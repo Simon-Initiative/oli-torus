@@ -33,6 +33,12 @@ export const ResponseActions = {
     };
   },
 
+  editResponseCorrectness(responseId: ResponseId, correct: boolean) {
+    return (model: HasParts) => {
+      getResponseBy(model, (r) => r.id === responseId).score = correct ? 1 : 0;
+    };
+  },
+
   editShowPage(responseId: ResponseId, showPage: number | undefined) {
     return (model: HasParts) => {
       getResponseBy(model, (r) => r.id === responseId).showPage = showPage;

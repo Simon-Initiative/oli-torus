@@ -26,6 +26,9 @@ export const TargetedFeedback: React.FC = () => {
           updateFeedback={(id, content) =>
             dispatch(ResponseActions.editResponseFeedback(mapping.response.id, content as RichText))
           }
+          updateCorrectness={(_id, correct) =>
+            dispatch(ResponseActions.editResponseCorrectness(mapping.response.id, correct))
+          }
           removeResponse={(id) => dispatch(ResponseActions.removeTargetedFeedback(id))}
           key={mapping.response.id}
         >
