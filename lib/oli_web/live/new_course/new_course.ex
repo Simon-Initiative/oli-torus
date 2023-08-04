@@ -304,22 +304,21 @@ defmodule OliWeb.Delivery.NewCourse do
           changeset
           |> Ecto.Changeset.apply_changes()
           |> Map.from_struct()
+          |> Map.take([
+            :title,
+            :course_section_number,
+            :class_modality,
+            :class_days,
+            :start_date,
+            :end_date
+          ])
           |> Map.merge(%{
             blueprint_id: blueprint.id,
-            requires_payment: blueprint.requires_payment,
-            payment_options: blueprint.payment_options,
-            pay_by_institution: blueprint.pay_by_institution,
-            amount: blueprint.amount,
-            has_grace_period: blueprint.has_grace_period,
-            grace_period_days: blueprint.grace_period_days,
-            grace_period_strategy: blueprint.grace_period_strategy,
             required_survey_resource_id: project.required_survey_resource_id,
             type: :enrollable,
             open_and_free: true,
             has_experiments: project.has_experiments,
-            base_project_id: blueprint.base_project_id,
-            context_id: UUID.uuid4(),
-            cover_image: blueprint.cover_image
+            context_id: UUID.uuid4()
           })
 
         case create_from_product(socket, blueprint, section_params) do
