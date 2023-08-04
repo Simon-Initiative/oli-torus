@@ -7,72 +7,161 @@ type DeserializeTypes = DeserializeTypesNoNull | null;
 
 const filterNull = (arr: DeserializeTypes): arr is DeserializeTypesNoNull => arr != null;
 
-type PartialTagDeserializer = (el: HTMLElement) => Omit<ModelElement, 'children' | 'id'> | null;
-type TagDeserializer = (el: HTMLElement) => ModelElement | null;
+type DeserializerMatchRule = (el: HTMLElement) => boolean;
 
-const foreignTagDeserializer: PartialTagDeserializer = (el: HTMLElement) => {
-  const lang = el.getAttribute('lang');
-  if (!lang) return null;
-  return { type: 'foreign', lang: lang };
+/* When you have several rules and you want to match on any of those rules.
+ * const rule = anyRule(subRule1, subRule2, subRule3);
+ * A logical OR of the rules.
+ */
+const anyRule =
+  (...rules: DeserializerMatchRule[]): DeserializerMatchRule =>
+  (el: HTMLElement) =>
+    rules.some((rule) => rule(el));
+
+/* When you have several rules and you only want to match on all of those rules.
+ * const rule = allRules(subRule1, subRule2, subRule3);
+ * A logical AND of the rules.
+ **/
+const allRules =
+  (...rules: DeserializerMatchRule[]): DeserializerMatchRule =>
+  (el: HTMLElement) =>
+    rules.every((rule) => rule(el));
+
+const notRule =
+  (rule: DeserializerMatchRule): DeserializerMatchRule =>
+  (el: HTMLElement) =>
+    !rule(el);
+
+/* You should be able to combine any and all rules like so:
+ * const rule = anyRule([allRules([subRule1, subRule2]), subRule3]);
+ */
+
+type DeserializerAction = (el: HTMLElement) => Record<string, unknown> | null;
+
+type PartialTagDeserializer = {
+  rule: DeserializerMatchRule;
+  action: DeserializerAction;
 };
 
-// These deserialize elements that have children appended to them automatically
-const ELEMENT_TAG_DESERIALIZERS: Record<string, PartialTagDeserializer> = {
-  A: (el: HTMLElement) => ({ type: 'a', href: el.getAttribute('href') || '' }),
-  // BLOCKQUOTE: () => ({ type: 'quote' }),
-  H1: () => ({ type: 'h1' }),
-  H2: () => ({ type: 'h2' }),
-  H3: () => ({ type: 'h3' }), // Question: Should we stick with the authorable h1 & h2?
-  H4: () => ({ type: 'h4' }),
-  H5: () => ({ type: 'h5' }),
-  H6: () => ({ type: 'h6' }),
-  P: () => ({ type: 'p' }),
-  DIV: () => ({ type: 'p' }),
-  I: foreignTagDeserializer,
+const hasAttributeRule =
+  (attributeName: string): DeserializerMatchRule =>
+  (el: HTMLElement) =>
+    !!el.getAttribute(attributeName);
 
-  // IMG: (el: HTMLElement) => ({ type: 'image', url: el.getAttribute('src') }),
-  // LI: () => ({ type: 'list-item' }),
-  // OL: () => ({ type: 'numbered-list' }),
-  // UL: () => ({ type: 'bulleted-list' }),
+const attributeEqualsRule =
+  (attributeName: string, attributeValue: string): DeserializerMatchRule =>
+  (el: HTMLElement) =>
+    el.getAttribute(attributeName) === attributeValue;
+
+const tagNameRule =
+  (tagName: string): DeserializerMatchRule =>
+  (el: HTMLElement) =>
+    el.tagName.toUpperCase() === tagName.toUpperCase();
+
+const tagTypeAction =
+  (type: string): DeserializerAction =>
+  () => ({ type, id: guid() });
+
+const serializer = (
+  rule: DeserializerMatchRule,
+  ...actions: DeserializerAction[]
+): PartialTagDeserializer => {
+  if (actions.length === 0) {
+    throw new Error('Must have at least one action');
+  }
+  if (actions.length === 1) {
+    return {
+      rule,
+      action: actions[0],
+    };
+  }
+  return {
+    rule,
+    action: (el: HTMLElement) => {
+      const attrs = actions.map((action) => action(el));
+      return Object.assign({}, ...attrs);
+    },
+  };
 };
 
-type MarkDeserializer = (el: HTMLElement) => Record<string, boolean> | null;
+/* Adds a static empty children array to the element */
+const addEmptyChildrenAction: DeserializerAction = () => {
+  return { children: [{ text: '' }] };
+};
+
+/* Takes the given attribute from the input element, and adds it to the output node with the given name and default value
+ *
+ */
+const copyAttribute =
+  (sourceName: string, targetName: string, defaultValue: unknown = null): DeserializerAction =>
+  (el: HTMLElement) => {
+    const value = el.getAttribute(sourceName);
+    if (!value && !defaultValue) return null; // If there's no value and no default, don't add the attribute
+    return { [targetName]: value || defaultValue };
+  };
+
+/* Takes the text content of the input element, and adds it as an attribute to the output node with the given name
+ */
+const copyTextContent =
+  (targetName: string): DeserializerAction =>
+  (el: HTMLElement) => {
+    const value = el.textContent;
+    if (!value) return null;
+    return { [targetName]: value };
+  };
+
+const addMarkAction =
+  (mark: string): DeserializerAction =>
+  (el: HTMLElement) => {
+    return { [mark]: true };
+  };
+
+const TAG_DESERIALIZERS: PartialTagDeserializer[] = [
+  serializer(tagNameRule('A'), tagTypeAction('a'), copyAttribute('href', 'href')),
+  serializer(tagNameRule('H1'), tagTypeAction('h1')),
+  serializer(tagNameRule('H2'), tagTypeAction('h2')),
+  serializer(tagNameRule('H3'), tagTypeAction('h3')),
+  serializer(tagNameRule('H4'), tagTypeAction('h4')),
+  serializer(tagNameRule('H5'), tagTypeAction('h5')),
+  serializer(tagNameRule('H6'), tagTypeAction('h6')),
+  serializer(tagNameRule('P'), tagTypeAction('p')),
+  serializer(tagNameRule('DIV'), tagTypeAction('p')),
+  serializer(
+    tagNameRule('PRE'),
+    tagTypeAction('code'),
+    addEmptyChildrenAction,
+    copyTextContent('code'),
+    copyAttribute('data-language', 'language', 'text'),
+  ),
+  serializer(
+    allRules(tagNameRule('I'), hasAttributeRule('lang')),
+    tagTypeAction('foreign'),
+    copyAttribute('lang', 'lang'),
+  ),
+];
 
 // These deserialize tags that result in marks being applied to text nodes.
-const TEXT_TAGS: Record<string, MarkDeserializer> = {
-  CODE: () => ({ code: true }),
-  DEL: () => ({ strikethrough: true }),
-  EM: () => ({ italic: true }),
-  I: () => ({ italic: true }),
-  S: () => ({ strikethrough: true }),
-  STRONG: () => ({ bold: true }),
-  B: () => ({ bold: true }),
-  U: () => ({ underline: true }),
-  SUB: () => ({ sub: true }),
-  SUP: () => ({ sup: true }),
-  SMALL: () => ({ deemphasis: true }),
-};
-
-// These deserialize tags that should not have children appended to them
-const CHILDLESS_TAGS: Record<string, TagDeserializer> = {
-  PRE: (el: HTMLElement) => {
-    const code = el.textContent;
-    const language = el.getAttribute('data-language');
-    if (!code) return null;
-    return {
-      type: 'code',
-      code,
-      language: language || 'text',
-      id: guid(),
-      children: [{ text: '' }],
-    };
-  },
-};
+const TEXT_TAGS: PartialTagDeserializer[] = [
+  serializer(tagNameRule('CODE'), addMarkAction('code')),
+  serializer(tagNameRule('DEL'), addMarkAction('strikethrough')),
+  serializer(tagNameRule('EM'), addMarkAction('italic')),
+  serializer(
+    allRules(tagNameRule('I'), notRule(hasAttributeRule('lang'))), // <i lang="fr"> is going to be treated as a <foreign> node and so don't count that as a mark
+    addMarkAction('italic'),
+  ),
+  serializer(tagNameRule('S'), addMarkAction('strikethrough')),
+  serializer(tagNameRule('STRONG'), addMarkAction('bold')),
+  serializer(tagNameRule('B'), addMarkAction('bold')),
+  serializer(tagNameRule('U'), addMarkAction('underline')),
+  serializer(tagNameRule('SUB'), addMarkAction('sub')),
+  serializer(tagNameRule('SUP'), addMarkAction('sup')),
+  serializer(tagNameRule('SMALL'), addMarkAction('deemphasis')),
+];
 
 const addToTextNode =
   (attrs: Record<string, boolean>) =>
   (node: Text | ModelElement): Text | ModelElement => {
-    if (!Text.isText(node)) return node;
+    if (!Text.isText(node)) return node; // QUESTION: Do we need to recursively follow children of elements and set their children too?
 
     // Special case: if we're adding subscript to a node with subscript, it's double sub script instead
     if (attrs.sub && node.sub) {
@@ -89,7 +178,6 @@ const addToTextNode =
     return { ...node, ...attrs };
   };
 
-// noBreakSpace = \u00a0;
 const sanitizeText = (text: string) => text.replace(/[\u00a0]/g, ' ').replace(/[\n\r]+/g, ' ');
 
 const deserialize = (el: HTMLElement): DeserializeTypes => {
@@ -111,33 +199,36 @@ const deserialize = (el: HTMLElement): DeserializeTypes => {
     children = [{ text: '' }];
   }
 
-  if (el.nodeName === 'BODY') {
+  if (nodeName === 'BODY') {
     return children;
   }
 
-  if (ELEMENT_TAG_DESERIALIZERS[nodeName]) {
-    const attrs = ELEMENT_TAG_DESERIALIZERS[nodeName](el);
-    if (attrs) {
-      return {
-        ...attrs,
-        children,
-        id: guid(),
-      } as ModelElement;
-    }
+  /* Run through all our TEXT_TAGS rules and collect all the results from them for this element.
+     These are going to be marks we add to the text nodes that are children of this element.
+  */
+  const textAttributesArray = TEXT_TAGS.filter(({ rule }) => rule(el))
+    .map(({ action }) => action(el))
+    .filter((r) => r != null);
+  const textAttributes = Object.assign({}, ...textAttributesArray);
+  if (textAttributes) {
+    children = children.map(addToTextNode(textAttributes));
   }
 
-  if (TEXT_TAGS[nodeName]) {
-    const attrs = TEXT_TAGS[nodeName](el);
-    if (attrs) {
-      return children.map(addToTextNode(attrs));
-    }
-  }
+  /* Run through all our TAG_DESERIALIZER rules and collect all the results from them for this element. */
+  const elementAttributesArray = TAG_DESERIALIZERS.filter(({ rule }) => rule(el))
+    .map(({ action }) => action(el))
+    .filter((r) => r != null);
+  const elementAttributes = Object.assign({}, ...elementAttributesArray);
 
-  if (CHILDLESS_TAGS[nodeName]) {
-    const node = CHILDLESS_TAGS[nodeName](el);
-    if (node) {
-      return node;
+  /* We our rules added a type prop (and maybe lots of other stuff) to the elementAttributes, we're going to treat it as an element.
+     If we have a children prop, we're good to go (ex: the code node will want an empty children array and adds that in the rules)
+     If not, we need to add that in.
+  */
+  if (elementAttributes.type) {
+    if (!elementAttributes.children) {
+      elementAttributes.children = children;
     }
+    return elementAttributes as ModelElement;
   }
 
   return children;
