@@ -29,6 +29,7 @@ import {
   ImageBlock,
   ImageInline,
   InputRef,
+  ListChildren,
   ListItem,
   ModelElement,
   OrderedList,
@@ -83,7 +84,8 @@ export const Model = {
 
   ol: () => create<OrderedList>({ type: 'ol', children: [Model.li()] }),
 
-  ul: () => create<UnorderedList>({ type: 'ul', children: [Model.li()] }),
+  ul: (children?: ListChildren | undefined) =>
+    create<UnorderedList>({ type: 'ul', children: children || [Model.li()] }),
 
   dt: () => create<DescriptionListTerm>({ type: 'dt', children: [Model.p([{ text: 'A term' }])] }),
   dd: () =>

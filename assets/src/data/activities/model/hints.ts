@@ -14,7 +14,7 @@ interface Hints extends Omit<List<Hint>, 'addOne' | 'removeOne'> {
   getBottomOutHint: (model: HasHints, partId: string) => Hint;
   addCognitiveHint(hint: Hint, partId: string): (model: HasHints, _post: PostUndoable) => void;
   setContent(id: string, content: RichText): (model: HasHints, _post: PostUndoable) => void;
-  removeOne: (id: string) => (model: any, post: PostUndoable) => void;
+  removeOne: (id: string, partId: string) => (model: any, post: PostUndoable) => void;
 }
 
 export const HINTS_BY_PART_PATH = (partId: string) => `$..parts[?(@.id=='${partId}')].hints`;
@@ -56,13 +56,17 @@ export const Hints: Hints = {
     };
   },
 
-  removeOne(id: string) {
+  removeOne(id: string, partId: string) {
     return (model: HasHints, post: PostUndoable) => {
-      const hint = Hints.getOne(model, id);
-      const index = Hints.getAll(model).findIndex((h) => h.id === id);
+      const index = Hints.byPart(model, partId).findIndex((h) => h.id === id);
+      const hint = Hints.byPart(model, partId)[index];
 
-      List<Hint>(PATH).removeOne(id)(model);
-      post(makeUndoable('Removed a hint', [Operations.insert(PATH, clone(hint), index)]));
+      List<Hint>(HINTS_BY_PART_PATH(partId)).removeOne(id)(model);
+      post(
+        makeUndoable('Removed a hint', [
+          Operations.insert(HINTS_BY_PART_PATH(partId), clone(hint), index),
+        ]),
+      );
     };
   },
 };

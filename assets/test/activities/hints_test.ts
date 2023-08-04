@@ -32,6 +32,6 @@ describe('authoring hints', () => {
 
   it('can remove a hint', () => {
     const firstHint = Hints.byPart(model, '1')[0];
-    expect(Hints.byPart(dispatch(model, Hints.removeOne(firstHint.id)), '1')).toHaveLength(2);
+    expect(Hints.byPart(dispatch(model, Hints.removeOne(firstHint.id, '1')), '1')).toHaveLength(2);
   });
 });

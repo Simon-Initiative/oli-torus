@@ -13,7 +13,7 @@ export const Hints: React.FC<Props> = (props) => {
     <HintsAuthoring
       addOne={() => dispatch(HintUtils.addCognitiveHint(makeHint(''), props.partId))}
       updateOne={(id, content) => dispatch(HintUtils.setContent(id, content))}
-      removeOne={(id) => dispatch(HintUtils.removeOne(id))}
+      removeOne={(id) => dispatch(HintUtils.removeOne(id, props.partId))}
       deerInHeadlightsHint={HintUtils.getDeerInHeadlightsHint(model, props.partId)}
       cognitiveHints={HintUtils.getCognitiveHints(model, props.partId)}
       bottomOutHint={HintUtils.getBottomOutHint(model, props.partId)}
