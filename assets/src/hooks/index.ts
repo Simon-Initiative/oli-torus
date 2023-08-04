@@ -48,5 +48,5 @@ export const Hooks = {
   SubmitForm,
   LoadSurveyScripts,
   LiveModal,
-  EmailList
+  EmailList,
 };

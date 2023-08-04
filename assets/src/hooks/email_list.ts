@@ -1,8 +1,8 @@
 const isValidEmail = (email: string): boolean =>
-  email.match(/^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$/) !== null;
+  email.match(/^[\w]+@([\w-]+\.)+[\w-]{2,4}$/) !== null;
 
 const parseEmails = (content: string): string[] =>
-  content.match(/[\w-\.]+@([\w-]+\.)+[\w-]{2,4}/g) || [];
+  content.match(/[\w]+@([\w-]+\.)+[\w-]{2,4}/g) || [];
 
 export const EmailList = {
   refresh() {
