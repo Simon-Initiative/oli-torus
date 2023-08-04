@@ -1,5 +1,5 @@
 defmodule OliWeb.Users.AuthorsTableModel do
-  use Surface.LiveComponent
+  use Phoenix.Component
 
   import OliWeb.Common.Utils
 
@@ -8,7 +8,7 @@ defmodule OliWeb.Users.AuthorsTableModel do
   alias OliWeb.Router.Helpers, as: Routes
 
   def render(assigns) do
-    ~F"""
+    ~H"""
     <div>nothing</div>
     """
   end
@@ -50,13 +50,13 @@ defmodule OliWeb.Users.AuthorsTableModel do
 
     case system_role_id do
       ^admin_role_id ->
-        ~F"""
-          <span class="badge badge-warning">Administrator</span>
+        ~H"""
+        <span class="badge badge-warning">Administrator</span>
         """
 
       _ ->
-        ~F"""
-          <span class="badge badge-dark">Author</span>
+        ~H"""
+        <span class="badge badge-dark">Author</span>
         """
     end
   end
@@ -66,8 +66,13 @@ defmodule OliWeb.Users.AuthorsTableModel do
         %{name: name, family_name: family_name, given_name: given_name, id: id},
         _
       ) do
-    ~F"""
-    <a href={Routes.live_path(OliWeb.Endpoint, OliWeb.Users.AuthorsDetailView, id)}>{name(name, given_name, family_name)}</a>
+    assigns =
+      Map.merge(assigns, %{id: id, name: name, family_name: family_name, given_name: given_name})
+
+    ~H"""
+    <a href={Routes.live_path(OliWeb.Endpoint, OliWeb.Users.AuthorsDetailView, @id)}>
+      <%= name(@name, @given_name, @family_name) %>
+    </a>
     """
   end
 end

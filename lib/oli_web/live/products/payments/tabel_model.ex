@@ -1,7 +1,8 @@
 defmodule OliWeb.Products.Payments.TableModel do
-  use OliWeb, :surface_component
+  use Phoenix.Component
 
   alias OliWeb.Common.Table.{ColumnSpec, SortableTableModel, Common}
+  alias OliWeb.Router.Helpers, as: Routes
 
   def new(payments, ctx) do
     inserted_at_spec = %ColumnSpec{
@@ -61,16 +62,20 @@ defmodule OliWeb.Products.Payments.TableModel do
       nil ->
         ""
 
-      s ->
-        ~F"""
-          <a href={Routes.live_path(
+      _section ->
+        assigns = Map.merge(assigns, %{section: section})
+
+        ~H"""
+        <a href={
+          Routes.live_path(
             OliWeb.Endpoint,
             OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
-            section.slug,
+            @section.slug,
             :overview
-          )}>
-            <span>{s.title}</span>
-          </a>
+          )
+        }>
+          <span><%= @section.title %></span>
+        </a>
         """
     end
   end
@@ -81,16 +86,22 @@ defmodule OliWeb.Products.Payments.TableModel do
         ""
 
       user ->
-        ~F"""
-          <a href={Routes.live_path(
+        assigns = Map.merge(assigns, %{section: section, user: user})
+
+        ~H"""
+        <a href={
+          Routes.live_path(
             OliWeb.Endpoint,
             OliWeb.Delivery.StudentDashboard.StudentDashboardLive,
-            section.slug,
-            user.id,
+            @section.slug,
+            @user.id,
             :content
-          )}>
-            <span>{safe_get(user.family_name, "Unknown")}, {safe_get(user.given_name, "Unknown")}</span>
-          </a>
+          )
+        }>
+          <span>
+            <%= "#{safe_get(@user.family_name, "Unknown")}, #{safe_get(@user.given_name, "Unknown")}" %>
+          </span>
+        </a>
         """
     end
   end
@@ -103,15 +114,21 @@ defmodule OliWeb.Products.Payments.TableModel do
   end
 
   def render_type_column(assigns, %{payment: payment, code: code}, _) do
+    assigns = Map.merge(assigns, %{payment: payment, code: code})
+
     case payment.type do
       :direct ->
-        ~F"""
-        Direct: <span class="badge badge-success">{payment.provider_type}</span>
+        ~H"""
+        <div>
+          Direct: <span class="badge badge-success"><%= @payment.provider_type %></span>
+        </div>
         """
 
       :deferred ->
-        ~F"""
-        Code: <code>{code}</code>
+        ~H"""
+        <div>
+          Code: <code><%= @code %></code>
+        </div>
         """
     end
   end
@@ -119,8 +136,12 @@ defmodule OliWeb.Products.Payments.TableModel do
   def render_details_column(assigns, %{payment: payment}, _) do
     case {payment.type, payment.provider_type} do
       {:direct, :stripe} ->
-        ~F"""
-        <a href={"https://dashboard.stripe.com/test/payments/#{payment.provider_payload["id"]}"}>View <i class="fas fa-external-link-alt ml-1"></i></a>
+        assigns = Map.merge(assigns, %{payment: payment})
+
+        ~H"""
+        <a href={"https://dashboard.stripe.com/test/payments/#{@payment.provider_payload["id"]}"}>
+          View <i class="fas fa-external-link-alt ml-1"></i>
+        </a>
         """
 
       _ ->
@@ -150,7 +171,7 @@ defmodule OliWeb.Products.Payments.TableModel do
   end
 
   def render(assigns) do
-    ~F"""
+    ~H"""
     <div>nothing</div>
     """
   end

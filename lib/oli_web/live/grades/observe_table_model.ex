@@ -1,6 +1,6 @@
 defmodule OliWeb.Grades.ObserveTableModel do
   alias OliWeb.Common.Table.{ColumnSpec, SortableTableModel}
-  use Surface.LiveComponent
+  use Phoenix.Component
 
   def new(updates) do
     SortableTableModel.new(
@@ -33,7 +33,7 @@ defmodule OliWeb.Grades.ObserveTableModel do
   end
 
   def render(assigns) do
-    ~F"""
+    ~H"""
     <div>nothing</div>
     """
   end

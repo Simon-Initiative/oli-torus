@@ -1,5 +1,5 @@
 defmodule OliWeb.CommunityLive.Associated.TableModel do
-  use Surface.LiveComponent
+  use Phoenix.Component
 
   alias Oli.Groups.CommunityVisibility
   alias OliWeb.Common.Table.{ColumnSpec, Common, SortableTableModel}
@@ -73,14 +73,25 @@ defmodule OliWeb.CommunityLive.Associated.TableModel do
     do: {fn t -> get_field(:title, t) end, sort_order}
 
   def render_select_column(assigns, item, _) do
-    ~F"""
-      <button class="btn btn-primary" phx-click="select" phx-value-type={item.unique_type} phx-value-id={item.id}>Select</button>
+    assings = Map.merge(assigns, %{item: item})
+
+    ~H"""
+    <button
+      class="btn btn-primary"
+      phx-click="select"
+      phx-value-type={@item.unique_type}
+      phx-value-id={@item.id}
+    >
+      Select
+    </button>
     """
   end
 
   def render_remove_column(assigns, item, _) do
-    ~F"""
-      <button class="btn btn-primary" phx-click="remove" phx-value-id={item.id}>Remove</button>
+    assings = Map.merge(assigns, %{item: item})
+
+    ~H"""
+    <button class="btn btn-primary" phx-click="remove" phx-value-id={@item.id}>Remove</button>
     """
   end
 
@@ -92,8 +103,8 @@ defmodule OliWeb.CommunityLive.Associated.TableModel do
   end
 
   def render(assigns) do
-    ~F"""
-      <div>nothing</div>
+    ~H"""
+    <div>nothing</div>
     """
   end
 end

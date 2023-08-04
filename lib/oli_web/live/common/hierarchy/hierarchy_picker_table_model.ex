@@ -75,8 +75,10 @@ defmodule OliWeb.Common.Hierarchy.HierarchyPicker.TableModel do
     <input
       id={"hierarchy_item_#{ @child.uuid}"}
       {@click_handler}
-      type="checkbox" {@maybe_checked}
-      {@maybe_preselected} />
+      type="checkbox"
+      {@maybe_checked}
+      {@maybe_preselected}
+    />
     """
   end
 
@@ -104,7 +106,7 @@ defmodule OliWeb.Common.Hierarchy.HierarchyPicker.TableModel do
     assigns = assign(assigns, :title, data.revision.title)
 
     ~H"""
-      <%= @title %>
+    <%= @title %>
     """
   end
 
@@ -112,7 +114,7 @@ defmodule OliWeb.Common.Hierarchy.HierarchyPicker.TableModel do
     assigns = assign(assigns, :graded, data.revision.graded)
 
     ~H"""
-      <%= if @graded, do: "Graded", else: "Practice" %>
+    <%= if @graded, do: "Graded", else: "Practice" %>
     """
   end
 
@@ -120,7 +122,7 @@ defmodule OliWeb.Common.Hierarchy.HierarchyPicker.TableModel do
     assigns = assign(assigns, :updated_at, data.revision.updated_at)
 
     ~H"""
-      <%= OliWeb.Common.FormatDateTime.format_datetime(@updated_at, show_timezone: false) %>
+    <%= OliWeb.Common.FormatDateTime.format_datetime(@updated_at, show_timezone: false) %>
     """
   end
 
@@ -128,7 +130,7 @@ defmodule OliWeb.Common.Hierarchy.HierarchyPicker.TableModel do
     assigns = assign(assigns, :publication_date, data.revision.publication_date)
 
     ~H"""
-      <%= OliWeb.Common.FormatDateTime.format_datetime(@publication_date, show_timezone: false) %>
+    <%= OliWeb.Common.FormatDateTime.format_datetime(@publication_date, show_timezone: false) %>
     """
   end
 end

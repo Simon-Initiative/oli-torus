@@ -1,11 +1,11 @@
 defmodule OliWeb.Delivery.LearningObjectives.ObjectivesTableModel do
-  use Surface.LiveComponent
+  use Phoenix.Component
 
   alias OliWeb.Common.Table.{ColumnSpec, SortableTableModel}
 
   def render(assigns) do
-    ~F"""
-      <div>nothing</div>
+    ~H"""
+    <div>nothing</div>
     """
   end
 
@@ -47,30 +47,41 @@ defmodule OliWeb.Delivery.LearningObjectives.ObjectivesTableModel do
           name: :objective
         }
       ) do
-    ~F"""
-      <div class="flex items-center ml-8 gap-x-4" data-proficiency-check={if student_proficiency == "Low", do: "false", else: "true"}>
-        <span class={"flex flex-shrink-0 rounded-full w-2 h-2 #{if student_proficiency == "Low", do: "bg-red-600", else: "bg-gray-500"}"}></span>
-        <span>{objective}</span>
-      </div>
+    assigns =
+      Map.merge(assigns, %{objective: objective, student_proficiency: student_proficiency})
+
+    ~H"""
+    <div
+      class="flex items-center ml-8 gap-x-4"
+      data-proficiency-check={if @student_proficiency == "Low", do: "false", else: "true"}
+    >
+      <span class={"flex flex-shrink-0 rounded-full w-2 h-2 #{if @student_proficiency == "Low", do: "bg-red-600", else: "bg-gray-500"}"}>
+      </span>
+      <span><%= @objective %></span>
+    </div>
     """
   end
 
   def custom_render(assigns, %{objective: objective} = _objectives, %ColumnSpec{
         name: :objective
       }) do
-    ~F"""
-      <div class="flex items-center ml-8 gap-x-4">
-        <span></span>
-        <span>{objective}</span>
-      </div>
+    assigns = Map.merge(assigns, %{objective: objective})
+
+    ~H"""
+    <div class="flex items-center ml-8 gap-x-4">
+      <span></span>
+      <span><%= @objective %></span>
+    </div>
     """
   end
 
   def custom_render(assigns, %{subobjective: subobjective} = _objectives, %ColumnSpec{
         name: :subobjective
       }) do
-    ~F"""
-      <div>{if is_nil(subobjective), do: "-", else: subobjective}</div>
+    assigns = Map.merge(assigns, %{subobjective: subobjective})
+
+    ~H"""
+    <div><%= if is_nil(@subobjective), do: "-", else: @subobjective %></div>
     """
   end
 end

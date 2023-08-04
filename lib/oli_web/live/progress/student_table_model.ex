@@ -2,7 +2,7 @@ defmodule OliWeb.Progress.StudentTabelModel do
   alias OliWeb.Common.Table.{ColumnSpec, SortableTableModel}
   alias OliWeb.Router.Helpers, as: Routes
   alias OliWeb.Progress.ResourceTitle
-  use Surface.LiveComponent
+  use Phoenix.Component
 
   @moduledoc """
   This table model displays various pieces of "progress" information for all course resources in a
@@ -142,10 +142,21 @@ defmodule OliWeb.Progress.StudentTabelModel do
   end
 
   def custom_render(assigns, row, %ColumnSpec{name: :title}) do
-    ~F"""
-    <ResourceTitle
-      node={row.node}
-      url={Routes.live_path(OliWeb.Endpoint, OliWeb.Progress.StudentResourceView, assigns.section_slug, assigns.user_id, row.resource_id)}/>
+    assigns = Map.merge(assigns, %{row: row})
+
+    ~H"""
+    <ResourceTitle.render
+      node={@row.node}
+      url={
+        Routes.live_path(
+          OliWeb.Endpoint,
+          OliWeb.Progress.StudentResourceView,
+          @section_slug,
+          @user_id,
+          @row.resource_id
+        )
+      }
+    />
     """
   end
 
@@ -174,7 +185,7 @@ defmodule OliWeb.Progress.StudentTabelModel do
   end
 
   def render(assigns) do
-    ~F"""
+    ~H"""
     <div>nothing</div>
     """
   end

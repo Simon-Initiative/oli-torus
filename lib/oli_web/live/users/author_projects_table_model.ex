@@ -48,9 +48,9 @@ defmodule OliWeb.Users.AuthorProjectsTableModel do
     assigns = Map.merge(assigns, %{title: project.title, slug: project.slug})
 
     ~H"""
-      <a href={Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.OverviewLive, @slug)}>
-        <%= @title %>
-      </a>
+    <a href={Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.OverviewLive, @slug)}>
+      <%= @title %>
+    </a>
     """
   end
 
@@ -58,12 +58,12 @@ defmodule OliWeb.Users.AuthorProjectsTableModel do
     case project.role do
       "owner" ->
         ~H"""
-          <span class="badge badge-primary">Owner</span>
+        <span class="badge badge-primary">Owner</span>
         """
 
       "contributor" ->
         ~H"""
-          <span class="badge badge-dark">Collaborator</span>
+        <span class="badge badge-dark">Collaborator</span>
         """
     end
   end
@@ -72,7 +72,7 @@ defmodule OliWeb.Users.AuthorProjectsTableModel do
     assigns = Map.merge(assigns, %{date_created: project.created_at})
 
     ~H"""
-      <%= parse_datetime(@date_created, @ctx) %>
+    <%= parse_datetime(@date_created, @ctx) %>
     """
   end
 
@@ -80,7 +80,7 @@ defmodule OliWeb.Users.AuthorProjectsTableModel do
     assigns = Map.merge(assigns, %{most_recent_edit: project.most_recent_edit})
 
     ~H"""
-      <%= parse_datetime(@most_recent_edit, @ctx) %>
+    <%= parse_datetime(@most_recent_edit, @ctx) %>
     """
   end
 

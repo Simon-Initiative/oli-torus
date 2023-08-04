@@ -91,12 +91,15 @@ defmodule OliWeb.Common.SortableTable.Table do
               <%= ColumnSpec.default_render_fn(column_spec, @row) %>
             <% else %>
               <%= column_spec.render_fn.(
-                %{
-                  model: @model,
-                  sort: @sort,
-                  select: @select,
-                  additional_table_class: @additional_table_class
-                },
+                with_data(
+                  %{
+                    model: @model,
+                    sort: @sort,
+                    select: @select,
+                    additional_table_class: @additional_table_class
+                  },
+                  @model.data
+                ),
                 @row,
                 column_spec
               ) %>

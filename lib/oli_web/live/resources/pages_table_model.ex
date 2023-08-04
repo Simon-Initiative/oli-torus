@@ -3,10 +3,10 @@ defmodule OliWeb.Resources.PagesTableModel do
   alias OliWeb.Router.Helpers, as: Routes
   alias Oli.Resources.Revision
   alias OliWeb.Curriculum.Actions
-  use Surface.LiveComponent
+  use Phoenix.Component
 
   def render(assigns) do
-    ~F"""
+    ~H"""
     <div>nothing</div>
     """
   end
@@ -55,9 +55,11 @@ defmodule OliWeb.Resources.PagesTableModel do
         },
         _
       ) do
-    ~F"""
-    <a href={Routes.resource_path(OliWeb.Endpoint, :edit, assigns.project_slug, slug)}>
-      {title}
+    assigns = Map.merge(assigns, %{slug: slug, title: title})
+
+    ~H"""
+    <a href={Routes.resource_path(OliWeb.Endpoint, :edit, @project_slug, @slug)}>
+      <%= @title %>
     </a>
     """
   end

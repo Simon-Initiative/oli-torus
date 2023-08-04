@@ -1,5 +1,5 @@
 defmodule OliWeb.CommunityLive.MembersTableModel do
-  use Surface.LiveComponent
+  use Phoenix.Component
 
   alias OliWeb.Common.Table.{ColumnSpec, SortableTableModel}
 
@@ -27,14 +27,14 @@ defmodule OliWeb.CommunityLive.MembersTableModel do
   end
 
   def render_remove_button(assigns, item, _) do
-    ~F"""
-      <button class="btn btn-primary" phx-click="remove" phx-value-id={item.id}>Remove</button>
+    ~H"""
+    <button class="btn btn-primary" phx-click="remove" phx-value-id={item.id}>Remove</button>
     """
   end
 
   def render(assigns) do
-    ~F"""
-      <div>nothing</div>
+    ~H"""
+    <div>nothing</div>
     """
   end
 end

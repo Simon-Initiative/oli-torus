@@ -6,6 +6,7 @@ defmodule OliWeb.Common.Paging do
   attr :click, :string, required: true
   attr :offset, :integer, required: true
   attr :limit, :integer, required: true
+  attr :id, :string, required: true
 
   def render(assigns) do
     params = PagingParams.calculate(assigns.total_count, assigns.offset, assigns.limit, 5)

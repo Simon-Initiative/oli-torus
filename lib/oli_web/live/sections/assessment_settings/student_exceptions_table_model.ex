@@ -128,10 +128,15 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTableModel do
       Map.merge(assigns, %{name: student_exception.user.name, id: student_exception.user_id})
 
     ~H"""
-      <div class="pl-1 pr-4">
-        <input class="mr-2" type="checkbox" checked={@id in @selected_student_exceptions} name={"checkbox-#{@id}"} />
-        <%= @name %>
-      </div>
+    <div class="pl-1 pr-4">
+      <input
+        class="mr-2"
+        type="checkbox"
+        checked={@id in @selected_student_exceptions}
+        name={"checkbox-#{@id}"}
+      />
+      <%= @name %>
+    </div>
     """
   end
 
@@ -143,13 +148,18 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTableModel do
       })
 
     ~H"""
-      <button class="hover:underline whitespace-nowrap" type="button" phx-click={@on_edit_date} phx-value-user_id={@id}>
-        <%= if @due_date do %>
-          <%= value_from_datetime(@due_date, @ctx) %>
-        <% else %>
-          No due date
-        <% end %>
-      </button>
+    <button
+      class="hover:underline whitespace-nowrap"
+      type="button"
+      phx-click={@on_edit_date}
+      phx-value-user_id={@id}
+    >
+      <%= if @due_date do %>
+        <%= value_from_datetime(@due_date, @ctx) %>
+      <% else %>
+        No due date
+      <% end %>
+    </button>
     """
   end
 
@@ -163,7 +173,15 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTableModel do
     ~H"""
     <div class={data_class(@selected_assessment.max_attempts, @max_attempts)}>
       <div class="relative">
-        <input class="w-28" type="number" min="0" value={@max_attempts} placeholder="-" phx-debounce={300} name={"max_attempts-#{@id}"} />
+        <input
+          class="w-28"
+          type="number"
+          min="0"
+          value={@max_attempts}
+          placeholder="-"
+          phx-debounce={300}
+          name={"max_attempts-#{@id}"}
+        />
         <%= if @max_attempts == 0 do %>
           <span class="text-[10px] absolute -ml-20 mt-3">(Unlimited)</span>
         <% end %>
@@ -182,7 +200,15 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTableModel do
     ~H"""
     <div class={data_class(@selected_assessment.time_limit, @time_limit)}>
       <div class="relative">
-        <input class="w-28" type="number" min="0" value={@time_limit} placeholder="-" phx-debounce={300} name={"time_limit-#{@id}"} />
+        <input
+          class="w-28"
+          type="number"
+          min="0"
+          value={@time_limit}
+          placeholder="-"
+          phx-debounce={300}
+          name={"time_limit-#{@id}"}
+        />
         <%= if @time_limit == 0 do %>
           <span class="text-[10px] absolute -ml-20 mt-3">(Unlimited)</span>
         <% end %>
@@ -255,7 +281,15 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTableModel do
 
     ~H"""
     <div class={data_class(@selected_assessment.grace_period, @grace_period)}>
-      <input class="w-28" type="number" min="0" value={@grace_period} placeholder="-" phx-debounce={500} name={"grace_period-#{@id}"} />
+      <input
+        class="w-28"
+        type="number"
+        min="0"
+        value={@grace_period}
+        placeholder="-"
+        phx-debounce={500}
+        name={"grace_period-#{@id}"}
+      />
     </div>
     """
   end
@@ -325,13 +359,28 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTableModel do
     ~H"""
     <div class={data_class(@selected_assessment.password, @password)}>
       <%= if @password in ["", nil] do %>
-        <input class="w-40" type="text" placeholder={"Enter password"} phx-debounce={800} name={"password-#{@id}"}/>
+        <input
+          class="w-40"
+          type="text"
+          placeholder="Enter password"
+          phx-debounce={800}
+          name={"password-#{@id}"}
+        />
       <% else %>
         <%= if @id == @edit_password_id do %>
-          <input id={"password_input#{@id}"} class="w-40" type="text" value={@password} phx-hook="InputAutoSelect" phx-click-away={@on_no_edit_password} phx-debounce={800} name={"password-#{@id}"}/>
+          <input
+            id={"password_input#{@id}"}
+            class="w-40"
+            type="text"
+            value={@password}
+            phx-hook="InputAutoSelect"
+            phx-click-away={@on_no_edit_password}
+            phx-debounce={800}
+            name={"password-#{@id}"}
+          />
         <% else %>
           <button type="button" phx-click={@on_edit_password} phx-value-user_id={@id}>
-            <input class="w-40" type="password" value={hide_password(@password)}/>
+            <input class="w-40" type="password" value={hide_password(@password)} />
           </button>
         <% end %>
       <% end %>

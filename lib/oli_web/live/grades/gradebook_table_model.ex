@@ -1,5 +1,5 @@
 defmodule OliWeb.Grades.GradebookTableModel do
-  use OliWeb, :surface_component
+  use Phoenix.Component
 
   alias OliWeb.Common.Table.{ColumnSpec, SortableTableModel}
   alias OliWeb.Common.Utils
@@ -81,10 +81,12 @@ defmodule OliWeb.Grades.GradebookTableModel do
   end
 
   def render_grade(assigns, row, _) do
-    ~F"""
-      <div class="ml-8">
-        {row.label}
-      </div>
+    assigns = Map.merge(assigns, %{row: row})
+
+    ~H"""
+    <div class="ml-8">
+      <%= @row.label %>
+    </div>
     """
   end
 
@@ -93,21 +95,34 @@ defmodule OliWeb.Grades.GradebookTableModel do
     has_score? = row.score != nil
     was_late = row.was_late
 
-    ~F"""
+    assigns =
+      Map.merge(assigns, %{perc: perc, has_score?: has_score?, was_late: was_late, row: row})
+
+    ~H"""
+    <div>
       <a
-        class={"ml-8 #{if has_score? and perc < 40, do: "text-red-500", else: "text-black"}"}
-        data-score-check={if has_score? and perc < 40, do: "false", else: "true"}
-        href={Routes.live_path(OliWeb.Endpoint, OliWeb.Progress.StudentResourceView, assigns.section_slug, assigns.student_id, row.resource_id)}
+        class={"ml-8 #{if @has_score? and @perc < 40, do: "text-red-500", else: "text-black"}"}
+        data-score-check={if @has_score? and @perc < 40, do: "false", else: "true"}
+        href={
+          Routes.live_path(
+            OliWeb.Endpoint,
+            OliWeb.Progress.StudentResourceView,
+            @section_slug,
+            @student_id,
+            @row.resource_id
+          )
+        }
       >
-        {#if has_score?}
-          {row.score}/{row.out_of}
-        {#else}
+        <%= if @has_score? do %>
+          <%= "#{@row.score}/#{@row.out_of}" %>
+        <% else %>
           Not Finished
-        {/if}
+        <% end %>
       </a>
-      {#if was_late}
-        <.badge variant={:danger}>LATE</.badge>
-      {/if}
+      <%= if @was_late do %>
+        <span class="ml-2 badge badge-xs badge-pill badge-danger">LATE</span>
+      <% end %>
+    </div>
     """
   end
 
@@ -119,10 +134,12 @@ defmodule OliWeb.Grades.GradebookTableModel do
           score(elem.score) / out_of_score(elem.out_of) * 100 < 40
       end)
 
-    ~F"""
-      <div class="ml-8" data-score-check={if disapproved_count > 0, do: "false", else: "true"}>
-        {OliWeb.Common.Utils.name(row.user)}
-      </div>
+    assigns = Map.merge(assigns, %{disapproved_count: disapproved_count, row: row})
+
+    ~H"""
+    <div class="ml-8" data-score-check={if @disapproved_count > 0, do: "false", else: "true"}>
+      <%= OliWeb.Common.Utils.name(@row.user) %>
+    </div>
     """
   end
 
@@ -141,13 +158,23 @@ defmodule OliWeb.Grades.GradebookTableModel do
   defp score(number), do: number
 
   def render_score(assigns, row, %ColumnSpec{name: resource_id}) do
+    assigns = Map.merge(assigns, %{row: row, resource_id: resource_id})
+
     case Map.get(row, resource_id) do
       # Indicates that this student has never visited this resource
       nil ->
         case assigns.show_all_links do
           true ->
-            ~F"""
-            <a href={Routes.live_path(OliWeb.Endpoint, OliWeb.Progress.StudentResourceView, row.section.slug, row.id, resource_id)}>
+            ~H"""
+            <a href={
+              Routes.live_path(
+                OliWeb.Endpoint,
+                OliWeb.Progress.StudentResourceView,
+                @row.section.slug,
+                @row.id,
+                @resource_id
+              )
+            }>
               <span class="text-muted">Never Visited</span>
             </a>
             """
@@ -160,8 +187,16 @@ defmodule OliWeb.Grades.GradebookTableModel do
       %ResourceAccess{score: nil, out_of: nil} ->
         case assigns.show_all_links do
           true ->
-            ~F"""
-            <a href={Routes.live_path(OliWeb.Endpoint, OliWeb.Progress.StudentResourceView, row.section.slug, row.id, resource_id)}>
+            ~H"""
+            <a href={
+              Routes.live_path(
+                OliWeb.Endpoint,
+                OliWeb.Progress.StudentResourceView,
+                @row.section.slug,
+                @row.id,
+                @resource_id
+              )
+            }>
               <span>Not Finished</span>
             </a>
             """
@@ -186,10 +221,30 @@ defmodule OliWeb.Grades.GradebookTableModel do
            was_late: was_late
          }
        ) do
+    assigns =
+      Map.merge(assigns, %{
+        row: row,
+        resource_id: resource_id,
+        score: score,
+        out_of: out_of,
+        was_late: was_late
+      })
+
     if out_of == 0 or out_of == 0.0 do
-      ~F"""
-      <a class="text-red-500" href={Routes.live_path(OliWeb.Endpoint, OliWeb.Progress.StudentResourceView, row.section.slug, row.id, resource_id)}>
-        <span>{score}/{out_of}</span>
+      ~H"""
+      <a
+        class="text-red-500"
+        href={
+          Routes.live_path(
+            OliWeb.Endpoint,
+            OliWeb.Progress.StudentResourceView,
+            @row.section.slug,
+            @row.id,
+            @resource_id
+          )
+        }
+      >
+        <span><%= "#{score}/#{out_of}" %></span>
       </a>
       """
     else
@@ -209,19 +264,33 @@ defmodule OliWeb.Grades.GradebookTableModel do
 
       perc = safe_score / safe_out_of * 100
 
-      ~F"""
-        <a class={if perc < 50, do: "text-red-500", else: "text-black"} href={Routes.live_path(OliWeb.Endpoint, OliWeb.Progress.StudentResourceView, row.section.slug, row.id, resource_id)}>
-        {safe_score}/{safe_out_of}
-        </a>
-        {#if was_late}
-          <.badge variant={:danger}>LATE</.badge>
-        {/if}
+      assigns =
+        Map.merge(assigns, %{perc: perc, safe_out_of: safe_out_of, safe_score: safe_score})
+
+      ~H"""
+      <a
+        class={if @perc < 50, do: "text-red-500", else: "text-black"}
+        href={
+          Routes.live_path(
+            OliWeb.Endpoint,
+            OliWeb.Progress.StudentResourceView,
+            @row.section.slug,
+            @row.id,
+            @resource_id
+          )
+        }
+      >
+        <%= "#{safe_score}/#{safe_out_of}" %>
+      </a>
+      <%= if @was_late do %>
+        <span class="ml-2 badge badge-xs badge-pill badge-danger">LATE</span>
+      <% end %>
       """
     end
   end
 
   def render(assigns) do
-    ~F"""
+    ~H"""
     <div>nothing</div>
     """
   end

@@ -56,12 +56,19 @@ defmodule OliWeb.Delivery.ScoredActivities.AssessmentsTableModel do
       })
 
     ~H"""
-      <div class="pl-9 pr-4 flex flex-col">
-        <%= if @container_label do %>
-          <span class="text-gray-600 font-bold text-sm"><%= @container_label %></span>
-        <% end %>
-        <a class="text-base" href="#" phx-click={JS.push("paged_table_selection_change", target: @target)} phx-value-id={@id}><%= @title %></a>
-      </div>
+    <div class="pl-9 pr-4 flex flex-col">
+      <%= if @container_label do %>
+        <span class="text-gray-600 font-bold text-sm"><%= @container_label %></span>
+      <% end %>
+      <a
+        class="text-base"
+        href="#"
+        phx-click={JS.push("paged_table_selection_change", target: @target)}
+        phx-value-id={@id}
+      >
+        <%= @title %>
+      </a>
+    </div>
     """
   end
 
@@ -73,7 +80,7 @@ defmodule OliWeb.Delivery.ScoredActivities.AssessmentsTableModel do
       })
 
     ~H"""
-      <%= parse_due_date(@due_date, @ctx, @scheduling_type) %>
+    <%= parse_due_date(@due_date, @ctx, @scheduling_type) %>
     """
   end
 
@@ -81,7 +88,9 @@ defmodule OliWeb.Delivery.ScoredActivities.AssessmentsTableModel do
     assigns = Map.merge(assigns, %{avg_score: assessment.avg_score})
 
     ~H"""
-      <div class={if @avg_score < 0.40, do: "text-red-600 font-bold"}><%= format_value(@avg_score) %></div>
+    <div class={if @avg_score < 0.40, do: "text-red-600 font-bold"}>
+      <%= format_value(@avg_score) %>
+    </div>
     """
   end
 
@@ -89,7 +98,7 @@ defmodule OliWeb.Delivery.ScoredActivities.AssessmentsTableModel do
     assigns = Map.merge(assigns, %{total_attempts: assessment.total_attempts})
 
     ~H"""
-      <%= @total_attempts || "-" %>
+    <%= @total_attempts || "-" %>
     """
   end
 
@@ -101,11 +110,13 @@ defmodule OliWeb.Delivery.ScoredActivities.AssessmentsTableModel do
       })
 
     ~H"""
-      <%= if @avg_score != nil do %>
-        <div class={if @students_completion < 0.40, do: "text-red-600 font-bold"}><%= format_value(@students_completion) %></div>
-      <% else %>
-        -
-      <% end %>
+    <%= if @avg_score != nil do %>
+      <div class={if @students_completion < 0.40, do: "text-red-600 font-bold"}>
+        <%= format_value(@students_completion) %>
+      </div>
+    <% else %>
+      -
+    <% end %>
     """
   end
 

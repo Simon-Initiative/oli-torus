@@ -57,7 +57,8 @@ defmodule OliWeb.Components.Delivery.ContentTableModel do
 
     ~H"""
     <div class="flex items-center">
-      <div class={"flex flex-shrink-0 rounded-full w-2 h-2 #{if @progress < 50, do: "bg-red-600", else: "bg-gray-500"}"}></div>
+      <div class={"flex flex-shrink-0 rounded-full w-2 h-2 #{if @progress < 50, do: "bg-red-600", else: "bg-gray-500"}"}>
+      </div>
       <%= if @patch_url_type == :instructor_dashboard do %>
         <.link
           class="ml-6 underline"
@@ -87,7 +88,12 @@ defmodule OliWeb.Components.Delivery.ContentTableModel do
     assigns = Map.merge(assigns, %{progress: parse_progress(container.progress)})
 
     ~H"""
-    <div class={if @progress < 50, do: "text-red-600 font-bold"} data-progress-check={if @progress >= 50, do: "true", else: "false"}><%= @progress %>%</div>
+    <div
+      class={if @progress < 50, do: "text-red-600 font-bold"}
+      data-progress-check={if @progress >= 50, do: "true", else: "false"}
+    >
+      <%= @progress %>%
+    </div>
     """
   end
 
@@ -95,7 +101,9 @@ defmodule OliWeb.Components.Delivery.ContentTableModel do
     assigns = Map.merge(assigns, %{container: container})
 
     ~H"""
-      <div class={if @container.student_proficiency == "Low", do: "text-red-600 font-bold"}><%= @container.student_proficiency %></div>
+    <div class={if @container.student_proficiency == "Low", do: "text-red-600 font-bold"}>
+      <%= @container.student_proficiency %>
+    </div>
     """
   end
 

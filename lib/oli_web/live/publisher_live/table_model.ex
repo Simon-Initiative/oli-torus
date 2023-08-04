@@ -1,5 +1,5 @@
 defmodule OliWeb.PublisherLive.TableModel do
-  use Surface.LiveComponent
+  use Phoenix.Component
 
   alias Oli.Inventories.Publisher
   alias OliWeb.Common.Table.{ColumnSpec, Common, SortableTableModel}
@@ -61,16 +61,20 @@ defmodule OliWeb.PublisherLive.TableModel do
   end
 
   def render_name(assigns, %Publisher{name: name, default: default}, _) do
-    ~F"""
-      {name}
-      {#if default}
+    assigns = Map.merge(assigns, %{name: name, default: default})
+
+    ~H"""
+    <div>
+      <%= @name %>
+      <%= if @default do %>
         <span class="badge badge-info">default</span>
-      {/if}
+      <% end %>
+    </div>
     """
   end
 
   def render(assigns) do
-    ~F"""
+    ~H"""
     <div>nothing</div>
     """
   end

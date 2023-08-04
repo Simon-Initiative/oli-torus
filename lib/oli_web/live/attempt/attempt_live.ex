@@ -72,7 +72,7 @@ defmodule OliWeb.Attempt.AttemptLive do
     ~F"""
     <div style="display: flex; flex-direction: row;">
       <div style="flex-grow: 4;">
-        <Table.render model={@table_model} select="select"/>
+        <Table.render model={@table_model} select="select" sort="sort"/>
       </div>
       <div style="display: flex; flex-direction: column;">
         {render_parts(assigns)}

@@ -1,10 +1,9 @@
 defmodule OliWeb.CollaborationLive.InstructorTableModel do
-  use Surface.Component
+  use Phoenix.Component
 
   alias OliWeb.CollaborationLive.AdminTableModel
   alias OliWeb.Common.Table.{ColumnSpec, Common, SortableTableModel}
   alias OliWeb.Router.Helpers, as: Routes
-  alias Surface.Components.Link
   alias OliWeb.Common.FormatDateTime
 
   def new(rows, ctx, opts \\ [is_listing: true]) do
@@ -64,8 +63,8 @@ defmodule OliWeb.CollaborationLive.InstructorTableModel do
   end
 
   def render(assigns) do
-    ~F"""
-      <div>nothing</div>
+    ~H"""
+    <div>nothing</div>
     """
   end
 
@@ -81,34 +80,59 @@ defmodule OliWeb.CollaborationLive.InstructorTableModel do
         },
         _spec
       ) do
-    ~F"""
+    assigns =
+      Map.merge(assigns, %{
+        title: title,
+        status: status,
+        most_recent_post: most_recent_post,
+        number_of_posts: number_of_posts,
+        number_of_posts_pending_approval: number_of_posts_pending_approval,
+        section_slug: section_slug,
+        page_revision_slug: page_revision_slug
+      })
+
+    ~H"""
     <div class="flex flex-col px-10 py-5">
       <div class="flex justify-between mb-3">
         <div class="flex gap-2">
-          <span class="torus-span">{title}</span>
+          <span class="torus-span"><%= @title %></span>
           <span class={"font-normal text-white text-xs uppercase badge
-                                badge-#{case status do
+                                badge-#{case @status do
             "enabled" -> "success"
             "disabled" -> "secondary"
             _ -> "info"
-          end}"}>{status}</span>
+          end}"}>
+            <%= @status %>
+          </span>
         </div>
-        <span class="torus-span">Most recent post: {FormatDateTime.date(most_recent_post, ctx)}</span>
+        <span class="torus-span">
+          <%= "Most recent post: #{FormatDateTime.date(@most_recent_post, @ctx)}" %>
+        </span>
       </div>
       <div class="flex justify-between">
         <p class="torus-p">
-          {#if number_of_posts == 0}
+          <%= if @number_of_posts == 0 do %>
             No posts yet
-          {#else}
-            Number of posts: <b>{number_of_posts}</b> {#if number_of_posts_pending_approval > 0}({number_of_posts_pending_approval} pending approval){/if}
-          {/if}
+          <% else %>
+            Number of posts: <b><%= @number_of_posts %></b>
+            <%= if @number_of_posts_pending_approval > 0 do %>
+              <%= "(#{@number_of_posts_pending_approval} pending approval)" %>
+            <% end %>
+          <% end %>
         </p>
-        <Link
-          to={Routes.page_delivery_path(OliWeb.Endpoint, :page_preview, section_slug, page_revision_slug)}
+        <.link
+          href={
+            Routes.page_delivery_path(
+              OliWeb.Endpoint,
+              :page_preview,
+              @section_slug,
+              @page_revision_slug
+            )
+          }
           class="torus-button primary"
         >
           View
-        </Link>
+        </.link>
       </div>
     </div>
     """

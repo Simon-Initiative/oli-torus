@@ -5,7 +5,6 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTableModel do
   alias OliWeb.Sections.AssessmentSettings.Tooltips
   use Phoenix.Component
 
-
   def new(
         assessments,
         section_slug,
@@ -138,7 +137,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTableModel do
     assigns = Map.merge(assigns, %{name: assessment.name})
 
     ~H"""
-      <div class="pr-4"><%= @name %></div>
+    <div class="pr-4"><%= @name %></div>
     """
   end
 
@@ -151,13 +150,18 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTableModel do
       })
 
     ~H"""
-      <button class="hover:underline whitespace-nowrap" type="button" phx-click={@on_edit_date} phx-value-assessment_id={@id}>
-        <%= if @due_date do %>
-          <%= value_from_datetime(@due_date, @ctx) %>
-        <% else %>
-          No due date
-        <% end %>
-      </button>
+    <button
+      class="hover:underline whitespace-nowrap"
+      type="button"
+      phx-click={@on_edit_date}
+      phx-value-assessment_id={@id}
+    >
+      <%= if @due_date do %>
+        <%= value_from_datetime(@due_date, @ctx) %>
+      <% else %>
+        No due date
+      <% end %>
+    </button>
     """
   end
 
@@ -166,12 +170,19 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTableModel do
       Map.merge(assigns, %{max_attempts: assessment.max_attempts, id: assessment.resource_id})
 
     ~H"""
-      <div class="relative">
-        <input class="mr-3 w-28" type="number" min="0" value={@max_attempts} phx-debounce={300} name={"max_attempts-#{@id}"} />
-        <%= if @max_attempts == 0 do %>
-          <span class="text-[10px] absolute -ml-24 mt-3">(Unlimited)</span>
-        <% end %>
-      </div>
+    <div class="relative">
+      <input
+        class="mr-3 w-28"
+        type="number"
+        min="0"
+        value={@max_attempts}
+        phx-debounce={300}
+        name={"max_attempts-#{@id}"}
+      />
+      <%= if @max_attempts == 0 do %>
+        <span class="text-[10px] absolute -ml-24 mt-3">(Unlimited)</span>
+      <% end %>
+    </div>
     """
   end
 
@@ -179,12 +190,19 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTableModel do
     assigns = Map.merge(assigns, %{time_limit: assessment.time_limit, id: assessment.resource_id})
 
     ~H"""
-      <div class="relative">
-        <input class="mr-3 w-28" type="number" min="0" value={@time_limit} phx-debounce={300} name={"time_limit-#{@id}"} />
-        <%= if @time_limit == 0 do %>
-          <span class="text-[10px] absolute -ml-24 mt-3">(Unlimited)</span>
-        <% end %>
-      </div>
+    <div class="relative">
+      <input
+        class="mr-3 w-28"
+        type="number"
+        min="0"
+        value={@time_limit}
+        phx-debounce={300}
+        name={"time_limit-#{@id}"}
+      />
+      <%= if @time_limit == 0 do %>
+        <span class="text-[10px] absolute -ml-24 mt-3">(Unlimited)</span>
+      <% end %>
+    </div>
     """
   end
 
@@ -193,10 +211,10 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTableModel do
       Map.merge(assigns, %{late_submit: assessment.late_submit, id: assessment.resource_id})
 
     ~H"""
-      <select class="torus-select pr-32" name={"late_submit-#{@id}"}>
-        <option selected={@late_submit == :allow} value={:allow}>Allow</option>
-        <option selected={@late_submit == :disallow} value={:disallow}>Disallow</option>
-      </select>
+    <select class="torus-select pr-32" name={"late_submit-#{@id}"}>
+      <option selected={@late_submit == :allow} value={:allow}>Allow</option>
+      <option selected={@late_submit == :disallow} value={:disallow}>Disallow</option>
+    </select>
     """
   end
 
@@ -204,10 +222,10 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTableModel do
     assigns = Map.merge(assigns, %{late_start: assessment.late_start, id: assessment.resource_id})
 
     ~H"""
-      <select class="torus-select pr-32" name={"late_start-#{@id}"}>
-        <option selected={@late_start == :allow} value={:allow}>Allow</option>
-        <option selected={@late_start == :disallow} value={:disallow}>Disallow</option>
-      </select>
+    <select class="torus-select pr-32" name={"late_start-#{@id}"}>
+      <option selected={@late_start == :allow} value={:allow}>Allow</option>
+      <option selected={@late_start == :disallow} value={:disallow}>Disallow</option>
+    </select>
     """
   end
 
@@ -219,11 +237,15 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTableModel do
       })
 
     ~H"""
-      <select class="torus-select pr-32" name={"scoring_strategy_id-#{@id}"} id={"scoring_strategy_id-#{@id}"}>
-        <option selected={@scoring_strategy_id == 1} value={1}>Average</option>
-        <option selected={@scoring_strategy_id == 2} value={2}>Best</option>
-        <option selected={@scoring_strategy_id == 3} value={3}>Last</option>
-      </select>
+    <select
+      class="torus-select pr-32"
+      name={"scoring_strategy_id-#{@id}"}
+      id={"scoring_strategy_id-#{@id}"}
+    >
+      <option selected={@scoring_strategy_id == 1} value={1}>Average</option>
+      <option selected={@scoring_strategy_id == 2} value={2}>Best</option>
+      <option selected={@scoring_strategy_id == 3} value={3}>Last</option>
+    </select>
     """
   end
 
@@ -232,7 +254,14 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTableModel do
       Map.merge(assigns, %{grace_period: assessment.grace_period, id: assessment.resource_id})
 
     ~H"""
-      <input class="w-28" type="number" min="0" value={@grace_period} phx-debounce={500} name={"grace_period-#{@id}"} />
+    <input
+      class="w-28"
+      type="number"
+      min="0"
+      value={@grace_period}
+      phx-debounce={500}
+      name={"grace_period-#{@id}"}
+    />
     """
   end
 
@@ -241,10 +270,10 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTableModel do
       Map.merge(assigns, %{retake_mode: assessment.retake_mode, id: assessment.resource_id})
 
     ~H"""
-      <select class="torus-select pr-32" name={"retake_mode-#{@id}"}>
-        <option selected={@retake_mode == :targeted} value={:targeted}>Targeted</option>
-        <option selected={@retake_mode == :normal} value={:normal}>Normal</option>
-      </select>
+    <select class="torus-select pr-32" name={"retake_mode-#{@id}"}>
+      <option selected={@retake_mode == :targeted} value={:targeted}>Targeted</option>
+      <option selected={@retake_mode == :normal} value={:normal}>Normal</option>
+    </select>
     """
   end
 
@@ -253,11 +282,11 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTableModel do
       Map.merge(assigns, %{feedback_mode: assessment.feedback_mode, id: assessment.resource_id})
 
     ~H"""
-      <select class="torus-select pr-32" name={"feedback_mode-#{@id}"}>
-        <option selected={@feedback_mode == :allow} value={:allow}>Allow</option>
-        <option selected={@feedback_mode == :disallow} value={:disallow}>Disallow</option>
-        <option selected={@feedback_mode == :scheduled} value={:scheduled}>Scheduled</option>
-      </select>
+    <select class="torus-select pr-32" name={"feedback_mode-#{@id}"}>
+      <option selected={@feedback_mode == :allow} value={:allow}>Allow</option>
+      <option selected={@feedback_mode == :disallow} value={:disallow}>Disallow</option>
+      <option selected={@feedback_mode == :scheduled} value={:scheduled}>Scheduled</option>
+    </select>
     """
   end
 
@@ -269,10 +298,10 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTableModel do
       })
 
     ~H"""
-      <select class="torus-select pr-32" name={"review_submission-#{@id}"}>
-        <option selected={@review_submission == :allow} value={:allow}>Allow</option>
-        <option selected={@review_submission == :disallow} value={:disallow}>Disallow</option>
-      </select>
+    <select class="torus-select pr-32" name={"review_submission-#{@id}"}>
+      <option selected={@review_submission == :allow} value={:allow}>Allow</option>
+      <option selected={@review_submission == :disallow} value={:disallow}>Disallow</option>
+    </select>
     """
   end
 
@@ -284,17 +313,32 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTableModel do
       })
 
     ~H"""
-      <%= if @password in ["", nil] do %>
-        <input class="w-40" type="text" placeholder={"Enter password"} phx-debounce={800} name={"password-#{@id}"}/>
+    <%= if @password in ["", nil] do %>
+      <input
+        class="w-40"
+        type="text"
+        placeholder="Enter password"
+        phx-debounce={800}
+        name={"password-#{@id}"}
+      />
+    <% else %>
+      <%= if @id == @edit_password_id do %>
+        <input
+          id={"password_input#{@id}"}
+          class="w-40"
+          type="text"
+          value={@password}
+          phx-hook="InputAutoSelect"
+          phx-click-away={@on_no_edit_password}
+          phx-debounce={800}
+          name={"password-#{@id}"}
+        />
       <% else %>
-        <%= if @id == @edit_password_id do %>
-          <input id={"password_input#{@id}"} class="w-40" type="text" value={@password} phx-hook="InputAutoSelect" phx-click-away={@on_no_edit_password} phx-debounce={800} name={"password-#{@id}"}/>
-        <% else %>
-          <button type="button" phx-click={@on_edit_password} phx-value-assessment_id={@id}>
-            <input class="w-40" type="password" value={hide_password(@password)}/>
-          </button>
-        <% end %>
+        <button type="button" phx-click={@on_edit_password} phx-value-assessment_id={@id}>
+          <input class="w-40" type="password" value={hide_password(@password)} />
+        </button>
       <% end %>
+    <% end %>
     """
   end
 
@@ -313,7 +357,16 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTableModel do
     <div>
       <.link
         class="ml-6 underline"
-        navigate={Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.AssessmentSettings.SettingsLive, @section_slug, :student_exceptions, @id)}>
+        navigate={
+          Routes.live_path(
+            OliWeb.Endpoint,
+            OliWeb.Sections.AssessmentSettings.SettingsLive,
+            @section_slug,
+            :student_exceptions,
+            @id
+          )
+        }
+      >
         <%= @exceptions_count %>
       </.link>
     </div>

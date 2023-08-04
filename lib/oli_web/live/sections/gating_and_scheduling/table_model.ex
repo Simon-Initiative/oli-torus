@@ -1,15 +1,15 @@
 defmodule OliWeb.Delivery.Sections.GatingAndScheduling.TableModel do
-  use OliWeb, :surface_component
+  use Phoenix.Component
 
-  alias Surface.Components.Link
   alias OliWeb.Common.Table.{ColumnSpec, SortableTableModel}
   alias OliWeb.Common.Utils
   alias Oli.Resources.Revision
   alias Oli.Delivery.Gating.{GatingCondition, GatingConditionData}
   alias OliWeb.Common.SessionContext
+  alias OliWeb.Router.Helpers, as: Routes
 
   def render(assigns) do
-    ~F"""
+    ~H"""
     <div></div>
     """
   end
@@ -59,15 +59,21 @@ defmodule OliWeb.Delivery.Sections.GatingAndScheduling.TableModel do
   end
 
   def render_resource_column(
-        %{section_slug: section_slug} = assigns,
+        assigns,
         %GatingCondition{
           revision: %Revision{title: title},
           id: id
         },
         _
       ) do
-    ~F"""
-    <Link to={Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.GatingAndScheduling.Edit, section_slug, id)}>{title}</Link>
+    assigns = Map.merge(assigns, %{title: title, id: id})
+
+    ~H"""
+    <.link href={
+      Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.GatingAndScheduling.Edit, @section_slug, @id)
+    }>
+      <%= @title %>
+    </.link>
     """
   end
 
@@ -78,8 +84,10 @@ defmodule OliWeb.Delivery.Sections.GatingAndScheduling.TableModel do
         },
         _
       ) do
-    ~F"""
-    {type |> Atom.to_string() |> String.capitalize()}
+    assigns = Map.merge(assigns, %{type: type})
+
+    ~H"""
+    <%= @type |> Atom.to_string() |> String.capitalize() %>
     """
   end
 
@@ -95,13 +103,25 @@ defmodule OliWeb.Delivery.Sections.GatingAndScheduling.TableModel do
         },
         _
       ) do
-    ~F"""
-      <div :if={start_datetime}>
-        <b>Start:</b> {Utils.render_precise_date(data, :start_datetime, ctx)}
+    assigns =
+      Map.merge(assigns, %{
+        data: data,
+        ctx: ctx,
+        start_datetime: start_datetime,
+        end_datetime: end_datetime
+      })
+
+    ~H"""
+    <%= if @start_datetime do %>
+      <div>
+        <b>Start:</b> <%= Utils.render_precise_date(@data, :start_datetime, @ctx) %>
       </div>
-      <div :if={end_datetime}>
-        <b>End:</b> {Utils.render_precise_date(data, :end_datetime, ctx)}
+    <% end %>
+    <%= if @end_datetime do %>
+      <div>
+        <b>End:</b> <%= Utils.render_precise_date(@data, :end_datetime, @ctx) %>
       </div>
+    <% end %>
     """
   end
 
@@ -112,7 +132,7 @@ defmodule OliWeb.Delivery.Sections.GatingAndScheduling.TableModel do
         },
         _
       ) do
-    ~F"""
+    ~H"""
     <div>
       A resource must be started
     </div>
@@ -129,7 +149,7 @@ defmodule OliWeb.Delivery.Sections.GatingAndScheduling.TableModel do
         },
         _
       ) do
-    ~F"""
+    ~H"""
     <div>
       A resource must be completed
     </div>
@@ -143,7 +163,7 @@ defmodule OliWeb.Delivery.Sections.GatingAndScheduling.TableModel do
         },
         _
       ) do
-    ~F"""
+    ~H"""
     <div>
       A resource must be completed with a minimum score
     </div>
@@ -157,15 +177,15 @@ defmodule OliWeb.Delivery.Sections.GatingAndScheduling.TableModel do
         },
         _
       ) do
-    ~F"""
-      <div>
-        Allows access to this resource
-      </div>
+    ~H"""
+    <div>
+      Allows access to this resource
+    </div>
     """
   end
 
   def render_user_column(
-        %{section_slug: section_slug} = assigns,
+        assigns,
         %GatingCondition{
           user_id: user_id,
           user: user,
@@ -173,10 +193,23 @@ defmodule OliWeb.Delivery.Sections.GatingAndScheduling.TableModel do
         },
         _
       ) do
-    ~F"""
-      <div :if={user_id}>
-        <Link to={Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.GatingAndScheduling.Edit, section_slug, id)}>{OliWeb.Common.Utils.name(user)}</Link>
+    assigns = Map.merge(assigns, %{user_id: user_id, user: user, id: id})
+
+    ~H"""
+    <%= if @user_id do %>
+      <div>
+        <.link href={
+          Routes.live_path(
+            OliWeb.Endpoint,
+            OliWeb.Sections.GatingAndScheduling.Edit,
+            @section_slug,
+            @id
+          )
+        }>
+          <%= OliWeb.Common.Utils.name(@user) %>
+        </.link>
       </div>
+    <% end %>
     """
   end
 end

@@ -1,5 +1,5 @@
 defmodule OliWeb.Discussion.TableModel do
-  use Surface.Component
+  use Phoenix.Component
 
   alias OliWeb.Common.Table.{ColumnSpec, SortableTableModel}
   alias OliWeb.Common.FormatDateTime
@@ -27,63 +27,72 @@ defmodule OliWeb.Discussion.TableModel do
   end
 
   def render(assigns) do
-    ~F"""
-      <div>nothing</div>
+    ~H"""
+    <div>nothing</div>
     """
   end
 
   defp href(section_slug, post) do
-
     container_type_id = Oli.Resources.ResourceType.get_id_by_type("container")
 
     case post.resource_type_id do
       ^container_type_id ->
-        Routes.live_path(OliWeb.Endpoint, OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive, section_slug, "reports", "course_discussion")
+        Routes.live_path(
+          OliWeb.Endpoint,
+          OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
+          section_slug,
+          "reports",
+          "course_discussion"
+        )
+
       _ ->
         Routes.page_delivery_path(OliWeb.Endpoint, :page_preview, section_slug, post.slug)
     end
-
   end
 
   def render_post(assigns, post, _) do
-    ~F"""
-      <div class="flex flex-col px-10 py-5">
-          <div class="flex justify-between mb-6">
-            <a class="text-delivery-primary hover:text-delivery-primary" href={href(assigns.section_slug, post)}>
-              {post.title}
-            </a>
-            <span class="torus-span">{FormatDateTime.format_datetime(post.inserted_at, show_timezone: false)}</span>
-          </div>
-        <div class="flex justify-between gap-2">
-          <h6 class="torus-h6 font-extrabold">{post.user_name}</h6>
-          {#if post.status == :submitted}
-            <div class="flex gap-2">
-              <button
+    assigns = Map.merge(assigns, %{post: post})
+
+    ~H"""
+    <div class="flex flex-col px-10 py-5">
+      <div class="flex justify-between mb-6">
+        <a class="text-delivery-primary hover:text-delivery-primary" href={href(@section_slug, @post)}>
+          <%= @post.title %>
+        </a>
+        <span class="torus-span">
+          <%= FormatDateTime.format_datetime(@post.inserted_at, show_timezone: false) %>
+        </span>
+      </div>
+      <div class="flex justify-between gap-2">
+        <h6 class="torus-h6 font-extrabold"><%= @post.user_name %></h6>
+        <%= if @post.status == :submitted do %>
+          <div class="flex gap-2">
+            <button
               class="btn btn-sm btn-success flex items-center gap-2"
               data-toggle="tooltip"
               title="Accept"
-              :on-click={JS.push("display_accept_modal", target: @target)}
-              phx-value-post_id={post.id}
-              >
-                <span>Approve</span>
-                <i class="fa fa-check" />
-              </button>
+              phx-click={JS.push("display_accept_modal", target: @target)}
+              phx-value-post_id={@post.id}
+            >
+              <span>Approve</span>
+              <i class="fa fa-check" />
+            </button>
 
-              <button
-                class="btn btn-sm btn-danger flex items-center gap-2"
-                data-toggle="tooltip"
-                title="Reject"
-                :on-click={JS.push("display_reject_modal", target: @target)}
-                phx-value-post_id={post.id}
-              >
-                <span>Reject</span>
-                <i class="fa fa-times" />
-              </button>
-            </div>
-          {/if}
-        </div>
-        <p class="torus-p">{post.content.message}</p>
+            <button
+              class="btn btn-sm btn-danger flex items-center gap-2"
+              data-toggle="tooltip"
+              title="Reject"
+              phx-click={JS.push("display_reject_modal", target: @target)}
+              phx-value-post_id={@post.id}
+            >
+              <span>Reject</span>
+              <i class="fa fa-times" />
+            </button>
+          </div>
+        <% end %>
       </div>
+      <p class="torus-p"><%= @post.content.message %></p>
+    </div>
     """
   end
 end

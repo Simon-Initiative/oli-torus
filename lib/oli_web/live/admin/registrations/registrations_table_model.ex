@@ -1,12 +1,11 @@
 defmodule OliWeb.Admin.RegistrationsTableModel do
-  use Surface.LiveComponent
+  use Phoenix.Component
 
   alias OliWeb.Common.Table.{ColumnSpec, Common, SortableTableModel}
   alias OliWeb.Router.Helpers, as: Routes
-  alias Surface.Components.Link
 
   def render(assigns) do
-    ~F"""
+    ~H"""
     <div>nothing</div>
     """
   end
@@ -51,8 +50,15 @@ defmodule OliWeb.Admin.RegistrationsTableModel do
         %{id: id},
         _
       ) do
-    ~F"""
-    <Link label="Details" to={Routes.registration_path(OliWeb.Endpoint, :show, id)} class="btn btn-sm btn-outline-primary" />
+    assigns = Map.merge(assigns, %{id: id})
+
+    ~H"""
+    <.link
+      href={Routes.registration_path(OliWeb.Endpoint, :show, @id)}
+      class="btn btn-sm btn-outline-primary"
+    >
+      Details
+    </.link>
     """
   end
 end

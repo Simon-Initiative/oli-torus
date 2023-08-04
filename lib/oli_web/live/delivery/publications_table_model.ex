@@ -27,11 +27,15 @@ defmodule OliWeb.Common.Hierarchy.Publications.TableModel do
     assigns = assign(assigns, publication: publication)
 
     ~H"""
-      <div id={"hierarchy_item_#{@publication.id}"}>
-        <button class="btn btn-link ml-1 mr-1 entry-title" phx-click="HierarchyPicker.select_publication" phx-value-id={@publication.id}>
-          <%= @publication.project.title %>
-        </button>
-      </div>
+    <div id={"hierarchy_item_#{@publication.id}"}>
+      <button
+        class="btn btn-link ml-1 mr-1 entry-title"
+        phx-click="HierarchyPicker.select_publication"
+        phx-value-id={@publication.id}
+      >
+        <%= @publication.project.title %>
+      </button>
+    </div>
     """
   end
 end

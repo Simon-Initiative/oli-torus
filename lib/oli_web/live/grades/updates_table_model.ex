@@ -1,6 +1,6 @@
 defmodule OliWeb.Grades.UpdatesTableModel do
   alias OliWeb.Common.Table.{ColumnSpec, SortableTableModel}
-  use Surface.LiveComponent
+  use Phoenix.Component
 
   def new(updates, ctx) do
     inserted_at_spec = %ColumnSpec{
@@ -76,7 +76,7 @@ defmodule OliWeb.Grades.UpdatesTableModel do
   end
 
   def render(assigns) do
-    ~F"""
+    ~H"""
     <div>nothing</div>
     """
   end

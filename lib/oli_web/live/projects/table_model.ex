@@ -1,5 +1,5 @@
 defmodule OliWeb.Projects.TableModel do
-  use Surface.LiveComponent
+  use Phoenix.Component
 
   alias OliWeb.Common.SessionContext
   alias OliWeb.Common.Table.{ColumnSpec, SortableTableModel}
@@ -41,30 +41,34 @@ defmodule OliWeb.Projects.TableModel do
   end
 
   def custom_render(assigns, project, %ColumnSpec{name: name}) do
+    assigns = Map.merge(assigns, %{project: project})
+
     case name do
       :title ->
-        ~F"""
-          <a href={Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.OverviewLive, project.slug)}>{project.title}</a>
+        ~H"""
+        <a href={Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.OverviewLive, @project.slug)}>
+          <%= @project.title %>
+        </a>
         """
 
       :status ->
         case project.status do
           :active ->
-            SortableTableModel.render_span_column(assigns, "Active", "text-success")
+            SortableTableModel.render_span_column(%{}, "Active", "text-success")
 
           :deleted ->
-            SortableTableModel.render_span_column(assigns, "Deleted", "text-danger")
+            SortableTableModel.render_span_column(%{}, "Deleted", "text-danger")
         end
 
       :name ->
-        ~F"""
-        <span>{project.name}</span> <small class="text-muted">{project.email}</small>
+        ~H"""
+        <span><%= @project.name %></span> <small class="text-muted"><%= @project.email %></small>
         """
     end
   end
 
   def render(assigns) do
-    ~F"""
+    ~H"""
     <div>nothing</div>
     """
   end
