@@ -9,7 +9,7 @@ export const normalize = (
   path: Path,
 ): boolean => {
   const [parent, parentPath] = Editor.parent(editor, path);
-  if (Element.isElement(parent)) {
+  if (Element.isElement(parent) && Element.isElement(node)) {
     const config = schema[parent.type];
 
     // As a fallback, if we can't reconcile the content, just delete it.

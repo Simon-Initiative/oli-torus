@@ -109,7 +109,7 @@ export const getNearestBlock = (editor: Editor): Maybe<ModelElement> => {
 
 export const findNearestBlock = (editor: Editor): NodeEntry<ModelElement> | undefined => {
   const block: NodeEntry<ModelElement> | undefined = Editor.above(editor, {
-    match: (n) => Editor.isBlock(editor, n),
+    match: (n) => Element.isElement(n) && Editor.isBlock(editor, n),
   });
   return block;
 };

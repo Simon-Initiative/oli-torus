@@ -121,7 +121,7 @@ export const Editor: React.FC<EditorProps> = React.memo((props: EditorProps) => 
     <React.Fragment>
       <Slate
         editor={editor}
-        value={props.value.length === 0 ? [Model.p()] : props.value}
+        initialValue={props.value.length === 0 ? [Model.p()] : props.value}
         onChange={onChange}
       >
         {props.children}

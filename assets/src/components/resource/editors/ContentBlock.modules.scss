@@ -4,6 +4,7 @@
 
   :global(.slate-editor) {
     padding: 0 calc(50% - 400px);
+    outline: none;
   }
 }
 
@@ -27,6 +28,7 @@
       clear: both;
       cursor: initial;
       padding: 1.3em 10px;
+      outline: none;
 
       &.structured-content {
         padding: 1.3em calc(50% - 400px);

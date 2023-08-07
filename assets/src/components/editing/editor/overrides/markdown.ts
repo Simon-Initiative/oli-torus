@@ -1,4 +1,4 @@
-import { Editor, Range, Transforms } from 'slate';
+import { Editor, Element, Range, Transforms } from 'slate';
 import { insertCodeblock } from 'components/editing/elements/blockcode/codeblockActions';
 import { CommandContext } from 'components/editing/elements/commands/interfaces';
 import { isTopLevel } from 'components/editing/slateUtils';
@@ -27,7 +27,15 @@ export const withMarkdown = (context: CommandContext) => (editor: Editor) => {
     const { selection } = editor;
 
     const setNodes = (type: 'h1' | 'h2') => {
-      Transforms.setNodes(editor, { type }, { match: (n) => Editor.isBlock(editor, n) });
+      Transforms.setNodes(
+        editor,
+        { type },
+        {
+          match: (n) => {
+            return Element.isElement(n) && Editor.isBlock(editor, n);
+          },
+        },
+      );
     };
 
     if (
@@ -38,7 +46,7 @@ export const withMarkdown = (context: CommandContext) => (editor: Editor) => {
     ) {
       const { anchor } = selection;
       const block = Editor.above(editor, {
-        match: (n) => Editor.isBlock(editor, n),
+        match: (n) => Element.isElement(n) && Editor.isBlock(editor, n),
       });
       const path = block ? block[1] : [];
       const start = Editor.start(editor, path);
