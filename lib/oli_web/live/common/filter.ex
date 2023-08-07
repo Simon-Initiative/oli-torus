@@ -4,7 +4,7 @@ defmodule OliWeb.Common.Filter do
   attr :change, :any, required: true
   attr :apply, :any, required: true
   attr :reset, :any, required: true
-  attr :query, :string
+  attr :query, :string, default: ""
 
   def render(assigns) do
     ~H"""
