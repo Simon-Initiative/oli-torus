@@ -7,7 +7,6 @@ defmodule Oli.Utils.Seeder.Attempt do
   alias Oli.Delivery.Attempts.PageLifecycle.AttemptState
   alias Oli.Delivery.Attempts.ActivityLifecycle
   alias Oli.Delivery.Page.PageContext
-  alias Oli.Publishing.DeliveryResolver
 
   def visit_page(
         seeds,

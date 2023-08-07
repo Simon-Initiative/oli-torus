@@ -18,15 +18,8 @@ defmodule Oli.Utils.Stagehand do
 
   require Logger
 
-  import Oli.Utils.Seeder.Utils
-
-  alias Oli.Resources.Revision
   alias Oli.Utils.Seeder
   alias Oli.Delivery.Sections
-  alias Oli.Delivery.Attempts.Core.StudentInput
-  alias Oli.Delivery.Attempts.Core.PartAttempt
-  alias Oli.Activities
-  alias Oli.Delivery.Attempts.ActivityLifecycle.Evaluate
   alias Oli.Utils.Stagehand.SimulateProgress
 
   @doc """

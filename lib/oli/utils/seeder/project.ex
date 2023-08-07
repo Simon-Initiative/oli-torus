@@ -141,7 +141,8 @@ defmodule Oli.Utils.Seeder.Project do
           },
           graded: false
         },
-        revision_tag: unscored_page1_tag
+        revision_tag: unscored_page1_tag,
+        container_revision_tag: unit1_tag
       )
       |> Seeder.Project.create_page(
         author,
@@ -159,7 +160,8 @@ defmodule Oli.Utils.Seeder.Project do
           },
           graded: true
         },
-        revision_tag: scored_page2_tag
+        revision_tag: scored_page2_tag,
+        container_revision_tag: unit1_tag
       )
 
     seeds

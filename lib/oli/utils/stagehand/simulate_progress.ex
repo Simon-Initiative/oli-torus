@@ -3,12 +3,10 @@ defmodule Oli.Utils.Stagehand.SimulateProgress do
 
   alias Oli.Resources.Revision
   alias Oli.Utils.Seeder
-  alias Oli.Delivery.Sections
   alias Oli.Delivery.Attempts.Core.StudentInput
   alias Oli.Delivery.Attempts.Core.PartAttempt
   alias Oli.Activities
   alias Oli.Delivery.Attempts.ActivityLifecycle.Evaluate
-  alias Oli.Rendering.Activity.ActivitySummary
   alias Oli.Utils.Stagehand.WeightedRandom
   alias Oli.Utils.Stagehand.SimulateProgress
 
@@ -204,7 +202,7 @@ defmodule Oli.Utils.Stagehand.SimulateProgress do
     end)
   end
 
-  defp selection_weight(score, pct_correct \\ 1.0) do
+  defp selection_weight(score, pct_correct) do
     if score > 0 do
       pct_correct
     else
