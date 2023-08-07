@@ -59,7 +59,23 @@ describe('onHTMLPaste', () => {
     expect(insertFragmentSpy).toHaveBeenCalledWith(editor, [
       {
         type: 'p',
-        children: [{ text: 'one ' }, { text: 'two', bold: true }, { text: ' three' }],
+        children: [{ text: 'one ' }, { text: 'two', strong: true }, { text: ' three' }],
+        id: expect.any(String),
+      },
+    ]);
+  });
+
+  it('should paste in bold text from a style', () => {
+    const event = simulateEvent(
+      '',
+      html('<p>one <span style="font-weight: bold;">two</span> three</p>'),
+    );
+    onHTMLPaste(event, editor);
+    expect(event.preventDefault).toHaveBeenCalled();
+    expect(insertFragmentSpy).toHaveBeenCalledWith(editor, [
+      {
+        type: 'p',
+        children: [{ text: 'one ' }, { text: 'two', strong: true }, { text: ' three' }],
         id: expect.any(String),
       },
     ]);
@@ -72,7 +88,7 @@ describe('onHTMLPaste', () => {
     expect(insertFragmentSpy).toHaveBeenCalledWith(editor, [
       {
         type: 'p',
-        children: [{ text: 'one ' }, { text: 'two', italic: true }, { text: ' three' }],
+        children: [{ text: 'one ' }, { text: 'two', em: true }, { text: ' three' }],
         id: expect.any(String),
       },
     ]);
@@ -195,6 +211,71 @@ describe('onHTMLPaste', () => {
         children: [{ text: '' }],
         code: 'public class Example {}',
         id: expect.any(String),
+      },
+    ]);
+  });
+
+  it('should paste an unordered list', () => {
+    const event = simulateEvent('', html('<ul><li>One</li><li>Two</li><li>Three</li></ul>'));
+    onHTMLPaste(event, editor);
+    expect(event.preventDefault).toHaveBeenCalled();
+    expect(insertFragmentSpy).toHaveBeenCalledWith(editor, [
+      {
+        type: 'ul',
+        id: expect.any(String),
+        children: [
+          { type: 'li', id: expect.any(String), children: [{ text: 'One' }] },
+          { type: 'li', id: expect.any(String), children: [{ text: 'Two' }] },
+          { type: 'li', id: expect.any(String), children: [{ text: 'Three' }] },
+        ],
+      },
+    ]);
+  });
+
+  it('should paste a table', () => {
+    const event = simulateEvent(
+      '',
+      html(
+        `<table>
+          <tr><th>Header 1</th><th>Header 2</th></tr>
+          <tr><td>1</td><td>2</td></tr>
+          <tr><td>3</td><td>4</td></tr>
+        </table>`,
+      ),
+    );
+    onHTMLPaste(event, editor);
+    expect(event.preventDefault).toHaveBeenCalled();
+    expect(insertFragmentSpy).toHaveBeenCalledWith(editor, [
+      {
+        type: 'table',
+        id: expect.any(String),
+        children: [
+          {
+            type: 'tr',
+            id: expect.any(String),
+            children: [
+              { type: 'th', id: expect.any(String), children: [{ text: 'Header 1' }] },
+              { type: 'th', id: expect.any(String), children: [{ text: 'Header 2' }] },
+            ],
+          },
+
+          {
+            type: 'tr',
+            id: expect.any(String),
+            children: [
+              { type: 'td', id: expect.any(String), children: [{ text: '1' }] },
+              { type: 'td', id: expect.any(String), children: [{ text: '2' }] },
+            ],
+          },
+          {
+            type: 'tr',
+            id: expect.any(String),
+            children: [
+              { type: 'td', id: expect.any(String), children: [{ text: '3' }] },
+              { type: 'td', id: expect.any(String), children: [{ text: '4' }] },
+            ],
+          },
+        ],
       },
     ]);
   });
