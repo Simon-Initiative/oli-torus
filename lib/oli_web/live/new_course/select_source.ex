@@ -8,6 +8,8 @@ defmodule OliWeb.Delivery.NewCourse.SelectSource do
   alias OliWeb.Common.Table.SortableTableModel
   alias OliWeb.Router.Helpers, as: Routes
 
+  alias Phoenix.LiveView.JS
+
   alias Surface.Components.Form.{Field, RadioButton}
 
   @default_params %{
@@ -88,19 +90,24 @@ defmodule OliWeb.Delivery.NewCourse.SelectSource do
         card_header_text={nil}
         card_body_text={nil}
         table_model={@table_model}
-        sort="sort"
+        sort={JS.push("sort", target: @myself)}
         show_more_opts={is_instructor?(@live_action)}
       >
         <Filter.render
           query={@params[:query]}
-          apply="apply_search"
-          change="change_search"
-          reset="reset_search"
+          apply={JS.push("apply_search", target: @myself)}
+          change={JS.push("change_search", target: @myself)}
+          reset={JS.push("reset_search", target: @myself)}
         />
 
         <:extra_opts>
           <div class="flex flex-row justify-end border-l border-l-gray-200 pl-4">
-            <.form id="update_view_type" for={:view} phx-change="update_view_type">
+            <.form
+              id="update_view_type"
+              for={:view}
+              phx-change="update_view_type"
+              phx-target={@myself}
+            >
               <Field.render name={:type} class="control w-100 d-flex align-items-center">
                 <div class="flex text-white dark:text-delivery-body-color-dark">
                   <label class={"#{if @view_type == :card, do: "shadow-inner bg-delivery-primary-200 text-white", else: "shadow bg-white dark:bg-gray-600 text-black dark:text-white"} cursor-pointer text-center block rounded-l-sm py-1 h-8 w-10"}>
@@ -135,8 +142,8 @@ defmodule OliWeb.Delivery.NewCourse.SelectSource do
         offset={@params[:offset]}
         limit={@params[:limit]}
         selected={@on_select}
-        sort="sort"
-        page_change="page_change"
+        sort={JS.push("sort", target: @myself)}
+        page_change={JS.push("page_change", target: @myself)}
         show_bottom_paging={false}
         cards_view={is_cards_view?(@live_action, @view_type)}
       />
