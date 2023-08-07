@@ -136,7 +136,7 @@ defmodule OliWeb.Products.ProductsView do
         {#if @is_admin_view == false}
           <Create id="creation" title={@creation_title} change="title" click="create"/>
         {#else}
-          <Filter change={"change_search"} reset="reset_search" apply="apply_search"/>
+          <Filter.render change={"change_search"} reset="reset_search" apply="apply_search"/>
         {/if}
 
         <div class="mb-3"/>

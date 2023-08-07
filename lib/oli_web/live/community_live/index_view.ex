@@ -79,7 +79,7 @@ defmodule OliWeb.CommunityLive.IndexView do
   def render(assigns) do
     ~F"""
       <div class="d-flex p-3 justify-content-between">
-        <Filter
+        <Filter.render
           change="change_search"
           reset="reset_search"
           apply="apply_search"

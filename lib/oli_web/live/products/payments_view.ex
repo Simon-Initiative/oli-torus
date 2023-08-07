@@ -78,7 +78,7 @@ defmodule OliWeb.Products.PaymentsView do
 
       <hr class="mt-5 mb-5"/>
 
-      <Filter apply={"apply_search"} change={"change_search"} reset="reset_search"/>
+      <Filter.render apply={"apply_search"} change={"change_search"} reset="reset_search"/>
 
       <div class="mb-3"/>
 

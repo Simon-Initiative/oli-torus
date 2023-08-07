@@ -163,7 +163,7 @@ defmodule OliWeb.ObjectivesLive.Objectives do
 
       <div class="container mx-auto">
         <FilterBox.render table_model={@table_model} show_more_opts={false} card_header_text="Learning Objectives" card_body_text={card_body_text(assigns)}>
-          <Filter
+          <Filter.render
             change="change_search"
             reset="reset_search"
             apply="apply_search"

@@ -78,7 +78,7 @@ defmodule OliWeb.CommunityLive.Associated.NewView do
   def render(assigns) do
     ~F"""
       <div class="p-3">
-        <Filter
+        <Filter.render
           change="change_search"
           reset="reset_search"
           apply="apply_search"
