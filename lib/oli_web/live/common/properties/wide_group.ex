@@ -1,23 +1,22 @@
 defmodule OliWeb.Common.Properties.WideGroup do
-  use Surface.Component
+  use Phoenix.Component
 
-  prop label, :string, required: true
-  prop description, :string, required: true
-  slot default, required: true
+  attr :label, :string, required: true
+  attr :description, :string, required: true
 
   def render(assigns) do
-    ~F"""
+    ~H"""
     <div class="grid grid-cols-12 py-5">
       <div class="md:col-span-12">
-        <h4>{@label}</h4>
+        <h4><%= @label %></h4>
         <div class="text-muted">
-          {@description}
+          <%= @description %>
         </div>
       </div>
     </div>
     <div class="grid grid-cols-12 border-b">
       <div class="md:col-span-12">
-        <#slot />
+        <%= render_slot(@inner_block) %>
       </div>
     </div>
     """

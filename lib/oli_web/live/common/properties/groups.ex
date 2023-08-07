@@ -1,12 +1,10 @@
 defmodule OliWeb.Common.Properties.Groups do
-  use Surface.Component
-
-  slot default, required: true
+  use Phoenix.Component
 
   def render(assigns) do
-    ~F"""
+    ~H"""
     <div class="container mx-auto">
-      <#slot />
+      <%= render_slot(@inner_block) %>
     </div>
     """
   end

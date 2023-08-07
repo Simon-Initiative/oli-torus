@@ -86,7 +86,7 @@ defmodule OliWeb.Users.UsersDetailView do
     ~F"""
     <div>
       {render_modal(assigns)}
-      <Groups>
+      <Groups.render>
         <Group.render label="Details" description="User details">
           <Form for={@changeset} change="change" submit="submit" opts={autocomplete: "off"}>
             <ReadOnly label="Sub" value={@user.sub}/>
@@ -173,7 +173,7 @@ defmodule OliWeb.Users.UsersDetailView do
             <div class="text-secondary">LTI users are managed by their LMS</div>
           {/if}
         </Group.render>
-      </Groups>
+      </Groups.render>
     </div>
     """
   end

@@ -120,7 +120,7 @@ defmodule OliWeb.Sections.OverviewView do
 
     ~F"""
     {render_modal(assigns)}
-    <Groups>
+    <Groups.render>
       <Group.render label="Details" description="Overview of course section details">
         <ReadOnly label="Course Section ID" value={@section.slug} />
         <ReadOnly label="Title" value={@section.title} />
@@ -325,7 +325,7 @@ defmodule OliWeb.Sections.OverviewView do
           <UnlinkSection unlink="unlink" section={@section} />
         </Group.render>
       {/if}
-    </Groups>
+    </Groups.render>
     """
   end
 

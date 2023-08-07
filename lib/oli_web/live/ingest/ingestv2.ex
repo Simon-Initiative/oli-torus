@@ -84,7 +84,7 @@ defmodule OliWeb.Admin.IngestV2 do
   defp render_preprocessed(assigns) do
     ~F"""
     {#if @ingestion_step == :preprocessed}
-    <Groups>
+    <Groups.render>
       <Group.render label="Project" description="Details about the project">
         <ReadOnly label="Title" value={@state.project_details["title"]}/>
         <ReadOnly label="Description" value={@state.project_details["description"]}/>
@@ -113,7 +113,7 @@ defmodule OliWeb.Admin.IngestV2 do
           Proceed and ingest this course project
         </button>
       </Group.render>
-    </Groups>
+    </Groups.render>
     {/if}
     """
   end

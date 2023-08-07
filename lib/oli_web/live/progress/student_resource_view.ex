@@ -142,7 +142,7 @@ defmodule OliWeb.Progress.StudentResourceView do
 
   def render_with_access(assigns) do
     ~F"""
-    <Groups>
+    <Groups.render>
       <Group.render label="Details" description="">
         <ReadOnly label="Student" value={OliWeb.Common.Utils.name(@user)}/>
         <ReadOnly label="Resource" value={@revision.title}/>
@@ -179,7 +179,7 @@ defmodule OliWeb.Progress.StudentResourceView do
       <Group.render label="Attempt History" description="">
         <AttemptHistory revision={@revision} section={@section} resource_attempts={@resource_access.resource_attempts} {=@ctx}/>
       </Group.render>
-    </Groups>
+    </Groups.render>
     {#if @show_confirm}
       <Confirm.render title="Confirm Attempt Submit" id="dialog" ok="do_submit_attempt" cancel="cancel_modal">
         Are you sure that you wish to finalize this attempt on behalf of the student?
@@ -190,7 +190,7 @@ defmodule OliWeb.Progress.StudentResourceView do
 
   def render_never_visited(assigns) do
     ~F"""
-    <Groups>
+    <Groups.render>
       <Group.render label="Details" description="">
         <ReadOnly label="Student" value={OliWeb.Common.Utils.name(@user)}/>
         <ReadOnly label="Resource" value={@revision.title}/>
@@ -204,7 +204,7 @@ defmodule OliWeb.Progress.StudentResourceView do
         {/if}
 
       </Group.render>
-    </Groups>
+    </Groups.render>
     """
   end
 

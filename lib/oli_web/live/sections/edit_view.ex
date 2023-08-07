@@ -81,7 +81,7 @@ defmodule OliWeb.Sections.EditView do
   def render(assigns) do
     ~F"""
     <Form as={:section} for={@changeset} change="validate" submit="save" opts={autocomplete: "off"}>
-      <Groups>
+      <Groups.render>
         <Group.render label="Settings" description="Manage the course section settings">
           <MainDetails
             changeset={@changeset}
@@ -115,13 +115,13 @@ defmodule OliWeb.Sections.EditView do
 
         <PaywallSettings changeset={@changeset} disabled={!can_change_payment?(@section, @is_admin)} />
         <ContentSettings changeset={@changeset} />
-      </Groups>
+      </Groups.render>
     </Form>
-    <Groups>
+    <Groups.render>
       <Group.render label="Labels" description="Custom labels">
         <CustomLabelsForm labels={@labels} save="save_labels" />
       </Group.render>
-    </Groups>
+    </Groups.render>
     """
   end
 

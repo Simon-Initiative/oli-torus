@@ -23,7 +23,7 @@ defmodule OliWeb.Workspace.AccountDetailsLive do
 
   def render(assigns) do
     ~F"""
-    <Groups>
+    <Groups.render>
       <Group.render label="Details" description="View and change your authoring account details">
         <div class="account-section">
           <div class="grid grid-cols-12 mb-4">
@@ -67,7 +67,7 @@ defmodule OliWeb.Workspace.AccountDetailsLive do
           <div id="theme-toggle" phx-hook="ThemeToggle" phx-update="ignore"></div>
         </div>
       </Group.render>
-    </Groups>
+    </Groups.render>
     """
   end
 

@@ -81,7 +81,7 @@ defmodule OliWeb.Users.AuthorsDetailView do
     ~F"""
     <div>
       {render_modal(assigns)}
-      <Groups>
+      <Groups.render>
         <Group.render label="Details" description="User details">
           <Form for={@changeset} change="change" submit="submit" opts={autocomplete: "off"}>
             <ReadOnly label="Name" value={@user.name}/>
@@ -118,7 +118,7 @@ defmodule OliWeb.Users.AuthorsDetailView do
             <Actions user={@user} csrf_token={@csrf_token} for_author={true}/>
           {/if}
         </Group.render>
-      </Groups>
+      </Groups.render>
     </div>
     """
   end

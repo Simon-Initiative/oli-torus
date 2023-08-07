@@ -22,7 +22,7 @@ defmodule OliWeb.Admin.AdminView do
 
   def render(assigns) do
     ~F"""
-    <Groups>
+    <Groups.render>
       <div class="alert alert-warning mt-5" role="alert">
         <strong>Note:</strong> All administrative actions taken in the system are logged for auditing purposes.
       </div>
@@ -62,7 +62,7 @@ defmodule OliWeb.Admin.AdminView do
           </li>
         </ul>
       </Group.render>
-    </Groups>
+    </Groups.render>
     """
   end
 
