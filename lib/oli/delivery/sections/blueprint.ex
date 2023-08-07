@@ -223,7 +223,10 @@ defmodule Oli.Delivery.Sections.Blueprint do
           delivery_policy_id: nil,
           customizations: custom_labels,
           contains_explorations: section.contains_explorations,
-          cover_image: section.cover_image
+          cover_image: section.cover_image,
+          skip_email_verification: section.skip_email_verification,
+          registration_open: section.registration_open,
+          requires_enrollment: section.requires_enrollment
         },
         attrs
       )

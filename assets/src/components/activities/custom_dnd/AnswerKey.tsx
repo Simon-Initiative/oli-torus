@@ -56,6 +56,9 @@ export const AnswerKey: React.FC<Props> = (props) => {
           updateFeedback={(_id, content) =>
             dispatch(ResponseActions.editResponseFeedback(response.id, content as RichText))
           }
+          updateCorrectness={(_id, correct) =>
+            dispatch(ResponseActions.editResponseCorrectness(response.id, correct))
+          }
           removeResponse={(id) => dispatch(ResponseActions.removeResponse(id))}
           key={response.id}
         >
