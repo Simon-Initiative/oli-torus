@@ -87,7 +87,7 @@ defmodule OliWeb.Users.UsersDetailView do
     <div>
       {render_modal(assigns)}
       <Groups>
-        <Group label="Details" description="User details">
+        <Group.render label="Details" description="User details">
           <Form for={@changeset} change="change" submit="submit" opts={autocomplete: "off"}>
             <ReadOnly label="Sub" value={@user.sub}/>
             <ReadOnly label="Name" value={@user.name}/>
@@ -136,9 +136,9 @@ defmodule OliWeb.Users.UsersDetailView do
             {#if @disabled_edit}
               <button class={"float-right btn btn-md btn-primary mt-2"} phx-click="start_edit">Edit</button>
             {/if}
-        </Group>
+        </Group.render>
         {#if !Enum.empty?(@user_lti_params)}
-          <Group label="LTI Details" description="LTI 1.3 details provided by an LMS">
+          <Group.render label="LTI Details" description="LTI 1.3 details provided by an LMS">
             <ul class="list-group">
               {#for lti_params <- @user_lti_params}
                 <li class="list-group-item">
@@ -154,9 +154,9 @@ defmodule OliWeb.Users.UsersDetailView do
                 </li>
               {/for}
             </ul>
-          </Group>
+          </Group.render>
         {/if}
-        <Group label="Enrolled Sections" description="Course sections to which the student is enrolled">
+        <Group.render label="Enrolled Sections" description="Course sections to which the student is enrolled">
           {live_component OliWeb.Users.UserEnrolledSections,
             id: "user_enrolled_sections",
             user: @user,
@@ -164,15 +164,15 @@ defmodule OliWeb.Users.UsersDetailView do
             ctx: @ctx,
             enrolled_sections: @enrolled_sections
           }
-        </Group>
-        <Group label="Actions" description="Actions that can be taken for this user">
+        </Group.render>
+        <Group.render label="Actions" description="Actions that can be taken for this user">
           {#if @user.independent_learner}
             <Actions user={@user} csrf_token={@csrf_token}/>
           {#else}
             <div>No actions available</div>
             <div class="text-secondary">LTI users are managed by their LMS</div>
           {/if}
-        </Group>
+        </Group.render>
       </Groups>
     </div>
     """

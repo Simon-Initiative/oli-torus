@@ -26,7 +26,7 @@ defmodule OliWeb.Admin.AdminView do
       <div class="alert alert-warning mt-5" role="alert">
         <strong>Note:</strong> All administrative actions taken in the system are logged for auditing purposes.
       </div>
-      <Group label="Account Management" description="Access and manage all users and authors">
+      <Group.render label="Account Management" description="Access and manage all users and authors">
         <ul class="link-list">
           <li><a href={Routes.live_path(OliWeb.Endpoint, OliWeb.Users.UsersView)}>Manage Students and Instructor Accounts</a></li>
           <li><a href={Routes.live_path(OliWeb.Endpoint, OliWeb.Users.AuthorsView)}>Manage Authoring Accounts</a></li>
@@ -34,8 +34,8 @@ defmodule OliWeb.Admin.AdminView do
           <li><a href={Routes.invite_path(OliWeb.Endpoint, :index)}>Invite New Authors</a></li>
           <li><a href={Routes.live_path(OliWeb.Endpoint, OliWeb.CommunityLive.IndexView)}>Manage Communities</a></li>
         </ul>
-      </Group>
-      <Group label="Content Management" description="Access and manage created content">
+      </Group.render>
+      <Group.render label="Content Management" description="Access and manage created content">
         <ul class="link-list">
           <li><a href={Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.ProjectsLive)}>Browse all Projects</a></li>
           <li><a href={Routes.live_path(OliWeb.Endpoint, OliWeb.Products.ProductsView)}>Browse all Products</a></li>
@@ -47,8 +47,8 @@ defmodule OliWeb.Admin.AdminView do
           <li><a href={Routes.brand_path(OliWeb.Endpoint, :index)}>Manage Branding</a></li>
           <li><a href={Routes.live_path(OliWeb.Endpoint, OliWeb.PublisherLive.IndexView)}>Manage Publishers</a></li>
         </ul>
-      </Group>
-      <Group label="System Management" description="Manage and support system level functionality">
+      </Group.render>
+      <Group.render label="System Management" description="Manage and support system level functionality">
         <ul class="link-list">
           <li><a href={Routes.activity_manage_path(OliWeb.Endpoint, :index)}>Manage Activities</a></li>
           <li><a href={Routes.live_path(OliWeb.Endpoint, OliWeb.SystemMessageLive.IndexView)}>Manage System Message Banner</a></li>
@@ -61,7 +61,7 @@ defmodule OliWeb.Admin.AdminView do
             </a>
           </li>
         </ul>
-      </Group>
+      </Group.render>
     </Groups>
     """
   end

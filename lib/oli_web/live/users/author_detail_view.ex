@@ -82,7 +82,7 @@ defmodule OliWeb.Users.AuthorsDetailView do
     <div>
       {render_modal(assigns)}
       <Groups>
-        <Group label="Details" description="User details">
+        <Group.render label="Details" description="User details">
           <Form for={@changeset} change="change" submit="submit" opts={autocomplete: "off"}>
             <ReadOnly label="Name" value={@user.name}/>
             <Field name={:given_name} class="form-group">
@@ -105,19 +105,19 @@ defmodule OliWeb.Users.AuthorsDetailView do
           {#if @disabled_edit}
             <button class={"float-right btn btn-md btn-primary mt-2"} phx-click="start_edit">Edit</button>
           {/if}
-        </Group>
-        <Group label="Projects" description="Projects that the Author has either created or is a collaborator within">
+        </Group.render>
+        <Group.render label="Projects" description="Projects that the Author has either created or is a collaborator within">
           {live_component OliWeb.Users.AuthorProjects,
             id: "author_projects",
             user: @user,
             ctx: @ctx
           }
-        </Group>
-        <Group label="Actions" description="Actions that can be taken for this user">
+        </Group.render>
+        <Group.render label="Actions" description="Actions that can be taken for this user">
           {#if @user.id != @author.id and @user.email != System.get_env("ADMIN_EMAIL", "admin@example.edu")}
             <Actions user={@user} csrf_token={@csrf_token} for_author={true}/>
           {/if}
-        </Group>
+        </Group.render>
       </Groups>
     </div>
     """

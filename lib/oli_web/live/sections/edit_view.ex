@@ -82,7 +82,7 @@ defmodule OliWeb.Sections.EditView do
     ~F"""
     <Form as={:section} for={@changeset} change="validate" submit="save" opts={autocomplete: "off"}>
       <Groups>
-        <Group label="Settings" description="Manage the course section settings">
+        <Group.render label="Settings" description="Manage the course section settings">
           <MainDetails
             changeset={@changeset}
             disabled={false}
@@ -90,8 +90,8 @@ defmodule OliWeb.Sections.EditView do
             brands={@brands}
             institutions={@institutions}
           />
-        </Group>
-        <Group label="Schedule" description="Edit the start and end dates for scheduling purposes">
+        </Group.render>
+        <Group.render label="Schedule" description="Edit the start and end dates for scheduling purposes">
           <StartEnd
             id="start_end_editing"
             changeset={@changeset}
@@ -99,7 +99,7 @@ defmodule OliWeb.Sections.EditView do
             is_admin={@is_admin}
             ctx={@ctx}
           />
-        </Group>
+        </Group.render>
 
         {#if @section.open_and_free}
           <OpenFreeSettings
@@ -118,9 +118,9 @@ defmodule OliWeb.Sections.EditView do
       </Groups>
     </Form>
     <Groups>
-      <Group label="Labels" description="Custom labels">
+      <Group.render label="Labels" description="Custom labels">
         <CustomLabelsForm labels={@labels} save="save_labels" />
-      </Group>
+      </Group.render>
     </Groups>
     """
   end

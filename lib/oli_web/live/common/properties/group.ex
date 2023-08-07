@@ -1,24 +1,23 @@
 defmodule OliWeb.Common.Properties.Group do
   use Surface.Component
 
-  prop label, :string, required: true
-  prop description, :string
-  prop is_last, :boolean, default: false
-  slot default, required: true
+  attr :label, :string, required: true
+  attr :description, :string, default: ""
+  attr :is_last, :boolean, default: false
 
   def render(assigns) do
-    ~F"""
-    <div class={"grid grid-cols-12 py-5 #{if !assigns[:is_last], do: "border-b dark:border-gray-700"}"}>
+    ~H"""
+    <div class={"grid grid-cols-12 py-5 #{if !@is_last, do: "border-b dark:border-gray-700"}"}>
       <div class="md:col-span-4">
-        <h4>{@label}</h4>
-        {#if assigns[:description]}
+        <h4><%= @label %></h4>
+        <%= if @description != "" do %>
           <div class="text-muted">
-            {@description}
+            <%= @description %>
           </div>
-        {/if}
+        <% end %>
       </div>
       <div class="md:col-span-8">
-      <#slot />
+        <%= render_slot(@inner_block) %>
       </div>
     </div>
     """

@@ -121,7 +121,7 @@ defmodule OliWeb.Sections.OverviewView do
     ~F"""
     {render_modal(assigns)}
     <Groups>
-      <Group label="Details" description="Overview of course section details">
+      <Group.render label="Details" description="Overview of course section details">
         <ReadOnly label="Course Section ID" value={@section.slug} />
         <ReadOnly label="Title" value={@section.title} />
         <ReadOnly label="Course Section Type" value={type_to_string(@section)} />
@@ -152,11 +152,11 @@ defmodule OliWeb.Sections.OverviewView do
             </a>
           </div>
         {/unless}
-      </Group>
-      <Group label="Instructors" description="Manage users with instructor level access">
+      </Group.render>
+      <Group.render label="Instructors" description="Manage users with instructor level access">
         <Instructors users={@instructors} />
-      </Group>
-      <Group label="Curriculum" description="Manage content delivered to students">
+      </Group.render>
+      <Group.render label="Curriculum" description="Manage content delivered to students">
         <ul class="link-list">
           <li>
             <a
@@ -194,8 +194,8 @@ defmodule OliWeb.Sections.OverviewView do
             </a>
           </li>
         </ul>
-      </Group>
-      <Group label="Manage" description="Manage all aspects of course delivery">
+      </Group.render>
+      <Group.render label="Manage" description="Manage all aspects of course delivery">
         <ul class="link-list">
           <li><a
               href={Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.EnrollmentsViewLive, @section.slug)}
@@ -231,8 +231,8 @@ defmodule OliWeb.Sections.OverviewView do
               :on-click="show_delete_modal"
             >Delete Section</button></li>
         </ul>
-      </Group>
-      <Group
+      </Group.render>
+      <Group.render
         label="Required Survey"
         description="Show a required to students who access the course for the first time"
       >
@@ -248,8 +248,8 @@ defmodule OliWeb.Sections.OverviewView do
             <p class="m-0">You are not allowed to have student surveys in this resource.<br>Please contact the admin to be granted with that permission.</p>
           </div>
         {/if}
-      </Group>
-      <Group
+      </Group.render>
+      <Group.render
         label="Collaborative Space"
         description="Activate and configure a collaborative space for this section"
       >
@@ -269,8 +269,8 @@ defmodule OliWeb.Sections.OverviewView do
             <p class="ml-8 mt-2">Collaborative spaces are not enabled by the course project.<br>Please contact a system administrator to enable.</p>
           {/if}
         </div>
-      </Group>
-      <Group label="Grading" description="View and manage student grades and progress"  is_last={not @is_lms_or_system_admin or @section.open_and_free}>
+      </Group.render>
+      <Group.render label="Grading" description="View and manage student grades and progress"  is_last={not @is_lms_or_system_admin or @section.open_and_free}>
         <ul class="link-list">
           <li><a
               href={Routes.live_path(OliWeb.Endpoint, OliWeb.ManualGrading.ManualGradingView, @section.slug)}
@@ -318,12 +318,12 @@ defmodule OliWeb.Sections.OverviewView do
               >Browse LMS Grade Update Log</a></li>
           {/if}
         </ul>
-      </Group>
+      </Group.render>
 
       {#if @is_lms_or_system_admin and !@section.open_and_free}
-        <Group label="LMS Admin" description="Administrator LMS Connection" is_last={true}>
+        <Group.render label="LMS Admin" description="Administrator LMS Connection" is_last={true}>
           <UnlinkSection unlink="unlink" section={@section} />
-        </Group>
+        </Group.render>
       {/if}
     </Groups>
     """

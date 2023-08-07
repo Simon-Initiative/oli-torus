@@ -294,7 +294,7 @@ defmodule OliWeb.ManualGrading.ManualGradingView do
         <script type="text/javascript" src={Routes.static_path(OliWeb.Endpoint, "/js/" <> script)}></script>
       {/for}
 
-      <Group>
+      <Group.render>
         <div class="d-flex justify-content-between">
           <TextSearch id="text-search"/>
           <Filters options={@options} selection={!is_nil(@attempt)}/>
@@ -309,21 +309,21 @@ defmodule OliWeb.ManualGrading.ManualGradingView do
           total_count={@total_count}
           offset={@offset}
           limit={@limit}/>
-      </Group>
+      </Group.render>
 
       {#if !is_nil(@attempt)}
-        <Group>
+        <Group.render>
           <Tabs active={@active_tab} changed="change_tab"/>
           {#if @active_tab == :review}
             <RenderedActivity id={@attempt.attempt_guid} rendered_activity={@review_rendered}/>
           {#else}
             <RenderedActivity id={@attempt.attempt_guid} rendered_activity={@preview_rendered}/>
           {/if}
-        </Group>
-        <Group>
+        </Group.render>
+        <Group.render>
           {render_parts(assigns)}
           <Apply disabled={scoring_remains(assigns)} apply="apply"/>
-        </Group>
+        </Group.render>
       {#else}
         <div style="margin-top: 200px;" class="d-flex justify-content-center">
           To get started with manual scoring of student activities, first select an activity attempt from above to review and score.

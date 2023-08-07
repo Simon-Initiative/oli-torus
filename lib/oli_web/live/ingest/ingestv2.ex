@@ -85,12 +85,12 @@ defmodule OliWeb.Admin.IngestV2 do
     ~F"""
     {#if @ingestion_step == :preprocessed}
     <Groups>
-      <Group label="Project" description="Details about the project">
+      <Group.render label="Project" description="Details about the project">
         <ReadOnly label="Title" value={@state.project_details["title"]}/>
         <ReadOnly label="Description" value={@state.project_details["description"]}/>
         <ReadOnly label="SVN URL" value={@state.project_details["svnRoot"]}/>
-      </Group>
-      <Group label="Resource Counts" description="Details about the resources">
+      </Group.render>
+      <Group.render label="Resource Counts" description="Details about the resources">
         <ReadOnly label="Tags" value={@resource_counts.tags}/>
         <ReadOnly label="Bibliography Entries" value={@resource_counts.bib_entries}/>
         <ReadOnly label="Objectives" value={@resource_counts.objectives}/>
@@ -98,8 +98,8 @@ defmodule OliWeb.Admin.IngestV2 do
         <ReadOnly label="Pages" value={@resource_counts.pages}/>
         <ReadOnly label="Products" value={@resource_counts.products}/>
         <ReadOnly label="Media Items" value={@resource_counts.media_items}/>
-      </Group>
-      <Group label="Errors" description="Errors encountered during preprocessing">
+      </Group.render>
+      <Group.render label="Errors" description="Errors encountered during preprocessing">
         <PagedTable.render
           allow_selection={false}
           filter={nil}
@@ -107,12 +107,12 @@ defmodule OliWeb.Admin.IngestV2 do
           total_count={@total_count}
           offset={@offset}
           limit={@limit}/>
-      </Group>
-      <Group label="Process" description="">
+      </Group.render>
+      <Group.render label="Process" description="">
         <button class="btn btn-primary" phx-click="process" phx-disable-with="Processing...">
           Proceed and ingest this course project
         </button>
-      </Group>
+      </Group.render>
     </Groups>
     {/if}
     """

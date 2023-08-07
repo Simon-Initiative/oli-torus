@@ -143,12 +143,12 @@ defmodule OliWeb.Progress.StudentResourceView do
   def render_with_access(assigns) do
     ~F"""
     <Groups>
-      <Group label="Details" description="">
+      <Group.render label="Details" description="">
         <ReadOnly label="Student" value={OliWeb.Common.Utils.name(@user)}/>
         <ReadOnly label="Resource" value={@revision.title}/>
-      </Group>
+      </Group.render>
       {#if @revision.graded}
-      <Group label="Current Grade" description="">
+      <Group.render label="Current Grade" description="">
 
           <Form as={:resource_access} for={@changeset} change="validate" submit="save" opts={autocomplete: "off"}>
             <Field name={:score} class="form-label-group">
@@ -174,11 +174,11 @@ defmodule OliWeb.Progress.StudentResourceView do
             <Passback click="passback" last_failed={@last_failed} resource_access={@resource_access} grade_sync_result={@grade_sync_result}/>
           {/if}
 
-      </Group>
+      </Group.render>
       {/if}
-      <Group label="Attempt History" description="">
+      <Group.render label="Attempt History" description="">
         <AttemptHistory revision={@revision} section={@section} resource_attempts={@resource_access.resource_attempts} {=@ctx}/>
-      </Group>
+      </Group.render>
     </Groups>
     {#if @show_confirm}
       <Confirm.render title="Confirm Attempt Submit" id="dialog" ok="do_submit_attempt" cancel="cancel_modal">
@@ -191,11 +191,11 @@ defmodule OliWeb.Progress.StudentResourceView do
   def render_never_visited(assigns) do
     ~F"""
     <Groups>
-      <Group label="Details" description="">
+      <Group.render label="Details" description="">
         <ReadOnly label="Student" value={OliWeb.Common.Utils.name(@user)}/>
         <ReadOnly label="Resource" value={@revision.title}/>
-      </Group>
-      <Group label="Attempt History" description="">
+      </Group.render>
+      <Group.render label="Attempt History" description="">
         <p>The student has not yet accessed this course resource.</p>
 
         {#if @revision.graded}
@@ -203,7 +203,7 @@ defmodule OliWeb.Progress.StudentResourceView do
           <button class="btn btn-primary mt-4" type="button" :on-click="create_access_record">Create Access Record</button>
         {/if}
 
-      </Group>
+      </Group.render>
     </Groups>
     """
   end

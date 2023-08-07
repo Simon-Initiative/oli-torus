@@ -36,7 +36,7 @@ defmodule OliWeb.Sections.PaywallSettings do
 
   def render(assigns) do
     ~F"""
-    <Group label="Payment Settings" description="Settings related to requried student fee and optional grace periody">
+    <Group.render label="Payment Settings" description="Settings related to requried student fee and optional grace periody">
       <Field name={:requires_payment} class="form-check">
         <Checkbox class="form-check-input" value={get_field(@changeset, :requires_payment)} opts={disabled: @disabled}/>
         <Label class="form-check-label"/>
@@ -75,7 +75,7 @@ defmodule OliWeb.Sections.PaywallSettings do
       </Field>
 
       <button class="btn btn-primary mt-3" type="submit">Save</button>
-    </Group>
+    </Group.render>
     """
   end
 end
