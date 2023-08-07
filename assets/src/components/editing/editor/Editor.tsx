@@ -1,5 +1,5 @@
 import React, { FocusEventHandler, useCallback, useMemo } from 'react';
-import { Descendant, Operation, Editor as SlateEditor, Transforms, createEditor } from 'slate';
+import { Descendant, Operation, Editor as SlateEditor, createEditor } from 'slate';
 import { withHistory } from 'slate-history';
 import { Editable, RenderElementProps, RenderLeafProps, Slate, withReact } from 'slate-react';
 import { EditorToolbar } from 'components/editing/toolbar/editorToolbar/EditorToolbar';

@@ -1,4 +1,5 @@
 import { Editor, Element, Text, Transforms } from 'slate';
+import { copy } from 'typedoc/dist/lib/utils';
 import { ModelElement } from 'data/content/model/elements/types';
 import { ModelTypes, schema } from 'data/content/model/schema';
 import {
@@ -78,7 +79,7 @@ const TAG_DESERIALIZERS: PartialTagDeserializer[] = [
   serializer('th', tagNameRule('TH'), tagTypeAction('th')),
 
   serializer('ul', tagNameRule('UL'), tagTypeAction('ul')),
-  serializer('ol', tagNameRule('OL'), tagTypeAction('ol')),
+  serializer('ol', tagNameRule('OL'), tagTypeAction('ol'), copyAttribute('start', 'start')),
   serializer('li', tagNameRule('LI'), tagTypeAction('li')),
 
   serializer('link', tagNameRule('A'), tagTypeAction('a'), copyAttribute('href', 'href')),
@@ -153,6 +154,7 @@ const TEXT_TAGS: PartialTagDeserializer[] = [
       tagNameRule('DEL'),
       tagNameRule('S'),
       spanWithStyleRule('text-decoration', 'line-through'),
+      allRules(tagNameRule('EM'), attributeEqualsRule('class', 'line-through')), // ECHO does strikethrough <em class='line-through'>
     ),
     addMarkAction('strikethrough'),
   ),
@@ -160,7 +162,7 @@ const TEXT_TAGS: PartialTagDeserializer[] = [
   serializer(
     'em',
     anyRule(
-      tagNameRule('EM'),
+      allRules(tagNameRule('EM'), notRule(attributeEqualsRule('class', 'line-through'))), // <em class='line-through'> is echo for strikethrough, so don't count that as EM
       allRules(tagNameRule('I'), notRule(foreignTagRule)), // <i lang="fr"> is going to be treated as a <foreign> node and so don't count that as a mark
       spanWithStyleRule('font-style', ['italic', 'oblique']),
     ),
@@ -370,7 +372,8 @@ const removeNestedTables = (
 };
 
 /* Torus doesn't support nested tables, so we want to extract inner tables and put them next to their parent table.
-   This way, we don't lose the structure of the inner table.
+   This way, we don't lose the structure of the inner table. This is especially important because a default echo
+   table uses a table containing the caption & title with an inner table with the content.
 */
 export const reparentNestedTables = (
   fragment: (ModelElement | Text)[],
@@ -388,11 +391,53 @@ export const reparentNestedTables = (
   return out;
 };
 
+/*
+ MSWord doesn't keep ordered lists together.
+ Instead of:
+   <ol>
+     <li>1</li>
+     <li>2</li>
+   </ol>
+
+   It will do:
+    <ol start="1">
+      <li>1</li>
+    </ol>
+    <ol start="2">
+      <li>2</li>
+    </ol>
+
+    This function will find adjacent OL lists with inreasing start values and combine them.
+*/
+export const combineOrderedLists = (fragment: (ModelElement | Text)[]): (ModelElement | Text)[] => {
+  const out = [];
+  let lastList: ModelElement | null = null;
+  for (const node of fragment) {
+    if (Element.isElement(node) && node.type === 'ol') {
+      if (lastList && lastList.type === 'ol') {
+        const lastStart = (lastList as any).start || 1;
+        const thisStart = (node as any).start || 1;
+        if (thisStart === lastStart + lastList.children.length) {
+          lastList.children.push(...node.children);
+          continue;
+        }
+      }
+      lastList = node;
+    } else {
+      lastList = null;
+    }
+    out.push(node);
+    if (Element.isElement(node) && node.children) {
+      (node as any).children = combineOrderedLists(node.children);
+    }
+  }
+  return out;
+};
+
 export const onHTMLPaste = (event: React.ClipboardEvent<HTMLDivElement>, editor: Editor) => {
   const pastedHtml = event.clipboardData?.getData('text/html')?.trim();
 
   if (!pastedHtml) return;
-  //debugger;
   try {
     const parsed = new DOMParser().parseFromString(pastedHtml, 'text/html');
     const [body] = Array.from(parsed.getElementsByTagName('body'));
@@ -403,6 +448,7 @@ export const onHTMLPaste = (event: React.ClipboardEvent<HTMLDivElement>, editor:
     event.preventDefault();
     fragment = removeEmptyTextNodesNextToBlockNodes(fragment as (ModelElement | Text)[]);
     fragment = reparentNestedTables(fragment);
+    fragment = combineOrderedLists(fragment);
     Transforms.insertFragment(editor, fragment);
   } catch (e) {
     console.error('Could not parse pasted html', e);

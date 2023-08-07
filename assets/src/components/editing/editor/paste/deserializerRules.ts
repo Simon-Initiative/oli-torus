@@ -48,10 +48,6 @@ export const attributeEqualsRule =
     const value = el.getAttribute(attributeName);
     if (!value) return false;
 
-    if (attributeValue === 'normal') {
-      debugger;
-    }
-
     if (typeof value === 'string' && typeof attributeValue === 'string') {
       return value.toLowerCase() === attributeValue.toLowerCase();
     }

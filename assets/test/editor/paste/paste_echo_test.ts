@@ -26,6 +26,14 @@ describe('on OLI Echo output paste', () => {
     expect(insertFragmentSpy).toHaveBeenCalledWith(editor, [{ text: 'term', term: true }]);
   });
 
+  it('should paste strikethrough', () => {
+    const event = simulateEvent('', html(`<em class="line-through">strikethrough</span>`));
+    onHTMLPaste(event, editor);
+    expect(event.preventDefault).toHaveBeenCalledTimes(1);
+    expect(insertFragmentSpy).toHaveBeenCalledWith(editor, [
+      { text: 'strikethrough', strikethrough: true },
+    ]);
+  });
   /*
     If you insert a table in Echo, you actually get a table inside a table.
     The outter table is for the title, table, and caption.
@@ -61,7 +69,6 @@ describe('on OLI Echo output paste', () => {
         },
       ];
       const output = reparentNestedTables(input);
-      console.info(JSON.stringify(output, null, 2));
       expect(output).toEqual([
         {
           type: 'table',

@@ -1,3 +1,5 @@
+/* eslint-disable no-irregular-whitespace */
+
 // Echo represents tables with a nested table. This is an issue in torus.
 export const echoTableExample = `<html>
 <body>
