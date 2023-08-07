@@ -262,9 +262,18 @@ defmodule OliWeb.Delivery.InstructorDashboard.DiscussionsTabTest do
 
       assert get_elements_in_table_count(view) == 2
       assert view |> has_element?("span", "Page #1")
-      assert view |> has_element?("p", "Number of posts: 4 (1 pending approval)")
+
+      assert view
+             |> element("table tbody tr:nth-of-type(1) p")
+             |> render =~
+               ~s{<p class=\"torus-p\">\n      \n        Number of posts: <b>1</b>\n        \n          (1 pending approval)\n        \n      \n    </p>}
+
       assert view |> has_element?("span", "Page #2")
-      assert view |> has_element?("p", "Number of posts: 1 (1 pending approval)")
+
+      assert view
+             |> element("table tbody tr:nth-of-type(2) p")
+             |> render =~
+               ~s{<p class=\"torus-p\">\n      \n        Number of posts: <b>4</b>\n        \n          (1 pending approval)\n        \n      \n    </p>}
     end
 
     defp get_elements_in_table_count(view) do
