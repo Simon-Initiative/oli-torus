@@ -1,4 +1,5 @@
 import { Editor } from 'slate';
+import { msWordTableExample } from 'components/editing/editor/paste/mswordTableExample';
 import { onHTMLPaste } from 'components/editing/editor/paste/onHtmlPaste';
 import { mockEditor, mockInsertFragment, simulateEvent } from './paste_test_utils';
 
@@ -266,5 +267,204 @@ describe('on MSWord paste', () => {
     onHTMLPaste(event, editor);
     expect(event.preventDefault).toHaveBeenCalledTimes(1);
     expect(insertFragmentSpy).toHaveBeenCalledWith(editor, [{ text: 'superscript', sup: true }]);
+  });
+
+  it('should paste an ms-word table with colspan and rowspans set', () => {
+    const event = simulateEvent('', html(msWordTableExample));
+    onHTMLPaste(event, editor);
+
+    expect(event.preventDefault).toHaveBeenCalledTimes(1);
+    expect(insertFragmentSpy).toHaveBeenCalledWith(editor, [
+      {
+        type: 'table',
+        id: expect.any(String),
+        children: [
+          {
+            type: 'tr',
+            id: expect.any(String),
+            children: [
+              {
+                type: 'td',
+                id: expect.any(String),
+                colspan: 2,
+                children: [
+                  {
+                    type: 'p',
+                    id: expect.any(String),
+                    children: [
+                      {
+                        text: 'Merged cell on the left.',
+                      },
+                      {
+                        text: ' ',
+                      },
+                    ],
+                  },
+                ],
+              },
+              {
+                type: 'td',
+                id: expect.any(String),
+                colspan: 2,
+                children: [
+                  {
+                    type: 'p',
+                    id: expect.any(String),
+                    children: [
+                      {
+                        text: 'Merged cell on the right',
+                      },
+                      {
+                        text: ' ',
+                      },
+                    ],
+                  },
+                ],
+              },
+            ],
+          },
+          {
+            type: 'tr',
+            id: expect.any(String),
+            children: [
+              {
+                type: 'td',
+                id: expect.any(String),
+                colspan: 1,
+                rowspan: 2,
+                children: [
+                  {
+                    type: 'p',
+                    id: expect.any(String),
+                    children: [
+                      {
+                        text: 'Vertically merged cell',
+                      },
+                      {
+                        text: ' ',
+                      },
+                    ],
+                  },
+                ],
+              },
+              {
+                type: 'td',
+                id: expect.any(String),
+                children: [
+                  {
+                    type: 'p',
+                    id: expect.any(String),
+                    children: [
+                      {
+                        text: '',
+                      },
+                      {
+                        text: ' ',
+                      },
+                    ],
+                  },
+                ],
+              },
+              {
+                type: 'td',
+                id: expect.any(String),
+                children: [
+                  {
+                    type: 'p',
+                    id: expect.any(String),
+                    children: [
+                      {
+                        text: '',
+                      },
+                      {
+                        text: ' ',
+                      },
+                    ],
+                  },
+                ],
+              },
+              {
+                type: 'td',
+                id: expect.any(String),
+                children: [
+                  {
+                    type: 'p',
+                    id: expect.any(String),
+                    children: [
+                      {
+                        text: '',
+                      },
+                      {
+                        text: ' ',
+                      },
+                    ],
+                  },
+                ],
+              },
+            ],
+          },
+          {
+            type: 'tr',
+            id: expect.any(String),
+            children: [
+              {
+                type: 'td',
+                id: expect.any(String),
+                children: [
+                  {
+                    type: 'p',
+                    id: expect.any(String),
+                    children: [
+                      {
+                        text: '',
+                      },
+                      {
+                        text: ' ',
+                      },
+                    ],
+                  },
+                ],
+              },
+              {
+                type: 'td',
+                id: expect.any(String),
+                children: [
+                  {
+                    type: 'p',
+                    id: expect.any(String),
+                    children: [
+                      {
+                        text: '',
+                      },
+                      {
+                        text: ' ',
+                      },
+                    ],
+                  },
+                ],
+              },
+              {
+                type: 'td',
+                id: expect.any(String),
+                children: [
+                  {
+                    type: 'p',
+                    id: expect.any(String),
+                    children: [
+                      {
+                        text: '',
+                      },
+                      {
+                        text: ' ',
+                      },
+                    ],
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      },
+    ]);
   });
 });

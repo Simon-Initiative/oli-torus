@@ -6,6 +6,7 @@ import {
   addEmptyChildrenAction,
   addMarkAction,
   copyAttribute,
+  copyNumericAttribute,
   copyTextContent,
   tagTypeAction,
 } from './deserializerActions';
@@ -67,7 +68,13 @@ export const foreignTagRule = allRules(tagNameRule('I'), hasAttributeRule('lang'
 const TAG_DESERIALIZERS: PartialTagDeserializer[] = [
   serializer('table', tagNameRule('TABLE'), tagTypeAction('table')),
   serializer('tr', tagNameRule('TR'), tagTypeAction('tr')),
-  serializer('td', tagNameRule('TD'), tagTypeAction('td')),
+  serializer(
+    'td',
+    tagNameRule('TD'),
+    tagTypeAction('td'),
+    copyNumericAttribute('colspan', 'colspan'),
+    copyNumericAttribute('rowspan', 'rowspan'),
+  ),
   serializer('th', tagNameRule('TH'), tagTypeAction('th')),
 
   serializer('ul', tagNameRule('UL'), tagTypeAction('ul')),
