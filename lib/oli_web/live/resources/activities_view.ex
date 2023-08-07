@@ -237,14 +237,14 @@ defmodule OliWeb.Resources.ActivitiesView do
     ~F"""
     <div id="activity_review" class="container mx-auto" phx-hook="ReviewActivity">
 
-      <FilterBox
+      <FilterBox.render
         card_header_text="Browse All Activities"
         card_body_text=""
         table_model={@table_model}
         show_sort={false}
         show_more_opts={false}>
         <TextSearch id="text-search" text={@options.text_search}/>
-      </FilterBox>
+      </FilterBox.render>
 
       <div class="mb-3"/>
 

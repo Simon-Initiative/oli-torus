@@ -162,13 +162,13 @@ defmodule OliWeb.ObjectivesLive.Objectives do
       {render_modal(assigns)}
 
       <div class="container mx-auto">
-        <FilterBox table_model={@table_model} show_more_opts={false} card_header_text="Learning Objectives" card_body_text={card_body_text(assigns)}>
+        <FilterBox.render table_model={@table_model} show_more_opts={false} card_header_text="Learning Objectives" card_body_text={card_body_text(assigns)}>
           <Filter
             change="change_search"
             reset="reset_search"
             apply="apply_search"
             query={@query} />
-        </FilterBox>
+        </FilterBox.render>
 
         <div class="d-flex flex-row-reverse">
           <button class="btn btn-primary" :on-click="display_new_modal">Create new Objective</button>

@@ -7,8 +7,7 @@ defmodule OliWeb.Common.CardListing do
   alias OliWeb.Delivery.NewCourse.TableModel
 
   attr :model, :map, required: true
-  attr :selected, :string, required: true
-  attr :selected_target, :any, default: nil
+  attr :selected, :any, required: true
   attr :ctx, :map, required: true
 
   def render(assigns) do
@@ -17,9 +16,7 @@ defmodule OliWeb.Common.CardListing do
       <div class="card-deck mr-0 ml-0 inline-flex flex-wrap">
         <%= for item <- @model.rows do %>
           <a
-            phx-click={
-              if @selected_target, do: Map.put(@selected, :target, @selected_target), else: @selected
-            }
+            phx-click={@selected}
             class="course-card-link mb-2 no-underline hover:no-underline"
             phx-value-id={action_id(item)}
           >

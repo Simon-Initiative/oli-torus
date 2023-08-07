@@ -13,8 +13,7 @@ defmodule OliWeb.Common.Listing do
   attr :show_bottom_paging, :boolean, default: true
   attr :additional_table_class, :string, default: "table-sm"
   attr :cards_view, :boolean, default: false
-  attr :selected, :string
-  attr :selected_target, :any, default: nil
+  attr :selected, :any
   attr :with_body, :boolean, default: false
   slot :inner_block
 
@@ -57,12 +56,7 @@ defmodule OliWeb.Common.Listing do
   defp render_table(assigns) do
     ~H"""
     <%= if @cards_view do %>
-      <CardListing.render
-        model={@table_model}
-        selected={@selected}
-        selected_target={@selected_target}
-        ctx={@table_model.data.ctx}
-      />
+      <CardListing.render model={@table_model} selected={@selected} ctx={@table_model.data.ctx} />
     <% else %>
       <%= if @with_body do %>
         <%= render_slot(@inner_block) %>

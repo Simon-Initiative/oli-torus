@@ -113,7 +113,7 @@ defmodule OliWeb.Sections.SectionsView do
 
     ~F"""
       <div class="container mx-auto">
-        <FilterBox
+        <FilterBox.render
           card_header_text="Browse Course Sections"
           card_body_text=""
           table_model={@table_model}
@@ -142,7 +142,7 @@ defmodule OliWeb.Sections.SectionsView do
               </select>
             </form>
           </:extra_opts>
-        </FilterBox>
+        </FilterBox.render>
 
         <div class="mb-5"/>
 

@@ -150,7 +150,7 @@ defmodule OliWeb.Resources.PagesView do
     {render_modal(assigns)}
     <div class="container mx-auto">
 
-      <FilterBox
+      <FilterBox.render
         card_header_text="Browse All Pages"
         card_body_text=""
         table_model={@table_model}
@@ -178,7 +178,7 @@ defmodule OliWeb.Resources.PagesView do
             </select>
           </form>
         </:extra_opts>
-      </FilterBox>
+      </FilterBox.render>
 
       <div class="my-3 d-flex flex-row">
         <div class="flex-grow-1" />
