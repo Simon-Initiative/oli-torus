@@ -181,9 +181,9 @@ defmodule OliWeb.Progress.StudentResourceView do
       </Group>
     </Groups>
     {#if @show_confirm}
-      <Confirm title="Confirm Attempt Submit" id="dialog" ok="do_submit_attempt" cancel="cancel_modal">
+      <Confirm.render title="Confirm Attempt Submit" id="dialog" ok="do_submit_attempt" cancel="cancel_modal">
         Are you sure that you wish to finalize this attempt on behalf of the student?
-      </Confirm>
+      </Confirm.render>
     {/if}
     """
   end

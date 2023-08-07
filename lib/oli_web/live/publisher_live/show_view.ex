@@ -100,9 +100,9 @@ defmodule OliWeb.PublisherLive.ShowView do
         </ShowSection>
       </div>
       {#if @show_confirm_default}
-        <Confirm title="Confirm Default" id="set_default_modal" ok="set_default" cancel="cancel_set_default_modal">
+        <Confirm.render title="Confirm Default" id="set_default_modal" ok="set_default" cancel="cancel_set_default_modal">
           Are you sure that you wish to set this publisher as the default?
-        </Confirm>
+        </Confirm.render>
       {/if}
     """
   end

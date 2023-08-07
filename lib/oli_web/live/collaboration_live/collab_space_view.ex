@@ -548,8 +548,8 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
   defp display_confirm_modal(modal_assigns, action, index, socket, opt_text \\ "") do
     modal = fn assigns ->
       ~F"""
-      <Confirm {...@modal_assigns}>
-        Are you sure you want to {action} post #{index}? {opt_text}</Confirm>
+      <Confirm.render id={@modal_assigns.id} title={@modal_assigns.title} ok={@modal_assigns.ok} cancel={@modal_assigns.cancel}>
+        Are you sure you want to {action} post #{index}? {opt_text}</Confirm.render>
       """
     end
 

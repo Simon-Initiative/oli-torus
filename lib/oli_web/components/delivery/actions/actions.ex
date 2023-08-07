@@ -1,5 +1,5 @@
 defmodule OliWeb.Components.Delivery.Actions do
-  use Surface.LiveComponent
+  use Phoenix.LiveComponent
   use OliWeb.Common.Modal
 
   alias Lti_1p3.Tool.ContextRoles
@@ -9,17 +9,6 @@ defmodule OliWeb.Components.Delivery.Actions do
   alias Oli.Delivery.Paywall
   alias Oli.Delivery.Paywall.Payment
   alias OliWeb.Router.Helpers, as: Routes
-
-  prop(enrollment_info, :map, required: true)
-  prop(section, :map, required: true)
-  prop(user, :map, required: true)
-
-  data(enrollment, :map, default: %{})
-  data(user_role_data, :list, default: [])
-  data(user_role_id, :integer, default: nil)
-  data(has_payment, :boolean, default: false)
-  data(current_user, :map, default: %{})
-  data(is_admin, :boolean, default: false)
 
   @user_role_data [
     %{id: 3, name: :instructor, title: "Instructor"},
@@ -56,59 +45,72 @@ defmodule OliWeb.Components.Delivery.Actions do
      )}
   end
 
+  attr :enrollment_info, :map, required: true
+  attr :section, :map, required: true
+  attr :user, :map, required: true
+
   def render(assigns) do
-    ~F"""
-      <div id="student_actions" class="mx-10 mb-10 bg-white dark:bg-gray-800 shadow-sm px-14 py-7 flex flex-col gap-6">
-        <.live_component
-          module={OliWeb.Components.LiveModal}
-          id="unenroll_user_modal"
-          title="Unenroll student"
-          on_confirm={JS.push("unenroll", target: @myself)}
-        >
-          <div class="px-4">
-            <p>Are you sure you want to unenroll "{@user.name}" from the course "{@section.title}"?</p>
-          </div>
-        </.live_component>
-
-        <div class="flex flex-col sm:flex-row sm:items-end instructor_dashboard_table">
-          <h4 class="torus-h4 !py-0 mr-auto dark:text-white">Actions</h4>
+    ~H"""
+    <div
+      id="student_actions"
+      class="mx-10 mb-10 bg-white dark:bg-gray-800 shadow-sm px-14 py-7 flex flex-col gap-6"
+    >
+      <.live_component
+        module={OliWeb.Components.LiveModal}
+        id="unenroll_user_modal"
+        title="Unenroll student"
+        on_confirm={JS.push("unenroll", target: @myself)}
+      >
+        <div class="px-4">
+          <p>
+            Are you sure you want to unenroll "<%= @user.name %>" from the course "<%= @section.title %>"?
+          </p>
         </div>
+      </.live_component>
 
-        <div class="flex justify-between items-center">
-          <div class="flex flex-col">
-            <span class="dark:text-white">Change enrolled user role</span>
-            <span class="text-xs text-gray-400 dark:text-gray-950">Select the role to change for the user in this section.</span>
-          </div>
-          <form phx-change="display_confirm_modal" phx-target={@myself}>
-            <select class="torus-select pr-32" name="filter_by_role_id">
-              {#for elem <- @user_role_data}
-                <option selected={elem.id == @user_role_id} value={elem.id}>{elem.title}</option>
-              {/for}
-            </select>
-          </form>
-        </div>
-
-        {#if @section.requires_payment and @is_admin}
-          <div class="flex justify-between items-center px-14 py-8">
-            <div class="flex flex-col">
-              <span class="dark:text-black">Bypass payment</span>
-              <span class="text-xs text-gray-400 dark:text-gray-950">Apply bypass payment</span>
-            </div>
-              <button
-                class="torus-button flex justify-center primary h-9 w-48"
-                disabled={@has_payment}
-                phx-click="display_bypass_modal"
-                phx-target={@myself}
-              >
-                Apply Bypass Payment
-              </button>
-          </div>
-        {/if}
-
-        <div class="ml-auto">
-          <button phx-click={JS.push("open", target: "#unenroll_user_modal")} class="btn btn-danger">Unenroll</button>
-        </div>
+      <div class="flex flex-col sm:flex-row sm:items-end instructor_dashboard_table">
+        <h4 class="torus-h4 !py-0 mr-auto dark:text-white">Actions</h4>
       </div>
+
+      <div class="flex justify-between items-center">
+        <div class="flex flex-col">
+          <span class="dark:text-white">Change enrolled user role</span>
+          <span class="text-xs text-gray-400 dark:text-gray-950">
+            Select the role to change for the user in this section.
+          </span>
+        </div>
+        <form phx-change="display_confirm_modal" phx-target={@myself}>
+          <select class="torus-select pr-32" name="filter_by_role_id">
+            <%= for elem <- @user_role_data do %>
+              <option selected={elem.id == @user_role_id} value={elem.id}>
+                <%= elem.title %>
+              </option>
+            <% end %>
+          </select>
+        </form>
+      </div>
+      <%= if @section.requires_payment and @is_admin do %>
+        <div class="flex justify-between items-center px-14 py-8">
+          <div class="flex flex-col">
+            <span class="dark:text-black">Bypass payment</span>
+            <span class="text-xs text-gray-400 dark:text-gray-950">Apply bypass payment</span>
+          </div>
+          <button
+            class="torus-button flex justify-center primary h-9 w-48"
+            disabled={@has_payment}
+            phx-click="display_bypass_modal"
+            phx-target={@myself}
+          >
+            Apply Bypass Payment
+          </button>
+        </div>
+      <% end %>
+      <div class="ml-auto">
+        <button phx-click={JS.push("open", target: "#unenroll_user_modal")} class="btn btn-danger">
+          Unenroll
+        </button>
+      </div>
+    </div>
     """
   end
 
@@ -170,16 +172,27 @@ defmodule OliWeb.Components.Delivery.Actions do
         JS.push("cancel_confirm_modal",
           target: socket.assigns.myself,
           value: %{"previous_role_id" => socket.assigns.user_role_id}
-        )
+        ),
+      myself: socket.assigns.myself
     }
 
-    %{given_name: given_name, family_name: family_name} = socket.assigns.user
-
     modal = fn assigns ->
-      ~F"""
-        <Confirm {...@modal_assigns}>
-          Are you sure you want to change user role to {given_name} {family_name}?
-        </Confirm>
+      assigns =
+        Map.merge(assigns, %{
+          given_name: socket.assigns.user.given_name,
+          family_name: socket.assigns.user.family_name
+        })
+
+      ~H"""
+      <Confirm.render
+        title={@modal_assigns.title}
+        ok={@modal_assigns.ok}
+        myself={@modal_assigns.myself}
+        cancel={@modal_assigns.cancel}
+        id={@modal_assigns.id}
+      >
+        <%= "Are you sure you want to change user role to #{@given_name} #{@family_name}?" %>
+      </Confirm.render>
       """
     end
 
@@ -233,16 +246,27 @@ defmodule OliWeb.Components.Delivery.Actions do
       cancel:
         JS.push("cancel_confirm_modal",
           target: socket.assigns.myself
-        )
+        ),
+      myself: socket.assigns.myself
     }
 
-    %{given_name: given_name, family_name: family_name} = socket.assigns.user
-
     modal = fn assigns ->
-      ~F"""
-        <Confirm {...@modal_assigns}>
-          Are you sure you want to bypass payment for {given_name} {family_name}?
-        </Confirm>
+      assigns =
+        Map.merge(assigns, %{
+          given_name: socket.assigns.user.given_name,
+          family_name: socket.assigns.user.family_name
+        })
+
+      ~H"""
+      <Confirm.render
+        title={@modal_assigns.title}
+        ok={@modal_assigns.ok}
+        myself={@modal_assigns.myself}
+        cancel={@modal_assigns.cancel}
+        id={@modal_assigns.id}
+      >
+        <%= "Are you sure you want to bypass payment for #{@given_name} #{@family_name}?" %>
+      </Confirm.render>
       """
     end
 

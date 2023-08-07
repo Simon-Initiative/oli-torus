@@ -57,9 +57,9 @@ defmodule OliWeb.SystemMessageLive.IndexView do
         <button class="form-button btn btn-md btn-primary btn-block mt-3" type="submit">Create</button>
       </Form>
       {#if @show_confirm}
-        <Confirm title="Confirm Message" id="dialog" ok="broadcast_message" cancel="cancel_modal">
+        <Confirm.render title="Confirm Message" id="dialog" ok="broadcast_message" cancel="cancel_modal">
           Are you sure that you wish to <b>{if @message_will_be_displayed, do: "send", else: "hide"}</b> this message to all users in the system?
-        </Confirm>
+        </Confirm.render>
       {/if}
     """
   end

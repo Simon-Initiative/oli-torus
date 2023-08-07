@@ -1,25 +1,40 @@
 defmodule OliWeb.Common.Confirm do
-  use Surface.LiveComponent
+  use Phoenix.Component
 
-  prop title, :string, required: true
-  prop ok, :event, required: true
-  prop cancel, :event, required: true
-  slot default
+  attr :title, :string, required: true
+  attr :ok, :any, required: true
+  attr :cancel, :any, required: true
 
   def render(assigns) do
-    ~F"""
-    <div id={@id} class={"modal fade show"} tabindex="-1" role="dialog" aria-hidden="true" phx-hook="ModalLaunch">
+    ~H"""
+    <div
+      id={@id}
+      class="modal fade show"
+      tabindex="-1"
+      role="dialog"
+      aria-hidden="true"
+      phx-hook="ModalLaunch"
+    >
       <div class="modal-dialog modal-dialog-centered" role="document">
         <div class="modal-content">
           <div class="modal-header">
-            <h5 class="modal-title">{@title}</h5>
+            <h5 class="modal-title"><%= @title %></h5>
           </div>
           <div class="modal-body">
-            <#slot />
+            <%= render_slot(@inner_block) %>
           </div>
           <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" :on-click={@cancel}>Cancel</button>
-            <button type="button" class="btn btn-primary" data-bs-dismiss="modal" :on-click={@ok}>Ok</button>
+            <button
+              type="button"
+              class="btn btn-secondary"
+              data-bs-dismiss="modal"
+              phx-click={@cancel}
+            >
+              Cancel
+            </button>
+            <button type="button" class="btn btn-primary" data-bs-dismiss="modal" phx-click={@ok}>
+              Ok
+            </button>
           </div>
         </div>
       </div>

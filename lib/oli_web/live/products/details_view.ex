@@ -117,9 +117,9 @@ defmodule OliWeb.Products.DetailsView do
         </div>
       </div>
       {#if @show_confirm}
-        <Confirm title="Confirm Duplication" id="dialog" ok="duplicate" cancel="cancel_modal">
+        <Confirm.render title="Confirm Duplication" id="dialog" ok="duplicate" cancel="cancel_modal">
           Are you sure that you wish to duplicate this product?
-        </Confirm>
+        </Confirm.render>
       {/if}
     </div>
     """

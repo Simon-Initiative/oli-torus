@@ -71,9 +71,9 @@ defmodule OliWeb.Sections.InviteView do
     {/if}
 
     {#if @show_confirm}
-      <Confirm title="Confirm Deletion" id="dialog" ok="delete" cancel="cancel_modal">
+      <Confirm.render title="Confirm Deletion" id="dialog" ok="delete" cancel="cancel_modal">
         Are you sure that you wish to delete this course section invitation?
-      </Confirm>
+      </Confirm.render>
     {/if}
     </div>
     """
