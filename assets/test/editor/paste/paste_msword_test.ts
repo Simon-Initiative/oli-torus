@@ -1,5 +1,6 @@
 import { Editor } from 'slate';
 import { onHTMLPaste } from 'components/editing/editor/paste/onHtmlPaste';
+import { mswordListExample } from './mswordListExample';
 import { msWordTableExample } from './mswordTableExample';
 import { mockEditor, mockInsertFragment, simulateEvent } from './paste_test_utils';
 
@@ -465,6 +466,79 @@ describe('on MSWord paste', () => {
           },
         ],
       },
+    ]);
+  });
+
+  it('should string multiple msword ordered lists together', () => {
+    const event = simulateEvent('', html(mswordListExample));
+    onHTMLPaste(event, editor);
+    console.info(JSON.stringify(insertFragmentSpy.mock.calls[0][1], null, 2));
+    expect(event.preventDefault).toHaveBeenCalledTimes(1);
+    expect(insertFragmentSpy).toHaveBeenCalledWith(editor, [
+      expect.any(Object),
+      {
+        type: 'ol',
+        id: expect.any(String),
+        start: '1',
+        children: [
+          {
+            type: 'li',
+            id: expect.any(String),
+            children: [
+              {
+                type: 'p',
+                id: expect.any(String),
+                children: [
+                  {
+                    text: 'Here is a numbered list',
+                  },
+                  {
+                    text: ' ',
+                  },
+                ],
+              },
+            ],
+          },
+          {
+            type: 'li',
+            id: expect.any(String),
+            children: [
+              {
+                type: 'p',
+                id: expect.any(String),
+                children: [
+                  {
+                    text: 'With three items',
+                  },
+                  {
+                    text: ' ',
+                  },
+                ],
+              },
+            ],
+          },
+          {
+            type: 'li',
+            id: expect.any(String),
+            children: [
+              {
+                type: 'p',
+                id: expect.any(String),
+                children: [
+                  {
+                    text: 'In it',
+                  },
+                  {
+                    text: ' ',
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      },
+
+      expect.any(Object),
     ]);
   });
 });

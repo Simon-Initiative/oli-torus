@@ -415,8 +415,8 @@ export const combineOrderedLists = (fragment: (ModelElement | Text)[]): (ModelEl
   for (const node of fragment) {
     if (Element.isElement(node) && node.type === 'ol') {
       if (lastList && lastList.type === 'ol') {
-        const lastStart = (lastList as any).start || 1;
-        const thisStart = (node as any).start || 1;
+        const lastStart = parseInt((lastList as any).start || '1', 10);
+        const thisStart = parseInt((node as any).start || '1', 10);
         if (thisStart === lastStart + lastList.children.length) {
           lastList.children.push(...node.children);
           continue;
@@ -438,6 +438,7 @@ export const onHTMLPaste = (event: React.ClipboardEvent<HTMLDivElement>, editor:
   const pastedHtml = event.clipboardData?.getData('text/html')?.trim();
 
   if (!pastedHtml) return;
+  //debugger;
   try {
     const parsed = new DOMParser().parseFromString(pastedHtml, 'text/html');
     const [body] = Array.from(parsed.getElementsByTagName('body'));
@@ -446,9 +447,12 @@ export const onHTMLPaste = (event: React.ClipboardEvent<HTMLDivElement>, editor:
     if (!fragment) return;
     if (!Array.isArray(fragment)) fragment = [fragment];
     event.preventDefault();
+
+    // Some post-processing to clean up the fragment:
     fragment = removeEmptyTextNodesNextToBlockNodes(fragment as (ModelElement | Text)[]);
     fragment = reparentNestedTables(fragment);
     fragment = combineOrderedLists(fragment);
+
     Transforms.insertFragment(editor, fragment);
   } catch (e) {
     console.error('Could not parse pasted html', e);
