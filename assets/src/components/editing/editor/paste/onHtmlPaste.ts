@@ -141,6 +141,11 @@ const spanWithStyleRule = (styleName: string, styleValue: string[] | string | St
 
 // These deserialize tags that result in marks being applied to text nodes.
 const TEXT_TAGS: PartialTagDeserializer[] = [
+  serializer(
+    'term',
+    allRules(tagNameRule('SPAN'), attributeEqualsRule('class', 'term')),
+    addMarkAction('term'),
+  ),
   serializer('code', tagNameRule('CODE'), addMarkAction('code')),
   serializer(
     'del',
@@ -339,11 +344,55 @@ const removeEmptyTextNodesNextToBlockNodes = (
   });
 };
 
+const removeNestedTables = (
+  fragment: (ModelElement | Text)[],
+): {
+  fragment: (ModelElement | Text)[];
+  removedTables: ModelElement[];
+} => {
+  const removedTables = [];
+  const nonTables = [];
+
+  for (const node of fragment) {
+    if (Element.isElement(node) && node.type === 'table') {
+      removedTables.push(node);
+    } else {
+      if (Element.isElement(node) && node.children) {
+        const { fragment, removedTables: childRemovedTables } = removeNestedTables(node.children);
+        (node as any).children = fragment;
+        removedTables.push(...childRemovedTables);
+      }
+      nonTables.push(node);
+    }
+  }
+
+  return { fragment: nonTables, removedTables };
+};
+
+/* Torus doesn't support nested tables, so we want to extract inner tables and put them next to their parent table.
+   This way, we don't lose the structure of the inner table.
+*/
+export const reparentNestedTables = (
+  fragment: (ModelElement | Text)[],
+): (ModelElement | Text)[] => {
+  const out = [];
+  for (const node of fragment) {
+    if (Element.isElement(node) && node.type === 'table') {
+      const { fragment: nonTables, removedTables } = removeNestedTables(node.children);
+      (node as any).children = nonTables;
+      out.push(node, ...removedTables);
+    } else {
+      out.push(node);
+    }
+  }
+  return out;
+};
+
 export const onHTMLPaste = (event: React.ClipboardEvent<HTMLDivElement>, editor: Editor) => {
   const pastedHtml = event.clipboardData?.getData('text/html')?.trim();
 
   if (!pastedHtml) return;
-  debugger;
+  //debugger;
   try {
     const parsed = new DOMParser().parseFromString(pastedHtml, 'text/html');
     const [body] = Array.from(parsed.getElementsByTagName('body'));
@@ -353,6 +402,7 @@ export const onHTMLPaste = (event: React.ClipboardEvent<HTMLDivElement>, editor:
     if (!Array.isArray(fragment)) fragment = [fragment];
     event.preventDefault();
     fragment = removeEmptyTextNodesNextToBlockNodes(fragment as (ModelElement | Text)[]);
+    fragment = reparentNestedTables(fragment);
     Transforms.insertFragment(editor, fragment);
   } catch (e) {
     console.error('Could not parse pasted html', e);

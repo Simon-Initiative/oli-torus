@@ -1,6 +1,6 @@
 import { Editor } from 'slate';
-import { msWordTableExample } from 'components/editing/editor/paste/mswordTableExample';
 import { onHTMLPaste } from 'components/editing/editor/paste/onHtmlPaste';
+import { msWordTableExample } from './mswordTableExample';
 import { mockEditor, mockInsertFragment, simulateEvent } from './paste_test_utils';
 
 const html = (fragment: string) => `<html><body>${fragment}</body></html>`;
