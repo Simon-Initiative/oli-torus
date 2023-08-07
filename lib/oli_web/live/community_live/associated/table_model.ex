@@ -73,7 +73,7 @@ defmodule OliWeb.CommunityLive.Associated.TableModel do
     do: {fn t -> get_field(:title, t) end, sort_order}
 
   def render_select_column(assigns, item, _) do
-    assings = Map.merge(assigns, %{item: item})
+    assigns = Map.merge(assigns, %{item: item})
 
     ~H"""
     <button
@@ -88,7 +88,7 @@ defmodule OliWeb.CommunityLive.Associated.TableModel do
   end
 
   def render_remove_column(assigns, item, _) do
-    assings = Map.merge(assigns, %{item: item})
+    assigns = Map.merge(assigns, %{item: item})
 
     ~H"""
     <button class="btn btn-primary" phx-click="remove" phx-value-id={@item.id}>Remove</button>
