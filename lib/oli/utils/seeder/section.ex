@@ -84,19 +84,19 @@ defmodule Oli.Utils.Seeder.Section do
     |> tag(tags[:section_tag], section)
   end
 
-  def create_and_enroll_learner(seeds, section, user_attrs, tags \\ []) do
-    user_tag = tags[:user_tag] || random_tag()
+  def create_and_enroll_learner(seeds, section, user_attrs \\ %{}, tags \\ []) do
+    user_tag = tags[:user_tag] || random_tag("user")
 
     seeds
-    |> create_user(user_attrs, tags)
+    |> create_user(user_attrs, Keyword.put(tags, :user_tag, user_tag))
     |> enroll_as_learner(section, ref(user_tag))
   end
 
-  def create_and_enroll_instructor(seeds, section, user_attrs, tags \\ []) do
-    user_tag = tags[:user_tag] || random_tag()
+  def create_and_enroll_instructor(seeds, section, user_attrs \\ %{}, tags \\ []) do
+    user_tag = tags[:user_tag] || random_tag("user")
 
     seeds
-    |> create_user(user_attrs, tags)
+    |> create_user(user_attrs, Keyword.put(tags, :user_tag, user_tag))
     |> enroll_as_instructor(section, ref(user_tag))
   end
 

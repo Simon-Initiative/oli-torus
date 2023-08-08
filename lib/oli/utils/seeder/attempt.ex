@@ -6,8 +6,9 @@ defmodule Oli.Utils.Seeder.Attempt do
   alias Oli.Delivery.Attempts.ActivityLifecycle.Evaluate
   alias Oli.Delivery.Attempts.PageLifecycle.AttemptState
   alias Oli.Delivery.Attempts.ActivityLifecycle
+  alias Oli.Delivery.Page.PageContext
 
-  def visit_unscored_page(
+  def visit_page(
         seeds,
         page_revision,
         section,
@@ -18,25 +19,19 @@ defmodule Oli.Utils.Seeder.Attempt do
     [page_revision, section, user, datashop_session_id] =
       unpack(seeds, [page_revision, section, user, datashop_session_id])
 
-    effective_settings = %Oli.Delivery.Settings.Combined{}
+    page_context =
+      PageContext.create_for_visit(section, page_revision.slug, user, datashop_session_id)
 
-    Core.track_access(page_revision.resource_id, section.id, user.id)
-
-    {:ok,
-     {:in_progress,
-      %AttemptState{resource_attempt: resource_attempt, attempt_hierarchy: attempt_hierarchy}}} =
-      PageLifecycle.visit(
-        page_revision,
-        section.slug,
-        datashop_session_id,
-        user,
-        effective_settings,
-        &Oli.Delivery.ActivityProvider.provide/6
-      )
+    resource_attempt =
+      case page_context.resource_attempts do
+        [resource_attempt | _] -> resource_attempt
+        _ -> nil
+      end
 
     seeds
     |> tag(tags[:resource_attempt_tag], resource_attempt)
-    |> tag(tags[:attempt_hierarchy_tag], attempt_hierarchy)
+    |> tag(tags[:attempt_hierarchy_tag], page_context.latest_attempts)
+    |> tag(tags[:page_context_tag], page_context)
   end
 
   def start_scored_assessment(
@@ -52,7 +47,8 @@ defmodule Oli.Utils.Seeder.Attempt do
 
     Core.track_access(page_revision.resource_id, section.id, user.id)
 
-    effective_settings = Oli.Delivery.Settings.get_combined_settings(page_revision, section.id, user.id)
+    effective_settings =
+      Oli.Delivery.Settings.get_combined_settings(page_revision, section.id, user.id)
 
     {:ok, %AttemptState{resource_attempt: resource_attempt, attempt_hierarchy: attempt_hierarchy}} =
       PageLifecycle.start(

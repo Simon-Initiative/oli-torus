@@ -960,6 +960,66 @@ defmodule Oli.Delivery.Sections do
     change_section(Map.merge(section, %{open_and_free: true}), attrs)
   end
 
+  @doc """
+  Returns the set of all students with :context_learner role in the given section.
+  """
+  def fetch_students(section_slug) do
+    list_enrollments(section_slug)
+    |> Enum.filter(fn e ->
+      ContextRoles.contains_role?(e.context_roles, ContextRoles.get_role(:context_learner))
+    end)
+    |> Enum.map(fn e -> e.user end)
+  end
+
+  @doc """
+  Returns the set of all instructors with :context_instructor role in the given section.
+  """
+  def fetch_instructors(section_slug) do
+    list_enrollments(section_slug)
+    |> Enum.filter(fn e ->
+      ContextRoles.contains_role?(e.context_roles, ContextRoles.get_role(:context_instructor))
+    end)
+    |> Enum.map(fn e -> e.user end)
+  end
+
+  @doc """
+  Returns all scored pages for the given section.
+  """
+  def fetch_scored_pages(section_slug), do: fetch_all_pages(section_slug, true)
+
+  @doc """
+  Returns all unscored pages for the given section.
+  """
+  def fetch_unscored_pages(section_slug), do: fetch_all_pages(section_slug, false)
+
+  def fetch_all_pages(section_slug, graded \\ nil) do
+    maybe_filter_by_graded =
+      case graded do
+        nil -> true
+        graded -> dynamic([_, _, _, _, rev], rev.graded == ^graded)
+      end
+
+    SectionResource
+    |> join(:inner, [sr], s in Section, on: sr.section_id == s.id)
+    |> join(:inner, [sr, s], spp in SectionsProjectsPublications,
+      on: spp.section_id == s.id and spp.project_id == sr.project_id
+    )
+    |> join(:inner, [sr, _, spp], pr in PublishedResource,
+      on: pr.publication_id == spp.publication_id and pr.resource_id == sr.resource_id
+    )
+    |> join(:inner, [sr, _, _, pr], rev in Revision, on: rev.id == pr.revision_id)
+    |> where(
+      [sr, s, _, _, rev],
+      s.slug == ^section_slug and
+        rev.deleted == false and
+        rev.resource_type_id == ^ResourceType.get_id_by_type("page")
+    )
+    |> where(^maybe_filter_by_graded)
+    |> order_by([_, _, _, _, rev], asc: rev.resource_id)
+    |> select([_, _, _, _, rev], rev)
+    |> Repo.all()
+  end
+
   # Creates a 'hierarchy definition' strictly from a a project and the recursive
   # definition of containers starting with the root revision container.  This hierarchy
   # definition is a map of resource ids to a list of the child resource ids, effectively
