@@ -153,8 +153,6 @@ defmodule OliWeb.Components.Common do
   slot(:inner_block)
 
   def input(%{field: %Phoenix.HTML.FormField{} = field} = assigns) do
-    IO.inspect(field)
-
     assigns
     |> assign(field: nil, id: assigns.id || field.id)
     |> assign(:errors, field.errors)
@@ -252,7 +250,7 @@ defmodule OliWeb.Components.Common do
   @doc """
   Generates a generic error message.
   """
-  slot :inner_block, required: true
+  slot(:inner_block, required: true)
 
   def error(assigns) do
     ~H"""
@@ -265,9 +263,9 @@ defmodule OliWeb.Components.Common do
   @doc """
   Renders a label.
   """
-  attr :for, :string, default: nil
-  attr :if, :boolean, default: true
-  slot :inner_block, required: true
+  attr(:for, :string, default: nil)
+  attr(:if, :boolean, default: true)
+  slot(:inner_block, required: true)
 
   def label(assigns) do
     ~H"""
