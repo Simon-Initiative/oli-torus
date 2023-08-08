@@ -67,6 +67,7 @@ export const CustomDnDComponent: React.FC = () => {
 
   const uiState = useSelector((state: ActivityDeliveryState) => state);
   const [focusedPart, setFocusedPart] = useState<string | null>(null);
+  const [working, setWorking] = useState(false);
   const [resetListener, setResetListener] = useState<ResetListener | null>(null);
   const dispatch = useDispatch();
   const { getState } = useStore();
@@ -114,11 +115,13 @@ export const CustomDnDComponent: React.FC = () => {
     const part = findPart(partId);
     if (part === null) console.log('part not found! id=' + partId);
     else {
+      setWorking(true);
       await dispatch(resetPart(uiState.attemptState.attemptGuid, part.attemptGuid, onResetPart));
+      setWorking(false);
     }
   };
 
-  const onSubmit = (targetId: string, draggableId: string) => {
+  const onSubmit = async (targetId: string, draggableId: string) => {
     const [partId, choiceId] =
       partIdBearers === 'targets' ? [targetId, draggableId] : [draggableId, targetId];
     const response = partId + '_' + choiceId;
@@ -127,8 +130,9 @@ export const CustomDnDComponent: React.FC = () => {
     const state = getState();
     const part = state.attemptState.parts.find((p: any) => p.partId === partId);
     if (part !== undefined) {
+      setWorking(true);
       if (part.dateEvaluated !== null) {
-        dispatch(
+        await dispatch(
           resetAndSubmitPart(
             uiState.attemptState.attemptGuid,
             part.attemptGuid,
@@ -138,7 +142,7 @@ export const CustomDnDComponent: React.FC = () => {
           ),
         );
       } else {
-        dispatch(
+        await dispatch(
           submitPart(
             uiState.attemptState.attemptGuid,
             part.attemptGuid,
@@ -147,6 +151,7 @@ export const CustomDnDComponent: React.FC = () => {
           ),
         );
       }
+      setWorking(false);
     }
   };
 
@@ -159,7 +164,7 @@ export const CustomDnDComponent: React.FC = () => {
         <DragCanvas
           model={model}
           initialState={initialState}
-          editMode={editMode}
+          editMode={editMode && !working}
           activityAttemptGuid={uiState.attemptState.attemptGuid}
           onRegisterResetCallback={(listener) => {
             setResetListener(() => listener);
@@ -170,26 +175,41 @@ export const CustomDnDComponent: React.FC = () => {
         />
         <GradedPointsConnected />
 
-        <ResetButtonConnected
-          onReset={() => {
-            if (resetListener !== null) {
-              // This informs the non-React DragCanvas impl to move all draggables
-              // back to their original location
-              resetListener();
-            }
+        {working || (
+          <ResetButtonConnected
+            onReset={async () => {
+              if (resetListener !== null) {
+                // This informs the non-React DragCanvas impl to move all draggables
+                // back to their original location
+                resetListener();
+              }
 
-            const partInputs = uiState.attemptState.parts.reduce((m: any, p) => {
-              m[p.partId] = '';
-              return m;
-            }, {});
-            dispatch(resetAction(onResetActivity, partInputs));
-          }}
-        />
+              const partInputs = uiState.attemptState.parts.reduce((m: any, p) => {
+                m[p.partId] = '';
+                return m;
+              }, {});
+              setWorking(true);
+              await dispatch(resetAction(onResetActivity, partInputs));
+              setWorking(false);
+            }}
+          />
+        )}
 
-        <FocusedFeedback focusedPart={focusedPart} />
+        <div className="h-7 text-left">
+          {working || <FocusedFeedback focusedPart={focusedPart} />}
+          {working && <WorkingMessage />}
+        </div>
         <FocusedHints focusedPart={focusedPart} />
       </div>
     </div>
+  );
+};
+
+const WorkingMessage: React.FC = () => {
+  return (
+    <span>
+      <i className="fas fa-circle-notch fa-spin fa-1x fa-fw" /> Working...
+    </span>
   );
 };
 

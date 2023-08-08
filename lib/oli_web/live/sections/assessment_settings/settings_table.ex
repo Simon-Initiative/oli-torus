@@ -329,7 +329,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
            assessment.resource_id,
            [
              {:end_date, end_date},
-             {:scheduling_type, :scheduling_type}
+             {:scheduling_type, scheduling_type}
            ],
            false
          )
