@@ -1,5 +1,4 @@
 import { Editor, Element, Text, Transforms } from 'slate';
-import { copy } from 'typedoc/dist/lib/utils';
 import { ModelElement } from 'data/content/model/elements/types';
 import { ModelTypes, schema } from 'data/content/model/schema';
 import {
