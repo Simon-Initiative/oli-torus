@@ -238,7 +238,7 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
         </div>
 
         <div class="p-5">
-          <ActiveUsers users={@active_users} />
+          <ActiveUsers.render users={@active_users} />
         </div>
       </div>
     </div>
