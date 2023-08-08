@@ -19,23 +19,25 @@ export const normalize = (
         // so deletion removes the inner block and causes validation errors
         if (node.type === 'p' && parent.type === 'code') {
           Transforms.removeNodes(editor, { at: parentPath });
-          console.warn('Normalizing content: Special case code, removing node', node.type);
+          console.warn(`Normalizing content: Special case code, removing node ${node.type}`);
           return true;
         }
 
         Transforms.unwrapNodes(editor, { at: path });
-        console.warn('Normalizing content: Invalid child type for parent', node.type, parent.type);
+        console.warn(
+          `Normalizing content: Invalid child type for parent ${parent.type} > ${node.type}`,
+        );
         return true;
       }
     }
+  }
 
-    // Check the top-level constraints
-    if (Editor.isBlock(editor, node) && !schema[node.type].isTopLevel) {
-      if (Editor.isEditor(parent)) {
-        Transforms.unwrapNodes(editor, { at: path });
-        console.warn('Normalizing content: Unwrapping top level block node', node.type);
-        return true;
-      }
+  // Check the top-level constraints
+  if (Element.isElement(node) && Editor.isBlock(editor, node) && !schema[node.type].isTopLevel) {
+    if (Editor.isEditor(parent)) {
+      Transforms.unwrapNodes(editor, { at: path });
+      console.warn('Normalizing content: Unwrapping top level block node ' + node.type);
+      return true;
     }
   }
   return false;

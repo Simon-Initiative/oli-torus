@@ -78,7 +78,7 @@ type SubElements = DefinitionMeaning | Pronunciation | DefinitionTranslation | D
 export type TableCell = TableHeader | TableData | TableConjugation;
 
 type HeadingChildren = Text[];
-export interface Paragraph extends SlateElement<(InputRef | Text | ImageBlock)[]> {
+export interface Paragraph extends SlateElement<(InputRef | Text | ImageBlock | Inline)[]> {
   type: 'p';
 }
 

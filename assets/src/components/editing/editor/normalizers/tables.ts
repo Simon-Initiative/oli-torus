@@ -21,7 +21,7 @@ export const getColumnSpan = (cells: TableCell[]): number =>
 export const getEffectiveColumns = (row: TableRow, table: Table): number => {
   const rowIndex = table.children.indexOf(row);
   if (rowIndex === -1) {
-    console.error("Tried to getEffectiveColumns for a row that doesn't belong to the table");
+    console.warn("Tried to getEffectiveColumns for a row that doesn't belong to the table");
     return 0;
   }
 

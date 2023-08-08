@@ -1,4 +1,3 @@
-import { Text } from 'slate';
 import {
   AllModelElements,
   Audio,
@@ -6,6 +5,8 @@ import {
   Callout,
   CalloutInline,
   Citation,
+  CodeLine,
+  CodeV1,
   CodeV2,
   CommandButton,
   Conjugation,
@@ -78,11 +79,18 @@ export const Model = {
 
   tr: (children: TableCell[]) => create<TableRow>({ type: 'tr', children }),
 
-  table: (children: TableRow[]) => create<Table>({ type: 'table', children }),
+  table: (children: TableRow[] = []) => create<Table>({ type: 'table', children }),
 
-  li: (text = '') => create<ListItem>({ type: 'li', children: [Model.p(text)] }),
+  li: (text: string | ListItem['children'] = '') => {
+    if (typeof text === 'string') {
+      return create<ListItem>({ type: 'li', children: [Model.p(text)] });
+    }
 
-  ol: () => create<OrderedList>({ type: 'ol', children: [Model.li()] }),
+    return create<ListItem>({ type: 'li', children: text });
+  },
+
+  ol: (children?: OrderedList['children']) =>
+    create<OrderedList>({ type: 'ol', children: children || [Model.li()] }),
 
   ul: (children?: ListChildren | undefined) =>
     create<UnorderedList>({ type: 'ul', children: children || [Model.li()] }),
@@ -126,8 +134,8 @@ export const Model = {
 
   dialogSpeaker: (name: string) => ({ name, image: '', id: guid() }),
 
-  dialogLine: (speaker: string) =>
-    create<DialogLine>({ type: 'dialog_line', speaker, children: [Model.p()] }),
+  dialogLine: (speaker: string, text = '') =>
+    create<DialogLine>({ type: 'dialog_line', speaker, children: [Model.p(text)] }),
 
   dialog: (title = '') =>
     create<Dialog>({
@@ -165,7 +173,7 @@ export const Model = {
 
   audio: (src?: string) => create<Audio>({ type: 'audio', src }),
 
-  p: (children?: (InputRef | Text)[] | string) => {
+  p: (children?: Paragraph['children'] | string) => {
     if (!children) return create<Paragraph>({ type: 'p' });
     if (Array.isArray(children)) return create<Paragraph>({ type: 'p', children });
     return create<Paragraph>({ type: 'p', children: [{ text: children }] });
@@ -176,11 +184,20 @@ export const Model = {
       type: 'blockquote',
     }),
 
+  codeLine: (text: string) => create<CodeLine>({ type: 'code_line', children: [{ text }] }),
+
   code: (code = '') =>
     create<CodeV2>({
       type: 'code',
       code,
       language: 'Text',
+    }),
+
+  codeV1: (code = '') =>
+    create<CodeV1>({
+      type: 'code',
+      language: 'Text',
+      children: [Model.codeLine(code)],
     }),
 
   ecl: (code = '') =>

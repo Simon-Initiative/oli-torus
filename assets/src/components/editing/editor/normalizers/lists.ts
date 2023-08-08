@@ -13,7 +13,7 @@ export const normalize = (
     const allInlineChildren = node.children.every(
       (child) => Editor.isInline(editor, child) || Text.isText(child),
     );
-    if (allInlineChildren) {
+    if (node.children.length > 0 && allInlineChildren) {
       console.warn(
         'Normalizing content: Had an LI with all inline elements. Wrapping children in paragraph',
       );
@@ -26,20 +26,20 @@ export const normalize = (
       } as ListItem;
 
       Transforms.insertNodes(editor, newLI, { at: path });
+      return true;
     }
   }
 
   const [parent] = Editor.parent(editor, path);
   if (Element.isElement(parent)) {
-    const config = schema[parent.type];
+    const parentConfig = schema[parent.type];
     if (['ol', 'ul'].includes(parent.type)) {
       if (Text.isText(node)) {
         Transforms.wrapNodes(editor, Model.li(), { at: path });
         console.warn('Normalizing content: Wrapping text in list with list item');
         return true;
       }
-      if (Element.isElement(node) && !config.validChildren[node.type]) {
-        //Transforms.setNodes(editor, { type: 'li' }, { at: path });
+      if (Element.isElement(node) && !parentConfig.validChildren[node.type]) {
         Transforms.wrapNodes(editor, Model.li(), { at: path });
         console.warn('Normalizing content: Wrapping node in list to list item type');
         return true;
