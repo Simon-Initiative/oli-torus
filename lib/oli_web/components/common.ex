@@ -6,8 +6,10 @@ defmodule OliWeb.Components.Common do
     <main role="main" class="container mx-auto">
       <div class="alert alert-danger mt-3" role="alert">
         <h4 class="alert-heading">Not Found</h4>
-        <p>The page you are trying to access does not exist. If you think this is an error, please contact support.</p>
-        <hr>
+        <p>
+          The page you are trying to access does not exist. If you think this is an error, please contact support.
+        </p>
+        <hr />
         <p class="mb-0"><b>Tip:</b> Check the URL or link and try again.</p>
       </div>
     </main>
@@ -18,19 +20,18 @@ defmodule OliWeb.Components.Common do
   Badge component
   """
   attr(:variant, :atom, default: nil, values: [:primary, :info, :success, :warning, :danger, nil])
-  attr :class, :string, default: nil
+  attr(:class, :string, default: nil)
   slot(:inner_block, required: true)
 
   def badge(assigns) do
     ~H"""
-      <span
-        class={[
-          "text-xs font-medium mr-2 px-2.5 py-0.5 rounded border uppercase",
-          badge_variant_classes(@variant),
-          @class
-        ]}>
-        <%= render_slot(@inner_block) %>
-      </span>
+    <span class={[
+      "text-xs font-medium mr-2 px-2.5 py-0.5 rounded border uppercase",
+      badge_variant_classes(@variant),
+      @class
+    ]}>
+      <%= render_slot(@inner_block) %>
+    </span>
     """
   end
 
@@ -54,11 +55,11 @@ defmodule OliWeb.Components.Common do
       <.button phx-click="go" class="ml-2">Send!</.button>
   """
   attr(:variant, :atom, default: nil, values: [:primary, :info, :success, :warning, :danger, nil])
-  attr :type, :string, default: nil
-  attr :class, :string, default: nil
-  attr :rest, :global, include: ~w(disabled form name value)
+  attr(:type, :string, default: nil)
+  attr(:class, :string, default: nil)
+  attr(:rest, :global, include: ~w(disabled form name value))
 
-  slot :inner_block, required: true
+  slot(:inner_block, required: true)
 
   def button(assigns) do
     ~H"""
@@ -78,13 +79,201 @@ defmodule OliWeb.Components.Common do
 
   defp button_variant_classes(variant) do
     case variant do
-      :primary -> "text-white bg-blue-500 hover:bg-blue-600 active:bg-blue-700 focus:ring-2 focus:ring-blue-400 dark:bg-blue-600 dark:hover:bg-blue-500 dark:active:bg-blue-400 focus:outline-none dark:focus:ring-blue-700"
-      :info -> "text-white bg-gray-500 hover:bg-gray-600 active:bg-gray-700 focus:ring-2 focus:ring-gray-400 dark:bg-gray-600 dark:hover:bg-gray-500 dark:active:bg-gray-400 focus:outline-none dark:focus:ring-gray-700"
-      :success -> "text-white bg-green-500 hover:bg-green-600 active:bg-green-700 focus:ring-2 focus:ring-green-400 dark:bg-green-600 dark:hover:bg-green-500 dark:active:bg-green-400 focus:outline-none dark:focus:ring-green-700"
-      :warning -> "text-white bg-yellow-500 hover:bg-yellow-600 active:bg-yellow-700 focus:ring-2 focus:ring-yellow-400 dark:bg-yellow-600 dark:hover:bg-yellow-500 dark:active:bg-yellow-400 focus:outline-none dark:focus:ring-yellow-700"
-      :danger -> "text-white bg-red-500 hover:bg-red-600 active:bg-red-700 focus:ring-2 focus:ring-red-400 dark:bg-red-600 dark:hover:bg-red-500 dark:active:bg-red-400 focus:outline-none dark:focus:ring-red-700"
-      _ -> ""
+      :primary ->
+        "text-white bg-blue-500 hover:bg-blue-600 active:bg-blue-700 focus:ring-2 focus:ring-blue-400 dark:bg-blue-600 dark:hover:bg-blue-500 dark:active:bg-blue-400 focus:outline-none dark:focus:ring-blue-700"
+
+      :info ->
+        "text-white bg-gray-500 hover:bg-gray-600 active:bg-gray-700 focus:ring-2 focus:ring-gray-400 dark:bg-gray-600 dark:hover:bg-gray-500 dark:active:bg-gray-400 focus:outline-none dark:focus:ring-gray-700"
+
+      :success ->
+        "text-white bg-green-500 hover:bg-green-600 active:bg-green-700 focus:ring-2 focus:ring-green-400 dark:bg-green-600 dark:hover:bg-green-500 dark:active:bg-green-400 focus:outline-none dark:focus:ring-green-700"
+
+      :warning ->
+        "text-white bg-yellow-500 hover:bg-yellow-600 active:bg-yellow-700 focus:ring-2 focus:ring-yellow-400 dark:bg-yellow-600 dark:hover:bg-yellow-500 dark:active:bg-yellow-400 focus:outline-none dark:focus:ring-yellow-700"
+
+      :danger ->
+        "text-white bg-red-500 hover:bg-red-600 active:bg-red-700 focus:ring-2 focus:ring-red-400 dark:bg-red-600 dark:hover:bg-red-500 dark:active:bg-red-400 focus:outline-none dark:focus:ring-red-700"
+
+      _ ->
+        ""
     end
   end
 
+  @doc """
+  Renders an input with label and error messages.
+
+  A `Phoenix.HTML.FormField` may be passed as argument,
+  which is used to retrieve the input name, id, and values.
+  Otherwise all attributes may be passed explicitly.
+
+  ## Types
+
+  This function accepts all HTML input types, considering that:
+
+    * You may also set `type="select"` to render a `<select>` tag
+
+    * `type="checkbox"` is used exclusively to render boolean values
+
+    * For live file uploads, see `Phoenix.Component.live_file_input/1`
+
+  See https://developer.mozilla.org/en-US/docs/Web/HTML/Element/input
+  for more information.
+
+  ## Examples
+
+      <.input field={@form[:email]} type="email" />
+      <.input name="my-input" errors={["oh no!"]} />
+  """
+  attr(:id, :any, default: nil)
+  attr(:name, :any)
+  attr(:label, :string, default: nil)
+  attr(:value, :any)
+
+  attr(:type, :string,
+    default: "text",
+    values: ~w(checkbox color date datetime-local email file hidden month number password
+               range radio search select tel text textarea time url week)
+  )
+
+  attr(:field, Phoenix.HTML.FormField,
+    doc: "a form field struct retrieved from the form, for example: @form[:email]"
+  )
+
+  attr(:errors, :list, default: [])
+  attr(:checked, :boolean, doc: "the checked flag for checkbox inputs")
+  attr(:prompt, :string, default: nil, doc: "the prompt for select inputs")
+  attr(:options, :list, doc: "the options to pass to Phoenix.HTML.Form.options_for_select/2")
+  attr(:multiple, :boolean, default: false, doc: "the multiple flag for select inputs")
+
+  attr(:rest, :global,
+    include: ~w(accept autocomplete capture cols disabled form list max maxlength min minlength
+                multiple pattern placeholder readonly required rows size step)
+  )
+
+  slot(:inner_block)
+
+  def input(%{field: %Phoenix.HTML.FormField{} = field} = assigns) do
+    IO.inspect(field)
+
+    assigns
+    |> assign(field: nil, id: assigns.id || field.id)
+    |> assign(:errors, field.errors)
+    |> assign_new(:name, fn -> if assigns.multiple, do: field.name <> "[]", else: field.name end)
+    |> assign_new(:value, fn -> field.value end)
+    |> input()
+  end
+
+  def input(%{type: "checkbox", value: value} = assigns) do
+    assigns =
+      assign_new(assigns, :checked, fn -> Phoenix.HTML.Form.normalize_value("checkbox", value) end)
+
+    ~H"""
+    <div phx-feedback-for={@name}>
+      <label class="flex items-center gap-4 text-sm leading-6 text-zinc-600">
+        <input type="hidden" name={@name} value="false" />
+        <input
+          type="checkbox"
+          id={@id}
+          name={@name}
+          value="true"
+          checked={@checked}
+          class="rounded border-zinc-300 text-zinc-900 focus:ring-0"
+          {@rest}
+        />
+        <%= @label %>
+      </label>
+      <.error :for={msg <- @errors}><%= msg %></.error>
+    </div>
+    """
+  end
+
+  def input(%{type: "select"} = assigns) do
+    ~H"""
+    <div phx-feedback-for={@name}>
+      <.label :if={@label} for={@id}><%= @label %></.label>
+      <select
+        id={@id}
+        name={@name}
+        class="mt-2 block w-full rounded-md border border-gray-300 bg-white shadow-sm focus:border-zinc-400 focus:ring-0 sm:text-sm"
+        multiple={@multiple}
+        {@rest}
+      >
+        <option :if={@prompt} value=""><%= @prompt %></option>
+        <%= Phoenix.HTML.Form.options_for_select(@options, @value) %>
+      </select>
+      <.error :for={msg <- @errors}><%= msg %></.error>
+    </div>
+    """
+  end
+
+  def input(%{type: "textarea"} = assigns) do
+    ~H"""
+    <div phx-feedback-for={@name}>
+      <.label :if={@label} for={@id}><%= @label %></.label>
+      <textarea
+        id={@id}
+        name={@name}
+        class={[
+          "mt-2 block w-full rounded-lg text-zinc-900 focus:ring-0 sm:text-sm sm:leading-6",
+          "min-h-[6rem] phx-no-feedback:border-zinc-300 phx-no-feedback:focus:border-zinc-400",
+          @errors == [] && "border-zinc-300 focus:border-zinc-400",
+          @errors != [] && "border-rose-400 focus:border-rose-400"
+        ]}
+        {@rest}
+      ><%= Phoenix.HTML.Form.normalize_value("textarea", @value) %></textarea>
+      <.error :for={msg <- @errors}><%= msg %></.error>
+    </div>
+    """
+  end
+
+  # All other inputs text, datetime-local, url, password, etc. are handled here...
+  def input(assigns) do
+    ~H"""
+    <div phx-feedback-for={@name}>
+      <.label :if={@label} for={@id}><%= @label %></.label>
+      <input
+        type={@type}
+        name={@name}
+        id={@id}
+        value={Phoenix.HTML.Form.normalize_value(@type, @value)}
+        class={[
+          "mt-2 block w-full rounded-lg text-zinc-900 focus:ring-0 sm:text-sm sm:leading-6",
+          "phx-no-feedback:border-zinc-300 phx-no-feedback:focus:border-zinc-400",
+          @errors == [] && "border-zinc-300 focus:border-zinc-400",
+          @errors != [] && "border-rose-400 focus:border-rose-400"
+        ]}
+        {@rest}
+      />
+      <.error :for={msg <- @errors}><%= msg %></.error>
+    </div>
+    """
+  end
+
+  @doc """
+  Generates a generic error message.
+  """
+  slot :inner_block, required: true
+
+  def error(assigns) do
+    ~H"""
+    <p class="mt-3 flex gap-3 text-sm leading-6 text-rose-600 phx-no-feedback:hidden">
+      <%= render_slot(@inner_block) %>
+    </p>
+    """
+  end
+
+  @doc """
+  Renders a label.
+  """
+  attr :for, :string, default: nil
+  attr :if, :boolean, default: true
+  slot :inner_block, required: true
+
+  def label(assigns) do
+    ~H"""
+    <label :if={@if} for={@for} class="block text-sm font-semibold leading-6 text-zinc-800">
+      <%= render_slot(@inner_block) %>
+    </label>
+    """
+  end
 end
