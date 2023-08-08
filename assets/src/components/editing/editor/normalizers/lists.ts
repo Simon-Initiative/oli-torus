@@ -13,7 +13,7 @@ export const normalize = (
     const allInlineChildren = node.children.every(
       (child) => Editor.isInline(editor, child) || Text.isText(child),
     );
-    if (allInlineChildren) {
+    if (node.children.length > 0 && allInlineChildren) {
       console.warn(
         'Normalizing content: Had an LI with all inline elements. Wrapping children in paragraph',
       );
@@ -26,6 +26,7 @@ export const normalize = (
       } as ListItem;
 
       Transforms.insertNodes(editor, newLI, { at: path });
+      return true;
     }
   }
 
