@@ -217,6 +217,11 @@ defmodule OliWeb.Delivery.StudentDashboard.StudentDashboardLive do
      )}
   end
 
+  @impl Phoenix.LiveView
+  def handle_info({:put_flash, type, message}, socket) do
+    {:noreply, put_flash(socket, type, message)}
+  end
+
   defp get_containers(section, student_id) do
     case Sections.get_units_and_modules_containers(section.slug) do
       {0, pages} ->
