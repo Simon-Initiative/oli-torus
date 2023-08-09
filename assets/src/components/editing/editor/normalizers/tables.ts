@@ -76,6 +76,13 @@ export const normalize = (
       }
     });
 
+    if (max > 1000) {
+      console.warn(
+        'Normalizing content: Table has more than 1000 columns. This is likely an error.',
+      );
+      return false;
+    }
+
     if (anyDiffer) {
       table.children.forEach((row, index: number) => {
         let count = getEffectiveColumns(row, table);

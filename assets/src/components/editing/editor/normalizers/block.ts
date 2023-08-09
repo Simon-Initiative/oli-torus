@@ -12,6 +12,11 @@ export const normalize = (
   if (Element.isElement(parent) && Element.isElement(node)) {
     const config = schema[parent.type];
 
+    if (!config) {
+      console.warn('Normalizing content: No schema config for parent', parent.type);
+      return false;
+    }
+
     // As a fallback, if we can't reconcile the content, just delete it.
     if (Editor.isBlock(editor, node)) {
       if (Element.isElement(node) && !config.validChildren[node.type]) {
