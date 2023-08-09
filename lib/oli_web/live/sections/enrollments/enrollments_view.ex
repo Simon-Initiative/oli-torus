@@ -36,7 +36,7 @@ defmodule OliWeb.Sections.EnrollmentsViewLive do
   data limit, :integer, default: @limit
   data options, :any
   data add_enrollments_step, :atom, default: :step_1
-  data add_enrollments_selected_role, :atom, default: :instructor
+  data add_enrollments_selected_role, :atom, default: :student
   data add_enrollments_emails, :list, default: []
   data add_enrollments_users_not_found, :list, default: []
 
@@ -88,7 +88,7 @@ defmodule OliWeb.Sections.EnrollmentsViewLive do
            options: options,
            offset: 0,
            add_enrollments_step: :step_1,
-           add_enrollments_selected_role: :instructor,
+           add_enrollments_selected_role: :student,
            add_enrollments_emails: [],
            add_enrollments_users_not_found: []
          )}
@@ -134,7 +134,7 @@ defmodule OliWeb.Sections.EnrollmentsViewLive do
   def render(assigns) do
     ~F"""
     <div id="enrollments_view" class="container mx-auto">
-      {#if @is_admin}
+      {#if @is_admin and @section.open_and_free == true}
         <.live_component
           module={OliWeb.Components.LiveModal}
           id="enrollments_view_add_enrollments_modal"
@@ -165,7 +165,7 @@ defmodule OliWeb.Sections.EnrollmentsViewLive do
       <div class="flex justify-between">
         <TextSearch id="text-search"/>
 
-        {#if @is_admin}
+        {#if @is_admin and @section.open_and_free == true}
           <Link
             label="Download as .CSV"
             to={Routes.page_delivery_path(OliWeb.Endpoint, :export_enrollments, @section.slug)}
