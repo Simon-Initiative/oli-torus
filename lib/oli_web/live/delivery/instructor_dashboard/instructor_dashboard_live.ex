@@ -603,23 +603,27 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
 
   end
 
-  @impl true
+  @impl Phoenix.LiveView
   def handle_info({:proficiency, proficiency_per_container}, socket) do
 
-    {total, containers} = socket.assigns.containers
+    case Map.get(socket.assigns, :containers) do
+      nil -> {:noreply, socket}
 
-    containers_with_metrics =
-      Enum.map(containers, fn container ->
-        Map.merge(container, %{
-          student_proficiency:
-            Map.get(proficiency_per_container, container.id, "Not enough data")
-        })
-      end)
+      {total, containers} ->
 
-    {:noreply, assign(socket, containers: {total, containers_with_metrics})}
+        containers_with_metrics =
+          Enum.map(containers, fn container ->
+            Map.merge(container, %{
+              student_proficiency:
+                Map.get(proficiency_per_container, container.id, "Not enough data")
+            })
+          end)
+
+        {:noreply, assign(socket, containers: {total, containers_with_metrics})}
+    end
   end
 
-  @impl true
+  @impl Phoenix.LiveView
   def handle_info(_any, socket) do
     {:noreply, socket}
   end
