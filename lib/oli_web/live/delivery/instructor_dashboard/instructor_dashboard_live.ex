@@ -91,7 +91,9 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
     socket =
       socket
       |> assign(params: params, view: :reports, active_tab: active_tab)
-      |> assign_new(:containers, fn -> Helpers.get_containers(socket.assigns.section) end)
+      |> assign_new(:containers, fn ->
+        Helpers.get_containers(socket.assigns.section)
+      end)
 
     {:noreply, socket}
   end
@@ -181,6 +183,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
         value when value in [nil, "course_content"] ->
           socket =
             assign_new(socket, :hierarchy, fn ->
+
               section =
                 socket.assigns.section
                 |> Oli.Repo.preload([:base_project, :root_section_resource])

@@ -247,8 +247,10 @@ defmodule OliWeb.Delivery.StudentDashboard.StudentDashboardLive do
             student_id
           )
 
+        contained_pages = Oli.Delivery.Sections.get_contained_pages(section)
+
         proficiency_per_container =
-          Metrics.proficiency_for_student_per_container(section.slug, student_id)
+          Metrics.proficiency_for_student_per_container(section, student_id, contained_pages)
 
         containers_with_metrics =
           Enum.map(containers, fn container ->

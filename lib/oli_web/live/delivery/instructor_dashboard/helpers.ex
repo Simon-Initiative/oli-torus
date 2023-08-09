@@ -31,6 +31,9 @@ defmodule OliWeb.Delivery.InstructorDashboard.Helpers do
         {0, pages_with_metrics}
 
       {total_count, containers} ->
+
+        contained_pages = Oli.Delivery.Sections.get_contained_pages(section)
+
         student_progress =
           Metrics.progress_across(
             section.id,
@@ -39,7 +42,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.Helpers do
             Sections.count_enrollments(section.slug)
           )
 
-        proficiency_per_container = Metrics.proficiency_per_container(section.slug)
+        proficiency_per_container = Metrics.proficiency_per_container(section, contained_pages)
 
         containers_with_metrics =
           Enum.map(containers, fn container ->
