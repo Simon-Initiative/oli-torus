@@ -89,6 +89,9 @@ defmodule Oli.Delivery.Sections do
 
     filter_by_role =
       case options do
+        %EnrollmentBrowseOptions{is_instructor: true, is_student: true} ->
+          true
+
         %EnrollmentBrowseOptions{is_student: true} ->
           dynamic(
             [u, e],
@@ -193,7 +196,7 @@ defmodule Oli.Delivery.Sections do
       sorting,
       options
     )
-    |> where([_, e], e.status != :suspended)
+    |> where([u, e], e.status != :suspended)
     |> join(:left, [_, e, p], ecr in EnrollmentContextRole, on: ecr.enrollment_id == e.id)
     |> group_by([_, _, _, ecr], [ecr.context_role_id])
     |> preload([u], :platform_roles)
@@ -315,7 +318,7 @@ defmodule Oli.Delivery.Sections do
   end
 
   @doc """
-  Enrolls a user in a course section
+  Enrolls a user or users in a course section
   ## Examples
       iex> enroll(user_id, section_id, [%ContextRole{}])
       {:ok, %Enrollment{}} # Inserted or updated with success
@@ -323,6 +326,41 @@ defmodule Oli.Delivery.Sections do
       iex> enroll(user_id, section_id, :open_and_free)
       {:error, changeset} # Something went wrong
   """
+  @spec enroll(list(number()), number(), [%ContextRole{}]) :: {:ok, list(%Enrollment{})}
+  def enroll(user_ids, section_id, context_roles) when is_list(user_ids) do
+    Repo.transaction(fn ->
+      context_roles = EctoProvider.Marshaler.to(context_roles)
+      date = DateTime.utc_now() |> DateTime.truncate(:second)
+
+      # Insert all the enrollments at the same time
+      enrollments =
+        Enum.map(
+          user_ids,
+          &%{
+            user_id: &1,
+            section_id: section_id,
+            inserted_at: date,
+            updated_at: date,
+            status: :enrolled,
+            state: %{}
+          }
+        )
+
+      {_cont, enrollments} = Repo.insert_all(Enrollment, enrollments, returning: [:id], conflict_target: [:user_id, :section_id], on_conflict: {:replace, [:user_id]})
+
+      # Insert the enrollment context roles at the same time based on the previously created enrollments
+      enrollment_context_roles =
+        Enum.reduce(context_roles, [], fn role, enrollment_context_roles ->
+          Enum.map(enrollments, &%{enrollment_id: &1.id, context_role_id: role.id}) ++
+            enrollment_context_roles
+        end)
+
+      Repo.insert_all(EnrollmentContextRole, enrollment_context_roles, on_conflict: :nothing)
+
+      {:ok, enrollments}
+    end)
+  end
+
   @spec enroll(number(), number(), [%ContextRole{}]) :: {:ok, %Enrollment{}}
   def enroll(user_id, section_id, context_roles) do
     context_roles = EctoProvider.Marshaler.to(context_roles)

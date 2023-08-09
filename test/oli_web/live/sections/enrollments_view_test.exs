@@ -2,11 +2,13 @@ defmodule OliWeb.Sections.EnrollmentsViewTest do
   use OliWeb.ConnCase
 
   import Oli.Factory
+  import Ecto.Query
   import Phoenix.{ConnTest, LiveViewTest}
 
   alias Oli.Seeder
   alias Lti_1p3.Tool.ContextRoles
   alias Oli.Delivery.Sections
+  alias Oli.Repo
 
   @endpoint OliWeb.Endpoint
 
@@ -77,6 +79,7 @@ defmodule OliWeb.Sections.EnrollmentsViewTest do
       assert html =~ "Admin"
       assert html =~ "Enrollments"
       assert html =~ "Download as .CSV"
+      assert html =~ "Add Enrollments"
       assert html =~ OliWeb.Common.Utils.name(e.user.name, e.user.given_name, e.user.family_name)
     end
   end
@@ -99,10 +102,121 @@ defmodule OliWeb.Sections.EnrollmentsViewTest do
     end
   end
 
+  describe "admin - invitations" do
+    setup [:setup_enrollments_view]
+
+    test "can invite new users to the section", %{section: section, conn: conn} do
+      enrollments_url =
+        Routes.live_path(@endpoint, OliWeb.Sections.EnrollmentsViewLive, section.slug)
+
+      {:ok, view, _html} = live(conn, enrollments_url)
+
+      user_1 = insert(:user)
+      user_2 = insert(:user)
+      non_existant_email_1 = "non_existant_user_1@test.com"
+      non_existant_email_2 = "non_existant_user_2@test.com"
+
+      # Open "Add enrollments modal"
+      view
+      |> with_target("#enrollments_view_add_enrollments_modal")
+      |> render_click("open")
+
+      assert has_element?(view, "h5", "Add enrollments")
+      assert has_element?(view, "input[placeholder=\"user@email.com\"]")
+
+      # Add emails to the list
+      view
+      |> with_target("#enrollments_view")
+      |> render_hook("add_enrollments_update_list", %{
+        value: [user_1.email, user_2.email, non_existant_email_1, non_existant_email_2]
+      })
+
+      assert has_element?(view, "p", user_1.email)
+      assert has_element?(view, "p", user_2.email)
+      assert has_element?(view, "p", non_existant_email_1)
+      assert has_element?(view, "p", non_existant_email_2)
+
+      # Go to second step
+      view
+      |> with_target("#enrollments_view")
+      |> render_hook("add_enrollments_go_to_step_2")
+
+      assert has_element?(view, "p", "The following emails don't exist in the database")
+
+      assert has_element?(
+               view,
+               "#enrollments_view_add_enrollments_modal li ul p",
+               non_existant_email_1
+             )
+
+      assert has_element?(
+               view,
+               "#enrollments_view_add_enrollments_modal li ul p",
+               non_existant_email_2
+             )
+
+      refute has_element?(view, "#enrollments_view_add_enrollments_modal li ul p", user_1.email)
+      refute has_element?(view, "#enrollments_view_add_enrollments_modal li ul p", user_2.email)
+
+      # Remove an email from the "Users not found" list
+      view
+      |> with_target("#enrollments_view")
+      |> render_hook("add_enrollments_remove_from_list", %{user: non_existant_email_2})
+
+      refute has_element?(
+               view,
+               "#enrollments_view_add_enrollments_modal li ul p",
+               non_existant_email_2
+             )
+
+      view
+      |> with_target("#enrollments_view")
+      |> render_hook("add_enrollments_go_to_step_3")
+
+      assert has_element?(view, "p", "Are you sure you want to enroll 3 users?")
+
+      # Send the invitations (this mocks the POST request made by the form)
+      conn =
+        post(
+          conn,
+          Routes.invite_path(conn, :create_bulk, section.slug,
+            emails: [user_1.email, user_2.email, non_existant_email_1],
+            role: "instructor",
+            "g-recaptcha-response": "any"
+          )
+        )
+
+      assert redirected_to(conn, 302) =~ enrollments_url
+
+      new_users =
+        Oli.Accounts.User
+        |> where([u], u.email in [^user_1.email, ^user_2.email, ^non_existant_email_1])
+        |> select([u], {u.email, u.invitation_token})
+        |> Repo.all()
+        |> Enum.into(%{})
+
+      assert length(Map.keys(new_users)) == 3
+      assert Map.get(new_users, user_1.email) == nil
+      assert Map.get(new_users, user_2.email) == nil
+      assert Map.get(new_users, non_existant_email_1) != nil
+    end
+
+    test "can' invite new users to the section if section is not open and free", %{conn: conn} do
+      section = insert(:section)
+
+      enrollments_url =
+        Routes.live_path(@endpoint, OliWeb.Sections.EnrollmentsViewLive, section.slug)
+
+      {:ok, _view, html} = live(conn, enrollments_url)
+
+      refute html =~ "Add Enrollments"
+    end
+  end
+
   defp setup_enrollments_view(%{conn: conn}) do
     map = Seeder.base_project_with_resource2()
 
-    section = make(map.project, map.institution, "a", %{})
+    section = make(map.project, map.institution, "a", %{open_and_free: true})
 
     enroll(section)
 

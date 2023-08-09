@@ -5,6 +5,8 @@ defmodule OliWeb.InviteControllerTest do
   alias Oli.Accounts
   alias Oli.Accounts.Author
 
+  import Oli.Factory
+
   @invite_email "invite@example.com"
   setup [:create_admin]
 
@@ -38,6 +40,68 @@ defmodule OliWeb.InviteControllerTest do
       new_author = Accounts.get_author_by_email(@invite_email)
       assert new_author.given_name == "me"
       assert new_author.invitation_accepted_at
+    end
+
+    test "accept new section enrollment invitation", %{conn: conn} do
+      expect_recaptcha_http_post()
+      section = insert(:section)
+
+      # Create the invitations
+      conn =
+        post(
+          conn,
+          Routes.invite_path(conn, :create_bulk, section.slug,
+            emails: ["invite@example.com", "invite2@example.com"],
+            role: "instructor",
+            "g-recaptcha-response": "any"
+          )
+        )
+
+      # Accept the invitation for the first user
+      new_user = Accounts.get_user_by(email: "invite@example.com")
+      token = PowInvitation.Plug.sign_invitation_token(conn, new_user)
+
+      put(
+        conn,
+        Routes.delivery_pow_invitation_invitation_path(conn, :update, token),
+        %{
+          user: %{
+            email: "invite@example.com",
+            given_name: "First",
+            family_name: "User",
+            password: "passingby",
+            password_confirmation: "passingby"
+          }
+        }
+      )
+
+      new_user = Accounts.get_user_by(email: "invite@example.com")
+      assert new_user.given_name == "First"
+      assert new_user.family_name == "User"
+      assert new_user.invitation_accepted_at
+
+      # Accept the invitation for the second user
+      new_user = Accounts.get_user_by(email: "invite2@example.com")
+      token = PowInvitation.Plug.sign_invitation_token(conn, new_user)
+
+      put(
+        conn,
+        Routes.delivery_pow_invitation_invitation_path(conn, :update, token),
+        %{
+          user: %{
+            email: "invite2@example.com",
+            given_name: "Second",
+            family_name: "User",
+            password: "passingby",
+            password_confirmation: "passingby"
+          }
+        }
+      )
+
+      new_user = Accounts.get_user_by(email: "invite2@example.com")
+      assert new_user.given_name == "Second"
+      assert new_user.family_name == "User"
+      assert new_user.invitation_accepted_at
     end
   end
 

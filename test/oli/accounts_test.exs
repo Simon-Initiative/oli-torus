@@ -379,6 +379,45 @@ defmodule Oli.AccountsTest do
       refute user_role_id_changed == 4
       assert user_role_id_changed == 3
     end
+
+    test "get_users_by_email/1 returns the users from a list of emails" do
+      insert(:user, %{email: "user_with_email_1@test.com"})
+      insert(:user, %{email: "user_with_email_2@test.com"})
+      insert(:user, %{email: "user_with_email_3@test.com"})
+
+      assert Accounts.get_users_by_email([
+               "user_with_email_1@test.com",
+               "user_with_email_2@test.com",
+               "non_existan@test.com"
+             ])
+             |> Enum.map(& &1.email) == [
+               "user_with_email_1@test.com",
+               "user_with_email_2@test.com"
+             ]
+    end
+
+    test "bulk_invite_users/2" do
+      inviter_author = insert(:author)
+      invited_users = ["non_existant_user_1@test.com", "non_existant_user_2@test.com"]
+
+      Accounts.bulk_invite_users(
+        ["non_existant_user_1@test.com", "non_existant_user_2@test.com"],
+        inviter_author
+      )
+
+      users =
+        User
+        |> where([u], u.email in ^invited_users)
+        |> select([u], [:invitation_token])
+        |> Repo.all()
+
+      assert length(users) == 2
+
+      assert Enum.all?(
+               users,
+               &(!is_nil(&1.invitation_token))
+             )
+    end
   end
 
   describe "communities accounts" do
