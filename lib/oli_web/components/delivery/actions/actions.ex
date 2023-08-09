@@ -105,6 +105,15 @@ defmodule OliWeb.Components.Delivery.Actions do
           </div>
         {/if}
 
+        {#if @is_admin}
+          <.live_component
+            id="transfer_enrollment"
+            module={OliWeb.Delivery.Actions.TransferEnrollment}
+            section={@section}
+            user={@user}
+          />
+        {/if}
+
         <div class="ml-auto">
           <button phx-click={JS.push("open", target: "#unenroll_user_modal")} class="btn btn-danger">Unenroll</button>
         </div>
