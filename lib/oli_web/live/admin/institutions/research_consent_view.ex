@@ -73,6 +73,9 @@ defmodule OliWeb.Admin.Institutions.ResearchConsentView do
               No Research Consent Form
             </label>
           </div>
+          <.error :for={error <- Keyword.get_values(@changeset.errors || [], :research_consent)}>
+            <%= translate_error(error) %>
+          </.error>
         </div>
 
         <button class="form-button btn btn-md btn-primary btn-block mt-3" type="submit">Save</button>

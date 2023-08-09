@@ -122,7 +122,7 @@ defmodule OliWeb.Sections.SectionsView do
           <TextSearch id="text-search" text={@options.text_search}/>
 
           <:extra_opts>
-            <Check checked={@options.active_today} click="active_today">Active (start/end dates include today)</Check>
+            <Check.render checked={@options.active_today} click="active_today">Active (start/end dates include today)</Check.render>
 
             <form :on-change="change_type" class="d-flex">
               <select name="type" id="select_type" class="custom-select custom-select mr-2">

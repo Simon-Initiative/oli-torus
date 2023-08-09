@@ -20,7 +20,7 @@ defmodule OliWeb.Products.Payments.Discounts.Form do
     ~F"""
       <Form for={@changeset} submit={@save} change={@change}>
         {#if @live_action != :product_new}
-          <ReadOnly label="Institution" value={@institution_name}/>
+          <ReadOnly.render label="Institution" value={@institution_name}/>
         {#else}
           <Field name={:institution_id} class="form-group">
             <Label/>

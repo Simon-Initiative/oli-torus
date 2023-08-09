@@ -122,12 +122,12 @@ defmodule OliWeb.Sections.OverviewView do
     {render_modal(assigns)}
     <Groups.render>
       <Group.render label="Details" description="Overview of course section details">
-        <ReadOnly label="Course Section ID" value={@section.slug} />
-        <ReadOnly label="Title" value={@section.title} />
-        <ReadOnly label="Course Section Type" value={type_to_string(@section)} />
-        <ReadOnly label="URL" show_copy_btn={true} value={Routes.page_delivery_url(OliWeb.Endpoint, :index, @section.slug)} />
+        <ReadOnly.render label="Course Section ID" value={@section.slug} />
+        <ReadOnly.render label="Title" value={@section.title} />
+        <ReadOnly.render label="Course Section Type" value={type_to_string(@section)} />
+        <ReadOnly.render label="URL" show_copy_btn={true} value={Routes.page_delivery_url(OliWeb.Endpoint, :index, @section.slug)} />
         {#unless is_nil(deployment)}
-          <ReadOnly
+          <ReadOnly.render
             label="Institution"
             type={if @is_system_admin, do: "link"}
             link_label={deployment.institution.name}

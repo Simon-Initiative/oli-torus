@@ -89,8 +89,8 @@ defmodule OliWeb.Users.UsersDetailView do
       <Groups.render>
         <Group.render label="Details" description="User details">
           <Form for={@changeset} change="change" submit="submit" opts={autocomplete: "off"}>
-            <ReadOnly label="Sub" value={@user.sub}/>
-            <ReadOnly label="Name" value={@user.name}/>
+            <ReadOnly.render label="Sub" value={@user.sub}/>
+            <ReadOnly.render label="Name" value={@user.name}/>
             <Field name={:given_name} class="form-group">
               <Label text="Given Name"/>
               <TextInput class="form-control" opts={disabled: @disabled_edit}/>
@@ -103,9 +103,9 @@ defmodule OliWeb.Users.UsersDetailView do
               <Label text="Email"/>
               <TextInput class="form-control" opts={disabled: @disabled_edit}/>
             </Field>
-            <ReadOnly label="Guest" value={boolean(@user.guest)}/>
+            <ReadOnly.render label="Guest" value={boolean(@user.guest)}/>
             {#if Application.fetch_env!(:oli, :age_verification)[:is_enabled] == "true"}
-              <ReadOnly label="Confirmed is 13 or older on creation" value={boolean(@user.age_verified)}/>
+              <ReadOnly.render label="Confirmed is 13 or older on creation" value={boolean(@user.age_verified)}/>
             {/if}
             <div class="form-control mb-3">
               <Field name={:independent_learner}>
@@ -125,10 +125,10 @@ defmodule OliWeb.Users.UsersDetailView do
                 </Field>
               </div>
             </section>
-            <ReadOnly label="Research Opt Out" value={boolean(@user.research_opt_out)}/>
-            <ReadOnly label="Email Confirmed" value={render_date(@user, :email_confirmed_at, @ctx)}/>
-            <ReadOnly label="Created" value={render_date(@user, :inserted_at, @ctx)}/>
-            <ReadOnly label="Last Updated" value={render_date(@user, :updated_at, @ctx)}/>
+            <ReadOnly.render label="Research Opt Out" value={boolean(@user.research_opt_out)}/>
+            <ReadOnly.render label="Email Confirmed" value={render_date(@user, :email_confirmed_at, @ctx)}/>
+            <ReadOnly.render label="Created" value={render_date(@user, :inserted_at, @ctx)}/>
+            <ReadOnly.render label="Last Updated" value={render_date(@user, :updated_at, @ctx)}/>
             {#unless @disabled_edit}
               <Submit class={"float-right btn btn-md btn-primary mt-2"}>Save</Submit>
             {/unless}

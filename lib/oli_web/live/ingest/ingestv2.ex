@@ -1,5 +1,5 @@
 defmodule OliWeb.Admin.IngestV2 do
-  use Surface.LiveView, layout: {OliWeb.LayoutView, :live}
+  use OliWeb, :live_view
 
   alias Oli.Repo
   alias Oli.Accounts.Author
@@ -12,10 +12,6 @@ defmodule OliWeb.Admin.IngestV2 do
   alias OliWeb.Common.Check
   alias OliWeb.Admin.Ingest.ErrorsTableModel
   import OliWeb.DelegatedEvents
-
-  prop author, :any
-  data breadcrumbs, :any
-  data title, :string, default: "Ingest Project"
 
   defp ingest_file(author) do
     "_digests/#{author.id}-digest.zip"
@@ -68,108 +64,124 @@ defmodule OliWeb.Admin.IngestV2 do
   end
 
   defp render_ready(assigns) do
-    ~F"""
-    {#if @ingestion_step == :ready}
+    ~H"""
+    <%= if @ingestion_step == :ready do %>
       <div class="alert alert-secondary mb-3" role="alert">
         <h4 class="alert-heading">Ready for Ingest</h4>
-        <Check checked={@bypass_validation} click="bypass">Bypass JSON validation <strong>(only use in development use cases)</strong></Check>
+        <Check.render id="bypass_json_validation" checked={@bypass_validation} click="bypass">
+          Bypass JSON validation <strong>(only use in development use cases)</strong>
+        </Check.render>
         <div class="mt-4">
           <button class="btn btn-primary" phx-click="preprocess">Preprocess</button>
         </div>
       </div>
-    {/if}
+    <% end %>
     """
   end
 
   defp render_preprocessed(assigns) do
-    ~F"""
-    {#if @ingestion_step == :preprocessed}
-    <Groups.render>
-      <Group.render label="Project" description="Details about the project">
-        <ReadOnly label="Title" value={@state.project_details["title"]}/>
-        <ReadOnly label="Description" value={@state.project_details["description"]}/>
-        <ReadOnly label="SVN URL" value={@state.project_details["svnRoot"]}/>
-      </Group.render>
-      <Group.render label="Resource Counts" description="Details about the resources">
-        <ReadOnly label="Tags" value={@resource_counts.tags}/>
-        <ReadOnly label="Bibliography Entries" value={@resource_counts.bib_entries}/>
-        <ReadOnly label="Objectives" value={@resource_counts.objectives}/>
-        <ReadOnly label="Activities" value={@resource_counts.activities}/>
-        <ReadOnly label="Pages" value={@resource_counts.pages}/>
-        <ReadOnly label="Products" value={@resource_counts.products}/>
-        <ReadOnly label="Media Items" value={@resource_counts.media_items}/>
-      </Group.render>
-      <Group.render label="Errors" description="Errors encountered during preprocessing">
-        <PagedTable.render
-          allow_selection={false}
-          filter={nil}
-          table_model={@table_model}
-          total_count={@total_count}
-          offset={@offset}
-          limit={@limit}/>
-      </Group.render>
-      <Group.render label="Process" description="">
-        <button class="btn btn-primary" phx-click="process" phx-disable-with="Processing...">
-          Proceed and ingest this course project
-        </button>
-      </Group.render>
-    </Groups.render>
-    {/if}
+    ~H"""
+    <%= if @ingestion_step == :preprocessed do %>
+      <Groups.render>
+        <Group.render label="Project" description="Details about the project">
+          <ReadOnly.render label="Title" value={@state.project_details["title"]} />
+          <ReadOnly.render label="Description" value={@state.project_details["description"]} />
+          <ReadOnly.render label="SVN URL" value={@state.project_details["svnRoot"]} />
+        </Group.render>
+        <Group.render label="Resource Counts" description="Details about the resources">
+          <ReadOnly.render label="Tags" value={@resource_counts.tags} />
+          <ReadOnly.render label="Bibliography Entries" value={@resource_counts.bib_entries} />
+          <ReadOnly.render label="Objectives" value={@resource_counts.objectives} />
+          <ReadOnly.render label="Activities" value={@resource_counts.activities} />
+          <ReadOnly.render label="Pages" value={@resource_counts.pages} />
+          <ReadOnly.render label="Products" value={@resource_counts.products} />
+          <ReadOnly.render label="Media Items" value={@resource_counts.media_items} />
+        </Group.render>
+        <Group.render label="Errors" description="Errors encountered during preprocessing">
+          <PagedTable.render
+            allow_selection={false}
+            filter={nil}
+            table_model={@table_model}
+            total_count={@total_count}
+            offset={@offset}
+            limit={@limit}
+          />
+        </Group.render>
+        <Group.render label="Process" description="">
+          <button class="btn btn-primary" phx-click="process" phx-disable-with="Processing...">
+            Proceed and ingest this course project
+          </button>
+        </Group.render>
+      </Groups.render>
+    <% end %>
     """
   end
 
   defp render_processed(assigns) do
-    ~F"""
-    {#if @ingestion_step == :processed}
+    ~H"""
+    <%= if @ingestion_step == :processed do %>
       <h4>Ingest succeeded</h4>
 
-      <a href={Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.OverviewLive, @state.project.slug)}>Access your new course here</a>
-    {/if}
+      <a href={Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.OverviewLive, @state.project.slug)}>
+        Access your new course here
+      </a>
+    <% end %>
     """
   end
 
   defp render_progress(assigns) do
-    ~F"""
-      {#if @progress_step != ""}
+    ~H"""
+    <%= if @progress_step != "" do %>
       <div class="alert alert-secondary" role="alert">
-        <h4 class="alert-heading"><i class="fas fa-circle-notch fa-spin fa-1x fa-fw mr-2" /> {@progress_step}</h4>
+        <h4 class="alert-heading">
+          <i class="fas fa-circle-notch fa-spin fa-1x fa-fw mr-2" /><%= @progress_step %>
+        </h4>
 
-      {#if @progress_total_tasks > 0}
-        <div class="progress">
-          <div id={@progress_step} class="progress-bar" role="progressbar" style={width(assigns)} aria-valuenow={now(assigns)} aria-valuemin="0" aria-valuemax="100"></div>
-        </div>
-      {/if}
-
+        <%= if @progress_total_tasks > 0 do %>
+          <div class="progress">
+            <div
+              id={@progress_step}
+              class="progress-bar"
+              role="progressbar"
+              style={width(assigns)}
+              aria-valuenow={now(assigns)}
+              aria-valuemin="0"
+              aria-valuemax="100"
+            >
+            </div>
+          </div>
+        <% end %>
       </div>
-
-    {/if}
+    <% end %>
     """
   end
 
   defp render_failed(assigns) do
-    ~F"""
-    {#if @ingestion_step == :failed}
-    <div class="alert alert-danger" role="alert">
-      <h4 class="alert-heading">Ingest Processing Failed</h4>
-      {@error}
-    </div>
-    {/if}
+    ~H"""
+    <%= if @ingestion_step == :failed do %>
+      <div class="alert alert-danger" role="alert">
+        <h4 class="alert-heading">Ingest Processing Failed</h4>
+        <%= @error %>
+      </div>
+    <% end %>
     """
   end
 
-  @impl true
+  attr :author, :any
+  attr :breadcrumbs, :any
+  attr :title, :string, default: "Ingest Project"
+
   def render(assigns) do
-    ~F"""
+    ~H"""
     <div class="container">
       <h3 class="display-6">Course Ingestion</h3>
-      <hr class="my-4"/>
+      <hr class="my-4" />
 
-      {render_ready(assigns)}
-      {render_preprocessed(assigns)}
-      {render_processed(assigns)}
-      {render_failed(assigns)}
-      {render_progress(assigns)}
-
+      <%= render_ready(assigns) %>
+      <%= render_preprocessed(assigns) %>
+      <%= render_processed(assigns) %>
+      <%= render_failed(assigns) %>
+      <%= render_progress(assigns) %>
     </div>
     """
   end

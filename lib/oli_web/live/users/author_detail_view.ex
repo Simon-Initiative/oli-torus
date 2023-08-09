@@ -84,7 +84,7 @@ defmodule OliWeb.Users.AuthorsDetailView do
       <Groups.render>
         <Group.render label="Details" description="User details">
           <Form for={@changeset} change="change" submit="submit" opts={autocomplete: "off"}>
-            <ReadOnly label="Name" value={@user.name}/>
+            <ReadOnly.render label="Name" value={@user.name}/>
             <Field name={:given_name} class="form-group">
               <Label text="First Name"/>
               <TextInput class="form-control" opts={disabled: @disabled_edit}/>
@@ -97,7 +97,7 @@ defmodule OliWeb.Users.AuthorsDetailView do
               <Label text="Email"/>
               <TextInput class="form-control" opts={disabled: @disabled_edit}/>
             </Field>
-            <ReadOnly label="Role" value={role(@user.system_role_id)}/>
+            <ReadOnly.render label="Role" value={role(@user.system_role_id)}/>
             {#unless @disabled_edit}
               <Submit class={"float-right btn btn-md btn-primary mt-2"}>Save</Submit>
             {/unless}

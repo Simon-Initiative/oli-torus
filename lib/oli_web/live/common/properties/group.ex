@@ -1,9 +1,11 @@
 defmodule OliWeb.Common.Properties.Group do
-  use Surface.Component
+  use OliWeb, :html
 
   attr :label, :string, required: true
   attr :description, :string, default: ""
   attr :is_last, :boolean, default: false
+
+  slot :inner_block, required: true
 
   def render(assigns) do
     ~H"""

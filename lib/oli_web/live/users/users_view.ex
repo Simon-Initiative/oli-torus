@@ -103,7 +103,7 @@ defmodule OliWeb.Users.UsersView do
     ~F"""
     <div>
 
-      <Check class="mr-4" checked={@options.include_guests} click="include_guests">Show guest users</Check>
+      <Check.render class="mr-4" checked={@options.include_guests} click="include_guests">Show guest users</Check.render>
 
       <div class="mb-3"/>
 

@@ -52,7 +52,7 @@ defmodule OliWeb.Curriculum.EntryLive do
             <span class="ml-1 mr-1 entry-title"><%= @child.title %></span>
             <.link
               class="entry-title mx-3"
-              to={
+              href={
                 Routes.resource_path(
                   OliWeb.Endpoint,
                   :edit,

@@ -144,8 +144,8 @@ defmodule OliWeb.Progress.StudentResourceView do
     ~F"""
     <Groups.render>
       <Group.render label="Details" description="">
-        <ReadOnly label="Student" value={OliWeb.Common.Utils.name(@user)}/>
-        <ReadOnly label="Resource" value={@revision.title}/>
+        <ReadOnly.render label="Student" value={OliWeb.Common.Utils.name(@user)}/>
+        <ReadOnly.render label="Resource" value={@revision.title}/>
       </Group.render>
       {#if @revision.graded}
       <Group.render label="Current Grade" description="">
@@ -192,8 +192,8 @@ defmodule OliWeb.Progress.StudentResourceView do
     ~F"""
     <Groups.render>
       <Group.render label="Details" description="">
-        <ReadOnly label="Student" value={OliWeb.Common.Utils.name(@user)}/>
-        <ReadOnly label="Resource" value={@revision.title}/>
+        <ReadOnly.render label="Student" value={OliWeb.Common.Utils.name(@user)}/>
+        <ReadOnly.render label="Resource" value={@revision.title}/>
       </Group.render>
       <Group.render label="Attempt History" description="">
         <p>The student has not yet accessed this course resource.</p>

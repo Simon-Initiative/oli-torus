@@ -88,7 +88,7 @@ defmodule OliWeb.InstitutionsLiveTest do
              |> render() =~
                "Institution couldn&#39;t be created/updated. Please check the errors below."
 
-      assert has_element?(view, "span", "is invalid")
+      assert has_element?(view, "p", "is invalid")
     end
 
     test "saves institution with no form when data is valid", %{

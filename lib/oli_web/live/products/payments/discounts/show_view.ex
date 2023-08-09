@@ -147,7 +147,7 @@ defmodule OliWeb.Products.Payments.Discounts.ShowView do
 
   def render(assigns) do
     ~F"""
-      <FormContainer title={@title}>
+      <FormContainer.render title={@title}>
         <Form
           institution_name={@institution_name}
           institutions={@institutions}
@@ -157,7 +157,7 @@ defmodule OliWeb.Products.Payments.Discounts.ShowView do
           change="change"
           live_action={@live_action}
           clear="clear" />
-      </FormContainer>
+      </FormContainer.render>
     """
   end
 
