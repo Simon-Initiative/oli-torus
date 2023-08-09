@@ -247,19 +247,15 @@ defmodule OliWeb.Delivery.StudentDashboard.StudentDashboardLive do
             student_id
           )
 
-        contained_pages = Oli.Delivery.Sections.get_contained_pages(section)
-
-        proficiency_per_container =
-          Metrics.proficiency_for_student_per_container(section, student_id, contained_pages)
-
         containers_with_metrics =
           Enum.map(containers, fn container ->
             Map.merge(container, %{
               progress: student_progress[container.id] || 0.0,
-              student_proficiency:
-                Map.get(proficiency_per_container, container.id, "Not enough data")
+              student_proficiency: "Loading..."
             })
           end)
+
+        async_calculate_proficiency(section, student_id)
 
         {total_count, containers_with_metrics}
     end
@@ -364,4 +360,41 @@ defmodule OliWeb.Delivery.StudentDashboard.StudentDashboardLive do
 
     ordered_pages ++ unordered
   end
+
+  defp async_calculate_proficiency(section, student_id) do
+
+    pid = self()
+
+    Task.async(fn ->
+      contained_pages = Oli.Delivery.Sections.get_contained_pages(section)
+
+      proficiency_per_container =
+        Metrics.proficiency_for_student_per_container(section, student_id, contained_pages)
+
+      send(pid, {:proficiency, proficiency_per_container})
+    end)
+
+  end
+
+  @impl true
+  def handle_info({:proficiency, proficiency_per_container}, socket) do
+
+    {total, containers} = socket.assigns.containers
+
+    containers_with_metrics =
+      Enum.map(containers, fn container ->
+        Map.merge(container, %{
+          student_proficiency:
+            Map.get(proficiency_per_container, container.id, "Not enough data")
+        })
+      end)
+
+    {:noreply, assign(socket, containers: {total, containers_with_metrics})}
+  end
+
+  @impl true
+  def handle_info(_any, socket) do
+    {:noreply, socket}
+  end
+
 end
