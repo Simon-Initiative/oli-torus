@@ -868,9 +868,7 @@ defmodule Oli.Delivery.Metrics do
   # Given a list of ContainedPage records, return a map of container ids to a tuple of
   # correct and total values, initialized to {0.0, 0.0}
   defp init_container_totals(contained_pages) do
-    Enum.map(contained_pages, fn %ContainedPage{container_id: container_id} -> container_id end)
-    |> Enum.dedup()
-    |> Enum.reduce(%{}, fn container_id, map ->
+     Enum.reduce(contained_pages, %{}, fn %ContainedPage{container_id: container_id}, map ->
       Map.put(map, container_id, {0.0, 0.0})
     end)
   end
