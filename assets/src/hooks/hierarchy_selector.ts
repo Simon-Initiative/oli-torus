@@ -19,7 +19,7 @@ export const HierarchySelector = {
       if (clickOutside) {
         itemsList.dataset.active = 'false';
         document.removeEventListener('click', hierarchySelectorListener);
-        this.pushEventTo(selectedItemsList, 'expand', undefined, () => undefined);
+        this.pushEventTo(`#${element.id}`, 'expand', undefined, () => undefined);
       }
     };
 

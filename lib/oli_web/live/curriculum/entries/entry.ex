@@ -2,31 +2,30 @@ defmodule OliWeb.Curriculum.EntryLive do
   @moduledoc """
   Curriculum item entry component.
   """
-  use Surface.LiveComponent
+  use Phoenix.LiveComponent
 
   import OliWeb.Curriculum.Utils
 
   alias OliWeb.Curriculum.{Actions, DetailsLive, LearningSummaryLive}
   alias OliWeb.Router.Helpers, as: Routes
   alias OliWeb.Common.Links
-  alias Surface.Components.Link
 
-  prop ctx, :struct, required: true
-  prop child, :struct, required: true
-  prop index, :integer, required: true
-  prop selected, :boolean, required: true
-  prop project, :struct, required: true
-  prop numberings, :struct, required: true
-  prop editor, :struct, required: true
-  prop activity_ids, :list, required: true
-  prop activity_map, :map, required: true
-  prop author, :struct, required: true
-  prop container, :struct, required: true
-  prop objective_map, :map, required: true
-  prop view, :string, required: true
+  attr(:ctx, :map, required: true)
+  attr(:child, :map, required: true)
+  attr(:index, :integer, required: true)
+  attr(:selected, :boolean, required: true)
+  attr(:project, :map, required: true)
+  attr(:numberings, :map, required: true)
+  attr(:editor, :map, required: true)
+  attr(:activity_ids, :list, required: true)
+  attr(:activity_map, :map, required: true)
+  attr(:author, :map, required: true)
+  attr(:container, :map, required: true)
+  attr(:objective_map, :map, required: true)
+  attr(:view, :string, required: true)
 
   def render(assigns) do
-    ~F"""
+    ~H"""
     <div
       tabindex="0"
       phx-keydown="keydown"
@@ -39,50 +38,50 @@ defmodule OliWeb.Curriculum.EntryLive do
       data-drag-slug={@child.slug}
       phx-hook="DragSource"
       class={"p-3 flex-grow-1 d-flex curriculum-entry #{if @selected do
-        "active"
-      else
-        ""
-      end}"}
+          "active"
+        else
+          ""
+        end}"}
     >
       <div class="flex-grow-1 d-flex flex-column self-center">
         <div class="flex-1">
-          {icon(assigns)}
-          {#if Oli.Resources.ResourceType.get_type_by_id(@child.resource_type_id) == "container"}
-            {Links.resource_link(@child, [], @project, @numberings, "ml-1 mr-1 entry-title")}
-          {#else}
-            <span class="ml-1 mr-1 entry-title">{@child.title}</span>
-            <Link
+          <%= icon(assigns) %>
+          <%= if Oli.Resources.ResourceType.get_type_by_id(@child.resource_type_id) == "container" do %>
+            <%= Links.resource_link(@child, [], @project, @numberings, "ml-1 mr-1 entry-title") %>
+          <% else %>
+            <span class="ml-1 mr-1 entry-title"><%= @child.title %></span>
+            <.link
               class="entry-title mx-3"
-              to={Routes.resource_path(
-                OliWeb.Endpoint,
-                :edit,
-                @project.slug,
-                @child.slug
-              )}
-              label="Edit Page"
-            />
-          {/if}
-          {#if @editor}
-            <span class="badge">
-              {Map.get(@editor, :name) || "Someone"} is editing this
-            </span>
-          {/if}
+              to={
+                Routes.resource_path(
+                  OliWeb.Endpoint,
+                  :edit,
+                  @project.slug,
+                  @child.slug
+                )
+              }
+            >
+              Edit Page
+            </.link>
+          <% end %>
+          <span :if={@editor} class="badge">
+            <%= Map.get(@editor, :name) || "Someone" %> is editing this
+          </span>
         </div>
+
         <div>
-          {#case @view}
-            {#match "Detailed"}
-              {live_component(DetailsLive, assigns)}
-            {#match "Learning Summary"}
-              {live_component(LearningSummaryLive, assigns)}
-            {#match _}
-              {nil}
-          {/case}
+          <%= case @view do %>
+            <% "Detailed" -> %>
+              <%= live_component(DetailsLive, assigns) %>
+            <% "Learning Summary" -> %>
+              <%= live_component(LearningSummaryLive, assigns) %>
+            <% _ -> %>
+          <% end %>
         </div>
       </div>
-
       <!-- prevent dragging of actions menu and modals using this draggable wrapper -->
       <div draggable="true" ondragstart="event.preventDefault(); event.stopPropagation();">
-        {live_component(Actions, assigns)}
+        <%= live_component(Actions, assigns) %>
       </div>
     </div>
     """

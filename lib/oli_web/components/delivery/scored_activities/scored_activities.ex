@@ -334,9 +334,6 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
         %{"limit" => limit, "offset" => offset},
         socket
       ) do
-    IO.inspect(limit, label: "limit")
-    IO.inspect(offset, label: "offset")
-
     {:noreply,
      push_patch(socket,
        to:

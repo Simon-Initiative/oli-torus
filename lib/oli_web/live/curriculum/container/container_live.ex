@@ -3,8 +3,7 @@ defmodule OliWeb.Curriculum.ContainerLive do
   LiveView implementation of a container editor.
   """
 
-  use Surface.LiveView, layout: {OliWeb.LayoutView, :live}
-  # use OliWeb, :live_view
+  use OliWeb, :live_view
   use OliWeb.Common.Modal
 
   import Oli.Utils, only: [value_or: 2]
@@ -13,6 +12,8 @@ defmodule OliWeb.Curriculum.ContainerLive do
 
   alias Oli.Authoring.Editing.ContainerEditor
   alias Oli.Authoring.Course
+
+  alias Phoenix.LiveView.JS
 
   alias OliWeb.Curriculum.{
     Rollup,
@@ -241,8 +242,16 @@ defmodule OliWeb.Curriculum.ContainerLive do
     }
 
     modal = fn assigns ->
-      ~F"""
-      <OptionsModal {...@modal_assigns} />
+      ~H"""
+      <OptionsModal.render
+        redirect_url={assigns.modal_assigns.redirect_url}
+        revision={assigns.modal_assigns.revision}
+        changeset={assigns.modal_assigns.changeset}
+        project={assigns.modal_assigns.project}
+        project_hierarchy={assigns.modal_assigns.project_hierarchy}
+        validate={assigns.modal_assigns.validate}
+        submit={assigns.modal_assigns.submit}
+      />
       """
     end
 
@@ -310,7 +319,7 @@ defmodule OliWeb.Curriculum.ContainerLive do
 
     modal = fn assigns ->
       ~H"""
-        <MoveModal.render {@modal_assigns} />
+      <MoveModal.render {@modal_assigns} />
       """
     end
 
@@ -615,7 +624,7 @@ defmodule OliWeb.Curriculum.ContainerLive do
 
     modal = fn assigns ->
       ~H"""
-        <DeleteModal.render {@modal_assigns} />
+      <DeleteModal.render {@modal_assigns} />
       """
     end
 
@@ -638,7 +647,7 @@ defmodule OliWeb.Curriculum.ContainerLive do
 
     modal = fn assigns ->
       ~H"""
-        <NotEmptyModal.render {@modal_assigns} />
+      <NotEmptyModal.render {@modal_assigns} />
       """
     end
 

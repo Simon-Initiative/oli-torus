@@ -1,4 +1,4 @@
-{render_modal(assigns)}
+<%= render_modal(assigns) %>
 
 <div id="curriculum-container" class="container mx-auto curriculum-editor">
   <div class="grid grid-cols-12">
@@ -17,7 +17,8 @@
             phx-value-view="Basic"
             class={"btn btn-xs #{if @view == "Basic", do: "active"}"}
           >
-            <input type="radio" name="options" id="view-1" checked={@view == "Basic"}> <span>Basic</span>
+            <input type="radio" name="options" id="view-1" checked={@view == "Basic"} />
+            <span>Basic</span>
           </label>
 
           <label
@@ -25,7 +26,8 @@
             phx-value-view="Detailed"
             class={"btn btn-xs #{if @view == "Detailed", do: "active"}"}
           >
-            <input type="radio" name="options" id="view-2" checked={@view == "Detailed"}> <span>Detailed</span>
+            <input type="radio" name="options" id="view-2" checked={@view == "Detailed"} />
+            <span>Detailed</span>
           </label>
 
           <label
@@ -33,7 +35,8 @@
             phx-value-view="Learning Summary"
             class={"btn btn-xs #{if @view === "Learning Summary", do: "active"}"}
           >
-            <input type="radio" name="options" id="view-3" checked={@view == "Learning Summary"}> <span>Learning</span>
+            <input type="radio" name="options" id="view-3" checked={@view == "Learning Summary"} />
+            <span>Learning</span>
           </label>
         </div>
       </div>
@@ -42,14 +45,14 @@
   <div class="grid grid-cols-12" phx-window-keydown="keydown">
     <div class="col-span-12">
       <div class="curriculum-entries">
-        {#if Enum.count(@children) == 0}
+        <%= if Enum.count(@children) == 0 do %>
           <div style="margin-top: 15px">
             <p>There's nothing here.</p>
           </div>
-        {/if}
-        {#for {child, index} <- Enum.with_index(@children) |> Enum.filter(fn {c, _i} -> c.slug != @dragging end)}
-          <DropTarget id={index} index={index} />
-          <EntryLive
+        <% end %>
+        <%= for {child, index} <- Enum.with_index(@children) |> Enum.filter(fn {c, _i} -> c.slug != @dragging end) do %>
+          <DropTarget.render id={index} index={index} />
+          <EntryLive.render
             id={child.slug}
             ctx={@ctx}
             editor={Map.get(@resources_being_edited, child.resource_id)}
@@ -65,8 +68,8 @@
             view={@view}
             numberings={@numberings}
           />
-        {/for}
-        <DropTarget id="last" index={length(@children)} />
+        <% end %>
+        <%!-- <DropTarget id="last" index={length(@children)} /> --%>
       </div>
       <div class="mt-5">
         <span class="text-secondary mr-2">Create:</span>
@@ -86,7 +89,7 @@
         >
           Graded Assessment
         </button>
-        {#if @adaptivity_flag}
+        <%= if @adaptivity_flag do %>
           <button
             phx-click="add"
             phx-value-type="Adaptive"
@@ -95,14 +98,14 @@
           >
             Adaptive Page
           </button>
-        {/if}
+        <% end %>
         <button
           phx-click="add"
           phx-value-type="Container"
           class="btn btn-xs btn-outline-primary mr-0.5"
           type="button"
         >
-          {new_container_name(@numberings, @container)}
+          <%= new_container_name(@numberings, @container) %>
         </button>
       </div>
     </div>

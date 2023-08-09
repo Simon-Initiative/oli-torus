@@ -114,8 +114,7 @@ defmodule OliWeb.Snapshots.SnapshotsView do
     case Oli.Delivery.Snapshots.Worker.perform_now(
            socket.assigns.missing,
            socket.assigns.section.slug
-         )
-         |> IO.inspect() do
+         ) do
       {:ok, _} -> {:noreply, assign(socket, missing: [], count_missing: 0, result: :success)}
       {:error, e} -> {:noreply, assign(socket, result: e)}
       e -> {:noreply, assign(socket, result: e)}

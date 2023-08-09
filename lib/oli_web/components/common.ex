@@ -140,6 +140,7 @@ defmodule OliWeb.Components.Common do
   )
 
   attr(:errors, :list, default: [])
+  attr(:class, :string, default: nil)
   attr(:checked, :boolean, doc: "the checked flag for checkbox inputs")
   attr(:prompt, :string, default: nil, doc: "the prompt for select inputs")
   attr(:options, :list, doc: "the options to pass to Phoenix.HTML.Form.options_for_select/2")
@@ -158,6 +159,7 @@ defmodule OliWeb.Components.Common do
     |> assign(:errors, field.errors)
     |> assign_new(:name, fn -> if assigns.multiple, do: field.name <> "[]", else: field.name end)
     |> assign_new(:value, fn -> field.value end)
+    |> assign_new(:class, fn -> assigns[:class] end)
     |> input()
   end
 
@@ -166,8 +168,8 @@ defmodule OliWeb.Components.Common do
       assign_new(assigns, :checked, fn -> Phoenix.HTML.Form.normalize_value("checkbox", value) end)
 
     ~H"""
-    <div phx-feedback-for={@name}>
-      <label class="flex items-center gap-4 text-sm leading-6 text-zinc-600">
+    <div class="contents" phx-feedback-for={@name}>
+      <label class="contents">
         <input type="hidden" name={@name} value="false" />
         <input
           type="checkbox"
@@ -175,7 +177,7 @@ defmodule OliWeb.Components.Common do
           name={@name}
           value="true"
           checked={@checked}
-          class="rounded border-zinc-300 text-zinc-900 focus:ring-0"
+          class={@class}
           {@rest}
         />
         <%= @label %>
@@ -187,12 +189,12 @@ defmodule OliWeb.Components.Common do
 
   def input(%{type: "select"} = assigns) do
     ~H"""
-    <div phx-feedback-for={@name}>
+    <div class="contents" phx-feedback-for={@name}>
       <.label :if={@label} for={@id}><%= @label %></.label>
       <select
         id={@id}
         name={@name}
-        class="mt-2 block w-full rounded-md border border-gray-300 bg-white shadow-sm focus:border-zinc-400 focus:ring-0 sm:text-sm"
+        class={@class}
         multiple={@multiple}
         {@rest}
       >
@@ -206,16 +208,14 @@ defmodule OliWeb.Components.Common do
 
   def input(%{type: "textarea"} = assigns) do
     ~H"""
-    <div phx-feedback-for={@name}>
+    <div class="contents" phx-feedback-for={@name}>
       <.label :if={@label} for={@id}><%= @label %></.label>
       <textarea
         id={@id}
         name={@name}
         class={[
-          "mt-2 block w-full rounded-lg text-zinc-900 focus:ring-0 sm:text-sm sm:leading-6",
-          "min-h-[6rem] phx-no-feedback:border-zinc-300 phx-no-feedback:focus:border-zinc-400",
-          @errors == [] && "border-zinc-300 focus:border-zinc-400",
-          @errors != [] && "border-rose-400 focus:border-rose-400"
+          @class,
+          @errors != [] && "border-red-400 focus:border-red-400"
         ]}
         {@rest}
       ><%= Phoenix.HTML.Form.normalize_value("textarea", @value) %></textarea>
@@ -227,7 +227,7 @@ defmodule OliWeb.Components.Common do
   # All other inputs text, datetime-local, url, password, etc. are handled here...
   def input(assigns) do
     ~H"""
-    <div phx-feedback-for={@name}>
+    <div class="contents" phx-feedback-for={@name}>
       <.label :if={@label} for={@id}><%= @label %></.label>
       <input
         type={@type}
@@ -235,10 +235,8 @@ defmodule OliWeb.Components.Common do
         id={@id}
         value={Phoenix.HTML.Form.normalize_value(@type, @value)}
         class={[
-          "mt-2 block w-full rounded-lg text-zinc-900 focus:ring-0 sm:text-sm sm:leading-6",
-          "phx-no-feedback:border-zinc-300 phx-no-feedback:focus:border-zinc-400",
-          @errors == [] && "border-zinc-300 focus:border-zinc-400",
-          @errors != [] && "border-rose-400 focus:border-rose-400"
+          @class,
+          @errors != [] && "border-red-400 focus:border-red-400"
         ]}
         {@rest}
       />
