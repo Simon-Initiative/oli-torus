@@ -843,6 +843,18 @@ defmodule Oli.Delivery.Metrics do
     Repo.one(query)
   end
 
+  # Given a list of ContainedPage records, return a map of
+  # page ids to a list of container ids (their ancestor containers)
+  # that contain that page
+  #
+  # For instance, given the following ContainedPage records:
+  #
+  #  %ContainedPage{container_id: 1, page_id: 10}
+  #  %ContainedPage{container_id: 1, page_id: 11}
+  #  %ContainedPage{container_id: 2, page_id: 10}
+  #
+  # This function will return:
+  # %{10 => [1, 2], 11 => [1]}
   defp page_to_parent_containers_map(contained_pages) do
     Enum.reduce(contained_pages, %{},
       fn %ContainedPage{container_id: container_id, page_id: page_id}, inverted_cp_index ->
@@ -853,6 +865,8 @@ defmodule Oli.Delivery.Metrics do
       end)
   end
 
+  # Given a list of ContainedPage records, return a map of container ids to a tuple of
+  # correct and total values, initialized to {0.0, 0.0}
   defp init_container_totals(contained_pages) do
     Enum.map(contained_pages, fn %ContainedPage{container_id: container_id} -> container_id end)
     |> Enum.dedup()
@@ -861,6 +875,9 @@ defmodule Oli.Delivery.Metrics do
     end)
   end
 
+  # Given a list of {page_id, correct, total} tuples, and a list of
+  # ContainedPage records, return a map of container ids to a tuple of correct and total values,
+  # where the container totals are the sum of the page totals for all pages contained in that container.
   defp bucket_into_container_totals(page_totals, contained_pages) do
 
     inverted_cp_index = page_to_parent_containers_map(contained_pages)
