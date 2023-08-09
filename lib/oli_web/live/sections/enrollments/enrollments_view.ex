@@ -165,16 +165,18 @@ defmodule OliWeb.Sections.EnrollmentsViewLive do
       <div class="flex justify-between">
         <TextSearch id="text-search"/>
 
-        {#if @is_admin and @section.open_and_free == true}
+        {#if @is_admin}
           <Link
             label="Download as .CSV"
             to={Routes.page_delivery_path(OliWeb.Endpoint, :export_enrollments, @section.slug)}
             class="btn btn-outline-primary"
             method={:post} />
 
-            <button phx-click="open" phx-target="#enrollments_view_add_enrollments_modal" class="torus-button primary">
-              Add Enrollments
-            </button>
+            {#if @section.open_and_free == true}
+              <button phx-click="open" phx-target="#enrollments_view_add_enrollments_modal" class="torus-button primary">
+                Add Enrollments
+              </button>
+            {/if}
         {/if}
       </div>
 

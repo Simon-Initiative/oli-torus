@@ -200,12 +200,23 @@ defmodule OliWeb.Sections.EnrollmentsViewTest do
       assert Map.get(new_users, user_2.email) == nil
       assert Map.get(new_users, non_existant_email_1) != nil
     end
+
+    test "can' invite new users to the section if section is not open and free", %{conn: conn} do
+      section = insert(:section)
+
+      enrollments_url =
+        Routes.live_path(@endpoint, OliWeb.Sections.EnrollmentsViewLive, section.slug)
+
+      {:ok, _view, html} = live(conn, enrollments_url)
+
+      refute html =~ "Add Enrollments"
+    end
   end
 
   defp setup_enrollments_view(%{conn: conn}) do
     map = Seeder.base_project_with_resource2()
 
-    section = make(map.project, map.institution, "a", %{})
+    section = make(map.project, map.institution, "a", %{open_and_free: true})
 
     enroll(section)
 
