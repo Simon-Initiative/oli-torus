@@ -885,10 +885,14 @@ defmodule Oli.Delivery.Metrics do
 
     Enum.reduce(page_totals, container_totals, fn {page_id, correct, total}, map ->
       container_ids = Map.get(inverted_cp_index, page_id)
-      Enum.reduce(container_ids, map, fn container_id, map ->
-        {current_correct, current_total} = Map.get(map, container_id)
-        Map.put(map, container_id, {current_correct + correct, current_total + total})
-      end)
+      case container_ids do
+        nil -> map
+        _ ->
+          Enum.reduce(container_ids, map, fn container_id, map ->
+            {current_correct, current_total} = Map.get(map, container_id)
+            Map.put(map, container_id, {current_correct + correct, current_total + total})
+          end)
+      end
     end)
     |> Enum.into(%{}, fn {container_id, {correct, total}} ->
       proficiency = case total do
