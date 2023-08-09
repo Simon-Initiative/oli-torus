@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.25.0 (unreleased)
+## 0.24.4 (unreleased)
 
 ### Bug Fixes
 
