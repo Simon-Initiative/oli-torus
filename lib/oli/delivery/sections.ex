@@ -3296,4 +3296,49 @@ defmodule Oli.Delivery.Sections do
   end
 
   def get_revision_by_index(_, _), do: nil
+
+  @doc """
+  Get all students for a given section with their enrollment date.
+  """
+
+  def get_students_for_section_with_enrollment_date(section_id) do
+    student_context_role_id = ContextRoles.get_role(:context_learner).id
+
+    Repo.all(
+      from(enrollment in Enrollment,
+        join: enrollment_context_role in EnrollmentContextRole,
+        on: enrollment_context_role.enrollment_id == enrollment.id,
+        join: user in User,
+        on: enrollment.user_id == user.id,
+        where:
+          enrollment.section_id == ^section_id and
+            enrollment_context_role.context_role_id == ^student_context_role_id,
+        select: {user, enrollment}
+      )
+    )
+    |> Enum.map(fn {user, enrollment} ->
+      Map.put(user, :enrollment_date, enrollment.inserted_at)
+    end)
+    |> Enum.sort_by(fn user -> user.name end)
+  end
+
+  @doc """
+    Get all instructors for a given section.
+  """
+  def get_instructors_for_section(section_id) do
+    instructor_context_role_id = ContextRoles.get_role(:context_instructor).id
+
+    Repo.all(
+      from(enrollment in Enrollment,
+        join: enrollment_context_role in EnrollmentContextRole,
+        on: enrollment_context_role.enrollment_id == enrollment.id,
+        join: user in User,
+        on: enrollment.user_id == user.id,
+        where:
+          enrollment.section_id == ^section_id and
+            enrollment_context_role.context_role_id == ^instructor_context_role_id,
+        select: user
+      )
+    )
+  end
 end

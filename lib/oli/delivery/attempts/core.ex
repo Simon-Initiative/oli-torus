@@ -25,11 +25,12 @@ defmodule Oli.Delivery.Attempts.Core do
 
   def get_user_from_attempt(%ResourceAttempt{resource_access_id: resource_access_id}) do
     query =
-      from access in ResourceAccess,
+      from(access in ResourceAccess,
         join: user in User,
         on: access.user_id == user.id,
         select: user,
         where: access.id == ^resource_access_id
+      )
 
     Repo.one(query)
   end
@@ -40,13 +41,14 @@ defmodule Oli.Delivery.Attempts.Core do
   """
   def has_any_attempts?(%User{id: user_id}, %Section{id: section_id}, resource_id) do
     query =
-      from access in ResourceAccess,
+      from(access in ResourceAccess,
         join: attempt in ResourceAttempt,
         on: access.id == attempt.resource_access_id,
         select: count(attempt.id),
         where:
           access.user_id == ^user_id and access.section_id == ^section_id and
             access.resource_id == ^resource_id
+      )
 
     Repo.one(query) > 0
   end
@@ -419,7 +421,7 @@ defmodule Oli.Delivery.Attempts.Core do
   def get_part_attempts_and_users(project_id) do
     # This is our base, reusable query designed to get the part attempts
     core =
-      from snapshot in Snapshot,
+      from(snapshot in Snapshot,
         as: :snapshot,
         join: part_attempt in PartAttempt,
         as: :part_attempt,
@@ -427,6 +429,7 @@ defmodule Oli.Delivery.Attempts.Core do
         where:
           snapshot.project_id == ^project_id and
             part_attempt.lifecycle_state == :evaluated
+      )
 
     # Now get the resource attempt revision for those part attempts, distinctly, and
     # create a map of their ids to the attempts
@@ -589,16 +592,18 @@ defmodule Oli.Delivery.Attempts.Core do
   end
 
   def get_latest_non_active_activity_attempts(resource_attempt_id) do
-
-    query = from(
-      aa in ActivityAttempt,
-      where: (aa.lifecycle_state == :evaluated or aa.lifecycle_state == :submitted) and aa.resource_attempt_id ==  ^resource_attempt_id,
-      group_by: aa.resource_id,
-      select: max(aa.id)
-    )
+    query =
+      from(
+        aa in ActivityAttempt,
+        where:
+          (aa.lifecycle_state == :evaluated or aa.lifecycle_state == :submitted) and
+            aa.resource_attempt_id == ^resource_attempt_id,
+        group_by: aa.resource_id,
+        select: max(aa.id)
+      )
 
     Repo.all(
-      from(aa in ActivityAttempt ,
+      from(aa in ActivityAttempt,
         where: aa.id in subquery(query),
         select: aa
       )
@@ -678,12 +683,14 @@ defmodule Oli.Delivery.Attempts.Core do
   end
 
   def is_scoreable_first_attempt?(activity_attempt_guid) do
-    {attempt_number, scoreable} = Repo.one(
-      from(a in ActivityAttempt,
-        where: a.attempt_guid == ^activity_attempt_guid,
-        select: {a.attempt_number, a.scoreable}
+    {attempt_number, scoreable} =
+      Repo.one(
+        from(a in ActivityAttempt,
+          where: a.attempt_guid == ^activity_attempt_guid,
+          select: {a.attempt_number, a.scoreable}
+        )
       )
-    )
+
     case {attempt_number, scoreable} do
       {1, true} -> true
       _ -> false
@@ -802,6 +809,19 @@ defmodule Oli.Delivery.Attempts.Core do
   end
 
   @doc """
+  Gets all part attempts for a given activity attempts.
+  """
+
+  def get_part_attempts_by_activity_attempts(activity_attempts) do
+    Repo.all(
+      from(pa in PartAttempt,
+        where: pa.activity_attempt_id in ^activity_attempts,
+        select: pa
+      )
+    )
+  end
+
+  @doc """
   Creates a resource attempt.
   ## Examples
       iex> create_resource_attempt(%{field: value})
@@ -869,6 +889,23 @@ defmodule Oli.Delivery.Attempts.Core do
   end
 
   @doc """
+  Updates all resource accesses for a given section and user.
+  """
+
+  def update_resource_accesses_by_section_and_user(
+        current_section_id,
+        current_user_id,
+        target_section_id,
+        target_user_id
+      ) do
+    from(
+      ra in ResourceAccess,
+      where: ra.section_id == ^current_section_id and ra.user_id == ^current_user_id
+    )
+    |> Repo.update_all(set: [section_id: target_section_id, user_id: target_user_id])
+  end
+
+  @doc """
   Creates an activity attempt.
   ## Examples
       iex> create_activity_attempt(%{field: value})
@@ -880,6 +917,19 @@ defmodule Oli.Delivery.Attempts.Core do
     %ActivityAttempt{}
     |> ActivityAttempt.changeset(attrs)
     |> Repo.insert()
+  end
+
+  @doc """
+  Gets all activity attempts for a given resource attempts.
+  """
+
+  def get_activity_attempts_by_resource_attempts(resource_attempts) do
+    Repo.all(
+      from(aa in ActivityAttempt,
+        where: aa.resource_attempt_id in ^resource_attempts,
+        select: aa
+      )
+    )
   end
 
   @doc """
@@ -905,4 +955,30 @@ defmodule Oli.Delivery.Attempts.Core do
   """
   def get_resource_attempt(clauses),
     do: Repo.get_by(ResourceAttempt, clauses)
+
+  @doc """
+  Gets all resource attempts for a given resource accesses.
+  """
+
+  def get_resource_attempts_by_resource_accesses(resource_accesses) do
+    Repo.all(
+      from(ra in ResourceAttempt,
+        where: ra.resource_access_id in ^resource_accesses,
+        select: ra
+      )
+    )
+  end
+
+  @doc """
+    Deletes part attempts, activity attempts, resource attempts, and resource accesses for a given section and user.
+    Deleting resource accesses will cascade to deleting resource attempts, which will cascade to deleting activity
+  """
+
+  def delete_resource_accesses_by_section_and_user(target_section_id, target_user_id) do
+    Repo.delete_all(
+      from(res_acc in ResourceAccess,
+        where: res_acc.section_id == ^target_section_id and res_acc.user_id == ^target_user_id
+      )
+    )
+  end
 end
