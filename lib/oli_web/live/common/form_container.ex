@@ -1,22 +1,22 @@
 defmodule OliWeb.Common.FormContainer do
-  use Surface.Component
+  use OliWeb, :html
 
-  prop title, :string, required: true
-  prop bs_row_class, :string, default: "grid grid-cols-12"
+  attr :title, :string, required: true
+  attr :bs_row_class, :string, default: "grid grid-cols-12"
 
-  prop bs_col_class, :string, default: "col-span-12 mx-auto"
+  attr :bs_col_class, :string, default: "col-span-12 mx-auto"
 
-  slot default, required: true
+  slot :inner_block, required: true
 
   def render(assigns) do
-    ~F"""
+    ~H"""
     <div class="container box-form-container">
       <div class={@bs_row_class}>
         <div class={@bs_col_class}>
           <div class="card signin my-5">
             <div class="card-body">
-              <h5 class="card-title text-center">{@title}</h5>
-              <#slot />
+              <h5 class="card-title text-center"><%= @title %></h5>
+              <%= render_slot(@inner_block) %>
             </div>
           </div>
         </div>

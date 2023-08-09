@@ -1,18 +1,11 @@
 defmodule OliWeb.Admin.Institutions.ResearchConsentView do
-  use Surface.LiveView, layout: {OliWeb.LayoutView, :live}
+  use OliWeb, :live_view
 
   alias Oli.Institutions
   alias Oli.Institutions.Institution
   alias OliWeb.Common.{Breadcrumb, FormContainer}
   alias OliWeb.InstitutionController
   alias OliWeb.Router.Helpers, as: Routes
-  alias Surface.Components.Form
-  alias Surface.Components.Form.{ErrorTag, Field, RadioButton}
-
-  data breadcrumbs, :any
-  data title, :string, default: "Manage Research Consent"
-  data institution, :any, default: nil
-  data changeset, :changeset, default: nil
 
   defp institution_route(institution_id),
     do: Routes.institution_path(OliWeb.Endpoint, :show, institution_id)
@@ -45,27 +38,46 @@ defmodule OliWeb.Admin.Institutions.ResearchConsentView do
     end
   end
 
-  def render(assigns) do
-    ~F"""
-      <FormContainer title={@title}>
-        <Form for={@changeset} submit="save">
-          <Field name={:research_consent} class="form-group">
-            <div class="form-check p-2">
-              <div class="p-2">
-                <RadioButton value={:oli_form} />
-                <label class="form-check-label ml-1">OLI Research Consent Form</label><br>
-              </div>
-              <div class="p-2">
-                <RadioButton value={:no_form} />
-                <label class="form-check-label ml-1">No Research Consent Form</label>
-              </div>
-            </div>
-            <ErrorTag/>
-          </Field>
+  attr :breadcrumbs, :any
+  attr :title, :string, default: "Manage Research Consent"
+  attr :institution, :any, default: nil
+  attr :changeset, :map, default: nil
 
-          <button class="form-button btn btn-md btn-primary btn-block mt-3" type="submit">Save</button>
-        </Form>
-      </FormContainer>
+  def render(assigns) do
+    ~H"""
+    <FormContainer.render title={@title}>
+      <.form for={@changeset} phx-submit="save">
+        <div class="form-check p-2">
+          <div class="p-2">
+            <input
+              id="research_consent_yes"
+              checked={Ecto.Changeset.get_field(@changeset, :research_consent) == :oli_form}
+              name="institution[research_consent]"
+              type="radio"
+              value={:oli_form}
+            />
+            <label for="research_consent_yes" class="form-check-label ml-1">
+              OLI Research Consent Form
+            </label>
+            <br />
+          </div>
+          <div class="p-2">
+            <input
+              id="research_consent_no"
+              checked={Ecto.Changeset.get_field(@changeset, :research_consent) == :no_form}
+              name="institution[research_consent]"
+              type="radio"
+              value={:no_form}
+            />
+            <label for="research_consent_no" class="form-check-label ml-1">
+              No Research Consent Form
+            </label>
+          </div>
+        </div>
+
+        <button class="form-button btn btn-md btn-primary btn-block mt-3" type="submit">Save</button>
+      </.form>
+    </FormContainer.render>
     """
   end
 
