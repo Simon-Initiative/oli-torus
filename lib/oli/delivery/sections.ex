@@ -1603,6 +1603,13 @@ defmodule Oli.Delivery.Sections do
     end)
   end
 
+  def get_contained_pages(%Section{id: section_id}) do
+    from(cp in ContainedPage,
+      where: cp.section_id == ^section_id
+    )
+    |> Repo.all()
+  end
+
   @doc """
   Rebuilds the "contained pages" relations for a course section.  A "contained page" for a
   container is the full set of pages found immeidately within that container or in any of
