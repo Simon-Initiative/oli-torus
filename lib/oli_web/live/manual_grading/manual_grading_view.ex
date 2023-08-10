@@ -296,7 +296,7 @@ defmodule OliWeb.ManualGrading.ManualGradingView do
 
       <Group.render>
         <div class="d-flex justify-content-between">
-          <TextSearch id="text-search"/>
+          <TextSearch.render id="text-search"/>
           <Filters options={@options} selection={!is_nil(@attempt)}/>
         </div>
 

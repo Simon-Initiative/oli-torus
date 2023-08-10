@@ -52,7 +52,7 @@ defmodule OliWeb.Common.EnrollmentBrowser.EnrollmentPicker do
     ~F"""
     <div id={@id}>
 
-      <TextSearch id="text-search" event_target={"#" <> assigns.id}/>
+      <TextSearch.render id="text-search" event_target={"#" <> assigns.id}/>
 
       <div class="mb-3"/>
 

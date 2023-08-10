@@ -156,7 +156,7 @@ defmodule OliWeb.Resources.PagesView do
         table_model={@table_model}
         show_sort={false}
         show_more_opts={true}>
-        <TextSearch id="text-search" text={@options.text_search}/>
+        <TextSearch.render id="text-search" text={@options.text_search}/>
 
         <:extra_opts>
 

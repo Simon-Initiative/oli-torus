@@ -182,7 +182,7 @@ defmodule OliWeb.Projects.ProjectsLive do
       <div class="container mb-4">
         <div class="grid grid-cols-12">
           <div class="col-span-12">
-            <TextSearch event_target={:live_view} id="text-search" apply="text_search_apply" reset="text_search_reset" change="text_search_change" text={@text_search} />
+            <TextSearch.render event_target={:live_view} id="text-search" apply="text_search_apply" reset="text_search_reset" change="text_search_change" text={@text_search} />
           </div>
         </div>
       </div>

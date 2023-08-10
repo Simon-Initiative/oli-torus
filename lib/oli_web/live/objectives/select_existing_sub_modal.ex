@@ -32,7 +32,7 @@ defmodule OliWeb.ObjectivesLive.SelectExistingSubModal do
             </div>
             <div class="modal-body">
               <div class="container form-container">
-                <TextSearch id="text-search" text={@query} event_target={@myself} reset="text_search_reset" />
+                <TextSearch.render id="text-search" text={@query} event_target={@myself} reset="text_search_reset" />
                 <div class="d-flex flex-column mt-3">
                   {#for sub_objective <- @filtered_sub_objectives}
                     <div class="my-2 d-flex">

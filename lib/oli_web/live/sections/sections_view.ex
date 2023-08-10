@@ -119,7 +119,7 @@ defmodule OliWeb.Sections.SectionsView do
           table_model={@table_model}
           show_sort={false}
           show_more_opts={true}>
-          <TextSearch id="text-search" text={@options.text_search}/>
+          <TextSearch.render id="text-search" text={@options.text_search}/>
 
           <:extra_opts>
             <Check.render checked={@options.active_today} click="active_today">Active (start/end dates include today)</Check.render>

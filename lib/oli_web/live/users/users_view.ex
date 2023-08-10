@@ -1,5 +1,5 @@
 defmodule OliWeb.Users.UsersView do
-  use Surface.LiveView, layout: {OliWeb.LayoutView, :live}
+  use OliWeb, :live_view
 
   import OliWeb.Common.Params
   import OliWeb.DelegatedEvents
@@ -17,14 +17,6 @@ defmodule OliWeb.Users.UsersView do
     include_guests: false,
     text_search: ""
   }
-
-  data(breadcrumbs, :any)
-  data(users, :list, default: [])
-  data(tabel_model, :struct)
-  data(total_count, :integer, default: 0)
-  data(offset, :integer, default: 0)
-  data(limit, :integer, default: @limit)
-  data(options, :any)
 
   defp set_breadcrumbs() do
     OliWeb.Admin.AdminView.breadcrumb()
@@ -99,27 +91,35 @@ defmodule OliWeb.Users.UsersView do
      )}
   end
 
+  attr(:breadcrumbs, :any)
+  attr(:users, :list, default: [])
+  attr(:tabel_model, :map)
+  attr(:total_count, :integer, default: 0)
+  attr(:offset, :integer, default: 0)
+  attr(:limit, :integer, default: @limit)
+  attr(:options, :any)
+
   def render(assigns) do
-    ~F"""
+    ~H"""
     <div>
+      <Check.render class="mr-4" checked={@options.include_guests} click="include_guests">
+        Show guest users
+      </Check.render>
 
-      <Check.render class="mr-4" checked={@options.include_guests} click="include_guests">Show guest users</Check.render>
+      <div class="mb-3" />
 
-      <div class="mb-3"/>
+      <TextSearch.render id="text-search" text={@options.text_search} />
 
-      <TextSearch id="text-search" text={@options.text_search} />
-
-      <div class="mb-3"/>
+      <div class="mb-3" />
 
       <PagedTable.render
         filter={@options.text_search}
         table_model={@table_model}
         total_count={@total_count}
         offset={@offset}
-        limit={@limit}/>
-
+        limit={@limit}
+      />
     </div>
-
     """
   end
 

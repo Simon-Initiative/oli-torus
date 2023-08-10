@@ -123,7 +123,7 @@ defmodule OliWeb.Grades.BrowseUpdatesView do
     ~F"""
     <div class="container mx-auto">
 
-      <TextSearch id="text-search"/>
+      <TextSearch.render id="text-search"/>
 
       <div class="mb-3"/>
 

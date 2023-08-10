@@ -53,7 +53,6 @@
         <%= for {child, index} <- Enum.with_index(@children) |> Enum.filter(fn {c, _i} -> c.slug != @dragging end) do %>
           <DropTarget.render id={index} index={index} />
           <EntryLive.render
-            id={child.slug}
             ctx={@ctx}
             editor={Map.get(@resources_being_edited, child.resource_id)}
             author={@author}

@@ -189,7 +189,7 @@ defmodule OliWeb.Sections.GatingAndScheduling do
     ~F"""
     <div class="container">
       <div class="d-flex">
-        <TextSearch id="text-search"/>
+        <TextSearch.render id="text-search"/>
         <div class="flex-grow-1"></div>
         <Link class="btn btn-primary ml-2" to={link_new(assigns)}>
           <i class="fas fa-plus"></i> New {render_type(assigns)}

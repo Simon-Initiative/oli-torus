@@ -124,7 +124,7 @@ defmodule OliWeb.Sections.EnrollmentsViewLive do
     <div class="container mx-auto">
 
       <div class="d-flex justify-content-between">
-        <TextSearch id="text-search"/>
+        <TextSearch.render id="text-search"/>
 
         {#if @is_admin}
           <Link

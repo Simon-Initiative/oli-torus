@@ -104,7 +104,7 @@ defmodule OliWeb.Users.AuthorsView do
     ~F"""
     <div>
 
-      <TextSearch id="text-search" text={@options.text_search} />
+      <TextSearch.render id="text-search" text={@options.text_search} />
 
       <div class="mb-3"/>
 
