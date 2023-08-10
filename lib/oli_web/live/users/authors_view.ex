@@ -1,5 +1,5 @@
 defmodule OliWeb.Users.AuthorsView do
-  use Surface.LiveView, layout: {OliWeb.LayoutView, :live}
+  use OliWeb, :live_view
 
   import OliWeb.Common.Params
   import OliWeb.DelegatedEvents
@@ -16,16 +16,6 @@ defmodule OliWeb.Users.AuthorsView do
   @default_options %AuthorBrowseOptions{
     text_search: ""
   }
-
-  prop(author, :any)
-  data(breadcrumbs, :any)
-  data(title, :string, default: "All Authors")
-  data(authors, :list, default: [])
-  data(tabel_model, :struct)
-  data(total_count, :integer, default: 0)
-  data(offset, :integer, default: 0)
-  data(limit, :integer, default: @limit)
-  data(options, :any)
 
   defp set_breadcrumbs() do
     OliWeb.Admin.AdminView.breadcrumb()
@@ -100,8 +90,18 @@ defmodule OliWeb.Users.AuthorsView do
      )}
   end
 
+  attr :author, :any
+  attr :breadcrumbs, :any
+  attr :title, :string, default: "All Authors"
+  attr :authors, :list, default: []
+  attr :tabel_model, :map
+  attr :total_count, :integer, default: 0
+  attr :offset, :integer, default: 0
+  attr :limit, :integer, default: @limit
+  attr :options, :any
+
   def render(assigns) do
-    ~F"""
+    ~H"""
     <div>
 
       <TextSearch.render id="text-search" text={@options.text_search} />
