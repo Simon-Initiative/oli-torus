@@ -1,5 +1,5 @@
 defmodule OliWeb.CollaborationLive.IndexView do
-  use Surface.LiveView, layout: {OliWeb.LayoutView, :live}
+  use OliWeb, :live_view
   use OliWeb.Common.SortableTable.TableHandlers
 
   alias Oli.Resources.Collaboration
@@ -10,18 +10,6 @@ defmodule OliWeb.CollaborationLive.IndexView do
   alias alias OliWeb.Sections.Mount
 
   @title "Collaborative Spaces"
-
-  data title, :string, default: @title
-  data breadcrumbs, :any
-  data filter, :any, default: %{}
-  data query, :string, default: ""
-  data total_count, :integer, default: 0
-  data offset, :integer, default: 0
-  data limit, :integer, default: 20
-  data sort, :string, default: "sort"
-  data page_change, :string, default: "page_change"
-  data show_bottom_paging, :boolean, default: false
-  data additional_table_class, :string, default: ""
 
   @table_filter_fn &__MODULE__.filter_rows/3
   @table_push_patch_path &__MODULE__.live_path/2
@@ -80,7 +68,10 @@ defmodule OliWeb.CollaborationLive.IndexView do
          section_slug: section_slug,
          collab_spaces: collab_spaces,
          table_model: table_model,
-         total_count: length(collab_spaces)
+         total_count: length(collab_spaces),
+         limit: 20,
+         offset: 0,
+         query: ""
        )}
     end
 
@@ -100,27 +91,23 @@ defmodule OliWeb.CollaborationLive.IndexView do
   end
 
   def render(assigns) do
-    ~F"""
-      <div class="d-flex p-3 justify-content-between">
-        <Filter.render
-          change="change_search"
-          reset="reset_search"
-          apply="apply_search"
-          query={@query}/>
-      </div>
+    ~H"""
+    <div class="d-flex p-3 justify-content-between">
+      <Filter.render change="change_search" reset="reset_search" apply="apply_search" query={@query} />
+    </div>
 
-      <div id="collaborative-spaces-table" class="p-4">
-        <Listing.render
-          filter={@query}
-          table_model={@table_model}
-          total_count={@total_count}
-          offset={@offset}
-          limit={@limit}
-          sort={@sort}
-          page_change={@page_change}
-          show_bottom_paging={@show_bottom_paging}
-          additional_table_class={@additional_table_class}/>
-      </div>
+    <div id="collaborative-spaces-table" class="p-4">
+      <Listing.render
+        filter={@query}
+        table_model={@table_model}
+        total_count={@total_count}
+        offset={@offset}
+        limit={@limit}
+        sort="sort"
+        page_change="page_change"
+        show_bottom_paging={false}
+      />
+    </div>
     """
   end
 
