@@ -1162,6 +1162,158 @@ defmodule Oli.TestHelpers do
     end)
   end
 
+  def sections_with_same_publications(_) do
+    author = insert(:author)
+    project = insert(:project, authors: [author])
+    user_1 = insert(:user)
+    user_2 = insert(:user)
+
+    # Create page 1
+    page_resource_1 = insert(:resource)
+    insert(:project_resource, %{project_id: project.id, resource_id: page_resource_1.id})
+
+    page_1_revision =
+      insert(
+        :revision,
+        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("page"),
+        title: "Page 1",
+        graded: false,
+        resource: page_resource_1
+      )
+
+    # Create page 2
+    page_resource_2 = insert(:resource)
+    insert(:project_resource, %{project_id: project.id, resource_id: page_resource_2.id})
+
+    page_2_revision =
+      insert(
+        :revision,
+        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("page"),
+        title: "Page 2",
+        graded: true,
+        resource: page_resource_2
+      )
+
+    # Create root container for the project
+    root_container_resource = insert(:resource)
+    insert(:project_resource, %{project_id: project.id, resource_id: root_container_resource.id})
+
+    root_container_revision =
+      insert(:revision, %{
+        resource: root_container_resource,
+        objectives: %{},
+        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("container"),
+        children: [
+          page_resource_1.id,
+          page_resource_2.id
+        ],
+        content: %{},
+        deleted: false,
+        slug: "root_container",
+        title: "Root Container"
+      })
+
+    # Publicate project
+    publication =
+      insert(:publication, %{project: project, root_resource_id: root_container_resource.id})
+
+    insert(:published_resource, %{
+      publication: publication,
+      resource: root_container_resource,
+      revision: root_container_revision
+    })
+
+    insert(:published_resource, %{
+      publication: publication,
+      resource: page_resource_1,
+      revision: page_1_revision
+    })
+
+    insert(:published_resource, %{
+      publication: publication,
+      resource: page_resource_2,
+      revision: page_2_revision
+    })
+
+
+    # Create section 1
+    section_1 =
+      insert(:section,
+        base_project: project,
+        context_id: UUID.uuid4(),
+        registration_open: true,
+        type: :enrollable
+      )
+
+    # create section 2
+    section_2 =
+      insert(:section,
+        base_project: project,
+        context_id: UUID.uuid4(),
+        registration_open: true,
+        type: :enrollable
+      )
+
+    resource_access_1 =
+      insert(:resource_access, user: user_1, section: section_1, resource: page_resource_1)
+
+    resource_access_2 =
+      insert(:resource_access, user: user_2, section: section_2, resource: page_resource_2)
+
+    resource_attempt_1 = insert(:resource_attempt, resource_access: resource_access_1)
+    resource_attempt_2 = insert(:resource_attempt, resource_access: resource_access_2)
+
+    activity_attempt_1 =
+      insert(:activity_attempt,
+        resource_attempt: resource_attempt_1,
+        revision: page_1_revision,
+        lifecycle_state: "active",
+        transformed_model: generate_attempt_content()
+      )
+
+    activity_attempt_2 =
+      insert(:activity_attempt,
+        resource_attempt: resource_attempt_2,
+        revision: page_1_revision,
+        lifecycle_state: "active",
+        transformed_model: generate_attempt_content()
+      )
+
+    insert(:part_attempt,
+      activity_attempt: activity_attempt_1,
+      response: %{files: [], input: "option_1_id"}
+    )
+
+    insert(:part_attempt,
+      activity_attempt: activity_attempt_2,
+      response: %{files: [], input: "option_2_id"}
+    )
+
+    insert(:snapshot, %{
+      section: section_1,
+      resource: page_1_revision.resource,
+      user: user_1,
+      correct: true
+    })
+
+    insert(:snapshot, %{
+      section: section_2,
+      resource: page_1_revision.resource,
+      user: user_2,
+      correct: true
+    })
+
+    {:ok, section_1} = Sections.create_section_resources(section_1, publication)
+    {:ok, section_2} = Sections.create_section_resources(section_2, publication)
+
+    %{
+      section_1: section_1,
+      section_2: section_2,
+      user_1: user_1,
+      user_2: user_2
+    }
+  end
+
   def section_with_gating_conditions(_context) do
     author = insert(:author)
     project = insert(:project, authors: [author])

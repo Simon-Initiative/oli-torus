@@ -348,4 +348,214 @@ defmodule OliWeb.Delivery.StudentDashboard.Components.ActionsTabTest do
       refute has_element?(view, "button", "Apply Bypass Payment")
     end
   end
+
+  describe "Transfer section data as an admin user" do
+    setup [:admin_conn, :sections_with_same_publications]
+
+    test "shows rendered button to transfer enrollment correctly", %{
+      conn: conn,
+      section_1: section_1,
+      user_1: user_1
+    } do
+      Sections.enroll(user_1.id, section_1.id, [
+        ContextRoles.get_role(:context_learner)
+      ])
+
+      {:ok, view, _html} =
+        live(
+          conn,
+          live_view_students_actions_route(section_1.slug, user_1.id, :actions)
+        )
+
+      # Actions tab is the selected one
+      assert has_element?(
+               view,
+               ~s{a[href="#{live_view_students_actions_route(section_1.slug, user_1.id, :actions)}"].border-b-2},
+               "Actions"
+             )
+
+      assert has_element?(view, "span", "Transfer Enrollment")
+      assert has_element?(view, "button", "Transfer Enrollment")
+    end
+
+    test "allow transfer enrollment to another section", %{
+      conn: conn,
+      section_1: section_1,
+      section_2: section_2,
+      user_1: user_1,
+      user_2: user_2
+    } do
+      Sections.enroll(user_1.id, section_1.id, [
+        ContextRoles.get_role(:context_learner)
+      ])
+
+      Sections.enroll(user_1.id, section_2.id, [
+        ContextRoles.get_role(:context_learner)
+      ])
+
+      Sections.enroll(user_2.id, section_2.id, [
+        ContextRoles.get_role(:context_learner)
+      ])
+
+      {:ok, view, _html} =
+        live(
+          conn,
+          live_view_students_actions_route(section_1.slug, user_1.id, :actions)
+        )
+
+      assert has_element?(view, "button", "Transfer Enrollment")
+
+      # click button to transfer enrollment
+      view
+      |> with_target("#transfer_enrollment_modal")
+      |> render_click("open", %{})
+
+      # text in modal is correct
+      assert view
+             |> element("p[class=\"mb-2\"]")
+             |> render() =~
+               "This will transfer this student&#39;s enrollment, and all their current progress, to the selected course section. If this student is already enrolled in the selected course section, that progress will be lost."
+
+      assert view
+             |> element("tr:first-child > td:first-child")
+             |> render() =~ "#{section_2.title}"
+
+      # click on section_2 row
+      view
+      |> element(
+        "tr[phx-value-id=\"#{section_2.id}\"]",
+        "#{section_2.title}"
+      )
+      |> render_click()
+
+      # shows the table element with the target students
+      assert view
+             |> element("tr:first-child > td:first-child")
+             |> render() =~ "#{user_1.name}"
+
+      assert view
+             |> element("tr:last-child > td:first-child")
+             |> render() =~ "#{user_2.name}"
+
+      # click on user_2 row
+      view
+      |> element(
+        "tr[phx-value-id=\"#{user_2.id}\"]",
+        "#{user_2.name}"
+      )
+      |> render_click()
+
+      assert element(view, "p[class=\"my-4\"]") |> render() =~
+               ~s"\n    Are you sure you want to transfer the <strong>#{user_1.name}</strong>\n    enrollment&#39;s in <strong>#{section_1.title}</strong>\n    to <strong>#{user_2.name}</strong>\n    in <strong>#{section_2.title}</strong>?\n"
+
+      # click on confirm button
+      view
+      |> with_target("#transfer_enrollment")
+      |> render_click("finish_transfer_enrollment")
+
+      # shows success message
+      assert has_element?(view, "div.alert.alert-info", "Enrollment successfully transfered")
+    end
+
+    test "shows text if there are no sections to transfer data", %{conn: conn, user_1: user_1} do
+      section = insert(:section)
+
+      Sections.enroll(user_1.id, section.id, [
+        ContextRoles.get_role(:context_learner)
+      ])
+
+      {:ok, view, _html} =
+        live(
+          conn,
+          live_view_students_actions_route(section.slug, user_1.id, :actions)
+        )
+
+      assert has_element?(view, "button", "Transfer Enrollment")
+
+      # click button to transfer enrollment
+      view
+      |> with_target("#transfer_enrollment_modal")
+      |> render_click("open", %{})
+
+      # shows text when there are not sections to transfer data
+      assert view
+             |> element("p.mt-4")
+             |> render() =~
+               "There are no other sections to transfer this student to."
+    end
+
+    test "shows text if there are no students to transfer data", %{
+      conn: conn,
+      section_1: section_1,
+      section_2: section_2,
+      user_1: user_1
+    } do
+      # section = insert(:section)
+
+      Sections.enroll(user_1.id, section_1.id, [
+        ContextRoles.get_role(:context_learner)
+      ])
+
+      {:ok, view, _html} =
+        live(
+          conn,
+          live_view_students_actions_route(section_1.slug, user_1.id, :actions)
+        )
+
+      assert has_element?(view, "button", "Transfer Enrollment")
+
+      # click button to transfer enrollment
+      view
+      |> with_target("#transfer_enrollment_modal")
+      |> render_click("open", %{})
+
+      assert view
+             |> element("tr:first-child > td:first-child")
+             |> render() =~ "#{section_2.title}"
+
+      # click on section_2 row
+      view
+      |> element(
+        "tr[phx-value-id=\"#{section_2.id}\"]",
+        "#{section_2.title}"
+      )
+      |> render_click()
+
+      # shows text when there are not sections to transfer data
+      assert view
+             |> element("p.mt-4")
+             |> render() =~
+               "There are no other students to transfer this student to."
+    end
+  end
+
+  describe "Transfer section data as an instructor user" do
+    setup [:instructor_conn, :sections_with_same_publications]
+
+    test "button to transfer enrollment is not rendered if the user is not an admin user", %{
+      conn: conn,
+      section_1: section_1,
+      instructor: instructor,
+      user_1: user_1
+    } do
+      Sections.enroll(user_1.id, section_1.id, [ContextRoles.get_role(:context_learner)])
+      Sections.enroll(instructor.id, section_1.id, [ContextRoles.get_role(:context_instructor)])
+
+      {:ok, view, _html} =
+        live(
+          conn,
+          live_view_students_actions_route(section_1.slug, user_1.id, :actions)
+        )
+
+      # Actions tab is the selected one
+      assert has_element?(
+               view,
+               ~s{a[href="#{live_view_students_actions_route(section_1.slug, user_1.id, :actions)}"].border-b-2},
+               "Actions"
+             )
+
+      refute has_element?(view, "span", "Transfer Enrollment")
+      refute has_element?(view, "button", "Transfer")
+    end
+  end
 end
