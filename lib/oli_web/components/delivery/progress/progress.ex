@@ -1,16 +1,10 @@
 defmodule OliWeb.Components.Delivery.Progress do
-  use Surface.LiveComponent
+  use OliWeb, :live_component
 
   alias OliWeb.Common.{PagedTable, SearchInput, Params}
   alias OliWeb.Components.Delivery.StudentProgressTabelModel
   alias OliWeb.Router.Helpers, as: Routes
   alias Phoenix.LiveView.JS
-
-  data(title, :string, default: "Progress")
-  prop(params, :map, required: true)
-  prop(total_count, :integer, required: true)
-  prop(table_model, :map, required: true)
-  prop(ctx, :struct, required: true)
 
   @default_params %{
     offset: 0,
@@ -62,34 +56,49 @@ defmodule OliWeb.Components.Delivery.Progress do
      )}
   end
 
-  def render(assigns) do
-    ~F"""
-      <div class="mx-10 mb-10 bg-white">
-        <div class="flex flex-col sm:flex-row sm:items-end px-6 py-4 instructor_dashboard_table">
-          <h4 class="pl-9 !py-2 torus-h4 mr-auto">{@title}</h4>
-          <form for="search" phx-target={@myself} phx-change="search_progress" class="pb-6 ml-9 w-44 sm:pb-0">
-            <SearchInput.render id="progress_search_input" name="resource_title" text={@params.text_search} />
-          </form>
-        </div>
+  attr(:title, :string, default: "Progress")
+  attr(:params, :map, required: true)
+  attr(:total_count, :integer, required: true)
+  attr(:table_model, :map, required: true)
+  attr(:ctx, :map, required: true)
 
-        {#if @total_count > 0}
-          <div id="progress-table">
-            <PagedTable.render
-              table_model={@table_model}
-              page_change={JS.push("paged_table_page_change", target: @myself)}
-              sort={JS.push("paged_table_sort", target: @myself)}
-              total_count={@total_count}
-              offset={@params.offset}
-              limit={@params.limit}
-              additional_table_class="instructor_dashboard_table"
-              show_bottom_paging={false}
-              render_top_info={false}
-            />
-          </div>
-        {#else}
-          <h6 class="text-center py-4">There are no progress to show</h6>
-        {/if}
+  def render(assigns) do
+    ~H"""
+    <div class="mx-10 mb-10 bg-white">
+      <div class="flex flex-col sm:flex-row sm:items-end px-6 py-4 instructor_dashboard_table">
+        <h4 class="pl-9 !py-2 torus-h4 mr-auto"><%= @title %></h4>
+        <form
+          for="search"
+          phx-target={@myself}
+          phx-change="search_progress"
+          class="pb-6 ml-9 w-44 sm:pb-0"
+        >
+          <SearchInput.render
+            id="progress_search_input"
+            name="resource_title"
+            text={@params.text_search}
+          />
+        </form>
       </div>
+
+      <%= if @total_count > 0 do %>
+        <div id="progress-table">
+          <PagedTable.render
+            table_model={@table_model}
+            page_change={JS.push("paged_table_page_change", target: @myself)}
+            sort={JS.push("paged_table_sort", target: @myself)}
+            total_count={@total_count}
+            offset={@params.offset}
+            limit={@params.limit}
+            additional_table_class="instructor_dashboard_table"
+            show_bottom_paging={false}
+            render_top_info={false}
+          />
+        </div>
+      <% else %>
+        <h6 class="text-center py-4">There are no progress to show</h6>
+      <% end %>
+    </div>
     """
   end
 
