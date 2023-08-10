@@ -1,15 +1,10 @@
 defmodule OliWeb.Users.UserEnrolledSections do
-  use Surface.LiveComponent
+  use OliWeb, :live_component
 
   alias OliWeb.Common.{PagedTable, SearchInput, Params}
   alias OliWeb.Router.Helpers, as: Routes
   alias OliWeb.Users.UserEnrolledTableModel
   alias Phoenix.LiveView.JS
-
-  prop enrolled_sections, :list, required: true
-  prop params, :map, required: true
-  prop table_model, :struct, required: true
-  prop total_count, :number, required: true
 
   @default_params %{
     offset: 0,
@@ -47,38 +42,51 @@ defmodule OliWeb.Users.UserEnrolledSections do
      )}
   end
 
+  attr(:enrolled_sections, :list, required: true)
+  attr(:params, :map, required: true)
+  attr(:table_model, :map, required: true)
+  attr(:total_count, :integer, required: true)
+
   def render(assigns) do
-    ~F"""
-      <div class="flex flex-col gap-y-4">
-        {#if length(@enrolled_sections) > 0}
-          <div class="d-flex justify-end">
-            <form for="search" phx-target={@myself} phx-change="search_section" class="pb-6 ml-9 sm:pb-0 w-44">
-              <SearchInput.render id="section_search_input" name="section_title" text={@params.text_search} />
-            </form>
+    ~H"""
+    <div class="flex flex-col gap-y-4">
+      <%= if length(@enrolled_sections) > 0 do %>
+        <div class="d-flex justify-end">
+          <form
+            for="search"
+            phx-target={@myself}
+            phx-change="search_section"
+            class="pb-6 ml-9 sm:pb-0 w-44"
+          >
+            <SearchInput.render
+              id="section_search_input"
+              name="section_title"
+              text={@params.text_search}
+            />
+          </form>
+        </div>
+
+        <%= if @total_count > 0 do %>
+          <div id="sections-enrolled-table">
+            <PagedTable.render
+              table_model={@table_model}
+              total_count={@total_count}
+              offset={@params.offset}
+              limit={@params.limit}
+              additional_table_class="instructor_dashboard_table"
+              sort={JS.push("paged_table_sort", target: @myself)}
+              page_change={JS.push("paged_table_page_change", target: @myself)}
+              show_bottom_paging={false}
+              render_top_info={false}
+            />
           </div>
-
-
-          {#if @total_count > 0}
-            <div id="sections-enrolled-table">
-              <PagedTable.render
-                table_model={@table_model}
-                total_count={@total_count}
-                offset={@params.offset}
-                limit={@params.limit}
-                additional_table_class="instructor_dashboard_table"
-                sort={JS.push("paged_table_sort", target: @myself)}
-                page_change={JS.push("paged_table_page_change", target: @myself)}
-                show_bottom_paging={false}
-                render_top_info={false}
-              />
-            </div>
-          {#else}
-            <h6 class="text-center py-4">There are no sections to show</h6>
-          {/if}
-        {#else}
-          <h6 class="text-center py-4">User is not enrolled in any course section</h6>
-        {/if}
-      </div>
+        <% else %>
+          <h6 class="text-center py-4">There are no sections to show</h6>
+        <% end %>
+      <% else %>
+        <h6 class="text-center py-4">User is not enrolled in any course section</h6>
+      <% end %>
+    </div>
     """
   end
 
