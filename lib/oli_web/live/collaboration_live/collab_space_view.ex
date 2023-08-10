@@ -1,5 +1,5 @@
 defmodule OliWeb.CollaborationLive.CollabSpaceView do
-  use Surface.LiveView, layout: {OliWeb.LayoutView, :live}
+  use OliWeb, :live_view
 
   alias Phoenix.LiveView.JS
 
@@ -15,39 +15,10 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
   alias OliWeb.CollaborationLive.ActiveUsers
   alias OliWeb.CollaborationLive.Posts.Sort
   alias OliWeb.CollaborationLive.Posts.List, as: PostList
-  alias OliWeb.Common.Confirm
   alias OliWeb.Presence
   alias Phoenix.PubSub
   alias OliWeb.Components.Delivery.Buttons
-
-  alias Surface.Components.Form
-
-  alias Surface.Components.Form.{
-    Field,
-    TextArea,
-    Inputs,
-    HiddenInput,
-    Checkbox
-  }
-
-  data selected, :string, default: ""
-  data modal, :any, default: nil
-
-  data editing_post, :struct, default: nil
-  data is_edition_mode, :boolean, default: false
-  data topic, :string
-  data active_users, :list
-  data posts, :list
-  data new_post_changeset, :changeset
-
-  data collab_space_config, :struct
-  data user, :struct
-  data section, :struct
-  data page_resource, :struct
-  data search_params, :struct
-  data sort, :struct
-  data is_instructor, :boolean, default: false
-  data is_student, :boolean, default: false
+  alias OliWeb.Components.Modal
 
   # ----------------
   def channels_topic(section_slug, resource_id),
@@ -135,62 +106,125 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
        active_users: Presence.list_presences(topic),
        posts: get_posts(search_params, sort),
        collab_space_config: collab_space_config,
-       new_post_changeset: new_post_changeset,
+       new_post_form: to_form(new_post_changeset),
        sort: sort,
        is_instructor: is_instructor,
        is_student: is_student,
-       title: title
+       title: title,
+       selected: "",
+       editing_post: nil,
+       is_edition_mode: false,
+       modal_assigns: %{}
      )}
   end
 
   def render(assigns) do
-    ~F"""
-    {render_modal(assigns)}
-
+    ~H"""
     <div class="container mx-auto">
+      <Modal.modal
+        id="delete_post_modal"
+        on_confirm={JS.push("delete_posts") |> Modal.hide_modal("delete_post_modal")}
+        on_cancel={JS.push("cancel_confirm_modal")}
+      >
+        <:title>Delete Post</:title>
+        <%= "Are you sure you want to delete post #{@modal_assigns[:index]}?" %>
+        <:confirm>OK</:confirm>
+        <:cancel>Cancel</:cancel>
+      </Modal.modal>
+
+      <Modal.modal
+        id="archive_post_modal"
+        on_confirm={JS.push("archive_post") |> Modal.hide_modal("archive_post_modal")}
+        on_cancel={JS.push("cancel_confirm_modal")}
+      >
+        <:title>Archive Post</:title>
+        <%= "Are you sure you want to archive post #{@modal_assigns[:index]}?" %>
+        <:confirm>OK</:confirm>
+        <:cancel>Cancel</:cancel>
+      </Modal.modal>
+
+      <Modal.modal
+        id="unarchive_post_modal"
+        on_confirm={JS.push("unarchive_post") |> Modal.hide_modal("unarchive_post_modal")}
+        on_cancel={JS.push("cancel_confirm_modal")}
+      >
+        <:title>Unarchive Post</:title>
+        <%= "Are you sure you want to unarchive post #{@modal_assigns[:index]}?" %>
+        <:confirm>OK</:confirm>
+        <:cancel>Cancel</:cancel>
+      </Modal.modal>
+
+      <Modal.modal
+        id="accept_post_modal"
+        on_confirm={JS.push("accept_post") |> Modal.hide_modal("accept_post_modal")}
+        on_cancel={JS.push("cancel_confirm_modal")}
+      >
+        <:title>Accept Post</:title>
+        <%= "Are you sure you want to accept post #{@modal_assigns[:index]}?" %>
+        <:confirm>OK</:confirm>
+        <:cancel>Cancel</:cancel>
+      </Modal.modal>
+
+      <Modal.modal
+        id="reject_post_modal"
+        on_confirm={JS.push("reject_post") |> Modal.hide_modal("reject_post_modal")}
+        on_cancel={JS.push("cancel_confirm_modal")}
+      >
+        <:title>Reject Post</:title>
+        <%= "Are you sure you want to reject post #{@modal_assigns[:index]}? This will also reject the replies if there is any." %>
+        <:confirm>OK</:confirm>
+        <:cancel>Cancel</:cancel>
+      </Modal.modal>
+
       <div class="bg-white dark:bg-gray-800 dark:text-delivery-body-color-dark shadow">
         <div>
           <div class="flex items-center justify-between p-5">
             <div class="flex items-center justify-between w-full">
-              <h3 class="text-xl font-bold">{@title}</h3>
-              {#if is_archived?(@collab_space_config.status)}
+              <h3 class="text-xl font-bold"><%= @title %></h3>
+              <%= if is_archived?(@collab_space_config.status) do %>
                 <span class="badge badge-info ml-2">Archived</span>
-              {/if}
+              <% end %>
             </div>
           </div>
         </div>
 
         <div class="p-2 pt-0 mb-5">
-          <Form
+          <.form
             id="new_post_form"
-            for={@new_post_changeset}
-            submit="create_post"
-            opts={autocomplete: "off"}
+            for={@new_post_form}
+            phx-submit="create_post"
             class="bg-gray-100 dark:bg-gray-700 p-3 rounded-sm"
           >
-            <HiddenInput field={:user_id} />
-            <HiddenInput field={:section_id} />
-            <HiddenInput field={:resource_id} />
+            <div class="hidden">
+              <.input type="hidden" field={@new_post_form[:user_id]} />
+              <.input type="hidden" field={@new_post_form[:section_id]} />
+              <.input type="hidden" field={@new_post_form[:resource_id]} />
+              <.input type="hidden" field={@new_post_form[:parent_post_id]} />
+              <.input type="hidden" field={@new_post_form[:thread_root_id]} />
+            </div>
 
-            <HiddenInput field={:parent_post_id} />
-            <HiddenInput field={:thread_root_id} />
+            <.inputs_for :let={pc} field={@new_post_form[:content]}>
+              <.input
+                type="textarea"
+                field={pc[:message]}
+                autocomplete="off"
+                placeholder="New post"
+                data-grow="true"
+                data-initial-height={44}
+                onkeyup="resizeTextArea(this)"
+                class="torus-input border-r-0 collab-space__textarea"
+              />
+            </.inputs_for>
 
-            <Inputs for={:content}>
-              <Field name={:message}>
-                <TextArea
-                  opts={
-                    placeholder: "New post",
-                    "data-grow": "true",
-                    "data-initial-height": 44,
-                    onkeyup: "resizeTextArea(this)"
-                  }
-                  class="torus-input border-r-0 collab-space__textarea"
-                />
-              </Field>
-            </Inputs>
             <div class="flex justify-end">
-              {#if @is_student and @collab_space_config.anonymous_posting}
-                <Checkbox id="new_post_anonymous_checkbox" field={:anonymous} class="hidden" />
+              <%= if @is_student and @collab_space_config.anonymous_posting do %>
+                <div class="hidden">
+                  <.input
+                    type="checkbox"
+                    id="new_post_anonymous_checkbox"
+                    field={@new_post_form[:anonymous]}
+                  />
+                </div>
                 <Buttons.button_with_options
                   id="create_post_button"
                   type="submit"
@@ -206,27 +240,29 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
                 >
                   Create Post
                 </Buttons.button_with_options>
-              {#else}
+              <% else %>
                 <Buttons.button disabled={is_archived?(@collab_space_config.status)} type="submit">
                   Create Post
                 </Buttons.button>
-              {/if}
+              <% end %>
             </div>
-          </Form>
+          </.form>
         </div>
 
-        {#if length(@posts) > 1}
+        <%= if length(@posts) > 1 do %>
           <div class="flex justify-end gap-2 py-2 px-5">
-            <Sort sort={@sort} />
+            <Sort.render sort={@sort} />
           </div>
-        {#elseif length(@posts) == 0}
-          <div class="border border-gray-100 rounded-sm p-5 flex items-center justify-center m-2">
-            <span class="torus-span">No posts yet</span>
-          </div>
-        {/if}
+        <% else %>
+          <%= if length(@posts) == 0 do %>
+            <div class="border border-gray-100 rounded-sm p-5 flex items-center justify-center m-2">
+              <span class="torus-span">No posts yet</span>
+            </div>
+          <% end %>
+        <% end %>
 
         <div class={if is_archived?(@collab_space_config.status), do: "readonly", else: ""}>
-          <PostList
+          <PostList.render
             posts={@posts}
             collab_space_config={@collab_space_config}
             selected={@selected}
@@ -257,16 +293,16 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
     {:noreply, assign(socket, __modal__: nil)}
   end
 
-  use OliWeb.Common.Modal
   # ----------------
 
   def handle_event("create_post", %{"post" => attrs} = _params, socket) do
     socket = clear_flash(socket)
 
     attrs =
-      if not socket.assigns.collab_space_config.auto_accept and socket.assigns.is_student,
-        do: Map.put(attrs, "status", :submitted),
-        else: attrs
+      if not socket.assigns.collab_space_config.auto_accept and
+           socket.assigns.is_student,
+         do: Map.put(attrs, "status", :submitted),
+         else: attrs
 
     case Collaboration.create_post(attrs) do
       {:ok, %PostSchema{} = post} ->
@@ -278,13 +314,13 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
           {:post_created, Repo.preload(post, :user)}
         )
 
-        {:noreply, hide_modal(socket, modal_assigns: nil)}
+        {:noreply, assign(socket, modal_assigns: nil)}
 
       {:error, %Ecto.Changeset{} = _changeset} ->
         {:noreply,
          socket
          |> put_flash(:error, "Couldn't create post")
-         |> hide_modal(modal_assigns: nil)}
+         |> assign(modal_assigns: nil)}
     end
   end
 
@@ -299,6 +335,7 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
       end
 
     socket = assign(socket, editing_post: post, is_edition_mode: is_edition_mode)
+
     {:noreply, push_event(socket, "set_focus", %{id: "post_text_area_#{post_id}"})}
   end
 
@@ -306,28 +343,19 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
     do: do_edit_post(socket.assigns.editing_post, attrs, socket)
 
   # -----------Delete Post-----------#
-  def handle_event("display_delete_modal", %{"id" => id, "index" => index}, socket) do
+  def handle_event(
+        "display_delete_modal",
+        %{"id" => id, "index" => index},
+        socket
+      ) do
     post = Collaboration.get_post_by(%{id: id})
 
-    modal_assigns = %{
-      title: "Delete Post",
-      id: "delete_post_modal",
-      ok: "delete_posts",
-      cancel: "cancel_confirm_modal"
-    }
-
-    opt_text =
-      if socket.assigns.is_instructor,
-        do: "This will also delete the replies if there is any.",
-        else: ""
-
-    display_confirm_modal(
-      modal_assigns,
-      "delete",
-      index,
-      assign(socket, editing_post: post, is_edition_mode: false),
-      opt_text
-    )
+    {:noreply,
+     assign(socket,
+       editing_post: post,
+       is_edition_mode: false,
+       modal_assigns: %{index: index}
+     )}
   end
 
   def handle_event("delete_posts", _, socket),
@@ -335,22 +363,19 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
 
   # -----------Archive Post-----------#
 
-  def handle_event("display_archive_modal", %{"id" => id, "index" => index}, socket) do
+  def handle_event(
+        "display_archive_modal",
+        %{"id" => id, "index" => index},
+        socket
+      ) do
     post = Collaboration.get_post_by(%{id: id})
 
-    modal_assigns = %{
-      title: "Archive Post",
-      id: "archive_post_modal",
-      ok: "archive_post",
-      cancel: "cancel_confirm_modal"
-    }
-
-    display_confirm_modal(
-      modal_assigns,
-      "archive",
-      index,
-      assign(socket, editing_post: post, is_edition_mode: false)
-    )
+    {:noreply,
+     assign(socket,
+       editing_post: post,
+       is_edition_mode: false,
+       modal_assigns: %{index: index}
+     )}
   end
 
   def handle_event("archive_post", _, socket),
@@ -358,22 +383,19 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
 
   # -----------Unarchive Post-----------#
 
-  def handle_event("display_unarchive_modal", %{"id" => id, "index" => index}, socket) do
+  def handle_event(
+        "display_unarchive_modal",
+        %{"id" => id, "index" => index},
+        socket
+      ) do
     post = Collaboration.get_post_by(%{id: id})
 
-    modal_assigns = %{
-      title: "Unarchive Post",
-      id: "unarchive_post_modal",
-      ok: "unarchive_post",
-      cancel: "cancel_confirm_modal"
-    }
-
-    display_confirm_modal(
-      modal_assigns,
-      "unarchive",
-      index,
-      assign(socket, editing_post: post, is_edition_mode: false)
-    )
+    {:noreply,
+     assign(socket,
+       editing_post: post,
+       is_edition_mode: false,
+       modal_assigns: %{index: index}
+     )}
   end
 
   def handle_event("unarchive_post", _, socket),
@@ -381,22 +403,19 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
 
   # -----------Accept Post-----------#
 
-  def handle_event("display_accept_modal", %{"id" => id, "index" => index}, socket) do
+  def handle_event(
+        "display_accept_modal",
+        %{"id" => id, "index" => index},
+        socket
+      ) do
     post = Collaboration.get_post_by(%{id: id})
 
-    modal_assigns = %{
-      title: "Accept Post",
-      id: "accept_post_modal",
-      ok: "accept_post",
-      cancel: "cancel_confirm_modal"
-    }
-
-    display_confirm_modal(
-      modal_assigns,
-      "accept",
-      index,
-      assign(socket, editing_post: post, is_edition_mode: false)
-    )
+    {:noreply,
+     assign(socket,
+       editing_post: post,
+       is_edition_mode: false,
+       modal_assigns: %{index: index}
+     )}
   end
 
   def handle_event("accept_post", _, socket),
@@ -404,33 +423,31 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
 
   # -----------Reject Post-----------#
 
-  def handle_event("display_reject_modal", %{"id" => id, "index" => index}, socket) do
+  def handle_event(
+        "display_reject_modal",
+        %{"id" => id, "index" => index},
+        socket
+      ) do
     post = Collaboration.get_post_by(%{id: id})
 
-    modal_assigns = %{
-      title: "Reject Post",
-      id: "reject_post_modal",
-      ok: "reject_post",
-      cancel: "cancel_confirm_modal"
-    }
-
-    display_confirm_modal(
-      modal_assigns,
-      "reject",
-      index,
-      assign(socket, editing_post: post, is_edition_mode: false),
-      "This will also reject the replies if there is any."
-    )
+    {:noreply,
+     assign(socket,
+       editing_post: post,
+       is_edition_mode: false,
+       modal_assigns: %{index: index}
+     )}
   end
 
   def handle_event("reject_post", _, socket),
     do: do_delete_post(socket.assigns.editing_post, socket)
 
   def handle_event("cancel_confirm_modal", _, socket) do
-    {:noreply,
-     socket
-     |> assign(editing_post: nil)
-     |> hide_modal(modal_assigns: nil)}
+    {
+      :noreply,
+      socket
+      |> assign(editing_post: nil)
+      |> assign(modal_assigns: nil)
+    }
   end
 
   # ----------------
@@ -470,9 +487,10 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
 
     posts =
       if post.status == :submitted do
-        if socket.assigns.is_instructor or post.user.id == socket.assigns.user.id,
-          do: all_posts ++ [post],
-          else: all_posts
+        if socket.assigns.is_instructor or
+             post.user.id == socket.assigns.user.id,
+           do: all_posts ++ [post],
+           else: all_posts
       else
         all_posts ++ [post]
       end
@@ -488,7 +506,8 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
       socket.assigns.posts
       |> get_all_posts()
       |> Enum.filter(fn post ->
-        post.id != post_id and post.thread_root_id != post_id and post.parent_post_id != post_id
+        post.id != post_id and post.thread_root_id != post_id and
+          post.parent_post_id != post_id
       end)
 
     {:noreply,
@@ -502,9 +521,10 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
 
     posts =
       if post_edited.status == :submitted do
-        if socket.assigns.is_instructor or post_edited.user.id == socket.assigns.user.id,
-          do: update_in_all_posts(all_posts, post_edited),
-          else: all_posts
+        if socket.assigns.is_instructor or
+             post_edited.user.id == socket.assigns.user.id,
+           do: update_in_all_posts(all_posts, post_edited),
+           else: all_posts
       else
         case Enum.find(all_posts, &(&1.id == post_edited.id)) do
           nil -> all_posts ++ [post_edited]
@@ -524,12 +544,17 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
         socket
       ) do
     search_params =
-      Map.put(socket.assigns.search_params, :collab_space_config, collab_space_config)
+      Map.put(
+        socket.assigns.search_params,
+        :collab_space_config,
+        collab_space_config
+      )
 
     socket =
-      if show_full_history != socket.assigns.collab_space_config.show_full_history,
-        do: assign(socket, posts: get_posts(search_params, socket.assigns.sort)),
-        else: socket
+      if show_full_history !=
+           socket.assigns.collab_space_config.show_full_history,
+         do: assign(socket, posts: get_posts(search_params, socket.assigns.sort)),
+         else: socket
 
     {:noreply,
      assign(socket,
@@ -542,22 +567,6 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
     {:noreply,
      assign(socket,
        active_users: Presence.list_presences(socket.assigns.topic)
-     )}
-  end
-
-  defp display_confirm_modal(modal_assigns, action, index, socket, opt_text \\ "") do
-    modal = fn assigns ->
-      ~F"""
-      <Confirm.render id={@modal_assigns.id} title={@modal_assigns.title} ok={@modal_assigns.ok} cancel={@modal_assigns.cancel}>
-        Are you sure you want to {action} post #{index}? {opt_text}</Confirm.render>
-      """
-    end
-
-    {:noreply,
-     show_modal(
-       socket,
-       modal,
-       modal_assigns: modal_assigns
      )}
   end
 
@@ -577,13 +586,13 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
         {:noreply,
          socket
          |> assign(editing_post: nil)
-         |> hide_modal(modal_assigns: nil)}
+         |> assign(modal_assigns: nil)}
 
       {:error, %Ecto.Changeset{} = _changeset} ->
         {:noreply,
          socket
          |> put_flash(:error, "Couldn't edit post")
-         |> hide_modal(modal_assigns: nil)}
+         |> assign(modal_assigns: nil)}
     end
   end
 
@@ -594,18 +603,22 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
       {number, nil} when number > 0 ->
         socket = put_flash(socket, :info, "Post/s successfully deleted")
 
-        PubSub.broadcast(Oli.PubSub, socket.assigns.topic, {:post_deleted, post.id})
+        PubSub.broadcast(
+          Oli.PubSub,
+          socket.assigns.topic,
+          {:post_deleted, post.id}
+        )
 
         {:noreply,
          socket
          |> assign(editing_post: nil)
-         |> hide_modal(modal_assigns: nil)}
+         |> assign(modal_assigns: nil)}
 
       _ ->
         {:noreply,
          socket
          |> put_flash(:error, "Couldn't delete post/s")
-         |> hide_modal(modal_assigns: nil)}
+         |> assign(modal_assigns: nil)}
     end
   end
 
@@ -618,7 +631,10 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
          },
          %{by: sort_by, order: sort_order}
        ) do
-    Collaboration.list_posts_for_instructor_in_page_section(section_id, resource_id)
+    Collaboration.list_posts_for_instructor_in_page_section(
+      section_id,
+      resource_id
+    )
     |> maybe_threading(collab_space_config)
     |> sort(sort_by, sort_order)
     |> Enum.with_index(1)
@@ -655,7 +671,11 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
          },
          %{by: sort_by, order: sort_order}
        ) do
-    Collaboration.list_posts_for_user_in_page_section(section_id, resource_id, user_id)
+    Collaboration.list_posts_for_user_in_page_section(
+      section_id,
+      resource_id,
+      user_id
+    )
     |> maybe_threading(collab_space_config)
     |> sort(sort_by, sort_order)
     |> Enum.with_index(1)
@@ -698,7 +718,11 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
   defp is_archived?(_), do: false
 
   defp sort(posts, :inserted_at = sort_by, sort_order) do
-    Enum.sort_by(posts, &(Map.get(&1, sort_by) |> DateTime.to_unix()), sort_order)
+    Enum.sort_by(
+      posts,
+      &(Map.get(&1, sort_by) |> DateTime.to_unix()),
+      sort_order
+    )
   end
 
   defp sort(posts, sort_by, sort_order) do
