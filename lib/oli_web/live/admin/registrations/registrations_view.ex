@@ -1,5 +1,5 @@
 defmodule OliWeb.Admin.RegistrationsView do
-  use Surface.LiveView, layout: {OliWeb.LayoutView, :live}
+  use OliWeb, :live_view
 
   alias Oli.Repo
   alias Oli.Repo.{Paging, Sorting}
@@ -10,7 +10,6 @@ defmodule OliWeb.Admin.RegistrationsView do
   alias OliWeb.Admin.RegistrationsTableModel
   alias Oli.Institutions
   alias Oli.Institutions.{RegistrationBrowseOptions}
-  alias Surface.Components.Link
 
   import OliWeb.DelegatedEvents
   import OliWeb.Common.Params
@@ -20,18 +19,6 @@ defmodule OliWeb.Admin.RegistrationsView do
   @default_options %RegistrationBrowseOptions{
     text_search: ""
   }
-
-  prop author, :any
-  data breadcrumbs, :any
-  data title, :string, default: "LTI 1.3 Registrations"
-
-  data registrations, :list, default: []
-
-  data tabel_model, :struct
-  data total_count, :integer, default: 0
-  data offset, :integer, default: 0
-  data limit, :integer, default: @limit
-  data options, :any
 
   defp set_breadcrumbs() do
     OliWeb.Admin.AdminView.breadcrumb()
@@ -70,7 +57,8 @@ defmodule OliWeb.Admin.RegistrationsView do
        registrations: registrations,
        total_count: total_count,
        table_model: table_model,
-       options: @default_options
+       options: @default_options,
+       limit: @limit
      )}
   end
 
@@ -114,29 +102,43 @@ defmodule OliWeb.Admin.RegistrationsView do
      )}
   end
 
-  def render(assigns) do
-    ~F"""
-    <div>
+  attr(:author, :any)
 
+  def render(assigns) do
+    ~H"""
+    <div>
       <div class="d-flex flex-row">
-        <TextSearch id="text-search" text={@options.text_search} />
+        <.live_component
+          module={TextSearch}
+          id="text-search"
+          text={@options.text_search}
+          placeholder="Search..."
+          event_target={:live_view}
+          apply="text_search_apply"
+          reset="text_search_reset"
+          change="text_search_change"
+        />
         <div class="flex-grow-1"></div>
         <div>
-          <Link label="Create Registration" to={Routes.registration_path(OliWeb.Endpoint, :new)} class="btn btn-sm btn-outline-primary ml-2" />
+          <.link
+            href={Routes.registration_path(OliWeb.Endpoint, :new)}
+            class="btn btn-sm btn-outline-primary ml-2"
+          >
+            Create Registration
+          </.link>
         </div>
       </div>
 
-      <div class="mb-3"/>
+      <div class="mb-3" />
 
       <PagedTable.render
         filter={@options.text_search}
         table_model={@table_model}
         total_count={@total_count}
         offset={@offset}
-        limit={@limit}/>
-
+        limit={@limit}
+      />
     </div>
-
     """
   end
 
