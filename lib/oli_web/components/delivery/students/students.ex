@@ -1,22 +1,11 @@
 defmodule OliWeb.Components.Delivery.Students do
-  use Surface.LiveComponent
+  use OliWeb, :live_component
 
   alias Phoenix.LiveView.JS
 
   alias OliWeb.Common.{PagedTable, SearchInput, Params, Utils}
   alias OliWeb.Delivery.Sections.EnrollmentsTableModel
   alias OliWeb.Router.Helpers, as: Routes
-
-  prop(ctx, :struct, required: true)
-  prop(title, :string, default: "Students")
-  prop(tab_name, :atom, default: :students)
-  prop(section_slug, :string, default: nil)
-  prop(params, :map, required: true)
-  prop(total_count, :number, required: true)
-  prop(table_model, :struct, required: true)
-  prop(dropdown_options, :list, required: true)
-  prop(show_progress_csv_download, :boolean, default: false)
-  prop(view, :atom)
 
   @default_params %{
     offset: 0,
@@ -165,21 +154,49 @@ defmodule OliWeb.Components.Delivery.Students do
     end
   end
 
+  attr(:ctx, :map, required: true)
+  attr(:title, :string, default: "Students")
+  attr(:tab_name, :atom, default: :students)
+  attr(:section_slug, :string, default: nil)
+  attr(:params, :map, required: true)
+  attr(:total_count, :integer, required: true)
+  attr(:table_model, :map, required: true)
+  attr(:dropdown_options, :list, required: true)
+  attr(:show_progress_csv_download, :boolean, default: false)
+  attr(:view, :atom)
+
   def render(assigns) do
-    ~F"""
+    ~H"""
     <div class="flex flex-col gap-2 mx-10 mb-10">
       <div class="bg-white dark:bg-gray-800 shadow-sm">
         <div class="flex justify-between sm:items-end px-4 sm:px-9 py-4 instructor_dashboard_table">
           <div>
-            <h4 class="torus-h4 !py-0 sm:mr-auto mb-2">{@title}</h4>
-            {#if @show_progress_csv_download}
-              <a class="self-end" href={Routes.metrics_path(OliWeb.Endpoint, :download_container_progress, @section_slug, @params.container_id)} download="progress.csv">
-                <i class="fa-solid fa-download mr-1" />
-                Download student progress CSV
+            <h4 class="torus-h4 !py-0 sm:mr-auto mb-2"><%= @title %></h4>
+            <%= if @show_progress_csv_download do %>
+              <a
+                class="self-end"
+                href={
+                  Routes.metrics_path(
+                    OliWeb.Endpoint,
+                    :download_container_progress,
+                    @section_slug,
+                    @params.container_id
+                  )
+                }
+                download="progress.csv"
+              >
+                <i class="fa-solid fa-download mr-1" /> Download student progress CSV
               </a>
-            {#else}
-              <a href={Routes.delivery_path(OliWeb.Endpoint, :download_students_progress, @section_slug)} class="self-end"><i class="fa-solid fa-download ml-1" /> Download</a>
-            {/if}
+            <% else %>
+              <a
+                href={
+                  Routes.delivery_path(OliWeb.Endpoint, :download_students_progress, @section_slug)
+                }
+                class="self-end"
+              >
+                <i class="fa-solid fa-download ml-1" /> Download
+              </a>
+            <% end %>
           </div>
           <div class="flex flex-col-reverse sm:flex-row gap-2 items-end">
             <div class="flex w-full sm:w-auto sm:items-end gap-2">
@@ -187,15 +204,23 @@ defmodule OliWeb.Components.Delivery.Students do
                 <label class="cursor-pointer inline-flex flex-col gap-1 w-full">
                   <small class="torus-small uppercase">Filter by</small>
                   <select class="torus-select" name="filter">
-                    {#for elem <- @dropdown_options}
-                      <option selected={@params.filter_by == elem.value} value={elem.value}>{elem.label}</option>
-                    {/for}
+                    <option
+                      :for={elem <- @dropdown_options}
+                      selected={@params.filter_by == elem.value}
+                      value={elem.value}
+                    >
+                      <%= elem.label %>
+                    </option>
                   </select>
                 </label>
               </form>
             </div>
             <form for="search" phx-target={@myself} phx-change="search_student" class="w-44">
-              <SearchInput.render id="students_search_input" name="student_name" text={@params.text_search} />
+              <SearchInput.render
+                id="students_search_input"
+                name="student_name"
+                text={@params.text_search}
+              />
             </form>
           </div>
         </div>
