@@ -1,6 +1,5 @@
 defmodule OliWeb.Common.EnrollmentBrowser.EnrollmentPicker do
-  use Surface.LiveComponent
-  use OliWeb.Common.Modal
+  use OliWeb, :live_component
 
   alias Oli.Repo.{Paging, Sorting}
   alias OliWeb.Common.{TextSearch, PagedTable}
@@ -8,6 +7,7 @@ defmodule OliWeb.Common.EnrollmentBrowser.EnrollmentPicker do
   alias OliWeb.Common.Table.SortableTableModel
   alias OliWeb.Common.EnrollmentBrowser.TableModel
   alias Oli.Delivery.Sections
+  alias Phoenix.LiveView.JS
   import OliWeb.DelegatedEvents
   import OliWeb.Common.Params
 
@@ -18,13 +18,9 @@ defmodule OliWeb.Common.EnrollmentBrowser.EnrollmentPicker do
     text_search: ""
   }
 
-  prop section, :any, default: nil
-  prop ctx, :struct
-  data table_model, :struct
-  data total_count, :integer, default: 0
-  data offset, :integer, default: 0
-  data limit, :integer, default: @limit
-  data options, :any
+  def mount(socket) do
+    {:ok, assign(socket, %{offset: 0, limit: @limit})}
+  end
 
   def update(assigns, socket) do
     %{total_count: total_count, table_model: table_model} =
@@ -48,22 +44,25 @@ defmodule OliWeb.Common.EnrollmentBrowser.EnrollmentPicker do
     end
   end
 
+  attr(:section, :any, default: nil)
+  attr(:ctx, :map)
+
   def render(assigns) do
-    ~F"""
+    ~H"""
     <div id={@id}>
+      <TextSearch.render id="text-search" event_target={"#" <> assigns.id} />
 
-      <TextSearch.render id="text-search" event_target={"#" <> assigns.id}/>
-
-      <div class="mb-3"/>
+      <div class="mb-3" />
 
       <PagedTable.render
-        sort="paged_table_sort"
-        page_change="paged_table_page_change"
+        sort={JS.push("paged_table_sort", target: @myself)}
+        page_change={JS.push("paged_table_page_change", target: @myself)}
         filter={@options.text_search}
         table_model={@table_model}
         total_count={@total_count}
         offset={@offset}
-        limit={@limit}/>
+        limit={@limit}
+      />
     </div>
     """
   end
