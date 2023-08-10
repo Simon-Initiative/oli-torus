@@ -1,5 +1,5 @@
 defmodule OliWeb.CommunityLive.Associated.NewView do
-  use Surface.LiveView, layout: {OliWeb.LayoutView, :live}
+  use OliWeb, :live_view
   use OliWeb.Common.SortableTable.TableHandlers
 
   alias Oli.Authoring.Course
@@ -8,16 +8,6 @@ defmodule OliWeb.CommunityLive.Associated.NewView do
   alias OliWeb.CommunityLive.Associated.{IndexView, TableModel}
   alias Oli.Delivery.Sections.Blueprint
   alias OliWeb.Router.Helpers, as: Routes
-
-  data(title, :string, default: "Community Associate New")
-  data(breadcrumbs, :any)
-
-  data(query, :string, default: "")
-  data(total_count, :integer, default: 0)
-  data(offset, :integer, default: 0)
-  data(limit, :integer, default: 20)
-  data(sort, :string, default: "sort")
-  data(page_change, :string, default: "page_change")
 
   @table_filter_fn &__MODULE__.filter_rows/3
   @table_push_patch_path &__MODULE__.live_path/2
@@ -71,12 +61,13 @@ defmodule OliWeb.CommunityLive.Associated.NewView do
        sources: sources,
        table_model: table_model,
        total_count: length(sources),
-       community_id: community_id
+       community_id: community_id,
+       limit: 20
      )}
   end
 
   def render(assigns) do
-    ~F"""
+    ~H"""
       <div class="p-3">
         <Filter.render
           change="change_search"
@@ -92,8 +83,8 @@ defmodule OliWeb.CommunityLive.Associated.NewView do
           total_count={@total_count}
           offset={@offset}
           limit={@limit}
-          sort={@sort}
-          page_change={@page_change}
+          sort="sort"
+          page_change="page_change"
           show_bottom_paging={false}
           additional_table_class=""/>
       </div>
