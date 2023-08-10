@@ -1,5 +1,5 @@
 defmodule OliWeb.CommunityLive.Associated.IndexView do
-  use Surface.LiveView, layout: {OliWeb.LayoutView, :live}
+  use OliWeb, :live_view
   use OliWeb.Common.SortableTable.TableHandlers
 
   alias Oli.Groups
@@ -7,17 +7,6 @@ defmodule OliWeb.CommunityLive.Associated.IndexView do
   alias OliWeb.CommunityLive.ShowView
   alias OliWeb.CommunityLive.Associated.{NewView, TableModel}
   alias OliWeb.Router.Helpers, as: Routes
-  alias Surface.Components.Link
-
-  data(title, :string, default: "Community Associated")
-  data(breadcrumbs, :any)
-
-  data(query, :string, default: "")
-  data(total_count, :integer, default: 0)
-  data(offset, :integer, default: 0)
-  data(limit, :integer, default: 20)
-  data(sort, :string, default: "sort")
-  data(page_change, :string, default: "page_change")
 
   @table_filter_fn &__MODULE__.filter_rows/3
   @table_push_patch_path &__MODULE__.live_path/2
@@ -55,36 +44,34 @@ defmodule OliWeb.CommunityLive.Associated.IndexView do
        associations: associations,
        community_id: community_id,
        table_model: table_model,
-       total_count: length(associations)
+       total_count: length(associations),
+       limit: 20
      )}
   end
 
   def render(assigns) do
-    ~F"""
-      <div class="d-flex p-3 justify-content-between">
-        <Filter.render
-          change="change_search"
-          reset="reset_search"
-          apply="apply_search"
-          query={@query}/>
+    ~H"""
+    <div class="d-flex p-3 justify-content-between">
+      <Filter.render change="change_search" reset="reset_search" apply="apply_search" query={@query} />
 
-        <Link class="btn btn-primary" to={Routes.live_path(@socket, NewView, @community_id)}>
-          Add new +
-        </Link>
-      </div>
+      <.link class="btn btn-primary" href={Routes.live_path(OliWeb.Endpoint, NewView, @community_id)}>
+        Add new +
+      </.link>
+    </div>
 
-      <div id="projects-products-table" class="p-4">
-        <Listing.render
-          filter={@query}
-          table_model={@table_model}
-          total_count={@total_count}
-          offset={@offset}
-          limit={@limit}
-          sort={@sort}
-          page_change={@page_change}
-          show_bottom_paging={false}
-          additional_table_class=""/>
-      </div>
+    <div id="projects-products-table" class="p-4">
+      <Listing.render
+        filter={@query}
+        table_model={@table_model}
+        total_count={@total_count}
+        offset={@offset}
+        limit={@limit}
+        sort="sort"
+        page_change="page_change"
+        show_bottom_paging={false}
+        additional_table_class=""
+      />
+    </div>
     """
   end
 
