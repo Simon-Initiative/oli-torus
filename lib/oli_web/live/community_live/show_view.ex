@@ -21,15 +21,15 @@ defmodule OliWeb.CommunityLive.ShowView do
 
   alias OliWeb.Router.Helpers, as: Routes
 
-  data title, :string, default: "Edit Community"
-  data community, :struct
-  data changeset, :changeset
-  data breadcrumbs, :list
-  data modal, :any, default: nil
-  data community_admins, :list
-  data community_members, :list
-  data community_institutions, :list
-  data matches, :map, default: %{"admin" => [], "member" => [], "institution" => []}
+  data(title, :string, default: "Edit Community")
+  data(community, :struct)
+  data(changeset, :changeset)
+  data(breadcrumbs, :list)
+  data(modal, :any, default: nil)
+  data(community_admins, :list)
+  data(community_members, :list)
+  data(community_institutions, :list)
+  data(matches, :map, default: %{"admin" => [], "member" => [], "institution" => []})
 
   @matches_limit 30
 
@@ -76,14 +76,14 @@ defmodule OliWeb.CommunityLive.ShowView do
     ~F"""
       {render_modal(assigns)}
       <div id="community-overview" class="overview container">
-        <ShowSection
+        <ShowSection.render
           section_title="Details"
           section_description="Main community fields that will be shown to system admins and community admins."
         >
           <Form changeset={@changeset} save="save"/>
-        </ShowSection>
+        </ShowSection.render>
 
-        <ShowSection
+        <ShowSection.render
           section_title="Community Admins"
           section_description="Add other authors by email to administrate the community."
         >
@@ -98,9 +98,9 @@ defmodule OliWeb.CommunityLive.ShowView do
             button_text="Add"
             collaborators={@community_admins}
             allow_removal={@is_system_admin}/>
-        </ShowSection>
+        </ShowSection.render>
 
-        <ShowSection
+        <ShowSection.render
           section_title="Community Members"
           section_description="Add users by email as members of the community (one at a time). Only showing the last 3 additions here."
         >
@@ -117,18 +117,18 @@ defmodule OliWeb.CommunityLive.ShowView do
           <Link class="btn btn-link float-right mt-4" to={Routes.live_path(@socket, MembersIndexView, @community.id)}>
             See all >
           </Link>
-        </ShowSection>
+        </ShowSection.render>
 
-        <ShowSection
+        <ShowSection.render
           section_title="Projects and Products"
           section_description="Make selected Projects and Products available to members of this Community."
         >
           <Link class="btn btn-link" to={Routes.live_path(@socket, IndexAssociated, @community_id)}>
             See associated
           </Link>
-        </ShowSection>
+        </ShowSection.render>
 
-        <ShowSection
+        <ShowSection.render
         section_title="Institutions"
         section_description="Add institutions to be part of the community."
         >
@@ -144,14 +144,14 @@ defmodule OliWeb.CommunityLive.ShowView do
             placeholder="Institution name"
             button_text="Add"
             collaborators={@community_institutions}/>
-        </ShowSection>
+        </ShowSection.render>
 
-        <ShowSection section_title="Actions">
+        <ShowSection.render section_title="Actions">
           <div class="d-flex align-items-center">
             <button type="button" class="btn btn-link text-danger action-button" :on-click="show_delete_modal">Delete</button>
             <span>Permanently delete this community.</span>
           </div>
-        </ShowSection>
+        </ShowSection.render>
       </div>
     """
   end

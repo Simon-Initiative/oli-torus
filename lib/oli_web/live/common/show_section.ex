@@ -1,21 +1,20 @@
 defmodule OliWeb.Common.ShowSection do
-  use Surface.Component
+  use OliWeb, :html
 
-  prop section_title, :string, required: true
-  prop section_description, :string
-  slot default, required: true
+  attr(:section_title, :string, required: true)
+  attr(:section_description, :string, default: nil)
 
   def render(assigns) do
-    ~F"""
+    ~H"""
     <div class="flex md:grid grid-cols-12 py-5 border-b">
       <div class="md:col-span-4">
-        <h4>{@section_title}</h4>
-        {#unless is_nil(@section_description)}
-          <div class="text-muted">{@section_description}</div>
-        {/unless}
+        <h4><%= @section_title %></h4>
+        <%= unless is_nil(@section_description) do %>
+          <div class="text-muted"><%= @section_description %></div>
+        <% end %>
       </div>
       <div class="md:col-span-8">
-        <#slot />
+        <%= render_slot(@inner_block) %>
       </div>
     </div>
     """

@@ -23,12 +23,12 @@ defmodule OliWeb.PublisherLive.ShowView do
     Checkbox
   }
 
-  data title, :string, default: "Edit Publisher"
-  data publisher, :struct
-  data changeset, :changeset
-  data breadcrumbs, :list
-  data modal, :any, default: nil
-  data show_confirm_default, :boolean, default: false
+  data(title, :string, default: "Edit Publisher")
+  data(publisher, :struct)
+  data(changeset, :changeset)
+  data(breadcrumbs, :list)
+  data(modal, :any, default: nil)
+  data(show_confirm_default, :boolean, default: false)
 
   def breadcrumb(publisher_id) do
     IndexView.breadcrumb() ++
@@ -65,14 +65,14 @@ defmodule OliWeb.PublisherLive.ShowView do
     ~F"""
       {render_modal(assigns)}
       <div id="publisher-overview" class="overview container">
-        <ShowSection
+        <ShowSection.render
           section_title="Details"
           section_description="Main publisher fields that will be shown to system admins."
         >
           <Form changeset={@changeset} save="save"/>
-        </ShowSection>
+        </ShowSection.render>
 
-        <ShowSection section_title="Actions">
+        <ShowSection.render section_title="Actions">
           <div>
             <SurfaceForm for={@changeset} change="save" class="d-flex">
               <div class="form-group">
@@ -97,7 +97,7 @@ defmodule OliWeb.PublisherLive.ShowView do
               </div>
             {/unless}
           </div>
-        </ShowSection>
+        </ShowSection.render>
       </div>
       {#if @show_confirm_default}
         <Confirm.render title="Confirm Default" id="set_default_modal" ok="set_default" cancel="cancel_set_default_modal">
