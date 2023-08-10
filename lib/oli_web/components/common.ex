@@ -272,4 +272,11 @@ defmodule OliWeb.Components.Common do
     </label>
     """
   end
+
+  def fetch_field(f, field) do
+    case Ecto.Changeset.fetch_field(f, field) do
+      {_, value} -> value
+      _ -> nil
+    end
+  end
 end

@@ -100,7 +100,6 @@ defmodule OliWeb.Admin.IngestV2 do
         <Group.render label="Errors" description="Errors encountered during preprocessing">
           <PagedTable.render
             allow_selection={false}
-            filter={nil}
             table_model={@table_model}
             total_count={@total_count}
             offset={@offset}

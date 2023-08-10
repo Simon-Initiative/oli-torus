@@ -87,8 +87,6 @@ defmodule OliWeb.Delivery.NewCourse.SelectSource do
     ~H"""
     <div class="w-full">
       <FilterBox.render
-        card_header_text={nil}
-        card_body_text={nil}
         table_model={@table_model}
         sort={JS.push("sort", target: @myself)}
         show_more_opts={is_instructor?(@live_action)}

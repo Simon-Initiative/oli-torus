@@ -235,13 +235,6 @@ defmodule OliWeb.Curriculum.OptionsModal do
     """
   end
 
-  def fetch_field(f, field) do
-    case Ecto.Changeset.fetch_field(f, field) do
-      {_, value} -> value
-      _ -> nil
-    end
-  end
-
   defp is_foundation(changeset, revision) do
     if !is_nil(changeset.changes |> Map.get(:purpose)) do
       changeset.changes.purpose == :foundation

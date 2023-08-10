@@ -65,7 +65,6 @@ defmodule OliWeb.Common.Listing do
           model={@table_model}
           sort={@sort}
           additional_table_class={@additional_table_class}
-          select={nil}
         />
       <% end %>
     <% end %>

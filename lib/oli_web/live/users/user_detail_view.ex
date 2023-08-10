@@ -218,13 +218,6 @@ defmodule OliWeb.Users.UsersDetailView do
     """
   end
 
-  def fetch_field(f, field) do
-    case Ecto.Changeset.fetch_field(f, field) do
-      {_, value} -> value
-      _ -> nil
-    end
-  end
-
   @impl Phoenix.LiveView
   def handle_params(params, _, socket) do
     socket =
