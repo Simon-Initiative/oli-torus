@@ -1,6 +1,5 @@
 defmodule OliWeb.Components.Delivery.DiscussionActivity do
-  use Surface.LiveComponent
-  use OliWeb.Common.Modal
+  use OliWeb, :live_component
 
   alias OliWeb.Common.PagedTable
   alias OliWeb.Router.Helpers, as: Routes
@@ -8,19 +7,9 @@ defmodule OliWeb.Components.Delivery.DiscussionActivity do
   alias Oli.Resources.Collaboration
   alias OliWeb.Discussion.TableModel, as: DiscussionTableModel
   alias OliWeb.CollaborationLive.InstructorTableModel, as: CollabSpaceTableModel
-  alias OliWeb.Common.Confirm
+  alias OliWeb.Components.Modal
 
   alias Phoenix.LiveView.JS
-
-  prop(ctx, :any, required: true)
-  prop(limit, :number, default: 10)
-  prop(filter, :string, required: true)
-  prop(offset, :number, required: true)
-  prop(count, :number, required: true)
-  prop(collab_space_table_model, :struct, required: true)
-  prop(discussion_table_model, :struct, required: true)
-  prop(parent_component_id, :string, required: true)
-  prop(section_slug, :string, required: true)
 
   @default_params %{
     offset: 0,
@@ -45,14 +34,44 @@ defmodule OliWeb.Components.Delivery.DiscussionActivity do
     {:ok, socket}
   end
 
+  attr(:ctx, :any, required: true)
+  attr(:limit, :integer, default: 10)
+  attr(:filter, :string, required: true)
+  attr(:offset, :integer, required: true)
+  attr(:count, :integer, required: true)
+  attr(:collab_space_table_model, :map, required: true)
+  attr(:discussion_table_model, :map, required: true)
+  attr(:parent_component_id, :string, required: true)
+  attr(:section_slug, :string, required: true)
+
   def render(assigns) do
-    ~F"""
+    ~H"""
     <div class="p-10">
+      <Modal.modal
+        id="accept_post_modal"
+        on_confirm={JS.push("accept_post", target: @myself) |> Modal.hide_modal("accept_post_modal")}
+        on_cancel={JS.push("cancel_confirm_modal", target: @myself)}
+      >
+        <:title>Accept Post</:title>
+        <%= "Are you sure you want to accept this post?" %>
+        <:confirm>OK</:confirm>
+        <:cancel>Cancel</:cancel>
+      </Modal.modal>
 
-      {render_modal(assigns)}
-
+      <Modal.modal
+        id="reject_post_modal"
+        on_confirm={JS.push("reject_post", target: @myself) |> Modal.hide_modal("reject_post_modal")}
+        on_cancel={JS.push("cancel_confirm_modal", target: @myself)}
+      >
+        <:title>Reject Post</:title>
+        <%= "Are you sure you want to reject this post? This will also reject the replies if there is any." %>
+        <:confirm>OK</:confirm>
+        <:cancel>Cancel</:cancel>
+      </Modal.modal>
       <div class="bg-white dark:bg-gray-800 w-full">
-        <h4 class="px-10 py-6 border-b border-b-gray-200 dark:border-b-gray-700 torus-h4">Discussion Activity</h4>
+        <h4 class="px-10 py-6 border-b border-b-gray-200 dark:border-b-gray-700 torus-h4">
+          Discussion Activity
+        </h4>
 
         <div class="flex items-end gap-2 px-10 py-6 border-b border-b-gray-200 dark:border-b-gray-700">
           <form phx-change="filter" phx-target={@myself}>
@@ -60,36 +79,40 @@ defmodule OliWeb.Components.Delivery.DiscussionActivity do
               <small class="torus-small uppercase">Filter by</small>
               <select class="torus-select pr-32" name="filter">
                 <option selected={@filter == :all} value="all">All</option>
-                <option selected={@filter == :need_approval} value="need_approval">Posts that Need Approval</option>
-                <option selected={@filter == :need_response} value="need_response">Posts Awaiting a Reply</option>
-                <option selected={@filter == :by_discussion} value="by_discussion">By Discussion</option>
+                <option selected={@filter == :need_approval} value="need_approval">
+                  Posts that Need Approval
+                </option>
+                <option selected={@filter == :need_response} value="need_response">
+                  Posts Awaiting a Reply
+                </option>
+                <option selected={@filter == :by_discussion} value="by_discussion">
+                  By Discussion
+                </option>
               </select>
             </label>
           </form>
         </div>
 
         <div id="discussion_activity_table">
-          {#if @filter == :by_discussion}
+          <%= if @filter == :by_discussion do %>
             <PagedTable.render
               table_model={@collab_space_table_model}
-              filter=""
               page_change={JS.push("paged_table_page_change", target: @myself)}
               total_count={@count}
               offset={@offset}
               limit={@limit}
               additional_table_class="border-0"
             />
-          {#else}
+          <% else %>
             <PagedTable.render
               table_model={@discussion_table_model}
-              filter=""
               page_change={JS.push("paged_table_page_change", target: @myself)}
               total_count={@count}
               offset={@offset}
               limit={@limit}
               additional_table_class="border-0"
             />
-          {/if}
+          <% end %>
         </div>
       </div>
     </div>
@@ -108,18 +131,9 @@ defmodule OliWeb.Components.Delivery.DiscussionActivity do
 
   @impl true
   def handle_event("display_accept_modal", %{"post_id" => post_id}, socket) do
-    modal_assigns = %{
-      title: "Accept Post",
-      id: "accept_post_modal_#{UUID.uuid4()}",
-      ok: JS.push("accept_post", target: socket.assigns.myself),
-      cancel: JS.push("cancel_confirm_modal", target: socket.assigns.myself)
-    }
-
-    display_confirm_modal(
-      modal_assigns,
-      "accept",
-      assign(socket, post_id: post_id)
-    )
+    {:noreply,
+     socket
+     |> assign(post_id: post_id)}
   end
 
   @impl true
@@ -130,29 +144,19 @@ defmodule OliWeb.Components.Delivery.DiscussionActivity do
       {:ok, _} ->
         {:noreply,
          do_filter(socket)
-         |> hide_modal(modal_assigns: nil)}
+         |> assign(post_id: nil)}
 
       {:error, %Ecto.Changeset{} = _changeset} ->
         {:noreply,
          socket
-         |> hide_modal(modal_assigns: nil)}
+         |> assign(post_id: nil)}
     end
   end
 
   def handle_event("display_reject_modal", %{"post_id" => post_id}, socket) do
-    modal_assigns = %{
-      title: "Reject Post",
-      id: "reject_post_modal_#{UUID.uuid4()}",
-      ok: JS.push("reject_post", target: socket.assigns.myself),
-      cancel: JS.push("cancel_confirm_modal", target: socket.assigns.myself)
-    }
-
-    display_confirm_modal(
-      modal_assigns,
-      "reject",
-      assign(socket, post_id: post_id),
-      "This will also reject the replies if there is any."
-    )
+    {:noreply,
+     socket
+     |> assign(post_id: post_id)}
   end
 
   def handle_event("reject_post", _, socket) do
@@ -162,19 +166,19 @@ defmodule OliWeb.Components.Delivery.DiscussionActivity do
       {number, nil} when number > 0 ->
         {:noreply,
          do_filter(socket)
-         |> hide_modal(modal_assigns: nil)}
+         |> assign(post_id: nil)}
 
       _ ->
         {:noreply,
          socket
-         |> hide_modal(modal_assigns: nil)}
+         |> assign(post_id: nil)}
     end
   end
 
   def handle_event("cancel_confirm_modal", _, socket) do
     {:noreply,
      socket
-     |> hide_modal(modal_assigns: nil)}
+     |> assign(post_id: nil)}
   end
 
   defp do_filter(socket) do
@@ -268,23 +272,6 @@ defmodule OliWeb.Components.Delivery.DiscussionActivity do
              attrs
            )
          )
-     )}
-  end
-
-  defp display_confirm_modal(modal_assigns, action, socket, opt_text \\ "") do
-    modal = fn assigns ->
-      ~F"""
-      <Confirm {...@modal_assigns}>
-        Are you sure you want to {action} this post? {opt_text}
-      </Confirm>
-      """
-    end
-
-    {:noreply,
-     show_modal(
-       socket,
-       modal,
-       modal_assigns: modal_assigns
      )}
   end
 end

@@ -4,6 +4,7 @@ defmodule OliWeb.Discussion.TableModel do
   alias OliWeb.Common.Table.{ColumnSpec, SortableTableModel}
   alias OliWeb.Common.FormatDateTime
   alias Phoenix.LiveView.JS
+  alias OliWeb.Components.Modal
   alias OliWeb.Router.Helpers, as: Routes
 
   def new(posts, section_slug, target) do
@@ -71,7 +72,10 @@ defmodule OliWeb.Discussion.TableModel do
               class="btn btn-sm btn-success flex items-center gap-2"
               data-toggle="tooltip"
               title="Accept"
-              phx-click={JS.push("display_accept_modal", target: @target)}
+              phx-click={
+                JS.push("display_accept_modal", target: @target)
+                |> Modal.show_modal("accept_post_modal")
+              }
               phx-value-post_id={@post.id}
             >
               <span>Approve</span>
@@ -82,7 +86,10 @@ defmodule OliWeb.Discussion.TableModel do
               class="btn btn-sm btn-danger flex items-center gap-2"
               data-toggle="tooltip"
               title="Reject"
-              phx-click={JS.push("display_reject_modal", target: @target)}
+              phx-click={
+                JS.push("display_reject_modal", target: @target)
+                |> Modal.show_modal("reject_post_modal")
+              }
               phx-value-post_id={@post.id}
             >
               <span>Reject</span>
