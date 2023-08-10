@@ -1,6 +1,5 @@
 defmodule OliWeb.Workspace.AccountDetailsLive do
-  use Surface.LiveView
-  use Phoenix.HTML
+  use OliWeb, :live_view
 
   alias OliWeb.Router.Helpers, as: Routes
   alias Oli.Accounts
@@ -22,7 +21,7 @@ defmodule OliWeb.Workspace.AccountDetailsLive do
   end
 
   def render(assigns) do
-    ~F"""
+    ~H"""
     <Groups.render>
       <Group.render label="Details" description="View and change your authoring account details">
         <div class="account-section">
@@ -30,7 +29,7 @@ defmodule OliWeb.Workspace.AccountDetailsLive do
             <div class="col-span-12">
               <h4 class="mb-3">Name</h4>
               <p class="mb-2">
-                {"#{@current_author.name}"}
+                <%= "#{@current_author.name}" %>
               </p>
             </div>
           </div>
@@ -38,29 +37,30 @@ defmodule OliWeb.Workspace.AccountDetailsLive do
             <div class="col-span-12">
               <h4 class="mb-3">Email</h4>
               <p class="mb-2">
-                {"#{@current_author.email}"}
+                <%= "#{@current_author.email}" %>
               </p>
-              {#if Enum.count(providers_for(@current_author)) > 0}
+              <%= if Enum.count(providers_for(@current_author)) > 0 do %>
                 <h4 class="mt-3">Credentials Managed By</h4>
-                {#for provider <- providers_for(@current_author)}
-                  <div class="my-2">
-                    <span class={"provider provider-#{OliWeb.Pow.PowHelpers.provider_class(provider)}"}>
+                <div :for={provider <- providers_for(@current_author)} class="my-2">
+                  <span class={"provider provider-#{OliWeb.Pow.PowHelpers.provider_class(provider)}"}>
                     {OliWeb.Pow.PowHelpers.provider_icon(provider)} {OliWeb.Pow.PowHelpers.provider_name(provider)}
-                    </span>
-                  </div>
-                {/for}
-              {/if}
+                  </span>
+                </div>
+              <% end %>
             </div>
           </div>
           <div class="grid grid-cols-12 my-4">
             <div class="col-span-12">
-            {link "Change Account Details", to: Routes.authoring_pow_registration_path(OliWeb.Endpoint, :edit), class: "btn btn-outline-primary"}
+              <%= link("Change Account Details",
+                to: Routes.authoring_pow_registration_path(OliWeb.Endpoint, :edit),
+                class: "btn btn-outline-primary"
+              ) %>
             </div>
           </div>
         </div>
       </Group.render>
       <Group.render label="Preferences" description="Adjust your authoring preferences">
-        {render_preferences(assigns)}
+        <%= render_preferences(assigns) %>
 
         <div class="my-4">
           <div class="mb-1">Dark Mode</div>
@@ -74,11 +74,19 @@ defmodule OliWeb.Workspace.AccountDetailsLive do
   defp render_preferences(%{current_author: current_author} = assigns) do
     show_relative_dates = Accounts.get_author_preference(current_author, :show_relative_dates)
 
-    ~F"""
+    ~H"""
     <div>
       <div class="form-check mt-2">
-        <input type="checkbox" id="show_relative_dates" class="form-check-input" checked={show_relative_dates} phx-hook="CheckboxListener" />
-        <label for="show_relative_dates" class="form-check-label">Show dates formatted as relative to today</label>
+        <input
+          type="checkbox"
+          id="show_relative_dates"
+          class="form-check-input"
+          checked={show_relative_dates}
+          phx-hook="CheckboxListener"
+        />
+        <label for="show_relative_dates" class="form-check-label">
+          Show dates formatted as relative to today
+        </label>
       </div>
     </div>
     """
