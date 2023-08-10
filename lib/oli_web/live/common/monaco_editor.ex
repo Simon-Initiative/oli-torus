@@ -1,24 +1,24 @@
 defmodule OliWeb.Common.MonacoEditor do
-  use OliWeb, :surface_component
+  use OliWeb, :html
 
   alias Oli.Utils.SchemaResolver
 
-  prop language, :string
-  prop default_value, :string
-  prop width, :string
-  prop height, :string
-  prop validate_schema_uri, :string
-  prop default_options, :map
-  prop set_options, :event
-  prop set_width_height, :event
-  prop set_value, :event
-  prop on_mount, :event
-  prop on_change, :event
-  prop get_value, :event
-  prop use_code_lenses, :list
+  attr(:language, :string)
+  attr(:default_value, :string)
+  attr(:width, :string, default: "100%")
+  attr(:height, :string)
+  attr(:validate_schema_uri, :string)
+  attr(:default_options, :map)
+  attr(:set_options, :any)
+  attr(:set_width_height, :any, default: nil)
+  attr(:set_value, :any)
+  attr(:on_mount, :any, default: nil)
+  attr(:on_change, :any, default: nil)
+  attr(:get_value, :any)
+  attr(:use_code_lenses, :list)
 
   def render(assigns) do
-    ~F"""
+    ~H"""
     <div
       id={@id}
       phx-hook="MonacoEditor"
@@ -36,7 +36,8 @@ defmodule OliWeb.Common.MonacoEditor do
       data-set-width-height={encode_attr(@set_width_height)}
       data-set-value={encode_attr(@set_value)}
       data-get-value={encode_attr(@get_value)}
-      data-use-code-lenses={if @use_code_lenses, do: encode_attr(@use_code_lenses)}>
+      data-use-code-lenses={if @use_code_lenses, do: encode_attr(@use_code_lenses)}
+    >
       <div class="text-center">
         <div class="spinner-border text-secondary" role="status">
           <span class="sr-only">Loading...</span>
@@ -45,4 +46,8 @@ defmodule OliWeb.Common.MonacoEditor do
     </div>
     """
   end
+
+  defp encode_attr(nil), do: nil
+  defp encode_attr(data) when is_binary(data), do: Jason.encode!(%{type: "string", data: data})
+  defp encode_attr(data), do: Jason.encode!(%{type: "object", data: Jason.encode!(data)})
 end

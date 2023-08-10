@@ -4,7 +4,7 @@ defmodule OliWeb.RevisionHistory.Details do
   alias OliWeb.Common.MonacoEditor
   alias Oli.Utils.SchemaResolver
 
-  prop revision, :map
+  prop(revision, :map)
 
   def render(assigns) do
     attrs =
@@ -12,7 +12,7 @@ defmodule OliWeb.RevisionHistory.Details do
 
     ~F"""
     <div class="revision-details">
-      <MonacoEditor
+      <MonacoEditor.render
         id={"details-editor-#{@revision.id}"}
         height="500px"
         language="json"

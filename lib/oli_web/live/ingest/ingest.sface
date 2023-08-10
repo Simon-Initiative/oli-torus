@@ -10,7 +10,7 @@
         <div class="alert alert-danger" role="alert">
           <p>{ Ingest.prettify_error(error) }</p>
 
-          <MonacoEditor
+          <MonacoEditor.render
             id="schema_errors"
             language="json"
             height={500}
