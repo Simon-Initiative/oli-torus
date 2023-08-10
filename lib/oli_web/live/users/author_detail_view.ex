@@ -115,7 +115,7 @@ defmodule OliWeb.Users.AuthorsDetailView do
         </Group.render>
         <Group.render label="Actions" description="Actions that can be taken for this user">
           {#if @user.id != @author.id and @user.email != System.get_env("ADMIN_EMAIL", "admin@example.edu")}
-            <Actions user={@user} csrf_token={@csrf_token} for_author={true}/>
+            <Actions.render user={@user} csrf_token={@csrf_token} for_author={true}/>
           {/if}
         </Group.render>
       </Groups.render>

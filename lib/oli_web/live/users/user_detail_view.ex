@@ -1,10 +1,9 @@
 defmodule OliWeb.Users.UsersDetailView do
-  use OliWeb, :surface_view
+  use OliWeb, :live_view
   use OliWeb.Common.Modal
 
   import OliWeb.Common.Properties.Utils
   import OliWeb.Common.Utils
-  import Ecto.Changeset
 
   alias Oli.Accounts
   alias Oli.Accounts.User
@@ -23,16 +22,6 @@ defmodule OliWeb.Users.UsersDetailView do
   alias OliWeb.Pow.UserContext
   alias OliWeb.Router.Helpers, as: Routes
   alias OliWeb.Users.Actions
-  alias Surface.Components.Form
-  alias Surface.Components.Form.{Checkbox, Label, Field, Submit, TextInput}
-
-  data(breadcrumbs, :any)
-  data(changeset, :changeset)
-  data(csrf_token, :any)
-  data(modal, :any, default: nil)
-  data(title, :string, default: "User Details")
-  data(user, :struct, default: nil)
-  data(disabled_edit, :boolean, default: true)
 
   defp set_breadcrumbs(user) do
     OliWeb.Admin.AdminView.breadcrumb()
@@ -50,6 +39,7 @@ defmodule OliWeb.Users.UsersDetailView do
       ]
   end
 
+  @impl true
   def mount(
         %{"user_id" => user_id},
         %{"csrf_token" => csrf_token} = session,
@@ -81,101 +71,158 @@ defmodule OliWeb.Users.UsersDetailView do
     end
   end
 
-  @impl true
+  attr(:breadcrumbs, :any)
+  attr(:changeset, :map)
+  attr(:csrf_token, :any)
+  attr(:modal, :any, default: nil)
+  attr(:title, :string, default: "User Details")
+  attr(:user, :map, default: nil)
+  attr(:disabled_edit, :boolean, default: true)
+
   def render(assigns) do
-    ~F"""
+    ~H"""
     <div>
-      {render_modal(assigns)}
+      <%= render_modal(assigns) %>
       <Groups.render>
         <Group.render label="Details" description="User details">
-          <Form for={@changeset} change="change" submit="submit" opts={autocomplete: "off"}>
-            <ReadOnly.render label="Sub" value={@user.sub}/>
-            <ReadOnly.render label="Name" value={@user.name}/>
-            <Field name={:given_name} class="form-group">
-              <Label text="Given Name"/>
-              <TextInput class="form-control" opts={disabled: @disabled_edit}/>
-            </Field>
-            <Field name={:family_name} class="form-group">
-              <Label text="Last Name"/>
-              <TextInput class="form-control" opts={disabled: @disabled_edit}/>
-            </Field>
-            <Field name={:email} class="form-group">
-              <Label text="Email"/>
-              <TextInput class="form-control" opts={disabled: @disabled_edit}/>
-            </Field>
-            <ReadOnly.render label="Guest" value={boolean(@user.guest)}/>
-            {#if Application.fetch_env!(:oli, :age_verification)[:is_enabled] == "true"}
-              <ReadOnly.render label="Confirmed is 13 or older on creation" value={boolean(@user.age_verified)}/>
-            {/if}
+          <.form for={@changeset} phx-change="change" phx-submit="submit" autocomplete="off">
+            <ReadOnly.render label="Sub" value={@user.sub} />
+            <ReadOnly.render label="Name" value={@user.name} />
+            <div class="form-group">
+              <label for="given_name">Given Name</label>
+              <input
+                value={@changeset.data.given_name}
+                id="given_name"
+                name="user[given_name]"
+                class="form-control"
+                disabled={@disabled_edit}
+              />
+            </div>
+            <div class="form-group">
+              <label for="family_name">Last Name</label>
+              <input
+                value={@changeset.data.family_name}
+                id="family_name"
+                name="user[family_name]"
+                class="form-control"
+                disabled={@disabled_edit}
+              />
+            </div>
+            <div class="form-group">
+              <label for="email">Email</label>
+              <input
+                value={@changeset.data.email}
+                id="email"
+                name="user[email]"
+                class="form-control"
+                disabled={@disabled_edit}
+              />
+            </div>
+            <ReadOnly.render label="Guest" value={boolean(@user.guest)} />
+            <%= if Application.fetch_env!(:oli, :age_verification)[:is_enabled] == "true" do %>
+              <ReadOnly.render
+                label="Confirmed is 13 or older on creation"
+                value={boolean(@user.age_verified)}
+              />
+            <% end %>
             <div class="form-control mb-3">
-              <Field name={:independent_learner}>
-                <Checkbox class="form-check-input" value={get_field(@changeset, :independent_learner)} opts={disabled: @disabled_edit}/>
-                <Label class="form-check-label mr-2">Independent Learner</Label>
-              </Field>
+              <input
+                id="independent_learner"
+                name="user[independent_learner]"
+                type="checkbox"
+                class="form-check-input"
+                checked={fetch_field(@changeset, :independent_learner)}
+                disabled={@disabled_edit}
+              />
+              <label for="independent_learner" class="form-check-label mr-2">
+                Independent Learner
+              </label>
             </div>
             <section class="mb-2">
               <heading>
                 <p>Enable Independent Section Creation</p>
-                <small>Allow this user to create "Independent" sections and enroll students via invitation link without an LMS</small>
+                <small>
+                  Allow this user to create "Independent" sections and enroll students via invitation link without an LMS
+                </small>
               </heading>
               <div class="form-control">
-                <Field name={:can_create_sections}>
-                  <Checkbox class="form-check-input" value={get_field(@changeset, :can_create_sections)} opts={disabled: @disabled_edit}/>
-                  <Label class="form-check-label mr-2">Can Create Sections</Label>
-                </Field>
+                <input
+                  id="can_create_sections"
+                  name="user[can_create_sections]"
+                  type="checkbox"
+                  class="form-check-input"
+                  checked={fetch_field(@changeset, :can_create_sections)}
+                  disabled={@disabled_edit}
+                />
+                <label for="can_create_sections" class="form-check-label mr-2">
+                  Can Create Sections
+                </label>
               </div>
             </section>
-            <ReadOnly.render label="Research Opt Out" value={boolean(@user.research_opt_out)}/>
-            <ReadOnly.render label="Email Confirmed" value={render_date(@user, :email_confirmed_at, @ctx)}/>
-            <ReadOnly.render label="Created" value={render_date(@user, :inserted_at, @ctx)}/>
-            <ReadOnly.render label="Last Updated" value={render_date(@user, :updated_at, @ctx)}/>
-            {#unless @disabled_edit}
-              <Submit class={"float-right btn btn-md btn-primary mt-2"}>Save</Submit>
-            {/unless}
-          </Form>
-            {#if @disabled_edit}
-              <button class={"float-right btn btn-md btn-primary mt-2"} phx-click="start_edit">Edit</button>
-            {/if}
+            <ReadOnly.render label="Research Opt Out" value={boolean(@user.research_opt_out)} />
+            <ReadOnly.render
+              label="Email Confirmed"
+              value={render_date(@user, :email_confirmed_at, @ctx)}
+            />
+            <ReadOnly.render label="Created" value={render_date(@user, :inserted_at, @ctx)} />
+            <ReadOnly.render label="Last Updated" value={render_date(@user, :updated_at, @ctx)} />
+            <%= unless @disabled_edit do %>
+              <button type="submit" class="float-right btn btn-md btn-primary mt-2">Save</button>
+            <% end %>
+          </.form>
+          <%= if @disabled_edit do %>
+            <button class="float-right btn btn-md btn-primary mt-2" phx-click="start_edit">
+              Edit
+            </button>
+          <% end %>
         </Group.render>
-        {#if !Enum.empty?(@user_lti_params)}
+        <%= if !Enum.empty?(@user_lti_params) do %>
           <Group.render label="LTI Details" description="LTI 1.3 details provided by an LMS">
             <ul class="list-group">
-              {#for lti_params <- @user_lti_params}
-                <li class="list-group-item">
-                  <div class="d-flex pb-2 mb-2 border-b">
-                    <div class="flex-grow-1">{lti_params.issuer}</div>
-                    <div>Last Updated: {render_date(lti_params, :updated_at, @ctx)}</div>
-                  </div>
-                  <div style="max-height: 400px; overflow: scroll;">
-                    <pre> <code
-                      id="lit_params_#{lti_params.id}" class="lti-params language-json" phx-update="ignore">{Jason.encode!(lti_params.params) |> Jason.Formatter.pretty_print()}</code>
-                    </pre>
-                  </div>
-                </li>
-              {/for}
+              <li :for={lti_params <- @user_lti_params} class="list-group-item">
+                <div class="d-flex pb-2 mb-2 border-b">
+                  <div class="flex-grow-1"><%= lti_params.issuer %></div>
+                  <div>Last Updated: <%= render_date(lti_params, :updated_at, @ctx) %></div>
+                </div>
+                <div style="max-height: 400px; overflow: scroll;">
+                  <pre> <code
+                    id="lit_params_#{lti_params.id}" class="lti-params language-json" phx-update="ignore"><%= Jason.encode!(lti_params.params) |> Jason.Formatter.pretty_print() %></code>
+                  </pre>
+                </div>
+              </li>
             </ul>
           </Group.render>
-        {/if}
-        <Group.render label="Enrolled Sections" description="Course sections to which the student is enrolled">
-          {live_component OliWeb.Users.UserEnrolledSections,
+        <% end %>
+        <Group.render
+          label="Enrolled Sections"
+          description="Course sections to which the student is enrolled"
+        >
+          <%= live_component(OliWeb.Users.UserEnrolledSections,
             id: "user_enrolled_sections",
             user: @user,
             params: @params,
             ctx: @ctx,
             enrolled_sections: @enrolled_sections
-          }
+          ) %>
         </Group.render>
         <Group.render label="Actions" description="Actions that can be taken for this user">
-          {#if @user.independent_learner}
-            <Actions user={@user} csrf_token={@csrf_token}/>
-          {#else}
+          <%= if @user.independent_learner do %>
+            <Actions.render user={@user} csrf_token={@csrf_token} />
+          <% else %>
             <div>No actions available</div>
             <div class="text-secondary">LTI users are managed by their LMS</div>
-          {/if}
+          <% end %>
         </Group.render>
       </Groups.render>
     </div>
     """
+  end
+
+  def fetch_field(f, field) do
+    case Ecto.Changeset.fetch_field(f, field) do
+      {_, value} -> value
+      _ -> nil
+    end
   end
 
   @impl Phoenix.LiveView
@@ -189,13 +236,12 @@ defmodule OliWeb.Users.UsersDetailView do
 
   def handle_event("show_confirm_email_modal", _, socket) do
     modal_assigns = %{
-      id: "confirm_email",
       user: socket.assigns.user
     }
 
     modal = fn assigns ->
-      ~F"""
-        <ConfirmEmailModal.render {...@modal_assigns} />
+      ~H"""
+      <ConfirmEmailModal.render id="confirm_email" user={assigns.modal_assigns.user} />
       """
     end
 
@@ -223,13 +269,12 @@ defmodule OliWeb.Users.UsersDetailView do
 
   def handle_event("show_lock_account_modal", _, socket) do
     modal_assigns = %{
-      id: "lock_account",
       user: socket.assigns.user
     }
 
     modal = fn assigns ->
-      ~F"""
-        <LockAccountModal.render {...@modal_assigns} />
+      ~H"""
+      <LockAccountModal.render id="lock_account" user={assigns.modal_assigns.user} />
       """
     end
 
@@ -257,8 +302,8 @@ defmodule OliWeb.Users.UsersDetailView do
     }
 
     modal = fn assigns ->
-      ~F"""
-        <UnlockAccountModal.render {...@modal_assigns} />
+      ~H"""
+      <UnlockAccountModal.render id="unlock_account" user={assigns.modal_assigns.user} />
       """
     end
 
@@ -286,8 +331,8 @@ defmodule OliWeb.Users.UsersDetailView do
     }
 
     modal = fn assigns ->
-      ~F"""
-        <DeleteAccountModal.render {...@modal_assigns} />
+      ~H"""
+      <DeleteAccountModal.render id="delete_account" user={assigns.modal_assigns.user} />
       """
     end
 
@@ -314,11 +359,12 @@ defmodule OliWeb.Users.UsersDetailView do
   end
 
   def handle_event("change", %{"user" => params}, socket) do
-    {:noreply, assign(socket, changeset: user_changeset(socket.assigns.user, params))}
+    {:noreply,
+     assign(socket, changeset: user_changeset(socket.assigns.user, cast_params(params)))}
   end
 
   def handle_event("submit", %{"user" => params}, socket) do
-    case Accounts.update_user(socket.assigns.user, params) do
+    case Accounts.update_user(socket.assigns.user, cast_params(params)) do
       {:ok, user} ->
         {:noreply,
          socket
@@ -332,6 +378,12 @@ defmodule OliWeb.Users.UsersDetailView do
 
   def handle_event("start_edit", _, socket) do
     {:noreply, socket |> assign(disabled_edit: false)}
+  end
+
+  defp cast_params(params) do
+    params
+    |> Map.put("independent_learner", if(params["independent_learner"], do: true, else: false))
+    |> Map.put("can_create_sections", if(params["can_create_sections"], do: true, else: false))
   end
 
   defp user_with_platform_roles(id) do

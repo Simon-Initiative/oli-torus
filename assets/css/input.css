@@ -66,3 +66,7 @@ select {
 ::-webkit-calendar-picker-indicator {
   @apply dark:invert
 }
+
+input[type="checkbox"]:disabled {
+  @apply border-gray-400 bg-gray-200;
+}

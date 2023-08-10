@@ -4,6 +4,7 @@ defmodule OliWeb.AdminLiveTest do
 
   import Phoenix.LiveViewTest
   import Oli.Factory
+  import OliWeb.Common.Properties.Utils
 
   alias Oli.Accounts
   alias Oli.Accounts.{Author, User}
@@ -355,10 +356,10 @@ defmodule OliWeb.AdminLiveTest do
       assert has_element?(view, "input[value=\"#{user.given_name}\"]")
       assert has_element?(view, "input[value=\"#{user.family_name}\"]")
       assert has_element?(view, "input[value=\"#{user.email}\"]")
-      assert has_element?(view, "input[value=\"#{user.guest}\"]")
-      assert has_element?(view, "#user_independent_learner")
-      assert has_element?(view, "#user_can_create_sections")
-      assert has_element?(view, "input[value=\"#{user.research_opt_out}\"]")
+      assert has_element?(view, "input[value=\"#{boolean(user.guest)}\"]")
+      assert has_element?(view, "#independent_learner")
+      assert has_element?(view, "#can_create_sections")
+      assert has_element?(view, "input[value=\"#{boolean(user.research_opt_out)}\"]")
 
       assert has_element?(
                view,
