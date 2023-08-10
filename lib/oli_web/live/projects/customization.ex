@@ -4,7 +4,7 @@ defmodule OliWeb.Projects.CustomizationLive do
   alias OliWeb.Common.CustomLabelsForm
   alias Oli.Branding.CustomLabels
 
-  data labels, :map, default: Map.from_struct(CustomLabels.default())
+  data(labels, :map, default: Map.from_struct(CustomLabels.default()))
 
   def mount(
         _params,
@@ -14,10 +14,12 @@ defmodule OliWeb.Projects.CustomizationLive do
         socket
       ) do
     project = Course.get_project_by_slug(project_slug)
-    labels = case project.customizations do
-      nil -> Map.from_struct(CustomLabels.default())
-      val -> Map.from_struct(val)
-    end
+
+    labels =
+      case project.customizations do
+        nil -> Map.from_struct(CustomLabels.default())
+        val -> Map.from_struct(val)
+      end
 
     {:ok,
      assign(socket,
@@ -29,16 +31,23 @@ defmodule OliWeb.Projects.CustomizationLive do
   @spec render(any) :: Phoenix.LiveView.Rendered.t()
   def render(assigns) do
     ~F"""
-      <CustomLabelsForm labels={@labels} save="save_labels"/>
+      <CustomLabelsForm.render labels={@labels} save="save_labels"/>
     """
   end
 
-  def handle_event("save_labels", %{"view" => params}, socket) do
+  def handle_event("save_labels", params, socket) do
     socket = clear_flash(socket)
 
-    params = Map.merge(%{"unit" => "Unit", "module" => "Module", "section" => "Section"}, params, fn _k, v1, v2 ->
-      if v2 == nil || String.length(String.trim v2) == 0 do v1 else v2 end
-    end)
+    params =
+      Map.merge(%{"unit" => "Unit", "module" => "Module", "section" => "Section"}, params, fn _k,
+                                                                                              v1,
+                                                                                              v2 ->
+        if v2 == nil || String.length(String.trim(v2)) == 0 do
+          v1
+        else
+          v2
+        end
+      end)
 
     case Course.update_project(socket.assigns.project, %{customizations: params}) do
       {:ok, project} ->
@@ -51,7 +60,8 @@ defmodule OliWeb.Projects.CustomizationLive do
             :error,
             "Project couldn't be updated"
           )
-          {:noreply, assign(socket, :project, socket.assigns.project)}
+
+        {:noreply, assign(socket, :project, socket.assigns.project)}
     end
   end
 end

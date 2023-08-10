@@ -1,24 +1,22 @@
 defmodule OliWeb.Common.CustomLabelsForm do
-  use Surface.Component
-  alias Surface.Components.Form
-  alias Surface.Components.Form.{Field, TextInput, Label}
+  use OliWeb, :html
 
-  prop labels, :map, default: %{unit: "Unit", module: "Module", section: "Section"}
-  prop(save, :event, required: true)
+  attr(:labels, :map, default: %{unit: "Unit", module: "Module", section: "Section"})
+  attr(:save, :any, required: true)
 
   @spec render(any) :: Phoenix.LiveView.Rendered.t()
   def render(assigns) do
-    ~F"""
-      <Form for={:view} submit={@save} >
-        {#for {k, v} <- @labels}
-          <Field name={k} class="form-group">
-            <Label text={k}/>
-            <TextInput class="form-control"  opts={placeholder: v, value: v}/>
-          </Field>
-        {/for}
-        <button class="float-left btn btn-md btn-primary mt-2" type="submit">Save</button>
-      </Form>
+    IO.inspect(assigns.labels, label: "labels!")
+
+    ~H"""
+    <.form for={:view} phx-submit={@save}>
+      <%= for {k, v} <- @labels do %>
+        <div class="form-group">
+          <.input class="form-control" placeholder={v} value={v} name={k} label={humanize(k)} />
+        </div>
+      <% end %>
+      <button class="float-left btn btn-md btn-primary mt-2" type="submit">Save</button>
+    </.form>
     """
   end
-
 end

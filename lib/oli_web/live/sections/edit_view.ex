@@ -119,7 +119,7 @@ defmodule OliWeb.Sections.EditView do
     </Form>
     <Groups.render>
       <Group.render label="Labels" description="Custom labels">
-        <CustomLabelsForm labels={@labels} save="save_labels" />
+        <CustomLabelsForm.render labels={@labels} save="save_labels" />
       </Group.render>
     </Groups.render>
     """
@@ -143,7 +143,7 @@ defmodule OliWeb.Sections.EditView do
     end
   end
 
-  def handle_event("save_labels", %{"view" => params}, socket) do
+  def handle_event("save_labels", params, socket) do
     socket = clear_flash(socket)
 
     params =
@@ -160,7 +160,13 @@ defmodule OliWeb.Sections.EditView do
     case Sections.update_section(socket.assigns.section, %{customizations: params}) do
       {:ok, section} ->
         socket = put_flash(socket, :info, "Section changes saved")
-        {:noreply, assign(socket, section: section, changeset: Sections.change_section(section))}
+
+        {:noreply,
+         assign(socket,
+           section: section,
+           changeset: Sections.change_section(section),
+           labels: params
+         )}
 
       {:error, %Ecto.Changeset{} = changeset} ->
         {:noreply, assign(socket, changeset: changeset)}
