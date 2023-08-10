@@ -1,22 +1,12 @@
 defmodule OliWeb.Components.Delivery.Content do
-  use Surface.LiveComponent
+  use OliWeb, :live_component
 
   alias Phoenix.LiveView.JS
-  alias Surface.Components.Form
-  alias Surface.Components.Form.{Field, Select}
 
   alias OliWeb.Common.{PagedTable, SearchInput}
   alias OliWeb.Components.Delivery.ContentTableModel
   alias OliWeb.Common.Params
   alias OliWeb.Router.Helpers, as: Routes
-
-  prop(params, :map, required: true)
-  prop(total_count, :number, required: true)
-  prop(table_model, :struct, required: true)
-  prop(options_for_container_select, :list)
-  prop(patch_url_type, :atom, required: true)
-  prop(view, :atom)
-  prop(section_slug, :string)
 
   @default_params %{
     offset: 0,
@@ -69,22 +59,56 @@ defmodule OliWeb.Components.Delivery.Content do
      )}
   end
 
+  attr(:params, :map, required: true)
+  attr(:total_count, :integer, required: true)
+  attr(:table_model, :map, required: true)
+  attr(:options_for_container_select, :list)
+  attr(:patch_url_type, :atom, required: true)
+  attr(:view, :atom)
+  attr(:section_slug, :string)
+
   def render(assigns) do
-    ~F"""
+    ~H"""
     <div class="flex flex-col gap-2 mx-10 mb-10">
       <div class="bg-white dark:bg-gray-800 shadow-sm">
-        <div style="min-height: 83px;" class="flex justify-between gap-2 items-end px-4 sm:px-9 py-4 instructor_dashboard_table">
+        <div
+          style="min-height: 83px;"
+          class="flex justify-between gap-2 items-end px-4 sm:px-9 py-4 instructor_dashboard_table"
+        >
           <div>
-            <Form for={:containers} id="container-select-form" change="filter_container" class="mr-auto mb-2">
-              <Field name={:container_type}>
-                <Select id="container_select" options={@options_for_container_select} selected={@params.container_filter_by} class="text-delivery-body-color text-xl font-bold tracking-wide pl-0 underline underline-offset-4 border-none focus:!border-none"/>
-              </Field>
-            </Form>
-            <a href={Routes.delivery_path(OliWeb.Endpoint, :download_course_content_info, @section_slug)} download="course_content.csv" class="self-end"><i class="fa-solid fa-download ml-1" /> Download</a>
+            <.form
+              for={:containers}
+              id="container-select-form"
+              phx-change="filter_container"
+              phx-target={@myself}
+              class="mr-auto mb-2"
+            >
+              <.input
+                type="select"
+                name="container_type"
+                id="container_select"
+                options={@options_for_container_select}
+                value={@params.container_filter_by}
+                class="text-delivery-body-color text-xl font-bold tracking-wide pl-0 underline underline-offset-4 border-none focus:!border-none"
+              />
+            </.form>
+            <a
+              href={
+                Routes.delivery_path(OliWeb.Endpoint, :download_course_content_info, @section_slug)
+              }
+              download="course_content.csv"
+              class="self-end"
+            >
+              <i class="fa-solid fa-download ml-1" /> Download
+            </a>
           </div>
-          <form for="search" phx-target={@myself} phx-change="search_container" class="w-44">
-            <SearchInput.render id="content_search_input" name="container_name" text={@params.text_search} />
-          </form>
+          <.form for={:search} phx-target={@myself} phx-change="search_container" class="w-44">
+            <SearchInput.render
+              id="content_search_input"
+              name="container_name"
+              text={@params.text_search}
+            />
+          </.form>
         </div>
 
         <PagedTable.render
@@ -104,7 +128,7 @@ defmodule OliWeb.Components.Delivery.Content do
 
   def handle_event(
         "filter_container",
-        %{"containers" => %{"container_type" => container_type}},
+        %{"_target" => ["container_type"], "container_type" => container_type},
         socket
       ) do
     {:noreply,
