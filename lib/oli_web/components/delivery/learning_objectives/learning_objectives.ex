@@ -1,20 +1,11 @@
 defmodule OliWeb.Components.Delivery.LearningObjectives do
-  use Surface.LiveComponent
+  use OliWeb, :live_component
 
   alias OliWeb.Common.{PagedTable, SearchInput}
   alias Phoenix.LiveView.JS
   alias OliWeb.Delivery.LearningObjectives.ObjectivesTableModel
   alias OliWeb.Common.Params
   alias OliWeb.Router.Helpers, as: Routes
-
-  prop(params, :any)
-  prop(table_model, :any)
-  prop(total_count, :integer)
-  prop(units_modules, :map)
-  prop(student_id, :integer)
-  prop(patch_url_type, :atom, required: true)
-  prop(view, :atom)
-  prop(section_slug, :string)
 
   @default_params %{
     offset: 0,
@@ -65,23 +56,43 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
      )}
   end
 
+  attr(:params, :any)
+  attr(:table_model, :any)
+  attr(:total_count, :integer)
+  attr(:units_modules, :map)
+  attr(:student_id, :integer)
+  attr(:patch_url_type, :atom, required: true)
+  attr(:view, :atom)
+  attr(:section_slug, :string)
+
   def render(assigns) do
-    ~F"""
+    ~H"""
     <div class="flex flex-col gap-2 mx-10 mb-10">
       <div class="bg-white shadow-sm">
         <div class="flex justify-between sm:items-end px-4 sm:px-9 py-4 instructor_dashboard_table">
           <div>
             <h4 class="torus-h4 !py-0 mr-auto mb-2">Learning Objectives</h4>
-            <a href={Routes.delivery_path(OliWeb.Endpoint, :download_learning_objectives, @section_slug)} class="self-end"><i class="fa-solid fa-download ml-1" /> Download</a>
+            <a
+              href={
+                Routes.delivery_path(OliWeb.Endpoint, :download_learning_objectives, @section_slug)
+              }
+              class="self-end"
+            >
+              <i class="fa-solid fa-download ml-1" /> Download
+            </a>
           </div>
           <div class="flex flex-col-reverse sm:flex-row gap-2 items-end">
-            <form for="search" phx-target={@myself} phx-change="search_objective" class="w-44">
-              <SearchInput.render id="objective_search_input" name="objective_name" text={@params.text_search} />
-            </form>
+            <.form for={:search} phx-target={@myself} phx-change="search_objective" class="w-44">
+              <SearchInput.render
+                id="objective_search_input"
+                name="objective_name"
+                text={@params.text_search}
+              />
+            </.form>
           </div>
         </div>
 
-        {#if @total_count > 0}
+        <%= if @total_count > 0 do %>
           <div id="objectives-table">
             <PagedTable.render
               table_model={@table_model}
@@ -95,9 +106,9 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
               render_top_info={false}
             />
           </div>
-        {#else}
+        <% else %>
           <h6 class="text-center py-4">There are no objectives to show</h6>
-        {/if}
+        <% end %>
       </div>
     </div>
     """
