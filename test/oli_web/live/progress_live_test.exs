@@ -166,19 +166,9 @@ defmodule OliWeb.ProgressLiveTest do
       {:ok, view, _html} =
         live(conn, live_view_student_resource_route(section.slug, student.id, resource.id))
 
-      assert view
-             |> element("div[data-phx-component=\"1\"]")
-             |> render =~ "#{first_attempt.formatted} / #{out_of}"
-
-      assert view
-             |> element("div[data-phx-component=\"2\"]")
-             |> render =~ "#{second_attempt.formatted} / #{out_of}"
-
-      assert view
-             |> element("div[data-phx-component=\"3\"]")
-             |> render =~ "#{third_attempt.formatted} / #{out_of}"
-
-      assert true
+      assert has_element?(view, "span", "#{first_attempt.formatted} / #{out_of}")
+      assert has_element?(view, "span", "#{second_attempt.formatted} / #{out_of}")
+      assert has_element?(view, "span", "#{third_attempt.formatted} / #{out_of}")
     end
   end
 
