@@ -1,5 +1,5 @@
 defmodule OliWeb.Snapshots.SnapshotsView do
-  use Surface.LiveView, layout: {OliWeb.LayoutView, :live}
+  use OliWeb, :live_view
 
   import Ecto.Query, warn: false
   alias Oli.Repo
@@ -15,10 +15,6 @@ defmodule OliWeb.Snapshots.SnapshotsView do
   alias OliWeb.Sections.Mount
   alias OliWeb.Common.Breadcrumb
   alias OliWeb.Router.Helpers, as: Routes
-
-  data missing, :any, default: []
-  data section, :any, default: nil
-  data result, :any, default: nil
 
   def set_breadcrumbs(type, section) do
     OliWeb.Sections.OverviewView.set_breadcrumbs(type, section)
@@ -41,7 +37,7 @@ defmodule OliWeb.Snapshots.SnapshotsView do
         Mount.handle_error(socket, {:error, e})
 
       {type, _, section} ->
-        missing = get_missing(section)
+        missing = get_missing(section) |> IO.inspect()
         count_missing = Enum.count(missing)
 
         {:ok,
@@ -54,28 +50,29 @@ defmodule OliWeb.Snapshots.SnapshotsView do
     end
   end
 
+  attr :missing, :any, default: []
+  attr :section, :any, default: nil
+  attr :result, :any, default: nil
+
   def render(assigns) do
-    ~F"""
+    ~H"""
     <div class="container mx-auto">
-    {#if @count_missing > 0}
+      <%= if @count_missing > 0 do %>
+        <p>There seems to be <%= @count_missing %> snapshot records.</p>
 
-        <p>There seems to be {@count_missing} snapshot records.</p>
-
-        {#if is_nil(@result)}
-          <button class="btn btn-primary" :on-click="run">Generate Snapshots</button>
-        {#else}
-          {#if @result == :success}
+        <%= if is_nil(@result) do %>
+          <button class="btn btn-primary" phx-click="run">Generate Snapshots</button>
+        <% else %>
+          <%= if @result == :success do %>
             <p><strong>Success!</strong></p>
-          {#else}
+          <% else %>
             <p><strong>Error!</strong></p>
-            {Kernel.inspect(@result)}
-          {/if}
-        {/if}
-
-    {#else}
-      <p>There seems to be no missing snapshot records.</p>
-    {/if}
-
+            <%= Kernel.inspect(@result) %>
+          <% end %>
+        <% end %>
+      <% else %>
+        <p>There seems to be no missing snapshot records.</p>
+      <% end %>
     </div>
     """
   end
