@@ -1,5 +1,5 @@
 defmodule OliWeb.CommunityLive.IndexView do
-  use Surface.LiveView, layout: {OliWeb.LayoutView, :live}
+  use OliWeb, :live_view
   use OliWeb.Common.SortableTable.TableHandlers
 
   alias Oli.Accounts
@@ -7,22 +7,8 @@ defmodule OliWeb.CommunityLive.IndexView do
   alias OliWeb.Common.{Breadcrumb, Filter, Listing, SessionContext}
   alias OliWeb.CommunityLive.{NewView, TableModel}
   alias OliWeb.Router.Helpers, as: Routes
-  alias Surface.Components.Form
-  alias Surface.Components.Form.{Checkbox, Field, Label}
-  alias Surface.Components.Link
 
-  data title, :string, default: "Communities"
-  data breadcrumbs, :any
-
-  data filter, :any, default: %{"status" => "active"}
-  data query, :string, default: ""
-  data total_count, :integer, default: 0
-  data offset, :integer, default: 0
-  data limit, :integer, default: 20
-  data sort, :string, default: "sort"
-  data page_change, :string, default: "page_change"
-  data show_bottom_paging, :boolean, default: false
-  data additional_table_class, :string, default: ""
+  alias Phoenix.LiveView.JS
 
   @table_filter_fn &__MODULE__.filter_rows/3
   @table_push_patch_path &__MODULE__.live_path/2
@@ -72,46 +58,60 @@ defmodule OliWeb.CommunityLive.IndexView do
        communities: communities,
        table_model: table_model,
        total_count: length(communities),
-       is_system_admin: is_system_admin
+       is_system_admin: is_system_admin,
+       limit: 20,
+       offset: 0,
+       filter: %{"status" => "active"},
+       query: ""
      )}
   end
 
   def render(assigns) do
-    ~F"""
-      <div class="d-flex p-3 justify-content-between">
-        <Filter.render
-          change="change_search"
-          reset="reset_search"
-          apply="apply_search"
-          query={@query}/>
+    ~H"""
+    <div class="d-flex p-3 justify-content-between">
+      <Filter.render change="change_search" reset="reset_search" apply="apply_search" query={@query} />
 
-        {#if @is_system_admin}
-          <Link class="btn btn-primary" to={Routes.live_path(@socket, NewView)}>
-            Create Community
-          </Link>
-        {/if}
-      </div>
-      <div id="community-filters" class="p-3">
-        <Form for={:filter} change="apply_filter" class="pl-4">
-          <Field name={:status} class="form-group">
-            <Checkbox value={Map.get(@filter, "status", "active")} checked_value="active" unchecked_value="active,deleted" class="form-check-input"/>
-            <Label class="form-check-label" text="Show only active communities"/>
-          </Field>
-        </Form>
-      </div>
+      <.link :if={@is_system_admin} class="btn btn-primary" href={Routes.live_path(@socket, NewView)}>
+        Create Community
+      </.link>
+    </div>
+    <div id="community-filters" class="p-3">
+      <.form for={:filter} phx-change="apply_filter" class="pl-4">
+        <div class="form-group">
+          <.input
+            type="checkbox"
+            phx-click={
+              JS.push("apply_filter",
+                value: %{
+                  filter: %{
+                    status:
+                      if(Map.get(@filter, "status") == "active", do: "active,deleted", else: "active")
+                  }
+                }
+              )
+            }
+            name={:status}
+            value="true"
+            checked={Map.get(@filter, "status", "active") == "active"}
+            class="form-check-input"
+            label="Show only active communities"
+          />
+        </div>
+      </.form>
+    </div>
 
-      <div id="communities-table" class="p-4">
-        <Listing.render
-          filter={@query}
-          table_model={@table_model}
-          total_count={@total_count}
-          offset={@offset}
-          limit={@limit}
-          sort={@sort}
-          page_change={@page_change}
-          show_bottom_paging={@show_bottom_paging}
-          additional_table_class={@additional_table_class}/>
-      </div>
+    <div id="communities-table" class="p-4">
+      <Listing.render
+        filter={@query}
+        table_model={@table_model}
+        total_count={@total_count}
+        offset={@offset}
+        limit={@limit}
+        sort="sort"
+        page_change="page_change"
+        show_bottom_paging={false}
+      />
+    </div>
     """
   end
 end
