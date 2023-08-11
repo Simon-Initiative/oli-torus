@@ -1,23 +1,11 @@
 defmodule OliWeb.CommunityLive.MembersIndexView do
-  use Surface.LiveView, layout: {OliWeb.LayoutView, :live}
+  use OliWeb, :live_view
   use OliWeb.Common.SortableTable.TableHandlers
 
   alias Oli.Groups
   alias OliWeb.Common.{Breadcrumb, Filter, Listing}
   alias OliWeb.CommunityLive.{ShowView, MembersTableModel}
   alias OliWeb.Router.Helpers, as: Routes
-
-  data title, :string, default: "Community Members"
-  data breadcrumbs, :any
-
-  data query, :string, default: ""
-  data total_count, :integer, default: 0
-  data offset, :integer, default: 0
-  data limit, :integer, default: 20
-  data sort, :string, default: "sort"
-  data page_change, :string, default: "page_change"
-  data show_bottom_paging, :boolean, default: false
-  data additional_table_class, :string, default: ""
 
   @table_filter_fn &__MODULE__.filter_rows/3
   @table_push_patch_path &__MODULE__.live_path/2
@@ -50,32 +38,31 @@ defmodule OliWeb.CommunityLive.MembersIndexView do
        members: members,
        community_id: community_id,
        table_model: table_model,
-       total_count: length(members)
+       total_count: length(members),
+       offset: 0,
+       limit: 20,
+       query: ""
      )}
   end
 
   def render(assigns) do
-    ~F"""
-      <div class="d-flex p-3 justify-content-between">
-        <Filter.render
-          change="change_search"
-          reset="reset_search"
-          apply="apply_search"
-          query={@query}/>
-      </div>
+    ~H"""
+    <div class="d-flex p-3 justify-content-between">
+      <Filter.render change="change_search" reset="reset_search" apply="apply_search" query={@query} />
+    </div>
 
-      <div class="p-4">
-        <Listing.render
-          filter={@query}
-          table_model={@table_model}
-          total_count={@total_count}
-          offset={@offset}
-          limit={@limit}
-          sort={@sort}
-          page_change={@page_change}
-          show_bottom_paging={@show_bottom_paging}
-          additional_table_class={@additional_table_class}/>
-      </div>
+    <div class="p-4">
+      <Listing.render
+        filter={@query}
+        table_model={@table_model}
+        total_count={@total_count}
+        offset={@offset}
+        limit={@limit}
+        sort="sort"
+        page_change="page_change"
+        show_bottom_paging={false}
+      />
+    </div>
     """
   end
 
