@@ -1,46 +1,55 @@
 defmodule OliWeb.CommunityLive.Form do
-  use Surface.Component
+  use OliWeb, :html
 
-  alias Surface.Components.Form
-  alias Surface.Components.Form.{Checkbox, ErrorTag, Field, Label, TextArea, TextInput}
-
-  prop(changeset, :changeset, required: true)
-  prop(save, :event, required: true)
-  prop(display_labels, :boolean, default: true)
+  attr(:form, :map, required: true)
+  attr(:save, :any, required: true)
+  attr(:display_labels, :boolean, default: true)
 
   def render(assigns) do
-    ~F"""
-    <Form for={@changeset} submit={@save}>
-      <Field name={:name} class="form-group">
-        {#if @display_labels}
-          <Label class="control-label">Community Name</Label>
-        {/if}
-        <TextInput class="form-control" opts={placeholder: "Name", maxlength: "255"}/>
-        <ErrorTag/>
-      </Field>
+    ~H"""
+    <.form for={@form} phx-submit={@save}>
+      <div class="form-group">
+        <.input
+          class="form-control"
+          field={@form[:name]}
+          placeholder="Name"
+          maxlength={255}
+          label={if @display_labels, do: "Community Name"}
+        />
+      </div>
 
-      <Field name={:description} class="form-group">
-        {#if @display_labels}
-          <Label class="control-label">Community Description</Label>
-        {/if}
-        <TextArea class="form-control" rows="4" opts={placeholder: "Description"}/>
-      </Field>
+      <div class="form-group">
+        <.input
+          type="textarea"
+          class="form-control"
+          field={@form[:description]}
+          placeholder="Description"
+          rows="4"
+          label={if @display_labels, do: "Community Description"}
+        />
+      </div>
 
-      <Field name={:key_contact} class="form-group">
-        {#if @display_labels}
-          <Label class="control-label">Community Contact</Label>
-        {/if}
-        <TextInput class="form-control" opts={placeholder: "Key Contact", maxlength: "255"}/>
-        <ErrorTag/>
-      </Field>
+      <div class="form-group">
+        <.input
+          class="form-control"
+          field={@form[:key_contact]}
+          placeholder="Key Contact"
+          maxlength={255}
+          label={if @display_labels, do: "Community Contact"}
+        />
+      </div>
 
-      <Field name={:global_access} class="form-check">
-        <Checkbox class="form-check-input"/>
-        <Label class="form-check-label" text="Access to Global Project or Products"/>
-      </Field>
+      <div class="form-check">
+        <.input
+          type="checkbox"
+          class="form-check-input"
+          field={@form[:global_access]}
+          label="Access to Global Project or Products"
+        />
+      </div>
 
       <button class="form-button btn btn-md btn-primary btn-block mt-3" type="submit">Save</button>
-    </Form>
+    </.form>
     """
   end
 end

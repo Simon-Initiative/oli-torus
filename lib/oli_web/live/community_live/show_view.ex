@@ -1,5 +1,5 @@
 defmodule OliWeb.CommunityLive.ShowView do
-  use Surface.LiveView, layout: {OliWeb.LayoutView, :live}
+  use OliWeb, :live_view
   use OliWeb.Common.Modal
 
   alias Oli.Accounts
@@ -9,7 +9,6 @@ defmodule OliWeb.CommunityLive.ShowView do
   alias Oli.Repo.{Paging, Sorting}
   alias OliWeb.Common.{Breadcrumb, DeleteModal, Params, ShowSection}
   alias OliWeb.CommunityLive.Associated.IndexView, as: IndexAssociated
-  alias Surface.Components.Link
 
   alias OliWeb.CommunityLive.{
     Form,
@@ -20,16 +19,6 @@ defmodule OliWeb.CommunityLive.ShowView do
   }
 
   alias OliWeb.Router.Helpers, as: Routes
-
-  data(title, :string, default: "Edit Community")
-  data(community, :struct)
-  data(changeset, :changeset)
-  data(breadcrumbs, :list)
-  data(modal, :any, default: nil)
-  data(community_admins, :list)
-  data(community_members, :list)
-  data(community_institutions, :list)
-  data(matches, :map, default: %{"admin" => [], "member" => [], "institution" => []})
 
   @matches_limit 30
 
@@ -59,13 +48,14 @@ defmodule OliWeb.CommunityLive.ShowView do
 
           assign(socket,
             community: community,
-            changeset: changeset,
+            form: to_form(changeset),
             breadcrumbs: breadcrumb(community_id),
             community_admins: community_admins,
             community_id: community_id,
             community_members: community_members,
             community_institutions: community_institutions,
-            is_system_admin: is_system_admin
+            is_system_admin: is_system_admin,
+            matches: %{"admin" => [], "member" => [], "institution" => []}
           )
       end
 
@@ -73,86 +63,98 @@ defmodule OliWeb.CommunityLive.ShowView do
   end
 
   def render(assigns) do
-    ~F"""
-      {render_modal(assigns)}
-      <div id="community-overview" class="overview container">
-        <ShowSection.render
-          section_title="Details"
-          section_description="Main community fields that will be shown to system admins and community admins."
+    ~H"""
+    <div id="community-overview" class="overview container">
+      <%= render_modal(assigns) %>
+      <ShowSection.render
+        section_title="Details"
+        section_description="Main community fields that will be shown to system admins and community admins."
+      >
+        <Form.render form={@form} save="save" />
+      </ShowSection.render>
+
+      <ShowSection.render
+        section_title="Community Admins"
+        section_description="Add other authors by email to administrate the community."
+      >
+        <Invitation.render
+          to_invite={:admin}
+          list_id="admin_matches"
+          invite="add_admin"
+          remove="remove_admin"
+          suggest="suggest_admin"
+          matches={@matches["admin"]}
+          placeholder="admin@example.edu"
+          button_text="Add"
+          collaborators={@community_admins}
+          allow_removal={@is_system_admin}
+        />
+      </ShowSection.render>
+
+      <ShowSection.render
+        section_title="Community Members"
+        section_description="Add users by email as members of the community (one at a time). Only showing the last 3 additions here."
+      >
+        <Invitation.render
+          list_id="member_matches"
+          invite="add_member"
+          remove="remove_member"
+          suggest="suggest_member"
+          matches={@matches["member"]}
+          placeholder="user@example.edu"
+          button_text="Add"
+          collaborators={@community_members}
+        />
+
+        <.link
+          class="btn btn-link float-right mt-4"
+          href={Routes.live_path(@socket, MembersIndexView, @community.id)}
         >
-          <Form changeset={@changeset} save="save"/>
-        </ShowSection.render>
+          See all
+        </.link>
+      </ShowSection.render>
 
-        <ShowSection.render
-          section_title="Community Admins"
-          section_description="Add other authors by email to administrate the community."
-        >
-          <Invitation
-            to_invite={:admin}
-            list_id="admin_matches"
-            invite="add_admin"
-            remove="remove_admin"
-            suggest="suggest_admin"
-            matches={@matches["admin"]}
-            placeholder="admin@example.edu"
-            button_text="Add"
-            collaborators={@community_admins}
-            allow_removal={@is_system_admin}/>
-        </ShowSection.render>
+      <ShowSection.render
+        section_title="Projects and Products"
+        section_description="Make selected Projects and Products available to members of this Community."
+      >
+        <.link class="btn btn-link" href={Routes.live_path(@socket, IndexAssociated, @community_id)}>
+          See associated
+        </.link>
+      </ShowSection.render>
 
-        <ShowSection.render
-          section_title="Community Members"
-          section_description="Add users by email as members of the community (one at a time). Only showing the last 3 additions here."
-        >
-          <Invitation
-            list_id="member_matches"
-            invite="add_member"
-            remove="remove_member"
-            suggest="suggest_member"
-            matches={@matches["member"]}
-            placeholder="user@example.edu"
-            button_text="Add"
-            collaborators={@community_members}/>
-
-          <Link class="btn btn-link float-right mt-4" to={Routes.live_path(@socket, MembersIndexView, @community.id)}>
-            See all >
-          </Link>
-        </ShowSection.render>
-
-        <ShowSection.render
-          section_title="Projects and Products"
-          section_description="Make selected Projects and Products available to members of this Community."
-        >
-          <Link class="btn btn-link" to={Routes.live_path(@socket, IndexAssociated, @community_id)}>
-            See associated
-          </Link>
-        </ShowSection.render>
-
-        <ShowSection.render
+      <ShowSection.render
         section_title="Institutions"
         section_description="Add institutions to be part of the community."
-        >
-          <Invitation
-            list_id="institution_matches"
-            to_invite={:institution}
-            search_field={:name}
-            invite="add_institution"
-            remove="remove_institution"
-            suggest="suggest_institution"
-            matches={@matches["institution"]}
-            main_fields={[primary: :name, secondary: :institution_email]}
-            placeholder="Institution name"
-            button_text="Add"
-            collaborators={@community_institutions}/>
-        </ShowSection.render>
+      >
+        <Invitation.render
+          list_id="institution_matches"
+          to_invite={:institution}
+          search_field={:name}
+          invite="add_institution"
+          remove="remove_institution"
+          suggest="suggest_institution"
+          matches={@matches["institution"]}
+          main_fields={[primary: :name, secondary: :institution_email]}
+          placeholder="Institution name"
+          button_text="Add"
+          collaborators={@community_institutions}
+        />
+      </ShowSection.render>
 
-        <ShowSection.render section_title="Actions">
-          <div class="d-flex align-items-center">
-            <button type="button" class="btn btn-link text-danger action-button" :on-click="show_delete_modal">Delete</button>
-            <span>Permanently delete this community.</span>
-          </div>
-        </ShowSection.render>
-      </div>
+      <ShowSection.render section_title="Actions">
+        <div class="d-flex align-items-center">
+          <button
+            type="button"
+            class="btn btn-link text-danger action-button"
+            phx-click="show_delete_modal"
+          >
+            Delete
+          </button>
+          <span>Permanently delete this community.</span>
+        </div>
+      </ShowSection.render>
+    </div>
     """
   end
 
@@ -164,7 +166,7 @@ defmodule OliWeb.CommunityLive.ShowView do
         socket = put_flash(socket, :info, "Community successfully updated.")
 
         {:noreply,
-         assign(socket, community: community, changeset: Groups.change_community(community))}
+         assign(socket, community: community, form: to_form(Groups.change_community(community)))}
 
       {:error, %Ecto.Changeset{} = changeset} ->
         socket =
@@ -174,7 +176,7 @@ defmodule OliWeb.CommunityLive.ShowView do
             "Community couldn't be updated. Please check the errors below."
           )
 
-        {:noreply, assign(socket, changeset: changeset)}
+        {:noreply, assign(socket, form: to_form(changeset))}
     end
   end
 
@@ -228,15 +230,24 @@ defmodule OliWeb.CommunityLive.ShowView do
     }
 
     modal = fn assigns ->
-      ~F"""
-        <DeleteModal {...@modal_assigns} />
+      ~H"""
+      <DeleteModal.render
+        __context__={assigns[:__context_] || %{}}
+        id={@modal_assigns.id}
+        description={@modal_assigns.description}
+        entity_name={@modal_assigns.entity_name}
+        entity_type={@modal_assigns.entity_type}
+        delete_enabled={@modal_assigns.delete_enabled}
+        validate={@modal_assigns.validate}
+        delete={@modal_assigns.delete}
+      />
       """
     end
 
     {:noreply, show_modal(socket, modal, modal_assigns: modal_assigns)}
   end
 
-  def handle_event("add_admin", %{"admin" => %{"email" => email}}, socket) do
+  def handle_event("add_admin", %{"email" => email}, socket) do
     socket = clear_flash(socket)
 
     attrs = %{
@@ -295,7 +306,7 @@ defmodule OliWeb.CommunityLive.ShowView do
     {:noreply, socket}
   end
 
-  def handle_event("add_member", %{"collaborator" => %{"email" => email}}, socket) do
+  def handle_event("add_member", %{"email" => email}, socket) do
     socket = clear_flash(socket)
 
     attrs = %{community_id: socket.assigns.community.id}
@@ -310,8 +321,12 @@ defmodule OliWeb.CommunityLive.ShowView do
         }
 
         modal = fn assigns ->
-          ~F"""
-            <SelectMemberModal {...@modal_assigns} />
+          ~H"""
+          <SelectMemberModal.render
+            id={@modal_assigns.id}
+            members={@modal_assigns.members}
+            select={@modal_assigns.select}
+          />
           """
         end
 
@@ -336,7 +351,7 @@ defmodule OliWeb.CommunityLive.ShowView do
     {:noreply, socket}
   end
 
-  def handle_event("add_institution", %{"institution" => %{"name" => name}}, socket) do
+  def handle_event("add_institution", %{"name" => name}, socket) do
     socket = clear_flash(socket)
     community_id = socket.assigns.community.id
 
@@ -410,15 +425,15 @@ defmodule OliWeb.CommunityLive.ShowView do
     end
   end
 
-  def handle_event("suggest_admin", %{"admin" => %{"email" => query}}, socket) do
+  def handle_event("suggest_admin", %{"email" => query}, socket) do
     do_suggest("admin", query, socket)
   end
 
-  def handle_event("suggest_member", %{"collaborator" => %{"email" => query}}, socket) do
+  def handle_event("suggest_member", %{"email" => query}, socket) do
     do_suggest("member", query, socket)
   end
 
-  def handle_event("suggest_institution", %{"institution" => %{"name" => query}}, socket) do
+  def handle_event("suggest_institution", %{"name" => query}, socket) do
     matches =
       Map.put(
         socket.assigns.matches,

@@ -156,7 +156,7 @@ defmodule OliWeb.Components.Common do
   def input(%{field: %Phoenix.HTML.FormField{} = field} = assigns) do
     assigns
     |> assign(field: nil, id: assigns.id || field.id)
-    |> assign(:errors, field.errors)
+    |> assign(:errors, Enum.map(field.errors, &OliWeb.ErrorHelpers.translate_error(&1)))
     |> assign_new(:name, fn -> if assigns.multiple, do: field.name <> "[]", else: field.name end)
     |> assign_new(:value, fn -> field.value end)
     |> assign_new(:class, fn -> assigns[:class] end)
@@ -191,13 +191,7 @@ defmodule OliWeb.Components.Common do
     ~H"""
     <div class="contents" phx-feedback-for={@name}>
       <.label :if={@label} for={@id}><%= @label %></.label>
-      <select
-        id={@id}
-        name={@name}
-        class={@class}
-        multiple={@multiple}
-        {@rest}
-      >
+      <select id={@id} name={@name} class={@class} multiple={@multiple} {@rest}>
         <option :if={@prompt} value=""><%= @prompt %></option>
         <%= Phoenix.HTML.Form.options_for_select(@options, @value) %>
       </select>

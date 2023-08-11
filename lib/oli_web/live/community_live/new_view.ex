@@ -1,15 +1,11 @@
 defmodule OliWeb.CommunityLive.NewView do
-  use Surface.LiveView, layout: {OliWeb.LayoutView, :live}
+  use OliWeb, :live_view
 
   alias Oli.Groups
   alias Oli.Groups.Community
   alias OliWeb.Common.{Breadcrumb, FormContainer, Params}
   alias OliWeb.CommunityLive.{Form, IndexView}
   alias OliWeb.Router.Helpers, as: Routes
-
-  data(title, :string, default: "New Community")
-  data(community, :changeset, default: Groups.change_community(%Community{}))
-  data(breadcrumbs, :list)
 
   def breadcrumb() do
     IndexView.breadcrumb() ++
@@ -24,14 +20,16 @@ defmodule OliWeb.CommunityLive.NewView do
   def mount(_, _, socket) do
     {:ok,
      assign(socket,
-       breadcrumbs: breadcrumb()
+       breadcrumbs: breadcrumb(),
+       title: "New Community",
+       form: to_form(Groups.change_community(%Community{}))
      )}
   end
 
   def render(assigns) do
-    ~F"""
+    ~H"""
       <FormContainer.render title={@title}>
-        <Form changeset={@community} save="save" display_labels={false}/>
+        <Form.render form={@form} save="save" display_labels={false}/>
       </FormContainer.render>
     """
   end
@@ -54,7 +52,7 @@ defmodule OliWeb.CommunityLive.NewView do
             "Community couldn't be created. Please check the errors below."
           )
 
-        {:noreply, assign(socket, community: changeset)}
+        {:noreply, assign(socket, form: to_form(changeset))}
     end
   end
 end

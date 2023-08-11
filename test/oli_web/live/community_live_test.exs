@@ -219,7 +219,7 @@ defmodule OliWeb.CommunityLiveTest do
              |> render() =~
                "Community couldn&#39;t be created. Please check the errors below."
 
-      assert has_element?(view, "span", "can't be blank")
+      assert has_element?(view, "p", "can't be blank")
       assert [] = Groups.list_communities()
     end
 
@@ -238,7 +238,7 @@ defmodule OliWeb.CommunityLiveTest do
              |> render() =~
                "Community couldn&#39;t be created. Please check the errors below."
 
-      assert has_element?(view, "span", "has already been taken")
+      assert has_element?(view, "p", "has already been taken")
       assert 1 = Groups.list_communities() |> length()
     end
 
@@ -304,7 +304,7 @@ defmodule OliWeb.CommunityLiveTest do
              |> render() =~
                "Community couldn&#39;t be updated. Please check the errors below."
 
-      assert has_element?(view, "span", "can't be blank")
+      assert has_element?(view, "p", "can't be blank")
       refute Groups.get_community(id).name == ""
     end
 
@@ -346,7 +346,7 @@ defmodule OliWeb.CommunityLiveTest do
              |> render() =~
                "Community couldn&#39;t be updated. Please check the errors below."
 
-      assert has_element?(view, "span", "has already been taken")
+      assert has_element?(view, "p", "has already been taken")
       assert 2 = Groups.list_communities() |> length()
     end
 
@@ -457,7 +457,7 @@ defmodule OliWeb.CommunityLiveTest do
 
       view
       |> element("form[phx-submit=\"add_admin\"")
-      |> render_submit(%{admin: %{email: author.email}})
+      |> render_submit(%{email: author.email})
 
       assert view
              |> element("div.alert.alert-info")
@@ -478,7 +478,7 @@ defmodule OliWeb.CommunityLiveTest do
 
       view
       |> element("form[phx-submit=\"add_admin\"")
-      |> render_submit(%{collaborator: %{email: author.email}})
+      |> render_submit(%{email: author.email})
 
       error_message =
         "Some of the community admin(s) couldn&#39;t be added because the author(s) don&#39;t exist in the system or are already associated."
@@ -489,7 +489,7 @@ defmodule OliWeb.CommunityLiveTest do
 
       view
       |> element("form[phx-submit=\"add_admin\"")
-      |> render_submit(%{collaborator: %{email: "wrong@example.com"}})
+      |> render_submit(%{email: "wrong@example.com"})
 
       assert view
              |> element("div.alert.alert-danger")
@@ -511,7 +511,7 @@ defmodule OliWeb.CommunityLiveTest do
 
       view
       |> element("form[phx-submit=\"add_admin\"")
-      |> render_submit(%{admin: %{email: Enum.join(emails, ",")}})
+      |> render_submit(%{email: Enum.join(emails, ",")})
 
       assert view
              |> element("div.alert.alert-info")
@@ -577,7 +577,7 @@ defmodule OliWeb.CommunityLiveTest do
 
       view
       |> element("form[phx-change=\"suggest_admin\"")
-      |> render_change(%{admin: %{email: author.name}})
+      |> render_change(%{email: author.name})
 
       assert view
              |> element("#admin_matches")
@@ -586,7 +586,7 @@ defmodule OliWeb.CommunityLiveTest do
 
       view
       |> element("form[phx-change=\"suggest_admin\"")
-      |> render_change(%{admin: %{email: "other_name"}})
+      |> render_change(%{email: "other_name"})
 
       refute view
              |> element("#admin_matches")
@@ -607,7 +607,7 @@ defmodule OliWeb.CommunityLiveTest do
 
       view
       |> element("form[phx-submit=\"add_member\"")
-      |> render_submit(%{collaborator: %{email: user.email}})
+      |> render_submit(%{email: user.email})
 
       assert view
              |> element("div.alert.alert-info")
@@ -628,7 +628,7 @@ defmodule OliWeb.CommunityLiveTest do
 
       view
       |> element("form[phx-submit=\"add_member\"")
-      |> render_submit(%{collaborator: %{email: user.email}})
+      |> render_submit(%{email: user.email})
 
       error_message =
         "Member couldn&#39;t be added because the user don&#39;t exist in the system or is already associated."
@@ -639,7 +639,7 @@ defmodule OliWeb.CommunityLiveTest do
 
       view
       |> element("form[phx-submit=\"add_member\"")
-      |> render_submit(%{collaborator: %{email: "wrong@example.com"}})
+      |> render_submit(%{email: "wrong@example.com"})
 
       assert view
              |> element("div.alert.alert-danger")
@@ -704,7 +704,7 @@ defmodule OliWeb.CommunityLiveTest do
 
       view
       |> element("form[phx-change=\"suggest_member\"")
-      |> render_change(%{collaborator: %{email: user.name}})
+      |> render_change(%{email: user.name})
 
       assert view
              |> element("#member_matches")
@@ -713,7 +713,7 @@ defmodule OliWeb.CommunityLiveTest do
 
       view
       |> element("form[phx-change=\"suggest_member\"")
-      |> render_change(%{collaborator: %{email: "other_name"}})
+      |> render_change(%{email: "other_name"})
 
       refute view
              |> element("#member_matches")
@@ -735,11 +735,11 @@ defmodule OliWeb.CommunityLiveTest do
 
       view
       |> element("form[phx-change=\"suggest_member\"")
-      |> render_change(%{collaborator: %{email: email}})
+      |> render_change(%{email: email})
 
       view
       |> element("form[phx-submit=\"add_member\"")
-      |> render_submit(%{collaborator: %{email: email}})
+      |> render_submit(%{email: email})
 
       assert has_element?(view, ".modal-title", "Select user")
       assert has_element?(view, ".modal-body", "Sub: #{user_1.sub}")
@@ -770,7 +770,7 @@ defmodule OliWeb.CommunityLiveTest do
 
       view
       |> element("form[phx-submit=\"add_institution\"")
-      |> render_submit(%{institution: %{name: institution.name}})
+      |> render_submit(%{name: institution.name})
 
       assert view
              |> element("div.alert.alert-info")
@@ -791,7 +791,7 @@ defmodule OliWeb.CommunityLiveTest do
 
       view
       |> element("form[phx-submit=\"add_institution\"")
-      |> render_submit(%{institution: %{name: institution.name}})
+      |> render_submit(%{name: institution.name})
 
       assert view
              |> element("div.alert.alert-danger")
@@ -800,7 +800,7 @@ defmodule OliWeb.CommunityLiveTest do
 
       view
       |> element("form[phx-submit=\"add_institution\"")
-      |> render_submit(%{institution: %{name: "Bad institution"}})
+      |> render_submit(%{name: "Bad institution"})
 
       assert view
              |> element("div.alert.alert-danger")
@@ -823,7 +823,7 @@ defmodule OliWeb.CommunityLiveTest do
 
       view
       |> element("form[phx-submit=\"add_institution\"")
-      |> render_submit(%{institution: %{name: Enum.join(names, ",")}})
+      |> render_submit(%{name: Enum.join(names, ",")})
 
       assert view
              |> element("div.alert.alert-info")
@@ -889,7 +889,7 @@ defmodule OliWeb.CommunityLiveTest do
 
       view
       |> element("form[phx-change=\"suggest_institution\"")
-      |> render_change(%{institution: %{name: institution.name}})
+      |> render_change(%{name: institution.name})
 
       assert view
              |> element("#institution_matches")
@@ -898,7 +898,7 @@ defmodule OliWeb.CommunityLiveTest do
 
       view
       |> element("form[phx-change=\"suggest_institution\"")
-      |> render_change(%{institution: %{name: "other_name"}})
+      |> render_change(%{name: "other_name"})
 
       refute view
              |> element("#institution_matches")

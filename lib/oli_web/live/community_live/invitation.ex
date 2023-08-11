@@ -1,49 +1,58 @@
 defmodule OliWeb.CommunityLive.Invitation do
-  use Surface.Component
+  use OliWeb, :html
 
-  alias Surface.Components.Form
-  alias Surface.Components.Form.{ErrorTag, Field, TextInput}
-
-  prop list_id, :string, required: true
-  prop invite, :event, required: true
-  prop remove, :event, required: true
-  prop suggest, :event
-  prop collaborators, :any, default: []
-  prop matches, :any, default: []
-  prop to_invite, :any, default: :collaborator
-  prop search_field, :any, default: :email
-  prop main_fields, :keyword, default: [primary: :name, secondary: :email]
-  prop placeholder, :string, default: "collaborator@example.edu"
-  prop button_text, :string, default: "Send invite"
-  prop allow_removal, :boolean, default: true
+  attr(:list_id, :string, required: true)
+  attr(:invite, :any, required: true)
+  attr(:remove, :any, required: true)
+  attr(:suggest, :any)
+  attr(:collaborators, :any, default: [])
+  attr(:matches, :any, default: [])
+  attr(:to_invite, :any, default: :collaborator)
+  attr(:search_field, :any, default: :email)
+  attr(:main_fields, :list, default: [primary: :name, secondary: :email])
+  attr(:placeholder, :string, default: "collaborator@example.edu")
+  attr(:button_text, :string, default: "Send invite")
+  attr(:allow_removal, :boolean, default: true)
 
   def render(assigns) do
-    ~F"""
-      <Form for={@to_invite} submit={@invite} change={@suggest} class="d-flex mb-5">
-        <Field name={@search_field} class="w-100">
-          <TextInput class="form-control" opts={placeholder: @placeholder, autocomplete: "off", list: @list_id}/>
-          <datalist id={@list_id}>
-            {#for match <- @matches}
-              <option value={Map.get(match, @search_field)}>{Map.get(match, @main_fields[:primary])}</option>
-            {/for}
-          </datalist>
-          <ErrorTag/>
-        </Field>
-        <button class="form-button btn btn-outline-primary" type="submit">{@button_text}</button>
-      </Form>
-      {#for collaborator <- @collaborators}
-        <div class="d-flex justify-content-between align-items-center mb-3">
-          <div class="d-flex flex-column">
-            <div>{Map.get(collaborator, @main_fields[:primary])}</div>
-            <div class="text-muted">{Map.get(collaborator, @main_fields[:secondary])}</div>
-          </div>
-          {#if @allow_removal}
-            <div class="user-actions">
-              <button class="btn btn-link text-danger" :on-click={@remove} phx-value-collaborator-id={collaborator.id}>Remove</button>
-            </div>
-          {/if}
+    ~H"""
+    <.form for={@to_invite} phx-submit={@invite} phx-change={@suggest} class="d-flex mb-5">
+      <div class="w-100">
+        <.input
+          name={@search_field}
+          value=""
+          class="form-control"
+          placeholder={@placeholder}
+          autocomplete="off"
+          list={@list_id}
+        />
+        <datalist id={@list_id}>
+          <%= for match <- @matches do %>
+            <option value={Map.get(match, @search_field)}>
+              <%= Map.get(match, @main_fields[:primary]) %>
+            </option>
+          <% end %>
+        </datalist>
+      </div>
+      <button class="form-button btn btn-outline-primary" type="submit"><%= @button_text %></button>
+    </.form>
+    <%= for collaborator <- @collaborators do %>
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <div class="d-flex flex-column">
+          <div><%= Map.get(collaborator, @main_fields[:primary]) %></div>
+          <div class="text-muted"><%= Map.get(collaborator, @main_fields[:secondary]) %></div>
         </div>
-      {/for}
+        <div :if={@allow_removal} class="user-actions">
+          <button
+            class="btn btn-link text-danger"
+            phx-click={@remove}
+            phx-value-collaborator-id={collaborator.id}
+          >
+            Remove
+          </button>
+        </div>
+      </div>
+    <% end %>
     """
   end
 end

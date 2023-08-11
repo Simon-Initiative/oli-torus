@@ -3,6 +3,7 @@ defmodule OliWeb.Common.ShowSection do
 
   attr(:section_title, :string, required: true)
   attr(:section_description, :string, default: nil)
+  slot :inner_block, required: true
 
   def render(assigns) do
     ~H"""
