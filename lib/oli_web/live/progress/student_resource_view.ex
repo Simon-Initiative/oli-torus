@@ -1,35 +1,16 @@
 defmodule OliWeb.Progress.StudentResourceView do
-  use Surface.LiveView, layout: {OliWeb.LayoutView, :live}
+  use OliWeb, :live_view
 
-  alias Oli.Repo
   import Ecto.Query, warn: false
-  alias Oli.Delivery.Attempts.Core.{PartAttempt, ResourceAttempt, ActivityAttempt}
 
-  alias OliWeb.Common.{Breadcrumb, SessionContext, Utils}
-  alias OliWeb.Common.Properties.{Groups, Group, ReadOnly}
-  alias Oli.Delivery.Attempts.Core.ResourceAccess
-  alias Surface.Components.Form
-  alias Surface.Components.Form.{Field, Label, NumberInput, ErrorTag}
-  alias OliWeb.Progress.AttemptHistory
-  alias OliWeb.Sections.Mount
   alias Oli.Delivery.Attempts.Core
-  alias OliWeb.Progress.Passback
+  alias Oli.Delivery.Attempts.Core.{ActivityAttempt, PartAttempt, ResourceAccess, ResourceAttempt}
   alias Oli.Delivery.Attempts.PageLifecycle.Broadcaster
-  alias OliWeb.Common.{Confirm}
-
-  data(breadcrumbs, :any)
-  data(title, :string, default: "Student Progress")
-  data(section, :any, default: nil)
-  data(changeset, :any)
-  data(resource_access, :any)
-  data(last_failed, :any)
-  data(show_confirm, :boolean, default: false)
-  data(attempt_guid, :string, default: nil)
-
-  data(revision, :any)
-  data(user, :any)
-  data(is_editing, :boolean, default: false)
-  data(grade_sync_result, :any, default: nil)
+  alias Oli.Repo
+  alias OliWeb.Common.{Breadcrumb, Confirm, SessionContext, Utils}
+  alias OliWeb.Common.Properties.{Groups, Group, ReadOnly}
+  alias OliWeb.Progress.{AttemptHistory, Passback}
+  alias OliWeb.Sections.Mount
 
   defp set_breadcrumbs(type, section, user_id) do
     OliWeb.Progress.StudentView.set_breadcrumbs(type, section, user_id)
@@ -89,7 +70,10 @@ defmodule OliWeb.Progress.StudentResourceView do
                resource_access: resource_access,
                revision: revision,
                last_failed: fetch_last_failed(resource_access),
-               user: user
+               user: user,
+               show_confirm: false,
+               is_editing: false,
+               grade_sync_result: nil
              )}
         end
     end
@@ -141,68 +125,128 @@ defmodule OliWeb.Progress.StudentResourceView do
   end
 
   def render_with_access(assigns) do
-    ~F"""
+    ~H"""
     <Groups.render>
       <Group.render label="Details" description="">
-        <ReadOnly.render label="Student" value={OliWeb.Common.Utils.name(@user)}/>
-        <ReadOnly.render label="Resource" value={@revision.title}/>
+        <ReadOnly.render label="Student" value={OliWeb.Common.Utils.name(@user)} />
+        <ReadOnly.render label="Resource" value={@revision.title} />
       </Group.render>
-      {#if @revision.graded}
-      <Group.render label="Current Grade" description="">
+      <%= if @revision.graded do %>
+        <Group.render label="Current Grade" description="">
+          <.form
+            as={:resource_access}
+            for={@changeset}
+            phx-change="validate"
+            phx-submit="save"
+            autocomplete="off"
+          >
+            <div class="form-group">
+              <div class="d-flex justify-content-between items-center">
+                <label for="score" class="mt-3">Score</label>
+                <.error
+                  :for={error <- Keyword.get_values(@changeset.errors || [], :score)}
+                  for="resource_access[score]"
+                >
+                  <%= translate_error(error) %>
+                </.error>
+              </div>
+              <.input
+                id="resource_access_score"
+                class="form-control"
+                type="number"
+                name="resource_access[score]"
+                value={fetch_field(@changeset, :score)}
+                disabled={!@is_editing}
+                step="0.01"
+              />
 
-          <Form as={:resource_access} for={@changeset} change="validate" submit="save" opts={autocomplete: "off"}>
-            <Field name={:score} class="form-label-group">
-              <div class="d-flex justify-content-between"><Label/><ErrorTag class="help-block"/></div>
-              <NumberInput class="form-control" opts={disabled: !@is_editing, step: "0.01"}/>
               <div class="text-muted">Scores are rounded up, limiting to two decimal points.</div>
-            </Field>
-            <Field name={:out_of} class="form-label-group mb-4">
-              <div class="d-flex justify-content-between"><Label/><ErrorTag class="help-block"/></div>
-              <NumberInput class="form-control" opts={disabled: !@is_editing, step: "0.01"}/>
-            </Field>
+            </div>
 
-            {#if @is_editing}
+            <div class="form-group">
+              <div class="d-flex justify-content-between items-center">
+                <label for="score" class="mt-3">Out Of</label>
+                <.error
+                  :for={error <- Keyword.get_values(@changeset.errors || [], :out_of)}
+                  for="resource_access[out_of]"
+                >
+                  <%= translate_error(error) %>
+                </.error>
+              </div>
+              <.input
+                id="resource_access_out_of"
+                class="form-control"
+                type="number"
+                name="resource_access[out_of]"
+                value={fetch_field(@changeset, :out_of)}
+                disabled={!@is_editing}
+                step="0.01"
+              />
+            </div>
+
+            <%= if @is_editing do %>
               <button class="btn btn-primary" type="submit">Save</button>
-              <button class="btn btn-primary" type="button" :on-click="disable_score_edit">Cancel</button>
-            {#else}
-              <button class="btn btn-primary" type="button" :on-click="enable_score_edit">Change Score</button>
-            {/if}
-          </Form>
+              <button class="btn btn-primary" type="button" phx-click="disable_score_edit">
+                Cancel
+              </button>
+            <% else %>
+              <button class="btn btn-primary" type="button" phx-click="enable_score_edit">
+                Change Score
+              </button>
+            <% end %>
+          </.form>
 
-          {#if !@section.open_and_free}
-            <div class="mb-3"/>
-            <Passback.render click="passback" last_failed={@last_failed} resource_access={@resource_access} grade_sync_result={@grade_sync_result}/>
-          {/if}
-
-      </Group.render>
-      {/if}
+          <%= if !@section.open_and_free do %>
+            <div class="mb-3" />
+            <Passback.render
+              click="passback"
+              last_failed={@last_failed}
+              resource_access={@resource_access}
+              grade_sync_result={@grade_sync_result}
+            />
+          <% end %>
+        </Group.render>
+      <% end %>
       <Group.render label="Attempt History" description="">
-        <AttemptHistory.render revision={@revision} section={@section} resource_attempts={@resource_access.resource_attempts} ctx={@ctx}/>
+        <AttemptHistory.render
+          revision={@revision}
+          section={@section}
+          resource_attempts={@resource_access.resource_attempts}
+          ctx={@ctx}
+        />
       </Group.render>
     </Groups.render>
-    {#if @show_confirm}
-      <Confirm.render title="Confirm Attempt Submit" id="dialog" ok="do_submit_attempt" cancel="cancel_modal">
+    <%= if @show_confirm do %>
+      <Confirm.render
+        title="Confirm Attempt Submit"
+        id="dialog"
+        ok="do_submit_attempt"
+        cancel="cancel_modal"
+      >
         Are you sure that you wish to finalize this attempt on behalf of the student?
       </Confirm.render>
-    {/if}
+    <% end %>
     """
   end
 
   def render_never_visited(assigns) do
-    ~F"""
+    ~H"""
     <Groups.render>
       <Group.render label="Details" description="">
-        <ReadOnly.render label="Student" value={OliWeb.Common.Utils.name(@user)}/>
-        <ReadOnly.render label="Resource" value={@revision.title}/>
+        <ReadOnly.render label="Student" value={OliWeb.Common.Utils.name(@user)} />
+        <ReadOnly.render label="Resource" value={@revision.title} />
       </Group.render>
       <Group.render label="Attempt History" description="">
         <p>The student has not yet accessed this course resource.</p>
 
-        {#if @revision.graded}
-          <p>If there is a need to manually set the grade for this student without the student ever having visited this page, first create the access record:</p>
-          <button class="btn btn-primary mt-4" type="button" :on-click="create_access_record">Create Access Record</button>
-        {/if}
-
+        <%= if @revision.graded do %>
+          <p>
+            If there is a need to manually set the grade for this student without the student ever having visited this page, first create the access record:
+          </p>
+          <button class="btn btn-primary mt-4" type="button" phx-click="create_access_record">
+            Create Access Record
+          </button>
+        <% end %>
       </Group.render>
     </Groups.render>
     """

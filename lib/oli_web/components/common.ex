@@ -243,10 +243,14 @@ defmodule OliWeb.Components.Common do
   Generates a generic error message.
   """
   slot(:inner_block, required: true)
+  attr(:for, :string, default: nil)
 
   def error(assigns) do
     ~H"""
-    <p class="mt-3 flex gap-3 text-sm leading-6 text-rose-600 phx-no-feedback:hidden">
+    <p
+      class="mt-3 flex gap-3 text-sm leading-6 text-rose-600 phx-no-feedback:hidden"
+      phx-feedback-for={@for}
+    >
       <%= render_slot(@inner_block) %>
     </p>
     """
