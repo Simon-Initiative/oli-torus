@@ -322,7 +322,7 @@ defmodule OliWeb.Sections.OverviewView do
 
       {#if @is_lms_or_system_admin and !@section.open_and_free}
         <Group.render label="LMS Admin" description="Administrator LMS Connection" is_last={true}>
-          <UnlinkSection unlink="unlink" section={@section} />
+          <UnlinkSection.render unlink="unlink" section={@section} />
         </Group.render>
       {/if}
     </Groups.render>
