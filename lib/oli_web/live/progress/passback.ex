@@ -1,33 +1,39 @@
 defmodule OliWeb.Progress.Passback do
-  use Surface.Component
+  use OliWeb, :html
 
-  prop resource_access, :struct, required: true
-  prop last_failed, :any, required: true
-  prop grade_sync_result, :any, required: true
-  prop click, :event, required: true
+  attr(:resource_access, :map, required: true)
+  attr(:last_failed, :any, required: true)
+  attr(:grade_sync_result, :any, required: true)
+  attr(:click, :any, required: true)
 
   def render(assigns) do
-    ~F"""
+    ~H"""
     <div>
+      <%= if Oli.Delivery.Attempts.Core.ResourceAccess.last_grade_update_failed?(@resource_access) and !is_nil(@last_failed) do %>
+        <div class="alert alert-warning" role="alert">
+          <p>
+            This student's most recent LMS grade update failed.  This sometimes happens due to temporary network
+            problems between this system and the LMS.
+          </p>
 
-      {#if Oli.Delivery.Attempts.Core.ResourceAccess.last_grade_update_failed?(@resource_access) and !is_nil(@last_failed)}
-      <div class="alert alert-warning" role="alert">
-        <p>This student's most recent LMS grade update failed.  This sometimes happens due to temporary network
-        problems between this system and the LMS.</p>
+          <blockquote>
+            <%= @last_failed.details %>
+          </blockquote>
 
-        <blockquote>
-          {@last_failed.details}
-        </blockquote>
+          <p>To resolve this problem, try manually sending the grade to the LMS.</p>
 
-        <p>To resolve this problem, try manually sending the grade to the LMS.</p>
+          <p>
+            <strong>Note:</strong>
+            If this problem persists, the root cause may be an LMS misconfiguration.
+            In that case, contact your LMS administrator.
+          </p>
+        </div>
+      <% end %>
 
-        <p><strong>Note:</strong> If this problem persists, the root cause may be an LMS misconfiguration.
-         In that case, contact your LMS administrator.</p>
-      </div>
-      {/if}
-
-      <button class="btn btn-primary mb-4" phx-disable-with="Sending..." :on-click={@click}>Send Grade to LMS</button>
-      {render_result(assigns, @grade_sync_result)}
+      <button class="btn btn-primary mb-4" phx-disable-with="Sending..." phx-click={@click}>
+        Send Grade to LMS
+      </button>
+      <%= render_result(assigns, @grade_sync_result) %>
     </div>
     """
   end
@@ -38,9 +44,11 @@ defmodule OliWeb.Progress.Passback do
         ""
 
       result ->
-        ~F"""
+        assigns = assign(assigns, :result, result)
+
+        ~H"""
         <div class="alert alert-info" role="alert">
-          {result}
+          <%= @result %>
         </div>
         """
     end

@@ -171,7 +171,7 @@ defmodule OliWeb.Progress.StudentResourceView do
 
           {#if !@section.open_and_free}
             <div class="mb-3"/>
-            <Passback click="passback" last_failed={@last_failed} resource_access={@resource_access} grade_sync_result={@grade_sync_result}/>
+            <Passback.render click="passback" last_failed={@last_failed} resource_access={@resource_access} grade_sync_result={@grade_sync_result}/>
           {/if}
 
       </Group.render>
