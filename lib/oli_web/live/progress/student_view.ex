@@ -1,27 +1,15 @@
 defmodule OliWeb.Progress.StudentView do
-  use Surface.LiveView, layout: {OliWeb.LayoutView, :live}
+  use OliWeb, :live_view
 
-  import OliWeb.Common.Utils
   import OliWeb.Common.Params
+  import OliWeb.Common.Utils
 
-  alias OliWeb.Common.{Breadcrumb}
-  alias OliWeb.Common.TextSearch
-  alias OliWeb.Router.Helpers, as: Routes
-  alias OliWeb.Progress.StudentTabelModel
+  alias OliWeb.Common.{Breadcrumb, SessionContext, TextSearch}
   alias OliWeb.Common.SortableTable.Table
   alias OliWeb.Common.Table.SortableTableModel
-  alias OliWeb.Sections.Mount
-  alias OliWeb.Common.SessionContext
+  alias OliWeb.Progress.StudentTabelModel
   alias OliWeb.Router.Helpers, as: Routes
-
-  data(breadcrumbs, :any)
-  data(title, :string, default: "Student Progress")
-  data(section, :any, default: nil)
-  data(user, :any)
-  data(text_search, :string)
-  data(table_model, :struct)
-  data(resource_accesses, :map)
-  data(page_nodes, :list)
+  alias OliWeb.Sections.Mount
 
   def set_breadcrumbs(type, section, user_id) do
     OliWeb.Sections.OverviewView.set_breadcrumbs(type, section)
@@ -142,13 +130,13 @@ defmodule OliWeb.Progress.StudentView do
   end
 
   def render(assigns) do
-    ~F"""
-      <div class="container mx-auto mb-5">
-        <h3>Progress Details for {name(@user)}</h3>
-        <TextSearch.render id="text_search" text={@text_search}/>
-        <div class="mt-4"/>
-        <Table.render model={@table_model} sort="do_sort"/>
-      </div>
+    ~H"""
+    <div class="container mx-auto mb-5">
+      <h3>Progress Details for <%= name(@user) %></h3>
+      <TextSearch.render id="text_search" text={@text_search} />
+      <div class="mt-4" />
+      <Table.render model={@table_model} sort="do_sort" />
+    </div>
     """
   end
 
