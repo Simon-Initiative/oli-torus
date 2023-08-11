@@ -1,9 +1,11 @@
 defmodule OliWeb.Common.Confirm do
   use Phoenix.Component
 
+  attr :id, :string, required: true
   attr :title, :string, required: true
   attr :ok, :any, required: true
   attr :cancel, :any, required: true
+  slot :inner_block, required: true
 
   def render(assigns) do
     ~H"""

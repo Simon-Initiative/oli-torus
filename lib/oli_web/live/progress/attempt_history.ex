@@ -12,7 +12,6 @@ defmodule OliWeb.Progress.AttemptHistory do
     <div class="list-group">
       <%= for attempt <- @resource_attempts do %>
         <PageAttemptSummary.render
-          id={attempt.id}
           revision={@revision}
           attempt={attempt}
           section={@section}

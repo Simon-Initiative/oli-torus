@@ -1,5 +1,5 @@
 defmodule OliWeb.SystemMessageLive.IndexView do
-  use Surface.LiveView, layout: {OliWeb.LayoutView, :live}
+  use OliWeb, :live_view
 
   import OliWeb.ErrorHelpers
 
@@ -8,15 +8,6 @@ defmodule OliWeb.SystemMessageLive.IndexView do
   alias OliWeb.Common.{Breadcrumb, Confirm, FormatDateTime, SessionContext}
   alias OliWeb.Router.Helpers, as: Routes
   alias OliWeb.SystemMessageLive.EditMessage
-  alias Surface.Components.Form
-  alias Surface.Components.Form.{ErrorTag, Field, TextArea}
-
-  data(title, :string, default: "Type a System Message")
-  data(breadcrumbs, :list)
-  data(show_confirm, :boolean, default: false)
-  data(messages, :list)
-  data(unsaved_system_message, :map, default: nil)
-  data(message_will_be_displayed, :boolean)
 
   def breadcrumb() do
     OliWeb.Admin.AdminView.breadcrumb() ++
@@ -35,32 +26,51 @@ defmodule OliWeb.SystemMessageLive.IndexView do
      assign(socket,
        ctx: SessionContext.init(socket, session),
        messages: messages,
-       breadcrumbs: breadcrumb()
+       breadcrumbs: breadcrumb(),
+       changeset: SystemMessage.changeset(%SystemMessage{}) |> to_form()
      )}
   end
 
-  def render(assigns) do
-    ~F"""
-      {#for message <- @messages}
-        <EditMessage save="save" system_message={current_message(@unsaved_system_message, message)} {=@ctx}/>
-      {/for}
-      <Form for={:system_message} submit="create">
-        <Field name={:message} class="form-group">
-          <TextArea
-            class="form-control"
-            rows="3"
-            opts={placeholder: "Type a message for all users in the system", maxlength: "140"}
-          />
-          <ErrorTag/>
-        </Field>
+  attr(:title, :string, default: "Type a System Message")
+  attr(:breadcrumbs, :list)
+  attr(:show_confirm, :boolean, default: false)
+  attr(:messages, :list)
+  attr(:unsaved_system_message, :map, default: nil)
+  attr(:message_will_be_displayed, :boolean)
 
-        <button class="form-button btn btn-md btn-primary btn-block mt-3" type="submit">Create</button>
-      </Form>
-      {#if @show_confirm}
-        <Confirm.render title="Confirm Message" id="dialog" ok="broadcast_message" cancel="cancel_modal">
-          Are you sure that you wish to <b>{if @message_will_be_displayed, do: "send", else: "hide"}</b> this message to all users in the system?
-        </Confirm.render>
-      {/if}
+  def render(assigns) do
+    ~H"""
+    <%= for message <- @messages do %>
+      <EditMessage.render
+        save="save"
+        system_message={current_message(@unsaved_system_message, message)}
+        ctx={@ctx}
+      />
+    <% end %>
+    <.form for={@changeset} phx-submit="create">
+      <div class="form-group">
+        <.input
+          type="textarea"
+          field={@changeset[:message]}
+          class="form-control"
+          rows="3"
+          placeholder="Type a message for all users in the system"
+          maxlength="140"
+        />
+        <.error :for={error <- Keyword.get_values(@changeset.errors || [], :message)}>
+          <%= translate_error(error) %>
+        </.error>
+      </div>
+
+      <button class="form-button btn btn-md btn-primary btn-block mt-3" type="submit">Create</button>
+    </.form>
+    <%= if @show_confirm do %>
+      <Confirm.render title="Confirm Message" id="dialog" ok="broadcast_message" cancel="cancel_modal">
+        Are you sure that you wish to
+        <b><%= if @message_will_be_displayed, do: "send", else: "hide" %></b>
+        this message to all users in the system?
+      </Confirm.render>
+    <% end %>
     """
   end
 
