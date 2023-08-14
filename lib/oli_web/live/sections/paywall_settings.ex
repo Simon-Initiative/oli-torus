@@ -30,22 +30,24 @@ defmodule OliWeb.Sections.PaywallSettings do
     >
       <div class="form-check">
         <input
+          id="requires_payment"
           type="checkbox"
           name="section[requires_payment]"
           class="form-check-input"
           checked={get_field(@changeset, :requires_payment)}
           disabled={@disabled}
         />
-        <label class="form-check-label">Requires payment</label>
+        <label for="requires_payment" class="form-check-label">Requires payment</label>
       </div>
       <div class="mt-2 form-label-group">
         <div class="flex justify-between">
-          <label class="form-check-label">Amount</label>
+          <label for="amount" class="form-check-label">Amount</label>
           <.error :for={error <- Keyword.get_values(@changeset.errors || [], :amount)}>
             <%= translate_error(error) %>
           </.error>
         </div>
         <.input
+          id="amount"
           name="section[amount]"
           value={get_field(@changeset, :amount)}
           class="form-control"
@@ -53,8 +55,9 @@ defmodule OliWeb.Sections.PaywallSettings do
         />
       </div>
       <div class="form-label-group">
-        <label>Payment options</label>
+        <label for="payment_options">Payment options</label>
         <.input
+          id="payment_options"
           type="select"
           class="form-control"
           name="section[payment_options]"
@@ -69,28 +72,31 @@ defmodule OliWeb.Sections.PaywallSettings do
       <%= unless get_field(@changeset, :open_and_free) do %>
         <div class="form-check">
           <input
+            id="pay_by_institution"
             type="checkbox"
             name="section[pay_by_institution]"
             class="form-check-input"
             checked={get_field(@changeset, :pay_by_institution)}
             disabled={@disabled or !get_field(@changeset, :requires_payment)}
           />
-          <label class="form-check-label">Pay by institution</label>
+          <label for="pay_by_institution" class="form-check-label">Pay by institution</label>
         </div>
       <% end %>
       <div class="form-check">
         <input
+          id="has_grace_period"
           type="checkbox"
           name="section[has_grace_period]"
           class="form-check-input"
           checked={get_field(@changeset, :has_grace_period)}
           disabled={@disabled or !get_field(@changeset, :requires_payment)}
         />
-        <label class="form-check-label">Has grace period</label>
+        <label for="has_grace_period" class="form-check-label">Has grace period</label>
       </div>
       <div class="form-label-group">
-        <label>Grace period days</label>
+        <label for="grace_period_days">Grace period days</label>
         <.input
+          id="grace_period_days"
           type="number"
           class="form-control"
           name="section[grace_period_days]"
@@ -105,8 +111,9 @@ defmodule OliWeb.Sections.PaywallSettings do
         </.error>
       </div>
       <div class="form-label-group">
-        <label>Grace period strategy</label>
+        <label for="grace_period_strategy">Grace period strategy</label>
         <.input
+          id="grace_period_strategy"
           type="select"
           class="form-control"
           name="section[grace_period_strategy]"

@@ -102,7 +102,7 @@ defmodule OliWeb.Sections.EditView do
         </Group.render>
 
         {#if @section.open_and_free}
-          <OpenFreeSettings
+          <OpenFreeSettings.render
             id="open_and_free_settings"
             is_admin={@is_admin}
             changeset={@changeset}
@@ -178,6 +178,9 @@ defmodule OliWeb.Sections.EditView do
     |> Map.put("requires_payment", if(params["requires_payment"], do: true, else: false))
     |> Map.put("pay_by_institution", if(params["pay_by_institution"], do: true, else: false))
     |> Map.put("has_grace_period", if(params["has_grace_period"], do: true, else: false))
+    |> Map.put("registration_open", if(params["registration_open"], do: true, else: false))
+    |> Map.put("requires_enrollment", if(params["requires_enrollment"], do: true, else: false))
+    |> Map.put("skip_email_verification", if(params["skip_email_verification"], do: true, else: false))
   end
 
   defp convert_dates(params, ctx) do
