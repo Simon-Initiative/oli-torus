@@ -16,7 +16,7 @@ defmodule OliWeb.ManualGrading.ManualGradingView do
 
   """
 
-  use Surface.LiveView, layout: {OliWeb.LayoutView, :live}
+  use OliWeb, :live_view
 
   alias Oli.Repo.{Paging, Sorting}
   alias OliWeb.Common.{TextSearch, PagedTable, Breadcrumb, SessionContext}
@@ -46,22 +46,6 @@ defmodule OliWeb.ManualGrading.ManualGradingView do
     graded: nil,
     text_search: nil
   }
-
-  data breadcrumbs, :any
-  data title, :string, default: "Manual Scoring"
-  data section, :any, default: nil
-  data tabel_model, :struct
-  data total_count, :integer, default: 0
-  data offset, :integer, default: 0
-  data limit, :integer, default: @limit
-  data attempt, :struct, default: nil
-  data activity_types_map, :map, default: %{}
-  data review_rendered, :any, default: nil
-  data preview_rendered, :any, default: nil
-  data active_tab, :atom, default: :review
-  data score_feedbacks, :map, default: %{}
-  data parts_map, :map, default: nil
-  data options, :any
 
   def set_breadcrumbs(type, section) do
     OliWeb.Sections.OverviewView.set_breadcrumbs(type, section)
@@ -117,7 +101,12 @@ defmodule OliWeb.ManualGrading.ManualGradingView do
            table_model: table_model,
            additional_scripts: additional_scripts,
            options: @default_options,
-           activity_types_map: activity_types_map
+           activity_types_map: activity_types_map,
+           title: "Manual Scoring",
+           offset: 0,
+           limit: @limit,
+           active_tab: :review,
+           score_feedbacks: %{}
          )}
     end
   end
@@ -287,20 +276,20 @@ defmodule OliWeb.ManualGrading.ManualGradingView do
   end
 
   def render(assigns) do
-    ~F"""
+    ~H"""
     <div class="container mx-auto">
-
-      {#for script <- @additional_scripts}
-        <script type="text/javascript" src={Routes.static_path(OliWeb.Endpoint, "/js/" <> script)}></script>
-      {/for}
+      <%= for script <- @additional_scripts do %>
+        <script type="text/javascript" src={Routes.static_path(OliWeb.Endpoint, "/js/" <> script)}>
+        </script>
+      <% end %>
 
       <Group.render>
         <div class="d-flex justify-content-between">
-          <TextSearch.render id="text-search"/>
-          <Filters options={@options} selection={!is_nil(@attempt)}/>
+          <TextSearch.render id="text-search" />
+          <Filters.render options={@options} selection={!is_nil(@attempt)} />
         </div>
 
-        <div class="mb-3"/>
+        <div class="mb-3" />
 
         <PagedTable.render
           allow_selection={true}
@@ -308,42 +297,47 @@ defmodule OliWeb.ManualGrading.ManualGradingView do
           table_model={@table_model}
           total_count={@total_count}
           offset={@offset}
-          limit={@limit}/>
+          limit={@limit}
+        />
       </Group.render>
 
-      {#if !is_nil(@attempt)}
+      <%= if !is_nil(@attempt) do %>
         <Group.render>
-          <Tabs active={@active_tab} changed="change_tab"/>
-          {#if @active_tab == :review}
-            <RenderedActivity id={@attempt.attempt_guid} rendered_activity={@review_rendered}/>
-          {#else}
-            <RenderedActivity id={@attempt.attempt_guid} rendered_activity={@preview_rendered}/>
-          {/if}
+          <Tabs.render active={@active_tab} changed="change_tab" />
+          <%= if @active_tab == :review do %>
+            <RenderedActivity.render id={@attempt.attempt_guid} rendered_activity={@review_rendered} />
+          <% else %>
+            <RenderedActivity.render id={@attempt.attempt_guid} rendered_activity={@preview_rendered} />
+          <% end %>
         </Group.render>
         <Group.render>
-          {render_parts(assigns)}
-          <Apply disabled={scoring_remains(assigns)} apply="apply"/>
+          <%= render_parts(assigns) %>
+          <Apply.render disabled={scoring_remains(assigns)} apply="apply" />
         </Group.render>
-      {#else}
+      <% else %>
         <div style="margin-top: 200px;" class="d-flex justify-content-center">
           To get started with manual scoring of student activities, first select an activity attempt from above to review and score.
         </div>
-      {/if}
+      <% end %>
 
-      {#if pending_changes(assigns)}
-        <div id="before_unload" phx-hook="BeforeUnloadListener"/>
-      {/if}
-
+      <%= if pending_changes(assigns) do %>
+        <div id="before_unload" phx-hook="BeforeUnloadListener" />
+      <% end %>
     </div>
     """
   end
 
   def render_parts(assigns) do
-    ~F"""
-    {#for pa <- @part_attempts}
-      <PartScoring part_attempt={pa} part_scoring={@score_feedbacks[pa.attempt_guid]} feedback_changed="feedback_changed" score_changed="score_changed"/>
-      <hr/>
-    {/for}
+    ~H"""
+    <%= for pa <- @part_attempts do %>
+      <PartScoring.render
+        part_attempt={pa}
+        part_scoring={@score_feedbacks[pa.attempt_guid]}
+        feedback_changed="feedback_changed"
+        score_changed="score_changed"
+      />
+      <hr />
+    <% end %>
     """
   end
 
