@@ -1,6 +1,6 @@
 defmodule OliWeb.Grades.FailedGradeSyncLive do
   use OliWeb.Common.SortableTable.TableHandlers
-  use Surface.LiveView, layout: {OliWeb.LayoutView, :live}
+  use OliWeb, :live_view
 
   import Oli.Utils, only: [trap_nil: 2]
 
@@ -13,23 +13,6 @@ defmodule OliWeb.Grades.FailedGradeSyncLive do
   require Logger
 
   @title "View Failed LMS Grade Sync"
-  data title, :string, default: @title
-  data breadcrumbs, :any
-
-  data section, :any, default: nil
-  data table_model, :any, default: []
-  data failed_resource_accesses, :any, default: []
-
-  data filter, :any, default: %{}
-  data query, :string, default: ""
-  data total_count, :integer, default: 0
-  data offset, :integer, default: 0
-  data limit, :integer, default: 20
-  data sort, :string, default: "sort"
-  data page_change, :string, default: "page_change"
-  data show_bottom_paging, :boolean, default: false
-  data additional_table_class, :string, default: ""
-
   @table_filter_fn &__MODULE__.filter_rows/3
   @table_push_patch_path &__MODULE__.live_path/2
 
@@ -79,22 +62,26 @@ defmodule OliWeb.Grades.FailedGradeSyncLive do
            failed_resource_accesses: failed_resource_accesses,
            table_model: table_model,
            total_count: length(failed_resource_accesses),
-           section: section
+           section: section,
+           query: "",
+           offset: 0,
+           limit: 20
          )}
     end
   end
 
   def render(assigns) do
-    ~F"""
+    ~H"""
     <div class="container mx-auto">
       <div class="d-flex p-3 justify-content-between">
         <Filter.render
           change="change_search"
           reset="reset_search"
           apply="apply_search"
-          query={@query} />
+          query={@query}
+        />
 
-          <button class="btn btn-primary mr-5" phx-click="bulk-retry">Retry all</button>
+        <button class="btn btn-primary mr-5" phx-click="bulk-retry">Retry all</button>
       </div>
 
       <div id="failed-sync-grades-table" class="p-4">
@@ -104,10 +91,10 @@ defmodule OliWeb.Grades.FailedGradeSyncLive do
           total_count={@total_count}
           offset={@offset}
           limit={@limit}
-          sort={@sort}
-          page_change={@page_change}
-          show_bottom_paging={@show_bottom_paging}
-          additional_table_class={@additional_table_class} />
+          sort="sort"
+          page_change="page_change"
+          show_bottom_paging={false}
+        />
       </div>
     </div>
     """
