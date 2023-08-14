@@ -1,5 +1,5 @@
 defmodule OliWeb.Sections.InviteView do
-  use Surface.LiveView, layout: {OliWeb.LayoutView, :live}
+  use OliWeb, :live_view
 
   import Oli.Utils.Time
 
@@ -9,12 +9,6 @@ defmodule OliWeb.Sections.InviteView do
   alias OliWeb.Common.{Breadcrumb, Confirm}
   alias OliWeb.Sections.Mount
   alias OliWeb.Common.SessionContext
-
-  data(breadcrumbs, :any)
-  data(title, :string, default: "Invite Students")
-  data(section, :any, default: nil)
-  data(show_confirm, :boolean, default: false)
-  data(to_delete, :integer, default: nil)
 
   defp set_breadcrumbs(type, section) do
     OliWeb.Sections.OverviewView.set_breadcrumbs(type, section)
@@ -47,34 +41,58 @@ defmodule OliWeb.Sections.InviteView do
     end
   end
 
-  def render(assigns) do
-    ~F"""
-    <div>
+  attr(:breadcrumbs, :any)
+  attr(:title, :string, default: "Invite Students")
+  attr(:section, :any, default: nil)
+  attr(:show_confirm, :boolean, default: false)
+  attr(:to_delete, :integer, default: nil)
 
+  def render(assigns) do
+    ~H"""
+    <div>
       <div class="mb-5">
         Create new invite link expiring after:
         <div class="btn-group" role="group">
-          <button type="button" class="btn btn-secondary" :on-click="new" phx-value-option="one_day">One day</button>
-          <button type="button" class="btn btn-secondary" :on-click="new" phx-value-option="one_week">One week</button>
-          <button disabled={is_nil(@section.start_date)} type="button" class="btn btn-secondary" :on-click="new" phx-value-option="section_start">Section start</button>
-          <button disabled={is_nil(@section.end_date)} type="button" class="btn btn-secondary" :on-click="new" phx-value-option="section_end">Section end</button>
+          <button type="button" class="btn btn-secondary" phx-click="new" phx-value-option="one_day">
+            One day
+          </button>
+          <button type="button" class="btn btn-secondary" phx-click="new" phx-value-option="one_week">
+            One week
+          </button>
+          <button
+            disabled={is_nil(@section.start_date)}
+            type="button"
+            class="btn btn-secondary"
+            phx-click="new"
+            phx-value-option="section_start"
+          >
+            Section start
+          </button>
+          <button
+            disabled={is_nil(@section.end_date)}
+            type="button"
+            class="btn btn-secondary"
+            phx-click="new"
+            phx-value-option="section_end"
+          >
+            Section end
+          </button>
         </div>
       </div>
 
+      <%= if length(@invitations) > 0 do %>
+        <div class="list-group">
+          <%= for invitation <- @invitations do %>
+            <Invitation.render id={invitation.id} invitation={invitation} delete="request_delete" ctx={@ctx} />
+          <% end %>
+        </div>
+      <% end %>
 
-    {#if length(@invitations) > 0}
-      <div class="list-group">
-      {#for invitation <- @invitations}
-        <Invitation id={invitation.id} invitation={invitation} delete="request_delete" {=@ctx}/>
-      {/for}
-      </div>
-    {/if}
-
-    {#if @show_confirm}
-      <Confirm.render title="Confirm Deletion" id="dialog" ok="delete" cancel="cancel_modal">
-        Are you sure that you wish to delete this course section invitation?
-      </Confirm.render>
-    {/if}
+      <%= if @show_confirm do %>
+        <Confirm.render title="Confirm Deletion" id="dialog" ok="delete" cancel="cancel_modal">
+          Are you sure that you wish to delete this course section invitation?
+        </Confirm.render>
+      <% end %>
     </div>
     """
   end
