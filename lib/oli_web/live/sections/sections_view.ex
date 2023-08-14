@@ -1,5 +1,5 @@
 defmodule OliWeb.Sections.SectionsView do
-  use Surface.LiveView, layout: {OliWeb.LayoutView, :live}
+  use OliWeb, :live_view
 
   import OliWeb.Common.Params
   import OliWeb.DelegatedEvents
@@ -21,16 +21,6 @@ defmodule OliWeb.Sections.SectionsView do
     filter_type: nil
   }
   @type_opts [:open, :lms]
-
-  prop author, :any
-  data breadcrumbs, :any
-  data title, :string, default: "All Course Sections"
-  data sections, :list, default: []
-  data tabel_model, :struct
-  data total_count, :integer, default: 0
-  data offset, :integer, default: 0
-  data limit, :integer, default: @limit
-  data options, :any
 
   def set_breadcrumbs() do
     OliWeb.Admin.AdminView.breadcrumb()
@@ -107,55 +97,76 @@ defmodule OliWeb.Sections.SectionsView do
      )}
   end
 
+  attr :author, :any
+  attr :breadcrumbs, :any
+  attr :title, :string, default: "All Course Sections"
+  attr :sections, :list, default: []
+  attr :tabel_model, :map
+  attr :total_count, :integer, default: 0
+  attr :offset, :integer, default: 0
+  attr :limit, :integer, default: @limit
+  attr :options, :any
+
   def render(assigns) do
-    # can't use @ notation inside sigil
-    type_opts = @type_opts
+    assigns = assign(assigns, type_opts: @type_opts)
 
-    ~F"""
-      <div class="container mx-auto">
-        <FilterBox.render
-          card_header_text="Browse Course Sections"
-          card_body_text=""
+    ~H"""
+    <div class="container mx-auto">
+      <FilterBox.render
+        card_header_text="Browse Course Sections"
+        card_body_text=""
+        table_model={@table_model}
+        show_sort={false}
+        show_more_opts={true}
+      >
+        <TextSearch.render id="text-search" text={@options.text_search} />
+
+        <:extra_opts>
+          <Check.render checked={@options.active_today} click="active_today">
+            Active (start/end dates include today)
+          </Check.render>
+
+          <form phx-change="change_type" class="d-flex">
+            <select name="type" id="select_type" class="custom-select custom-select mr-2">
+              <option value="" selected>Type</option>
+              <option
+                :for={type_opt <- @type_opts}
+                value={type_opt}
+                selected={@options.filter_type == type_opt}
+              >
+                <%= humanize_type_opt(type_opt) %>
+              </option>
+            </select>
+          </form>
+
+          <form phx-change="change_status" class="d-flex">
+            <select name="status" id="select_status" class="custom-select custom-select mr-2">
+              <option value="" selected>Status</option>
+              <option
+                :for={status_opt <- Ecto.Enum.values(Section, :status)}
+                value={status_opt}
+                selected={@options.filter_status == status_opt}
+              >
+                <%= Phoenix.Naming.humanize(status_opt) %>
+              </option>
+            </select>
+          </form>
+        </:extra_opts>
+      </FilterBox.render>
+
+      <div class="mb-5" />
+
+      <div class="sections-table">
+        <PagedTable.render
+          filter={@options.text_search}
           table_model={@table_model}
-          show_sort={false}
-          show_more_opts={true}>
-          <TextSearch.render id="text-search" text={@options.text_search}/>
-
-          <:extra_opts>
-            <Check.render checked={@options.active_today} click="active_today">Active (start/end dates include today)</Check.render>
-
-            <form :on-change="change_type" class="d-flex">
-              <select name="type" id="select_type" class="custom-select custom-select mr-2">
-                <option value="" selected>Type</option>
-                {#for type_opt <- type_opts}
-                  <option value={type_opt} selected={@options.filter_type == type_opt}>{humanize_type_opt(type_opt)}</option>
-                {/for}
-              </select>
-            </form>
-
-            <form :on-change="change_status" class="d-flex">
-              <select name="status" id="select_status" class="custom-select custom-select mr-2">
-                <option value="" selected>Status</option>
-                {#for status_opt <- Ecto.Enum.values(Section, :status)}
-                  <option value={status_opt} selected={@options.filter_status == status_opt}>{Phoenix.Naming.humanize(status_opt)}</option>
-                {/for}
-              </select>
-            </form>
-          </:extra_opts>
-        </FilterBox.render>
-
-        <div class="mb-5"/>
-
-        <div class="sections-table">
-          <PagedTable.render
-            filter={@options.text_search}
-            table_model={@table_model}
-            total_count={@total_count}
-            offset={@offset}
-            limit={@limit}
-            show_bottom_paging={false}/>
-        </div>
+          total_count={@total_count}
+          offset={@offset}
+          limit={@limit}
+          show_bottom_paging={false}
+        />
       </div>
+    </div>
     """
   end
 
