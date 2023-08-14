@@ -348,7 +348,7 @@ defmodule OliWeb.Sections.OverviewView do
             >
               Score Manually Graded Activities
               <%= if @submission_count > 0 do %>
-                <span class="badge badge-primary">{@submission_count}</span>
+                <span class="badge badge-primary"><%= @submission_count %></span>
               <% end %>
             </a>
           </li>
