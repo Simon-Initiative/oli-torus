@@ -94,25 +94,25 @@ defmodule OliWeb.Projects.LtiConnectInstructions do
                     {/if}
 
                     <div class="tab-pane fade" id="pills-other" role="tabpanel" aria-labelledby="pills-other-tab">
-                      <LmsUrlToCopy
+                      <LmsUrlToCopy.render
                         title= "Tool URL"
                         id= "tool_url"
                         value= {@lti_connect_info.tool_url}
                       />
 
-                      <LmsUrlToCopy
+                      <LmsUrlToCopy.render
                         title= "Initiate login URL"
                         id= "initiate_login_url"
                         value= {@lti_connect_info.initiate_login_url}
                       />
 
-                      <LmsUrlToCopy
+                      <LmsUrlToCopy.render
                         title= "Public Keyset URL"
                         id= "public_keyset_url"
                         value= {@lti_connect_info.public_keyset_url}
                       />
 
-                      <LmsUrlToCopy
+                      <LmsUrlToCopy.render
                         title= "Redirection URI(s)"
                         id= "redirect_uris"
                         value= {@lti_connect_info.redirect_uris}
