@@ -1,37 +1,38 @@
 defmodule OliWeb.RevisionHistory.Table do
-  use OliWeb, :surface_component
+  use OliWeb, :html
 
   alias OliWeb.Common.Utils
-
-  prop(selected, :string)
-  prop(revisions, :any)
-  prop(publication, :any)
-  prop(mappings, :any)
-  prop(tree, :any)
-  prop(page_offset, :number)
-  prop(page_size, :number)
-  prop(ctx, :struct)
 
   defp publication_state(assigns, revision_id) do
     publication = assigns.publication
 
     case Map.get(assigns.mappings, revision_id) do
       %{publication: ^publication} ->
-        ~F"""
+        ~H"""
         <span class="badge badge-success">Currently Published</span>
         """
 
       %{publication: %{published: published}} when not is_nil(published) ->
-        ~F"""
+        ~H"""
         <span class="badge badge-info">Previously Published</span>
         """
 
       _ ->
-        ~F"""
+        ~H"""
         <span></span>
         """
     end
   end
+
+  attr(:id, :string)
+  attr(:selected, :string)
+  attr(:revisions, :any)
+  attr(:publication, :any)
+  attr(:mappings, :any)
+  attr(:tree, :any)
+  attr(:page_offset, :integer)
+  attr(:page_size, :integer)
+  attr(:ctx, :map)
 
   def render(assigns) do
     range = Range.new(assigns.page_offset, assigns.page_offset + assigns.page_size)
@@ -45,23 +46,33 @@ defmodule OliWeb.RevisionHistory.Table do
       end
     end
 
-    ~F"""
+    assigns = Map.merge(assigns, %{tr_props: tr_props, to_display: to_display})
+
+    ~H"""
     <table class="table table-hover table-bordered table-sm">
       <thead class="thead-dark">
-        <tr><th>Id</th><th>Project</th><th>Created</th><th>Updated</th><th>Author</th><th>Slug</th><th>Published</th></tr>
+        <tr>
+          <th>Id</th>
+          <th>Project</th>
+          <th>Created</th>
+          <th>Updated</th>
+          <th>Author</th>
+          <th>Slug</th>
+          <th>Published</th>
+        </tr>
       </thead>
       <tbody id="revisions">
-      {#for rev <- to_display }
-        <tr id={"revision-#{rev.id}"} {...tr_props.(rev.id)}>
-          <td>{ rev.id }</td>
-          <td>{ Map.get(@tree, rev.id).project_id }</td>
-          <td>{ Utils.render_date(rev, :inserted_at, @ctx) }</td>
-          <td>{ Utils.render_date(rev, :updated_at, @ctx) }</td>
-          <td>{ rev.author.email }</td>
-          <td>{ rev.slug }</td>
-          <td>{ publication_state(assigns, rev.id) }</td>
-        </tr>
-      {/for}
+        <%= for rev <- @to_display do %>
+          <tr id={"revision-#{rev.id}"} {@tr_props.(rev.id)}>
+            <td><%= rev.id %></td>
+            <td><%= Map.get(@tree, rev.id).project_id %></td>
+            <td><%= Utils.render_date(rev, :inserted_at, @ctx) %></td>
+            <td><%= Utils.render_date(rev, :updated_at, @ctx) %></td>
+            <td><%= rev.author.email %></td>
+            <td><%= rev.slug %></td>
+            <td><%= publication_state(assigns, rev.id) %></td>
+          </tr>
+        <% end %>
       </tbody>
     </table>
     """
