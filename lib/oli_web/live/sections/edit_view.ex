@@ -110,7 +110,7 @@ defmodule OliWeb.Sections.EditView do
             {=@ctx}
           />
         {#else}
-          <LtiSettings section={@section} />
+          <LtiSettings.render section={@section} />
         {/if}
 
         <PaywallSettings.render changeset={@changeset} disabled={!can_change_payment?(@section, @is_admin)} />
