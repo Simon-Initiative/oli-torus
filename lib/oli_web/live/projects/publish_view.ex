@@ -136,7 +136,7 @@ defmodule OliWeb.Projects.PublishView do
       <div class="publish container">
         <div class="flex flex-row">
           <div class="flex-1">
-            <PublicationDetails
+            <PublicationDetails.render
               active_publication_changes={@active_publication_changes}
               ctx={@ctx}
               has_changes={@has_changes}
