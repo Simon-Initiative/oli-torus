@@ -113,7 +113,7 @@ defmodule OliWeb.Sections.EditView do
           <LtiSettings section={@section} />
         {/if}
 
-        <PaywallSettings changeset={@changeset} disabled={!can_change_payment?(@section, @is_admin)} />
+        <PaywallSettings.render changeset={@changeset} disabled={!can_change_payment?(@section, @is_admin)} />
         <ContentSettings changeset={@changeset} />
       </Groups.render>
     </Form>
@@ -126,12 +126,12 @@ defmodule OliWeb.Sections.EditView do
   end
 
   def handle_event("validate", %{"section" => params}, socket) do
-    params = convert_dates(params, socket.assigns.ctx)
+    params = convert_dates(params, socket.assigns.ctx) |> parse_checkboxes()
     {:noreply, assign(socket, changeset: Sections.change_section(socket.assigns.section, params))}
   end
 
   def handle_event("save", %{"section" => params}, socket) do
-    params = convert_dates(params, socket.assigns.ctx)
+    params = convert_dates(params, socket.assigns.ctx) |> parse_checkboxes()
 
     case Sections.update_section(socket.assigns.section, params) do
       {:ok, section} ->
@@ -171,6 +171,13 @@ defmodule OliWeb.Sections.EditView do
       {:error, %Ecto.Changeset{} = changeset} ->
         {:noreply, assign(socket, changeset: changeset)}
     end
+  end
+
+  defp parse_checkboxes(params) do
+    params
+    |> Map.put("requires_payment", if(params["requires_payment"], do: true, else: false))
+    |> Map.put("pay_by_institution", if(params["pay_by_institution"], do: true, else: false))
+    |> Map.put("has_grace_period", if(params["has_grace_period"], do: true, else: false))
   end
 
   defp convert_dates(params, ctx) do

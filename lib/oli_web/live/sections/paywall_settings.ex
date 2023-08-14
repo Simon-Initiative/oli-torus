@@ -1,23 +1,8 @@
 defmodule OliWeb.Sections.PaywallSettings do
-  use Surface.Component
+  use OliWeb, :html
 
-  alias Surface.Components.{Field, Select}
-
-  alias Surface.Components.Form.{
-    Field,
-    Label,
-    Select,
-    TextInput,
-    NumberInput,
-    Checkbox,
-    ErrorTag
-  }
-
-  alias OliWeb.Common.Properties.{Group}
+  alias OliWeb.Common.Properties.Group
   import Ecto.Changeset
-
-  prop changeset, :any, required: true
-  prop disabled, :boolean, required: true
 
   defp strategies do
     [
@@ -34,45 +19,105 @@ defmodule OliWeb.Sections.PaywallSettings do
     ]
   end
 
+  attr :changeset, :any, required: true
+  attr :disabled, :boolean, required: true
+
   def render(assigns) do
-    ~F"""
-    <Group.render label="Payment Settings" description="Settings related to requried student fee and optional grace periody">
-      <Field name={:requires_payment} class="form-check">
-        <Checkbox class="form-check-input" value={get_field(@changeset, :requires_payment)} opts={disabled: @disabled}/>
-        <Label class="form-check-label"/>
-      </Field>
-      <Field name={:amount} class="mt-2 form-label-group">
-        <div class="d-flex justify-content-between"><Label/><ErrorTag class="help-block"/></div>
-        <TextInput class="form-control" opts={disabled: @disabled or !get_field(@changeset, :requires_payment)}/>
-      </Field>
-      <Field name={:payment_options}>
-        <Label/>
-        <Select
-          class="form-control" form="section" field="payment_options"
-          opts={disabled: @disabled or !get_field(@changeset, :payment_options) or !get_field(@changeset, :payment_options)}
-          options={payment_options_choices()} selected={get_field(@changeset, :payment_options)}/>
-      </Field>
-      {#unless get_field(@changeset, :open_and_free)}
-        <Field name={:pay_by_institution} class="form-check">
-          <Checkbox class="form-check-input" value={get_field(@changeset, :pay_by_institution)} opts={disabled: @disabled or !get_field(@changeset, :requires_payment)}/>
-          <Label class="form-check-label"/>
-        </Field>
-      {/unless}
-      <Field name={:has_grace_period} class="form-check mt-4">
-        <Checkbox class="form-check-input" value={get_field(@changeset, :has_grace_period)} opts={disabled: @disabled or !get_field(@changeset, :requires_payment)}/>
-        <Label class="form-check-label"/>
-      </Field>
-      <Field name={:grace_period_days} class="form-label-group">
-        <div class="d-flex justify-content-between"><Label/><ErrorTag class="help-block"/></div>
-        <NumberInput class="form-control" opts={disabled: @disabled or !get_field(@changeset, :requires_payment) or !get_field(@changeset, :has_grace_period)}/>
-      </Field>
-      <Field name={:grace_period_strategy}>
-        <Label/>
-        <Select
-          class="form-control" form="section" field="grace_period_strategy"
-          opts={disabled: @disabled or !get_field(@changeset, :requires_payment) or !get_field(@changeset, :has_grace_period)}
-          options={strategies()} selected={get_field(@changeset, :grace_period_strategy)}/>
-      </Field>
+    ~H"""
+    <Group.render
+      label="Payment Settings"
+      description="Settings related to requried student fee and optional grace periody"
+    >
+      <div class="form-check">
+        <input
+          type="checkbox"
+          name="section[requires_payment]"
+          class="form-check-input"
+          checked={get_field(@changeset, :requires_payment)}
+          disabled={@disabled}
+        />
+        <label class="form-check-label">Requires payment</label>
+      </div>
+      <div class="mt-2 form-label-group">
+        <div class="flex justify-between">
+          <label class="form-check-label">Amount</label>
+          <.error :for={error <- Keyword.get_values(@changeset.errors || [], :amount)}>
+            <%= translate_error(error) %>
+          </.error>
+        </div>
+        <.input
+          name="section[amount]"
+          value={get_field(@changeset, :amount)}
+          class="form-control"
+          disabled={@disabled or !get_field(@changeset, :requires_payment)}
+        />
+      </div>
+      <div class="form-label-group">
+        <label>Payment options</label>
+        <.input
+          type="select"
+          class="form-control"
+          name="section[payment_options]"
+          value={get_field(@changeset, :payment_options)}
+          options={payment_options_choices()}
+          disabled={
+            @disabled or !get_field(@changeset, :payment_options) or
+              !get_field(@changeset, :payment_options)
+          }
+        />
+      </div>
+      <%= unless get_field(@changeset, :open_and_free) do %>
+        <div class="form-check">
+          <input
+            type="checkbox"
+            name="section[pay_by_institution]"
+            class="form-check-input"
+            checked={get_field(@changeset, :pay_by_institution)}
+            disabled={@disabled or !get_field(@changeset, :requires_payment)}
+          />
+          <label class="form-check-label">Pay by institution</label>
+        </div>
+      <% end %>
+      <div class="form-check">
+        <input
+          type="checkbox"
+          name="section[has_grace_period]"
+          class="form-check-input"
+          checked={get_field(@changeset, :has_grace_period)}
+          disabled={@disabled or !get_field(@changeset, :requires_payment)}
+        />
+        <label class="form-check-label">Has grace period</label>
+      </div>
+      <div class="form-label-group">
+        <label>Grace period days</label>
+        <.input
+          type="number"
+          class="form-control"
+          name="section[grace_period_days]"
+          value={get_field(@changeset, :grace_period_days)}
+          disabled={
+            @disabled or !get_field(@changeset, :requires_payment) or
+              !get_field(@changeset, :has_grace_period)
+          }
+        />
+        <.error :for={error <- Keyword.get_values(@changeset.errors || [], :grace_period_days)}>
+          <%= translate_error(error) %>
+        </.error>
+      </div>
+      <div class="form-label-group">
+        <label>Grace period strategy</label>
+        <.input
+          type="select"
+          class="form-control"
+          name="section[grace_period_strategy]"
+          value={get_field(@changeset, :grace_period_strategy)}
+          options={strategies()}
+          disabled={
+            @disabled or !get_field(@changeset, :requires_payment) or
+              !get_field(@changeset, :has_grace_period)
+          }
+        />
+      </div>
 
       <button class="btn btn-primary mt-3" type="submit">Save</button>
     </Group.render>

@@ -248,7 +248,7 @@ defmodule OliWeb.Components.Common do
   def error(assigns) do
     ~H"""
     <p
-      class="mt-3 flex gap-3 text-sm leading-6 text-rose-600 phx-no-feedback:hidden"
+      class="flex gap-3 text-sm leading-6 text-rose-600 phx-no-feedback:hidden"
       phx-feedback-for={@for}
     >
       <%= render_slot(@inner_block) %>

@@ -67,6 +67,6 @@ select {
   @apply dark:invert
 }
 
-input[type="checkbox"]:disabled {
+input[type="checkbox"]:not(:checked):disabled {
   @apply border-gray-400 bg-gray-200;
 }
