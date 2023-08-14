@@ -1,5 +1,5 @@
 defmodule OliWeb.Grades.ObserveGradeUpdatesView do
-  use Surface.LiveView, layout: {OliWeb.LayoutView, :live}
+  use OliWeb, :live_view
 
   alias OliWeb.Common.{Breadcrumb, PagedTable}
   alias Oli.Delivery.Attempts.Core
@@ -9,14 +9,6 @@ defmodule OliWeb.Grades.ObserveGradeUpdatesView do
   alias OliWeb.Grades.ObserveTableModel
 
   @retain_count 15
-
-  data retain_count, :integer, default: @retain_count
-  data breadcrumbs, :any
-  data title, :string, default: "Observe Grade Updates"
-  data section, :any, default: nil
-  data table_model, :any, default: []
-  data updates, :list, default: []
-  data total_count, :integer, default: 0
 
   @spec set_breadcrumbs(:admin | :user, atom | %{:slug => any, optional(any) => any}) :: [...]
   def set_breadcrumbs(type, section) do
@@ -48,20 +40,24 @@ defmodule OliWeb.Grades.ObserveGradeUpdatesView do
            breadcrumbs: set_breadcrumbs(type, section),
            table_model: ObserveTableModel.new([]),
            updates: [],
-           section: section
+           section: section,
+           limit: @retain_count,
+           offset: 0,
+           total_count: 0
          )}
     end
   end
 
   def render(assigns) do
-    ~F"""
+    ~H"""
     <div class="container mx-auto">
       <PagedTable.render
-        filter={""}
+        filter=""
         table_model={@table_model}
         total_count={@total_count}
-        offset={0}
-        limit={@retain_count}/>
+        offset={@offset}
+        limit={@limit}
+      />
     </div>
     """
   end
