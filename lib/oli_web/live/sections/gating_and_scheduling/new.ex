@@ -1,5 +1,5 @@
 defmodule OliWeb.Sections.GatingAndScheduling.New do
-  use Surface.LiveView, layout: {OliWeb.LayoutView, :live}
+  use OliWeb, :live_view
   use OliWeb.Common.Modal
 
   alias OliWeb.Sections.Mount
@@ -39,12 +39,19 @@ defmodule OliWeb.Sections.GatingAndScheduling.New do
   end
 
   def render(assigns) do
-    ~F"""
-    {render_modal(assigns)}
+    ~H"""
+    <%= render_modal(assigns) %>
     <div class="container">
-      <h3>{@title}</h3>
+      <h3><%= @title %></h3>
 
-      <Form id="new_gating_contition" section={@section} gating_condition={@gating_condition} parent_gate={@parent_gate} count_exceptions={@count_exceptions} {=@ctx}/>
+      <Form.render
+        id="new_gating_contition"
+        section={@section}
+        gating_condition={@gating_condition}
+        parent_gate={@parent_gate}
+        count_exceptions={@count_exceptions}
+        ctx={@ctx}
+      />
     </div>
     """
   end
