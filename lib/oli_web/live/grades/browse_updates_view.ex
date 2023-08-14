@@ -1,5 +1,5 @@
 defmodule OliWeb.Grades.BrowseUpdatesView do
-  use Surface.LiveView, layout: {OliWeb.LayoutView, :live}
+  use OliWeb, :live_view
 
   alias Oli.Repo.{Paging, Sorting}
   alias OliWeb.Common.{TextSearch, PagedTable, Breadcrumb}
@@ -14,15 +14,6 @@ defmodule OliWeb.Grades.BrowseUpdatesView do
   alias OliWeb.Common.SessionContext
 
   @limit 25
-
-  data(breadcrumbs, :any)
-  data(title, :string, default: "LMS Grade Updates")
-  data(section, :any, default: nil)
-  data(tabel_model, :struct)
-  data(total_count, :integer, default: 0)
-  data(offset, :integer, default: 0)
-  data(limit, :integer, default: @limit)
-  data(options, :any)
 
   def set_breadcrumbs(type, section) do
     type
@@ -76,6 +67,8 @@ defmodule OliWeb.Grades.BrowseUpdatesView do
            section: section,
            total_count: total_count,
            table_model: table_model,
+           offset: 0,
+           limit: @limit,
            options: options
          )}
     end
@@ -120,19 +113,19 @@ defmodule OliWeb.Grades.BrowseUpdatesView do
   end
 
   def render(assigns) do
-    ~F"""
+    ~H"""
     <div class="container mx-auto">
+      <TextSearch.render id="text-search" />
 
-      <TextSearch.render id="text-search"/>
-
-      <div class="mb-3"/>
+      <div class="mb-3" />
 
       <PagedTable.render
         filter={@options.text_search}
         table_model={@table_model}
         total_count={@total_count}
         offset={@offset}
-        limit={@limit}/>
+        limit={@limit}
+      />
     </div>
     """
   end
