@@ -1,5 +1,4 @@
 defmodule OliWeb.Projects.CreateProjectModal do
-  # use OliWeb, :surface_component
   use Phoenix.LiveComponent
   use Phoenix.HTML
 
