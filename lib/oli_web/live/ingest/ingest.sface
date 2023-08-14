@@ -58,5 +58,5 @@
 
     <hr class="my-4">
 
-    <FAQ />
+    <FAQ.render />
 </div>
