@@ -3,6 +3,7 @@ defmodule OliWeb.Common.MonacoEditor do
 
   alias Oli.Utils.SchemaResolver
 
+  attr(:id, :string)
   attr(:language, :string)
   attr(:default_value, :string)
   attr(:width, :string, default: "100%")

@@ -55,7 +55,7 @@
             {/for}
           {/if}
 
-          <Details revision={@selected} project={@project} />
+          <Details.render revision={@selected} project={@project} />
         </div>
       </div>
     </div>
