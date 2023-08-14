@@ -92,7 +92,7 @@ defmodule OliWeb.Sections.EditView do
           />
         </Group.render>
         <Group.render label="Schedule" description="Edit the start and end dates for scheduling purposes">
-          <StartEnd
+          <StartEnd.render
             id="start_end_editing"
             changeset={@changeset}
             disabled={false}
