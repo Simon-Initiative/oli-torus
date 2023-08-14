@@ -83,7 +83,7 @@ defmodule OliWeb.Sections.EditView do
     <Form as={:section} for={@changeset} change="validate" submit="save" opts={autocomplete: "off"}>
       <Groups.render>
         <Group.render label="Settings" description="Manage the course section settings">
-          <MainDetails
+          <MainDetails.render
             changeset={@changeset}
             disabled={false}
             is_admin={@is_admin}

@@ -1,50 +1,71 @@
 defmodule OliWeb.Sections.MainDetails do
-  use Surface.Component
-
-  alias Surface.Components.Form.{Field, Label, TextInput, Select, ErrorTag}
+  use OliWeb, :html
 
   import Ecto.Changeset
 
-  prop(changeset, :any, required: true)
-  prop(disabled, :boolean, required: true)
-  prop(is_admin, :boolean, required: true)
-  prop(brands, :list, required: true)
-  prop(institutions, :list, required: true)
+  attr(:changeset, :any, required: true)
+  attr(:disabled, :boolean, required: true)
+  attr(:is_admin, :boolean, required: true)
+  attr(:brands, :list, required: true)
+  attr(:institutions, :list, required: true)
 
   def render(assigns) do
-    ~F"""
+    ~H"""
     <div>
-      <Field name={:title} class="form-label-group">
-        <div class="d-flex justify-content-between"><Label /><ErrorTag class="help-block" /></div>
-        <TextInput class="form-control" opts={disabled: @disabled} />
-      </Field>
-      <Field name={:description} class="form-label-group">
-        <div class="d-flex justify-content-between"><Label /><ErrorTag class="help-block" /></div>
-        <TextInput class="form-control" opts={disabled: @disabled} />
-      </Field>
-      <Field name={:brand_id} class="mt-2">
-        <Label>Brand</Label>
-        <Select
+      <div class="form-label-group">
+        <div class="flex justify-between">
+          <label for="section_title">Title</label>
+          <.error :for={error <- Keyword.get_values(@changeset.errors || [], :title)}>
+            <%= translate_error(error) %>
+          </.error>
+        </div>
+        <.input
+          id="section_title"
+          name="section[title]"
+          value={get_field(@changeset, :title)}
           class="form-control"
-          prompt="None"
-          form="section"
-          field="brand_id"
-          options={@brands}
-          selected={get_field(@changeset, :brand_id)}
+          disabled={@disabled}
         />
-      </Field>
-      <Field name={:institution_id} class="mt-2">
-        <Label>Institution</Label>
-        <Select
+      </div>
+      <div class="form-label-group">
+        <div class="flex justify-between">
+          <label for="section_description">Description</label>
+          <.error :for={error <- Keyword.get_values(@changeset.errors || [], :description)}>
+            <%= translate_error(error) %>
+          </.error>
+        </div>
+        <.input
+          id="section_description"
+          name="section[description]"
+          value={get_field(@changeset, :description)}
           class="form-control"
-          prompt="None"
-          form="section"
-          field="institution_id"
-          options={@institutions}
-          selected={get_field(@changeset, :institution_id)}
-          opts={disabled: get_field(@changeset, :lti_1p3_deployment_id) != nil}
+          disabled={@disabled}
         />
-      </Field>
+      </div>
+      <div class="mt-2">
+        <label for="section_brand_id">Brand</label>
+        <.input
+          id="section_brand_id"
+          type="select"
+          class="form-control"
+          name="section[brand_id]"
+          value={get_field(@changeset, :brand_id)}
+          options={[{"None", nil} | @brands]}
+        />
+      </div>
+      <div class="mt-2">
+        <label for="section_institution_id">Institution</label>
+        <.input
+          id="section_institution_id"
+          type="select"
+          class="form-control"
+          name="section[institution_id]"
+          value={get_field(@changeset, :institution_id)}
+          options={[{"None", nil} | @institutions]}
+          disabled={get_field(@changeset, :lti_1p3_deployment_id) != nil}
+        />
+      </div>
+
       <button class="btn btn-primary mt-3" type="submit">Save</button>
     </div>
     """
