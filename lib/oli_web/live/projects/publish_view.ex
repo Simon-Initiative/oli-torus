@@ -229,7 +229,7 @@ defmodule OliWeb.Projects.PublishView do
 
     modal = fn assigns ->
       ~F"""
-        <LtiConnectInstructions {...@modal_assigns} />
+        <LtiConnectInstructions.render {...@modal_assigns} />
       """
     end
 

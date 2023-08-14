@@ -1,13 +1,13 @@
 defmodule OliWeb.Projects.LtiConnectInstructions do
-  use Surface.Component
+  use OliWeb, :html
 
   alias OliWeb.Projects.LmsUrlToCopy
 
-  prop lti_connect_info, :map, required: true
-  prop id, :string, required: true
+  attr(:lti_connect_info, :map, required: true)
+  attr(:id, :string, required: true)
 
   def render(assigns) do
-    ~F"""
+    ~H"""
       <div class="modal fade fixed top-0 left-0 hidden w-full h-full outline-none overflow-x-hidden overflow-y-auto" id={@id} tabindex="-1" aria-labelledby="exampleModalLgLabel" aria-modal="true" role="dialog" phx-hook="ModalLaunch">
         <div class="modal-dialog modal-lg relative w-auto pointer-events-none">
           <div class="modal-content border-none shadow-lg relative flex flex-col w-full pointer-events-auto bg-white bg-clip-padding rounded-md outline-none">
@@ -37,11 +37,11 @@ defmodule OliWeb.Projects.LtiConnectInstructions do
                     <li class="nav-item">
                       <a class="nav-link active" id="pills-canvas-tab" data-bs-toggle="pill" href="#pills-canvas" role="tab" aria-controls="pills-canvas" aria-selected="true">Canvas</a>
                     </li>
-                    {#if @lti_connect_info.blackboard_application_client_id}
+                    <%= if @lti_connect_info.blackboard_application_client_id do %>
                       <li class="nav-item">
                         <a class="nav-link" id="pills-blackboard-tab" data-bs-toggle="pill" href="#pills-blackboard" role="tab" aria-controls="pills-blackboard" aria-selected="false">Blackboard</a>
                       </li>
-                    {/if}
+                    <% end %>
                     <li class="nav-item">
                       <a class="nav-link" id="pills-other-tab" data-bs-toggle="pill" href="#pills-other" role="tab" aria-controls="pills-other" aria-selected="false">Other LMS</a>
                     </li>
@@ -72,7 +72,7 @@ defmodule OliWeb.Projects.LtiConnectInstructions do
                       </div>
                     </div>
 
-                    {#if @lti_connect_info.blackboard_application_client_id}
+                    <%= if @lti_connect_info.blackboard_application_client_id do %>
                       <div class="tab-pane fade" id="pills-blackboard" role="tabpanel" aria-labelledby="pills-other-tab">
                         <p>
                           Please refer to the <a href="https://help.blackboard.com/Learn/Administrator/SaaS/Integrations/Learning_Tools_Interoperability" target="_blank">Blackboard Documentation on LTI 1.3 tool configuration</a> for full configuration instructions.
@@ -91,7 +91,7 @@ defmodule OliWeb.Projects.LtiConnectInstructions do
                           </div>
                         </div>
                       </div>
-                    {/if}
+                    <% end %>
 
                     <div class="tab-pane fade" id="pills-other" role="tabpanel" aria-labelledby="pills-other-tab">
                       <LmsUrlToCopy.render
