@@ -1,14 +1,9 @@
 defmodule OliWeb.Grades.GradebookView do
-  use Surface.LiveView, layout: {OliWeb.LayoutView, :live}
+  use OliWeb, :live_view
 
   alias OliWeb.Common.Breadcrumb
   alias OliWeb.Router.Helpers, as: Routes
   alias OliWeb.Sections.Mount
-
-  data breadcrumbs, :any
-  data title, :string, default: "Gradebook"
-  data section, :any, default: nil
-  data show_all_links, :boolean, default: false
 
   def set_breadcrumbs(type, section) do
     type
@@ -50,13 +45,13 @@ defmodule OliWeb.Grades.GradebookView do
   end
 
   def render(assigns) do
-    ~F"""
-      {live_component OliWeb.Components.Delivery.QuizScores,
-        id: "quiz_scores_table",
-        section: assigns.section,
-        params: assigns.params,
-        patch_url_type: :gradebook_view
-      }
+    ~H"""
+    <%= live_component(OliWeb.Components.Delivery.QuizScores,
+      id: "quiz_scores_table",
+      section: assigns.section,
+      params: assigns.params,
+      patch_url_type: :gradebook_view
+    ) %>
     """
   end
 end
