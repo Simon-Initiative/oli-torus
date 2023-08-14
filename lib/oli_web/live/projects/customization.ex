@@ -1,10 +1,8 @@
 defmodule OliWeb.Projects.CustomizationLive do
-  use Surface.LiveView
+  use OliWeb, :live_view
   alias Oli.Authoring.Course
-  alias OliWeb.Common.CustomLabelsForm
   alias Oli.Branding.CustomLabels
-
-  data(labels, :map, default: Map.from_struct(CustomLabels.default()))
+  alias OliWeb.Common.CustomLabelsForm
 
   def mount(
         _params,
@@ -30,7 +28,7 @@ defmodule OliWeb.Projects.CustomizationLive do
 
   @spec render(any) :: Phoenix.LiveView.Rendered.t()
   def render(assigns) do
-    ~F"""
+    ~H"""
       <CustomLabelsForm.render labels={@labels} save="save_labels"/>
     """
   end
