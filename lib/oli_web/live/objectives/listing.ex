@@ -37,25 +37,27 @@ defmodule OliWeb.ObjectivesLive.Listing do
                   <u>Sub-Objectives</u>
                   <ul class="list-group list-group-flush">
                     {#for sub_objective <- item.children}
-                      <li class="list-group-item p-2 text-info d-flex sub-obj">
-                        <div class="w-75">{sub_objective.title}</div>
-                        <div class="ml-2 sub-actions">
-                          <button
-                            phx-click="display_edit_modal"
-                            phx-value-slug={sub_objective.slug}
-                            class="ml-1 btn btn-sm btn-light">
-                            <i class="fas fa-i-cursor"></i>
-                          </button>
-                          <button
-                            phx-click="delete"
-                            phx-value-slug={sub_objective.slug}
-                            phx-value-parent_slug={item.slug}
-                            class="ml-1 btn btn-sm btn-danger">
-                              <i class="fas fa-trash-alt fa-lg"></i>
-                          </button>
-                        </div>
-                      </li>
-                      <div class="border border-light w-75"></div>
+                      {#if !is_nil(sub_objective)}
+                        <li class="list-group-item p-2 text-info d-flex sub-obj">
+                          <div class="w-75">{sub_objective.title}</div>
+                          <div class="ml-2 sub-actions">
+                            <button
+                              phx-click="display_edit_modal"
+                              phx-value-slug={sub_objective.slug}
+                              class="ml-1 btn btn-sm btn-light">
+                              <i class="fas fa-i-cursor"></i>
+                            </button>
+                            <button
+                              phx-click="delete"
+                              phx-value-slug={sub_objective.slug}
+                              phx-value-parent_slug={item.slug}
+                              class="ml-1 btn btn-sm btn-danger">
+                                <i class="fas fa-trash-alt fa-lg"></i>
+                            </button>
+                          </div>
+                        </li>
+                        <div class="border border-light w-75"></div>
+                      {/if}
                     {/for}
                   </ul>
                 </div>
