@@ -1,5 +1,5 @@
 defmodule OliWeb.Delivery.ManageSourceMaterials do
-  use Surface.LiveView, layout: {OliWeb.LayoutView, :live}
+  use OliWeb, :live_view
   use OliWeb.Common.Modal
 
   alias Oli.Authoring.Course
@@ -11,13 +11,6 @@ defmodule OliWeb.Delivery.ManageSourceMaterials do
   alias OliWeb.Delivery.ManageSourceMaterials.{ApplyUpdateModal, ProjectInfo, ProjectCard}
   alias OliWeb.Router.Helpers, as: Routes
   alias OliWeb.Sections.Mount
-
-  data base_project_details, :struct
-  data current_publication, :map
-  data remixed_projects, :map
-  data section, :struct
-  data updates, :map
-  data updates_in_progress, :map
 
   def set_breadcrumbs(section, type) do
     type
@@ -76,60 +69,57 @@ defmodule OliWeb.Delivery.ManageSourceMaterials do
   end
 
   def render(assigns) do
-    ~F"""
-      {render_modal(assigns)}
-      <div class="container mx-auto pb-5">
-
-        <ProjectCard
-          id={"project_info_#{@base_project_details.id}"}
-          title="Base Project Info"
-          tooltip="Information about the base project curriculum"
+    ~H"""
+    <%= render_modal(assigns) %>
+    <div class="container mx-auto pb-5">
+      <ProjectCard.render
+        id={"project_info_#{@base_project_details.id}"}
+        title="Base Project Info"
+        tooltip="Information about the base project curriculum"
+      >
+        <ProjectInfo.render
+          project={@base_project_details}
+          current_publication={@current_publication}
+          newest_publication={newest_publication(@base_project_details.id, @updates)}
+          updates={@updates}
+          updates_in_progress={@updates_in_progress}
+        />
+      </ProjectCard.render>
+      <%= if not is_nil(@section.blueprint_id) do %>
+        <ProjectCard.render
+          id={"product_info_#{@section.blueprint_id}"}
+          title="Product Info"
+          tooltip="Information about the product on which this section is based"
         >
-          <ProjectInfo
-            project={@base_project_details}
-            current_publication={@current_publication}
-            newest_publication={newest_publication(@base_project_details.id, @updates)}
-            updates={@updates}
-            updates_in_progress={@updates_in_progress}
-          />
-        </ProjectCard>
+          <div class="card-title">
+            <h5><%= @section.blueprint.title %></h5>
+          </div>
+          <p class="card-text"><%= @section.blueprint.description %></p>
+        </ProjectCard.render>
+      <% end %>
 
-        {#if not is_nil(@section.blueprint_id)}
-          <ProjectCard
-            id={"product_info_#{@section.blueprint_id}"}
-            title="Product Info"
-            tooltip="Information about the product on which this section is based"
-          >
-            <div class="card-title">
-              <h5>{@section.blueprint.title}</h5>
-            </div>
-            <p class="card-text">{@section.blueprint.description}</p>
-          </ProjectCard>
-        {/if}
-
-        {#if Enum.count(@remixed_projects) > 0}
-          <ProjectCard
-            id="remixed_projects_1"
-            title="Remixed Projects Info"
-            tooltip="Information about the projects that have been remixed into this section"
-          >
-            <ul class="list-group">
-              {#for project <- @remixed_projects}
-                <li class="list-group-item">
-                  <ProjectInfo
-                    project={project}
-                    current_publication={project.publication}
-                    newest_publication={newest_publication(project.id, @updates)}
-                    updates={@updates}
-                    updates_in_progress={@updates_in_progress}
-                  />
-                </li>
-              {/for}
-            </ul>
-          </ProjectCard>
-        {/if}
-
-      </div>
+      <%= if Enum.count(@remixed_projects) > 0 do %>
+        <ProjectCard.render
+          id="remixed_projects_1"
+          title="Remixed Projects Info"
+          tooltip="Information about the projects that have been remixed into this section"
+        >
+          <ul class="list-group">
+            <%= for project <- @remixed_projects do %>
+              <li class="list-group-item">
+                <ProjectInfo.render
+                  project={project}
+                  current_publication={project.publication}
+                  newest_publication={newest_publication(project.id, @updates)}
+                  updates={@updates}
+                  updates_in_progress={@updates_in_progress}
+                />
+              </li>
+            <% end %>
+          </ul>
+        </ProjectCard.render>
+      <% end %>
+    </div>
     """
   end
 
@@ -164,8 +154,15 @@ defmodule OliWeb.Delivery.ManageSourceMaterials do
     }
 
     modal = fn assigns ->
-      ~F"""
-        <ApplyUpdateModal {...@modal_assigns} />
+      ~H"""
+      <ApplyUpdateModal.render
+        changes={@modal_assigns.changes}
+        current_publication={@modal_assigns.current_publication}
+        id={@modal_assigns.id}
+        newest_publication={@modal_assigns.newest_publication}
+        project_id={@modal_assigns.project_id}
+        updates={@modal_assigns.updates}
+      />
       """
     end
 
