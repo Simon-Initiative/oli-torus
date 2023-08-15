@@ -1,5 +1,5 @@
 defmodule OliWeb.Products.DetailsView do
-  use Surface.LiveView, layout: {OliWeb.LayoutView, :live}
+  use OliWeb, :live_view
 
   alias Oli.Repo
   alias OliWeb.Common.Breadcrumb
@@ -16,12 +16,6 @@ defmodule OliWeb.Products.DetailsView do
   alias Oli.Utils.S3Storage
 
   require Logger
-
-  data breadcrumbs, :any, default: [Breadcrumb.new(%{full_title: "Product Overview"})]
-  data product, :any, default: nil
-  data show_confirm, :boolean, default: false
-  prop author, :any
-  prop is_admin, :boolean
 
   def set_breadcrumbs(section),
     do: [
@@ -58,7 +52,9 @@ defmodule OliWeb.Products.DetailsView do
            product: product,
            is_admin: Oli.Accounts.is_admin?(author),
            changeset: Section.changeset(product, %{}),
-           title: "Edit Product"
+           title: "Edit Product",
+           show_confirm: false,
+           breadcrumbs: [Breadcrumb.new(%{full_title: "Product Overview"})]
          )
          |> Phoenix.LiveView.allow_upload(:cover_image,
            accept: ~w(.jpg .jpeg .png),
@@ -70,7 +66,7 @@ defmodule OliWeb.Products.DetailsView do
   end
 
   def render(assigns) do
-    ~F"""
+    ~H"""
     <div class="overview container">
       <div class="grid grid-cols-12 py-5 border-b">
         <div class="md:col-span-4">
@@ -81,7 +77,13 @@ defmodule OliWeb.Products.DetailsView do
           </div>
         </div>
         <div class="md:col-span-8">
-          <Edit product={@product} changeset={@changeset} available_brands={@available_brands} publishers={@publishers} is_admin={@is_admin}/>
+          <Edit.render
+            product={@product}
+            changeset={@changeset}
+            available_brands={@available_brands}
+            publishers={@publishers}
+            is_admin={@is_admin}
+          />
         </div>
       </div>
       <div class="grid grid-cols-12 py-5 border-b">
@@ -92,7 +94,12 @@ defmodule OliWeb.Products.DetailsView do
           </div>
         </div>
         <div class="md:col-span-8">
-          <Content product={@product} changeset={@changeset} save="save" updates={@updates}/>
+          <Content.render
+            product={@product}
+            changeset={to_form(@changeset)}
+            save="save"
+            updates={@updates}
+          />
         </div>
       </div>
 
@@ -104,7 +111,15 @@ defmodule OliWeb.Products.DetailsView do
           </div>
         </div>
         <div class="md:col-span-8">
-          <ImageUpload product={@product} uploads={@uploads} changeset={@changeset} upload_event="update_image" change="change" cancel_upload="cancel_upload" updates={@updates}/>
+          <ImageUpload.render
+            product={@product}
+            uploads={@uploads}
+            changeset={to_form(@changeset)}
+            upload_event="update_image"
+            change="change"
+            cancel_upload="cancel_upload"
+            updates={@updates}
+          />
         </div>
       </div>
 
@@ -113,14 +128,14 @@ defmodule OliWeb.Products.DetailsView do
           <h4>Actions</h4>
         </div>
         <div class="md:col-span-8">
-          <Actions product={@product} is_admin={@is_admin}/>
+          <Actions.render product={@product} is_admin={@is_admin} />
         </div>
       </div>
-      {#if @show_confirm}
+      <%= if @show_confirm do %>
         <Confirm.render title="Confirm Duplication" id="dialog" ok="duplicate" cancel="cancel_modal">
           Are you sure that you wish to duplicate this product?
         </Confirm.render>
-      {/if}
+      <% end %>
     </div>
     """
   end

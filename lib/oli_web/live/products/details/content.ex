@@ -1,72 +1,69 @@
 defmodule OliWeb.Products.Details.Content do
-  use Surface.Component
-
-  import Ecto.Changeset
+  use OliWeb, :html
 
   alias OliWeb.Router.Helpers, as: Routes
-  alias Surface.Components.{Form, Link}
 
-  alias Surface.Components.Form.{
-    Field,
-    Label,
-    Checkbox
-  }
-
-  prop product, :any, required: true
-  prop updates, :any, required: true
-  prop changeset, :any, default: nil
-  prop save, :event, required: true
+  attr(:product, :any, required: true)
+  attr(:updates, :any, required: true)
+  attr(:changeset, :any, default: nil)
+  attr(:save, :any, required: true)
 
   def render(assigns) do
-    update_count = Enum.count(assigns.updates)
-
-    ~F"""
+    ~H"""
     <div>
       <div>
-        {#if update_count == 0}
-          <p>There are <b>no updates</b> available for this product.</p>
-        {#elseif update_count == 1}
+        <p :if={Enum.count(@updates) == 0}>There are <b>no updates</b> available for this product.</p>
+        <div :if={Enum.count(@updates) == 1}>
           <p>There is <b>one</b> update available for this product.</p>
-          <Link
-              label={"Manage Source Materials"}
-              to={Routes.live_path(OliWeb.Endpoint, OliWeb.Delivery.ManageSourceMaterials, @product.slug)}
-            />
-        {#else}
+          <.link href={
+            Routes.live_path(OliWeb.Endpoint, OliWeb.Delivery.ManageSourceMaterials, @product.slug)
+          }>
+            Manage Source Materials
+          </.link>
+        </div>
+        <div :if={Enum.count(@updates) not in [0, 1]}>
           <p>There are <b>{update_count}</b> updates available for this product.</p>
-          <Link
-              label={"Manage Source Materials"}
-              to={Routes.live_path(OliWeb.Endpoint, OliWeb.Delivery.ManageSourceMaterials, @product.slug)}
-            />
-        {/if}
-          <p>
-            <Link
-              label={"Customize content"}
-              to={Routes.product_remix_path(OliWeb.Endpoint, :product_remix, @product.slug)}
-            />
-          </p>
-          <p>
-            <Link
-              label={"Gating and scheduling"}
-              to={Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.GatingAndScheduling, @product.slug)}
-            />
-          </p>
+          <.link href={
+            Routes.live_path(OliWeb.Endpoint, OliWeb.Delivery.ManageSourceMaterials, @product.slug)
+          }>
+            Manage Source Materials
+          </.link>
+        </div>
+        <p>
+          <.link href={Routes.product_remix_path(OliWeb.Endpoint, :product_remix, @product.slug)}>
+            Customize content
+          </.link>
+        </p>
+        <p>
+          <.link href={
+            Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.GatingAndScheduling, @product.slug)
+          }>
+            Gating and scheduling
+          </.link>
+        </p>
       </div>
 
       <div class="grid grid-cols-12 my-4" id="content-form">
         <div class="col-span-12">
-          <Form for={@changeset} change={@save} class="d-flex">
+          <.form for={@changeset} phx-change={@save} class="d-flex">
             <div class="form-group">
               <div class="form-row">
                 <div class="custom-control custom-switch pl-4">
-                  <Field name={:display_curriculum_item_numbering} class="form-check">
-                    <Checkbox class="custom-control-input" value={get_field(@changeset, :display_curriculum_item_numbering)}/>
-                    <Label class="custom-control-label">Display curriculum item numbers</Label>
-                    <p class="text-muted">Enable students to see the curriculum's module and unit numbers</p>
-                  </Field>
+                  <div class="form-check">
+                    <.input
+                      type="checkbox"
+                      class="custom-control-input"
+                      field={@changeset[:display_curriculum_item_numbering]}
+                      label="Display curriculum item numbers"
+                    />
+                    <p class="text-muted">
+                      Enable students to see the curriculum's module and unit numbers
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>
-          </Form>
+          </.form>
         </div>
       </div>
     </div>
