@@ -1,7 +1,5 @@
 defmodule OliWeb.Common.FilterBox do
-  use Phoenix.Component
-
-  alias Surface.Components.Form.{Field, RadioButton}
+  use OliWeb, :html
 
   # "The main filter/search"
   slot(:inner_block, required: true)
@@ -46,10 +44,12 @@ defmodule OliWeb.Common.FilterBox do
                     <% end %>
                   <% end %>
                 </select>
-                <Field.render name="sort_order" class="control d-flex align-items-center">
+                <div class="control d-flex align-items-center">
                   <div class="flex">
                     <label class="cursor-pointer">
-                      <RadioButton.render
+                      <.input
+                        type="checkbox"
+                        name="sort_order"
                         class="hidden"
                         opts="hidden: true"
                         value={if @table_model.sort_order == :desc, do: "asc", else: "desc"}
@@ -57,7 +57,7 @@ defmodule OliWeb.Common.FilterBox do
                       <i class={"fa fa-sort-amount-#{if @table_model.sort_order == :desc, do: "up", else: "down"}"} />
                     </label>
                   </div>
-                </Field.render>
+                </div>
               </form>
             </div>
           <% end %>
