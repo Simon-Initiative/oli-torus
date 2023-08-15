@@ -1,5 +1,5 @@
 defmodule OliWeb.Sections.EditView do
-  use Surface.LiveView, layout: {OliWeb.LayoutView, :live}
+  use OliWeb, :live_view
 
   alias Oli.Branding
   alias OliWeb.Sections.StartEnd
@@ -17,17 +17,8 @@ defmodule OliWeb.Sections.EditView do
     ContentSettings
   }
 
-  alias Surface.Components.Form
   alias Oli.Branding.CustomLabels
   alias Oli.Institutions
-
-  data(breadcrumbs, :any)
-  data(title, :string, default: "Edit Section Details")
-  data(section, :any, default: nil)
-  data(changeset, :any)
-  data(is_admin, :boolean)
-  data(brands, :list)
-  data(labels, :map, default: Map.from_struct(CustomLabels.default()))
 
   defp set_breadcrumbs(type, section) do
     OliWeb.Sections.OverviewView.set_breadcrumbs(type, section)
@@ -78,9 +69,20 @@ defmodule OliWeb.Sections.EditView do
     end
   end
 
+  attr(:breadcrumbs, :any)
+  attr(:title, :string, default: "Edit Section Details")
+  attr(:section, :any, default: nil)
+  attr(:changeset, :any)
+  attr(:is_admin, :boolean)
+  attr(:brands, :list)
+  attr(:labels, :map, default: Map.from_struct(CustomLabels.default()))
+
   def render(assigns) do
-    ~F"""
-    <Form as={:section} for={@changeset} change="validate" submit="save" opts={autocomplete: "off"}>
+    assigns = assign(assigns, changeset: to_form(assigns.changeset))
+
+    ~H"""
+    <title><%= @title %></title>
+    <.form as={:section} for={@changeset} phx-change="validate" phx-submit="save" autocomplete="off">
       <Groups.render>
         <Group.render label="Settings" description="Manage the course section settings">
           <MainDetails.render
@@ -91,32 +93,34 @@ defmodule OliWeb.Sections.EditView do
             institutions={@institutions}
           />
         </Group.render>
-        <Group.render label="Schedule" description="Edit the start and end dates for scheduling purposes">
+        <Group.render
+          label="Schedule"
+          description="Edit the start and end dates for scheduling purposes"
+        >
           <StartEnd.render
-            id="start_end_editing"
             changeset={@changeset}
             disabled={false}
             is_admin={@is_admin}
             ctx={@ctx}
           />
         </Group.render>
-
-        {#if @section.open_and_free}
+        <%= if @section.open_and_free do %>
           <OpenFreeSettings.render
-            id="open_and_free_settings"
             is_admin={@is_admin}
             changeset={@changeset}
             disabled={false}
-            {=@ctx}
+            ctx={@ctx}
           />
-        {#else}
+        <% else %>
           <LtiSettings.render section={@section} />
-        {/if}
-
-        <PaywallSettings.render changeset={@changeset} disabled={!can_change_payment?(@section, @is_admin)} />
-        <ContentSettings changeset={@changeset} />
+        <% end %>
+        <PaywallSettings.render
+          changeset={@changeset}
+          disabled={!can_change_payment?(@section, @is_admin)}
+        />
+        <ContentSettings.render changeset={@changeset} />
       </Groups.render>
-    </Form>
+    </.form>
     <Groups.render>
       <Group.render label="Labels" description="Custom labels">
         <CustomLabelsForm.render labels={@labels} save="save_labels" />
@@ -126,12 +130,12 @@ defmodule OliWeb.Sections.EditView do
   end
 
   def handle_event("validate", %{"section" => params}, socket) do
-    params = convert_dates(params, socket.assigns.ctx) |> parse_checkboxes()
+    params = convert_dates(params, socket.assigns.ctx)
     {:noreply, assign(socket, changeset: Sections.change_section(socket.assigns.section, params))}
   end
 
   def handle_event("save", %{"section" => params}, socket) do
-    params = convert_dates(params, socket.assigns.ctx) |> parse_checkboxes()
+    params = convert_dates(params, socket.assigns.ctx)
 
     case Sections.update_section(socket.assigns.section, params) do
       {:ok, section} ->
@@ -171,16 +175,6 @@ defmodule OliWeb.Sections.EditView do
       {:error, %Ecto.Changeset{} = changeset} ->
         {:noreply, assign(socket, changeset: changeset)}
     end
-  end
-
-  defp parse_checkboxes(params) do
-    params
-    |> Map.put("requires_payment", if(params["requires_payment"], do: true, else: false))
-    |> Map.put("pay_by_institution", if(params["pay_by_institution"], do: true, else: false))
-    |> Map.put("has_grace_period", if(params["has_grace_period"], do: true, else: false))
-    |> Map.put("registration_open", if(params["registration_open"], do: true, else: false))
-    |> Map.put("requires_enrollment", if(params["requires_enrollment"], do: true, else: false))
-    |> Map.put("skip_email_verification", if(params["skip_email_verification"], do: true, else: false))
   end
 
   defp convert_dates(params, ctx) do

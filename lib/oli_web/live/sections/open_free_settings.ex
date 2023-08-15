@@ -14,38 +14,30 @@ defmodule OliWeb.Sections.OpenFreeSettings do
     <div>
       <Group.render label="Direct Delivery" description="Direct Delivery section settings">
         <div class="form-check">
-          <input
-            id="registration_open"
+          <.input
             type="checkbox"
-            name="section[registration_open]"
+            field={@changeset[:registration_open]}
+            label="Registration open"
             class="form-check-input"
-            checked={get_field(@changeset, :registration_open)}
           />
-          <label for="registration_open" class="form-check-label">Registration open</label>
         </div>
 
         <div class="form-check">
-          <input
-            id="requires_enrollment"
+          <.input
             type="checkbox"
-            name="section[requires_enrollment]"
+            field={@changeset[:requires_enrollment]}
+            label="Requires enrollment"
             class="form-check-input"
-            checked={get_field(@changeset, :requires_enrollment)}
           />
-          <label for="registration_open" class="form-check-label">Requires enrollment</label>
         </div>
 
         <div class="form-check">
-          <input
-            id="skip_email_verification"
+          <.input
             type="checkbox"
-            name="section[skip_email_verification]"
+            field={@changeset[:skip_email_verification]}
+            label="Omit student email verification"
             class="form-check-input"
-            checked={get_field(@changeset, :skip_email_verification)}
           />
-          <label for="skip_email_verification" class="form-check-label">
-            Omit student email verification
-          </label>
         </div>
 
         <div class="form-row">

@@ -1,6 +1,8 @@
 defmodule OliWeb.Components.Common do
   use Phoenix.Component
 
+  alias OliWeb.Common.FormatDateTime
+
   def not_found(assigns) do
     ~H"""
     <main role="main" class="container mx-auto">
@@ -142,6 +144,7 @@ defmodule OliWeb.Components.Common do
   attr(:errors, :list, default: [])
   attr(:class, :string, default: nil)
   attr(:checked, :boolean, doc: "the checked flag for checkbox inputs")
+  attr(:ctx, :map, default: nil)
   attr(:prompt, :string, default: nil, doc: "the prompt for select inputs")
   attr(:options, :list, doc: "the options to pass to Phoenix.HTML.Form.options_for_select/2")
   attr(:multiple, :boolean, default: false, doc: "the multiple flag for select inputs")
@@ -169,7 +172,7 @@ defmodule OliWeb.Components.Common do
 
     ~H"""
     <div class="contents" phx-feedback-for={@name}>
-      <label class="contents">
+      <label class="flex gap-2 items-center">
         <input type="hidden" name={@name} value="false" />
         <input
           type="checkbox"
@@ -213,6 +216,35 @@ defmodule OliWeb.Components.Common do
         ]}
         {@rest}
       ><%= Phoenix.HTML.Form.normalize_value("textarea", @value) %></textarea>
+      <.error :for={msg <- @errors}><%= msg %></.error>
+    </div>
+    """
+  end
+
+  def input(%{type: "datetime-local"} = assigns) do
+    assigns =
+      if assigns[:ctx] do
+        assign(assigns,
+          value: FormatDateTime.convert_datetime(assigns.value, assigns.ctx)
+        )
+      else
+        assigns
+      end
+
+    ~H"""
+    <div class="contents" phx-feedback-for={@name}>
+      <.label :if={@label} for={@id}><%= @label %></.label>
+      <input
+        type={@type}
+        name={@name}
+        id={@id}
+        value={Phoenix.HTML.Form.normalize_value(@type, @value)}
+        class={[
+          @class,
+          @errors != [] && "border-red-400 focus:border-red-400"
+        ]}
+        {Map.delete(@rest, :ctx)}
+      />
       <.error :for={msg <- @errors}><%= msg %></.error>
     </div>
     """
