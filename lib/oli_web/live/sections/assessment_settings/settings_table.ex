@@ -1,5 +1,5 @@
 defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
-  use Surface.LiveComponent
+  use OliWeb, :live_component
 
   import Phoenix.HTML.Form
   import OliWeb.ErrorHelpers
@@ -16,20 +16,6 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
   alias Oli.Delivery.Sections.SectionResource
   alias Oli.Publishing.DeliveryResolver
   alias Oli.Repo
-
-  prop(assessments, :list, required: true)
-  prop(params, :map, required: true)
-  prop(section, :map, required: true)
-  prop(ctx, :map, required: true)
-  prop(update_sort_order, :boolean, required: true)
-
-  data(flash, :map)
-  data(table_model, :map)
-  data(modal_assigns, :map)
-  data(total_count, :integer)
-  data(form_id, :string)
-  data(bulk_apply_selected_assessment_id, :integer)
-  data(selected_assessment, :map)
 
   @default_params %{
     offset: 0,
@@ -88,11 +74,25 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
      )}
   end
 
+  attr(:assessments, :list, required: true)
+  attr(:params, :map, required: true)
+  attr(:section, :map, required: true)
+  attr(:ctx, :map, required: true)
+  attr(:update_sort_order, :boolean, required: true)
+
+  attr(:flash, :map)
+  attr(:table_model, :map)
+  attr(:modal_assigns, :map)
+  attr(:total_count, :integer)
+  attr(:form_id, :string)
+  attr(:bulk_apply_selected_assessment_id, :integer)
+  attr(:selected_assessment, :map)
+
   def render(assigns) do
-    ~F"""
+    ~H"""
     <div id="settings_table" class="mx-10 mb-10 bg-white dark:bg-gray-800 shadow-sm">
-      {due_date_modal(assigns)}
-      {modal(@modal_assigns)}
+      <%= due_date_modal(assigns) %>
+      <%= modal(@modal_assigns) %>
       <div class="flex flex-col space-y-4 lg:space-y-0 lg:flex-row lg:items-center lg:justify-between pr-6 mb-4">
         <div class="flex flex-col pl-9">
           <h4 class="torus-h4 whitespace-nowrap">Assessment Settings</h4>
@@ -107,17 +107,28 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
           <label>Copy and apply settings from one assessment to all:</label>
           <div class="flex lg:space-x-4 lg:mt-2">
             <select class="torus-select" name="assessment_id">
-              {#for assessment <- @assessments}
-                <option
-                  selected={assessment.resource_id == @bulk_apply_selected_assessment_id}
-                  value={assessment.resource_id}
-                >{assessment.name}</option>
-              {/for}
+              <option
+                :for={assessment <- @assessments}
+                selected={assessment.resource_id == @bulk_apply_selected_assessment_id}
+                value={assessment.resource_id}
+              >
+                <%= assessment.name %>
+              </option>
             </select>
-            <button type="submit" class="torus-button flex justify-center primary h-9 px-4 whitespace-nowrap lg:ml-4">Bulk apply</button>
+            <button
+              type="submit"
+              class="torus-button flex justify-center primary h-9 px-4 whitespace-nowrap lg:ml-4"
+            >
+              Bulk apply
+            </button>
           </div>
         </form>
-        <form for="search" phx-target={@myself} phx-change="search_assessment" class="pb-6 ml-9 sm:pb-0 w-44">
+        <form
+          for="search"
+          phx-target={@myself}
+          phx-change="search_assessment"
+          class="pb-6 ml-9 sm:pb-0 w-44"
+        >
           <SearchInput.render
             id="assessments_search_input"
             name="assessment_name"
@@ -125,7 +136,12 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
           />
         </form>
       </div>
-      <form id={"form-#{@form_id}"} for="settings_table" phx-target={@myself} phx-change="update_setting">
+      <form
+        id={"form-#{@form_id}"}
+        for="settings_table"
+        phx-target={@myself}
+        phx-change="update_setting"
+      >
         <PagedTable.render
           table_model={@table_model}
           total_count={@total_count}
