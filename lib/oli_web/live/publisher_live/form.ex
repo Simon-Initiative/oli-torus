@@ -31,46 +31,60 @@ defmodule OliWeb.PublisherLive.Form do
       </div>
 
       <div class="form-group mb-0">
+        <%= if @display_labels do %>
+          <label for="publisher_email">Publisher Email</label>
+        <% end %>
         <.input
           id="publisher_email"
           class="form-control"
           type="text"
           field={@changeset[:email]}
-          label={if @display_labels, do: "Publisher Email"}
           placeholder="Email"
           maxlength="255"
         />
       </div>
 
-      <.input
-        id="publisher_address"
-        class="form-control"
-        type="text"
-        field={@changeset[:address]}
-        label={if @display_labels, do: "Publisher Address"}
-        placeholder="Address"
-        maxlength="255"
-      />
+      <div class="form-group mb-0">
+        <%= if @display_labels do %>
+          <label for="publisher_address">Publisher Address</label>
+        <% end %>
+        <.input
+          id="publisher_address"
+          class="form-control"
+          type="text"
+          field={@changeset[:address]}
+          placeholder="Address"
+          maxlength="255"
+        />
+      </div>
 
-      <.input
-        id="publisher_main_contact"
-        class="form-control"
-        type="text"
-        field={@changeset[:main_contact]}
-        label={if @display_labels, do: "Publisher Main Contact"}
-        placeholder="Main Contact"
-        maxlength="255"
-      />
+      <div class="form-group mb-0">
+        <%= if @display_labels do %>
+          <label for="publisher_main_contact">Publisher Main Contact</label>
+        <% end %>
+        <.input
+          id="publisher_main_contact"
+          class="form-control"
+          type="text"
+          field={@changeset[:main_contact]}
+          placeholder="Main Contact"
+          maxlength="255"
+        />
+      </div>
 
-      <.input
-        id="publisher_website_url"
-        class="form-control"
-        type="text"
-        field={@changeset[:website_url]}
-        label={if @display_labels, do: "Publisher Website URL"}
-        placeholder="Website URL"
-        maxlength="255"
-      />
+      <div class="form-group mb-0">
+        <%= if @display_labels do %>
+          <label for="publisher_website_url">Publisher Website URL</label>
+        <% end %>
+        <.input
+          id="publisher_website_url"
+          class="form-control"
+          type="text"
+          field={@changeset[:website_url]}
+          placeholder="Website URL"
+          maxlength="255"
+        />
+      </div>
 
       <button class="form-button btn btn-md btn-primary btn-block mt-3" type="submit">Save</button>
     </.form>
