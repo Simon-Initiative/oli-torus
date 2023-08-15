@@ -157,20 +157,35 @@ defmodule OliWeb.Projects.ProjectsLive do
           <div>
             <%= if @is_admin do %>
               <div class="form-check" style="display: inline;">
-                <input type="checkbox" class="form-check-input" id="allCheck" checked={@show_all} phx-click="toggle_show_all">
+                <input
+                  type="checkbox"
+                  class="form-check-input"
+                  id="allCheck"
+                  checked={@show_all}
+                  phx-click="toggle_show_all"
+                />
                 <label class="form-check-label" for="allCheck">Show all projects</label>
               </div>
             <% end %>
             <div class={"form-check #{if @is_admin, do: "ml-4", else: ""}"} style="display: inline;">
-              <input type="checkbox" class="form-check-input" id="deletedCheck" checked={@show_deleted} phx-click="toggle_show_deleted">
+              <input
+                type="checkbox"
+                class="form-check-input"
+                id="deletedCheck"
+                checked={@show_deleted}
+                phx-click="toggle_show_deleted"
+              />
               <label class="form-check-label" for="deletedCheck">Show deleted projects</label>
             </div>
           </div>
 
           <div class="flex-grow-1"></div>
 
-          <button id="button-new-project"
-            class="btn btn-sm btn-primary ml-2" phx-click="show_create_project_modal">
+          <button
+            id="button-new-project"
+            class="btn btn-sm btn-primary ml-2"
+            phx-click="show_create_project_modal"
+          >
             <i class="fa fa-plus"></i> New Project
           </button>
         </div>
@@ -179,20 +194,33 @@ defmodule OliWeb.Projects.ProjectsLive do
       <div class="container mb-4">
         <div class="grid grid-cols-12">
           <div class="col-span-12">
-            <TextSearch.render event_target={:live_view} id="text-search" apply="text_search_apply" reset="text_search_reset" change="text_search_change" text={@text_search} />
+            <TextSearch.render
+              event_target={:live_view}
+              id="text-search"
+              apply="text_search_apply"
+              reset="text_search_reset"
+              change="text_search_change"
+              text={@text_search}
+            />
           </div>
         </div>
       </div>
 
       <div class="grid grid-cols-12">
         <div id="projects-table" class="col-span-12">
-          <PagedTable.render page_change="paged_table_page_change" sort="paged_table_sort"
-            total_count={@total_count} filter={@text_search}
-            selection_change={nil} allow_selection={false}
-            limit={@limit} offset={@offset} table_model={@table_model} show_bottom_paging={true} />
+          <PagedTable.render
+            page_change="paged_table_page_change"
+            sort="paged_table_sort"
+            total_count={@total_count}
+            filter={@text_search}
+            allow_selection={false}
+            limit={@limit}
+            offset={@offset}
+            table_model={@table_model}
+            show_bottom_paging={true}
+          />
         </div>
       </div>
-
     </div>
     """
   end
@@ -235,7 +263,7 @@ defmodule OliWeb.Projects.ProjectsLive do
 
     modal = fn assigns ->
       ~H"""
-        <CreateProjectModal.render {@modal_assigns} />
+      <CreateProjectModal.render {@modal_assigns} />
       """
     end
 

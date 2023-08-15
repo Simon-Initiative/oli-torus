@@ -67,7 +67,6 @@ defmodule OliWeb.Products.PaymentsView do
     ~H"""
     <div>
       <CreateCodes.render
-        id="create_codes"
         disabled={!@product.requires_payment}
         count={@code_count}
         product_slug={@product_slug}

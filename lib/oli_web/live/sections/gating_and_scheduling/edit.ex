@@ -49,7 +49,6 @@ defmodule OliWeb.Sections.GatingAndScheduling.Edit do
       <h3><%= @title %></h3>
 
       <Form.render
-        id="new_gating_contition"
         section={@section}
         gating_condition={@gating_condition}
         parent_gate={@parent_gate}

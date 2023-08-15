@@ -1,5 +1,5 @@
 defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTable do
-  use Surface.LiveComponent
+  use OliWeb, :live_component
 
   import Phoenix.HTML.Form
   import OliWeb.ErrorHelpers
@@ -11,27 +11,9 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTable do
   alias OliWeb.Common.Params
   alias Phoenix.LiveView.JS
   alias OliWeb.Router.Helpers, as: Routes
-  alias Surface.Components.Form
-  alias Surface.Components.Form.{Field, Label, Select}
   alias Oli.Delivery
   alias Oli.Delivery.Settings.StudentException
   alias Oli.Repo
-
-  prop(student_exceptions, :list, required: true)
-  prop(assessments, :list, required: true)
-  prop(params, :map, required: true)
-  prop(ctx, :map, required: true)
-  prop(section, :map, required: true)
-
-  data(table_model, :map)
-  data(total_count, :integer)
-  data(total_exceptions, :integer)
-  data(options_for_select, :list)
-  data(students, :list)
-  data(selected_student_exceptions, :list)
-  data(modal_assigns, :map)
-  data(form_id, :string)
-  data(selected_setting, :map)
 
   @default_params %{
     offset: 0,
@@ -94,23 +76,50 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTable do
      )}
   end
 
+  attr(:student_exceptions, :list, required: true)
+  attr(:assessments, :list, required: true)
+  attr(:params, :map, required: true)
+  attr(:ctx, :map, required: true)
+  attr(:section, :map, required: true)
+
+  attr(:table_model, :map)
+  attr(:total_count, :integer)
+  attr(:total_exceptions, :integer)
+  attr(:options_for_select, :list)
+  attr(:students, :list)
+  attr(:selected_student_exceptions, :list)
+  attr(:modal_assigns, :map)
+  attr(:form_id, :string)
+  attr(:selected_setting, :map)
+
   def render(assigns) do
-    ~F"""
+    assigns = assign(assigns, assessment_changeset: to_form(%{}, as: :assessments))
+
+    ~H"""
     <div id="student_exceptions_table" class="mx-10 mb-10 bg-white dark:bg-gray-800 shadow-sm">
-      {due_date_modal(assigns)}
-      {modal(@modal_assigns)}
+      <%= due_date_modal(assigns) %>
+      <%= modal(@modal_assigns) %>
       <div class="flex flex-col sm:flex-row sm:items-center pr-6 mb-4">
         <div class="flex flex-col pl-9 mr-auto">
           <h4 class="torus-h4">Student Exceptions</h4>
-          <Form for={:assessments} id="assessment_select" change="change_assessment">
-            <Field name={:assessment_id} class="form-group">
-              <Label>Select an assessment to manage student specific exceptions</Label>
-              <Select class="ml-4" options={@options_for_select} selected={@params.selected_assessment_id} />
-            </Field>
-          </Form>
-          {#if @total_count > 0}
-            <p class={if @total_exceptions > 0, do: "bg-blue-100 p-3 mr-auto rounded-lg bg-opacity-50"}>Current exceptions: {exceptions_text(@total_count, @total_exceptions)}</p>
-          {/if}
+          <.form for={@assessment_changeset} id="assessment_select" phx-change="change_assessment" phx-target={@myself}>
+            <div class="form-group">
+              <.input
+                type="select"
+                field={@assessment_changeset[:assessment_id]}
+                label="Select an assessment to manage student specific exceptions"
+                class="ml-4"
+                options={@options_for_select}
+              />
+            </div>
+          </.form>
+          <%= if @total_count > 0 do %>
+            <p class={
+              if @total_exceptions > 0, do: "bg-blue-100 p-3 mr-auto rounded-lg bg-opacity-50"
+            }>
+              Current exceptions: <%= exceptions_text(@total_count, @total_exceptions) %>
+            </p>
+          <% end %>
         </div>
         <div class="flex space-x-4">
           <button
@@ -119,17 +128,26 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTable do
             phx-click="show_modal"
             phx-value-modal_name="confirm_removal"
             phx-target={@myself}
-          >Remove Selected</button>
+          >
+            Remove Selected
+          </button>
           <button
             class="torus-button flex justify-center primary h-9 w-48"
             disabled={length(@students) == @total_count}
             phx-click="show_modal"
             phx-value-modal_name="add_student_exception"
             phx-target={@myself}
-          >Add New</button>
+          >
+            Add New
+          </button>
         </div>
       </div>
-      <form id={"form-#{@form_id}"} for="student_exceptions_table" phx-target={@myself} phx-change="update_student_exception">
+      <form
+        id={"form-#{@form_id}"}
+        for="student_exceptions_table"
+        phx-target={@myself}
+        phx-change="update_student_exception"
+      >
         <PagedTable.render
           table_model={@table_model}
           total_count={@total_count}
