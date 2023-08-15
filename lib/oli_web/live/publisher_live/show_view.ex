@@ -69,7 +69,7 @@ defmodule OliWeb.PublisherLive.ShowView do
           section_title="Details"
           section_description="Main publisher fields that will be shown to system admins."
         >
-          <Form changeset={@changeset} save="save"/>
+          <Form.render changeset={@changeset} save="save"/>
         </ShowSection.render>
 
         <ShowSection.render section_title="Actions">

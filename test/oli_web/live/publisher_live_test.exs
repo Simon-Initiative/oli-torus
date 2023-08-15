@@ -185,7 +185,7 @@ defmodule OliWeb.PublisherLiveTest do
              |> render() =~
                "Publisher couldn&#39;t be created. Please check the errors below."
 
-      assert has_element?(view, "span", "can't be blank")
+      assert has_element?(view, "p", "can't be blank")
       # Only the default publisher
       assert 1 = Inventories.list_publishers() |> length()
     end
@@ -207,7 +207,7 @@ defmodule OliWeb.PublisherLiveTest do
              |> render() =~
                "Publisher couldn&#39;t be created. Please check the errors below."
 
-      assert has_element?(view, "span", "has already been taken")
+      assert has_element?(view, "p", "has already been taken")
       # There are 2 considering the default publisher
       assert 2 = Inventories.list_publishers() |> length()
     end
@@ -286,7 +286,7 @@ defmodule OliWeb.PublisherLiveTest do
              |> render() =~
                "Publisher couldn&#39;t be updated. Please check the errors below."
 
-      assert has_element?(view, "span", "can't be blank")
+      assert has_element?(view, "p", "can't be blank")
       refute Inventories.get_publisher(id).name == ""
     end
 
@@ -328,7 +328,7 @@ defmodule OliWeb.PublisherLiveTest do
              |> render() =~
                "Publisher couldn&#39;t be updated. Please check the errors below."
 
-      assert has_element?(view, "span", "has already been taken")
+      assert has_element?(view, "p", "has already been taken")
       assert 3 = Inventories.list_publishers() |> length()
     end
 

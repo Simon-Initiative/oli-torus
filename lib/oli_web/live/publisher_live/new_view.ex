@@ -1,15 +1,11 @@
 defmodule OliWeb.PublisherLive.NewView do
-  use Surface.LiveView, layout: {OliWeb.LayoutView, :live}
+  use OliWeb, :live_view
 
   alias Oli.Inventories
   alias Oli.Inventories.Publisher
   alias OliWeb.Common.{Breadcrumb, FormContainer, Params}
   alias OliWeb.PublisherLive.{Form, IndexView}
   alias OliWeb.Router.Helpers, as: Routes
-
-  data(title, :string, default: "New Publisher")
-  data(publisher, :changeset, default: Inventories.change_publisher(%Publisher{}))
-  data(breadcrumbs, :list)
 
   def breadcrumb() do
     IndexView.breadcrumb() ++
@@ -28,11 +24,15 @@ defmodule OliWeb.PublisherLive.NewView do
      )}
   end
 
+  attr(:title, :string, default: "New Publisher")
+  attr(:publisher, :any, default: Inventories.change_publisher(%Publisher{}))
+  attr(:breadcrumbs, :list)
+
   def render(assigns) do
-    ~F"""
-      <FormContainer.render title={@title}>
-        <Form changeset={@publisher} save="save" display_labels={false}/>
-      </FormContainer.render>
+    ~H"""
+    <FormContainer.render title={@title}>
+      <Form.render changeset={@publisher} save="save" display_labels={false} />
+    </FormContainer.render>
     """
   end
 
