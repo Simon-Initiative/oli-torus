@@ -216,7 +216,7 @@ defmodule OliWeb.Sections.OverviewView do
             >
               Manage Source Materials
               <%= if @updates_count > 0 do %>
-                <span class="badge badge-primary">{@updates_count} available</span>
+                <span class="badge badge-primary"><%= @updates_count %> available</span>
               <% end %>
             </a>
           </li>
