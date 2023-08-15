@@ -1,28 +1,14 @@
 defmodule OliWeb.Products.PaymentsView do
-  use Surface.LiveView
+  use OliWeb, :live_view
   use OliWeb.Common.SortableTable.TableHandlers
 
-  alias(OliWeb.Common.Filter)
-
+  alias OliWeb.Common.Filter
   alias OliWeb.Common.Listing
   alias OliWeb.Common.Breadcrumb
   alias OliWeb.Products.Payments.CreateCodes
   alias OliWeb.Common.Table.SortableTableModel
   alias OliWeb.Router.Helpers, as: Routes
   alias OliWeb.Common.SessionContext
-
-  data breadcrumbs, :any, default: [Breadcrumb.new(%{full_title: "Payments"})]
-  data title, :string, default: "Payments"
-  data code_count, :integer, default: 50
-  data product_slug, :string
-  data payments, :list, default: []
-  data tabel_model, :struct
-  data total_count, :integer, default: 0
-  data offset, :integer, default: 0
-  data limit, :integer, default: 20
-  data query, :string, default: ""
-  data applied_query, :string, default: ""
-  data download_enabled, :boolean, default: false
 
   @table_filter_fn &OliWeb.Products.PaymentsView.filter_rows/3
   @table_push_patch_path &OliWeb.Products.PaymentsView.live_path/2
@@ -66,21 +52,35 @@ defmodule OliWeb.Products.PaymentsView do
        product_slug: product_slug,
        payments: payments,
        total_count: total_count,
-       table_model: table_model
+       table_model: table_model,
+       breadcrumbs: [Breadcrumb.new(%{full_title: "Payments"})],
+       title: "Payments",
+       code_count: 50,
+       offset: 0,
+       limit: 20,
+       applied_query: "",
+       download_enabled: false
      )}
   end
 
   def render(assigns) do
-    ~F"""
+    ~H"""
     <div>
+      <CreateCodes.render
+        id="create_codes"
+        disabled={!@product.requires_payment}
+        count={@code_count}
+        product_slug={@product_slug}
+        download_enabled={@download_enabled}
+        create_codes="create"
+        change="change_count"
+      />
 
-      <CreateCodes id="create_codes" disabled={!@product.requires_payment} count={@code_count} product_slug={@product_slug} download_enabled={@download_enabled} create_codes="create" change="change_count"/>
+      <hr class="mt-5 mb-5" />
 
-      <hr class="mt-5 mb-5"/>
+      <Filter.render apply="apply_search" change="change_search" reset="reset_search" />
 
-      <Filter.render apply={"apply_search"} change={"change_search"} reset="reset_search"/>
-
-      <div class="mb-3"/>
+      <div class="mb-3" />
 
       <Listing.render
         filter={@applied_query}
@@ -89,10 +89,9 @@ defmodule OliWeb.Products.PaymentsView do
         offset={@offset}
         limit={@limit}
         sort="sort"
-        page_change="page_change"/>
-
+        page_change="page_change"
+      />
     </div>
-
     """
   end
 
