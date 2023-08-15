@@ -305,9 +305,9 @@ defmodule OliWeb.ManualGrading.ManualGradingView do
         <Group.render>
           <Tabs.render active={@active_tab} changed="change_tab" />
           <%= if @active_tab == :review do %>
-            <RenderedActivity.render id={@attempt.attempt_guid} rendered_activity={@review_rendered} />
+            <RenderedActivity.render rendered_activity={@review_rendered} />
           <% else %>
-            <RenderedActivity.render id={@attempt.attempt_guid} rendered_activity={@preview_rendered} />
+            <RenderedActivity.render rendered_activity={@preview_rendered} />
           <% end %>
         </Group.render>
         <Group.render>

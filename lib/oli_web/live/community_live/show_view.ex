@@ -313,7 +313,7 @@ defmodule OliWeb.CommunityLive.ShowView do
 
         modal = fn assigns ->
           ~H"""
-          <SelectMemberModal.render {modal_assigns} />
+          <SelectMemberModal.render {@modal_assigns} />
           """
         end
 

@@ -139,8 +139,10 @@ defmodule OliWeb.Admin.AdminView do
         ""
 
       badge ->
+        assigns = assign(assigns, badge: badge)
+
         ~H"""
-        <span class="badge badge-pill badge-primary ml-2"><%= badge %></span>
+        <span class="badge badge-pill badge-primary ml-2"><%= @badge %></span>
         """
     end
   end

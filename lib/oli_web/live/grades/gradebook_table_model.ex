@@ -244,7 +244,7 @@ defmodule OliWeb.Grades.GradebookTableModel do
           )
         }
       >
-        <span><%= "#{score}/#{out_of}" %></span>
+        <span><%= "#{@score}/#{@out_of}" %></span>
       </a>
       """
     else
@@ -280,7 +280,7 @@ defmodule OliWeb.Grades.GradebookTableModel do
           )
         }
       >
-        <%= "#{safe_score}/#{safe_out_of}" %>
+        <%= "#{@safe_score}/#{@safe_out_of}" %>
       </a>
       <%= if @was_late do %>
         <span class="ml-2 badge badge-xs badge-pill badge-danger">LATE</span>

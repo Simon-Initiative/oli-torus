@@ -18,7 +18,7 @@ defmodule OliWeb.Progress.PageAttemptSummary do
   def render(assigns), do: do_render(assigns)
 
   def do_render(
-        %{revision: %{graded: graded}, attempt: %{attempt_guid: guid, lifecycle_state: :active}} =
+        %{revision: %{graded: _graded}, attempt: %{attempt_guid: _guid, lifecycle_state: :active}} =
           assigns
       ) do
     ~H"""
@@ -43,8 +43,12 @@ defmodule OliWeb.Progress.PageAttemptSummary do
           Time elapsed: <%= duration(@attempt.inserted_at, DateTime.utc_now()) %>.
         </small>
       </a>
-      <%= if graded do %>
-        <button class="btn btn-danger btn-sm" phx-click="submit_attempt" phx-value-guid={guid}>
+      <%= if @revision.graded do %>
+        <button
+          class="btn btn-danger btn-sm"
+          phx-click="submit_attempt"
+          phx-value-guid={@attempt.attempt_guid}
+        >
           Submit Attempt on Behalf of Student
         </button>
       <% end %>

@@ -19,17 +19,23 @@ defmodule OliWeb.Users.Actions do
     resend_confirmation_link_path = Routes.pow_path(OliWeb.Endpoint, resend)
     reset_password_link_path = Routes.pow_path(OliWeb.Endpoint, reset)
 
+    assigns =
+      assign(assigns,
+        resend_confirmation_link_path: resend_confirmation_link_path,
+        reset_password_link_path: reset_password_link_path
+      )
+
     ~H"""
     <div>
       <form
         id={"resend-confirmation-#{@user.id}"}
         method="post"
-        action={resend_confirmation_link_path}
+        action={@resend_confirmation_link_path}
       >
         <input type="hidden" name="_csrf_token" value={@csrf_token} />
         <input type="hidden" name="id" value={@user.id} />
       </form>
-      <form id={"reset-password-#{@user.id}"} method="post" action={reset_password_link_path}>
+      <form id={"reset-password-#{@user.id}"} method="post" action={@reset_password_link_path}>
         <input type="hidden" name="_csrf_token" value={@csrf_token} />
         <input type="hidden" name="id" value={@user.id} />
       </form>

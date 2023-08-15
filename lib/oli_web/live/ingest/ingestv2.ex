@@ -32,6 +32,7 @@ defmodule OliWeb.Admin.IngestV2 do
       ]
   end
 
+  @impl true
   def mount(_, %{"current_author_id" => author_id}, socket) do
     author = Repo.get(Author, author_id)
 

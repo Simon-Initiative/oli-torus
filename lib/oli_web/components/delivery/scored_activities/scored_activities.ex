@@ -245,7 +245,6 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
               <RenderedActivity.render
                 id={@rendered_activity_id}
                 rendered_activity={@preview_rendered}
-                myself={@myself}
               />
             <% else %>
               <p class="pt-9 pb-5">No attempt registered for this question</p>

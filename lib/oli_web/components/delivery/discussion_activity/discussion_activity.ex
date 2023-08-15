@@ -17,6 +17,7 @@ defmodule OliWeb.Components.Delivery.DiscussionActivity do
     filter: :all
   }
 
+  @impl true
   def update(assigns, socket) do
     socket =
       socket

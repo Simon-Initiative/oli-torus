@@ -74,6 +74,8 @@ defmodule OliWeb.Workspace.AccountDetailsLive do
   defp render_preferences(%{current_author: current_author} = assigns) do
     show_relative_dates = Accounts.get_author_preference(current_author, :show_relative_dates)
 
+    assigns = assign(assigns, show_relative_dates: show_relative_dates)
+
     ~H"""
     <div>
       <div class="form-check mt-2">
@@ -81,7 +83,7 @@ defmodule OliWeb.Workspace.AccountDetailsLive do
           type="checkbox"
           id="show_relative_dates"
           class="form-check-input"
-          checked={show_relative_dates}
+          checked={@show_relative_dates}
           phx-hook="CheckboxListener"
         />
         <label for="show_relative_dates" class="form-check-label">

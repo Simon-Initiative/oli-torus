@@ -69,7 +69,7 @@ defmodule OliWeb.CollaborationLive.InstructorTableModel do
   end
 
   def render_collab_space(
-        %{ctx: ctx} = assigns,
+        %{ctx: _ctx} = assigns,
         %{
           page: %{title: title, slug: page_revision_slug},
           section: %{slug: section_slug},

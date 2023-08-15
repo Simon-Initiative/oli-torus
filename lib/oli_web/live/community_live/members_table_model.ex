@@ -27,8 +27,10 @@ defmodule OliWeb.CommunityLive.MembersTableModel do
   end
 
   def render_remove_button(assigns, item, _) do
+    assigns = Map.put(assigns, :item, item)
+
     ~H"""
-    <button class="btn btn-primary" phx-click="remove" phx-value-id={item.id}>Remove</button>
+    <button class="btn btn-primary" phx-click="remove" phx-value-id={@item.id}>Remove</button>
     """
   end
 

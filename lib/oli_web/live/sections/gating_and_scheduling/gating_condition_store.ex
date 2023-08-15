@@ -257,7 +257,7 @@ defmodule OliWeb.Delivery.Sections.GatingAndScheduling.GatingConditionStore do
 
     modal = fn assigns ->
       ~F"""
-        <SelectResourceModal {...@modal_assigns} />
+        <SelectResourceModal.render {...@modal_assigns} />
       """
     end
 
@@ -283,7 +283,7 @@ defmodule OliWeb.Delivery.Sections.GatingAndScheduling.GatingConditionStore do
 
     modal = fn assigns ->
       ~F"""
-        <SelectResourceModal {...@modal_assigns} />
+        <SelectResourceModal.render {...@modal_assigns} />
       """
     end
 

@@ -187,7 +187,6 @@ defmodule OliWeb.Components.Delivery.Actions do
       <Confirm.render
         title={@modal_assigns.title}
         ok={@modal_assigns.ok}
-        myself={@modal_assigns.myself}
         cancel={@modal_assigns.cancel}
         id={@modal_assigns.id}
       >
@@ -261,7 +260,6 @@ defmodule OliWeb.Components.Delivery.Actions do
       <Confirm.render
         title={@modal_assigns.title}
         ok={@modal_assigns.ok}
-        myself={@modal_assigns.myself}
         cancel={@modal_assigns.cancel}
         id={@modal_assigns.id}
       >
