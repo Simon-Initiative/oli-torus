@@ -396,7 +396,7 @@ defmodule OliWeb.PublisherLiveTest do
 
       view
       |> element("#delete_publisher_modal form")
-      |> render_change(%{"publisher" => %{"name" => name}})
+      |> render_change(%{"name" => name})
 
       refute view
              |> element("#delete_publisher_modal form button")
