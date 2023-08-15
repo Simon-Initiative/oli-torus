@@ -1,5 +1,5 @@
 defmodule OliWeb.Sections.EnrollmentsViewLive do
-  use OliWeb, :surface_view
+  use OliWeb, :live_view
 
   import OliWeb.DelegatedEvents
   import OliWeb.Common.Params
@@ -13,7 +13,6 @@ defmodule OliWeb.Sections.EnrollmentsViewLive do
   alias Oli.Delivery.Sections
   alias OliWeb.Sections.Mount
   alias OliWeb.Common.SessionContext
-  alias Surface.Components.Link
   alias Oli.Delivery.Metrics
   alias Oli.Delivery.Paywall
 
@@ -23,16 +22,6 @@ defmodule OliWeb.Sections.EnrollmentsViewLive do
     is_instructor: false,
     text_search: nil
   }
-
-  data breadcrumbs, :any
-  data title, :string, default: "Enrollments"
-  data section, :any, default: nil
-
-  data tabel_model, :struct
-  data total_count, :integer, default: 0
-  data offset, :integer, default: 0
-  data limit, :integer, default: @limit
-  data options, :any
 
   def set_breadcrumbs(type, section) do
     type
@@ -119,30 +108,42 @@ defmodule OliWeb.Sections.EnrollmentsViewLive do
      )}
   end
 
+  attr :breadcrumbs, :any
+  attr :title, :string, default: "Enrollments"
+  attr :section, :any, default: nil
+
+  attr :tabel_model, :map
+  attr :total_count, :integer, default: 0
+  attr :offset, :integer, default: 0
+  attr :limit, :integer, default: @limit
+  attr :options, :any
+
   def render(assigns) do
-    ~F"""
+    ~H"""
     <div class="container mx-auto">
-
       <div class="d-flex justify-content-between">
-        <TextSearch.render id="text-search"/>
+        <TextSearch.render id="text-search" />
 
-        {#if @is_admin}
-          <Link
-            label="Download as .CSV"
-            to={Routes.page_delivery_path(OliWeb.Endpoint, :export_enrollments, @section.slug)}
+        <%= if @is_admin do %>
+          <.link
+            href={Routes.page_delivery_path(OliWeb.Endpoint, :export_enrollments, @section.slug)}
             class="btn btn-outline-primary"
-            method={:post} />
-        {/if}
+            method="post"
+          >
+            Download as .CSV
+          </.link>
+        <% end %>
       </div>
 
-      <div class="mb-3"/>
+      <div class="mb-3" />
 
       <PagedTable.render
         filter={@options.text_search}
         table_model={@table_model}
         total_count={@total_count}
         offset={@offset}
-        limit={@limit}/>
+        limit={@limit}
+      />
     </div>
     """
   end
