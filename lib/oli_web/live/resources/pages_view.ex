@@ -1,5 +1,5 @@
 defmodule OliWeb.Resources.PagesView do
-  use Surface.LiveView, layout: {OliWeb.LayoutView, :live}
+  use OliWeb, :live_view
   use OliWeb.Common.Modal
 
   import Oli.Utils, only: [uuid: 0]
@@ -27,12 +27,6 @@ defmodule OliWeb.Resources.PagesView do
   alias Oli.Delivery.Hierarchy.HierarchyNode
   alias Oli.Authoring.Course.Project
   alias OliWeb.Curriculum.OptionsModal
-
-  data(title, :string, default: "All Pages")
-  data(project, :any)
-  data(breadcrumbs, :list)
-  data(author, :any)
-  data(pages, :list)
 
   @limit 25
 
@@ -145,36 +139,55 @@ defmodule OliWeb.Resources.PagesView do
      )}
   end
 
-  def render(assigns) do
-    ~F"""
-    {render_modal(assigns)}
-    <div class="container mx-auto">
+  attr(:title, :string, default: "All Pages")
+  attr(:project, :any)
+  attr(:breadcrumbs, :list)
+  attr(:author, :any)
+  attr(:pages, :list)
 
+  def render(assigns) do
+    ~H"""
+    <%= render_modal(assigns) %>
+    <div class="container mx-auto">
       <FilterBox.render
         card_header_text="Browse All Pages"
         card_body_text=""
         table_model={@table_model}
         show_sort={false}
-        show_more_opts={true}>
-        <TextSearch.render id="text-search" text={@options.text_search}/>
+        show_more_opts={true}
+      >
+        <TextSearch.render id="text-search" text={@options.text_search} />
 
         <:extra_opts>
-
-          <form :on-change="change_graded" class="d-flex">
+          <form phx-change="change_graded" class="d-flex">
             <select name="graded" id="select_graded" class="custom-select custom-select mr-2">
               <option value="" selected>Grading Type</option>
-              {#for {value, str} <- graded_opts()}
-                <option value={Kernel.to_string(value)} selected={@options.graded == value}>{str}</option>
-              {/for}
+              <option
+                :for={
+                  {value, str} <-
+                    graded_opts()
+                }
+                value={Kernel.to_string(value)}
+                selected={@options.graded == value}
+              >
+                <%= str %>
+              </option>
             </select>
           </form>
 
-          <form :on-change="change_type" class="d-flex">
+          <form phx-change="change_type" class="d-flex">
             <select name="type" id="select_type" class="custom-select custom-select mr-2">
               <option value="" selected>Page Type</option>
-              {#for {value, str} <- type_opts()}
-                <option value={Kernel.to_string(value)} selected={@options.basic == value}>{str}</option>
-              {/for}
+              <option
+                :for={
+                  {value, str} <-
+                    type_opts()
+                }
+                value={Kernel.to_string(value)}
+                selected={@options.basic == value}
+              >
+                <%= str %>
+              </option>
             </select>
           </form>
         </:extra_opts>
@@ -182,18 +195,45 @@ defmodule OliWeb.Resources.PagesView do
 
       <div class="my-3 d-flex flex-row">
         <div class="flex-grow-1" />
-          <div class="dropdown btn-group">
-            <button type="button" class="btn btn-primary dropdown-toggle" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-              Create <i class="fa-solid fa-caret-down ml-2"></i>
+        <div class="dropdown btn-group">
+          <button
+            type="button"
+            class="btn btn-primary dropdown-toggle"
+            data-bs-toggle="dropdown"
+            aria-haspopup="true"
+            aria-expanded="false"
+          >
+            Create <i class="fa-solid fa-caret-down ml-2"></i>
+          </button>
+          <div class="dropdown-menu dropdown-menu-right">
+            <button
+              type="button"
+              class="dropdown-item"
+              phx-click="create_page"
+              phx-value-type="Unscored"
+            >
+              Practice Page
             </button>
-            <div class="dropdown-menu dropdown-menu-right">
-              <button type="button" class="dropdown-item" :on-click="create_page" phx-value-type="Unscored">Practice Page</button>
-              <button type="button" class="dropdown-item" :on-click="create_page" phx-value-type="Scored">Graded Assessment</button>
-              {#if Oli.Features.enabled?("adaptivity")}
-                <button type="button" class="dropdown-item" :on-click="create_page" phx-value-type="Adaptive">Adaptive Page</button>
-              {/if}
-            </div>
+            <button
+              type="button"
+              class="dropdown-item"
+              phx-click="create_page"
+              phx-value-type="Scored"
+            >
+              Graded Assessment
+            </button>
+            <%= if Oli.Features.enabled?("adaptivity") do %>
+              <button
+                type="button"
+                class="dropdown-item"
+                phx-click="create_page"
+                phx-value-type="Adaptive"
+              >
+                Adaptive Page
+              </button>
+            <% end %>
           </div>
+        </div>
       </div>
 
       <PagedTable.render
@@ -201,7 +241,8 @@ defmodule OliWeb.Resources.PagesView do
         table_model={@table_model}
         total_count={@total_count}
         offset={@offset}
-        limit={limit()}/>
+        limit={limit()}
+      />
     </div>
     """
   end
@@ -270,8 +311,8 @@ defmodule OliWeb.Resources.PagesView do
     }
 
     modal = fn assigns ->
-      ~F"""
-      <OliWeb.Curriculum.DeleteModal.render {...@modal_assigns} />
+      ~H"""
+      <OliWeb.Curriculum.DeleteModal.render {@modal_assigns} />
       """
     end
 
@@ -377,8 +418,8 @@ defmodule OliWeb.Resources.PagesView do
     }
 
     modal = fn assigns ->
-      ~F"""
-      <OptionsModal {...@modal_assigns} />
+      ~H"""
+      <OptionsModal.render {@modal_assigns} />
       """
     end
 
@@ -461,8 +502,8 @@ defmodule OliWeb.Resources.PagesView do
     }
 
     modal = fn assigns ->
-      ~F"""
-        <MoveModal.render {...@modal_assigns} />
+      ~H"""
+      <MoveModal.render {@modal_assigns} />
       """
     end
 

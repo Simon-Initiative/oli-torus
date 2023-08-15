@@ -13,8 +13,6 @@ defmodule OliWeb.Curriculum.ContainerLive do
   alias Oli.Authoring.Editing.ContainerEditor
   alias Oli.Authoring.Course
 
-  alias Phoenix.LiveView.JS
-
   alias OliWeb.Curriculum.{
     Rollup,
     ActivityDelta,
@@ -243,15 +241,7 @@ defmodule OliWeb.Curriculum.ContainerLive do
 
     modal = fn assigns ->
       ~H"""
-      <OptionsModal.render
-        redirect_url={assigns.modal_assigns.redirect_url}
-        revision={assigns.modal_assigns.revision}
-        changeset={assigns.modal_assigns.changeset}
-        project={assigns.modal_assigns.project}
-        project_hierarchy={assigns.modal_assigns.project_hierarchy}
-        validate={assigns.modal_assigns.validate}
-        submit={assigns.modal_assigns.submit}
-      />
+      <OptionsModal.render {@modal_assigns} />
       """
     end
 

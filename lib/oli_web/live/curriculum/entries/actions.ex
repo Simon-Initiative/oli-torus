@@ -24,7 +24,7 @@ defmodule OliWeb.Curriculum.Actions do
             focusable="false"
             data-prefix="fas"
             data-icon="caret-down"
-            class="w-2 ml-2"
+            class="w-2"
             role="img"
             xmlns="http://www.w3.org/2000/svg"
             viewBox="0 0 320 512"
