@@ -1,5 +1,5 @@
 defmodule OliWeb.Products.ProductsView do
-  use Surface.LiveView, layout: {OliWeb.LayoutView, :live}
+  use OliWeb, :live_view
   alias Oli.Repo
   alias OliWeb.Common.{Breadcrumb, Filter, Listing, SessionContext}
   alias OliWeb.Products.Create
@@ -9,21 +9,6 @@ defmodule OliWeb.Products.ProductsView do
   alias OliWeb.Common.Table.SortableTableModel
   alias OliWeb.Router.Helpers, as: Routes
   alias Oli.Publishing
-
-  prop(is_admin_view, :boolean)
-  prop(project, :any)
-  prop(author, :any)
-  data(breadcrumbs, :any)
-  data(title, :string, default: "Products")
-
-  data(creation_title, :string, default: "")
-  data(products, :list, default: [])
-  data(tabel_model, :struct)
-  data(total_count, :integer, default: 0)
-  data(offset, :integer, default: 0)
-  data(limit, :integer, default: 20)
-  data(query, :string, default: "")
-  data(applied_query, :string, default: "")
 
   @table_filter_fn &OliWeb.Products.ProductsView.filter_rows/3
   @table_push_patch_path &OliWeb.Products.ProductsView.live_path/2
@@ -125,21 +110,26 @@ defmodule OliWeb.Products.ProductsView do
        products: products,
        total_count: total_count,
        table_model: table_model,
-       title: title
+       title: title,
+       offset: 0,
+       limit: 20,
+       query: "",
+       applied_query: "",
+       creation_title: ""
      )}
   end
 
   def render(assigns) do
-    ~F"""
+    ~H"""
     <div>
-      {#if @published?}
-        {#if @is_admin_view == false}
-          <Create id="creation" title={@creation_title} change="title" click="create"/>
-        {#else}
-          <Filter.render change={"change_search"} reset="reset_search" apply="apply_search"/>
-        {/if}
+      <%= if @published? do %>
+        <%= if @is_admin_view == false do %>
+          <Create.render title={@creation_title} change="title" click="create" />
+        <% else %>
+          <Filter.render change="change_search" reset="reset_search" apply="apply_search" />
+        <% end %>
 
-        <div class="mb-3"/>
+        <div class="mb-3" />
 
         <Listing.render
           filter={@query}
@@ -148,12 +138,12 @@ defmodule OliWeb.Products.ProductsView do
           offset={@offset}
           limit={@limit}
           sort="sort"
-          page_change="page_change"/>
-      {#else}
+          page_change="page_change"
+        />
+      <% else %>
         <div>Products cannot be created until project is published.</div>
-      {/if}
+      <% end %>
     </div>
-
     """
   end
 
