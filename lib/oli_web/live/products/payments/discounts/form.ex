@@ -1,62 +1,52 @@
 defmodule OliWeb.Products.Payments.Discounts.Form do
-  use Surface.Component
+  use OliWeb, :html
 
-  import Ecto.Changeset
-
-  alias Surface.Components.Form
-  alias Surface.Components.Form.{ErrorTag, Field, Label, Select, NumberInput, TextInput}
   alias OliWeb.Common.Properties.ReadOnly
 
-  prop changeset, :changeset, required: true
-  prop discount, :any, required: true
-  prop save, :event, required: true
-  prop change, :event, required: true
-  prop clear, :event
-  prop institution_name, :string
-  prop live_action, :atom
-  prop institutions, :list
+  attr(:form, :map, required: true)
+  attr(:discount, :any, required: true)
+  attr(:save, :any, required: true)
+  attr(:change, :any, required: true)
+  attr(:clear, :any)
+  attr(:institution_name, :string)
+  attr(:live_action, :atom)
+  attr(:institutions, :list)
 
   def render(assigns) do
-    ~F"""
-      <Form for={@changeset} submit={@save} change={@change}>
-        {#if @live_action != :product_new}
+    ~H"""
+      <.form for={@form} phx-submit={@save} phx-change={@change}>
+        <%= if @live_action != :product_new do %>
           <ReadOnly.render label="Institution" value={@institution_name}/>
-        {#else}
-          <Field name={:institution_id} class="form-group">
-            <Label/>
-            <Select
+        <% else %>
+            <div class="form-group">
+            <.input type="select"
+              field={@form[:institution_id]}
+              label="Institution"
               prompt="Select institution"
               class="form-control"
               options={Enum.map(@institutions, &{&1.name, &1.id})}
-              selected={get_field(@changeset, :institution_id)}/>
-            <ErrorTag/>
-          </Field>
-        {/if}
+              />
+          </div>
+        <%end%>
 
-        <Field name={:type} class="form-group">
-          <Label />
-          <Select class="form-control" options={"Percentage": "percentage", "Fixed price": "fixed_amount"} selected={get_field(@changeset, :type)}/>
-          <ErrorTag/>
-        </Field>
+        <div class="form-group">
+          <.input type="select" field={@form[:type]} label="Type" class="form-control" options={["Percentage": "percentage", "Fixed price": "fixed_amount"]}/>
+        </div>
 
-        <Field name={:amount} class="form-group">
-          <Label text="Price"/>
-          <TextInput class="form-control" opts={disabled: get_field(@changeset, :type) == :percentage} />
-          <ErrorTag/>
-        </Field>
+        <div class="form-group">
+          <.input field={@form[:amount]} label="Price" class="form-control" disabled={@form[:type].value in [:percentage, "percentage"]} />
+        </div>
 
-        <Field name={:percentage} class="form-group">
-          <Label/>
-          <NumberInput class="form-control" opts={min: 0, max: 100, step: 0.1, disabled: get_field(@changeset, :type) == :fixed_amount} />
-          <ErrorTag/>
-        </Field>
+        <div class="form-group">
+          <.input type="number" field={@form[:percentage]} label="Percentage" class="form-control" min={0} max={100} step={0.1} disabled={@form[:type].value in [:fixed_amount, "fixed_amount"]} />
+        </div>
 
-        <button class="form-button btn btn-md btn-primary btn-block mt-3" type="submit">Save</button>
-      </Form>
+        <button type="submit" class="form-button btn btn-md btn-primary btn-block mt-3">Save</button>
+      </.form>
 
-      {#if @live_action == :institution}
+      <%= if @live_action == :institution do %>
         <button class="btn btn-md btn-outline-danger float-right mt-3" phx-click="clear" disabled={is_nil(@discount)}>Clear</button>
-      {/if}
+      <%end%>
     """
   end
 end

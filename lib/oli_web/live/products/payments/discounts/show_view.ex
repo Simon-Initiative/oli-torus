@@ -1,6 +1,5 @@
 defmodule OliWeb.Products.Payments.Discounts.ShowView do
-  use Surface.LiveView, layout: {OliWeb.LayoutView, :live}
-
+  use OliWeb, :live_view
   alias Oli.Delivery.{Paywall, Sections}
   alias Oli.Delivery.Paywall.Discount
   alias Oli.Delivery.Sections.Section
@@ -10,15 +9,6 @@ defmodule OliWeb.Products.Payments.Discounts.ShowView do
   alias OliWeb.Products.Payments.Discounts.{Form, ProductsIndexView}
   alias OliWeb.InstitutionController
   alias OliWeb.Router.Helpers, as: Routes
-
-  data breadcrumbs, :any
-  data title, :string, default: "Manage Discount"
-  data product, :any, default: nil
-  data institution, :any, default: nil
-  data institutions, :any, default: []
-  data discount, :any, default: nil
-  data changeset, :changeset, default: nil
-  data institution_name, :string, default: ""
 
   defp set_breadcrumbs(:product, product, discount_id) do
     ProductsIndexView.set_breadcrumbs(product) ++
@@ -61,9 +51,10 @@ defmodule OliWeb.Products.Payments.Discounts.ShowView do
            title: "New Discount",
            breadcrumbs: set_breadcrumbs(live_action, product),
            institutions: institutions,
+           institution_name: "",
            product: product,
            discount: nil,
-           changeset: Paywall.change_discount(%Discount{}),
+           changeset: to_form(Paywall.change_discount(%Discount{})),
            live_action: live_action
          )}
 
@@ -92,12 +83,14 @@ defmodule OliWeb.Products.Payments.Discounts.ShowView do
           discount ->
             {:ok,
              assign(socket,
+               title: "Manage Discount",
+               institutions: [],
                breadcrumbs: set_breadcrumbs(live_action, product, discount.id),
                institution: discount.institution,
                institution_name: discount.institution.name,
                product: product,
                discount: discount,
-               changeset: Paywall.change_discount(discount),
+               changeset: to_form(Paywall.change_discount(discount)),
                live_action: live_action
              )}
         end
@@ -123,9 +116,11 @@ defmodule OliWeb.Products.Payments.Discounts.ShowView do
          assign(socket,
            breadcrumbs: set_breadcrumbs(live_action, institution),
            institution_name: name,
+           title: "Manage Discount",
+           institutions: [],
            institution: institution,
            discount: discount,
-           changeset: changeset,
+           changeset: to_form(changeset),
            live_action: live_action
          )}
 
@@ -146,13 +141,13 @@ defmodule OliWeb.Products.Payments.Discounts.ShowView do
   end
 
   def render(assigns) do
-    ~F"""
+    ~H"""
       <FormContainer.render title={@title}>
-        <Form
+        <Form.render
           institution_name={@institution_name}
           institutions={@institutions}
           discount={@discount}
-          changeset={@changeset}
+          form={@changeset}
           save="save"
           change="change"
           live_action={@live_action}
@@ -191,7 +186,7 @@ defmodule OliWeb.Products.Payments.Discounts.ShowView do
            :error,
            "Discount couldn't be created/updated. Please check the errors below."
          )
-         |> assign(changeset: changeset)}
+         |> assign(changeset: to_form(changeset))}
     end
   end
 
@@ -203,13 +198,13 @@ defmodule OliWeb.Products.Payments.Discounts.ShowView do
         {:noreply,
          socket
          |> put_flash(:info, "Discount successfully cleared.")
-         |> assign(discount: nil, changeset: Paywall.change_discount(%Discount{}))}
+         |> assign(discount: nil, changeset: to_form(Paywall.change_discount(%Discount{})))}
 
       {:error, %Ecto.Changeset{} = changeset} ->
         {:noreply,
          socket
          |> put_flash(:error, "Discount couldn't be cleared.")
-         |> assign(changeset: changeset)}
+         |> assign(changeset: to_form(changeset))}
     end
   end
 
@@ -223,7 +218,9 @@ defmodule OliWeb.Products.Payments.Discounts.ShowView do
       |> Map.put("amount", if(params["type"] == "fixed_amount", do: params["amount"], else: nil))
 
     {:noreply,
-     assign(socket, changeset: Paywall.change_discount(socket.assigns.changeset.data, params))}
+     assign(socket,
+       changeset: Paywall.change_discount(socket.assigns.changeset.data, params) |> to_form()
+     )}
   end
 
   defp get_institution_id(""), do: nil

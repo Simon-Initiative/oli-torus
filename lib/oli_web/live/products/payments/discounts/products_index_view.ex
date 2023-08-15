@@ -1,5 +1,5 @@
 defmodule OliWeb.Products.Payments.Discounts.ProductsIndexView do
-  use Surface.LiveView, layout: {OliWeb.LayoutView, :live}
+  use OliWeb, :live_view
   use OliWeb.Common.SortableTable.TableHandlers
 
   alias Oli.Delivery.{Sections, Paywall}
@@ -7,18 +7,6 @@ defmodule OliWeb.Products.Payments.Discounts.ProductsIndexView do
   alias OliWeb.Common.{Breadcrumb, Listing, SessionContext}
   alias OliWeb.Products.Payments.Discounts.TableModel
   alias OliWeb.Router.Helpers, as: Routes
-  alias Surface.Components.Link
-
-  data(title, :string, default: "Discounts")
-  data(breadcrumbs, :any)
-  data(query, :string, default: "")
-  data(total_count, :integer, default: 0)
-  data(offset, :integer, default: 0)
-  data(limit, :integer, default: 20)
-  data(sort, :string, default: "sort")
-  data(page_change, :string, default: "page_change")
-  data(show_bottom_paging, :boolean, default: false)
-  data(additional_table_class, :string, default: "")
 
   @table_filter_fn &__MODULE__.filter_rows/3
   @table_push_patch_path &__MODULE__.live_path/2
@@ -53,7 +41,11 @@ defmodule OliWeb.Products.Payments.Discounts.ProductsIndexView do
            discounts: discounts,
            table_model: table_model,
            total_count: length(discounts),
-           product: product
+           product: product,
+           title: "Discounts",
+           query: "",
+           offset: 0,
+           limit: 20
          )}
 
       _ ->
@@ -65,25 +57,26 @@ defmodule OliWeb.Products.Payments.Discounts.ProductsIndexView do
   end
 
   def render(assigns) do
-    ~F"""
-      <Link
-        to={Routes.discount_path(OliWeb.Endpoint, :product_new, @product.slug)}
-        class="btn btn-outline-primary float-right">
-        Create Discount
-      </Link>
+    ~H"""
+    <.link
+      href={Routes.discount_path(OliWeb.Endpoint, :product_new, @product.slug)}
+      class="btn btn-outline-primary float-right"
+    >
+      Create Discount
+    </.link>
 
-      <div id="discounts-table" class="p-4">
-        <Listing.render
-          filter={@query}
-          table_model={@table_model}
-          total_count={@total_count}
-          offset={@offset}
-          limit={@limit}
-          sort={@sort}
-          page_change={@page_change}
-          show_bottom_paging={@show_bottom_paging}
-          additional_table_class={@additional_table_class}/>
-      </div>
+    <div id="discounts-table" class="p-4">
+      <Listing.render
+        filter={@query}
+        table_model={@table_model}
+        total_count={@total_count}
+        offset={@offset}
+        limit={@limit}
+        sort="sort"
+        page_change="page_change"
+        show_bottom_paging={false}
+      />
+    </div>
     """
   end
 
