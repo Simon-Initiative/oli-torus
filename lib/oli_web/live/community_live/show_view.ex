@@ -322,11 +322,7 @@ defmodule OliWeb.CommunityLive.ShowView do
 
         modal = fn assigns ->
           ~H"""
-          <SelectMemberModal.render
-            id={@modal_assigns.id}
-            members={@modal_assigns.members}
-            select={@modal_assigns.select}
-          />
+          <SelectMemberModal.render {modal_assigns} />
           """
         end
 
