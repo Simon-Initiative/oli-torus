@@ -1,5 +1,5 @@
 defmodule OliWeb.Delivery.Sections.GatingAndScheduling.GatingConditionStore do
-  use Surface.LiveComponent
+  use OliWeb, :live_component
   use OliWeb.Common.Modal
 
   alias OliWeb.Router.Helpers, as: Routes
@@ -12,8 +12,8 @@ defmodule OliWeb.Delivery.Sections.GatingAndScheduling.GatingConditionStore do
   alias OliWeb.Common.{Breadcrumb, DeleteModalNoConfirmation, FormatDateTime}
 
   def render(assigns) do
-    ~F"""
-    <div>nothing </div>
+    ~H"""
+    <div>nothing</div>
     """
   end
 
@@ -139,8 +139,8 @@ defmodule OliWeb.Delivery.Sections.GatingAndScheduling.GatingConditionStore do
     }
 
     modal = fn assigns ->
-      ~F"""
-        <OliWeb.Common.EnrollmentBrowser.SelectUserModal.render {...@modal_assigns} />
+      ~H"""
+      <OliWeb.Common.EnrollmentBrowser.SelectUserModal.render {@modal_assigns} />
       """
     end
 
@@ -211,8 +211,8 @@ defmodule OliWeb.Delivery.Sections.GatingAndScheduling.GatingConditionStore do
     }
 
     modal = fn assigns ->
-      ~F"""
-        <SelectResourceModal.render {...@modal_assigns} />
+      ~H"""
+      <SelectResourceModal.render {@modal_assigns} />
       """
     end
 
@@ -256,8 +256,8 @@ defmodule OliWeb.Delivery.Sections.GatingAndScheduling.GatingConditionStore do
     }
 
     modal = fn assigns ->
-      ~F"""
-        <SelectResourceModal.render {...@modal_assigns} />
+      ~H"""
+      <SelectResourceModal.render {@modal_assigns} />
       """
     end
 
@@ -282,8 +282,8 @@ defmodule OliWeb.Delivery.Sections.GatingAndScheduling.GatingConditionStore do
     }
 
     modal = fn assigns ->
-      ~F"""
-        <SelectResourceModal.render {...@modal_assigns} />
+      ~H"""
+      <SelectResourceModal.render {@modal_assigns} />
       """
     end
 
@@ -588,8 +588,8 @@ defmodule OliWeb.Delivery.Sections.GatingAndScheduling.GatingConditionStore do
     }
 
     modal = fn assigns ->
-      ~F"""
-        <DeleteModalNoConfirmation {...@modal_assigns} />
+      ~H"""
+      <DeleteModalNoConfirmation.render {@modal_assigns} />
       """
     end
 
