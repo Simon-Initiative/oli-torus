@@ -419,7 +419,7 @@ defmodule OliWeb.CommunityLiveTest do
 
       view
       |> element("#delete_community_modal form")
-      |> render_change(%{"community" => %{"name" => name}})
+      |> render_change(%{"name" => name})
 
       refute view
              |> element("#delete_community_modal form button")

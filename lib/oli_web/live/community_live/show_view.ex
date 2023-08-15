@@ -201,7 +201,7 @@ defmodule OliWeb.CommunityLive.ShowView do
     {:noreply, hide_modal(socket, modal_assigns: nil)}
   end
 
-  def handle_event("validate_name_for_deletion", %{"community" => %{"name" => name}}, socket) do
+  def handle_event("validate_name_for_deletion", %{"name" => name}, socket) do
     delete_enabled = name == socket.assigns.community.name
 
     {:noreply,
@@ -231,16 +231,7 @@ defmodule OliWeb.CommunityLive.ShowView do
 
     modal = fn assigns ->
       ~H"""
-      <DeleteModal.render
-        __context__={assigns[:__context_] || %{}}
-        id={@modal_assigns.id}
-        description={@modal_assigns.description}
-        entity_name={@modal_assigns.entity_name}
-        entity_type={@modal_assigns.entity_type}
-        delete_enabled={@modal_assigns.delete_enabled}
-        validate={@modal_assigns.validate}
-        delete={@modal_assigns.delete}
-      />
+      <DeleteModal.render {@modal_assigns} />
       """
     end
 

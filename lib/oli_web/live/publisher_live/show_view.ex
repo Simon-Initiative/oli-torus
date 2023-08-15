@@ -175,7 +175,7 @@ defmodule OliWeb.PublisherLive.ShowView do
 
     modal = fn assigns ->
       ~F"""
-        <DeleteModal {...@modal_assigns} />
+        <DeleteModal.render {...@modal_assigns} />
       """
     end
 
