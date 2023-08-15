@@ -83,7 +83,7 @@
             </div>
             <%= for error <- @edit_errors do %>
               <div class="alert alert-warning d-flex" role="alert">
-                <div class="flex-grow-1">{error}</div>
+                <div class="flex-grow-1"><%= error %></div>
                 <div>
                   <a href={@resource_schema.schema["$id"]} target="_blank">
                     JSON Schema <i class="fas fa-external-link-alt"></i>
