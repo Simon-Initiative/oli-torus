@@ -25,7 +25,12 @@ defmodule OliWeb.Common.TextSearch do
       />
       <%= if @text != "" do %>
         <div class="input-group-append">
-          <button class="btn btn-outline-secondary" phx-click={@reset} phx-value-id={@id}>
+          <button
+            class="btn btn-outline-secondary"
+            phx-click={@reset}
+            phx-target={@event_target}
+            phx-value-id={@id}
+          >
             <i class="fas fa-times"></i>
           </button>
         </div>

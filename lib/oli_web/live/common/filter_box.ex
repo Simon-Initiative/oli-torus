@@ -3,20 +3,21 @@ defmodule OliWeb.Common.FilterBox do
 
   alias Surface.Components.Form.{Field, RadioButton}
 
-  @doc "The main filter/search"
-  slot :default, required: true
-  @doc "Extra options that can be added next to search and/or sort"
-  slot :extra_opts
+  # "The main filter/search"
+  slot(:inner_block, required: true)
+  # "Extra options that can be added next to search and/or sort"
+  slot(:extra_opts)
 
-  attr :table_model, :map, required: true
-  attr :card_header_text, :string, default: "Select Curriculum"
+  attr(:table_model, :map, required: true)
+  attr(:card_header_text, :string, default: "Select Curriculum")
 
-  attr :card_body_text, :string,
+  attr(:card_body_text, :string,
     default: "Select a curriculum source to create your course section."
+  )
 
-  attr :show_sort, :boolean, default: true
-  attr :show_more_opts, :boolean, default: true
-  attr :sort, :any, default: nil
+  attr(:show_sort, :boolean, default: true)
+  attr(:show_more_opts, :boolean, default: true)
+  attr(:sort, :any, default: nil)
 
   def render(assigns) do
     ~H"""
