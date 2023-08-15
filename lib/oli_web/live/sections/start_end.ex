@@ -2,8 +2,6 @@ defmodule OliWeb.Sections.StartEnd do
   use OliWeb, :surface_component
   use OliWeb, :html
 
-  alias OliWeb.Common.FormatDateTime
-
   attr(:changeset, :any, required: true)
   attr(:disabled, :boolean, required: true)
   attr(:is_admin, :boolean, required: true)

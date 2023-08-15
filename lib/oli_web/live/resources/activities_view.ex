@@ -1,9 +1,9 @@
 defmodule OliWeb.Resources.ActivitiesView do
-  use Surface.LiveView, layout: {OliWeb.LayoutView, :live}
+  use OliWeb, :live_view
 
   import OliWeb.DelegatedEvents
   import OliWeb.Common.Params
-  import Oli.Authoring.Editing.Utils
+  import Oli.Authoring.Editing.Utils, except: [trap_nil: 1]
   alias Oli.Accounts
   alias OliWeb.Router.Helpers, as: Routes
   alias OliWeb.Common.{TextSearch, PagedTable, Breadcrumb, FilterBox}
@@ -13,12 +13,6 @@ defmodule OliWeb.Resources.ActivitiesView do
   alias OliWeb.Common.SessionContext
   alias OliWeb.Resources.ActivitiesTableModel
   alias Oli.Repo.{Paging, Sorting}
-
-  data(title, :string, default: "All Activities")
-  data(project, :any)
-  data(breadcrumbs, :list)
-  data(author, :any)
-  data(activities, :list)
 
   @limit 25
 
@@ -233,20 +227,26 @@ defmodule OliWeb.Resources.ActivitiesView do
     IO.iodata_to_binary(encoded)
   end
 
-  def render(assigns) do
-    ~F"""
-    <div id="activity_review" class="container mx-auto" phx-hook="ReviewActivity">
+  attr(:title, :string, default: "All Activities")
+  attr(:project, :any)
+  attr(:breadcrumbs, :list)
+  attr(:author, :any)
+  attr(:activities, :list)
 
+  def render(assigns) do
+    ~H"""
+    <div id="activity_review" class="container mx-auto" phx-hook="ReviewActivity">
       <FilterBox.render
         card_header_text="Browse All Activities"
         card_body_text=""
         table_model={@table_model}
         show_sort={false}
-        show_more_opts={false}>
-        <TextSearch.render id="text-search" text={@options.text_search}/>
+        show_more_opts={false}
+      >
+        <TextSearch.render id="text-search" text={@options.text_search} />
       </FilterBox.render>
 
-      <div class="mb-3"/>
+      <div class="mb-3" />
 
       <PagedTable.render
         allow_selection={true}
@@ -254,7 +254,8 @@ defmodule OliWeb.Resources.ActivitiesView do
         table_model={@table_model}
         total_count={@total_count}
         offset={@offset}
-        limit={limit()}/>
+        limit={limit()}
+      />
 
       <a href={Routes.activity_review_path(OliWeb.Endpoint, :index)}>Open Sync View</a>
     </div>

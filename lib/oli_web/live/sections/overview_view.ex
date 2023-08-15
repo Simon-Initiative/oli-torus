@@ -116,7 +116,7 @@ defmodule OliWeb.Sections.OverviewView do
   attr :section_has_student_data, :boolean
 
   def render(assigns) do
-    deployment = assigns.section.lti_1p3_deployment
+    assigns = assign(assigns, deployment: assigns.section.lti_1p3_deployment)
 
     ~H"""
     <%= render_modal(assigns) %>
@@ -130,15 +130,15 @@ defmodule OliWeb.Sections.OverviewView do
           show_copy_btn={true}
           value={Routes.page_delivery_url(OliWeb.Endpoint, :index, @section.slug)}
         />
-        <%= unless is_nil(deployment) do %>
+        <%= unless is_nil(@deployment) do %>
           <ReadOnly.render
             label="Institution"
             type={if @is_system_admin, do: "link"}
-            link_label={deployment.institution.name}
+            link_label={@deployment.institution.name}
             value={
               if @is_system_admin,
-                do: Routes.institution_path(OliWeb.Endpoint, :show, deployment.institution_id),
-                else: deployment.institution.name
+                do: Routes.institution_path(OliWeb.Endpoint, :show, @deployment.institution_id),
+                else: @deployment.institution.name
             }
           />
         <% end %>

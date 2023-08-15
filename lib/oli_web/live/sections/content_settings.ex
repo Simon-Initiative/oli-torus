@@ -1,8 +1,6 @@
 defmodule OliWeb.Sections.ContentSettings do
   use OliWeb, :html
 
-  import Ecto.Changeset
-
   alias OliWeb.Common.Properties.Group
 
   attr :changeset, :any, required: true

@@ -1,8 +1,6 @@
 defmodule OliWeb.Sections.MainDetails do
   use OliWeb, :html
 
-  import Ecto.Changeset
-
   attr(:changeset, :any, required: true)
   attr(:disabled, :boolean, required: true)
   attr(:is_admin, :boolean, required: true)

@@ -2,7 +2,6 @@ defmodule OliWeb.Sections.OpenFreeSettings do
   use OliWeb, :html
 
   alias OliWeb.Common.Properties.Group
-  import Ecto.Changeset
 
   attr(:changeset, :any, required: true)
   attr(:disabled, :boolean, required: true)

@@ -13,6 +13,8 @@ defmodule OliWeb.Sections.Invites.Invitation do
   end
 
   def do_render(assigns, active) do
+    assigns = assign(assigns, active: active)
+
     ~H"""
     <li class="list-group-item list-group-action flex-column align-items-start">
       <div class="d-flex w-100 justify-content-between">
@@ -43,7 +45,7 @@ defmodule OliWeb.Sections.Invites.Invitation do
           </button>
         </div>
       </div>
-      <%= if active do %>
+      <%= if @active do %>
         <p class="mb-1">
           Expires: <%= Utils.render_precise_date(@invitation, :date_expires, @ctx) %>
         </p>

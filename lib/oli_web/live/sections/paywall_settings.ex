@@ -2,7 +2,6 @@ defmodule OliWeb.Sections.PaywallSettings do
   use OliWeb, :html
 
   alias OliWeb.Common.Properties.Group
-  import Ecto.Changeset
   import Phoenix.HTML.Form, only: [normalize_value: 2]
 
   defp strategies do

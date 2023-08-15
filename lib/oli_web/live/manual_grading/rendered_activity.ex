@@ -2,6 +2,7 @@ defmodule OliWeb.ManualGrading.RenderedActivity do
   use OliWeb, :html
 
   attr :rendered_activity, :any, required: true
+  attr :id, :string, default: nil
 
   def render(%{rendered_activity: nil} = assigns) do
     ~H"""

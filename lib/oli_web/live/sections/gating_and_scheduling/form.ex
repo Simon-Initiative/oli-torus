@@ -268,27 +268,30 @@ defmodule OliWeb.Sections.GatingAndScheduling.Form do
       |> Map.get(:end_datetime)
       |> convert_datetime(ctx)
 
+    assigns =
+      assign(assigns, initial_start_date: initial_start_date, initial_end_date: initial_end_date)
+
     ~H"""
     <div class="form-group">
-      <label for="conditionTypeSelect">Start Date <small>(<%= ctx.local_tz %>)</small></label>
+      <label for="conditionTypeSelect">Start Date <small>(<%= @ctx.local_tz %>)</small></label>
       <div
         id="start_date"
         phx-hook="DateTimeLocalInputListener"
         phx-value-change="schedule_start_date_changed"
         phx-update="ignore"
       >
-        <input type="datetime-local" class="form-control" value={initial_start_date} />
+        <input type="datetime-local" class="form-control" value={@initial_start_date} />
       </div>
     </div>
     <div class="form-group">
-      <label for="conditionTypeSelect">End Date <small>(<%= ctx.local_tz %>)</small></label>
+      <label for="conditionTypeSelect">End Date <small>(<%= @ctx.local_tz %>)</small></label>
       <div
         id="end_date"
         phx-hook="DateTimeLocalInputListener"
         phx-value-change="schedule_end_date_changed"
         phx-update="ignore"
       >
-        <input type="datetime-local" class="form-control" value={initial_end_date} />
+        <input type="datetime-local" class="form-control" value={@initial_end_date} />
       </div>
     </div>
     """
@@ -320,7 +323,7 @@ defmodule OliWeb.Sections.GatingAndScheduling.Form do
     """
   end
 
-  def render_condition_options(%{gating_condition: %{type: :finished, data: data}} = assigns) do
+  def render_condition_options(%{gating_condition: %{type: :finished, data: _data}} = assigns) do
     ~H"""
     <div class="form-group">
       <label for="source">Resource That Must Be Finished</label>
@@ -350,7 +353,7 @@ defmodule OliWeb.Sections.GatingAndScheduling.Form do
         type="checkbox"
         value=""
         id="min-score"
-        checked={checked_from_min_score(data)}
+        checked={checked_from_min_score(@data)}
         phx-click="toggle_min_score"
       />
       <label class="form-check-label" for="min-score">
@@ -363,10 +366,10 @@ defmodule OliWeb.Sections.GatingAndScheduling.Form do
           type="number"
           class="form-control"
           id="min-score-value"
-          disabled={!checked_from_min_score(data)}
+          disabled={!checked_from_min_score(@data)}
           min="0"
           max="100"
-          value={value_from_min_score(data)}
+          value={value_from_min_score(@data)}
           phx-hook="TextInputListener"
           phx-value-change="change_min_score"
         />
