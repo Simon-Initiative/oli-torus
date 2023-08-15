@@ -1,12 +1,12 @@
 defmodule OliWeb.Sections.GatingAndScheduling do
-  use Surface.LiveView, layout: {OliWeb.LayoutView, :live}
+  use OliWeb, :live_view
+
   import OliWeb.DelegatedEvents
   import OliWeb.Common.Params
 
   alias OliWeb.Router.Helpers, as: Routes
   alias Oli.Repo.{Paging, Sorting}
   alias OliWeb.Common.Table.SortableTableModel
-  alias Surface.Components.{Link}
   alias OliWeb.Sections.Mount
   alias OliWeb.Common.{TextSearch, PagedTable, Breadcrumb}
   alias Oli.Delivery.Gating
@@ -186,24 +186,25 @@ defmodule OliWeb.Sections.GatingAndScheduling do
   end
 
   def render(assigns) do
-    ~F"""
+    ~H"""
     <div class="container">
       <div class="d-flex">
-        <TextSearch.render id="text-search"/>
+        <TextSearch.render id="text-search" />
         <div class="flex-grow-1"></div>
-        <Link class="btn btn-primary ml-2" to={link_new(assigns)}>
-          <i class="fas fa-plus"></i> New {render_type(assigns)}
-        </Link>
+        <.link class="btn btn-primary ml-2" href={link_new(assigns)}>
+          <i class="fas fa-plus"></i> New <%= render_type(assigns) %>
+        </.link>
       </div>
 
-      <div class="mb-3"/>
+      <div class="mb-3" />
 
       <PagedTable.render
         filter={@text_search}
         table_model={@table_model}
         total_count={@total_count}
         offset={@offset}
-        limit={@limit}/>
+        limit={@limit}
+      />
     </div>
     """
   end
