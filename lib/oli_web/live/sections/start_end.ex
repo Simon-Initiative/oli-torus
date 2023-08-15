@@ -1,5 +1,4 @@
 defmodule OliWeb.Sections.StartEnd do
-  use OliWeb, :surface_component
   use OliWeb, :html
 
   attr(:changeset, :any, required: true)
