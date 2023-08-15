@@ -1,7 +1,7 @@
 defmodule OliWeb.Projects.PublishView do
-  use Surface.LiveView, layout: {OliWeb.LayoutView, :live}
-  use OliWeb.Common.SortableTable.TableHandlers
+  use OliWeb, :live_view
   use OliWeb.Common.Modal
+  use OliWeb.Common.SortableTable.TableHandlers
 
   import Oli.Utils, only: [trap_nil: 1, log_error: 2]
 
@@ -19,15 +19,6 @@ defmodule OliWeb.Projects.PublishView do
   }
 
   alias OliWeb.Router.Helpers, as: Routes
-
-  data(auto_update_sections, :boolean, default: false)
-  data(limit, :integer, default: 10)
-  data(modal, :any, default: nil)
-  data(offset, :integer, default: 0)
-  data(page_change, :string, default: "page_change")
-  data(query, :string, default: "")
-  data(show_bottom_paging, :boolean, default: false)
-  data(sort, :string, default: "sort")
 
   @table_filter_fn &__MODULE__.filter_rows/3
   @table_push_patch_path &__MODULE__.live_path/2
@@ -126,75 +117,105 @@ defmodule OliWeb.Projects.PublishView do
        project: project,
        push_affected: push_affected,
        table_model: table_model,
-       version_change: version_change
+       version_change: version_change,
+       limit: 10
      )}
   end
 
+  attr(:auto_update_sections, :boolean, default: false)
+  attr(:limit, :integer, default: 10)
+  attr(:modal, :any, default: nil)
+  attr(:offset, :integer, default: 0)
+  attr(:page_change, :string, default: "page_change")
+  attr(:query, :string, default: "")
+  attr(:show_bottom_paging, :boolean, default: false)
+  attr(:sort, :string, default: "sort")
+
   def render(assigns) do
-    ~F"""
-      {render_modal(assigns)}
-      <div class="publish container">
-        <div class="flex flex-row">
-          <div class="flex-1">
-            <PublicationDetails.render
+    ~H"""
+    <%= render_modal(assigns) %>
+    <div class="publish container">
+      <div class="flex flex-row">
+        <div class="flex-1">
+          <PublicationDetails.render
+            active_publication_changes={@active_publication_changes}
+            ctx={@ctx}
+            has_changes={@has_changes}
+            latest_published_publication={@latest_published_publication}
+            parent_pages={@parent_pages}
+            project={@project}
+          />
+
+          <%= if @has_changes do %>
+            <VersioningDetails.render
+              active_publication={@active_publication}
               active_publication_changes={@active_publication_changes}
-              ctx={@ctx}
+              auto_update_sections={@auto_update_sections}
+              changeset={@changeset}
+              form_changed="form_changed"
               has_changes={@has_changes}
               latest_published_publication={@latest_published_publication}
-              parent_pages={@parent_pages}
               project={@project}
+              publish_active="publish_active"
+              push_affected={@push_affected}
+              version_change={@version_change}
             />
+          <% end %>
 
-            {#if @has_changes}
-              <VersioningDetails
-                id="versioning-details"
-                active_publication={@active_publication}
-                active_publication_changes={@active_publication_changes}
-                changeset={@changeset}
-                has_changes={@has_changes}
-                latest_published_publication={@latest_published_publication}
-                project={@project}
-                publish_active="publish_active"
-                push_affected={@push_affected}
-                version_change={@version_change}
+          <hr class="mt-3 mb-5" />
+          <%= if length(@active_sections) > 0 do %>
+            <h5>This project has <%= length(@active_sections) %> active course sections</h5>
+            <div id="active-course-sections-table">
+              <Listing.render
+                filter={@query}
+                limit={@limit}
+                offset={@offset}
+                page_change={@page_change}
+                show_bottom_paging={@show_bottom_paging}
+                sort={@sort}
+                table_model={@table_model}
+                total_count={length(@active_sections)}
               />
-            {/if}
-
-            <hr class="mt-3 mb-5">
-            {#if length(@active_sections) > 0}
-              <h5>This project has {length(@active_sections)} active course sections</h5>
-              <div id="active-course-sections-table">
-                <Listing.render
-                  filter={@query}
-                  limit={@limit}
-                  offset={@offset}
-                  page_change={@page_change}
-                  show_bottom_paging={@show_bottom_paging}
-                  sort={@sort}
-                  table_model={@table_model}
-                  total_count={length(@active_sections)}
-                />
-              </div>
-            {#else}
-              <h5>This project has no active course sections</h5>
-            {/if}
-          </div>
+            </div>
+          <% else %>
+            <h5>This project has no active course sections</h5>
+          <% end %>
         </div>
       </div>
+    </div>
     """
   end
 
-  def handle_event("publish_active", %{"publication" => publication}, socket) do
+  def handle_event(
+        "form_changed",
+        %{"auto_push_update" => auto_push_update, "description" => description},
+        socket
+      ) do
+    {:noreply,
+     assign(socket,
+       auto_update_sections: string_to_bool(auto_push_update),
+       description: description
+     )}
+  end
+
+  def handle_event(
+        "publish_active",
+        %{
+          "active_publication_id" => active_publication_id,
+          "auto_push_update" => auto_push_update,
+          "description" => description
+        },
+        socket
+      ) do
     project = socket.assigns.project
 
-    with {:ok, description} <- Map.get(publication, "description") |> trap_nil(),
-         {active_publication_id, ""} <-
-           Map.get(publication, "active_publication_id") |> Integer.parse(),
+    with {:ok, description} <- description |> trap_nil(),
+         {active_publication_id, ""} <- active_publication_id |> Integer.parse(),
          {:ok} <- check_active_publication_id(project.slug, active_publication_id),
          previous_publication <-
            Publishing.get_latest_published_publication_by_slug(project.slug),
          {:ok, new_publication} <- Publishing.publish_project(project, description) do
-      if Map.get(publication, "auto_push_update") == "true" do
+      if auto_push_update == "true" do
         Publishing.push_publication_update_to_sections(
           project,
           previous_publication,
@@ -228,8 +249,8 @@ defmodule OliWeb.Projects.PublishView do
     }
 
     modal = fn assigns ->
-      ~F"""
-        <LtiConnectInstructions.render {...@modal_assigns} />
+      ~H"""
+      <LtiConnectInstructions.render {@modal_assigns} />
       """
     end
 
@@ -250,4 +271,7 @@ defmodule OliWeb.Projects.PublishView do
       {:error, "publication id does not match the active publication"}
     end
   end
+
+  defp string_to_bool("true"), do: true
+  defp string_to_bool(_), do: false
 end

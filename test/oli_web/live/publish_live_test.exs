@@ -297,9 +297,7 @@ defmodule OliWeb.PublishLiveTest do
 
       view
       |> element("form#versioning-details-form")
-      |> render_change(%{
-        "publication" => %{"auto_push_update" => "true", "description" => "some description"}
-      })
+      |> render_change(%{"auto_push_update" => "true", "description" => "some description"})
 
       assert has_element?(view, "li", "#{push_affected.product_count} product(s)")
       assert has_element?(view, "li", "#{push_affected.section_count} course section(s)")
@@ -316,9 +314,7 @@ defmodule OliWeb.PublishLiveTest do
 
       view
       |> element("form#versioning-details-form")
-      |> render_change(%{
-        "publication" => %{"auto_push_update" => "true", "description" => "some description"}
-      })
+      |> render_change(%{"auto_push_update" => "true", "description" => "some description"})
 
       assert view
              |> element("div.alert.alert-warning")
