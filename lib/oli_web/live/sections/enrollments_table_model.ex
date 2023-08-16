@@ -3,6 +3,7 @@ defmodule OliWeb.Delivery.Sections.EnrollmentsTableModel do
   alias OliWeb.Router.Helpers, as: Routes
   alias OliWeb.Common.Utils
   alias OliWeb.Common.FormatDateTime
+  alias Lti_1p3.Tool.ContextRoles
 
   use Phoenix.Component
 
@@ -14,30 +15,53 @@ defmodule OliWeb.Delivery.Sections.EnrollmentsTableModel do
 
   def new(users, section, ctx) do
     column_specs =
-      [
-        %ColumnSpec{
-          name: :name,
-          label: "STUDENT NAME",
-          render_fn: &__MODULE__.render_name_column/3,
-          sort_fn: &__MODULE__.sort_name_column/2,
-          th_class: "pl-10"
-        },
-        %ColumnSpec{
-          name: :last_interaction,
-          label: "LAST INTERACTED",
-          render_fn: &__MODULE__.render_last_interaction_column/3
-        },
-        %ColumnSpec{
-          name: :progress,
-          label: "COURSE PROGRESS",
-          render_fn: &__MODULE__.render_progress_column/3
-        },
-        %ColumnSpec{
-          name: :overall_proficiency,
-          label: "OVERALL COURSE PROFICIENCY",
-          render_fn: &__MODULE__.render_overall_proficiency_column/3
-        }
-      ] ++
+      if is_nil(Map.get(ctx, :author)) do
+        [
+          %ColumnSpec{
+            name: :name,
+            label: "STUDENT NAME",
+            render_fn: &__MODULE__.render_name_column/3,
+            sort_fn: &__MODULE__.sort_name_column/2,
+            th_class: "pl-10"
+          },
+          %ColumnSpec{
+            name: :last_interaction,
+            label: "LAST INTERACTED",
+            render_fn: &__MODULE__.render_last_interaction_column/3
+          },
+          %ColumnSpec{
+            name: :progress,
+            label: "COURSE PROGRESS",
+            render_fn: &__MODULE__.render_progress_column/3
+          },
+          %ColumnSpec{
+            name: :overall_proficiency,
+            label: "OVERALL COURSE PROFICIENCY",
+            render_fn: &__MODULE__.render_overall_proficiency_column/3
+          }
+        ]
+      else
+        [
+          %ColumnSpec{
+            name: :name,
+            label: "Name",
+            render_fn: &__MODULE__.render_name_column/3,
+            sort_fn: &__MODULE__.sort_name_column/2,
+            th_class: "pl-10"
+          },
+          %ColumnSpec{
+            name: :email,
+            label: "Email",
+            render_fn: &__MODULE__.render_email_column/3
+          },
+          %ColumnSpec{
+            name: :type,
+            label: "Type",
+            render_fn: &__MODULE__.render_type_column/3,
+            sortable: false
+          }
+        ]
+      end ++
         if section.requires_payment do
           [
             %ColumnSpec{
@@ -116,7 +140,7 @@ defmodule OliWeb.Delivery.Sections.EnrollmentsTableModel do
       <div class={"flex flex-shrink-0 rounded-full w-2 h-2 #{if @progress < 50, do: "bg-red-600", else: "bg-gray-500"}"}>
       </div>
       <.link class="ml-6 underline" navigate={@link}>
-        <%= Utils.name(@name, @given_name, @family_name) %>
+        <%= if @name, do: Utils.name(@name, @given_name, @family_name), else: "N/A" %>
       </.link>
     </div>
     """
@@ -175,6 +199,30 @@ defmodule OliWeb.Delivery.Sections.EnrollmentsTableModel do
     <div class={if @overall_proficiency == "Low", do: "text-red-600 font-bold"}>
       <%= @overall_proficiency %>
     </div>
+    """
+  end
+
+  def render_email_column(assigns, user, _) do
+    assigns = Map.merge(assigns, %{email: Map.get(user, :email)})
+
+    ~H"""
+    <div><%= @email %></div>
+    """
+  end
+
+  def render_type_column(assigns, user, _) do
+    assigns =
+      Map.merge(assigns, %{
+        type:
+          if(
+            user.context_role_id == ContextRoles.get_role(:context_instructor).id,
+            do: "Instructor",
+            else: "Student"
+          )
+      })
+
+    ~H"""
+    <div><%= @type %></div>
     """
   end
 

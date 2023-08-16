@@ -1,9 +1,23 @@
+import { Model } from 'data/content/model/elements/factories';
 import { getEffectiveColumns } from '../../../src/components/editing/editor/normalizers/tables';
 import { Table } from '../../../src/data/content/model/elements/types';
+import { expectAnyEmptyParagraph, expectAnyId, runNormalizer } from '../normalize-test-utils';
 import { generateRow } from './table-test-util';
 
 describe('Table normalization', () => {
   describe('getEffectiveColumns', () => {
+    it('should not error on row not in table', () => {
+      const error = jest.spyOn(console, 'error').mockImplementation((...args) => {});
+      const table: Table = {
+        type: 'table',
+        id: 'T',
+        children: [generateRow([{}, {}, {}])],
+      };
+      const row = generateRow([{}, {}, {}]);
+      error.mockRestore();
+      expect(getEffectiveColumns(row, table)).toEqual(0);
+    });
+
     it('should return the correct number of columns for basic cells', () => {
       // No colspan/rowspan entries
       const table: Table = {
@@ -58,5 +72,28 @@ describe('Table normalization', () => {
       // which has colspans 3,1,1 for a total of 3+1+1+3=8
       expect(getEffectiveColumns(row, table)).toEqual(8);
     });
+  });
+
+  it('should add missing cells to rows', () => {
+    const original = [
+      Model.p(),
+      Model.table([
+        Model.tr([Model.td('0')]),
+        Model.tr([Model.td('A'), Model.td('B')]),
+        Model.tr([Model.td('1')]),
+      ]),
+      Model.p(),
+    ];
+    const expected = expectAnyId([
+      expectAnyEmptyParagraph,
+      Model.table([
+        Model.tr([Model.td('0'), Model.td('')]),
+        Model.tr([Model.td('A'), Model.td('B')]),
+        Model.tr([Model.td('1'), Model.td('')]),
+      ]),
+      expectAnyEmptyParagraph,
+    ]);
+    const { editor } = runNormalizer(original as any);
+    expect(editor.children).toEqual(expected);
   });
 });

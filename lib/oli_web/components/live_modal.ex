@@ -14,6 +14,7 @@ defmodule OliWeb.Components.LiveModal do
          class: assigns[:class] || "",
          on_confirm: assigns[:on_confirm],
          on_confirm_label: assigns[:on_confirm_label] || "Confirm",
+         on_confirm_disabled: assigns[:on_confirm_disabled] || false,
          on_cancel: assigns[:on_cancel],
          on_cancel_label: assigns[:on_cancel_label] || "Cancel",
          show_actions: !is_nil(assigns[:on_confirm]) || !is_nil(assigns[:on_cancel])
@@ -24,6 +25,7 @@ defmodule OliWeb.Components.LiveModal do
   attr :title, :string
   attr :class, :string, default: ""
   attr :on_confirm, :string
+  attr :on_confirm_disabled, :boolean, default: false
   attr :on_confirm_label, :string, default: "Confirm"
   attr :on_cancel, :string
   attr :on_cancel_label, :string, default: "Cancel"
@@ -52,7 +54,7 @@ defmodule OliWeb.Components.LiveModal do
                     </button>
                   <% end %>
                   <%= if @on_confirm do %>
-                    <button phx-click={@on_confirm} class="torus-button primary">
+                    <button disabled={@on_confirm_disabled} phx-click={@on_confirm} class="torus-button primary">
                       <%= @on_confirm_label %>
                     </button>
                   <% end %>

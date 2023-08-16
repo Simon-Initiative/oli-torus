@@ -96,6 +96,53 @@ defmodule Oli.SectionsTest do
       assert ContextRoles.has_role?(user1, section.slug, ContextRoles.get_role(:context_learner))
     end
 
+    test "enroll/3 upserts correctly for multiple users", %{
+      section: section,
+      user1: user1,
+      user2: user2
+    } do
+      assert Sections.list_enrollments(section.slug) == []
+
+      # Enroll a user as instructor
+      Sections.enroll([user1.id, user2.id], section.id, [
+        ContextRoles.get_role(:context_instructor)
+      ])
+
+      assert ContextRoles.has_role?(
+               user1,
+               section.slug,
+               ContextRoles.get_role(:context_instructor)
+             )
+
+      assert ContextRoles.has_role?(
+               user2,
+               section.slug,
+               ContextRoles.get_role(:context_instructor)
+             )
+
+      # Now enroll again as same role, this should be idempotent
+      Sections.enroll([user1.id, user2.id], section.id, [
+        ContextRoles.get_role(:context_instructor)
+      ])
+
+      assert ContextRoles.has_role?(
+               user1,
+               section.slug,
+               ContextRoles.get_role(:context_instructor)
+             )
+
+      assert ContextRoles.has_role?(
+               user2,
+               section.slug,
+               ContextRoles.get_role(:context_instructor)
+             )
+
+      # Now enroll again with different role, this should update the role
+      Sections.enroll([user1.id, user2.id], section.id, [ContextRoles.get_role(:context_learner)])
+      assert ContextRoles.has_role?(user1, section.slug, ContextRoles.get_role(:context_learner))
+      assert ContextRoles.has_role?(user2, section.slug, ContextRoles.get_role(:context_learner))
+    end
+
     test "unenroll/3 removes context roles", %{section: section, user1: user1} do
       Sections.enroll(user1.id, section.id, [
         ContextRoles.get_role(:context_instructor),

@@ -58,7 +58,9 @@ defmodule Oli.Delivery.Sections.BlueprintTest do
           context_id: UUID.uuid4(),
           institution_id: institution.id,
           base_project_id: project.id,
-          publisher_id: project.publisher_id
+          publisher_id: project.publisher_id,
+          skip_email_verification: true,
+          requires_enrollment: true
         })
         |> then(fn {:ok, section} -> section end)
         |> Sections.create_section_resources(initial_pub)
@@ -66,6 +68,9 @@ defmodule Oli.Delivery.Sections.BlueprintTest do
       {:ok, %{id: id} = duplicate} = Blueprint.duplicate(section)
 
       assert duplicate.type == :blueprint
+      assert duplicate.skip_email_verification == true
+      assert duplicate.registration_open == true
+      assert duplicate.requires_enrollment == true
       refute duplicate.id == section.id
       refute duplicate.slug == section.slug
       refute duplicate.root_section_resource_id == section.root_section_resource_id

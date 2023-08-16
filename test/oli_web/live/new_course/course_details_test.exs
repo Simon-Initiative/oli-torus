@@ -2,6 +2,7 @@ defmodule OliWeb.NewCourse.CourseDetailsTest do
   use ExUnit.Case, async: true
   use OliWeb.ConnCase
 
+  import Ecto.Query, warn: false
   import Phoenix.LiveViewTest
 
   @live_view_admin_route Routes.select_source_path(OliWeb.Endpoint, :admin)
@@ -289,7 +290,9 @@ defmodule OliWeb.NewCourse.CourseDetailsTest do
     end
 
     test "successfully creates a section from a product", %{conn: conn} = context do
-      %{section: section} = create_source(context, %{type: :blueprint})
+      %{section: section} =
+        create_source(context, %{type: :blueprint, contains_explorations: true})
+
       {:ok, view, _html} = live(conn, @live_view_lms_instructor_route)
 
       select_source(:instructor, view, section)
@@ -305,6 +308,13 @@ defmodule OliWeb.NewCourse.CourseDetailsTest do
         },
         "current_step" => 3
       })
+
+      blueprint_section =
+        Oli.Delivery.Sections.Section
+        |> where([s], s.blueprint_id == ^section.id)
+        |> Oli.Repo.one()
+
+      assert blueprint_section.contains_explorations == true
 
       flash = assert_redirect(view, Routes.delivery_path(OliWeb.Endpoint, :index))
       assert flash["info"] == "Section successfully created."

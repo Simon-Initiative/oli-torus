@@ -78,7 +78,7 @@ type SubElements = DefinitionMeaning | Pronunciation | DefinitionTranslation | D
 export type TableCell = TableHeader | TableData | TableConjugation;
 
 type HeadingChildren = Text[];
-export interface Paragraph extends SlateElement<(InputRef | Text | ImageBlock)[]> {
+export interface Paragraph extends SlateElement<(InputRef | Text | ImageBlock | Inline)[]> {
   type: 'p';
 }
 
@@ -144,7 +144,7 @@ export type OrderedListStyle = typeof OrderedListStyles[number];
 export const UnorderdListStyles = ['none', 'disc', 'circle', 'square'];
 export type UnorderedListStyle = typeof UnorderdListStyles[number];
 
-type ListChildren = (ListItem | OrderedList | UnorderedList | Text)[];
+export type ListChildren = (ListItem | OrderedList | UnorderedList | Text)[];
 
 export interface OrderedList extends SlateElement<ListChildren> {
   type: 'ol';

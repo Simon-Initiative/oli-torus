@@ -29,6 +29,7 @@ export const DragCanvas: React.FC<DragCanvasProps> = (props: DragCanvasProps) =>
   // part attempt guids.
   useEffect(() => {
     updateDropHandler(id, props);
+    updateRootDropHandler(id, props);
   }, [props.activityAttemptGuid]);
 
   useEffect(() => {
@@ -171,6 +172,32 @@ function updateDropHandler(id: string, props: DragCanvasProps) {
   });
 }
 
+function updateRootDropHandler(id: string, props: DragCanvasProps) {
+  const shadowRoot = (document.getElementById(id) as any).shadowRoot;
+
+  const rootDropHandler = (ev: DragEvent) => {
+    if (ev !== null) {
+      const inputVal = (ev as any).dataTransfer.getData('text/plain');
+      const initiatorsWrapper = shadowRoot.getElementById('input-source');
+      shadowRoot.querySelectorAll('.initiator').forEach((element: HTMLElement) => {
+        if (element.getAttribute('input_val') === inputVal) {
+          const parentTargetId = getParentTargetId(element);
+          if (parentTargetId) {
+            props.onDetach(parentTargetId, inputVal);
+            initiatorsWrapper.appendChild(element);
+          }
+        }
+      });
+    }
+  };
+
+  if (shadowRoot.previousHandler) {
+    shadowRoot.removeEventListener('drop', shadowRoot.previousHandler);
+  }
+  shadowRoot.previousHandler = rootDropHandler;
+  shadowRoot.addEventListener('drop', rootDropHandler);
+}
+
 function setEditMode(editMode: boolean, id: string) {
   const shadowRoot = (document.getElementById(id) as any).shadowRoot;
   shadowRoot.querySelectorAll('.initiator').forEach((element: any) => {
@@ -191,6 +218,7 @@ function renderRawContent(id: string, props: DragCanvasProps) {
   targetWrapper.innerHTML = model.targetArea;
 
   const initiatorsWrapper = document.createElement('div');
+  initiatorsWrapper.id = 'input-source';
   initiatorsWrapper.className = 'input_source';
   initiatorsWrapper.innerHTML = model.initiators;
 
@@ -224,21 +252,6 @@ function renderRawContent(id: string, props: DragCanvasProps) {
     if (ev !== null) {
       (ev as any).dataTransfer.setData('text/plain', (ev as any).target.input_val);
       (ev as any).dataTransfer.dropEffect = 'move';
-    }
-  };
-
-  const rootDropHandler = (ev: DragEvent) => {
-    if (ev !== null) {
-      const inputVal = (ev as any).dataTransfer.getData('text/plain');
-      shadowRoot.querySelectorAll('.initiator').forEach((element: HTMLElement) => {
-        if (element.getAttribute('input_val') === inputVal) {
-          const parentTargetId = getParentTargetId(element);
-          if (parentTargetId) {
-            props.onDetach(parentTargetId, inputVal);
-            initiatorsWrapper.appendChild(element);
-          }
-        }
-      });
     }
   };
 
@@ -288,8 +301,6 @@ function renderRawContent(id: string, props: DragCanvasProps) {
     element.addEventListener('dragover', dragOverHandler);
     element.addEventListener('click', targetClickHandler);
   });
-
-  shadow.addEventListener('drop', rootDropHandler);
 
   props.onRegisterResetCallback(() => {
     const inputRoot = shadowRoot.querySelector('.input_source');

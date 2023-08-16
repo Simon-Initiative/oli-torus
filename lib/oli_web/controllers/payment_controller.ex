@@ -3,11 +3,9 @@ defmodule OliWeb.PaymentController do
   require Logger
   alias Oli.Delivery.Paywall
   alias Oli.Delivery.Paywall.AccessSummary
-  alias Oli.Grading
   alias Oli.Delivery.Sections
   alias OliWeb.Common.SessionContext
   alias OliWeb.Common.FormatDateTime
-
 
   @doc """
   Render the page to show a student that they do not have access because
@@ -33,7 +31,7 @@ defmodule OliWeb.PaymentController do
 
       {:ok, amount} = Money.to_string(section.amount)
 
-      instructors = Grading.fetch_instructors(section.slug)
+      instructors = Sections.fetch_instructors(section.slug)
       |> Enum.reduce([], fn a, m ->
         m ++ [a.name]
       end)

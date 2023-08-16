@@ -19,7 +19,7 @@ export const HintsTab: React.FC<Props> = (props) => {
       hints={Hints.byPart(model, props.input.partId)}
       updateOne={(id, content) => dispatch(Hints.setContent(id, content as RichText))}
       addOne={() => dispatch(Hints.addOne(makeHint(''), props.input.partId))}
-      removeOne={(id) => dispatch(Hints.removeOne(id))}
+      removeOne={(id) => dispatch(Hints.removeOne(id, props.input.partId))}
       placeholder="Hint"
       title={partTitle(props.input, props.index)}
     />

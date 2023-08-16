@@ -231,7 +231,7 @@ defmodule OliWeb.Sections.OverviewView do
               }
               class="btn btn-link"
             >
-              Manage Enrolled Students
+              Manage Enrollments
             </a>
           </li>
           <%= if @section.open_and_free do %>

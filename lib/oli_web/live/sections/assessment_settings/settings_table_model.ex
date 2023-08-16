@@ -156,7 +156,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTableModel do
       phx-click={@on_edit_date}
       phx-value-assessment_id={@id}
     >
-      <%= if @due_date do %>
+      <%= if @due_date != nil and @scheduling_type == :due_by do %>
         <%= value_from_datetime(@due_date, @ctx) %>
       <% else %>
         No due date
