@@ -3,7 +3,8 @@ import { Descendant } from 'slate';
 import { ErrorBoundary } from 'components/common/ErrorBoundary';
 import { Editor } from 'components/editing/editor/Editor';
 import { CommandDescription } from 'components/editing/elements/commands/interfaces';
-import { StructuredContent } from 'data/content/resource';
+import { MarkdownEditor } from 'components/editing/markdown_editor/MarkdownEditor';
+import { DEFAULT_EDITOR, StructuredContent } from 'data/content/resource';
 import { ProjectSlug, ResourceSlug } from 'data/types';
 import { slateFixer } from './SlateFixer';
 
@@ -32,18 +33,46 @@ export const StructuredContentEditor = ({
     [contentItem, onEdit],
   );
 
-  const [value] = React.useState(slateFixer(contentItem));
+  const changeEditor = (editor: 'markdown' | 'slate') => (_e: any) => {
+    onEdit({
+      ...contentItem,
+      editor,
+    });
+  };
 
-  return (
-    <ErrorBoundary>
-      <Editor
-        className="structured-content"
-        commandContext={{ projectSlug: projectSlug, resourceSlug: resourceSlug }}
-        editMode={editMode}
-        value={value.children}
-        onEdit={onSlateEdit}
-        toolbarInsertDescs={toolbarInsertDescs}
-      />
-    </ErrorBoundary>
-  );
+  const [value] = React.useState(slateFixer(contentItem));
+  const editorType = contentItem.editor || DEFAULT_EDITOR;
+
+  if (editorType === 'markdown') {
+    return (
+      <ErrorBoundary>
+        <button className="btn" onClick={changeEditor('slate')}>
+          Switch to slate
+        </button>
+        <MarkdownEditor
+          className="structured-content"
+          commandContext={{ projectSlug: projectSlug, resourceSlug: resourceSlug }}
+          editMode={editMode}
+          value={value.children}
+          onEdit={onSlateEdit}
+        />
+      </ErrorBoundary>
+    );
+  } else {
+    return (
+      <ErrorBoundary>
+        <button className="btn" onClick={changeEditor('markdown')}>
+          Switch to markdown
+        </button>
+        <Editor
+          className="structured-content"
+          commandContext={{ projectSlug: projectSlug, resourceSlug: resourceSlug }}
+          editMode={editMode}
+          value={value.children}
+          onEdit={onSlateEdit}
+          toolbarInsertDescs={toolbarInsertDescs}
+        />
+      </ErrorBoundary>
+    );
+  }
 };

@@ -250,7 +250,10 @@ export interface StructuredContent {
   type: 'content';
   id: string;
   children: ModelElement[];
+  editor?: 'slate' | 'markdown';
 }
+
+export const DEFAULT_EDITOR = 'slate';
 
 export interface ActivityBankSelection {
   type: 'selection';
