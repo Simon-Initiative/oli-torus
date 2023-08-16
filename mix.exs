@@ -123,9 +123,7 @@ defmodule Oli.MixProject do
   defp elixirc_options(:dev), do: []
   defp elixirc_options(:test), do: []
 
-  # TODO: RE-ENABLE ONCE SURFACE DEPENDENCIES ARE REMOVED AND WARNINGS ARE FIXED [MER-2417]
-  # defp elixirc_options(_), do: [warnings_as_errors: true]
-  defp elixirc_options(_), do: []
+  defp elixirc_options(_), do: [warnings_as_errors: true]
 
   # Specifies your project dependencies.
   #

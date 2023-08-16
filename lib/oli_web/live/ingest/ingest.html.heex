@@ -9,7 +9,7 @@
       <MonacoEditor.render
         id="schema_errors"
         language="json"
-        height={500}
+        height="500"
         default_value={get_json(@error) |> Jason.encode!() |> Jason.Formatter.pretty_print()}
         validate_schema_uri={get_schema(@error).schema["$id"]}
       />

@@ -51,7 +51,6 @@ defmodule OliWeb.Common.FilterBox do
                         type="checkbox"
                         name="sort_order"
                         class="hidden"
-                        opts="hidden: true"
                         value={if @table_model.sort_order == :desc, do: "asc", else: "desc"}
                       />
                       <i class={"fa fa-sort-amount-#{if @table_model.sort_order == :desc, do: "up", else: "down"}"} />
