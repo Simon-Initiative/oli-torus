@@ -1,5 +1,5 @@
 defmodule OliWeb.Delivery.NewCourse.SelectSource do
-  use Phoenix.LiveComponent
+  use OliWeb, :live_component
 
   alias Oli.Delivery
   alias Oli.Delivery.Sections.Blueprint
@@ -9,8 +9,6 @@ defmodule OliWeb.Delivery.NewCourse.SelectSource do
   alias OliWeb.Router.Helpers, as: Routes
 
   alias Phoenix.LiveView.JS
-
-  alias Surface.Components.Form.{Field, RadioButton}
 
   @default_params %{
     offset: 0,
@@ -84,6 +82,8 @@ defmodule OliWeb.Delivery.NewCourse.SelectSource do
 
   @spec render(any) :: Phoenix.LiveView.Rendered.t()
   def render(assigns) do
+    assigns = assign(assigns, :changeset, to_form(%{}, as: :view))
+
     ~H"""
     <div class="w-full">
       <FilterBox.render
@@ -102,32 +102,34 @@ defmodule OliWeb.Delivery.NewCourse.SelectSource do
           <div class="flex flex-row justify-end border-l border-l-gray-200 pl-4">
             <.form
               id="update_view_type"
-              for={:view}
+              for={@changeset}
               phx-change="update_view_type"
               phx-target={@myself}
             >
-              <Field.render name={:type} class="control w-100 d-flex align-items-center">
+              <div name={:type} class="control w-100 d-flex align-items-center">
                 <div class="flex text-white dark:text-delivery-body-color-dark">
                   <label class={"#{if @view_type == :card, do: "shadow-inner bg-delivery-primary-200 text-white", else: "shadow bg-white dark:bg-gray-600 text-black dark:text-white"} cursor-pointer text-center block rounded-l-sm py-1 h-8 w-10"}>
-                    <RadioButton.render
+                    <.input
+                      field={@changeset[:type]}
+                      type="radio"
                       class="hidden"
                       value="card"
                       checked={@view_type == :card}
-                      opts="hidden: true"
                     />
                     <i class="fa fa-th" />
                   </label>
                   <label class={"#{if @view_type == :list, do: "shadow-inner bg-delivery-primary-200 text-white", else: "shadow bg-white dark:bg-gray-600 text-black dark:text-white"} cursor-pointer text-center block rounded-r-sm py-1 h-8 w-10"}>
-                    <RadioButton.render
+                    <.input
+                      field={@changeset[:type]}
+                      type="radio"
                       class="hidden"
                       value="list"
-                      checked={@view_type == :list}
-                      opts="hidden: true"
+                      checked={@view_type == :card}
                     />
                     <i class="fa fa-list" />
                   </label>
                 </div>
-              </Field.render>
+              </div>
             </.form>
           </div>
         </:extra_opts>
