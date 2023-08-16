@@ -13,7 +13,6 @@ defmodule OliWeb.Sections.EnrollmentsViewLive do
   alias Oli.Delivery.Sections
   alias OliWeb.Sections.Mount
   alias OliWeb.Common.SessionContext
-  alias Surface.Components.Link
   alias Oli.Delivery.Metrics
   alias Oli.Delivery.Paywall
 
@@ -117,19 +116,19 @@ defmodule OliWeb.Sections.EnrollmentsViewLive do
      )}
   end
 
-  attr :breadcrumbs, :any
-  attr :title, :string, default: "Enrollments"
-  attr :section, :any, default: nil
+  attr(:breadcrumbs, :any)
+  attr(:title, :string, default: "Enrollments")
+  attr(:section, :any, default: nil)
 
-  attr :tabel_model, :map
-  attr :total_count, :integer, default: 0
-  attr :offset, :integer, default: 0
-  attr :limit, :integer, default: @limit
-  attr :options, :any
-  attr :add_enrollments_step, :atom, default: :step_1
-  attr :add_enrollments_selected_role, :atom, default: :student
-  attr :add_enrollments_emails, :list, default: []
-  attr :add_enrollments_users_not_found, :list, default: []
+  attr(:tabel_model, :map)
+  attr(:total_count, :integer, default: 0)
+  attr(:offset, :integer, default: 0)
+  attr(:limit, :integer, default: @limit)
+  attr(:options, :any)
+  attr(:add_enrollments_step, :atom, default: :step_1)
+  attr(:add_enrollments_selected_role, :atom, default: :student)
+  attr(:add_enrollments_emails, :list, default: [])
+  attr(:add_enrollments_users_not_found, :list, default: [])
 
   def render(assigns) do
     ~H"""
@@ -172,7 +171,7 @@ defmodule OliWeb.Sections.EnrollmentsViewLive do
           <.link
             href={Routes.page_delivery_path(OliWeb.Endpoint, :export_enrollments, @section.slug)}
             class="btn btn-outline-primary"
-            method={:post}
+            method="post"
           >
             Download as .CSV
           </.link>
