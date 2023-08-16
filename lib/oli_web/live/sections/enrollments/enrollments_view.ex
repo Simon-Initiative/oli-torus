@@ -17,6 +17,8 @@ defmodule OliWeb.Sections.EnrollmentsViewLive do
   alias Oli.Delivery.Metrics
   alias Oli.Delivery.Paywall
 
+  alias Phoenix.LiveView.JS
+
   @limit 25
   @default_options %EnrollmentBrowseOptions{
     is_student: true,
@@ -33,6 +35,10 @@ defmodule OliWeb.Sections.EnrollmentsViewLive do
   data offset, :integer, default: 0
   data limit, :integer, default: @limit
   data options, :any
+  data add_enrollments_step, :atom, default: :step_1
+  data add_enrollments_selected_role, :atom, default: :student
+  data add_enrollments_emails, :list, default: []
+  data add_enrollments_users_not_found, :list, default: []
 
   def set_breadcrumbs(type, section) do
     type
@@ -56,10 +62,19 @@ defmodule OliWeb.Sections.EnrollmentsViewLive do
         Mount.handle_error(socket, {:error, e})
 
       {type, _, section} ->
-        ctx = SessionContext.init(socket, session)
+        ctx = SessionContext.init(socket, session) |> Map.put(:is_enrollment_page, true)
+
+        options =
+          if !is_nil(Map.get(ctx, :author)),
+            do: Map.put(@default_options, :is_instructor, true),
+            else: @default_options
 
         %{total_count: total_count, table_model: table_model} =
-          enrollment_assigns(section, ctx |> Map.put(:is_enrollment_page, true))
+          enrollment_assigns(%{
+            section: section,
+            context: ctx,
+            options: options
+          })
 
         {:ok,
          assign(socket,
@@ -70,7 +85,12 @@ defmodule OliWeb.Sections.EnrollmentsViewLive do
            section: section,
            total_count: total_count,
            table_model: table_model,
-           options: @default_options
+           options: options,
+           offset: 0,
+           add_enrollments_step: :step_1,
+           add_enrollments_selected_role: :student,
+           add_enrollments_emails: [],
+           add_enrollments_users_not_found: []
          )}
     end
   end
@@ -91,24 +111,16 @@ defmodule OliWeb.Sections.EnrollmentsViewLive do
 
     offset = get_int_param(params, "offset", 0)
 
-    options = %EnrollmentBrowseOptions{
-      text_search: get_param(params, "text_search", ""),
-      is_student: true,
-      is_instructor: false
-    }
+    options = Map.put(socket.assigns.options, :text_search, get_param(params, "text_search", ""))
 
-    enrollments =
-      Sections.browse_enrollments_with_context_roles(
-        socket.assigns.section,
-        %Paging{offset: offset, limit: @limit},
-        %Sorting{direction: table_model.sort_order, field: table_model.sort_by_spec.name},
-        options
-      )
-      |> add_students_progress(socket.assigns.section.id, nil)
-      |> add_payment_status(socket.assigns.section)
-
-    table_model = Map.put(table_model, :rows, enrollments)
-    total_count = determine_total(enrollments)
+    %{total_count: total_count, table_model: table_model} =
+      enrollment_assigns(%{
+        section: socket.assigns.section,
+        context: socket.assigns.ctx |> Map.put(:is_enrollment_page, true),
+        options: options,
+        table_model: table_model,
+        offset: offset
+      })
 
     {:noreply,
      assign(socket,
@@ -121,9 +133,36 @@ defmodule OliWeb.Sections.EnrollmentsViewLive do
 
   def render(assigns) do
     ~F"""
-    <div class="container mx-auto">
+    <div id="enrollments_view" class="container mx-auto">
+      {#if @is_admin and @section.open_and_free == true}
+        <.live_component
+          module={OliWeb.Components.LiveModal}
+          id="enrollments_view_add_enrollments_modal"
+          title="Add enrollments"
+          on_confirm={
+            case @add_enrollments_step do
+              :step_1 -> JS.push("add_enrollments_go_to_step_2")
+              :step_2 -> JS.push("add_enrollments_go_to_step_3")
+              :step_3 -> JS.dispatch("click", to: "#add_enrollments_form button")
+            end
+          }
+          on_confirm_label={if @add_enrollments_step == :step_3, do: "Confirm", else: "Next"}
+          on_cancel={if @add_enrollments_step == :step_1, do: nil, else: JS.push("add_enrollments_go_to_step_1")}
+          on_confirm_disabled={if length(@add_enrollments_emails) == 0, do: true, else: false}
+          on_cancel_label={if @add_enrollments_step == :step_1, do: nil, else: "Back"}
+        >
+          <.add_enrollments
+            add_enrollments_emails={@add_enrollments_emails}
+            add_enrollments_step={@add_enrollments_step}
+            add_enrollments_selected_role={@add_enrollments_selected_role}
+            add_enrollments_users_not_found={@add_enrollments_users_not_found}
+            section_slug={@section.slug}
+          />
+        </.live_component>
+      {/if}
 
-      <div class="d-flex justify-content-between">
+
+      <div class="flex justify-between">
         <TextSearch id="text-search"/>
 
         {#if @is_admin}
@@ -132,6 +171,12 @@ defmodule OliWeb.Sections.EnrollmentsViewLive do
             to={Routes.page_delivery_path(OliWeb.Endpoint, :export_enrollments, @section.slug)}
             class="btn btn-outline-primary"
             method={:post} />
+
+            {#if @section.open_and_free == true}
+              <button phx-click="open" phx-target="#enrollments_view_add_enrollments_modal" class="torus-button primary">
+                Add Enrollments
+              </button>
+            {/if}
         {/if}
       </div>
 
@@ -169,6 +214,174 @@ defmodule OliWeb.Sections.EnrollmentsViewLive do
      )}
   end
 
+  #### Add enrollments modal related stuff ####
+  def add_enrollments(%{add_enrollments_step: :step_1} = assigns) do
+    ~H"""
+      <div class="px-4">
+        <p class="mb-2">
+          Please write the email addresses of the users you want to invite to the course.
+        </p>
+        <OliWeb.Components.EmailList.render
+          id="enrollments_email_list"
+          users_list={@add_enrollments_emails}
+          on_update="add_enrollments_update_list"
+          on_remove="add_enrollments_remove_from_list"
+        />
+        <label class="flex flex-col mt-4 w-40 ml-auto">
+          <small class="torus-small uppercase">Role</small>
+          <form class="w-full" phx-change="add_enrollments_change_selected_role">
+            <select name="role" class="torus-select w-full">
+              <option selected={:instructor == @add_enrollments_selected_role} value={:instructor}>Instructor</option>
+              <option selected={:student == @add_enrollments_selected_role} value={:student}>Student</option>
+            </select>
+          </form>
+        </label>
+      </div>
+    """
+  end
+
+  def add_enrollments(%{add_enrollments_step: :step_2} = assigns) do
+    ~H"""
+      <div class="px-4">
+        <p>
+          The following emails don't exist in the database. If you still want to proceed, an email will be sent and they
+          will become enrolled once they sign up. Please, review them and click on "Next" to continue.
+        </p>
+        <div>
+          <li class="list-none mt-4 max-h-80 overflow-y-scroll">
+            <%= for user <- @add_enrollments_users_not_found do %>
+              <ul class="odd:bg-gray-200 even:bg-gray-100 p-2 first:rounded-t last:rounded-b">
+                <div class="flex items-center justify-between">
+                  <p><%= user %></p>
+                  <button phx-click="add_enrollments_remove_from_list" phx-value-user={user} class="torus-button error">Remove</button>
+                </div>
+              </ul>
+            <% end %>
+          </li>
+        </div>
+      </div>
+    """
+  end
+
+  def add_enrollments(%{add_enrollments_step: :step_3} = assigns) do
+    ~H"""
+      <.form
+        for={:enrollments}
+        id="add_enrollments_form"
+        class="hidden"
+        method="POST"
+        action={Routes.invite_path(OliWeb.Endpoint, :create_bulk, @section_slug)}>
+          <%= for email <- @add_enrollments_emails do %>
+            <input name="emails[]" value={email} hidden />
+          <% end %>
+          <input name="role" value={@add_enrollments_selected_role} />
+          <input name="section_slug" value={@section_slug} />
+          <button type="submit" class="hidden" />
+      </.form>
+      <div class="px-4">
+        <p>
+          Are you sure you want to enroll <%= "#{if length(@add_enrollments_emails) == 1, do: "one user", else: "#{length(@add_enrollments_emails)} users"}"%>?
+        </p>
+      </div>
+    """
+  end
+
+  def handle_event("add_enrollments_go_to_step_1", _, socket) do
+    {:noreply, assign(socket, :add_enrollments_step, :step_1)}
+  end
+
+  def handle_event("add_enrollments_go_to_step_2", _, socket) do
+    users = socket.assigns.add_enrollments_emails
+    existing_users = Oli.Accounts.get_users_by_email(users) |> Enum.map(& &1.email)
+    add_enrollments_users_not_found = users -- existing_users
+
+    case length(add_enrollments_users_not_found) do
+      0 ->
+        {:noreply,
+         assign(socket, %{
+           add_enrollments_step: :step_3
+         })}
+
+      _ ->
+        {:noreply,
+         assign(socket, %{
+           add_enrollments_step: :step_2,
+           add_enrollments_users_not_found: add_enrollments_users_not_found
+         })}
+    end
+  end
+
+  def handle_event("add_enrollments_go_to_step_3", _, socket) do
+    {:noreply,
+     assign(socket, %{
+       add_enrollments_step: :step_3
+     })}
+  end
+
+  def handle_event("add_enrollments_change_selected_role", %{"role" => role}, socket) do
+    {:noreply, assign(socket, :add_enrollments_selected_role, String.to_existing_atom(role))}
+  end
+
+  def handle_event("add_enrollments_update_list", %{"value" => list}, socket)
+      when is_list(list) do
+    add_enrollments_emails = socket.assigns.add_enrollments_emails
+
+    socket =
+      if length(list) != 0 do
+        add_enrollments_emails = Enum.concat(add_enrollments_emails, list) |> Enum.uniq()
+
+        assign(socket, %{
+          add_enrollments_emails: add_enrollments_emails
+        })
+      end
+
+    {:noreply, socket}
+  end
+
+  def handle_event("add_enrollments_update_list", %{"value" => value}, socket) do
+    add_enrollments_emails = socket.assigns.add_enrollments_emails
+
+    socket =
+      if String.length(value) != 0 && !Enum.member?(add_enrollments_emails, value) do
+        add_enrollments_emails = add_enrollments_emails ++ [String.downcase(value)]
+
+        assign(socket, %{
+          add_enrollments_emails: add_enrollments_emails
+        })
+      end
+
+    {:noreply, socket}
+  end
+
+  def handle_event("add_enrollments_remove_from_list", %{"user" => user}, socket) do
+    add_enrollments_emails = Enum.filter(socket.assigns.add_enrollments_emails, &(&1 != user))
+
+    add_enrollments_users_not_found =
+      Enum.filter(socket.assigns.add_enrollments_users_not_found, &(&1 != user))
+
+    step =
+      cond do
+        length(add_enrollments_emails) == 0 ->
+          :step_1
+
+        socket.assigns.add_enrollments_step == :step_2 and
+            length(add_enrollments_users_not_found) == 0 ->
+          :step_1
+
+        true ->
+          socket.assigns.add_enrollments_step
+      end
+
+    {:noreply,
+     assign(socket, %{
+       add_enrollments_emails: add_enrollments_emails,
+       add_enrollments_users_not_found: add_enrollments_users_not_found,
+       add_enrollments_step: step
+     })}
+  end
+
+  #### End of enrollments modal related stuff ####
+
   def handle_event(event, params, socket) do
     {event, params, socket, &__MODULE__.patch_with/2}
     |> delegate_to([
@@ -177,23 +390,48 @@ defmodule OliWeb.Sections.EnrollmentsViewLive do
     ])
   end
 
-  def enrollment_assigns(section, ctx) do
+  def enrollment_assigns(
+        %{
+          section: section,
+          context: ctx,
+          options: options
+        } = assigns
+      ) do
+    %{offset: offset, direction: direction, field: field} =
+      case assigns[:table_model] do
+        nil ->
+          %{offset: assigns[:offset] || 0, direction: :asc, field: :name}
+
+        table_model ->
+          %{
+            offset: assigns[:offset] || 0,
+            direction: table_model.sort_order,
+            field: table_model.sort_by_spec.name
+          }
+      end
+
     enrollments =
       Sections.browse_enrollments_with_context_roles(
         section,
-        %Paging{offset: 0, limit: @limit},
-        %Sorting{direction: :asc, field: :name},
-        @default_options
+        %Paging{offset: offset, limit: @limit},
+        %Sorting{direction: direction, field: field},
+        options
       )
       |> add_students_progress(section.id, nil)
       |> add_payment_status(section)
 
     total_count = determine_total(enrollments)
 
-    {:ok, table_model} = EnrollmentsTableModel.new(enrollments, section, ctx)
+    {:ok, table_model} =
+      case assigns[:table_model] do
+        nil -> EnrollmentsTableModel.new(enrollments, section, ctx)
+        table_model -> {:ok, Map.put(table_model, :rows, enrollments)}
+      end
 
     %{total_count: total_count, table_model: table_model}
   end
+
+  def enrollment_assigns(socket), do: enrollment_assigns(socket.assigns)
 
   defp add_students_progress(users, section_id, container_id) do
     users_progress = Metrics.progress_for(section_id, Enum.map(users, & &1.id), container_id)

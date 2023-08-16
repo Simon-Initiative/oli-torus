@@ -200,7 +200,7 @@ defmodule OliWeb.Sections.OverviewView do
           <li><a
               href={Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.EnrollmentsViewLive, @section.slug)}
               class="btn btn-link"
-            >Manage Enrolled Students</a></li>
+            >Manage Enrollments</a></li>
           {#if @section.open_and_free}
             <li><a
                 href={Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.InviteView, @section.slug)}

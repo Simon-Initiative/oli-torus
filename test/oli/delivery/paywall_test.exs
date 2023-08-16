@@ -746,4 +746,49 @@ defmodule Oli.Delivery.PaywallTest do
       assert length(codes) == 1
     end
   end
+
+  describe "payments" do
+    setup [:sections_with_same_publications]
+
+    test "update payments for enrollment", %{
+      section_1: section_1,
+      section_2: section_2,
+      user_1: user_1
+    } do
+      # Current enrollment
+      current_enrollment = insert(:enrollment, user: user_1, section: section_1)
+
+      # Target enrollment
+      new_enrollment = insert(:enrollment, user: user_1, section: section_2)
+
+      Paywall.create_payment(%{
+        generation_date: DateTime.utc_now(),
+        amount: Money.new(50, "USD"),
+        section_id: section_1.id,
+        enrollment_id: current_enrollment.id
+      })
+
+      Paywall.create_payment(%{
+        generation_date: DateTime.utc_now(),
+        amount: Money.new(50, "USD"),
+        section_id: section_1.id,
+        enrollment_id: current_enrollment.id
+      })
+
+      assert Paywall.list_payments(section_1.slug) |> length() == 2
+      assert Paywall.list_payments(section_2.slug) |> length() == 0
+
+      assert {changes_count, _} =
+               Paywall.update_payments_for_enrollment(
+                 current_enrollment,
+                 new_enrollment,
+                 section_2.id
+               )
+
+      assert changes_count == 2
+
+      assert Paywall.list_payments(section_1.slug) |> length() == 0
+      assert Paywall.list_payments(section_2.slug) |> length() == 2
+    end
+  end
 end
