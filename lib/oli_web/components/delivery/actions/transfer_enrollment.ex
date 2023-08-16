@@ -448,16 +448,16 @@ defmodule OliWeb.Delivery.Actions.TransferEnrollment do
       :step_1 ->
         Enum.filter(list_to_work, fn data ->
           String.contains?(
-            String.downcase(data.title),
-            String.downcase(text_search)
+            safe_downcase(data.title),
+            String.safe_downcase(text_search)
           )
         end)
 
       :step_2 ->
         Enum.filter(list_to_work, fn data ->
           String.contains?(
-            String.downcase(data.name),
-            String.downcase(text_search)
+            safe_downcase(data.name),
+            safe_downcase(text_search)
           )
         end)
     end
@@ -468,7 +468,7 @@ defmodule OliWeb.Delivery.Actions.TransferEnrollment do
       :title ->
         Enum.sort_by(
           list_to_work,
-          fn data -> Map.get(data, :title) |> String.downcase() end,
+          fn data -> data.title |> safe_downcase end,
           sort_order
         )
 
@@ -484,11 +484,14 @@ defmodule OliWeb.Delivery.Actions.TransferEnrollment do
       :name ->
         Enum.sort_by(
           list_to_work,
-          fn data -> Map.get(data, :name) |> String.downcase() end,
+          fn data -> data.name |> safe_downcase end,
           sort_order
         )
     end
   end
+
+  defp safe_downcase(nil), do: ""
+  defp safe_downcase(string), do: String.downcase(string)
 
   defp update_params(
          %{sort_by: current_sort_by, sort_order: current_sort_order} = params,
