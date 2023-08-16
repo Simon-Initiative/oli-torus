@@ -11,6 +11,10 @@ defmodule Oli.SectionsTest do
   alias Oli.Publishing
   alias Oli.Publishing.DeliveryResolver
   alias Oli.Delivery.Hierarchy
+  alias Oli.Delivery.Attempts.Core
+  alias Oli.Delivery.Snapshots.Snapshot
+  alias Oli.Delivery.Snapshots
+  alias Oli.Delivery.Transfer
 
   describe "enrollments" do
     @valid_attrs %{
@@ -1423,6 +1427,122 @@ defmodule Oli.SectionsTest do
         |> Repo.one()
 
       assert updated_state["has_visited_once"] == true
+    end
+  end
+
+  describe "transfer student data" do
+    setup [:sections_with_same_publications]
+
+    test "gets course sections to which a student's data can be transferred", %{
+      section_1: section_1,
+      section_2: section_2
+    } do
+      sections = Transfer.get_sections_to_transfer_data(section_1)
+      [target_section_2] = sections
+
+      assert length(sections) == 1
+      assert target_section_2.title == section_2.title
+    end
+
+    test "deletes attempts and resource accesses by section and user", %{section_1: section_1, user_1: user_1} do
+      # gets resource accesses, resource attempts, activity attempts and part attempts from target section
+      resource_accesses =
+        Core.get_resource_accesses(section_1.slug, user_1.id) |> Enum.map(& &1.id)
+
+      resource_attempts =
+        Core.get_resource_attempts_by_resource_accesses(resource_accesses) |> Enum.map(& &1.id)
+
+      activity_attempts =
+        Core.get_activity_attempts_by_resource_attempts(resource_attempts) |> Enum.map(& &1.id)
+
+      # assert that there are resource accesses, resource attempts, activity attempts and part attempts in target section
+
+      assert Core.get_resource_accesses(section_1.slug, user_1.id) |> length() == 1
+
+      assert Core.get_resource_attempts_by_resource_accesses(resource_accesses) |> length() == 1
+
+      assert Core.get_activity_attempts_by_resource_attempts(resource_attempts) |> length() == 1
+
+      assert Core.get_part_attempts_by_activity_attempts(activity_attempts) |> length() == 1
+
+      # delete resource accesses, resource attempts, activity attempts and part attempts for target section
+
+      Core.delete_resource_accesses_by_section_and_user(section_1.id, user_1.id)
+
+      # assert that there are no resource accesses, resource attempts, activity attempts and part attempts in target section
+
+      assert Core.get_resource_accesses(section_1.slug, user_1.id) |> length() == 0
+
+      assert Core.get_resource_attempts_by_resource_accesses(resource_accesses) |> length() == 0
+
+      assert Core.get_activity_attempts_by_resource_attempts(resource_attempts) |> length() == 0
+
+      assert Core.get_part_attempts_by_activity_attempts(activity_attempts) |> length() == 0
+    end
+
+    test "deletes snapshot by section and user", %{section_1: section_1, user_1: user_1} do
+      # assert that there is a snapshot in target section and user
+      assert Oli.Repo.all(
+               from sn in Snapshot,
+                 where: sn.section_id == ^section_1.id and sn.user_id == ^user_1.id
+             )
+             |> length() == 1
+
+      # delete snapshot for target section and user
+      Snapshots.delete_snapshots_by_section_and_user(section_1.id, user_1.id)
+
+      # assert that there is no snapshot in target section and user
+      assert Oli.Repo.all(
+               from sn in Snapshot,
+                 where: sn.section_id == ^section_1.id and sn.user_id == ^user_1.id
+             )
+             |> length() == 0
+    end
+
+    test "updates resource accesses and snapshots from current section and user to target section and user", %{
+      section_1: section_1,
+      section_2: section_2,
+      user_1: user_1,
+      user_2: user_2
+    } do
+      # assert that there is a resource access and spanshot in current section
+      assert Core.get_resource_accesses(section_1.slug, user_1.id) |> length() == 1
+      assert Oli.Repo.get_by(Snapshot, section_id: section_1.id).section_id == section_1.id
+
+      # assert that there is no resource access and spanshot in target section
+      assert Core.get_resource_accesses(section_2.slug, user_1.id) |> length() == 0
+      assert Oli.Repo.get_by(Snapshot, section_id: section_2.id).section_id == section_2.id
+
+      # update resource accesses and snapshots from current section and user to target section and user
+      Core.update_resource_accesses_by_section_and_user(
+        section_1.id,
+        user_1.id,
+        section_2.id,
+        user_2.id
+      )
+
+      Snapshots.update_snapshots_by_section_and_user(
+        section_1.id,
+        user_1.id,
+        section_2.id,
+        user_2.id
+      )
+
+      # assert that there is no resource access and spanshot in current section
+      assert Core.get_resource_accesses(section_1.slug, user_1.id) |> length() == 0
+      assert Oli.Repo.all(
+               from sn in Snapshot,
+                 where: sn.section_id == ^section_1.id and sn.user_id == ^user_1.id
+             )
+             |> length() == 0
+
+      # assert that there is a resource access and spanshot in target section
+      assert Core.get_resource_accesses(section_2.slug, user_2.id) |> length() == 2
+      assert Oli.Repo.all(
+               from sn in Snapshot,
+                 where: sn.section_id == ^section_2.id and sn.user_id == ^user_2.id
+             )
+             |> length() == 2
     end
   end
 end
