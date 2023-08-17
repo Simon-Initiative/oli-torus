@@ -174,6 +174,59 @@ defmodule OliWeb.Delivery.StudentDashboard.Components.QuizzScoresTabTest do
       assert has_element?(view, "a", "Not Finished")
     end
 
+    test "gets rendered correctly for a student suspended", %{
+      conn: conn,
+      section: section,
+      instructor: instructor,
+      student_with_gating_condition: student,
+      graded_page_1: graded_page_1,
+      graded_page_3: graded_page_3,
+      graded_page_5: graded_page_5
+    } do
+      insert_resource_access(
+        graded_page_1,
+        graded_page_3,
+        graded_page_5,
+        section,
+        student
+      )
+
+      Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
+
+      {:ok, view, _html} =
+        live(conn, live_view_students_dashboard_route(section.slug, student.id, :quizz_scores))
+
+      assert has_element?(
+               view,
+               "div",
+               "#{graded_page_1.title}"
+             )
+
+      assert has_element?(
+               view,
+               "div",
+               "#{graded_page_3.title}"
+             )
+
+      assert has_element?(
+               view,
+               "div",
+               "#{graded_page_5.title}"
+             )
+
+      Sections.unenroll_learner(student.id, section.id)
+
+      assert Oli.Grading.generate_gradebook_for_section(section)
+             |> elem(0)
+             |> Enum.filter(fn row -> row.user.id == student.id end)
+             |> length() == 0
+
+      {:ok, view, _html} =
+        live(conn, live_view_students_dashboard_route(section.slug, student.id, :quizz_scores))
+
+      assert has_element?(view, "h6", "There are no quiz scores to show")
+    end
+
     test "applies searching", %{
       conn: conn,
       section: section,
