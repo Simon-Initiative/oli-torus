@@ -45,9 +45,9 @@ defmodule OliWeb.Components.Delivery.Actions do
      )}
   end
 
-  attr :enrollment_info, :map, required: true
-  attr :section, :map, required: true
-  attr :user, :map, required: true
+  attr(:enrollment_info, :map, required: true)
+  attr(:section, :map, required: true)
+  attr(:user, :map, required: true)
 
   def render(assigns) do
     ~H"""
@@ -105,6 +105,16 @@ defmodule OliWeb.Components.Delivery.Actions do
           </button>
         </div>
       <% end %>
+
+      <%= if @is_admin do %>
+        <.live_component
+          id="transfer_enrollment"
+          module={OliWeb.Delivery.Actions.TransferEnrollment}
+          section={@section}
+          user={@user}
+        />
+      <% end %>
+
       <div class="ml-auto">
         <button phx-click={JS.push("open", target: "#unenroll_user_modal")} class="btn btn-danger">
           Unenroll

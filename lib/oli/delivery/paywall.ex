@@ -103,9 +103,9 @@ defmodule Oli.Delivery.Paywall do
     end
   end
 
-  defp has_paid?(nil), do: false
+  def has_paid?(nil), do: false
 
-  defp has_paid?(%Enrollment{id: id}) do
+  def has_paid?(%Enrollment{id: id}) do
     query =
       from(
         p in Payment,
@@ -489,6 +489,18 @@ defmodule Oli.Delivery.Paywall do
     p
     |> Payment.changeset(attrs)
     |> Repo.update()
+  end
+
+  def update_payments_for_enrollment(
+        %Enrollment{id: current_enrollment_id},
+        %Enrollment{id: target_enrollment_id},
+        target_section_id
+      ) do
+    from(
+      p in Payment,
+      where: p.enrollment_id == ^current_enrollment_id
+    )
+    |> Repo.update_all(set: [enrollment_id: target_enrollment_id, section_id: target_section_id])
   end
 
   # ------------------------------------------
