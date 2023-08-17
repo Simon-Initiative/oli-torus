@@ -1235,7 +1235,6 @@ defmodule Oli.TestHelpers do
       revision: page_2_revision
     })
 
-
     # Create section 1
     section_1 =
       insert(:section,
@@ -2147,6 +2146,130 @@ defmodule Oli.TestHelpers do
        section: section,
        posts: [first_post, second_post]
      }}
+  end
+
+  def section_with_pages(%{
+        author: author,
+        revisions: revisions,
+        revision_section_attributes: revision_section_attributes
+      }) do
+    project = insert(:project, %{authors: [author]})
+
+    revisions = Enum.zip(revisions, revision_section_attributes)
+
+    # Create project resource for each revision
+    Enum.each(revisions, fn {revision = %Oli.Resources.Revision{}, _section_attributes} ->
+      insert(:project_resource, %{project_id: project.id, resource_id: revision.resource.id})
+    end)
+
+    # Create project container
+    container_revision =
+      insert(:revision, %{
+        objectives: %{},
+        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("container"),
+        children:
+          Enum.map(revisions, fn {revision = %Oli.Resources.Revision{}, _section_attributes} ->
+            revision.resource.id
+          end),
+        content: %{},
+        deleted: false,
+        title: "Root Container"
+      })
+
+    insert(:project_resource, %{
+      project_id: project.id,
+      resource_id: container_revision.resource.id
+    })
+
+    # Create project publication
+    publication =
+      insert(:publication, %{project: project, root_resource_id: container_revision.resource.id})
+
+    # Publish container
+    insert(:published_resource, %{
+      publication: publication,
+      resource: container_revision.resource,
+      revision: container_revision
+    })
+
+    section =
+      insert(:section,
+        base_project: project,
+        context_id: UUID.uuid4(),
+        open_and_free: true,
+        registration_open: true,
+        type: :enrollable
+      )
+
+    # Publish revisions
+    Enum.each(revisions, fn {revision = %Oli.Resources.Revision{}, section_attributes} ->
+      insert(:published_resource, %{
+        publication: publication,
+        resource: revision.resource,
+        revision: revision
+      })
+
+      insert(
+        :section_resource,
+        Map.merge(
+          %{
+            section: section,
+            project: project,
+            resource_id: revision.resource.id
+          },
+          section_attributes
+        )
+      )
+    end)
+
+    # Set the section root resource
+    container_revision_section_resource =
+      insert(
+        :section_resource,
+        section: section,
+        project: project,
+        resource_id: container_revision.resource.id
+      )
+
+    {:ok, section} =
+      section
+      |> Section.changeset(%{
+        root_section_resource_id: container_revision_section_resource.id
+      })
+      |> Repo.update()
+
+    # Insert section project publication
+    insert(:section_project_publication, %{
+      project: project,
+      section: section,
+      publication: publication
+    })
+
+    {:ok, section: section, project: project, author: author}
+  end
+
+  def section_with_pages(
+        %{
+          revisions: _revisions,
+          revision_section_attributes: _revision_section_attributes
+        } = attrs
+      ) do
+    author = insert(:author)
+
+    section_with_pages(Map.put(attrs, :author, author))
+  end
+
+  def section_with_pages(
+        %{
+          revisions: revisions
+        } = attrs
+      ) do
+    author = insert(:author)
+    revision_section_attributes = Enum.map(revisions, fn _ -> %{} end)
+
+    section_with_pages(
+      Map.merge(attrs, %{author: author, revision_section_attributes: revision_section_attributes})
+    )
   end
 
   def project_section_revisions(_) do
