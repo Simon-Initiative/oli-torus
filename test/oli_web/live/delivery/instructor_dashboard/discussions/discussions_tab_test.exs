@@ -264,14 +264,14 @@ defmodule OliWeb.Delivery.InstructorDashboard.DiscussionsTabTest do
       assert view |> has_element?("span", "Page #1")
 
       assert view
-             |> element("table tbody tr:nth-of-type(1) p")
+             |> element("table tbody tr:first-of-type p")
              |> render =~
                ~s{<p class=\"torus-p\">\n      \n        Number of posts: <b>1</b>\n        \n          (1 pending approval)\n        \n      \n    </p>}
 
       assert view |> has_element?("span", "Page #2")
 
       assert view
-             |> element("table tbody tr:nth-of-type(2) p")
+             |> element("table tbody tr:last-of-type p")
              |> render =~
                ~s{<p class=\"torus-p\">\n      \n        Number of posts: <b>4</b>\n        \n          (1 pending approval)\n        \n      \n    </p>}
     end
