@@ -8,7 +8,6 @@ defmodule OliWeb.Delivery.StudentDashboard.StudentDashboardLive do
   alias OliWeb.Delivery.StudentDashboard.Components.Helpers
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Metrics
-  alias Oli.Grading.GradebookRow
 
   @impl Phoenix.LiveView
   def mount(_params, session, socket) do
@@ -269,13 +268,16 @@ defmodule OliWeb.Delivery.StudentDashboard.StudentDashboardLive do
   end
 
   defp get_scores(section, student_id) do
-    {gradebook, _column_labels} = Oli.Grading.generate_gradebook_for_section(section)
+    grades_for_user =
+      Oli.Grading.generate_gradebook_for_section(section)
+      |> elem(0)
+      |> Enum.filter(fn row -> row.user.id == student_id end)
 
-    if length(gradebook) > 0 do
-      [%GradebookRow{user: _user, scores: scores} | _] =
-        Enum.filter(gradebook, fn grade -> grade.user.id == student_id end)
-
-      Enum.filter(scores, fn score -> !is_nil(score) end)
+    if length(grades_for_user) > 0 do
+      grades_for_user
+      |> List.first()
+      |> Map.get(:scores)
+      |> Enum.filter(fn score -> !is_nil(score) end)
     else
       []
     end
