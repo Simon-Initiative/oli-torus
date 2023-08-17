@@ -765,7 +765,7 @@ defmodule OliWeb.Router do
       :pow_email_layout
     ])
 
-    get("/", DeliveryController, :open_and_free_index)
+    live("/", Delivery.OpenAndFreeIndex)
 
     live("/join/invalid", Sections.InvalidSectionInviteView)
   end
@@ -907,7 +907,6 @@ defmodule OliWeb.Router do
     live_session :instructor_dashboard,
       on_mount: OliWeb.Delivery.InstructorDashboard.InitialAssigns,
       root_layout: {OliWeb.LayoutView, :delivery_dashboard} do
-
       live("/:view", Delivery.InstructorDashboard.InstructorDashboardLive)
       live("/:view/:active_tab", Delivery.InstructorDashboard.InstructorDashboardLive)
 
@@ -1378,7 +1377,7 @@ defmodule OliWeb.Router do
 
       get("/flame_graphs", DevController, :flame_graphs)
 
-      live_storybook "/storybook", backend_module: OliWeb.Storybook
+      live_storybook("/storybook", backend_module: OliWeb.Storybook)
     end
   end
 end

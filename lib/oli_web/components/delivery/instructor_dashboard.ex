@@ -1,5 +1,5 @@
 defmodule OliWeb.Components.Delivery.InstructorDashboard do
-  use Phoenix.Component
+  use OliWeb, :html
 
   import OliWeb.ViewHelpers, only: [brand_logo: 1]
 
@@ -18,18 +18,23 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard do
 
   def main_layout(assigns) do
     ~H"""
-      <div class="flex-1 flex flex-col h-screen">
-        <.header socket_or_conn={@socket_or_conn} ctx={@ctx} view={@view} section={@section} preview_mode={@preview_mode} />
-        <.section_details_header section={@section}/>
-        <Header.delivery_breadcrumb {assigns} />
+    <div class="flex-1 flex flex-col h-screen">
+      <.header
+        socket_or_conn={@socket_or_conn}
+        ctx={@ctx}
+        view={@view}
+        section={@section}
+        preview_mode={@preview_mode}
+      />
+      <.section_details_header section={@section} />
+      <Header.delivery_breadcrumb {assigns} />
 
-        <div class="relative flex-1 flex flex-col pt-4 pb-[60px]">
+      <div class="relative flex-1 flex flex-col pt-4 pb-[60px]">
+        <%= render_slot(@inner_block) %>
 
-          <%= render_slot(@inner_block) %>
-
-          <%= Phoenix.View.render OliWeb.LayoutView, "_delivery_footer.html", assigns %>
-        </div>
+        <%= Phoenix.View.render(OliWeb.LayoutView, "_delivery_footer.html", assigns) %>
       </div>
+    </div>
     """
   end
 
@@ -53,14 +58,17 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard do
 
   def tabs(assigns) do
     ~H"""
-      <div class="container mx-auto my-4">
-        <ul class="nav nav-tabs flex flex-col md:flex-row flex-wrap list-none border-b-0 pl-0 mb-4" id="tabs-tab"
-          role="tablist">
-
-          <%= for %TabLink{label: label, path: path, badge: badge, active: active} <- @tabs do %>
-            <li class="nav-item" role="presentation">
-              <.link patch={path}
-                class={"
+    <div class="container mx-auto my-4">
+      <ul
+        class="nav nav-tabs flex flex-col md:flex-row flex-wrap list-none border-b-0 pl-0 mb-4"
+        id="tabs-tab"
+        role="tablist"
+      >
+        <%= for %TabLink{label: label, path: path, badge: badge, active: active} <- @tabs do %>
+          <li class="nav-item" role="presentation">
+            <.link
+              patch={path}
+              class={"
                   block
                   border-x-0 border-t-0 border-b-2
                   px-3
@@ -74,21 +82,23 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard do
                   hover:border-delivery-primary-200
                   focus:border-delivery-primary-200
                   #{if active, do: "!border-delivery-primary active", else: "border-transparent"}
-                "}>
-                <%= if is_function(label), do: label.(), else: label %>
-                  <%= if badge do %>
-                  <span class="text-xs inline-block py-1 px-2 ml-2 leading-none text-center whitespace-nowrap align-baseline font-bold bg-delivery-primary text-white rounded"><%= badge %></span>
-                  <% end %>
-              </.link>
-            </li>
-          <% end %>
-
-        </ul>
-      </div>
+                "}
+            >
+              <%= if is_function(label), do: label.(), else: label %>
+              <%= if badge do %>
+                <span class="text-xs inline-block py-1 px-2 ml-2 leading-none text-center whitespace-nowrap align-baseline font-bold bg-delivery-primary text-white rounded">
+                  <%= badge %>
+                </span>
+              <% end %>
+            </.link>
+          </li>
+        <% end %>
+      </ul>
+    </div>
     """
   end
 
-  defp logo_link(nil, _), do: Routes.delivery_path(OliWeb.Endpoint, :open_and_free_index)
+  defp logo_link(nil, _), do: ~p"/sections"
 
   defp logo_link(section, preview_mode) do
     if preview_mode do
@@ -104,9 +114,9 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard do
 
   defp header_link(assigns) do
     ~H"""
-      <.link
-        href={@path}
-        class={"
+    <.link
+      href={@path}
+      class={"
           flex
           flex-col
           justify-center
@@ -118,9 +128,10 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard do
           border-b-4
           #{if @active, do: "!border-white/75", else: "border-transparent"}
           hover:border-white/50
-        "}>
-        <div class="mx-2"><%= render_slot(@inner_block) %></div>
-      </.link>
+        "}
+    >
+      <div class="mx-2"><%= render_slot(@inner_block) %></div>
+    </.link>
     """
   end
 
@@ -147,30 +158,53 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard do
 
   def header(assigns) do
     ~H"""
-      <div class="w-full bg-delivery-header text-white border-b border-slate-600">
-        <div class="container mx-auto flex flex-row">
-          <div class="flex items-center">
-            <a class="navbar-brand dark torus-logo my-1 mr-auto" href={logo_link(@section, @preview_mode)}>
-              <%= brand_logo(Map.merge(assigns, %{class: "d-inline-block align-top mr-2"})) %>
-            </a>
-          </div>
+    <div class="w-full bg-delivery-header text-white border-b border-slate-600">
+      <div class="container mx-auto flex flex-row">
+        <div class="flex items-center">
+          <a
+            class="navbar-brand dark torus-logo my-1 mr-auto"
+            href={logo_link(@section, @preview_mode)}
+          >
+            <%= brand_logo(Map.merge(assigns, %{class: "d-inline-block align-top mr-2"})) %>
+          </a>
+        </div>
 
-          <div class="flex flex-1 flex-row justify-center">
-            <.header_link path={header_link_path(@socket_or_conn, @section, :overview, @preview_mode)} active={is_active?(@view, :overview)}>Overview</.header_link>
-            <.header_link path={header_link_path(@socket_or_conn, @section, :reports, @preview_mode)} active={is_active?(@view, :reports)}>Reports</.header_link>
-            <.header_link path={header_link_path(@socket_or_conn, @section, :manage, @preview_mode)} active={is_active?(@view, :manage)}>Manage</.header_link>
-            <.header_link path={header_link_path(@socket_or_conn, @section, :discussions, @preview_mode)} active={is_active?(@view, :discussions)}>Discussion Activity</.header_link>
-          </div>
+        <div class="flex flex-1 flex-row justify-center">
+          <.header_link
+            path={header_link_path(@socket_or_conn, @section, :overview, @preview_mode)}
+            active={is_active?(@view, :overview)}
+          >
+            Overview
+          </.header_link>
+          <.header_link
+            path={header_link_path(@socket_or_conn, @section, :reports, @preview_mode)}
+            active={is_active?(@view, :reports)}
+          >
+            Reports
+          </.header_link>
+          <.header_link
+            path={header_link_path(@socket_or_conn, @section, :manage, @preview_mode)}
+            active={is_active?(@view, :manage)}
+          >
+            Manage
+          </.header_link>
+          <.header_link
+            path={header_link_path(@socket_or_conn, @section, :discussions, @preview_mode)}
+            active={is_active?(@view, :discussions)}
+          >
+            Discussion Activity
+          </.header_link>
+        </div>
 
-          <%= if @preview_mode do %>
-            <UserAccountMenu.preview_user />
-          <% else %>
-            <UserAccountMenu.menu ctx={@ctx} section={@section}/>
-          <% end %>
+        <%= if @preview_mode do %>
+          <UserAccountMenu.preview_user />
+        <% else %>
+          <UserAccountMenu.menu ctx={@ctx} section={@section} />
+        <% end %>
 
-          <div class="flex items-center border-l border-slate-300 my-2">
-            <button
-              class="
+        <div class="flex items-center border-l border-slate-300 my-2">
+          <button
+            class="
                 btn
                 rounded
                 ml-4
@@ -180,12 +214,13 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard do
                 hover:bg-delivery-header-700
                 active:bg-delivery-header-600
               "
-                onclick="window.showHelpModal();">
-              <i class="fa-regular fa-circle-question fa-lg"></i>
-            </button>
-          </div>
+            onclick="window.showHelpModal();"
+          >
+            <i class="fa-regular fa-circle-question fa-lg"></i>
+          </button>
         </div>
       </div>
+    </div>
     """
   end
 

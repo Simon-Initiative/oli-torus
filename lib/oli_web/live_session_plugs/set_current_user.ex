@@ -5,12 +5,17 @@ defmodule Oli.LiveSessionPlugs.SetCurrentUser do
   alias Oli.Accounts.User
   alias Oli.AccountLookupCache
 
+  def on_mount(:with_preloads, _, %{"current_user_id" => current_user_id}, socket) do
+    current_user = Accounts.get_user!(current_user_id, preload: [:platform_roles, :author])
+    {:cont, assign(socket, current_user: current_user)}
+  end
+
   def on_mount(:default, _, %{"current_user_id" => current_user_id}, socket) do
     {:ok, current_user} = get_user(current_user_id)
     {:cont, assign(socket, current_user: current_user)}
   end
 
-  def on_mount(:default, _params, _session, socket) do
+  def on_mount(_, _params, _session, socket) do
     {:cont, socket}
   end
 

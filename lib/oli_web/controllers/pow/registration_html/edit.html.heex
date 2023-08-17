@@ -102,7 +102,7 @@
         <%= hidden_input f, :link_account, value: @link_account %>
       <% end %>
       <%= submit "Update", class: "btn btn-md btn-primary btn-block" %>
-      <%= link "Cancel", to: value_or(assigns[:cancel_path], Routes.delivery_path(@conn, :open_and_free_index)), class: "btn btn-md btn-outline-secondary btn-block mt-3" %>
+      <%= link "Cancel", to: value_or(assigns[:cancel_path], Routes.live_path(@conn, OliWeb.Delivery.OpenAndFreeIndex)), class: "btn btn-md btn-outline-secondary btn-block mt-3" %>
     <% end %>
   <% end %>
 

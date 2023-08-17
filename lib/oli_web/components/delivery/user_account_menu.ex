@@ -1,5 +1,5 @@
 defmodule OliWeb.Components.Delivery.UserAccountMenu do
-  use Phoenix.Component
+  use OliWeb, :html
 
   import OliWeb.Components.Delivery.Utils
 
@@ -12,6 +12,7 @@ defmodule OliWeb.Components.Delivery.UserAccountMenu do
 
   attr(:ctx, SessionContext)
   attr(:section, Section)
+  attr(:is_liveview, :boolean, default: false)
 
   def menu(assigns) do
     assigns = user_account_menu_assigns(assigns)
@@ -20,7 +21,7 @@ defmodule OliWeb.Components.Delivery.UserAccountMenu do
     # so for now, just render this component as if it were in a static page - is_liveview: false
 
     ~H"""
-      <%= React.component(%SessionContext{@ctx | is_liveview: false }, "Components.UserAccountMenu", %{
+      <%= React.component(%SessionContext{@ctx | is_liveview: @is_liveview }, "Components.UserAccountMenu", %{
           user: @user,
           preview: @preview,
           routes: @routes,
@@ -65,7 +66,7 @@ defmodule OliWeb.Components.Delivery.UserAccountMenu do
         linkAccount: Routes.delivery_path(OliWeb.Endpoint, :link_account),
         editAccount: Routes.pow_registration_path(OliWeb.Endpoint, :edit),
         updateTimezone: Routes.static_page_path(OliWeb.Endpoint, :update_timezone),
-        openAndFreeIndex: Routes.delivery_path(OliWeb.Endpoint, :open_and_free_index)
+        openAndFreeIndex: ~p"/sections"
       }
     )
     |> assign(
