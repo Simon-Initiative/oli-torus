@@ -5,11 +5,14 @@ defmodule OliWeb.Delivery.OpenAndFreeIndex do
   on_mount(Oli.LiveSessionPlugs.SetCtx)
 
   alias Oli.Delivery.Sections
+  alias OliWeb.Components.Delivery.Utils
 
   import OliWeb.Common.SourceImage
 
   def mount(_params, _session, socket) do
-    sections = Sections.list_user_open_and_free_sections(socket.assigns.current_user)
+    sections =
+      Sections.list_user_open_and_free_sections(socket.assigns.current_user)
+      |> add_user_role(socket.assigns.current_user)
 
     {:ok, assign(socket, sections: sections)}
   end
@@ -44,6 +47,7 @@ defmodule OliWeb.Delivery.OpenAndFreeIndex do
                     src={cover_image(section)}
                     alt="course image"
                   />
+                  <span class="badge badge-info ml-2 mt-2 capitalize"><%= section.user_role %></span>
                   <div class="p-6">
                     <h5 class="text-gray-900 dark:text-white text-xl font-medium mb-2">
                       <%= section.title %>
@@ -61,5 +65,14 @@ defmodule OliWeb.Delivery.OpenAndFreeIndex do
     </main>
     <%= render(OliWeb.LayoutView, "_delivery_footer.html", assigns) %>
     """
+  end
+
+  defp add_user_role([], _user), do: []
+
+  defp add_user_role(sections, user) do
+    sections
+    |> Enum.map(fn s ->
+      Map.merge(s, %{user_role: Utils.user_role(s, user) |> Atom.to_string()})
+    end)
   end
 end

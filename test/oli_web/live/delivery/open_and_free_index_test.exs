@@ -107,6 +107,43 @@ defmodule OliWeb.Delivery.OpenAndFreeIndexTest do
       assert has_element?(view, ~s{a[href="/sections/#{section.slug}/overview"]})
     end
 
+    test "section badge gets rendered correctly considering the user role",
+         %{
+           conn: conn,
+           user: user
+         } do
+      section_1 =
+        insert(:section, %{
+          open_and_free: true,
+          description: "This is a description",
+          title: "The best course ever!"
+        })
+
+      section_2 =
+        insert(:section, %{
+          open_and_free: true,
+          description: "This is another description",
+          title: "Advanced Elixir"
+        })
+
+      Sections.enroll(user.id, section_1.id, [ContextRoles.get_role(:context_learner)])
+      Sections.enroll(user.id, section_2.id, [ContextRoles.get_role(:context_instructor)])
+
+      {:ok, view, _html} = live(conn, ~p"/sections")
+
+      assert has_element?(
+               view,
+               ~s{a[href="/sections/#{section_1.slug}/overview"] span.badge},
+               "student"
+             )
+
+      assert has_element?(
+               view,
+               ~s{a[href="/sections/#{section_2.slug}/overview"] span.badge},
+               "instructor"
+             )
+    end
+
     test "if no cover image is set, renders default image in enrollment page", %{
       conn: conn,
       user: user
