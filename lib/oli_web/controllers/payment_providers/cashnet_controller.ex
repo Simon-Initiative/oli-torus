@@ -163,7 +163,6 @@ defmodule OliWeb.PaymentProviders.CashnetController do
               {_, msg} = Oli.Utils.log_error("CashnetController:init_form failed.", e)
               error(conn, 500, msg)
           end
-
         _ ->
           Logger.error("CashnetController could not init intent")
           error(conn, 400, "client error")
