@@ -25,6 +25,11 @@ defmodule OliWeb.Delivery.Sections.EnrollmentsTableModel do
             th_class: "pl-10"
           },
           %ColumnSpec{
+            name: :email,
+            label: "EMAIL",
+            render_fn: &__MODULE__.render_email_column/3
+          },
+          %ColumnSpec{
             name: :last_interaction,
             label: "LAST INTERACTED",
             render_fn: &__MODULE__.render_last_interaction_column/3
@@ -44,19 +49,19 @@ defmodule OliWeb.Delivery.Sections.EnrollmentsTableModel do
         [
           %ColumnSpec{
             name: :name,
-            label: "Name",
+            label: "NAME",
             render_fn: &__MODULE__.render_name_column/3,
             sort_fn: &__MODULE__.sort_name_column/2,
             th_class: "pl-10"
           },
           %ColumnSpec{
             name: :email,
-            label: "Email",
+            label: "EMAIL",
             render_fn: &__MODULE__.render_email_column/3
           },
           %ColumnSpec{
             name: :type,
-            label: "Type",
+            label: "TYPE",
             render_fn: &__MODULE__.render_type_column/3,
             sortable: false
           }
