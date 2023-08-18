@@ -10,10 +10,11 @@ function isIniFrame(): boolean {
 }
 
 function configFormForIframe() {
-    get('#sub').classList.remove('hidden');
-    get('#spinner').classList.add('hidden');
-    get('#cmupayment').target = '_blank';
-    get('#signouturlfield').value = window.location.origin + '/api/v1/payments/c/signoff?ref1val1=' + get('#ref1val1field').value;
+  get('#sub').classList.remove('hidden');
+  get('#spinner').classList.add('hidden');
+  get('#cmupayment').target = '_blank';
+  get('#signouturlfield').value =
+    window.location.origin + '/api/v1/payments/c/signoff?ref1val1=' + get('#ref1val1field').value;
 }
 
 function makeCashnetPurchase(_purchase: any) {
