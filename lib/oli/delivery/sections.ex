@@ -2788,21 +2788,25 @@ defmodule Oli.Delivery.Sections do
 
           sub_objectives =
             Enum.map(objective.children, fn child ->
-              sub_objective = Map.get(lookup_map, child)
+              case Map.get(lookup_map, child) do
+                nil ->
+                  nil
+                sub_objective ->
+                  {correct, total} =
+                    Map.get(proficiency_per_learning_objective, sub_objective.resource_id, {0, 0})
 
-              {correct, total} =
-                Map.get(proficiency_per_learning_objective, sub_objective.resource_id, {0, 0})
-
-              Map.merge(sub_objective, %{
-                objective: objective.title,
-                objective_resource_id: objective.resource_id,
-                student_proficiency_obj:
-                  calc.(parent_correct, parent_total) |> Metrics.proficiency_range(),
-                subobjective: sub_objective.title,
-                subobjective_resource_id: sub_objective.resource_id,
-                student_proficiency_subobj: calc.(correct, total) |> Metrics.proficiency_range()
-              })
+                  Map.merge(sub_objective, %{
+                    objective: objective.title,
+                    objective_resource_id: objective.resource_id,
+                    student_proficiency_obj:
+                      calc.(parent_correct, parent_total) |> Metrics.proficiency_range(),
+                    subobjective: sub_objective.title,
+                    subobjective_resource_id: sub_objective.resource_id,
+                    student_proficiency_subobj: calc.(correct, total) |> Metrics.proficiency_range()
+                  })
+                end
             end)
+            |> Enum.filter(fn sub_objective -> sub_objective != nil end)
 
           [objective | sub_objectives] ++ all
 
