@@ -389,7 +389,7 @@ defmodule OliWeb.Router do
     pipe_through([:browser, :authoring_protected, :workspace, :authorize_project])
 
     live_session :load_projects,
-      on_mount: [Oli.LiveSessionPlugs.SetCurrentAuthor, Oli.LiveSessionPlugs.SetProject] do
+      on_mount: [OliWeb.LiveSessionPlugs.SetCurrentAuthor, OliWeb.LiveSessionPlugs.SetProject] do
       live("/:project_id/overview", Projects.OverviewLive)
       live("/:project_id", Projects.OverviewLive)
     end
@@ -993,9 +993,9 @@ defmodule OliWeb.Router do
 
     live_session :load_section,
       on_mount: [
-        Oli.LiveSessionPlugs.SetSection,
-        Oli.LiveSessionPlugs.SetCurrentUser,
-        Oli.LiveSessionPlugs.RequireEnrollment
+        OliWeb.LiveSessionPlugs.SetSection,
+        OliWeb.LiveSessionPlugs.SetCurrentUser,
+        OliWeb.LiveSessionPlugs.RequireEnrollment
       ] do
       live(
         "/:section_slug/welcome",

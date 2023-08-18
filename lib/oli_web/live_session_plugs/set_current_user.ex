@@ -1,4 +1,4 @@
-defmodule Oli.LiveSessionPlugs.SetCurrentUser do
+defmodule OliWeb.LiveSessionPlugs.SetCurrentUser do
   import Phoenix.Component, only: [assign: 2]
 
   alias Oli.Accounts

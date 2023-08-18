@@ -1,4 +1,4 @@
-defmodule Oli.LiveSessionPlugs.SetCtx do
+defmodule OliWeb.LiveSessionPlugs.SetCtx do
   import Phoenix.Component, only: [assign: 2]
   alias OliWeb.Common.SessionContext
 

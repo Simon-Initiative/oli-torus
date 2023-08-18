@@ -1,4 +1,4 @@
-defmodule Oli.LiveSessionPlugs.SetSection do
+defmodule OliWeb.LiveSessionPlugs.SetSection do
   use OliWeb, :verified_routes
 
   import Phoenix.LiveView, only: [push_navigate: 2, put_flash: 3]

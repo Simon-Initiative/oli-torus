@@ -1,8 +1,8 @@
 defmodule OliWeb.Delivery.OpenAndFreeIndex do
   use OliWeb, :live_view
 
-  on_mount({Oli.LiveSessionPlugs.SetCurrentUser, :with_preloads})
-  on_mount(Oli.LiveSessionPlugs.SetCtx)
+  on_mount({OliWeb.LiveSessionPlugs.SetCurrentUser, :with_preloads})
+  on_mount(OliWeb.LiveSessionPlugs.SetCtx)
 
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.{Enrollment, Section}
