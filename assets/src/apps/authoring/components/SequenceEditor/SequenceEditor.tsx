@@ -50,7 +50,7 @@ const SequenceEditor: React.FC = () => {
   const allActivities = useSelector(selectAllActivities);
   const hierarchy = useMemo(() => getHierarchy(sequence), [sequence]);
   const [open, toggleOpen] = useToggle(true);
-
+  const [isContextMenuClicked, setIsContextMenuClicked] = useState(false);
   const [itemToRename, setItemToRename] = useState<any>(undefined);
   const [showConfirmDelete, setShowConfirmDelete] = useState<boolean>(false);
   const [itemToDelete, setItemToDelete] = useState<any>(undefined);
@@ -403,7 +403,7 @@ const SequenceEditor: React.FC = () => {
         {currentGroup && (
           <Dropdown
             onClick={(e: React.MouseEvent) => {
-              (e as any).isContextButtonClick = true;
+              (e as any).isContextButtonClick = true && setIsContextMenuClicked(true);
             }}
           >
             <Dropdown.Toggle
@@ -631,8 +631,16 @@ const SequenceEditor: React.FC = () => {
       defaultActiveKey="0"
       activeKey={open ? '0' : '-1'}
       style={{
-        height: !bottomLeftPanel && open ? 'calc(100vh - 100px)' : 'auto',
-        maxHeight: !bottomLeftPanel && open ? 'calc(100vh - 100px)' : '60vh',
+        height: isContextMenuClicked
+          ? '100vh'
+          : !bottomLeftPanel && open
+          ? 'calc(100vh - 100px)'
+          : 'auto',
+        maxHeight: isContextMenuClicked
+          ? ''
+          : !bottomLeftPanel && open
+          ? 'calc(100vh - 100px)'
+          : '60vh',
         overflow: 'hidden',
       }}
     >
@@ -684,8 +692,12 @@ const SequenceEditor: React.FC = () => {
       <Accordion.Collapse
         eventKey="0"
         style={{
-          overflowY: 'auto',
-          maxHeight: !bottomLeftPanel && open ? 'calc(100vh - 100px)' : '60vh',
+          overflowY: isContextMenuClicked ? undefined : 'auto',
+          maxHeight: isContextMenuClicked
+            ? ''
+            : !bottomLeftPanel && open
+            ? 'calc(100vh - 100px)'
+            : '60vh',
         }}
       >
         <ListGroup as="ol" className="aa-sequence">
