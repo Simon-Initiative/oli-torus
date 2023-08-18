@@ -4247,6 +4247,10 @@ table.table-striped tbody tr:nth-child(even) {
   margin-right: 0px;
 }
 
+.mr-0\.5 {
+  margin-right: 0.125rem;
+}
+
 .mr-1 {
   margin-right: 0.25rem;
 }
@@ -5395,6 +5399,11 @@ table.table-striped tbody tr:nth-child(even) {
   border-color: rgb(59 118 211 / var(--tw-border-opacity));
 }
 
+.border-red-400 {
+  --tw-border-opacity: 1;
+  border-color: rgb(248 113 113 / var(--tw-border-opacity));
+}
+
 .border-red-500 {
   --tw-border-opacity: 1;
   border-color: rgb(239 68 68 / var(--tw-border-opacity));
@@ -6356,6 +6365,11 @@ table.table-striped tbody tr:nth-child(even) {
   color: rgb(185 28 28 / var(--tw-text-opacity));
 }
 
+.text-rose-600 {
+  --tw-text-opacity: 1;
+  color: rgb(225 29 72 / var(--tw-text-opacity));
+}
+
 .text-secondary {
   --tw-text-opacity: 1;
   color: rgb(82 82 82 / var(--tw-text-opacity));
@@ -6399,6 +6413,11 @@ table.table-striped tbody tr:nth-child(even) {
 .text-zinc-600 {
   --tw-text-opacity: 1;
   color: rgb(82 82 91 / var(--tw-text-opacity));
+}
+
+.text-zinc-800 {
+  --tw-text-opacity: 1;
+  color: rgb(39 39 42 / var(--tw-text-opacity));
 }
 
 .underline {
@@ -6862,6 +6881,13 @@ input[type="datetime-local"].torus-input::placeholder {
 .dark ::-webkit-calendar-picker-indicator {
   --tw-invert: invert(100%);
   filter: var(--tw-blur) var(--tw-brightness) var(--tw-contrast) var(--tw-grayscale) var(--tw-hue-rotate) var(--tw-invert) var(--tw-saturate) var(--tw-sepia) var(--tw-drop-shadow);
+}
+
+input[type="checkbox"]:not(:checked):disabled {
+  --tw-border-opacity: 1;
+  border-color: rgb(163 163 163 / var(--tw-border-opacity));
+  --tw-bg-opacity: 1;
+  background-color: rgb(229 229 229 / var(--tw-bg-opacity));
 }
 
 h4.torus-h4 {
@@ -8391,6 +8417,11 @@ body {
   border-color: rgb(159 188 233 / var(--tw-border-opacity));
 }
 
+.focus\:border-red-400:focus {
+  --tw-border-opacity: 1;
+  border-color: rgb(248 113 113 / var(--tw-border-opacity));
+}
+
 .focus\:text-blue-700:focus {
   --tw-text-opacity: 1;
   color: rgb(29 68 129 / var(--tw-text-opacity));
@@ -8625,6 +8656,14 @@ body {
 .group[aria-expanded="true"] .group-aria-expanded\:rotate-180 {
   --tw-rotate: 180deg;
   transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
+}
+
+.phx-no-feedback\:hidden.phx-no-feedback {
+  display: none;
+}
+
+.phx-no-feedback .phx-no-feedback\:hidden {
+  display: none;
 }
 
 @container card (min-width: 42rem) {
