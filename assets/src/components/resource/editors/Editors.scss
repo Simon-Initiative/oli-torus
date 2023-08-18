@@ -11,6 +11,7 @@
     .content-block {
       .slate-editor {
         border: none;
+        outline: none;
 
         .popup-anchor {
           cursor: inherit;
@@ -27,6 +28,7 @@
           @include clearfix;
           cursor: initial;
           padding: 1.3em 10px;
+          outline: none;
 
           &.structured-content {
             padding: 1.3em calc(50% - 400px);

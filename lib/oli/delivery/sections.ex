@@ -89,6 +89,9 @@ defmodule Oli.Delivery.Sections do
 
     filter_by_role =
       case options do
+        %EnrollmentBrowseOptions{is_instructor: true, is_student: true} ->
+          true
+
         %EnrollmentBrowseOptions{is_student: true} ->
           dynamic(
             [u, e],
@@ -193,7 +196,7 @@ defmodule Oli.Delivery.Sections do
       sorting,
       options
     )
-    |> where([_, e], e.status != :suspended)
+    |> where([u, e], e.status != :suspended)
     |> join(:left, [_, e, p], ecr in EnrollmentContextRole, on: ecr.enrollment_id == e.id)
     |> group_by([_, _, _, ecr], [ecr.context_role_id])
     |> preload([u], :platform_roles)
@@ -315,7 +318,7 @@ defmodule Oli.Delivery.Sections do
   end
 
   @doc """
-  Enrolls a user in a course section
+  Enrolls a user or users in a course section
   ## Examples
       iex> enroll(user_id, section_id, [%ContextRole{}])
       {:ok, %Enrollment{}} # Inserted or updated with success
@@ -323,6 +326,41 @@ defmodule Oli.Delivery.Sections do
       iex> enroll(user_id, section_id, :open_and_free)
       {:error, changeset} # Something went wrong
   """
+  @spec enroll(list(number()), number(), [%ContextRole{}]) :: {:ok, list(%Enrollment{})}
+  def enroll(user_ids, section_id, context_roles) when is_list(user_ids) do
+    Repo.transaction(fn ->
+      context_roles = EctoProvider.Marshaler.to(context_roles)
+      date = DateTime.utc_now() |> DateTime.truncate(:second)
+
+      # Insert all the enrollments at the same time
+      enrollments =
+        Enum.map(
+          user_ids,
+          &%{
+            user_id: &1,
+            section_id: section_id,
+            inserted_at: date,
+            updated_at: date,
+            status: :enrolled,
+            state: %{}
+          }
+        )
+
+      {_cont, enrollments} = Repo.insert_all(Enrollment, enrollments, returning: [:id], conflict_target: [:user_id, :section_id], on_conflict: {:replace, [:user_id]})
+
+      # Insert the enrollment context roles at the same time based on the previously created enrollments
+      enrollment_context_roles =
+        Enum.reduce(context_roles, [], fn role, enrollment_context_roles ->
+          Enum.map(enrollments, &%{enrollment_id: &1.id, context_role_id: role.id}) ++
+            enrollment_context_roles
+        end)
+
+      Repo.insert_all(EnrollmentContextRole, enrollment_context_roles, on_conflict: :nothing)
+
+      {:ok, enrollments}
+    end)
+  end
+
   @spec enroll(number(), number(), [%ContextRole{}]) :: {:ok, %Enrollment{}}
   def enroll(user_id, section_id, context_roles) do
     context_roles = EctoProvider.Marshaler.to(context_roles)
@@ -958,6 +996,66 @@ defmodule Oli.Delivery.Sections do
 
   def change_open_and_free_section(%Section{} = section, attrs \\ %{}) do
     change_section(Map.merge(section, %{open_and_free: true}), attrs)
+  end
+
+  @doc """
+  Returns the set of all students with :context_learner role in the given section.
+  """
+  def fetch_students(section_slug) do
+    list_enrollments(section_slug)
+    |> Enum.filter(fn e ->
+      ContextRoles.contains_role?(e.context_roles, ContextRoles.get_role(:context_learner))
+    end)
+    |> Enum.map(fn e -> e.user end)
+  end
+
+  @doc """
+  Returns the set of all instructors with :context_instructor role in the given section.
+  """
+  def fetch_instructors(section_slug) do
+    list_enrollments(section_slug)
+    |> Enum.filter(fn e ->
+      ContextRoles.contains_role?(e.context_roles, ContextRoles.get_role(:context_instructor))
+    end)
+    |> Enum.map(fn e -> e.user end)
+  end
+
+  @doc """
+  Returns all scored pages for the given section.
+  """
+  def fetch_scored_pages(section_slug), do: fetch_all_pages(section_slug, true)
+
+  @doc """
+  Returns all unscored pages for the given section.
+  """
+  def fetch_unscored_pages(section_slug), do: fetch_all_pages(section_slug, false)
+
+  def fetch_all_pages(section_slug, graded \\ nil) do
+    maybe_filter_by_graded =
+      case graded do
+        nil -> true
+        graded -> dynamic([_, _, _, _, rev], rev.graded == ^graded)
+      end
+
+    SectionResource
+    |> join(:inner, [sr], s in Section, on: sr.section_id == s.id)
+    |> join(:inner, [sr, s], spp in SectionsProjectsPublications,
+      on: spp.section_id == s.id and spp.project_id == sr.project_id
+    )
+    |> join(:inner, [sr, _, spp], pr in PublishedResource,
+      on: pr.publication_id == spp.publication_id and pr.resource_id == sr.resource_id
+    )
+    |> join(:inner, [sr, _, _, pr], rev in Revision, on: rev.id == pr.revision_id)
+    |> where(
+      [sr, s, _, _, rev],
+      s.slug == ^section_slug and
+        rev.deleted == false and
+        rev.resource_type_id == ^ResourceType.get_id_by_type("page")
+    )
+    |> where(^maybe_filter_by_graded)
+    |> order_by([_, _, _, _, rev], asc: rev.resource_id)
+    |> select([_, _, _, _, rev], rev)
+    |> Repo.all()
   end
 
   # Creates a 'hierarchy definition' strictly from a a project and the recursive
@@ -3198,4 +3296,49 @@ defmodule Oli.Delivery.Sections do
   end
 
   def get_revision_by_index(_, _), do: nil
+
+  @doc """
+  Get all students for a given section with their enrollment date.
+  """
+
+  def get_students_for_section_with_enrollment_date(section_id) do
+    student_context_role_id = ContextRoles.get_role(:context_learner).id
+
+    Repo.all(
+      from(enrollment in Enrollment,
+        join: enrollment_context_role in EnrollmentContextRole,
+        on: enrollment_context_role.enrollment_id == enrollment.id,
+        join: user in User,
+        on: enrollment.user_id == user.id,
+        where:
+          enrollment.section_id == ^section_id and
+            enrollment_context_role.context_role_id == ^student_context_role_id,
+        select: {user, enrollment}
+      )
+    )
+    |> Enum.map(fn {user, enrollment} ->
+      Map.put(user, :enrollment_date, enrollment.inserted_at)
+    end)
+    |> Enum.sort_by(fn user -> user.name end)
+  end
+
+  @doc """
+    Get all instructors for a given section.
+  """
+  def get_instructors_for_section(section_id) do
+    instructor_context_role_id = ContextRoles.get_role(:context_instructor).id
+
+    Repo.all(
+      from(enrollment in Enrollment,
+        join: enrollment_context_role in EnrollmentContextRole,
+        on: enrollment_context_role.enrollment_id == enrollment.id,
+        join: user in User,
+        on: enrollment.user_id == user.id,
+        where:
+          enrollment.section_id == ^section_id and
+            enrollment_context_role.context_role_id == ^instructor_context_role_id,
+        select: user
+      )
+    )
+  end
 end

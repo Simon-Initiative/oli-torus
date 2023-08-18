@@ -1,5 +1,5 @@
 defmodule OliWeb.Components.Delivery.StudentProgressTabelModel do
-  use OliWeb, :surface_component
+  use Phoenix.Component
   alias OliWeb.Common.Table.{ColumnSpec, SortableTableModel}
   alias OliWeb.Router.Helpers, as: Routes
   alias OliWeb.Progress.ResourceTitle
@@ -71,21 +71,33 @@ defmodule OliWeb.Components.Delivery.StudentProgressTabelModel do
   end
 
   def custom_render(assigns, row, %ColumnSpec{name: :title}) do
-    ~F"""
-      <ResourceTitle
-        node={row.node}
-        url={Routes.live_path(OliWeb.Endpoint, OliWeb.Progress.StudentResourceView, assigns.section_slug, assigns.user_id, row.resource_id)}
-      />
+    assigns = Map.merge(assigns, %{row: row})
+
+    ~H"""
+    <ResourceTitle.render
+      node={@row.node}
+      url={
+        Routes.live_path(
+          OliWeb.Endpoint,
+          OliWeb.Progress.StudentResourceView,
+          @section_slug,
+          @user_id,
+          @row.resource_id
+        )
+      }
+    />
     """
   end
 
   def custom_render(assigns, row, %ColumnSpec{name: :score}) do
     if row.type == "Graded" and !is_nil(row.score) do
-      ~F"""
-       <span>{row.score} / {row.out_of}</span>
-       {#if row.was_late}
-         <.badge variant={:danger}>LATE</.badge>
-       {/if}
+      assigns = Map.merge(assigns, %{row: row})
+
+      ~H"""
+      <span><%= "#{@row.score} / #{@row.out_of}" %></span>
+      <%= if @row.was_late do %>
+        <span class="ml-2 badge badge-xs badge-pill badge-danger">LATE</span>
+      <% end %>
       """
     else
       ""
@@ -101,8 +113,8 @@ defmodule OliWeb.Components.Delivery.StudentProgressTabelModel do
   end
 
   def render(assigns) do
-    ~F"""
-      <div>nothing</div>
+    ~H"""
+    <div>nothing</div>
     """
   end
 end

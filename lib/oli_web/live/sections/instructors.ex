@@ -1,17 +1,15 @@
 defmodule OliWeb.Sections.Instructors do
-  use Surface.Component
+  use OliWeb, :html
   import OliWeb.Common.Utils
 
-  prop users, :list, required: true
+  attr :users, :list, required: true
 
   def render(assigns) do
-    ~F"""
+    ~H"""
     <ul class="list-group">
-      {#for u <- @users}
-        <li class="list-group-item">
-          {name(u)}
-        </li>
-      {/for}
+      <li :for={u <- @users} class="list-group-item">
+        <%= name(u) %>
+      </li>
     </ul>
     """
   end

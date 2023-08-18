@@ -727,10 +727,12 @@ defmodule OliWeb.Delivery.InstructorDashboard.ScoredActivitiesTabTest do
           case Floki.find(data, "select") do
             [] ->
               Floki.text(data)
+              |> String.split("\n")
+              |> Enum.map(fn string -> String.trim(string) end)
+              |> Enum.join()
 
             select ->
-              Floki.find(select, "option[selected]")
-              |> Floki.text()
+              Floki.find(select, "option[selected]") |> Floki.text()
           end
         end)
       end)

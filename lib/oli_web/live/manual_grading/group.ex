@@ -1,12 +1,10 @@
 defmodule OliWeb.ManualGrading.Group do
-  use Surface.Component
-
-  slot default, required: true
+  use Phoenix.Component
 
   def render(assigns) do
-    ~F"""
+    ~H"""
     <div class="mb-3">
-      <#slot />
+      <%= render_slot(@inner_block) %>
     </div>
     """
   end

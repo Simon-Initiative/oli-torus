@@ -1,10 +1,10 @@
 defmodule OliWeb.CollaborationLive.Posts.Sort do
-  use Surface.Component
+  use OliWeb, :html
 
-  prop sort, :struct, required: true
+  attr(:sort, :map, required: true)
 
   def render(assigns) do
-    ~F"""
+    ~H"""
     <div class="flex gap-2">
       <div class="flex text-xs">
         <button

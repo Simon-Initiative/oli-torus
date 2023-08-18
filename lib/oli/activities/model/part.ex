@@ -10,6 +10,8 @@ defmodule Oli.Activities.Model.Part do
     :explanation
   ]
 
+  @grading_approaches MapSet.new(["automatic", "manual"])
+
   def parse(%{"id" => id} = part) do
     scoring_strategy =
       Map.get(part, "scoringStrategy", Oli.Resources.ScoringStrategy.get_id_by_type("average"))
@@ -19,9 +21,13 @@ defmodule Oli.Activities.Model.Part do
     responses = Map.get(part, "responses", [])
     explanation = Map.get(part, "explanation")
 
-    grading_approach =
+    grading_approach_str =
       Map.get(part, "gradingApproach", "automatic")
-      |> String.to_existing_atom()
+
+    grading_approach = case MapSet.member?(@grading_approaches, grading_approach_str) do
+      true -> String.to_atom(grading_approach_str)
+      false -> :automatic
+    end
 
     out_of = Map.get(part, "outOf")
 

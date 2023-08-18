@@ -1,34 +1,33 @@
 defmodule OliWeb.Products.Details.Actions do
-  use Surface.Component
+  use OliWeb, :html
   alias OliWeb.Router.Helpers, as: Routes
 
-  prop product, :any, required: true
-  prop is_admin, :boolean, required: true
+  attr(:product, :any, required: true)
+  attr(:is_admin, :boolean, required: true)
 
   def render(assigns) do
-    ~F"""
+    ~H"""
     <div>
       <div class="d-flex align-items-center">
         <div>
-          <button class="btn btn-link action-button" :on-click="request_duplicate">
+          <button class="btn btn-link action-button" phx-click="request_duplicate">
             Duplicate
           </button>
         </div>
         <div>Create a complete copy of this product.</div>
       </div>
 
-      {#if @is_admin}
-
-        <div class="d-flex align-items-center">
-          <div>
-            <a class="btn btn-link action-button" href={Routes.live_path(OliWeb.Endpoint, OliWeb.Products.PaymentsView, @product.slug)}>
-              Manage Payments
-            </a>
-          </div>
-          <div>Audit payments and manage payment codes.</div>
+      <div :if={@is_admin} class="d-flex align-items-center">
+        <div>
+          <a
+            class="btn btn-link action-button"
+            href={Routes.live_path(OliWeb.Endpoint, OliWeb.Products.PaymentsView, @product.slug)}
+          >
+            Manage Payments
+          </a>
         </div>
-
-      {/if}
+        <div>Audit payments and manage payment codes.</div>
+      </div>
 
       <div class="d-flex align-items-center">
         <div>
@@ -36,10 +35,11 @@ defmodule OliWeb.Products.Details.Actions do
             View Usage
           </button>
         </div>
-        <div>View course section usage.</div> <div class="badge badge-info">Coming Soon</div>
+        <div>View course section usage.</div>
+
+        <div class="badge badge-info">Coming Soon</div>
       </div>
     </div>
-
     """
   end
 end

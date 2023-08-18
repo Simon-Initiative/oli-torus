@@ -224,7 +224,10 @@ defmodule OliWeb.ObjectivesLiveTest do
       refute has_element?(view, "##{last_obj.slug}")
 
       view
-      |> element("a[phx-click=\"page_change\"]", "2")
+      |> element(
+        "#header_paging > nav > ul > li:nth-child(4) > a",
+        "2"
+      )
       |> render_click()
 
       refute has_element?(view, "##{first_obj.slug}")
@@ -260,19 +263,19 @@ defmodule OliWeb.ObjectivesLiveTest do
       assert has_element?(view, "##{obj.slug}", "Sub-Objectives 2")
       assert has_element?(view, "##{obj.slug}", "Pages 2")
       assert has_element?(view, "##{obj.slug}", "Activities 0")
-      assert has_element?(view, ".collapse.show", "Sub-Objectives")
-      assert has_element?(view, ".collapse.show", "#{sub_obj.title}")
-      assert has_element?(view, ".collapse.show", "Pages")
+      assert has_element?(view, ".collapse", "Sub-Objectives")
+      assert has_element?(view, ".collapse", "#{sub_obj.title}")
+      assert has_element?(view, ".collapse", "Pages")
 
       assert has_element?(
                view,
-               ".collapse.show a[href=\"#{Routes.resource_path(OliWeb.Endpoint, :edit, project.slug, page_1.slug)}\"]",
+               ".collapse a[href=\"#{Routes.resource_path(OliWeb.Endpoint, :edit, project.slug, page_1.slug)}\"]",
                "#{page_1.title}"
              )
 
       assert has_element?(
                view,
-               ".collapse.show a[href=\"#{Routes.resource_path(OliWeb.Endpoint, :edit, project.slug, page_2.slug)}\"]",
+               ".collapse a[href=\"#{Routes.resource_path(OliWeb.Endpoint, :edit, project.slug, page_2.slug)}\"]",
                "#{page_2.title}"
              )
 
@@ -443,7 +446,7 @@ defmodule OliWeb.ObjectivesLiveTest do
 
       {:ok, view, _html} = live(conn, live_view_route(project.slug, %{selected: first_obj.slug}))
 
-      refute has_element?(view, ".collapse.show", "#{sub_obj_b.title}")
+      refute has_element?(view, "#collapse0", "#{sub_obj_b.title}")
 
       view
       |> element(
@@ -492,7 +495,7 @@ defmodule OliWeb.ObjectivesLiveTest do
       )
       |> render_click(%{"slug" => sub_obj_b.slug, "parent_slug" => first_obj.slug})
 
-      assert has_element?(view, ".collapse.show", "#{sub_obj_b.title}")
+      assert has_element?(view, ".collapse", "#{sub_obj_b.title}")
       assert has_element?(view, ".collapse", "#{sub_obj_b.title}")
 
       assert view
@@ -533,7 +536,7 @@ defmodule OliWeb.ObjectivesLiveTest do
                |> ObjectiveEditor.fetch_objective_mappings()
                |> length()
 
-      assert has_element?(view, ".collapse.show", "#{title}")
+      assert has_element?(view, ".collapse", "#{title}")
 
       assert_receive {:finish_attachments, {_attachments, _flash_fn}}
       assert_receive {:DOWN, _ref, :process, _pid, :normal}
@@ -549,7 +552,7 @@ defmodule OliWeb.ObjectivesLiveTest do
       {:ok, view, _html} = live(conn, live_view_route(project.slug, %{selected: obj.slug}))
 
       assert has_element?(view, "##{obj.slug}")
-      assert has_element?(view, ".collapse.show", "#{sub_obj.title}")
+      assert has_element?(view, ".collapse", "#{sub_obj.title}")
 
       view
       |> element("button[phx-click=\"display_edit_modal\"][phx-value-slug=#{sub_obj.slug}]")
@@ -569,8 +572,8 @@ defmodule OliWeb.ObjectivesLiveTest do
                |> ObjectiveEditor.fetch_objective_mappings()
                |> length()
 
-      refute has_element?(view, ".collapse.show", "#{sub_obj.title}")
-      assert has_element?(view, ".collapse.show", "#{title}")
+      refute has_element?(view, ".collapse", "#{sub_obj.title}")
+      assert has_element?(view, ".collapse", "#{title}")
 
       assert_receive {:finish_attachments, {_attachments, _flash_fn}}
       assert_receive {:DOWN, _ref, :process, _pid, :normal}
@@ -589,7 +592,7 @@ defmodule OliWeb.ObjectivesLiveTest do
       {:ok, view, _html} = live(conn, live_view_route(project.slug, %{selected: obj.slug}))
 
       assert has_element?(view, "##{obj.slug}")
-      assert has_element?(view, ".collapse.show", "#{sub_obj.title}")
+      assert has_element?(view, ".collapse", "#{sub_obj.title}")
 
       view
       |> element("button[phx-click=\"delete\"][phx-value-slug=#{sub_obj.slug}]")
@@ -605,7 +608,7 @@ defmodule OliWeb.ObjectivesLiveTest do
                |> ObjectiveEditor.fetch_objective_mappings()
                |> length()
 
-      refute has_element?(view, ".collapse.show", "#{sub_obj.title}")
+      refute has_element?(view, ".collapse", "#{sub_obj.title}")
 
       assert_receive {:finish_attachments, {_attachments, _flash_fn}}
       assert_receive {:DOWN, _ref, :process, _pid, :normal}
@@ -628,7 +631,7 @@ defmodule OliWeb.ObjectivesLiveTest do
 
       assert has_element?(view, "##{obj_a.slug}")
       assert has_element?(view, "##{obj_b.slug}")
-      assert has_element?(view, "##{obj_a.slug} .collapse.show", "#{sub_obj.title}")
+      assert has_element?(view, "##{obj_a.slug} .collapse", "#{sub_obj.title}")
       assert has_element?(view, "##{obj_b.slug} .collapse", "#{sub_obj.title}")
 
       view
@@ -647,7 +650,7 @@ defmodule OliWeb.ObjectivesLiveTest do
                |> ObjectiveEditor.fetch_objective_mappings()
                |> length()
 
-      refute has_element?(view, "##{obj_a.slug} .collapse.show", "#{sub_obj.title}")
+      refute has_element?(view, "##{obj_a.slug} .collapse", "#{sub_obj.title}")
       assert has_element?(view, "##{obj_b.slug} .collapse", "#{sub_obj.title}")
 
       assert_receive {:finish_attachments, {_attachments, _flash_fn}}

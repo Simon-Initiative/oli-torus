@@ -287,6 +287,12 @@ defmodule OliWeb.Router do
     resources("/invitations", InvitationController, only: [:edit, :update])
   end
 
+  scope "/delivery", PowInvitation.Phoenix, as: :delivery_pow_invitation do
+    pipe_through([:browser, :delivery, :registration_captcha])
+
+    resources("/invitations", InvitationController, only: [:edit, :update])
+  end
+
   # open access routes
   scope "/", OliWeb do
     pipe_through([:browser, :delivery, :authoring])
@@ -1024,6 +1030,7 @@ defmodule OliWeb.Router do
     live("/:section_slug/remix", Delivery.RemixSection)
     live("/:section_slug/remix/:section_resource_slug", Delivery.RemixSection)
     live("/:section_slug/enrollments", Sections.EnrollmentsViewLive)
+    post("/:section_slug/enrollments", InviteController, :create_bulk)
 
     live_session :enrolled_students,
       on_mount: [

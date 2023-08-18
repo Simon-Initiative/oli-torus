@@ -1,18 +1,19 @@
 defmodule OliWeb.Products.Create do
-  use Surface.LiveComponent
+  use OliWeb, :html
 
-  prop title, :string, required: true
-  prop click, :event, required: true
-  prop change, :event, required: true
+  attr(:title, :string, required: true)
+  attr(:click, :any, required: true)
+  attr(:change, :any, required: true)
 
   def render(assigns) do
-    ~F"""
+    ~H"""
     <div>
-
       <p>Create a new product with title:</p>
-      <input type="text" style="width: 40%;" :on-blur={@change} :on-keyup={@change}/>
+      <input type="text" style="width: 40%;" phx-blur={@change} phx-keyup={@change} />
 
-      <button class="btn btn-primary" :on-click={@click} disabled={@title == ""}>Create Product</button>
+      <button class="btn btn-primary" phx-click={@click} disabled={@title == ""}>
+        Create Product
+      </button>
     </div>
     """
   end
