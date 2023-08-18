@@ -9,8 +9,10 @@ defmodule OliWeb.Storybook.ModalExample do
 
   def doc, do: "Modal example"
 
+  @impl true
   def mount(_, _, socket), do: {:ok, socket}
 
+  @impl true
   def render(assigns) do
     ~H"""
       <div>
@@ -25,5 +27,4 @@ defmodule OliWeb.Storybook.ModalExample do
       </div>
     """
   end
-
 end

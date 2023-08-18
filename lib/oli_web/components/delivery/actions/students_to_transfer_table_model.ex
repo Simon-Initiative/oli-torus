@@ -29,7 +29,7 @@ defmodule OliWeb.Delivery.Actions.StudentsToTransferTableModel do
   end
 
   def render_name_column(assigns, student, _) do
-    assigns = assign(assigns, name: student.name, student_id: student.id)
+    assigns = Map.merge(assigns, %{name: student.name, student_id: student.id})
 
     ~H"""
     <div class="pl-9 pr-4 flex flex-col">
@@ -39,7 +39,7 @@ defmodule OliWeb.Delivery.Actions.StudentsToTransferTableModel do
   end
 
   def render_date(assigns, student, %ColumnSpec{name: :enrollment_date}) do
-    assigns = assign(assigns, :enrollment_date, student.enrollment_date)
+    assigns = Map.put(assigns, :enrollment_date, student.enrollment_date)
 
     ~H"""
     <%= FormatDateTime.format_datetime(@enrollment_date, show_timezone: false) %>

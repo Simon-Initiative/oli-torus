@@ -1,10 +1,10 @@
 defmodule OliWeb.Common.EnrollmentBrowser.TableModel do
   alias OliWeb.Common.Table.{ColumnSpec, SortableTableModel}
   import OliWeb.Common.Utils
-  use Surface.Component
+  use Phoenix.Component
 
   def render(assigns) do
-    ~F"""
+    ~H"""
     <div>nothing</div>
     """
   end
@@ -41,9 +41,12 @@ defmodule OliWeb.Common.EnrollmentBrowser.TableModel do
         },
         _
       ) do
-    ~F"""
-    <button class="btn btn-primary" :on-click="select_user" phx-value-id={id}>
-      {name(name, given_name, family_name)}
+    assigns =
+      Map.merge(assigns, %{id: id, name: name, given_name: given_name, family_name: family_name})
+
+    ~H"""
+    <button class="btn btn-primary" phx-click="select_user" phx-value-id={@id}>
+      <%= name(@name, @given_name, @family_name) %>
     </button>
     """
   end

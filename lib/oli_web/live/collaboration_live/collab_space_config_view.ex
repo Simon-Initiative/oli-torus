@@ -1,5 +1,5 @@
 defmodule OliWeb.CollaborationLive.CollabSpaceConfigView do
-  use Surface.LiveView
+  use OliWeb, :live_view
 
   alias Oli.Authoring.Course
   alias Oli.Delivery.Sections
@@ -10,18 +10,6 @@ defmodule OliWeb.CollaborationLive.CollabSpaceConfigView do
   alias Oli.Delivery.Sections.SectionResource
   alias OliWeb.CollaborationLive.CollabSpaceView
   alias Phoenix.PubSub
-  alias Surface.Components.Form
-  alias Surface.Components.Form.{Checkbox, Field, HiddenInput, Inputs, Label, NumberInput}
-
-  data is_delivery, :boolean, default: false
-  data author_id, :string
-  data user_id, :string
-  data collab_space_config, :any
-  data collab_space_status, :atom
-  data changeset, :any
-  data page_revision, :any
-  data page_resource, :any
-  data parent_entity, :any
 
   def mount(
         _params,
@@ -73,7 +61,7 @@ defmodule OliWeb.CollaborationLive.CollabSpaceConfigView do
        user_id: Map.get(session, "current_user_id"),
        collab_space_config: collab_space_config,
        collab_space_status: get_status(collab_space_config),
-       changeset: changeset,
+       form: to_form(changeset),
        page_revision: page_revision,
        page_resource: page_resource,
        parent_entity: parent_entity,
@@ -83,77 +71,117 @@ defmodule OliWeb.CollaborationLive.CollabSpaceConfigView do
   end
 
   def render(assigns) do
-    ~F"""
-      <div class={"card max-w-full #{if @is_overview_render, do: "shadow-none"}"}>
-        <div class="flex flex-col md:flex-row md:items-center card-body justify-between">
-          <div class="flex flex-col justify-start md:flex-row md:items-center gap-2">
-            {#unless @is_overview_render}
-              <h3 class="card-title">Collaborative Space Config</h3>
-            {/unless}
-            <div>
-              <span class="bg-delivery-primary-200 badge badge-info">{humanize(@collab_space_status)}</span>
-            </div>
-          </div>
-
-          <div class="mt-4 md:mt-0">
-            {#case @collab_space_status}
-              {#match :disabled}
-                <button class="torus-button primary" :on-click="enable">Enable</button>
-              {#match :enabled}
-                <button class="torus-button outline" :on-click="archive">Archive</button>
-                <button class="torus-button secondary" :on-click="disable">Disable</button>
-              {#match _}
-                <button class="torus-button primary border outline" :on-click="enable">Enable</button>
-                <button class="torus-button secondary" :on-click="disable">Disable</button>
-            {/case}
+    ~H"""
+    <div class={"card max-w-full #{if @is_overview_render, do: "shadow-none"}"}>
+      <div class="flex flex-col md:flex-row md:items-center card-body justify-between">
+        <div class="flex flex-col justify-start md:flex-row md:items-center gap-2">
+          <%= unless @is_overview_render do %>
+            <h3 class="card-title">Collaborative Space Config</h3>
+          <% end %>
+          <div>
+            <span class="bg-delivery-primary-200 badge badge-info">
+              <%= humanize(@collab_space_status) %>
+            </span>
           </div>
         </div>
-        {#if @collab_space_status == :enabled}
-          <div class="card-footer bg-transparent flex mt-8">
-            <Form class="w-full" for={@changeset} submit="save">
-              <Inputs for={:collab_space_config}>
-                <HiddenInput field={:status}/>
 
-                <Field name={:threaded} class="form-check mt-1">
-                  <Checkbox class="form-check-input"/>
-                  <Label class="form-check-label" text="Allow threading of posts with replies"/>
-                </Field>
-
-                <Field name={:auto_accept} class="form-check mt-1">
-                  <Checkbox class="form-check-input"/>
-                  <Label class="form-check-label" text="Allow posts to be visible without approval"/>
-                </Field>
-
-                <Field name={:show_full_history} class="form-check mt-1">
-                  <Checkbox class="form-check-input"/>
-                  <Label class="form-check-label" />
-                </Field>
-
-                <Field name={:anonymous_posting} class="form-check mt-1">
-                  <Checkbox class="form-check-input"/>
-                  <Label class="form-check-label" text="Allow anonymous posts"/>
-                </Field>
-
-                <br>
-                Participation requirements
-                <div class="flex flex-col gap-4">
-                  <Field name={:participation_min_replies} class="form-group">
-                    <Label text="Minimum replies"/>
-                    <NumberInput class="form-control" opts={min: 0}/>
-                  </Field>
-
-                  <Field name={:participation_min_posts} class="form-group">
-                    <Label text="Minimum posts" />
-                    <NumberInput class="form-control" opts={min: 0}/>
-                  </Field>
-                </div>
-              </Inputs>
-
-              <button class="torus-button primary !flex ml-auto mt-8" type="submit">Save</button>
-            </Form>
-          </div>
-        {/if}
+        <div class="mt-4 md:mt-0">
+          <.action_buttons status={@collab_space_status} />
+        </div>
       </div>
+      <%= if  @collab_space_status == :enabled do %>
+        <div class="card-footer bg-transparent flex mt-8">
+          <.form class="w-full" for={@form} phx-submit="save">
+            <.inputs_for :let={cs} field={@form[:collab_space_config]}>
+              <.input type="hidden" field={cs[:status]} />
+
+              <div class="form-check mt-1">
+                <.input
+                  type="checkbox"
+                  field={cs[:threaded]}
+                  class="form-check-input"
+                  label="Allow threading of posts with replies"
+                />
+              </div>
+
+              <div class="form-check mt-1">
+                <.input
+                  type="checkbox"
+                  field={cs[:auto_accept]}
+                  class="form-check-input"
+                  label="Allow posts to be visible without approval"
+                />
+              </div>
+
+              <div class="form-check mt-1">
+                <.input
+                  type="checkbox"
+                  field={cs[:show_full_history]}
+                  class="form-check-input"
+                  label="Show full history"
+                />
+              </div>
+
+              <div class="form-check mt-1">
+                <.input
+                  type="checkbox"
+                  field={cs[:anonymous_posting]}
+                  class="form-check-input"
+                  label="Allow anonymous posts"
+                />
+              </div>
+
+              <br /> Participation requirements
+              <div class="flex flex-col gap-4">
+                <div class="form-group">
+                  <.input
+                    type="number"
+                    min={0}
+                    field={cs[:participation_min_replies]}
+                    class="form-control"
+                    label="Minimum replies"
+                  />
+                </div>
+
+                <div class="form-group">
+                  <.input
+                    type="number"
+                    min={0}
+                    field={cs[:participation_min_posts]}
+                    class="form-control"
+                    label="Minimum posts"
+                  />
+                </div>
+              </div>
+            </.inputs_for>
+
+            <button class="torus-button primary !flex ml-auto mt-8" type="submit">Save</button>
+          </.form>
+        </div>
+      <% end %>
+    </div>
+    """
+  end
+
+  attr(:status, :atom)
+
+  def action_buttons(%{status: :disabled} = assigns) do
+    ~H"""
+    <button class="torus-button primary" phx-click="enable">Enable</button>
+    """
+  end
+
+  def action_buttons(%{status: :enabled} = assigns) do
+    ~H"""
+    <button class="torus-button outline" phx-click="archive">Archive</button>
+    <button class="torus-button secondary" phx-click="disable">Disable</button>
+    """
+  end
+
+  def action_buttons(assigns) do
+    ~H"""
+    <button class="torus-button primary border outline" phx-click="enable">Enable</button>
+    <button class="torus-button secondary" phx-click="disable">Disable</button>
     """
   end
 
@@ -197,11 +225,12 @@ defmodule OliWeb.CollaborationLive.CollabSpaceConfigView do
   defp upsert_collab_space(true, action, attrs, socket) do
     socket = clear_flash(socket)
 
-    case Oli.Delivery.Sections.get_section_resource(socket.assigns.parent_entity.id, socket.assigns.page_resource.id)
-    |> Oli.Delivery.Sections.update_section_resource(%{collab_space_config: attrs}) do
-
+    case Oli.Delivery.Sections.get_section_resource(
+           socket.assigns.parent_entity.id,
+           socket.assigns.page_resource.id
+         )
+         |> Oli.Delivery.Sections.update_section_resource(%{collab_space_config: attrs}) do
       {:ok, section_resource} ->
-
         socket = put_flash(socket, :info, "Collaborative space successfully #{action}.")
         collab_space_config = section_resource.collab_space_config
 
@@ -213,7 +242,7 @@ defmodule OliWeb.CollaborationLive.CollabSpaceConfigView do
 
         {:noreply,
          assign(socket,
-           changeset: SectionResource.changeset(section_resource, %{}),
+           form: to_form(SectionResource.changeset(section_resource, %{})),
            collab_space_status: get_status(collab_space_config),
            collab_space_config: collab_space_config
          )}
@@ -246,7 +275,7 @@ defmodule OliWeb.CollaborationLive.CollabSpaceConfigView do
         {:noreply,
          assign(socket,
            page_revision: next_page_revision,
-           changeset: Resources.change_revision(next_page_revision),
+           form: to_form(Resources.change_revision(next_page_revision)),
            collab_space_status: get_status(collab_space_config),
            collab_space_config: collab_space_config
          )}
@@ -262,12 +291,6 @@ defmodule OliWeb.CollaborationLive.CollabSpaceConfigView do
 
   defp from_struct(nil), do: %{}
   defp from_struct(collab_space), do: Map.from_struct(collab_space)
-
-  defp humanize(atom) do
-    atom
-    |> Atom.to_string()
-    |> String.capitalize()
-  end
 
   def handle_info(_, socket), do: {:noreply, socket}
 end

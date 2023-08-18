@@ -1,6 +1,6 @@
 defmodule OliWeb.ManualGrading.TableModel do
   alias OliWeb.Common.Table.{ColumnSpec, SortableTableModel}
-  use Surface.LiveComponent
+  use Phoenix.Component
 
   def new(attempts, activity_types_map, ctx) do
     SortableTableModel.new(
@@ -73,7 +73,7 @@ defmodule OliWeb.ManualGrading.TableModel do
   end
 
   def render(assigns) do
-    ~F"""
+    ~H"""
     <div>nothing</div>
     """
   end

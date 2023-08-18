@@ -88,16 +88,17 @@ defmodule OliWeb.Delivery.NewCourse do
 
   def render(assigns) do
     ~H"""
-      <div id={@form_id} phx-hook="SubmitForm">
-        <.live_component
-          id="course_creation_stepper"
-          module={Stepper}
-          on_cancel="redirect_to_courses"
-          steps={@steps || []}
-          current_step={@current_step}
-          next_step_disabled={next_step_disabled?(assigns)}
-          data={get_step_data(assigns)} />
-      </div>
+    <div id={@form_id} phx-hook="SubmitForm">
+      <.live_component
+        id="course_creation_stepper"
+        module={Stepper}
+        on_cancel="redirect_to_courses"
+        steps={@steps || []}
+        current_step={@current_step}
+        next_step_disabled={next_step_disabled?(assigns)}
+        data={get_step_data(assigns)}
+      />
+    </div>
     """
   end
 
@@ -105,12 +106,12 @@ defmodule OliWeb.Delivery.NewCourse do
 
   defp header(assigns) do
     ~H"""
-      <h5 class="px-9 py-4 border-gray-200 dark:border-gray-600 border-b text-sm font-semibold">
-        New course set up
-      </h5>
-      <div class="overflow-y-auto scrollbar-hide relative h-full">
-        <%= render_slot(@inner_block) %>
-      </div>
+    <h5 class="px-9 py-4 border-gray-200 dark:border-gray-600 border-b text-sm font-semibold">
+      New course set up
+    </h5>
+    <div class="overflow-y-auto scrollbar-hide relative h-full">
+      <%= render_slot(@inner_block) %>
+    </div>
     """
   end
 
@@ -118,50 +119,54 @@ defmodule OliWeb.Delivery.NewCourse do
 
   defp render_flash(assigns) do
     ~H"""
-      <%= if live_flash(@flash, :form_error) do %>
-        <div class="alert alert-danger m-0 flex flex-row justify-between w-full" role="alert">
+    <%= if live_flash(@flash, :form_error) do %>
+      <div class="alert alert-danger m-0 flex flex-row justify-between w-full" role="alert">
+        <%= live_flash(@flash, :form_error) %>
 
-          <%= live_flash(@flash, :form_error) %>
-
-          <button type="button" class="close" data-bs-dismiss="alert" aria-label="Close" phx-click="lv:clear-flash" phx-value-key="error">
-            <i class="fa-solid fa-xmark fa-lg"></i>
-          </button>
-
-        </div>
-      <% end %>
+        <button
+          type="button"
+          class="close"
+          data-bs-dismiss="alert"
+          aria-label="Close"
+          phx-click="lv:clear-flash"
+          phx-value-key="error"
+        >
+          <i class="fa-solid fa-xmark fa-lg"></i>
+        </button>
+      </div>
+    <% end %>
     """
   end
 
   def render_step(:select_source, assigns) do
     ~H"""
-      <.header>
-        <div class="flex flex-col items-center gap-3 pl-9 pr-16 py-4">
-          <h2>Select source</h2>
-          <.live_component
-            id="select_source_step"
-            module={SelectSource}
-            session={@session}
-            on_select={@on_select}
-            on_select_target={@on_select_target}
-            source={@source}
-            current_user={@current_user}
-            lti_params={@lti_params}
-          />
-        </div>
-      </.header>
+    <.header>
+      <div class="flex flex-col items-center gap-3 pl-9 pr-16 py-4">
+        <h2>Select source</h2>
+        <.live_component
+          id="select_source_step"
+          module={SelectSource}
+          session={@session}
+          on_select={@on_select}
+          source={@source}
+          current_user={@current_user}
+          lti_params={@lti_params}
+        />
+      </div>
+    </.header>
     """
   end
 
   def render_step(:name_course, assigns) do
     ~H"""
-      <.header>
-        <div class="flex flex-col items-center gap-3 pl-9 pr-16 py-4">
-          <img src="/images/icons/course-creation-wizard-step-1.svg" />
-          <h2>Name your course</h2>
-          <.render_flash flash={@flash} />
-          <NameCourse.render changeset={@changeset} />
-        </div>
-      </.header>
+    <.header>
+      <div class="flex flex-col items-center gap-3 pl-9 pr-16 py-4">
+        <img src="/images/icons/course-creation-wizard-step-1.svg" />
+        <h2>Name your course</h2>
+        <.render_flash flash={@flash} />
+        <NameCourse.render changeset={@changeset} />
+      </div>
+    </.header>
     """
   end
 
@@ -172,7 +177,7 @@ defmodule OliWeb.Delivery.NewCourse do
         <img src="/images/icons/course-creation-wizard-step-2.svg" />
         <h2>Course details</h2>
         <.render_flash flash={@flash} />
-        <CourseDetails.render on_select={@on_select} changeset={@changeset} />
+        <CourseDetails.render changeset={@changeset} />
       </div>
     </.header>
     """
@@ -196,8 +201,7 @@ defmodule OliWeb.Delivery.NewCourse do
         %{
           session: assigns.session,
           source: assigns[:source],
-          on_select: "source_selection",
-          on_select_target: "##{@form_id}",
+          on_select: JS.push("source_selection", target: "##{@form_id}"),
           current_user: assigns.current_user,
           lti_params: assigns.lti_params
         }
@@ -206,7 +210,11 @@ defmodule OliWeb.Delivery.NewCourse do
         %{changeset: assigns.changeset, flash: assigns.flash}
 
       _ ->
-        %{changeset: assigns.changeset, on_select: "day_selection", flash: assigns.flash}
+        %{
+          changeset: assigns.changeset,
+          on_select: JS.push("day_selection", target: "##{@form_id}"),
+          flash: assigns.flash
+        }
     end
   end
 

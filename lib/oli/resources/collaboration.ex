@@ -127,7 +127,8 @@ defmodule Oli.Resources.Collaboration do
             page_revision.resource_id
           ),
         count: over(count(page_revision.id))
-      }
+      },
+      order_by: section.id
     )
     |> maybe_add_query_limit(opts[:limit])
     |> maybe_add_query_offset(opts[:offset])
@@ -217,12 +218,10 @@ defmodule Oli.Resources.Collaboration do
            resource_id: resource_id,
            collab_space_config: revision_collab_space_config
          } <- DeliveryResolver.from_revision_slug(section_slug, page_slug) do
-
       case Sections.get_section_resource(section_id, resource_id) do
         %{collab_space_config: nil} -> {:ok, revision_collab_space_config}
         %{collab_space_config: sr_collab_space_config} -> {:ok, sr_collab_space_config}
       end
-
     else
       _ -> {:error, :not_found}
     end
@@ -357,8 +356,7 @@ defmodule Oli.Resources.Collaboration do
       from(
         post in Post,
         join: sr in SectionResource,
-        on:
-          sr.resource_id == post.resource_id and sr.section_id == post.section_id,
+        on: sr.resource_id == post.resource_id and sr.section_id == post.section_id,
         join: spp in SectionsProjectsPublications,
         on: spp.section_id == post.section_id and spp.project_id == sr.project_id,
         join: pr in PublishedResource,
@@ -403,8 +401,7 @@ defmodule Oli.Resources.Collaboration do
       from(
         post in Post,
         join: sr in SectionResource,
-        on:
-          sr.resource_id == post.resource_id and sr.section_id == post.section_id,
+        on: sr.resource_id == post.resource_id and sr.section_id == post.section_id,
         join: spp in SectionsProjectsPublications,
         on: spp.section_id == post.section_id and spp.project_id == sr.project_id,
         join: pr in PublishedResource,
@@ -520,7 +517,9 @@ defmodule Oli.Resources.Collaboration do
     Section
     |> join(:inner, [s], p in Post, on: p.section_id == s.id)
     |> join(:inner, [s], spp in SectionsProjectsPublications, on: spp.section_id == s.id)
-    |> join(:inner, [s, p, spp], pr in PublishedResource, on: pr.publication_id == spp.publication_id and pr.resource_id == p.resource_id)
+    |> join(:inner, [s, p, spp], pr in PublishedResource,
+      on: pr.publication_id == spp.publication_id and pr.resource_id == p.resource_id
+    )
     |> join(:inner, [_s, _p, _spp, pr], r in Revision, on: r.id == pr.revision_id)
     |> join(:inner, [_s, p, _spp], u in User, on: p.user_id == u.id)
     |> where(^section_join)

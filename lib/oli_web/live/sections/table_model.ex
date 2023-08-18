@@ -1,5 +1,5 @@
 defmodule OliWeb.Sections.SectionsTableModel do
-  use Surface.LiveComponent
+  use Phoenix.Component
 
   alias OliWeb.Common.SessionContext
   alias OliWeb.Common.Table.{ColumnSpec, SortableTableModel}
@@ -72,8 +72,19 @@ defmodule OliWeb.Sections.SectionsTableModel do
   end
 
   def custom_render(assigns, section, %ColumnSpec{name: :title}) do
-    ~F"""
-      <a href={Routes.live_path(OliWeb.Endpoint, OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive, section.slug, :manage)}>{section.title}</a>
+    assigns = Map.merge(assigns, %{section: section})
+
+    ~H"""
+    <a href={
+      Routes.live_path(
+        OliWeb.Endpoint,
+        OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
+        @section.slug,
+        :manage
+      )
+    }>
+      <%= @section.title %>
+    </a>
     """
   end
 
@@ -92,15 +103,19 @@ defmodule OliWeb.Sections.SectionsTableModel do
   end
 
   def custom_render(assigns, section, %ColumnSpec{name: :institution}) do
-    ~F"""
-      <div class="flex space-x-2 items-center">
-        <div>
-          {section.institution && section.institution.name}
-        </div>
-        {#if @render_institution_action}
-          <button class="btn btn-primary my-6" phx-click="edit_section" value={section.id}>Edit</button>
-        {/if}
+    assigns = Map.merge(assigns, %{section: section})
+
+    ~H"""
+    <div class="flex space-x-2 items-center">
+      <div>
+        <%= @section.institution && @section.institution.name %>
       </div>
+      <%= if @render_institution_action do %>
+        <button class="btn btn-primary my-6" phx-click="edit_section" value={@section.id}>
+          Edit
+        </button>
+      <% end %>
+    </div>
     """
   end
 
@@ -125,8 +140,8 @@ defmodule OliWeb.Sections.SectionsTableModel do
     do: Map.get(section, :instructor_name, "")
 
   def render(assigns) do
-    ~F"""
-      <div>nothing</div>
+    ~H"""
+    <div>nothing</div>
     """
   end
 end

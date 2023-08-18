@@ -137,12 +137,10 @@ defmodule OliWeb.Delivery.Sections.EnrollmentsTableModel do
 
     ~H"""
     <div class="flex items-center ml-8">
-      <div class={"flex flex-shrink-0 rounded-full w-2 h-2 #{if @progress < 50, do: "bg-red-600", else: "bg-gray-500"}"}></div>
-      <.link
-        class="ml-6 underline"
-        navigate={@link}
-      >
-      <%= if @name, do: Utils.name(@name, @given_name, @family_name), else: "N/A" %>
+      <div class={"flex flex-shrink-0 rounded-full w-2 h-2 #{if @progress < 50, do: "bg-red-600", else: "bg-gray-500"}"}>
+      </div>
+      <.link class="ml-6 underline" navigate={@link}>
+        <%= if @name, do: Utils.name(@name, @given_name, @family_name), else: "N/A" %>
       </.link>
     </div>
     """
@@ -153,10 +151,12 @@ defmodule OliWeb.Delivery.Sections.EnrollmentsTableModel do
         %{payment_status: payment_status, payment_date: payment_date},
         _
       ) do
-    assigns = assign(assigns, payment_status: payment_status, payment_date: payment_date)
+    assigns = Map.merge(assigns, %{payment_status: payment_status, payment_date: payment_date})
 
     ~H"""
-      <div class={if @payment_status == :not_paid, do: "text-red-600 font-bold"}><%= render_label(@payment_status, @payment_date, @section, @ctx) %></div>
+    <div class={if @payment_status == :not_paid, do: "text-red-600 font-bold"}>
+      <%= render_label(@payment_status, @payment_date, @section, @ctx) %>
+    </div>
     """
   end
 
@@ -164,7 +164,12 @@ defmodule OliWeb.Delivery.Sections.EnrollmentsTableModel do
     assigns = Map.merge(assigns, %{progress: parse_progress(user.progress)})
 
     ~H"""
-    <div class={if @progress < 50, do: "text-red-600 font-bold"} data-progress-check={if @progress >= 50, do: "true", else: "false"}><%= @progress %>%</div>
+    <div
+      class={if @progress < 50, do: "text-red-600 font-bold"}
+      data-progress-check={if @progress >= 50, do: "true", else: "false"}
+    >
+      <%= @progress %>%
+    </div>
     """
   end
 
@@ -191,7 +196,9 @@ defmodule OliWeb.Delivery.Sections.EnrollmentsTableModel do
     assigns = Map.merge(assigns, %{overall_proficiency: Map.get(user, :overall_proficiency)})
 
     ~H"""
-      <div class={if @overall_proficiency == "Low", do: "text-red-600 font-bold"}><%= @overall_proficiency %></div>
+    <div class={if @overall_proficiency == "Low", do: "text-red-600 font-bold"}>
+      <%= @overall_proficiency %>
+    </div>
     """
   end
 
@@ -199,7 +206,7 @@ defmodule OliWeb.Delivery.Sections.EnrollmentsTableModel do
     assigns = Map.merge(assigns, %{email: Map.get(user, :email)})
 
     ~H"""
-      <div><%= @email %></div>
+    <div><%= @email %></div>
     """
   end
 
@@ -215,7 +222,7 @@ defmodule OliWeb.Delivery.Sections.EnrollmentsTableModel do
       })
 
     ~H"""
-      <div><%= @type %></div>
+    <div><%= @type %></div>
     """
   end
 

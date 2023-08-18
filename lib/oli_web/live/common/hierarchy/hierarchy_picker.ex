@@ -68,41 +68,52 @@ defmodule OliWeb.Common.Hierarchy.HierarchyPicker do
       <%= if !is_nil(assigns[:selected_publication] || assigns[:active_tab]) do %>
         <.render_back_to_publications />
         <div class="flex mb-2">
-          <.render_hierarchy_tab tab_name={:curriculum} tab_label="Curriculum" active_tab={assigns[:active_tab]} />
-          <.render_hierarchy_tab tab_name={:all_pages} tab_label="All pages" active_tab={assigns[:active_tab]} />
+          <.render_hierarchy_tab
+            tab_name={:curriculum}
+            tab_label="Curriculum"
+            active_tab={assigns[:active_tab]}
+          />
+          <.render_hierarchy_tab
+            tab_name={:all_pages}
+            tab_label="All pages"
+            active_tab={assigns[:active_tab]}
+          />
         </div>
       <% end %>
 
       <%= if assigns[:active_tab] == :all_pages do %>
         <form phx-debounce="500" phx-change="HierarchyPicker.pages_text_search" class="ml-auto w-44">
-          <SearchInput.render text={assigns.pages_table_model_params[:text_search]} name="text_search" id="text_search" placeholder="Search pages" />
+          <SearchInput.render
+            text={assigns.pages_table_model_params[:text_search]}
+            name="text_search"
+            id="text_search"
+            placeholder="Search pages"
+          />
         </form>
         <PagedTable.render
-          __context__={assigns[:__context_]}
           total_count={assigns.pages_table_model_total_count}
           filter={assigns.pages_table_model_params.text_filter}
           limit={assigns.pages_table_model_params.limit}
           offset={assigns.pages_table_model_params.offset}
-          table_model={Map.put(assigns.pages_table_model, :data, %{
-            selection: assigns.selection,
-            preselected: assigns.preselected,
-            selected_publication: assigns.selected_publication
-          })}
+          table_model={
+            Map.put(assigns.pages_table_model, :data, %{
+              selection: assigns.selection,
+              preselected: assigns.preselected,
+              selected_publication: assigns.selected_publication
+            })
+          }
           allow_selection={false}
           sort="HierarchyPicker.pages_sort"
           page_change="HierarchyPicker.pages_page_change"
-          selection_change=""
           show_top_paging={false}
-          show_bottom_paging={true}
           additional_table_class="remix_materials_table"
           render_top_info={false}
         />
       <% else %>
         <div class="hierarchy-navigation">
-          <%= render_breadcrumb assigns %>
+          <%= render_breadcrumb(assigns) %>
         </div>
         <div class="hierarchy">
-          <%# filter out the item being moved from the options, sort all containers first  %>
           <%= for child <- @children |> filter_items(assigns) |> sort_items(assigns) do %>
             <%= render_child(assigns, child) %>
           <% end %>
@@ -121,25 +132,30 @@ defmodule OliWeb.Common.Hierarchy.HierarchyPicker do
     ~H"""
     <div id={@id} class="hierarchy-picker">
       <div class="hierarchy-navigation">
-        <%= render_breadcrumb assigns %>
+        <%= render_breadcrumb(assigns) %>
       </div>
       <div class="hierarchy">
-        <form phx-debounce="500" phx-change="HierarchyPicker.publications_text_search" class="ml-auto w-56">
-          <SearchInput.render text={assigns.publications_table_model_params[:text_search]} name="text_search" id="text_search" placeholder="Search Content Sources" />
+        <form
+          phx-debounce="500"
+          phx-change="HierarchyPicker.publications_text_search"
+          class="ml-auto w-56"
+        >
+          <SearchInput.render
+            text={assigns.publications_table_model_params[:text_search]}
+            name="text_search"
+            id="text_search"
+            placeholder="Search Content Sources"
+          />
         </form>
         <PagedTable.render
-          __context__={assigns[:__context_]}
           total_count={assigns.publications_table_model_total_count}
           filter={assigns.publications_table_model_params.text_filter}
           limit={assigns.publications_table_model_params.limit}
           offset={assigns.publications_table_model_params.offset}
           table_model={assigns.publications_table_model}
           allow_selection={false}
-          sort=""
           page_change="HierarchyPicker.publications_page_change"
-          selection_change=""
           show_top_paging={false}
-          show_bottom_paging={true}
           additional_table_class="remix_materials_publications_table"
           render_top_info={false}
         />
@@ -161,13 +177,17 @@ defmodule OliWeb.Common.Hierarchy.HierarchyPicker do
       |> assign(:child, child)
 
     ~H"""
-    <div id={"hierarchy_item_#{@child.uuid}"} phx-click="HierarchyPicker.select" phx-value-uuid={@child.uuid}>
+    <div
+      id={"hierarchy_item_#{@child.uuid}"}
+      phx-click="HierarchyPicker.select"
+      phx-value-uuid={@child.uuid}
+    >
       <div class="flex-1 mx-2">
         <span class="align-middle">
           <input type="checkbox" {@maybe_checked} />
           <OliWeb.Curriculum.EntryLive.icon child={@child.revision} />
         </span>
-        <%= resource_link assigns, @child %>
+        <%= resource_link(assigns, @child) %>
       </div>
     </div>
     """
@@ -200,13 +220,13 @@ defmodule OliWeb.Common.Hierarchy.HierarchyPicker do
       )
 
     ~H"""
-    <div id={"hierarchy_item_#{ @child.uuid}"} {@click_handler} >
+    <div id={"hierarchy_item_#{ @child.uuid}"} {@click_handler}>
       <div class="flex-1 mx-2">
         <span class="align-middle">
           <input type="checkbox" {@maybe_checked} {@maybe_preselected} />
-          <%= OliWeb.Curriculum.EntryLive.icon(%{child:  @child.revision}) %>
+          <%= OliWeb.Curriculum.EntryLive.icon(%{child: @child.revision}) %>
         </span>
-        <%= resource_link assigns,  @child %>
+        <%= resource_link(assigns, @child) %>
       </div>
     </div>
     """
@@ -221,7 +241,7 @@ defmodule OliWeb.Common.Hierarchy.HierarchyPicker do
         <span class="align-middle">
           <%= OliWeb.Curriculum.EntryLive.icon(%{child: @child.revision}) %>
         </span>
-        <%= resource_link assigns, @child %>
+        <%= resource_link(assigns, @child) %>
       </div>
     </div>
     """
@@ -229,11 +249,13 @@ defmodule OliWeb.Common.Hierarchy.HierarchyPicker do
 
   def render_breadcrumb(%{hierarchy: nil, active: nil} = assigns) do
     ~H"""
-      <ol class="breadcrumb custom-breadcrumb p-1 px-2">
-        <div>
-          <button class="btn btn-sm btn-link" disabled><i class="fas fa-book"></i> Select a Content Source</button>
-        </div>
-      </ol>
+    <ol class="breadcrumb custom-breadcrumb p-1 px-2">
+      <div>
+        <button class="btn btn-sm btn-link" disabled>
+          <i class="fas fa-book"></i> Select a Content Source
+        </button>
+      </div>
+    </ol>
     """
   end
 
@@ -246,15 +268,16 @@ defmodule OliWeb.Common.Hierarchy.HierarchyPicker do
       |> assign(:maybe_disabled, maybe_disabled(breadcrumbs))
 
     ~H"""
-      <ol class="flex items-center gap-2 bg-gray-100 dark:bg-gray-700 p-2 rounded overflow-x-scroll scrollbar-hide">
-        <%= for {breadcrumb, index} <- Enum.with_index(@breadcrumbs) do %>
-          <.breadcrumb_item
-            breadcrumb={breadcrumb}
-            show_short={length(@breadcrumbs) > 3}
-            is_first={index == 0}
-            is_last={length(@breadcrumbs) - 1 == index} />
-        <% end %>
-      </ol>
+    <ol class="flex items-center gap-2 bg-gray-100 dark:bg-gray-700 p-2 rounded overflow-x-scroll scrollbar-hide">
+      <%= for {breadcrumb, index} <- Enum.with_index(@breadcrumbs) do %>
+        <.breadcrumb_item
+          breadcrumb={breadcrumb}
+          show_short={length(@breadcrumbs) > 3}
+          is_first={index == 0}
+          is_last={length(@breadcrumbs) - 1 == index}
+        />
+      <% end %>
+    </ol>
     """
   end
 
@@ -267,14 +290,23 @@ defmodule OliWeb.Common.Hierarchy.HierarchyPicker do
             <i class="fa-solid fa-house" />
           </div>
         <% {true, false} -> %>
-          <button class="btn btn-link p-0" phx-click="HierarchyPicker.update_active" phx-value-uuid={@breadcrumb.slug}>
+          <button
+            class="btn btn-link p-0"
+            phx-click="HierarchyPicker.update_active"
+            phx-value-uuid={@breadcrumb.slug}
+          >
             <i class="fa-solid fa-house" />
           </button>
           <span>/</span>
         <% {_, true} -> %>
           <span><%= get_title(@breadcrumb, @show_short) %></span>
         <% _ -> %>
-          <button class="btn btn-link p-0" disabled={@is_last} phx-click="HierarchyPicker.update_active" phx-value-uuid={@breadcrumb.slug}>
+          <button
+            class="btn btn-link p-0"
+            disabled={@is_last}
+            phx-click="HierarchyPicker.update_active"
+            phx-value-uuid={@breadcrumb.slug}
+          >
             <%= get_title(@breadcrumb, @show_short) %>
           </button>
           <span>/</span>
@@ -285,22 +317,21 @@ defmodule OliWeb.Common.Hierarchy.HierarchyPicker do
 
   defp render_back_to_publications(assigns) do
     ~H"""
-      <button class="btn btn-sm btn-link mr-2" phx-click="HierarchyPicker.clear_publication">
-        <i class="fas fa-arrow-left mr-1"></i>
-        Back to publications
-      </button>
+    <button class="btn btn-sm btn-link mr-2" phx-click="HierarchyPicker.clear_publication">
+      <i class="fas fa-arrow-left mr-1"></i> Back to publications
+    </button>
     """
   end
 
   defp render_hierarchy_tab(assigns) do
     ~H"""
-      <button
-        phx-click="HierarchyPicker.update_hierarchy_tab"
-        phx-value-tab_name={@tab_name}
-        class={"py-3 px-2 border-b-4 #{if @active_tab == @tab_name, do: "border-b-delivery-primary", else: "hover:border-b-4 hover:border-b-delivery-primary/25"}"}
-      >
-        <%= @tab_label %>
-      </button>
+    <button
+      phx-click="HierarchyPicker.update_hierarchy_tab"
+      phx-value-tab_name={@tab_name}
+      class={"py-3 px-2 border-b-4 #{if @active_tab == @tab_name, do: "border-b-delivery-primary", else: "hover:border-b-4 hover:border-b-delivery-primary/25"}"}
+    >
+      <%= @tab_label %>
+    </button>
     """
   end
 
@@ -361,14 +392,18 @@ defmodule OliWeb.Common.Hierarchy.HierarchyPicker do
             )
 
           ~H"""
-            <button class="btn btn-link entry-title px-0" phx-click="HierarchyPicker.update_active" phx-value-uuid={@uuid}>
-              <%= @title %>
-            </button>
+          <button
+            class="btn btn-link entry-title px-0"
+            phx-click="HierarchyPicker.update_active"
+            phx-value-uuid={@uuid}
+          >
+            <%= @title %>
+          </button>
           """
 
         _ ->
           ~H"""
-            <button class="btn btn-link entry-title px-0" disabled><%= @revision.title %></button>
+          <button class="btn btn-link entry-title px-0" disabled><%= @revision.title %></button>
           """
       end
     end

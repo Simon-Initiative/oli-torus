@@ -40,7 +40,7 @@ defmodule OliWeb.Delivery.Actions.SectionsToTransferTableModel do
   end
 
   def render_section_column(assigns, section, _) do
-    assigns = assign(assigns, title: section.title, section_id: section.id)
+    assigns = Map.merge(assigns, %{title: section.title, section_id: section.id})
 
     ~H"""
     <div class="pl-9 pr-4 flex flex-col">
@@ -50,7 +50,7 @@ defmodule OliWeb.Delivery.Actions.SectionsToTransferTableModel do
   end
 
   def render_date(assigns, section, %ColumnSpec{name: :start_date}) do
-    assigns = assign(assigns, :start_date, section.start_date)
+    assigns = Map.put(assigns, :start_date, section.start_date)
 
     ~H"""
     <%= FormatDateTime.format_datetime(@start_date, show_timezone: false) %>
@@ -58,7 +58,7 @@ defmodule OliWeb.Delivery.Actions.SectionsToTransferTableModel do
   end
 
   def render_date(assigns, section, %ColumnSpec{name: :end_date}) do
-    assigns = assign(assigns, :end_date, section.end_date)
+    assigns = Map.put(assigns, :end_date, section.end_date)
 
     ~H"""
     <%= FormatDateTime.format_datetime(@end_date, show_timezone: false) %>
@@ -92,7 +92,7 @@ defmodule OliWeb.Delivery.Actions.SectionsToTransferTableModel do
           "#{first_three_names_str}, #{others_str}"
       end
 
-    assigns = assign(assigns, :instructors, instructors)
+    assigns = Map.put(assigns, :instructors, instructors)
 
     ~H"""
     <%= @instructors %>
