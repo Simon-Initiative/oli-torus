@@ -446,6 +446,7 @@ defmodule OliWeb.DeliveryController do
           |> Enum.map(
             &%{
               name: &1.name,
+              email: &1.email,
               last_interaction: &1.last_interaction,
               progress: &1.progress,
               overall_proficiency: &1.overall_proficiency,
@@ -455,6 +456,7 @@ defmodule OliWeb.DeliveryController do
           |> DataTable.new()
           |> DataTable.headers([
             :name,
+            :email,
             :last_interaction,
             :progress,
             :overall_proficiency,
