@@ -8,7 +8,6 @@ defmodule Oli.Utils.Stagehand.SimulateProgress do
   alias Oli.Activities
   alias Oli.Delivery.Attempts.ActivityLifecycle.Evaluate
   alias Oli.Utils.Stagehand.WeightedRandom
-  alias Oli.Utils.Stagehand.SimulateProgress
 
   require Logger
 
