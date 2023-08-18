@@ -156,5 +156,88 @@ defmodule OliWeb.Delivery.OpenAndFreeIndexTest do
 
       assert render(view) =~ ~s|src="/images/course_default.jpg"|
     end
+
+    test "can search by course name", %{conn: conn, user: user} do
+      section_1 = insert(:section, %{open_and_free: true, title: "The best course ever!"})
+      section_2 = insert(:section, %{open_and_free: true, title: "Maths"})
+
+      Sections.enroll(user.id, section_1.id, [ContextRoles.get_role(:context_learner)])
+      Sections.enroll(user.id, section_2.id, [ContextRoles.get_role(:context_instructor)])
+
+      {:ok, view, _html} = live(conn, ~p"/sections")
+
+      assert has_element?(view, "h5", "The best course ever!")
+      assert has_element?(view, "h5", "Maths")
+
+      view
+      |> form("form[phx-change=search_section]")
+      |> render_change(%{search: "best"})
+
+      assert has_element?(view, "h5", "The best course ever!")
+      refute has_element?(view, "h5", "Maths")
+
+      view
+      |> form("form[phx-change=search_section]")
+      |> render_change(%{search: ""})
+
+      assert has_element?(view, "h5", "The best course ever!")
+      assert has_element?(view, "h5", "Maths")
+
+      view
+      |> form("form[phx-change=search_section]")
+      |> render_change(%{search: "a not existing course"})
+
+      refute has_element?(view, "h5", "The best course ever!")
+      refute has_element?(view, "h5", "Maths")
+    end
+
+    test "can search by instructor name", %{conn: conn, user: user} do
+      section_1 = insert(:section, %{open_and_free: true, title: "The best course ever!"})
+      section_2 = insert(:section, %{open_and_free: true, title: "Maths"})
+      section_3 = insert(:section, %{open_and_free: true, title: "Elixir"})
+
+      instructor_1 = insert(:user, %{name: "Lionel Messi"})
+      instructor_2 = insert(:user, %{name: "Angel Di Maria"})
+
+      Sections.enroll(user.id, section_1.id, [ContextRoles.get_role(:context_learner)])
+      Sections.enroll(user.id, section_2.id, [ContextRoles.get_role(:context_learner)])
+      Sections.enroll(user.id, section_3.id, [ContextRoles.get_role(:context_learner)])
+
+      Sections.enroll(instructor_1.id, section_1.id, [ContextRoles.get_role(:context_instructor)])
+      Sections.enroll(instructor_1.id, section_2.id, [ContextRoles.get_role(:context_instructor)])
+
+      Sections.enroll(instructor_2.id, section_2.id, [ContextRoles.get_role(:context_instructor)])
+      Sections.enroll(instructor_2.id, section_3.id, [ContextRoles.get_role(:context_instructor)])
+
+      {:ok, view, _html} = live(conn, ~p"/sections")
+
+      assert has_element?(view, "h5", "The best course ever!")
+      assert has_element?(view, "h5", "Maths")
+      assert has_element?(view, "h5", "Elixir")
+
+      view
+      |> form("form[phx-change=search_section]")
+      |> render_change(%{search: "messi"})
+
+      assert has_element?(view, "h5", "The best course ever!")
+      assert has_element?(view, "h5", "Maths")
+      refute has_element?(view, "h5", "Elixir")
+
+      view
+      |> form("form[phx-change=search_section]")
+      |> render_change(%{search: "maria"})
+
+      refute has_element?(view, "h5", "The best course ever!")
+      assert has_element?(view, "h5", "Maths")
+      assert has_element?(view, "h5", "Elixir")
+
+      view
+      |> form("form[phx-change=search_section]")
+      |> render_change(%{search: "a not existing instructor"})
+
+      refute has_element?(view, "h5", "The best course ever!")
+      refute has_element?(view, "h5", "Maths")
+      refute has_element?(view, "h5", "Elixir")
+    end
   end
 end
