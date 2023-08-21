@@ -597,9 +597,10 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
           Map.put(
             activity,
             :objectives,
-            Enum.map(objective_ids, fn id ->
-              Map.get(objectives_mapper, id)
+            Enum.reduce(objective_ids, MapSet.new(), fn id, activity_objectives ->
+              MapSet.put(activity_objectives, Map.get(objectives_mapper, id))
             end)
+            |> MapSet.to_list()
           )
       end
     end)

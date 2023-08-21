@@ -7,7 +7,6 @@ defmodule OliWeb.Projects.VersioningDetails do
   attr(:active_publication_changes, :any, required: true)
   attr(:auto_update_sections, :boolean, default: false)
   attr(:changeset, :any, required: true)
-  attr(:description, :string, default: "")
   attr(:has_changes, :boolean, required: true)
   attr(:latest_published_publication, :any, required: true)
   attr(:project, :map, required: true)
@@ -99,18 +98,16 @@ defmodule OliWeb.Projects.VersioningDetails do
           <% end %>
           <.input
             type="textarea"
-            field={fetch_field(@changeset, :description)}
-            name="description"
+            field={@changeset[:description]}
             class="form-control"
             rows="3"
-            value={@description}
             placeholder="Enter a short description of these changes..."
             required={true}
             autocomplete="off"
           />
         <% else %>
           <%= if is_nil(@active_publication_changes) do %>
-            <.input type="hidden" field={fetch_field(@changeset, :description)} name="description" value="Initial publish" />
+            <.input class="hidden" field={@changeset[:description]} value="Initial publish" />
           <% end %>
         <% end %>
 
@@ -119,8 +116,7 @@ defmodule OliWeb.Projects.VersioningDetails do
             <.input
               class="form-check-input"
               type="checkbox"
-              name="auto_push_update"
-              field={fetch_field(@changeset, :auto_push_update)}
+              field={@changeset[:auto_push_update]}
               value={@auto_update_sections}
               label="Automatically push this publication update to all products and sections"
             />
@@ -143,9 +139,8 @@ defmodule OliWeb.Projects.VersioningDetails do
 
         <div class="form-group">
           <.input
-            type="hidden"
-            field={fetch_field(@changeset, :active_publication_id)}
-            name="active_publication_id"
+            class="hidden"
+            field={@changeset[:active_publication_id]}
             value={@active_publication.id}
           />
           <button
