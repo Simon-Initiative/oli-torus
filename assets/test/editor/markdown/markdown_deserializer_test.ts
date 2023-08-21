@@ -258,4 +258,38 @@ describe('Markdown Deserializer', () => {
     const expectedOutput = `![Example Image](https://example.com/image.png)`;
     expect(deserializeNode(context)(node)).toEqual(expectedOutput);
   });
+
+  it('should deserialize some inline marks', () => {
+    const node: AllModelElements = {
+      type: 'p',
+      id: '1',
+      children: [
+        { text: 'Here is a paragraph with some ' },
+        { strong: true, text: 'bold' },
+        { text: ' ' },
+        { em: true, text: 'italic' },
+        { text: ' ' },
+        { strikethrough: true, text: 'and strikethrough' },
+        { text: ' text in it.' },
+      ],
+    };
+
+    const expectedOutput = `Here is a paragraph with some **bold** _italic_ ~~and strikethrough~~ text in it.\n\n`;
+    expect(deserializeNode(emptyContext)(node)).toEqual(expectedOutput);
+  });
+
+  it('should deserialize nested marks', () => {
+    const node: AllModelElements = {
+      type: 'p',
+      id: '1',
+      children: [
+        { text: 'Here is a paragraph with some ' },
+        { strong: true, em: true, text: 'bold italic' },
+        { text: ' text in it.' },
+      ],
+    };
+
+    const expectedOutput = `Here is a paragraph with some **_bold italic_** text in it.\n\n`;
+    expect(deserializeNode(emptyContext)(node)).toEqual(expectedOutput);
+  });
 });

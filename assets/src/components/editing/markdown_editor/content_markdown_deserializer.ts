@@ -22,7 +22,10 @@ export interface DeserializationContext {
 */
 export const contentMarkdownDeserializer = (
   content: (FormattedText | AllModelElements | Inline)[] | undefined | Caption,
-  context: DeserializationContext = { listStack: [], nodeStack: [] },
+  context: DeserializationContext = {
+    listStack: [],
+    nodeStack: [],
+  },
   parent?: AllModelElements,
 ): string => {
   if (!content) return '';
@@ -33,11 +36,34 @@ export const contentMarkdownDeserializer = (
     .join('');
 };
 
+const textNode = (node: FormattedText): string => {
+  const marks = [];
+  if (node.strong) marks.push('**');
+  if (node.em) marks.push('_');
+  //if (node.underline) marks.push('__');
+  if (node.strikethrough) marks.push('~~');
+
+  const allwhitespaceMatch = node.text.match(/^\s+$/); // If it's all whitespace, preceeding and trailing match and it doubles it up.
+  const preceedingWhitespaceMatch = node.text.match(/^(\s+)/);
+  const trailingWhitespaceMatch = node.text.match(/(\s+)$/);
+  const text = node.text.trim().replace(/\n/g, ' ');
+
+  const startMarksString = marks.join('');
+  const endMarksString = marks.reverse().join('');
+
+  const preceedingWhitespace = preceedingWhitespaceMatch ? preceedingWhitespaceMatch[1] : '';
+
+  const trailingWhitespace =
+    !allwhitespaceMatch && trailingWhitespaceMatch ? trailingWhitespaceMatch[1] : '';
+
+  return `${preceedingWhitespace}${startMarksString}${text}${endMarksString}${trailingWhitespace}`;
+};
+
 export const deserializeNode =
   (context: DeserializationContext) =>
   (node: AllModelElements | Text): string | null => {
     if ('text' in node && node.text) {
-      return node.text;
+      return textNode(node);
     }
 
     const model = node as AllModelElements;

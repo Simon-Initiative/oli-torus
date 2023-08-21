@@ -1,4 +1,5 @@
-import { AllModelTypes } from 'data/content/model/elements/types';
+import { AllModelElements, AllModelTypes } from 'data/content/model/elements/types';
+import { FormattedText } from 'data/content/model/text';
 
 export const MarkdownCompatibleTypes: AllModelTypes[] = [
   'p',
@@ -15,3 +16,48 @@ export const MarkdownCompatibleTypes: AllModelTypes[] = [
   'blockquote',
   'img',
 ];
+
+export const MarkdownCompatibleMarks: string[] = ['strong', 'em', 'strikethrough'];
+
+const translations: Record<string, string> = {
+  em: 'italic',
+  strong: 'bold',
+};
+
+const hasType = (node: AllModelElements | FormattedText): node is AllModelElements =>
+  'type' in node;
+
+const hasText = (node: AllModelElements | FormattedText): node is FormattedText => 'text' in node;
+
+export const getMarkdownWarnings = (model: (AllModelElements | FormattedText)[]): string[] => {
+  const warnings: string[] = [];
+
+  model.filter(hasType).forEach((element) => {
+    if (!MarkdownCompatibleTypes.includes(element.type)) {
+      warnings.push(element.type);
+    }
+  });
+
+  model.filter(hasText).forEach((element) => {
+    const marks = Object.keys(element || {}).filter(
+      (mark) => mark !== 'text' && mark !== 'id' && mark !== 'type',
+    );
+
+    marks.forEach((mark) => {
+      if (!MarkdownCompatibleMarks.includes(mark)) {
+        warnings.push(mark);
+      }
+    });
+  });
+
+  model.forEach((element) => {
+    if ('children' in element) {
+      warnings.push(...getMarkdownWarnings(element.children));
+    }
+  });
+
+  const uniqueWarnings = [...new Set(warnings)];
+  return Array.from(uniqueWarnings).map((warning) => capitalize(translations[warning] || warning));
+};
+
+const capitalize = (str: string): string => str.charAt(0).toUpperCase() + str.slice(1);
