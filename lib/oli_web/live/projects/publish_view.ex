@@ -191,6 +191,7 @@ defmodule OliWeb.Projects.PublishView do
         %{"auto_push_update" => auto_push_update, "description" => description},
         socket
       ) do
+
     {:noreply,
      assign(socket,
        auto_update_sections: string_to_bool(auto_push_update),
@@ -202,12 +203,12 @@ defmodule OliWeb.Projects.PublishView do
         "publish_active",
         %{
           "active_publication_id" => active_publication_id,
-          "auto_push_update" => auto_push_update,
           "description" => description
-        },
+        } = payload,
         socket
       ) do
     project = socket.assigns.project
+    auto_push_update = Map.get(payload, "auto_push_update", "false")
 
     with {:ok, description} <- description |> trap_nil(),
          {active_publication_id, ""} <- active_publication_id |> Integer.parse(),
