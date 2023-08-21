@@ -150,6 +150,8 @@ defmodule OliWeb.Projects.PublishView do
             <VersioningDetails.render
               active_publication={@active_publication}
               active_publication_changes={@active_publication_changes}
+              auto_update_sections={@auto_update_sections}
+              form_changed="form_changed"
               changeset={@changeset |> to_form()}
               has_changes={@has_changes}
               latest_published_publication={@latest_published_publication}
@@ -182,6 +184,19 @@ defmodule OliWeb.Projects.PublishView do
       </div>
     </div>
     """
+  end
+
+  def handle_event(
+        "form_changed",
+        %{
+          "publication" => %{"auto_push_update" => auto_push_update}
+        },
+        socket
+      ) do
+    {:noreply,
+     assign(socket,
+       auto_update_sections: string_to_bool(auto_push_update)
+     )}
   end
 
   def handle_event("publish_active", %{"publication" => publication}, socket) do
@@ -250,4 +265,7 @@ defmodule OliWeb.Projects.PublishView do
       {:error, "publication id does not match the active publication"}
     end
   end
+
+  defp string_to_bool("true"), do: true
+  defp string_to_bool(_), do: false
 end

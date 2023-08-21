@@ -5,6 +5,7 @@ defmodule OliWeb.Projects.VersioningDetails do
 
   attr(:active_publication, :any, required: true)
   attr(:active_publication_changes, :any, required: true)
+  attr(:auto_update_sections, :boolean, default: false)
   attr(:changeset, :any, required: true)
   attr(:has_changes, :boolean, required: true)
   attr(:latest_published_publication, :any, required: true)
@@ -12,11 +13,17 @@ defmodule OliWeb.Projects.VersioningDetails do
   attr(:publish_active, :any, required: true)
   attr(:push_affected, :map, required: true)
   attr(:version_change, :any, required: true)
+  attr(:form_changed, :any, required: true)
 
   def render(assigns) do
     ~H"""
     <div class="my-4 border-t pt-3">
-      <.form id="versioning-details-form" for={@changeset} phx-submit={@publish_active}>
+      <.form
+        id="versioning-details-form"
+        for={@changeset}
+        phx-submit={@publish_active}
+        phx-change={@form_changed}
+      >
         <%= if @has_changes && @active_publication_changes do %>
           <h5>Versioning Details</h5>
           <p>The version number is automatically determined by the nature of the changes.</p>
@@ -110,12 +117,13 @@ defmodule OliWeb.Projects.VersioningDetails do
               class="form-check-input"
               type="checkbox"
               field={@changeset[:auto_push_update]}
+              value={@auto_update_sections}
               label="Automatically push this publication update to all products and sections"
             />
           </div>
         <% end %>
 
-        <%= if @changeset[:auto_update_sections] == "true" do %>
+        <%= if @auto_update_sections do %>
           <div class="alert alert-warning" role="alert">
             <%= if @push_affected.section_count > 0 or @push_affected.product_count > 0 do %>
               <h6>This force push update will affect:</h6>
