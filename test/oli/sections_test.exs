@@ -1444,7 +1444,10 @@ defmodule Oli.SectionsTest do
       assert target_section_2.title == section_2.title
     end
 
-    test "deletes attempts and resource accesses by section and user", %{section_1: section_1, user_1: user_1} do
+    test "deletes attempts and resource accesses by section and user", %{
+      section_1: section_1,
+      user_1: user_1
+    } do
       # gets resource accesses, resource attempts, activity attempts and part attempts from target section
       resource_accesses =
         Core.get_resource_accesses(section_1.slug, user_1.id) |> Enum.map(& &1.id)
@@ -1483,8 +1486,9 @@ defmodule Oli.SectionsTest do
     test "deletes snapshot by section and user", %{section_1: section_1, user_1: user_1} do
       # assert that there is a snapshot in target section and user
       assert Oli.Repo.all(
-               from sn in Snapshot,
+               from(sn in Snapshot,
                  where: sn.section_id == ^section_1.id and sn.user_id == ^user_1.id
+               )
              )
              |> length() == 1
 
@@ -1493,18 +1497,20 @@ defmodule Oli.SectionsTest do
 
       # assert that there is no snapshot in target section and user
       assert Oli.Repo.all(
-               from sn in Snapshot,
+               from(sn in Snapshot,
                  where: sn.section_id == ^section_1.id and sn.user_id == ^user_1.id
+               )
              )
              |> length() == 0
     end
 
-    test "updates resource accesses and snapshots from current section and user to target section and user", %{
-      section_1: section_1,
-      section_2: section_2,
-      user_1: user_1,
-      user_2: user_2
-    } do
+    test "updates resource accesses and snapshots from current section and user to target section and user",
+         %{
+           section_1: section_1,
+           section_2: section_2,
+           user_1: user_1,
+           user_2: user_2
+         } do
       # assert that there is a resource access and spanshot in current section
       assert Core.get_resource_accesses(section_1.slug, user_1.id) |> length() == 1
       assert Oli.Repo.get_by(Snapshot, section_id: section_1.id).section_id == section_1.id
@@ -1530,19 +1536,76 @@ defmodule Oli.SectionsTest do
 
       # assert that there is no resource access and spanshot in current section
       assert Core.get_resource_accesses(section_1.slug, user_1.id) |> length() == 0
+
       assert Oli.Repo.all(
-               from sn in Snapshot,
+               from(sn in Snapshot,
                  where: sn.section_id == ^section_1.id and sn.user_id == ^user_1.id
+               )
              )
              |> length() == 0
 
       # assert that there is a resource access and spanshot in target section
       assert Core.get_resource_accesses(section_2.slug, user_2.id) |> length() == 2
+
       assert Oli.Repo.all(
-               from sn in Snapshot,
+               from(sn in Snapshot,
                  where: sn.section_id == ^section_2.id and sn.user_id == ^user_2.id
+               )
              )
              |> length() == 2
+    end
+  end
+
+  describe "get_next_activities_for_student/3" do
+    test "returns the upcoming activities in a section for a given student" do
+      page_revision =
+        insert(:revision,
+          resource_type_id: Oli.Resources.ResourceType.get_id_by_type("page"),
+          title: "Upcoming assessment",
+          graded: true,
+          content: %{"advancedDelivery" => true}
+        )
+
+      container_revision =
+        insert(:revision,
+          resource_type_id: Oli.Resources.ResourceType.get_id_by_type("container"),
+          title: "A graded container?",
+          graded: true,
+          content: %{"advancedDelivery" => true}
+        )
+
+      {:ok, section: section, project: _project, author: author} =
+        section_with_pages(%{
+          revisions: [page_revision, container_revision],
+          revision_section_attributes: [
+            %{
+              start_date: DateTime.add(DateTime.utc_now(), -10, :day),
+              end_date: DateTime.add(DateTime.utc_now(), 5, :day)
+            },
+            %{
+              start_date: DateTime.add(DateTime.utc_now(), -10, :day),
+              end_date: DateTime.add(DateTime.utc_now(), 5, :day)
+            }
+          ]
+        })
+
+      student = insert(:user)
+
+      session_context = %OliWeb.Common.SessionContext{
+        browser_timezone: "utc",
+        local_tz: "utc",
+        author: author,
+        user: student,
+        is_liveview: false
+      }
+
+      enroll_user_to_section(student, section, :context_learner)
+
+      next_activities =
+        Sections.get_next_activities_for_student(section.slug, student.id, session_context)
+
+      assert length(next_activities) == 1
+      assert Enum.at(next_activities, 0).title == "Upcoming assessment"
     end
   end
 end
