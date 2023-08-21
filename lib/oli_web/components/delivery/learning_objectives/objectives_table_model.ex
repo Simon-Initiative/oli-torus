@@ -24,11 +24,15 @@ defmodule OliWeb.Delivery.LearningObjectives.ObjectivesTableModel do
       },
       %ColumnSpec{
         name: :student_proficiency_obj,
-        label: "STUDENT PROFICIENCY OBJ."
+        label: "STUDENT PROFICIENCY OBJ.",
+        tooltip:
+          "For all students, or one specific student, proficiency for a learning objective will be calculated off the percentage of correct answers for first part attempts within first activity attempts - for those parts that have that learning objective or any of its sub-objectives attached to it."
       },
       %ColumnSpec{
         name: :student_proficiency_subobj,
-        label: "STUDENT PROFICIENCY (SUB OBJ.)"
+        label: "STUDENT PROFICIENCY (SUB OBJ.)",
+        tooltip:
+          "For all students, or one specific student, proficiency for a learning objective will be calculated off the percentage of correct answers for first part attempts within first activity attempts - for those parts that have that learning objective or any of its sub-objectives attached to it."
       }
     ]
 

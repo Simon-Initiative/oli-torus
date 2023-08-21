@@ -32,12 +32,16 @@ defmodule OliWeb.Delivery.Sections.EnrollmentsTableModel do
           %ColumnSpec{
             name: :progress,
             label: "COURSE PROGRESS",
+            tooltip:
+              "Progress is percent attempted of activities present on the page from the most recent page attempt. If there are no activities within the page, and if the student has visited that page, we count that as an attempt.",
             render_fn: &__MODULE__.render_progress_column/3
           },
           %ColumnSpec{
             name: :overall_proficiency,
             label: "OVERALL COURSE PROFICIENCY",
-            render_fn: &__MODULE__.render_overall_proficiency_column/3
+            render_fn: &__MODULE__.render_overall_proficiency_column/3,
+            tooltip:
+              "For all students, or one specific student, proficiency for a learning objective will be calculated off the percentage of correct answers for first part attempts within first activity attempts - for those parts that have that learning objective or any of its sub-objectives attached to it."
           }
         ]
       else
