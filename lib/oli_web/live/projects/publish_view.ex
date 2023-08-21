@@ -250,7 +250,4 @@ defmodule OliWeb.Projects.PublishView do
       {:error, "publication id does not match the active publication"}
     end
   end
-
-  defp string_to_bool("true"), do: true
-  defp string_to_bool(_), do: false
 end
