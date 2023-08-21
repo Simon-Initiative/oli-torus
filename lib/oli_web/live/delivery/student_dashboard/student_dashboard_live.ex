@@ -268,19 +268,9 @@ defmodule OliWeb.Delivery.StudentDashboard.StudentDashboardLive do
   end
 
   defp get_scores(section, student_id) do
-    grades_for_user =
-      Oli.Grading.generate_gradebook_for_section(section)
-      |> elem(0)
-      |> Enum.filter(fn row -> row.user.id == student_id end)
-
-    if length(grades_for_user) > 0 do
-      grades_for_user
-      |> List.first()
-      |> Map.get(:scores)
-      |> Enum.filter(fn score -> !is_nil(score) end)
-    else
-      []
-    end
+    if Sections.is_enrolled?(student_id, section.slug),
+      do: Oli.Grading.get_scores_for_section_and_user(section, student_id),
+      else: []
   end
 
   defp get_page_nodes(section_slug, student_id) do

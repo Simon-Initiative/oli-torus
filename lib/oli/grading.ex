@@ -212,6 +212,44 @@ defmodule Oli.Grading do
   end
 
   @doc """
+  Returns a list of GradebookScore for enrolled user in the provided section
+
+  `[%GradebookScore{}, GradebookScore{}, ...]`
+  """
+  def get_scores_for_section_and_user(%Section{} = section, student_id) do
+    # get publication page resources, filtered by graded: true
+    graded_pages = Sections.fetch_scored_pages(section.slug)
+
+    # create a map of all resource accesses, keyed off resource id
+    resource_accesses = fetch_resource_accesses(section.id)
+
+    Enum.reduce(Enum.reverse(graded_pages), [], fn revision, acc ->
+      scores =
+        case resource_accesses[revision.resource_id] do
+          %{^student_id => student_resource_accesses} ->
+            case student_resource_accesses do
+              %ResourceAccess{score: score, out_of: out_of, was_late: was_late} ->
+                %GradebookScore{
+                  resource_id: revision.resource_id,
+                  label: revision.title,
+                  score: score,
+                  out_of: out_of,
+                  was_late: was_late
+                }
+
+              _ ->
+                nil
+            end
+
+          _ ->
+            nil
+        end
+
+      if scores != nil, do: [scores | acc], else: acc
+    end)
+  end
+
+  @doc """
   Determines the maximum point value that can be obtained for a page.
 
   Two implementations exist, one for adaptive pages and one for regular pages. The
