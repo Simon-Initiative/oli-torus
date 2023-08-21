@@ -64,11 +64,14 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard do
         id="tabs-tab"
         role="tablist"
       >
-        <%= for %TabLink{label: label, path: path, badge: badge, active: active} <- @tabs do %>
-          <li class="nav-item" role="presentation">
-            <.link
-              patch={path}
-              class={"
+        <li
+          :for={%TabLink{label: label, path: path, badge: badge, active: active} <- @tabs}
+          class="nav-item"
+          role="presentation"
+        >
+          <.link
+            patch={path}
+            class={"
                   block
                   border-x-0 border-t-0 border-b-2
                   px-3
@@ -83,16 +86,16 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard do
                   focus:border-delivery-primary-200
                   #{if active, do: "!border-delivery-primary active", else: "border-transparent"}
                 "}
+          >
+            <%= if is_function(label), do: label.(), else: label %>
+            <span
+              :if={badge}
+              class="text-xs inline-block py-1 px-2 ml-2 leading-none text-center whitespace-nowrap align-baseline font-bold bg-delivery-primary text-white rounded"
             >
-              <%= if is_function(label), do: label.(), else: label %>
-              <%= if badge do %>
-                <span class="text-xs inline-block py-1 px-2 ml-2 leading-none text-center whitespace-nowrap align-baseline font-bold bg-delivery-primary text-white rounded">
-                  <%= badge %>
-                </span>
-              <% end %>
-            </.link>
-          </li>
-        <% end %>
+              <%= badge %>
+            </span>
+          </.link>
+        </li>
       </ul>
     </div>
     """

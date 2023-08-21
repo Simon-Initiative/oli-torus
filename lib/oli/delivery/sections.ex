@@ -346,7 +346,12 @@ defmodule Oli.Delivery.Sections do
           }
         )
 
-      {_cont, enrollments} = Repo.insert_all(Enrollment, enrollments, returning: [:id], conflict_target: [:user_id, :section_id], on_conflict: {:replace, [:user_id]})
+      {_cont, enrollments} =
+        Repo.insert_all(Enrollment, enrollments,
+          returning: [:id],
+          conflict_target: [:user_id, :section_id],
+          on_conflict: {:replace, [:user_id]}
+        )
 
       # Insert the enrollment context roles at the same time based on the previously created enrollments
       enrollment_context_roles =
@@ -1018,6 +1023,39 @@ defmodule Oli.Delivery.Sections do
       ContextRoles.contains_role?(e.context_roles, ContextRoles.get_role(:context_instructor))
     end)
     |> Enum.map(fn e -> e.user end)
+  end
+
+  @doc """
+  Returns the names of all instructors with :context_instructor role for the given section ids.
+
+  %{
+    section_id_1: [inst_1, inst_2],
+    ...
+    section_id_n: [inst_3]
+  }
+  """
+
+  def instructors_per_section(section_ids) do
+    instructor_context_role_id = ContextRoles.get_role(:context_instructor).id
+
+    query =
+      from(
+        e in Enrollment,
+        join: s in Section,
+        on: e.section_id == s.id,
+        join: ecr in EnrollmentContextRole,
+        on: e.id == ecr.enrollment_id,
+        where:
+          s.id in ^section_ids and s.status == :active and e.status == :enrolled and
+            ecr.context_role_id == ^instructor_context_role_id,
+        preload: [:user],
+        select: {s.id, e}
+      )
+
+    Repo.all(query)
+    |> Enum.group_by(fn {section_id, _} -> section_id end, fn {_, enrollment} ->
+      OliWeb.Components.Delivery.Utils.user_name(enrollment.user)
+    end)
   end
 
   @doc """

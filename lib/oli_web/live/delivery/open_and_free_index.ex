@@ -5,12 +5,8 @@ defmodule OliWeb.Delivery.OpenAndFreeIndex do
   on_mount(OliWeb.LiveSessionPlugs.SetCtx)
 
   alias Oli.Delivery.Sections
-  alias Oli.Delivery.Sections.{Enrollment, Section}
   alias OliWeb.Components.Delivery.Utils
   alias OliWeb.Common.SearchInput
-  alias Lti_1p3.Tool.ContextRoles
-  alias Oli.Delivery.Sections.EnrollmentContextRole
-  alias Oli.Repo
 
   import Ecto.Query, warn: false
   import OliWeb.Common.SourceImage
@@ -125,35 +121,11 @@ defmodule OliWeb.Delivery.OpenAndFreeIndex do
   defp add_instructors([]), do: []
 
   defp add_instructors(sections) do
-    instructors_per_section = instructors_per_section(sections)
+    instructors_per_section = Sections.instructors_per_section(Enum.map(sections, & &1.id))
 
     sections
     |> Enum.map(fn section ->
       Map.merge(section, %{instructors: Map.get(instructors_per_section, section.id, [])})
-    end)
-  end
-
-  defp instructors_per_section(sections) do
-    section_ids = Enum.map(sections, & &1.id)
-    instructor_context_role_id = ContextRoles.get_role(:context_instructor).id
-
-    query =
-      from(
-        e in Enrollment,
-        join: s in Section,
-        on: e.section_id == s.id,
-        join: ecr in EnrollmentContextRole,
-        on: e.id == ecr.enrollment_id,
-        where:
-          s.id in ^section_ids and s.status == :active and e.status == :enrolled and
-            ecr.context_role_id == ^instructor_context_role_id,
-        preload: [:user],
-        select: {s.id, e}
-      )
-
-    Repo.all(query)
-    |> Enum.group_by(fn {section_id, _} -> section_id end, fn {_, enrollment} ->
-      Utils.user_name(enrollment.user)
     end)
   end
 
