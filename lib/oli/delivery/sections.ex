@@ -346,7 +346,12 @@ defmodule Oli.Delivery.Sections do
           }
         )
 
-      {_cont, enrollments} = Repo.insert_all(Enrollment, enrollments, returning: [:id], conflict_target: [:user_id, :section_id], on_conflict: {:replace, [:user_id]})
+      {_cont, enrollments} =
+        Repo.insert_all(Enrollment, enrollments,
+          returning: [:id],
+          conflict_target: [:user_id, :section_id],
+          on_conflict: {:replace, [:user_id]}
+        )
 
       # Insert the enrollment context roles at the same time based on the previously created enrollments
       enrollment_context_roles =
@@ -2756,58 +2761,36 @@ defmodule Oli.Delivery.Sections do
         where:
           not is_nil(sp.end_date) and
             sp.end_date >= ^DateTime.utc_now() and
-            sp.resource_type_id in [
-              ^ResourceType.get_id_by_type("page"),
-              ^ResourceType.get_id_by_type("container")
-            ],
+            sp.resource_type_id == ^ResourceType.get_id_by_type("page"),
         limit: 2
       )
 
     query
     |> Repo.all()
-    |> Enum.map(fn sr ->
-      Map.put(
-        sr,
-        :end_date,
-        if is_nil(sr.end_date) do
-          nil
-        else
-          OliWeb.Common.FormatDateTime.date(sr.end_date, session_context)
-        end
-      )
-    end)
-    |> Enum.map(fn activity ->
-      case ResourceType.get_type_by_id(activity.resource_type_id) do
-        "page" ->
-          Map.put(
-            activity,
-            :progress,
+    |> Enum.map(
+      &Map.merge(
+        &1,
+        %{
+          end_date:
+            if is_nil(&1.end_date) do
+              nil
+            else
+              OliWeb.Common.FormatDateTime.date(&1.end_date, session_context)
+            end,
+          progress:
             Oli.Delivery.Metrics.progress_for_page(
-              activity.section_id,
+              &1.section_id,
               user_id,
-              activity.resource_id
-            ) * 100
-          )
-
-        "container" ->
-          Map.put(
-            activity,
-            :progress,
-            Oli.Delivery.Metrics.progress_for(
-              activity.section_id,
-              user_id,
-              activity.resource_id
-            ) * 100
-          )
-      end
-      |> Map.put(
-        :completion_percentage,
-        Oli.Delivery.Metrics.completion_for(
-          activity.section_id,
-          activity.resource_id
-        )
+              &1.resource_id
+            ) * 100,
+          completion_percentage:
+            Oli.Delivery.Metrics.completion_for(
+              &1.section_id,
+              &1.resource_id
+            )
+        }
       )
-    end)
+    )
   end
 
   defp to_datetime(nd) do
