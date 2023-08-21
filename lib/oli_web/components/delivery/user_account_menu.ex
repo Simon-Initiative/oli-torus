@@ -50,6 +50,20 @@ defmodule OliWeb.Components.Delivery.UserAccountMenu do
             selectedTimezone: timezone_preference(user_or_admin)
           }
 
+        %SessionContext{author: author} when not is_nil(author) ->
+          %{
+            picture: author.picture,
+            name: user_name(author),
+            role: user_role(assigns[:section], author),
+            roleLabel: user_role_text(assigns[:section], author),
+            roleColor: user_role_color(assigns[:section], author),
+            isGuest: user_is_guest?(assigns),
+            isIndependentInstructor: Sections.is_independent_instructor?(author),
+            isIndependentLearner: user_is_independent_learner?(author),
+            linkedAuthorAccount: linked_author_account(author),
+            selectedTimezone: timezone_preference(author)
+          }
+
         _ ->
           nil
       end
