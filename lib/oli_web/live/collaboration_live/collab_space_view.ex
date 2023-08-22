@@ -693,26 +693,35 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
   end
 
   defp maybe_threading(all_posts, %CollabSpaceConfig{threaded: true}) do
-    Enum.reduce(all_posts, [], fn post, acc ->
-      if is_nil(post.thread_root_id) do
-        replies =
-          all_posts
-          |> Enum.filter(fn child -> child.thread_root_id == post.id end)
-          |> Enum.with_index(1)
+    posts_mapper =
+      all_posts
+      |> Enum.group_by(fn post -> post.parent_post_id end)
 
-        post =
-          post
-          |> Map.put(:replies, replies)
-          |> Map.put(:replies_count, length(replies))
+    Map.get(posts_mapper, nil, [])
+    |> Enum.map(fn root_post ->
+      replies =
+        build_replies([root_post], posts_mapper, 1, [])
+        |> Enum.with_index(1)
 
-        acc ++ [post]
-      else
-        acc
-      end
+      root_post
+      |> Map.put(:replies, replies)
+      |> Map.put(:replies_count, length(replies))
+      |> Map.put(:post_level, 0)
     end)
   end
 
   defp maybe_threading(all_posts, _), do: all_posts
+
+  defp build_replies([], _mapper, _post_level, acum_replies), do: List.flatten(acum_replies)
+
+  defp build_replies([reply | replies], mapper, post_level, acum_replies) do
+    post_full_replies =
+      Enum.map(Map.get(mapper, reply.id, []), fn r ->
+        [Map.put(r, :post_level, post_level) | build_replies([r], mapper, post_level + 1, [])]
+      end)
+
+    build_replies(replies, mapper, post_level, [post_full_replies | acum_replies])
+  end
 
   defp is_archived?(:archived), do: true
   defp is_archived?(_), do: false
