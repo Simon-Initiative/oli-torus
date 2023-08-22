@@ -1046,7 +1046,7 @@ defmodule Oli.Delivery.Sections do
         join: ecr in EnrollmentContextRole,
         on: e.id == ecr.enrollment_id,
         where:
-          s.id in ^section_ids and s.status == :active and e.status == :enrolled and
+          s.id in ^section_ids and e.status == :enrolled and
             ecr.context_role_id == ^instructor_context_role_id,
         preload: [:user],
         select: {s.id, e}
