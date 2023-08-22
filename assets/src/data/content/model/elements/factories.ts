@@ -77,7 +77,7 @@ export const Model = {
 
   tc: (text: string) => create<TableConjugation>({ type: 'tc', children: [Model.p(text)] }),
 
-  tr: (children: TableCell[]) => create<TableRow>({ type: 'tr', children }),
+  tr: (children: (TableHeader | TableCell)[]) => create<TableRow>({ type: 'tr', children }),
 
   table: (children: TableRow[] = []) => create<Table>({ type: 'table', children }),
 

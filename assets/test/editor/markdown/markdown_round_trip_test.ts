@@ -10,6 +10,7 @@ import {
   deserializeNode,
 } from 'components/editing/markdown_editor/content_markdown_deserializer';
 import { serializeMarkdown } from 'components/editing/markdown_editor/content_markdown_serializer';
+import { Model } from 'data/content/model/elements/factories';
 import { AllModelElements } from 'data/content/model/elements/types';
 import { expectAnyId } from '../normalize-test-utils';
 
@@ -66,6 +67,15 @@ describe('Markdown round trip', () => {
           { text: ' text in it.' },
         ],
       },
+    ]);
+  });
+
+  it('should serialize and deserialize a table', () => {
+    testRoundTrip([
+      Model.table([
+        Model.tr([Model.th('H1'), Model.th('H2')]),
+        Model.tr([Model.td('D1'), Model.td('D2')]),
+      ]),
     ]);
   });
 });

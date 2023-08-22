@@ -6,6 +6,7 @@ import {
   ListItem,
   OrderedList,
   Paragraph,
+  Table,
   UnorderedList,
 } from 'data/content/model/elements/types';
 import { FormattedText } from 'data/content/model/text';
@@ -99,6 +100,8 @@ export const deserializeNode =
         return `\`${contentMarkdownDeserializer(model.children, newContext, model)}\`\n\n`;
       case 'blockquote':
         return blockquote(model, newContext);
+      case 'table':
+        return table(model, newContext);
       case 'a':
         return `[${contentMarkdownDeserializer(model.children, newContext, model)}](${model.href})`;
       case 'img':
@@ -113,6 +116,52 @@ export const deserializeNode =
 
     return null;
   };
+
+// Note: We are not supporting colspan or rowspan
+const table = (model: Table, newContext: DeserializationContext): string => {
+  const columnCount = Math.max(...model.children.map((row) => row.children.length));
+  const columnWidths = Array.from({ length: columnCount }, () => 0);
+  const textGrid: string[][] = Array.from({ length: model.children.length }, () =>
+    Array.from({ length: columnCount }, () => ''),
+  );
+
+  model.children.forEach((row, rowIndex) => {
+    row.children.forEach((cell, columnIndex) => {
+      let cellContent = contentMarkdownDeserializer(cell.children, newContext) || '';
+
+      // Newlines don't work in markdown table cells. Removing them could introduce some invalid content, will have to watch.
+      cellContent = cellContent.replace(/\n/g, ' ');
+      textGrid[rowIndex][columnIndex] = cellContent;
+
+      // Need to know the biggest column width for each column
+      // But we don't want to pad to HUGE columns, so min(200, x)
+      columnWidths[columnIndex] = Math.min(
+        200,
+        Math.max(columnWidths[columnIndex], cellContent.length),
+      );
+    });
+  });
+
+  // This is the divider between row, ie: "----|----|----"
+  const dividerLine = '|-' + columnWidths.map((width) => '-'.repeat(width)).join('-|-') + '-|\n';
+
+  const markdownTable = textGrid.map((row, rowIndex) => {
+    const cells = row
+      .map((cell, columnIndex) => {
+        const columnWidth = columnWidths[columnIndex];
+        const padding = ' '.repeat(columnWidth - cell.length);
+        return `${cell}${padding}`;
+      })
+      .join(' | ');
+
+    const isHeader = model?.children[rowIndex]?.children[0]?.type === 'th';
+    const divider = isHeader ? dividerLine : '';
+
+    return `| ${cells} |\n${divider}`;
+  });
+
+  return markdownTable.join('');
+};
 
 const blockquote = (model: AllModelElements, context: DeserializationContext): string => {
   const includeBlankLine = !isParent(context, ['li', 'ul', 'ol', 'blockquote']);

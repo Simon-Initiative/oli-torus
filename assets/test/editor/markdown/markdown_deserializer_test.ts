@@ -3,6 +3,7 @@ import {
   contentMarkdownDeserializer,
   deserializeNode,
 } from 'components/editing/markdown_editor/content_markdown_deserializer';
+import { Model } from 'data/content/model/elements/factories';
 import { AllModelElements } from 'data/content/model/elements/types';
 
 const emptyContext: DeserializationContext = {
@@ -290,6 +291,25 @@ describe('Markdown Deserializer', () => {
     };
 
     const expectedOutput = `Here is a paragraph with some **_bold italic_** text in it.\n\n`;
+    expect(deserializeNode(emptyContext)(node)).toEqual(expectedOutput);
+  });
+
+  it('should deserialize a table', () => {
+    const node: AllModelElements = {
+      type: 'table',
+      id: '1',
+      children: [
+        Model.tr([Model.th('Heading 1'), Model.th('Heading 2'), Model.th('Heading 3')]),
+        Model.tr([Model.td('Cell 1'), Model.td('Cell 2'), Model.td('Cell 3')]),
+        Model.tr([Model.td('Cell 4'), Model.td('Cell 5'), Model.td('Cell 6')]),
+      ],
+    };
+
+    const expectedOutput = `| Heading 1   | Heading 2   | Heading 3   |
+|-------------|-------------|-------------|
+| Cell 1      | Cell 2      | Cell 3      |
+| Cell 4      | Cell 5      | Cell 6      |
+`;
     expect(deserializeNode(emptyContext)(node)).toEqual(expectedOutput);
   });
 });

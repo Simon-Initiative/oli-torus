@@ -1,7 +1,8 @@
 import { _Lexer } from 'Lexer';
 import { Token, Tokens } from 'Tokens';
 import { marked } from 'marked';
-import { AllModelElements } from 'data/content/model/elements/types';
+import { Model } from 'data/content/model/elements/factories';
+import { AllModelElements, TableRow } from 'data/content/model/elements/types';
 import { FormattedText } from 'data/content/model/text';
 import guid from 'utils/guid';
 
@@ -23,43 +24,11 @@ const defaultContext: SerializationContext = {
   },
 };
 
-const descriptionList = {
-  name: 'strikethrough',
-  level: 'inline', // Is this a block-level or inline-level tokenizer?
-  start(src: string) {
-    return src.match(/~~[^~\n]/)?.index;
-  }, // Hint to Marked.js to stop and check for a match
-  tokenizer(src: string, tokens: Token[]) {
-    const rule = /^~~([^~\n]+)~~/; // Regex for the complete token, anchor to string start
-    const match = rule.exec(src);
-    if (match) {
-      const token = {
-        // Token to generate
-        type: 'strikethrough', // Should match "name" above
-        raw: match[0], // Text to consume from the source
-        text: match[1].trim(), // Additional custom properties
-        tokens: [], // Array where child inline tokens will be generated
-      };
-      this.lexer.inline(token.text, token.tokens); // Queue this data to be processed for inline tokens
-      return token;
-    }
-  },
-};
-
 export const createLexer = (): _Lexer => {
   const lexer = new marked.Lexer({
     gfm: true,
   });
-  // {
-  //   extensions: {
-  //     renderers: {},
-  //     childTokens: {},
-  //     inline: [descriptionList.tokenizer],
-  //     block: [],
-  //   },
-  // });
 
-  //debugger;
   return lexer;
 };
 
@@ -114,6 +83,8 @@ const serializeToken =
           ...context,
           marks: { ...context.marks, strikethrough: true },
         });
+      case 'table':
+        return serializeTable(token as Tokens.Table, context);
     }
 
     // Unknown token, process children.
@@ -133,6 +104,45 @@ const serializeTokens = (
 
 const isNotNull = <TValue>(value: TValue | null | undefined): value is TValue => {
   return value !== null && value !== undefined;
+};
+
+const wrapWithParagraph = (elements: (FormattedText | AllModelElements)[]): AllModelElements[] => {
+  return elements.map((element) => {
+    if ('text' in element) {
+      return Model.p([element]);
+    }
+    return element;
+  });
+};
+
+const serializeTable = (token: Tokens.Table, context: SerializationContext): AllModelElements[] => {
+  const rows: TableRow[] = [];
+
+  if (token.header && token.header.length > 0) {
+    rows.push(
+      Model.tr(
+        token.header.map((cell) => ({
+          type: 'th',
+          id: guid(),
+          children: wrapWithParagraph(serializeTokens(cell.tokens, context)) as any,
+        })),
+      ),
+    );
+  }
+
+  token.rows.forEach((row) => {
+    rows.push(
+      Model.tr(
+        row.map((cell) => ({
+          type: 'td',
+          id: guid(),
+          children: wrapWithParagraph(serializeTokens(cell.tokens, context)) as any,
+        })),
+      ),
+    );
+  });
+
+  return [Model.table(rows)];
 };
 
 export const serializeMarkdown = (markdown: string): (FormattedText | AllModelElements)[] => {
