@@ -33,9 +33,9 @@ defmodule Oli.Delivery.Paywall.Providers.Cashnet do
          cashnet_form:
            ~s|<form action="#{cashnet_checkout_url}" id="cmupayment" name="cashnet" method="post" target="_self">
            <input type="hidden" name="virtual" value="#{cashnet_client}#{cashnet_store}"/>
-           <input type="hidden" name="signouturl" value="https://#{host}#{Routes.page_delivery_path(OliWeb.Endpoint, :index, section.slug)}"/>
+           <input type="hidden" id="signouturlfield" name="signouturl" value="https://#{host}#{Routes.page_delivery_path(OliWeb.Endpoint, :index, section.slug)}"/>
            <input type="hidden" name="ref1type1" value="#{cashnet_store}-payment_ref"/>
-           <input type="hidden" name="ref1val1" value="#{payment.provider_id}"/>
+           <input type="hidden" id="ref1val1field" name="ref1val1" value="#{payment.provider_id}"/>
 
            <input type="hidden" name="fname" value="#{safe_get(user.given_name, "Unknown")}"/>
            <input type="hidden" name="lname" value="#{safe_get(user.family_name, "Unknown")}"/>
@@ -57,6 +57,11 @@ defmodule Oli.Delivery.Paywall.Providers.Cashnet do
            <input type="hidden" name="qty1" value="1"/>
            <input type="hidden" name="amount1" value="#{section.amount.amount}"/>
            <input type="hidden" name="gl1" value="#{cashnet_gl_number}"/>
+           <div class="flex justify-center">
+             <button id="sub" class="btn btn-primary mt-5 hidden">
+               <span id="button-text">Pay now</span>
+             </button>
+           </div>
         </form>|
        }}
     else

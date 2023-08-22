@@ -25,6 +25,11 @@ defmodule OliWeb.Delivery.Sections.EnrollmentsTableModel do
             th_class: "pl-10"
           },
           %ColumnSpec{
+            name: :email,
+            label: "EMAIL",
+            render_fn: &__MODULE__.render_email_column/3
+          },
+          %ColumnSpec{
             name: :last_interaction,
             label: "LAST INTERACTED",
             render_fn: &__MODULE__.render_last_interaction_column/3
@@ -32,31 +37,35 @@ defmodule OliWeb.Delivery.Sections.EnrollmentsTableModel do
           %ColumnSpec{
             name: :progress,
             label: "COURSE PROGRESS",
+            tooltip:
+              "Progress is percent attempted of activities present on the page from the most recent page attempt. If there are no activities within the page, and if the student has visited that page, we count that as an attempt.",
             render_fn: &__MODULE__.render_progress_column/3
           },
           %ColumnSpec{
             name: :overall_proficiency,
             label: "OVERALL COURSE PROFICIENCY",
-            render_fn: &__MODULE__.render_overall_proficiency_column/3
+            render_fn: &__MODULE__.render_overall_proficiency_column/3,
+            tooltip:
+              "For all students, or one specific student, proficiency for a learning objective will be calculated off the percentage of correct answers for first part attempts within first activity attempts - for those parts that have that learning objective or any of its sub-objectives attached to it."
           }
         ]
       else
         [
           %ColumnSpec{
             name: :name,
-            label: "Name",
+            label: "NAME",
             render_fn: &__MODULE__.render_name_column/3,
             sort_fn: &__MODULE__.sort_name_column/2,
             th_class: "pl-10"
           },
           %ColumnSpec{
             name: :email,
-            label: "Email",
+            label: "EMAIL",
             render_fn: &__MODULE__.render_email_column/3
           },
           %ColumnSpec{
             name: :type,
-            label: "Type",
+            label: "TYPE",
             render_fn: &__MODULE__.render_type_column/3,
             sortable: false
           }

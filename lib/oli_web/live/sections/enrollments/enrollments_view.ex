@@ -263,7 +263,7 @@ defmodule OliWeb.Sections.EnrollmentsViewLive do
       <div>
         <li class="list-none mt-4 max-h-80 overflow-y-scroll">
           <%= for user <- @add_enrollments_users_not_found do %>
-            <ul class="odd:bg-gray-200 even:bg-gray-100 p-2 first:rounded-t last:rounded-b">
+            <ul class="odd:bg-gray-200 dark:odd:bg-neutral-600 even:bg-gray-100 dark:even:bg-neutral-500 p-2 first:rounded-t last:rounded-b">
               <div class="flex items-center justify-between">
                 <p><%= user %></p>
                 <button
