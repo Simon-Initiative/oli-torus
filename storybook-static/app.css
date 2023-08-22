@@ -7430,15 +7430,6 @@ button.torus-button.error:disabled {
   color: rgb(255 255 255 / var(--tw-text-opacity));
 }
 
-.dark button.torus-button.primary:disabled,.dark 
-button.torus-button.secondary:disabled
-button.torus-button.error:disabled {
-  --tw-bg-opacity: 1;
-  background-color: rgb(115 115 115 / var(--tw-bg-opacity));
-  --tw-text-opacity: 1;
-  color: rgb(255 255 255 / var(--tw-text-opacity));
-}
-
 a.torus-button.error,
 button.torus-button.error {
   --tw-bg-opacity: 1;
@@ -8915,19 +8906,9 @@ body {
   color: rgb(255 255 255 / var(--tw-text-opacity));
 }
 
-.dark .dark\:odd\:bg-neutral-600:nth-child(odd) {
-  --tw-bg-opacity: 1;
-  background-color: rgb(82 82 82 / var(--tw-bg-opacity));
-}
-
 .dark .dark\:even\:bg-gray-700:nth-child(even) {
   --tw-bg-opacity: 1;
   background-color: rgb(64 64 64 / var(--tw-bg-opacity));
-}
-
-.dark .dark\:even\:bg-neutral-500:nth-child(even) {
-  --tw-bg-opacity: 1;
-  background-color: rgb(115 115 115 / var(--tw-bg-opacity));
 }
 
 .dark .dark\:hover\:bg-blue-500:hover {
