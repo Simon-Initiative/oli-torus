@@ -36,7 +36,7 @@ defmodule OliWeb.Components.LiveModal do
       <div phx-hook="LiveModal" id={@id}>
         <%= if @show do %>
           <div id={"#{@id}_backdrop"} class="fixed h-full w-full z-50 bg-black/20 left-0 top-0 flex items-center justify-center">
-            <div class={"bg-white rounded max-w-xl w-full p-4 #{@class}"}>
+            <div class={"bg-white dark:bg-neutral-800 rounded max-w-xl w-full p-4 #{@class}"}>
               <div class={"flex items-cent #{if assigns[:title], do: "justify-between", else: "justify-end"} p-4"}>
                 <%= if @title do %>
                   <h5><%= @title %></h5>
