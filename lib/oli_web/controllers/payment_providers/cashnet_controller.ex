@@ -114,16 +114,25 @@ defmodule OliWeb.PaymentProviders.CashnetController do
   @doc """
   An endpoint where cashnet can redirect users if they sign off or cancel the payment process.
   """
-  def signoff(conn, payload) do
+  def signoff(conn, %{"ref1val1" => provider_id} = payload) do
     Logger.debug("CashnetController:signoff ", payload)
 
     user = conn.assigns.current_user
-    PubSub.broadcast(Oli.PubSub, "section:payment:"<>Integer.to_string(user.id), {:payment, "logged off without paying"})
+    if user == nil do
+      payment = Oli.Delivery.Paywall.get_provider_payment(:cashnet, provider_id)
+      if payment != nil do
+        PubSub.broadcast(Oli.PubSub, "section:payment:"<>Integer.to_string(payment.pending_user_id), {:payment, "logged off"})
+      end
+      render_back_to_lms(conn)
 
-    if user.independent_learner do
-      redirect(conn, to: Routes.delivery_path(conn, :open_and_free_index))
     else
-      redirect(conn, to: Routes.delivery_path(conn, :index))
+      PubSub.broadcast(Oli.PubSub, "section:payment:"<>Integer.to_string(user.id), {:payment, "logged off without paying"})
+
+      if user.independent_learner do
+        redirect(conn, to: Routes.delivery_path(conn, :open_and_free_index))
+      else
+        redirect(conn, to: Routes.delivery_path(conn, :index))
+      end
     end
 
   end
@@ -154,7 +163,6 @@ defmodule OliWeb.PaymentProviders.CashnetController do
               {_, msg} = Oli.Utils.log_error("CashnetController:init_form failed.", e)
               error(conn, 500, msg)
           end
-
         _ ->
           Logger.error("CashnetController could not init intent")
           error(conn, 400, "client error")
@@ -166,5 +174,14 @@ defmodule OliWeb.PaymentProviders.CashnetController do
 
       error(conn, 401, "unauthorized, this user is not enrolled in this section")
     end
+  end
+
+  defp render_back_to_lms(conn) do
+    conn
+    |> put_view(OliWeb.PaymentProviders.CashnetView)
+    |> put_root_layout({OliWeb.LayoutView, "delivery_from_payment.html"})
+    |> put_status(200)
+    |> render("lms_from_payment_site.html")
+    |> halt()
   end
 end
