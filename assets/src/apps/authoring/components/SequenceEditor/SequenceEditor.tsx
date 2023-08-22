@@ -681,7 +681,7 @@ const SequenceEditor: React.FC = () => {
         eventKey="0"
         style={{
           overflowY: 'auto',
-          maxHeight: !bottomLeftPanel && open ? 'calc(100vh - 100px)' : '60vh',
+          maxHeight: !bottomLeftPanel && open ? 'calc(100vh - 100px)' : '55vh',
         }}
       >
         <ListGroup as="ol" className="aa-sequence">
