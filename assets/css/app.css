@@ -7,6 +7,8 @@
 @import 'text';
 @import 'button';
 @import 'table';
+@import "markdown-editor";
+
 
 /**
  * Automatically style all links with blue text and underline on hover.
@@ -18,10 +20,12 @@
  */
 a,
 a.btn.btn-link {
+  /* prettier-ignore */
   @apply text-blue-500 hover:text-blue-600 hover:underline;
 }
 
 a.btn {
+  /* prettier-ignore */
   @apply hover:no-underline;
 }
 

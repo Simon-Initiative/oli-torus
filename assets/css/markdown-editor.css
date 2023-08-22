@@ -1,0 +1,11 @@
+@import "@uiw/react-md-editor/markdown-editor";
+@import "@uiw/react-markdown-preview/markdown";
+
+
+.wmde-markdown ul {
+  list-style: disc;
+}
+
+.wmde-markdown ol {
+  list-style: decimal;
+}
