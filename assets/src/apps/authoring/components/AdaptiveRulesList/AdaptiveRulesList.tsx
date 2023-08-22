@@ -42,7 +42,6 @@ const IRulesList: React.FC = () => {
   const currentRule = useSelector(selectCurrentRule);
   const sequenceEditorHeight = useSelector(selectSequenceEditorHeight);
   const sequenceEditorExpanded = useSelector(selectSequenceEditorExpanded);
-  const [isContextMenuClicked, setIsContextMenuClicked] = useState(false);
   const [open, toggleOpen] = useToggle(true);
   const rules = currentActivity?.authoring?.rules || [];
   const [ruleToEdit, setRuleToEdit] = useState<any>(undefined);
@@ -272,7 +271,7 @@ const IRulesList: React.FC = () => {
     return (
       <Dropdown
         onClick={(e: React.MouseEvent) => {
-          (e as any).isContextButtonClick = true && setIsContextMenuClicked(true);
+          (e as any).isContextButtonClick = true;
         }}
       >
         <Dropdown.Toggle
@@ -366,11 +365,7 @@ const IRulesList: React.FC = () => {
       defaultActiveKey="0"
       activeKey={open ? '0' : '-1'}
       style={{
-        maxHeight: isContextMenuClicked
-          ? ''
-          : sequenceEditorExpanded
-          ? '25vh'
-          : `calc(100vh - ${sequenceEditorHeight}px)`,
+        maxHeight: sequenceEditorExpanded ? '25vh' : `calc(100vh - ${sequenceEditorHeight}px)`,
       }}
     >
       <div className="aa-panel-section-title-bar">
@@ -434,12 +429,8 @@ const IRulesList: React.FC = () => {
       <Accordion.Collapse
         eventKey="0"
         style={{
-          maxHeight: isContextMenuClicked
-            ? ''
-            : sequenceEditorExpanded
-            ? '25vh'
-            : `calc(100vh - ${sequenceEditorHeight}px)`,
-          overflowY: isContextMenuClicked ? undefined : 'auto',
+          maxHeight: sequenceEditorExpanded ? '25vh' : `calc(100vh - ${sequenceEditorHeight}px)`,
+          overflowY: 'auto',
         }}
       >
         <ListGroup className="aa-rules-list" as="ol">
