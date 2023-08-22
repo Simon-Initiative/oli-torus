@@ -216,15 +216,28 @@ defmodule OliWeb.Delivery.StudentDashboard.Components.QuizzScoresTabTest do
 
       Sections.unenroll_learner(student.id, section.id)
 
-      assert Oli.Grading.generate_gradebook_for_section(section)
-             |> elem(0)
-             |> Enum.filter(fn row -> row.user.id == student.id end)
-             |> length() == 0
+      assert Oli.Grading.get_scores_for_section_and_user(section, student.id) |> length() == 3
 
       {:ok, view, _html} =
         live(conn, live_view_students_dashboard_route(section.slug, student.id, :quizz_scores))
 
-      assert has_element?(view, "h6", "There are no quiz scores to show")
+      assert has_element?(
+               view,
+               "div",
+               "#{graded_page_1.title}"
+             )
+
+      assert has_element?(
+               view,
+               "div",
+               "#{graded_page_3.title}"
+             )
+
+      assert has_element?(
+               view,
+               "div",
+               "#{graded_page_5.title}"
+             )
     end
 
     test "applies searching", %{
