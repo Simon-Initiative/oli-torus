@@ -74,7 +74,7 @@ defmodule OliWeb.Delivery.StudentDashboard.StudentDashboardLive do
         active_tab: String.to_existing_atom(params["active_tab"])
       )
       |> assign_new(:scores, fn ->
-        %{scores: get_scores(socket.assigns.section, socket.assigns.student.id)}
+        %{scores: Oli.Grading.get_scores_for_section_and_user(socket.assigns.section, socket.assigns.student.id)}
       end)
 
     {:noreply, socket}
@@ -265,12 +265,6 @@ defmodule OliWeb.Delivery.StudentDashboard.StudentDashboardLive do
 
         {total_count, containers_with_metrics}
     end
-  end
-
-  defp get_scores(section, student_id) do
-    if Sections.is_enrolled?(student_id, section.slug),
-      do: Oli.Grading.get_scores_for_section_and_user(section, student_id),
-      else: []
   end
 
   defp get_page_nodes(section_slug, student_id) do
