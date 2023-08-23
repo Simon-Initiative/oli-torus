@@ -17,6 +17,37 @@ describe('Markdown serializer', () => {
     );
   });
 
+  it('should serialize a list', () => {
+    const content = `* This is a list item\n* This is another list item\n\n`;
+    expect(serializeMarkdown(content)).toEqual(
+      expectAnyId([
+        {
+          type: 'ul',
+          id: '1',
+          children: [Model.li('This is a list item'), Model.li('This is another list item')],
+        },
+      ]),
+    );
+  });
+
+  it('should serialize a nested list', () => {
+    const content = `* This is a list item\n  1. Sub list\n  2. Sub list 2\n* This is another list item\n\n`;
+    const out = serializeMarkdown(content);
+    expect(serializeMarkdown(content)).toEqual(
+      expectAnyId([
+        {
+          type: 'ul',
+          id: '1',
+          children: [
+            Model.li('This is a list item'),
+            Model.ol([Model.li('Sub list'), Model.li('Sub list 2')]),
+            Model.li('This is another list item'),
+          ],
+        },
+      ]),
+    );
+  });
+
   it('should serialize a paragraph', () => {
     const content = `This is a paragraph. With multiple text nodes.\n\n`;
     expect(serializeMarkdown(content)).toEqual(

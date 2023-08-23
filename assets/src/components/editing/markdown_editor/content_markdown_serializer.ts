@@ -1,8 +1,16 @@
 import { _Lexer } from 'Lexer';
 import { Token, Tokens } from 'Tokens';
 import { marked } from 'marked';
+import { Element, Node } from 'slate';
 import { Model } from 'data/content/model/elements/factories';
-import { AllModelElements, TableRow } from 'data/content/model/elements/types';
+import {
+  AllModelElements,
+  ListChildren,
+  ListItem,
+  OrderedList,
+  TableRow,
+  UnorderedList,
+} from 'data/content/model/elements/types';
 import { FormattedText } from 'data/content/model/text';
 import guid from 'utils/guid';
 
@@ -85,12 +93,19 @@ const serializeToken =
         });
       case 'table':
         return serializeTable(token as Tokens.Table, context);
+      case 'list':
+        return serializeList(token as Tokens.List, context);
+      case 'space':
+        return null;
     }
 
     // Unknown token, process children.
     if ('tokens' in token && token.tokens) {
+      console.warn('Unknown token with .tokens', token);
       return serializeTokens(token.tokens, context);
     }
+
+    console.warn('Unknown token', token);
     return null;
   };
 
@@ -113,6 +128,43 @@ const wrapWithParagraph = (elements: (FormattedText | AllModelElements)[]): AllM
     }
     return element;
   });
+};
+
+const isList = (n: Node): n is UnorderedList | OrderedList =>
+  Element.isElement(n) && (n.type === 'ul' || n.type === 'ol');
+
+const serializeList = (token: Tokens.List, context: SerializationContext): AllModelElements[] => {
+  const items = token.items.map((item) => {
+    if (item.type === 'list_item') {
+      const children = serializeTokens(item.tokens, context) as any[];
+      return Model.li(children);
+    }
+    return serializeTokens(item.tokens, context);
+  });
+
+  const itemsWithSubLists: ListChildren = [];
+  /*
+    The markdown lexer will put sub-lists inside list items.
+    We want them next to list items.
+  */
+  items.forEach((item) => {
+    const subLists = 'children' in item && (item.children.filter(isList) as ListChildren);
+    const nonSubLists =
+      'children' in item && (item.children.filter((n) => !isList(n)) as ListItem['children']);
+    if (subLists) {
+      nonSubLists &&
+        itemsWithSubLists.push(Model.li(wrapWithParagraph(nonSubLists) as ListItem['children']));
+      itemsWithSubLists.push(...subLists);
+    } else {
+      if ('type' in item && item.type === 'li' && item.children) {
+        item.children = wrapWithParagraph(item.children as any) as any;
+      }
+      itemsWithSubLists.push(item as ListItem);
+    }
+  });
+
+  const list = token.ordered ? Model.ol(itemsWithSubLists) : Model.ul(itemsWithSubLists);
+  return [list];
 };
 
 const serializeTable = (token: Tokens.Table, context: SerializationContext): AllModelElements[] => {
