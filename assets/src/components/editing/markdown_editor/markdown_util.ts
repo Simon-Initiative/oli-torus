@@ -15,13 +15,19 @@ export const MarkdownCompatibleTypes: AllModelTypes[] = [
   'code',
   'blockquote',
   'img',
+  'tr',
+  'th',
+  'td',
+  'tr',
+  'table',
 ];
 
-export const MarkdownCompatibleMarks: string[] = ['strong', 'em', 'strikethrough'];
+export const MarkdownCompatibleMarks: string[] = ['strong', 'em', 'strikethrough', 'code'];
 
 const translations: Record<string, string> = {
   em: 'italic',
   strong: 'bold',
+  di: 'Description List',
 };
 
 const hasType = (node: AllModelElements | FormattedText): node is AllModelElements =>
@@ -32,14 +38,14 @@ const hasText = (node: AllModelElements | FormattedText): node is FormattedText 
 export const getMarkdownWarnings = (model: (AllModelElements | FormattedText)[]): string[] => {
   const warnings: string[] = [];
 
-  model.filter(hasType).forEach((element) => {
+  model?.filter(hasType).forEach((element) => {
     if (!MarkdownCompatibleTypes.includes(element.type)) {
       warnings.push(element.type);
     }
   });
 
-  model.filter(hasText).forEach((element) => {
-    const marks = Object.keys(element || {}).filter(
+  model?.filter(hasText).forEach((element) => {
+    const marks = Object.keys(element || []).filter(
       (mark) => mark !== 'text' && mark !== 'id' && mark !== 'type',
     );
 
@@ -50,7 +56,7 @@ export const getMarkdownWarnings = (model: (AllModelElements | FormattedText)[])
     });
   });
 
-  model.forEach((element) => {
+  model?.forEach((element) => {
     if ('children' in element) {
       warnings.push(...getMarkdownWarnings(element.children));
     }

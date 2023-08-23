@@ -3,10 +3,12 @@ import { Descendant, Operation, Editor as SlateEditor, createEditor } from 'slat
 import { withHistory } from 'slate-history';
 import { Editable, RenderElementProps, RenderLeafProps, Slate, withReact } from 'slate-react';
 import { EditorToolbar } from 'components/editing/toolbar/editorToolbar/EditorToolbar';
+import { useToggle } from 'components/hooks/useToggle';
 import { Model } from 'data/content/model/elements/factories';
 import { Mark, Marks } from 'data/content/model/text';
 import { classNames } from 'utils/classNames';
 import { CommandContext, CommandDescription } from '../elements/commands/interfaces';
+import { SwitchToMarkdownModal } from './SwitchToMarkdownModal';
 import { backspaceBlockKeyDown, deleteBlockKeyDown } from './handlers/deleteblock';
 import { hotkeyHandler } from './handlers/hotkey';
 import { onKeyDown as listOnKeyDown } from './handlers/lists';
@@ -41,6 +43,7 @@ export type EditorProps = {
   editorOverride?: SlateEditor;
   onFocus?: FocusEventHandler | undefined;
   onBlur?: FocusEventHandler | undefined;
+  onSwitchToMarkdown?: () => void;
 };
 
 // Necessary to work around FireFox focus and selection issues with Slate
@@ -64,6 +67,7 @@ export const Editor: React.FC<EditorProps> = React.memo((props: EditorProps) => 
     if (props.editorOverride) {
       return props.editorOverride;
     }
+
     const editor = withMarkdown(props.commandContext)(
       withReact(withHistory(withTables(withInlines(withVoids(createEditor()))))),
     );
@@ -135,6 +139,7 @@ export const Editor: React.FC<EditorProps> = React.memo((props: EditorProps) => 
           context={props.commandContext}
           insertOptions={props.toolbarInsertDescs}
           fixedToolbar={props.fixedToolbar}
+          onSwitchToMarkdown={props.onSwitchToMarkdown}
         />
 
         <Editable
