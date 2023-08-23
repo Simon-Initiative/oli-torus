@@ -26,8 +26,9 @@ export const StructuredContentEditor = ({
   toolbarInsertDescs,
   onEdit,
 }: StructuredContentEditor) => {
-  const onSlateEdit = React.useCallback(
+  const onContentEdit = React.useCallback(
     (children: Descendant[]) => {
+      console.info('onContentEdit', children);
       onEdit(Object.assign({}, contentItem, { children }));
     },
     [contentItem, onEdit],
@@ -54,7 +55,7 @@ export const StructuredContentEditor = ({
           commandContext={{ projectSlug: projectSlug, resourceSlug: resourceSlug }}
           editMode={editMode}
           value={value.children}
-          onEdit={onSlateEdit}
+          onEdit={onContentEdit}
         />
       </ErrorBoundary>
     );
@@ -69,7 +70,7 @@ export const StructuredContentEditor = ({
           commandContext={{ projectSlug: projectSlug, resourceSlug: resourceSlug }}
           editMode={editMode}
           value={value.children}
-          onEdit={onSlateEdit}
+          onEdit={onContentEdit}
           toolbarInsertDescs={toolbarInsertDescs}
         />
       </ErrorBoundary>

@@ -1,4 +1,4 @@
-import React, { FocusEventHandler, useCallback, useMemo, useState } from 'react';
+import React, { FocusEventHandler, useCallback, useEffect, useMemo, useState } from 'react';
 import '@uiw/react-markdown-preview/markdown.css';
 import MDEditor from '@uiw/react-md-editor';
 import '@uiw/react-md-editor/markdown-editor.css';
@@ -35,22 +35,30 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = (props) => {
   const darkMode: boolean = useMemo(() => {
     return document.documentElement.classList.contains('dark');
   }, []);
-
+  const { onEdit } = props;
   const modeClass = darkMode ? 'dark' : 'light';
 
-  const saveChanges = useCallback(() => {
-    const content = serializeMarkdown(value || '');
-    console.info(JSON.stringify(content, null, 2));
-  }, []);
+  const saveChanges = useCallback(
+    (newValue: string) => {
+      const content = serializeMarkdown(newValue);
+      onEdit(content as Descendant[], null, []);
+    },
+    [onEdit],
+  );
 
-  const delayedSave = useMemo(() => {
-    return debounce(saveChanges, 5000);
-  }, [saveChanges]);
+  const onChange = useCallback(
+    (newValue: string | undefined) => {
+      console.info('onchange');
+      setValue(newValue || '');
+      saveChanges(newValue || '');
+    },
+    [saveChanges],
+  );
 
-  const onChange = useCallback((newValue: string | undefined) => {
-    setValue(newValue || '');
-    delayedSave();
-  }, []);
+  const onBlur = useCallback(() => {
+    console.info('onblur');
+    saveChanges(value || '');
+  }, [value, saveChanges]);
 
   return (
     <div data-color-mode={modeClass}>
@@ -59,14 +67,9 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = (props) => {
         onChange={onChange}
         height={600}
         data-color-mode={modeClass}
-        onBlur={saveChanges}
+        onBlur={onBlur}
         preview="edit"
       />
-      {/* <textarea value={value} cols={80} rows={40} onChange={onChange} /> */}
-      <button className="btn" onClick={saveChanges}>
-        Save
-      </button>
-      ;
     </div>
   );
 };
