@@ -34,7 +34,8 @@ export const StructuredContentEditor = ({
     [contentItem, onEdit],
   );
 
-  const changeEditor = (editor: 'markdown' | 'slate') => (_e: any) => {
+  const changeEditor = (editor: 'markdown' | 'slate') => (_e?: any) => {
+    console.info('Switching editor modes', editor);
     onEdit({
       ...contentItem,
       editor,
@@ -47,14 +48,12 @@ export const StructuredContentEditor = ({
   if (editorType === 'markdown') {
     return (
       <ErrorBoundary>
-        <button className="btn" onClick={changeEditor('slate')}>
-          Switch to slate
-        </button>
         <MarkdownEditor
           className="structured-content"
           commandContext={{ projectSlug: projectSlug, resourceSlug: resourceSlug }}
           editMode={editMode}
           value={value.children}
+          onSwitchModes={changeEditor('slate')}
           onEdit={onContentEdit}
         />
       </ErrorBoundary>
