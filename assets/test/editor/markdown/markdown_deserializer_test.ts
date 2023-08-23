@@ -309,7 +309,21 @@ describe('Markdown Deserializer', () => {
 |-------------|-------------|-------------|
 | Cell 1      | Cell 2      | Cell 3      |
 | Cell 4      | Cell 5      | Cell 6      |
+
 `;
+    expect(deserializeNode(emptyContext)(node)).toEqual(expectedOutput);
+  });
+
+  it('should deserialize a code block', () => {
+    const node: AllModelElements = {
+      type: 'code',
+      id: '1',
+      code: 'Some code\nSome more code',
+      language: 'Text',
+      children: [{ text: '' }],
+    };
+
+    const expectedOutput = `\`\`\`Text\nSome code\nSome more code\n\`\`\`\n\n`;
     expect(deserializeNode(emptyContext)(node)).toEqual(expectedOutput);
   });
 });

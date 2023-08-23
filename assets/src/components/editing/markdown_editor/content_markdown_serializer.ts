@@ -86,6 +86,10 @@ const serializeToken =
           ...context,
           marks: { ...context.marks, underline: true },
         });
+      case 'codespan':
+        return [{ code: true, text: token.text }];
+      case 'code':
+        return serializeCode(token as Tokens.Code, context);
       case 'del':
         return serializeTokens(token.tokens, {
           ...context,
@@ -95,6 +99,8 @@ const serializeToken =
         return serializeTable(token as Tokens.Table, context);
       case 'list':
         return serializeList(token as Tokens.List, context);
+      case 'image':
+        return serializeImage(token as Tokens.Image, context);
       case 'space':
         return null;
     }
@@ -108,6 +114,20 @@ const serializeToken =
     console.warn('Unknown token', token);
     return null;
   };
+
+const serializeImage = (token: Tokens.Image, context: SerializationContext): AllModelElements[] => {
+  return [Model.image(token.href, !token.text ? undefined : token.text)];
+};
+
+const serializeCode = (
+  token: Tokens.Code,
+  context: SerializationContext,
+): (FormattedText | AllModelElements)[] => {
+  const codeText = token.text;
+  const code = Model.code(codeText);
+  code.language = token.lang || 'Text';
+  return [code];
+};
 
 const serializeTokens = (
   tokens: Token[] | undefined,

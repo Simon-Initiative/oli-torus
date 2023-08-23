@@ -167,7 +167,8 @@ export const Model = {
   cite: (text = '', bibref: number) =>
     create<Citation>({ type: 'cite', bibref: bibref, children: [{ text }] }),
 
-  image: (src?: string) => create<ImageBlock>({ type: 'img', src, display: 'block' }),
+  image: (src?: string, altText?: string) =>
+    create<ImageBlock>({ type: 'img', src, display: 'block', alt: altText }),
 
   imageInline: (src?: string) => create<ImageInline>({ type: 'img_inline', src }),
 

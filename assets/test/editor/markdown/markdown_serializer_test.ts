@@ -32,7 +32,6 @@ describe('Markdown serializer', () => {
 
   it('should serialize a nested list', () => {
     const content = `* This is a list item\n  1. Sub list\n  2. Sub list 2\n* This is another list item\n\n`;
-    const out = serializeMarkdown(content);
     expect(serializeMarkdown(content)).toEqual(
       expectAnyId([
         {
@@ -44,6 +43,24 @@ describe('Markdown serializer', () => {
             Model.li('This is another list item'),
           ],
         },
+      ]),
+    );
+  });
+
+  it('should serialize an image', () => {
+    const content = `![Alt text](https://example.com/image.png)\n\n`;
+    expect(serializeMarkdown(content)).toEqual(
+      expectAnyId([
+        Model.p([
+          {
+            type: 'img',
+            id: '1',
+            src: 'https://example.com/image.png',
+            alt: 'Alt text',
+            display: 'block',
+            children: [{ text: '' }],
+          },
+        ]),
       ]),
     );
   });
@@ -164,6 +181,20 @@ describe('Markdown serializer', () => {
 | Cell 1      | Cell 2      | Cell 3      |
 | Cell 4      | Cell 5      | Cell 6      |
 `;
+    expect(serializeMarkdown(input)).toEqual(expectAnyId([expected]));
+  });
+
+  it('should serialize a code block', () => {
+    const expected: AllModelElements = {
+      type: 'code',
+      id: '1',
+      code: 'Some code\nSome more code',
+      language: 'jsx',
+      children: [{ text: '' }],
+    };
+
+    const marker = '```';
+    const input = `${marker}jsx\nSome code\nSome more code\n${marker}\n\n`;
     expect(serializeMarkdown(input)).toEqual(expectAnyId([expected]));
   });
 });

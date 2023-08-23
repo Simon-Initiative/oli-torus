@@ -1,6 +1,6 @@
 import React, { FocusEventHandler, useCallback, useEffect, useMemo, useState } from 'react';
 import '@uiw/react-markdown-preview/markdown.css';
-import MDEditor from '@uiw/react-md-editor';
+import MDEditor, { commands } from '@uiw/react-md-editor';
 import '@uiw/react-md-editor/markdown-editor.css';
 import { debounce } from 'lodash';
 import { Descendant } from 'slate';
@@ -31,6 +31,7 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = (props) => {
   const [value, setValue] = useState<string | undefined>(() =>
     contentMarkdownDeserializer(props.value),
   );
+  const [lastSavedValue, setLastSavedValue] = useState<string | undefined>();
 
   const darkMode: boolean = useMemo(() => {
     return document.documentElement.classList.contains('dark');
@@ -40,10 +41,14 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = (props) => {
 
   const saveChanges = useCallback(
     (newValue: string) => {
+      if (newValue === lastSavedValue) {
+        return;
+      }
+      setLastSavedValue(newValue);
       const content = serializeMarkdown(newValue);
       onEdit(content as Descendant[], null, []);
     },
-    [onEdit],
+    [lastSavedValue, onEdit],
   );
 
   const onChange = useCallback(
@@ -69,6 +74,7 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = (props) => {
         data-color-mode={modeClass}
         onBlur={onBlur}
         preview="edit"
+        extraCommands={[commands.fullscreen]}
       />
     </div>
   );

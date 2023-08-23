@@ -2,6 +2,7 @@ import { Text } from 'slate';
 import {
   AllModelElements,
   Caption,
+  CodeV2,
   Inline,
   ListItem,
   OrderedList,
@@ -39,6 +40,7 @@ export const contentMarkdownDeserializer = (
 
 const textNode = (node: FormattedText): string => {
   const marks = [];
+  if (node.code) marks.push('`');
   if (node.strong) marks.push('**');
   if (node.em) marks.push('_');
   //if (node.underline) marks.push('__');
@@ -97,7 +99,10 @@ export const deserializeNode =
         return listItem(model, 0, newContext); // Shouldn't really get bare list items, maybe this isn't neccessary
 
       case 'code':
-        return `\`${contentMarkdownDeserializer(model.children, newContext, model)}\`\n\n`;
+        const codeMarker = '```';
+        return `${codeMarker}${model.language || ''}\n${
+          (model as CodeV2).code || ''
+        }\n${codeMarker}\n\n`;
       case 'blockquote':
         return blockquote(model, newContext);
       case 'table':
@@ -105,7 +110,9 @@ export const deserializeNode =
       case 'a':
         return `[${contentMarkdownDeserializer(model.children, newContext, model)}](${model.href})`;
       case 'img':
-        return `![${contentMarkdownDeserializer(model.caption, newContext, model)}](${model.src})`;
+        return `![${contentMarkdownDeserializer(model.caption || model.alt, newContext, model)}](${
+          model.src
+        })`;
     }
 
     if ('children' in node && node.children) {
@@ -160,7 +167,7 @@ const table = (model: Table, newContext: DeserializationContext): string => {
     return `| ${cells} |\n${divider}`;
   });
 
-  return markdownTable.join('');
+  return markdownTable.join('') + '\n';
 };
 
 const blockquote = (model: AllModelElements, context: DeserializationContext): string => {
