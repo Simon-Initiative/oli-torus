@@ -35,7 +35,7 @@ defmodule OliWeb.InstitutionControllerTest do
 
   describe "index" do
     test "lists all institutions", %{conn: conn} do
-      conn = get(conn, Routes.institution_path(conn, :index))
+      conn = get(conn, Routes.live_path(OliWeb.Endpoint, OliWeb.Admin.Institutions.IndexLive))
       assert html_response(conn, 200) =~ "some name"
     end
   end
@@ -51,7 +51,7 @@ defmodule OliWeb.InstitutionControllerTest do
     test "redirects to page index when data is valid", %{conn: conn} do
       conn = post(conn, Routes.institution_path(conn, :create), institution: @create_attrs)
 
-      assert redirected_to(conn) == Routes.institution_path(conn, :index)
+      assert redirected_to(conn) == Routes.live_path(OliWeb.Endpoint, OliWeb.Admin.Institutions.IndexLive)
     end
 
     test "renders errors when data is invalid", %{conn: conn} do
@@ -115,7 +115,7 @@ defmodule OliWeb.InstitutionControllerTest do
   describe "delete institution" do
     test "deletes chosen institution", %{conn: conn, institution: institution} do
       conn = delete(conn, Routes.institution_path(conn, :delete, institution))
-      assert redirected_to(conn) == Routes.institution_path(conn, :index)
+      assert redirected_to(conn) == Routes.live_path(OliWeb.Endpoint, OliWeb.Admin.Institutions.IndexLive)
 
       institution_id = institution.id
 
@@ -140,7 +140,7 @@ defmodule OliWeb.InstitutionControllerTest do
                  })
 
                assert redirected_to(conn) ==
-                        Routes.institution_path(conn, :index) <> "#pending-registrations"
+                        Routes.live_path(OliWeb.Endpoint, OliWeb.Admin.Institutions.IndexLive) <> "#pending-registrations"
 
                assert Institutions.count_pending_registrations() == 0
              end) =~ "This message cannot be sent because SLACK_WEBHOOK_URL is not configured"
@@ -151,7 +151,7 @@ defmodule OliWeb.InstitutionControllerTest do
 
       pending_registration = pending_registration_fixture()
 
-      conn = get(conn, Routes.institution_path(conn, :index))
+      conn = get(conn, Routes.live_path(OliWeb.Endpoint, OliWeb.Admin.Institutions.IndexLive))
 
       assert html_response(conn, 200) =~ pending_registration.name
       assert html_response(conn, 200) =~ pending_registration.institution_url

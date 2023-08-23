@@ -17,7 +17,7 @@ defmodule OliWeb.InstitutionController do
       [
         Breadcrumb.new(%{
           full_title: "Institutions",
-          link: Routes.institution_path(OliWeb.Endpoint, :index)
+          link: Routes.live_path(OliWeb.Endpoint, OliWeb.Admin.Institutions.IndexLive)
         })
       ]
   end
@@ -56,20 +56,6 @@ defmodule OliWeb.InstitutionController do
     |> Enum.map(fn brand -> {brand.name, brand.id} end)
   end
 
-  def index(conn, _params) do
-    institutions = Institutions.list_institutions()
-    pending_registrations = Institutions.list_pending_registrations()
-
-    render_institution_page(conn, "index.html",
-      breadcrumbs: root_breadcrumbs(),
-      institutions: institutions,
-      pending_registrations: pending_registrations,
-      country_codes: Predefined.country_codes(),
-      lti_config_defaults: Predefined.lti_config_defaults(),
-      world_universities_and_domains: Predefined.world_universities_and_domains()
-    )
-  end
-
   def new(conn, _params) do
     changeset = Institutions.change_institution(%Institution{})
 
@@ -92,7 +78,7 @@ defmodule OliWeb.InstitutionController do
       {:ok, _institution} ->
         conn
         |> put_flash(:info, "Institution created")
-        |> redirect(to: Routes.institution_path(conn, :index))
+        |> redirect(to: Routes.live_path(OliWeb.Endpoint, OliWeb.Admin.Institutions.IndexLive))
 
       {:error, %Ecto.Changeset{} = changeset} ->
         render_institution_page(conn, "new.html",
@@ -170,7 +156,7 @@ defmodule OliWeb.InstitutionController do
 
         conn
         |> put_flash(:info, "Institution deleted")
-        |> redirect(to: Routes.institution_path(conn, :index))
+        |> redirect(to: Routes.live_path(OliWeb.Endpoint, OliWeb.Admin.Institutions.IndexLive))
     end
   end
 
@@ -196,7 +182,7 @@ defmodule OliWeb.InstitutionController do
           :error,
           "Pending registration with issuer '#{issuer}', client_id '#{client_id}' and deployment_id '#{deployment_id}' does not exist"
         )
-        |> redirect(to: Routes.institution_path(conn, :index))
+        |> redirect(to: Routes.live_path(OliWeb.Endpoint, OliWeb.Admin.Institutions.IndexLive))
 
       pending_registration ->
         with {:ok, pending_registration} <-
@@ -240,7 +226,7 @@ defmodule OliWeb.InstitutionController do
             content_tag(:b, pending_registration.name),
             " approved"
           ])
-          |> redirect(to: Routes.institution_path(conn, :index) <> "#pending-registrations")
+          |> redirect(to: Routes.live_path(OliWeb.Endpoint, OliWeb.Admin.Institutions.IndexLive) <> "#pending-registrations")
         else
           error ->
             Logger.error("Failed to approve registration request", error)
@@ -250,7 +236,7 @@ defmodule OliWeb.InstitutionController do
               :error,
               "Failed to approve registration. Please double check your entries and try again."
             )
-            |> redirect(to: Routes.institution_path(conn, :index))
+            |> redirect(to: Routes.live_path(OliWeb.Endpoint, OliWeb.Admin.Institutions.IndexLive))
         end
     end
   end
@@ -282,7 +268,7 @@ defmodule OliWeb.InstitutionController do
       content_tag(:b, pending_registration.name),
       " declined"
     ])
-    |> redirect(to: Routes.institution_path(conn, :index))
+    |> redirect(to: Routes.live_path(OliWeb.Endpoint, OliWeb.Admin.Institutions.IndexLive))
   end
 
   defp render_institution_page(conn, template, assigns) do
