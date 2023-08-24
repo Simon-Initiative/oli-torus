@@ -1,10 +1,17 @@
 defmodule OliWeb.Insights do
   use OliWeb, :live_view
 
+  alias Oli.Publishing
   alias OliWeb.Insights.{TableHeader, TableRow}
   alias Oli.Authoring.Course
+  alias OliWeb.Components.Project.DatashopExport
+  alias Oli.Authoring.Broadcaster
+  alias Oli.Authoring.Broadcaster.Subscriber
+  alias OliWeb.Common.SessionContext
 
-  def mount(_params, %{"project_slug" => project_slug} = _session, socket) do
+  def mount(_params, %{"project_slug" => project_slug} = session, socket) do
+    ctx = SessionContext.init(socket, session)
+
     by_activity_rows = Oli.Analytics.ByActivity.query_against_project_slug(project_slug)
     project = Course.get_project_by_slug(project_slug)
 
@@ -12,8 +19,21 @@ defmodule OliWeb.Insights do
       Enum.map(by_activity_rows, fn r -> r.slice.resource_id end)
       |> parent_pages(project_slug)
 
+    latest_publication = Publishing.get_latest_published_publication_by_slug(project.slug)
+
+    {datashop_export_status, datashop_export_url, datashop_export_timestamp} =
+      case Course.datashop_export_status(project) do
+        {:available, url, timestamp} -> {:available, url, timestamp}
+        {:expired, _, _} -> {:expired, nil, nil}
+        {status} -> {status, nil, nil}
+      end
+
+    # Subscribe to any datashop snapshot progress updates for this project
+    Subscriber.subscribe_to_datashop_export_status(project.slug)
+
     {:ok,
      assign(socket,
+       ctx: ctx,
        project: project,
        by_page_rows: nil,
        by_activity_rows: by_activity_rows,
@@ -24,7 +44,11 @@ defmodule OliWeb.Insights do
        query: "",
        sort_by: "title",
        sort_order: :asc,
-       title: "Insights | " <> project.title
+       title: "Insights | " <> project.title,
+       latest_publication: latest_publication,
+       datashop_export_status: datashop_export_status,
+       datashop_export_url: datashop_export_url,
+       datashop_export_timestamp: datashop_export_timestamp
      )}
   end
 
@@ -60,6 +84,20 @@ defmodule OliWeb.Insights do
 
   def render(assigns) do
     ~H"""
+    <div class="mb-3">
+      <p>
+      Insights can help you improve your course by providing a statistical analysis of
+      the skills covered by each question to find areas where students are struggling.
+      </p>
+      <div class="d-flex align-items-center">
+        <DatashopExport.export_button
+            ctx={@ctx}
+            latest_publication={@latest_publication}
+            datashop_export_status={@datashop_export_status}
+            datashop_export_url={@datashop_export_url}
+            datashop_export_timestamp={@datashop_export_timestamp} />
+      </div>
+    </div>
     <ul class="nav nav-pills">
       <li class="nav-item my-2 mr-2">
         <button {is_disabled(@selected, :by_activity)} class="btn btn-primary" phx-click="by-activity">By Activity</button>
@@ -264,6 +302,40 @@ defmodule OliWeb.Insights do
      else
        socket
      end}
+  end
+
+  def handle_event("generate_datashop_snapshot", _params, socket) do
+    project = socket.assigns.project
+
+    case Course.generate_datashop_snapshot(project) do
+      {:ok, _job} ->
+        Broadcaster.broadcast_datashop_export_status(project.slug, {:in_progress})
+
+        {:noreply, assign(socket, datashop_export_status: :in_progress)}
+
+      {:error, _changeset} ->
+        socket =
+          socket
+          |> put_flash(:error, "Datashop snapshot could not be generated.")
+
+        {:noreply, socket}
+    end
+  end
+
+  def handle_info(
+        {:datashop_export_status, {:available, datashop_export_url, datashop_export_timestamp}},
+        socket
+      ) do
+    {:noreply,
+     assign(socket,
+       datashop_export_status: :available,
+       datashop_export_url: datashop_export_url,
+       datashop_export_timestamp: datashop_export_timestamp
+     )}
+  end
+
+  def handle_info({:datashop_export_status, {status}}, socket) do
+    {:noreply, assign(socket, datashop_export_status: status)}
   end
 
   def handle_info(:init_by_page, socket) do

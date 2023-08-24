@@ -400,9 +400,7 @@ defmodule OliWeb.Router do
 
     # Project display pages
     live("/:project_id/publish", Projects.PublishView)
-    post("/:project_id/datashop", ProjectController, :download_datashop)
     post("/:project_id/export", ProjectController, :download_export)
-    post("/:project_id/insights", ProjectController, :download_analytics)
     post("/:project_id/duplicate", ProjectController, :clone_project)
 
     # Alternatives Groups
@@ -907,7 +905,6 @@ defmodule OliWeb.Router do
     live_session :instructor_dashboard,
       on_mount: OliWeb.Delivery.InstructorDashboard.InitialAssigns,
       root_layout: {OliWeb.LayoutView, :delivery_dashboard} do
-
       live("/:view", Delivery.InstructorDashboard.InstructorDashboardLive)
       live("/:view/:active_tab", Delivery.InstructorDashboard.InstructorDashboardLive)
 
@@ -1378,7 +1375,7 @@ defmodule OliWeb.Router do
 
       get("/flame_graphs", DevController, :flame_graphs)
 
-      live_storybook "/storybook", backend_module: OliWeb.Storybook
+      live_storybook("/storybook", backend_module: OliWeb.Storybook)
     end
   end
 end
