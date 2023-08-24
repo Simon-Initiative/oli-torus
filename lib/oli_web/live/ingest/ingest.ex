@@ -1,5 +1,5 @@
 defmodule OliWeb.Admin.Ingest do
-  use Surface.LiveView, layout: {OliWeb.LayoutView, :live}
+  use OliWeb, :live_view
 
   alias Oli.Repo
   alias Oli.Accounts.Author
@@ -8,10 +8,6 @@ defmodule OliWeb.Admin.Ingest do
   alias Oli.Interop.Ingest
   alias OliWeb.Common.MonacoEditor
   alias OliWeb.Admin.Ingest.FAQ
-
-  prop author, :any
-  data breadcrumbs, :any
-  data title, :string, default: "Ingest Project"
 
   defp set_breadcrumbs() do
     OliWeb.Admin.AdminView.breadcrumb()
@@ -28,6 +24,7 @@ defmodule OliWeb.Admin.Ingest do
       ]
   end
 
+  @impl Phoenix.LiveView
   def mount(_, %{"current_author_id" => author_id}, socket) do
     author = Repo.get(Author, author_id)
 
@@ -38,7 +35,8 @@ defmodule OliWeb.Admin.Ingest do
        uploaded_files: [],
        uploaded_content: nil,
        upload_errors: [],
-       error: nil
+       error: nil,
+       title: "Ingest Project"
      )
      |> allow_upload(:digest, accept: ~w(.zip), max_entries: 1)}
   end
@@ -74,4 +72,10 @@ defmodule OliWeb.Admin.Ingest do
         {:noreply, assign(socket, error: error)}
     end
   end
+
+  defp is_invalid_json({:error, {:invalid_json, _schema, _errors, _json}}), do: true
+  defp is_invalid_json(_), do: false
+  defp get_schema({:error, {:invalid_json, schema, _errors, _json}}), do: schema
+  defp get_errors({:error, {:invalid_json, _schema, errors, _json}}), do: errors
+  defp get_json({:error, {:invalid_json, _schema, _errors, json}}), do: json
 end

@@ -14,7 +14,6 @@ defmodule OliWeb.Delivery.NewCourse.CourseDetails do
   ]
 
   attr :changeset, :map, required: true
-  attr :on_select, :any, required: true
 
   def render(assigns) do
     assigns =
@@ -29,17 +28,26 @@ defmodule OliWeb.Delivery.NewCourse.CourseDetails do
       )
 
     ~H"""
-    <.form id="course-details-form" class="w-full" for={@changeset} :let={f} >
+    <.form :let={f} id="course-details-form" class="w-full" for={@changeset}>
       <div class="flex flex-col gap-8">
         <%= if @class_modality != :never do %>
           <div class="flex flex-col gap-1 flex-1">
             <span required>Days of the week you meet</span>
             <div class="flex flex-wrap gap-2">
               <%= for {value, label} <- @days do %>
-                <CustomCheckbox.item form={f} field={:class_days} checked={Enum.member?(@class_days, value)} value={value} label={label} />
+                <CustomCheckbox.item
+                  form={f}
+                  field={:class_days}
+                  checked={Enum.member?(@class_days, value)}
+                  value={value}
+                  label={label}
+                />
               <% end %>
             </div>
-            <small class="torus-small mt-1"><i class="fa fa-circle-info mr-1" /> This will allow for accurate action recommendations for you and your students to be accurate according to your meeting schedule</small>
+            <small class="torus-small mt-1">
+              <i class="fa fa-circle-info mr-1" />
+              This will allow for accurate action recommendations for you and your students to be accurate according to your meeting schedule
+            </small>
           </div>
         <% end %>
 
@@ -47,14 +55,17 @@ defmodule OliWeb.Delivery.NewCourse.CourseDetails do
           <div class="flex gap-4 w-full">
             <div class="flex flex-col gap-1 flex-1">
               <span required>Course start date</span>
-              <%= Phoenix.HTML.Form.datetime_local_input f, :start_date, class: "torus-input" %>
+              <%= Phoenix.HTML.Form.datetime_local_input(f, :start_date, class: "torus-input") %>
             </div>
             <div class="flex flex-col gap-1 flex-1">
               <span required>Course end date</span>
-              <%= Phoenix.HTML.Form.datetime_local_input f, :end_date, class: "torus-input" %>
+              <%= Phoenix.HTML.Form.datetime_local_input(f, :end_date, class: "torus-input") %>
             </div>
           </div>
-          <small class="torus-small mt-1"><i class="fa fa-circle-info mr-1" /> The start and end dates help us recommend a teaching schedule and assignment cadence</small>
+          <small class="torus-small mt-1">
+            <i class="fa fa-circle-info mr-1" />
+            The start and end dates help us recommend a teaching schedule and assignment cadence
+          </small>
         </div>
       </div>
     </.form>

@@ -25,6 +25,11 @@ defmodule OliWeb.Delivery.Sections.EnrollmentsTableModel do
             th_class: "pl-10"
           },
           %ColumnSpec{
+            name: :email,
+            label: "EMAIL",
+            render_fn: &__MODULE__.render_email_column/3
+          },
+          %ColumnSpec{
             name: :last_interaction,
             label: "LAST INTERACTED",
             render_fn: &__MODULE__.render_last_interaction_column/3
@@ -32,31 +37,35 @@ defmodule OliWeb.Delivery.Sections.EnrollmentsTableModel do
           %ColumnSpec{
             name: :progress,
             label: "COURSE PROGRESS",
+            tooltip:
+              "Progress is percent attempted of activities present on the page from the most recent page attempt. If there are no activities within the page, and if the student has visited that page, we count that as an attempt.",
             render_fn: &__MODULE__.render_progress_column/3
           },
           %ColumnSpec{
             name: :overall_proficiency,
             label: "OVERALL COURSE PROFICIENCY",
-            render_fn: &__MODULE__.render_overall_proficiency_column/3
+            render_fn: &__MODULE__.render_overall_proficiency_column/3,
+            tooltip:
+              "For all students, or one specific student, proficiency for a learning objective will be calculated off the percentage of correct answers for first part attempts within first activity attempts - for those parts that have that learning objective or any of its sub-objectives attached to it."
           }
         ]
       else
         [
           %ColumnSpec{
             name: :name,
-            label: "Name",
+            label: "NAME",
             render_fn: &__MODULE__.render_name_column/3,
             sort_fn: &__MODULE__.sort_name_column/2,
             th_class: "pl-10"
           },
           %ColumnSpec{
             name: :email,
-            label: "Email",
+            label: "EMAIL",
             render_fn: &__MODULE__.render_email_column/3
           },
           %ColumnSpec{
             name: :type,
-            label: "Type",
+            label: "TYPE",
             render_fn: &__MODULE__.render_type_column/3,
             sortable: false
           }
@@ -137,12 +146,10 @@ defmodule OliWeb.Delivery.Sections.EnrollmentsTableModel do
 
     ~H"""
     <div class="flex items-center ml-8">
-      <div class={"flex flex-shrink-0 rounded-full w-2 h-2 #{if @progress < 50, do: "bg-red-600", else: "bg-gray-500"}"}></div>
-      <.link
-        class="ml-6 underline"
-        navigate={@link}
-      >
-      <%= if @name, do: Utils.name(@name, @given_name, @family_name), else: "N/A" %>
+      <div class={"flex flex-shrink-0 rounded-full w-2 h-2 #{if @progress < 50, do: "bg-red-600", else: "bg-gray-500"}"}>
+      </div>
+      <.link class="ml-6 underline" navigate={@link}>
+        <%= if @name, do: Utils.name(@name, @given_name, @family_name), else: "N/A" %>
       </.link>
     </div>
     """
@@ -153,10 +160,12 @@ defmodule OliWeb.Delivery.Sections.EnrollmentsTableModel do
         %{payment_status: payment_status, payment_date: payment_date},
         _
       ) do
-    assigns = assign(assigns, payment_status: payment_status, payment_date: payment_date)
+    assigns = Map.merge(assigns, %{payment_status: payment_status, payment_date: payment_date})
 
     ~H"""
-      <div class={if @payment_status == :not_paid, do: "text-red-600 font-bold"}><%= render_label(@payment_status, @payment_date, @section, @ctx) %></div>
+    <div class={if @payment_status == :not_paid, do: "text-red-600 font-bold"}>
+      <%= render_label(@payment_status, @payment_date, @section, @ctx) %>
+    </div>
     """
   end
 
@@ -164,7 +173,12 @@ defmodule OliWeb.Delivery.Sections.EnrollmentsTableModel do
     assigns = Map.merge(assigns, %{progress: parse_progress(user.progress)})
 
     ~H"""
-    <div class={if @progress < 50, do: "text-red-600 font-bold"} data-progress-check={if @progress >= 50, do: "true", else: "false"}><%= @progress %>%</div>
+    <div
+      class={if @progress < 50, do: "text-red-600 font-bold"}
+      data-progress-check={if @progress >= 50, do: "true", else: "false"}
+    >
+      <%= @progress %>%
+    </div>
     """
   end
 
@@ -191,7 +205,9 @@ defmodule OliWeb.Delivery.Sections.EnrollmentsTableModel do
     assigns = Map.merge(assigns, %{overall_proficiency: Map.get(user, :overall_proficiency)})
 
     ~H"""
-      <div class={if @overall_proficiency == "Low", do: "text-red-600 font-bold"}><%= @overall_proficiency %></div>
+    <div class={if @overall_proficiency == "Low", do: "text-red-600 font-bold"}>
+      <%= @overall_proficiency %>
+    </div>
     """
   end
 
@@ -199,7 +215,7 @@ defmodule OliWeb.Delivery.Sections.EnrollmentsTableModel do
     assigns = Map.merge(assigns, %{email: Map.get(user, :email)})
 
     ~H"""
-      <div><%= @email %></div>
+    <div><%= @email %></div>
     """
   end
 
@@ -215,7 +231,7 @@ defmodule OliWeb.Delivery.Sections.EnrollmentsTableModel do
       })
 
     ~H"""
-      <div><%= @type %></div>
+    <div><%= @type %></div>
     """
   end
 

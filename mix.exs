@@ -123,9 +123,7 @@ defmodule Oli.MixProject do
   defp elixirc_options(:dev), do: []
   defp elixirc_options(:test), do: []
 
-  # TODO: RE-ENABLE ONCE SURFACE DEPENDENCIES ARE REMOVED AND WARNINGS ARE FIXED [MER-2417]
-  # defp elixirc_options(_), do: [warnings_as_errors: true]
-  defp elixirc_options(_), do: []
+  defp elixirc_options(_), do: [warnings_as_errors: true]
 
   # Specifies your project dependencies.
   #
@@ -198,7 +196,6 @@ defmodule Oli.MixProject do
       {:react_phoenix, "~> 1.3"},
       {:certifi, "~> 2.7"},
       {:ssl_verify_fun, "~> 1.1"},
-      {:surface, "~> 0.11.0"},
       {:premailex, "~> 0.3.0"},
       {:sched_ex, "~> 1.1"},
       {:shortuuid, "~> 2.1"},

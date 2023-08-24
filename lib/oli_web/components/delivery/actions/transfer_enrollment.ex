@@ -64,7 +64,7 @@ defmodule OliWeb.Delivery.Actions.TransferEnrollment do
           socket.assigns.sections_table_model
           |> Map.merge(%{
             rows: rows,
-            sort_order: socket.assigns.params.sort_order,
+            sort_order: socket.assigns.params.sort_order
           })
           |> SortableTableModel.update_sort_params(socket.assigns.params.sort_by)
 
@@ -97,7 +97,7 @@ defmodule OliWeb.Delivery.Actions.TransferEnrollment do
       students_table_model
       |> Map.merge(%{
         rows: rows,
-        sort_order: socket.assigns.params.sort_order,
+        sort_order: socket.assigns.params.sort_order
       })
       |> SortableTableModel.update_sort_params(socket.assigns.params.sort_by)
 
@@ -111,7 +111,7 @@ defmodule OliWeb.Delivery.Actions.TransferEnrollment do
 
   def render(assigns) do
     ~H"""
-    <div id="transfer_enrollment">
+    <div phx-target={@myself} id="transfer_enrollment">
       <.live_component
         module={OliWeb.Components.LiveModal}
         id="transfer_enrollment_modal"
@@ -191,19 +191,14 @@ defmodule OliWeb.Delivery.Actions.TransferEnrollment do
             </form>
           </div>
           <PagedTable.render
-            __context__={assigns[:__context_]}
             table_model={@sections_table_model}
             total_count={@sections_total_count}
             offset={@params.offset}
             limit={@params.limit}
-            page_change={%{name: "paged_table_page_change", target: "#transfer_enrollment"}}
-            selection_change={
-              %{name: "paged_table_selection_section_change", target: "#transfer_enrollment"}
-            }
-            sort={%{name: "paged_table_sort", target: "#transfer_enrollment"}}
+            page_change={JS.push("paged_table_page_change", target: @myself)}
+            selection_change={JS.push("paged_table_selection_section_change", target: @myself)}
+            sort={JS.push("paged_table_sort", target: @myself)}
             additional_table_class="instructor_dashboard_table"
-            filter=""
-            show_top_paging={true}
             show_bottom_paging={false}
             render_top_info={false}
             allow_selection={true}
@@ -222,7 +217,7 @@ defmodule OliWeb.Delivery.Actions.TransferEnrollment do
       <p class="mb-2">
         This will transfer this student's enrollment, and all their current progress, to the selected course section. If this student is already enrolled in the selected course section, that progress will be lost.
       </p>
-      <hr class="my-5"/>
+      <hr class="my-5" />
       <%= if length(assigns.list_students) > 0 do %>
         <div class="flex flex-col gap-2">
           <div class="flex justify-between items-center">
@@ -236,19 +231,14 @@ defmodule OliWeb.Delivery.Actions.TransferEnrollment do
             </form>
           </div>
           <PagedTable.render
-            __context__={assigns[:__context_]}
             table_model={@students_table_model}
             total_count={@students_total_count}
             offset={@params.offset}
             limit={@params.limit}
-            page_change={%{name: "paged_table_page_change", target: "#transfer_enrollment"}}
-            selection_change={
-              %{name: "paged_table_selection_student_change", target: "#transfer_enrollment"}
-            }
-            sort={%{name: "paged_table_sort", target: "#transfer_enrollment"}}
+            page_change={JS.push("paged_table_page_change", target: @myself)}
+            selection_change={JS.push("paged_table_selection_student_change", target: @myself)}
+            sort={JS.push("paged_table_sort", target: @myself)}
             additional_table_class="instructor_dashboard_table"
-            filter=""
-            show_top_paging={true}
             show_bottom_paging={false}
             render_top_info={false}
             allow_selection={true}
@@ -267,7 +257,7 @@ defmodule OliWeb.Delivery.Actions.TransferEnrollment do
       <p class="mb-2">
         This will transfer this student's enrollment, and all their current progress, to the selected course section. If this student is already enrolled in the selected course section, that progress will be lost.
       </p>
-      <hr class="my-5"/>
+      <hr class="my-5" />
       <p class="my-4">
         Are you sure you want to transfer the <strong><%= @current_student.name %></strong>
         enrollment's in <strong><%= @current_section.title %></strong>
@@ -449,7 +439,7 @@ defmodule OliWeb.Delivery.Actions.TransferEnrollment do
         Enum.filter(list_to_work, fn data ->
           String.contains?(
             safe_downcase(data.title),
-            String.safe_downcase(text_search)
+            safe_downcase(text_search)
           )
         end)
 

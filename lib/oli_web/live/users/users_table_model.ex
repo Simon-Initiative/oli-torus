@@ -1,5 +1,5 @@
 defmodule OliWeb.Users.UsersTableModel do
-  use Surface.LiveComponent
+  use Phoenix.Component
 
   import OliWeb.Common.Utils
 
@@ -7,7 +7,7 @@ defmodule OliWeb.Users.UsersTableModel do
   alias OliWeb.Router.Helpers, as: Routes
 
   def render(assigns) do
-    ~F"""
+    ~H"""
     <div>nothing</div>
     """
   end
@@ -44,15 +44,17 @@ defmodule OliWeb.Users.UsersTableModel do
   def render_author_column(assigns, %{author: author, author_id: author_id}, _) do
     case author_id do
       nil ->
-        ~F"""
-          <span class="text-secondary"><em>None</em></span>
+        ~H"""
+        <span class="text-secondary"><em>None</em></span>
         """
 
       author_id ->
-        ~F"""
-          <a href={Routes.live_path(OliWeb.Endpoint, OliWeb.Users.AuthorsDetailView, author_id)}>
-            <span class="badge badge-dark">{author.email}</span>
-          </a>
+        assigns = Map.merge(assigns, %{author: author, author_id: author_id})
+
+        ~H"""
+        <a href={Routes.live_path(OliWeb.Endpoint, OliWeb.Users.AuthorsDetailView, @author_id)}>
+          <span class="badge badge-dark"><%= @author.email %></span>
+        </a>
         """
     end
   end
@@ -62,8 +64,13 @@ defmodule OliWeb.Users.UsersTableModel do
         %{id: id, name: name, given_name: given_name, family_name: family_name},
         _
       ) do
-    ~F"""
-      <a href={Routes.live_path(OliWeb.Endpoint, OliWeb.Users.UsersDetailView, id)}>{name(name, given_name, family_name)}</a>
+    assigns =
+      Map.merge(assigns, %{id: id, name: name, given_name: given_name, family_name: family_name})
+
+    ~H"""
+    <a href={Routes.live_path(OliWeb.Endpoint, OliWeb.Users.UsersDetailView, @id)}>
+      <%= name(@name, @given_name, @family_name) %>
+    </a>
     """
   end
 
@@ -74,25 +81,34 @@ defmodule OliWeb.Users.UsersTableModel do
       ) do
     primary_badge =
       if independent_learner do
-        ~F"""
-          <span class="badge badge-primary">Independent Learner</span>
+        ~H"""
+        <span class="badge badge-primary">Independent Learner</span>
         """
       else
-        ~F"""
-          <span class="badge badge-dark">LTI</span>
+        ~H"""
+        <span class="badge badge-dark">LTI</span>
         """
       end
 
     secondary_badge =
       if can_create_sections do
-        ~F"""
-          <span class="badge badge-light">Can Create Sections</span>
+        ~H"""
+        <span class="badge badge-light">Can Create Sections</span>
         """
       else
-        ~F"""
+        ~H"""
+
         """
       end
 
-    ~F({primary_badge} {secondary_badge})
+    assigns =
+      Map.merge(assigns, %{primary_badge: primary_badge, secondary_badge: secondary_badge})
+
+    ~H"""
+    <div>
+      <%= @primary_badge %>
+      <%= @secondary_badge %>
+    </div>
+    """
   end
 end

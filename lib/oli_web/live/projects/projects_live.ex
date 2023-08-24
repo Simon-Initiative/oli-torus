@@ -3,40 +3,21 @@ defmodule OliWeb.Projects.ProjectsLive do
   LiveView implementation of projects view.
   """
 
-  use OliWeb, :surface_view
+  use OliWeb, :live_view
   use OliWeb.Common.Modal
 
-  import OliWeb.DelegatedEvents
   import OliWeb.Common.Params
+  import OliWeb.DelegatedEvents
 
-  alias OliWeb.Projects.CreateProjectModal
-  alias Oli.Repo.{Paging, Sorting}
-  alias OliWeb.Common.Breadcrumb
+  alias Oli.Accounts
   alias Oli.Authoring.Course
   alias Oli.Authoring.Course.Project
-  alias OliWeb.Common.PagedTable
-  alias OliWeb.Common.TextSearch
+  alias Oli.Repo.{Paging, Sorting}
+  alias OliWeb.Common.{Breadcrumb, PagedTable, SessionContext, TextSearch}
+  alias OliWeb.Projects.{CreateProjectModal, TableModel}
   alias OliWeb.Router.Helpers, as: Routes
-  alias Oli.Accounts
-  alias OliWeb.Common.SessionContext
-  alias OliWeb.Projects.TableModel
 
   @limit 25
-
-  data(breadcrumbs, :any, default: [Breadcrumb.new(%{full_title: "Projects"})])
-  data(title, :string, default: "Projects")
-  data(payments, :list, default: [])
-
-  data(tabel_model, :struct)
-  data(total_count, :integer, default: 0)
-  data(offset, :integer, default: 0)
-  data(limit, :integer, default: @limit)
-  data(show_all, :boolean, default: true)
-  data(show_deleted, :boolean, default: false)
-  data(text_search, :string, default: "")
-
-  data(author, :any)
-  data(is_admin, :boolean, default: false)
 
   def mount(_, %{"current_author_id" => _} = session, socket) do
     %SessionContext{author: author} = ctx = SessionContext.init(socket, session)
@@ -74,7 +55,8 @@ defmodule OliWeb.Projects.ProjectsLive do
        total_count: total_count,
        is_admin: is_admin,
        show_all: show_all,
-       show_deleted: show_deleted
+       show_deleted: show_deleted,
+       title: "Projects"
      )}
   end
 
@@ -150,30 +132,60 @@ defmodule OliWeb.Projects.ProjectsLive do
      )}
   end
 
+  attr(:breadcrumbs, :any, default: [Breadcrumb.new(%{full_title: "Projects"})])
+  attr(:title, :string, default: "Projects")
+  attr(:payments, :list, default: [])
+
+  attr(:tabel_model, :map)
+  attr(:total_count, :integer, default: 0)
+  attr(:offset, :integer, default: 0)
+  attr(:limit, :integer, default: @limit)
+  attr(:show_all, :boolean, default: true)
+  attr(:show_deleted, :boolean, default: false)
+  attr(:text_search, :string, default: "")
+
+  attr(:author, :any)
+  attr(:is_admin, :boolean, default: false)
+
   def render(assigns) do
-    ~F"""
-    {render_modal(assigns)}
+    ~H"""
+    <%= render_modal(assigns) %>
 
     <div class="container mx-auto">
       <div class="projects-title-row mb-4">
         <div class="d-flex justify-content-between align-items-baseline">
           <div>
-            {#if @is_admin}
+            <%= if @is_admin do %>
               <div class="form-check" style="display: inline;">
-                <input type="checkbox" class="form-check-input" id="allCheck" checked={@show_all} phx-click="toggle_show_all">
+                <input
+                  type="checkbox"
+                  class="form-check-input"
+                  id="allCheck"
+                  checked={@show_all}
+                  phx-click="toggle_show_all"
+                />
                 <label class="form-check-label" for="allCheck">Show all projects</label>
               </div>
-            {/if}
+            <% end %>
             <div class={"form-check #{if @is_admin, do: "ml-4", else: ""}"} style="display: inline;">
-              <input type="checkbox" class="form-check-input" id="deletedCheck" checked={@show_deleted} phx-click="toggle_show_deleted">
+              <input
+                type="checkbox"
+                class="form-check-input"
+                id="deletedCheck"
+                checked={@show_deleted}
+                phx-click="toggle_show_deleted"
+              />
               <label class="form-check-label" for="deletedCheck">Show deleted projects</label>
             </div>
           </div>
 
           <div class="flex-grow-1"></div>
 
-          <button id="button-new-project"
-            class="btn btn-sm btn-primary ml-2" phx-click="show_create_project_modal">
+          <button
+            id="button-new-project"
+            class="btn btn-sm btn-primary ml-2"
+            phx-click="show_create_project_modal"
+          >
             <i class="fa fa-plus"></i> New Project
           </button>
         </div>
@@ -182,20 +194,33 @@ defmodule OliWeb.Projects.ProjectsLive do
       <div class="container mb-4">
         <div class="grid grid-cols-12">
           <div class="col-span-12">
-            <TextSearch event_target={:live_view} id="text-search" apply="text_search_apply" reset="text_search_reset" change="text_search_change" text={@text_search} />
+            <TextSearch.render
+              event_target={:live_view}
+              id="text-search"
+              apply="text_search_apply"
+              reset="text_search_reset"
+              change="text_search_change"
+              text={@text_search}
+            />
           </div>
         </div>
       </div>
 
       <div class="grid grid-cols-12">
         <div id="projects-table" class="col-span-12">
-          <PagedTable page_change="paged_table_page_change" sort="paged_table_sort"
-            total_count={@total_count} filter={@text_search}
-            selection_change={nil} allow_selection={false}
-            limit={@limit} offset={@offset} table_model={@table_model} show_bottom_paging={true} />
+          <PagedTable.render
+            page_change="paged_table_page_change"
+            sort="paged_table_sort"
+            total_count={@total_count}
+            filter={@text_search}
+            allow_selection={false}
+            limit={@limit}
+            offset={@offset}
+            table_model={@table_model}
+            show_bottom_paging={true}
+          />
         </div>
       </div>
-
     </div>
     """
   end
@@ -237,8 +262,8 @@ defmodule OliWeb.Projects.ProjectsLive do
     }
 
     modal = fn assigns ->
-      ~F"""
-        <CreateProjectModal.render {...@modal_assigns} />
+      ~H"""
+      <CreateProjectModal.render {@modal_assigns} />
       """
     end
 

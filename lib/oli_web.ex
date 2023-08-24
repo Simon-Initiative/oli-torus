@@ -78,27 +78,6 @@ defmodule OliWeb do
     end
   end
 
-  def surface_view do
-    quote do
-      use Surface.LiveView,
-        layout: {OliWeb.LayoutView, :live}
-
-      import Oli.Utils.Surface
-
-      unquote(html_helpers())
-    end
-  end
-
-  def surface_component do
-    quote do
-      use Surface.LiveComponent
-
-      import Oli.Utils.Surface
-
-      unquote(html_helpers())
-    end
-  end
-
   def mailer_view do
     quote do
       use Phoenix.View,

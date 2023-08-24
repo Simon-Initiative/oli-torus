@@ -160,10 +160,6 @@ config :ex_money,
   default_cldr_backend: Oli.Cldr,
   json_library: Jason
 
-config :surface, :components, [
-  {Surface.Components.Form.ErrorTag, default_translator: {OliWeb.ErrorHelpers, :translate_error}}
-]
-
 # Configure reCAPTCHA
 config :oli, :recaptcha,
   verify_url: "https://www.google.com/recaptcha/api/siteverify",
@@ -221,13 +217,6 @@ config :mnesia,
 config :appsignal, :config, revision: System.get_env("SHA", default_sha)
 
 config :appsignal, :client_key, System.get_env("APPSIGNAL_PUSH_API_KEY", nil)
-
-config :surface, :components, [
-  {
-    Surface.Components.Form.ErrorTag,
-    default_class: "help-block", default_translator: {OliWeb.ErrorHelpers, :translate_error}
-  }
-]
 
 # Configure Privacy Policies link
 config :oli, :privacy_policies,

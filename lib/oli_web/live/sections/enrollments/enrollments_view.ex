@@ -1,5 +1,5 @@
 defmodule OliWeb.Sections.EnrollmentsViewLive do
-  use OliWeb, :surface_view
+  use OliWeb, :live_view
 
   import OliWeb.DelegatedEvents
   import OliWeb.Common.Params
@@ -13,7 +13,6 @@ defmodule OliWeb.Sections.EnrollmentsViewLive do
   alias Oli.Delivery.Sections
   alias OliWeb.Sections.Mount
   alias OliWeb.Common.SessionContext
-  alias Surface.Components.Link
   alias Oli.Delivery.Metrics
   alias Oli.Delivery.Paywall
 
@@ -25,20 +24,6 @@ defmodule OliWeb.Sections.EnrollmentsViewLive do
     is_instructor: false,
     text_search: nil
   }
-
-  data breadcrumbs, :any
-  data title, :string, default: "Enrollments"
-  data section, :any, default: nil
-
-  data tabel_model, :struct
-  data total_count, :integer, default: 0
-  data offset, :integer, default: 0
-  data limit, :integer, default: @limit
-  data options, :any
-  data add_enrollments_step, :atom, default: :step_1
-  data add_enrollments_selected_role, :atom, default: :student
-  data add_enrollments_emails, :list, default: []
-  data add_enrollments_users_not_found, :list, default: []
 
   def set_breadcrumbs(type, section) do
     type
@@ -131,10 +116,24 @@ defmodule OliWeb.Sections.EnrollmentsViewLive do
      )}
   end
 
+  attr(:breadcrumbs, :any)
+  attr(:title, :string, default: "Enrollments")
+  attr(:section, :any, default: nil)
+
+  attr(:tabel_model, :map)
+  attr(:total_count, :integer, default: 0)
+  attr(:offset, :integer, default: 0)
+  attr(:limit, :integer, default: @limit)
+  attr(:options, :any)
+  attr(:add_enrollments_step, :atom, default: :step_1)
+  attr(:add_enrollments_selected_role, :atom, default: :student)
+  attr(:add_enrollments_emails, :list, default: [])
+  attr(:add_enrollments_users_not_found, :list, default: [])
+
   def render(assigns) do
-    ~F"""
+    ~H"""
     <div id="enrollments_view" class="container mx-auto">
-      {#if @is_admin and @section.open_and_free == true}
+      <%= if @is_admin and @section.open_and_free == true do %>
         <.live_component
           module={OliWeb.Components.LiveModal}
           id="enrollments_view_add_enrollments_modal"
@@ -147,7 +146,11 @@ defmodule OliWeb.Sections.EnrollmentsViewLive do
             end
           }
           on_confirm_label={if @add_enrollments_step == :step_3, do: "Confirm", else: "Next"}
-          on_cancel={if @add_enrollments_step == :step_1, do: nil, else: JS.push("add_enrollments_go_to_step_1")}
+          on_cancel={
+            if @add_enrollments_step == :step_1,
+              do: nil,
+              else: JS.push("add_enrollments_go_to_step_1")
+          }
           on_confirm_disabled={if length(@add_enrollments_emails) == 0, do: true, else: false}
           on_cancel_label={if @add_enrollments_step == :step_1, do: nil, else: "Back"}
         >
@@ -159,35 +162,41 @@ defmodule OliWeb.Sections.EnrollmentsViewLive do
             section_slug={@section.slug}
           />
         </.live_component>
-      {/if}
-
+      <% end %>
 
       <div class="flex justify-between">
-        <TextSearch id="text-search"/>
+        <TextSearch.render id="text-search" />
 
-        {#if @is_admin}
-          <Link
-            label="Download as .CSV"
-            to={Routes.page_delivery_path(OliWeb.Endpoint, :export_enrollments, @section.slug)}
+        <%= if @is_admin do %>
+          <.link
+            href={Routes.page_delivery_path(OliWeb.Endpoint, :export_enrollments, @section.slug)}
             class="btn btn-outline-primary"
-            method={:post} />
+            method="post"
+          >
+            Download as .CSV
+          </.link>
 
-            {#if @section.open_and_free == true}
-              <button phx-click="open" phx-target="#enrollments_view_add_enrollments_modal" class="torus-button primary">
-                Add Enrollments
-              </button>
-            {/if}
-        {/if}
+          <%= if @section.open_and_free == true do %>
+            <button
+              phx-click="open"
+              phx-target="#enrollments_view_add_enrollments_modal"
+              class="torus-button primary"
+            >
+              Add Enrollments
+            </button>
+          <% end %>
+        <% end %>
       </div>
 
-      <div class="mb-3"/>
+      <div class="mb-3" />
 
-      <PagedTable
+      <PagedTable.render
         filter={@options.text_search}
         table_model={@table_model}
         total_count={@total_count}
         offset={@offset}
-        limit={@limit}/>
+        limit={@limit}
+      />
     </div>
     """
   end
@@ -217,72 +226,83 @@ defmodule OliWeb.Sections.EnrollmentsViewLive do
   #### Add enrollments modal related stuff ####
   def add_enrollments(%{add_enrollments_step: :step_1} = assigns) do
     ~H"""
-      <div class="px-4">
-        <p class="mb-2">
-          Please write the email addresses of the users you want to invite to the course.
-        </p>
-        <OliWeb.Components.EmailList.render
-          id="enrollments_email_list"
-          users_list={@add_enrollments_emails}
-          on_update="add_enrollments_update_list"
-          on_remove="add_enrollments_remove_from_list"
-        />
-        <label class="flex flex-col mt-4 w-40 ml-auto">
-          <small class="torus-small uppercase">Role</small>
-          <form class="w-full" phx-change="add_enrollments_change_selected_role">
-            <select name="role" class="torus-select w-full">
-              <option selected={:instructor == @add_enrollments_selected_role} value={:instructor}>Instructor</option>
-              <option selected={:student == @add_enrollments_selected_role} value={:student}>Student</option>
-            </select>
-          </form>
-        </label>
-      </div>
+    <div class="px-4">
+      <p class="mb-2">
+        Please write the email addresses of the users you want to invite to the course.
+      </p>
+      <OliWeb.Components.EmailList.render
+        id="enrollments_email_list"
+        users_list={@add_enrollments_emails}
+        on_update="add_enrollments_update_list"
+        on_remove="add_enrollments_remove_from_list"
+      />
+      <label class="flex flex-col mt-4 w-40 ml-auto">
+        <small class="torus-small uppercase">Role</small>
+        <form class="w-full" phx-change="add_enrollments_change_selected_role">
+          <select name="role" class="torus-select w-full">
+            <option selected={:instructor == @add_enrollments_selected_role} value={:instructor}>
+              Instructor
+            </option>
+            <option selected={:student == @add_enrollments_selected_role} value={:student}>
+              Student
+            </option>
+          </select>
+        </form>
+      </label>
+    </div>
     """
   end
 
   def add_enrollments(%{add_enrollments_step: :step_2} = assigns) do
     ~H"""
-      <div class="px-4">
-        <p>
-          The following emails don't exist in the database. If you still want to proceed, an email will be sent and they
-          will become enrolled once they sign up. Please, review them and click on "Next" to continue.
-        </p>
-        <div>
-          <li class="list-none mt-4 max-h-80 overflow-y-scroll">
-            <%= for user <- @add_enrollments_users_not_found do %>
-              <ul class="odd:bg-gray-200 even:bg-gray-100 p-2 first:rounded-t last:rounded-b">
-                <div class="flex items-center justify-between">
-                  <p><%= user %></p>
-                  <button phx-click="add_enrollments_remove_from_list" phx-value-user={user} class="torus-button error">Remove</button>
-                </div>
-              </ul>
-            <% end %>
-          </li>
-        </div>
+    <div class="px-4">
+      <p>
+        The following emails don't exist in the database. If you still want to proceed, an email will be sent and they
+        will become enrolled once they sign up. Please, review them and click on "Next" to continue.
+      </p>
+      <div>
+        <li class="list-none mt-4 max-h-80 overflow-y-scroll">
+          <%= for user <- @add_enrollments_users_not_found do %>
+            <ul class="odd:bg-gray-200 dark:odd:bg-neutral-600 even:bg-gray-100 dark:even:bg-neutral-500 p-2 first:rounded-t last:rounded-b">
+              <div class="flex items-center justify-between">
+                <p><%= user %></p>
+                <button
+                  phx-click="add_enrollments_remove_from_list"
+                  phx-value-user={user}
+                  class="torus-button error"
+                >
+                  Remove
+                </button>
+              </div>
+            </ul>
+          <% end %>
+        </li>
       </div>
+    </div>
     """
   end
 
   def add_enrollments(%{add_enrollments_step: :step_3} = assigns) do
     ~H"""
-      <.form
-        for={:enrollments}
-        id="add_enrollments_form"
-        class="hidden"
-        method="POST"
-        action={Routes.invite_path(OliWeb.Endpoint, :create_bulk, @section_slug)}>
-          <%= for email <- @add_enrollments_emails do %>
-            <input name="emails[]" value={email} hidden />
-          <% end %>
-          <input name="role" value={@add_enrollments_selected_role} />
-          <input name="section_slug" value={@section_slug} />
-          <button type="submit" class="hidden" />
-      </.form>
-      <div class="px-4">
-        <p>
-          Are you sure you want to enroll <%= "#{if length(@add_enrollments_emails) == 1, do: "one user", else: "#{length(@add_enrollments_emails)} users"}"%>?
-        </p>
-      </div>
+    <.form
+      for={:enrollments}
+      id="add_enrollments_form"
+      class="hidden"
+      method="POST"
+      action={Routes.invite_path(OliWeb.Endpoint, :create_bulk, @section_slug)}
+    >
+      <%= for email <- @add_enrollments_emails do %>
+        <input name="emails[]" value={email} hidden />
+      <% end %>
+      <input name="role" value={@add_enrollments_selected_role} />
+      <input name="section_slug" value={@section_slug} />
+      <button type="submit" class="hidden" />
+    </.form>
+    <div class="px-4">
+      <p>
+        Are you sure you want to enroll <%= "#{if length(@add_enrollments_emails) == 1, do: "one user", else: "#{length(@add_enrollments_emails)} users"}" %>?
+      </p>
+    </div>
     """
   end
 

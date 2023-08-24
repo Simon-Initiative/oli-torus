@@ -1,7 +1,5 @@
 defmodule OliWeb.CollaborationLive.Posts.Show do
-  use Surface.Component
-
-  alias Phoenix.LiveView.JS
+  use OliWeb, :html
 
   alias Oli.Resources.Collaboration
   alias Oli.Resources.Collaboration.Post, as: PostSchema
@@ -10,90 +8,88 @@ defmodule OliWeb.CollaborationLive.Posts.Show do
   alias Oli.Resources.Collaboration.Post
   alias OliWeb.Components.Delivery.Buttons
 
-  alias Surface.Components.Form
+  alias Phoenix.LiveView.JS
+  alias OliWeb.Components.Modal
 
-  alias Surface.Components.Form.{
-    Field,
-    TextArea,
-    HiddenInput,
-    Inputs,
-    Checkbox
-  }
-
-  prop post, :struct, required: true
-  prop is_reply, :boolean, default: false
-  prop parent_replies, :list, default: []
-  prop parent_post_id, :string, default: nil
-  prop index, :integer, required: true
-  prop user_id, :string, required: true
-  prop is_instructor, :boolean, required: true
-  prop is_student, :boolean, required: true
-  prop is_threaded, :boolean, required: true
-  prop is_anonymous, :boolean, required: true
-  prop parent_is_archived, :boolean, required: true
-  prop is_editing, :boolean, default: false
-  prop is_selected, :boolean, default: false
-
-  data changeset, :struct
+  attr(:post, :map, required: true)
+  attr(:is_reply, :boolean, default: false)
+  attr(:parent_replies, :list, default: [])
+  attr(:parent_post_id, :string, default: nil)
+  attr(:index, :string, required: true)
+  attr(:user_id, :string, required: true)
+  attr(:is_instructor, :boolean, required: true)
+  attr(:is_student, :boolean, required: true)
+  attr(:is_threaded, :boolean, required: true)
+  attr(:is_anonymous, :boolean, required: true)
+  attr(:parent_is_archived, :boolean, required: true)
+  attr(:is_editing, :boolean, default: false)
+  attr(:is_selected, :boolean, default: false)
 
   def render(assigns) do
     assigns =
       case assigns.is_editing do
         true ->
-          assign(assigns, changeset: Collaboration.change_post(assigns.post))
+          assign(assigns, form: to_form(Collaboration.change_post(assigns.post)))
 
         _ ->
           assign(assigns,
-            changeset:
-              Collaboration.change_post(%PostSchema{
-                user_id: assigns.user_id,
-                section_id: assigns.post.section_id,
-                resource_id: assigns.post.resource_id,
-                parent_post_id: assigns.post.id,
-                thread_root_id: assigns.post.parent_post_id || assigns.post.id
-              })
+            form:
+              to_form(
+                Collaboration.change_post(%PostSchema{
+                  user_id: assigns.user_id,
+                  section_id: assigns.post.section_id,
+                  resource_id: assigns.post.resource_id,
+                  parent_post_id: assigns.post.id,
+                  thread_root_id: assigns.post.parent_post_id || assigns.post.id
+                })
+              )
           )
       end
 
-    ~F"""
+    ~H"""
     <div class="flex-col">
       <div class="flex gap-2 mb-3">
-        <span class="torus-span post-index">#{@index}</span>
+        <span class="torus-span post-index">#<%= @index %></span>
 
         <div class="border-r border-gray-200 h-10" />
 
         <div class="flex flex-1 justify-between">
           <div class="flex-col">
-            <h6 class="torus-h6 text-sm">{render_name(@post, @user_id)}</h6>
-            <small class="torus-small">{render_date(@post.inserted_at)}</small>
+            <h6 class="torus-h6 text-sm"><%= render_name(@post, @user_id) %></h6>
+            <small class="torus-small"><%= render_date(@post.inserted_at) %></small>
           </div>
 
           <div class="flex gap-2 items-center">
-            {#if @post.user_id == @user_id}
+            <%= if @post.user_id == @user_id do %>
               <button
                 class="btn btn-link p-0 text-delivery-primary hover:text-delivery-primary-700 disabled:text-gray-200"
                 type="button"
                 disabled={@is_editing}
                 data-bs-toggle="tooltip"
                 title="Edit"
-                :on-click="set_editing_post"
+                phx-click="set_editing_post"
                 phx-value-post_id={@post.id}
               >
                 <i class="fas fa-edit" />
               </button>
 
-              {#unless @is_instructor}
+              <%= unless @is_instructor do %>
                 <span
                   class="d-inline-block"
                   data-bs-toggle="tooltip"
-                  title={if has_replies?(@post, @parent_replies, @post.id),
-                    do: "Cannot be deleted because it has replies",
-                    else: "Delete"}
+                  title={
+                    if has_replies?(@post, @parent_replies, @post.id),
+                      do: "Cannot be deleted because it has replies",
+                      else: "Delete"
+                  }
                 >
                   <button
                     class="btn btn-link p-0 text-delivery-primary hover:text-delivery-primary-700 disabled:text-gray-200"
                     type="button"
-                    :on-click="display_delete_modal"
+                    role="display_delete_modal"
+                    phx-click={
+                      JS.push("display_delete_modal") |> Modal.show_modal("delete_post_modal")
+                    }
                     phx-value-id={@post.id}
                     phx-value-index={@index}
                     disabled={has_replies?(@post, @parent_replies, @post.id)}
@@ -101,17 +97,23 @@ defmodule OliWeb.CollaborationLive.Posts.Show do
                     <i class="fas fa-trash" />
                   </button>
                 </span>
-              {/unless}
-            {/if}
+              <% end %>
+            <% end %>
 
-            {#if @is_instructor}
+            <%= if @is_instructor do %>
               <button
                 class={"btn btn-link p-0 text-delivery-primary hover:text-delivery-primary-700 disabled:text-gray-200" <>
                   if not @parent_is_archived, do: " not-readonly", else: ""}
                 type="button"
                 data-bs-toggle="tooltip"
                 title={if is_archived?(@post.status), do: "Unarchive", else: "Archive"}
-                :on-click={if is_archived?(@post.status), do: "display_unarchive_modal", else: "display_archive_modal"}
+                role="display_archiver_modal"
+                phx-click={
+                  if is_archived?(@post.status),
+                    do:
+                      JS.push("display_unarchive_modal") |> Modal.show_modal("unarchive_post_modal"),
+                    else: JS.push("display_archive_modal") |> Modal.show_modal("archive_post_modal")
+                }
                 phx-value-id={@post.id}
                 phx-value-index={@index}
               >
@@ -123,28 +125,30 @@ defmodule OliWeb.CollaborationLive.Posts.Show do
                 type="button"
                 data-bs-toggle="tooltip"
                 title="Delete"
-                :on-click="display_delete_modal"
+                role="display_delete_modal"
+                phx-click={JS.push("display_delete_modal") |> Modal.show_modal("delete_post_modal")}
                 phx-value-id={@post.id}
                 phx-value-index={@index}
               >
                 <i class="fas fa-trash" />
               </button>
-            {/if}
+            <% end %>
           </div>
         </div>
       </div>
 
-      {#if @post.status == :submitted}
+      <%= if @post.status == :submitted do %>
         <div id={"post_#{@post.id}_actions"} class="flex items-center justify-between mb-3">
           <span class="badge badge-info mr-2 text-xs">Pending approval</span>
 
-          {#if @is_instructor}
+          <%= if @is_instructor do %>
             <div class="flex gap-2">
               <button
                 class="btn btn-sm btn-success rounded-button"
                 data-bs-toggle="tooltip"
                 title="Accept"
-                :on-click="display_accept_modal"
+                role="display_accept_modal"
+                phx-click={JS.push("display_accept_modal") |> Modal.show_modal("accept_post_modal")}
                 phx-value-id={@post.id}
                 phx-value-index={@index}
               >
@@ -155,72 +159,80 @@ defmodule OliWeb.CollaborationLive.Posts.Show do
                 class="btn btn-sm btn-danger rounded-button"
                 data-bs-toggle="tooltip"
                 title="Reject"
-                :on-click="display_reject_modal"
+                role="display_reject_modal"
+                phx-click={JS.push("display_reject_modal") |> Modal.show_modal("reject_post_modal")}
                 phx-value-id={@post.id}
                 phx-value-index={@index}
               >
                 <i class="fa fa-times" />
               </button>
             </div>
-          {/if}
+          <% end %>
         </div>
-      {/if}
+      <% end %>
 
-      {#if @is_threaded and @is_reply and @post.parent_post_id != @parent_post_id}
+      <%= if @is_threaded and @is_reply and @post.parent_post_id != @parent_post_id do %>
         <small class="mt-2 torus-small reply-info">
-          {reply_parent_post_text(assigns, @parent_replies, @index, @post.parent_post_id)}
+          <%= reply_parent_post_text(assigns, @parent_replies, @index, @post.parent_post_id) %>
         </small>
-      {/if}
+      <% end %>
 
-      {#if @is_editing}
-        <Form
+      <%= if @is_editing do %>
+        <.form
           id={"edit_post_form_#{@post.id}"}
-          for={@changeset}
-          submit="edit_post"
-          opts={autocomplete: "off"}
+          for={@form}
+          phx-submit="edit_post"
           class="flex mt-2 flex-col items-end gap-2"
         >
-          <HiddenInput field={:user_id} />
-          <HiddenInput field={:section_id} />
-          <HiddenInput field={:resource_id} />
+          <div class="hidden">
+            <.input type="hidden" field={@form[:user_id]} id={"post_user_id_#{@index}"} />
+            <.input type="hidden" field={@form[:section_id]} id={"post_section_id_#{@index}"} />
+            <.input type="hidden" field={@form[:resource_id]} id={"post_resource_id_#{@index}"} />
+            <.input type="hidden" field={@form[:parent_post_id]} id={"post_parent_post_id_#{@index}"} />
+            <.input type="hidden" field={@form[:thread_root_id]} id={"post_thread_root_id_#{@index}"} />
+          </div>
 
-          <HiddenInput field={:parent_post_id} />
-          <HiddenInput field={:thread_root_id} />
-
-          <Inputs for={:content}>
-            <Field class="w-full" name={:message}>
-              <TextArea
+          <.inputs_for :let={pc} field={@form[:content]} id={"post_content_#{@index}"}>
+            <div class="w-full">
+              <.input
+                type="textarea"
+                field={pc[:message]}
                 id={"post_text_area_#{@post.id}"}
-                opts={
-                  "data-grow": "true",
-                  "data-initial-height": 44,
-                  onkeyup: "resizeTextArea(this)"
-                }
+                autocomplete="off"
+                data-grow="true"
+                data-initial-height={44}
+                onkeyup="resizeTextArea(this)"
                 class="torus-input border-r-0 collab-space__textarea"
               />
-            </Field>
-          </Inputs>
+            </div>
+          </.inputs_for>
           <div class={"flex w-full justify-between #{if @is_threaded, do: "h-10"}"}>
-            {#if @is_threaded and !@is_reply and has_replies?(@post, @parent_replies, @post.id)}
+            <%= if @is_threaded and !@is_reply and has_replies?(@post, @parent_replies, @post.id) do %>
               <button
-                :on-click="set_selected"
+                phx-click="set_selected"
                 type="button"
                 class="flex items-center text-gray-400 mt-2"
                 phx-value-id={@post.id}
               >
                 <i class={"fa #{if @is_selected, do: "fa-angle-up", else: "fa-angle-down"} mr-1"} />
-                <small>{if @is_selected, do: "Hide replies", else: "Show #{@post.replies_count} replies"}</small>
+                <small>
+                  <%= if @is_selected, do: "Hide replies", else: "Show #{@post.replies_count} replies" %>
+                </small>
               </button>
-            {/if}
+            <% end %>
             <div class="flex gap-2 ml-auto">
               <button
                 type="button"
-                :on-click="set_editing_post"
+                phx-click="set_editing_post"
                 phx-value-post_id={@post.id}
                 class="torus-button secondary"
-              >Cancel</button>
-              {#if @is_student and @is_anonymous}
-                <Checkbox id={"edit_#{@post.id}_checkbox"} field={:anonymous} class="hidden" />
+              >
+                Cancel
+              </button>
+              <%= if @is_student and @is_anonymous do %>
+                <div class="hidden">
+                  <.input type="checkbox" id={"edit_#{@post.id}_checkbox"} field={@form[:anonymous]} />
+                </div>
                 <Buttons.button_with_options
                   id={"edit_#{@post.id}_save"}
                   type="submit"
@@ -253,68 +265,75 @@ defmodule OliWeb.CollaborationLive.Posts.Show do
                 >
                   Save
                 </Buttons.button_with_options>
-              {#else}
+              <% else %>
                 <Buttons.button type="submit">
                   Save
                 </Buttons.button>
-              {/if}
+              <% end %>
             </div>
           </div>
-        </Form>
-      {/if}
+        </.form>
+      <% end %>
 
-      {#if !@is_editing}
-        <p class="mb-0 text-sm post-content">{@post.content.message}</p>
-      {/if}
+      <%= if !@is_editing do %>
+        <p class="mb-0 text-sm post-content"><%= @post.content.message %></p>
+      <% end %>
 
-      {#if @is_threaded && !@is_editing}
-        <Form
+      <%= if @is_threaded && !@is_editing do %>
+        <.form
           id={"reply_form_#{@post.id}"}
-          for={@changeset}
-          submit="create_post"
-          opts={autocomplete: "off"}
+          for={@form}
+          phx-submit="create_post"
           class="flex mt-2 flex-col items-end gap-2"
         >
-          <HiddenInput field={:user_id} />
-          <HiddenInput field={:section_id} />
-          <HiddenInput field={:resource_id} />
-
-          <HiddenInput field={:parent_post_id} />
-          <HiddenInput field={:thread_root_id} />
-
-          <Inputs for={:content}>
-            <Field class="w-full" name={:message}>
-              <TextArea
-                opts={
-                  placeholder: "Reply",
-                  "data-grow": "true",
-                  "data-initial-height": 44,
-                  onkeyup: "resizeTextArea(this)"
-                }
+          <div class="hidden">
+            <.input type="hidden" field={@form[:user_id]} id={"post_user_id_#{@index}"} />
+            <.input type="hidden" field={@form[:section_id]} id={"post_section_id_#{@index}"} />
+            <.input type="hidden" field={@form[:resource_id]} id={"post_resource_id_#{@index}"} />
+            <.input type="hidden" field={@form[:parent_post_id]} id={"post_parent_post_id_#{@index}"} />
+            <.input type="hidden" field={@form[:thread_root_id]} id={"post_thread_root_id_#{@index}"} />
+          </div>
+          <.inputs_for :let={pc} field={@form[:content]} id={"post_content_#{@index}"}>
+            <div class="w-full">
+              <.input
+                type="textarea"
+                field={pc[:message]}
+                id={"post_content_message_#{@index}"}
+                placeholder="Reply"
+                data-grow="true"
+                data-initial-height={44}
+                onkeyup="resizeTextArea(this)"
                 class="torus-input border-r-0 collab-space__textarea reply"
               />
-            </Field>
-          </Inputs>
+            </div>
+          </.inputs_for>
           <div class={"flex w-full justify-between #{if @is_threaded, do: "h-10"}"}>
-            {#if @is_threaded and !@is_reply and has_replies?(@post, @parent_replies, @post.id)}
+            <%= if @is_threaded and !@is_reply and has_replies?(@post, @parent_replies, @post.id) do %>
               <button
-                :on-click="set_selected"
+                phx-click="set_selected"
                 type="button"
                 class="flex items-center text-gray-400 mt-2"
                 phx-value-id={@post.id}
               >
                 <i class={"fa #{if @is_selected, do: "fa-angle-up", else: "fa-angle-down"} mr-1"} />
-                <small>{if @is_selected, do: "Hide replies", else: "Show #{@post.replies_count} replies"}</small>
+                <small>
+                  <%= if @is_selected, do: "Hide replies", else: "Show #{@post.replies_count} replies" %>
+                </small>
               </button>
-            {/if}
+            <% end %>
             <div class="collab-space__send-button-with-checkbox ml-auto">
-              {#if @is_student and @is_anonymous}
-                <Checkbox id={"reply_#{@post.id}_checkbox"} field={:anonymous} class="hidden" />
+              <%= if @is_student and @is_anonymous do %>
+                <div class="hidden">
+                  <.input type="checkbox" id={"reply_#{@post.id}_checkbox"} field={@form[:anonymous]} />
+                </div>
                 <Buttons.button_with_options
                   id={"reply_#{@post.id}_send"}
                   type="submit"
                   options={[
-                    %{text: "Reply as me", on_click: JS.dispatch("click", to: "reply_#{@post.id}_send_button")},
+                    %{
+                      text: "Reply as me",
+                      on_click: JS.dispatch("click", to: "reply_#{@post.id}_send_button")
+                    },
                     %{
                       text: "Reply anonymously",
                       on_click:
@@ -325,15 +344,15 @@ defmodule OliWeb.CollaborationLive.Posts.Show do
                 >
                   Reply
                 </Buttons.button_with_options>
-              {#else}
+              <% else %>
                 <Buttons.button type="submit">
                   Reply
                 </Buttons.button>
-              {/if}
+              <% end %>
             </div>
           </div>
-        </Form>
-      {/if}
+        </.form>
+      <% end %>
     </div>
     """
   end
@@ -344,9 +363,10 @@ defmodule OliWeb.CollaborationLive.Posts.Show do
   defp reply_parent_post_text(assigns, replies, thread_index, parent_post_id) do
     thread_index = thread_index |> String.split(".") |> hd()
     {_parent_post, index} = Enum.find(replies, fn {elem, _index} -> elem.id == parent_post_id end)
+    assigns = Map.merge(assigns, %{thread_index: thread_index, index: index})
 
-    ~F"""
-    Replying to #{thread_index}.{index}:
+    ~H"""
+    <%= "Replying to ##{@thread_index}.#{@index}:" %>
     """
   end
 

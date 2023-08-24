@@ -1,5 +1,5 @@
 defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTable do
-  use Surface.LiveComponent
+  use OliWeb, :live_component
 
   import Phoenix.HTML.Form
   import OliWeb.ErrorHelpers
@@ -11,27 +11,9 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTable do
   alias OliWeb.Common.Params
   alias Phoenix.LiveView.JS
   alias OliWeb.Router.Helpers, as: Routes
-  alias Surface.Components.Form
-  alias Surface.Components.Form.{Field, Label, Select}
   alias Oli.Delivery
   alias Oli.Delivery.Settings.StudentException
   alias Oli.Repo
-
-  prop(student_exceptions, :list, required: true)
-  prop(assessments, :list, required: true)
-  prop(params, :map, required: true)
-  prop(ctx, :map, required: true)
-  prop(section, :map, required: true)
-
-  data(table_model, :map)
-  data(total_count, :integer)
-  data(total_exceptions, :integer)
-  data(options_for_select, :list)
-  data(students, :list)
-  data(selected_student_exceptions, :list)
-  data(modal_assigns, :map)
-  data(form_id, :string)
-  data(selected_setting, :map)
 
   @default_params %{
     offset: 0,
@@ -94,23 +76,50 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTable do
      )}
   end
 
+  attr(:student_exceptions, :list, required: true)
+  attr(:assessments, :list, required: true)
+  attr(:params, :map, required: true)
+  attr(:ctx, :map, required: true)
+  attr(:section, :map, required: true)
+
+  attr(:table_model, :map)
+  attr(:total_count, :integer)
+  attr(:total_exceptions, :integer)
+  attr(:options_for_select, :list)
+  attr(:students, :list)
+  attr(:selected_student_exceptions, :list)
+  attr(:modal_assigns, :map)
+  attr(:form_id, :string)
+  attr(:selected_setting, :map)
+
   def render(assigns) do
-    ~F"""
+    assigns = assign(assigns, assessment_changeset: to_form(%{}, as: :assessments))
+
+    ~H"""
     <div id="student_exceptions_table" class="mx-10 mb-10 bg-white dark:bg-gray-800 shadow-sm">
-      {due_date_modal(assigns)}
-      {modal(@modal_assigns)}
+      <%= due_date_modal(assigns) %>
+      <%= modal(@modal_assigns) %>
       <div class="flex flex-col sm:flex-row sm:items-center pr-6 mb-4">
         <div class="flex flex-col pl-9 mr-auto">
           <h4 class="torus-h4">Student Exceptions</h4>
-          <Form for={:assessments} id="assessment_select" change="change_assessment">
-            <Field name={:assessment_id} class="form-group">
-              <Label>Select an assessment to manage student specific exceptions</Label>
-              <Select class="ml-4" options={@options_for_select} selected={@params.selected_assessment_id} />
-            </Field>
-          </Form>
-          {#if @total_count > 0}
-            <p class={if @total_exceptions > 0, do: "bg-blue-100 p-3 mr-auto rounded-lg bg-opacity-50"}>Current exceptions: {exceptions_text(@total_count, @total_exceptions)}</p>
-          {/if}
+          <.form for={@assessment_changeset} id="assessment_select" phx-change="change_assessment" phx-target={@myself}>
+            <div class="form-group">
+              <.input
+                type="select"
+                field={@assessment_changeset[:assessment_id]}
+                label="Select an assessment to manage student specific exceptions"
+                class="ml-4"
+                options={@options_for_select}
+              />
+            </div>
+          </.form>
+          <%= if @total_count > 0 do %>
+            <p class={
+              if @total_exceptions > 0, do: "bg-blue-100 p-3 mr-auto rounded-lg bg-opacity-50"
+            }>
+              Current exceptions: <%= exceptions_text(@total_count, @total_exceptions) %>
+            </p>
+          <% end %>
         </div>
         <div class="flex space-x-4">
           <button
@@ -119,18 +128,27 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTable do
             phx-click="show_modal"
             phx-value-modal_name="confirm_removal"
             phx-target={@myself}
-          >Remove Selected</button>
+          >
+            Remove Selected
+          </button>
           <button
             class="torus-button flex justify-center primary h-9 w-48"
             disabled={length(@students) == @total_count}
             phx-click="show_modal"
             phx-value-modal_name="add_student_exception"
             phx-target={@myself}
-          >Add New</button>
+          >
+            Add New
+          </button>
         </div>
       </div>
-      <form id={"form-#{@form_id}"} for="student_exceptions_table" phx-target={@myself} phx-change="update_student_exception">
-        <PagedTable
+      <form
+        id={"form-#{@form_id}"}
+        for="student_exceptions_table"
+        phx-target={@myself}
+        phx-change="update_student_exception"
+      >
+        <PagedTable.render
           table_model={@table_model}
           total_count={@total_count}
           offset={@params.offset}
@@ -148,23 +166,43 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTable do
 
   def due_date_modal(assigns) do
     ~H"""
-      <.live_component
-        id="student_due_date_modal"
-        title={if @selected_setting, do: "Due date for #{@selected_setting.user.name}"}
-        module={OliWeb.Components.LiveModal}
-        on_confirm={JS.dispatch("submit", to: "#student-due-date-form") |> JS.push("close", target: "#student_due_date_modal")}
-        on_confirm_label="Save"
-      >
-        <div class="p-4">
-          <form id="student-due-date-form" for="settings_table" phx-target={@myself} phx-submit="edit_date">
-            <label for="end_date_input">Please pick a due date for the selected student</label>
-            <div class="flex gap-2 items-center mt-2">
-              <input id="end_date_input" name="end_date" type="datetime-local" phx-debounce={500} value={value_from_datetime(@selected_setting.end_date, @ctx)}/>
-              <button class="torus-button primary" type="button" phx-click={JS.set_attribute({"value", ""}, to: "#end_date_input")}>Clear</button>
-            </div>
-          </form>
-        </div>
-      </.live_component>
+    <.live_component
+      id="student_due_date_modal"
+      title={if @selected_setting, do: "Due date for #{@selected_setting.user.name}"}
+      module={OliWeb.Components.LiveModal}
+      on_confirm={
+        JS.dispatch("submit", to: "#student-due-date-form")
+        |> JS.push("close", target: "#student_due_date_modal")
+      }
+      on_confirm_label="Save"
+    >
+      <div class="p-4">
+        <form
+          id="student-due-date-form"
+          for="settings_table"
+          phx-target={@myself}
+          phx-submit="edit_date"
+        >
+          <label for="end_date_input">Please pick a due date for the selected student</label>
+          <div class="flex gap-2 items-center mt-2">
+            <input
+              id="end_date_input"
+              name="end_date"
+              type="datetime-local"
+              phx-debounce={500}
+              value={value_from_datetime(@selected_setting.end_date, @ctx)}
+            />
+            <button
+              class="torus-button primary"
+              type="button"
+              phx-click={JS.set_attribute({"value", ""}, to: "#end_date_input")}
+            >
+              Clear
+            </button>
+          </div>
+        </form>
+      </div>
+    </.live_component>
     """
   end
 
@@ -172,177 +210,174 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTable do
 
   def modal(%{show: "add_student_exception"} = assigns) do
     ~H"""
-     <div
-          id="add_student_exception_modal"
-          class="modal fade show bg-gray-900 bg-opacity-50"
-          tabindex="-1"
-          role="dialog"
-          aria-hidden="true"
-          style="display: block;"
-          phx-window-keydown={JS.dispatch("click", to: "#cancel_exception_button")}
-          phx-key="Escape"
-        >
-          <div class="modal-dialog modal-dialog-centered" role="document">
-            <div class="modal-content">
-              <div class="modal-header">
-                <h5 class="modal-title">Add Exception</h5>
+    <div
+      id="add_student_exception_modal"
+      class="modal fade show bg-gray-900 bg-opacity-50"
+      tabindex="-1"
+      role="dialog"
+      aria-hidden="true"
+      style="display: block;"
+      phx-window-keydown={JS.dispatch("click", to: "#cancel_exception_button")}
+      phx-key="Escape"
+    >
+      <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Add Exception</h5>
+            <button
+              type="button"
+              class="btn-close box-content w-4 h-4 p-1 border-none rounded-none opacity-50 focus:shadow-none focus:outline-none focus:opacity-100 hover:opacity-75 hover:no-underline"
+              aria-label="Close"
+              phx-click={JS.dispatch("click", to: "#cancel_exception_button")}
+            >
+              <i class="fa-solid fa-xmark fa-xl" />
+            </button>
+          </div>
+          <div class="modal-body">
+            <.form
+              :let={f}
+              for={%{}}
+              as={:student_exception}
+              phx-submit="add_student_exception"
+              phx-target={@myself}
+            >
+              <div class="flex flex-col space-y-2">
+                <%= label(f, :student, "Select Student", class: "control-label") %>
+                <%= select(f, :student_id, @student_options) %>
+              </div>
+              <div class="flex space-x-3 mt-6 justify-end">
                 <button
                   type="button"
-                  class="btn-close box-content w-4 h-4 p-1 border-none rounded-none opacity-50 focus:shadow-none focus:outline-none focus:opacity-100 hover:opacity-75 hover:no-underline"
-                  aria-label="Close"
-                  phx-click={JS.dispatch("click", to: "#cancel_exception_button")}
-                >
-                  <i class="fa-solid fa-xmark fa-xl" />
-                </button>
-              </div>
-              <div class="modal-body">
-                <.form
-                  for={%{}}
-                  as={:student_exception}
-                  phx-submit="add_student_exception"
+                  id="cancel_exception_button"
+                  class="btn btn-link"
+                  phx-click="hide_modal"
                   phx-target={@myself}
-                  :let={f}
                 >
-                  <div class="flex flex-col space-y-2">
-                    <%= label f, :student, "Select Student", class: "control-label" %>
-                    <%= select f, :student_id, @student_options %>
-                  </div>
-                  <div class="flex space-x-3 mt-6 justify-end">
-                    <button
-                      type="button"
-                      id="cancel_exception_button"
-                      class="btn btn-link"
-                      phx-click="hide_modal"
-                      phx-target={@myself}
-                    >Cancel</button>
+                  Cancel
+                </button>
 
-                    <button
-                      type="submit"
-                      class="btn btn-primary"
-                    >Add</button>
-                  </div>
-                </.form>
+                <button type="submit" class="btn btn-primary">Add</button>
               </div>
-            </div>
+            </.form>
           </div>
         </div>
+      </div>
+    </div>
     """
   end
 
   def modal(%{show: "confirm_removal"} = assigns) do
     ~H"""
-     <div
-          id="confirm_removal_modal"
-          class="modal fade show bg-gray-900 bg-opacity-50"
-          tabindex="-1"
-          role="dialog"
-          aria-hidden="true"
-          style="display: block;"
-          phx-window-keydown={JS.dispatch("click", to: "#cancel_removal_button")}
-          phx-key="Escape"
-        >
-          <div class="modal-dialog modal-dialog-centered" role="document">
-            <div class="modal-content">
-              <div class="modal-header">
-                <h5 class="modal-title">Confirm Removal</h5>
+    <div
+      id="confirm_removal_modal"
+      class="modal fade show bg-gray-900 bg-opacity-50"
+      tabindex="-1"
+      role="dialog"
+      aria-hidden="true"
+      style="display: block;"
+      phx-window-keydown={JS.dispatch("click", to: "#cancel_removal_button")}
+      phx-key="Escape"
+    >
+      <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Confirm Removal</h5>
+            <button
+              type="button"
+              class="btn-close box-content w-4 h-4 p-1 border-none rounded-none opacity-50 focus:shadow-none focus:outline-none focus:opacity-100 hover:opacity-75 hover:no-underline"
+              aria-label="Close"
+              phx-click={JS.dispatch("click", to: "#cancel_removal_button")}
+            >
+              <i class="fa-solid fa-xmark fa-xl" />
+            </button>
+          </div>
+          <div class="modal-body">
+            <.form
+              for={%{}}
+              as={:confirm_removal}
+              phx-submit="remove_student_exceptions"
+              phx-target={@myself}
+            >
+              <div class="flex flex-col space-y-2">
+                <p>Are you sure you want to remove the selected exceptions?</p>
+              </div>
+              <div class="flex space-x-3 mt-6 justify-end">
                 <button
                   type="button"
-                  class="btn-close box-content w-4 h-4 p-1 border-none rounded-none opacity-50 focus:shadow-none focus:outline-none focus:opacity-100 hover:opacity-75 hover:no-underline"
-                  aria-label="Close"
-                  phx-click={JS.dispatch("click", to: "#cancel_removal_button")}
-                >
-                  <i class="fa-solid fa-xmark fa-xl" />
-                </button>
-              </div>
-              <div class="modal-body">
-                <.form
-                  for={%{}}
-                  as={:confirm_removal}
-                  phx-submit="remove_student_exceptions"
+                  id="cancel_removal_button"
+                  class="btn btn-link"
+                  phx-click="hide_modal"
                   phx-target={@myself}
                 >
-                  <div class="flex flex-col space-y-2">
-                    <p>Are you sure you want to remove the selected exceptions?</p>
-                  </div>
-                  <div class="flex space-x-3 mt-6 justify-end">
-                    <button
-                      type="button"
-                      id="cancel_removal_button"
-                      class="btn btn-link"
-                      phx-click="hide_modal"
-                      phx-target={@myself}
-                    >Cancel</button>
+                  Cancel
+                </button>
 
-                    <button
-                      type="submit"
-                      class="btn btn-primary"
-                    >Confirm</button>
-                  </div>
-                </.form>
+                <button type="submit" class="btn btn-primary">Confirm</button>
               </div>
-            </div>
+            </.form>
           </div>
         </div>
+      </div>
+    </div>
     """
   end
 
   def modal(%{show: "scheduled_feedback"} = assigns) do
     ~H"""
-     <div
-          id="scheduled_modal"
-          class="modal fade show bg-gray-900 bg-opacity-50"
-          tabindex="-1"
-          role="dialog"
-          aria-hidden="true"
-          style="display: block;"
-          phx-window-keydown={JS.dispatch("click", to: "#scheduled_cancel_button")}
-          phx-key="Escape"
-        >
-          <div class="modal-dialog modal-dialog-centered" role="document">
-            <div class="modal-content">
-              <div class="modal-header">
-                <h5 class="modal-title">View Feedback</h5>
+    <div
+      id="scheduled_modal"
+      class="modal fade show bg-gray-900 bg-opacity-50"
+      tabindex="-1"
+      role="dialog"
+      aria-hidden="true"
+      style="display: block;"
+      phx-window-keydown={JS.dispatch("click", to: "#scheduled_cancel_button")}
+      phx-key="Escape"
+    >
+      <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">View Feedback</h5>
+            <button
+              type="button"
+              class="btn-close box-content w-4 h-4 p-1 border-none rounded-none opacity-50 focus:shadow-none focus:outline-none focus:opacity-100 hover:opacity-75 hover:no-underline"
+              aria-label="Close"
+              phx-click={JS.dispatch("click", to: "#scheduled_cancel_button")}
+            >
+              <i class="fa-solid fa-xmark fa-xl" />
+            </button>
+          </div>
+          <div class="modal-body">
+            <.form
+              :let={f}
+              for={@changeset}
+              phx-submit="submit_scheduled_date"
+              phx-change="validate_scheduled_date"
+              phx-target={@myself}
+            >
+              <div class="flex flex-col space-y-2">
+                <%= label(f, :feedback_scheduled_date, "Scheduled Date", class: "control-label") %>
+                <%= datetime_local_input(f, :feedback_scheduled_date, class: "mr-auto") %>
+                <%= error_tag(f, :feedback_scheduled_date, true) %>
+              </div>
+              <div class="flex space-x-3 mt-6 justify-end">
                 <button
                   type="button"
-                  class="btn-close box-content w-4 h-4 p-1 border-none rounded-none opacity-50 focus:shadow-none focus:outline-none focus:opacity-100 hover:opacity-75 hover:no-underline"
-                  aria-label="Close"
-                  phx-click={JS.dispatch("click", to: "#scheduled_cancel_button")}
-                >
-                  <i class="fa-solid fa-xmark fa-xl" />
-                </button>
-              </div>
-              <div class="modal-body">
-                <.form
-                  for={@changeset}
-                  phx-submit="submit_scheduled_date"
-                  phx-change="validate_scheduled_date"
+                  id="scheduled_cancel_button"
+                  class="btn btn-link"
+                  phx-click="hide_modal"
                   phx-target={@myself}
-                  :let={f}
                 >
-                  <div class="flex flex-col space-y-2">
-                    <%= label f, :feedback_scheduled_date, "Scheduled Date", class: "control-label" %>
-                    <%= datetime_local_input f, :feedback_scheduled_date, class: "mr-auto" %>
-                    <%= error_tag f, :feedback_scheduled_date, true %>
-                  </div>
-                  <div class="flex space-x-3 mt-6 justify-end">
-                    <button
-                      type="button"
-                      id="scheduled_cancel_button"
-                      class="btn btn-link"
-                      phx-click="hide_modal"
-                      phx-target={@myself}
-                    >Cancel</button>
+                  Cancel
+                </button>
 
-                    <button
-                      type="submit"
-                      class="btn btn-primary"
-                    >Save</button>
-                  </div>
-                </.form>
+                <button type="submit" class="btn btn-primary">Save</button>
               </div>
-            </div>
+            </.form>
           </div>
         </div>
+      </div>
+    </div>
     """
   end
 

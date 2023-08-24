@@ -1,5 +1,5 @@
 defmodule OliWeb.Sections.EditView do
-  use Surface.LiveView, layout: {OliWeb.LayoutView, :live}
+  use OliWeb, :live_view
 
   alias Oli.Branding
   alias OliWeb.Sections.StartEnd
@@ -17,17 +17,8 @@ defmodule OliWeb.Sections.EditView do
     ContentSettings
   }
 
-  alias Surface.Components.Form
   alias Oli.Branding.CustomLabels
   alias Oli.Institutions
-
-  data(breadcrumbs, :any)
-  data(title, :string, default: "Edit Section Details")
-  data(section, :any, default: nil)
-  data(changeset, :any)
-  data(is_admin, :boolean)
-  data(brands, :list)
-  data(labels, :map, default: Map.from_struct(CustomLabels.default()))
 
   defp set_breadcrumbs(type, section) do
     OliWeb.Sections.OverviewView.set_breadcrumbs(type, section)
@@ -78,50 +69,63 @@ defmodule OliWeb.Sections.EditView do
     end
   end
 
+  attr(:breadcrumbs, :any)
+  attr(:title, :string, default: "Edit Section Details")
+  attr(:section, :any, default: nil)
+  attr(:changeset, :any)
+  attr(:is_admin, :boolean)
+  attr(:brands, :list)
+  attr(:labels, :map, default: Map.from_struct(CustomLabels.default()))
+
   def render(assigns) do
-    ~F"""
-    <Form as={:section} for={@changeset} change="validate" submit="save" opts={autocomplete: "off"}>
-      <Groups>
-        <Group label="Settings" description="Manage the course section settings">
-          <MainDetails
+    assigns = assign(assigns, changeset: to_form(assigns.changeset))
+
+    ~H"""
+    <title><%= @title %></title>
+    <.form as={:section} for={@changeset} phx-change="validate" phx-submit="save" autocomplete="off">
+      <Groups.render>
+        <Group.render label="Settings" description="Manage the course section settings">
+          <MainDetails.render
             changeset={@changeset}
             disabled={false}
             is_admin={@is_admin}
             brands={@brands}
             institutions={@institutions}
           />
-        </Group>
-        <Group label="Schedule" description="Edit the start and end dates for scheduling purposes">
-          <StartEnd
-            id="start_end_editing"
+        </Group.render>
+        <Group.render
+          label="Schedule"
+          description="Edit the start and end dates for scheduling purposes"
+        >
+          <StartEnd.render
             changeset={@changeset}
             disabled={false}
             is_admin={@is_admin}
             ctx={@ctx}
           />
-        </Group>
-
-        {#if @section.open_and_free}
-          <OpenFreeSettings
-            id="open_and_free_settings"
+        </Group.render>
+        <%= if @section.open_and_free do %>
+          <OpenFreeSettings.render
             is_admin={@is_admin}
             changeset={@changeset}
             disabled={false}
-            {=@ctx}
+            ctx={@ctx}
           />
-        {#else}
-          <LtiSettings section={@section} />
-        {/if}
-
-        <PaywallSettings changeset={@changeset} disabled={!can_change_payment?(@section, @is_admin)} />
-        <ContentSettings changeset={@changeset} />
-      </Groups>
-    </Form>
-    <Groups>
-      <Group label="Labels" description="Custom labels">
-        <CustomLabelsForm labels={@labels} save="save_labels" />
-      </Group>
-    </Groups>
+        <% else %>
+          <LtiSettings.render section={@section} />
+        <% end %>
+        <PaywallSettings.render
+          changeset={@changeset}
+          disabled={!can_change_payment?(@section, @is_admin)}
+        />
+        <ContentSettings.render changeset={@changeset} />
+      </Groups.render>
+    </.form>
+    <Groups.render>
+      <Group.render label="Labels" description="Custom labels">
+        <CustomLabelsForm.render labels={@labels} save="save_labels" />
+      </Group.render>
+    </Groups.render>
     """
   end
 
@@ -143,7 +147,7 @@ defmodule OliWeb.Sections.EditView do
     end
   end
 
-  def handle_event("save_labels", %{"view" => params}, socket) do
+  def handle_event("save_labels", params, socket) do
     socket = clear_flash(socket)
 
     params =
@@ -160,7 +164,13 @@ defmodule OliWeb.Sections.EditView do
     case Sections.update_section(socket.assigns.section, %{customizations: params}) do
       {:ok, section} ->
         socket = put_flash(socket, :info, "Section changes saved")
-        {:noreply, assign(socket, section: section, changeset: Sections.change_section(section))}
+
+        {:noreply,
+         assign(socket,
+           section: section,
+           changeset: Sections.change_section(section),
+           labels: params
+         )}
 
       {:error, %Ecto.Changeset{} = changeset} ->
         {:noreply, assign(socket, changeset: changeset)}

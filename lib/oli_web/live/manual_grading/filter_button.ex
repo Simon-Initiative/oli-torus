@@ -1,32 +1,27 @@
 defmodule OliWeb.ManualGrading.FilterButton do
-  use Surface.Component
+  use OliWeb, :html
 
-  prop clicked, :event, required: true
-  prop label, :string, required: true
-  prop active, :boolean, required: true
-  prop tooltip, :string, required: true
-  prop selection, :boolean, required: true
-  prop key, :any, required: true
-
-  def render(%{active: true} = assigns) do
-    do_render(assigns, "btn btn-info", "false")
-  end
+  attr :clicked, :any, required: true
+  attr :label, :string, required: true
+  attr :active, :boolean, required: true
+  attr :tooltip, :string, required: true
+  attr :selection, :boolean, required: true
+  attr :key, :any, required: true
 
   def render(assigns) do
-    do_render(assigns, "btn btn-outline-secondary", "true")
-  end
-
-  def do_render(assigns, classes, active) do
-    ~F"""
-      <button
-        disabled={!@selection}
-        type="button"
-        data-bs-toggle="tooltip"
-        title={@tooltip}
-        class={classes}
-        :on-click={@clicked} phx-value-key={@key} phx-value-active={active}>
-        {@label}
-      </button>
+    ~H"""
+    <button
+      disabled={!@selection}
+      type="button"
+      data-bs-toggle="tooltip"
+      title={@tooltip}
+      class={if @active, do: "btn btn-info", else: "btn btn-outline-secondary"}
+      phx-click={@clicked}
+      phx-value-key={@key}
+      phx-value-active={if @active, do: "false", else: "true"}
+    >
+      <%= @label %>
+    </button>
     """
   end
 end
