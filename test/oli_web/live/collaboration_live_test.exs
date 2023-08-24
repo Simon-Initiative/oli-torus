@@ -1620,8 +1620,7 @@ defmodule OliWeb.CollaborationLiveTest do
 
       assert has_element?(view, "h3", "Discussion")
       assert has_element?(view, "span", "Archived")
-      assert has_element?(view, "form#new_post_form button[type=submit]:disabled")
-      assert has_element?(view, ".readonly")
+      refute has_element?(view, "form#new_post_form")
     end
 
     test "post is archived",
@@ -1648,7 +1647,7 @@ defmodule OliWeb.CollaborationLiveTest do
           }
         )
 
-      assert has_element?(view, "#post_#{post.id}.readonly")
+      assert has_element?(view, "#post_#{post.id}.bg-gray-100")
     end
 
     test "reply is archived",
@@ -2196,8 +2195,8 @@ defmodule OliWeb.CollaborationLiveTest do
 
       expand_replies(view, first_post.id)
 
-      refute has_element?(view, "#post_#{first_post.id}.readonly")
-      refute has_element?(view, "#post_reply_#{reply.id}.readonly")
+      refute has_element?(view, "#post_#{first_post.id}.bg-gray-100")
+      refute has_element?(view, "#post_reply_#{reply.id}.bg-gray-200")
 
       display_archive_modal(view, reply.id)
       confirm_archive(view)
@@ -2207,8 +2206,8 @@ defmodule OliWeb.CollaborationLiveTest do
              |> render() =~
                "Post successfully edited"
 
-      refute has_element?(view, "#post_#{first_post.id}.readonly")
-      assert has_element?(view, "#post_reply_#{reply.id}.readonly")
+      refute has_element?(view, "#post_#{first_post.id}.bg-gray-100")
+      assert has_element?(view, "#post_reply_#{reply.id}.bg-gray-200")
 
       display_archive_modal(view, first_post.id)
       confirm_archive(view)
@@ -2218,7 +2217,7 @@ defmodule OliWeb.CollaborationLiveTest do
              |> render() =~
                "Post successfully edited"
 
-      assert has_element?(view, "#post_#{first_post.id}.readonly")
+      assert has_element?(view, "#post_#{first_post.id}.bg-gray-100")
     end
 
     test "unarchive post",
@@ -2262,8 +2261,8 @@ defmodule OliWeb.CollaborationLiveTest do
 
       expand_replies(view, post.id)
 
-      assert has_element?(view, "#post_#{post.id}.readonly")
-      assert has_element?(view, "#post_reply_#{reply.id}.readonly")
+      assert has_element?(view, "#post_#{post.id}.bg-gray-100")
+      assert has_element?(view, "#post_reply_#{reply.id}.bg-gray-200")
 
       display_unarchive_modal(view, reply.id)
       confirm_unarchive(view)
@@ -2273,8 +2272,8 @@ defmodule OliWeb.CollaborationLiveTest do
              |> render() =~
                "Post successfully edited"
 
-      assert has_element?(view, "#post_#{post.id}.readonly")
-      refute has_element?(view, "#post_reply_#{reply.id}.readonly")
+      assert has_element?(view, "#post_#{post.id}.bg-gray-100")
+      refute has_element?(view, "#post_reply_#{reply.id}.bg-gray-200")
 
       display_unarchive_modal(view, post.id)
       confirm_unarchive(view)
@@ -2284,7 +2283,7 @@ defmodule OliWeb.CollaborationLiveTest do
              |> render() =~
                "Post successfully edited"
 
-      refute has_element?(view, "#post_#{post.id}.readonly")
+      refute has_element?(view, "#post_#{post.id}.bg-gray-100")
     end
   end
 
