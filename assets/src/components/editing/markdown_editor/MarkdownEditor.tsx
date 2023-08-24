@@ -2,6 +2,7 @@ import React, { FocusEventHandler, useCallback, useMemo, useState } from 'react'
 import '@uiw/react-markdown-preview/markdown.css';
 import MDEditor, { ICommand, commands } from '@uiw/react-md-editor';
 import '@uiw/react-md-editor/markdown-editor.css';
+import { debounce } from 'lodash';
 import { Descendant } from 'slate';
 import { Icon } from 'components/misc/Icon';
 import { NormalizerContext } from '../editor/normalizers/normalizer';
@@ -64,13 +65,19 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = (props) => {
     [lastSavedValue, onEdit],
   );
 
+  const delayedSaveChanges = useMemo(
+    () => debounce(saveChanges, 800, { maxWait: 5000 }),
+    [saveChanges],
+  );
+
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const onChange = useCallback(
     (newValue: string | undefined) => {
       console.info('onchange');
       setValue(newValue || '');
-      saveChanges(newValue || '');
+      delayedSaveChanges(newValue || '');
     },
-    [saveChanges],
+    [delayedSaveChanges],
   );
 
   const onBlur = useCallback(() => {

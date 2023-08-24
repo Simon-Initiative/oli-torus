@@ -24,9 +24,9 @@ export const StructuredContentEditor = ({
   toolbarInsertDescs,
   onEdit,
 }: StructuredContentEditor) => {
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const onContentEdit = React.useCallback(
     (children: ModelElement[]) => {
-      console.info('onContentEdit', children);
       onEdit(Object.assign({}, contentItem, { children }));
     },
     [contentItem, onEdit],

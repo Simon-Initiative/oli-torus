@@ -44,7 +44,6 @@ export const SlateOrMarkdownEditor: React.FC<SlateOrMarkdownEditorProps> = ({
 }) => {
   const onContentEdit = React.useCallback(
     (children: ModelElement[]) => {
-      console.info('onContentEdit', children);
       onEdit(children);
     },
     [onEdit],
