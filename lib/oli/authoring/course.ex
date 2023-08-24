@@ -480,21 +480,15 @@ defmodule Oli.Authoring.Course do
   end
 
   @doc """
-  Generates a datashop snapshot for the given project if one is not already available or is expired.
+  Generates a datashop snapshot for the given project if one is not already in progress
   """
   def generate_datashop_snapshot(project) do
     case datashop_export_status(project) do
-      {:not_available} ->
-        generate_datashop_snapshot!(project)
-
       {:in_progress} ->
         {:error, "Datashop snapshot is already in progress"}
 
-      {:expired, _, _} ->
+      _ ->
         generate_datashop_snapshot!(project)
-
-      {:available, _url, _timestamp} ->
-        {:error, "Datashop snapshot is already available"}
     end
   end
 

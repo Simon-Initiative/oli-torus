@@ -16,6 +16,7 @@ defmodule OliWeb.Projects.OverviewLive do
   alias OliWeb.Components.Overview
   alias OliWeb.Projects.RequiredSurvey
   alias OliWeb.Components.Project.DatashopExport
+  alias Oli.Authoring.Broadcaster
   alias Oli.Authoring.Broadcaster.Subscriber
   alias OliWeb.Common.SessionContext
 
@@ -331,6 +332,8 @@ defmodule OliWeb.Projects.OverviewLive do
 
     case Course.generate_datashop_snapshot(project) do
       {:ok, _job} ->
+        Broadcaster.broadcast_datashop_export_status(project.slug, {:in_progress})
+
         {:noreply, assign(socket, datashop_export_status: :in_progress)}
 
       {:error, _changeset} ->

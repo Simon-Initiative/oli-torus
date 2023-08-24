@@ -68,7 +68,7 @@ defmodule OliWeb.Components.Common do
     <button
       type={@type}
       class={[
-        "rounded text-sm px-3.5 py-2",
+        "rounded text-sm px-3.5 py-2 whitespace-nowrap",
         button_variant_classes(@variant),
         @class
       ]}
@@ -120,7 +120,7 @@ defmodule OliWeb.Components.Common do
     ~H"""
     <a href={@href}
       class={[
-        "rounded hover:underline px-3.5 py-2",
+        "rounded px-3.5 py-2 whitespace-nowrap hover:underline",
         link_variant_classes(@variant),
         @rest[:disabled] && "text-gray-500 hover:text-gray-500 focus:ring-0 hover:no-underline cursor-default",
         @class
