@@ -8,6 +8,7 @@ defmodule Oli.Analytics.Common do
   alias Oli.Delivery.Attempts.Core.{PartAttempt, ActivityAttempt}
   alias Oli.Activities
   alias OliWeb.Common.FormatDateTime
+  alias Oli.Activities.ActivityRegistration
 
   def snapshots_for_project(project_slug) do
     objectives_map =
@@ -17,7 +18,7 @@ defmodule Oli.Analytics.Common do
         on: snapshot.project_id == project.id,
         join: objective in Revision,
         on: snapshot.objective_revision_id == objective.id,
-        group_by: [snapshot.objective_revision_id],
+        group_by: [snapshot.objective_revision_id, objective.title, objective.resource_id],
         select: {
           snapshot.objective_revision_id,
           objective.title,
@@ -35,23 +36,24 @@ defmodule Oli.Analytics.Common do
         join: snapshot in Snapshot,
         on: snapshot.project_id == project.id,
         join: activity in Revision,
-        on: snapshot.activity_revision_id == activity.id,
-        group_by: [snapshot.activity_revision_id],
+        on: snapshot.revision_id == activity.id,
+        group_by: [snapshot.revision_id, activity.title, activity.resource_id, activity.activity_type_id, activity.content],
         select: {
-          snapshot.activity_revision_id,
+          snapshot.revision_id,
           activity.title,
           activity.resource_id,
           activity.activity_type_id,
+          activity.content,
         }
       )
       |> Repo.all()
-      |> Enum.reduce(%{}, fn {revision_id, title, resource_id, type_id}, acc ->
-        Map.put(acc, revision_id, %{title: title, resource_id: resource_id, type_id: type_id})
+      |> Enum.reduce(%{}, fn {revision_id, title, resource_id, activity_type_id, content}, acc ->
+        Map.put(acc, revision_id, %{title: title, resource_id: resource_id, activity_type_id: activity_type_id, content: content})
       end)
 
     activity_registration_map = Activities.list_activity_registrations()
-      |> Enum.reduce(%{}, fn {activity_id, registration_id}, acc ->
-        Map.put(acc, activity_id, registration_id)
+      |> Enum.reduce(%{}, fn %ActivityRegistration{id: id} = registration, acc ->
+        Map.put(acc, id, registration)
       end)
 
     sections_map =
@@ -61,7 +63,7 @@ defmodule Oli.Analytics.Common do
         on: snapshot.project_id == project.id,
         join: section in Section,
         on: snapshot.section_id == section.id,
-        group_by: [snapshot.section_id],
+        group_by: [snapshot.section_id, section.title, section.slug],
         select: {
           snapshot.section_id,
           section.title,
@@ -107,7 +109,7 @@ defmodule Oli.Analytics.Common do
           }
         )
       )
-      |> Stream.map(fn {
+      |> Enum.map(fn {
           snapshot_part_attempt_id,
           snapshot_revision_id,
           snapshot_objective_revision_id,
@@ -138,10 +140,10 @@ defmodule Oli.Analytics.Common do
           snapshot_part_attempt_id,
           snapshot_activity_id,
           snapshot_resource_id,
-          objective.resource_id,
+          safe_get(objective, :resource_id),
           activity.title,
           activity_registration.title,
-          objective.title,
+          safe_get(objective, :title),
           snapshot_attempt_number,
           snapshot_graded,
           snapshot_correct,
@@ -162,6 +164,13 @@ defmodule Oli.Analytics.Common do
         ]
       end)
     end)
+  end
+
+  defp safe_get(map, key, default \\ nil) do
+    case map do
+      nil -> nil
+      map -> Map.get(map, key, default)
+    end
   end
 
   def analytics_by_activity(project_slug) do
