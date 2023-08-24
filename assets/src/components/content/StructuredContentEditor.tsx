@@ -1,11 +1,7 @@
 import React, { useMemo } from 'react';
-import { Descendant } from 'slate';
-import { ErrorBoundary } from 'components/common/ErrorBoundary';
-import { Editor } from 'components/editing/editor/Editor';
-import { SwitchToMarkdownModal } from 'components/editing/editor/SwitchToMarkdownModal';
+import { SlateOrMarkdownEditor } from 'components/editing/SlateOrMarkdownEditor';
 import { CommandDescription } from 'components/editing/elements/commands/interfaces';
-import { MarkdownEditor } from 'components/editing/markdown_editor/MarkdownEditor';
-import { useToggle } from 'components/hooks/useToggle';
+import { ModelElement } from 'data/content/model/elements/types';
 import { DEFAULT_EDITOR, StructuredContent } from 'data/content/resource';
 import { ProjectSlug, ResourceSlug } from 'data/types';
 import { slateFixer } from './SlateFixer';
@@ -29,62 +25,40 @@ export const StructuredContentEditor = ({
   onEdit,
 }: StructuredContentEditor) => {
   const onContentEdit = React.useCallback(
-    (children: Descendant[]) => {
+    (children: ModelElement[]) => {
       console.info('onContentEdit', children);
       onEdit(Object.assign({}, contentItem, { children }));
     },
     [contentItem, onEdit],
   );
-  const [switchToMarkdownModal, toggleSwitchToMarkdownModal, , closeSwitchModal] = useToggle();
 
-  const changeEditor = (editor: 'markdown' | 'slate') => (_e?: any) => {
-    console.info('Switching editor modes', editor);
-    closeSwitchModal();
+  const changeEditor = (editor: 'markdown' | 'slate') => {
+    console.info('Switching editor modes', editor, contentItem);
     onEdit({
       ...contentItem,
       editor,
     });
   };
 
-  // When we switch between the markdown & slate editors, we need to refresh the initial value so the new editor gets an updated copy.
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  const initialEditorValue = useMemo(() => slateFixer(contentItem), [contentItem.editor || '']);
+  // The editors aren't true controlled components. They both take initial values. So When we switch between the
+  // markdown & slate editors, we need to refresh the initial value so the new editor gets an updated copy.
+  const initialEditorValue =
+    useMemo(
+      () => slateFixer(contentItem),
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+      [contentItem.editor || ''],
+    )?.children || [];
 
-  const editorType = contentItem.editor || DEFAULT_EDITOR;
-
-  if (editorType === 'markdown') {
-    return (
-      <ErrorBoundary>
-        <MarkdownEditor
-          className="structured-content"
-          commandContext={{ projectSlug: projectSlug, resourceSlug: resourceSlug }}
-          editMode={editMode}
-          value={initialEditorValue.children}
-          onSwitchModes={changeEditor('slate')}
-          onEdit={onContentEdit}
-        />
-      </ErrorBoundary>
-    );
-  } else {
-    return (
-      <ErrorBoundary>
-        <Editor
-          className="structured-content"
-          commandContext={{ projectSlug: projectSlug, resourceSlug: resourceSlug }}
-          editMode={editMode}
-          value={initialEditorValue.children}
-          onEdit={onContentEdit}
-          toolbarInsertDescs={toolbarInsertDescs}
-          onSwitchToMarkdown={toggleSwitchToMarkdownModal}
-        />
-        {switchToMarkdownModal && (
-          <SwitchToMarkdownModal
-            model={contentItem.children}
-            onCancel={toggleSwitchToMarkdownModal}
-            onConfirm={changeEditor('markdown')}
-          />
-        )}
-      </ErrorBoundary>
-    );
-  }
+  return (
+    <SlateOrMarkdownEditor
+      editMode={editMode}
+      projectSlug={projectSlug}
+      resourceSlug={resourceSlug}
+      content={initialEditorValue}
+      toolbarInsertDescs={toolbarInsertDescs}
+      onEdit={onContentEdit}
+      onEditorTypeChange={changeEditor}
+      editorType={contentItem.editor || DEFAULT_EDITOR}
+    />
+  );
 };

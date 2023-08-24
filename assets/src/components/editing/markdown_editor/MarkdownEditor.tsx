@@ -3,11 +3,9 @@ import '@uiw/react-markdown-preview/markdown.css';
 import MDEditor, { ICommand, commands } from '@uiw/react-md-editor';
 import '@uiw/react-md-editor/markdown-editor.css';
 import { Descendant } from 'slate';
-import { useToggle } from 'components/hooks/useToggle';
 import { Icon } from 'components/misc/Icon';
 import { NormalizerContext } from '../editor/normalizers/normalizer';
 import { CommandContext } from '../elements/commands/interfaces';
-import { SwitchToSlateModal } from './SwitchToSlateModal';
 import { contentMarkdownDeserializer } from './content_markdown_deserializer';
 import { serializeMarkdown } from './content_markdown_serializer';
 
@@ -34,7 +32,6 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = (props) => {
   const [value, setValue] = useState<string | undefined>(() =>
     contentMarkdownDeserializer(props.value),
   );
-  const [switchVisible, toggleSwitchVisible] = useToggle();
   const [lastSavedValue, setLastSavedValue] = useState<string | undefined>();
 
   const switchToSlateCommand: ICommand = {
@@ -43,9 +40,9 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = (props) => {
     buttonProps: { 'aria-label': 'Switch to Slate' },
     icon: <Icon icon="newspaper" />,
     execute: () => {
+      props.onSwitchModes();
       const content = serializeMarkdown(value || '');
-      props.onEdit(content as Descendant[], null, []);
-      toggleSwitchVisible();
+      props.onEdit(content as Descendant[], null, []); // Trigger a save as well
     },
   };
 
@@ -106,9 +103,6 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = (props) => {
         ]}
         extraCommands={[switchToSlateCommand, commands.fullscreen]}
       />
-      {switchVisible && (
-        <SwitchToSlateModal onCancel={toggleSwitchVisible} onConfirm={props.onSwitchModes} />
-      )}
     </div>
   );
 };

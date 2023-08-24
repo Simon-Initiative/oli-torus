@@ -134,11 +134,13 @@ document.addEventListener('DOMContentLoaded', () => {
     }),
   );
 
-  (window as any).hljs
-    .configure({
-      noHighlightRe: /w-md-editor-text-pre/, // Do not use HLJS on our markdown editor.
-    })(window as any)
-    .hljs.highlightAll();
+  const hljs = (window as any).hljs;
+
+  hljs.configure({
+    cssSelector: 'pre code.torus-code',
+  });
+
+  hljs.highlightAll();
 });
 
 let currentlyPlaying: HTMLAudioElement | null = null;
