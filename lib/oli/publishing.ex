@@ -1523,4 +1523,15 @@ defmodule Oli.Publishing do
 
     Enum.map(results, fn [slug, title] -> %{slug: slug, title: title} end)
   end
+
+  @doc """
+  Returns all publications for a given section
+  """
+  def get_all_publications_by_section(section_id) do
+    Repo.all(
+      from spp in SectionsProjectsPublications,
+        where: spp.section_id == ^section_id,
+        select: spp
+    )
+  end
 end

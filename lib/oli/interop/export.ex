@@ -5,6 +5,8 @@ defmodule Oli.Interop.Export do
   alias Oli.Authoring.MediaLibrary
   alias Oli.Authoring.MediaLibrary.ItemOptions
   alias Oli.Utils
+  alias Oli.Delivery.Sections.Blueprint
+  alias Oli.Delivery.Sections
 
   @doc """
   Generates a course digest for an existing course project.
@@ -23,7 +25,8 @@ defmodule Oli.Interop.Export do
        activities(resources, project) ++
        bib_entries(resources) ++
        alternatives(resources) ++
-       pages(resources, project))
+       pages(resources, project) ++
+       products(resources, project))
     |> Utils.zip("export.zip")
   end
 
@@ -294,6 +297,23 @@ defmodule Oli.Interop.Export do
     end)
   end
 
+  def products(resources, project) do
+    # get all ids for products in this project
+    products_ids = Blueprint.list_for_project(project) |> Enum.map(& &1.id)
+
+    # get all publications for these products filtering out any that only have one publication (for current project)
+    publications_by_section_id =
+      Sections.get_current_publication_for_sections(products_ids, project.id)
+      |> Enum.filter(fn {prod, _} ->
+        length(Publishing.get_all_publications_by_section(prod.id)) == 1
+      end)
+
+    # create a product file for each product
+    Enum.map(publications_by_section_id, fn {product, pub} ->
+      create_product_file(resources, product, pub)
+    end)
+  end
+
   # retrieve all resource revisions for this publication
   defp fetch_all_resources(publication) do
     Publishing.get_published_resources_by_publication(publication.id)
@@ -349,6 +369,21 @@ defmodule Oli.Interop.Export do
       children: Enum.map(root.children, fn id -> full_hierarchy(revisions_by_id, id) end)
     }
     |> entry("_hierarchy.json")
+  end
+
+  # create the singular hierarchy file
+  defp create_product_file(resources, product, publication) do
+    revisions_by_id = Enum.reduce(resources, %{}, fn r, m -> Map.put(m, r.resource_id, r) end)
+    root = Map.get(revisions_by_id, publication.root_resource_id)
+
+    %{
+      type: "Product",
+      id: Integer.to_string(product.id, 10),
+      originalFile: "",
+      title: product.title,
+      children: Enum.map(root.children, fn id -> full_hierarchy(revisions_by_id, id) end)
+    }
+    |> entry("#{product.id}.json")
   end
 
   # helper to create a zip entry tuple
