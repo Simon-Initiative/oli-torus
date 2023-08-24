@@ -59,7 +59,7 @@ defmodule OliWeb.CollaborationLive.Posts.Show do
             <small class="torus-small"><%= render_date(@post.inserted_at) %></small>
           </div>
 
-          <div class="flex gap-2 items-center">
+          <div :if={!@parent_is_archived} class="flex gap-2 items-center">
             <%= if @post.user_id == @user_id do %>
               <button
                 class="btn btn-link p-0 text-delivery-primary hover:text-delivery-primary-700 disabled:text-gray-200"

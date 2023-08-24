@@ -2261,19 +2261,9 @@ defmodule OliWeb.CollaborationLiveTest do
 
       expand_replies(view, post.id)
 
+      # parent post and its reply are archived (grayed out)
       assert has_element?(view, "#post_#{post.id}.bg-gray-100")
       assert has_element?(view, "#post_reply_#{reply.id}.bg-gray-200")
-
-      display_unarchive_modal(view, reply.id)
-      confirm_unarchive(view)
-
-      assert view
-             |> element("div.alert.alert-info")
-             |> render() =~
-               "Post successfully edited"
-
-      assert has_element?(view, "#post_#{post.id}.bg-gray-100")
-      refute has_element?(view, "#post_reply_#{reply.id}.bg-gray-200")
 
       display_unarchive_modal(view, post.id)
       confirm_unarchive(view)
@@ -2283,7 +2273,19 @@ defmodule OliWeb.CollaborationLiveTest do
              |> render() =~
                "Post successfully edited"
 
+      # parent post is not archived, but its reply is still archived
       refute has_element?(view, "#post_#{post.id}.bg-gray-100")
+      assert has_element?(view, "#post_#{post.id}")
+      assert has_element?(view, "#post_reply_#{reply.id}.bg-gray-200")
+
+      display_unarchive_modal(view, reply.id)
+      confirm_unarchive(view)
+
+      # parent post and its reply are not archived
+      refute has_element?(view, "#post_#{post.id}.bg-gray-100")
+      assert has_element?(view, "#post_#{post.id}")
+      refute has_element?(view, "#post_reply_#{reply.id}.bg-gray-200")
+      assert has_element?(view, "#post_reply_#{reply.id}")
     end
   end
 
