@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Descendant } from 'slate';
 import { ErrorBoundary } from 'components/common/ErrorBoundary';
 import { Editor } from 'components/editing/editor/Editor';
@@ -36,6 +36,7 @@ export const StructuredContentEditor = ({
     [contentItem, onEdit],
   );
   const [switchToMarkdownModal, toggleSwitchToMarkdownModal, , closeSwitchModal] = useToggle();
+
   const changeEditor = (editor: 'markdown' | 'slate') => (_e?: any) => {
     console.info('Switching editor modes', editor);
     closeSwitchModal();
@@ -45,7 +46,10 @@ export const StructuredContentEditor = ({
     });
   };
 
-  const [value] = React.useState(slateFixer(contentItem));
+  // When we switch between the markdown & slate editors, we need to refresh the initial value so the new editor gets an updated copy.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const initialEditorValue = useMemo(() => slateFixer(contentItem), [contentItem.editor || '']);
+
   const editorType = contentItem.editor || DEFAULT_EDITOR;
 
   if (editorType === 'markdown') {
@@ -55,7 +59,7 @@ export const StructuredContentEditor = ({
           className="structured-content"
           commandContext={{ projectSlug: projectSlug, resourceSlug: resourceSlug }}
           editMode={editMode}
-          value={value.children}
+          value={initialEditorValue.children}
           onSwitchModes={changeEditor('slate')}
           onEdit={onContentEdit}
         />
@@ -68,7 +72,7 @@ export const StructuredContentEditor = ({
           className="structured-content"
           commandContext={{ projectSlug: projectSlug, resourceSlug: resourceSlug }}
           editMode={editMode}
-          value={value.children}
+          value={initialEditorValue.children}
           onEdit={onContentEdit}
           toolbarInsertDescs={toolbarInsertDescs}
           onSwitchToMarkdown={toggleSwitchToMarkdownModal}
