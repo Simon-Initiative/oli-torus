@@ -23,6 +23,7 @@ interface MarkdownEditorProps {
   className?: string;
   style?: React.CSSProperties;
   placeholder?: string;
+  initialHeight?: number;
   onPaste?: React.ClipboardEventHandler<HTMLDivElement>;
   children?: React.ReactNode;
   onFocus?: FocusEventHandler | undefined;
@@ -50,7 +51,7 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = (props) => {
   const darkMode: boolean = useMemo(() => {
     return document.documentElement.classList.contains('dark');
   }, []);
-  const { onEdit } = props;
+  const { onEdit, initialHeight } = props;
   const modeClass = darkMode ? 'dark' : 'light';
 
   const saveChanges = useCallback(
@@ -90,7 +91,7 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = (props) => {
       <MDEditor
         value={value}
         onChange={onChange}
-        height={600}
+        height={initialHeight || 600}
         data-color-mode={modeClass}
         onBlur={onBlur}
         preview="edit"

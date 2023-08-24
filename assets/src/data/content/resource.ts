@@ -246,14 +246,16 @@ export const createDefaultSelection = () => {
   } as ActivityBankSelection;
 };
 
+export type EditorType = 'slate' | 'markdown';
+
 export interface StructuredContent {
   type: 'content';
   id: string;
   children: ModelElement[];
-  editor?: 'slate' | 'markdown';
+  editor?: EditorType;
 }
 
-export const DEFAULT_EDITOR = 'slate';
+export const DEFAULT_EDITOR: EditorType = 'slate';
 
 export interface ActivityBankSelection {
   type: 'selection';

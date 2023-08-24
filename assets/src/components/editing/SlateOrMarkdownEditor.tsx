@@ -1,5 +1,4 @@
-import React, { useMemo } from 'react';
-import { Descendant } from 'slate';
+import React from 'react';
 import { ErrorBoundary } from 'components/common/ErrorBoundary';
 import { Editor } from 'components/editing/editor/Editor';
 import { SwitchToMarkdownModal } from 'components/editing/editor/SwitchToMarkdownModal';
@@ -7,7 +6,7 @@ import { CommandDescription } from 'components/editing/elements/commands/interfa
 import { MarkdownEditor } from 'components/editing/markdown_editor/MarkdownEditor';
 import { useToggle } from 'components/hooks/useToggle';
 import { ModelElement } from 'data/content/model/elements/types';
-import { DEFAULT_EDITOR } from 'data/content/resource';
+import { EditorType } from 'data/content/resource';
 import { ProjectSlug, ResourceSlug } from 'data/types';
 import { SwitchToSlateModal } from './markdown_editor/SwitchToSlateModal';
 
@@ -15,10 +14,12 @@ type SlateOrMarkdownEditorProps = {
   editMode: boolean; // Whether or not we can edit
   content: ModelElement[]; // Content to edit
   onEdit: (content: ModelElement[]) => void; // Edit handler
-  onEditorTypeChange: (editorType: 'slate' | 'markdown') => void;
+  onEditorTypeChange: (editorType: EditorType) => void;
   projectSlug: ProjectSlug;
-  resourceSlug: ResourceSlug;
-  editorType?: 'slate' | 'markdown';
+  placeholder?: string;
+  resourceSlug?: ResourceSlug;
+  initialHeight?: number;
+  editorType?: EditorType;
   toolbarInsertDescs?: CommandDescription[]; // Content insertion options
 };
 
@@ -39,8 +40,10 @@ export const SlateOrMarkdownEditor: React.FC<SlateOrMarkdownEditorProps> = ({
   content,
   toolbarInsertDescs,
   onEdit,
+  placeholder,
   onEditorTypeChange,
   editorType,
+  initialHeight,
 }) => {
   const onContentEdit = React.useCallback(
     (children: ModelElement[]) => {
@@ -68,6 +71,7 @@ export const SlateOrMarkdownEditor: React.FC<SlateOrMarkdownEditorProps> = ({
           commandContext={{ projectSlug: projectSlug, resourceSlug: resourceSlug }}
           editMode={editMode}
           value={content}
+          initialHeight={initialHeight}
           onSwitchModes={toggleSwitchToSlateModal}
           onEdit={onContentEdit}
         />
@@ -87,6 +91,7 @@ export const SlateOrMarkdownEditor: React.FC<SlateOrMarkdownEditorProps> = ({
           commandContext={{ projectSlug: projectSlug, resourceSlug: resourceSlug }}
           editMode={editMode}
           value={content}
+          placeholder={placeholder}
           onEdit={onContentEdit}
           toolbarInsertDescs={toolbarInsertDescs || []}
           onSwitchToMarkdown={toggleSwitchToMarkdownModal}

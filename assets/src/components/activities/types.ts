@@ -347,10 +347,14 @@ export interface HasChoices {
   choices: Choice[];
 }
 
+export interface SpecifiesEditor {
+  editor?: 'markdown' | 'slate';
+}
+
 /**
  * Defines a question stem.
  */
-export interface Stem extends Identifiable, HasContent {}
+export interface Stem extends Identifiable, HasContent, SpecifiesEditor {}
 /**
  * Marker interface for an entity that has a question stem.
  */
