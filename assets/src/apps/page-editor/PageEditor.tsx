@@ -1,7 +1,6 @@
 import React from 'react';
 import { connect } from 'react-redux';
 import Appsignal from '@appsignal/javascript';
-import def from 'ajv/dist/vocabularies/applicator/additionalItems';
 import * as Immutable from 'immutable';
 import { Dispatch, State } from 'state';
 import { MultiInputSchema } from 'components/activities/multi_input/schema';

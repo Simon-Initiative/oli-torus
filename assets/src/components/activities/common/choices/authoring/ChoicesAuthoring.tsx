@@ -26,7 +26,7 @@ interface Props {
   addOne: () => void;
   setAll: (choices: Choice[]) => void;
   onEdit: (id: string, content: Descendant[]) => void;
-  onChangeEditorType: (id: string, editorType: EditorType) => void;
+  onChangeEditorType?: (id: string, editorType: EditorType) => void;
   onRemove: (id: string) => void;
   simpleText?: boolean;
   colorMap?: Map<string, string>;
@@ -79,7 +79,9 @@ export const Choices: React.FC<Props> = ({
                     content={choice.content}
                     onEdit={(content) => onEdit(choice.id, content)}
                     allowBlockElements={true}
-                    onEditorTypeChange={(editor) => onChangeEditorType(choice.id, editor)}
+                    onEditorTypeChange={(editor) =>
+                      onChangeEditorType && onChangeEditorType(choice.id, editor)
+                    }
                     projectSlug={projectSlug}
                     initialHeight={100}
                   />

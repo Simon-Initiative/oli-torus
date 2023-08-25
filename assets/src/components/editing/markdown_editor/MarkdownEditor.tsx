@@ -1,7 +1,5 @@
 import React, { FocusEventHandler, useCallback, useMemo, useState } from 'react';
-import '@uiw/react-markdown-preview/markdown.css';
 import MDEditor, { ICommand, commands } from '@uiw/react-md-editor';
-import '@uiw/react-md-editor/markdown-editor.css';
 import { debounce } from 'lodash';
 import { Descendant } from 'slate';
 import { Icon } from 'components/misc/Icon';

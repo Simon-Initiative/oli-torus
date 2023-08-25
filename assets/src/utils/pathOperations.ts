@@ -1,5 +1,4 @@
 import jp from 'jsonpath';
-import { off } from 'process';
 
 export type PathOperation =
   | FindOperation

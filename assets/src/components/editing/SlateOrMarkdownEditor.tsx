@@ -16,7 +16,7 @@ type SlateOrMarkdownEditorProps = {
   editMode: boolean; // Whether or not we can edit
   content: ModelElement[]; // Content to edit
   onEdit: (content: ModelElement[]) => void; // Edit handler
-  onEditorTypeChange: (editorType: EditorType) => void;
+  onEditorTypeChange?: (editorType: EditorType) => void;
   editorType: EditorType;
   projectSlug: ProjectSlug;
   placeholder?: string;
@@ -74,7 +74,7 @@ export const SlateOrMarkdownEditor: React.FC<SlateOrMarkdownEditorProps> = ({
     console.info('Switching editor modes', editor);
     closeSwitchMarkdownModal();
     closeSwitchSlateModal();
-    onEditorTypeChange(editor);
+    onEditorTypeChange && onEditorTypeChange(editor);
   };
 
   if (editorType === 'markdown') {

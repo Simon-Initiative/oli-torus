@@ -52,12 +52,17 @@ import {
 import guid from 'utils/guid';
 import { normalizeHref } from './utils';
 
+// removeUndefined({a: 1, b: undefined}) = {a: 1}
+const removeUndefined = (obj: Record<string, any>): unknown => {
+  return Object.fromEntries(Object.entries(obj).filter(([_, v]) => v !== undefined));
+};
+
 function create<E extends AllModelElements>(params: Partial<E>): E {
-  return {
+  return removeUndefined({
     id: guid(),
     children: [{ text: '' }],
     ...params,
-  } as E;
+  }) as E;
 }
 
 export const emptyChildren = (element: AllModelElements) =>
