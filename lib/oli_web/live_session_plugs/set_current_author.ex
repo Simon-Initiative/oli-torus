@@ -1,4 +1,4 @@
-defmodule Oli.LiveSessionPlugs.SetCurrentAuthor do
+defmodule OliWeb.LiveSessionPlugs.SetCurrentAuthor do
   import Phoenix.Component, only: [assign: 2]
 
   def on_mount(:default, _params, %{"current_author_id" => current_author_id}, socket) do

@@ -1026,6 +1026,39 @@ defmodule Oli.Delivery.Sections do
   end
 
   @doc """
+  Returns the names of all instructors with :context_instructor role for the given section ids.
+
+  %{
+    section_id_1: [inst_1, inst_2],
+    ...
+    section_id_n: [inst_3]
+  }
+  """
+
+  def instructors_per_section(section_ids) do
+    instructor_context_role_id = ContextRoles.get_role(:context_instructor).id
+
+    query =
+      from(
+        e in Enrollment,
+        join: s in Section,
+        on: e.section_id == s.id,
+        join: ecr in EnrollmentContextRole,
+        on: e.id == ecr.enrollment_id,
+        where:
+          s.id in ^section_ids and e.status == :enrolled and
+            ecr.context_role_id == ^instructor_context_role_id,
+        preload: [:user],
+        select: {s.id, e}
+      )
+
+    Repo.all(query)
+    |> Enum.group_by(fn {section_id, _} -> section_id end, fn {_, enrollment} ->
+      OliWeb.Components.Delivery.Utils.user_name(enrollment.user)
+    end)
+  end
+
+  @doc """
   Returns all scored pages for the given section.
   """
   def fetch_scored_pages(section_slug), do: fetch_all_pages(section_slug, true)
