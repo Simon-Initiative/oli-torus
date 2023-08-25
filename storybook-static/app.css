@@ -5689,6 +5689,10 @@ table.table-striped tbody tr:nth-child(even) {
   --tw-bg-opacity: 0.5;
 }
 
+.bg-opacity-90 {
+  --tw-bg-opacity: 0.9;
+}
+
 .bg-contain {
   background-size: contain;
 }
