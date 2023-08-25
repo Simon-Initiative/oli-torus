@@ -905,7 +905,8 @@ $font-family-sans-serif: var(--font-sans);
   }
 }
 
-.dark .modal-dialog.config-modal {
+.dark .modal-dialog.config-modal,
+.dark #advanced-authoring-modals .modal-dialog {
   .modal-header {
     background-color: $panel-bg-color-dark;
     color: #f5f6f7;
