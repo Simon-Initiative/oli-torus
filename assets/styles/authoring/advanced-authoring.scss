@@ -1,7 +1,7 @@
 $nav-height: 65px;
 $panel-side-width: 270px;
 $panel-bg-color-light: #f5f6f7;
-$panel-bg-color-dark: #7b8a8b;
+$panel-bg-color-dark: black;
 $panel-font-color-light: #333;
 $panel-font-color-dark: $panel-font-color-light;
 $torus-panel-side-width: 200px;
@@ -864,24 +864,26 @@ $font-family-sans-serif: var(--font-sans);
 }
 
 .dark .aa-panel,
-.dark  .aa-panel-inner,
+.dark .aa-panel-inner,
 .dark .aa-sequence-editor .aa-panel-section-title-bar,
 .dark .aa-adaptivity-rules .aa-panel-section-title-bar,
 .dark .aa-panel.bottom-panel .aa-panel-section-title-bar,
-.dark .aa-panel.right-panel .aa-panel-section-title-bar{
-    background-color: var(--color-body-dark);
-    color: var(--color-body-color-dark);
-    box-shadow: 1px 1px 8px 1px var(--color-gray-900);
-    border-color: var(--color-gray-600);
+.dark .aa-panel.right-panel .aa-panel-section-title-bar {
+  background-color: var(--color-body-dark);
+  color: var(--color-body-color-dark);
+  box-shadow: 1px 1px 8px 1px var(--color-gray-900);
+  border-color: var(--color-gray-600);
 }
-.dark .advanced-authoring .aa-panel-tabs .nav-link{
+.dark .advanced-authoring .aa-panel-tabs .nav-link {
   color: #f5f5f5;
 }
-.dark .activity-content input, .dark .activity-content input[type="datetime-local"], .dark .activity-content  input[type="number"]{
+.dark .activity-content input,
+.dark .activity-content input[type='datetime-local'],
+.dark .activity-content input[type='number'] {
   --tw-bg-opacity: inherit;
-    background-color: inherit;
-    --tw-text-opacity: inherit;
-    color: inherit;
+  background-color: inherit;
+  --tw-text-opacity: inherit;
+  color: inherit;
 }
 
 .dark .dark\:text-white .activity-content {
@@ -889,17 +891,29 @@ $font-family-sans-serif: var(--font-sans);
   color: rgb(55, 58, 68);
 }
 .dark .aa-sequence-item .aa-sequence-details-wrapper:hover,
-.dark .aa-rules-list-item .aa-rules-list-details-wrapper:hover
-{
+.dark .aa-rules-list-item .aa-rules-list-details-wrapper:hover {
   background-color: #333 !important;
 }
 .dark .aa-sequence-item,
 .dark .aa-rules-list-item,
-.dark .aa-adaptivity-editor{
+.dark .aa-adaptivity-editor {
   .dropdown-item {
-    &:hover{
+    &:hover {
       border: 1px solid white;
       color: white;
     }
+  }
+}
+
+.dark .modal-dialog.config-modal {
+  .modal-header {
+    background-color: $panel-bg-color-dark;
+    color: #f5f6f7;
+  }
+  .modal-footer {
+    background-color: $panel-bg-color-dark;
+  }
+  .modal-body {
+    color: $panel-bg-color-dark;
   }
 }
