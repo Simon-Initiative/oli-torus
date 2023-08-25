@@ -1,15 +1,16 @@
 defmodule OliWeb.ManualGrading.Apply do
-  use Surface.Component
+  use OliWeb, :html
 
-  prop disabled, :boolean, required: true
-  prop apply, :event, required: true
+  attr(:disabled, :boolean, required: true)
+  attr(:apply, :any, required: true)
 
   def render(assigns) do
-    ~F"""
+    ~H"""
     <div class="d-flex justify-content-center">
-      <button class="btn btn-primary" disabled={@disabled} :on-click={@apply}>Apply Score and Feedback</button>
+      <button class="btn btn-primary" disabled={@disabled} phx-click={@apply}>
+        Apply Score and Feedback
+      </button>
     </div>
     """
   end
-
 end

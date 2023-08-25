@@ -18,12 +18,16 @@ defmodule OliWeb.Components.Delivery.ContentTableModel do
       },
       %ColumnSpec{
         name: :student_completion,
-        label: "STUDENT COMPLETION",
+        label: "STUDENT PROGRESS",
+        tooltip:
+          "Progress is percent attempted of activities present on the page from the most recent page attempt. If there are no activities within the page, and if the student has visited that page, we count that as an attempt.",
         render_fn: &__MODULE__.render_student_completion/3
       },
       %ColumnSpec{
         name: :student_proficiency,
         label: "STUDENT PROFICIENCY",
+        tooltip:
+          "For all students, or one specific student, proficiency for a learning objective will be calculated off the percentage of correct answers for first part attempts within first activity attempts - for those parts that have that learning objective or any of its sub-objectives attached to it.",
         render_fn: &__MODULE__.render_student_proficiency/3
       }
     ]
@@ -57,7 +61,8 @@ defmodule OliWeb.Components.Delivery.ContentTableModel do
 
     ~H"""
     <div class="flex items-center">
-      <div class={"flex flex-shrink-0 rounded-full w-2 h-2 #{if @progress < 50, do: "bg-red-600", else: "bg-gray-500"}"}></div>
+      <div class={"flex flex-shrink-0 rounded-full w-2 h-2 #{if @progress < 50, do: "bg-red-600", else: "bg-gray-500"}"}>
+      </div>
       <%= if @patch_url_type == :instructor_dashboard do %>
         <.link
           class="ml-6 underline"
@@ -87,7 +92,12 @@ defmodule OliWeb.Components.Delivery.ContentTableModel do
     assigns = Map.merge(assigns, %{progress: parse_progress(container.progress)})
 
     ~H"""
-    <div class={if @progress < 50, do: "text-red-600 font-bold"} data-progress-check={if @progress >= 50, do: "true", else: "false"}><%= @progress %>%</div>
+    <div
+      class={if @progress < 50, do: "text-red-600 font-bold"}
+      data-progress-check={if @progress >= 50, do: "true", else: "false"}
+    >
+      <%= @progress %>%
+    </div>
     """
   end
 
@@ -95,7 +105,9 @@ defmodule OliWeb.Components.Delivery.ContentTableModel do
     assigns = Map.merge(assigns, %{container: container})
 
     ~H"""
-      <div class={if @container.student_proficiency == "Low", do: "text-red-600 font-bold"}><%= @container.student_proficiency %></div>
+    <div class={if @container.student_proficiency == "Low", do: "text-red-600 font-bold"}>
+      <%= @container.student_proficiency %>
+    </div>
     """
   end
 

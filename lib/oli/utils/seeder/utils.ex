@@ -36,6 +36,8 @@ defmodule Oli.Utils.Seeder.Utils do
   def ref(tag), do: %SeedRef{tag: tag}
 
   def random_tag(), do: uuid()
+  def random_tag(label) when is_atom(label), do: random_tag(to_string(label))
+  def random_tag(label), do: "#{label}_#{uuid()}"
 
   # do not add values for which tags are nil
   def tag(seeds, nil, _value), do: seeds

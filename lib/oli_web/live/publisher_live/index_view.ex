@@ -1,25 +1,11 @@
 defmodule OliWeb.PublisherLive.IndexView do
-  use Surface.LiveView, layout: {OliWeb.LayoutView, :live}
+  use OliWeb, :live_view
   use OliWeb.Common.SortableTable.TableHandlers
 
+  alias Oli.Inventories
   alias OliWeb.Common.{Breadcrumb, Filter, Listing, SessionContext}
   alias OliWeb.PublisherLive.{NewView, TableModel}
   alias OliWeb.Router.Helpers, as: Routes
-  alias Oli.Inventories
-  alias Surface.Components.Link
-
-  data(title, :string, default: "Publishers")
-  data(breadcrumbs, :any)
-
-  data(filter, :any, default: %{})
-  data(query, :string, default: "")
-  data(total_count, :integer, default: 0)
-  data(offset, :integer, default: 0)
-  data(limit, :integer, default: 20)
-  data(sort, :string, default: "sort")
-  data(page_change, :string, default: "page_change")
-  data(show_bottom_paging, :boolean, default: false)
-  data(additional_table_class, :string, default: "")
 
   @table_filter_fn &__MODULE__.filter_rows/3
   @table_push_patch_path &__MODULE__.live_path/2
@@ -56,36 +42,46 @@ defmodule OliWeb.PublisherLive.IndexView do
        breadcrumbs: breadcrumb(),
        publishers: publishers,
        table_model: table_model,
-       total_count: length(publishers)
+       total_count: length(publishers),
+       limit: 20
      )}
   end
 
+  attr :additional_table_class, :string, default: ""
+  attr :breadcrumbs, :any
+  attr :filter, :any, default: %{}
+  attr :limit, :integer, default: 20
+  attr :offset, :integer, default: 0
+  attr :page_change, :string, default: "page_change"
+  attr :query, :string, default: ""
+  attr :show_bottom_paging, :boolean, default: false
+  attr :sort, :string, default: "sort"
+  attr :title, :string, default: "Publishers"
+  attr :total_count, :integer, default: 0
+
   def render(assigns) do
-    ~F"""
-      <div class="d-flex p-3 justify-content-between">
-        <Filter
-          change="change_search"
-          reset="reset_search"
-          apply="apply_search"
-          query={@query}/>
+    ~H"""
+    <div class="d-flex p-3 justify-content-between">
+      <Filter.render change="change_search" reset="reset_search" apply="apply_search" query={@query} />
 
-        <Link class="btn btn-primary" to={Routes.live_path(@socket, NewView)}>
-          Create Publisher
-        </Link>
-      </div>
+      <.link class="btn btn-primary" href={Routes.live_path(@socket, NewView)}>
+        Create Publisher
+      </.link>
+    </div>
 
-      <div id="publishers-table" class="p-4">
-        <Listing
-          filter={@query}
-          table_model={@table_model}
-          total_count={@total_count}
-          offset={@offset}
-          limit={@limit}
-          sort={@sort}
-          page_change={@page_change}
-          show_bottom_paging={@show_bottom_paging}
-          additional_table_class={@additional_table_class}/>
-      </div>
+    <div id="publishers-table" class="p-4">
+      <Listing.render
+        filter={@query}
+        table_model={@table_model}
+        total_count={@total_count}
+        offset={@offset}
+        limit={@limit}
+        sort={@sort}
+        page_change={@page_change}
+        show_bottom_paging={@show_bottom_paging}
+        additional_table_class={@additional_table_class}
+      />
+    </div>
     """
   end
 end
