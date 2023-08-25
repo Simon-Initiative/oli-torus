@@ -4,11 +4,7 @@
   and more changes are introduced with every load/save cycle.
 */
 import { Descendant } from 'slate';
-import {
-  DeserializationContext,
-  contentMarkdownDeserializer,
-  deserializeNode,
-} from 'components/editing/markdown_editor/content_markdown_deserializer';
+import { contentMarkdownDeserializer } from 'components/editing/markdown_editor/content_markdown_deserializer';
 import { serializeMarkdown } from 'components/editing/markdown_editor/content_markdown_serializer';
 import { Model } from 'data/content/model/elements/factories';
 import { AllModelElements } from 'data/content/model/elements/types';

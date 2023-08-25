@@ -1,6 +1,7 @@
 import React from 'react';
 import { connect } from 'react-redux';
 import Appsignal from '@appsignal/javascript';
+import def from 'ajv/dist/vocabularies/applicator/additionalItems';
 import * as Immutable from 'immutable';
 import { Dispatch, State } from 'state';
 import { MultiInputSchema } from 'components/activities/multi_input/schema';
@@ -25,6 +26,7 @@ import { Objective } from 'data/content/objective';
 import {
   ActivityMap,
   ActivityReference,
+  EditorType,
   ResourceContent,
   ResourceContext,
   StructuredContent,
@@ -53,6 +55,7 @@ export interface PageEditorProps extends ResourceContext {
   activities: ActivityMap;
   featureFlags: FeatureFlags;
   appsignalKey: string | null;
+  defaultEditor: EditorType;
   onLoadPreferences: () => void;
 }
 
@@ -126,7 +129,11 @@ export class PageEditor extends React.Component<PageEditorProps, PageEditorState
   constructor(props: PageEditorProps) {
     super(props);
 
-    const { title, objectives, allObjectives, content, allTags } = props;
+    const { title, objectives, allObjectives, content, allTags, defaultEditor } = props;
+
+    window.preferences = {
+      editor: defaultEditor,
+    };
 
     const activityContexts = Immutable.OrderedMap<string, ActivityEditContext>(
       this.props.activityContexts.map((c) => {
@@ -648,3 +655,11 @@ export default connect<StateProps, DispatchProps, OwnProps>(
   mapStateToProps,
   mapDispatchToProps,
 )(PageEditor);
+
+declare global {
+  interface Window {
+    preferences?: {
+      editor: EditorType;
+    };
+  }
+}

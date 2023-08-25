@@ -1,5 +1,6 @@
 import * as Immutable from 'immutable';
 import { ActivityModelSchema } from 'components/activities/types';
+import { getDefaultEditor } from 'components/editing/markdown_editor/markdown_util';
 import * as Bank from 'data/content/bank';
 import { Model } from 'data/content/model/elements/factories';
 import { ModelElement } from 'data/content/model/elements/types';
@@ -185,6 +186,7 @@ export const createDefaultStructuredContent = (
 ): StructuredContent => ({
   type: 'content',
   id: guid(),
+  editor: getDefaultEditor(),
   children,
 });
 

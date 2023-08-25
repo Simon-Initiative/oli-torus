@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { ErrorBoundary } from 'components/common/ErrorBoundary';
 import { Editor } from 'components/editing/editor/Editor';
 import { SwitchToMarkdownModal } from 'components/editing/editor/SwitchToMarkdownModal';
@@ -48,11 +48,14 @@ export const SlateOrMarkdownEditor: React.FC<SlateOrMarkdownEditorProps> = ({
   initialHeight,
   allowBlockElements,
 }) => {
-  toolbarInsertDescs =
-    toolbarInsertDescs ||
-    blockInsertOptions({
-      type: allowBlockElements ? 'extended' : 'inline',
-    });
+  toolbarInsertDescs = useMemo(
+    () =>
+      toolbarInsertDescs ||
+      blockInsertOptions({
+        type: allowBlockElements ? 'extended' : 'inline',
+      }),
+    [allowBlockElements, toolbarInsertDescs],
+  );
 
   const onContentEdit = React.useCallback(
     (children: ModelElement[]) => {

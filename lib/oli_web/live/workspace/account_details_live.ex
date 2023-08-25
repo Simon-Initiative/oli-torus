@@ -62,19 +62,21 @@ defmodule OliWeb.Workspace.AccountDetailsLive do
       <Group.render label="Preferences" description="Adjust your authoring preferences">
         <%= render_preferences(assigns) %>
 
-        <div class="my-4">
+        <div class="my-8">
           <div class="mb-1">Dark Mode</div>
           <div id="theme-toggle" phx-hook="ThemeToggle" phx-update="ignore"></div>
         </div>
+
       </Group.render>
     </Groups.render>
     """
   end
 
   defp render_preferences(%{current_author: current_author} = assigns) do
+    editor = Accounts.get_author_preference(current_author, :editor)
     show_relative_dates = Accounts.get_author_preference(current_author, :show_relative_dates)
 
-    assigns = assign(assigns, show_relative_dates: show_relative_dates)
+    assigns = assign(assigns, show_relative_dates: show_relative_dates, editor: editor)
 
     ~H"""
     <div>
@@ -90,6 +92,16 @@ defmodule OliWeb.Workspace.AccountDetailsLive do
           Show dates formatted as relative to today
         </label>
       </div>
+
+      <div class="form-check mt-8">
+        <label for="editor_selector" class="form-select-label block mb-1">
+          Default editor
+        </label>
+        <select name="editor" id='editor' class='form-select' phx-hook="SelectListener" >
+          <option value='markdown' selected={@editor == "markdown"} >Markdown</option>
+          <option value='slate' selected={@editor == "slate"} >Rich text editor</option>
+        </select>
+      </div>
     </div>
     """
   end
@@ -101,6 +113,15 @@ defmodule OliWeb.Workspace.AccountDetailsLive do
       Accounts.set_author_preference(current_author.id, :show_relative_dates, checked)
 
     {:noreply, assign(socket, current_author: updated_author)}
+  end
+
+  def handle_event("change", %{"id" => "editor", "value" => value} , socket) do
+    %{current_author: current_author} = socket.assigns
+
+    {:ok, updated_author} =
+      Accounts.set_author_preference(current_author.id, :editor, value)
+
+    {:noreply, assign(socket, current_author: current_author)}
   end
 
   defp providers_for(%Author{} = author) do

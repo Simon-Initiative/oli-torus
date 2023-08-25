@@ -3,12 +3,10 @@ import { Descendant, Operation, Editor as SlateEditor, createEditor } from 'slat
 import { withHistory } from 'slate-history';
 import { Editable, RenderElementProps, RenderLeafProps, Slate, withReact } from 'slate-react';
 import { EditorToolbar } from 'components/editing/toolbar/editorToolbar/EditorToolbar';
-import { useToggle } from 'components/hooks/useToggle';
 import { Model } from 'data/content/model/elements/factories';
 import { Mark, Marks } from 'data/content/model/text';
 import { classNames } from 'utils/classNames';
 import { CommandContext, CommandDescription } from '../elements/commands/interfaces';
-import { SwitchToMarkdownModal } from './SwitchToMarkdownModal';
 import { backspaceBlockKeyDown, deleteBlockKeyDown } from './handlers/deleteblock';
 import { hotkeyHandler } from './handlers/hotkey';
 import { onKeyDown as listOnKeyDown } from './handlers/lists';

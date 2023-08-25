@@ -1,5 +1,6 @@
 import { AllModelElements, AllModelTypes } from 'data/content/model/elements/types';
 import { FormattedText } from 'data/content/model/text';
+import { DEFAULT_EDITOR, EditorType } from 'data/content/resource';
 
 export const MarkdownCompatibleTypes: AllModelTypes[] = [
   'p',
@@ -67,3 +68,7 @@ export const getMarkdownWarnings = (model: (AllModelElements | FormattedText)[])
 };
 
 const capitalize = (str: string): string => str.charAt(0).toUpperCase() + str.slice(1);
+
+export const getDefaultEditor = (): EditorType => {
+  return window.preferences?.editor || DEFAULT_EDITOR;
+};
