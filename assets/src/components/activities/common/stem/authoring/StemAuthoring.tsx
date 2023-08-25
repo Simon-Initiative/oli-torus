@@ -22,6 +22,7 @@ export const StemAuthoring: React.FC<Props> = ({
     <div className="flex-grow-1 mb-4">
       <SlateOrMarkdownEditor
         editMode={editMode}
+        allowBlockElements={true}
         projectSlug={projectSlug}
         placeholder="Question"
         content={stem.content}

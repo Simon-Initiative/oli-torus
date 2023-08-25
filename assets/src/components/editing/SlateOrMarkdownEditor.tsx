@@ -9,8 +9,10 @@ import { ModelElement } from 'data/content/model/elements/types';
 import { EditorType } from 'data/content/resource';
 import { ProjectSlug, ResourceSlug } from 'data/types';
 import { SwitchToSlateModal } from './markdown_editor/SwitchToSlateModal';
+import { blockInsertOptions } from './toolbar/editorToolbar/blocks/blockInsertOptions';
 
 type SlateOrMarkdownEditorProps = {
+  allowBlockElements: boolean;
   editMode: boolean; // Whether or not we can edit
   content: ModelElement[]; // Content to edit
   onEdit: (content: ModelElement[]) => void; // Edit handler
@@ -44,7 +46,14 @@ export const SlateOrMarkdownEditor: React.FC<SlateOrMarkdownEditorProps> = ({
   onEditorTypeChange,
   editorType,
   initialHeight,
+  allowBlockElements,
 }) => {
+  toolbarInsertDescs =
+    toolbarInsertDescs ||
+    blockInsertOptions({
+      type: allowBlockElements ? 'extended' : 'inline',
+    });
+
   const onContentEdit = React.useCallback(
     (children: ModelElement[]) => {
       onEdit(children);
@@ -106,4 +115,8 @@ export const SlateOrMarkdownEditor: React.FC<SlateOrMarkdownEditorProps> = ({
       </ErrorBoundary>
     );
   }
+};
+
+SlateOrMarkdownEditor.defaultProps = {
+  allowBlockElements: true,
 };

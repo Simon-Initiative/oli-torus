@@ -52,6 +52,7 @@ export const StructuredContentEditor = ({
   return (
     <SlateOrMarkdownEditor
       editMode={editMode}
+      allowBlockElements={true}
       projectSlug={projectSlug}
       resourceSlug={resourceSlug}
       content={initialEditorValue}
