@@ -17,12 +17,13 @@ type SlateOrMarkdownEditorProps = {
   content: ModelElement[]; // Content to edit
   onEdit: (content: ModelElement[]) => void; // Edit handler
   onEditorTypeChange: (editorType: EditorType) => void;
+  editorType: EditorType;
   projectSlug: ProjectSlug;
   placeholder?: string;
   resourceSlug?: ResourceSlug;
   initialHeight?: number;
-  editorType?: EditorType;
   toolbarInsertDescs?: CommandDescription[]; // Content insertion options
+  style?: React.CSSProperties;
 };
 
 /*
@@ -47,6 +48,7 @@ export const SlateOrMarkdownEditor: React.FC<SlateOrMarkdownEditorProps> = ({
   editorType,
   initialHeight,
   allowBlockElements,
+  style,
 }) => {
   toolbarInsertDescs = useMemo(
     () =>
@@ -86,6 +88,7 @@ export const SlateOrMarkdownEditor: React.FC<SlateOrMarkdownEditorProps> = ({
           initialHeight={initialHeight}
           onSwitchModes={toggleSwitchToSlateModal}
           onEdit={onContentEdit}
+          style={style}
         />
         {switchToSlateModal && (
           <SwitchToSlateModal
@@ -99,7 +102,7 @@ export const SlateOrMarkdownEditor: React.FC<SlateOrMarkdownEditorProps> = ({
     return (
       <ErrorBoundary>
         <Editor
-          className="structured-content"
+          className="structured-content p-1"
           commandContext={{ projectSlug: projectSlug, resourceSlug: resourceSlug }}
           editMode={editMode}
           value={content}
@@ -107,6 +110,7 @@ export const SlateOrMarkdownEditor: React.FC<SlateOrMarkdownEditorProps> = ({
           onEdit={onContentEdit}
           toolbarInsertDescs={toolbarInsertDescs || []}
           onSwitchToMarkdown={toggleSwitchToMarkdownModal}
+          style={style}
         />
         {switchToMarkdownModal && (
           <SwitchToMarkdownModal

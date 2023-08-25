@@ -17,6 +17,7 @@ import { Checkbox } from 'components/misc/icons/checkbox/Checkbox';
 import { TabbedNavigation } from 'components/tabbed_navigation/Tabs';
 import { Choices } from 'data/activities/model/choices';
 import { getCorrectChoiceIds } from 'data/activities/model/responses';
+import { EditorType } from 'data/content/resource';
 import { defaultWriterContext } from 'data/content/writers/context';
 import { configureStore } from 'state/store';
 import { AuthoringElement, AuthoringElementProps } from '../AuthoringElement';
@@ -45,6 +46,7 @@ const CheckAllThatApply = () => {
           addOne={() => dispatch(CATAActions.addChoice(ActivityTypes.makeChoice('')))}
           setAll={(choices: ActivityTypes.Choice[]) => dispatch(Choices.setAll(choices))}
           onEdit={(id, content) => dispatch(Choices.setContent(id, content))}
+          onChangeEditorType={(id, editorType) => dispatch(Choices.setEditor(id, editorType))}
           onRemove={(id) => dispatch(CATAActions.removeChoiceAndUpdateRules(id))}
         />
       </TabbedNavigation.Tab>

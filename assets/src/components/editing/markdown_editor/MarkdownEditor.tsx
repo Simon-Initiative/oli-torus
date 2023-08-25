@@ -87,30 +87,29 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = (props) => {
   }, [value, saveChanges]);
 
   return (
-    <div data-color-mode={modeClass}>
-      <MDEditor
-        value={value}
-        onChange={onChange}
-        height={initialHeight || 600}
-        data-color-mode={modeClass}
-        onBlur={onBlur}
-        preview="edit"
-        commands={[
-          commands.bold,
-          commands.italic,
-          commands.strikethrough,
-          commands.title,
-          commands.divider,
-          commands.link,
-          commands.quote,
-          commands.code,
-          commands.image,
-          commands.divider,
-          commands.unorderedListCommand,
-          commands.orderedListCommand,
-        ]}
-        extraCommands={[switchToSlateCommand, commands.fullscreen]}
-      />
-    </div>
+    <MDEditor
+      value={value}
+      onChange={onChange}
+      height={initialHeight || 600}
+      data-color-mode={modeClass}
+      onBlur={onBlur}
+      preview="edit"
+      style={props.style}
+      commands={[
+        commands.bold,
+        commands.italic,
+        commands.strikethrough,
+        commands.title,
+        commands.divider,
+        commands.link,
+        commands.quote,
+        commands.code,
+        commands.image,
+        commands.divider,
+        commands.unorderedListCommand,
+        commands.orderedListCommand,
+      ]}
+      extraCommands={[switchToSlateCommand, commands.fullscreen]}
+    />
   );
 };

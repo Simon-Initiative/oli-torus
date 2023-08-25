@@ -13,6 +13,7 @@ export const SwitchToSlateModal: React.FC<Props> = ({ onConfirm, onCancel }) => 
       title="Switch to slate editor"
       onConfirm={onConfirm}
       onCancel={onCancel}
+      className="z-[100001]"
     >
       The Slate base editor is a rich WYSIWYG editor. As long as you do not use any content elements
       that are not supported by the this editor, you can switch back and forth. Would you like to
