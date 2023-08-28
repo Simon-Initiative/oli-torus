@@ -29,11 +29,14 @@ defmodule Oli.Qa.Reviewers.Content.SelectionWorker do
        }) do
     case Oli.Activities.Realizer.Selection.parse(selection) do
       {:ok, selection} ->
-        case Oli.Activities.Realizer.Selection.test(selection, %Source{
-               publication_id: publication_id,
-               blacklisted_activity_ids: [],
-               section_slug: ""
-             }) do
+        case Oli.Activities.Realizer.Selection.test(
+               selection,
+               %Source{
+                 publication_id: publication_id,
+                 blacklisted_activity_ids: [],
+                 section_slug: ""
+               }
+             ) do
           {:ok, _} ->
             :ok
 

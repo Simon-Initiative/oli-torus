@@ -130,6 +130,9 @@ defmodule OliWeb.Components.Delivery.Students do
           sort_order
         )
 
+      :email ->
+        Enum.sort_by(students, fn student -> student.email end, sort_order)
+
       :last_interaction ->
         Enum.sort_by(students, fn student -> student.last_interaction end, sort_order)
 
@@ -315,6 +318,7 @@ defmodule OliWeb.Components.Delivery.Students do
           "sort_by",
           [
             :name,
+            :email,
             :last_interaction,
             :progress,
             :overall_proficiency,

@@ -17,6 +17,8 @@ defmodule OliWeb do
   and import those modules here.
   """
 
+  def static_paths, do: ~w(assets fonts images favicon.ico robots.txt)
+
   def controller do
     quote do
       use Phoenix.Controller, layouts: [html: {OliWeb.LayoutView, :app}], namespace: OliWeb
@@ -137,6 +139,18 @@ defmodule OliWeb do
       import OliWeb.Components.Common
 
       import ReactPhoenix.ClientSide
+
+      # Routes generation with the ~p sigil
+      unquote(verified_routes())
+    end
+  end
+
+  def verified_routes do
+    quote do
+      use Phoenix.VerifiedRoutes,
+        endpoint: OliWeb.Endpoint,
+        router: OliWeb.Router,
+        statics: OliWeb.static_paths()
     end
   end
 

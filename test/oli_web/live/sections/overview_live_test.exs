@@ -290,7 +290,7 @@ defmodule OliWeb.Sections.OverviewLiveTest do
         if system_role_id == 2 do
           Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.SectionsView)
         else
-          Routes.delivery_path(OliWeb.Endpoint, :open_and_free_index)
+          ~p"/sections"
         end
 
       assert_redirected(view, redirect_path)
@@ -327,7 +327,7 @@ defmodule OliWeb.Sections.OverviewLiveTest do
         if system_role_id == 2 do
           Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.SectionsView)
         else
-          Routes.delivery_path(OliWeb.Endpoint, :open_and_free_index)
+          ~p"/sections"
         end
 
       assert_redirected(view, redirect_path)

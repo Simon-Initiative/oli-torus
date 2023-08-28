@@ -30,7 +30,9 @@ defmodule OliWeb.Delivery.ScoredActivities.AssessmentsTableModel do
       },
       %ColumnSpec{
         name: :students_completion,
-        label: "STUDENTS COMPLETION",
+        label: "STUDENTS PROGRESS",
+        tooltip:
+          "Progress is percent attempted of activities present on the page from the most recent page attempt. If there are no activities within the page, and if the student has visited that page, we count that as an attempt.",
         render_fn: &__MODULE__.render_students_completion_column/3
       }
     ]

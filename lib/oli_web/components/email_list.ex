@@ -15,7 +15,7 @@ defmodule OliWeb.Components.EmailList do
     ~H"""
       <div id={@id} class="flex flex-wrap rounded-md border border-gray-300 p-4 gap-2 cursor-text" phx-hook="EmailList" phx-event={@on_update}>
         <%= for user <- @users_list do %>
-          <div class="rounded-md bg-gray-100 cursor-default p-2 shadow-md flex items-center gap-2 user-email max-h-80 scroll-y-overflow">
+          <div class="rounded-md bg-gray-100 dark:bg-neutral-600 cursor-default p-2 shadow-md flex items-center gap-2 user-email max-h-80 scroll-y-overflow">
             <p><%= user %></p>
             <button
               phx-click={@on_remove}

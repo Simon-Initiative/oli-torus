@@ -84,7 +84,7 @@ defmodule OliWeb.Delivery.NewCourse do
      )}
   end
 
-  attr :breadcrumbs, :any, default: [Breadcrumb.new(%{full_title: "Course Creation"})]
+  attr(:breadcrumbs, :any, default: [Breadcrumb.new(%{full_title: "Course Creation"})])
 
   def render(assigns) do
     ~H"""
@@ -102,7 +102,7 @@ defmodule OliWeb.Delivery.NewCourse do
     """
   end
 
-  slot :inner_block, required: true
+  slot(:inner_block, required: true)
 
   defp header(assigns) do
     ~H"""
@@ -115,7 +115,7 @@ defmodule OliWeb.Delivery.NewCourse do
     """
   end
 
-  attr :flash, :any, default: %{}
+  attr(:flash, :any, default: %{})
 
   defp render_flash(assigns) do
     ~H"""
@@ -408,7 +408,7 @@ defmodule OliWeb.Delivery.NewCourse do
        to:
          if(socket.assigns.lti_params,
            do: Routes.delivery_path(socket, :index),
-           else: Routes.delivery_path(socket, :open_and_free_index)
+           else: Routes.live_path(socket, OliWeb.Delivery.OpenAndFreeIndex)
          )
      )}
   end

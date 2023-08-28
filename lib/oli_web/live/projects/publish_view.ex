@@ -151,8 +151,8 @@ defmodule OliWeb.Projects.PublishView do
               active_publication={@active_publication}
               active_publication_changes={@active_publication_changes}
               auto_update_sections={@auto_update_sections}
-              changeset={@changeset}
               form_changed="form_changed"
+              changeset={@changeset |> to_form()}
               has_changes={@has_changes}
               latest_published_publication={@latest_published_publication}
               project={@project}
@@ -188,34 +188,28 @@ defmodule OliWeb.Projects.PublishView do
 
   def handle_event(
         "form_changed",
-        %{"auto_push_update" => auto_push_update, "description" => description},
+        %{
+          "publication" => %{"auto_push_update" => auto_push_update}
+        },
         socket
       ) do
     {:noreply,
      assign(socket,
-       auto_update_sections: string_to_bool(auto_push_update),
-       description: description
+       auto_update_sections: string_to_bool(auto_push_update)
      )}
   end
 
-  def handle_event(
-        "publish_active",
-        %{
-          "active_publication_id" => active_publication_id,
-          "auto_push_update" => auto_push_update,
-          "description" => description
-        },
-        socket
-      ) do
+  def handle_event("publish_active", %{"publication" => publication}, socket) do
     project = socket.assigns.project
 
-    with {:ok, description} <- description |> trap_nil(),
-         {active_publication_id, ""} <- active_publication_id |> Integer.parse(),
+    with {:ok, description} <- Map.get(publication, "description") |> trap_nil(),
+         {active_publication_id, ""} <-
+           Map.get(publication, "active_publication_id") |> Integer.parse(),
          {:ok} <- check_active_publication_id(project.slug, active_publication_id),
          previous_publication <-
            Publishing.get_latest_published_publication_by_slug(project.slug),
          {:ok, new_publication} <- Publishing.publish_project(project, description) do
-      if auto_push_update == "true" do
+      if Map.get(publication, "auto_push_update") == "true" do
         Publishing.push_publication_update_to_sections(
           project,
           previous_publication,

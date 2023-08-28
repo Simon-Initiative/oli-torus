@@ -18,12 +18,16 @@ defmodule OliWeb.Components.Delivery.ContentTableModel do
       },
       %ColumnSpec{
         name: :student_completion,
-        label: "STUDENT COMPLETION",
+        label: "STUDENT PROGRESS",
+        tooltip:
+          "Progress is percent attempted of activities present on the page from the most recent page attempt. If there are no activities within the page, and if the student has visited that page, we count that as an attempt.",
         render_fn: &__MODULE__.render_student_completion/3
       },
       %ColumnSpec{
         name: :student_proficiency,
         label: "STUDENT PROFICIENCY",
+        tooltip:
+          "For all students, or one specific student, proficiency for a learning objective will be calculated off the percentage of correct answers for first part attempts within first activity attempts - for those parts that have that learning objective or any of its sub-objectives attached to it.",
         render_fn: &__MODULE__.render_student_proficiency/3
       }
     ]

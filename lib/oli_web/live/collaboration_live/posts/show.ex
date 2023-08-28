@@ -59,7 +59,7 @@ defmodule OliWeb.CollaborationLive.Posts.Show do
             <small class="torus-small"><%= render_date(@post.inserted_at) %></small>
           </div>
 
-          <div class="flex gap-2 items-center">
+          <div :if={!@parent_is_archived} class="flex gap-2 items-center">
             <%= if @post.user_id == @user_id do %>
               <button
                 class="btn btn-link p-0 text-delivery-primary hover:text-delivery-primary-700 disabled:text-gray-200"
@@ -206,8 +206,8 @@ defmodule OliWeb.CollaborationLive.Posts.Show do
               />
             </div>
           </.inputs_for>
-          <div class={"flex w-full justify-between #{if @is_threaded, do: "h-10"}"}>
-            <%= if @is_threaded and !@is_reply and has_replies?(@post, @parent_replies, @post.id) do %>
+          <div class="flex w-full justify-between">
+            <div class="h-10" :if={@is_threaded and !@is_reply and has_replies?(@post, @parent_replies, @post.id)}>
               <button
                 phx-click="set_selected"
                 type="button"
@@ -219,7 +219,7 @@ defmodule OliWeb.CollaborationLive.Posts.Show do
                   <%= if @is_selected, do: "Hide replies", else: "Show #{@post.replies_count} replies" %>
                 </small>
               </button>
-            <% end %>
+            </div>
             <div class="flex gap-2 ml-auto">
               <button
                 type="button"
@@ -286,14 +286,14 @@ defmodule OliWeb.CollaborationLive.Posts.Show do
           phx-submit="create_post"
           class="flex mt-2 flex-col items-end gap-2"
         >
-          <div class="hidden">
+          <div :if={!@parent_is_archived} class="hidden">
             <.input type="hidden" field={@form[:user_id]} id={"post_user_id_#{@index}"} />
             <.input type="hidden" field={@form[:section_id]} id={"post_section_id_#{@index}"} />
             <.input type="hidden" field={@form[:resource_id]} id={"post_resource_id_#{@index}"} />
             <.input type="hidden" field={@form[:parent_post_id]} id={"post_parent_post_id_#{@index}"} />
             <.input type="hidden" field={@form[:thread_root_id]} id={"post_thread_root_id_#{@index}"} />
           </div>
-          <.inputs_for :let={pc} field={@form[:content]} id={"post_content_#{@index}"}>
+          <.inputs_for :if={!@parent_is_archived} :let={pc} field={@form[:content]} id={"post_content_#{@index}"}>
             <div class="w-full">
               <.input
                 type="textarea"
@@ -307,8 +307,8 @@ defmodule OliWeb.CollaborationLive.Posts.Show do
               />
             </div>
           </.inputs_for>
-          <div class={"flex w-full justify-between #{if @is_threaded, do: "h-10"}"}>
-            <%= if @is_threaded and !@is_reply and has_replies?(@post, @parent_replies, @post.id) do %>
+          <div class="flex w-full justify-between">
+            <div class="h-10" :if={@is_threaded and !@is_reply and has_replies?(@post, @parent_replies, @post.id)}>
               <button
                 phx-click="set_selected"
                 type="button"
@@ -320,8 +320,8 @@ defmodule OliWeb.CollaborationLive.Posts.Show do
                   <%= if @is_selected, do: "Hide replies", else: "Show #{@post.replies_count} replies" %>
                 </small>
               </button>
-            <% end %>
-            <div class="collab-space__send-button-with-checkbox ml-auto">
+            </div>
+            <div :if={!@parent_is_archived} class="collab-space__send-button-with-checkbox ml-auto">
               <%= if @is_student and @is_anonymous do %>
                 <div class="hidden">
                   <.input type="checkbox" id={"reply_#{@post.id}_checkbox"} field={@form[:anonymous]} />

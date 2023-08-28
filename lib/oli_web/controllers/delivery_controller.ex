@@ -29,7 +29,15 @@ defmodule OliWeb.DeliveryController do
 
   def instructor_dashboard(conn, %{"section_slug" => section_slug}) do
     # redirect to live view
-    redirect(conn, to: Routes.live_path(conn, OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive, section_slug, "overview"))
+    redirect(conn,
+      to:
+        Routes.live_path(
+          conn,
+          OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
+          section_slug,
+          "overview"
+        )
+    )
   end
 
   def index(conn, _params) do
@@ -71,14 +79,6 @@ defmodule OliWeb.DeliveryController do
           redirect_to_page_delivery(conn, section)
         end
     end
-  end
-
-  def open_and_free_index(conn, _params) do
-    user = conn.assigns.current_user
-
-    sections = Sections.list_user_open_and_free_sections(user)
-
-    render(conn, "open_and_free_index.html", sections: sections, user: user)
   end
 
   defp render_course_not_configured(conn) do
@@ -446,6 +446,7 @@ defmodule OliWeb.DeliveryController do
           |> Enum.map(
             &%{
               name: &1.name,
+              email: &1.email,
               last_interaction: &1.last_interaction,
               progress: &1.progress,
               overall_proficiency: &1.overall_proficiency,
@@ -455,6 +456,7 @@ defmodule OliWeb.DeliveryController do
           |> DataTable.new()
           |> DataTable.headers([
             :name,
+            :email,
             :last_interaction,
             :progress,
             :overall_proficiency,

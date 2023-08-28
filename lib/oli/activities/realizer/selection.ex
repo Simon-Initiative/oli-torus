@@ -54,8 +54,7 @@ defmodule Oli.Activities.Realizer.Selection do
   end
 
   @doc """
-  Tests the fulfillment of a selection by querying the database for matching activities, but
-  only returning one result to save bandwidth.
+  Tests the fulfillment of a selection by querying the database for matching activities.
 
   Returns {:ok, %Result{}} when the selection is filled.
 
@@ -65,7 +64,7 @@ defmodule Oli.Activities.Realizer.Selection do
   Returns {:error, e} on a failure to execute the query.
   """
   def test(%Selection{} = selection, %Source{} = source) do
-    run(selection, source, %Paging{limit: 1, offset: 0})
+    run(selection, source, %Paging{limit: selection.count, offset: 0})
   end
 
   defp run(%Selection{count: count, logic: logic}, %Source{} = source, %Paging{} = paging) do
