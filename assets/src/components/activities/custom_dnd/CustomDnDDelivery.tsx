@@ -195,10 +195,7 @@ export const CustomDnDComponent: React.FC = () => {
           />
         )}
         <FocusedHints focusedPart={focusedPart} />
-        <div className="h-7 text-left">
-          {working || <FocusedFeedback focusedPart={focusedPart} />}
-          {working && <WorkingMessage />}
-        </div>
+        {working ? <WorkingMessage /> : <FocusedFeedback focusedPart={focusedPart} />}
       </div>
     </div>
   );
