@@ -1,5 +1,6 @@
 defmodule OliWeb.SystemMessageLive.ShowView do
-  use OliWeb, :live_view
+  use Phoenix.LiveView, layout: {OliWeb.LayoutView, :live_no_flash}
+  use Phoenix.HTML
 
   alias Oli.Notifications
   alias Oli.Notifications.PubSub
@@ -19,7 +20,7 @@ defmodule OliWeb.SystemMessageLive.ShowView do
     {:ok, assign(socket, messages: messages)}
   end
 
-  attr :messages, :list, default: []
+  attr(:messages, :list, default: [])
 
   def render(assigns) do
     ~H"""
