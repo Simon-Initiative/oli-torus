@@ -136,6 +136,7 @@ defmodule Oli.MixProject do
       {:bamboo_phoenix, "~> 1.0"},
       {:base32_crockford, "~> 1.0.0"},
       {:bcrypt_elixir, "~> 2.2"},
+      {:broadway, "1.0.7"},
       {:cachex, "~> 3.5"},
       {:credo, "~> 1.6", only: [:dev, :test], runtime: false},
       {:csv, "~> 3.0.5"},
