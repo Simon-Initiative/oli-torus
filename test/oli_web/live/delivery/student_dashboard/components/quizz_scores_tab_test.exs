@@ -101,9 +101,10 @@ defmodule OliWeb.Delivery.StudentDashboard.Components.QuizzScoresTabTest do
     end
 
     test "can access page if enrolled to section", %{
+      conn: conn,
       instructor: instructor,
       section: section,
-      conn: conn
+      page_revision: page_revision
     } do
       student = insert(:user)
       Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
@@ -119,7 +120,11 @@ defmodule OliWeb.Delivery.StudentDashboard.Components.QuizzScoresTabTest do
              )
 
       # QuizScores tab content gets rendered
-      assert has_element?(view, "h6", "There are no quiz scores to show")
+      assert has_element?(
+               view,
+               "div",
+               "#{page_revision.title}"
+             )
     end
   end
 
@@ -132,8 +137,7 @@ defmodule OliWeb.Delivery.StudentDashboard.Components.QuizzScoresTabTest do
     } do
       student = insert(:user)
 
-      {:ok,
-       section: section, unit_one_revision: _unit_one_revision, page_revision: _page_revision} =
+      {:ok, section: section, unit_one_revision: _unit_one_revision, page_revision: page_revision} =
         section_with_assessment(nil)
 
       Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
@@ -148,7 +152,11 @@ defmodule OliWeb.Delivery.StudentDashboard.Components.QuizzScoresTabTest do
                "Quiz Scores"
              )
 
-      assert has_element?(view, "h6", "There are no quiz scores to show")
+      assert has_element?(
+               view,
+               "div",
+               "#{page_revision.title}"
+             )
     end
 
     test "gets rendered correctly for a student that has not yet finished a quizz", %{
@@ -216,7 +224,7 @@ defmodule OliWeb.Delivery.StudentDashboard.Components.QuizzScoresTabTest do
 
       Sections.unenroll_learner(student.id, section.id)
 
-      assert Oli.Grading.get_scores_for_section_and_user(section, student.id) |> length() == 3
+      assert Oli.Grading.get_scores_for_section_and_user(section.id, student.id) |> length() == 6
 
       {:ok, view, _html} =
         live(conn, live_view_students_dashboard_route(section.slug, student.id, :quizz_scores))
@@ -237,6 +245,24 @@ defmodule OliWeb.Delivery.StudentDashboard.Components.QuizzScoresTabTest do
                view,
                "div",
                "#{graded_page_5.title}"
+             )
+    end
+
+    test "renders message when there are no quiz scores to show", %{
+      conn: conn,
+      instructor: instructor
+    } do
+      student = insert(:user)
+      section = insert(:section, type: :enrollable, open_and_free: true)
+      Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
+
+      {:ok, view, _html} =
+        live(conn, live_view_students_dashboard_route(section.slug, student.id, :quizz_scores))
+
+      assert has_element?(
+               view,
+               "h6",
+               "There are no quiz scores to show"
              )
     end
 
@@ -356,11 +382,11 @@ defmodule OliWeb.Delivery.StudentDashboard.Components.QuizzScoresTabTest do
              |> render() =~ graded_page_1.title
 
       assert view
-             |> element("table.instructor_dashboard_table > tbody > tr:nth-child(2)")
+             |> element("table.instructor_dashboard_table > tbody > tr:nth-child(3)")
              |> render() =~ graded_page_3.title
 
       assert view
-             |> element("table.instructor_dashboard_table > tbody > tr:nth-child(3)")
+             |> element("table.instructor_dashboard_table > tbody > tr:nth-child(5)")
              |> render() =~ graded_page_5.title
 
       ## sorting by student
@@ -380,15 +406,15 @@ defmodule OliWeb.Delivery.StudentDashboard.Components.QuizzScoresTabTest do
         )
 
       assert view
-             |> element("table.instructor_dashboard_table > tbody > tr:first-child")
+             |> element("table.instructor_dashboard_table > tbody > tr:nth-child(2)")
              |> render() =~ graded_page_5.title
 
       assert view
-             |> element("table.instructor_dashboard_table > tbody > tr:nth-child(2)")
+             |> element("table.instructor_dashboard_table > tbody > tr:nth-child(4)")
              |> render() =~ graded_page_3.title
 
       assert view
-             |> element("table.instructor_dashboard_table > tbody > tr:nth-child(3)")
+             |> element("table.instructor_dashboard_table > tbody > tr:nth-child(6)")
              |> render() =~ graded_page_1.title
     end
 
@@ -477,7 +503,7 @@ defmodule OliWeb.Delivery.StudentDashboard.Components.QuizzScoresTabTest do
       ## aplies pagination
       params = %{
         limit: 1,
-        offset: 1
+        offset: 2
       }
 
       {:ok, view, _html} =
