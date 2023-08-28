@@ -74,7 +74,7 @@ defmodule OliWeb.Delivery.StudentDashboard.StudentDashboardLive do
         active_tab: String.to_existing_atom(params["active_tab"])
       )
       |> assign_new(:scores, fn ->
-        %{scores: Oli.Grading.get_scores_for_section_and_user(socket.assigns.section, socket.assigns.student.id)}
+        %{scores: Oli.Grading.get_scores_for_section_and_user(socket.assigns.section.id, socket.assigns.student.id)}
       end)
 
     {:noreply, socket}

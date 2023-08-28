@@ -8,9 +8,9 @@ defmodule Oli.Grading do
   import Ecto.Query, warn: false
   import Oli.Utils, only: [log_error: 2]
 
-  alias Oli.Publishing.DeliveryResolver
+  alias Oli.Publishing.{DeliveryResolver, PublishedResource}
   alias Oli.Delivery.Sections
-  alias Oli.Delivery.Sections.{Section}
+  alias Oli.Delivery.Sections.{Section, SectionResource, SectionsProjectsPublications}
   alias Oli.Delivery.Attempts.Core, as: Attempts
   alias Oli.Delivery.Attempts.Core.ResourceAccess
   alias Oli.Grading.GradebookRow
@@ -20,6 +20,7 @@ defmodule Oli.Grading do
   alias Lti_1p3.Tool.Services.AGS.Score
   alias Oli.Resources.Revision
   alias OliWeb.Common.Utils
+  alias Oli.Repo
 
   @doc """
   If grade passback services 2.0 is enabled, sends the current state of a ResourceAccess
@@ -216,37 +217,35 @@ defmodule Oli.Grading do
 
   `[%GradebookScore{}, GradebookScore{}, ...]`
   """
-  def get_scores_for_section_and_user(%Section{} = section, student_id) do
-    # get publication page resources, filtered by graded: true
-    graded_pages = Sections.fetch_scored_pages(section.slug)
+  def get_scores_for_section_and_user(section_id, student_id) do
+    resource_type_id = Oli.Resources.ResourceType.get_id_by_type("page")
 
-    # create a map of all resource accesses, keyed off resource id
-    resource_accesses = fetch_resource_accesses(section.id)
-
-    Enum.reduce(Enum.reverse(graded_pages), [], fn revision, acc ->
-      scores =
-        case resource_accesses[revision.resource_id] do
-          %{^student_id => student_resource_accesses} ->
-            case student_resource_accesses do
-              %ResourceAccess{score: score, out_of: out_of, was_late: was_late} ->
-                %GradebookScore{
-                  resource_id: revision.resource_id,
-                  label: revision.title,
-                  score: score,
-                  out_of: out_of,
-                  was_late: was_late
-                }
-
-              _ ->
-                nil
-            end
-
-          _ ->
-            nil
-        end
-
-      if scores != nil, do: [scores | acc], else: acc
-    end)
+    Repo.all(
+      from(
+        sr in SectionResource,
+        join: sec in Section,
+        on: sec.id == sr.section_id,
+        join: spp in SectionsProjectsPublications,
+        on: spp.section_id == sec.id and spp.project_id == sr.project_id,
+        join: pr in PublishedResource,
+        on: pr.publication_id == spp.publication_id and pr.resource_id == sr.resource_id,
+        join: rev in Revision,
+        on: rev.id == pr.revision_id,
+        left_join: ra in ResourceAccess,
+        on: ra.resource_id == rev.resource_id and ra.user_id == ^student_id,
+        where:
+          sec.id == ^section_id and rev.deleted == false and
+            rev.resource_type_id == ^resource_type_id and
+            rev.graded == true,
+        select: %GradebookScore{
+          resource_id: rev.resource_id,
+          label: rev.title,
+          score: ra.score,
+          out_of: ra.out_of,
+          was_late: ra.was_late
+        }
+      )
+    )
   end
 
   @doc """
