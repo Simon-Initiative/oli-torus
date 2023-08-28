@@ -37,8 +37,8 @@ defmodule OliWeb.Admin.Institutions.IndexLive do
 
   def render(assigns) do
     ~H"""
-    <div class="container">
-      <ul class="nav nav-tabs mb-3" role="tablist">
+    <div class="flex flex-col gap-2">
+      <ul class="nav nav-tabs" role="tablist">
         <li class="nav-item">
           <b
             phx-click="change_active_tab"
@@ -72,22 +72,18 @@ defmodule OliWeb.Admin.Institutions.IndexLive do
           </b>
         </li>
       </ul>
-      <div class="tab-content">
+      <div>
         <div
           :if={@active_tab == :institutions_tab}
           id="institutions"
           role="tabpanel"
           aria-labelledby="institutions_tab"
+          class="flex flex-col gap-2"
         >
-          <div class="d-flex flex-row mb-2">
-            <div class="flex-grow-1"></div>
-            <div>
-              <%= link("New Institution",
-                to: Routes.institution_path(OliWeb.Endpoint, :new),
-                class: "btn btn-md btn-outline-primary"
-              ) %>
-            </div>
-          </div>
+          <%= link("New Institution",
+            to: Routes.institution_path(OliWeb.Endpoint, :new),
+            class: "btn btn-md btn-outline-primary self-end"
+          ) %>
 
           <%= if Enum.count(@institutions) == 0 do %>
             <div class="my-5 text-center">
