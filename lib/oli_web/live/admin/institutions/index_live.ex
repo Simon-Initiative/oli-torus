@@ -1,12 +1,18 @@
 defmodule OliWeb.Admin.Institutions.IndexLive do
   use OliWeb, :live_view
+  require Logger
 
   alias Oli.Institutions
   alias Oli.Predefined
+  alias Oli.Slack
+
   alias OliWeb.Common.Breadcrumb
   alias OliWeb.Router.Helpers, as: Routes
   alias OliWeb.Components.Modal
+
   alias Phoenix.LiveView.JS
+
+  on_mount(Oli.LiveSessionPlugs.SetCurrentAuthor)
 
   def mount(_params, session, socket) do
     institutions = Institutions.list_institutions()
@@ -15,13 +21,14 @@ defmodule OliWeb.Admin.Institutions.IndexLive do
       assign(
         socket,
         institutions: institutions,
+        institutions_list: [{"New institution", nil} | Enum.map(institutions, &{&1.name, &1.id})],
         pending_registrations: Institutions.list_pending_registrations(),
         breadcrumbs: root_breadcrumbs(),
         country_codes: Predefined.country_codes(),
-        lti_config_defaults: Predefined.lti_config_defaults(),
-        world_universities_and_domains: Predefined.world_universities_and_domains(),
         ctx: OliWeb.Common.SessionContext.init(socket, session),
-        selected_pending_registration: nil,
+        registration_changeset: nil,
+        institution_id: nil,
+        form_disabled?: false,
         active_tab: :institutions_tab
       )
 
@@ -31,7 +38,7 @@ defmodule OliWeb.Admin.Institutions.IndexLive do
   def render(assigns) do
     ~H"""
     <div class="container">
-      <ul class="nav nav-tabs mb-3" id="institutions_tab" role="tablist">
+      <ul class="nav nav-tabs mb-3" role="tablist">
         <li class="nav-item">
           <b
             phx-click="change_active_tab"
@@ -163,27 +170,24 @@ defmodule OliWeb.Admin.Institutions.IndexLive do
                         class="btn btn-sm btn-outline-primary ml-2"
                         phx-click={
                           JS.push("select_pending_registration",
-                            value: %{registration_id: pending_registration.id}
+                            value: %{registration_id: pending_registration.id, action: "review"}
                           )
                           |> Modal.show_modal("review-registration-modal")
                         }
                       >
                         Review
                       </button>
-                      <%= link("Decline",
-                        to:
-                          Routes.institution_path(
-                            OliWeb.Endpoint,
-                            :remove_registration,
-                            pending_registration
-                          ),
-                        method: :delete,
-                        data: [
-                          confirm:
-                            "Are you sure you want to decline this request from \"#{pending_registration.name}\"?"
-                        ],
-                        class: "btn btn-sm btn-outline-danger ml-2"
-                      ) %>
+                      <button
+                        class="btn btn-sm btn-outline-danger ml-2"
+                        phx-click={
+                          JS.push("select_pending_registration",
+                            value: %{registration_id: pending_registration.id, action: "decline"}
+                          )
+                          |> Modal.show_modal("decline-registration-modal")
+                        }
+                      >
+                        Decline
+                      </button>
                     </td>
                   </tr>
                 <% end %>
@@ -194,178 +198,166 @@ defmodule OliWeb.Admin.Institutions.IndexLive do
       </div>
     </div>
 
+    <Modal.modal class="w-5/6" id="decline-registration-modal">
+      <:title>Decline Registration</:title>
+      <div
+        data-hide_modal={Modal.hide("#decline-registration-modal")}
+        id="decline-registration-modal-trigger"
+      />
+      <div :if={@registration_changeset} class="contents">
+        <p>
+          Are you sure you want to decline this request from "<%= @registration_changeset.name %>"?
+        </p>
+        <div :if={@registration_changeset} class="flex justify-end border-0">
+          <button type="button" class="btn btn-secondary mr-2">
+            Cancel
+          </button>
+          <button
+            phx-click="decline_registration"
+            phx-value-registration_id={@registration_changeset.data.id}
+            type="button"
+            class="submit btn btn-danger"
+          >
+            Confirm
+          </button>
+        </div>
+      </div>
+    </Modal.modal>
+
     <Modal.modal class="w-5/6" id="review-registration-modal">
       <:title>Review Registration</:title>
-      <div :if={@selected_pending_registration}>
-        <%= form_for Oli.Institutions.change_pending_registration(@selected_pending_registration), Routes.institution_path(OliWeb.Endpoint, :approve_registration), fn f -> %>
-          <%= hidden_input(f, :id) %>
-          <div class="box-form-container">
-            <div class="grid grid-cols-12">
-              <div class="form-group col-span-12 lg:col-span-6 lg:pr-3">
-                <h6>Institution Details</h6>
+      <div
+        data-hide_modal={Modal.hide("#review-registration-modal")}
+        id="review-registration-modal-trigger"
+      />
+      <div :if={@registration_changeset} class="contents">
+        <div>
+          <.form for={@registration_changeset} phx-submit="save_registration">
+            <div class="box-form-container">
+              <div class="flex flex-col md:flex-row gap-2 md:gap-4 justify-between">
+                <div class="form-group flex-1">
+                  <h6 class="mb-2">Institution Details</h6>
 
-                <div class="form-label-group">
-                  <%= text_input(f, :name,
-                    class:
-                      "institution-name typeahead form-control " <>
-                        error_class(f, :name, "is-invalid"),
-                    placeholder: "Institution Name",
-                    required: true
-                  ) %>
-                  <%= label(f, :name, "Institution Name", class: "control-label") %>
-                  <%= error_tag(f, :name) %>
+                  <.input
+                    variant="outlined"
+                    phx-change="select_existing_institution"
+                    type="select"
+                    options={@institutions_list}
+                    field={@registration_changeset[:institution_id]}
+                    value={@institution_id}
+                    label="Select Institution"
+                  />
+                  <.input
+                    variant="outlined"
+                    class="read-only:bg-gray-100"
+                    readonly={@form_disabled?}
+                    field={@registration_changeset[:name]}
+                    label="Institution Name"
+                    required
+                  />
+                  <.input
+                    variant="outlined"
+                    class="read-only:bg-gray-100"
+                    readonly={@form_disabled?}
+                    field={@registration_changeset[:institution_url]}
+                    label="Institution URL"
+                    required
+                  />
+                  <.input
+                    variant="outlined"
+                    class="read-only:bg-gray-100"
+                    readonly={@form_disabled?}
+                    field={@registration_changeset[:institution_email]}
+                    label="Contact Email"
+                    required
+                  />
+                  <.input
+                    variant="outlined"
+                    class="disabled:bg-gray-100"
+                    disabled={@form_disabled?}
+                    type="select"
+                    options={@country_codes}
+                    field={@registration_changeset[:country_code]}
+                    label="Select Country"
+                    required
+                  />
                 </div>
 
-                <div class="form-label-group">
-                  <%= text_input(f, :institution_url,
-                    class:
-                      "institution-url form-control " <>
-                        error_class(f, :institution_url, "is-invalid"),
-                    placeholder: "Institution URL",
-                    required: true
-                  ) %>
-                  <%= label(f, :institution_url, "Institution URL") %>
-                  <%= error_tag(f, :institution_url) %>
-                </div>
+                <hr class="block md:hidden mb-6" />
 
-                <div id="create-new-msg" class="mb-3 px-2" style="display: none">
-                  <div class="text-success">
-                    A <b>new</b> institution will be created for this registration.
-                  </div>
-                  <div class="text-dark">
-                    To create a registration for an existing institution, the <b>Institution URL</b>
-                    must match an existing institution.
-                  </div>
-                </div>
+                <div class="form-group flex-1">
+                  <h6 class="mb-2">LTI 1.3 Configuration</h6>
 
-                <div id="use-existing-msg" class="mb-3 px-2" style="display: none">
-                  <div class="text-primary">
-                    An <b>existing</b> institution will be used for this registration:
-                  </div>
-                  <div class="my-2">
-                    <input
-                      type="text"
-                      id="use-existing-name"
-                      class="form-control text-primary"
-                      readonly
-                    />
-                  </div>
-                  <div class="text-dark">
-                    To create a new institution for this registration, the <b>Institution URL</b>
-                    must be different from an existing institution.
-                  </div>
-                </div>
-
-                <div id="institution-details">
-                  <div class="form-label-group">
-                    <%= email_input(f, :institution_email,
-                      class:
-                        "email form-control " <>
-                          error_class(f, :institution_email, "is-invalid"),
-                      placeholder: "Contact Email",
-                      required: true
-                    ) %>
-                    <%= label(f, :institution_email, "Contact Email", class: "control-label") %>
-                    <%= error_tag(f, :institution_email) %>
-                  </div>
-
-                  <div class="form-label-group">
-                    <%= select(f, :country_code, @country_codes,
-                      prompt: "Select Country",
-                      class: "form-control " <> error_class(f, :country_code, "is-invalid"),
-                      required: true
-                    ) %>
-                    <%= error_tag(f, :country_code) %>
-                  </div>
-                </div>
-              </div>
-
-              <div class="form-group col-span-12 lg:col-span-5 lg:border-l lg:pl-3">
-                <hr class="mb-4 lg:hidden border-top" />
-
-                <h6>LTI 1.3 Configuration</h6>
-
-                <div class="form-label-group">
-                  <%= text_input(f, :issuer, class: "form-control ", readonly: true) %>
-                  <%= label(f, :issuer, "Issuer", class: "control-label") %>
-                </div>
-
-                <div class="form-label-group">
-                  <%= text_input(f, :client_id, class: "form-control ", readonly: true) %>
-                  <%= label(f, :client_id, "Client ID", class: "control-label") %>
-                </div>
-
-                <div class="form-label-group">
-                  <%= text_input(f, :deployment_id, class: "form-control ", readonly: true) %>
-                  <%= label(f, :deployment_id, "Deployment ID", class: "control-label") %>
-                </div>
-
-                <div class="form-label-group">
-                  <%= text_input(f, :key_set_url,
-                    class: "key_set_url form-control " <> error_class(f, :key_set_url, "is-invalid"),
-                    placeholder: "Keyset URL",
-                    required: true
-                  ) %>
-                  <%= label(f, :key_set_url, "Keyset URL", class: "control-label") %>
-                  <%= error_tag(f, :key_set_url) %>
-                </div>
-
-                <div class="form-label-group">
-                  <%= text_input(f, :auth_token_url,
-                    class:
-                      "auth_token_url form-control " <>
-                        error_class(f, :auth_token_url, "is-invalid"),
-                    placeholder: "Auth Token URL",
-                    required: true
-                  ) %>
-                  <%= label(f, :auth_token_url, "Auth Token URL", class: "control-label") %>
-                  <%= error_tag(f, :auth_token_url) %>
-                </div>
-
-                <div class="form-label-group">
-                  <%= text_input(f, :auth_login_url,
-                    class:
-                      "auth_login_url form-control " <>
-                        error_class(f, :auth_login_url, "is-invalid"),
-                    placeholder: "Auth Login URL",
-                    required: true
-                  ) %>
-                  <%= label(f, :auth_login_url, "Auth Login URL", class: "control-label") %>
-                  <%= error_tag(f, :auth_login_url) %>
-                </div>
-
-                <div class="form-label-group">
-                  <%= text_input(f, :auth_server,
-                    class: "auth_server form-control " <> error_class(f, :auth_server, "is-invalid"),
-                    placeholder: "Auth Server URL",
-                    required: true
-                  ) %>
-                  <%= label(f, :auth_server, "Auth Server URL", class: "control-label") %>
-                  <%= error_tag(f, :auth_server) %>
-                </div>
-
-                <div class="form-label-group">
-                  <%= text_input(f, :line_items_service_domain,
-                    class:
-                      "line_items_service_domain form-control " <>
-                        error_class(f, :line_items_service_domain, "is-invalid"),
-                    placeholder: "Line items service domain"
-                  ) %>
-                  <%= label(f, :line_items_service_domain, "Line items service domain",
-                    class: "control-label"
-                  ) %>
-                  <%= error_tag(f, :line_items_service_domain) %>
+                  <.input
+                    variant="outlined"
+                    class="read-only:bg-gray-100"
+                    field={@registration_changeset[:issuer]}
+                    label="Issuer"
+                    readonly
+                  />
+                  <.input
+                    variant="outlined"
+                    class="read-only:bg-gray-100"
+                    field={@registration_changeset[:client_id]}
+                    label="Client ID"
+                    readonly
+                  />
+                  <.input
+                    variant="outlined"
+                    class="read-only:bg-gray-100"
+                    field={@registration_changeset[:deployment_id]}
+                    label="Deployment ID"
+                    readonly
+                  />
+                  <.input
+                    variant="outlined"
+                    class="read-only:bg-gray-100"
+                    field={@registration_changeset[:key_set_url]}
+                    label="Keyset URL"
+                    readonly
+                  />
+                  <.input
+                    variant="outlined"
+                    class="read-only:bg-gray-100"
+                    field={@registration_changeset[:auth_token_url]}
+                    label="Auth Token URL"
+                    readonly
+                  />
+                  <.input
+                    variant="outlined"
+                    class="read-only:bg-gray-100"
+                    field={@registration_changeset[:auth_login_url]}
+                    label="Auth Login URL"
+                    readonly
+                  />
+                  <.input
+                    variant="outlined"
+                    class="read-only:bg-gray-100"
+                    field={@registration_changeset[:auth_server]}
+                    label="Auth Server URL"
+                    readonly
+                  />
+                  <.input
+                    variant="outlined"
+                    class="read-only:bg-gray-100"
+                    field={@registration_changeset[:line_items_service_domain]}
+                    label="Line items service domain"
+                    readonly
+                  />
                 </div>
               </div>
             </div>
-          </div>
-          <div class="flex justify-end border-0">
-            <button type="button" class="btn btn-secondary mr-2">
-              Cancel
-            </button>
-            <%= submit("Approve", class: "submit btn btn-success") %>
-          </div>
-        <% end %>
+
+            <div class="flex justify-end border-0">
+              <button type="button" class="btn btn-secondary mr-2">
+                Cancel
+              </button>
+              <button type="submit" class="submit btn btn-success">
+                Approve
+              </button>
+            </div>
+          </.form>
+        </div>
       </div>
     </Modal.modal>
     """
@@ -375,16 +367,246 @@ defmodule OliWeb.Admin.Institutions.IndexLive do
     {:noreply, assign(socket, :active_tab, String.to_existing_atom(tab))}
   end
 
-  def handle_event("select_pending_registration", %{"registration_id" => registration_id}, socket) do
+  def handle_event(
+        "select_existing_institution",
+        %{"registration" => %{"institution_id" => ""}},
+        socket
+      ) do
+    registration_changeset =
+      Enum.find(
+        socket.assigns.pending_registrations,
+        &(&1.id == socket.assigns.registration_changeset.data.id)
+      )
+      |> Oli.Institutions.change_pending_registration()
+      |> to_form(as: "registration")
+
+    {:noreply,
+     assign(socket, registration_changeset: registration_changeset, form_disabled?: false)}
+  end
+
+  def handle_event(
+        "select_existing_institution",
+        %{"registration" => %{"institution_id" => institution_id}},
+        socket
+      ) do
+    institution_id = String.to_integer(institution_id)
+    institution = Enum.find(socket.assigns.institutions, &(&1.id == institution_id))
+
+    registration_changeset =
+      Enum.find(
+        socket.assigns.pending_registrations,
+        &(&1.id == socket.assigns.registration_changeset.data.id)
+      )
+      |> Map.merge(
+        Map.take(institution, [:name, :institution_url, :institution_email, :country_code])
+      )
+      |> Oli.Institutions.change_pending_registration()
+      |> to_form(as: "registration")
+
+    {:noreply,
+     assign(socket, registration_changeset: registration_changeset, form_disabled?: true)}
+  end
+
+  def handle_event(
+        "select_pending_registration",
+        %{"registration_id" => registration_id, "action" => "decline"},
+        socket
+      ) do
+    selected_registration =
+      Enum.find(
+        socket.assigns.pending_registrations,
+        &(&1.id == registration_id)
+      )
+
     {:noreply,
      assign(
        socket,
-       :selected_pending_registration,
-       Enum.find(
-         socket.assigns.pending_registrations |> IO.inspect(),
-         &(&1.id == registration_id)
-       )
+       registration_changeset:
+         selected_registration |> Oli.Institutions.change_pending_registration() |> to_form()
      )}
+  end
+
+  def handle_event(
+        "select_pending_registration",
+        %{"registration_id" => registration_id, "action" => "review"},
+        socket
+      ) do
+    selected_registration =
+      Enum.find(
+        socket.assigns.pending_registrations,
+        &(&1.id == registration_id)
+      )
+
+    matching_institution =
+      Enum.find(
+        socket.assigns.institutions,
+        &(&1.institution_url == selected_registration.institution_url)
+      )
+
+    # If there's already an institution with that url, suggest it as the institution that will be
+    # related to the registration
+    {registration_changeset, institution_id} =
+      if matching_institution do
+        {selected_registration
+         |> Map.merge(
+           Map.take(matching_institution, [
+             :name,
+             :institution_url,
+             :institution_email,
+             :country_code
+           ])
+         )
+         |> Oli.Institutions.change_pending_registration()
+         |> to_form(as: "registration"), matching_institution.id}
+      else
+        {selected_registration
+         |> Oli.Institutions.change_pending_registration()
+         |> to_form(as: "registration"), nil}
+      end
+
+    {:noreply,
+     assign(
+       socket,
+       registration_changeset: registration_changeset,
+       institution_id: institution_id,
+       form_disabled?: !is_nil(institution_id)
+     )}
+  end
+
+  def handle_event("save_registration", %{"registration" => registration}, socket) do
+    issuer = registration["issuer"]
+    client_id = registration["client_id"]
+
+    # handle the case where deployment_id is nil in the html form, causing this attr
+    # to be and empty string
+    deployment_id =
+      case registration["deployment_id"] do
+        "" -> nil
+        deployment_id -> deployment_id
+      end
+
+    socket =
+      case Institutions.get_pending_registration(issuer, client_id, deployment_id) do
+        nil ->
+          socket
+          |> put_flash(
+            :error,
+            "Pending registration with issuer '#{issuer}', client_id '#{client_id}' and deployment_id '#{deployment_id}' does not exist"
+          )
+
+        pending_registration ->
+          with {:ok, pending_registration} <-
+                 Institutions.update_pending_registration(
+                   pending_registration,
+                   registration
+                 ),
+               {:ok, {institution, registration, _deployment}} <-
+                 Institutions.approve_pending_registration(pending_registration) do
+            registration_approved_email =
+              Oli.Email.create_email(
+                institution.institution_email,
+                "Registration Approved",
+                "registration_approved.html",
+                %{institution: institution, registration: registration}
+              )
+
+            Oli.Mailer.deliver_now(registration_approved_email)
+
+            # send a Slack notification regarding the new registration approval
+            approving_admin = socket.assigns[:current_author]
+
+            Slack.send(%{
+              "username" => approving_admin.name,
+              "icon_emoji" => ":robot_face:",
+              "blocks" => [
+                %{
+                  "type" => "section",
+                  "text" => %{
+                    "type" => "mrkdwn",
+                    "text" =>
+                      "Registration request for *#{pending_registration.name}* has been approved."
+                  }
+                }
+              ]
+            })
+
+            socket
+            |> assign(
+              pending_registrations:
+                Enum.filter(
+                  socket.assigns.pending_registrations,
+                  &(&1.id != pending_registration.id)
+                )
+            )
+            |> put_flash(:info, [
+              "Registration for ",
+              content_tag(:b, pending_registration.name),
+              " approved"
+            ])
+          else
+            error ->
+              Logger.error("Failed to approve registration request", error)
+
+              socket
+              |> put_flash(
+                :error,
+                "Failed to approve registration. Please double check your entries and try again."
+              )
+          end
+      end
+
+    {:noreply,
+     push_event(socket, "js-exec", %{
+       to: "#review-registration-modal-trigger",
+       attr: "data-hide_modal"
+     })}
+  end
+
+  def handle_event("decline_registration", %{"registration_id" => registration_id}, socket) do
+    registration_id = String.to_integer(registration_id)
+
+    pending_registration =
+      Enum.find(
+        socket.assigns.pending_registrations,
+        &(&1.id == registration_id)
+      )
+
+    {:ok, _pending_registration} = Institutions.delete_pending_registration(pending_registration)
+
+    # send a Slack notification regarding the new registration approval
+    approving_admin = socket.assigns[:current_author]
+
+    Slack.send(%{
+      "username" => approving_admin.name,
+      "icon_emoji" => ":robot_face:",
+      "blocks" => [
+        %{
+          "type" => "section",
+          "text" => %{
+            "type" => "mrkdwn",
+            "text" => "Registration for *#{pending_registration.name}* has been declined."
+          }
+        }
+      ]
+    })
+
+    socket =
+      socket
+      |> assign(
+        pending_registrations:
+          Enum.filter(socket.assigns.pending_registrations, &(&1.id != pending_registration.id))
+      )
+      |> put_flash(:info, [
+        "Registration for ",
+        content_tag(:b, pending_registration.name),
+        " declined"
+      ])
+
+    {:noreply,
+     push_event(socket, "js-exec", %{
+       to: "#decline-registration-modal-trigger",
+       attr: "data-hide_modal"
+     })}
   end
 
   defp root_breadcrumbs() do

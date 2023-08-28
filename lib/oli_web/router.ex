@@ -1223,7 +1223,6 @@ defmodule OliWeb.Router do
     end
 
     put("/approve_registration", InstitutionController, :approve_registration)
-    delete("/pending_registration/:id", InstitutionController, :remove_registration)
 
     # Communities
     live("/communities/new", CommunityLive.NewView)

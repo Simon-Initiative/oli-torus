@@ -260,7 +260,7 @@ defmodule OliWeb.LtiController do
               "text" => %{
                 "type" => "mrkdwn",
                 "text" =>
-                  "New registration request from *#{pending_registration.name}*. <#{Routes.institution_url(conn, :index)}#pending-registrations|Click here to view all pending requests>."
+                  "New registration request from *#{pending_registration.name}*. <#{Routes.live_path(OliWeb.Endpoint, OliWeb.Admin.Institutions.IndexLive)}|Click here to view all pending requests>."
               }
             },
             %{

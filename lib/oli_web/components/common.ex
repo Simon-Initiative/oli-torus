@@ -141,6 +141,8 @@ defmodule OliWeb.Components.Common do
     doc: "a form field struct retrieved from the form, for example: @form[:email]"
   )
 
+  attr(:variant, :string, default: "standard", values: ~w(outlined standard))
+
   attr(:errors, :list, default: [])
   attr(:class, :string, default: nil)
   attr(:checked, :boolean, doc: "the checked flag for checkbox inputs")
@@ -191,13 +193,17 @@ defmodule OliWeb.Components.Common do
   end
 
   def input(%{type: "select"} = assigns) do
+    assigns = assigns |> set_input_classes() |> set_input_placeholder()
+
     ~H"""
-    <div class="contents" phx-feedback-for={@name}>
-      <.label :if={@label} for={@id}><%= @label %></.label>
-      <select id={@id} name={@name} class={@class} multiple={@multiple} {@rest}>
+    <div class={@group_class} phx-feedback-for={@name}>
+      <select id={@id} name={@name} class={@input_class} multiple={@multiple} {@rest}>
         <option :if={@prompt} value=""><%= @prompt %></option>
         <%= Phoenix.HTML.Form.options_for_select(@options, @value) %>
       </select>
+      <.label :if={@label} onclick="(e) => console.log(e.target)" for={@id} class={@label_class}>
+        <%= @label %>
+      </.label>
       <.error :for={msg <- @errors}><%= msg %></.error>
     </div>
     """
@@ -252,23 +258,51 @@ defmodule OliWeb.Components.Common do
 
   # All other inputs text, datetime-local, url, password, etc. are handled here...
   def input(assigns) do
+    assigns = assigns |> set_input_classes() |> set_input_placeholder()
+
     ~H"""
-    <div class="contents" phx-feedback-for={@name}>
-      <.label :if={@label} for={@id}><%= @label %></.label>
+    <div class={@group_class} phx-feedback-for={@name}>
       <input
         type={@type}
         name={@name}
         id={@id}
         value={Phoenix.HTML.Form.normalize_value(@type, @value)}
-        class={[
-          @class,
-          @errors != [] && "border-red-400 focus:border-red-400"
-        ]}
+        class={@input_class}
+        placeholder={@placeholder}
         {@rest}
       />
+      <.label :if={@label} class={@label_class} for={@id}><%= @label %></.label>
       <.error :for={msg <- @errors}><%= msg %></.error>
     </div>
     """
+  end
+
+  defp set_input_placeholder(assigns) do
+    placeholder =
+      if assigns[:variant] == "outlined" do
+        assigns[:placeholder] || assigns[:label]
+      else
+        assigns[:placeholder]
+      end
+
+    assign(assigns, placeholder: placeholder)
+  end
+
+  defp set_input_classes(assigns) do
+    input_class = [
+      assigns.class,
+      assigns.errors != [] && "border-red-400 focus:border-red-400"
+    ]
+
+    {group_class, label_class, input_class} =
+      if assigns[:variant] == "outlined" do
+        {"form-label-group", "control-label pointer-events-none", ["form-control" | input_class]}
+      else
+        {"flex flex-col-reverse", "", input_class}
+      end
+
+    assigns =
+      assign(assigns, group_class: group_class, label_class: label_class, input_class: input_class)
   end
 
   @doc """
@@ -293,11 +327,13 @@ defmodule OliWeb.Components.Common do
   """
   attr(:for, :string, default: nil)
   attr(:if, :boolean, default: true)
+  attr(:class, :string, default: nil)
+  attr(:onclick, :string, default: nil)
   slot(:inner_block, required: true)
 
   def label(assigns) do
     ~H"""
-    <label :if={@if} for={@for} class="block text-sm font-semibold leading-6 text-zinc-800">
+    <label :if={@if} for={@for} class={@class} onclick={@onclick}>
       <%= render_slot(@inner_block) %>
     </label>
     """
