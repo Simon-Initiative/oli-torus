@@ -50,6 +50,10 @@ export const SlateOrMarkdownEditor: React.FC<SlateOrMarkdownEditorProps> = ({
   allowBlockElements,
   style,
 }) => {
+  // Bit of a hack. Since this isn't a real controlled component, need to keep track of the latest
+  // version for validation reasons.
+  const [lastContent, setLastContent] = React.useState<ModelElement[]>(content);
+
   toolbarInsertDescs = useMemo(
     () =>
       toolbarInsertDescs ||
@@ -71,11 +75,18 @@ export const SlateOrMarkdownEditor: React.FC<SlateOrMarkdownEditorProps> = ({
   const [switchToSlateModal, toggleSwitchToSlateModal, , closeSwitchSlateModal] = useToggle();
 
   const changeEditor = (editor: 'markdown' | 'slate') => (_e?: any) => {
-    console.info('Switching editor modes', editor);
     closeSwitchMarkdownModal();
     closeSwitchSlateModal();
     onEditorTypeChange && onEditorTypeChange(editor);
   };
+
+  const onContentEdited = React.useCallback(
+    (content) => {
+      setLastContent(content as ModelElement[]);
+      onContentEdit(content as ModelElement[]);
+    },
+    [setLastContent],
+  );
 
   if (editorType === 'markdown') {
     return (
@@ -87,7 +98,7 @@ export const SlateOrMarkdownEditor: React.FC<SlateOrMarkdownEditorProps> = ({
           value={content}
           initialHeight={initialHeight}
           onSwitchModes={toggleSwitchToSlateModal}
-          onEdit={onContentEdit}
+          onEdit={onContentEdited}
           style={style}
         />
         {switchToSlateModal && (
@@ -107,14 +118,14 @@ export const SlateOrMarkdownEditor: React.FC<SlateOrMarkdownEditorProps> = ({
           editMode={editMode}
           value={content}
           placeholder={placeholder}
-          onEdit={onContentEdit}
+          onEdit={onContentEdited}
           toolbarInsertDescs={toolbarInsertDescs || []}
           onSwitchToMarkdown={toggleSwitchToMarkdownModal}
           style={style}
         />
         {switchToMarkdownModal && (
           <SwitchToMarkdownModal
-            model={content}
+            model={lastContent}
             onCancel={toggleSwitchToMarkdownModal}
             onConfirm={changeEditor('markdown')}
           />
