@@ -54,8 +54,6 @@ defmodule OliWeb.SystemMessageLiveTest do
       system_message = insert(:system_message)
       {:ok, view, _html} = live(conn, @live_view_index_route)
 
-      IO.inspect(system_message.start)
-
       assert view
              |> element("#system_message_start")
              |> render() =~
