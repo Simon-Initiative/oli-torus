@@ -16,7 +16,14 @@ defmodule OliWeb.CommunityLive.Invitation do
 
   def render(assigns) do
     ~H"""
-    <.form for={@to_invite} phx-submit={@invite} phx-change={@suggest} class="d-flex mb-5">
+    <.form
+      :let={_f}
+      for={%{}}
+      as={@to_invite}
+      phx-submit={@invite}
+      phx-change={@suggest}
+      class="d-flex mb-5"
+    >
       <div class="w-100">
         <.input
           name={@search_field}
