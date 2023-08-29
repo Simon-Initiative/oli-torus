@@ -95,7 +95,7 @@ export const SlateOrMarkdownEditor: React.FC<SlateOrMarkdownEditorProps> = ({
     return (
       <ErrorBoundary>
         <MarkdownEditor
-          className="structured-content"
+          className={className}
           commandContext={{ projectSlug: projectSlug, resourceSlug: resourceSlug }}
           editMode={editMode}
           value={content}

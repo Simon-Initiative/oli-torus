@@ -1,19 +1,33 @@
 import React from 'react';
 import { useAuthoringElementContext } from 'components/activities/AuthoringElementProvider';
 import { HasParts, RichText } from 'components/activities/types';
-import { RichTextEditorConnected } from 'components/content/RichTextEditor';
-import { getExplanationContent, setExplanationContent } from 'data/activities/model/explanation';
+import { SlateOrMarkdownEditor } from 'components/editing/SlateOrMarkdownEditor';
+import {
+  getExplanationContent,
+  getExplanationEditor,
+  setExplanationContent,
+  setExplanationEditor,
+} from 'data/activities/model/explanation';
+import { EditorType, SMALL_EDITOR_HEIGHT } from 'data/content/resource';
 
 interface Props {
   partId: string;
 }
 export const Explanation: React.FC<Props> = (props) => {
-  const { dispatch, model } = useAuthoringElementContext<HasParts>();
+  const { dispatch, model, projectSlug } = useAuthoringElementContext<HasParts>();
   return (
-    <RichTextEditorConnected
+    <SlateOrMarkdownEditor
       placeholder="Explanation"
-      value={getExplanationContent(model, props.partId)}
+      content={getExplanationContent(model, props.partId)}
       onEdit={(content: RichText) => dispatch(setExplanationContent(props.partId, content))}
+      onEditorTypeChange={(editor: EditorType) =>
+        dispatch(setExplanationEditor(props.partId, editor))
+      }
+      editMode={true}
+      editorType={getExplanationEditor(model, props.partId)}
+      allowBlockElements={true}
+      projectSlug={projectSlug}
+      initialHeight={SMALL_EDITOR_HEIGHT}
     />
   );
 };
