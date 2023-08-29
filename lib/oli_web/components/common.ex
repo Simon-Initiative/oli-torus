@@ -301,8 +301,7 @@ defmodule OliWeb.Components.Common do
         {"flex flex-col-reverse", "", input_class}
       end
 
-    assigns =
-      assign(assigns, group_class: group_class, label_class: label_class, input_class: input_class)
+    assign(assigns, group_class: group_class, label_class: label_class, input_class: input_class)
   end
 
   @doc """

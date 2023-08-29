@@ -1,12 +1,9 @@
 defmodule OliWeb.InstitutionController do
   use OliWeb, :controller
 
-  import Phoenix.HTML.Tag
-
   alias Oli.Institutions
   alias Oli.Institutions.Institution
   alias Oli.Predefined
-  alias Oli.Slack
   alias OliWeb.Common.Breadcrumb
   alias Oli.Branding
 
