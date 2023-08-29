@@ -7,7 +7,7 @@ import { Choice, makeContent } from 'components/activities/types';
 import { Draggable } from 'components/common/DraggableColumn';
 import { SlateOrMarkdownEditor } from 'components/editing/SlateOrMarkdownEditor';
 import { toSimpleText } from 'components/editing/slateUtils';
-import { DEFAULT_EDITOR, EditorType } from 'data/content/resource';
+import { DEFAULT_EDITOR, EditorType, SMALL_EDITOR_HEIGHT } from 'data/content/resource';
 import { classNames } from 'utils/classNames';
 import styles from './ChoicesAuthoring.modules.scss';
 
@@ -83,7 +83,7 @@ export const Choices: React.FC<Props> = ({
                       onChangeEditorType && onChangeEditorType(choice.id, editor)
                     }
                     projectSlug={projectSlug}
-                    initialHeight={100}
+                    initialHeight={SMALL_EDITOR_HEIGHT}
                   />
                 )}
 

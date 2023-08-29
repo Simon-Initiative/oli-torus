@@ -6,7 +6,7 @@ import { Response } from 'components/activities/types';
 import { SlateOrMarkdownEditor } from 'components/editing/SlateOrMarkdownEditor';
 import { Card } from 'components/misc/Card';
 import { ID } from 'data/content/model/other';
-import { DEFAULT_EDITOR, EditorType } from 'data/content/resource';
+import { DEFAULT_EDITOR, EditorType, SMALL_EDITOR_HEIGHT } from 'data/content/resource';
 import { AuthoringCheckboxConnected } from '../authoring/AuthoringCheckbox';
 
 interface Props {
@@ -42,7 +42,7 @@ export const ResponseCard: React.FC<Props> = (props) => {
           editorType={props.response.feedback.editor || DEFAULT_EDITOR}
           editMode={true}
           projectSlug={projectSlug}
-          initialHeight={100}
+          initialHeight={SMALL_EDITOR_HEIGHT}
         />
 
         {props.children}

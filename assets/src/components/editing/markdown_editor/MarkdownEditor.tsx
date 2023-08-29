@@ -87,6 +87,7 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = (props) => {
   return (
     <MDEditor
       value={value}
+      className={props.className}
       onChange={onChange}
       height={initialHeight || 600}
       data-color-mode={modeClass}

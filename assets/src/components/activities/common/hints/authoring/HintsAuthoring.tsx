@@ -8,7 +8,7 @@ import { Hint, RichText } from 'components/activities/types';
 import { SlateOrMarkdownEditor } from 'components/editing/SlateOrMarkdownEditor';
 import { Card } from 'components/misc/Card';
 import { ID } from 'data/content/model/other';
-import { DEFAULT_EDITOR, EditorType } from 'data/content/resource';
+import { DEFAULT_EDITOR, EditorType, SMALL_EDITOR_HEIGHT } from 'data/content/resource';
 
 interface HintsAuthoringProps {
   addOne: () => void;
@@ -104,6 +104,7 @@ export const CognitiveHints: React.FC<CognitiveProps> = ({
         <div key={hint.id} className="d-flex mb-2">
           <div className="py-2 mr-3 w-[20px]">{index + 1}.</div>
           <SlateOrMarkdownEditor
+            initialHeight={SMALL_EDITOR_HEIGHT}
             placeholder={placeholder || 'Explain how to solve the problem'}
             className="flex-grow-1"
             content={hint.content}
