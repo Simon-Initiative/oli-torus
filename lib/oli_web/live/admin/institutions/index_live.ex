@@ -12,7 +12,7 @@ defmodule OliWeb.Admin.Institutions.IndexLive do
 
   alias Phoenix.LiveView.JS
 
-  on_mount(Oli.LiveSessionPlugs.SetCurrentAuthor)
+  on_mount(OliWeb.LiveSessionPlugs.SetCurrentAuthor)
 
   def mount(_params, session, socket) do
     institutions = Institutions.list_institutions()
