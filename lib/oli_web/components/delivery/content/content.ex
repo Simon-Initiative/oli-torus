@@ -77,7 +77,7 @@ defmodule OliWeb.Components.Delivery.Content do
         >
           <div>
             <.form
-              for={:containers}
+              for={%{}}
               id="container-select-form"
               phx-change="filter_container"
               phx-target={@myself}
@@ -102,7 +102,7 @@ defmodule OliWeb.Components.Delivery.Content do
               <i class="fa-solid fa-download ml-1" /> Download
             </a>
           </div>
-          <.form for={:search} phx-target={@myself} phx-change="search_container" class="w-44">
+          <.form for={%{}} phx-target={@myself} phx-change="search_container" class="w-44">
             <SearchInput.render
               id="content_search_input"
               name="container_name"

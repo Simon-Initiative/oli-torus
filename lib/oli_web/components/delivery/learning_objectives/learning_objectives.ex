@@ -82,7 +82,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
             </a>
           </div>
           <div class="flex flex-col-reverse sm:flex-row gap-2 items-end">
-            <.form for={:search} phx-target={@myself} phx-change="search_objective" class="w-44">
+            <.form for={%{}} phx-target={@myself} phx-change="search_objective" class="w-44">
               <SearchInput.render
                 id="objective_search_input"
                 name="objective_name"
