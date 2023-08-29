@@ -1,9 +1,8 @@
 defmodule OliWeb.Products.Payments.Discounts.TableModel do
-  use Surface.LiveComponent
+  use Phoenix.Component
 
   alias OliWeb.Common.Table.{ColumnSpec, SortableTableModel}
   alias OliWeb.Router.Helpers, as: Routes
-  alias Surface.Components.Link
 
   def new(discounts, ctx) do
     SortableTableModel.new(
@@ -59,19 +58,22 @@ defmodule OliWeb.Products.Payments.Discounts.TableModel do
   end
 
   def render_actions_column(assigns, item, _) do
-    ~F"""
-      <Link
-        to={Routes.discount_path(OliWeb.Endpoint, :product, item.section.slug, item.id)}
-        class="btn btn-outline-primary">
-        Edit
-      </Link>
-      <button class="btn btn-outline-danger" phx-click="remove" phx-value-id={item.id}>Remove</button>
+    assigns = Map.merge(assigns, %{item: item})
+
+    ~H"""
+    <.link
+      href={Routes.discount_path(OliWeb.Endpoint, :product, @item.section.slug, @item.id)}
+      class="btn btn-outline-primary"
+    >
+      Edit
+    </.link>
+    <button class="btn btn-outline-danger" phx-click="remove" phx-value-id={@item.id}>Remove</button>
     """
   end
 
   def render(assigns) do
-    ~F"""
-      <div>nothing</div>
+    ~H"""
+    <div>nothing</div>
     """
   end
 

@@ -49,7 +49,7 @@ defmodule OliWeb.Projects.OverviewLive do
   def render(assigns) do
     ~H"""
     <div class="overview container mx-auto">
-      <.form let={f} for={@changeset} phx-submit="update" >
+      <.form :let={f} for={@changeset} phx-submit="update" >
         <OverviewSection.render title="Details" description="Your project title and description will be shown to students when you publish this project.">
           <div class="form-label-group mb-3">
             <%= label f, :title, "Project ID", class: "control-label" %>
@@ -238,7 +238,7 @@ defmodule OliWeb.Projects.OverviewLive do
               <div>
                 <p>Please type <strong><%= @project.title %></strong> below to confirm.</p>
               </div>
-              <.form let={f} for={:form} phx-submit="delete">
+              <.form :let={f} for={%{}} as={:form} phx-submit="delete">
                 <div class="mt-2">
                   <%= text_input f, :title, class: "form-control", id: "delete-confirm-title", required: true %>
                 </div>

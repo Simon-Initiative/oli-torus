@@ -23,7 +23,7 @@ import {
   resetAction,
 } from 'data/activities/DeliveryState';
 import { getByUnsafe } from 'data/activities/model/utils';
-import { safelySelectInputs } from 'data/activities/utils';
+import { safelySelectStringInputs } from 'data/activities/utils';
 import { defaultWriterContext } from 'data/content/writers/context';
 import { configureStore } from 'state/store';
 import { DeliveryElementProvider, useDeliveryElementContext } from '../DeliveryElementProvider';
@@ -119,7 +119,7 @@ export const VlabComponent: React.FC = () => {
     dispatch(
       initializeState(
         activityState,
-        safelySelectInputs(activityState).caseOf({
+        safelySelectStringInputs(activityState).caseOf({
           just: (inputs) => inputs,
           nothing: () =>
             model.inputs.reduce((acc, input) => {

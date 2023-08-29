@@ -31,7 +31,7 @@ defmodule OliWeb.Grades.GradeSync do
           were manually adjusted or overridden by the instructor.") %>
         </div>
 
-        <select id="assignment_grade_sync_select" class="custom-select custom-select-lg mb-3" phx-hook="SelectListener" phx-value-change="select_page">
+        <select id="assignment_grade_sync_select" class="custom-select custom-select-lg mb-2" phx-hook="SelectListener" phx-value-change="select_page">
           <%= for page <- @graded_pages do %>
             <option value={page.resource_id}><%= page.title %></option>
           <% end %>
@@ -47,7 +47,7 @@ defmodule OliWeb.Grades.GradeSync do
 
       </div>
 
-      <div class="card-footer">
+      <div class="card-footer mt-4">
 
         <a class="btn btn-primary" phx-click="send_grades" {@disabled} ><%= dgettext("grades", "Synchronize Grades") %></a>
 

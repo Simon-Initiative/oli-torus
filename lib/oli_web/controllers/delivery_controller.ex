@@ -29,7 +29,15 @@ defmodule OliWeb.DeliveryController do
 
   def instructor_dashboard(conn, %{"section_slug" => section_slug}) do
     # redirect to live view
-    redirect(conn, to: Routes.live_path(conn, OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive, section_slug, "overview"))
+    redirect(conn,
+      to:
+        Routes.live_path(
+          conn,
+          OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
+          section_slug,
+          "overview"
+        )
+    )
   end
 
   def index(conn, _params) do
@@ -71,14 +79,6 @@ defmodule OliWeb.DeliveryController do
           redirect_to_page_delivery(conn, section)
         end
     end
-  end
-
-  def open_and_free_index(conn, _params) do
-    user = conn.assigns.current_user
-
-    sections = Sections.list_user_open_and_free_sections(user)
-
-    render(conn, "open_and_free_index.html", sections: sections, user: user)
   end
 
   defp render_course_not_configured(conn) do
@@ -131,7 +131,7 @@ defmodule OliWeb.DeliveryController do
     |> assign(:action, Routes.pow_registration_path(conn, :create))
     |> assign(:sign_in_path, Routes.pow_session_path(conn, :new))
     |> assign(:cancel_path, Routes.delivery_path(conn, :index))
-    |> Phoenix.Controller.put_view(OliWeb.Pow.RegistrationView)
+    |> Phoenix.Controller.put_view(OliWeb.Pow.RegistrationHTML)
     |> Phoenix.Controller.render("new.html")
   end
 
@@ -156,8 +156,8 @@ defmodule OliWeb.DeliveryController do
     |> assign(:create_account_path, create_account_path)
     |> assign(:cancel_path, cancel_path)
     |> assign(:link_account, true)
-    |> put_view(OliWeb.Pow.SessionView)
-    |> render("new.html")
+    |> put_view(OliWeb.Pow.SessionHTML)
+    |> Phoenix.Controller.render("new.html")
   end
 
   def process_link_account_provider(conn, %{"provider" => provider}) do
@@ -282,8 +282,8 @@ defmodule OliWeb.DeliveryController do
     |> assign(:action, action)
     |> assign(:sign_in_path, sign_in_path)
     |> assign(:cancel_path, cancel_path)
-    |> put_view(OliWeb.Pow.RegistrationView)
-    |> render("new.html")
+    |> put_view(OliWeb.Pow.RegistrationHTML)
+    |> Phoenix.Controller.render("new.html")
   end
 
   def render_create_and_link_form(conn, opts \\ []) do
@@ -307,8 +307,8 @@ defmodule OliWeb.DeliveryController do
     |> assign(:sign_in_path, sign_in_path)
     |> assign(:cancel_path, cancel_path)
     |> assign(:link_account, true)
-    |> put_view(OliWeb.Pow.RegistrationView)
-    |> render("new.html")
+    |> put_view(OliWeb.Pow.RegistrationHTML)
+    |> Phoenix.Controller.render("new.html")
   end
 
   def signin(conn, %{"section" => section}) do
@@ -446,6 +446,7 @@ defmodule OliWeb.DeliveryController do
           |> Enum.map(
             &%{
               name: &1.name,
+              email: &1.email,
               last_interaction: &1.last_interaction,
               progress: &1.progress,
               overall_proficiency: &1.overall_proficiency,
@@ -455,6 +456,7 @@ defmodule OliWeb.DeliveryController do
           |> DataTable.new()
           |> DataTable.headers([
             :name,
+            :email,
             :last_interaction,
             :progress,
             :overall_proficiency,

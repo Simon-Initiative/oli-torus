@@ -164,42 +164,42 @@ defmodule OliWeb.Curriculum.ContainerLiveTest do
 
       assert has_element?(
                view,
-               "input#revision-settings-form_title"
+               "form#revision-settings-form [name=\"revision[title]\"]"
              )
 
       assert has_element?(
                view,
-               "select#revision-settings-form_graded"
+               "form#revision-settings-form [name=\"revision[graded]\"]"
              )
 
       assert has_element?(
                view,
-               "select#revision-settings-form_explanation_strategy_type"
+               "form#revision-settings-form [name=\"revision[explanation_strategy][type]\"]"
              )
 
       assert has_element?(
                view,
-               "select#revision-settings-form_max_attempts"
+               "form#revision-settings-form [name=\"revision[max_attempts]\"]"
              )
 
       assert has_element?(
                view,
-               "select#revision-settings-form_scoring_strategy_id"
+               "form#revision-settings-form [name=\"revision[scoring_strategy_id]\"]"
              )
 
       assert has_element?(
                view,
-               "select#revision-settings-form_retake_mode"
+               "form#revision-settings-form [name=\"revision[retake_mode]\"]"
              )
 
       assert has_element?(
                view,
-               "select#revision-settings-form_purpose"
+               "form#revision-settings-form [name=\"revision[purpose]\"]"
              )
 
       assert has_element?(
                view,
-               "div#related-resources-selector"
+               "form#revision-settings-form div#related-resources-selector"
              )
     end
 
@@ -255,19 +255,13 @@ defmodule OliWeb.Curriculum.ContainerLiveTest do
       |> render_click()
 
       view
-      |> form("form#revision-settings-form", %{
+      |> form("form#revision-settings-form")
+      |> render_submit(%{
         "revision" => %{
-          "purpose" => "foundation"
+          "purpose" => "application",
+          "relates_to" => [revision_page_two.resource_id]
         }
       })
-
-      view
-      |> element("input#hierarchy-selector__checkbox-#{revision_page_two.resource_id}")
-      |> render_click()
-
-      view
-      |> element("form#revision-settings-form")
-      |> render_submit()
 
       assert Oli.Publishing.AuthoringResolver.from_revision_slug(
                project.slug,

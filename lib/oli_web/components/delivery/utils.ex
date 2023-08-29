@@ -1,5 +1,6 @@
 defmodule OliWeb.Components.Delivery.Utils do
   use Phoenix.Component
+  use OliWeb, :verified_routes
 
   alias Oli.Interop.CustomActivities.User
   alias OliWeb.Router.Helpers, as: Routes
@@ -85,7 +86,7 @@ defmodule OliWeb.Components.Delivery.Utils do
         "#"
 
       is_open_and_free_section?(assigns) or is_independent_learner?(assigns) ->
-        Routes.delivery_path(OliWeb.Endpoint, :open_and_free_index)
+        ~p"/sections"
 
       true ->
         Routes.static_page_path(OliWeb.Endpoint, :index)

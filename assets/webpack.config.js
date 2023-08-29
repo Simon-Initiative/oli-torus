@@ -34,6 +34,7 @@ const populateEntries = () => {
     keepalive: ['./src/phoenix/keep-alive.ts'],
     delivery_adaptive_themes_default_light: ['./styles/adaptive/light.scss'],
     delivery_adaptive_themes_flowchart: ['./styles/adaptive/flowchart.scss'],
+    storybook: ['./js/storybook.js'],
   };
 
   const manifests = glob.sync('./src/components/activities/*/manifest.json', {});
@@ -319,7 +320,7 @@ module.exports = (env, options) => ({
       outputFilename: '../licenses.json',
       licenseOverrides: {
         'janus-script@1.9.2': 'MIT',
-        'phoenix_html@3.2.0': 'MIT',
+        'phoenix_html@3.3.1': 'MIT',
         'typed-function@2.0.0': 'MIT',
       },
       unacceptableLicenseTest: (licenseIdentifier) => {

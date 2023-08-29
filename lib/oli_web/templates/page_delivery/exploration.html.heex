@@ -10,7 +10,7 @@
     <% end %>
 
     <div class="container mx-auto px-10 mt-3 mb-5 flex flex-col">
-      <%= live_render @conn, Components.Delivery.ExplorationList, session: %{ "section_slug" => @section_slug } %>
+      <%= live_render @conn, Components.Delivery.ExplorationList, session: %{ "section_slug" => @section_slug, "preview_mode" => @preview_mode } %>
     </div>
 
     <%= render OliWeb.LayoutView, "_delivery_footer.html", assigns %>

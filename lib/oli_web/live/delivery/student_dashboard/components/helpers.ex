@@ -1,5 +1,6 @@
 defmodule OliWeb.Delivery.StudentDashboard.Components.Helpers do
   use Phoenix.Component
+  use OliWeb, :verified_routes
 
   import OliWeb.ViewHelpers, only: [brand_logo: 1]
 
@@ -116,7 +117,8 @@ defmodule OliWeb.Delivery.StudentDashboard.Components.Helpers do
   defp is_active_tab?(tab, active_tab), do: tab == active_tab
   defp is_hidden?(tab, hidden_tabs), do: Enum.member?(hidden_tabs, tab)
 
-  defp logo_link(nil, _, _), do: Routes.delivery_path(OliWeb.Endpoint, :open_and_free_index)
+  defp logo_link(nil, _, _),
+    do: ~p"/sections"
 
   defp logo_link(section, student_id, preview_mode) do
     if preview_mode do

@@ -111,7 +111,8 @@ config :oli, OliWeb.Endpoint,
       "--watch-options-stdin",
       cd: Path.expand("../assets", __DIR__)
     ],
-    tailwind: {Tailwind, :install_and_run, [:default, ~w(--watch)]}
+    tailwind: {Tailwind, :install_and_run, [:default, ~w(--watch)]},
+    storybook_tailwind: {Tailwind, :install_and_run, [:storybook, ~w(--watch)]}
   ]
 
 # ## SSL Support
@@ -145,7 +146,8 @@ config :oli, OliWeb.Endpoint,
       ~r"priv/static/.*(js|css|png|jpeg|jpg|gif|svg)$",
       ~r"priv/gettext/.*(po)$",
       ~r"lib/oli_web/{live,views}/.*(ex)$",
-      ~r"lib/oli_web/templates/.*(eex)$"
+      ~r"lib/oli_web/templates/.*(eex)$",
+      ~r"storybook/.*(exs)$"
     ]
   ]
 

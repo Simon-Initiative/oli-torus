@@ -8,4 +8,4 @@ This project uses the default Elixir code formatting rules through running `mix 
 
 ## UI Code
 
-User interface code can be implemented using either traditional, stateless controller rendered templated views or with stateful Phoenix LiveView implementations. For Phoenix LiveView implemented user interfaces, all new views and components should be implemented using the Surface library.
+User interface code can be implemented using either traditional, stateless controller rendered templated views or with stateful Phoenix LiveView implementations.

@@ -449,11 +449,10 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
         |> Enum.map(fn data ->
           case Floki.find(data, "select") do
             [] ->
-              Floki.text(data)
+              Floki.text(data) |> String.trim()
 
             select ->
-              Floki.find(select, "option[selected]")
-              |> Floki.text()
+              Floki.find(select, "option[selected]") |> Floki.text() |> String.trim()
           end
         end)
       end)
@@ -776,7 +775,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
 
       assert element(view, "#confirm_bulk_apply_modal")
              |> render() =~
-               "<p>Are you sure you want to apply the <strong>Page 2</strong> settings to all other assessments?</p>"
+               "Are you sure you want to apply the <strong>Page 2</strong>"
     end
 
     test "confirming the bulk apply modal applies the selected setting to all other assessments",
@@ -1061,6 +1060,13 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
       assert page_1_assessment_settings.feedback_mode == :allow
       assert page_1_assessment_settings.feedback_scheduled_date == nil
 
+      [form_id] =
+        view
+        |> render()
+        |> Floki.parse_fragment!()
+        |> Floki.find(~s{form[for="settings_table"]})
+        |> Floki.attribute("id")
+
       view
       |> form(~s{form[for="settings_table"]})
       |> render_change(%{
@@ -1076,6 +1082,13 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
         }
       })
 
+      [updated_form_id] =
+        view
+        |> render()
+        |> Floki.parse_fragment!()
+        |> Floki.find(~s{form[for="settings_table"]})
+        |> Floki.attribute("id")
+
       page_1_assessment_settings =
         get_assessments(section.slug, [])
         |> Enum.find(fn assessment ->
@@ -1089,6 +1102,9 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
 
       assert page_1_assessment_settings.feedback_scheduled_date ==
                ~U[2023-05-29 21:50:00Z]
+
+      # we update the form id to guarantee the selected value in the dropdown gets updated in the UI
+      assert updated_form_id != form_id
     end
 
     test "feedback_mode value is not set to :scheduled when the modal is cancelled and the modal closes",

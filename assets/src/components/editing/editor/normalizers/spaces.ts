@@ -2,10 +2,11 @@ import * as Immutable from 'immutable';
 import { Editor, Element, Path, Transforms } from 'slate';
 import { Model } from 'data/content/model/elements/factories';
 import { ModelElement } from 'data/content/model/elements/types';
+import { ModelTypes } from 'data/content/model/schema';
 import { FormattedText } from 'data/content/model/text';
 
-const spacesRequiredBetween = Immutable.Set<string>([
-  'image',
+export const spacesRequiredBetween = Immutable.Set<ModelTypes>([
+  'img',
   'youtube',
   'audio',
   'blockquote',
@@ -32,6 +33,7 @@ export const normalize = (
   if (path[path.length - 1] + 1 < parent.children.length) {
     const nextItem = Editor.node(editor, Path.next(path));
 
+    // istanbul ignore else
     if (nextItem !== undefined) {
       const [nextNode] = nextItem;
       if (Element.isElement(node) && Element.isElement(nextNode)) {

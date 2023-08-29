@@ -1162,6 +1162,157 @@ defmodule Oli.TestHelpers do
     end)
   end
 
+  def sections_with_same_publications(_) do
+    author = insert(:author)
+    project = insert(:project, authors: [author])
+    user_1 = insert(:user)
+    user_2 = insert(:user)
+
+    # Create page 1
+    page_resource_1 = insert(:resource)
+    insert(:project_resource, %{project_id: project.id, resource_id: page_resource_1.id})
+
+    page_1_revision =
+      insert(
+        :revision,
+        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("page"),
+        title: "Page 1",
+        graded: false,
+        resource: page_resource_1
+      )
+
+    # Create page 2
+    page_resource_2 = insert(:resource)
+    insert(:project_resource, %{project_id: project.id, resource_id: page_resource_2.id})
+
+    page_2_revision =
+      insert(
+        :revision,
+        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("page"),
+        title: "Page 2",
+        graded: true,
+        resource: page_resource_2
+      )
+
+    # Create root container for the project
+    root_container_resource = insert(:resource)
+    insert(:project_resource, %{project_id: project.id, resource_id: root_container_resource.id})
+
+    root_container_revision =
+      insert(:revision, %{
+        resource: root_container_resource,
+        objectives: %{},
+        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("container"),
+        children: [
+          page_resource_1.id,
+          page_resource_2.id
+        ],
+        content: %{},
+        deleted: false,
+        slug: "root_container",
+        title: "Root Container"
+      })
+
+    # Publicate project
+    publication =
+      insert(:publication, %{project: project, root_resource_id: root_container_resource.id})
+
+    insert(:published_resource, %{
+      publication: publication,
+      resource: root_container_resource,
+      revision: root_container_revision
+    })
+
+    insert(:published_resource, %{
+      publication: publication,
+      resource: page_resource_1,
+      revision: page_1_revision
+    })
+
+    insert(:published_resource, %{
+      publication: publication,
+      resource: page_resource_2,
+      revision: page_2_revision
+    })
+
+    # Create section 1
+    section_1 =
+      insert(:section,
+        base_project: project,
+        context_id: UUID.uuid4(),
+        registration_open: true,
+        type: :enrollable
+      )
+
+    # create section 2
+    section_2 =
+      insert(:section,
+        base_project: project,
+        context_id: UUID.uuid4(),
+        registration_open: true,
+        type: :enrollable
+      )
+
+    resource_access_1 =
+      insert(:resource_access, user: user_1, section: section_1, resource: page_resource_1)
+
+    resource_access_2 =
+      insert(:resource_access, user: user_2, section: section_2, resource: page_resource_2)
+
+    resource_attempt_1 = insert(:resource_attempt, resource_access: resource_access_1)
+    resource_attempt_2 = insert(:resource_attempt, resource_access: resource_access_2)
+
+    activity_attempt_1 =
+      insert(:activity_attempt,
+        resource_attempt: resource_attempt_1,
+        revision: page_1_revision,
+        lifecycle_state: "active",
+        transformed_model: generate_attempt_content()
+      )
+
+    activity_attempt_2 =
+      insert(:activity_attempt,
+        resource_attempt: resource_attempt_2,
+        revision: page_1_revision,
+        lifecycle_state: "active",
+        transformed_model: generate_attempt_content()
+      )
+
+    insert(:part_attempt,
+      activity_attempt: activity_attempt_1,
+      response: %{files: [], input: "option_1_id"}
+    )
+
+    insert(:part_attempt,
+      activity_attempt: activity_attempt_2,
+      response: %{files: [], input: "option_2_id"}
+    )
+
+    insert(:snapshot, %{
+      section: section_1,
+      resource: page_1_revision.resource,
+      user: user_1,
+      correct: true
+    })
+
+    insert(:snapshot, %{
+      section: section_2,
+      resource: page_1_revision.resource,
+      user: user_2,
+      correct: true
+    })
+
+    {:ok, section_1} = Sections.create_section_resources(section_1, publication)
+    {:ok, section_2} = Sections.create_section_resources(section_2, publication)
+
+    %{
+      section_1: section_1,
+      section_2: section_2,
+      user_1: user_1,
+      user_2: user_2
+    }
+  end
+
   def section_with_gating_conditions(_context) do
     author = insert(:author)
     project = insert(:project, authors: [author])
@@ -1997,6 +2148,130 @@ defmodule Oli.TestHelpers do
      }}
   end
 
+  def section_with_pages(%{
+        author: author,
+        revisions: revisions,
+        revision_section_attributes: revision_section_attributes
+      }) do
+    project = insert(:project, %{authors: [author]})
+
+    revisions = Enum.zip(revisions, revision_section_attributes)
+
+    # Create project resource for each revision
+    Enum.each(revisions, fn {revision = %Oli.Resources.Revision{}, _section_attributes} ->
+      insert(:project_resource, %{project_id: project.id, resource_id: revision.resource.id})
+    end)
+
+    # Create project container
+    container_revision =
+      insert(:revision, %{
+        objectives: %{},
+        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("container"),
+        children:
+          Enum.map(revisions, fn {revision = %Oli.Resources.Revision{}, _section_attributes} ->
+            revision.resource.id
+          end),
+        content: %{},
+        deleted: false,
+        title: "Root Container"
+      })
+
+    insert(:project_resource, %{
+      project_id: project.id,
+      resource_id: container_revision.resource.id
+    })
+
+    # Create project publication
+    publication =
+      insert(:publication, %{project: project, root_resource_id: container_revision.resource.id})
+
+    # Publish container
+    insert(:published_resource, %{
+      publication: publication,
+      resource: container_revision.resource,
+      revision: container_revision
+    })
+
+    section =
+      insert(:section,
+        base_project: project,
+        context_id: UUID.uuid4(),
+        open_and_free: true,
+        registration_open: true,
+        type: :enrollable
+      )
+
+    # Publish revisions
+    Enum.each(revisions, fn {revision = %Oli.Resources.Revision{}, section_attributes} ->
+      insert(:published_resource, %{
+        publication: publication,
+        resource: revision.resource,
+        revision: revision
+      })
+
+      insert(
+        :section_resource,
+        Map.merge(
+          %{
+            section: section,
+            project: project,
+            resource_id: revision.resource.id
+          },
+          section_attributes
+        )
+      )
+    end)
+
+    # Set the section root resource
+    container_revision_section_resource =
+      insert(
+        :section_resource,
+        section: section,
+        project: project,
+        resource_id: container_revision.resource.id
+      )
+
+    {:ok, section} =
+      section
+      |> Section.changeset(%{
+        root_section_resource_id: container_revision_section_resource.id
+      })
+      |> Repo.update()
+
+    # Insert section project publication
+    insert(:section_project_publication, %{
+      project: project,
+      section: section,
+      publication: publication
+    })
+
+    {:ok, section: section, project: project, author: author}
+  end
+
+  def section_with_pages(
+        %{
+          revisions: _revisions,
+          revision_section_attributes: _revision_section_attributes
+        } = attrs
+      ) do
+    author = insert(:author)
+
+    section_with_pages(Map.put(attrs, :author, author))
+  end
+
+  def section_with_pages(
+        %{
+          revisions: revisions
+        } = attrs
+      ) do
+    author = insert(:author)
+    revision_section_attributes = Enum.map(revisions, fn _ -> %{} end)
+
+    section_with_pages(
+      Map.merge(attrs, %{author: author, revision_section_attributes: revision_section_attributes})
+    )
+  end
+
   def project_section_revisions(_) do
     author = insert(:author)
     project = insert(:project, authors: [author])
@@ -2377,5 +2652,20 @@ defmodule Oli.TestHelpers do
       end
 
     System.cmd(cmd, args)
+  end
+
+  @doc """
+    Provides set of helpers to test async events
+  """
+  def wait_until(fun), do: wait_until(fun, 500)
+
+  def wait_until(fun, 0), do: fun.()
+
+  def wait_until(fun, timeout) do
+    fun.()
+  rescue
+    ExUnit.AssertionError ->
+      :timer.sleep(100)
+      wait_until(fun, max(0, timeout - 100))
   end
 end

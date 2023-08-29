@@ -1,50 +1,46 @@
 defmodule OliWeb.Sections.MainDetails do
-  use Surface.Component
+  use OliWeb, :html
 
-  alias Surface.Components.Form.{Field, Label, TextInput, Select, ErrorTag}
-
-  import Ecto.Changeset
-
-  prop(changeset, :any, required: true)
-  prop(disabled, :boolean, required: true)
-  prop(is_admin, :boolean, required: true)
-  prop(brands, :list, required: true)
-  prop(institutions, :list, required: true)
+  attr(:changeset, :any, required: true)
+  attr(:disabled, :boolean, required: true)
+  attr(:is_admin, :boolean, required: true)
+  attr(:brands, :list, required: true)
+  attr(:institutions, :list, required: true)
 
   def render(assigns) do
-    ~F"""
+    ~H"""
     <div>
-      <Field name={:title} class="form-label-group">
-        <div class="d-flex justify-content-between"><Label /><ErrorTag class="help-block" /></div>
-        <TextInput class="form-control" opts={disabled: @disabled} />
-      </Field>
-      <Field name={:description} class="form-label-group">
-        <div class="d-flex justify-content-between"><Label /><ErrorTag class="help-block" /></div>
-        <TextInput class="form-control" opts={disabled: @disabled} />
-      </Field>
-      <Field name={:brand_id} class="mt-2">
-        <Label>Brand</Label>
-        <Select
+      <div class="form-label-group">
+        <.input field={@changeset[:title]} label="Title" class="form-control" disabled={@disabled} />
+      </div>
+      <div class="form-label-group">
+        <.input
+          field={@changeset[:description]}
+          label="Description"
           class="form-control"
-          prompt="None"
-          form="section"
-          field="brand_id"
-          options={@brands}
-          selected={get_field(@changeset, :brand_id)}
+          disabled={@disabled}
         />
-      </Field>
-      <Field name={:institution_id} class="mt-2">
-        <Label>Institution</Label>
-        <Select
+      </div>
+      <div class="mt-2">
+        <.input
+          type="select"
+          field={@changeset[:brand_id]}
+          label="Brand"
           class="form-control"
-          prompt="None"
-          form="section"
-          field="institution_id"
-          options={@institutions}
-          selected={get_field(@changeset, :institution_id)}
-          opts={disabled: get_field(@changeset, :lti_1p3_deployment_id) != nil}
+          options={[{"None", nil} | @brands]}
         />
-      </Field>
+      </div>
+      <div class="mt-2">
+        <.input
+          type="select"
+          field={@changeset[:institution_id]}
+          label="Institution"
+          class="form-control"
+          options={[{"None", nil} | @institutions]}
+          disabled={@changeset[:lti_1p3_deployment_id].value != nil}
+        />
+      </div>
+
       <button class="btn btn-primary mt-3" type="submit">Save</button>
     </div>
     """

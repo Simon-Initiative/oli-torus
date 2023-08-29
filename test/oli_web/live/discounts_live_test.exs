@@ -245,7 +245,7 @@ defmodule OliWeb.DiscountsLiveTest do
              |> render() =~
                "Discount couldn&#39;t be created/updated. Please check the errors below."
 
-      assert has_element?(view, "span", "can't be blank")
+      assert has_element?(view, "p", "can't be blank")
 
       refute %Discount{type: :fixed_amount} ==
                Paywall.get_discount_by!(%{
@@ -402,7 +402,7 @@ defmodule OliWeb.DiscountsLiveTest do
              |> render() =~
                "Discount couldn&#39;t be created/updated. Please check the errors below."
 
-      assert has_element?(view, "span", "can't be blank")
+      assert has_element?(view, "p", "can't be blank")
       refute Paywall.get_institution_wide_discount!(institution.id)
     end
 

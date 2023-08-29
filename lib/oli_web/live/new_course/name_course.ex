@@ -8,7 +8,7 @@ defmodule OliWeb.Delivery.NewCourse.NameCourse do
 
   def render(assigns) do
     ~H"""
-      <.form id="name-course-form" let={f} for={@changeset} class="flex flex-col gap-8 mt-8">
+      <.form id="name-course-form" :let={f} for={@changeset} class="flex flex-col gap-8 mt-8">
         <label class="flex flex-col">
           <span required for="course-name-field">Course name</span>
           <%= text_input f, :title, class: "torus-input" %>

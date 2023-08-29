@@ -19,6 +19,22 @@ defmodule OliWeb.IngestLiveTest do
     zip_tmp_filepath
   end
 
+  defp upload_file(file_name, conn) do
+    path = simulate_open_zip("./test/support/digests/#{file_name}")
+
+    file_upload = %{
+      "digest" => %Plug.Upload{
+        content_type: "application/zip",
+        filename: file_name,
+        path: path
+      }
+    }
+
+    post(conn, Routes.ingest_path(conn, :upload), %{
+      upload: file_upload
+    })
+  end
+
   describe "user cannot access when is not logged in" do
     test "redirects to new session when accessing the ingest project view", %{
       conn: conn
@@ -31,6 +47,225 @@ defmodule OliWeb.IngestLiveTest do
 
   describe "ingest project" do
     setup [:admin_conn]
+
+    test "shows error message when media manifest file is not loaded", %{conn: conn, admin: admin} do
+      conn = upload_file("digest_4", conn)
+
+      assert redirected_to(conn, 302) == Routes.live_path(OliWeb.Endpoint, OliWeb.Admin.IngestV2)
+
+      conn =
+        recycle(conn)
+        |> Pow.Plug.assign_current_user(admin, OliWeb.Pow.PowHelpers.get_pow_config(:author))
+
+      {:ok, view, _html} =
+        live(
+          conn,
+          Routes.live_path(OliWeb.Endpoint, OliWeb.Admin.IngestV2, %{
+            current_author_id: conn.assigns.current_author.id
+          })
+        )
+
+      view
+      |> element("button[phx-click=\"preprocess\"")
+      |> render_click()
+
+      wait_until(
+        fn ->
+          assert has_element?(
+                   view,
+                   "h3[class=\"display-6\"]",
+                   "Course Ingestion"
+                 )
+
+          assert has_element?(
+                   view,
+                   "table > tbody > tr > td:first-child",
+                   "Could not locate required file _media-manifest.json in archive"
+                 )
+        end,
+        1_000
+      )
+    end
+
+    test "shows error message when hierarchy file is not loaded", %{conn: conn, admin: admin} do
+      conn = upload_file("digest_5", conn)
+
+      assert redirected_to(conn, 302) == Routes.live_path(OliWeb.Endpoint, OliWeb.Admin.IngestV2)
+
+      conn =
+        recycle(conn)
+        |> Pow.Plug.assign_current_user(admin, OliWeb.Pow.PowHelpers.get_pow_config(:author))
+
+      {:ok, view, _html} =
+        live(
+          conn,
+          Routes.live_path(OliWeb.Endpoint, OliWeb.Admin.IngestV2, %{
+            current_author_id: conn.assigns.current_author.id
+          })
+        )
+
+      view
+      |> element("button[phx-click=\"preprocess\"")
+      |> render_click()
+
+      wait_until(
+        fn ->
+          assert has_element?(
+                   view,
+                   "h3[class=\"display-6\"]",
+                   "Course Ingestion"
+                 )
+
+          assert has_element?(
+                   view,
+                   "table > tbody > tr > td:first-child",
+                   "Could not locate required file _hierarchy.json in archive"
+                 )
+        end,
+        1_000
+      )
+    end
+
+    test "shows error message when project file is not loaded", %{conn: conn, admin: admin} do
+      conn = upload_file("digest_6", conn)
+
+      assert redirected_to(conn, 302) == Routes.live_path(OliWeb.Endpoint, OliWeb.Admin.IngestV2)
+
+      conn =
+        recycle(conn)
+        |> Pow.Plug.assign_current_user(admin, OliWeb.Pow.PowHelpers.get_pow_config(:author))
+
+      {:ok, view, _html} =
+        live(
+          conn,
+          Routes.live_path(OliWeb.Endpoint, OliWeb.Admin.IngestV2, %{
+            current_author_id: conn.assigns.current_author.id
+          })
+        )
+
+      view
+      |> element("button[phx-click=\"preprocess\"")
+      |> render_click()
+
+      wait_until(
+        fn ->
+          assert has_element?(
+                   view,
+                   "h3[class=\"display-6\"]",
+                   "Course Ingestion"
+                 )
+
+          assert has_element?(
+                   view,
+                   "table > tbody > tr > td:first-child",
+                   "Could not locate required file _project.json in archive"
+                 )
+        end,
+        1_000
+      )
+    end
+
+    test "shows error message when zip file does not have any file required", %{
+      conn: conn,
+      admin: admin
+    } do
+      conn = upload_file("digest_1", conn)
+
+      assert redirected_to(conn, 302) == Routes.live_path(OliWeb.Endpoint, OliWeb.Admin.IngestV2)
+
+      conn =
+        recycle(conn)
+        |> Pow.Plug.assign_current_user(admin, OliWeb.Pow.PowHelpers.get_pow_config(:author))
+
+      {:ok, view, _html} =
+        live(
+          conn,
+          Routes.live_path(OliWeb.Endpoint, OliWeb.Admin.IngestV2, %{
+            current_author_id: conn.assigns.current_author.id
+          })
+        )
+
+      view
+      |> element("button[phx-click=\"preprocess\"")
+      |> render_click()
+
+      wait_until(
+        fn ->
+          assert has_element?(
+                   view,
+                   "h3[class=\"display-6\"]",
+                   "Course Ingestion"
+                 )
+
+          assert has_element?(
+                   view,
+                   "table > tbody > tr > td:first-child",
+                   "Could not locate required file _media-manifest.json in archive"
+                 )
+
+          assert has_element?(
+                   view,
+                   "table > tbody > tr > td:first-child",
+                   "Could not locate required file _hierarchy.json in archive"
+                 )
+
+          assert has_element?(
+                   view,
+                   "table > tbody > tr > td:first-child",
+                   "Could not locate required file _project.json in archive"
+                 )
+        end,
+        1_000
+      )
+    end
+
+    test "there are no show error messages when file is loaded ok", %{
+      conn: conn,
+      admin: admin
+    } do
+      conn = upload_file("digest_3", conn)
+
+      assert redirected_to(conn, 302) == Routes.live_path(OliWeb.Endpoint, OliWeb.Admin.IngestV2)
+
+      conn =
+        recycle(conn)
+        |> Pow.Plug.assign_current_user(admin, OliWeb.Pow.PowHelpers.get_pow_config(:author))
+
+      {:ok, view, _html} =
+        live(
+          conn,
+          Routes.live_path(OliWeb.Endpoint, OliWeb.Admin.IngestV2, %{
+            current_author_id: conn.assigns.current_author.id
+          })
+        )
+
+      view
+      |> element("button[phx-click=\"preprocess\"")
+      |> render_click()
+
+      wait_until(
+        fn ->
+          refute has_element?(
+                   view,
+                   "table > thead > tr > th:first-child",
+                   "Error"
+                 )
+
+          assert has_element?(
+                   view,
+                   "h3[class=\"display-6\"]",
+                   "Course Ingestion"
+                 )
+
+          assert has_element?(
+                   view,
+                   "p[class=\"px-5 py-2\"]",
+                   "None exist"
+                 )
+        end,
+        1_000
+      )
+    end
 
     @tag :skip
     test "show error message when no file is attached", %{conn: conn} do

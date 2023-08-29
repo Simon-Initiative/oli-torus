@@ -3,8 +3,9 @@ defmodule OliWeb.Delivery.ScoredActivities.AssessmentsTableModel do
 
   alias OliWeb.Common.Table.{ColumnSpec, SortableTableModel}
   alias OliWeb.Common.FormatDateTime
+  alias Phoenix.LiveView.JS
 
-  def new(assessments, ctx) do
+  def new(assessments, ctx, target) do
     column_specs = [
       %ColumnSpec{
         name: :title,
@@ -29,7 +30,9 @@ defmodule OliWeb.Delivery.ScoredActivities.AssessmentsTableModel do
       },
       %ColumnSpec{
         name: :students_completion,
-        label: "STUDENTS COMPLETION",
+        label: "STUDENTS PROGRESS",
+        tooltip:
+          "Progress is percent attempted of activities present on the page from the most recent page attempt. If there are no activities within the page, and if the student has visited that page, we count that as an attempt.",
         render_fn: &__MODULE__.render_students_completion_column/3
       }
     ]
@@ -40,22 +43,34 @@ defmodule OliWeb.Delivery.ScoredActivities.AssessmentsTableModel do
       event_suffix: "",
       id_field: [:id],
       data: %{
-        ctx: ctx
+        ctx: ctx,
+        target: target
       }
     )
   end
 
   def render_assessment_column(assigns, assessment, _) do
     assigns =
-      Map.merge(assigns, %{title: assessment.title, container_label: assessment.container_label})
+      Map.merge(assigns, %{
+        title: assessment.title,
+        container_label: assessment.container_label,
+        id: assessment.id
+      })
 
     ~H"""
-      <div class="pl-9 pr-4 flex flex-col">
-        <%= if @container_label do %>
-          <span class="text-gray-600 font-bold text-sm"><%= @container_label %></span>
-        <% end %>
-        <div class="text-base"><%= @title %></div>
-      </div>
+    <div class="pl-9 pr-4 flex flex-col">
+      <%= if @container_label do %>
+        <span class="text-gray-600 font-bold text-sm"><%= @container_label %></span>
+      <% end %>
+      <a
+        class="text-base"
+        href="#"
+        phx-click={JS.push("paged_table_selection_change", target: @target)}
+        phx-value-id={@id}
+      >
+        <%= @title %>
+      </a>
+    </div>
     """
   end
 
@@ -67,7 +82,7 @@ defmodule OliWeb.Delivery.ScoredActivities.AssessmentsTableModel do
       })
 
     ~H"""
-      <%= parse_due_date(@due_date, @ctx, @scheduling_type) %>
+    <%= parse_due_date(@due_date, @ctx, @scheduling_type) %>
     """
   end
 
@@ -75,7 +90,9 @@ defmodule OliWeb.Delivery.ScoredActivities.AssessmentsTableModel do
     assigns = Map.merge(assigns, %{avg_score: assessment.avg_score})
 
     ~H"""
-      <div class={if @avg_score < 0.40, do: "text-red-600 font-bold"}><%= format_value(@avg_score) %></div>
+    <div class={if @avg_score < 0.40, do: "text-red-600 font-bold"}>
+      <%= format_value(@avg_score) %>
+    </div>
     """
   end
 
@@ -83,7 +100,7 @@ defmodule OliWeb.Delivery.ScoredActivities.AssessmentsTableModel do
     assigns = Map.merge(assigns, %{total_attempts: assessment.total_attempts})
 
     ~H"""
-      <%= @total_attempts || "-" %>
+    <%= @total_attempts || "-" %>
     """
   end
 
@@ -95,11 +112,13 @@ defmodule OliWeb.Delivery.ScoredActivities.AssessmentsTableModel do
       })
 
     ~H"""
-      <%= if @avg_score != nil do %>
-        <div class={if @students_completion < 0.40, do: "text-red-600 font-bold"}><%= format_value(@students_completion) %></div>
-      <% else %>
-        -
-      <% end %>
+    <%= if @avg_score != nil do %>
+      <div class={if @students_completion < 0.40, do: "text-red-600 font-bold"}>
+        <%= format_value(@students_completion) %>
+      </div>
+    <% else %>
+      -
+    <% end %>
     """
   end
 

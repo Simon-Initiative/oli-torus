@@ -4,13 +4,15 @@ defmodule OliWeb.Components.Delivery.ExplorationList do
   alias Oli.Publishing.DeliveryResolver, as: Resolver
   alias OliWeb.Components.Delivery.ExplorationCard
 
-  def mount(_params, %{"section_slug" => section_slug}, socket) do
+  def mount(_params, %{"section_slug" => section_slug, "preview_mode" => preview_mode}, socket) do
     explorations = Resolver.get_by_purpose(section_slug, :application)
+
 
     {:ok,
      assign(socket,
        explorations: explorations,
-       section_slug: section_slug
+       section_slug: section_slug,
+       preview_mode: preview_mode
      )}
   end
 
@@ -19,7 +21,7 @@ defmodule OliWeb.Components.Delivery.ExplorationList do
       <div class="flex flex-col gap-4">
         <%= if length(@explorations) > 0 do %>
           <%= for exploration <- @explorations do %>
-            <ExplorationCard.render exploration={exploration} section_slug={@section_slug}/>
+            <ExplorationCard.render exploration={exploration} section_slug={@section_slug} preview_mode={@preview_mode} />
           <% end %>
         <% else %>
           <div class="bg-white dark:bg-gray-800 border-l-4 border-delivery-primary p-4" role="alert">

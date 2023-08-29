@@ -5,7 +5,6 @@ defmodule OliWeb.Insights do
   alias Oli.Authoring.Course
   alias Oli.Utils
   alias CSV
-  alias Oli.Activities
 
   def mount(_params, %{"project_slug" => project_slug} = _session, socket) do
     by_activity_rows = Oli.Analytics.ByActivity.query_against_project_slug(project_slug)
@@ -376,22 +375,11 @@ defmodule OliWeb.Insights do
       [
         snapshots_title_row
         | Oli.Analytics.Common.snapshots_for_project(project_slug)
-          |> Enum.map(
-            &(&1
-              # Query returns a list of fields
-              # Get activity type
-              |> List.replace_at(5, Activities.get_registration!(Enum.at(&1, 5)).title)
-              # JSON format student response
-              |> List.replace_at(15, Jason.encode_to_iodata!(Enum.at(&1, 15)))
-              # JSON format feedback
-              |> List.replace_at(16, Jason.encode_to_iodata!(Enum.at(&1, 16)))
-              |> List.replace_at(17, Jason.encode_to_iodata!(Enum.at(&1, 17)))
-              # JSON format date
-              |> List.replace_at(20, date(Enum.at(&1, 20))))
-          )
       ]
     ]
   end
+
+
 
   def derived_analytics_data(project_slug) do
     analytics_title_row = [

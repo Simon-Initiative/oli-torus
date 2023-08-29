@@ -25,6 +25,7 @@
 :global(html.dark) {
   :global(.rich-text-editor > .slate-editor) {
     border-color: var(--color-gray-600);
+    outline: none;
 
     &.disabled {
       background: var(--color-gray-800);

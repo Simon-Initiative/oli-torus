@@ -1,6 +1,6 @@
 defmodule OliWeb.Admin.Ingest.ErrorsTableModel do
   alias OliWeb.Common.Table.{ColumnSpec, SortableTableModel}
-  use Surface.Component
+  use Phoenix.Component
 
   def new(errors) do
     SortableTableModel.new(
@@ -31,7 +31,7 @@ defmodule OliWeb.Admin.Ingest.ErrorsTableModel do
   end
 
   def render(assigns) do
-    ~F"""
+    ~H"""
     <div>nothing</div>
     """
   end

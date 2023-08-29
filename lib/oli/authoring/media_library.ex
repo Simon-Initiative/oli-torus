@@ -66,22 +66,16 @@ defmodule Oli.Authoring.MediaLibrary do
     if project != nil do
       hash = :crypto.hash(:md5, file_contents) |> Base.encode16()
 
-      # We must ensure that a file of the same name is not added again to the
-      # library as the upload would replace that existing file - causing a potential
-      # backward compatibility problem for publication.  We also check to determine
-      # if another file with the exact same content exists to prevent unecessary
-      # duplication of storage
+      # We must ensure that a file with the same content is not added again to the
+      # library to prevent unecessary duplication of storage
       case check_for_duplicates(project.id, file_name, hash) do
         # Upload the file and insert the meta data
         {:no_duplicate_found, _} ->
           upload(file_name, file_contents)
           |> insert(project.id, file_name, file_contents, hash)
 
-        {:duplicate_name, _} ->
-          {:error, {:file_exists}}
-
         {:duplicate_content, item} ->
-          {:ok, item}
+          {:duplicate, item}
       end
     else
       {:error, {:not_found}}
@@ -192,14 +186,10 @@ defmodule Oli.Authoring.MediaLibrary do
     end)
   end
 
-  defp check_for_duplicates(project_id, file_name, hash) do
-    if Oli.Repo.get_by(MediaItem, project_id: project_id, file_name: file_name) == nil do
-      case Oli.Repo.get_by(MediaItem, project_id: project_id, md5_hash: hash) do
-        nil -> {:no_duplicate_found, nil}
-        item -> {:duplicate_content, item}
-      end
-    else
-      {:duplicate_name, nil}
+  defp check_for_duplicates(project_id, _, hash) do
+    case Oli.Repo.get_by(MediaItem, project_id: project_id, md5_hash: hash) do
+      nil -> {:no_duplicate_found, nil}
+      item -> {:duplicate_content, item}
     end
   end
 

@@ -1,5 +1,5 @@
 defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
-  use Surface.LiveComponent
+  use OliWeb, :live_component
 
   import Phoenix.HTML.Form
   import OliWeb.ErrorHelpers
@@ -16,20 +16,6 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
   alias Oli.Delivery.Sections.SectionResource
   alias Oli.Publishing.DeliveryResolver
   alias Oli.Repo
-
-  prop(assessments, :list, required: true)
-  prop(params, :map, required: true)
-  prop(section, :map, required: true)
-  prop(ctx, :map, required: true)
-  prop(update_sort_order, :boolean, required: true)
-
-  data(flash, :map)
-  data(table_model, :map)
-  data(modal_assigns, :map)
-  data(total_count, :integer)
-  data(form_id, :string)
-  data(bulk_apply_selected_assessment_id, :integer)
-  data(selected_assessment, :map)
 
   @default_params %{
     offset: 0,
@@ -88,11 +74,25 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
      )}
   end
 
+  attr(:assessments, :list, required: true)
+  attr(:params, :map, required: true)
+  attr(:section, :map, required: true)
+  attr(:ctx, :map, required: true)
+  attr(:update_sort_order, :boolean, required: true)
+
+  attr(:flash, :map)
+  attr(:table_model, :map)
+  attr(:modal_assigns, :map)
+  attr(:total_count, :integer)
+  attr(:form_id, :string)
+  attr(:bulk_apply_selected_assessment_id, :integer)
+  attr(:selected_assessment, :map)
+
   def render(assigns) do
-    ~F"""
+    ~H"""
     <div id="settings_table" class="mx-10 mb-10 bg-white dark:bg-gray-800 shadow-sm">
-      {due_date_modal(assigns)}
-      {modal(@modal_assigns)}
+      <%= due_date_modal(assigns) %>
+      <%= modal(@modal_assigns) %>
       <div class="flex flex-col space-y-4 lg:space-y-0 lg:flex-row lg:items-center lg:justify-between pr-6 mb-4">
         <div class="flex flex-col pl-9">
           <h4 class="torus-h4 whitespace-nowrap">Assessment Settings</h4>
@@ -107,17 +107,28 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
           <label>Copy and apply settings from one assessment to all:</label>
           <div class="flex lg:space-x-4 lg:mt-2">
             <select class="torus-select" name="assessment_id">
-              {#for assessment <- @assessments}
-                <option
-                  selected={assessment.resource_id == @bulk_apply_selected_assessment_id}
-                  value={assessment.resource_id}
-                >{assessment.name}</option>
-              {/for}
+              <option
+                :for={assessment <- @assessments}
+                selected={assessment.resource_id == @bulk_apply_selected_assessment_id}
+                value={assessment.resource_id}
+              >
+                <%= assessment.name %>
+              </option>
             </select>
-            <button type="submit" class="torus-button flex justify-center primary h-9 px-4 whitespace-nowrap lg:ml-4">Bulk apply</button>
+            <button
+              type="submit"
+              class="torus-button flex justify-center primary h-9 px-4 whitespace-nowrap lg:ml-4"
+            >
+              Bulk apply
+            </button>
           </div>
         </form>
-        <form for="search" phx-target={@myself} phx-change="search_assessment" class="pb-6 ml-9 sm:pb-0 w-44">
+        <form
+          for="search"
+          phx-target={@myself}
+          phx-change="search_assessment"
+          class="pb-6 ml-9 sm:pb-0 w-44"
+        >
           <SearchInput.render
             id="assessments_search_input"
             name="assessment_name"
@@ -125,8 +136,13 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
           />
         </form>
       </div>
-      <form id={"form-#{@form_id}"} for="settings_table" phx-target={@myself} phx-change="update_setting">
-        <PagedTable
+      <form
+        id={"form-#{@form_id}"}
+        for="settings_table"
+        phx-target={@myself}
+        phx-change="update_setting"
+      >
+        <PagedTable.render
           table_model={@table_model}
           total_count={@total_count}
           offset={@params.offset}
@@ -144,139 +160,161 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
 
   def due_date_modal(assigns) do
     ~H"""
-      <.live_component
-        id="assessment_due_date_modal"
-        title={if @selected_assessment, do: "#{@selected_assessment.name} due date"}
-        module={OliWeb.Components.Modal}
-        on_confirm={JS.dispatch("submit", to: "#assessment-due-date-form") |> JS.push("close", target: "#assessment_due_date_modal")}
-        on_confirm_label="Save"
-      >
-        <div class="p-4">
-          <form id="assessment-due-date-form" for="settings_table" phx-target={@myself} phx-submit="edit_date">
-            <label for="end_date_input">Please pick a due date for the selected assessment</label>
-            <div class="flex gap-2 items-center mt-2">
-              <input id="end_date_input" name="end_date" type="datetime-local" phx-debounce={500} value={value_from_datetime(@selected_assessment.end_date, @ctx)}/>
-              <button class="torus-button primary" type="button" phx-click={JS.set_attribute({"value", ""}, to: "#end_date_input")}>Clear</button>
-            </div>
-          </form>
-        </div>
-      </.live_component>
+    <.live_component
+      id="assessment_due_date_modal"
+      title={if @selected_assessment, do: "#{@selected_assessment.name} due date"}
+      module={OliWeb.Components.LiveModal}
+      on_confirm={
+        JS.dispatch("submit", to: "#assessment-due-date-form")
+        |> JS.push("close", target: "#assessment_due_date_modal")
+      }
+      on_confirm_label="Save"
+    >
+      <div class="p-4">
+        <form
+          id="assessment-due-date-form"
+          for="settings_table"
+          phx-target={@myself}
+          phx-submit="edit_date"
+        >
+          <label for="end_date_input">Please pick a due date for the selected assessment</label>
+          <div class="flex gap-2 items-center mt-2">
+            <input
+              id="end_date_input"
+              name="end_date"
+              type="datetime-local"
+              phx-debounce={500}
+              value={value_from_datetime(@selected_assessment.end_date, @ctx)}
+            />
+            <button
+              class="torus-button primary"
+              type="button"
+              phx-click={JS.set_attribute({"value", ""}, to: "#end_date_input")}
+            >
+              Clear
+            </button>
+          </div>
+        </form>
+      </div>
+    </.live_component>
     """
   end
 
   def modal(%{show: "scheduled_feedback"} = assigns) do
     ~H"""
-     <div
-          id="scheduled_modal"
-          class="modal fade show bg-gray-900 bg-opacity-50"
-          tabindex="-1"
-          role="dialog"
-          aria-hidden="true"
-          style="display: block;"
-          phx-window-keydown={JS.dispatch("click", to: "#scheduled_cancel_button")}
-          phx-key="Escape"
-        >
-          <div class="modal-dialog modal-dialog-centered" role="document">
-            <div class="modal-content">
-              <div class="modal-header">
-                <h5 class="modal-title">View Feedback</h5>
+    <div
+      id="scheduled_modal"
+      class="modal fade show bg-gray-900 bg-opacity-50"
+      tabindex="-1"
+      role="dialog"
+      aria-hidden="true"
+      style="display: block;"
+      phx-window-keydown={JS.dispatch("click", to: "#scheduled_cancel_button")}
+      phx-key="Escape"
+    >
+      <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">View Feedback</h5>
+            <button
+              type="button"
+              class="btn-close box-content w-4 h-4 p-1 border-none rounded-none opacity-50 focus:shadow-none focus:outline-none focus:opacity-100 hover:opacity-75 hover:no-underline"
+              aria-label="Close"
+              phx-click={JS.dispatch("click", to: "#scheduled_cancel_button")}
+            >
+              <i class="fa-solid fa-xmark fa-xl" />
+            </button>
+          </div>
+          <div class="modal-body">
+            <.form
+              :let={f}
+              for={@changeset}
+              phx-submit="submit_scheduled_date"
+              phx-change="validate_scheduled_date"
+              phx-target={@myself}
+            >
+              <div class="flex flex-col space-y-2">
+                <%= label(f, :feedback_scheduled_date, "Scheduled Date", class: "control-label") %>
+                <%= datetime_local_input(f, :feedback_scheduled_date, class: "mr-auto") %>
+                <%= error_tag(f, :feedback_scheduled_date, true) %>
+              </div>
+              <div class="flex space-x-3 mt-6 justify-end">
                 <button
                   type="button"
-                  class="btn-close box-content w-4 h-4 p-1 border-none rounded-none opacity-50 focus:shadow-none focus:outline-none focus:opacity-100 hover:opacity-75 hover:no-underline"
-                  aria-label="Close"
-                  phx-click={JS.dispatch("click", to: "#scheduled_cancel_button")}
-                >
-                  <i class="fa-solid fa-xmark fa-xl" />
-                </button>
-              </div>
-              <div class="modal-body">
-                <.form
-                  for={@changeset}
-                  phx-submit="submit_scheduled_date"
-                  phx-change="validate_scheduled_date"
+                  id="scheduled_cancel_button"
+                  class="btn btn-link"
+                  phx-click="cancel_scheduled_modal"
                   phx-target={@myself}
-                  :let={f}
                 >
-                  <div class="flex flex-col space-y-2">
-                    <%= label f, :feedback_scheduled_date, "Scheduled Date", class: "control-label" %>
-                    <%= datetime_local_input f, :feedback_scheduled_date, class: "mr-auto" %>
-                    <%= error_tag f, :feedback_scheduled_date, true %>
-                  </div>
-                  <div class="flex space-x-3 mt-6 justify-end">
-                    <button
-                      type="button"
-                      id="scheduled_cancel_button"
-                      class="btn btn-link"
-                      phx-click="cancel_scheduled_modal"
-                      phx-target={@myself}
-                    >Cancel</button>
+                  Cancel
+                </button>
 
-                    <button
-                      type="submit"
-                      class="btn btn-primary"
-                    >Save</button>
-                  </div>
-                </.form>
+                <button type="submit" class="btn btn-primary">Save</button>
               </div>
-            </div>
+            </.form>
           </div>
         </div>
+      </div>
+    </div>
     """
   end
 
   def modal(%{show: "confirm_bulk_apply"} = assigns) do
     ~H"""
-     <div
-          id="confirm_bulk_apply_modal"
-          class="modal fade show bg-gray-900 bg-opacity-50"
-          tabindex="-1"
-          role="dialog"
-          aria-hidden="true"
-          style="display: block;"
-          phx-window-keydown={JS.dispatch("click", to: "#cancel_bulk_apply_button")}
-          phx-key="Escape"
-        >
-          <div class="modal-dialog modal-dialog-centered" role="document">
-            <div class="modal-content">
-              <div class="modal-header">
-                <h5 class="modal-title">Confirm Bulk Apply</h5>
+    <div
+      id="confirm_bulk_apply_modal"
+      class="modal fade show bg-gray-900 bg-opacity-50"
+      tabindex="-1"
+      role="dialog"
+      aria-hidden="true"
+      style="display: block;"
+      phx-window-keydown={JS.dispatch("click", to: "#cancel_bulk_apply_button")}
+      phx-key="Escape"
+    >
+      <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Confirm Bulk Apply</h5>
+            <button
+              type="button"
+              class="btn-close box-content w-4 h-4 p-1 border-none rounded-none opacity-50 focus:shadow-none focus:outline-none focus:opacity-100 hover:opacity-75 hover:no-underline"
+              aria-label="Close"
+              phx-click={JS.dispatch("click", to: "#cancel_bulk_apply_button")}
+            >
+              <i class="fa-solid fa-xmark fa-xl" />
+            </button>
+          </div>
+          <div class="modal-body">
+            <.form
+              for={%{}}
+              as={:confirm_bulk_apply}
+              phx-submit="confirm_bulk_apply"
+              phx-target={@myself}
+            >
+              <div class="flex flex-col space-y-2">
+                <p>
+                  Are you sure you want to apply the <strong><%= @base_assessment.name %></strong>
+                  settings to all other assessments?
+                </p>
+              </div>
+              <div class="flex space-x-3 mt-6 justify-end">
                 <button
                   type="button"
-                  class="btn-close box-content w-4 h-4 p-1 border-none rounded-none opacity-50 focus:shadow-none focus:outline-none focus:opacity-100 hover:opacity-75 hover:no-underline"
-                  aria-label="Close"
-                  phx-click={JS.dispatch("click", to: "#cancel_bulk_apply_button")}
-                >
-                  <i class="fa-solid fa-xmark fa-xl" />
-                </button>
-              </div>
-              <div class="modal-body">
-                <.form
-                  for={:confirm_bulk_apply}
-                  phx-submit="confirm_bulk_apply"
+                  id="cancel_bulk_apply_button"
+                  class="btn btn-link"
+                  phx-click="hide_modal"
                   phx-target={@myself}
                 >
-                  <div class="flex flex-col space-y-2">
-                    <p>Are you sure you want to apply the <strong><%= @base_assessment.name %></strong> settings to all other assessments?</p>
-                  </div>
-                  <div class="flex space-x-3 mt-6 justify-end">
-                    <button
-                      type="button"
-                      id="cancel_bulk_apply_button"
-                      class="btn btn-link"
-                      phx-click="hide_modal"
-                      phx-target={@myself}
-                    >Cancel</button>
+                  Cancel
+                </button>
 
-                    <button
-                      type="submit"
-                      class="btn btn-primary"
-                    >Confirm</button>
-                  </div>
-                </.form>
+                <button type="submit" class="btn btn-primary">Confirm</button>
               </div>
-            </div>
+            </.form>
           </div>
         </div>
+      </div>
+    </div>
     """
   end
 
@@ -588,18 +626,21 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
          )}
 
       {:ok, _section_resource} ->
-        {:noreply,
-         socket
-         |> update_assessments(
-           socket.assigns.modal_assigns.changeset.data.resource_id,
-           [
-             {:feedback_scheduled_date, utc_datetime},
-             {:feedback_mode, :scheduled}
-           ],
-           false
-         )
-         |> flash_to_liveview(:info, "Setting updated!")
-         |> assign(modal_assigns: %{show: false})}
+        {
+          :noreply,
+          socket
+          |> update_assessments(
+            socket.assigns.modal_assigns.changeset.data.resource_id,
+            [
+              {:feedback_scheduled_date, utc_datetime},
+              {:feedback_mode, :scheduled}
+            ],
+            false
+          )
+          |> flash_to_liveview(:info, "Setting updated!")
+          |> assign(modal_assigns: %{show: false})
+          |> assign(form_id: UUID.uuid4())
+        }
     end
   end
 

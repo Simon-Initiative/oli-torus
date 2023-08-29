@@ -415,7 +415,7 @@ defmodule Oli.Delivery.Evaluation.ExplanationTest do
             set_num_attempts: 2
           }
         )
-        |> Seeder.Attempt.visit_unscored_page(
+        |> Seeder.Attempt.visit_page(
           ref(:unscored_page1),
           ref(:section),
           ref(:student1),
@@ -465,7 +465,7 @@ defmodule Oli.Delivery.Evaluation.ExplanationTest do
           ref(:unscored_page1_activity_attempt),
           datashop_session_id_user1
         )
-        |> Seeder.Attempt.visit_unscored_page(
+        |> Seeder.Attempt.visit_page(
           ref(:unscored_page1),
           ref(:section),
           ref(:student1),

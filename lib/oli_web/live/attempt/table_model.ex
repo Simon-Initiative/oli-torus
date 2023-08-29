@@ -1,5 +1,5 @@
 defmodule OliWeb.Attempt.TableModel do
-  use Surface.LiveComponent
+  use Phoenix.Component
 
   alias OliWeb.Common.Table.{ColumnSpec, SortableTableModel}
 
@@ -55,41 +55,39 @@ defmodule OliWeb.Attempt.TableModel do
     )
   end
 
-
   def render_updated(assigns, row, _) do
     if row.updated do
-      ~F"""
+      ~H"""
       <div style="background-color: black; color: white;">UPDATED</div>
       """
     else
-      ~F"""
+      ~H"""
       <div></div>
-    """
+      """
     end
   end
 
   def render_attempts(assigns, row, _) do
+    assigns = Map.merge(assigns, %{row: row})
 
     if row.id == assigns.model.selected do
-      ~F"""
+      ~H"""
       <div>
-        <strong>{row.attempt_guid}</strong>
-
+        <strong><%= @row.attempt_guid %></strong>
       </div>
       """
     else
-      ~F"""
+      ~H"""
       <div>
-        <span style="color: blue; cursor: pointer;""><u>{row.attempt_guid}</u></span>
-
+        <span style="color: blue; cursor: pointer;"><u><%= @row.attempt_guid %></u></span>
       </div>
       """
     end
   end
 
   def render(assigns) do
-    ~F"""
-      <div>nothing</div>
+    ~H"""
+    <div>nothing</div>
     """
   end
 end

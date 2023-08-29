@@ -1,5 +1,5 @@
 defmodule OliWeb.RevisionHistory do
-  use Surface.LiveView
+  use OliWeb, :live_view
   use OliWeb.Common.Modal
 
   import Ecto.Query, warn: false
@@ -120,7 +120,7 @@ defmodule OliWeb.RevisionHistory do
 
   defp fetch_all_revisions(resource_id) do
     Repo.all(
-      from rev in Revision,
+      from(rev in Revision,
         join: a in Author,
         on: a.id == rev.author_id,
         where: rev.resource_id == ^resource_id,
@@ -137,6 +137,7 @@ defmodule OliWeb.RevisionHistory do
             :author_id,
             author: [:email]
           ])
+      )
     )
   end
 
@@ -223,8 +224,8 @@ defmodule OliWeb.RevisionHistory do
     }
 
     modal = fn assigns ->
-      ~F"""
-        <RestoreRevisionModal.render {...@modal_assigns} />
+      ~H"""
+      <RestoreRevisionModal.render id={@modal_assigns.id} />
       """
     end
 
@@ -406,7 +407,7 @@ defmodule OliWeb.RevisionHistory do
      )}
   end
 
-  defp friendly_error(:too_large), do: "Image too large"
+  defp friendly_error(:too_large), do: "File too large"
   defp friendly_error(:too_many_files), do: "Too many files"
   defp friendly_error(:not_accepted), do: "Unacceptable file type"
 
