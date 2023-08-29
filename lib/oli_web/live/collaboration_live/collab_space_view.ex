@@ -177,101 +177,91 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
       </Modal.modal>
 
       <div class="bg-white dark:bg-gray-800 dark:text-delivery-body-color-dark shadow">
-        <div>
-          <div class="flex items-center justify-between p-5">
-            <div class="flex items-center justify-between w-full">
-              <h3 class="text-xl font-bold"><%= @title %></h3>
-              <%= if is_archived?(@collab_space_config.status) do %>
-                <span class="badge badge-info ml-2">Archived</span>
-              <% end %>
-            </div>
+        <div class="flex items-center justify-between p-5 w-full">
+          <h3 class="text-xl font-bold"><%= @title %></h3>
+          <span :if={is_archived?(@collab_space_config.status)} class="badge badge-info ml-2">
+            Archived
+          </span>
+        </div>
+
+        <.form
+          :if={!is_archived?(@collab_space_config.status)}
+          id="new_post_form"
+          for={@new_post_form}
+          phx-submit="create_post"
+          class="bg-gray-100 dark:bg-gray-700 mb-5 m-3 p-3 rounded-sm"
+        >
+          <div class="hidden">
+            <.input type="hidden" field={@new_post_form[:user_id]} />
+            <.input type="hidden" field={@new_post_form[:section_id]} />
+            <.input type="hidden" field={@new_post_form[:resource_id]} />
+            <.input type="hidden" field={@new_post_form[:parent_post_id]} />
+            <.input type="hidden" field={@new_post_form[:thread_root_id]} />
           </div>
-        </div>
 
-        <div class="p-2 pt-0 mb-5">
-          <.form
-            id="new_post_form"
-            for={@new_post_form}
-            phx-submit="create_post"
-            class="bg-gray-100 dark:bg-gray-700 p-3 rounded-sm"
-          >
-            <div class="hidden">
-              <.input type="hidden" field={@new_post_form[:user_id]} />
-              <.input type="hidden" field={@new_post_form[:section_id]} />
-              <.input type="hidden" field={@new_post_form[:resource_id]} />
-              <.input type="hidden" field={@new_post_form[:parent_post_id]} />
-              <.input type="hidden" field={@new_post_form[:thread_root_id]} />
-            </div>
+          <.inputs_for :let={pc} field={@new_post_form[:content]}>
+            <.input
+              type="textarea"
+              field={pc[:message]}
+              autocomplete="off"
+              placeholder="New post"
+              data-grow="true"
+              data-initial-height={44}
+              onkeyup="resizeTextArea(this)"
+              class="torus-input border-r-0 collab-space__textarea"
+            />
+          </.inputs_for>
 
-            <.inputs_for :let={pc} field={@new_post_form[:content]}>
-              <.input
-                type="textarea"
-                field={pc[:message]}
-                autocomplete="off"
-                placeholder="New post"
-                data-grow="true"
-                data-initial-height={44}
-                onkeyup="resizeTextArea(this)"
-                class="torus-input border-r-0 collab-space__textarea"
-              />
-            </.inputs_for>
-
-            <div class="flex justify-end">
-              <%= if @is_student and @collab_space_config.anonymous_posting do %>
-                <div class="hidden">
-                  <.input
-                    type="checkbox"
-                    id="new_post_anonymous_checkbox"
-                    field={@new_post_form[:anonymous]}
-                  />
-                </div>
-                <Buttons.button_with_options
-                  id="create_post_button"
-                  type="submit"
-                  disabled={is_archived?(@collab_space_config.status)}
-                  options={[
-                    %{
-                      text: "Post anonymously",
-                      on_click:
-                        JS.dispatch("click", to: "#new_post_anonymous_checkbox")
-                        |> JS.dispatch("click", to: "#create_post_button_button")
-                    }
-                  ]}
-                >
-                  Create Post
-                </Buttons.button_with_options>
-              <% else %>
-                <Buttons.button disabled={is_archived?(@collab_space_config.status)} type="submit">
-                  Create Post
-                </Buttons.button>
-              <% end %>
-            </div>
-          </.form>
-        </div>
-
-        <%= if length(@posts) > 1 do %>
-          <div class="flex justify-end gap-2 py-2 px-5">
-            <Sort.render sort={@sort} />
+          <div class="flex justify-end">
+            <%= if @is_student and @collab_space_config.anonymous_posting do %>
+              <div class="hidden">
+                <.input
+                  type="checkbox"
+                  id="new_post_anonymous_checkbox"
+                  field={@new_post_form[:anonymous]}
+                />
+              </div>
+              <Buttons.button_with_options
+                id="create_post_button"
+                type="submit"
+                options={[
+                  %{
+                    text: "Post anonymously",
+                    on_click:
+                      JS.dispatch("click", to: "#new_post_anonymous_checkbox")
+                      |> JS.dispatch("click", to: "#create_post_button_button")
+                  }
+                ]}
+              >
+                Create Post
+              </Buttons.button_with_options>
+            <% else %>
+              <Buttons.button disabled={is_archived?(@collab_space_config.status)} type="submit">
+                Create Post
+              </Buttons.button>
+            <% end %>
           </div>
-        <% else %>
-          <%= if length(@posts) == 0 do %>
-            <div class="border border-gray-100 rounded-sm p-5 flex items-center justify-center m-2">
-              <span class="torus-span">No posts yet</span>
-            </div>
-          <% end %>
-        <% end %>
+        </.form>
 
-        <div class={if is_archived?(@collab_space_config.status), do: "readonly", else: ""}>
-          <PostList.render
-            posts={@posts}
-            collab_space_config={@collab_space_config}
-            selected={@selected}
-            user_id={@user.id}
-            is_instructor={@is_instructor}
-            is_student={@is_student}
-            editing_post={if @is_edition_mode, do: @editing_post, else: nil}
-          />
+        <div :if={length(@posts) > 1} class="flex justify-end gap-2 py-2 px-5">
+          <Sort.render sort={@sort} />
         </div>
+        <div
+          :if={length(@posts) == 0}
+          class="border border-gray-100 rounded-sm p-5 flex items-center justify-center m-2"
+        >
+          <span class="torus-span">No posts yet</span>
+        </div>
+
+        <PostList.render
+          posts={@posts}
+          collab_space_config={@collab_space_config}
+          selected={@selected}
+          user_id={@user.id}
+          is_instructor={@is_instructor}
+          is_student={@is_student}
+          editing_post={if @is_edition_mode, do: @editing_post, else: nil}
+        />
 
         <div class="p-5">
           <ActiveUsers.render users={@active_users} />

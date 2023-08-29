@@ -21,6 +21,7 @@ defmodule OliWeb.ConnCase do
       import Plug.Conn
       import Phoenix.ConnTest
       alias OliWeb.Router.Helpers, as: Routes
+      use OliWeb, :verified_routes
 
       import Oli.TestHelpers
       import OliWeb.Pow.PowHelpers

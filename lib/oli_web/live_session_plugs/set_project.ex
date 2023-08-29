@@ -1,4 +1,4 @@
-defmodule Oli.LiveSessionPlugs.SetProject do
+defmodule OliWeb.LiveSessionPlugs.SetProject do
   import Phoenix.Component, only: [assign: 2]
 
   def on_mount(:default, %{"project_id" => project_id}, _session, socket) do
