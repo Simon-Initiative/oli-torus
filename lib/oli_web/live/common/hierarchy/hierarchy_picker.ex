@@ -185,7 +185,7 @@ defmodule OliWeb.Common.Hierarchy.HierarchyPicker do
       <div class="flex-1 mx-2">
         <span class="align-middle">
           <input type="checkbox" {@maybe_checked} />
-          <OliWeb.Curriculum.EntryLive.icon child={@child.revision} />
+          <OliWeb.Curriculum.Entry.icon child={@child.revision} />
         </span>
         <%= resource_link(assigns, @child) %>
       </div>
@@ -224,7 +224,7 @@ defmodule OliWeb.Common.Hierarchy.HierarchyPicker do
       <div class="flex-1 mx-2">
         <span class="align-middle">
           <input type="checkbox" {@maybe_checked} {@maybe_preselected} />
-          <%= OliWeb.Curriculum.EntryLive.icon(%{child: @child.revision}) %>
+          <%= OliWeb.Curriculum.Entry.icon(%{child: @child.revision}) %>
         </span>
         <%= resource_link(assigns, @child) %>
       </div>
@@ -239,7 +239,7 @@ defmodule OliWeb.Common.Hierarchy.HierarchyPicker do
     <div id={"hierarchy_item_#{@child.uuid}"}>
       <div class="flex-1 mx-2">
         <span class="align-middle">
-          <%= OliWeb.Curriculum.EntryLive.icon(%{child: @child.revision}) %>
+          <%= OliWeb.Curriculum.Entry.icon(%{child: @child.revision}) %>
         </span>
         <%= resource_link(assigns, @child) %>
       </div>
