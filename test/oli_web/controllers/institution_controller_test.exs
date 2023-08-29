@@ -1,8 +1,6 @@
 defmodule OliWeb.InstitutionControllerTest do
   use OliWeb.ConnCase
 
-  import ExUnit.CaptureLog
-
   alias Oli.Repo
   alias Oli.Accounts
   alias Oli.Accounts.Author
@@ -10,7 +8,6 @@ defmodule OliWeb.InstitutionControllerTest do
   alias Oli.Institutions.Institution
   alias Oli.Lti.Tool.Registration
   alias Oli.Lti.Tool.Deployment
-  alias Oli.Institutions.PendingRegistration
 
   @create_attrs %{
     country_code: "some country_code",
@@ -121,50 +118,6 @@ defmodule OliWeb.InstitutionControllerTest do
 
       assert %Institution{id: ^institution_id} =
                Institutions.get_institution_by!(%{status: :deleted})
-    end
-  end
-
-  describe "approve registration" do
-    test "approves the chosen registration", %{conn: conn} do
-      pending_registration = pending_registration_fixture()
-
-      pending_registration_attrs =
-        %{}
-        |> Map.merge(PendingRegistration.institution_attrs(pending_registration))
-        |> Map.merge(PendingRegistration.registration_attrs(pending_registration))
-
-      assert capture_log(fn ->
-               conn =
-                 put(conn, Routes.institution_path(conn, :approve_registration), %{
-                   "pending_registration" => pending_registration_attrs
-                 })
-
-               assert redirected_to(conn) ==
-                        Routes.live_path(OliWeb.Endpoint, OliWeb.Admin.Institutions.IndexLive) <> "#pending-registrations"
-
-               assert Institutions.count_pending_registrations() == 0
-             end) =~ "This message cannot be sent because SLACK_WEBHOOK_URL is not configured"
-    end
-
-    test "displays pending registration data", map do
-      {:ok, conn: conn, ctx: session_context} = set_timezone(map)
-
-      pending_registration = pending_registration_fixture()
-
-      conn = get(conn, Routes.live_path(OliWeb.Endpoint, OliWeb.Admin.Institutions.IndexLive))
-
-      assert html_response(conn, 200) =~ pending_registration.name
-      assert html_response(conn, 200) =~ pending_registration.institution_url
-      assert html_response(conn, 200) =~ pending_registration.institution_email
-
-      assert html_response(conn, 200) =~
-               OliWeb.Common.Utils.render_date(
-                 pending_registration,
-                 :inserted_at,
-                 session_context
-               )
-
-      assert html_response(conn, 200) =~ "Decline"
     end
   end
 
