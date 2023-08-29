@@ -89,7 +89,7 @@ defmodule Oli.Analytics.RawAnalyticsExportWorker do
     # create file by writing the header row
     File.write!(
       tmp_filepath,
-      encoded_snapshots_title_row <> "\n"
+      encoded_snapshots_title_row
     )
 
     Oli.Analytics.Common.stream_project_raw_analytics_to_file!(project_slug, tmp_filepath)

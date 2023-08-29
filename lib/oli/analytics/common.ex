@@ -177,7 +177,7 @@ defmodule Oli.Analytics.Common do
           ]
         ]
         |> CSV.encode(separator: ?\t)
-        |> Enum.map(&File.write!(append_to_filepath, &1 <> "\n", [:append]))
+        |> Enum.map(&File.write!(append_to_filepath, &1, [:append]))
       end)
       |> Stream.run()
     end)
