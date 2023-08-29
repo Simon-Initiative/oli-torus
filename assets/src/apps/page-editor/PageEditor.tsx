@@ -275,7 +275,7 @@ export class PageEditor extends React.Component<PageEditorProps, PageEditorState
     // only update if editMode is active
     if (!this.state.editMode) return;
 
-    const model = this.adjustActivityForConstraints(
+    const constrainedContent = this.adjustActivityForConstraints(
       this.state.activityContexts.get(id)?.typeSlug,
       update.content,
     );
@@ -295,7 +295,7 @@ export class PageEditor extends React.Component<PageEditorProps, PageEditorState
           this.props.projectSlug,
           this.props.resourceId,
           merged.activityId,
-          { ...update, content: model },
+          { ...update, content: constrainedContent },
           releaseLock,
         );
 

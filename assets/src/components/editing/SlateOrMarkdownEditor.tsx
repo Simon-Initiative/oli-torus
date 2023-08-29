@@ -72,6 +72,7 @@ export const SlateOrMarkdownEditor: React.FC<SlateOrMarkdownEditorProps> = ({
 
   const [switchToMarkdownModal, toggleSwitchToMarkdownModal, , closeSwitchMarkdownModal] =
     useToggle();
+
   const [switchToSlateModal, toggleSwitchToSlateModal, , closeSwitchSlateModal] = useToggle();
 
   const changeEditor = (editor: 'markdown' | 'slate') => (_e?: any) => {

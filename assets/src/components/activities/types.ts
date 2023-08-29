@@ -389,7 +389,7 @@ export const makeHint: (text: string) => Hint = makeContent;
 /**
  * Defines feedback entity.
  */
-export interface Feedback extends Identifiable, HasContent {}
+export interface Feedback extends Identifiable, HasContent, SpecifiesEditor {}
 /**
  * Defines explanation entity.
  */
