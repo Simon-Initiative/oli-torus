@@ -344,7 +344,7 @@ defmodule Oli.Delivery.Attempts.Core do
         join: r in Revision,
         on: pr.revision_id == r.id,
         where:
-          s.slug == ^section_slug and s.status == :active and r.graded == true and
+          s.slug == ^section_slug and r.graded == true and
             a.resource_id == ^resource_id,
         select: a,
         distinct: a
@@ -368,7 +368,7 @@ defmodule Oli.Delivery.Attempts.Core do
         on: pr.publication_id == spp.publication_id,
         join: r in Revision,
         on: pr.revision_id == r.id,
-        where: s.slug == ^section_slug and s.status == :active and a.user_id == ^user_id,
+        where: s.slug == ^section_slug and a.user_id == ^user_id,
         distinct: a.id,
         select: a
       )
@@ -381,7 +381,7 @@ defmodule Oli.Delivery.Attempts.Core do
         join: s in Section,
         on: a.section_id == s.id,
         where:
-          a.user_id == ^user_id and s.slug == ^section_slug and s.status == :active and
+          a.user_id == ^user_id and s.slug == ^section_slug and
             a.resource_id == ^resource_id,
         select: a
       )
@@ -395,7 +395,7 @@ defmodule Oli.Delivery.Attempts.Core do
         on: a.id == ra.resource_access_id,
         join: s in Section,
         on: a.section_id == s.id,
-        where: a.user_id == ^user_id and s.slug == ^section_slug and s.status == :active,
+        where: a.user_id == ^user_id and s.slug == ^section_slug,
         group_by: a.id,
         select: a,
         select_merge: %{
