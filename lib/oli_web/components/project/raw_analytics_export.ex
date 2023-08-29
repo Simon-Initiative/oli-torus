@@ -7,7 +7,7 @@ defmodule OliWeb.Components.Project.RawAnalyticsExport do
   alias Oli.Publishing.Publications.Publication
 
   attr(:ctx, SessionContext, required: true)
-  attr(:latest_publication, Publication, required: true)
+  attr(:latest_publication, Publication, default: nil)
   attr(:analytics_export_status, :atom, values: [:not_available, :in_progress, :available])
   attr(:analytics_export_url, :string)
   attr(:analytics_export_timestamp, :string)
