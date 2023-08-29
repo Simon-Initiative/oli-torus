@@ -3,7 +3,6 @@ defmodule OliWeb.Projects.OverviewLive do
 
   import Phoenix.Component
 
-  alias Phoenix.PubSub
   alias Oli.Accounts
   alias Oli.Authoring.Course
   alias Oli.Authoring.Course.Project
@@ -15,8 +14,6 @@ defmodule OliWeb.Projects.OverviewLive do
   alias Oli.Resources.Collaboration
   alias OliWeb.Components.Overview
   alias OliWeb.Projects.RequiredSurvey
-  alias Oli.Authoring.Broadcaster
-  alias Oli.Authoring.Broadcaster.Subscriber
   alias OliWeb.Common.SessionContext
 
   def mount(_params, session, socket) do
