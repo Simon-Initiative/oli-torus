@@ -377,7 +377,7 @@ export const makeStem: (text: string) => Stem = makeContent;
 /**
  * Defines a hint.
  */
-export interface Hint extends Identifiable, HasContent {}
+export interface Hint extends Identifiable, HasContent, SpecifiesEditor {}
 /**
  * Marker interface for an entity that has hints.
  */

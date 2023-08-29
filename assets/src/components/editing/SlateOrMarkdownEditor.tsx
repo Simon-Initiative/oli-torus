@@ -24,6 +24,7 @@ type SlateOrMarkdownEditorProps = {
   initialHeight?: number;
   toolbarInsertDescs?: CommandDescription[]; // Content insertion options
   style?: React.CSSProperties;
+  className?: string;
 };
 
 /*
@@ -49,6 +50,7 @@ export const SlateOrMarkdownEditor: React.FC<SlateOrMarkdownEditorProps> = ({
   initialHeight,
   allowBlockElements,
   style,
+  className,
 }) => {
   // Bit of a hack. Since this isn't a real controlled component, need to keep track of the latest
   // version for validation reasons.
@@ -114,7 +116,7 @@ export const SlateOrMarkdownEditor: React.FC<SlateOrMarkdownEditorProps> = ({
     return (
       <ErrorBoundary>
         <Editor
-          className="structured-content p-1"
+          className={`structured-content p-1 ${className}`}
           commandContext={{ projectSlug: projectSlug, resourceSlug: resourceSlug }}
           editMode={editMode}
           value={content}
