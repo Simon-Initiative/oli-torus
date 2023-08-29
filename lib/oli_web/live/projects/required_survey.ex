@@ -19,7 +19,7 @@ defmodule OliWeb.Projects.RequiredSurvey do
           <label class="form-check-label">
             <input name="survey" class="survey_check" type="checkbox" id="survey_check" checked={@enabled}>
             <span>
-              Allow students to take a survey before starting the course
+              Require students to take a survey before starting the course
             </span>
           </label>
         </div>
