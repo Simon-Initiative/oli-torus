@@ -400,6 +400,7 @@ defmodule OliWeb.Router do
 
     # Project display pages
     live("/:project_id/publish", Projects.PublishView)
+    post("/:project_id/datashop", ProjectController, :download_datashop)
     post("/:project_id/export", ProjectController, :download_export)
     post("/:project_id/duplicate", ProjectController, :clone_project)
 

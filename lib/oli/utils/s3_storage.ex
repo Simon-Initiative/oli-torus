@@ -1,5 +1,4 @@
 defmodule Oli.Utils.S3Storage do
-
   alias ExAws.S3
   alias Oli.HTTP
 
@@ -15,7 +14,20 @@ defmodule Oli.Utils.S3Storage do
       {:ok, %{status_code: 200}} -> {:ok, full_upload_path}
       {_, payload} -> {:error, payload}
     end
+  end
 
+  def stream_file(bucket_name, upload_path, file_path) do
+    media_url = Application.fetch_env!(:oli, :media_url)
+
+    full_upload_path = "https://#{media_url}/#{upload_path}"
+
+    case file_path
+         |> S3.Upload.stream_file()
+         |> S3.upload(bucket_name, upload_path)
+         |> HTTP.aws().request() do
+      {:ok, %{status_code: 200}} -> {:ok, full_upload_path}
+      {_, payload} -> {:error, payload}
+    end
   end
 
   @doc """
@@ -37,7 +49,6 @@ defmodule Oli.Utils.S3Storage do
       {:ok, %{status_code: 200}} -> {:ok, full_upload_path}
       {_, payload} -> {:error, payload}
     end
-
   end
 
   defp upload(bucket_name, upload_path, contents) do

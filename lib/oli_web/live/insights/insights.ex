@@ -4,7 +4,7 @@ defmodule OliWeb.Insights do
   alias Oli.Publishing
   alias OliWeb.Insights.{TableHeader, TableRow}
   alias Oli.Authoring.Course
-  alias OliWeb.Components.Project.DatashopExport
+  alias OliWeb.Components.Project.RawAnalyticsExport
   alias Oli.Authoring.Broadcaster
   alias Oli.Authoring.Broadcaster.Subscriber
   alias OliWeb.Common.SessionContext
@@ -21,15 +21,15 @@ defmodule OliWeb.Insights do
 
     latest_publication = Publishing.get_latest_published_publication_by_slug(project.slug)
 
-    {datashop_export_status, datashop_export_url, datashop_export_timestamp} =
-      case Course.datashop_export_status(project) do
+    {analytics_export_status, analytics_export_url, analytics_export_timestamp} =
+      case Course.analytics_export_status(project) do
         {:available, url, timestamp} -> {:available, url, timestamp}
         {:expired, _, _} -> {:expired, nil, nil}
         {status} -> {status, nil, nil}
       end
 
-    # Subscribe to any datashop snapshot progress updates for this project
-    Subscriber.subscribe_to_datashop_export_status(project.slug)
+    # Subscribe to any raw analytics snapshot progress updates for this project
+    Subscriber.subscribe_to_analytics_export_status(project.slug)
 
     {:ok,
      assign(socket,
@@ -46,9 +46,9 @@ defmodule OliWeb.Insights do
        sort_order: :asc,
        title: "Insights | " <> project.title,
        latest_publication: latest_publication,
-       datashop_export_status: datashop_export_status,
-       datashop_export_url: datashop_export_url,
-       datashop_export_timestamp: datashop_export_timestamp
+       analytics_export_status: analytics_export_status,
+       analytics_export_url: analytics_export_url,
+       analytics_export_timestamp: analytics_export_timestamp
      )}
   end
 
@@ -90,12 +90,12 @@ defmodule OliWeb.Insights do
       the skills covered by each question to find areas where students are struggling.
       </p>
       <div class="d-flex align-items-center">
-        <DatashopExport.export_button
+        <RawAnalyticsExport.export_button
             ctx={@ctx}
             latest_publication={@latest_publication}
-            datashop_export_status={@datashop_export_status}
-            datashop_export_url={@datashop_export_url}
-            datashop_export_timestamp={@datashop_export_timestamp} />
+            analytics_export_status={@analytics_export_status}
+            analytics_export_url={@analytics_export_url}
+            analytics_export_timestamp={@analytics_export_timestamp} />
       </div>
     </div>
     <ul class="nav nav-pills">
@@ -136,10 +136,10 @@ defmodule OliWeb.Insights do
 
         <%= if !is_loading?(assigns) do %>
           <table class="table table-sm">
-            <%= live_component TableHeader, assigns %>
+            <.live_component module={TableHeader} id="table_header" {assigns} />
             <tbody>
               <%= for row <- @active_rows do %>
-                <%= live_component TableRow, row: row, parent_pages: assigns.parent_pages, project: assigns.project, selected: @selected %>
+                <.live_component module={TableRow} id={row.slice.id} row={row} parent_pages={assigns.parent_pages} project={assigns.project} selected={@selected} />
               <% end %>
             </tbody>
           </table>
@@ -304,38 +304,39 @@ defmodule OliWeb.Insights do
      end}
   end
 
-  def handle_event("generate_datashop_snapshot", _params, socket) do
+  def handle_event("generate_analytics_snapshot", _params, socket) do
     project = socket.assigns.project
 
-    case Course.generate_datashop_snapshot(project) do
+    case Course.generate_analytics_snapshot(project) do
       {:ok, _job} ->
-        Broadcaster.broadcast_datashop_export_status(project.slug, {:in_progress})
+        Broadcaster.broadcast_analytics_export_status(project.slug, {:in_progress})
 
-        {:noreply, assign(socket, datashop_export_status: :in_progress)}
+        {:noreply, assign(socket, analytics_export_status: :in_progress)}
 
       {:error, _changeset} ->
         socket =
           socket
-          |> put_flash(:error, "Datashop snapshot could not be generated.")
+          |> put_flash(:error, "Raw analytics snapshot could not be generated.")
 
         {:noreply, socket}
     end
   end
 
   def handle_info(
-        {:datashop_export_status, {:available, datashop_export_url, datashop_export_timestamp}},
+        {:analytics_export_status,
+         {:available, analytics_export_url, analytics_export_timestamp}},
         socket
       ) do
     {:noreply,
      assign(socket,
-       datashop_export_status: :available,
-       datashop_export_url: datashop_export_url,
-       datashop_export_timestamp: datashop_export_timestamp
+       analytics_export_status: :available,
+       analytics_export_url: analytics_export_url,
+       analytics_export_timestamp: analytics_export_timestamp
      )}
   end
 
-  def handle_info({:datashop_export_status, {status}}, socket) do
-    {:noreply, assign(socket, datashop_export_status: status)}
+  def handle_info({:analytics_export_status, {status}}, socket) do
+    {:noreply, assign(socket, analytics_export_status: status)}
   end
 
   def handle_info(:init_by_page, socket) do

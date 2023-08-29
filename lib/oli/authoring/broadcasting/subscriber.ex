@@ -43,8 +43,8 @@ defmodule Oli.Authoring.Broadcaster.Subscriber do
     PubSub.subscribe(Oli.PubSub, message_lock_released(project_slug, resource_id))
   end
 
-  def subscribe_to_datashop_export_status(project_slug) do
-    PubSub.subscribe(Oli.PubSub, message_datashop_export_status(project_slug))
+  def subscribe_to_analytics_export_status(project_slug) do
+    PubSub.subscribe(Oli.PubSub, message_analytics_export_status(project_slug))
   end
 
   ### Unsubscription API
@@ -88,7 +88,7 @@ defmodule Oli.Authoring.Broadcaster.Subscriber do
     PubSub.unsubscribe(Oli.PubSub, message_lock_released(project_slug, resource_id))
   end
 
-  def unsubscribe_to_datashop_export_status(project_slug) do
-    PubSub.unsubscribe(Oli.PubSub, message_datashop_export_status(project_slug))
+  def unsubscribe_to_analytics_export_status(project_slug) do
+    PubSub.unsubscribe(Oli.PubSub, message_analytics_export_status(project_slug))
   end
 end

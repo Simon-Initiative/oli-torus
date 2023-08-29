@@ -15,7 +15,6 @@ defmodule OliWeb.Projects.OverviewLive do
   alias Oli.Resources.Collaboration
   alias OliWeb.Components.Overview
   alias OliWeb.Projects.RequiredSurvey
-  alias OliWeb.Components.Project.DatashopExport
   alias Oli.Authoring.Broadcaster
   alias Oli.Authoring.Broadcaster.Subscriber
   alias OliWeb.Common.SessionContext
@@ -33,15 +32,6 @@ defmodule OliWeb.Projects.OverviewLive do
     {collab_space_config, revision_slug} = get_collab_space_config_and_revision(project.slug)
 
     latest_publication = Publishing.get_latest_published_publication_by_slug(project.slug)
-    {datashop_export_status, datashop_export_url, datashop_export_timestamp} =
-      case Course.datashop_export_status(project) do
-        {:available, url, timestamp} -> {:available, url, timestamp}
-        {:expired, _, _} -> {:expired, nil, nil}
-        {status} -> {status, nil, nil}
-      end
-
-    # Subscribe to any datashop snapshot progress updates for this project
-    Subscriber.subscribe_to_datashop_export_status(project.slug)
 
     socket =
       assign(socket,
@@ -60,10 +50,7 @@ defmodule OliWeb.Projects.OverviewLive do
         language_codes: Oli.LanguageCodesIso639.codes(),
         collab_space_config: collab_space_config,
         revision_slug: revision_slug,
-        latest_publication: latest_publication,
-        datashop_export_status: datashop_export_status,
-        datashop_export_url: datashop_export_url,
-        datashop_export_timestamp: datashop_export_timestamp,
+        latest_publication: latest_publication
       )
 
     {:ok, socket}
@@ -228,12 +215,15 @@ defmodule OliWeb.Projects.OverviewLive do
         </div>
 
         <div class="d-flex align-items-center">
-          <DatashopExport.export_button
-            ctx={@ctx}
-            latest_publication={@latest_publication}
-            datashop_export_status={@datashop_export_status}
-            datashop_export_url={@datashop_export_url}
-            datashop_export_timestamp={@datashop_export_timestamp} />
+          <%= case Oli.Publishing.get_latest_published_publication_by_slug(@project.slug) do %>
+            <% nil -> %>
+              <button disabled class="btn btn-link action-button">
+                <span data-bs-toggle="tooltip" data-bs-placement="top" title="Project must be published to generate a datashop export file.">Download</span>
+              </button>
+            <% _pub -> %>
+              <%= button("Download", to: Routes.project_path(@socket, :download_datashop, @project), method: :post, class: "btn btn-link action-button") %>
+          <% end %>
+          <span>Download a <a class="text-primary external" href="https://pslcdatashop.web.cmu.edu/" target="_blank">Datashop</a> file.</span>
         </div>
 
         <div class="d-flex align-items-center">
@@ -326,36 +316,4 @@ defmodule OliWeb.Projects.OverviewLive do
         {:noreply, socket}
     end
   end
-
-  def handle_event("generate_datashop_snapshot", _params, socket) do
-    project = socket.assigns.project
-
-    case Course.generate_datashop_snapshot(project) do
-      {:ok, _job} ->
-        Broadcaster.broadcast_datashop_export_status(project.slug, {:in_progress})
-
-        {:noreply, assign(socket, datashop_export_status: :in_progress)}
-
-      {:error, _changeset} ->
-        socket =
-          socket
-          |> put_flash(:error, "Datashop snapshot could not be generated.")
-
-        {:noreply, socket}
-    end
-  end
-
-  def handle_info({:datashop_export_status, {:available, datashop_export_url, datashop_export_timestamp}}, socket) do
-    {:noreply,
-      assign(socket,
-      datashop_export_status: :available,
-      datashop_export_url: datashop_export_url,
-      datashop_export_timestamp: datashop_export_timestamp)
-    }
-  end
-
-  def handle_info({:datashop_export_status, {status}}, socket) do
-    {:noreply, assign(socket, datashop_export_status: status)}
-  end
-
 end

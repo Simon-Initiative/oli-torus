@@ -6,7 +6,6 @@ defmodule OliWeb.ProjectController do
   alias Oli.Analytics.Datashop
   alias OliWeb.Common.Breadcrumb
   alias Oli.Authoring.Clone
-  alias OliWeb.Insights
 
   def unpublished(pub), do: pub.published == nil
 
