@@ -72,3 +72,17 @@ const capitalize = (str: string): string => str.charAt(0).toUpperCase() + str.sl
 export const getDefaultEditor = (): EditorType => {
   return window.preferences?.editor || DEFAULT_EDITOR;
 };
+
+export const setDefaultEditor = (editor: EditorType) => {
+  window.preferences = {
+    editor,
+  };
+};
+
+declare global {
+  interface Window {
+    preferences?: {
+      editor: EditorType;
+    };
+  }
+}

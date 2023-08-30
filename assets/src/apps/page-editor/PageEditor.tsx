@@ -9,6 +9,7 @@ import { ActivityModelSchema, Undoable as ActivityUndoable } from 'components/ac
 import { EditorUpdate as ActivityEditorUpdate } from 'components/activity/InlineActivityEditor';
 import { PersistenceStatus } from 'components/content/PersistenceStatus';
 import { TitleBar } from 'components/content/TitleBar';
+import { setDefaultEditor } from 'components/editing/markdown_editor/markdown_util';
 import { AlternativesContextProvider } from 'components/hooks/useAlternatives';
 import { Banner } from 'components/messages/Banner';
 import { ModalDisplay } from 'components/modal/ModalDisplay';
@@ -130,9 +131,7 @@ export class PageEditor extends React.Component<PageEditorProps, PageEditorState
 
     const { title, objectives, allObjectives, content, allTags, defaultEditor } = props;
 
-    window.preferences = {
-      editor: defaultEditor,
-    };
+    setDefaultEditor(defaultEditor);
 
     const activityContexts = Immutable.OrderedMap<string, ActivityEditContext>(
       this.props.activityContexts.map((c) => {
@@ -654,11 +653,3 @@ export default connect<StateProps, DispatchProps, OwnProps>(
   mapStateToProps,
   mapDispatchToProps,
 )(PageEditor);
-
-declare global {
-  interface Window {
-    preferences?: {
-      editor: EditorType;
-    };
-  }
-}
