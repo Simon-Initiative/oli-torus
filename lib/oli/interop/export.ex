@@ -306,7 +306,8 @@ defmodule Oli.Interop.Export do
     %{
       title: project.title,
       description: project.description,
-      type: "Manifest"
+      type: "Manifest",
+      required_student_survey: project.required_survey_resource_id
     }
     |> entry("_project.json")
   end

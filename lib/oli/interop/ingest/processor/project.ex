@@ -24,10 +24,13 @@ defmodule Oli.Interop.Ingest.Processor.Project do
           title
       end
 
+    required_survey_resource_id = Map.get(project_details, "required_student_survey")
+
     {:ok, %{project: project, publication: publication, resource_revision: root_revision}} =
       Oli.Authoring.Course.create_project(title, author, %{
         description: Map.get(project_details, "description"),
-        legacy_svn_root: Map.get(project_details, "svnRoot")
+        legacy_svn_root: Map.get(project_details, "svnRoot"),
+        required_survey_resource_id: required_survey_resource_id
       })
 
     # create alternatives groups

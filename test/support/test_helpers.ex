@@ -2668,4 +2668,15 @@ defmodule Oli.TestHelpers do
       :timer.sleep(100)
       wait_until(fun, max(0, timeout - 100))
   end
+
+  def unzip_to_memory(data) do
+    File.write("export.zip", data)
+    result = :zip.unzip(to_charlist("export.zip"), [:memory])
+    File.rm!("export.zip")
+
+    case result do
+      {:ok, entries} -> entries
+      _ -> []
+    end
+  end
 end
