@@ -71,6 +71,10 @@ defmodule OliWeb.Resources.PagesTableModel do
   def render_graded_column(_, %Revision{graded: false}, _), do: "Practice"
 
   def render_actions_column(_, %Revision{} = revision, _) do
-    live_component(Actions, child: revision)
+    assigns = %{child: revision}
+
+    ~H"""
+    <Actions.render child={@child} />
+    """
   end
 end

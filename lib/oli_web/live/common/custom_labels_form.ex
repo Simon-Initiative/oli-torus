@@ -7,7 +7,7 @@ defmodule OliWeb.Common.CustomLabelsForm do
   @spec render(any) :: Phoenix.LiveView.Rendered.t()
   def render(assigns) do
     ~H"""
-    <.form for={:view} phx-submit={@save}>
+    <.form for={%{}} phx-submit={@save}>
       <%= for {k, v} <- @labels do %>
         <div class="form-group">
           <.input class="form-control" placeholder={v} value={v} name={k} label={humanize(k)} />

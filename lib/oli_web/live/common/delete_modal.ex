@@ -34,7 +34,7 @@ defmodule OliWeb.Common.DeleteModal do
               <div>
                 <p>Please type <strong><%= @entity_name %></strong> below to confirm.</p>
               </div>
-              <.form for={String.to_atom(@entity_type)} phx-submit={@delete} phx-change={@validate}>
+              <.form for={%{}} id={"delete_#{@entity_type}_form"} phx-submit={@delete} phx-change={@validate}>
                 <div class="form-group">
                   <input type="text" name={:name} class="form-control" placeholder={@entity_name} />
                 </div>
