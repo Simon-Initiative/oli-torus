@@ -76,7 +76,7 @@ defmodule OliWeb.CommunityLive.IndexView do
       </.link>
     </div>
     <div id="community-filters" class="p-3">
-      <.form for={:filter} phx-change="apply_filter" class="pl-4">
+      <.form for={%{}} phx-change="apply_filter" class="pl-4">
         <div class="form-group">
           <.input
             type="checkbox"

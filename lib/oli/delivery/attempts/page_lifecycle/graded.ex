@@ -238,11 +238,16 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Graded do
 
   defp apply_evaluation(resource_attempt, activity_attempts, %Combined{} = effective_settings) do
     {score, out_of} =
-      activity_attempts
-      |> Enum.filter(fn activity_attempt -> activity_attempt.scoreable end)
-      |> Enum.reduce({0, 0}, &aggregation_reducer/2)
-      |> override_out_of(resource_attempt.revision.content)
-      |> ensure_valid_grade
+      if Enum.empty?(activity_attempts) do
+        # For assessments with empty activities, grant a score or 1.0/1.0
+        {1.0, 1.0}
+      else
+        activity_attempts
+        |> Enum.filter(fn activity_attempt -> activity_attempt.scoreable end)
+        |> Enum.reduce({0, 0}, &aggregation_reducer/2)
+        |> override_out_of(resource_attempt.revision.content)
+        |> ensure_valid_grade
+      end
 
     now = DateTime.utc_now()
 

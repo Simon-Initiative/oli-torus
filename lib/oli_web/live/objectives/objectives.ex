@@ -332,7 +332,7 @@ defmodule OliWeb.ObjectivesLive.Objectives do
 
     modal = fn assigns ->
       ~H"""
-      <.live_component module={SelectExistingSubModal} {@modal_assigns} />
+      <.live_component id="select_existing_sub_modal" module={SelectExistingSubModal} {@modal_assigns} />
       """
     end
 

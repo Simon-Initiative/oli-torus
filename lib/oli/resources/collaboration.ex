@@ -128,7 +128,7 @@ defmodule Oli.Resources.Collaboration do
           ),
         count: over(count(page_revision.id))
       },
-      order_by: section.id
+      order_by: [section.id, page_revision.id]
     )
     |> maybe_add_query_limit(opts[:limit])
     |> maybe_add_query_offset(opts[:offset])
