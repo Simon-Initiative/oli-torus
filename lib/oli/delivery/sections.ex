@@ -485,7 +485,7 @@ defmodule Oli.Delivery.Sections do
         join: cr in Lti_1p3.DataProviders.EctoProvider.ContextRole,
         on: e_cr.context_role_id == cr.id,
         where:
-          s.slug == ^section_slug and s.status == :active and cr.id in ^role_ids and
+          s.slug == ^section_slug and cr.id in ^role_ids and
             e.status == :enrolled,
         select: count(e)
       )
