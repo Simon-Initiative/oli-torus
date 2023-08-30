@@ -1,19 +1,36 @@
 defmodule Oli.Analytics.Summary do
-  import Ecto.Query, warn: false
-  alias Oli.Repo
-  alias Oli.Analytics.Summary.{ProjectResourceSummary, SectionResourceSummary}
 
+  alias Oli.Analytics.Summary.EvaluatedAttempt.AttemptGroup
+  alias Oli.Analytics.Summary.XAPI.StatementFactory
+  alias Oli.Analytics.XAPI.Uploader
 
+  def process_summary_analytics(snapshot_attempt_summary, project_id, host_name) do
 
-  def summarize_project_resource_attempt(project_slug) do
+    AttemptGroup.from_attempt_summary(snapshot_attempt_summary, project_id, host_name)
+    |> emit_xapi_events()
+    |> update_project_resource_summaries()
+    |> update_section_resource_summaries()
+    |> update_section_response_summaries()
 
-    # Full part attempts
-    # Revision of the activity
+  end
 
-    # IDs
-    # section, project, publication, user
+  defp emit_xapi_events(attempt_group) do
+    StatementFactory.to_statements(attempt_group)
+    |> Enum.map(fn statement -> Uploader.upload(statement) end)
 
+    attempt_group
+  end
 
+  defp update_project_resource_summaries(attempt_group) do
+    attempt_group
+  end
+
+  defp update_section_resource_summaries(attempt_group) do
+    attempt_group
+  end
+
+  defp update_section_response_summaries(attempt_group) do
+    attempt_group
   end
 
 end

@@ -61,6 +61,8 @@ defmodule Oli.Delivery.Snapshots.Worker do
           Oli.Delivery.Sections.determine_which_project_id(ra.section_id, ra.resource_id)
       end
 
+    Oli.Analytics.Summary.process_summary_analytics(results, project_id, host_name())
+
     # determine all referenced objective ids by the parts that we find
     objective_ids =
       Enum.reduce(results, MapSet.new([]), fn {pa, _, _, _, _, r}, m ->
@@ -103,6 +105,12 @@ defmodule Oli.Delivery.Snapshots.Worker do
 
       Repo.insert_all(Snapshot, attrs_list)
     end)
+  end
+
+  defp host_name() do
+    Application.get_env(:oli, OliWeb.Endpoint)
+    |> Keyword.get(:url)
+    |> Keyword.get(:host)
   end
 
   def to_attrs(
