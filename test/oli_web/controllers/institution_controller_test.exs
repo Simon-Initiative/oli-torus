@@ -32,7 +32,7 @@ defmodule OliWeb.InstitutionControllerTest do
 
   describe "index" do
     test "lists all institutions", %{conn: conn} do
-      conn = get(conn, Routes.live_path(OliWeb.Endpoint, OliWeb.Admin.Institutions.IndexLive))
+      conn = get(conn, ~p"/admin/institutions")
       assert html_response(conn, 200) =~ "some name"
     end
   end
@@ -48,7 +48,7 @@ defmodule OliWeb.InstitutionControllerTest do
     test "redirects to page index when data is valid", %{conn: conn} do
       conn = post(conn, Routes.institution_path(conn, :create), institution: @create_attrs)
 
-      assert redirected_to(conn) == Routes.live_path(OliWeb.Endpoint, OliWeb.Admin.Institutions.IndexLive)
+      assert redirected_to(conn) == ~p"/admin/institutions"
     end
 
     test "renders errors when data is invalid", %{conn: conn} do
@@ -112,7 +112,7 @@ defmodule OliWeb.InstitutionControllerTest do
   describe "delete institution" do
     test "deletes chosen institution", %{conn: conn, institution: institution} do
       conn = delete(conn, Routes.institution_path(conn, :delete, institution))
-      assert redirected_to(conn) == Routes.live_path(OliWeb.Endpoint, OliWeb.Admin.Institutions.IndexLive)
+      assert redirected_to(conn) == ~p"/admin/institutions"
 
       institution_id = institution.id
 

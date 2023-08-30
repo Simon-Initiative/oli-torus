@@ -117,7 +117,7 @@ defmodule OliWeb.AdminLiveTest do
 
       assert has_element?(
                view,
-               "a[href=\"#{Routes.live_path(OliWeb.Endpoint, OliWeb.Admin.Institutions.IndexLive)}\"]"
+               "a[href=\"#{~p"/admin/institutions"}\"]"
              )
 
       assert has_element?(

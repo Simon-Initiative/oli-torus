@@ -1,6 +1,6 @@
 <div class="container">
   <span>
-    <%= link to: Routes.live_path(OliWeb.Endpoint, OliWeb.Admin.Institutions.IndexLive) do %>
+    <%= link to: ~p"/admin/institutions" do %>
       <i class="fas fa-arrow-left"></i> Back
     <% end %>
   </span>

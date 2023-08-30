@@ -606,7 +606,7 @@ defmodule OliWeb.Admin.Institutions.IndexLive do
       [
         Breadcrumb.new(%{
           full_title: "Institutions",
-          link: Routes.live_path(OliWeb.Endpoint, OliWeb.Admin.Institutions.IndexLive)
+          link: ~p"/admin/institutions"
         })
       ]
   end

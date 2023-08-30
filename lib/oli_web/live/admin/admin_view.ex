@@ -41,7 +41,7 @@ defmodule OliWeb.Admin.AdminView do
             </a>
           </li>
           <li>
-            <a href={Routes.live_path(OliWeb.Endpoint, OliWeb.Admin.Institutions.IndexLive)}>
+            <a href={~p"/admin/institutions"}>
               Manage Institutions <%= badge(
                 assigns,
                 Oli.Institutions.count_pending_registrations() |> Oli.Utils.positive_or_nil()

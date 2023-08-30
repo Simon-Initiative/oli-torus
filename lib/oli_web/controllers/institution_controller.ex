@@ -1,5 +1,6 @@
 defmodule OliWeb.InstitutionController do
   use OliWeb, :controller
+  use OliWeb, :verified_routes
 
   alias Oli.Institutions
   alias Oli.Institutions.Institution
@@ -14,7 +15,7 @@ defmodule OliWeb.InstitutionController do
       [
         Breadcrumb.new(%{
           full_title: "Institutions",
-          link: Routes.live_path(OliWeb.Endpoint, OliWeb.Admin.Institutions.IndexLive)
+          link: ~p"/admin/institutions"
         })
       ]
   end
@@ -75,7 +76,7 @@ defmodule OliWeb.InstitutionController do
       {:ok, _institution} ->
         conn
         |> put_flash(:info, "Institution created")
-        |> redirect(to: Routes.live_path(OliWeb.Endpoint, OliWeb.Admin.Institutions.IndexLive))
+        |> redirect(to: ~p"/admin/institutions")
 
       {:error, %Ecto.Changeset{} = changeset} ->
         render_institution_page(conn, "new.html",
@@ -153,7 +154,7 @@ defmodule OliWeb.InstitutionController do
 
         conn
         |> put_flash(:info, "Institution deleted")
-        |> redirect(to: Routes.live_path(OliWeb.Endpoint, OliWeb.Admin.Institutions.IndexLive))
+        |> redirect(to: ~p"/admin/institutions")
     end
   end
 
