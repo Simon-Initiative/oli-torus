@@ -4239,6 +4239,26 @@ table.table-striped tbody tr:nth-child(even) {
   margin-left: -1px;
 }
 
+.ml-\[12px\] {
+  margin-left: 12px;
+}
+
+.ml-\[24px\] {
+  margin-left: 24px;
+}
+
+.ml-\[36px\] {
+  margin-left: 36px;
+}
+
+.ml-\[48px\] {
+  margin-left: 48px;
+}
+
+.ml-\[60px\] {
+  margin-left: 60px;
+}
+
 .ml-auto {
   margin-left: auto;
 }
