@@ -38,11 +38,11 @@ defmodule OliWeb.CollaborationLive.Posts.List do
           class="bg-gray-100 dark:bg-gray-700"
           id={"post_#{post.id}_replies"}
         >
-          <div class="flex flex-col gap-4 ml-6">
+          <div class="flex flex-col gap-4">
             <div
               :for={{reply, reply_index} <- post.replies}
               id={"post_reply_#{reply.id}"}
-              class={"p-5  show #{if reply_index == 1, do: "mt-4"} #{if reply_index == length(post.replies), do: "mb-4"} #{if reply.status == :archived or @collab_space_config.status == :archived, do: "bg-gray-200 bg-opacity-90 dark:bg-gray-800", else: "bg-white dark:bg-gray-800"}"}
+              class={"p-5 #{reply_margin(reply.post_level)} show #{if reply_index == 1, do: "mt-3"} #{if reply_index == length(post.replies), do: "mb-3"} #{if reply.status == :archived or @collab_space_config.status == :archived, do: "bg-gray-200 bg-opacity-90 dark:bg-gray-800", else: "bg-white dark:bg-gray-800"}"}
               aria-labelledby={"heading_#{post.id}"}
             >
               <Show.render
@@ -69,5 +69,16 @@ defmodule OliWeb.CollaborationLive.Posts.List do
       </div>
     </div>
     """
+  end
+
+  defp reply_margin(level) do
+    case level do
+      0 -> nil
+      1 -> "ml-[12px]"
+      2 -> "ml-[24px]"
+      3 -> "ml-[36px]"
+      4 -> "ml-[48px]"
+      _ -> "ml-[60px]"
+    end
   end
 end

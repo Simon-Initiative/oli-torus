@@ -19,7 +19,7 @@ defmodule OliWeb.Projects.RequiredSurvey do
           <label class="form-check-label">
             <input name="survey" class="survey_check" type="checkbox" id="survey_check" checked={@enabled}>
             <span>
-              Allow students to take a survey before starting the course
+              Require students to take a survey before starting the course
             </span>
           </label>
         </div>
@@ -49,7 +49,7 @@ defmodule OliWeb.Projects.RequiredSurvey do
   def handle_event("set-required-survey", params, socket) do
     %{project: project, author_id: author_id} = socket.assigns
     allow_survey = Map.has_key?(params, "survey") and String.length(params["survey"]) > 0
-
+ 
     required_survey =
       if allow_survey do
         Course.create_project_survey(project, author_id)
