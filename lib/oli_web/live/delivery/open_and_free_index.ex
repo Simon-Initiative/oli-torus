@@ -55,7 +55,7 @@ defmodule OliWeb.Delivery.OpenAndFreeIndex do
           >
             New Section
           </.link>
-          <.form for={:search} phx-change="search_section" class="w-[330px]">
+          <.form for={%{}} phx-change="search_section" class="w-[330px]">
             <SearchInput.render
               id="section_search_input"
               name="search"

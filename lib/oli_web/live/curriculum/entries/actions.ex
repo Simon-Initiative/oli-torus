@@ -3,9 +3,11 @@ defmodule OliWeb.Curriculum.Actions do
   Curriculum item entry actions component.
   """
 
-  use OliWeb, :live_component
+  use OliWeb, :html
 
   alias Oli.Resources.ResourceType
+
+  attr(:child, :map, required: true)
 
   def render(assigns) do
     ~H"""

@@ -752,6 +752,7 @@ defmodule Oli.SectionsTest do
       assert Map.has_key?(updates_in_progress, latest_publication.id)
     end
 
+    @tag capture_log: true
     test "apply_publication_update/2", %{
       author: author,
       project: project,
@@ -901,6 +902,7 @@ defmodule Oli.SectionsTest do
       assert section_resources |> Enum.count() == 7
     end
 
+    @tag capture_log: true
     test "apply_publication_update/2 handles minor non-hierarchical updates",
          %{
            project: project,
@@ -1035,6 +1037,7 @@ defmodule Oli.SectionsTest do
              |> Enum.find(fn sr -> sr.resource_id == Map.get(map, :o1).resource.id end)
     end
 
+    @tag capture_log: true
     test "apply_publication_update/2 only applies minor changes to products", %{
       author: author,
       project: project,
