@@ -65,13 +65,6 @@ export const SlateOrMarkdownEditor: React.FC<SlateOrMarkdownEditorProps> = ({
     [allowBlockElements, toolbarInsertDescs],
   );
 
-  const onContentEdit = React.useCallback(
-    (children: ModelElement[]) => {
-      onEdit(children);
-    },
-    [onEdit],
-  );
-
   const [switchToMarkdownModal, toggleSwitchToMarkdownModal, , closeSwitchMarkdownModal] =
     useToggle();
 
@@ -84,11 +77,11 @@ export const SlateOrMarkdownEditor: React.FC<SlateOrMarkdownEditorProps> = ({
   };
 
   const onContentEdited = React.useCallback(
-    (content) => {
-      setLastContent(content as ModelElement[]);
-      onContentEdit(content as ModelElement[]);
+    (content: ModelElement[]) => {
+      setLastContent(content);
+      onEdit(content);
     },
-    [setLastContent],
+    [setLastContent, onEdit],
   );
 
   if (editorType === 'markdown') {

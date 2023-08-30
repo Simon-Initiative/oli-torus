@@ -25,12 +25,10 @@ export const StructuredContentEditor = ({
   onEdit,
 }: StructuredContentEditor) => {
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  const onContentEdit = React.useCallback(
-    (children: ModelElement[]) => {
-      onEdit(Object.assign({}, contentItem, { children }));
-    },
-    [contentItem, onEdit],
-  );
+  const onContentEdit = (children: ModelElement[]) => {
+    console.info("Structured content editor's onContentEdit", { contentItem, children });
+    onEdit(Object.assign({}, contentItem, { children }));
+  };
 
   const changeEditor = (editor: 'markdown' | 'slate') => {
     console.info('Switching editor modes', editor, contentItem);
