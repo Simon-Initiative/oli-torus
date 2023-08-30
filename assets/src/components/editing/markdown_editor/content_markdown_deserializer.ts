@@ -46,6 +46,8 @@ const textNode = (node: FormattedText): string => {
   //if (node.underline) marks.push('__');
   if (node.strikethrough) marks.push('~~');
 
+  if (node.text === '\n') return '  \n'; // Special case line break
+
   const allwhitespaceMatch = node.text.match(/^\s+$/); // If it's all whitespace, preceeding and trailing match and it doubles it up.
   const preceedingWhitespaceMatch = node.text.match(/^(\s+)/);
   const trailingWhitespaceMatch = node.text.match(/(\s+)$/);

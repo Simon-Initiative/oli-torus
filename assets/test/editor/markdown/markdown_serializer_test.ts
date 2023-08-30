@@ -4,6 +4,20 @@ import { AllModelElements } from 'data/content/model/elements/types';
 import { expectAnyId } from '../normalize-test-utils';
 
 describe('Markdown serializer', () => {
+  it('should serialize a line break via double-spaces', () => {
+    const content = `Line one  \nLine two\n\n`;
+    expect(serializeMarkdown(content)).toEqual(
+      expectAnyId([
+        {
+          type: 'p',
+          id: '1',
+          children: [{ text: 'Line one' }, { text: '\n' }, { text: 'Line two' }],
+          // Apparently, it is legal to have a \n within a paragraph element, but there's no good way to author one of these.
+        },
+      ]),
+    );
+  });
+
   it('should serialize a heading', () => {
     const content = `# This is a heading\n\n`;
     expect(serializeMarkdown(content)).toEqual(

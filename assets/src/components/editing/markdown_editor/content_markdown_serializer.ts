@@ -65,6 +65,8 @@ const serializeToken =
     switch (token.type) {
       case 'text':
         return serializeTokenToText(token as Tokens.Text, context);
+      case 'br':
+        return [{ text: '\n' }];
       case 'paragraph':
         return [{ type: 'p', id: guid(), children: serializeTokens(token.tokens, context) as any }];
       case 'heading':

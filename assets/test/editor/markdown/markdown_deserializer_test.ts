@@ -14,6 +14,18 @@ const emptyContext: DeserializationContext = {
 Object.freeze(emptyContext);
 
 describe('Markdown Deserializer', () => {
+  it('should deserialize a linebreak', () => {
+    const content: AllModelElements[] = [
+      {
+        type: 'p',
+        id: '1',
+        children: [{ text: 'Line one' }, { text: '\n' }, { text: 'Line two' }],
+        // Apparently, it is legal to have a \n within a paragraph element, but there's no good way to author one of these.
+      },
+    ];
+    expect(contentMarkdownDeserializer(content)).toEqual(`Line one  \nLine two\n\n`);
+  });
+
   it('should deserialize a paragraph', () => {
     const content: AllModelElements[] = [
       {
