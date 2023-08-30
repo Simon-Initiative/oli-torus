@@ -56,7 +56,24 @@ defmodule OliWeb.Components.Common do
       <.button>Send!</.button>
       <.button phx-click="go" class="ml-2">Send!</.button>
   """
-  attr(:variant, :atom, default: nil, values: [:primary, :info, :success, :warning, :danger, nil])
+  attr(:variant, :atom,
+    default: nil,
+    values: [
+      :primary,
+      :secondary,
+      :tertiary,
+      :light,
+      :dark,
+      :info,
+      :success,
+      :warning,
+      :danger,
+      nil
+    ]
+  )
+
+  attr(:size, :atom, default: :md, values: [:xs, :sm, :md, :lg, :xl, :custom, nil])
+
   attr(:type, :string, default: nil)
   attr(:class, :string, default: nil)
   attr(:rest, :global, include: ~w(disabled form name value))
@@ -68,8 +85,9 @@ defmodule OliWeb.Components.Common do
     <button
       type={@type}
       class={[
-        "rounded text-sm px-3.5 py-2",
+        "rounded",
         button_variant_classes(@variant),
+        button_size_classes(@size),
         @class
       ]}
       {@rest}
@@ -82,7 +100,19 @@ defmodule OliWeb.Components.Common do
   defp button_variant_classes(variant) do
     case variant do
       :primary ->
-        "text-white bg-blue-500 hover:bg-blue-600 active:bg-blue-700 focus:ring-2 focus:ring-blue-400 dark:bg-blue-600 dark:hover:bg-blue-500 dark:active:bg-blue-400 focus:outline-none dark:focus:ring-blue-700"
+        "text-white bg-primary-500 hover:bg-primary-600 active:bg-primary-700 focus:ring-2 focus:ring-primary-400 dark:bg-primary-600 dark:hover:bg-primary dark:active:bg-primary-400 focus:outline-none dark:focus:ring-primary-700"
+
+      :secondary ->
+        "text-body-color bg-transparent hover:bg-gray-200 active:text-white active:bg-primary-600 focus:ring-2 focus:ring-primary-400 dark:text-body-color-dark dark:hover:bg-gray-600 dark:active:bg-primary-400 focus:outline-none dark:focus:ring-primary-700"
+
+      :tertiary ->
+        "text-primary-700 bg-primary-50 hover:bg-primary-100 active:bg-primary-200 focus:ring-2 focus:ring-primary-100 dark:text-primary-300 dark:bg-primary-800 dark:hover:bg-primary-700 dark:active:bg-primary-600 focus:outline-none dark:focus:ring-primary-800"
+
+      :light ->
+        "text-body-color bg-gray-100 hover:bg-gray-200 active:bg-gray-300 focus:ring-2 focus:ring-gray-100 dark:text-white dark:bg-gray-800 dark:hover:bg-gray-700 dark:active:bg-gray-600 focus:outline-none dark:focus:ring-gray-800"
+
+      :dark ->
+        "text-white bg-gray-500 hover:bg-gray-600 active:bg-gray-700 focus:ring-2 focus:ring-gray-500 dark:text-white dark:bg-gray-500 dark:hover:bg-gray-400 dark:active:bg-gray-300 focus:outline-none dark:focus:ring-gray-500"
 
       :info ->
         "text-white bg-gray-500 hover:bg-gray-600 active:bg-gray-700 focus:ring-2 focus:ring-gray-400 dark:bg-gray-600 dark:hover:bg-gray-500 dark:active:bg-gray-400 focus:outline-none dark:focus:ring-gray-700"
@@ -98,6 +128,17 @@ defmodule OliWeb.Components.Common do
 
       _ ->
         ""
+    end
+  end
+
+  defp button_size_classes(size) do
+    case size do
+      :xs -> "text-xs px-2 py-1"
+      :sm -> "text-sm px-2.5 py-1.5"
+      :md -> "text-base px-3 py-2"
+      :lg -> "text-lg px-4 py-2"
+      :xl -> "text-xl px-4 py-2"
+      _ -> ""
     end
   end
 

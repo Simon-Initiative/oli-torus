@@ -1,12 +1,14 @@
 defmodule OliWeb.ObjectivesLive.Listing do
   use Phoenix.Component
 
+  import OliWeb.Components.Common
+
   alias OliWeb.ObjectivesLive.Actions
   alias OliWeb.Router.Helpers, as: Routes
 
-  attr :rows, :list, required: true
-  attr :selected, :string, required: true
-  attr :project_slug, :string, required: true
+  attr(:rows, :list, required: true)
+  attr(:selected, :string, required: true)
+  attr(:project_slug, :string, required: true)
 
   def render(assigns) do
     ~H"""
@@ -46,52 +48,52 @@ defmodule OliWeb.ObjectivesLive.Listing do
           >
             <div class="card-body p-4">
               <div class="mb-3">
-                <u>Sub-Objectives</u>
+                <div class="font-bold">Sub-Objectives</div>
                 <ul class="list-group list-group-flush">
                   <%= for sub_objective <- item.children do %>
-                    <li class="list-group-item p-2 text-info d-flex sub-obj">
-                      <div class="w-75"><%= sub_objective.title %></div>
-                      <div class="ml-2 sub-actions">
-                        <button
+                    <li :if={!is_nil(sub_objective)} class="list-group-item p-2 d-flex group/item">
+                      <div class="py-1.5 w-75"><%= sub_objective.title %></div>
+                      <div class="ml-2 invisible group-hover/item:visible">
+                        <.button
+                          variant={:tertiary}
+                          size={:xs}
                           phx-click="display_edit_modal"
                           phx-value-slug={sub_objective.slug}
-                          class="ml-1 btn btn-sm btn-light"
                         >
-                          <i class="fas fa-i-cursor"></i>
-                        </button>
-                        <button
+                          <i class="fas fa-i-cursor"></i> Rename
+                        </.button>
+                        <.button
+                          variant={:danger}
+                          size={:xs}
                           phx-click="delete"
                           phx-value-slug={sub_objective.slug}
                           phx-value-parent_slug={item.slug}
-                          class="ml-1 btn btn-sm btn-danger"
                         >
-                          <i class="fas fa-trash-alt fa-lg"></i>
-                        </button>
+                          <i class="fas fa-trash-alt fa-lg"></i> Delete
+                        </.button>
                       </div>
                     </li>
-                    <div class="border border-light w-75"></div>
                   <% end %>
                 </ul>
               </div>
               <div class="mb-3">
-                <u>Pages</u>
+                <div class="font-bold">Pages</div>
                 <ul class="list-group list-group-flush">
                   <%= for page <- item.page_attachments do %>
                     <li class="list-group-item p-2">
                       <a
                         href={Routes.resource_path(OliWeb.Endpoint, :edit, @project_slug, page.slug)}
                         target="_blank"
-                        class="text-info"
+                        class="text-primary"
                       >
                         <%= page.title %>
                       </a>
                     </li>
-                    <hr class="h-0 my-2 border border-solid border-t-0 border-gray-700 opacity-25 w-75" />
                   <% end %>
                 </ul>
               </div>
 
-              <Actions.render slug={item.slug} />
+              <Actions.actions slug={item.slug} />
             </div>
           </div>
         </div>
