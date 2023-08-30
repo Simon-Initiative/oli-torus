@@ -201,7 +201,7 @@ defmodule OliWeb.Components.Common do
         <option :if={@prompt} value=""><%= @prompt %></option>
         <%= Phoenix.HTML.Form.options_for_select(@options, @value) %>
       </select>
-      <.label :if={@label} onclick="(e) => console.log(e.target)" for={@id} class={@label_class}>
+      <.label :if={@label} for={@id} class={@label_class}>
         <%= @label %>
       </.label>
       <.error :for={msg <- @errors}><%= msg %></.error>

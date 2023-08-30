@@ -101,31 +101,29 @@ defmodule OliWeb.Admin.Institutions.IndexLive do
                 </tr>
               </thead>
               <tbody>
-                <%= for institution <- @institutions do %>
-                  <tr>
-                    <td>
-                      <%= link(institution.name,
-                        to:
-                          Routes.live_path(
-                            OliWeb.Endpoint,
-                            OliWeb.Admin.Institutions.SectionsAndStudentsView,
-                            institution.id,
-                            :sections
-                          )
-                      ) %>
-                    </td>
-                    <td><%= institution.country_code %></td>
-                    <td><%= institution.institution_email %></td>
-                    <td><%= institution.institution_url %></td>
+                <tr :for={institution <- @institutions}>
+                  <td>
+                    <%= link(institution.name,
+                      to:
+                        Routes.live_path(
+                          OliWeb.Endpoint,
+                          OliWeb.Admin.Institutions.SectionsAndStudentsView,
+                          institution.id,
+                          :sections
+                        )
+                    ) %>
+                  </td>
+                  <td><%= institution.country_code %></td>
+                  <td><%= institution.institution_email %></td>
+                  <td><%= institution.institution_url %></td>
 
-                    <td class="text-nowrap">
-                      <%= link("Details",
-                        to: Routes.institution_path(OliWeb.Endpoint, :show, institution),
-                        class: "btn btn-sm btn-outline-primary"
-                      ) %>
-                    </td>
-                  </tr>
-                <% end %>
+                  <td class="text-nowrap">
+                    <%= link("Details",
+                      to: Routes.institution_path(OliWeb.Endpoint, :show, institution),
+                      class: "btn btn-sm btn-outline-primary"
+                    ) %>
+                  </td>
+                </tr>
               </tbody>
             </table>
           <% end %>
@@ -152,41 +150,39 @@ defmodule OliWeb.Admin.Institutions.IndexLive do
                 </tr>
               </thead>
               <tbody>
-                <%= for pending_registration <- @pending_registrations do %>
-                  <tr>
-                    <td><%= pending_registration.name %></td>
-                    <td><%= pending_registration.institution_url %></td>
-                    <td><%= pending_registration.institution_email %></td>
-                    <td>
-                      <%= OliWeb.Common.Utils.render_date(pending_registration, :inserted_at, @ctx) %>
-                    </td>
+                <tr :for={pending_registration <- @pending_registrations}>
+                  <td><%= pending_registration.name %></td>
+                  <td><%= pending_registration.institution_url %></td>
+                  <td><%= pending_registration.institution_email %></td>
+                  <td>
+                    <%= OliWeb.Common.Utils.render_date(pending_registration, :inserted_at, @ctx) %>
+                  </td>
 
-                    <td class="text-nowrap">
-                      <button
-                        class="btn btn-sm btn-outline-primary ml-2"
-                        phx-click={
-                          JS.push("select_pending_registration",
-                            value: %{registration_id: pending_registration.id, action: "review"}
-                          )
-                          |> Modal.show_modal("review-registration-modal")
-                        }
-                      >
-                        Review
-                      </button>
-                      <button
-                        class="btn btn-sm btn-outline-danger ml-2"
-                        phx-click={
-                          JS.push("select_pending_registration",
-                            value: %{registration_id: pending_registration.id, action: "decline"}
-                          )
-                          |> Modal.show_modal("decline-registration-modal")
-                        }
-                      >
-                        Decline
-                      </button>
-                    </td>
-                  </tr>
-                <% end %>
+                  <td class="text-nowrap">
+                    <button
+                      class="btn btn-sm btn-outline-primary ml-2"
+                      phx-click={
+                        JS.push("select_pending_registration",
+                          value: %{registration_id: pending_registration.id, action: "review"}
+                        )
+                        |> Modal.show_modal("review-registration-modal")
+                      }
+                    >
+                      Review
+                    </button>
+                    <button
+                      class="btn btn-sm btn-outline-danger ml-2"
+                      phx-click={
+                        JS.push("select_pending_registration",
+                          value: %{registration_id: pending_registration.id, action: "decline"}
+                        )
+                        |> Modal.show_modal("decline-registration-modal")
+                      }
+                    >
+                      Decline
+                    </button>
+                  </td>
+                </tr>
               </tbody>
             </table>
           <% end %>
