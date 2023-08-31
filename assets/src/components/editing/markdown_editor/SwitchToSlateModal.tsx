@@ -10,14 +10,14 @@ export const SwitchToSlateModal: React.FC<Props> = ({ onConfirm, onCancel }) => 
     <PromptModal
       cancelText="No"
       confirmText="Yes"
-      title="Switch to slate editor"
+      title="Switch to rich text editor"
       onConfirm={onConfirm}
       onCancel={onCancel}
       className="z-[100001]"
     >
-      The Slate base editor is a rich WYSIWYG editor. As long as you do not use any content elements
-      that are not supported by the this editor, you can switch back and forth. Would you like to
-      switch now?
+      The rich text editor is our default content editor based on a &quot;what you see is what you
+      get&quot; model. As long as you do not use any content elements that are not supported by the
+      the Markdown editor, you can switch back. Would you like to switch now?
     </PromptModal>
   );
 };
