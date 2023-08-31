@@ -1,16 +1,18 @@
 import React from 'react';
 import { Descendant } from 'slate';
-import { RichTextEditor } from 'components/content/RichTextEditor';
+import { SlateOrMarkdownEditor } from 'components/editing/SlateOrMarkdownEditor';
 import { Description } from 'components/misc/Description';
 import { Heading } from 'components/misc/Heading';
 import { Checkmark } from 'components/misc/icons/Checkmark';
 import { Cross } from 'components/misc/icons/Cross';
+import { DEFAULT_EDITOR, EditorType, SMALL_EDITOR_HEIGHT } from 'data/content/resource';
 import { ProjectSlug } from 'data/types';
 import { Feedback as FeedbackItem } from '../../types';
 import { ModelEditorProps } from '../schema';
 
 interface FeedbackProps extends ModelEditorProps {
   onEditResponse: (score: number, content: Descendant[]) => void;
+  onEditEditorType: (score: number, editor: EditorType) => void;
   projectSlug: ProjectSlug;
   onRequestMedia: any;
 }
@@ -21,7 +23,7 @@ interface ItemProps extends FeedbackProps {
   onRequestMedia: any;
 }
 
-export const Item = (props: ItemProps) => {
+const Item = (props: ItemProps) => {
   const { feedback, score, editMode, onEditResponse } = props;
 
   return (
@@ -30,12 +32,15 @@ export const Item = (props: ItemProps) => {
         {score === 1 ? <Checkmark /> : <Cross />}
         Feedback for {score === 1 ? 'Correct' : 'Incorrect'} Answer:
       </Description>
-      <RichTextEditor
+      <SlateOrMarkdownEditor
         projectSlug={props.projectSlug}
         editMode={editMode}
-        value={feedback.content}
-        onRequestMedia={props.onRequestMedia}
+        initialHeight={SMALL_EDITOR_HEIGHT}
+        content={feedback.content}
         onEdit={(content) => onEditResponse(score, content)}
+        onEditorTypeChange={(editor) => props.onEditEditorType(score, editor)}
+        editorType={feedback.editor || DEFAULT_EDITOR}
+        allowBlockElements={true}
       />
     </div>
   );
