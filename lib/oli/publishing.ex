@@ -23,7 +23,7 @@ defmodule Oli.Publishing do
   alias Oli.Publishing
   alias Oli.Delivery.Sections.SectionsProjectsPublications
   alias Oli.Authoring.Authors.AuthorProject
-  alias Oli.Delivery.Sections.Blueprint
+  alias Oli.Delivery.Sections.{Blueprint, SectionResource}
   alias Oli.Groups
   alias Oli.Publishing.Publications.{Publication, PublicationDiff, PublicationDiffKey}
   alias Oli.Delivery.Updates
@@ -832,6 +832,21 @@ defmodule Oli.Publishing do
     )
   end
 
+  def get_published_resources_for_products(product_ids) do
+    Repo.all(
+      from(sr in SectionResource,
+        join: spp in SectionsProjectsPublications,
+        on: spp.section_id == sr.section_id,
+        join: pr in PublishedResource,
+        on: pr.resource_id == sr.resource_id and pr.publication_id == spp.publication_id,
+        join: rev in Revision,
+        on: rev.id == pr.revision_id,
+        where: sr.section_id in ^product_ids,
+        select: {sr.section_id, %{section_resource: sr, revision: rev}}
+      )
+    )
+  end
+
   @doc """
   Creates a new, or updates the existing published resource
   for the given publication and revision.
@@ -1522,16 +1537,5 @@ defmodule Oli.Publishing do
     {:ok, %{rows: results}} = Ecto.Adapters.SQL.query(Oli.Repo, sql, [])
 
     Enum.map(results, fn [slug, title] -> %{slug: slug, title: title} end)
-  end
-
-  @doc """
-  Returns all publications for a given section
-  """
-  def get_all_publications_by_section(section_id) do
-    Repo.all(
-      from spp in SectionsProjectsPublications,
-        where: spp.section_id == ^section_id,
-        select: spp
-    )
   end
 end

@@ -1672,18 +1672,6 @@ defmodule Oli.Delivery.Sections do
     |> Repo.one!()
   end
 
-  def get_current_publication_for_sections(section_ids, project_id) do
-    from(spp in SectionsProjectsPublications,
-      join: pub in Publication,
-      on: spp.publication_id == pub.id,
-      join: sec in Section,
-      on: spp.section_id == sec.id,
-      where: spp.section_id in ^section_ids and spp.project_id == ^project_id,
-      select: {sec, pub}
-    )
-    |> Repo.all()
-  end
-
   @doc """
   Updates a single project in a section to use the specified publication
   """
