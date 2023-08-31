@@ -14,6 +14,7 @@ defmodule Oli.Analytics.Summary.XAPI.PartAttemptEvaluated do
     activity_attempt: activity_attempt,
     attempt_guid: part_attempt_guid,
     attempt_number: part_attempt_number,
+    hints: hints,
     response: response,
     score: score,
     out_of: out_of,
@@ -72,6 +73,7 @@ defmodule Oli.Analytics.Summary.XAPI.PartAttemptEvaluated do
       },
       "context" => %{
         "extensions" => %{
+          "http://oli.cmu.edu/extensions/hints_requested" => hints,
           "http://oli.cmu.edu/extensions/part_attempt_number" => part_attempt_number,
           "http://oli.cmu.edu/extensions/activity_attempt_number" => activity_attempt.attempt_number,
           "http://oli.cmu.edu/extensions/page_attempt_number" => page_attempt_number,

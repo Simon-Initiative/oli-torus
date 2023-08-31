@@ -3,34 +3,12 @@ defmodule Oli.Repo.Migrations.SummaryTables do
 
   def change do
 
-    create table(:project_resource_summary) do
+    create table(:resource_summary) do
 
       add :project_id, references(:projects)
       add :publication_id, references(:publications)
-      add :revision_id, references(:revisions)
-
-      add :resource_id, references(:resources)
-      add :resource_type_id, references(:resource_types)
-      add :part_id, :string
-
-      add :num_correct, :integer
-      add :num_attempts, :integer
-      add :num_hints, :integer
-      add :num_first_attempts, :integer
-      add :num_first_attempts_correct, :integer
-
-      timestamps(type: :timestamptz)
-    end
-
-    create index(:project_resource_summary, [:project_id, :resource_id, :part_id], name: :project_resource_summary_project_resource_id_part_id_index)])
-    create index(:project_resource_summary, [:project_id, :publication_id, :revision_id, :part_id], name: :project_resource_summary_project_publication_revision_part_id_index)])
-
-    create table(:section_resource_summary) do
-
       add :section_id, references(:sections)
       add :user_id, references(:users)
-      # add :group_id, references(:groups)
-
       add :resource_id, references(:resources)
       add :resource_type_id, references(:resource_types)
       add :part_id, :string
@@ -41,10 +19,17 @@ defmodule Oli.Repo.Migrations.SummaryTables do
       add :num_first_attempts, :integer
       add :num_first_attempts_correct, :integer
 
-      timestamps(type: :timestamptz)
     end
 
-    create table(:section_response_summary) do
+    flush()
+
+    execute """
+    ALTER TABLE resource_summary ADD CONSTRAINT unique_scope UNIQUE (project_id, publication_id, section_id, user_id, resource_id, resource_type_id, part_id);
+    """
+
+    flush()
+
+    create table(:response_summary) do
 
       add :section_id, references(:sections)
       add :page_id, references(:resources)

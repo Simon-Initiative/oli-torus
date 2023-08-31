@@ -2,7 +2,7 @@ defmodule Oli.Analytics.Summary.SectionResponseSummary do
   use Ecto.Schema
   import Ecto.Changeset
 
-  schema "section_response_summary" do
+  schema "response_summary" do
 
     belongs_to(:section, Oli.Delivery.Sections.Section)
     belongs_to(:page, Oli.Resources.Resource)
