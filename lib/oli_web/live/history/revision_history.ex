@@ -342,10 +342,9 @@ defmodule OliWeb.RevisionHistory do
         %{"value" => value, "meta" => %{"action" => "save"}},
         socket
       ) do
-    %{revisions: revisions, resource_schema: resource_schema} = socket.assigns
+    %{revisions: revisions} = socket.assigns
 
     with {:ok, edited} <- Jason.decode(value),
-         :ok <- ExJsonSchema.Validator.validate(resource_schema, edited),
          latest_revision <- fetch_revision(hd(revisions).id) do
       {:noreply,
        socket
