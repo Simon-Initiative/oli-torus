@@ -36,4 +36,10 @@ export const Items = {
       Operations.apply(model, Operations.replace(`$..items[?(@.id=='${id}')].content`, content));
     };
   },
+
+  setEditor(id: string, editor: EditorType) {
+    return (model: any, _post: PostUndoable) => {
+      Operations.apply(model, Operations.setKey(`$..items[?(@.id=='${id}')]`, 'editor', editor));
+    };
+  },
 };
