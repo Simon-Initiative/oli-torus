@@ -5,10 +5,12 @@ defmodule Oli.Analytics.Summary.ProjectResourceSummary do
   schema "resource_summary" do
 
     # These are the scope records (essentially to what scope do these summaries apply)
-    belongs_to(:project, Oli.Authoring.Course.Project)
-    belongs_to(:publication, Oli.Publishing.Publications.Publication)
-    belongs_to(:section, Oli.Delivery.Sections.Section)
-    belongs_to(:user, Oli.Accounts.User)
+
+    field(:project_id, :integer, default: -1)
+    field(:publication_id, :integer, default: -1)
+    field(:section_id, :integer, default: -1)
+    field(:user_id, :integer, default: -1)
+
     belongs_to(:resource, Oli.Resources.Resource)
     field(:part_id, :string)
 
@@ -26,7 +28,7 @@ defmodule Oli.Analytics.Summary.ProjectResourceSummary do
   def changeset(brand, attrs) do
     brand
     |> cast(attrs, [:project_id, :publication_id, :section_id, :user_id, :resource_id, :resource_type_id, :part_id, :num_correct, :num_attempts, :num_hints, :num_first_attempts, :num_first_attempts_correct])
-    |> validate_required([:resource_id, :resource_type_id])
+    |> validate_required([])
   end
 
 end

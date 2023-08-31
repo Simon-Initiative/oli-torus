@@ -5,10 +5,10 @@ defmodule Oli.Repo.Migrations.SummaryTables do
 
     create table(:resource_summary) do
 
-      add :project_id, references(:projects)
-      add :publication_id, references(:publications)
-      add :section_id, references(:sections)
-      add :user_id, references(:users)
+      add :project_id, :integer
+      add :publication_id, :integer
+      add :section_id, :integer
+      add :user_id, :integer
       add :resource_id, references(:resources)
       add :resource_type_id, references(:resource_types)
       add :part_id, :string
@@ -21,17 +21,15 @@ defmodule Oli.Repo.Migrations.SummaryTables do
 
     end
 
-    flush()
-
-    execute """
-    ALTER TABLE resource_summary ADD CONSTRAINT unique_scope UNIQUE (project_id, publication_id, section_id, user_id, resource_id, resource_type_id, part_id);
-    """
-
-    flush()
+    # add a unique index to resource_summary for the scope of the summary
+    # this is to prevent duplicate records from being inserted
+    create unique_index(:resource_summary, [:project_id, :publication_id, :section_id, :user_id, :resource_id, :resource_type_id, :part_id], name: :resource_summary_scopes)
 
     create table(:response_summary) do
 
-      add :section_id, references(:sections)
+      add :project_id, :integer
+      add :publication_id, :integer
+      add :section_id, :integer
       add :page_id, references(:resources)
       add :activity_id, references(:resources)
       add :part_id, :string
@@ -44,7 +42,7 @@ defmodule Oli.Repo.Migrations.SummaryTables do
 
     create table(:student_responses) do
 
-      add :section_response_summary_id, references(:section_response_summary)
+      add :response_summary_id, references(:response_summary)
       add :user_id, references(:users)
 
       timestamps(type: :timestamptz)
