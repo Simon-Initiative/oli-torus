@@ -86,7 +86,10 @@ const ShortAnswer = () => {
               <ResponseCard
                 title="Targeted feedback"
                 response={response}
-                updateFeedback={(id, content) =>
+                updateFeedbackEditor={(_id, editor) =>
+                  dispatch(ResponseActions.editResponseFeedbackEditor(response.id, editor))
+                }
+                updateFeedback={(_id, content) =>
                   dispatch(ResponseActions.editResponseFeedback(response.id, content as RichText))
                 }
                 updateCorrectness={(_id, correct) =>
