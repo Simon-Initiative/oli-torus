@@ -19,6 +19,12 @@ interface Props {
 }
 export const ResponseCard: React.FC<Props> = (props) => {
   const { projectSlug } = useAuthoringElementContext();
+
+  const onEditorTypeChange = (editor: EditorType) =>
+    props.updateFeedbackEditor!(props.response.id, editor);
+
+  const editorType = props.response.feedback.editor || DEFAULT_EDITOR;
+
   return (
     <Card.Card>
       <Card.Title>
@@ -37,9 +43,9 @@ export const ResponseCard: React.FC<Props> = (props) => {
           placeholder="Explain why the student might have arrived at this answer"
           content={props.response.feedback.content}
           onEdit={(content) => props.updateFeedback(props.response.id, content)}
-          onEditorTypeChange={(editor) => props.updateFeedbackEditor(props.response.id, editor)}
+          onEditorTypeChange={onEditorTypeChange}
           allowBlockElements={true}
-          editorType={props.response.feedback.editor || DEFAULT_EDITOR}
+          editorType={editorType}
           editMode={true}
           projectSlug={projectSlug}
           initialHeight={SMALL_EDITOR_HEIGHT}
