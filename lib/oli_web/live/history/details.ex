@@ -4,15 +4,24 @@ defmodule OliWeb.RevisionHistory.Details do
   alias OliWeb.Common.MonacoEditor
   alias Oli.Utils.SchemaResolver
 
+  @rejected_keys [
+    :title,
+    :activity_type,
+    :warnings,
+    :previous_revision,
+    :scoring_strategy,
+    :author,
+    :resource,
+    :__meta__,
+    :resource_type,
+    :primary_resource,
+    :content
+  ]
+
   attr(:revision, :map)
   attr(:project, :map)
 
   def render(assigns) do
-    attrs =
-      ~w"slug deleted author_id previous_revision_id resource_type_id graded max_attempts late_start late_submit grace_period time_limit scoring_strategy_id activity_type_id parameters"
-
-    assigns = Map.merge(assigns, %{attrs: attrs})
-
     ~H"""
     <div class="revision-details">
       <MonacoEditor.render
@@ -44,24 +53,10 @@ defmodule OliWeb.RevisionHistory.Details do
               <td style="width:200px;"><strong>Title</strong></td>
               <td><%= @revision.title %></td>
             </tr>
-            <tr>
-              <td style="width:200px;"><strong>Objectives</strong></td>
-              <td>
-                <%= if Map.get(@revision.objectives, "attached") in [nil, []] do %>
-                  <em>None</em>
-                <% else %>
-                  <ul>
-                    <%= for objective <- Map.get(@revision.objectives, "attached") do %>
-                      <li><%= objective %></li>
-                    <% end %>
-                  </ul>
-                <% end %>
-              </td>
-            </tr>
-            <%= for k <- @attrs do %>
+            <%= for {key, value} <- revision_details(@revision) do %>
               <tr>
-                <td style="width:200px;"><strong><%= Phoenix.Naming.humanize(k) %></strong></td>
-                <td><%= Map.get(@revision, String.to_existing_atom(k)) %></td>
+                <td style="width:200px;"><strong><%= Phoenix.Naming.humanize(key) %></strong></td>
+                <td><%= json_encode_pretty(value) %></td>
               </tr>
             <% end %>
           </tbody>
@@ -69,6 +64,12 @@ defmodule OliWeb.RevisionHistory.Details do
       </div>
     </div>
     """
+  end
+
+  defp revision_details(revision) do
+    revision
+    |> Map.from_struct()
+    |> Enum.reject(fn {k, _v} -> k in @rejected_keys end)
   end
 
   defp json_encode_pretty(json) do
