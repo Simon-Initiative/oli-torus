@@ -121,7 +121,7 @@ defmodule OliWeb.Workspace.AccountDetailsLive do
     {:ok, updated_author} =
       Accounts.set_author_preference(current_author.id, :editor, value)
 
-    {:noreply, assign(socket, current_author: current_author)}
+    {:noreply, assign(socket, current_author: updated_author)}
   end
 
   defp providers_for(%Author{} = author) do
