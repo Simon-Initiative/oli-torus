@@ -1,9 +1,9 @@
-defmodule Oli.Analytics.Summary.EvaluatedAttempt.AttemptGroup do
+defmodule Oli.Analytics.Summary.AttemptGroup do
 
   import Ecto.Query, warn: false
   alias Oli.Repo
 
-  alias Oli.Analytics.Summary.EvaluatedAttempt.Context
+  alias Oli.Analytics.Summary.Context
 
   @moduledoc """
   Represents a collection of evaluated part attempts, and the possible activity and page
@@ -27,6 +27,10 @@ defmodule Oli.Analytics.Summary.EvaluatedAttempt.AttemptGroup do
     :resource_attempt,
     :context
   ]
+
+  def from_attempt_summary(%Oli.Analytics.Summary.Pipeline{} = pipeline, attempt_summary, project_id, host_name) do
+    Map.put(pipeline, :attempt_group, from_attempt_summary(attempt_summary, project_id, host_name))
+  end
 
   @doc """
   For a collection of part attempt guids,

@@ -1,4 +1,4 @@
-defmodule Oli.Analytics.Summary.EvaluatedAttempt.Context do
+defmodule Oli.Analytics.Summary.Context do
 
   @enforce_keys [
     :user_id,

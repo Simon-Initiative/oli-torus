@@ -1,6 +1,6 @@
 defmodule Oli.Analytics.Summary.XAPI.PartAttemptEvaluated do
 
-  alias Oli.Analytics.Summary.EvaluatedAttempt.Context
+  alias Oli.Analytics.Summary.Context
   alias Oli.Analytics.XAPI.Statement
 
   def new(%Context{

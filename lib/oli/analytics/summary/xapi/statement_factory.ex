@@ -1,6 +1,6 @@
 defmodule Oli.Analytics.Summary.XAPI.StatementFactory do
 
-  alias Oli.Analytics.Summary.EvaluatedAttempt.AttemptGroup
+  alias Oli.Analytics.Summary.AttemptGroup
   alias Oli.Analytics.Summary.XAPI.{PageAttemptEvaluated, PartAttemptEvaluated, ActivityAttemptEvaluated}
 
   def to_statements(%AttemptGroup{

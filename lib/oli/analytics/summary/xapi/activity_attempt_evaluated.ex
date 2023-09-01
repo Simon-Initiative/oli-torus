@@ -1,6 +1,6 @@
 defmodule Oli.Analytics.Summary.XAPI.ActivityAttemptEvaluated do
 
-  alias Oli.Analytics.Summary.EvaluatedAttempt.Context
+  alias Oli.Analytics.Summary.Context
   alias Oli.Analytics.XAPI.Statement
   alias Oli.Delivery.Attempts.Core.ActivityAttempt
 

@@ -1,9 +1,10 @@
 defmodule Oli.Analytics.Summary do
 
-  alias Oli.Analytics.Summary.EvaluatedAttempt.{AttemptGroup}
+  alias Oli.Analytics.Summary.{AttemptGroup, ResponseLabel, Pipeline}
   alias Oli.Analytics.Summary.XAPI.StatementFactory
-  alias Oli.Analytics.Summary.ResponseLabel
   alias Oli.Analytics.XAPI.Uploader
+
+  alias Oli.Timing
 
   @resource_fields "project_id, publication_id, section_id, user_id, resource_id, part_id, resource_type_id, num_correct, num_attempts, num_hints, num_first_attempts, num_first_attempts_correct"
   @response_fields "project_id, publication_id, section_id, page_id, activity_id, resource_part_response_id, part_id, count"
@@ -19,23 +20,36 @@ defmodule Oli.Analytics.Summary do
   """
   def execute_analytics_pipeline(snapshot_attempt_summary, project_id, host_name) do
 
-    AttemptGroup.from_attempt_summary(snapshot_attempt_summary, project_id, host_name)
+    try do
+
+    Pipeline.init()
+    |> AttemptGroup.from_attempt_summary(snapshot_attempt_summary, project_id, host_name)
+    |> Pipeline.step_done(:query)
     |> emit_xapi_events()
+    |> Pipeline.step_done(:xapi)
     |> upsert_resource_summaries()
+    |> Pipeline.step_done(:resource_summary)
     |> upsert_response_summaries()
+    |> Pipeline.step_done(:response_summary)
+    |> Pipeline.all_done()
+
+    rescue
+      e -> IO.inspect e
+    end
 
   end
 
   # From all of the part attempts, activity attempts, and resource attempt, construct and
   # emit xAPI statements to S3.
-  defp emit_xapi_events(attempt_group) do
+  defp emit_xapi_events(%Pipeline{attempt_group: attempt_group} = pipeline) do
+
     StatementFactory.to_statements(attempt_group)
     |> Enum.map(fn statement -> Uploader.upload(statement) end)
 
-    attempt_group
+    pipeline
   end
 
-  defp upsert_resource_summaries(attempt_group) do
+  defp upsert_resource_summaries(%Pipeline{attempt_group: attempt_group} = pipeline) do
 
     proto_records = assemble_proto_records(attempt_group)
 
@@ -45,11 +59,11 @@ defmodule Oli.Analytics.Summary do
       |> drop_temp_table()
     end)
 
-    attempt_group
+    pipeline
 
   end
 
-  defp upsert_response_summaries(attempt_group) do
+  defp upsert_response_summaries(%Pipeline{attempt_group: attempt_group} = pipeline) do
 
     # Read all activity registrations
     registered_activities = Oli.Activities.list_activity_registrations()
@@ -69,6 +83,7 @@ defmodule Oli.Analytics.Summary do
 
     end)
 
+    pipeline
   end
 
   defp upsert_student_responses(attempt_group, part_attempt_tuples) do
