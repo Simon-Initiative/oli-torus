@@ -126,7 +126,6 @@ export const deserializeNode =
     return null;
   };
 
-// Note: We are not supporting colspan or rowspan
 const table = (model: Table, newContext: DeserializationContext): string => {
   const columnCount = Math.max(...model.children.map((row) => row.children.length));
   const columnWidths = Array.from({ length: columnCount }, () => 0);
