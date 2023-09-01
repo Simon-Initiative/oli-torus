@@ -29,6 +29,7 @@ const translations: Record<string, string> = {
   em: 'italic',
   strong: 'bold',
   di: 'Description List',
+  iframe: 'Webpage (iFrame)',
 };
 
 const hasType = (node: AllModelElements | FormattedText): node is AllModelElements =>
