@@ -25,6 +25,18 @@ defmodule Oli.Repo.Migrations.SummaryTables do
     # this is to prevent duplicate records from being inserted
     create unique_index(:resource_summary, [:project_id, :publication_id, :section_id, :user_id, :resource_id, :resource_type_id, :part_id], name: :resource_summary_scopes)
 
+
+    create table(:resource_part_responses) do
+
+      add :resource_id, references(:resources)
+      add :part_id, :string
+      add :response, :string
+      add :label, :string
+
+    end
+
+    create unique_index(:resource_part_responses, [:resource_id, :part_id, :response], name: :resourse_part_response_unique)
+
     create table(:response_summary) do
 
       add :project_id, :integer
@@ -33,20 +45,24 @@ defmodule Oli.Repo.Migrations.SummaryTables do
       add :page_id, references(:resources)
       add :activity_id, references(:resources)
       add :part_id, :string
+      add :resource_part_response_id, references(:resource_part_responses)
 
-      add :label, :string
       add :count, :integer
 
-      timestamps(type: :timestamptz)
     end
+
+    create unique_index(:response_summary, [:project_id, :publication_id, :section_id, :page_id, :activity_id, :part_id, :resource_part_response_id], name: :response_summary_scopes)
 
     create table(:student_responses) do
 
-      add :response_summary_id, references(:response_summary)
+      add :section_id, references(:sections)
+      add :page_id, references(:resources)
+      add :resource_part_response_id, references(:resource_part_responses)
       add :user_id, references(:users)
 
-      timestamps(type: :timestamptz)
     end
+
+    create unique_index(:student_responses, [:section_id, :page_id, :resource_part_response_id, :user_id], name: :student_responses_unique)
 
   end
 end

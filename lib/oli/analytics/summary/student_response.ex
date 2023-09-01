@@ -4,17 +4,18 @@ defmodule Oli.Analytics.Summary.StudentResponse do
 
   schema "student_responses" do
 
-    belongs_to(:response_summary_id, Oli.Analytics.Summary.ResponseSummary)
+    belongs_to(:section, Oli.Delivery.Sections.Section)
+    belongs_to(:resource_part_response, Oli.Analytics.Summary.ResourcePartResponse)
+    belongs_to(:page, Oli.Resources.Resource)
     belongs_to(:user, Oli.Accounts.User)
 
-    timestamps(type: :utc_datetime)
   end
 
   @doc false
   def changeset(brand, attrs) do
     brand
-    |> cast(attrs, [:response_summary_id, :user_id])
-    |> validate_required([:response_summary_id, :user_id])
+    |> cast(attrs, [:section_id, :resource_part_response_id, :page_id, :user_id])
+    |> validate_required([:section_id, :resource_part_response_id, :page_id, :user_id])
   end
 
 end

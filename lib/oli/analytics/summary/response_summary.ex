@@ -10,18 +10,17 @@ defmodule Oli.Analytics.Summary.ResponseSummary do
 
     belongs_to(:page, Oli.Resources.Resource)
     belongs_to(:activity, Oli.Resources.Resource)
+    belongs_to(:resource_part_response, Oli.Analytics.Summary.ResourcePartResponse)
     field(:part_id, :string)
 
-    field(:label, :string)
     field(:count, :integer, default: 0)
 
-    timestamps(type: :utc_datetime)
   end
 
   @doc false
   def changeset(brand, attrs) do
     brand
-    |> cast(attrs, [:project_id, :publication_id, :section_id, :page_id, :activity_id, :part_id, :label, :count])
+    |> cast(attrs, [:project_id, :publication_id, :section_id, :page_id, :activity_id, :resource_part_response_id, :part_id, :count])
     |> validate_required([])
   end
 

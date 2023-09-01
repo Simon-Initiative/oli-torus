@@ -61,7 +61,7 @@ defmodule Oli.Delivery.Snapshots.Worker do
           Oli.Delivery.Sections.determine_which_project_id(ra.section_id, ra.resource_id)
       end
 
-    Oli.Analytics.Summary.process_summary_analytics(results, project_id, host_name())
+    Oli.Analytics.Summary.execute_analytics_pipeline(results, project_id, host_name())
 
     # determine all referenced objective ids by the parts that we find
     objective_ids =
