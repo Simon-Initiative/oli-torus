@@ -93,6 +93,7 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = (props) => {
       data-color-mode={modeClass}
       onBlur={onBlur}
       preview="edit"
+      defaultTabEnable={true}
       style={props.style}
       commands={[
         commands.bold,
