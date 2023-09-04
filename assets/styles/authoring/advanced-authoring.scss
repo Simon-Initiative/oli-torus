@@ -911,3 +911,9 @@ $font-family-sans-serif: var(--font-sans);
     }
   }
 }
+
+.toast-body {
+  .list-group-item {
+    margin: 5px;
+  }
+}

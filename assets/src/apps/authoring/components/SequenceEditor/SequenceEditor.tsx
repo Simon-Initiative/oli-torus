@@ -41,7 +41,7 @@ import ContextAwareToggle from '../Accordion/ContextAwareToggle';
 import ConfirmDelete from '../Modal/DeleteConfirmationModal';
 import { RightPanelTabs } from '../RightMenu/RightMenu';
 
-const SequenceEditor: React.FC = () => {
+const SequenceEditor: React.FC<any> = (props: any) => {
   const dispatch = useDispatch();
   const currentSequenceId = useSelector(selectCurrentSequenceId);
   const sequence = useSelector(selectSequence);
@@ -380,7 +380,9 @@ const SequenceEditor: React.FC = () => {
 
       dispatch(
         setLeftPanelState({
-          sequenceEditorHeight: ref.current?.clientHeight,
+          sequenceEditorHeight: ref?.current?.clientHeight
+            ? ref?.current?.clientHeight + 150
+            : ref?.current?.clientHeight,
           sequenceEditorExpanded: scrollHeight > clientHeight ? true : false,
         }),
       );
@@ -403,6 +405,7 @@ const SequenceEditor: React.FC = () => {
           <Dropdown
             onClick={(e: React.MouseEvent) => {
               (e as any).isContextButtonClick = true;
+              props.contextMenuClicked(true, props);
             }}
           >
             <Dropdown.Toggle
@@ -551,7 +554,10 @@ const SequenceEditor: React.FC = () => {
               className={`aa-sequence-item${item.children.length ? ' is-parent' : ''}`}
               key={`${item.custom.sequenceId}`}
               active={item.custom.sequenceId === currentSequenceId}
-              onClick={(e) => !(e as any).isContextButtonClick && handleItemClick(e, item)}
+              onClick={(e) => {
+                !(e as any).isContextButtonClick && handleItemClick(e, item);
+                props.contextMenuClicked((e as any).isContextButtonClick);
+              }}
               tabIndex={0}
             >
               <div className="aa-sequence-details-wrapper">
@@ -605,6 +611,7 @@ const SequenceEditor: React.FC = () => {
                   index={index}
                   arr={arr}
                   isParentQB={isParentQB}
+                  contextMenuClicked={props.contextMenuClicked}
                 />
               </div>
               {item.children.length ? (
