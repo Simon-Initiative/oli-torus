@@ -3,6 +3,8 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTableModel do
   alias OliWeb.Router.Helpers, as: Routes
   alias OliWeb.Common.FormatDateTime
   alias OliWeb.Sections.AssessmentSettings.Tooltips
+  alias Phoenix.LiveView.JS
+
   use Phoenix.Component
 
   def new(
@@ -29,6 +31,13 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTableModel do
         th_class: "!sticky left-20 bg-white z-10",
         td_class: "sticky left-20 bg-white dark:bg-neutral-800 z-10 whitespace-nowrap",
         tooltip: Tooltips.for(:name)
+      },
+      %ColumnSpec{
+        name: :available_date,
+        label: "AVAILABLE DATE",
+        render_fn: &__MODULE__.render_available_date_column/3,
+        th_class: "whitespace-nowrap",
+        tooltip: Tooltips.for(:available_date)
       },
       %ColumnSpec{
         name: :due_date,
@@ -141,6 +150,29 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTableModel do
     """
   end
 
+  def render_available_date_column(assigns, assessment, _) do
+    assigns =
+      Map.merge(assigns, %{
+        available_date: assessment.start_date,
+        id: assessment.resource_id
+      })
+
+    ~H"""
+    <button
+      class="hover:underline whitespace-nowrap"
+      type="button"
+      phx-click={edit_date_and_show_modal(@on_edit_date, "available_date")}
+      phx-value-assessment_id={@id}
+    >
+      <%= if is_nil(@available_date) do %>
+        No available date
+      <% else %>
+        <%= value_from_datetime(@available_date, @ctx) %>
+      <% end %>
+    </button>
+    """
+  end
+
   def render_due_date_column(assigns, assessment, _) do
     assigns =
       Map.merge(assigns, %{
@@ -153,7 +185,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTableModel do
     <button
       class="hover:underline whitespace-nowrap"
       type="button"
-      phx-click={@on_edit_date}
+      phx-click={edit_date_and_show_modal(@on_edit_date, "due_date")}
       phx-value-assessment_id={@id}
     >
       <%= if @due_date != nil and @scheduling_type == :due_by do %>
@@ -379,4 +411,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTableModel do
     datetime
     |> FormatDateTime.date(ctx: ctx, show_timezone: false)
   end
+
+  defp edit_date_and_show_modal(on_edit_date, date_input_type),
+    do: JS.push(on_edit_date, "open", target: "#assessment_#{date_input_type}_modal")
 end

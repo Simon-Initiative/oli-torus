@@ -25,6 +25,8 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
     text_search: nil
   }
 
+  @date_fields ["start_date", "end_date"]
+
   def mount(socket) do
     {:ok, assign(socket, modal_assigns: %{show: false})}
   end
@@ -43,8 +45,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
         rows,
         assigns.section.slug,
         assigns.ctx,
-        JS.push("edit_date", target: socket.assigns.myself)
-        |> JS.push("open", target: "#assessment_due_date_modal"),
+        JS.push("edit_date", target: socket.assigns.myself),
         JS.push("edit_password", target: socket.assigns.myself),
         JS.push("no_edit_password", target: socket.assigns.myself)
       )
@@ -92,6 +93,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
     ~H"""
     <div id="settings_table" class="mx-10 mb-10 bg-white dark:bg-gray-800 shadow-sm">
       <%= due_date_modal(assigns) %>
+      <%= available_date_modal(assigns) %>
       <%= modal(@modal_assigns) %>
       <div class="flex flex-col space-y-4 lg:space-y-0 lg:flex-row lg:items-center lg:justify-between pr-6 mb-4">
         <div class="flex flex-col pl-9">
@@ -155,6 +157,50 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
         />
       </form>
     </div>
+    """
+  end
+
+  def available_date_modal(assigns) do
+    ~H"""
+    <.live_component
+      id="assessment_available_date_modal"
+      title={if @selected_assessment, do: "#{@selected_assessment.name} available date"}
+      module={OliWeb.Components.LiveModal}
+      on_confirm={
+        JS.dispatch("submit", to: "#assessment-available-date-form")
+        |> JS.push("close", target: "#assessment_available_date_modal")
+      }
+      on_confirm_label="Save"
+    >
+      <div class="p-4">
+        <form
+          id="assessment-available-date-form"
+          for="settings_table"
+          phx-target={@myself}
+          phx-submit="edit_date"
+        >
+          <label for="start_date_input">
+            Please pick an available date for the selected assessment
+          </label>
+          <div class="flex gap-2 items-center mt-2">
+            <input
+              id="start_date_input"
+              name="start_date"
+              type="datetime-local"
+              phx-debounce={500}
+              value={value_from_datetime(@selected_assessment.start_date, @ctx)}
+            />
+            <button
+              class="torus-button primary"
+              type="button"
+              phx-click={JS.set_attribute({"value", ""}, to: "#start_date_input")}
+            >
+              Clear
+            </button>
+          </div>
+        </form>
+      </div>
+    </.live_component>
     """
   end
 
@@ -329,50 +375,11 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
     {:noreply, assign(socket, selected_assessment: base_assessment)}
   end
 
-  def handle_event("edit_date", %{"end_date" => end_date}, socket) do
-    assessment = socket.assigns.selected_assessment
+  def handle_event("edit_date", %{"start_date" => start_date}, socket),
+    do: on_edit_date(:start_date, start_date, socket)
 
-    end_date =
-      if String.length(end_date) > 0 do
-        FormatDateTime.datestring_to_utc_datetime(
-          end_date,
-          socket.assigns.ctx
-        )
-      else
-        nil
-      end
-
-    scheduling_type = if !is_nil(end_date), do: :due_by, else: :read_by
-
-    Sections.get_section_resource(
-      socket.assigns.section.id,
-      assessment.resource_id
-    )
-    |> SectionResource.changeset(%{
-      end_date: end_date,
-      scheduling_type: scheduling_type
-    })
-    |> Repo.update()
-    |> case do
-      {:error, _changeset} ->
-        {:noreply,
-         socket
-         |> flash_to_liveview(:error, "ERROR: Setting could not be updated")}
-
-      {:ok, _section_resource} ->
-        {:noreply,
-         socket
-         |> update_assessments(
-           assessment.resource_id,
-           [
-             {:end_date, end_date},
-             {:scheduling_type, scheduling_type}
-           ],
-           false
-         )
-         |> flash_to_liveview(:info, "Setting updated!")}
-    end
-  end
+  def handle_event("edit_date", %{"end_date" => end_date}, socket),
+    do: on_edit_date(:end_date, end_date, socket)
 
   def handle_event("hide_modal", _params, socket) do
     {:noreply,
@@ -516,8 +523,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
         socket.assigns.table_model.rows,
         socket.assigns.section.slug,
         socket.assigns.ctx,
-        JS.push("edit_date", target: socket.assigns.myself)
-        |> JS.push("open", target: "#assessment_due_date_modal"),
+        JS.push("edit_date", target: socket.assigns.myself),
         JS.push("edit_password", target: socket.assigns.myself),
         JS.push("no_edit_password", target: socket.assigns.myself),
         edit_password_id
@@ -644,6 +650,64 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
     end
   end
 
+  defp on_edit_date(date_field, new_date, socket) do
+    assessment = socket.assigns.selected_assessment
+
+    new_date =
+      if String.length(new_date) > 0 do
+        FormatDateTime.datestring_to_utc_datetime(
+          new_date,
+          socket.assigns.ctx
+        )
+      else
+        nil
+      end
+
+    Sections.get_section_resource(
+      socket.assigns.section.id,
+      assessment.resource_id
+    )
+    |> change_section_resource(date_field, new_date)
+    |> Repo.update()
+    |> case do
+      {:error, _changeset} ->
+        {:noreply,
+         socket
+         |> flash_to_liveview(:error, "ERROR: Setting could not be updated")}
+
+      {:ok, section_resource} ->
+        {:noreply,
+         socket
+         |> update_assessments(
+           assessment.resource_id,
+           [
+             {date_field, new_date}
+             | maybe_add_scheduling_type(date_field, section_resource)
+           ],
+           false
+         )
+         |> flash_to_liveview(:info, "Setting updated!")}
+    end
+  end
+
+  defp change_section_resource(section_resource, :start_date, start_date) do
+    SectionResource.changeset(section_resource, %{
+      start_date: start_date
+    })
+  end
+
+  defp change_section_resource(section_resource, :end_date, end_date) do
+    SectionResource.changeset(section_resource, %{
+      end_date: end_date,
+      scheduling_type: unless(is_nil(end_date), do: :due_by, else: :read_by)
+    })
+  end
+
+  defp maybe_add_scheduling_type("end_date", section_resource),
+    do: [{:scheduling_type, section_resource.scheduling_type}]
+
+  defp maybe_add_scheduling_type("start_date", _section_resource), do: []
+
   defp do_update(key, assessment_setting_id, new_value, socket) do
     Sections.get_section_resource(
       socket.assigns.section.id,
@@ -719,7 +783,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
                value != "" ->
           abs(String.to_integer(value))
 
-        {"end_date", value} ->
+        {key, value} when key in @date_fields ->
           FormatDateTime.datestring_to_utc_datetime(value, ctx)
 
         {_, value} ->

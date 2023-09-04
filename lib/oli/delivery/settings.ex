@@ -54,6 +54,7 @@ defmodule Oli.Delivery.Settings do
 
     %Combined{
       resource_id: resolved_revision.resource_id,
+      start_date: combine_field(:start_date, section_resource, student_exception),
       end_date: combine_field(:end_date, section_resource, student_exception),
       max_attempts: max_attempts,
       retake_mode: combine_field(:retake_mode, section_resource, student_exception),

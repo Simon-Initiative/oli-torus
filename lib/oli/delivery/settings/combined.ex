@@ -1,5 +1,6 @@
 defmodule Oli.Delivery.Settings.Combined do
   defstruct resource_id: nil,
+            start_date: nil,
             end_date: nil,
             max_attempts: 0,
             retake_mode: :normal,
@@ -17,6 +18,7 @@ defmodule Oli.Delivery.Settings.Combined do
 
   @type t() :: %__MODULE__{
           resource_id: integer(),
+          start_date: DateTime.t(),
           end_date: DateTime.t(),
           max_attempts: integer(),
           retake_mode: :normal | :targeted,
