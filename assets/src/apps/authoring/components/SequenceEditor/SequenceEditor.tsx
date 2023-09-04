@@ -62,7 +62,31 @@ const SequenceEditor: React.FC<any> = (props: any) => {
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    console.log({ menuItemClicked: props.menuItemClicked });
+    if (props.menuItemClicked) {
+      const { event, item, parentItem, isLayer, isBank, direction } = props.menuItemClicked;
+      switch (event) {
+        case 'handleItemAdd':
+          handleItemAdd(parentItem, isLayer, isBank);
+          break;
+        case 'handleItemReorder':
+          handleItemReorder(null, item, direction);
+          break;
+        case 'handleItemDelete':
+          handleItemDelete(item);
+          break;
+        case 'handleItemConvert':
+          handleItemConvert(item);
+          break;
+        case 'handleItemClone':
+          handleItemClone(item);
+          break;
+        case 'setItemToRename':
+          setItemToRename(item);
+          break;
+        default:
+          break;
+      }
+    }
   }, [props.menuItemClicked]);
 
   const handleItemClick = (e: any, entry: SequenceEntry<SequenceEntryChild>) => {

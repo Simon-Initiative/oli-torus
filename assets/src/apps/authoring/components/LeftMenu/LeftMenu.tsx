@@ -8,8 +8,6 @@ const LeftMenu: React.FC = () => {
   const [menuDetails, setMenuDetails] = useState();
   const [menuItemClicked, setMenuItemClicked] = useState<any>({});
   const toggleSequenceContextMenu = (showToast: boolean, itemDetails: any) => {
-    console.log({ showToast });
-
     if (itemDetails) {
       setMenuDetails(itemDetails);
     }
@@ -17,8 +15,6 @@ const LeftMenu: React.FC = () => {
   };
 
   const handleContextMenuItemClick = (itemDetails: any) => {
-    console.log({ itemDetails });
-
     setMenuItemClicked(itemDetails);
   };
   return (

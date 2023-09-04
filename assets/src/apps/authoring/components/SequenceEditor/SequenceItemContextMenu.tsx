@@ -51,30 +51,36 @@ const SequenceItemContextMenu = (props: any) => {
   const handleItemAdd = async (parentItem: any, isLayer = false, isBank = false) => {
     const details = { event: 'handleItemAdd', parentItem, isLayer, isBank };
     props.onMenuItemClick(details);
+    props.contextMenuClicked(false);
   };
 
   const handleItemReorder = async (event: any, item: any, direction: any) => {
     const details = { event: 'handleItemReorder', item, direction };
     props.onMenuItemClick(details);
+    props.contextMenuClicked(false);
   };
 
   const handleItemDelete = async (item: any) => {
     const details = { event: 'handleItemDelete', item };
     props.onMenuItemClick(details);
+    props.contextMenuClicked(false);
   };
 
   const handleItemConvert = async (item: any) => {
     const details = { event: 'handleItemConvert', item };
     props.onMenuItemClick(details);
+    props.contextMenuClicked(false);
   };
 
   const handleItemClone = async (item: any) => {
     const details = { event: 'handleItemClone', item };
     props.onMenuItemClick(details);
+    props.contextMenuClicked(false);
   };
   const handleRenameItem = async (item: any) => {
     const details = { event: 'setItemToRename', item };
     props.onMenuItemClick(details);
+    props.contextMenuClicked(false);
   };
 
   const handleCopyItem = async (item: any) => {
@@ -96,7 +102,6 @@ const SequenceItemContextMenu = (props: any) => {
       setIsLayer(sequenceItemDetail.item.custom.isLayer);
       setSeqType(isLayer ? layerLabel : isBank ? bankLabel : screenLabel);
     }
-    console.log({ displayContextMenu: props.displayContextMenu });
   }, [props]);
 
   return (
