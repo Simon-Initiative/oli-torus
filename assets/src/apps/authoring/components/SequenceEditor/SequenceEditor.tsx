@@ -403,8 +403,6 @@ const SequenceEditor: React.FC<any> = (props: any) => {
     setTimeout(() => {
       const scrollHeight = ref.current?.scrollHeight || 0;
       const clientHeight = ref.current?.clientHeight || 0;
-      console.log({ scrollHeight, clientHeight });
-
       dispatch(
         setLeftPanelState({
           sequenceEditorHeight: ref?.current?.clientHeight
