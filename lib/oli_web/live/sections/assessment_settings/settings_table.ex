@@ -25,8 +25,6 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
     text_search: nil
   }
 
-  @date_fields ["start_date", "end_date"]
-
   def mount(socket) do
     {:ok, assign(socket, modal_assigns: %{show: false})}
   end
@@ -703,10 +701,10 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
     })
   end
 
-  defp maybe_add_scheduling_type("end_date", section_resource),
+  defp maybe_add_scheduling_type(:end_date, section_resource),
     do: [{:scheduling_type, section_resource.scheduling_type}]
 
-  defp maybe_add_scheduling_type("start_date", _section_resource), do: []
+  defp maybe_add_scheduling_type(:start_date, _section_resource), do: []
 
   defp do_update(key, assessment_setting_id, new_value, socket) do
     Sections.get_section_resource(
@@ -783,7 +781,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
                value != "" ->
           abs(String.to_integer(value))
 
-        {key, value} when key in @date_fields ->
+        {key, value} when key in ["start_date", "end_date"] ->
           FormatDateTime.datestring_to_utc_datetime(value, ctx)
 
         {_, value} ->
