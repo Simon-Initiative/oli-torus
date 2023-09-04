@@ -94,7 +94,11 @@
               </div>
             <% end %>
           <% end %>
-          <Details.render revision={@selected} project={@project} />
+          <Details.render
+            revision={@selected}
+            project={@project}
+            modal_assigns={@details_modal_assigns}
+          />
         </div>
       </div>
     </div>
