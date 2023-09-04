@@ -56,11 +56,14 @@ const SequenceEditor: React.FC<any> = (props: any) => {
   const isAdmin = useSelector(selectIsAdmin);
   const bottomLeftPanel = useSelector(selectBottomLeftPanel);
   const projectSlug = useSelector(selectProjectSlug);
-
   const layerLabel = 'Layer';
   const bankLabel = 'Question Bank';
   const screenLabel = 'Screen';
   const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    console.log({ menuItemClicked: props.menuItemClicked });
+  }, [props.menuItemClicked]);
 
   const handleItemClick = (e: any, entry: SequenceEntry<SequenceEntryChild>) => {
     e.stopPropagation();
