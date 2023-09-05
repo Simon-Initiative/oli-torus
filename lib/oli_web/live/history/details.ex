@@ -236,7 +236,7 @@ defmodule OliWeb.RevisionHistory.Details do
   defp parse_list(list, project_slug, slug_mapper) do
     parsed =
       Enum.map(list, fn resource_id ->
-        ~s[<a href='#{history_url(project_slug, Map.get(slug_mapper, resource_id))}'>#{resource_id}</a>]
+        ~s[<a href="#{history_url(project_slug, Map.get(slug_mapper, resource_id))}" data-phx-link="redirect" data-phx-link-state="push">#{resource_id}</a>]
       end)
       |> Enum.join(", ")
 
