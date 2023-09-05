@@ -1,5 +1,7 @@
 defmodule Oli.Resources do
   import Ecto.Query, warn: false
+  alias Oli.Publishing.Publications.Publication
+  alias Oli.Authoring.Course.ProjectResource
   alias Oli.Repo
 
   # Resources only know about Resources.  Resources
@@ -399,5 +401,24 @@ defmodule Oli.Resources do
       error ->
         error
     end
+  end
+
+  @doc """
+  Returns the revision slug of the curriculum for the given revision id.
+  """
+
+  def get_revision_root_slug(revision_id) do
+    from(r in Revision,
+      join: pr in ProjectResource,
+      on: r.resource_id == pr.resource_id,
+      where: r.id == ^revision_id,
+      join: pub in Publication,
+      on: pr.project_id == pub.project_id,
+      join: r2 in Revision,
+      on: pub.root_resource_id == r2.resource_id,
+      select: r2.slug,
+      limit: 1
+    )
+    |> Repo.one()
   end
 end

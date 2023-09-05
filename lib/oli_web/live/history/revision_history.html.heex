@@ -3,6 +3,9 @@
 <div class="container">
   <h2>Revision History</h2>
   <h4>Resource ID: <%= @resource_id %></h4>
+  <.link :if={@selected.slug != @revision_root_slug} class="torus-button primary" navigate={~p[/project/#{@project.slug}/history/slug/#{@revision_root_slug}]}>
+    Hierarchy
+  </.link>
 
   <div class="row" style="margin-bottom: 30px;">
     <div class="col-12">

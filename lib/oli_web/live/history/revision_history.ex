@@ -116,6 +116,7 @@ defmodule OliWeb.RevisionHistory do
        details_modal_assigns: nil,
        resource_schema: resource_schema
      )
+     |> assign_new(:revision_root_slug, fn _ -> Resources.get_revision_root_slug(revision.id) end)
      |> allow_upload(:json, accept: ~w(.json), max_entries: 1)}
   end
 
