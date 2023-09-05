@@ -389,7 +389,7 @@ defmodule OliWeb.Router do
     pipe_through([:browser, :authoring_protected, :workspace, :authorize_project])
 
     live_session :load_projects,
-      on_mount: [Oli.LiveSessionPlugs.SetCurrentAuthor, Oli.LiveSessionPlugs.SetProject] do
+      on_mount: [OliWeb.LiveSessionPlugs.SetCurrentAuthor, OliWeb.LiveSessionPlugs.SetProject] do
       live("/:project_id/overview", Projects.OverviewLive)
       live("/:project_id", Projects.OverviewLive)
     end
@@ -765,7 +765,7 @@ defmodule OliWeb.Router do
       :pow_email_layout
     ])
 
-    get("/", DeliveryController, :open_and_free_index)
+    live("/", Delivery.OpenAndFreeIndex)
 
     live("/join/invalid", Sections.InvalidSectionInviteView)
   end
@@ -907,7 +907,6 @@ defmodule OliWeb.Router do
     live_session :instructor_dashboard,
       on_mount: OliWeb.Delivery.InstructorDashboard.InitialAssigns,
       root_layout: {OliWeb.LayoutView, :delivery_dashboard} do
-
       live("/:view", Delivery.InstructorDashboard.InstructorDashboardLive)
       live("/:view/:active_tab", Delivery.InstructorDashboard.InstructorDashboardLive)
 
@@ -994,9 +993,9 @@ defmodule OliWeb.Router do
 
     live_session :load_section,
       on_mount: [
-        Oli.LiveSessionPlugs.SetSection,
-        Oli.LiveSessionPlugs.SetCurrentUser,
-        Oli.LiveSessionPlugs.RequireEnrollment
+        OliWeb.LiveSessionPlugs.SetSection,
+        OliWeb.LiveSessionPlugs.SetCurrentUser,
+        OliWeb.LiveSessionPlugs.RequireEnrollment
       ] do
       live(
         "/:section_slug/welcome",
@@ -1378,7 +1377,7 @@ defmodule OliWeb.Router do
 
       get("/flame_graphs", DevController, :flame_graphs)
 
-      live_storybook "/storybook", backend_module: OliWeb.Storybook
+      live_storybook("/storybook", backend_module: OliWeb.Storybook)
     end
   end
 end

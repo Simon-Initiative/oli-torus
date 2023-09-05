@@ -41,7 +41,10 @@ const colors = {
 module.exports = {
   colors: {
     ...colors,
-    primary: colors.blue['500'],
+    primary: {
+      DEFAULT: colors.blue['500'],
+      ...colors.blue,
+    },
     secondary: colors.gray['600'],
     danger: '#e74c3c',
     warning: '#f39c12',

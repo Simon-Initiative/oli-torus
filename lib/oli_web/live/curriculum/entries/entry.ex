@@ -1,12 +1,12 @@
-defmodule OliWeb.Curriculum.EntryLive do
+defmodule OliWeb.Curriculum.Entry do
   @moduledoc """
   Curriculum item entry component.
   """
-  use Phoenix.LiveComponent
+  use OliWeb, :html
 
   import OliWeb.Curriculum.Utils
 
-  alias OliWeb.Curriculum.{Actions, DetailsLive, LearningSummaryLive}
+  alias OliWeb.Curriculum.{Actions, Details, LearningSummary}
   alias OliWeb.Router.Helpers, as: Routes
   alias OliWeb.Common.Links
 
@@ -72,16 +72,21 @@ defmodule OliWeb.Curriculum.EntryLive do
         <div>
           <%= case @view do %>
             <% "Detailed" -> %>
-              <%= live_component(DetailsLive, assigns) %>
+              <Details.render child={@child} ctx={@ctx} />
             <% "Learning Summary" -> %>
-              <%= live_component(LearningSummaryLive, assigns) %>
+              <LearningSummary.render
+                child={@child}
+                activity_ids={@activity_ids}
+                activity_map={@activity_map}
+                objective_map={@objective_map}
+              />
             <% _ -> %>
           <% end %>
         </div>
       </div>
       <!-- prevent dragging of actions menu and modals using this draggable wrapper -->
       <div draggable="true" ondragstart="event.preventDefault(); event.stopPropagation();">
-        <%= live_component(Actions, assigns) %>
+        <Actions.render child={@child} />
       </div>
     </div>
     """

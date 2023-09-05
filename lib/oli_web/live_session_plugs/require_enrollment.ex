@@ -1,4 +1,4 @@
-defmodule Oli.LiveSessionPlugs.RequireEnrollment do
+defmodule OliWeb.LiveSessionPlugs.RequireEnrollment do
   import Phoenix.Component, only: [assign: 2]
 
   alias Oli.Delivery.Sections

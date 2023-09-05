@@ -1,11 +1,14 @@
-defmodule OliWeb.Curriculum.DetailsLive do
+defmodule OliWeb.Curriculum.Details do
   @moduledoc """
   Curriculum item entry component.
   """
 
-  use OliWeb, :live_component
+  use OliWeb, :html
 
   alias OliWeb.Common.Utils
+
+  attr(:child, :map, required: true)
+  attr(:ctx, :map, required: true)
 
   def render(assigns) do
     ~H"""

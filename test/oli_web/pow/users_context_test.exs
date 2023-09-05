@@ -18,7 +18,7 @@ defmodule OliWeb.Pow.UserContextTest do
         )
 
       assert html_response(conn, 302) =~
-               Routes.delivery_path(conn, :open_and_free_index)
+               ~p"/sections"
     end
   end
 

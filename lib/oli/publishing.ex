@@ -23,7 +23,7 @@ defmodule Oli.Publishing do
   alias Oli.Publishing
   alias Oli.Delivery.Sections.SectionsProjectsPublications
   alias Oli.Authoring.Authors.AuthorProject
-  alias Oli.Delivery.Sections.Blueprint
+  alias Oli.Delivery.Sections.{Blueprint, SectionResource}
   alias Oli.Groups
   alias Oli.Publishing.Publications.{Publication, PublicationDiff, PublicationDiffKey}
   alias Oli.Delivery.Updates
@@ -829,6 +829,21 @@ defmodule Oli.Publishing do
     Repo.one(
       from p in PublishedResource,
         where: p.publication_id == ^publication_id and p.resource_id == ^resource_id
+    )
+  end
+
+  def get_published_resources_for_products(product_ids) do
+    Repo.all(
+      from(sr in SectionResource,
+        join: spp in SectionsProjectsPublications,
+        on: spp.section_id == sr.section_id,
+        join: pr in PublishedResource,
+        on: pr.resource_id == sr.resource_id and pr.publication_id == spp.publication_id,
+        join: rev in Revision,
+        on: rev.id == pr.revision_id,
+        where: sr.section_id in ^product_ids,
+        select: {sr.section_id, %{section_resource: sr, revision: rev}}
+      )
     )
   end
 
