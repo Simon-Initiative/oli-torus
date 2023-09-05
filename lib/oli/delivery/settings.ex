@@ -95,8 +95,12 @@ defmodule Oli.Delivery.Settings do
   end
 
   def was_late?(_, %Combined{late_submit: :disallow}, _now), do: false
-  def was_late?(%ResourceAttempt{} = resource_attempt, %Combined{late_submit: :allow} = effective_settings, now) do
 
+  def was_late?(
+        %ResourceAttempt{} = resource_attempt,
+        %Combined{late_submit: :allow} = effective_settings,
+        now
+      ) do
     case determine_effective_deadline(resource_attempt, effective_settings) do
       nil -> false
       effective_deadline -> DateTime.compare(now, effective_deadline) == :gt
@@ -109,10 +113,9 @@ defmodule Oli.Delivery.Settings do
   def new_attempt_allowed(%Combined{} = effective_settings, num_attempts_taken, blocking_gates) do
     with {:allowed} <- check_blocking_gates(blocking_gates),
          {:allowed} <- check_num_attempts(effective_settings, num_attempts_taken),
+         {:allowed} <- check_start_date(effective_settings),
          {:allowed} <- check_end_date(effective_settings) do
       {:allowed}
-    else
-      reason -> reason
     end
   end
 
@@ -124,6 +127,16 @@ defmodule Oli.Delivery.Settings do
       {:allowed}
     else
       {:no_attempts_remaining}
+    end
+  end
+
+  def check_start_date(%Combined{start_date: nil}), do: {:allowed}
+
+  def check_start_date(%Combined{start_date: start_date}) do
+    if DateTime.compare(start_date, DateTime.utc_now()) == :gt do
+      {:before_start_date}
+    else
+      {:allowed}
     end
   end
 
@@ -144,37 +157,36 @@ defmodule Oli.Delivery.Settings do
         %ResourceAttempt{} = resource_attempt,
         %Combined{} = effective_settings
       ) do
+    deadline =
+      case {effective_settings.end_date, effective_settings.time_limit} do
+        # no end date or time limit, no deadline
+        {nil, nil} ->
+          nil
 
-    deadline = case {effective_settings.end_date, effective_settings.time_limit} do
-      # no end date or time limit, no deadline
-      {nil, nil} ->
-        nil
+        {nil, 0} ->
+          nil
 
-      {nil, 0} ->
-        nil
-
-      # only a time limit, just add the minutes to the start
-      {nil, time_limit} ->
-        DateTime.add(resource_attempt.inserted_at, time_limit, :minute)
-
-      # only an end date, use that
-      {end_date, 0} ->
-        end_date
-
-      # both an end date and a time limit, use the earlier of the two
-      {end_date, time_limit} ->
-        if end_date < DateTime.add(resource_attempt.inserted_at, time_limit, :minute) do
-          end_date
-        else
+        # only a time limit, just add the minutes to the start
+        {nil, time_limit} ->
           DateTime.add(resource_attempt.inserted_at, time_limit, :minute)
-        end
-    end
+
+        # only an end date, use that
+        {end_date, 0} ->
+          end_date
+
+        # both an end date and a time limit, use the earlier of the two
+        {end_date, time_limit} ->
+          if end_date < DateTime.add(resource_attempt.inserted_at, time_limit, :minute) do
+            end_date
+          else
+            DateTime.add(resource_attempt.inserted_at, time_limit, :minute)
+          end
+      end
 
     case deadline do
       nil -> nil
       deadline -> DateTime.add(deadline, effective_settings.grace_period, :minute)
     end
-
   end
 
   def show_feedback?(%Combined{feedback_mode: :allow}), do: true
@@ -185,4 +197,15 @@ defmodule Oli.Delivery.Settings do
   end
 
   def show_feedback?(nil), do: true
+
+  def check_password(_effective_settings, ""), do: {:allowed}
+  def check_password(_effective_settings, nil), do: {:allowed}
+
+  def check_password?(%Combined{password: password}, received_password) do
+    if password == received_password do
+      {:allowed}
+    else
+      {:invalid_password}
+    end
+  end
 end
