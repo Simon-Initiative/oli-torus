@@ -94,7 +94,9 @@
               </div>
             <% end %>
           <% end %>
-          <Details.render
+          <.live_component
+            id="revision_details"
+            module={Details}
             revision={@selected}
             project={@project}
             modal_assigns={@details_modal_assigns}

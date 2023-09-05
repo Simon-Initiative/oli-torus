@@ -65,12 +65,13 @@ defmodule Oli.Resources do
   @spec get_resource_from_slug(String.t()) :: any
   def get_resource_from_slug(revision) do
     query =
-      from r in Resource,
+      from(r in Resource,
         distinct: r.id,
         join: v in Revision,
         on: v.resource_id == r.id,
         where: v.slug == ^revision,
         select: r
+      )
 
     Repo.one(query)
   end
@@ -81,12 +82,13 @@ defmodule Oli.Resources do
   @spec get_resources_from_slug([]) :: any
   def get_resources_from_slug(revisions) do
     query =
-      from r in Resource,
+      from(r in Resource,
         distinct: r.id,
         join: v in Revision,
         on: v.resource_id == r.id,
         where: v.slug in ^revisions,
         select: r
+      )
 
     resources = Repo.all(query)
 
@@ -100,10 +102,25 @@ defmodule Oli.Resources do
   """
   def map_resource_ids_from_slugs(revision_slugs) do
     query =
-      from r in Revision,
+      from(r in Revision,
         where: r.slug in ^revision_slugs,
         group_by: [r.slug, r.resource_id],
         select: map(r, [:slug, :resource_id])
+      )
+
+    Repo.all(query)
+  end
+
+  @doc """
+  Gets a list of slugs and resources_ids, based on a list of revision ids.
+  """
+  def map_slugs_from_resources_ids(revision_resources_ids) do
+    query =
+      from(r in Revision,
+        where: r.resource_id in ^revision_resources_ids,
+        group_by: [r.resource_id, r.slug],
+        select: {r.resource_id, r.slug}
+      )
 
     Repo.all(query)
   end
