@@ -487,7 +487,7 @@ defmodule Oli.Delivery.Metrics do
     |> Enum.into(%{})
   end
 
-  def raw_proficiency_per_learning_objective(section_slug) do
+  def raw_proficiency_per_learning_objective(%Section{analytics_version: :v1, slug: section_slug}) do
     query =
       from(sn in Snapshot,
         join: s in Section,
@@ -506,7 +506,30 @@ defmodule Oli.Delivery.Metrics do
     |> Enum.into(%{})
   end
 
-  def raw_proficiency_for_student_per_learning_objective(section_slug, student_id) do
+  def raw_proficiency_per_learning_objective(%Section{analytics_version: :v2, id: section_id}) do
+
+    objective_type_id = Oli.Resources.ResourceType.get_id_by_type("objective")
+
+    query =
+      from(summary in Oli.Analytics.Summary.ResourceSummary,
+        where: summary.section_id == ^section_id
+          and summary.project_id == -1
+          and summary.publication_id == -1
+          and summary.user_id == -1
+          and summary.resource_type_id == ^objective_type_id
+        select: {
+          summary.objective_id,
+          summary.num_first_attempts_correct,
+          summary.num_first_attempts
+        })
+
+    Repo.all(query)
+    |> Enum.reduce(%{}, fn {objective_id, num_first_attempts_correct, num_first_attempts}, acc ->
+      Map.put(acc, objective_id, {num_first_attempts_correct, num_first_attempts})
+    end
+  end
+
+  def raw_proficiency_for_student_per_learning_objective(%Section{analytics_version: :v1, slug: section_slug}, student_id) do
     query =
       from(sn in Snapshot,
         join: s in Section,
@@ -527,6 +550,28 @@ defmodule Oli.Delivery.Metrics do
     |> Enum.into(%{})
   end
 
+  def raw_proficiency_for_student_per_learning_objective(%Section{analytics_version: :v2, id: section_id}, student_id) do
+    objective_type_id = Oli.Resources.ResourceType.get_id_by_type("objective")
+
+    query =
+      from(summary in Oli.Analytics.Summary.ResourceSummary,
+        where: summary.section_id == ^section_id
+          and summary.project_id == -1
+          and summary.publication_id == -1
+          and summary.user_id == ^student_id
+          and summary.resource_type_id == ^objective_type_id
+        select: {
+          summary.objective_id,
+          summary.num_first_attempts_correct,
+          summary.num_first_attempts
+        })
+
+    Repo.all(query)
+    |> Enum.reduce(%{}, fn {objective_id, num_first_attempts_correct, num_first_attempts}, acc ->
+      Map.put(acc, objective_id, {num_first_attempts_correct, num_first_attempts})
+    end
+  end
+
   @doc """
   Calculates the learning proficiency ("High", "Medium", "Low", "Not enough data")
   for every container of a given section
@@ -538,7 +583,30 @@ defmodule Oli.Delivery.Metrics do
       container_id_n => "Low"
     }
   """
-  def proficiency_per_container(section_slug) do
+  def proficiency_per_container(%Section{analytics_version: :v1, slug: section_slug}) do
+    query =
+      from(sn in Snapshot,
+        join: s in Section,
+        on: sn.section_id == s.id,
+        join: cp in ContainedPage,
+        on: cp.page_id == sn.resource_id,
+        where: sn.attempt_number == 1 and sn.part_attempt_number == 1 and s.slug == ^section_slug,
+        group_by: cp.container_id,
+        select:
+          {cp.container_id,
+           fragment(
+             "CAST(COUNT(CASE WHEN ? THEN 1 END) as float) / CAST(COUNT(*) as float)",
+             sn.correct
+           )}
+      )
+
+    Repo.all(query)
+    |> Enum.into(%{}, fn {container_id, proficiency} ->
+      {container_id, proficiency_range(proficiency)}
+    end)
+  end
+
+  def proficiency_per_container(%Section{analytics_version: :v2, id: section_id}) do
     query =
       from(sn in Snapshot,
         join: s in Section,
