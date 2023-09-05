@@ -2,6 +2,7 @@ defmodule OliWeb.Components.Common do
   use Phoenix.Component
 
   alias OliWeb.Common.FormatDateTime
+  alias Phoenix.LiveView.JS
 
   def not_found(assigns) do
     ~H"""
@@ -172,10 +173,16 @@ defmodule OliWeb.Components.Common do
   attr(:label, :string, default: nil)
   attr(:value, :any)
 
+  attr(:field_value, :any,
+    doc:
+      "in case of radio input, this stores the value of the field and not the value of the input"
+  )
+
   attr(:type, :string,
     default: "text",
-    values: ~w(checkbox color date datetime-local email file hidden month number password
-               range radio search select tel text textarea time url week)
+    values:
+      ~w(checkbox color date datetime-local email file hidden month number password
+               range radio search select tel text textarea time url week custom_radio custom_checkbox)
   )
 
   attr(:field, Phoenix.HTML.FormField,
@@ -199,7 +206,7 @@ defmodule OliWeb.Components.Common do
 
   def input(%{field: %Phoenix.HTML.FormField{} = field} = assigns) do
     assigns
-    |> assign(field: nil, id: assigns.id || field.id)
+    |> assign(field: nil, id: assigns.id || field.id, field_value: field.value)
     |> assign(:errors, Enum.map(field.errors, &OliWeb.ErrorHelpers.translate_error(&1)))
     |> assign_new(:name, fn -> if assigns.multiple, do: field.name <> "[]", else: field.name end)
     |> assign_new(:value, fn -> field.value end)
@@ -291,6 +298,78 @@ defmodule OliWeb.Components.Common do
     """
   end
 
+  def input(%{type: "custom_radio", field_value: field_value, value: value} = assigns) do
+    assigns =
+      assign(assigns,
+        id: "#{value}_radio_button",
+        is_checked: is_radio_checked?(field_value, value)
+      )
+
+    ~H"""
+    <label
+      name={@name}
+      phx-click={
+        JS.set_attribute({"data-checked", false}, to: "label[name=\"#{@name}\"]")
+        |> JS.set_attribute({"data-checked", true})
+      }
+      class={[
+        "p-2 rounded border border-primary cursor-pointer",
+        "data-[checked=true]:bg-primary data-[checked=true]:hover:bg-delivery-primary-600 data-[checked=true]:text-white",
+        "data-[checked=false]:bg-white data-[checked=false]:dark:bg-gray-800 data-[checked=false]:hover:bg-delivery-primary-100 data-[checked=false]:text-primary"
+      ]}
+      data-checked={"#{@is_checked}"}
+      for={@id}
+    >
+      <span><%= @label %></span>
+      <input
+        type="radio"
+        name={@name}
+        id={@id}
+        value={@value}
+        class="hidden"
+        {Map.delete(@rest, :ctx)}
+      />
+    </label>
+    """
+  end
+
+  def input(%{type: "custom_checkbox", field_value: field_value, value: value} = assigns) do
+    assigns =
+      assign(assigns,
+        id: "#{value}_radio_button",
+        is_checked: is_radio_checked?(field_value, value)
+      )
+
+    ~H"""
+    <label
+      onclick={"
+        (() => {
+          checked = this.dataset['checked'] == 'true' ? false : true;
+          this.dataset['checked'] = checked;
+          document.getElementById('#{@id}').checked = checked;
+        })();
+      "}
+      data-checked={"#{@is_checked}"}
+      class={[
+        "h-10 w-10 text-xs text-primary font-semibold cursor-pointer p-3 aspect-square !flex items-center justify-center rounded-full border border-primary",
+        "data-[checked=true]:bg-primary data-[checked=true]:hover:bg-delivery-primary-600 data-[checked=true]:text-white",
+        "data-[checked=false]:bg-white data-[checked=false]:dark:bg-gray-800 data-[checked=false]:hover:bg-delivery-primary-100 data-[checked=false]:text-primary"
+      ]}
+      for={"##{@id}"}
+    >
+      <input
+        type="checkbox"
+        name={@name}
+        id={@id}
+        value={@value}
+        checked={@is_checked}
+        class="hidden"
+      />
+      <span><%= @label %></span>
+    </label>
+    """
+  end
+
   # All other inputs text, datetime-local, url, password, etc. are handled here...
   def input(assigns) do
     ~H"""
@@ -310,6 +389,18 @@ defmodule OliWeb.Components.Common do
       <.error :for={msg <- @errors}><%= msg %></.error>
     </div>
     """
+  end
+
+  defp is_radio_checked?(field_value, value) when is_list(field_value) do
+    Enum.member?(field_value, value)
+  end
+
+  defp is_radio_checked?(field_value, value) do
+    case {is_atom(field_value), is_atom(value)} do
+      {false, true} -> String.to_atom(field_value) == value
+      {true, false} -> field_value == String.to_atom(value)
+      field_value -> field_value == value
+    end
   end
 
   @doc """
