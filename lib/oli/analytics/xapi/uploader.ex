@@ -2,15 +2,15 @@ defmodule Oli.Analytics.XAPI.Uploader do
 
   alias ExAws.S3
   alias Oli.HTTP
-  alias Oli.Analytics.XAPI.Statement
+  alias Oli.Analytics.XAPI.StatementBundle
 
-  def upload(%Statement{category: category, category_id: category_id, type: type, type_id: type_id, body: body}) do
+  def upload(%StatementBundle{partition: partition, partition_id: partition_id, category: category, bundle_id: bundle_id, body: body}) do
     bucket_name = Application.fetch_env!(:oli, :s3_xapi_bucket_name)
-    upload_path = "#{category}/#{category_id}/#{type}/#{type_id}.json"
 
-    contents = Jason.encode!(body)
+    now = System.monotonic_time()
+    upload_path = "#{partition}/#{partition_id}/#{category}/#{now}_#{bundle_id}.jsonl"
 
-    S3.put_object(bucket_name, upload_path, contents, [])
+    S3.put_object(bucket_name, upload_path, body, [])
     |> HTTP.aws().request()
   end
 

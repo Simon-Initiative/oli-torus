@@ -9,6 +9,14 @@ defmodule Oli.Analytics.Common do
   alias Oli.Activities
   alias OliWeb.Common.FormatDateTime
 
+  @doc """
+  Take an enumeration of maps and convert to a
+  """
+  def to_jsonlines(maps) do
+    Enum.map(maps, fn m -> Jason.encode!(m) end)
+    |> Enum.join("\n")
+  end
+
   def snapshots_for_project(project_slug) do
     objectives_map =
       from(project in Project,

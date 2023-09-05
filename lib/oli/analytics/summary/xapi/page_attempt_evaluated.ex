@@ -1,7 +1,6 @@
 defmodule Oli.Analytics.Summary.XAPI.PageAttemptEvaluated do
 
   alias Oli.Analytics.Summary.Context
-  alias Oli.Analytics.XAPI.Statement
 
   def new(%Context{
     user_id: user_id,
@@ -18,7 +17,7 @@ defmodule Oli.Analytics.Summary.XAPI.PageAttemptEvaluated do
     date_evaluated: timestamp
   }) do
 
-    body = %{
+    %{
       "actor" => %{
         "account" => %{
           "homePage" => host_name,
@@ -63,14 +62,6 @@ defmodule Oli.Analytics.Summary.XAPI.PageAttemptEvaluated do
         }
       },
       "timestamp" => timestamp
-    }
-
-    %Statement{
-      category: :section,
-      category_id: section_id,
-      type: :page_attempt_evaluated,
-      type_id: attempt_guid,
-      body: body
     }
   end
 

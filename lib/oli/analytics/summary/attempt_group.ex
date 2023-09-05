@@ -28,8 +28,9 @@ defmodule Oli.Analytics.Summary.AttemptGroup do
     :context
   ]
 
-  def from_attempt_summary(%Oli.Analytics.Summary.Pipeline{} = pipeline, attempt_summary, project_id, host_name) do
-    Map.put(pipeline, :attempt_group, from_attempt_summary(attempt_summary, project_id, host_name))
+  def from_attempt_summary(%Oli.Analytics.Common.Pipeline{} = pipeline, attempt_summary, project_id, host_name) do
+    Map.put(pipeline, :data, from_attempt_summary(attempt_summary, project_id, host_name))
+    |> Oli.Analytics.Common.Pipeline.step_done(:query)
   end
 
   @doc """
@@ -70,11 +71,11 @@ defmodule Oli.Analytics.Summary.AttemptGroup do
       user_id: access.user_id,
       section_id: access.section_id,
       project_id: project_id,
-      publication_id: project_id_for_section_project(access.section_id, project_id)
+      publication_id: pub_id_for_section_project(access.section_id, project_id)
     }
   end
 
-  defp project_id_for_section_project(section_id, project_id) do
+  defp pub_id_for_section_project(section_id, project_id) do
     query = from spp in Oli.Delivery.Sections.SectionsProjectsPublications,
       where: spp.section_id == ^section_id and spp.project_id == ^project_id,
       select: spp.publication_id

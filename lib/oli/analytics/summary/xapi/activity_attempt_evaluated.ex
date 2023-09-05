@@ -1,7 +1,6 @@
 defmodule Oli.Analytics.Summary.XAPI.ActivityAttemptEvaluated do
 
   alias Oli.Analytics.Summary.Context
-  alias Oli.Analytics.XAPI.Statement
   alias Oli.Delivery.Attempts.Core.ActivityAttempt
 
   def new(%Context{
@@ -24,7 +23,7 @@ defmodule Oli.Analytics.Summary.XAPI.ActivityAttemptEvaluated do
     resource_id: page_id
   }) do
 
-    body = %{
+    %{
       "actor" => %{
         "account" => %{
           "homePage" => host_name,
@@ -73,14 +72,6 @@ defmodule Oli.Analytics.Summary.XAPI.ActivityAttemptEvaluated do
         }
       },
       "timestamp" => timestamp
-    }
-
-    %Statement{
-      category: :section,
-      category_id: section_id,
-      type: :activity_attempt_evaluated,
-      type_id: attempt_guid,
-      body: body
     }
   end
 

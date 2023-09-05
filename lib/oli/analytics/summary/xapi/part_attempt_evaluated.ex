@@ -1,7 +1,6 @@
 defmodule Oli.Analytics.Summary.XAPI.PartAttemptEvaluated do
 
   alias Oli.Analytics.Summary.Context
-  alias Oli.Analytics.XAPI.Statement
 
   def new(%Context{
     user_id: user_id,
@@ -33,7 +32,7 @@ defmodule Oli.Analytics.Summary.XAPI.PartAttemptEvaluated do
       map when is_map(map) -> Map.get(map, part_id, [])
     end
 
-    body = %{
+    %{
       "actor" => %{
         "account" => %{
           "homePage" => host_name,
@@ -91,14 +90,6 @@ defmodule Oli.Analytics.Summary.XAPI.PartAttemptEvaluated do
         }
       },
       "timestamp" => timestamp
-    }
-
-    %Statement{
-      category: :section,
-      category_id: section_id,
-      type: :part_attempt_evaluated,
-      type_id: part_attempt_guid,
-      body: body
     }
   end
 

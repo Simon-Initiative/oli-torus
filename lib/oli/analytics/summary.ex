@@ -1,10 +1,10 @@
 defmodule Oli.Analytics.Summary do
 
-  alias Oli.Analytics.Summary.{AttemptGroup, ResponseLabel, Pipeline}
+  alias Oli.Analytics.Summary.{AttemptGroup, ResponseLabel}
+  alias Oli.Analytics.Common.Pipeline
   alias Oli.Analytics.Summary.XAPI.StatementFactory
-  alias Oli.Analytics.XAPI.Uploader
-
-  alias Oli.Timing
+  alias Oli.Analytics.XAPI.{Uploader, StatementBundle}
+  require Logger
 
   @resource_fields "project_id, publication_id, section_id, user_id, resource_id, part_id, resource_type_id, num_correct, num_attempts, num_hints, num_first_attempts, num_first_attempts_correct"
   @response_fields "project_id, publication_id, section_id, page_id, activity_id, resource_part_response_id, part_id, count"
@@ -22,48 +22,63 @@ defmodule Oli.Analytics.Summary do
 
     try do
 
-    Pipeline.init()
-    |> AttemptGroup.from_attempt_summary(snapshot_attempt_summary, project_id, host_name)
-    |> Pipeline.step_done(:query)
-    |> emit_xapi_events()
-    |> Pipeline.step_done(:xapi)
-    |> upsert_resource_summaries()
-    |> Pipeline.step_done(:resource_summary)
-    |> upsert_response_summaries()
-    |> Pipeline.step_done(:response_summary)
-    |> Pipeline.all_done()
+      Pipeline.init("SummaryAnalyticsPipeline")
+      |> AttemptGroup.from_attempt_summary(snapshot_attempt_summary, project_id, host_name)
+      |> emit_xapi_events()
+      |> upsert_resource_summaries()
+      |> upsert_response_summaries()
+      |> Pipeline.all_done()
 
     rescue
-      e -> IO.inspect e
+      e -> Logger.error("Error executing SummaryAnalyticsPipeline: #{inspect(e)}")
     end
 
   end
 
   # From all of the part attempts, activity attempts, and resource attempt, construct and
-  # emit xAPI statements to S3.
-  defp emit_xapi_events(%Pipeline{attempt_group: attempt_group} = pipeline) do
+  # emit a single xAPI statement bundle to S3.
+  defp emit_xapi_events(%Pipeline{data: attempt_group} = pipeline) do
 
-    StatementFactory.to_statements(attempt_group)
-    |> Enum.map(fn statement -> Uploader.upload(statement) end)
+    pipeline = case StatementFactory.to_statements(attempt_group)
+    |> Oli.Analytics.Common.to_jsonlines()
+    |> produce_statement_bundle(attempt_group)
+    |> Uploader.upload() do
 
-    pipeline
+      {:ok, _} ->
+        pipeline
+
+      {:error, error} ->
+        Pipeline.add_error(pipeline, error)
+
+    end
+
+    Pipeline.step_done(pipeline, :xapi)
+
   end
 
-  defp upsert_resource_summaries(%Pipeline{attempt_group: attempt_group} = pipeline) do
+  defp upsert_resource_summaries(%Pipeline{data: attempt_group} = pipeline) do
 
     proto_records = assemble_proto_records(attempt_group)
 
-    Oli.Repo.transaction(fn ->
+    pipeline = case Oli.Repo.transaction(fn ->
       insert_as_temp_table(proto_records, @resource_fields)
       |> upsert_counts()
       |> drop_temp_table()
-    end)
+    end) do
 
-    pipeline
+      {:ok, _} ->
+        pipeline
+
+      {:error, error} ->
+        Pipeline.add_error(pipeline, error)
+
+    end
+
+    Pipeline.step_done(pipeline, :resource_summary)
 
   end
 
-  defp upsert_response_summaries(%Pipeline{attempt_group: attempt_group} = pipeline) do
+  defp upsert_response_summaries(%Pipeline{data: attempt_group} = pipeline) do
 
     # Read all activity registrations
     registered_activities = Oli.Activities.list_activity_registrations()
@@ -71,7 +86,7 @@ defmodule Oli.Analytics.Summary do
       Map.put(map, activity_registration.id, activity_registration)
     end)
 
-    Oli.Repo.transaction(fn ->
+    pipeline = case Oli.Repo.transaction(fn ->
       part_attempt_tuples = upsert_responses(attempt_group.part_attempts, registered_activities)
 
       create_response_proto_records(attempt_group, part_attempt_tuples)
@@ -81,14 +96,22 @@ defmodule Oli.Analytics.Summary do
 
       upsert_student_responses(attempt_group, part_attempt_tuples)
 
-    end)
+    end) do
 
-    pipeline
+      {:ok, _} ->
+        pipeline
+
+      {:error, error} ->
+        Pipeline.add_error(pipeline, error)
+
+    end
+
+    Pipeline.step_done(pipeline, :resp)
   end
 
   defp upsert_student_responses(attempt_group, part_attempt_tuples) do
 
-    values = Enum.map(part_attempt_tuples, fn {id, part_attempt} ->
+    values = Enum.map(part_attempt_tuples, fn {id, _} ->
       """
       (
         #{attempt_group.context.section_id},
@@ -200,6 +223,26 @@ defmodule Oli.Analytics.Summary do
       # Course section specific, publication specific
       fn ctx -> [nil, ctx.publication_id, ctx.section_id] end
     ]
+  end
+
+  defp produce_statement_bundle(json_lines_body, attempt_group) do
+    %StatementBundle{
+      partition: :section,
+      partition_id: attempt_group.context.section_id,
+      category: :attempt_evaluated,
+      bundle_id: create_bundle_id(attempt_group),
+      body: json_lines_body
+    }
+  end
+
+  defp create_bundle_id(attempt_group) do
+    guids = Enum.map(attempt_group.part_attempts, fn part_attempt ->
+      part_attempt.attempt_guid
+    end)
+    |> Enum.join(",")
+
+    :crypto.hash(:md5, guids)
+    |> Base.encode16()
   end
 
   defp insert_as_temp_table(proto_records, table_fields) do
