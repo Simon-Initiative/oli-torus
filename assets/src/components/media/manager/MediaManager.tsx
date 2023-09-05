@@ -1,4 +1,4 @@
-import * as React from 'react';
+import React, { useEffect } from 'react';
 import { Dropdown } from 'react-bootstrap';
 import * as Immutable from 'immutable';
 import { Maybe } from 'tsmonad';
@@ -15,7 +15,7 @@ import { VideoUploadWarning } from './VideoUploadWarning';
 import { uploadFiles } from './upload';
 
 const PAGELOAD_TRIGGER_MARGIN_PX = 100;
-const MAX_NAME_LENGTH = 26;
+const MAX_NAME_LENGTH = 30;
 const PAGE_LOADING_MESSAGE = 'Hang on while we load your items...';
 
 export const MIMETYPE_FILTERS = {
@@ -124,7 +124,28 @@ export interface MediaManagerState {
   error: Maybe<string>;
   filteredMimeTypes: string[] | undefined;
   uploading: boolean;
+  duplicateWarning: string[];
 }
+
+const setMediaManagerLayoutSetting = (layout: LAYOUTS) => {
+  window.localStorage.setItem('media-manager-layout', layout === LAYOUTS.LIST ? 'list' : 'grid');
+};
+
+const getMediaManagerLayoutSetting = (): LAYOUTS => {
+  const layout = window.localStorage.getItem('media-manager-layout');
+  switch (layout) {
+    case 'list':
+      return LAYOUTS.LIST;
+    case 'grid':
+    default:
+      return LAYOUTS.GRID;
+  }
+};
+
+const formatDate = (date: string) => {
+  const d = new Date(date);
+  return `${d.toLocaleDateString()} ${d.toLocaleTimeString()}`;
+};
 
 /**
  * MediaManager React Component
@@ -141,11 +162,12 @@ export class MediaManager extends React.PureComponent<MediaManagerProps, MediaMa
       searchText: undefined,
       orderBy: SORT_MAPPINGS.Newest.orderBy,
       order: SORT_MAPPINGS.Newest.order,
-      layout: LAYOUTS.GRID,
+      layout: getMediaManagerLayoutSetting(),
       showDetails: true,
       error: Maybe.nothing<string>(),
       filteredMimeTypes: props.mimeFilter,
       uploading: false,
+      duplicateWarning: [],
     };
 
     this.onScroll = this.onScroll.bind(this);
@@ -266,6 +288,11 @@ export class MediaManager extends React.PureComponent<MediaManagerProps, MediaMa
     // sequentially upload files one at a time, then reload the media page
     uploadFiles(this.props.projectSlug, fileList)
       .then((result: any) => {
+        const duplicates = result.filter((r: any) => r.duplicate).map((r: any) => r.filename);
+        if (duplicates.length > 0) {
+          this.setState({ duplicateWarning: duplicates });
+        }
+
         onResetMedia();
         onLoadCourseMediaNextPage(
           this.props.projectSlug,
@@ -284,6 +311,7 @@ export class MediaManager extends React.PureComponent<MediaManagerProps, MediaMa
               }
             });
           })
+
           .then(() => this.setState({ error: Maybe.nothing<string>() }));
       })
       .catch((e: Error | string) => {
@@ -297,6 +325,7 @@ export class MediaManager extends React.PureComponent<MediaManagerProps, MediaMa
   }
 
   onChangeLayout(newLayout: LAYOUTS) {
+    setMediaManagerLayoutSetting(newLayout);
     this.setState({
       layout: newLayout,
     });
@@ -436,7 +465,7 @@ export class MediaManager extends React.PureComponent<MediaManagerProps, MediaMa
                 <div className="refs-col">
                   {mediaItemRefs.get(item.guid) && (mediaItemRefs.get(item.guid) as any).size}
                 </div>
-                <div className="date-col">{item.dateUpdated}</div>
+                <div className="date-col">{formatDate(item.dateUpdated)}</div>
                 <div className="size-col">{convert.toByteNotation(item.fileSize)}</div>
               </div>
             ))}
@@ -489,7 +518,7 @@ export class MediaManager extends React.PureComponent<MediaManagerProps, MediaMa
               />
               <MediaIcon filename={item.fileName} mimeType={item.mimeType} url={item.url} />
               <div className="name">
-                {stringFormat.ellipsize(item.fileName, MAX_NAME_LENGTH, 5)}
+                {stringFormat.ellipsize(item.fileName, MAX_NAME_LENGTH, 12)}
               </div>
             </div>
           ))}
@@ -771,7 +800,37 @@ export class MediaManager extends React.PureComponent<MediaManagerProps, MediaMa
             </div>
           )}
         </div>
+        {
+          // Show a toast for each duplicate file
+          this.state.duplicateWarning.map((file, idx) => (
+            <DuplicateToast
+              key={idx}
+              filename={file}
+              onDismiss={() => this.setState({ duplicateWarning: [] })}
+            />
+          ))
+        }
       </div>
     );
   }
 }
+
+export const DuplicateToast: React.FC<{ filename: string; onDismiss: () => void }> = ({
+  filename,
+  onDismiss,
+}) => {
+  useEffect(() => {
+    const t = setTimeout(onDismiss, 5000);
+    return () => clearTimeout(t);
+  }, []);
+  return (
+    <div
+      className="bg-body-50 text-body-800 w-64 fixed bottom-4 left-4 p-4 border-gray-800 border-1 rounded"
+      onClick={onDismiss}
+    >
+      <strong className="me-auto">Duplicate File</strong>
+      <p>{filename}</p>
+      <p>This file was previously uploaded and has been selected for you.</p>
+    </div>
+  );
+};

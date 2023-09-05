@@ -21,7 +21,7 @@ defmodule OliWeb.CollaboratorControllerTest do
         )
 
       assert html_response(conn, 302) =~ "/project/"
-      assert assert get_flash(conn, :info) == "Collaborator invitations sent!"
+      assert assert Phoenix.Flash.get(conn.assigns.flash, :info) == "Collaborator invitations sent!"
     end
 
     test "allows multiple comma separated values", %{conn: conn, project: project} do
@@ -34,7 +34,7 @@ defmodule OliWeb.CollaboratorControllerTest do
         )
 
       assert html_response(conn, 302) =~ "/project/"
-      assert assert get_flash(conn, :info) == "Collaborator invitations sent!"
+      assert assert Phoenix.Flash.get(conn.assigns.flash, :info) == "Collaborator invitations sent!"
     end
 
     test "allows capital letters in emails", %{conn: conn, project: project} do
@@ -47,7 +47,7 @@ defmodule OliWeb.CollaboratorControllerTest do
         )
 
       assert html_response(conn, 302) =~ "/project/"
-      assert assert get_flash(conn, :info) == "Collaborator invitations sent!"
+      assert assert Phoenix.Flash.get(conn.assigns.flash, :info) == "Collaborator invitations sent!"
     end
 
     test "some emails succeed, some fail", %{conn: conn, project: project} do
@@ -62,7 +62,7 @@ defmodule OliWeb.CollaboratorControllerTest do
 
                assert html_response(conn, 302) =~ "/project/"
 
-               assert assert get_flash(conn, :error) =~
+               assert assert Phoenix.Flash.get(conn.assigns.flash, :error) =~
                                "Failed to add some collaborators: notevenan_email"
              end) =~
                "Failed to add some collaborators: notevenan_email"

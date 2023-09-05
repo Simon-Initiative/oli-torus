@@ -4,6 +4,8 @@
 
 ### Bug Fixes
 
+- Fix an issue where nil sub-objective crashes objectives page
+
 ### Enhancements
 
 ### Configs

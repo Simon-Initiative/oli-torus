@@ -214,10 +214,20 @@ defmodule Oli.Utils do
   end
 
   def validate_dates_consistency(changeset, start_date_field, end_date_field) do
-    validate_change(changeset, start_date_field, fn _, field ->
-      # check if the start date is after the end date
-      if Timex.compare(field, get_field(changeset, end_date_field)) == 1 do
-        [{start_date_field, "must be before the end date"}]
+    changeset =
+      validate_change(changeset, start_date_field, fn _, field ->
+        # check if the start date is after the end date
+        if Timex.compare(field, get_field(changeset, end_date_field)) == 1 do
+          [{start_date_field, "must be before the end date"}]
+        else
+          []
+        end
+      end)
+
+    validate_change(changeset, end_date_field, fn _, field ->
+      # check if the end date is before the start date
+      if Timex.compare(field, get_field(changeset, start_date_field)) == -1 do
+        [{end_date_field, "must be after the start date"}]
       else
         []
       end

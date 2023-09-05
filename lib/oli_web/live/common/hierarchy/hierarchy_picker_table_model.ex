@@ -33,7 +33,8 @@ defmodule OliWeb.Common.Hierarchy.HierarchyPicker.TableModel do
         label: "Published on",
         render_fn: &__MODULE__.custom_render/3,
         th_class: "pl-2 text-right",
-        td_class: "text-right"
+        td_class: "text-right",
+        sortable: false
       }
     ]
 
@@ -53,29 +54,29 @@ defmodule OliWeb.Common.Hierarchy.HierarchyPicker.TableModel do
         } = assigns,
         child
       ) do
+    click_handler =
+      if {pub.id, child.revision.resource_id} in preselected do
+        []
+      else
+        ["phx-click": "HierarchyPicker.select", "phx-value-uuid": child.uuid]
+      end
+
     assigns =
-      assigns
-      |> assign(:child, child)
-      |> assign(
-        :click_handler,
-        if {pub.id, child.revision.resource_id} in preselected do
-          []
-        else
-          ["phx-click": "HierarchyPicker.select", "phx-value-uuid": child.uuid]
-        end
-      )
-      |> assign(:maybe_checked, maybe_checked(selection, pub.id, child.revision.resource_id))
-      |> assign(
-        :maybe_preselected,
-        maybe_preselected(preselected, pub.id, child.revision.resource_id)
-      )
+      Map.merge(assigns, %{
+        child: child,
+        maybe_checked: maybe_checked(selection, pub.id, child.revision.resource_id),
+        maybe_preselected: maybe_preselected(preselected, pub.id, child.revision.resource_id),
+        click_handler: click_handler
+      })
 
     ~H"""
     <input
       id={"hierarchy_item_#{ @child.uuid}"}
       {@click_handler}
-      type="checkbox" {@maybe_checked}
-      {@maybe_preselected} />
+      type="checkbox"
+      {@maybe_checked}
+      {@maybe_preselected}
+    />
     """
   end
 
@@ -100,34 +101,34 @@ defmodule OliWeb.Common.Hierarchy.HierarchyPicker.TableModel do
   end
 
   def custom_render(assigns, data, %ColumnSpec{name: :title}) do
-    assigns = assign(assigns, :title, data.revision.title)
+    assigns = Map.merge(assigns, %{title: data.revision.title})
 
     ~H"""
-      <%= @title %>
+    <%= @title %>
     """
   end
 
   def custom_render(assigns, data, %ColumnSpec{name: :graded}) do
-    assigns = assign(assigns, :graded, data.revision.graded)
+    assigns = Map.merge(assigns, %{graded: data.revision.graded})
 
     ~H"""
-      <%= if @graded, do: "Graded", else: "Practice" %>
+    <%= if @graded, do: "Graded", else: "Practice" %>
     """
   end
 
   def custom_render(assigns, data, %ColumnSpec{name: :updated_at}) do
-    assigns = assign(assigns, :updated_at, data.revision.updated_at)
+    assigns = Map.merge(assigns, %{updated_at: data.revision.updated_at})
 
     ~H"""
-      <%= OliWeb.Common.FormatDateTime.format_datetime(@updated_at, show_timezone: false) %>
+    <%= OliWeb.Common.FormatDateTime.format_datetime(@updated_at, show_timezone: false) %>
     """
   end
 
   def custom_render(assigns, data, %ColumnSpec{name: :publication_date}) do
-    assigns = assign(assigns, :publication_date, data.revision.publication_date)
+    assigns = Map.merge(assigns, %{publication_date: data.revision.publication_date})
 
     ~H"""
-      <%= OliWeb.Common.FormatDateTime.format_datetime(@publication_date, show_timezone: false) %>
+    <%= OliWeb.Common.FormatDateTime.format_datetime(@publication_date, show_timezone: false) %>
     """
   end
 end

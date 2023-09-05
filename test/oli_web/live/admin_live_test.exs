@@ -4,6 +4,7 @@ defmodule OliWeb.AdminLiveTest do
 
   import Phoenix.LiveViewTest
   import Oli.Factory
+  import OliWeb.Common.Properties.Utils
 
   alias Oli.Accounts
   alias Oli.Accounts.{Author, User}
@@ -217,6 +218,20 @@ defmodule OliWeb.AdminLiveTest do
                "#{user.family_name}, #{user.given_name}"
     end
 
+    test "links to linked author", %{conn: conn} do
+      author =
+        insert(:author, %{given_name: "Lionel", family_name: "Messi", email: "lio@messi.com"})
+
+      insert(:user, %{author: author})
+
+      {:ok, view, _html} = live(conn, @live_view_users_route)
+
+      assert view
+             |> element("a[href=\"#{live_view_author_detail_route(author.id)}\"]")
+             |> render() =~
+               "lio@messi.com"
+    end
+
     test "applies filtering", %{conn: conn} do
       user_1 = insert(:user)
       user_2 = insert(:user, guest: true)
@@ -341,10 +356,10 @@ defmodule OliWeb.AdminLiveTest do
       assert has_element?(view, "input[value=\"#{user.given_name}\"]")
       assert has_element?(view, "input[value=\"#{user.family_name}\"]")
       assert has_element?(view, "input[value=\"#{user.email}\"]")
-      assert has_element?(view, "input[value=\"#{user.guest}\"]")
-      assert has_element?(view, "#user_independent_learner")
-      assert has_element?(view, "#user_can_create_sections")
-      assert has_element?(view, "input[value=\"#{user.research_opt_out}\"]")
+      assert has_element?(view, "input[value=\"#{boolean(user.guest)}\"]")
+      assert has_element?(view, "#independent_learner")
+      assert has_element?(view, "#can_create_sections")
+      assert has_element?(view, "input[value=\"#{boolean(user.research_opt_out)}\"]")
 
       assert has_element?(
                view,

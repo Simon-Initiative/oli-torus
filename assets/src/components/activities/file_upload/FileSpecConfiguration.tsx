@@ -85,21 +85,27 @@ export const FileSpecConfiguration = (props: FileSpecConfigurationProps) => {
         }}
       />
 
-      <div className="btn-group btn-group-sm mt-3" role="group">
-        {commonAccepts.map((ca) => {
-          return (
-            <button
-              key={ca.value}
-              type="button"
-              className="btn btn-outline-secondary"
-              onClick={() => props.onEdit(Object.assign({}, props.fileSpec, { accept: ca.value }))}
-            >
-              {ca.label}
-            </button>
-          );
-        })}
-      </div>
-      <small className="mt-3 text-muted">Common file extension choices</small>
+      {props.editMode && (
+        <>
+          <div className="btn-group btn-group-sm mt-3" role="group">
+            {commonAccepts.map((ca) => {
+              return (
+                <button
+                  key={ca.value}
+                  type="button"
+                  className="btn btn-outline-secondary"
+                  onClick={() =>
+                    props.onEdit(Object.assign({}, props.fileSpec, { accept: ca.value }))
+                  }
+                >
+                  {ca.label}
+                </button>
+              );
+            })}
+          </div>
+          <small className="mt-3 text-muted">Common file extension choices</small>
+        </>
+      )}
     </div>
   );
 };

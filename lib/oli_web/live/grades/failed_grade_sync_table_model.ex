@@ -1,5 +1,5 @@
 defmodule OliWeb.Grades.FailedGradeSyncTableModel do
-  use Surface.LiveComponent
+  use Phoenix.Component
 
   alias OliWeb.Common.Table.{ColumnSpec, SortableTableModel}
 
@@ -27,14 +27,23 @@ defmodule OliWeb.Grades.FailedGradeSyncTableModel do
   end
 
   def render_retry_column(assigns, item, _) do
-    ~F"""
-      <button class="btn btn-primary" phx-click="retry" phx-value-resource-id={item.resource_id} phx-value-user-id={item.user_id}>Retry</button>
+    assigns = Map.merge(assigns, %{item: item})
+
+    ~H"""
+    <button
+      class="btn btn-primary"
+      phx-click="retry"
+      phx-value-resource-id={@item.resource_id}
+      phx-value-user-id={@item.user_id}
+    >
+      Retry
+    </button>
     """
   end
 
   def render(assigns) do
-    ~F"""
-      <div>nothing</div>
+    ~H"""
+    <div>nothing</div>
     """
   end
 end

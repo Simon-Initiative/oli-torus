@@ -84,7 +84,7 @@ defmodule OliWeb.Common.PowTest do
         )
 
       assert html_response(conn, 302) =~
-               Routes.delivery_path(conn, :open_and_free_index)
+               ~p"/sections"
 
       # user who is already signed in should be automatically redirected away from sign in page
       conn =
@@ -92,7 +92,7 @@ defmodule OliWeb.Common.PowTest do
         |> get(Routes.pow_session_path(conn, :new))
 
       assert html_response(conn, 302) =~
-               Routes.delivery_path(conn, :open_and_free_index)
+               ~p"/sections"
     end
 
     test "handles new session failure for non LMS user", %{conn: conn, user: user} do

@@ -1,6 +1,9 @@
 defmodule OliWeb.Common.Modal do
   @moduledoc """
-  A Phoenix LiveView modal implementation.
+  A Phoenix LiveView modal implementation. (DEPRECATED)
+
+  **NOTICE:** This module is deprecated and may be removed in a future version. All new modals
+  should be implemented using the `Modal` component from `OliWeb.Components.Modal`.
 
   Usage:
 

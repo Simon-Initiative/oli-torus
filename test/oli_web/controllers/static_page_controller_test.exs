@@ -94,7 +94,7 @@ defmodule OliWeb.StaticPageControllerTest do
     test "updates the user timezone preference and redirects correctly", context do
       {:ok, conn: conn, user: user} = user_conn(context)
       new_timezone = "America/Montevideo"
-      redirect_to = Routes.delivery_path(conn, :open_and_free_index)
+      redirect_to = ~p"/sections"
 
       conn =
         post(conn, Routes.static_page_path(conn, :update_timezone), %{

@@ -1,6 +1,0 @@
-<%= case OliWeb.Pow.PowHelpers.current_pow_config(@conn) do %>
-  <% Oli.Accounts.Author -> %>
-    <%= render OliWeb.Pow.RegistrationView, "author_edit.html", assigns %>
-  <% _ -> %>
-    <%= render OliWeb.Pow.RegistrationView, "user_edit.html", assigns %>
-<% end %>

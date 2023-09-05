@@ -8,24 +8,19 @@ defmodule Oli.Grading do
   import Ecto.Query, warn: false
   import Oli.Utils, only: [log_error: 2]
 
-  alias Oli.Publishing.DeliveryResolver
+  alias Oli.Publishing.{DeliveryResolver, PublishedResource}
   alias Oli.Delivery.Sections
-  alias Oli.Delivery.Sections.{SectionResource, Section}
+  alias Oli.Delivery.Sections.{Section, SectionResource, SectionsProjectsPublications}
   alias Oli.Delivery.Attempts.Core, as: Attempts
   alias Oli.Delivery.Attempts.Core.ResourceAccess
   alias Oli.Grading.GradebookRow
   alias Oli.Grading.GradebookScore
   alias Oli.Activities.Realizer.Selection
-  alias Lti_1p3.Tool.ContextRoles
   alias Lti_1p3.Tool.Services.AGS
   alias Lti_1p3.Tool.Services.AGS.Score
   alias Oli.Resources.Revision
-  alias Oli.Publishing.PublishedResource
-  alias Oli.Resources.ResourceType
-
-  alias Oli.Repo
-  alias Oli.Delivery.Sections.SectionsProjectsPublications
   alias OliWeb.Common.Utils
+  alias Oli.Repo
 
   @doc """
   If grade passback services 2.0 is enabled, sends the current state of a ResourceAccess
@@ -170,10 +165,10 @@ defmodule Oli.Grading do
   """
   def generate_gradebook_for_section(%Section{} = section) do
     # get publication page resources, filtered by graded: true
-    graded_pages = fetch_graded_pages(section.slug)
+    graded_pages = Sections.fetch_scored_pages(section.slug)
 
     # get students enrolled in the section, filter by role: student
-    students = fetch_students(section.slug)
+    students = Sections.fetch_students(section.slug)
 
     # create a map of all resource accesses, keyed off resource id
     resource_accesses = fetch_resource_accesses(section.id)
@@ -215,6 +210,42 @@ defmodule Oli.Grading do
     column_labels = Enum.map(graded_pages, fn revision -> revision.title end)
 
     {gradebook, column_labels}
+  end
+
+  @doc """
+  Returns a list of GradebookScore for enrolled user in the provided section
+
+  `[%GradebookScore{}, GradebookScore{}, ...]`
+  """
+  def get_scores_for_section_and_user(section_id, student_id) do
+    resource_type_id = Oli.Resources.ResourceType.get_id_by_type("page")
+
+    Repo.all(
+      from(
+        sr in SectionResource,
+        join: sec in Section,
+        on: sec.id == sr.section_id,
+        join: spp in SectionsProjectsPublications,
+        on: spp.section_id == sec.id and spp.project_id == sr.project_id,
+        join: pr in PublishedResource,
+        on: pr.publication_id == spp.publication_id and pr.resource_id == sr.resource_id,
+        join: rev in Revision,
+        on: rev.id == pr.revision_id,
+        left_join: ra in ResourceAccess,
+        on: ra.resource_id == rev.resource_id and ra.user_id == ^student_id,
+        where:
+          sec.id == ^section_id and rev.deleted == false and
+            rev.resource_type_id == ^resource_type_id and
+            rev.graded == true,
+        select: %GradebookScore{
+          resource_id: rev.resource_id,
+          label: rev.title,
+          score: ra.score,
+          out_of: ra.out_of,
+          was_late: ra.was_late
+        }
+      )
+    )
   end
 
   @doc """
@@ -274,22 +305,6 @@ defmodule Oli.Grading do
   defp ensure_valid_number(value) when is_float(value), do: value
   defp ensure_valid_number(_), do: 1.0
 
-  def fetch_students(section_slug) do
-    Sections.list_enrollments(section_slug)
-    |> Enum.filter(fn e ->
-      ContextRoles.contains_role?(e.context_roles, ContextRoles.get_role(:context_learner))
-    end)
-    |> Enum.map(fn e -> e.user end)
-  end
-
-  def fetch_instructors(section_slug) do
-    Sections.list_enrollments(section_slug)
-    |> Enum.filter(fn e ->
-      ContextRoles.contains_role?(e.context_roles, ContextRoles.get_role(:context_instructor))
-    end)
-    |> Enum.map(fn e -> e.user end)
-  end
-
   def fetch_resource_accesses(section_id) do
     Attempts.get_graded_resource_access_for_context(section_id)
     |> Enum.reduce(%{}, fn resource_access, acc ->
@@ -309,31 +324,5 @@ defmodule Oli.Grading do
           )
       end
     end)
-  end
-
-  def fetch_graded_pages(section_slug) do
-    SectionResource
-    |> join(:inner, [sr], s in Section, on: sr.section_id == s.id)
-    |> join(:inner, [sr, s], spp in SectionsProjectsPublications,
-      on: spp.section_id == s.id and spp.project_id == sr.project_id
-    )
-    |> join(:inner, [sr, _, spp], pr in PublishedResource,
-      on: pr.publication_id == spp.publication_id and pr.resource_id == sr.resource_id
-    )
-    |> join(:inner, [sr, _, _, pr], rev in Revision, on: rev.id == pr.revision_id)
-    |> where(
-      [sr, s, _, _, rev],
-      s.slug == ^section_slug and
-        rev.deleted == false and
-        rev.graded == true and
-        rev.resource_type_id == ^ResourceType.get_id_by_type("page")
-    )
-    |> order_by([_, _, _, _, rev], asc: rev.resource_id)
-    |> select([_, _, _, _, rev], rev)
-    |> Repo.all()
-  end
-
-  def fetch_reachable_graded_pages(section_slug) do
-    fetch_graded_pages(section_slug)
   end
 end

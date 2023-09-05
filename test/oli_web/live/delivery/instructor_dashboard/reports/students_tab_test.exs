@@ -82,6 +82,34 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
                OliWeb.Common.Utils.name(user.name, user.given_name, user.family_name)
     end
 
+    test "students email gets rendered correctly", %{
+      conn: conn,
+      section: section,
+      instructor: instructor
+    } do
+      student_1 =
+        insert(:user, %{given_name: "Kevin", family_name: "Durant", email: "kevin.durant@nba.com"})
+
+      student_2 =
+        insert(:user, %{given_name: "LeBron", family_name: "James", email: "lebron.james@nba.com"})
+
+      Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
+      Sections.enroll(student_1.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.enroll(student_2.id, section.id, [ContextRoles.get_role(:context_learner)])
+
+      {:ok, view, _html} = live(conn, live_view_students_route(section.slug))
+
+      [student_1_email, student_2_email] =
+        view
+        |> render()
+        |> Floki.parse_fragment!()
+        |> Floki.find(~s{.instructor_dashboard_table tbody tr td:nth-child(2)})
+        |> Enum.map(fn td -> Floki.text(td) end)
+
+      assert student_1_email == student_1.email
+      assert student_2_email == student_2.email
+    end
+
     test "students last interaction gets rendered (for a student with interaction and yet with no interaction)",
          %{instructor: instructor, conn: conn, ctx: ctx} do
       %{section: section, mod1_pages: mod1_pages} =
@@ -119,14 +147,14 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
         view
         |> render()
         |> Floki.parse_fragment!()
-        |> Floki.find(~s{.instructor_dashboard_table tbody tr:nth-child(1) td:nth-child(2)})
+        |> Floki.find(~s{.instructor_dashboard_table tbody tr:nth-child(1) td:nth-child(3)})
         |> Enum.map(fn td -> Floki.text(td) end)
 
       [student_2_last_interaction] =
         view
         |> render()
         |> Floki.parse_fragment!()
-        |> Floki.find(~s{.instructor_dashboard_table tbody tr:nth-child(2) td:nth-child(2)})
+        |> Floki.find(~s{.instructor_dashboard_table tbody tr:nth-child(2) td:nth-child(3)})
         |> Enum.map(fn td -> Floki.text(td) end)
 
       assert student_1_last_interaction =~
@@ -248,7 +276,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
         |> render()
         |> Floki.parse_fragment!()
         |> Floki.find(~s{.instructor_dashboard_table tr [data-progress-check]})
-        |> Enum.map(fn div_tag -> Floki.text(div_tag) end)
+        |> Enum.map(fn div_tag -> Floki.text(div_tag) |> String.trim() end)
 
       assert progress == ["10%", "0%", "30%", "20%"]
 
@@ -263,7 +291,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
         |> render()
         |> Floki.parse_fragment!()
         |> Floki.find(~s{.instructor_dashboard_table tr [data-progress-check]})
-        |> Enum.map(fn div_tag -> Floki.text(div_tag) end)
+        |> Enum.map(fn div_tag -> Floki.text(div_tag) |> String.trim() end)
 
       assert progress == ["3%", "0%", "8%", "5%"]
 
@@ -277,7 +305,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
         |> render()
         |> Floki.parse_fragment!()
         |> Floki.find(~s{.instructor_dashboard_table tr [data-progress-check]})
-        |> Enum.map(fn div_tag -> Floki.text(div_tag) end)
+        |> Enum.map(fn div_tag -> Floki.text(div_tag) |> String.trim() end)
 
       assert progress == ["0%", "0%", "0%", "0%"]
 
@@ -291,7 +319,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
         |> render()
         |> Floki.parse_fragment!()
         |> Floki.find(~s{.instructor_dashboard_table tr [data-progress-check]})
-        |> Enum.map(fn div_tag -> Floki.text(div_tag) end)
+        |> Enum.map(fn div_tag -> Floki.text(div_tag) |> String.trim() end)
 
       assert progress == ["30%", "0%", "90%", "60%"]
 

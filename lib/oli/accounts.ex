@@ -77,6 +77,48 @@ defmodule Oli.Accounts do
     Repo.all(query)
   end
 
+  @spec get_users_by_email(list(String.t())) :: list(User.t())
+  def get_users_by_email(email_list) do
+    User
+    |> where([u], u.independent_learner == true and u.email in ^email_list)
+    |> select([u], %{
+      id: u.id,
+      email: u.email
+    })
+    |> Repo.all()
+  end
+
+  @doc """
+  Creates multiple invited users
+  ## Examples
+      iex> bulk_invite_users(["email_1@test.com", "email_2@test.com"], %Author{id: 1})
+      [%User{id: 3}, %User{id: 4}]
+  """
+  def bulk_invite_users(user_emails, %Author{} = inviter_user) do
+    date = DateTime.utc_now() |> DateTime.truncate(:second)
+
+    users =
+      Enum.map(
+        user_emails,
+        fn email ->
+          User
+          |> struct()
+          |> User.invite_changeset(inviter_user, %{
+            email: email
+          })
+          |> Map.get(:changes)
+          |> Map.delete(:invited_by_id)
+          |> Map.merge(%{
+            state: %{},
+            inserted_at: date,
+            updated_at: date
+          })
+        end
+      )
+
+    Repo.insert_all(User, users, returning: [:id, :invitation_token, :email])
+  end
+
   def browse_authors(
         %Paging{limit: limit, offset: offset},
         %Sorting{field: field, direction: direction},

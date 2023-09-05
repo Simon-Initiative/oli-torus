@@ -913,16 +913,45 @@ defmodule OliWeb.PageDeliveryControllerTest do
       conn: conn,
       user: user
     } do
-      {:ok, section} = section_with_upcoming_activities()
+      page_revision =
+        insert(:revision,
+          resource_type_id: Oli.Resources.ResourceType.get_id_by_type("page"),
+          title: "Upcoming assessment",
+          graded: true,
+          content: %{"advancedDelivery" => true}
+        )
+
+      container_revision =
+        insert(:revision,
+          resource_type_id: Oli.Resources.ResourceType.get_id_by_type("container"),
+          title: "A graded container?",
+          graded: true,
+          content: %{"advancedDelivery" => true}
+        )
+
+      {:ok, section: section, project: _project, author: _author} =
+        section_with_pages(%{
+          revisions: [page_revision, container_revision],
+          revision_section_attributes: [
+            %{
+              start_date: DateTime.add(DateTime.utc_now(), -10, :day),
+              end_date: DateTime.add(DateTime.utc_now(), 5, :day)
+            },
+            %{
+              start_date: DateTime.add(DateTime.utc_now(), -10, :day),
+              end_date: DateTime.add(DateTime.utc_now(), 5, :day)
+            }
+          ]
+        })
+
       enroll_as_student(%{section: section, user: user})
 
       conn =
         conn
         |> get(Routes.page_delivery_path(conn, :index, section.slug))
 
-      assert html_response(conn, 200) =~ "Up Next"
-      assert html_response(conn, 200) =~ "Upcoming Activity 1"
-      assert html_response(conn, 200) =~ "Upcoming Activity 2"
+      assert html_response(conn, 200) =~ "Upcoming assessment"
+      refute html_response(conn, 200) =~ "A graded container?"
     end
 
     test "shows page index based navigation", %{
@@ -2682,117 +2711,5 @@ defmodule OliWeb.PageDeliveryControllerTest do
       ],
       "version" => "0.1.0"
     }
-  end
-
-  defp section_with_upcoming_activities() do
-    author = insert(:author)
-    project = insert(:project, authors: [author])
-
-    activity_1_revision =
-      insert(:revision,
-        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("page"),
-        title: "Upcoming Activity 1"
-      )
-
-    activity_2_revision =
-      insert(:revision,
-        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("page"),
-        title: "Upcoming Activity 2"
-      )
-
-    container_revision =
-      insert(:revision, %{
-        resource: insert(:resource),
-        objectives: %{},
-        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("container"),
-        children: [activity_1_revision.resource_id, activity_2_revision.resource_id],
-        content: %{},
-        deleted: false,
-        title: "Root Container"
-      })
-
-    insert(:project_resource, %{
-      project_id: project.id,
-      resource_id: activity_1_revision.resource_id
-    })
-
-    insert(:project_resource, %{
-      project_id: project.id,
-      resource_id: activity_2_revision.resource_id
-    })
-
-    insert(:project_resource, %{
-      project_id: project.id,
-      resource_id: container_revision.resource_id
-    })
-
-    publication =
-      insert(:publication, %{project: project, root_resource_id: container_revision.resource_id})
-
-    insert(:published_resource, %{
-      publication: publication,
-      resource: activity_1_revision.resource,
-      revision: activity_1_revision,
-      author: author
-    })
-
-    insert(:published_resource, %{
-      publication: publication,
-      resource: activity_2_revision.resource,
-      revision: activity_2_revision,
-      author: author
-    })
-
-    insert(:published_resource, %{
-      publication: publication,
-      resource: container_revision.resource,
-      revision: container_revision,
-      author: author
-    })
-
-    section =
-      insert(:section,
-        base_project: project,
-        context_id: UUID.uuid4(),
-        open_and_free: true,
-        registration_open: true,
-        type: :enrollable
-      )
-
-    Oli.Delivery.Sections.create_section_resources(section, publication)
-
-    Oli.Delivery.Sections.get_section_resource(section.id, activity_1_revision.resource_id)
-    |> Oli.Delivery.Sections.update_section_resource(%{
-      scheduling_type: :due_by,
-      end_date: DateTime.add(DateTime.utc_now(), 1, :day)
-    })
-
-    Oli.Delivery.Sections.get_section_resource(section.id, activity_2_revision.resource_id)
-    |> Oli.Delivery.Sections.update_section_resource(%{
-      scheduling_type: :due_by,
-      end_date: DateTime.add(DateTime.utc_now(), 2, :day)
-    })
-
-    insert(:gating_condition, %{
-      section: section,
-      resource: activity_1_revision.resource,
-      type: :schedule,
-      user: nil,
-      data: %Oli.Delivery.Gating.GatingConditionData{
-        end_datetime: DateTime.add(DateTime.utc_now(), 1, :day)
-      }
-    })
-
-    insert(:gating_condition, %{
-      section: section,
-      resource: activity_2_revision.resource,
-      type: :schedule,
-      user: nil,
-      data: %Oli.Delivery.Gating.GatingConditionData{
-        end_datetime: DateTime.add(DateTime.utc_now(), 2, :day)
-      }
-    })
-
-    {:ok, section}
   end
 end

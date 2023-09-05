@@ -11,7 +11,6 @@ defmodule OliWeb.Delivery.StudentDashboard.InitialAssigns do
 
   import Phoenix.LiveView
   import Phoenix.Component
-  import OliWeb.LiveHelpers
 
   def on_mount(:default, :not_mounted_at_router, _session, socket) do
     {:cont, socket}
