@@ -9,11 +9,11 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTable do
   alias OliWeb.Common.PagedTable
   alias OliWeb.Sections.AssessmentSettings.StudentExceptionsTableModel
   alias OliWeb.Common.Params
+  alias OliWeb.Common.Utils, as: CommonUtils
   alias Phoenix.LiveView.JS
   alias OliWeb.Router.Helpers, as: Routes
-  alias Oli.Delivery
+  alias Oli.{Delivery, Repo, Utils}
   alias Oli.Delivery.Settings.StudentException
-  alias Oli.Repo
 
   @default_params %{
     offset: 0,
@@ -194,6 +194,7 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTable do
               id="start_date_input"
               name="start_date"
               type="datetime-local"
+              max={CommonUtils.datetime_input_limit(:start_date, @selected_setting, @ctx)}
               phx-debounce={500}
               value={value_from_datetime(@selected_setting.start_date, @ctx)}
             />
@@ -236,6 +237,7 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTable do
               id="end_date_input"
               name="end_date"
               type="datetime-local"
+              min={CommonUtils.datetime_input_limit(:end_date, @selected_setting, @ctx)}
               phx-debounce={500}
               value={value_from_datetime(@selected_setting.end_date, @ctx)}
             />
@@ -742,11 +744,19 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTable do
         nil
       end
 
+    {new_start_date, new_end_date, changed_date_field} = CommonUtils.maybe_preserve_dates_distance(date_field, new_date, selected_setting)
+
+    message = if changed_date_field do
+      " The #{Utils.stringify_atom(changed_date_field)} was adjusted to preserve the time distance between the start and end dates."
+    else
+      ""
+    end
+
     Delivery.get_delivery_setting_by(%{
       resource_id: selected_setting.resource_id,
       user_id: selected_setting.user_id
     })
-    |> change_student_exception(date_field, new_date)
+    |> change_student_exception(date_field, new_start_date, new_end_date)
     |> Repo.update()
     |> case do
       {:error, _changeset} ->
@@ -763,18 +773,20 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTable do
 
         {:noreply,
          socket
-         |> flash_to_liveview(:info, "Student Exception updated!")}
+         |> flash_to_liveview(:info, "Student Exception updated!.#{message}")}
     end
   end
 
-  defp change_student_exception(student_exception, :start_date, start_date) do
+  defp change_student_exception(student_exception, :start_date, start_date, end_date) do
     StudentException.changeset(student_exception, %{
-      start_date: start_date
+      start_date: start_date,
+      end_date: end_date
     })
   end
 
-  defp change_student_exception(student_exception, :end_date, end_date) do
+  defp change_student_exception(student_exception, :end_date, start_date, end_date) do
     StudentException.changeset(student_exception, %{
+      start_date: start_date,
       end_date: end_date,
       scheduling_type: unless(is_nil(end_date), do: :due_by, else: :read_by)
     })
@@ -917,8 +929,7 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTable do
   defp value_from_datetime(datetime, ctx) do
     datetime
     |> FormatDateTime.convert_datetime(ctx)
-    |> DateTime.to_iso8601()
-    |> String.slice(0, 16)
+    |> FormatDateTime.format_datetime(precision: :simple_iso8601)
   end
 
   defp update_liveview_student_exceptions(action, student_exceptions, update_sort_order) do

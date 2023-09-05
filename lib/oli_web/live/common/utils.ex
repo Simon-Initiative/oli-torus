@@ -80,4 +80,94 @@ defmodule OliWeb.Common.Utils do
   def render_version(edition, major, minor) do
     "v#{edition}.#{major}.#{minor}"
   end
+
+  @doc """
+    Given a datetime range defined by a start date and an end date, it returns a datetime string that defines a limit (min or max) for one of the dates based on the other.
+    This limit is used to restrict the possible values that can be selected in a datetime input.
+
+    A restriction for the datetime input is added if the date that is being edited was nil before, so it is not possible to calculate a time distance.
+    The time limit does not work well in some browsers, allowing the user to select a time that is not valid. That is why for this particular case we don't allow start and end dates to be equal.
+    Depending on the case, we add or substract a day to the limit to achieve that.
+
+    If the date was not nil, we don't need to set a limit since we can calculate the time distance accordingly.
+
+    ## Examples
+    iex> datetime_input_limit(:start_date, %{start_date: nil, end_date: ~U[2023-09-06 13:28:34]}, %SessionContext{browser_timezone: "America/Montevideo"})
+    "2023-09-05T10:28"
+
+    iex> datetime_input_limit(:start_date, %{start_date: ~U[2023-09-01 13:28:34], end_date: ~U[2023-09-06 13:28:34]}, %SessionContext{browser_timezone: "America/Montevideo"})
+    ""
+
+    iex> datetime_input_limit(:end_date, %{start_date: ~U[2023-09-02 13:28:34], end_date: nil}, %SessionContext{browser_timezone: "America/Montevideo"})
+    "2023-09-03T10:28"
+
+    iex> datetime_input_limit(:end_date, %{start_date: ~U[2023-09-02 13:28:34], end_date: ~U[2023-09-03 13:28:34]}, %SessionContext{browser_timezone: "America/Montevideo"})
+    ""
+  """
+
+  def datetime_input_limit(:start_date, %{start_date: nil = _old_start_date, end_date: end_date}, ctx) when not is_nil(end_date) do
+    end_date
+    |> convert_datetime(ctx)
+    |> DateTime.add(-1, :day)
+    |> format_datetime(precision: :simple_iso8601)
+  end
+
+  def datetime_input_limit(:start_date, _settings, _ctx), do: ""
+
+  def datetime_input_limit(:end_date, %{start_date: start_date, end_date: nil = _old_end_date}, ctx) when not is_nil(start_date) do
+    start_date
+    |> convert_datetime(ctx)
+    |> DateTime.add(1, :day)
+    |> format_datetime(precision: :simple_iso8601)
+  end
+
+  def datetime_input_limit(:end_date, _settings, _ctx), do: ""
+
+  @doc """
+  Preserves the time distance between the start and end dates when one of them is changed, and returns the new start and end dates and an atom indicating which date was updated to preserve the distance.
+
+  If the new start date (end date) or the existing end date (start date) are nil, we don't need to preserve the distance.
+  If the new start date (end date) is before (after) the existing end date (start date), we don't need to preserve the distance.
+
+  iex> maybe_preserve_dates_distance(:start_date, ~U[2023-09-04 13:28:34], %{start_date: ~U[2023-09-01 13:28:34], end_date: ~U[2023-09-02 13:28:34]})
+    {~U[2023-09-04 13:28:34], ~U[2023-09-05 13:28:34], true}
+
+  iex> maybe_preserve_dates_distance(:end_date, nil, %{start_date: ~U[2023-09-01 13:28:34], end_date: ~U[2023-09-02 13:28:34]})
+      {~U[2023-09-01 13:28:34], ~U[2023-09-02 13:28:34], false}
+  """
+  def maybe_preserve_dates_distance(:start_date, new_start_date, %{end_date: end_date}) when is_nil(new_start_date) or is_nil(end_date) do
+    {new_start_date, end_date, nil}
+  end
+
+  def maybe_preserve_dates_distance(:start_date, new_start_date, setting) do
+    case DateTime.compare(new_start_date, setting.end_date) do
+      :lt ->
+        {new_start_date, setting.end_date, nil}
+
+      _gt_or_eq ->
+        # Calculate previous time difference and apply it to the new end date
+        diff = DateTime.diff(setting.end_date, setting.start_date)
+        new_end_date = DateTime.add(new_start_date, diff)
+
+        {new_start_date, new_end_date, :end_date}
+    end
+  end
+
+  def maybe_preserve_dates_distance(:end_date, new_end_date, %{start_date: start_date}) when is_nil(new_end_date) or is_nil(start_date) do
+    {start_date, new_end_date, nil}
+  end
+
+  def maybe_preserve_dates_distance(:end_date, new_end_date, setting) do
+    case DateTime.compare(new_end_date, setting.start_date) do
+      :gt ->
+        {setting.start_date, new_end_date, nil}
+
+      _lt_or_eq ->
+        # Calculate previous time difference and apply it to the new start date
+        diff = DateTime.diff(setting.start_date, setting.end_date)
+        new_start_date = DateTime.add(new_end_date, diff)
+
+        {new_start_date, new_end_date, :start_date}
+    end
+  end
 end

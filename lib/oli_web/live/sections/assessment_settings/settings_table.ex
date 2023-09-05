@@ -5,17 +5,16 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
   import OliWeb.ErrorHelpers
   import Ecto.Query, only: [from: 2]
 
-  alias OliWeb.Common.FormatDateTime
-  alias OliWeb.Common.{PagedTable, SearchInput}
+  alias OliWeb.Common.{FormatDateTime, PagedTable, SearchInput, Params}
+  alias OliWeb.Common.Utils, as: CommonUtils
 
   alias OliWeb.Sections.AssessmentSettings.SettingsTableModel
-  alias OliWeb.Common.Params
   alias Phoenix.LiveView.JS
   alias OliWeb.Router.Helpers, as: Routes
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.SectionResource
   alias Oli.Publishing.DeliveryResolver
-  alias Oli.Repo
+  alias Oli.{Repo, Utils}
 
   @default_params %{
     offset: 0,
@@ -185,6 +184,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
               id="start_date_input"
               name="start_date"
               type="datetime-local"
+              max={CommonUtils.datetime_input_limit(:start_date, @selected_assessment, @ctx)}
               phx-debounce={500}
               value={value_from_datetime(@selected_assessment.start_date, @ctx)}
             />
@@ -227,6 +227,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
               id="end_date_input"
               name="end_date"
               type="datetime-local"
+              min={CommonUtils.datetime_input_limit(:end_date, @selected_assessment, @ctx)}
               phx-debounce={500}
               value={value_from_datetime(@selected_assessment.end_date, @ctx)}
             />
@@ -661,11 +662,19 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
         nil
       end
 
+    {new_start_date, new_end_date, changed_date_field} = CommonUtils.maybe_preserve_dates_distance(date_field, new_date, assessment)
+
+    message = if changed_date_field do
+      " The #{Utils.stringify_atom(changed_date_field)} was adjusted to preserve the time distance between the start and end dates."
+    else
+      ""
+    end
+
     Sections.get_section_resource(
       socket.assigns.section.id,
       assessment.resource_id
     )
-    |> change_section_resource(date_field, new_date)
+    |> change_section_resource(date_field, new_start_date, new_end_date)
     |> Repo.update()
     |> case do
       {:error, _changeset} ->
@@ -679,23 +688,26 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
          |> update_assessments(
            assessment.resource_id,
            [
-             {date_field, new_date}
+             {:start_date, new_start_date},
+             {:end_date, new_end_date}
              | maybe_add_scheduling_type(date_field, section_resource)
            ],
            false
          )
-         |> flash_to_liveview(:info, "Setting updated!")}
+         |> flash_to_liveview(:info, "Setting updated!.#{message}")}
     end
   end
 
-  defp change_section_resource(section_resource, :start_date, start_date) do
+  defp change_section_resource(section_resource, :start_date, start_date, end_date) do
     SectionResource.changeset(section_resource, %{
-      start_date: start_date
+      start_date: start_date,
+      end_date: end_date
     })
   end
 
-  defp change_section_resource(section_resource, :end_date, end_date) do
+  defp change_section_resource(section_resource, :end_date, start_date, end_date) do
     SectionResource.changeset(section_resource, %{
+      start_date: start_date,
       end_date: end_date,
       scheduling_type: unless(is_nil(end_date), do: :due_by, else: :read_by)
     })
@@ -880,8 +892,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
   defp value_from_datetime(datetime, ctx) do
     datetime
     |> FormatDateTime.convert_datetime(ctx)
-    |> DateTime.to_iso8601()
-    |> String.slice(0, 16)
+    |> FormatDateTime.format_datetime(precision: :simple_iso8601)
   end
 
   defp flash_to_liveview(socket, type, message) do
