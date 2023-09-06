@@ -32,7 +32,7 @@ defmodule Oli.Delivery.Snapshots.Worker do
   @doc """
   Allows immediate execution of the snapshot creation logic. Used to bypass queueing during testing scenarios.
   """
-  def perform_now(part_attempt_guids, section_slug) do
+  def perform_now(part_attempt_guids, section_slug, with_v2_support \\ true) do
     # Fetch all the necessary context information to be able to create snapshots
     results =
       from(pa in PartAttempt,
@@ -61,8 +61,6 @@ defmodule Oli.Delivery.Snapshots.Worker do
           Oli.Delivery.Sections.determine_which_project_id(ra.section_id, ra.resource_id)
       end
 
-    Oli.Analytics.Summary.execute_analytics_pipeline(results, project_id, host_name())
-
     # determine all referenced objective ids by the parts that we find
     objective_ids =
       Enum.reduce(results, MapSet.new([]), fn {pa, _, _, _, _, r}, m ->
@@ -81,6 +79,12 @@ defmodule Oli.Delivery.Snapshots.Worker do
     # transaction call will return  either {:ok, _} or {:error, _}. In the case of the {:ok, _} Oban
     # marks the job as completed.  In the case of an error, it scheduled it for a retry.
     Repo.transaction(fn ->
+
+      # First execute the v2 pipeline. If it fails it will rollback the transaction and the job will
+      # be retried.
+      if with_v2_support do
+        {:ok, _} = Oli.Analytics.Summary.execute_analytics_pipeline(results, project_id, host_name())
+      end
 
       attrs_list = Enum.reduce(results, [], fn {part_attempt, _, _, _, _, activity_revision} = result, all_bulk_attrs ->
         # Look at the attached objectives for that part for that revision

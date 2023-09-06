@@ -7,8 +7,6 @@ defmodule Oli.Analytics.Summary do
   alias Oli
   require Logger
 
-
-
   @resource_fields "project_id, publication_id, section_id, user_id, resource_id, part_id, resource_type_id, num_correct, num_attempts, num_hints, num_first_attempts, num_first_attempts_correct"
   @response_fields "project_id, publication_id, section_id, page_id, activity_id, resource_part_response_id, part_id, count"
 
@@ -23,18 +21,12 @@ defmodule Oli.Analytics.Summary do
   """
   def execute_analytics_pipeline(snapshot_attempt_summary, project_id, host_name) do
 
-    try do
-
-      Pipeline.init("SummaryAnalyticsPipeline")
-      |> AttemptGroup.from_attempt_summary(snapshot_attempt_summary, project_id, host_name)
-      |> emit_xapi_events()
-      |> upsert_resource_summaries()
-      |> upsert_response_summaries()
-      |> Pipeline.all_done()
-
-   rescue
-      e -> Logger.error("Error executing SummaryAnalyticsPipeline: #{inspect(e)}")
-   end
+    Pipeline.init("SummaryAnalyticsPipeline")
+    |> AttemptGroup.from_attempt_summary(snapshot_attempt_summary, project_id, host_name)
+    |> emit_xapi_events()
+    |> upsert_resource_summaries()
+    |> upsert_response_summaries()
+    |> Pipeline.all_done()
 
   end
 
@@ -65,16 +57,10 @@ defmodule Oli.Analytics.Summary do
 
   # From all of the part attempts that were evaluated, upsert the appropriate records
   # into the resource summary table.
-  defp upsert_resource_summaries(%Pipeline{data: nil} = pipeline), do: Pipeline.step_done(pipeline, :resource_summary)
-  defp upsert_resource_summaries(%Pipeline{data: attempt_group} = pipeline) do
+  def upsert_resource_summaries(%Pipeline{data: nil} = pipeline), do: Pipeline.step_done(pipeline, :resource_summary)
+  def upsert_resource_summaries(%Pipeline{data: attempt_group, errors: []} = pipeline) do
 
-    proto_records = assemble_proto_records(attempt_group)
-
-    pipeline = case Oli.Repo.transaction(fn ->
-      insert_as_temp_table(proto_records, @resource_fields)
-      |> upsert_counts()
-      |> drop_temp_table()
-    end) do
+    pipeline = case assemble_proto_records(attempt_group) |> upsert_counts() do
 
       {:ok, _} ->
         pipeline
@@ -87,11 +73,12 @@ defmodule Oli.Analytics.Summary do
     Pipeline.step_done(pipeline, :resource_summary)
 
   end
+  def upsert_resource_summaries(pipeline), do: Pipeline.step_done(pipeline, :resource_summary)
 
   # From all of the part attempts that were evaluated, upsert the appropriate records
   # into the response summary table.
-  defp upsert_response_summaries(%Pipeline{data: nil} = pipeline), do: Pipeline.step_done(pipeline, :response_summary)
-  defp upsert_response_summaries(%Pipeline{data: attempt_group} = pipeline) do
+  def upsert_response_summaries(%Pipeline{data: nil} = pipeline), do: Pipeline.step_done(pipeline, :response_summary)
+  def upsert_response_summaries(%Pipeline{data: attempt_group, errors: []} = pipeline) do
 
     # Read all activity registrations
     registered_activities = Oli.Activities.list_activity_registrations()
@@ -100,12 +87,11 @@ defmodule Oli.Analytics.Summary do
     end)
 
     pipeline = case Oli.Repo.transaction(fn ->
+
       part_attempt_tuples = upsert_responses(attempt_group.part_attempts, registered_activities)
 
       create_response_proto_records(attempt_group, part_attempt_tuples)
-      |> insert_as_temp_table(@response_fields)
       |> upsert_response_counts()
-      |> drop_temp_table()
 
       upsert_student_responses(attempt_group, part_attempt_tuples)
 
@@ -121,6 +107,7 @@ defmodule Oli.Analytics.Summary do
 
     Pipeline.step_done(pipeline, :response_summary)
   end
+  def upsert_response_summaries(pipeline), do: Pipeline.step_done(pipeline, :response_summary)
 
   defp upsert_student_responses(attempt_group, part_attempt_tuples) do
 
@@ -151,7 +138,7 @@ defmodule Oli.Analytics.Summary do
     Enum.reduce(part_attempt_tuples, [], fn {id, part_attempt}, proto_records ->
       Enum.map(response_scope_builder_fns(), fn scope_builder_fn ->
         scope_builder_fn.(attempt_group.context) ++ [
-          attempt_group.resource_attempt.resource_id, part_attempt.activity_revision.resource_id, id, part_attempt.part_id, 1
+          attempt_group.resource_attempt.resource_id, part_attempt.activity_revision.resource_id, id, "\'#{part_attempt.part_id}\'", 1
         ]
       end)
       ++ proto_records
@@ -167,7 +154,7 @@ defmodule Oli.Analytics.Summary do
         activity_type = Map.get(registered_activities, part_attempt.activity_revision.activity_type_id)
 
         %ResponseLabel{response: response, label: label} = ResponseLabel.build(part_attempt, activity_type.slug)
-        values = ["(#{part_attempt.activity_revision.resource_id}, #{part_attempt.part_id}, $#{(index * 2) + 1}, $#{(index * 2) + 2})" | values]
+        values = ["(#{part_attempt.activity_revision.resource_id}, \'#{part_attempt.part_id}\', $#{(index * 2) + 1}, $#{(index * 2) + 2})" | values]
         params = [response, label | params]
 
         {values, params}
@@ -191,7 +178,8 @@ defmodule Oli.Analytics.Summary do
     end)
 
     Enum.map(rows, fn [id, resource_id, part_id] ->
-      {id, Map.get(part_attempt_by_resource_part, {resource_id, part_id})}
+      result = Map.get(part_attempt_by_resource_part, {resource_id, part_id})
+      {id, result}
     end)
 
   end
@@ -264,12 +252,8 @@ defmodule Oli.Analytics.Summary do
     |> Base.encode16()
   end
 
-  defp insert_as_temp_table(proto_records, table_fields) do
-
-    unique_table_suffix = :crypto.strong_rand_bytes(8) |> Base.encode16()
-    table_name = "batch_data_#{unique_table_suffix}"
-
-    data = Enum.map(proto_records, fn record ->
+  defp to_values(proto_records) do
+    Enum.map(proto_records, fn record ->
       record = Enum.map(record, fn value ->
         case value do
           nil -> -1
@@ -280,26 +264,16 @@ defmodule Oli.Analytics.Summary do
       "(#{Enum.join(record, ", ")})"
     end)
     |> Enum.join(", ")
-
-    sql = """
-      CREATE TEMP TABLE #{table_name} AS
-      SELECT * FROM (VALUES
-        #{data}
-      ) AS t(#{table_fields});
-    """
-
-    Ecto.Adapters.SQL.query(Oli.Repo, sql, [])
-
-    table_name
-
   end
 
-  defp upsert_counts(table_name) do
+  defp upsert_counts(proto_records) do
+
+    data = to_values(proto_records)
 
     sql = """
       INSERT INTO resource_summary (#{@resource_fields})
-      SELECT #{@resource_fields}
-      FROM #{table_name}
+      VALUES
+      #{data}
       ON CONFLICT (project_id, publication_id, section_id, user_id, resource_id, resource_type_id, part_id)
       DO UPDATE SET
         num_correct = resource_summary.num_correct + EXCLUDED.num_correct,
@@ -311,31 +285,19 @@ defmodule Oli.Analytics.Summary do
 
     Ecto.Adapters.SQL.query(Oli.Repo, sql, [])
 
-    table_name
-
   end
 
-  defp upsert_response_counts(table_name) do
+  defp upsert_response_counts(proto_records) do
+
+    data = to_values(proto_records)
 
     sql = """
       INSERT INTO response_summary (#{@response_fields})
-      SELECT #{@response_fields}
-      FROM #{table_name}
+      VALUES
+      #{data}
       ON CONFLICT (project_id, publication_id, section_id, page_id, activity_id, resource_part_response_id, part_id)
       DO UPDATE SET
         count = response_summary.count + EXCLUDED.count;
-    """
-
-    Ecto.Adapters.SQL.query(Oli.Repo, sql, [])
-
-    table_name
-
-  end
-
-  defp drop_temp_table(table_name) do
-
-    sql = """
-      DROP TABLE #{table_name};
     """
 
     Ecto.Adapters.SQL.query(Oli.Repo, sql, [])
@@ -405,7 +367,7 @@ defmodule Oli.Analytics.Summary do
   defp activity(pa) do
     [
       pa.activity_revision.resource_id,
-      pa.part_id,
+      "\'#{pa.part_id}\'",
       Oli.Resources.ResourceType.get_id_by_type("activity")
     ]
   end
@@ -413,7 +375,7 @@ defmodule Oli.Analytics.Summary do
   defp objective(objective_id) do
     [
       objective_id,
-      nil,
+      "\'unknown\'",
       Oli.Resources.ResourceType.get_id_by_type("objective")
     ]
   end
@@ -421,7 +383,7 @@ defmodule Oli.Analytics.Summary do
   defp page(page_id) do
     [
       page_id,
-      nil,
+      "\'unknown\'",
       Oli.Resources.ResourceType.get_id_by_type("page")
     ]
   end

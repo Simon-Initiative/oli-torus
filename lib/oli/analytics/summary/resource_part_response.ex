@@ -4,7 +4,7 @@ defmodule Oli.Analytics.Summary.ResourcePartResponse do
 
   schema "resource_part_responses" do
 
-    belongs_to(:resource_id, Oli.Resources.Resource)
+    belongs_to(:resource, Oli.Resources.Resource)
     field(:part_id, :string)
     field(:response, :string)
     field(:label, :string)

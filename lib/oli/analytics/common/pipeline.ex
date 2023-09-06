@@ -31,16 +31,19 @@ defmodule Oli.Analytics.Common.Pipeline do
   end
 
   def all_done(%__MODULE__{measurements: nil}), do: nil
-  def all_done(%__MODULE__{measurements: measurements, errors: errors, label: label}) do
+  def all_done(%__MODULE__{measurements: measurements, errors: errors, label: label} = pipeline) do
     :telemetry.execute([:oli, :analytics, :summary], measurements)
 
     Logger.info("#{label} pipeline complete, measurements: #{to_friendly_display(measurements)}, errors: #{inspect(errors)}}}")
+
+    case errors do
+      [] -> {:ok, pipeline}
+      _ -> {:error, pipeline}
+    end
   end
 
-  def add_error(%__MODULE__{errors: errors}, error) do
-    %__MODULE__{
-      errors: [error | errors]
-    }
+  def add_error(%__MODULE__{errors: errors} = pipeline, error) do
+    %{pipeline | errors: [error | errors]}
   end
 
   defp to_friendly_display(measurements) do
