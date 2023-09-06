@@ -302,7 +302,11 @@ const IRulesList: React.FC<any> = (props: any) => {
       <Dropdown
         onClick={(e: React.MouseEvent) => {
           (e as any).isContextButtonClick = true;
-          props.contextMenuClicked(true, props);
+          props.contextMenuClicked(true, {
+            rule:props,
+            clientX: (e as any).clientX,
+            clientY: (e as any).clientY,
+          });
         }}
       >
         <Dropdown.Toggle

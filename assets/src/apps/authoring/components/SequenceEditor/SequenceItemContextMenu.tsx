@@ -34,7 +34,6 @@ const SequenceItemContextMenu = (props: any) => {
       function handleClickOutside(event: any) {
         if (ref.current && !ref.current.contains(event.target)) {
           setShowMenu(false);
-          props.contextMenuClicked(false);
         }
       }
       // Bind the event listener

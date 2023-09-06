@@ -2,6 +2,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { ListGroup, Toast } from 'react-bootstrap';
 import { useSelector } from 'react-redux';
+import { selectSequenceEditorExpanded } from 'apps/authoring/store/app/slice';
 import { selectCopiedItem, selectCopiedType } from 'apps/authoring/store/clipboard/slice';
 
 const AdaptiveRuleContextMenu = (props: any) => {
@@ -12,6 +13,8 @@ const AdaptiveRuleContextMenu = (props: any) => {
   const [showMenu, setShowMenu] = useState(false);
   const copied = useSelector(selectCopiedItem);
   const copiedType = useSelector(selectCopiedType);
+  const [clientY, setClientY] = useState<number>(0);
+  const sequenceEditorExpanded = useSelector(selectSequenceEditorExpanded);
   function useOutsideAlerter(ref: any) {
     useEffect(() => {
       /**
@@ -75,11 +78,13 @@ const AdaptiveRuleContextMenu = (props: any) => {
     setShowMenu(props.displayContextMenu);
 
     if (props.adaptiveRuleDetails) {
-      const adaptiveRuleDetail = props.adaptiveRuleDetails;
+      const { rule, clientY } = props.adaptiveRuleDetails;
+      const adaptiveRuleDetail = rule;
       setId(adaptiveRuleDetail.id);
       setItem(adaptiveRuleDetail.item);
       setIndex(adaptiveRuleDetail.index);
       setArr(adaptiveRuleDetail.arr);
+      setClientY(clientY);
     }
   }, [props]);
 
@@ -89,7 +94,12 @@ const AdaptiveRuleContextMenu = (props: any) => {
         id={`rule-list-item-${id}-context-trigger`}
         ref={wrapperRef}
         show={showMenu}
-        style={{ cursor: 'pointer', left: '70px', top: '40vh' }}
+        style={{
+          cursor: 'pointer',
+          left: '70px',
+          bottom: sequenceEditorExpanded ? `1px` : `auto`,
+          top: sequenceEditorExpanded ? `auto` : `${clientY - 30}px`,
+        }}
         className={`dropdown-menu ${props.show ? 'show' : ''}`}
       >
         <Toast.Body>
