@@ -8,8 +8,6 @@ import { useToggle } from '../../../../components/hooks/useToggle';
 import { createNew as createNewActivity } from '../../../authoring/store/activities/actions/createNew';
 import {
   selectBottomLeftPanel,
-  selectIsAdmin,
-  selectProjectSlug,
   setCurrentRule,
   setLeftPanelState,
   setRightPanelActiveTab,
@@ -53,9 +51,7 @@ const SequenceEditor: React.FC<any> = (props: any) => {
   const [itemToRename, setItemToRename] = useState<any>(undefined);
   const [showConfirmDelete, setShowConfirmDelete] = useState<boolean>(false);
   const [itemToDelete, setItemToDelete] = useState<any>(undefined);
-  const isAdmin = useSelector(selectIsAdmin);
   const bottomLeftPanel = useSelector(selectBottomLeftPanel);
-  const projectSlug = useSelector(selectProjectSlug);
   const layerLabel = 'Layer';
   const bankLabel = 'Question Bank';
   const screenLabel = 'Screen';
@@ -72,7 +68,8 @@ const SequenceEditor: React.FC<any> = (props: any) => {
           handleItemReorder(null, item, direction);
           break;
         case 'handleItemDelete':
-          handleItemDelete(item);
+          setShowConfirmDelete(true);
+          setItemToDelete(item);
           break;
         case 'handleItemConvert':
           handleItemConvert(item);
@@ -419,11 +416,7 @@ const SequenceEditor: React.FC<any> = (props: any) => {
   }, [itemToRename]);
 
   const SequenceItemContextMenu = (props: any) => {
-    const { id, item, index, arr, isParentQB } = props;
-    const isBank = item.custom.isBank;
-    const isLayer = item.custom.isLayer;
-    const seqType = isLayer ? layerLabel : isBank ? bankLabel : screenLabel;
-
+    const { id } = props;
     return (
       <>
         {currentGroup && (
@@ -440,109 +433,6 @@ const SequenceEditor: React.FC<any> = (props: any) => {
             >
               <i className="fas fa-ellipsis-v" />
             </Dropdown.Toggle>
-
-            <Dropdown.Menu>
-              {!isParentQB && (
-                <Dropdown.Item onClick={() => handleItemAdd(item)}>
-                  <i className="fas fa-desktop mr-2" /> Add Subscreen
-                </Dropdown.Item>
-              )}
-
-              {!isBank && !isParentQB && (
-                <Dropdown.Item onClick={() => handleItemAdd(item, true)}>
-                  <i className="fas fa-layer-group mr-2" /> Add Layer
-                </Dropdown.Item>
-              )}
-              {!isBank && !isParentQB && (
-                <Dropdown.Item onClick={() => handleItemAdd(item, false, true)}>
-                  <i className="fas fa-cubes mr-2" /> Add Question Bank
-                </Dropdown.Item>
-              )}
-
-              {isLayer ? (
-                <Dropdown.Item onClick={() => handleItemConvert(item)}>
-                  <i className="fas fa-exchange-alt mr-2" /> Convert to Screen
-                </Dropdown.Item>
-              ) : !isBank && !isParentQB ? (
-                <Dropdown.Item onClick={() => handleItemConvert(item)}>
-                  <i className="fas fa-exchange-alt mr-2" /> Convert to Layer
-                </Dropdown.Item>
-              ) : null}
-
-              <Dropdown.Item onClick={() => setItemToRename(item)}>
-                <i className="fas fa-i-cursor align-text-top mr-2" /> Rename
-              </Dropdown.Item>
-
-              {!isLayer && !isBank && (
-                <Dropdown.Item onClick={() => handleItemClone(item)}>
-                  <i className="fas fa-clone align-text-top mr-2" /> Clone Screen
-                </Dropdown.Item>
-              )}
-
-              <Dropdown.Item onClick={() => navigator.clipboard.writeText(item.custom.sequenceId)}>
-                <i className="fas fa-clipboard align-text-top mr-2" /> {`Copy ${seqType} ID`}
-              </Dropdown.Item>
-
-              {currentGroup?.children?.length > 1 && (
-                <>
-                  <div className="dropdown-divider" />
-                  <Dropdown.Item
-                    onClick={() => {
-                      setShowConfirmDelete(true);
-                      setItemToDelete(item);
-                    }}
-                  >
-                    <i className="fas fa-trash mr-2" /> Delete
-                  </Dropdown.Item>
-                  <div className="dropdown-divider"></div>
-                </>
-              )}
-              {index > 0 && (
-                <Dropdown.Item onClick={(e) => handleItemReorder(e, item, ReorderDirection.UP)}>
-                  <i className="fas fa-arrow-up mr-2" /> Move Up
-                </Dropdown.Item>
-              )}
-              {index < arr.length - 1 && (
-                <Dropdown.Item onClick={(e) => handleItemReorder(e, item, ReorderDirection.DOWN)}>
-                  <i className="fas fa-arrow-down mr-2" /> Move Down
-                </Dropdown.Item>
-              )}
-              {item.custom.layerRef && (
-                <Dropdown.Item onClick={(e) => handleItemReorder(e, item, ReorderDirection.OUT)}>
-                  <i className="fas fa-arrow-left mr-2" /> Move Out
-                </Dropdown.Item>
-              )}
-              {index > 0 && arr.length > 1 && (
-                <Dropdown.Item onClick={(e) => handleItemReorder(e, item, ReorderDirection.IN)}>
-                  <i className="fas fa-arrow-right mr-2" /> Move In
-                </Dropdown.Item>
-              )}
-              {isAdmin && (
-                <>
-                  <div className="dropdown-divider" />
-                  <Dropdown.Item
-                    onClick={() => {
-                      // open revision history in new tab
-                      window.open(`/project/${projectSlug}/history/resource_id/${item.resourceId}`);
-                    }}
-                  >
-                    <i className="fas fa-history mr-2" /> Revision History (Admin)
-                  </Dropdown.Item>
-                  <div className="dropdown-divider"></div>
-                </>
-              )}
-
-              {/* <div className="dropdown-divider"></div>
-              <Dropdown.Item onClick={() => {}}>
-                <i className="fas fa-copy mr-2" /> Copy
-              </Dropdown.Item>
-              <Dropdown.Item onClick={() => {}}>
-                <i className="fas fa-paste mr-2" /> Paste as Child
-              </Dropdown.Item>
-              <Dropdown.Item onClick={() => {}}>
-                <i className="fas fa-paste mr-2" /> Paste as Sibling
-              </Dropdown.Item> */}
-            </Dropdown.Menu>
           </Dropdown>
         )}
       </>

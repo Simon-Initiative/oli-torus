@@ -36,7 +36,7 @@ import {
 } from '../../store/app/slice';
 import ConfirmDelete from '../Modal/DeleteConfirmationModal';
 
-const IRulesList: React.FC = () => {
+const IRulesList: React.FC<any> = (props: any) => {
   const dispatch = useDispatch();
   const currentActivity = useSelector(selectCurrentActivity);
   const currentRule = useSelector(selectCurrentRule);
@@ -50,6 +50,35 @@ const IRulesList: React.FC = () => {
   const isLayer = getIsLayer();
   const isBank = getIsBank();
   const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (props.menuItemClicked) {
+      const { event, item, type, rule, direction, index } = props.menuItemClicked;
+      switch (event) {
+        case 'handleRenameRule':
+          setRuleToEdit(item);
+          break;
+        case 'handleRuleReorder':
+          handleMoveRule(index, direction);
+          break;
+        case 'handleRulePaste':
+          handlePasteRule(item, type, index);
+          break;
+        case 'handleCopyRule':
+          handleCopyRule(rule);
+          break;
+        case 'handleDuplicateRule':
+          handleDuplicateRule(rule, index);
+          break;
+        case 'handleItemDelete':
+          setItemToDelete(item);
+          setShowConfirmDelete(true);
+          break;
+        default:
+          break;
+      }
+    }
+  }, [props.menuItemClicked]);
 
   let sequenceTypeLabel = '';
   if (isLayer) {
@@ -265,13 +294,15 @@ const IRulesList: React.FC = () => {
     item: IAdaptiveRule | 'initState';
     index: number | 'initState';
     arr?: IAdaptiveRule[];
+    contextMenuClicked: any;
   }) => {
-    const { id, item, index, arr } = props;
+    const { id } = props;
 
     return (
       <Dropdown
         onClick={(e: React.MouseEvent) => {
           (e as any).isContextButtonClick = true;
+          props.contextMenuClicked(true, props);
         }}
       >
         <Dropdown.Toggle
@@ -281,60 +312,6 @@ const IRulesList: React.FC = () => {
         >
           <i className="fas fa-ellipsis-v" />
         </Dropdown.Toggle>
-
-        <Dropdown.Menu>
-          {item !== 'initState' && (
-            <Dropdown.Item onClick={() => setRuleToEdit(item)}>
-              <i className="fas fa-i-cursor align-text-top mr-2" /> Rename
-            </Dropdown.Item>
-          )}
-
-          {(item === 'initState' || !item.default || (item.default && item.correct)) && (
-            <>
-              <Dropdown.Item onClick={() => handleCopyRule(item)}>
-                <i className="fas fa-copy mr-2" /> Copy
-              </Dropdown.Item>
-              <Dropdown.Item onClick={() => handlePasteRule(copied, copiedType, index)}>
-                <i className="fas fa-clipboard mr-2" /> Insert copied rule
-              </Dropdown.Item>
-            </>
-          )}
-
-          {item !== 'initState' && index !== 'initState' && (
-            <>
-              {!item.default && (
-                <>
-                  <Dropdown.Item onClick={() => handleMoveRule(index, 'down')}>
-                    <i className="fas fa-arrow-down mr-2" /> Move Down
-                  </Dropdown.Item>
-                  <div className="dropdown-divider"></div>
-                  <Dropdown.Item onClick={() => handleDuplicateRule(item, index)}>
-                    <i className="fas fa-copy mr-2" /> Duplicate
-                  </Dropdown.Item>
-                  <Dropdown.Item
-                    onClick={() => {
-                      setItemToDelete(item);
-                      setShowConfirmDelete(true);
-                    }}
-                  >
-                    <i className="fas fa-trash mr-2" /> Delete
-                  </Dropdown.Item>
-                  <div className="dropdown-divider"></div>
-                </>
-              )}
-              {index > 1 && !item.default && (
-                <Dropdown.Item onClick={() => handleMoveRule(index, 'up')}>
-                  <i className="fas fa-arrow-up mr-2" /> Move Up
-                </Dropdown.Item>
-              )}
-              {arr && index < arr.length - 2 && !item.default && (
-                <Dropdown.Item onClick={() => handleMoveRule(index, 'down')}>
-                  <i className="fas fa-arrow-down mr-2" /> Move Down
-                </Dropdown.Item>
-              )}
-            </>
-          )}
-        </Dropdown.Menu>
       </Dropdown>
     );
   };
@@ -439,7 +416,9 @@ const IRulesList: React.FC = () => {
               className="aa-rules-list-item"
               as="li"
               active={currentRule === 'initState'}
-              onClick={(e) => !(e as any).isContextButtonClick && handleSelectRule(undefined, true)}
+              onClick={(e) => {
+                !(e as any).isContextButtonClick && handleSelectRule(undefined, true);
+              }}
             >
               <div className="aa-rules-list-details-wrapper">
                 <div className="details">
@@ -448,7 +427,12 @@ const IRulesList: React.FC = () => {
                     <span className="title font-italic">Initial State</span>
                   </span>
                 </div>
-                <RuleItemContextMenu id={guid()} item={'initState'} index={'initState'} />
+                <RuleItemContextMenu
+                  contextMenuClicked={props.contextMenuClicked}
+                  id={guid()}
+                  item={'initState'}
+                  index={'initState'}
+                />
               </div>
             </ListGroup.Item>
           )}
@@ -488,7 +472,13 @@ const IRulesList: React.FC = () => {
                       />
                     )}
                   </div>
-                  <RuleItemContextMenu id={guid()} item={rule} index={index} arr={arr} />
+                  <RuleItemContextMenu
+                    contextMenuClicked={props.contextMenuClicked}
+                    id={guid()}
+                    item={rule}
+                    index={index}
+                    arr={arr}
+                  />
                 </div>
               </ListGroup.Item>
             ))}
