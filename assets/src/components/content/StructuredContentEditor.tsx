@@ -26,7 +26,6 @@ export const StructuredContentEditor = ({
 }: StructuredContentEditor) => {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const onContentEdit = (children: ModelElement[]) => {
-    console.info("Structured content editor's onContentEdit", { contentItem, children });
     onEdit(Object.assign({}, contentItem, { children }));
   };
 

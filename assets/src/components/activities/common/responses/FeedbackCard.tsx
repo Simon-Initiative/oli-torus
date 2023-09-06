@@ -5,7 +5,7 @@ import { Feedback } from 'components/activities/types';
 import { SlateOrMarkdownEditor } from 'components/editing/SlateOrMarkdownEditor';
 import { Card } from 'components/misc/Card';
 import { ID } from 'data/content/model/other';
-import { DEFAULT_EDITOR, EditorType, SMALL_EDITOR_HEIGHT } from 'data/content/resource';
+import { DEFAULT_EDITOR, EditorType } from 'data/content/resource';
 
 export const FeedbackCard: React.FC<{
   feedback: Feedback;
@@ -29,7 +29,6 @@ export const FeedbackCard: React.FC<{
           editorType={feedback.editor || DEFAULT_EDITOR}
           allowBlockElements={true}
           projectSlug={projectSlug}
-          initialHeight={SMALL_EDITOR_HEIGHT}
         />
         {/* <RichTextEditorConnected
           placeholder={placeholder === undefined ? 'Enter feedback' : placeholder}

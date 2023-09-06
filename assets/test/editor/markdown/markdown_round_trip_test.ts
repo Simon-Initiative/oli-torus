@@ -38,12 +38,17 @@ describe('Markdown round trip', () => {
     ]);
   });
 
-  it('should serialize and deserialize a paragraph', () => {
+  it('should serialize and deserialize a couple paragraphs', () => {
     testRoundTrip([
       {
         type: 'p',
         id: '1',
         children: [{ text: 'Here is some paragraph text.' }],
+      },
+      {
+        type: 'p',
+        id: '2',
+        children: [{ text: 'Here is the second paragraph text.' }],
       },
     ]);
   });

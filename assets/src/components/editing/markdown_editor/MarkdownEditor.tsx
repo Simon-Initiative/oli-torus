@@ -21,7 +21,6 @@ interface MarkdownEditorProps {
   className?: string;
   style?: React.CSSProperties;
   placeholder?: string;
-  initialHeight?: number;
   onPaste?: React.ClipboardEventHandler<HTMLDivElement>;
   children?: React.ReactNode;
   onFocus?: FocusEventHandler | undefined;
@@ -49,7 +48,7 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = (props) => {
   const darkMode: boolean = useMemo(() => {
     return document.documentElement.classList.contains('dark');
   }, []);
-  const { onEdit, initialHeight } = props;
+  const { onEdit } = props;
   const modeClass = darkMode ? 'dark' : 'light';
 
   const saveChanges = useCallback(
@@ -72,7 +71,6 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = (props) => {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const onChange = useCallback(
     (newValue: string | undefined) => {
-      console.info('onchange');
       setValue(newValue || '');
       delayedSaveChanges(newValue || '');
     },
@@ -89,7 +87,7 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = (props) => {
       value={value}
       className={props.className}
       onChange={onChange}
-      height={initialHeight || 600}
+      height="auto"
       data-color-mode={modeClass}
       onBlur={onBlur}
       preview="edit"

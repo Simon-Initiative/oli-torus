@@ -258,7 +258,6 @@ export interface StructuredContent {
 }
 
 export const DEFAULT_EDITOR: EditorType = 'slate';
-export const SMALL_EDITOR_HEIGHT = 100;
 
 export interface ActivityBankSelection {
   type: 'selection';

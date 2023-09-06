@@ -21,7 +21,6 @@ type SlateOrMarkdownEditorProps = {
   projectSlug: ProjectSlug;
   placeholder?: string;
   resourceSlug?: ResourceSlug;
-  initialHeight?: number;
   toolbarInsertDescs?: CommandDescription[]; // Content insertion options
   style?: React.CSSProperties;
   className?: string;
@@ -47,7 +46,6 @@ export const SlateOrMarkdownEditor: React.FC<SlateOrMarkdownEditorProps> = ({
   placeholder,
   onEditorTypeChange,
   editorType,
-  initialHeight,
   allowBlockElements,
   style,
   className,
@@ -92,7 +90,6 @@ export const SlateOrMarkdownEditor: React.FC<SlateOrMarkdownEditorProps> = ({
           commandContext={{ projectSlug: projectSlug, resourceSlug: resourceSlug }}
           editMode={editMode}
           value={content}
-          initialHeight={initialHeight}
           onSwitchModes={toggleSwitchToSlateModal}
           onEdit={onContentEdited}
           style={style}

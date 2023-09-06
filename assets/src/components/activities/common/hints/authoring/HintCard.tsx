@@ -4,7 +4,7 @@ import { Hint } from 'components/activities/types';
 import { SlateOrMarkdownEditor } from 'components/editing/SlateOrMarkdownEditor';
 import { Card } from 'components/misc/Card';
 import { ID } from 'data/content/model/other';
-import { DEFAULT_EDITOR, EditorType, SMALL_EDITOR_HEIGHT } from 'data/content/resource';
+import { DEFAULT_EDITOR, EditorType } from 'data/content/resource';
 
 export const HintCard: React.FC<{
   title: JSX.Element;
@@ -19,7 +19,6 @@ export const HintCard: React.FC<{
       <Card.Title>{title}</Card.Title>
       <Card.Content>
         <SlateOrMarkdownEditor
-          initialHeight={SMALL_EDITOR_HEIGHT}
           placeholder={placeholder}
           content={hint?.content || []}
           onEdit={(content) => updateOne(hint.id, content)}

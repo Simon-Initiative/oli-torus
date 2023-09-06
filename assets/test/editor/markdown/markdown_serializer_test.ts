@@ -1,3 +1,4 @@
+import { Descendant } from 'slate';
 import { serializeMarkdown } from 'components/editing/markdown_editor/content_markdown_serializer';
 import { Model } from 'data/content/model/elements/factories';
 import { AllModelElements } from 'data/content/model/elements/types';
@@ -210,5 +211,26 @@ describe('Markdown serializer', () => {
     const marker = '```';
     const input = `${marker}jsx\nSome code\nSome more code\n${marker}\n\n`;
     expect(serializeMarkdown(input)).toEqual(expectAnyId([expected]));
+  });
+
+  it('should correctly handle us removing the double \n at the end of a doc', () => {
+    const expected: Descendant[] = [
+      {
+        type: 'p',
+        id: '1',
+        children: [{ text: 'Here is some paragraph text.' }],
+      },
+      {
+        type: 'p',
+        id: '2',
+        children: [{ text: 'Here is the second paragraph text.' }],
+      },
+    ];
+
+    // Note the second paragraph doesn't have \n\n at the end, we strip those out when we deserialize
+    // so the on-screen editor isn't bigger by 2 lines than it needs to be.
+    const content = `Here is some paragraph text.\n\nHere is the second paragraph text.`;
+
+    expect(serializeMarkdown(content)).toEqual(expectAnyId(expected));
   });
 });

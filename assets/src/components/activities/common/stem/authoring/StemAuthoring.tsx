@@ -1,7 +1,7 @@
 import React from 'react';
 import { RichText, Stem } from 'components/activities/types';
 import { SlateOrMarkdownEditor } from 'components/editing/SlateOrMarkdownEditor';
-import { DEFAULT_EDITOR, EditorType, SMALL_EDITOR_HEIGHT } from 'data/content/resource';
+import { DEFAULT_EDITOR, EditorType } from 'data/content/resource';
 
 interface Props {
   stem: Stem;
@@ -29,7 +29,6 @@ export const StemAuthoring: React.FC<Props> = ({
         onEdit={onEdit}
         onEditorTypeChange={onChangeEditorType}
         editorType={stem.editor || DEFAULT_EDITOR}
-        initialHeight={SMALL_EDITOR_HEIGHT}
       />
     </div>
   );

@@ -19,6 +19,10 @@ export interface DeserializationContext {
   nodeStack: AllModelElements[];
 }
 
+const removeTrailingDoubleNewline = (text: string) => {
+  return text.replace(/\n\n$/, '');
+};
+
 /*
   Takes our content model, and converts it to a markdown string representation.
 */
@@ -32,10 +36,12 @@ export const contentMarkdownDeserializer = (
 ): string => {
   if (!content) return '';
   if (typeof content === 'string') return content;
-  return content
-    .map(deserializeNode(context))
-    .filter((line) => typeof line === 'string')
-    .join('');
+  return removeTrailingDoubleNewline(
+    content
+      .map(deserializeNode(context))
+      .filter((line) => typeof line === 'string')
+      .join(''),
+  );
 };
 
 const textNode = (node: FormattedText): string => {

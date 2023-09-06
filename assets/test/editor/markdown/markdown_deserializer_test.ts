@@ -23,7 +23,7 @@ describe('Markdown Deserializer', () => {
         // Apparently, it is legal to have a \n within a paragraph element, but there's no good way to author one of these.
       },
     ];
-    expect(contentMarkdownDeserializer(content)).toEqual(`Line one  \nLine two\n\n`);
+    expect(contentMarkdownDeserializer(content)).toEqual(`Line one  \nLine two`);
   });
 
   it('should deserialize a paragraph', () => {
@@ -35,7 +35,7 @@ describe('Markdown Deserializer', () => {
       },
     ];
     expect(contentMarkdownDeserializer(content)).toEqual(
-      `This is a paragraph. With multiple text nodes.\n\n`,
+      `This is a paragraph. With multiple text nodes.`,
     );
   });
 
@@ -53,7 +53,7 @@ describe('Markdown Deserializer', () => {
       },
     ];
     expect(contentMarkdownDeserializer(content)).toEqual(
-      `This is a paragraph.\n\nThis is also a paragraph.\n\n`,
+      `This is a paragraph.\n\nThis is also a paragraph.`,
     );
   });
 
@@ -317,13 +317,32 @@ describe('Markdown Deserializer', () => {
       ],
     };
 
-    const expectedOutput = `| Heading 1   | Heading 2   | Heading 3   |
-|-------------|-------------|-------------|
-| Cell 1      | Cell 2      | Cell 3      |
-| Cell 4      | Cell 5      | Cell 6      |
+    const expectedOutput = `| Heading 1 | Heading 2 | Heading 3 |
+|-----------|-----------|-----------|
+| Cell 1    | Cell 2    | Cell 3    |
+| Cell 4    | Cell 5    | Cell 6    |
 
 `;
     expect(deserializeNode(emptyContext)(node)).toEqual(expectedOutput);
+  });
+
+  it('should deserialize 2 paragraphs but only have double \n in one', () => {
+    const node: AllModelElements[] = [
+      {
+        type: 'p',
+        id: '1',
+        children: [{ text: 'Here is some paragraph text.' }],
+      },
+      {
+        type: 'p',
+        id: '2',
+        children: [{ text: 'Here is the second paragraph text.' }],
+      },
+    ];
+
+    const expectedOutput = `Here is some paragraph text.\n\nHere is the second paragraph text.`;
+
+    expect(contentMarkdownDeserializer(node)).toEqual(expectedOutput);
   });
 
   it('should deserialize a code block', () => {

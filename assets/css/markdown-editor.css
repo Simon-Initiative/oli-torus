@@ -14,3 +14,7 @@ textarea.w-md-editor-text-input {
 .wmde-markdown ol {
   list-style: decimal;
 }
+
+.w-md-editor .w-md-editor-content {
+  min-height: 2.1rem;
+}

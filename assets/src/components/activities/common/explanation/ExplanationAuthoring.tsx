@@ -8,7 +8,7 @@ import {
   setExplanationContent,
   setExplanationEditor,
 } from 'data/activities/model/explanation';
-import { EditorType, SMALL_EDITOR_HEIGHT } from 'data/content/resource';
+import { EditorType } from 'data/content/resource';
 
 interface Props {
   partId: string;
@@ -27,7 +27,6 @@ export const Explanation: React.FC<Props> = (props) => {
       editorType={getExplanationEditor(model, props.partId)}
       allowBlockElements={true}
       projectSlug={projectSlug}
-      initialHeight={SMALL_EDITOR_HEIGHT}
     />
   );
 };

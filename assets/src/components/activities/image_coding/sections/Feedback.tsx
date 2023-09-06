@@ -5,7 +5,7 @@ import { Description } from 'components/misc/Description';
 import { Heading } from 'components/misc/Heading';
 import { Checkmark } from 'components/misc/icons/Checkmark';
 import { Cross } from 'components/misc/icons/Cross';
-import { DEFAULT_EDITOR, EditorType, SMALL_EDITOR_HEIGHT } from 'data/content/resource';
+import { DEFAULT_EDITOR, EditorType } from 'data/content/resource';
 import { ProjectSlug } from 'data/types';
 import { Feedback as FeedbackItem } from '../../types';
 import { ModelEditorProps } from '../schema';
@@ -35,7 +35,6 @@ const Item = (props: ItemProps) => {
       <SlateOrMarkdownEditor
         projectSlug={props.projectSlug}
         editMode={editMode}
-        initialHeight={SMALL_EDITOR_HEIGHT}
         content={feedback.content}
         onEdit={(content) => onEditResponse(score, content)}
         onEditorTypeChange={(editor) => props.onEditEditorType(score, editor)}
