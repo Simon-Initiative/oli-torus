@@ -18,7 +18,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.Helpers do
             Enum.map(students, & &1.id)
           )
 
-        proficiency_per_page = Metrics.proficiency_per_page(section.slug, page_ids)
+        proficiency_per_page = Metrics.proficiency_per_page(section, page_ids)
 
         pages_with_metrics =
           Enum.map(pages, fn page ->
@@ -31,6 +31,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.Helpers do
         {0, pages_with_metrics}
 
       {total_count, containers} ->
+
         student_progress =
           Metrics.progress_across(
             section.id,
@@ -39,14 +40,11 @@ defmodule OliWeb.Delivery.InstructorDashboard.Helpers do
             Sections.count_enrollments(section.slug)
           )
 
-        proficiency_per_container = Metrics.proficiency_per_container(section.slug)
-
         containers_with_metrics =
           Enum.map(containers, fn container ->
             Map.merge(container, %{
               progress: student_progress[container.id] || 0.0,
-              student_proficiency:
-                Map.get(proficiency_per_container, container.id, "Not enough data")
+              student_proficiency: "Loading..."
             })
           end)
 
@@ -110,7 +108,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.Helpers do
         Sections.enrolled_students(section.slug)
         |> add_students_progress_for_page(section.id, page_id)
         |> add_students_last_interaction_for_page(section.slug, page_id)
-        |> add_students_overall_proficiency_for_page(section.slug, page_id)
+        |> add_students_overall_proficiency_for_page(section, page_id)
     end
   end
 
@@ -158,9 +156,9 @@ defmodule OliWeb.Delivery.InstructorDashboard.Helpers do
     end)
   end
 
-  defp add_students_overall_proficiency_for_page(students, section_slug, page_id) do
+  defp add_students_overall_proficiency_for_page(students, section, page_id) do
     proficiency_per_student_for_page =
-      Metrics.proficiency_per_student_for_page(section_slug, page_id)
+      Metrics.proficiency_per_student_for_page(section, page_id)
 
     Enum.map(students, fn student ->
       Map.merge(student, %{

@@ -54,7 +54,7 @@ defmodule OliWeb.Delivery.StudentDashboard.StudentDashboardLive do
         %{
           objectives:
             Sections.get_objectives_and_subobjectives(
-              socket.assigns.section.slug,
+              socket.assigns.section,
               socket.assigns.student.id
             ),
           filter_options:
@@ -201,26 +201,6 @@ defmodule OliWeb.Delivery.StudentDashboard.StudentDashboardLive do
     """
   end
 
-  @impl Phoenix.LiveView
-  def handle_info({:hide_modal}, socket) do
-    {:noreply, hide_modal(socket)}
-  end
-
-  @impl Phoenix.LiveView
-  def handle_info({:show_modal, modal, modal_assigns}, socket) do
-    {:noreply,
-     show_modal(
-       socket,
-       modal,
-       modal_assigns: modal_assigns
-     )}
-  end
-
-  @impl Phoenix.LiveView
-  def handle_info({:put_flash, type, message}, socket) do
-    {:noreply, put_flash(socket, type, message)}
-  end
-
   defp get_containers(section, student_id) do
     case Sections.get_units_and_modules_containers(section.slug) do
       {0, pages} ->
@@ -231,7 +211,7 @@ defmodule OliWeb.Delivery.StudentDashboard.StudentDashboardLive do
             student_id
           )
 
-        proficiency_per_page = Metrics.proficiency_for_student_per_page(section.slug, student_id)
+        proficiency_per_page = Metrics.proficiency_for_student_per_page(section, student_id)
 
         pages_with_metrics =
           Enum.map(pages, fn page ->
@@ -251,17 +231,15 @@ defmodule OliWeb.Delivery.StudentDashboard.StudentDashboardLive do
             student_id
           )
 
-        proficiency_per_container =
-          Metrics.proficiency_for_student_per_container(section.slug, student_id)
-
         containers_with_metrics =
           Enum.map(containers, fn container ->
             Map.merge(container, %{
               progress: student_progress[container.id] || 0.0,
-              student_proficiency:
-                Map.get(proficiency_per_container, container.id, "Not enough data")
+              student_proficiency: "Loading..."
             })
           end)
+
+        async_calculate_proficiency(section, student_id)
 
         {total_count, containers_with_metrics}
     end
@@ -353,4 +331,67 @@ defmodule OliWeb.Delivery.StudentDashboard.StudentDashboardLive do
 
     ordered_pages ++ unordered
   end
+
+  defp async_calculate_proficiency(section, student_id) do
+
+    pid = self()
+
+    Task.async(fn ->
+      contained_pages = Oli.Delivery.Sections.get_contained_pages(section)
+
+      proficiency_per_container =
+        Metrics.proficiency_for_student_per_container(section, student_id, contained_pages)
+
+      send(pid, {:proficiency, proficiency_per_container})
+    end)
+
+  end
+
+
+  @impl Phoenix.LiveView
+  def handle_info({:hide_modal}, socket) do
+    {:noreply, hide_modal(socket)}
+  end
+
+  @impl Phoenix.LiveView
+  def handle_info({:show_modal, modal, modal_assigns}, socket) do
+    {:noreply,
+     show_modal(
+       socket,
+       modal,
+       modal_assigns: modal_assigns
+     )}
+  end
+
+  @impl Phoenix.LiveView
+  def handle_info({:put_flash, type, message}, socket) do
+    {:noreply, put_flash(socket, type, message)}
+  end
+
+  @impl Phoenix.LiveView
+  def handle_info({:proficiency, proficiency_per_container}, socket) do
+
+    case Map.get(socket.assigns, :containers) do
+      nil -> {:noreply, socket}
+
+      {total, containers} ->
+
+        containers_with_metrics =
+          Enum.map(containers, fn container ->
+            Map.merge(container, %{
+              student_proficiency:
+                Map.get(proficiency_per_container, container.id, "Not enough data")
+            })
+          end)
+
+        {:noreply, assign(socket, containers: {total, containers_with_metrics})}
+    end
+
+  end
+
+  @impl Phoenix.LiveView
+  def handle_info(_any, socket) do
+    {:noreply, socket}
+  end
+
 end

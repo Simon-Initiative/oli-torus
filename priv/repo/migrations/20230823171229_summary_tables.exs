@@ -27,7 +27,7 @@ defmodule Oli.Repo.Migrations.SummaryTables do
 
     # add a unique index to resource_summary for the scope of the summary
     # this is to prevent duplicate records from being inserted
-    create unique_index(:resource_summary, [:project_id, :publication_id, :section_id, :cohort_id, :user_id, :resource_id, :resource_type_id, :part_id], name: :resource_summary_scopes)
+    create unique_index(:resource_summary, [:project_id, :publication_id, :section_id, :user_id, :resource_id, :resource_type_id, :part_id], name: :resource_summary_scopes)
 
 
     create table(:resource_part_responses) do
@@ -55,7 +55,7 @@ defmodule Oli.Repo.Migrations.SummaryTables do
 
     end
 
-    create unique_index(:response_summary, [:project_id, :publication_id, :section_id, :cohort_id, :page_id, :activity_id, :part_id, :resource_part_response_id], name: :response_summary_scopes)
+    create unique_index(:response_summary, [:project_id, :publication_id, :section_id, :page_id, :activity_id, :part_id, :resource_part_response_id], name: :response_summary_scopes)
 
     create table(:student_responses) do
 

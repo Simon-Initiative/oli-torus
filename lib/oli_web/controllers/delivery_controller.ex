@@ -476,9 +476,9 @@ defmodule OliWeb.DeliveryController do
       nil ->
         Phoenix.Controller.redirect(conn, to: Routes.static_page_path(OliWeb.Endpoint, :not_found))
 
-      _section ->
+      section ->
         contents =
-          Sections.get_objectives_and_subobjectives(slug)
+          Sections.get_objectives_and_subobjectives(section)
           |> Enum.map(
             &%{
               objective: &1.objective,

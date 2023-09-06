@@ -14,7 +14,9 @@ defmodule Oli.Delivery.Metrics.LearningProficiencyTest do
       resource: resource,
       user: user,
       correct: result,
-      objective: objective
+      objective: objective,
+      attempt_number: 1,
+      part_attempt_number: 1
     })
   end
 
@@ -384,7 +386,7 @@ defmodule Oli.Delivery.Metrics.LearningProficiencyTest do
       set_snapshot(section, page_3.resource, page_3_obj.resource, student_4, false)
 
       proficiency_per_learning_objective =
-        Metrics.raw_proficiency_per_learning_objective(section.slug)
+        Metrics.raw_proficiency_per_learning_objective(section)
 
       # "High"
       assert proficiency_per_learning_objective[page_1_obj.resource.id] ==
@@ -424,10 +426,10 @@ defmodule Oli.Delivery.Metrics.LearningProficiencyTest do
       set_snapshot(section, page_4.resource, page_4_obj.resource, student_2, true)
 
       student_1_proficiency_per_learning_objective =
-        Metrics.raw_proficiency_for_student_per_learning_objective(section.slug, student_1.id)
+        Metrics.raw_proficiency_for_student_per_learning_objective(section, student_1.id)
 
       student_2_proficiency_per_learning_objective =
-        Metrics.raw_proficiency_for_student_per_learning_objective(section.slug, student_2.id)
+        Metrics.raw_proficiency_for_student_per_learning_objective(section, student_2.id)
 
       # "High"
       assert student_1_proficiency_per_learning_objective[page_1_obj.resource.id] == {1.0, 1.0}
@@ -485,7 +487,7 @@ defmodule Oli.Delivery.Metrics.LearningProficiencyTest do
       set_snapshot(section, page_4.resource, page_4_obj.resource, student_3, false)
       set_snapshot(section, page_4.resource, page_4_obj.resource, student_4, false)
 
-      proficiency_per_container = Metrics.proficiency_per_container(section.slug)
+      proficiency_per_container = Metrics.proficiency_per_container(section, Oli.Delivery.Sections.get_contained_pages(section))
 
       assert proficiency_per_container[unit_1.resource_id] == "Medium"
       assert proficiency_per_container[module_1.resource_id] == "Medium"
@@ -563,7 +565,7 @@ defmodule Oli.Delivery.Metrics.LearningProficiencyTest do
       set_snapshot(section, page_4.resource, page_4_obj.resource, student_1, true)
 
       proficiency_for_student_1_per_container =
-        Metrics.proficiency_for_student_per_container(section.slug, student_1.id)
+        Metrics.proficiency_for_student_per_container(section, student_1.id, Oli.Delivery.Sections.get_contained_pages(section))
 
       assert proficiency_for_student_1_per_container[unit_1.resource_id] == "High"
       assert proficiency_for_student_1_per_container[unit_2.resource_id] == "Low"
@@ -584,10 +586,10 @@ defmodule Oli.Delivery.Metrics.LearningProficiencyTest do
       set_snapshot(section, page_2.resource, page_2_obj.resource, student_1, false)
 
       page_1_proficiency =
-        Metrics.proficiency_per_student_for_page(section.slug, page_1.resource_id)
+        Metrics.proficiency_per_student_for_page(section, page_1.resource_id)
 
       page_2_proficiency =
-        Metrics.proficiency_per_student_for_page(section.slug, page_2.resource_id)
+        Metrics.proficiency_per_student_for_page(section, page_2.resource_id)
 
       assert page_1_proficiency[student_1.id] == "High"
       assert page_2_proficiency[student_1.id] == "Low"
@@ -619,7 +621,7 @@ defmodule Oli.Delivery.Metrics.LearningProficiencyTest do
       set_snapshot(section, page_3.resource, page_3_obj.resource, student_3, true)
 
       proficiency_per_page =
-        Metrics.proficiency_per_page(section.slug, [
+        Metrics.proficiency_per_page(section, [
           page_1.resource_id,
           page_2.resource_id,
           page_3.resource_id
@@ -645,7 +647,7 @@ defmodule Oli.Delivery.Metrics.LearningProficiencyTest do
       set_snapshot(section, page_3.resource, page_3_obj.resource, student_1, false)
 
       proficiency_for_student_per_page =
-        Metrics.proficiency_for_student_per_page(section.slug, student_1.id)
+        Metrics.proficiency_for_student_per_page(section, student_1.id)
 
       assert proficiency_for_student_per_page[page_1.resource_id] == "High"
       assert proficiency_for_student_per_page[page_2.resource_id] == "Low"

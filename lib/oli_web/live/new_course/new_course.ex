@@ -164,7 +164,7 @@ defmodule OliWeb.Delivery.NewCourse do
         <img src="/images/icons/course-creation-wizard-step-1.svg" />
         <h2>Name your course</h2>
         <.render_flash flash={@flash} />
-        <NameCourse.render changeset={@changeset} />
+        <NameCourse.render changeset={to_form(@changeset)} />
       </div>
     </.header>
     """
@@ -177,7 +177,7 @@ defmodule OliWeb.Delivery.NewCourse do
         <img src="/images/icons/course-creation-wizard-step-2.svg" />
         <h2>Course details</h2>
         <.render_flash flash={@flash} />
-        <CourseDetails.render changeset={@changeset} />
+        <CourseDetails.render changeset={to_form(@changeset)} />
       </div>
     </.header>
     """
@@ -212,7 +212,6 @@ defmodule OliWeb.Delivery.NewCourse do
       _ ->
         %{
           changeset: assigns.changeset,
-          on_select: JS.push("day_selection", target: "##{@form_id}"),
           flash: assigns.flash
         }
     end
@@ -417,21 +416,6 @@ defmodule OliWeb.Delivery.NewCourse do
 
   def handle_event("source_selection", %{"id" => source}, socket) do
     {:noreply, assign(socket, source: source, current_step: 1)}
-  end
-
-  def handle_event("day_selection", %{"class_days" => class_days}, socket) do
-    class_days =
-      Enum.reduce(class_days, [], fn {day, checked}, days ->
-        if String.to_atom(checked) do
-          [day | days]
-        else
-          days
-        end
-      end)
-
-    changeset = Ecto.Changeset.change(socket.assigns.changeset, %{class_days: class_days})
-
-    {:noreply, assign(socket, changeset: changeset)}
   end
 
   def handle_event(

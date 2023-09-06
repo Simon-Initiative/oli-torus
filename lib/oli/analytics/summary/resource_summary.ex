@@ -1,4 +1,4 @@
-defmodule Oli.Analytics.Summary.ProjectResourceSummary do
+defmodule Oli.Analytics.Summary.ResourceSummary do
   use Ecto.Schema
   import Ecto.Changeset
 
