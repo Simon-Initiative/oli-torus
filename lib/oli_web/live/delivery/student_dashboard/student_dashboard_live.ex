@@ -201,26 +201,6 @@ defmodule OliWeb.Delivery.StudentDashboard.StudentDashboardLive do
     """
   end
 
-  @impl Phoenix.LiveView
-  def handle_info({:hide_modal}, socket) do
-    {:noreply, hide_modal(socket)}
-  end
-
-  @impl Phoenix.LiveView
-  def handle_info({:show_modal, modal, modal_assigns}, socket) do
-    {:noreply,
-     show_modal(
-       socket,
-       modal,
-       modal_assigns: modal_assigns
-     )}
-  end
-
-  @impl Phoenix.LiveView
-  def handle_info({:put_flash, type, message}, socket) do
-    {:noreply, put_flash(socket, type, message)}
-  end
-
   defp get_containers(section, student_id) do
     case Sections.get_units_and_modules_containers(section.slug) do
       {0, pages} ->
@@ -367,6 +347,7 @@ defmodule OliWeb.Delivery.StudentDashboard.StudentDashboardLive do
 
   end
 
+
   @impl Phoenix.LiveView
   def handle_info({:hide_modal}, socket) do
     {:noreply, hide_modal(socket)}
@@ -380,6 +361,11 @@ defmodule OliWeb.Delivery.StudentDashboard.StudentDashboardLive do
        modal,
        modal_assigns: modal_assigns
      )}
+  end
+
+  @impl Phoenix.LiveView
+  def handle_info({:put_flash, type, message}, socket) do
+    {:noreply, put_flash(socket, type, message)}
   end
 
   @impl Phoenix.LiveView
