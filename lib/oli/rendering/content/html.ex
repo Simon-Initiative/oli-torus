@@ -173,13 +173,24 @@ defmodule Oli.Rendering.Content.Html do
   defp tableRowClass(_), do: ""
 
   def table(%Context{} = context, next, attrs) do
-    # caption =
-    #   case attrs do
-    #     %{"caption" => c} -> caption(context, c)
-    #     _ -> ""
-    #   end
 
-    captioned_content(context, attrs, [
+    # We want to ensure that tables are always wrapped
+    # in a figure element, even if there is no caption. When
+    # a caption attr is present but "empty" we still want the figure,
+    # but not an empty <figcaption>.  The <figure> element with its
+    # responsive-embed class is needed in all cases to acheive correct
+    # table display.
+
+    wrapping_fn =
+       case attrs do
+         %{"caption" => ""} -> &figure_only/3
+         %{"caption" => nil} -> &figure_only/3
+         %{"caption" => [%{"children" => [%{"text" => ""}], "type" => "p"}]} -> &figure_only/3
+         %{"caption" => _an_actual_caption} -> &captioned_content/3
+         _ -> &figure_only/3
+       end
+
+    wrapping_fn.(context, attrs, [
       "<table class='#{tableBorderClass(attrs)} #{tableRowClass(attrs)}'>",
       next.(),
       "</table>\n"
@@ -850,7 +861,7 @@ defmodule Oli.Rendering.Content.Html do
 
   defp captioned_content(%Context{} = context, %{"caption" => caption_content} = _attrs, content) do
     [~s|<div class="caption-wrapper">|] ++
-      [~s|<figure class="figure embed-responsive text-center">|] ++
+      [~s|<figure class="figure embed-responsive">|] ++
       content ++
       [~s|<figcaption class="figure-caption text-center">|] ++
       [caption(context, caption_content)] ++
@@ -867,6 +878,16 @@ defmodule Oli.Rendering.Content.Html do
 
   defp caption(context, content) do
     Oli.Rendering.Content.render(context, content, __MODULE__)
+  end
+
+  defp figure_only(_context, _attrs, content) do
+    [
+      ~s|<figure class="figure embed-responsive">|,
+      ~s|<div class="figure-content">|,
+      content,
+      "</div>",
+      "</figure>"
+    ]
   end
 
   defp missing_media_src(%Context{render_opts: render_opts} = context, element) do

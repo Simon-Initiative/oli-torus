@@ -62,6 +62,7 @@ defmodule OliWeb.ObjectivesLive.Objectives do
        total_count: length(objectives),
        all_objectives: all_objectives,
        all_children: all_children,
+       objective_attachments: [],
        title: "Objectives",
        query: "",
        offset: 0,
