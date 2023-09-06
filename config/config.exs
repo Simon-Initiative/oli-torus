@@ -147,8 +147,6 @@ config :oli, Oban,
   plugins: [Oban.Plugins.Pruner],
   queues: [
     default: 10,
-    summary: 10,
-    event_capture: 10,
     snapshots: 20,
     selections: 2,
     updates: 10,

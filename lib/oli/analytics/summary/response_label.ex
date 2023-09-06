@@ -11,7 +11,7 @@ defmodule Oli.Analytics.Summary.ResponseLabel do
   def build(_part_attempt, "oli_image_coding"), do: unsupported()
 
   def build(part_attempt, "oli_multiple_choice"), do: from_choices(part_attempt)
-def build(part_attempt, "oli_ordering"), do: from_choices(part_attempt)
+  def build(part_attempt, "oli_ordering"), do: from_choices(part_attempt)
   def build(part_attempt, "oli_check_all_that_apply"), do: from_choices(part_attempt)
   def build(part_attempt, "oli_image_hotspot"), do: from_choices(part_attempt)
 

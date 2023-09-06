@@ -1,5 +1,37 @@
 defmodule Oli.Analytics.Common.Pipeline do
 
+  @moduledoc """
+  A reusable, multi-step pipeline that can be used with arbitrary multi-step
+  operations.  The Pipeline will track the time spent in each step and report
+  the results to telemetry and to system Logger.  It will also track errors
+  that occur in the pipeline.  General usage is to create a labelled pipeline,
+  then call step_done/2 after each step, and finally call all_done/1 when the
+  entire pipeline is finished.  For example:alarm_handler
+
+  ```
+  Pipeline.init("My Pipeline")
+  |> process_message_batch()
+  |> Pipeline.step_done(:process_message_batch)
+  |> upsert_summary_records()
+  |> Pipeline.step_done(:upsert_summary_records)
+  |> save_state_to_s3()
+  |> Pipeline.step_done(:save_state_to_s3)
+  |> Pipeline.all_done()
+  ```
+
+  Or, if you have your actual functions call the step_done/2 functions, you can
+  get something more concise:
+
+  ```
+  Pipeline.init("My Pipeline")
+  |> process_message_batch()
+  |> upsert_summary_records()
+  |> save_state_to_s3()
+  |> Pipeline.all_done()
+  ```
+
+  """
+
   require Logger
 
   defstruct [
