@@ -38,7 +38,10 @@ defmodule Oli.Analytics.Summary.AttemptGroup do
   gather a evaluated attempt group, which is all the information needed in order
   to both emit an xAPI statement for each part attempt, and to process all summary analytics.
   """
+  def from_attempt_summary([], _project_id, _host_name), do: nil
   def from_attempt_summary(attempt_summary, project_id, host_name) do
+
+    {_, _, ra, _, page_revision, _} = List.first(attempt_summary)
 
     part_attempts = Enum.map(attempt_summary, fn {pa, aa, _, _, _, ar} ->
       Map.merge(pa, %{
@@ -51,7 +54,6 @@ defmodule Oli.Analytics.Summary.AttemptGroup do
     |> Enum.filter(fn activity_attempt -> activity_attempt.lifecycle_state == :evaluated end)
     |> Enum.dedup()
 
-    {_, _, ra, _, page_revision, _} = List.first(attempt_summary)
     resource_attempt = Map.merge(ra, %{resource_id: page_revision.resource_id})
 
     context = build_context(attempt_summary, project_id, host_name)
@@ -73,6 +75,17 @@ defmodule Oli.Analytics.Summary.AttemptGroup do
       project_id: project_id,
       publication_id: pub_id_for_section_project(access.section_id, project_id)
     }
+  end
+
+  defp pub_id_for_section_project(section_id, nil) do
+    query = from spp in Oli.Delivery.Sections.SectionsProjectsPublications,
+      where: spp.section_id == ^section_id,
+      select: spp.publication_id
+
+    case Repo.all(query) do
+      [] -> nil
+      [{pub_id}] -> pub_id
+    end
   end
 
   defp pub_id_for_section_project(section_id, project_id) do

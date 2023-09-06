@@ -20,6 +20,7 @@ defmodule Oli.Analytics.Common.Pipeline do
     }
   end
 
+  def step_done(%__MODULE__{mark: nil, measurements: nil} = pipeline, _), do: pipeline
   def step_done(%__MODULE__{mark: mark, measurements: measurements} = pipeline, recorded_as) do
 
     measurements = Map.put(measurements, recorded_as, Oli.Timing.elapsed(mark))
@@ -29,6 +30,7 @@ defmodule Oli.Analytics.Common.Pipeline do
     |> Map.put(:mark, Oli.Timing.mark())
   end
 
+  def all_done(%__MODULE__{measurements: nil}), do: nil
   def all_done(%__MODULE__{measurements: measurements, errors: errors, label: label}) do
     :telemetry.execute([:oli, :analytics, :summary], measurements)
 

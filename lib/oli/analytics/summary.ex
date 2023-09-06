@@ -6,6 +6,8 @@ defmodule Oli.Analytics.Summary do
   alias Oli.Analytics.XAPI.{Uploader, StatementBundle}
   require Logger
 
+
+
   @resource_fields "project_id, publication_id, section_id, user_id, resource_id, part_id, resource_type_id, num_correct, num_attempts, num_hints, num_first_attempts, num_first_attempts_correct"
   @response_fields "project_id, publication_id, section_id, page_id, activity_id, resource_part_response_id, part_id, count"
 
@@ -20,7 +22,7 @@ defmodule Oli.Analytics.Summary do
   """
   def execute_analytics_pipeline(snapshot_attempt_summary, project_id, host_name) do
 
-    try do
+    #try do
 
       Pipeline.init("SummaryAnalyticsPipeline")
       |> AttemptGroup.from_attempt_summary(snapshot_attempt_summary, project_id, host_name)
@@ -29,9 +31,9 @@ defmodule Oli.Analytics.Summary do
       |> upsert_response_summaries()
       |> Pipeline.all_done()
 
-    rescue
-      e -> Logger.error("Error executing SummaryAnalyticsPipeline: #{inspect(e)}")
-    end
+   # rescue
+   #   e -> Logger.error("Error executing SummaryAnalyticsPipeline: #{inspect(e)}")
+   # end
 
   end
 
@@ -39,23 +41,29 @@ defmodule Oli.Analytics.Summary do
   # emit a single xAPI statement bundle to S3.
   defp emit_xapi_events(%Pipeline{data: attempt_group} = pipeline) do
 
-    pipeline = case StatementFactory.to_statements(attempt_group)
-    |> Oli.Analytics.Common.to_jsonlines()
-    |> produce_statement_bundle(attempt_group)
-    |> Uploader.upload() do
+    if Application.get_env(:oli, :env) == :test or is_nil(attempt_group) do
+      Pipeline.step_done(pipeline, :xapi)
+    else
+      pipeline = case StatementFactory.to_statements(attempt_group)
+      |> Oli.Analytics.Common.to_jsonlines()
+      |> produce_statement_bundle(attempt_group)
+      |> Uploader.upload() do
 
-      {:ok, _} ->
-        pipeline
+        {:ok, _} ->
+          pipeline
 
-      {:error, error} ->
-        Pipeline.add_error(pipeline, error)
+        {:error, error} ->
+          Pipeline.add_error(pipeline, error)
 
+      end
+
+      Pipeline.step_done(pipeline, :xapi)
     end
-
-    Pipeline.step_done(pipeline, :xapi)
 
   end
 
+
+  defp upsert_resource_summaries(%Pipeline{data: nil} = pipeline), do: Pipeline.step_done(pipeline, :resource_summary)
   defp upsert_resource_summaries(%Pipeline{data: attempt_group} = pipeline) do
 
     proto_records = assemble_proto_records(attempt_group)
@@ -78,6 +86,7 @@ defmodule Oli.Analytics.Summary do
 
   end
 
+  defp upsert_response_summaries(%Pipeline{data: nil} = pipeline), do: Pipeline.step_done(pipeline, :response_summary)
   defp upsert_response_summaries(%Pipeline{data: attempt_group} = pipeline) do
 
     # Read all activity registrations
@@ -106,7 +115,7 @@ defmodule Oli.Analytics.Summary do
 
     end
 
-    Pipeline.step_done(pipeline, :resp)
+    Pipeline.step_done(pipeline, :response_summary)
   end
 
   defp upsert_student_responses(attempt_group, part_attempt_tuples) do
@@ -152,8 +161,8 @@ defmodule Oli.Analytics.Summary do
       |> Enum.reduce({[], []}, fn {part_attempt, index}, {values, params} ->
 
         activity_type = Map.get(registered_activities, part_attempt.activity_revision.activity_type_id)
-        %ResponseLabel{response: response, label: label} = ResponseLabel.build(part_attempt, activity_type.slug)
 
+        %ResponseLabel{response: response, label: label} = ResponseLabel.build(part_attempt, activity_type.slug)
         values = ["(#{part_attempt.activity_revision.resource_id}, #{part_attempt.part_id}, $#{(index * 2) + 1}, $#{(index * 2) + 2})" | values]
         params = [response, label | params]
 
