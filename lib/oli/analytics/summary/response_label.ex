@@ -11,7 +11,7 @@ defmodule Oli.Analytics.Summary.ResponseLabel do
   def build(_part_attempt, "oli_image_coding"), do: unsupported()
 
   def build(part_attempt, "oli_multiple_choice"), do: from_choices(part_attempt)
-  def build(part_attempt, "oli_ordering"), do: from_choices(part_attempt)
+def build(part_attempt, "oli_ordering"), do: from_choices(part_attempt)
   def build(part_attempt, "oli_check_all_that_apply"), do: from_choices(part_attempt)
   def build(part_attempt, "oli_image_hotspot"), do: from_choices(part_attempt)
 
@@ -30,7 +30,7 @@ defmodule Oli.Analytics.Summary.ResponseLabel do
 
     from_choices(part_attempt, fn choices, ids ->
       if order_descending do
-        numbers_from_choices(choices, Enum.reverse(ids))
+        numbers_from_choices(Enum.reverse(choices), ids)
       else
         numbers_from_choices(choices, ids)
       end
@@ -39,7 +39,7 @@ defmodule Oli.Analytics.Summary.ResponseLabel do
   end
 
   def build(part_attempt, "oli_multi_input") do
-    case Enum.find(part_attempt.activity_revision.content["inputs"], fn input -> input["partId"] == part_attempt.part_id end) do
+    case Enum.find(part_attempt.activity_revision.content["inputs"], fn input -> input["partId"] == part_attempt.id end) do
       %{"inputType" => "text"} ->
         build(part_attempt, "oli_short_answer")
       %{"inputType" => "dropdown"} = input ->
@@ -55,12 +55,15 @@ defmodule Oli.Analytics.Summary.ResponseLabel do
         build(part_attempt, "oli_short_answer")
       %{"inputType" => "numeric"} ->
         build(part_attempt, "oli_short_answer")
+      %{"inputType" => "vlabvalue"} ->
+        build(part_attempt, "oli_short_answer")
       _ ->
         unsupported()
     end
   end
 
   def build(part_attempt, "oli_vlab") do
+    # identical to multi input, so delegate
     build(part_attempt, "oli_multi_input")
   end
 
@@ -73,6 +76,8 @@ defmodule Oli.Analytics.Summary.ResponseLabel do
     end
   end
 
+  def build(_part_attempt, _dynamically_registered), do: unsupported()
+
   defp from_choices(part_attempt, labeller \\ &letters_from_choices/2) do
     part_attempt.activity_revision.content
     |> Map.get("choices")
@@ -82,14 +87,14 @@ defmodule Oli.Analytics.Summary.ResponseLabel do
   defp from_choices_helper(choices, part_attempt, labeller) do
      case part_attempt.response do
       %{"input" => nil} ->
-        to_struct("No answer", "#{part_attempt.activity_revision.resource_id}")
+        to_struct("No answer", "")
 
       %{"input" => input} when is_binary(input) ->
         labeller.(choices, String.split(input, " "))
         |> to_struct(input)
 
       _ ->
-        to_struct("", "#{part_attempt.activity_revision.resource_id}")
+        to_struct("No answer", "")
     end
   end
 
@@ -131,6 +136,6 @@ defmodule Oli.Analytics.Summary.ResponseLabel do
   end
 
   defp unsupported(), do: to_struct("unsupported", "unsupported")
-  defp empty(), do: to_struct("Empty", "")
+  defp empty(), do: to_struct("No answer", "")
 
 end

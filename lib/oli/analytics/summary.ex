@@ -1,9 +1,10 @@
 defmodule Oli.Analytics.Summary do
 
-  alias Oli.Analytics.Summary.{AttemptGroup, ResponseLabel}
+  alias Oli.Analytics.Summary.{AttemptGroup, ResponseLabel, ResourceSummary, ResponseSummary, ResourcePartResponse, StudentResponse}
   alias Oli.Analytics.Common.Pipeline
   alias Oli.Analytics.Summary.XAPI.StatementFactory
   alias Oli.Analytics.XAPI.{Uploader, StatementBundle}
+  alias Oli
   require Logger
 
 
@@ -12,17 +13,17 @@ defmodule Oli.Analytics.Summary do
   @response_fields "project_id, publication_id, section_id, page_id, activity_id, resource_part_response_id, part_id, count"
 
   @doc """
-  Executes the analytics pipeline for a given snapshot attempt summary. This will emit
-  xAPI statements and upsert resource and response summary tables.
+  Executes the analytics pipeline for a given snapshot attempt summary. This will produce
+  and emit an xAPI statement bundle and upsert resource and response summary tables.
 
   Eventually, once snapshots are excised from the system, we will need a different entry
-  point for this pipeline. In fact, we will likely relocate the xAPI statement generation
+  point for this pipeline. In fact, we will likely relocate the xAPI bundle generation
   at the point where individual parts, activities, and pages are evaluated, and then
   change this pipeline to use a more optimized query for powering the summary upserts.
   """
   def execute_analytics_pipeline(snapshot_attempt_summary, project_id, host_name) do
 
-    #try do
+    try do
 
       Pipeline.init("SummaryAnalyticsPipeline")
       |> AttemptGroup.from_attempt_summary(snapshot_attempt_summary, project_id, host_name)
@@ -31,9 +32,9 @@ defmodule Oli.Analytics.Summary do
       |> upsert_response_summaries()
       |> Pipeline.all_done()
 
-   # rescue
-   #   e -> Logger.error("Error executing SummaryAnalyticsPipeline: #{inspect(e)}")
-   # end
+   rescue
+      e -> Logger.error("Error executing SummaryAnalyticsPipeline: #{inspect(e)}")
+   end
 
   end
 
@@ -62,7 +63,8 @@ defmodule Oli.Analytics.Summary do
 
   end
 
-
+  # From all of the part attempts that were evaluated, upsert the appropriate records
+  # into the resource summary table.
   defp upsert_resource_summaries(%Pipeline{data: nil} = pipeline), do: Pipeline.step_done(pipeline, :resource_summary)
   defp upsert_resource_summaries(%Pipeline{data: attempt_group} = pipeline) do
 
@@ -86,6 +88,8 @@ defmodule Oli.Analytics.Summary do
 
   end
 
+  # From all of the part attempts that were evaluated, upsert the appropriate records
+  # into the response summary table.
   defp upsert_response_summaries(%Pipeline{data: nil} = pipeline), do: Pipeline.step_done(pipeline, :response_summary)
   defp upsert_response_summaries(%Pipeline{data: attempt_group} = pipeline) do
 
@@ -192,6 +196,10 @@ defmodule Oli.Analytics.Summary do
 
   end
 
+  # For each part attempt that is being updated in the resource summary table, we need to
+  # track data counts in serveral different "scopes".  This function returns a list of
+  # functions that can be used to build the scope portion of the resource summary table
+  # record upserts.
   defp resource_scope_builder_fns() do
     [
       # [project_id, publication_id, section_id, user_id]
@@ -216,6 +224,8 @@ defmodule Oli.Analytics.Summary do
     ]
   end
 
+  # Similar to response summary scope builder, this function returns a list of functions
+  # that build the scope portion of the response summary table record upserts.
   defp response_scope_builder_fns() do
     [
       # [project_id, publication_id, section_id]
@@ -332,8 +342,6 @@ defmodule Oli.Analytics.Summary do
 
   end
 
-
-
   defp assemble_proto_records(attempt_group) do
     context = attempt_group.context
 
@@ -428,6 +436,30 @@ defmodule Oli.Analytics.Summary do
       if pa.attempt_number == 1 and pa.activity_attempt.attempt_number == 1 do 1 else 0 end,
       if pa.attempt_number == 1 and pa.activity_attempt.attempt_number == 1 do correct else 0 end
     ]
+  end
+
+  def create_resource_summary(attrs \\ %{}) do
+    %ResourceSummary{}
+    |> ResourceSummary.changeset(attrs)
+    |> Oli.Repo.insert()
+  end
+
+  def create_response_summary(attrs \\ %{}) do
+    %ResponseSummary{}
+    |> ResponseSummary.changeset(attrs)
+    |> Oli.Repo.insert()
+  end
+
+  def create_resource_part_response(attrs \\ %{}) do
+    %ResourcePartResponse{}
+    |> ResourcePartResponse.changeset(attrs)
+    |> Oli.Repo.insert()
+  end
+
+  def create_student_response(attrs \\ %{}) do
+    %StudentResponse{}
+    |> StudentResponse.changeset(attrs)
+    |> Oli.Repo.insert()
   end
 
 end

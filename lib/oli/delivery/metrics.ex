@@ -519,7 +519,7 @@ defmodule Oli.Delivery.Metrics do
           and summary.user_id == -1
           and summary.resource_type_id == ^objective_type_id,
         select: {
-          summary.objective_id,
+          summary.resource_id,
           summary.num_first_attempts_correct,
           summary.num_first_attempts
         })
@@ -704,7 +704,7 @@ defmodule Oli.Delivery.Metrics do
         select:
           {summary.user_id,
            fragment(
-             "SUM(?) / SUM(?)",
+             "CAST(SUM(?) as float) / CAST(SUM(?) as float)",
              summary.num_first_attempts_correct,
              summary.num_first_attempts
            )})
@@ -816,7 +816,7 @@ defmodule Oli.Delivery.Metrics do
         select: {
           summary.resource_id,
           fragment(
-             "SUM(?) / SUM(?)",
+             "CAST(? as float) / CAST(? as float)",
              summary.num_first_attempts_correct,
              summary.num_first_attempts
            )
@@ -877,7 +877,7 @@ defmodule Oli.Delivery.Metrics do
         select:
           {summary.user_id,
            fragment(
-             "SUM(?) / SUM(?)",
+             "CAST(? as float) / CAST(? as float)",
              summary.num_first_attempts_correct,
              summary.num_first_attempts
            )})
@@ -938,7 +938,7 @@ defmodule Oli.Delivery.Metrics do
         select:
           {summary.resource_id,
            fragment(
-             "SUM(?) / SUM(?)",
+             "? / ?",
              summary.num_first_attempts_correct,
              summary.num_first_attempts
            )})
