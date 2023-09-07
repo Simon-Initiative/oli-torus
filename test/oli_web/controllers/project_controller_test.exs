@@ -141,17 +141,6 @@ defmodule OliWeb.ProjectControllerTest do
     end
   end
 
-  defp unzip_to_memory(data) do
-    File.write("export.zip", data)
-    result = :zip.unzip(to_charlist("export.zip"), [:memory])
-    File.rm!("export.zip")
-
-    case result do
-      {:ok, entries} -> entries
-      _ -> []
-    end
-  end
-
   defp create_another_publication(product_2) do
     project_2 = insert(:project)
     # Create page 1
@@ -199,7 +188,7 @@ defmodule OliWeb.ProjectControllerTest do
     insert(:published_resource, %{
       publication: new_publication,
       resource: container_resource_2,
-      revision: container_revision_2,
+      revision: container_revision_2
     })
 
     insert(:published_resource, %{

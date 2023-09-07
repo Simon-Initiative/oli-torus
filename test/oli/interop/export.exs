@@ -14,7 +14,7 @@ defmodule Oli.Interop.ExportTest do
 
       {:ok, project_json} = Jason.decode(Map.get(export, '_project.json'))
 
-      assert project_json["required_student_survey"] == project.required_survey_resource_id
+      assert project_json["required_student_survey"] == Integer.to_string(project.required_survey_resource_id)
     end
   end
 
