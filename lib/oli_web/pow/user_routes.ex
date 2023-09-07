@@ -16,7 +16,7 @@ defmodule OliWeb.Pow.UserRoutes do
           Routes.delivery_path(conn, :show_enroll, section_slug)
 
         _ ->
-          Routes.delivery_path(conn, :open_and_free_index)
+          Routes.live_path(conn, OliWeb.Delivery.OpenAndFreeIndex)
       end
     )
   end
@@ -47,7 +47,7 @@ defmodule OliWeb.Pow.UserRoutes do
     |> request_path_or(
       case conn.assigns[:current_user] do
         %User{independent_learner: true} ->
-          Routes.delivery_path(conn, :open_and_free_index)
+          Routes.live_path(conn, OliWeb.Delivery.OpenAndFreeIndex)
 
         _ ->
           Routes.delivery_path(conn, :index)

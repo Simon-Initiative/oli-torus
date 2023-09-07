@@ -1,5 +1,6 @@
 defmodule OliWeb.CognitoController do
   use OliWeb, :controller
+  use OliWeb, :verified_routes
 
   import OliWeb.ViewHelpers, only: [redirect_with_error: 3]
   import Oli.Utils
@@ -22,7 +23,7 @@ defmodule OliWeb.CognitoController do
       {:ok, user} ->
         conn
         |> create_pow_user(:user, user)
-        |> redirect(to: Routes.delivery_path(conn, :open_and_free_index))
+        |> redirect(to: ~p"/sections")
 
       {:error, %Ecto.Changeset{}} ->
         redirect_with_error(conn, get_error_url(params), "Invalid parameters")
@@ -189,7 +190,9 @@ defmodule OliWeb.CognitoController do
   defp clone_project(conn, project_slug, author, error_url) do
     case Clone.clone_project(project_slug, author, author_in_project_title: true) do
       {:ok, dupe} ->
-        redirect(conn, to: Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.OverviewLive, dupe.slug))
+        redirect(conn,
+          to: Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.OverviewLive, dupe.slug)
+        )
 
       {:error, error} ->
         redirect_with_error(conn, error_url, snake_case_to_friendly(error))

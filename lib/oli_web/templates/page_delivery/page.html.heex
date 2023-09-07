@@ -84,7 +84,7 @@ window.userToken = "<%= assigns[:user_token] %>";
   OLI.initActivityBridge('eventIntercept');
 </script>
 
-<%= if @graded && @activity_count > 0 && @review_mode == false && not @adaptive do %>
+<%= if @graded && @review_mode == false && not @adaptive do %>
   <div class="d-flex align-items-center justify-content-center">
     <button id="submit_answers" class="btn btn-primary btn-lg text-center" onClick={"window.OLI.finalize('#{@section_slug}', '#{@slug}', '#{@attempt_guid}', #{@graded}, 'submit_answers')"}>
       Submit Answers

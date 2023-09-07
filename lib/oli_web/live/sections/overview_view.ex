@@ -105,15 +105,15 @@ defmodule OliWeb.Sections.OverviewView do
     )
   end
 
-  attr :user, :any
-  attr :modal, :any, default: nil
-  attr :breadcrumbs, :any
-  attr :title, :string, default: "Section Details"
-  attr :section, :any, default: nil
-  attr :instructors, :list, default: []
-  attr :updates_count, :integer
-  attr :submission_count, :integer
-  attr :section_has_student_data, :boolean
+  attr(:user, :any)
+  attr(:modal, :any, default: nil)
+  attr(:breadcrumbs, :any)
+  attr(:title, :string, default: "Section Details")
+  attr(:section, :any, default: nil)
+  attr(:instructors, :list, default: [])
+  attr(:updates_count, :integer)
+  attr(:submission_count, :integer)
+  attr(:section_has_student_data, :boolean)
 
   def render(assigns) do
     assigns = assign(assigns, deployment: assigns.section.lti_1p3_deployment)
@@ -513,7 +513,7 @@ defmodule OliWeb.Sections.OverviewView do
               if is_admin do
                 Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.SectionsView)
               else
-                Routes.delivery_path(socket.endpoint, :open_and_free_index)
+                ~p"/sections"
               end
 
             socket

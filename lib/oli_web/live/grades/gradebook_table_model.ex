@@ -32,7 +32,7 @@ defmodule OliWeb.Grades.GradebookTableModel do
           label: "STUDENT NAME",
           render_fn: &__MODULE__.render_student/3,
           th_class: "pl-10 whitespace-nowrap !sticky left-0 z-10",
-          td_class: "sticky left-0 z-10"
+          td_class: "sticky bg-white dark:bg-neutral-800 left-0 z-10"
         }
       ] ++
         Enum.map(graded_pages, fn revision ->

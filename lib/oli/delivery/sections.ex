@@ -485,7 +485,7 @@ defmodule Oli.Delivery.Sections do
         join: cr in Lti_1p3.DataProviders.EctoProvider.ContextRole,
         on: e_cr.context_role_id == cr.id,
         where:
-          s.slug == ^section_slug and s.status == :active and cr.id in ^role_ids and
+          s.slug == ^section_slug and cr.id in ^role_ids and
             e.status == :enrolled,
         select: count(e)
       )
@@ -1023,6 +1023,39 @@ defmodule Oli.Delivery.Sections do
       ContextRoles.contains_role?(e.context_roles, ContextRoles.get_role(:context_instructor))
     end)
     |> Enum.map(fn e -> e.user end)
+  end
+
+  @doc """
+  Returns the names of all instructors with :context_instructor role for the given section ids.
+
+  %{
+    section_id_1: [inst_1, inst_2],
+    ...
+    section_id_n: [inst_3]
+  }
+  """
+
+  def instructors_per_section(section_ids) do
+    instructor_context_role_id = ContextRoles.get_role(:context_instructor).id
+
+    query =
+      from(
+        e in Enrollment,
+        join: s in Section,
+        on: e.section_id == s.id,
+        join: ecr in EnrollmentContextRole,
+        on: e.id == ecr.enrollment_id,
+        where:
+          s.id in ^section_ids and e.status == :enrolled and
+            ecr.context_role_id == ^instructor_context_role_id,
+        preload: [:user],
+        select: {s.id, e}
+      )
+
+    Repo.all(query)
+    |> Enum.group_by(fn {section_id, _} -> section_id end, fn {_, enrollment} ->
+      OliWeb.Components.Delivery.Utils.user_name(enrollment.user)
+    end)
   end
 
   @doc """
@@ -1829,6 +1862,13 @@ defmodule Oli.Delivery.Sections do
     end)
   end
 
+  def get_contained_pages(%Section{id: section_id}) do
+    from(cp in ContainedPage,
+      where: cp.section_id == ^section_id
+    )
+    |> Repo.all()
+  end
+
   @doc """
   Rebuilds the "contained pages" relations for a course section.  A "contained page" for a
   container is the full set of pages found immeidately within that container or in any of
@@ -2287,7 +2327,7 @@ defmodule Oli.Delivery.Sections do
             section_id: section_id,
             children: Enum.reverse(children_sr_ids),
             collab_space_config: revision.collab_space_config,
-            max_attempts: revision.max_attempts,
+            max_attempts: revision.max_attempts || 0,
             scoring_strategy_id: revision.scoring_strategy_id,
             retake_mode: revision.retake_mode
           })
