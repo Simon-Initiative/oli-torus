@@ -32,9 +32,24 @@ export const PageScheduleLine: React.FC<ScheduleLineProps> = ({ item, indent, da
 
   const onChange = useCallback(
     (startDate: DateWithoutTime | null, endDate: DateWithoutTime) => {
-      dispatch(moveScheduleItem({ itemId: item.id, startDate, endDate }));
+      let targetEndDate: Date | DateWithoutTime = endDate;
+
+      // On a drag, need to change the date, but preserve the end time if one exists.
+      if (item.endDateTime) {
+        targetEndDate = new Date();
+        targetEndDate.setDate(endDate.getDate());
+        targetEndDate.setMonth(endDate.getMonth());
+        targetEndDate.setFullYear(endDate.getFullYear());
+        targetEndDate.setHours(
+          item.endDateTime.getHours(),
+          item.endDateTime.getMinutes(),
+          item.endDateTime.getSeconds(),
+        );
+      }
+
+      dispatch(moveScheduleItem({ itemId: item.id, startDate, endDate: targetEndDate }));
     },
-    [dispatch, item.id],
+    [dispatch, item.id, item.endDateTime],
   );
 
   const rowClass = isSelected ? 'bg-green-50' : '';
