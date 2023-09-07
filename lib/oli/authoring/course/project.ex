@@ -18,6 +18,7 @@ defmodule Oli.Authoring.Course.Project do
     field :has_experiments, :boolean, default: false
     field :legacy_svn_root, :string
     field :allow_ecl_content_type, :boolean, default: false
+    field(:analytics_version, Ecto.Enum, values: [:v1, :v2], default: :v1)
 
     embeds_one :customizations, CustomLabels, on_replace: :delete
     embeds_one :attributes, ProjectAttributes, on_replace: :delete
@@ -65,6 +66,7 @@ defmodule Oli.Authoring.Course.Project do
       :has_experiments,
       :legacy_svn_root,
       :allow_ecl_content_type,
+      :analytics_version,
       :publisher_id,
       :required_survey_resource_id
     ])

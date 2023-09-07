@@ -7,6 +7,10 @@ defmodule Oli.Repo.Migrations.SummaryTables do
       add :analytics_version, :string, default: "v1"
     end
 
+    alter table(:projects) do
+      add :analytics_version, :string, default: "v1"
+    end
+
     create table(:resource_summary) do
 
       add :project_id, :integer
