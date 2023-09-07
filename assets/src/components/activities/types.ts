@@ -1,7 +1,8 @@
+import { getDefaultEditor } from 'components/editing/markdown_editor/markdown_util';
 import { Model } from 'data/content/model/elements/factories';
 import { ModelElement } from 'data/content/model/elements/types';
 import { ID, Identifiable } from 'data/content/model/other';
-import { ResourceContext } from 'data/content/resource';
+import { EditorType, ResourceContext } from 'data/content/resource';
 import { ResourceId } from 'data/types';
 import guid from 'utils/guid';
 import { PathOperation } from 'utils/pathOperations';
@@ -124,10 +125,14 @@ export interface HasContent {
  * @param id optional identifier
  * @returns content
  */
-export function makeContent(text: string, id?: string): { id: string; content: RichText } {
+export function makeContent(
+  text: string,
+  id?: string,
+): { id: string; content: RichText; editor: EditorType } {
   return {
     id: id ? id : guid(),
     content: [Model.p(text)],
+    editor: getDefaultEditor(),
   };
 }
 
@@ -335,7 +340,7 @@ export interface ActivityState {
  * Defines an option, or choice, within activities such as a
  * multiple choice activity.
  */
-export interface Choice extends Identifiable, HasContent {}
+export interface Choice extends Identifiable, HasContent, SpecifiesEditor {}
 /**
  * Helper function to create a choice from simple text.
  */
@@ -347,10 +352,14 @@ export interface HasChoices {
   choices: Choice[];
 }
 
+export interface SpecifiesEditor {
+  editor?: 'markdown' | 'slate';
+}
+
 /**
  * Defines a question stem.
  */
-export interface Stem extends Identifiable, HasContent {}
+export interface Stem extends Identifiable, HasContent, SpecifiesEditor {}
 /**
  * Marker interface for an entity that has a question stem.
  */
@@ -368,7 +377,7 @@ export const makeStem: (text: string) => Stem = makeContent;
 /**
  * Defines a hint.
  */
-export interface Hint extends Identifiable, HasContent {}
+export interface Hint extends Identifiable, HasContent, SpecifiesEditor {}
 /**
  * Marker interface for an entity that has hints.
  */
@@ -380,7 +389,7 @@ export const makeHint: (text: string) => Hint = makeContent;
 /**
  * Defines feedback entity.
  */
-export interface Feedback extends Identifiable, HasContent {}
+export interface Feedback extends Identifiable, HasContent, SpecifiesEditor {}
 /**
  * Defines explanation entity.
  */

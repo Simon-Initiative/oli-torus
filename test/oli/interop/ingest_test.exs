@@ -19,7 +19,7 @@ defmodule Oli.Interop.IngestTest do
   def verify_export(entries) do
     m = Enum.reduce(entries, %{}, fn {f, c}, m -> Map.put(m, f, c) end)
 
-    assert length(entries) == 30
+    assert length(entries) == 31
     assert Map.has_key?(m, '_hierarchy.json')
     assert Map.has_key?(m, '_media-manifest.json')
     assert Map.has_key?(m, '_project.json')

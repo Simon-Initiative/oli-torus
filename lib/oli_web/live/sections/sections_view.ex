@@ -97,15 +97,15 @@ defmodule OliWeb.Sections.SectionsView do
      )}
   end
 
-  attr :author, :any
-  attr :breadcrumbs, :any
-  attr :title, :string, default: "All Course Sections"
-  attr :sections, :list, default: []
-  attr :tabel_model, :map
-  attr :total_count, :integer, default: 0
-  attr :offset, :integer, default: 0
-  attr :limit, :integer, default: @limit
-  attr :options, :any
+  attr(:author, :any)
+  attr(:breadcrumbs, :any)
+  attr(:title, :string, default: "All Course Sections")
+  attr(:sections, :list, default: [])
+  attr(:tabel_model, :map)
+  attr(:total_count, :integer, default: 0)
+  attr(:offset, :integer, default: 0)
+  attr(:limit, :integer, default: @limit)
+  attr(:options, :any)
 
   def render(assigns) do
     assigns = assign(assigns, type_opts: @type_opts)
@@ -123,11 +123,11 @@ defmodule OliWeb.Sections.SectionsView do
 
         <:extra_opts>
           <Check.render checked={@options.active_today} click="active_today">
-            Active (start/end dates include today)
+            <span class="ml-2">Active (start/end dates include today)</span>
           </Check.render>
 
           <form phx-change="change_type" class="d-flex">
-            <select name="type" id="select_type" class="custom-select custom-select mr-2">
+            <select name="type" id="select_type" class="custom-select mx-3" style="width: 120px;">
               <option value="" selected>Type</option>
               <option
                 :for={type_opt <- @type_opts}
@@ -140,7 +140,7 @@ defmodule OliWeb.Sections.SectionsView do
           </form>
 
           <form phx-change="change_status" class="d-flex">
-            <select name="status" id="select_status" class="custom-select custom-select mr-2">
+            <select name="status" id="select_status" class="custom-select" style="width: 120px;">
               <option value="" selected>Status</option>
               <option
                 :for={status_opt <- Ecto.Enum.values(Section, :status)}
@@ -163,7 +163,6 @@ defmodule OliWeb.Sections.SectionsView do
           total_count={@total_count}
           offset={@offset}
           limit={@limit}
-          show_bottom_paging={false}
         />
       </div>
     </div>

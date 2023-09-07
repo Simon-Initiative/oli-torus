@@ -1,9 +1,8 @@
-import React from 'react';
-import { Descendant } from 'slate';
-import { ErrorBoundary } from 'components/common/ErrorBoundary';
-import { Editor } from 'components/editing/editor/Editor';
+import React, { useMemo } from 'react';
+import { SlateOrMarkdownEditor } from 'components/editing/SlateOrMarkdownEditor';
 import { CommandDescription } from 'components/editing/elements/commands/interfaces';
-import { StructuredContent } from 'data/content/resource';
+import { ModelElement } from 'data/content/model/elements/types';
+import { DEFAULT_EDITOR, StructuredContent } from 'data/content/resource';
 import { ProjectSlug, ResourceSlug } from 'data/types';
 import { slateFixer } from './SlateFixer';
 
@@ -25,25 +24,39 @@ export const StructuredContentEditor = ({
   toolbarInsertDescs,
   onEdit,
 }: StructuredContentEditor) => {
-  const onSlateEdit = React.useCallback(
-    (children: Descendant[]) => {
-      onEdit(Object.assign({}, contentItem, { children }));
-    },
-    [contentItem, onEdit],
-  );
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const onContentEdit = (children: ModelElement[]) => {
+    onEdit(Object.assign({}, contentItem, { children }));
+  };
 
-  const [value] = React.useState(slateFixer(contentItem));
+  const changeEditor = (editor: 'markdown' | 'slate') => {
+    console.info('Switching editor modes', editor, contentItem);
+    onEdit({
+      ...contentItem,
+      editor,
+    });
+  };
+
+  // The editors aren't true controlled components. They both take initial values. So When we switch between the
+  // markdown & slate editors, we need to refresh the initial value so the new editor gets an updated copy.
+  const initialEditorValue =
+    useMemo(
+      () => slateFixer(contentItem),
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+      [contentItem.editor || ''],
+    )?.children || [];
 
   return (
-    <ErrorBoundary>
-      <Editor
-        className="structured-content"
-        commandContext={{ projectSlug: projectSlug, resourceSlug: resourceSlug }}
-        editMode={editMode}
-        value={value.children}
-        onEdit={onSlateEdit}
-        toolbarInsertDescs={toolbarInsertDescs}
-      />
-    </ErrorBoundary>
+    <SlateOrMarkdownEditor
+      editMode={editMode}
+      allowBlockElements={true}
+      projectSlug={projectSlug}
+      resourceSlug={resourceSlug}
+      content={initialEditorValue}
+      toolbarInsertDescs={toolbarInsertDescs}
+      onEdit={onContentEdit}
+      onEditorTypeChange={changeEditor}
+      editorType={contentItem.editor || DEFAULT_EDITOR}
+    />
   );
 };

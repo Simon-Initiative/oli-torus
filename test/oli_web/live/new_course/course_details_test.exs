@@ -30,8 +30,8 @@ defmodule OliWeb.NewCourse.CourseDetailsTest do
       assert has_element?(view, "input[type=\"checkbox\"]#thursday_radio_button")
       assert has_element?(view, "input[type=\"checkbox\"]#friday_radio_button")
       assert has_element?(view, "input[type=\"checkbox\"]#saturday_radio_button")
-      assert has_element?(view, "input[type=\"datetime-local\"]#course-details-form_start_date")
-      assert has_element?(view, "input[type=\"datetime-local\"]#course-details-form_end_date")
+      assert has_element?(view, "input[type=\"datetime-local\"]#section_start_date")
+      assert has_element?(view, "input[type=\"datetime-local\"]#section_end_date")
     end
 
     test "doesn't render the class days if class never meets", %{conn: conn} = context do
@@ -49,8 +49,8 @@ defmodule OliWeb.NewCourse.CourseDetailsTest do
       refute has_element?(view, "input[type=\"checkbox\"]#thursday_radio_button")
       refute has_element?(view, "input[type=\"checkbox\"]#friday_radio_button")
       refute has_element?(view, "input[type=\"checkbox\"]#saturday_radio_button")
-      assert has_element?(view, "input[type=\"datetime-local\"]#course-details-form_start_date")
-      assert has_element?(view, "input[type=\"datetime-local\"]#course-details-form_end_date")
+      assert has_element?(view, "input[type=\"datetime-local\"]#section_start_date")
+      assert has_element?(view, "input[type=\"datetime-local\"]#section_end_date")
     end
 
     test "can't go to next step unless all required fields are filled and valid",
@@ -158,8 +158,8 @@ defmodule OliWeb.NewCourse.CourseDetailsTest do
       assert has_element?(view, "input[type=\"checkbox\"]#thursday_radio_button")
       assert has_element?(view, "input[type=\"checkbox\"]#friday_radio_button")
       assert has_element?(view, "input[type=\"checkbox\"]#saturday_radio_button")
-      assert has_element?(view, "input[type=\"datetime-local\"]#course-details-form_start_date")
-      assert has_element?(view, "input[type=\"datetime-local\"]#course-details-form_end_date")
+      assert has_element?(view, "input[type=\"datetime-local\"]#section_start_date")
+      assert has_element?(view, "input[type=\"datetime-local\"]#section_end_date")
     end
 
     test "can't go to next step unless all required fields are filled", %{conn: conn} = context do
@@ -249,8 +249,8 @@ defmodule OliWeb.NewCourse.CourseDetailsTest do
       assert has_element?(view, "input[type=\"checkbox\"]#thursday_radio_button")
       assert has_element?(view, "input[type=\"checkbox\"]#friday_radio_button")
       assert has_element?(view, "input[type=\"checkbox\"]#saturday_radio_button")
-      assert has_element?(view, "input[type=\"datetime-local\"]#course-details-form_start_date")
-      assert has_element?(view, "input[type=\"datetime-local\"]#course-details-form_end_date")
+      assert has_element?(view, "input[type=\"datetime-local\"]#section_start_date")
+      assert has_element?(view, "input[type=\"datetime-local\"]#section_end_date")
     end
 
     test "can't go to next step unless all required fields are filled", %{conn: conn} = context do

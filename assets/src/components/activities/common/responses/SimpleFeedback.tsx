@@ -4,6 +4,7 @@ import { FeedbackCard } from 'components/activities/common/responses/FeedbackCar
 import { ResponseActions } from 'components/activities/common/responses/responseActions';
 import { HasParts, RichText } from 'components/activities/types';
 import { getCorrectResponse, getIncorrectResponse } from 'data/activities/model/responses';
+import { EditorType } from 'data/content/resource';
 import { ShowPage } from './ShowPage';
 
 interface Props {
@@ -14,9 +15,15 @@ export const SimpleFeedback: React.FC<Props> = ({ partId }) => {
   const { model, dispatch, editMode, authoringContext } = useAuthoringElementContext<HasParts>();
 
   const correctResponse = getCorrectResponse(model, partId);
+
   const incorrectResponse = getIncorrectResponse(model, partId);
+
   const updateFeedback = (responseId: string, content: RichText) =>
     dispatch(ResponseActions.editResponseFeedback(responseId, content));
+
+  const updateFeedbackEditor = (responseId: string, editor: EditorType) =>
+    dispatch(ResponseActions.editResponseFeedbackEditor(responseId, editor));
+
   const updateShowPage = (responseId: string, showPage: number | undefined) =>
     dispatch(ResponseActions.editShowPage(responseId, showPage));
 
@@ -27,6 +34,7 @@ export const SimpleFeedback: React.FC<Props> = ({ partId }) => {
         title="Feedback for correct answer"
         feedback={correctResponse.feedback}
         update={(_id, content) => updateFeedback(correctResponse.id, content as RichText)}
+        updateEditor={(editor) => updateFeedbackEditor(correctResponse.id, editor)}
         placeholder="Encourage students or explain why the answer is correct"
       >
         {authoringContext.contentBreaksExist ? (
@@ -42,6 +50,7 @@ export const SimpleFeedback: React.FC<Props> = ({ partId }) => {
         title="Feedback for incorrect answers"
         feedback={incorrectResponse.feedback}
         update={(_id, content) => updateFeedback(incorrectResponse.id, content as RichText)}
+        updateEditor={(editor) => updateFeedbackEditor(incorrectResponse.id, editor)}
         placeholder="Enter catch-all feedback for incorrect answers"
       >
         {authoringContext.contentBreaksExist ? (

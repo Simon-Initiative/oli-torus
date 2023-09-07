@@ -1,10 +1,16 @@
 # Changelog
 
-## 0.25.0 (unreleased)
+## 0.25.0 (Unreleased)
 
 ### Bug Fixes
 
-### Enhancements
+- Fix an issue where nil sub-objective crashes objectives page
+
+## 0.24.4 (2023-8-11)
+
+### Bug Fixes
+
+- Fix performance issue for learning proficiency calculation
 
 ### Configs
 
