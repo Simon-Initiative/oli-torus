@@ -11,13 +11,15 @@ interface Props {
   index: number;
 }
 export const HintsTab: React.FC<Props> = (props) => {
-  const { model, dispatch } = useAuthoringElementContext<MultiInputSchema>();
+  const { model, dispatch, projectSlug } = useAuthoringElementContext<MultiInputSchema>();
 
   return (
     <CognitiveHints
+      projectSlug={projectSlug}
       key={props.input.id}
       hints={Hints.byPart(model, props.input.partId)}
       updateOne={(id, content) => dispatch(Hints.setContent(id, content as RichText))}
+      updateOneEditor={(id, editor) => dispatch(Hints.setEditor(id, editor))}
       addOne={() => dispatch(Hints.addOne(makeHint(''), props.input.partId))}
       removeOne={(id) => dispatch(Hints.removeOne(id, props.input.partId))}
       placeholder="Hint"

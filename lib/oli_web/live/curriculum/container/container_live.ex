@@ -17,7 +17,7 @@ defmodule OliWeb.Curriculum.ContainerLive do
     Rollup,
     ActivityDelta,
     DropTarget,
-    EntryLive,
+    Entry,
     OptionsModal,
     DeleteModal,
     NotEmptyModal

@@ -485,7 +485,7 @@ defmodule Oli.Delivery.Sections do
         join: cr in Lti_1p3.DataProviders.EctoProvider.ContextRole,
         on: e_cr.context_role_id == cr.id,
         where:
-          s.slug == ^section_slug and s.status == :active and cr.id in ^role_ids and
+          s.slug == ^section_slug and cr.id in ^role_ids and
             e.status == :enrolled,
         select: count(e)
       )
@@ -1860,6 +1860,13 @@ defmodule Oli.Delivery.Sections do
 
       section_resources
     end)
+  end
+
+  def get_contained_pages(%Section{id: section_id}) do
+    from(cp in ContainedPage,
+      where: cp.section_id == ^section_id
+    )
+    |> Repo.all()
   end
 
   @doc """

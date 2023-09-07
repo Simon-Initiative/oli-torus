@@ -52,12 +52,17 @@ import {
 import guid from 'utils/guid';
 import { normalizeHref } from './utils';
 
+// removeUndefined({a: 1, b: undefined}) = {a: 1}
+const removeUndefined = (obj: Record<string, any>): unknown => {
+  return Object.fromEntries(Object.entries(obj).filter(([_, v]) => v !== undefined));
+};
+
 function create<E extends AllModelElements>(params: Partial<E>): E {
-  return {
+  return removeUndefined({
     id: guid(),
     children: [{ text: '' }],
     ...params,
-  } as E;
+  }) as E;
 }
 
 export const emptyChildren = (element: AllModelElements) =>
@@ -77,7 +82,7 @@ export const Model = {
 
   tc: (text: string) => create<TableConjugation>({ type: 'tc', children: [Model.p(text)] }),
 
-  tr: (children: TableCell[]) => create<TableRow>({ type: 'tr', children }),
+  tr: (children: (TableHeader | TableCell)[]) => create<TableRow>({ type: 'tr', children }),
 
   table: (children: TableRow[] = []) => create<Table>({ type: 'table', children }),
 
@@ -167,7 +172,8 @@ export const Model = {
   cite: (text = '', bibref: number) =>
     create<Citation>({ type: 'cite', bibref: bibref, children: [{ text }] }),
 
-  image: (src?: string) => create<ImageBlock>({ type: 'img', src, display: 'block' }),
+  image: (src?: string, altText?: string) =>
+    create<ImageBlock>({ type: 'img', src, display: 'block', alt: altText }),
 
   imageInline: (src?: string) => create<ImageInline>({ type: 'img_inline', src }),
 

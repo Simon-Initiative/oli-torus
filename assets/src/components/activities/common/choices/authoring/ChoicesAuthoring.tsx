@@ -1,11 +1,13 @@
 import React from 'react';
 import { Descendant } from 'slate';
+import { useAuthoringElementContext } from 'components/activities/AuthoringElementProvider';
 import { AuthoringButtonConnected } from 'components/activities/common/authoring/AuthoringButton';
 import { RemoveButtonConnected } from 'components/activities/common/authoring/RemoveButton';
 import { Choice, makeContent } from 'components/activities/types';
 import { Draggable } from 'components/common/DraggableColumn';
-import { RichTextEditorConnected } from 'components/content/RichTextEditor';
+import { SlateOrMarkdownEditor } from 'components/editing/SlateOrMarkdownEditor';
 import { toSimpleText } from 'components/editing/slateUtils';
+import { DEFAULT_EDITOR, EditorType } from 'data/content/resource';
 import { classNames } from 'utils/classNames';
 import styles from './ChoicesAuthoring.modules.scss';
 
@@ -24,6 +26,7 @@ interface Props {
   addOne: () => void;
   setAll: (choices: Choice[]) => void;
   onEdit: (id: string, content: Descendant[]) => void;
+  onChangeEditorType?: (id: string, editorType: EditorType) => void;
   onRemove: (id: string) => void;
   simpleText?: boolean;
   colorMap?: Map<string, string>;
@@ -37,7 +40,10 @@ export const Choices: React.FC<Props> = ({
   onRemove,
   simpleText,
   colorMap,
+  onChangeEditorType,
 }) => {
+  const { projectSlug } = useAuthoringElementContext();
+
   return (
     <>
       <Draggable.Column items={choices} setItems={setAll}>
@@ -61,15 +67,22 @@ export const Choices: React.FC<Props> = ({
                     onChange={(e) => onEdit(choice.id, makeContent(e.target.value).content)}
                   />
                 ) : (
-                  <RichTextEditorConnected
+                  <SlateOrMarkdownEditor
                     style={{
                       flexGrow: 1,
                       cursor: 'text',
                       backgroundColor: colorMap?.get(choice.id),
                     }}
+                    editMode={true}
+                    editorType={choice.editor || DEFAULT_EDITOR}
                     placeholder="Answer choice"
-                    value={choice.content}
+                    content={choice.content}
                     onEdit={(content) => onEdit(choice.id, content)}
+                    allowBlockElements={true}
+                    onEditorTypeChange={(editor) =>
+                      onChangeEditorType && onChangeEditorType(choice.id, editor)
+                    }
+                    projectSlug={projectSlug}
                   />
                 )}
 

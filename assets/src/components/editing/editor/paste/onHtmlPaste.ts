@@ -437,7 +437,6 @@ export const onHTMLPaste = (event: React.ClipboardEvent<HTMLDivElement>, editor:
   const pastedHtml = event.clipboardData?.getData('text/html')?.trim();
 
   if (!pastedHtml) return;
-  //debugger;
   try {
     const parsed = new DOMParser().parseFromString(pastedHtml, 'text/html');
     const [body] = Array.from(parsed.getElementsByTagName('body'));

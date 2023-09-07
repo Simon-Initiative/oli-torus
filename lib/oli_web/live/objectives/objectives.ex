@@ -62,6 +62,7 @@ defmodule OliWeb.ObjectivesLive.Objectives do
        total_count: length(objectives),
        all_objectives: all_objectives,
        all_children: all_children,
+       objective_attachments: [],
        title: "Objectives",
        query: "",
        offset: 0,
@@ -332,7 +333,7 @@ defmodule OliWeb.ObjectivesLive.Objectives do
 
     modal = fn assigns ->
       ~H"""
-      <.live_component module={SelectExistingSubModal} {@modal_assigns} />
+      <.live_component id="select_existing_sub_modal" module={SelectExistingSubModal} {@modal_assigns} />
       """
     end
 
