@@ -5,6 +5,7 @@ defmodule Oli.Interop.Ingest do
   alias Oli.Resources.PageContent
   alias Oli.Utils.SchemaResolver
   alias Oli.Resources.ContentMigrator
+  alias Oli.Authoring.Course
 
   @project_key "_project"
   @hierarchy_key "_hierarchy"
@@ -110,6 +111,7 @@ defmodule Oli.Interop.Ingest do
              create_activities(project, resource_map, objective_map, tag_map, as_author),
            {:ok, {page_map, _}} <-
              create_pages(
+               project_details,
                project,
                resource_map,
                activity_map,
@@ -338,8 +340,7 @@ defmodule Oli.Interop.Ingest do
         Oli.Authoring.Course.create_project(title, as_author, %{
           description: Map.get(project_details, "description"),
           legacy_svn_root: Map.get(project_details, "svnRoot"),
-          customizations: custom_labels,
-          required_survey_resource_id: Map.get(project_details, "required_student_survey")
+          customizations: custom_labels
         })
     end
   end
@@ -413,6 +414,7 @@ defmodule Oli.Interop.Ingest do
 
   # Process each resource file of type "Page" to create pages
   defp create_pages(
+         project_details,
          project,
          resource_map,
          activity_map,
@@ -427,6 +429,8 @@ defmodule Oli.Interop.Ingest do
       |> Enum.filter(fn {_, content} -> Map.get(content, "type") == "Page" end)
       |> scrub_resources()
 
+    required_student_survey_id = Map.get(project_details, "required_student_survey")
+
     Repo.transaction(fn ->
       case Enum.reduce_while(pages, %{}, fn {id, page}, map ->
              case create_page(
@@ -438,8 +442,13 @@ defmodule Oli.Interop.Ingest do
                     bib_map,
                     as_author
                   ) do
-               {:ok, revision} -> {:cont, Map.put(map, id, revision)}
-               {:error, e} -> {:halt, {:error, e}}
+               {:ok, revision} ->
+                 if id == required_student_survey_id, do: Course.update_project(project, %{required_survey_resource_id: revision.resource_id})
+
+                 {:cont, Map.put(map, id, revision)}
+
+               {:error, e} ->
+                 {:halt, {:error, e}}
              end
            end) do
         {:error, e} -> Repo.rollback(e)
