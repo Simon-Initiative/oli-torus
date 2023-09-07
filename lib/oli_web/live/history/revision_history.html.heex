@@ -3,7 +3,7 @@
 <div class="container">
   <h2>Revision History</h2>
   <h4>Resource ID: <%= @resource_id %></h4>
-  <.link :if={@selected.slug != @revision_root_slug} class="torus-button primary" navigate={~p[/project/#{@project.slug}/history/slug/#{@revision_root_slug}]}>
+  <.link :if={@selected.slug != @revision_root_slug} id="root_hierarchy_link" class="torus-button primary" navigate={~p[/project/#{@project.slug}/history/slug/#{@revision_root_slug}]}>
     Hierarchy
   </.link>
 
@@ -31,7 +31,7 @@
             page_size={@page_size}
           />
           <Table.render
-            id="table"
+            id="attributes_table"
             tree={@tree}
             publication={@publication}
             mappings={@mappings}
@@ -98,7 +98,7 @@
             <% end %>
           <% end %>
           <.live_component
-            id="revision_details"
+            id="revision_details_table"
             module={Details}
             revision={@selected}
             project={@project}

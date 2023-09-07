@@ -138,11 +138,11 @@ defmodule OliWeb.RevisionHistory.Details do
         <div>
           <table style="table-layout: fixed;" class="table table-bordered table-sm mt-3">
             <tbody>
-              <tr>
+              <tr id="revision-table-title-attr">
                 <td class="w-52"><strong>Title</strong></td>
                 <td><%= @revision.title %></td>
               </tr>
-              <tr :for={{key, value} <- revision_details(@revision)}>
+              <tr id={"revision-table-#{key}-attr"} :for={{key, value} <- revision_details(@revision)}>
                 <td class="w-52">
                   <strong><%= Phoenix.Naming.humanize(key) %></strong>
                 </td>
