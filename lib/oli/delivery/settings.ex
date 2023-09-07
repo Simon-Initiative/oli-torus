@@ -201,11 +201,9 @@ defmodule Oli.Delivery.Settings do
   def check_password(_effective_settings, ""), do: {:allowed}
   def check_password(_effective_settings, nil), do: {:allowed}
 
-  def check_password?(%Combined{password: password}, received_password) do
-    if password == received_password do
-      {:allowed}
-    else
-      {:invalid_password}
-    end
-  end
+  def check_password(%Combined{password: password}, received_password)
+      when password == received_password,
+      do: {:allowed}
+
+  def check_password(_, _), do: {:invalid_password}
 end

@@ -92,16 +92,16 @@ defmodule OliWeb.Common.Utils do
     If the date was not nil, we don't need to set a limit since we can calculate the time distance accordingly.
 
     ## Examples
-    iex> datetime_input_limit(:start_date, %{start_date: nil, end_date: ~U[2023-09-06 13:28:34]}, %SessionContext{browser_timezone: "America/Montevideo"})
+    iex> datetime_input_limit(:start_date, %{start_date: nil, end_date: ~U[2023-09-06 13:28:00Z]}, %{SessionContext.init() | local_tz: "America/Montevideo"})
     "2023-09-05T10:28"
 
-    iex> datetime_input_limit(:start_date, %{start_date: ~U[2023-09-01 13:28:34], end_date: ~U[2023-09-06 13:28:34]}, %SessionContext{browser_timezone: "America/Montevideo"})
+    iex> datetime_input_limit(:start_date, %{start_date: ~U[2023-09-01 13:28:00Z], end_date: ~U[2023-09-06 13:28:00Z]}, %{SessionContext.init() | local_tz: "America/Montevideo"})
     ""
 
-    iex> datetime_input_limit(:end_date, %{start_date: ~U[2023-09-02 13:28:34], end_date: nil}, %SessionContext{browser_timezone: "America/Montevideo"})
+    iex> datetime_input_limit(:end_date, %{start_date: ~U[2023-09-02 13:28:00Z], end_date: nil}, %{SessionContext.init() | local_tz: "America/Montevideo"})
     "2023-09-03T10:28"
 
-    iex> datetime_input_limit(:end_date, %{start_date: ~U[2023-09-02 13:28:34], end_date: ~U[2023-09-03 13:28:34]}, %SessionContext{browser_timezone: "America/Montevideo"})
+    iex> datetime_input_limit(:end_date, %{start_date: ~U[2023-09-02 13:28:00Z], end_date: ~U[2023-09-03 13:28:00Z]}, %{SessionContext.init() | local_tz: "America/Montevideo"})
     ""
   """
 
@@ -129,11 +129,11 @@ defmodule OliWeb.Common.Utils do
   If the new start date (end date) or the existing end date (start date) are nil, we don't need to preserve the distance.
   If the new start date (end date) is before (after) the existing end date (start date), we don't need to preserve the distance.
 
-  iex> maybe_preserve_dates_distance(:start_date, ~U[2023-09-04 13:28:34], %{start_date: ~U[2023-09-01 13:28:34], end_date: ~U[2023-09-02 13:28:34]})
-    {~U[2023-09-04 13:28:34], ~U[2023-09-05 13:28:34], true}
+  iex> maybe_preserve_dates_distance(:start_date, ~U[2023-09-04 13:28:00Z], %{start_date: ~U[2023-09-01 13:28:00Z], end_date: ~U[2023-09-02 13:28:00Z]})
+  {~U[2023-09-04 13:28:00Z], ~U[2023-09-05 13:28:00Z], :end_date}
 
-  iex> maybe_preserve_dates_distance(:end_date, nil, %{start_date: ~U[2023-09-01 13:28:34], end_date: ~U[2023-09-02 13:28:34]})
-      {~U[2023-09-01 13:28:34], ~U[2023-09-02 13:28:34], false}
+  iex> maybe_preserve_dates_distance(:end_date, nil, %{start_date: ~U[2023-09-01 13:28:00Z], end_date: ~U[2023-09-02 13:28:00Z]})
+  {~U[2023-09-01 13:28:00Z], nil, nil}
   """
   def maybe_preserve_dates_distance(:start_date, new_start_date, %{end_date: end_date}) when is_nil(new_start_date) or is_nil(end_date) do
     {new_start_date, end_date, nil}
