@@ -10,7 +10,8 @@ import { DescriptiveButton } from 'components/editing/toolbar/buttons/Descriptiv
 import { DropdownButton } from 'components/editing/toolbar/buttons/DropdownButton';
 import { activeBlockType } from 'components/editing/toolbar/toolbarUtils';
 
-export const toggleTextTypes = [toggleParagraph, toggleHeading, toggleList, toggleBlockquote];
+// Note: The order here matters since a paragraph can be inside a list item.
+export const toggleTextTypes = [toggleList, toggleParagraph, toggleHeading, toggleBlockquote];
 
 interface BlockToggleProps {
   blockInsertOptions: CommandDescription[];
