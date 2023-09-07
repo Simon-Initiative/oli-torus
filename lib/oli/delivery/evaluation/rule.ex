@@ -153,7 +153,7 @@ defmodule Oli.Delivery.Evaluation.Rule do
   defp is_range?(str), do: String.starts_with?(str, ["[", "("])
 
   defp is_float?(str),
-    do: String.contains?(str, ".") or String.contains?(str, "e")
+    do: String.contains?(str, ".") or String.contains?(str, "e-")
 
   defp parse_range(range_str) do
     case Regex.run(
