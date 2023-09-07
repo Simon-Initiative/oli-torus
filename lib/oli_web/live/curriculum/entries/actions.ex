@@ -8,6 +8,7 @@ defmodule OliWeb.Curriculum.Actions do
   alias Oli.Resources.ResourceType
 
   attr(:child, :map, required: true)
+  attr(:revision_history_link, :boolean, default: false)
 
   def render(assigns) do
     ~H"""
@@ -70,6 +71,13 @@ defmodule OliWeb.Curriculum.Actions do
             </button>
           <% end %>
           <div class="dropdown-divider"></div>
+          <.link
+            :if={@revision_history_link}
+            class="dropdown-item"
+            navigate={~p[/project/elixir/history/slug/#{@child.slug}]}
+          >
+            <i class="fas fa-history mr-1"></i> View revision history
+          </.link>
           <button
             type="button"
             class="dropdown-item text-danger"

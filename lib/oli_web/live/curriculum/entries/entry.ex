@@ -23,6 +23,7 @@ defmodule OliWeb.Curriculum.Entry do
   attr(:container, :map, required: true)
   attr(:objective_map, :map, required: true)
   attr(:view, :string, required: true)
+  attr(:revision_history_link, :boolean, default: false)
 
   def render(assigns) do
     ~H"""
@@ -86,7 +87,7 @@ defmodule OliWeb.Curriculum.Entry do
       </div>
       <!-- prevent dragging of actions menu and modals using this draggable wrapper -->
       <div draggable="true" ondragstart="event.preventDefault(); event.stopPropagation();">
-        <Actions.render child={@child} />
+        <Actions.render child={@child} revision_history_link={@revision_history_link} />
       </div>
     </div>
     """
