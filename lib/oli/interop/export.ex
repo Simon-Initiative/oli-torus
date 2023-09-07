@@ -319,11 +319,16 @@ defmodule Oli.Interop.Export do
 
   # create the _project.json file
   defp create_project_file(project) do
+    required_survey_resource_id =
+      if project.required_survey_resource_id == nil,
+        do: nil,
+        else: Integer.to_string(project.required_survey_resource_id)
+
     %{
       title: project.title,
       description: project.description,
       type: "Manifest",
-      required_student_survey: project.required_survey_resource_id
+      required_student_survey: required_survey_resource_id
     }
     |> entry("_project.json")
   end
