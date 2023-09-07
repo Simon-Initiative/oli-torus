@@ -161,6 +161,12 @@ window.toggleAudio = (element: HTMLAudioElement) => {
   }
 };
 
+window.addEventListener('phx:js-exec', ({ detail }: any) => {
+  document.querySelectorAll(detail.to).forEach((el) => {
+    liveSocket.execJS(el, el.getAttribute(detail.attr));
+  });
+});
+
 declare global {
   interface Window {
     liveSocket: typeof liveSocket;
