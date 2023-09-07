@@ -1,8 +1,17 @@
 # Changelog
 
-## 0.24.4 (unreleased)
+
+## 0.24.5 (2023-9-12)
 
 ### Bug Fixes
+
+- Scientific notation in single response range question handling
+
+## 0.24.4 (2023-8-11)
+
+### Bug Fixes
+
+- Query performance for proficiency calculations
 
 ### Enhancements
 
