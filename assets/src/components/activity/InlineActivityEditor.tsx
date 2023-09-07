@@ -16,6 +16,7 @@ import styles from './InlineActivityEditor.modules.scss';
 export interface ActivityEditorProps extends ActivityEditContext {
   editMode: boolean;
   projectSlug: string;
+  revisionHistoryLink: boolean;
   allObjectives: Objective[];
   allTags: Tag[];
   banked: boolean;
@@ -179,7 +180,18 @@ export class InlineActivityEditor extends React.Component<
             allowEmptyContents={false}
             editMode={this.props.editMode}
           />
-          <div className="flex-grow-1"></div>
+
+          <div className="ml-auto mr-2">
+            {this.props.revisionHistoryLink && (
+              <a
+                className="dropdown-item ml-auto"
+                href={`/project/${this.props.projectSlug}/history/slug/${this.props.activitySlug}`}
+              >
+                <i className="fas fa-history mr-1"></i> View revision history
+              </a>
+            )}
+          </div>
+
           <div className={styles.toolbar}>
             {this.props.customToolbarItems && <this.props.customToolbarItems />}
             <DeleteButton
