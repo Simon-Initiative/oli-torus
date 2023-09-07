@@ -49,7 +49,7 @@ defmodule Oli.Content.Content.HtmlTest do
                ~r/<div data-react-class="Components.YoutubePlayer"/
 
       assert rendered_html_string =~
-               "<pre><code class=\"language-python\">import fresh-pots</code></pre>"
+               "<pre><code class=\"torus-code language-python\">import fresh-pots</code></pre>"
 
       assert rendered_html_string =~
                ~r/<iframe class=".*"  allowfullscreen src="https:\/\/www.wikipedia.org"><\/iframe>/

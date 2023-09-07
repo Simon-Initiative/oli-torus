@@ -15,6 +15,7 @@ import {
   getResponsesByPartId,
 } from 'data/activities/model/responses';
 import { getParts } from 'data/activities/model/utils';
+import { EditorType } from 'data/content/resource';
 import { clone } from 'utils/common';
 import { Operations } from 'utils/pathOperations';
 
@@ -24,6 +25,12 @@ export const ResponseActions = {
       // Insert a new reponse just before the last response (which is the catch-all response)
       const responses = getResponsesByPartId(model, partId);
       getResponsesByPartId(model, partId).splice(responses.length - 1, 0, response);
+    };
+  },
+
+  editResponseFeedbackEditor(responseId: ResponseId, editor: EditorType) {
+    return (model: HasParts) => {
+      getResponseBy(model, (r) => r.id === responseId).feedback.editor = editor;
     };
   },
 

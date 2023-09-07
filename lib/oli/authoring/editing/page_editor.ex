@@ -224,6 +224,7 @@ defmodule Oli.Authoring.Editing.PageEditor do
 
       {:ok,
        %Oli.Authoring.Editing.ResourceContext{
+         defaultEditor: Accounts.get_author_preference(author, :editor, "slate"),
          authorEmail: author.email,
          projectSlug: project_slug,
          resourceSlug: revision_slug,

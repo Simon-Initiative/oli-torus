@@ -1,3 +1,4 @@
+import { EditorType } from 'data/content/resource';
 import { Ok, ServerError, makeRequest } from './common';
 
 export type FetchPreferencesResult = Preferences | ServerError;
@@ -6,6 +7,7 @@ export type UpdatePreferencesResult = Ok | ServerError;
 export type Preferences = {
   ['theme']: string | null;
   ['live_preview_display']: string | null;
+  editor?: EditorType;
 };
 
 export function fetchPreferences(): Promise<FetchPreferencesResult> {
