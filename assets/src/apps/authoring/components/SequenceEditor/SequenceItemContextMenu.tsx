@@ -3,6 +3,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { ListGroup, Toast } from 'react-bootstrap';
 import { useSelector } from 'react-redux';
 import { selectIsAdmin, selectProjectSlug } from 'apps/authoring/store/app/slice';
+import { SequenceEntry, SequenceEntryChild, SequenceEntryType, SequenceHierarchyItem } from 'apps/delivery/store/features/groups/actions/sequence';
 
 const layerLabel = 'Layer';
 const bankLabel = 'Question Bank';
@@ -48,31 +49,31 @@ const SequenceItemContextMenu = (props: any) => {
   const wrapperRef = useRef(null);
   useOutsideAlerter(wrapperRef);
 
-  const handleItemAdd = async (parentItem: any, isLayer = false, isBank = false) => {
+  const handleItemAdd = async (parentItem: SequenceEntry<SequenceEntryChild> | undefined, isLayer = false, isBank = false) => {
     const details = { event: 'handleItemAdd', parentItem, isLayer, isBank };
     props.onMenuItemClick(details);
     props.contextMenuClicked(false);
   };
 
-  const handleItemReorder = async (event: any, item: any, direction: any) => {
+  const handleItemReorder = async (event: any, item: SequenceHierarchyItem<SequenceEntryType>, direction: ReorderDirection) => {
     const details = { event: 'handleItemReorder', item, direction };
     props.onMenuItemClick(details);
     props.contextMenuClicked(false);
   };
 
-  const handleItemDelete = async (item: any) => {
+  const handleItemDelete = async (item: SequenceHierarchyItem<SequenceEntryType>) => {
     const details = { event: 'handleItemDelete', item };
     props.onMenuItemClick(details);
     props.contextMenuClicked(false);
   };
 
-  const handleItemConvert = async (item: any) => {
+  const handleItemConvert = async (item: SequenceHierarchyItem<SequenceEntryType>) => {
     const details = { event: 'handleItemConvert', item };
     props.onMenuItemClick(details);
     props.contextMenuClicked(false);
   };
 
-  const handleItemClone = async (item: any) => {
+  const handleItemClone = async (item: SequenceHierarchyItem<SequenceEntryType>) => {
     const details = { event: 'handleItemClone', item };
     props.onMenuItemClick(details);
     props.contextMenuClicked(false);

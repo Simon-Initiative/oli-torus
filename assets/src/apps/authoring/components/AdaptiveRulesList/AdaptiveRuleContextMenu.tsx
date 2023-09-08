@@ -4,6 +4,7 @@ import { ListGroup, Toast } from 'react-bootstrap';
 import { useSelector } from 'react-redux';
 import { selectSequenceEditorExpanded } from 'apps/authoring/store/app/slice';
 import { selectCopiedItem, selectCopiedType } from 'apps/authoring/store/clipboard/slice';
+import { IAdaptiveRule, InitState } from 'apps/delivery/store/features/activities/slice';
 
 const AdaptiveRuleContextMenu = (props: any) => {
   const [id, setId] = useState(false);
@@ -38,37 +39,37 @@ const AdaptiveRuleContextMenu = (props: any) => {
   const wrapperRef = useRef(null);
   useOutsideAlerter(wrapperRef);
 
-  const handleRuleReorder = async (index: any, direction: any) => {
+  const handleRuleReorder = async (index: number, direction: any) => {
     const details = { event: 'handleRuleReorder', index, direction };
     props.onMenuItemClick(details);
     props.contextMenuClicked(false);
   };
 
-  const handleRulePaste = async (copied: any, copiedType: any, index: any) => {
+  const handleRulePaste = async (copied: IAdaptiveRule | InitState, copiedType: any, index: any) => {
     const details = { event: 'handleRulePaste', item: copied, type: copiedType, index };
     props.onMenuItemClick(details);
     props.contextMenuClicked(false);
   };
 
-  const handleRenameRule = async (item: any) => {
+  const handleRenameRule = async (item: IAdaptiveRule) => {
     const details = { event: 'handleRenameRule', item };
     props.onMenuItemClick(details);
     props.contextMenuClicked(false);
   };
 
-  const handleCopyRule = async (rule: any | 'initState') => {
+  const handleCopyRule = async (rule: IAdaptiveRule | 'initState') => {
     const details = { event: 'handleCopyRule', rule };
     props.onMenuItemClick(details);
     props.contextMenuClicked(false);
   };
 
-  const handleDuplicateRule = async (rule: any, index: number) => {
+  const handleDuplicateRule = async (rule: IAdaptiveRule, index: number) => {
     const details = { event: 'handleDuplicateRule', rule, index };
     props.onMenuItemClick(details);
     props.contextMenuClicked(false);
   };
 
-  const handleItemDelete = async (item: any) => {
+  const handleItemDelete = async (item: IAdaptiveRule) => {
     const details = { event: 'handleItemDelete', item };
     props.onMenuItemClick(details);
     props.contextMenuClicked(false);
