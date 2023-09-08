@@ -1,11 +1,15 @@
 defmodule OliWeb.Products.ProductsView do
   use OliWeb, :live_view
+
+  import OliWeb.Common.Params
+
   alias Oli.Repo
-  alias OliWeb.Common.{Breadcrumb, Filter, Listing, SessionContext}
+  alias OliWeb.Common.{Breadcrumb, Check, Filter, Listing, SessionContext}
   alias OliWeb.Products.Create
   alias Oli.Authoring.Course
   alias Oli.Accounts.Author
   alias Oli.Delivery.Sections.Blueprint
+  alias Oli.Delivery.Sections.BlueprintBrowseOptions
   alias OliWeb.Common.Table.SortableTableModel
   alias OliWeb.Router.Helpers, as: Routes
   alias Oli.Publishing
@@ -67,7 +71,12 @@ defmodule OliWeb.Products.ProductsView do
       ) do
     author = Repo.get(Author, author_id)
     project = Course.get_project_by_slug(project_slug)
-    products = Blueprint.list_for_project(project)
+
+    options = %BlueprintBrowseOptions{
+      project_id: project.id,
+      include_archived: false
+    }
+    products = Blueprint.list(options)
 
     mount_as(
       author,
@@ -84,7 +93,12 @@ defmodule OliWeb.Products.ProductsView do
   def mount(_, %{"current_author_id" => author_id} = session, socket) do
     author = Repo.get(Author, author_id)
 
-    products = Blueprint.list()
+    options = %BlueprintBrowseOptions{
+      project_id: nil,
+      include_archived: false
+    }
+    products = Blueprint.list(options)
+
     mount_as(author, true, products, nil, admin_breadcrumbs(), "Products", socket, session)
   end
 
@@ -110,12 +124,14 @@ defmodule OliWeb.Products.ProductsView do
        products: products,
        total_count: total_count,
        table_model: table_model,
+       include_archived: false,
        title: title,
        offset: 0,
        limit: 20,
        query: "",
        applied_query: "",
-       creation_title: ""
+       creation_title: "",
+       ctx: ctx
      )}
   end
 
@@ -128,6 +144,10 @@ defmodule OliWeb.Products.ProductsView do
         <% else %>
           <Filter.render change="change_search" reset="reset_search" apply="apply_search" />
         <% end %>
+
+        <Check.render checked={@include_archived} click="include_archived">
+          Include archived Products
+        </Check.render>
 
         <div class="mb-3" />
 
@@ -145,6 +165,45 @@ defmodule OliWeb.Products.ProductsView do
       <% end %>
     </div>
     """
+  end
+
+  def handle_params(params, _, socket) do
+    project_id = if socket.assigns.project === nil, do: nil, else: socket.assigns.project.id
+    value = get_boolean_param(params, "include_archived", false)
+
+    options = %BlueprintBrowseOptions{
+      project_id: project_id,
+      include_archived: value
+    }
+    products = Blueprint.list(options)
+
+    total_count = length(products)
+
+    {:ok, table_model} = OliWeb.Products.ProductsTableModel.new(products, socket.assigns.ctx)
+
+    {:noreply,
+     assign(socket,
+      include_archived: value,
+      products: products,
+      total_count: total_count,
+      table_model: table_model
+    )}
+  end
+
+  def handle_event("include_archived", values, socket) do
+    value = if Map.has_key?(values, "value"), do: true, else: false
+
+    {:noreply,
+     push_patch(socket,
+       to:
+        live_path(
+          socket,
+          %{
+             include_archived: value
+           }
+         ),
+       replace: true
+     )}
   end
 
   def handle_event("title", %{"value" => title}, socket) do
