@@ -661,11 +661,27 @@ defmodule OliWeb.ObjectivesLiveTest do
          %{conn: conn, project: project, publication: publication} do
       create_objective(project, publication, "obj_a", "Objective A")
 
-      conn = get(conn, "/authoring/project/#{project.slug}/objectives#show_links")
-      assert html_response(conn, 200) =~ "View revision history"
+      conn =
+        get(conn, "/authoring/project/#{project.slug}/objectives#show_links")
+        |> Map.put(
+          :request_path,
+          "/authoring/project/#{project.slug}/curriculum#show_links"
+        )
+
+      {:ok, view, _html} = live(conn)
+
+      assert render(view) =~ "View revision history"
+    end
+
+    test "does not render links to revision history if #show_links is not added to the url (being an admin)",
+         %{conn: conn, project: project, publication: publication} do
+      create_objective(project, publication, "obj_a", "Objective A")
 
       conn = get(conn, "/authoring/project/#{project.slug}/objectives")
-      refute html_response(conn, 302) =~ "View revision history"
+
+      {:ok, view, _html} = live(conn)
+
+      refute render(view) =~ "View revision history"
     end
   end
 end
