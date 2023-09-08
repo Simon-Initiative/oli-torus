@@ -17,7 +17,7 @@ const LeftMenu: React.FC = () => {
     if (itemDetails) {
       setSequenceItemDetails(itemDetails);
     }
-    setDisplaySequenceContextMenu(showToast ? showToast : false);
+    setDisplaySequenceContextMenu(showToast || false);
   };
 
   const handleSequenceContextMenuItemClick = (itemDetails: any) => {
@@ -28,7 +28,7 @@ const LeftMenu: React.FC = () => {
     if (itemDetails) {
       setAdaptivRuleDetails(itemDetails);
     }
-    setDisplayAdaptivRuleContextMenu(showToast ? showToast : false);
+    setDisplayAdaptivRuleContextMenu(showToast || false);
   };
 
   const handleAdaptivRuleContextMenuItemClick = (itemDetails: any) => {

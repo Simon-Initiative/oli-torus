@@ -76,7 +76,7 @@ export interface AppState {
   sequenceEditorHeight: string;
   topLeftPanel: boolean;
   bottomLeftPanel: boolean;
-  sequenceEditorExpanded: false;
+  sequenceEditorExpanded: boolean;
 }
 
 const initialState: AppState = {
