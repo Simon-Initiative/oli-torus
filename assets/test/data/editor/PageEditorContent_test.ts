@@ -253,6 +253,7 @@ describe('PageEditorContent', () => {
             },
           ],
           id: expect.any(String),
+          editor: 'slate',
           type: 'content',
         },
         {
@@ -279,6 +280,7 @@ describe('PageEditorContent', () => {
                 },
               ],
               id: expect.any(String),
+              editor: 'slate',
               type: 'content',
             },
           ],

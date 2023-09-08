@@ -285,7 +285,7 @@ defmodule OliWeb.Sections.EnrollmentsViewLive do
   def add_enrollments(%{add_enrollments_step: :step_3} = assigns) do
     ~H"""
     <.form
-      for={:enrollments}
+      for={%{}}
       id="add_enrollments_form"
       class="hidden"
       method="POST"

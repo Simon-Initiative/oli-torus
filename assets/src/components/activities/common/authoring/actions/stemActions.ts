@@ -5,6 +5,11 @@ import { PREVIEW_TEXT_PATH, STEM_PATH } from 'data/activities/model/utils';
 import { Operations } from 'utils/pathOperations';
 
 export const StemActions = {
+  changeEditorMode(mode: 'slate' | 'markdown', stemPath = STEM_PATH) {
+    return (model: any) => {
+      Operations.apply(model, Operations.setKey(stemPath, 'editor', mode));
+    };
+  },
   editStem(content: Descendant[], stemPath = STEM_PATH) {
     return (model: any) => {
       Operations.apply(model, Operations.replace(stemPath + '.content', content));

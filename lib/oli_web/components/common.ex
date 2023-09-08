@@ -2,6 +2,7 @@ defmodule OliWeb.Components.Common do
   use Phoenix.Component
 
   alias OliWeb.Common.FormatDateTime
+  alias Phoenix.LiveView.JS
 
   def not_found(assigns) do
     ~H"""
@@ -56,7 +57,24 @@ defmodule OliWeb.Components.Common do
       <.button>Send!</.button>
       <.button phx-click="go" class="ml-2">Send!</.button>
   """
-  attr(:variant, :atom, default: nil, values: [:primary, :info, :success, :warning, :danger, nil])
+  attr(:variant, :atom,
+    default: nil,
+    values: [
+      :primary,
+      :secondary,
+      :tertiary,
+      :light,
+      :dark,
+      :info,
+      :success,
+      :warning,
+      :danger,
+      nil
+    ]
+  )
+
+  attr(:size, :atom, default: :md, values: [:xs, :sm, :md, :lg, :xl, :custom, nil])
+
   attr(:type, :string, default: nil)
   attr(:class, :string, default: nil)
   attr(:rest, :global, include: ~w(disabled form name value))
@@ -68,8 +86,9 @@ defmodule OliWeb.Components.Common do
     <button
       type={@type}
       class={[
-        "rounded text-sm px-3.5 py-2",
+        "rounded",
         button_variant_classes(@variant),
+        button_size_classes(@size),
         @class
       ]}
       {@rest}
@@ -82,7 +101,19 @@ defmodule OliWeb.Components.Common do
   defp button_variant_classes(variant) do
     case variant do
       :primary ->
-        "text-white bg-blue-500 hover:bg-blue-600 active:bg-blue-700 focus:ring-2 focus:ring-blue-400 dark:bg-blue-600 dark:hover:bg-blue-500 dark:active:bg-blue-400 focus:outline-none dark:focus:ring-blue-700"
+        "text-white bg-primary-500 hover:bg-primary-600 active:bg-primary-700 focus:ring-2 focus:ring-primary-400 dark:bg-primary-600 dark:hover:bg-primary dark:active:bg-primary-400 focus:outline-none dark:focus:ring-primary-700"
+
+      :secondary ->
+        "text-body-color bg-transparent hover:bg-gray-200 active:text-white active:bg-primary-600 focus:ring-2 focus:ring-primary-400 dark:text-body-color-dark dark:hover:bg-gray-600 dark:active:bg-primary-400 focus:outline-none dark:focus:ring-primary-700"
+
+      :tertiary ->
+        "text-primary-700 bg-primary-50 hover:bg-primary-100 active:bg-primary-200 focus:ring-2 focus:ring-primary-100 dark:text-primary-300 dark:bg-primary-800 dark:hover:bg-primary-700 dark:active:bg-primary-600 focus:outline-none dark:focus:ring-primary-800"
+
+      :light ->
+        "text-body-color bg-gray-100 hover:bg-gray-200 active:bg-gray-300 focus:ring-2 focus:ring-gray-100 dark:text-white dark:bg-gray-800 dark:hover:bg-gray-700 dark:active:bg-gray-600 focus:outline-none dark:focus:ring-gray-800"
+
+      :dark ->
+        "text-white bg-gray-500 hover:bg-gray-600 active:bg-gray-700 focus:ring-2 focus:ring-gray-500 dark:text-white dark:bg-gray-500 dark:hover:bg-gray-400 dark:active:bg-gray-300 focus:outline-none dark:focus:ring-gray-500"
 
       :info ->
         "text-white bg-gray-500 hover:bg-gray-600 active:bg-gray-700 focus:ring-2 focus:ring-gray-400 dark:bg-gray-600 dark:hover:bg-gray-500 dark:active:bg-gray-400 focus:outline-none dark:focus:ring-gray-700"
@@ -98,6 +129,17 @@ defmodule OliWeb.Components.Common do
 
       _ ->
         ""
+    end
+  end
+
+  defp button_size_classes(size) do
+    case size do
+      :xs -> "text-xs px-2 py-1"
+      :sm -> "text-sm px-2.5 py-1.5"
+      :md -> "text-base px-3 py-2"
+      :lg -> "text-lg px-4 py-2"
+      :xl -> "text-xl px-4 py-2"
+      _ -> ""
     end
   end
 
@@ -131,15 +173,23 @@ defmodule OliWeb.Components.Common do
   attr(:label, :string, default: nil)
   attr(:value, :any)
 
+  attr(:field_value, :any,
+    doc:
+      "in case of radio input, this stores the value of the field and not the value of the input"
+  )
+
   attr(:type, :string,
     default: "text",
-    values: ~w(checkbox color date datetime-local email file hidden month number password
-               range radio search select tel text textarea time url week)
+    values:
+      ~w(checkbox color date datetime-local email file hidden month number password
+               range radio search select tel text textarea time url week custom_radio custom_checkbox)
   )
 
   attr(:field, Phoenix.HTML.FormField,
     doc: "a form field struct retrieved from the form, for example: @form[:email]"
   )
+
+  attr(:variant, :string, default: "standard", values: ~w(outlined standard))
 
   attr(:errors, :list, default: [])
   attr(:class, :string, default: nil)
@@ -158,7 +208,7 @@ defmodule OliWeb.Components.Common do
 
   def input(%{field: %Phoenix.HTML.FormField{} = field} = assigns) do
     assigns
-    |> assign(field: nil, id: assigns.id || field.id)
+    |> assign(field: nil, id: assigns.id || field.id, field_value: field.value)
     |> assign(:errors, Enum.map(field.errors, &OliWeb.ErrorHelpers.translate_error(&1)))
     |> assign_new(:name, fn -> if assigns.multiple, do: field.name <> "[]", else: field.name end)
     |> assign_new(:value, fn -> field.value end)
@@ -191,13 +241,17 @@ defmodule OliWeb.Components.Common do
   end
 
   def input(%{type: "select"} = assigns) do
+    assigns = assigns |> set_input_classes() |> set_input_placeholder()
+
     ~H"""
-    <div class="contents" phx-feedback-for={@name}>
-      <.label :if={@label} for={@id}><%= @label %></.label>
-      <select id={@id} name={@name} class={@class} multiple={@multiple} {@rest}>
+    <div class={@group_class} phx-feedback-for={@name}>
+      <select id={@id} name={@name} class={@input_class} multiple={@multiple} {@rest}>
         <option :if={@prompt} value=""><%= @prompt %></option>
         <%= Phoenix.HTML.Form.options_for_select(@options, @value) %>
       </select>
+      <.label :if={@label} for={@id} class={@label_class}>
+        <%= @label %>
+      </.label>
       <.error :for={msg <- @errors}><%= msg %></.error>
     </div>
     """
@@ -250,25 +304,136 @@ defmodule OliWeb.Components.Common do
     """
   end
 
+  def input(%{type: "custom_radio", field_value: field_value, value: value} = assigns) do
+    assigns =
+      assign(assigns,
+        id: "#{value}_radio_button",
+        is_checked: is_radio_checked?(field_value, value)
+      )
+
+    ~H"""
+    <label
+      name={@name}
+      phx-click={
+        JS.set_attribute({"data-checked", false}, to: "label[name=\"#{@name}\"]")
+        |> JS.set_attribute({"data-checked", true})
+      }
+      class={[
+        "p-2 rounded border border-primary cursor-pointer",
+        "data-[checked=true]:bg-primary data-[checked=true]:hover:bg-delivery-primary-600 data-[checked=true]:text-white",
+        "data-[checked=false]:bg-white data-[checked=false]:dark:bg-gray-800 data-[checked=false]:hover:bg-delivery-primary-100 data-[checked=false]:text-primary"
+      ]}
+      data-checked={"#{@is_checked}"}
+      for={@id}
+    >
+      <span><%= @label %></span>
+      <input
+        type="radio"
+        name={@name}
+        id={@id}
+        value={@value}
+        class="hidden"
+        {Map.delete(@rest, :ctx)}
+      />
+    </label>
+    """
+  end
+
+  def input(%{type: "custom_checkbox", field_value: field_value, value: value} = assigns) do
+    assigns =
+      assign(assigns,
+        id: "#{value}_radio_button",
+        is_checked: is_radio_checked?(field_value, value)
+      )
+
+    ~H"""
+    <label
+      onclick={"
+        (() => {
+          checked = this.dataset['checked'] == 'true' ? false : true;
+          this.dataset['checked'] = checked;
+          document.getElementById('#{@id}').checked = checked;
+        })();
+      "}
+      data-checked={"#{@is_checked}"}
+      class={[
+        "h-10 w-10 text-xs text-primary font-semibold cursor-pointer p-3 aspect-square !flex items-center justify-center rounded-full border border-primary",
+        "data-[checked=true]:bg-primary data-[checked=true]:hover:bg-delivery-primary-600 data-[checked=true]:text-white",
+        "data-[checked=false]:bg-white data-[checked=false]:dark:bg-gray-800 data-[checked=false]:hover:bg-delivery-primary-100 data-[checked=false]:text-primary"
+      ]}
+      for={"##{@id}"}
+    >
+      <input
+        type="checkbox"
+        name={@name}
+        id={@id}
+        value={@value}
+        checked={@is_checked}
+        class="hidden"
+      />
+      <span><%= @label %></span>
+    </label>
+    """
+  end
+
   # All other inputs text, datetime-local, url, password, etc. are handled here...
   def input(assigns) do
+    assigns = assigns |> set_input_classes() |> set_input_placeholder()
+
     ~H"""
-    <div class="contents" phx-feedback-for={@name}>
-      <.label :if={@label} for={@id}><%= @label %></.label>
+    <div class={@group_class} phx-feedback-for={@name}>
       <input
         type={@type}
         name={@name}
         id={@id}
         value={Phoenix.HTML.Form.normalize_value(@type, @value)}
-        class={[
-          @class,
-          @errors != [] && "border-red-400 focus:border-red-400"
-        ]}
+        class={@input_class}
+        placeholder={@placeholder}
         {@rest}
       />
+      <.label :if={@label} class={@label_class} for={@id}><%= @label %></.label>
       <.error :for={msg <- @errors}><%= msg %></.error>
     </div>
     """
+  end
+
+  defp set_input_placeholder(assigns) do
+    placeholder =
+      if assigns[:variant] == "outlined" do
+        assigns[:placeholder] || assigns[:label]
+      else
+        assigns[:placeholder]
+      end
+
+    assign(assigns, placeholder: placeholder)
+  end
+
+  defp set_input_classes(assigns) do
+    input_class = [
+      assigns.class,
+      assigns.errors != [] && "border-red-400 focus:border-red-400"
+    ]
+
+    {group_class, label_class, input_class} =
+      if assigns[:variant] == "outlined" do
+        {"form-label-group", "control-label pointer-events-none", ["form-control" | input_class]}
+      else
+        {"flex flex-col-reverse", "", input_class}
+      end
+
+    assign(assigns, group_class: group_class, label_class: label_class, input_class: input_class)
+  end
+
+  defp is_radio_checked?(field_value, value) when is_list(field_value) do
+    Enum.member?(field_value, value)
+  end
+
+  defp is_radio_checked?(field_value, value) do
+    case {is_atom(field_value), is_atom(value)} do
+      {false, true} -> String.to_atom(field_value) == value
+      {true, false} -> field_value == String.to_atom(value)
+      field_value -> field_value == value
+    end
   end
 
   @doc """
@@ -293,11 +458,13 @@ defmodule OliWeb.Components.Common do
   """
   attr(:for, :string, default: nil)
   attr(:if, :boolean, default: true)
+  attr(:class, :string, default: nil)
+  attr(:onclick, :string, default: nil)
   slot(:inner_block, required: true)
 
   def label(assigns) do
     ~H"""
-    <label :if={@if} for={@for} class="block text-sm font-semibold leading-6 text-zinc-800">
+    <label :if={@if} for={@for} class={@class} onclick={@onclick}>
       <%= render_slot(@inner_block) %>
     </label>
     """

@@ -37,6 +37,6 @@
 
 <div>
   <%= submit "Save", class: "btn btn-md btn-primary btn-block" %>
-  <%= link "Cancel", to: value_or(assigns[:cancel_path], Routes.institution_path(@conn, :index)), class: "btn btn-md btn-outline-secondary btn-block mt-3" %>
+  <%= link "Cancel", to: value_or(assigns[:cancel_path], ~p"/admin/institutions"), class: "btn btn-md btn-outline-secondary btn-block mt-3" %>
 </div>
 <% end %>
