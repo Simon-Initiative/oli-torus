@@ -133,11 +133,9 @@ defmodule Oli.Delivery.Settings do
   def check_start_date(%Combined{start_date: nil}), do: {:allowed}
 
   def check_start_date(%Combined{start_date: start_date}) do
-    if DateTime.compare(start_date, DateTime.utc_now()) == :gt do
-      {:before_start_date}
-    else
-      {:allowed}
-    end
+    if DateTime.compare(start_date, DateTime.utc_now()) == :gt,
+      do: {:before_start_date},
+      else: {:allowed}
   end
 
   def check_end_date(%Combined{end_date: nil}), do: {:allowed}
@@ -176,11 +174,9 @@ defmodule Oli.Delivery.Settings do
 
         # both an end date and a time limit, use the earlier of the two
         {end_date, time_limit} ->
-          if end_date < DateTime.add(resource_attempt.inserted_at, time_limit, :minute) do
-            end_date
-          else
-            DateTime.add(resource_attempt.inserted_at, time_limit, :minute)
-          end
+          if end_date < DateTime.add(resource_attempt.inserted_at, time_limit, :minute),
+            do: end_date,
+            else: DateTime.add(resource_attempt.inserted_at, time_limit, :minute)
       end
 
     case deadline do
