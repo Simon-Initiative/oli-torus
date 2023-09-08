@@ -45,6 +45,7 @@ const CheckAllThatApply = () => {
           addOne={() => dispatch(CATAActions.addChoice(ActivityTypes.makeChoice('')))}
           setAll={(choices: ActivityTypes.Choice[]) => dispatch(Choices.setAll(choices))}
           onEdit={(id, content) => dispatch(Choices.setContent(id, content))}
+          onChangeEditorType={(id, editorType) => dispatch(Choices.setEditor(id, editorType))}
           onRemove={(id) => dispatch(CATAActions.removeChoiceAndUpdateRules(id))}
         />
       </TabbedNavigation.Tab>

@@ -1,6 +1,7 @@
 import { Descendant } from 'slate';
 import { Choice, PostUndoable } from 'components/activities/types';
 import { List } from 'data/activities/model/list';
+import { EditorType } from 'data/content/resource';
 import { Operations } from 'utils/pathOperations';
 
 const PATH = '$..choices';
@@ -16,6 +17,12 @@ export const Choices = {
       Operations.apply(model, Operations.replace(`$..choices[?(@.id=='${id}')].content`, content));
     };
   },
+
+  setEditor(id: string, editor: EditorType) {
+    return (model: any, _post: PostUndoable) => {
+      Operations.apply(model, Operations.setKey(`$..choices[?(@.id=='${id}')]`, 'editor', editor));
+    };
+  },
 };
 
 const ITEMS_PATH = '$..items';
@@ -27,6 +34,12 @@ export const Items = {
   setContent(id: string, content: Descendant[]) {
     return (model: any, _post: PostUndoable) => {
       Operations.apply(model, Operations.replace(`$..items[?(@.id=='${id}')].content`, content));
+    };
+  },
+
+  setEditor(id: string, editor: EditorType) {
+    return (model: any, _post: PostUndoable) => {
+      Operations.apply(model, Operations.setKey(`$..items[?(@.id=='${id}')]`, 'editor', editor));
     };
   },
 };

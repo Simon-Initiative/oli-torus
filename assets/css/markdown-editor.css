@@ -1,0 +1,20 @@
+@import "@uiw/react-md-editor/markdown-editor";
+@import "@uiw/react-markdown-preview/markdown";
+
+.wmde-markdown-color,
+textarea.w-md-editor-text-input {
+  /* Really want a fixed-width font while editing */
+  --md-editor-font-family: Consolas, "Courier New", monospace;
+}
+
+.wmde-markdown ul {
+  list-style: disc;
+}
+
+.wmde-markdown ol {
+  list-style: decimal;
+}
+
+.w-md-editor .w-md-editor-content {
+  min-height: 2.1rem;
+}

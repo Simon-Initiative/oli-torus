@@ -47,6 +47,7 @@ export const Ordering: React.FC = () => {
           addOne={() => dispatch(Actions.addChoice(ActivityTypes.makeChoice('')))}
           setAll={(choices: ActivityTypes.Choice[]) => dispatch(Choices.setAll(choices))}
           onEdit={(id, content) => dispatch(Choices.setContent(id, content))}
+          onChangeEditorType={(id, editor) => dispatch(Choices.setEditor(id, editor))}
           onRemove={(id) => dispatch(Actions.removeChoiceAndUpdateRules(id))}
           colorMap={model.choiceColors ? new Map(model.choiceColors) : undefined}
         />
