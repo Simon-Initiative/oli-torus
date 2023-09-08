@@ -1,6 +1,11 @@
 import jp from 'jsonpath';
 
-export type PathOperation = FindOperation | InsertOperation | ReplaceOperation | FilterOperation;
+export type PathOperation =
+  | FindOperation
+  | InsertOperation
+  | ReplaceOperation
+  | FilterOperation
+  | SetKey;
 
 // apply a series of transformations which may mutate the given json
 export function applyAll(json: Record<string, any>, ops: PathOperation[]): void {
@@ -25,6 +30,13 @@ export function apply(json: Record<string, any>, op: PathOperation): any[] {
       }
       return result;
     }
+
+    if (op.type === 'SetKey') {
+      // Impl of 'SetKey' is to set a key on an object
+      result[op.key] = op.item;
+      return result;
+    }
+
     if (op.type === 'ReplaceOperation') {
       // Impl of 'ReplaceOperation' is simply returning the value of item
       // that will then replace the item matched via 'path'
@@ -44,7 +56,7 @@ export type FindOperation = {
   path: string;
 };
 
-// Insert into a list
+// Insert into a list or sets an attribute on an object
 export type InsertOperation = {
   type: 'InsertOperation';
   path: string;
@@ -56,6 +68,14 @@ export type InsertOperation = {
 export type ReplaceOperation = {
   type: 'ReplaceOperation';
   path: string;
+  item: any;
+};
+
+// Set a key - useful when the key might be missing and you can't use ReplaceOperation
+export type SetKey = {
+  type: 'SetKey';
+  path: string;
+  key: string;
   item: any;
 };
 
@@ -84,6 +104,13 @@ export const replace = (path: string, item: any): ReplaceOperation => ({
   item,
 });
 
+export const setKey = (path: string, key: string, item: any): SetKey => ({
+  type: 'SetKey',
+  path,
+  key,
+  item,
+});
+
 export const filter = (path: string, predicatePath: string): FilterOperation => ({
   type: 'FilterOperation',
   path,
@@ -97,4 +124,5 @@ export const Operations = {
   filter,
   apply,
   applyAll,
+  setKey,
 };

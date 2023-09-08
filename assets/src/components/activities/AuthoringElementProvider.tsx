@@ -1,4 +1,4 @@
-import React, { useContext } from 'react';
+import React, { useContext, useRef } from 'react';
 import produce from 'immer';
 import { Maybe } from 'tsmonad';
 import { ErrorBoundary } from 'components/common/ErrorBoundary';
@@ -33,8 +33,19 @@ export const AuthoringElementProvider: React.FC<AuthoringElementProps<ActivityMo
   onRequestMedia,
   onEdit,
 }) => {
+  const modelRef = useRef(model);
+  modelRef.current = model;
+
   const dispatch: AuthoringElementState<any>['dispatch'] = (action) => {
-    const newModel = produce(model, (draftState) => action(draftState, onPostUndoable));
+    /*
+    Got into an interesting situation where this dispatch function was closed over an outdated version of `model`
+    causing previous updates to be undone.
+
+    ie: these were not the same value when called:
+      model.authoring.parts[0].responses[0].feedback
+      modelRef.current?.authoring.parts[0].responses[0].feedback
+    */
+    const newModel = produce(modelRef.current, (draftState) => action(draftState, onPostUndoable));
     onEdit(newModel);
     return newModel;
   };
