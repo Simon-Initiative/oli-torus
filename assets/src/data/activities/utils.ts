@@ -20,6 +20,8 @@ export const stringToStudentInput = (input: string): StudentInput =>
 
 // An `ActivityState` only has an input if it has been saved or submitted.
 // Each activity part may have an input.
+// NB: this version splits input strings into array of words, useful if input string codes a set of
+// selected ids. Not appropriate for text input activities which should use safelySelectStringInputs
 export const safelySelectInputs = (activityState: ActivityState | undefined): Maybe<PartInputs> => {
   const partInputs = activityState?.parts.filter((part) => !!part?.response?.input);
   if (!partInputs) return Maybe.nothing();

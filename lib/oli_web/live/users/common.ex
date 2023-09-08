@@ -1,11 +1,11 @@
 defmodule OliWeb.Users.Common do
-  use OliWeb, :surface_component
+  use OliWeb, :html
 
   alias Oli.Accounts
   alias OliWeb.Common.Utils
 
   def render(assigns) do
-    ~F"""
+    ~H"""
     <div>nothing</div>
     """
   end
@@ -20,52 +20,80 @@ defmodule OliWeb.Users.Common do
         } = row,
         _
       ) do
+    assigns =
+      Map.merge(
+        assigns,
+        %{
+          email: email,
+          email_confirmed_at: email_confirmed_at,
+          invitation_accepted_at: invitation_accepted_at,
+          locked_at: locked_at,
+          row: row
+        }
+      )
+
     checkmark =
-      case row do
+      case assigns.row do
         %{independent_learner: false} ->
           nil
 
         _ ->
           cond do
-            Accounts.user_confirmation_pending?(row) ->
-              ~F"""
-              <span data-bs-toggle="tooltip" data-bs-html="true" title={"Confirmation Pending sent to #{email}"}>
+            Accounts.user_confirmation_pending?(assigns.row) ->
+              ~H"""
+              <span
+                data-bs-toggle="tooltip"
+                data-bs-html="true"
+                title={"Confirmation Pending sent to #{@email}"}
+              >
                 <i class="fas fa-paper-plane text-secondary"></i>
               </span>
               """
 
-            not is_nil(email_confirmed_at) ->
-              ~F"""
-              <span data-bs-toggle="tooltip" data-bs-html="true" title={"Email Confirmed on #{Utils.render_precise_date(row, :email_confirmed_at, @ctx)}"}>
+            not is_nil(assigns.email_confirmed_at) ->
+              ~H"""
+              <span
+                data-bs-toggle="tooltip"
+                data-bs-html="true"
+                title={"Email Confirmed on #{Utils.render_precise_date(@row, :email_confirmed_at, @ctx)}"}
+              >
                 <i class="fas fa-check text-success"></i>
               </span>
               """
 
-            not is_nil(invitation_accepted_at) ->
-              ~F"""
-              <span data-bs-toggle="tooltip" data-bs-html="true" title={"Invitation Accepted on #{Utils.render_precise_date(row, :invitation_accepted_at, @ctx)}"}>
+            not is_nil(assigns.invitation_accepted_at) ->
+              ~H"""
+              <span
+                data-bs-toggle="tooltip"
+                data-bs-html="true"
+                title={"Invitation Accepted on #{Utils.render_precise_date(@row, :invitation_accepted_at, @ctx)}"}
+              >
                 <i class="fas fa-check text-success"></i>
               </span>
               """
 
             true ->
-              ~F"""
-              <span data-bs-toggle="tooltip" data-bs-html="true" title={"Invitation Pending sent to #{email}"}>
+              ~H"""
+              <span data-bs-toggle="tooltip" data-bs-html="true" title={"Invitation Pending sent to #{@email}"}>
                 <i class="fas fa-paper-plane text-secondary"></i>
               </span>
               """
           end
       end
 
-    ~F"""
-      <div class="d-flex flex-row">
-       {email} <div class="flex-grow-1"></div> {checkmark}
-      </div>
-      <div>
-        {#if !is_nil(locked_at)}
-          <span class="badge badge-warning"><i class="fas fa-user-lock"></i> Account Locked</span>
-        {/if}
-      </div>
+    assigns = Map.put(assigns, :checkmark, checkmark)
+
+    ~H"""
+    <div class="d-flex flex-row">
+      <%= @email %>
+      <div class="flex-grow-1"></div>
+      <%= @checkmark %>
+    </div>
+    <div>
+      <%= if !is_nil(@locked_at) do %>
+        <span class="badge badge-warning"><i class="fas fa-user-lock"></i> Account Locked</span>
+      <% end %>
+    </div>
     """
   end
 end

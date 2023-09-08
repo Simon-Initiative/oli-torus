@@ -1,5 +1,5 @@
 defmodule OliWeb.Delivery.StudentOnboarding.Wizard do
-  use Phoenix.LiveView
+  use OliWeb, :live_view
 
   alias OliWeb.Common.Stepper
   alias OliWeb.Common.Stepper.Step
@@ -95,10 +95,10 @@ defmodule OliWeb.Delivery.StudentOnboarding.Wizard do
      )}
   end
 
-  attr :section, :map, required: true
-  attr :steps, :list, default: []
-  attr :current_step_name, :atom, default: @intro_step
-  attr :current_step_index, :integer, default: 0
+  attr(:section, :map, required: true)
+  attr(:steps, :list, default: [])
+  attr(:current_step_name, :atom, default: @intro_step)
+  attr(:current_step_index, :integer, default: 0)
 
   def render(assigns) do
     ~H"""
@@ -108,15 +108,15 @@ defmodule OliWeb.Delivery.StudentOnboarding.Wizard do
           module={Stepper}
           steps={@steps}
           current_step={@current_step_index}
-          on_cancel={if !@is_lti, do: JS.navigate(Routes.delivery_path(OliWeb.Endpoint, :open_and_free_index)), else: nil}
+          on_cancel={if !@is_lti, do: JS.navigate(~p"/sections"), else: nil}
           data={get_step_data(assigns)}
         />
       </div>
     """
   end
 
-  slot :inner_block, required: true
-  attr :section, :map, required: true
+  slot(:inner_block, required: true)
+  attr(:section, :map, required: true)
 
   defp header(assigns) do
     ~H"""
@@ -129,7 +129,7 @@ defmodule OliWeb.Delivery.StudentOnboarding.Wizard do
     """
   end
 
-  attr :section, :map, required: true
+  attr(:section, :map, required: true)
 
   def render_step(%{current_step_name: @intro_step} = assigns) do
     ~H"""

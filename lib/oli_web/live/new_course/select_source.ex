@@ -1,5 +1,5 @@
 defmodule OliWeb.Delivery.NewCourse.SelectSource do
-  use Surface.LiveComponent
+  use OliWeb, :live_component
 
   alias Oli.Delivery
   alias Oli.Delivery.Sections.Blueprint
@@ -8,38 +8,24 @@ defmodule OliWeb.Delivery.NewCourse.SelectSource do
   alias OliWeb.Common.Table.SortableTableModel
   alias OliWeb.Router.Helpers, as: Routes
 
-  alias Surface.Components.Form
-  alias Surface.Components.Form.{Field, RadioButton}
+  alias Phoenix.LiveView.JS
 
-  data(sources, :list, default: [])
-  data(table_model, :struct)
-  data(total_count, :integer, default: 0)
-  data(view_type, :atom, default: :card)
-  data(live_action, :atom)
+  @default_params %{
+    offset: 0,
+    limit: 20,
+    sort_by: :title,
+    sort_order: :asc,
+    query: "",
+    applied_query: "",
+    selection: nil
+  }
 
-  data(params, :map,
-    default: %{
-      offset: 0,
-      limit: 20,
-      sort_by: :title,
-      sort_order: :asc,
-      query: "",
-      applied_query: "",
-      selection: nil
-    }
-  )
-
-  prop(session, :map, required: true)
-  prop(on_select, :event, required: true)
-  prop(on_select_target, :any, required: true)
-  prop(current_user, :map, required: true)
-  prop(lti_params, :map, required: true)
+  @default_view_type :card
 
   def update(
         %{
           session: session,
           on_select: on_select,
-          on_select_target: on_select_target,
           current_user: current_user,
           lti_params: lti_params
         } = assigns,
@@ -47,6 +33,8 @@ defmodule OliWeb.Delivery.NewCourse.SelectSource do
       ) do
     if !socket.assigns[:loaded] do
       ctx = SessionContext.init(socket, session)
+      params = socket.assigns[:params] || @default_params
+      view_type = socket.assigns[:view_type] || @default_view_type
 
       # live_action is :independent_learner, :admin or :lms_instructor
       live_action = session["live_action"]
@@ -56,7 +44,7 @@ defmodule OliWeb.Delivery.NewCourse.SelectSource do
       {total_count, table_model} =
         OliWeb.Delivery.NewCourse.TableModel.new(sources, ctx)
         |> elem(1)
-        |> get_table_model_and_count(sources, socket.assigns.params)
+        |> get_table_model_and_count(sources, params)
 
       {:ok,
        assign(socket,
@@ -66,9 +54,10 @@ defmodule OliWeb.Delivery.NewCourse.SelectSource do
          live_action: live_action,
          loaded: true,
          on_select: on_select,
-         on_select_target: on_select_target,
          current_user: current_user,
-         lti_params: lti_params
+         lti_params: lti_params,
+         params: params,
+         view_type: view_type
        )}
     else
       case assigns[:source] do
@@ -93,69 +82,89 @@ defmodule OliWeb.Delivery.NewCourse.SelectSource do
 
   @spec render(any) :: Phoenix.LiveView.Rendered.t()
   def render(assigns) do
-    ~F"""
+    assigns = assign(assigns, :changeset, to_form(%{}, as: :view))
+
+    ~H"""
     <div class="w-full">
-      <FilterBox
-        card_header_text={nil}
-        card_body_text={nil}
+      <FilterBox.render
         table_model={@table_model}
-        sort="sort"
+        sort={JS.push("sort", target: @myself)}
         show_more_opts={is_instructor?(@live_action)}
       >
-        <Filter
+        <Filter.render
           query={@params[:query]}
-          apply="apply_search"
-          change="change_search"
-          reset="reset_search"
+          apply={JS.push("apply_search", target: @myself)}
+          change={JS.push("change_search", target: @myself)}
+          reset={JS.push("reset_search", target: @myself)}
         />
 
         <:extra_opts>
           <div class="flex flex-row justify-end border-l border-l-gray-200 pl-4">
-            <Form id="update_view_type" for={:view} change="update_view_type">
-              <Field name={:type} class="control w-100 d-flex align-items-center">
+            <.form
+              id="update_view_type"
+              for={@changeset}
+              phx-change="update_view_type"
+              phx-target={@myself}
+            >
+              <div name={:type} class="control w-100 d-flex align-items-center">
                 <div class="flex text-white dark:text-delivery-body-color-dark">
                   <label class={"#{if @view_type == :card, do: "shadow-inner bg-delivery-primary-200 text-white", else: "shadow bg-white dark:bg-gray-600 text-black dark:text-white"} cursor-pointer text-center block rounded-l-sm py-1 h-8 w-10"}>
-                    <RadioButton class="hidden" value="card" checked={@view_type == :card} opts={hidden: true} />
+                    <.input
+                      field={@changeset[:type]}
+                      type="radio"
+                      class="hidden"
+                      value="card"
+                      checked={@view_type == :card}
+                    />
                     <i class="fa fa-th" />
                   </label>
                   <label class={"#{if @view_type == :list, do: "shadow-inner bg-delivery-primary-200 text-white", else: "shadow bg-white dark:bg-gray-600 text-black dark:text-white"} cursor-pointer text-center block rounded-r-sm py-1 h-8 w-10"}>
-                    <RadioButton class="hidden" value="list" checked={@view_type == :list} opts={hidden: true} />
+                    <.input
+                      field={@changeset[:type]}
+                      type="radio"
+                      class="hidden"
+                      value="list"
+                      checked={@view_type == :card}
+                    />
                     <i class="fa fa-list" />
                   </label>
                 </div>
-              </Field>
-            </Form>
+              </div>
+            </.form>
           </div>
         </:extra_opts>
-      </FilterBox>
+      </FilterBox.render>
 
-      <Listing
+      <Listing.render
         filter={@params[:applied_query]}
         table_model={@table_model}
         total_count={@total_count}
         offset={@params[:offset]}
         limit={@params[:limit]}
         selected={@on_select}
-        selected_target={@on_select_target}
-        sort="sort"
-        page_change="page_change"
+        sort={JS.push("sort", target: @myself)}
+        page_change={JS.push("page_change", target: @myself)}
         show_bottom_paging={false}
         cards_view={is_cards_view?(@live_action, @view_type)}
       />
 
-      {#if is_lms_instructor?(@live_action) and is_nil(@current_user.author)}
+      <%= if is_lms_instructor?(@live_action) and is_nil(@current_user.author) do %>
         <div class="card max-w-lg mx-auto">
           <div class="card-body text-center">
             <h5 class="card-title">Have a Course Authoring Account?</h5>
-            <p class="card-text">Link your authoring account to access projects where you are a collaborator.</p>
+            <p class="card-text">
+              Link your authoring account to access projects where you are a collaborator.
+            </p>
             <a
               href={Routes.delivery_path(OliWeb.Endpoint, :link_account)}
               target="_blank"
               class="btn btn-primary link-account inline-block my-2"
-            >Link Authoring Account</a>
+            >
+              Link Authoring Account
+            </a>
           </div>
         </div>
-      {/if}
+      <% end %>
     </div>
     """
   end

@@ -57,11 +57,11 @@ interface ContentOutlineItemProps extends OutlineItemProps {
 
 export const ContentOutlineItem = (props: ContentOutlineItemProps) => {
   const { contentItem } = props;
-
+  const title = contentItem.editor === 'markdown' ? 'Markdown' : 'Paragraph';
   return (
     <OutlineItem {...props}>
       <Icon iconName="fas fa-paragraph" />
-      <Description title="Paragraph">{getContentDescription(contentItem)}</Description>
+      <Description title={title}>{getContentDescription(contentItem)}</Description>
     </OutlineItem>
   );
 };

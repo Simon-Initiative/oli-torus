@@ -19,42 +19,6 @@ input[type="datetime-local"].torus-input::placeholder {
   @apply border border-gray-300 dark:border-gray-600 rounded-sm text-gray-400;
 }
 
-.torus-custom-radio {
-  @apply p-2 rounded border border-primary cursor-pointer;
-}
-
-.torus-custom-radio input[type="radio"] {
-  @apply hidden;
-}
-
-.torus-custom-radio:has(input[type="radio"]:checked) {
-  @apply bg-primary hover:bg-delivery-primary-600 text-white;
-}
-
-.torus-custom-radio:has(input[type="radio"]:not(:checked)) {
-  @apply bg-white dark:bg-gray-800 hover:bg-delivery-primary-100 text-primary;
-}
-
-.torus-custom-checkbox {
-  @apply h-10 w-10 text-xs font-semibold cursor-pointer;
-}
-
-.torus-custom-checkbox input[type="checkbox"] {
-  @apply hidden;
-}
-
-.torus-custom-checkbox:has(input[type="checkbox"]) {
-  @apply p-3 w-10 h-10 aspect-square flex items-center justify-center rounded-full border border-primary;
-}
-
-.torus-custom-checkbox:has(input[type="checkbox"]:checked) {
-  @apply bg-primary hover:bg-delivery-primary-600 text-white;
-}
-
-.torus-custom-checkbox:has(input[type="checkbox"]:not(:checked)) {
-  @apply bg-white dark:bg-gray-800 hover:bg-delivery-primary-100 text-primary;
-}
-
 input, input[type="datetime-local"], input[type="number"] {
   @apply dark:bg-neutral-800 dark:text-white;
 }
@@ -65,4 +29,8 @@ select {
 
 ::-webkit-calendar-picker-indicator {
   @apply dark:invert
+}
+
+input[type="checkbox"]:not(:checked):disabled {
+  @apply border-gray-400 bg-gray-200;
 }

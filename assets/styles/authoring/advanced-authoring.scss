@@ -1,7 +1,7 @@
 $nav-height: 65px;
 $panel-side-width: 270px;
 $panel-bg-color-light: #f5f6f7;
-$panel-bg-color-dark: #7b8a8b;
+$panel-bg-color-dark: black;
 $panel-font-color-light: #333;
 $panel-font-color-dark: $panel-font-color-light;
 $torus-panel-side-width: 200px;
@@ -912,6 +912,19 @@ $font-family-sans-serif: var(--font-sans);
   }
 }
 
+.dark .modal-dialog.config-modal,
+.dark #advanced-authoring-modals .modal-dialog {
+  .modal-header {
+    background-color: $panel-bg-color-dark;
+    color: #f5f6f7;
+  }
+  .modal-footer {
+    background-color: $panel-bg-color-dark;
+  }
+  .modal-body {
+    color: $panel-bg-color-dark;
+  }
+}
 .toast-body {
   .list-group-item {
     margin: 5px;

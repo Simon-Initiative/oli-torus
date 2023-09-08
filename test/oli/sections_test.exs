@@ -11,6 +11,10 @@ defmodule Oli.SectionsTest do
   alias Oli.Publishing
   alias Oli.Publishing.DeliveryResolver
   alias Oli.Delivery.Hierarchy
+  alias Oli.Delivery.Attempts.Core
+  alias Oli.Delivery.Snapshots.Snapshot
+  alias Oli.Delivery.Snapshots
+  alias Oli.Delivery.Transfer
 
   describe "enrollments" do
     @valid_attrs %{
@@ -94,6 +98,53 @@ defmodule Oli.SectionsTest do
       # Now enroll again with different role, this should update the role
       Sections.enroll(user1.id, section.id, [ContextRoles.get_role(:context_learner)])
       assert ContextRoles.has_role?(user1, section.slug, ContextRoles.get_role(:context_learner))
+    end
+
+    test "enroll/3 upserts correctly for multiple users", %{
+      section: section,
+      user1: user1,
+      user2: user2
+    } do
+      assert Sections.list_enrollments(section.slug) == []
+
+      # Enroll a user as instructor
+      Sections.enroll([user1.id, user2.id], section.id, [
+        ContextRoles.get_role(:context_instructor)
+      ])
+
+      assert ContextRoles.has_role?(
+               user1,
+               section.slug,
+               ContextRoles.get_role(:context_instructor)
+             )
+
+      assert ContextRoles.has_role?(
+               user2,
+               section.slug,
+               ContextRoles.get_role(:context_instructor)
+             )
+
+      # Now enroll again as same role, this should be idempotent
+      Sections.enroll([user1.id, user2.id], section.id, [
+        ContextRoles.get_role(:context_instructor)
+      ])
+
+      assert ContextRoles.has_role?(
+               user1,
+               section.slug,
+               ContextRoles.get_role(:context_instructor)
+             )
+
+      assert ContextRoles.has_role?(
+               user2,
+               section.slug,
+               ContextRoles.get_role(:context_instructor)
+             )
+
+      # Now enroll again with different role, this should update the role
+      Sections.enroll([user1.id, user2.id], section.id, [ContextRoles.get_role(:context_learner)])
+      assert ContextRoles.has_role?(user1, section.slug, ContextRoles.get_role(:context_learner))
+      assert ContextRoles.has_role?(user2, section.slug, ContextRoles.get_role(:context_learner))
     end
 
     test "unenroll/3 removes context roles", %{section: section, user1: user1} do
@@ -701,6 +752,7 @@ defmodule Oli.SectionsTest do
       assert Map.has_key?(updates_in_progress, latest_publication.id)
     end
 
+    @tag capture_log: true
     test "apply_publication_update/2", %{
       author: author,
       project: project,
@@ -850,6 +902,7 @@ defmodule Oli.SectionsTest do
       assert section_resources |> Enum.count() == 7
     end
 
+    @tag capture_log: true
     test "apply_publication_update/2 handles minor non-hierarchical updates",
          %{
            project: project,
@@ -984,6 +1037,7 @@ defmodule Oli.SectionsTest do
              |> Enum.find(fn sr -> sr.resource_id == Map.get(map, :o1).resource.id end)
     end
 
+    @tag capture_log: true
     test "apply_publication_update/2 only applies minor changes to products", %{
       author: author,
       project: project,
@@ -1376,6 +1430,185 @@ defmodule Oli.SectionsTest do
         |> Repo.one()
 
       assert updated_state["has_visited_once"] == true
+    end
+  end
+
+  describe "transfer student data" do
+    setup [:sections_with_same_publications]
+
+    test "gets course sections to which a student's data can be transferred", %{
+      section_1: section_1,
+      section_2: section_2
+    } do
+      sections = Transfer.get_sections_to_transfer_data(section_1)
+      [target_section_2] = sections
+
+      assert length(sections) == 1
+      assert target_section_2.title == section_2.title
+    end
+
+    test "deletes attempts and resource accesses by section and user", %{
+      section_1: section_1,
+      user_1: user_1
+    } do
+      # gets resource accesses, resource attempts, activity attempts and part attempts from target section
+      resource_accesses =
+        Core.get_resource_accesses(section_1.slug, user_1.id) |> Enum.map(& &1.id)
+
+      resource_attempts =
+        Core.get_resource_attempts_by_resource_accesses(resource_accesses) |> Enum.map(& &1.id)
+
+      activity_attempts =
+        Core.get_activity_attempts_by_resource_attempts(resource_attempts) |> Enum.map(& &1.id)
+
+      # assert that there are resource accesses, resource attempts, activity attempts and part attempts in target section
+
+      assert Core.get_resource_accesses(section_1.slug, user_1.id) |> length() == 1
+
+      assert Core.get_resource_attempts_by_resource_accesses(resource_accesses) |> length() == 1
+
+      assert Core.get_activity_attempts_by_resource_attempts(resource_attempts) |> length() == 1
+
+      assert Core.get_part_attempts_by_activity_attempts(activity_attempts) |> length() == 1
+
+      # delete resource accesses, resource attempts, activity attempts and part attempts for target section
+
+      Core.delete_resource_accesses_by_section_and_user(section_1.id, user_1.id)
+
+      # assert that there are no resource accesses, resource attempts, activity attempts and part attempts in target section
+
+      assert Core.get_resource_accesses(section_1.slug, user_1.id) |> length() == 0
+
+      assert Core.get_resource_attempts_by_resource_accesses(resource_accesses) |> length() == 0
+
+      assert Core.get_activity_attempts_by_resource_attempts(resource_attempts) |> length() == 0
+
+      assert Core.get_part_attempts_by_activity_attempts(activity_attempts) |> length() == 0
+    end
+
+    test "deletes snapshot by section and user", %{section_1: section_1, user_1: user_1} do
+      # assert that there is a snapshot in target section and user
+      assert Oli.Repo.all(
+               from(sn in Snapshot,
+                 where: sn.section_id == ^section_1.id and sn.user_id == ^user_1.id
+               )
+             )
+             |> length() == 1
+
+      # delete snapshot for target section and user
+      Snapshots.delete_snapshots_by_section_and_user(section_1.id, user_1.id)
+
+      # assert that there is no snapshot in target section and user
+      assert Oli.Repo.all(
+               from(sn in Snapshot,
+                 where: sn.section_id == ^section_1.id and sn.user_id == ^user_1.id
+               )
+             )
+             |> length() == 0
+    end
+
+    test "updates resource accesses and snapshots from current section and user to target section and user",
+         %{
+           section_1: section_1,
+           section_2: section_2,
+           user_1: user_1,
+           user_2: user_2
+         } do
+      # assert that there is a resource access and spanshot in current section
+      assert Core.get_resource_accesses(section_1.slug, user_1.id) |> length() == 1
+      assert Oli.Repo.get_by(Snapshot, section_id: section_1.id).section_id == section_1.id
+
+      # assert that there is no resource access and spanshot in target section
+      assert Core.get_resource_accesses(section_2.slug, user_1.id) |> length() == 0
+      assert Oli.Repo.get_by(Snapshot, section_id: section_2.id).section_id == section_2.id
+
+      # update resource accesses and snapshots from current section and user to target section and user
+      Core.update_resource_accesses_by_section_and_user(
+        section_1.id,
+        user_1.id,
+        section_2.id,
+        user_2.id
+      )
+
+      Snapshots.update_snapshots_by_section_and_user(
+        section_1.id,
+        user_1.id,
+        section_2.id,
+        user_2.id
+      )
+
+      # assert that there is no resource access and spanshot in current section
+      assert Core.get_resource_accesses(section_1.slug, user_1.id) |> length() == 0
+
+      assert Oli.Repo.all(
+               from(sn in Snapshot,
+                 where: sn.section_id == ^section_1.id and sn.user_id == ^user_1.id
+               )
+             )
+             |> length() == 0
+
+      # assert that there is a resource access and spanshot in target section
+      assert Core.get_resource_accesses(section_2.slug, user_2.id) |> length() == 2
+
+      assert Oli.Repo.all(
+               from(sn in Snapshot,
+                 where: sn.section_id == ^section_2.id and sn.user_id == ^user_2.id
+               )
+             )
+             |> length() == 2
+    end
+  end
+
+  describe "get_next_activities_for_student/3" do
+    test "returns the upcoming activities in a section for a given student" do
+      page_revision =
+        insert(:revision,
+          resource_type_id: Oli.Resources.ResourceType.get_id_by_type("page"),
+          title: "Upcoming assessment",
+          graded: true,
+          content: %{"advancedDelivery" => true}
+        )
+
+      container_revision =
+        insert(:revision,
+          resource_type_id: Oli.Resources.ResourceType.get_id_by_type("container"),
+          title: "A graded container?",
+          graded: true,
+          content: %{"advancedDelivery" => true}
+        )
+
+      {:ok, section: section, project: _project, author: author} =
+        section_with_pages(%{
+          revisions: [page_revision, container_revision],
+          revision_section_attributes: [
+            %{
+              start_date: DateTime.add(DateTime.utc_now(), -10, :day),
+              end_date: DateTime.add(DateTime.utc_now(), 5, :day)
+            },
+            %{
+              start_date: DateTime.add(DateTime.utc_now(), -10, :day),
+              end_date: DateTime.add(DateTime.utc_now(), 5, :day)
+            }
+          ]
+        })
+
+      student = insert(:user)
+
+      session_context = %OliWeb.Common.SessionContext{
+        browser_timezone: "utc",
+        local_tz: "utc",
+        author: author,
+        user: student,
+        is_liveview: false
+      }
+
+      enroll_user_to_section(student, section, :context_learner)
+
+      next_activities =
+        Sections.get_next_activities_for_student(section.slug, student.id, session_context)
+
+      assert length(next_activities) == 1
+      assert Enum.at(next_activities, 0).title == "Upcoming assessment"
     end
   end
 end

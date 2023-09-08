@@ -1,17 +1,18 @@
 defmodule OliWeb.Common.Check do
-  use Surface.Component
+  use OliWeb, :html
 
-  prop checked, :boolean, required: true
-  prop click, :event, required: true
-  prop class, :string
-  slot default, required: true
+  attr :id, :string, default: nil
+  attr :checked, :boolean, required: true
+  attr :click, :string, required: true
+  attr :class, :string, default: nil
+  slot :inner_block, required: true
 
   def render(assigns) do
-    ~F"""
+    ~H"""
     <div class={"form-check #{@class}"} style="display: inline;">
-      <input type="checkbox" class="form-check-input" checked={@checked} :on-click={@click}/>
-      <label class="form-check-label" :on-click={@click}>
-        <#slot />
+      <input id={@id} type="checkbox" class="form-check-input" checked={@checked} phx-click={@click} />
+      <label for={@id} class="form-check-label" phx-click={@click}>
+        <%= render_slot(@inner_block) %>
       </label>
     </div>
     """

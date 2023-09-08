@@ -1,12 +1,34 @@
 # Changelog
 
-## 0.25.0 (unreleased)
+## 0.25.0 (Unreleased)
 
 ### Bug Fixes
 
-### Enhancements
+- Fix an issue where nil sub-objective crashes objectives page
+
+## 0.24.4 (2023-8-11)
+
+### Bug Fixes
+
+- Fix performance issue for learning proficiency calculation
 
 ### Configs
+
+## 0.24.3 (2023-8-04)
+
+### Bug Fixes
+
+- Fix an issue in assessment review of multi inputs where text was being truncated
+- Fix a couple issues related to custom drag and drop activities
+- Fix an issue where explorations are not carried over during section creation from a product
+- Prevent data loss from normalization of certain list items
+- Fix deletion of hints on multi input activities
+- Fix due date on assessment settings
+- Fix activities due soon in recommended actions tab
+
+### Enhancements
+
+- Add the authoring capability to mark multiple targeted feedbacks as correct
 
 ## 0.24.2 (2023-7-27)
 

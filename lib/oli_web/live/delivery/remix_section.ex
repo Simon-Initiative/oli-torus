@@ -35,13 +35,7 @@ defmodule OliWeb.Delivery.RemixSection do
   alias Phoenix.LiveView.JS
 
   defp redirect_after_save(:instructor, %Section{slug: slug}),
-    do:
-      Routes.live_path(
-        OliWeb.Endpoint,
-        OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
-        slug,
-        :overview
-      )
+    do: ~p"/sections/#{slug}/remix"
 
   defp redirect_after_save(:open_and_free, section),
     do: Routes.admin_open_and_free_path(OliWeb.Endpoint, :show, section)

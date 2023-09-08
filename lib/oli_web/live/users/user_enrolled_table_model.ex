@@ -1,13 +1,13 @@
 defmodule OliWeb.Users.UserEnrolledTableModel do
-  use Surface.LiveComponent
+  use Phoenix.Component
 
   alias OliWeb.Common.Table.{ColumnSpec, SortableTableModel}
   alias OliWeb.Common.Utils
   alias OliWeb.Router.Helpers, as: Routes
 
   def render(assigns) do
-    ~F"""
-      <div>nothing</div>
+    ~H"""
+    <div>nothing</div>
     """
   end
 
@@ -68,13 +68,15 @@ defmodule OliWeb.Users.UserEnrolledTableModel do
   def render_last_accessed(assigns, row, col_spec) do
     case row.last_accessed do
       nil ->
-        ~F"""
-          <span>Not accessed yet</span>
+        ~H"""
+        <span>Not accessed yet</span>
         """
 
       _ ->
-        ~F"""
-          <span>{Utils.render_relative_date(row, col_spec.name, Map.get(assigns, :ctx))}</span>
+        assigns = Map.merge(assigns, %{row: row, col_spec: col_spec})
+
+        ~H"""
+        <span><%= Utils.render_relative_date(@row, @col_spec.name, @ctx) %></span>
         """
     end
   end
@@ -104,33 +106,33 @@ defmodule OliWeb.Users.UserEnrolledTableModel do
   def render_payment_status(assigns, row, _col_spec) do
     case row.payment_status do
       :not_paywalled ->
-        ~F"""
-          <span>N/A</span>
+        ~H"""
+        <span>N/A</span>
         """
 
       :paid ->
-        ~F"""
-          <span>Paid</span>
+        ~H"""
+        <span>Paid</span>
         """
 
       :not_paid ->
-        ~F"""
-          <span>Not Paid</span>
+        ~H"""
+        <span>Not Paid</span>
         """
 
       :within_grace_period ->
-        ~F"""
-          <span>Within Grace Period</span>
+        ~H"""
+        <span>Within Grace Period</span>
         """
 
       :instructor ->
-        ~F"""
-          <span>Instructor</span>
+        ~H"""
+        <span>Instructor</span>
         """
 
       _ ->
-        ~F"""
-          <span>Unknown</span>
+        ~H"""
+        <span>Unknown</span>
         """
     end
   end

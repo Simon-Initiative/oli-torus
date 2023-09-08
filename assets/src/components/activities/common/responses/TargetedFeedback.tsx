@@ -13,6 +13,7 @@ import {
   RichText,
 } from 'components/activities/types';
 import { ResponseMapping, getTargetedResponseMappings } from 'data/activities/model/responses';
+import { EditorType } from 'data/content/resource';
 import { defaultWriterContext } from 'data/content/writers/context';
 import { ShowPage } from './ShowPage';
 
@@ -34,6 +35,10 @@ export const useTargetedFeedback = () => {
     targetedMappings: getTargetedResponseMappings(model),
     updateFeedback: (responseId: string, content: RichText) =>
       dispatch(ResponseActions.editResponseFeedback(responseId, content)),
+    updateFeedbackEditor: (responseId: string, editor: EditorType) =>
+      dispatch(ResponseActions.editResponseFeedbackEditor(responseId, editor)),
+    updateCorrectness: (responseId: string, correct: boolean) =>
+      dispatch(ResponseActions.editResponseCorrectness(responseId, correct)),
     removeFeedback: (responseId: string) =>
       dispatch(ResponseActions.removeTargetedFeedback(responseId)),
     updateShowPage: (responseId: string, showPage: number | undefined) =>
@@ -75,6 +80,8 @@ export const TargetedFeedback: React.FC<Props> = (props) => {
           title="Targeted feedback"
           response={mapping.response}
           updateFeedback={hook.updateFeedback}
+          updateFeedbackEditor={hook.updateFeedbackEditor}
+          updateCorrectness={hook.updateCorrectness}
           removeResponse={hook.removeFeedback}
         >
           <ChoicesDelivery

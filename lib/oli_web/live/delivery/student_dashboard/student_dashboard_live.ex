@@ -8,7 +8,6 @@ defmodule OliWeb.Delivery.StudentDashboard.StudentDashboardLive do
   alias OliWeb.Delivery.StudentDashboard.Components.Helpers
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Metrics
-  alias Oli.Grading.GradebookRow
 
   @impl Phoenix.LiveView
   def mount(_params, session, socket) do
@@ -75,7 +74,7 @@ defmodule OliWeb.Delivery.StudentDashboard.StudentDashboardLive do
         active_tab: String.to_existing_atom(params["active_tab"])
       )
       |> assign_new(:scores, fn ->
-        %{scores: get_scores(socket.assigns.section, socket.assigns.student.id)}
+        %{scores: Oli.Grading.get_scores_for_section_and_user(socket.assigns.section.id, socket.assigns.student.id)}
       end)
 
     {:noreply, socket}
@@ -202,21 +201,6 @@ defmodule OliWeb.Delivery.StudentDashboard.StudentDashboardLive do
     """
   end
 
-  @impl Phoenix.LiveView
-  def handle_info({:hide_modal}, socket) do
-    {:noreply, hide_modal(socket)}
-  end
-
-  @impl Phoenix.LiveView
-  def handle_info({:show_modal, modal, modal_assigns}, socket) do
-    {:noreply,
-     show_modal(
-       socket,
-       modal,
-       modal_assigns: modal_assigns
-     )}
-  end
-
   defp get_containers(section, student_id) do
     case Sections.get_units_and_modules_containers(section.slug) do
       {0, pages} ->
@@ -247,32 +231,17 @@ defmodule OliWeb.Delivery.StudentDashboard.StudentDashboardLive do
             student_id
           )
 
-        proficiency_per_container =
-          Metrics.proficiency_for_student_per_container(section.slug, student_id)
-
         containers_with_metrics =
           Enum.map(containers, fn container ->
             Map.merge(container, %{
               progress: student_progress[container.id] || 0.0,
-              student_proficiency:
-                Map.get(proficiency_per_container, container.id, "Not enough data")
+              student_proficiency: "Loading..."
             })
           end)
 
+        async_calculate_proficiency(section, student_id)
+
         {total_count, containers_with_metrics}
-    end
-  end
-
-  defp get_scores(section, student_id) do
-    {gradebook, _column_labels} = Oli.Grading.generate_gradebook_for_section(section)
-
-    if length(gradebook) > 0 do
-      [%GradebookRow{user: _user, scores: scores} | _] =
-        Enum.filter(gradebook, fn grade -> grade.user.id == student_id end)
-
-      Enum.filter(scores, fn score -> !is_nil(score) end)
-    else
-      []
     end
   end
 
@@ -362,4 +331,67 @@ defmodule OliWeb.Delivery.StudentDashboard.StudentDashboardLive do
 
     ordered_pages ++ unordered
   end
+
+  defp async_calculate_proficiency(section, student_id) do
+
+    pid = self()
+
+    Task.async(fn ->
+      contained_pages = Oli.Delivery.Sections.get_contained_pages(section)
+
+      proficiency_per_container =
+        Metrics.proficiency_for_student_per_container(section, student_id, contained_pages)
+
+      send(pid, {:proficiency, proficiency_per_container})
+    end)
+
+  end
+
+
+  @impl Phoenix.LiveView
+  def handle_info({:hide_modal}, socket) do
+    {:noreply, hide_modal(socket)}
+  end
+
+  @impl Phoenix.LiveView
+  def handle_info({:show_modal, modal, modal_assigns}, socket) do
+    {:noreply,
+     show_modal(
+       socket,
+       modal,
+       modal_assigns: modal_assigns
+     )}
+  end
+
+  @impl Phoenix.LiveView
+  def handle_info({:put_flash, type, message}, socket) do
+    {:noreply, put_flash(socket, type, message)}
+  end
+
+  @impl Phoenix.LiveView
+  def handle_info({:proficiency, proficiency_per_container}, socket) do
+
+    case Map.get(socket.assigns, :containers) do
+      nil -> {:noreply, socket}
+
+      {total, containers} ->
+
+        containers_with_metrics =
+          Enum.map(containers, fn container ->
+            Map.merge(container, %{
+              student_proficiency:
+                Map.get(proficiency_per_container, container.id, "Not enough data")
+            })
+          end)
+
+        {:noreply, assign(socket, containers: {total, containers_with_metrics})}
+    end
+
+  end
+
+  @impl Phoenix.LiveView
+  def handle_info(_any, socket) do
+    {:noreply, socket}
+  end
+
 end

@@ -256,7 +256,7 @@ export const schema: Schema = {
     isVoid: true,
     isBlock: true,
     isTopLevel: true,
-    validChildren: {},
+    validChildren: toObj(['code_line']),
   },
   code_line: {
     isVoid: false,

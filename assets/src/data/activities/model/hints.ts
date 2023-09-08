@@ -1,5 +1,6 @@
 import { HasHints, Hint, PostUndoable, RichText, makeUndoable } from 'components/activities/types';
 import { List } from 'data/activities/model/list';
+import { EditorType } from 'data/content/resource';
 import { clone } from 'utils/common';
 import { Operations } from 'utils/pathOperations';
 
@@ -14,7 +15,8 @@ interface Hints extends Omit<List<Hint>, 'addOne' | 'removeOne'> {
   getBottomOutHint: (model: HasHints, partId: string) => Hint;
   addCognitiveHint(hint: Hint, partId: string): (model: HasHints, _post: PostUndoable) => void;
   setContent(id: string, content: RichText): (model: HasHints, _post: PostUndoable) => void;
-  removeOne: (id: string) => (model: any, post: PostUndoable) => void;
+  setEditor(id: string, mode: EditorType): (model: HasHints, _post: PostUndoable) => void;
+  removeOne: (id: string, partId: string) => (model: any, post: PostUndoable) => void;
 }
 
 export const HINTS_BY_PART_PATH = (partId: string) => `$..parts[?(@.id=='${partId}')].hints`;
@@ -56,13 +58,23 @@ export const Hints: Hints = {
     };
   },
 
-  removeOne(id: string) {
-    return (model: HasHints, post: PostUndoable) => {
-      const hint = Hints.getOne(model, id);
-      const index = Hints.getAll(model).findIndex((h) => h.id === id);
+  setEditor(id: string, mode: EditorType) {
+    return (model: HasHints, _post: PostUndoable) => {
+      Hints.getOne(model, id).editor = mode;
+    };
+  },
 
-      List<Hint>(PATH).removeOne(id)(model);
-      post(makeUndoable('Removed a hint', [Operations.insert(PATH, clone(hint), index)]));
+  removeOne(id: string, partId: string) {
+    return (model: HasHints, post: PostUndoable) => {
+      const index = Hints.byPart(model, partId).findIndex((h) => h.id === id);
+      const hint = Hints.byPart(model, partId)[index];
+
+      List<Hint>(HINTS_BY_PART_PATH(partId)).removeOne(id)(model);
+      post(
+        makeUndoable('Removed a hint', [
+          Operations.insert(HINTS_BY_PART_PATH(partId), clone(hint), index),
+        ]),
+      );
     };
   },
 };

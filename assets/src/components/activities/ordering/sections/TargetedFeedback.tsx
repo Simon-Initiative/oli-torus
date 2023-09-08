@@ -23,8 +23,14 @@ export const TargetedFeedback: React.FC = () => {
         <ResponseCard
           title="Targeted feedback"
           response={mapping.response}
-          updateFeedback={(id, content) =>
+          updateFeedbackEditor={(_id, editor) =>
+            dispatch(ResponseActions.editResponseFeedbackEditor(mapping.response.id, editor))
+          }
+          updateFeedback={(_id, content) =>
             dispatch(ResponseActions.editResponseFeedback(mapping.response.id, content as RichText))
+          }
+          updateCorrectness={(_id, correct) =>
+            dispatch(ResponseActions.editResponseCorrectness(mapping.response.id, correct))
           }
           removeResponse={(id) => dispatch(ResponseActions.removeTargetedFeedback(id))}
           key={mapping.response.id}

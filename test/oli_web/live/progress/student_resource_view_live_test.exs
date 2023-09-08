@@ -62,12 +62,12 @@ defmodule OliWeb.Progress.StudentResourceViewLiveTest do
       |> render_submit(%{resource_access: %{score: 3, out_of: 1}})
 
       assert view
-             |> element("span[phx-feedback-for='resource_access[score]']")
+             |> element("p[phx-feedback-for='resource_access[score]']")
              |> render() =~
                "must be less than out of value"
 
       assert view
-             |> element("span[phx-feedback-for='resource_access[out_of]']")
+             |> element("p[phx-feedback-for='resource_access[out_of]']")
              |> render() =~
                "must be greater than score"
 

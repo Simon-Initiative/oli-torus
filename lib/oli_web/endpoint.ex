@@ -1,6 +1,5 @@
 defmodule OliWeb.Endpoint do
   use Phoenix.Endpoint, otp_app: :oli
-  use Appsignal.Phoenix
 
   @session_options [
     store: :cookie,

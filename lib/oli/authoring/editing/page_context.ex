@@ -21,6 +21,7 @@ defmodule Oli.Authoring.Editing.ResourceContext do
     :previous_page,
     :next_page,
     :collab_space_config,
-    :optionalContentTypes
+    :optionalContentTypes,
+    :defaultEditor
   ]
 end

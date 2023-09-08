@@ -15,6 +15,7 @@ import {
   getResponsesByPartId,
 } from 'data/activities/model/responses';
 import { getParts } from 'data/activities/model/utils';
+import { EditorType } from 'data/content/resource';
 import { clone } from 'utils/common';
 import { Operations } from 'utils/pathOperations';
 
@@ -27,9 +28,21 @@ export const ResponseActions = {
     };
   },
 
+  editResponseFeedbackEditor(responseId: ResponseId, editor: EditorType) {
+    return (model: HasParts) => {
+      getResponseBy(model, (r) => r.id === responseId).feedback.editor = editor;
+    };
+  },
+
   editResponseFeedback(responseId: ResponseId, content: RichText) {
     return (model: HasParts) => {
       getResponseBy(model, (r) => r.id === responseId).feedback.content = content;
+    };
+  },
+
+  editResponseCorrectness(responseId: ResponseId, correct: boolean) {
+    return (model: HasParts) => {
+      getResponseBy(model, (r) => r.id === responseId).score = correct ? 1 : 0;
     };
   },
 

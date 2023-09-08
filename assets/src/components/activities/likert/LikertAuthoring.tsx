@@ -48,6 +48,7 @@ const Likert = (props: AuthoringElementProps<LikertModelSchema>) => {
               choices={model.choices}
               setAll={(choices: ActivityTypes.Choice[]) => dispatch(Choices.setAll(choices))}
               onEdit={(id, content) => dispatch(Choices.setContent(id, content))}
+              onChangeEditorType={(id, editorType) => dispatch(Choices.setEditor(id, editorType))}
               addOne={() => dispatch(LikertActions.addChoice())}
               onRemove={(id) => dispatch(LikertActions.removeChoice(id))}
             />
@@ -71,6 +72,7 @@ const Likert = (props: AuthoringElementProps<LikertModelSchema>) => {
             choices={model.items}
             setAll={(choices: ActivityTypes.Choice[]) => dispatch(Items.setAll(choices))}
             onEdit={(id, content) => dispatch(Items.setContent(id, content))}
+            onChangeEditorType={(id, editorType) => dispatch(Items.setEditor(id, editorType))}
             addOne={() => dispatch(LikertActions.addItem())}
             onRemove={(id) => dispatch(LikertActions.removeItem(id))}
           />

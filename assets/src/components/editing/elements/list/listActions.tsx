@@ -86,7 +86,7 @@ export const toggleOrderedList: CommandDescription = {
 const listStyleLabels: Record<OrderedListStyle | UnorderedListStyle, string> = {
   none: 'No Bullet',
   decimal: 'Decimal - 1',
-  'decimal-leading-zero': 'Decimal w/ Zero - 01',
+  'decimal-leading-zero': 'Zero Decimal - 01',
   'lower-roman': 'Lower Roman - i',
   'upper-roman': 'Upper Roman - I',
   'lower-alpha': 'Lower Alpha - a',

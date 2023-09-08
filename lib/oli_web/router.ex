@@ -287,6 +287,12 @@ defmodule OliWeb.Router do
     resources("/invitations", InvitationController, only: [:edit, :update])
   end
 
+  scope "/delivery", PowInvitation.Phoenix, as: :delivery_pow_invitation do
+    pipe_through([:browser, :delivery, :registration_captcha])
+
+    resources("/invitations", InvitationController, only: [:edit, :update])
+  end
+
   # open access routes
   scope "/", OliWeb do
     pipe_through([:browser, :delivery, :authoring])
@@ -383,7 +389,7 @@ defmodule OliWeb.Router do
     pipe_through([:browser, :authoring_protected, :workspace, :authorize_project])
 
     live_session :load_projects,
-      on_mount: [Oli.LiveSessionPlugs.SetCurrentAuthor, Oli.LiveSessionPlugs.SetProject] do
+      on_mount: [OliWeb.LiveSessionPlugs.SetCurrentAuthor, OliWeb.LiveSessionPlugs.SetProject] do
       live("/:project_id/overview", Projects.OverviewLive)
       live("/:project_id", Projects.OverviewLive)
     end
@@ -634,7 +640,7 @@ defmodule OliWeb.Router do
 
     post("/c/success", PaymentProviders.CashnetController, :success)
     post("/c/failure", PaymentProviders.CashnetController, :failure)
-    get("/c/signoff", PaymentProviders.CashnetController, :signoff)
+    post("/c/signoff", PaymentProviders.CashnetController, :signoff)
   end
 
   # Endpoints for client-side scheduling UI
@@ -759,7 +765,7 @@ defmodule OliWeb.Router do
       :pow_email_layout
     ])
 
-    get("/", DeliveryController, :open_and_free_index)
+    live("/", Delivery.OpenAndFreeIndex)
 
     live("/join/invalid", Sections.InvalidSectionInviteView)
   end
@@ -901,7 +907,6 @@ defmodule OliWeb.Router do
     live_session :instructor_dashboard,
       on_mount: OliWeb.Delivery.InstructorDashboard.InitialAssigns,
       root_layout: {OliWeb.LayoutView, :delivery_dashboard} do
-
       live("/:view", Delivery.InstructorDashboard.InstructorDashboardLive)
       live("/:view/:active_tab", Delivery.InstructorDashboard.InstructorDashboardLive)
 
@@ -988,9 +993,9 @@ defmodule OliWeb.Router do
 
     live_session :load_section,
       on_mount: [
-        Oli.LiveSessionPlugs.SetSection,
-        Oli.LiveSessionPlugs.SetCurrentUser,
-        Oli.LiveSessionPlugs.RequireEnrollment
+        OliWeb.LiveSessionPlugs.SetSection,
+        OliWeb.LiveSessionPlugs.SetCurrentUser,
+        OliWeb.LiveSessionPlugs.RequireEnrollment
       ] do
       live(
         "/:section_slug/welcome",
@@ -1024,6 +1029,7 @@ defmodule OliWeb.Router do
     live("/:section_slug/remix", Delivery.RemixSection)
     live("/:section_slug/remix/:section_resource_slug", Delivery.RemixSection)
     live("/:section_slug/enrollments", Sections.EnrollmentsViewLive)
+    post("/:section_slug/enrollments", InviteController, :create_bulk)
 
     live_session :enrolled_students,
       on_mount: [
@@ -1190,7 +1196,9 @@ defmodule OliWeb.Router do
     live("/open_and_free/:section_slug/remix", Delivery.RemixSection, as: :open_and_free_remix)
 
     # Institutions, LTI Registrations and Deployments
-    resources("/institutions", InstitutionController)
+    resources("/institutions", InstitutionController, except: [:index])
+
+    live("/institutions/", Admin.Institutions.IndexLive)
 
     live(
       "/institutions/:institution_id/discount",
@@ -1215,7 +1223,6 @@ defmodule OliWeb.Router do
     end
 
     put("/approve_registration", InstitutionController, :approve_registration)
-    delete("/pending_registration/:id", InstitutionController, :remove_registration)
 
     # Communities
     live("/communities/new", CommunityLive.NewView)
@@ -1371,7 +1378,7 @@ defmodule OliWeb.Router do
 
       get("/flame_graphs", DevController, :flame_graphs)
 
-      live_storybook "/storybook", backend_module: OliWeb.Storybook
+      live_storybook("/storybook", backend_module: OliWeb.Storybook)
     end
   end
 end

@@ -9,17 +9,19 @@ interface Props {
   partId: string;
 }
 export const HintsEditor: React.FC<Props> = (props) => {
-  const { model, dispatch } = useAuthoringElementContext<CustomDnDSchema>();
+  const { model, dispatch, projectSlug } = useAuthoringElementContext<CustomDnDSchema>();
 
   return (
     <CognitiveHints
       key={props.partId}
       hints={Hints.byPart(model, props.partId)}
       updateOne={(id, content) => dispatch(Hints.setContent(id, content as RichText))}
+      updateOneEditor={(id, editor) => dispatch(Hints.setEditor(id, editor))}
       addOne={() => dispatch(Hints.addOne(makeHint(''), props.partId))}
-      removeOne={(id) => dispatch(Hints.removeOne(id))}
+      removeOne={(id) => dispatch(Hints.removeOne(id, props.partId))}
       placeholder="Hint"
       title={props.partId}
+      projectSlug={projectSlug}
     />
   );
 };

@@ -89,6 +89,9 @@ defmodule Oli.Delivery.Sections do
 
     filter_by_role =
       case options do
+        %EnrollmentBrowseOptions{is_instructor: true, is_student: true} ->
+          true
+
         %EnrollmentBrowseOptions{is_student: true} ->
           dynamic(
             [u, e],
@@ -193,7 +196,7 @@ defmodule Oli.Delivery.Sections do
       sorting,
       options
     )
-    |> where([_, e], e.status != :suspended)
+    |> where([u, e], e.status != :suspended)
     |> join(:left, [_, e, p], ecr in EnrollmentContextRole, on: ecr.enrollment_id == e.id)
     |> group_by([_, _, _, ecr], [ecr.context_role_id])
     |> preload([u], :platform_roles)
@@ -315,7 +318,7 @@ defmodule Oli.Delivery.Sections do
   end
 
   @doc """
-  Enrolls a user in a course section
+  Enrolls a user or users in a course section
   ## Examples
       iex> enroll(user_id, section_id, [%ContextRole{}])
       {:ok, %Enrollment{}} # Inserted or updated with success
@@ -323,6 +326,46 @@ defmodule Oli.Delivery.Sections do
       iex> enroll(user_id, section_id, :open_and_free)
       {:error, changeset} # Something went wrong
   """
+  @spec enroll(list(number()), number(), [%ContextRole{}]) :: {:ok, list(%Enrollment{})}
+  def enroll(user_ids, section_id, context_roles) when is_list(user_ids) do
+    Repo.transaction(fn ->
+      context_roles = EctoProvider.Marshaler.to(context_roles)
+      date = DateTime.utc_now() |> DateTime.truncate(:second)
+
+      # Insert all the enrollments at the same time
+      enrollments =
+        Enum.map(
+          user_ids,
+          &%{
+            user_id: &1,
+            section_id: section_id,
+            inserted_at: date,
+            updated_at: date,
+            status: :enrolled,
+            state: %{}
+          }
+        )
+
+      {_cont, enrollments} =
+        Repo.insert_all(Enrollment, enrollments,
+          returning: [:id],
+          conflict_target: [:user_id, :section_id],
+          on_conflict: {:replace, [:user_id]}
+        )
+
+      # Insert the enrollment context roles at the same time based on the previously created enrollments
+      enrollment_context_roles =
+        Enum.reduce(context_roles, [], fn role, enrollment_context_roles ->
+          Enum.map(enrollments, &%{enrollment_id: &1.id, context_role_id: role.id}) ++
+            enrollment_context_roles
+        end)
+
+      Repo.insert_all(EnrollmentContextRole, enrollment_context_roles, on_conflict: :nothing)
+
+      {:ok, enrollments}
+    end)
+  end
+
   @spec enroll(number(), number(), [%ContextRole{}]) :: {:ok, %Enrollment{}}
   def enroll(user_id, section_id, context_roles) do
     context_roles = EctoProvider.Marshaler.to(context_roles)
@@ -442,7 +485,7 @@ defmodule Oli.Delivery.Sections do
         join: cr in Lti_1p3.DataProviders.EctoProvider.ContextRole,
         on: e_cr.context_role_id == cr.id,
         where:
-          s.slug == ^section_slug and s.status == :active and cr.id in ^role_ids and
+          s.slug == ^section_slug and cr.id in ^role_ids and
             e.status == :enrolled,
         select: count(e)
       )
@@ -831,6 +874,20 @@ defmodule Oli.Delivery.Sections do
   end
 
   @doc """
+  Creates multiple section resources.
+  ## Examples
+      iex> bulk_create_section_resource([%{slug: slug_value_1, ...}, %{slug: slug_value_2, ...}])
+      {2, [%SectionResource{}, %SectionResource{}]}
+  """
+  def bulk_create_section_resource(_section_resource_rows, _opts \\ [])
+
+  def bulk_create_section_resource([], _opts), do: {0, []}
+
+  def bulk_create_section_resource(section_resource_rows, opts) do
+    Repo.insert_all(SectionResource, section_resource_rows, returning: opts[:returning] || true)
+  end
+
+  @doc """
   Updates a section resource.
   ## Examples
       iex> update_section_resource(section, %{field: new_value})
@@ -842,6 +899,24 @@ defmodule Oli.Delivery.Sections do
     section
     |> SectionResource.changeset(attrs)
     |> Repo.update()
+  end
+
+  @doc """
+  Updates multiple section resources.
+  ## Examples
+      iex> bulk_update_section_resource(section, %{field: new_value})
+      {2, [%SectionResource{}, %SectionResource{}]}
+  """
+  def bulk_update_section_resource(_section_resource_rows, _opts \\ [])
+
+  def bulk_update_section_resource([], _), do: {0, []}
+
+  def bulk_update_section_resource(section_resource_rows, opts) do
+    Repo.insert_all(SectionResource, section_resource_rows,
+      returning: opts[:returning] || true,
+      on_conflict: {:replace, [:children]},
+      conflict_target: [:id]
+    )
   end
 
   @doc """
@@ -926,6 +1001,99 @@ defmodule Oli.Delivery.Sections do
 
   def change_open_and_free_section(%Section{} = section, attrs \\ %{}) do
     change_section(Map.merge(section, %{open_and_free: true}), attrs)
+  end
+
+  @doc """
+  Returns the set of all students with :context_learner role in the given section.
+  """
+  def fetch_students(section_slug) do
+    list_enrollments(section_slug)
+    |> Enum.filter(fn e ->
+      ContextRoles.contains_role?(e.context_roles, ContextRoles.get_role(:context_learner))
+    end)
+    |> Enum.map(fn e -> e.user end)
+  end
+
+  @doc """
+  Returns the set of all instructors with :context_instructor role in the given section.
+  """
+  def fetch_instructors(section_slug) do
+    list_enrollments(section_slug)
+    |> Enum.filter(fn e ->
+      ContextRoles.contains_role?(e.context_roles, ContextRoles.get_role(:context_instructor))
+    end)
+    |> Enum.map(fn e -> e.user end)
+  end
+
+  @doc """
+  Returns the names of all instructors with :context_instructor role for the given section ids.
+
+  %{
+    section_id_1: [inst_1, inst_2],
+    ...
+    section_id_n: [inst_3]
+  }
+  """
+
+  def instructors_per_section(section_ids) do
+    instructor_context_role_id = ContextRoles.get_role(:context_instructor).id
+
+    query =
+      from(
+        e in Enrollment,
+        join: s in Section,
+        on: e.section_id == s.id,
+        join: ecr in EnrollmentContextRole,
+        on: e.id == ecr.enrollment_id,
+        where:
+          s.id in ^section_ids and e.status == :enrolled and
+            ecr.context_role_id == ^instructor_context_role_id,
+        preload: [:user],
+        select: {s.id, e}
+      )
+
+    Repo.all(query)
+    |> Enum.group_by(fn {section_id, _} -> section_id end, fn {_, enrollment} ->
+      OliWeb.Components.Delivery.Utils.user_name(enrollment.user)
+    end)
+  end
+
+  @doc """
+  Returns all scored pages for the given section.
+  """
+  def fetch_scored_pages(section_slug), do: fetch_all_pages(section_slug, true)
+
+  @doc """
+  Returns all unscored pages for the given section.
+  """
+  def fetch_unscored_pages(section_slug), do: fetch_all_pages(section_slug, false)
+
+  def fetch_all_pages(section_slug, graded \\ nil) do
+    maybe_filter_by_graded =
+      case graded do
+        nil -> true
+        graded -> dynamic([_, _, _, _, rev], rev.graded == ^graded)
+      end
+
+    SectionResource
+    |> join(:inner, [sr], s in Section, on: sr.section_id == s.id)
+    |> join(:inner, [sr, s], spp in SectionsProjectsPublications,
+      on: spp.section_id == s.id and spp.project_id == sr.project_id
+    )
+    |> join(:inner, [sr, _, spp], pr in PublishedResource,
+      on: pr.publication_id == spp.publication_id and pr.resource_id == sr.resource_id
+    )
+    |> join(:inner, [sr, _, _, pr], rev in Revision, on: rev.id == pr.revision_id)
+    |> where(
+      [sr, s, _, _, rev],
+      s.slug == ^section_slug and
+        rev.deleted == false and
+        rev.resource_type_id == ^ResourceType.get_id_by_type("page")
+    )
+    |> where(^maybe_filter_by_graded)
+    |> order_by([_, _, _, _, rev], asc: rev.resource_id)
+    |> select([_, _, _, _, rev], rev)
+    |> Repo.all()
   end
 
   # Creates a 'hierarchy definition' strictly from a a project and the recursive
@@ -1167,19 +1335,81 @@ defmodule Oli.Delivery.Sections do
       level = 0
       processed_ids = []
 
-      {root_section_resource_id, _numbering_tracker, processed_ids} =
-        create_section_resource(
-          section,
-          publication,
-          published_resources_by_resource_id,
-          processed_ids,
-          root_revision,
-          level,
-          numbering_tracker,
-          hierarchy_definition
+      # Generate all the section resource slugs at the same time
+      titles =
+        published_resources_by_resource_id
+        |> Map.values()
+        |> Enum.map(fn %PublishedResource{revision: revision} ->
+          revision.title
+        end)
+
+      section_resource_slugs =
+        Enum.zip(
+          titles,
+          Slug.generate(
+            :section_resources,
+            titles
+          )
+        )
+        |> Enum.into(%{})
+
+      # Transverse the hierarchy and create a list containing the SectionResource maps to be inserted
+      {section_resources, _, _} =
+        build_section_resource_insertion(%{
+          section: section,
+          publication: publication,
+          published_resources_by_resource_id: published_resources_by_resource_id,
+          processed_ids: processed_ids,
+          revision: root_revision,
+          level: level,
+          numbering_tracker: numbering_tracker,
+          hierarchy_definition: hierarchy_definition,
+          date: DateTime.utc_now() |> DateTime.truncate(:second),
+          slugs: section_resource_slugs
+        })
+
+      # Insert all the section resources without their children
+      {_count, section_resources} =
+        Repo.insert_all(SectionResource, section_resources,
+          returning: [:id, :resource_id, :inserted_at, :updated_at]
         )
 
-      processed_ids = [root_resource_id | processed_ids]
+      processed_ids = Enum.map(section_resources, & &1.resource_id)
+
+      # Rebuild the section resources (with the id they have in the database) and add their children
+      section_resources_by_resource_id =
+        Enum.reduce(section_resources, %{}, fn sr, map ->
+          Map.put(map, sr.resource_id, sr)
+        end)
+
+      section_resources =
+        Enum.reduce(section_resources, [], fn sr, section_resources ->
+          children = hierarchy_definition[sr.resource_id]
+
+          if !is_nil(children) and length(children) > 0 do
+            sr =
+              Map.put(
+                sr,
+                :children,
+                Enum.map(hierarchy_definition[sr.resource_id] || [], fn child_resource_id ->
+                  section_resources_by_resource_id[child_resource_id].id
+                end)
+              )
+              |> Map.take([:id, :children, :inserted_at, :updated_at])
+
+            [sr | section_resources]
+          else
+            section_resources
+          end
+        end)
+
+      # Update children for the section resources that were just created in the database
+      # (only when it's necessary to do so)
+      Repo.insert_all(SectionResource, section_resources,
+        returning: [:id, :resource_id, :children],
+        on_conflict: {:replace, [:children]},
+        conflict_target: [:id]
+      )
 
       survey_id =
         Project
@@ -1192,6 +1422,8 @@ defmodule Oli.Delivery.Sections do
         skip_resource_ids: processed_ids,
         required_survey_resource_id: survey_id
       )
+
+      root_section_resource_id = section_resources_by_resource_id[root_resource_id].id
 
       update_section(section, %{root_section_resource_id: root_section_resource_id})
       |> case do
@@ -1206,69 +1438,96 @@ defmodule Oli.Delivery.Sections do
     end)
   end
 
-  # This function constructs a section resource record by recursively calling itself on all the
-  # children for the revision, then inserting the resulting struct into the database and returning its id.
-  # This may not be the most efficient way of doing this but it seems to be the only way to create the records
-  # in one go, otherwise section record creation then constructing relationships by updating the children
-  # for each record would have to be two separate traversals
-  defp create_section_resource(
-         section,
-         publication,
-         published_resources_by_resource_id,
-         processed_ids,
-         revision,
-         level,
-         numbering_tracker,
-         hierarchy_definition
-       ) do
+  # The following function receives a hierarchy and recursively builds a list with the
+  # SectionResource maps that will be inserted in the database.
+  defp build_section_resource_insertion(%{
+         section: section,
+         publication: publication,
+         published_resources_by_resource_id: published_resources_by_resource_id,
+         processed_ids: processed_ids,
+         revision: revision,
+         level: level,
+         numbering_tracker: numbering_tracker,
+         hierarchy_definition: hierarchy_definition,
+         date: date,
+         slugs: slugs
+       }) do
     {numbering_index, numbering_tracker} =
       Numbering.next_index(numbering_tracker, level, revision)
 
     children = Map.get(hierarchy_definition, revision.resource_id, [])
 
-    {children, numbering_tracker, processed_ids} =
+    # Transform each child of the revision into a section resource
+    {children, numbering_tracker, slugs} =
       Enum.reduce(
         children,
-        {[], numbering_tracker, processed_ids},
-        fn resource_id, {children_ids, numbering_tracker, processed_ids} ->
+        {[], numbering_tracker, slugs},
+        fn resource_id, {processed_children, numbering_tracker, slugs} ->
           %PublishedResource{revision: child} = published_resources_by_resource_id[resource_id]
 
-          {id, numbering_tracker, processed_ids} =
-            create_section_resource(
-              section,
-              publication,
-              published_resources_by_resource_id,
-              processed_ids,
-              child,
-              level + 1,
-              numbering_tracker,
-              hierarchy_definition
-            )
+          {section_resources, numbering_tracker, slugs} =
+            build_section_resource_insertion(%{
+              section: section,
+              publication: publication,
+              published_resources_by_resource_id: published_resources_by_resource_id,
+              processed_ids: processed_ids,
+              revision: child,
+              level: level + 1,
+              numbering_tracker: numbering_tracker,
+              hierarchy_definition: hierarchy_definition,
+              date: date,
+              slugs: slugs
+            })
 
-          {[id | children_ids], numbering_tracker, [resource_id | processed_ids]}
+          {section_resources ++ processed_children, numbering_tracker, slugs}
         end
       )
-      # it's more efficient to append to list using [id | children_ids] and
-      # then reverse than to concat on every reduce call using ++
-      |> then(fn {children, numbering_tracker, processed_ids} ->
-        {Enum.reverse(children), numbering_tracker, processed_ids}
-      end)
 
-    %SectionResource{id: section_resource_id} =
-      Oli.Repo.insert!(%SectionResource{
+    slug = Map.get(slugs, revision.title)
+
+    # If the slug is a list it's because other resources in the hierarchy have the same title, so
+    # we need to remove that slug from the list so it doesn't get used again
+    {slug, slugs} =
+      if is_list(slug) do
+        slug = List.first(slug)
+
+        slugs =
+          Map.update(slugs, revision.title, [], fn slug_list ->
+            Enum.filter(slug_list, &(&1 != slug))
+          end)
+
+        {slug, slugs}
+      else
+        {slug, slugs}
+      end
+
+    # Return the section resource for the revision along with all the section resources
+    # for the revision's children
+    section_resources = [
+      # The below is necessary because Repo.insert_all/3 receives a map, not a struct
+      # The below is necessary because Repo.insert_all/3 doesn't autogenerate values
+      # TODO: CAMBIAR ESTO
+      %SectionResource{
         numbering_index: numbering_index,
         numbering_level: level,
-        children: children,
-        slug: Slug.generate(:section_resources, revision.title),
+        slug: slug,
         collab_space_config: revision.collab_space_config,
         max_attempts: revision.max_attempts,
         resource_id: revision.resource_id,
         project_id: publication.project_id,
         scoring_strategy_id: revision.scoring_strategy_id,
         section_id: section.id
+      }
+      |> SectionResource.to_map()
+      |> Map.delete(:id)
+      |> Map.merge(%{
+        inserted_at: date,
+        updated_at: date
       })
+      | children
+    ]
 
-    {section_resource_id, numbering_tracker, processed_ids}
+    {section_resources, numbering_tracker, slugs}
   end
 
   def get_project_by_section_resource(section_id, resource_id) do
@@ -1601,6 +1860,13 @@ defmodule Oli.Delivery.Sections do
 
       section_resources
     end)
+  end
+
+  def get_contained_pages(%Section{id: section_id}) do
+    from(cp in ContainedPage,
+      where: cp.section_id == ^section_id
+    )
+    |> Repo.all()
   end
 
   @doc """
@@ -2061,7 +2327,7 @@ defmodule Oli.Delivery.Sections do
             section_id: section_id,
             children: Enum.reverse(children_sr_ids),
             collab_space_config: revision.collab_space_config,
-            max_attempts: revision.max_attempts,
+            max_attempts: revision.max_attempts || 0,
             scoring_strategy_id: revision.scoring_strategy_id,
             retake_mode: revision.retake_mode
           })
@@ -2535,58 +2801,36 @@ defmodule Oli.Delivery.Sections do
         where:
           not is_nil(sp.end_date) and
             sp.end_date >= ^DateTime.utc_now() and
-            sp.resource_type_id in [
-              ^ResourceType.get_id_by_type("page"),
-              ^ResourceType.get_id_by_type("container")
-            ],
+            sp.resource_type_id == ^ResourceType.get_id_by_type("page"),
         limit: 2
       )
 
     query
     |> Repo.all()
-    |> Enum.map(fn sr ->
-      Map.put(
-        sr,
-        :end_date,
-        if is_nil(sr.end_date) do
-          nil
-        else
-          OliWeb.Common.FormatDateTime.date(sr.end_date, session_context)
-        end
-      )
-    end)
-    |> Enum.map(fn activity ->
-      case ResourceType.get_type_by_id(activity.resource_type_id) do
-        "page" ->
-          Map.put(
-            activity,
-            :progress,
+    |> Enum.map(
+      &Map.merge(
+        &1,
+        %{
+          end_date:
+            if is_nil(&1.end_date) do
+              nil
+            else
+              OliWeb.Common.FormatDateTime.date(&1.end_date, session_context)
+            end,
+          progress:
             Oli.Delivery.Metrics.progress_for_page(
-              activity.section_id,
+              &1.section_id,
               user_id,
-              activity.resource_id
-            ) * 100
-          )
-
-        "container" ->
-          Map.put(
-            activity,
-            :progress,
-            Oli.Delivery.Metrics.progress_for(
-              activity.section_id,
-              user_id,
-              activity.resource_id
-            ) * 100
-          )
-      end
-      |> Map.put(
-        :completion_percentage,
-        Oli.Delivery.Metrics.completion_for(
-          activity.section_id,
-          activity.resource_id
-        )
+              &1.resource_id
+            ) * 100,
+          completion_percentage:
+            Oli.Delivery.Metrics.completion_for(
+              &1.section_id,
+              &1.resource_id
+            )
+        }
       )
-    end)
+    )
   end
 
   defp to_datetime(nd) do
@@ -3075,4 +3319,49 @@ defmodule Oli.Delivery.Sections do
   end
 
   def get_revision_by_index(_, _), do: nil
+
+  @doc """
+  Get all students for a given section with their enrollment date.
+  """
+
+  def get_students_for_section_with_enrollment_date(section_id) do
+    student_context_role_id = ContextRoles.get_role(:context_learner).id
+
+    Repo.all(
+      from(enrollment in Enrollment,
+        join: enrollment_context_role in EnrollmentContextRole,
+        on: enrollment_context_role.enrollment_id == enrollment.id,
+        join: user in User,
+        on: enrollment.user_id == user.id,
+        where:
+          enrollment.section_id == ^section_id and
+            enrollment_context_role.context_role_id == ^student_context_role_id,
+        select: {user, enrollment}
+      )
+    )
+    |> Enum.map(fn {user, enrollment} ->
+      Map.put(user, :enrollment_date, enrollment.inserted_at)
+    end)
+    |> Enum.sort_by(fn user -> user.name end)
+  end
+
+  @doc """
+    Get all instructors for a given section.
+  """
+  def get_instructors_for_section(section_id) do
+    instructor_context_role_id = ContextRoles.get_role(:context_instructor).id
+
+    Repo.all(
+      from(enrollment in Enrollment,
+        join: enrollment_context_role in EnrollmentContextRole,
+        on: enrollment_context_role.enrollment_id == enrollment.id,
+        join: user in User,
+        on: enrollment.user_id == user.id,
+        where:
+          enrollment.section_id == ^section_id and
+            enrollment_context_role.context_role_id == ^instructor_context_role_id,
+        select: user
+      )
+    )
+  end
 end
