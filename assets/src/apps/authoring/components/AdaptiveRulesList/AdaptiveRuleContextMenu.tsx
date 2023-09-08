@@ -45,7 +45,11 @@ const AdaptiveRuleContextMenu = (props: any) => {
     props.contextMenuClicked(false);
   };
 
-  const handleRulePaste = async (copied: IAdaptiveRule | InitState, copiedType: any, index: any) => {
+  const handleRulePaste = async (
+    copied: IAdaptiveRule | InitState,
+    copiedType: any,
+    index: any,
+  ) => {
     const details = { event: 'handleRulePaste', item: copied, type: copiedType, index };
     props.onMenuItemClick(details);
     props.contextMenuClicked(false);

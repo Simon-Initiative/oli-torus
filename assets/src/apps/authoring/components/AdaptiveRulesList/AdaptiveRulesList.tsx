@@ -303,7 +303,7 @@ const IRulesList: React.FC<any> = (props: any) => {
         onClick={(e: React.MouseEvent) => {
           (e as any).isContextButtonClick = true;
           props.contextMenuClicked(true, {
-            rule:props,
+            rule: props,
             clientX: (e as any).clientX,
             clientY: (e as any).clientY,
           });

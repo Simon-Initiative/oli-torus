@@ -3,7 +3,12 @@ import React, { useEffect, useRef, useState } from 'react';
 import { ListGroup, Toast } from 'react-bootstrap';
 import { useSelector } from 'react-redux';
 import { selectIsAdmin, selectProjectSlug } from 'apps/authoring/store/app/slice';
-import { SequenceEntry, SequenceEntryChild, SequenceEntryType, SequenceHierarchyItem } from 'apps/delivery/store/features/groups/actions/sequence';
+import {
+  SequenceEntry,
+  SequenceEntryChild,
+  SequenceEntryType,
+  SequenceHierarchyItem,
+} from 'apps/delivery/store/features/groups/actions/sequence';
 
 const layerLabel = 'Layer';
 const bankLabel = 'Question Bank';
@@ -49,13 +54,21 @@ const SequenceItemContextMenu = (props: any) => {
   const wrapperRef = useRef(null);
   useOutsideAlerter(wrapperRef);
 
-  const handleItemAdd = async (parentItem: SequenceEntry<SequenceEntryChild> | undefined, isLayer = false, isBank = false) => {
+  const handleItemAdd = async (
+    parentItem: SequenceEntry<SequenceEntryChild> | undefined,
+    isLayer = false,
+    isBank = false,
+  ) => {
     const details = { event: 'handleItemAdd', parentItem, isLayer, isBank };
     props.onMenuItemClick(details);
     props.contextMenuClicked(false);
   };
 
-  const handleItemReorder = async (event: any, item: SequenceHierarchyItem<SequenceEntryType>, direction: ReorderDirection) => {
+  const handleItemReorder = async (
+    event: any,
+    item: SequenceHierarchyItem<SequenceEntryType>,
+    direction: ReorderDirection,
+  ) => {
     const details = { event: 'handleItemReorder', item, direction };
     props.onMenuItemClick(details);
     props.contextMenuClicked(false);
