@@ -6,6 +6,7 @@ defmodule Oli.Interop.Export do
   alias Oli.Authoring.MediaLibrary.ItemOptions
   alias Oli.Utils
   alias Oli.Delivery.Sections.Blueprint
+  alias Oli.Delivery.Sections.BlueprintBrowseOptions
   alias Oli.Repo
 
   @doc """
@@ -300,7 +301,10 @@ defmodule Oli.Interop.Export do
   def products(project) do
     # get all products in this project
     products =
-      Blueprint.list_for_project(project)
+      Blueprint.list(%BlueprintBrowseOptions{
+        project_id: project.id,
+        include_archived: false
+      })
       |> Repo.preload(section_project_publications: [:publication])
       |> Enum.filter(&(length(&1.section_project_publications) == 1))
 

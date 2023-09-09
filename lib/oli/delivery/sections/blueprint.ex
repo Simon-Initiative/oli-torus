@@ -327,18 +327,6 @@ defmodule Oli.Delivery.Sections.Blueprint do
     end)
   end
 
-  def list_for_project(%Project{id: id}) do
-    query =
-      from(
-        s in Section,
-        where: s.type == :blueprint and s.status in [:active, :deleted] and s.base_project_id == ^id,
-        select: s,
-        preload: [:base_project]
-      )
-
-    Repo.all(query)
-  end
-
   def list() do
     query =
       from(

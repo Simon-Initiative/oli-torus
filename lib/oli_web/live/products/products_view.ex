@@ -65,23 +65,18 @@ defmodule OliWeb.Products.ProductsView do
   end
 
   def mount(
-        %{"project_id" => project_slug},
+        %{"project_id" => project_slug} = params,
         %{"current_author_id" => author_id} = session,
         socket
       ) do
     author = Repo.get(Author, author_id)
+
     project = Course.get_project_by_slug(project_slug)
 
-    options = %BlueprintBrowseOptions{
-      project_id: project.id,
-      include_archived: false
-    }
-    products = Blueprint.list(options)
-
     mount_as(
+      params,
       author,
       false,
-      products,
       project,
       breadcrumb([]),
       "Products | " <> project.title,
@@ -90,19 +85,20 @@ defmodule OliWeb.Products.ProductsView do
     )
   end
 
-  def mount(_, %{"current_author_id" => author_id} = session, socket) do
+  def mount(params, %{"current_author_id" => author_id} = session, socket) do
     author = Repo.get(Author, author_id)
 
+    mount_as(params, author, true, nil, admin_breadcrumbs(), "Products", socket, session)
+  end
+
+  defp mount_as(params, author, is_admin_view, project, breadcrumbs, title, socket, session) do
+    project_id = if project === nil, do: nil, else: project.id
     options = %BlueprintBrowseOptions{
-      project_id: nil,
-      include_archived: false
+      project_id: project_id,
+      include_archived: get_boolean_param(params, "include_archived", false)
     }
     products = Blueprint.list(options)
 
-    mount_as(author, true, products, nil, admin_breadcrumbs(), "Products", socket, session)
-  end
-
-  defp mount_as(author, is_admin_view, products, project, breadcrumbs, title, socket, session) do
     total_count = length(products)
 
     ctx = SessionContext.init(socket, session)
@@ -124,7 +120,7 @@ defmodule OliWeb.Products.ProductsView do
        products: products,
        total_count: total_count,
        table_model: table_model,
-       include_archived: false,
+       include_archived: get_boolean_param(params, "include_archived", false),
        title: title,
        offset: 0,
        limit: 20,
@@ -167,13 +163,14 @@ defmodule OliWeb.Products.ProductsView do
     """
   end
 
-  def handle_params(params, _, socket) do
+  def handle_event("include_archived", __params, socket) do
     project_id = if socket.assigns.project === nil, do: nil, else: socket.assigns.project.id
-    value = get_boolean_param(params, "include_archived", false)
+
+    include_archived = !socket.assigns.include_archived
 
     options = %BlueprintBrowseOptions{
       project_id: project_id,
-      include_archived: value
+      include_archived: include_archived
     }
     products = Blueprint.list(options)
 
@@ -181,26 +178,22 @@ defmodule OliWeb.Products.ProductsView do
 
     {:ok, table_model} = OliWeb.Products.ProductsTableModel.new(products, socket.assigns.ctx)
 
-    {:noreply,
-     assign(socket,
-      include_archived: value,
+    socket = assign(socket,
+      include_archived: include_archived,
       products: products,
       total_count: total_count,
       table_model: table_model
-    )}
-  end
-
-  def handle_event("include_archived", values, socket) do
-    value = if Map.has_key?(values, "value"), do: true, else: false
+    )
 
     {:noreply,
      push_patch(socket,
        to:
         live_path(
           socket,
+          Map.merge(socket.assigns.params,
           %{
-             include_archived: value
-           }
+             include_archived: include_archived
+           })
          ),
        replace: true
      )}
