@@ -92,3 +92,5 @@ yarn-error.log
 /assets/storybook-static
 /assets/.storybook/temp
 _digests
+# the directory for AWS S3 uploads (for dev)
+/data
