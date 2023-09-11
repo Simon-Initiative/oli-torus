@@ -1,11 +1,20 @@
 # Changelog
 
-
 ## 0.24.5 (2023-9-12)
 
 ### Bug Fixes
 
 - Scientific notation in single response range question handling
+
+### Enhancements
+
+- Allow configuration of HTTP/HTTPS max header length
+
+### Environment Configs
+
+```
+HTTP_MAX_VALUE_HEADER_LENGTH       (Optional) HTTP/HTTPS max header length accepted by Cowboy
+```
 
 ## 0.24.4 (2023-8-11)
 
