@@ -449,6 +449,117 @@ defmodule OliWeb.PageDeliveryControllerTest do
       assert html_response(conn, 200) =~ "(Review)"
     end
 
+    test "grade update worker is not created if section has not grade passback enabled", %{
+      user: user,
+      conn: conn,
+      section: section,
+      page_revision: page_revision
+    } do
+      enroll_as_student(%{section: section, user: user})
+
+      conn = get(conn, Routes.page_delivery_path(conn, :page, section.slug, page_revision.slug))
+
+      # now start the attempt
+      conn =
+        recycle(conn)
+        |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
+
+      conn =
+        get(
+          conn,
+          Routes.page_delivery_path(conn, :start_attempt, section.slug, page_revision.slug)
+        )
+
+      # verify the redirection
+      redir_path = redirected_to(conn, 302)
+
+      conn =
+        recycle(conn)
+        |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
+
+      conn = get(conn, redir_path)
+
+      # fetch the resource that will have been created
+      [attempt] = Oli.Repo.all(ResourceAttempt)
+
+      conn =
+        recycle(conn)
+        |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
+
+      post(
+        conn,
+        Routes.page_lifecycle_path(
+          conn,
+          :transition
+        ),
+        %{
+          "action" => "finalize",
+          "section_slug" => section.slug,
+          "revision_slug" => page_revision.slug,
+          "attempt_guid" => attempt.attempt_guid
+        }
+      )
+
+      # verify that Oban job has not been created
+      assert Oli.Delivery.Attempts.PageLifecycle.GradeUpdateWorker.get_jobs() == []
+    end
+
+    test "grade update worker is created if section has grade passback enabled", %{
+      user: user,
+      conn: conn,
+      section: section,
+      page_revision: page_revision
+    } do
+      {:ok, section} = Sections.update_section(section, %{grade_passback_enabled: true})
+      enroll_as_student(%{section: section, user: user})
+
+      conn = get(conn, Routes.page_delivery_path(conn, :page, section.slug, page_revision.slug))
+
+      # now start the attempt
+      conn =
+        recycle(conn)
+        |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
+
+      conn =
+        get(
+          conn,
+          Routes.page_delivery_path(conn, :start_attempt, section.slug, page_revision.slug)
+        )
+
+      # verify the redirection
+      redir_path = redirected_to(conn, 302)
+
+      conn =
+        recycle(conn)
+        |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
+
+      conn = get(conn, redir_path)
+
+      # fetch the resource attempt that will have been created
+      [attempt] = Oli.Repo.all(ResourceAttempt)
+
+      conn =
+        recycle(conn)
+        |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
+
+      post(
+        conn,
+        Routes.page_lifecycle_path(
+          conn,
+          :transition
+        ),
+        %{
+          "action" => "finalize",
+          "section_slug" => section.slug,
+          "revision_slug" => page_revision.slug,
+          "attempt_guid" => attempt.attempt_guid
+        }
+      )
+
+      # verify that Oban job has been created
+      assert Oli.Delivery.Attempts.PageLifecycle.GradeUpdateWorker.get_jobs() |> length() == 1
+    end
+
     test "requires correct password to start an attempt", %{
       user: user,
       conn: conn,
