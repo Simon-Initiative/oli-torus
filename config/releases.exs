@@ -191,17 +191,17 @@ help_provider =
 
 config :oli, :help, dispatcher: help_provider
 
-# Configurable cowboy http/https max header length accepted. Default 4096
+# Configurable http/https max header length accepted for Cowboy. Default is 4096
 # https://ninenines.eu/docs/en/cowboy/2.5/manual/cowboy_http/
-max_header_value_length =
-  System.get_env("COWBOY_MAX_VALUE_HEADER_LENGTH", "4096") |> String.to_integer()
+http_max_header_value_length =
+  System.get_env("HTTP_MAX_VALUE_HEADER_LENGTH", "4096") |> String.to_integer()
 
 config :oli, OliWeb.Endpoint,
   server: true,
   http: [
     :inet6,
     port: String.to_integer(System.get_env("HTTP_PORT", "80")),
-    protocol_options: [max_header_value_length: max_header_value_length]
+    protocol_options: [max_header_value_length: http_max_header_value_length]
   ],
   url: [
     scheme: System.get_env("SCHEME", "https"),
@@ -218,7 +218,7 @@ if System.get_env("SSL_CERT_PATH") && System.get_env("SSL_KEY_PATH") do
       otp_app: :oli,
       keyfile: System.get_env("SSL_CERT_PATH", "priv/ssl/localhost.key"),
       certfile: System.get_env("SSL_KEY_PATH", "priv/ssl/localhost.crt"),
-      protocol_options: [max_header_value_length: max_header_value_length]
+      protocol_options: [max_header_value_length: http_max_header_value_length]
     ]
 end
 
