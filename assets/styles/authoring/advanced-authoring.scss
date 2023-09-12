@@ -45,6 +45,13 @@ $font-family-sans-serif: var(--font-sans);
   // &.startup {
   //   opacity: 1;
   // }
+  .aa-panel.left-panel {
+    height: 100vh;
+    overflow-y: hidden;
+  }
+  .aa-sequence-editor {
+    overflow-y: auto;
+  }
   .aa-panel,
   .aa-header-nav {
     position: fixed;
@@ -916,5 +923,10 @@ $font-family-sans-serif: var(--font-sans);
   }
   .modal-body {
     color: $panel-bg-color-dark;
+  }
+}
+.toast-body {
+  .list-group-item {
+    margin: 5px;
   }
 }
