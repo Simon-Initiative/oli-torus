@@ -144,22 +144,6 @@ const EmbeddedDelivery = (props: DeliveryElementProps<OliEmbeddedModelSchema>) =
           data-userguid={context.user_guid}
           data-partids={context.part_ids}
           data-mode="oli"
-          onLoad={(event: any) => {
-            if (iframeHeight > 0) return;
-            const { contentWindow, contentDocument } = event.target;
-            const embed = contentWindow.document.body.querySelector('body > :first-of-type');
-
-            // Observe any size changes in the content and update the iframe height
-            const resizeObserver = new ResizeObserver((entries) => {
-              // This limit to 700px prevents uncontrolled iframe height growth.
-              // A bug where for some content layouts settings the iframe height results in a run away height growth loop
-              if (contentDocument.body.scrollHeight < 700) {
-                setIframeHeight(contentDocument.body.scrollHeight);
-              }
-            });
-
-            resizeObserver.observe(embed);
-          }}
         ></iframe>
       )}
       {preview && <h4>OLI Embedded activity does not yet support preview</h4>}
