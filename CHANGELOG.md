@@ -8,12 +8,14 @@
 
 ### Enhancements
 
-- Allow configuration of HTTP/HTTPS max header length
+- Allow configuration of HTTP/HTTPS cowboy protocol options
 
 ### Environment Configs
 
 ```
-HTTP_MAX_VALUE_HEADER_LENGTH       (Optional) HTTP/HTTPS max header length accepted by Cowboy
+HTTP_MAX_HEADER_NAME_LENGTH       (Optional) HTTP/HTTPS Maximum length of header names for Cowboy (Default 64)
+HTTP_MAX_HEADER_VALUE_LENGTH      (Optional) HTTP/HTTPS Maximum length of header values for Cowboy (Default 4096)
+HTTP_MAX_HEADERS                  (Optional) HTTP/HTTPS Maximum number of headers allowed per request for Cowboy (Default 100)
 ```
 
 ## 0.24.4 (2023-8-11)
