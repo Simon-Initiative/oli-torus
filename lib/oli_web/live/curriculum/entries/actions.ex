@@ -8,7 +8,7 @@ defmodule OliWeb.Curriculum.Actions do
   alias Oli.Resources.ResourceType
 
   attr(:child, :map, required: true)
-  attr(:project_slug, :string, required: true)
+  attr(:project_slug, :string)
   attr(:revision_history_link, :boolean, default: false)
 
   def render(assigns) do
