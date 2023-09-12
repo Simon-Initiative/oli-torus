@@ -181,7 +181,7 @@ defmodule OliWeb.Sections.OverviewView do
               href={Routes.live_path(OliWeb.Endpoint, OliWeb.Delivery.RemixSection, @section.slug)}
               class="btn btn-link"
             >
-              Customize Curriculum
+              Customize Content
             </a>
           </li>
           <li>
