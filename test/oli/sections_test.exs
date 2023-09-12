@@ -1002,6 +1002,45 @@ defmodule Oli.SectionsTest do
           section_tag: :section
         )
 
+      # one week agao
+      one_week_ago = DateTime.utc_now() |> DateTime.add(-7, :day) |> DateTime.truncate(:second)
+      a_day_later = DateTime.utc_now() |> DateTime.add(-6, :day) |> DateTime.truncate(:second)
+
+      # Simulate customizing assessment settings for page1
+      page1_sr = Oli.Delivery.Sections.get_section_resource(section.id, page1.id)
+
+      {:ok, _} = Oli.Delivery.Sections.update_section_resource(page1_sr, %{
+        scoring_strategy_id: 2,
+        scheduling_type: :due_by,
+        manually_scheduled: true,
+        start_date: one_week_ago,
+        end_date: a_day_later,
+        collab_space_config: %Oli.Resources.Collaboration.CollabSpaceConfig{
+          status: :enabled,
+          threaded: false,
+          auto_accept: false,
+          show_full_history: false,
+          anonymous_posting: false,
+          participation_min_posts: 100,
+          participation_min_replies: 101
+        },
+        explanation_strategy: %Oli.Resources.ExplanationStrategy{
+          type: :after_set_num_attempts,
+          set_num_attempts: 10
+        },
+        max_attempts: 200,
+        retake_mode: :targeted,
+        password: "12345", # "I've got the same combination on my luggage"
+        late_submit: :disallow,
+        late_start: :disallow,
+        time_limit: 90,
+        grace_period: 100,
+        review_submission: :disallow,
+        feedback_mode: :scheduled,
+        feedback_scheduled_date: a_day_later
+
+      })
+
       # verify the curriculum precondition
       hierarchy = DeliveryResolver.full_hierarchy(section.slug)
 
@@ -1139,6 +1178,33 @@ defmodule Oli.SectionsTest do
              |> Map.get(:children)
              |> Enum.at(1)
              |> Map.get(:resource_id) == nested_page2.id
+
+      # verify the assessment settings remain unchanged
+      page1_sr = Oli.Delivery.Sections.get_section_resource(section.id, page1.id)
+      assert page1_sr.scoring_strategy_id == 2
+      assert page1_sr.scheduling_type == :due_by
+      assert page1_sr.manually_scheduled == true
+      assert page1_sr.start_date == one_week_ago
+      assert page1_sr.end_date == a_day_later
+      assert page1_sr.collab_space_config.status == :enabled
+      assert page1_sr.collab_space_config.threaded == false
+      assert page1_sr.collab_space_config.auto_accept == false
+      assert page1_sr.collab_space_config.show_full_history == false
+      assert page1_sr.collab_space_config.anonymous_posting == false
+      assert page1_sr.collab_space_config.participation_min_posts == 100
+      assert page1_sr.collab_space_config.participation_min_replies == 101
+      assert page1_sr.explanation_strategy.type == :after_set_num_attempts
+      assert page1_sr.explanation_strategy.set_num_attempts == 10
+      assert page1_sr.max_attempts == 200
+      assert page1_sr.retake_mode == :targeted
+      assert page1_sr.password == "12345"
+      assert page1_sr.late_submit == :disallow
+      assert page1_sr.late_start == :disallow
+      assert page1_sr.time_limit == 90
+      assert page1_sr.grace_period == 100
+      assert page1_sr.review_submission == :disallow
+      assert page1_sr.feedback_mode == :scheduled
+      assert page1_sr.feedback_scheduled_date == a_day_later
 
       # verify the final number of section resource records matches what is
       # expected to guard against section resource record leaks
