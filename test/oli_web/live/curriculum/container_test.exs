@@ -12,7 +12,9 @@ defmodule OliWeb.Curriculum.ContainerLiveTest do
   @endpoint OliWeb.Endpoint
 
   describe "cannot access when is not logged in" do
-    test "redirect to new session when accessing the container view", %{conn: conn} do
+    test "redirect to new session when accessing the container view", %{
+      conn: conn
+    } do
       project = insert(:project)
 
       redirect_path =
@@ -26,7 +28,9 @@ defmodule OliWeb.Curriculum.ContainerLiveTest do
   describe "cannot access when is not an author" do
     setup [:user_conn]
 
-    test "redirect to new session when accessing the container view", %{conn: conn} do
+    test "redirect to new session when accessing the container view", %{
+      conn: conn
+    } do
       project = insert(:project)
 
       redirect_path =
@@ -58,7 +62,10 @@ defmodule OliWeb.Curriculum.ContainerLiveTest do
 
       conn =
         recycle(conn)
-        |> Pow.Plug.assign_current_user(author, OliWeb.Pow.PowHelpers.get_pow_config(:author))
+        |> Pow.Plug.assign_current_user(
+          author,
+          OliWeb.Pow.PowHelpers.get_pow_config(:author)
+        )
 
       conn = get(conn, redir_path)
 
@@ -69,8 +76,13 @@ defmodule OliWeb.Curriculum.ContainerLiveTest do
       page1 = Map.get(map, :page1)
       page2 = Map.get(map, :page2)
 
-      assert view |> element("##{Integer.to_string(page1.id)}") |> has_element?()
-      assert view |> element("##{Integer.to_string(page2.id)}") |> has_element?()
+      assert view
+             |> element("##{Integer.to_string(page1.id)}")
+             |> has_element?()
+
+      assert view
+             |> element("##{Integer.to_string(page2.id)}")
+             |> has_element?()
     end
 
     test "shows the author name editing the page correctly", %{
@@ -101,7 +113,10 @@ defmodule OliWeb.Curriculum.ContainerLiveTest do
     } do
       conn =
         recycle(conn)
-        |> Pow.Plug.assign_current_user(author, OliWeb.Pow.PowHelpers.get_pow_config(:author))
+        |> Pow.Plug.assign_current_user(
+          author,
+          OliWeb.Pow.PowHelpers.get_pow_config(:author)
+        )
         |> get("/authoring/project/#{project.slug}/curriculum/")
 
       {:ok, view, _html} = live(conn)
@@ -118,7 +133,8 @@ defmodule OliWeb.Curriculum.ContainerLiveTest do
       |> element(
         "div[phx-value-slug=\"#{revision_page_two.slug}\"] button[phx-click=\"duplicate_page\"]"
       )
-      |> render_click =~ "entry-title\">Copy of #{revision_page_two.title}</span>"
+      |> render_click =~
+        "entry-title\">Copy of #{revision_page_two.title}</span>"
     end
 
     test "does not show duplicate action for adaptive pages", %{
@@ -129,7 +145,10 @@ defmodule OliWeb.Curriculum.ContainerLiveTest do
     } do
       conn =
         recycle(conn)
-        |> Pow.Plug.assign_current_user(author, OliWeb.Pow.PowHelpers.get_pow_config(:author))
+        |> Pow.Plug.assign_current_user(
+          author,
+          OliWeb.Pow.PowHelpers.get_pow_config(:author)
+        )
         |> get("/authoring/project/#{project.slug}/curriculum/")
 
       {:ok, view, _html} = live(conn)
@@ -151,7 +170,10 @@ defmodule OliWeb.Curriculum.ContainerLiveTest do
     } do
       conn =
         recycle(conn)
-        |> Pow.Plug.assign_current_user(author, OliWeb.Pow.PowHelpers.get_pow_config(:author))
+        |> Pow.Plug.assign_current_user(
+          author,
+          OliWeb.Pow.PowHelpers.get_pow_config(:author)
+        )
         |> get("/authoring/project/#{project.slug}/curriculum/")
 
       {:ok, view, _html} = live(conn)
@@ -203,15 +225,19 @@ defmodule OliWeb.Curriculum.ContainerLiveTest do
              )
     end
 
-    test "when the page is of type 'foundation', the related resources selector is disabled", %{
-      conn: conn,
-      author: author,
-      project: project,
-      revision1: revision_page_one
-    } do
+    test "when the page is of type 'foundation', the related resources selector is disabled",
+         %{
+           conn: conn,
+           author: author,
+           project: project,
+           revision1: revision_page_one
+         } do
       conn =
         recycle(conn)
-        |> Pow.Plug.assign_current_user(author, OliWeb.Pow.PowHelpers.get_pow_config(:author))
+        |> Pow.Plug.assign_current_user(
+          author,
+          OliWeb.Pow.PowHelpers.get_pow_config(:author)
+        )
         |> get("/authoring/project/#{project.slug}/curriculum/")
 
       {:ok, view, _html} = live(conn)
@@ -243,7 +269,10 @@ defmodule OliWeb.Curriculum.ContainerLiveTest do
     } do
       conn =
         recycle(conn)
-        |> Pow.Plug.assign_current_user(author, OliWeb.Pow.PowHelpers.get_pow_config(:author))
+        |> Pow.Plug.assign_current_user(
+          author,
+          OliWeb.Pow.PowHelpers.get_pow_config(:author)
+        )
         |> get("/authoring/project/#{project.slug}/curriculum/")
 
       {:ok, view, _html} = live(conn)
@@ -269,6 +298,64 @@ defmodule OliWeb.Curriculum.ContainerLiveTest do
              )
              |> Map.get(:relates_to) == [revision_page_two.resource_id]
     end
+
+    test "an author can not see the `view revision history` link", %{
+      conn: conn,
+      author: author,
+      project: project
+    } do
+      conn =
+        recycle(conn)
+        |> Pow.Plug.assign_current_user(
+          author,
+          OliWeb.Pow.PowHelpers.get_pow_config(:author)
+        )
+        |> get("/authoring/project/#{project.slug}/curriculum")
+        |> Map.put(
+          :request_path,
+          "/authoring/project/#{project.slug}/curriculum#show_links"
+        )
+
+      {:ok, view, _html} = live(conn)
+
+      refute render(view) =~ "View revision history"
+    end
+  end
+
+  describe "container live test (as admin)" do
+    setup [:setup_session, :admin_conn]
+
+    test "can see the `view revision history` link if the url has #show_links",
+         %{
+           conn: conn,
+           project: project
+         } do
+      conn =
+        conn
+        |> get("/authoring/project/#{project.slug}/curriculum")
+        |> Map.put(
+          :request_path,
+          "/authoring/project/#{project.slug}/curriculum#show_links"
+        )
+
+      {:ok, view, _html} = live(conn)
+
+      assert render(view) =~ "View revision history"
+    end
+
+    test "can not see the `view revision history` link if the url does not have #show_links",
+         %{
+           conn: conn,
+           project: project
+         } do
+      conn =
+        conn
+        |> get("/authoring/project/#{project.slug}/curriculum")
+
+      {:ok, view, _html} = live(conn)
+
+      refute render(view) =~ "View revision history"
+    end
   end
 
   defp setup_session(%{conn: conn}) do
@@ -278,7 +365,10 @@ defmodule OliWeb.Curriculum.ContainerLiveTest do
 
     conn =
       Plug.Test.init_test_session(conn, lti_session: nil)
-      |> Pow.Plug.assign_current_user(map.author, OliWeb.Pow.PowHelpers.get_pow_config(:author))
+      |> Pow.Plug.assign_current_user(
+        map.author,
+        OliWeb.Pow.PowHelpers.get_pow_config(:author)
+      )
 
     {:ok,
      conn: conn,

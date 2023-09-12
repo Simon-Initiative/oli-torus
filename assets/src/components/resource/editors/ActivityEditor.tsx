@@ -52,6 +52,7 @@ export const ActivityEditor = ({
           activityId={activity.activityId}
           title={activity.title}
           banked={false}
+          revisionHistoryLink={false}
           contentBreaksExist={contentBreaksExist}
           canRemove={canRemove}
           onRemove={() => onRemove(contentItem.id)}
