@@ -181,7 +181,7 @@ defmodule OliWeb.Delivery.Actions.TransferEnrollment do
       <%= if length(assigns.list_sections) > 0 do %>
         <div class="flex flex-col gap-2">
           <div class="flex justify-between items-center">
-            <small class="torus-small uppercase">Select section to transfer enrolllment</small>
+            <small class="torus-small uppercase">Select section to transfer enrollment</small>
             <form for="search" phx-target={@myself} phx-change="search_item" class="w-44">
               <SearchInput.render
                 id="section_search_input"
@@ -221,7 +221,7 @@ defmodule OliWeb.Delivery.Actions.TransferEnrollment do
       <%= if length(assigns.list_students) > 0 do %>
         <div class="flex flex-col gap-2">
           <div class="flex justify-between items-center">
-            <small class="torus-small uppercase">Select student to transfer enrolllment</small>
+            <small class="torus-small uppercase">Select student to transfer enrollment</small>
             <form for="search" phx-target={@myself} phx-change="search_item" class="w-44">
               <SearchInput.render
                 id="student_search_input"
