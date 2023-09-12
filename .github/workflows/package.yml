@@ -34,6 +34,9 @@ jobs:
         uses: ./.github/actions/torus-builder
         with:
           build-sha: ${{ steps.info.outputs.sha_short }}
+          context: .
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
       - name: 🗜️ Zip it
         run: |
