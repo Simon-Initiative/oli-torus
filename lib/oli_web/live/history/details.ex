@@ -56,8 +56,9 @@ defmodule OliWeb.RevisionHistory.Details do
           list ++ resource_ids
 
         map when is_map(map) ->
-          Enum.reduce(map, [], fn {_key, list}, acum -> list ++ acum end) ++
-            resource_ids
+          map
+          |> Map.values()
+          |> List.flatten(resource_ids)
       end
     end)
   end
@@ -142,7 +143,7 @@ defmodule OliWeb.RevisionHistory.Details do
                 <td class="w-52"><strong>Title</strong></td>
                 <td><%= @revision.title %></td>
               </tr>
-              <tr id={"revision-table-#{key}-attr"} :for={{key, value} <- revision_details(@revision)}>
+              <tr :for={{key, value} <- revision_details(@revision)} id={"revision-table-#{key}-attr"}>
                 <td class="w-52">
                   <strong><%= Phoenix.Naming.humanize(key) %></strong>
                 </td>
@@ -150,7 +151,7 @@ defmodule OliWeb.RevisionHistory.Details do
                   <button
                     :if={key in @editable_keys}
                     class="mx-2"
-                    phx-click={JS.push("reset-monaco") |> JS.push("edit-attribute")}
+                    phx-click={JS.push("reset_monaco") |> JS.push("edit_attribute")}
                     phx-value-attr-key={key}
                   >
                     <i class="fas fa-edit" />
@@ -158,7 +159,7 @@ defmodule OliWeb.RevisionHistory.Details do
                   <.render_attribute
                     value={value}
                     key={key}
-                    keys={@linkable_keys}
+                    linkable_keys={@linkable_keys}
                     project_slug={@project.slug}
                     slug_mapper={@slug_mapper}
                   />
@@ -175,19 +176,19 @@ defmodule OliWeb.RevisionHistory.Details do
   attr(:value, :string)
   attr(:key, :string)
   attr(:project_slug, :string)
-  attr(:keys, :list)
+  attr(:linkable_keys, :list)
   attr(:slug_mapper, :map)
 
   def render_attribute(
         %{
           key: key,
-          keys: keys,
+          linkable_keys: linkable_keys,
           value: value,
           project_slug: project_slug,
           slug_mapper: slug_mapper
         } = assigns
       ) do
-    if key in keys do
+    if key in linkable_keys do
       case value do
         list when is_list(list) ->
           assigns = %{parsed_list: parse_list(list, project_slug, slug_mapper)}
@@ -250,7 +251,7 @@ defmodule OliWeb.RevisionHistory.Details do
   defp revision_details(revision) do
     revision
     |> Map.from_struct()
-    |> Enum.reject(fn {k, _v} -> k in @ignored_keys end)
+    |> Map.drop(@ignored_keys)
   end
 
   defp json_encode_pretty(json) do

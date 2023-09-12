@@ -334,7 +334,7 @@ defmodule OliWeb.History.RevisionHistoryTest do
       # LiveViewTest doesn't support testing two or more JS.push chained so we need to trigger two events separatedly
       view
       |> with_target("#attributes_table")
-      |> render_click("edit-attribute", %{"attr-key" => "children"})
+      |> render_click("edit_attribute", %{"attr-key" => "children"})
 
       # the modal is shown
       assert has_element?(view, "#edit_attribute_modal")
@@ -389,7 +389,7 @@ defmodule OliWeb.History.RevisionHistoryTest do
       # LiveViewTest doesn't support testing two or more JS.push chained so we need to trigger two events separatedly
       view
       |> with_target("#attributes_table")
-      |> render_click("edit-attribute", %{"attr-key" => "objectives"})
+      |> render_click("edit_attribute", %{"attr-key" => "objectives"})
 
       # the modal is shown
       assert has_element?(view, "#edit_attribute_modal")
@@ -434,7 +434,7 @@ defmodule OliWeb.History.RevisionHistoryTest do
       # LiveViewTest doesn't support testing two or more JS.push chained so we need to trigger two events separatedly
       view
       |> with_target("#attributes_table")
-      |> render_click("edit-attribute", %{"attr-key" => "children"})
+      |> render_click("edit_attribute", %{"attr-key" => "children"})
 
       view
       |> with_target("#edit_attribute_modal")

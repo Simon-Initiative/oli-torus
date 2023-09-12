@@ -114,7 +114,7 @@ defmodule Oli.Resources do
   end
 
   @doc """
-  Gets a list of slugs and resources_ids, based on a list of revision ids.
+  Gets a list of slugs and resources_ids, based on a list of resource ids.
   """
   def map_slugs_from_resources_ids(revision_resources_ids) do
     query =

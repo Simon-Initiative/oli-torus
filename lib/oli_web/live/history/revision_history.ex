@@ -361,11 +361,11 @@ defmodule OliWeb.RevisionHistory do
     end
   end
 
-  def handle_event("reset-monaco", _params, socket) do
+  def handle_event("reset_monaco", _params, socket) do
     {:noreply, assign(socket, details_modal_assigns: nil)}
   end
 
-  def handle_event("edit-attribute", %{"attr-key" => attr_key}, socket) do
+  def handle_event("edit_attribute", %{"attr-key" => attr_key}, socket) do
     socket =
       assign(socket,
         details_modal_assigns: %{
