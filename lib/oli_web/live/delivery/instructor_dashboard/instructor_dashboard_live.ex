@@ -3,7 +3,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
   use OliWeb.Common.Modal
 
   alias OliWeb.Common.SessionContext
-  alias Oli.Delivery.Sections
+  alias Oli.Delivery.{Metrics, Sections}
   alias Oli.Publishing.DeliveryResolver
   alias Oli.Resources.Collaboration
   alias OliWeb.Components.Delivery.InstructorDashboard
@@ -34,6 +34,8 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
           |> Helpers.get_containers()
           |> elem(1)
           |> Enum.find(&(&1.id == params.container_id))
+
+        async_calculate_proficiency(socket.assigns.section)
 
         assign(socket, :selected_container, selected_container)
       else
@@ -91,7 +93,13 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
     socket =
       socket
       |> assign(params: params, view: :reports, active_tab: active_tab)
-      |> assign_new(:containers, fn -> Helpers.get_containers(socket.assigns.section) end)
+      |> assign_new(:containers, fn ->
+
+        containers = Helpers.get_containers(socket.assigns.section)
+        async_calculate_proficiency(socket.assigns.section)
+        containers
+
+      end)
 
     {:noreply, socket}
   end
@@ -181,6 +189,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
         value when value in [nil, "course_content"] ->
           socket =
             assign_new(socket, :hierarchy, fn ->
+
               section =
                 socket.assigns.section
                 |> Oli.Repo.preload([:base_project, :root_section_resource])
@@ -580,4 +589,43 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
         []
     end
   end
+
+  defp async_calculate_proficiency(section) do
+
+    pid = self()
+
+    Task.async(fn ->
+      contained_pages = Oli.Delivery.Sections.get_contained_pages(section)
+      proficiency_per_container = Metrics.proficiency_per_container(section, contained_pages)
+
+      send(pid, {:proficiency, proficiency_per_container})
+    end)
+
+  end
+
+  @impl Phoenix.LiveView
+  def handle_info({:proficiency, proficiency_per_container}, socket) do
+
+    case Map.get(socket.assigns, :containers) do
+      nil -> {:noreply, socket}
+
+      {total, containers} ->
+
+        containers_with_metrics =
+          Enum.map(containers, fn container ->
+            Map.merge(container, %{
+              student_proficiency:
+                Map.get(proficiency_per_container, container.id, "Not enough data")
+            })
+          end)
+
+        {:noreply, assign(socket, containers: {total, containers_with_metrics})}
+    end
+  end
+
+  @impl Phoenix.LiveView
+  def handle_info(_any, socket) do
+    {:noreply, socket}
+  end
+
 end

@@ -5,11 +5,14 @@ import { StemAuthoring } from 'components/activities/common/stem/authoring/StemA
 import { HasStem } from 'components/activities/types';
 
 export const Stem: React.FC = () => {
-  const { model, dispatch } = useAuthoringElementContext<HasStem>();
+  const { model, dispatch, editMode, projectSlug } = useAuthoringElementContext<HasStem>();
   return (
     <StemAuthoring
       stem={model.stem}
       onEdit={(content) => dispatch(StemActions.editStemAndPreviewText(content))}
+      onChangeEditorType={(editorType) => dispatch(StemActions.changeEditorMode(editorType))}
+      editMode={editMode}
+      projectSlug={projectSlug}
     />
   );
 };

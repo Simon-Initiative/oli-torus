@@ -31,6 +31,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.Helpers do
         {0, pages_with_metrics}
 
       {total_count, containers} ->
+
         student_progress =
           Metrics.progress_across(
             section.id,
@@ -39,14 +40,11 @@ defmodule OliWeb.Delivery.InstructorDashboard.Helpers do
             Sections.count_enrollments(section.slug)
           )
 
-        proficiency_per_container = Metrics.proficiency_per_container(section.slug)
-
         containers_with_metrics =
           Enum.map(containers, fn container ->
             Map.merge(container, %{
               progress: student_progress[container.id] || 0.0,
-              student_proficiency:
-                Map.get(proficiency_per_container, container.id, "Not enough data")
+              student_proficiency: "Loading..."
             })
           end)
 

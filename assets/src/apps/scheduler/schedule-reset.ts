@@ -17,6 +17,8 @@ export const countWorkingDays = (
 };
 
 export const findNthDay = (startDay: number, n: number, weekdaysToSchedule: boolean[]) => {
+  if (n === 0) return new DateWithoutTime(startDay);
+
   const start = new DateWithoutTime(Math.floor(startDay) - 1);
   let workdays = 0;
   while (workdays < n) {
@@ -25,6 +27,7 @@ export const findNthDay = (startDay: number, n: number, weekdaysToSchedule: bool
       workdays++;
     }
   }
+
   return start;
 };
 

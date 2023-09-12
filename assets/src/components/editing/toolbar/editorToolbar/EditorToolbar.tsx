@@ -12,11 +12,13 @@ import { Inlines } from 'components/editing/toolbar/editorToolbar/Inlines';
 import { BlockInsertMenu } from 'components/editing/toolbar/editorToolbar/blocks/BlockInsertMenu';
 import { BlockSettings } from 'components/editing/toolbar/editorToolbar/blocks/BlockSettings';
 import { BlockToggle } from 'components/editing/toolbar/editorToolbar/blocks/BlockToggle';
+import { EditorSettingsMenu } from './EditorSettingsMenu';
 
 interface Props {
   context: CommandContext;
   insertOptions: CommandDescription[];
   fixedToolbar?: boolean;
+  onSwitchToMarkdown?: () => void;
 }
 
 export const EditorToolbar = (props: Props) => {
@@ -27,6 +29,9 @@ export const EditorToolbar = (props: Props) => {
       <BlockToggle blockInsertOptions={props.insertOptions} />
       <BlockSettings />
       <BlockInsertMenu blockInsertOptions={props.insertOptions} />
+      {props.onSwitchToMarkdown && (
+        <EditorSettingsMenu onSwitchToMarkdown={props.onSwitchToMarkdown} />
+      )}
     </Toolbar>
   );
 

@@ -3,6 +3,7 @@ import { Maybe } from 'tsmonad';
 import { PostUndoable, makeUndoable } from 'components/activities/types';
 import { toSimpleText } from 'components/editing/slateUtils';
 import { Identifiable } from 'data/content/model/other';
+import { EditorType } from 'data/content/resource';
 import { clone } from 'utils/common';
 import { Operations } from 'utils/pathOperations';
 import { Hint as HintType, RichText, makeHint } from '../types';
@@ -71,6 +72,12 @@ export class ICActions {
   static editRegex(value: string) {
     return (draftState: ImageCodingModelSchema, _post: PostUndoable) => {
       draftState.regex = value;
+    };
+  }
+
+  static editFeedbackEditorType(score: number, editor: EditorType) {
+    return (draftState: ImageCodingModelSchema, _post: PostUndoable) => {
+      draftState.feedback[score].editor = editor;
     };
   }
 

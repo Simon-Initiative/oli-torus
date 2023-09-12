@@ -1,5 +1,6 @@
 defmodule OliWeb.LtiController do
   use OliWeb, :controller
+  use OliWeb, :verified_routes
 
   import Oli.Utils
 
@@ -260,7 +261,7 @@ defmodule OliWeb.LtiController do
               "text" => %{
                 "type" => "mrkdwn",
                 "text" =>
-                  "New registration request from *#{pending_registration.name}*. <#{Routes.institution_url(conn, :index)}#pending-registrations|Click here to view all pending requests>."
+                  "New registration request from *#{pending_registration.name}*. <#{~p"/admin/institutions"}|Click here to view all pending requests>."
               }
             },
             %{

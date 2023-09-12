@@ -8,6 +8,7 @@ defmodule OliWeb.DeliveryControllerTest do
   alias Lti_1p3.Tool.ContextRoles
   alias Oli.Delivery.Sections
 
+  import Mox
   import Oli.Factory
 
   describe "delivery_controller index" do
@@ -506,6 +507,93 @@ defmodule OliWeb.DeliveryControllerTest do
 
       assert html_response(conn, 200) =~ "Enroll in Course Section"
     end
+  end
+
+  describe "enroll in the section while logged in" do
+    setup [:user_conn]
+
+    test "redirects to overview section screen if section requires enrollment", %{conn: conn} do
+      section = insert(:section, requires_enrollment: true)
+      conn = get(conn, Routes.delivery_path(conn, :show_enroll, section.slug))
+
+      assert html_response(conn, 200) =~
+               "Enroll"
+
+      conn = post(conn, Routes.delivery_path(conn, :process_enroll, section.slug))
+
+      assert html_response(conn, 200) =~
+               section.title
+    end
+
+    test "redirects to overview section screen if section does not requires enrollment", %{
+      conn: conn
+    } do
+      section = insert(:section, requires_enrollment: false)
+      conn = get(conn, Routes.delivery_path(conn, :show_enroll, section.slug))
+
+      assert html_response(conn, 200) =~
+               "Enroll"
+
+      conn = post(conn, Routes.delivery_path(conn, :process_enroll, section.slug))
+
+      assert html_response(conn, 200) =~
+               section.title
+    end
+  end
+
+  describe "enroll in the section without being logged in" do
+    test "redirects to login screen if section requires enrollment", %{conn: conn} do
+      section = insert(:section, requires_enrollment: true)
+      conn = get(conn, Routes.delivery_path(conn, :show_enroll, section.slug))
+
+      assert html_response(conn, 200) =~
+               "Enroll as Guest"
+
+      conn = mock_captcha(conn, section)
+
+      assert Phoenix.Flash.get(conn.assigns.flash, :error) ==
+               "Cannot enroll guest users in a course section that requires enrollment"
+
+      assert response(conn, 302) =~
+               "<html><body>You are being <a href=\"/session/new?request_path=/sections/#{section.slug}/enroll\">redirected</a>.</body></html>"
+    end
+
+    test "redirects to overview section screen if section does not requires enrollment", %{
+      conn: conn
+    } do
+      section = insert(:section, requires_enrollment: false)
+      conn = get(conn, Routes.delivery_path(conn, :show_enroll, section.slug))
+
+      assert html_response(conn, 200) =~
+               "Enroll as Guest"
+
+      conn = mock_captcha(conn, section)
+
+      assert response(conn, 302) =~
+               "<html><body>You are being <a href=\"/sections/#{section.slug}/overview\">redirected</a>.</body></html>"
+    end
+  end
+
+  defp mock_captcha(conn, section) do
+    Oli.Test.MockHTTP
+    |> expect(:post, fn "https://www.google.com/recaptcha/api/siteverify",
+                        _body,
+                        _headers,
+                        _opts ->
+      {:ok,
+       %HTTPoison.Response{
+         status_code: 200,
+         body:
+           Jason.encode!(%{
+             "success" => true
+           })
+       }}
+    end)
+
+    conn
+    |> post(Routes.delivery_path(conn, :process_enroll, section.slug), %{
+      "g-recaptcha-response" => "some-valid-capcha-data"
+    })
   end
 
   defp setup_lti_session(%{conn: conn}) do

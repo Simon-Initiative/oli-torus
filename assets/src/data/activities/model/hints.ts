@@ -1,5 +1,6 @@
 import { HasHints, Hint, PostUndoable, RichText, makeUndoable } from 'components/activities/types';
 import { List } from 'data/activities/model/list';
+import { EditorType } from 'data/content/resource';
 import { clone } from 'utils/common';
 import { Operations } from 'utils/pathOperations';
 
@@ -14,6 +15,7 @@ interface Hints extends Omit<List<Hint>, 'addOne' | 'removeOne'> {
   getBottomOutHint: (model: HasHints, partId: string) => Hint;
   addCognitiveHint(hint: Hint, partId: string): (model: HasHints, _post: PostUndoable) => void;
   setContent(id: string, content: RichText): (model: HasHints, _post: PostUndoable) => void;
+  setEditor(id: string, mode: EditorType): (model: HasHints, _post: PostUndoable) => void;
   removeOne: (id: string, partId: string) => (model: any, post: PostUndoable) => void;
 }
 
@@ -53,6 +55,12 @@ export const Hints: Hints = {
   setContent(id: string, content: RichText) {
     return (model: HasHints, _post: PostUndoable) => {
       Hints.getOne(model, id).content = content;
+    };
+  },
+
+  setEditor(id: string, mode: EditorType) {
+    return (model: HasHints, _post: PostUndoable) => {
+      Hints.getOne(model, id).editor = mode;
     };
   },
 
