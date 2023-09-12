@@ -55,9 +55,9 @@ const EmbeddedDelivery = (props: DeliveryElementProps<OliEmbeddedModelSchema>) =
       if (height) {
         try {
           // Extract number
-          height = height.replace(/[^0-9]/g,"");
+          height = height.replace(/[^0-9]/g, '');
           setIframeHeight(parseInt(height));
-        } catch(error) {
+        } catch (error) {
           console.error(error);
         }
       }
