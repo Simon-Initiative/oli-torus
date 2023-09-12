@@ -16,17 +16,6 @@ defmodule Oli.Interop.IngestTest do
     AuthoringResolver.from_revision_slug(project.slug, Repo.one(query).slug)
   end
 
-  def unzip_to_memory(data) do
-    File.write("export.zip", data)
-    result = :zip.unzip(to_charlist("export.zip"), [:memory])
-    File.rm!("export.zip")
-
-    case result do
-      {:ok, entries} -> entries
-      _ -> []
-    end
-  end
-
   def verify_export(entries) do
     m = Enum.reduce(entries, %{}, fn {f, c}, m -> Map.put(m, f, c) end)
 
