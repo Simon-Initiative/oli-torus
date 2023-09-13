@@ -1270,7 +1270,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
       |> render() =~ "max=\"2023-10-10T17:00\""
     end
 
-    test "available date renders 'No available date' if it is not set",
+    test "available date renders 'Always available' if it is not set",
          %{
            conn: conn,
            section: section,
@@ -1287,7 +1287,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
         table_as_list_of_maps(view, :settings)
 
       assert assessment_1.available_date =~ "October 10, 2023"
-      assert assessment_2.available_date =~ "No available date"
+      assert assessment_2.available_date =~ "Always available"
     end
 
     test "due date date can be changed by clicking the due date in the table",
@@ -1940,7 +1940,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
       |> render() =~ "max=\"2023-10-10T17:00\""
     end
 
-    test "available date renders 'No available date' if it is not set",
+    test "available date renders 'Always available' if it is not set",
          %{
            conn: conn,
            section: section,
@@ -1972,7 +1972,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
       [exception_1, exception_2] = table_as_list_of_maps(view, :student_exceptions)
 
       assert exception_1.available_date =~ "October 10, 2023"
-      assert exception_2.available_date =~ "No available date"
+      assert exception_2.available_date =~ "Always available"
     end
 
     test "due date can be changed by clicking the due date in the table",
