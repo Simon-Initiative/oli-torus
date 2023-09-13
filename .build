@@ -32,8 +32,8 @@ dist/html/fonts/remixicon.svg
 dist/html/fonts/remixicon.ttf
 dist/html/fonts/remixicon.woff
 dist/html/fonts/remixicon.woff2
-dist/search_items-11e097ea40.js
-dist/sidebar_items-8dacb68999.js
+dist/search_items-7e4f60d475.js
+dist/sidebar_items-8242108f1f.js
 end-user.html
 evaluationresponse.html
 explanation.html
@@ -75,6 +75,7 @@ scoringstrategy.html
 search.html
 self-hosted.html
 server-coding.html
+specifieseditor.html
 stateupdateaction.html
 stem.html
 studentresponse.html
