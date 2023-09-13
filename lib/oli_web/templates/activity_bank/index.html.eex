@@ -3,7 +3,6 @@
 <%= for script <- @scripts do %>
   <script type="text/javascript" src="<%= Routes.static_path(@conn, "/js/" <> script) %>"></script>
 <% end %>
-
 <div id="editor" class="container mx-auto">
-  <%= react_component("Components.ActivityBank", @context) %>
+  <%= react_component("Components.ActivityBank", Map.merge(@context, %{revisionHistoryLink: @revision_history_link})) %>
 </div>

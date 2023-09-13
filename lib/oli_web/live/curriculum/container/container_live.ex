@@ -112,7 +112,13 @@ defmodule OliWeb.Curriculum.ContainerLive do
              ),
            dragging: nil,
            page_title: "Curriculum | " <> project.title
-         )}
+         )
+         |> attach_hook(:has_show_links_uri_hash, :handle_params, fn _params, uri, socket ->
+           {:cont,
+            assign_new(socket, :has_show_links_uri_hash, fn ->
+              String.contains?(uri, "#show_links")
+            end)}
+         end)}
     end
   end
 

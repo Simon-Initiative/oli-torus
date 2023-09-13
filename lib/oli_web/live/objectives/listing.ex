@@ -1,5 +1,5 @@
 defmodule OliWeb.ObjectivesLive.Listing do
-  use Phoenix.Component
+  use OliWeb, :html
 
   import OliWeb.Components.Common
 
@@ -9,6 +9,7 @@ defmodule OliWeb.ObjectivesLive.Listing do
   attr(:rows, :list, required: true)
   attr(:selected, :string, required: true)
   attr(:project_slug, :string, required: true)
+  attr(:revision_history_link, :boolean, required: true)
 
   def render(assigns) do
     ~H"""
@@ -37,6 +38,12 @@ defmodule OliWeb.ObjectivesLive.Listing do
               <div>
                 <i class="fa fa-list mr-1"></i><%= "Activities #{item.activity_attachments_count}" %>
               </div>
+              <.link
+                :if={@revision_history_link}
+                navigate={~p[/project/#{@project_slug}/history/slug/#{item.slug}]}
+              >
+                <i class="fas fa-history"></i> View revision history
+              </.link>
             </div>
           </div>
 
