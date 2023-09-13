@@ -30,7 +30,6 @@ defmodule Oli.Application do
 
         # Start the Pow MnesiaCache to persist session across multiple servers
         Oli.MnesiaClusterSupervisor,
-
         OliWeb.Presence,
 
         # Starts the nonce cleanup task, call Lti_1p3.Nonces.cleanup_nonce_store/0 at 1:01 UTC every day
@@ -58,8 +57,17 @@ defmodule Oli.Application do
 
         # Starts Cachex to store user/author info across requests
         Oli.AccountLookupCache
-
       ] ++ maybe_node_js_config()
+
+    if log_incomplete_requests?() do
+      :ok =
+        :telemetry.attach(
+          "cowboy-request-handler",
+          [:cowboy, :request, :early_error],
+          &Oli.LogIncompleteRequestHandler.handle_event/4,
+          nil
+        )
+    end
 
     # See https://hexdocs.pm/elixir/Supervisor.html
     # for other strategies and supported options
@@ -109,5 +117,9 @@ defmodule Oli.Application do
     else
       []
     end
+  end
+
+  defp log_incomplete_requests?() do
+    Application.fetch_env!(:oli, :log_incomplete_requests)
   end
 end

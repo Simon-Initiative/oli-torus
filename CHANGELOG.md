@@ -1,11 +1,24 @@
 # Changelog
 
-
 ## 0.24.5 (2023-9-12)
 
 ### Bug Fixes
 
 - Scientific notation in single response range question handling
+
+### Enhancements
+
+- Allow configuration of HTTP/HTTPS cowboy protocol options
+
+### Environment Configs
+
+```
+HTTP_MAX_HEADER_NAME_LENGTH       (Optional) HTTP/HTTPS Maximum length of header names for Cowboy (Default 64)
+HTTP_MAX_HEADER_VALUE_LENGTH      (Optional) HTTP/HTTPS Maximum length of header values for Cowboy (Default 4096)
+HTTP_MAX_HEADERS                  (Optional) HTTP/HTTPS Maximum number of headers allowed per request for Cowboy (Default 100)
+
+LOG_INCOMPLETE_HTTP_REQUESTS      (Optional) Log incomplete HTTP requests (Default true)
+```
 
 ## 0.24.4 (2023-8-11)
 
