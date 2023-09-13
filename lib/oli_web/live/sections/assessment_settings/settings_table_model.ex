@@ -165,7 +165,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTableModel do
       phx-value-assessment_id={@id}
     >
       <%= if is_nil(@available_date) do %>
-        No available date
+        Always available
       <% else %>
         <%= value_from_datetime(@available_date, @ctx) %>
       <% end %>
