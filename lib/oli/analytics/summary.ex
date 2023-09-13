@@ -1,9 +1,14 @@
 defmodule Oli.Analytics.Summary do
+  alias Oli.Analytics.Summary.{
+    AttemptGroup,
+    ResponseLabel,
+    ResourceSummary,
+    ResponseSummary,
+    ResourcePartResponse,
+    StudentResponse
+  }
 
-  alias Oli.Analytics.Summary.{AttemptGroup, ResponseLabel, ResourceSummary, ResponseSummary, ResourcePartResponse, StudentResponse}
   alias Oli.Analytics.Common.Pipeline
-  alias Oli.Analytics.Summary.XAPI.StatementFactory
-  alias Oli.Analytics.XAPI.{Uploader, StatementBundle}
   alias Oli
   require Logger
 
@@ -12,7 +17,9 @@ defmodule Oli.Analytics.Summary do
 
   @doc """
   Executes the analytics pipeline for a given snapshot attempt summary. This will produce
-  and emit an xAPI statement bundle and upsert resource and response summary tables.
+  the base AttemptGroup struct to upsert resource and response summary tables.
+  After upserts are done, a new job is scheduled with S3 uploader worker (Oli.Delivery.Snapshots.S3UploaderWorker)
+  that will contain the required data to emit an xAPI statement bundle.
 
   Eventually, once snapshots are excised from the system, we will need a different entry
   point for this pipeline. In fact, we will likely relocate the xAPI bundle generation
@@ -20,108 +27,81 @@ defmodule Oli.Analytics.Summary do
   change this pipeline to use a more optimized query for powering the summary upserts.
   """
   def execute_analytics_pipeline(snapshot_attempt_summary, project_id, host_name) do
-
     Pipeline.init("SummaryAnalyticsPipeline")
     |> AttemptGroup.from_attempt_summary(snapshot_attempt_summary, project_id, host_name)
-    |> emit_xapi_events()
     |> upsert_resource_summaries()
     |> upsert_response_summaries()
     |> Pipeline.all_done()
-
   end
 
-  # From all of the part attempts, activity attempts, and resource attempt, construct and
-  # emit a single xAPI statement bundle to S3.
-  defp emit_xapi_events(%Pipeline{data: attempt_group} = pipeline) do
+  # From all of the part attempts that were evaluated, upsert the appropriate records
+  # into the resource summary table.
+  def upsert_resource_summaries(%Pipeline{data: nil} = pipeline),
+    do: Pipeline.step_done(pipeline, :resource_summary)
 
-    if Application.get_env(:oli, :env) == :test or is_nil(attempt_group) do
-      Pipeline.step_done(pipeline, :xapi)
-    else
-      pipeline = case StatementFactory.to_statements(attempt_group)
-      |> Oli.Analytics.Common.to_jsonlines()
-      |> produce_statement_bundle(attempt_group)
-      |> Uploader.upload() do
-
+  def upsert_resource_summaries(%Pipeline{data: attempt_group, errors: []} = pipeline) do
+    pipeline =
+      case assemble_proto_records(attempt_group) |> upsert_counts() do
         {:ok, _} ->
           pipeline
 
         {:error, error} ->
           Pipeline.add_error(pipeline, error)
-
       end
 
-      Pipeline.step_done(pipeline, :xapi)
-    end
-
-  end
-
-  # From all of the part attempts that were evaluated, upsert the appropriate records
-  # into the resource summary table.
-  def upsert_resource_summaries(%Pipeline{data: nil} = pipeline), do: Pipeline.step_done(pipeline, :resource_summary)
-  def upsert_resource_summaries(%Pipeline{data: attempt_group, errors: []} = pipeline) do
-
-    pipeline = case assemble_proto_records(attempt_group) |> upsert_counts() do
-
-      {:ok, _} ->
-        pipeline
-
-      {:error, error} ->
-        Pipeline.add_error(pipeline, error)
-
-    end
-
     Pipeline.step_done(pipeline, :resource_summary)
-
   end
+
   def upsert_resource_summaries(pipeline), do: Pipeline.step_done(pipeline, :resource_summary)
 
   # From all of the part attempts that were evaluated, upsert the appropriate records
   # into the response summary table.
-  def upsert_response_summaries(%Pipeline{data: nil} = pipeline), do: Pipeline.step_done(pipeline, :response_summary)
+  def upsert_response_summaries(%Pipeline{data: nil} = pipeline),
+    do: Pipeline.step_done(pipeline, :response_summary)
+
   def upsert_response_summaries(%Pipeline{data: attempt_group, errors: []} = pipeline) do
-
     # Read all activity registrations
-    registered_activities = Oli.Activities.list_activity_registrations()
-    |> Enum.reduce(%{}, fn activity_registration, map ->
-      Map.put(map, activity_registration.id, activity_registration)
-    end)
+    registered_activities =
+      Oli.Activities.list_activity_registrations()
+      |> Enum.reduce(%{}, fn activity_registration, map ->
+        Map.put(map, activity_registration.id, activity_registration)
+      end)
 
-    pipeline = case Oli.Repo.transaction(fn ->
+    pipeline =
+      case Oli.Repo.transaction(fn ->
+             part_attempt_tuples =
+               upsert_responses(attempt_group.part_attempts, registered_activities)
 
-      part_attempt_tuples = upsert_responses(attempt_group.part_attempts, registered_activities)
+             create_response_proto_records(attempt_group, part_attempt_tuples)
+             |> upsert_response_counts()
 
-      create_response_proto_records(attempt_group, part_attempt_tuples)
-      |> upsert_response_counts()
+             upsert_student_responses(attempt_group, part_attempt_tuples)
+           end) do
+        {:ok, _} ->
+          pipeline
 
-      upsert_student_responses(attempt_group, part_attempt_tuples)
-
-    end) do
-
-      {:ok, _} ->
-        pipeline
-
-      {:error, error} ->
-        Pipeline.add_error(pipeline, error)
-
-    end
+        {:error, error} ->
+          Pipeline.add_error(pipeline, error)
+      end
 
     Pipeline.step_done(pipeline, :response_summary)
   end
+
   def upsert_response_summaries(pipeline), do: Pipeline.step_done(pipeline, :response_summary)
 
   defp upsert_student_responses(attempt_group, part_attempt_tuples) do
-
-    values = Enum.map(part_attempt_tuples, fn {id, _} ->
-      """
-      (
-        #{attempt_group.context.section_id},
-        #{id},
-        #{attempt_group.resource_attempt.resource_id},
-        #{attempt_group.context.user_id}
-      )
-      """
-    end)
-    |> Enum.join(", ")
+    values =
+      Enum.map(part_attempt_tuples, fn {id, _} ->
+        """
+        (
+          #{attempt_group.context.section_id},
+          #{id},
+          #{attempt_group.resource_attempt.resource_id},
+          #{attempt_group.context.user_id}
+        )
+        """
+      end)
+      |> Enum.join(", ")
 
     sql = """
     INSERT INTO student_responses (section_id, resource_part_response_id, page_id, user_id)
@@ -137,28 +117,38 @@ defmodule Oli.Analytics.Summary do
   defp create_response_proto_records(attempt_group, part_attempt_tuples) do
     Enum.reduce(part_attempt_tuples, [], fn {id, part_attempt}, proto_records ->
       Enum.map(response_scope_builder_fns(), fn scope_builder_fn ->
-        scope_builder_fn.(attempt_group.context) ++ [
-          attempt_group.resource_attempt.resource_id, part_attempt.activity_revision.resource_id, id, "\'#{part_attempt.part_id}\'", 1
-        ]
-      end)
-      ++ proto_records
+        scope_builder_fn.(attempt_group.context) ++
+          [
+            attempt_group.resource_attempt.resource_id,
+            part_attempt.activity_revision.resource_id,
+            id,
+            "\'#{part_attempt.part_id}\'",
+            1
+          ]
+      end) ++
+        proto_records
     end)
   end
 
   defp upsert_responses(part_attempts, registered_activities) do
-
     {values, params} =
       Enum.with_index(part_attempts)
       |> Enum.reduce({[], []}, fn {part_attempt, index}, {values, params} ->
+        activity_type =
+          Map.get(registered_activities, part_attempt.activity_revision.activity_type_id)
 
-        activity_type = Map.get(registered_activities, part_attempt.activity_revision.activity_type_id)
+        %ResponseLabel{response: response, label: label} =
+          ResponseLabel.build(part_attempt, activity_type.slug)
 
-        %ResponseLabel{response: response, label: label} = ResponseLabel.build(part_attempt, activity_type.slug)
-        values = ["(#{part_attempt.activity_revision.resource_id}, \'#{part_attempt.part_id}\', $#{(index * 2) + 1}, $#{(index * 2) + 2})" | values]
+        values = [
+          "(#{part_attempt.activity_revision.resource_id}, \'#{part_attempt.part_id}\', $#{index * 2 + 1}, $#{index * 2 + 2})"
+          | values
+        ]
+
         params = [response, label | params]
 
         {values, params}
-    end)
+      end)
 
     values = Enum.join(values, ", ")
 
@@ -173,15 +163,19 @@ defmodule Oli.Analytics.Summary do
 
     {:ok, %{rows: rows}} = Ecto.Adapters.SQL.query(Oli.Repo, sql, params)
 
-    part_attempt_by_resource_part = Enum.reduce(part_attempts, %{}, fn part_attempt, map ->
-      Map.put(map, {part_attempt.activity_revision.resource_id, part_attempt.part_id}, part_attempt)
-    end)
+    part_attempt_by_resource_part =
+      Enum.reduce(part_attempts, %{}, fn part_attempt, map ->
+        Map.put(
+          map,
+          {part_attempt.activity_revision.resource_id, part_attempt.part_id},
+          part_attempt
+        )
+      end)
 
     Enum.map(rows, fn [id, resource_id, part_id] ->
       result = Map.get(part_attempt_by_resource_part, {resource_id, part_id})
       {id, result}
     end)
-
   end
 
   # For each part attempt that is being updated in the resource summary table, we need to
@@ -232,34 +226,15 @@ defmodule Oli.Analytics.Summary do
     ]
   end
 
-  defp produce_statement_bundle(json_lines_body, attempt_group) do
-    %StatementBundle{
-      partition: :section,
-      partition_id: attempt_group.context.section_id,
-      category: :attempt_evaluated,
-      bundle_id: create_bundle_id(attempt_group),
-      body: json_lines_body
-    }
-  end
-
-  defp create_bundle_id(attempt_group) do
-    guids = Enum.map(attempt_group.part_attempts, fn part_attempt ->
-      part_attempt.attempt_guid
-    end)
-    |> Enum.join(",")
-
-    :crypto.hash(:md5, guids)
-    |> Base.encode16()
-  end
-
   defp to_values(proto_records) do
     Enum.map(proto_records, fn record ->
-      record = Enum.map(record, fn value ->
-        case value do
-          nil -> -1
-          _ -> value
-        end
-      end)
+      record =
+        Enum.map(record, fn value ->
+          case value do
+            nil -> -1
+            _ -> value
+          end
+        end)
 
       "(#{Enum.join(record, ", ")})"
     end)
@@ -267,7 +242,6 @@ defmodule Oli.Analytics.Summary do
   end
 
   defp upsert_counts(proto_records) do
-
     data = to_values(proto_records)
 
     sql = """
@@ -284,11 +258,9 @@ defmodule Oli.Analytics.Summary do
     """
 
     Ecto.Adapters.SQL.query(Oli.Repo, sql, [])
-
   end
 
   defp upsert_response_counts(proto_records) do
-
     data = to_values(proto_records)
 
     sql = """
@@ -301,58 +273,60 @@ defmodule Oli.Analytics.Summary do
     """
 
     Ecto.Adapters.SQL.query(Oli.Repo, sql, [])
-
   end
 
   defp assemble_proto_records(attempt_group) do
     context = attempt_group.context
 
     # Create all activity focused proto-records.
-    activity_proto_records = Enum.reduce(attempt_group.part_attempts, [], fn part_attempt, proto_records ->
-      Enum.map(resource_scope_builder_fns(), fn scope_builder_fn ->
-        scope_builder_fn.(context) ++ activity(part_attempt) ++ counts(part_attempt)
+    activity_proto_records =
+      Enum.reduce(attempt_group.part_attempts, [], fn part_attempt, proto_records ->
+        Enum.map(resource_scope_builder_fns(), fn scope_builder_fn ->
+          scope_builder_fn.(context) ++ activity(part_attempt) ++ counts(part_attempt)
+        end) ++
+          proto_records
       end)
-      ++ proto_records
-    end)
 
     # Objective proto-records
-    objective_proto_records = Enum.reduce(attempt_group.part_attempts, %{}, fn part_attempt, map ->
-
-      get_objectives(part_attempt)
-      |> Enum.reduce(map, fn objective_id, map ->
-
+    objective_proto_records =
+      Enum.reduce(attempt_group.part_attempts, %{}, fn part_attempt, map ->
+        get_objectives(part_attempt)
+        |> Enum.reduce(map, fn objective_id, map ->
           case Map.get(map, objective_id) do
             nil ->
               Map.put(map, objective_id, counts(part_attempt))
 
             existing ->
-              updated = counts(part_attempt)
-              |> Enum.zip(existing)
-              |> Enum.map(fn {a, b} -> a + b end)
+              updated =
+                counts(part_attempt)
+                |> Enum.zip(existing)
+                |> Enum.map(fn {a, b} -> a + b end)
 
               Map.put(map, objective_id, updated)
           end
+        end)
       end)
-    end)
-    |> Enum.reduce([], fn {objective_id, counts}, all ->
+      |> Enum.reduce([], fn {objective_id, counts}, all ->
+        Enum.map(resource_scope_builder_fns(), fn scope_builder_fn ->
+          scope_builder_fn.(context) ++ objective(objective_id) ++ counts
+        end) ++
+          all
+      end)
+
+    aggregate_counts =
+      Enum.reduce(attempt_group.part_attempts, [0, 0, 0, 0, 0], fn part_attempt, totals ->
+        counts(part_attempt)
+        |> Enum.zip(totals)
+        |> Enum.map(fn {a, b} -> a + b end)
+      end)
+
+    page_proto_records =
       Enum.map(resource_scope_builder_fns(), fn scope_builder_fn ->
-        scope_builder_fn.(context) ++ objective(objective_id) ++ counts
+        scope_builder_fn.(context) ++
+          page(attempt_group.resource_attempt.resource_id) ++ aggregate_counts
       end)
-      ++ all
-    end)
-
-    aggregate_counts = Enum.reduce(attempt_group.part_attempts, [0, 0, 0, 0, 0], fn part_attempt, totals ->
-      counts(part_attempt)
-      |> Enum.zip(totals)
-      |> Enum.map(fn {a, b} -> a + b end)
-    end)
-
-    page_proto_records = Enum.map(resource_scope_builder_fns(), fn scope_builder_fn ->
-      scope_builder_fn.(context) ++ page(attempt_group.resource_attempt.resource_id) ++ aggregate_counts
-    end)
 
     activity_proto_records ++ objective_proto_records ++ page_proto_records
-
   end
 
   defp get_objectives(part_attempt) do
@@ -362,7 +336,6 @@ defmodule Oli.Analytics.Summary do
       map when is_map(map) -> Map.get(map, part_attempt.part_id, [])
     end
   end
-
 
   defp activity(pa) do
     [
@@ -389,14 +362,27 @@ defmodule Oli.Analytics.Summary do
   end
 
   defp counts(pa) do
-    correct =  if pa.score == pa.out_of do 1 else 0 end
+    correct =
+      if pa.score == pa.out_of do
+        1
+      else
+        0
+      end
 
     [
       correct,
       1,
       length(pa.hints),
-      if pa.attempt_number == 1 and pa.activity_attempt.attempt_number == 1 do 1 else 0 end,
-      if pa.attempt_number == 1 and pa.activity_attempt.attempt_number == 1 do correct else 0 end
+      if pa.attempt_number == 1 and pa.activity_attempt.attempt_number == 1 do
+        1
+      else
+        0
+      end,
+      if pa.attempt_number == 1 and pa.activity_attempt.attempt_number == 1 do
+        correct
+      else
+        0
+      end
     ]
   end
 
@@ -423,5 +409,4 @@ defmodule Oli.Analytics.Summary do
     |> StudentResponse.changeset(attrs)
     |> Oli.Repo.insert()
   end
-
 end
