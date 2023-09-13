@@ -187,6 +187,10 @@ defmodule Oli.Delivery do
     |> Repo.all()
   end
 
+  @spec create_delivery_setting(
+          :invalid
+          | %{optional(:__struct__) => none, optional(atom | binary) => any}
+        ) :: any
   @doc """
   Creates a delivery setting.
 

@@ -8,6 +8,7 @@ defmodule Oli.Delivery.Sections.Blueprint do
   alias Oli.Delivery
   alias Oli.Delivery.Sections.Section
   alias Oli.Delivery.Sections
+  alias Oli.Delivery.Sections.BlueprintBrowseOptions
   alias Oli.Groups.CommunityVisibility
   alias Oli.Institutions.Institution
   alias Oli.Repo
@@ -326,18 +327,6 @@ defmodule Oli.Delivery.Sections.Blueprint do
     end)
   end
 
-  def list_for_project(%Project{id: id}) do
-    query =
-      from(
-        s in Section,
-        where: s.type == :blueprint and s.base_project_id == ^id,
-        select: s,
-        preload: [:base_project]
-      )
-
-    Repo.all(query)
-  end
-
   def list() do
     query =
       from(
@@ -348,6 +337,25 @@ defmodule Oli.Delivery.Sections.Blueprint do
       )
 
     Repo.all(query)
+  end
+
+  def list(%BlueprintBrowseOptions{} = options) do
+    filter_by_project =
+      if is_nil(options.project_id),
+        do: true,
+        else: dynamic([s], s.base_project_id == ^options.project_id)
+
+    filter_by_status =
+      if options.include_archived,
+        do: dynamic([s], s.status in [:active, :archived]),
+        else: dynamic([s], s.status == :active)
+
+    Section
+    |> where([s], s.type == :blueprint)
+    |> where(^filter_by_project)
+    |> where(^filter_by_status)
+    |> preload([:base_project])
+    |> Repo.all()
   end
 
   @doc """

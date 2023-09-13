@@ -141,6 +141,30 @@ defmodule OliWeb.ProductsLiveTest do
              |> element("tr:first-child > td:first-child")
              |> render() =~ product_2.title
     end
+
+    test "include archived products", %{conn: conn, product: product} do
+      product_2 =
+        insert(:section,
+          type: :blueprint,
+          requires_payment: true,
+          amount: Money.new(:USD, 10),
+          inserted_at: yesterday(),
+          status: :archived
+        )
+
+      {:ok, view, _html} = live(conn, @live_view_all_products)
+
+      assert has_element?(view, "a", product.base_project.title)
+      refute has_element?(view, "a", product_2.base_project.title)
+
+      view
+      |> element("input[phx-click=\"include_archived\"]")
+      |> render_click()
+
+      assert has_element?(view, "a", product.base_project.title)
+      assert has_element?(view, "a", product_2.base_project.title)
+
+    end
   end
 
   describe "user cannot access when is not logged in" do

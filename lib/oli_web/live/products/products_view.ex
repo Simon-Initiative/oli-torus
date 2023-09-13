@@ -1,11 +1,15 @@
 defmodule OliWeb.Products.ProductsView do
   use OliWeb, :live_view
+
+  import OliWeb.Common.Params
+
   alias Oli.Repo
-  alias OliWeb.Common.{Breadcrumb, Filter, Listing, SessionContext}
+  alias OliWeb.Common.{Breadcrumb, Check, Filter, Listing, SessionContext}
   alias OliWeb.Products.Create
   alias Oli.Authoring.Course
   alias Oli.Accounts.Author
   alias Oli.Delivery.Sections.Blueprint
+  alias Oli.Delivery.Sections.BlueprintBrowseOptions
   alias OliWeb.Common.Table.SortableTableModel
   alias OliWeb.Router.Helpers, as: Routes
   alias Oli.Publishing
@@ -61,18 +65,18 @@ defmodule OliWeb.Products.ProductsView do
   end
 
   def mount(
-        %{"project_id" => project_slug},
+        %{"project_id" => project_slug} = params,
         %{"current_author_id" => author_id} = session,
         socket
       ) do
     author = Repo.get(Author, author_id)
+
     project = Course.get_project_by_slug(project_slug)
-    products = Blueprint.list_for_project(project)
 
     mount_as(
+      params,
       author,
       false,
-      products,
       project,
       breadcrumb([]),
       "Products | " <> project.title,
@@ -81,14 +85,20 @@ defmodule OliWeb.Products.ProductsView do
     )
   end
 
-  def mount(_, %{"current_author_id" => author_id} = session, socket) do
+  def mount(params, %{"current_author_id" => author_id} = session, socket) do
     author = Repo.get(Author, author_id)
 
-    products = Blueprint.list()
-    mount_as(author, true, products, nil, admin_breadcrumbs(), "Products", socket, session)
+    mount_as(params, author, true, nil, admin_breadcrumbs(), "Products", socket, session)
   end
 
-  defp mount_as(author, is_admin_view, products, project, breadcrumbs, title, socket, session) do
+  defp mount_as(params, author, is_admin_view, project, breadcrumbs, title, socket, session) do
+    project_id = if project === nil, do: nil, else: project.id
+    options = %BlueprintBrowseOptions{
+      project_id: project_id,
+      include_archived: get_boolean_param(params, "include_archived", false)
+    }
+    products = Blueprint.list(options)
+
     total_count = length(products)
 
     ctx = SessionContext.init(socket, session)
@@ -110,12 +120,14 @@ defmodule OliWeb.Products.ProductsView do
        products: products,
        total_count: total_count,
        table_model: table_model,
+       include_archived: get_boolean_param(params, "include_archived", false),
        title: title,
        offset: 0,
        limit: 20,
        query: "",
        applied_query: "",
-       creation_title: ""
+       creation_title: "",
+       ctx: ctx
      )}
   end
 
@@ -128,6 +140,10 @@ defmodule OliWeb.Products.ProductsView do
         <% else %>
           <Filter.render change="change_search" reset="reset_search" apply="apply_search" />
         <% end %>
+
+        <Check.render checked={@include_archived} click="include_archived">
+          Include archived Products
+        </Check.render>
 
         <div class="mb-3" />
 
@@ -145,6 +161,42 @@ defmodule OliWeb.Products.ProductsView do
       <% end %>
     </div>
     """
+  end
+
+  def handle_event("include_archived", __params, socket) do
+    project_id = if socket.assigns.project === nil, do: nil, else: socket.assigns.project.id
+
+    include_archived = !socket.assigns.include_archived
+
+    options = %BlueprintBrowseOptions{
+      project_id: project_id,
+      include_archived: include_archived
+    }
+    products = Blueprint.list(options)
+
+    total_count = length(products)
+
+    {:ok, table_model} = OliWeb.Products.ProductsTableModel.new(products, socket.assigns.ctx)
+
+    socket = assign(socket,
+      include_archived: include_archived,
+      products: products,
+      total_count: total_count,
+      table_model: table_model
+    )
+
+    {:noreply,
+     push_patch(socket,
+       to:
+        live_path(
+          socket,
+          Map.merge(socket.assigns.params,
+          %{
+             include_archived: include_archived
+           })
+         ),
+       replace: true
+     )}
   end
 
   def handle_event("title", %{"value" => title}, socket) do
