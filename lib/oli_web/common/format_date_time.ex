@@ -198,6 +198,9 @@ defmodule OliWeb.Common.FormatDateTime do
 
       :relative ->
         Timex.format!(datetime, "{relative}", :relative)
+
+      :simple_iso8601 ->
+        Timex.format!(datetime, "{ISOdate}T{h24}:{m}")
     end
   end
 
