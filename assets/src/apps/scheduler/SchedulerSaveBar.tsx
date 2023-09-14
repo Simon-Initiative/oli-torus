@@ -178,6 +178,7 @@ export const ScheduleSaveBar: React.FC<SaveIndicatorProps> = ({ onSave }) => {
       const newDate = e.target.value;
       const target = newDate ? stringToDateWithoutTime(newDate) : null;
       if (!selectedItem) return;
+
       dispatch(
         moveScheduleItem({
           itemId: selectedItem.id,

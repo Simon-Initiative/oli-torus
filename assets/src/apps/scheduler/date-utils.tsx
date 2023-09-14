@@ -203,6 +203,20 @@ export const dateWithoutTimeShortLabel = (d: DateWithoutTime | null) => {
   return `${d.getMonth() + 1}/${d.getDate()}`;
 };
 
+/* Makes sure the start is before the end date. */
+export const validateStartEndDates = (
+  start: DateWithoutTime | null,
+  end: DateWithoutTime | null,
+) => {
+  if (!start || !end) {
+    return [start, end];
+  }
+  if (start.getDaysSinceEpoch() > end.getDaysSinceEpoch()) {
+    return [end, start];
+  }
+  return [start, end];
+};
+
 export const DateWithoutTimeLabel: React.FC<{ date: DateWithoutTime }> = ({ date }) => {
   return <span>{dateWithoutTimeLabel(date)}</span>;
 };

@@ -2,7 +2,7 @@ import React, { useCallback, useState } from 'react';
 import { DateWithoutTime } from 'epoq';
 import { useDocumentMouseEvents } from '../../components/hooks/useDocumentMouseEvents';
 import { useToggle } from '../../components/hooks/useToggle';
-import { DayGeometry, barGeometry, leftToDate } from './date-utils';
+import { DayGeometry, barGeometry, leftToDate, validateStartEndDates } from './date-utils';
 import { SchedulingType } from './scheduler-slice';
 
 interface DragBarProps {
@@ -89,16 +89,6 @@ export const DraggableIcon: React.FC<{
   );
 };
 
-const validateDates = (start: DateWithoutTime | null, end: DateWithoutTime | null) => {
-  if (!start || !end) {
-    return [start, end];
-  }
-  if (start.getDaysSinceEpoch() > end.getDaysSinceEpoch()) {
-    return [end, start];
-  }
-  return [start, end];
-};
-
 export const PageDragBar: React.FC<DragBarProps> = ({
   endDate,
   startDate,
@@ -110,7 +100,7 @@ export const PageDragBar: React.FC<DragBarProps> = ({
 }) => {
   const onEndDateChange = useCallback(
     (date: DateWithoutTime) => {
-      const [start, end] = validateDates(startDate, date);
+      const [start, end] = validateStartEndDates(startDate, date);
       onChange && onChange(start, end);
     },
     [onChange, startDate],
@@ -118,7 +108,7 @@ export const PageDragBar: React.FC<DragBarProps> = ({
 
   const onStartDateChange = useCallback(
     (date: DateWithoutTime) => {
-      const [start, end] = validateDates(date, endDate);
+      const [start, end] = validateStartEndDates(date, endDate);
       onChange && onChange(start, end);
     },
     [onChange, endDate],
@@ -126,7 +116,7 @@ export const PageDragBar: React.FC<DragBarProps> = ({
 
   const hasStartEnd = isGraded && startDate && endDate;
   const geometry = barGeometry(dayGeometry, startDate, endDate);
-  const offsetIcons = Math.abs(geometry.width) < 20;
+  const offsetIcons = hasStartEnd && Math.abs(geometry.width) < 20;
 
   const showConnector = hasStartEnd && !offsetIcons;
 
