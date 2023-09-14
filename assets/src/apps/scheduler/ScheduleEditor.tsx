@@ -12,6 +12,7 @@ import { scheduleAppFlushChanges, scheduleAppStartup } from './scheduling-thunk'
 export interface SchedulerProps {
   start_date: StringDate;
   end_date: StringDate;
+  preferred_scheduling_time: string;
   title: string;
   section_slug: string;
   display_curriculum_item_numbering: boolean;
