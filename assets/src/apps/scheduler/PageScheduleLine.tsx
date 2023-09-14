@@ -76,18 +76,19 @@ export const PageScheduleLine: React.FC<ScheduleLineProps> = ({ item, indent, da
 
         <td className="relative p-0">
           <ScheduleHeader labels={false} dayGeometry={dayGeometry} />
-          {item.endDate && (
-            <PageDragBar
-              onChange={onChange}
-              onStartDrag={onSelect}
-              endDate={item.endDate}
-              manual={item.manually_scheduled}
-              dayGeometry={dayGeometry}
-              isContainer={false}
-              isSingleDay={true}
-              hardSchedule={item.scheduling_type === 'due_by'}
-            />
-          )}
+
+          <PageDragBar
+            onChange={onChange}
+            onStartDrag={onSelect}
+            startDate={item.startDate}
+            endDate={item.endDate}
+            manual={item.manually_scheduled}
+            dayGeometry={dayGeometry}
+            isContainer={false}
+            isSingleDay={true}
+            isGraded={item.graded}
+            schedulingType={item.scheduling_type}
+          />
         </td>
       </tr>
     </>

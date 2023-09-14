@@ -1,92 +1,220 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useState } from 'react';
 import { DateWithoutTime } from 'epoq';
 import { useDocumentMouseEvents } from '../../components/hooks/useDocumentMouseEvents';
 import { useToggle } from '../../components/hooks/useToggle';
 import { DayGeometry, barGeometry, leftToDate } from './date-utils';
+import { SchedulingType } from './scheduler-slice';
 
 interface DragBarProps {
-  endDate: DateWithoutTime;
+  endDate: DateWithoutTime | null;
+  startDate: DateWithoutTime | null;
   isContainer: boolean;
   dayGeometry: DayGeometry;
-  onChange?: (start: DateWithoutTime | null, end: DateWithoutTime) => void;
+  onChange?: (start: DateWithoutTime | null, end: DateWithoutTime | null) => void;
   onStartDrag?: () => void;
   manual: boolean;
   isSingleDay?: boolean;
-  hardSchedule: boolean;
+  schedulingType: SchedulingType;
+  isGraded: boolean;
 }
 
-export const PageDragBar: React.FC<DragBarProps> = ({
-  endDate,
-  onChange,
-  onStartDrag,
-  dayGeometry,
-  hardSchedule,
-}) => {
+export const DraggableIcon: React.FC<{
+  date: DateWithoutTime;
+  dayGeometry: DayGeometry;
+  onChange: (date: DateWithoutTime) => void;
+  onStartDrag?: () => void;
+  children: React.ReactNode;
+  offset: number;
+}> = ({ date, dayGeometry, onChange, onStartDrag, children, offset }) => {
   const [isDragging, , enableDrag, disableDrag] = useToggle();
 
   const [startingGeometry, setStartingGeometry] = React.useState({ left: 0, width: 0 });
-  const [workingEnd, setWorkingEnd] = React.useState<DateWithoutTime>(new DateWithoutTime());
 
   const [mouseDownX, setMouseDownX] = React.useState(0);
+
+  const [workingDate, setWorkingDate] = useState<DateWithoutTime>(new DateWithoutTime());
 
   const onMouseMove = (e: MouseEvent) => {
     const delta = e.clientX - mouseDownX;
     if (isDragging) {
-      const newEnd = leftToDate(startingGeometry.left + delta, dayGeometry);
-      if (!newEnd) return;
-      setWorkingEnd(newEnd.date);
+      const newDate = leftToDate(startingGeometry.left + delta, dayGeometry);
+      if (!newDate) return;
+      setWorkingDate(newDate.date);
     }
     onChange &&
-      workingEnd.getDaysSinceEpoch() !== endDate.getDaysSinceEpoch() &&
-      onChange(null, workingEnd);
+      workingDate.getDaysSinceEpoch() !== date.getDaysSinceEpoch() &&
+      onChange(workingDate);
   };
 
   const startDrag = useCallback(
     (e: React.MouseEvent) => {
       enableDrag();
       setMouseDownX(e.clientX);
-      setWorkingEnd(endDate);
-      setStartingGeometry(barGeometry(dayGeometry, endDate, endDate));
+      setWorkingDate(date);
+      setStartingGeometry(barGeometry(dayGeometry, date, date));
       onStartDrag && onStartDrag();
     },
-    [dayGeometry, enableDrag, endDate, onStartDrag],
+    [enableDrag, date, dayGeometry, onStartDrag],
   );
 
   const stopDrag = useCallback(
     (e: React.MouseEvent | MouseEvent) => {
       disableDrag();
-      onChange && onChange(null, workingEnd);
+      onChange && onChange(workingDate);
     },
-    [disableDrag, onChange, workingEnd],
+    [disableDrag, onChange, workingDate],
   );
 
   useDocumentMouseEvents(isDragging, undefined, stopDrag, onMouseMove);
 
   const geometry = isDragging
-    ? barGeometry(dayGeometry, workingEnd, workingEnd)
-    : barGeometry(dayGeometry, endDate, endDate);
+    ? barGeometry(dayGeometry, workingDate, workingDate)
+    : barGeometry(dayGeometry, date, date);
 
   const barStyles = {
     left: geometry.left,
     width: geometry.width,
     top: 7,
+    transform: `translate(0,${offset}px)`,
   };
 
   return (
     <div
       onMouseDown={startDrag}
-      className={`absolute h-3 flex flex-row justify-between  cursor-move`}
+      className={`absolute h-3 flex flex-row justify-between cursor-move transition-transform`}
       style={barStyles}
     >
-      {hardSchedule ? (
-        <span key="exclamation">
-          <i className="fa fa-calendar "></i>
-        </span>
-      ) : (
-        <span key="file">
-          <i className="fa fa-file"></i>
-        </span>
-      )}
+      {children}
     </div>
   );
 };
+
+const validateDates = (start: DateWithoutTime | null, end: DateWithoutTime | null) => {
+  if (!start || !end) {
+    return [start, end];
+  }
+  if (start.getDaysSinceEpoch() > end.getDaysSinceEpoch()) {
+    return [end, start];
+  }
+  return [start, end];
+};
+
+export const PageDragBar: React.FC<DragBarProps> = ({
+  endDate,
+  startDate,
+  onChange,
+  onStartDrag,
+  dayGeometry,
+  schedulingType,
+  isGraded,
+}) => {
+  const onEndDateChange = useCallback(
+    (date: DateWithoutTime) => {
+      const [start, end] = validateDates(startDate, date);
+      onChange && onChange(start, end);
+    },
+    [onChange, startDate],
+  );
+
+  const onStartDateChange = useCallback(
+    (date: DateWithoutTime) => {
+      const [start, end] = validateDates(date, endDate);
+      onChange && onChange(start, end);
+    },
+    [onChange, endDate],
+  );
+
+  const hasStartEnd = isGraded && startDate && endDate;
+  const geometry = barGeometry(dayGeometry, startDate, endDate);
+  const offsetIcons = Math.abs(geometry.width) < 20;
+
+  const showConnector = hasStartEnd && !offsetIcons;
+
+  const EndIcon =
+    schedulingType === 'due_by'
+      ? DueDateIcon
+      : schedulingType === 'inclass_activity'
+      ? InClassIcon
+      : SuggestedDateIcon;
+
+  return (
+    <>
+      {showConnector && (
+        <ConnectorLine dayGeometry={dayGeometry} startDate={startDate} endDate={endDate} />
+      )}
+
+      {endDate && (
+        <DraggableIcon
+          date={endDate}
+          dayGeometry={dayGeometry}
+          onStartDrag={onStartDrag}
+          onChange={onEndDateChange}
+          offset={offsetIcons ? 10 : 0}
+        >
+          <EndIcon />
+        </DraggableIcon>
+      )}
+
+      {isGraded && startDate && (
+        <DraggableIcon
+          date={startDate}
+          dayGeometry={dayGeometry}
+          onStartDrag={onStartDrag}
+          onChange={onStartDateChange}
+          offset={offsetIcons ? -10 : 0}
+        >
+          <AvailableDateIcon />
+        </DraggableIcon>
+      )}
+    </>
+  );
+};
+
+const ConnectorLine: React.FC<{
+  dayGeometry: DayGeometry;
+  startDate: DateWithoutTime;
+  endDate: DateWithoutTime;
+}> = ({ dayGeometry, startDate, endDate }) => {
+  const geometry = barGeometry(dayGeometry, startDate, endDate);
+
+  const barStyle = {
+    left: geometry.left + 17,
+    width: geometry.width - 22,
+    top: 17,
+  };
+
+  return <span className="absolute rounded-sm bg-blue-500 h-1" style={barStyle} />;
+
+  // Alternate thick line style
+  // const barStyle = {
+  //   left: geometry.left - 8,
+  //   width: geometry.width + 28,
+  //   top: 3,
+  // };
+
+  // return <span className="absolute rounded-lg bg-blue-50 h-8" style={barStyle} />;
+};
+
+export const InClassIcon: React.FC = () => (
+  <span key="inclass">
+    <i className="fa fa-users-line text-blue-500"></i>
+  </span>
+);
+
+export const AvailableDateIcon: React.FC = () => (
+  <span key="flag">
+    <i className="fa fa-flag text-green-500"></i>
+  </span>
+);
+
+export const SuggestedDateIcon: React.FC = () => (
+  <span key="file">
+    <i className="fa fa-file text-blue-500"></i>
+  </span>
+);
+
+export const DueDateIcon: React.FC = () => (
+  <span key="exclamation">
+    <i className="fa fa-calendar text-red-700"></i>
+  </span>
+);
