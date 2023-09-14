@@ -127,6 +127,10 @@ defmodule Oli.Delivery.Sections.Section do
 
     field(:preferred_scheduling_time, :time, default: ~T[23:59:59])
 
+    field :v25_migration, Ecto.Enum,
+      values: [:not_started, :done, :pending],
+      default: :not_started
+
     timestamps(type: :utc_datetime)
   end
 
