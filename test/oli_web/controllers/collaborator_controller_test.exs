@@ -8,6 +8,13 @@ defmodule OliWeb.CollaboratorControllerTest do
   @admin_email System.get_env("ADMIN_EMAIL", "admin@example.edu")
   @invalid_email "hey@example.com"
   @invite_email "invite@example.com"
+
+  defp get_authors(project) do
+    Accounts.project_authors(project)
+    |> Enum.map(fn author -> author.email end)
+    |> Enum.join(", ")
+  end
+
   setup [:author_project_conn]
 
   describe "create" do
@@ -17,11 +24,14 @@ defmodule OliWeb.CollaboratorControllerTest do
       conn =
         post(conn, Routes.collaborator_path(conn, :create, project),
           collaborator_emails: @admin_email,
+          authors: get_authors(project),
           "g-recaptcha-response": "any"
         )
 
       assert html_response(conn, 302) =~ "/project/"
-      assert assert Phoenix.Flash.get(conn.assigns.flash, :info) == "Collaborator invitations sent!"
+
+      assert Phoenix.Flash.get(conn.assigns.flash, :info) ==
+               "Collaborator invitations sent!"
     end
 
     test "allows multiple comma separated values", %{conn: conn, project: project} do
@@ -30,11 +40,14 @@ defmodule OliWeb.CollaboratorControllerTest do
       conn =
         post(conn, Routes.collaborator_path(conn, :create, project),
           collaborator_emails: "#{@admin_email}, #{@invite_email},someotheremail@example.edu",
+          authors: get_authors(project),
           "g-recaptcha-response": "any"
         )
 
       assert html_response(conn, 302) =~ "/project/"
-      assert assert Phoenix.Flash.get(conn.assigns.flash, :info) == "Collaborator invitations sent!"
+
+      assert Phoenix.Flash.get(conn.assigns.flash, :info) ==
+               "Collaborator invitations sent!"
     end
 
     test "allows capital letters in emails", %{conn: conn, project: project} do
@@ -43,11 +56,14 @@ defmodule OliWeb.CollaboratorControllerTest do
       conn =
         post(conn, Routes.collaborator_path(conn, :create, project),
           collaborator_emails: "Invite@Example.COM",
+          authors: get_authors(project),
           "g-recaptcha-response": "any"
         )
 
       assert html_response(conn, 302) =~ "/project/"
-      assert assert Phoenix.Flash.get(conn.assigns.flash, :info) == "Collaborator invitations sent!"
+
+      assert Phoenix.Flash.get(conn.assigns.flash, :info) ==
+               "Collaborator invitations sent!"
     end
 
     test "some emails succeed, some fail", %{conn: conn, project: project} do
@@ -57,13 +73,14 @@ defmodule OliWeb.CollaboratorControllerTest do
                conn =
                  post(conn, Routes.collaborator_path(conn, :create, project),
                    collaborator_emails: "#{@admin_email}, notevenan_email",
+                   authors: get_authors(project),
                    "g-recaptcha-response": "any"
                  )
 
                assert html_response(conn, 302) =~ "/project/"
 
-               assert assert Phoenix.Flash.get(conn.assigns.flash, :error) =~
-                               "Failed to add some collaborators: notevenan_email"
+               assert Phoenix.Flash.get(conn.assigns.flash, :error) =~
+                        "Failed to add some collaborators: notevenan_email"
              end) =~
                "Failed to add some collaborators: notevenan_email"
     end
@@ -74,10 +91,58 @@ defmodule OliWeb.CollaboratorControllerTest do
       conn =
         post(conn, Routes.collaborator_path(conn, :create, project),
           collaborator_emails: @invalid_email,
+          authors: get_authors(project),
           "g-recaptcha-response": "any"
         )
 
       assert html_response(conn, 302) =~ "/project/"
+    end
+
+    test "shows an error message when the author's email already exists", %{
+      conn: conn,
+      project: project
+    } do
+      expect_recaptcha_http_post()
+
+      author_email =
+        project |> Oli.Repo.preload(:authors) |> Map.get(:authors) |> hd |> Map.get(:email)
+
+      conn =
+        post(conn, Routes.collaborator_path(conn, :create, project),
+          collaborator_emails: author_email,
+          authors: get_authors(project),
+          "g-recaptcha-response": "any"
+        )
+
+      assert html_response(conn, 302) =~ "/project/"
+
+      assert Phoenix.Flash.get(conn.assigns.flash, :error) ==
+               "This person is already a collaborator in this project."
+    end
+
+    test "shows an error message if the number of invitations exceeds the allowed limit", %{
+      conn: conn,
+      project: project
+    } do
+      expect_recaptcha_http_post()
+
+      list_of_emails =
+        Enum.reduce(1..25, "", fn index, acc ->
+          email = "author_#{index}@example.com"
+          if acc == "", do: email, else: "#{acc}, #{email}"
+        end)
+
+      conn =
+        post(conn, Routes.collaborator_path(conn, :create, project),
+          collaborator_emails: list_of_emails,
+          authors: get_authors(project),
+          "g-recaptcha-response": "any"
+        )
+
+      assert html_response(conn, 302) =~ "/project/"
+
+      assert Phoenix.Flash.get(conn.assigns.flash, :error) ==
+               "Collaborator invitations cannot exceed 20 emails at a time. Please try again with fewer invites"
     end
   end
 
@@ -88,6 +153,7 @@ defmodule OliWeb.CollaboratorControllerTest do
       conn =
         post(conn, Routes.collaborator_path(conn, :create, project),
           collaborator_emails: @invite_email,
+          authors: get_authors(project),
           "g-recaptcha-response": "any"
         )
 
