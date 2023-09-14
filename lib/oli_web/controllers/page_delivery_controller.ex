@@ -9,7 +9,7 @@ defmodule OliWeb.PageDeliveryController do
   alias Oli.Activities
   alias Oli.Delivery.Attempts.{Core, PageLifecycle}
   alias Oli.Delivery.Page.{PageContext, ObjectivesRollup}
-  alias Oli.Delivery.{Paywall, PreviousNextIndex, Sections}
+  alias Oli.Delivery.{Paywall, PreviousNextIndex, Sections, Settings}
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.Section
   alias Oli.Delivery.Paywall.Discount
@@ -57,8 +57,7 @@ defmodule OliWeb.PageDeliveryController do
           else
             revision = DeliveryResolver.root_container(section_slug)
 
-            effective_settings =
-              Oli.Delivery.Settings.get_combined_settings(revision, section.id, user.id)
+            effective_settings = Settings.get_combined_settings(revision, section.id, user.id)
 
             next_activities =
               Sections.get_next_activities_for_student(section_slug, user.id, context)
@@ -359,7 +358,7 @@ defmodule OliWeb.PageDeliveryController do
     blocking_gates = Map.get(conn.assigns, :blocking_gates, [])
 
     new_attempt_allowed =
-      Oli.Delivery.Settings.new_attempt_allowed(
+      Settings.new_attempt_allowed(
         effective_settings,
         attempts_taken,
         blocking_gates
@@ -374,6 +373,9 @@ defmodule OliWeb.PageDeliveryController do
 
         {:no_attempts_remaining} ->
           "You have no attempts remaining out of #{effective_settings.max_attempts} total attempt#{plural(effective_settings.max_attempts)}."
+
+        {:before_start_date} ->
+          before_start_date_message(conn, effective_settings)
 
         {:end_date_passed} ->
           "The deadline for this assignment has passed."
@@ -604,7 +606,7 @@ defmodule OliWeb.PageDeliveryController do
         latest_attempts: context.latest_attempts,
         section: section,
         children: context.page.children,
-        show_feedback: Oli.Delivery.Settings.show_feedback?(effective_settings),
+        show_feedback: Settings.show_feedback?(effective_settings),
         page_link_url: &Routes.page_delivery_path(conn, :page, section_slug, &1),
         container_link_url: &Routes.page_delivery_path(conn, :container, section_slug, &1),
         revision: context.page,
@@ -619,7 +621,7 @@ defmodule OliWeb.PageDeliveryController do
         time_limit: effective_settings.time_limit,
         attempt_start_time: resource_attempt.inserted_at |> to_epoch,
         effective_end_time:
-          Oli.Delivery.Settings.determine_effective_deadline(resource_attempt, effective_settings)
+          Settings.determine_effective_deadline(resource_attempt, effective_settings)
           |> to_epoch,
         end_date: effective_settings.end_date,
         auto_submit: effective_settings.late_submit == :disallow,
@@ -673,7 +675,10 @@ defmodule OliWeb.PageDeliveryController do
         resourceAttemptGuid: resource_attempt.attempt_guid,
         currentServerTime: DateTime.utc_now() |> to_epoch,
         effectiveEndTime:
-          Oli.Delivery.Settings.determine_effective_deadline(resource_attempt, context.effective_settings)
+          Settings.determine_effective_deadline(
+            resource_attempt,
+            context.effective_settings
+          )
           |> to_epoch,
         lateSubmit: context.effective_settings.late_submit,
         activityGuidMapping: context.activities,
@@ -745,7 +750,7 @@ defmodule OliWeb.PageDeliveryController do
     revision = DeliveryResolver.root_container(section_slug)
 
     effective_settings =
-      Oli.Delivery.Settings.get_combined_settings(
+      Settings.get_combined_settings(
         revision,
         section.id,
         current_user.id
@@ -846,7 +851,7 @@ defmodule OliWeb.PageDeliveryController do
               ~s|<div class="text-center"><em>Instructor preview of adaptive activities is not supported</em></div>|
 
             effective_settings =
-              Oli.Delivery.Settings.get_combined_settings(
+              Settings.get_combined_settings(
                 revision,
                 section.id
               )
@@ -1004,8 +1009,8 @@ defmodule OliWeb.PageDeliveryController do
 
     effective_settings =
       case conn.assigns.current_user do
-        nil -> Oli.Delivery.Settings.get_combined_settings(revision, section.id)
-        user -> Oli.Delivery.Settings.get_combined_settings(revision, section.id, user.id)
+        nil -> Settings.get_combined_settings(revision, section.id)
+        user -> Settings.get_combined_settings(revision, section.id, user.id)
       end
 
     section_resource = Sections.get_section_resource(section.id, revision.resource_id)
@@ -1066,26 +1071,32 @@ defmodule OliWeb.PageDeliveryController do
     if Sections.is_enrolled?(user.id, section_slug) do
       revision = Resolver.from_revision_slug(section_slug, revision_slug)
 
-      effective_settings =
-        Oli.Delivery.Settings.get_combined_settings(revision, section.id, user.id)
+      effective_settings = Settings.get_combined_settings(revision, section.id, user.id)
 
-      case effective_settings.password do
-        nil ->
+      case check_settings_before_attempt(conn, effective_settings, password) do
+        :ok ->
           do_start_attempt(conn, section, user, revision, effective_settings)
 
-        "" ->
-          do_start_attempt(conn, section, user, revision, effective_settings)
-
-        ^password ->
-          do_start_attempt(conn, section, user, revision, effective_settings)
-
-        _ ->
+        {:error, error_message} ->
           conn
-          |> put_flash(:error, "Incorrect password")
+          |> put_flash(:error, error_message)
           |> redirect(to: Routes.page_delivery_path(conn, :page, section.slug, revision.slug))
       end
     else
       render(conn, "not_authorized.html")
+    end
+  end
+
+  defp check_settings_before_attempt(conn, effective_settings, received_password) do
+    with {:allowed} <- Settings.check_password(effective_settings, received_password),
+         {:allowed} <- Settings.check_start_date(effective_settings) do
+      :ok
+    else
+      {:invalid_password} ->
+        {:error, "Incorrect password"}
+
+      {:before_start_date} ->
+        {:error, before_start_date_message(conn, effective_settings)}
     end
   end
 
@@ -1373,4 +1384,8 @@ defmodule OliWeb.PageDeliveryController do
 
   defp url_from_desc(conn, section_slug, %{"type" => "page", "slug" => slug}),
     do: Routes.page_delivery_path(conn, :page_preview, section_slug, slug)
+
+  defp before_start_date_message(conn, effective_settings) do
+    "This assessment is not yet available. It will be available on #{date(effective_settings.start_date, conn: conn, precision: :minutes)}."
+  end
 end

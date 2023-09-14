@@ -64,7 +64,7 @@ export const getMarkdownWarnings = (model: (AllModelElements | FormattedText)[])
     }
   });
 
-  const uniqueWarnings = [...new Set(warnings)];
+  const uniqueWarnings = Array.from(new Set(warnings));
   return Array.from(uniqueWarnings).map((warning) => capitalize(translations[warning] || warning));
 };
 

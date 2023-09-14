@@ -9,11 +9,11 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTable do
   alias OliWeb.Common.PagedTable
   alias OliWeb.Sections.AssessmentSettings.StudentExceptionsTableModel
   alias OliWeb.Common.Params
+  alias OliWeb.Common.Utils, as: CommonUtils
   alias Phoenix.LiveView.JS
   alias OliWeb.Router.Helpers, as: Routes
-  alias Oli.Delivery
+  alias Oli.{Delivery, Repo, Utils}
   alias Oli.Delivery.Settings.StudentException
-  alias Oli.Repo
 
   @default_params %{
     offset: 0,
@@ -43,8 +43,7 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTable do
         socket.assigns.myself,
         socket.assigns.selected_student_exceptions,
         assigns.ctx,
-        JS.push("edit_date", target: socket.assigns.myself)
-        |> JS.push("open", target: "#student_due_date_modal"),
+        JS.push("edit_date", target: socket.assigns.myself),
         JS.push("edit_password", target: socket.assigns.myself),
         JS.push("no_edit_password", target: socket.assigns.myself)
       )
@@ -98,11 +97,17 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTable do
     ~H"""
     <div id="student_exceptions_table" class="mx-10 mb-10 bg-white dark:bg-gray-800 shadow-sm">
       <%= due_date_modal(assigns) %>
+      <%= available_date_modal(assigns) %>
       <%= modal(@modal_assigns) %>
       <div class="flex flex-col sm:flex-row sm:items-center pr-6 mb-4">
         <div class="flex flex-col pl-9 mr-auto">
           <h4 class="torus-h4">Student Exceptions</h4>
-          <.form for={@assessment_changeset} id="assessment_select" phx-change="change_assessment" phx-target={@myself}>
+          <.form
+            for={@assessment_changeset}
+            id="assessment_select"
+            phx-change="change_assessment"
+            phx-target={@myself}
+          >
             <div class="form-group">
               <.input
                 type="select"
@@ -164,6 +169,49 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTable do
     """
   end
 
+  def available_date_modal(assigns) do
+    ~H"""
+    <.live_component
+      id="student_available_date_modal"
+      title={if @selected_setting, do: "Available date for #{@selected_setting.user.name}"}
+      module={OliWeb.Components.LiveModal}
+      on_confirm={
+        JS.dispatch("submit", to: "#student-available-date-form")
+        |> JS.push("close", target: "#student_available_date_modal")
+      }
+      on_confirm_label="Save"
+    >
+      <div class="p-4">
+        <form
+          id="student-available-date-form"
+          for="settings_table"
+          phx-target={@myself}
+          phx-submit="edit_date"
+        >
+          <label for="start_date_input">Please pick an available date for the selected student</label>
+          <div class="flex gap-2 items-center mt-2">
+            <input
+              id="start_date_input"
+              name="start_date"
+              type="datetime-local"
+              max={CommonUtils.datetime_input_limit(:start_date, @selected_setting, @ctx)}
+              phx-debounce={500}
+              value={value_from_datetime(@selected_setting.start_date, @ctx)}
+            />
+            <button
+              class="torus-button primary"
+              type="button"
+              phx-click={JS.set_attribute({"value", ""}, to: "#start_date_input")}
+            >
+              Clear
+            </button>
+          </div>
+        </form>
+      </div>
+    </.live_component>
+    """
+  end
+
   def due_date_modal(assigns) do
     ~H"""
     <.live_component
@@ -189,6 +237,7 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTable do
               id="end_date_input"
               name="end_date"
               type="datetime-local"
+              min={CommonUtils.datetime_input_limit(:end_date, @selected_setting, @ctx)}
               phx-debounce={500}
               value={value_from_datetime(@selected_setting.end_date, @ctx)}
             />
@@ -396,8 +445,7 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTable do
         socket.assigns.myself,
         socket.assigns.selected_student_exceptions,
         socket.assigns.ctx,
-        JS.push("edit_date", target: socket.assigns.myself)
-        |> JS.push("open", target: "#student_due_date_modal"),
+        JS.push("edit_date", target: socket.assigns.myself),
         JS.push("edit_password", target: socket.assigns.myself),
         JS.push("no_edit_password", target: socket.assigns.myself),
         edit_password_id
@@ -418,45 +466,11 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTable do
     {:noreply, assign(socket, selected_setting: selected_setting)}
   end
 
-  def handle_event("edit_date", %{"end_date" => end_date}, socket) do
-    selected_setting = socket.assigns.selected_setting
+  def handle_event("edit_date", %{"start_date" => start_date}, socket),
+    do: on_edit_date(:start_date, start_date, socket)
 
-    end_date =
-      if String.length(end_date) > 0 do
-        FormatDateTime.datestring_to_utc_datetime(
-          end_date,
-          socket.assigns.ctx
-        )
-      else
-        nil
-      end
-
-    scheduling_type = if !is_nil(end_date), do: :due_by, else: :read_by
-
-    Delivery.get_delivery_setting_by(%{
-      resource_id: selected_setting.resource_id,
-      user_id: selected_setting.user_id
-    })
-    |> StudentException.changeset(%{end_date: end_date, scheduling_type: scheduling_type})
-    |> Repo.update()
-    |> case do
-      {:error, _changeset} ->
-        {:noreply,
-         socket
-         |> flash_to_liveview(:error, "ERROR: Student Exception could not be updated")}
-
-      {:ok, updated_student_exception} ->
-        update_liveview_student_exceptions(
-          :updated,
-          [Repo.preload(updated_student_exception, :user)],
-          false
-        )
-
-        {:noreply,
-         socket
-         |> flash_to_liveview(:info, "Student Exception updated!")}
-    end
-  end
+  def handle_event("edit_date", %{"end_date" => end_date}, socket),
+    do: on_edit_date(:end_date, end_date, socket)
 
   def handle_event("show_modal", %{"modal_name" => name}, socket) do
     common_modal_assings = %{show: name, myself: socket.assigns.myself}
@@ -717,6 +731,67 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTable do
      )}
   end
 
+  defp on_edit_date(date_field, new_date, socket) do
+    selected_setting = socket.assigns.selected_setting
+
+    new_date =
+      if String.length(new_date) > 0 do
+        FormatDateTime.datestring_to_utc_datetime(
+          new_date,
+          socket.assigns.ctx
+        )
+      else
+        nil
+      end
+
+    {new_start_date, new_end_date, changed_date_field} = CommonUtils.maybe_preserve_dates_distance(date_field, new_date, selected_setting)
+
+    message = if changed_date_field do
+      " The #{Utils.stringify_atom(changed_date_field)} was adjusted to preserve the time distance between the start and end dates."
+    else
+      ""
+    end
+
+    Delivery.get_delivery_setting_by(%{
+      resource_id: selected_setting.resource_id,
+      user_id: selected_setting.user_id
+    })
+    |> change_student_exception(date_field, new_start_date, new_end_date)
+    |> Repo.update()
+    |> case do
+      {:error, _changeset} ->
+        {:noreply,
+         socket
+         |> flash_to_liveview(:error, "ERROR: Student Exception could not be updated")}
+
+      {:ok, updated_student_exception} ->
+        update_liveview_student_exceptions(
+          :updated,
+          [Repo.preload(updated_student_exception, :user)],
+          false
+        )
+
+        {:noreply,
+         socket
+         |> flash_to_liveview(:info, "Student Exception updated!.#{message}")}
+    end
+  end
+
+  defp change_student_exception(student_exception, :start_date, start_date, end_date) do
+    StudentException.changeset(student_exception, %{
+      start_date: start_date,
+      end_date: end_date
+    })
+  end
+
+  defp change_student_exception(student_exception, :end_date, start_date, end_date) do
+    StudentException.changeset(student_exception, %{
+      start_date: start_date,
+      end_date: end_date,
+      scheduling_type: unless(is_nil(end_date), do: :due_by, else: :read_by)
+    })
+  end
+
   def decode_params(params) do
     %{
       offset: Params.get_int_param(params, "offset", @default_params.offset),
@@ -854,8 +929,7 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTable do
   defp value_from_datetime(datetime, ctx) do
     datetime
     |> FormatDateTime.convert_datetime(ctx)
-    |> DateTime.to_iso8601()
-    |> String.slice(0, 16)
+    |> FormatDateTime.format_datetime(precision: :simple_iso8601)
   end
 
   defp update_liveview_student_exceptions(action, student_exceptions, update_sort_order) do
@@ -882,7 +956,7 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTable do
         when key in ["scoring_strategy_id", "time_limit", "max_attempts"] and value != "" ->
           abs(String.to_integer(value))
 
-        {"end_date", value} ->
+        {key, value} when key in ["start_date", "end_date"] ->
           FormatDateTime.datestring_to_utc_datetime(value, ctx)
 
         {_, value} ->
