@@ -27,11 +27,18 @@ defmodule Oli.Analytics.RawAnalyticsExportWorker do
           |> Enum.map(&String.to_charlist/1)
 
         # zip up the files
-        zip_filepath = Path.join([File.cwd!(), "analytics.zip"])
-        {:ok, _filename} = :zip.create(zip_filepath, files, cwd: tmp_dir)
+        random_string = Oli.Utils.random_string(16)
+
+        {:ok, timestamp} = DateTime.utc_now() |> Timex.format("%Y-%m-%d-%H%M%S", :strftime)
+
+        filename = "analytics_#{project_slug}_#{timestamp}.zip"
+
+        zip_filepath = Path.join([File.cwd!(), random_string, filename])
+
+        {:ok, _filepath} = :zip.create(zip_filepath, files, cwd: tmp_dir)
 
         bucket_name = Application.fetch_env!(:oli, :s3_media_bucket_name)
-        analytics_snapshot_path = "analytics/#{project_slug}/analytics.zip"
+        analytics_snapshot_path = "analytics/#{project_slug}/#{filename}"
 
         {:ok, full_upload_url} =
           Utils.S3Storage.stream_file(bucket_name, analytics_snapshot_path, zip_filepath)
