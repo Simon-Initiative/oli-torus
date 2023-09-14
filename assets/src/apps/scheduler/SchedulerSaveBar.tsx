@@ -159,6 +159,7 @@ export const ScheduleSaveBar: React.FC<SaveIndicatorProps> = ({ onSave }) => {
   const selectedItem = useSelector(getSelectedItem);
   const saving = useSelector(isSaving);
   const dispatch = useDispatch();
+
   const onChangeTypeHandler = useCallback(
     (e: React.ChangeEvent<HTMLSelectElement>) => {
       if (!selectedItem) return;
