@@ -1,12 +1,5 @@
-import React, {
-  ChangeEvent,
-  ChangeEventHandler,
-  MouseEventHandler,
-  ReactNode,
-  useCallback,
-} from 'react';
+import React, { ChangeEvent, ChangeEventHandler, ReactNode, useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { select } from 'slate';
 import {
   dateWithTimeLabel,
   dateWithoutTimeLabel,
@@ -115,18 +108,6 @@ const PageDetailEditor: React.FC<PageDetailEditorProps> = ({
     </FormRow>
   );
 };
-
-const SmallLinkButton: React.FC<{
-  children: ReactNode;
-  onClick: MouseEventHandler<HTMLButtonElement>;
-}> = ({ children, onClick }) => (
-  <button
-    onClick={onClick}
-    className="text-xs text-delivery-primary-700 hover:text-delivery-primary-500"
-  >
-    {children}
-  </button>
-);
 
 const FormRow: React.FC<{ children: ReactNode }> = ({ children }) => (
   <div className="flex flex-row gap-1 flex-grow-0 text-sm justify-center">{children}</div>
