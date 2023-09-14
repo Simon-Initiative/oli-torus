@@ -138,6 +138,7 @@ defmodule OliWeb.Projects.OverviewLive do
                   autocomplete: "off",
                   autofocus: focusHelper(f, :collaborator_emails, default: false) %>
               <%= error_tag f, :collaborator_emails %>
+              <%= hidden_input f, :authors, value: @collaborators |> Enum.map(fn author -> author.email end) |> Enum.join(", ") %>
               <div class="input-group-append">
                 <%= submit "Send Invite",
                   id: "button-create-collaborator",
