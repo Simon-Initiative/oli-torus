@@ -203,7 +203,13 @@ defmodule OliWeb.Api.SchedulingController do
       "children" => sr.children,
       "resource_type_id" => sr.resource_type_id,
       "graded" => sr.graded,
-      "start_date" => sr.start_date |> just_date.(),
+      "start_date" =>
+          if sr.graded do
+            # Using start_date as the availablility date for graded items
+            sr.start_date
+          else
+            sr.start_date |> just_date.()
+          end,
       "end_date" =>
         if sr.scheduling_type == :due_by do
           sr.end_date

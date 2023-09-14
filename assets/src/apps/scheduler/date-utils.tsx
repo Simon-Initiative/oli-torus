@@ -207,6 +207,12 @@ export const DateWithoutTimeLabel: React.FC<{ date: DateWithoutTime }> = ({ date
   return <span>{dateWithoutTimeLabel(date)}</span>;
 };
 
+export const toDateWithoutTime = (date: Date | DateWithoutTime | null): DateWithoutTime | null => {
+  if (!date) return null;
+  if (date instanceof DateWithoutTime) return date;
+  return new DateWithoutTime(date.getFullYear(), date.getMonth(), date.getDate());
+};
+
 export const stringToDateWithTime = (s: string): Date => {
   const parts = s.split('T');
   if (parts.length !== 2) throw new Error(`Invalid date string: ${s}`);
