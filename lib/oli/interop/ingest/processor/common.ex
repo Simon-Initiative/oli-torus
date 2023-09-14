@@ -2,6 +2,7 @@ defmodule Oli.Interop.Ingest.Processor.Common do
   alias Oli.Interop.Ingest.State
   alias Oli.Resources.Revision
   alias Oli.Repo
+  alias Oli.Authoring.Course
 
   @doc """
   Bulk creates revisions for a particular resource type from the ingest state. The resource
@@ -22,11 +23,18 @@ defmodule Oli.Interop.Ingest.Processor.Common do
     count = Enum.count(resources)
     {state, ids} = take_ids(state, count)
 
+    required_survey_resource_id = Map.get(state.project_details, "required_student_survey")
+
     # Construct the bulk insert payloads, using the supplied mapper function to allow proper creation of the
     # payload map per the needs of each resource type
     payload =
       Enum.zip(ids, resources)
-      |> Enum.map(fn {resource_id, {_, resource}} -> mapper_fn.(state, resource_id, resource) end)
+      |> Enum.map(fn {resource_id, {id, resource}} ->
+        if id == required_survey_resource_id,
+          do: Course.update_project(state.project, %{required_survey_resource_id: resource_id})
+
+        mapper_fn.(state, resource_id, resource)
+      end)
 
     Repo.insert_all(Revision, payload, placeholders: create_placeholders(author, resource_type_id))
 

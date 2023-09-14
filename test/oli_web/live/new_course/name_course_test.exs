@@ -23,8 +23,8 @@ defmodule OliWeb.NewCourse.NameCourseTest do
       select_section(:admin, view, section)
 
       assert has_element?(view, "h2", "Name your course")
-      assert has_element?(view, "input#name-course-form_title")
-      assert has_element?(view, "input#name-course-form_course_section_number")
+      assert has_element?(view, "input#section_title")
+      assert has_element?(view, "input#section_course_section_number")
       assert has_element?(view, "input#in_person_radio_button")
       assert has_element?(view, "input#online_radio_button")
       assert has_element?(view, "input#hybrid_radio_button")
@@ -81,8 +81,8 @@ defmodule OliWeb.NewCourse.NameCourseTest do
       select_section(:instructor, view, section)
 
       assert has_element?(view, "h2", "Name your course")
-      assert has_element?(view, "input#name-course-form_title")
-      assert has_element?(view, "input#name-course-form_course_section_number")
+      assert has_element?(view, "input#section_title")
+      assert has_element?(view, "input#section_course_section_number")
       assert has_element?(view, "input#in_person_radio_button")
       assert has_element?(view, "input#online_radio_button")
       assert has_element?(view, "input#hybrid_radio_button")
@@ -152,8 +152,8 @@ defmodule OliWeb.NewCourse.NameCourseTest do
       select_section(:lms, view, section)
 
       assert has_element?(view, "h2", "Name your course")
-      assert has_element?(view, "input#name-course-form_title")
-      assert has_element?(view, "input#name-course-form_course_section_number")
+      assert has_element?(view, "input#section_title")
+      assert has_element?(view, "input#section_course_section_number")
       assert has_element?(view, "input#in_person_radio_button")
       assert has_element?(view, "input#online_radio_button")
       assert has_element?(view, "input#hybrid_radio_button")

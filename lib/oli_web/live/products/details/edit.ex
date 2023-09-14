@@ -8,7 +8,7 @@ defmodule OliWeb.Products.Details.Edit do
   alias OliWeb.Router.Helpers, as: Routes
 
   defp statuses do
-    [{"Active", "active"}, {"Disabled", "deleted"}]
+    [{"Active", "active"}, {"Archived", "archived"}]
   end
 
   defp strategies do

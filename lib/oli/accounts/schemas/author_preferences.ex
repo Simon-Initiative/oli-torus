@@ -14,6 +14,7 @@ defmodule Oli.Accounts.AuthorPreferences do
     field :admin_show_deleted_projects, :boolean, default: false
     field :show_relative_dates, :boolean, default: true
     field :timezone, :string
+    field :editor, :string, default: "slate"
   end
 
   def changeset(preferences, attrs \\ %{}) do
@@ -22,7 +23,8 @@ defmodule Oli.Accounts.AuthorPreferences do
       :admin_show_all_projects,
       :admin_show_deleted_projects,
       :show_relative_dates,
-      :timezone
+      :timezone,
+      :editor
     ])
   end
 end

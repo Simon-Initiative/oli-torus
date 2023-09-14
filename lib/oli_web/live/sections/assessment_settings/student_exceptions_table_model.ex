@@ -2,6 +2,8 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTableModel do
   alias OliWeb.Common.Table.{ColumnSpec, SortableTableModel}
   alias OliWeb.Common.FormatDateTime
   alias OliWeb.Sections.AssessmentSettings.Tooltips
+  alias Phoenix.LiveView.JS
+
   use Phoenix.Component
 
   def new(
@@ -23,6 +25,13 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTableModel do
         render_fn: &__MODULE__.render_student_column/3,
         th_class: "pl-10 !sticky left-0 bg-white dark:bg-neutral-800 z-10",
         td_class: "sticky left-0 bg-white dark:bg-neutral-800 z-10 whitespace-nowrap"
+      },
+      %ColumnSpec{
+        name: :available_date,
+        label: "AVAILABLE DATE",
+        render_fn: &__MODULE__.render_available_date_column/3,
+        th_class: "whitespace-nowrap",
+        tooltip: Tooltips.for(:available_date)
       },
       %ColumnSpec{
         name: :due_date,
@@ -140,6 +149,29 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTableModel do
     """
   end
 
+  def render_available_date_column(assigns, student_exception, _) do
+    assigns =
+      Map.merge(assigns, %{
+        available_date: student_exception.start_date,
+        id: student_exception.user_id
+      })
+
+    ~H"""
+    <button
+      class="hover:underline whitespace-nowrap"
+      type="button"
+      phx-click={edit_date_and_show_modal(@on_edit_date, "available_date")}
+      phx-value-user_id={@id}
+    >
+      <%= if is_nil(@available_date) do %>
+        Always available
+      <% else %>
+        <%= value_from_datetime(@available_date, @ctx) %>
+      <% end %>
+    </button>
+    """
+  end
+
   def render_due_date_column(assigns, student_exception, _) do
     assigns =
       Map.merge(assigns, %{
@@ -151,7 +183,7 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTableModel do
     <button
       class="hover:underline whitespace-nowrap"
       type="button"
-      phx-click={@on_edit_date}
+      phx-click={edit_date_and_show_modal(@on_edit_date, "due_date")}
       phx-value-user_id={@id}
     >
       <%= if @due_date do %>
@@ -404,4 +436,7 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTableModel do
     datetime
     |> FormatDateTime.date(ctx: ctx, show_timezone: false)
   end
+
+  defp edit_date_and_show_modal(on_edit_date, date_input_type),
+    do: JS.push(on_edit_date, "open", target: "#student_#{date_input_type}_modal")
 end

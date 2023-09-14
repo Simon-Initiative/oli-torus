@@ -717,6 +717,227 @@ defmodule Oli.TestHelpers do
     {:ok, section: section, unit_one_revision: unit_one_revision, page_revision: page_revision}
   end
 
+  def create_project_with_products(_conn) do
+    author = insert(:author)
+    project = insert(:project, authors: [author])
+
+    # Create page 1
+    page_resource_1 = insert(:resource)
+
+    page_revision_1 =
+      insert(:revision, %{
+        objectives: %{},
+        resource_type_id: ResourceType.get_id_by_type("page"),
+        children: [],
+        content: %{"model" => []},
+        deleted: false,
+        title: "Page 1",
+        resource: page_resource_1,
+        slug: "page_1"
+      })
+
+    # Associate page 1 to the project
+    insert(:project_resource, %{project_id: project.id, resource_id: page_resource_1.id})
+
+    # Create page 2
+    page_resource_2 = insert(:resource)
+
+    page_revision_2 =
+      insert(:revision, %{
+        objectives: %{},
+        resource_type_id: ResourceType.get_id_by_type("page"),
+        children: [],
+        content: %{"model" => []},
+        deleted: false,
+        title: "Page 2",
+        resource: page_resource_2,
+        slug: "page_2"
+      })
+
+    # Associate page 2 to the project
+    insert(:project_resource, %{project_id: project.id, resource_id: page_resource_2.id})
+
+    # module container
+    module_resource = insert(:resource)
+
+    module_revision =
+      insert(:revision, %{
+        resource: module_resource,
+        objectives: %{},
+        resource_type_id: ResourceType.get_id_by_type("container"),
+        children: [page_resource_2.id],
+        content: %{},
+        deleted: false,
+        slug: "module_container",
+        title: "Module Container"
+      })
+
+    # Associate module to the project
+    insert(:project_resource, %{project_id: project.id, resource_id: module_resource.id})
+
+    # unit container
+    unit_resource = insert(:resource)
+
+    unit_revision =
+      insert(:revision, %{
+        resource: unit_resource,
+        objectives: %{},
+        resource_type_id: ResourceType.get_id_by_type("container"),
+        children: [module_resource.id],
+        content: %{},
+        deleted: false,
+        slug: "unit_container",
+        title: "Unit Container"
+      })
+
+    # Associate unit to the project
+    insert(:project_resource, %{project_id: project.id, resource_id: unit_resource.id})
+
+    # root container
+    container_resource = insert(:resource)
+
+    container_revision =
+      insert(:revision, %{
+        resource: container_resource,
+        objectives: %{},
+        resource_type_id: ResourceType.get_id_by_type("container"),
+        children: [unit_resource.id, page_resource_1.id],
+        content: %{},
+        deleted: false,
+        slug: "root_container",
+        title: "Root Container"
+      })
+
+    # Associate root container to the project
+    insert(:project_resource, %{project_id: project.id, resource_id: container_resource.id})
+
+    # Publication of project with root container
+    publication =
+      insert(:publication, %{
+        project: project,
+        root_resource_id: container_resource.id
+      })
+
+    # Publish root container resource
+    insert(:published_resource, %{
+      publication: publication,
+      resource: container_resource,
+      revision: container_revision,
+      author: author
+    })
+
+    # Publish unit resource
+    insert(:published_resource, %{
+      author: author,
+      publication: publication,
+      resource: unit_resource,
+      revision: unit_revision
+    })
+
+    # Publish module resource
+    insert(:published_resource, %{
+      author: author,
+      publication: publication,
+      resource: module_resource,
+      revision: module_revision
+    })
+
+    # Publish page 1 resource
+    insert(:published_resource, %{
+      author: author,
+      publication: publication,
+      resource: page_resource_1,
+      revision: page_revision_1
+    })
+
+    # Publish page 2 resource
+    insert(:published_resource, %{
+      author: author,
+      publication: publication,
+      resource: page_resource_2,
+      revision: page_revision_2
+    })
+
+    product_1 =
+      insert(:section,
+        base_project: project,
+        context_id: UUID.uuid4(),
+        open_and_free: false,
+        registration_open: false,
+        type: :blueprint,
+        title: "Product 1",
+        slug: "product_1"
+      )
+
+    product_2 =
+      insert(:section,
+        base_project: project,
+        context_id: UUID.uuid4(),
+        open_and_free: false,
+        registration_open: false,
+        type: :blueprint,
+        title: "Product 2",
+        slug: "product_2"
+      )
+
+    {:ok, product_1} = Sections.create_section_resources(product_1, publication)
+    Sections.rebuild_contained_pages(product_1)
+
+    {:ok, product_2} = Sections.create_section_resources(product_2, publication)
+    Sections.rebuild_contained_pages(product_2)
+
+    # Create new unpublished publication for the project
+    new_publication =
+      insert(:publication, %{
+        project: project,
+        root_resource_id: container_resource.id,
+        published: nil
+      })
+
+    insert(:published_resource, %{
+      publication: new_publication,
+      resource: container_resource,
+      revision: container_revision,
+      author: author
+    })
+
+    insert(:published_resource, %{
+      author: author,
+      publication: new_publication,
+      resource: unit_resource,
+      revision: unit_revision
+    })
+
+    insert(:published_resource, %{
+      author: author,
+      publication: new_publication,
+      resource: module_resource,
+      revision: module_revision
+    })
+
+    insert(:published_resource, %{
+      author: author,
+      publication: new_publication,
+      resource: page_resource_1,
+      revision: page_revision_1
+    })
+
+    insert(:published_resource, %{
+      author: author,
+      publication: new_publication,
+      resource: page_resource_2,
+      revision: page_revision_2
+    })
+
+    %{
+      project: project,
+      product_1: product_1,
+      product_2: product_2,
+      page_resource_1: page_resource_1,
+      page_resource_2: page_resource_2
+    }
+  end
+
   def create_project_with_objectives(_conn) do
     author = insert(:author)
     project = insert(:project, authors: [author])
@@ -2667,5 +2888,16 @@ defmodule Oli.TestHelpers do
     ExUnit.AssertionError ->
       :timer.sleep(100)
       wait_until(fun, max(0, timeout - 100))
+  end
+
+  def unzip_to_memory(data) do
+    File.write("export.zip", data)
+    result = :zip.unzip(to_charlist("export.zip"), [:memory])
+    File.rm!("export.zip")
+
+    case result do
+      {:ok, entries} -> entries
+      _ -> []
+    end
   end
 end

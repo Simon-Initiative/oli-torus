@@ -62,11 +62,18 @@ defmodule OliWeb.ObjectivesLive.Objectives do
        total_count: length(objectives),
        all_objectives: all_objectives,
        all_children: all_children,
+       objective_attachments: [],
        title: "Objectives",
        query: "",
        offset: 0,
        limit: 20
-     )}
+     )
+     |> attach_hook(:has_show_links_uri_hash, :handle_params, fn _params, uri, socket ->
+       {:cont,
+        assign_new(socket, :has_show_links_uri_hash, fn ->
+          String.contains?(uri, "#show_links")
+        end)}
+     end)}
   end
 
   defp build_objectives(project, objectives_attachments, flash_fn, first_load \\ false) do
@@ -178,7 +185,12 @@ defmodule OliWeb.ObjectivesLive.Objectives do
           additional_table_class="table-sm text-center"
           with_body={true}
         >
-          <Listing.render rows={@table_model.rows} selected={@selected} project_slug={@project.slug} />
+          <Listing.render
+            revision_history_link={@has_show_links_uri_hash and Accounts.is_admin?(@author)}
+            rows={@table_model.rows}
+            selected={@selected}
+            project_slug={@project.slug}
+          />
         </Table.render>
       </div>
     </div>

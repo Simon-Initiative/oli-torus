@@ -54,6 +54,7 @@ export interface ActivityBankProps {
   allTags: Tag[]; // All tags
   totalCount: number;
   appsignalKey: string | null;
+  revisionHistoryLink: boolean;
 }
 
 type ActivityBankState = {
@@ -491,6 +492,7 @@ export class ActivityBank extends React.Component<ActivityBankProps, ActivityBan
           <InlineActivityEditor
             key={key}
             projectSlug={this.props.projectSlug}
+            revisionHistoryLink={this.props.revisionHistoryLink}
             editMode={editMode}
             allObjectives={this.state.allObjectives.toArray()}
             allTags={this.state.allTags.toArray()}
@@ -590,7 +592,6 @@ export class ActivityBank extends React.Component<ActivityBankProps, ActivityBan
             <div className="resource-editor">
               <div>
                 <UndoToasts undoables={this.state.undoables} onInvokeUndo={this.onInvokeUndo} />
-
                 <Banner
                   dismissMessage={(msg) =>
                     this.setState({
@@ -613,7 +614,6 @@ export class ActivityBank extends React.Component<ActivityBankProps, ActivityBan
                     onAdd={this.onActivityAdd}
                   />
                 </div>
-
                 <LogicFilter
                   expressions={this.state.filterExpressions}
                   editMode={true}
@@ -629,7 +629,6 @@ export class ActivityBank extends React.Component<ActivityBankProps, ActivityBan
                   }}
                   onRemove={() => true}
                 />
-
                 <div className="d-flex justify-end my-4">
                   <button
                     className="btn btn-secondary mr-3"
@@ -654,13 +653,10 @@ export class ActivityBank extends React.Component<ActivityBankProps, ActivityBan
                     Apply Filters
                   </button>
                 </div>
-
                 <hr className="mb-4" />
-
                 {pagingOrPlaceholder}
 
                 {activities}
-
                 {this.state.totalCount > 0 ? pagingOrPlaceholder : null}
               </div>
             </div>

@@ -1195,7 +1195,9 @@ defmodule OliWeb.Router do
     live("/open_and_free/:section_slug/remix", Delivery.RemixSection, as: :open_and_free_remix)
 
     # Institutions, LTI Registrations and Deployments
-    resources("/institutions", InstitutionController)
+    resources("/institutions", InstitutionController, except: [:index])
+
+    live("/institutions/", Admin.Institutions.IndexLive)
 
     live(
       "/institutions/:institution_id/discount",
@@ -1220,7 +1222,6 @@ defmodule OliWeb.Router do
     end
 
     put("/approve_registration", InstitutionController, :approve_registration)
-    delete("/pending_registration/:id", InstitutionController, :remove_registration)
 
     # Communities
     live("/communities/new", CommunityLive.NewView)

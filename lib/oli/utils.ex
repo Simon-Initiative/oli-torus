@@ -409,4 +409,9 @@ defmodule Oli.Utils do
 
     result
   end
+
+  @doc """
+  Converts an atom into a readable string by replacing underscores with empty spaces.
+  """
+  def stringify_atom(atom), do: atom |> Atom.to_string() |> String.replace("_", " ")
 end

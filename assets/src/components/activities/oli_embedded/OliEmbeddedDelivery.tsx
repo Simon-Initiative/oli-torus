@@ -34,7 +34,7 @@ const EmbeddedDelivery = (props: DeliveryElementProps<OliEmbeddedModelSchema>) =
 
   const [context, setContext] = useState<Context>();
   const [preview, setPreview] = useState<boolean>(false);
-  const [iframeHeight, setIframeHeight] = useState(0);
+  const [iframeHeight, setIframeHeight] = useState(500);
 
   const dispatch = useDispatch();
   useEffect(() => {
@@ -46,6 +46,22 @@ const EmbeddedDelivery = (props: DeliveryElementProps<OliEmbeddedModelSchema>) =
       dispatch,
       activityContext,
     );
+
+    const parser = new DOMParser();
+    const modelDoc = parser.parseFromString(model.modelXml, 'text/xml');
+    const modelRootNode = modelDoc.querySelector(':root');
+    if (modelRootNode != null) {
+      let height = modelRootNode.getAttribute('height');
+      if (height) {
+        try {
+          // Extract number
+          height = height.replace(/[^0-9]/g, '');
+          setIframeHeight(parseInt(height));
+        } catch (error) {
+          console.error(error);
+        }
+      }
+    }
 
     fetchContext();
   }, []);
@@ -128,21 +144,6 @@ const EmbeddedDelivery = (props: DeliveryElementProps<OliEmbeddedModelSchema>) =
           data-userguid={context.user_guid}
           data-partids={context.part_ids}
           data-mode="oli"
-          onLoad={(event: any) => {
-            const { contentWindow, contentDocument } = event.target;
-            const embed = contentWindow.document.body.querySelector('#oli-embed');
-
-            // Observe any size changes in the content and update the iframe height
-            const resizeObserver = new ResizeObserver((entries) => {
-              // This limit to 700px prevents uncontrolled iframe height growth.
-              // A bug where for some content layouts settings the iframe height results in a run away height growth loop
-              if (contentDocument.body.scrollHeight < 700) {
-                setIframeHeight(contentDocument.body.scrollHeight);
-              }
-            });
-
-            resizeObserver.observe(embed);
-          }}
         ></iframe>
       )}
       {preview && <h4>OLI Embedded activity does not yet support preview</h4>}

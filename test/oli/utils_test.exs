@@ -24,7 +24,6 @@ defmodule Oli.UtilsTest do
     end
   end
 
-
   describe "ensure_absolute_url" do
     test "returns an absolute url" do
       assert Utils.ensure_absolute_url("test") == "https://localhost/test"
@@ -68,6 +67,12 @@ defmodule Oli.UtilsTest do
       test_string = "test string"
 
       assert Utils.find_and_linkify_urls_in_string(test_string) == test_string
+    end
+  end
+
+  describe "stringify_atom/1" do
+    test "returns the string representation of an atom without underscores" do
+      assert Utils.stringify_atom(:this_is_a_test) == "this is a test"
     end
   end
 end

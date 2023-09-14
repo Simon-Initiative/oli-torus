@@ -350,7 +350,7 @@ defmodule OliWeb.DeliveryController do
 
     if Oli.Utils.LoadTesting.enabled?() or recaptcha_verified?(g_recaptcha_response) do
       with {:available, section} <- Sections.available?(conn.assigns.section),
-           {:ok, user} <- current_or_guest_user(conn),
+           {:ok, user} <- current_or_guest_user(conn, section.requires_enrollment),
            user <- Repo.preload(user, [:platform_roles]) do
         if Sections.is_enrolled?(user.id, section.slug) do
           redirect(conn,
@@ -372,6 +372,18 @@ defmodule OliWeb.DeliveryController do
           |> redirect(to: Routes.page_delivery_path(OliWeb.Endpoint, :index, section.slug))
         end
       else
+        {:redirect, nil} ->
+          # guest user cant access courses that require enrollment
+          redirect_path =
+            "/session/new?request_path=#{Routes.delivery_path(conn, :show_enroll, conn.assigns.section.slug)}"
+
+          conn
+          |> put_flash(
+            :error,
+            "Cannot enroll guest users in a course section that requires enrollment"
+          )
+          |> redirect(to: redirect_path)
+
         _error ->
           render(conn, "enroll.html", error: "Something went wrong, please try again")
       end
@@ -387,10 +399,10 @@ defmodule OliWeb.DeliveryController do
     Oli.Utils.Recaptcha.verify(g_recaptcha_response) == {:success, true}
   end
 
-  defp current_or_guest_user(conn) do
+  defp current_or_guest_user(conn, requires_enrollment) do
     case conn.assigns.current_user do
       nil ->
-        Accounts.create_guest_user()
+        if requires_enrollment, do: {:redirect, nil}, else: Accounts.create_guest_user()
 
       user ->
         {:ok, user}

@@ -29,7 +29,7 @@ defmodule Oli.Factory do
 
   alias Oli.Delivery.Paywall.{Discount, Payment}
   alias Oli.Groups.{Community, CommunityAccount, CommunityInstitution, CommunityVisibility}
-  alias Oli.Institutions.{Institution, SsoJwk}
+  alias Oli.Institutions.{Institution, SsoJwk, PendingRegistration}
   alias Oli.Inventories.Publisher
   alias Oli.Lti.Tool.{Deployment, Registration}
   alias Oli.Notifications.SystemMessage
@@ -534,6 +534,23 @@ defmodule Oli.Factory do
       result: :success,
       attempt_number: 1,
       resource_access: anonymous_build(:resource_access)
+    }
+  end
+
+  def pending_registration_factory() do
+    %PendingRegistration{
+      country_code: "US",
+      institution_email: "#{sequence("institution_")}@edu.com",
+      institution_url: "https://www.#{sequence("institution_")}.com",
+      name: sequence("Institution "),
+      issuer: sequence("issuer_"),
+      client_id: sequence("client_id_"),
+      deployment_id: sequence("deployment_id_"),
+      key_set_url: "https://www.#{sequence("key_set_url_")}.com",
+      auth_token_url: "https://www.#{sequence("key_set_url_")}.com/auth/token",
+      auth_login_url: "https://www.#{sequence("key_set_url_")}.com/auth/login",
+      auth_server: "https://www.#{sequence("key_set_url_")}.com/auth/server",
+      line_items_service_domain: ""
     }
   end
 

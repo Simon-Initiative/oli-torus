@@ -288,9 +288,9 @@ defmodule Oli.Predefined do
         product_family_code: "desire2learn",
         name: "D2L (Desire2Learn)",
         key_set_path: "/d2l/.well-known/jwks",
-        auth_token_path: "/core/connect/token",
+        auth_token_url: "https://auth.brightspace.com/core/connect/token",
         auth_login_path: "/d2l/lti/authenticate",
-        auth_server_path: "/auth/token"
+        auth_server_url: "https://api.brightspace.com/auth/token"
       }
     ]
 

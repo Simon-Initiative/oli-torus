@@ -1,12 +1,16 @@
 <%= render_modal(assigns) %>
 
 <div id="curriculum-container" class="container mx-auto curriculum-editor">
-  <div class="grid grid-cols-12">
-    <div class="col-span-12">
-      <p class="mb-3">
-        Create and arrange your learning materials below.
-      </p>
-    </div>
+  <div class="flex justify-between">
+    <p class="mb-3">
+      Create and arrange your learning materials below.
+    </p>
+    <.link
+      :if={@has_show_links_uri_hash and Accounts.is_admin?(@author)}
+      navigate={~p[/project/#{@project.slug}/history/slug/#{@container.slug}]}
+    >
+      <i class="fas fa-history"></i> View revision history
+    </.link>
   </div>
   <div class="grid grid-cols-12">
     <div class="col-span-12">
@@ -66,6 +70,7 @@
             project={@project}
             view={@view}
             numberings={@numberings}
+            revision_history_link={@has_show_links_uri_hash and Accounts.is_admin?(@author)}
           />
         <% end %>
         <%!-- <DropTarget id="last" index={length(@children)} /> --%>

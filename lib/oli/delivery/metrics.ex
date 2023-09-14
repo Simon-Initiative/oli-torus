@@ -7,6 +7,7 @@ defmodule Oli.Delivery.Metrics do
   alias Oli.Analytics.DataTables.DataTable
   alias Oli.Delivery.Attempts.Core.{ResourceAccess, ActivityAttempt}
   alias Oli.Delivery.Attempts.Core
+  alias Oli.Delivery.Sections.Section
 
   alias Oli.Delivery.Sections.{
     ContainedPage,
@@ -538,27 +539,21 @@ defmodule Oli.Delivery.Metrics do
       container_id_n => "Low"
     }
   """
-  def proficiency_per_container(section_slug) do
+  def proficiency_per_container(%Section{id: id}, contained_pages) do
     query =
       from(sn in Snapshot,
-        join: s in Section,
-        on: sn.section_id == s.id,
-        join: cp in ContainedPage,
-        on: cp.page_id == sn.resource_id,
-        where: sn.attempt_number == 1 and sn.part_attempt_number == 1 and s.slug == ^section_slug,
-        group_by: cp.container_id,
+        where: sn.attempt_number == 1 and sn.part_attempt_number == 1 and sn.section_id == ^id,
+        group_by: sn.resource_id,
         select:
-          {cp.container_id,
-           fragment(
-             "CAST(COUNT(CASE WHEN ? THEN 1 END) as float) / CAST(COUNT(*) as float)",
-             sn.correct
-           )}
+          {
+            sn.resource_id,
+            fragment("CAST(COUNT(CASE WHEN ? THEN 1 END) as float)", sn.correct),
+            fragment("CAST(COUNT(*) as float)")
+          }
       )
 
     Repo.all(query)
-    |> Enum.into(%{}, fn {container_id, proficiency} ->
-      {container_id, proficiency_range(proficiency)}
-    end)
+    |> bucket_into_container_totals(contained_pages)
   end
 
   @doc """
@@ -593,9 +588,7 @@ defmodule Oli.Delivery.Metrics do
 
     query =
       from(sn in Snapshot,
-        join: s in Section,
-        on: sn.section_id == s.id,
-        where: sn.attempt_number == 1 and sn.part_attempt_number == 1 and s.slug == ^section.slug,
+        where: sn.attempt_number == 1 and sn.part_attempt_number == 1 and sn.section_id == ^section.id,
         where: ^filter_by_container,
         group_by: sn.user_id,
         select:
@@ -623,29 +616,23 @@ defmodule Oli.Delivery.Metrics do
       container_id_n => "Low"
     }
   """
-  def proficiency_for_student_per_container(section_slug, student_id) do
+  def proficiency_for_student_per_container(%Section{id: id}, student_id, contained_pages) do
     query =
       from(sn in Snapshot,
-        join: s in Section,
-        on: sn.section_id == s.id,
-        join: cp in ContainedPage,
-        on: sn.resource_id == cp.page_id,
         where:
-          sn.attempt_number == 1 and sn.part_attempt_number == 1 and s.slug == ^section_slug and
+          sn.attempt_number == 1 and sn.part_attempt_number == 1 and sn.section_id == ^id and
             sn.user_id == ^student_id,
-        group_by: cp.container_id,
+        group_by: sn.resource_id,
         select:
-          {cp.container_id,
-           fragment(
-             "CAST(COUNT(CASE WHEN ? THEN 1 END) as float) / CAST(COUNT(*) as float)",
-             sn.correct
-           )}
+          {
+            sn.resource_id,
+            fragment("CAST(COUNT(CASE WHEN ? THEN 1 END) as float)", sn.correct),
+            fragment("CAST(COUNT(*) as float)")
+          }
       )
 
     Repo.all(query)
-    |> Enum.into(%{}, fn {student_id, proficiency} ->
-      {student_id, proficiency_range(proficiency)}
-    end)
+    |> bucket_into_container_totals(contained_pages)
   end
 
   @doc """
@@ -664,14 +651,12 @@ defmodule Oli.Delivery.Metrics do
       from(sn in Snapshot,
         join: s in Section,
         on: sn.section_id == s.id,
-        join: cp in ContainedPage,
-        on: sn.resource_id == cp.page_id,
         where:
           sn.attempt_number == 1 and sn.part_attempt_number == 1 and s.slug == ^section_slug and
             sn.user_id == ^student_id,
-        group_by: cp.page_id,
+        group_by: sn.resource_id,
         select:
-          {cp.page_id,
+          {sn.resource_id,
            fragment(
              "CAST(COUNT(CASE WHEN ? THEN 1 END) as float) / CAST(COUNT(*) as float)",
              sn.correct
@@ -679,8 +664,8 @@ defmodule Oli.Delivery.Metrics do
       )
 
     Repo.all(query)
-    |> Enum.into(%{}, fn {student_id, proficiency} ->
-      {student_id, proficiency_range(proficiency)}
+    |> Enum.into(%{}, fn {resource_id, proficiency} ->
+      {resource_id, proficiency_range(proficiency)}
     end)
   end
 
@@ -856,5 +841,65 @@ defmodule Oli.Delivery.Metrics do
       )
 
     Repo.one(query)
+  end
+
+  # Given a list of ContainedPage records, return a map of
+  # page ids to a list of container ids (their ancestor containers)
+  # that contain that page
+  #
+  # For instance, given the following ContainedPage records:
+  #
+  #  %ContainedPage{container_id: 1, page_id: 10}
+  #  %ContainedPage{container_id: 1, page_id: 11}
+  #  %ContainedPage{container_id: 2, page_id: 10}
+  #
+  # This function will return:
+  # %{10 => [1, 2], 11 => [1]}
+  defp page_to_parent_containers_map(contained_pages) do
+    Enum.reduce(contained_pages, %{},
+      fn %ContainedPage{container_id: container_id, page_id: page_id}, inverted_cp_index ->
+        case Map.get(inverted_cp_index, page_id) do
+          nil -> Map.put(inverted_cp_index, page_id, [container_id])
+          container_ids -> Map.put(inverted_cp_index, page_id, [container_id | container_ids])
+        end
+      end)
+  end
+
+  # Given a list of ContainedPage records, return a map of container ids to a tuple of
+  # correct and total values, initialized to {0.0, 0.0}
+  defp init_container_totals(contained_pages) do
+     Enum.reduce(contained_pages, %{}, fn %ContainedPage{container_id: container_id}, map ->
+      Map.put(map, container_id, {0.0, 0.0})
+    end)
+  end
+
+  # Given a list of {page_id, correct, total} tuples, and a list of
+  # ContainedPage records, return a map of container ids to a tuple of correct and total values,
+  # where the container totals are the sum of the page totals for all pages contained in that container.
+  defp bucket_into_container_totals(page_totals, contained_pages) do
+
+    inverted_cp_index = page_to_parent_containers_map(contained_pages)
+    container_totals = init_container_totals(contained_pages)
+
+    Enum.reduce(page_totals, container_totals, fn {page_id, correct, total}, map ->
+      container_ids = Map.get(inverted_cp_index, page_id)
+
+      case container_ids do
+        nil -> map
+        _ ->
+          Enum.reduce(container_ids, map, fn container_id, map ->
+            update_in(map, [container_id], fn {current_correct, current_total} ->
+              {current_correct + correct, current_total + total}
+            end)
+          end)
+      end
+    end)
+    |> Enum.into(%{}, fn {container_id, {correct, total}} ->
+      proficiency = case total do
+        0.0 -> nil
+        _ -> correct / total
+      end
+      {container_id, proficiency_range(proficiency)}
+    end)
   end
 end

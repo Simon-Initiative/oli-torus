@@ -28,6 +28,7 @@ defmodule OliWeb.Components.Modal do
       </.modal>
   """
   attr :id, :string, required: true
+  attr :class, :string, default: ""
   attr :show, :boolean, default: false
   attr :on_cancel, JS, default: %JS{}
   attr :on_confirm, JS, default: %JS{}
@@ -46,7 +47,7 @@ defmodule OliWeb.Components.Modal do
       phx-remove={hide_modal(@id)}
       class="relative z-50 hidden"
     >
-      <div id={"#{@id}-bg"} class="fixed inset-0 bg-zinc-50/90 transition-opacity backdrop-blur-sm" aria-hidden="true" />
+      <div id={"#{@id}-bg"} class="fixed inset-0 bg-black/20 transition-opacity backdrop-blur-sm" aria-hidden="true" />
       <div
         class="fixed inset-0 overflow-y-auto"
         aria-labelledby={"#{@id}-title"}
@@ -56,7 +57,7 @@ defmodule OliWeb.Components.Modal do
         tabindex="0"
       >
         <div class="flex min-h-full items-center justify-center">
-          <div class="w-full max-w-3xl p-4 sm:p-6 lg:py-8">
+          <div class={["w-full p-4 sm:p-6 lg:py-8", @class]}>
             <.focus_wrap
               id={"#{@id}-container"}
               phx-mounted={@show && show_modal(@id)}

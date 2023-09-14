@@ -41,6 +41,7 @@ export type EditorProps = {
   editorOverride?: SlateEditor;
   onFocus?: FocusEventHandler | undefined;
   onBlur?: FocusEventHandler | undefined;
+  onSwitchToMarkdown?: () => void;
 };
 
 // Necessary to work around FireFox focus and selection issues with Slate
@@ -64,6 +65,7 @@ export const Editor: React.FC<EditorProps> = React.memo((props: EditorProps) => 
     if (props.editorOverride) {
       return props.editorOverride;
     }
+
     const editor = withMarkdown(props.commandContext)(
       withReact(withHistory(withTables(withInlines(withVoids(createEditor()))))),
     );
@@ -135,6 +137,7 @@ export const Editor: React.FC<EditorProps> = React.memo((props: EditorProps) => 
           context={props.commandContext}
           insertOptions={props.toolbarInsertDescs}
           fixedToolbar={props.fixedToolbar}
+          onSwitchToMarkdown={props.onSwitchToMarkdown}
         />
 
         <Editable

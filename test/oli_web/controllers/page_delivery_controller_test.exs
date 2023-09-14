@@ -449,6 +449,117 @@ defmodule OliWeb.PageDeliveryControllerTest do
       assert html_response(conn, 200) =~ "(Review)"
     end
 
+    test "grade update worker is not created if section has not grade passback enabled", %{
+      user: user,
+      conn: conn,
+      section: section,
+      page_revision: page_revision
+    } do
+      enroll_as_student(%{section: section, user: user})
+
+      conn = get(conn, Routes.page_delivery_path(conn, :page, section.slug, page_revision.slug))
+
+      # now start the attempt
+      conn =
+        recycle(conn)
+        |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
+
+      conn =
+        get(
+          conn,
+          Routes.page_delivery_path(conn, :start_attempt, section.slug, page_revision.slug)
+        )
+
+      # verify the redirection
+      redir_path = redirected_to(conn, 302)
+
+      conn =
+        recycle(conn)
+        |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
+
+      conn = get(conn, redir_path)
+
+      # fetch the resource that will have been created
+      [attempt] = Oli.Repo.all(ResourceAttempt)
+
+      conn =
+        recycle(conn)
+        |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
+
+      post(
+        conn,
+        Routes.page_lifecycle_path(
+          conn,
+          :transition
+        ),
+        %{
+          "action" => "finalize",
+          "section_slug" => section.slug,
+          "revision_slug" => page_revision.slug,
+          "attempt_guid" => attempt.attempt_guid
+        }
+      )
+
+      # verify that Oban job has not been created
+      assert Oli.Delivery.Attempts.PageLifecycle.GradeUpdateWorker.get_jobs() == []
+    end
+
+    test "grade update worker is created if section has grade passback enabled", %{
+      user: user,
+      conn: conn,
+      section: section,
+      page_revision: page_revision
+    } do
+      {:ok, section} = Sections.update_section(section, %{grade_passback_enabled: true})
+      enroll_as_student(%{section: section, user: user})
+
+      conn = get(conn, Routes.page_delivery_path(conn, :page, section.slug, page_revision.slug))
+
+      # now start the attempt
+      conn =
+        recycle(conn)
+        |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
+
+      conn =
+        get(
+          conn,
+          Routes.page_delivery_path(conn, :start_attempt, section.slug, page_revision.slug)
+        )
+
+      # verify the redirection
+      redir_path = redirected_to(conn, 302)
+
+      conn =
+        recycle(conn)
+        |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
+
+      conn = get(conn, redir_path)
+
+      # fetch the resource attempt that will have been created
+      [attempt] = Oli.Repo.all(ResourceAttempt)
+
+      conn =
+        recycle(conn)
+        |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
+
+      post(
+        conn,
+        Routes.page_lifecycle_path(
+          conn,
+          :transition
+        ),
+        %{
+          "action" => "finalize",
+          "section_slug" => section.slug,
+          "revision_slug" => page_revision.slug,
+          "attempt_guid" => attempt.attempt_guid
+        }
+      )
+
+      # verify that Oban job has been created
+      assert Oli.Delivery.Attempts.PageLifecycle.GradeUpdateWorker.get_jobs() |> length() == 1
+    end
+
     test "requires correct password to start an attempt", %{
       user: user,
       conn: conn,
@@ -518,6 +629,115 @@ defmodule OliWeb.PageDeliveryControllerTest do
 
       conn = get(conn, redir_path)
       assert html_response(conn, 200) =~ "Submit Answers"
+    end
+
+    # This tests the edge case for when a student goes to a page that is available to start and the instructor changes the start date
+    # to a future date simultaneously and before the student refreshes the page.
+    # The student should be redirected back to the page and see a message that the page is not yet available when trying to start an attempt.
+    test "requires a past start date to start an attempt", %{
+      user: user,
+      conn: conn,
+      section: section,
+      page_revision: page_revision
+    } do
+      enroll_as_student(%{section: section, user: user})
+
+      sr = Sections.get_section_resource(section.id, page_revision.resource_id)
+
+      conn = get(conn, Routes.page_delivery_path(conn, :page, section.slug, page_revision.slug))
+
+      assert html_response(conn, 200) =~ "Start Attempt"
+
+      # change the start date to tomorrow
+      tomorrow = DateTime.utc_now() |> DateTime.add(1, :day)
+      Sections.update_section_resource(sr, %{start_date: tomorrow})
+
+      # now start the attempt
+      conn =
+        recycle(conn)
+        |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
+
+      conn =
+        get(
+          conn,
+          Routes.page_delivery_path(conn, :start_attempt, section.slug, page_revision.slug)
+        )
+
+      assert html_response(conn, 302) =~ "redirected"
+      redir_path = redirected_to(conn, 302)
+
+      conn =
+        recycle(conn)
+        |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
+
+      conn = get(conn, redir_path)
+
+      assert html_response(conn, 200) =~
+               "This assessment is not yet available. It will be available on #{FormatDateTime.date(tomorrow, conn: conn, precision: :minutes)}."
+    end
+
+    test "shows 'Start Attempt' button when start date has passed", %{
+      user: user,
+      conn: conn,
+      section: section,
+      page_revision: page_revision
+    } do
+      enroll_as_student(%{section: section, user: user})
+
+      sr = Sections.get_section_resource(section.id, page_revision.resource_id)
+
+      tomorrow = DateTime.utc_now() |> DateTime.add(-1, :day)
+      Sections.update_section_resource(sr, %{start_date: tomorrow})
+
+      conn = get(conn, Routes.page_delivery_path(conn, :page, section.slug, page_revision.slug))
+
+      assert html_response(conn, 200) =~ "When you are ready to begin, you may"
+
+      # now start the attempt
+      conn =
+        recycle(conn)
+        |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
+
+      conn =
+        get(
+          conn,
+          Routes.page_delivery_path(conn, :start_attempt, section.slug, page_revision.slug)
+        )
+
+      # verify the redirection
+      assert html_response(conn, 302) =~ "redirected"
+      redir_path = redirected_to(conn, 302)
+
+      # and then the rendering of the page, which should contain a button
+      # that says 'Submit Answers'
+      conn =
+        recycle(conn)
+        |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
+
+      conn = get(conn, redir_path)
+      assert html_response(conn, 200) =~ "Submit Answers"
+    end
+
+    test "does not show 'Start Attempt' button when start date has not passed yet", %{
+      user: user,
+      conn: conn,
+      section: section,
+      page_revision: page_revision
+    } do
+      enroll_as_student(%{section: section, user: user})
+
+      sr = Sections.get_section_resource(section.id, page_revision.resource_id)
+
+      tomorrow = DateTime.utc_now() |> DateTime.add(1, :day)
+      Sections.update_section_resource(sr, %{start_date: tomorrow})
+
+      conn = get(conn, Routes.page_delivery_path(conn, :page, section.slug, page_revision.slug))
+      html_response = html_response(conn, 200)
+
+      assert html_response =~
+               "This assessment is not yet available. It will be available on #{FormatDateTime.date(tomorrow, conn: conn, precision: :minutes)}."
+
+      refute html_response =~ "Start Attempt"
     end
 
     test "changing a page from graded to ungraded allows the graded attempt to continue", %{

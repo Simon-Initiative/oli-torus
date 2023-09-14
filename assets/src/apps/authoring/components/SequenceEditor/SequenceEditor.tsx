@@ -7,9 +7,9 @@ import guid from 'utils/guid';
 import { useToggle } from '../../../../components/hooks/useToggle';
 import { createNew as createNewActivity } from '../../../authoring/store/activities/actions/createNew';
 import {
-  selectIsAdmin,
-  selectProjectSlug,
+  selectBottomLeftPanel,
   setCurrentRule,
+  setLeftPanelState,
   setRightPanelActiveTab,
 } from '../../../authoring/store/app/slice';
 import {
@@ -39,7 +39,7 @@ import ContextAwareToggle from '../Accordion/ContextAwareToggle';
 import ConfirmDelete from '../Modal/DeleteConfirmationModal';
 import { RightPanelTabs } from '../RightMenu/RightMenu';
 
-const SequenceEditor: React.FC = () => {
+const SequenceEditor: React.FC<any> = (props: any) => {
   const dispatch = useDispatch();
   const currentSequenceId = useSelector(selectCurrentSequenceId);
   const sequence = useSelector(selectSequence);
@@ -48,17 +48,43 @@ const SequenceEditor: React.FC = () => {
   const allActivities = useSelector(selectAllActivities);
   const hierarchy = useMemo(() => getHierarchy(sequence), [sequence]);
   const [open, toggleOpen] = useToggle(true);
-
   const [itemToRename, setItemToRename] = useState<any>(undefined);
   const [showConfirmDelete, setShowConfirmDelete] = useState<boolean>(false);
   const [itemToDelete, setItemToDelete] = useState<any>(undefined);
-
-  const isAdmin = useSelector(selectIsAdmin);
-  const projectSlug = useSelector(selectProjectSlug);
-
+  const bottomLeftPanel = useSelector(selectBottomLeftPanel);
   const layerLabel = 'Layer';
   const bankLabel = 'Question Bank';
   const screenLabel = 'Screen';
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (props.menuItemClicked) {
+      const { event, item, parentItem, isLayer, isBank, direction } = props.menuItemClicked;
+      switch (event) {
+        case 'handleItemAdd':
+          handleItemAdd(parentItem, isLayer, isBank);
+          break;
+        case 'handleItemReorder':
+          handleItemReorder(null, item, direction);
+          break;
+        case 'handleItemDelete':
+          setShowConfirmDelete(true);
+          setItemToDelete(item);
+          break;
+        case 'handleItemConvert':
+          handleItemConvert(item);
+          break;
+        case 'handleItemClone':
+          handleItemClone(item);
+          break;
+        case 'setItemToRename':
+          setItemToRename(item);
+          break;
+        default:
+          break;
+      }
+    }
+  }, [props.menuItemClicked]);
 
   const handleItemClick = (e: any, entry: SequenceEntry<SequenceEntryChild>) => {
     e.stopPropagation();
@@ -74,6 +100,7 @@ const SequenceEditor: React.FC = () => {
         },
       }),
     );
+    sequenceItemToggleClick();
   };
 
   const addNewSequence = async (newSequenceEntry: any, siblingId: any) => {
@@ -369,23 +396,34 @@ const SequenceEditor: React.FC = () => {
 
   const inputToFocus = useRef<HTMLInputElement>(null);
 
+  const sequenceItemToggleClick = () => {
+    setTimeout(() => {
+      const scrollHeight = ref.current?.scrollHeight || 0;
+      const clientHeight = ref.current?.clientHeight || 0;
+      dispatch(
+        setLeftPanelState({
+          sequenceEditorHeight: ref?.current?.clientHeight
+            ? ref?.current?.clientHeight + 150
+            : ref?.current?.clientHeight,
+          sequenceEditorExpanded: scrollHeight > clientHeight ? true : false,
+        }),
+      );
+    }, 1000);
+  };
   useEffect(() => {
     if (!itemToRename) return;
     inputToFocus.current?.focus();
   }, [itemToRename]);
 
   const SequenceItemContextMenu = (props: any) => {
-    const { id, item, index, arr, isParentQB } = props;
-    const isBank = item.custom.isBank;
-    const isLayer = item.custom.isLayer;
-    const seqType = isLayer ? layerLabel : isBank ? bankLabel : screenLabel;
-
+    const { id } = props;
     return (
       <>
         {currentGroup && (
           <Dropdown
             onClick={(e: React.MouseEvent) => {
               (e as any).isContextButtonClick = true;
+              props.contextMenuClicked(true, props);
             }}
           >
             <Dropdown.Toggle
@@ -395,109 +433,6 @@ const SequenceEditor: React.FC = () => {
             >
               <i className="fas fa-ellipsis-v" />
             </Dropdown.Toggle>
-
-            <Dropdown.Menu>
-              {!isParentQB && (
-                <Dropdown.Item onClick={() => handleItemAdd(item)}>
-                  <i className="fas fa-desktop mr-2" /> Add Subscreen
-                </Dropdown.Item>
-              )}
-
-              {!isBank && !isParentQB && (
-                <Dropdown.Item onClick={() => handleItemAdd(item, true)}>
-                  <i className="fas fa-layer-group mr-2" /> Add Layer
-                </Dropdown.Item>
-              )}
-              {!isBank && !isParentQB && (
-                <Dropdown.Item onClick={() => handleItemAdd(item, false, true)}>
-                  <i className="fas fa-cubes mr-2" /> Add Question Bank
-                </Dropdown.Item>
-              )}
-
-              {isLayer ? (
-                <Dropdown.Item onClick={() => handleItemConvert(item)}>
-                  <i className="fas fa-exchange-alt mr-2" /> Convert to Screen
-                </Dropdown.Item>
-              ) : !isBank && !isParentQB ? (
-                <Dropdown.Item onClick={() => handleItemConvert(item)}>
-                  <i className="fas fa-exchange-alt mr-2" /> Convert to Layer
-                </Dropdown.Item>
-              ) : null}
-
-              <Dropdown.Item onClick={() => setItemToRename(item)}>
-                <i className="fas fa-i-cursor align-text-top mr-2" /> Rename
-              </Dropdown.Item>
-
-              {!isLayer && !isBank && (
-                <Dropdown.Item onClick={() => handleItemClone(item)}>
-                  <i className="fas fa-clone align-text-top mr-2" /> Clone Screen
-                </Dropdown.Item>
-              )}
-
-              <Dropdown.Item onClick={() => navigator.clipboard.writeText(item.custom.sequenceId)}>
-                <i className="fas fa-clipboard align-text-top mr-2" /> {`Copy ${seqType} ID`}
-              </Dropdown.Item>
-
-              {currentGroup?.children?.length > 1 && (
-                <>
-                  <div className="dropdown-divider" />
-                  <Dropdown.Item
-                    onClick={() => {
-                      setShowConfirmDelete(true);
-                      setItemToDelete(item);
-                    }}
-                  >
-                    <i className="fas fa-trash mr-2" /> Delete
-                  </Dropdown.Item>
-                  <div className="dropdown-divider"></div>
-                </>
-              )}
-              {index > 0 && (
-                <Dropdown.Item onClick={(e) => handleItemReorder(e, item, ReorderDirection.UP)}>
-                  <i className="fas fa-arrow-up mr-2" /> Move Up
-                </Dropdown.Item>
-              )}
-              {index < arr.length - 1 && (
-                <Dropdown.Item onClick={(e) => handleItemReorder(e, item, ReorderDirection.DOWN)}>
-                  <i className="fas fa-arrow-down mr-2" /> Move Down
-                </Dropdown.Item>
-              )}
-              {item.custom.layerRef && (
-                <Dropdown.Item onClick={(e) => handleItemReorder(e, item, ReorderDirection.OUT)}>
-                  <i className="fas fa-arrow-left mr-2" /> Move Out
-                </Dropdown.Item>
-              )}
-              {index > 0 && arr.length > 1 && (
-                <Dropdown.Item onClick={(e) => handleItemReorder(e, item, ReorderDirection.IN)}>
-                  <i className="fas fa-arrow-right mr-2" /> Move In
-                </Dropdown.Item>
-              )}
-              {isAdmin && (
-                <>
-                  <div className="dropdown-divider" />
-                  <Dropdown.Item
-                    onClick={() => {
-                      // open revision history in new tab
-                      window.open(`/project/${projectSlug}/history/resource_id/${item.resourceId}`);
-                    }}
-                  >
-                    <i className="fas fa-history mr-2" /> Revision History (Admin)
-                  </Dropdown.Item>
-                  <div className="dropdown-divider"></div>
-                </>
-              )}
-
-              {/* <div className="dropdown-divider"></div>
-              <Dropdown.Item onClick={() => {}}>
-                <i className="fas fa-copy mr-2" /> Copy
-              </Dropdown.Item>
-              <Dropdown.Item onClick={() => {}}>
-                <i className="fas fa-paste mr-2" /> Paste as Child
-              </Dropdown.Item>
-              <Dropdown.Item onClick={() => {}}>
-                <i className="fas fa-paste mr-2" /> Paste as Sibling
-              </Dropdown.Item> */}
-            </Dropdown.Menu>
           </Dropdown>
         )}
       </>
@@ -534,7 +469,10 @@ const SequenceEditor: React.FC = () => {
               className={`aa-sequence-item${item.children.length ? ' is-parent' : ''}`}
               key={`${item.custom.sequenceId}`}
               active={item.custom.sequenceId === currentSequenceId}
-              onClick={(e) => !(e as any).isContextButtonClick && handleItemClick(e, item)}
+              onClick={(e) => {
+                !(e as any).isContextButtonClick && handleItemClick(e, item);
+                props.contextMenuClicked((e as any).isContextButtonClick);
+              }}
               tabIndex={0}
             >
               <div className="aa-sequence-details-wrapper">
@@ -543,6 +481,7 @@ const SequenceEditor: React.FC = () => {
                     <ContextAwareToggle
                       eventKey={`toggle_${item.custom.sequenceId}`}
                       className={`aa-sequence-item-toggle`}
+                      callback={sequenceItemToggleClick}
                     />
                   ) : null}
                   {!itemToRename ? (
@@ -587,6 +526,7 @@ const SequenceEditor: React.FC = () => {
                   index={index}
                   arr={arr}
                   isParentQB={isParentQB}
+                  contextMenuClicked={props.contextMenuClicked}
                 />
               </div>
               {item.children.length ? (
@@ -603,7 +543,17 @@ const SequenceEditor: React.FC = () => {
     );
 
   return (
-    <Accordion className="aa-sequence-editor" defaultActiveKey="0" activeKey={open ? '0' : '-1'}>
+    <Accordion
+      className="aa-sequence-editor"
+      ref={ref}
+      defaultActiveKey="0"
+      activeKey={open ? '0' : '-1'}
+      style={{
+        height: !bottomLeftPanel && open ? 'calc(100vh - 100px)' : 'auto',
+        maxHeight: !bottomLeftPanel && open ? 'calc(100vh - 100px)' : '60vh',
+        overflow: 'hidden',
+      }}
+    >
       <div className="aa-panel-section-title-bar">
         <div className="d-flex align-items-center">
           <ContextAwareToggle eventKey="0" onClick={toggleOpen} />
@@ -649,7 +599,13 @@ const SequenceEditor: React.FC = () => {
           </Dropdown>
         </OverlayTrigger>
       </div>
-      <Accordion.Collapse eventKey="0">
+      <Accordion.Collapse
+        eventKey="0"
+        style={{
+          overflowY: 'auto',
+          maxHeight: !bottomLeftPanel && open ? 'calc(100vh - 100px)' : '55vh',
+        }}
+      >
         <ListGroup as="ol" className="aa-sequence">
           {getHierarchyList(hierarchy)}
         </ListGroup>
