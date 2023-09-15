@@ -16,7 +16,7 @@ export const insertFormula = createButtonCommandDesc({
 });
 
 export const insertInlineFormula = createButtonCommandDesc({
-  category: 'STEM',
+  category: 'General',
   icon: <i className="fa-solid fa-square-root-variable"></i>,
   description: 'Formula (Inline)',
   execute: (_context, editor) => {

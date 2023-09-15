@@ -3,65 +3,17 @@ import { MultiInput, MultiInputType } from 'components/activities/multi_input/sc
 import { InputRef } from 'data/content/model/elements/types';
 import { ID } from 'data/content/model/other';
 
-export type CommandCategories =
-  | 'Media'
-  | 'Language'
-  | 'STEM'
-  | 'General'
-  | 'Formatting'
-  | 'Structure'
-  | 'Other';
+export const CommandCategoryList = [
+  'Formatting',
+  'Media',
+  'STEM',
+  'General',
+  'Language',
+  'Structure',
+  'Other',
+];
 
-// Media:
-// insertImage
-// insertYoutube
-// insertVideo
-// insertAudio
-// insertWebpage
-
-// Language:
-// insertDefinition
-// insertDialog
-// insertConjugation
-
-// STEM:
-// insertFormula
-// insertCodeblock
-// insertFigure
-
-// General:
-// insertTable
-// insertCallout
-// insertPageLink
-// insertDescriptionListCommand
-
-// ---- inline:
-
-// Formatting:
-// underLineDesc,
-// strikethroughDesc,
-// deemphasisDesc,
-// subscriptDesc,
-// doublesubscriptDesc,
-// superscriptDesc,
-
-// Language:
-// termDesc,
-// citationCmdDesc,
-// insertForeign,
-
-// Media:
-//insertImageInline,
-//insertPopup,
-
-// STEM:
-//insertInlineFormula,
-// insertInlineCodeblock,
-
-// General:
-// Link
-//insertInlineCallout,
-//insertCommandButton,
+export type CommandCategories = typeof CommandCategoryList[number];
 
 // For toolbar buttons
 export type CommandDescription = {
