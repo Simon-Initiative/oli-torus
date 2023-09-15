@@ -8,6 +8,7 @@ import { createButtonCommandDesc } from '../commands/commandFactories';
 export const insertDescriptionListCommand = createButtonCommandDesc({
   icon: <i className="fa-solid fa-list"></i>,
   description: 'Description List',
+  category: 'Structure',
 
   execute: (context, editor: Editor) => {
     insertDescriptionList(editor);

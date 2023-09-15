@@ -3,11 +3,72 @@ import { MultiInput, MultiInputType } from 'components/activities/multi_input/sc
 import { InputRef } from 'data/content/model/elements/types';
 import { ID } from 'data/content/model/other';
 
+export type CommandCategories =
+  | 'Media'
+  | 'Language'
+  | 'STEM'
+  | 'General'
+  | 'Formatting'
+  | 'Structure'
+  | 'Other';
+
+// Media:
+// insertImage
+// insertYoutube
+// insertVideo
+// insertAudio
+// insertWebpage
+
+// Language:
+// insertDefinition
+// insertDialog
+// insertConjugation
+
+// STEM:
+// insertFormula
+// insertCodeblock
+// insertFigure
+
+// General:
+// insertTable
+// insertCallout
+// insertPageLink
+// insertDescriptionListCommand
+
+// ---- inline:
+
+// Formatting:
+// underLineDesc,
+// strikethroughDesc,
+// deemphasisDesc,
+// subscriptDesc,
+// doublesubscriptDesc,
+// superscriptDesc,
+
+// Language:
+// termDesc,
+// citationCmdDesc,
+// insertForeign,
+
+// Media:
+//insertImageInline,
+//insertPopup,
+
+// STEM:
+//insertInlineFormula,
+// insertInlineCodeblock,
+
+// General:
+// Link
+//insertInlineCallout,
+//insertCommandButton,
+
 // For toolbar buttons
 export type CommandDescription = {
   type: 'CommandDesc';
   icon: (editor: Editor) => JSX.Element | undefined;
   command: Command;
+  category?: CommandCategories;
   description: (editor: Editor) => string;
   // active: is the item in the cursor's selection
   active?: (editor: Editor) => boolean;

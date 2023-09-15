@@ -7,6 +7,7 @@ import { createButtonCommandDesc } from '../commands/commandFactories';
 export const popupCmdDesc = createButtonCommandDesc({
   icon: <i className="fa-solid fa-window-restore"></i>,
   description: 'Popup Content',
+  category: 'General',
   execute: (_context, editor, _params) => {
     const selection = editor.selection;
     if (!selection) return;

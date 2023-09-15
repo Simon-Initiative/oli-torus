@@ -100,6 +100,7 @@ const execute =
 export const insertImage = (onReqMedia: any) =>
   createButtonCommandDesc({
     icon: <i className="fa-solid fa-image"></i>,
+    category: 'Media',
     description: 'Image',
     execute: execute(onReqMedia),
   });
@@ -108,6 +109,7 @@ export const insertImage = (onReqMedia: any) =>
 export const insertImageInline = createButtonCommandDesc({
   icon: <i className="fa-solid fa-images"></i>,
   description: 'Image (Inline)',
+  category: 'Media',
   execute: (context, editor) =>
     selectImage(context.projectSlug).then((selection) =>
       Maybe.maybe(selection).map((src) =>
