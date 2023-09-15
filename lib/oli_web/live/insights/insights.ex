@@ -89,7 +89,7 @@ defmodule OliWeb.Insights do
         Insights can help you improve your course by providing a statistical analysis of
         the skills covered by each question to find areas where students are struggling.
       </p>
-      <div class="d-flex align-items-center">
+      <div class="d-flex align-items-center my-3">
         <RawAnalyticsExport.export_button
           ctx={@ctx}
           latest_publication={@latest_publication}
