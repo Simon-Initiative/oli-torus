@@ -12,6 +12,7 @@ end
 
 config :oli,
   env: :dev,
+  s3_xapi_bucket_name: System.get_env("S3_XAPI_BUCKET_NAME"),
   s3_media_bucket_name: System.get_env("S3_MEDIA_BUCKET_NAME"),
   media_url: System.get_env("MEDIA_URL"),
   problematic_query_detection:
@@ -181,7 +182,15 @@ config :appsignal, :config, active: false
 
 # Configure AWS
 config :ex_aws,
-  region: System.get_env("AWS_REGION", "us-east-1")
+  region: System.get_env("AWS_REGION", "us-east-1"),
+  access_key_id: System.get_env("AWS_ACCESS_KEY_ID", "your_minio_access_key"),
+  secret_access_key: System.get_env("AWS_SECRET_ACCESS_KEY", "your_minio_secret_key")
+
+config :ex_aws, :s3,
+  region: System.get_env("AWS_REGION", "us-east-1"),
+  scheme: "http://",
+  port: 9000,
+  host: "127.0.0.1"
 
 config :ex_aws, :hackney_opts,
   follow_redirect: true,

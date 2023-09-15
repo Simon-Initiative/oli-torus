@@ -10,6 +10,14 @@ defmodule Oli.Analytics.Common do
   alias OliWeb.Common.FormatDateTime
   alias Oli.Activities.ActivityRegistration
 
+  @doc """
+  Take an enumeration of maps of data and return a JSON Lines compatible string.
+  """
+  def to_jsonlines(maps) do
+    Enum.map(maps, fn m -> Jason.encode!(m) end)
+    |> Enum.join("\n")
+  end
+
   def stream_project_raw_analytics_to_file!(project_slug, append_to_filepath) do
     objectives_map =
       from(project in Project,

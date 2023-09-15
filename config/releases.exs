@@ -54,6 +54,14 @@ s3_media_bucket_name =
     For example: torus-media
     """
 
+
+s3_xapi_bucket_name =
+  System.get_env("S3_XAPI_BUCKET_NAME") ||
+    raise """
+    environment variable S3_XAPI_BUCKET_NAME is missing.
+    For example: torus-xapi
+    """
+
 if System.get_env("PAYMENT_PROVIDER") == "stripe" &&
      (!System.get_env("STRIPE_PUBLIC_SECRET") || !System.get_env("STRIPE_PRIVATE_SECRET")) do
   raise """
@@ -81,6 +89,7 @@ media_url =
 # General OLI app config
 config :oli,
   s3_media_bucket_name: s3_media_bucket_name,
+  s3_xapi_bucket_name: s3_xapi_bucket_name,
   media_url: media_url,
   email_from_name: System.get_env("EMAIL_FROM_NAME", "OLI Torus"),
   email_from_address: System.get_env("EMAIL_FROM_ADDRESS", "admin@example.edu"),

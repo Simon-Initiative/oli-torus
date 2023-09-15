@@ -286,7 +286,8 @@ defmodule OliWeb.Delivery.NewCourse do
             open_and_free: true,
             context_id: UUID.uuid4(),
             customizations: customizations,
-            has_experiments: has_experiments
+            has_experiments: has_experiments,
+            analytics_version: :v2
           })
 
         case create_from_publication(socket, publication, section_params) do
@@ -325,7 +326,8 @@ defmodule OliWeb.Delivery.NewCourse do
             type: :enrollable,
             open_and_free: true,
             has_experiments: project.has_experiments,
-            context_id: UUID.uuid4()
+            context_id: UUID.uuid4(),
+            analytics_version: :v2
           })
 
         case create_from_product(socket, blueprint, section_params) do

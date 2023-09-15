@@ -334,8 +334,8 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
     {:ok, _} = Sections.rebuild_contained_pages(section)
 
     # enroll students to section
-
-    [student_1, student_2] = insert_pair(:user)
+    student_1 = insert(:user, %{name: "Student 1"})
+    student_2 = insert(:user, %{name: "Student 2"})
     [student_3, student_4] = insert_pair(:user)
 
     Sections.enroll(student_1.id, section.id, [
@@ -1969,10 +1969,12 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
           )
         )
 
-      [exception_1, exception_2] = table_as_list_of_maps(view, :student_exceptions)
+      [student_1_exception, student_2_exception] =
+        table_as_list_of_maps(view, :student_exceptions)
+        |> Enum.sort_by(& &1.student)
 
-      assert exception_1.available_date =~ "October 10, 2023"
-      assert exception_2.available_date =~ "Always available"
+      assert student_1_exception.available_date =~ "October 10, 2023"
+      assert student_2_exception.available_date =~ "Always available"
     end
 
     test "due date can be changed by clicking the due date in the table",

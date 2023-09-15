@@ -50,8 +50,12 @@ defmodule OliWeb.Telemetry do
       # Plug
       counter("oli.plug.start.system_time"),
       summary("oli.plug.stop.duration", unit: {:native, :millisecond}),
-      summary("oli.resolvers.authoring.duration"),
-      summary("oli.resolvers.delivery.duration"),
+      summary("oli.resolvers.authoring.duration", unit: {:native, :millisecond}),
+      summary("oli.resolvers.delivery.duration", unit: {:native, :millisecond}),
+      summary("oli.analytics.summary.xapi", unit: {:native, :millisecond}),
+      summary("oli.analytics.summary.resource_summary", unit: {:native, :millisecond}),
+      summary("oli.analytics.summary.response_summary", unit: {:native, :millisecond}),
+      summary("oli.analytics.summary.query", unit: {:native, :millisecond}),
 
       # Database Time Metrics
       summary("oli.repo.query.total_time", unit: {:native, :millisecond}),

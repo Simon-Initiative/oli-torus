@@ -20,6 +20,7 @@ defmodule Oli.Authoring.Course.Project do
     field :allow_ecl_content_type, :boolean, default: false
     field :latest_analytics_snapshot_url, :string
     field :latest_analytics_snapshot_timestamp, :utc_datetime
+    field :analytics_version, Ecto.Enum, values: [:v1, :v2], default: :v1
 
     embeds_one :customizations, CustomLabels, on_replace: :delete
     embeds_one :attributes, ProjectAttributes, on_replace: :delete
@@ -67,6 +68,7 @@ defmodule Oli.Authoring.Course.Project do
       :has_experiments,
       :legacy_svn_root,
       :allow_ecl_content_type,
+      :analytics_version,
       :publisher_id,
       :required_survey_resource_id,
       :latest_analytics_snapshot_url,

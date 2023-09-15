@@ -311,7 +311,8 @@ defmodule Oli.Authoring.Course do
         title: title,
         version: "1.0.0",
         family_id: family.id,
-        publisher_id: default_publisher.id
+        publisher_id: default_publisher.id,
+        analytics_version: :v2
       },
       additional_attrs
     )

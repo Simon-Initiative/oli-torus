@@ -2937,7 +2937,7 @@ defmodule Oli.Delivery.Sections do
   top level objectives, they appear with their proficiency for only those activities that
   directly attached to them.
   """
-  def get_objectives_and_subobjectives(section_slug, student_id \\ nil) do
+  def get_objectives_and_subobjectives(%Section{slug: section_slug} = section, student_id \\ nil) do
     calc = fn count, total ->
       case total do
         0 -> nil
@@ -2948,10 +2948,10 @@ defmodule Oli.Delivery.Sections do
     proficiency_per_learning_objective =
       case student_id do
         nil ->
-          Metrics.raw_proficiency_per_learning_objective(section_slug)
+          Metrics.raw_proficiency_per_learning_objective(section)
 
         student_id ->
-          Metrics.raw_proficiency_for_student_per_learning_objective(section_slug, student_id)
+          Metrics.raw_proficiency_for_student_per_learning_objective(section, student_id)
       end
 
     # get the minimal fields for all objectives from the database
