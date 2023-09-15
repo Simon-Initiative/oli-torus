@@ -50,7 +50,7 @@ defmodule OliWeb.Components.Common do
   end
 
   @doc """
-  Button component
+  Button component.
 
   ## Examples
 
@@ -86,7 +86,7 @@ defmodule OliWeb.Components.Common do
     <button
       type={@type}
       class={[
-        "rounded",
+        "rounded whitespace-nowrap",
         button_variant_classes(@variant),
         button_size_classes(@size),
         @class
@@ -140,6 +140,61 @@ defmodule OliWeb.Components.Common do
       :lg -> "text-lg px-4 py-2"
       :xl -> "text-xl px-4 py-2"
       _ -> ""
+    end
+  end
+
+  @doc """
+  Link button component.
+
+  ## Examples
+
+      <.link>Navigate!</.link>
+      <.link phx-click="go" class="ml-2">Navigate!</.link>
+  """
+  attr(:variant, :atom, default: nil, values: [:primary, :info, :success, :warning, :danger, nil])
+  attr :href, :string, default: nil
+  attr :class, :string, default: nil
+  attr :rest, :global, include: ~w(disabled target rel download)
+
+  slot :inner_block, required: true
+
+  def button_link(assigns) do
+    ~H"""
+    <a
+      href={@href}
+      class={[
+        "rounded px-3.5 py-2 whitespace-nowrap hover:underline",
+        link_variant_classes(@variant),
+        @rest[:disabled] &&
+          "text-gray-500 hover:text-gray-500 focus:ring-0 hover:no-underline cursor-default",
+        @class
+      ]}
+      {@rest}
+    >
+      <%= render_slot(@inner_block) %>
+    </a>
+    """
+  end
+
+  defp link_variant_classes(variant) do
+    case variant do
+      :primary ->
+        "text-blue-500 hover:text-blue-600 active:text-blue-700 focus:ring-2 focus:ring-blue-400 dark:text-blue-600 dark:hover:text-blue-500 dark:active:text-blue-400 focus:outline-none dark:focus:ring-blue-700"
+
+      :info ->
+        "text-gray-500 hover:text-gray-600 active:text-gray-700 focus:ring-2 focus:ring-gray-400 dark:text-gray-600 dark:hover:text-gray-500 dark:active:text-gray-400 focus:outline-none dark:focus:ring-gray-700"
+
+      :success ->
+        "text-green-500 hover:text-green-600 active:text-green-700 focus:ring-2 focus:ring-green-400 dark:text-green-600 dark:hover:text-green-500 dark:active:text-green-400 focus:outline-none dark:focus:ring-green-700"
+
+      :warning ->
+        "text-yellow-500 hover:text-yellow-600 active:text-yellow-700 focus:ring-2 focus:ring-yellow-400 dark:text-yellow-600 dark:hover:text-yellow-500 dark:active:text-yellow-400 focus:outline-none dark:focus:ring-yellow-700"
+
+      :danger ->
+        "text-red-500 hover:text-red-600 active:text-red-700 focus:ring-2 focus:ring-red-400 dark:text-red-600 dark:hover:text-red-500 dark:active:text-red-400 focus:outline-none dark:focus:ring-red-700"
+
+      _ ->
+        ""
     end
   end
 

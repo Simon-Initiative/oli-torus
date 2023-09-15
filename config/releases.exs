@@ -26,6 +26,12 @@ config :oli, Oli.Repo,
   timeout: 600_000,
   ownership_timeout: 600_000
 
+config :ex_aws, :s3,
+  region: System.get_env("AWS_REGION", "us-east-1"),
+  scheme: System.get_env("AWS_S3_SCHEME", "https") <> "://",
+  port: System.get_env("AWS_S3_PORT", "443") |> String.to_integer(),
+  host: System.get_env("AWS_S3_HOST", "s3.amazonaws.com")
+
 secret_key_base =
   System.get_env("SECRET_KEY_BASE") ||
     raise """
@@ -53,7 +59,6 @@ s3_media_bucket_name =
     environment variable S3_MEDIA_BUCKET_NAME is missing.
     For example: torus-media
     """
-
 
 s3_xapi_bucket_name =
   System.get_env("S3_XAPI_BUCKET_NAME") ||

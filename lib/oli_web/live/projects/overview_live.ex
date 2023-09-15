@@ -1,5 +1,6 @@
 defmodule OliWeb.Projects.OverviewLive do
   use OliWeb, :live_view
+
   import Phoenix.Component
 
   alias Oli.Accounts
@@ -11,10 +12,12 @@ defmodule OliWeb.Projects.OverviewLive do
   alias Oli.Activities
   alias Oli.Publishing.AuthoringResolver
   alias Oli.Resources.Collaboration
-  alias OliWeb.Project.OverviewSection
+  alias OliWeb.Components.Overview
   alias OliWeb.Projects.RequiredSurvey
+  alias OliWeb.Common.SessionContext
 
-  def mount(_params, _session, socket) do
+  def mount(_params, session, socket) do
+    ctx = SessionContext.init(socket, session)
     project = socket.assigns.project
 
     author = socket.assigns[:current_author]
@@ -25,8 +28,11 @@ defmodule OliWeb.Projects.OverviewLive do
 
     {collab_space_config, revision_slug} = get_collab_space_config_and_revision(project.slug)
 
+    latest_publication = Publishing.get_latest_published_publication_by_slug(project.slug)
+
     socket =
       assign(socket,
+        ctx: ctx,
         breadcrumbs: [Breadcrumb.new(%{full_title: "Project Overview"})],
         active: :overview,
         collaborators: Accounts.project_authors(project),
@@ -40,7 +46,8 @@ defmodule OliWeb.Projects.OverviewLive do
         attributes: project.attributes,
         language_codes: Oli.LanguageCodesIso639.codes(),
         collab_space_config: collab_space_config,
-        revision_slug: revision_slug
+        revision_slug: revision_slug,
+        latest_publication: latest_publication
       )
 
     {:ok, socket}
@@ -50,7 +57,7 @@ defmodule OliWeb.Projects.OverviewLive do
     ~H"""
     <div class="overview container mx-auto">
       <.form :let={f} for={@changeset} phx-submit="update" >
-        <OverviewSection.render title="Details" description="Your project title and description will be shown to students when you publish this project.">
+        <Overview.section title="Details" description="Your project title and description will be shown to students when you publish this project.">
           <div class="form-label-group mb-3">
             <%= label f, :title, "Project ID", class: "control-label" %>
             <%= text_input f, :slug, class: "form-control", disabled: true %>
@@ -89,8 +96,8 @@ defmodule OliWeb.Projects.OverviewLive do
             </div>
           <% end %>
           <%= submit "Save", class: "btn btn-md btn-primary mt-2" %>
-        </OverviewSection.render>
-        <OverviewSection.render title="Project Attributes" description="Project wide configuration, not all options may be relevant for all subject areas.">
+        </Overview.section>
+        <Overview.section title="Project Attributes" description="Project wide configuration, not all options may be relevant for all subject areas.">
           <div class="d-block">
             <%= inputs_for f, :attributes, fn fp -> %>
               <div class="form-label-group mb-3">
@@ -106,25 +113,25 @@ defmodule OliWeb.Projects.OverviewLive do
             <div><a type="button" class="btn btn-link pl-0" href={Routes.live_path(OliWeb.Endpoint, OliWeb.Resources.AlternativesEditor, @project.slug)}>Manage Alternatives</a></div>
             <small>Alternatives define the different flavors of content which can be authored. Students can then select which alternative they prefer to use.</small>
           </div>
-        </OverviewSection.render>
+        </Overview.section>
 
         <%= if @is_admin do %>
-          <OverviewSection.render title="Content Types" description="Enable optional content types.">
+          <Overview.section title="Content Types" description="Enable optional content types.">
             <div class="form-label-group mb-3 form-check">
               <%= checkbox f, :allow_ecl_content_type, required: false %>
               <%= label f, :allow_ecl_content_type, "ECL Code Editor", class: "control-label form-check-label" %>
             </div>
 
             <%= submit "Save", class: "btn btn-md btn-primary mt-2" %>
-          </OverviewSection.render>
+          </Overview.section>
         <% end %>
       </.form>
 
-      <OverviewSection.render title="Project Labels" description="Project wide customization of labels.">
+      <Overview.section title="Project Labels" description="Project wide customization of labels.">
         <%= live_render @socket, OliWeb.Projects.CustomizationLive, id: "project_customizations", session: %{ "project_slug" => @project.slug } %>
-      </OverviewSection.render>
+      </Overview.section>
 
-      <OverviewSection.render title="Collaborators" description="Invite other authors by email to contribute to your project. Specify multiple separated by a comma.">
+      <Overview.section title="Collaborators" description="Invite other authors by email to contribute to your project. Specify multiple separated by a comma.">
         <script src="https://www.google.com/recaptcha/api.js"></script>
         <.form :let={f} for={%Plug.Conn{}} id="form-add-collaborator" method="POST" action={Routes.collaborator_path(@socket, :create, @project)}>
           <div class="form-group">
@@ -153,15 +160,15 @@ defmodule OliWeb.Projects.OverviewLive do
           </div>
         </.form>
         <%= render_many @collaborators, OliWeb.ProjectView, "_collaborator.html", %{conn: @socket, as: :collaborator, project: @project} %>
-      </OverviewSection.render>
+      </Overview.section>
 
-      <OverviewSection.render title="Advanced Activities" description="Enable advanced activity types for your project to include in your curriculum.">
+      <Overview.section title="Advanced Activities" description="Enable advanced activity types for your project to include in your curriculum.">
         <%= render_many @activities_enabled, OliWeb.ProjectView, "_tr_activities_available.html", %{conn: @socket, as: :activity_enabled, project: @project} %>
-      </OverviewSection.render>
+      </Overview.section>
 
       <%= live_render @socket, OliWeb.Projects.VisibilityLive, id: "project_visibility", session: %{ "project_slug" => @project.slug } %>
 
-      <OverviewSection.render title="Collaboration Space" description="Allows to activate and configure a collaborative space for the root resource of a project.">
+      <Overview.section title="Collaboration Space" description="Allows to activate and configure a collaborative space for the root resource of a project.">
         <div class="container mx-auto">
           <%=
             live_render(@socket, OliWeb.CollaborationLive.CollabSpaceConfigView, id: "project_collab_space_config",
@@ -173,9 +180,9 @@ defmodule OliWeb.Projects.OverviewLive do
               })
           %>
         </div>
-      </OverviewSection.render>
+      </Overview.section>
 
-      <OverviewSection.render title="Required Survey" description="Allows to activate and configure a survey for all students that enter the course for the first time.">
+      <Overview.section title="Required Survey" description="Allows to activate and configure a survey for all students that enter the course for the first time.">
         <.live_component
           module={RequiredSurvey}
           id="required-survey-section"
@@ -184,9 +191,9 @@ defmodule OliWeb.Projects.OverviewLive do
           enabled={@project.required_survey_resource_id}
           required_survey={@project.required_survey}
         />
-      </OverviewSection.render>
+      </Overview.section>
 
-      <OverviewSection.render title="Actions" is_last={true}>
+      <Overview.section title="Actions" is_last={true}>
         <div class="d-flex align-items-center">
           <div>
             <%= button("Duplicate",
@@ -213,14 +220,14 @@ defmodule OliWeb.Projects.OverviewLive do
             <% _pub -> %>
               <%= button("Download", to: Routes.project_path(@socket, :download_datashop, @project), method: :post, class: "btn btn-link action-button") %>
           <% end %>
-          <span>Download a <a class="text-primary" href="https://pslcdatashop.web.cmu.edu/" target="_blank">Datashop</a> file.</span>
+          <span>Download a <a class="text-primary external" href="https://pslcdatashop.web.cmu.edu/" target="_blank">Datashop</a> file.</span>
         </div>
 
         <div class="d-flex align-items-center">
           <button type="button" class="btn btn-link text-danger action-button" onclick="OLI.showModal('delete-package-modal')">Delete</button>
           <span>Permanently delete this project.</span>
         </div>
-      </OverviewSection.render>
+      </Overview.section>
     </div>
 
     <div class="modal fade" id="delete-package-modal" tabindex="-1" role="dialog" aria-labelledby="delete-modal" aria-hidden="true">
