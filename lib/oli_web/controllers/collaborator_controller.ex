@@ -43,7 +43,10 @@ defmodule OliWeb.CollaboratorController do
             conn
             |> put_flash(
               :error,
-              "This person is already a collaborator in this project."
+              if(Enum.count(emails) > 1,
+                do: "These people are already collaborators in this project.",
+                else: "This person is already a collaborator in this project."
+              )
             )
             |> redirect(
               to: Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.OverviewLive, project_id)
@@ -75,10 +78,10 @@ defmodule OliWeb.CollaboratorController do
 
                 {conn, failures} ->
                   if Enum.count(failures) == Enum.count(emails) do
-                    {_, error_msg} = log_error("Failed to add collaborators", failures)
+                    log_error("Failed to add collaborators", failures)
 
                     conn
-                    |> put_flash(:error, error_msg)
+                    |> put_flash(:error, "Failed to add collaborators")
                     |> redirect(
                       to:
                         Routes.live_path(
@@ -90,14 +93,16 @@ defmodule OliWeb.CollaboratorController do
                   else
                     failed_emails = Enum.map(failures, fn {email, _msg} -> email end)
 
-                    {_, error_msg} =
-                      log_error(
-                        "Failed to add some collaborators: #{Enum.join(failed_emails, ", ")}",
-                        failures
-                      )
+                    log_error(
+                      "Failed to add some collaborators: #{Enum.join(failed_emails, ", ")}",
+                      failures
+                    )
 
                     conn
-                    |> put_flash(:error, error_msg)
+                    |> put_flash(
+                      :error,
+                      "Failed to add some collaborators: #{Enum.join(failed_emails, ", ")}"
+                    )
                     |> redirect(
                       to:
                         Routes.live_path(
