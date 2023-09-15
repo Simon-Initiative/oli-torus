@@ -36,6 +36,12 @@ defmodule OliWeb.Components.Project.RawAnalyticsExport do
                 Created <%= date(@analytics_export_timestamp, @ctx) %>.
                 <.button_link phx-click={@on_generate_analytics_snapshot}><i class="fa-solid fa-rotate-right mr-1"></i>Regenerate</.button_link>
               </span>
+            <% :error -> %>
+              <.button_link variant={:primary} phx-click={@on_generate_analytics_snapshot}>Generate Raw Analytics</.button_link>
+              <span class="text-sm text-gray-500">
+                <i class="fa-solid fa-exclamation-circle text-red-500"></i>
+                Error generating raw analytics snapshot. Please try again later or contact support.
+              </span>
           <% end %>
       <% end %>
     """

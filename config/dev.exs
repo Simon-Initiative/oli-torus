@@ -188,9 +188,9 @@ config :ex_aws,
 
 config :ex_aws, :s3,
   region: System.get_env("AWS_REGION", "us-east-1"),
-  scheme: "http://",
-  port: 9000,
-  host: "127.0.0.1"
+  scheme: System.get_env("AWS_S3_SCHEME", "http") <> "://",
+  port: System.get_env("AWS_S3_PORT", "9000") |> String.to_integer(),
+  host: System.get_env("AWS_S3_HOST", "127.0.0.1")
 
 config :ex_aws, :hackney_opts,
   follow_redirect: true,

@@ -329,7 +329,7 @@ defmodule OliWeb.Insights do
       {:ok, _job} ->
         Broadcaster.broadcast_analytics_export_status(project.slug, {:in_progress})
 
-        {:noreply, assign(socket, analytics_export_status: :in_progress)}
+        {:noreply, socket}
 
       {:error, _changeset} ->
         socket =
@@ -350,6 +350,16 @@ defmodule OliWeb.Insights do
        analytics_export_status: :available,
        analytics_export_url: analytics_export_url,
        analytics_export_timestamp: analytics_export_timestamp
+     )}
+  end
+
+  def handle_info(
+        {:analytics_export_status, {:error, e}},
+        socket
+      ) do
+    {:noreply,
+     assign(socket,
+       analytics_export_status: :error
      )}
   end
 

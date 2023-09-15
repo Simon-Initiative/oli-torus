@@ -1,7 +1,8 @@
 defmodule Oli.Analytics.RawAnalyticsExportWorker do
   use Oban.Worker,
     queue: :analytics_export,
-    priority: 3
+    priority: 3,
+    max_attempts: 1
 
   alias Oli.Utils
   alias Oli.Authoring.Broadcaster
@@ -9,7 +10,18 @@ defmodule Oli.Analytics.RawAnalyticsExportWorker do
 
   @impl Oban.Worker
   def perform(%Oban.Job{args: %{"project_slug" => project_slug} = _args}) do
-    generate(project_slug)
+    try do
+      generate(project_slug)
+    rescue
+      e ->
+        # notify subscribers that the export failed
+        Broadcaster.broadcast_analytics_export_status(
+          project_slug,
+          {:error, e}
+        )
+
+        raise e
+    end
 
     :ok
   end
@@ -33,18 +45,14 @@ defmodule Oli.Analytics.RawAnalyticsExportWorker do
 
         filename = "analytics_#{project_slug}_#{timestamp}.zip"
 
-        zip_filepath = Path.join([File.cwd!(), random_string, filename])
-
-        {:ok, _filepath} = :zip.create(zip_filepath, files, cwd: tmp_dir)
+        zip_filepath = Path.join([tmp_dir, filename])
+        {:ok, filepath} = :zip.create(zip_filepath, files, cwd: tmp_dir)
 
         bucket_name = Application.fetch_env!(:oli, :s3_media_bucket_name)
-        analytics_snapshot_path = "analytics/#{project_slug}/#{filename}"
+        analytics_snapshot_path = Path.join(["analytics", project_slug, random_string, filename])
 
         {:ok, full_upload_url} =
-          Utils.S3Storage.stream_file(bucket_name, analytics_snapshot_path, zip_filepath)
-
-        # cleanup zip file
-        File.rm!(zip_filepath)
+          Utils.S3Storage.stream_file(bucket_name, analytics_snapshot_path, filepath)
 
         full_upload_url
       end)
