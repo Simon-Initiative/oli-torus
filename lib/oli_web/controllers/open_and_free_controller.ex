@@ -87,7 +87,8 @@ defmodule OliWeb.OpenAndFreeController do
           has_experiments: project.has_experiments,
           context_id: UUID.uuid4(),
           start_date: utc_start_date,
-          end_date: utc_end_date
+          end_date: utc_end_date,
+          analytics_version: :v2
         })
 
       case create_from_product(conn, blueprint, section_params) do
@@ -168,6 +169,7 @@ defmodule OliWeb.OpenAndFreeController do
         |> Map.put("end_date", utc_end_date)
         |> Map.put("customizations", customizations)
         |> Map.put("has_experiments", has_experiments)
+        |> Map.put("analytics_version", :v2)
 
       case create_from_publication(conn, publication, section_params) do
         {:ok, section} ->

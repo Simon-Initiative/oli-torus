@@ -555,6 +555,7 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
         |> LogWorker.maybe_schedule(activity_attempt_guid, section_slug)
 
 
+
       _ ->
         {:error, "Activity type does not allow client evaluation"}
     end
