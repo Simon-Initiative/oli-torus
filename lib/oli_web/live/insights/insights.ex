@@ -354,7 +354,7 @@ defmodule OliWeb.Insights do
   end
 
   def handle_info(
-        {:analytics_export_status, {:error, e}},
+        {:analytics_export_status, {:error, _e}},
         socket
       ) do
     {:noreply,
