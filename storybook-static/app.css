@@ -3981,6 +3981,10 @@ table.table-striped tbody tr:nth-child(even) {
   top: 0.75rem;
 }
 
+.top-\[80px\] {
+  top: 80px;
+}
+
 .isolate {
   isolation: isolate;
 }
@@ -5871,6 +5875,11 @@ table.table-striped tbody tr:nth-child(even) {
   padding-right: 0.75rem;
 }
 
+.px-3\.5 {
+  padding-left: 0.875rem;
+  padding-right: 0.875rem;
+}
+
 .px-4 {
   padding-left: 1rem;
   padding-right: 1rem;
@@ -6390,6 +6399,11 @@ table.table-striped tbody tr:nth-child(even) {
 .text-gray-900 {
   --tw-text-opacity: 1;
   color: rgb(23 23 23 / var(--tw-text-opacity));
+}
+
+.text-green-500 {
+  --tw-text-opacity: 1;
+  color: rgb(34 197 94 / var(--tw-text-opacity));
 }
 
 .text-green-700 {
@@ -9905,6 +9919,11 @@ body {
   color: rgb(59 118 211 / var(--tw-text-opacity));
 }
 
+.hover\:text-blue-600:hover {
+  --tw-text-opacity: 1;
+  color: rgb(39 92 175 / var(--tw-text-opacity));
+}
+
 .hover\:text-blue-700:hover {
   --tw-text-opacity: 1;
   color: rgb(29 68 129 / var(--tw-text-opacity));
@@ -9944,9 +9963,24 @@ body {
   color: rgb(29 68 129 / var(--tw-text-opacity));
 }
 
+.hover\:text-gray-500:hover {
+  --tw-text-opacity: 1;
+  color: rgb(115 115 115 / var(--tw-text-opacity));
+}
+
+.hover\:text-gray-600:hover {
+  --tw-text-opacity: 1;
+  color: rgb(82 82 82 / var(--tw-text-opacity));
+}
+
 .hover\:text-gray-900:hover {
   --tw-text-opacity: 1;
   color: rgb(23 23 23 / var(--tw-text-opacity));
+}
+
+.hover\:text-green-600:hover {
+  --tw-text-opacity: 1;
+  color: rgb(22 163 74 / var(--tw-text-opacity));
 }
 
 .hover\:text-red-500:hover {
@@ -9954,9 +9988,19 @@ body {
   color: rgb(239 68 68 / var(--tw-text-opacity));
 }
 
+.hover\:text-red-600:hover {
+  --tw-text-opacity: 1;
+  color: rgb(220 38 38 / var(--tw-text-opacity));
+}
+
 .hover\:text-white:hover {
   --tw-text-opacity: 1;
   color: rgb(255 255 255 / var(--tw-text-opacity));
+}
+
+.hover\:text-yellow-600:hover {
+  --tw-text-opacity: 1;
+  color: rgb(232 149 9 / var(--tw-text-opacity));
 }
 
 .hover\:underline:hover {
@@ -10063,6 +10107,11 @@ body {
 
 .focus\:ring-inset:focus {
   --tw-ring-inset: inset;
+}
+
+.focus\:ring-blue-400:focus {
+  --tw-ring-opacity: 1;
+  --tw-ring-color: rgb(93 141 219 / var(--tw-ring-opacity));
 }
 
 .focus\:ring-blue-500:focus {
@@ -10185,6 +10234,11 @@ body {
   background-color: rgb(178 115 7 / var(--tw-bg-opacity));
 }
 
+.active\:text-blue-700:active {
+  --tw-text-opacity: 1;
+  color: rgb(29 68 129 / var(--tw-text-opacity));
+}
+
 .active\:text-delivery-primary-600:active {
   --tw-text-opacity: 1;
   color: rgb(39 92 175 / var(--tw-text-opacity));
@@ -10195,9 +10249,29 @@ body {
   color: rgb(29 68 129 / var(--tw-text-opacity));
 }
 
+.active\:text-gray-700:active {
+  --tw-text-opacity: 1;
+  color: rgb(64 64 64 / var(--tw-text-opacity));
+}
+
+.active\:text-green-700:active {
+  --tw-text-opacity: 1;
+  color: rgb(21 128 61 / var(--tw-text-opacity));
+}
+
+.active\:text-red-700:active {
+  --tw-text-opacity: 1;
+  color: rgb(185 28 28 / var(--tw-text-opacity));
+}
+
 .active\:text-white:active {
   --tw-text-opacity: 1;
   color: rgb(255 255 255 / var(--tw-text-opacity));
+}
+
+.active\:text-yellow-700:active {
+  --tw-text-opacity: 1;
+  color: rgb(178 115 7 / var(--tw-text-opacity));
 }
 
 .active\:hover\:text-delivery-primary-600:hover:active {
@@ -10517,6 +10591,11 @@ body {
   color: rgb(0 0 0 / var(--tw-text-opacity));
 }
 
+.dark .dark\:text-blue-600 {
+  --tw-text-opacity: 1;
+  color: rgb(39 92 175 / var(--tw-text-opacity));
+}
+
 .dark .dark\:text-body-color-dark {
   --tw-text-opacity: 1;
   color: rgb(245 245 245 / var(--tw-text-opacity));
@@ -10552,6 +10631,11 @@ body {
   color: rgb(82 82 82 / var(--tw-text-opacity));
 }
 
+.dark .dark\:text-green-600 {
+  --tw-text-opacity: 1;
+  color: rgb(22 163 74 / var(--tw-text-opacity));
+}
+
 .dark .dark\:text-primary-300 {
   --tw-text-opacity: 1;
   color: rgb(126 165 226 / var(--tw-text-opacity));
@@ -10565,6 +10649,11 @@ body {
 .dark .dark\:text-white {
   --tw-text-opacity: 1;
   color: rgb(255 255 255 / var(--tw-text-opacity));
+}
+
+.dark .dark\:text-yellow-600 {
+  --tw-text-opacity: 1;
+  color: rgb(232 149 9 / var(--tw-text-opacity));
 }
 
 .dark .dark\:odd\:bg-neutral-600:nth-child(odd) {
@@ -10632,14 +10721,44 @@ body {
   background-color: rgb(247 174 50 / var(--tw-bg-opacity));
 }
 
+.dark .dark\:hover\:text-blue-500:hover {
+  --tw-text-opacity: 1;
+  color: rgb(59 118 211 / var(--tw-text-opacity));
+}
+
+.dark .dark\:hover\:text-gray-500:hover {
+  --tw-text-opacity: 1;
+  color: rgb(115 115 115 / var(--tw-text-opacity));
+}
+
+.dark .dark\:hover\:text-green-500:hover {
+  --tw-text-opacity: 1;
+  color: rgb(34 197 94 / var(--tw-text-opacity));
+}
+
+.dark .dark\:hover\:text-red-500:hover {
+  --tw-text-opacity: 1;
+  color: rgb(239 68 68 / var(--tw-text-opacity));
+}
+
 .dark .dark\:hover\:text-white:hover {
   --tw-text-opacity: 1;
   color: rgb(255 255 255 / var(--tw-text-opacity));
 }
 
+.dark .dark\:hover\:text-yellow-500:hover {
+  --tw-text-opacity: 1;
+  color: rgb(247 174 50 / var(--tw-text-opacity));
+}
+
 .dark .dark\:focus\:text-white:focus {
   --tw-text-opacity: 1;
   color: rgb(255 255 255 / var(--tw-text-opacity));
+}
+
+.dark .dark\:focus\:ring-blue-700:focus {
+  --tw-ring-opacity: 1;
+  --tw-ring-color: rgb(29 68 129 / var(--tw-ring-opacity));
 }
 
 .dark .dark\:focus\:ring-gray-500:focus {
@@ -10725,6 +10844,31 @@ body {
 .dark .dark\:active\:bg-yellow-400:active {
   --tw-bg-opacity: 1;
   background-color: rgb(249 190 89 / var(--tw-bg-opacity));
+}
+
+.dark .dark\:active\:text-blue-400:active {
+  --tw-text-opacity: 1;
+  color: rgb(93 141 219 / var(--tw-text-opacity));
+}
+
+.dark .dark\:active\:text-gray-400:active {
+  --tw-text-opacity: 1;
+  color: rgb(163 163 163 / var(--tw-text-opacity));
+}
+
+.dark .dark\:active\:text-green-400:active {
+  --tw-text-opacity: 1;
+  color: rgb(74 222 128 / var(--tw-text-opacity));
+}
+
+.dark .dark\:active\:text-red-400:active {
+  --tw-text-opacity: 1;
+  color: rgb(248 113 113 / var(--tw-text-opacity));
+}
+
+.dark .dark\:active\:text-yellow-400:active {
+  --tw-text-opacity: 1;
+  color: rgb(249 190 89 / var(--tw-text-opacity));
 }
 
 .dark .group:hover .dark\:group-hover\:bg-gray-800 {
