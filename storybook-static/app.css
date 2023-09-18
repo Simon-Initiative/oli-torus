@@ -4481,6 +4481,10 @@ table.table-striped tbody tr:nth-child(even) {
   height: 0px;
 }
 
+.h-1 {
+  height: 0.25rem;
+}
+
 .h-10 {
   height: 2.5rem;
 }
@@ -4503,10 +4507,6 @@ table.table-striped tbody tr:nth-child(even) {
 
 .h-2\/5 {
   height: 40%;
-}
-
-.h-20 {
-  height: 5rem;
 }
 
 .h-24 {
@@ -6667,6 +6667,12 @@ table.table-striped tbody tr:nth-child(even) {
 
 .transition-opacity {
   transition-property: opacity;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 150ms;
+}
+
+.transition-transform {
+  transition-property: transform;
   transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
   transition-duration: 150ms;
 }
