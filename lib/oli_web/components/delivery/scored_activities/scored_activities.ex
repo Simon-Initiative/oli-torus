@@ -78,7 +78,7 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
           students_with_attempts =
             DeliveryResolver.students_with_attempts_for_page(
               current_assessment,
-              assigns.section.id,
+              assigns.section,
               student_ids
             )
 
