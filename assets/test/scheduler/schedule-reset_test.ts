@@ -16,6 +16,7 @@ const hierarchItemTemplate: HierarchyItem = {
   startDate: null,
   endDate: null,
   endDateTime: null,
+  startDateTime: null,
   children: [],
   end_date: '',
   start_date: '',
