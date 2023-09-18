@@ -174,47 +174,47 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
                 text={@params.text_search}
               />
             </form>
-            <%= if @current_assessment != nil do %>
-              <div id="student_attempts_summary" class="flex flex-row mt-auto">
-                <span class="text-xs">
-                  <%= if @students_with_attempts_count == 0 do %>
-                    No student has completed any attempts.
-                  <% else %>
-                    <%= ~s{#{@students_with_attempts_count} #{Gettext.ngettext(OliWeb.Gettext, "student has", "students have", @students_with_attempts_count)} completed #{@total_attempts_count} #{Gettext.ngettext(OliWeb.Gettext, "attempt", "attempts", @total_attempts_count)}.} %>
-                  <% end %>
-                </span>
-                <%= if @students_with_attempts_count < Enum.count(@students) do %>
-                  <div class="flex flex-col">
-                    <span class="text-xs ml-2">
-                      <%= ~s{#{Enum.count(@student_emails_without_attempts)} #{Gettext.ngettext(OliWeb.Gettext,
-                      "student has",
-                      "students have",
-                      Enum.count(@student_emails_without_attempts))} not completed any attempt.} %>
-                    </span>
-                    <input
-                      type="text"
-                      id="email_inputs"
-                      class="form-control hidden"
-                      value={Enum.join(@student_emails_without_attempts, "; ")}
-                      readonly
-                    />
-                    <button
-                      id="copy_emails_button"
-                      class="text-xs text-primary underline ml-auto mb-6"
-                      phx-hook="CopyListener"
-                      data-clipboard-target="#email_inputs"
-                    >
-                      <i class="fa-solid fa-copy mr-2" /><%= Gettext.ngettext(
-                        OliWeb.Gettext,
-                        "Copy email address",
-                        "Copy email addresses",
-                        Enum.count(@student_emails_without_attempts)
-                      ) %>
-                    </button>
-                  </div>
+            <div
+              :if={@current_assessment != nil}
+              id="student_attempts_summary"
+              class="flex flex-row mt-auto"
+            >
+              <span class="text-xs">
+                <%= if @students_with_attempts_count == 0 do %>
+                  No student has completed any attempts.
+                <% else %>
+                  <%= ~s{#{@students_with_attempts_count} #{Gettext.ngettext(OliWeb.Gettext, "student has", "students have", @students_with_attempts_count)} completed #{@total_attempts_count} #{Gettext.ngettext(OliWeb.Gettext, "attempt", "attempts", @total_attempts_count)}.} %>
                 <% end %>
+              </span>
+              <div :if={@students_with_attempts_count < Enum.count(@students)} class="flex flex-col">
+                <span class="text-xs ml-2">
+                  <%= ~s{#{Enum.count(@student_emails_without_attempts)} #{Gettext.ngettext(OliWeb.Gettext,
+                  "student has",
+                  "students have",
+                  Enum.count(@student_emails_without_attempts))} not completed any attempt.} %>
+                </span>
+                <input
+                  type="text"
+                  id="email_inputs"
+                  class="form-control hidden"
+                  value={Enum.join(@student_emails_without_attempts, "; ")}
+                  readonly
+                />
+                <button
+                  id="copy_emails_button"
+                  class="text-xs text-primary underline ml-auto mb-6"
+                  phx-hook="CopyListener"
+                  data-clipboard-target="#email_inputs"
+                >
+                  <i class="fa-solid fa-copy mr-2" /><%= Gettext.ngettext(
+                    OliWeb.Gettext,
+                    "Copy email address",
+                    "Copy email addresses",
+                    Enum.count(@student_emails_without_attempts)
+                  ) %>
+                </button>
               </div>
-            <% end %>
+            </div>
           </div>
         </div>
 
@@ -231,27 +231,22 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
           show_bottom_paging={false}
         />
       </div>
-      <%= if @current_assessment != nil and @activities != [] do %>
-        <div class="mt-9">
-          <div class="bg-white dark:bg-gray-800 dark:text-white w-min whitespace-nowrap rounded-t-md block font-medium text-sm leading-tight uppercase border-x-1 border-t-1 border-b-0 border-gray-300 px-6 py-4">
-            Question details
-          </div>
-          <div
-            class="bg-white dark:bg-gray-800 dark:text-white shadow-sm px-6 -mt-5"
-            id="activity_detail"
-            phx-hook="LoadSurveyScripts"
-          >
-            <%= if @preview_rendered != nil do %>
-              <RenderedActivity.render
-                id={@rendered_activity_id}
-                rendered_activity={@preview_rendered}
-              />
-            <% else %>
-              <p class="pt-9 pb-5">No attempt registered for this question</p>
-            <% end %>
-          </div>
+      <div :if={@current_assessment != nil and @activities != []} class="mt-9">
+        <div class="bg-white dark:bg-gray-800 dark:text-white w-min whitespace-nowrap rounded-t-md block font-medium text-sm leading-tight uppercase border-x-1 border-t-1 border-b-0 border-gray-300 px-6 py-4">
+          Question details
         </div>
-      <% end %>
+        <div
+          class="bg-white dark:bg-gray-800 dark:text-white shadow-sm px-6 -mt-5"
+          id="activity_detail"
+          phx-hook="LoadSurveyScripts"
+        >
+          <%= if @preview_rendered != nil do %>
+            <RenderedActivity.render id={@rendered_activity_id} rendered_activity={@preview_rendered} />
+          <% else %>
+            <p class="pt-9 pb-5">No attempt registered for this question</p>
+          <% end %>
+        </div>
+      </div>
     </div>
     """
   end
