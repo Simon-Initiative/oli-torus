@@ -54,7 +54,7 @@ defmodule Oli.Publishing.DeliveryResolver do
 
   def students_with_attempts_for_page(
         page,
-        %Section{analytics_version: "v2", id: section_id} = _section,
+        %Section{analytics_version: :v2, id: section_id} = _section,
         student_ids
       ) do
     from(rs in ResourceSummary,
