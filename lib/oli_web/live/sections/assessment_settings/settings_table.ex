@@ -662,13 +662,15 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
         nil
       end
 
-    {new_start_date, new_end_date, changed_date_field} = CommonUtils.maybe_preserve_dates_distance(date_field, new_date, assessment)
+    {new_start_date, new_end_date, changed_date_field} =
+      CommonUtils.maybe_preserve_dates_distance(date_field, new_date, assessment)
 
-    message = if changed_date_field do
-      " The #{Utils.stringify_atom(changed_date_field)} was adjusted to preserve the time distance between the start and end dates."
-    else
-      ""
-    end
+    message =
+      if changed_date_field do
+        " The #{Utils.stringify_atom(changed_date_field)} was adjusted to preserve the time distance between the start and end dates."
+      else
+        ""
+      end
 
     Sections.get_section_resource(
       socket.assigns.section.id,
@@ -820,6 +822,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
           "sort_by",
           [
             :name,
+            :available_date,
             :due_date,
             :max_attempts,
             :time_limit,
@@ -861,7 +864,20 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
   end
 
   defp sort_by(assessments, sort_by, sort_order) do
-    Enum.sort_by(assessments, fn a -> Map.get(a, sort_by) end, sort_order)
+    case sort_by do
+      :available_date ->
+        Enum.sort_by(assessments, fn a -> a.start_date end, sort_order)
+
+      :due_date ->
+        Enum.sort_by(
+          assessments,
+          fn a -> if a.scheduling_type == :due_by, do: a.end_date, else: nil end,
+          sort_order
+        )
+
+      _ ->
+        Enum.sort_by(assessments, fn a -> Map.get(a, sort_by) end, sort_order)
+    end
   end
 
   defp update_params(

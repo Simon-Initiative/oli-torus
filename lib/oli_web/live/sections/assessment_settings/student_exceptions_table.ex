@@ -744,13 +744,15 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTable do
         nil
       end
 
-    {new_start_date, new_end_date, changed_date_field} = CommonUtils.maybe_preserve_dates_distance(date_field, new_date, selected_setting)
+    {new_start_date, new_end_date, changed_date_field} =
+      CommonUtils.maybe_preserve_dates_distance(date_field, new_date, selected_setting)
 
-    message = if changed_date_field do
-      " The #{Utils.stringify_atom(changed_date_field)} was adjusted to preserve the time distance between the start and end dates."
-    else
-      ""
-    end
+    message =
+      if changed_date_field do
+        " The #{Utils.stringify_atom(changed_date_field)} was adjusted to preserve the time distance between the start and end dates."
+      else
+        ""
+      end
 
     Delivery.get_delivery_setting_by(%{
       resource_id: selected_setting.resource_id,
@@ -805,6 +807,7 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTable do
           [
             :name,
             :due_date,
+            :available_date,
             :max_attempts,
             :time_limit,
             :late_submit,
@@ -865,7 +868,23 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTable do
   end
 
   defp sort_by(student_exceptions, sort_by, sort_order) do
-    Enum.sort_by(student_exceptions, fn se -> Map.get(se, sort_by) end, sort_order)
+    case sort_by do
+      :student ->
+        Enum.sort_by(student_exceptions, fn se -> se.user.name end, sort_order)
+
+      :available_date ->
+        Enum.sort_by(student_exceptions, fn se -> se.start_date end, sort_order)
+
+      :due_date ->
+        Enum.sort_by(
+          student_exceptions,
+          fn se -> if se.scheduling_type == :due_by, do: se.end_date, else: nil end,
+          sort_order
+        )
+
+      _ ->
+        Enum.sort_by(student_exceptions, fn se -> Map.get(se, sort_by) end, sort_order)
+    end
   end
 
   defp update_params(%{sort_by: current_sort_by, sort_order: current_sort_order} = params, %{
