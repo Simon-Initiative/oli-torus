@@ -75,7 +75,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.Helpers do
 
     attempts_across_for_pages =
       Metrics.attempts_across_for_pages(
-        section.id,
+        section,
         page_ids,
         student_ids
       )

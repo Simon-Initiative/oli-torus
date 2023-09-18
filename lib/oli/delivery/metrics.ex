@@ -409,7 +409,25 @@ defmodule Oli.Delivery.Metrics do
       page_id_n => number_of_attempts_for_page_n
     }
   """
-  def attempts_across_for_pages(section_id, pages_ids, user_ids) do
+  def attempts_across_for_pages(
+        %Section{id: section_id, analytics_version: "v2"} = _section_id,
+        pages_ids,
+        user_ids
+      ) do
+    from(rs in ResourceSummary,
+      where:
+        rs.section_id == ^section_id and rs.resource_id in ^pages_ids and rs.user_id in ^user_ids,
+      group_by: rs.resource_id,
+      select: {
+        rs.resource_id,
+        fragment("SUM(?)", rs.num_attempts)
+      }
+    )
+    |> Repo.all()
+    |> Enum.into(%{})
+  end
+
+  def attempts_across_for_pages(%Section{id: section_id} = _section_id, pages_ids, user_ids) do
     from(ra in ResourceAttempt,
       join: access in ResourceAccess,
       on: access.id == ra.resource_access_id,
