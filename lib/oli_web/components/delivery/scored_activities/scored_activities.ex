@@ -2,6 +2,7 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
   use Phoenix.LiveComponent
 
   import Ecto.Query
+  alias Oli.Analytics.Summary.ResourceSummary
   alias Oli.Publishing.PublishedResource
   alias Oli.Repo
 
@@ -27,6 +28,8 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
     ResourceAttempt,
     ActivityAttempt
   }
+
+  alias Oli.Delivery.Sections.Section
 
   alias Oli.Resources.Revision
 
@@ -529,6 +532,23 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
       :scored_activities,
       params
     )
+  end
+
+  defp count_attempts(
+         current_assessment,
+         %Section{analytics_version: :v2, id: section_id},
+         student_ids
+       ) do
+    page_type_id = Oli.Resources.ResourceType.get_id_by_type("page")
+
+    from(rs in ResourceSummary,
+      where:
+        rs.section_id == ^section_id and rs.resource_id == ^current_assessment.resource_id and
+          rs.user_id in ^student_ids and rs.project_id == -1 and rs.publication_id == -1 and
+          rs.resource_type_id == ^page_type_id,
+      select: sum(rs.num_attempts)
+    )
+    |> Repo.one()
   end
 
   defp count_attempts(current_assessment, section, student_ids) do
