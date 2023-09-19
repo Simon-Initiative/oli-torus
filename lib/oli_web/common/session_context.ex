@@ -62,16 +62,28 @@ defmodule OliWeb.Common.SessionContext do
   def init(%Plug.Conn{assigns: assigns} = conn) do
     browser_timezone = Plug.Conn.get_session(conn, "browser_timezone")
 
-    {_, author} =
+    author =
       case Map.get(assigns, :current_author) do
-        nil -> {:ok, nil}
-        %Author{id: author_id} -> Oli.AccountLookupCache.get_author(author_id)
+        nil ->
+          nil
+
+        %Author{id: author_id} ->
+          case Oli.AccountLookupCache.get_author(author_id) do
+            {:ok, author} -> author
+            _ -> nil
+          end
       end
 
-    {_, user} =
+    user =
       case Map.get(assigns, :current_user) do
-        nil -> {:ok, nil}
-        %User{id: user_id} -> Oli.AccountLookupCache.get_user(user_id)
+        nil ->
+          nil
+
+        %User{id: user_id} ->
+          case Oli.AccountLookupCache.get_user(user_id) do
+            {:ok, user} -> user
+            _ -> nil
+          end
       end
 
     %__MODULE__{
