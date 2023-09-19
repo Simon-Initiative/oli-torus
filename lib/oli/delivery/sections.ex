@@ -3364,4 +3364,21 @@ defmodule Oli.Delivery.Sections do
       )
     )
   end
+
+  @doc """
+    Get all sections filtered by the clauses passed as the first argument.
+    The second argument is a list of fields to be selected from the Section table.
+    If the second argument is not passed, all fields will be selected.
+  """
+  def get_sections_by(clauses, select_fields \\ nil) do
+    Section
+    |> from(where: ^clauses)
+    |> maybe_select_section_fields(select_fields)
+    |> Repo.all()
+  end
+
+  defp maybe_select_section_fields(query, nil), do: query
+
+  defp maybe_select_section_fields(query, select_fields),
+    do: select(query, [s], struct(s, ^select_fields))
 end
