@@ -57,13 +57,22 @@ defmodule OliWeb.Common.SessionContext do
 
   @doc """
   Initialize a SessionContext struct from a Plug.Conn struct. User or Author structs are loaded
-  from the current assigns (previously loaded by set_user plug)
+  from the account lookup cache.
   """
   def init(%Plug.Conn{assigns: assigns} = conn) do
     browser_timezone = Plug.Conn.get_session(conn, "browser_timezone")
 
-    author = Map.get(assigns, :current_author)
-    user = Map.get(assigns, :current_user)
+    {_, author} =
+      case Map.get(assigns, :current_author) do
+        nil -> {:ok, nil}
+        %Author{id: author_id} -> Oli.AccountLookupCache.get_author(author_id)
+      end
+
+    {_, user} =
+      case Map.get(assigns, :current_user) do
+        nil -> {:ok, nil}
+        %User{id: user_id} -> Oli.AccountLookupCache.get_user(user_id)
+      end
 
     %__MODULE__{
       browser_timezone: browser_timezone,
