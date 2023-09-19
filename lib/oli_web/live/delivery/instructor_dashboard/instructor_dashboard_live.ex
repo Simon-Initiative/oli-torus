@@ -73,7 +73,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
       |> assign(params: params, view: :reports, active_tab: :learning_objectives)
       |> assign_new(:objectives_tab, fn ->
         %{
-          objectives: Sections.get_objectives_and_subobjectives(socket.assigns.section.slug),
+          objectives: Sections.get_objectives_and_subobjectives(socket.assigns.section),
           filter_options:
             Sections.get_units_and_modules_from_a_section(socket.assigns.section.slug)
         }

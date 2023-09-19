@@ -350,7 +350,7 @@ defmodule OliWeb.Router do
     )
 
     get(
-      "/products/:product_id/payments/donwload_codes",
+      "/products/:product_id/payments/download_codes",
       PaymentController,
       :download_payment_codes
     )
@@ -402,7 +402,6 @@ defmodule OliWeb.Router do
     live("/:project_id/publish", Projects.PublishView)
     post("/:project_id/datashop", ProjectController, :download_datashop)
     post("/:project_id/export", ProjectController, :download_export)
-    post("/:project_id/insights", ProjectController, :download_analytics)
     post("/:project_id/duplicate", ProjectController, :clone_project)
 
     # Alternatives Groups

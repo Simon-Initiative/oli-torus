@@ -54,7 +54,7 @@ defmodule OliWeb.Delivery.StudentDashboard.StudentDashboardLive do
         %{
           objectives:
             Sections.get_objectives_and_subobjectives(
-              socket.assigns.section.slug,
+              socket.assigns.section,
               socket.assigns.student.id
             ),
           filter_options:
@@ -211,7 +211,7 @@ defmodule OliWeb.Delivery.StudentDashboard.StudentDashboardLive do
             student_id
           )
 
-        proficiency_per_page = Metrics.proficiency_for_student_per_page(section.slug, student_id)
+        proficiency_per_page = Metrics.proficiency_for_student_per_page(section, student_id)
 
         pages_with_metrics =
           Enum.map(pages, fn page ->

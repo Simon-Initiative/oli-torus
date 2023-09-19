@@ -14,6 +14,10 @@ defmodule Oli.Delivery.Snapshots.Worker do
     ActivityAttempt
   }
 
+  alias Oli.Analytics.Common.Pipeline
+  alias Oli.Analytics.Summary.XAPI.StatementFactory
+  alias Oli.Delivery.Snapshots.S3UploaderWorker
+
   @moduledoc """
   An Oban worker driven snapshot creator.  Snapshot creation jobs take a section slug and a collection of
   part attempt guids as parameters and create the necessary snapshot records from that information and a
@@ -32,7 +36,7 @@ defmodule Oli.Delivery.Snapshots.Worker do
   @doc """
   Allows immediate execution of the snapshot creation logic. Used to bypass queueing during testing scenarios.
   """
-  def perform_now(part_attempt_guids, section_slug) do
+  def perform_now(part_attempt_guids, section_slug, with_v2_support \\ true) do
     # Fetch all the necessary context information to be able to create snapshots
     results =
       from(pa in PartAttempt,
@@ -78,31 +82,93 @@ defmodule Oli.Delivery.Snapshots.Worker do
     # Return the value of the result of the transaction as the Oban worker return value. The
     # transaction call will return  either {:ok, _} or {:error, _}. In the case of the {:ok, _} Oban
     # marks the job as completed.  In the case of an error, it scheduled it for a retry.
-    Repo.transaction(fn ->
 
-      attrs_list = Enum.reduce(results, [], fn {part_attempt, _, _, _, _, activity_revision} = result, all_bulk_attrs ->
-        # Look at the attached objectives for that part for that revision
-        attached_objectives = Map.get(activity_revision.objectives, part_attempt.part_id, [])
+    case Repo.transaction(fn ->
+           # First execute the v2 pipeline. If it fails it will rollback the transaction and the job will
+           # be retried.
+           {:ok, %Pipeline{data: attempt_group}} =
+             if with_v2_support do
+               Oli.Analytics.Summary.execute_analytics_pipeline(results, project_id, host_name())
+             else
+               {:ok, %Pipeline{data: nil}}
+             end
 
-        bulk_attrs = case attached_objectives do
-          # If there are no attached objectives, create one record recoring nils for the objectives
-          [] -> [to_attrs(result, nil, nil, project_id)]
+           attrs_list =
+             Enum.reduce(results, [], fn {part_attempt, _, _, _, _, activity_revision} = result,
+                                         all_bulk_attrs ->
+               # Look at the attached objectives for that part for that revision
+               attached_objectives =
+                 Map.get(activity_revision.objectives, part_attempt.part_id, [])
 
-          # Otherwise create one record for each objective, careful to dedupe in the event that
-          # somehow a part has objectives duplicated
-          objective_ids ->
-            MapSet.new(objective_ids)
-            |> MapSet.to_list()
-            |> Enum.map(fn id ->
-              to_attrs(result, id, Map.get(objective_revisions_by_id, id), project_id)
-            end)
+               bulk_attrs =
+                 case attached_objectives do
+                   # If there are no attached objectives, create one record recoring nils for the objectives
+                   [] ->
+                     [to_attrs(result, nil, nil, project_id)]
+
+                   # Otherwise create one record for each objective, careful to dedupe in the event that
+                   # somehow a part has objectives duplicated
+                   objective_ids ->
+                     MapSet.new(objective_ids)
+                     |> MapSet.to_list()
+                     |> Enum.map(fn id ->
+                       to_attrs(result, id, Map.get(objective_revisions_by_id, id), project_id)
+                     end)
+                 end
+
+               bulk_attrs ++ all_bulk_attrs
+             end)
+
+           Repo.insert_all(Snapshot, attrs_list)
+           attempt_group
+         end) do
+      {:ok, attempt_group} ->
+        if with_v2_support and attempt_group != nil and Application.get_env(:oli, :env) != :test do
+          # In case the Repo.transaction succeeds, we have to schedule
+          # the job to upload the snapshot details to S3.
+          # But we do not want the unprobable oban job insertion error
+          # to trigger the execution of this whole worker again
+          # (which will involve re running the Repo.transaction)
+          # so we wrap the insertion in an async supervised task.
+          # This task will not be spawned for test environment.
+
+          Task.Supervisor.start_child(Oli.TaskSupervisor, fn ->
+            body =
+              StatementFactory.to_statements(attempt_group)
+              |> Oli.Analytics.Common.to_jsonlines()
+
+            bundle_id = create_bundle_id(attempt_group)
+
+            partition_id = attempt_group.context.section_id
+
+            %{body: body, bundle_id: bundle_id, partition_id: partition_id}
+            |> S3UploaderWorker.new()
+            |> Oban.insert()
+          end)
         end
 
-        bulk_attrs ++ all_bulk_attrs
-      end)
+        {:ok, attempt_group}
 
-      Repo.insert_all(Snapshot, attrs_list)
-    end)
+      {:error, error} ->
+        {:error, error}
+    end
+  end
+
+  defp create_bundle_id(attempt_group) do
+    guids =
+      Enum.map(attempt_group.part_attempts, fn part_attempt ->
+        part_attempt.attempt_guid
+      end)
+      |> Enum.join(",")
+
+    :crypto.hash(:md5, guids)
+    |> Base.encode16()
+  end
+
+  defp host_name() do
+    Application.get_env(:oli, OliWeb.Endpoint)
+    |> Keyword.get(:url)
+    |> Keyword.get(:host)
   end
 
   def to_attrs(
