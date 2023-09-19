@@ -61,6 +61,7 @@ defmodule Oli.Publishing.DeliveryResolver do
       where:
         rs.section_id == ^section_id and rs.resource_id == ^page.resource_id and
           rs.user_id in ^student_ids,
+      distinct: rs.user_id,
       select: rs.user_id
     )
     |> Repo.all()
