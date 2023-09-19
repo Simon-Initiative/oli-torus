@@ -222,6 +222,10 @@ defmodule OliWeb.Router do
     plug(Oli.Plugs.EnsureUserSectionVisit)
   end
 
+  pipeline :redirect_to_preview_if_is_admin do
+    plug(Oli.Plugs.RedirectIfIsAdmin)
+  end
+
   ### HELPERS ###
 
   defp put_pow_mailer_layout(conn, layout), do: put_private(conn, :pow_mailer_layouts, layout)
@@ -923,6 +927,7 @@ defmodule OliWeb.Router do
       :require_section,
       :delivery,
       :require_exploration_pages,
+      :redirect_to_preview_if_is_admin,
       :delivery_protected,
       :maybe_gated_resource,
       :enforce_enroll_and_paywall,
