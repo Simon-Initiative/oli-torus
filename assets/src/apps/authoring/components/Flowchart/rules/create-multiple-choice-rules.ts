@@ -124,7 +124,7 @@ export const generateMultipleChoiceRules = (
   ];
 
   const blankCondition: ICondition = createCondition(
-    `stage.${question.id}.selectedChoice`,
+    `stage.${question.id}.numberOfSelectedChoices`,
     '0',
     'equal',
   );
@@ -138,6 +138,7 @@ export const generateMultipleChoiceRules = (
         destinationId: getSequenceIdFromDestinationPath(path, sequence),
       })),
       disableAction,
+      blankCondition,
     );
   }
 
