@@ -134,7 +134,11 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
 
     socket =
       if socket.assigns.current_assessment != nil,
-        do: assign_selected_activity(socket, params[:selected_activity]),
+        do:
+          assign_selected_activity(
+            socket,
+            params[:selected_activity] && String.to_integer(params[:selected_activity])
+          ),
         else: socket
 
     {:ok, socket}
@@ -373,17 +377,26 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
         socket
 
       rows ->
-        assign_selected_activity(socket, hd(rows).resource_id |> Integer.to_string())
+        assign_selected_activity(socket, hd(rows).resource_id)
     end
   end
 
   defp assign_selected_activity(socket, selected_activity_id) do
+    selected_activity =
+      Enum.find(socket.assigns.activities, fn a ->
+        a.resource_id == selected_activity_id
+      end)
+
     table_model =
       Map.merge(socket.assigns.table_model, %{
-        selected: selected_activity_id
+        selected: "#{selected_activity_id}"
       })
 
-    case get_activity_attempt(selected_activity_id, socket.assigns.section.id) do
+    case get_activity_details(
+           selected_activity,
+           socket.assigns.section.id,
+           socket.assigns.activity_types_map
+         ) do
       nil ->
         socket
         |> assign(table_model: table_model)
@@ -621,7 +634,7 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
     end)
   end
 
-  defp get_activity_attempt(selected_activity_id, section_id) do
+  defp get_activity_details(selected_activity, section_id, activity_types_map) do
     query =
       ActivityAttempt
       |> join(:left, [aa], resource_attempt in ResourceAttempt,
@@ -640,7 +653,7 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
       |> where(
         [aa, _resource_attempt, resource_access, _u, activity_revision, _resource_revision],
         resource_access.section_id == ^section_id and
-          activity_revision.resource_id == ^selected_activity_id
+          activity_revision.resource_id == ^selected_activity.resource_id
       )
       |> order_by([aa, _, _, _, _, _], desc: aa.inserted_at)
       |> limit(1)
@@ -661,6 +674,41 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
         }
       )
 
-    Repo.one(query)
+    multiple_choice_type_id =
+      Enum.find(activity_types_map, fn {k, v} -> v.title == "Multiple Choice" end)
+      |> elem(0)
+
+    single_response_type_id =
+      Enum.find(activity_types_map, fn {k, v} -> v.title == "Single Response" end)
+      |> elem(0)
+
+    case Repo.one(query) do
+      nil ->
+        nil
+
+      %{activity_type_id: activity_type_id} = activity_attempt
+      when activity_type_id == multiple_choice_type_id ->
+        # TODO get real choices frequencies
+
+        choices =
+          activity_attempt.transformed_model["choices"]
+          |> Enum.map(fn choice ->
+            Map.merge(choice, %{"frequency" => Enum.random(1..10)})
+          end)
+
+        update_in(
+          activity_attempt,
+          [Access.key!(:transformed_model)],
+          &Map.put(&1, "choices", choices)
+        )
+
+      %{activity_type_id: activity_type_id} = activity_attempt
+      when activity_type_id == single_response_type_id ->
+        # TODO add single response details
+        activity_attempt
+
+      activity_attempt ->
+        activity_attempt
+    end
   end
 end
