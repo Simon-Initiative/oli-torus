@@ -28,6 +28,7 @@ export const ScheduleEditor: React.FC<SchedulerProps> = ({
   display_curriculum_item_numbering,
   wizard_mode,
   edit_section_details_url,
+  preferred_scheduling_time,
 }) => {
   const dispatch = useDispatch();
 
@@ -69,6 +70,7 @@ export const ScheduleEditor: React.FC<SchedulerProps> = ({
         title,
         section_slug,
         display_curriculum_item_numbering,
+        preferred_scheduling_time,
       }),
     );
   }, [dispatch, display_curriculum_item_numbering, end_date, section_slug, start_date, title]);

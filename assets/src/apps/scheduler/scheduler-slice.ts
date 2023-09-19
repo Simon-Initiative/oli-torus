@@ -49,6 +49,11 @@ export interface SchedulerState {
   sectionSlug: string;
   errorMessage: string | null;
   weekdays: boolean[];
+  preferredSchedulingTime: {
+    hour: number;
+    minute: number;
+    second: number;
+  };
 }
 
 export const initSchedulerState = (): SchedulerState => ({
@@ -64,6 +69,11 @@ export const initSchedulerState = (): SchedulerState => ({
   sectionSlug: '',
   errorMessage: null,
   weekdays: [false, true, true, true, true, true, false],
+  preferredSchedulingTime: {
+    hour: 23,
+    minute: 59,
+    second: 59,
+  },
 });
 
 const toDateTime = (str: string) => {
@@ -198,7 +208,13 @@ const schedulerSlice = createSlice({
           mutableItem.startDateTime.setFullYear(action.payload.startDate.getFullYear());
           mutableItem.startDateTime.setMonth(action.payload.startDate.getMonth());
           mutableItem.startDateTime.setDate(action.payload.startDate.getDate());
-          mutableItem.startDateTime.setHours(23, 59, 59, 0);
+
+          mutableItem.startDateTime.setHours(
+            state.preferredSchedulingTime.hour,
+            state.preferredSchedulingTime.minute,
+            state.preferredSchedulingTime.second,
+            0,
+          );
         }
 
         /*
@@ -233,7 +249,12 @@ const schedulerSlice = createSlice({
             mutableItem.endDateTime.setFullYear(action.payload.endDate.getFullYear());
             mutableItem.endDateTime.setMonth(action.payload.endDate.getMonth());
             mutableItem.endDateTime.setDate(action.payload.endDate.getDate());
-            mutableItem.endDateTime.setHours(23, 59, 59, 0);
+            mutableItem.endDateTime.setHours(
+              state.preferredSchedulingTime.hour,
+              state.preferredSchedulingTime.minute,
+              state.preferredSchedulingTime.second,
+              0,
+            );
           } else {
             mutableItem.endDateTime = null;
           }
@@ -250,6 +271,7 @@ const schedulerSlice = createSlice({
             state.schedule,
             false,
             state.weekdays,
+            state.preferredSchedulingTime,
           );
 
           state.dirty.push(...descendentIds(mutableItem, state.schedule));
@@ -274,6 +296,7 @@ const schedulerSlice = createSlice({
             state.schedule,
             true,
             action.payload.weekdays,
+            state.preferredSchedulingTime,
           );
         state.dirty = state.schedule.map((item) => item.id);
       }
@@ -314,9 +337,18 @@ const schedulerSlice = createSlice({
         display_curriculum_item_numbering,
         schedule,
         section_slug,
+        preferred_scheduling_time,
       } = action.payload;
       state.appLoading = true;
       state.title = title;
+      const preferredTimeString = preferred_scheduling_time || '23:59:59';
+      const preferredTimeParts = preferredTimeString.split(':');
+      state.preferredSchedulingTime = {
+        hour: parseInt(preferredTimeParts[0]),
+        minute: parseInt(preferredTimeParts[1]),
+        second: parseInt(preferredTimeParts[2]),
+      };
+
       state.displayCurriculumItemNumbering = display_curriculum_item_numbering;
       state.startDate = new DateWithoutTime(start_date);
       state.endDate = new DateWithoutTime(end_date);
@@ -332,6 +364,7 @@ const schedulerSlice = createSlice({
             state.schedule,
             true,
             state.weekdays,
+            state.preferredSchedulingTime,
           );
         state.dirty = state.schedule.map((item) => item.id);
       }
