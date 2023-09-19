@@ -4,6 +4,8 @@ defmodule Oli.Analytics.RawAnalyticsExportWorker do
     priority: 3,
     max_attempts: 1
 
+  require Logger
+
   alias Oli.Utils
   alias Oli.Authoring.Broadcaster
   alias Oli.Authoring.Course
@@ -11,7 +13,13 @@ defmodule Oli.Analytics.RawAnalyticsExportWorker do
   @impl Oban.Worker
   def perform(%Oban.Job{args: %{"project_slug" => project_slug} = _args}) do
     try do
-      generate(project_slug)
+      {full_upload_url, timestamp} = generate(project_slug)
+
+      # notify subscribers that the export is available
+      Broadcaster.broadcast_analytics_export_status(
+        project_slug,
+        {:available, full_upload_url, timestamp}
+      )
     rescue
       e ->
         # notify subscribers that the export failed
@@ -20,13 +28,16 @@ defmodule Oli.Analytics.RawAnalyticsExportWorker do
           {:error, e}
         )
 
-        raise e
+        Logger.error(Exception.format(:error, e, __STACKTRACE__))
+        reraise e, __STACKTRACE__
     end
 
     :ok
   end
 
   def generate(project_slug) do
+    timestamp = DateTime.utc_now()
+
     # create file and prepare for streaming data to it
     full_upload_url =
       Utils.use_tmp(fn tmp_dir ->
@@ -41,9 +52,9 @@ defmodule Oli.Analytics.RawAnalyticsExportWorker do
         # zip up the files
         random_string = Oli.Utils.random_string(16)
 
-        {:ok, timestamp} = DateTime.utc_now() |> Timex.format("%Y-%m-%d-%H%M%S", :strftime)
+        {:ok, file_timestamp} = timestamp |> Timex.format("%Y-%m-%d-%H%M%S", :strftime)
 
-        filename = "analytics_#{project_slug}_#{timestamp}.zip"
+        filename = "analytics_#{project_slug}_#{file_timestamp}.zip"
 
         zip_filepath = Path.join([tmp_dir, filename])
         {:ok, filepath} = :zip.create(zip_filepath, files, cwd: tmp_dir)
@@ -58,14 +69,9 @@ defmodule Oli.Analytics.RawAnalyticsExportWorker do
       end)
 
     # update the project's last_exported_at timestamp
-    timestamp = DateTime.utc_now()
     Course.update_project_latest_analytics_snapshot_url(project_slug, full_upload_url, timestamp)
 
-    # notify subscribers that the export is available
-    Broadcaster.broadcast_analytics_export_status(
-      project_slug,
-      {:available, full_upload_url, timestamp}
-    )
+    {full_upload_url, timestamp}
   end
 
   def write_raw_snapshot_data(project_slug, tmp_dir) do

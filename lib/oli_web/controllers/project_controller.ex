@@ -3,7 +3,6 @@ defmodule OliWeb.ProjectController do
 
   alias Oli.Authoring.Course
   alias Oli.Qa
-  alias Oli.Analytics.Datashop
   alias OliWeb.Common.Breadcrumb
   alias Oli.Authoring.Clone
 
@@ -40,15 +39,6 @@ defmodule OliWeb.ProjectController do
         |> put_flash(:error, "Could not create project. Please try again")
         |> redirect(to: Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.ProjectsLive))
     end
-  end
-
-  def download_datashop(conn, _project_params) do
-    project = conn.assigns.project
-
-    conn
-    |> send_download({:binary, Datashop.export(project.id)},
-      filename: "Datashop_#{project.slug}.xml"
-    )
   end
 
   def download_export(conn, _project_params) do
