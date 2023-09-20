@@ -125,6 +125,7 @@ export class PageEditor extends React.Component<PageEditorProps, PageEditorState
   mousedownListener: any;
   mouseupListener: any;
   windowBlurListener: any;
+  editorsRef: React.RefObject<HTMLDivElement> = React.createRef();
 
   constructor(props: PageEditorProps) {
     super(props);
@@ -549,6 +550,12 @@ export class PageEditor extends React.Component<PageEditorProps, PageEditorState
       </button>
     );
 
+    const dismissMessage = (msg: any) =>
+      this.setState({
+        messages: this.state.messages.filter((m) => msg.guid !== m.guid),
+      });
+    const executeAction = (message: any, action: any) => action.execute(message);
+
     return (
       <React.StrictMode>
         <AppsignalContext.Provider value={this.state.appsignal}>
@@ -560,18 +567,18 @@ export class PageEditor extends React.Component<PageEditorProps, PageEditorState
                 <UndoToasts undoables={this.state.undoables} onInvokeUndo={this.onInvokeUndo} />
 
                 <Banner
-                  dismissMessage={(msg: any) =>
-                    this.setState({
-                      messages: this.state.messages.filter((m) => msg.guid !== m.guid),
-                    })
-                  }
-                  executeAction={(message: any, action: any) => action.execute(message)}
+                  dismissMessage={dismissMessage}
+                  executeAction={executeAction}
                   messages={this.state.messages}
                 />
                 <TitleBar
                   title={state.title}
                   onTitleEdit={onTitleEdit}
                   editMode={this.state.editMode}
+                  parent={this.editorsRef.current}
+                  dismissMessage={dismissMessage}
+                  executeAction={executeAction}
+                  messages={this.state.messages}
                 >
                   <PersistenceStatus persistence={this.state.persistence} />
 
@@ -601,6 +608,7 @@ export class PageEditor extends React.Component<PageEditorProps, PageEditorState
                     />
                     <Editors
                       {...props}
+                      editorsRef={this.editorsRef}
                       editMode={this.state.editMode}
                       objectives={this.state.allObjectives}
                       allTags={this.state.allTags}
