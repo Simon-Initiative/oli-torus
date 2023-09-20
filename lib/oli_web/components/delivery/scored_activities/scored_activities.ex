@@ -692,12 +692,41 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
 
       %{activity_type_id: activity_type_id} = activity_attempt
       when activity_type_id == single_response_type_id ->
-        # TODO add single response details
-        activity_attempt
+        add_single_response_details(activity_attempt, section_id)
 
       activity_attempt ->
         activity_attempt
     end
+  end
+
+  defp add_single_response_details(activity_attempt, _section_id) do
+    # TODO get real responses
+
+    responses =
+      [
+        %{
+          text:
+            "Some response Lorem ipsum dolor sit amet consectetur adipisicing elit. Facere eaque repellat aspernatur corrupti minima illo impedit magni quisquam quibusdam mollitia, ipsam assumenda laborum alias eius doloribus nihil beatae deleniti quo? Lorem ipsum dolor sit amet consectetur adipisicing elit. Dolore aliquid in culpa. Vero fuga quisquam deleniti facere dolorum delectus nulla maxime quaerat maiores praesentium? Magni, rem suscipit! Rerum, quos sed.",
+          user_name: "Lionel Messi"
+        },
+        %{
+          text:
+            "Some response Lorem ipsum dolor sit amet consectetur adipisicing elit. Facere eaque repellat aspernatur corrupti minima illo impedit magni quisquam quibusdam mollitia, ipsam assumenda laborum alias eius doloribus nihil beatae deleniti quo? Lorem ipsum dolor sit amet consectetur adipisicing elit. Dolore aliquid in culpa. Vero fuga quisquam deleniti facere dolorum delectus nulla maxime quaerat maiores praesentium? Magni, rem suscipit! Rerum, quos sed.",
+          user_name: "Angel Di Maria"
+        },
+        %{
+          text:
+            "Some response from the GOAT Some response Lorem ipsum dolor sit amet consectetur adipisicing elit. Facere eaque repellat aspernatur corrupti minima illo impedit magni quisquam quibusdam mollitia, ipsam assumenda laborum alias eius doloribus nihil beatae deleniti quo? Lorem ipsum dolor sit amet consectetur adipisicing elit. Dolore aliquid in culpa. Vero fuga quisquam deleniti facere dolorum delectus nulla maxime quaerat maiores praesentium? Magni, rem suscipit! Rerum, quos sed.",
+          user_name: "Lionel Messi"
+        }
+      ]
+      |> Enum.sort_by(fn response -> response.user_name end)
+
+    update_in(
+      activity_attempt,
+      [Access.key!(:revision), Access.key!(:content)],
+      &Map.put(&1, "responses", responses)
+    )
   end
 
   defp add_choices_frequencies(activity_attempt, section_id) do
