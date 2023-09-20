@@ -153,7 +153,8 @@ config :oli, Oban,
     updates: 10,
     grades: 30,
     auto_submit: 3,
-    analytics_export: 3
+    analytics_export: 3,
+    datashop_export: 3
   ]
 
 config :ex_money,
