@@ -372,6 +372,45 @@ defmodule Oli.Utils do
   end
 
   @doc """
+  Creates a temporary directory and calls the given function with the file path as an argument.
+  The directory will be deleted after the function returns.
+
+  If type: :file is passed, the function will create a temporary file instead of a directory.
+  """
+  def use_tmp(func, opts \\ []) do
+    # create tmp file
+    tmp_path =
+      Path.join([
+        System.tmp_dir!(),
+        uuid()
+      ])
+
+    if Keyword.get(opts, :type) == :file do
+      File.touch!(tmp_path)
+    else
+      File.mkdir!(tmp_path)
+    end
+
+    # ensure the file will get cleaned up even if the function fails
+    result =
+      try do
+        func.(tmp_path)
+      rescue
+        e ->
+          # cleanup
+          File.rm_rf!(tmp_path)
+
+          Logger.error(Exception.format(:error, e, __STACKTRACE__))
+          reraise e, __STACKTRACE__
+      end
+
+    # cleanup
+    File.rm_rf!(tmp_path)
+
+    result
+  end
+
+  @doc """
   Converts an atom into a readable string by replacing underscores with empty spaces.
   """
   def stringify_atom(atom), do: atom |> Atom.to_string() |> String.replace("_", " ")

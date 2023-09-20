@@ -786,7 +786,7 @@ defmodule Oli.DatashopTest do
         ]
         |> Enum.map(& &1.attempt_guid)
 
-      Oli.Delivery.Snapshots.Worker.perform_now(part_attempt_guids, map.section.slug)
+      Oli.Delivery.Snapshots.Worker.perform_now(part_attempt_guids, map.section.slug, false)
 
       Map.put(map, :datashop_file, Datashop.export(map.project.id))
     end
@@ -911,7 +911,8 @@ defmodule Oli.DatashopTest do
 
       Oli.Delivery.Snapshots.Worker.perform_now(
         [map.mc_user1_part_attempt_x.attempt_guid],
-        map.section.slug
+        map.section.slug,
+        false
       )
 
       count_with_new_snapshot =

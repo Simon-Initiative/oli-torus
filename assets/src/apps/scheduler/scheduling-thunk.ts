@@ -27,7 +27,9 @@ export const scheduleAppFlushChanges = createAsyncThunk(
         const item = getScheduleItem(id, schedule);
         if (!item) return null;
         return {
-          start_date: dateWithoutTimeLabel(item.startDate),
+          start_date: item.graded
+            ? dateTimeInTorusFormat(item.startDateTime)
+            : dateWithoutTimeLabel(item.startDate),
           end_date:
             item.scheduling_type === 'due_by'
               ? dateTimeInTorusFormat(item.endDateTime) // For due-by we need the time as well as the date.

@@ -8,8 +8,17 @@ defmodule Oli.Analytics.Common do
   alias Oli.Delivery.Attempts.Core.{PartAttempt, ActivityAttempt}
   alias Oli.Activities
   alias OliWeb.Common.FormatDateTime
+  alias Oli.Activities.ActivityRegistration
 
-  def snapshots_for_project(project_slug) do
+  @doc """
+  Take an enumeration of maps of data and return a JSON Lines compatible string.
+  """
+  def to_jsonlines(maps) do
+    Enum.map(maps, fn m -> Jason.encode!(m) end)
+    |> Enum.join("\n")
+  end
+
+  def stream_project_raw_analytics_to_file!(project_slug, append_to_filepath) do
     objectives_map =
       from(project in Project,
         where: project.slug == ^project_slug,
@@ -17,7 +26,7 @@ defmodule Oli.Analytics.Common do
         on: snapshot.project_id == project.id,
         join: objective in Revision,
         on: snapshot.objective_revision_id == objective.id,
-        group_by: [snapshot.objective_revision_id],
+        group_by: [snapshot.objective_revision_id, objective.title, objective.resource_id],
         select: {
           snapshot.objective_revision_id,
           objective.title,
@@ -35,23 +44,36 @@ defmodule Oli.Analytics.Common do
         join: snapshot in Snapshot,
         on: snapshot.project_id == project.id,
         join: activity in Revision,
-        on: snapshot.activity_revision_id == activity.id,
-        group_by: [snapshot.activity_revision_id],
-        select: {
-          snapshot.activity_revision_id,
+        on: snapshot.revision_id == activity.id,
+        group_by: [
+          snapshot.revision_id,
           activity.title,
           activity.resource_id,
           activity.activity_type_id,
+          activity.content
+        ],
+        select: {
+          snapshot.revision_id,
+          activity.title,
+          activity.resource_id,
+          activity.activity_type_id,
+          activity.content
         }
       )
       |> Repo.all()
-      |> Enum.reduce(%{}, fn {revision_id, title, resource_id, type_id}, acc ->
-        Map.put(acc, revision_id, %{title: title, resource_id: resource_id, type_id: type_id})
+      |> Enum.reduce(%{}, fn {revision_id, title, resource_id, activity_type_id, content}, acc ->
+        Map.put(acc, revision_id, %{
+          title: title,
+          resource_id: resource_id,
+          activity_type_id: activity_type_id,
+          content: content
+        })
       end)
 
-    activity_registration_map = Activities.list_activity_registrations()
-      |> Enum.reduce(%{}, fn {activity_id, registration_id}, acc ->
-        Map.put(acc, activity_id, registration_id)
+    activity_registration_map =
+      Activities.list_activity_registrations()
+      |> Enum.reduce(%{}, fn %ActivityRegistration{id: id} = registration, acc ->
+        Map.put(acc, id, registration)
       end)
 
     sections_map =
@@ -61,7 +83,7 @@ defmodule Oli.Analytics.Common do
         on: snapshot.project_id == project.id,
         join: section in Section,
         on: snapshot.section_id == section.id,
-        group_by: [snapshot.section_id],
+        group_by: [snapshot.section_id, section.title, section.slug],
         select: {
           snapshot.section_id,
           section.title,
@@ -108,60 +130,72 @@ defmodule Oli.Analytics.Common do
         )
       )
       |> Stream.map(fn {
-          snapshot_part_attempt_id,
-          snapshot_revision_id,
-          snapshot_objective_revision_id,
-          snapshot_activity_id,
-          snapshot_resource_id,
-          snapshot_attempt_number,
-          snapshot_graded,
-          snapshot_correct,
-          snapshot_score,
-          snapshot_out_of,
-          snapshot_hints,
-          snapshot_inserted_at,
-          snapshot_user_id,
-          snapshot_section_id,
-          part_attempt_score,
-          part_attempt_out_of,
-          part_attempt_response,
-          part_attempt_feedback,
-          part_attempt_activity_attempt_id,
-          activity_attempt_resource_attempt_id
-      } ->
+                         snapshot_part_attempt_id,
+                         snapshot_revision_id,
+                         snapshot_objective_revision_id,
+                         snapshot_activity_id,
+                         snapshot_resource_id,
+                         snapshot_attempt_number,
+                         snapshot_graded,
+                         snapshot_correct,
+                         snapshot_score,
+                         snapshot_out_of,
+                         snapshot_hints,
+                         snapshot_inserted_at,
+                         snapshot_user_id,
+                         snapshot_section_id,
+                         part_attempt_score,
+                         part_attempt_out_of,
+                         part_attempt_response,
+                         part_attempt_feedback,
+                         part_attempt_activity_attempt_id,
+                         activity_attempt_resource_attempt_id
+                       } ->
         objective = Map.get(objectives_map, snapshot_objective_revision_id)
         activity = Map.get(activities_map, snapshot_revision_id)
         activity_registration = Map.get(activity_registration_map, activity.activity_type_id)
         section = Map.get(sections_map, snapshot_section_id)
 
         [
-          snapshot_part_attempt_id,
-          snapshot_activity_id,
-          snapshot_resource_id,
-          objective.resource_id,
-          activity.title,
-          activity_registration.title,
-          objective.title,
-          snapshot_attempt_number,
-          snapshot_graded,
-          snapshot_correct,
-          snapshot_score,
-          snapshot_out_of,
-          snapshot_hints,
-          part_attempt_score,
-          part_attempt_out_of,
-          Jason.encode_to_iodata!(part_attempt_response),
-          Jason.encode_to_iodata!(part_attempt_feedback),
-          Jason.encode_to_iodata!(activity.content),
-          section.title,
-          section.slug,
-          FormatDateTime.date(snapshot_inserted_at),
-          snapshot_user_id,
-          part_attempt_activity_attempt_id,
-          activity_attempt_resource_attempt_id
+          [
+            snapshot_part_attempt_id,
+            snapshot_activity_id,
+            snapshot_resource_id,
+            safe_get(objective, :resource_id),
+            activity.title,
+            activity_registration.title,
+            safe_get(objective, :title),
+            snapshot_attempt_number,
+            snapshot_graded,
+            snapshot_correct,
+            snapshot_score,
+            snapshot_out_of,
+            snapshot_hints,
+            part_attempt_score,
+            part_attempt_out_of,
+            Jason.encode_to_iodata!(part_attempt_response),
+            Jason.encode_to_iodata!(part_attempt_feedback),
+            Jason.encode_to_iodata!(activity.content),
+            section.title,
+            section.slug,
+            FormatDateTime.date(snapshot_inserted_at),
+            snapshot_user_id,
+            part_attempt_activity_attempt_id,
+            activity_attempt_resource_attempt_id
+          ]
         ]
+        |> CSV.encode(separator: ?\t)
+        |> Enum.map(&File.write!(append_to_filepath, &1, [:append]))
       end)
+      |> Stream.run()
     end)
+  end
+
+  defp safe_get(map, key, default \\ nil) do
+    case map do
+      nil -> nil
+      map -> Map.get(map, key, default)
+    end
   end
 
   def analytics_by_activity(project_slug) do
@@ -284,7 +318,7 @@ defmodule Oli.Analytics.Common do
                 correctness.is_eventually_correct
               )
             ) /
-             fragment("count(distinct (?,?))", correctness.user_id, correctness.activity_id),
+              fragment("count(distinct (?,?))", correctness.user_id, correctness.activity_id),
           first_try_correct_ratio:
             sum(
               fragment(

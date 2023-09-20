@@ -641,6 +641,7 @@ defmodule Oli.Delivery.AttemptsTest do
       } =
         Seeder.base_project_with_resource2()
         |> Seeder.create_section()
+        |> Seeder.create_section_resources()
         |> Seeder.add_user(%{}, :user1)
         |> Seeder.add_user(%{}, :user2)
         |> Seeder.add_activity(

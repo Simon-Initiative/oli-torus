@@ -1,4 +1,4 @@
-defmodule OliWeb.Project.OverviewSection do
+defmodule OliWeb.Components.Overview do
   use Phoenix.Component
 
   slot :inner_block, required: true
@@ -6,7 +6,7 @@ defmodule OliWeb.Project.OverviewSection do
   attr :description, :string, required: false
   attr :is_last, :boolean, required: false
 
-  def render(assigns) do
+  def section(assigns) do
     ~H"""
     <div class={"grid grid-cols-12 py-5 #{if !assigns[:is_last], do: "border-b dark:border-gray-700"}"}>
       <div class="col-span-4 mr-4">

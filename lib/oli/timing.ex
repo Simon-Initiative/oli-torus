@@ -33,8 +33,17 @@ defmodule Oli.Timing do
 
   """
   def emit({time, return_result}, tags, measurement_atom) do
-    :telemetry.execute(tags, Map.put(%{}, measurement_atom, time / 1000))
+    :telemetry.execute(tags, Map.put(%{}, measurement_atom, time))
 
     return_result
   end
+
+  def mark() do
+    System.monotonic_time()
+  end
+
+  def elapsed(start_time) do
+    System.monotonic_time() - start_time
+  end
+
 end

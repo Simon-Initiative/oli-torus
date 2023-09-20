@@ -147,6 +147,20 @@ export const resetScheduleItem = (
         child.startDate = new DateWithoutTime(end.getDaysSinceEpoch());
       }
 
+      if (child.startDate) {
+        child.startDateTime = new Date(
+          child.startDate.getFullYear(),
+          child.startDate.getMonth(),
+          child.startDate.getDate(),
+          23,
+          59,
+          59,
+          999,
+        );
+      } else {
+        child.startDateTime = null;
+      }
+
       child.endDateTime = new Date(
         child.endDate.getFullYear(),
         child.endDate.getMonth(),

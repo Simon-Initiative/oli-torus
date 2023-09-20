@@ -1,6 +1,7 @@
 import { createSlice } from '@reduxjs/toolkit';
 import type { PayloadAction } from '@reduxjs/toolkit';
 import { DateWithoutTime } from 'epoq';
+import { toDateWithoutTime } from './date-utils';
 import { resetScheduleItem } from './schedule-reset';
 import { scheduleAppFlushChanges, scheduleAppStartup } from './scheduling-thunk';
 
@@ -32,6 +33,7 @@ export interface HierarchyItem extends HierarchyItemSrc {
   startDate: DateWithoutTime | null;
   endDate: DateWithoutTime | null;
   endDateTime: Date | null; // This is only used for the due-by which includes a date and time.
+  startDateTime: Date | null; // This is only used for the available-from which includes a date and time.
 }
 
 export interface SchedulerState {
@@ -93,6 +95,7 @@ const buildHierarchyItems = (items: HierarchyItemSrc[]): HierarchyItem[] => {
     startDate: item.start_date ? new DateWithoutTime(item.start_date) : null,
     endDate: item.end_date ? new DateWithoutTime(item.end_date) : null,
     endDateTime: toDateTime(item.end_date),
+    startDateTime: toDateTime(item.start_date),
   }));
 };
 
@@ -100,7 +103,7 @@ const initialState = { schedule: [] as HierarchyItem[] } as SchedulerState;
 
 interface MovePayload {
   itemId: number;
-  startDate: DateWithoutTime | null;
+  startDate: Date | DateWithoutTime | null;
   endDate: Date | DateWithoutTime | null;
 }
 
@@ -165,8 +168,38 @@ const schedulerSlice = createSlice({
       const mutableItem = getScheduleItem(action.payload.itemId, state.schedule);
 
       if (mutableItem) {
-        let datesChanged = !datesEqual(mutableItem.startDate, action.payload.startDate);
-        mutableItem.startDate = action.payload.startDate;
+        let datesChanged = false;
+
+        /* If this is a graded item, the start date represents the available-from date, which needs both a
+           date and a time.
+        */
+        if (action.payload.startDate && 'getHours' in action.payload.startDate) {
+          // A Date passed in...
+          datesChanged =
+            datesChanged ||
+            !mutableItem.startDateTime ||
+            action.payload.startDate.getTime() !== mutableItem.startDateTime?.getTime();
+
+          mutableItem.startDateTime = action.payload.startDate;
+          mutableItem.startDate = toDateWithoutTime(action.payload.startDate);
+        } else if (!action.payload.startDate) {
+          // Null passed in...
+          datesChanged = datesChanged || mutableItem.startDate !== null;
+          mutableItem.startDate = null;
+          mutableItem.startDateTime = null;
+        } else {
+          // A DateWithoutTime passed in...
+          datesChanged =
+            datesChanged || !datesEqual(mutableItem.startDate, action.payload.startDate);
+
+          mutableItem.startDate = action.payload.startDate;
+
+          mutableItem.startDateTime = new Date();
+          mutableItem.startDateTime.setFullYear(action.payload.startDate.getFullYear());
+          mutableItem.startDateTime.setMonth(action.payload.startDate.getMonth());
+          mutableItem.startDateTime.setDate(action.payload.startDate.getDate());
+          mutableItem.startDateTime.setHours(23, 59, 59, 0);
+        }
 
         /*
           scheduling_type === 'due_by' uses a Date and all other scheduling types use a DateWithoutTime for endDate

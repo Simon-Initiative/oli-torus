@@ -1,12 +1,17 @@
 defmodule OliWeb.Insights do
   use OliWeb, :live_view
 
+  alias Oli.Publishing
   alias OliWeb.Insights.{TableHeader, TableRow}
   alias Oli.Authoring.Course
-  alias Oli.Utils
-  alias CSV
+  alias OliWeb.Components.Project.AsyncExporter
+  alias Oli.Authoring.Broadcaster
+  alias Oli.Authoring.Broadcaster.Subscriber
+  alias OliWeb.Common.SessionContext
 
-  def mount(_params, %{"project_slug" => project_slug} = _session, socket) do
+  def mount(_params, %{"project_slug" => project_slug} = session, socket) do
+    ctx = SessionContext.init(socket, session)
+
     by_activity_rows = Oli.Analytics.ByActivity.query_against_project_slug(project_slug)
     project = Course.get_project_by_slug(project_slug)
 
@@ -14,8 +19,21 @@ defmodule OliWeb.Insights do
       Enum.map(by_activity_rows, fn r -> r.slice.resource_id end)
       |> parent_pages(project_slug)
 
+    latest_publication = Publishing.get_latest_published_publication_by_slug(project.slug)
+
+    {analytics_export_status, analytics_export_url, analytics_export_timestamp} =
+      case Course.analytics_export_status(project) do
+        {:available, url, timestamp} -> {:available, url, timestamp}
+        {:expired, _, _} -> {:expired, nil, nil}
+        {status} -> {status, nil, nil}
+      end
+
+    # Subscribe to any raw analytics snapshot progress updates for this project
+    Subscriber.subscribe_to_analytics_export_status(project.slug)
+
     {:ok,
      assign(socket,
+       ctx: ctx,
        project: project,
        by_page_rows: nil,
        by_activity_rows: by_activity_rows,
@@ -26,7 +44,11 @@ defmodule OliWeb.Insights do
        query: "",
        sort_by: "title",
        sort_order: :asc,
-       title: "Insights | " <> project.title
+       title: "Insights | " <> project.title,
+       latest_publication: latest_publication,
+       analytics_export_status: analytics_export_status,
+       analytics_export_url: analytics_export_url,
+       analytics_export_timestamp: analytics_export_timestamp
      )}
   end
 
@@ -62,6 +84,21 @@ defmodule OliWeb.Insights do
 
   def render(assigns) do
     ~H"""
+    <div class="mb-3">
+      <p>
+        Insights can help you improve your course by providing a statistical analysis of
+        the skills covered by each question to find areas where students are struggling.
+      </p>
+      <div class="d-flex align-items-center my-3">
+        <AsyncExporter.raw_analytics
+          ctx={@ctx}
+          latest_publication={@latest_publication}
+          analytics_export_status={@analytics_export_status}
+          analytics_export_url={@analytics_export_url}
+          analytics_export_timestamp={@analytics_export_timestamp}
+        />
+      </div>
+    </div>
     <ul class="nav nav-pills">
       <li class="nav-item my-2 mr-2">
         <button {is_disabled(@selected, :by_activity)} class="btn btn-primary" phx-click="by-activity">
@@ -285,6 +322,51 @@ defmodule OliWeb.Insights do
      end}
   end
 
+  def handle_event("generate_analytics_snapshot", _params, socket) do
+    project = socket.assigns.project
+
+    case Course.generate_analytics_snapshot(project) do
+      {:ok, _job} ->
+        Broadcaster.broadcast_analytics_export_status(project.slug, {:in_progress})
+
+        {:noreply, socket}
+
+      {:error, _changeset} ->
+        socket =
+          socket
+          |> put_flash(:error, "Raw analytics snapshot could not be generated.")
+
+        {:noreply, socket}
+    end
+  end
+
+  def handle_info(
+        {:analytics_export_status,
+         {:available, analytics_export_url, analytics_export_timestamp}},
+        socket
+      ) do
+    {:noreply,
+     assign(socket,
+       analytics_export_status: :available,
+       analytics_export_url: analytics_export_url,
+       analytics_export_timestamp: analytics_export_timestamp
+     )}
+  end
+
+  def handle_info(
+        {:analytics_export_status, {:error, _e}},
+        socket
+      ) do
+    {:noreply,
+     assign(socket,
+       analytics_export_status: :error
+     )}
+  end
+
+  def handle_info({:analytics_export_status, {status}}, socket) do
+    {:noreply, assign(socket, analytics_export_status: status)}
+  end
+
   def handle_info(:init_by_page, socket) do
     by_page_rows = Oli.Analytics.ByPage.query_against_project_slug(socket.assigns.project.slug)
 
@@ -341,124 +423,6 @@ defmodule OliWeb.Insights do
       []
     end
   end
-
-  def export(project) do
-    filenames =
-      ["raw_analytics.tsv", "by_page.tsv", "by_activity.tsv", "by_objective.tsv"]
-      # CSV Encoder expects charlists for filenames, not strings
-      |> Enum.map(&String.to_charlist(&1))
-
-    analytics =
-      raw_snapshot_data(project.slug)
-      |> Enum.concat(derived_analytics_data(project.slug))
-      |> Enum.map(&CSV.encode(&1, separator: ?\t))
-      |> Enum.map(&Enum.join(&1, ""))
-
-    Enum.zip(filenames, analytics)
-    # Convert to tuples of {filename, CSV table rows}
-    |> Enum.map(&{elem(&1, 0), elem(&1, 1)})
-    |> Utils.zip("analytics.zip")
-  end
-
-  def raw_snapshot_data(project_slug) do
-    snapshots_title_row = [
-      "Part Attempt ID",
-      "Activity ID",
-      "Page ID",
-      "Objective ID",
-      "Activity Title",
-      "Activity Type",
-      "Objective Title",
-      "Attempt Number",
-      "Graded?",
-      "Correct?",
-      "Activity Score",
-      "Activity Out Of",
-      "Hints Requested",
-      "Part Score",
-      "Part Out Of",
-      "Student Response",
-      "Feedback",
-      "Activity Content",
-      "Section Title",
-      "Section Slug",
-      "Date Created",
-      "Student ID",
-      "Activity Attempt ID",
-      "Resource Attempt ID"
-    ]
-
-    [
-      [
-        snapshots_title_row
-        | Oli.Analytics.Common.snapshots_for_project(project_slug)
-      ]
-    ]
-  end
-
-  def derived_analytics_data(project_slug) do
-    analytics_title_row = [
-      "Resource Title",
-      "Activity Title",
-      "Number of Attempts",
-      "Relative Difficulty",
-      "Eventually Correct",
-      "First Try Correct"
-    ]
-
-    [
-      Oli.Analytics.ByPage.query_against_project_slug(project_slug),
-      Oli.Analytics.ByActivity.query_against_project_slug(project_slug),
-      Oli.Analytics.ByObjective.query_against_project_slug(project_slug)
-    ]
-    |> Enum.map(&[analytics_title_row | extract_analytics(&1)])
-  end
-
-  def extract_analytics([
-        %{
-          slice: slice,
-          number_of_attempts: number_of_attempts,
-          relative_difficulty: relative_difficulty,
-          eventually_correct: eventually_correct,
-          first_try_correct: first_try_correct
-        } = h
-        | t
-      ]) do
-    [
-      [
-        slice.title,
-        case Map.get(h, :activity) do
-          nil -> slice.title
-          %{title: nil} -> slice.title
-          %{title: title} -> title
-          _ -> slice.title
-        end,
-        if is_nil(number_of_attempts) do
-          "No attempts"
-        else
-          Integer.to_string(number_of_attempts)
-        end,
-        if is_nil(relative_difficulty) do
-          ""
-        else
-          Float.to_string(truncate(relative_difficulty))
-        end,
-        if is_nil(eventually_correct) do
-          ""
-        else
-          format_percent(eventually_correct)
-        end,
-        if is_nil(first_try_correct) do
-          ""
-        else
-          format_percent(first_try_correct)
-        end
-      ]
-      | extract_analytics(t)
-    ]
-  end
-
-  def extract_analytics([]), do: []
 
   def truncate(float_or_nil) when is_nil(float_or_nil), do: nil
   def truncate(float_or_nil) when is_float(float_or_nil), do: Float.round(float_or_nil, 2)
