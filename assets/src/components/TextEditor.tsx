@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Button } from 'components/common/Buttons';
-import { TextInput } from 'components/common/inputs';
+import { TextInput } from 'components/common/Inputs';
 import { classNames } from 'utils/classNames';
 import { valueOr } from 'utils/common';
 
