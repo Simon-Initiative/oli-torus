@@ -54,7 +54,7 @@ export const TitleBar = (props: TitleBarProps) => {
         <div
           className={classNames(
             'flex-1 d-flex align-items-baseline',
-            showFloating && 'px-4 py-2 backdrop-blur-md bg-white/75 shadow-lg',
+            showFloating && 'px-4 py-2 backdrop-blur-md bg-body/75 dark:bg-body-dark/75 shadow-lg',
           )}
         >
           <div

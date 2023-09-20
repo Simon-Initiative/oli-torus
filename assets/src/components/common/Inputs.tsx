@@ -55,7 +55,7 @@ export const TextInput = ({
     <input
       ref={inputRef}
       className={classNames(
-        'rounded border border-gray-300 focus:ring-2 focus:ring-primary focus:outline-none',
+        'rounded border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-primary focus:outline-none',
         disabled && 'bg-gray-200 text-gray-400 dark:bg-gray-800 dark:text-gray-500',
         sizeClasses(size),
         className,
