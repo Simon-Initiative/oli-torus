@@ -1,5 +1,5 @@
 import React from 'react';
-import { useBoundingRect } from 'components/hooks/useBoundingRect';
+import { useBoundingClientRect } from 'components/hooks/useBoundingRect';
 import { useScrollPosition } from 'components/hooks/useScrollPosition';
 import { Banner } from 'components/messages/Banner';
 import { MessageAction, Message as Msg } from 'data/messages/messages';
@@ -36,7 +36,7 @@ export const TitleBar = (props: TitleBarProps) => {
     executeAction,
   } = props;
   const scrollPos = useScrollPosition();
-  const bounding = useBoundingRect(parent);
+  const bounding = useBoundingClientRect(parent, { triggerOnWindowResize: true });
 
   const showFloating = scrollPos > 300;
 
