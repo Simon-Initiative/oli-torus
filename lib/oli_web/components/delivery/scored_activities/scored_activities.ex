@@ -2,7 +2,15 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
   use Phoenix.LiveComponent
 
   import Ecto.Query
-  alias Oli.Analytics.Summary.{ResourceSummary, ResponseSummary}
+  alias Oli.Accounts.User
+
+  alias Oli.Analytics.Summary.{
+    ResourcePartResponse,
+    ResourceSummary,
+    ResponseSummary,
+    StudentResponse
+  }
+
   alias Oli.Publishing.PublishedResource
   alias Oli.Repo
 
@@ -699,28 +707,27 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
     end
   end
 
-  defp add_single_response_details(activity_attempt, _section_id) do
-    # TODO get real responses
-
+  defp add_single_response_details(activity_attempt, section_id) do
     responses =
-      [
-        %{
-          text:
-            "Some response Lorem ipsum dolor sit amet consectetur adipisicing elit. Facere eaque repellat aspernatur corrupti minima illo impedit magni quisquam quibusdam mollitia, ipsam assumenda laborum alias eius doloribus nihil beatae deleniti quo? Lorem ipsum dolor sit amet consectetur adipisicing elit. Dolore aliquid in culpa. Vero fuga quisquam deleniti facere dolorum delectus nulla maxime quaerat maiores praesentium? Magni, rem suscipit! Rerum, quos sed.",
-          user_name: "Lionel Messi"
-        },
-        %{
-          text:
-            "Some response Lorem ipsum dolor sit amet consectetur adipisicing elit. Facere eaque repellat aspernatur corrupti minima illo impedit magni quisquam quibusdam mollitia, ipsam assumenda laborum alias eius doloribus nihil beatae deleniti quo? Lorem ipsum dolor sit amet consectetur adipisicing elit. Dolore aliquid in culpa. Vero fuga quisquam deleniti facere dolorum delectus nulla maxime quaerat maiores praesentium? Magni, rem suscipit! Rerum, quos sed.",
-          user_name: "Angel Di Maria"
-        },
-        %{
-          text:
-            "Some response from the GOAT Some response Lorem ipsum dolor sit amet consectetur adipisicing elit. Facere eaque repellat aspernatur corrupti minima illo impedit magni quisquam quibusdam mollitia, ipsam assumenda laborum alias eius doloribus nihil beatae deleniti quo? Lorem ipsum dolor sit amet consectetur adipisicing elit. Dolore aliquid in culpa. Vero fuga quisquam deleniti facere dolorum delectus nulla maxime quaerat maiores praesentium? Magni, rem suscipit! Rerum, quos sed.",
-          user_name: "Lionel Messi"
-        }
-      ]
-      |> Enum.sort_by(fn response -> response.user_name end)
+      from(rs in ResponseSummary,
+        where:
+          rs.section_id == ^section_id and rs.activity_id == ^activity_attempt.resource_id and
+            rs.page_id == ^activity_attempt.page_id and
+            rs.publication_id == -1 and rs.project_id == -1,
+        join: rpp in ResourcePartResponse,
+        on: rs.resource_part_response_id == rpp.id,
+        join: sr in StudentResponse,
+        on:
+          rs.section_id == sr.section_id and rs.page_id == sr.page_id and
+            rs.resource_part_response_id == sr.resource_part_response_id,
+        join: u in User,
+        on: sr.user_id == u.id,
+        select: %{text: rpp.response, user: u}
+      )
+      |> Repo.all()
+      |> Enum.map(fn response ->
+        %{text: response.text, user_name: OliWeb.Common.Utils.name(response.user)}
+      end)
 
     update_in(
       activity_attempt,
