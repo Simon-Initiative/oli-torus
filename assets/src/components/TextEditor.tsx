@@ -1,4 +1,7 @@
 import React, { useEffect, useState } from 'react';
+import { Button } from 'components/common/Buttons';
+import { TextInput } from 'components/common/inputs';
+import { classNames } from 'utils/classNames';
 import { valueOr } from 'utils/common';
 
 export interface TextEditorProps {
@@ -65,39 +68,30 @@ export const TextEditor = (props: TextEditorProps) => {
   };
 
   const editingUI = () => {
-    const style = { marginTop: '5px', width: '90%', display: 'inline' };
-
-    const validity = !allowEmpty && !isValid(value) ? 'is-invalid' : '';
-    const size = props.size === 'large' ? 'form-control-lg' : '';
-    const inputClass = `form-control ${validity} ${size} flex-fill`;
-
     return (
-      <div data-slate-editor className="d-flex flex-grow-1">
-        <input
-          type="text"
-          className={inputClass}
+      <div data-slate-editor className="d-flex inline-flex flex-grow-1">
+        <TextInput
+          className={classNames('flex-1', !allowEmpty && isValid(value) ? 'is-invalid' : '')}
+          size="sm"
           onKeyUp={onKeyUp}
           onChange={onTextChange}
           value={value}
-          style={style}
+          autoSelect={true}
         />
-        <button
-          key="save"
-          onClick={onSave}
-          type="button"
-          disabled={!allowEmpty && !isValid(value)}
-          className="btn btn-primary btn-sm my-2 ml-2"
-        >
-          Save
-        </button>
-        <button
-          key="cancel"
-          onClick={onCancel}
-          type="button"
-          className="btn btn-outline-secondary btn-sm my-2 ml-2"
-        >
-          Cancel
-        </button>
+        <div className="whitespace-nowrap">
+          <Button
+            className="ml-2"
+            variant="primary"
+            size="sm"
+            onClick={onSave}
+            disabled={!allowEmpty && !isValid(value)}
+          >
+            Save
+          </Button>
+          <Button className="ml-1" variant="secondary" size="sm" onClick={onCancel}>
+            Cancel
+          </Button>
+        </div>
       </div>
     );
   };
