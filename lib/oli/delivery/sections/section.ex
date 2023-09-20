@@ -40,7 +40,12 @@ defmodule Oli.Delivery.Sections.Section do
 
     field(:visibility, Ecto.Enum, values: [:selected, :global], default: :global)
     field(:requires_payment, :boolean, default: false)
-    field(:payment_options, Ecto.Enum, values: [:direct, :deferred, :direct_and_deferred], default: :direct_and_deferred)
+
+    field(:payment_options, Ecto.Enum,
+      values: [:direct, :deferred, :direct_and_deferred],
+      default: :direct_and_deferred
+    )
+
     field(:pay_by_institution, :boolean, default: false)
     field(:amount, Money.Ecto.Map.Type)
     field(:has_grace_period, :boolean, default: true)
@@ -61,7 +66,7 @@ defmodule Oli.Delivery.Sections.Section do
     field(:display_curriculum_item_numbering, :boolean, default: true)
     field(:contains_explorations, :boolean, default: false)
 
-    belongs_to :required_survey, Oli.Resources.Resource, foreign_key: :required_survey_resource_id
+    belongs_to(:required_survey, Oli.Resources.Resource, foreign_key: :required_survey_resource_id)
 
     embeds_one(:customizations, CustomLabels, on_replace: :delete)
 
@@ -108,15 +113,19 @@ defmodule Oli.Delivery.Sections.Section do
     belongs_to(:publisher, Oli.Inventories.Publisher)
 
     # fields for course creation
-    field :class_modality, Ecto.Enum,
+    field(:class_modality, Ecto.Enum,
       values: [:never, :online, :in_person, :hybrid],
       default: :never
+    )
 
-    field :class_days, {:array, Ecto.Enum},
+    field(:class_days, {:array, Ecto.Enum},
       values: [:monday, :tuesday, :wednesday, :thursday, :friday, :saturday, :sunday],
       default: []
+    )
 
-    field :course_section_number, :string
+    field(:course_section_number, :string)
+
+    field(:preferred_scheduling_time, :time, default: ~T[23:59:59])
 
     timestamps(type: :utc_datetime)
   end
@@ -169,7 +178,8 @@ defmodule Oli.Delivery.Sections.Section do
       :required_survey_resource_id,
       :class_modality,
       :class_days,
-      :course_section_number
+      :course_section_number,
+      :preferred_scheduling_time
     ])
     |> cast_embed(:customizations, required: false)
     |> validate_required([

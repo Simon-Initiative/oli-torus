@@ -141,7 +141,7 @@ defmodule OliWeb.Delivery.NewCourse do
   def render_step(:select_source, assigns) do
     ~H"""
     <.header>
-      <div class="flex flex-col items-center gap-3 pl-9 pr-16 py-4">
+      <div class="flex flex-col items-center gap-3 pl-9 pr-16 py-6">
         <h2>Select source</h2>
         <.live_component
           id="select_source_step"
@@ -160,8 +160,8 @@ defmodule OliWeb.Delivery.NewCourse do
   def render_step(:name_course, assigns) do
     ~H"""
     <.header>
-      <div class="flex flex-col items-center gap-3 pl-9 pr-16 py-4">
-        <img src="/images/icons/course-creation-wizard-step-1.svg" />
+      <div class="flex flex-col items-center gap-3 pl-9 pr-16 py-6">
+        <img src="/images/icons/course-creation-wizard-step-1.svg" style="height: 170px;" />
         <h2>Name your course</h2>
         <.render_flash flash={@flash} />
         <NameCourse.render changeset={to_form(@changeset)} />
@@ -173,8 +173,8 @@ defmodule OliWeb.Delivery.NewCourse do
   def render_step(:course_details, assigns) do
     ~H"""
     <.header>
-      <div class="flex flex-col items-center gap-3 pl-9 pr-16 py-4">
-        <img src="/images/icons/course-creation-wizard-step-2.svg" />
+      <div class="flex flex-col items-center gap-3 pl-9 pr-16 py-6">
+        <img src="/images/icons/course-creation-wizard-step-2.svg" style="height: 170px;"/>
         <h2>Course details</h2>
         <.render_flash flash={@flash} />
         <CourseDetails.render changeset={to_form(@changeset)} />
@@ -242,7 +242,8 @@ defmodule OliWeb.Delivery.NewCourse do
              class_days: section_params.class_days,
              course_section_number: section_params.course_section_number,
              start_date: section_params.start_date,
-             end_date: section_params.end_date
+             end_date: section_params.end_date,
+             preferred_scheduling_time: section_params.preferred_scheduling_time
            }
          ) do
       {:ok, _section} ->
@@ -318,7 +319,8 @@ defmodule OliWeb.Delivery.NewCourse do
             :class_modality,
             :class_days,
             :start_date,
-            :end_date
+            :end_date,
+            :preferred_scheduling_time
           ])
           |> Map.merge(%{
             blueprint_id: blueprint.id,
@@ -473,9 +475,9 @@ defmodule OliWeb.Delivery.NewCourse do
 
         fields_to_validate =
           if class_modality != :never do
-            [:class_days, :start_date, :end_date]
+            [:class_days, :start_date, :end_date, :preferred_scheduling_time]
           else
-            [:start_date, :end_date]
+            [:start_date, :end_date, :preferred_scheduling_time]
           end
 
         if validate_fields(changeset, fields_to_validate) do
