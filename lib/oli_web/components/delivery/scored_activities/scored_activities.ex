@@ -2,7 +2,7 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
   use Phoenix.LiveComponent
 
   import Ecto.Query
-  alias Oli.Analytics.Summary.ResourceSummary
+  alias Oli.Analytics.Summary.{ResourceSummary, ResponseSummary}
   alias Oli.Publishing.PublishedResource
   alias Oli.Repo
 
@@ -675,11 +675,11 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
       )
 
     multiple_choice_type_id =
-      Enum.find(activity_types_map, fn {k, v} -> v.title == "Multiple Choice" end)
+      Enum.find(activity_types_map, fn {_k, v} -> v.title == "Multiple Choice" end)
       |> elem(0)
 
     single_response_type_id =
-      Enum.find(activity_types_map, fn {k, v} -> v.title == "Single Response" end)
+      Enum.find(activity_types_map, fn {_k, v} -> v.title == "Single Response" end)
       |> elem(0)
 
     case Repo.one(query) do
@@ -688,19 +688,7 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
 
       %{activity_type_id: activity_type_id} = activity_attempt
       when activity_type_id == multiple_choice_type_id ->
-        # TODO get real choices frequencies
-
-        choices =
-          activity_attempt.transformed_model["choices"]
-          |> Enum.map(fn choice ->
-            Map.merge(choice, %{"frequency" => Enum.random(1..10)})
-          end)
-
-        update_in(
-          activity_attempt,
-          [Access.key!(:transformed_model)],
-          &Map.put(&1, "choices", choices)
-        )
+        add_choices_frequencies(activity_attempt, section_id)
 
       %{activity_type_id: activity_type_id} = activity_attempt
       when activity_type_id == single_response_type_id ->
@@ -710,5 +698,60 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
       activity_attempt ->
         activity_attempt
     end
+  end
+
+  defp add_choices_frequencies(activity_attempt, section_id) do
+    choice_frequency_mapper =
+      from(rs in ResponseSummary,
+        where:
+          rs.section_id == ^section_id and
+            rs.project_id == -1 and
+            rs.publication_id == -1 and
+            rs.page_id == ^activity_attempt.page_id and
+            rs.activity_id == ^activity_attempt.resource_id,
+        join: rpp in assoc(rs, :resource_part_response),
+        preload: [resource_part_response: rpp],
+        select: rs
+      )
+      |> Repo.all()
+      |> Enum.reduce(%{}, fn response_summary, acc ->
+        Map.put(acc, response_summary.resource_part_response.response, response_summary.count)
+      end)
+
+    choices =
+      activity_attempt.transformed_model["choices"]
+      |> Enum.map(fn choice ->
+        Map.merge(choice, %{
+          "frequency" => Map.get(choice_frequency_mapper, choice["id"]) || 0
+        })
+      end)
+      |> Kernel.++(
+        if Map.has_key?(choice_frequency_mapper, "") do
+          [
+            %{
+              "content" => [
+                %{
+                  "children" => [
+                    %{
+                      "text" =>
+                        "Blank attempt (user submitted assessment without selecting any choice for this activity)"
+                    }
+                  ],
+                  "type" => "p"
+                }
+              ],
+              "frequency" => Map.get(choice_frequency_mapper, "")
+            }
+          ]
+        else
+          []
+        end
+      )
+
+    update_in(
+      activity_attempt,
+      [Access.key!(:transformed_model)],
+      &Map.put(&1, "choices", choices)
+    )
   end
 end
