@@ -546,7 +546,7 @@ export class PageEditor extends React.Component<PageEditorProps, PageEditorState
           )
         }
       >
-        Preview <i className="fas fa-external-link-alt ml-1"></i>
+        <i className="fa-regular fa-file-lines mr-1"></i> Preview
       </button>
     );
 
