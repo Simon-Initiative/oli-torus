@@ -785,14 +785,15 @@ defmodule OliWeb.Delivery.InstructorDashboard.ScoredActivitiesTabTest do
       author: author
     })
 
-    # create section...
+    # create section with analytics v2...
     section =
       insert(:section,
         base_project: project,
         context_id: UUID.uuid4(),
         open_and_free: true,
         registration_open: true,
-        type: :enrollable
+        type: :enrollable,
+        analytics_version: :v1
       )
 
     {:ok, section} = Sections.create_section_resources(section, publication)
@@ -823,8 +824,28 @@ defmodule OliWeb.Delivery.InstructorDashboard.ScoredActivitiesTabTest do
       ContextRoles.get_role(:context_instructor)
     ])
 
+    # create section with analytics v1...
+    section_v1 =
+      insert(:section,
+        base_project: project,
+        context_id: UUID.uuid4(),
+        open_and_free: true,
+        registration_open: true,
+        type: :enrollable,
+        analytics_version: :v1
+      )
+
+    {:ok, section_v1} = Sections.create_section_resources(section_v1, publication)
+    {:ok, _} = Sections.rebuild_contained_pages(section_v1)
+
+    # enroll students to section
+    Sections.enroll(student_1.id, section_v1.id, [
+      ContextRoles.get_role(:context_learner)
+    ])
+
     %{
       section: section,
+      section_v1: section_v1,
       project: project,
       publication: publication,
       mcq_activity_1: mcq_activity_1_revision,
@@ -1015,10 +1036,11 @@ defmodule OliWeb.Delivery.InstructorDashboard.ScoredActivitiesTabTest do
       assert has_element?(view, "p", "None exist")
     end
 
-    test "shows an warning and redirect to the scored activities tab when the assessment doesn't exist", %{
-      conn: conn,
-      section: section
-    } do
+    test "shows an warning and redirect to the scored activities tab when the assessment doesn't exist",
+         %{
+           conn: conn,
+           section: section
+         } do
       {:ok, view, _html} =
         live(
           conn,
@@ -1320,6 +1342,151 @@ defmodule OliWeb.Delivery.InstructorDashboard.ScoredActivitiesTabTest do
 
       assert selected_activity_model =~
                "\"responses\":[{\"text\":\"This is an incorrect answer from student 2\",\"user_name\":\"Di Maria, Angel\"},{\"text\":\"This is the second answer (correct) from student 2\",\"user_name\":\"Di Maria, Angel\"},{\"text\":\"This is the first answer (correct) from the GOAT\",\"user_name\":\"Messi, Lionel\"}]"
+    end
+
+    test "single response details get rendered for a section with analytics_version :v2 but not for :v1",
+         %{
+           conn: conn,
+           section_v1: section_v1,
+           section: section,
+           page_1: page_1,
+           student_1: student_1,
+           single_response_activity: single_response_activity,
+           project: project,
+           publication: publication
+         } do
+      ## section with analytics_version :v1
+      set_activity_attempt(
+        page_1,
+        single_response_activity,
+        student_1,
+        section_v1,
+        project.id,
+        publication.id,
+        "This is an incorrect answer from student 1",
+        false
+      )
+
+      {:ok, view, _html} =
+        live(
+          conn,
+          live_view_scored_activities_route(section_v1.slug, %{
+            assessment_id: page_1.id
+          })
+        )
+
+      selected_activity_model =
+        view
+        |> render()
+        |> Floki.parse_fragment!()
+        |> Floki.find(~s{oli-short-answer-authoring})
+        |> Floki.attribute("model")
+        |> hd
+
+      refute selected_activity_model =~ "This is an incorrect answer from student 1"
+
+      ## section with analytics_version :v2
+      set_activity_attempt(
+        page_1,
+        single_response_activity,
+        student_1,
+        section,
+        project.id,
+        publication.id,
+        "This is an incorrect answer from student 1",
+        false
+      )
+
+      {:ok, view, _html} =
+        live(
+          conn,
+          live_view_scored_activities_route(section.slug, %{
+            assessment_id: page_1.id
+          })
+        )
+
+      selected_activity_model =
+        view
+        |> render()
+        |> Floki.parse_fragment!()
+        |> Floki.find(~s{oli-short-answer-authoring})
+        |> Floki.attribute("model")
+        |> hd
+
+      assert selected_activity_model =~ "This is an incorrect answer from student 1"
+    end
+
+    test "multiple choice frequency details get rendered for a section with analytics_version :v2 but not for :v1",
+         %{
+           conn: conn,
+           section_v1: section_v1,
+           section: section,
+           page_1: page_1,
+           student_1: student_1,
+           mcq_activity_1: mcq_activity_1,
+           project: project,
+           publication: publication
+         } do
+      ## section with analytics_version :v1
+      set_activity_attempt(
+        page_1,
+        mcq_activity_1,
+        student_1,
+        section_v1,
+        project.id,
+        publication.id,
+        "id_for_option_a",
+        true
+      )
+
+      {:ok, view, _html} =
+        live(
+          conn,
+          live_view_scored_activities_route(section_v1.slug, %{
+            assessment_id: page_1.id
+          })
+        )
+
+      selected_activity_model =
+        view
+        |> render()
+        |> Floki.parse_fragment!()
+        |> Floki.find(~s{oli-multiple-choice-authoring})
+        |> Floki.attribute("model")
+        |> hd
+
+      assert selected_activity_model =~ ~s{"id":"id_for_option_a"}
+      refute selected_activity_model =~ ~s{"frequency":}
+
+      ## section with analytics_version :v2
+      set_activity_attempt(
+        page_1,
+        mcq_activity_1,
+        student_1,
+        section,
+        project.id,
+        publication.id,
+        "id_for_option_a",
+        true
+      )
+
+      {:ok, view, _html} =
+        live(
+          conn,
+          live_view_scored_activities_route(section.slug, %{
+            assessment_id: page_1.id
+          })
+        )
+
+      selected_activity_model =
+        view
+        |> render()
+        |> Floki.parse_fragment!()
+        |> Floki.find(~s{oli-multiple-choice-authoring})
+        |> Floki.attribute("model")
+        |> hd
+
+      assert selected_activity_model =~ ~s{"frequency":1,"id":"id_for_option_a"}
     end
 
     test "question details responds to user click on an activity", %{

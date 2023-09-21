@@ -401,7 +401,7 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
 
     case get_activity_details(
            selected_activity,
-           socket.assigns.section.id,
+           socket.assigns.section,
            socket.assigns.activity_types_map
          ) do
       nil ->
@@ -641,7 +641,7 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
     end)
   end
 
-  defp get_activity_details(selected_activity, section_id, activity_types_map) do
+  defp get_activity_details(selected_activity, section, activity_types_map) do
     query =
       ActivityAttempt
       |> join(:left, [aa], resource_attempt in ResourceAttempt,
@@ -659,7 +659,7 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
       )
       |> where(
         [aa, _resource_attempt, resource_access, _u, activity_revision, _resource_revision],
-        resource_access.section_id == ^section_id and
+        resource_access.section_id == ^section.id and
           activity_revision.resource_id == ^selected_activity.resource_id
       )
       |> order_by([aa, _, _, _, _, _], desc: aa.inserted_at)
@@ -695,22 +695,25 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
 
       %{activity_type_id: activity_type_id} = activity_attempt
       when activity_type_id == multiple_choice_type_id ->
-        add_choices_frequencies(activity_attempt, section_id)
+        add_choices_frequencies(activity_attempt, section)
 
       %{activity_type_id: activity_type_id} = activity_attempt
       when activity_type_id == single_response_type_id ->
-        add_single_response_details(activity_attempt, section_id)
+        add_single_response_details(activity_attempt, section)
 
       activity_attempt ->
         activity_attempt
     end
   end
 
-  defp add_single_response_details(activity_attempt, section_id) do
+  defp add_single_response_details(activity_attempt, %Section{analytics_version: :v1}),
+    do: activity_attempt
+
+  defp add_single_response_details(activity_attempt, section) do
     responses =
       from(rs in ResponseSummary,
         where:
-          rs.section_id == ^section_id and rs.activity_id == ^activity_attempt.resource_id and
+          rs.section_id == ^section.id and rs.activity_id == ^activity_attempt.resource_id and
             rs.page_id == ^activity_attempt.page_id and
             rs.publication_id == -1 and rs.project_id == -1,
         join: rpp in ResourcePartResponse,
@@ -735,11 +738,14 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
     )
   end
 
-  defp add_choices_frequencies(activity_attempt, section_id) do
+  defp add_choices_frequencies(activity_attempt, %Section{analytics_version: :v1}),
+    do: activity_attempt
+
+  defp add_choices_frequencies(activity_attempt, section) do
     choice_frequency_mapper =
       from(rs in ResponseSummary,
         where:
-          rs.section_id == ^section_id and
+          rs.section_id == ^section.id and
             rs.project_id == -1 and
             rs.publication_id == -1 and
             rs.page_id == ^activity_attempt.page_id and
