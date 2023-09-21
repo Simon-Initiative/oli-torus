@@ -1,5 +1,6 @@
-defmodule Oli.Plugs.RedirectIfIsAdmin do
+defmodule Oli.Plugs.DeliveryPreview do
   import Phoenix.Controller
+  import Plug.Conn
   alias OliWeb.Router.Helpers, as: Routes
 
   def init(_params) do
@@ -12,7 +13,8 @@ defmodule Oli.Plugs.RedirectIfIsAdmin do
       do:
         redirect(conn,
           to: Routes.page_delivery_path(OliWeb.Endpoint, :index_preview, section.slug)
-        ),
+        )
+        |> halt(),
       else: conn
   end
 end

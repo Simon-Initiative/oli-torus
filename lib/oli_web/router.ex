@@ -222,8 +222,8 @@ defmodule OliWeb.Router do
     plug(Oli.Plugs.EnsureUserSectionVisit)
   end
 
-  pipeline :redirect_to_preview_if_is_admin do
-    plug(Oli.Plugs.RedirectIfIsAdmin)
+  pipeline :delivery_preview do
+    plug(Oli.Plugs.DeliveryPreview)
   end
 
   ### HELPERS ###
@@ -927,7 +927,7 @@ defmodule OliWeb.Router do
       :require_section,
       :delivery,
       :require_exploration_pages,
-      :redirect_to_preview_if_is_admin,
+      :delivery_preview,
       :delivery_protected,
       :maybe_gated_resource,
       :enforce_enroll_and_paywall,
