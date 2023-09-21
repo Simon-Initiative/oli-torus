@@ -48,7 +48,17 @@ export const addItemActions = (onRequestMedia: any) => [
 ];
 
 export const formatMenuCommands = [
-  toggleFormat({ icon: <i className="fa-solid fa-bold"></i>, mark: 'strong', description: 'Bold' }),
-  toggleFormat({ icon: <i className="fa-solid fa-italic"></i>, mark: 'em', description: 'Italic' }),
+  toggleFormat({
+    category: 'Formatting',
+    icon: <i className="fa-solid fa-bold"></i>,
+    mark: 'strong',
+    description: 'Bold',
+  }),
+  toggleFormat({
+    category: 'Formatting',
+    icon: <i className="fa-solid fa-italic"></i>,
+    mark: 'em',
+    description: 'Italic',
+  }),
   linkCmd,
 ];

@@ -1,10 +1,11 @@
 import { Editor } from 'slate';
 import { Mark } from 'data/content/model/text';
-import { Command, CommandDescription } from './interfaces';
+import { Command, CommandCategories, CommandDescription } from './interfaces';
 
 interface CommandWrapperProps {
   icon?: JSX.Element;
   description: string;
+  category?: CommandCategories;
   execute: Command['execute'];
   mark?: Mark;
   active?: CommandDescription['active'];
@@ -20,10 +21,12 @@ function createCommandDesc({
   description,
   execute,
   active,
+  category,
   precondition,
 }: CommandWrapperProps): CommandDescription {
   return {
     type: 'CommandDesc',
+    category,
     icon: () => icon,
     description: () => description,
     ...(active ? { active } : {}),

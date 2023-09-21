@@ -63,6 +63,7 @@ const command: Command = {
 
 export const citationCmdDesc: CommandDescription = {
   type: 'CommandDesc',
+  category: 'General',
   icon: () => <i className="fa-solid fa-book"></i>,
   description: () => 'Cite',
   command,
