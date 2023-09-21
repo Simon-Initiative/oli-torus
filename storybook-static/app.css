@@ -6317,11 +6317,6 @@ table.table-striped tbody tr:nth-child(even) {
   color: rgb(29 68 129 / var(--tw-text-opacity));
 }
 
-.text-body {
-  --tw-text-opacity: 1;
-  color: rgb(255 255 255 / var(--tw-text-opacity));
-}
-
 .text-body-800 {
   --tw-text-opacity: 1;
   color: rgb(64 64 64 / var(--tw-text-opacity));
@@ -10607,9 +10602,9 @@ body {
   color: rgb(245 245 245 / var(--tw-text-opacity));
 }
 
-.dark .dark\:text-body-dark {
+.dark .dark\:text-body-dark-100 {
   --tw-text-opacity: 1;
-  color: rgb(42 43 46 / var(--tw-text-opacity));
+  color: rgb(173 173 173 / var(--tw-text-opacity));
 }
 
 .dark .dark\:text-delivery-body-color-dark {
