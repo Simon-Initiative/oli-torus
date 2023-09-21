@@ -1045,7 +1045,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.ScoredActivitiesTabTest do
            conn: conn,
            section: section
          } do
-      {:ok, view, _html} =
+      {:ok, _view, _html} =
         live(
           conn,
           live_view_scored_activities_route(section.slug, %{
@@ -1053,13 +1053,8 @@ defmodule OliWeb.Delivery.InstructorDashboard.ScoredActivitiesTabTest do
           })
         )
 
-      flash =
-        assert_redirected(
-          view,
-          ~p"/sections/#{section.slug}/instructor_dashboard/overview/scored_activities"
-        )
-
-      assert flash["info"] == "The assessment doesn't exist"
+      assert_receive {_ref, {:redirect, _lv, %{flash: _flash_msg, to: url}}}
+      assert url == ~p"/sections/#{section.slug}/instructor_dashboard/overview/scored_activities"
     end
 
     test "loads correctly activity details", %{
