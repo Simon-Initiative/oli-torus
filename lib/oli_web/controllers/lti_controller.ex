@@ -299,7 +299,7 @@ defmodule OliWeb.LtiController do
                     "type" => "plain_text",
                     "text" => "Review Request"
                   },
-                  "url" => "#{Routes.institution_url(conn, :index)}#pending-registrations"
+                  "url" => ~p"/admin/institutions"
                 }
               ]
             }
