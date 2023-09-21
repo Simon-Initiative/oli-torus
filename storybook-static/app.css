@@ -3981,6 +3981,10 @@ table.table-striped tbody tr:nth-child(even) {
   top: 0.75rem;
 }
 
+.top-\[65px\] {
+  top: 65px;
+}
+
 .top-\[80px\] {
   top: 80px;
 }
@@ -4567,6 +4571,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .h-\[400px\] {
   height: 400px;
+}
+
+.h-\[40px\] {
+  height: 40px;
 }
 
 .h-\[450px\] {
@@ -5557,6 +5565,10 @@ table.table-striped tbody tr:nth-child(even) {
   background-color: rgb(249 249 249 / var(--tw-bg-opacity));
 }
 
+.bg-body\/75 {
+  background-color: rgb(255 255 255 / 0.75);
+}
+
 .bg-delivery-body {
   --tw-bg-opacity: 1;
   background-color: rgb(243 245 248 / var(--tw-bg-opacity));
@@ -5908,6 +5920,11 @@ table.table-striped tbody tr:nth-child(even) {
 .px-9 {
   padding-left: 2.25rem;
   padding-right: 2.25rem;
+}
+
+.px-\[1px\] {
+  padding-left: 1px;
+  padding-right: 1px;
 }
 
 .py-0 {
@@ -6632,6 +6649,12 @@ table.table-striped tbody tr:nth-child(even) {
 
 .filter {
   filter: var(--tw-blur) var(--tw-brightness) var(--tw-contrast) var(--tw-grayscale) var(--tw-hue-rotate) var(--tw-invert) var(--tw-saturate) var(--tw-sepia) var(--tw-drop-shadow);
+}
+
+.backdrop-blur-md {
+  --tw-backdrop-blur: blur(12px);
+  -webkit-backdrop-filter: var(--tw-backdrop-blur) var(--tw-backdrop-brightness) var(--tw-backdrop-contrast) var(--tw-backdrop-grayscale) var(--tw-backdrop-hue-rotate) var(--tw-backdrop-invert) var(--tw-backdrop-opacity) var(--tw-backdrop-saturate) var(--tw-backdrop-sepia);
+          backdrop-filter: var(--tw-backdrop-blur) var(--tw-backdrop-brightness) var(--tw-backdrop-contrast) var(--tw-backdrop-grayscale) var(--tw-backdrop-hue-rotate) var(--tw-backdrop-invert) var(--tw-backdrop-opacity) var(--tw-backdrop-saturate) var(--tw-backdrop-sepia);
 }
 
 .backdrop-blur-sm {
@@ -10150,6 +10173,11 @@ body {
   --tw-ring-color: rgb(74 222 128 / var(--tw-ring-opacity));
 }
 
+.focus\:ring-primary:focus {
+  --tw-ring-opacity: 1;
+  --tw-ring-color: rgb(59 118 211 / var(--tw-ring-opacity));
+}
+
 .focus\:ring-primary-100:focus {
   --tw-ring-opacity: 1;
   --tw-ring-color: rgb(193 211 241 / var(--tw-ring-opacity));
@@ -10483,6 +10511,10 @@ body {
   background-color: rgb(42 43 46 / var(--tw-bg-opacity));
 }
 
+.dark .dark\:bg-body-dark\/75 {
+  background-color: rgb(42 43 46 / 0.75);
+}
+
 .dark .dark\:bg-delivery-body-dark {
   --tw-bg-opacity: 1;
   background-color: rgb(23 23 23 / var(--tw-bg-opacity));
@@ -10625,6 +10657,11 @@ body {
 .dark .dark\:text-gray-400 {
   --tw-text-opacity: 1;
   color: rgb(163 163 163 / var(--tw-text-opacity));
+}
+
+.dark .dark\:text-gray-500 {
+  --tw-text-opacity: 1;
+  color: rgb(115 115 115 / var(--tw-text-opacity));
 }
 
 .dark .dark\:text-gray-600 {
