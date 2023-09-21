@@ -23,7 +23,17 @@ defmodule OliWeb.Sections.StartEnd do
         <.input
           type="datetime-local"
           field={@changeset[:end_date]}
-          label="Start date"
+          label="End date"
+          class="form-control"
+          disabled={@disabled}
+          ctx={@ctx}
+        />
+      </div>
+      <div class="form-label-group">
+        <.input
+          type="time"
+          field={@changeset[:preferred_scheduling_time]}
+          label="Scheduling Preferred Time"
           class="form-control"
           disabled={@disabled}
           ctx={@ctx}
