@@ -64,7 +64,8 @@ defmodule OliWeb.Api.BlueprintController do
       name: blueprint.name,
       description: blueprint.description,
       content: blueprint.content,
-      icon: blueprint.icon
+      icon: blueprint.icon,
+      category: blueprint.category
     }
   end
 end

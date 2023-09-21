@@ -4,7 +4,7 @@ defmodule OliWeb.Insights do
   alias Oli.Publishing
   alias OliWeb.Insights.{TableHeader, TableRow}
   alias Oli.Authoring.Course
-  alias OliWeb.Components.Project.RawAnalyticsExport
+  alias OliWeb.Components.Project.AsyncExporter
   alias Oli.Authoring.Broadcaster
   alias Oli.Authoring.Broadcaster.Subscriber
   alias OliWeb.Common.SessionContext
@@ -90,7 +90,7 @@ defmodule OliWeb.Insights do
         the skills covered by each question to find areas where students are struggling.
       </p>
       <div class="d-flex align-items-center my-3">
-        <RawAnalyticsExport.export_button
+        <AsyncExporter.raw_analytics
           ctx={@ctx}
           latest_publication={@latest_publication}
           analytics_export_status={@analytics_export_status}

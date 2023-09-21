@@ -1339,6 +1339,14 @@ defmodule OliWeb.PageDeliveryControllerTest do
       assert html_response(conn, 200) =~ page.revision.title
       assert html_response(conn, 200) =~ "<div id=\"countdown_timer_display\""
     end
+
+    test "shows an error when the section doesn't exist", %{conn: conn} do
+      conn =
+        conn
+        |> get(Routes.page_delivery_path(conn, :index, "non_existant_section"))
+
+      assert html_response(conn, 404) =~ "The section you are trying to view does not exist"
+    end
   end
 
   describe "independent learner page_delivery_controller" do

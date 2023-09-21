@@ -25,8 +25,8 @@ defmodule OliWeb.Delivery.NewCourse.CourseDetails do
       )
 
     ~H"""
-    <.form id="course-details-form" class="w-full" for={@changeset}>
-      <div class="flex flex-col gap-8">
+    <.form id="course-details-form" class="flex flex-col mt-8" for={@changeset}>
+      <div class="flex flex-col">
         <%= if @class_modality != :never do %>
           <div class="flex flex-col gap-1 flex-1">
             <span required>Days of the week you meet</span>
@@ -61,6 +61,16 @@ defmodule OliWeb.Delivery.NewCourse.CourseDetails do
           <small class="torus-small mt-1">
             <i class="fa fa-circle-info mr-1" />
             The start and end dates help us recommend a teaching schedule and assignment cadence
+          </small>
+        </div>
+        <div class="flex flex-col gap-2">
+          <div class="flex flex-col gap-1 flex-1">
+            <span>Scheduling Preferred Time</span>
+            <.input type="time" field={@changeset[:preferred_scheduling_time]} />
+          </div>
+          <small class="torus-small mt-1">
+            <i class="fa fa-circle-info mr-1" />
+            This is the time that the scheduler will use when setting due dates and times for your pages
           </small>
         </div>
       </div>

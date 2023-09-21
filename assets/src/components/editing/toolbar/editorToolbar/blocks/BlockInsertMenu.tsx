@@ -3,8 +3,8 @@ import { useSlate } from 'slate-react';
 import { createButtonCommandDesc } from 'components/editing/elements/commands/commandFactories';
 import { CommandDescription } from 'components/editing/elements/commands/interfaces';
 import { Toolbar } from 'components/editing/toolbar/Toolbar';
-import { DescriptiveButton } from 'components/editing/toolbar/buttons/DescriptiveButton';
 import { DropdownButton } from 'components/editing/toolbar/buttons/DropdownButton';
+import { CategorizedCommandList } from '../../CategorizedCommandList';
 import { CommandButton } from '../../buttons/CommandButton';
 
 export const insertItemDropdown = createButtonCommandDesc({
@@ -32,9 +32,7 @@ export const BlockInsertMenu = ({ blockInsertOptions }: Props) => {
       ))}
       {remainingInsertOptions.length > 0 && (
         <DropdownButton description={insertItemDropdown} showDropdownArrow={false}>
-          {remainingInsertOptions.map((desc, i) => (
-            <DescriptiveButton key={i} description={desc} />
-          ))}
+          <CategorizedCommandList commands={remainingInsertOptions} />
         </DropdownButton>
       )}
     </Toolbar.Group>

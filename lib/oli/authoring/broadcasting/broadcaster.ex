@@ -125,4 +125,15 @@ defmodule Oli.Authoring.Broadcaster do
       {:analytics_export_status, status}
     )
   end
+
+  @doc """
+  Broadcasts a datashop export status update
+  """
+  def broadcast_datashop_export_status(project_slug, status) do
+    PubSub.broadcast(
+      Oli.PubSub,
+      message_datashop_export_status(project_slug),
+      {:datashop_export_status, status}
+    )
+  end
 end

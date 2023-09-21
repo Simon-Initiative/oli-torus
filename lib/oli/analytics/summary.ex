@@ -145,7 +145,7 @@ defmodule Oli.Analytics.Summary do
           | values
         ]
 
-        params = [response, label | params]
+        params = params ++ [response, label]
 
         {values, params}
       end)
