@@ -28,7 +28,7 @@ const InputTextAuthor: React.FC<AuthorPartComponentProps<InputTextModel>> = (pro
         type="text"
         placeholder={prompt}
         disabled={true}
-        style={{ width: '100%', fontSize }}
+        style={{ width: '100%', fontSize, pointerEvents: 'none' }}
       />
     </div>
   );
