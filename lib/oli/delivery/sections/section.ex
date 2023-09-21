@@ -129,7 +129,7 @@ defmodule Oli.Delivery.Sections.Section do
 
     field(:v25_migration, Ecto.Enum,
       values: [:not_started, :done, :pending],
-      default: :not_started
+      default: :done
     )
 
     timestamps(type: :utc_datetime)
