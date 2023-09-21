@@ -793,7 +793,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.ScoredActivitiesTabTest do
         open_and_free: true,
         registration_open: true,
         type: :enrollable,
-        analytics_version: :v1
+        analytics_version: :v2
       )
 
     {:ok, section} = Sections.create_section_resources(section, publication)
@@ -841,6 +841,10 @@ defmodule OliWeb.Delivery.InstructorDashboard.ScoredActivitiesTabTest do
     # enroll students to section
     Sections.enroll(student_1.id, section_v1.id, [
       ContextRoles.get_role(:context_learner)
+    ])
+
+    Sections.enroll(instructor.id, section_v1.id, [
+      ContextRoles.get_role(:context_instructor)
     ])
 
     %{
