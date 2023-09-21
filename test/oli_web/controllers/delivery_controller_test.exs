@@ -546,8 +546,8 @@ defmodule OliWeb.DeliveryControllerTest do
       section = insert(:section, requires_enrollment: true)
       conn = get(conn, Routes.delivery_path(conn, :show_enroll, section.slug))
 
-      assert html_response(conn, 200) =~
-               "Enroll as Guest"
+      assert html_response(conn, 302) =~
+               "<html><body>You are being <a href=\"/session/new?section=#{section.slug}\">redirected</a>.</body></html>"
 
       conn = mock_captcha(conn, section)
 
