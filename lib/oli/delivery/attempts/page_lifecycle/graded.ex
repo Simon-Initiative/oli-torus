@@ -148,8 +148,6 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Graded do
                  resource_attempt.was_late
                ) do
             {:ok, resource_access} ->
-              {:ok, resource_access} = Oli.Delivery.Metrics.mark_progress_completed(resource_access)
-
               {:ok,
                %FinalizationSummary{
                  graded: true,
@@ -164,11 +162,12 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Graded do
           end
 
         %ResourceAttempt{lifecycle_state: :submitted, resource_access_id: resource_access_id} ->
+          {:ok, resource_access} = Oli.Delivery.Metrics.mark_progress_completed(Oli.Repo.get(ResourceAccess, resource_access_id))
           {:ok,
            %FinalizationSummary{
              graded: true,
              lifecycle_state: :submitted,
-             resource_access: Oli.Repo.get(ResourceAccess, resource_access_id),
+             resource_access: resource_access,
              part_attempt_guids: part_attempt_guids,
              effective_settings: effective_settings
            }}

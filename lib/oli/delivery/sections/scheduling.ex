@@ -54,10 +54,13 @@ defmodule Oli.Delivery.Sections.Scheduling do
   Returns a {:ok, num_rows} tuple, with num_rows indicating the number of rows
   updated - or a {:error, error} tuple.
   """
-  def update(%Section{id: section_id}, updates, timezone) do
-
+  def update(
+        %Section{id: section_id, preferred_scheduling_time: preferred_scheduling_time},
+        updates,
+        timezone
+      ) do
     if is_valid_update?(updates) do
-      case build_values_params(updates, timezone) do
+      case build_values_params(updates, timezone, preferred_scheduling_time) do
         {[], []} ->
           {:ok, 0}
 
@@ -99,9 +102,9 @@ defmodule Oli.Delivery.Sections.Scheduling do
     end)
   end
 
-  defp parse_date(nil, _), do: nil
+  defp parse_date(nil, _, _), do: nil
 
-  defp parse_date(date_time_str, timezone) do
+  defp parse_date(date_time_str, timezone, preferred_scheduling_time) do
     # From the front end we can receive two forms of date time strings:
     # 1. "2019-01-01 00:00:00"
     # 2. "2019-01-01"
@@ -132,14 +135,19 @@ defmodule Oli.Delivery.Sections.Scheduling do
           |> Enum.map(fn s -> String.to_integer(s) end)
 
         {:ok, date} = Date.new(y, m, d)
-        {:ok, time} = Time.new(23, 59, 59)
+
+        time =
+          if preferred_scheduling_time == nil,
+            do: Time.new!(23, 59, 59),
+            else: preferred_scheduling_time
+
         {:ok, date_time} = DateTime.new(date, time, timezone)
         {:ok, date_time} = DateTime.shift_zone(date_time, "Etc/UTC")
         DateTime.truncate(date_time, :second)
     end
   end
 
-  defp build_values_params(updates, timezone) do
+  defp build_values_params(updates, timezone, preferred_scheduling_time) do
     {values, params, _} =
       Enum.reduce(updates, {[], [], 1}, fn sr, {values, params, i} ->
         {
@@ -151,8 +159,8 @@ defmodule Oli.Delivery.Sections.Scheduling do
             [
               val(sr, :id),
               val(sr, :scheduling_type),
-              val(sr, :start_date) |> parse_date(timezone),
-              val(sr, :end_date) |> parse_date(timezone),
+              val(sr, :start_date) |> parse_date(timezone, preferred_scheduling_time),
+              val(sr, :end_date) |> parse_date(timezone, preferred_scheduling_time),
               val(sr, :manually_scheduled)
             ],
           i + 5

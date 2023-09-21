@@ -11,6 +11,7 @@ interface Payload {
   title: string;
   section_slug: string;
   display_curriculum_item_numbering: boolean;
+  preferred_scheduling_time: string;
 }
 
 export const scheduleAppFlushChanges = createAsyncThunk(
@@ -61,13 +62,21 @@ export const scheduleAppFlushChanges = createAsyncThunk(
 export const scheduleAppStartup = createAsyncThunk(
   'schedule/startup',
   async (
-    { start_date, end_date, title, section_slug, display_curriculum_item_numbering }: Payload,
+    {
+      start_date,
+      end_date,
+      title,
+      section_slug,
+      display_curriculum_item_numbering,
+      preferred_scheduling_time,
+    }: Payload,
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     thunkAPI,
   ) => {
     const response = await loadSchedule(section_slug);
     return {
       schedule: response,
+      preferred_scheduling_time,
       start_date,
       end_date,
       title,

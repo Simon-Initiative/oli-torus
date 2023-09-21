@@ -12,6 +12,7 @@ const ui = {
 
 export const insertCodeblock = createButtonCommandDesc({
   ...ui,
+  category: 'STEM',
   execute: (_context, editor) => {
     if (!editor.selection) return;
     Transforms.insertNodes(editor, Model.code(), { at: editor.selection });
@@ -21,6 +22,7 @@ export const insertCodeblock = createButtonCommandDesc({
 
 export const toggleCodeblock = createButtonCommandDesc({
   ...ui,
+  category: 'STEM',
   active: (editor) => isActive(editor, 'code'),
   execute: (_ctx, editor) => switchType(editor, 'code'),
 });

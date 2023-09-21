@@ -11,6 +11,7 @@ const ui = {
 
 export const insertEcl = createButtonCommandDesc({
   ...ui,
+  category: 'STEM',
   execute: (_context, editor) => {
     if (!editor.selection) return;
     Transforms.insertNodes(editor, Model.ecl(), { at: editor.selection });

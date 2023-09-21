@@ -32,6 +32,7 @@ defmodule OliWeb.NewCourse.CourseDetailsTest do
       assert has_element?(view, "input[type=\"checkbox\"]#saturday_radio_button")
       assert has_element?(view, "input[type=\"datetime-local\"]#section_start_date")
       assert has_element?(view, "input[type=\"datetime-local\"]#section_end_date")
+      assert has_element?(view, "input[type=\"time\"]#section_preferred_scheduling_time")
     end
 
     test "doesn't render the class days if class never meets", %{conn: conn} = context do
@@ -51,6 +52,7 @@ defmodule OliWeb.NewCourse.CourseDetailsTest do
       refute has_element?(view, "input[type=\"checkbox\"]#saturday_radio_button")
       assert has_element?(view, "input[type=\"datetime-local\"]#section_start_date")
       assert has_element?(view, "input[type=\"datetime-local\"]#section_end_date")
+      assert has_element?(view, "input[type=\"time\"]#section_preferred_scheduling_time")
     end
 
     test "can't go to next step unless all required fields are filled and valid",
@@ -73,7 +75,8 @@ defmodule OliWeb.NewCourse.CourseDetailsTest do
         "section" => %{
           class_days: [:monday, :friday],
           start_date: DateTime.add(DateTime.utc_now(), 4, :day),
-          end_date: DateTime.add(DateTime.utc_now(), 2, :day)
+          end_date: DateTime.add(DateTime.utc_now(), 2, :day),
+          preferred_scheduling_time: ~T[23:59:59]
         },
         "current_step" => 3
       })
@@ -98,7 +101,8 @@ defmodule OliWeb.NewCourse.CourseDetailsTest do
         "section" => %{
           class_days: [:monday, :friday],
           start_date: DateTime.add(DateTime.utc_now(), 2, :day),
-          end_date: DateTime.add(DateTime.utc_now(), 62, :day)
+          end_date: DateTime.add(DateTime.utc_now(), 62, :day),
+          preferred_scheduling_time: ~T[23:59:59]
         },
         "current_step" => 3
       })
@@ -125,7 +129,8 @@ defmodule OliWeb.NewCourse.CourseDetailsTest do
         "section" => %{
           class_days: [:monday, :friday],
           start_date: DateTime.add(DateTime.utc_now(), 2, :day),
-          end_date: DateTime.add(DateTime.utc_now(), 62, :day)
+          end_date: DateTime.add(DateTime.utc_now(), 62, :day),
+          preferred_scheduling_time: ~T[23:59:59]
         },
         "current_step" => 3
       })
@@ -160,6 +165,7 @@ defmodule OliWeb.NewCourse.CourseDetailsTest do
       assert has_element?(view, "input[type=\"checkbox\"]#saturday_radio_button")
       assert has_element?(view, "input[type=\"datetime-local\"]#section_start_date")
       assert has_element?(view, "input[type=\"datetime-local\"]#section_end_date")
+      assert has_element?(view, "input[type=\"time\"]#section_preferred_scheduling_time")
     end
 
     test "can't go to next step unless all required fields are filled", %{conn: conn} = context do
@@ -189,7 +195,8 @@ defmodule OliWeb.NewCourse.CourseDetailsTest do
         "section" => %{
           class_days: [:monday, :friday],
           start_date: DateTime.add(DateTime.utc_now(), 2, :day),
-          end_date: DateTime.add(DateTime.utc_now(), 62, :day)
+          end_date: DateTime.add(DateTime.utc_now(), 62, :day),
+          preferred_scheduling_time: ~T[23:59:59]
         },
         "current_step" => 3
       })
@@ -216,7 +223,8 @@ defmodule OliWeb.NewCourse.CourseDetailsTest do
         "section" => %{
           class_days: [:monday, :friday],
           start_date: DateTime.add(DateTime.utc_now(), 2, :day),
-          end_date: DateTime.add(DateTime.utc_now(), 62, :day)
+          end_date: DateTime.add(DateTime.utc_now(), 62, :day),
+          preferred_scheduling_time: ~T[23:59:59]
         },
         "current_step" => 3
       })
@@ -251,6 +259,7 @@ defmodule OliWeb.NewCourse.CourseDetailsTest do
       assert has_element?(view, "input[type=\"checkbox\"]#saturday_radio_button")
       assert has_element?(view, "input[type=\"datetime-local\"]#section_start_date")
       assert has_element?(view, "input[type=\"datetime-local\"]#section_end_date")
+      assert has_element?(view, "input[type=\"time\"]#section_preferred_scheduling_time")
     end
 
     test "can't go to next step unless all required fields are filled", %{conn: conn} = context do
@@ -304,7 +313,8 @@ defmodule OliWeb.NewCourse.CourseDetailsTest do
         "section" => %{
           class_days: [:monday, :friday],
           start_date: DateTime.add(DateTime.utc_now(), 2, :day),
-          end_date: DateTime.add(DateTime.utc_now(), 62, :day)
+          end_date: DateTime.add(DateTime.utc_now(), 62, :day),
+          preferred_scheduling_time: ~T[23:59:59]
         },
         "current_step" => 3
       })

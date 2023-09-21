@@ -10,6 +10,12 @@ export enum ScheduleItemType {
   Container,
 }
 
+interface TimeParts {
+  hour: number;
+  minute: number;
+  second: number;
+}
+
 export type StringDate = string;
 export type SchedulingType = 'read_by' | 'inclass_activity' | 'due_by';
 // Version that comes from torus
@@ -49,6 +55,7 @@ export interface SchedulerState {
   sectionSlug: string;
   errorMessage: string | null;
   weekdays: boolean[];
+  preferredSchedulingTime: TimeParts;
 }
 
 export const initSchedulerState = (): SchedulerState => ({
@@ -64,9 +71,14 @@ export const initSchedulerState = (): SchedulerState => ({
   sectionSlug: '',
   errorMessage: null,
   weekdays: [false, true, true, true, true, true, false],
+  preferredSchedulingTime: {
+    hour: 23,
+    minute: 59,
+    second: 59,
+  },
 });
 
-const toDateTime = (str: string) => {
+const toDateTime = (str: string, preferredSchedulingTime: TimeParts) => {
   if (!str) return null;
   const [date, time] = str.split('T');
   const [year, month, day] = date.split('-');
@@ -82,20 +94,24 @@ const toDateTime = (str: string) => {
     d.setUTCMinutes(parseInt(minute, 10));
     d.setUTCSeconds(parseInt(seconds, 10));
   } else {
-    d.setHours(23);
-    d.setMinutes(59);
-    d.setSeconds(59);
+    d.setHours(preferredSchedulingTime.hour);
+    d.setMinutes(preferredSchedulingTime.minute);
+    d.setSeconds(preferredSchedulingTime.second);
+    d.setMilliseconds(0);
   }
   return d;
 };
 
-const buildHierarchyItems = (items: HierarchyItemSrc[]): HierarchyItem[] => {
+const buildHierarchyItems = (
+  items: HierarchyItemSrc[],
+  preferredSchedulingTime: TimeParts,
+): HierarchyItem[] => {
   return items.map((item) => ({
     ...item,
     startDate: item.start_date ? new DateWithoutTime(item.start_date) : null,
     endDate: item.end_date ? new DateWithoutTime(item.end_date) : null,
-    endDateTime: toDateTime(item.end_date),
-    startDateTime: toDateTime(item.start_date),
+    endDateTime: toDateTime(item.end_date, preferredSchedulingTime),
+    startDateTime: toDateTime(item.start_date, preferredSchedulingTime),
   }));
 };
 
@@ -198,7 +214,13 @@ const schedulerSlice = createSlice({
           mutableItem.startDateTime.setFullYear(action.payload.startDate.getFullYear());
           mutableItem.startDateTime.setMonth(action.payload.startDate.getMonth());
           mutableItem.startDateTime.setDate(action.payload.startDate.getDate());
-          mutableItem.startDateTime.setHours(23, 59, 59, 0);
+
+          mutableItem.startDateTime.setHours(
+            state.preferredSchedulingTime.hour,
+            state.preferredSchedulingTime.minute,
+            state.preferredSchedulingTime.second,
+            0,
+          );
         }
 
         /*
@@ -233,7 +255,12 @@ const schedulerSlice = createSlice({
             mutableItem.endDateTime.setFullYear(action.payload.endDate.getFullYear());
             mutableItem.endDateTime.setMonth(action.payload.endDate.getMonth());
             mutableItem.endDateTime.setDate(action.payload.endDate.getDate());
-            mutableItem.endDateTime.setHours(23, 59, 59, 0);
+            mutableItem.endDateTime.setHours(
+              state.preferredSchedulingTime.hour,
+              state.preferredSchedulingTime.minute,
+              state.preferredSchedulingTime.second,
+              0,
+            );
           } else {
             mutableItem.endDateTime = null;
           }
@@ -250,6 +277,7 @@ const schedulerSlice = createSlice({
             state.schedule,
             false,
             state.weekdays,
+            state.preferredSchedulingTime,
           );
 
           state.dirty.push(...descendentIds(mutableItem, state.schedule));
@@ -274,6 +302,7 @@ const schedulerSlice = createSlice({
             state.schedule,
             true,
             action.payload.weekdays,
+            state.preferredSchedulingTime,
           );
         state.dirty = state.schedule.map((item) => item.id);
       }
@@ -314,13 +343,22 @@ const schedulerSlice = createSlice({
         display_curriculum_item_numbering,
         schedule,
         section_slug,
+        preferred_scheduling_time,
       } = action.payload;
       state.appLoading = true;
       state.title = title;
+      const preferredTimeString = preferred_scheduling_time || '23:59:59';
+      const preferredTimeParts = preferredTimeString.split(':');
+      state.preferredSchedulingTime = {
+        hour: parseInt(preferredTimeParts[0]),
+        minute: parseInt(preferredTimeParts[1]),
+        second: parseInt(preferredTimeParts[2]),
+      };
+
       state.displayCurriculumItemNumbering = display_curriculum_item_numbering;
       state.startDate = new DateWithoutTime(start_date);
       state.endDate = new DateWithoutTime(end_date);
-      state.schedule = buildHierarchyItems(schedule);
+      state.schedule = buildHierarchyItems(schedule, state.preferredSchedulingTime);
       state.sectionSlug = section_slug;
       if (state.startDate && state.endDate && neverScheduled(state.schedule)) {
         const root = getScheduleRoot(state.schedule);
@@ -332,6 +370,7 @@ const schedulerSlice = createSlice({
             state.schedule,
             true,
             state.weekdays,
+            state.preferredSchedulingTime,
           );
         state.dirty = state.schedule.map((item) => item.id);
       }

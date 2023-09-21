@@ -139,7 +139,7 @@ const FeedbackEditor: React.FC<{
           <option value="0">Equal to</option>
           <option value="1">Between two values</option>
           <option value="2">Greater Than</option>
-          <option value="3">Greather Than or Equal</option>
+          <option value="3">Greater Than or Equal</option>
           <option value="4">Less Than</option>
           <option value="5">Less Than or Equal</option>
         </select>

@@ -1015,6 +1015,27 @@ defmodule OliWeb.Delivery.InstructorDashboard.ScoredActivitiesTabTest do
       assert has_element?(view, "p", "None exist")
     end
 
+    test "shows an warning and redirect to the scored activities tab when the assessment doesn't exist", %{
+      conn: conn,
+      section: section
+    } do
+      {:ok, view, _html} =
+        live(
+          conn,
+          live_view_scored_activities_route(section.slug, %{
+            assessment_id: 500
+          })
+        )
+
+      flash =
+        assert_redirected(
+          view,
+          ~p"/sections/#{section.slug}/instructor_dashboard/overview/scored_activities"
+        )
+
+      assert flash["info"] == "The assessment doesn't exist"
+    end
+
     test "loads correctly activity details", %{
       conn: conn,
       section: section,

@@ -14,6 +14,9 @@ export const getTopLevelSchedule = (state: SchedulerAppState): HierarchyItem[] =
     .filter((i) => !!i) as HierarchyItem[];
 };
 
+export const getPreferredSchedulingTime = (state: SchedulerAppState) =>
+  state.scheduler.preferredSchedulingTime;
+
 export const getScheduleBounds = (state: SchedulerAppState) => {
   return {
     startDate: state.scheduler.startDate,

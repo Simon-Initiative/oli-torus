@@ -7,6 +7,7 @@ import { createButtonCommandDesc } from '../commands/commandFactories';
 export const insertCommandButton = createButtonCommandDesc({
   icon: <i className="fa-solid fa-wand-magic-sparkles"></i>,
   description: 'Command Button',
+  category: 'General',
   execute: (_context, editor, _params) => {
     const selection = editor.selection;
     if (!selection) return;

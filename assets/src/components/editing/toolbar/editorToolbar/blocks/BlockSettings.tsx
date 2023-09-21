@@ -86,6 +86,7 @@ function CodeBlock() {
   const switchLanguage = (prettyName: string) =>
     createButtonCommandDesc({
       icon: <i className="fa-solid fa-laptop-code"></i>,
+      category: 'STEM',
       description: prettyName,
       active: (editor) => {
         const topLevel = getHighestTopLevel(editor).valueOr<any>(undefined);

@@ -6,10 +6,10 @@ defmodule Oli.Repo.Migrations.AddBlueprintTable do
 
   def change do
     create table(:blueprints) do
-      add :name, :string, size: 64, null: false
-      add :description, :string, null: false
-      add :content, :map, null: false
-      add :icon, :string, null: false
+      add(:name, :string, size: 64, null: false)
+      add(:description, :string, null: false)
+      add(:content, :map, null: false)
+      add(:icon, :string, null: false)
       timestamps(type: :timestamptz)
     end
 
@@ -26,14 +26,10 @@ defmodule Oli.Repo.Migrations.AddBlueprintTable do
         "{\"blueprint\":[{\"id\":\"\",\"children\":[{\"text\":\"Theorem Title\"}],\"type\":\"h4\"},{\"id\":\"\",\"children\":[{\"text\":\"Statement\"}],\"type\":\"h5\"},{\"id\":\"\",\"children\":[{\"text\":\"Enter a statement here\"}],\"type\":\"p\"},{\"id\":\"\",\"children\":[{\"text\":\"Proof\"}],\"type\":\"h5\"},{\"id\":\"\",\"children\":[{\"text\":\"Enter the proof here\"}],\"type\":\"p\"}]}"
       )
 
-    changeset =
-      Blueprint.changeset(%Blueprint{}, %{
-        name: "Theorem",
-        description: "A theorem is a statement that can be proven true.",
-        content: theorem_blueprint,
-        icon: "rate_review"
-      })
+    insert_statement =
+      "insert into blueprints (name, description, content, icon, inserted_at, updated_at)
+       values ('Theorem', 'A theorem is a statement that can be proven true.', $1, 'rate_review', now(), now());"
 
-    {:ok, _} = Repo.insert(changeset)
+    {:ok, _} = Ecto.Adapters.SQL.query(Repo, insert_statement, [theorem_blueprint])
   end
 end
