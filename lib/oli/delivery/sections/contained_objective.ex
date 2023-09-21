@@ -31,8 +31,9 @@ defmodule Oli.Delivery.Sections.ContainedObjective do
     ])
     |> validate_required([
       :section_id,
-      :container_id,
       :objective_id
     ])
+    |> foreign_key_constraint(:section_id)
+    |> foreign_key_constraint(:objective_id)
   end
 end

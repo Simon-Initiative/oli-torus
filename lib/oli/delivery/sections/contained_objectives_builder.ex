@@ -13,9 +13,7 @@ defmodule Oli.Delivery.Sections.ContainedObjectivesBuilder do
   alias Ecto.Multi
 
   @impl Oban.Worker
-  def perform(%Oban.Job{args: %{"section_slug" => slug}}), do: perform_now(slug)
-
-  def perform_now(section_slug) do
+  def perform(%Oban.Job{args: %{"section_slug" => section_slug}}) do
     timestamps = %{
       inserted_at: {:placeholder, :now},
       updated_at: {:placeholder, :now}
@@ -25,23 +23,21 @@ defmodule Oli.Delivery.Sections.ContainedObjectivesBuilder do
       now: DateTime.utc_now() |> DateTime.truncate(:second)
     }
 
-    res =
-      Multi.new()
-      |> Multi.run(:contained_objectives, &build_contained_objectives(&1, &2, section_slug))
-      |> Multi.insert_all(
-        :inserted_contained_objectives,
-        ContainedObjective,
-        &objectives_with_timestamps(&1, timestamps),
-        placeholders: placeholders
-      )
-      |> Multi.run(:section, &find_section_by_slug(&1, &2, section_slug))
-      |> Multi.update(
-        :done_section,
-        &Section.changeset(&1.section, %{v25_migration: :done})
-      )
-      |> Repo.transaction()
-
-    case res do
+    Multi.new()
+    |> Multi.run(:contained_objectives, &build_contained_objectives(&1, &2, section_slug))
+    |> Multi.insert_all(
+      :inserted_contained_objectives,
+      ContainedObjective,
+      &objectives_with_timestamps(&1, timestamps),
+      placeholders: placeholders
+    )
+    |> Multi.run(:section, &find_section_by_slug(&1, &2, section_slug))
+    |> Multi.update(
+      :done_section,
+      &Section.changeset(&1.section, %{v25_migration: :done})
+    )
+    |> Repo.transaction()
+    |> case do
       {:ok, res} ->
         {:ok, res}
 
