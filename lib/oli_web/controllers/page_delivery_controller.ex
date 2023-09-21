@@ -192,7 +192,8 @@ defmodule OliWeb.PageDeliveryController do
             display_curriculum_item_numbering: section.display_curriculum_item_numbering,
             preview_mode: false,
             page_link_url: &Routes.page_delivery_path(conn, :page, section_slug, &1),
-            container_link_url: &Routes.page_delivery_path(conn, :container, section_slug, &1)
+            container_link_url: &Routes.page_delivery_path(conn, :container, section_slug, &1),
+            user: user
           )
       end
     else
@@ -805,13 +806,14 @@ defmodule OliWeb.PageDeliveryController do
       display_curriculum_item_numbering: section.display_curriculum_item_numbering,
       preview_mode: true,
       page_link_url: &Routes.page_delivery_path(conn, :page, section_slug, &1),
-      container_link_url: &Routes.page_delivery_path(conn, :container, section_slug, &1)
+      container_link_url: &Routes.page_delivery_path(conn, :container, section_slug, &1),
+      user: conn.assigns.current_user || conn.assigns.current_author
     )
   end
 
   def assignments_preview(conn, %{"section_slug" => section_slug}) do
     section = conn.assigns.section
-    user = conn.assigns.current_user
+    user = conn.assigns.current_user || conn.assigns.current_author
 
     render(
       conn,
