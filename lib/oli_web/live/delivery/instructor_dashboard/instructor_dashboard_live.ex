@@ -94,11 +94,9 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
       socket
       |> assign(params: params, view: :reports, active_tab: active_tab)
       |> assign_new(:containers, fn ->
-
         containers = Helpers.get_containers(socket.assigns.section)
         async_calculate_proficiency(socket.assigns.section)
         containers
-
       end)
 
     {:noreply, socket}
@@ -189,7 +187,6 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
         value when value in [nil, "course_content"] ->
           socket =
             assign_new(socket, :hierarchy, fn ->
-
               section =
                 socket.assigns.section
                 |> Oli.Repo.preload([:base_project, :root_section_resource])
@@ -591,7 +588,6 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
   end
 
   defp async_calculate_proficiency(section) do
-
     pid = self()
 
     Task.async(fn ->
@@ -600,17 +596,15 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
 
       send(pid, {:proficiency, proficiency_per_container})
     end)
-
   end
 
   @impl Phoenix.LiveView
   def handle_info({:proficiency, proficiency_per_container}, socket) do
-
     case Map.get(socket.assigns, :containers) do
-      nil -> {:noreply, socket}
+      nil ->
+        {:noreply, socket}
 
       {total, containers} ->
-
         containers_with_metrics =
           Enum.map(containers, fn container ->
             Map.merge(container, %{
@@ -623,9 +617,17 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
     end
   end
 
+  def handle_info({:redirect_with_warning, message}, socket) do
+    {:noreply,
+     redirect(
+       socket |> put_flash(:info, message),
+       to:
+         ~p"/sections/#{socket.assigns.section_slug}/instructor_dashboard/#{socket.assigns.view}/#{socket.assigns.active_tab}"
+     )}
+  end
+
   @impl Phoenix.LiveView
   def handle_info(_any, socket) do
     {:noreply, socket}
   end
-
 end

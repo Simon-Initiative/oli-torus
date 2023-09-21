@@ -1,5 +1,5 @@
 defmodule OliWeb.Components.Delivery.ScoredActivities do
-  use Phoenix.LiveComponent
+  use OliWeb, :live_component
 
   import Ecto.Query
   alias Oli.Publishing.PublishedResource
@@ -39,85 +39,15 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
   }
 
   def mount(socket) do
-    {:ok, assign(socket, scripts_loaded: false)}
+    {:ok, assign(socket, scripts_loaded: false, table_model: nil, current_assessment: nil)}
   end
 
   def update(assigns, socket) do
     params = decode_params(assigns.params)
 
     socket =
-      case params.assessment_id do
-        nil ->
-          {total_count, rows} = apply_filters(assigns.assessments, params)
-
-          {:ok, table_model} = AssessmentsTableModel.new(rows, assigns.ctx, socket.assigns.myself)
-
-          table_model =
-            Map.merge(table_model, %{
-              rows: rows,
-              sort_order: params.sort_order
-            })
-            |> SortableTableModel.update_sort_params(params.sort_by)
-
-          assign(socket,
-            table_model: table_model,
-            total_count: total_count,
-            current_assessment: nil
-          )
-
-        assessment_id ->
-          current_assessment =
-            Enum.find(assigns.assessments, fn a ->
-              a.id == assessment_id
-            end)
-
-          student_ids = Enum.map(assigns.students, & &1.id)
-
-          activities = get_activities(current_assessment, assigns.section, student_ids)
-
-          students_with_attempts =
-            DeliveryResolver.students_with_attempts_for_page(
-              current_assessment,
-              assigns.section.id,
-              student_ids
-            )
-
-          student_emails_without_attempts =
-            Enum.reduce(assigns.students, [], fn s, acc ->
-              if s.id in students_with_attempts do
-                acc
-              else
-                [s.email | acc]
-              end
-            end)
-
-          {total_count, rows} = apply_filters(activities, params)
-
-          {:ok, table_model} = ActivitiesTableModel.new(rows)
-
-          table_model =
-            table_model
-            |> Map.merge(%{
-              rows: rows,
-              sort_order: params.sort_order
-            })
-            |> SortableTableModel.update_sort_params(params.sort_by)
-
-          assign(socket,
-            current_assessment: current_assessment,
-            activities: activities,
-            table_model: table_model,
-            total_count: total_count,
-            students_with_attempts_count: Enum.count(students_with_attempts),
-            student_emails_without_attempts: student_emails_without_attempts,
-            total_attempts_count:
-              count_attempts(current_assessment, assigns.section, student_ids),
-            rendered_activity_id: UUID.uuid4()
-          )
-      end
-
-    socket =
       assign(socket,
+        params: params,
         params: params,
         section: assigns.section,
         view: assigns.view,
@@ -129,18 +59,89 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
         preview_rendered: nil
       )
 
-    socket =
-      if socket.assigns.current_assessment != nil,
-        do: assign_selected_activity(socket, params[:selected_activity]),
-        else: socket
+    case params.assessment_id do
+      nil ->
+        {total_count, rows} = apply_filters(assigns.assessments, params)
 
-    {:ok, socket}
+        {:ok, table_model} = AssessmentsTableModel.new(rows, assigns.ctx, socket.assigns.myself)
+
+        table_model =
+          Map.merge(table_model, %{
+            rows: rows,
+            sort_order: params.sort_order
+          })
+          |> SortableTableModel.update_sort_params(params.sort_by)
+
+        {:ok,
+         assign(socket,
+           table_model: table_model,
+           total_count: total_count,
+           current_assessment: nil
+         )}
+
+      assessment_id ->
+        case Enum.find(assigns.assessments, fn a ->
+               a.id == assessment_id
+             end) do
+          nil ->
+            send(self(), {:redirect_with_warning, "The assessment doesn't exist"})
+            {:ok, socket}
+
+          current_assessment ->
+            student_ids = Enum.map(assigns.students, & &1.id)
+
+            activities = get_activities(current_assessment, assigns.section, student_ids)
+
+            students_with_attempts =
+              DeliveryResolver.students_with_attempts_for_page(
+                current_assessment,
+                assigns.section.id,
+                student_ids
+              )
+
+            student_emails_without_attempts =
+              Enum.reduce(assigns.students, [], fn s, acc ->
+                if s.id in students_with_attempts do
+                  acc
+                else
+                  [s.email | acc]
+                end
+              end)
+
+            {total_count, rows} = apply_filters(activities, params)
+
+            {:ok, table_model} = ActivitiesTableModel.new(rows)
+
+            table_model =
+              table_model
+              |> Map.merge(%{
+                rows: rows,
+                sort_order: params.sort_order
+              })
+              |> SortableTableModel.update_sort_params(params.sort_by)
+
+            {:ok,
+             assign(socket,
+               current_assessment: current_assessment,
+               activities: activities,
+               table_model: table_model,
+               total_count: total_count,
+               students_with_attempts_count: Enum.count(students_with_attempts),
+               student_emails_without_attempts: student_emails_without_attempts,
+               total_attempts_count:
+                 count_attempts(current_assessment, assigns.section, student_ids),
+               rendered_activity_id: UUID.uuid4()
+             )
+             |> assign_selected_activity(params[:selected_activity])}
+        end
+    end
   end
 
   def render(assigns) do
     ~H"""
     <div>
-      <div class="bg-white shadow-sm dark:bg-gray-800 dark:text-white">
+      <.loader if={!@table_model} />
+      <div :if={@table_model} class="bg-white shadow-sm dark:bg-gray-800 dark:text-white">
         <div class="flex flex-col space-y-4 lg:space-y-0 lg:flex-row lg:justify-between px-9">
           <%= if @current_assessment != nil do %>
             <div class="flex flex-col">
@@ -231,27 +232,25 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
           show_bottom_paging={false}
         />
       </div>
-      <%= if @current_assessment != nil and @activities != [] do %>
-        <div class="mt-9">
-          <div class="bg-white dark:bg-gray-800 dark:text-white w-min whitespace-nowrap rounded-t-md block font-medium text-sm leading-tight uppercase border-x-1 border-t-1 border-b-0 border-gray-300 px-6 py-4">
-            Question details
-          </div>
-          <div
-            class="bg-white dark:bg-gray-800 dark:text-white shadow-sm px-6 -mt-5"
-            id="activity_detail"
-            phx-hook="LoadSurveyScripts"
-          >
-            <%= if @preview_rendered != nil do %>
-              <RenderedActivity.render
-                id={@rendered_activity_id}
-                rendered_activity={@preview_rendered}
-              />
-            <% else %>
-              <p class="pt-9 pb-5">No attempt registered for this question</p>
-            <% end %>
-          </div>
+      <div :if={@current_assessment != nil and @activities != []} class="mt-9">
+        <div class="bg-white dark:bg-gray-800 dark:text-white w-min whitespace-nowrap rounded-t-md block font-medium text-sm leading-tight uppercase border-x-1 border-t-1 border-b-0 border-gray-300 px-6 py-4">
+          Question details
         </div>
-      <% end %>
+        <div
+          class="bg-white dark:bg-gray-800 dark:text-white shadow-sm px-6 -mt-5"
+          id="activity_detail"
+          phx-hook="LoadSurveyScripts"
+        >
+          <%= if @preview_rendered != nil do %>
+            <RenderedActivity.render
+              id={@rendered_activity_id}
+              rendered_activity={@preview_rendered}
+            />
+          <% else %>
+            <p class="pt-9 pb-5">No attempt registered for this question</p>
+          <% end %>
+        </div>
+      </div>
     </div>
     """
   end
@@ -629,7 +628,7 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
       )
       |> order_by([aa, _, _, _, _, _], desc: aa.inserted_at)
       |> limit(1)
-      |> select([aa, _, _, _, _, _], aa)
+      |> Ecto.Query.select([aa, _, _, _, _, _], aa)
       |> select_merge(
         [aa, resource_attempt, resource_access, user, activity_revision, resource_revision],
         %{
