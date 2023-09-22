@@ -16,6 +16,10 @@ defmodule Mix.Tasks.CreateContainedObjectives do
   def run(_args) do
     Mix.Task.run("app.start")
 
+    run_now()
+  end
+
+  def run_now() do
     Logger.info("Start enqueueing contained objectives creation")
 
     Multi.new()
