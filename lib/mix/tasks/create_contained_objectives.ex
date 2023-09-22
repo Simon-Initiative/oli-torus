@@ -1,5 +1,4 @@
 defmodule Mix.Tasks.CreateContainedObjectives do
-  @moduledoc "Printed when the user requests `mix help create_contained_objectives`"
   @shortdoc "Create contained objectives for all sections that were not migrated"
 
   use Mix.Task
