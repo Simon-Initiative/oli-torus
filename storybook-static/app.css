@@ -4577,6 +4577,10 @@ table.table-striped tbody tr:nth-child(even) {
   height: 40px;
 }
 
+.h-\[41px\] {
+  height: 41px;
+}
+
 .h-\[450px\] {
   height: 450px;
 }
