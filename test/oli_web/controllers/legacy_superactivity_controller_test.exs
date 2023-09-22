@@ -122,7 +122,7 @@ defmodule OliWeb.LegacySuperactivityControllerTest do
           )
         )
 
-      assert conn.resp_body =~ ~s(<attempt_history activity_guid=)
+      assert conn.resp_body =~ ~s(<attempt_history max_attempts=)
 
       conn =
         recycle(conn)
@@ -153,7 +153,7 @@ defmodule OliWeb.LegacySuperactivityControllerTest do
           )
         )
 
-      assert conn.resp_body =~ ~s(<file_record date_created=")
+      assert conn.resp_body =~ ~s(<file_record file_name=")
 
       conn =
         recycle(conn)
@@ -196,7 +196,7 @@ defmodule OliWeb.LegacySuperactivityControllerTest do
           )
         )
 
-      assert conn.resp_body =~ ~s(<attempt_history activity_guid=)
+      assert conn.resp_body =~ ~s(<attempt_history max_attempts=)
 
       conn =
         recycle(conn)
@@ -215,7 +215,7 @@ defmodule OliWeb.LegacySuperactivityControllerTest do
           )
         )
 
-      assert conn.resp_body =~ ~s(<attempt_history activity_guid=)
+      assert conn.resp_body =~ ~s(<attempt_history max_attempts=)
 
       conn =
         recycle(conn)
@@ -235,7 +235,6 @@ defmodule OliWeb.LegacySuperactivityControllerTest do
         )
 
       assert conn.resp_body =~ ~s(command not supported)
-
     end
   end
 

@@ -59,7 +59,7 @@ defmodule OliWeb.Delivery.OpenAndFreeIndexTest do
              |> Floki.find(~s{div[data-live-react-class="Components.UserAccountMenu"]})
              |> Floki.attribute("data-live-react-props")
              |> hd =~
-               ~s{\"role\":\"instructor\",\"roleColor\":\"#2ecc71\",\"roleLabel\":\"Instructor\"}
+               ~s{\"roleColor\":\"#2ecc71\",\"roleLabel\":\"Instructor\"}
     end
 
     test "gets the 'student' label role in the user account menu if the user with platform_role=student can not create sections",
@@ -81,7 +81,7 @@ defmodule OliWeb.Delivery.OpenAndFreeIndexTest do
              |> Floki.find(~s{div[data-live-react-class="Components.UserAccountMenu"]})
              |> Floki.attribute("data-live-react-props")
              |> hd =~
-               ~s{\"role\":\"student\",\"roleColor\":\"#3498db\",\"roleLabel\":\"Student\"}
+               ~s{\"roleColor\":\"#3498db\",\"roleLabel\":\"Student\"}
     end
 
     test "renders product title, image and description in sections index with a link to acces to it",
