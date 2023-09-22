@@ -8,9 +8,12 @@ defmodule Oli.Delivery.Settings.StudentException do
     belongs_to :section, Oli.Delivery.Sections.Section
     belongs_to :resource, Oli.Resources.Resource
 
-    embeds_one :collab_space_config, Oli.Resources.Collaboration.CollabSpaceConfig, on_replace: :delete
+    embeds_one :collab_space_config, Oli.Resources.Collaboration.CollabSpaceConfig,
+      on_replace: :delete
+
     embeds_one :explanation_strategy, Oli.Resources.ExplanationStrategy, on_replace: :delete
 
+    field :start_date, :utc_datetime, null: true
     field :end_date, :utc_datetime, null: true
     field :password, :string, null: true
     field :max_attempts, :integer, null: true
@@ -33,6 +36,7 @@ defmodule Oli.Delivery.Settings.StudentException do
       :user_id,
       :section_id,
       :resource_id,
+      :start_date,
       :end_date,
       :password,
       :max_attempts,
@@ -44,7 +48,7 @@ defmodule Oli.Delivery.Settings.StudentException do
       :scoring_strategy_id,
       :review_submission,
       :feedback_mode,
-      :feedback_scheduled_date,
+      :feedback_scheduled_date
     ])
     |> cast_embed(:explanation_strategy)
     |> cast_embed(:collab_space_config)

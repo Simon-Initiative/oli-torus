@@ -222,6 +222,10 @@ defmodule OliWeb.Router do
     plug(Oli.Plugs.EnsureUserSectionVisit)
   end
 
+  pipeline :delivery_preview do
+    plug(Oli.Plugs.DeliveryPreview)
+  end
+
   ### HELPERS ###
 
   defp put_pow_mailer_layout(conn, layout), do: put_private(conn, :pow_mailer_layouts, layout)
@@ -350,7 +354,7 @@ defmodule OliWeb.Router do
     )
 
     get(
-      "/products/:product_id/payments/donwload_codes",
+      "/products/:product_id/payments/download_codes",
       PaymentController,
       :download_payment_codes
     )
@@ -402,7 +406,6 @@ defmodule OliWeb.Router do
     live("/:project_id/publish", Projects.PublishView)
     post("/:project_id/datashop", ProjectController, :download_datashop)
     post("/:project_id/export", ProjectController, :download_export)
-    post("/:project_id/insights", ProjectController, :download_analytics)
     post("/:project_id/duplicate", ProjectController, :clone_project)
 
     # Alternatives Groups
@@ -924,6 +927,7 @@ defmodule OliWeb.Router do
       :require_section,
       :delivery,
       :require_exploration_pages,
+      :delivery_preview,
       :delivery_protected,
       :maybe_gated_resource,
       :enforce_enroll_and_paywall,

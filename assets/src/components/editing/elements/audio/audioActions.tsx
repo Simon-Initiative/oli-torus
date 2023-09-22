@@ -58,6 +58,7 @@ export const insertAudio = (onRequestMedia: any) =>
   createButtonCommandDesc({
     icon: <i className="fa-solid fa-music"></i>,
     description: 'Audio Clip',
+    category: 'Media',
 
     execute: (context, editor: Editor) => {
       const at = editor.selection as any;

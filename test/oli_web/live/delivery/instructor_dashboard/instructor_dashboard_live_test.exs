@@ -149,5 +149,30 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLiveTest do
 
       assert has_element?(view, "h4", "Discussion Activity")
     end
+
+    test "user is sent to report/default_content_tab if an invalid tab is provided in the url param",
+         %{
+           conn: conn,
+           instructor: instructor,
+           section: section
+         } do
+      Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
+
+      {:ok, view, _html} =
+        live(
+          conn,
+          Routes.live_path(
+            OliWeb.Endpoint,
+            OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
+            section.slug,
+            :reports,
+            "invalid_tab",
+            %{}
+          )
+        )
+
+      # content is the active tab
+      assert has_element?(view, "a.active", "Content")
+    end
   end
 end

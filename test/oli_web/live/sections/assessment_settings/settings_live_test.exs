@@ -6,6 +6,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
   import Oli.Factory
 
   alias Oli.Delivery.{Settings, Sections}
+  alias Oli.Delivery
   alias Lti_1p3.Tool.ContextRoles
   alias Oli.Resources.ResourceType
   alias Oli.Publishing.DeliveryResolver
@@ -333,8 +334,8 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
     {:ok, _} = Sections.rebuild_contained_pages(section)
 
     # enroll students to section
-
-    [student_1, student_2] = insert_pair(:user)
+    student_1 = insert(:user, %{name: "Student 1"})
+    student_2 = insert(:user, %{name: "Student 2"})
     [student_3, student_4] = insert_pair(:user)
 
     Sections.enroll(student_1.id, section.id, [
@@ -407,6 +408,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
           [
             :index,
             :name,
+            :available_date,
             :due_date,
             :max_attempts,
             :time_limit,
@@ -424,6 +426,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
         :student_exceptions ->
           [
             :student,
+            :available_date,
             :due_date,
             :max_attempts,
             :time_limit,
@@ -452,7 +455,9 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
               Floki.text(data) |> String.trim()
 
             select ->
-              Floki.find(select, "option[selected]") |> Floki.text() |> String.trim()
+              Floki.find(select, "option[selected]")
+              |> Floki.text()
+              |> String.trim()
           end
         end)
       end)
@@ -1149,7 +1154,143 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
       assert page_1_assessment_settings.feedback_scheduled_date == nil
     end
 
-    test "schedule date can be changed by clicking the due date in the table",
+    test "available date can be changed by clicking the available date in the table",
+         %{
+           conn: conn,
+           section: section,
+           page_1: page_1
+         } do
+      {:ok, view, _html} = live(conn, live_view_overview_route(section.slug, "settings", "all"))
+
+      # LiveViewTest doesn't support testing two or more JS.push chained so I need to trigger two events separatedly
+      view
+      |> with_target("#settings_table")
+      |> render_click("edit_date", %{assessment_id: "#{page_1.resource_id}"})
+
+      view
+      |> with_target("#assessment_available_date_modal")
+      |> render_click("open", %{})
+
+      assert has_element?(view, "h5", "Page 1 available date")
+
+      assert has_element?(
+               view,
+               "label",
+               "Please pick an available date for the selected assessment"
+             )
+
+      new_date = ~U[2023-10-10 16:00:00Z]
+
+      view
+      |> element("#assessment-available-date-form")
+      |> render_submit(%{start_date: new_date})
+
+      assert has_element?(view, "button", "October 10, 2023")
+    end
+
+    test "preserves distance when setting available date after due date",
+         %{
+           conn: conn,
+           section: section,
+           page_1: page_1
+         } do
+      Sections.get_section_resource(section.id, page_1.resource.id)
+      |> Sections.update_section_resource(%{
+        start_date: ~U[2023-10-10 16:00:00Z],
+        end_date: ~U[2023-10-11 17:00:00Z],
+        scheduling_type: :due_by
+      })
+
+      {:ok, view, _html} = live(conn, live_view_overview_route(section.slug, "settings", "all"))
+
+      # LiveViewTest doesn't support testing two or more JS.push chained so I need to trigger two events separatedly
+      view
+      |> with_target("#settings_table")
+      |> render_click("edit_date", %{assessment_id: "#{page_1.resource_id}"})
+
+      view
+      |> with_target("#assessment_available_date_modal")
+      |> render_click("open", %{})
+
+      assert has_element?(view, "h5", "Page 1 available date")
+
+      assert has_element?(
+               view,
+               "label",
+               "Please pick an available date for the selected assessment"
+             )
+
+      new_date = ~U[2023-10-14 17:00:00Z]
+
+      view
+      |> element("#assessment-available-date-form")
+      |> render_submit(%{start_date: new_date})
+
+      # due date should be moved to 1 day after the new available date
+      assert has_element?(view, "button", "October 15, 2023 6:00 PM")
+    end
+
+    test "limits datetime selection when setting available date for the first time and the due date is already set",
+         %{
+           conn: conn,
+           section: section,
+           page_1: page_1
+         } do
+      end_date = ~U[2023-10-11 17:00:00Z]
+
+      Sections.get_section_resource(section.id, page_1.resource.id)
+      |> Sections.update_section_resource(%{
+        start_date: nil,
+        end_date: end_date,
+        scheduling_type: :due_by
+      })
+
+      {:ok, view, _html} = live(conn, live_view_overview_route(section.slug, "settings", "all"))
+
+      # LiveViewTest doesn't support testing two or more JS.push chained so I need to trigger two events separatedly
+      view
+      |> with_target("#settings_table")
+      |> render_click("edit_date", %{assessment_id: "#{page_1.resource_id}"})
+
+      view
+      |> with_target("#assessment_available_date_modal")
+      |> render_click("open", %{})
+
+      assert has_element?(view, "h5", "Page 1 available date")
+
+      assert has_element?(
+               view,
+               "label",
+               "Please pick an available date for the selected assessment"
+             )
+
+      # it only allows start dates up to one day before the end date for this scenario
+      view
+      |> element("#start_date_input[max]")
+      |> render() =~ "max=\"2023-10-10T17:00\""
+    end
+
+    test "available date renders 'Always available' if it is not set",
+         %{
+           conn: conn,
+           section: section,
+           page_1: page_1
+         } do
+      Sections.get_section_resource(section.id, page_1.resource.id)
+      |> Sections.update_section_resource(%{
+        start_date: ~U[2023-10-10 16:00:00Z]
+      })
+
+      {:ok, view, _html} = live(conn, live_view_overview_route(section.slug, "settings", "all"))
+
+      [assessment_1, assessment_2, _assessment_3, _assessment_4] =
+        table_as_list_of_maps(view, :settings)
+
+      assert assessment_1.available_date =~ "October 10, 2023"
+      assert assessment_2.available_date =~ "Always available"
+    end
+
+    test "due date date can be changed by clicking the due date in the table",
          %{
            conn: conn,
            section: section,
@@ -1167,7 +1308,12 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
       |> render_click("open", %{})
 
       assert has_element?(view, "h5", "Page 1 due date")
-      assert has_element?(view, "label", "Please pick a due date for the selected assessment")
+
+      assert has_element?(
+               view,
+               "label",
+               "Please pick a due date for the selected assessment"
+             )
 
       new_date = ~U[2023-10-10 16:00:00Z]
 
@@ -1176,6 +1322,88 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
       |> render_submit(%{end_date: new_date})
 
       assert has_element?(view, "button", "October 10, 2023")
+    end
+
+    test "preserves distance when setting due date before available date",
+         %{
+           conn: conn,
+           section: section,
+           page_1: page_1
+         } do
+      Sections.get_section_resource(section.id, page_1.resource.id)
+      |> Sections.update_section_resource(%{
+        start_date: ~U[2023-10-10 16:00:00Z],
+        end_date: ~U[2023-10-11 17:00:00Z],
+        scheduling_type: :due_by
+      })
+
+      {:ok, view, _html} = live(conn, live_view_overview_route(section.slug, "settings", "all"))
+
+      # LiveViewTest doesn't support testing two or more JS.push chained so I need to trigger two events separatedly
+      view
+      |> with_target("#settings_table")
+      |> render_click("edit_date", %{assessment_id: "#{page_1.resource_id}"})
+
+      view
+      |> with_target("#assessment_due_date_modal")
+      |> render_click("open", %{})
+
+      assert has_element?(view, "h5", "Page 1 due date")
+
+      assert has_element?(
+               view,
+               "label",
+               "Please pick a due date for the selected assessment"
+             )
+
+      new_date = ~U[2023-10-08 12:00:00Z]
+
+      view
+      |> element("#assessment-due-date-form")
+      |> render_submit(%{end_date: new_date})
+
+      # available date should be moved to 1 day before the new due date
+      assert has_element?(view, "button", "October 7, 2023 11:00 AM")
+    end
+
+    test "limits datetime selection when setting due date for the first time and the available date is already set",
+         %{
+           conn: conn,
+           section: section,
+           page_1: page_1
+         } do
+      start_date = ~U[2023-10-11 17:00:00Z]
+
+      Sections.get_section_resource(section.id, page_1.resource.id)
+      |> Sections.update_section_resource(%{
+        start_date: start_date,
+        end_date: nil,
+        scheduling_type: :due_by
+      })
+
+      {:ok, view, _html} = live(conn, live_view_overview_route(section.slug, "settings", "all"))
+
+      # LiveViewTest doesn't support testing two or more JS.push chained so I need to trigger two events separatedly
+      view
+      |> with_target("#settings_table")
+      |> render_click("edit_date", %{assessment_id: "#{page_1.resource_id}"})
+
+      view
+      |> with_target("#assessment_due_date_modal")
+      |> render_click("open", %{})
+
+      assert has_element?(view, "h5", "Page 1 due date")
+
+      assert has_element?(
+               view,
+               "label",
+               "Please pick a due date for the selected assessment"
+             )
+
+      # it only allows end dates one day after from the start date for this scenario
+      view
+      |> element("#end_date_input[min]")
+      |> render() =~ "min=\"2023-10-12T17:00\""
     end
 
     test "due date renders 'No due date' if scheduling type != due_by, and renders the date if scheduling type = due_by",
@@ -1233,7 +1461,9 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
       # select assessment 1
       view
       |> form(~s{form[id=assessment_select]})
-      |> render_change(%{"assessments" => %{"assessment_id" => page_1.resource.id}})
+      |> render_change(%{
+        "assessments" => %{"assessment_id" => page_1.resource.id}
+      })
 
       assert [se_1, se_2] = table_as_list_of_maps(view, :student_exceptions)
       assert se_1.student =~ student_1.name
@@ -1243,7 +1473,9 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
       # select assessment 2
       view
       |> form(~s{form[id=assessment_select]})
-      |> render_change(%{"assessments" => %{"assessment_id" => page_2.resource.id}})
+      |> render_change(%{
+        "assessments" => %{"assessment_id" => page_2.resource.id}
+      })
 
       assert [se_1] = table_as_list_of_maps(view, :student_exceptions)
       assert se_1.student =~ student_1.name
@@ -1252,7 +1484,9 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
       # select assessment 3
       view
       |> form(~s{form[id=assessment_select]})
-      |> render_change(%{"assessments" => %{"assessment_id" => page_3.resource.id}})
+      |> render_change(%{
+        "assessments" => %{"assessment_id" => page_3.resource.id}
+      })
 
       assert [] = table_as_list_of_maps(view, :student_exceptions)
       assert render(view) =~ "None exist"
@@ -1413,7 +1647,10 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
       assert render(view) =~ "None exist"
 
       view
-      |> element(~s{button[phx-value-modal_name=add_student_exception]}, "Add New")
+      |> element(
+        ~s{button[phx-value-modal_name=add_student_exception]},
+        "Add New"
+      )
       |> render_click()
 
       # the modal is shown
@@ -1492,6 +1729,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
       })
 
       [updated_student_exception_1] = table_as_list_of_maps(view, :student_exceptions)
+
       assert updated_student_exception_1.late_submit == "Disallow"
       assert student_exception_1.student == updated_student_exception_1.student
     end
@@ -1552,7 +1790,194 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
              )
     end
 
-    test "schedule date can be changed by clicking the due date in the table",
+    test "available date can be changed by clicking the available date in the table",
+         %{
+           conn: conn,
+           section: section,
+           page_1: page_1,
+           student_1: student_1
+         } do
+      exception = set_student_exception(section, page_1.resource, student_1)
+
+      {:ok, view, _html} =
+        live(
+          conn,
+          live_view_overview_route(
+            section.slug,
+            "student_exceptions",
+            page_1.resource.id
+          )
+        )
+
+      # LiveViewTest doesn't support testing two or more JS.push chained so I need to trigger two events separatedly
+      view
+      |> with_target("#student_exceptions_table")
+      |> render_click("edit_date", %{user_id: "#{exception.user_id}"})
+
+      view
+      |> with_target("#student_available_date_modal")
+      |> render_click("open", %{})
+
+      assert has_element?(view, "h5", "Available date for #{student_1.name}")
+
+      assert has_element?(
+               view,
+               "label",
+               "Please pick an available date for the selected student"
+             )
+
+      new_date = ~U[2023-10-10 16:00:00Z]
+
+      view
+      |> element("#student-available-date-form")
+      |> render_submit(%{start_date: new_date})
+
+      assert has_element?(view, "button", "October 10, 2023")
+    end
+
+    test "preserves distance when setting available date after due date",
+         %{
+           conn: conn,
+           section: section,
+           page_1: page_1,
+           student_1: student_1
+         } do
+      exception = set_student_exception(section, page_1.resource, student_1)
+
+      Delivery.get_delivery_setting_by(%{
+        resource_id: page_1.resource.id,
+        user_id: student_1.id
+      })
+      |> Delivery.update_delivery_setting(%{
+        start_date: ~U[2023-10-10 16:00:00Z],
+        end_date: ~U[2023-10-11 17:00:00Z],
+        scheduling_type: :due_by
+      })
+
+      {:ok, view, _html} =
+        live(
+          conn,
+          live_view_overview_route(
+            section.slug,
+            "student_exceptions",
+            page_1.resource.id
+          )
+        )
+
+      # LiveViewTest doesn't support testing two or more JS.push chained so I need to trigger two events separatedly
+      view
+      |> with_target("#student_exceptions_table")
+      |> render_click("edit_date", %{user_id: "#{exception.user_id}"})
+
+      view
+      |> with_target("#student_available_date_modal")
+      |> render_click("open", %{})
+
+      assert has_element?(view, "h5", "Available date for #{student_1.name}")
+
+      assert has_element?(
+               view,
+               "label",
+               "Please pick an available date for the selected student"
+             )
+
+      new_date = ~U[2023-10-14 17:00:00Z]
+
+      view
+      |> element("#student-available-date-form")
+      |> render_submit(%{start_date: new_date})
+
+      # due date should be moved to 1 day after the new available date
+      assert has_element?(view, "button", "October 15, 2023 6:00 PM")
+    end
+
+    test "limits datetime selection when setting available date for the first time and the due date is already set",
+         %{
+           conn: conn,
+           section: section,
+           page_1: page_1,
+           student_1: student_1
+         } do
+      end_date = ~U[2023-10-11 17:00:00Z]
+      exception = set_student_exception(section, page_1.resource, student_1)
+
+      Delivery.get_delivery_setting_by(%{
+        resource_id: page_1.resource.id,
+        user_id: student_1.id
+      })
+      |> Delivery.update_delivery_setting(%{
+        start_date: nil,
+        end_date: end_date,
+        scheduling_type: :due_by
+      })
+
+      {:ok, view, _html} =
+        live(
+          conn,
+          live_view_overview_route(section.slug, "student_exceptions", page_1.resource.id)
+        )
+
+      # LiveViewTest doesn't support testing two or more JS.push chained so I need to trigger two events separatedly
+      view
+      |> with_target("#student_exceptions_table")
+      |> render_click("edit_date", %{user_id: "#{exception.user_id}"})
+
+      view
+      |> with_target("#student_available_date_modal")
+      |> render_click("open", %{})
+
+      assert has_element?(view, "h5", "Available date for #{student_1.name}")
+
+      assert has_element?(
+               view,
+               "label",
+               "Please pick an available date for the selected student"
+             )
+
+      # it only allows start dates from one day before the end date for this scenario
+      view
+      |> element("#start_date_input[max]")
+      |> render() =~ "max=\"2023-10-10T17:00\""
+    end
+
+    test "available date renders 'Always available' if it is not set",
+         %{
+           conn: conn,
+           section: section,
+           page_1: page_1,
+           student_1: student_1,
+           student_2: student_2
+         } do
+      _exception_1 = set_student_exception(section, page_1.resource, student_1)
+      _exception_2 = set_student_exception(section, page_1.resource, student_2)
+
+      Delivery.get_delivery_setting_by(%{
+        resource_id: page_1.resource.id,
+        user_id: student_1.id
+      })
+      |> Delivery.update_delivery_setting(%{
+        start_date: ~U[2023-10-10 16:00:00Z]
+      })
+
+      {:ok, view, _html} =
+        live(
+          conn,
+          live_view_overview_route(
+            section.slug,
+            "student_exceptions",
+            page_1.resource.id
+          )
+        )
+
+      [student_1_exception, student_2_exception] =
+        table_as_list_of_maps(view, :student_exceptions)
+        |> Enum.sort_by(& &1.student)
+
+      assert student_1_exception.available_date =~ "October 10, 2023"
+      assert student_2_exception.available_date =~ "Always available"
+    end
+
+    test "due date can be changed by clicking the due date in the table",
          %{
            conn: conn,
            section: section,
@@ -1581,7 +2006,12 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
       |> render_click("open", %{})
 
       assert has_element?(view, "h5", "Due date for #{student_1.name}")
-      assert has_element?(view, "label", "Please pick a due date for the selected student")
+
+      assert has_element?(
+               view,
+               "label",
+               "Please pick a due date for the selected student"
+             )
 
       new_date = ~U[2023-10-10 16:00:00Z]
 
@@ -1590,6 +2020,111 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
       |> render_submit(%{end_date: new_date})
 
       assert has_element?(view, "button", "October 10, 2023")
+    end
+
+    test "preserves distance when setting due date before available date",
+         %{
+           conn: conn,
+           section: section,
+           page_1: page_1,
+           student_1: student_1
+         } do
+      exception = set_student_exception(section, page_1.resource, student_1)
+
+      Delivery.get_delivery_setting_by(%{
+        resource_id: page_1.resource.id,
+        user_id: student_1.id
+      })
+      |> Delivery.update_delivery_setting(%{
+        start_date: ~U[2023-10-10 16:00:00Z],
+        end_date: ~U[2023-10-11 17:00:00Z],
+        scheduling_type: :due_by
+      })
+
+      {:ok, view, _html} =
+        live(
+          conn,
+          live_view_overview_route(
+            section.slug,
+            "student_exceptions",
+            page_1.resource.id
+          )
+        )
+
+      # LiveViewTest doesn't support testing two or more JS.push chained so I need to trigger two events separatedly
+      view
+      |> with_target("#student_exceptions_table")
+      |> render_click("edit_date", %{user_id: "#{exception.user_id}"})
+
+      view
+      |> with_target("#student_due_date_modal")
+      |> render_click("open", %{})
+
+      assert has_element?(view, "h5", "Due date for #{student_1.name}")
+
+      assert has_element?(
+               view,
+               "label",
+               "Please pick a due date for the selected student"
+             )
+
+      new_date = ~U[2023-10-03 12:00:00Z]
+
+      view
+      |> element("#student-due-date-form")
+      |> render_submit(%{end_date: new_date})
+
+      # available date should be moved to 1 day before the new due date
+      assert has_element?(view, "button", "October 2, 2023 11:00 AM")
+    end
+
+    test "limits datetime selection when setting due date for the first time and the available date is already set",
+         %{
+           conn: conn,
+           section: section,
+           page_1: page_1,
+           student_1: student_1
+         } do
+      start_date = ~U[2023-10-11 17:00:00Z]
+      exception = set_student_exception(section, page_1.resource, student_1)
+
+      Delivery.get_delivery_setting_by(%{
+        resource_id: page_1.resource.id,
+        user_id: student_1.id
+      })
+      |> Delivery.update_delivery_setting(%{
+        start_date: start_date,
+        end_date: nil,
+        scheduling_type: :due_by
+      })
+
+      {:ok, view, _html} =
+        live(
+          conn,
+          live_view_overview_route(section.slug, "student_exceptions", page_1.resource.id)
+        )
+
+      # LiveViewTest doesn't support testing two or more JS.push chained so I need to trigger two events separatedly
+      view
+      |> with_target("#student_exceptions_table")
+      |> render_click("edit_date", %{user_id: "#{exception.user_id}"})
+
+      view
+      |> with_target("#student_due_date_modal")
+      |> render_click("open", %{})
+
+      assert has_element?(view, "h5", "Due date for #{student_1.name}")
+
+      assert has_element?(
+               view,
+               "label",
+               "Please pick a due date for the selected student"
+             )
+
+      # it only allows end dates from one day after the start date for this scenario
+      view
+      |> element("#end_date_input[min]")
+      |> render() =~ "min=\"2023-10-12T17:00\""
     end
   end
 end

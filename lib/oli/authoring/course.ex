@@ -22,9 +22,10 @@ defmodule Oli.Authoring.Course do
 
   def list_project_resources(project_id) do
     Repo.all(
-      from pr in ProjectResource,
+      from(pr in ProjectResource,
         where: pr.project_id == ^project_id,
         select: pr
+      )
     )
   end
 
@@ -41,11 +42,12 @@ defmodule Oli.Authoring.Course do
   """
   def list_projects_containing_resource(resource_id) do
     Repo.all(
-      from pr in ProjectResource,
+      from(pr in ProjectResource,
         join: p in Project,
         on: p.id == pr.project_id,
         where: pr.resource_id == ^resource_id,
         select: p
+      )
     )
   end
 
@@ -309,7 +311,8 @@ defmodule Oli.Authoring.Course do
         title: title,
         version: "1.0.0",
         family_id: family.id,
-        publisher_id: default_publisher.id
+        publisher_id: default_publisher.id,
+        analytics_version: :v2
       },
       additional_attrs
     )
@@ -318,6 +321,30 @@ defmodule Oli.Authoring.Course do
   def update_project(%Project{} = project, attrs) do
     project
     |> Project.changeset(attrs)
+    |> Repo.update()
+  end
+
+  @doc """
+  Updates the latest_analytics_snapshot_url and latest_analytics_snapshot_timestamp for the given project.
+  """
+  def update_project_latest_analytics_snapshot_url(project_slug, url, timestamp) do
+    get_project_by_slug(project_slug)
+    |> Project.changeset(%{
+      latest_analytics_snapshot_url: url,
+      latest_analytics_snapshot_timestamp: timestamp
+    })
+    |> Repo.update()
+  end
+
+  @doc """
+  Updates the latest_datashop_snapshot_url and latest_datashop_snapshot_timestamp for the given project.
+  """
+  def update_project_latest_datashop_snapshot_url(project_slug, url, timestamp) do
+    get_project_by_slug(project_slug)
+    |> Project.changeset(%{
+      latest_datashop_snapshot_url: url,
+      latest_datashop_snapshot_timestamp: timestamp
+    })
     |> Repo.update()
   end
 
@@ -415,5 +442,128 @@ defmodule Oli.Authoring.Course do
         update_project_required_survey_resource_id(project.id, nil)
         Oli.Publishing.ChangeTracker.track_revision(project.slug, revision, %{deleted: true})
     end
+  end
+
+  @doc """
+  Returns true if an export is already in progress for the given project and queue, false otherwise.
+
+  ## Examples
+      iex> export_in_progress?("example_project")
+      true
+  """
+  def export_in_progress?(project_slug, queue) do
+    Oban.Job
+    |> where([j], j.state in ["available", "executing", "scheduled"])
+    |> where([j], j.queue == ^queue)
+    |> where([j], fragment("?->>'project_slug' = ?", j.args, ^project_slug))
+    |> Repo.all()
+    |> Enum.count() > 0
+  end
+
+  @doc """
+  Returns the status of the analytics export for the given project.
+  """
+  def analytics_export_status(project) do
+    if export_in_progress?(project.slug, "analytics_export") do
+      # snapshot is in progress
+      {:in_progress}
+    else
+      case project do
+        # snapshot is created and completed
+        %Project{
+          latest_analytics_snapshot_url: snapshot_url,
+          latest_analytics_snapshot_timestamp: snapshot_timestamp
+        }
+        when not is_nil(snapshot_url) and not is_nil(snapshot_timestamp) ->
+          # here we are checking if the snapshot is expired or not
+          {:ok, snapshot_timestamp} = DateTime.from_naive(snapshot_timestamp, "Etc/UTC")
+
+          # snapshot automatically expires after 30 days
+          snapshot_expiry = DateTime.add(snapshot_timestamp, 30, :day)
+
+          case DateTime.compare(snapshot_expiry, DateTime.utc_now()) do
+            :lt ->
+              {:expired, snapshot_url, snapshot_timestamp}
+
+            _ ->
+              {:available, snapshot_url, snapshot_timestamp}
+          end
+
+        # snapshot has not been created yet
+        _ ->
+          {:not_available}
+      end
+    end
+  end
+
+  @doc """
+  Generates an analytics snapshot for the given project if one is not already in progress
+  """
+  def generate_analytics_snapshot(project) do
+    case analytics_export_status(project) do
+      {:in_progress} ->
+        {:error, "Raw analytics snapshot is already in progress"}
+
+      _ ->
+        generate_analytics_snapshot!(project)
+    end
+  end
+
+  defp generate_analytics_snapshot!(project) do
+    %{project_slug: project.slug}
+    |> Oli.Analytics.RawAnalyticsExportWorker.new()
+    |> Oban.insert()
+  end
+
+  def datashop_export_status(project) do
+    if export_in_progress?(project.slug, "datashop_export") do
+      # snapshot is in progress
+      {:in_progress}
+    else
+      case project do
+        # snapshot is created and completed
+        %Project{
+          latest_datashop_snapshot_url: snapshot_url,
+          latest_datashop_snapshot_timestamp: snapshot_timestamp
+        }
+        when not is_nil(snapshot_url) and not is_nil(snapshot_timestamp) ->
+          # here we are checking if the snapshot is expired or not
+          {:ok, snapshot_timestamp} = DateTime.from_naive(snapshot_timestamp, "Etc/UTC")
+
+          # snapshot automatically expires after 30 days
+          snapshot_expiry = DateTime.add(snapshot_timestamp, 30, :day)
+
+          case DateTime.compare(snapshot_expiry, DateTime.utc_now()) do
+            :lt ->
+              {:expired, snapshot_url, snapshot_timestamp}
+
+            _ ->
+              {:available, snapshot_url, snapshot_timestamp}
+          end
+
+        # snapshot has not been created yet
+        _ ->
+          {:not_available}
+      end
+    end
+  end
+
+  @doc """
+  Generates a datashop snapshot for the given project if one is not already in progress
+  """
+  def generate_datashop_snapshot(project) do
+    case datashop_export_status(project) do
+      {:in_progress} ->
+        {:error, "Datashop snapshot is already in progress"}
+
+      _ ->
+        generate_datashop_snapshot!(project)
+    end
+  end
+
+  defp generate_datashop_snapshot!(project) do
+    %{project_slug: project.slug}
+    |> Oli.Analytics.DatashopExportWorker.new()
+    |> Oban.insert()
   end
 end

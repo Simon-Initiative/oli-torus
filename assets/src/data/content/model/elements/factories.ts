@@ -53,8 +53,10 @@ import guid from 'utils/guid';
 import { normalizeHref } from './utils';
 
 // removeUndefined({a: 1, b: undefined}) = {a: 1}
-const removeUndefined = (obj: Record<string, any>): unknown => {
-  return Object.fromEntries(Object.entries(obj).filter(([_, v]) => v !== undefined));
+export const removeUndefined = (obj: Record<string, any>): unknown => {
+  return Object.entries(obj)
+    .filter(([_, v]) => v !== undefined)
+    .reduce((acc, [k, v]) => ({ ...acc, [k]: v }), {});
 };
 
 function create<E extends AllModelElements>(params: Partial<E>): E {

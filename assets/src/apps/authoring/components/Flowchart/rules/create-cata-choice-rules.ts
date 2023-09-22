@@ -16,6 +16,7 @@ import {
   isIncorrectPath,
   isOptionCommonErrorPath,
 } from '../paths/path-utils';
+import { generateAllCorrectWorkflow } from './create-all-correct-workflow';
 import { createCondition } from './create-condition';
 import {
   DEFAULT_CORRECT_FEEDBACK,
@@ -134,6 +135,12 @@ export const generateCATAChoiceRules = (
     'is',
     3,
   );
+
+  const isAlwaysCorrect = !!question.custom?.anyCorrectAnswer;
+
+  if (isAlwaysCorrect) {
+    return generateAllCorrectWorkflow(correct, [], disableAction, blankCondition);
+  }
 
   return generateThreeTryWorkflow(
     correct,

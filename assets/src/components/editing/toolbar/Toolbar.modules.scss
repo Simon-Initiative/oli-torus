@@ -63,6 +63,9 @@
   }
 }
 
+.toolbarLabel {
+  color: #6b7281;
+}
 .toolbarButton {
   display: flex;
   flex-direction: row;
@@ -113,6 +116,7 @@
   text-align: center;
 }
 
+.categorizedDropdownGroup,
 .multiDropdownGroup {
   width: 580px;
   display: flex;
@@ -135,6 +139,13 @@
       margin-right: 0px;
       border-radius: 6px;
     }
+  }
+}
+
+.categorizedDropdownGroup {
+  width: 760px;
+  .toolbarButton {
+    padding: 4px;
   }
 }
 
@@ -177,6 +188,7 @@
     }
   }
 
+  .toolbarLabel,
   .toolbarButton {
     color: #dee2f2;
   }

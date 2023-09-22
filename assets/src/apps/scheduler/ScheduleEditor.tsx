@@ -12,6 +12,7 @@ import { scheduleAppFlushChanges, scheduleAppStartup } from './scheduling-thunk'
 export interface SchedulerProps {
   start_date: StringDate;
   end_date: StringDate;
+  preferred_scheduling_time: string;
   title: string;
   section_slug: string;
   display_curriculum_item_numbering: boolean;
@@ -27,6 +28,7 @@ export const ScheduleEditor: React.FC<SchedulerProps> = ({
   display_curriculum_item_numbering,
   wizard_mode,
   edit_section_details_url,
+  preferred_scheduling_time,
 }) => {
   const dispatch = useDispatch();
 
@@ -68,6 +70,7 @@ export const ScheduleEditor: React.FC<SchedulerProps> = ({
         title,
         section_slug,
         display_curriculum_item_numbering,
+        preferred_scheduling_time,
       }),
     );
   }, [dispatch, display_curriculum_item_numbering, end_date, section_slug, start_date, title]);

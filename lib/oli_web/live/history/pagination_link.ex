@@ -1,5 +1,9 @@
 defmodule OliWeb.RevisionHistory.PaginationLink do
-  use Phoenix.LiveComponent
+  use OliWeb, :html
+
+  attr(:page_ordinal, :integer)
+  attr(:active, :boolean)
+  attr(:page_offset, :integer)
 
   def render(assigns) do
     assigns = assign(assigns, :str, Integer.to_string(assigns.page_ordinal))

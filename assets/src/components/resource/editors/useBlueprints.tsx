@@ -5,6 +5,7 @@ import guid from 'utils/guid';
 import { ModelTypes } from '../../../data/content/model/elements/types';
 import {
   Command,
+  CommandCategories,
   CommandContext,
   CommandDescription,
 } from '../../editing/elements/commands/interfaces';
@@ -12,6 +13,7 @@ import {
 interface Blueprint {
   name: string;
   description: string;
+  category: CommandCategories;
   content: {
     blueprint: any[];
   };
@@ -72,6 +74,7 @@ const createBlueprintCommand = (blueprint: Blueprint): Command => {
 
 const blueprintToCommand = (blueprint: Blueprint): CommandDescription => ({
   type: 'CommandDesc',
+  category: blueprint.category,
   icon: () => <i className={blueprint.icon}></i>,
   command: createBlueprintCommand(blueprint),
   description: () => blueprint.name,

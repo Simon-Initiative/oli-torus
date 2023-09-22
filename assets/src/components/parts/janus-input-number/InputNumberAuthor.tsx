@@ -43,7 +43,7 @@ const InputNumberAuthor: React.FC<AuthorPartComponentProps<InputNumberModel>> = 
         min={minValue}
         max={maxValue}
         disabled={true}
-        style={{ width: '100%' }}
+        style={{ width: '100%', pointerEvents: 'none' }}
         className={`${showIncrementArrows ? '' : 'hideIncrementArrows'}`}
       />
       {unitsLabel && <span className="unitsLabel">{unitsLabel}</span>}

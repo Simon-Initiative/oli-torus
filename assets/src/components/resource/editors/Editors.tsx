@@ -30,6 +30,7 @@ export type EditorsProps = {
   objectives: Immutable.List<Objective>;
   childrenObjectives: Immutable.Map<ResourceId, Immutable.List<Objective>>;
   featureFlags: FeatureFlags;
+  editorsRef: React.RefObject<HTMLDivElement>;
   onEdit: (content: PageEditorContent) => void;
   onRemove: (id: string) => void;
   onAddItem: (c: ResourceContent, index: number[], a?: ActivityEditContext) => void;
@@ -57,6 +58,7 @@ export const Editors = (props: EditorsProps) => {
     editorMap,
     resourceContext,
     featureFlags,
+    editorsRef,
     onAddItem,
     onEditActivity,
     onPostUndoable,
@@ -131,7 +133,10 @@ export const Editors = (props: EditorsProps) => {
   });
 
   return (
-    <div className={classNames(className, 'editors d-flex flex-column flex-grow-1 shadow-lg')}>
+    <div
+      ref={editorsRef}
+      className={classNames(className, 'editors d-flex flex-column flex-grow-1 shadow-lg')}
+    >
       {editors}
 
       <AddResource

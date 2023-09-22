@@ -488,7 +488,7 @@ defmodule Oli.Delivery.Metrics do
     |> Enum.into(%{})
   end
 
-  def raw_proficiency_per_learning_objective(section_slug) do
+  def raw_proficiency_per_learning_objective(%Section{analytics_version: :v1, slug: section_slug}) do
     query =
       from(sn in Snapshot,
         join: s in Section,
@@ -507,7 +507,30 @@ defmodule Oli.Delivery.Metrics do
     |> Enum.into(%{})
   end
 
-  def raw_proficiency_for_student_per_learning_objective(section_slug, student_id) do
+  def raw_proficiency_per_learning_objective(%Section{analytics_version: :v2, id: section_id}) do
+
+    objective_type_id = Oli.Resources.ResourceType.get_id_by_type("objective")
+
+    query =
+      from(summary in Oli.Analytics.Summary.ResourceSummary,
+        where: summary.section_id == ^section_id
+          and summary.project_id == -1
+          and summary.publication_id == -1
+          and summary.user_id == -1
+          and summary.resource_type_id == ^objective_type_id,
+        select: {
+          summary.resource_id,
+          summary.num_first_attempts_correct,
+          summary.num_first_attempts
+        })
+
+    Repo.all(query)
+    |> Enum.reduce(%{}, fn {objective_id, num_first_attempts_correct, num_first_attempts}, acc ->
+      Map.put(acc, objective_id, {num_first_attempts_correct, num_first_attempts})
+    end)
+  end
+
+  def raw_proficiency_for_student_per_learning_objective(%Section{analytics_version: :v1, slug: section_slug}, student_id) do
     query =
       from(sn in Snapshot,
         join: s in Section,
@@ -528,6 +551,28 @@ defmodule Oli.Delivery.Metrics do
     |> Enum.into(%{})
   end
 
+  def raw_proficiency_for_student_per_learning_objective(%Section{analytics_version: :v2, id: section_id}, student_id) do
+    objective_type_id = Oli.Resources.ResourceType.get_id_by_type("objective")
+
+    query =
+      from(summary in Oli.Analytics.Summary.ResourceSummary,
+        where: summary.section_id == ^section_id
+          and summary.project_id == -1
+          and summary.publication_id == -1
+          and summary.user_id == ^student_id
+          and summary.resource_type_id == ^objective_type_id,
+        select: {
+          summary.resource_id,
+          summary.num_first_attempts_correct,
+          summary.num_first_attempts
+        })
+
+    Repo.all(query)
+    |> Enum.reduce(%{}, fn {objective_id, num_first_attempts_correct, num_first_attempts}, acc ->
+      Map.put(acc, objective_id, {num_first_attempts_correct, num_first_attempts})
+    end)
+  end
+
   @doc """
   Calculates the learning proficiency ("High", "Medium", "Low", "Not enough data")
   for every container of a given section
@@ -539,7 +584,7 @@ defmodule Oli.Delivery.Metrics do
       container_id_n => "Low"
     }
   """
-  def proficiency_per_container(%Section{id: id}, contained_pages) do
+  def proficiency_per_container(%Section{id: id, analytics_version: :v1}, contained_pages) do
     query =
       from(sn in Snapshot,
         where: sn.attempt_number == 1 and sn.part_attempt_number == 1 and sn.section_id == ^id,
@@ -556,6 +601,28 @@ defmodule Oli.Delivery.Metrics do
     |> bucket_into_container_totals(contained_pages)
   end
 
+  def proficiency_per_container(%Section{id: section_id, analytics_version: :v2}, contained_pages) do
+
+    page_type_id = Oli.Resources.ResourceType.get_id_by_type("page")
+
+    query =
+      from(summary in Oli.Analytics.Summary.ResourceSummary,
+        where: summary.section_id == ^section_id
+          and summary.project_id == -1
+          and summary.publication_id == -1
+          and summary.user_id == -1
+          and summary.resource_type_id == ^page_type_id,
+        select: {
+          summary.resource_id,
+          summary.num_first_attempts_correct,
+          summary.num_first_attempts
+        })
+
+    Repo.all(query)
+    |> bucket_into_container_totals(contained_pages)
+
+  end
+
   @doc """
   Calculates the learning proficiency ("High", "Medium", "Low", "Not enough data")
   for every student across a given container.
@@ -569,7 +636,8 @@ defmodule Oli.Delivery.Metrics do
       student_id_n => "Low"
     }
   """
-  def proficiency_per_student_across(section, container_id \\ nil) do
+  def proficiency_per_student_across(section, container_id \\ nil)
+  def proficiency_per_student_across(%Section{analytics_version: :v1} = section, container_id) do
     filter_by_container =
       case container_id do
         nil ->
@@ -605,6 +673,48 @@ defmodule Oli.Delivery.Metrics do
     end)
   end
 
+  def proficiency_per_student_across(%Section{analytics_version: :v2, id: section_id} = section, container_id) do
+    filter_by_container =
+      case container_id do
+        nil ->
+          true
+
+        _ ->
+          pages_for_container =
+            from(cp in ContainedPage,
+              where: cp.section_id == ^section.id and cp.container_id == ^container_id,
+              select: cp.page_id
+            )
+            |> Repo.all()
+
+          dynamic([sn], sn.resource_id in ^pages_for_container)
+      end
+
+    page_type_id = Oli.Resources.ResourceType.get_id_by_type("page")
+
+    query =
+      from(summary in Oli.Analytics.Summary.ResourceSummary,
+        where: summary.section_id == ^section_id
+          and summary.project_id == -1
+          and summary.publication_id == -1
+          and summary.user_id != -1
+          and summary.resource_type_id == ^page_type_id,
+        where: ^filter_by_container,
+        group_by: summary.user_id,
+        select:
+          {summary.user_id,
+           fragment(
+             "CAST(SUM(?) as float) / CAST(SUM(?) as float)",
+             summary.num_first_attempts_correct,
+             summary.num_first_attempts
+           )})
+
+    Repo.all(query)
+    |> Enum.into(%{}, fn {student_id, proficiency} ->
+      {student_id, proficiency_range(proficiency)}
+    end)
+  end
+
   @doc """
   Calculates the learning proficiency ("High", "Medium", "Low", "Not enough data")
   for every container of a given section for a given student
@@ -616,7 +726,8 @@ defmodule Oli.Delivery.Metrics do
       container_id_n => "Low"
     }
   """
-  def proficiency_for_student_per_container(%Section{id: id}, student_id, contained_pages) do
+  def proficiency_for_student_per_container(%Section{id: id, analytics_version: :v1}, student_id, contained_pages) do
+
     query =
       from(sn in Snapshot,
         where:
@@ -635,6 +746,28 @@ defmodule Oli.Delivery.Metrics do
     |> bucket_into_container_totals(contained_pages)
   end
 
+  def proficiency_for_student_per_container(%Section{id: section_id, analytics_version: :v2}, student_id, contained_pages) do
+
+    page_type_id = Oli.Resources.ResourceType.get_id_by_type("page")
+
+    query =
+      from(summary in Oli.Analytics.Summary.ResourceSummary,
+        where: summary.section_id == ^section_id
+          and summary.project_id == -1
+          and summary.publication_id == -1
+          and summary.user_id == ^student_id
+          and summary.resource_type_id == ^page_type_id,
+        select: {
+          summary.resource_id,
+          summary.num_first_attempts_correct,
+          summary.num_first_attempts
+        })
+
+    Repo.all(query)
+    |> bucket_into_container_totals(contained_pages)
+  end
+
+
   @doc """
   Calculates the learning proficiency ("High", "Medium", "Low", "Not enough data")
   for every page of a given section for a given student
@@ -646,7 +779,7 @@ defmodule Oli.Delivery.Metrics do
       page_id_n => "Low"
     }
   """
-  def proficiency_for_student_per_page(section_slug, student_id) do
+  def proficiency_for_student_per_page(%Section{slug: section_slug, analytics_version: :v1}, student_id) do
     query =
       from(sn in Snapshot,
         join: s in Section,
@@ -669,6 +802,32 @@ defmodule Oli.Delivery.Metrics do
     end)
   end
 
+  def proficiency_for_student_per_page(%Section{id: section_id, analytics_version: :v2}, student_id) do
+
+    page_type_id = Oli.Resources.ResourceType.get_id_by_type("page")
+
+    query =
+      from(summary in Oli.Analytics.Summary.ResourceSummary,
+        where: summary.section_id == ^section_id
+          and summary.project_id == -1
+          and summary.publication_id == -1
+          and summary.user_id == ^student_id
+          and summary.resource_type_id == ^page_type_id,
+        select: {
+          summary.resource_id,
+          fragment(
+             "CAST(? as float) / CAST(? as float)",
+             summary.num_first_attempts_correct,
+             summary.num_first_attempts
+           )
+        })
+
+    Repo.all(query)
+    |> Enum.into(%{}, fn {resource_id, proficiency} ->
+      {resource_id, proficiency_range(proficiency)}
+    end)
+  end
+
   @doc """
   Calculates the learning proficiency ("High", "Medium", "Low", "Not enough data")
   for each student of a given section for a specific page
@@ -680,7 +839,7 @@ defmodule Oli.Delivery.Metrics do
       student_id_n => "Low"
     }
   """
-  def proficiency_per_student_for_page(section_slug, page_id) do
+  def proficiency_per_student_for_page(%Section{slug: section_slug, analytics_version: :v1}, page_id) do
     query =
       from(sn in Snapshot,
         join: s in Section,
@@ -703,6 +862,33 @@ defmodule Oli.Delivery.Metrics do
     end)
   end
 
+  def proficiency_per_student_for_page(%Section{id: section_id, analytics_version: :v2}, page_id) do
+
+    page_type_id = Oli.Resources.ResourceType.get_id_by_type("page")
+
+    query =
+      from(summary in Oli.Analytics.Summary.ResourceSummary,
+        where: summary.section_id == ^section_id
+          and summary.project_id == -1
+          and summary.publication_id == -1
+          and summary.user_id != -1
+          and summary.resource_id == ^page_id
+          and summary.resource_type_id == ^page_type_id,
+        select:
+          {summary.user_id,
+           fragment(
+             "CAST(? as float) / CAST(? as float)",
+             summary.num_first_attempts_correct,
+             summary.num_first_attempts
+           )})
+
+
+    Repo.all(query)
+    |> Enum.into(%{}, fn {student_id, proficiency} ->
+      {student_id, proficiency_range(proficiency)}
+    end)
+  end
+
   @doc """
   Calculates the learning proficiency ("High", "Medium", "Low", "Not enough data")
   for each page provided as a list
@@ -714,7 +900,7 @@ defmodule Oli.Delivery.Metrics do
       page_id_n => "Low"
     }
   """
-  def proficiency_per_page(section_slug, page_ids) do
+  def proficiency_per_page(%Section{slug: section_slug, analytics_version: :v1}, page_ids) do
     query =
       from(sn in Snapshot,
         join: s in Section,
@@ -730,6 +916,32 @@ defmodule Oli.Delivery.Metrics do
              sn.correct
            )}
       )
+
+    Repo.all(query)
+    |> Enum.into(%{}, fn {page_id, proficiency} ->
+      {page_id, proficiency_range(proficiency)}
+    end)
+  end
+
+  def proficiency_per_page(%Section{id: section_id, analytics_version: :v2}, page_ids) do
+
+    page_type_id = Oli.Resources.ResourceType.get_id_by_type("page")
+
+    query =
+      from(summary in Oli.Analytics.Summary.ResourceSummary,
+        where: summary.section_id == ^section_id
+          and summary.project_id == -1
+          and summary.publication_id == -1
+          and summary.user_id == -1
+          and summary.resource_id in ^page_ids
+          and summary.resource_type_id == ^page_type_id,
+        select:
+          {summary.resource_id,
+           fragment(
+             "? / ?",
+             summary.num_first_attempts_correct,
+             summary.num_first_attempts
+           )})
 
     Repo.all(query)
     |> Enum.into(%{}, fn {page_id, proficiency} ->

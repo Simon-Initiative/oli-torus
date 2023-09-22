@@ -1,12 +1,19 @@
 import { createSlice } from '@reduxjs/toolkit';
 import type { PayloadAction } from '@reduxjs/toolkit';
 import { DateWithoutTime } from 'epoq';
+import { toDateWithoutTime } from './date-utils';
 import { resetScheduleItem } from './schedule-reset';
 import { scheduleAppFlushChanges, scheduleAppStartup } from './scheduling-thunk';
 
 export enum ScheduleItemType {
   Page = 1,
   Container,
+}
+
+interface TimeParts {
+  hour: number;
+  minute: number;
+  second: number;
 }
 
 export type StringDate = string;
@@ -32,6 +39,7 @@ export interface HierarchyItem extends HierarchyItemSrc {
   startDate: DateWithoutTime | null;
   endDate: DateWithoutTime | null;
   endDateTime: Date | null; // This is only used for the due-by which includes a date and time.
+  startDateTime: Date | null; // This is only used for the available-from which includes a date and time.
 }
 
 export interface SchedulerState {
@@ -47,6 +55,7 @@ export interface SchedulerState {
   sectionSlug: string;
   errorMessage: string | null;
   weekdays: boolean[];
+  preferredSchedulingTime: TimeParts;
 }
 
 export const initSchedulerState = (): SchedulerState => ({
@@ -62,9 +71,14 @@ export const initSchedulerState = (): SchedulerState => ({
   sectionSlug: '',
   errorMessage: null,
   weekdays: [false, true, true, true, true, true, false],
+  preferredSchedulingTime: {
+    hour: 23,
+    minute: 59,
+    second: 59,
+  },
 });
 
-const toDateTime = (str: string) => {
+const toDateTime = (str: string, preferredSchedulingTime: TimeParts) => {
   if (!str) return null;
   const [date, time] = str.split('T');
   const [year, month, day] = date.split('-');
@@ -80,19 +94,24 @@ const toDateTime = (str: string) => {
     d.setUTCMinutes(parseInt(minute, 10));
     d.setUTCSeconds(parseInt(seconds, 10));
   } else {
-    d.setHours(23);
-    d.setMinutes(59);
-    d.setSeconds(59);
+    d.setHours(preferredSchedulingTime.hour);
+    d.setMinutes(preferredSchedulingTime.minute);
+    d.setSeconds(preferredSchedulingTime.second);
+    d.setMilliseconds(0);
   }
   return d;
 };
 
-const buildHierarchyItems = (items: HierarchyItemSrc[]): HierarchyItem[] => {
+const buildHierarchyItems = (
+  items: HierarchyItemSrc[],
+  preferredSchedulingTime: TimeParts,
+): HierarchyItem[] => {
   return items.map((item) => ({
     ...item,
     startDate: item.start_date ? new DateWithoutTime(item.start_date) : null,
     endDate: item.end_date ? new DateWithoutTime(item.end_date) : null,
-    endDateTime: toDateTime(item.end_date),
+    endDateTime: toDateTime(item.end_date, preferredSchedulingTime),
+    startDateTime: toDateTime(item.start_date, preferredSchedulingTime),
   }));
 };
 
@@ -100,7 +119,7 @@ const initialState = { schedule: [] as HierarchyItem[] } as SchedulerState;
 
 interface MovePayload {
   itemId: number;
-  startDate: DateWithoutTime | null;
+  startDate: Date | DateWithoutTime | null;
   endDate: Date | DateWithoutTime | null;
 }
 
@@ -165,8 +184,44 @@ const schedulerSlice = createSlice({
       const mutableItem = getScheduleItem(action.payload.itemId, state.schedule);
 
       if (mutableItem) {
-        let datesChanged = !datesEqual(mutableItem.startDate, action.payload.startDate);
-        mutableItem.startDate = action.payload.startDate;
+        let datesChanged = false;
+
+        /* If this is a graded item, the start date represents the available-from date, which needs both a
+           date and a time.
+        */
+        if (action.payload.startDate && 'getHours' in action.payload.startDate) {
+          // A Date passed in...
+          datesChanged =
+            datesChanged ||
+            !mutableItem.startDateTime ||
+            action.payload.startDate.getTime() !== mutableItem.startDateTime?.getTime();
+
+          mutableItem.startDateTime = action.payload.startDate;
+          mutableItem.startDate = toDateWithoutTime(action.payload.startDate);
+        } else if (!action.payload.startDate) {
+          // Null passed in...
+          datesChanged = datesChanged || mutableItem.startDate !== null;
+          mutableItem.startDate = null;
+          mutableItem.startDateTime = null;
+        } else {
+          // A DateWithoutTime passed in...
+          datesChanged =
+            datesChanged || !datesEqual(mutableItem.startDate, action.payload.startDate);
+
+          mutableItem.startDate = action.payload.startDate;
+
+          mutableItem.startDateTime = new Date();
+          mutableItem.startDateTime.setFullYear(action.payload.startDate.getFullYear());
+          mutableItem.startDateTime.setMonth(action.payload.startDate.getMonth());
+          mutableItem.startDateTime.setDate(action.payload.startDate.getDate());
+
+          mutableItem.startDateTime.setHours(
+            state.preferredSchedulingTime.hour,
+            state.preferredSchedulingTime.minute,
+            state.preferredSchedulingTime.second,
+            0,
+          );
+        }
 
         /*
           scheduling_type === 'due_by' uses a Date and all other scheduling types use a DateWithoutTime for endDate
@@ -200,7 +255,12 @@ const schedulerSlice = createSlice({
             mutableItem.endDateTime.setFullYear(action.payload.endDate.getFullYear());
             mutableItem.endDateTime.setMonth(action.payload.endDate.getMonth());
             mutableItem.endDateTime.setDate(action.payload.endDate.getDate());
-            mutableItem.endDateTime.setHours(23, 59, 59, 0);
+            mutableItem.endDateTime.setHours(
+              state.preferredSchedulingTime.hour,
+              state.preferredSchedulingTime.minute,
+              state.preferredSchedulingTime.second,
+              0,
+            );
           } else {
             mutableItem.endDateTime = null;
           }
@@ -217,6 +277,7 @@ const schedulerSlice = createSlice({
             state.schedule,
             false,
             state.weekdays,
+            state.preferredSchedulingTime,
           );
 
           state.dirty.push(...descendentIds(mutableItem, state.schedule));
@@ -241,6 +302,7 @@ const schedulerSlice = createSlice({
             state.schedule,
             true,
             action.payload.weekdays,
+            state.preferredSchedulingTime,
           );
         state.dirty = state.schedule.map((item) => item.id);
       }
@@ -281,13 +343,22 @@ const schedulerSlice = createSlice({
         display_curriculum_item_numbering,
         schedule,
         section_slug,
+        preferred_scheduling_time,
       } = action.payload;
       state.appLoading = true;
       state.title = title;
+      const preferredTimeString = preferred_scheduling_time || '23:59:59';
+      const preferredTimeParts = preferredTimeString.split(':');
+      state.preferredSchedulingTime = {
+        hour: parseInt(preferredTimeParts[0]),
+        minute: parseInt(preferredTimeParts[1]),
+        second: parseInt(preferredTimeParts[2]),
+      };
+
       state.displayCurriculumItemNumbering = display_curriculum_item_numbering;
       state.startDate = new DateWithoutTime(start_date);
       state.endDate = new DateWithoutTime(end_date);
-      state.schedule = buildHierarchyItems(schedule);
+      state.schedule = buildHierarchyItems(schedule, state.preferredSchedulingTime);
       state.sectionSlug = section_slug;
       if (state.startDate && state.endDate && neverScheduled(state.schedule)) {
         const root = getScheduleRoot(state.schedule);
@@ -299,6 +370,7 @@ const schedulerSlice = createSlice({
             state.schedule,
             true,
             state.weekdays,
+            state.preferredSchedulingTime,
           );
         state.dirty = state.schedule.map((item) => item.id);
       }

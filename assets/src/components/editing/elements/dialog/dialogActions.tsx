@@ -17,6 +17,7 @@ const store = configureStore();
 
 export const insertDialog = createButtonCommandDesc({
   icon: <i className="fa-regular fa-comment-dots"></i>,
+  category: 'Language',
   description: 'Dialog',
   execute: (_context, editor) => {
     const at = editor.selection;

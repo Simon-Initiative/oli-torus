@@ -17,6 +17,7 @@ const MultiLineTextInputAuthor: React.FC<AuthorPartComponentProps<MultiLineTextM
     height,
     resize: 'none',
     fontSize,
+    pointerEvents: 'none',
   };
 
   useEffect(() => {

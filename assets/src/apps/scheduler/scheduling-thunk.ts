@@ -11,6 +11,7 @@ interface Payload {
   title: string;
   section_slug: string;
   display_curriculum_item_numbering: boolean;
+  preferred_scheduling_time: string;
 }
 
 export const scheduleAppFlushChanges = createAsyncThunk(
@@ -27,7 +28,9 @@ export const scheduleAppFlushChanges = createAsyncThunk(
         const item = getScheduleItem(id, schedule);
         if (!item) return null;
         return {
-          start_date: dateWithoutTimeLabel(item.startDate),
+          start_date: item.graded
+            ? dateTimeInTorusFormat(item.startDateTime)
+            : dateWithoutTimeLabel(item.startDate),
           end_date:
             item.scheduling_type === 'due_by'
               ? dateTimeInTorusFormat(item.endDateTime) // For due-by we need the time as well as the date.
@@ -59,13 +62,21 @@ export const scheduleAppFlushChanges = createAsyncThunk(
 export const scheduleAppStartup = createAsyncThunk(
   'schedule/startup',
   async (
-    { start_date, end_date, title, section_slug, display_curriculum_item_numbering }: Payload,
+    {
+      start_date,
+      end_date,
+      title,
+      section_slug,
+      display_curriculum_item_numbering,
+      preferred_scheduling_time,
+    }: Payload,
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     thunkAPI,
   ) => {
     const response = await loadSchedule(section_slug);
     return {
       schedule: response,
+      preferred_scheduling_time,
       start_date,
       end_date,
       title,

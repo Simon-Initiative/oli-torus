@@ -22,7 +22,9 @@ defmodule OliWeb.Api.PageLifecycleController do
        }} ->
         # graded resource finalization success
         section = Sections.get_section_by(slug: section_slug)
-        PageLifecycle.GradeUpdateWorker.create(section.id, id, :inline)
+
+        if section.grade_passback_enabled,
+          do: PageLifecycle.GradeUpdateWorker.create(section.id, id, :inline)
 
         is_adaptive_page? = case Oli.Publishing.DeliveryResolver.from_revision_slug(section_slug, revision_slug) do
           %Oli.Resources.Revision{content: %{"advancedDelivery" => true}} -> true
