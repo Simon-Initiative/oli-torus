@@ -221,7 +221,7 @@ defmodule Oli.Delivery.Metrics.AvgScoreTest do
 
       pages_avg_score =
         Metrics.avg_score_across_for_pages(
-          section.id,
+          section,
           [
             p1.published_resource.resource_id,
             p2.published_resource.resource_id,
@@ -239,7 +239,7 @@ defmodule Oli.Delivery.Metrics.AvgScoreTest do
 
       pages_avg_score_excluding_user_2 =
         Metrics.avg_score_across_for_pages(
-          section.id,
+          section,
           [
             p1.published_resource.resource_id,
             p2.published_resource.resource_id,
