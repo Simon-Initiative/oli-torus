@@ -14,19 +14,25 @@ defmodule Oli.Delivery.Sections.SectionResource do
     field :numbering_level, :integer
 
     # soft scheduling
-    field(:scheduling_type, Ecto.Enum, values: [:due_by, :read_by, :inclass_activity], default: :read_by)
+    field(:scheduling_type, Ecto.Enum,
+      values: [:due_by, :read_by, :inclass_activity],
+      default: :read_by
+    )
+
     field(:manually_scheduled, :boolean)
     field(:start_date, :utc_datetime)
     field(:end_date, :utc_datetime)
 
     # instructor overridable page settings
-    embeds_one :collab_space_config, Oli.Resources.Collaboration.CollabSpaceConfig, on_replace: :delete
+    embeds_one :collab_space_config, Oli.Resources.Collaboration.CollabSpaceConfig,
+      on_replace: :delete
+
     embeds_one :explanation_strategy, Oli.Resources.ExplanationStrategy, on_replace: :delete
 
     # assessment settings
     field :max_attempts, :integer, default: 0
     field :retake_mode, Ecto.Enum, values: [:normal, :targeted], default: :normal
-    field :password, :string, null: true
+    field :password, :string
     field :late_submit, Ecto.Enum, values: [:allow, :disallow], default: :allow
     field :late_start, Ecto.Enum, values: [:allow, :disallow], default: :allow
     field :time_limit, :integer, default: 0
