@@ -724,7 +724,7 @@ defmodule Oli.Delivery.Sections do
         first
 
       [first | _] ->
-        Logger.warn("More than one active section was returned for context_id #{context_id}")
+        Logger.warning("More than one active section was returned for context_id #{context_id}")
 
         first
     end
@@ -1614,6 +1614,7 @@ defmodule Oli.Delivery.Sections do
             limit: 1
           )
         ),
+      on: true,
       preload: [:project],
       select: {spp, current_pub, latest_pub}
     )

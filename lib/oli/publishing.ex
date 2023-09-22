@@ -1100,7 +1100,7 @@ defmodule Oli.Publishing do
   def get_publication_diff(p1, p2) do
     case DiffAgent.get(PublicationDiffKey.key(p1.id, p2.id)) do
       nil ->
-        Logger.warn(
+        Logger.warning(
           "No precomputed publication diff found for delta #{p1.id} -> #{p2.id}. Generating one now."
         )
 
