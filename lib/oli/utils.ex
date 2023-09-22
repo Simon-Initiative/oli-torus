@@ -143,6 +143,26 @@ defmodule Oli.Utils do
               |> value_or(Map.get(data, :family_name))
               |> value_or("")
 
+            fn_length = String.length(first_name)
+            ln_length = String.length(last_name)
+
+            # Check if the first and last names should be shortened
+            {first_name, last_name} =
+              case {fn_length + ln_length > 255, fn_length > 127, ln_length > 127} do
+                {false, _, _} ->
+                  {first_name, last_name}
+
+                {true, true, true} ->
+                  {"#{String.slice(first_name, 0, 124)}...",
+                   "#{String.slice(last_name, 0, 124)}..."}
+
+                {true, true, false} ->
+                  {"#{String.slice(first_name, 0, 124)}...", last_name}
+
+                {true, false, true} ->
+                  {first_name, "#{String.slice(last_name, 0, 124)}..."}
+              end
+
             name =
               "#{first_name} #{last_name}"
               |> String.trim()
