@@ -94,7 +94,7 @@ defmodule Oli.Rendering.Content.Selection do
         %{}
 
       ids ->
-        Oli.Publishing.DeliveryResolver.from_resource_id(section_slug, ids)
+        Oli.Publishing.AuthoringResolver.from_resource_id(section_slug, ids)
         |> Enum.reduce(%{}, fn rev, m -> Map.put(m, rev.resource_id, rev.title) end)
     end
   end
@@ -129,8 +129,10 @@ defmodule Oli.Rendering.Content.Selection do
     |> Enum.join(" ")
   end
 
-  defp activity_names(id, activity_types_map),
-    do: "<span class=\"activity-name\">#{Map.get(activity_types_map, id).title}</span>"
+  defp activity_names(id, activity_types_map) do
+    unless Map.equal?(activity_types_map, %{}),
+      do: "<span class=\"activity-name\">#{Map.get(activity_types_map, id).title}</span>"
+  end
 
   defp titles(ids, title_map, class) when is_list(ids) do
     Enum.map(ids, fn id -> titles(id, title_map, class) end)
