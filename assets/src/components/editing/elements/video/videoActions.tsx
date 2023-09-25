@@ -14,6 +14,7 @@ import { VideoSource } from '../../../../data/content/model/elements/types';
 
 export const insertVideo = createButtonCommandDesc({
   icon: <i className="fa-solid fa-circle-play"></i>,
+  category: 'Media',
   description: 'Video',
   execute: (_context, editor) => {
     const at = editor.selection;

@@ -6,6 +6,7 @@ import { createButtonCommandDesc } from '../commands/commandFactories';
 export const insertConjugation = createButtonCommandDesc({
   icon: <i className="fa-solid fa-language"></i>,
   description: 'Conjugation',
+  category: 'Language',
   execute: (_context, editor) => {
     const at = editor.selection;
     if (!at) return;

@@ -152,11 +152,11 @@ defmodule OliWeb.Components.Common do
       <.link phx-click="go" class="ml-2">Navigate!</.link>
   """
   attr(:variant, :atom, default: nil, values: [:primary, :info, :success, :warning, :danger, nil])
-  attr :href, :string, default: nil
-  attr :class, :string, default: nil
-  attr :rest, :global, include: ~w(disabled target rel download)
+  attr(:href, :string, default: nil)
+  attr(:class, :string, default: nil)
+  attr(:rest, :global, include: ~w(disabled target rel download))
 
-  slot :inner_block, required: true
+  slot(:inner_block, required: true)
 
   def button_link(assigns) do
     ~H"""
@@ -530,5 +530,15 @@ defmodule OliWeb.Components.Common do
       {_, value} -> value
       _ -> nil
     end
+  end
+
+  attr(:if, :boolean, default: true)
+
+  def loader(assigns) do
+    ~H"""
+    <div :if={@if} class="h-full w-full flex items-center justify-center">
+      <span class="spinner-border spinner-border-sm text-primary h-16 w-16" role="status" aria-hidden="true" />
+    </div>
+    """
   end
 end

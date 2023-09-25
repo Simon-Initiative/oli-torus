@@ -340,7 +340,9 @@ export interface ActivityState {
  * Defines an option, or choice, within activities such as a
  * multiple choice activity.
  */
-export interface Choice extends Identifiable, HasContent, SpecifiesEditor {}
+export interface Choice extends Identifiable, HasContent, SpecifiesEditor {
+  frequency?: number;
+}
 /**
  * Helper function to create a choice from simple text.
  */

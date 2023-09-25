@@ -3,6 +3,7 @@ defmodule Oli.Publishing.DeliveryResolver do
   import Ecto.Query, warn: false
   import Oli.Utils
 
+  alias Oli.Analytics.Summary.ResourceSummary
   alias Oli.Repo
   alias Oli.Publishing.Resolver
   alias Oli.Resources.Revision
@@ -51,7 +52,26 @@ defmodule Oli.Publishing.DeliveryResolver do
     |> Repo.all()
   end
 
-  def students_with_attempts_for_page(page, section_id, student_ids) do
+  def students_with_attempts_for_page(
+        page,
+        %Section{analytics_version: :v2, id: section_id} = _section,
+        student_ids
+      ) do
+    from(rs in ResourceSummary,
+      where:
+        rs.section_id == ^section_id and rs.resource_id == ^page.resource_id and
+          rs.user_id in ^student_ids,
+      distinct: rs.user_id,
+      select: rs.user_id
+    )
+    |> Repo.all()
+  end
+
+  def students_with_attempts_for_page(
+        page,
+        %Section{id: section_id},
+        student_ids
+      ) do
     from(ra in ResourceAttempt,
       join: rac in ResourceAccess,
       on: ra.resource_access_id == rac.id,
@@ -87,6 +107,7 @@ defmodule Oli.Publishing.DeliveryResolver do
 
       # order them according to the resource_ids
       map = Enum.reduce(revisions, %{}, fn e, m -> Map.put(m, e.resource_id, e) end)
+
       Enum.map(resource_ids, fn resource_id -> Map.get(map, resource_id) end)
     end
     |> run()
@@ -218,7 +239,9 @@ defmodule Oli.Publishing.DeliveryResolver do
 
     fn ->
       from([s: s, sr: sr, rev: rev] in section_resource_revisions(section_slug),
-        where: rev.resource_type_id == ^page_id or rev.resource_type_id == ^container_id,
+        where:
+          rev.resource_type_id == ^page_id or
+            rev.resource_type_id == ^container_id,
         select: rev
       )
       |> Repo.all()
@@ -255,10 +278,13 @@ defmodule Oli.Publishing.DeliveryResolver do
     container_id = Oli.Resources.ResourceType.get_id_by_type("container")
 
     fn ->
-      from([s: s, sr: sr, rev: rev, spp: spp] in section_resource_revisions(section_slug),
+      from(
+        [s: s, sr: sr, rev: rev, spp: spp] in section_resource_revisions(section_slug),
         join: p in Project,
         on: p.id == spp.project_id,
-        where: rev.resource_type_id == ^page_id or rev.resource_type_id == ^container_id,
+        where:
+          rev.resource_type_id == ^page_id or
+            rev.resource_type_id == ^container_id,
         select:
           {s, sr, rev,
            fragment(
@@ -351,7 +377,8 @@ defmodule Oli.Publishing.DeliveryResolver do
     Repo.all(
       from([sr: sr, rev: rev] in section_resource_revisions(section_slug),
         where:
-          rev.purpose == ^purpose and rev.deleted == false and rev.resource_type_id == ^page_id,
+          rev.purpose == ^purpose and rev.deleted == false and
+            rev.resource_type_id == ^page_id,
         select: rev,
         order_by: [asc: :resource_id]
       )

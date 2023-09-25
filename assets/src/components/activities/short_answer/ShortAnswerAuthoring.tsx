@@ -43,14 +43,31 @@ const ShortAnswer = () => {
         <TabbedNavigation.Tab label="Question">
           <div className="d-flex flex-column flex-md-row mb-2">
             <Stem />
-            <InputTypeDropdown
-              options={shortAnswerOptions}
-              editMode={editMode}
-              selected={model.inputType}
-              onChange={(inputType) =>
-                dispatch(ShortAnswerActions.setInputType(inputType, model.authoring.parts[0].id))
-              }
-            />
+            {!model.responses ? (
+              <InputTypeDropdown
+                options={shortAnswerOptions}
+                editMode={editMode}
+                selected={model.inputType}
+                onChange={(inputType) =>
+                  dispatch(ShortAnswerActions.setInputType(inputType, model.authoring.parts[0].id))
+                }
+              />
+            ) : (
+              <table>
+                <tr>
+                  <th>Student</th>
+                  <th>Response</th>
+                </tr>
+                <tbody>
+                  {model.responses.map((response, index) => (
+                    <tr key={index}>
+                      <td className="whitespace-nowrap">{response.user_name}</td>
+                      <td>{response.text}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
           </div>
         </TabbedNavigation.Tab>
         <TabbedNavigation.Tab label="Answer Key">

@@ -196,6 +196,7 @@ defmodule Oli.Factory do
       slug: sequence("examplesection"),
       type: :blueprint,
       open_and_free: false,
+      analytics_version: :v1,
       description: "A description",
       brand: anonymous_build(:brand),
       publisher: anonymous_build(:publisher),

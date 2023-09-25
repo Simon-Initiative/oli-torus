@@ -133,7 +133,11 @@ defmodule OliWeb.Delivery.ScoredActivities.AssessmentsTableModel do
   defp format_value(nil), do: "-"
   defp format_value(value), do: "#{parse_percentage(value)}%"
 
-  defp parse_percentage(value) do
+  defp parse_percentage(value) when is_integer(value) do
+    value * 100
+  end
+
+  defp parse_percentage(value) when is_float(value) do
     {value, _} =
       Float.round(value * 100)
       |> Float.to_string()

@@ -2031,16 +2031,15 @@ defmodule OliWeb.PageDeliveryControllerTest do
       assert html_response(conn, 200)
     end
 
-    test "user must be enrolled in the section even if is a system admin", %{
+    test "user logged in as system admin can access to exploration preview", %{
       conn: conn,
       section: section
     } do
       {:ok, conn: conn, admin: _admin} = admin_conn(%{conn: conn})
 
-      conn = get(conn, Routes.page_delivery_path(conn, :exploration, section.slug))
+      conn = get(conn, Routes.page_delivery_path(conn, :exploration_preview, section.slug))
 
-      assert html_response(conn, 302) =~
-               "You are being <a href=\"/sections/#{section.slug}/enroll\">redirected</a>."
+      assert html_response(conn, 200) =~ "#{section.title} | Your Exploration Activities"
     end
 
     test "redirects to enroll page if not is enrolled in the section", %{
@@ -2157,6 +2156,17 @@ defmodule OliWeb.PageDeliveryControllerTest do
       assert html_response(conn, 200)
     end
 
+    test "user logged in as system admin can access to discussion preview", %{
+      conn: conn,
+      section: section
+    } do
+      {:ok, conn: conn, admin: _admin} = admin_conn(%{conn: conn})
+
+      conn = get(conn, Routes.page_delivery_path(conn, :discussion_preview, section.slug))
+
+      assert html_response(conn, 200) =~ "Your Latest Discussion Activity"
+    end
+
     test "page renders a list of posts of current user", %{
       conn: conn,
       section: section,
@@ -2239,6 +2249,20 @@ defmodule OliWeb.PageDeliveryControllerTest do
         )
 
       assert html_response(conn, 200) =~ section.title
+
+      assert html_response(conn, 200) =~ "Assignments"
+
+      assert html_response(conn, 200) =~
+               "Find all your assignments, quizzes and activities associated with graded material."
+    end
+
+    test "user logged in as system admin can access to assignments preview", %{
+      conn: conn,
+      section: section
+    } do
+      {:ok, conn: conn, admin: _admin} = admin_conn(%{conn: conn})
+
+      conn = get(conn, Routes.page_delivery_path(conn, :assignments_preview, section.slug))
 
       assert html_response(conn, 200) =~ "Assignments"
 

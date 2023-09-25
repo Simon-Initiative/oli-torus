@@ -7,6 +7,7 @@ import { getNearestBlock, isActive, isTopLevel } from 'components/editing/slateU
 
 export const toggleHeading = createButtonCommandDesc({
   icon: <i className="fa-solid fa-heading"></i>,
+  category: 'Formatting',
   description: 'Heading',
   active: (editor) => isActive(editor, ['h1', 'h2']),
   execute: (_ctx, editor) => switchType(editor, 'h2'),
@@ -31,11 +32,13 @@ const selectedType = (editor: Editor) =>
 
 export const headingTypeDescs = [
   createButtonCommandDesc({
+    category: 'Formatting',
     description: 'H1',
     active: (editor) => isActive(editor, ['h1']),
     execute: (_ctx, editor) => switchType(editor, 'h1'),
   }),
   createButtonCommandDesc({
+    category: 'Formatting',
     description: 'H2',
     active: (editor) => isActive(editor, ['h2']),
     execute: (_ctx, editor) => switchType(editor, 'h2'),
@@ -44,6 +47,7 @@ export const headingTypeDescs = [
 
 export const headingLevelDesc = (editor: Editor) =>
   createButtonCommandDesc({
+    category: 'Formatting',
     description: isActive(editor, 'h1') ? 'H1' : 'H2',
     active: (editor) => isActive(editor, ['h1', 'h2']),
     execute: () => {},
@@ -52,6 +56,7 @@ export const headingLevelDesc = (editor: Editor) =>
 export const commandDesc: CommandDescription = {
   type: 'CommandDesc',
   icon: () => <i className="fa-solid fa-heading"></i>,
+  category: 'Formatting',
   description: () => 'Title (# or ##)',
   command: {
     execute: (_context, editor) => {

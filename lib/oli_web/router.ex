@@ -222,6 +222,10 @@ defmodule OliWeb.Router do
     plug(Oli.Plugs.EnsureUserSectionVisit)
   end
 
+  pipeline :delivery_preview do
+    plug(Oli.Plugs.DeliveryPreview)
+  end
+
   ### HELPERS ###
 
   defp put_pow_mailer_layout(conn, layout), do: put_private(conn, :pow_mailer_layouts, layout)
@@ -923,6 +927,7 @@ defmodule OliWeb.Router do
       :require_section,
       :delivery,
       :require_exploration_pages,
+      :delivery_preview,
       :delivery_protected,
       :maybe_gated_resource,
       :enforce_enroll_and_paywall,

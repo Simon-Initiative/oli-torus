@@ -3,7 +3,7 @@ defmodule OliWeb.DeliveryController do
 
   alias Lti_1p3.Tool.{PlatformRoles, ContextRoles}
   alias Oli.Accounts
-  alias Oli.Accounts.Author
+  alias Oli.Accounts.{User, Author}
   alias Oli.Analytics.DataTables.DataTable
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.EnrollmentBrowseOptions
@@ -12,8 +12,6 @@ defmodule OliWeb.DeliveryController do
   alias Oli.Repo
   alias Oli.Repo.{Paging, Sorting}
   alias OliWeb.Delivery.InstructorDashboard.Helpers
-
-  import Oli.Utils
 
   require Logger
 
@@ -327,12 +325,18 @@ defmodule OliWeb.DeliveryController do
     case Sections.available?(conn.assigns.section) do
       {:available, section} ->
         # redirect to course index if user is already signed in and enrolled
-        with {:ok, user} <- conn.assigns.current_user |> trap_nil,
+        with {:ok, user} <- current_or_guest_user(conn, section.requires_enrollment),
              true <- Sections.is_enrolled?(user.id, section.slug) do
           redirect(conn,
             to: Routes.page_delivery_path(OliWeb.Endpoint, :index, section.slug)
           )
         else
+          {:redirect, nil} ->
+            # guest user cant access courses that require enrollment
+            redirect_path =
+              "/session/new?section=#{section.slug}"
+            conn
+              |> redirect(to: redirect_path)
           _ ->
             section = Oli.Repo.preload(section, [:base_project])
 
@@ -403,6 +407,9 @@ defmodule OliWeb.DeliveryController do
     case conn.assigns.current_user do
       nil ->
         if requires_enrollment, do: {:redirect, nil}, else: Accounts.create_guest_user()
+
+      %User{guest: true} = guest ->
+        if requires_enrollment, do: {:redirect, nil}, else: {:ok, guest}
 
       user ->
         {:ok, user}
