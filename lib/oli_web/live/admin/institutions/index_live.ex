@@ -493,7 +493,10 @@ defmodule OliWeb.Admin.Institutions.IndexLive do
                    registration
                  ),
                {:ok, {institution, registration, _deployment}} <-
-                 Institutions.approve_pending_registration(pending_registration) do
+                 approve_pending_registration(
+                   registration["institution_id"],
+                   pending_registration
+                 ) do
             registration_approved_email =
               Oli.Email.create_email(
                 institution.institution_email,
@@ -600,6 +603,13 @@ defmodule OliWeb.Admin.Institutions.IndexLive do
        attr: "data-hide_modal"
      })}
   end
+
+  # handle the case where the creation of a new institution was required (when institution_id == "")
+  defp approve_pending_registration("", pending_registration),
+    do: Institutions.approve_pending_registration_as_new_institution(pending_registration)
+
+  defp approve_pending_registration(_, pending_registration),
+    do: Institutions.approve_pending_registration(pending_registration)
 
   defp root_breadcrumbs() do
     OliWeb.Admin.AdminView.breadcrumb() ++
