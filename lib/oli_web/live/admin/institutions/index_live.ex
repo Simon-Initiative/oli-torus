@@ -201,7 +201,7 @@ defmodule OliWeb.Admin.Institutions.IndexLive do
           Are you sure you want to decline this request from "<%= @registration_changeset.name %>"?
         </p>
         <div :if={@registration_changeset} class="flex justify-end border-0">
-          <button type="button" class="btn btn-secondary mr-2">
+          <button phx-click={Modal.hide("#decline-registration-modal")} type="button" class="btn btn-secondary mr-2">
             Cancel
           </button>
           <button
@@ -341,7 +341,7 @@ defmodule OliWeb.Admin.Institutions.IndexLive do
             </div>
 
             <div class="flex justify-end border-0">
-              <button type="button" class="btn btn-secondary mr-2">
+              <button phx-click={Modal.hide("#review-registration-modal")} type="button" class="btn btn-secondary mr-2">
                 Cancel
               </button>
               <button type="submit" class="submit btn btn-success">
