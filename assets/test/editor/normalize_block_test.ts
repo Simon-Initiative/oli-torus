@@ -18,8 +18,8 @@ describe('editor / block normalizer', () => {
       Model.popup(),
       Model.cite('foo', 1),
       Model.formulaInline(),
-      Model.foreign(),
-      Model.calloutInline(),
+      Model.foreign("test"),
+      Model.calloutInline("test"),
     ];
     for (const node of inlineNodes) {
       const original = [Model.p([node])];

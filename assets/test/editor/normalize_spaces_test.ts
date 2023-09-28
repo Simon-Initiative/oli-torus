@@ -34,16 +34,16 @@ describe('editor / spaces normalizer', () => {
     it(`Should add paragraph between ${elementType} block elements`, () => {
       const original = [
         Model.p(),
-        { type: elementType, id: '1', children: [{ text: '' }] },
-        { type: elementType, id: '2', children: [{ text: '' }] },
+        { type: elementType, id: '1', children: [{ text: 'test' }] },
+        { type: elementType, id: '2', children: [{ text: 'test' }] },
         Model.p(),
       ] as Descendant[];
 
       const expected = expectAnyId([
         expectAnyEmptyParagraph,
-        { type: elementType, id: '1', children: [{ text: '' }] },
+        { type: elementType, id: '1', children: [{ text: 'test' }] },
         expectAnyEmptyParagraph,
-        { type: elementType, id: '2', children: [{ text: '' }] },
+        { type: elementType, id: '2', children: [{ text: 'test' }] },
         expectAnyEmptyParagraph,
       ] as Descendant[]);
 

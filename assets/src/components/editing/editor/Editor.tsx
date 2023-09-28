@@ -13,7 +13,7 @@ import { onKeyDown as listOnKeyDown } from './handlers/lists';
 import { onKeyDown as quoteOnKeyDown } from './handlers/quote';
 import { onKeyDown as titleOnKeyDown } from './handlers/title';
 import { onKeyDown as voidOnKeyDown } from './handlers/void';
-import { onKeyDown as linkOnKeyDown } from './handlers/link';
+import { onKeyDown as linkOnKeyDown } from './handlers/deleteempty';
 
 import { editorFor, markFor } from './modelEditorDispatch';
 import { NormalizerContext, installNormalizer } from './normalizers/normalizer';

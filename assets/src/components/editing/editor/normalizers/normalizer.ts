@@ -1,7 +1,7 @@
 import { Editor, Element, Node, NodeEntry, Text, Transforms } from 'slate';
 import { normalize as blockNormalize } from 'components/editing/editor/normalizers/block';
 import { normalize as forceRootNode } from 'components/editing/editor/normalizers/forceRootNode';
-import { normalize as linkNormalize } from 'components/editing/editor/normalizers/links';
+import { normalize as linkNormalize } from 'components/editing/editor/normalizers/deleteempty';
 import { normalize as listNormalize } from 'components/editing/editor/normalizers/lists';
 import { normalize as rootNormalize } from 'components/editing/editor/normalizers/root';
 import { normalize as spacesNormalize } from 'components/editing/editor/normalizers/spaces';
