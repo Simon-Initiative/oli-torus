@@ -13,6 +13,8 @@ import { onKeyDown as listOnKeyDown } from './handlers/lists';
 import { onKeyDown as quoteOnKeyDown } from './handlers/quote';
 import { onKeyDown as titleOnKeyDown } from './handlers/title';
 import { onKeyDown as voidOnKeyDown } from './handlers/void';
+import { onKeyDown as linkOnKeyDown } from './handlers/link';
+
 import { editorFor, markFor } from './modelEditorDispatch';
 import { NormalizerContext, installNormalizer } from './normalizers/normalizer';
 import { withInlines } from './overrides/inlines';
@@ -102,6 +104,7 @@ export const Editor: React.FC<EditorProps> = React.memo((props: EditorProps) => 
       hotkeyHandler(editor, e.nativeEvent, props.commandContext);
       backspaceBlockKeyDown(editor, e);
       deleteBlockKeyDown(editor, e);
+      linkOnKeyDown(editor, e);
     },
     [editor, props.commandContext],
   );
