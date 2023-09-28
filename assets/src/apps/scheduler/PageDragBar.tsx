@@ -2,7 +2,13 @@ import React, { useCallback, useState } from 'react';
 import { DateWithoutTime } from 'epoq';
 import { useDocumentMouseEvents } from '../../components/hooks/useDocumentMouseEvents';
 import { useToggle } from '../../components/hooks/useToggle';
-import { DayGeometry, barGeometry, betweenGeometry, leftToDate, validateStartEndDates } from './date-utils';
+import {
+  DayGeometry,
+  barGeometry,
+  betweenGeometry,
+  leftToDate,
+  validateStartEndDates,
+} from './date-utils';
 import { SchedulingType } from './scheduler-slice';
 
 interface DragBarProps {
@@ -169,7 +175,7 @@ const ConnectorLine: React.FC<{
 
   const barStyle = {
     left: geometry.left,
-    width: geometry.width ,
+    width: geometry.width,
     top: 17,
   };
 

@@ -36,7 +36,6 @@ export const PageScheduleLine: React.FC<ScheduleLineProps> = ({ item, indent, da
       let targetStartDate: Date | DateWithoutTime | null = startDate;
 
       if (item.startDateTime && startDate) {
-
         targetStartDate = new Date();
         // Important: Important to set these in order
         targetStartDate.setFullYear(startDate.getFullYear());
@@ -48,11 +47,11 @@ export const PageScheduleLine: React.FC<ScheduleLineProps> = ({ item, indent, da
           item.startDateTime.getSeconds(),
         );
 
-        console.info("PageScheduleLine::onChange", {
+        console.info('PageScheduleLine::onChange', {
           startDate,
           item: item.startDateTime,
-          targetStartDate
-        })
+          targetStartDate,
+        });
       }
 
       // On a drag, need to change the date, but preserve the end time if one exists.
