@@ -531,7 +531,8 @@ defmodule OliWeb.Admin.Institutions.IndexLive do
                 Enum.filter(
                   socket.assigns.pending_registrations,
                   &(&1.id != pending_registration.id)
-                )
+                ),
+              institutions: Institutions.list_institutions()
             )
             |> put_flash(:info, [
               "Registration for ",
