@@ -1,7 +1,7 @@
+import { KeyboardEvent } from 'react';
 import { Editor, Element } from 'slate';
 import { SlateEditor } from 'data/content/model/slate';
 import { isEmptyContent } from 'data/content/utils';
-import { KeyboardEvent } from 'react';
 
 // Which elements do we want to remove if they're empty?
 export const emptyElementsToDelete = ['a', 'callout', 'callout_inline', 'foreign'];

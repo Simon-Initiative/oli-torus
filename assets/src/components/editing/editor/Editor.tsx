@@ -8,13 +8,12 @@ import { Mark, Marks } from 'data/content/model/text';
 import { classNames } from 'utils/classNames';
 import { CommandContext, CommandDescription } from '../elements/commands/interfaces';
 import { backspaceBlockKeyDown, deleteBlockKeyDown } from './handlers/deleteblock';
+import { onKeyDown as linkOnKeyDown } from './handlers/deleteempty';
 import { hotkeyHandler } from './handlers/hotkey';
 import { onKeyDown as listOnKeyDown } from './handlers/lists';
 import { onKeyDown as quoteOnKeyDown } from './handlers/quote';
 import { onKeyDown as titleOnKeyDown } from './handlers/title';
 import { onKeyDown as voidOnKeyDown } from './handlers/void';
-import { onKeyDown as linkOnKeyDown } from './handlers/deleteempty';
-
 import { editorFor, markFor } from './modelEditorDispatch';
 import { NormalizerContext, installNormalizer } from './normalizers/normalizer';
 import { withInlines } from './overrides/inlines';
