@@ -2,7 +2,7 @@ import React, { useCallback, useState } from 'react';
 import { DateWithoutTime } from 'epoq';
 import { useDocumentMouseEvents } from '../../components/hooks/useDocumentMouseEvents';
 import { useToggle } from '../../components/hooks/useToggle';
-import { DayGeometry, barGeometry, leftToDate, validateStartEndDates } from './date-utils';
+import { DayGeometry, barGeometry, betweenGeometry, leftToDate, validateStartEndDates } from './date-utils';
 import { SchedulingType } from './scheduler-slice';
 
 interface DragBarProps {
@@ -115,7 +115,7 @@ export const PageDragBar: React.FC<DragBarProps> = ({
   );
 
   const hasStartEnd = isGraded && startDate && endDate;
-  const geometry = barGeometry(dayGeometry, startDate, endDate);
+  const geometry = betweenGeometry(dayGeometry, startDate, endDate);
   const offsetIcons = hasStartEnd && Math.abs(geometry.width) < 20;
 
   const showConnector = hasStartEnd && !offsetIcons;
@@ -165,11 +165,11 @@ const ConnectorLine: React.FC<{
   startDate: DateWithoutTime;
   endDate: DateWithoutTime;
 }> = ({ dayGeometry, startDate, endDate }) => {
-  const geometry = barGeometry(dayGeometry, startDate, endDate);
+  const geometry = betweenGeometry(dayGeometry, startDate, endDate);
 
   const barStyle = {
-    left: geometry.left + 17,
-    width: geometry.width - 22,
+    left: geometry.left,
+    width: geometry.width ,
     top: 17,
   };
 
