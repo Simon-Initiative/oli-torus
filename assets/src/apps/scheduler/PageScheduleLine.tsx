@@ -36,23 +36,31 @@ export const PageScheduleLine: React.FC<ScheduleLineProps> = ({ item, indent, da
       let targetStartDate: Date | DateWithoutTime | null = startDate;
 
       if (item.startDateTime && startDate) {
+
         targetStartDate = new Date();
-        targetStartDate.setDate(startDate.getDate());
-        targetStartDate.setMonth(startDate.getMonth());
+        // Important: Important to set these in order
         targetStartDate.setFullYear(startDate.getFullYear());
+        targetStartDate.setMonth(startDate.getMonth());
+        targetStartDate.setDate(startDate.getDate());
         targetStartDate.setHours(
           item.startDateTime.getHours(),
           item.startDateTime.getMinutes(),
           item.startDateTime.getSeconds(),
         );
+
+        console.info("PageScheduleLine::onChange", {
+          startDate,
+          item: item.startDateTime,
+          targetStartDate
+        })
       }
 
       // On a drag, need to change the date, but preserve the end time if one exists.
       if (item.endDateTime) {
         targetEndDate = new Date();
-        targetEndDate.setDate(endDate.getDate());
-        targetEndDate.setMonth(endDate.getMonth());
         targetEndDate.setFullYear(endDate.getFullYear());
+        targetEndDate.setMonth(endDate.getMonth());
+        targetEndDate.setDate(endDate.getDate());
         targetEndDate.setHours(
           item.endDateTime.getHours(),
           item.endDateTime.getMinutes(),
