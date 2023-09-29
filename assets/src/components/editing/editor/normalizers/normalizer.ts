@@ -1,5 +1,6 @@
 import { Editor, Element, Node, NodeEntry, Text, Transforms } from 'slate';
 import { normalize as blockNormalize } from 'components/editing/editor/normalizers/block';
+import { normalize as linkNormalize } from 'components/editing/editor/normalizers/deleteempty';
 import { normalize as forceRootNode } from 'components/editing/editor/normalizers/forceRootNode';
 import { normalize as listNormalize } from 'components/editing/editor/normalizers/lists';
 import { normalize as rootNormalize } from 'components/editing/editor/normalizers/root';
@@ -21,6 +22,7 @@ export interface NormalizerOptions {
   wrapParagraphs: boolean;
   spacesNormalize: boolean;
   blockNormalize: boolean;
+  linkNormalize: boolean;
   listNormalize: boolean;
   tableNormalize: boolean;
   conjugationNormalize: boolean;
@@ -33,6 +35,7 @@ const defaultOptions = {
   wrapParagraphs: true,
   spacesNormalize: true,
   blockNormalize: true,
+  linkNormalize: true,
   codeNormalize: true,
   listNormalize: true,
   tableNormalize: true,
@@ -95,13 +98,16 @@ export function installNormalizer(
       // if (options.codeNormalize && codeNormalize(editor, node, path)) return;
 
       if (options.listNormalize && listNormalize(editor, node, path)) return; // Must come before block normalizer
+
       if (options.blockNormalize && blockNormalize(editor, node, path)) return;
 
       if (options.tableNormalize && tableNormalize(editor, node, path)) return;
+
+      if (options.linkNormalize && linkNormalize(editor, node, path)) return;
     } catch (e) {
       // istanbul ignore next
       console.error('Normalization Error:', e);
     }
-    normalizeNode(entry);
+    return normalizeNode(entry);
   };
 }
