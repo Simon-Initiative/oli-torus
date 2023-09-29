@@ -1,5 +1,4 @@
-import React from 'react';
-import { useBoundingClientRect } from 'components/hooks/useBoundingRect';
+import React, { useState } from 'react';
 import { useScrollPosition } from 'components/hooks/useScrollPosition';
 import { Banner } from 'components/messages/Banner';
 import { MessageAction, Message as Msg } from 'data/messages/messages';
@@ -12,7 +11,6 @@ export type TitleBarProps = {
   onTitleEdit: (title: string) => void;
   children: any;
   className?: string;
-  parent: HTMLElement | null;
   dismissMessage: (message: Msg) => void;
   executeAction: (message: Msg, action: MessageAction) => void;
   messages: Msg[];
@@ -29,40 +27,40 @@ export const TitleBar = (props: TitleBarProps) => {
     className,
     title,
     children,
-    parent,
     messages,
     onTitleEdit,
     dismissMessage,
     executeAction,
   } = props;
   const scrollPos = useScrollPosition();
-  const bounding = useBoundingClientRect(parent, { triggerOnWindowResize: true });
 
-  const showFloating = scrollPos > 300;
+  const [titleBarTop, setTitleBarTop] = useState<number | null>(null);
+  const [titleBarHeight, setTitleBarHeight] = useState<number | null>(null);
+  const workspaceHeaderHeight = 64;
+  const showFloating =
+    titleBarTop && titleBarHeight && scrollPos > titleBarTop - workspaceHeaderHeight;
 
   return (
     <>
       <div
-        className={classNames(
-          'TitleBar',
-          'block w-100 align-items-baseline',
-          className,
-          showFloating ? 'fixed z-10 top-[65px] px-[1px]' : 'h-[40px]',
-        )}
-        style={showFloating ? { width: bounding?.width, left: bounding?.left } : {}}
+        ref={(ref) => {
+          if (ref?.offsetTop && !titleBarTop) {
+            const boundingClientRect = ref.getBoundingClientRect();
+
+            setTitleBarTop(boundingClientRect.top);
+            setTitleBarHeight(boundingClientRect.height);
+          }
+        }}
+        className={classNames('TitleBar', 'sticky w-100 align-items-baseline z-40', className)}
+        style={{ top: workspaceHeaderHeight }}
       >
         <div
           className={classNames(
-            'flex-1 d-flex align-items-baseline',
-            showFloating && 'px-4 py-2 backdrop-blur-md bg-body/75 dark:bg-body-dark/75 shadow-lg',
+            'flex-1 d-flex align-items-baseline py-2',
+            showFloating ? 'px-4 backdrop-blur-md bg-body/75 dark:bg-body-dark/75 shadow-lg' : '',
           )}
         >
-          <div
-            className={classNames(
-              'd-flex align-items-baseline flex-grow-1 mr-2',
-              showFloating && 'px-4 py-2',
-            )}
-          >
+          <div className={classNames('d-flex align-items-baseline flex-grow-1 mr-2')}>
             <TextEditor
               onEdit={onTitleEdit}
               model={title}
@@ -74,22 +72,14 @@ export const TitleBar = (props: TitleBarProps) => {
           </div>
           {children}
         </div>
-        <div className="p-3">
-          {showFloating && (
-            <Banner
-              dismissMessage={dismissMessage}
-              executeAction={executeAction}
-              messages={messages}
-            />
-          )}
-        </div>
+        {showFloating && (
+          <Banner
+            dismissMessage={dismissMessage}
+            executeAction={executeAction}
+            messages={messages}
+          />
+        )}
       </div>
-
-      {showFloating && (
-        <>
-          <div className="h-[40px]"></div>
-        </>
-      )}
     </>
   );
 };

@@ -34,7 +34,7 @@ export class Banner extends React.PureComponent<BannerProps, {}> {
     const messages = [...errors, ...warnings, ...infos, ...tasks];
 
     return (
-      <div className={classNames(styles.banner, 'sticky top-[80px]')}>
+      <div className={classNames(styles.banner)}>
         <TransitionGroup>
           {messages.map((m) => (
             <CSSTransition key={m.guid} timeout={{ enter: 200, exit: 200 }}>
