@@ -312,6 +312,32 @@ defmodule Oli.AccountsTest do
       assert Accounts.is_lms_user?(user.email)
     end
 
+    test "is_lms_user?/1 returns true when more than one user email exists and one is lms" do
+      user1 = insert(:user, %{email: "test@test.com", independent_learner: false})
+      insert(:lti_params, user_id: user1.id)
+
+      _user2 = insert(:user, %{email: "test@test.com", independent_learner: false})
+
+      assert Accounts.is_lms_user?(user1.email)
+    end
+
+    test "is_lms_user?/1 returns true when more than one user email exists and all are lms" do
+      user1 = insert(:user, %{email: "test@test.com", independent_learner: false})
+      insert(:lti_params, user_id: user1.id)
+
+      user2 = insert(:user, %{email: "test@test.com", independent_learner: false})
+      insert(:lti_params, user_id: user2.id)
+
+      assert Accounts.is_lms_user?(user1.email)
+    end
+
+    test "is_lms_user?/1 returns false only user is independent" do
+      user1 = insert(:user, %{email: "test@test.com", independent_learner: true})
+
+      refute Accounts.is_lms_user?(user1.email)
+    end
+
+
     test "is_lms_user?/1 returns false when the user does not exist" do
       refute Accounts.is_lms_user?("invalid_email")
     end

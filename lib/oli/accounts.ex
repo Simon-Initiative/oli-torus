@@ -412,18 +412,13 @@ defmodule Oli.Accounts do
   Returns true if a user belongs to an LMS.
   """
   def is_lms_user?(email) do
-    case get_user_by(%{email: email}) do
-      nil ->
-        false
 
-      %User{id: user_id} ->
-        Repo.exists?(
-          from(
-            lti in LtiParams,
-            where: lti.user_id == ^user_id
-          )
-        )
-    end
+    query = from lti in LtiParams,
+      join: user in User,
+      on: lti.user_id == user.id,
+      where: ilike(user.email, ^email)
+
+    Repo.exists?(query)
   end
 
   @doc """
