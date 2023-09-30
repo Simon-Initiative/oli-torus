@@ -626,6 +626,46 @@ defmodule Oli.Institutions do
   end
 
   @doc """
+  Approves a pending registration request. If successful, a new deployment will be created and attached
+  to a the required new institution.
+
+  The operation guarantees all actions or none are performed.
+
+  ## Examples
+      iex> approve_pending_registration_as_new_institution(pending_registration)
+      {:ok, {%Institution{}, %Registration{}, %Deployment{}}}
+      iex> approve_pending_registration_as_new_institution(pending_registration)
+      {:error, reason}
+  """
+
+  def approve_pending_registration_as_new_institution(
+        %PendingRegistration{} = pending_registration
+      ) do
+    Repo.transaction(fn ->
+      with {:ok, institution} <-
+             create_institution(PendingRegistration.institution_attrs(pending_registration)),
+           {:ok, active_jwk} <- Lti_1p3.get_active_jwk(),
+           registration_attrs =
+             Map.merge(PendingRegistration.registration_attrs(pending_registration), %{
+               institution_id: institution.id,
+               tool_jwk_id: active_jwk.id
+             }),
+           {:ok, registration} <- create_registration(registration_attrs),
+           deployment_attrs =
+             Map.merge(PendingRegistration.deployment_attrs(pending_registration), %{
+               institution_id: institution.id,
+               registration_id: registration.id
+             }),
+           {:ok, deployment} <- create_deployment(deployment_attrs),
+           {:ok, _pending_registration} <- delete_pending_registration(pending_registration) do
+        {institution, registration, deployment}
+      else
+        error -> Repo.rollback(error)
+      end
+    end)
+  end
+
+  @doc """
   Returns an institution, registration and deployment from a given deployment_id
   ## Examples
       iex> get_institution_registration_deployment("some-issuer", "some-client-id", "some-deployment-id")
