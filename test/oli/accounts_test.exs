@@ -306,7 +306,7 @@ defmodule Oli.AccountsTest do
     end
 
     test "is_lms_user?/1 returns true when the user exists and belongs to an lms" do
-      user = insert(:user)
+      user = insert(:user, %{email: "test@test.com", independent_learner: false})
       insert(:lti_params, user_id: user.id)
 
       assert Accounts.is_lms_user?(user.email)
@@ -343,7 +343,7 @@ defmodule Oli.AccountsTest do
     end
 
     test "is_lms_user?/1 returns false when the user exists but is not from an lms" do
-      user = insert(:user)
+      user = insert(:user, %{email: "test@test.com", independent_learner: true})
 
       refute Accounts.is_lms_user?(user.email)
     end

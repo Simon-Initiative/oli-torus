@@ -16,7 +16,6 @@ defmodule Oli.Accounts do
 
   alias Oli.Groups
   alias Oli.Groups.CommunityAccount
-  alias Oli.Lti.LtiParams
   alias Oli.Repo
   alias Oli.Repo.{Paging, Sorting}
   alias Oli.AccountLookupCache
@@ -413,10 +412,8 @@ defmodule Oli.Accounts do
   """
   def is_lms_user?(email) do
 
-    query = from lti in LtiParams,
-      join: user in User,
-      on: lti.user_id == user.id,
-      where: ilike(user.email, ^email)
+    query = from user in User,
+      where: user.email == ^email and user.independent_learner == false
 
     Repo.exists?(query)
   end
