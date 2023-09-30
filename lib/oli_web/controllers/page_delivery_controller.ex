@@ -850,7 +850,7 @@ defmodule OliWeb.PageDeliveryController do
               PreviousNextIndex.retrieve(section, revision.resource_id)
 
             html =
-              ~s|<div class="text-center"><em>Instructor preview of adaptive activities is not supported</em></div>|
+              ~s|<div class="text-center"><em>Instructor preview of adaptive activities by admin accounts is not supported</em></div>|
 
             effective_settings =
               Settings.get_combined_settings(
