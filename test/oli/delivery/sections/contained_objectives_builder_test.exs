@@ -2,11 +2,9 @@ defmodule Oli.Delivery.Sections.ContainedObjectivesBuilderTest do
   use Oban.Testing, repo: Oli.Repo
   use Oli.DataCase
 
-  import Ecto.Query, only: [from: 2]
-
   alias Oli.Delivery.Sections
-  alias Oli.Delivery.Sections.{ContainedObjectivesBuilder, ContainedObjective}
-  alias Oli.{Factory, Repo}
+  alias Oli.Delivery.Sections.ContainedObjectivesBuilder
+  alias Oli.Factory
 
   describe "given a section with objectives" do
     setup [:create_full_project_with_objectives]
@@ -39,7 +37,7 @@ defmodule Oli.Delivery.Sections.ContainedObjectivesBuilderTest do
       assert {:ok, _} = perform_job(ContainedObjectivesBuilder, %{section_slug: section.slug})
 
       # Check Root Container objectives
-      root_container_objectives = get_section_contained_objectives(section.id, nil)
+      root_container_objectives = Sections.get_section_contained_objectives(section.id, nil)
 
       # Objectives A and B are not attached
       [resources.obj_resource_a, resources.obj_resource_b]
@@ -58,7 +56,7 @@ defmodule Oli.Delivery.Sections.ContainedObjectivesBuilderTest do
 
       # Check Module Container 1 objectives
       module_container_1_objectives =
-        get_section_contained_objectives(section.id, resources.module_resource_1.id)
+        Sections.get_section_contained_objectives(section.id, resources.module_resource_1.id)
 
       # C, C1 and D are the objectives attached to the inner activities
       assert length(module_container_1_objectives) == 3
@@ -72,7 +70,7 @@ defmodule Oli.Delivery.Sections.ContainedObjectivesBuilderTest do
 
       # Check Unit Container objectives
       unit_container_objectives =
-        get_section_contained_objectives(section.id, resources.unit_resource.id)
+        Sections.get_section_contained_objectives(section.id, resources.unit_resource.id)
 
       # C, C1 and D are the objectives attached to the inner activities
       assert length(unit_container_objectives) == 3
@@ -86,7 +84,7 @@ defmodule Oli.Delivery.Sections.ContainedObjectivesBuilderTest do
 
       # Check Module Container 2 objectives
       module_container_2_objectives =
-        get_section_contained_objectives(section.id, resources.module_resource_2.id)
+        Sections.get_section_contained_objectives(section.id, resources.module_resource_2.id)
 
       # E and F are the objectives attached to the inner activities
       assert length(module_container_2_objectives) == 2
@@ -98,7 +96,7 @@ defmodule Oli.Delivery.Sections.ContainedObjectivesBuilderTest do
                ])
 
       # Check Root Container objectives
-      root_container_objectives = get_section_contained_objectives(section.id, nil)
+      root_container_objectives = Sections.get_section_contained_objectives(section.id, nil)
 
       # C, C1, D, E and F are the objectives attached to the inner activities
       assert length(root_container_objectives) == 5
@@ -123,25 +121,7 @@ defmodule Oli.Delivery.Sections.ContainedObjectivesBuilderTest do
       assert {:ok, _} = perform_job(ContainedObjectivesBuilder, %{section_slug: section.slug})
 
       assert Sections.get_section_by(slug: section.slug).v25_migration == :done
-      assert [] == get_section_contained_objectives(section.id, nil)
+      assert [] == Sections.get_section_contained_objectives(section.id, nil)
     end
-  end
-
-  defp get_section_contained_objectives(section_id, nil) do
-    Repo.all(
-      from(co in ContainedObjective,
-        where: co.section_id == ^section_id and is_nil(co.container_id),
-        select: co.objective_id
-      )
-    )
-  end
-
-  defp get_section_contained_objectives(section_id, container_id) do
-    Repo.all(
-      from(co in ContainedObjective,
-        where: [section_id: ^section_id, container_id: ^container_id],
-        select: co.objective_id
-      )
-    )
   end
 end

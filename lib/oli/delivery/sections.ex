@@ -7,9 +7,7 @@ defmodule Oli.Delivery.Sections do
   alias Oli.Delivery.Sections.EnrollmentContextRole
   alias Oli.Repo
   alias Oli.Repo.{Paging, Sorting}
-  alias Oli.Delivery.Sections.Section
-  alias Oli.Delivery.Sections.ContainedPage
-  alias Oli.Delivery.Sections.Enrollment
+  alias Oli.Delivery.Sections.{ContainedObjective, ContainedPage, Enrollment, Section}
   alias Lti_1p3.Tool.ContextRole
   alias Lti_1p3.DataProviders.EctoProvider
   alias Oli.Lti.Tool.{Deployment, Registration}
@@ -1857,6 +1855,7 @@ defmodule Oli.Delivery.Sections do
       PreviousNextIndex.rebuild(section)
 
       {:ok, _} = rebuild_contained_pages(section, section_resources)
+      {:ok, _} = rebuild_contained_objectives(section)
 
       section_resources
     end)
@@ -1997,6 +1996,138 @@ defmodule Oli.Delivery.Sections do
     """
 
     Ecto.Adapters.SQL.query(Repo, sql, [section_id, section_id])
+  end
+
+  @doc """
+  Rebuilds the "contained objectives" relations for a course section. A "contained objective" for a
+  container is the full set of objectives found within the activities (within the pages) included in the container or in any of
+  its sub-containers.  For every container in a course section, one row will exist in this
+  "contained objectives" table for each contained objective. This allows a straightforward join through
+  this relation from a container to then all of its contained objectives.
+  It does not take into account the objectives attached to the pages within a container.
+
+  There will be always at least one entry per objective with the container_id being nil, which represents the inclusion of the objective in the root container.
+  """
+
+  def rebuild_contained_objectives(section) do
+    timestamps = %{
+      inserted_at: {:placeholder, :now},
+      updated_at: {:placeholder, :now}
+    }
+
+    placeholders = %{
+      now: DateTime.utc_now() |> DateTime.truncate(:second)
+    }
+
+    Multi.new()
+    |> Multi.delete_all(
+      :delete_all_objectives,
+      from(ContainedObjective, where: [section_id: ^section.id])
+    )
+    |> Multi.run(:contained_objectives, &build_contained_objectives(&1, &2, section.slug))
+    |> Multi.insert_all(
+      :inserted_contained_objectives,
+      ContainedObjective,
+      &objectives_with_timestamps(&1, timestamps),
+      placeholders: placeholders
+    )
+    |> Repo.transaction()
+    |> case do
+      {:ok, res} ->
+        {:ok, res}
+
+      {:error, _, changeset, _} ->
+        {:error, changeset}
+    end
+  end
+
+  def build_contained_objectives(repo, _changes, section_slug) do
+    page_type_id = ResourceType.get_id_by_type("page")
+    activity_type_id = ResourceType.get_id_by_type("activity")
+
+    section_resource_pages =
+      from(
+        [sr: sr, rev: rev, s: s] in DeliveryResolver.section_resource_revisions(section_slug),
+        where: not rev.deleted and rev.resource_type_id == ^page_type_id
+      )
+
+    section_resource_activities =
+      from(
+        [sr: sr, rev: rev, s: s] in DeliveryResolver.section_resource_revisions(section_slug),
+        where: not rev.deleted and rev.resource_type_id == ^activity_type_id,
+        select: rev
+      )
+
+    activity_references =
+      from(
+        rev in Revision,
+        join: content_elem in fragment("jsonb_array_elements(?->'model')", rev.content),
+        select: %{
+          revision_id: rev.id,
+          activity_id: fragment("(?->>'activity_id')::integer", content_elem)
+        },
+        where: fragment("?->>'type'", content_elem) == "activity-reference"
+      )
+
+    activity_objectives =
+      from(
+        rev in Revision,
+        join: obj in fragment("jsonb_each_text(?)", rev.objectives),
+        select: %{
+          objective_revision_id: rev.id,
+          objective_resource_id:
+            fragment("jsonb_array_elements_text(?::jsonb)::integer", obj.value)
+        },
+        where: rev.deleted == false and rev.resource_type_id == ^activity_type_id
+      )
+
+    contained_objectives =
+      from(
+        [sr: sr, rev: rev, s: s] in section_resource_pages,
+        join: cp in ContainedPage,
+        on: cp.page_id == rev.resource_id and cp.section_id == s.id,
+        join: ar in subquery(activity_references),
+        on: ar.revision_id == rev.id,
+        join: act in subquery(section_resource_activities),
+        on: act.resource_id == ar.activity_id,
+        join: ao in subquery(activity_objectives),
+        on: ao.objective_revision_id == act.id,
+        group_by: [cp.section_id, cp.container_id, ao.objective_resource_id],
+        select: %{
+          section_id: cp.section_id,
+          container_id: cp.container_id,
+          objective_id: ao.objective_resource_id
+        }
+      )
+      |> repo.all()
+
+    {:ok, contained_objectives}
+  end
+
+  defp objectives_with_timestamps(%{contained_objectives: contained_objectives}, timestamps) do
+    Enum.map(contained_objectives, &Map.merge(&1, timestamps))
+  end
+
+  @doc """
+  Returns the contained objectives for a given section and container.
+  If the container id is nil, then it returns the contained objectives for the root container (all objectives of the section).
+  """
+  def get_section_contained_objectives(section_id, nil) do
+    Repo.all(
+      from(co in ContainedObjective,
+        where: co.section_id == ^section_id and is_nil(co.container_id),
+        select: co.objective_id
+      )
+    )
+  end
+
+  def get_section_contained_objectives(section_id, container_id) do
+    Repo.all(
+      from(co in ContainedObjective,
+        where: [section_id: ^section_id, container_id: ^container_id],
+        select: co.objective_id
+      )
+    )
   end
 
   @doc """

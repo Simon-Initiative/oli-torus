@@ -6,6 +6,7 @@ defmodule Oli.TestHelpers do
   alias Oli.Repo
   alias Oli.Accounts
   alias Oli.Accounts.{Author, AuthorPreferences, User}
+  alias Oli.Activities
   alias Oli.Authoring.Course
   alias Oli.Authoring.Course.Project
   alias Oli.Delivery.Sections
@@ -1300,6 +1301,22 @@ defmodule Oli.TestHelpers do
         module_resource_2: module_resource_2,
         unit_resource: unit_resource,
         root_resource: root_resource
+      },
+      revisions: %{
+        obj_revision_a: obj_revision_a,
+        obj_revision_b: obj_revision_b,
+        obj_revision_c: obj_revision_c,
+        obj_revision_c1: obj_revision_c1,
+        obj_revision_d: obj_revision_d,
+        obj_revision_e: obj_revision_e,
+        obj_revision_f: obj_revision_f,
+        page_revision_1: page_revision_1,
+        page_revision_2: page_revision_2,
+        page_revision_3: page_revision_3,
+        module_revision_1: module_revision_1,
+        module_revision_2: module_revision_2,
+        unit_revision: unit_revision,
+        root_revision: root_revision
       }
     }
   end
@@ -1333,6 +1350,7 @@ defmodule Oli.TestHelpers do
         objectives: %{"1" => objectives},
         scoring_strategy_id: Oli.Resources.ScoringStrategy.get_id_by_type("average"),
         resource_type_id: ResourceType.get_id_by_type("activity"),
+        activity_type_id: Activities.get_registration_by_slug("oli_multiple_choice").id,
         children: [],
         content: %{"model" => []},
         deleted: false,
