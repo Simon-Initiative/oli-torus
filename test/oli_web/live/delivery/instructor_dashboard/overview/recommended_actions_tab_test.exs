@@ -109,8 +109,28 @@ defmodule OliWeb.Delivery.InstructorDashboard.Overview.RecommendedActionsTest do
     } do
       user = insert(:user)
 
+      # access and attempt for current section
       resource_access =
         insert(:resource_access, user: user, section: section, resource: section_page.resource)
+
+      resource_attempt = insert(:resource_attempt, resource_access: resource_access)
+
+      insert(:activity_attempt,
+        resource_attempt: resource_attempt,
+        resource: section_page.resource,
+        revision: section_page,
+        lifecycle_state: :submitted
+      )
+
+      # access and attempt for another section with same page resource
+      another_section = insert(:section)
+
+      resource_access =
+        insert(:resource_access,
+          user: user,
+          section: another_section,
+          resource: section_page.resource
+        )
 
       resource_attempt = insert(:resource_attempt, resource_access: resource_access)
 
@@ -124,6 +144,13 @@ defmodule OliWeb.Delivery.InstructorDashboard.Overview.RecommendedActionsTest do
       {:ok, view, _html} = live(conn, instructor_course_content_path(section.slug))
 
       assert has_element?(view, "h4", "Score questions")
+
+      # the pending score of the other section should not be counted
+      refute has_element?(
+               view,
+               "span",
+               "You have 2 questions that are awaiting your manual scoring"
+             )
 
       assert has_element?(
                view,
