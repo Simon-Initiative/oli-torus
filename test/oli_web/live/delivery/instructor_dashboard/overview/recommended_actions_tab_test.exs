@@ -24,6 +24,18 @@ defmodule OliWeb.Delivery.InstructorDashboard.Overview.RecommendedActionsTest do
     {:ok, []}
   end
 
+  defp add_schedule(section_id) do
+    {:ok, start_date} = DateTime.from_naive(~N[2023-05-24 00:00:00], "UTC")
+
+    Oli.Delivery.Sections.SectionResource
+    |> where([sr], sr.section_id == ^section_id)
+    |> select([sr], sr)
+    |> limit(1)
+    |> Repo.one()
+    |> Oli.Delivery.Sections.SectionResource.changeset(%{start_date: start_date})
+    |> Repo.update()
+  end
+
   describe "Instructor dashboard overview - recommended_actions tab" do
     setup [:instructor_conn, :basic_section, :enroll_instructor]
 
@@ -31,6 +43,8 @@ defmodule OliWeb.Delivery.InstructorDashboard.Overview.RecommendedActionsTest do
       conn: conn,
       section: section
     } do
+      add_schedule(section.id)
+
       {:ok, view, _html} = live(conn, instructor_course_content_path(section.slug))
 
       assert has_element?(view, "span", "No action needed")
@@ -40,15 +54,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.Overview.RecommendedActionsTest do
       conn: conn,
       section: section
     } do
-      {:ok, start_date} = DateTime.from_naive(~N[2023-05-24 00:00:00], "UTC")
-
-      Oli.Delivery.Sections.SectionResource
-      |> where([sr], sr.section_id == ^section.id)
-      |> select([sr], sr)
-      |> limit(1)
-      |> Repo.one()
-      |> Oli.Delivery.Sections.SectionResource.changeset(%{start_date: start_date})
-      |> Repo.update()
+      add_schedule(section.id)
 
       assert Oli.Delivery.RecommendedActions.section_has_scheduled_resources?(section.id)
 
@@ -58,13 +64,17 @@ defmodule OliWeb.Delivery.InstructorDashboard.Overview.RecommendedActionsTest do
       refute has_element?(view, "span", "You have not defined a schedule for your course content")
     end
 
-    test "renders the \"soft scheduling\" action when necessary", %{
-      conn: conn,
-      section: section
-    } do
-      {:ok, _view, _html} = live(conn, instructor_course_content_path(section.slug))
+    test "renders the \"soft scheduling\" action when necessary (for example, after a new course section has just been created)",
+         %{
+           conn: conn,
+           section: section
+         } do
+      {:ok, view, _html} = live(conn, instructor_course_content_path(section.slug))
 
       refute Oli.Delivery.RecommendedActions.section_has_scheduled_resources?(section.id)
+
+      assert has_element?(view, "h4", "Scheduling")
+      assert has_element?(view, "span", "You have not defined a schedule for your course content")
     end
 
     test "renders the \"pending approval posts\" action when necessary", %{
