@@ -43,6 +43,16 @@ export const getResponsesByPartId = (model: HasParts, partId: string): Response[
 export const getResponseBy = (model: HasParts, predicate: (x: Response) => boolean) =>
   getByUnsafe(getResponses(model), predicate);
 
+export const getOutOfPoints = (model: HasParts, partId: string) => {
+  const part = getPartById(model, partId);
+  return part?.outOf;
+};
+
+export const getIncorrectPoints = (model: HasParts, partId: string) => {
+  const part = getPartById(model, partId);
+  return part?.incorrectScore;
+}
+
 // Does not take into account partial credit
 export const getCorrectResponse = (model: HasParts, partId: string) => {
   return Maybe.maybe(getResponsesByPartId(model, partId).find((r) => r.score >= 1)).valueOrThrow(

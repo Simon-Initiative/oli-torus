@@ -562,6 +562,7 @@ export interface Part extends Identifiable {
   scoringStrategy: ScoringStrategy;
   gradingApproach?: GradingApproach;
   outOf?: null | number;
+  incorrectScore?: null | number;
 }
 
 /**
