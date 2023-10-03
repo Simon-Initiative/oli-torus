@@ -25,9 +25,9 @@ const shouldShow = (
   surveyId: string | null,
   shouldShow?: boolean,
 ) => {
-  if (shouldShow) return true;
   if (graded) return false;
   if (surveyId !== null) return false;
+  if (shouldShow) return true;
 
   return !isEvaluated(uiState) && !isSubmitted(uiState);
 };
