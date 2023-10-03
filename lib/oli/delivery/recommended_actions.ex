@@ -19,17 +19,14 @@ defmodule Oli.Delivery.RecommendedActions do
   end
 
   def section_has_scheduled_resources?(section_id) do
-    items =
-      section_resource_query()
-      |> where(
-        [sr],
-        sr.section_id == ^section_id and (not is_nil(sr.start_date) or not is_nil(sr.end_date))
-      )
-      |> select([sr], sr.id)
-      |> limit(1)
-      |> Repo.all()
-
-    Enum.count(items) > 0
+    section_resource_query()
+    |> where(
+      [sr],
+      sr.section_id == ^section_id and (not is_nil(sr.start_date) or not is_nil(sr.end_date))
+    )
+    |> select([sr], sr.id)
+    |> limit(1)
+    |> Repo.exists?()
   end
 
   def section_scoring_pending_activities_count(section_id) do
