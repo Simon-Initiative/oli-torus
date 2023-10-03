@@ -43,7 +43,9 @@ defmodule OliWeb.Workspace.AccountDetailsLive do
                 <h4 class="mt-3">Credentials Managed By</h4>
                 <div :for={provider <- providers_for(@current_author)} class="my-2">
                   <span class={"provider provider-#{OliWeb.Pow.PowHelpers.provider_class(provider)}"}>
-                    {OliWeb.Pow.PowHelpers.provider_icon(provider)} {OliWeb.Pow.PowHelpers.provider_name(provider)}
+                    <%= OliWeb.Pow.PowHelpers.provider_icon(provider) %> <%= OliWeb.Pow.PowHelpers.provider_name(
+                      provider
+                    ) %>
                   </span>
                 </div>
               <% end %>
@@ -66,7 +68,6 @@ defmodule OliWeb.Workspace.AccountDetailsLive do
           <div class="mb-1">Dark Mode</div>
           <div id="theme-toggle" phx-hook="ThemeToggle" phx-update="ignore"></div>
         </div>
-
       </Group.render>
     </Groups.render>
     """
@@ -97,9 +98,9 @@ defmodule OliWeb.Workspace.AccountDetailsLive do
         <label for="editor_selector" class="form-select-label block mb-1">
           Default editor
         </label>
-        <select name="editor" id='editor' class='form-select' phx-hook="SelectListener" >
-          <option value='markdown' selected={@editor == "markdown"} >Markdown</option>
-          <option value='slate' selected={@editor == "slate"} >Rich text editor</option>
+        <select name="editor" id="editor" class="form-select" phx-hook="SelectListener">
+          <option value="markdown" selected={@editor == "markdown"}>Markdown</option>
+          <option value="slate" selected={@editor == "slate"}>Rich text editor</option>
         </select>
       </div>
     </div>
@@ -115,11 +116,10 @@ defmodule OliWeb.Workspace.AccountDetailsLive do
     {:noreply, assign(socket, current_author: updated_author)}
   end
 
-  def handle_event("change", %{"id" => "editor", "value" => value} , socket) do
+  def handle_event("change", %{"id" => "editor", "value" => value}, socket) do
     %{current_author: current_author} = socket.assigns
 
-    {:ok, updated_author} =
-      Accounts.set_author_preference(current_author.id, :editor, value)
+    {:ok, updated_author} = Accounts.set_author_preference(current_author.id, :editor, value)
 
     {:noreply, assign(socket, current_author: updated_author)}
   end
