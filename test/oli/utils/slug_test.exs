@@ -55,6 +55,23 @@ defmodule Oli.Utils.SlugTest do
       assert new_revision.slug == r.slug
     end
 
+    test "update_on_change/2 creates non-empty slug when title contains special characters", %{
+      revision1: r
+    } do
+      {:ok, new_revision} =
+        Revision.changeset(%Revision{}, %{
+          previous_revision_id: r.id,
+          title: "灵丹妙药",
+          resource_id: r.resource_id,
+          resource_type_id: r.resource_type_id,
+          author_id: r.author_id
+        })
+        |> Repo.insert()
+
+      assert new_revision.slug != r.slug
+      assert String.length(new_revision.slug) == 10
+    end
+
     test "update_on_change/2 does update the slug when the previous revision title differs", %{
       revision1: r
     } do
@@ -71,6 +88,7 @@ defmodule Oli.Utils.SlugTest do
       refute new_revision.slug == r.slug
       assert new_revision.slug == "a_different_title"
     end
+
 
     test "update_on_change/2 handles the case when there isn't a previous revision", %{
       revision1: r
