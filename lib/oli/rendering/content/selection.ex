@@ -94,15 +94,9 @@ defmodule Oli.Rendering.Content.Selection do
         %{}
 
       ids ->
-        revisions =
-          if Enum.any?(
-               Oli.Publishing.AuthoringResolver.from_resource_id(section_slug, ids),
-               fn elem -> is_nil(elem) end
-             ),
-             do: Oli.Publishing.DeliveryResolver.from_resource_id(section_slug, ids),
-             else: Oli.Publishing.AuthoringResolver.from_resource_id(section_slug, ids)
-
-        revisions
+        # This section_slug really is the project slug
+        Oli.Publishing.AuthoringResolver.from_resource_id(section_slug, ids)
+        |> Enum.filter(fn r -> !is_nil(r) end)
         |> Enum.reduce(%{}, fn rev, m -> Map.put(m, rev.resource_id, rev.title) end)
     end
   end
