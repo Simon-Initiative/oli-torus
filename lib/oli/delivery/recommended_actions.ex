@@ -1,6 +1,8 @@
 defmodule Oli.Delivery.RecommendedActions do
   import Ecto.Query, warn: false
 
+  alias Oli.Delivery.Attempts.Core.ResourceAttempt
+  alias Oli.Delivery.Attempts.Core.ResourceAccess
   alias Oli.Delivery.Sections.{Section, SectionResource, SectionsProjectsPublications}
   alias Oli.Delivery.Attempts.Core.ActivityAttempt
   alias Oli.Repo
@@ -19,24 +21,25 @@ defmodule Oli.Delivery.RecommendedActions do
   end
 
   def section_has_scheduled_resources?(section_id) do
-    items =
-      section_resource_query()
-      |> where(
-        [sr],
-        sr.section_id == ^section_id and (not is_nil(sr.start_date) or not is_nil(sr.end_date))
-      )
-      |> select([sr], sr.id)
-      |> limit(1)
-      |> Repo.all()
-
-    Enum.count(items) > 0
+    section_resource_query()
+    |> where(
+      [sr],
+      sr.section_id == ^section_id and (not is_nil(sr.start_date) or not is_nil(sr.end_date))
+    )
+    |> select([sr], sr.id)
+    |> limit(1)
+    |> Repo.exists?()
   end
 
   def section_scoring_pending_activities_count(section_id) do
-    SectionResource
-    |> join(:inner, [sr], aa in ActivityAttempt, on: aa.resource_id == sr.resource_id)
-    |> where([sr, aa], sr.section_id == ^section_id and aa.lifecycle_state == :submitted)
-    |> select([_, aa], count(aa.id))
+    from(aa in ActivityAttempt,
+      join: ra in ResourceAttempt,
+      on: aa.resource_attempt_id == ra.id,
+      join: r_acc in ResourceAccess,
+      on: ra.resource_access_id == r_acc.id,
+      where: aa.lifecycle_state == :submitted and r_acc.section_id == ^section_id,
+      select: count(aa.id)
+    )
     |> Repo.one()
   end
 
