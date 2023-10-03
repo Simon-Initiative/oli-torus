@@ -1,7 +1,6 @@
 defmodule OliWeb.Qa.WarningDetails do
-  use Phoenix.LiveComponent
+  use OliWeb, :html
   import OliWeb.Qa.Utils
-  alias OliWeb.Router.Helpers, as: Routes
 
   def render(assigns) do
     ~H"""
@@ -16,7 +15,11 @@ defmodule OliWeb.Qa.WarningDetails do
     <div class="review-card active" id={"#{@selected.id}"}>
       <h4 class="d-flex">
         <div>
-          Improvement opportunity on <%= OliWeb.Common.Links.resource_link(@selected.revision, @parent_pages, @project) %>
+          Improvement opportunity on <%= OliWeb.Common.Links.resource_link(
+            @selected.revision,
+            @parent_pages,
+            @project
+          ) %>
         </div>
         <div class="flex-fill"></div>
         <button class="btn btn-sm btn-secondary" phx-click="dismiss">
@@ -24,36 +27,81 @@ defmodule OliWeb.Qa.WarningDetails do
         </button>
       </h4>
       <div class="bd-callout bd-callout-info">
-        <h3><%= String.capitalize(@selected.subtype) %> on <%= @selected.revision.resource_type.type %></h3>
-        <%= explanatory_text(@selected.subtype, %{ graded: @selected.revision.graded }) %>
+        <h3>
+          <%= String.capitalize(@selected.subtype) %> on <%= @selected.revision.resource_type.type %>
+        </h3>
+        <%= explanatory_text(@selected.subtype, %{graded: @selected.revision.graded}) %>
       </div>
       <div class="alert alert-info">
-        <strong>Action item</strong> <%= action_item(@selected.subtype, %{ graded: @selected.revision.graded }) %>
-        <%= if @selected.content do %>
-          <div class="delivery-container">
-            <%= if @selected.content["type"] == "selection" do %>
-              <p></p>
-              <p>
-                This page contains an activity bank selection whose logic, when tested by this QA Review run,
-                did not yield enough activities to satisfy the specified count in the selection.
-              </p>
-              <p>
-                Fix this issue by one of two ways:
-              </p>
-              <ol>
-                <li>Edit the <a href={"#{Routes.resource_url(OliWeb.Endpoint, :edit, @project.slug, @selected.revision.slug)}##{@selected.content["id"]}"}>
-                  selection logic in the page</a> to allow it to select more activities</li>
-                <li>Create more banked activities to allow the selection to fill the specified count</li>
-              </ol>
-
-            <% else %>
-              <%= Phoenix.HTML.raw(Oli.Rendering.Content.render(%Oli.Rendering.Context{user: @author}, @selected.content, Oli.Rendering.Content.Html)) %>
-            <% end %>
-
-          </div>
-          <% end %>
+        <strong>Action item</strong> <%= action_item(@selected.subtype, %{
+          graded: @selected.revision.graded
+        }) %>
+        <div class="delivery-container">
+          <.warning
+            :if={@selected.content}
+            selected={@selected}
+            project_slug={@project.slug}
+            author={@author}
+          />
+        </div>
       </div>
     </div>
+    """
+  end
+
+  attr(:selected, :map, required: true)
+  attr(:project_slug, :string, required: true)
+  attr(:author, :map, required: true)
+
+  def warning(
+        %{selected: %{subtype: "No value provided for criteria in bank selection logic"}} =
+          assigns
+      ) do
+    ~H"""
+    <p>
+      This page contains an activity bank selection whose logic, when tested by this QA Review run,
+      did not yield activities to satisfy the specified criteria in the selection.
+    </p>
+    <p>
+      Fix this issue by adding a value for the criteria in the
+      <.link navigate={~p"/authoring/project/#{@project_slug}/resource/#{@selected.revision.slug}"}>
+        selection logic in the page.
+      </.link>
+    </p>
+    """
+  end
+
+  def warning(%{selected: %{content: %{"type" => "selection"}}} = assigns) do
+    ~H"""
+    <p>
+      This page contains an activity bank selection whose logic, when tested by this QA Review run,
+      did not yield enough activities to satisfy the specified count in the selection.
+    </p>
+    <p>
+      Fix this issue by one of two ways:
+    </p>
+    <ol>
+      <li>
+        Edit the
+        <.link navigate={~p"/authoring/project/#{@project_slug}/resource/#{@selected.revision.slug}"}>
+          selection logic in the page
+        </.link>
+        to allow it to select more activities
+      </li>
+      <li>Create more banked activities to allow the selection to fill the specified count</li>
+    </ol>
+    """
+  end
+
+  def warning(assigns) do
+    ~H"""
+    <%= Phoenix.HTML.raw(
+      Oli.Rendering.Content.render(
+        %Oli.Rendering.Context{user: @author},
+        @selected.content,
+        Oli.Rendering.Content.Html
+      )
+    ) %>
     """
   end
 end
