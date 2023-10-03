@@ -51,6 +51,7 @@ $font-family-sans-serif: var(--font-sans);
   }
   .aa-sequence-editor {
     overflow-y: auto;
+    min-height: 150px;
   }
   .aa-panel,
   .aa-header-nav {
