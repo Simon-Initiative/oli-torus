@@ -1120,7 +1120,8 @@ defmodule OliWeb.CollaborationLiveTest do
              |> render() =~
                "Post successfully created"
 
-      assert_receive {:post_created, %PostSchema{}}
+      post_created_by = user.id
+      assert_receive {:post_created, %PostSchema{}, ^post_created_by}
 
       posts =
         Collaboration.list_posts_for_user_in_page_section(
@@ -1170,7 +1171,8 @@ defmodule OliWeb.CollaborationLiveTest do
              |> render() =~
                "Post successfully created"
 
-      assert_receive {:post_created, %PostSchema{}}
+      post_created_by = user.id
+      assert_receive {:post_created, %PostSchema{}, ^post_created_by}
 
       posts =
         Collaboration.list_posts_for_user_in_page_section(
@@ -1266,7 +1268,8 @@ defmodule OliWeb.CollaborationLiveTest do
              |> render() =~
                "Post successfully edited"
 
-      assert_receive {:post_edited, %PostSchema{}}
+      edited_by = user.id
+      assert_receive {:post_edited, %PostSchema{}, ^edited_by}
 
       updated_post =
         Collaboration.list_posts_for_user_in_page_section(
@@ -1343,7 +1346,8 @@ defmodule OliWeb.CollaborationLiveTest do
              |> render() =~
                "Post/s successfully deleted"
 
-      assert_receive {:post_deleted, ^post_id}
+      user_id = user.id
+      assert_receive {:post_deleted, ^post_id, ^user_id}
 
       posts =
         Collaboration.list_posts_for_user_in_page_section(
@@ -1387,7 +1391,8 @@ defmodule OliWeb.CollaborationLiveTest do
              |> render() =~
                "Post successfully created"
 
-      assert_receive {:post_created, %PostSchema{}}
+      post_created_by = user.id
+      assert_receive {:post_created, %PostSchema{}, ^post_created_by}
 
       posts =
         Collaboration.list_posts_for_user_in_page_section(
@@ -1453,7 +1458,8 @@ defmodule OliWeb.CollaborationLiveTest do
              |> render() =~
                "Post successfully edited"
 
-      assert_receive {:post_edited, %PostSchema{}}
+      post_edited_by = user.id
+      assert_receive {:post_edited, %PostSchema{}, ^post_edited_by}
 
       updated_reply =
         Collaboration.list_posts_for_user_in_page_section(
@@ -1524,7 +1530,8 @@ defmodule OliWeb.CollaborationLiveTest do
              |> render() =~
                "Post/s successfully deleted"
 
-      assert_receive {:post_deleted, ^reply_id}
+      deleted_by_id = user.id
+      assert_receive {:post_deleted, ^reply_id, ^deleted_by_id}
 
       posts =
         Collaboration.list_posts_for_user_in_page_section(
@@ -1585,7 +1592,8 @@ defmodule OliWeb.CollaborationLiveTest do
              |> render() =~
                "Post successfully created"
 
-      assert_receive {:post_created, %PostSchema{}}
+      post_created_by = user.id
+      assert_receive {:post_created, %PostSchema{}, ^post_created_by}
 
       posts =
         Collaboration.list_posts_for_user_in_page_section(
@@ -1714,7 +1722,8 @@ defmodule OliWeb.CollaborationLiveTest do
              |> render() =~
                "Post successfully created"
 
-      assert_receive {:post_created, %PostSchema{}}
+      post_created_by = user.id
+      assert_receive {:post_created, %PostSchema{}, ^post_created_by}
 
       created_post =
         Collaboration.list_posts_for_user_in_page_section(
@@ -1739,7 +1748,7 @@ defmodule OliWeb.CollaborationLiveTest do
              |> render() =~
                "Post successfully created"
 
-      assert_receive {:post_created, %PostSchema{}}
+      assert_receive {:post_created, %PostSchema{}, ^post_created_by}
 
       reply =
         Collaboration.list_posts_for_user_in_page_section(
@@ -1854,7 +1863,8 @@ defmodule OliWeb.CollaborationLiveTest do
              |> render() =~
                "Post successfully created"
 
-      assert_receive {:post_created, %PostSchema{}}
+      post_created_by = user.id
+      assert_receive {:post_created, %PostSchema{}, ^post_created_by}
 
       created_post =
         Collaboration.list_posts_for_user_in_page_section(
@@ -1955,7 +1965,8 @@ defmodule OliWeb.CollaborationLiveTest do
              |> render() =~
                "Post successfully created"
 
-      assert_receive {:post_created, %PostSchema{}}
+      post_created_by = instructor.id
+      assert_receive {:post_created, %PostSchema{}, ^post_created_by}
 
       posts =
         Collaboration.list_posts_for_instructor_in_page_section(
@@ -2030,7 +2041,8 @@ defmodule OliWeb.CollaborationLiveTest do
              |> render() =~
                "Post/s successfully deleted"
 
-      assert_receive {:post_deleted, ^parent_post_id}
+      instructor_id = instructor.id
+      assert_receive {:post_deleted, ^parent_post_id, ^instructor_id}
 
       posts =
         Collaboration.list_posts_for_instructor_in_page_section(
@@ -2085,11 +2097,6 @@ defmodule OliWeb.CollaborationLiveTest do
 
       display_accept_modal(view, second_post.id)
       confirm_accept(view)
-
-      assert view
-             |> element("div.alert.alert-info")
-             |> render() =~
-               "Post successfully edited"
 
       refute has_element?(
                view,
@@ -2267,11 +2274,6 @@ defmodule OliWeb.CollaborationLiveTest do
 
       display_unarchive_modal(view, post.id)
       confirm_unarchive(view)
-
-      assert view
-             |> element("div.alert.alert-info")
-             |> render() =~
-               "Post successfully edited"
 
       # parent post is not archived, but its reply is still archived
       refute has_element?(view, "#post_#{post.id}.bg-gray-100")
