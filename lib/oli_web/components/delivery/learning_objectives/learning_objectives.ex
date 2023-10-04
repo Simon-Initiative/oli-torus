@@ -14,22 +14,21 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
     sort_order: :asc,
     sort_by: :objective,
     text_search: nil,
-    filter_by: "all"
+    filter_by: "root"
   }
 
   def update(
         %{
           objectives_tab: objectives_tab,
           section_slug: section_slug,
-          params: params
+          params: params,
+          section: section
         } = assigns,
         socket
       ) do
     params = decode_params(params)
 
-    units_modules = objectives_tab.filter_options
-
-    {total_count, rows} = apply_filters(objectives_tab.objectives, params, units_modules)
+    {total_count, rows} = apply_filters(objectives_tab.objectives, params)
 
     {:ok, objectives_table_model} = ObjectivesTableModel.new(rows)
 
@@ -51,7 +50,8 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
        student_id: assigns[:student_id],
        patch_url_type: assigns.patch_url_type,
        section_slug: section_slug,
-       units_modules: units_modules,
+       units_modules: objectives_tab.filter_options,
+       filter_enabled?: filter_by_module_enabled?(section, objectives_tab.objectives),
        view: assigns[:view]
      )}
   end
@@ -62,6 +62,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
   attr(:units_modules, :map)
   attr(:student_id, :integer)
   attr(:patch_url_type, :atom, required: true)
+  attr(:filter_enabled?, :boolean)
   attr(:view, :atom)
   attr(:section_slug, :string)
 
@@ -82,6 +83,24 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
             </a>
           </div>
           <div class="flex flex-col-reverse sm:flex-row gap-2 items-end">
+            <.form for={%{}} class={"w-full"} phx-change="filter_by" phx-target={@myself}>
+              <label class="cursor-pointer inline-flex flex-col gap-1 w-full">
+                <small class="torus-small uppercase">
+                  Filter by module
+                  <i id="filter-disabled-tooltip" :if={!@filter_enabled?} class="fas fa-info-circle" title="This filter will be available soon" phx-hook="TooltipInit"/>
+                </small>
+                <select class="torus-select" name="filter" disabled={!@filter_enabled?}>
+                  <option selected={@params.filter_by == "root"} value={"root"}>Root</option>
+                  <option
+                    :for={module <- @units_modules}
+                    selected={@params.filter_by == module.container_id}
+                    value={module.container_id}
+                  >
+                    <%= module.title %>
+                  </option>
+                </select>
+              </label>
+            </.form>
             <.form for={%{}} phx-target={@myself} phx-change="search_objective" class="w-44">
               <SearchInput.render
                 id="objective_search_input"
@@ -198,7 +217,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
           @default_params.sort_by
         ),
       text_search: Params.get_param(params, "text_search", @default_params.text_search),
-      filter_by: Params.get_param(params, "filter_by", @default_params.filter_by)
+      filter_by: Params.get_int_param(params, "filter_by", @default_params.filter_by)
     }
   end
 
@@ -225,11 +244,11 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
     end)
   end
 
-  defp apply_filters(objectives, params, units_modules) do
+  defp apply_filters(objectives, params) do
     objectives =
       objectives
       |> maybe_filter_by_text(params.text_search)
-      |> maybe_filter_by_option(params.filter_by, units_modules)
+      |> maybe_filter_by_option(params.filter_by)
       |> sort_by(params.sort_by, params.sort_order)
 
     {length(objectives), objectives |> Enum.drop(params.offset) |> Enum.take(params.limit)}
@@ -239,23 +258,10 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
     Enum.sort_by(objectives, fn obj -> obj[sort_by] end, sort_order)
   end
 
-  defp maybe_filter_by_option(objectives, "all", _units_modules), do: objectives
+  defp maybe_filter_by_option(objectives, "root"), do: objectives
 
-  defp maybe_filter_by_option(objectives, container_id, units_modules) do
-    container =
-      Enum.filter(units_modules, fn elem ->
-        elem.container_id == String.to_integer(container_id)
-      end)
-      |> List.first()
-
-    Enum.filter(objectives, fn objective ->
-      if is_nil(objective[:pages_id]),
-        do: false,
-        else:
-          Enum.any?(objective[:pages_id], fn page_id ->
-            Enum.member?(container.children, page_id)
-          end)
-    end)
+  defp maybe_filter_by_option(objectives, container_id) do
+    Enum.filter(objectives, &(container_id in &1.container_ids))
   end
 
   defp maybe_filter_by_text(objectives, nil), do: objectives
@@ -291,5 +297,18 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
       :learning_objectives,
       update_params(socket.assigns.params, new_params)
     )
+  end
+
+  _docp = """
+  Returns true if the filter by module feature is enabled for the section.
+  This happens when the contained objectives for the section were already created.
+  """
+
+  defp filter_by_module_enabled?(section, objectives) do
+    section.v25_migration == :done and
+      Enum.all?(
+        objectives,
+        &(&1.container_ids != [] and &1.container_ids != nil)
+      )
   end
 end

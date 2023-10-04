@@ -3092,11 +3092,15 @@ defmodule Oli.Delivery.Sections do
 
     objectives =
       from([rev: rev] in DeliveryResolver.section_resource_revisions(section_slug),
+        left_join: co in ContainedObjective,
+        on: co.objective_id == rev.resource_id,
         where: rev.deleted == false and rev.resource_type_id == ^objective_id,
+        group_by: [rev.title, rev.resource_id, rev.children],
         select: %{
           title: rev.title,
           resource_id: rev.resource_id,
-          children: rev.children
+          children: rev.children,
+          container_ids: fragment("array_agg(DISTINCT ?)", co.container_id)
         }
       )
       |> Repo.all()
