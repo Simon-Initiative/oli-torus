@@ -3,6 +3,7 @@ import {
   ChoiceId,
   ChoiceIdsToResponseId,
   HasParts,
+  Part,
   Response,
   makeResponse,
 } from 'components/activities/types';
@@ -43,12 +44,11 @@ export const getResponsesByPartId = (model: HasParts, partId: string): Response[
 export const getResponseBy = (model: HasParts, predicate: (x: Response) => boolean) =>
   getByUnsafe(getResponses(model), predicate);
 
-
 export const hasCustomScoring = (model: HasParts, partId?: string): boolean => {
   const outOf = getOutOfPoints(model, partId || model.authoring.parts[0].id);
-  console.info('hasCustomScoring', outOf, model, partId)
   return outOf !== null && outOf !== undefined;
 };
+
 
 export const getOutOfPoints = (model: HasParts, partId: string) => {
   const part = getPartById(model, partId);

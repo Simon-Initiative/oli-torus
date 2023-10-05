@@ -1,8 +1,9 @@
-import React, {  useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useAuthoringElementContext } from 'components/activities/AuthoringElementProvider';
 import { HasParts } from 'components/activities/types';
 import { Card } from 'components/misc/Card';
 import { getIncorrectPoints, getOutOfPoints } from 'data/activities/model/responses';
+import guid from 'utils/guid';
 import { ScoringActions } from '../authoring/actions/scoringActions';
 import { ScoreInput } from './ScoreInput';
 
@@ -10,12 +11,15 @@ interface ActivityScoreProps {
   partId: string;
 }
 
+/*
+  Sets a single part-level score for the activity. Not appropriate for activities with multiple parts.
+*/
 export const ActivityScoring: React.FC<ActivityScoreProps> = ({ partId }) => {
   const { model, dispatch, editMode } = useAuthoringElementContext<HasParts>();
-  const checkboxInputId = `scoring-${partId}`;
+  const checkboxInputId = useMemo(() => guid(), []);
   const outOf = getOutOfPoints(model, partId);
   const incorrect = getIncorrectPoints(model, partId);
-  const [useDefaultScoring, setDefaultScoring] = useState(outOf === null);
+  const [useDefaultScoring, setDefaultScoring] = useState(outOf === null || outOf === undefined);
   const outOfPoints = outOf || 1;
   const incorrectPoints = incorrect || 0;
 
@@ -60,7 +64,7 @@ export const ActivityScoring: React.FC<ActivityScoreProps> = ({ partId }) => {
         </div>
 
         {useDefaultScoring || (
-          <div className='flex flex-row gap-4'>
+          <div className="flex flex-row gap-4">
             <ScoreInput score={outOfPoints} onChange={onCorrectScoreChange} editMode={editMode}>
               Correct Answer Score:
             </ScoreInput>
@@ -78,4 +82,3 @@ export const ActivityScoring: React.FC<ActivityScoreProps> = ({ partId }) => {
     </Card.Card>
   );
 };
-
