@@ -2062,6 +2062,7 @@ defmodule Oli.Delivery.Sections do
       from(
         rev in Revision,
         join: content_elem in fragment("jsonb_array_elements(?->'model')", rev.content),
+        on: true,
         select: %{
           revision_id: rev.id,
           activity_id: fragment("(?->>'activity_id')::integer", content_elem)
@@ -2073,6 +2074,7 @@ defmodule Oli.Delivery.Sections do
       from(
         rev in Revision,
         join: obj in fragment("jsonb_each_text(?)", rev.objectives),
+        on: true,
         select: %{
           objective_revision_id: rev.id,
           objective_resource_id:
