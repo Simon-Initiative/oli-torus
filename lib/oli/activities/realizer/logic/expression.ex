@@ -47,35 +47,38 @@ defmodule Oli.Activities.Realizer.Logic.Expression do
   alias Oli.Activities.Realizer.Logic.Expression
 
   def parse(%{"fact" => fact, "operator" => operator, "value" => value}) when is_list(value) do
-    case {fact, operator} do
-      {"objectives", "contains"} ->
+    case {fact, operator, value} do
+      {_fact, _operator, []} ->
+        {:error, "no values provided for expression"}
+
+      {"objectives", "contains", value} ->
         {:ok, %Expression{fact: :objectives, operator: :contains, value: value}}
 
-      {"objectives", "equals"} ->
+      {"objectives", "equals", value} ->
         {:ok, %Expression{fact: :objectives, operator: :equals, value: value}}
 
-      {"objectives", "does_not_equal"} ->
+      {"objectives", "does_not_equal", value} ->
         {:ok, %Expression{fact: :objectives, operator: :does_not_equal, value: value}}
 
-      {"objectives", "does_not_contain"} ->
+      {"objectives", "does_not_contain", value} ->
         {:ok, %Expression{fact: :objectives, operator: :does_not_contain, value: value}}
 
-      {"tags", "contains"} ->
+      {"tags", "contains", value} ->
         {:ok, %Expression{fact: :tags, operator: :contains, value: value}}
 
-      {"tags", "equals"} ->
+      {"tags", "equals", value} ->
         {:ok, %Expression{fact: :tags, operator: :equals, value: value}}
 
-      {"tags", "does_not_contain"} ->
+      {"tags", "does_not_contain", value} ->
         {:ok, %Expression{fact: :tags, operator: :does_not_contain, value: value}}
 
-      {"tags", "does_not_equal"} ->
+      {"tags", "does_not_equal", value} ->
         {:ok, %Expression{fact: :tags, operator: :does_not_equal, value: value}}
 
-      {"type", "contains"} ->
+      {"type", "contains", value} ->
         {:ok, %Expression{fact: :type, operator: :contains, value: value}}
 
-      {"type", "does_not_contain"} ->
+      {"type", "does_not_contain", value} ->
         {:ok, %Expression{fact: :type, operator: :does_not_contain, value: value}}
 
       _ ->

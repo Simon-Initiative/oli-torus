@@ -1,6 +1,9 @@
 defmodule OliWeb.Qa.WarningSummary do
-  use Phoenix.LiveComponent
+  use OliWeb, :html
   import OliWeb.Qa.Utils
+
+  attr(:warning, :map, required: true)
+  attr(:selected, :map, required: true)
 
   def render(assigns) do
     ~H"""

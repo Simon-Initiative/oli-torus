@@ -204,50 +204,59 @@ defmodule Oli.Delivery.ActivityProvider do
          _user,
          _section_slug
        ) do
-    {:ok, %Selection{id: id} = selection} =
-      Selection.parse(model_component)
-      |> decrement_for_prototypes(fulfillment_state.prototypes_by_selection)
+    case Selection.parse(model_component) do
+      {:error, "no values provided for expression"} ->
+        fulfillment_state
+        |> Map.put(:errors, [
+          "Selection failed to fulfill: no values provided for expression"
+          | fulfillment_state.errors
+        ])
 
-    # Add any existing prototypes to the prototypes list for this selection and to the blacklist
-    fulfillment_state = add_existing_for_selection(fulfillment_state, id)
+      {:ok, %Selection{}} = result ->
+        {:ok, %Selection{id: id} = selection} =
+          decrement_for_prototypes(result, fulfillment_state.prototypes_by_selection)
 
-    # Handle the case that existing prototypes for this selection completely decrement
-    # the count down to zero
-    if selection.count == 0 do
-      fulfillment_state
-    else
-      # We need to draw some number of activities from the bank
-      case Selection.fulfill(selection, fulfillment_state.source) do
-        {:ok, %Result{} = result} ->
-          new_prototypes =
-            Enum.reverse(result.rows)
-            |> Enum.map(fn r -> revision_to_prototype(r, group_id, survey_id, id) end)
+        # Add any existing prototypes to the prototypes list for this selection and to the blacklist
+        fulfillment_state = add_existing_for_selection(fulfillment_state, id)
 
+        # Handle the case that existing prototypes for this selection completely decrement
+        # the count down to zero
+        if selection.count == 0 do
           fulfillment_state
-          |> Map.put(:prototypes, new_prototypes ++ fulfillment_state.prototypes)
-          |> Map.put(:source, merge_blacklist(fulfillment_state.source, result.rows))
+        else
+          # We need to draw some number of activities from the bank
+          case Selection.fulfill(selection, fulfillment_state.source) do
+            {:ok, %Result{} = result} ->
+              new_prototypes =
+                Enum.reverse(result.rows)
+                |> Enum.map(fn r -> revision_to_prototype(r, group_id, survey_id, id) end)
 
-        {:partial, %Result{} = result} ->
-          missing = selection.count - result.rowCount
+              fulfillment_state
+              |> Map.put(:prototypes, new_prototypes ++ fulfillment_state.prototypes)
+              |> Map.put(:source, merge_blacklist(fulfillment_state.source, result.rows))
 
-          error = "Selection failed to fulfill completely with #{missing} missing activities"
+            {:partial, %Result{} = result} ->
+              missing = selection.count - result.rowCount
 
-          new_prototypes =
-            Enum.map(result.rows, fn r ->
-              revision_to_prototype(r, group_id, survey_id, id)
-            end)
+              error = "Selection failed to fulfill completely with #{missing} missing activities"
 
-          fulfillment_state
-          |> Map.put(:prototypes, new_prototypes ++ fulfillment_state.prototypes)
-          |> Map.put(:source, merge_blacklist(fulfillment_state.source, result.rows))
-          |> Map.put(:errors, [error | fulfillment_state.errors])
+              new_prototypes =
+                Enum.map(result.rows, fn r ->
+                  revision_to_prototype(r, group_id, survey_id, id)
+                end)
 
-        e ->
-          error = "Selection failed to fulfill with error: #{e}"
+              fulfillment_state
+              |> Map.put(:prototypes, new_prototypes ++ fulfillment_state.prototypes)
+              |> Map.put(:source, merge_blacklist(fulfillment_state.source, result.rows))
+              |> Map.put(:errors, [error | fulfillment_state.errors])
 
-          fulfillment_state
-          |> Map.put(:errors, [error | fulfillment_state.errors])
-      end
+            e ->
+              error = "Selection failed to fulfill with error: #{e}"
+
+              fulfillment_state
+              |> Map.put(:errors, [error | fulfillment_state.errors])
+          end
+        end
     end
   end
 
