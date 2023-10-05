@@ -61,8 +61,8 @@ defmodule Oli.Delivery.Sections.Section do
     field(:nrps_enabled, :boolean, default: false)
     field(:nrps_context_memberships_url, :string)
 
-    field(:resource_gating_index, :map, default: %{}, null: false)
-    field(:previous_next_index, :map, default: nil, null: true)
+    field(:resource_gating_index, :map, default: %{})
+    field(:previous_next_index, :map, default: nil)
     field(:display_curriculum_item_numbering, :boolean, default: true)
     field(:contains_explorations, :boolean, default: false)
 

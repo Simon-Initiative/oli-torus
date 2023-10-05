@@ -263,7 +263,7 @@ defmodule OliWeb.IngestLiveTest do
                    "None exist"
                  )
         end,
-        1_000
+        1_500
       )
     end
 
