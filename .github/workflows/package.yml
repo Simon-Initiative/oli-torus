@@ -43,8 +43,8 @@ jobs:
         uses: docker/build-push-action@v2
         with:
           context: ./.github/actions/torus-builder
-          push: true
-          tags: olisimon/torus-builder:latest
+          load: true
+          tags: torus-builder:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
