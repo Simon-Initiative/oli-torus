@@ -5,6 +5,7 @@ on:
       - master
       - hotfix-*
       - prerelease-*
+      - fix-build-for-elixir-1.15.5
   # manually trigger a package build from the Actions tab
   workflow_dispatch:
 
