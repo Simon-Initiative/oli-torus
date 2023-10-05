@@ -1,9 +1,10 @@
-import React, { ReactNode, useState } from 'react';
+import React, {  useState } from 'react';
 import { useAuthoringElementContext } from 'components/activities/AuthoringElementProvider';
 import { HasParts } from 'components/activities/types';
 import { Card } from 'components/misc/Card';
 import { getIncorrectPoints, getOutOfPoints } from 'data/activities/model/responses';
 import { ScoringActions } from '../authoring/actions/scoringActions';
+import { ScoreInput } from './ScoreInput';
 
 interface ActivityScoreProps {
   partId: string;
@@ -18,12 +19,12 @@ export const ActivityScoring: React.FC<ActivityScoreProps> = ({ partId }) => {
   const outOfPoints = outOf || 1;
   const incorrectPoints = incorrect || 0;
 
-  console.info('ActivityScoring', model);
-
   const onChangeDefault = (e: React.ChangeEvent<HTMLInputElement>) => {
     setDefaultScoring(e.target.checked);
     if (e.target.checked) {
       dispatch(ScoringActions.editPartScore(partId, null, null));
+    } else {
+      dispatch(ScoringActions.editPartScore(partId, 1, 0));
     }
   };
 
@@ -38,8 +39,6 @@ export const ActivityScoring: React.FC<ActivityScoreProps> = ({ partId }) => {
       dispatch(ScoringActions.editPartScore(partId, outOf || null, score));
     }
   };
-
-  console.info('EDITMODE', editMode);
 
   return (
     <Card.Card>
@@ -61,7 +60,7 @@ export const ActivityScoring: React.FC<ActivityScoreProps> = ({ partId }) => {
         </div>
 
         {useDefaultScoring || (
-          <div className='flex flex-row gap-2'>
+          <div className='flex flex-row gap-4'>
             <ScoreInput score={outOfPoints} onChange={onCorrectScoreChange} editMode={editMode}>
               Correct Answer Score:
             </ScoreInput>
@@ -80,23 +79,3 @@ export const ActivityScoring: React.FC<ActivityScoreProps> = ({ partId }) => {
   );
 };
 
-const ScoreInput: React.FC<{
-  score: number;
-  onChange: (score: number) => void;
-  children: ReactNode;
-  editMode: boolean;
-}> = ({ score, onChange, children, editMode }) => {
-  return (
-    <div className='w-48'>
-      <label>{children}</label>
-      <input
-        type="number"
-        className="form-control w-10"
-        disabled={!editMode}
-        onChange={(e) => onChange(parseFloat(e.target.value || '0'))}
-        value={score}
-        step={0.1}
-      />
-    </div>
-  );
-};
