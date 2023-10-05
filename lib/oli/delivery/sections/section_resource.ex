@@ -123,6 +123,7 @@ defmodule Oli.Delivery.Sections.SectionResource do
       :project_id,
       :section_id,
       :delivery_policy_id,
+      :scoring_strategy_id,
       :inserted_at,
       :updated_at
     ])

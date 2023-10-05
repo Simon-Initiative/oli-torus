@@ -110,7 +110,7 @@ defmodule Oli.Resources.Collaboration do
           ),
         number_of_posts:
           fragment(
-            "select count(*) from posts where section_id = ? and resource_id = ?",
+            "select count(*) from posts where section_id = ? and resource_id = ? and status != 'deleted'",
             section.id,
             page_revision.resource_id
           ),
@@ -122,7 +122,7 @@ defmodule Oli.Resources.Collaboration do
           ),
         most_recent_post:
           fragment(
-            "select max(inserted_at) from posts where section_id = ? and resource_id = ?",
+            "select max(inserted_at) from posts where section_id = ? and resource_id = ? and status != 'deleted'",
             section.id,
             page_revision.resource_id
           ),

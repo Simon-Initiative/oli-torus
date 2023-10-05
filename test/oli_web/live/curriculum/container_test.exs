@@ -124,14 +124,14 @@ defmodule OliWeb.Curriculum.ContainerLiveTest do
       # Duplicate action is present with the right revision id
       assert view
              |> element(
-               "div[phx-value-slug=\"#{revision_page_one.slug}\"] button[phx-click=\"duplicate_page\"]"
+               "div[phx-value-slug=\"#{revision_page_one.slug}\"] button[role=\"duplicate_page\"]"
              )
              |> render =~ "phx-value-id=\"#{revision_page_one.id}\""
 
       # Clicking on duplicate action creates a new entry with the right title name
       view
       |> element(
-        "div[phx-value-slug=\"#{revision_page_two.slug}\"] button[phx-click=\"duplicate_page\"]"
+        "div[phx-value-slug=\"#{revision_page_two.slug}\"] button[role=\"duplicate_page\"]"
       )
       |> render_click =~
         "entry-title\">Copy of #{revision_page_two.title}</span>"
@@ -180,7 +180,7 @@ defmodule OliWeb.Curriculum.ContainerLiveTest do
 
       view
       |> element(
-        "div[phx-value-slug=\"#{revision_page_one.slug}\"] button[phx-click=\"show_options_modal\"]"
+        "div[phx-value-slug=\"#{revision_page_one.slug}\"] button[role=\"show_options_modal\"]"
       )
       |> render_click() =~ "Page Options"
 
@@ -244,7 +244,7 @@ defmodule OliWeb.Curriculum.ContainerLiveTest do
 
       view
       |> element(
-        "div[phx-value-slug=\"#{revision_page_one.slug}\"] button[phx-click=\"show_options_modal\"]"
+        "div[phx-value-slug=\"#{revision_page_one.slug}\"] button[role=\"show_options_modal\"]"
       )
       |> render_click()
 
@@ -279,7 +279,7 @@ defmodule OliWeb.Curriculum.ContainerLiveTest do
 
       view
       |> element(
-        "div[phx-value-slug=\"#{revision_page_one.slug}\"] button[phx-click=\"show_options_modal\"]"
+        "div[phx-value-slug=\"#{revision_page_one.slug}\"] button[role=\"show_options_modal\"]"
       )
       |> render_click()
 
