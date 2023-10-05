@@ -997,17 +997,24 @@ defmodule OliWeb.Delivery.InstructorDashboard.ScoredActivitiesTabTest do
       |> element("table tbody tr:nth-of-type(1) a")
       |> render_click(%{id: page_5.id})
 
-      # we assert that the url was patched correctly after click
-      current_params =
-        "?assessment_table_params[assessment_id]=&assessment_table_params[assessment_table_params]=&assessment_table_params[limit]=10&assessment_table_params[offset]=0&assessment_table_params[selected_activity]=&assessment_table_params[sort_by]=title&assessment_table_params[sort_order]=asc&assessment_table_params[text_search]="
-
       url =
         live_view_scored_activities_route(section.slug, %{
           assessment_id: page_5.id
-        }) <>
-          current_params
+        })
 
-      assert_receive {_ref, {:patch, _topic, %{to: ^url}}}
+      # we assert that the url was patched correctly after click
+      receive do
+        {_ref, {:patch, _topic, %{kind: :push, to: url_with_params}}} ->
+          assert String.starts_with?(url_with_params, url)
+          assert url_with_params =~ "assessment_table_params[offset]=0"
+          assert url_with_params =~ "assessment_table_params[limit]=10"
+          assert url_with_params =~ "assessment_table_params[sort_by]=title"
+          assert url_with_params =~ "assessment_table_params[assessment_id]="
+          assert url_with_params =~ "assessment_table_params[text_search]="
+          assert url_with_params =~ "assessment_table_params[sort_order]=asc"
+          assert url_with_params =~ "assessment_table_params[assessment_table_params]="
+          assert url_with_params =~ "assessment_table_params[selected_activity]="
+      end
 
       # and that the activitiy content was rendered
       assert view

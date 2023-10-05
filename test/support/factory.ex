@@ -6,6 +6,8 @@ defmodule Oli.Factory do
   alias Oli.Authoring.Course.{Family, Project, ProjectVisibility, ProjectResource}
   alias Oli.Branding.Brand
 
+  alias Oli.Delivery.Sections.ContainedObjective
+
   alias Oli.Delivery.Attempts.Core.{
     ActivityAttempt,
     LMSGradeUpdate,
@@ -552,6 +554,14 @@ defmodule Oli.Factory do
       auth_login_url: "https://www.#{sequence("key_set_url_")}.com/auth/login",
       auth_server: "https://www.#{sequence("key_set_url_")}.com/auth/server",
       line_items_service_domain: ""
+    }
+  end
+
+  def contained_objective_factory() do
+    %ContainedObjective{
+      section: anonymous_build(:section),
+      container_id: insert(:resource).id,
+      objective_id: insert(:resource).id
     }
   end
 

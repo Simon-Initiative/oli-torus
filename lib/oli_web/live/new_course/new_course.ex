@@ -372,6 +372,7 @@ defmodule OliWeb.Delivery.NewCourse do
       with {:ok, section} <- Sections.create_section(section_params),
            {:ok, section} <- Sections.create_section_resources(section, publication),
            {:ok, _} <- Sections.rebuild_contained_pages(section),
+           {:ok, _} <- Sections.rebuild_contained_objectives(section),
            {:ok, _enrollment} <- enroll(socket, section),
            {:ok, updated_section} <-
              Oli.Delivery.maybe_update_section_contains_explorations(section) do
@@ -387,6 +388,7 @@ defmodule OliWeb.Delivery.NewCourse do
     Repo.transaction(fn ->
       with {:ok, section} <- Oli.Delivery.Sections.Blueprint.duplicate(blueprint, section_params),
            {:ok, _} <- Sections.rebuild_contained_pages(section),
+           {:ok, _} <- Sections.rebuild_contained_objectives(section),
            {:ok, _maybe_enrollment} <- enroll(socket, section) do
         section
       else

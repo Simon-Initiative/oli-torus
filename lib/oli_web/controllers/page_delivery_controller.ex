@@ -560,7 +560,17 @@ defmodule OliWeb.PageDeliveryController do
     }
 
     this_attempt = context.resource_attempts |> hd
-    html = render_content_html(render_context, this_attempt.content, context.page.slug)
+
+    attempt_content =
+      if Enum.any?(this_attempt.errors, fn e ->
+           e == "Selection failed to fulfill: no values provided for expression"
+         end) and context.is_student do
+        %{"model" => []}
+      else
+        this_attempt.content
+      end
+
+    html = render_content_html(render_context, attempt_content, context.page.slug)
     conn = put_root_layout(conn, {OliWeb.LayoutView, "page.html"})
 
     all_activities = Activities.list_activity_registrations()

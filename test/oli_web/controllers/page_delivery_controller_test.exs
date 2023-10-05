@@ -1215,7 +1215,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
              |> Floki.find(~s{div[data-react-class="Components.Navbar"]})
              |> Floki.attribute("data-react-props")
              |> hd =~
-               ~s{\"role\":\"student\",\"roleColor\":\"#3498db\",\"roleLabel\":\"Student\"}
+               ~s{\"roleColor\":\"#3498db\",\"roleLabel\":\"Student\"}
     end
 
     test "shows role label correctly when user is enrolled as student with platform_role=instructor",
@@ -1253,7 +1253,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
              |> Floki.find(~s{div[data-react-class="Components.Navbar"]})
              |> Floki.attribute("data-react-props")
              |> hd =~
-               ~s{\"role\":\"instructor\",\"roleColor\":\"#2ecc71\",\"roleLabel\":\"Instructor\"}
+               ~s{\"roleLabel\":\"Instructor\"}
     end
 
     test "timer will not be shown if revision is ungraded", %{

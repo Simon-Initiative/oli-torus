@@ -367,7 +367,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTableModel do
           name={"password-#{@id}"}
         />
       <% else %>
-        <button type="button" phx-click={@on_edit_password} phx-value-assessment_id={@id}>
+        <button type="button" phx-click={@on_edit_password} phx-value-assessment_id={@id} role="edit_password">
           <input class="w-40" type="password" value={hide_password(@password)} />
         </button>
       <% end %>
