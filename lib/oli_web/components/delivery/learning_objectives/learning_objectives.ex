@@ -20,7 +20,6 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
   def update(
         %{
           objectives_tab: objectives_tab,
-          section_slug: section_slug,
           params: params,
           section: section
         } = assigns,
@@ -49,9 +48,9 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
        params: params,
        student_id: assigns[:student_id],
        patch_url_type: assigns.patch_url_type,
-       section_slug: section_slug,
+       section_slug: section.slug,
        units_modules: objectives_tab.filter_options,
-       filter_enabled?: filter_by_module_enabled?(section, objectives_tab.objectives),
+       filter_disabled?: filter_by_module_disabled?(section, objectives_tab.objectives),
        view: assigns[:view]
      )}
   end
@@ -62,7 +61,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
   attr(:units_modules, :map)
   attr(:student_id, :integer)
   attr(:patch_url_type, :atom, required: true)
-  attr(:filter_enabled?, :boolean)
+  attr(:filter_disabled?, :boolean)
   attr(:view, :atom)
   attr(:section_slug, :string)
 
@@ -87,9 +86,9 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
               <label class="cursor-pointer inline-flex flex-col gap-1 w-full">
                 <small class="torus-small uppercase">
                   Filter by module
-                  <i id="filter-disabled-tooltip" :if={!@filter_enabled?} class="fas fa-info-circle" title="This filter will be available soon" phx-hook="TooltipInit"/>
+                  <i id="filter-disabled-tooltip" :if={@filter_disabled?} class="fas fa-info-circle" title="This filter will be available soon" phx-hook="TooltipInit"/>
                 </small>
-                <select class="torus-select" name="filter" disabled={!@filter_enabled?}>
+                <select class="torus-select" name="filter" disabled={@filter_disabled?}>
                   <option selected={@params.filter_by == "root"} value={"root"}>Root</option>
                   <option
                     :for={module <- @units_modules}
@@ -300,15 +299,15 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
   end
 
   _docp = """
-  Returns true if the filter by module feature is enabled for the section.
-  This happens when the contained objectives for the section were already created.
+  Returns true if the filter by module feature is disabled for the section.
+  This happens when the contained objectives for the section were not yet created.
   """
 
-  defp filter_by_module_enabled?(section, objectives) do
-    section.v25_migration == :done and
-      Enum.all?(
+  defp filter_by_module_disabled?(section, objectives) do
+    section.v25_migration != :done or
+      Enum.any?(
         objectives,
-        &(&1.container_ids != [] and &1.container_ids != nil)
+        &(&1.container_ids == [] or &1.container_ids == nil)
       )
   end
 end

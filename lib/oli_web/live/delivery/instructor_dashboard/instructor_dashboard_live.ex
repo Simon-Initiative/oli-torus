@@ -491,7 +491,6 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
       id="objectives_table"
       module={OliWeb.Components.Delivery.LearningObjectives}
       params={@params}
-      section_slug={@section.slug}
       view={@view}
       objectives_tab={@objectives_tab}
       section={@section}
