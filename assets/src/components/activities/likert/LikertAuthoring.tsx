@@ -16,6 +16,7 @@ import { AuthoringElementProvider, useAuthoringElementContext } from '../Authori
 import { MCActions } from '../common/authoring/actions/multipleChoiceActions';
 import { ChoicesDelivery } from '../common/choices/delivery/ChoicesDelivery';
 import { Explanation } from '../common/explanation/ExplanationAuthoring';
+import { ActivityScoring } from '../common/responses/ActivityScoring';
 import { SimpleFeedback } from '../common/responses/SimpleFeedback';
 import { TargetedFeedback } from '../common/responses/TargetedFeedback';
 import { StemDelivery } from '../common/stem/delivery/StemDelivery';
@@ -24,7 +25,6 @@ import { VariableActions } from '../common/variables/variableActions';
 import * as ActivityTypes from '../types';
 import { LikertActions } from './actions';
 import { LikertModelSchema } from './schema';
-import { ActivityScoring } from '../common/responses/ActivityScoring';
 
 const Likert = (props: AuthoringElementProps<LikertModelSchema>) => {
   const { dispatch, model, editMode, projectSlug } =

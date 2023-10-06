@@ -2,7 +2,11 @@ import React, { useMemo, useState } from 'react';
 import { useAuthoringElementContext } from 'components/activities/AuthoringElementProvider';
 import { HasParts, ScoringStrategy } from 'components/activities/types';
 import { Card } from 'components/misc/Card';
-import { getIncorrectPoints, getOutOfPoints, getScoringStrategy } from 'data/activities/model/responses';
+import {
+  getIncorrectPoints,
+  getOutOfPoints,
+  getScoringStrategy,
+} from 'data/activities/model/responses';
 import guid from 'utils/guid';
 import { ScoringActions } from '../authoring/actions/scoringActions';
 import { ScoreInput } from './ScoreInput';
@@ -25,12 +29,11 @@ export const ActivityScoring: React.FC<ActivityScoreProps> = ({ partId, shouldSe
   const incorrectPoints = incorrect || 0;
   const scoringStrategy = getScoringStrategy(model, partId);
 
-
   const onChangeDefault = (e: React.ChangeEvent<HTMLInputElement>) => {
     setDefaultScoring(e.target.checked);
     if (e.target.checked) {
       dispatch(ScoringActions.editPartScore(partId, null, null));
-      dispatch(ScoringActions.editPartScoringStrategy(partId, "average"));
+      dispatch(ScoringActions.editPartScoringStrategy(partId, 'average'));
     } else {
       dispatch(ScoringActions.editPartScore(partId, 1, 0));
     }
@@ -88,8 +91,14 @@ export const ActivityScoring: React.FC<ActivityScoreProps> = ({ partId, shouldSe
             </div>
             {shouldSetStrategy && (
               <div className="flex flex-row gap-4 mt-4 items-center">
-                <label className='flex items-center'>Scoring Strategy</label>
-                <select style={{width:"40%"}} className="form-control" disabled={!editMode} value={scoringStrategy || 'average'} onChange={onScoringStrategyChange}>
+                <label className="flex items-center">Scoring Strategy</label>
+                <select
+                  style={{ width: '40%' }}
+                  className="form-control"
+                  disabled={!editMode}
+                  value={scoringStrategy || 'average'}
+                  onChange={onScoringStrategyChange}
+                >
                   <option value="average">Average</option>
                   <option value="total">Total</option>
                   <option value="best">Best</option>
