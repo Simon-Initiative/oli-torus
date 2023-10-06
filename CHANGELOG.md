@@ -6,6 +6,8 @@
 
 ### Bug Fixes
 
+- Fix an issue where admin attempting to create a new institution when an existing registration with the same issuer and client_id fails
+
 ## 0.25.0 (2023-10-5)
 
 ### Enhancements
