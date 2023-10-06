@@ -274,36 +274,6 @@ defmodule OliWeb.Delivery.InstructorDashboard.LearningObjectivesTabTest do
       refute has_element?(view, ".torus-select[disabled]")
     end
 
-    test "does not allow filtering by module when contained objectives were not created", %{
-      conn: conn,
-      instructor: instructor,
-      section: section,
-      revisions: revisions
-    } do
-      # Setup section data
-      Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
-      Sections.update_section(section, %{v25_migration: :not_started})
-
-      {:ok, view, _html} = live(conn, live_view_learning_objectives_route(section.slug))
-
-      assert has_element?(view, "#objectives-table")
-
-      # It contains objectives attached to pages but not to activities
-      assert has_element?(view, "span", "#{revisions.obj_revision_a.title}")
-      assert has_element?(view, "span", "#{revisions.obj_revision_b.title}")
-
-      assert has_element?(view, "span", "#{revisions.obj_revision_c.title}")
-      assert has_element?(view, "div", "#{revisions.obj_revision_c1.title}")
-      assert has_element?(view, "span", "#{revisions.obj_revision_d.title}")
-      assert has_element?(view, "span", "#{revisions.obj_revision_e.title}")
-      assert has_element?(view, "span", "#{revisions.obj_revision_f.title}")
-
-      # Has info tooltip
-      assert has_element?(view, "#filter-disabled-tooltip")
-      # Select is disabled
-      assert has_element?(view, ".torus-select[disabled]")
-    end
-
     test "does not allow filtering by module when section has the wrong migration status", %{
       conn: conn,
       instructor: instructor,
