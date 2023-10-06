@@ -98,7 +98,7 @@ export const AnswerKeyTab: React.FC<Props> = (props) => {
         onEditResponseRule={(id, rule) => dispatch(ResponseActions.editRule(id, rule))}
       />
       <SimpleFeedback partId={props.input.partId} />
-      <ActivityScoring partId={props.input.partId} />
+      <ActivityScoring partId={props.input.partId} shouldSetStrategy={true} />
       {getTargetedResponses(model, props.input.partId).map((response: Response) => (
         <ResponseCard
           title="Targeted feedback"

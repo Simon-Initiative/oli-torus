@@ -49,10 +49,14 @@ export const hasCustomScoring = (model: HasParts, partId?: string): boolean => {
   return outOf !== null && outOf !== undefined;
 };
 
-
 export const getOutOfPoints = (model: HasParts, partId: string) => {
   const part = getPartById(model, partId);
   return part?.outOf;
+};
+
+export const getScoringStrategy = (model: HasParts, partId: string) => {
+  const part = getPartById(model, partId);
+  return part?.scoringStrategy;
 };
 
 export const getIncorrectPoints = (model: HasParts, partId: string) => {
