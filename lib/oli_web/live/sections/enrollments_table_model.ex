@@ -15,7 +15,6 @@ defmodule OliWeb.Delivery.Sections.EnrollmentsTableModel do
 
   def new(users, section, ctx) do
     column_specs =
-      if is_nil(Map.get(ctx, :author)) do
         [
           %ColumnSpec{
             name: :name,
@@ -47,21 +46,6 @@ defmodule OliWeb.Delivery.Sections.EnrollmentsTableModel do
             render_fn: &__MODULE__.render_overall_proficiency_column/3,
             tooltip:
               "For all students, or one specific student, proficiency for a learning objective will be calculated off the percentage of correct answers for first part attempts within first activity attempts - for those parts that have that learning objective or any of its sub-objectives attached to it."
-          }
-        ]
-      else
-        [
-          %ColumnSpec{
-            name: :name,
-            label: "NAME",
-            render_fn: &__MODULE__.render_name_column/3,
-            sort_fn: &__MODULE__.sort_name_column/2,
-            th_class: "pl-10"
-          },
-          %ColumnSpec{
-            name: :email,
-            label: "EMAIL",
-            render_fn: &__MODULE__.render_email_column/3
           },
           %ColumnSpec{
             name: :type,
@@ -70,7 +54,7 @@ defmodule OliWeb.Delivery.Sections.EnrollmentsTableModel do
             sortable: false
           }
         ]
-      end ++
+       ++
         if section.requires_payment do
           [
             %ColumnSpec{

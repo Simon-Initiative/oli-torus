@@ -5,7 +5,7 @@ defmodule Oli.MixProject do
     [
       app: :oli,
       version: "0.25.0",
-      elixir: "~> 1.14.0",
+      elixir: "~> 1.15.5",
       elixirc_paths: elixirc_paths(Mix.env()),
       elixirc_options: elixirc_options(Mix.env()),
       compilers: Mix.compilers(),
@@ -141,7 +141,7 @@ defmodule Oli.MixProject do
       {:csv, "~> 3.0.5"},
       {:decimal, "~> 2.0"},
       {:dialyxir, "~> 0.5.0", only: [:dev], runtime: true},
-      {:ecto_sql, "~> 3.7.0"},
+      {:ecto_sql, "~> 3.10"},
       {:eflame, "~> 1.0"},
       {:ecto_psql_extras, "~> 0.2"},
       {:ex_aws, "~> 2.2"},

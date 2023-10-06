@@ -3,25 +3,28 @@ defmodule Oli.Institutions.PendingRegistration do
   import Ecto.Changeset
 
   schema "pending_registrations" do
-    field :country_code, :string
-    field :institution_email, :string
-    field :institution_url, :string
-    field :name, :string
+    field(:country_code, :string)
+    field(:institution_email, :string)
+    field(:institution_url, :string)
+    field(:name, :string)
 
-    field :issuer, :string
-    field :client_id, :string
-    field :deployment_id, :string
-    field :key_set_url, :string
-    field :auth_token_url, :string
-    field :auth_login_url, :string
-    field :auth_server, :string
-    field :line_items_service_domain, :string
+    field(:issuer, :string)
+    field(:client_id, :string)
+    field(:deployment_id, :string)
+    field(:key_set_url, :string)
+    field(:auth_token_url, :string)
+    field(:auth_login_url, :string)
+    field(:auth_server, :string)
+    field(:line_items_service_domain, :string)
 
     timestamps(type: :utc_datetime)
   end
 
   @doc false
   def changeset(pending_registration, attrs \\ %{}) do
+    # ensure any string values are trimmed of leading/trailing whitespace
+    attrs = map_trim_whitespace(attrs)
+
     pending_registration
     |> cast(attrs, [
       :name,
@@ -79,5 +82,16 @@ defmodule Oli.Institutions.PendingRegistration do
     |> Map.take([
       :deployment_id
     ])
+  end
+
+  def map_trim_whitespace(attrs) do
+    attrs
+    |> Enum.reduce(
+      attrs,
+      fn
+        {k, v}, acc when is_binary(v) -> Map.put(acc, k, String.trim(v))
+        _, acc -> acc
+      end
+    )
   end
 end

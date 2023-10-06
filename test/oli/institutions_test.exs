@@ -472,6 +472,37 @@ defmodule Oli.InstitutionsTest do
       assert result_institution.id == first_institution.id
     end
 
+    test "approve_pending_registration_as_new_institution/1 creates a new institution and registration and removes pending registration" do
+      pending_registration =
+        insert(:pending_registration, %{
+          issuer: "new issuer",
+          institution_url: "https://www.something.com"
+        })
+
+      assert Institutions.list_institutions()
+             |> Enum.find(fn i -> i.institution_url == "https://www.something.com" end) ==
+               nil
+
+      assert Institutions.list_registrations()
+             |> Enum.find(fn r -> r.issuer == "new issuer" end) == nil
+
+      {:ok, {%Institution{}, %Registration{}, _deployment}} =
+        Institutions.approve_pending_registration_as_new_institution(pending_registration)
+
+      assert Institutions.list_institutions()
+             |> Enum.find(fn i -> i.institution_url == "https://www.something.com" end) !=
+               nil
+
+      assert Institutions.list_registrations()
+             |> Enum.find(fn r -> r.issuer == "new issuer" end) != nil
+
+      assert Institutions.get_pending_registration(
+               pending_registration.issuer,
+               pending_registration.client_id,
+               pending_registration.deployment_id
+             ) == nil
+    end
+
     test "approve_pending_registration/1 creates a new institution and registration and removes pending registration" do
       {:ok, %PendingRegistration{} = pending_registration} =
         Institutions.create_pending_registration(%{

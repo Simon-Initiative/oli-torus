@@ -274,6 +274,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTableModel do
       name={"scoring_strategy_id-#{@id}"}
       id={"scoring_strategy_id-#{@id}"}
     >
+      <option disabled selected={@scoring_strategy_id == nil} hidden value="">-</option>
       <option selected={@scoring_strategy_id == 1} value={1}>Average</option>
       <option selected={@scoring_strategy_id == 2} value={2}>Best</option>
       <option selected={@scoring_strategy_id == 3} value={3}>Last</option>
@@ -366,7 +367,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTableModel do
           name={"password-#{@id}"}
         />
       <% else %>
-        <button type="button" phx-click={@on_edit_password} phx-value-assessment_id={@id}>
+        <button type="button" phx-click={@on_edit_password} phx-value-assessment_id={@id} role="edit_password">
           <input class="w-40" type="password" value={hide_password(@password)} />
         </button>
       <% end %>

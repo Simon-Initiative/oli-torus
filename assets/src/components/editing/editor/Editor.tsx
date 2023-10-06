@@ -8,6 +8,7 @@ import { Mark, Marks } from 'data/content/model/text';
 import { classNames } from 'utils/classNames';
 import { CommandContext, CommandDescription } from '../elements/commands/interfaces';
 import { backspaceBlockKeyDown, deleteBlockKeyDown } from './handlers/deleteblock';
+import { onKeyDown as linkOnKeyDown } from './handlers/deleteempty';
 import { hotkeyHandler } from './handlers/hotkey';
 import { onKeyDown as listOnKeyDown } from './handlers/lists';
 import { onKeyDown as quoteOnKeyDown } from './handlers/quote';
@@ -102,6 +103,7 @@ export const Editor: React.FC<EditorProps> = React.memo((props: EditorProps) => 
       hotkeyHandler(editor, e.nativeEvent, props.commandContext);
       backspaceBlockKeyDown(editor, e);
       deleteBlockKeyDown(editor, e);
+      linkOnKeyDown(editor, e);
     },
     [editor, props.commandContext],
   );

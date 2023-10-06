@@ -722,7 +722,7 @@ defmodule Oli.Delivery.Sections do
         first
 
       [first | _] ->
-        Logger.warn("More than one active section was returned for context_id #{context_id}")
+        Logger.warning("More than one active section was returned for context_id #{context_id}")
 
         first
     end
@@ -1504,7 +1504,6 @@ defmodule Oli.Delivery.Sections do
     section_resources = [
       # The below is necessary because Repo.insert_all/3 receives a map, not a struct
       # The below is necessary because Repo.insert_all/3 doesn't autogenerate values
-      # TODO: CAMBIAR ESTO
       %SectionResource{
         numbering_index: numbering_index,
         numbering_level: level,
@@ -1612,6 +1611,7 @@ defmodule Oli.Delivery.Sections do
             limit: 1
           )
         ),
+      on: true,
       preload: [:project],
       select: {spp, current_pub, latest_pub}
     )
@@ -2062,6 +2062,7 @@ defmodule Oli.Delivery.Sections do
       from(
         rev in Revision,
         join: content_elem in fragment("jsonb_array_elements(?->'model')", rev.content),
+        on: true,
         select: %{
           revision_id: rev.id,
           activity_id: fragment("(?->>'activity_id')::integer", content_elem)
@@ -2073,6 +2074,7 @@ defmodule Oli.Delivery.Sections do
       from(
         rev in Revision,
         join: obj in fragment("jsonb_each_text(?)", rev.objectives),
+        on: true,
         select: %{
           objective_revision_id: rev.id,
           objective_resource_id:

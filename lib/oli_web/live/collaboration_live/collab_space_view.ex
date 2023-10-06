@@ -301,7 +301,7 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
         PubSub.broadcast(
           Oli.PubSub,
           socket.assigns.topic,
-          {:post_created, Repo.preload(post, :user)}
+          {:post_created, Repo.preload(post, :user), socket.assigns.user.id}
         )
 
         {:noreply, assign(socket, modal_assigns: nil)}
@@ -345,7 +345,8 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
        editing_post: post,
        is_edition_mode: false,
        modal_assigns: %{index: index}
-     )}
+     )
+     |> clear_flash()}
   end
 
   def handle_event("delete_posts", _, socket),
@@ -472,7 +473,7 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
      )}
   end
 
-  def handle_info({:post_created, %PostSchema{} = post}, socket) do
+  def handle_info({:post_created, %PostSchema{} = post, created_by_id}, socket) do
     all_posts = get_all_posts(socket.assigns.posts)
 
     posts =
@@ -488,10 +489,11 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
     {:noreply,
      assign(socket,
        posts: get_posts(socket.assigns.search_params, socket.assigns.sort, posts)
-     )}
+     )
+     |> maybe_clear_flash(created_by_id, socket.assigns.user.id)}
   end
 
-  def handle_info({:post_deleted, post_id}, socket) do
+  def handle_info({:post_deleted, post_id, deleted_by_id}, socket) do
     posts =
       socket.assigns.posts
       |> get_all_posts()
@@ -503,10 +505,11 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
     {:noreply,
      assign(socket,
        posts: get_posts(socket.assigns.search_params, socket.assigns.sort, posts)
-     )}
+     )
+     |> maybe_clear_flash(deleted_by_id, socket.assigns.user.id)}
   end
 
-  def handle_info({:post_edited, %PostSchema{} = post_edited}, socket) do
+  def handle_info({:post_edited, %PostSchema{} = post_edited, edited_by_id}, socket) do
     all_posts = get_all_posts(socket.assigns.posts)
 
     posts =
@@ -525,7 +528,8 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
     {:noreply,
      assign(socket,
        posts: get_posts(socket.assigns.search_params, socket.assigns.sort, posts)
-     )}
+     )
+     |> maybe_clear_flash(edited_by_id, socket.assigns.user.id)}
   end
 
   def handle_info(
@@ -557,7 +561,8 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
     {:noreply,
      assign(socket,
        active_users: Presence.list_presences(socket.assigns.topic)
-     )}
+     )
+     |> clear_flash()}
   end
 
   defp do_edit_post(post, attrs, socket) do
@@ -565,12 +570,17 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
 
     case Collaboration.update_post(post, attrs) do
       {:ok, %PostSchema{} = post} ->
-        socket = put_flash(socket, :info, "Post successfully edited")
+        socket =
+          if attrs[:status] == :approved do
+            clear_flash(socket)
+          else
+            put_flash(socket, :info, "Post successfully edited")
+          end
 
         PubSub.broadcast(
           Oli.PubSub,
           socket.assigns.topic,
-          {:post_edited, Repo.preload(post, :user)}
+          {:post_edited, Repo.preload(post, :user), socket.assigns.user.id}
         )
 
         {:noreply,
@@ -596,7 +606,7 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
         PubSub.broadcast(
           Oli.PubSub,
           socket.assigns.topic,
-          {:post_deleted, post.id}
+          {:post_deleted, post.id, socket.assigns.user.id}
         )
 
         {:noreply,
@@ -748,5 +758,13 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
 
       acc ++ [post] ++ replies
     end)
+  end
+
+  defp maybe_clear_flash(socket, owner_id, current_user_id) do
+    if owner_id != current_user_id do
+      clear_flash(socket)
+    else
+      socket
+    end
   end
 end

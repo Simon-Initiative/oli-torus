@@ -733,6 +733,9 @@ defmodule Oli.Publishing do
 
           :updated_at ->
             order_by(query, [_pr, rev], [{^params.sort_order, rev.updated_at}])
+
+          :publication_date ->
+            order_by(query, [_pr, _rev, pub], [{^params.sort_order, pub.published}])
         end
       else
         query
@@ -1100,7 +1103,7 @@ defmodule Oli.Publishing do
   def get_publication_diff(p1, p2) do
     case DiffAgent.get(PublicationDiffKey.key(p1.id, p2.id)) do
       nil ->
-        Logger.warn(
+        Logger.warning(
           "No precomputed publication diff found for delta #{p1.id} -> #{p2.id}. Generating one now."
         )
 
