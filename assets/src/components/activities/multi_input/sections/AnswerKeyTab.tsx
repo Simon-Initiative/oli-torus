@@ -3,6 +3,7 @@ import { useAuthoringElementContext } from 'components/activities/AuthoringEleme
 import { AuthoringButtonConnected } from 'components/activities/common/authoring/AuthoringButton';
 import { MCActions } from 'components/activities/common/authoring/actions/multipleChoiceActions';
 import { ChoicesDelivery } from 'components/activities/common/choices/delivery/ChoicesDelivery';
+import { ActivityScoring } from 'components/activities/common/responses/ActivityScoring';
 import { ResponseCard } from 'components/activities/common/responses/ResponseCard';
 import { ShowPage } from 'components/activities/common/responses/ShowPage';
 import { SimpleFeedback } from 'components/activities/common/responses/SimpleFeedback';
@@ -19,7 +20,7 @@ import { InputEntry } from 'components/activities/short_answer/sections/InputEnt
 import { getTargetedResponses } from 'components/activities/short_answer/utils';
 import { Response, RichText, makeResponse } from 'components/activities/types';
 import { Radio } from 'components/misc/icons/radio/Radio';
-import { getCorrectResponse } from 'data/activities/model/responses';
+import { getCorrectResponse, hasCustomScoring } from 'data/activities/model/responses';
 import { containsRule, eqRule, equalsRule } from 'data/activities/model/rules';
 import { defaultWriterContext } from 'data/content/writers/context';
 
@@ -70,6 +71,8 @@ export const AnswerKeyTab: React.FC<Props> = (props) => {
           context={defaultWriterContext({ projectSlug: projectSlug })}
         />
         <SimpleFeedback partId={props.input.partId} />
+        <ActivityScoring partId={props.input.partId} />
+
         <TargetedFeedback
           choices={model.choices.filter((choice) =>
             (props.input as Dropdown).choiceIds.includes(choice.id),
@@ -95,6 +98,7 @@ export const AnswerKeyTab: React.FC<Props> = (props) => {
         onEditResponseRule={(id, rule) => dispatch(ResponseActions.editRule(id, rule))}
       />
       <SimpleFeedback partId={props.input.partId} />
+      <ActivityScoring partId={props.input.partId} />
       {getTargetedResponses(model, props.input.partId).map((response: Response) => (
         <ResponseCard
           title="Targeted feedback"
@@ -111,6 +115,10 @@ export const AnswerKeyTab: React.FC<Props> = (props) => {
           updateCorrectness={(_id, correct) =>
             dispatch(ResponseActions.editResponseCorrectness(response.id, correct))
           }
+          updateScore={(_id, score) =>
+            dispatch(ResponseActions.editResponseScore(response.id, score))
+          }
+          customScoring={hasCustomScoring(model, props.input.partId)}
           removeResponse={(id) => dispatch(ResponseActions.removeResponse(id))}
           key={response.id}
         >
