@@ -32,8 +32,6 @@ defmodule Oli.Release do
 
     if String.upcase(confirm) == "YES\n" do
       drop(%{dangerously_force: true})
-
-      IO.puts("COMPLETED: Operation completed successfully.")
     else
       IO.puts("ABORTED: Operation was not confirmed by user.")
       :init.stop()
