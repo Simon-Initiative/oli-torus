@@ -24,6 +24,7 @@ import { VariableActions } from '../common/variables/variableActions';
 import * as ActivityTypes from '../types';
 import { LikertActions } from './actions';
 import { LikertModelSchema } from './schema';
+import { ActivityScoring } from '../common/responses/ActivityScoring';
 
 const Likert = (props: AuthoringElementProps<LikertModelSchema>) => {
   const { dispatch, model, editMode, projectSlug } =
@@ -195,6 +196,8 @@ const Likert = (props: AuthoringElementProps<LikertModelSchema>) => {
             context={writerContext}
           />
           <SimpleFeedback partId={selectedPartId} />
+          <ActivityScoring partId={model.authoring.parts[0].id} />
+
           <TargetedFeedback
             toggleChoice={(choiceId, mapping) => {
               dispatch(MCActions.editTargetedFeedbackChoice(mapping.response.id, choiceId));
