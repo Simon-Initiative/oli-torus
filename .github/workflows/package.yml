@@ -100,7 +100,8 @@ jobs:
           build-args: APP_VERSION=${{ steps.info.outputs.app_version }}
             SHA_SHORT=${{ steps.info.outputs.sha_short }}
           push: true
-          tags: olisimon/oli-torus:latest
+          tags: |
+            olisimon/oli-torus:latest
             olisimon/oli-torus:${{ steps.info.outputs.app_version }}
             olisimon/oli-torus:${{ steps.info.outputs.app_version }}-${{ steps.info.outputs.sha_short }}
           cache-from: type=gha

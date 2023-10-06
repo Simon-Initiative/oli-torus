@@ -183,6 +183,7 @@ jobs:
   container:
     name: Container build and push
     runs-on: ubuntu-latest
+    needs: [elixir-build-test, ts-build-test]
 
     outputs:
       app_version: ${{ steps.info.outputs.app_version }}
@@ -215,6 +216,6 @@ jobs:
           build-args: APP_VERSION=${{ steps.info.outputs.app_version }}
             SHA_SHORT=${{ steps.info.outputs.sha_short }}
           push: true
-          tags: olisimon/oli-torus:${{ github.event.number }}
+          tags: olisimon/oli-torus:pr-${{ github.event.number }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
