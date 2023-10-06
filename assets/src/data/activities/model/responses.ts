@@ -3,7 +3,6 @@ import {
   ChoiceId,
   ChoiceIdsToResponseId,
   HasParts,
-  Part,
   Response,
   makeResponse,
 } from 'components/activities/types';
