@@ -1,6 +1,3 @@
-ARG ELIXIR_VERSION=1.15.5
-ARG OTP_VERSION=26.1
-
 FROM amazonlinux:2
 
 RUN yum update -y
@@ -10,16 +7,16 @@ RUN yum install ncurses-devel openssl11-devel -y
 RUN yum groupinstall "Development Tools" -y
 
 WORKDIR /tmp
-RUN wget "http://erlang.org/download/otp_src_${OTP_VERSION}.tar.gz" -O otp_src_${OTP_VERSION}.tar.gz
-RUN tar xfz otp_src_${OTP_VERSION}.tar.gz
-WORKDIR /tmp/otp_src_${OTP_VERSION}/
+RUN wget "http://erlang.org/download/otp_src_26.1.tar.gz" -O otp_src_26.1.tar.gz
+RUN tar xfz otp_src_26.1.tar.gz
+WORKDIR /tmp/otp_src_26.1/
 RUN ./configure
 RUN make && make install
 
 WORKDIR /tmp
-RUN wget "https://github.com/elixir-lang/elixir/archive/v${ELIXIR_VERSION}.tar.gz"
-RUN tar xfz v${ELIXIR_VERSION}.tar.gz
-WORKDIR /tmp/elixir-${ELIXIR_VERSION}/
+RUN wget "https://github.com/elixir-lang/elixir/archive/v1.15.5.tar.gz"
+RUN tar xfz v1.15.5.tar.gz
+WORKDIR /tmp/elixir-1.15.5/
 ENV PATH="${PATH}:/usr/local/bin"
 RUN make && make install
 
