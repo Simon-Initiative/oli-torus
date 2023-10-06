@@ -19,12 +19,15 @@ database_url =
     For example: ecto://USER:PASS@HOST/DATABASE
     """
 
+maybe_ipv6 = if System.get_env("ECTO_IPV6") in ~w(true 1), do: [:inet6], else: []
+
 config :oli, Oli.Repo,
   url: database_url,
   database: System.get_env("DB_NAME", "oli"),
   pool_size: String.to_integer(System.get_env("POOL_SIZE") || "10"),
   timeout: 600_000,
-  ownership_timeout: 600_000
+  ownership_timeout: 600_000,
+  socket_options: maybe_ipv6
 
 config :ex_aws, :s3,
   region: System.get_env("AWS_REGION", "us-east-1"),
@@ -205,6 +208,10 @@ help_provider =
 
 config :oli, :help, dispatcher: help_provider
 
+if System.get_env("PHX_SERVER") do
+  config :oli, OliWeb.Endpoint, server: true
+end
+
 config :oli, OliWeb.Endpoint,
   server: true,
   http: [
@@ -301,13 +308,3 @@ config :libcluster,
   ]
 
 config :appsignal, :client_key, System.get_env("APPSIGNAL_PUSH_API_KEY", nil)
-
-# ## Using releases (Elixir v1.9+)
-#
-# If you are doing OTP releases, you need to instruct Phoenix
-# to start each relevant endpoint:
-#
-#     config :oli, OliWeb.Endpoint, server: true
-#
-# Then you can assemble a release by calling `mix release`.
-# See `mix help release` for more information.
