@@ -84,6 +84,38 @@ const findGeometry = (dayGeometry: DayGeometry, date: DateWithoutTime | null) =>
   return cloneOf(dayGeometry.geometry.find((dg) => dg.date.getDaysSinceEpoch() === epoc));
 };
 
+/** Gets geometry between two dates
+ * This differs from barGeometry, because it goes from the start of the first day to the start of the last day
+ * instead of the start of the first day to the end of the last day.
+ */
+export const betweenGeometry = (
+  dayGeometry: DayGeometry,
+  startDate: DateWithoutTime | null,
+  endDate: DateWithoutTime | null,
+) => {
+  if (!dayGeometry || !startDate) {
+    return { width: 0, left: 0 };
+  }
+
+  const firstDate = new DateWithoutTime(
+    Math.min(startDate.getDaysSinceEpoch(), (endDate || startDate).getDaysSinceEpoch()),
+  );
+  const lastDate = new DateWithoutTime(
+    Math.max(startDate.getDaysSinceEpoch(), (endDate || startDate).getDaysSinceEpoch()),
+  );
+
+  const start = findGeometry(dayGeometry, firstDate);
+  const end = findGeometry(dayGeometry, lastDate);
+  const endPostion = end ? end.left : start ? start.left : 0;
+  const left = start ? start.left : 0;
+  const width = start ? endPostion - left : 0;
+
+  return {
+    width,
+    left,
+  };
+};
+
 export const barGeometry = (
   dayGeometry: DayGeometry,
   startDate: DateWithoutTime | null,

@@ -190,12 +190,12 @@ defmodule OliWeb.Pow.PowHelpers do
     case provider do
       :google ->
         HTML.raw(
-          "<div class=\"#{provider_name(provider, downcase: true)}-icon-container\"><img class=\"#{provider_name(provider, downcase: true)}-icon\" src=\"/images/icons/google-icon.svg\"/></div>"
+          "<div class=\"w-[64px] #{provider_name(provider, downcase: true)}-icon-container\"><img class=\"#{provider_name(provider, downcase: true)}-icon\" src=\"/images/icons/google-icon.svg\"/></div>"
         )
 
       :github ->
         HTML.raw(
-          "<div class=\"#{provider_name(provider, downcase: true)}-icon-container\"><i class=\"fab fa-github #{provider_name(provider, downcase: true)}-icon\"></i></div>"
+          "<div class=\"w-[64px] #{provider_name(provider, downcase: true)}-icon-container\"><i class=\"fab fa-github #{provider_name(provider, downcase: true)}-icon\"></i></div>"
         )
 
       _ ->

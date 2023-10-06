@@ -716,9 +716,9 @@ defmodule OliWeb.RemixSectionLiveTest do
                "Another orph. Page"
              )
 
-      # Can't sort by published date
+      # Can sort by published date
       assert view
-             |> has_element?("th[data-sortable=\"false\"]", "Published on")
+             |> has_element?("th[data-sortable=\"true\"]", "Published on")
     end
 
     test "remix section items - add materials - all pages view can be filtered by text", %{

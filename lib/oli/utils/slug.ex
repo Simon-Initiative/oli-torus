@@ -172,12 +172,23 @@ defmodule Oli.Utils.Slug do
   def slugify(nil), do: ""
 
   def slugify(title) do
-    String.downcase(title, :default)
+    case String.downcase(title, :default)
     |> String.trim()
     |> String.replace(" ", "_")
     |> alpha_numeric_only()
     |> URI.encode_www_form()
-    |> String.slice(0, 30)
+    |> String.slice(0, 30) do
+
+      # A page title that only contains non-alphanumeric characters will
+      # generate a slug that is empty. This is not allowed, so we generate
+      # a random slug instead.
+      "" ->
+        random_string(10)
+
+      otherwise ->
+        otherwise
+
+    end
   end
 
   defp unique_slug(table, generate_candidate) when is_function(generate_candidate) do

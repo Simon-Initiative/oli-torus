@@ -575,7 +575,6 @@ export class PageEditor extends React.Component<PageEditorProps, PageEditorState
                   title={state.title}
                   onTitleEdit={onTitleEdit}
                   editMode={this.state.editMode}
-                  parent={this.editorsRef.current}
                   dismissMessage={dismissMessage}
                   executeAction={executeAction}
                   messages={this.state.messages}

@@ -105,7 +105,7 @@ defmodule OliWeb.CollaborationLive.InstructorTableModel do
             <%= @status %>
           </span>
         </div>
-        <span class="torus-span">
+        <span :if={@most_recent_post} class="torus-span">
           <%= "Most recent post: #{FormatDateTime.date(@most_recent_post, @ctx)}" %>
         </span>
       </div>

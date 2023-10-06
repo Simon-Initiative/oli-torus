@@ -192,6 +192,72 @@ defmodule OliWeb.Admin.Institutions.IndexLiveTest do
              |> Repo.one() != nil
     end
 
+    test "when a pending registration is approved by setting a `New Institution`, the new institution is created correctly",
+         %{conn: conn} do
+      insert(:institution, %{
+        institution_url: "www.existing_institution.com",
+        name: "Existing institution"
+      })
+
+      pending_registration =
+        insert(:pending_registration, %{
+          institution_url: "www.existing_institution.com",
+          name: "New Institution"
+        })
+
+      assert Institution
+             |> where([i], i.name == "New Institution")
+             |> Repo.one() == nil
+
+      {:ok, view, _html} = institutions_index_route(conn)
+      go_to_pending_registrations(view)
+
+      view
+      |> render_click("select_pending_registration", %{
+        registration_id: pending_registration.id,
+        action: "review"
+      })
+
+      view
+      |> element("select[phx-change=\"select_existing_institution\"]")
+      |> render_change(%{
+        "_target" => ["registration", "institution_id"],
+        "registration" => %{"institution_id" => ""}
+      })
+
+      view
+      |> render_submit(
+        "save_registration",
+        %{
+          registration:
+            pending_registration
+            |> Map.from_struct()
+            |> Map.take([
+              :country_code,
+              :institution_email,
+              :institution_url,
+              :name,
+              :issuer,
+              :client_id,
+              :deployment_id,
+              :key_set_url,
+              :auth_token_url,
+              :auth_login_url,
+              :auth_server,
+              :line_items_service_domain
+            ])
+            |> Map.put(:institution_id, "")
+        }
+      )
+
+      new_institution =
+        Institution
+        |> where([i], i.name == "New Institution")
+        |> Repo.one()
+
+      assert new_institution.institution_url == "www.existing_institution.com"
+    end
+
     test "when a pending registration contains the url of an existing institution, the existing institution is used instead",
          %{conn: conn} do
       existing_institution =

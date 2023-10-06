@@ -1504,7 +1504,6 @@ defmodule Oli.Delivery.Sections do
     section_resources = [
       # The below is necessary because Repo.insert_all/3 receives a map, not a struct
       # The below is necessary because Repo.insert_all/3 doesn't autogenerate values
-      # TODO: CAMBIAR ESTO
       %SectionResource{
         numbering_index: numbering_index,
         numbering_level: level,

@@ -733,6 +733,9 @@ defmodule Oli.Publishing do
 
           :updated_at ->
             order_by(query, [_pr, rev], [{^params.sort_order, rev.updated_at}])
+
+          :publication_date ->
+            order_by(query, [_pr, _rev, pub], [{^params.sort_order, pub.published}])
         end
       else
         query

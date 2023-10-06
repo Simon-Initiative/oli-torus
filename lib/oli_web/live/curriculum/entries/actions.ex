@@ -6,6 +6,7 @@ defmodule OliWeb.Curriculum.Actions do
   use OliWeb, :html
 
   alias Oli.Resources.ResourceType
+  alias Phoenix.LiveView.JS
 
   attr(:child, :map, required: true)
   attr(:project_slug, :string)
@@ -18,10 +19,7 @@ defmodule OliWeb.Curriculum.Actions do
         <button
           class="btn dropdown-toggle"
           type="button"
-          data-bs-toggle="dropdown"
-          data-target={"dropdownMenu_#{@child.slug}"}
-          aria-haspopup="true"
-          aria-expanded="false"
+          phx-click={JS.toggle(to: "#dropdownMenu_#{@child.slug}")}
         >
           <svg
             aria-hidden="true"
@@ -41,14 +39,16 @@ defmodule OliWeb.Curriculum.Actions do
           </svg>
         </button>
         <div
-          class="dropdown-menu dropdown-menu-right"
+          class="hidden dropdown-menu dropdown-menu-right"
           id={"dropdownMenu_#{@child.slug}"}
+          phx-click-away={JS.toggle(to: "#dropdownMenu_#{@child.slug}")}
           aria-labelledby={"dropdownMenuButton_#{@child.slug}"}
         >
           <button
             type="button"
             class="dropdown-item"
-            phx-click="show_options_modal"
+            phx-click={push_event_and_hide_dropdown("show_options_modal", @child.slug)}
+            role="show_options_modal"
             phx-value-slug={@child.slug}
           >
             <i class="fas fa-sliders-h mr-1 flex-1"></i> Options
@@ -56,7 +56,8 @@ defmodule OliWeb.Curriculum.Actions do
           <button
             type="button"
             class="dropdown-item"
-            phx-click="show_move_modal"
+            phx-click={push_event_and_hide_dropdown("show_move_modal", @child.slug)}
+            role="show_move_modal"
             phx-value-slug={@child.slug}
           >
             <i class="fas fa-arrow-circle-right mr-1"></i> Move to...
@@ -65,7 +66,8 @@ defmodule OliWeb.Curriculum.Actions do
             <button
               type="button"
               class="dropdown-item"
-              phx-click="duplicate_page"
+              phx-click={push_event_and_hide_dropdown("duplicate_page", @child.slug)}
+              role="duplicate_page"
               phx-value-id={@child.id}
             >
               <i class="fas fa-copy mr-1"></i> Duplicate
@@ -82,7 +84,8 @@ defmodule OliWeb.Curriculum.Actions do
           <button
             type="button"
             class="dropdown-item text-danger"
-            phx-click="show_delete_modal"
+            phx-click={push_event_and_hide_dropdown("show_delete_modal", @child.slug)}
+            role="show_delete_modal"
             phx-value-slug={@child.slug}
           >
             <i class="far fa-trash-alt mr-1"></i> Delete
@@ -92,4 +95,7 @@ defmodule OliWeb.Curriculum.Actions do
     </div>
     """
   end
+
+  defp push_event_and_hide_dropdown(event, target_slug),
+    do: JS.push(event) |> JS.toggle(to: "#dropdownMenu_#{target_slug}")
 end

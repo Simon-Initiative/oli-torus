@@ -6,35 +6,35 @@
     <hr class="my-4">
     <%= form_for @changeset, @action, [as: :user], fn f -> %>
       <div class="form-label-group">
-        <%= email_input f, Pow.Ecto.Schema.user_id_field(@changeset), class: "form-control " <> error_class(f, Pow.Ecto.Schema.user_id_field(@changeset), "is-invalid"),
+        <%= email_input f, Pow.Ecto.Schema.user_id_field(@changeset), maxlength: 255, class: "form-control " <> error_class(f, Pow.Ecto.Schema.user_id_field(@changeset), "is-invalid"),
           placeholder: "Email", required: true, autofocus: focusHelper(f, Pow.Ecto.Schema.user_id_field(@changeset), default: true) %>
         <%= label f, Pow.Ecto.Schema.user_id_field(@changeset), class: "control-label" %>
         <%= error_tag f, Pow.Ecto.Schema.user_id_field(@changeset) %>
       </div>
 
       <div class="form-label-group">
-        <%= text_input f, :given_name, class: "form-control " <> error_class(f, :given_name, "is-invalid"),
+        <%= text_input f, :given_name, maxlength: 255, class: "form-control " <> error_class(f, :given_name, "is-invalid"),
           placeholder: "First Name", required: true, autofocus: focusHelper(f, :given_name) %>
         <%= label f, :given_name, "First Name", class: "control-label" %>
         <%= error_tag f, :given_name %>
       </div>
 
       <div class="form-label-group">
-        <%= text_input f, :family_name, class: "form-control " <> error_class(f, :family_name, "is-invalid"),
+        <%= text_input f, :family_name, maxlength: 255, class: "form-control " <> error_class(f, :family_name, "is-invalid"),
           placeholder: "Last Name", required: true, autofocus: focusHelper(f, :family_name) %>
         <%= label f, :family_name, "Last Name", class: "control-label" %>
         <%= error_tag f, :family_name %>
       </div>
 
       <div class="form-label-group">
-        <%= password_input f, :password, class: "form-control " <> error_class(f, [:password, :password_confirmation], "is-invalid"),
+        <%= password_input f, :password, maxlength: 255, class: "form-control " <> error_class(f, [:password, :password_confirmation], "is-invalid"),
           placeholder: "Password", required: true, autofocus: focusHelper(f, [:password, :password_confirmation]) %>
         <%= label f, :password, class: "control-label" %>
         <%= error_tag f, :password %>
       </div>
 
       <div class="form-label-group">
-        <%= password_input f, :password_confirmation, class: "form-control " <> error_class(f, :password_confirmation, "is-invalid"),
+        <%= password_input f, :password_confirmation, maxlength: 255, class: "form-control " <> error_class(f, :password_confirmation, "is-invalid"),
           placeholder: "Confirm Password", required: true, autofocus: focusHelper(f, :password_confirmation) %>
         <%= label f, :password_confirmation, "Confirm Password", class: "control-label" %>
         <%= error_tag f, :password_confirmation %>

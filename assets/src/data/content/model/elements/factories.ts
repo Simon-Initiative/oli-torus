@@ -154,7 +154,7 @@ export const Model = {
 
   figure: () => create<Figure>({ type: 'figure', title: [Model.p()], children: [Model.p()] }),
 
-  foreign: () => create<Foreign>({ type: 'foreign', children: [{ text: '' }] }),
+  foreign: (text = '') => create<Foreign>({ type: 'foreign', children: [{ text }] }),
 
   formula: (subtype: FormulaSubTypes = 'latex', src = '1 + 2 = 3') =>
     create<FormulaBlock>({ type: 'formula', src, subtype }),

@@ -112,7 +112,7 @@ defmodule OliWeb.Common.PowTest do
       conn: conn
     } do
       # sign user in
-      user = insert(:user)
+      user = insert(:user, %{independent_learner: false})
       insert(:lti_params, user_id: user.id)
 
       conn =
