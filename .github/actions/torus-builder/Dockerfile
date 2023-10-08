@@ -7,16 +7,16 @@ RUN yum install ncurses-devel openssl11-devel -y
 RUN yum groupinstall "Development Tools" -y
 
 WORKDIR /tmp
-RUN wget "http://erlang.org/download/otp_src_24.0.tar.gz" -O otp24.tar.gz
-RUN tar xfz otp24.tar.gz
-WORKDIR /tmp/otp_src_24.0/
+RUN wget "http://erlang.org/download/otp_src_26.1.tar.gz" -O otp_src_26.1.tar.gz
+RUN tar xfz otp_src_26.1.tar.gz
+WORKDIR /tmp/otp_src_26.1/
 RUN ./configure
 RUN make && make install
 
 WORKDIR /tmp
-RUN wget "https://github.com/elixir-lang/elixir/archive/v1.14.0.tar.gz"
-RUN tar xfz v1.14.0.tar.gz
-WORKDIR /tmp/elixir-1.14.0/
+RUN wget "https://github.com/elixir-lang/elixir/archive/v1.15.5.tar.gz"
+RUN tar xfz v1.15.5.tar.gz
+WORKDIR /tmp/elixir-1.15.5/
 ENV PATH="${PATH}:/usr/local/bin"
 RUN make && make install
 
@@ -25,14 +25,15 @@ RUN mix local.rebar --force
 
 # install node
 RUN yum install -y gcc-c++ make
-RUN curl -sL https://rpm.nodesource.com/setup_16.x | bash -
-RUN yum --enablerepo=nodesource clean metadata
-RUN yum install -y nodejs
+RUN yum install https://rpm.nodesource.com/pub_16.x/nodistro/repo/nodesource-release-nodistro-1.noarch.rpm -y
+RUN yum install nodejs -y --setopt=nodesource-nodejs.module_hotfixes=1
 RUN npm install -g yarn
 
 # fix elixir encoding warning
 # https://stackoverflow.com/questions/32407164/the-vm-is-running-with-native-name-encoding-of-latin1-which-may-cause-elixir-to
-ENV LANG=C.UTF-8
+ENV LANG="en_US.utf8"
+ENV LANGUAGE="en_US:"
+ENV LC_ALL=en_US.UTF-8
 
 COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
