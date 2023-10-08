@@ -154,7 +154,7 @@ defmodule OliWeb.Delivery.StudentDashboard.StudentDashboardLive do
       id="learning_objectives_tab"
       module={OliWeb.Delivery.StudentDashboard.Components.LearningObjectivesTab}
       params={@params}
-      section_slug={@section.slug}
+      section={@section}
       objectives_tab={@objectives_tab}
       student_id={@student.id}
       />

@@ -104,6 +104,8 @@ defmodule OliWeb.Delivery.InstructorDashboard.LearningObjectivesTabTest do
       obj_revision_2: obj_revision_2
     } do
       Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
+      Sections.update_section(section, %{v25_migration: :not_started})
+
       {:ok, view, _html} = live(conn, live_view_learning_objectives_route(section.slug))
 
       assert has_element?(view, "#objectives-table")
@@ -129,6 +131,8 @@ defmodule OliWeb.Delivery.InstructorDashboard.LearningObjectivesTabTest do
       obj_revision_2: obj_revision_2
     } do
       Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
+      Sections.update_section(section, %{v25_migration: :not_started})
+
       {:ok, view, _html} = live(conn, live_view_learning_objectives_route(section.slug))
 
       assert view
@@ -163,6 +167,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.LearningObjectivesTabTest do
       obj_revision_2: obj_revision_2
     } do
       Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
+      Sections.update_section(section, %{v25_migration: :not_started})
       {:ok, view, _html} = live(conn, live_view_learning_objectives_route(section.slug))
 
       assert has_element?(view, "span", "#{obj_revision_1.title}")
@@ -188,6 +193,113 @@ defmodule OliWeb.Delivery.InstructorDashboard.LearningObjectivesTabTest do
       refute has_element?(view, "span", "#{obj_revision_1.title}")
       assert has_element?(view, "span", "#{obj_revision_2.title}")
     end
+  end
 
+  describe "objectives filtering" do
+    setup [:instructor_conn, :create_full_project_with_objectives]
+    ## Course Hierarchy
+    #
+    # Root Container --> Page 1 --> Activity X
+    #                |--> Unit Container --> Module Container 1 --> Page 2 --> Activity Y
+    #                |                                                     |--> Activity Z
+    #                |--> Module Container 2 --> Page 3 --> Activity W
+    #
+    ## Objectives Hierarchy
+    #
+    # Page 1 --> Objective A
+    # Page 2 --> Objective B
+    #
+    # Note: the objectives above are not considered since they are attached to the pages
+    #
+    # Activity Y --> Objective C
+    #           |--> SubObjective C1
+    # Activity Z --> Objective D
+    # Activity W --> Objective E
+    #           |--> Objective F
+    #
+    # Note: Activity X does not have objectives
+    test "applies filtering by module when contained objectives were created", %{
+      conn: conn,
+      instructor: instructor,
+      section: section,
+      revisions: revisions
+    } do
+      # Setup section data
+      Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
+      Sections.rebuild_contained_objectives(section)
+
+      {:ok, view, _html} = live(conn, live_view_learning_objectives_route(section.slug))
+
+      assert has_element?(view, "#objectives-table")
+
+      refute has_element?(view, "span", "#{revisions.obj_revision_a.title}")
+      refute has_element?(view, "span", "#{revisions.obj_revision_b.title}")
+      assert has_element?(view, "span", "#{revisions.obj_revision_c.title}")
+      assert has_element?(view, "div", "#{revisions.obj_revision_c1.title}")
+      assert has_element?(view, "span", "#{revisions.obj_revision_d.title}")
+      assert has_element?(view, "span", "#{revisions.obj_revision_e.title}")
+      assert has_element?(view, "span", "#{revisions.obj_revision_f.title}")
+
+      ## searching by Unit Container
+      params = %{
+        filter_by: revisions.unit_revision.resource_id
+      }
+
+      {:ok, view, _html} = live(conn, live_view_learning_objectives_route(section.slug, params))
+
+      assert has_element?(view, "#objectives-table")
+      assert has_element?(view, "span", "#{revisions.obj_revision_c.title}")
+      assert has_element?(view, "div", "#{revisions.obj_revision_c1.title}")
+      assert has_element?(view, "span", "#{revisions.obj_revision_d.title}")
+      refute has_element?(view, "span", "#{revisions.obj_revision_e.title}")
+      refute has_element?(view, "span", "#{revisions.obj_revision_f.title}")
+
+      ## searching by Module Container 2
+      params = %{
+        filter_by: revisions.module_revision_2.resource_id
+      }
+
+      {:ok, view, _html} = live(conn, live_view_learning_objectives_route(section.slug, params))
+
+      assert has_element?(view, "#objectives-table")
+      refute has_element?(view, "span", "#{revisions.obj_revision_c.title}")
+      refute has_element?(view, "div", "#{revisions.obj_revision_c1.title}")
+      refute has_element?(view, "span", "#{revisions.obj_revision_d.title}")
+      assert has_element?(view, "span", "#{revisions.obj_revision_e.title}")
+      assert has_element?(view, "span", "#{revisions.obj_revision_f.title}")
+
+      # Does not have info tooltip
+      refute has_element?(view, "#filter-disabled-tooltip")
+      # Select is enabled
+      refute has_element?(view, ".torus-select[disabled]")
+    end
+
+    test "does not allow filtering by module when section has the wrong migration status", %{
+      conn: conn,
+      instructor: instructor,
+      section: section,
+      revisions: revisions
+    } do
+      # Setup section data
+      Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
+      Sections.rebuild_contained_objectives(section)
+      Sections.update_section(section, %{v25_migration: :not_started})
+
+      {:ok, view, _html} = live(conn, live_view_learning_objectives_route(section.slug))
+
+      assert has_element?(view, "#objectives-table")
+      assert has_element?(view, "span", "#{revisions.obj_revision_a.title}")
+      assert has_element?(view, "span", "#{revisions.obj_revision_b.title}")
+      assert has_element?(view, "span", "#{revisions.obj_revision_c.title}")
+      assert has_element?(view, "div", "#{revisions.obj_revision_c1.title}")
+      assert has_element?(view, "span", "#{revisions.obj_revision_d.title}")
+      assert has_element?(view, "span", "#{revisions.obj_revision_e.title}")
+      assert has_element?(view, "span", "#{revisions.obj_revision_f.title}")
+
+      # Has info tooltip
+      assert has_element?(view, "#filter-disabled-tooltip")
+      # Select is disabled
+      assert has_element?(view, ".torus-select[disabled]")
+    end
   end
 end
