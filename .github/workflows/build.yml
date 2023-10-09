@@ -212,7 +212,7 @@ jobs:
           # list of Docker images to use as base name for tags
           images: |
             olisimon/oli-torus
-            ghcr.io/SimonInitiative/oli-torus
+            ghcr.io/Simon-Initiative/oli-torus
           # generate Docker tags based on the following events/attributes
           tags: |
             type=ref,event=pr
@@ -228,8 +228,8 @@ jobs:
         uses: docker/login-action@v1
         with:
           registry: ghcr.io
-          username: ${{github.actor}}
-          password: ${{secrets.GITHUB_TOKEN}}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: 🐳 Docker Build and Push
         uses: docker/build-push-action@v2
