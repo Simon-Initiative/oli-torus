@@ -12,7 +12,7 @@ get_env_as_boolean = fn key, default ->
   end
 end
 
-if Mix.env() == :prod do
+if config_env() == :prod do
   database_url =
     System.get_env("DATABASE_URL") ||
       raise """
