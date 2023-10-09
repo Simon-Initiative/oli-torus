@@ -6,7 +6,8 @@ inputs:
     required: true
 runs:
   using: "docker"
-  ## Use the prebuilt, cached torus-builder image from an earlier step
-  image: torus-builder:latest
+  # image: "Dockerfile"
+  ## Use the prebuilt builder image on docker hub until github improves caching across builds
+  image: olisimon/torus-builder:latest
   args:
     - ${{ inputs.build-sha }}
