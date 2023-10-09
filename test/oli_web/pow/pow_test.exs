@@ -169,6 +169,32 @@ defmodule OliWeb.Common.PowTest do
       refute Accounts.get_user_by(%{email: @user_email})
     end
 
+    test "returns error when email confirmation does not match email", %{conn: conn} do
+      expect_recaptcha_http_post()
+
+      attr =
+        @user_form_attrs
+        |> Map.put(:email_confirmation, "email_with_typo@test.com")
+        |> Map.put(:age_verified, true)
+
+      conn =
+        post(
+          conn,
+          Routes.pow_registration_path(conn, :create),
+          %{
+            user: attr,
+            "g-recaptcha-response": "any"
+          }
+        )
+
+      assert html_response(conn, 200) =~ "Create a Learner/Educator Account"
+
+      assert html_response(conn, 200) =~
+               "Email confirmation does not match Email"
+
+      refute Accounts.get_user_by(%{email: @user_email})
+    end
+
     test "creates the user when age verification is checked", %{conn: conn} do
       expect_recaptcha_http_post()
 
@@ -186,6 +212,29 @@ defmodule OliWeb.Common.PowTest do
         )
 
       assert html_response(conn, 302) =~ "You are being <a href=\"/session/new\">redirected"
+
+      assert %User{email: @user_email, email_confirmed_at: nil} =
+               Accounts.get_user_by(%{email: @user_email})
+    end
+
+    test "an email confirmation flash message is set when account is created", %{conn: conn} do
+      expect_recaptcha_http_post()
+
+      conn =
+        post(
+          conn,
+          Routes.pow_registration_path(conn, :create),
+          %{
+            user:
+              Map.merge(@user_form_attrs, %{
+                age_verified: "true"
+              }),
+            "g-recaptcha-response": "any"
+          }
+        )
+
+      assert conn.assigns.flash["info"] ==
+               "To continue, check #{@user_email} for a confirmation email.\n\nIf you don’t receive this email, check your Spam folder or verify that testing@example.edu is correct.\n\nYou can close this tab if you received the email.\n"
 
       assert %User{email: @user_email, email_confirmed_at: nil} =
                Accounts.get_user_by(%{email: @user_email})
