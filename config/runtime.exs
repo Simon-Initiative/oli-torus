@@ -12,7 +12,7 @@ get_env_as_boolean = fn key, default ->
   end
 end
 
-if config_env() == :prod do
+if Mix.env() == :prod do
   database_url =
     System.get_env("DATABASE_URL") ||
       raise """
@@ -72,7 +72,7 @@ if config_env() == :prod do
       """
 
   if System.get_env("PAYMENT_PROVIDER") == "stripe" &&
-      (!System.get_env("STRIPE_PUBLIC_SECRET") || !System.get_env("STRIPE_PRIVATE_SECRET")) do
+       (!System.get_env("STRIPE_PUBLIC_SECRET") || !System.get_env("STRIPE_PRIVATE_SECRET")) do
     raise """
     Stripe payment provider not configured correctly. Both STRIPE_PUBLIC_SECRET
     and STRIPE_PRIVATE_SECRET values must be set.
@@ -80,7 +80,7 @@ if config_env() == :prod do
   end
 
   if System.get_env("PAYMENT_PROVIDER") == "cashnet" &&
-      (!System.get_env("CASHNET_STORE") || !System.get_env("CASHNET_CHECKOUT_URL") ||
+       (!System.get_env("CASHNET_STORE") || !System.get_env("CASHNET_CHECKOUT_URL") ||
           !System.get_env("CASHNET_CLIENT") || !System.get_env("CASHNET_GL_NUMBER")) do
     raise """
     Cashnet payment provider not configured correctly. CASHNET_STORE, CASHNET_CHECKOUT_URL,
@@ -304,5 +304,4 @@ if config_env() == :prod do
     ]
 
   config :appsignal, :client_key, System.get_env("APPSIGNAL_PUSH_API_KEY", nil)
-
 end
