@@ -11,7 +11,8 @@ defmodule OliWeb.Delivery.StudentDashboard.CourseContentLive do
         %{
           "section_slug" => section_slug,
           "current_user_id" => current_user_id,
-          "preview_mode" => preview_mode
+          "preview_mode" => preview_mode,
+          "scheduled_dates" => scheduled_dates
         } = session,
         socket
       ) do
@@ -36,8 +37,7 @@ defmodule OliWeb.Delivery.StudentDashboard.CourseContentLive do
        current_level_nodes: hierarchy["children"],
        current_position: current_position,
        current_level: current_level,
-       scheduled_dates:
-         Sections.get_resources_scheduled_dates_for_student(section.slug, current_user_id),
+       scheduled_dates: scheduled_dates,
        section: section,
        breadcrumbs_tree: [{current_level, current_position, "Curriculum"}],
        current_user_id: current_user_id,
