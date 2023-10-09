@@ -13,6 +13,7 @@ defmodule OliWeb.Common.PowTest do
 
   @user_form_attrs %{
     email: @user_email,
+    email_confirmation: @user_email,
     given_name: "me",
     family_name: "too",
     password: "passingby",
