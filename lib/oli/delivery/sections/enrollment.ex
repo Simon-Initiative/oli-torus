@@ -5,6 +5,7 @@ defmodule Oli.Delivery.Sections.Enrollment do
   schema "enrollments" do
     belongs_to :user, Oli.Accounts.User
     belongs_to :section, Oli.Delivery.Sections.Section
+    belongs_to :most_recently_visited_resource, Oli.Resources.Resource
 
     field :state, :map, default: %{}
     field :status, Ecto.Enum, values: [:enrolled, :suspended], default: :enrolled
