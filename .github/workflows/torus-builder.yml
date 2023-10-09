@@ -2,10 +2,6 @@ name: Build torus-builder Docker Image
 
 on:
   workflow_dispatch:
-    inputs:
-      name:
-        required: true
-        description: "Tag for the Docker image"
 
 jobs:
   elixir-build-test:
@@ -29,6 +25,6 @@ jobs:
         with:
           context: ./.github/actions/torus-builder
           push: true
-          tags: torus-builder:latest,torus-builder:${{ github.event.inputs.name }}
+          tags: torus-builder:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
