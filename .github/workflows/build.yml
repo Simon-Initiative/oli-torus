@@ -183,6 +183,9 @@ jobs:
   container:
     name: Container build and push
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
 
     outputs:
       app_version: ${{ steps.info.outputs.app_version }}
