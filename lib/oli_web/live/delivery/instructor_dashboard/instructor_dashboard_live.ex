@@ -74,7 +74,12 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
       ) do
     socket =
       socket
-      |> assign(params: params, view: :reports, active_tab: :learning_objectives)
+      |> assign(
+        params: params,
+        view: :reports,
+        active_tab: :learning_objectives,
+        section: socket.assigns.section
+      )
       |> assign_new(:objectives_tab, fn ->
         %{
           objectives: Sections.get_objectives_and_subobjectives(socket.assigns.section),
@@ -486,9 +491,9 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
       id="objectives_table"
       module={OliWeb.Components.Delivery.LearningObjectives}
       params={@params}
-      section_slug={@section.slug}
       view={@view}
       objectives_tab={@objectives_tab}
+      section={@section}
       patch_url_type={:instructor_dashboard}
     />
     """
