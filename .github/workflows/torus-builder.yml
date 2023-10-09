@@ -4,12 +4,11 @@ on:
   workflow_dispatch:
 
 jobs:
-  elixir-build-test:
-    name: Elixir build and test
+  build:
+    name: Build torus-builder Docker Image
     runs-on: ubuntu-latest
 
     env:
-      MIX_ENV: test
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     steps:
