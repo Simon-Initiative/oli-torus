@@ -200,10 +200,7 @@ const PageItem = ({
         {label + ' ' + index + ': ' + title}
       </div>
     ) : (
-      <div
-        className="flex border-dashed border-b-2 border-gray-100"
-        style={{ marginLeft: level * 20 }}
-      >
+      <div className="flex border-dashed border-b-2 border-gray-100" style={{ marginLeft: level * 20 }}>
         <div className="grow">{title}</div>
         <div className="grow-0 mr-4">{index}</div>
       </div>
