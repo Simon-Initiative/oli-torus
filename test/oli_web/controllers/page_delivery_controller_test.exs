@@ -1347,6 +1347,55 @@ defmodule OliWeb.PageDeliveryControllerTest do
 
       assert html_response(conn, 404) =~ "The section you are trying to view does not exist"
     end
+
+    test "shows 'Where you left off' card when student has visited a page before", %{
+      conn: conn,
+      user: user,
+      section: section,
+      map: map
+    } do
+      %{page: page} = map
+
+      enroll_as_student(%{section: section, user: user})
+
+      visit_page(page.revision, section, user)
+
+      conn =
+        conn
+        |> get(Routes.page_delivery_path(conn, :index, section.slug))
+
+      # card gets rendered
+      assert html_response(conn, 200) =~ "Continue where you left off"
+
+      # with latest visited page title
+      [{"h4", [{"class", _}], [title]}] =
+        html_response(conn, 200)
+        |> Floki.parse_document!()
+        |> Floki.find("#latest_visited_page_card h4")
+
+      assert title =~ page.revision.title
+
+      # with a link to that page
+      assert html_response(conn, 200)
+             |> Floki.parse_document!()
+             |> Floki.find("#latest_visited_page_card a")
+             |> Floki.attribute("href")
+             |> hd() == "/sections/#{section.slug}/page/#{page.revision.slug}"
+    end
+
+    test "does not show 'Where you left off' card when student has not visited a page before", %{
+      conn: conn,
+      user: user,
+      section: section
+    } do
+      enroll_as_student(%{section: section, user: user})
+
+      conn =
+        conn
+        |> get(Routes.page_delivery_path(conn, :index, section.slug))
+
+      refute html_response(conn, 200) =~ "Continue where you left off"
+    end
   end
 
   describe "independent learner page_delivery_controller" do

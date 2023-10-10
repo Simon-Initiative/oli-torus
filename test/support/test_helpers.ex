@@ -3171,7 +3171,7 @@ defmodule Oli.TestHelpers do
       datashop_session_id
     )
 
-    {:ok, {:in_progress, _ra}} =
+    {:ok, {_status, _ra}} =
       PageLifecycle.visit(
         page_revision,
         section.slug,

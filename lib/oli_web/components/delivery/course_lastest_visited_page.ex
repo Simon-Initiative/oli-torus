@@ -13,7 +13,7 @@ defmodule OliWeb.Components.Delivery.CourseLatestVisitedPage do
 
   def latest_visited_page(assigns) do
     ~H"""
-    <div class="bg-white dark:bg-gray-800 shadow">
+    <div id="latest_visited_page_card" class="bg-white dark:bg-gray-800 shadow">
       <div class="p-4">
         Continue where you left off
       </div>
