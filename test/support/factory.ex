@@ -320,7 +320,10 @@ defmodule Oli.Factory do
       title: "Example revision",
       slug: sequence("example_revision"),
       resource: anonymous_build(:resource),
-      collab_space_config: build(:collab_space_config)
+      collab_space_config: build(:collab_space_config),
+      content: %{
+        "model" => []
+      }
     }
   end
 

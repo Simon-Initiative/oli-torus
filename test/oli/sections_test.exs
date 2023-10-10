@@ -1611,4 +1611,64 @@ defmodule Oli.SectionsTest do
       assert Enum.at(next_activities, 0).title == "Upcoming assessment"
     end
   end
+
+  describe "get_latest_visited_page/2" do
+    test "returns the latest page revision visited by a user in a section" do
+      page_1_revision =
+        insert(:revision,
+          resource_type_id: Oli.Resources.ResourceType.get_id_by_type("page"),
+          title: "Learning Elixir"
+        )
+
+      page_2_revision =
+        insert(:revision,
+          resource_type_id: Oli.Resources.ResourceType.get_id_by_type("page"),
+          title: "Enum.map"
+        )
+
+      {:ok, section: section, project: _project, author: _author} =
+        section_with_pages(%{
+          revisions: [page_1_revision, page_2_revision]
+        })
+
+      student = insert(:user)
+
+      enroll_user_to_section(student, section, :context_learner)
+
+      # visit page 1
+      visit_page(page_1_revision, section, student)
+      revision = Sections.get_latest_visited_page(section.slug, student.id)
+      assert revision.title == "Learning Elixir"
+
+      # visit page 2
+      visit_page(page_2_revision, section, student)
+      revision = Sections.get_latest_visited_page(section.slug, student.id)
+      assert revision.title == "Enum.map"
+    end
+
+    test "returns nil if the user has not visited any page in the section" do
+      page_1_revision =
+        insert(:revision,
+          resource_type_id: Oli.Resources.ResourceType.get_id_by_type("page"),
+          title: "Learning Elixir"
+        )
+
+      page_2_revision =
+        insert(:revision,
+          resource_type_id: Oli.Resources.ResourceType.get_id_by_type("page"),
+          title: "Enum.map"
+        )
+
+      {:ok, section: section, project: _project, author: _author} =
+        section_with_pages(%{
+          revisions: [page_1_revision, page_2_revision]
+        })
+
+      student = insert(:user)
+
+      enroll_user_to_section(student, section, :context_learner)
+
+      refute Sections.get_latest_visited_page(section.slug, student.id)
+    end
+  end
 end
