@@ -58,6 +58,8 @@ type FlattenedItem = {
   level: number;
   containerSlug: string | undefined;
   isActive: boolean;
+  label: string;
+  index: string;
 };
 
 const flatten = (
@@ -83,6 +85,8 @@ const flatten = (
           type: item.type,
           title: item.title,
           slug: item.slug,
+          label: item.label,
+          index: item.index,
           level,
           containerSlug: item.slug,
           isActive: isCurrentUrl(sectionSlug, projectSlug, item.type, item.slug, isPreview),
@@ -101,6 +105,8 @@ const flatten = (
           type: item.type,
           title: item.title,
           slug: item.slug,
+          label: item.label,
+          index: item.index,
           level,
           containerSlug,
           isActive: isCurrentUrl(sectionSlug, projectSlug, item.type, item.slug, isPreview),
@@ -118,6 +124,8 @@ interface Container {
   title: string;
   id: string;
   slug: string;
+  label: string;
+  index: string;
 }
 
 interface Page {
@@ -125,6 +133,8 @@ interface Page {
   title: string;
   id: string;
   slug: string;
+  label: string;
+  index: string;
 }
 
 type HierarchyItem = Container | Page;
@@ -162,6 +172,8 @@ interface PageItemProps extends FlattenedItem {
 const PageItem = ({
   type,
   title,
+  label,
+  index,
   slug,
   level,
   sectionSlug,
@@ -183,6 +195,10 @@ const PageItem = ({
         : 'border-transparent',
     )}
   >
-    <div style={{ marginLeft: level * 20 }}>{title}</div>
+    {type === 'container' ? (
+      <div className="font-bold" style={{ marginLeft: level * 20 }}>{label + ' ' + index + ': ' + title}</div>
+    ) : (
+      <div className="flex border-dashed border-b-2 border-gray-100" style={{ marginLeft: level * 20 }}><div className="grow">{title}</div><div className="grow-0 mr-4">{index}</div></div>
+    )}
   </a>
 );

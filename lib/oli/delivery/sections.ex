@@ -2689,6 +2689,16 @@ defmodule Oli.Delivery.Sections do
     {:ok, _, previous_next_index} =
       PreviousNextIndex.retrieve(section, section.root_section_resource.resource_id)
 
+      previous_next_index = previous_next_index
+        |>Enum.map(fn {k, v} ->
+          label = if Map.get(v, "type") === "container" do
+            get_container_label(String.to_integer(Map.get(v, "level")), section.customizations || Map.from_struct(CustomLabels.default()))
+          else
+            ""
+          end
+          {k, Map.put(v, "label", label)}
+        end)
+        |> Map.new()
     # Retrieve the top level resource ids, and convert them to strings
     resource_ids =
       Oli.Delivery.Sections.map_section_resource_children_to_resource_ids(
