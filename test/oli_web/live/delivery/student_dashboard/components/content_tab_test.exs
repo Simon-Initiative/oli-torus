@@ -150,7 +150,7 @@ defmodule OliWeb.Delivery.StudentDashboard.Components.ContentTabTest do
       refute render(view) =~ "Module 1"
       refute render(view) =~ "Module 2"
 
-      assert element(view, "#header_paging div:first-child") |> render() =~
+      assert element(view, "#header_paging > div:first-child") |> render() =~
                "Showing result 3 - 3 of 3 total"
 
       [top_selected_page, bottom_selected_page] =

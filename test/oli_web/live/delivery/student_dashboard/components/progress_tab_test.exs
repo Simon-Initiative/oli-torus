@@ -447,4 +447,92 @@ defmodule OliWeb.Delivery.StudentDashboard.Components.ProgressTabTest do
              )
     end
   end
+
+  describe "page size change" do
+    setup [
+      :instructor_conn,
+      :create_full_project_with_objectives,
+      :enrolled_student_and_instructor
+    ]
+
+    test "lists table elements according to the default page size", %{
+      conn: conn,
+      student: student,
+      section: section,
+      revisions: revisions
+    } do
+      {:ok, view, _html} =
+        live(conn, live_view_students_progress_route(section.slug, student.id, :progress))
+
+      assert has_element?(view, "a", revisions.page_revision_1.title)
+      assert has_element?(view, "a", revisions.page_revision_2.title)
+      assert has_element?(view, "a", revisions.page_revision_3.title)
+
+      # It does not display pagination options
+      refute has_element?(view, "nav[aria-label=\"Paging\"]")
+
+      # It displays page size dropdown
+      assert has_element?(view, "form select.torus-select option[selected]", "20")
+    end
+
+    test "updates page size and list expected elements", %{
+      conn: conn,
+      section: section,
+      student: student,
+      revisions: revisions
+    } do
+      {:ok, view, _html} =
+        live(conn, live_view_students_progress_route(section.slug, student.id, :progress))
+
+      assert has_element?(view, "a", revisions.page_revision_1.title)
+      assert has_element?(view, "a", revisions.page_revision_2.title)
+      assert has_element?(view, "a", revisions.page_revision_3.title)
+
+      # Change page size from default (20) to 2
+      view
+      |> element("#header_paging_page_size_form")
+      |> render_change(%{limit: "2"})
+
+      # Page 1
+      assert has_element?(view, "a", revisions.page_revision_1.title)
+      assert has_element?(view, "a", revisions.page_revision_2.title)
+      # Page 2
+      refute has_element?(view, "a", revisions.page_revision_3.title)
+    end
+
+    test "keeps showing the same elements when changing the page size", %{
+      conn: conn,
+      section: section,
+      student: student,
+      revisions: revisions
+    } do
+      # Starts in page 2
+      {:ok, view, _html} =
+        live(
+          conn,
+          live_view_students_progress_route(section.slug, student.id, :progress, %{
+            limit: 2,
+            offset: 2
+          })
+        )
+
+      # Page 1
+      refute has_element?(view, "a", revisions.page_revision_1.title)
+      refute has_element?(view, "a", revisions.page_revision_2.title)
+      # Page 2
+      assert has_element?(view, "a", revisions.page_revision_3.title)
+
+      # Change page size from 2 to 1
+      view
+      |> element("#header_paging_page_size_form")
+      |> render_change(%{limit: "1"})
+
+      # Page 1
+      refute has_element?(view, "a", revisions.page_revision_1.title)
+      # Page 2
+      refute has_element?(view, "a", revisions.page_revision_2.title)
+      # Page 3. It keeps showing the same element.
+      assert has_element?(view, "a", revisions.page_revision_3.title)
+    end
+  end
 end
