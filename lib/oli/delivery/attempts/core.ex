@@ -636,6 +636,29 @@ defmodule Oli.Delivery.Attempts.Core do
   end
 
   @doc """
+  Retrieves all resource attempts for a given resource id, section slug and user id.
+  """
+  def get_all_resource_attempts(resource_id, section_slug, user_id) do
+    Repo.all(
+      ResourceAttempt
+      |> join(:left, [ra1], a in ResourceAccess, on: a.id == ra1.resource_access_id)
+      |> join(:left, [_, a], s in Section, on: a.section_id == s.id)
+      |> join(:left, [ra1, a, _], ra2 in ResourceAttempt,
+        on:
+          a.id == ra2.resource_access_id and ra1.id < ra2.id and
+            ra1.resource_access_id == ra2.resource_access_id
+      )
+      |> join(:left, [ra1, _, _, _], r in Revision, on: ra1.revision_id == r.id)
+      |> where(
+        [ra1, a, s, ra2, _],
+        a.user_id == ^user_id and s.slug == ^section_slug and s.status == :active and
+          a.resource_id == ^resource_id
+      )
+      |> preload(:revision)
+    )
+  end
+
+  @doc """
   Retrieves the resource access record and all (if any) attempts related to it
   in a two element tuple of the form:
 
