@@ -290,4 +290,18 @@ defmodule OliWeb.Components.Delivery.Utils do
       </div>
     """
   end
+
+  def get_resource_scheduled_date(resource_id, scheduled_dates, ctx) do
+    case scheduled_dates[resource_id] do
+      %{end_date: nil} ->
+        "No due date"
+
+      data ->
+        "#{scheduled_date_type(data.scheduled_type)} #{OliWeb.Common.FormatDateTime.date(data.end_date, ctx)}"
+    end
+  end
+
+  defp scheduled_date_type(:read_by), do: "Read by"
+  defp scheduled_date_type(:inclass_activity), do: "In class on"
+  defp scheduled_date_type(_), do: "Due by"
 end

@@ -85,7 +85,11 @@ defmodule OliWeb.PageDeliveryController do
               progress: learner_progress(section.id, user.id),
               next_activities: next_activities,
               independent_learner: user.independent_learner,
-              current_user_id: user.id
+              current_user_id: user.id,
+              latest_visited_page: Sections.get_latest_visited_page(section_slug, user.id),
+              scheduled_dates:
+                Sections.get_resources_scheduled_dates_for_student(section_slug, user.id),
+              context: context
             )
           end
       end
@@ -792,7 +796,11 @@ defmodule OliWeb.PageDeliveryController do
       revision_slug: revision.slug,
       is_instructor: false,
       is_student: false,
-      current_user_id: current_user.id
+      current_user_id: current_user.id,
+      latest_visited_page: Sections.get_latest_visited_page(section_slug, current_user.id),
+      scheduled_dates:
+        Sections.get_resources_scheduled_dates_for_student(section_slug, current_user.id),
+      context: conn.assigns[:ctx]
     )
   end
 
