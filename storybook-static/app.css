@@ -4863,6 +4863,14 @@ table.table-striped tbody tr:nth-child(even) {
   flex-grow: 0;
 }
 
+.grow {
+  flex-grow: 1;
+}
+
+.grow-0 {
+  flex-grow: 0;
+}
+
 .basis-1 {
   flex-basis: 0.25rem;
 }
