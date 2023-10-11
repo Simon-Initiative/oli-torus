@@ -5,20 +5,21 @@ defmodule OliWeb.PageDeliveryControllerTest do
   import Oli.Factory
   import Oli.Utils.Seeder.Utils
 
-  alias Oli.Delivery.Sections
+  alias Oli.Repo
   alias Oli.Seeder
+  alias Oli.Accounts
+  alias Oli.Delivery.{Sections, Settings}
+  alias Oli.Delivery.Attempts.{Core, PageLifecycle}
   alias Oli.Delivery.Attempts.Core.{ResourceAttempt, PartAttempt, ResourceAccess}
   alias Oli.Resources.Collaboration
   alias OliWeb.Common.{FormatDateTime, Utils}
   alias OliWeb.Router.Helpers, as: Routes
-  alias Oli.Repo
-  alias Oli.Accounts
 
   describe "page_delivery_controller build_hierarchy" do
-    setup [:setup_lti_session]
+    setup [:setup_tags, :setup_lti_session]
 
     test "properly converts a deeply nested  student access by an enrolled student", %{} do
-      # Defines a hierachry of:
+      # Defines a hierarchy of:
 
       # Page one
       # Page two
@@ -169,7 +170,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
   end
 
   describe "page_delivery_controller index" do
-    setup [:setup_lti_session]
+    setup [:setup_tags, :setup_lti_session]
 
     test "handles student access by an enrolled student", %{
       conn: conn,
@@ -341,6 +342,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
       assert html_response(conn, 200) =~ "Course Content"
     end
 
+    @tag isolation: "serializable"
     test "shows the prologue page on an assessment", %{
       user: user,
       conn: conn,
@@ -449,6 +451,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
       assert html_response(conn, 200) =~ "(Review)"
     end
 
+    @tag isolation: "serializable"
     test "grade update worker is not created if section has not grade passback enabled", %{
       user: user,
       conn: conn,
@@ -504,6 +507,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
       assert Oli.Delivery.Attempts.PageLifecycle.GradeUpdateWorker.get_jobs() == []
     end
 
+    @tag isolation: "serializable"
     test "grade update worker is created if section has grade passback enabled", %{
       user: user,
       conn: conn,
@@ -560,6 +564,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
       assert Oli.Delivery.Attempts.PageLifecycle.GradeUpdateWorker.get_jobs() |> length() == 1
     end
 
+    @tag isolation: "serializable"
     test "requires correct password to start an attempt", %{
       user: user,
       conn: conn,
@@ -676,6 +681,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
                "This assessment is not yet available. It will be available on #{FormatDateTime.date(tomorrow, conn: conn, precision: :minutes)}."
     end
 
+    @tag isolation: "serializable"
     test "shows 'Start Attempt' button when start date has passed", %{
       user: user,
       conn: conn,
@@ -740,6 +746,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
       refute html_response =~ "Start Attempt"
     end
 
+    @tag isolation: "serializable"
     test "changing a page from graded to ungraded allows the graded attempt to continue", %{
       map: map,
       project: project,
@@ -852,6 +859,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
       refute html_response(conn, 200) =~ "Submit Answers"
     end
 
+    @tag isolation: "serializable"
     test "changing a page from ungraded to graded shows the prologue even with an ungraded attempt present",
          %{
            map: map,
@@ -954,6 +962,71 @@ defmodule OliWeb.PageDeliveryControllerTest do
       assert html_response(conn, 200) =~ "Submit Answers"
     end
 
+    @tag isolation: "serializable"
+    test "multiple requests to start attempt only results in single active attempt record", %{
+      user: user,
+      conn: conn,
+      section: section,
+      page_revision: page_revision
+    } do
+      enroll_as_student(%{section: section, user: user})
+
+      # visit the page verifying that we are presented with the prologue page
+      conn = get(conn, Routes.page_delivery_path(conn, :page, section.slug, page_revision.slug))
+      assert html_response(conn, 200) =~ "When you are ready to begin, you may"
+
+      effective_settings = Settings.get_combined_settings(page_revision, section.id, user.id)
+
+      datashop_session_id = Plug.Conn.get_session(conn, :datashop_session_id)
+      activity_provider = &Oli.Delivery.ActivityProvider.provide/6
+
+      # simulate multiple requests to start an attempt, such as browser back/forward
+      [
+        Task.async(fn ->
+          PageLifecycle.start(
+            page_revision.slug,
+            section.slug,
+            datashop_session_id,
+            user,
+            effective_settings,
+            activity_provider
+          )
+        end),
+        Task.async(fn ->
+          PageLifecycle.start(
+            page_revision.slug,
+            section.slug,
+            datashop_session_id,
+            user,
+            effective_settings,
+            activity_provider
+          )
+        end)
+      ]
+      |> Task.await_many()
+
+      conn =
+        recycle(conn)
+        |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
+
+      conn = get(conn, Routes.page_delivery_path(conn, :page, section.slug, page_revision.slug))
+
+      assert html_response(conn, 200) =~ "Submit Answers"
+
+      # verify there is only a single resource attempt record
+      assert {%ResourceAccess{
+                access_count: 2
+              },
+              [
+                %ResourceAttempt{
+                  attempt_number: 1,
+                  lifecycle_state: :active
+                }
+              ]} =
+               Core.get_resource_attempt_history(page_revision.resource_id, section.slug, user.id)
+    end
+
+    @tag isolation: "serializable"
     test "page with content breaks renders pagination controls", %{
       map: map,
       project: project,
@@ -1023,6 +1096,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
       assert html_response(conn, 200) =~ ~s|<div data-react-class="Components.PaginationControls"|
     end
 
+    @tag isolation: "serializable"
     test "page renders learning objectives in ungraded pages but not graded, except for review mode",
          %{
            user: user,
@@ -1256,6 +1330,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
                ~s{\"role\":\"instructor\",\"roleColor\":\"#2ecc71\",\"roleLabel\":\"Instructor\"}
     end
 
+    @tag isolation: "serializable"
     test "timer will not be shown if revision is ungraded", %{
       conn: conn,
       user: user,
@@ -1298,6 +1373,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
       refute html_response(conn, 200) =~ "<div id=\"countdown_timer_display\""
     end
 
+    @tag isolation: "serializable"
     test "timer will be shown it if revision is graded", %{
       conn: conn,
       user: user,
@@ -1350,7 +1426,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
   end
 
   describe "independent learner page_delivery_controller" do
-    setup [:setup_independent_learner_section]
+    setup [:setup_tags, :setup_independent_learner_section]
 
     test "handles new independent learner user access", %{conn: conn, section: section} do
       Oli.Test.MockHTTP
@@ -1561,7 +1637,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
   end
 
   describe "displaying unit numbers" do
-    setup [:base_project_with_curriculum]
+    setup [:setup_tags, :base_project_with_curriculum]
 
     test "does not display unit numbers if setting is set to false", %{
       conn: conn,
@@ -2540,7 +2616,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
   end
 
   describe "audience" do
-    setup [:setup_audience_section]
+    setup [:setup_tags, :setup_audience_section]
 
     test "student sees the appropriate content according to audience", map do
       %{
@@ -2591,6 +2667,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
       refute html_response(conn, 200) =~ "group content with never audience"
     end
 
+    @tag isolation: "serializable"
     test "student sees the appropriate content according to audience during review",
          %{student1: user} = map do
       %{graded_page_with_audience_groups: graded_page_with_audience_groups, section: section} =
@@ -2640,6 +2717,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
       refute html_response(conn, 200) =~ "group content with never audience"
     end
 
+    @tag isolation: "serializable"
     test "instructor sees the appropriate content according to audience during review", map do
       %{graded_page_with_audience_groups: graded_page_with_audience_groups, section: section} =
         map
