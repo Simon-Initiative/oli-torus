@@ -19,7 +19,9 @@ defmodule OliWeb.Delivery.StudentDashboard.CourseContentLiveTest do
       session: %{
         "section_slug" => section_slug,
         "current_user_id" => user_id,
-        "preview_mode" => preview_mode
+        "preview_mode" => preview_mode,
+        "scheduled_dates" =>
+          Sections.get_resources_scheduled_dates_for_student(section_slug, user_id)
       }
     )
   end
