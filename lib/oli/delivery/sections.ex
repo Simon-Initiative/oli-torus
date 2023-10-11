@@ -2924,6 +2924,19 @@ defmodule Oli.Delivery.Sections do
   end
 
   @doc """
+    Returns the latest page revision visited by a user in a section.
+  """
+  def get_latest_visited_page(section_slug, user_id) do
+    from([rev: rev, s: s] in DeliveryResolver.section_resource_revisions(section_slug),
+      join: e in Enrollment,
+      on: e.section_id == s.id and rev.resource_id == e.most_recently_visited_resource_id,
+      where: e.user_id == ^user_id and s.slug == ^section_slug,
+      select: rev
+    )
+    |> Repo.one()
+  end
+
+  @doc """
     Returns the activities that a student need to complete next.
   """
   def get_next_activities_for_student(section_slug, user_id, session_context) do
@@ -3323,7 +3336,9 @@ defmodule Oli.Delivery.Sections do
   defp do_get_survey(section_slug) do
     Section
     |> join(:inner, [s], spp in SectionsProjectsPublications, on: spp.section_id == s.id)
-    |> join(:inner, [_, spp], pr in PublishedResource, on: pr.publication_id == spp.publication_id)
+    |> join(:inner, [_, spp], pr in PublishedResource,
+      on: pr.publication_id == spp.publication_id
+    )
     |> join(:inner, [_, _, pr], rev in Revision, on: pr.revision_id == rev.id)
     |> join(:inner, [s], proj in Project, on: proj.id == s.base_project_id)
     |> where(
