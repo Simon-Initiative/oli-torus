@@ -45,51 +45,54 @@ defmodule OliWeb.Common.Paging do
       <nav :if={@show_pagination} aria-label="Paging">
         <ul class="pagination">
           <li class={"page-item #{if @params.current_page_index == 0, do: "disabled"}"}>
-            <a class="page-link" phx-click={@click} phx-value-offset={0} phx-value-limit={@limit}>
+            <button class="page-link" phx-click={@click} phx-value-offset={0} phx-value-limit={@limit} disabled={@params.current_page_index == 0}>
               <i class="fas fa-angle-double-left"></i>
-            </a>
+            </button>
           </li>
           <li class={"page-item #{if @params.current_page_index == 0, do: "disabled"}"}>
-            <a
+            <button
               class="page-link"
               phx-click={@click}
               phx-value-offset={@offset - @limit}
               phx-value-limit={@limit}
+              disabled={@params.current_page_index == 0}
             >
               <i class="fas fa-angle-left"></i>
-            </a>
+            </button>
           </li>
           <%= for i <- 0..(@params.rendered_pages_count- 1) do %>
             <li class={"page-item #{if @params.start_page_index + i == @params.current_page_index, do: "active"}"}>
-              <a
+              <button
                 class="page-link"
                 phx-click={@click}
                 phx-value-offset={(@params.start_page_index + i) * @limit}
                 phx-value-limit={@limit}
               >
                 <%= i + 1 + @params.start_page_index %>
-              </a>
+              </button>
             </li>
           <% end %>
           <li class={"page-item #{if @params.current_page_index == @params.last_page_index, do: "disabled"}"}>
-            <a
+            <button
               class="page-link"
               phx-click={@click}
               phx-value-offset={@offset + @limit}
               phx-value-limit={@limit}
+              disabled={@params.current_page_index == @params.last_page_index}
             >
               <i class="fas fa-angle-right"></i>
-            </a>
+            </button>
           </li>
           <li class={"page-item #{if @params.current_page_index == @params.last_page_index, do: "disabled"}"}>
-            <a
+            <button
               class="page-link"
               phx-click={@click}
               phx-value-offset={@params.last_page_index * @limit}
               phx-value-limit={@limit}
+              disabled={@params.current_page_index == @params.last_page_index}
             >
               <i class="fas fa-angle-double-right"></i>
-            </a>
+            </button>
           </li>
         </ul>
       </nav>

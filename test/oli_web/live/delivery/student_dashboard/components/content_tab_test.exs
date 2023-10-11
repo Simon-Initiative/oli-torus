@@ -157,7 +157,7 @@ defmodule OliWeb.Delivery.StudentDashboard.Components.ContentTabTest do
         view
         |> render()
         |> Floki.parse_fragment!()
-        |> Floki.find(~s{li.page-item.active a})
+        |> Floki.find(~s{li.page-item.active button})
         |> Enum.map(fn a_tag -> Floki.text(a_tag) end)
 
       assert top_selected_page == bottom_selected_page and bottom_selected_page =~ "2"
