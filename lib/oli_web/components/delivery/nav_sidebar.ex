@@ -190,7 +190,7 @@ defmodule OliWeb.Components.Delivery.NavSidebar do
       assigns[:section]
       |> Oli.Repo.preload([:root_section_resource])
       |> Sections.build_hierarchy()
-
+      
     [
       %{
         name: "Home",
