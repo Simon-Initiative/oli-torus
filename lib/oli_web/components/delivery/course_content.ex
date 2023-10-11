@@ -1,11 +1,10 @@
 defmodule OliWeb.Components.Delivery.CourseContent do
   use Phoenix.LiveComponent
 
-  import OliWeb.Common.FormatDateTime
-
   alias Oli.Delivery.Metrics
   alias OliWeb.Router.Helpers, as: Routes
   alias OliWeb.Components.Delivery.Buttons
+  alias OliWeb.Components.Delivery.Utils, as: DeliveryUtils
 
   attr(:breadcrumbs_tree, :map, required: true)
   attr(:current_position, :integer, required: true)
@@ -87,7 +86,7 @@ defmodule OliWeb.Components.Delivery.CourseContent do
             </h4>
 
             <%= if !assigns[:is_instructor] do %>
-              <span class="w-64 h-10 text-sm tracking-wide text-gray-800 dark:text-white bg-gray-100 dark:bg-gray-500 rounded-sm flex justify-center items-center ml-auto mr-3"><%= get_resource_scheduled_date(resource["id"], @scheduled_dates, @ctx) %></span>
+              <span class="w-64 h-10 text-sm tracking-wide text-gray-800 dark:text-white bg-gray-100 dark:bg-gray-500 rounded-sm flex justify-center items-center ml-auto mr-3"><%= DeliveryUtils.get_resource_scheduled_date(String.to_integer(resource["id"]), @scheduled_dates, @ctx) %></span>
               <button class="torus-button primary h-10" phx-target={@myself} phx-click="open_resource" phx-value-resource_slug={resource["slug"]} phx-value-resource_type={resource["type"]} phx-value-preview={"#{@preview_mode}"}>Open</button>
             <% else %>
               <Buttons.button_with_options
@@ -369,20 +368,6 @@ defmodule OliWeb.Components.Delivery.CourseContent do
         0.0
     end
   end
-
-  defp get_resource_scheduled_date(resource_id, scheduled_dates, ctx) do
-    case scheduled_dates[String.to_integer(resource_id)] do
-      %{end_date: nil} ->
-        "No due date"
-
-      data ->
-        "#{scheduled_date_type(data.scheduled_type)} #{date(data.end_date, ctx)}"
-    end
-  end
-
-  defp scheduled_date_type(:read_by), do: "Read by"
-  defp scheduled_date_type(:inclass_activity), do: "In class on"
-  defp scheduled_date_type(_), do: "Due by"
 
   defp get_resource_name(current_level_nodes, current_position, display_curriculum_item_numbering) do
     current_node = get_current_node(current_level_nodes, current_position)
