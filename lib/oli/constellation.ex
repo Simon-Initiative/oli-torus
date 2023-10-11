@@ -3,7 +3,7 @@ defmodule ECL.Constellation do
   Constellation SDK.
   """
 
-  import Elixir.HTTPoison.Retry
+  #import Elixir.HTTPoison.Retry
 
   @spec login(String.t, String.t) :: String.t
   def login(username, password) do
@@ -114,7 +114,7 @@ defmodule ECL.Constellation do
           body = Poison.encode!(data)
           HTTPoison.post(path, body, headers, [])
     end
-    |>  autoretry(max_attempts: 5, wait: 1000, include_404s: false, retry_unknown_errors: false)
+    #|>  autoretry(max_attempts: 5, wait: 1000, include_404s: false, retry_unknown_errors: false)
     |>  handle_constellation_response()
 
   end

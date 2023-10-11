@@ -196,6 +196,19 @@ config :lti_1p3,
   ],
   ags_line_item_prefix: "oli-torus-"
 
+
+config :openai,
+  # find it at https://platform.openai.com/account/api-keys
+  api_key: System.get_env("OPENAI_API_KEY"),
+  # find it at https://platform.openai.com/account/org-settings under "Organization ID"
+  organization_key: System.get_env("OPENAI_ORG_KEY"),
+  # optional, passed to [HTTPoison.Request](https://hexdocs.pm/httpoison/HTTPoison.Request.html) options
+  http_options: [recv_timeout: :infinity, stream_to: self(), async: :once]
+  # optional, useful if you want to do local integration tests using Bypass or similar
+  # (https://github.com/PSPDFKit-labs/bypass), do not use it for production code,
+  # but only in your test config!
+
+
 config :ex_aws,
   region: {:system, "AWS_REGION"}
 

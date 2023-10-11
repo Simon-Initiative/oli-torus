@@ -88,6 +88,7 @@ defmodule OliWeb.OpenAndFreeController do
           context_id: UUID.uuid4(),
           start_date: utc_start_date,
           end_date: utc_end_date,
+          page_prompt_template: Oli.Conversation.DefaultPrompts.get_prompt("page_prompt"),
           analytics_version: :v2
         })
 
@@ -169,6 +170,7 @@ defmodule OliWeb.OpenAndFreeController do
         |> Map.put("end_date", utc_end_date)
         |> Map.put("customizations", customizations)
         |> Map.put("has_experiments", has_experiments)
+        |> Map.put("page_prompt_template", Oli.Conversation.DefaultPrompts.get_prompt("page_prompt"))
         |> Map.put("analytics_version", :v2)
 
       case create_from_publication(conn, publication, section_params) do

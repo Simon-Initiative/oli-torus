@@ -288,6 +288,7 @@ defmodule OliWeb.Delivery.NewCourse do
             context_id: UUID.uuid4(),
             customizations: customizations,
             has_experiments: has_experiments,
+            page_prompt_template: Oli.Conversation.DefaultPrompts.get_prompt("page_prompt"),
             analytics_version: :v2
           })
 
@@ -329,6 +330,7 @@ defmodule OliWeb.Delivery.NewCourse do
             open_and_free: true,
             has_experiments: project.has_experiments,
             context_id: UUID.uuid4(),
+            page_prompt_template: Oli.Conversation.DefaultPrompts.get_prompt("page_prompt"),
             analytics_version: :v2
           })
 

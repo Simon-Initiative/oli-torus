@@ -107,6 +107,8 @@ window.userToken = "<%= assigns[:user_token] %>";
   </div>
 <% end %>
 
+<%= live_render(@conn, OliWeb.Dialogue.PlaygroundLive, session: %{"section_slug" => @section_slug, "revision_id" => @page.id}) %>) %>
+
 <%= if Oli.Utils.LoadTesting.enabled?() do %>
 <!--
 __FINALIZATION_URL__<%= encode_url(Routes.page_delivery_path(@conn, :finalize_attempt, @section_slug, @slug, @attempt_guid)) %>__FINALIZATION_URL__

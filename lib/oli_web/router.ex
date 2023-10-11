@@ -1382,6 +1382,8 @@ defmodule OliWeb.Router do
 
       get("/flame_graphs", DevController, :flame_graphs)
 
+      live("/dialogue", Dialogue.PlaygroundLive)
+
       live_storybook("/storybook", backend_module: OliWeb.Storybook)
     end
   end

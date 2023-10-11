@@ -21,6 +21,8 @@ defmodule Oli.Rendering.Activity.Plaintext do
       ) do
     activity_summary = activity_map[activity_id]
 
+    IO.inspect "ACTIVITY"
+
     case activity_summary do
       nil ->
         {error_id, error_msg} =
@@ -37,6 +39,8 @@ defmodule Oli.Rendering.Activity.Plaintext do
             :instructor_preview -> activity_summary.authoring_element
             _ -> activity_summary.delivery_element
           end
+
+        IO.inspect activity_summary
 
         if activity_summary.graded do
           [

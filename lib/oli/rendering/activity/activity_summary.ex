@@ -29,6 +29,10 @@ defmodule Oli.Rendering.Activity.ActivitySummary do
     :lifecycle_state,
     # already encoded json of the model of the activity
     :model,
+
+    # the raw, unencoded model
+    :unencoded_model,
+
     # the webcomponent elements
     :delivery_element,
     :authoring_element,

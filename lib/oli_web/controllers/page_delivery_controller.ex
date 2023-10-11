@@ -333,6 +333,12 @@ defmodule OliWeb.PageDeliveryController do
     Page.render(render_context, content, Page.Html)
   end
 
+  def render_content_text(render_context, content, _page_slug) do
+    # Render a basic page content.  This is the default for all pages that do not have
+    # displayApplicationChrome set to true
+    Page.render(render_context, content, Page.Plaintext) |> :erlang.iolist_to_binary()
+  end
+
   # Matches a not-started page that displays the "start attempt" button
   defp render_page(
          %PageContext{
@@ -571,6 +577,11 @@ defmodule OliWeb.PageDeliveryController do
       end
 
     html = render_content_html(render_context, attempt_content, context.page.slug)
+
+    # Cache the page as text to allow the AI agent LV to access it.
+    page_as_text = render_content_text(render_context, attempt_content, context.page.slug)
+    Oli.Converstation.PageContentCache.put(context.page.id, page_as_text)
+
     conn = put_root_layout(conn, {OliWeb.LayoutView, "page.html"})
 
     all_activities = Activities.list_activity_registrations()

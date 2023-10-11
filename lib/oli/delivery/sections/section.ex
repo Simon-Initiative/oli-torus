@@ -132,6 +132,8 @@ defmodule Oli.Delivery.Sections.Section do
       default: :done
     )
 
+    field(:page_prompt_template, :string)
+
     timestamps(type: :utc_datetime)
   end
 
@@ -185,7 +187,8 @@ defmodule Oli.Delivery.Sections.Section do
       :class_days,
       :course_section_number,
       :preferred_scheduling_time,
-      :v25_migration
+      :v25_migration,
+      :page_prompt_template
     ])
     |> cast_embed(:customizations, required: false)
     |> validate_required([
