@@ -141,6 +141,7 @@ defmodule Oli.MixProject do
       {:csv, "~> 3.0.5"},
       {:decimal, "~> 2.0"},
       {:dialyxir, "~> 0.5.0", only: [:dev], runtime: true},
+      {:earmark, "~> 1.4"},
       {:ecto_sql, "~> 3.10"},
       {:eflame, "~> 1.0"},
       {:ecto_psql_extras, "~> 0.2"},

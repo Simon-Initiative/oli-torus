@@ -1,7 +1,8 @@
 defmodule OliWeb.Dialogue.PlaygroundLive do
   use Phoenix.LiveView, layout: {OliWeb.LayoutView, :live_no_flash}
   use Phoenix.HTML
-
+  import Ecto.Query, warn: false
+  alias Oli.Repo
   import Phoenix.Component
 
   alias OliWeb.Router.Helpers, as: Routes
@@ -108,7 +109,7 @@ defmodule OliWeb.Dialogue.PlaygroundLive do
       <%= for message <- @dialogue.messages do %>
         <%= if message.role != :system and message.role != :function do %>
           <div class={styles(message.role)}>
-            <%= message.content %>
+            <%= raw(message.content) %>
           </div>
         <% end %>
       <% end %>
@@ -212,7 +213,10 @@ defmodule OliWeb.Dialogue.PlaygroundLive do
 
     case socket.assigns.function_call do
       nil ->
-        dialogue = Dialogue.add_message(socket.assigns.dialogue, Message.new(:assistant, socket.assigns.active_message))
+
+        message = Earmark.as_html!(socket.assigns.active_message, [all: true])
+        dialogue = Dialogue.add_message(socket.assigns.dialogue, Message.new(:assistant, message))
+
         {:noreply, assign(socket, dialogue: dialogue, streaming: false, active_message: nil)}
 
       fc ->
@@ -226,6 +230,7 @@ defmodule OliWeb.Dialogue.PlaygroundLive do
         result = case result do
           result when is_binary(result) -> result
           result when is_map(result) -> Jason.encode!(result)
+          result when is_list(result) -> Jason.encode!(%{result: result})
           result -> Kernel.to_string(result)
         end
 
@@ -255,5 +260,39 @@ defmodule OliWeb.Dialogue.PlaygroundLive do
   def avg_score_for(%{"current_user_id" => user_id, "section_id" => section_id}) do
     Oli.Delivery.Metrics.avg_score_for(section_id, user_id, nil)
   end
+
+  def up_next(%{"current_user_id" => user_id, "section_id" => section_id}) do
+    get_next_activities_for_student(section_id, user_id)
+  end
+
+  def get_next_activities_for_student(section_id, user_id) do
+    section = Oli.Delivery.Sections.get_section!(section_id)
+    student_pages_query = Oli.Delivery.Sections.get_student_pages(section.slug, user_id)
+
+    ras = Oli.Delivery.Attempts.Core.get_resource_accesses(section.slug, user_id)
+    |> Enum.reduce(%{}, fn ra, acc -> Map.put(acc, ra.resource_id, ra) end)
+
+    query =
+      from(sp in subquery(student_pages_query),
+        where:
+          sp.graded == true and
+          not is_nil(sp.end_date) and
+            sp.end_date >= ^DateTime.utc_now() and
+            sp.resource_type_id == ^Oli.Resources.ResourceType.get_id_by_type("page"),
+        limit: 2
+      )
+
+    query
+    |> Repo.all()
+    |> Enum.map(fn page ->
+      %{
+        title: page.title,
+        url: Routes.page_delivery_path(OliWeb.Endpoint, :page, section.slug, page.slug),
+        due_date: page.end_date,
+        num_attempts_taken: Map.get(ras, page.resource_id, %{resource_attempts_count: 0}).resource_attempts_count
+      }
+    end)
+  end
+
 
 end

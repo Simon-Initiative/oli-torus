@@ -21,8 +21,6 @@ defmodule Oli.Rendering.Activity.Plaintext do
       ) do
     activity_summary = activity_map[activity_id]
 
-    IO.inspect "ACTIVITY"
-
     case activity_summary do
       nil ->
         {error_id, error_msg} =
@@ -40,17 +38,11 @@ defmodule Oli.Rendering.Activity.Plaintext do
             _ -> activity_summary.delivery_element
           end
 
-        IO.inspect activity_summary
+        [
+          "[Activity '#{tag}']",
+         # "[Question Stem: #{activity_summary.unencoded_model["stem"]}]",
 
-        if activity_summary.graded do
-          [
-            "[Graded activity '#{tag}'#{maybe_group_id(group_id)}#{maybe_survey_id(survey_id)}]"
-          ]
-        else
-          [
-            "[Ungraded activity '#{tag}'#{maybe_group_id(group_id)}#{maybe_survey_id(survey_id)}]"
-          ]
-        end
+        ]
     end
   end
 

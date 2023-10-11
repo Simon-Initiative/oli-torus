@@ -16,17 +16,21 @@ defmodule Oli.Conversation.Dialogue do
       response_handler_fn: response_handler_fn,
       functions: [
         %{
-          name: "memory",
-          description: "Returns the memory usage of the system in bytes",
+          name: "up_next",
+          description: "Returns the next scheduled lessons in the course as a list of objects with the following keys: title, url, due_date, num_attempts_taken",
           parameters: %{
               type: "object",
               properties: %{
-                  memory_type: %{
-                      type: "string",
-                      description: "Which type of memory to report: total, processes, system or atom",
-                  }
+                current_user_id: %{
+                  type: "integer",
+                  description: "The current student's user id",
+                },
+                section_id: %{
+                  type: "integer",
+                  description: "The current course section's id",
+                }
               },
-              required: ["memory_type"],
+              required: ["current_user_id", "section_id"],
           },
         },
         %{
@@ -79,9 +83,6 @@ defmodule Oli.Conversation.Dialogue do
       messages: encode_messages(messages),
       functions: dialogue.functions,
     ], config(:sync))
-
-
-    IO.inspect result
 
     result
   end

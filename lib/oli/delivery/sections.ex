@@ -2889,7 +2889,7 @@ defmodule Oli.Delivery.Sections do
     Repo.all(query)
   end
 
-  defp get_student_pages(section_slug, user_id) do
+  def get_student_pages(section_slug, user_id) do
     SectionResource
     |> join(:inner, [sr], s in Section, on: sr.section_id == s.id)
     |> join(:inner, [sr, s], spp in SectionsProjectsPublications,
