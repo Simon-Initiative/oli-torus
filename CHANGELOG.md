@@ -6,6 +6,12 @@
 
 ### Bug Fixes
 
+### Environment
+
+#### Infrastructure Changes
+
+- [ ] Update deployment migration scripts to use `Oli.Release.migrate_and_seed` instead of `Oli.ReleaseTasks.migrate_and_seed`
+
 ## 0.25.0 (2023-10-5)
 
 ### Enhancements

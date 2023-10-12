@@ -2,6 +2,11 @@ name: Build torus-builder Docker Image
 
 on:
   workflow_dispatch:
+    inputs:
+      tag:
+        description: "Tag to use for the Docker image"
+        required: true
+        default: "latest"
 
 jobs:
   build:
@@ -30,6 +35,6 @@ jobs:
         with:
           context: ./.github/actions/torus-builder
           push: true
-          tags: olisimon/torus-builder:latest
+          tags: olisimon/torus-builder:${{ github.event.inputs.tag }},
           cache-from: type=gha
           cache-to: type=gha,mode=max
