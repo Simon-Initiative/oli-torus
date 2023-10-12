@@ -179,6 +179,7 @@ defmodule Oli.MixProject do
       {:oban, "~> 2.6.1"},
       {:open_api_spex, "~> 3.9"},
       {:openai, "~> 0.5.4"},
+      {:pgvector, "~> 0.2.0"},
       {:phoenix, "~> 1.7"},
       {:phoenix_ecto, "~> 4.4"},
       {:phoenix_html, "~> 3.0"},

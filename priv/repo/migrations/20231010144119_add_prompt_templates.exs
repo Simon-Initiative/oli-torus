@@ -25,6 +25,11 @@ defmodule Oli.Repo.Migrations.AddPromptTemplates do
   """
 
   def change do
+
+    execute "CREATE EXTENSION IF NOT EXISTS vector"
+
+    flush()
+
     alter table(:sections) do
       add(:page_prompt_template, :text)
     end

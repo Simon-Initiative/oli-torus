@@ -119,7 +119,9 @@ config :oli, :cashnet_provider,
   cashnet_gl_number: System.get_env("CASHNET_GL_NUMBER")
 
 # Configure database
-config :oli, Oli.Repo, migration_timestamps: [type: :timestamptz]
+config :oli, Oli.Repo,
+  migration_timestamps: [type: :timestamptz],
+  types: Oli.PostgrexTypes
 
 # Config adapter for refreshing part_mapping
 config :oli, Oli.Publishing, refresh_adapter: Oli.Publishing.PartMappingRefreshAsync
