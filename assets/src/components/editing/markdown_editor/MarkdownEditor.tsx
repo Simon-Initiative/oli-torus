@@ -81,7 +81,6 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = (props) => {
   );
 
   const onBlur = useCallback(() => {
-    console.info('onblur');
     saveChanges(value || '');
   }, [value, saveChanges]);
 
