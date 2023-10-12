@@ -328,15 +328,21 @@ defmodule OliWeb.Projects.OverviewLive do
           <span>Download this project and its contents.</span>
         </div>
 
-        <div class="d-flex align-items-center">
-          <AsyncExporter.datashop
-            ctx={@ctx}
-            latest_publication={@latest_publication}
-            datashop_export_status={@datashop_export_status}
-            datashop_export_url={@datashop_export_url}
-            datashop_export_timestamp={@datashop_export_timestamp}
-          />
-        </div>
+        <%= if @is_admin do %>
+          <div class="d-flex align-items-center">
+            <div class="text-danger">
+              DataShop Download is an unstable feature at the moment as the memory demands that it places on the system can cause the server to crash.
+              Please use with extreme caution and consult Torus engineering staff before doing so.
+            </div>
+            <AsyncExporter.datashop
+              ctx={@ctx}
+              latest_publication={@latest_publication}
+              datashop_export_status={@datashop_export_status}
+              datashop_export_url={@datashop_export_url}
+              datashop_export_timestamp={@datashop_export_timestamp}
+            />
+          </div>
+        <% end %>
 
         <div class="d-flex align-items-center">
           <button
