@@ -590,8 +590,9 @@ export const templatizeText = (
     return text;
   } else if (
     typeof text === 'string' &&
-    (text?.search(/app\.|variables\.|stage\.|session\./) === -1 ||
-      (text?.indexOf('{') === -1 && text?.indexOf('}') === -1))
+    text?.search(/app\.|variables\.|stage\.|session\./) === -1 &&
+    text?.indexOf('{') === -1 &&
+    text?.indexOf('}') === -1
   ) {
     return text;
   }
