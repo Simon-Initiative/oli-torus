@@ -329,11 +329,11 @@ defmodule OliWeb.Projects.OverviewLive do
         </div>
 
         <%= if @is_admin do %>
+          <div class="text-danger p-3">
+            DataShop Download is an unstable feature at the moment as the memory demands that it places on the system can cause the server to crash.
+            Please use with extreme caution and consult Torus engineering staff before doing so.
+          </div>
           <div class="d-flex align-items-center">
-            <div class="text-danger">
-              DataShop Download is an unstable feature at the moment as the memory demands that it places on the system can cause the server to crash.
-              Please use with extreme caution and consult Torus engineering staff before doing so.
-            </div>
             <AsyncExporter.datashop
               ctx={@ctx}
               latest_publication={@latest_publication}
