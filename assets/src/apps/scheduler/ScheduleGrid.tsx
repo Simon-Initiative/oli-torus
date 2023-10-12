@@ -51,7 +51,38 @@ export const ScheduleGrid: React.FC<GridProps> = ({ startDate, endDate, onReset 
             ))}
           </tbody>
         </table>
+        <Legend />
       </div>
     </div>
   );
 };
+
+const LegendIconItem: React.FC<{ icon: string; text: string; color: string }> = ({
+  icon,
+  text,
+  color,
+}) => (
+  <span className="inline-flex items-center mr-4 rounded-md bg-gray-100 py-1 px-3">
+    <i className={`fa fa-${icon} mr-3 ${color}`} />
+    {text}
+  </span>
+);
+
+const LegendBarItem: React.FC = () => (
+  <span className="inline-flex items-center mr-4 rounded-md bg-gray-100 py-1 px-3">
+    <span className="inline-block rounded bg-delivery-primary-300 dark:bg-delivery-primary-600 h-5 justify-between p-0.5 cursor-move w-10 mr-3" />
+    Suggested Range
+  </span>
+);
+
+const Legend = () => (
+  <div className="flex flex-row align-middle mt-3 ">
+    <span className="mr-3 my-auto">Legend:</span>
+    <LegendBarItem />
+
+    <LegendIconItem icon="flag" text="Available Date" color="text-green-500" />
+    <LegendIconItem icon="file" text="Suggested Date" color="text-blue-500" />
+    <LegendIconItem icon="users-line" text="In Class Activity" color="text-blue-500" />
+    <LegendIconItem icon="calendar" text="Due Date" color="text-red-700" />
+  </div>
+);

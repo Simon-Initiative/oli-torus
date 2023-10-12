@@ -37,11 +37,7 @@ export const DialogEditor: React.FC<Props> = ({ model, attributes, children, com
           />
         }
       >
-        {preview && (
-          <>
-            <Dialog dialog={model} context={temporaryContext} />
-          </>
-        )}
+        {preview && <Dialog dialog={model} context={temporaryContext} />}
         {preview || (
           <DialogInlineEditor commandContext={commandContext} dialog={model} onEdit={onEdit} />
         )}

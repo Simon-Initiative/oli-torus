@@ -13,77 +13,80 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
   alias Oli.Delivery.Page.PageContext
   alias Oli.Delivery.Attempts.PageLifecycle.FinalizationSummary
 
-  describe "concurrent activity accesses with two students" do
-    setup do
-      content = %{
-        "stem" => "1",
-        "authoring" => %{
-          "parts" => [
-            %{
-              "id" => "1",
-              "responses" => [
-                %{
-                  "rule" => "input like {a}",
-                  "score" => 10,
-                  "id" => "r1",
-                  "feedback" => %{"id" => "1", "content" => "yes"}
-                },
-                %{
-                  "rule" => "input like {b}",
-                  "score" => 1,
-                  "id" => "r2",
-                  "feedback" => %{"id" => "2", "content" => "almost"}
-                },
-                %{
-                  "rule" => "input like {c}",
-                  "score" => 0,
-                  "id" => "r3",
-                  "feedback" => %{"id" => "3", "content" => "no"}
-                }
-              ],
-              "scoringStrategy" => "best",
-              "evaluationStrategy" => "regex"
-            }
-          ]
-        }
-      }
-
-      map =
-        Seeder.base_project_with_resource2()
-        |> Seeder.create_section()
-        |> Seeder.add_objective("objective one", :o1)
-        |> Seeder.add_activity(%{title: "one", max_attempts: 5, content: content}, :activity1)
-        |> Seeder.add_activity(%{title: "two", max_attempts: 5, content: content}, :activity2)
-        |> Seeder.add_user(%{}, :user1)
-        |> Seeder.add_user(%{}, :user2)
-
-      Seeder.ensure_published(map.publication.id)
-
-      Seeder.add_page(
-        map,
-        %{
-          title: "graded page",
-          content: %{
-            "model" => [
+  defp setup_concurrent_activity(_) do
+    content = %{
+      "stem" => "1",
+      "authoring" => %{
+        "parts" => [
+          %{
+            "id" => "1",
+            "responses" => [
               %{
-                "type" => "activity-reference",
-                "activity_id" => Map.get(map, :activity1).revision.resource_id
+                "rule" => "input like {a}",
+                "score" => 10,
+                "id" => "r1",
+                "feedback" => %{"id" => "1", "content" => "yes"}
               },
               %{
-                "type" => "activity-reference",
-                "activity_id" => Map.get(map, :activity2).revision.resource_id
+                "rule" => "input like {b}",
+                "score" => 1,
+                "id" => "r2",
+                "feedback" => %{"id" => "2", "content" => "almost"}
+              },
+              %{
+                "rule" => "input like {c}",
+                "score" => 0,
+                "id" => "r3",
+                "feedback" => %{"id" => "3", "content" => "no"}
               }
-            ]
-          },
-          objectives: %{"attached" => [Map.get(map, :o1).resource.id]},
-          graded: true
-        },
-        :container,
-        :graded_page
-      )
-      |> Seeder.create_section_resources()
-    end
+            ],
+            "scoringStrategy" => "best",
+            "evaluationStrategy" => "regex"
+          }
+        ]
+      }
+    }
 
+    map =
+      Seeder.base_project_with_resource2()
+      |> Seeder.create_section()
+      |> Seeder.add_objective("objective one", :o1)
+      |> Seeder.add_activity(%{title: "one", max_attempts: 5, content: content}, :activity1)
+      |> Seeder.add_activity(%{title: "two", max_attempts: 5, content: content}, :activity2)
+      |> Seeder.add_user(%{}, :user1)
+      |> Seeder.add_user(%{}, :user2)
+
+    Seeder.ensure_published(map.publication.id)
+
+    Seeder.add_page(
+      map,
+      %{
+        title: "graded page",
+        content: %{
+          "model" => [
+            %{
+              "type" => "activity-reference",
+              "activity_id" => Map.get(map, :activity1).revision.resource_id
+            },
+            %{
+              "type" => "activity-reference",
+              "activity_id" => Map.get(map, :activity2).revision.resource_id
+            }
+          ]
+        },
+        objectives: %{"attached" => [Map.get(map, :o1).resource.id]},
+        graded: true
+      },
+      :container,
+      :graded_page
+    )
+    |> Seeder.create_section_resources()
+  end
+
+  describe "concurrent activity accesses with two students" do
+    setup [:setup_tags, :setup_concurrent_activity]
+
+    @tag isolation: "serializable"
     test "graded page : determine_resource_attempt_state works with 2 users after user1 has started a page and user2 has not",
          %{
            graded_page: %{resource: resource, revision: revision},
@@ -94,7 +97,8 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
       datashop_session_id_user1 = UUID.uuid4()
       datashop_session_id_user2 = UUID.uuid4()
 
-      effective_settings = Oli.Delivery.Settings.get_combined_settings(revision, section.id, user1.id)
+      effective_settings =
+        Oli.Delivery.Settings.get_combined_settings(revision, section.id, user1.id)
 
       # Open the graded page as user 1 to get the prologue
       user1_page_context =
@@ -407,7 +411,8 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
       activity_provider = &Oli.Delivery.ActivityProvider.provide/6
       datashop_session_id_user1 = UUID.uuid4()
 
-      effective_settings = Oli.Delivery.Settings.get_combined_settings(revision, section.id, user1.id)
+      effective_settings =
+        Oli.Delivery.Settings.get_combined_settings(revision, section.id, user1.id)
 
       # User1 has a started resource attempt, so it should be "in progress"
       {:ok, {:in_progress, _resource_attempt}} =
@@ -460,7 +465,8 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
       activity_provider = &Oli.Delivery.ActivityProvider.provide/6
       datashop_session_id_user1 = UUID.uuid4()
 
-      effective_settings = Oli.Delivery.Settings.get_combined_settings(revision, section.id, user1.id)
+      effective_settings =
+        Oli.Delivery.Settings.get_combined_settings(revision, section.id, user1.id)
 
       {:ok, {:in_progress, _resource_attempt}} =
         PageLifecycle.visit(
@@ -508,7 +514,8 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
       datashop_session_id_user1 = UUID.uuid4()
       datashop_session_id_user2 = UUID.uuid4()
 
-      effective_settings = Oli.Delivery.Settings.get_combined_settings(revision, section.id, user1.id)
+      effective_settings =
+        Oli.Delivery.Settings.get_combined_settings(revision, section.id, user1.id)
 
       # User 1
       {:ok, {:in_progress, resource_attempt_user1}} =

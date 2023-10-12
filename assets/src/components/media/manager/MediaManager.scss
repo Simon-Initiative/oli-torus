@@ -238,6 +238,7 @@
             text-align: center;
             vertical-align: top;
             line-height: 20px;
+            font-size: 14px;
           }
 
           &.not-selectable {
@@ -290,6 +291,7 @@
         .list-body {
           flex: 1;
           overflow: auto;
+          max-height: 374px;
         }
 
         .sel-col {
@@ -358,7 +360,7 @@
           .selection-check {
             display: none;
             visibility: hidden;
-            margin: 15px 10px;
+            margin: 3px;
             vertical-align: middle;
             text-align: center;
             cursor: pointer;

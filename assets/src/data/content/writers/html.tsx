@@ -414,7 +414,7 @@ export class HtmlParser implements WriterImpl {
       context,
       attrs,
       <pre>
-        <code className={`language-${className}`}>{next()}</code>
+        <code className={`torus-code language-${className}`}>{next()}</code>
       </pre>,
     );
   }
@@ -423,7 +423,7 @@ export class HtmlParser implements WriterImpl {
       context,
       attrs,
       <pre>
-        <code className={`language-${className}`}>{this.escapeXml(attrs.code)}</code>
+        <code className={`torus-code language-${className}`}>{this.escapeXml(attrs.code)}</code>
       </pre>,
     );
   }

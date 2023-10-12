@@ -16,7 +16,7 @@ defmodule OliWeb.Pow.UserRoutes do
           Routes.delivery_path(conn, :show_enroll, section_slug)
 
         _ ->
-          Routes.delivery_path(conn, :open_and_free_index)
+          Routes.live_path(conn, OliWeb.Delivery.OpenAndFreeIndex)
       end
     )
   end
@@ -28,8 +28,11 @@ defmodule OliWeb.Pow.UserRoutes do
       case conn.params do
         %{"user" => %{"section" => section_slug}} ->
           case Sections.get_section_by_slug(section_slug) do
-            %Section{skip_email_verification: true} -> Routes.delivery_path(conn, :show_enroll, section_slug)
-            _ -> Routes.pow_session_path(conn, :new, section: section_slug)
+            %Section{skip_email_verification: true} ->
+              Routes.delivery_path(conn, :show_enroll, section_slug)
+
+            _ ->
+              Routes.pow_session_path(conn, :new, section: section_slug)
           end
 
         _ ->
@@ -44,7 +47,7 @@ defmodule OliWeb.Pow.UserRoutes do
     |> request_path_or(
       case conn.assigns[:current_user] do
         %User{independent_learner: true} ->
-          Routes.delivery_path(conn, :open_and_free_index)
+          Routes.live_path(conn, OliWeb.Delivery.OpenAndFreeIndex)
 
         _ ->
           Routes.delivery_path(conn, :index)
@@ -118,6 +121,10 @@ defmodule OliWeb.Pow.UserRoutes do
           [],
           Keyword.put(query_params, :section, section)
         )
+
+  def path_for(conn, PowInvitation.Phoenix.InvitationController, :update, [token], query_params) do
+    Routes.delivery_pow_invitation_invitation_path(conn, :update, token, query_params)
+  end
 
   def path_for(conn, plug, verb, vars, query_params),
     do: Pow.Phoenix.Routes.path_for(conn, plug, verb, vars, query_params)

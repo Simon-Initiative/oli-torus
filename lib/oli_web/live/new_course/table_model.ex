@@ -1,5 +1,5 @@
 defmodule OliWeb.Delivery.NewCourse.TableModel do
-  use Surface.LiveComponent
+  use Phoenix.Component
 
   alias OliWeb.Common.Table.{ColumnSpec, Common, SortableTableModel}
 
@@ -97,8 +97,12 @@ defmodule OliWeb.Delivery.NewCourse.TableModel do
   def render_action_column(assigns, item, _) do
     id = if is_product?(item), do: "product:#{item.id}", else: "publication:#{item.id}"
 
-    ~F"""
-    <button class="btn btn-primary btn-sm" phx-click="source_selection" phx-value-id={id}>Select</button>
+    assigns = Map.merge(assigns, %{id: id})
+
+    ~H"""
+    <button class="btn btn-primary btn-sm" phx-click="source_selection" phx-value-id={@id}>
+      Select
+    </button>
     """
   end
 
@@ -106,7 +110,7 @@ defmodule OliWeb.Delivery.NewCourse.TableModel do
     do: if(is_product?(item), do: "Product", else: "Project")
 
   def render(assigns) do
-    ~F"""
+    ~H"""
     <div>nothing</div>
     """
   end

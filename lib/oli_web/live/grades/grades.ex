@@ -11,6 +11,7 @@ defmodule OliWeb.Grades.GradesLive do
   alias Oli.Lti.AccessTokenLibrary
   alias OliWeb.Sections.Mount
   alias OliWeb.Common.Breadcrumb
+  alias OliWeb.Grades.{Export, GradeSync, LineItems, TestConnection}
 
   def set_breadcrumbs(type, section) do
     type
@@ -36,7 +37,7 @@ defmodule OliWeb.Grades.GradesLive do
       {type, _, section} ->
         {_d, registration} = Sections.get_deployment_registration_from_section(section)
         line_items_url = section.line_items_service_url
-        graded_pages = Grading.fetch_graded_pages(section.slug)
+        graded_pages = Sections.fetch_scored_pages(section.slug)
 
         selected_page =
           if length(graded_pages) > 0 do
@@ -94,27 +95,45 @@ defmodule OliWeb.Grades.GradesLive do
       <h2><%= dgettext("grades", "Manage Grades") %></h2>
 
       <p>
-        <%= dgettext("grades", "Grades for this section can be viewed by students and instructors using the LMS gradebook.") %>
+        <%= dgettext(
+          "grades",
+          "Grades for this section can be viewed by students and instructors using the LMS gradebook."
+        ) %>
       </p>
 
       <div class="my-2">
-        <%= live_component OliWeb.Grades.TestConnection, assigns %>
+        <TestConnection.render section={@section} test_output={@test_output} />
       </div>
       <div class="my-2">
-        <%= live_component OliWeb.Grades.Export, assigns %>
+        <Export.render section_slug={@section_slug} />
       </div>
 
       <div class="my-2">
-        <%= live_component OliWeb.Grades.LineItems, assigns %>
+        <LineItems.render task_queue={@task_queue} />
       </div>
       <div class="my-2">
-        <%= live_component OliWeb.Grades.GradeSync, assigns %>
+        <GradeSync.render
+          task_queue={@task_queue}
+          total_jobs={@total_jobs}
+          failed_jobs={@failed_jobs}
+          succeeded_jobs={@succeeded_jobs}
+          graded_pages={@graded_pages}
+          selected_page={@selected_page}
+        />
       </div>
 
       <div class={"my-2 #{@progress_visible}"}>
         <p><%= dgettext("grades", "Do not leave this page until this operation completes.") %></p>
         <div class="progress">
-          <div class="progress-bar" role="progressbar" style={"width: #{@percent_progress}%;"} aria-valuenow={"#{@percent_progress}"} aria-valuemin="0" aria-valuemax="100"></div>
+          <div
+            class="progress-bar"
+            role="progressbar"
+            style={"width: #{@percent_progress}%;"}
+            aria-valuenow={"#{@percent_progress}"}
+            aria-valuemin="0"
+            aria-valuemax="100"
+          >
+          </div>
         </div>
       </div>
     </div>
@@ -176,7 +195,7 @@ defmodule OliWeb.Grades.GradesLive do
 
   defp fetch_students(access_token, section) do
     # Query the db to find all enrolled students
-    students = Grading.fetch_students(section.slug)
+    students = Sections.fetch_students(section.slug)
 
     # If NRPS is enabled, request the latest view of the course membership
     # and filter our enrolled students to that list.  This step avoids us
@@ -211,7 +230,7 @@ defmodule OliWeb.Grades.GradesLive do
 
     case fetch_line_items(registration, socket.assigns.line_items_url) do
       {:ok, line_items, access_token} ->
-        graded_pages = Grading.fetch_graded_pages(socket.assigns.section.slug)
+        graded_pages = Sections.fetch_scored_pages(socket.assigns.section.slug)
 
         case determine_line_item_tasks(graded_pages, line_items, socket.assigns.section) do
           [] ->

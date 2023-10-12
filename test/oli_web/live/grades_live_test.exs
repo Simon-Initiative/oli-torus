@@ -150,12 +150,18 @@ defmodule OliWeb.GradesLiveTest do
       |> element("button[phx-click=\"test_connection\"]")
       |> render_click()
 
-      assert has_element?(view, "samp", "Starting test")
-      assert has_element?(view, "samp", "Requesting access token...")
-      assert has_element?(view, "samp", "Received access token")
-      assert has_element?(view, "samp", "Requesting line items...")
-      assert has_element?(view, "samp", "Received line items")
-      assert has_element?(view, "samp", "Success!")
+      # The mock is called in a different process than the test process
+      # so there is a chance that the test will finish executing
+      # before it has a chance to call the mock and meet the expectations.
+      # That is why we add the `wait_until`
+      wait_until(fn ->
+        assert has_element?(view, "samp", "Starting test")
+        assert has_element?(view, "samp", "Requesting access token...")
+        assert has_element?(view, "samp", "Received access token")
+        assert has_element?(view, "samp", "Requesting line items...")
+        assert has_element?(view, "samp", "Received line items")
+        assert has_element?(view, "samp", "Success!")
+      end)
     end
 
     @tag capture_log: true

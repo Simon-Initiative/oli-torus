@@ -134,7 +134,13 @@ document.addEventListener('DOMContentLoaded', () => {
     }),
   );
 
-  (window as any).hljs.highlightAll();
+  const hljs = (window as any).hljs;
+
+  hljs.configure({
+    cssSelector: 'pre code.torus-code',
+  });
+
+  hljs.highlightAll();
 });
 
 let currentlyPlaying: HTMLAudioElement | null = null;
@@ -154,6 +160,12 @@ window.toggleAudio = (element: HTMLAudioElement) => {
     element.pause();
   }
 };
+
+window.addEventListener('phx:js-exec', ({ detail }: any) => {
+  document.querySelectorAll(detail.to).forEach((el) => {
+    liveSocket.execJS(el, el.getAttribute(detail.attr));
+  });
+});
 
 declare global {
   interface Window {

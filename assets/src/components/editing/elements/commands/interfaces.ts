@@ -3,11 +3,24 @@ import { MultiInput, MultiInputType } from 'components/activities/multi_input/sc
 import { InputRef } from 'data/content/model/elements/types';
 import { ID } from 'data/content/model/other';
 
+export const CommandCategoryList = [
+  'Formatting',
+  'Media',
+  'STEM',
+  'General',
+  'Language',
+  'Structure',
+  'Other',
+];
+
+export type CommandCategories = typeof CommandCategoryList[number];
+
 // For toolbar buttons
 export type CommandDescription = {
   type: 'CommandDesc';
   icon: (editor: Editor) => JSX.Element | undefined;
   command: Command;
+  category?: CommandCategories;
   description: (editor: Editor) => string;
   // active: is the item in the cursor's selection
   active?: (editor: Editor) => boolean;

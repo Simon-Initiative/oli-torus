@@ -306,18 +306,44 @@ defmodule Oli.AccountsTest do
     end
 
     test "is_lms_user?/1 returns true when the user exists and belongs to an lms" do
-      user = insert(:user)
+      user = insert(:user, %{email: "test@test.com", independent_learner: false})
       insert(:lti_params, user_id: user.id)
 
       assert Accounts.is_lms_user?(user.email)
     end
+
+    test "is_lms_user?/1 returns true when more than one user email exists and one is lms" do
+      user1 = insert(:user, %{email: "test@test.com", independent_learner: false})
+      insert(:lti_params, user_id: user1.id)
+
+      _user2 = insert(:user, %{email: "test@test.com", independent_learner: false})
+
+      assert Accounts.is_lms_user?(user1.email)
+    end
+
+    test "is_lms_user?/1 returns true when more than one user email exists and all are lms" do
+      user1 = insert(:user, %{email: "test@test.com", independent_learner: false})
+      insert(:lti_params, user_id: user1.id)
+
+      user2 = insert(:user, %{email: "test@test.com", independent_learner: false})
+      insert(:lti_params, user_id: user2.id)
+
+      assert Accounts.is_lms_user?(user1.email)
+    end
+
+    test "is_lms_user?/1 returns false only user is independent" do
+      user1 = insert(:user, %{email: "test@test.com", independent_learner: true})
+
+      refute Accounts.is_lms_user?(user1.email)
+    end
+
 
     test "is_lms_user?/1 returns false when the user does not exist" do
       refute Accounts.is_lms_user?("invalid_email")
     end
 
     test "is_lms_user?/1 returns false when the user exists but is not from an lms" do
-      user = insert(:user)
+      user = insert(:user, %{email: "test@test.com", independent_learner: true})
 
       refute Accounts.is_lms_user?(user.email)
     end
@@ -378,6 +404,45 @@ defmodule Oli.AccountsTest do
 
       refute user_role_id_changed == 4
       assert user_role_id_changed == 3
+    end
+
+    test "get_users_by_email/1 returns the users from a list of emails" do
+      insert(:user, %{email: "user_with_email_1@test.com"})
+      insert(:user, %{email: "user_with_email_2@test.com"})
+      insert(:user, %{email: "user_with_email_3@test.com"})
+
+      assert Accounts.get_users_by_email([
+               "user_with_email_1@test.com",
+               "user_with_email_2@test.com",
+               "non_existan@test.com"
+             ])
+             |> Enum.map(& &1.email) == [
+               "user_with_email_1@test.com",
+               "user_with_email_2@test.com"
+             ]
+    end
+
+    test "bulk_invite_users/2" do
+      inviter_author = insert(:author)
+      invited_users = ["non_existant_user_1@test.com", "non_existant_user_2@test.com"]
+
+      Accounts.bulk_invite_users(
+        ["non_existant_user_1@test.com", "non_existant_user_2@test.com"],
+        inviter_author
+      )
+
+      users =
+        User
+        |> where([u], u.email in ^invited_users)
+        |> select([u], [:invitation_token])
+        |> Repo.all()
+
+      assert length(users) == 2
+
+      assert Enum.all?(
+               users,
+               &(!is_nil(&1.invitation_token))
+             )
     end
   end
 

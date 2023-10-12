@@ -1,5 +1,5 @@
 defmodule OliWeb.Projects.ActiveSectionsTableModel do
-  use Surface.LiveComponent
+  use Phoenix.Component
 
   alias OliWeb.Common.SessionContext
   alias OliWeb.Common.Table.{ColumnSpec, SortableTableModel}
@@ -54,8 +54,10 @@ defmodule OliWeb.Projects.ActiveSectionsTableModel do
       |> hd()
       |> Map.get(:publication)
 
-    ~F"""
-      <span class="badge badge-primary">{Utils.render_version(edition, major, minor)}</span>
+    assigns = Map.merge(assigns, %{edition: edition, major: major, minor: minor})
+
+    ~H"""
+    <span class="badge badge-primary"><%= Utils.render_version(@edition, @major, @minor) %></span>
     """
   end
 
@@ -63,8 +65,8 @@ defmodule OliWeb.Projects.ActiveSectionsTableModel do
     do: if(section.base_project_id == assigns.project.id, do: "Base Project", else: "Remixed")
 
   def render(assigns) do
-    ~F"""
-      <div>nothing</div>
+    ~H"""
+    <div>nothing</div>
     """
   end
 end

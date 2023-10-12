@@ -278,5 +278,41 @@ defmodule OliWeb.Sections.EditLiveTest do
       updated_section = Sections.get_section!(section.id)
       assert updated_section.title == valid_title
     end
+
+    test "update section with an invalid start/end date shows an error", %{
+      conn: conn,
+      section: section
+    } do
+      {:ok, view, _html} = live(conn, live_view_edit_route(section.slug))
+
+      today = DateTime.utc_now()
+      yesterday = DateTime.add(today, -1, :day)
+
+      view
+      |> element("form[phx-submit=\"save\"")
+      |> render_submit(%{section: %{start_date: today, end_date: yesterday}})
+
+      assert has_element?(view, "p", "must be before the end date")
+      assert has_element?(view, "p", "must be after the start date")
+    end
+
+    test "section's preferred_scheduling_time is viewable and editable", %{
+      conn: conn,
+      section: section
+    } do
+      {:ok, view, _html} = live(conn, live_view_edit_route(section.slug))
+
+      # the initial value corresponds to the default value.
+      assert view
+             |> element("#section_preferred_scheduling_time")
+             |> render() =~ "23:59:59"
+
+      view
+      |> element("form[phx-submit=\"save\"")
+      |> render_submit(%{section: %{preferred_scheduling_time: ~T[20:00:00]}})
+
+      updated_section = Sections.get_section!(section.id)
+      assert updated_section.preferred_scheduling_time == ~T[20:00:00]
+    end
   end
 end

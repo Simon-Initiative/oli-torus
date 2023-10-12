@@ -187,7 +187,7 @@ defmodule OliWeb.Sections.OverviewLiveTest do
       assert has_element?(
                view,
                "a[href=\"#{Routes.live_path(OliWeb.Endpoint, OliWeb.Delivery.RemixSection, section.slug)}\"]",
-               "Customize Curriculum"
+               "Customize Content"
              )
 
       assert has_element?(
@@ -290,7 +290,7 @@ defmodule OliWeb.Sections.OverviewLiveTest do
         if system_role_id == 2 do
           Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.SectionsView)
         else
-          Routes.delivery_path(OliWeb.Endpoint, :open_and_free_index)
+          ~p"/sections"
         end
 
       assert_redirected(view, redirect_path)
@@ -327,7 +327,7 @@ defmodule OliWeb.Sections.OverviewLiveTest do
         if system_role_id == 2 do
           Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.SectionsView)
         else
-          Routes.delivery_path(OliWeb.Endpoint, :open_and_free_index)
+          ~p"/sections"
         end
 
       assert_redirected(view, redirect_path)

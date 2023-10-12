@@ -8,6 +8,7 @@ defmodule Oli.Authoring.Editing.Blueprint do
     field :description, :string
     field :icon, :string
     field :content, :map, default: %{}
+    field :category, :string, default: "STEM"
   end
 
   def changeset(blueprint, attrs \\ %{}) do

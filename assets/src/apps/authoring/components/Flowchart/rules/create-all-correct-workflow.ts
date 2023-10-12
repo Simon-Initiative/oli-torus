@@ -4,7 +4,12 @@ import {
   IAdaptiveRule,
   ICondition,
 } from '../../../../delivery/store/features/activities/slice';
-import { IConditionWithFeedback, generateRule, newId } from './create-generic-rule';
+import {
+  DEFAULT_BLANK_FEEDBACK,
+  IConditionWithFeedback,
+  generateRule,
+  newId,
+} from './create-generic-rule';
 import { RulesAndVariables } from './rule-compilation';
 
 /*
@@ -15,8 +20,17 @@ export const generateAllCorrectWorkflow = (
   defaultPath: Required<IConditionWithFeedback>,
   specificPaths: IConditionWithFeedback[],
   disableAction: IAction,
+  blankCondition: ICondition,
 ): RulesAndVariables => {
   const rules: IAdaptiveRule[] = [];
+
+  // [A rule to catch an empty response]
+  blankCondition &&
+    rules.push(
+      generateRule('blank', [newId(blankCondition)], null, false, 20, DEFAULT_BLANK_FEEDBACK, [
+        resetTries(),
+      ]),
+    );
 
   for (const path of specificPaths.filter((e) => !!e.destinationId)) {
     rules.push(
@@ -37,7 +51,7 @@ export const generateAllCorrectWorkflow = (
       'always-correct',
       [],
       defaultPath.destinationId,
-      true,
+      false,
       50,
       defaultPath.feedback,
       [disableAction],
@@ -53,3 +67,13 @@ export const generateAllCorrectWorkflow = (
 
   return { rules, variables };
 };
+
+const resetTries = (): IAction => ({
+  type: 'mutateState',
+  params: {
+    value: '1',
+    target: 'session.attemptNumber',
+    operator: 'setting to',
+    targetType: 1,
+  },
+});

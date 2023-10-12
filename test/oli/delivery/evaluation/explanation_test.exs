@@ -8,34 +8,37 @@ defmodule Oli.Delivery.Evaluation.ExplanationTest do
   alias Oli.Resources.ExplanationStrategy
   alias Oli.Delivery.Attempts.Core.PartAttempt
 
-  describe "explanation" do
-    setup do
-      %{}
-      |> Seeder.Project.create_author(author_tag: :author)
-      |> Seeder.Project.create_sample_project(
-        ref(:author),
-        project_tag: :proj,
-        publication_tag: :pub,
-        unscored_page1_tag: :unscored_page1,
-        unscored_page1_activity_tag: :unscored_page1_activity,
-        scored_page2_tag: :scored_page2,
-        scored_page2_activity_tag: :scored_page2_activity
-      )
-      |> Seeder.Project.ensure_published(ref(:pub))
-      |> Seeder.Section.create_section(
-        ref(:proj),
-        ref(:pub),
-        nil,
-        %{},
-        section_tag: :section
-      )
-      |> Seeder.Section.create_and_enroll_learner(
-        ref(:section),
-        %{},
-        user_tag: :student1
-      )
-    end
+  defp setup_explanation(_) do
+    %{}
+    |> Seeder.Project.create_author(author_tag: :author)
+    |> Seeder.Project.create_sample_project(
+      ref(:author),
+      project_tag: :proj,
+      publication_tag: :pub,
+      unscored_page1_tag: :unscored_page1,
+      unscored_page1_activity_tag: :unscored_page1_activity,
+      scored_page2_tag: :scored_page2,
+      scored_page2_activity_tag: :scored_page2_activity
+    )
+    |> Seeder.Project.ensure_published(ref(:pub))
+    |> Seeder.Section.create_section(
+      ref(:proj),
+      ref(:pub),
+      nil,
+      %{},
+      section_tag: :section
+    )
+    |> Seeder.Section.create_and_enroll_learner(
+      ref(:section),
+      %{},
+      user_tag: :student1
+    )
+  end
 
+  describe "explanation" do
+    setup [:setup_tags, :setup_explanation]
+
+    @tag isolation: "serializable"
     test "after_max_resource_attempts_exhausted strategy explanation in a scored page", map do
       datashop_session_id_user1 = UUID.uuid4()
 
@@ -179,6 +182,7 @@ defmodule Oli.Delivery.Evaluation.ExplanationTest do
              } = map.scored_page2_activity_evaluation
     end
 
+    @tag isolation: "serializable"
     test "after_max_resource_attempts_exhausted strategy should not trigger when max_attempts is 0 (infinite)",
          map do
       datashop_session_id_user1 = UUID.uuid4()
@@ -283,6 +287,7 @@ defmodule Oli.Delivery.Evaluation.ExplanationTest do
               ]} = map.scored_page2_activity_evaluation
     end
 
+    @tag isolation: "serializable"
     test "after_set_num_attempts strategy explanation in a scored page", map do
       datashop_session_id_user1 = UUID.uuid4()
 
@@ -415,7 +420,7 @@ defmodule Oli.Delivery.Evaluation.ExplanationTest do
             set_num_attempts: 2
           }
         )
-        |> Seeder.Attempt.visit_unscored_page(
+        |> Seeder.Attempt.visit_page(
           ref(:unscored_page1),
           ref(:section),
           ref(:student1),
@@ -465,7 +470,7 @@ defmodule Oli.Delivery.Evaluation.ExplanationTest do
           ref(:unscored_page1_activity_attempt),
           datashop_session_id_user1
         )
-        |> Seeder.Attempt.visit_unscored_page(
+        |> Seeder.Attempt.visit_page(
           ref(:unscored_page1),
           ref(:section),
           ref(:student1),

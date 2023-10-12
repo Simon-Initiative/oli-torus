@@ -26,6 +26,12 @@ config :oli, Oli.Repo,
   timeout: 600_000,
   ownership_timeout: 600_000
 
+config :ex_aws, :s3,
+  region: System.get_env("AWS_REGION", "us-east-1"),
+  scheme: System.get_env("AWS_S3_SCHEME", "https") <> "://",
+  port: System.get_env("AWS_S3_PORT", "443") |> String.to_integer(),
+  host: System.get_env("AWS_S3_HOST", "s3.amazonaws.com")
+
 secret_key_base =
   System.get_env("SECRET_KEY_BASE") ||
     raise """
@@ -52,6 +58,13 @@ s3_media_bucket_name =
     raise """
     environment variable S3_MEDIA_BUCKET_NAME is missing.
     For example: torus-media
+    """
+
+s3_xapi_bucket_name =
+  System.get_env("S3_XAPI_BUCKET_NAME") ||
+    raise """
+    environment variable S3_XAPI_BUCKET_NAME is missing.
+    For example: torus-xapi
     """
 
 if System.get_env("PAYMENT_PROVIDER") == "stripe" &&
@@ -81,6 +94,7 @@ media_url =
 # General OLI app config
 config :oli,
   s3_media_bucket_name: s3_media_bucket_name,
+  s3_xapi_bucket_name: s3_xapi_bucket_name,
   media_url: media_url,
   email_from_name: System.get_env("EMAIL_FROM_NAME", "OLI Torus"),
   email_from_address: System.get_env("EMAIL_FROM_ADDRESS", "admin@example.edu"),

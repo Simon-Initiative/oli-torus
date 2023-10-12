@@ -28,7 +28,18 @@ services:
       - 443:443
     networks:
       - default
-
+  minio:
+    image: minio/minio
+    container_name: my-minio
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      MINIO_ROOT_USER: your_minio_access_key
+      MINIO_ROOT_PASSWORD: your_minio_secret_key
+    volumes:
+      - ./data:/data
+    command: ["server", "--console-address", ":9001", "/data"]
 
 volumes:
   postgres_data:

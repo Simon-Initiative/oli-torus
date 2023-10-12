@@ -17,6 +17,8 @@ export const countWorkingDays = (
 };
 
 export const findNthDay = (startDay: number, n: number, weekdaysToSchedule: boolean[]) => {
+  if (n === 0) return new DateWithoutTime(startDay);
+
   const start = new DateWithoutTime(Math.floor(startDay) - 1);
   let workdays = 0;
   while (workdays < n) {
@@ -25,6 +27,7 @@ export const findNthDay = (startDay: number, n: number, weekdaysToSchedule: bool
       workdays++;
     }
   }
+
   return start;
 };
 
@@ -91,6 +94,11 @@ export const resetScheduleItem = (
   schedule: HierarchyItem[],
   resetManual = true,
   weekdaysToSchedule = [false, true, true, true, true, true, false],
+  preferredTime: {
+    hour: number;
+    minute: number;
+    second: number;
+  },
 ) => {
   const hasChildren = !!target.children.map((id) => getScheduleItem(id, schedule)).length;
 
@@ -144,17 +152,39 @@ export const resetScheduleItem = (
         child.startDate = new DateWithoutTime(end.getDaysSinceEpoch());
       }
 
+      if (child.startDate) {
+        child.startDateTime = new Date(
+          child.startDate.getFullYear(),
+          child.startDate.getMonth(),
+          child.startDate.getDate(),
+          preferredTime.hour,
+          preferredTime.minute,
+          preferredTime.second,
+          0,
+        );
+      } else {
+        child.startDateTime = null;
+      }
+
       child.endDateTime = new Date(
         child.endDate.getFullYear(),
         child.endDate.getMonth(),
         child.endDate.getDate(),
-        23,
-        59,
-        59,
-        999,
+        preferredTime.hour,
+        preferredTime.minute,
+        preferredTime.second,
+        0,
       );
 
-      resetScheduleItem(child, calculatedStart, child.endDate, schedule);
+      resetScheduleItem(
+        child,
+        calculatedStart,
+        child.endDate,
+        schedule,
+        resetManual,
+        weekdaysToSchedule,
+        preferredTime,
+      );
     }
   }
 };

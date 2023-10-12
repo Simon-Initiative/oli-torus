@@ -61,6 +61,7 @@ const listCommandMaker = (listType: 'ul' | 'ol'): Command => {
 };
 
 export const toggleList = createButtonCommandDesc({
+  category: 'Structure',
   icon: <i className="fa-solid fa-list-ul"></i>,
   description: 'List',
   active: (editor) => isActive(editor, ['ul', 'ol']),
@@ -68,6 +69,7 @@ export const toggleList = createButtonCommandDesc({
 });
 
 export const toggleUnorderedList: CommandDescription = {
+  category: 'Structure',
   type: 'CommandDesc',
   icon: () => <i className="fa-solid fa-list-ul"></i>,
   description: () => 'Unordered List',
@@ -76,6 +78,7 @@ export const toggleUnorderedList: CommandDescription = {
 };
 
 export const toggleOrderedList: CommandDescription = {
+  category: 'Structure',
   type: 'CommandDesc',
   icon: () => <i className="fa-solid fa-list-ol"></i>,
   description: () => 'Ordered List',
@@ -86,7 +89,7 @@ export const toggleOrderedList: CommandDescription = {
 const listStyleLabels: Record<OrderedListStyle | UnorderedListStyle, string> = {
   none: 'No Bullet',
   decimal: 'Decimal - 1',
-  'decimal-leading-zero': 'Decimal w/ Zero - 01',
+  'decimal-leading-zero': 'Zero Decimal - 01',
   'lower-roman': 'Lower Roman - i',
   'upper-roman': 'Upper Roman - I',
   'lower-alpha': 'Lower Alpha - a',
@@ -151,6 +154,7 @@ export const listSettingButtonGroups = [
     createButtonCommandDesc({
       icon: <i className="fa-solid fa-list-ul"></i>,
       description: 'Unordered List',
+      category: 'Structure',
       active: (editor) => listTypeActive(editor, 'ul'),
       execute: (_ctx, editor) => {
         if (listTypeActive(editor, 'ul')) {
@@ -171,6 +175,7 @@ export const listSettingButtonGroups = [
     createButtonCommandDesc({
       icon: <i className="fa-solid fa-list-ol"></i>,
       description: 'Ordered List',
+      category: 'Structure',
       active: (editor) => listTypeActive(editor, 'ol'),
       execute: (_ctx, editor) => {
         if (listTypeActive(editor, 'ol')) {

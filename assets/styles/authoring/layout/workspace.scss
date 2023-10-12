@@ -83,7 +83,7 @@ $workspace-sidebar-width: 65px;
     position: sticky;
     top: $workspace-header-height;
     height: calc(100vh - #{$workspace-header-height});
-    z-index: var(--z-20);
+    z-index: 45;
   }
 
   .workspace-right {

@@ -1,13 +1,13 @@
 defmodule OliWeb.Projects.LmsUrlToCopy do
-  use Surface.Component
+  use OliWeb, :html
 
-  prop id, :string, required: true
-  prop title, :string, required: true
-  prop value, :string, required: true
+  attr(:id, :string, required: true)
+  attr(:title, :string, required: true)
+  attr(:value, :string, required: true)
 
   def render(assigns) do
-    ~F"""
-      <strong>{@title}:</strong>
+    ~H"""
+      <strong><%= @title %>:</strong>
       <div class="input-group input-group-sm mb-3">
         <input type="text" id={@id} class="form-control" value={@value} readonly>
         <div class="input-group-append">

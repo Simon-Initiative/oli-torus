@@ -3,7 +3,7 @@ defmodule OliWeb.DeliveryController do
 
   alias Lti_1p3.Tool.{PlatformRoles, ContextRoles}
   alias Oli.Accounts
-  alias Oli.Accounts.Author
+  alias Oli.Accounts.{User, Author}
   alias Oli.Analytics.DataTables.DataTable
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.EnrollmentBrowseOptions
@@ -12,8 +12,6 @@ defmodule OliWeb.DeliveryController do
   alias Oli.Repo
   alias Oli.Repo.{Paging, Sorting}
   alias OliWeb.Delivery.InstructorDashboard.Helpers
-
-  import Oli.Utils
 
   require Logger
 
@@ -29,7 +27,15 @@ defmodule OliWeb.DeliveryController do
 
   def instructor_dashboard(conn, %{"section_slug" => section_slug}) do
     # redirect to live view
-    redirect(conn, to: Routes.live_path(conn, OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive, section_slug, "overview"))
+    redirect(conn,
+      to:
+        Routes.live_path(
+          conn,
+          OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
+          section_slug,
+          "overview"
+        )
+    )
   end
 
   def index(conn, _params) do
@@ -71,14 +77,6 @@ defmodule OliWeb.DeliveryController do
           redirect_to_page_delivery(conn, section)
         end
     end
-  end
-
-  def open_and_free_index(conn, _params) do
-    user = conn.assigns.current_user
-
-    sections = Sections.list_user_open_and_free_sections(user)
-
-    render(conn, "open_and_free_index.html", sections: sections, user: user)
   end
 
   defp render_course_not_configured(conn) do
@@ -131,7 +129,7 @@ defmodule OliWeb.DeliveryController do
     |> assign(:action, Routes.pow_registration_path(conn, :create))
     |> assign(:sign_in_path, Routes.pow_session_path(conn, :new))
     |> assign(:cancel_path, Routes.delivery_path(conn, :index))
-    |> Phoenix.Controller.put_view(OliWeb.Pow.RegistrationView)
+    |> Phoenix.Controller.put_view(OliWeb.Pow.RegistrationHTML)
     |> Phoenix.Controller.render("new.html")
   end
 
@@ -156,8 +154,8 @@ defmodule OliWeb.DeliveryController do
     |> assign(:create_account_path, create_account_path)
     |> assign(:cancel_path, cancel_path)
     |> assign(:link_account, true)
-    |> put_view(OliWeb.Pow.SessionView)
-    |> render("new.html")
+    |> put_view(OliWeb.Pow.SessionHTML)
+    |> Phoenix.Controller.render("new.html")
   end
 
   def process_link_account_provider(conn, %{"provider" => provider}) do
@@ -282,8 +280,8 @@ defmodule OliWeb.DeliveryController do
     |> assign(:action, action)
     |> assign(:sign_in_path, sign_in_path)
     |> assign(:cancel_path, cancel_path)
-    |> put_view(OliWeb.Pow.RegistrationView)
-    |> render("new.html")
+    |> put_view(OliWeb.Pow.RegistrationHTML)
+    |> Phoenix.Controller.render("new.html")
   end
 
   def render_create_and_link_form(conn, opts \\ []) do
@@ -307,8 +305,8 @@ defmodule OliWeb.DeliveryController do
     |> assign(:sign_in_path, sign_in_path)
     |> assign(:cancel_path, cancel_path)
     |> assign(:link_account, true)
-    |> put_view(OliWeb.Pow.RegistrationView)
-    |> render("new.html")
+    |> put_view(OliWeb.Pow.RegistrationHTML)
+    |> Phoenix.Controller.render("new.html")
   end
 
   def signin(conn, %{"section" => section}) do
@@ -327,12 +325,18 @@ defmodule OliWeb.DeliveryController do
     case Sections.available?(conn.assigns.section) do
       {:available, section} ->
         # redirect to course index if user is already signed in and enrolled
-        with {:ok, user} <- conn.assigns.current_user |> trap_nil,
+        with {:ok, user} <- current_or_guest_user(conn, section.requires_enrollment),
              true <- Sections.is_enrolled?(user.id, section.slug) do
           redirect(conn,
             to: Routes.page_delivery_path(OliWeb.Endpoint, :index, section.slug)
           )
         else
+          {:redirect, nil} ->
+            # guest user cant access courses that require enrollment
+            redirect_path =
+              "/session/new?section=#{section.slug}"
+            conn
+              |> redirect(to: redirect_path)
           _ ->
             section = Oli.Repo.preload(section, [:base_project])
 
@@ -350,7 +354,7 @@ defmodule OliWeb.DeliveryController do
 
     if Oli.Utils.LoadTesting.enabled?() or recaptcha_verified?(g_recaptcha_response) do
       with {:available, section} <- Sections.available?(conn.assigns.section),
-           {:ok, user} <- current_or_guest_user(conn),
+           {:ok, user} <- current_or_guest_user(conn, section.requires_enrollment),
            user <- Repo.preload(user, [:platform_roles]) do
         if Sections.is_enrolled?(user.id, section.slug) do
           redirect(conn,
@@ -372,6 +376,18 @@ defmodule OliWeb.DeliveryController do
           |> redirect(to: Routes.page_delivery_path(OliWeb.Endpoint, :index, section.slug))
         end
       else
+        {:redirect, nil} ->
+          # guest user cant access courses that require enrollment
+          redirect_path =
+            "/session/new?request_path=#{Routes.delivery_path(conn, :show_enroll, conn.assigns.section.slug)}"
+
+          conn
+          |> put_flash(
+            :error,
+            "Cannot enroll guest users in a course section that requires enrollment"
+          )
+          |> redirect(to: redirect_path)
+
         _error ->
           render(conn, "enroll.html", error: "Something went wrong, please try again")
       end
@@ -387,10 +403,13 @@ defmodule OliWeb.DeliveryController do
     Oli.Utils.Recaptcha.verify(g_recaptcha_response) == {:success, true}
   end
 
-  defp current_or_guest_user(conn) do
+  defp current_or_guest_user(conn, requires_enrollment) do
     case conn.assigns.current_user do
       nil ->
-        Accounts.create_guest_user()
+        if requires_enrollment, do: {:redirect, nil}, else: Accounts.create_guest_user()
+
+      %User{guest: true} = guest ->
+        if requires_enrollment, do: {:redirect, nil}, else: {:ok, guest}
 
       user ->
         {:ok, user}
@@ -446,6 +465,7 @@ defmodule OliWeb.DeliveryController do
           |> Enum.map(
             &%{
               name: &1.name,
+              email: &1.email,
               last_interaction: &1.last_interaction,
               progress: &1.progress,
               overall_proficiency: &1.overall_proficiency,
@@ -455,6 +475,7 @@ defmodule OliWeb.DeliveryController do
           |> DataTable.new()
           |> DataTable.headers([
             :name,
+            :email,
             :last_interaction,
             :progress,
             :overall_proficiency,
@@ -474,9 +495,9 @@ defmodule OliWeb.DeliveryController do
       nil ->
         Phoenix.Controller.redirect(conn, to: Routes.static_page_path(OliWeb.Endpoint, :not_found))
 
-      _section ->
+      section ->
         contents =
-          Sections.get_objectives_and_subobjectives(slug)
+          Sections.get_objectives_and_subobjectives(section)
           |> Enum.map(
             &%{
               objective: &1.objective,

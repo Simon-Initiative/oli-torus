@@ -1,5 +1,5 @@
 import React, { FocusEventHandler, useCallback, useMemo } from 'react';
-import { Descendant, Operation, Editor as SlateEditor, Transforms, createEditor } from 'slate';
+import { Descendant, Operation, Editor as SlateEditor, createEditor } from 'slate';
 import { withHistory } from 'slate-history';
 import { Editable, RenderElementProps, RenderLeafProps, Slate, withReact } from 'slate-react';
 import { EditorToolbar } from 'components/editing/toolbar/editorToolbar/EditorToolbar';
@@ -8,6 +8,7 @@ import { Mark, Marks } from 'data/content/model/text';
 import { classNames } from 'utils/classNames';
 import { CommandContext, CommandDescription } from '../elements/commands/interfaces';
 import { backspaceBlockKeyDown, deleteBlockKeyDown } from './handlers/deleteblock';
+import { onKeyDown as linkOnKeyDown } from './handlers/deleteempty';
 import { hotkeyHandler } from './handlers/hotkey';
 import { onKeyDown as listOnKeyDown } from './handlers/lists';
 import { onKeyDown as quoteOnKeyDown } from './handlers/quote';
@@ -19,6 +20,7 @@ import { withInlines } from './overrides/inlines';
 import { withMarkdown } from './overrides/markdown';
 import { withTables } from './overrides/tables';
 import { withVoids } from './overrides/voids';
+import { createOnPaste } from './paste/onPaste';
 
 export type EditorProps = {
   // Callback when there has been any change to the editor
@@ -35,11 +37,12 @@ export type EditorProps = {
   className?: string;
   style?: React.CSSProperties;
   placeholder?: string;
-  children?: React.ReactNode;
   onPaste?: React.ClipboardEventHandler<HTMLDivElement>;
+  children?: React.ReactNode;
   editorOverride?: SlateEditor;
   onFocus?: FocusEventHandler | undefined;
   onBlur?: FocusEventHandler | undefined;
+  onSwitchToMarkdown?: () => void;
 };
 
 // Necessary to work around FireFox focus and selection issues with Slate
@@ -63,6 +66,7 @@ export const Editor: React.FC<EditorProps> = React.memo((props: EditorProps) => 
     if (props.editorOverride) {
       return props.editorOverride;
     }
+
     const editor = withMarkdown(props.commandContext)(
       withReact(withHistory(withTables(withInlines(withVoids(createEditor()))))),
     );
@@ -80,6 +84,10 @@ export const Editor: React.FC<EditorProps> = React.memo((props: EditorProps) => 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const onPaste = useMemo(() => {
+    return props.onPaste || createOnPaste(editor);
+  }, [editor, props.onPaste]);
+
   const renderElement = useCallback(
     (renderProps: RenderElementProps) =>
       editorFor(renderProps.element, renderProps, props.commandContext),
@@ -95,6 +103,7 @@ export const Editor: React.FC<EditorProps> = React.memo((props: EditorProps) => 
       hotkeyHandler(editor, e.nativeEvent, props.commandContext);
       backspaceBlockKeyDown(editor, e);
       deleteBlockKeyDown(editor, e);
+      linkOnKeyDown(editor, e);
     },
     [editor, props.commandContext],
   );
@@ -121,7 +130,7 @@ export const Editor: React.FC<EditorProps> = React.memo((props: EditorProps) => 
     <React.Fragment>
       <Slate
         editor={editor}
-        value={props.value.length === 0 ? [Model.p()] : props.value}
+        initialValue={props.value.length === 0 ? [Model.p()] : props.value}
         onChange={onChange}
       >
         {props.children}
@@ -130,6 +139,7 @@ export const Editor: React.FC<EditorProps> = React.memo((props: EditorProps) => 
           context={props.commandContext}
           insertOptions={props.toolbarInsertDescs}
           fixedToolbar={props.fixedToolbar}
+          onSwitchToMarkdown={props.onSwitchToMarkdown}
         />
 
         <Editable
@@ -147,21 +157,7 @@ export const Editor: React.FC<EditorProps> = React.memo((props: EditorProps) => 
           onKeyDown={onKeyDown}
           onFocus={props.onFocus || emptyOnFocus}
           onBlur={props.onBlur}
-          onPaste={(e: React.ClipboardEvent<HTMLDivElement>) => {
-            if (props.onPaste) return props.onPaste(e);
-
-            const pastedText = e.clipboardData?.getData('text')?.trim();
-            const youtubeRegex =
-              /^(?:(?:https?:)?\/\/)?(?:(?:www|m)\.)?(?:(?:youtube\.com|youtu.be))(?:\/(?:[\w-]+\?v=|embed\/|v\/)?)([\w-]+)(?:\S+)?$/;
-            const matches = pastedText.match(youtubeRegex);
-            if (matches != null) {
-              // matches[0] === the entire url
-              // matches[1] === video id
-              const [, videoId] = matches;
-              e.preventDefault();
-              Transforms.insertNodes(editor, [Model.youtube(videoId)]);
-            }
-          }}
+          onPaste={onPaste}
         />
       </Slate>
     </React.Fragment>

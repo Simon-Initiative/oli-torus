@@ -58,12 +58,8 @@ defmodule Oli.Authoring.MediaLibraryTest do
       assert {:error, {:not_found}} == MediaLibrary.size("thisprojectdoesnotexist")
     end
 
-    test "add/3 detects duplicate file name", %{project1: project1} do
-      assert {:error, {:file_exists}} == MediaLibrary.add(project1.slug, "3", "test")
-    end
-
     test "add/3 detects duplicate file contents", %{project1: project1} do
-      {:ok, item} = MediaLibrary.add(project1.slug, "newfile", "identical content")
+      {:duplicate, item} = MediaLibrary.add(project1.slug, "newfile", "identical content")
       assert item.file_name == "9"
     end
 

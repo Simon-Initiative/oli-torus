@@ -553,7 +553,7 @@ defmodule Oli.Rendering.Content.Html do
       end
 
     captioned_content(context, attrs, [
-      ~s|<pre><code class="language-#{language}">#{escape_xml!(code)}</code></pre>\n|
+      ~s|<pre><code class="torus-code language-#{language}">#{escape_xml!(code)}</code></pre>\n|
     ])
   end
 
@@ -575,7 +575,7 @@ defmodule Oli.Rendering.Content.Html do
       end
 
     captioned_content(context, attrs, [
-      ~s|<pre><code class="language-#{language}">|,
+      ~s|<pre><code class="torus-code language-#{language}">|,
       next.(),
       "</code></pre>\n"
     ])
@@ -590,7 +590,7 @@ defmodule Oli.Rendering.Content.Html do
       log_error("Malformed content element. Missing language attribute", attrs)
 
     captioned_content(context, attrs, [
-      ~s|<pre><code class="language-none">|,
+      ~s|<pre><code class="torus-code language-none">|,
       next.(),
       "</code></pre>\n"
     ])

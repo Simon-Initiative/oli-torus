@@ -7,6 +7,7 @@ import { insideSemanticElement } from '../utils';
 export const insertCallout = createButtonCommandDesc({
   icon: <i className="fa-solid fa-bullhorn"></i>,
   description: 'Callout',
+  category: 'General',
   execute: (_context, editor) => {
     const at = editor.selection;
     if (!at) return;
@@ -19,6 +20,7 @@ export const insertCallout = createButtonCommandDesc({
 export const insertInlineCallout = createButtonCommandDesc({
   icon: <i className="fa-solid fa-bullhorn"></i>,
   description: 'Callout',
+  category: 'General',
   execute: (_context, editor) => {
     const at = editor.selection;
     if (!at) return;

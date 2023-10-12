@@ -1,5 +1,57 @@
 # Changelog
 
+## 0.25.1 (Unreleased)
+
+### Enhancements
+
+### Bug Fixes
+
+- Fix an issue where admin attempting to create a new institution when an existing registration with the same issuer and client_id fails
+
+## 0.25.0 (2023-10-5)
+
+### Enhancements
+
+- Ability to Archive Products and toggle display of "show archived" products
+- "Available Date" setting for assessments added
+- Extended the Revision History tool to allow access to hierarchy, objectives and editing of children attributes
+- Markdown editing support in Basic Pages
+- Project export now includes required survey and all products
+- Assessments with zero activities can now be submitted
+- Added search capability and role type indication in My Courses view
+- Added tooltips that explain progress and proficiency calculations
+- Expose student email address in Manage Enrollments
+- Transfer student data, progress from one enrollment to another enrollment (in different section)
+- Add better support for copy and paste of rich content (html, word, docs) into editor
+- Add "enroll by email and role" feature
+- Improved product and section creation performance
+- New analytics infrastructure for tracking aggregate student performance
+- Optimized raw data download feature
+
+### Bug Fixes
+
+- Fixed handling of super activity iframe size
+- Fixed typo in enrollment modal window
+- Removed creation of unnecessary grade update worker jobs
+- Fixed scheduling bug related to times being reset
+- Updated "customize curriculum" link text to be consistent
+- Fixed drag and drop hints from obscuring feedback
+- Fixed numeric list creation issue
+- Prevent users from enrolling as guests when enrollment is required
+- Fixed quiz scores tab horizontal scrolling from obscuring student name
+- Fixed progress calculations in archived sections
+- Fixed quiz score calculations for suspended students
+- Fixed rendering of discussion posts in archived discussions
+- Fixed dark mode issues in advanced author
+- Fixed saving multiple new container additions during remix
+- Fixed cash net in LTI iframe operation
+- Fixed problem with repeated learning objectives in scored activities view
+- Fixes table rendering when missing a caption inside of paged group
+- Fixes drag and drop bugs related to attempt reset
+- Fixes problem with deleting hints on multi-part activities
+- Restores ctrl-z undo support
+- Fixes several issues with MediaManager UI
+
 ## 0.24.5 (2023-9-12)
 
 ### Bug Fixes
@@ -25,8 +77,7 @@ LOG_INCOMPLETE_HTTP_REQUESTS      (Optional) Log incomplete HTTP requests (Defau
 ### Bug Fixes
 
 - Query performance for proficiency calculations
-
-### Enhancements
+- Fix performance issue for learning proficiency calculation
 
 ### Configs
 

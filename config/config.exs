@@ -149,20 +149,19 @@ config :oli, Oban,
   queues: [
     default: 10,
     snapshots: 20,
+    s3_uploader: 20,
     selections: 2,
     updates: 10,
     grades: 30,
-    auto_submit: 3
+    auto_submit: 3,
+    analytics_export: 3,
+    datashop_export: 3
   ]
 
 config :ex_money,
   auto_start_exchange_rate_service: false,
   default_cldr_backend: Oli.Cldr,
   json_library: Jason
-
-config :surface, :components, [
-  {Surface.Components.Form.ErrorTag, default_translator: {OliWeb.ErrorHelpers, :translate_error}}
-]
 
 # Configure reCAPTCHA
 config :oli, :recaptcha,
@@ -222,13 +221,6 @@ config :appsignal, :config, revision: System.get_env("SHA", default_sha)
 
 config :appsignal, :client_key, System.get_env("APPSIGNAL_PUSH_API_KEY", nil)
 
-config :surface, :components, [
-  {
-    Surface.Components.Form.ErrorTag,
-    default_class: "help-block", default_translator: {OliWeb.ErrorHelpers, :translate_error}
-  }
-]
-
 # Configure Privacy Policies link
 config :oli, :privacy_policies,
   url: System.get_env("PRIVACY_POLICIES_URL", "https://www.cmu.edu/legal/privacy-notice.html")
@@ -272,6 +264,14 @@ config :tailwind,
       --config=tailwind.config.js
       --input=css/app.css
       --output=../priv/static/css/app.css
+    ),
+    cd: Path.expand("../assets", __DIR__)
+  ],
+  storybook: [
+    args: ~w(
+      --config=tailwind.config.js
+      --input=css/storybook.css
+      --output=../priv/static/assets/storybook.css
     ),
     cd: Path.expand("../assets", __DIR__)
   ]

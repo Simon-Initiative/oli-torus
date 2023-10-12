@@ -7,6 +7,7 @@ defmodule OliWeb.Router do
     extensions: [PowResetPassword, PowEmailConfirmation]
 
   import Phoenix.LiveDashboard.Router
+  import PhoenixStorybook.Router
 
   @user_persistent_session_cookie_key "oli_user_persistent_session_v2"
   @author_persistent_session_cookie_key "oli_author_persistent_session_v2"
@@ -20,8 +21,8 @@ defmodule OliWeb.Router do
     plug(:accepts, ["html"])
     plug(:fetch_session)
     plug(:fetch_live_flash)
-    plug(:put_root_layout, {OliWeb.LayoutView, "default.html"})
-    plug(:put_layout, {OliWeb.LayoutView, "app.html"})
+    plug(:put_root_layout, {OliWeb.LayoutView, :default})
+    plug(:put_layout, html: {OliWeb.LayoutView, :app})
     plug(:put_secure_browser_headers)
     plug(Oli.Plugs.LoadTestingCSRFBypass)
     plug(:protect_from_forgery)
@@ -45,7 +46,7 @@ defmodule OliWeb.Router do
   pipeline :lti do
     plug(:fetch_session)
     plug(:fetch_live_flash)
-    plug(:put_root_layout, {OliWeb.LayoutView, "lti.html"})
+    plug(:put_root_layout, {OliWeb.LayoutView, :lti})
     plug(OliWeb.Plugs.SessionContext)
   end
 
@@ -94,11 +95,11 @@ defmodule OliWeb.Router do
 
   # set the layout to be workspace
   pipeline :workspace do
-    plug(:put_root_layout, {OliWeb.LayoutView, "workspace.html"})
+    plug(:put_root_layout, {OliWeb.LayoutView, :workspace})
   end
 
   pipeline :delivery_layout do
-    plug(:put_root_layout, {OliWeb.LayoutView, "delivery.html"})
+    plug(:put_root_layout, {OliWeb.LayoutView, :delivery})
   end
 
   pipeline :maybe_gated_resource do
@@ -221,11 +222,19 @@ defmodule OliWeb.Router do
     plug(Oli.Plugs.EnsureUserSectionVisit)
   end
 
+  pipeline :delivery_preview do
+    plug(Oli.Plugs.DeliveryPreview)
+  end
+
   ### HELPERS ###
 
-  defp put_pow_mailer_layout(conn, layout), do: put_private(conn, :pow_mailer_layout, layout)
+  defp put_pow_mailer_layout(conn, layout), do: put_private(conn, :pow_mailer_layouts, layout)
 
   ### ROUTES ###
+
+  scope "/" do
+    storybook_assets()
+  end
 
   scope "/" do
     pipe_through([:browser, :delivery, :registration_captcha, :pow_email_layout])
@@ -278,6 +287,12 @@ defmodule OliWeb.Router do
 
   scope "/authoring", PowInvitation.Phoenix, as: :pow_invitation do
     pipe_through([:browser, :authoring, :registration_captcha])
+
+    resources("/invitations", InvitationController, only: [:edit, :update])
+  end
+
+  scope "/delivery", PowInvitation.Phoenix, as: :delivery_pow_invitation do
+    pipe_through([:browser, :delivery, :registration_captcha])
 
     resources("/invitations", InvitationController, only: [:edit, :update])
   end
@@ -339,7 +354,7 @@ defmodule OliWeb.Router do
     )
 
     get(
-      "/products/:product_id/payments/donwload_codes",
+      "/products/:product_id/payments/download_codes",
       PaymentController,
       :download_payment_codes
     )
@@ -378,7 +393,7 @@ defmodule OliWeb.Router do
     pipe_through([:browser, :authoring_protected, :workspace, :authorize_project])
 
     live_session :load_projects,
-      on_mount: [Oli.LiveSessionPlugs.SetCurrentAuthor, Oli.LiveSessionPlugs.SetProject] do
+      on_mount: [OliWeb.LiveSessionPlugs.SetCurrentAuthor, OliWeb.LiveSessionPlugs.SetProject] do
       live("/:project_id/overview", Projects.OverviewLive)
       live("/:project_id", Projects.OverviewLive)
     end
@@ -391,7 +406,6 @@ defmodule OliWeb.Router do
     live("/:project_id/publish", Projects.PublishView)
     post("/:project_id/datashop", ProjectController, :download_datashop)
     post("/:project_id/export", ProjectController, :download_export)
-    post("/:project_id/insights", ProjectController, :download_analytics)
     post("/:project_id/duplicate", ProjectController, :clone_project)
 
     # Alternatives Groups
@@ -629,7 +643,7 @@ defmodule OliWeb.Router do
 
     post("/c/success", PaymentProviders.CashnetController, :success)
     post("/c/failure", PaymentProviders.CashnetController, :failure)
-    get("/c/signoff", PaymentProviders.CashnetController, :signoff)
+    post("/c/signoff", PaymentProviders.CashnetController, :signoff)
   end
 
   # Endpoints for client-side scheduling UI
@@ -754,7 +768,7 @@ defmodule OliWeb.Router do
       :pow_email_layout
     ])
 
-    get("/", DeliveryController, :open_and_free_index)
+    live("/", Delivery.OpenAndFreeIndex)
 
     live("/join/invalid", Sections.InvalidSectionInviteView)
   end
@@ -811,7 +825,7 @@ defmodule OliWeb.Router do
         OliWeb.LiveSessionPlugs.SetRouteName,
         OliWeb.Delivery.StudentDashboard.InitialAssigns
       ],
-      root_layout: {OliWeb.LayoutView, "delivery_student_dashboard.html"} do
+      root_layout: {OliWeb.LayoutView, :delivery_student_dashboard} do
       live("/:active_tab", Delivery.StudentDashboard.StudentDashboardLive,
         metadata: %{route_name: :student_dashboard}
       )
@@ -822,7 +836,7 @@ defmodule OliWeb.Router do
         OliWeb.LiveSessionPlugs.SetRouteName,
         OliWeb.Delivery.StudentDashboard.InitialAssigns
       ],
-      root_layout: {OliWeb.LayoutView, "delivery_student_dashboard.html"} do
+      root_layout: {OliWeb.LayoutView, :delivery_student_dashboard} do
       live(
         "/preview/:active_tab",
         Delivery.StudentDashboard.StudentDashboardLive,
@@ -843,7 +857,7 @@ defmodule OliWeb.Router do
 
     live_session :instructor_dashboard_preview,
       on_mount: OliWeb.Delivery.InstructorDashboard.InitialAssigns,
-      root_layout: {OliWeb.LayoutView, "delivery_dashboard.html"} do
+      root_layout: {OliWeb.LayoutView, :delivery_dashboard} do
       live("/", Delivery.InstructorDashboard.InstructorDashboardLive, :preview)
       live("/:view", Delivery.InstructorDashboard.InstructorDashboardLive, :preview)
       live("/:view/:active_tab", Delivery.InstructorDashboard.InstructorDashboardLive, :preview)
@@ -864,25 +878,25 @@ defmodule OliWeb.Router do
     )
 
     get(
-      "/downloads/course_content/:section_slug",
+      "/downloads/course_content",
       DeliveryController,
       :download_course_content_info
     )
 
     get(
-      "/downloads/students_progress/:section_slug",
+      "/downloads/students_progress",
       DeliveryController,
       :download_students_progress
     )
 
     get(
-      "/downloads/learning_objectives/:section_slug",
+      "/downloads/learning_objectives",
       DeliveryController,
       :download_learning_objectives
     )
 
     get(
-      "/downloads/quiz_scores/:section_slug",
+      "/downloads/quiz_scores",
       DeliveryController,
       :download_quiz_scores
     )
@@ -895,8 +909,7 @@ defmodule OliWeb.Router do
 
     live_session :instructor_dashboard,
       on_mount: OliWeb.Delivery.InstructorDashboard.InitialAssigns,
-      root_layout: {OliWeb.LayoutView, "delivery_dashboard.html"} do
-
+      root_layout: {OliWeb.LayoutView, :delivery_dashboard} do
       live("/:view", Delivery.InstructorDashboard.InstructorDashboardLive)
       live("/:view/:active_tab", Delivery.InstructorDashboard.InstructorDashboardLive)
 
@@ -914,6 +927,7 @@ defmodule OliWeb.Router do
       :require_section,
       :delivery,
       :require_exploration_pages,
+      :delivery_preview,
       :delivery_protected,
       :maybe_gated_resource,
       :enforce_enroll_and_paywall,
@@ -983,9 +997,9 @@ defmodule OliWeb.Router do
 
     live_session :load_section,
       on_mount: [
-        Oli.LiveSessionPlugs.SetSection,
-        Oli.LiveSessionPlugs.SetCurrentUser,
-        Oli.LiveSessionPlugs.RequireEnrollment
+        OliWeb.LiveSessionPlugs.SetSection,
+        OliWeb.LiveSessionPlugs.SetCurrentUser,
+        OliWeb.LiveSessionPlugs.RequireEnrollment
       ] do
       live(
         "/:section_slug/welcome",
@@ -1019,13 +1033,14 @@ defmodule OliWeb.Router do
     live("/:section_slug/remix", Delivery.RemixSection)
     live("/:section_slug/remix/:section_resource_slug", Delivery.RemixSection)
     live("/:section_slug/enrollments", Sections.EnrollmentsViewLive)
+    post("/:section_slug/enrollments", InviteController, :create_bulk)
 
     live_session :enrolled_students,
       on_mount: [
         OliWeb.LiveSessionPlugs.SetRouteName,
         OliWeb.Delivery.StudentDashboard.InitialAssigns
       ],
-      root_layout: {OliWeb.LayoutView, "delivery_student_dashboard.html"} do
+      root_layout: {OliWeb.LayoutView, :delivery_student_dashboard} do
       live(
         "/:section_slug/enrollments/students/:student_id/:active_tab",
         Delivery.StudentDashboard.StudentDashboardLive,
@@ -1185,7 +1200,9 @@ defmodule OliWeb.Router do
     live("/open_and_free/:section_slug/remix", Delivery.RemixSection, as: :open_and_free_remix)
 
     # Institutions, LTI Registrations and Deployments
-    resources("/institutions", InstitutionController)
+    resources("/institutions", InstitutionController, except: [:index])
+
+    live("/institutions/", Admin.Institutions.IndexLive)
 
     live(
       "/institutions/:institution_id/discount",
@@ -1210,7 +1227,6 @@ defmodule OliWeb.Router do
     end
 
     put("/approve_registration", InstitutionController, :approve_registration)
-    delete("/pending_registration/:id", InstitutionController, :remove_registration)
 
     # Communities
     live("/communities/new", CommunityLive.NewView)
@@ -1362,12 +1378,11 @@ defmodule OliWeb.Router do
     end
 
     scope "/dev", OliWeb do
-      pipe_through([
-        :browser,
-        :admin
-      ])
+      pipe_through([:browser])
 
       get("/flame_graphs", DevController, :flame_graphs)
+
+      live_storybook("/storybook", backend_module: OliWeb.Storybook)
     end
   end
 end

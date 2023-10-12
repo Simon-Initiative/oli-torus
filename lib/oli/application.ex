@@ -56,7 +56,10 @@ defmodule Oli.Application do
         Oli.Publishing.Publications.DiffAgent,
 
         # Starts Cachex to store user/author info across requests
-        Oli.AccountLookupCache
+        Oli.AccountLookupCache,
+
+        # a supervisor which can be used to dynamically supervise tasks
+        {Task.Supervisor, name: Oli.TaskSupervisor}
       ] ++ maybe_node_js_config()
 
     if log_incomplete_requests?() do

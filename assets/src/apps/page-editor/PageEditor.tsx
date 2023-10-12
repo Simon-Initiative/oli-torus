@@ -9,6 +9,7 @@ import { ActivityModelSchema, Undoable as ActivityUndoable } from 'components/ac
 import { EditorUpdate as ActivityEditorUpdate } from 'components/activity/InlineActivityEditor';
 import { PersistenceStatus } from 'components/content/PersistenceStatus';
 import { TitleBar } from 'components/content/TitleBar';
+import { setDefaultEditor } from 'components/editing/markdown_editor/markdown_util';
 import { AlternativesContextProvider } from 'components/hooks/useAlternatives';
 import { Banner } from 'components/messages/Banner';
 import { ModalDisplay } from 'components/modal/ModalDisplay';
@@ -25,6 +26,7 @@ import { Objective } from 'data/content/objective';
 import {
   ActivityMap,
   ActivityReference,
+  EditorType,
   ResourceContent,
   ResourceContext,
   StructuredContent,
@@ -53,6 +55,7 @@ export interface PageEditorProps extends ResourceContext {
   activities: ActivityMap;
   featureFlags: FeatureFlags;
   appsignalKey: string | null;
+  defaultEditor: EditorType;
   onLoadPreferences: () => void;
 }
 
@@ -122,11 +125,14 @@ export class PageEditor extends React.Component<PageEditorProps, PageEditorState
   mousedownListener: any;
   mouseupListener: any;
   windowBlurListener: any;
+  editorsRef: React.RefObject<HTMLDivElement> = React.createRef();
 
   constructor(props: PageEditorProps) {
     super(props);
 
-    const { title, objectives, allObjectives, content, allTags } = props;
+    const { title, objectives, allObjectives, content, allTags, defaultEditor } = props;
+
+    setDefaultEditor(defaultEditor);
 
     const activityContexts = Immutable.OrderedMap<string, ActivityEditContext>(
       this.props.activityContexts.map((c) => {
@@ -269,7 +275,7 @@ export class PageEditor extends React.Component<PageEditorProps, PageEditorState
     // only update if editMode is active
     if (!this.state.editMode) return;
 
-    const model = this.adjustActivityForConstraints(
+    const constrainedContent = this.adjustActivityForConstraints(
       this.state.activityContexts.get(id)?.typeSlug,
       update.content,
     );
@@ -289,7 +295,7 @@ export class PageEditor extends React.Component<PageEditorProps, PageEditorState
           this.props.projectSlug,
           this.props.resourceId,
           merged.activityId,
-          { ...update, content: model },
+          { ...update, content: constrainedContent },
           releaseLock,
         );
 
@@ -540,9 +546,15 @@ export class PageEditor extends React.Component<PageEditorProps, PageEditorState
           )
         }
       >
-        Preview <i className="fas fa-external-link-alt ml-1"></i>
+        <i className="fa-regular fa-file-lines mr-1"></i> Preview
       </button>
     );
+
+    const dismissMessage = (msg: any) =>
+      this.setState({
+        messages: this.state.messages.filter((m) => msg.guid !== m.guid),
+      });
+    const executeAction = (message: any, action: any) => action.execute(message);
 
     return (
       <React.StrictMode>
@@ -555,18 +567,17 @@ export class PageEditor extends React.Component<PageEditorProps, PageEditorState
                 <UndoToasts undoables={this.state.undoables} onInvokeUndo={this.onInvokeUndo} />
 
                 <Banner
-                  dismissMessage={(msg: any) =>
-                    this.setState({
-                      messages: this.state.messages.filter((m) => msg.guid !== m.guid),
-                    })
-                  }
-                  executeAction={(message: any, action: any) => action.execute(message)}
+                  dismissMessage={dismissMessage}
+                  executeAction={executeAction}
                   messages={this.state.messages}
                 />
                 <TitleBar
                   title={state.title}
                   onTitleEdit={onTitleEdit}
                   editMode={this.state.editMode}
+                  dismissMessage={dismissMessage}
+                  executeAction={executeAction}
+                  messages={this.state.messages}
                 >
                   <PersistenceStatus persistence={this.state.persistence} />
 
@@ -596,6 +607,7 @@ export class PageEditor extends React.Component<PageEditorProps, PageEditorState
                     />
                     <Editors
                       {...props}
+                      editorsRef={this.editorsRef}
                       editMode={this.state.editMode}
                       objectives={this.state.allObjectives}
                       allTags={this.state.allTags}

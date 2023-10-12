@@ -18,7 +18,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.Helpers do
             Enum.map(students, & &1.id)
           )
 
-        proficiency_per_page = Metrics.proficiency_per_page(section.slug, page_ids)
+        proficiency_per_page = Metrics.proficiency_per_page(section, page_ids)
 
         pages_with_metrics =
           Enum.map(pages, fn page ->
@@ -31,7 +31,6 @@ defmodule OliWeb.Delivery.InstructorDashboard.Helpers do
         {0, pages_with_metrics}
 
       {total_count, containers} ->
-
         student_progress =
           Metrics.progress_across(
             section.id,
@@ -69,14 +68,14 @@ defmodule OliWeb.Delivery.InstructorDashboard.Helpers do
 
     avg_score_across_for_pages =
       Metrics.avg_score_across_for_pages(
-        section.id,
+        section,
         page_ids,
         student_ids
       )
 
     attempts_across_for_pages =
       Metrics.attempts_across_for_pages(
-        section.id,
+        section,
         page_ids,
         student_ids
       )
@@ -108,7 +107,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.Helpers do
         Sections.enrolled_students(section.slug)
         |> add_students_progress_for_page(section.id, page_id)
         |> add_students_last_interaction_for_page(section.slug, page_id)
-        |> add_students_overall_proficiency_for_page(section.slug, page_id)
+        |> add_students_overall_proficiency_for_page(section, page_id)
     end
   end
 
@@ -156,9 +155,8 @@ defmodule OliWeb.Delivery.InstructorDashboard.Helpers do
     end)
   end
 
-  defp add_students_overall_proficiency_for_page(students, section_slug, page_id) do
-    proficiency_per_student_for_page =
-      Metrics.proficiency_per_student_for_page(section_slug, page_id)
+  defp add_students_overall_proficiency_for_page(students, section, page_id) do
+    proficiency_per_student_for_page = Metrics.proficiency_per_student_for_page(section, page_id)
 
     Enum.map(students, fn student ->
       Map.merge(student, %{

@@ -50,8 +50,22 @@ defmodule OliWeb.Delivery.InstructorDashboard.DiscussionsTabTest do
         title: "Page #2"
       )
 
+    page_resource_3 = insert(:resource)
+    collab_space_config_3 = build(:collab_space_config, status: :enabled)
+
+    page_revision_3 =
+      insert(:revision,
+        resource: page_resource_3,
+        resource_type_id: ResourceType.get_id_by_type("page"),
+        content: %{"model" => []},
+        slug: "page_3",
+        collab_space_config: collab_space_config_3,
+        title: "Page #3"
+      )
+
     insert(:project_resource, %{project_id: project.id, resource_id: page_resource_1.id})
     insert(:project_resource, %{project_id: project.id, resource_id: page_resource_2.id})
+    insert(:project_resource, %{project_id: project.id, resource_id: page_resource_3.id})
 
     container_resource = insert(:resource)
 
@@ -59,7 +73,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.DiscussionsTabTest do
       insert(:revision, %{
         resource: container_resource,
         resource_type_id: ResourceType.get_id_by_type("container"),
-        children: [page_resource_1.id, page_resource_2.id],
+        children: [page_resource_1.id, page_resource_2.id, page_resource_3.id],
         content: %{},
         deleted: false,
         slug: "root_container",
@@ -93,6 +107,13 @@ defmodule OliWeb.Delivery.InstructorDashboard.DiscussionsTabTest do
       publication: publication,
       resource: page_resource_2,
       revision: page_revision_2,
+      author: author
+    })
+
+    insert(:published_resource, %{
+      publication: publication,
+      resource: page_resource_3,
+      revision: page_revision_3,
       author: author
     })
 
@@ -156,7 +177,8 @@ defmodule OliWeb.Delivery.InstructorDashboard.DiscussionsTabTest do
       page_1_post_2: page_1_post_2,
       page_1_post_3: page_1_post_3,
       page_1_post_4: page_1_post_4,
-      page_2_post_1: page_2_post_1
+      page_2_post_1: page_2_post_1,
+      page_revision_1: page_revision_1
     ]
   end
 
@@ -260,11 +282,77 @@ defmodule OliWeb.Delivery.InstructorDashboard.DiscussionsTabTest do
 
       view |> element("form[phx-change='filter']") |> render_change(%{filter: "by_discussion"})
 
-      assert get_elements_in_table_count(view) == 2
+      assert get_elements_in_table_count(view) == 3
       assert view |> has_element?("span", "Page #1")
-      assert view |> has_element?("p", "Number of posts: 4 (1 pending approval)")
+
+      assert view
+             |> element("table tbody tr:nth-of-type(1) p")
+             |> render =~
+               ~s{<p class=\"torus-p\">\n      \n        Number of posts: <b>4</b>\n        \n          (1 pending approval)\n        \n      \n    </p>}
+
       assert view |> has_element?("span", "Page #2")
-      assert view |> has_element?("p", "Number of posts: 1 (1 pending approval)")
+
+      assert view
+             |> element("table tbody tr:nth-of-type(2) p")
+             |> render =~
+               ~s{<p class=\"torus-p\">\n      \n        Number of posts: <b>1</b>\n        \n          (1 pending approval)\n        \n      \n    </p>}
+
+      assert view
+             |> element("table tbody tr:nth-of-type(3) p")
+             |> render =~ "No posts yet"
+    end
+
+    test "deleted posts are not included in posts count when filtering by collab space", %{
+      conn: conn,
+      instructor: instructor,
+      section: section,
+      page_revision_1: page_revision_1
+    } do
+      enroll_user_to_section(instructor, section, :context_instructor)
+
+      _deleted_post =
+        insert(:post,
+          status: :deleted,
+          content: %{message: "Page 1 - approved post"},
+          section: section,
+          resource: page_revision_1.resource,
+          user: instructor
+        )
+
+      {:ok, view, _html} = live(conn, live_view_discussions_route(section.slug))
+      view |> element("form[phx-change='filter']") |> render_change(%{filter: "by_discussion"})
+
+      # we check that the count is 4 and not 5
+      assert view
+             |> element("table tbody tr:first-of-type p")
+             |> render =~
+               ~s{<p class=\"torus-p\">\n      \n        Number of posts: <b>4</b>\n        \n          (1 pending approval)\n        \n      \n    </p>}
+    end
+
+    test "the 'Most recent post' detail is only shown for pages with posts when filtering by collab space",
+         %{
+           conn: conn,
+           instructor: instructor,
+           section: section
+         } do
+      enroll_user_to_section(instructor, section, :context_instructor)
+
+      {:ok, view, _html} = live(conn, live_view_discussions_route(section.slug))
+      view |> element("form[phx-change='filter']") |> render_change(%{filter: "by_discussion"})
+
+      # most recent post detail is rendered for a page with posts
+      assert view
+             |> element("table tbody tr:nth-of-type(2)")
+             |> render =~ "Most recent post"
+
+      # but it is not rendered for a page without posts
+      assert view
+             |> element("table tbody tr:nth-of-type(3)")
+             |> render =~ "No posts yet"
+
+      refute view
+             |> element("table tbody tr:nth-of-type(3)")
+             |> render =~ "Most recent post"
     end
 
     defp get_elements_in_table_count(view) do

@@ -143,6 +143,26 @@ defmodule Oli.Utils do
               |> value_or(Map.get(data, :family_name))
               |> value_or("")
 
+            fn_length = String.length(first_name)
+            ln_length = String.length(last_name)
+
+            # Check if the first and last names should be shortened
+            {first_name, last_name} =
+              case {fn_length + ln_length > 255, fn_length > 127, ln_length > 127} do
+                {false, _, _} ->
+                  {first_name, last_name}
+
+                {true, true, true} ->
+                  {"#{String.slice(first_name, 0, 124)}...",
+                   "#{String.slice(last_name, 0, 124)}..."}
+
+                {true, true, false} ->
+                  {"#{String.slice(first_name, 0, 124)}...", last_name}
+
+                {true, false, true} ->
+                  {first_name, "#{String.slice(last_name, 0, 124)}..."}
+              end
+
             name =
               "#{first_name} #{last_name}"
               |> String.trim()
@@ -214,10 +234,20 @@ defmodule Oli.Utils do
   end
 
   def validate_dates_consistency(changeset, start_date_field, end_date_field) do
-    validate_change(changeset, start_date_field, fn _, field ->
-      # check if the start date is after the end date
-      if Timex.compare(field, get_field(changeset, end_date_field)) == 1 do
-        [{start_date_field, "must be before the end date"}]
+    changeset =
+      validate_change(changeset, start_date_field, fn _, field ->
+        # check if the start date is after the end date
+        if Timex.compare(field, get_field(changeset, end_date_field)) == 1 do
+          [{start_date_field, "must be before the end date"}]
+        else
+          []
+        end
+      end)
+
+    validate_change(changeset, end_date_field, fn _, field ->
+      # check if the end date is before the start date
+      if Timex.compare(field, get_field(changeset, start_date_field)) == -1 do
+        [{end_date_field, "must be after the start date"}]
       else
         []
       end
@@ -360,4 +390,48 @@ defmodule Oli.Utils do
       dynamic([entity], field(entity, ^field) == ^value or ^conditions)
     end)
   end
+
+  @doc """
+  Creates a temporary directory and calls the given function with the file path as an argument.
+  The directory will be deleted after the function returns.
+
+  If type: :file is passed, the function will create a temporary file instead of a directory.
+  """
+  def use_tmp(func, opts \\ []) do
+    # create tmp file
+    tmp_path =
+      Path.join([
+        System.tmp_dir!(),
+        uuid()
+      ])
+
+    if Keyword.get(opts, :type) == :file do
+      File.touch!(tmp_path)
+    else
+      File.mkdir!(tmp_path)
+    end
+
+    # ensure the file will get cleaned up even if the function fails
+    result =
+      try do
+        func.(tmp_path)
+      rescue
+        e ->
+          # cleanup
+          File.rm_rf!(tmp_path)
+
+          Logger.error(Exception.format(:error, e, __STACKTRACE__))
+          reraise e, __STACKTRACE__
+      end
+
+    # cleanup
+    File.rm_rf!(tmp_path)
+
+    result
+  end
+
+  @doc """
+  Converts an atom into a readable string by replacing underscores with empty spaces.
+  """
+  def stringify_atom(atom), do: atom |> Atom.to_string() |> String.replace("_", " ")
 end

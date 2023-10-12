@@ -2,6 +2,8 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTableModel do
   alias OliWeb.Common.Table.{ColumnSpec, SortableTableModel}
   alias OliWeb.Common.FormatDateTime
   alias OliWeb.Sections.AssessmentSettings.Tooltips
+  alias Phoenix.LiveView.JS
+
   use Phoenix.Component
 
   def new(
@@ -23,6 +25,13 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTableModel do
         render_fn: &__MODULE__.render_student_column/3,
         th_class: "pl-10 !sticky left-0 bg-white dark:bg-neutral-800 z-10",
         td_class: "sticky left-0 bg-white dark:bg-neutral-800 z-10 whitespace-nowrap"
+      },
+      %ColumnSpec{
+        name: :available_date,
+        label: "AVAILABLE DATE",
+        render_fn: &__MODULE__.render_available_date_column/3,
+        th_class: "whitespace-nowrap",
+        tooltip: Tooltips.for(:available_date)
       },
       %ColumnSpec{
         name: :due_date,
@@ -128,10 +137,38 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTableModel do
       Map.merge(assigns, %{name: student_exception.user.name, id: student_exception.user_id})
 
     ~H"""
-      <div class="pl-1 pr-4">
-        <input class="mr-2" type="checkbox" checked={@id in @selected_student_exceptions} name={"checkbox-#{@id}"} />
-        <%= @name %>
-      </div>
+    <div class="pl-1 pr-4">
+      <input
+        class="mr-2"
+        type="checkbox"
+        checked={@id in @selected_student_exceptions}
+        name={"checkbox-#{@id}"}
+      />
+      <%= @name %>
+    </div>
+    """
+  end
+
+  def render_available_date_column(assigns, student_exception, _) do
+    assigns =
+      Map.merge(assigns, %{
+        available_date: student_exception.start_date,
+        id: student_exception.user_id
+      })
+
+    ~H"""
+    <button
+      class="hover:underline whitespace-nowrap"
+      type="button"
+      phx-click={edit_date_and_show_modal(@on_edit_date, "available_date")}
+      phx-value-user_id={@id}
+    >
+      <%= if is_nil(@available_date) do %>
+        Always available
+      <% else %>
+        <%= value_from_datetime(@available_date, @ctx) %>
+      <% end %>
+    </button>
     """
   end
 
@@ -143,13 +180,18 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTableModel do
       })
 
     ~H"""
-      <button class="hover:underline whitespace-nowrap" type="button" phx-click={@on_edit_date} phx-value-user_id={@id}>
-        <%= if @due_date do %>
-          <%= value_from_datetime(@due_date, @ctx) %>
-        <% else %>
-          No due date
-        <% end %>
-      </button>
+    <button
+      class="hover:underline whitespace-nowrap"
+      type="button"
+      phx-click={edit_date_and_show_modal(@on_edit_date, "due_date")}
+      phx-value-user_id={@id}
+    >
+      <%= if @due_date do %>
+        <%= value_from_datetime(@due_date, @ctx) %>
+      <% else %>
+        No due date
+      <% end %>
+    </button>
     """
   end
 
@@ -163,7 +205,15 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTableModel do
     ~H"""
     <div class={data_class(@selected_assessment.max_attempts, @max_attempts)}>
       <div class="relative">
-        <input class="w-28" type="number" min="0" value={@max_attempts} placeholder="-" phx-debounce={300} name={"max_attempts-#{@id}"} />
+        <input
+          class="w-28"
+          type="number"
+          min="0"
+          value={@max_attempts}
+          placeholder="-"
+          phx-debounce={300}
+          name={"max_attempts-#{@id}"}
+        />
         <%= if @max_attempts == 0 do %>
           <span class="text-[10px] absolute -ml-20 mt-3">(Unlimited)</span>
         <% end %>
@@ -182,7 +232,15 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTableModel do
     ~H"""
     <div class={data_class(@selected_assessment.time_limit, @time_limit)}>
       <div class="relative">
-        <input class="w-28" type="number" min="0" value={@time_limit} placeholder="-" phx-debounce={300} name={"time_limit-#{@id}"} />
+        <input
+          class="w-28"
+          type="number"
+          min="0"
+          value={@time_limit}
+          placeholder="-"
+          phx-debounce={300}
+          name={"time_limit-#{@id}"}
+        />
         <%= if @time_limit == 0 do %>
           <span class="text-[10px] absolute -ml-20 mt-3">(Unlimited)</span>
         <% end %>
@@ -255,7 +313,15 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTableModel do
 
     ~H"""
     <div class={data_class(@selected_assessment.grace_period, @grace_period)}>
-      <input class="w-28" type="number" min="0" value={@grace_period} placeholder="-" phx-debounce={500} name={"grace_period-#{@id}"} />
+      <input
+        class="w-28"
+        type="number"
+        min="0"
+        value={@grace_period}
+        placeholder="-"
+        phx-debounce={500}
+        name={"grace_period-#{@id}"}
+      />
     </div>
     """
   end
@@ -325,13 +391,28 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTableModel do
     ~H"""
     <div class={data_class(@selected_assessment.password, @password)}>
       <%= if @password in ["", nil] do %>
-        <input class="w-40" type="text" placeholder={"Enter password"} phx-debounce={800} name={"password-#{@id}"}/>
+        <input
+          class="w-40"
+          type="text"
+          placeholder="Enter password"
+          phx-debounce={800}
+          name={"password-#{@id}"}
+        />
       <% else %>
         <%= if @id == @edit_password_id do %>
-          <input id={"password_input#{@id}"} class="w-40" type="text" value={@password} phx-hook="InputAutoSelect" phx-click-away={@on_no_edit_password} phx-debounce={800} name={"password-#{@id}"}/>
+          <input
+            id={"password_input#{@id}"}
+            class="w-40"
+            type="text"
+            value={@password}
+            phx-hook="InputAutoSelect"
+            phx-click-away={@on_no_edit_password}
+            phx-debounce={800}
+            name={"password-#{@id}"}
+          />
         <% else %>
           <button type="button" phx-click={@on_edit_password} phx-value-user_id={@id}>
-            <input class="w-40" type="password" value={hide_password(@password)}/>
+            <input class="w-40" type="password" value={hide_password(@password)} />
           </button>
         <% end %>
       <% end %>
@@ -355,4 +436,7 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTableModel do
     datetime
     |> FormatDateTime.date(ctx: ctx, show_timezone: false)
   end
+
+  defp edit_date_and_show_modal(on_edit_date, date_input_type),
+    do: JS.push(on_edit_date, "open", target: "#student_#{date_input_type}_modal")
 end

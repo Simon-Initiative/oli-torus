@@ -13,60 +13,62 @@ defmodule Oli.Delivery.AttemptsTest do
 
   import Oli.Factory
 
+  defp setup_create_attempt_records(_) do
+    content1 = %{
+      "stem" => "1",
+      "authoring" => %{
+        "parts" => [
+          %{
+            "id" => "1",
+            "responses" => [],
+            "scoringStrategy" => "best",
+            "evaluationStrategy" => "regex"
+          }
+        ]
+      }
+    }
+
+    content2 = %{
+      "stem" => "2",
+      "authoring" => %{
+        "parts" => [
+          %{
+            "id" => "1",
+            "responses" => [],
+            "scoringStrategy" => "best",
+            "evaluationStrategy" => "regex"
+          }
+        ]
+      }
+    }
+
+    map =
+      Seeder.base_project_with_resource2()
+      |> Seeder.create_section()
+      |> Seeder.add_objective("objective one", :o1)
+      |> Seeder.add_activity(%{title: "one", content: content1}, :a1)
+      |> Seeder.add_activity(%{title: "two", content: content2}, :a2)
+      |> Seeder.add_user(%{}, :user1)
+      |> Seeder.add_user(%{}, :user2)
+
+    attrs = %{
+      title: "page1",
+      content: %{
+        "model" => [
+          %{"type" => "activity-reference", "activity_id" => Map.get(map, :a1).resource.id},
+          %{"type" => "activity-reference", "activity_id" => Map.get(map, :a2).resource.id}
+        ]
+      },
+      objectives: %{"attached" => [Map.get(map, :o1).resource.id]},
+      graded: true
+    }
+
+    Seeder.add_page(map, attrs, :p1)
+    |> Seeder.create_section_resources()
+  end
+
   describe "creating the attempt tree records" do
-    setup do
-      content1 = %{
-        "stem" => "1",
-        "authoring" => %{
-          "parts" => [
-            %{
-              "id" => "1",
-              "responses" => [],
-              "scoringStrategy" => "best",
-              "evaluationStrategy" => "regex"
-            }
-          ]
-        }
-      }
-
-      content2 = %{
-        "stem" => "2",
-        "authoring" => %{
-          "parts" => [
-            %{
-              "id" => "1",
-              "responses" => [],
-              "scoringStrategy" => "best",
-              "evaluationStrategy" => "regex"
-            }
-          ]
-        }
-      }
-
-      map =
-        Seeder.base_project_with_resource2()
-        |> Seeder.create_section()
-        |> Seeder.add_objective("objective one", :o1)
-        |> Seeder.add_activity(%{title: "one", content: content1}, :a1)
-        |> Seeder.add_activity(%{title: "two", content: content2}, :a2)
-        |> Seeder.add_user(%{}, :user1)
-        |> Seeder.add_user(%{}, :user2)
-
-      attrs = %{
-        title: "page1",
-        content: %{
-          "model" => [
-            %{"type" => "activity-reference", "activity_id" => Map.get(map, :a1).resource.id},
-            %{"type" => "activity-reference", "activity_id" => Map.get(map, :a2).resource.id}
-          ]
-        },
-        objectives: %{"attached" => [Map.get(map, :o1).resource.id]},
-        graded: true
-      }
-
-      Seeder.add_page(map, attrs, :p1)
-      |> Seeder.create_section_resources()
-    end
+    setup [:setup_tags, :setup_create_attempt_records]
 
     test "create the attempt tree", %{
       p1: p1,
@@ -94,7 +96,8 @@ defmodule Oli.Delivery.AttemptsTest do
           activity_provider: activity_provider,
           blacklisted_activity_ids: [],
           publication_id: pub.id,
-          effective_settings: Oli.Delivery.Settings.get_combined_settings(p1.revision, section.id, user.id)
+          effective_settings:
+            Oli.Delivery.Settings.get_combined_settings(p1.revision, section.id, user.id)
         })
 
       assert Attempts.has_any_attempts?(user, section, p1.revision.resource_id)
@@ -143,6 +146,7 @@ defmodule Oli.Delivery.AttemptsTest do
       end
     end
 
+    @tag isolation: "serializable"
     test "starting a graded resource attempt with one user", %{
       p1: %{revision: revision, resource: resource},
       section: section,
@@ -150,7 +154,9 @@ defmodule Oli.Delivery.AttemptsTest do
     } do
       activity_provider = &Oli.Delivery.ActivityProvider.provide/6
       datashop_session_id = UUID.uuid4()
-      effective_settings = Oli.Delivery.Settings.get_combined_settings(revision, section.id, user1.id)
+
+      effective_settings =
+        Oli.Delivery.Settings.get_combined_settings(revision, section.id, user1.id)
 
       PageContext.create_for_visit(section, revision.slug, user1, datashop_session_id)
 
@@ -202,6 +208,7 @@ defmodule Oli.Delivery.AttemptsTest do
         )
     end
 
+    @tag isolation: "serializable"
     test "starting a graded resource attempt with two users", %{
       p1: %{revision: revision, resource: resource},
       section: section,
@@ -212,7 +219,8 @@ defmodule Oli.Delivery.AttemptsTest do
       datashop_session_id_user1 = UUID.uuid4()
       datashop_session_id_user2 = UUID.uuid4()
 
-      effective_settings = Oli.Delivery.Settings.get_combined_settings(revision, section.id, user1.id)
+      effective_settings =
+        Oli.Delivery.Settings.get_combined_settings(revision, section.id, user1.id)
 
       PageContext.create_for_visit(section, revision.slug, user1, datashop_session_id_user1)
       PageContext.create_for_visit(section, revision.slug, user2, datashop_session_id_user2)
@@ -279,84 +287,86 @@ defmodule Oli.Delivery.AttemptsTest do
     end
   end
 
+  defp setup_fetching_attempt_records(_) do
+    Seeder.base_project_with_resource2()
+    |> Seeder.create_section()
+    |> Seeder.add_user(%{}, :user1)
+    |> Seeder.add_user(%{}, :user2)
+    |> Seeder.add_activity(%{}, :publication, :project, :author, :activity_a)
+    |> Seeder.add_page(%{graded: true}, :graded_page)
+    |> Seeder.create_section_resources()
+    |> Seeder.create_resource_attempt(
+      %{attempt_number: 1},
+      :user1,
+      :page1,
+      :revision1,
+      :attempt1
+    )
+    |> Seeder.create_activity_attempt(
+      %{attempt_number: 1, transformed_model: %{some: :thing}},
+      :activity_a,
+      :attempt1,
+      :activity_attempt1
+    )
+    |> Seeder.create_part_attempt(
+      %{attempt_number: 1},
+      %Part{id: "1", responses: [], hints: []},
+      :activity_attempt1,
+      :part1_attempt1
+    )
+    |> Seeder.create_resource_attempt(
+      %{attempt_number: 2},
+      :user1,
+      :page1,
+      :revision1,
+      :attempt2
+    )
+    |> Seeder.create_activity_attempt(
+      %{attempt_number: 1, transformed_model: nil},
+      :activity_a,
+      :attempt2,
+      :activity_attempt2
+    )
+    |> Seeder.create_part_attempt(
+      %{attempt_number: 1},
+      %Part{id: "1", responses: [], hints: []},
+      :activity_attempt2,
+      :part1_attempt1
+    )
+    |> Seeder.create_part_attempt(
+      %{attempt_number: 2},
+      %Part{id: "1", responses: [], hints: []},
+      :activity_attempt2,
+      :part1_attempt2
+    )
+    |> Seeder.create_part_attempt(
+      %{attempt_number: 3},
+      %Part{id: "1", responses: [], hints: []},
+      :activity_attempt2,
+      :part1_attempt3
+    )
+    |> Seeder.create_part_attempt(
+      %{attempt_number: 1},
+      %Part{id: "2", responses: [], hints: []},
+      :activity_attempt2,
+      :part2_attempt1
+    )
+    |> Seeder.create_part_attempt(
+      %{attempt_number: 1},
+      %Part{id: "3", responses: [], hints: []},
+      :activity_attempt2,
+      :part3_attempt1
+    )
+    |> Seeder.create_part_attempt(
+      %{attempt_number: 2},
+      %Part{id: "3", responses: [], hints: []},
+      :activity_attempt2,
+      :part3_attempt2
+    )
+  end
+
   describe "fetching attempt records" do
-    setup do
-      Seeder.base_project_with_resource2()
-      |> Seeder.create_section()
-      |> Seeder.add_user(%{}, :user1)
-      |> Seeder.add_user(%{}, :user2)
-      |> Seeder.add_activity(%{}, :publication, :project, :author, :activity_a)
-      |> Seeder.add_page(%{graded: true}, :graded_page)
-      |> Seeder.create_section_resources()
-      |> Seeder.create_resource_attempt(
-        %{attempt_number: 1},
-        :user1,
-        :page1,
-        :revision1,
-        :attempt1
-      )
-      |> Seeder.create_activity_attempt(
-        %{attempt_number: 1, transformed_model: %{some: :thing}},
-        :activity_a,
-        :attempt1,
-        :activity_attempt1
-      )
-      |> Seeder.create_part_attempt(
-        %{attempt_number: 1},
-        %Part{id: "1", responses: [], hints: []},
-        :activity_attempt1,
-        :part1_attempt1
-      )
-      |> Seeder.create_resource_attempt(
-        %{attempt_number: 2},
-        :user1,
-        :page1,
-        :revision1,
-        :attempt2
-      )
-      |> Seeder.create_activity_attempt(
-        %{attempt_number: 1, transformed_model: nil},
-        :activity_a,
-        :attempt2,
-        :activity_attempt2
-      )
-      |> Seeder.create_part_attempt(
-        %{attempt_number: 1},
-        %Part{id: "1", responses: [], hints: []},
-        :activity_attempt2,
-        :part1_attempt1
-      )
-      |> Seeder.create_part_attempt(
-        %{attempt_number: 2},
-        %Part{id: "1", responses: [], hints: []},
-        :activity_attempt2,
-        :part1_attempt2
-      )
-      |> Seeder.create_part_attempt(
-        %{attempt_number: 3},
-        %Part{id: "1", responses: [], hints: []},
-        :activity_attempt2,
-        :part1_attempt3
-      )
-      |> Seeder.create_part_attempt(
-        %{attempt_number: 1},
-        %Part{id: "2", responses: [], hints: []},
-        :activity_attempt2,
-        :part2_attempt1
-      )
-      |> Seeder.create_part_attempt(
-        %{attempt_number: 1},
-        %Part{id: "3", responses: [], hints: []},
-        :activity_attempt2,
-        :part3_attempt1
-      )
-      |> Seeder.create_part_attempt(
-        %{attempt_number: 2},
-        %Part{id: "3", responses: [], hints: []},
-        :activity_attempt2,
-        :part3_attempt2
-      )
-    end
+    setup [:setup_tags, :setup_fetching_attempt_records]
 
     test "ensure we can get the user from just the resource attempt", %{
       attempt1: attempt1,
@@ -395,6 +405,7 @@ defmodule Oli.Delivery.AttemptsTest do
                |> Attempts.select_model()
     end
 
+    @tag isolation: "serializable"
     test "get graded resource access", %{
       section: section,
       graded_page: %{revision: revision},
@@ -403,7 +414,8 @@ defmodule Oli.Delivery.AttemptsTest do
       activity_provider = &Oli.Delivery.ActivityProvider.provide/6
       datashop_session_id_user1 = UUID.uuid4()
 
-      effective_settings = Oli.Delivery.Settings.get_combined_settings(revision, section.id, user1.id)
+      effective_settings =
+        Oli.Delivery.Settings.get_combined_settings(revision, section.id, user1.id)
 
       PageContext.create_for_visit(section, revision.slug, user1, datashop_session_id_user1)
 
@@ -434,6 +446,7 @@ defmodule Oli.Delivery.AttemptsTest do
       assert Enum.count(accesses) == 0
     end
 
+    @tag isolation: "serializable"
     test "get graded resource access for specific students", %{
       section: section,
       graded_page: %{revision: revision},
@@ -444,7 +457,8 @@ defmodule Oli.Delivery.AttemptsTest do
       datashop_session_id_user1 = UUID.uuid4()
       datashop_session_id_user2 = UUID.uuid4()
 
-      effective_settings = Oli.Delivery.Settings.get_combined_settings(revision, section.id, user1.id)
+      effective_settings =
+        Oli.Delivery.Settings.get_combined_settings(revision, section.id, user1.id)
 
       PageContext.create_for_visit(section, revision.slug, user1, datashop_session_id_user1)
 
@@ -575,6 +589,7 @@ defmodule Oli.Delivery.AttemptsTest do
                Attempts.get_section_by_activity_attempt_guid(activity_attempt1.attempt_guid).id
     end
 
+    @tag isolation: "serializable"
     test "resource attempt history", %{
       graded_page: %{resource: resource, revision: revision},
       section: section,
@@ -583,7 +598,8 @@ defmodule Oli.Delivery.AttemptsTest do
       activity_provider = &Oli.Delivery.ActivityProvider.provide/6
       datashop_session_id_user1 = UUID.uuid4()
 
-      effective_settings = Oli.Delivery.Settings.get_combined_settings(revision, section.id, user1.id)
+      effective_settings =
+        Oli.Delivery.Settings.get_combined_settings(revision, section.id, user1.id)
 
       PageContext.create_for_visit(section, revision.slug, user1, datashop_session_id_user1)
 
@@ -641,6 +657,7 @@ defmodule Oli.Delivery.AttemptsTest do
       } =
         Seeder.base_project_with_resource2()
         |> Seeder.create_section()
+        |> Seeder.create_section_resources()
         |> Seeder.add_user(%{}, :user1)
         |> Seeder.add_user(%{}, :user2)
         |> Seeder.add_activity(

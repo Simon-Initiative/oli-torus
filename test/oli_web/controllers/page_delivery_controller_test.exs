@@ -5,20 +5,21 @@ defmodule OliWeb.PageDeliveryControllerTest do
   import Oli.Factory
   import Oli.Utils.Seeder.Utils
 
-  alias Oli.Delivery.Sections
+  alias Oli.Repo
   alias Oli.Seeder
+  alias Oli.Accounts
+  alias Oli.Delivery.{Sections, Settings}
+  alias Oli.Delivery.Attempts.{Core, PageLifecycle}
   alias Oli.Delivery.Attempts.Core.{ResourceAttempt, PartAttempt, ResourceAccess}
   alias Oli.Resources.Collaboration
   alias OliWeb.Common.{FormatDateTime, Utils}
   alias OliWeb.Router.Helpers, as: Routes
-  alias Oli.Repo
-  alias Oli.Accounts
 
   describe "page_delivery_controller build_hierarchy" do
-    setup [:setup_lti_session]
+    setup [:setup_tags, :setup_lti_session]
 
     test "properly converts a deeply nested  student access by an enrolled student", %{} do
-      # Defines a hierachry of:
+      # Defines a hierarchy of:
 
       # Page one
       # Page two
@@ -169,7 +170,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
   end
 
   describe "page_delivery_controller index" do
-    setup [:setup_lti_session]
+    setup [:setup_tags, :setup_lti_session]
 
     test "handles student access by an enrolled student", %{
       conn: conn,
@@ -341,6 +342,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
       assert html_response(conn, 200) =~ "Course Content"
     end
 
+    @tag isolation: "serializable"
     test "shows the prologue page on an assessment", %{
       user: user,
       conn: conn,
@@ -449,6 +451,120 @@ defmodule OliWeb.PageDeliveryControllerTest do
       assert html_response(conn, 200) =~ "(Review)"
     end
 
+    @tag isolation: "serializable"
+    test "grade update worker is not created if section has not grade passback enabled", %{
+      user: user,
+      conn: conn,
+      section: section,
+      page_revision: page_revision
+    } do
+      enroll_as_student(%{section: section, user: user})
+
+      conn = get(conn, Routes.page_delivery_path(conn, :page, section.slug, page_revision.slug))
+
+      # now start the attempt
+      conn =
+        recycle(conn)
+        |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
+
+      conn =
+        get(
+          conn,
+          Routes.page_delivery_path(conn, :start_attempt, section.slug, page_revision.slug)
+        )
+
+      # verify the redirection
+      redir_path = redirected_to(conn, 302)
+
+      conn =
+        recycle(conn)
+        |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
+
+      conn = get(conn, redir_path)
+
+      # fetch the resource that will have been created
+      [attempt] = Oli.Repo.all(ResourceAttempt)
+
+      conn =
+        recycle(conn)
+        |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
+
+      post(
+        conn,
+        Routes.page_lifecycle_path(
+          conn,
+          :transition
+        ),
+        %{
+          "action" => "finalize",
+          "section_slug" => section.slug,
+          "revision_slug" => page_revision.slug,
+          "attempt_guid" => attempt.attempt_guid
+        }
+      )
+
+      # verify that Oban job has not been created
+      assert Oli.Delivery.Attempts.PageLifecycle.GradeUpdateWorker.get_jobs() == []
+    end
+
+    @tag isolation: "serializable"
+    test "grade update worker is created if section has grade passback enabled", %{
+      user: user,
+      conn: conn,
+      section: section,
+      page_revision: page_revision
+    } do
+      {:ok, section} = Sections.update_section(section, %{grade_passback_enabled: true})
+      enroll_as_student(%{section: section, user: user})
+
+      conn = get(conn, Routes.page_delivery_path(conn, :page, section.slug, page_revision.slug))
+
+      # now start the attempt
+      conn =
+        recycle(conn)
+        |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
+
+      conn =
+        get(
+          conn,
+          Routes.page_delivery_path(conn, :start_attempt, section.slug, page_revision.slug)
+        )
+
+      # verify the redirection
+      redir_path = redirected_to(conn, 302)
+
+      conn =
+        recycle(conn)
+        |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
+
+      conn = get(conn, redir_path)
+
+      # fetch the resource attempt that will have been created
+      [attempt] = Oli.Repo.all(ResourceAttempt)
+
+      conn =
+        recycle(conn)
+        |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
+
+      post(
+        conn,
+        Routes.page_lifecycle_path(
+          conn,
+          :transition
+        ),
+        %{
+          "action" => "finalize",
+          "section_slug" => section.slug,
+          "revision_slug" => page_revision.slug,
+          "attempt_guid" => attempt.attempt_guid
+        }
+      )
+
+      # verify that Oban job has been created
+      assert Oli.Delivery.Attempts.PageLifecycle.GradeUpdateWorker.get_jobs() |> length() == 1
+    end
+
+    @tag isolation: "serializable"
     test "requires correct password to start an attempt", %{
       user: user,
       conn: conn,
@@ -520,6 +636,117 @@ defmodule OliWeb.PageDeliveryControllerTest do
       assert html_response(conn, 200) =~ "Submit Answers"
     end
 
+    # This tests the edge case for when a student goes to a page that is available to start and the instructor changes the start date
+    # to a future date simultaneously and before the student refreshes the page.
+    # The student should be redirected back to the page and see a message that the page is not yet available when trying to start an attempt.
+    test "requires a past start date to start an attempt", %{
+      user: user,
+      conn: conn,
+      section: section,
+      page_revision: page_revision
+    } do
+      enroll_as_student(%{section: section, user: user})
+
+      sr = Sections.get_section_resource(section.id, page_revision.resource_id)
+
+      conn = get(conn, Routes.page_delivery_path(conn, :page, section.slug, page_revision.slug))
+
+      assert html_response(conn, 200) =~ "Start Attempt"
+
+      # change the start date to tomorrow
+      tomorrow = DateTime.utc_now() |> DateTime.add(1, :day)
+      Sections.update_section_resource(sr, %{start_date: tomorrow})
+
+      # now start the attempt
+      conn =
+        recycle(conn)
+        |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
+
+      conn =
+        get(
+          conn,
+          Routes.page_delivery_path(conn, :start_attempt, section.slug, page_revision.slug)
+        )
+
+      assert html_response(conn, 302) =~ "redirected"
+      redir_path = redirected_to(conn, 302)
+
+      conn =
+        recycle(conn)
+        |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
+
+      conn = get(conn, redir_path)
+
+      assert html_response(conn, 200) =~
+               "This assessment is not yet available. It will be available on #{FormatDateTime.date(tomorrow, conn: conn, precision: :minutes)}."
+    end
+
+    @tag isolation: "serializable"
+    test "shows 'Start Attempt' button when start date has passed", %{
+      user: user,
+      conn: conn,
+      section: section,
+      page_revision: page_revision
+    } do
+      enroll_as_student(%{section: section, user: user})
+
+      sr = Sections.get_section_resource(section.id, page_revision.resource_id)
+
+      tomorrow = DateTime.utc_now() |> DateTime.add(-1, :day)
+      Sections.update_section_resource(sr, %{start_date: tomorrow})
+
+      conn = get(conn, Routes.page_delivery_path(conn, :page, section.slug, page_revision.slug))
+
+      assert html_response(conn, 200) =~ "When you are ready to begin, you may"
+
+      # now start the attempt
+      conn =
+        recycle(conn)
+        |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
+
+      conn =
+        get(
+          conn,
+          Routes.page_delivery_path(conn, :start_attempt, section.slug, page_revision.slug)
+        )
+
+      # verify the redirection
+      assert html_response(conn, 302) =~ "redirected"
+      redir_path = redirected_to(conn, 302)
+
+      # and then the rendering of the page, which should contain a button
+      # that says 'Submit Answers'
+      conn =
+        recycle(conn)
+        |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
+
+      conn = get(conn, redir_path)
+      assert html_response(conn, 200) =~ "Submit Answers"
+    end
+
+    test "does not show 'Start Attempt' button when start date has not passed yet", %{
+      user: user,
+      conn: conn,
+      section: section,
+      page_revision: page_revision
+    } do
+      enroll_as_student(%{section: section, user: user})
+
+      sr = Sections.get_section_resource(section.id, page_revision.resource_id)
+
+      tomorrow = DateTime.utc_now() |> DateTime.add(1, :day)
+      Sections.update_section_resource(sr, %{start_date: tomorrow})
+
+      conn = get(conn, Routes.page_delivery_path(conn, :page, section.slug, page_revision.slug))
+      html_response = html_response(conn, 200)
+
+      assert html_response =~
+               "This assessment is not yet available. It will be available on #{FormatDateTime.date(tomorrow, conn: conn, precision: :minutes)}."
+
+      refute html_response =~ "Start Attempt"
+    end
+
+    @tag isolation: "serializable"
     test "changing a page from graded to ungraded allows the graded attempt to continue", %{
       map: map,
       project: project,
@@ -632,6 +859,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
       refute html_response(conn, 200) =~ "Submit Answers"
     end
 
+    @tag isolation: "serializable"
     test "changing a page from ungraded to graded shows the prologue even with an ungraded attempt present",
          %{
            map: map,
@@ -734,6 +962,71 @@ defmodule OliWeb.PageDeliveryControllerTest do
       assert html_response(conn, 200) =~ "Submit Answers"
     end
 
+    @tag isolation: "serializable"
+    test "multiple requests to start attempt only results in single active attempt record", %{
+      user: user,
+      conn: conn,
+      section: section,
+      page_revision: page_revision
+    } do
+      enroll_as_student(%{section: section, user: user})
+
+      # visit the page verifying that we are presented with the prologue page
+      conn = get(conn, Routes.page_delivery_path(conn, :page, section.slug, page_revision.slug))
+      assert html_response(conn, 200) =~ "When you are ready to begin, you may"
+
+      effective_settings = Settings.get_combined_settings(page_revision, section.id, user.id)
+
+      datashop_session_id = Plug.Conn.get_session(conn, :datashop_session_id)
+      activity_provider = &Oli.Delivery.ActivityProvider.provide/6
+
+      # simulate multiple requests to start an attempt, such as browser back/forward
+      [
+        Task.async(fn ->
+          PageLifecycle.start(
+            page_revision.slug,
+            section.slug,
+            datashop_session_id,
+            user,
+            effective_settings,
+            activity_provider
+          )
+        end),
+        Task.async(fn ->
+          PageLifecycle.start(
+            page_revision.slug,
+            section.slug,
+            datashop_session_id,
+            user,
+            effective_settings,
+            activity_provider
+          )
+        end)
+      ]
+      |> Task.await_many()
+
+      conn =
+        recycle(conn)
+        |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
+
+      conn = get(conn, Routes.page_delivery_path(conn, :page, section.slug, page_revision.slug))
+
+      assert html_response(conn, 200) =~ "Submit Answers"
+
+      # verify there is only a single resource attempt record
+      assert {%ResourceAccess{
+                access_count: 2
+              },
+              [
+                %ResourceAttempt{
+                  attempt_number: 1,
+                  lifecycle_state: :active
+                }
+              ]} =
+               Core.get_resource_attempt_history(page_revision.resource_id, section.slug, user.id)
+    end
+
+    @tag isolation: "serializable"
     test "page with content breaks renders pagination controls", %{
       map: map,
       project: project,
@@ -803,6 +1096,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
       assert html_response(conn, 200) =~ ~s|<div data-react-class="Components.PaginationControls"|
     end
 
+    @tag isolation: "serializable"
     test "page renders learning objectives in ungraded pages but not graded, except for review mode",
          %{
            user: user,
@@ -913,16 +1207,45 @@ defmodule OliWeb.PageDeliveryControllerTest do
       conn: conn,
       user: user
     } do
-      {:ok, section} = section_with_upcoming_activities()
+      page_revision =
+        insert(:revision,
+          resource_type_id: Oli.Resources.ResourceType.get_id_by_type("page"),
+          title: "Upcoming assessment",
+          graded: true,
+          content: %{"advancedDelivery" => true}
+        )
+
+      container_revision =
+        insert(:revision,
+          resource_type_id: Oli.Resources.ResourceType.get_id_by_type("container"),
+          title: "A graded container?",
+          graded: true,
+          content: %{"advancedDelivery" => true}
+        )
+
+      {:ok, section: section, project: _project, author: _author} =
+        section_with_pages(%{
+          revisions: [page_revision, container_revision],
+          revision_section_attributes: [
+            %{
+              start_date: DateTime.add(DateTime.utc_now(), -10, :day),
+              end_date: DateTime.add(DateTime.utc_now(), 5, :day)
+            },
+            %{
+              start_date: DateTime.add(DateTime.utc_now(), -10, :day),
+              end_date: DateTime.add(DateTime.utc_now(), 5, :day)
+            }
+          ]
+        })
+
       enroll_as_student(%{section: section, user: user})
 
       conn =
         conn
         |> get(Routes.page_delivery_path(conn, :index, section.slug))
 
-      assert html_response(conn, 200) =~ "Up Next"
-      assert html_response(conn, 200) =~ "Upcoming Activity 1"
-      assert html_response(conn, 200) =~ "Upcoming Activity 2"
+      assert html_response(conn, 200) =~ "Upcoming assessment"
+      refute html_response(conn, 200) =~ "A graded container?"
     end
 
     test "shows page index based navigation", %{
@@ -1007,6 +1330,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
                ~s{\"role\":\"instructor\",\"roleColor\":\"#2ecc71\",\"roleLabel\":\"Instructor\"}
     end
 
+    @tag isolation: "serializable"
     test "timer will not be shown if revision is ungraded", %{
       conn: conn,
       user: user,
@@ -1049,6 +1373,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
       refute html_response(conn, 200) =~ "<div id=\"countdown_timer_display\""
     end
 
+    @tag isolation: "serializable"
     test "timer will be shown it if revision is graded", %{
       conn: conn,
       user: user,
@@ -1090,10 +1415,18 @@ defmodule OliWeb.PageDeliveryControllerTest do
       assert html_response(conn, 200) =~ page.revision.title
       assert html_response(conn, 200) =~ "<div id=\"countdown_timer_display\""
     end
+
+    test "shows an error when the section doesn't exist", %{conn: conn} do
+      conn =
+        conn
+        |> get(Routes.page_delivery_path(conn, :index, "non_existant_section"))
+
+      assert html_response(conn, 404) =~ "The section you are trying to view does not exist"
+    end
   end
 
   describe "independent learner page_delivery_controller" do
-    setup [:setup_independent_learner_section]
+    setup [:setup_tags, :setup_independent_learner_section]
 
     test "handles new independent learner user access", %{conn: conn, section: section} do
       Oli.Test.MockHTTP
@@ -1304,7 +1637,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
   end
 
   describe "displaying unit numbers" do
-    setup [:base_project_with_curriculum]
+    setup [:setup_tags, :base_project_with_curriculum]
 
     test "does not display unit numbers if setting is set to false", %{
       conn: conn,
@@ -1774,16 +2107,15 @@ defmodule OliWeb.PageDeliveryControllerTest do
       assert html_response(conn, 200)
     end
 
-    test "user must be enrolled in the section even if is a system admin", %{
+    test "user logged in as system admin can access to exploration preview", %{
       conn: conn,
       section: section
     } do
       {:ok, conn: conn, admin: _admin} = admin_conn(%{conn: conn})
 
-      conn = get(conn, Routes.page_delivery_path(conn, :exploration, section.slug))
+      conn = get(conn, Routes.page_delivery_path(conn, :exploration_preview, section.slug))
 
-      assert html_response(conn, 302) =~
-               "You are being <a href=\"/sections/#{section.slug}/enroll\">redirected</a>."
+      assert html_response(conn, 200) =~ "#{section.title} | Your Exploration Activities"
     end
 
     test "redirects to enroll page if not is enrolled in the section", %{
@@ -1900,6 +2232,17 @@ defmodule OliWeb.PageDeliveryControllerTest do
       assert html_response(conn, 200)
     end
 
+    test "user logged in as system admin can access to discussion preview", %{
+      conn: conn,
+      section: section
+    } do
+      {:ok, conn: conn, admin: _admin} = admin_conn(%{conn: conn})
+
+      conn = get(conn, Routes.page_delivery_path(conn, :discussion_preview, section.slug))
+
+      assert html_response(conn, 200) =~ "Your Latest Discussion Activity"
+    end
+
     test "page renders a list of posts of current user", %{
       conn: conn,
       section: section,
@@ -1982,6 +2325,20 @@ defmodule OliWeb.PageDeliveryControllerTest do
         )
 
       assert html_response(conn, 200) =~ section.title
+
+      assert html_response(conn, 200) =~ "Assignments"
+
+      assert html_response(conn, 200) =~
+               "Find all your assignments, quizzes and activities associated with graded material."
+    end
+
+    test "user logged in as system admin can access to assignments preview", %{
+      conn: conn,
+      section: section
+    } do
+      {:ok, conn: conn, admin: _admin} = admin_conn(%{conn: conn})
+
+      conn = get(conn, Routes.page_delivery_path(conn, :assignments_preview, section.slug))
 
       assert html_response(conn, 200) =~ "Assignments"
 
@@ -2259,7 +2616,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
   end
 
   describe "audience" do
-    setup [:setup_audience_section]
+    setup [:setup_tags, :setup_audience_section]
 
     test "student sees the appropriate content according to audience", map do
       %{
@@ -2310,6 +2667,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
       refute html_response(conn, 200) =~ "group content with never audience"
     end
 
+    @tag isolation: "serializable"
     test "student sees the appropriate content according to audience during review",
          %{student1: user} = map do
       %{graded_page_with_audience_groups: graded_page_with_audience_groups, section: section} =
@@ -2359,6 +2717,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
       refute html_response(conn, 200) =~ "group content with never audience"
     end
 
+    @tag isolation: "serializable"
     test "instructor sees the appropriate content according to audience during review", map do
       %{graded_page_with_audience_groups: graded_page_with_audience_groups, section: section} =
         map
@@ -2682,117 +3041,5 @@ defmodule OliWeb.PageDeliveryControllerTest do
       ],
       "version" => "0.1.0"
     }
-  end
-
-  defp section_with_upcoming_activities() do
-    author = insert(:author)
-    project = insert(:project, authors: [author])
-
-    activity_1_revision =
-      insert(:revision,
-        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("page"),
-        title: "Upcoming Activity 1"
-      )
-
-    activity_2_revision =
-      insert(:revision,
-        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("page"),
-        title: "Upcoming Activity 2"
-      )
-
-    container_revision =
-      insert(:revision, %{
-        resource: insert(:resource),
-        objectives: %{},
-        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("container"),
-        children: [activity_1_revision.resource_id, activity_2_revision.resource_id],
-        content: %{},
-        deleted: false,
-        title: "Root Container"
-      })
-
-    insert(:project_resource, %{
-      project_id: project.id,
-      resource_id: activity_1_revision.resource_id
-    })
-
-    insert(:project_resource, %{
-      project_id: project.id,
-      resource_id: activity_2_revision.resource_id
-    })
-
-    insert(:project_resource, %{
-      project_id: project.id,
-      resource_id: container_revision.resource_id
-    })
-
-    publication =
-      insert(:publication, %{project: project, root_resource_id: container_revision.resource_id})
-
-    insert(:published_resource, %{
-      publication: publication,
-      resource: activity_1_revision.resource,
-      revision: activity_1_revision,
-      author: author
-    })
-
-    insert(:published_resource, %{
-      publication: publication,
-      resource: activity_2_revision.resource,
-      revision: activity_2_revision,
-      author: author
-    })
-
-    insert(:published_resource, %{
-      publication: publication,
-      resource: container_revision.resource,
-      revision: container_revision,
-      author: author
-    })
-
-    section =
-      insert(:section,
-        base_project: project,
-        context_id: UUID.uuid4(),
-        open_and_free: true,
-        registration_open: true,
-        type: :enrollable
-      )
-
-    Oli.Delivery.Sections.create_section_resources(section, publication)
-
-    Oli.Delivery.Sections.get_section_resource(section.id, activity_1_revision.resource_id)
-    |> Oli.Delivery.Sections.update_section_resource(%{
-      scheduling_type: :due_by,
-      end_date: DateTime.add(DateTime.utc_now(), 1, :day)
-    })
-
-    Oli.Delivery.Sections.get_section_resource(section.id, activity_2_revision.resource_id)
-    |> Oli.Delivery.Sections.update_section_resource(%{
-      scheduling_type: :due_by,
-      end_date: DateTime.add(DateTime.utc_now(), 2, :day)
-    })
-
-    insert(:gating_condition, %{
-      section: section,
-      resource: activity_1_revision.resource,
-      type: :schedule,
-      user: nil,
-      data: %Oli.Delivery.Gating.GatingConditionData{
-        end_datetime: DateTime.add(DateTime.utc_now(), 1, :day)
-      }
-    })
-
-    insert(:gating_condition, %{
-      section: section,
-      resource: activity_2_revision.resource,
-      type: :schedule,
-      user: nil,
-      data: %Oli.Delivery.Gating.GatingConditionData{
-        end_datetime: DateTime.add(DateTime.utc_now(), 2, :day)
-      }
-    })
-
-    {:ok, section}
   end
 end

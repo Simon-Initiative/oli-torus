@@ -7,6 +7,7 @@ import { createButtonCommandDesc } from '../commands/commandFactories';
 export const commandDesc = createButtonCommandDesc({
   icon: <i className="fa-solid fa-link"></i>,
   description: 'Link (⌘L)',
+  category: 'General',
   execute: (_context, editor, _params) => {
     const selection = editor.selection;
     if (!selection) return;

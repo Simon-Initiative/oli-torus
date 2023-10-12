@@ -2,7 +2,7 @@ defmodule OliWeb.ObjectivesLive.Objectives do
   @moduledoc """
     LiveView implementation of an objective editor.
   """
-  use Surface.LiveView, layout: {OliWeb.LayoutView, "live.html"}
+  use OliWeb, :live_view
   use OliWeb.Common.SortableTable.TableHandlers
   use OliWeb.Common.Modal
 
@@ -26,25 +26,6 @@ defmodule OliWeb.ObjectivesLive.Objectives do
   }
 
   alias OliWeb.Router.Helpers, as: Routes
-
-  data(title, :string, default: "Objectives")
-  data(breadcrumbs, :any)
-
-  data(modal, :any, default: nil)
-  data(project, :any, default: %{})
-  data(objectives, :list, default: [])
-  data(objectives_attachments, :list, default: [])
-
-  data(filter, :any, default: %{})
-  data(query, :string, default: "")
-  data(total_count, :integer, default: 0)
-  data(offset, :integer, default: 0)
-  data(limit, :integer, default: 20)
-  data(sort, :string, default: "sort")
-  data(page_change, :string, default: "page_change")
-  data(show_bottom_paging, :boolean, default: false)
-  data(additional_table_class, :string, default: "table-sm text-center")
-  data(selected, :string, default: "")
 
   @table_filter_fn &__MODULE__.filter_rows/3
   @table_push_patch_path &__MODULE__.live_path/2
@@ -80,8 +61,19 @@ defmodule OliWeb.ObjectivesLive.Objectives do
        table_model: table_model,
        total_count: length(objectives),
        all_objectives: all_objectives,
-       all_children: all_children
-     )}
+       all_children: all_children,
+       objective_attachments: [],
+       title: "Objectives",
+       query: "",
+       offset: 0,
+       limit: 20
+     )
+     |> attach_hook(:has_show_links_uri_hash, :handle_params, fn _params, uri, socket ->
+       {:cont,
+        assign_new(socket, :has_show_links_uri_hash, fn ->
+          String.contains?(uri, "#show_links")
+        end)}
+     end)}
   end
 
   defp build_objectives(project, objectives_attachments, flash_fn, first_load \\ false) do
@@ -158,64 +150,78 @@ defmodule OliWeb.ObjectivesLive.Objectives do
   end
 
   def render(assigns) do
-    ~F"""
-      {render_modal(assigns)}
+    ~H"""
+    <%= render_modal(assigns) %>
 
-      <div class="container mx-auto">
-        <FilterBox table_model={@table_model} show_more_opts={false} card_header_text="Learning Objectives" card_body_text={card_body_text(assigns)}>
-          <Filter
-            change="change_search"
-            reset="reset_search"
-            apply="apply_search"
-            query={@query} />
-        </FilterBox>
+    <div class="container mx-auto">
+      <FilterBox.render
+        table_model={@table_model}
+        show_more_opts={false}
+        card_header_text="Learning Objectives"
+        card_body_text={card_body_text(assigns)}
+      >
+        <Filter.render
+          change="change_search"
+          reset="reset_search"
+          apply="apply_search"
+          query={@query}
+        />
+      </FilterBox.render>
 
-        <div class="d-flex flex-row-reverse">
-          <button class="btn btn-primary" :on-click="display_new_modal">Create new Objective</button>
-        </div>
-
-        <div id="objectives-table" class="my-4">
-          <Table
-            filter={@query}
-            table_model={@table_model}
-            total_count={@total_count}
-            offset={@offset}
-            limit={@limit}
-            sort={@sort}
-            page_change={@page_change}
-            show_bottom_paging={@show_bottom_paging}
-            additional_table_class={@additional_table_class}
-            with_body={true}>
-
-            <Listing
-              rows={@table_model.rows}
-              selected={@selected}
-              project_slug={@project.slug} />
-          </Table>
-        </div>
+      <div class="d-flex flex-row-reverse">
+        <button class="btn btn-primary" phx-click="display_new_modal">Create new Objective</button>
       </div>
+
+      <div id="objectives-table" class="my-4">
+        <Table.render
+          filter={@query}
+          table_model={@table_model}
+          total_count={@total_count}
+          offset={@offset}
+          limit={@limit}
+          sort="sort"
+          page_change="page_change"
+          show_bottom_paging={false}
+          additional_table_class="table-sm text-center"
+          with_body={true}
+        >
+          <Listing.render
+            revision_history_link={@has_show_links_uri_hash and Accounts.is_admin?(@author)}
+            rows={@table_model.rows}
+            selected={@selected}
+            project_slug={@project.slug}
+          />
+        </Table.render>
+      </div>
+    </div>
     """
   end
 
   defp card_body_text(assigns) do
-    ~F"""
-      Learning objectives help you to organize course content and determine appropriate assessments and instructional strategies.
-      <br/>
-      Refer to the <a class="external" href="https://www.cmu.edu/teaching/designteach/design/learningobjectives.html" target="_blank">CMU Eberly Center guide on learning objectives</a> to learn more about the importance of attaching learning objectives to pages and activities.
+    ~H"""
+    Learning objectives help you to organize course content and determine appropriate assessments and instructional strategies.
+    <br /> Refer to the
+    <a
+      class="external"
+      href="https://www.cmu.edu/teaching/designteach/design/learningobjectives.html"
+      target="_blank"
+    >
+      CMU Eberly Center guide on learning objectives
+    </a> to learn more about the importance of attaching learning objectives to pages and activities.
     """
   end
 
-  defp new_modal(changeset, socket) do
+  defp new_modal(form, socket) do
     modal_assigns = %{
       id: "new_objective_modal",
-      changeset: changeset,
+      form: form,
       action: :new,
       on_click: "new"
     }
 
     modal = fn assigns ->
-      ~F"""
-        <FormModal {...@modal_assigns} />
+      ~H"""
+      <FormModal.render {@modal_assigns} />
       """
     end
 
@@ -231,10 +237,10 @@ defmodule OliWeb.ObjectivesLive.Objectives do
     do: {:noreply, hide_modal(socket, modal_assigns: nil)}
 
   def handle_event("display_new_modal", _, socket),
-    do: new_modal(Resources.change_revision(%Revision{}), socket)
+    do: new_modal(Resources.change_revision(%Revision{}) |> to_form(), socket)
 
   def handle_event("display_new_sub_modal", %{"slug" => slug}, socket),
-    do: new_modal(Resources.change_revision(%Revision{parent_slug: slug}), socket)
+    do: new_modal(Resources.change_revision(%Revision{parent_slug: slug}) |> to_form(), socket)
 
   def handle_event("set_selected", %{"slug" => slug}, socket) do
     {:noreply,
@@ -277,14 +283,14 @@ defmodule OliWeb.ObjectivesLive.Objectives do
 
     modal_assigns = %{
       id: "edit_objective_modal",
-      changeset: changeset,
+      form: to_form(changeset),
       action: :edit,
       on_click: "edit"
     }
 
     modal = fn assigns ->
-      ~F"""
-        <FormModal {...@modal_assigns} />
+      ~H"""
+      <FormModal.render {@modal_assigns} />
       """
     end
 
@@ -337,8 +343,8 @@ defmodule OliWeb.ObjectivesLive.Objectives do
     }
 
     modal = fn assigns ->
-      ~F"""
-        <SelectExistingSubModal {...@modal_assigns} />
+      ~H"""
+      <.live_component id="select_existing_sub_modal" module={SelectExistingSubModal} {@modal_assigns} />
       """
     end
 
@@ -375,8 +381,8 @@ defmodule OliWeb.ObjectivesLive.Objectives do
           }
 
           modal = fn assigns ->
-            ~F"""
-              <DeleteModal {...@modal_assigns} />
+            ~H"""
+            <DeleteModal.render {@modal_assigns} />
             """
           end
 
@@ -395,8 +401,8 @@ defmodule OliWeb.ObjectivesLive.Objectives do
           }
 
           modal = fn assigns ->
-            ~F"""
-              <SelectionsModal {...@modal_assigns} />
+            ~H"""
+            <SelectionsModal.render {@modal_assigns} />
             """
           end
 

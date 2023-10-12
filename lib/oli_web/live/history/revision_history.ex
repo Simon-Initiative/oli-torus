@@ -1,5 +1,5 @@
 defmodule OliWeb.RevisionHistory do
-  use Surface.LiveView
+  use OliWeb, :live_view
   use OliWeb.Common.Modal
 
   import Ecto.Query, warn: false
@@ -113,14 +113,16 @@ defmodule OliWeb.RevisionHistory do
        edit_errors: [],
        upload_errors: [],
        edited_json: nil,
+       details_modal_assigns: nil,
        resource_schema: resource_schema
      )
+     |> assign_new(:revision_root_slug, fn _ -> Resources.get_revision_root_slug(revision.id) end)
      |> allow_upload(:json, accept: ~w(.json), max_entries: 1)}
   end
 
   defp fetch_all_revisions(resource_id) do
     Repo.all(
-      from rev in Revision,
+      from(rev in Revision,
         join: a in Author,
         on: a.id == rev.author_id,
         where: rev.resource_id == ^resource_id,
@@ -137,6 +139,7 @@ defmodule OliWeb.RevisionHistory do
             :author_id,
             author: [:email]
           ])
+      )
     )
   end
 
@@ -223,8 +226,8 @@ defmodule OliWeb.RevisionHistory do
     }
 
     modal = fn assigns ->
-      ~F"""
-        <RestoreRevisionModal.render {...@modal_assigns} />
+      ~H"""
+      <RestoreRevisionModal.render id={@modal_assigns.id} />
       """
     end
 
@@ -341,10 +344,9 @@ defmodule OliWeb.RevisionHistory do
         %{"value" => value, "meta" => %{"action" => "save"}},
         socket
       ) do
-    %{revisions: revisions, resource_schema: resource_schema} = socket.assigns
+    %{revisions: revisions} = socket.assigns
 
     with {:ok, edited} <- Jason.decode(value),
-         :ok <- ExJsonSchema.Validator.validate(resource_schema, edited),
          latest_revision <- fetch_revision(hd(revisions).id) do
       {:noreply,
        socket
@@ -356,6 +358,64 @@ defmodule OliWeb.RevisionHistory do
 
       {:error, errors} ->
         {:noreply, assign(socket, edit_errors: flatten_validation_errors(errors))}
+    end
+  end
+
+  def handle_event("reset_monaco", _params, socket) do
+    {:noreply, assign(socket, details_modal_assigns: nil)}
+  end
+
+  def handle_event("edit_attribute", %{"attr-key" => attr_key}, socket) do
+    socket =
+      assign(socket,
+        details_modal_assigns: %{
+          title: attr_key,
+          key: String.to_existing_atom(attr_key)
+        }
+      )
+
+    # we want to ensure monaco editor is reseted correctly
+    # before assigning new values and showing the modal
+    :timer.sleep(200)
+
+    {:noreply,
+     push_event(socket, "js-exec", %{
+       to: "#edit_attribute_modal_trigger",
+       attr: "data-show_edit_attribute_modal"
+     })}
+  end
+
+  @impl Phoenix.LiveView
+  def handle_event("save_edit_attribute", _, socket) do
+    {:noreply, socket |> push_event("monaco_editor_get_attribute_value", %{action: "save"})}
+  end
+
+  @impl Phoenix.LiveView
+  def handle_event(
+        "monaco_editor_get_attribute_value",
+        %{"value" => value, "meta" => %{"action" => "save"}},
+        socket
+      ) do
+    revision_being_edited = socket.assigns.selected
+    key_being_edited = socket.assigns.details_modal_assigns.key
+
+    with {:ok, decoded_value} <- Jason.decode(value),
+         {:ok, revision} <-
+           Oli.Resources.update_revision(
+             revision_being_edited,
+             Map.put(%{}, key_being_edited, decoded_value)
+           ) do
+      {:noreply,
+       socket
+       |> assign(selected: revision)
+       |> put_flash(:info, "Revision '#{key_being_edited}' updated")}
+    else
+      {:error, %Jason.DecodeError{}} ->
+        {:noreply, put_flash(socket, :error, "Could not update revision: Invalid JSON format")}
+
+      {:error, changeset} ->
+        {:noreply,
+         put_flash(socket, :error, "Could not update revision: #{inspect(changeset.errors)}")}
     end
   end
 
@@ -406,7 +466,7 @@ defmodule OliWeb.RevisionHistory do
      )}
   end
 
-  defp friendly_error(:too_large), do: "Image too large"
+  defp friendly_error(:too_large), do: "File too large"
   defp friendly_error(:too_many_files), do: "Too many files"
   defp friendly_error(:not_accepted), do: "Unacceptable file type"
 

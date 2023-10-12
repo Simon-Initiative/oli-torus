@@ -1,6 +1,0 @@
-<%= case OliWeb.Pow.PowHelpers.current_pow_config(@conn) do %>
-  <% Oli.Accounts.Author -> %>
-    <%= render OliWeb.Pow.SessionView, "author_new.html", assigns %>
-  <% _ -> %>
-    <%= render OliWeb.Pow.SessionView, "user_new.html", assigns %>
-<% end %>

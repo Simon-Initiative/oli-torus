@@ -52,6 +52,7 @@ const SettingsButton = (props: SettingsButtonProps) => (
   <DescriptiveButton
     description={createButtonCommandDesc({
       icon: <i className="fa-solid fa-globe"></i>,
+      category: 'Media',
       description: 'Settings',
       execute: (_context, _editor, _params) =>
         window.oliDispatch(

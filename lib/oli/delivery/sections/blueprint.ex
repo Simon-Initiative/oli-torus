@@ -8,6 +8,7 @@ defmodule Oli.Delivery.Sections.Blueprint do
   alias Oli.Delivery
   alias Oli.Delivery.Sections.Section
   alias Oli.Delivery.Sections
+  alias Oli.Delivery.Sections.BlueprintBrowseOptions
   alias Oli.Groups.CommunityVisibility
   alias Oli.Institutions.Institution
   alias Oli.Repo
@@ -244,65 +245,63 @@ defmodule Oli.Delivery.Sections.Blueprint do
          %Section{id: id, root_section_resource_id: root_id},
          %Section{} = blueprint
        ) do
-    query =
-      from(
-        s in Oli.Delivery.Sections.SectionResource,
-        where: s.section_id == ^id,
-        select: s
-      )
+    Repo.transaction(fn ->
+      query =
+        from(
+          s in Oli.Delivery.Sections.SectionResource,
+          where: s.section_id == ^id,
+          select: s
+        )
 
-    resources = Repo.all(query)
+      resources = Repo.all(query)
 
-    # First just duplicate the section resource records, wired to point
-    # to the new blueprint record
-    results =
-      Enum.reverse(resources)
-      |> Enum.reduce_while({:ok, []}, fn p, {:ok, all} ->
-        attrs =
-          Map.merge(Map.from_struct(p), %{
-            section_id: blueprint.id
-          })
-          |> Map.delete(:id)
+      # Create the maps for each section resource by duplicating the existing ones
+      # and set the section_id to be the id of the blueprint
+      resources_to_create =
+        Enum.reverse(resources)
+        |> Enum.reduce([], fn p, resources_to_create ->
+          resource =
+            Map.merge(Sections.SectionResource.to_map(p), %{
+              section_id: blueprint.id
+            })
+            |> Map.delete(:id)
 
-        case Sections.create_section_resource(attrs) do
-          {:ok, copy} -> {:cont, {:ok, [copy | all]}}
-          {:error, e} -> {:halt, {:error, e}}
-        end
-      end)
-
-    # If the first step succeeded, make a second pass through to edit each
-    # to update the id references in the :children list.  This two pass approach
-    # avoids a more complicated single pass recursive approach.
-    case results do
-      {:ok, section_resources} ->
-        resource_map =
-          Enum.zip(resources, section_resources)
-          |> Enum.reduce(%{}, fn {original, duplicate}, m ->
-            Map.put(m, original.id, duplicate.id)
-          end)
-
-        Enum.reduce_while(section_resources, {:ok, nil}, fn p, {:ok, item} ->
-          attrs = %{
-            children: Enum.map(p.children, fn id -> Map.get(resource_map, id) end)
-          }
-
-          case Sections.update_section_resource(p, attrs) do
-            {:ok, copy} ->
-              # We want to keep track of, and eventually return the duplicated
-              # root resource
-              case Map.get(resource_map, root_id) == copy.id do
-                true -> {:cont, {:ok, copy}}
-                false -> {:cont, {:ok, item}}
-              end
-
-            {:error, e} ->
-              {:halt, {:error, e}}
-          end
+          [resource | resources_to_create]
         end)
 
-      e ->
-        e
-    end
+      # Insert all the new (duplicated) section resources in the database (at this point
+      # the children of each section resource will be wrongly mapped to its original section resource)
+      {_count, results} =
+        Sections.bulk_create_section_resource(resources_to_create, returning: true)
+
+      results = Enum.map(results, &Sections.SectionResource.to_map(&1))
+
+      resource_map =
+        Enum.zip(resources, results)
+        |> Enum.reduce(%{}, fn {original, duplicate}, m ->
+          Map.put(m, original.id, duplicate.id)
+        end)
+
+      # Change the newly created section resources children so that they point to the correct
+      # section resource
+      section_resources =
+        Enum.reduce(results, [], fn sr, section_resources ->
+          sr =
+            Map.put(
+              sr,
+              :children,
+              Enum.map(sr.children, fn id -> Map.get(resource_map, id) end)
+            )
+
+          [sr | section_resources]
+        end)
+
+      # Update all section resources at the same time
+      {_cont, rows} = Sections.bulk_update_section_resource(section_resources, returning: true)
+
+      # Return the section resource that corresponds to the original root resource
+      Enum.find(rows, &(Map.get(resource_map, root_id) == &1.id))
+    end)
   end
 
   defp dupe_section_project_publications(%Section{id: id}, %Section{} = blueprint) do
@@ -328,18 +327,6 @@ defmodule Oli.Delivery.Sections.Blueprint do
     end)
   end
 
-  def list_for_project(%Project{id: id}) do
-    query =
-      from(
-        s in Section,
-        where: s.type == :blueprint and s.base_project_id == ^id,
-        select: s,
-        preload: [:base_project]
-      )
-
-    Repo.all(query)
-  end
-
   def list() do
     query =
       from(
@@ -350,6 +337,25 @@ defmodule Oli.Delivery.Sections.Blueprint do
       )
 
     Repo.all(query)
+  end
+
+  def list(%BlueprintBrowseOptions{} = options) do
+    filter_by_project =
+      if is_nil(options.project_id),
+        do: true,
+        else: dynamic([s], s.base_project_id == ^options.project_id)
+
+    filter_by_status =
+      if options.include_archived,
+        do: dynamic([s], s.status in [:active, :archived]),
+        else: dynamic([s], s.status == :active)
+
+    Section
+    |> where([s], s.type == :blueprint)
+    |> where(^filter_by_project)
+    |> where(^filter_by_status)
+    |> preload([:base_project])
+    |> Repo.all()
   end
 
   @doc """

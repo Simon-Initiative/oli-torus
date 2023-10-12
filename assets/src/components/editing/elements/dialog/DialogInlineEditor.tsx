@@ -1,10 +1,12 @@
-import React, { ChangeEvent, useCallback } from 'react';
+import React, { useCallback } from 'react';
+import { ReactEditor, useSlate } from 'slate-react';
 import { v4 } from 'uuid';
 import * as ContentModel from 'data/content/model/elements/types';
 import { Model } from '../../../../data/content/model/elements/factories';
 import { Speaker } from '../../../Dialog';
 import { CommandContext } from '../commands/interfaces';
 import { InlineEditor } from '../common/settings/InlineEditor';
+import { CursorInput } from './CursorInput';
 import { selectPortrait } from './dialogActions';
 
 export const DialogInlineEditor: React.FC<{
@@ -12,6 +14,16 @@ export const DialogInlineEditor: React.FC<{
   commandContext: CommandContext;
   onEdit: (definition: Partial<ContentModel.Dialog>) => void;
 }> = ({ dialog, onEdit, commandContext }) => {
+  const editor = useSlate();
+
+  const resetFocus = useCallback(() => {
+    /* On some operations, like deleting a speaker, focus is moved outside the editor. For those operations, we
+       manually focus the editor again so things like ctrl-z to undo work. MER-2284 */
+    setTimeout(() => {
+      ReactEditor.focus(editor);
+    }, 0);
+  }, []);
+
   const onSpeakerEdit = useCallback(
     // Utility funtion to easily update a single speaker by index.
     (index: number, props: Partial<ContentModel.DialogSpeaker>) => {
@@ -31,8 +43,8 @@ export const DialogInlineEditor: React.FC<{
 
   const onEditSpeakerName = useCallback(
     // Curried update function. Usage - onEditSpeakerName(index)(changeEvent)
-    (index: number) => (e: ChangeEvent<HTMLInputElement>) => {
-      onSpeakerEdit(index, { name: e.target.value });
+    (index: number) => (name: string) => {
+      onSpeakerEdit(index, { name });
     },
     [onSpeakerEdit],
   );
@@ -52,6 +64,7 @@ export const DialogInlineEditor: React.FC<{
       onEdit({
         speakers: dialog.speakers.filter((_, i) => i !== index),
       });
+      resetFocus();
     },
     [dialog.speakers, onEdit],
   );
@@ -84,6 +97,7 @@ export const DialogInlineEditor: React.FC<{
     onEdit({
       lines: [...dialog.lines, Model.dialogLine(dialog.speakers[0]?.id || '')],
     });
+    resetFocus();
   }, [dialog.lines, dialog.speakers, onEdit]);
 
   const onLineContentEdit = useCallback(
@@ -98,6 +112,7 @@ export const DialogInlineEditor: React.FC<{
       onEdit({
         lines: dialog.lines.filter((_, i) => i !== index),
       });
+      resetFocus();
     },
     [dialog.lines, onEdit],
   );
@@ -114,6 +129,7 @@ export const DialogInlineEditor: React.FC<{
       speakerIndex++;
       speakerIndex %= dialog.speakers.length;
       onLineEdit(index, { speaker: dialog.speakers[speakerIndex].id });
+      resetFocus();
     },
     [dialog.lines, dialog.speakers, onLineEdit],
   );
@@ -122,6 +138,7 @@ export const DialogInlineEditor: React.FC<{
     onEdit({
       speakers: [...dialog.speakers, Model.dialogSpeaker('Unknown')],
     });
+    resetFocus();
   }, [dialog.speakers, onEdit]);
 
   const titleId = v4();
@@ -153,7 +170,7 @@ export const DialogInlineEditor: React.FC<{
                   </span>
                 )
               )}
-              <input
+              <CursorInput
                 className="form-control form-control-sm"
                 type="text"
                 value={speaker.name}

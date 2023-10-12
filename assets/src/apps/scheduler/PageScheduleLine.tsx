@@ -32,9 +32,46 @@ export const PageScheduleLine: React.FC<ScheduleLineProps> = ({ item, indent, da
 
   const onChange = useCallback(
     (startDate: DateWithoutTime | null, endDate: DateWithoutTime) => {
-      dispatch(moveScheduleItem({ itemId: item.id, startDate, endDate }));
+      let targetEndDate: Date | DateWithoutTime = endDate;
+      let targetStartDate: Date | DateWithoutTime | null = startDate;
+
+      if (item.startDateTime && startDate) {
+        targetStartDate = new Date();
+        // Important: Important to set these in order
+        targetStartDate.setFullYear(startDate.getFullYear());
+        targetStartDate.setMonth(startDate.getMonth());
+        targetStartDate.setDate(startDate.getDate());
+        targetStartDate.setHours(
+          item.startDateTime.getHours(),
+          item.startDateTime.getMinutes(),
+          item.startDateTime.getSeconds(),
+        );
+
+        console.info('PageScheduleLine::onChange', {
+          startDate,
+          item: item.startDateTime,
+          targetStartDate,
+        });
+      }
+
+      // On a drag, need to change the date, but preserve the end time if one exists.
+      if (item.endDateTime) {
+        targetEndDate = new Date();
+        targetEndDate.setFullYear(endDate.getFullYear());
+        targetEndDate.setMonth(endDate.getMonth());
+        targetEndDate.setDate(endDate.getDate());
+        targetEndDate.setHours(
+          item.endDateTime.getHours(),
+          item.endDateTime.getMinutes(),
+          item.endDateTime.getSeconds(),
+        );
+      }
+
+      dispatch(
+        moveScheduleItem({ itemId: item.id, startDate: targetStartDate, endDate: targetEndDate }),
+      );
     },
-    [dispatch, item.id],
+    [item.startDateTime, item.endDateTime, item.id, dispatch],
   );
 
   const rowClass = isSelected ? 'bg-green-50' : '';
@@ -61,18 +98,19 @@ export const PageScheduleLine: React.FC<ScheduleLineProps> = ({ item, indent, da
 
         <td className="relative p-0">
           <ScheduleHeader labels={false} dayGeometry={dayGeometry} />
-          {item.endDate && (
-            <PageDragBar
-              onChange={onChange}
-              onStartDrag={onSelect}
-              endDate={item.endDate}
-              manual={item.manually_scheduled}
-              dayGeometry={dayGeometry}
-              isContainer={false}
-              isSingleDay={true}
-              hardSchedule={item.scheduling_type === 'due_by'}
-            />
-          )}
+
+          <PageDragBar
+            onChange={onChange}
+            onStartDrag={onSelect}
+            startDate={item.startDate}
+            endDate={item.endDate}
+            manual={item.manually_scheduled}
+            dayGeometry={dayGeometry}
+            isContainer={false}
+            isSingleDay={true}
+            isGraded={item.graded}
+            schedulingType={item.scheduling_type}
+          />
         </td>
       </tr>
     </>

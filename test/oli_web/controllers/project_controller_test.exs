@@ -3,6 +3,9 @@ defmodule OliWeb.ProjectControllerTest do
   alias Oli.Repo
   alias Oli.Activities
   alias Oli.Activities.ActivityRegistrationProject
+  alias Oli.Interop.Export
+  alias Oli.Delivery.Sections
+  alias Oli.Resources.ResourceType
 
   import Oli.Factory
 
@@ -75,6 +78,127 @@ defmodule OliWeb.ProjectControllerTest do
       conn = post(conn, Routes.project_path(conn, :create), project: @invalid_attrs)
       assert html_response(conn, 302) =~ "/projects"
     end
+  end
+
+  describe "export" do
+    setup [:admin_conn, :create_project_with_products]
+
+    test "export a project with products works correctly", %{
+      conn: conn,
+      project: project,
+      product_1: product_1,
+      product_2: product_2,
+      page_resource_1: page_resource_1,
+      page_resource_2: page_resource_2
+    } do
+      entries =
+        Export.export(project)
+        |> unzip_to_memory()
+
+      m = Enum.reduce(entries, %{}, fn {f, c}, m -> Map.put(m, f, c) end)
+
+      # There are 7 files in the export (2 resources, 2 products, 1 hierarchy, 1 manifest and 1 project)
+      assert length(entries) == 7
+      assert Map.has_key?(m, '_hierarchy.json')
+      assert Map.has_key?(m, '_media-manifest.json')
+      assert Map.has_key?(m, '_project.json')
+      assert Map.has_key?(m, '#{product_1.id}.json')
+      assert Map.has_key?(m, '#{product_2.id}.json')
+      assert Map.has_key?(m, '#{page_resource_1.id}.json')
+      assert Map.has_key?(m, '#{page_resource_2.id}.json')
+
+      conn = post(conn, Routes.project_path(conn, :download_export, project.id))
+      assert html_response(conn, 302) =~ "/authoring/projects"
+    end
+
+    test "export a project with products works correctly by filtering out products that have publications from other projects.", %{
+      conn: conn,
+      project: project,
+      product_1: product_1,
+      product_2: product_2,
+      page_resource_1: page_resource_1,
+      page_resource_2: page_resource_2,
+    } do
+      create_another_publication(product_2)
+
+      entries =
+        Export.export(project)
+        |> unzip_to_memory()
+
+      m = Enum.reduce(entries, %{}, fn {f, c}, m -> Map.put(m, f, c) end)
+
+      # There are 6 files in the export (2 resources, 1 product, 1 hierarchy, 1 manifest and 1 project)
+      assert length(entries) == 6
+      assert Map.has_key?(m, '_hierarchy.json')
+      assert Map.has_key?(m, '_media-manifest.json')
+      assert Map.has_key?(m, '_project.json')
+      assert Map.has_key?(m, '#{product_1.id}.json')
+      assert Map.has_key?(m, '#{page_resource_1.id}.json')
+      assert Map.has_key?(m, '#{page_resource_2.id}.json')
+
+      conn = post(conn, Routes.project_path(conn, :download_export, project.id))
+      assert html_response(conn, 302) =~ "/authoring/projects"
+    end
+  end
+
+  defp create_another_publication(product_2) do
+    project_2 = insert(:project)
+    # Create page 1
+    page_resource_3 = insert(:resource)
+
+    page_revision_3 =
+      insert(:revision, %{
+        objectives: %{},
+        resource_type_id: ResourceType.get_id_by_type("page"),
+        children: [],
+        content: %{"model" => []},
+        deleted: false,
+        title: "Page 3",
+        resource: page_resource_3,
+        slug: "page_3"
+      })
+
+    # Associate page 1 to the project
+    insert(:project_resource, %{project_id: project_2.id, resource_id: page_resource_3.id})
+
+    # root container
+    container_resource_2 = insert(:resource)
+
+    container_revision_2 =
+      insert(:revision, %{
+        resource: container_resource_2,
+        objectives: %{},
+        resource_type_id: ResourceType.get_id_by_type("container"),
+        children: [page_resource_3.id],
+        content: %{},
+        deleted: false,
+        slug: "root_container_2",
+        title: "Root Container 2"
+      })
+
+    # Associate root container to the project
+    insert(:project_resource, %{project_id: project_2.id, resource_id: container_resource_2.id})
+
+    new_publication =
+      insert(:publication, %{
+        project: project_2,
+        root_resource_id: container_resource_2.id
+      })
+
+    insert(:published_resource, %{
+      publication: new_publication,
+      resource: container_resource_2,
+      revision: container_revision_2
+    })
+
+    insert(:published_resource, %{
+      publication: new_publication,
+      resource: page_resource_3,
+      revision: page_revision_3
+    })
+
+    {:ok, product_2} = Sections.create_section_resources(product_2, new_publication)
+    Sections.rebuild_contained_pages(product_2)
   end
 
   defp unauthorized_redirect(conn, path, project) do

@@ -30,13 +30,20 @@ export const DropdownButton = (props: PropsWithChildren<Props>) => {
     [toolbar, thisDropdown],
   );
 
+  const isCategorizedList =
+    props.children && (props.children as any).type?.name === 'CategorizedCommandList';
+
   const multiColumn =
     props.children &&
     // eslint-disable-next-line no-prototype-builtins
     (props.children as any).hasOwnProperty('length') &&
     (props.children as { length: number }).length > 6;
 
-  const classname = multiColumn ? styles.multiDropdownGroup : styles.dropdownGroup;
+  const classname = isCategorizedList
+    ? styles.categorizedDropdownGroup
+    : multiColumn
+    ? styles.multiDropdownGroup
+    : styles.dropdownGroup;
 
   return (
     <Popover
@@ -49,7 +56,9 @@ export const DropdownButton = (props: PropsWithChildren<Props>) => {
       align={'start'}
       containerStyle={{ zIndex: '100000' }}
       content={
-        <div className={`${classname} bg-body dark:bg-body-dark text-body dark:text-body-dark `}>
+        <div
+          className={`${classname} bg-body dark:bg-body-dark text-body-800 dark:text-body-dark-100 `}
+        >
           {props.children}
         </div>
       }

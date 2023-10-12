@@ -1,7 +1,5 @@
 defmodule OliWeb.Delivery.NewCourse.CourseDetails do
-  use Phoenix.Component
-
-  alias OliWeb.Common.CustomCheckbox
+  use OliWeb, :html
 
   @days [
     {:sunday, "Sun"},
@@ -13,32 +11,39 @@ defmodule OliWeb.Delivery.NewCourse.CourseDetails do
     {:saturday, "Sat"}
   ]
 
-  attr :changeset, :map, required: true
-  attr :on_select, :any, required: true
+  attr(:changeset, :map, required: true)
 
   def render(assigns) do
     assigns =
       assign(
         assigns,
         %{
-          class_days: Ecto.Changeset.fetch_field(assigns.changeset, :class_days) |> elem(1),
-          class_modality: Ecto.Changeset.fetch_field(assigns.changeset, :class_modality) |> elem(1),
+          class_days: assigns.changeset[:class_days].value,
+          class_modality: assigns.changeset[:class_modality].value,
           days: @days
         }
       )
 
     ~H"""
-    <.form id="course-details-form" class="w-full" for={@changeset} let={f} >
-      <div class="flex flex-col gap-8">
+    <.form id="course-details-form" class="flex flex-col mt-8" for={@changeset}>
+      <div class="flex flex-col">
         <%= if @class_modality != :never do %>
           <div class="flex flex-col gap-1 flex-1">
             <span required>Days of the week you meet</span>
             <div class="flex flex-wrap gap-2">
               <%= for {value, label} <- @days do %>
-                <CustomCheckbox.item form={f} field={:class_days} checked={Enum.member?(@class_days, value)} value={value} label={label} />
+                <.input
+                  type="custom_checkbox"
+                  field={@changeset[:class_days]}
+                  value={value}
+                  label={label}
+                />
               <% end %>
             </div>
-            <small class="torus-small mt-1"><i class="fa fa-circle-info mr-1" /> This will allow for accurate action recommendations for you and your students to be accurate according to your meeting schedule</small>
+            <small class="torus-small mt-1">
+              <i class="fa fa-circle-info mr-1" />
+              This will allow for accurate action recommendations for you and your students to be accurate according to your meeting schedule
+            </small>
           </div>
         <% end %>
 
@@ -46,14 +51,27 @@ defmodule OliWeb.Delivery.NewCourse.CourseDetails do
           <div class="flex gap-4 w-full">
             <div class="flex flex-col gap-1 flex-1">
               <span required>Course start date</span>
-              <%= Phoenix.HTML.Form.datetime_local_input f, :start_date, class: "torus-input" %>
+              <.input type="datetime-local" field={@changeset[:start_date]} />
             </div>
             <div class="flex flex-col gap-1 flex-1">
               <span required>Course end date</span>
-              <%= Phoenix.HTML.Form.datetime_local_input f, :end_date, class: "torus-input" %>
+              <.input type="datetime-local" field={@changeset[:end_date]} />
             </div>
           </div>
-          <small class="torus-small mt-1"><i class="fa fa-circle-info mr-1" /> The start and end dates help us recommend a teaching schedule and assignment cadence</small>
+          <small class="torus-small mt-1">
+            <i class="fa fa-circle-info mr-1" />
+            The start and end dates help us recommend a teaching schedule and assignment cadence
+          </small>
+        </div>
+        <div class="flex flex-col gap-2">
+          <div class="flex flex-col gap-1 flex-1">
+            <span>Scheduling Preferred Time</span>
+            <.input type="time" field={@changeset[:preferred_scheduling_time]} />
+          </div>
+          <small class="torus-small mt-1">
+            <i class="fa fa-circle-info mr-1" />
+            This is the time that the scheduler will use when setting due dates and times for your pages
+          </small>
         </div>
       </div>
     </.form>

@@ -7,6 +7,7 @@ import { isActive } from '../../slateUtils';
 export const insertForeign = createButtonCommandDesc({
   icon: <i className="fa-solid fa-language"></i>,
   description: 'Foreign',
+  category: 'General',
   execute: (_context, editor) => {
     const at = editor.selection;
     if (!at) return;

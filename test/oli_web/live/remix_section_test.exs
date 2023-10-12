@@ -126,6 +126,62 @@ defmodule OliWeb.RemixSectionLiveTest do
       assert view |> element("#entry-#{revision2.resource_id}") |> has_element?()
     end
 
+    test "remix section - add materials - materials are added after save even if the revision has not max_attempts set",
+         %{
+           conn: conn,
+           map: %{
+             section_1: section_1
+           }
+         } do
+      {:ok, view, _html} = live(conn, ~p"/sections/#{section_1.slug}/remix")
+
+      ## Unit 1 does not exist
+      refute view |> render() =~ "Great Unit 1"
+
+      ## add Unit 1
+      view
+      |> element("button[phx-click=\"show_add_materials_modal\"]")
+      |> render_click()
+
+      view
+      |> element(
+        ".hierarchy table > tbody tr button[phx-click=\"HierarchyPicker.select_publication\"]",
+        "Project 1"
+      )
+      |> render_click()
+
+      view
+      |> element(
+        ".hierarchy > div[id^=\"hierarchy_item_\"]",
+        "Great Unit 1"
+      )
+      |> render_click()
+
+      view
+      |> element(
+        "button[phx-click=\"AddMaterialsModal.add\"]",
+        "Add"
+      )
+      |> render_click()
+
+      ## Unit 1 exists
+      assert view |> render() =~ "Great Unit 1"
+
+      view
+      |> element("#save", "Save")
+      |> render_click()
+
+      assert_redirected(
+        view,
+        ~p"/sections/#{section_1.slug}/remix"
+      )
+
+      {:ok, view, _html} = live(conn, ~p"/sections/#{section_1.slug}/remix")
+
+      ## Unit 1 was saved and is now part of the curriculum
+      assert view |> render() =~ "Great Unit 1"
+    end
+
     test "saving redirects instructor correctly", %{
       conn: conn,
       map: %{
@@ -145,12 +201,7 @@ defmodule OliWeb.RemixSectionLiveTest do
 
       assert_redirect(
         view,
-        Routes.live_path(
-          OliWeb.Endpoint,
-          OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
-          section.slug,
-          :overview
-        )
+        ~p"/sections/#{section.slug}/remix"
       )
     end
 
@@ -181,7 +232,7 @@ defmodule OliWeb.RemixSectionLiveTest do
       |> render_click()
 
       view
-      |> element(".hierarchy > div[id^=\"hierarchy_item_\"]:nth-of-type(1)")
+      |> element(".hierarchy > div[id^=\"hierarchy_item_\"]", "Elixir Page")
       |> render_click()
 
       view
@@ -215,12 +266,7 @@ defmodule OliWeb.RemixSectionLiveTest do
       ## expect to be redirected
       assert_redirect(
         view,
-        Routes.live_path(
-          OliWeb.Endpoint,
-          OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
-          map.section_1.slug,
-          :overview
-        )
+        ~p"/sections/#{map.section_1.slug}/remix"
       )
     end
 
@@ -291,12 +337,7 @@ defmodule OliWeb.RemixSectionLiveTest do
 
       assert_redirect(
         view,
-        Routes.live_path(
-          OliWeb.Endpoint,
-          OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
-          section.slug,
-          :overview
-        )
+        ~p"/sections/#{section.slug}/remix"
       )
     end
 
@@ -328,12 +369,7 @@ defmodule OliWeb.RemixSectionLiveTest do
 
       assert_redirect(
         view,
-        Routes.live_path(
-          OliWeb.Endpoint,
-          OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
-          section.slug,
-          :overview
-        )
+        ~p"/sections/#{section.slug}/remix"
       )
     end
   end
@@ -646,9 +682,20 @@ defmodule OliWeb.RemixSectionLiveTest do
       |> element("button[phx-value-tab_name=\"all_pages\"]")
       |> render_click()
 
+      view
+      |> element("th[phx-value-sort_by=\"title\"]")
+      |> render_click()
+
+      # "Another orph. Page" is the first element after sorting
       assert view
              |> has_element?(
-               ".remix_materials_table tbody tr:first-of-type td:nth-of-type(2)",
+               ".remix_materials_table tr:first-of-type td:nth-of-type(2)",
+               "Another orph. Page"
+             )
+
+      assert view
+             |> has_element?(
+               ".remix_materials_table tbody tr:last-of-type td:nth-of-type(2)",
                "Elixir Page"
              )
 
@@ -656,8 +703,22 @@ defmodule OliWeb.RemixSectionLiveTest do
       |> element("th[phx-value-sort_by=\"title\"]")
       |> render_click()
 
+      # "Elixir Page" is the first element after sorting
       assert view
-             |> has_element?(".remix_materials_table tr:first-of-type td", "Another orph. Page")
+             |> has_element?(
+               ".remix_materials_table tbody tr:first-of-type td:nth-of-type(2)",
+               "Elixir Page"
+             )
+
+      assert view
+             |> has_element?(
+               ".remix_materials_table tr:last-of-type td:nth-of-type(2)",
+               "Another orph. Page"
+             )
+
+      # Can sort by published date
+      assert view
+             |> has_element?("th[data-sortable=\"true\"]", "Published on")
     end
 
     test "remix section items - add materials - all pages view can be filtered by text", %{
@@ -912,6 +973,13 @@ defmodule OliWeb.RemixSectionLiveTest do
         title: "Another orph. Page"
       })
 
+    unit_1_revision =
+      insert(:revision, %{
+        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("container"),
+        title: "Great Unit 1",
+        max_attempts: nil
+      })
+
     container_revision =
       insert(:revision, %{
         resource: insert(:resource),
@@ -919,7 +987,8 @@ defmodule OliWeb.RemixSectionLiveTest do
         resource_type_id: Oli.Resources.ResourceType.get_id_by_type("container"),
         children: [
           page_revision.resource_id,
-          orphan_revision_2.resource_id
+          orphan_revision_2.resource_id,
+          unit_1_revision.resource_id
         ],
         content: %{},
         deleted: false,
@@ -934,6 +1003,11 @@ defmodule OliWeb.RemixSectionLiveTest do
     insert(:project_resource, %{
       project_id: proj_1.id,
       resource_id: orphan_revision_2.resource.id
+    })
+
+    insert(:project_resource, %{
+      project_id: proj_1.id,
+      resource_id: unit_1_revision.resource.id
     })
 
     insert(:project_resource, %{
@@ -959,6 +1033,13 @@ defmodule OliWeb.RemixSectionLiveTest do
       publication: proj_1_publication,
       resource: orphan_revision_2.resource,
       revision: orphan_revision_2,
+      author: author
+    })
+
+    insert(:published_resource, %{
+      publication: proj_1_publication,
+      resource: unit_1_revision.resource,
+      revision: unit_1_revision,
       author: author
     })
 

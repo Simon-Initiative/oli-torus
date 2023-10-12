@@ -1,6 +1,7 @@
 defmodule OliWeb.Api.ActivityBankControllerTest do
   use OliWeb.ConnCase
   alias Oli.Seeder
+  alias Oli.Accounts.SystemRole
 
   setup [:project_seed]
 
@@ -46,6 +47,23 @@ defmodule OliWeb.Api.ActivityBankControllerTest do
       assert keys["queryResult"]["totalCount"] == 3
       assert keys["queryResult"]["rowCount"] == 3
       assert length(keys["queryResult"]["rows"]) == 3
+    end
+
+    test "can view revision history if logged in as an admin", %{conn: conn, project: project} do
+      # as an author we should not see the revision history link
+      conn = get(conn, Routes.activity_bank_path(conn, :index, project.slug))
+      assert html_response(conn, 200) =~ ~s[&quot;revisionHistoryLink&quot;:false]
+
+      # as an admin we should see the revision history link
+      admin = author_fixture(%{system_role_id: SystemRole.role_id().admin})
+
+      conn =
+        conn
+        |> Pow.Plug.assign_current_user(admin, OliWeb.Pow.PowHelpers.get_pow_config(:author))
+        |> recycle_author_session(admin)
+
+      conn = get(conn, Routes.activity_bank_path(conn, :index, project.slug))
+      assert html_response(conn, 200) =~ ~s[&quot;revisionHistoryLink&quot;:true]
     end
   end
 

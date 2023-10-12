@@ -55,7 +55,7 @@ export const HoverContainer = (props: PropsWithChildren<Props>) => {
 
         if (mousedown) return position;
 
-        const HEADER_OFFSET = 150;
+        const HEADER_OFFSET = 200;
         const newPosition = positionRect(
           {
             ...state,

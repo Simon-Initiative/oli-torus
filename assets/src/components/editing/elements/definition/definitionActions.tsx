@@ -7,6 +7,7 @@ import { insideSemanticElement } from '../utils';
 export const insertDefinition = createButtonCommandDesc({
   icon: <i className="fa-solid fa-book-open"></i>,
   description: 'Definition',
+  category: 'Language',
   execute: (_context, editor) => {
     const at = editor.selection;
     if (!at) return;

@@ -195,6 +195,9 @@ const ImageCoding = (props: AuthoringElementProps<ImageCodingModelSchema>) => {
               <Feedback
                 {...sharedProps}
                 projectSlug={props.projectSlug}
+                onEditEditorType={(score, editor) =>
+                  dispatch(ICActions.editFeedbackEditorType(score, editor))
+                }
                 onEditResponse={(score, content) =>
                   dispatch(ICActions.editFeedback(score, content))
                 }

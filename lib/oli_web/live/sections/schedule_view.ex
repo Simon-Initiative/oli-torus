@@ -1,14 +1,9 @@
 defmodule OliWeb.Sections.ScheduleView do
-  use Surface.LiveView, layout: {OliWeb.LayoutView, "live.html"}
+  use OliWeb, :live_view
+
   alias OliWeb.Router.Helpers, as: Routes
   alias OliWeb.Sections.Mount
   alias OliWeb.Common.{Breadcrumb, SessionContext}
-
-  data(breadcrumbs, :any)
-  data(title, :string, default: "Schedule Section")
-  data(section, :any, default: nil)
-  data(show_confirm, :boolean, default: false)
-  data(to_delete, :integer, default: nil)
 
   defp set_breadcrumbs(type, section) do
     OliWeb.Sections.OverviewView.set_breadcrumbs(type, section)
@@ -40,6 +35,7 @@ defmodule OliWeb.Sections.ScheduleView do
            appConfig: %{
              start_date: section.start_date,
              end_date: section.end_date,
+             preferred_scheduling_time: section.preferred_scheduling_time,
              title: section.title,
              section_slug: section_slug,
              display_curriculum_item_numbering: section.display_curriculum_item_numbering,
@@ -50,10 +46,15 @@ defmodule OliWeb.Sections.ScheduleView do
     end
   end
 
+  attr(:breadcrumbs, :any)
+  attr(:title, :string, default: "Schedule Section")
+  attr(:section, :any, default: nil)
+  attr(:show_confirm, :boolean, default: false)
+  attr(:to_delete, :integer, default: nil)
+
   def render(assigns) do
     ~H"""
-
-    <script type="text/javascript" src={ @js_path }></script>
+    <script type="text/javascript" src={@js_path} />
 
     <div id="schedule-app" phx-update="ignore">
       <%= ReactPhoenix.ClientSide.react_component("Components.ScheduleEditor", @appConfig) %>

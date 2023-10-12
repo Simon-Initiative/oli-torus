@@ -18,13 +18,18 @@ defmodule OliWeb.Components.Header do
     ~H"""
     <nav class="navbar py-1">
       <div class="container mx-auto flex flex-row">
+        <a
+          class="navbar-brand torus-logo my-1 mr-auto"
+          href={
+            case assigns[:logo_link] do
+              nil ->
+                logo_link_path(assigns)
 
-        <a class="navbar-brand torus-logo my-1 mr-auto" href={case assigns[:logo_link] do
-          nil ->
-            logo_link_path(assigns)
-          logo_link ->
-            logo_link
-          end}>
+              logo_link ->
+                logo_link
+            end
+          }
+        >
           <%= brand_logo(Map.merge(assigns, %{class: "d-inline-block align-top mr-2"})) %>
         </a>
 
@@ -36,7 +41,6 @@ defmodule OliWeb.Components.Header do
 
         <%= cond do %>
           <% assigns[:hide_user] == true -> %>
-
           <% is_preview_mode?(assigns) -> %>
             <div class="dropdown relative">
               <button
@@ -68,19 +72,22 @@ defmodule OliWeb.Components.Header do
                 </div>
               </button>
             </div>
-
           <% user_signed_in?(assigns) -> %>
             <div class="max-w-[400px]">
-              <UserAccountMenu.menu ctx={@ctx} />
+              <UserAccountMenu.menu ctx={@ctx} is_liveview={Map.get(@ctx, :is_liveview)} />
             </div>
-
           <% true -> %>
-            <%= link "Learner/Educator Sign In", to: Routes.pow_session_path(OliWeb.Endpoint, :new), class: "btn btn-primary btn-sm my-2 flex items-center" %>
-
+            <%= link("Learner/Educator Sign In",
+              to: Routes.pow_session_path(OliWeb.Endpoint, :new),
+              class: "btn btn-primary btn-sm my-2 flex items-center"
+            ) %>
         <% end %>
       </div>
     </nav>
-    <.delivery_breadcrumb breadcrumbs={assigns[:breadcrumbs]} socket_or_conn={socket_or_conn(assigns)} />
+    <.delivery_breadcrumb
+      breadcrumbs={assigns[:breadcrumbs]}
+      socket_or_conn={socket_or_conn(assigns)}
+    />
     """
   end
 
@@ -93,7 +100,9 @@ defmodule OliWeb.Components.Header do
       <div class="container mx-auto my-2">
         <nav class="breadcrumb-bar d-flex align-items-center mt-3 mb-1">
           <div class="flex-1">
-            <%= live_render(@socket_or_conn, BreadcrumbTrailLive, session: %{"breadcrumbs" => @breadcrumbs}) %>
+            <%= live_render(@socket_or_conn, BreadcrumbTrailLive,
+              session: %{"breadcrumbs" => @breadcrumbs}
+            ) %>
           </div>
         </nav>
       </div>

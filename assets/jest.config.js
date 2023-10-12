@@ -9,6 +9,12 @@ module.exports = {
     '^utils/(.*)': '<rootDir>/src/utils/$1',
     '\\.[s]css': 'identity-obj-proxy',
     'monaco-editor': '<rootDir>/__mocks__/monaco.mock.js',
+
+    /* react-markdown and rehype are esm modules that don't play nice with jest so we mock them out.
+       this does mean you can't write tests for them, but currently we don't have any. */
+    'react-markdown': '<rootDir>/__mocks__/react-markdown.mock.js',
+    'rehype': '<rootDir>/__mocks__/react-markdown.mock.js',
+
     // necessary for jest to handle non-js file imports by mapping to an empty module
     '\\.(css|scss|wav)$': '<rootDir>/__mocks__/empty.mock.js',
   },

@@ -84,95 +84,100 @@ defmodule OliWeb.Delivery.NewCourse do
      )}
   end
 
-  attr :breadcrumbs, :any, default: [Breadcrumb.new(%{full_title: "Course Creation"})]
+  attr(:breadcrumbs, :any, default: [Breadcrumb.new(%{full_title: "Course Creation"})])
 
   def render(assigns) do
     ~H"""
-      <div id={@form_id} phx-hook="SubmitForm">
-        <.live_component
-          id="course_creation_stepper"
-          module={Stepper}
-          on_cancel="redirect_to_courses"
-          steps={@steps || []}
-          current_step={@current_step}
-          next_step_disabled={next_step_disabled?(assigns)}
-          data={get_step_data(assigns)} />
-      </div>
+    <div id={@form_id} phx-hook="SubmitForm">
+      <.live_component
+        id="course_creation_stepper"
+        module={Stepper}
+        on_cancel="redirect_to_courses"
+        steps={@steps || []}
+        current_step={@current_step}
+        next_step_disabled={next_step_disabled?(assigns)}
+        data={get_step_data(assigns)}
+      />
+    </div>
     """
   end
 
-  slot :inner_block, required: true
+  slot(:inner_block, required: true)
 
   defp header(assigns) do
     ~H"""
-      <h5 class="px-9 py-4 border-gray-200 dark:border-gray-600 border-b text-sm font-semibold">
-        New course set up
-      </h5>
-      <div class="overflow-y-auto scrollbar-hide relative h-full">
-        <%= render_slot(@inner_block) %>
-      </div>
+    <h5 class="px-9 py-4 border-gray-200 dark:border-gray-600 border-b text-sm font-semibold">
+      New course set up
+    </h5>
+    <div class="overflow-y-auto scrollbar-hide relative h-full">
+      <%= render_slot(@inner_block) %>
+    </div>
     """
   end
 
-  attr :flash, :any, default: %{}
+  attr(:flash, :any, default: %{})
 
   defp render_flash(assigns) do
     ~H"""
-      <%= if live_flash(@flash, :form_error) do %>
-        <div class="alert alert-danger m-0 flex flex-row justify-between w-full" role="alert">
+    <%= if live_flash(@flash, :form_error) do %>
+      <div class="alert alert-danger m-0 flex flex-row justify-between w-full" role="alert">
+        <%= live_flash(@flash, :form_error) %>
 
-          <%= live_flash(@flash, :form_error) %>
-
-          <button type="button" class="close" data-bs-dismiss="alert" aria-label="Close" phx-click="lv:clear-flash" phx-value-key="error">
-            <i class="fa-solid fa-xmark fa-lg"></i>
-          </button>
-
-        </div>
-      <% end %>
+        <button
+          type="button"
+          class="close"
+          data-bs-dismiss="alert"
+          aria-label="Close"
+          phx-click="lv:clear-flash"
+          phx-value-key="error"
+        >
+          <i class="fa-solid fa-xmark fa-lg"></i>
+        </button>
+      </div>
+    <% end %>
     """
   end
 
   def render_step(:select_source, assigns) do
     ~H"""
-      <.header>
-        <div class="flex flex-col items-center gap-3 pl-9 pr-16 py-4">
-          <h2>Select source</h2>
-          <.live_component
-            id="select_source_step"
-            module={SelectSource}
-            session={@session}
-            on_select={@on_select}
-            on_select_target={@on_select_target}
-            source={@source}
-            current_user={@current_user}
-            lti_params={@lti_params}
-          />
-        </div>
-      </.header>
+    <.header>
+      <div class="flex flex-col items-center gap-3 pl-9 pr-16 py-6">
+        <h2>Select source</h2>
+        <.live_component
+          id="select_source_step"
+          module={SelectSource}
+          session={@session}
+          on_select={@on_select}
+          source={@source}
+          current_user={@current_user}
+          lti_params={@lti_params}
+        />
+      </div>
+    </.header>
     """
   end
 
   def render_step(:name_course, assigns) do
     ~H"""
-      <.header>
-        <div class="flex flex-col items-center gap-3 pl-9 pr-16 py-4">
-          <img src="/images/icons/course-creation-wizard-step-1.svg" />
-          <h2>Name your course</h2>
-          <.render_flash flash={@flash} />
-          <NameCourse.render changeset={@changeset} />
-        </div>
-      </.header>
+    <.header>
+      <div class="flex flex-col items-center gap-3 pl-9 pr-16 py-6">
+        <img src="/images/icons/course-creation-wizard-step-1.svg" style="height: 170px;" />
+        <h2>Name your course</h2>
+        <.render_flash flash={@flash} />
+        <NameCourse.render changeset={to_form(@changeset)} />
+      </div>
+    </.header>
     """
   end
 
   def render_step(:course_details, assigns) do
     ~H"""
     <.header>
-      <div class="flex flex-col items-center gap-3 pl-9 pr-16 py-4">
-        <img src="/images/icons/course-creation-wizard-step-2.svg" />
+      <div class="flex flex-col items-center gap-3 pl-9 pr-16 py-6">
+        <img src="/images/icons/course-creation-wizard-step-2.svg" style="height: 170px;"/>
         <h2>Course details</h2>
         <.render_flash flash={@flash} />
-        <CourseDetails.render on_select={@on_select} changeset={@changeset} />
+        <CourseDetails.render changeset={to_form(@changeset)} />
       </div>
     </.header>
     """
@@ -196,8 +201,7 @@ defmodule OliWeb.Delivery.NewCourse do
         %{
           session: assigns.session,
           source: assigns[:source],
-          on_select: "source_selection",
-          on_select_target: "##{@form_id}",
+          on_select: JS.push("source_selection", target: "##{@form_id}"),
           current_user: assigns.current_user,
           lti_params: assigns.lti_params
         }
@@ -206,7 +210,10 @@ defmodule OliWeb.Delivery.NewCourse do
         %{changeset: assigns.changeset, flash: assigns.flash}
 
       _ ->
-        %{changeset: assigns.changeset, on_select: "day_selection", flash: assigns.flash}
+        %{
+          changeset: assigns.changeset,
+          flash: assigns.flash
+        }
     end
   end
 
@@ -235,7 +242,8 @@ defmodule OliWeb.Delivery.NewCourse do
              class_days: section_params.class_days,
              course_section_number: section_params.course_section_number,
              start_date: section_params.start_date,
-             end_date: section_params.end_date
+             end_date: section_params.end_date,
+             preferred_scheduling_time: section_params.preferred_scheduling_time
            }
          ) do
       {:ok, _section} ->
@@ -279,7 +287,8 @@ defmodule OliWeb.Delivery.NewCourse do
             open_and_free: true,
             context_id: UUID.uuid4(),
             customizations: customizations,
-            has_experiments: has_experiments
+            has_experiments: has_experiments,
+            analytics_version: :v2
           })
 
         case create_from_publication(socket, publication, section_params) do
@@ -310,7 +319,8 @@ defmodule OliWeb.Delivery.NewCourse do
             :class_modality,
             :class_days,
             :start_date,
-            :end_date
+            :end_date,
+            :preferred_scheduling_time
           ])
           |> Map.merge(%{
             blueprint_id: blueprint.id,
@@ -318,7 +328,8 @@ defmodule OliWeb.Delivery.NewCourse do
             type: :enrollable,
             open_and_free: true,
             has_experiments: project.has_experiments,
-            context_id: UUID.uuid4()
+            context_id: UUID.uuid4(),
+            analytics_version: :v2
           })
 
         case create_from_product(socket, blueprint, section_params) do
@@ -400,28 +411,13 @@ defmodule OliWeb.Delivery.NewCourse do
        to:
          if(socket.assigns.lti_params,
            do: Routes.delivery_path(socket, :index),
-           else: Routes.delivery_path(socket, :open_and_free_index)
+           else: Routes.live_path(socket, OliWeb.Delivery.OpenAndFreeIndex)
          )
      )}
   end
 
   def handle_event("source_selection", %{"id" => source}, socket) do
     {:noreply, assign(socket, source: source, current_step: 1)}
-  end
-
-  def handle_event("day_selection", %{"class_days" => class_days}, socket) do
-    class_days =
-      Enum.reduce(class_days, [], fn {day, checked}, days ->
-        if String.to_atom(checked) do
-          [day | days]
-        else
-          days
-        end
-      end)
-
-    changeset = Ecto.Changeset.change(socket.assigns.changeset, %{class_days: class_days})
-
-    {:noreply, assign(socket, changeset: changeset)}
   end
 
   def handle_event(
@@ -479,9 +475,9 @@ defmodule OliWeb.Delivery.NewCourse do
 
         fields_to_validate =
           if class_modality != :never do
-            [:class_days, :start_date, :end_date]
+            [:class_days, :start_date, :end_date, :preferred_scheduling_time]
           else
-            [:start_date, :end_date]
+            [:start_date, :end_date, :preferred_scheduling_time]
           end
 
         if validate_fields(changeset, fields_to_validate) do

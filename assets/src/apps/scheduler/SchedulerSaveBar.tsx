@@ -1,4 +1,4 @@
-import React, { ChangeEventHandler, useCallback } from 'react';
+import React, { ChangeEvent, ChangeEventHandler, ReactNode, useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import {
   dateWithTimeLabel,
@@ -24,6 +24,7 @@ interface PageDetailEditorProps {
   onChangeTypeHandler: ChangeEventHandler<HTMLSelectElement>;
   onChangeEndHandler: ChangeEventHandler<HTMLInputElement>;
   onChangeDueEndHandler: ChangeEventHandler<HTMLInputElement>;
+  onChangeAvailableFromHandler: (event: ChangeEvent<HTMLInputElement> | null) => void;
 }
 
 const DateRangeView: React.FC<{ selectedItem: HierarchyItem | undefined | null }> = ({
@@ -49,52 +50,97 @@ const PageDetailEditor: React.FC<PageDetailEditorProps> = ({
   onChangeTypeHandler,
   onChangeEndHandler,
   onChangeDueEndHandler,
+  onChangeAvailableFromHandler,
 }) => {
   if (!selectedItem) return null;
-  return (
-    <div className="flex flex-row gap-1 flex-grow-0  ">
-      <div className="text-ellipsis text-sm overflow-hidden whitespace-nowrap text-right pt-3 mr-2">
-        {selectedItem.title}:
-      </div>
-      <div className="w-52 pt-0.5">
-        <select
-          className="form-control text-sm"
-          value={selectedItem.scheduling_type}
-          onChange={onChangeTypeHandler}
-        >
-          <option value="read_by">Suggested by:</option>
-          <option value="inclass_activity">In-Class Activity On:</option>
-          <option value="due_by">Due By:</option>
-        </select>
-      </div>
-      <div className="w-52 pt-0.5">
-        {selectedItem.scheduling_type === 'due_by' || (
-          <input
-            className="form-control text-sm"
-            type="date"
-            onChange={onChangeEndHandler}
-            value={dateWithoutTimeLabel(selectedItem.endDate) || ''}
-          />
-        )}
 
-        {selectedItem.scheduling_type === 'due_by' && (
-          <input
-            className="form-control text-sm"
-            type="datetime-local"
-            onChange={onChangeDueEndHandler}
-            value={dateWithTimeLabel(selectedItem.endDateTime) || ''}
-          />
+  return (
+    <FormRow>
+      <ItemTitle>{selectedItem.title}:</ItemTitle>
+
+      <InputColumn>
+        {selectedItem.graded && (
+          <InputRow>
+            <InputLabel>Available From:</InputLabel>
+            <InputField>
+              <input
+                className="form-control text-sm"
+                type="datetime-local"
+                onChange={onChangeAvailableFromHandler}
+                value={dateWithTimeLabel(selectedItem.startDateTime) || ''}
+              />
+            </InputField>
+          </InputRow>
         )}
-      </div>
-    </div>
+        <InputRow>
+          <InputLabel>
+            <select
+              className="form-control text-sm"
+              value={selectedItem.scheduling_type}
+              onChange={onChangeTypeHandler}
+            >
+              <option value="read_by">Suggested by:</option>
+              <option value="inclass_activity">In-Class Activity On:</option>
+              <option value="due_by">Due By:</option>
+            </select>
+          </InputLabel>
+          <InputField>
+            {selectedItem.scheduling_type === 'due_by' || (
+              <input
+                className="form-control text-sm"
+                type="date"
+                onChange={onChangeEndHandler}
+                value={dateWithoutTimeLabel(selectedItem.endDate) || ''}
+              />
+            )}
+
+            {selectedItem.scheduling_type === 'due_by' && (
+              <input
+                className="form-control text-sm"
+                type="datetime-local"
+                onChange={onChangeDueEndHandler}
+                value={dateWithTimeLabel(selectedItem.endDateTime) || ''}
+              />
+            )}
+          </InputField>
+        </InputRow>
+      </InputColumn>
+    </FormRow>
   );
 };
+
+const FormRow: React.FC<{ children: ReactNode }> = ({ children }) => (
+  <div className="flex flex-row gap-1 flex-grow-0 text-sm justify-center">{children}</div>
+);
+
+const InputColumn: React.FC<{ children: ReactNode }> = ({ children }) => (
+  <div className="flex flex-col gap-1 flex-grow-0 my-auto">{children}</div>
+);
+
+const ItemTitle: React.FC<{ children: ReactNode }> = ({ children }) => (
+  <div className="text-ellipsis text-sm overflow-hidden whitespace-nowrap text-right mr-5 w-40 my-auto font-bold">
+    {children}
+  </div>
+);
+
+const InputRow: React.FC<{ children: ReactNode }> = ({ children }) => (
+  <div className="flex flex-row gap-1 flex-grow-0  ">{children}</div>
+);
+
+const InputLabel: React.FC<{ children: ReactNode }> = ({ children }) => (
+  <div className="w-40 pt-0.5">{children}</div>
+);
+
+const InputField: React.FC<{ children: ReactNode }> = ({ children }) => (
+  <div className="pt-0.5">{children}</div>
+);
 
 export const ScheduleSaveBar: React.FC<SaveIndicatorProps> = ({ onSave }) => {
   const unsavedChanges = useSelector(hasUnsavedChanges);
   const selectedItem = useSelector(getSelectedItem);
   const saving = useSelector(isSaving);
   const dispatch = useDispatch();
+
   const onChangeTypeHandler = useCallback(
     (e: React.ChangeEvent<HTMLSelectElement>) => {
       if (!selectedItem) return;
@@ -114,11 +160,28 @@ export const ScheduleSaveBar: React.FC<SaveIndicatorProps> = ({ onSave }) => {
       const newDate = e.target.value;
       const target = newDate ? stringToDateWithoutTime(newDate) : null;
       if (!selectedItem) return;
+
       dispatch(
         moveScheduleItem({
           itemId: selectedItem.id,
-          startDate: selectedItem.startDate,
+          startDate: selectedItem.startDateTime || selectedItem.startDate,
           endDate: target,
+        }),
+      );
+    },
+    [dispatch, selectedItem],
+  );
+
+  const onChangeAvailableFromHandler = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const newDate = e.target.value;
+      const target = newDate ? stringToDateWithTime(newDate) : null;
+      if (!selectedItem) return;
+      dispatch(
+        moveScheduleItem({
+          itemId: selectedItem.id,
+          startDate: target,
+          endDate: selectedItem.endDateTime || selectedItem.endDate,
         }),
       );
     },
@@ -134,7 +197,7 @@ export const ScheduleSaveBar: React.FC<SaveIndicatorProps> = ({ onSave }) => {
       dispatch(
         moveScheduleItem({
           itemId: selectedItem.id,
-          startDate: selectedItem.startDate,
+          startDate: selectedItem.startDateTime || selectedItem.startDate,
           endDate: target,
         }),
       );
@@ -144,13 +207,14 @@ export const ScheduleSaveBar: React.FC<SaveIndicatorProps> = ({ onSave }) => {
   const pageIsSelected = selectedItem && selectedItem.resource_type_id === ScheduleItemType.Page;
   if (!unsavedChanges && !saving && !pageIsSelected) return null;
   return (
-    <div className="fixed p-4 bottom-0 left-0 z-50 bg-body w-full flex border-t-gray-300 border-t h-20 dark:bg-slate-800">
+    <div className="fixed p-4 pt-3 bottom-0 left-0 z-50 bg-body w-full flex border-t-gray-300 border-t h-24 dark:bg-slate-800">
       {pageIsSelected || <DateRangeView selectedItem={selectedItem} />}
       {pageIsSelected && (
         <PageDetailEditor
           onChangeDueEndHandler={onChangeDueEndHandler}
           onChangeEndHandler={onChangeEndHandler}
           onChangeTypeHandler={onChangeTypeHandler}
+          onChangeAvailableFromHandler={onChangeAvailableFromHandler}
           selectedItem={selectedItem}
         />
       )}
@@ -175,7 +239,7 @@ export const ScheduleSaveBar: React.FC<SaveIndicatorProps> = ({ onSave }) => {
               You have unsaved changes
             </div>
             <button
-              className="bg-delivery-primary px-5 py-3 text-delivery-body rounded-md text-ellipsis overflow-hidden whitespace-nowrap"
+              className="bg-delivery-primary px-5 py-3 text-delivery-body rounded-md text-ellipsis overflow-hidden whitespace-nowrap h-12"
               onClick={onSave}
             >
               Save Changes

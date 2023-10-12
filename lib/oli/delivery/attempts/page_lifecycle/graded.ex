@@ -148,8 +148,6 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Graded do
                  resource_attempt.was_late
                ) do
             {:ok, resource_access} ->
-              {:ok, resource_access} = Oli.Delivery.Metrics.mark_progress_completed(resource_access)
-
               {:ok,
                %FinalizationSummary{
                  graded: true,
@@ -164,11 +162,12 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Graded do
           end
 
         %ResourceAttempt{lifecycle_state: :submitted, resource_access_id: resource_access_id} ->
+          {:ok, resource_access} = Oli.Delivery.Metrics.mark_progress_completed(Oli.Repo.get(ResourceAccess, resource_access_id))
           {:ok,
            %FinalizationSummary{
              graded: true,
              lifecycle_state: :submitted,
-             resource_access: Oli.Repo.get(ResourceAccess, resource_access_id),
+             resource_access: resource_access,
              part_attempt_guids: part_attempt_guids,
              effective_settings: effective_settings
            }}
@@ -238,11 +237,16 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Graded do
 
   defp apply_evaluation(resource_attempt, activity_attempts, %Combined{} = effective_settings) do
     {score, out_of} =
-      activity_attempts
-      |> Enum.filter(fn activity_attempt -> activity_attempt.scoreable end)
-      |> Enum.reduce({0, 0}, &aggregation_reducer/2)
-      |> override_out_of(resource_attempt.revision.content)
-      |> ensure_valid_grade
+      if Enum.empty?(activity_attempts) do
+        # For assessments with empty activities, grant a score or 1.0/1.0
+        {1.0, 1.0}
+      else
+        activity_attempts
+        |> Enum.filter(fn activity_attempt -> activity_attempt.scoreable end)
+        |> Enum.reduce({0, 0}, &aggregation_reducer/2)
+        |> override_out_of(resource_attempt.revision.content)
+        |> ensure_valid_grade
+      end
 
     now = DateTime.utc_now()
 

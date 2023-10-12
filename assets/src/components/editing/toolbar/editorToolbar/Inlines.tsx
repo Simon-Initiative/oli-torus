@@ -11,12 +11,12 @@ import {
 import { popupCmdDesc as insertPopup } from 'components/editing/elements/popup/PopupCmd';
 import { Toolbar } from 'components/editing/toolbar/Toolbar';
 import { CommandButton } from 'components/editing/toolbar/buttons/CommandButton';
-import { DescriptiveButton } from 'components/editing/toolbar/buttons/DescriptiveButton';
 import { DropdownButton } from 'components/editing/toolbar/buttons/DropdownButton';
 import { insertInlineCallout } from '../../elements/callout/calloutActions';
 import { insertCommandButton } from '../../elements/command_button/commandButtonActions';
 import { insertForeign } from '../../elements/foreign/foreignActions';
 import { insertInlineFormula } from '../../elements/formula/formulaActions';
+import { CategorizedCommandList } from '../CategorizedCommandList';
 
 interface Props {}
 export const Inlines = (_props: Props) => {
@@ -45,9 +45,7 @@ export const Inlines = (_props: Props) => {
     <Toolbar.Group>
       {basicFormattingOptions}
       <DropdownButton description={seeMoreInlineOptions} showDropdownArrow={false}>
-        {moreInlineOptions.map((desc, i) => (
-          <DescriptiveButton key={i} description={desc} />
-        ))}
+        <CategorizedCommandList commands={moreInlineOptions} />
       </DropdownButton>
     </Toolbar.Group>
   );

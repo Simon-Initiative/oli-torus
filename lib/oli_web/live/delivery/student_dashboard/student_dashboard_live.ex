@@ -8,7 +8,6 @@ defmodule OliWeb.Delivery.StudentDashboard.StudentDashboardLive do
   alias OliWeb.Delivery.StudentDashboard.Components.Helpers
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Metrics
-  alias Oli.Grading.GradebookRow
 
   @impl Phoenix.LiveView
   def mount(_params, session, socket) do
@@ -55,7 +54,7 @@ defmodule OliWeb.Delivery.StudentDashboard.StudentDashboardLive do
         %{
           objectives:
             Sections.get_objectives_and_subobjectives(
-              socket.assigns.section.slug,
+              socket.assigns.section,
               socket.assigns.student.id
             ),
           filter_options:
@@ -75,7 +74,7 @@ defmodule OliWeb.Delivery.StudentDashboard.StudentDashboardLive do
         active_tab: String.to_existing_atom(params["active_tab"])
       )
       |> assign_new(:scores, fn ->
-        %{scores: get_scores(socket.assigns.section, socket.assigns.student.id)}
+        %{scores: Oli.Grading.get_scores_for_section_and_user(socket.assigns.section.id, socket.assigns.student.id)}
       end)
 
     {:noreply, socket}
@@ -212,7 +211,7 @@ defmodule OliWeb.Delivery.StudentDashboard.StudentDashboardLive do
             student_id
           )
 
-        proficiency_per_page = Metrics.proficiency_for_student_per_page(section.slug, student_id)
+        proficiency_per_page = Metrics.proficiency_for_student_per_page(section, student_id)
 
         pages_with_metrics =
           Enum.map(pages, fn page ->
@@ -243,19 +242,6 @@ defmodule OliWeb.Delivery.StudentDashboard.StudentDashboardLive do
         async_calculate_proficiency(section, student_id)
 
         {total_count, containers_with_metrics}
-    end
-  end
-
-  defp get_scores(section, student_id) do
-    {gradebook, _column_labels} = Oli.Grading.generate_gradebook_for_section(section)
-
-    if length(gradebook) > 0 do
-      [%GradebookRow{user: _user, scores: scores} | _] =
-        Enum.filter(gradebook, fn grade -> grade.user.id == student_id end)
-
-      Enum.filter(scores, fn score -> !is_nil(score) end)
-    else
-      []
     end
   end
 
@@ -361,6 +347,7 @@ defmodule OliWeb.Delivery.StudentDashboard.StudentDashboardLive do
 
   end
 
+
   @impl Phoenix.LiveView
   def handle_info({:hide_modal}, socket) do
     {:noreply, hide_modal(socket)}
@@ -374,6 +361,11 @@ defmodule OliWeb.Delivery.StudentDashboard.StudentDashboardLive do
        modal,
        modal_assigns: modal_assigns
      )}
+  end
+
+  @impl Phoenix.LiveView
+  def handle_info({:put_flash, type, message}, socket) do
+    {:noreply, put_flash(socket, type, message)}
   end
 
   @impl Phoenix.LiveView

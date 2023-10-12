@@ -53,6 +53,8 @@ defmodule Oli.Delivery.Attempts.PageLifecycle do
         activity_provider
       ) do
     Repo.transaction(fn ->
+      Repo.query!("set transaction isolation level SERIALIZABLE;")
+
       case DeliveryResolver.from_revision_slug(section_slug, revision_slug) do
         nil ->
           Repo.rollback({:not_found})
@@ -106,9 +108,9 @@ defmodule Oli.Delivery.Attempts.PageLifecycle do
 
   `{:ok, {:not_started, %HistorySummary{}}}`
   """
-  @spec visit(%Revision{}, String.t(), String.t(), User.t(), any, any) ::
-          {:ok, {:in_progress | :revised, %AttemptState{}}}
-          | {:ok, {:not_started, %HistorySummary{}}}
+  @spec visit(Revision.t(), String.t(), String.t(), User.t(), any, any) ::
+          {:ok, {:in_progress | :revised, AttemptState.t()}}
+          | {:ok, {:not_started, HistorySummary.t()}}
           | {:error, any}
   def visit(
         page_revision,
@@ -203,14 +205,14 @@ defmodule Oli.Delivery.Attempts.PageLifecycle do
             Repo.rollback({:not_found})
 
           resource_attempt ->
-
             resource_access = Oli.Repo.get(ResourceAccess, resource_attempt.resource_access_id)
 
             context = %FinalizationContext{
               resource_attempt: resource_attempt,
               section_slug: section_slug,
               datashop_session_id: datashop_session_id,
-              effective_settings: Oli.Delivery.Settings.get_combined_settings(
+              effective_settings:
+                Oli.Delivery.Settings.get_combined_settings(
                   resource_attempt.revision,
                   resource_access.section_id,
                   resource_access.user_id

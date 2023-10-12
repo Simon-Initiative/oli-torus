@@ -6,6 +6,7 @@ defmodule OliWeb.Components.Delivery.Buttons do
   attr(:type, :string, default: "button")
   attr(:disabled, :boolean, default: false)
   attr(:class, :string, default: nil)
+  slot(:inner_block, required: true)
 
   def button(assigns) do
     ~H"""
@@ -42,32 +43,72 @@ defmodule OliWeb.Components.Delivery.Buttons do
     <div class="relative inline-block text-left">
       <div class="flex">
         <%= if assigns[:href] do %>
-          <a href={@href} {(if @target do [target: @target] else [] end)} class={[@button_class, @class]} disabled={@disabled}>
+          <a
+            href={@href}
+            {(if @target do [target: @target] else [] end)}
+            class={[@button_class, @class]}
+            disabled={@disabled}
+          >
             <%= render_slot(@inner_block) %>
           </a>
         <% else %>
-          <button phx-target={assigns[:onclick_target]} phx-click={assigns[:onclick]} id={"#{@id}_button"} type={@type} class={[@button_class, @class]} disabled={@disabled}>
+          <button
+            phx-target={assigns[:onclick_target]}
+            phx-click={assigns[:onclick]}
+            id={"#{@id}_button"}
+            type={@type}
+            class={[@button_class, @class]}
+            disabled={@disabled}
+          >
             <%= render_slot(@inner_block) %>
           </button>
         <% end %>
         <button type="button" phx-click={toggle_options(@id)} class={@dropdown_button_class}>
-          <svg  class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-            <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clip-rule="evenodd" />
+          <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+            <path
+              fill-rule="evenodd"
+              d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z"
+              clip-rule="evenodd"
+            />
           </svg>
         </button>
       </div>
-      <div phx-click-away={toggle_options(@id)} id={"#{@id}_options"} class="hidden absolute w-40 right-0 z-10 mt-2 origin-top-right divide-y divide-gray-100 rounded-md bg-white dark:bg-black dark:text shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none" role="menu" aria-orientation="vertical" aria-labelledby="menu-button" tabindex="-1">
+      <div
+        phx-click-away={toggle_options(@id)}
+        id={"#{@id}_options"}
+        class="hidden absolute w-40 right-0 z-10 mt-2 origin-top-right divide-y divide-gray-100 rounded-md bg-white dark:bg-black dark:text shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none"
+        role="menu"
+        aria-orientation="vertical"
+        aria-labelledby="menu-button"
+        tabindex="-1"
+      >
         <div class="py-1" role="none">
           <%= for {option, index} <- Enum.with_index(@options) do %>
             <%= if option[:href] do %>
-              <a href={option.href} {(if option[:target] do [target: option.target] else [] end)} class={@option_class} role="menuitem" tabindex="-1" id={"menu-item-#{@id}-#{index}"}>
+              <a
+                href={option.href}
+                {(if option[:target] do [target: option.target] else [] end)}
+                class={@option_class}
+                role="menuitem"
+                tabindex="-1"
+                id={"menu-item-#{@id}-#{index}"}
+              >
                 <%= option.text %>
                 <%= if option[:target] == "_blank" do %>
                   <i class="fa-solid fa-arrow-up-right-from-square ml-2"></i>
                 <% end %>
               </a>
             <% else %>
-              <button type="button" phx-click={toggle_options(option.on_click, @id)} class={@option_class} role="menuitem" tabindex="-1" id={"menu-item-#{@id}-#{index}"}><%= option.text %></button>
+              <button
+                type="button"
+                phx-click={toggle_options(option.on_click, @id)}
+                class={@option_class}
+                role="menuitem"
+                tabindex="-1"
+                id={"menu-item-#{@id}-#{index}"}
+              >
+                <%= option.text %>
+              </button>
             <% end %>
           <% end %>
         </div>
@@ -84,7 +125,11 @@ defmodule OliWeb.Components.Delivery.Buttons do
   def help_button(assigns) do
     ~H"""
     <!-- Button trigger modal -->
-    <button type="button" class="btn btn-xs btn-light inline-flex items-center help-btn m-1" onclick="window.showHelpModal();">
+    <button
+      type="button"
+      class="btn btn-xs btn-light inline-flex items-center help-btn m-1"
+      onclick="window.showHelpModal();"
+    >
       <span>Tech Support</span>
     </button>
     """

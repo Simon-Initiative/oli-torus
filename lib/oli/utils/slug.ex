@@ -115,10 +115,36 @@ defmodule Oli.Utils.Slug do
   end
 
   @doc """
-  Generates a unique slug for the table using the title provided
+  Generates a unique slug or slugs for the table using the title or titles provided
   """
+  def generate(table, titles) when is_list(titles) do
+    # Ensure no repeated titles
+    {titles, _, _} =
+      Enum.reduce(titles, {[], MapSet.new(), 1}, fn title, {titles, titles_map_set, index} ->
+        slugified_title = slugify(title)
+
+        case MapSet.member?(titles_map_set, slugified_title) do
+          false ->
+            {[slugified_title | titles], MapSet.put(titles_map_set, slugified_title), index}
+
+          _ ->
+            slugified_title = "#{slugified_title}_#{suffix_from_number(index)}"
+            {[slugified_title | titles], MapSet.put(titles_map_set, slugified_title), index + 1}
+        end
+      end)
+
+    unique_slugs(table, Enum.reverse(titles), 0, 10)
+  end
+
   def generate(table, title) do
     unique_slug(table, slugify(title), 0, 10)
+  end
+
+  defp suffix_from_number(number) do
+    @chars
+    |> Enum.take_random(4)
+    |> Enum.concat([Integer.to_string(abs(number))])
+    |> Enum.join()
   end
 
   @doc """
@@ -146,12 +172,23 @@ defmodule Oli.Utils.Slug do
   def slugify(nil), do: ""
 
   def slugify(title) do
-    String.downcase(title, :default)
+    case String.downcase(title, :default)
     |> String.trim()
     |> String.replace(" ", "_")
     |> alpha_numeric_only()
     |> URI.encode_www_form()
-    |> String.slice(0, 30)
+    |> String.slice(0, 30) do
+
+      # A page title that only contains non-alphanumeric characters will
+      # generate a slug that is empty. This is not allowed, so we generate
+      # a random slug instead.
+      "" ->
+        random_string(10)
+
+      otherwise ->
+        otherwise
+
+    end
   end
 
   defp unique_slug(table, generate_candidate) when is_function(generate_candidate) do
@@ -167,6 +204,24 @@ defmodule Oli.Utils.Slug do
     case check_unique_slug(table, candidate) do
       {:ok, slug} -> slug
       :error -> unique_slug(table, title, attempt + 1, max_attempts)
+    end
+  end
+
+  defp unique_slugs(_table, [], _attempt, _max_attempts), do: []
+
+  defp unique_slugs(_table, _slugified_titles, attempt, max_attempts)
+       when attempt == max_attempts,
+       do: []
+
+  defp unique_slugs(table, slugified_titles, attempt, max_attempts) do
+    candidates = Enum.map(slugified_titles, &(&1 <> suffix(attempt)))
+
+    case check_unique_slugs(table, candidates) do
+      {:ok, candidates} ->
+        candidates
+
+      :error ->
+        unique_slugs(table, slugified_titles, attempt + 1, max_attempts)
     end
   end
 
@@ -191,6 +246,20 @@ defmodule Oli.Utils.Slug do
 
     case query do
       {:ok, %{num_rows: 0}} -> {:ok, candidate}
+      {:ok, _results} -> :error
+    end
+  end
+
+  defp check_unique_slugs(table, candidates) do
+    query =
+      Ecto.Adapters.SQL.query(
+        Oli.Repo,
+        "SELECT * FROM #{table} WHERE slug = ANY($1);",
+        [candidates]
+      )
+
+    case query do
+      {:ok, %{num_rows: 0}} -> {:ok, candidates}
       {:ok, _results} -> :error
     end
   end

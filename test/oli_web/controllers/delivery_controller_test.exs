@@ -8,6 +8,7 @@ defmodule OliWeb.DeliveryControllerTest do
   alias Lti_1p3.Tool.ContextRoles
   alias Oli.Delivery.Sections
 
+  import Mox
   import Oli.Factory
 
   describe "delivery_controller index" do
@@ -429,116 +430,6 @@ defmodule OliWeb.DeliveryControllerTest do
 
       assert html_response(conn, 403) =~ "Section Has Not Started"
     end
-
-    test "renders product image in sections index", %{
-      conn: conn,
-      oaf_section_1: section
-    } do
-      user = user_fixture()
-      enroll_user_to_section(user, section, :context_learner)
-
-      cover_image = "https://example.com/some-image-url.png"
-      Sections.update_section(section, %{cover_image: cover_image})
-
-      conn =
-        Plug.Test.init_test_session(conn, lti_session: nil)
-        |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
-
-      conn = get(conn, Routes.delivery_path(conn, :open_and_free_index))
-
-      assert html_response(conn, 200) =~
-               ~s|src="#{cover_image}"|
-    end
-
-    test "renders product's cover image in enrollment page", %{
-      conn: conn,
-      oaf_section_1: section
-    } do
-      user = insert(:user)
-
-      cover_image = "https://example.com/some-image-url.png"
-
-      Sections.update_section(section, %{cover_image: cover_image})
-
-      conn =
-        Plug.Test.init_test_session(conn, lti_session: nil)
-        |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
-
-      conn = get(conn, Routes.delivery_path(conn, :show_enroll, section.slug))
-
-      assert html_response(conn, 200) =~
-               ~s|src="#{cover_image}"|
-    end
-
-    test "if no cover image is set, renders default image in enrollment page", %{
-      conn: conn,
-      oaf_section_1: section
-    } do
-      user = user_fixture()
-
-      cover_image = Routes.static_path(OliWeb.Endpoint, "/images/course_default.jpg")
-
-      conn =
-        Plug.Test.init_test_session(conn, lti_session: nil)
-        |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
-
-      conn = get(conn, Routes.delivery_path(conn, :show_enroll, section.slug))
-
-      assert html_response(conn, 200) =~
-               ~s|src="#{cover_image}"|
-    end
-
-    test "gets the 'instructor' label role in the user account menu if the user with platform_role=student can create sections",
-         %{conn: conn} do
-      user = insert(:user, %{can_create_sections: true})
-
-      Accounts.update_user_platform_roles(
-        user,
-        [
-          Lti_1p3.Tool.PlatformRoles.get_role(:institution_student)
-        ]
-      )
-
-      conn =
-        Plug.Test.init_test_session(conn, lti_session: nil)
-        |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
-
-      conn = get(conn, Routes.delivery_path(conn, :open_and_free_index))
-
-      assert html_response(conn, 200)
-             |> Floki.parse_document!()
-             |> Floki.find(~s{div[data-react-class="Components.UserAccountMenu"]})
-             |> Floki.attribute("data-react-props")
-             |> hd =~
-               ~s{\"role\":\"instructor\",\"roleColor\":\"#2ecc71\",\"roleLabel\":\"Instructor\"}
-    end
-
-    test "gets the 'student' label role in the user account menu if the user with platform_role=student can not create sections",
-         %{
-           conn: conn
-         } do
-      user = insert(:user, %{can_create_sections: false})
-
-      Accounts.update_user_platform_roles(
-        user,
-        [
-          Lti_1p3.Tool.PlatformRoles.get_role(:institution_student)
-        ]
-      )
-
-      conn =
-        Plug.Test.init_test_session(conn, lti_session: nil)
-        |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
-
-      conn = get(conn, Routes.delivery_path(conn, :open_and_free_index))
-
-      assert html_response(conn, 200)
-             |> Floki.parse_document!()
-             |> Floki.find(~s{div[data-react-class="Components.UserAccountMenu"]})
-             |> Floki.attribute("data-react-props")
-             |> hd =~
-               ~s{\"role\":\"student\",\"roleColor\":\"#3498db\",\"roleLabel\":\"Student\"}
-    end
   end
 
   @moduletag :capture_log
@@ -616,6 +507,93 @@ defmodule OliWeb.DeliveryControllerTest do
 
       assert html_response(conn, 200) =~ "Enroll in Course Section"
     end
+  end
+
+  describe "enroll in the section while logged in" do
+    setup [:user_conn]
+
+    test "redirects to overview section screen if section requires enrollment", %{conn: conn} do
+      section = insert(:section, requires_enrollment: true)
+      conn = get(conn, Routes.delivery_path(conn, :show_enroll, section.slug))
+
+      assert html_response(conn, 200) =~
+               "Enroll"
+
+      conn = post(conn, Routes.delivery_path(conn, :process_enroll, section.slug))
+
+      assert html_response(conn, 200) =~
+               section.title
+    end
+
+    test "redirects to overview section screen if section does not requires enrollment", %{
+      conn: conn
+    } do
+      section = insert(:section, requires_enrollment: false)
+      conn = get(conn, Routes.delivery_path(conn, :show_enroll, section.slug))
+
+      assert html_response(conn, 200) =~
+               "Enroll"
+
+      conn = post(conn, Routes.delivery_path(conn, :process_enroll, section.slug))
+
+      assert html_response(conn, 200) =~
+               section.title
+    end
+  end
+
+  describe "enroll in the section without being logged in" do
+    test "redirects to login screen if section requires enrollment", %{conn: conn} do
+      section = insert(:section, requires_enrollment: true)
+      conn = get(conn, Routes.delivery_path(conn, :show_enroll, section.slug))
+
+      assert html_response(conn, 302) =~
+               "<html><body>You are being <a href=\"/session/new?section=#{section.slug}\">redirected</a>.</body></html>"
+
+      conn = mock_captcha(conn, section)
+
+      assert Phoenix.Flash.get(conn.assigns.flash, :error) ==
+               "Cannot enroll guest users in a course section that requires enrollment"
+
+      assert response(conn, 302) =~
+               "<html><body>You are being <a href=\"/session/new?request_path=/sections/#{section.slug}/enroll\">redirected</a>.</body></html>"
+    end
+
+    test "redirects to overview section screen if section does not requires enrollment", %{
+      conn: conn
+    } do
+      section = insert(:section, requires_enrollment: false)
+      conn = get(conn, Routes.delivery_path(conn, :show_enroll, section.slug))
+
+      assert html_response(conn, 200) =~
+               "Enroll as Guest"
+
+      conn = mock_captcha(conn, section)
+
+      assert response(conn, 302) =~
+               "<html><body>You are being <a href=\"/sections/#{section.slug}/overview\">redirected</a>.</body></html>"
+    end
+  end
+
+  defp mock_captcha(conn, section) do
+    Oli.Test.MockHTTP
+    |> expect(:post, fn "https://www.google.com/recaptcha/api/siteverify",
+                        _body,
+                        _headers,
+                        _opts ->
+      {:ok,
+       %HTTPoison.Response{
+         status_code: 200,
+         body:
+           Jason.encode!(%{
+             "success" => true
+           })
+       }}
+    end)
+
+    conn
+    |> post(Routes.delivery_path(conn, :process_enroll, section.slug), %{
+      "g-recaptcha-response" => "some-valid-capcha-data"
+    })
   end
 
   defp setup_lti_session(%{conn: conn}) do

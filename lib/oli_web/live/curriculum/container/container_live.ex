@@ -3,8 +3,7 @@ defmodule OliWeb.Curriculum.ContainerLive do
   LiveView implementation of a container editor.
   """
 
-  use Surface.LiveView, layout: {OliWeb.LayoutView, "live.html"}
-  # use OliWeb, :live_view
+  use OliWeb, :live_view
   use OliWeb.Common.Modal
 
   import Oli.Utils, only: [value_or: 2]
@@ -18,7 +17,7 @@ defmodule OliWeb.Curriculum.ContainerLive do
     Rollup,
     ActivityDelta,
     DropTarget,
-    EntryLive,
+    Entry,
     OptionsModal,
     DeleteModal,
     NotEmptyModal
@@ -113,7 +112,13 @@ defmodule OliWeb.Curriculum.ContainerLive do
              ),
            dragging: nil,
            page_title: "Curriculum | " <> project.title
-         )}
+         )
+         |> attach_hook(:has_show_links_uri_hash, :handle_params, fn _params, uri, socket ->
+           {:cont,
+            assign_new(socket, :has_show_links_uri_hash, fn ->
+              String.contains?(uri, "#show_links")
+            end)}
+         end)}
     end
   end
 
@@ -241,8 +246,8 @@ defmodule OliWeb.Curriculum.ContainerLive do
     }
 
     modal = fn assigns ->
-      ~F"""
-      <OptionsModal {...@modal_assigns} />
+      ~H"""
+      <OptionsModal.render {@modal_assigns} />
       """
     end
 
@@ -310,7 +315,7 @@ defmodule OliWeb.Curriculum.ContainerLive do
 
     modal = fn assigns ->
       ~H"""
-        <MoveModal.render {@modal_assigns} />
+      <MoveModal.render {@modal_assigns} />
       """
     end
 
@@ -615,7 +620,7 @@ defmodule OliWeb.Curriculum.ContainerLive do
 
     modal = fn assigns ->
       ~H"""
-        <DeleteModal.render {@modal_assigns} />
+      <DeleteModal.render {@modal_assigns} />
       """
     end
 
@@ -638,7 +643,7 @@ defmodule OliWeb.Curriculum.ContainerLive do
 
     modal = fn assigns ->
       ~H"""
-        <NotEmptyModal.render {@modal_assigns} />
+      <NotEmptyModal.render {@modal_assigns} />
       """
     end
 
