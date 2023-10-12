@@ -2689,6 +2689,16 @@ defmodule Oli.Delivery.Sections do
     {:ok, _, previous_next_index} =
       PreviousNextIndex.retrieve(section, section.root_section_resource.resource_id)
 
+      previous_next_index = previous_next_index
+        |>Enum.map(fn {k, v} ->
+          label = if Map.get(v, "type") === "container" do
+            get_container_label(String.to_integer(Map.get(v, "level")), section.customizations || Map.from_struct(CustomLabels.default()))
+          else
+            ""
+          end
+          {k, Map.put(v, "label", label)}
+        end)
+        |> Map.new()
     # Retrieve the top level resource ids, and convert them to strings
     resource_ids =
       Oli.Delivery.Sections.map_section_resource_children_to_resource_ids(
@@ -2921,6 +2931,19 @@ defmodule Oli.Delivery.Sections do
       {:asc_nulls_last, fragment("numbering_level")},
       {:asc_nulls_last, fragment("numbering_index")}
     ])
+  end
+
+  @doc """
+    Returns the latest page revision visited by a user in a section.
+  """
+  def get_latest_visited_page(section_slug, user_id) do
+    from([rev: rev, s: s] in DeliveryResolver.section_resource_revisions(section_slug),
+      join: e in Enrollment,
+      on: e.section_id == s.id and rev.resource_id == e.most_recently_visited_resource_id,
+      where: e.user_id == ^user_id and s.slug == ^section_slug,
+      select: rev
+    )
+    |> Repo.one()
   end
 
   @doc """
@@ -3323,7 +3346,9 @@ defmodule Oli.Delivery.Sections do
   defp do_get_survey(section_slug) do
     Section
     |> join(:inner, [s], spp in SectionsProjectsPublications, on: spp.section_id == s.id)
-    |> join(:inner, [_, spp], pr in PublishedResource, on: pr.publication_id == spp.publication_id)
+    |> join(:inner, [_, spp], pr in PublishedResource,
+      on: pr.publication_id == spp.publication_id
+    )
     |> join(:inner, [_, _, pr], rev in Revision, on: pr.revision_id == rev.id)
     |> join(:inner, [s], proj in Project, on: proj.id == s.base_project_id)
     |> where(

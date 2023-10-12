@@ -12,6 +12,8 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
   alias Oli.Delivery.Snapshots.Snapshot
   alias Oli.Delivery.Page.PageContext
   alias Oli.Delivery.Attempts.PageLifecycle.FinalizationSummary
+  alias Oli.Delivery.Sections
+  alias Lti_1p3.Tool.ContextRoles
 
   describe "concurrent activity accesses with two students" do
     setup do
@@ -94,7 +96,11 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
       datashop_session_id_user1 = UUID.uuid4()
       datashop_session_id_user2 = UUID.uuid4()
 
-      effective_settings = Oli.Delivery.Settings.get_combined_settings(revision, section.id, user1.id)
+      Sections.enroll(user1.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.enroll(user2.id, section.id, [ContextRoles.get_role(:context_learner)])
+
+      effective_settings =
+        Oli.Delivery.Settings.get_combined_settings(revision, section.id, user1.id)
 
       # Open the graded page as user 1 to get the prologue
       user1_page_context =
@@ -406,8 +412,10 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
     } do
       activity_provider = &Oli.Delivery.ActivityProvider.provide/6
       datashop_session_id_user1 = UUID.uuid4()
+      Sections.enroll(user1.id, section.id, [ContextRoles.get_role(:context_learner)])
 
-      effective_settings = Oli.Delivery.Settings.get_combined_settings(revision, section.id, user1.id)
+      effective_settings =
+        Oli.Delivery.Settings.get_combined_settings(revision, section.id, user1.id)
 
       # User1 has a started resource attempt, so it should be "in progress"
       {:ok, {:in_progress, _resource_attempt}} =
@@ -459,8 +467,10 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
     } do
       activity_provider = &Oli.Delivery.ActivityProvider.provide/6
       datashop_session_id_user1 = UUID.uuid4()
+      Sections.enroll(user1.id, section.id, [ContextRoles.get_role(:context_learner)])
 
-      effective_settings = Oli.Delivery.Settings.get_combined_settings(revision, section.id, user1.id)
+      effective_settings =
+        Oli.Delivery.Settings.get_combined_settings(revision, section.id, user1.id)
 
       {:ok, {:in_progress, _resource_attempt}} =
         PageLifecycle.visit(
@@ -508,7 +518,10 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
       datashop_session_id_user1 = UUID.uuid4()
       datashop_session_id_user2 = UUID.uuid4()
 
-      effective_settings = Oli.Delivery.Settings.get_combined_settings(revision, section.id, user1.id)
+      Sections.enroll(user1.id, section.id, [ContextRoles.get_role(:context_learner)])
+
+      effective_settings =
+        Oli.Delivery.Settings.get_combined_settings(revision, section.id, user1.id)
 
       # User 1
       {:ok, {:in_progress, resource_attempt_user1}} =
@@ -548,6 +561,8 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
           effective_settings,
           activity_provider
         )
+
+      Sections.enroll(user2.id, section.id, [ContextRoles.get_role(:context_learner)])
 
       # User 2
       {:ok, {:in_progress, resource_attempt_user2}} =

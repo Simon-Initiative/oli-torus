@@ -65,9 +65,9 @@ const CustomDnd = () => {
         </TabbedNavigation.Tab>
         <TabbedNavigation.Tab label="Target Area">
           <div className="alert alert-info" role="alert">
-            Every part identifier must have a corresponding <code>&lt;div&gt;</code> element whose{' '}
-            <code>input_ref</code> attribute is set to that part identifier. Each of these{' '}
-            <code>&lt;div&gt;</code> elements must also have <code>target</code> set a CSS class
+            Every target area must have a corresponding <code>&lt;div&gt;</code> element whose{' '}
+            <code>input_ref</code> attribute is set to that target identifier. Each of these{' '}
+            <code>&lt;div&gt;</code> elements must also have <code>target</code> set as a CSS class
             name.
           </div>
           <WrappedMonaco
@@ -79,10 +79,10 @@ const CustomDnd = () => {
         </TabbedNavigation.Tab>
         <TabbedNavigation.Tab label="Initiators">
           <div className="alert alert-info" role="alert">
-            For each possible initiator identifier (the things students will drag) define a{' '}
+            For each possible initiator (the things students will drag) define a{' '}
             <code>&lt;div&gt;</code> element whose <code>input_val</code> attribute is set to that
             initiator identifier. Each of these <code>&lt;div&gt;</code> elements must also have{' '}
-            <code>initiator</code> set a CSS class name.
+            <code>initiator</code> set as a CSS class name.
           </div>
           <WrappedMonaco
             model={model.initiators}

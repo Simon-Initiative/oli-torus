@@ -2,6 +2,8 @@ defmodule Oli.Delivery.Page.PageContextTest do
   use Oli.DataCase
 
   alias Oli.Delivery.Page.PageContext
+  alias Lti_1p3.Tool.ContextRoles
+  alias Oli.Delivery.Sections
 
   describe "page context" do
     setup do
@@ -74,6 +76,9 @@ defmodule Oli.Delivery.Page.PageContextTest do
       Seeder.rebuild_section_resources(%{section: section, publication: publication})
 
       datashop_session_id = UUID.uuid4()
+
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+
       context = PageContext.create_for_visit(section, p1.revision.slug, user, datashop_session_id)
 
       # verify activities map

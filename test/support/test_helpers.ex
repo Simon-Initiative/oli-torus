@@ -18,6 +18,9 @@ defmodule Oli.TestHelpers do
   alias Lti_1p3.Tool.ContextRoles
   alias Oli.Delivery.Gating.GatingConditionData
   alias Oli.Resources.ResourceType
+  alias Oli.Delivery.Attempts.PageLifecycle
+  alias Oli.Delivery.Settings
+  alias Oli.Delivery.Page.PageContext
 
   Mox.defmock(Oli.Test.MockHTTP, for: HTTPoison.Base)
   Mox.defmock(Oli.Test.MockAws, for: ExAws.Behaviour)
@@ -3152,5 +3155,30 @@ defmodule Oli.TestHelpers do
       {:ok, entries} -> entries
       _ -> []
     end
+  end
+
+  def visit_page(page_revision, section, enrolled_user) do
+    activity_provider = &Oli.Delivery.ActivityProvider.provide/6
+    datashop_session_id = UUID.uuid4()
+
+    effective_settings =
+      Settings.get_combined_settings(page_revision, section.id, enrolled_user.id)
+
+    PageContext.create_for_visit(
+      section,
+      page_revision.slug,
+      enrolled_user,
+      datashop_session_id
+    )
+
+    {:ok, {_status, _ra}} =
+      PageLifecycle.visit(
+        page_revision,
+        section.slug,
+        datashop_session_id,
+        enrolled_user,
+        effective_settings,
+        activity_provider
+      )
   end
 end

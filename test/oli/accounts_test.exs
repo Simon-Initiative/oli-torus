@@ -111,6 +111,7 @@ defmodule Oli.AccountsTest do
 
     @valid_attrs %{
       email: "some_email@example.com",
+      email_confirmation: "some_email@example.com",
       given_name: "some given_name",
       family_name: "some family_name",
       sub: "some sub",
