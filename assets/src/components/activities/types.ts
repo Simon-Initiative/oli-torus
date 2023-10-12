@@ -1,6 +1,6 @@
 import { getDefaultEditor } from 'components/editing/markdown_editor/markdown_util';
 import { Model } from 'data/content/model/elements/factories';
-import { ModelElement } from 'data/content/model/elements/types';
+import { ModelElement, TextDirection } from 'data/content/model/elements/types';
 import { ID, Identifiable } from 'data/content/model/other';
 import { EditorType, ResourceContext } from 'data/content/resource';
 import { ResourceId } from 'data/types';
@@ -354,6 +354,10 @@ export interface HasChoices {
   choices: Choice[];
 }
 
+export interface SpecifiedTextDirection {
+  textDirection?: TextDirection;
+}
+
 export interface SpecifiesEditor {
   editor?: 'markdown' | 'slate';
 }
@@ -361,7 +365,7 @@ export interface SpecifiesEditor {
 /**
  * Defines a question stem.
  */
-export interface Stem extends Identifiable, HasContent, SpecifiesEditor {}
+export interface Stem extends Identifiable, HasContent, SpecifiesEditor, SpecifiedTextDirection {}
 /**
  * Marker interface for an entity that has a question stem.
  */
@@ -379,7 +383,7 @@ export const makeStem: (text: string) => Stem = makeContent;
 /**
  * Defines a hint.
  */
-export interface Hint extends Identifiable, HasContent, SpecifiesEditor {}
+export interface Hint extends Identifiable, HasContent, SpecifiesEditor, SpecifiedTextDirection {}
 /**
  * Marker interface for an entity that has hints.
  */
@@ -391,7 +395,11 @@ export const makeHint: (text: string) => Hint = makeContent;
 /**
  * Defines feedback entity.
  */
-export interface Feedback extends Identifiable, HasContent, SpecifiesEditor {}
+export interface Feedback
+  extends Identifiable,
+    HasContent,
+    SpecifiesEditor,
+    SpecifiedTextDirection {}
 /**
  * Defines explanation entity.
  */

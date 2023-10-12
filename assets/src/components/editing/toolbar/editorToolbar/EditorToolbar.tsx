@@ -12,6 +12,7 @@ import { Inlines } from 'components/editing/toolbar/editorToolbar/Inlines';
 import { BlockInsertMenu } from 'components/editing/toolbar/editorToolbar/blocks/BlockInsertMenu';
 import { BlockSettings } from 'components/editing/toolbar/editorToolbar/blocks/BlockSettings';
 import { BlockToggle } from 'components/editing/toolbar/editorToolbar/blocks/BlockToggle';
+import { TextDirection } from 'data/content/model/elements/types';
 import { EditorSettingsMenu } from './EditorSettingsMenu';
 
 interface Props {
@@ -19,6 +20,8 @@ interface Props {
   insertOptions: CommandDescription[];
   fixedToolbar?: boolean;
   onSwitchToMarkdown?: () => void;
+  textDirection?: TextDirection;
+  onChangeTextDirection?: (textDirection: TextDirection) => void;
 }
 
 export const EditorToolbar = (props: Props) => {
@@ -30,7 +33,11 @@ export const EditorToolbar = (props: Props) => {
       <BlockSettings />
       <BlockInsertMenu blockInsertOptions={props.insertOptions} />
       {props.onSwitchToMarkdown && (
-        <EditorSettingsMenu onSwitchToMarkdown={props.onSwitchToMarkdown} />
+        <EditorSettingsMenu
+          onSwitchToMarkdown={props.onSwitchToMarkdown}
+          textDirection={props.textDirection}
+          onChangeTextDirection={props.onChangeTextDirection}
+        />
       )}
     </Toolbar>
   );

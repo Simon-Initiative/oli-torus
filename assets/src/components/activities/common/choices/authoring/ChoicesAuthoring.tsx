@@ -10,6 +10,7 @@ import { toSimpleText } from 'components/editing/slateUtils';
 import { DEFAULT_EDITOR, EditorType } from 'data/content/resource';
 import { classNames } from 'utils/classNames';
 import styles from './ChoicesAuthoring.modules.scss';
+import { TextDirection } from 'data/content/model/elements/types';
 
 const renderChoiceIcon = (icon: any, choice: any, index: any) =>
   icon ? (
@@ -27,6 +28,7 @@ interface Props {
   setAll: (choices: Choice[]) => void;
   onEdit: (id: string, content: Descendant[]) => void;
   onChangeEditorType?: (id: string, editorType: EditorType) => void;
+  onChangeEditorTextDirection?: (id: string, textDirection: TextDirection) => void;
   onRemove: (id: string) => void;
   simpleText?: boolean;
   colorMap?: Map<string, string>;
@@ -41,6 +43,7 @@ export const Choices: React.FC<Props> = ({
   simpleText,
   colorMap,
   onChangeEditorType,
+  onChangeEditorTextDirection,
 }) => {
   const { projectSlug } = useAuthoringElementContext();
 
@@ -89,6 +92,10 @@ export const Choices: React.FC<Props> = ({
                             allowBlockElements={true}
                             onEditorTypeChange={(editor) =>
                               onChangeEditorType && onChangeEditorType(choice.id, editor)
+                            }
+                            textDirection={choice.textDirection}
+                            onChangeTextDirection={(dir) =>
+                              onChangeEditorTextDirection && onChangeEditorTextDirection(choice.id, dir)
                             }
                             projectSlug={projectSlug}
                           />

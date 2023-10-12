@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { SlateOrMarkdownEditor } from 'components/editing/SlateOrMarkdownEditor';
 import { CommandDescription } from 'components/editing/elements/commands/interfaces';
-import { ModelElement } from 'data/content/model/elements/types';
+import { ModelElement, TextDirection } from 'data/content/model/elements/types';
 import { DEFAULT_EDITOR, StructuredContent } from 'data/content/resource';
 import { ProjectSlug, ResourceSlug } from 'data/types';
 import { slateFixer } from './SlateFixer';
@@ -27,6 +27,13 @@ export const StructuredContentEditor = ({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const onContentEdit = (children: ModelElement[]) => {
     onEdit(Object.assign({}, contentItem, { children }));
+  };
+
+  const onChangeTextDirection = (textDirection: TextDirection) => {
+    onEdit({
+      ...contentItem,
+      textDirection,
+    });
   };
 
   const changeEditor = (editor: 'markdown' | 'slate') => {
@@ -57,6 +64,8 @@ export const StructuredContentEditor = ({
       onEdit={onContentEdit}
       onEditorTypeChange={changeEditor}
       editorType={contentItem.editor || DEFAULT_EDITOR}
+      onChangeTextDirection={onChangeTextDirection}
+      textDirection={contentItem.textDirection}
     />
   );
 };

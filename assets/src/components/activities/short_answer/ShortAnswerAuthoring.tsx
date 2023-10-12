@@ -106,6 +106,9 @@ const ShortAnswer = () => {
                 updateFeedbackEditor={(_id, editor) =>
                   dispatch(ResponseActions.editResponseFeedbackEditor(response.id, editor))
                 }
+                updateFeedbackTextDirection={(_id, textDirection) =>
+                  dispatch(ResponseActions.editResponseFeedbackTextDirection(response.id, textDirection))
+                }
                 updateFeedback={(_id, content) =>
                   dispatch(ResponseActions.editResponseFeedback(response.id, content as RichText))
                 }

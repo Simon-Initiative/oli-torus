@@ -195,6 +195,9 @@ const ImageCoding = (props: AuthoringElementProps<ImageCodingModelSchema>) => {
               <Feedback
                 {...sharedProps}
                 projectSlug={props.projectSlug}
+                onChangeTextDirection={(score, textDirection) =>
+                  dispatch(ICActions.editFeedbackTextDirection(score, textDirection))
+                }
                 onEditEditorType={(score, editor) =>
                   dispatch(ICActions.editFeedbackEditorType(score, editor))
                 }

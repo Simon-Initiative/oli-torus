@@ -3,7 +3,7 @@ import { ActivityModelSchema } from 'components/activities/types';
 import { getDefaultEditor } from 'components/editing/markdown_editor/markdown_util';
 import * as Bank from 'data/content/bank';
 import { Model } from 'data/content/model/elements/factories';
-import { ModelElement } from 'data/content/model/elements/types';
+import { ModelElement, TextDirection } from 'data/content/model/elements/types';
 import { Objective } from 'data/content/objective';
 import { Tag } from 'data/content/tags';
 import { ActivitySlug, ActivityTypeSlug, ProjectSlug, ResourceId, ResourceSlug } from 'data/types';
@@ -255,6 +255,7 @@ export interface StructuredContent {
   id: string;
   children: ModelElement[];
   editor?: EditorType;
+  textDirection?: TextDirection;
 }
 
 export const DEFAULT_EDITOR: EditorType = 'slate';

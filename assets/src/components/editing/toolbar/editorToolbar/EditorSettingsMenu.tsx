@@ -3,6 +3,7 @@ import { createButtonCommandDesc } from 'components/editing/elements/commands/co
 import { Toolbar } from 'components/editing/toolbar/Toolbar';
 import { DropdownButton } from 'components/editing/toolbar/buttons/DropdownButton';
 import { Icon } from 'components/misc/Icon';
+import { TextDirection } from 'data/content/model/elements/types';
 import { classNames } from 'utils/classNames';
 import styles from '../Toolbar.modules.scss';
 
@@ -15,8 +16,14 @@ export const editorSettingsDropdown = createButtonCommandDesc({
 
 interface Props {
   onSwitchToMarkdown: () => void;
+  textDirection?: TextDirection;
+  onChangeTextDirection?: (textDirection: TextDirection) => void;
 }
-export const EditorSettingsMenu = ({ onSwitchToMarkdown }: Props) => {
+export const EditorSettingsMenu = ({
+  onSwitchToMarkdown,
+  textDirection,
+  onChangeTextDirection,
+}: Props) => {
   return (
     <Toolbar.Group>
       <DropdownButton description={editorSettingsDropdown} showDropdownArrow={false}>
@@ -27,6 +34,19 @@ export const EditorSettingsMenu = ({ onSwitchToMarkdown }: Props) => {
           <Icon iconStyle="fa-brands" icon="markdown" />
           <span className={styles.description}>Switch to Markdown editor</span>
         </button>
+        {onChangeTextDirection && (
+          <button
+            onClick={() => onChangeTextDirection(textDirection === 'ltr' ? 'rtl' : 'ltr')}
+            className={classNames(styles.toolbarButton, styles.descriptive)}
+          >
+            <Icon iconStyle="fa-brands" icon="markdown" />
+            <span className={styles.description}>
+              Change To
+              {textDirection === 'ltr' ? ' Right-to-Left' : ' Left-to-Right'}
+              text direction
+            </span>
+          </button>
+        )}
       </DropdownButton>
     </Toolbar.Group>
   );

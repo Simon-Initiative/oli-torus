@@ -1,12 +1,13 @@
 import React, { FocusEventHandler, useCallback, useMemo, useState } from 'react';
 import MDEditor, { ICommand, commands } from '@uiw/react-md-editor';
 import { debounce } from 'lodash';
-import { Descendant } from 'slate';
+import { Descendant} from 'slate';
 import { Icon } from 'components/misc/Icon';
 import { NormalizerContext } from '../editor/normalizers/normalizer';
 import { CommandContext } from '../elements/commands/interfaces';
 import { contentMarkdownDeserializer } from './content_markdown_deserializer';
 import { serializeMarkdown } from './content_markdown_serializer';
+import { TextDirection } from 'data/content/model/elements/types';
 
 interface MarkdownEditorProps {
   onEdit: (value: Descendant[], _editor: any, _operations: any[]) => void;
@@ -25,6 +26,8 @@ interface MarkdownEditorProps {
   children?: React.ReactNode;
   onFocus?: FocusEventHandler | undefined;
   onBlur?: FocusEventHandler | undefined;
+  textDirection?: TextDirection;
+  onChangeTextDirection?: (textDirection: TextDirection) => void;
 }
 
 export const MarkdownEditor: React.FC<MarkdownEditorProps> = (props) => {
