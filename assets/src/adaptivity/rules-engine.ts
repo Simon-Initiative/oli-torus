@@ -66,11 +66,11 @@ const applyToEveryCondition = (top: TopLevelCondition | NestedCondition, callbac
   });
 };
 
-const evaluateValueExpression = (value: string, env: Environment) => {
+const evaluateValueExpression = (value: string, env: Environment, key?: string) => {
   if (typeof value !== 'string') {
     return value;
   }
-  const expr = getExpressionStringForValue({ type: CapiVariableTypes.STRING, value }, env);
+  const expr = getExpressionStringForValue({ type: CapiVariableTypes.STRING, value, key }, env);
   let { result } = evalScript(expr, env);
   if (result === value) {
     try {
@@ -132,7 +132,7 @@ const processRules = (rules: JanusRuleProperties[], env: Environment) => {
       let modifiedValue = ogValue;
       if (Array.isArray(ogValue)) {
         modifiedValue = ogValue.map((value) =>
-          typeof value === 'string' ? evaluateValueExpression(value, env) : value,
+          typeof value === 'string' ? evaluateValueExpression(value, env, condition.id) : value,
         );
       }
       if (
@@ -157,27 +157,27 @@ const processRules = (rules: JanusRuleProperties[], env: Environment) => {
         } else {
           actualValue = ogValue;
         }
-        const evaluatedValue = evaluateValueExpression(actualValue, env);
+        const evaluatedValue = evaluateValueExpression(actualValue, env, condition.id);
         modifiedValue = `${evaluatedValue},${toleranceValue}`;
       } else if (condition?.operator === 'inRange' || condition?.operator === 'notInRange') {
         // these have min, max, and optionally (unused) tolerance
         if (Array.isArray(ogValue)) {
           modifiedValue = ogValue
             .map((value) =>
-              typeof value === 'string' ? evaluateValueExpression(value, env) : value,
+              typeof value === 'string' ? evaluateValueExpression(value, env, condition.id) : value,
             )
             .join(',');
         } else if (typeof ogValue === 'string') {
           modifiedValue = parseArray(ogValue)
             .map((value) =>
-              typeof value === 'string' ? evaluateValueExpression(value, env) : value,
+              typeof value === 'string' ? evaluateValueExpression(value, env, condition.id) : value,
             )
             .join(',');
         }
       } else if (typeof ogValue === 'string' && ogValue.indexOf('{') === -1) {
         modifiedValue = ogValue;
       } else {
-        const evaluatedValue = evaluateValueExpression(ogValue, env);
+        const evaluatedValue = evaluateValueExpression(ogValue, env, condition.id);
         if (typeof evaluatedValue === 'string') {
           //if the converted value is string then we don't have to stringify (e.g. if the evaluatedValue = L and we stringyfy it then the value becomes '"L"' instead if 'L'
           // hence a trap state checking 'L' === 'L' returns false as the expression becomes 'L' === '"L"')
@@ -186,7 +186,7 @@ const processRules = (rules: JanusRuleProperties[], env: Environment) => {
           return modifiedValue;
         } else if (typeof ogValue === 'string') {
           //Need to stringify only if it was converted into object during evaluation process and we expect it to be string
-          modifiedValue = JSON.stringify(evaluateValueExpression(ogValue, env));
+          modifiedValue = JSON.stringify(evaluateValueExpression(ogValue, env, condition.id));
         }
       }
       //if it type ===3 then it is a array. We need to wrap it in [] if it is not already wrapped.
