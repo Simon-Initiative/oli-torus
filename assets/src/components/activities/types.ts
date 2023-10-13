@@ -481,6 +481,11 @@ export interface Response extends Identifiable {
   feedback: Feedback;
 
   /**
+   * Is this response, the default correct response?
+   */
+  correct?: boolean;
+
+  /**
    * Optional, show a page by index when this response is evaluated.
    */
   showPage?: number;
@@ -493,11 +498,17 @@ export interface Response extends Identifiable {
  * @param text simple text to formulate a Feedback from
  * @returns
  */
-export const makeResponse = (rule: string, score: number, text = ''): Response => ({
+export const makeResponse = (
+  rule: string,
+  score: number,
+  text = '',
+  correct?: boolean
+): Response => ({
   id: guid(),
   rule,
   score,
   feedback: makeFeedback(text),
+  correct,
 });
 
 /**

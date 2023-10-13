@@ -12,15 +12,15 @@ import { getByUnsafe, getPartById } from 'data/activities/model/utils';
 export const Responses = {
   catchAll: (text = 'Incorrect') => makeResponse(matchRule('.*'), 0, text),
   forTextInput: (correctText = 'Correct', incorrectText = 'Incorrect') => [
-    makeResponse(containsRule('answer'), 1, correctText),
+    makeResponse(containsRule('answer'), 1, correctText, true),
     Responses.catchAll(incorrectText),
   ],
   forNumericInput: (correctText = 'Correct', incorrectText = 'Incorrect') => [
-    makeResponse(eqRule(1), 1, correctText),
+    makeResponse(eqRule(1), 1, correctText, true),
     Responses.catchAll(incorrectText),
   ],
   forMathInput: (correctText = 'Correct', incorrectText = 'Incorrect') => [
-    makeResponse(equalsRule(''), 1, correctText),
+    makeResponse(equalsRule(''), 1, correctText, true),
     Responses.catchAll(incorrectText),
   ],
   forMultipleChoice: (
@@ -28,7 +28,7 @@ export const Responses = {
     correctText = 'Correct',
     incorrectText = 'Incorrect',
   ) => [
-    makeResponse(matchRule(correctChoiceId), 1, correctText),
+    makeResponse(matchRule(correctChoiceId), 1, correctText, true),
     makeResponse(matchRule('.*'), 0, incorrectText),
   ],
 };
@@ -65,9 +65,10 @@ export const getIncorrectPoints = (model: HasParts, partId: string) => {
 
 // Does not take into account partial credit
 export const getCorrectResponse = (model: HasParts, partId: string) => {
-  return Maybe.maybe(getResponsesByPartId(model, partId).find((r) => r.score >= 1)).valueOrThrow(
-    new Error('Could not find correct response'),
-  );
+  return Maybe.maybe(
+    getResponsesByPartId(model, partId).find((r) => r.correct) ||
+      getResponsesByPartId(model, partId).find((r) => r.score >= 1),
+  ).valueOrThrow(new Error('Could not find correct response'));
 };
 export const getIncorrectResponse = (model: HasParts, partId: string) => {
   return Maybe.maybe(
