@@ -1,6 +1,5 @@
 defmodule Oli.Repo.Migrations.AddBlueprintTable do
   alias Oli.Repo
-  alias Oli.Authoring.Editing.Blueprint
   use Ecto.Migration
   require Logger
 

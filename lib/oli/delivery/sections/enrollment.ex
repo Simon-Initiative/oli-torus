@@ -5,6 +5,7 @@ defmodule Oli.Delivery.Sections.Enrollment do
   schema "enrollments" do
     belongs_to :user, Oli.Accounts.User
     belongs_to :section, Oli.Delivery.Sections.Section
+    belongs_to :most_recently_visited_resource, Oli.Resources.Resource
 
     field :state, :map, default: %{}
     field :status, Ecto.Enum, values: [:enrolled, :suspended], default: :enrolled
@@ -19,7 +20,7 @@ defmodule Oli.Delivery.Sections.Enrollment do
   @doc false
   def changeset(enrollment, attrs) do
     enrollment
-    |> cast(attrs, [:user_id, :section_id, :state, :status])
+    |> cast(attrs, [:user_id, :section_id, :state, :status, :most_recently_visited_resource_id])
     |> validate_required([:user_id, :section_id])
   end
 end

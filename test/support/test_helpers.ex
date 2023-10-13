@@ -6,6 +6,7 @@ defmodule Oli.TestHelpers do
   alias Oli.Repo
   alias Oli.Accounts
   alias Oli.Accounts.{Author, AuthorPreferences, User}
+  alias Oli.Activities
   alias Oli.Authoring.Course
   alias Oli.Authoring.Course.Project
   alias Oli.Delivery.Sections
@@ -17,6 +18,9 @@ defmodule Oli.TestHelpers do
   alias Lti_1p3.Tool.ContextRoles
   alias Oli.Delivery.Gating.GatingConditionData
   alias Oli.Resources.ResourceType
+  alias Oli.Delivery.Attempts.PageLifecycle
+  alias Oli.Delivery.Settings
+  alias Oli.Delivery.Page.PageContext
 
   Mox.defmock(Oli.Test.MockHTTP, for: HTTPoison.Base)
   Mox.defmock(Oli.Test.MockAws, for: ExAws.Behaviour)
@@ -1153,6 +1157,258 @@ defmodule Oli.TestHelpers do
       obj_revision_2: obj_revision_2,
       module_revision: module_revision
     }
+  end
+
+  def create_full_project_with_objectives(_conn), do: create_full_project_with_objectives()
+
+  def create_full_project_with_objectives() do
+    author = insert(:author)
+    project = insert(:project, authors: [author])
+
+    # Create objectives
+    {obj_resource_a, obj_revision_a} = create_objective("Objective A", "objective_A", project)
+    {obj_resource_b, obj_revision_b} = create_objective("Objective B", "objective_B", project)
+    {obj_resource_c1, obj_revision_c1} = create_objective("Objective C1", "objective_C1", project)
+
+    {obj_resource_c, obj_revision_c} =
+      create_objective("Objective C", "objective_C", project, [obj_resource_c1.id])
+
+    {obj_resource_d, obj_revision_d} = create_objective("Objective D", "objective_D", project)
+    {obj_resource_e, obj_revision_e} = create_objective("Objective E", "objective_E", project)
+    {obj_resource_f, obj_revision_f} = create_objective("Objective F", "objective_F", project)
+
+    # Create activities
+    {act_resource_x, act_revision_x} = create_activity("Activity X", "activity_x", project)
+
+    {act_resource_y, act_revision_y} =
+      create_activity("Activity Y", "activity_y", project, [obj_resource_c.id, obj_resource_c1.id])
+
+    {act_resource_z, act_revision_z} =
+      create_activity("Activity Z", "activity_z", project, [obj_resource_d.id])
+
+    {act_resource_w, act_revision_w} =
+      create_activity("Activity W", "activity_w", project, [obj_resource_e.id, obj_resource_f.id])
+
+    # Create pages
+    build_content_for_page = fn activity_ids ->
+      Enum.with_index(activity_ids, fn activity_id, id ->
+        %{
+          "activity_id" => activity_id,
+          "id" => id,
+          "type" => "activity-reference"
+        }
+      end)
+    end
+
+    {page_resource_1, page_revision_1} =
+      create_page("Page 1", "page_1", project, build_content_for_page.([act_resource_x.id]), [
+        obj_resource_a.id
+      ])
+
+    {page_resource_2, page_revision_2} =
+      create_page(
+        "Page 2",
+        "page_2",
+        project,
+        build_content_for_page.([act_resource_y.id, act_resource_z.id]),
+        [obj_resource_b.id]
+      )
+
+    {page_resource_3, page_revision_3} =
+      create_page("Page 3", "page_3", project, build_content_for_page.([act_resource_w.id]))
+
+    # Create modules
+    {module_resource_1, module_revision_1} =
+      create_container("Module Container 1", "module_container_1", project, [page_resource_2.id])
+
+    {module_resource_2, module_revision_2} =
+      create_container("Module Container 2", "module_container_2", project, [page_resource_3.id])
+
+    # Create Unit
+    {unit_resource, unit_revision} =
+      create_container("Unit Container", "unit_container", project, [module_resource_1.id])
+
+    # Create Root
+    {root_resource, root_revision} =
+      create_container("Root Container", "root_container", project, [
+        page_resource_1.id,
+        unit_resource.id,
+        module_resource_2.id
+      ])
+
+    # Publication of project with root container
+    publication =
+      insert(:publication, %{
+        project: project,
+        root_resource_id: root_resource.id
+      })
+
+    # Publish all resources
+    [
+      {obj_resource_a, obj_revision_a},
+      {obj_resource_b, obj_revision_b},
+      {obj_resource_c, obj_revision_c},
+      {obj_resource_c1, obj_revision_c1},
+      {obj_resource_d, obj_revision_d},
+      {obj_resource_e, obj_revision_e},
+      {obj_resource_f, obj_revision_f},
+      {act_resource_x, act_revision_x},
+      {act_resource_y, act_revision_y},
+      {act_resource_z, act_revision_z},
+      {act_resource_w, act_revision_w},
+      {page_resource_1, page_revision_1},
+      {page_resource_2, page_revision_2},
+      {page_resource_3, page_revision_3},
+      {module_resource_1, module_revision_1},
+      {module_resource_2, module_revision_2},
+      {unit_resource, unit_revision},
+      {root_resource, root_revision}
+    ]
+    |> Enum.each(fn {resource, revision} ->
+      insert(:published_resource, %{
+        publication: publication,
+        resource: resource,
+        revision: revision,
+        author: author
+      })
+    end)
+
+    section =
+      insert(:section,
+        base_project: project,
+        context_id: UUID.uuid4(),
+        open_and_free: true,
+        registration_open: true,
+        type: :enrollable
+      )
+
+    {:ok, section} = Sections.create_section_resources(section, publication)
+    Sections.rebuild_contained_pages(section)
+
+    %{
+      project: project,
+      section: section,
+      publication: publication,
+      resources: %{
+        obj_resource_a: obj_resource_a,
+        obj_resource_b: obj_resource_b,
+        obj_resource_c: obj_resource_c,
+        obj_resource_c1: obj_resource_c1,
+        obj_resource_d: obj_resource_d,
+        obj_resource_e: obj_resource_e,
+        obj_resource_f: obj_resource_f,
+        page_resource_1: page_resource_1,
+        page_resource_2: page_resource_2,
+        page_resource_3: page_resource_3,
+        module_resource_1: module_resource_1,
+        module_resource_2: module_resource_2,
+        unit_resource: unit_resource,
+        root_resource: root_resource
+      },
+      revisions: %{
+        obj_revision_a: obj_revision_a,
+        obj_revision_b: obj_revision_b,
+        obj_revision_c: obj_revision_c,
+        obj_revision_c1: obj_revision_c1,
+        obj_revision_d: obj_revision_d,
+        obj_revision_e: obj_revision_e,
+        obj_revision_f: obj_revision_f,
+        page_revision_1: page_revision_1,
+        page_revision_2: page_revision_2,
+        page_revision_3: page_revision_3,
+        module_revision_1: module_revision_1,
+        module_revision_2: module_revision_2,
+        unit_revision: unit_revision,
+        root_revision: root_revision
+      }
+    }
+  end
+
+  defp create_objective(title, slug, project, subobjectives \\ []) do
+    obj_resource = insert(:resource)
+
+    obj_revision =
+      insert(:revision, %{
+        resource: obj_resource,
+        objectives: %{},
+        resource_type_id: ResourceType.get_id_by_type("objective"),
+        children: subobjectives,
+        content: %{},
+        deleted: false,
+        slug: slug,
+        title: title
+      })
+
+    # Associate objective to the project
+    insert(:project_resource, %{project_id: project.id, resource_id: obj_resource.id})
+
+    {obj_resource, obj_revision}
+  end
+
+  defp create_activity(title, slug, project, objectives \\ []) do
+    activity_resource = insert(:resource)
+
+    activity_revision =
+      insert(:revision, %{
+        objectives: %{"1" => objectives},
+        scoring_strategy_id: Oli.Resources.ScoringStrategy.get_id_by_type("average"),
+        resource_type_id: ResourceType.get_id_by_type("activity"),
+        activity_type_id: Activities.get_registration_by_slug("oli_multiple_choice").id,
+        children: [],
+        content: %{"model" => []},
+        deleted: false,
+        title: title,
+        resource: activity_resource,
+        slug: slug
+      })
+
+    # Associate activity to the project
+    insert(:project_resource, %{project_id: project.id, resource_id: activity_resource.id})
+
+    {activity_resource, activity_revision}
+  end
+
+  defp create_page(title, slug, project, content_model, objectives \\ []) do
+    page_resource = insert(:resource)
+
+    page_revision =
+      insert(:revision, %{
+        objectives: %{"attached" => objectives},
+        scoring_strategy_id: Oli.Resources.ScoringStrategy.get_id_by_type("average"),
+        resource_type_id: ResourceType.get_id_by_type("page"),
+        children: [],
+        content: %{"model" => content_model},
+        deleted: false,
+        title: title,
+        resource: page_resource,
+        slug: slug
+      })
+
+    # Associate page to the project
+    insert(:project_resource, %{project_id: project.id, resource_id: page_resource.id})
+
+    {page_resource, page_revision}
+  end
+
+  defp create_container(title, slug, project, children) do
+    container_resource = insert(:resource)
+
+    container_revision =
+      insert(:revision, %{
+        resource: container_resource,
+        objectives: %{},
+        resource_type_id: ResourceType.get_id_by_type("container"),
+        children: children,
+        content: %{},
+        deleted: false,
+        slug: slug,
+        title: title
+      })
+
+    # Associate container to the project
+    insert(:project_resource, %{project_id: project.id, resource_id: container_resource.id})
+
+    {container_resource, container_revision}
   end
 
   defp generate_attempt_content(),
@@ -2916,5 +3172,32 @@ defmodule Oli.TestHelpers do
     end
 
     :ok
+
   end
+
+  def visit_page(page_revision, section, enrolled_user) do
+    activity_provider = &Oli.Delivery.ActivityProvider.provide/6
+    datashop_session_id = UUID.uuid4()
+
+    effective_settings =
+      Settings.get_combined_settings(page_revision, section.id, enrolled_user.id)
+
+    PageContext.create_for_visit(
+      section,
+      page_revision.slug,
+      enrolled_user,
+      datashop_session_id
+    )
+
+    {:ok, {_status, _ra}} =
+      PageLifecycle.visit(
+        page_revision,
+        section.slug,
+        datashop_session_id,
+        enrolled_user,
+        effective_settings,
+        activity_provider
+      )
+  end
+
 end

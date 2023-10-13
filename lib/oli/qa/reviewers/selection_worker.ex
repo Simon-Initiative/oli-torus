@@ -50,6 +50,15 @@ defmodule Oli.Qa.Reviewers.Content.SelectionWorker do
             )
         end
 
+      {:error, "no values provided for expression"} ->
+        create_warning(
+          review.id,
+          revision_id,
+          project_slug,
+          selection,
+          "No value provided for criteria in bank selection logic"
+        )
+
       _ ->
         create_warning(
           review.id,

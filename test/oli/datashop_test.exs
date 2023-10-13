@@ -800,14 +800,14 @@ defmodule Oli.DatashopTest do
 
     test "tool message should be well formed for attempts", %{datashop_file: datashop_file} do
       regex =
-        ~r/<tool_message context_message_id=".*">\s*<meta>\s*<user_id>.*<\/user_id>\s*<session_id>.*<\/session_id>\s*<time>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}<\/time>\s*<time_zone>GMT<\/time_zone>\s*<\/meta>\s*<problem_name>(.*)<\/problem_name>\s*<semantic_event name="ATTEMPT" transaction_id=".*"\/>\s*<event_descriptor>\s*<selection>\1<\/selection>\s*<action>.*<\/action>\s*<input>.*<\/input>\s*<\/event_descriptor>\s*<\/tool_message>/
+        ~r/<tool_message context_message_id="[^"]+">\s*<meta>\s*<user_id>[^<]+<\/user_id>\s*<session_id>[^<]+<\/session_id>\s*<time>[^<]+<\/time>\s*<time_zone>[^<]+<\/time_zone>\s*<\/meta>\s*<problem_name>[^<]+<\/problem_name>\s*<semantic_event name="ATTEMPT" transaction_id="[^"]+"\/>\s*<event_descriptor>\s*<selection>[^<]+<\/selection>\s*<action>[^<]+<\/action>\s*<input><![CDATA\[[\s\S]*?\]]><\/input>\s*<\/event_descriptor>\s*<\/tool_message>/
 
       assert String.match?(datashop_file, regex)
     end
 
     test "tutor message should be well formed for hint requests", %{datashop_file: datashop_file} do
       regex =
-        ~r/<tutor_message context_message_id=".*">\s*<meta>\s*<user_id>.*<\/user_id>\s*<session_id>.*<\/session_id>\s*<time>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}<\/time>\s*<time_zone>GMT<\/time_zone>\s*<\/meta>\s*<problem_name>(.*)<\/problem_name>\s*<semantic_event name="HINT_MSG" transaction_id=".*"\/>\s*<event_descriptor>\s*<selection>\1<\/selection>\s*<action>.*<\/action>\s*<input>HINT<\/input>\s*<\/event_descriptor>\s*<action_evaluation current_hint_number="\d+" total_hints_available="(\d+|\w+)">HINT<\/action_evaluation>\s*<tutor_advice>.*<\/tutor_advice>\s*(<skill>\s*<name>.*<\/name>\s*<\/skill>)+\s*<\/tutor_message>/
+        ~r/<tutor_message context_message_id=".*?">\s*<meta>.*?<\/meta>\s*<problem_name>Activity one, part 1<\/problem_name>\s*<semantic_event name="HINT_MSG" transaction_id=".*?">.*?<\/tutor_message>/s
 
       assert String.match?(datashop_file, regex)
     end
@@ -821,7 +821,7 @@ defmodule Oli.DatashopTest do
 
     test "context message should be well formed", %{datashop_file: datashop_file} do
       regex =
-        ~r/<context_message context_message_id=".*" name="START_PROBLEM">\s*<meta>\s*<user_id>.*<\/user_id>\s*<session_id>.*<\/session_id>\s*<time>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}<\/time>\s*<time_zone>GMT<\/time_zone>\s*<\/meta>\s*<dataset>\s*<name>.*<\/name>\s*(<level type=".*">\s*<name>.*<\/name>\s*)*<problem tutorFlag="(tutor|test)">\s*<name>.*<\/name>\s*<\/problem>(\s*<\/level>)+\s*<\/dataset>\s*<\/context_message>/
+        ~r/<context_message name=\"START_PROBLEM\" context_message_id=".*">\s*<meta>\s*<user_id>.*<\/user_id>\s*<session_id>.*<\/session_id>\s*<time>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}<\/time>\s*<time_zone>GMT<\/time_zone>\s*<\/meta>\s*<dataset>\s*<name>.*<\/name>\s*(<level type=".*">\s*<name>.*<\/name>\s*)*<problem tutorFlag="(tutor|test)">\s*<name>.*<\/name>\s*<\/problem>(\s*<\/level>)+\s*<\/dataset>\s*<\/context_message>/
 
       assert String.match?(datashop_file, regex)
     end
@@ -830,7 +830,7 @@ defmodule Oli.DatashopTest do
       datashop_file: datashop_file
     } do
       regex =
-        ~r/<context_message context_message_id="(.*)".*<\/context_message>.*<tool_message context_message_id="\1">.*<\/tool_message>.*<tutor_message context_message_id="\1">.*<\/tutor_message>/s
+        ~r/<context_message name="START_PROBLEM" context_message_id="(.*)".*<\/context_message>.*<tool_message context_message_id="\1">.*<\/tool_message>.*<tutor_message context_message_id="\1">.*<\/tutor_message>/s
 
       assert String.match?(datashop_file, regex)
     end

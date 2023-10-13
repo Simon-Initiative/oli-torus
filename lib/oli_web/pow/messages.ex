@@ -38,4 +38,17 @@ defmodule OliWeb.Pow.Messages do
       Messages.invalid_credentials(conn)
     end
   end
+
+  @doc """
+  Flash message to show when user registers but e-mail is yet to be confirmed.
+  """
+  def pow_email_confirmation_email_confirmation_required(conn) do
+    email = conn.params["user"]["email"]
+
+    """
+    To continue, check #{email} for a confirmation email.\n
+    If you don’t receive this email, check your Spam folder or verify that #{email} is correct.\n
+    You can close this tab if you received the email.
+    """
+  end
 end

@@ -74,6 +74,7 @@ defmodule Oli.Accounts.User do
     field :payment, :map, virtual: true
     field :context_role_id, :integer, virtual: true
     field :enrollment, :map, virtual: true
+    field :email_confirmation, :string, virtual: true
 
     field :enroll_after_email_confirmation, :string, virtual: true
 
@@ -196,6 +197,7 @@ defmodule Oli.Accounts.User do
       :website,
       :email,
       :email_verified,
+      :email_confirmation,
       :gender,
       :birthdate,
       :zoneinfo,
@@ -222,6 +224,7 @@ defmodule Oli.Accounts.User do
     |> unique_constraint(:email, name: :users_email_independent_learner_index)
     |> maybe_create_unique_sub()
     |> lowercase_email()
+    |> validate_email_confirmation()
     |> maybe_name_from_given_and_family()
   end
 
@@ -255,6 +258,17 @@ defmodule Oli.Accounts.User do
 
       _ ->
         false
+    end
+  end
+
+  defp validate_email_confirmation(changeset) do
+    changeset = Ecto.Changeset.update_change(changeset, :email_confirmation, &String.downcase/1)
+
+    if Ecto.Changeset.get_field(changeset, :email) !=
+         Ecto.Changeset.get_field(changeset, :email_confirmation) do
+      Ecto.Changeset.add_error(changeset, :email_confirmation, "does not match Email")
+    else
+      changeset
     end
   end
 
