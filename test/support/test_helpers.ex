@@ -3157,6 +3157,24 @@ defmodule Oli.TestHelpers do
     end
   end
 
+  # Required in order to prevent '(Postgrex.Error) ERROR 25001 (active_sql_transaction): SET TRANSACTION ISOLATION LEVEL must be called before any query' error from occurring in tests
+  # https://stackoverflow.com/questions/54169171/phoenix-elixir-testing-when-setting-isolation-level-of-transaction/57328722#57328722
+  def setup_tags(tags) do
+    if tags[:isolation] do
+      Ecto.Adapters.SQL.Sandbox.checkin(Repo)
+      Ecto.Adapters.SQL.Sandbox.checkout(Repo, isolation: tags[:isolation])
+    else
+      Ecto.Adapters.SQL.Sandbox.checkout(Repo)
+    end
+
+    unless tags[:async] do
+      Ecto.Adapters.SQL.Sandbox.mode(Repo, {:shared, self()})
+    end
+
+    :ok
+
+  end
+
   def visit_page(page_revision, section, enrolled_user) do
     activity_provider = &Oli.Delivery.ActivityProvider.provide/6
     datashop_session_id = UUID.uuid4()
@@ -3181,4 +3199,5 @@ defmodule Oli.TestHelpers do
         activity_provider
       )
   end
+
 end
