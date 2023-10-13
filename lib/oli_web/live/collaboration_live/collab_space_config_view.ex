@@ -10,6 +10,8 @@ defmodule OliWeb.CollaborationLive.CollabSpaceConfigView do
   alias Oli.Delivery.Sections.SectionResource
   alias OliWeb.CollaborationLive.CollabSpaceView
   alias Phoenix.PubSub
+  alias OliWeb.Components.Modal
+  alias Phoenix.LiveView.JS
 
   def mount(
         _params,
@@ -72,93 +74,141 @@ defmodule OliWeb.CollaborationLive.CollabSpaceConfigView do
 
   def render(assigns) do
     ~H"""
-    <div class={"card max-w-full #{if @is_overview_render, do: "shadow-none"}"}>
-      <div class="flex flex-col md:flex-row md:items-center card-body justify-between">
-        <div class="flex flex-col justify-start md:flex-row md:items-center gap-2">
-          <%= unless @is_overview_render do %>
-            <h3 class="card-title">Collaborative Space Config</h3>
-          <% end %>
-          <div>
-            <span class="bg-delivery-primary-200 badge badge-info">
-              <%= humanize(@collab_space_status) %>
-            </span>
+    <Modal.modal
+      id="enable_collab_space_modal"
+      class="!w-auto"
+      on_confirm={
+        JS.push("enable_all_pages_collab_spaces") |> Modal.hide_modal("enable_collab_space_modal")
+      }
+    >
+      Are you sure you want to <strong>enable</strong>
+      collaboration spaces for all pages in the course?
+      <:confirm>OK</:confirm>
+      <:cancel>Cancel</:cancel>
+    </Modal.modal>
+
+    <Modal.modal
+      id="disable_collab_space_modal"
+      class="!w-auto"
+      on_confirm={
+        JS.push("disable_all_pages_collab_spaces") |> Modal.hide_modal("disable_collab_space_modal")
+      }
+    >
+      Are you sure you want to <strong>disable</strong>
+      collaboration spaces for all pages in the course?
+      <:confirm>OK</:confirm>
+      <:cancel>Cancel</:cancel>
+    </Modal.modal>
+
+    <div class={"card max-w-full #{if @is_overview_render, do: "shadow-none p-0"}"}>
+      <section>
+        <h5>Student Course Portal Collaborative Space</h5>
+        <div class="flex flex-col md:flex-row md:items-center card-body justify-between">
+          <div class="flex flex-col justify-start md:flex-row md:items-center gap-2">
+            <%= unless @is_overview_render do %>
+              <h3 class="card-title">Collaborative Space Config</h3>
+            <% end %>
+            <div>
+              <span class="bg-delivery-primary-200 badge badge-info">
+                <%= humanize(@collab_space_status) %>
+              </span>
+            </div>
+          </div>
+
+          <div class="mt-4 md:mt-0">
+            <.action_buttons status={@collab_space_status} />
           </div>
         </div>
+        <%= if  @collab_space_status == :enabled do %>
+          <div class="card-footer bg-transparent flex mt-8">
+            <.form class="w-full" for={@form} phx-submit="save">
+              <.inputs_for :let={cs} field={@form[:collab_space_config]}>
+                <.input type="hidden" field={cs[:status]} />
 
-        <div class="mt-4 md:mt-0">
-          <.action_buttons status={@collab_space_status} />
-        </div>
-      </div>
-      <%= if  @collab_space_status == :enabled do %>
-        <div class="card-footer bg-transparent flex mt-8">
-          <.form class="w-full" for={@form} phx-submit="save">
-            <.inputs_for :let={cs} field={@form[:collab_space_config]}>
-              <.input type="hidden" field={cs[:status]} />
-
-              <div class="form-check mt-1">
-                <.input
-                  type="checkbox"
-                  field={cs[:threaded]}
-                  class="form-check-input"
-                  label="Allow threading of posts with replies"
-                />
-              </div>
-
-              <div class="form-check mt-1">
-                <.input
-                  type="checkbox"
-                  field={cs[:auto_accept]}
-                  class="form-check-input"
-                  label="Allow posts to be visible without approval"
-                />
-              </div>
-
-              <div class="form-check mt-1">
-                <.input
-                  type="checkbox"
-                  field={cs[:show_full_history]}
-                  class="form-check-input"
-                  label="Show full history"
-                />
-              </div>
-
-              <div class="form-check mt-1">
-                <.input
-                  type="checkbox"
-                  field={cs[:anonymous_posting]}
-                  class="form-check-input"
-                  label="Allow anonymous posts"
-                />
-              </div>
-
-              <br /> Participation requirements
-              <div class="flex flex-col gap-4">
-                <div class="form-group">
+                <div class="form-check mt-1">
                   <.input
-                    type="number"
-                    min={0}
-                    field={cs[:participation_min_replies]}
-                    class="form-control"
-                    label="Minimum replies"
+                    type="checkbox"
+                    field={cs[:threaded]}
+                    class="form-check-input"
+                    label="Allow threading of posts with replies"
                   />
                 </div>
 
-                <div class="form-group">
+                <div class="form-check mt-1">
                   <.input
-                    type="number"
-                    min={0}
-                    field={cs[:participation_min_posts]}
-                    class="form-control"
-                    label="Minimum posts"
+                    type="checkbox"
+                    field={cs[:auto_accept]}
+                    class="form-check-input"
+                    label="Allow posts to be visible without approval"
                   />
                 </div>
-              </div>
-            </.inputs_for>
 
-            <button class="torus-button primary !flex ml-auto mt-8" type="submit">Save</button>
-          </.form>
-        </div>
-      <% end %>
+                <div class="form-check mt-1">
+                  <.input
+                    type="checkbox"
+                    field={cs[:show_full_history]}
+                    class="form-check-input"
+                    label="Show full history"
+                  />
+                </div>
+
+                <div class="form-check mt-1">
+                  <.input
+                    type="checkbox"
+                    field={cs[:anonymous_posting]}
+                    class="form-check-input"
+                    label="Allow anonymous posts"
+                  />
+                </div>
+
+                <br /> Participation requirements
+                <div class="flex flex-col gap-4">
+                  <div class="form-group">
+                    <.input
+                      type="number"
+                      min={0}
+                      field={cs[:participation_min_replies]}
+                      class="form-control"
+                      label="Minimum replies"
+                    />
+                  </div>
+
+                  <div class="form-group">
+                    <.input
+                      type="number"
+                      min={0}
+                      field={cs[:participation_min_posts]}
+                      class="form-control"
+                      label="Minimum posts"
+                    />
+                  </div>
+                </div>
+              </.inputs_for>
+
+              <button class="torus-button primary !flex ml-auto mt-4" type="submit">Save</button>
+            </.form>
+          </div>
+        <% end %>
+      </section>
+
+      <section
+        :if={@collab_space_status == :enabled}
+        class="flex flex-col space-y-4 mt-8 pt-6 border-t border-gray-200"
+      >
+        <h5>X pages currently have Collaborative Spaces enabled</h5>
+        <button
+          phx-click={Modal.show_modal("enable_collab_space_modal")}
+          class="btn btn-primary w-[450px]"
+        >
+          Enable Collaboration Spaces for all pages in the course
+        </button>
+        <button
+          phx-click={Modal.show_modal("disable_collab_space_modal")}
+          class="btn btn-primary w-[450px]"
+        >
+          Disable Collaboration Spaces for all pages in the course
+        </button>
+      </section>
     </div>
     """
   end
@@ -218,6 +268,16 @@ defmodule OliWeb.CollaborationLive.CollabSpaceConfigView do
       Map.merge(from_struct(socket.assigns.collab_space_config), %{status: :archived}),
       socket
     )
+  end
+
+  def handle_event("disable_all_pages_collab_spaces", _params, socket) do
+    # TODO handle this
+    {:noreply, socket}
+  end
+
+  def handle_event("enable_all_pages_collab_spaces", _params, socket) do
+    # TODO handle this
+    {:noreply, socket}
   end
 
   # first argument is a flag that specifies whether it is delivery or not, to accordingly
