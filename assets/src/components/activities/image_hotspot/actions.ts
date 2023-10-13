@@ -41,7 +41,7 @@ export const ImageHotspotActions = {
           matchListRule([correctChoice.id], [correctChoice.id]),
           1,
           '',
-          true
+          true,
         );
         model.authoring.parts[0].responses = [correctResponse, Responses.catchAll()];
         model.authoring.correct = [[correctChoice.id], correctResponse.id];

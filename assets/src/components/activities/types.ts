@@ -502,7 +502,7 @@ export const makeResponse = (
   rule: string,
   score: number,
   text = '',
-  correct?: boolean
+  correct?: boolean,
 ): Response => ({
   id: guid(),
   rule,

@@ -19,7 +19,7 @@ export const defaultCATAModel = (): CATA => {
     matchListRule([correctChoice.id, incorrectChoice.id], [correctChoice.id]),
     1,
     'Correct',
-    true
+    true,
   );
 
   return {

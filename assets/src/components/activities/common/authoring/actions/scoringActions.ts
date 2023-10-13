@@ -36,7 +36,6 @@ export const ScoringActions = {
           incorrectResponse.score = incorrectScore;
         }
       }
-
     };
   },
 };

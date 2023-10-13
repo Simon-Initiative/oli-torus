@@ -9,7 +9,12 @@ export const defaultOrderingModel = (): Ordering => {
   const choice1 = makeChoice('Choice 1');
   const choice2 = makeChoice('Choice 2');
 
-  const correctResponse = makeResponse(matchInOrderRule([choice1.id, choice2.id]), 1, 'Correct', true);
+  const correctResponse = makeResponse(
+    matchInOrderRule([choice1.id, choice2.id]),
+    1,
+    'Correct',
+    true,
+  );
 
   return {
     stem: makeStem(''),
