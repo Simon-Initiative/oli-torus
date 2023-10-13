@@ -24,16 +24,24 @@ export const ScoringActions = {
 
       // When we change the correct & incorrect scores, we also need to update the responses for the correct & incorrect answers
       if (correctScore !== null) {
-        const correctResponse = getCorrectResponse(model, partId);
-        if (correctResponse) {
-          correctResponse.score = correctScore;
+        try {
+          const correctResponse = getCorrectResponse(model, partId);
+          if (correctResponse) {
+            correctResponse.score = correctScore;
+          }
+        } catch (e) {
+          console.warn('Could not find correct response for part', partId);
         }
       }
 
       if (incorrectScore !== null) {
-        const incorrectResponse = getIncorrectResponse(model, partId);
-        if (incorrectResponse) {
-          incorrectResponse.score = incorrectScore;
+        try {
+          const incorrectResponse = getIncorrectResponse(model, partId);
+          if (incorrectResponse) {
+            incorrectResponse.score = incorrectScore;
+          }
+        } catch (e) {
+          console.warn('Could not find incorrect response for part', partId);
         }
       }
     };
