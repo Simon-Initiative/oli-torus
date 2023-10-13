@@ -99,12 +99,9 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
       datashop_session_id_user1 = UUID.uuid4()
       datashop_session_id_user2 = UUID.uuid4()
 
-<<<<<<< HEAD
-=======
       Sections.enroll(user1.id, section.id, [ContextRoles.get_role(:context_learner)])
       Sections.enroll(user2.id, section.id, [ContextRoles.get_role(:context_learner)])
 
->>>>>>> master
       effective_settings =
         Oli.Delivery.Settings.get_combined_settings(revision, section.id, user1.id)
 
@@ -524,11 +521,8 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
       datashop_session_id_user1 = UUID.uuid4()
       datashop_session_id_user2 = UUID.uuid4()
 
-<<<<<<< HEAD
-=======
       Sections.enroll(user1.id, section.id, [ContextRoles.get_role(:context_learner)])
 
->>>>>>> master
       effective_settings =
         Oli.Delivery.Settings.get_combined_settings(revision, section.id, user1.id)
 
