@@ -21,7 +21,7 @@ defmodule OliWeb.CollaborationLive.CollabSpaceConfigView do
         } = session,
         socket
       ) do
-    is_delivery = Map.get(session, "is_delivery")
+    is_delivery = Map.get(session, "is_delivery", false)
     page_resource = Resources.get_resource_from_slug(page_slug)
 
     slug =
@@ -88,7 +88,7 @@ defmodule OliWeb.CollaborationLive.CollabSpaceConfigView do
       Are you sure you want to <strong>enable</strong>
       collaboration spaces for all pages in the course?
       The following configuration will be bulk-applied to all pages:
-      <.form class="w-full" for={@form} phx-submit="enable_all_pages_collab_spaces">
+      <.form class="w-full" for={@form} phx-submit="enable_all_page_collab_spaces">
         <.collab_space_form_content form={@form} />
         <button id="enable_collab_submit_button" class="hidden" type="submit" />
       </.form>
@@ -101,7 +101,7 @@ defmodule OliWeb.CollaborationLive.CollabSpaceConfigView do
       id="disable_collab_space_modal"
       class="!w-auto"
       on_confirm={
-        JS.push("disable_all_pages_collab_spaces") |> Modal.hide_modal("disable_collab_space_modal")
+        JS.push("disable_all_page_collab_spaces") |> Modal.hide_modal("disable_collab_space_modal")
       }
     >
       Are you sure you want to <strong>disable</strong>
@@ -289,15 +289,18 @@ defmodule OliWeb.CollaborationLive.CollabSpaceConfigView do
     )
   end
 
-  def handle_event("disable_all_pages_collab_spaces", _params, socket) do
-    # TODO handle this for authoring
-    Collaboration.disable_all_page_collab_spaces_for_section(socket.assigns.slug)
+  def handle_event("disable_all_page_collab_spaces", _params, socket) do
+    if socket.assigns.is_delivery do
+      Collaboration.disable_all_page_collab_spaces_for_section(socket.assigns.slug)
+    else
+      Collaboration.disable_all_page_collab_spaces_for_project(socket.assigns.slug)
+    end
 
     {:noreply, assign(socket, collab_space_pages_count: 0)}
   end
 
   def handle_event(
-        "enable_all_pages_collab_spaces",
+        "enable_all_page_collab_spaces",
         %{
           "section_resource" => %{
             "collab_space_config" => collab_space_config
@@ -305,9 +308,7 @@ defmodule OliWeb.CollaborationLive.CollabSpaceConfigView do
         },
         socket
       ) do
-    # TODO handle this for authoring
-
-    {total_count, _section_resources} =
+    {total_page_count, _section_resources} =
       Collaboration.enable_all_page_collab_spaces_for_section(
         socket.assigns.slug,
         %CollabSpaceConfig{
@@ -325,7 +326,37 @@ defmodule OliWeb.CollaborationLive.CollabSpaceConfigView do
         }
       )
 
-    {:noreply, assign(socket, collab_space_pages_count: total_count)}
+    {:noreply, assign(socket, collab_space_pages_count: total_page_count)}
+  end
+
+  def handle_event(
+        "enable_all_page_collab_spaces",
+        %{
+          "revision" => %{
+            "collab_space_config" => collab_space_config
+          }
+        },
+        socket
+      ) do
+    {total_page_count, _revisions} =
+      Collaboration.enable_all_page_collab_spaces_for_project(
+        socket.assigns.slug,
+        %CollabSpaceConfig{
+          status: :enabled,
+          threaded: Oli.Utils.string_to_boolean(collab_space_config["threaded"]),
+          auto_accept: Oli.Utils.string_to_boolean(collab_space_config["auto_accept"]),
+          show_full_history:
+            Oli.Utils.string_to_boolean(collab_space_config["show_full_history"]),
+          anonymous_posting:
+            Oli.Utils.string_to_boolean(collab_space_config["anonymous_posting"]),
+          participation_min_replies:
+            String.to_integer(collab_space_config["participation_min_replies"]),
+          participation_min_posts:
+            String.to_integer(collab_space_config["participation_min_posts"])
+        }
+      )
+
+    {:noreply, assign(socket, collab_space_pages_count: total_page_count)}
   end
 
   # first argument is a flag that specifies whether it is delivery or not, to accordingly

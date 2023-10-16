@@ -298,6 +298,60 @@ defmodule Oli.Resources.Collaboration do
   end
 
   @doc """
+  Disables all page collaborative spaces for a given project,
+  for the current working publication.
+  """
+
+  def disable_all_page_collab_spaces_for_project(project_slug) do
+    page_id = Oli.Resources.ResourceType.get_id_by_type("page")
+
+    project_working_publication =
+      from(p in Publication,
+        join: c in Project,
+        on: p.project_id == c.id,
+        where: is_nil(p.published) and c.slug == ^project_slug,
+        select: p.id
+      )
+
+    from(rev in Revision,
+      join: m in PublishedResource,
+      on: m.revision_id == rev.id,
+      where:
+        m.publication_id in subquery(project_working_publication) and
+          rev.resource_type_id == ^page_id and rev.deleted == false,
+      select: rev
+    )
+    |> Repo.update_all(set: [collab_space_config: %CollabSpaceConfig{}])
+  end
+
+  @doc """
+  Enables all page collaborative spaces for a given project,
+  for the current working publication, bulk applying the collab space config provided.
+  """
+
+  def enable_all_page_collab_spaces_for_project(project_slug, collab_space_config) do
+    page_id = Oli.Resources.ResourceType.get_id_by_type("page")
+
+    project_working_publication =
+      from(p in Publication,
+        join: c in Project,
+        on: p.project_id == c.id,
+        where: is_nil(p.published) and c.slug == ^project_slug,
+        select: p.id
+      )
+
+    from(rev in Revision,
+      join: m in PublishedResource,
+      on: m.revision_id == rev.id,
+      where:
+        m.publication_id in subquery(project_working_publication) and
+          rev.resource_type_id == ^page_id and rev.deleted == false,
+      select: rev
+    )
+    |> Repo.update_all(set: [collab_space_config: collab_space_config])
+  end
+
+  @doc """
   Disables all page collaborative spaces for a given section.
   """
 
