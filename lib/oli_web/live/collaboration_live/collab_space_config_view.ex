@@ -24,18 +24,20 @@ defmodule OliWeb.CollaborationLive.CollabSpaceConfigView do
     is_delivery = Map.get(session, "is_delivery")
     page_resource = Resources.get_resource_from_slug(page_slug)
 
+    slug =
+      if is_delivery, do: Map.get(session, "section_slug"), else: Map.get(session, "project_slug")
+
     {page_revision, changeset, parent_entity, topic} =
       if is_delivery do
-        section_slug = Map.get(session, "section_slug")
-        section = Sections.get_section_by_slug(section_slug)
+        section = Sections.get_section_by_slug(slug)
 
-        topic = CollabSpaceView.channels_topic(section_slug, page_resource.id)
+        topic = CollabSpaceView.channels_topic(slug, page_resource.id)
         PubSub.subscribe(Oli.PubSub, topic)
 
         section_resource = Sections.get_section_resource(section.id, page_resource.id)
 
         {
-          DeliveryResolver.from_revision_slug(section_slug, page_slug),
+          DeliveryResolver.from_revision_slug(slug, page_slug),
           SectionResource.changeset(section_resource, %{
             collab_space_config: from_struct(collab_space_config)
           }),
@@ -43,15 +45,14 @@ defmodule OliWeb.CollaborationLive.CollabSpaceConfigView do
           topic
         }
       else
-        project_slug = Map.get(session, "project_slug")
-        page_revision = AuthoringResolver.from_revision_slug(project_slug, page_slug)
+        page_revision = AuthoringResolver.from_revision_slug(slug, page_slug)
 
         {
           page_revision,
           Resources.change_revision(page_revision, %{
             collab_space_config: from_struct(collab_space_config)
           }),
-          Course.get_project_by_slug(project_slug),
+          Course.get_project_by_slug(slug),
           ""
         }
       end
@@ -67,6 +68,7 @@ defmodule OliWeb.CollaborationLive.CollabSpaceConfigView do
        page_revision: page_revision,
        page_resource: page_resource,
        parent_entity: parent_entity,
+       collab_space_pages_count: get_collab_space_pages_count(is_delivery, slug),
        topic: topic,
        is_overview_render: Map.get(session, "is_overview_render")
      )}
@@ -102,7 +104,7 @@ defmodule OliWeb.CollaborationLive.CollabSpaceConfigView do
 
     <div class={"card max-w-full #{if @is_overview_render, do: "shadow-none p-0"}"}>
       <section>
-        <h5>Student Course Portal Collaborative Space</h5>
+        <h5 :if={@is_overview_render} class="mb-2">Student Course Portal Collaborative Space</h5>
         <div class="flex flex-col md:flex-row md:items-center card-body justify-between">
           <div class="flex flex-col justify-start md:flex-row md:items-center gap-2">
             <%= unless @is_overview_render do %>
@@ -192,10 +194,12 @@ defmodule OliWeb.CollaborationLive.CollabSpaceConfigView do
       </section>
 
       <section
-        :if={@collab_space_status == :enabled}
+        :if={@is_overview_render}
         class="flex flex-col space-y-4 mt-8 pt-6 border-t border-gray-200"
       >
-        <h5>X pages currently have Collaborative Spaces enabled</h5>
+        <h5>
+          <%= ~s{#{@collab_space_pages_count} #{Gettext.ngettext(OliWeb.Gettext, "page currently has", "pages currently have", @collab_space_pages_count)}} %> Collaborative Spaces enabled
+        </h5>
         <button
           phx-click={Modal.show_modal("enable_collab_space_modal")}
           class="btn btn-primary w-[450px]"
@@ -348,6 +352,21 @@ defmodule OliWeb.CollaborationLive.CollabSpaceConfigView do
 
   defp get_status(nil), do: :disabled
   defp get_status(%CollabSpaceConfig{status: status}), do: status
+
+  _docp = """
+  Calculates the number of pages that have collaborative spaces enabled
+  for authoring and instructor Overview page.
+  """
+
+  defp get_collab_space_pages_count(false, project_slug) do
+    Collaboration.count_collab_spaces_enabled_in_pages_for_project(project_slug)
+  end
+
+  defp get_collab_space_pages_count(true, section_slug) do
+    Collaboration.count_collab_spaces_enabled_in_pages_for_section(section_slug)
+  end
+
+  defp get_collab_space_pages_count(nil, _), do: 0
 
   defp from_struct(nil), do: %{}
   defp from_struct(collab_space), do: Map.from_struct(collab_space)
