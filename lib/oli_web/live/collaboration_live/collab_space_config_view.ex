@@ -57,6 +57,9 @@ defmodule OliWeb.CollaborationLive.CollabSpaceConfigView do
         }
       end
 
+    {collab_space_pages_count, pages_count} =
+      get_collab_space_pages_count(is_delivery, slug)
+
     {:ok,
      assign(socket,
        is_delivery: is_delivery,
@@ -68,7 +71,8 @@ defmodule OliWeb.CollaborationLive.CollabSpaceConfigView do
        page_revision: page_revision,
        page_resource: page_resource,
        parent_entity: parent_entity,
-       collab_space_pages_count: get_collab_space_pages_count(is_delivery, slug),
+       pages_count: pages_count,
+       collab_space_pages_count: collab_space_pages_count,
        topic: topic,
        is_overview_render: Map.get(session, "is_overview_render"),
        slug: slug
@@ -87,7 +91,7 @@ defmodule OliWeb.CollaborationLive.CollabSpaceConfigView do
     >
       Are you sure you want to <strong>enable</strong>
       collaboration spaces for all pages in the course?
-      The following configuration will be bulk-applied to all pages:
+      <br />The following configuration will be bulk-applied to all pages:
       <.form class="w-full" for={@form} phx-submit="enable_all_page_collab_spaces">
         <.collab_space_form_content form={@form} />
         <button id="enable_collab_submit_button" class="hidden" type="submit" />
@@ -144,17 +148,26 @@ defmodule OliWeb.CollaborationLive.CollabSpaceConfigView do
         class="flex flex-col space-y-4 mt-8 pt-6 border-t border-gray-200"
       >
         <h5>
-          <%= ~s{#{@collab_space_pages_count} #{Gettext.ngettext(OliWeb.Gettext, "page currently has", "pages currently have", @collab_space_pages_count)}} %> Collaborative Spaces enabled
+          <%= ~s{#{if @pages_count == @collab_space_pages_count, do: "All"} #{@collab_space_pages_count} #{Gettext.ngettext(OliWeb.Gettext, "page currently has", "pages currently have", @collab_space_pages_count)}} %> Collaborative Spaces enabled
         </h5>
         <button
-          phx-click={Modal.show_modal("enable_collab_space_modal")}
-          class="btn btn-primary w-[450px]"
+          phx-click={
+            @pages_count > @collab_space_pages_count &&
+              Modal.show_modal("enable_collab_space_modal")
+          }
+          class={[
+            "btn btn-primary w-[450px]",
+            "#{if @pages_count == @collab_space_pages_count, do: "disabled"}"
+          ]}
         >
           Enable Collaboration Spaces for all pages in the course
         </button>
         <button
-          phx-click={Modal.show_modal("disable_collab_space_modal")}
-          class="btn btn-primary w-[450px]"
+          phx-click={@collab_space_pages_count > 0 && Modal.show_modal("disable_collab_space_modal")}
+          class={[
+            "btn btn-primary w-[450px]",
+            "#{if @collab_space_pages_count == 0, do: "disabled"}"
+          ]}
         >
           Disable Collaboration Spaces for all pages in the course
         </button>
@@ -429,8 +442,8 @@ defmodule OliWeb.CollaborationLive.CollabSpaceConfigView do
   defp get_status(%CollabSpaceConfig{status: status}), do: status
 
   _docp = """
-  Calculates the number of pages that have collaborative spaces enabled
-  for authoring and instructor Overview page.
+  Calculates the number of pages that have collaborative spaces enabled and
+  the total number of pages, for authoring and instructor Overview page.
   """
 
   defp get_collab_space_pages_count(false, project_slug) do
@@ -441,7 +454,7 @@ defmodule OliWeb.CollaborationLive.CollabSpaceConfigView do
     Collaboration.count_collab_spaces_enabled_in_pages_for_section(section_slug)
   end
 
-  defp get_collab_space_pages_count(nil, _), do: 0
+  defp get_collab_space_pages_count(nil, _), do: %{with_collab_spaces_enabled: 0, total: 0}
 
   defp from_struct(nil), do: %{}
   defp from_struct(collab_space), do: Map.from_struct(collab_space)

@@ -255,8 +255,14 @@ defmodule Oli.Resources.Collaboration do
   end
 
   @doc """
-  Counts the number of collaborative spaces enabled in pages for a given project,
+  Counts the number pages with collab space enabled and the number of total pages for a given project,
   for the current working publication.
+  Returns a tuple like {pages_with_collab_space_enabled_count, total_pages_count}
+
+  ## Examples
+
+      iex> count_collab_spaces_enabled_in_pages_for_project("project_slug")
+      {1, 18}
   """
   def count_collab_spaces_enabled_in_pages_for_project(project_slug) do
     page_id = Oli.Resources.ResourceType.get_id_by_type("page")
@@ -274,25 +280,48 @@ defmodule Oli.Resources.Collaboration do
       on: rev.id == m.revision_id,
       where:
         m.publication_id in subquery(project_working_publication) and
-          rev.resource_type_id == ^page_id and rev.deleted == false and
-          fragment("?->> ? = ?", rev.collab_space_config, ^"status", ^"enabled"),
-      select: count(rev)
+          rev.resource_type_id == ^page_id and rev.deleted == false,
+      select: {
+        count(
+          fragment(
+            "CASE WHEN ?->> ? = ? THEN 1 ELSE NULL END",
+            rev.collab_space_config,
+            ^"status",
+            ^"enabled"
+          )
+        ),
+        count(rev)
+      }
     )
     |> Repo.one()
   end
 
   @doc """
-  Counts the number of collaborative spaces enabled in pages for a given section,
-  for the current publication.
+  Counts the number pages with collab space enabled and the number of total pages for a given project,
+  for the current working publication.
+  Returns a tuple like {pages_with_collab_space_enabled_count, total_pages_count}
+
+  ## Examples
+
+      iex> count_collab_spaces_enabled_in_pages_for_section("section_slug")
+      {1, 18}
   """
   def count_collab_spaces_enabled_in_pages_for_section(section_slug) do
     page_id = Oli.Resources.ResourceType.get_id_by_type("page")
 
     from([sr: sr, rev: rev] in DeliveryResolver.section_resource_revisions(section_slug),
-      where:
-        rev.resource_type_id == ^page_id and rev.deleted == false and
-          fragment("?->> ? = ?", sr.collab_space_config, ^"status", ^"enabled"),
-      select: count(sr)
+      where: rev.resource_type_id == ^page_id and rev.deleted == false,
+      select: {
+        count(
+          fragment(
+            "CASE WHEN ?->> ? = ? THEN 1 ELSE NULL END",
+            sr.collab_space_config,
+            ^"status",
+            ^"enabled"
+          )
+        ),
+        count(rev)
+      }
     )
     |> Repo.one()
   end
