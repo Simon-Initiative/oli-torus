@@ -307,8 +307,8 @@ defmodule OliWeb.Sections.OverviewView do
         <% end %>
       </Group.render>
       <Group.render
-        label="Collaborative Space"
-        description="Activate and configure a collaborative space for this section"
+        label="Collaboration Spaces"
+        description="Manage the Collaborative Spaces within the course"
       >
         <div class="container mx-auto">
           <%= live_render(@socket, OliWeb.CollaborationLive.CollabSpaceConfigView,
