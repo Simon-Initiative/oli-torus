@@ -311,22 +311,16 @@ defmodule OliWeb.Sections.OverviewView do
         description="Activate and configure a collaborative space for this section"
       >
         <div class="container mx-auto">
-          <%= if @collab_space_config && @collab_space_config.status != :disabled do %>
-            <%= live_render(@socket, OliWeb.CollaborationLive.CollabSpaceConfigView,
-              id: "collab_space_config",
-              session: %{
-                "collab_space_config" => @collab_space_config,
-                "section_slug" => @section.slug,
-                "resource_slug" => @resource_slug,
-                "is_overview_render" => true,
-                "is_delivery" => true
-              }
-            ) %>
-          <% else %>
-            <p class="ml-8 mt-2">
-              Collaborative spaces are not enabled by the course project.<br />Please contact a system administrator to enable.
-            </p>
-          <% end %>
+          <%= live_render(@socket, OliWeb.CollaborationLive.CollabSpaceConfigView,
+            id: "collab_space_config",
+            session: %{
+              "collab_space_config" => @collab_space_config,
+              "section_slug" => @section.slug,
+              "resource_slug" => @resource_slug,
+              "is_overview_render" => true,
+              "is_delivery" => true
+            }
+          ) %>
         </div>
       </Group.render>
       <Group.render
