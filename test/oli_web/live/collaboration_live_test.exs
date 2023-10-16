@@ -458,27 +458,39 @@ defmodule OliWeb.CollaborationLiveTest do
       assert has_element?(view, "span", "Enabled")
 
       assert view
-             |> element("#section_resource_collab_space_config_0_threaded")
+             |> element(
+               "#collab_space_config_form #section_resource_collab_space_config_0_threaded"
+             )
              |> render() =~ "checked"
 
       assert view
-             |> element("#section_resource_collab_space_config_0_auto_accept")
+             |> element(
+               "#collab_space_config_form #section_resource_collab_space_config_0_auto_accept"
+             )
              |> render() =~ "checked"
 
       assert view
-             |> element("#section_resource_collab_space_config_0_show_full_history")
+             |> element(
+               "#collab_space_config_form #section_resource_collab_space_config_0_show_full_history"
+             )
              |> render() =~ "checked"
 
       assert view
-             |> element("#section_resource_collab_space_config_0_anonymous_posting")
+             |> element(
+               "#collab_space_config_form #section_resource_collab_space_config_0_anonymous_posting"
+             )
              |> render() =~ "checked"
 
       assert view
-             |> element("#section_resource_collab_space_config_0_participation_min_replies")
+             |> element(
+               "#collab_space_config_form #section_resource_collab_space_config_0_participation_min_replies"
+             )
              |> render() =~ "0"
 
       assert view
-             |> element("#section_resource_collab_space_config_0_participation_min_posts")
+             |> element(
+               "#collab_space_config_form #section_resource_collab_space_config_0_participation_min_posts"
+             )
              |> render() =~ "0"
     end
 
@@ -515,19 +527,27 @@ defmodule OliWeb.CollaborationLiveTest do
       })
 
       refute view
-             |> element("#section_resource_collab_space_config_0_threaded")
+             |> element(
+               "#collab_space_config_form #section_resource_collab_space_config_0_threaded"
+             )
              |> render() =~ "checked"
 
       refute view
-             |> element("#section_resource_collab_space_config_0_auto_accept")
+             |> element(
+               "#collab_space_config_form #section_resource_collab_space_config_0_auto_accept"
+             )
              |> render() =~ "checked"
 
       refute view
-             |> element("#section_resource_collab_space_config_0_anonymous_posting")
+             |> element(
+               "#collab_space_config_form #section_resource_collab_space_config_0_anonymous_posting"
+             )
              |> render() =~ "checked"
 
       assert view
-             |> element("#section_resource_collab_space_config_0_participation_min_replies")
+             |> element(
+               "#collab_space_config_form #section_resource_collab_space_config_0_participation_min_replies"
+             )
              |> render() =~ "2"
 
       assert_receive {
@@ -566,11 +586,15 @@ defmodule OliWeb.CollaborationLiveTest do
       })
 
       refute view
-             |> element("#section_resource_collab_space_config_0_participation_min_replies")
+             |> element(
+               "#collab_space_config_form #section_resource_collab_space_config_0_participation_min_replies"
+             )
              |> render() =~ "-1"
 
       assert view
-             |> element("#section_resource_collab_space_config_0_participation_min_replies")
+             |> element(
+               "#collab_space_config_form #section_resource_collab_space_config_0_participation_min_replies"
+             )
              |> render() =~ "0"
 
       refute_receive {:updated_collab_space_config, _}
@@ -668,23 +692,39 @@ defmodule OliWeb.CollaborationLiveTest do
       assert has_element?(view, "h3", "Collaborative Space Config")
       assert has_element?(view, "span", "Enabled")
 
-      assert view |> element("#revision_collab_space_config_0_threaded") |> render() =~ "checked"
+      assert view
+             |> element("#collab_space_config_form #revision_collab_space_config_0_threaded")
+             |> render() =~ "checked"
 
-      assert view |> element("#revision_collab_space_config_0_auto_accept") |> render() =~
-               "checked"
-
-      assert view |> element("#revision_collab_space_config_0_show_full_history") |> render() =~
-               "checked"
-
-      assert view |> element("#revision_collab_space_config_0_anonymous_posting") |> render() =~
+      assert view
+             |> element("#collab_space_config_form #revision_collab_space_config_0_auto_accept")
+             |> render() =~
                "checked"
 
       assert view
-             |> element("#revision_collab_space_config_0_participation_min_replies")
+             |> element(
+               "#collab_space_config_form #revision_collab_space_config_0_show_full_history"
+             )
+             |> render() =~
+               "checked"
+
+      assert view
+             |> element(
+               "#collab_space_config_form #revision_collab_space_config_0_anonymous_posting"
+             )
+             |> render() =~
+               "checked"
+
+      assert view
+             |> element(
+               "#collab_space_config_form #revision_collab_space_config_0_participation_min_replies"
+             )
              |> render() =~ "0"
 
       assert view
-             |> element("#revision_collab_space_config_0_participation_min_posts")
+             |> element(
+               "#collab_space_config_form #revision_collab_space_config_0_participation_min_posts"
+             )
              |> render() =~
                "0"
     end
@@ -720,16 +760,26 @@ defmodule OliWeb.CollaborationLiveTest do
         }
       })
 
-      refute view |> element("#revision_collab_space_config_0_threaded") |> render() =~ "checked"
+      refute view
+             |> element("#collab_space_config_form #revision_collab_space_config_0_threaded")
+             |> render() =~ "checked"
 
-      refute view |> element("#revision_collab_space_config_0_auto_accept") |> render() =~
+      refute view
+             |> element("#collab_space_config_form #revision_collab_space_config_0_auto_accept")
+             |> render() =~
                "checked"
 
-      refute view |> element("#revision_collab_space_config_0_anonymous_posting") |> render() =~
+      refute view
+             |> element(
+               "#collab_space_config_form #revision_collab_space_config_0_anonymous_posting"
+             )
+             |> render() =~
                "checked"
 
       assert view
-             |> element("#revision_collab_space_config_0_participation_min_replies")
+             |> element(
+               "#collab_space_config_form #revision_collab_space_config_0_participation_min_replies"
+             )
              |> render() =~ "2"
     end
 
@@ -756,11 +806,15 @@ defmodule OliWeb.CollaborationLiveTest do
       |> render_submit(%{revision: %{collab_space_config: %{participation_min_replies: -1}}})
 
       refute view
-             |> element("#revision_collab_space_config_0_participation_min_replies")
+             |> element(
+               "#collab_space_config_form #revision_collab_space_config_0_participation_min_replies"
+             )
              |> render() =~ "-1"
 
       assert view
-             |> element("#revision_collab_space_config_0_participation_min_replies")
+             |> element(
+               "#collab_space_config_form #revision_collab_space_config_0_participation_min_replies"
+             )
              |> render() =~ "0"
     end
   end

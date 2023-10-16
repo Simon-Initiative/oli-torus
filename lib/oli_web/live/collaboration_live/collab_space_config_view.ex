@@ -135,7 +135,7 @@ defmodule OliWeb.CollaborationLive.CollabSpaceConfigView do
         </div>
         <%= if  @collab_space_status == :enabled do %>
           <div class="card-footer bg-transparent flex mt-8">
-            <.form class="w-full" for={@form} phx-submit="save">
+            <.form id="collab_space_config_form" class="w-full" for={@form} phx-submit="save">
               <.collab_space_form_content form={@form} />
               <button class="torus-button primary !flex ml-auto mt-4" type="submit">Save</button>
             </.form>
