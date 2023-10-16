@@ -297,6 +297,34 @@ defmodule Oli.Resources.Collaboration do
     |> Repo.one()
   end
 
+  @doc """
+  Disables all page collaborative spaces for a given section.
+  """
+
+  def disable_all_page_collab_spaces_for_section(section_slug) do
+    page_id = Oli.Resources.ResourceType.get_id_by_type("page")
+
+    from([sr: sr, rev: rev] in DeliveryResolver.section_resource_revisions(section_slug),
+      where: rev.resource_type_id == ^page_id and rev.deleted == false,
+      select: sr
+    )
+    |> Repo.update_all(set: [collab_space_config: %CollabSpaceConfig{}])
+  end
+
+  @doc """
+  Enables all page collaborative spaces for a given section, bulk applying the collab space config provided.
+  """
+
+  def enable_all_page_collab_spaces_for_section(section_slug, collab_space_config) do
+    page_id = Oli.Resources.ResourceType.get_id_by_type("page")
+
+    from([sr: sr, rev: rev] in DeliveryResolver.section_resource_revisions(section_slug),
+      where: rev.resource_type_id == ^page_id and rev.deleted == false,
+      select: sr
+    )
+    |> Repo.update_all(set: [collab_space_config: collab_space_config])
+  end
+
   # ------------------------------------------------------------
   # Posts
 

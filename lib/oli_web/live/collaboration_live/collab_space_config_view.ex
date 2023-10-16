@@ -70,7 +70,8 @@ defmodule OliWeb.CollaborationLive.CollabSpaceConfigView do
        parent_entity: parent_entity,
        collab_space_pages_count: get_collab_space_pages_count(is_delivery, slug),
        topic: topic,
-       is_overview_render: Map.get(session, "is_overview_render")
+       is_overview_render: Map.get(session, "is_overview_render"),
+       slug: slug
      )}
   end
 
@@ -80,11 +81,18 @@ defmodule OliWeb.CollaborationLive.CollabSpaceConfigView do
       id="enable_collab_space_modal"
       class="!w-auto"
       on_confirm={
-        JS.push("enable_all_pages_collab_spaces") |> Modal.hide_modal("enable_collab_space_modal")
+        JS.dispatch("click", to: "#enable_collab_submit_button")
+        |> Modal.hide_modal("enable_collab_space_modal")
       }
     >
       Are you sure you want to <strong>enable</strong>
       collaboration spaces for all pages in the course?
+      The following configuration will be bulk-applied to all pages:
+      <.form class="w-full" for={@form} phx-submit="enable_all_pages_collab_spaces">
+        <.collab_space_form_content form={@form} />
+        <button id="enable_collab_submit_button" class="hidden" type="submit" />
+      </.form>
+
       <:confirm>OK</:confirm>
       <:cancel>Cancel</:cancel>
     </Modal.modal>
@@ -124,69 +132,7 @@ defmodule OliWeb.CollaborationLive.CollabSpaceConfigView do
         <%= if  @collab_space_status == :enabled do %>
           <div class="card-footer bg-transparent flex mt-8">
             <.form class="w-full" for={@form} phx-submit="save">
-              <.inputs_for :let={cs} field={@form[:collab_space_config]}>
-                <.input type="hidden" field={cs[:status]} />
-
-                <div class="form-check mt-1">
-                  <.input
-                    type="checkbox"
-                    field={cs[:threaded]}
-                    class="form-check-input"
-                    label="Allow threading of posts with replies"
-                  />
-                </div>
-
-                <div class="form-check mt-1">
-                  <.input
-                    type="checkbox"
-                    field={cs[:auto_accept]}
-                    class="form-check-input"
-                    label="Allow posts to be visible without approval"
-                  />
-                </div>
-
-                <div class="form-check mt-1">
-                  <.input
-                    type="checkbox"
-                    field={cs[:show_full_history]}
-                    class="form-check-input"
-                    label="Show full history"
-                  />
-                </div>
-
-                <div class="form-check mt-1">
-                  <.input
-                    type="checkbox"
-                    field={cs[:anonymous_posting]}
-                    class="form-check-input"
-                    label="Allow anonymous posts"
-                  />
-                </div>
-
-                <br /> Participation requirements
-                <div class="flex flex-col gap-4">
-                  <div class="form-group">
-                    <.input
-                      type="number"
-                      min={0}
-                      field={cs[:participation_min_replies]}
-                      class="form-control"
-                      label="Minimum replies"
-                    />
-                  </div>
-
-                  <div class="form-group">
-                    <.input
-                      type="number"
-                      min={0}
-                      field={cs[:participation_min_posts]}
-                      class="form-control"
-                      label="Minimum posts"
-                    />
-                  </div>
-                </div>
-              </.inputs_for>
-
+              <.collab_space_form_content form={@form} />
               <button class="torus-button primary !flex ml-auto mt-4" type="submit">Save</button>
             </.form>
           </div>
@@ -239,6 +185,75 @@ defmodule OliWeb.CollaborationLive.CollabSpaceConfigView do
     """
   end
 
+  attr :form, :map
+
+  def collab_space_form_content(assigns) do
+    ~H"""
+    <.inputs_for :let={cs} field={@form[:collab_space_config]}>
+      <.input type="hidden" field={cs[:status]} />
+
+      <div class="form-check mt-1">
+        <.input
+          type="checkbox"
+          field={cs[:threaded]}
+          class="form-check-input"
+          label="Allow threading of posts with replies"
+        />
+      </div>
+
+      <div class="form-check mt-1">
+        <.input
+          type="checkbox"
+          field={cs[:auto_accept]}
+          class="form-check-input"
+          label="Allow posts to be visible without approval"
+        />
+      </div>
+
+      <div class="form-check mt-1">
+        <.input
+          type="checkbox"
+          field={cs[:show_full_history]}
+          class="form-check-input"
+          label="Show full history"
+        />
+      </div>
+
+      <div class="form-check mt-1">
+        <.input
+          type="checkbox"
+          field={cs[:anonymous_posting]}
+          class="form-check-input"
+          label="Allow anonymous posts"
+        />
+      </div>
+
+      <br /> Participation requirements
+      <div class="flex flex-col gap-4">
+        <div class="form-group">
+          <.input
+            type="number"
+            min={0}
+            field={cs[:participation_min_replies]}
+            class="form-control"
+            label="Minimum replies"
+          />
+        </div>
+
+        <div class="form-group">
+          <.input
+            type="number"
+            min={0}
+            field={cs[:participation_min_posts]}
+            class="form-control"
+            label="Minimum posts"
+          />
+        </div>
+      </div>
+    </.inputs_for>
+    """
+  end
+
   def handle_event("save", %{"section_resource" => %{"collab_space_config" => attrs}}, socket) do
     upsert_collab_space(socket.assigns.is_delivery, "updated", attrs, socket)
   end
@@ -275,13 +290,42 @@ defmodule OliWeb.CollaborationLive.CollabSpaceConfigView do
   end
 
   def handle_event("disable_all_pages_collab_spaces", _params, socket) do
-    # TODO handle this
-    {:noreply, socket}
+    # TODO handle this for authoring
+    Collaboration.disable_all_page_collab_spaces_for_section(socket.assigns.slug)
+
+    {:noreply, assign(socket, collab_space_pages_count: 0)}
   end
 
-  def handle_event("enable_all_pages_collab_spaces", _params, socket) do
-    # TODO handle this
-    {:noreply, socket}
+  def handle_event(
+        "enable_all_pages_collab_spaces",
+        %{
+          "section_resource" => %{
+            "collab_space_config" => collab_space_config
+          }
+        },
+        socket
+      ) do
+    # TODO handle this for authoring
+
+    {total_count, _section_resources} =
+      Collaboration.enable_all_page_collab_spaces_for_section(
+        socket.assigns.slug,
+        %CollabSpaceConfig{
+          status: :enabled,
+          threaded: Oli.Utils.string_to_boolean(collab_space_config["threaded"]),
+          auto_accept: Oli.Utils.string_to_boolean(collab_space_config["auto_accept"]),
+          show_full_history:
+            Oli.Utils.string_to_boolean(collab_space_config["show_full_history"]),
+          anonymous_posting:
+            Oli.Utils.string_to_boolean(collab_space_config["anonymous_posting"]),
+          participation_min_replies:
+            String.to_integer(collab_space_config["participation_min_replies"]),
+          participation_min_posts:
+            String.to_integer(collab_space_config["participation_min_posts"])
+        }
+      )
+
+    {:noreply, assign(socket, collab_space_pages_count: total_count)}
   end
 
   # first argument is a flag that specifies whether it is delivery or not, to accordingly
