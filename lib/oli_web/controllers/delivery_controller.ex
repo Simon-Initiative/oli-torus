@@ -1,5 +1,6 @@
 defmodule OliWeb.DeliveryController do
   use OliWeb, :controller
+  use OliWeb, :verified_routes
 
   alias Lti_1p3.Tool.{PlatformRoles, ContextRoles}
   alias Oli.Accounts
@@ -321,7 +322,7 @@ defmodule OliWeb.DeliveryController do
     |> redirect(to: Routes.pow_registration_path(conn, :new, section: section))
   end
 
-  def show_enroll(conn, _params) do
+  def show_enroll(conn, params) do
     case Sections.available?(conn.assigns.section) do
       {:available, section} ->
         # redirect to course index if user is already signed in and enrolled
@@ -333,14 +334,24 @@ defmodule OliWeb.DeliveryController do
         else
           {:redirect, nil} ->
             # guest user cant access courses that require enrollment
+            login_params = [
+              section: section.slug,
+              from_invitation_link?: params["from_invitation_link?"] || false
+            ]
+
             redirect_path =
-              "/session/new?section=#{section.slug}"
+              ~p"/session/new?#{login_params}"
+
             conn
-              |> redirect(to: redirect_path)
+            |> redirect(to: redirect_path)
+
           _ ->
             section = Oli.Repo.preload(section, [:base_project])
 
-            render(conn, "enroll.html", section: section)
+            render(conn, "enroll.html",
+              section: section,
+              from_invitation_link?: params["from_invitation_link?"] || false
+            )
         end
 
       {:unavailable, reason} ->
