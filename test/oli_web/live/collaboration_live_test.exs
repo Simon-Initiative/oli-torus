@@ -599,6 +599,97 @@ defmodule OliWeb.CollaborationLiveTest do
 
       refute_receive {:updated_collab_space_config, _}
     end
+
+    test "can enable Collab spaces for all pages in course", %{
+      conn: conn,
+      instructor: instructor,
+      section: section,
+      page_revision_cs: page_revision_cs
+    } do
+      {:ok, view, _html} =
+        live_isolated(
+          conn,
+          CollabSpaceConfigView,
+          session: %{
+            "current_user_id" => instructor.id,
+            "collab_space_config" => page_revision_cs.collab_space_config,
+            "section_slug" => section.slug,
+            "is_delivery" => true,
+            "resource_slug" => page_revision_cs.slug,
+            "is_overview_render" => true
+          }
+        )
+
+      assert element(view, "h5[role='collab_space_page_summary']")
+             |> render() =~ "1 page currently has Collaborative Spaces enabled"
+
+      # can not trigger a JS command from a test to show the confirmation modal (hidden to the user),
+      # so we directly submit the form in the modal
+      element(view, ~s{form[phx-submit="enable_all_page_collab_spaces"]})
+      |> render_submit(%{
+        section_resource: %{
+          collab_space_config: %{
+            anonymous_posting: false,
+            auto_accept: true,
+            participation_min_posts: 0,
+            participation_min_replies: 0,
+            show_full_history: true,
+            status: :enabled,
+            threaded: true
+          }
+        }
+      })
+
+      assert element(view, "h5[role='collab_space_page_summary']")
+             |> render() =~ "All 2 pages currently have Collaborative Spaces enabled"
+
+      # enable all pages button is disabled
+      assert has_element?(
+               view,
+               "button[disabled=disabled]",
+               "Enable Collaboration Spaces for all pages in the course"
+             )
+    end
+
+    test "can disable Collab spaces for all pages in course", %{
+      conn: conn,
+      instructor: instructor,
+      section: section,
+      page_revision_cs: page_revision_cs
+    } do
+      {:ok, view, _html} =
+        live_isolated(
+          conn,
+          CollabSpaceConfigView,
+          session: %{
+            "current_user_id" => instructor.id,
+            "collab_space_config" => page_revision_cs.collab_space_config,
+            "section_slug" => section.slug,
+            "is_delivery" => true,
+            "resource_slug" => page_revision_cs.slug,
+            "is_overview_render" => true
+          }
+        )
+
+      assert element(view, "h5[role='collab_space_page_summary']")
+             |> render() =~ "1 page currently has Collaborative Spaces enabled"
+
+      # can not trigger a JS command from a test to show the confirmation modal (hidden to the user),
+      # so we directly confirm the modal
+      view
+      |> element(~s{div[id="disable_collab_space_modal"] button}, "OK")
+      |> render_click()
+
+      assert element(view, "h5[role='collab_space_page_summary']")
+             |> render() =~ "0 pages currently have Collaborative Spaces enabled"
+
+      # disable all pages button is disabled
+      assert has_element?(
+               view,
+               "button[disabled=disabled]",
+               "Disable Collaboration Spaces for all pages in the course"
+             )
+    end
   end
 
   describe "admin - collab space config view" do
@@ -816,6 +907,97 @@ defmodule OliWeb.CollaborationLiveTest do
                "#collab_space_config_form #revision_collab_space_config_0_participation_min_replies"
              )
              |> render() =~ "0"
+    end
+
+    test "can enable Collab spaces for all pages in course", %{
+      conn: conn,
+      author: author,
+      project: project,
+      page_revision_cs: page_revision_cs
+    } do
+      {:ok, view, _html} =
+        live_isolated(
+          conn,
+          CollabSpaceConfigView,
+          session: %{
+            "current_user_id" => author.id,
+            "collab_space_config" => page_revision_cs.collab_space_config,
+            "project_slug" => project.slug,
+            "is_delivery" => false,
+            "resource_slug" => page_revision_cs.slug,
+            "is_overview_render" => true
+          }
+        )
+
+      assert element(view, "h5[role='collab_space_page_summary']")
+             |> render() =~ "1 page currently has Collaborative Spaces enabled"
+
+      # can not trigger a JS command from a test to show the confirmation modal (hidden to the user),
+      # so we directly submit the form in the modal
+      element(view, ~s{form[phx-submit="enable_all_page_collab_spaces"]})
+      |> render_submit(%{
+        revision: %{
+          collab_space_config: %{
+            anonymous_posting: false,
+            auto_accept: true,
+            participation_min_posts: 0,
+            participation_min_replies: 0,
+            show_full_history: true,
+            status: :enabled,
+            threaded: true
+          }
+        }
+      })
+
+      assert element(view, "h5[role='collab_space_page_summary']")
+             |> render() =~ "All 2 pages currently have Collaborative Spaces enabled"
+
+      # enable all pages button is disabled
+      assert has_element?(
+               view,
+               "button[disabled=disabled]",
+               "Enable Collaboration Spaces for all pages in the course"
+             )
+    end
+
+    test "can disable Collab spaces for all pages in course", %{
+      conn: conn,
+      author: author,
+      project: project,
+      page_revision_cs: page_revision_cs
+    } do
+      {:ok, view, _html} =
+        live_isolated(
+          conn,
+          CollabSpaceConfigView,
+          session: %{
+            "current_user_id" => author.id,
+            "collab_space_config" => page_revision_cs.collab_space_config,
+            "project_slug" => project.slug,
+            "is_delivery" => false,
+            "resource_slug" => page_revision_cs.slug,
+            "is_overview_render" => true
+          }
+        )
+
+      assert element(view, "h5[role='collab_space_page_summary']")
+             |> render() =~ "1 page currently has Collaborative Spaces enabled"
+
+      # can not trigger a JS command from a test to show the confirmation modal (hidden to the user),
+      # so we directly confirm the modal
+      view
+      |> element(~s{div[id="disable_collab_space_modal"] button}, "OK")
+      |> render_click()
+
+      assert element(view, "h5[role='collab_space_page_summary']")
+             |> render() =~ "0 pages currently have Collaborative Spaces enabled"
+
+      # disable all pages button is disabled
+      assert has_element?(
+               view,
+               "button[disabled=disabled]",
+               "Disable Collaboration Spaces for all pages in the course"
+             )
     end
   end
 

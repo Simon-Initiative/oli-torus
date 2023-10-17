@@ -147,7 +147,7 @@ defmodule OliWeb.CollaborationLive.CollabSpaceConfigView do
         :if={@is_overview_render}
         class="flex flex-col space-y-4 mt-8 pt-6 border-t border-gray-200"
       >
-        <h5>
+        <h5 role="collab_space_page_summary">
           <%= ~s{#{if @pages_count == @collab_space_pages_count, do: "All"} #{@collab_space_pages_count} #{Gettext.ngettext(OliWeb.Gettext, "page currently has", "pages currently have", @collab_space_pages_count)}} %> Collaborative Spaces enabled
         </h5>
         <button
@@ -155,19 +155,15 @@ defmodule OliWeb.CollaborationLive.CollabSpaceConfigView do
             @pages_count > @collab_space_pages_count &&
               Modal.show_modal("enable_collab_space_modal")
           }
-          class={[
-            "btn btn-primary w-[450px]",
-            "#{if @pages_count == @collab_space_pages_count, do: "disabled"}"
-          ]}
+          class="btn btn-primary w-[450px]"
+          disabled={@pages_count == @collab_space_pages_count}
         >
           Enable Collaboration Spaces for all pages in the course
         </button>
         <button
           phx-click={@collab_space_pages_count > 0 && Modal.show_modal("disable_collab_space_modal")}
-          class={[
-            "btn btn-primary w-[450px]",
-            "#{if @collab_space_pages_count == 0, do: "disabled"}"
-          ]}
+          class="btn btn-primary w-[450px]"
+          disabled={@collab_space_pages_count == 0}
         >
           Disable Collaboration Spaces for all pages in the course
         </button>
