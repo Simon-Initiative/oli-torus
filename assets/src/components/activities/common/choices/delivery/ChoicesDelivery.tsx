@@ -52,7 +52,7 @@ export const ChoicesDelivery: React.FC<Props> = ({
               <div className="d-flex align-items-center col">
                 {isSelected(choice.id) ? selectedIcon : unselectedIcon}
                 <div className={classNames('content', styles.choicesChoiceContent)}>
-                  <HtmlContentModelRenderer content={choice.content} context={context} />
+                  <HtmlContentModelRenderer content={choice.content} context={context} direction={choice.textDirection} />
                 </div>
               </div>
             </label>

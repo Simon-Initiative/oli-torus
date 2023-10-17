@@ -340,7 +340,7 @@ export interface ActivityState {
  * Defines an option, or choice, within activities such as a
  * multiple choice activity.
  */
-export interface Choice extends Identifiable, HasContent, SpecifiesEditor {
+export interface Choice extends Identifiable, HasContent, SpecifiesEditor, SpecifiesTextDirection {
   frequency?: number;
 }
 /**
@@ -354,7 +354,7 @@ export interface HasChoices {
   choices: Choice[];
 }
 
-export interface SpecifiedTextDirection {
+export interface SpecifiesTextDirection {
   textDirection?: TextDirection;
 }
 
@@ -365,7 +365,7 @@ export interface SpecifiesEditor {
 /**
  * Defines a question stem.
  */
-export interface Stem extends Identifiable, HasContent, SpecifiesEditor, SpecifiedTextDirection {}
+export interface Stem extends Identifiable, HasContent, SpecifiesEditor, SpecifiesTextDirection {}
 /**
  * Marker interface for an entity that has a question stem.
  */
@@ -383,7 +383,7 @@ export const makeStem: (text: string) => Stem = makeContent;
 /**
  * Defines a hint.
  */
-export interface Hint extends Identifiable, HasContent, SpecifiesEditor, SpecifiedTextDirection {}
+export interface Hint extends Identifiable, HasContent, SpecifiesEditor, SpecifiesTextDirection {}
 /**
  * Marker interface for an entity that has hints.
  */
@@ -399,11 +399,11 @@ export interface Feedback
   extends Identifiable,
     HasContent,
     SpecifiesEditor,
-    SpecifiedTextDirection {}
+    SpecifiesTextDirection {}
 /**
  * Defines explanation entity.
  */
-export interface Explanation extends Identifiable, HasContent {}
+export interface Explanation extends Identifiable, HasContent, SpecifiesTextDirection {}
 /**
  * Helper function to create Feedback from simple text.
  */

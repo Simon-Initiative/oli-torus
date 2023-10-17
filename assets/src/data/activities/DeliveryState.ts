@@ -153,6 +153,7 @@ export const activityDeliverySlice = createSlice({
         const { score, out_of } = calculateNewScore(action);
 
         handleAutomationInResponse(state, action);
+        debugger
 
         state.attemptState = {
           ...state.attemptState,

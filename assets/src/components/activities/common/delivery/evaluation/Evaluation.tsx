@@ -16,8 +16,10 @@ export function renderPartFeedback(partState: PartState, context: WriterContext)
   const errorText = makeContent('There was an error processing this response');
   const error = partState.error;
   const feedback = partState.feedback?.content;
+  const feedbackDirection = partState.feedback?.textDirection || 'ltr';
   const resultCl = resultClass(partState.score, partState.outOf, partState.error);
   const explanation = partState.explanation?.content;
+  const explanationDirection = partState.explanation?.textDirection || 'ltr';
 
   return (
     <React.Fragment>
@@ -31,6 +33,7 @@ export function renderPartFeedback(partState: PartState, context: WriterContext)
         <HtmlContentModelRenderer
           content={error ? errorText.content : feedback ? feedback : makeFeedback('').content}
           context={context}
+          direction={feedbackDirection}
         />
       </Component>
       {explanation && resultCl !== 'correct' && (
@@ -44,7 +47,7 @@ export function renderPartFeedback(partState: PartState, context: WriterContext)
               <b>Explanation:</b>
             </div>
             <div>
-              <HtmlContentModelRenderer content={explanation} context={context} />
+              <HtmlContentModelRenderer direction={explanationDirection} content={explanation} context={context} />
             </div>
           </div>
         </Component>

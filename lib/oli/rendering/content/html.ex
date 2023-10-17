@@ -783,7 +783,7 @@ defmodule Oli.Rendering.Content.Html do
     end
   end
 
-  def example(%Context{} = _context, next, _) do
+  def example(%Context{} = _context, next, element) do
     [
       ~s|<div class="content-purpose example"><div class="content-purpose-label">Example</div><div #{directionAttr(element)} class="content-purpose-content">|,
       next.(),
@@ -791,7 +791,7 @@ defmodule Oli.Rendering.Content.Html do
     ]
   end
 
-  def learn_more(%Context{} = _context, next, _) do
+  def learn_more(%Context{} = _context, next, element) do
     [
       ~s|<div class="content-purpose learnmore"><div class="content-purpose-label">Learn more</div><div #{directionAttr(element)} class="content-purpose-content">|,
       next.(),
@@ -808,12 +808,11 @@ defmodule Oli.Rendering.Content.Html do
   end
 
   defp directionAttr(element) do
-    case Map.get(element,"textDirection", "ltr") do
+    case Map.get(element, "textDirection", "ltr") do
       "ltr" -> ""
       "rtl" -> " dir=\"rtl\""
       _ -> ""
     end
-  end
   end
 
   def escape_xml!(text) do

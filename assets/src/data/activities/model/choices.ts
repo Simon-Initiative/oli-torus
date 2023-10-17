@@ -18,6 +18,15 @@ export const Choices = {
     };
   },
 
+  setTextDirection(id: string, textDirection: 'ltr' | 'rtl') {
+    return (model: any, _post: PostUndoable) => {
+      Operations.apply(
+        model,
+        Operations.setKey(`$..choices[?(@.id=='${id}')]`, 'textDirection', textDirection),
+      );
+    };
+  },
+
   setEditor(id: string, editor: EditorType) {
     return (model: any, _post: PostUndoable) => {
       Operations.apply(model, Operations.setKey(`$..choices[?(@.id=='${id}')]`, 'editor', editor));
