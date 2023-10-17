@@ -3,11 +3,10 @@ defmodule OliWeb.Components.Delivery.Actions do
   use OliWeb.Common.Modal
 
   alias Lti_1p3.Tool.ContextRoles
-  alias Oli.{Accounts, Repo}
+  alias Oli.Accounts
   alias OliWeb.Common.Confirm
   alias Phoenix.LiveView.JS
   alias Oli.Delivery.Paywall
-  alias Oli.Delivery.Paywall.Payment
   alias OliWeb.Router.Helpers, as: Routes
 
   @user_role_data [
@@ -58,92 +57,98 @@ defmodule OliWeb.Components.Delivery.Actions do
       id="student_actions"
       class="mx-10 mb-10 bg-white dark:bg-gray-800 shadow-sm px-14 py-7 flex flex-col gap-6"
     >
-      <div :if={@is_suspended?} id="unenrolled_student_actions">
-        <.live_component
-          module={OliWeb.Components.LiveModal}
-          id="re_enroll_user_modal"
-          title="Re-enroll student"
-          on_confirm={JS.push("re_enroll", target: @myself)}
-        >
-          <div class="px-4">
-            <p>
-              Are you sure you want to re-enroll "<%= @user.name %>" in the course "<%= @section.title %>"?
-            </p>
-          </div>
-        </.live_component>
-        <div class="ml-auto">
-          <button phx-click={JS.push("open", target: "#re_enroll_user_modal")} class="btn btn-primary">
-            Re-enroll
-          </button>
-        </div>
-      </div>
-      <div :if={!@is_suspended?} id="enrolled_student_actions">
-        <.live_component
-          module={OliWeb.Components.LiveModal}
-          id="unenroll_user_modal"
-          title="Unenroll student"
-          on_confirm={JS.push("unenroll", target: @myself)}
-        >
-          <div class="px-4">
-            <p>
-              Are you sure you want to unenroll "<%= @user.name %>" from the course "<%= @section.title %>"?
-            </p>
-          </div>
-        </.live_component>
-
-        <div class="flex flex-col sm:flex-row sm:items-end instructor_dashboard_table">
-          <h4 class="torus-h4 !py-0 mr-auto dark:text-white">Actions</h4>
-        </div>
-
-        <div class="flex justify-between items-center">
-          <div class="flex flex-col">
-            <span class="dark:text-white">Change enrolled user role</span>
-            <span class="text-xs text-gray-400 dark:text-gray-950">
-              Select the role to change for the user in this section.
-            </span>
-          </div>
-          <form phx-change="display_confirm_modal" phx-target={@myself}>
-            <select class="torus-select pr-32" name="filter_by_role_id">
-              <%= for elem <- @user_role_data do %>
-                <option selected={elem.id == @user_role_id} value={elem.id}>
-                  <%= elem.title %>
-                </option>
-              <% end %>
-            </select>
-          </form>
-        </div>
-        <%= if @section.requires_payment and @is_admin do %>
-          <div class="flex justify-between items-center px-14 py-8">
-            <div class="flex flex-col">
-              <span class="dark:text-black">Bypass payment</span>
-              <span class="text-xs text-gray-400 dark:text-gray-950">Apply bypass payment</span>
+      <%= if @is_suspended? do %>
+        <div id="unenrolled_student_actions">
+          <.live_component
+            module={OliWeb.Components.LiveModal}
+            id="re_enroll_user_modal"
+            title="Re-enroll student"
+            on_confirm={JS.push("re_enroll", target: @myself)}
+          >
+            <div class="px-4">
+              <p>
+                Are you sure you want to re-enroll "<%= @user.name %>" in the course "<%= @section.title %>"?
+              </p>
             </div>
+          </.live_component>
+          <div class="ml-auto">
             <button
-              class="torus-button flex justify-center primary h-9 w-48"
-              disabled={@has_payment}
-              phx-click="display_bypass_modal"
-              phx-target={@myself}
+              phx-click={JS.push("open", target: "#re_enroll_user_modal")}
+              class="btn btn-primary"
             >
-              Apply Bypass Payment
+              Re-enroll
             </button>
           </div>
-        <% end %>
-
-        <%= if @is_admin do %>
-          <.live_component
-            id="transfer_enrollment"
-            module={OliWeb.Delivery.Actions.TransferEnrollment}
-            section={@section}
-            user={@user}
-          />
-        <% end %>
-
-        <div class="ml-auto">
-          <button phx-click={JS.push("open", target: "#unenroll_user_modal")} class="btn btn-danger">
-            Unenroll
-          </button>
         </div>
-      </div>
+      <% else %>
+        <div id="enrolled_student_actions">
+          <.live_component
+            module={OliWeb.Components.LiveModal}
+            id="unenroll_user_modal"
+            title="Unenroll student"
+            on_confirm={JS.push("unenroll", target: @myself)}
+          >
+            <div class="px-4">
+              <p>
+                Are you sure you want to unenroll "<%= @user.name %>" from the course "<%= @section.title %>"?
+              </p>
+            </div>
+          </.live_component>
+
+          <div class="flex flex-col sm:flex-row sm:items-end instructor_dashboard_table">
+            <h4 class="torus-h4 !py-0 mr-auto dark:text-white">Actions</h4>
+          </div>
+
+          <div class="flex justify-between items-center">
+            <div class="flex flex-col">
+              <span class="dark:text-white">Change enrolled user role</span>
+              <span class="text-xs text-gray-400 dark:text-gray-950">
+                Select the role to change for the user in this section.
+              </span>
+            </div>
+            <form phx-change="display_confirm_modal" phx-target={@myself}>
+              <select class="torus-select pr-32" name="filter_by_role_id">
+                <%= for elem <- @user_role_data do %>
+                  <option selected={elem.id == @user_role_id} value={elem.id}>
+                    <%= elem.title %>
+                  </option>
+                <% end %>
+              </select>
+            </form>
+          </div>
+          <%= if @section.requires_payment and @is_admin do %>
+            <div class="flex justify-between items-center px-14 py-8">
+              <div class="flex flex-col">
+                <span class="dark:text-black">Bypass payment</span>
+                <span class="text-xs text-gray-400 dark:text-gray-950">Apply bypass payment</span>
+              </div>
+              <button
+                class="torus-button flex justify-center primary h-9 w-48"
+                disabled={@has_payment}
+                phx-click="display_bypass_modal"
+                phx-target={@myself}
+              >
+                Apply Bypass Payment
+              </button>
+            </div>
+          <% end %>
+
+          <%= if @is_admin do %>
+            <.live_component
+              id="transfer_enrollment"
+              module={OliWeb.Delivery.Actions.TransferEnrollment}
+              section={@section}
+              user={@user}
+            />
+          <% end %>
+
+          <div class="ml-auto">
+            <button phx-click={JS.push("open", target: "#unenroll_user_modal")} class="btn btn-danger">
+              Unenroll
+            </button>
+          </div>
+        </div>
+      <% end %>
     </div>
     """
   end

@@ -133,6 +133,7 @@ defmodule OliWeb.Delivery.StudentDashboard.Components.ActionsTabTest do
 
       assert has_element?(view, "button", "Unenroll")
       assert has_element?(view, "select[name=filter_by_role_id]")
+      refute has_element?(view, "button", "Re-enroll")
 
       view
       |> with_target("#unenroll_user_modal")
@@ -163,6 +164,60 @@ defmodule OliWeb.Delivery.StudentDashboard.Components.ActionsTabTest do
              |> limit(1)
              |> Oli.Repo.one()
              |> Map.get(:status) == :suspended
+    end
+
+    test "can re-enroll students that were suspended", %{
+      section: section,
+      conn: conn,
+      instructor: instructor
+    } do
+      student = insert(:user)
+      Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
+      Sections.enroll(student.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.unenroll_learner(student.id, section.id)
+
+      {:ok, view, _html} =
+        live(conn, live_view_students_actions_route(section.slug, student.id, :actions))
+
+      # Actions tab is the selected one
+      assert has_element?(
+               view,
+               ~s{a[href="#{live_view_students_actions_route(section.slug, student.id, :actions)}"].border-b-2},
+               "Actions"
+             )
+
+      assert has_element?(view, "button", "Re-enroll")
+      refute has_element?(view, "button", "Unenroll")
+
+      view
+      |> with_target("#re_enroll_user_modal")
+      |> render_click("open", %{})
+
+      assert has_element?(
+               view,
+               "p",
+               "Are you sure you want to re-enroll \"#{student.name}\" in the course \"#{section.title}\"?"
+             )
+
+      view
+      |> with_target("#student_actions")
+      |> render_click("re_enroll", %{})
+
+      assert_redirected(
+        view,
+        Routes.live_path(
+          OliWeb.Endpoint,
+          OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
+          section.slug,
+          :manage
+        )
+      )
+
+      assert Enrollment
+             |> where([e], e.user_id == ^student.id and e.section_id == ^section.id)
+             |> limit(1)
+             |> Oli.Repo.one()
+             |> Map.get(:status) == :enrolled
     end
   end
 
