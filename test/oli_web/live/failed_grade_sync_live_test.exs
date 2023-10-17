@@ -188,7 +188,7 @@ defmodule OliWeb.FailedGradeSyncLiveTest do
                "AAAA Name"
 
       view
-      |> element("a[phx-click=\"page_change\"]", "2")
+      |> element("button[phx-click=\"page_change\"]", "2")
       |> render_click()
 
       refute view

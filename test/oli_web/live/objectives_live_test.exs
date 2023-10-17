@@ -225,7 +225,7 @@ defmodule OliWeb.ObjectivesLiveTest do
 
       view
       |> element(
-        "#header_paging > nav > ul > li:nth-child(4) > a",
+        "#header_paging > nav > ul > li:nth-child(4) > button",
         "2"
       )
       |> render_click()

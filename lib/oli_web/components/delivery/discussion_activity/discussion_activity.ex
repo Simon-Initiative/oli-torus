@@ -13,7 +13,7 @@ defmodule OliWeb.Components.Delivery.DiscussionActivity do
 
   @default_params %{
     offset: 0,
-    limit: 10,
+    limit: 20,
     filter: :all
   }
 
@@ -103,6 +103,8 @@ defmodule OliWeb.Components.Delivery.DiscussionActivity do
               offset={@offset}
               limit={@limit}
               additional_table_class="border-0"
+              limit_change={JS.push("paged_table_limit_change", target: @myself)}
+              show_limit_change={true}
             />
           <% else %>
             <PagedTable.render
@@ -112,6 +114,8 @@ defmodule OliWeb.Components.Delivery.DiscussionActivity do
               offset={@offset}
               limit={@limit}
               additional_table_class="border-0"
+              limit_change={JS.push("paged_table_limit_change", target: @myself)}
+              show_limit_change={true}
             />
           <% end %>
         </div>
@@ -128,6 +132,24 @@ defmodule OliWeb.Components.Delivery.DiscussionActivity do
   @impl true
   def handle_event("paged_table_page_change", %{"offset" => offset}, socket) do
     push_with(socket, %{offset: offset})
+  end
+
+  @impl true
+  def handle_event(
+        "paged_table_limit_change",
+        params,
+        socket
+      ) do
+    new_limit = OliWeb.Common.Params.get_int_param(params, "limit", 20)
+
+    new_offset =
+      OliWeb.Common.PagingParams.calculate_new_offset(
+        socket.assigns.offset,
+        new_limit,
+        socket.assigns.count
+      )
+
+    push_with(socket, %{limit: new_limit, offset: new_offset})
   end
 
   @impl true
