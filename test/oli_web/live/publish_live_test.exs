@@ -416,7 +416,7 @@ defmodule OliWeb.PublishLiveTest do
              |> render() =~ last_section.title
 
       view
-      |> element("a[phx-click=\"page_change\"]", "2")
+      |> element("button[phx-click=\"page_change\"]", "2")
       |> render_click()
 
       assert view
