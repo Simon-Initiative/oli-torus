@@ -650,7 +650,7 @@ defmodule Oli.Institutions do
                institution_id: institution.id,
                tool_jwk_id: active_jwk.id
              }),
-           {:ok, registration} <- create_registration(registration_attrs),
+           {:ok, registration} <- find_or_create_registration(registration_attrs),
            deployment_attrs =
              Map.merge(PendingRegistration.deployment_attrs(pending_registration), %{
                institution_id: institution.id,

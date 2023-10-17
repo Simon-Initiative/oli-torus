@@ -1777,7 +1777,26 @@ defmodule Oli.Delivery.Sections do
       |> then(
         &Repo.insert_all(SectionResource, &1,
           placeholders: placeholders,
-          on_conflict: {:replace_all_except, [:inserted_at, :scoring_strategy_id]},
+          on_conflict: {:replace_all_except, [
+            :inserted_at,
+            :scoring_strategy_id,
+            :scheduling_type,
+            :manually_scheduled,
+            :start_date,
+            :end_date,
+            :collab_space_config,
+            :explanation_strategy,
+            :max_attempts,
+            :retake_mode,
+            :password,
+            :late_submit,
+            :late_start,
+            :time_limit,
+            :grace_period,
+            :review_submission,
+            :feedback_mode,
+            :feedback_scheduled_date
+            ]},
           conflict_target: [:section_id, :resource_id]
         )
       )
@@ -2256,7 +2275,26 @@ defmodule Oli.Delivery.Sections do
       |> then(
         &Repo.insert_all(SectionResource, &1,
           placeholders: placeholders,
-          on_conflict: {:replace_all_except, [:inserted_at, :scoring_strategy_id]},
+          on_conflict: {:replace_all_except, [
+            :inserted_at,
+            :scoring_strategy_id,
+            :scheduling_type,
+            :manually_scheduled,
+            :start_date,
+            :end_date,
+            :collab_space_config,
+            :explanation_strategy,
+            :max_attempts,
+            :retake_mode,
+            :password,
+            :late_submit,
+            :late_start,
+            :time_limit,
+            :grace_period,
+            :review_submission,
+            :feedback_mode,
+            :feedback_scheduled_date
+          ]},
           conflict_target: [:section_id, :resource_id]
         )
       )
@@ -2354,7 +2392,26 @@ defmodule Oli.Delivery.Sections do
       |> then(
         &Repo.insert_all(SectionResource, &1,
           placeholders: placeholders,
-          on_conflict: {:replace_all_except, [:inserted_at, :scoring_strategy_id]},
+          on_conflict: {:replace_all_except, [
+            :inserted_at,
+            :scoring_strategy_id,
+            :scheduling_type,
+            :manually_scheduled,
+            :start_date,
+            :end_date,
+            :collab_space_config,
+            :explanation_strategy,
+            :max_attempts,
+            :retake_mode,
+            :password,
+            :late_submit,
+            :late_start,
+            :time_limit,
+            :grace_period,
+            :review_submission,
+            :feedback_mode,
+            :feedback_scheduled_date
+          ]},
           conflict_target: [:section_id, :resource_id]
         )
       )
@@ -2468,7 +2525,26 @@ defmodule Oli.Delivery.Sections do
             # if there is a conflict on the unique section_id resource_id constraint,
             # we assume it is because a resource has been moved or removed/readded in
             # a remix operation, so we simply replace the existing section_resource record
-            on_conflict: :replace_all,
+            on_conflict: {:replace_all_except, [
+              :inserted_at,
+              :scoring_strategy_id,
+              :scheduling_type,
+              :manually_scheduled,
+              :start_date,
+              :end_date,
+              :collab_space_config,
+              :explanation_strategy,
+              :max_attempts,
+              :retake_mode,
+              :password,
+              :late_submit,
+              :late_start,
+              :time_limit,
+              :grace_period,
+              :review_submission,
+              :feedback_mode,
+              :feedback_scheduled_date
+            ]},
             conflict_target: [:section_id, :resource_id]
           )
 
