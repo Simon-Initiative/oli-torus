@@ -51,4 +51,13 @@ export const Items = {
       Operations.apply(model, Operations.setKey(`$..items[?(@.id=='${id}')]`, 'editor', editor));
     };
   },
+
+  setTextDirection(id: string, textDirection: 'ltr' | 'rtl') {
+    return (model: any, _post: PostUndoable) => {
+      Operations.apply(
+        model,
+        Operations.setKey(`$..items[?(@.id=='${id}')]`, 'textDirection', textDirection),
+      );
+    };
+  },
 };

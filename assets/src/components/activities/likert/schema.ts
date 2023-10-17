@@ -1,4 +1,5 @@
 import { Maybe } from 'tsmonad';
+import { TextDirection } from 'data/content/model/elements/types';
 import { ID } from 'data/content/model/other';
 import {
   ActivityModelSchema,
@@ -6,6 +7,7 @@ import {
   ChoiceIdsToResponseId,
   Part,
   RichText,
+  SpecifiesTextDirection,
   Stem,
   Transformation,
   makeChoice,
@@ -13,9 +15,10 @@ import {
 } from '../types';
 
 // Likert Scale element. Functions as subclass of Choice
-export class LikertChoice implements Choice {
+export class LikertChoice implements Choice, SpecifiesTextDirection {
   id: ID;
   content: RichText;
+  textDirection?: TextDirection ;
   // set only if using non-default value:
   value: Maybe<number>;
 }
@@ -27,9 +30,10 @@ export const makeLikertChoice: (s: string) => LikertChoice = (text) => {
 };
 
 // Individual item in a multi-part Likert is like question stem
-export class LikertItem implements Stem {
+export class LikertItem implements Stem, SpecifiesTextDirection {
   id: ID;
   content: RichText;
+  textDirection?: TextDirection ;
   // optional group id:
   group: Maybe<string> = Maybe.nothing();
   required = false;
