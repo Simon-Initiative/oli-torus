@@ -255,7 +255,7 @@ defmodule Oli.Resources.Collaboration do
   end
 
   @doc """
-  Counts the number pages with collab space enabled and the number of total pages for a given project,
+  Counts the number of pages with collab space enabled and the number of total pages for a given project,
   for the current working publication.
   Returns a tuple like {pages_with_collab_space_enabled_count, total_pages_count}
 
@@ -297,7 +297,7 @@ defmodule Oli.Resources.Collaboration do
   end
 
   @doc """
-  Counts the number pages with collab space enabled and the number of total pages for a given project,
+  Counts the number of pages with collab space enabled and the number of total pages for a given project,
   for the current working publication.
   Returns a tuple like {pages_with_collab_space_enabled_count, total_pages_count}
 
