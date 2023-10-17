@@ -9,5 +9,5 @@ interface StemProps {
 }
 
 export const Stem = ({ stem, context }: StemProps) => {
-  return <HtmlContentModelRenderer content={stem.content} context={context} />;
+  return <HtmlContentModelRenderer direction={stem.textDirection} content={stem.content} context={context} />;
 };
