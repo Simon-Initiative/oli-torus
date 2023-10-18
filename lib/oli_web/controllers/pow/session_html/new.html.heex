@@ -37,20 +37,21 @@
     <% end %>
   <% end %>
 <% else %>
-  <div class="container mx-auto">
-    <div class="callout callout-primary max-w-lg">
-      <h4><i class="fas fa-info-circle mr-2"></i>Looking for Authoring or your LMS?</h4>
-      <p>This sign in page is for <b>Independent Learner and Educator</b> accounts.</p>
-      <p>If your institution uses an LMS such as Canvas or Blackboard to access your course, please sign in through your LMS.</p>
-      <p>If you are trying to sign in as an author, please use the Authoring Sign In page.</p>
-      <p class="my-2 text-right">
-        <%= link to: Routes.authoring_pow_session_path(@conn, :new), class: "btn btn-sm btn-outline-primary" do %>
-          Go to Authoring Sign In <i class="fa fa-arrow-right"></i>
-        <% end %>
-      </p>
+  <%= unless Oli.Utils.string_to_boolean(@conn.params["from_invitation_link?"]) do %>
+    <div class="container mx-auto">
+      <div class="callout callout-primary max-w-lg">
+        <h4><i class="fas fa-info-circle mr-2"></i>Looking for Authoring or your LMS?</h4>
+        <p>This sign in page is for <b>Independent Learner and Educator</b> accounts.</p>
+        <p>If your institution uses an LMS such as Canvas or Blackboard to access your course, please sign in through your LMS.</p>
+        <p>If you are trying to sign in as an author, please use the Authoring Sign In page.</p>
+        <p class="my-2 text-right">
+          <%= link to: Routes.authoring_pow_session_path(@conn, :new), class: "btn btn-sm btn-outline-primary" do %>
+            Go to Authoring Sign In <i class="fa fa-arrow-right"></i>
+          <% end %>
+        </p>
+      </div>
     </div>
-  </div>
-
+  <% end %>
   <%= render OliWeb.SharedView, "_box_form_container.html", Map.merge(assigns, %{title: value_or(assigns[:title], "Learner/Educator Sign In"), bs_col_class: "sm:col-span-10 md:col-span-8 lg:col-span-6 col-xl-5 mx-auto mt-4"}) do %>
     <%# social media sign in links %>
     <%= for link <- OliWeb.Pow.PowHelpers.provider_links(@conn), do: raw link %>

@@ -258,6 +258,13 @@ defmodule Oli.TestHelpers do
     {:ok, conn: conn, user: user}
   end
 
+  def guest_conn(%{conn: conn}) do
+    guest = user_fixture(%{guest: true})
+    conn = Pow.Plug.assign_current_user(conn, guest, OliWeb.Pow.PowHelpers.get_pow_config(:user))
+
+    {:ok, conn: conn, guest: guest}
+  end
+
   def instructor_conn(%{conn: conn}) do
     {:ok, instructor} =
       Accounts.update_user_platform_roles(
