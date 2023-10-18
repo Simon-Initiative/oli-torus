@@ -1176,6 +1176,7 @@ defmodule OliWeb.Router do
     live("/features", Features.FeaturesLive)
     live("/api_keys", ApiKeys.ApiKeysLive)
     live("/products", Products.ProductsView)
+
     live("/products/:product_id/discounts", Products.Payments.Discounts.ProductsIndexView)
     live("/collaborative_spaces", CollaborationLive.IndexView, :admin, as: :collab_spaces_index)
 
@@ -1242,6 +1243,11 @@ defmodule OliWeb.Router do
     # Course Ingestion
     get("/ingest/upload", IngestController, :index)
     post("/ingest/ingest", IngestController, :upload)
+
+    get("/:project_slug/import/index", IngestController, :index_csv)
+    post("/:project_slug/import/upload_csv", IngestController, :upload_csv)
+    live("/:project_slug/import/csv", Import.CSVImportView)
+
     live("/ingest", Admin.Ingest)
     live("/ingest/process", Admin.IngestV2)
 
@@ -1381,8 +1387,6 @@ defmodule OliWeb.Router do
       pipe_through([:browser])
 
       get("/flame_graphs", DevController, :flame_graphs)
-
-      live("/dialogue", Dialogue.PlaygroundLive)
 
       live_storybook("/storybook", backend_module: OliWeb.Storybook)
     end
