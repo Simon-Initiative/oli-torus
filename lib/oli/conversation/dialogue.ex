@@ -2,7 +2,6 @@ defmodule Oli.Conversation.Dialogue do
 
   require Logger
   alias Oli.Conversation.Message
-  alias Oli.Conversation.Dialogue
 
   defstruct [
     :messages,
@@ -77,7 +76,7 @@ defmodule Oli.Conversation.Dialogue do
     |> IO.inspect
   end
 
-  def engage(%__MODULE__{messages: messages, response_handler_fn: response_handler_fn} = dialogue, :sync) do
+  def engage(%__MODULE__{messages: messages} = dialogue, :sync) do
      result = OpenAI.chat_completion([
       model: "gpt-3.5-turbo",
       messages: encode_messages(messages),

@@ -4,15 +4,11 @@ defmodule OliWeb.Import.CSVImportView do
   import OliWeb.Common.Params
 
   alias Oli.Repo
-  alias OliWeb.Common.{Breadcrumb, Check, Filter, Listing, SessionContext}
-  alias OliWeb.Products.Create
+  alias OliWeb.Common.{Breadcrumb}
   alias Oli.Authoring.Course
   alias Oli.Accounts.Author
-  alias Oli.Delivery.Sections.Blueprint
-  alias Oli.Delivery.Sections.BlueprintBrowseOptions
-  alias OliWeb.Common.Table.SortableTableModel
+
   alias OliWeb.Router.Helpers, as: Routes
-  alias Oli.Publishing
 
   defp set_breadcrumbs() do
     OliWeb.Admin.AdminView.breadcrumb()
@@ -34,14 +30,11 @@ defmodule OliWeb.Import.CSVImportView do
   end
 
   def mount(
-        %{"project_slug" => project_slug} = params,
-        %{"current_author_id" => author_id} = session,
+        %{"project_slug" => project_slug},
+        %{"current_author_id" => author_id},
         socket
       ) do
     author = Repo.get(Author, author_id)
-
-    project = Course.get_project_by_slug(project_slug)
-
     ingest_file = ingest_file(author)
 
     if File.exists?(ingest_file) do
@@ -113,7 +106,7 @@ defmodule OliWeb.Import.CSVImportView do
       case Oli.Resources.update_revision(revision, change) do
         {:ok, _} ->
           send(pid, {:update, row_num, :success})
-        {:error, e} ->
+        {:error, _} ->
           send(pid, {:update, row_num, :failure})
       end
 
