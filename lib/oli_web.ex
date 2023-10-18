@@ -27,7 +27,10 @@ defmodule OliWeb do
       import OliWeb.Gettext
       import OliWeb.Pow.PowHelpers
       import Phoenix.LiveView.Controller
+
       alias OliWeb.Router.Helpers, as: Routes
+
+      unquote(verified_routes())
     end
   end
 

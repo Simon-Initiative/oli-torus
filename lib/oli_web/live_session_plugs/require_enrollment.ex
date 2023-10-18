@@ -1,13 +1,20 @@
 defmodule OliWeb.LiveSessionPlugs.RequireEnrollment do
+  use OliWeb, :verified_routes
+
   import Phoenix.Component, only: [assign: 2]
 
   alias Oli.Delivery.Sections
 
   def on_mount(:default, %{"section_slug" => section_slug}, _session, socket) do
-    user = socket.assigns.current_user
-    is_enrolled = Sections.is_enrolled?(user.id, section_slug)
+    case socket.assigns[:current_user] do
+      nil ->
+        {:cont, socket}
 
-    {:cont, assign(socket, is_enrolled: is_enrolled)}
+      user ->
+        is_enrolled = Sections.is_enrolled?(user.id, section_slug)
+
+        {:cont, assign(socket, is_enrolled: is_enrolled)}
+    end
   end
 
   def on_mount(:default, _params, _session, socket) do

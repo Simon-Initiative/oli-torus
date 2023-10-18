@@ -87,7 +87,7 @@ defmodule OliWeb.Components.Common do
       type={@type}
       class={[
         "rounded whitespace-nowrap",
-        button_variant_classes(@variant),
+        button_variant_classes(@variant, disabled: @rest[:disabled]),
         button_size_classes(@size),
         @class
       ]}
@@ -98,13 +98,47 @@ defmodule OliWeb.Components.Common do
     """
   end
 
-  defp button_variant_classes(variant) do
+  defp button_variant_classes(variant, disabled: true) do
+    case variant do
+      :primary ->
+        "text-white bg-primary-200 dark:bg-primary-900 cursor-not-allowed"
+
+      :secondary ->
+        "text-gray-500 bg-transparent dark:text-gray-500 cursor-not-allowed"
+
+      :tertiary ->
+        "text-primary-300 bg-primary-50 dark:text-primary-500 dark:bg-primary-800 cursor-not-allowed"
+
+      :light ->
+        "text-gray-400 bg-gray-50 dark:text-gray-500 dark:bg-gray-900 cursor-not-allowed"
+
+      :dark ->
+        "text-gray-400 bg-gray-500 dark:text-gray-300 dark:bg-gray-800 cursor-not-allowed"
+
+      :info ->
+        "text-gray-100 bg-gray-300 dark:bg-gray-800 cursor-not-allowed"
+
+      :success ->
+        "text-green-100 bg-green-300 dark:bg-green-600 cursor-not-allowed"
+
+      :warning ->
+        "text-yellow-100 bg-yellow-300 dark:bg-yellow-600 cursor-not-allowed"
+
+      :danger ->
+        "text-red-100 bg-red-300 dark:bg-red-600 cursor-not-allowed"
+
+      _ ->
+        ""
+    end
+  end
+
+  defp button_variant_classes(variant, _) do
     case variant do
       :primary ->
         "text-white bg-primary-500 hover:bg-primary-600 active:bg-primary-700 focus:ring-2 focus:ring-primary-400 dark:bg-primary-600 dark:hover:bg-primary dark:active:bg-primary-400 focus:outline-none dark:focus:ring-primary-700"
 
       :secondary ->
-        "text-body-color bg-transparent hover:bg-gray-200 active:text-white active:bg-primary-600 focus:ring-2 focus:ring-primary-400 dark:text-body-color-dark dark:hover:bg-gray-600 dark:active:bg-primary-400 focus:outline-none dark:focus:ring-primary-700"
+        "text-body-color bg-transparent hover:bg-gray-200 active:text-white active:bg-primary-700 focus:ring-2 focus:ring-primary-400 dark:text-body-color-dark dark:hover:bg-gray-600 dark:active:bg-primary-400 focus:outline-none dark:focus:ring-primary-700"
 
       :tertiary ->
         "text-primary-700 bg-primary-50 hover:bg-primary-100 active:bg-primary-200 focus:ring-2 focus:ring-primary-100 dark:text-primary-300 dark:bg-primary-800 dark:hover:bg-primary-700 dark:active:bg-primary-600 focus:outline-none dark:focus:ring-primary-800"
@@ -113,13 +147,13 @@ defmodule OliWeb.Components.Common do
         "text-body-color bg-gray-100 hover:bg-gray-200 active:bg-gray-300 focus:ring-2 focus:ring-gray-100 dark:text-white dark:bg-gray-800 dark:hover:bg-gray-700 dark:active:bg-gray-600 focus:outline-none dark:focus:ring-gray-800"
 
       :dark ->
-        "text-white bg-gray-500 hover:bg-gray-600 active:bg-gray-700 focus:ring-2 focus:ring-gray-500 dark:text-white dark:bg-gray-500 dark:hover:bg-gray-400 dark:active:bg-gray-300 focus:outline-none dark:focus:ring-gray-500"
+        "text-white bg-gray-700 hover:bg-gray-800 active:bg-gray-600 focus:ring-2 focus:ring-gray-600 dark:text-white dark:bg-gray-700 dark:hover:bg-gray-600 dark:active:bg-gray-500 focus:outline-none dark:focus:ring-gray-500"
 
       :info ->
         "text-white bg-gray-500 hover:bg-gray-600 active:bg-gray-700 focus:ring-2 focus:ring-gray-400 dark:bg-gray-600 dark:hover:bg-gray-500 dark:active:bg-gray-400 focus:outline-none dark:focus:ring-gray-700"
 
       :success ->
-        "text-white bg-green-500 hover:bg-green-600 active:bg-green-700 focus:ring-2 focus:ring-green-400 dark:bg-green-600 dark:hover:bg-green-500 dark:active:bg-green-400 focus:outline-none dark:focus:ring-green-700"
+        "text-white bg-green-600 hover:bg-green-700 active:bg-green-800 focus:ring-2 focus:ring-green-700 dark:bg-green-600 dark:hover:bg-green-500 dark:active:bg-green-400 focus:outline-none dark:focus:ring-green-700"
 
       :warning ->
         "text-white bg-yellow-500 hover:bg-yellow-600 active:bg-yellow-700 focus:ring-2 focus:ring-yellow-400 dark:bg-yellow-600 dark:hover:bg-yellow-500 dark:active:bg-yellow-400 focus:outline-none dark:focus:ring-yellow-700"
@@ -152,6 +186,7 @@ defmodule OliWeb.Components.Common do
       <.link phx-click="go" class="ml-2">Navigate!</.link>
   """
   attr(:variant, :atom, default: nil, values: [:primary, :info, :success, :warning, :danger, nil])
+  attr(:size, :atom, default: :md, values: [:xs, :sm, :md, :lg, :xl, :custom, nil])
   attr(:href, :string, default: nil)
   attr(:class, :string, default: nil)
   attr(:rest, :global, include: ~w(disabled target rel download))
@@ -163,10 +198,9 @@ defmodule OliWeb.Components.Common do
     <a
       href={@href}
       class={[
-        "rounded px-3.5 py-2 whitespace-nowrap hover:underline",
-        link_variant_classes(@variant),
-        @rest[:disabled] &&
-          "text-gray-500 hover:text-gray-500 focus:ring-0 hover:no-underline cursor-default",
+        "rounded whitespace-nowrap",
+        link_variant_classes(@variant, disabled: @rest[:disabled]),
+        button_size_classes(@size),
         @class
       ]}
       {@rest}
@@ -176,25 +210,47 @@ defmodule OliWeb.Components.Common do
     """
   end
 
-  defp link_variant_classes(variant) do
+  defp link_variant_classes(variant, disabled: true) do
     case variant do
       :primary ->
-        "text-blue-500 hover:text-blue-600 active:text-blue-700 focus:ring-2 focus:ring-blue-400 dark:text-blue-600 dark:hover:text-blue-500 dark:active:text-blue-400 focus:outline-none dark:focus:ring-blue-700"
+        "text-blue-400 dark:text-blue-800 cursor-default"
 
       :info ->
-        "text-gray-500 hover:text-gray-600 active:text-gray-700 focus:ring-2 focus:ring-gray-400 dark:text-gray-600 dark:hover:text-gray-500 dark:active:text-gray-400 focus:outline-none dark:focus:ring-gray-700"
+        "text-gray-400 dark:text-gray-800 cursor-default"
 
       :success ->
-        "text-green-500 hover:text-green-600 active:text-green-700 focus:ring-2 focus:ring-green-400 dark:text-green-600 dark:hover:text-green-500 dark:active:text-green-400 focus:outline-none dark:focus:ring-green-700"
+        "text-green-400 dark:text-green-800 cursor-default"
 
       :warning ->
-        "text-yellow-500 hover:text-yellow-600 active:text-yellow-700 focus:ring-2 focus:ring-yellow-400 dark:text-yellow-600 dark:hover:text-yellow-500 dark:active:text-yellow-400 focus:outline-none dark:focus:ring-yellow-700"
+        "text-yellow-400 dark:text-yellow-800 cursor-default"
 
       :danger ->
-        "text-red-500 hover:text-red-600 active:text-red-700 focus:ring-2 focus:ring-red-400 dark:text-red-600 dark:hover:text-red-500 dark:active:text-red-400 focus:outline-none dark:focus:ring-red-700"
+        "text-red-400 dark:text-red-800 cursor-default"
 
       _ ->
         ""
+    end
+  end
+
+  defp link_variant_classes(variant, _) do
+    case variant do
+      :primary ->
+        "text-blue-500 hover:text-blue-600 active:text-blue-700 focus:ring-2 focus:ring-blue-400 dark:text-blue-600 dark:hover:text-blue-500 dark:active:text-blue-400 focus:outline-none dark:focus:ring-blue-700 hover:underline cursor-pointer"
+
+      :info ->
+        "text-gray-500 hover:text-gray-600 active:text-gray-700 focus:ring-2 focus:ring-gray-400 dark:text-gray-600 dark:hover:text-gray-500 dark:active:text-gray-400 focus:outline-none dark:focus:ring-gray-700 hover:underline cursor-pointer"
+
+      :success ->
+        "text-green-500 hover:text-green-600 active:text-green-700 focus:ring-2 focus:ring-green-400 dark:text-green-600 dark:hover:text-green-500 dark:active:text-green-400 focus:outline-none dark:focus:ring-green-700 hover:underline cursor-pointer"
+
+      :warning ->
+        "text-yellow-500 hover:text-yellow-600 active:text-yellow-700 focus:ring-2 focus:ring-yellow-400 dark:text-yellow-600 dark:hover:text-yellow-500 dark:active:text-yellow-400 focus:outline-none dark:focus:ring-yellow-700 hover:underline cursor-pointer"
+
+      :danger ->
+        "text-red-500 hover:text-red-600 active:text-red-700 focus:ring-2 focus:ring-red-400 dark:text-red-600 dark:hover:text-red-500 dark:active:text-red-400 focus:outline-none dark:focus:ring-red-700 hover:underline cursor-pointer"
+
+      _ ->
+        "hover:underline cursor-pointer"
     end
   end
 
