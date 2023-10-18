@@ -9,7 +9,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
 
   @default_params %{
     offset: 0,
-    limit: 10,
+    limit: 20,
     container_id: nil,
     sort_order: :asc,
     sort_by: :objective,
@@ -122,6 +122,8 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
               additional_table_class="instructor_dashboard_table"
               show_bottom_paging={false}
               render_top_info={false}
+              limit_change={JS.push("paged_table_limit_change", target: @myself)}
+              show_limit_change={true}
             />
           </div>
         <% else %>
@@ -187,6 +189,31 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
          route_for(
            socket,
            %{limit: limit, offset: offset},
+           socket.assigns.patch_url_type
+         )
+     )}
+  end
+
+  def handle_event(
+        "paged_table_limit_change",
+        params,
+        %{assigns: %{params: current_params}} = socket
+      ) do
+    new_limit = Params.get_int_param(params, "limit", 20)
+
+    new_offset =
+      OliWeb.Common.PagingParams.calculate_new_offset(
+        current_params.offset,
+        new_limit,
+        socket.assigns.total_count
+      )
+
+    {:noreply,
+     push_patch(socket,
+       to:
+         route_for(
+           socket,
+           %{limit: new_limit, offset: new_offset},
            socket.assigns.patch_url_type
          )
      )}
