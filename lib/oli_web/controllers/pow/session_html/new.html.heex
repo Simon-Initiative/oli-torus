@@ -1,6 +1,5 @@
 <%= if OliWeb.Pow.PowHelpers.current_pow_config(@conn) == Oli.Accounts.Author do %>
   <%= render OliWeb.SharedView, "_box_form_container.html", Map.merge(assigns, %{title: value_or(assigns[:title], "Authoring Sign In"), bs_col_class: "mx-auto mt-10"}) do %>
-    
     <%= for link <- OliWeb.Pow.PowHelpers.provider_links(@conn), do: raw(link) %>
     <hr class="my-4" />
 
@@ -77,7 +76,6 @@
     </div>
   <% end %>
   <%= render OliWeb.SharedView, "_box_form_container.html", Map.merge(assigns, %{title: value_or(assigns[:title], "Learner/Educator Sign In"), bs_col_class: "sm:col-span-10 md:col-span-8 lg:col-span-6 col-xl-5 mx-auto mt-4"}) do %>
-    
     <%= for link <- OliWeb.Pow.PowHelpers.provider_links(@conn), do: raw(link) %>
     <hr class="my-4" />
     <%= form_for @changeset, @action, [as: :user], fn f -> %>
