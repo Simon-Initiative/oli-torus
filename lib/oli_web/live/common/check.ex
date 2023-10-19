@@ -5,20 +5,12 @@ defmodule OliWeb.Common.Check do
   attr :checked, :boolean, required: true
   attr :click, :string, required: true
   attr :class, :string, default: nil
-  attr :disabled, :boolean, default: false
   slot :inner_block, required: true
 
   def render(assigns) do
     ~H"""
     <div class={"form-check #{@class}"} style="display: inline;">
-      <input
-        id={@id}
-        type="checkbox"
-        class="form-check-input"
-        checked={@checked}
-        phx-click={@click}
-        disabled={@disabled}
-      />
+      <input id={@id} type="checkbox" class="form-check-input" checked={@checked} phx-click={@click} />
       <label for={@id} class="form-check-label" phx-click={@click}>
         <%= render_slot(@inner_block) %>
       </label>

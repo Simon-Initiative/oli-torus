@@ -69,9 +69,6 @@ defmodule OliWeb.Admin.IngestV2 do
     <%= if @ingestion_step == :ready do %>
       <div class="alert alert-secondary mb-3" role="alert">
         <h4 class="alert-heading">Ready for Ingest</h4>
-        <Check.render id="bypass_json_validation" checked={@bypass_validation} click="bypass" disabled>
-          Bypass JSON validation
-        </Check.render>
         <div class="mt-4">
           <button class="btn btn-primary" phx-click="preprocess">Preprocess</button>
         </div>
