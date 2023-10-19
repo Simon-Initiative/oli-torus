@@ -10,7 +10,7 @@ services:
       - 443:443
 
   postgres:
-    image: postgres
+    image: postgres:16
     logging:
       driver: "json-file"
       options:
