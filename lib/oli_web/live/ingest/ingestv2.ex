@@ -56,7 +56,7 @@ defmodule OliWeb.Admin.IngestV2 do
          offset: 0,
          limit: 20,
          table_model: nil,
-         bypass_validation: false,
+         bypass_validation: true,
          total_count: 0
        )}
     else
@@ -69,7 +69,7 @@ defmodule OliWeb.Admin.IngestV2 do
     <%= if @ingestion_step == :ready do %>
       <div class="alert alert-secondary mb-3" role="alert">
         <h4 class="alert-heading">Ready for Ingest</h4>
-        <Check.render id="bypass_json_validation" checked={@bypass_validation} click="bypass">
+        <Check.render id="bypass_json_validation" checked={@bypass_validation} click="bypass" disabled>
           Bypass JSON validation <strong>(only use in development use cases)</strong>
         </Check.render>
         <div class="mt-4">
