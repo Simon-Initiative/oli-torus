@@ -7,8 +7,7 @@
 @import 'text';
 @import 'button';
 @import 'table';
-@import "markdown-editor";
-
+@import 'markdown-editor';
 
 /**
  * Automatically style all links with blue text and underline on hover.
@@ -67,4 +66,8 @@ a.download::after {
 
 body {
   scrollbar-color: transparent;
+}
+
+.bg-colorful {
+  background-image: url('/images/gradients/colorful-light-opacity-25.png');
 }

@@ -11,24 +11,68 @@ defmodule OliWeb.Components.Delivery.UserAccountMenu do
   alias OliWeb.Common.React
 
   attr(:ctx, SessionContext)
-  attr(:section, Section)
-  attr(:is_liveview, :boolean, default: false)
+  attr(:section, Section, default: nil)
 
   def menu(assigns) do
     assigns = user_account_menu_assigns(assigns)
 
-    # For some reason the react_live_component no longer works here (fails silently)
-    # so for now, just render this component as if it were in a static page - is_liveview: false
-
     ~H"""
-      <%= React.component(%SessionContext{@ctx | is_liveview: @is_liveview }, "Components.UserAccountMenu", %{
-          user: @user,
-          preview: @preview,
-          routes: @routes,
-          sectionSlug: @section_slug,
-          selectedTimezone: @selected_timezone,
-          timezones: @timezones,
-        }, id: "menu") %>
+    <%= React.component(
+      @ctx,
+      "Components.UserAccountMenu",
+      %{
+        user: @user,
+        preview: @preview,
+        routes: @routes,
+        sectionSlug: @section_slug,
+        selectedTimezone: @selected_timezone,
+        timezones: @timezones
+      },
+      id: "menu",
+      target_id: "user-menu"
+    ) %>
+    """
+  end
+
+  def user_menu_loader(assigns) do
+    ~H"""
+    <svg
+      width="158.507"
+      height="43.756"
+      viewBox="0 0 40.857 11.279"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <!-- Animated gradient -->
+      <defs>
+        <linearGradient id="loader-gradient" gradientTransform="rotate(20)">
+          <stop offset="5%" stop-color="#eee">
+            <animate
+              attributeName="stop-color"
+              values="#EEEEEE; #CCCCCC; #EEEEEE"
+              dur="1s"
+              repeatCount="indefinite"
+            >
+            </animate>
+          </stop>
+          <stop offset="95%" stop-color="#aaa">
+            <animate
+              attributeName="stop-color"
+              values="#EEEEEE; #DDDDDD; #EEEEEE"
+              dur="3s"
+              repeatCount="indefinite"
+            >
+            </animate>
+          </stop>
+        </linearGradient>
+      </defs>
+
+      <g transform="translate(-8.79 -1.99)">
+        <circle fill="url(#loader-gradient)" cx="44.009" cy="7.63" r="5.639" /><path
+          fill="url(#loader-gradient)"
+          d="M8.791 4.478h27.588v2.267H8.791z"
+        /><path fill="url(#loader-gradient)" d="M16.78 8.321h19.627v2.267H16.78z" />
+      </g>
+    </svg>
     """
   end
 
@@ -92,9 +136,9 @@ defmodule OliWeb.Components.Delivery.UserAccountMenu do
 
   def preview_user(assigns) do
     ~H"""
-      <div class="flex">
-        <button
-          class="
+    <div class="flex">
+      <button
+        class="
             dropdown-toggle
             px-6
             py-2.5
@@ -108,20 +152,20 @@ defmodule OliWeb.Components.Delivery.UserAccountMenu do
             items-center
             whitespace-nowrap
           "
-          type="button"
-          data-bs-toggle="dropdown"
-          aria-expanded="false"
-        >
-          <div class="user-icon">
-            <.user_icon />
+        type="button"
+        data-bs-toggle="dropdown"
+        aria-expanded="false"
+      >
+        <div class="user-icon">
+          <.user_icon />
+        </div>
+        <div class="block lg:inline-block lg:mt-0 text-grey-darkest mx-2">
+          <div class="username">
+            Preview
           </div>
-          <div class="block lg:inline-block lg:mt-0 text-grey-darkest mx-2">
-            <div class="username">
-              Preview
-            </div>
-          </div>
-        </button>
-      </div>
+        </div>
+      </button>
+    </div>
     """
   end
 

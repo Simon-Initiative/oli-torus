@@ -3,7 +3,7 @@
   footer =  Application.fetch_env!(:oli, :footer)
 %>
 
-<footer class="flex flex-row h-[60px] overflow-hidden absolute bottom-0 left-0 right-0 bg-delivery-footer dark:bg-delivery-footer-dark">
+<footer class="flex flex-row h-[60px] overflow-hidden absolute bottom-0 left-0 right-0 bg-delivery-instructor-dashboard-footer dark:bg-delivery-instructor-dashboard-footer-dark">
   <div class="container mx-auto flex flex-row px-10 items-center text-sm">
     <div class="text-left">
       <a href='javascript:;' onclick="OLI.selectCookiePreferences({privacyPoliciesUrl: '<%= privacy_policies_url %>'})">Cookie Preferences</a>

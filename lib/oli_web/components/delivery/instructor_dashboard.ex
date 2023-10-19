@@ -161,7 +161,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard do
 
   def header(assigns) do
     ~H"""
-    <div class="w-full bg-delivery-header text-white border-b border-slate-600">
+    <div class="w-full bg-delivery-instructor-dashboard-header text-white border-b border-slate-600">
       <div class="container mx-auto flex flex-row">
         <div class="flex items-center">
           <a
@@ -199,11 +199,13 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard do
           </.header_link>
         </div>
 
-        <%= if @preview_mode do %>
-          <UserAccountMenu.preview_user />
-        <% else %>
-          <UserAccountMenu.menu ctx={@ctx} section={@section} />
-        <% end %>
+        <div class="p-3">
+          <%= if @preview_mode do %>
+            <UserAccountMenu.preview_user />
+          <% else %>
+            <UserAccountMenu.menu ctx={@ctx} section={@section} />
+          <% end %>
+        </div>
 
         <div class="flex items-center border-l border-slate-300 my-2">
           <button
@@ -214,8 +216,8 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard do
                 no-underline
                 text-slate-100
                 hover:no-underline
-                hover:bg-delivery-header-700
-                active:bg-delivery-header-600
+                hover:bg-delivery-instructor-dashboard-header-700
+                active:bg-delivery-instructor-dashboard-header-600
               "
             onclick="window.showHelpModal();"
           >
@@ -233,7 +235,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard do
 
   def section_details_header(assigns) do
     ~H"""
-    <div class="w-full bg-delivery-header text-white py-8">
+    <div class="w-full bg-delivery-instructor-dashboard-header text-white py-8">
       <div class="container mx-auto flex flex-row justify-between">
         <div class="flex-1 flex items-center text-[1.5em]">
           <div class="font-bold text-slate-300">

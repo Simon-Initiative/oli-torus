@@ -164,19 +164,16 @@ module.exports = {
           DEFAULT: colors.white,
         },
       },
-      footer: {
-        DEFAULT: '#eceef1',
+      header: {
+        DEFAULT: '#ffffff',
         dark: {
-          DEFAULT: '#323233',
+          DEFAULT: '#000000',
         },
       },
-      header: {
-        DEFAULT: '#222439',
-        600: '#52526b',
-        700: '#3b3b4d',
-        800: '#2a2a3e',
+      navbar: {
+        DEFAULT: '#ffffff',
         dark: {
-          DEFAULT: '#222439',
+          DEFAULT: '#000000',
         },
       },
       primary: {
@@ -204,6 +201,23 @@ module.exports = {
             dark: {
               DEFAULT: colors.gray['600'],
             },
+          },
+        },
+      },
+      'instructor-dashboard': {
+        footer: {
+          DEFAULT: '#eceef1',
+          dark: {
+            DEFAULT: '#323233',
+          },
+        },
+        header: {
+          DEFAULT: '#222439',
+          600: '#52526b',
+          700: '#3b3b4d',
+          800: '#2a2a3e',
+          dark: {
+            DEFAULT: '#222439',
           },
         },
       },

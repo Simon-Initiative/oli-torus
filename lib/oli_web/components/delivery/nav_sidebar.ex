@@ -1,5 +1,5 @@
 defmodule OliWeb.Components.Delivery.NavSidebar do
-  use Phoenix.Component
+  use OliWeb, :html
 
   import OliWeb.Components.Delivery.Utils
   import Oli.Utils, only: [value_or: 2]
@@ -10,7 +10,6 @@ defmodule OliWeb.Components.Delivery.NavSidebar do
   alias Oli.Resources.ResourceType
   alias Oli.Resources.Revision
   alias Oli.Publishing.AuthoringResolver
-  alias OliWeb.Router.Helpers, as: Routes
   alias Oli.Branding.Brand
   alias OliWeb.Components.Delivery.UserAccountMenu
   alias Oli.Delivery.Sections
@@ -21,19 +20,18 @@ defmodule OliWeb.Components.Delivery.NavSidebar do
 
   def main_with_nav(assigns) do
     ~H"""
-      <main role="main" class="flex-1 flex flex-col relative lg:flex-row">
-        <.navbar {assigns} path_info={@conn.path_info} />
+    <main role="main" class="flex-1 flex flex-col relative lg:flex-row">
+      <.navbar {assigns} path_info={@conn.path_info} />
 
-        <div class="flex-1 flex flex-col lg:pl-[200px]">
-
-          <%= render_slot(@inner_block) %>
-
-        </div>
-      </main>
+      <div class="flex-1 flex flex-col lg:pl-[200px]">
+        <%= render_slot(@inner_block) %>
+      </div>
+    </main>
     """
   end
 
-  attr(:context, SessionContext)
+  attr(:ctx, SessionContext)
+  attr(:section, Section)
   attr(:path_info, :list)
 
   def navbar(assigns) do
@@ -54,18 +52,18 @@ defmodule OliWeb.Components.Delivery.NavSidebar do
       |> UserAccountMenu.user_account_menu_assigns()
 
     ~H"""
-      <div id="navbar" phx-update="ignore">
-        <%= ReactPhoenix.ClientSide.react_component("Components.Navbar", %{
-          logo: @logo,
-          links: @links,
-          user: @user,
-          preview: @preview,
-          routes: @routes,
-          sectionSlug: @section_slug,
-          selectedTimezone: @selected_timezone,
-          timezones: @timezones,
-        }) %>
-      </div>
+    <div id="navbar" phx-update="ignore">
+      <%= ReactPhoenix.ClientSide.react_component("Components.Navbar", %{
+        logo: @logo,
+        links: @links,
+        user: @user,
+        preview: @preview,
+        routes: @routes,
+        sectionSlug: @section_slug,
+        selectedTimezone: @selected_timezone,
+        timezones: @timezones
+      }) %>
+    </div>
     """
   end
 
@@ -190,7 +188,7 @@ defmodule OliWeb.Components.Delivery.NavSidebar do
       assigns[:section]
       |> Oli.Repo.preload([:root_section_resource])
       |> Sections.build_hierarchy()
-      
+
     [
       %{
         name: "Home",
