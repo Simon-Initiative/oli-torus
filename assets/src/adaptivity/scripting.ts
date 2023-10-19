@@ -581,7 +581,7 @@ export const templatizeText = (
   useFormattedText = true,
 ): string => {
   let innerEnv = new Environment(env);
-  // if the text contains backslash, it is probably a math expr like: '16^{\\frac{1}{2}}=\\sqrt {16}={\\editable{}}'
+  // if the text contains backslash, it is probably a math exprs like: '16^{\\frac{1}{2}}=\\sqrt {16}={\\editable{}}'
   // and we should just return it as is; if it has variables inside, then we still need to evaluate it
   if (
     typeof text !== 'string' ||
