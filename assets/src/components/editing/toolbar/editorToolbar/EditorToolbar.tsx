@@ -1,4 +1,5 @@
 import React from 'react';
+import { propTypes } from 'react-bootstrap/esm/Image';
 import { Editor, Element } from 'slate';
 import { ReactEditor, useSlate } from 'slate-react';
 import {
@@ -26,13 +27,15 @@ interface Props {
 
 export const EditorToolbar = (props: Props) => {
   const editor = useSlate();
+  const hasSettingsMenu = props.onSwitchToMarkdown || props.onChangeTextDirection;
+
   const toolbar = (
     <Toolbar fixed={props.fixedToolbar} context={props.context}>
       <Inlines />
       <BlockToggle blockInsertOptions={props.insertOptions} />
       <BlockSettings />
       <BlockInsertMenu blockInsertOptions={props.insertOptions} />
-      {props.onSwitchToMarkdown && (
+      {hasSettingsMenu && (
         <EditorSettingsMenu
           onSwitchToMarkdown={props.onSwitchToMarkdown}
           textDirection={props.textDirection}

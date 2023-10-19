@@ -1,5 +1,4 @@
 import React from 'react';
-import { update } from 'immutable';
 import { Descendant } from 'slate';
 import { useAuthoringElementContext } from 'components/activities/AuthoringElementProvider';
 import { AuthoringButtonConnected } from 'components/activities/common/authoring/AuthoringButton';

@@ -15,7 +15,7 @@ export const editorSettingsDropdown = createButtonCommandDesc({
 });
 
 interface Props {
-  onSwitchToMarkdown: () => void;
+  onSwitchToMarkdown?: () => void;
   textDirection?: TextDirection;
   onChangeTextDirection?: (textDirection: TextDirection) => void;
 }
@@ -27,13 +27,15 @@ export const EditorSettingsMenu = ({
   return (
     <Toolbar.Group>
       <DropdownButton description={editorSettingsDropdown} showDropdownArrow={false}>
-        <button
-          onClick={onSwitchToMarkdown}
-          className={classNames(styles.toolbarButton, styles.descriptive)}
-        >
-          <Icon iconStyle="fa-brands" icon="markdown" />
-          <span className={styles.description}>Switch to Markdown editor</span>
-        </button>
+        {onSwitchToMarkdown && (
+          <button
+            onClick={onSwitchToMarkdown}
+            className={classNames(styles.toolbarButton, styles.descriptive)}
+          >
+            <Icon iconStyle="fa-brands" icon="markdown" />
+            <span className={styles.description}>Switch to Markdown editor</span>
+          </button>
+        )}
         {onChangeTextDirection && (
           <button
             onClick={() => onChangeTextDirection(textDirection === 'ltr' ? 'rtl' : 'ltr')}
