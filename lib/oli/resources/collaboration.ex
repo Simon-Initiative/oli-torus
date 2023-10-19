@@ -254,6 +254,15 @@ defmodule Oli.Resources.Collaboration do
     end
   end
 
+  defp project_working_publication(project_slug) do
+    from(p in Publication,
+      join: c in Project,
+      on: p.project_id == c.id,
+      where: is_nil(p.published) and c.slug == ^project_slug,
+      select: p.id
+    )
+  end
+
   @doc """
   Counts the number of pages with collab space enabled and the number of total pages for a given project,
   for the current working publication.
@@ -267,19 +276,11 @@ defmodule Oli.Resources.Collaboration do
   def count_collab_spaces_enabled_in_pages_for_project(project_slug) do
     page_id = Oli.Resources.ResourceType.get_id_by_type("page")
 
-    project_working_publication =
-      from(p in Publication,
-        join: c in Project,
-        on: p.project_id == c.id,
-        where: is_nil(p.published) and c.slug == ^project_slug,
-        select: p.id
-      )
-
     from(m in PublishedResource,
       join: rev in Revision,
       on: rev.id == m.revision_id,
       where:
-        m.publication_id in subquery(project_working_publication) and
+        m.publication_id in subquery(project_working_publication(project_slug)) and
           rev.resource_type_id == ^page_id and rev.deleted == false,
       select: {
         count(
@@ -297,7 +298,7 @@ defmodule Oli.Resources.Collaboration do
   end
 
   @doc """
-  Counts the number of pages with collab space enabled and the number of total pages for a given project,
+  Counts the number of pages with collab space enabled and the number of total pages for a given section,
   for the current working publication.
   Returns a tuple like {pages_with_collab_space_enabled_count, total_pages_count}
 
@@ -334,19 +335,11 @@ defmodule Oli.Resources.Collaboration do
   def disable_all_page_collab_spaces_for_project(project_slug) do
     page_id = Oli.Resources.ResourceType.get_id_by_type("page")
 
-    project_working_publication =
-      from(p in Publication,
-        join: c in Project,
-        on: p.project_id == c.id,
-        where: is_nil(p.published) and c.slug == ^project_slug,
-        select: p.id
-      )
-
     from(rev in Revision,
       join: m in PublishedResource,
       on: m.revision_id == rev.id,
       where:
-        m.publication_id in subquery(project_working_publication) and
+        m.publication_id in subquery(project_working_publication(project_slug)) and
           rev.resource_type_id == ^page_id and rev.deleted == false,
       select: rev
     )
@@ -361,19 +354,11 @@ defmodule Oli.Resources.Collaboration do
   def enable_all_page_collab_spaces_for_project(project_slug, collab_space_config) do
     page_id = Oli.Resources.ResourceType.get_id_by_type("page")
 
-    project_working_publication =
-      from(p in Publication,
-        join: c in Project,
-        on: p.project_id == c.id,
-        where: is_nil(p.published) and c.slug == ^project_slug,
-        select: p.id
-      )
-
     from(rev in Revision,
       join: m in PublishedResource,
       on: m.revision_id == rev.id,
       where:
-        m.publication_id in subquery(project_working_publication) and
+        m.publication_id in subquery(project_working_publication(project_slug)) and
           rev.resource_type_id == ^page_id and rev.deleted == false,
       select: rev
     )
