@@ -219,6 +219,35 @@ defmodule OliWeb.Delivery.StudentDashboard.Components.ActionsTabTest do
              |> Oli.Repo.one()
              |> Map.get(:status) == :enrolled
     end
+
+    test "displays an error message when enrollment was not found", %{
+      section: section,
+      conn: conn,
+      instructor: instructor
+    } do
+      student = insert(:user)
+      # Does not enroll student
+      Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
+
+      {:ok, view, _html} =
+        live(conn, live_view_students_actions_route(section.slug, student.id, :actions))
+
+      # Actions tab is the selected one
+      assert has_element?(
+               view,
+               ~s{a[href="#{live_view_students_actions_route(section.slug, student.id, :actions)}"].border-b-2},
+               "Actions"
+             )
+
+      assert has_element?(view, "button", "Re-enroll")
+      refute has_element?(view, "button", "Unenroll")
+
+      view
+      |> with_target("#student_actions")
+      |> render_click("re_enroll", %{})
+
+      assert render(view) =~ "Could not re-enroll the student. Previous enrollment was not found."
+    end
   end
 
   describe "Change enrrolled user role" do

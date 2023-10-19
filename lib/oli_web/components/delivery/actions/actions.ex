@@ -190,7 +190,8 @@ defmodule OliWeb.Components.Delivery.Actions do
              )
          )}
 
-      _ ->
+      {:error, :not_found} ->
+        send(self(), {:put_flash, :info, "Could not re-enroll the student. Previous enrollment was not found."})
         {:noreply, socket}
     end
   end

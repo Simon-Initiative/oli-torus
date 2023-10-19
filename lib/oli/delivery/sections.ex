@@ -435,7 +435,7 @@ defmodule Oli.Delivery.Sections do
     case Repo.get_by(Enrollment, user_id: user_id, section_id: section_id, status: :suspended) do
       nil ->
         # Enrollment not found
-        {:error, nil}
+        {:error, :not_found}
 
       enrollment ->
         enrollment
