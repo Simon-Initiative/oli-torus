@@ -9,7 +9,6 @@ defmodule OliWeb.Admin.IngestV2 do
   alias OliWeb.Common.Properties.{Groups, Group, ReadOnly}
   alias Oli.Interop.Ingest.Preprocessor
   alias OliWeb.Common.PagedTable
-  alias OliWeb.Common.Check
   alias OliWeb.Admin.Ingest.ErrorsTableModel
   import OliWeb.DelegatedEvents
 
