@@ -1,6 +1,5 @@
 defmodule OliWeb.Delivery.StudentDashboard.Components.Helpers do
-  use Phoenix.Component
-  use OliWeb, :verified_routes
+  use OliWeb, :html
 
   import OliWeb.ViewHelpers, only: [brand_logo: 1]
 
@@ -20,17 +19,17 @@ defmodule OliWeb.Delivery.StudentDashboard.Components.Helpers do
 
   def main_layout(assigns) do
     ~H"""
-      <div class="flex-1 flex flex-col h-screen">
-        <.header ctx={@ctx} student={@student} section={@section} preview_mode={@preview_mode} />
-        <Header.delivery_breadcrumb {assigns} />
+    <div class="flex-1 flex flex-col h-screen">
+      <.header ctx={@ctx} student={@student} section={@section} preview_mode={@preview_mode} />
+      <Header.delivery_breadcrumb {assigns} />
 
-        <div class="flex-1 flex flex-col">
-          <div class="relative flex-1 flex flex-col pb-[60px]">
-            <%= render_slot(@inner_block) %>
-            <%= Phoenix.View.render OliWeb.LayoutView, "_delivery_footer.html", assigns %>
-          </div>
+      <div class="flex-1 flex flex-col">
+        <div class="relative flex-1 flex flex-col pb-[60px]">
+          <%= render_slot(@inner_block) %>
+          <%= Phoenix.View.render(OliWeb.LayoutView, "_delivery_footer.html", assigns) %>
         </div>
       </div>
+    </div>
     """
   end
 
@@ -71,21 +70,24 @@ defmodule OliWeb.Delivery.StudentDashboard.Components.Helpers do
 
   def tabs(assigns) do
     ~H"""
-      <div class="container mx-auto my-4">
-        <ul class="nav nav-tabs flex flex-col md:flex-row flex-wrap list-none border-b-0 pl-0 mb-4" id="tabs-tab"
-          role="tablist">
-
-          <%= for {label, href, badge, active, hidden} <- [
+    <div class="container mx-auto my-4">
+      <ul
+        class="nav nav-tabs flex flex-col md:flex-row flex-wrap list-none border-b-0 pl-0 mb-4"
+        id="tabs-tab"
+        role="tablist"
+      >
+        <%= for {label, href, badge, active, hidden} <- [
             {"Content", path_for(:content, @section_slug, @student_id, @preview_mode), nil, is_active_tab?(:content, @active_tab), is_hidden?(:content, @hidden_tabs)},
             {"Learning Objectives", path_for(:learning_objectives, @section_slug, @student_id, @preview_mode), nil, is_active_tab?(:learning_objectives, @active_tab), is_hidden?(:learning_objectives, @hidden_tabs)},
             {"Quiz Scores", path_for(:quizz_scores, @section_slug, @student_id, @preview_mode), nil, is_active_tab?(:quizz_scores, @active_tab), is_hidden?(:quizz_scores, @hidden_tabs)},
             {"Progress", path_for(:progress, @section_slug, @student_id, @preview_mode), nil, is_active_tab?(:progress, @active_tab), is_hidden?(:progress, @hidden_tabs)},
             {"Actions", path_for(:actions, @section_slug, @student_id, @preview_mode), nil, is_active_tab?(:actions, @active_tab), is_hidden?(:actions, @hidden_tabs)},
           ] do %>
-            <%= if !hidden do %>
-              <li class="nav-item" role="presentation">
-                <.link patch={href}
-                  class={"
+          <%= if !hidden do %>
+            <li class="nav-item" role="presentation">
+              <.link
+                patch={href}
+                class={"
                     block
                     border-x-0 border-t-0 border-b-2
                     px-1
@@ -99,18 +101,20 @@ defmodule OliWeb.Delivery.StudentDashboard.Components.Helpers do
                     hover:border-delivery-primary-200
                     focus:border-delivery-primary-200
                     #{if active, do: "border-delivery-primary", else: "border-transparent"}
-                  "}>
-                    <%= label %>
-                    <%= if badge do %>
-                    <span class="text-xs inline-block py-1 px-2 ml-2 leading-none text-center whitespace-nowrap align-baseline font-bold bg-delivery-primary text-white rounded"><%= badge %></span>
-                    <% end %>
-                </.link>
-              </li>
-            <% end %>
+                  "}
+              >
+                <%= label %>
+                <%= if badge do %>
+                  <span class="text-xs inline-block py-1 px-2 ml-2 leading-none text-center whitespace-nowrap align-baseline font-bold bg-delivery-primary text-white rounded">
+                    <%= badge %>
+                  </span>
+                <% end %>
+              </.link>
+            </li>
           <% end %>
-
-        </ul>
-      </div>
+        <% end %>
+      </ul>
+    </div>
     """
   end
 
@@ -135,36 +139,40 @@ defmodule OliWeb.Delivery.StudentDashboard.Components.Helpers do
 
   def header(assigns) do
     ~H"""
-      <div class="w-full bg-delivery-header text-white border-b border-slate-600">
-        <div class="container mx-auto py-2 flex flex-row justify-between">
-          <div class="flex-1 flex items-center">
-            <a class="navbar-brand dark torus-logo my-1 mr-auto" href={logo_link(@section, @student.id, @preview_mode)}>
-              <%= brand_logo(Map.merge(assigns, %{class: "d-inline-block align-top mr-2"})) %>
-            </a>
-          </div>
-          <%= if @preview_mode do %>
-            <UserAccountMenu.preview_user />
-          <% else %>
-            <UserAccountMenu.menu ctx={@ctx} />
-          <% end %>
-          <div class="flex items-center border-l border-slate-300">
-            <button
-              class="
+    <div class="w-full bg-delivery-instructor-dashboard-header text-white border-b border-slate-600">
+      <div class="container mx-auto py-2 flex flex-row justify-between">
+        <div class="flex-1 flex items-center">
+          <a
+            class="navbar-brand dark torus-logo my-1 mr-auto"
+            href={logo_link(@section, @student.id, @preview_mode)}
+          >
+            <%= brand_logo(Map.merge(assigns, %{class: "d-inline-block align-top mr-2"})) %>
+          </a>
+        </div>
+        <%= if @preview_mode do %>
+          <UserAccountMenu.preview_user />
+        <% else %>
+          <UserAccountMenu.menu ctx={@ctx} />
+        <% end %>
+        <div class="flex items-center border-l border-slate-300">
+          <button
+            class="
                 btn
                 rounded
                 ml-4
                 no-underline
                 text-slate-100
                 hover:no-underline
-                hover:bg-delivery-header-700
-                active:bg-delivery-header-600
+                hover:bg-delivery-instructor-dashboard-header-700
+                active:bg-delivery-instructor-dashboard-header-600
               "
-              onclick="window.showHelpModal();">
-              <i class="fa-regular fa-circle-question fa-lg"></i>
-            </button>
-          </div>
+            onclick="window.showHelpModal();"
+          >
+            <i class="fa-regular fa-circle-question fa-lg"></i>
+          </button>
         </div>
       </div>
+    </div>
     """
   end
 
@@ -182,37 +190,49 @@ defmodule OliWeb.Delivery.StudentDashboard.Components.Helpers do
 
   def student_details(assigns) do
     ~H"""
-      <div id="student_details_card" class="flex flex-col sm:flex-row items-center mx-10">
-        <div class="flex shrink-0 mb-6 sm:mb-0 sm:mr-6">
-          <%= if @student.picture do %>
-            <img src={@student.picture} class="rounded-full h-52 w-52" referrerPolicy="no-referrer" />
-          <% else %>
-            <i class="fa-solid fa-circle-user text-[208px] text-gray-200"></i>
-          <% end %>
-        </div>
-        <div class="flex flex-col divide-y divide-gray-100 dark:divide-gray-700 w-full bg-white dark:bg-neutral-800">
-          <div class="grid grid-cols-5 gap-4 w-full p-8">
-            <div class="flex flex-col justify-between">
-              <h4 class="text-xs uppercase text-gray-800 dark:text-white font-normal flex items-center">average score</h4>
-              <span class={"text-base font-semibold tracking-wide flex items-center mt-2 #{text_color(:avg_score, @student.avg_score)}"}><%= format_student_score(@student.avg_score) %></span>
-            </div>
-            <div class="flex flex-col justify-between">
-              <h4 class="text-xs uppercase text-gray-800 dark:text-white font-normal flex items-center">course completion</h4>
-              <span class={"text-base font-semibold tracking-wide flex items-center mt-2 #{text_color(:progress, @student.progress)}"}><%= format_percentage(@student.progress) %></span>
-            </div>
-          </div>
-          <%= if length(@survey_responses) > 0 do%>
-            <div class="grid grid-cols-5 gap-4 w-full p-8">
-              <%= for response <- @survey_responses do %>
-                <div class="flex flex-col justify-between">
-                  <h4 class="text-xs uppercase text-gray-800 dark:text-white font-normal flex items-center"><%= response.title %></h4>
-                  <span class="text-base font-semibold tracking-wide text-gray-800 dark:text-white flex items-center mt-2"><%= response.response || "-" %></span>
-                </div>
-              <% end %>
-            </div>
-          <% end %>
-        </div>
+    <div id="student_details_card" class="flex flex-col sm:flex-row items-center mx-10">
+      <div class="flex shrink-0 mb-6 sm:mb-0 sm:mr-6">
+        <%= if @student.picture do %>
+          <img src={@student.picture} class="rounded-full h-52 w-52" referrerPolicy="no-referrer" />
+        <% else %>
+          <i class="fa-solid fa-circle-user text-[208px] text-gray-200"></i>
+        <% end %>
       </div>
+      <div class="flex flex-col divide-y divide-gray-100 dark:divide-gray-700 w-full bg-white dark:bg-neutral-800">
+        <div class="grid grid-cols-5 gap-4 w-full p-8">
+          <div class="flex flex-col justify-between">
+            <h4 class="text-xs uppercase text-gray-800 dark:text-white font-normal flex items-center">
+              average score
+            </h4>
+            <span class={"text-base font-semibold tracking-wide flex items-center mt-2 #{text_color(:avg_score, @student.avg_score)}"}>
+              <%= format_student_score(@student.avg_score) %>
+            </span>
+          </div>
+          <div class="flex flex-col justify-between">
+            <h4 class="text-xs uppercase text-gray-800 dark:text-white font-normal flex items-center">
+              course completion
+            </h4>
+            <span class={"text-base font-semibold tracking-wide flex items-center mt-2 #{text_color(:progress, @student.progress)}"}>
+              <%= format_percentage(@student.progress) %>
+            </span>
+          </div>
+        </div>
+        <%= if length(@survey_responses) > 0 do %>
+          <div class="grid grid-cols-5 gap-4 w-full p-8">
+            <%= for response <- @survey_responses do %>
+              <div class="flex flex-col justify-between">
+                <h4 class="text-xs uppercase text-gray-800 dark:text-white font-normal flex items-center">
+                  <%= response.title %>
+                </h4>
+                <span class="text-base font-semibold tracking-wide text-gray-800 dark:text-white flex items-center mt-2">
+                  <%= response.response || "-" %>
+                </span>
+              </div>
+            <% end %>
+          </div>
+        <% end %>
+      </div>
+    </div>
     """
   end
 

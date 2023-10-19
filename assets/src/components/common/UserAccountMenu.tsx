@@ -129,6 +129,8 @@ export const UserAccountMenu = ({
                     Edit Account
                   </a>
                 </DropdownItem>
+
+                <DropdownDivider />
               </>
             )}
 
@@ -153,7 +155,7 @@ export const UserAccountMenu = ({
 
             {(user.isIndependentLearner || user.isIndependentInstructor) && (
               <>
-                <hr className="dropdown-divider" />
+                <DropdownDivider />
 
                 <DropdownItem>
                   <a href={routes.openAndFreeIndex} className="py-1 block w-full">
@@ -163,7 +165,7 @@ export const UserAccountMenu = ({
               </>
             )}
 
-            <hr className="dropdown-divider" />
+            <DropdownDivider />
 
             <DropdownItem>
               <a
@@ -186,30 +188,25 @@ export const UserAccountMenu = ({
     >
       <button
         className="
-          px-6
-          py-2.5
+          flex flex-row
+          px-3
+          py-2
           font-medium
           text-sm
           leading-tight
           transition
           duration-150
           ease-in-out
-          flex
-          w-full
           whitespace-nowrap
           text-left
         "
         onClick={() => setIsPopoverOpen(!isPopoverOpen)}
       >
-        <div className="user-icon mr-4 self-center">
-          <UserIcon user={user} />
-        </div>
-
-        <div className="block">
+        <div className="self-center">
           <div className="username">{user.name}</div>
-          <div className="role" style={{ color: user.roleColor }}>
-            {user.roleLabel}
-          </div>
+        </div>
+        <div className="user-icon ml-4 self-center">
+          <UserIcon user={user} />
         </div>
       </button>
     </Popover>
@@ -231,6 +228,16 @@ interface DropdownItemProps {}
 const DropdownItem: React.FC<PropsWithChildren<DropdownItemProps>> = ({ children }) => (
   <li className="py-1 px-4 font-normal block w-full whitespace-nowrap bg-transparent">
     {children}
+  </li>
+);
+
+interface DropdownDividerProps {}
+
+const DropdownDivider: React.FC<PropsWithChildren<DropdownDividerProps>> = (
+  _props: DropdownDividerProps,
+) => (
+  <li className="py-1 px-4 font-normal block w-full whitespace-nowrap bg-transparent">
+    <hr className="border-t border-gray-200 dark:border-gray-700 my-1" />
   </li>
 );
 

@@ -102,6 +102,10 @@ defmodule OliWeb.Router do
     plug(:put_root_layout, {OliWeb.LayoutView, :delivery})
   end
 
+  pipeline :storybook_layout do
+    plug(:put_root_layout, {OliWeb.LayoutView, :storybook})
+  end
+
   pipeline :maybe_gated_resource do
     plug(Oli.Plugs.MaybeGatedResource)
   end
@@ -920,6 +924,57 @@ defmodule OliWeb.Router do
     end
   end
 
+  ### NextGen23 Student Course Delivery
+  scope "/ng23/sections/:section_slug", OliWeb do
+    # TODO: Do we need all these pipeline steps?
+    pipe_through([
+      :browser,
+      :require_section,
+      :delivery,
+      :require_exploration_pages,
+      :delivery_preview,
+      :delivery_protected,
+      :maybe_gated_resource,
+      :enforce_enroll_and_paywall,
+      :ensure_user_section_visit,
+      :force_required_survey,
+      :pow_email_layout
+    ])
+
+    live_session :delivery,
+      on_mount: [
+        OliWeb.LiveSessionPlugs.SetSection,
+        OliWeb.LiveSessionPlugs.SetCurrentUser,
+        OliWeb.LiveSessionPlugs.SetSessionContext,
+        OliWeb.LiveSessionPlugs.SetBrand,
+        OliWeb.LiveSessionPlugs.SetPreviewMode,
+        OliWeb.LiveSessionPlugs.RequireEnrollment
+      ] do
+      live("/", Delivery.Student.IndexLive)
+      live("/content", Delivery.Student.ContentLive)
+      live("/discussion", Delivery.Student.DiscussionLive)
+      live("/assignments", Delivery.Student.AssignmentsLive)
+      live("/explorations", Delivery.Student.ExplorationsLive)
+    end
+
+    # TODO: Implement preview mode for NextGen23
+    # live_session :delivery_preview,
+    #   on_mount: [
+    #     OliWeb.LiveSessionPlugs.SetSection,
+    #     OliWeb.LiveSessionPlugs.SetCurrentUser,
+    #     OliWeb.LiveSessionPlugs.SetSessionContext,
+    #     OliWeb.LiveSessionPlugs.SetBrand,
+    #     OliWeb.LiveSessionPlugs.SetPreviewMode,
+    #     OliWeb.LiveSessionPlugs.RequireEnrollment
+    #   ] do
+    #   live("/", Delivery.Student.IndexLive, :preview)
+    #   live("/content", Delivery.Student.ContentLive, :preview)
+    #   live("/discussion", Delivery.Student.DiscussionLive, :preview)
+    #   live("/assignments", Delivery.Student.AssignmentsLive, :preview)
+    #   live("/explorations", Delivery.Student.ExplorationsLive, :preview)
+    # end
+  end
+
   ### Sections - Student Course Delivery
   scope "/sections/:section_slug", OliWeb do
     pipe_through([
@@ -983,6 +1038,7 @@ defmodule OliWeb.Router do
     get("/exploration", PageDeliveryController, :exploration_preview)
     get("/discussion", PageDeliveryController, :discussion_preview)
     get("/my_assignments", PageDeliveryController, :assignments_preview)
+
     get("/container/:revision_slug", PageDeliveryController, :container_preview)
     get("/page/:revision_slug", PageDeliveryController, :page_preview)
     get("/page/:revision_slug/page/:page", PageDeliveryController, :page_preview)
@@ -1377,6 +1433,8 @@ defmodule OliWeb.Router do
     # web interface for viewing sent emails during development
     forward("/dev/sent_emails", Bamboo.SentEmailViewerPlug)
 
+    live_storybook("/storybook", backend_module: OliWeb.Storybook)
+
     scope "/api/v1/testing", OliWeb do
       pipe_through([:api])
 
@@ -1389,6 +1447,7 @@ defmodule OliWeb.Router do
       get("/flame_graphs", DevController, :flame_graphs)
 
       live_storybook("/storybook", backend_module: OliWeb.Storybook)
+
     end
   end
 end

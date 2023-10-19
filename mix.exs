@@ -188,7 +188,7 @@ defmodule Oli.MixProject do
       {:phoenix_live_reload, "~> 1.3", only: :dev},
       {:phoenix_live_view, "~> 0.19.5"},
       {:phoenix_pubsub, "~> 2.0"},
-      {:phoenix_storybook, "~> 0.5.0"},
+      {:phoenix_storybook, "~> 0.5.6"},
       {:phoenix_view, "~> 2.0"},
       {:plug_cowboy, "~> 2.1"},
       {:poison, "~> 3.1"},

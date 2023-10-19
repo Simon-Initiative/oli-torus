@@ -2,6 +2,7 @@ import { DeliveryElementRenderer } from 'components/common/DeliveryElementRender
 import { ECLRepl } from 'components/common/ECLRepl';
 import { Navbar } from 'components/common/Navbar';
 import { SelectTimezone } from 'components/common/SelectTimezone';
+import { TechSupportButton } from 'components/common/TechSupportButton';
 import { UserAccountMenu } from 'components/common/UserAccountMenu';
 import { AlternativesPreferenceSelector } from 'components/delivery/AlternativesPreferenceSelector';
 import { CourseContentOutline } from 'components/delivery/CourseContentOutline';
@@ -31,3 +32,4 @@ registerApplication('DeliveryElementRenderer', DeliveryElementRenderer, globalSt
 registerApplication('ECLRepl', ECLRepl, globalStore);
 registerApplication('SelectTimezone', SelectTimezone, globalStore);
 registerApplication('YoutubePlayer', YoutubePlayer, globalStore);
+registerApplication('TechSupportButton', TechSupportButton, globalStore);
