@@ -7,7 +7,10 @@ defmodule Oli.Delivery.Attempts.Core.PartAttempt do
     field(:attempt_number, :integer)
     field(:grading_approach, Ecto.Enum, values: [:automatic, :manual], default: :automatic)
 
-    field(:lifecycle_state, Ecto.Enum, values: [:active, :submitted, :evaluated], default: :active)
+    field(:lifecycle_state, Ecto.Enum,
+      values: [:active, :submitted, :evaluated],
+      default: :active
+    )
 
     field(:date_evaluated, :utc_datetime)
     field(:date_submitted, :utc_datetime)

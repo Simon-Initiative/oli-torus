@@ -86,20 +86,22 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLive do
   @impl true
   def render(assigns) do
     ~H"""
-      <div class="mx-auto my-4">
-        <div class="flex mx-10">
-          <ul class="nav nav-tabs flex flex-col md:flex-row flex-wrap list-none border-b-0 pl-0 mb-4" id="tabs-tab"
-            role="tablist">
-
-            <%= for {label, tab_name, active} <- [
+    <div class="mx-auto my-4">
+      <div class="flex mx-10">
+        <ul
+          class="nav nav-tabs flex flex-col md:flex-row flex-wrap list-none border-b-0 pl-0 mb-4"
+          id="tabs-tab"
+          role="tablist"
+        >
+          <%= for {label, tab_name, active} <- [
               {"Assessment Settings", :settings, is_active_tab?(:settings, @active_tab)},
               {"Student Exceptions", :student_exceptions, is_active_tab?(:student_exceptions, @active_tab)},
             ] do %>
-              <li class="nav-item" role="presentation">
-                <a
+            <li class="nav-item" role="presentation">
+              <a
                 phx-click="change_tab"
                 phx-value-selected_tab={tab_name}
-                  class={"
+                class={"
                     block
                     border-x-0 border-t-0 border-b-2
                     px-1
@@ -113,37 +115,38 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLive do
                     hover:border-delivery-primary-200
                     focus:border-delivery-primary-200
                     #{if active, do: "border-delivery-primary", else: "border-transparent"}
-                  "}>
-                    <%= label %>
-                </a>
-              </li>
-            <% end %>
-          </ul>
-          <div class="ml-auto"><.flash_message flash={@flash} /></div>
-        </div>
-        <%= if @active_tab == :settings do %>
-          <.live_component
-            id="assessment_settings_table"
-            module={OliWeb.Sections.AssessmentSettings.SettingsTable}
-            assessments={@assessments}
-            params={@params}
-            section={@section}
-            ctx={@ctx}
-            update_sort_order={@update_sort_order}
-          />
-        <% else %>
-        <.live_component
-            id="student_exeptions_table"
-            module={OliWeb.Sections.AssessmentSettings.StudentExceptionsTable}
-            student_exceptions={@student_exceptions}
-            students={@students}
-            assessments={@assessments}
-            params={@params}
-            section={@section}
-            ctx={@ctx}
-          />
-        <% end %>
+                  "}
+              >
+                <%= label %>
+              </a>
+            </li>
+          <% end %>
+        </ul>
+        <div class="ml-auto"><.flash_message flash={@flash} /></div>
       </div>
+      <%= if @active_tab == :settings do %>
+        <.live_component
+          id="assessment_settings_table"
+          module={OliWeb.Sections.AssessmentSettings.SettingsTable}
+          assessments={@assessments}
+          params={@params}
+          section={@section}
+          ctx={@ctx}
+          update_sort_order={@update_sort_order}
+        />
+      <% else %>
+        <.live_component
+          id="student_exeptions_table"
+          module={OliWeb.Sections.AssessmentSettings.StudentExceptionsTable}
+          student_exceptions={@student_exceptions}
+          students={@students}
+          assessments={@assessments}
+          params={@params}
+          section={@section}
+          ctx={@ctx}
+        />
+      <% end %>
+    </div>
     """
   end
 

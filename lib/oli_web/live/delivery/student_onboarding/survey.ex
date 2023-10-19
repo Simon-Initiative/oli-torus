@@ -98,30 +98,35 @@ defmodule OliWeb.Delivery.StudentOnboarding.Survey do
   attr :section, :map, required: true
   attr :survey, :map, required: true
   attr :datashop_session_id, :string, required: true
+
   def render(assigns) do
     ~H"""
-      <div id="eventIntercept" phx-target={@myself} phx-hook="LoadSurveyScripts" class="h-full">
-        <script>
-          window.userToken = "<%= assigns[:user_token] %>";
-        </script>
-        <%= if @error do %>
-          <div class="alert alert-danger m-0 flex flex-row justify-between w-full" role="alert">
-            Something went wrong when loading the survey
+    <div id="eventIntercept" phx-target={@myself} phx-hook="LoadSurveyScripts" class="h-full">
+      <script>
+        window.userToken = "<%= assigns[:user_token] %>";
+      </script>
+      <%= if @error do %>
+        <div class="alert alert-danger m-0 flex flex-row justify-between w-full" role="alert">
+          Something went wrong when loading the survey
+        </div>
+      <% else %>
+        <%= if @loaded do %>
+          <h1 class="mb-4"><%= @title %></h1>
+          <hr class="text-gray-400 my-4" />
+          <div class="pb-1">
+            <%= Phoenix.HTML.raw(@html) %>
           </div>
         <% else %>
-          <%= if @loaded do %>
-            <h1 class="mb-4"><%= @title %></h1>
-            <hr class="text-gray-400 my-4">
-            <div class="pb-1">
-              <%= Phoenix.HTML.raw(@html) %>
-            </div>
-          <% else %>
-            <div class="h-full w-full flex items-center justify-center">
-              <span class="spinner-border spinner-border-sm text-primary h-16 w-16" role="status" aria-hidden="true" />
-            </div>
-          <% end %>
+          <div class="h-full w-full flex items-center justify-center">
+            <span
+              class="spinner-border spinner-border-sm text-primary h-16 w-16"
+              role="status"
+              aria-hidden="true"
+            />
+          </div>
         <% end %>
-      </div>
+      <% end %>
+    </div>
     """
   end
 

@@ -1,88 +1,113 @@
-
-<script src="https://www.google.com/recaptcha/api.js"></script>
-
+<script src="https://www.google.com/recaptcha/api.js">
+</script>
 <!-- Help Modal -->
-<div class="modal help-modal fade fixed top-0 left-0 hidden w-full h-full outline-none overflow-x-hidden overflow-y-auto"
-  id="help-modal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+<div
+  class="modal help-modal fade fixed top-0 left-0 hidden w-full h-full outline-none overflow-x-hidden overflow-y-auto"
+  id="help-modal"
+  tabindex="-1"
+  aria-labelledby="exampleModalLabel"
+  aria-hidden="true"
+>
   <div class="modal-dialog modal-lg relative w-auto pointer-events-none">
-    <div
-      class="modal-content border-none shadow-lg relative flex flex-col w-full pointer-events-auto bg-white bg-clip-padding rounded-md outline-none">
+    <div class="modal-content border-none shadow-lg relative flex flex-col w-full pointer-events-auto bg-white bg-clip-padding rounded-md outline-none">
       <%= form_for :help, "#", [id: "form-request-help"], fn f -> %>
-        <div
-          class="modal-header flex flex-shrink-0 items-center justify-between p-4 border-b border-gray-200 rounded-t-md">
+        <div class="modal-header flex flex-shrink-0 items-center justify-between p-4 border-b border-gray-200 rounded-t-md">
           <h5 class="modal-title text-xl font-medium leading-normal inline-flex">
             <span>Tech Support</span>
           </h5>
-          <button type="button"
+          <button
+            type="button"
             class="btn-close box-content w-4 h-4 p-1 border-none rounded-none opacity-50 focus:shadow-none focus:outline-none focus:opacity-100 hover:opacity-75 hover:no-underline"
-            data-bs-dismiss="modal" aria-label="Close">
-              <i class="fa-solid fa-xmark fa-xl"></i>
+            data-bs-dismiss="modal"
+            aria-label="Close"
+          >
+            <i class="fa-solid fa-xmark fa-xl"></i>
           </button>
         </div>
         <div class="modal-body relative p-4">
-          <h5 id="help-success-message" class="hidden text-success">Your help request has been submitted</h5>
+          <h5 id="help-success-message" class="hidden text-success">
+            Your help request has been submitted
+          </h5>
           <div id="help-form">
-            <%= hidden_input f, :location, id: "location"%>
-            <%= hidden_input f, :cookies_enabled, id: "cookies_enabled"%>
+            <%= hidden_input(f, :location, id: "location") %>
+            <%= hidden_input(f, :cookies_enabled, id: "cookies_enabled") %>
             <div class="form-group">
-              <%= label f, :full_name, "Name", class: "control-label" %>
-              <%= text_input f,
-                  :full_name,
-                  class: "form-control" <> error_class(f, :full_name, "is-invalid"),
-                  placeholder: "Enter Name",
-                  required: true,
-                  autofocus: true,
-                  value: @conn.assigns[:current_user] && @conn.assigns.current_user.name || @conn.assigns[:author] && @conn.assigns.author.name || @conn.assigns[:current_author] && @conn.assigns.current_author.name %>
-              <%= error_tag f, :full_name %>
+              <%= label(f, :full_name, "Name", class: "control-label") %>
+              <%= text_input(
+                f,
+                :full_name,
+                class: "form-control" <> error_class(f, :full_name, "is-invalid"),
+                placeholder: "Enter Name",
+                required: true,
+                autofocus: true,
+                value:
+                  (@conn.assigns[:current_user] && @conn.assigns.current_user.name) ||
+                    (@conn.assigns[:author] && @conn.assigns.author.name) ||
+                    (@conn.assigns[:current_author] && @conn.assigns.current_author.name)
+              ) %>
+              <%= error_tag(f, :full_name) %>
             </div>
             <div class="form-group">
-              <%= label f, :email, "Email Address", class: "control-label" %>
-              <%= email_input f,
+              <%= label(f, :email, "Email Address", class: "control-label") %>
+              <%= email_input(
+                f,
                 :email,
                 class: "form-control" <> error_class(f, :email, "is-invalid"),
                 placeholder: "Enter Email",
                 required: true,
-                value: @conn.assigns[:current_user] && @conn.assigns.current_user.email || @conn.assigns[:author] && @conn.assigns.author.email || @conn.assigns[:current_author] && @conn.assigns.current_author.email %>
-              <%= error_tag f, :email %>
+                value:
+                  (@conn.assigns[:current_user] && @conn.assigns.current_user.email) ||
+                    (@conn.assigns[:author] && @conn.assigns.author.email) ||
+                    (@conn.assigns[:current_author] && @conn.assigns.current_author.email)
+              ) %>
+              <%= error_tag(f, :email) %>
             </div>
             <div class="form-group mb-3">
-              <%= label f, :subject, "Subject:", class: "control-label" %>
-              <%= select f, :subject,
-                  Enum.map(Oli.Help.HelpContent.list_subjects(), fn {key, desc} -> [value: key, key: desc] end),
-                  prompt: "Select from the list of topics provided.",
-                  class: "form-control" <> error_class(f, :message, "is-invalid"),
-                  required: true %>
-              </div>
-              <div class="form-group mb-3">
-                <%= label f, :message, "Questions or Comments:", class: "control-label" %>
-                <%= textarea f,
-                  :message,
-                  class: "form-control" <> error_class(f, :message, "is-invalid"),
-                  required: true,
-                  rows: 8 %>
-              <%= error_tag f, :message %>
+              <%= label(f, :subject, "Subject:", class: "control-label") %>
+              <%= select(
+                f,
+                :subject,
+                Enum.map(Oli.Help.HelpContent.list_subjects(), fn {key, desc} ->
+                  [value: key, key: desc]
+                end),
+                prompt: "Select from the list of topics provided.",
+                class: "form-control" <> error_class(f, :message, "is-invalid"),
+                required: true
+              ) %>
+            </div>
+            <div class="form-group mb-3">
+              <%= label(f, :message, "Questions or Comments:", class: "control-label") %>
+              <%= textarea(
+                f,
+                :message,
+                class: "form-control" <> error_class(f, :message, "is-invalid"),
+                required: true,
+                rows: 8
+              ) %>
+              <%= error_tag(f, :message) %>
             </div>
             <div class="input-group mb-3">
               <div id="help-captcha"></div>
-              <%= error_tag f, :captcha %>
+              <%= error_tag(f, :captcha) %>
             </div>
-            <div id="help-error-message" class="hidden input-group mb-3 alert alert-danger" role="alert"></div>
+            <div
+              id="help-error-message"
+              class="hidden input-group mb-3 alert alert-danger"
+              role="alert"
+            >
+            </div>
           </div>
         </div>
-        <div
-          class="modal-footer flex flex-shrink-0 flex-wrap items-center justify-end p-4 border-t border-gray-200 rounded-b-md">
+        <div class="modal-footer flex flex-shrink-0 flex-wrap items-center justify-end p-4 border-t border-gray-200 rounded-b-md">
           <div id="help-form-buttons">
-            <button
-              type="button"
-              class="btn btn-link ml-2"
-              data-bs-dismiss="modal"
-            >
+            <button type="button" class="btn btn-link ml-2" data-bs-dismiss="modal">
               Cancel
             </button>
-            <%= submit "Send Request",
+            <%= submit("Send Request",
               id: "button-create-author",
               class: "btn btn-primary ml-2",
-              phx_disable_with: "Requesting help..." %>
+              phx_disable_with: "Requesting help..."
+            ) %>
           </div>
           <button
             id="help-form-ok-button"
@@ -97,7 +122,6 @@
     </div>
   </div>
 </div>
-
 
 <script>
   let helpRecapture = null;

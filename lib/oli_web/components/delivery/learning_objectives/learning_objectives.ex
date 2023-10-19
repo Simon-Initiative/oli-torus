@@ -82,14 +82,20 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
             </a>
           </div>
           <div class="flex flex-col-reverse sm:flex-row gap-2 items-end">
-            <.form for={%{}} class={"w-full"} phx-change="filter_by" phx-target={@myself}>
+            <.form for={%{}} class="w-full" phx-change="filter_by" phx-target={@myself}>
               <label class="cursor-pointer inline-flex flex-col gap-1 w-full">
                 <small class="torus-small uppercase">
                   Filter by module
-                  <i id="filter-disabled-tooltip" :if={@filter_disabled?} class="fas fa-info-circle" title="This filter will be available soon" phx-hook="TooltipInit"/>
+                  <i
+                    :if={@filter_disabled?}
+                    id="filter-disabled-tooltip"
+                    class="fas fa-info-circle"
+                    title="This filter will be available soon"
+                    phx-hook="TooltipInit"
+                  />
                 </small>
                 <select class="torus-select" name="filter" disabled={@filter_disabled?}>
-                  <option selected={@params.filter_by == "root"} value={"root"}>Root</option>
+                  <option selected={@params.filter_by == "root"} value="root">Root</option>
                   <option
                     :for={module <- @units_modules}
                     selected={@params.filter_by == module.container_id}

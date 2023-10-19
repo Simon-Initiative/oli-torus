@@ -1,5 +1,4 @@
 defmodule Oli.Analytics.Common.Pipeline do
-
   @moduledoc """
   A reusable, multi-step pipeline that can be used with arbitrary multi-step
   operations.  The Pipeline will track the time spent in each step and report
@@ -45,7 +44,7 @@ defmodule Oli.Analytics.Common.Pipeline do
   def init(label) do
     %__MODULE__{
       errors: [],
-      mark:  Oli.Timing.mark(),
+      mark: Oli.Timing.mark(),
       measurements: %{},
       data: nil,
       label: label
@@ -53,8 +52,8 @@ defmodule Oli.Analytics.Common.Pipeline do
   end
 
   def step_done(%__MODULE__{mark: nil, measurements: nil} = pipeline, _), do: pipeline
-  def step_done(%__MODULE__{mark: mark, measurements: measurements} = pipeline, recorded_as) do
 
+  def step_done(%__MODULE__{mark: mark, measurements: measurements} = pipeline, recorded_as) do
     measurements = Map.put(measurements, recorded_as, Oli.Timing.elapsed(mark))
 
     pipeline
@@ -63,10 +62,13 @@ defmodule Oli.Analytics.Common.Pipeline do
   end
 
   def all_done(%__MODULE__{measurements: nil}), do: nil
+
   def all_done(%__MODULE__{measurements: measurements, errors: errors, label: label} = pipeline) do
     :telemetry.execute([:oli, :analytics, :summary], measurements)
 
-    Logger.info("#{label} pipeline complete, measurements: #{to_friendly_display(measurements)}, errors: #{inspect(errors)}}}")
+    Logger.info(
+      "#{label} pipeline complete, measurements: #{to_friendly_display(measurements)}, errors: #{inspect(errors)}}}"
+    )
 
     case errors do
       [] -> {:ok, pipeline}
@@ -82,5 +84,4 @@ defmodule Oli.Analytics.Common.Pipeline do
     Enum.map(measurements, fn {k, v} -> "#{k}: #{Float.round(v / 1000 / 1000, 2)}ms" end)
     |> Enum.join(", ")
   end
-
 end

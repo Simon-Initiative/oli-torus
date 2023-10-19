@@ -11,6 +11,7 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Graded do
     Lifecycle,
     Hierarchy
   }
+
   alias Oli.Delivery.Settings
   alias Oli.Delivery.Settings.Combined
   alias Oli.Delivery.Attempts.Scoring
@@ -81,7 +82,6 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Graded do
           datashop_session_id: datashop_session_id
         } = context
       ) do
-
     {_, resource_attempts} =
       get_resource_attempt_history(page_revision.resource_id, section_slug, user.id)
 
@@ -94,17 +94,27 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Graded do
     case Oli.Delivery.Settings.check_end_date(effective_settings) do
       {:allowed} ->
         case {effective_settings.max_attempts > length(resource_attempts) or
-          effective_settings.max_attempts == 0, has_any_active_attempts?(resource_attempts)} do
+                effective_settings.max_attempts == 0,
+              has_any_active_attempts?(resource_attempts)} do
           {true, false} ->
-
             {:ok, resource_attempt} = Hierarchy.create(context)
 
             # We possible schedule an auto-submission job (depending on the settings)
-            {:ok, resource_attempt} = case Oli.Delivery.Attempts.AutoSubmit.Worker.maybe_schedule_auto_submit(
-              effective_settings, section_slug, resource_attempt, datashop_session_id) do
-                {:ok, :not_scheduled} -> {:ok, resource_attempt}
-                {:ok, auto_submit_job_id} -> Core.update_resource_attempt(resource_attempt, %{auto_submit_job_id: auto_submit_job_id})
-            end
+            {:ok, resource_attempt} =
+              case Oli.Delivery.Attempts.AutoSubmit.Worker.maybe_schedule_auto_submit(
+                     effective_settings,
+                     section_slug,
+                     resource_attempt,
+                     datashop_session_id
+                   ) do
+                {:ok, :not_scheduled} ->
+                  {:ok, resource_attempt}
+
+                {:ok, auto_submit_job_id} ->
+                  Core.update_resource_attempt(resource_attempt, %{
+                    auto_submit_job_id: auto_submit_job_id
+                  })
+              end
 
             AttemptState.fetch_attempt_state(resource_attempt, page_revision)
 
@@ -116,10 +126,8 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Graded do
         end
 
       {:end_date_passed} ->
-          {:error, {:end_date_passed}}
+        {:error, {:end_date_passed}}
     end
-
-
   end
 
   @impl Lifecycle
@@ -137,7 +145,8 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Graded do
     # Collect all of the part attempt guids for all of the activities that get finalized
     with {:ok, part_attempt_guids} <-
            finalize_activity_and_part_attempts(resource_attempt, datashop_session_id),
-         {:ok, resource_attempt} <- roll_up_activities_to_resource_attempt(resource_attempt, effective_settings),
+         {:ok, resource_attempt} <-
+           roll_up_activities_to_resource_attempt(resource_attempt, effective_settings),
          {:ok, resource_attempt} <- cancel_pending_auto_submit(resource_attempt) do
       case resource_attempt do
         %ResourceAttempt{lifecycle_state: :evaluated} ->
@@ -162,7 +171,11 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Graded do
           end
 
         %ResourceAttempt{lifecycle_state: :submitted, resource_access_id: resource_access_id} ->
-          {:ok, resource_access} = Oli.Delivery.Metrics.mark_progress_completed(Oli.Repo.get(ResourceAccess, resource_access_id))
+          {:ok, resource_access} =
+            Oli.Delivery.Metrics.mark_progress_completed(
+              Oli.Repo.get(ResourceAccess, resource_access_id)
+            )
+
           {:ok,
            %FinalizationSummary{
              graded: true,
@@ -204,6 +217,7 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Graded do
   end
 
   defp cancel_pending_auto_submit(%ResourceAttempt{auto_submit_job_id: nil} = ra), do: {:ok, ra}
+
   defp cancel_pending_auto_submit(%ResourceAttempt{} = ra) do
     Oli.Delivery.Attempts.AutoSubmit.Worker.cancel_auto_submit(ra)
     Core.update_resource_attempt(ra, %{auto_submit_job_id: nil})
@@ -329,7 +343,12 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Graded do
     ensure_valid_grade({score, out_of})
   end
 
-  def roll_up_resource_attempts_to_access(%{scoring_strategy_id: scoring_strategy_id}, _section_slug, resource_access_id, was_late) do
+  def roll_up_resource_attempts_to_access(
+        %{scoring_strategy_id: scoring_strategy_id},
+        _section_slug,
+        resource_access_id,
+        was_late
+      ) do
     access = Oli.Repo.get(ResourceAccess, resource_access_id)
 
     graded_attempts =

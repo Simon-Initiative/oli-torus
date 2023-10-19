@@ -1063,37 +1063,38 @@ defmodule Oli.SectionsTest do
       # Simulate customizing assessment settings for page1
       page1_sr = Oli.Delivery.Sections.get_section_resource(section.id, page1.id)
 
-      {:ok, _} = Oli.Delivery.Sections.update_section_resource(page1_sr, %{
-        scoring_strategy_id: 2,
-        scheduling_type: :due_by,
-        manually_scheduled: true,
-        start_date: one_week_ago,
-        end_date: a_day_later,
-        collab_space_config: %Oli.Resources.Collaboration.CollabSpaceConfig{
-          status: :enabled,
-          threaded: false,
-          auto_accept: false,
-          show_full_history: false,
-          anonymous_posting: false,
-          participation_min_posts: 100,
-          participation_min_replies: 101
-        },
-        explanation_strategy: %Oli.Resources.ExplanationStrategy{
-          type: :after_set_num_attempts,
-          set_num_attempts: 10
-        },
-        max_attempts: 200,
-        retake_mode: :targeted,
-        password: "12345", # "I've got the same combination on my luggage"
-        late_submit: :disallow,
-        late_start: :disallow,
-        time_limit: 90,
-        grace_period: 100,
-        review_submission: :disallow,
-        feedback_mode: :scheduled,
-        feedback_scheduled_date: a_day_later
-
-      })
+      {:ok, _} =
+        Oli.Delivery.Sections.update_section_resource(page1_sr, %{
+          scoring_strategy_id: 2,
+          scheduling_type: :due_by,
+          manually_scheduled: true,
+          start_date: one_week_ago,
+          end_date: a_day_later,
+          collab_space_config: %Oli.Resources.Collaboration.CollabSpaceConfig{
+            status: :enabled,
+            threaded: false,
+            auto_accept: false,
+            show_full_history: false,
+            anonymous_posting: false,
+            participation_min_posts: 100,
+            participation_min_replies: 101
+          },
+          explanation_strategy: %Oli.Resources.ExplanationStrategy{
+            type: :after_set_num_attempts,
+            set_num_attempts: 10
+          },
+          max_attempts: 200,
+          retake_mode: :targeted,
+          # "I've got the same combination on my luggage"
+          password: "12345",
+          late_submit: :disallow,
+          late_start: :disallow,
+          time_limit: 90,
+          grace_period: 100,
+          review_submission: :disallow,
+          feedback_mode: :scheduled,
+          feedback_scheduled_date: a_day_later
+        })
 
       # verify the curriculum precondition
       hierarchy = DeliveryResolver.full_hierarchy(section.slug)

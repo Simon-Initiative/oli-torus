@@ -74,7 +74,13 @@ defmodule OliWeb.Delivery.StudentDashboard.StudentDashboardLive do
         active_tab: String.to_existing_atom(params["active_tab"])
       )
       |> assign_new(:scores, fn ->
-        %{scores: Oli.Grading.get_scores_for_section_and_user(socket.assigns.section.id, socket.assigns.student.id)}
+        %{
+          scores:
+            Oli.Grading.get_scores_for_section_and_user(
+              socket.assigns.section.id,
+              socket.assigns.student.id
+            )
+        }
       end)
 
     {:noreply, socket}
@@ -122,82 +128,82 @@ defmodule OliWeb.Delivery.StudentDashboard.StudentDashboardLive do
   @impl Phoenix.LiveView
   def render(assigns) do
     ~H"""
-      <%= render_modal(assigns) %>
-      <Helpers.student_details survey_responses={@survey_responses || []} student={@student} />
-      <Helpers.tabs
-        hidden_tabs={if !@enrollment, do: [:actions], else: []}
-        active_tab={@active_tab}
-        section_slug={@section.slug}
-        student_id={@student.id}
-        preview_mode={@preview_mode}
-      />
-      <%= render_tab(assigns) %>
+    <%= render_modal(assigns) %>
+    <Helpers.student_details survey_responses={@survey_responses || []} student={@student} />
+    <Helpers.tabs
+      hidden_tabs={if !@enrollment, do: [:actions], else: []}
+      active_tab={@active_tab}
+      section_slug={@section.slug}
+      student_id={@student.id}
+      preview_mode={@preview_mode}
+    />
+    <%= render_tab(assigns) %>
     """
   end
 
   defp render_tab(%{active_tab: :content} = assigns) do
     ~H"""
-      <.live_component
+    <.live_component
       id="content_tab"
       module={OliWeb.Delivery.StudentDashboard.Components.ContentTab}
       params={@params}
       section_slug={@section.slug}
       containers={@containers}
       student_id={@student.id}
-      />
+    />
     """
   end
 
   defp render_tab(%{active_tab: :learning_objectives} = assigns) do
     ~H"""
-      <.live_component
+    <.live_component
       id="learning_objectives_tab"
       module={OliWeb.Delivery.StudentDashboard.Components.LearningObjectivesTab}
       params={@params}
       section={@section}
       objectives_tab={@objectives_tab}
       student_id={@student.id}
-      />
+    />
     """
   end
 
   defp render_tab(%{active_tab: :quizz_scores} = assigns) do
     ~H"""
-      <.live_component
-        id="quiz_scores_table"
-        module={OliWeb.Delivery.StudentDashboard.Components.QuizzScoresTab}
-        params={@params}
-        section={@section}
-        patch_url_type={:quiz_scores_student}
-        student_id={@student.id}
-        scores={@scores}
-      />
+    <.live_component
+      id="quiz_scores_table"
+      module={OliWeb.Delivery.StudentDashboard.Components.QuizzScoresTab}
+      params={@params}
+      section={@section}
+      patch_url_type={:quiz_scores_student}
+      student_id={@student.id}
+      scores={@scores}
+    />
     """
   end
 
   defp render_tab(%{active_tab: :progress} = assigns) do
     ~H"""
-      <.live_component
-        id="progress_tab"
-        module={OliWeb.Delivery.StudentDashboard.Components.ProgressTab}
-        params={@params}
-        section_slug={@section.slug}
-        student_id={@student.id}
-        ctx={@ctx}
-        pages={@pages}
-      />
+    <.live_component
+      id="progress_tab"
+      module={OliWeb.Delivery.StudentDashboard.Components.ProgressTab}
+      params={@params}
+      section_slug={@section.slug}
+      student_id={@student.id}
+      ctx={@ctx}
+      pages={@pages}
+    />
     """
   end
 
   defp render_tab(%{active_tab: :actions} = assigns) do
     ~H"""
-      <.live_component
-        id="actions_table"
-        module={OliWeb.Components.Delivery.Actions}
-        user={@student}
-        section={@section}
-        enrollment_info={@enrollment_info}
-      />
+    <.live_component
+      id="actions_table"
+      module={OliWeb.Components.Delivery.Actions}
+      user={@student}
+      section={@section}
+      enrollment_info={@enrollment_info}
+    />
     """
   end
 
@@ -333,7 +339,6 @@ defmodule OliWeb.Delivery.StudentDashboard.StudentDashboardLive do
   end
 
   defp async_calculate_proficiency(section, student_id) do
-
     pid = self()
 
     Task.async(fn ->
@@ -344,9 +349,7 @@ defmodule OliWeb.Delivery.StudentDashboard.StudentDashboardLive do
 
       send(pid, {:proficiency, proficiency_per_container})
     end)
-
   end
-
 
   @impl Phoenix.LiveView
   def handle_info({:hide_modal}, socket) do
@@ -370,12 +373,11 @@ defmodule OliWeb.Delivery.StudentDashboard.StudentDashboardLive do
 
   @impl Phoenix.LiveView
   def handle_info({:proficiency, proficiency_per_container}, socket) do
-
     case Map.get(socket.assigns, :containers) do
-      nil -> {:noreply, socket}
+      nil ->
+        {:noreply, socket}
 
       {total, containers} ->
-
         containers_with_metrics =
           Enum.map(containers, fn container ->
             Map.merge(container, %{
@@ -386,12 +388,10 @@ defmodule OliWeb.Delivery.StudentDashboard.StudentDashboardLive do
 
         {:noreply, assign(socket, containers: {total, containers_with_metrics})}
     end
-
   end
 
   @impl Phoenix.LiveView
   def handle_info(_any, socket) do
     {:noreply, socket}
   end
-
 end

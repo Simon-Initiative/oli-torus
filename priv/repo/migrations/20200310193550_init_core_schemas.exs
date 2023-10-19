@@ -362,7 +362,9 @@ defmodule Oli.Repo.Migrations.InitCoreSchemas do
     create index(:snapshots, [:activity_id])
     create index(:snapshots, [:section_id])
 
-    create unique_index(:snapshots, [:part_attempt_id, :objective_id], name: :snapshot_unique_part)
+    create unique_index(:snapshots, [:part_attempt_id, :objective_id],
+             name: :snapshot_unique_part
+           )
 
     create table(:media_items) do
       timestamps(type: :timestamptz)

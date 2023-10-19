@@ -174,7 +174,7 @@ defmodule OliWeb.Delivery.NewCourse do
     ~H"""
     <.header>
       <div class="flex flex-col items-center gap-3 pl-9 pr-16 py-6">
-        <img src="/images/icons/course-creation-wizard-step-2.svg" style="height: 170px;"/>
+        <img src="/images/icons/course-creation-wizard-step-2.svg" style="height: 170px;" />
         <h2>Course details</h2>
         <.render_flash flash={@flash} />
         <CourseDetails.render changeset={to_form(@changeset)} />

@@ -20,9 +20,9 @@ defmodule OliWeb.ExperimentController do
   end
 
   defp do_experiment_download(conn, %Project{slug: slug} = project) do
-
-    encoded_experiment = Oli.Delivery.Experiments.ExperimentBuilder.build(project)
-    |> Poison.encode!()
+    encoded_experiment =
+      Oli.Delivery.Experiments.ExperimentBuilder.build(project)
+      |> Poison.encode!()
 
     conn
     |> send_download({:binary, encoded_experiment},
@@ -31,15 +31,14 @@ defmodule OliWeb.ExperimentController do
   end
 
   defp do_segment_download(conn, %Project{slug: slug} = project) do
-
-    encoded_segment = Oli.Delivery.Experiments.SegmentBuilder.build(project)
-    |> Poison.encode!()
+    encoded_segment =
+      Oli.Delivery.Experiments.SegmentBuilder.build(project)
+      |> Poison.encode!()
 
     conn
     |> send_download({:binary, encoded_segment},
       filename: "segment_#{slug}.json"
     )
-
   end
 
   defp error(conn, code, reason) do
@@ -47,5 +46,4 @@ defmodule OliWeb.ExperimentController do
     |> send_resp(code, reason)
     |> halt()
   end
-
 end

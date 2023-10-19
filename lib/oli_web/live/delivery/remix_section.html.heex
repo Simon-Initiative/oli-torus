@@ -1,6 +1,11 @@
 <%= render_modal(assigns) %>
 
-<div data-saved={if @has_unsaved_changes, do: "false", else: "true"} phx-hook="BeforeUnloadListener" id="curriculum-container" class="container curriculum-editor">
+<div
+  data-saved={if @has_unsaved_changes, do: "false", else: "true"}
+  phx-hook="BeforeUnloadListener"
+  id="curriculum-container"
+  class="container curriculum-editor"
+>
   <h3><%= @section.title %></h3>
 
   <div class="grid grid-cols-12 mt-3">
@@ -13,7 +18,10 @@
             id="cancel"
             disabled={!@has_unsaved_changes}
             class="btn btn-outline-primary ml-1"
-            phx-click={JS.set_attribute({"data-saved", "true"}, to: "#curriculum-container") |> JS.push("cancel")}
+            phx-click={
+              JS.set_attribute({"data-saved", "true"}, to: "#curriculum-container")
+              |> JS.push("cancel")
+            }
           >
             Cancel
           </button>
@@ -21,7 +29,10 @@
             id="save"
             disabled={!@has_unsaved_changes}
             class="btn btn-primary ml-1"
-            phx-click={JS.set_attribute({"data-saved", "true"}, to: "#curriculum-container") |> JS.push("save")}
+            phx-click={
+              JS.set_attribute({"data-saved", "true"}, to: "#curriculum-container")
+              |> JS.push("save")
+            }
             phx-disabled-with="Saving..."
           >
             Save
@@ -32,7 +43,7 @@
   </div>
 
   <div class="curriculum-navigation">
-    <%= render_breadcrumb assigns %>
+    <%= render_breadcrumb(assigns) %>
   </div>
 
   <div class="grid grid-cols-12" phx-window-keydown="keydown">
@@ -46,23 +57,27 @@
         <%= for {node, index} <- filter_items(@active.children, @dragging) do %>
           <DropTarget.droptarget id={index} index={index} />
           <Entry.entry
-              index={index}
-              selected={@selected == node.uuid}
-              node={node}
-              is_product={assigns[:is_product]} />
+            index={index}
+            selected={@selected == node.uuid}
+            node={node}
+            is_product={assigns[:is_product]}
+          />
         <% end %>
-        <DropTarget.droptarget id={"last"} index={length(@active.children)} />
+        <DropTarget.droptarget id="last" index={length(@active.children)} />
       </div>
       <div class="mt-5">
-        <%# <span class="text-secondary mr-2">Add</span> %>
-        <button phx-click="show_add_materials_modal"` class="btn btn-xs btn-primary p-2 mr-1" type="button">
+        
+        <button
+          phx-click="show_add_materials_modal"
+          `
+          class="btn btn-xs btn-primary p-2 mr-1"
+          type="button"
+        >
           Add Materials
         </button>
-        <%
-        #<button phx-click="add_container" class="btn btn-xs btn-outline-primary p-2 mr-1" type="button">
+        <% # <button phx-click="add_container" class="btn btn-xs btn-outline-primary p-2 mr-1" type="button">
         #  <%= new_container_name(@active)
-        # </button>
-         %>
+        # </button> %>
       </div>
     </div>
   </div>
