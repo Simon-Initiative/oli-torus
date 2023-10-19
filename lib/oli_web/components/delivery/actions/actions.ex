@@ -8,6 +8,7 @@ defmodule OliWeb.Components.Delivery.Actions do
   alias Phoenix.LiveView.JS
   alias Oli.Delivery.Paywall
   alias OliWeb.Router.Helpers, as: Routes
+  alias OliWeb.Components.Modal
 
   @user_role_data [
     %{id: 3, name: :instructor, title: "Instructor"},
@@ -59,21 +60,18 @@ defmodule OliWeb.Components.Delivery.Actions do
     >
       <%= if @is_suspended? do %>
         <div id="unenrolled_student_actions">
-          <.live_component
-            module={OliWeb.Components.LiveModal}
+          <Modal.modal
             id="re_enroll_user_modal"
-            title="Re-enroll student"
-            on_confirm={JS.push("re_enroll", target: @myself)}
+            class="w-5/6"
+            on_confirm={JS.push("re_enroll", target: @myself) |> Modal.hide_modal("re_enroll_user_modal")}
           >
-            <div class="px-4">
-              <p>
-                Are you sure you want to re-enroll "<%= @user.name %>" in the course "<%= @section.title %>"?
-              </p>
-            </div>
-          </.live_component>
+            <:title>Re-enroll student</:title>
+            <%= "Are you sure you want to re-enroll #{@user.name} in the course #{@section.title}" %>
+            <:confirm>Confirm</:confirm>
+          </Modal.modal>
           <div class="ml-auto">
             <button
-              phx-click={JS.push("open", target: "#re_enroll_user_modal")}
+              phx-click={Modal.show_modal("re_enroll_user_modal")}
               class="btn btn-primary"
             >
               Re-enroll
@@ -82,19 +80,15 @@ defmodule OliWeb.Components.Delivery.Actions do
         </div>
       <% else %>
         <div id="enrolled_student_actions">
-          <.live_component
-            module={OliWeb.Components.LiveModal}
+          <Modal.modal
             id="unenroll_user_modal"
-            title="Unenroll student"
-            on_confirm={JS.push("unenroll", target: @myself)}
+            class="w-5/6"
+            on_confirm={JS.push("unenroll", target: @myself) |> Modal.hide_modal("unenroll_user_modal")}
           >
-            <div class="px-4">
-              <p>
-                Are you sure you want to unenroll "<%= @user.name %>" from the course "<%= @section.title %>"?
-              </p>
-            </div>
-          </.live_component>
-
+            <:title>Unenroll student</:title>
+            <%= "Are you sure you want to unenroll #{@user.name} from the course #{@section.title}" %>
+            <:confirm>Confirm</:confirm>
+          </Modal.modal>
           <div class="flex flex-col sm:flex-row sm:items-end instructor_dashboard_table">
             <h4 class="torus-h4 !py-0 mr-auto dark:text-white">Actions</h4>
           </div>
@@ -143,7 +137,7 @@ defmodule OliWeb.Components.Delivery.Actions do
           <% end %>
 
           <div class="ml-auto">
-            <button phx-click={JS.push("open", target: "#unenroll_user_modal")} class="btn btn-danger">
+            <button phx-click={Modal.show_modal("unenroll_user_modal")} class="btn btn-danger">
               Unenroll
             </button>
           </div>

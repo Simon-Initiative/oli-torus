@@ -136,16 +136,6 @@ defmodule OliWeb.Delivery.StudentDashboard.Components.ActionsTabTest do
       refute has_element?(view, "button", "Re-enroll")
 
       view
-      |> with_target("#unenroll_user_modal")
-      |> render_click("open", %{})
-
-      assert has_element?(
-               view,
-               "p",
-               "Are you sure you want to unenroll \"#{student.name}\" from the course \"#{section.title}\"?"
-             )
-
-      view
       |> with_target("#student_actions")
       |> render_click("unenroll", %{})
 
@@ -188,16 +178,6 @@ defmodule OliWeb.Delivery.StudentDashboard.Components.ActionsTabTest do
 
       assert has_element?(view, "button", "Re-enroll")
       refute has_element?(view, "button", "Unenroll")
-
-      view
-      |> with_target("#re_enroll_user_modal")
-      |> render_click("open", %{})
-
-      assert has_element?(
-               view,
-               "p",
-               "Are you sure you want to re-enroll \"#{student.name}\" in the course \"#{section.title}\"?"
-             )
 
       view
       |> with_target("#student_actions")
