@@ -10,6 +10,8 @@ defmodule OliWeb.Dialogue.PlaygroundLive do
   alias OliWeb.Dialogue.UserInput
   alias Oli.Conversation.Message
 
+  defp realize_prompt_template(nil, _), do: ""
+
   defp realize_prompt_template(template, bindings) do
     keyword_list = Map.to_list(bindings)
     EEx.eval_string(template, keyword_list)

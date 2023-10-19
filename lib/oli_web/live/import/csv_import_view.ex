@@ -1,11 +1,8 @@
 defmodule OliWeb.Import.CSVImportView do
   use OliWeb, :live_view
 
-  import OliWeb.Common.Params
-
   alias Oli.Repo
   alias OliWeb.Common.{Breadcrumb}
-  alias Oli.Authoring.Course
   alias Oli.Accounts.Author
 
   alias OliWeb.Router.Helpers, as: Routes
