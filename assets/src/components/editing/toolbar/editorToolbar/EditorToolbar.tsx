@@ -14,6 +14,8 @@ import { BlockInsertMenu } from 'components/editing/toolbar/editorToolbar/blocks
 import { BlockSettings } from 'components/editing/toolbar/editorToolbar/blocks/BlockSettings';
 import { BlockToggle } from 'components/editing/toolbar/editorToolbar/blocks/BlockToggle';
 import { TextDirection } from 'data/content/model/elements/types';
+import { useDefaultTextDirection } from 'utils/useDefaultTextDirection';
+import { useStateFromLocalStorage } from 'utils/useStateFromLocalStorage';
 import { EditorSettingsMenu } from './EditorSettingsMenu';
 
 interface Props {
@@ -28,6 +30,14 @@ interface Props {
 export const EditorToolbar = (props: Props) => {
   const editor = useSlate();
   const hasSettingsMenu = props.onSwitchToMarkdown || props.onChangeTextDirection;
+  const [, setDefaultTextDir] = useDefaultTextDirection();
+
+  const onTextDirectionChange = (textDirection: TextDirection) => {
+    if (props.onChangeTextDirection) {
+      props.onChangeTextDirection(textDirection);
+    }
+    setDefaultTextDir(textDirection);
+  };
 
   const toolbar = (
     <Toolbar fixed={props.fixedToolbar} context={props.context}>
@@ -39,7 +49,7 @@ export const EditorToolbar = (props: Props) => {
         <EditorSettingsMenu
           onSwitchToMarkdown={props.onSwitchToMarkdown}
           textDirection={props.textDirection}
-          onChangeTextDirection={props.onChangeTextDirection}
+          onChangeTextDirection={onTextDirectionChange}
         />
       )}
     </Toolbar>

@@ -6,6 +6,7 @@ import { EditorType, ResourceContext } from 'data/content/resource';
 import { ResourceId } from 'data/types';
 import guid from 'utils/guid';
 import { PathOperation } from 'utils/pathOperations';
+import { getDefaultTextDirection } from 'utils/useDefaultTextDirection';
 
 /**
  * Converts a rich text feedback, that may contain inline markup and
@@ -128,11 +129,12 @@ export interface HasContent {
 export function makeContent(
   text: string,
   id?: string,
-): { id: string; content: RichText; editor: EditorType } {
+): { id: string; content: RichText; editor: EditorType; textDirection: TextDirection } {
   return {
     id: id ? id : guid(),
     content: [Model.p(text)],
     editor: getDefaultEditor(),
+    textDirection: getDefaultTextDirection(),
   };
 }
 

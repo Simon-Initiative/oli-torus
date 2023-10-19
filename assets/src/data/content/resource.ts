@@ -8,6 +8,7 @@ import { Objective } from 'data/content/objective';
 import { Tag } from 'data/content/tags';
 import { ActivitySlug, ActivityTypeSlug, ProjectSlug, ResourceId, ResourceSlug } from 'data/types';
 import guid from 'utils/guid';
+import { getDefaultTextDirection } from 'utils/useDefaultTextDirection';
 import { ActivityEditContext } from './activity';
 
 export type PageContent = {
@@ -187,6 +188,7 @@ export const createDefaultStructuredContent = (
   type: 'content',
   id: guid(),
   editor: getDefaultEditor(),
+  textDirection: getDefaultTextDirection(),
   children,
 });
 
