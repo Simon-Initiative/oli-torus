@@ -30,5 +30,5 @@ export const DeliveryElementRenderer: React.FC<DeliveryElementRendererProps> = (
 }) => {
   const writerContext = defaultWriterContext(context);
 
-  return <HtmlContentModelRenderer content={element} context={writerContext} />;
+  return <HtmlContentModelRenderer content={element} context={writerContext} direction='auto' />;
 };

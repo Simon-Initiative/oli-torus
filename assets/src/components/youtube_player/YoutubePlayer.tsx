@@ -126,7 +126,7 @@ export const YoutubePlayer: React.FC<{
       </div>
       {!authorMode && video.caption && (
         <div className="text-center">
-          <HtmlContentModelRenderer content={video.caption} context={context} />
+          <HtmlContentModelRenderer  content={video.caption} context={context} />
         </div>
       )}
 
