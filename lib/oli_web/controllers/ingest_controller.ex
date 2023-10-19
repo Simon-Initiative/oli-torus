@@ -13,8 +13,6 @@ defmodule OliWeb.IngestController do
 
     upload = params["upload"]
 
-    IO.inspect params
-
     if not is_nil(upload) do
       if !File.exists?("_digests") do
         File.mkdir!("_digests")

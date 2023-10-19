@@ -88,7 +88,7 @@ defmodule Oli.Rendering.Content.Markdown do
     ]
   end
 
-  def img(%Context{} = context, _, %{"src" => src} = attrs) do
+  def img(%Context{} = _context, _, %{"src" => src} = attrs) do
     [
       "![#{maybeAlt(attrs)}](#{escape_xml!(src)})\n\n",
     ]
@@ -104,21 +104,21 @@ defmodule Oli.Rendering.Content.Markdown do
 
   def img_inline(%Context{} = _context, _, _e), do: ""
 
-  def video(%Context{} = context, _, attrs) do
+  def video(%Context{} = _context, _, attrs) do
     adhoc_group("Video", maybeAlt(attrs))
   end
 
-  def ecl(%Context{} = context, _, attrs) do
+  def ecl(%Context{} = _context, _, attrs) do
     adhoc_group("Emerald Cloud Lab Code", ["```\n", attrs["code"], "```\n\n"])
   end
 
-  def youtube(%Context{} = context, _, %{"src" => src} = attrs) do
+  def youtube(%Context{} = _context, _, %{"src" => src} = attrs) do
     adhoc_group("YouTube Video", [maybeAlt(attrs), "\n", "source: #{src}"])
   end
 
   def youtube(%Context{} = _context, _, _e), do: ""
 
-  def iframe(%Context{} = context, _, %{"src" => src} = attrs) do
+  def iframe(%Context{} = _context, _, %{"src" => src} = attrs) do
     adhoc_group("External WebPage IFRAME", [maybeAlt(attrs), "\n", "source: #{escape_xml!(src)}"])
   end
 
@@ -126,7 +126,7 @@ defmodule Oli.Rendering.Content.Markdown do
     missing_media_src(context, e)
   end
 
-  def audio(%Context{} = context, _, %{"src" => src} = attrs) do
+  def audio(%Context{} = _context, _, %{"src" => src} = attrs) do
     adhoc_group("Audio Clip", [maybeAlt(attrs), "\n", "source: #{src}"])
   end
 

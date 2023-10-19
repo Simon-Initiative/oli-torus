@@ -1445,9 +1445,6 @@ defmodule OliWeb.Router do
       pipe_through([:browser])
 
       get("/flame_graphs", DevController, :flame_graphs)
-
-      live_storybook("/storybook", backend_module: OliWeb.Storybook)
-
     end
   end
 end
