@@ -307,6 +307,20 @@ defmodule OliWeb.Projects.OverviewLive do
       </Overview.section>
 
       <Overview.section title="Actions" is_last={true}>
+
+        <%= if @is_admin do %>
+          <div class="d-flex align-items-center">
+            <div>
+              <%= button("Import CSV for NG23 Effort",
+                to: Routes.ingest_path(@socket, :index_csv, @project.slug),
+                method: :get,
+                class: "btn btn-link action-button"
+              ) %>
+            </div>
+            <span>Imports an NG23 <code>.csv</code> file to set new attributes.</span>
+          </div>
+        <% end %>
+
         <div class="d-flex align-items-center">
           <div>
             <%= button("Duplicate",

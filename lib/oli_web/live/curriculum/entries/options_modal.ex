@@ -155,6 +155,23 @@ defmodule OliWeb.Curriculum.OptionsModal do
                 </div>
 
                 <div class="form-group">
+                  <label for="duration_minutes">Suggested Duration (minutes)</label>
+                  <.input
+                    id="duration_minutes"
+                    type="number"
+                    min="0"
+                    step="1"
+                    name="revision[duration_minutes]"
+                    class="form-control"
+                    aria-describedby="duration_description"
+                    value={fetch_field(@changeset, :duration_minutes)}
+                  />
+                  <small id="duration_description" class="form-text text-muted">
+                    A suggested time in minutes that the page should take a student to complete.
+                  </small>
+                </div>
+
+                <div class="form-group">
                   <label for="scoring_strategy_id">Scoring Strategy</label>
                   <.input
                     type="select"
