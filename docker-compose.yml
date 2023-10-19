@@ -10,7 +10,7 @@ services:
       - 443:443
 
   postgres:
-    image: postgres:16
+    image: ankane/pgvector
     logging:
       driver: "json-file"
       options:
