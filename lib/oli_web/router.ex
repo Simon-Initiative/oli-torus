@@ -1433,6 +1433,8 @@ defmodule OliWeb.Router do
     # web interface for viewing sent emails during development
     forward("/dev/sent_emails", Bamboo.SentEmailViewerPlug)
 
+    live_storybook("/storybook", backend_module: OliWeb.Storybook)
+
     scope "/api/v1/testing", OliWeb do
       pipe_through([:api])
 
@@ -1443,9 +1445,6 @@ defmodule OliWeb.Router do
       pipe_through([:browser])
 
       get("/flame_graphs", DevController, :flame_graphs)
-
-      live_storybook("/storybook", backend_module: OliWeb.Storybook)
-
     end
   end
 end
