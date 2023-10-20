@@ -121,8 +121,9 @@
     </div>
   <% end %>
 
-<%= live_render(@conn, OliWeb.Dialogue.PlaygroundLive, session: %{"section_slug" => @section_slug, "revision_id" => @page.id}) %>) %>
-
+  <%= live_render(@conn, OliWeb.Dialogue.PlaygroundLive,
+    session: %{"section_slug" => @section_slug, "revision_id" => @page.id}
+  ) %>) %>
   <%= if @review_mode == true do %>
     <div class="d-flex align-items-center justify-content-center">
       <%= link("Continue",
@@ -132,8 +133,8 @@
     </div>
   <% end %>
 
-<%= if Oli.Utils.LoadTesting.enabled?() do %>
-<!--
+  <%= if Oli.Utils.LoadTesting.enabled?() do %>
+    <!--
 __FINALIZATION_URL__<%= encode_url(Routes.page_delivery_path(@conn, :finalize_attempt, @section_slug, @slug, @attempt_guid)) %>__FINALIZATION_URL__
 
 __ACTIVITY_ATTEMPTS__<%= encode_activity_attempts(@activity_type_slug_mapping, @latest_attempts) %>__ACTIVITY_ATTEMPTS__

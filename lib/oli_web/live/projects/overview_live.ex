@@ -307,7 +307,6 @@ defmodule OliWeb.Projects.OverviewLive do
       </Overview.section>
 
       <Overview.section title="Actions" is_last={true}>
-
         <%= if @is_admin do %>
           <div class="d-flex align-items-center">
             <div>

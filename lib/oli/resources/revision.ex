@@ -46,7 +46,6 @@ defmodule Oli.Resources.Revision do
     field :intro_video, :string, default: nil
     field :poster_image, :string, default: nil
 
-
     # 0 represents "unlimited" attempts
     field :max_attempts, :integer, default: 0
     field :recommended_attempts, :integer, default: 0

@@ -90,7 +90,7 @@ defmodule Oli.Rendering.Content.Markdown do
 
   def img(%Context{} = _context, _, %{"src" => src} = attrs) do
     [
-      "![#{maybeAlt(attrs)}](#{escape_xml!(src)})\n\n",
+      "![#{maybeAlt(attrs)}](#{escape_xml!(src)})\n\n"
     ]
   end
 
@@ -98,7 +98,7 @@ defmodule Oli.Rendering.Content.Markdown do
 
   def img_inline(%Context{} = _context, _, %{"src" => src} = attrs) do
     [
-      "![#{maybeAlt(attrs)}](#{escape_xml!(src)})\n\n",
+      "![#{maybeAlt(attrs)}](#{escape_xml!(src)})\n\n"
     ]
   end
 
@@ -141,7 +141,6 @@ defmodule Oli.Rendering.Content.Markdown do
   defp tableRowClass(_), do: ""
 
   def table(%Context{} = context, next, attrs) do
-
     # We want to ensure that tables are always wrapped
     # in a figure element, even if there is no caption. When
     # a caption attr is present but "empty" we still want the figure,
@@ -150,13 +149,13 @@ defmodule Oli.Rendering.Content.Markdown do
     # table display.
 
     wrapping_fn =
-       case attrs do
-         %{"caption" => ""} -> &figure_only/3
-         %{"caption" => nil} -> &figure_only/3
-         %{"caption" => [%{"children" => [%{"text" => ""}], "type" => "p"}]} -> &figure_only/3
-         %{"caption" => _an_actual_caption} -> &captioned_content/3
-         _ -> &figure_only/3
-       end
+      case attrs do
+        %{"caption" => ""} -> &figure_only/3
+        %{"caption" => nil} -> &figure_only/3
+        %{"caption" => [%{"children" => [%{"text" => ""}], "type" => "p"}]} -> &figure_only/3
+        %{"caption" => _an_actual_caption} -> &captioned_content/3
+        _ -> &figure_only/3
+      end
 
     wrapping_fn.(context, attrs, [
       "<table class='#{tableBorderClass(attrs)} #{tableRowClass(attrs)}'>",
@@ -874,5 +873,4 @@ defmodule Oli.Rendering.Content.Markdown do
       _ -> ""
     end
   end
-
 end
