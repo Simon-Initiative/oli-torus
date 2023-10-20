@@ -325,7 +325,7 @@ defmodule Oli.Delivery.Paywall do
             {:error, {:unknown_section}}
 
           %Section{blueprint_id: blueprint_id, id: id} = section ->
-            case Repo.get_by(Payment, code: code) do
+            case get_payment_by(code: code) do
               nil ->
                 {:error, {:unknown_code}}
 
@@ -361,7 +361,7 @@ defmodule Oli.Delivery.Paywall do
         {:error, {:not_enrolled}}
 
       %{id: id} ->
-        case Repo.get_by(Payment, enrollment_id: id) do
+        case get_payment_by(enrollment_id: id) do
           nil ->
             update_payment(payment, %{
               enrollment_id: id,
@@ -643,5 +643,17 @@ defmodule Oli.Delivery.Paywall do
     end
     |> Discount.changeset(attrs)
     |> Repo.insert_or_update()
+  end
+
+  @doc """
+  Gets a single payment by a list of clauses
+  ## Examples
+      iex> get_payment_by(code: "123")
+      %Payment{}
+      iex> get_section_by(code: "111")
+      nil
+  """
+  def get_payment_by(clauses) do
+    Repo.get_by(Payment, clauses)
   end
 end

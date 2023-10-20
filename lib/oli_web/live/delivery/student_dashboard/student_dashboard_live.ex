@@ -96,14 +96,18 @@ defmodule OliWeb.Delivery.StudentDashboard.StudentDashboardLive do
   def handle_params(%{"active_tab" => "actions"} = params, _, socket) do
     enrollment = Sections.get_enrollment(socket.assigns.section.slug, socket.assigns.student.id)
 
+    user_role_id =
+      if is_nil(enrollment), do: nil, else: Sections.get_user_role_from_enrollment(enrollment)
+
     socket =
       socket
       |> assign(params: params, active_tab: String.to_existing_atom(params["active_tab"]))
       |> assign_new(:enrollment_info, fn ->
         %{
           enrollment: enrollment,
-          user_role_id: Sections.get_user_role_from_enrollment(enrollment),
-          current_user: socket.assigns.current_user
+          user_role_id: user_role_id,
+          current_user: socket.assigns.current_user,
+          is_suspended?: is_nil(enrollment)
         }
       end)
 
@@ -122,82 +126,81 @@ defmodule OliWeb.Delivery.StudentDashboard.StudentDashboardLive do
   @impl Phoenix.LiveView
   def render(assigns) do
     ~H"""
-      <%= render_modal(assigns) %>
-      <Helpers.student_details survey_responses={@survey_responses || []} student={@student} />
-      <Helpers.tabs
-        hidden_tabs={if !@enrollment, do: [:actions], else: []}
-        active_tab={@active_tab}
-        section_slug={@section.slug}
-        student_id={@student.id}
-        preview_mode={@preview_mode}
-      />
-      <%= render_tab(assigns) %>
+    <%= render_modal(assigns) %>
+    <Helpers.student_details survey_responses={@survey_responses || []} student={@student} />
+    <Helpers.tabs
+      active_tab={@active_tab}
+      section_slug={@section.slug}
+      student_id={@student.id}
+      preview_mode={@preview_mode}
+    />
+    <%= render_tab(assigns) %>
     """
   end
 
   defp render_tab(%{active_tab: :content} = assigns) do
     ~H"""
-      <.live_component
+    <.live_component
       id="content_tab"
       module={OliWeb.Delivery.StudentDashboard.Components.ContentTab}
       params={@params}
       section_slug={@section.slug}
       containers={@containers}
       student_id={@student.id}
-      />
+    />
     """
   end
 
   defp render_tab(%{active_tab: :learning_objectives} = assigns) do
     ~H"""
-      <.live_component
+    <.live_component
       id="learning_objectives_tab"
       module={OliWeb.Delivery.StudentDashboard.Components.LearningObjectivesTab}
       params={@params}
       section={@section}
       objectives_tab={@objectives_tab}
       student_id={@student.id}
-      />
+    />
     """
   end
 
   defp render_tab(%{active_tab: :quizz_scores} = assigns) do
     ~H"""
-      <.live_component
-        id="quiz_scores_table"
-        module={OliWeb.Delivery.StudentDashboard.Components.QuizzScoresTab}
-        params={@params}
-        section={@section}
-        patch_url_type={:quiz_scores_student}
-        student_id={@student.id}
-        scores={@scores}
-      />
+    <.live_component
+      id="quiz_scores_table"
+      module={OliWeb.Delivery.StudentDashboard.Components.QuizzScoresTab}
+      params={@params}
+      section={@section}
+      patch_url_type={:quiz_scores_student}
+      student_id={@student.id}
+      scores={@scores}
+    />
     """
   end
 
   defp render_tab(%{active_tab: :progress} = assigns) do
     ~H"""
-      <.live_component
-        id="progress_tab"
-        module={OliWeb.Delivery.StudentDashboard.Components.ProgressTab}
-        params={@params}
-        section_slug={@section.slug}
-        student_id={@student.id}
-        ctx={@ctx}
-        pages={@pages}
-      />
+    <.live_component
+      id="progress_tab"
+      module={OliWeb.Delivery.StudentDashboard.Components.ProgressTab}
+      params={@params}
+      section_slug={@section.slug}
+      student_id={@student.id}
+      ctx={@ctx}
+      pages={@pages}
+    />
     """
   end
 
   defp render_tab(%{active_tab: :actions} = assigns) do
     ~H"""
-      <.live_component
-        id="actions_table"
-        module={OliWeb.Components.Delivery.Actions}
-        user={@student}
-        section={@section}
-        enrollment_info={@enrollment_info}
-      />
+    <.live_component
+      id="actions_table"
+      module={OliWeb.Components.Delivery.Actions}
+      user={@student}
+      section={@section}
+      enrollment_info={@enrollment_info}
+    />
     """
   end
 
