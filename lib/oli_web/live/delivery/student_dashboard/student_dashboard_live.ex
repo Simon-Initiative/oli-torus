@@ -102,14 +102,18 @@ defmodule OliWeb.Delivery.StudentDashboard.StudentDashboardLive do
   def handle_params(%{"active_tab" => "actions"} = params, _, socket) do
     enrollment = Sections.get_enrollment(socket.assigns.section.slug, socket.assigns.student.id)
 
+    user_role_id =
+      if is_nil(enrollment), do: nil, else: Sections.get_user_role_from_enrollment(enrollment)
+
     socket =
       socket
       |> assign(params: params, active_tab: String.to_existing_atom(params["active_tab"]))
       |> assign_new(:enrollment_info, fn ->
         %{
           enrollment: enrollment,
-          user_role_id: Sections.get_user_role_from_enrollment(enrollment),
-          current_user: socket.assigns.current_user
+          user_role_id: user_role_id,
+          current_user: socket.assigns.current_user,
+          is_suspended?: is_nil(enrollment)
         }
       end)
 
@@ -131,7 +135,6 @@ defmodule OliWeb.Delivery.StudentDashboard.StudentDashboardLive do
     <%= render_modal(assigns) %>
     <Helpers.student_details survey_responses={@survey_responses || []} student={@student} />
     <Helpers.tabs
-      hidden_tabs={if !@enrollment, do: [:actions], else: []}
       active_tab={@active_tab}
       section_slug={@section.slug}
       student_id={@student.id}
