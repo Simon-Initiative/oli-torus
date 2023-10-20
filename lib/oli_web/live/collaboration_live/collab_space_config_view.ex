@@ -450,8 +450,6 @@ defmodule OliWeb.CollaborationLive.CollabSpaceConfigView do
     Collaboration.count_collab_spaces_enabled_in_pages_for_section(section_slug)
   end
 
-  defp get_collab_space_pages_count(nil, _), do: %{with_collab_spaces_enabled: 0, total: 0}
-
   defp from_struct(nil), do: %{}
   defp from_struct(collab_space), do: Map.from_struct(collab_space)
 
