@@ -42,7 +42,7 @@ defmodule OliWeb.IngestController do
     container_type_id = Oli.Resources.ResourceType.get_id_by_type("container")
     page_type_id = Oli.Resources.ResourceType.get_id_by_type("page")
 
-    content = Oli.Publishing.AuthoringResolver.full_hierarchy(project_slug)
+    rows = Oli.Publishing.AuthoringResolver.full_hierarchy(project_slug)
     |> Oli.Delivery.Hierarchy.flatten_hierarchy()
     |> Enum.map(fn %{
         numbering: %{
@@ -83,6 +83,10 @@ defmodule OliWeb.IngestController do
 
       end
     end)
+
+    headers = ["type", "title", "slug", "duration_minutes", "poster_image", "intro_video", "intro_content"]
+
+    content = [headers | rows]
     |> CSV.encode()
     |> Enum.to_list()
 
