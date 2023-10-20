@@ -74,7 +74,13 @@ defmodule OliWeb.Delivery.StudentDashboard.StudentDashboardLive do
         active_tab: String.to_existing_atom(params["active_tab"])
       )
       |> assign_new(:scores, fn ->
-        %{scores: Oli.Grading.get_scores_for_section_and_user(socket.assigns.section.id, socket.assigns.student.id)}
+        %{
+          scores:
+            Oli.Grading.get_scores_for_section_and_user(
+              socket.assigns.section.id,
+              socket.assigns.student.id
+            )
+        }
       end)
 
     {:noreply, socket}
@@ -336,7 +342,6 @@ defmodule OliWeb.Delivery.StudentDashboard.StudentDashboardLive do
   end
 
   defp async_calculate_proficiency(section, student_id) do
-
     pid = self()
 
     Task.async(fn ->
@@ -347,9 +352,7 @@ defmodule OliWeb.Delivery.StudentDashboard.StudentDashboardLive do
 
       send(pid, {:proficiency, proficiency_per_container})
     end)
-
   end
-
 
   @impl Phoenix.LiveView
   def handle_info({:hide_modal}, socket) do
@@ -373,12 +376,11 @@ defmodule OliWeb.Delivery.StudentDashboard.StudentDashboardLive do
 
   @impl Phoenix.LiveView
   def handle_info({:proficiency, proficiency_per_container}, socket) do
-
     case Map.get(socket.assigns, :containers) do
-      nil -> {:noreply, socket}
+      nil ->
+        {:noreply, socket}
 
       {total, containers} ->
-
         containers_with_metrics =
           Enum.map(containers, fn container ->
             Map.merge(container, %{
@@ -389,12 +391,10 @@ defmodule OliWeb.Delivery.StudentDashboard.StudentDashboardLive do
 
         {:noreply, assign(socket, containers: {total, containers_with_metrics})}
     end
-
   end
 
   @impl Phoenix.LiveView
   def handle_info(_any, socket) do
     {:noreply, socket}
   end
-
 end

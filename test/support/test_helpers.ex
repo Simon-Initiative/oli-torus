@@ -3179,7 +3179,6 @@ defmodule Oli.TestHelpers do
     end
 
     :ok
-
   end
 
   def visit_page(page_revision, section, enrolled_user) do
@@ -3206,5 +3205,4 @@ defmodule Oli.TestHelpers do
         activity_provider
       )
   end
-
 end

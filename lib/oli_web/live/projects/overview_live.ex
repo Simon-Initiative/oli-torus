@@ -449,7 +449,9 @@ defmodule OliWeb.Projects.OverviewLive do
     case Course.update_project(project, %{status: :deleted}) do
       {:ok, _project} ->
         {:noreply,
-         push_redirect(socket, to: Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.ProjectsLive))}
+         push_redirect(socket,
+           to: Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.ProjectsLive)
+         )}
 
       {:error, %Ecto.Changeset{} = changeset} ->
         socket =

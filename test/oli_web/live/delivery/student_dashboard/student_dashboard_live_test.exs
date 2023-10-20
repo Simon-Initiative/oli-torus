@@ -125,7 +125,9 @@ defmodule OliWeb.Delivery.StudentDashboard.StudentDashboardLiveTest do
       {:ok, _view, html} =
         live(conn, live_view_students_dashboard_route(section.slug, student.id))
 
-      assert html =~ ~s(<a href="/sections/#{section.slug}/instructor_dashboard/reports/students">Student reports</a>)
+      assert html =~
+               ~s(<a href="/sections/#{section.slug}/instructor_dashboard/reports/students">Student reports</a>)
+
       assert html =~ ~s(#{student.name} information)
     end
 
@@ -137,18 +139,21 @@ defmodule OliWeb.Delivery.StudentDashboard.StudentDashboardLiveTest do
     } do
       Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
 
-      route = Routes.enrollment_student_info_path(
-        OliWeb.Endpoint,
-        OliWeb.Delivery.StudentDashboard.StudentDashboardLive,
-        section.slug,
-        student.id,
-        :content
-      )
+      route =
+        Routes.enrollment_student_info_path(
+          OliWeb.Endpoint,
+          OliWeb.Delivery.StudentDashboard.StudentDashboardLive,
+          section.slug,
+          student.id,
+          :content
+        )
 
       {:ok, _view, html} =
         live(conn, route)
 
-      assert html =~ ~s(<a href="/sections/#{section.slug}/instructor_dashboard/manage">Manage Section</a>)
+      assert html =~
+               ~s(<a href="/sections/#{section.slug}/instructor_dashboard/manage">Manage Section</a>)
+
       assert html =~ ~s(<a href="/sections/#{section.slug}/enrollments">Enrollments</a>)
       assert html =~ ~s(#{student.name} information)
     end

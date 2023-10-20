@@ -18,8 +18,12 @@ defmodule Oli.EditingTest do
         Seeder.base_project_with_resource2()
         |> Seeder.add_objective("sub objective 1", :subobjective12A)
         |> Seeder.add_objective("sub objective 2", :subobjective2B)
-        |> Seeder.add_objective_with_children("objective 1",[:subobjective12A], :objective1)
-        |> Seeder.add_objective_with_children("objective 2", [:subobjective12A, :subobjective2B], :objective2)
+        |> Seeder.add_objective_with_children("objective 1", [:subobjective12A], :objective1)
+        |> Seeder.add_objective_with_children(
+          "objective 2",
+          [:subobjective12A, :subobjective2B],
+          :objective2
+        )
 
       %{
         map: map,
@@ -490,20 +494,51 @@ defmodule Oli.EditingTest do
 
     test "construct_parent_references/1", %{
       map: %{
-        objective1: %{revision: %Revision{resource_id: objective1_resource_id, title: objective1_title} = objective1},
-        objective2: %{revision: %Revision{resource_id: objective2_resource_id, title: objective2_title} = objective2},
-        subobjective12A: %{revision: %Revision{resource_id: subobjective12A_resource_id, title: subobjective12A_title} = subobjective12A},
-        subobjective2B: %{revision: %Revision{resource_id: subobjective2B_resource_id, title: subobjective2B_title} = subobjective2B}
+        objective1: %{
+          revision:
+            %Revision{resource_id: objective1_resource_id, title: objective1_title} = objective1
+        },
+        objective2: %{
+          revision:
+            %Revision{resource_id: objective2_resource_id, title: objective2_title} = objective2
+        },
+        subobjective12A: %{
+          revision:
+            %Revision{resource_id: subobjective12A_resource_id, title: subobjective12A_title} =
+              subobjective12A
+        },
+        subobjective2B: %{
+          revision:
+            %Revision{resource_id: subobjective2B_resource_id, title: subobjective2B_title} =
+              subobjective2B
+        }
       }
     } do
       assert [
-        %{id: subobjective2B_resource_id, parentId: objective2_resource_id, title: subobjective2B_title},
-        %{id: subobjective12A_resource_id, parentId: objective1_resource_id, title: subobjective12A_title},
-        %{id: subobjective12A_resource_id, parentId: objective2_resource_id, title: subobjective12A_title},
-        %{id: objective2_resource_id, parentId: nil, title: objective2_title},
-        %{id: objective1_resource_id, parentId: nil, title: objective1_title}
-      ] ==
-        PageEditor.construct_parent_references([objective1, objective2, subobjective12A, subobjective2B])
+               %{
+                 id: subobjective2B_resource_id,
+                 parentId: objective2_resource_id,
+                 title: subobjective2B_title
+               },
+               %{
+                 id: subobjective12A_resource_id,
+                 parentId: objective1_resource_id,
+                 title: subobjective12A_title
+               },
+               %{
+                 id: subobjective12A_resource_id,
+                 parentId: objective2_resource_id,
+                 title: subobjective12A_title
+               },
+               %{id: objective2_resource_id, parentId: nil, title: objective2_title},
+               %{id: objective1_resource_id, parentId: nil, title: objective1_title}
+             ] ==
+               PageEditor.construct_parent_references([
+                 objective1,
+                 objective2,
+                 subobjective12A,
+                 subobjective2B
+               ])
     end
   end
 end

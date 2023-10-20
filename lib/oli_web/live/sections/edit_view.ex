@@ -97,12 +97,7 @@ defmodule OliWeb.Sections.EditView do
           label="Schedule"
           description="Edit the start and end dates for scheduling purposes"
         >
-          <StartEnd.render
-            changeset={@changeset}
-            disabled={false}
-            is_admin={@is_admin}
-            ctx={@ctx}
-          />
+          <StartEnd.render changeset={@changeset} disabled={false} is_admin={@is_admin} ctx={@ctx} />
         </Group.render>
         <%= if @section.open_and_free do %>
           <OpenFreeSettings.render

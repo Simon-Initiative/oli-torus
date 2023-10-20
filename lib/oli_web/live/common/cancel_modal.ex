@@ -9,7 +9,14 @@ defmodule OliWeb.Common.Cancel do
 
   def render(assigns) do
     ~H"""
-    <div id={@id} class={"modal fade show"} tabindex="-1" role="dialog" aria-hidden="true" phx-hook="ModalLaunch">
+    <div
+      id={@id}
+      class="modal fade show"
+      tabindex="-1"
+      role="dialog"
+      aria-hidden="true"
+      phx-hook="ModalLaunch"
+    >
       <div class="modal-dialog modal-dialog-centered" role="document">
         <div class="modal-content">
           <div class="modal-header">
@@ -19,8 +26,17 @@ defmodule OliWeb.Common.Cancel do
             <%= render_slot(@inner_block) %>
           </div>
           <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" phx-click={@cancel}>Cancel</button>
-            <button type="button" class="btn btn-primary" data-bs-dismiss="modal" phx-click={@ok}>Ok</button>
+            <button
+              type="button"
+              class="btn btn-secondary"
+              data-bs-dismiss="modal"
+              phx-click={@cancel}
+            >
+              Cancel
+            </button>
+            <button type="button" class="btn btn-primary" data-bs-dismiss="modal" phx-click={@ok}>
+              Ok
+            </button>
           </div>
         </div>
       </div>

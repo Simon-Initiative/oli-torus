@@ -58,31 +58,38 @@ defmodule Oli.Delivery.Page.PageContext do
   to a renderer.
   """
   def create_for_review(section_slug, attempt_guid, user, is_admin?) do
-
     section = Oli.Delivery.Sections.get_section_by_slug(section_slug)
 
-    {progress_state, resource_attempts, latest_attempts, activities, user_for_attempt, effective_settings} =
+    {progress_state, resource_attempts, latest_attempts, activities, user_for_attempt,
+     effective_settings} =
       case PageLifecycle.review(attempt_guid) do
         {:ok,
          {state,
           %AttemptState{resource_attempt: resource_attempt, attempt_hierarchy: latest_attempts}}} ->
-
           user_for_attempt = Attempts.get_user_from_attempt(resource_attempt)
-          effective_settings = Oli.Delivery.Settings.get_combined_settings(resource_attempt.revision, section.id, user_for_attempt.id)
+
+          effective_settings =
+            Oli.Delivery.Settings.get_combined_settings(
+              resource_attempt.revision,
+              section.id,
+              user_for_attempt.id
+            )
 
           # For testing feedback_mode, uncomment the following
           # date = DateTime.utc_now() |> DateTime.add(-1, :day)
           # effective_settings = %{effective_settings | feedback_mode: :scheduled, feedback_scheduled_date: date}
 
-          {progress_state, resource_attempts, latest_attempts, activities} = assemble_final_context(
-            state,
-            resource_attempt,
-            latest_attempts,
-            resource_attempt.revision,
-            Oli.Delivery.Settings.show_feedback?(effective_settings)
-          )
+          {progress_state, resource_attempts, latest_attempts, activities} =
+            assemble_final_context(
+              state,
+              resource_attempt,
+              latest_attempts,
+              resource_attempt.revision,
+              Oli.Delivery.Settings.show_feedback?(effective_settings)
+            )
 
-          {progress_state, resource_attempts, latest_attempts, activities, user_for_attempt, effective_settings}
+          {progress_state, resource_attempts, latest_attempts, activities, user_for_attempt,
+           effective_settings}
 
         {:error, _} ->
           {:error, [], %{}}
@@ -167,7 +174,9 @@ defmodule Oli.Delivery.Page.PageContext do
       ) do
     # resolve the page revision per section
     page_revision = DeliveryResolver.from_revision_slug(section_slug, page_slug)
-    effective_settings = Oli.Delivery.Settings.get_combined_settings(page_revision, section_id, user.id)
+
+    effective_settings =
+      Oli.Delivery.Settings.get_combined_settings(page_revision, section_id, user.id)
 
     Attempts.track_access(page_revision.resource_id, section_id, user.id)
 
@@ -241,13 +250,25 @@ defmodule Oli.Delivery.Page.PageContext do
     }
   end
 
-  defp assemble_final_context(state, resource_attempt, latest_attempts, %{
-         content: %{"advancedDelivery" => true}
-       }, _) do
+  defp assemble_final_context(
+         state,
+         resource_attempt,
+         latest_attempts,
+         %{
+           content: %{"advancedDelivery" => true}
+         },
+         _
+       ) do
     {state, [resource_attempt], latest_attempts, latest_attempts}
   end
 
-  defp assemble_final_context(state, resource_attempt, latest_attempts, page_revision, show_feedback) do
+  defp assemble_final_context(
+         state,
+         resource_attempt,
+         latest_attempts,
+         page_revision,
+         show_feedback
+       ) do
     content_for_ordinal_assignment =
       case resource_attempt.content do
         nil -> page_revision.content
@@ -261,7 +282,7 @@ defmodule Oli.Delivery.Page.PageContext do
        resource_attempt,
        page_revision,
        assign_ordinals_from: content_for_ordinal_assignment,
-      show_feedback: show_feedback
+       show_feedback: show_feedback
      )}
   end
 

@@ -29,7 +29,7 @@ defmodule OliWeb.Projects.CustomizationLive do
   @spec render(any) :: Phoenix.LiveView.Rendered.t()
   def render(assigns) do
     ~H"""
-      <CustomLabelsForm.render labels={@labels} save="save_labels"/>
+    <CustomLabelsForm.render labels={@labels} save="save_labels" />
     """
   end
 

@@ -438,7 +438,9 @@ defmodule OliWeb.DeliveryController do
   def download_course_content_info(conn, %{"section_slug" => slug}) do
     case Oli.Delivery.Sections.get_section_by_slug(slug) do
       nil ->
-        Phoenix.Controller.redirect(conn, to: Routes.static_page_path(OliWeb.Endpoint, :not_found))
+        Phoenix.Controller.redirect(conn,
+          to: Routes.static_page_path(OliWeb.Endpoint, :not_found)
+        )
 
       section ->
         {_total_count, containers_with_metrics} = Helpers.get_containers(section)
@@ -466,7 +468,9 @@ defmodule OliWeb.DeliveryController do
   def download_students_progress(conn, %{"section_slug" => slug}) do
     case Oli.Delivery.Sections.get_section_by_slug(slug) do
       nil ->
-        Phoenix.Controller.redirect(conn, to: Routes.static_page_path(OliWeb.Endpoint, :not_found))
+        Phoenix.Controller.redirect(conn,
+          to: Routes.static_page_path(OliWeb.Endpoint, :not_found)
+        )
 
       section ->
         students = Helpers.get_students(section)
@@ -504,7 +508,9 @@ defmodule OliWeb.DeliveryController do
   def download_learning_objectives(conn, %{"section_slug" => slug}) do
     case Oli.Delivery.Sections.get_section_by_slug(slug) do
       nil ->
-        Phoenix.Controller.redirect(conn, to: Routes.static_page_path(OliWeb.Endpoint, :not_found))
+        Phoenix.Controller.redirect(conn,
+          to: Routes.static_page_path(OliWeb.Endpoint, :not_found)
+        )
 
       section ->
         contents =
@@ -536,7 +542,9 @@ defmodule OliWeb.DeliveryController do
   def download_quiz_scores(conn, %{"section_slug" => slug}) do
     case Oli.Delivery.Sections.get_section_by_slug(slug) do
       nil ->
-        Phoenix.Controller.redirect(conn, to: Routes.static_page_path(OliWeb.Endpoint, :not_found))
+        Phoenix.Controller.redirect(conn,
+          to: Routes.static_page_path(OliWeb.Endpoint, :not_found)
+        )
 
       section ->
         enrollments =

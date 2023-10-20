@@ -1,5 +1,4 @@
 defmodule OliWeb.ManualGrading.ScoreFeedback do
-
   @enforce_keys [
     :score,
     :out_of,
@@ -10,5 +9,4 @@ defmodule OliWeb.ManualGrading.ScoreFeedback do
     :out_of,
     :feedback
   ]
-
 end

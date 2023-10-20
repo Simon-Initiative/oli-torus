@@ -27,7 +27,9 @@ defmodule OliWeb.Common.PagedTable do
       <% end %>
 
       <%= if @total_count > 0 do %>
-        <div :if={@total_count <= @limit and @render_top_info} class="px-5 py-2">Showing all results (<%= @total_count %> total)</div>
+        <div :if={@total_count <= @limit and @render_top_info} class="px-5 py-2">
+          Showing all results (<%= @total_count %> total)
+        </div>
         <%= if @show_top_paging do %>
           <Paging.render
             id="header_paging"
