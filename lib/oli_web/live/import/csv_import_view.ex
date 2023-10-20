@@ -76,37 +76,46 @@ defmodule OliWeb.Import.CSVImportView do
 
   defp process_rows(pid, project_slug, ingest_file) do
 
+    to_content = fn content ->
+      children = String.split(content, "|")
+      |> Enum.map(fn p -> to_paragraph(p) end)
+
+      %{
+        children: children
+      }
+    end
+
     File.stream!(ingest_file)
     |> CSV.decode()
     |> Enum.to_list()
     |> Enum.with_index(1)
-    |> Enum.map(fn {{:ok, [_title, slug, attr, content]}, row_num} ->
+    |> Enum.map(fn {{:ok, [_type, _title, slug, duration_minutes, poster_image, intro_video, intro_content]}, row_num} ->
 
       revision = Oli.Publishing.AuthoringResolver.from_revision_slug(project_slug, slug)
 
-      value = case attr do
-        "duration_minutes" -> String.to_integer(content)
-        "poster_image" -> content
-        "intro_video" -> content
-        "intro_content" ->
+      has_change? = duration_minutes != "" or poster_image != "" or intro_video != "" or intro_content != ""
 
-          children = String.split(content, "\n")
-          |> Enum.map(fn p -> to_paragraph(p) end)
+      if has_change? do
+        change = %{
+          duration_minutes: if duration_minutes != "" do String.to_integer(duration_minutes) else nil end,
+          poster_image: if poster_image != "" do poster_image else nil end,
+          intro_video: if intro_video != "" do intro_video else nil end,
+          intro_content: if intro_content != "" do to_content.(intro_content) else nil end
+        }
 
-          %{
-            children: children
-          }
+        needs_change? = revision.duration_minutes != change.duration_minutes or revision.poster_image != change.poster_image or revision.intro_video != change.intro_video or revision.intro_content != change.intro_content
+
+        if needs_change? do
+          case Oli.Resources.update_revision(revision, change) do
+            {:ok, _} ->
+              IO.inspect change
+              send(pid, {:update, row_num, :success})
+            {:error, _} ->
+              send(pid, {:update, row_num, :failure})
+          end
+        end
+
       end
-
-      change = Map.put(%{}, String.to_existing_atom(attr), value)
-
-      case Oli.Resources.update_revision(revision, change) do
-        {:ok, _} ->
-          send(pid, {:update, row_num, :success})
-        {:error, _} ->
-          send(pid, {:update, row_num, :failure})
-      end
-
     end)
   end
 
