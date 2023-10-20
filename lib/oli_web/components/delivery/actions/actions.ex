@@ -63,17 +63,16 @@ defmodule OliWeb.Components.Delivery.Actions do
           <Modal.modal
             id="re_enroll_user_modal"
             class="w-5/6"
-            on_confirm={JS.push("re_enroll", target: @myself) |> Modal.hide_modal("re_enroll_user_modal")}
+            on_confirm={
+              JS.push("re_enroll", target: @myself) |> Modal.hide_modal("re_enroll_user_modal")
+            }
           >
             <:title>Re-enroll student</:title>
             <%= "Are you sure you want to re-enroll #{@user.name} in the course #{@section.title}" %>
             <:confirm>Confirm</:confirm>
           </Modal.modal>
           <div class="ml-auto">
-            <button
-              phx-click={Modal.show_modal("re_enroll_user_modal")}
-              class="btn btn-primary"
-            >
+            <button phx-click={Modal.show_modal("re_enroll_user_modal")} class="btn btn-primary">
               Re-enroll
             </button>
           </div>
@@ -83,7 +82,9 @@ defmodule OliWeb.Components.Delivery.Actions do
           <Modal.modal
             id="unenroll_user_modal"
             class="w-5/6"
-            on_confirm={JS.push("unenroll", target: @myself) |> Modal.hide_modal("unenroll_user_modal")}
+            on_confirm={
+              JS.push("unenroll", target: @myself) |> Modal.hide_modal("unenroll_user_modal")
+            }
           >
             <:title>Unenroll student</:title>
             <%= "Are you sure you want to unenroll #{@user.name} from the course #{@section.title}" %>
@@ -185,7 +186,12 @@ defmodule OliWeb.Components.Delivery.Actions do
          )}
 
       {:error, :not_found} ->
-        send(self(), {:put_flash, :info, "Could not re-enroll the student. Previous enrollment was not found."})
+        send(
+          self(),
+          {:put_flash, :info,
+           "Could not re-enroll the student. Previous enrollment was not found."}
+        )
+
         {:noreply, socket}
     end
   end
