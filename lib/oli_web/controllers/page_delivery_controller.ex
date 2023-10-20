@@ -400,7 +400,7 @@ defmodule OliWeb.PageDeliveryController do
     resource_attempts =
       Enum.filter(resource_attempts, fn r -> r.date_submitted != nil end)
       |> Enum.sort(fn r1, r2 ->
-        r1.date_submitted <= r2.date_submitted
+        DateTime.before?(r1.date_submitted, r2.date_submitted)
       end)
 
     {:ok, {previous, next, current}, _} = PreviousNextIndex.retrieve(section, page.resource_id)
