@@ -23,7 +23,7 @@ defmodule OliWeb.Common.Components do
       )
 
     ~H"""
-      <button class={@class} phx-click={@on_click} {@values}><i class={@icon}></i></button>
+    <button class={@class} phx-click={@on_click} {@values}><i class={@icon}></i></button>
     """
   end
 end

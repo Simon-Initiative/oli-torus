@@ -64,7 +64,8 @@ const populateEntries = () => {
   const styleSheets = [
     { adaptive: './styles/adaptive/adaptive-reset.scss' },
     { styles: './styles/index.scss' },
-    { preview: './styles/preview.scss' }];
+    { preview: './styles/preview.scss' },
+  ];
 
   // Merge the attributes of all found activities and the initialEntries
   // into one single object.
@@ -78,9 +79,9 @@ const populateEntries = () => {
   if (
     Object.keys(merged).length !=
     Object.keys(initialEntries).length +
-    2 * foundActivities.length +
-    2 * foundParts.length +
-    styleSheets.length
+      2 * foundActivities.length +
+      2 * foundParts.length +
+      styleSheets.length
   ) {
     throw new Error(
       'Encountered a possible naming collision in activity or part manifests. Aborting.',

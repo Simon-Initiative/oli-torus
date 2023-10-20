@@ -67,7 +67,6 @@ defmodule Oli.Resources.ResourcesTest do
            new_unpublished_page: new_unpublished_page,
            section: section
          } do
-
       assert Resources.resource_summary(
                unscored_page1.resource_id,
                project.slug,

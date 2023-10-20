@@ -156,11 +156,20 @@ defmodule OliWeb.Resources.PagesView do
         show_sort={false}
         show_more_opts={true}
       >
-        <TextSearch.render id="text-search" text={@options.text_search} event_target={"#text-search-input"}/>
+        <TextSearch.render
+          id="text-search"
+          text={@options.text_search}
+          event_target="#text-search-input"
+        />
 
         <:extra_opts>
           <form phx-change="change_graded" class="d-flex">
-            <select name="graded" id="select_graded" class="custom-select custom-select mr-2" style="width: 170px;">
+            <select
+              name="graded"
+              id="select_graded"
+              class="custom-select custom-select mr-2"
+              style="width: 170px;"
+            >
               <option value="" selected>Grading Type</option>
               <option
                 :for={
@@ -176,7 +185,12 @@ defmodule OliWeb.Resources.PagesView do
           </form>
 
           <form phx-change="change_type" class="d-flex">
-            <select name="type" id="select_type" class="custom-select custom-select mr-2" style="width: 170px;">
+            <select
+              name="type"
+              id="select_type"
+              class="custom-select custom-select mr-2"
+              style="width: 170px;"
+            >
               <option value="" selected>Page Type</option>
               <option
                 :for={

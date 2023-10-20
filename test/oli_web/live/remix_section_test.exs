@@ -562,7 +562,7 @@ defmodule OliWeb.RemixSectionLiveTest do
       refute has_element?(view, "button", "Project 5")
 
       view
-      |> element("a[phx-click=\"HierarchyPicker.publications_page_change\"]", "2")
+      |> element("button[phx-click=\"HierarchyPicker.publications_page_change\"]", "2")
       |> render_click()
 
       assert has_element?(view, "button", "Project 5")

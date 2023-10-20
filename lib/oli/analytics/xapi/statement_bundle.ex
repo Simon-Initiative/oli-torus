@@ -1,5 +1,4 @@
 defmodule Oli.Analytics.XAPI.StatementBundle do
-
   # XAPI statements get bundled and stored in S3 in JSON Lines format.
 
   # The pathing structure is:
@@ -17,5 +16,4 @@ defmodule Oli.Analytics.XAPI.StatementBundle do
     :bundle_id,
     :body
   ]
-
 end

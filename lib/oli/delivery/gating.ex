@@ -106,8 +106,6 @@ defmodule Oli.Delivery.Gating do
     end)
   end
 
-
-
   @doc """
   Returns the list of gating_conditions for a section, optionally restricted
   to only top-level conditions (i.e., not ones that are student exceptions)
@@ -122,7 +120,6 @@ defmodule Oli.Delivery.Gating do
 
   """
   def list_gating_conditions(section_id, top_level_only \\ false) do
-
     filter_by_top_level =
       if is_nil(top_level_only) do
         dynamic(
@@ -139,7 +136,6 @@ defmodule Oli.Delivery.Gating do
       |> where([gc], gc.section_id == ^section_id)
 
     Repo.all(query)
-
   end
 
   @doc """

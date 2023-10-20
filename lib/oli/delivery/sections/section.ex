@@ -66,7 +66,9 @@ defmodule Oli.Delivery.Sections.Section do
     field(:display_curriculum_item_numbering, :boolean, default: true)
     field(:contains_explorations, :boolean, default: false)
 
-    belongs_to(:required_survey, Oli.Resources.Resource, foreign_key: :required_survey_resource_id)
+    belongs_to(:required_survey, Oli.Resources.Resource,
+      foreign_key: :required_survey_resource_id
+    )
 
     embeds_one(:customizations, CustomLabels, on_replace: :delete)
 

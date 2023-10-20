@@ -173,7 +173,6 @@ defmodule Oli.Rendering.Content.Html do
   defp tableRowClass(_), do: ""
 
   def table(%Context{} = context, next, attrs) do
-
     # We want to ensure that tables are always wrapped
     # in a figure element, even if there is no caption. When
     # a caption attr is present but "empty" we still want the figure,
@@ -182,13 +181,13 @@ defmodule Oli.Rendering.Content.Html do
     # table display.
 
     wrapping_fn =
-       case attrs do
-         %{"caption" => ""} -> &figure_only/3
-         %{"caption" => nil} -> &figure_only/3
-         %{"caption" => [%{"children" => [%{"text" => ""}], "type" => "p"}]} -> &figure_only/3
-         %{"caption" => _an_actual_caption} -> &captioned_content/3
-         _ -> &figure_only/3
-       end
+      case attrs do
+        %{"caption" => ""} -> &figure_only/3
+        %{"caption" => nil} -> &figure_only/3
+        %{"caption" => [%{"children" => [%{"text" => ""}], "type" => "p"}]} -> &figure_only/3
+        %{"caption" => _an_actual_caption} -> &captioned_content/3
+        _ -> &figure_only/3
+      end
 
     wrapping_fn.(context, attrs, [
       "<table class='#{tableBorderClass(attrs)} #{tableRowClass(attrs)}'>",

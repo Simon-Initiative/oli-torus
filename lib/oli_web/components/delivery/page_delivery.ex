@@ -17,23 +17,25 @@ defmodule OliWeb.Components.Delivery.PageDelivery do
 
   def header(assigns) do
     ~H"""
-      <h1 class="title flex flex-row items-center justify-between mb-2">
-        <%= @title %><%= if @review_mode == true do %>
-          (Review)
-        <% end %>
-        <%= case assigns do %>
-          <% %{previous_page: _, next_page: _, numbered_revisions: _, section_slug: _} -> %>
-            <PageNavigator.render
-              id="top_page_navigator"
-              page_number={@page_number}
-              next_page={assigns[:next_page]}
-              previous_page={assigns[:previous_page]}
-              preview_mode={@preview_mode}
-              section_slug={@section_slug}
-              numbered_revisions={assigns[:numbered_revisions]} />
-          <% _ -> %>
-        <% end %>
-      </h1>
+    <h1 class="title flex flex-row items-center justify-between mb-2">
+      <%= @title %>
+      <%= if @review_mode == true do %>
+        (Review)
+      <% end %>
+      <%= case assigns do %>
+        <% %{previous_page: _, next_page: _, numbered_revisions: _, section_slug: _} -> %>
+          <PageNavigator.render
+            id="top_page_navigator"
+            page_number={@page_number}
+            next_page={assigns[:next_page]}
+            previous_page={assigns[:previous_page]}
+            preview_mode={@preview_mode}
+            section_slug={@section_slug}
+            numbered_revisions={assigns[:numbered_revisions]}
+          />
+        <% _ -> %>
+      <% end %>
+    </h1>
     """
   end
 
@@ -44,18 +46,18 @@ defmodule OliWeb.Components.Delivery.PageDelivery do
 
   def details(assigns) do
     ~H"""
-      <div class="flex flex-row my-2">
-        <%= if @end_date do %>
-          <div class="py-1.5 px-4 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-delivery-body-color-dark rounded">
-            <%= scheduling_type_label(@scheduling_type) %> <%= date(@end_date, @ctx) %>
-          </div>
-        <% end %>
-        <%= if @est_reading_time do %>
-          <div class="py-1.5 px-4 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-delivery-body-color-dark rounded ml-1">
-            Estimated reading time: <%= duration(@est_reading_time) %>
-          </div>
-        <% end %>
-      </div>
+    <div class="flex flex-row my-2">
+      <%= if @end_date do %>
+        <div class="py-1.5 px-4 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-delivery-body-color-dark rounded">
+          <%= scheduling_type_label(@scheduling_type) %> <%= date(@end_date, @ctx) %>
+        </div>
+      <% end %>
+      <%= if @est_reading_time do %>
+        <div class="py-1.5 px-4 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-delivery-body-color-dark rounded ml-1">
+          Estimated reading time: <%= duration(@est_reading_time) %>
+        </div>
+      <% end %>
+    </div>
     """
   end
 
@@ -67,16 +69,16 @@ defmodule OliWeb.Components.Delivery.PageDelivery do
 
   def learning_objectives(assigns) do
     ~H"""
-      <%= if length(@objectives) > 0 do %>
-        <div class="objectives p-4 rounded-lg bg-gray-100 dark:bg-gray-700">
-          <div class="uppercase font-bold mb-2">Learning Objectives</div>
-          <ul class="list-none">
-            <%= for title <- @objectives do %>
-              <li class="objective mt-2"><%= title %></li>
-            <% end %>
-          </ul>
-        </div>
-      <% end %>
+    <%= if length(@objectives) > 0 do %>
+      <div class="objectives p-4 rounded-lg bg-gray-100 dark:bg-gray-700">
+        <div class="uppercase font-bold mb-2">Learning Objectives</div>
+        <ul class="list-none">
+          <%= for title <- @objectives do %>
+            <li class="objective mt-2"><%= title %></li>
+          <% end %>
+        </ul>
+      </div>
+    <% end %>
     """
   end
 end

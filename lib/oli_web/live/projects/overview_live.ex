@@ -342,15 +342,21 @@ defmodule OliWeb.Projects.OverviewLive do
           <span>Download this project and its contents.</span>
         </div>
 
-        <div class="d-flex align-items-center">
-          <AsyncExporter.datashop
-            ctx={@ctx}
-            latest_publication={@latest_publication}
-            datashop_export_status={@datashop_export_status}
-            datashop_export_url={@datashop_export_url}
-            datashop_export_timestamp={@datashop_export_timestamp}
-          />
-        </div>
+        <%= if @is_admin do %>
+          <div class="text-danger p-3">
+            DataShop Download is an unstable feature at the moment as the memory demands that it places on the system can cause the server to crash.
+            Please use with extreme caution and consult Torus engineering staff before doing so.
+          </div>
+          <div class="d-flex align-items-center">
+            <AsyncExporter.datashop
+              ctx={@ctx}
+              latest_publication={@latest_publication}
+              datashop_export_status={@datashop_export_status}
+              datashop_export_url={@datashop_export_url}
+              datashop_export_timestamp={@datashop_export_timestamp}
+            />
+          </div>
+        <% end %>
 
         <div class="d-flex align-items-center">
           <button
@@ -457,7 +463,9 @@ defmodule OliWeb.Projects.OverviewLive do
     case Course.update_project(project, %{status: :deleted}) do
       {:ok, _project} ->
         {:noreply,
-         push_redirect(socket, to: Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.ProjectsLive))}
+         push_redirect(socket,
+           to: Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.ProjectsLive)
+         )}
 
       {:error, %Ecto.Changeset{} = changeset} ->
         socket =

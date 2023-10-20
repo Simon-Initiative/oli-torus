@@ -85,7 +85,11 @@ defmodule Oli.NotificationsTest do
       end_date = DateTime.add(now, 3700)
 
       {:ok, updated_system_message} =
-        Notifications.update_system_message(system_message, %{message: "new_message", start: start_date, end: end_date})
+        Notifications.update_system_message(system_message, %{
+          message: "new_message",
+          start: start_date,
+          end: end_date
+        })
 
       [start_job, end_job] =
         Ecto.Query.from(j in Oban.Job,

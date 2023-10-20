@@ -1,5 +1,4 @@
 defmodule Oli.Delivery.Experiments do
-
   @moduledoc """
   Interface to Upgrade-powered experiments.
   """
@@ -36,10 +35,8 @@ defmodule Oli.Delivery.Experiments do
   """
   def enroll(enrollment_id, project_slug, decision_point) do
     with {:ok, _} <- init(enrollment_id, project_slug),
-      {:ok, assign_results} <- assign(enrollment_id)
-    do
+         {:ok, assign_results} <- assign(enrollment_id) do
       case assign_results do
-
         # Upgrade returns an empty array payload in cases when no active
         # experiment applies for this student
         [] ->
@@ -50,17 +47,18 @@ defmodule Oli.Delivery.Experiments do
             {:ok, %{"condition" => condition}} ->
               Logger.info("Marked experiment for [#{enrollment_id}] into [#{condition}]")
               {:ok, condition}
+
             e ->
               Logger.warning("Could not mark experiment #{Kernel.to_string(e)}")
               {:ok, nil}
           end
       end
-
     else
       {:error, e} ->
         Oli.Utils.Appsignal.capture_error(e)
         Logger.error("Could not enroll into Upgrade #{Kernel.to_string(e)}")
         {:error, e}
+
       e ->
         Oli.Utils.Appsignal.capture_error(e)
         Logger.error("Could not enroll into Upgrade #{Kernel.to_string(e)}")
@@ -74,7 +72,6 @@ defmodule Oli.Delivery.Experiments do
   from a group whose name matches the project slug.
   """
   def init(enrollment_id, project_slug) do
-
     body = %{
       "id" => enrollment_id,
       "group" => %{
@@ -95,10 +92,11 @@ defmodule Oli.Delivery.Experiments do
   Requests assignment of a condition code for qualifying experiments.
   """
   def assign(enrollment_id) do
-    body = encode_body(%{
-      "userId" => enrollment_id,
-      "context" => "add"
-    })
+    body =
+      encode_body(%{
+        "userId" => enrollment_id,
+        "context" => "add"
+      })
 
     case http().post(url("/api/assign"), body, headers()) do
       {:ok, %{status_code: 200, body: body}} -> Poison.decode(body)
@@ -110,18 +108,19 @@ defmodule Oli.Delivery.Experiments do
   Marks that a user has seen an experiment decision point and condition.
   """
   def mark(enrollment_id, %{decision_point: decision_point, target: target, condition: condition}) do
-
-    body = encode_body(%{
-      "userId" => enrollment_id,
-      "site" => decision_point,
-      "target" => target,
-      "condition" => condition,
-      "status" => "condition applied"
-    })
+    body =
+      encode_body(%{
+        "userId" => enrollment_id,
+        "site" => decision_point,
+        "target" => target,
+        "condition" => condition,
+        "status" => "condition applied"
+      })
 
     case http().post(url("/api/v1/mark"), body, headers()) do
       {:ok, %{status_code: 200, body: body}} ->
         Poison.decode(body)
+
       e ->
         e
     end
@@ -131,25 +130,26 @@ defmodule Oli.Delivery.Experiments do
   Posts a metrics result to Upgrade.
   """
   def log(enrollment_id, correctness) do
-    body = encode_body(%{
-      "userId" => enrollment_id,
-      "value" => [
-        %{
-          "userId" => enrollment_id,
-          "metrics" => %{
-            "groupedMetrics" => [
-              %{
-                "groupClass" => "mastery",
-                "groupKey" => "activities",
-                "attributes" => %{
-                  "correctness" => correctness
+    body =
+      encode_body(%{
+        "userId" => enrollment_id,
+        "value" => [
+          %{
+            "userId" => enrollment_id,
+            "metrics" => %{
+              "groupedMetrics" => [
+                %{
+                  "groupClass" => "mastery",
+                  "groupKey" => "activities",
+                  "attributes" => %{
+                    "correctness" => correctness
+                  }
                 }
-              }
-            ]
+              ]
+            }
           }
-        }
-      ]
-    })
+        ]
+      })
 
     case http().post(url("/api/v1/log"), body, headers()) do
       {:ok, %{status_code: 200, body: body}} ->
@@ -171,7 +171,11 @@ defmodule Oli.Delivery.Experiments do
   defp mark_for(results, decision_point) do
     dp = Enum.find(results, fn d -> d["expPoint"] == decision_point end)
 
-    %{decision_point: decision_point, target: dp["expId"], condition: dp["assignedCondition"]["conditionCode"]}
+    %{
+      decision_point: decision_point,
+      target: dp["expId"],
+      condition: dp["assignedCondition"]["conditionCode"]
+    }
   end
 
   defp url(suffix) do
@@ -184,13 +188,16 @@ defmodule Oli.Delivery.Experiments do
 
   defp headers() do
     case api_token() do
-      nil -> [
-        "Content-Type": "application/json"
-      ]
-      token -> [
-        Authorization: "Bearer #{token}",
-        "Content-Type": "application/json"
-      ]
+      nil ->
+        [
+          "Content-Type": "application/json"
+        ]
+
+      token ->
+        [
+          Authorization: "Bearer #{token}",
+          "Content-Type": "application/json"
+        ]
     end
   end
 end

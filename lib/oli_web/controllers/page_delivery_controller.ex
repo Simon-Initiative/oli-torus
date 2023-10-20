@@ -406,7 +406,7 @@ defmodule OliWeb.PageDeliveryController do
     resource_attempts =
       Enum.filter(resource_attempts, fn r -> r.date_submitted != nil end)
       |> Enum.sort(fn r1, r2 ->
-        r1.date_submitted <= r2.date_submitted
+        DateTime.before?(r1.date_submitted, r2.date_submitted)
       end)
 
     {:ok, {previous, next, current}, _} = PreviousNextIndex.retrieve(section, page.resource_id)
@@ -1131,12 +1131,12 @@ defmodule OliWeb.PageDeliveryController do
     end
   end
 
-  defp do_start_attempt(conn, section, user, revision, effective_settings) do
+  def do_start_attempt(conn, section, user, revision, effective_settings) do
     datashop_session_id = Plug.Conn.get_session(conn, :datashop_session_id)
     activity_provider = &Oli.Delivery.ActivityProvider.provide/6
 
     # We must check gating conditions here to account for gates that activated after
-    # the prologue page was rendered, and for malicous/deliberate attempts to start an attempt via
+    # the prologue page was rendered, and for malicious/deliberate attempts to start an attempt via
     # hitting this endpoint.
     case Oli.Delivery.Gating.blocked_by(section, user, revision.resource_id) do
       [] ->

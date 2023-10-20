@@ -207,7 +207,10 @@ defmodule OliWeb.CollaborationLive.Posts.Show do
             </div>
           </.inputs_for>
           <div class="flex w-full justify-between">
-            <div class="h-10" :if={@is_threaded and !@is_reply and has_replies?(@post, @parent_replies, @post.id)}>
+            <div
+              :if={@is_threaded and !@is_reply and has_replies?(@post, @parent_replies, @post.id)}
+              class="h-10"
+            >
               <button
                 phx-click="set_selected"
                 type="button"
@@ -293,7 +296,12 @@ defmodule OliWeb.CollaborationLive.Posts.Show do
             <.input type="hidden" field={@form[:parent_post_id]} id={"post_parent_post_id_#{@index}"} />
             <.input type="hidden" field={@form[:thread_root_id]} id={"post_thread_root_id_#{@index}"} />
           </div>
-          <.inputs_for :if={!@parent_is_archived} :let={pc} field={@form[:content]} id={"post_content_#{@index}"}>
+          <.inputs_for
+            :let={pc}
+            :if={!@parent_is_archived}
+            field={@form[:content]}
+            id={"post_content_#{@index}"}
+          >
             <div class="w-full">
               <.input
                 type="textarea"
@@ -308,7 +316,10 @@ defmodule OliWeb.CollaborationLive.Posts.Show do
             </div>
           </.inputs_for>
           <div class="flex w-full justify-between">
-            <div class="h-10" :if={@is_threaded and !@is_reply and has_replies?(@post, @parent_replies, @post.id)}>
+            <div
+              :if={@is_threaded and !@is_reply and has_replies?(@post, @parent_replies, @post.id)}
+              class="h-10"
+            >
               <button
                 phx-click="set_selected"
                 type="button"

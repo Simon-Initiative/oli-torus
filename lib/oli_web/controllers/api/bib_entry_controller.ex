@@ -30,7 +30,11 @@ defmodule OliWeb.Api.BibEntryController do
   def new(conn, %{"project" => project_slug, "title" => title, "content" => content}) do
     author = conn.assigns[:current_author]
 
-    case BibEntryEditor.create(project_slug, author, %{"title" => title, "author_id" => author.id, "content" => %{data: Poison.decode!(content)}}) do
+    case BibEntryEditor.create(project_slug, author, %{
+           "title" => title,
+           "author_id" => author.id,
+           "content" => %{data: Poison.decode!(content)}
+         }) do
       {:ok, {:ok, revision}} ->
         json(conn, %{"result" => "success", "bibentry" => serialize_revision(revision)})
 
@@ -45,10 +49,19 @@ defmodule OliWeb.Api.BibEntryController do
     end
   end
 
-  def update(conn, %{"project" => project_slug, "title" => title, "content" => content, "entry" => entry_id}) do
+  def update(conn, %{
+        "project" => project_slug,
+        "title" => title,
+        "content" => content,
+        "entry" => entry_id
+      }) do
     author = conn.assigns[:current_author]
 
-    case BibEntryEditor.edit(project_slug, entry_id, author, %{"title" => title, "author_id" => author.id, "content" => %{data: Poison.decode!(content)}}) do
+    case BibEntryEditor.edit(project_slug, entry_id, author, %{
+           "title" => title,
+           "author_id" => author.id,
+           "content" => %{data: Poison.decode!(content)}
+         }) do
       {:ok, revision} ->
         json(conn, %{"result" => "success", "bibentry" => serialize_revision(revision)})
 
@@ -63,8 +76,12 @@ defmodule OliWeb.Api.BibEntryController do
     end
   end
 
-  def retrieve(conn, %{"project" => project_slug, "paging" => %{"offset" => offset, "limit" => limit}}) do
+  def retrieve(conn, %{
+        "project" => project_slug,
+        "paging" => %{"offset" => offset, "limit" => limit}
+      }) do
     author = conn.assigns[:current_author]
+
     case BibEntryEditor.retrieve(project_slug, author, %Paging{offset: offset, limit: limit}) do
       {:ok, %{rows: rows, total_count: total_count}} ->
         json(conn, %{

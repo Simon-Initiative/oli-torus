@@ -163,7 +163,6 @@ defmodule OliWeb.ProductsLiveTest do
 
       assert has_element?(view, "a", product.base_project.title)
       assert has_element?(view, "a", product_2.base_project.title)
-
     end
   end
 

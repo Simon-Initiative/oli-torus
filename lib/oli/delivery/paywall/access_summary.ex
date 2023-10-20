@@ -1,11 +1,12 @@
 defmodule Oli.Delivery.Paywall.AccessSummary do
-
   alias Oli.Delivery.Paywall.AccessSummary
 
   defstruct [
-    :available, # Boolean indicating whether access is available
-    :reason, # For available, one of:     [:not_paywalled, :instructor, :paid, :within_grace_period, :pay_by_institution]
-             # For not-available, one of: [:not_enrolled, :not_paid]
+    # Boolean indicating whether access is available
+    :available,
+    # For available, one of:     [:not_paywalled, :instructor, :paid, :within_grace_period, :pay_by_institution]
+    :reason,
+    # For not-available, one of: [:not_enrolled, :not_paid]
     :grace_period_remaining
   ]
 

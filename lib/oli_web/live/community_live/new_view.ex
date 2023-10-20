@@ -28,9 +28,9 @@ defmodule OliWeb.CommunityLive.NewView do
 
   def render(assigns) do
     ~H"""
-      <FormContainer.render title={@title}>
-        <Form.render form={@form} save="save" display_labels={false}/>
-      </FormContainer.render>
+    <FormContainer.render title={@title}>
+      <Form.render form={@form} save="save" display_labels={false} />
+    </FormContainer.render>
     """
   end
 

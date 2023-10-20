@@ -36,7 +36,9 @@ defmodule Oli.Interop.Ingest.Processor.Common do
         mapper_fn.(state, resource_id, resource)
       end)
 
-    Repo.insert_all(Revision, payload, placeholders: create_placeholders(author, resource_type_id))
+    Repo.insert_all(Revision, payload,
+      placeholders: create_placeholders(author, resource_type_id)
+    )
 
     # Finish by updating the `:legacy_to_resource_id_map` to track which resource ids were just allocated to
     # which legacy ids

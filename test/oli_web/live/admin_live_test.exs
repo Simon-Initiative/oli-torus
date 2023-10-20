@@ -317,7 +317,7 @@ defmodule OliWeb.AdminLiveTest do
                last_user.given_name
 
       view
-      |> element("#header_paging a[phx-click=\"paged_table_page_change\"]", "2")
+      |> element("#header_paging button[phx-click=\"paged_table_page_change\"]", "2")
       |> render_click()
 
       refute view
@@ -576,7 +576,7 @@ defmodule OliWeb.AdminLiveTest do
       assert render(view) =~ first_author.given_name
 
       view
-      |> element("#header_paging a[phx-click=\"paged_table_page_change\"]", "2")
+      |> element("#header_paging button[phx-click=\"paged_table_page_change\"]", "2")
       |> render_click()
 
       refute render(view) =~ first_author.given_name
