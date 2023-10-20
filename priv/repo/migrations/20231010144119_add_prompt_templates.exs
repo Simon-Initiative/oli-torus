@@ -30,7 +30,7 @@ defmodule Oli.Repo.Migrations.AddPromptTemplates do
     flush()
 
     alter table(:sections) do
-      add(:page_prompt_template, :text)
+      add(:page_prompt_template, :text, default: @page_prompt)
     end
 
     create table("default_prompts", primary_key: false) do
@@ -39,8 +39,6 @@ defmodule Oli.Repo.Migrations.AddPromptTemplates do
     end
 
     flush()
-
-    Oli.Repo.update_all("sections", set: [page_prompt_template: @page_prompt])
 
     Oli.Repo.insert_all("default_prompts", [
       %{
