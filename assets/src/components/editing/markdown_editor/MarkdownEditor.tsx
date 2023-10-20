@@ -48,6 +48,19 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = (props) => {
     },
   };
 
+  const textLabel = props.textDirection === 'ltr' ? 'Right to Left' : 'Left to Right';
+  const textIcon = props.textDirection === 'rtl' ?   'right-long' : 'left-long';
+
+  const changeTextDirectionCommand: ICommand = {
+    name: `Change to ${textLabel} text direction`,
+    keyCommand: 'switch-to-slate',
+    buttonProps: { 'aria-label': `Change to ${textLabel} text direction` },
+    icon: <Icon icon={textIcon} />,
+    execute: () => {
+      props.onChangeTextDirection && props.onChangeTextDirection(props.textDirection === 'ltr' ? 'rtl' : 'ltr');
+    },
+  };
+
   const darkMode: boolean = useMemo(() => {
     return document.documentElement.classList.contains('dark');
   }, []);
@@ -84,6 +97,11 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = (props) => {
     saveChanges(value || '');
   }, [value, saveChanges]);
 
+  const extraCommands = [switchToSlateCommand, commands.fullscreen];
+  if(props.onChangeTextDirection) {
+    extraCommands.unshift(changeTextDirectionCommand);
+  }
+
   return (
     <MDEditor
       value={value}
@@ -110,7 +128,7 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = (props) => {
         commands.unorderedListCommand,
         commands.orderedListCommand,
       ]}
-      extraCommands={[switchToSlateCommand, commands.fullscreen]}
+      extraCommands={extraCommands}
     />
   );
 };

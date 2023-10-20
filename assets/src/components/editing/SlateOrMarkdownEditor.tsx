@@ -11,9 +11,6 @@ import { ProjectSlug, ResourceSlug } from 'data/types';
 import { SwitchToSlateModal } from './markdown_editor/SwitchToSlateModal';
 import { blockInsertOptions } from './toolbar/editorToolbar/blocks/blockInsertOptions';
 
-
-
-
 type SlateOrMarkdownEditorProps = {
   allowBlockElements: boolean;
   editMode: boolean; // Whether or not we can edit
@@ -55,7 +52,7 @@ export const SlateOrMarkdownEditor: React.FC<SlateOrMarkdownEditorProps> = ({
   style,
   className,
   textDirection,
-  onChangeTextDirection
+  onChangeTextDirection,
 }) => {
   // Bit of a hack. Since this isn't a real controlled component, need to keep track of the latest
   // version for validation reasons.
