@@ -489,7 +489,7 @@ defmodule Oli.EditingTest do
     } do
       html = PageEditor.render_page_html(project.slug, revision.content, author)
 
-      assert html == [["<p>", [[[[], "Here" | "&#39;"] | "s some test content"]], "</p>\n"]]
+      assert html == ["<div dir=\"ltr\">",[["<p>", [[[[], "Here" | "&#39;"] | "s some test content"]], "</p>\n"]],"</div>"]
     end
 
     test "construct_parent_references/1", %{

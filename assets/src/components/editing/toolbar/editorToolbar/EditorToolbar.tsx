@@ -1,5 +1,4 @@
 import React from 'react';
-import { propTypes } from 'react-bootstrap/esm/Image';
 import { Editor, Element } from 'slate';
 import { ReactEditor, useSlate } from 'slate-react';
 import {
@@ -15,7 +14,6 @@ import { BlockSettings } from 'components/editing/toolbar/editorToolbar/blocks/B
 import { BlockToggle } from 'components/editing/toolbar/editorToolbar/blocks/BlockToggle';
 import { TextDirection } from 'data/content/model/elements/types';
 import { useDefaultTextDirection } from 'utils/useDefaultTextDirection';
-import { useStateFromLocalStorage } from 'utils/useStateFromLocalStorage';
 import { EditorSettingsMenu } from './EditorSettingsMenu';
 
 interface Props {
