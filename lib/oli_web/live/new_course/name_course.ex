@@ -26,7 +26,12 @@ defmodule OliWeb.Delivery.NewCourse.NameCourse do
             value="in_person"
             type="custom_radio"
           />
-          <.input label="Only online" field={@changeset[:class_modality]} value="online" type="custom_radio" />
+          <.input
+            label="Only online"
+            field={@changeset[:class_modality]}
+            value="online"
+            type="custom_radio"
+          />
           <.input
             label="Both in person and online"
             field={@changeset[:class_modality]}

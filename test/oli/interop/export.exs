@@ -8,13 +8,15 @@ defmodule Oli.Interop.ExportTest do
     setup [:setup_project_with_survey]
 
     test "project export preserves student surveys", %{project: project} do
-      export = Export.export(project)
-      |> unzip_to_memory()
-      |> Enum.reduce(%{}, fn {f, c}, m -> Map.put(m, f, c) end)
+      export =
+        Export.export(project)
+        |> unzip_to_memory()
+        |> Enum.reduce(%{}, fn {f, c}, m -> Map.put(m, f, c) end)
 
-      {:ok, project_json} = Jason.decode(Map.get(export, '_project.json'))
+      {:ok, project_json} = Jason.decode(Map.get(export, ~c"_project.json"))
 
-      assert project_json["required_student_survey"] == Integer.to_string(project.required_survey_resource_id)
+      assert project_json["required_student_survey"] ==
+               Integer.to_string(project.required_survey_resource_id)
     end
   end
 

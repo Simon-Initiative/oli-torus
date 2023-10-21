@@ -48,7 +48,7 @@ defmodule OliWeb.Pow.UserContext do
   def create(params) do
     params =
       with %{"section" => section_slug} <- params,
-          %Section{skip_email_verification: true} <- Sections.get_section_by_slug(section_slug) do
+           %Section{skip_email_verification: true} <- Sections.get_section_by_slug(section_slug) do
         email_confirmed_at = DateTime.truncate(DateTime.utc_now(), :second)
         Map.put(params, "email_confirmed_at", email_confirmed_at)
       else

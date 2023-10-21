@@ -9,7 +9,7 @@ defmodule OliWeb.Components.Delivery.Students do
 
   @default_params %{
     offset: 0,
-    limit: 25,
+    limit: 20,
     container_id: nil,
     section_slug: nil,
     page_id: nil,
@@ -237,6 +237,8 @@ defmodule OliWeb.Components.Delivery.Students do
           additional_table_class="instructor_dashboard_table"
           sort={JS.push("paged_table_sort", target: @myself)}
           page_change={JS.push("paged_table_page_change", target: @myself)}
+          limit_change={JS.push("paged_table_limit_change", target: @myself)}
+          show_limit_change={true}
         />
       </div>
     </div>
@@ -269,6 +271,34 @@ defmodule OliWeb.Components.Delivery.Students do
            socket.assigns.view,
            socket.assigns.tab_name,
            update_params(socket.assigns.params, %{limit: limit, offset: offset})
+         )
+     )}
+  end
+
+  def handle_event(
+        "paged_table_limit_change",
+        params,
+        %{assigns: %{params: current_params}} = socket
+      ) do
+    new_limit = Params.get_int_param(params, "limit", 20)
+
+    new_offset =
+      OliWeb.Common.PagingParams.calculate_new_offset(
+        current_params.offset,
+        new_limit,
+        socket.assigns.total_count
+      )
+
+    {:noreply,
+     push_patch(socket,
+       to:
+         Routes.live_path(
+           socket,
+           OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
+           socket.assigns.section_slug,
+           socket.assigns.view,
+           socket.assigns.tab_name,
+           update_params(socket.assigns.params, %{limit: new_limit, offset: new_offset})
          )
      )}
   end

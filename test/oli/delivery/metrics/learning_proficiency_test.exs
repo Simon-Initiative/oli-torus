@@ -487,7 +487,11 @@ defmodule Oli.Delivery.Metrics.LearningProficiencyTest do
       set_snapshot(section, page_4.resource, page_4_obj.resource, student_3, false)
       set_snapshot(section, page_4.resource, page_4_obj.resource, student_4, false)
 
-      proficiency_per_container = Metrics.proficiency_per_container(section, Oli.Delivery.Sections.get_contained_pages(section))
+      proficiency_per_container =
+        Metrics.proficiency_per_container(
+          section,
+          Oli.Delivery.Sections.get_contained_pages(section)
+        )
 
       assert proficiency_per_container[unit_1.resource_id] == "Medium"
       assert proficiency_per_container[module_1.resource_id] == "Medium"
@@ -565,7 +569,11 @@ defmodule Oli.Delivery.Metrics.LearningProficiencyTest do
       set_snapshot(section, page_4.resource, page_4_obj.resource, student_1, true)
 
       proficiency_for_student_1_per_container =
-        Metrics.proficiency_for_student_per_container(section, student_1.id, Oli.Delivery.Sections.get_contained_pages(section))
+        Metrics.proficiency_for_student_per_container(
+          section,
+          student_1.id,
+          Oli.Delivery.Sections.get_contained_pages(section)
+        )
 
       assert proficiency_for_student_1_per_container[unit_1.resource_id] == "High"
       assert proficiency_for_student_1_per_container[unit_2.resource_id] == "Low"

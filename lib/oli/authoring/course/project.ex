@@ -52,7 +52,9 @@ defmodule Oli.Authoring.Course.Project do
     field(:owner_id, :integer, virtual: true)
     field(:owner_name, :string, virtual: true)
 
-    belongs_to(:required_survey, Oli.Resources.Resource, foreign_key: :required_survey_resource_id)
+    belongs_to(:required_survey, Oli.Resources.Resource,
+      foreign_key: :required_survey_resource_id
+    )
 
     timestamps(type: :utc_datetime)
   end

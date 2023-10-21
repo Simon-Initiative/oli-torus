@@ -33,37 +33,44 @@ defmodule OliWeb.Components.LiveModal do
 
   def render(assigns) do
     ~H"""
-      <div phx-hook="LiveModal" id={@id}>
-        <%= if @show do %>
-          <div id={"#{@id}_backdrop"} class="fixed h-full w-full z-50 bg-black/20 left-0 top-0 flex items-center justify-center">
-            <div class={"bg-white dark:bg-neutral-800 rounded max-w-xl w-full p-4 #{@class}"}>
-              <div class={"flex items-cent #{if assigns[:title], do: "justify-between", else: "justify-end"} p-4"}>
-                <%= if @title do %>
-                  <h5><%= @title %></h5>
-                <% end %>
-                <button phx-target={@myself} phx-click="close">
-                  <i class="fa-solid fa-xmark" />
-                </button>
-              </div>
-              <%= render_slot(@inner_block) %>
-              <%= if @show_actions do %>
-                <div class="flex items-center justify-end gap-2 mt-12">
-                  <%= if @on_cancel do %>
-                    <button phx-click={@on_cancel} class="torus-button secondary">
-                      <%= @on_cancel_label %>
-                    </button>
-                  <% end %>
-                  <%= if @on_confirm do %>
-                    <button disabled={@on_confirm_disabled} phx-click={@on_confirm} class="torus-button primary">
-                      <%= @on_confirm_label %>
-                    </button>
-                  <% end %>
-                </div>
+    <div phx-hook="LiveModal" id={@id}>
+      <%= if @show do %>
+        <div
+          id={"#{@id}_backdrop"}
+          class="fixed h-full w-full z-50 bg-black/20 left-0 top-0 flex items-center justify-center"
+        >
+          <div class={"bg-white dark:bg-neutral-800 rounded max-w-xl w-full p-4 #{@class}"}>
+            <div class={"flex items-cent #{if assigns[:title], do: "justify-between", else: "justify-end"} p-4"}>
+              <%= if @title do %>
+                <h5><%= @title %></h5>
               <% end %>
+              <button phx-target={@myself} phx-click="close">
+                <i class="fa-solid fa-xmark" />
+              </button>
             </div>
+            <%= render_slot(@inner_block) %>
+            <%= if @show_actions do %>
+              <div class="flex items-center justify-end gap-2 mt-12">
+                <%= if @on_cancel do %>
+                  <button phx-click={@on_cancel} class="torus-button secondary">
+                    <%= @on_cancel_label %>
+                  </button>
+                <% end %>
+                <%= if @on_confirm do %>
+                  <button
+                    disabled={@on_confirm_disabled}
+                    phx-click={@on_confirm}
+                    class="torus-button primary"
+                  >
+                    <%= @on_confirm_label %>
+                  </button>
+                <% end %>
+              </div>
+            <% end %>
           </div>
-        <% end %>
-      </div>
+        </div>
+      <% end %>
+    </div>
     """
   end
 

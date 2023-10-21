@@ -103,7 +103,9 @@ defmodule OliWeb.InstitutionControllerTest do
 
     test "renders errors when data is invalid", %{conn: conn, institution: institution} do
       conn =
-        put(conn, Routes.institution_path(conn, :update, institution), institution: @invalid_attrs)
+        put(conn, Routes.institution_path(conn, :update, institution),
+          institution: @invalid_attrs
+        )
 
       assert html_response(conn, 200) =~ "Edit Institution"
     end

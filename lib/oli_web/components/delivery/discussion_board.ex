@@ -14,8 +14,11 @@ defmodule OliWeb.Components.Delivery.DiscussionBoard do
         },
         socket
       ) do
-    last_posts_user = Collaboration.list_lasts_posts_for_user(current_user_id, section_id, @posts_limit)
-    last_posts_section = Collaboration.list_lasts_posts_for_section(current_user_id, section_id, @posts_limit)
+    last_posts_user =
+      Collaboration.list_lasts_posts_for_user(current_user_id, section_id, @posts_limit)
+
+    last_posts_section =
+      Collaboration.list_lasts_posts_for_section(current_user_id, section_id, @posts_limit)
 
     section = Oli.Repo.get(Oli.Delivery.Sections.Section, section_id)
 
@@ -29,12 +32,20 @@ defmodule OliWeb.Components.Delivery.DiscussionBoard do
 
   def render(assigns) do
     ~H"""
-      <div class="flex flex-col justify-start mt-4 px-7 sm:px-0">
-        <h6 class="text-xl font-normal leading-8 tracking-wide">Discussion Board</h6>
-      </div>
+    <div class="flex flex-col justify-start mt-4 px-7 sm:px-0">
+      <h6 class="text-xl font-normal leading-8 tracking-wide">Discussion Board</h6>
+    </div>
 
-      <DiscussionPost.render last_posts={@last_posts_user} title="Your Latest Discussion Activity" section_slug={@section_slug}/>
-      <DiscussionPost.render last_posts={@last_posts_section} title="All Discussion Activity" section_slug={@section_slug}/>
+    <DiscussionPost.render
+      last_posts={@last_posts_user}
+      title="Your Latest Discussion Activity"
+      section_slug={@section_slug}
+    />
+    <DiscussionPost.render
+      last_posts={@last_posts_section}
+      title="All Discussion Activity"
+      section_slug={@section_slug}
+    />
     """
   end
 end

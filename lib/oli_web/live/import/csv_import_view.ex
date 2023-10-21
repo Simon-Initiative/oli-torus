@@ -35,8 +35,8 @@ defmodule OliWeb.Import.CSVImportView do
     ingest_file = ingest_file(author)
 
     if File.exists?(ingest_file) do
-
       pid = self()
+
       Task.async(fn ->
         process_rows(pid, project_slug, ingest_file)
         send(pid, {:finished})
@@ -50,9 +50,9 @@ defmodule OliWeb.Import.CSVImportView do
          results: []
        )}
     else
-      {:ok, Phoenix.LiveView.redirect(socket, to: Routes.ingest_path(OliWeb.Endpoint, :index_csv))}
+      {:ok,
+       Phoenix.LiveView.redirect(socket, to: Routes.ingest_path(OliWeb.Endpoint, :index_csv))}
     end
-
   end
 
   def render(assigns) do
@@ -73,76 +73,79 @@ defmodule OliWeb.Import.CSVImportView do
     {:noreply, assign(socket, show_feature_overview: false)}
   end
 
-
   defp process_rows(pid, project_slug, ingest_file) do
-
     File.stream!(ingest_file)
     |> CSV.decode()
     |> Enum.to_list()
     |> Enum.with_index(1)
     |> Enum.map(fn {{:ok, [_title, slug, attr, content]}, row_num} ->
-
       revision = Oli.Publishing.AuthoringResolver.from_revision_slug(project_slug, slug)
 
-      value = case attr do
-        "duration_minutes" -> String.to_integer(content)
-        "poster_image" -> content
-        "intro_video" -> content
-        "intro_content" ->
+      value =
+        case attr do
+          "duration_minutes" ->
+            String.to_integer(content)
 
-          children = String.split(content, "\n")
-          |> Enum.map(fn p -> to_paragraph(p) end)
+          "poster_image" ->
+            content
 
-          %{
-            children: children
-          }
-      end
+          "intro_video" ->
+            content
+
+          "intro_content" ->
+            children =
+              String.split(content, "\n")
+              |> Enum.map(fn p -> to_paragraph(p) end)
+
+            %{
+              children: children
+            }
+        end
 
       change = Map.put(%{}, String.to_existing_atom(attr), value)
 
       case Oli.Resources.update_revision(revision, change) do
         {:ok, _} ->
           send(pid, {:update, row_num, :success})
+
         {:error, _} ->
           send(pid, {:update, row_num, :failure})
       end
-
     end)
   end
 
-
   defp to_paragraph(text) do
+    children =
+      case String.contains?(text, "**") do
+        false ->
+          [%{text: text}]
 
-    children = case String.contains?(text, "**") do
-      false ->
-        [%{text: text}]
+        true ->
+          items = String.split(" " <> text <> " ", "**")
 
-      true ->
-        items = String.split(" " <> text <> " ", "**")
+          last = Enum.count(items)
 
-        last = Enum.count(items)
+          Enum.with_index(items, 1)
+          |> Enum.map(fn {t, i} ->
+            # if i is even it is bold
 
-        Enum.with_index(items, 1)
-        |> Enum.map(fn {t, i} ->
-          # if i is even it is bold
+            t =
+              case i do
+                1 -> String.trim_leading(t)
+                ^last -> String.trim_trailing(t)
+                _ -> t
+              end
 
-          t = case i do
-            1 -> String.trim_leading(t)
-            ^last -> String.trim_trailing(t)
-            _ -> t
-          end
-
-          if rem(i, 2) == 0 do
-            %{text: t, bold: true}
-          else
-            %{text: t}
-          end
-        end)
-    end
+            if rem(i, 2) == 0 do
+              %{text: t, bold: true}
+            else
+              %{text: t}
+            end
+          end)
+      end
 
     %{type: "p", children: children}
   end
-
 
   def handle_info({:update, row_num, result}, socket) do
     {:noreply,
@@ -164,5 +167,4 @@ defmodule OliWeb.Import.CSVImportView do
        finished: true
      )}
   end
-
 end

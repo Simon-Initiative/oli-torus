@@ -16,5 +16,4 @@ defmodule OliWeb.Api.ECLController do
 
     json(conn, %{"result" => result})
   end
-
 end

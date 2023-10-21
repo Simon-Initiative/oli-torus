@@ -1,6 +1,7 @@
 defmodule OliWeb.Pow.UserRoutes do
   use Pow.Phoenix.Routes
   use OliWeb, :controller
+  use OliWeb, :verified_routes
 
   alias OliWeb.Router.Helpers, as: Routes
   alias Oli.Accounts.User
@@ -74,36 +75,62 @@ defmodule OliWeb.Pow.UserRoutes do
           %{
             section: %Section{slug: section_slug, open_and_free: true, requires_enrollment: false}
           } ->
-            Routes.delivery_path(conn, :show_enroll, section_slug)
-
-          # pass section slug along for use in sign in form to redirect to enroll after sign in,
-          # or embed in confirmation email link
-          %{
-            section: %Section{slug: section_slug}
-          } ->
-            Pow.Phoenix.Routes.session_path(conn, :new,
-              request_path: Phoenix.Controller.current_path(conn),
-              section: section_slug
+            Routes.delivery_path(
+              conn,
+              :show_enroll,
+              section_slug,
+              params_for(conn, [:from_invitation_link?])
             )
 
           # if section is a string, then it represents a section slug from a confirmation email
           # where a user will be automatically redirected to the enroll page after sign in
-          %{section: section_slug} when is_binary(section_slug) ->
-            Pow.Phoenix.Routes.session_path(conn, :new,
-              request_path: Phoenix.Controller.current_path(conn),
-              section: section_slug
+          %{section: _section} ->
+            Pow.Phoenix.Routes.session_path(
+              conn,
+              :new,
+              params_for(conn, [:request_path, :section, :from_invitation_link?])
             )
 
           _ ->
-            Pow.Phoenix.Routes.session_path(conn, :new,
-              request_path: Phoenix.Controller.current_path(conn)
+            Pow.Phoenix.Routes.session_path(
+              conn,
+              :new,
+              params_for(conn, [:request_path, :from_invitation_link?])
             )
         end
 
       _method ->
-        Pow.Phoenix.Routes.session_path(conn, :new)
+        Pow.Phoenix.Routes.session_path(conn, :new, params_for(conn, [:from_invitation_link?]))
     end
   end
+
+  defp params_for(conn, params),
+    do: Enum.reduce(params, %{}, &add_param(&1, &2, conn))
+
+  defp add_param(:from_invitation_link?, params, conn) do
+    from_invitation_link? =
+      conn
+      |> Phoenix.Controller.current_path()
+      |> String.contains?(~p"/sections/join")
+
+    if from_invitation_link?, do: Map.put(params, :from_invitation_link?, true), else: params
+  end
+
+  defp add_param(:request_path, params, conn),
+    do: Map.put(params, :request_path, Phoenix.Controller.current_path(conn))
+
+  defp add_param(:section, params, conn),
+    do: Map.put(params, :section, get_section_slug(conn.assigns))
+
+  defp get_section_slug(%{
+         section: %Section{slug: section_slug}
+       }),
+       do: section_slug
+
+  defp get_section_slug(%{section: section_slug}) when is_binary(section_slug),
+    do: section_slug
+
+  defp get_section_slug(_assigns), do: nil
 
   @impl true
   def path_for(

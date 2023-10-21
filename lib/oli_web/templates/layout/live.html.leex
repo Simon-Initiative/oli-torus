@@ -1,9 +1,10 @@
 
 <div id="live_flash_container" class="flash container mx-auto px-0 sticky top-[80px]">
   <%= if live_flash(@flash, :info) do %>
-    <div class="alert alert-info flex flex-row justify-between" role="alert">
-
-      <%= live_flash(@flash, :info) %>
+    <div class="alert alert-info flex flex-row" role="alert">
+      <div class="flex-1">
+        <%= live_flash(@flash, :info) %>
+      </div>
 
       <button type="button" class="close" data-bs-dismiss="alert" aria-label="Close" phx-click="lv:clear-flash" phx-value-key="info">
         <i class="fa-solid fa-xmark fa-lg"></i>
@@ -13,9 +14,11 @@
   <% end %>
 
   <%= if live_flash(@flash, :error) do %>
-    <div class="alert alert-danger flex flex-row justify-between" role="alert">
+    <div class="alert alert-danger flex flex-row" role="alert">
 
-      <%= live_flash(@flash, :error) %>
+      <div class="flex-1">
+        <%= live_flash(@flash, :error) %>
+      </div>
 
       <button type="button" class="close" data-bs-dismiss="alert" aria-label="Close" phx-click="lv:clear-flash" phx-value-key="error">
         <i class="fa-solid fa-xmark fa-lg"></i>

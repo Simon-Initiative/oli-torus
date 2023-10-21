@@ -56,6 +56,7 @@ const DEFAULT_LAYOUT_STYLES = `
 }
 
 .initiator {
+  color: black;
   display: inline-block;
   min-height: 20px;
   height: 30px;

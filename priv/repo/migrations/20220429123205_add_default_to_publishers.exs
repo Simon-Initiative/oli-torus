@@ -7,7 +7,7 @@ defmodule Oli.Repo.Migrations.AddDefaultToPublishers do
     end
 
     create unique_index(:publishers, [:default],
-             where: '"default"',
+             where: ~c"\"default\"",
              name: :publisher_default_true_index
            )
 
