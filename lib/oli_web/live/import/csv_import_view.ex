@@ -74,10 +74,10 @@ defmodule OliWeb.Import.CSVImportView do
   end
 
   defp process_rows(pid, project_slug, ingest_file) do
-
     to_content = fn content ->
-      children = String.split(content, "|")
-      |> Enum.map(fn p -> to_paragraph(p) end)
+      children =
+        String.split(content, "|")
+        |> Enum.map(fn p -> to_paragraph(p) end)
 
       %{
         children: children
@@ -88,37 +88,67 @@ defmodule OliWeb.Import.CSVImportView do
     |> CSV.decode()
     |> Enum.to_list()
     |> Enum.with_index(0)
-    |> Enum.map(fn {{:ok, [_type, _title, slug, duration_minutes, poster_image, intro_video, intro_content]}, row_num} ->
-
+    |> Enum.map(fn {{:ok,
+                     [
+                       _type,
+                       _title,
+                       slug,
+                       duration_minutes,
+                       poster_image,
+                       intro_video,
+                       intro_content
+                     ]}, row_num} ->
       if row_num > 0 do
-
         revision = Oli.Publishing.AuthoringResolver.from_revision_slug(project_slug, slug)
 
-        has_change? = duration_minutes != "" or poster_image != "" or intro_video != "" or intro_content != ""
+        has_change? =
+          duration_minutes != "" or poster_image != "" or intro_video != "" or intro_content != ""
 
         if has_change? do
           change = %{
-            duration_minutes: if duration_minutes != "" do String.to_integer(duration_minutes) else nil end,
-            poster_image: if poster_image != "" do poster_image else nil end,
-            intro_video: if intro_video != "" do intro_video else nil end,
-            intro_content: if intro_content != "" do to_content.(intro_content) else nil end
+            duration_minutes:
+              if duration_minutes != "" do
+                String.to_integer(duration_minutes)
+              else
+                nil
+              end,
+            poster_image:
+              if poster_image != "" do
+                poster_image
+              else
+                nil
+              end,
+            intro_video:
+              if intro_video != "" do
+                intro_video
+              else
+                nil
+              end,
+            intro_content:
+              if intro_content != "" do
+                to_content.(intro_content)
+              else
+                nil
+              end
           }
 
-
-          needs_change? = revision.duration_minutes != change.duration_minutes or revision.poster_image != change.poster_image or revision.intro_video != change.intro_video or revision.intro_content != change.intro_content
+          needs_change? =
+            revision.duration_minutes != change.duration_minutes or
+              revision.poster_image != change.poster_image or
+              revision.intro_video != change.intro_video or
+              revision.intro_content != change.intro_content
 
           if needs_change? do
             case Oli.Resources.update_revision(revision, change) do
               {:ok, _} ->
-                IO.inspect change
+                IO.inspect(change)
                 send(pid, {:update, row_num, :success})
+
               {:error, _} ->
                 send(pid, {:update, row_num, :failure})
             end
           end
-
         end
-
       end
     end)
   end

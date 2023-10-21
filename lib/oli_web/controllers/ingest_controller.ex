@@ -38,57 +38,80 @@ defmodule OliWeb.IngestController do
   end
 
   def download_current(conn, %{"project_slug" => project_slug}) do
-
     container_type_id = Oli.Resources.ResourceType.get_id_by_type("container")
     page_type_id = Oli.Resources.ResourceType.get_id_by_type("page")
 
-    rows = Oli.Publishing.AuthoringResolver.full_hierarchy(project_slug)
-    |> Oli.Delivery.Hierarchy.flatten_hierarchy()
-    |> Enum.map(fn %{
-        numbering: %{
-          index: index,
-          level: level
-        },
-        revision: %{
-          resource_type_id: type_id,
-          title: title,
-          slug: slug,
-          poster_image: poster_image,
-          intro_content: intro_content,
-          intro_video: intro_video,
-          duration_minutes: duration_minutes,
-          purpose: purpose
-        }
-      } ->
+    rows =
+      Oli.Publishing.AuthoringResolver.full_hierarchy(project_slug)
+      |> Oli.Delivery.Hierarchy.flatten_hierarchy()
+      |> Enum.map(fn %{
+                       numbering: %{
+                         index: index,
+                         level: level
+                       },
+                       revision: %{
+                         resource_type_id: type_id,
+                         title: title,
+                         slug: slug,
+                         poster_image: poster_image,
+                         intro_content: intro_content,
+                         intro_video: intro_video,
+                         duration_minutes: duration_minutes,
+                         purpose: purpose
+                       }
+                     } ->
+        case type_id do
+          ^container_type_id ->
+            c =
+              case level do
+                0 -> "Root Resource"
+                1 -> "Unit #{index}"
+                _ -> "Module #{index}"
+              end
 
-      case type_id do
-        ^container_type_id ->
+            [
+              c,
+              title,
+              slug,
+              duration_minutes |> v,
+              poster_image |> v,
+              intro_video |> v,
+              intro_content |> m
+            ]
 
-          c = case level do
-            0 -> "Root Resource"
-            1 -> "Unit #{index}"
-            _ -> "Module #{index}"
-          end
+          ^page_type_id ->
+            page_type =
+              case purpose do
+                :foundation -> "foundation"
+                _ -> "exploration"
+              end
 
-          [c, title, slug, duration_minutes |> v, poster_image |> v, intro_video |> v, intro_content |> m]
+            [
+              page_type,
+              title,
+              slug,
+              duration_minutes |> v,
+              poster_image |> v,
+              intro_video |> v,
+              intro_content |> m
+            ]
+        end
+      end)
 
-        ^page_type_id ->
+    headers = [
+      "type",
+      "title",
+      "slug",
+      "duration_minutes",
+      "poster_image",
+      "intro_video",
+      "intro_content"
+    ]
 
-          page_type = case purpose do
-            :foundation -> "foundation"
-            _ -> "exploration"
-          end
-
-          [page_type, title, slug, duration_minutes |> v, poster_image |> v, intro_video |> v, intro_content |> m]
-
-      end
-    end)
-
-    headers = ["type", "title", "slug", "duration_minutes", "poster_image", "intro_video", "intro_content"]
-
-    content = [headers | rows]
-    |> CSV.encode()
-    |> Enum.to_list()
+    content =
+      [headers | rows]
+      |> CSV.encode()
+      |> Enum.to_list()
 
     conn
     |> send_download({:binary, content},
@@ -108,6 +131,7 @@ defmodule OliWeb.IngestController do
     end)
     |> Enum.join("|")
   end
+
   defp m(_), do: ""
 
   defp v(nil), do: ""
