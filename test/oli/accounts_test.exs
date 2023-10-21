@@ -338,7 +338,6 @@ defmodule Oli.AccountsTest do
       refute Accounts.is_lms_user?(user1.email)
     end
 
-
     test "is_lms_user?/1 returns false when the user does not exist" do
       refute Accounts.is_lms_user?("invalid_email")
     end

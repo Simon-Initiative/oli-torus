@@ -48,20 +48,20 @@ defmodule OliWeb.Delivery.StudentDashboard.CourseContentLive do
   @impl Phoenix.LiveView
   def render(assigns) do
     ~H"""
-      <.live_component
-        module={OliWeb.Components.Delivery.CourseContent}
-        id="course_content_tab"
-        ctx={assigns.ctx}
-        hierarchy={assigns.hierarchy}
-        current_position={assigns.current_position}
-        current_level={assigns.current_level}
-        current_level_nodes={assigns.current_level_nodes}
-        breadcrumbs_tree={assigns.breadcrumbs_tree}
-        section={assigns.section}
-        scheduled_dates={assigns.scheduled_dates}
-        current_user_id={assigns.current_user_id}
-        preview_mode={assigns.preview_mode}
-      />
+    <.live_component
+      module={OliWeb.Components.Delivery.CourseContent}
+      id="course_content_tab"
+      ctx={assigns.ctx}
+      hierarchy={assigns.hierarchy}
+      current_position={assigns.current_position}
+      current_level={assigns.current_level}
+      current_level_nodes={assigns.current_level_nodes}
+      breadcrumbs_tree={assigns.breadcrumbs_tree}
+      section={assigns.section}
+      scheduled_dates={assigns.scheduled_dates}
+      current_user_id={assigns.current_user_id}
+      preview_mode={assigns.preview_mode}
+    />
     """
   end
 end

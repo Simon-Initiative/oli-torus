@@ -35,8 +35,8 @@ defmodule OliWeb.Import.CSVImportView do
     ingest_file = ingest_file(author)
 
     if File.exists?(ingest_file) do
-
       pid = self()
+
       Task.async(fn ->
         process_rows(pid, project_slug, ingest_file)
         send(pid, {:finished})
@@ -50,9 +50,9 @@ defmodule OliWeb.Import.CSVImportView do
          results: []
        )}
     else
-      {:ok, Phoenix.LiveView.redirect(socket, to: Routes.ingest_path(OliWeb.Endpoint, :index_csv))}
+      {:ok,
+       Phoenix.LiveView.redirect(socket, to: Routes.ingest_path(OliWeb.Endpoint, :index_csv))}
     end
-
   end
 
   def render(assigns) do
@@ -72,7 +72,6 @@ defmodule OliWeb.Import.CSVImportView do
   def handle_event("hide_overview", _, socket) do
     {:noreply, assign(socket, show_feature_overview: false)}
   end
-
 
   defp process_rows(pid, project_slug, ingest_file) do
 
@@ -105,6 +104,7 @@ defmodule OliWeb.Import.CSVImportView do
             intro_content: if intro_content != "" do to_content.(intro_content) else nil end
           }
 
+
           needs_change? = revision.duration_minutes != change.duration_minutes or revision.poster_image != change.poster_image or revision.intro_video != change.intro_video or revision.intro_content != change.intro_content
 
           if needs_change? do
@@ -123,39 +123,38 @@ defmodule OliWeb.Import.CSVImportView do
     end)
   end
 
-
   defp to_paragraph(text) do
+    children =
+      case String.contains?(text, "**") do
+        false ->
+          [%{text: text}]
 
-    children = case String.contains?(text, "**") do
-      false ->
-        [%{text: text}]
+        true ->
+          items = String.split(" " <> text <> " ", "**")
 
-      true ->
-        items = String.split(" " <> text <> " ", "**")
+          last = Enum.count(items)
 
-        last = Enum.count(items)
+          Enum.with_index(items, 1)
+          |> Enum.map(fn {t, i} ->
+            # if i is even it is bold
 
-        Enum.with_index(items, 1)
-        |> Enum.map(fn {t, i} ->
-          # if i is even it is bold
+            t =
+              case i do
+                1 -> String.trim_leading(t)
+                ^last -> String.trim_trailing(t)
+                _ -> t
+              end
 
-          t = case i do
-            1 -> String.trim_leading(t)
-            ^last -> String.trim_trailing(t)
-            _ -> t
-          end
-
-          if rem(i, 2) == 0 do
-            %{text: t, bold: true}
-          else
-            %{text: t}
-          end
-        end)
-    end
+            if rem(i, 2) == 0 do
+              %{text: t, bold: true}
+            else
+              %{text: t}
+            end
+          end)
+      end
 
     %{type: "p", children: children}
   end
-
 
   def handle_info({:update, row_num, result}, socket) do
     {:noreply,
@@ -177,5 +176,4 @@ defmodule OliWeb.Import.CSVImportView do
        finished: true
      )}
   end
-
 end

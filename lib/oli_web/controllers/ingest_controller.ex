@@ -128,7 +128,9 @@ defmodule OliWeb.IngestController do
       File.cp(upload["digest"].path, "_imports/#{author.id}-import.csv")
 
       conn
-      |> redirect(to: Routes.live_path(OliWeb.Endpoint, OliWeb.Import.CSVImportView, project_slug))
+      |> redirect(
+        to: Routes.live_path(OliWeb.Endpoint, OliWeb.Import.CSVImportView, project_slug)
+      )
     else
       conn
       |> put_flash(:error, "A valid file must be attached")

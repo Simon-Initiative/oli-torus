@@ -28,8 +28,9 @@ defmodule OliWeb.Breadcrumb.BreadcrumbLive do
   defp render_breadcrumb(%{is_last: false} = assigns) do
     ~H"""
     <li class="breadcrumb-item">
-      <%= link get_title(@breadcrumb, @show_short),
-          to: @breadcrumb.link %>
+      <%= link(get_title(@breadcrumb, @show_short),
+        to: @breadcrumb.link
+      ) %>
       <span><i class="fas fa-angle-right ml-1"></i></span>
     </li>
     """

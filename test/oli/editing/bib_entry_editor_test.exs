@@ -10,47 +10,58 @@ defmodule Oli.BibEntryEditorTest do
   describe "bib entry editing" do
     setup do
       Seeder.base_project_with_resource2()
-      |> Seeder.create_bib_entry(:first, "Correlation of the Base Strengths of Amines 1", %{data: Poison.decode!('[{
-        "container-title": "Journal of the American Chemical Society",
-        "author": [{
-          "given": "H. K.",
-          "family": "Hall"
+      |> Seeder.create_bib_entry(:first, "Correlation of the Base Strengths of Amines 1", %{
+        data: Poison.decode!(~c"[{
+        \"container-title\": \"Journal of the American Chemical Society\",
+        \"author\": [{
+          \"given\": \"H. K.\",
+          \"family\": \"Hall\"
         }],
-        "type": "article-journal",
-        "id": "Hall1957Correlation",
-        "citation-label": "Hall1957Correlation",
-        "issue": "20",
-        "issued": {
-          "date-parts": [
+        \"type\": \"article-journal\",
+        \"id\": \"Hall1957Correlation\",
+        \"citation-label\": \"Hall1957Correlation\",
+        \"issue\": \"20\",
+        \"issued\": {
+          \"date-parts\": [
             [1957, 1, 1]
           ]
         },
-        "page": "5441-5444",
-        "title": "Correlation of the Base Strengths of Amines 1",
-        "volume": "79"
-      }]')})
-      |> Seeder.create_bib_entry(:second, "Gitksan medicinal plants-cultural choice and efficacy", %{data: Poison.decode!('[{
-        "container-title": "Journal of Ethnobiology and Ethnomedicine",
-        "author": [{
-          "given": "Leslie Main",
-          "family": "Johnson"
+        \"page\": \"5441-5444\",
+        \"title\": \"Correlation of the Base Strengths of Amines 1\",
+        \"volume\": \"79\"
+      }]")
+      })
+      |> Seeder.create_bib_entry(
+        :second,
+        "Gitksan medicinal plants-cultural choice and efficacy",
+        %{data: Poison.decode!(~c"[{
+        \"container-title\": \"Journal of Ethnobiology and Ethnomedicine\",
+        \"author\": [{
+          \"given\": \"Leslie Main\",
+          \"family\": \"Johnson\"
         }],
-        "type": "article-journal",
-        "id": "Johnson2006Gitksan",
-        "citation-label": "Johnson2006Gitksan",
-        "issue": "1",
-        "issued": {
-          "date-parts": [
+        \"type\": \"article-journal\",
+        \"id\": \"Johnson2006Gitksan\",
+        \"citation-label\": \"Johnson2006Gitksan\",
+        \"issue\": \"1\",
+        \"issued\": {
+          \"date-parts\": [
             [2006, 6, 21]
           ]
         },
-        "publisher": "BioMed Central",
-        "title": "Gitksan medicinal plants-cultural choice and efficacy",
-        "volume": "2"
-      }]')})
+        \"publisher\": \"BioMed Central\",
+        \"title\": \"Gitksan medicinal plants-cultural choice and efficacy\",
+        \"volume\": \"2\"
+      }]")}
+      )
     end
 
-    test "list/2 lists both bib_entrys", %{author: author, project: project, first: first, second: second} do
+    test "list/2 lists both bib_entrys", %{
+      author: author,
+      project: project,
+      first: first,
+      second: second
+    } do
       {:ok, revisions} = BibEntryEditor.list(project.slug, author)
 
       assert length(revisions) == 2
@@ -58,8 +69,13 @@ defmodule Oli.BibEntryEditorTest do
       assert Enum.at(revisions, 1).resource_id == second.revision.resource_id
     end
 
-    test "browse_entrys/3 lists paged bib_entrys", %{author: author, project: project, first: first} do
-      {:ok, revisions} = BibEntryEditor.retrieve(project.slug, author, %Paging{limit: 1, offset: 0})
+    test "browse_entrys/3 lists paged bib_entrys", %{
+      author: author,
+      project: project,
+      first: first
+    } do
+      {:ok, revisions} =
+        BibEntryEditor.retrieve(project.slug, author, %Paging{limit: 1, offset: 0})
 
       assert length(revisions.rows) == 1
       assert Enum.at(revisions.rows, 0).resource_id == first.revision.resource_id
@@ -92,7 +108,7 @@ defmodule Oli.BibEntryEditorTest do
       first: first
     } do
       assert {:error, {:not_found}} ==
-        BibEntryEditor.edit("does_not_exist", first.revision.resource_id, author, %{
+               BibEntryEditor.edit("does_not_exist", first.revision.resource_id, author, %{
                  "title" => "test"
                })
     end
@@ -102,7 +118,7 @@ defmodule Oli.BibEntryEditorTest do
       project: project
     } do
       assert {:error, {:not_found}} ==
-        BibEntryEditor.edit(project.slug, 22222, author, %{
+               BibEntryEditor.edit(project.slug, 22222, author, %{
                  "title" => "test"
                })
     end
@@ -122,7 +138,7 @@ defmodule Oli.BibEntryEditorTest do
         |> Repo.insert()
 
       assert {:error, {:not_authorized}} ==
-        BibEntryEditor.edit(project.slug, first.revision.resource_id, author, %{
+               BibEntryEditor.edit(project.slug, first.revision.resource_id, author, %{
                  "title" => "test"
                })
     end
@@ -134,7 +150,10 @@ defmodule Oli.BibEntryEditorTest do
         })
 
       revision =
-        Oli.Publishing.AuthoringResolver.from_resource_id(project.slug, first.revision.resource_id)
+        Oli.Publishing.AuthoringResolver.from_resource_id(
+          project.slug,
+          first.revision.resource_id
+        )
 
       refute revision.id == first.revision.id
       assert revision.title == "updated title"
@@ -156,7 +175,10 @@ defmodule Oli.BibEntryEditorTest do
         })
 
       revision =
-        Oli.Publishing.AuthoringResolver.from_resource_id(project.slug, first.revision.resource_id)
+        Oli.Publishing.AuthoringResolver.from_resource_id(
+          project.slug,
+          first.revision.resource_id
+        )
 
       refute revision.id == first.revision.id
       assert revision.deleted == true

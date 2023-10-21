@@ -137,14 +137,13 @@ defmodule Oli.Resources.AlternativesTest do
       student1: student1,
       section: section
     } do
-
       by_id = %{
         "1" => %{
           id: 1,
           title: "group",
           options: [
             %{"name" => "one"},
-            %{"name" => "two"},
+            %{"name" => "two"}
           ],
           strategy: "select_all"
         }
@@ -206,7 +205,7 @@ defmodule Oli.Resources.AlternativesTest do
           title: "group",
           options: [
             %{"name" => "one"},
-            %{"name" => "two"},
+            %{"name" => "two"}
           ],
           strategy: "user_section_preference"
         }
@@ -276,14 +275,13 @@ defmodule Oli.Resources.AlternativesTest do
            student1: student1,
            section: section
          } do
-
       by_id = %{
         "1" => %{
           id: 1,
           title: "group",
           options: [
             %{"name" => "one"},
-            %{"name" => "two"},
+            %{"name" => "two"}
           ],
           strategy: "user_section_preference"
         }

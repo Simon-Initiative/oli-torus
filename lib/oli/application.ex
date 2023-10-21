@@ -57,12 +57,21 @@ defmodule Oli.Application do
 
         # Starts Cachex to store user/author info across requests
         Oli.AccountLookupCache,
-
         {Cachex, name: :page_content_cache},
 
         # a supervisor which can be used to dynamically supervise tasks
         {Task.Supervisor, name: Oli.TaskSupervisor}
       ] ++ maybe_node_js_config()
+
+    if log_incomplete_requests?() do
+      :ok =
+        :telemetry.attach(
+          "cowboy-request-handler",
+          [:cowboy, :request, :early_error],
+          &Oli.LogIncompleteRequestHandler.handle_event/4,
+          nil
+        )
+    end
 
     # See https://hexdocs.pm/elixir/Supervisor.html
     # for other strategies and supported options
@@ -112,5 +121,9 @@ defmodule Oli.Application do
     else
       []
     end
+  end
+
+  defp log_incomplete_requests?() do
+    Application.fetch_env!(:oli, :log_incomplete_requests)
   end
 end

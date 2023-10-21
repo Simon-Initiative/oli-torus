@@ -170,7 +170,10 @@ defmodule OliWeb.OpenAndFreeController do
         |> Map.put("end_date", utc_end_date)
         |> Map.put("customizations", customizations)
         |> Map.put("has_experiments", has_experiments)
-        |> Map.put("page_prompt_template", Oli.Conversation.DefaultPrompts.get_prompt("page_prompt"))
+        |> Map.put(
+          "page_prompt_template",
+          Oli.Conversation.DefaultPrompts.get_prompt("page_prompt")
+        )
         |> Map.put("analytics_version", :v2)
 
       case create_from_publication(conn, publication, section_params) do

@@ -8,7 +8,7 @@ defmodule Oli.Rendering.Content do
 
   alias Oli.Rendering.Context
 
-  @type next :: (() -> String.t())
+  @type next :: (-> String.t())
   @type children :: [%{}]
 
   @callback text(%Context{}, %{}) :: [any()]

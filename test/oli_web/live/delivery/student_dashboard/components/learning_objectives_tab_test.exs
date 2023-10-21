@@ -360,4 +360,133 @@ defmodule OliWeb.Delivery.StudentDashboard.Components.LearningObjectivesTabTest 
       assert has_element?(view, ".torus-select[disabled]")
     end
   end
+
+  describe "page size change" do
+    setup [
+      :instructor_conn,
+      :create_full_project_with_objectives,
+      :enrolled_student_and_instructor
+    ]
+
+    test "lists table elements according to the default page size", %{
+      conn: conn,
+      student: student,
+      section: section,
+      revisions: revisions
+    } do
+      # Setup section data
+      Sections.rebuild_contained_objectives(section)
+
+      {:ok, view, _html} =
+        live(
+          conn,
+          live_view_students_dashboard_route(section.slug, student.id, :learning_objectives)
+        )
+
+      assert has_element?(view, "span", "#{revisions.obj_revision_c.title}")
+      assert has_element?(view, "div", "#{revisions.obj_revision_c1.title}")
+      assert has_element?(view, "span", "#{revisions.obj_revision_d.title}")
+      assert has_element?(view, "span", "#{revisions.obj_revision_e.title}")
+      assert has_element?(view, "span", "#{revisions.obj_revision_f.title}")
+
+      # It does not display pagination options
+      refute has_element?(view, "nav[aria-label=\"Paging\"]")
+
+      # It displays page size dropdown
+      assert has_element?(view, "form select.torus-select option[selected]", "20")
+    end
+
+    test "updates page size and list expected elements", %{
+      conn: conn,
+      student: student,
+      section: section,
+      revisions: revisions
+    } do
+      # Setup section data
+      Sections.rebuild_contained_objectives(section)
+
+      {:ok, view, _html} =
+        live(
+          conn,
+          live_view_students_dashboard_route(section.slug, student.id, :learning_objectives)
+        )
+
+      assert has_element?(view, "span", "#{revisions.obj_revision_c.title}")
+      assert has_element?(view, "div", "#{revisions.obj_revision_c1.title}")
+      assert has_element?(view, "span", "#{revisions.obj_revision_d.title}")
+      assert has_element?(view, "span", "#{revisions.obj_revision_e.title}")
+      assert has_element?(view, "span", "#{revisions.obj_revision_f.title}")
+
+      # Change page size from default (20) to 2
+      view
+      |> element("#header_paging_page_size_form")
+      |> render_change(%{limit: "2"})
+
+      # Page 1
+      assert has_element?(view, "span", "#{revisions.obj_revision_c.title}")
+      assert has_element?(view, "div", "#{revisions.obj_revision_c1.title}")
+      # Page 2 and 3
+      refute has_element?(view, "span", "#{revisions.obj_revision_d.title}")
+      refute has_element?(view, "span", "#{revisions.obj_revision_e.title}")
+      refute has_element?(view, "span", "#{revisions.obj_revision_f.title}")
+    end
+
+    test "keeps showing the same elements when changing the page size", %{
+      conn: conn,
+      student: student,
+      section: section,
+      revisions: revisions
+    } do
+      # Setup section data
+      Sections.rebuild_contained_objectives(section)
+
+      # Starts in page 2
+      {:ok, view, _html} =
+        live(
+          conn,
+          live_view_students_dashboard_route(section.slug, student.id, :learning_objectives, %{
+            limit: 2,
+            offset: 2
+          })
+        )
+
+      # Page 1
+      refute has_element?(view, "span", "#{revisions.obj_revision_c.title}")
+      refute has_element?(view, "div", "#{revisions.obj_revision_c1.title}")
+      # Page 2
+      assert has_element?(view, "span", "#{revisions.obj_revision_d.title}")
+      assert has_element?(view, "span", "#{revisions.obj_revision_e.title}")
+      # Page 3
+      refute has_element?(view, "span", "#{revisions.obj_revision_f.title}")
+
+      # Change page size from 2 to 1
+      view
+      |> element("#header_paging_page_size_form")
+      |> render_change(%{limit: "1"})
+
+      # Page 1
+      refute has_element?(view, "span", "#{revisions.obj_revision_c.title}")
+      # Page 2
+      refute has_element?(view, "div", "#{revisions.obj_revision_c1.title}")
+      # Page 3. It keeps showing the same element.
+      assert has_element?(view, "span", "#{revisions.obj_revision_d.title}")
+      # Page 4
+      refute has_element?(view, "span", "#{revisions.obj_revision_e.title}")
+      # Page 5
+      refute has_element?(view, "span", "#{revisions.obj_revision_f.title}")
+
+      # Change page size from 1 to 3
+      view
+      |> element("#header_paging_page_size_form")
+      |> render_change(%{limit: "3"})
+
+      # Page 1. Still showing the same element.
+      assert has_element?(view, "span", "#{revisions.obj_revision_c.title}")
+      assert has_element?(view, "div", "#{revisions.obj_revision_c1.title}")
+      assert has_element?(view, "span", "#{revisions.obj_revision_d.title}")
+      # Page 2
+      refute has_element?(view, "span", "#{revisions.obj_revision_e.title}")
+      refute has_element?(view, "span", "#{revisions.obj_revision_f.title}")
+    end
+  end
 end

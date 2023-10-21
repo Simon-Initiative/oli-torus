@@ -9,7 +9,9 @@ defmodule OliWeb.Components.Project.AsyncExporter do
   attr(:ctx, SessionContext, required: true)
   attr(:latest_publication, Publication, default: nil)
 
-  attr(:analytics_export_status, :atom, values: [:not_available, :in_progress, :available, :error])
+  attr(:analytics_export_status, :atom,
+    values: [:not_available, :in_progress, :available, :error]
+  )
 
   attr(:analytics_export_url, :string)
   attr(:analytics_export_timestamp, :string)

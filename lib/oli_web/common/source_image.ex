@@ -5,7 +5,7 @@ defmodule OliWeb.Common.SourceImage do
     Given a section or source, returns the cover_image for the given element, or a default one.
   """
   def cover_image(%{cover_image: url}) when not is_nil(url) do
-      url
+    url
   end
 
   def cover_image(_) do

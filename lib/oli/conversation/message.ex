@@ -1,5 +1,4 @@
 defmodule Oli.Conversation.Message do
-
   @derive Jason.Encoder
   defstruct [
     :role,
@@ -21,6 +20,4 @@ defmodule Oli.Conversation.Message do
       name: name
     }
   end
-
-
 end
