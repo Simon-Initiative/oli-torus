@@ -442,7 +442,7 @@ defmodule OliWeb.Sections.OverviewView do
         </Group.render>
       <% end %>
 
-      <%= if @is_system_admin do %>
+      <div :if={@is_system_admin} class="border-t dark:border-gray-700">
         <Group.render
           label="Prompt Templates"
           description="Edit the GenAI prompt templates"
@@ -475,11 +475,11 @@ defmodule OliWeb.Sections.OverviewView do
             }
             use_code_lenses={[]}
           />
-          <button type="button" class="btn btn-primary action-button" phx-click="save_prompt">
+          <button type="button" class="btn btn-primary action-button mt-4" phx-click="save_prompt">
             Save
           </button>
         </Group.render>
-      <% end %>
+      </div>
     </Groups.render>
     """
   end
