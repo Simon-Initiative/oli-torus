@@ -4621,6 +4621,10 @@ table.table-striped tbody tr:nth-child(even) {
   min-height: 100vh;
 }
 
+.\!w-auto {
+  width: auto !important;
+}
+
 .w-0 {
   width: 0px;
 }
@@ -4751,6 +4755,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .w-\[330px\] {
   width: 330px;
+}
+
+.w-\[450px\] {
+  width: 450px;
 }
 
 .w-\[500px\] {
@@ -6133,6 +6141,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .pt-5 {
   padding-top: 1.25rem;
+}
+
+.pt-6 {
+  padding-top: 1.5rem;
 }
 
 .pt-9 {
