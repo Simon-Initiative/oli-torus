@@ -6,6 +6,101 @@ defmodule Oli.Resources.CollaborationTest do
   alias Oli.Resources
   alias Oli.Resources.Collaboration
   alias Oli.Resources.Collaboration.{CollabSpaceConfig, Post}
+  alias Oli.Delivery.Sections
+
+  defp build_project_with_one_collab_space(published \\ nil) do
+    page_revision_1 =
+      insert(:revision,
+        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("page"),
+        collab_space_config: %CollabSpaceConfig{status: :enabled}
+      )
+
+    page_revision_2 =
+      insert(:revision,
+        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("page")
+      )
+
+    page_revision_3 =
+      insert(:revision,
+        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("page")
+      )
+
+    container_revision =
+      insert(:revision, %{
+        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("container"),
+        children: [
+          page_revision_1.resource_id,
+          page_revision_2.resource_id,
+          page_revision_3.resource_id
+        ],
+        content: %{},
+        deleted: false,
+        slug: "root_container",
+        title: "Root Container"
+      })
+
+    project = insert(:project)
+
+    insert(:project_resource, %{project_id: project.id, resource_id: page_revision_1.resource_id})
+    insert(:project_resource, %{project_id: project.id, resource_id: page_revision_2.resource_id})
+    insert(:project_resource, %{project_id: project.id, resource_id: page_revision_3.resource_id})
+
+    insert(:project_resource, %{
+      project_id: project.id,
+      resource_id: container_revision.resource_id
+    })
+
+    # Publication of project with root container
+    publication =
+      insert(:publication, %{
+        project: project,
+        published: published,
+        root_resource_id: container_revision.resource_id
+      })
+
+    # Publish resources
+    insert(:published_resource, %{
+      publication: publication,
+      resource: container_revision.resource,
+      revision: container_revision
+    })
+
+    insert(:published_resource, %{
+      publication: publication,
+      resource: page_revision_1.resource,
+      revision: page_revision_1
+    })
+
+    insert(:published_resource, %{
+      publication: publication,
+      resource: page_revision_2.resource,
+      revision: page_revision_2
+    })
+
+    insert(:published_resource, %{
+      publication: publication,
+      resource: page_revision_3.resource,
+      revision: page_revision_3
+    })
+
+    %{project: project, publication: publication, page_revision_1: page_revision_1}
+  end
+
+  defp build_section_with_one_collab_space() do
+    %{project: project, publication: publication, page_revision_1: page_revision_1} =
+      build_project_with_one_collab_space(DateTime.utc_now())
+
+    section = insert(:section, base_project: project)
+
+    {:ok, section} = Sections.create_section_resources(section, publication)
+
+    Sections.get_section_resource(section.id, page_revision_1.resource_id)
+    |> Sections.update_section_resource(%{
+      collab_space_config: %CollabSpaceConfig{status: :enabled}
+    })
+
+    Sections.get_section!(section.id)
+  end
 
   describe "collaborative spaces" do
     test "upsert_collaborative_space/4 with valid data creates a collaborative space" do
@@ -252,6 +347,93 @@ defmodule Oli.Resources.CollaborationTest do
                )
 
       assert collab_space_config == returned_cs
+    end
+
+    test "count_collab_spaces_enabled_in_pages_for_project/1 returns the correct count" do
+      %{project: %{slug: project_slug}} = build_project_with_one_collab_space()
+
+      assert {1, 3} ==
+               Collaboration.count_collab_spaces_enabled_in_pages_for_project(project_slug)
+    end
+
+    test "count_collab_spaces_enabled_in_pages_for_section/1 returns the correct count" do
+      section = build_section_with_one_collab_space()
+
+      assert {1, 3} ==
+               Collaboration.count_collab_spaces_enabled_in_pages_for_section(section.slug)
+    end
+
+    test "disable_all_page_collab_spaces_for_project/1 sets all collab spaces to status = disabled" do
+      %{project: %{slug: project_slug}} = build_project_with_one_collab_space()
+
+      {disabled_count, revisions} =
+        Collaboration.disable_all_page_collab_spaces_for_project(project_slug)
+
+      assert disabled_count == 3
+
+      Enum.each(revisions, fn revision ->
+        assert %CollabSpaceConfig{status: :disabled} = revision.collab_space_config
+      end)
+
+      assert {0, 3} ==
+               Collaboration.count_collab_spaces_enabled_in_pages_for_project(project_slug)
+    end
+
+    test "disable_all_page_collab_spaces_for_section/1 sets all collab spaces to status = disabled" do
+      section = build_section_with_one_collab_space()
+
+      {disabled_count, section_resources} =
+        Collaboration.disable_all_page_collab_spaces_for_section(section.slug)
+
+      assert disabled_count == 3
+
+      Enum.each(section_resources, fn section_resource ->
+        assert %CollabSpaceConfig{status: :disabled} =
+                 section_resource.collab_space_config
+      end)
+
+      assert {0, 3} ==
+               Collaboration.count_collab_spaces_enabled_in_pages_for_section(section.slug)
+    end
+
+    test "enable_all_page_collab_spaces_for_project/2 enables all collab spaces with the given config" do
+      %{project: %{slug: project_slug}} = build_project_with_one_collab_space()
+
+      collab_space_config =
+        %CollabSpaceConfig{status: :enabled, threaded: false}
+
+      {enabled_count, revisions} =
+        Collaboration.enable_all_page_collab_spaces_for_project(project_slug, collab_space_config)
+
+      assert enabled_count == 3
+
+      Enum.each(revisions, fn revision ->
+        assert %CollabSpaceConfig{status: :enabled, threaded: false} =
+                 revision.collab_space_config
+      end)
+
+      assert {3, 3} ==
+               Collaboration.count_collab_spaces_enabled_in_pages_for_project(project_slug)
+    end
+
+    test "enable_all_page_collab_spaces_for_section/2 enables all collab spaces with the given config" do
+      section = build_section_with_one_collab_space()
+
+      collab_space_config =
+        %CollabSpaceConfig{status: :enabled, threaded: false}
+
+      {enabled_count, section_resources} =
+        Collaboration.enable_all_page_collab_spaces_for_section(section.slug, collab_space_config)
+
+      assert enabled_count == 3
+
+      Enum.each(section_resources, fn section_resource ->
+        assert %CollabSpaceConfig{status: :enabled, threaded: false} =
+                 section_resource.collab_space_config
+      end)
+
+      assert {3, 3} ==
+               Collaboration.count_collab_spaces_enabled_in_pages_for_section(section.slug)
     end
   end
 
