@@ -26,10 +26,11 @@ defmodule OliWeb.Api.PageLifecycleController do
         if section.grade_passback_enabled,
           do: PageLifecycle.GradeUpdateWorker.create(section.id, id, :inline)
 
-        is_adaptive_page? = case Oli.Publishing.DeliveryResolver.from_revision_slug(section_slug, revision_slug) do
-          %Oli.Resources.Revision{content: %{"advancedDelivery" => true}} -> true
-          _ -> false
-        end
+        is_adaptive_page? =
+          case Oli.Publishing.DeliveryResolver.from_revision_slug(section_slug, revision_slug) do
+            %Oli.Resources.Revision{content: %{"advancedDelivery" => true}} -> true
+            _ -> false
+          end
 
         restart_url =
           Routes.page_delivery_path(
@@ -41,7 +42,6 @@ defmodule OliWeb.Api.PageLifecycleController do
 
         redirectTo =
           case {effective_settings.review_submission, is_adaptive_page?} do
-
             {:allow, false} ->
               Routes.page_delivery_path(
                 conn,

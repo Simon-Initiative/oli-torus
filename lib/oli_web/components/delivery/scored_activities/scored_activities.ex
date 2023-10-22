@@ -43,7 +43,7 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
 
   @default_params %{
     offset: 0,
-    limit: 10,
+    limit: 20,
     sort_order: :asc,
     sort_by: :title,
     text_search: nil
@@ -243,6 +243,8 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
           additional_table_class="instructor_dashboard_table"
           allow_selection={!is_nil(@current_assessment)}
           show_bottom_paging={false}
+          limit_change={JS.push("paged_table_limit_change", target: @myself)}
+          show_limit_change={true}
         />
       </div>
       <div :if={@current_assessment != nil and @activities != []} class="mt-9">
@@ -348,6 +350,30 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
          route_to(
            socket,
            update_params(socket.assigns.params, %{limit: limit, offset: offset})
+         )
+     )}
+  end
+
+  def handle_event(
+        "paged_table_limit_change",
+        params,
+        %{assigns: %{params: current_params}} = socket
+      ) do
+    new_limit = Params.get_int_param(params, "limit", 20)
+
+    new_offset =
+      OliWeb.Common.PagingParams.calculate_new_offset(
+        current_params.offset,
+        new_limit,
+        socket.assigns.total_count
+      )
+
+    {:noreply,
+     push_patch(socket,
+       to:
+         route_to(
+           socket,
+           update_params(socket.assigns.params, %{limit: new_limit, offset: new_offset})
          )
      )}
   end

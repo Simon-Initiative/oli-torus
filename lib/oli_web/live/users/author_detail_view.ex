@@ -83,38 +83,61 @@ defmodule OliWeb.Users.AuthorsDetailView do
       <Groups.render>
         <Group.render label="Details" description="User details">
           <.form for={@changeset} phx-change="change" phx-submit="submit" autocomplete="off">
-            <ReadOnly.render label="Name" value={@user.name}/>
+            <ReadOnly.render label="Name" value={@user.name} />
             <div class="form-group">
               <label for="given_name">First Name</label>
-              <.input value={fetch_field(@changeset, :given_name)} id="given_name" name="author[given_name]" class="form-control" disabled={@disabled_edit}/>
+              <.input
+                value={fetch_field(@changeset, :given_name)}
+                id="given_name"
+                name="author[given_name]"
+                class="form-control"
+                disabled={@disabled_edit}
+              />
             </div>
             <div class="form-group">
               <label for="family_name">Last Name</label>
-              <.input value={fetch_field(@changeset, :family_name)} id="family_name" name="author[family_name]" class="form-control" disabled={@disabled_edit}/>
+              <.input
+                value={fetch_field(@changeset, :family_name)}
+                id="family_name"
+                name="author[family_name]"
+                class="form-control"
+                disabled={@disabled_edit}
+              />
             </div>
             <div class="form-group">
               <label for="email">Email</label>
-              <.input value={fetch_field(@changeset, :email)} id="email" name="author[email]" class="form-control" disabled={@disabled_edit}/>
+              <.input
+                value={fetch_field(@changeset, :email)}
+                id="email"
+                name="author[email]"
+                class="form-control"
+                disabled={@disabled_edit}
+              />
             </div>
-            <ReadOnly.render label="Role" value={role(@user.system_role_id)}/>
+            <ReadOnly.render label="Role" value={role(@user.system_role_id)} />
             <%= unless @disabled_edit do %>
-              <button type="submit" class={"float-right btn btn-md btn-primary mt-2"}>Save</button>
+              <button type="submit" class="float-right btn btn-md btn-primary mt-2">Save</button>
             <% end %>
           </.form>
           <%= if @disabled_edit do %>
-            <button class={"float-right btn btn-md btn-primary mt-2"} phx-click="start_edit">Edit</button>
+            <button class="float-right btn btn-md btn-primary mt-2" phx-click="start_edit">
+              Edit
+            </button>
           <% end %>
         </Group.render>
-        <Group.render label="Projects" description="Projects that the Author has either created or is a collaborator within">
-          <%= live_component OliWeb.Users.AuthorProjects,
+        <Group.render
+          label="Projects"
+          description="Projects that the Author has either created or is a collaborator within"
+        >
+          <%= live_component(OliWeb.Users.AuthorProjects,
             id: "author_projects",
             user: @user,
             ctx: @ctx
-          %>
+          ) %>
         </Group.render>
         <Group.render label="Actions" description="Actions that can be taken for this user">
           <%= if @user.id != @author.id and @user.email != System.get_env("ADMIN_EMAIL", "admin@example.edu") do %>
-            <Actions.render user={@user} csrf_token={@csrf_token} for_author={true}/>
+            <Actions.render user={@user} csrf_token={@csrf_token} for_author={true} />
           <% end %>
         </Group.render>
       </Groups.render>
@@ -129,7 +152,7 @@ defmodule OliWeb.Users.AuthorsDetailView do
 
     modal = fn assigns ->
       ~H"""
-        <ConfirmEmailModal.render id="confirm_email" user={assigns.modal_assigns.user} />
+      <ConfirmEmailModal.render id="confirm_email" user={assigns.modal_assigns.user} />
       """
     end
 
@@ -162,7 +185,7 @@ defmodule OliWeb.Users.AuthorsDetailView do
 
     modal = fn assigns ->
       ~H"""
-        <UnlockAccountModal.render id="unlock_account" user={assigns.modal_assigns.user} />
+      <UnlockAccountModal.render id="unlock_account" user={assigns.modal_assigns.user} />
       """
     end
 
@@ -190,7 +213,7 @@ defmodule OliWeb.Users.AuthorsDetailView do
 
     modal = fn assigns ->
       ~H"""
-        <DeleteAccountModal.render id="delete_account" user={assigns.modal_assigns.user} />
+      <DeleteAccountModal.render id="delete_account" user={assigns.modal_assigns.user} />
       """
     end
 
@@ -224,7 +247,7 @@ defmodule OliWeb.Users.AuthorsDetailView do
 
     modal = fn assigns ->
       ~H"""
-        <LockAccountModal.render id="lock_account" user={assigns.modal_assigns.user} />
+      <LockAccountModal.render id="lock_account" user={assigns.modal_assigns.user} />
       """
     end
 
@@ -252,7 +275,7 @@ defmodule OliWeb.Users.AuthorsDetailView do
 
     modal = fn assigns ->
       ~H"""
-        <GrantAdminModal.render id="grant_admin" user={assigns.modal_assigns.user} />
+      <GrantAdminModal.render id="grant_admin" user={assigns.modal_assigns.user} />
       """
     end
 
@@ -276,7 +299,7 @@ defmodule OliWeb.Users.AuthorsDetailView do
 
     modal = fn assigns ->
       ~H"""
-        <RevokeAdminModal.render id="revoke_admin" user={assigns.modal_assigns.user} />
+      <RevokeAdminModal.render id="revoke_admin" user={assigns.modal_assigns.user} />
       """
     end
 

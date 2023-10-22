@@ -57,4 +57,5 @@ defmodule Oli.Repo.Migrations.AddPromptTemplates do
 
     execute "DROP EXTENSION vector"
   end
+
 end

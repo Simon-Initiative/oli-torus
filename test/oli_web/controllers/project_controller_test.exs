@@ -52,7 +52,8 @@ defmodule OliWeb.ProjectControllerTest do
       })
       |> Repo.insert()
 
-      conn = get(conn, Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.OverviewLive, project.slug))
+      conn =
+        get(conn, Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.OverviewLive, project.slug))
 
       response = html_response(conn, 200)
       assert response =~ "Overview"
@@ -99,26 +100,27 @@ defmodule OliWeb.ProjectControllerTest do
 
       # There are 7 files in the export (2 resources, 2 products, 1 hierarchy, 1 manifest and 1 project)
       assert length(entries) == 7
-      assert Map.has_key?(m, '_hierarchy.json')
-      assert Map.has_key?(m, '_media-manifest.json')
-      assert Map.has_key?(m, '_project.json')
-      assert Map.has_key?(m, '#{product_1.id}.json')
-      assert Map.has_key?(m, '#{product_2.id}.json')
-      assert Map.has_key?(m, '#{page_resource_1.id}.json')
-      assert Map.has_key?(m, '#{page_resource_2.id}.json')
+      assert Map.has_key?(m, ~c"_hierarchy.json")
+      assert Map.has_key?(m, ~c"_media-manifest.json")
+      assert Map.has_key?(m, ~c"_project.json")
+      assert Map.has_key?(m, ~c"#{product_1.id}.json")
+      assert Map.has_key?(m, ~c"#{product_2.id}.json")
+      assert Map.has_key?(m, ~c"#{page_resource_1.id}.json")
+      assert Map.has_key?(m, ~c"#{page_resource_2.id}.json")
 
       conn = post(conn, Routes.project_path(conn, :download_export, project.id))
       assert html_response(conn, 302) =~ "/authoring/projects"
     end
 
-    test "export a project with products works correctly by filtering out products that have publications from other projects.", %{
-      conn: conn,
-      project: project,
-      product_1: product_1,
-      product_2: product_2,
-      page_resource_1: page_resource_1,
-      page_resource_2: page_resource_2,
-    } do
+    test "export a project with products works correctly by filtering out products that have publications from other projects.",
+         %{
+           conn: conn,
+           project: project,
+           product_1: product_1,
+           product_2: product_2,
+           page_resource_1: page_resource_1,
+           page_resource_2: page_resource_2
+         } do
       create_another_publication(product_2)
 
       entries =
@@ -129,12 +131,12 @@ defmodule OliWeb.ProjectControllerTest do
 
       # There are 6 files in the export (2 resources, 1 product, 1 hierarchy, 1 manifest and 1 project)
       assert length(entries) == 6
-      assert Map.has_key?(m, '_hierarchy.json')
-      assert Map.has_key?(m, '_media-manifest.json')
-      assert Map.has_key?(m, '_project.json')
-      assert Map.has_key?(m, '#{product_1.id}.json')
-      assert Map.has_key?(m, '#{page_resource_1.id}.json')
-      assert Map.has_key?(m, '#{page_resource_2.id}.json')
+      assert Map.has_key?(m, ~c"_hierarchy.json")
+      assert Map.has_key?(m, ~c"_media-manifest.json")
+      assert Map.has_key?(m, ~c"_project.json")
+      assert Map.has_key?(m, ~c"#{product_1.id}.json")
+      assert Map.has_key?(m, ~c"#{page_resource_1.id}.json")
+      assert Map.has_key?(m, ~c"#{page_resource_2.id}.json")
 
       conn = post(conn, Routes.project_path(conn, :download_export, project.id))
       assert html_response(conn, 302) =~ "/authoring/projects"

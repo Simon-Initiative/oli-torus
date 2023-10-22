@@ -93,10 +93,12 @@ defmodule OliWeb.Products.ProductsView do
 
   defp mount_as(params, author, is_admin_view, project, breadcrumbs, title, socket, session) do
     project_id = if project === nil, do: nil, else: project.id
+
     options = %BlueprintBrowseOptions{
       project_id: project_id,
       include_archived: get_boolean_param(params, "include_archived", false)
     }
+
     products = Blueprint.list(options)
 
     total_count = length(products)
@@ -172,28 +174,32 @@ defmodule OliWeb.Products.ProductsView do
       project_id: project_id,
       include_archived: include_archived
     }
+
     products = Blueprint.list(options)
 
     total_count = length(products)
 
     {:ok, table_model} = OliWeb.Products.ProductsTableModel.new(products, socket.assigns.ctx)
 
-    socket = assign(socket,
-      include_archived: include_archived,
-      products: products,
-      total_count: total_count,
-      table_model: table_model
-    )
+    socket =
+      assign(socket,
+        include_archived: include_archived,
+        products: products,
+        total_count: total_count,
+        table_model: table_model
+      )
 
     {:noreply,
      push_patch(socket,
        to:
-        live_path(
-          socket,
-          Map.merge(socket.assigns.params,
-          %{
-             include_archived: include_archived
-           })
+         live_path(
+           socket,
+           Map.merge(
+             socket.assigns.params,
+             %{
+               include_archived: include_archived
+             }
+           )
          ),
        replace: true
      )}

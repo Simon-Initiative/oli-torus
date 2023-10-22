@@ -6,8 +6,8 @@ defmodule Oli.Interop.CustomActivities.FileDirectory do
   def setup(%{
         context: context
       }) do
-
     children = fetchChildren(context)
+
     element(
       :file_directory,
       children
@@ -18,6 +18,7 @@ defmodule Oli.Interop.CustomActivities.FileDirectory do
     case context.save_files do
       nil ->
         []
+
       save_files ->
         [
           save_files

@@ -6,7 +6,7 @@ defmodule Oli.Rendering.Group do
 
   alias Oli.Rendering.Context
 
-  @type next :: (() -> String.t())
+  @type next :: (-> String.t())
 
   @callback group(%Context{}, next, %{}) :: [any()]
   @callback elements(%Context{}, []) :: [any()]
@@ -21,7 +21,6 @@ defmodule Oli.Rendering.Group do
         writer
       ) do
     pagination_mode = Map.get(element, "paginationMode", "normal")
-
 
     if should_render?(mode, element) do
       next = fn ->

@@ -71,7 +71,6 @@ defmodule Oli.Delivery.Page.ObjectivesRollupTest do
       Seeder.add_page(map, attrs, :p1)
       |> Seeder.add_page(attrs2, :p2)
       |> Seeder.add_page(attrs3, :p3)
-
     end
 
     test "rolls up correctly when directly attached to page",
@@ -86,17 +85,31 @@ defmodule Oli.Delivery.Page.ObjectivesRollupTest do
       activity_revisions = [a1.revision, a2.revision]
 
       # Test that when none are attached
-      assert [] == ObjectivesRollup.rollup_objectives(
-        p1.revision, activity_revisions, Oli.Publishing.AuthoringResolver, project.slug)
+      assert [] ==
+               ObjectivesRollup.rollup_objectives(
+                 p1.revision,
+                 activity_revisions,
+                 Oli.Publishing.AuthoringResolver,
+                 project.slug
+               )
 
       # Tests when one is attached
-      assert ["objective two"] == ObjectivesRollup.rollup_objectives(
-        p2.revision, activity_revisions, Oli.Publishing.AuthoringResolver, project.slug)
+      assert ["objective two"] ==
+               ObjectivesRollup.rollup_objectives(
+                 p2.revision,
+                 activity_revisions,
+                 Oli.Publishing.AuthoringResolver,
+                 project.slug
+               )
 
       # Tests when objectives map is malformed (simply an empty map in this case)
-      assert [] == ObjectivesRollup.rollup_objectives(
-        p3.revision, activity_revisions, Oli.Publishing.AuthoringResolver, project.slug)
-
+      assert [] ==
+               ObjectivesRollup.rollup_objectives(
+                 p3.revision,
+                 activity_revisions,
+                 Oli.Publishing.AuthoringResolver,
+                 project.slug
+               )
     end
   end
 end

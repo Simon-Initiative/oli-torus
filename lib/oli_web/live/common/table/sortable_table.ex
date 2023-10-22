@@ -12,7 +12,11 @@ defmodule OliWeb.Common.Table.SortableTable do
       |> assign(:event_suffix, event_suffix)
 
     ~H"""
-    <th style="cursor: pointer;" phx-click={"sort#{@event_suffix}"} phx-value-sort_by={@column_spec.name}>
+    <th
+      style="cursor: pointer;"
+      phx-click={"sort#{@event_suffix}"}
+      phx-value-sort_by={@column_spec.name}
+    >
       <%= if @column_spec.tooltip do %>
         <span data-bs-toggle="tooltip" title={@column_spec.tooltip}>
           <%= @column_spec.label %>
@@ -54,7 +58,13 @@ defmodule OliWeb.Common.Table.SortableTable do
       <thead>
         <tr>
           <%= for column_spec <- @model.column_specs do %>
-            <%= th(with_data(assigns, @model.data), column_spec, @model.sort_by_spec, @model.sort_order, @model.event_suffix) %>
+            <%= th(
+              with_data(assigns, @model.data),
+              column_spec,
+              @model.sort_by_spec,
+              @model.sort_order,
+              @model.event_suffix
+            ) %>
           <% end %>
         </tr>
       </thead>
@@ -87,7 +97,7 @@ defmodule OliWeb.Common.Table.SortableTable do
           <%= case column_spec.render_fn do
             nil -> ColumnSpec.default_render_fn(column_spec, @row)
             func -> func.(with_data(assigns, @model.data), @row, column_spec)
-            end %>
+          end %>
         </td>
       <% end %>
     </tr>

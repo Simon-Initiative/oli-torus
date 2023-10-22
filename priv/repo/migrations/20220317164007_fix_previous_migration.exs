@@ -2,7 +2,6 @@ defmodule Oli.Repo.Migrations.FixPreviousMigration do
   use Ecto.Migration
 
   def change do
-
     flush()
 
     drop_trigger()
@@ -14,9 +13,7 @@ defmodule Oli.Repo.Migrations.FixPreviousMigration do
     refresh_materialized_view()
 
     flush()
-
   end
-
 
   def drop_materialized_view() do
     execute """
@@ -67,7 +64,6 @@ defmodule Oli.Repo.Migrations.FixPreviousMigration do
     TABLESPACE pg_default;
     """
   end
-
 
   def get_current_db_user() do
     case System.get_env("DATABASE_URL", nil) do

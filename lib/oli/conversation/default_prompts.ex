@@ -27,5 +27,4 @@ defmodule Oli.Conversation.DefaultPrompts do
     query = from(p in Oli.Conversation.DefaultPrompts, where: p.label == ^label)
     Oli.Repo.one(query).prompt
   end
-
 end

@@ -11,5 +11,4 @@ defmodule Oli.Converstation.PageContentCache do
 
   def get(revision_id),
     do: Cachex.get(@cache_name, revision_id)
-
 end

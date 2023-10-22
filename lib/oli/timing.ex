@@ -45,5 +45,4 @@ defmodule Oli.Timing do
   def elapsed(start_time) do
     System.monotonic_time() - start_time
   end
-
 end
