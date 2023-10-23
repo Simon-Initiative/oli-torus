@@ -5,6 +5,7 @@ on:
       - master
       - hotfix-*
       - prerelease-*
+      - nextgen-ux
   # manually trigger a package build from the Actions tab
   workflow_dispatch:
 
