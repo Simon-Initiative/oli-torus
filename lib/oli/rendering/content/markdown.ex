@@ -11,7 +11,6 @@ defmodule Oli.Rendering.Content.Markdown do
   alias Phoenix.HTML
   alias Oli.Rendering.Content.MathMLSanitizer
   alias HtmlSanitizeEx.Scrubber
-  alias Oli.Utils.Purposes
   alias Oli.Rendering.Content.ResourceSummary
 
   @behaviour Oli.Rendering.Content
@@ -134,139 +133,63 @@ defmodule Oli.Rendering.Content.Markdown do
     missing_media_src(context, e)
   end
 
-  defp tableBorderClass(%{"border" => "hidden"}), do: "table-borderless"
-  defp tableBorderClass(_), do: "table-bordered"
-
-  defp tableRowClass(%{"rowstyle" => "alternating"}), do: "table-striped"
-  defp tableRowClass(_), do: ""
-
-  def table(%Context{} = context, next, attrs) do
-
-    # We want to ensure that tables are always wrapped
-    # in a figure element, even if there is no caption. When
-    # a caption attr is present but "empty" we still want the figure,
-    # but not an empty <figcaption>.  The <figure> element with its
-    # responsive-embed class is needed in all cases to acheive correct
-    # table display.
-
-    wrapping_fn =
-       case attrs do
-         %{"caption" => ""} -> &figure_only/3
-         %{"caption" => nil} -> &figure_only/3
-         %{"caption" => [%{"children" => [%{"text" => ""}], "type" => "p"}]} -> &figure_only/3
-         %{"caption" => _an_actual_caption} -> &captioned_content/3
-         _ -> &figure_only/3
-       end
-
-    wrapping_fn.(context, attrs, [
-      "<table class='#{tableBorderClass(attrs)} #{tableRowClass(attrs)}'>",
+  def table(%Context{} = _context, next, _attrs) do
+    [
+      "\n",
       next.(),
-      "</table>\n"
-    ])
+      "\n\n"
+    ]
   end
 
   def tr(%Context{} = _context, next, _) do
-    ["<tr>", next.(), "</tr>\n"]
+    ["\n|", next.()]
   end
 
-  defp maybeColSpan(%{"colspan" => colspan}) do
-    " colspan='#{colspan}'"
+  def th(%Context{} = _context, next, _attrs) do
+    [next.(), "|"]
   end
 
-  defp maybeColSpan(_) do
-    ""
+  def td(%Context{} = _context, next, _attrs) do
+    [next.(), "|"]
   end
 
-  defp maybeRowSpan(%{"rowspan" => rowspan}) do
-    " rowspan='#{rowspan}'"
+  def tc(%Context{} = _context, next, _attrs) do
+    [next.(), "|"]
   end
 
-  defp maybeRowSpan(_) do
-    ""
-  end
-
-  defp maybeTextAlign(%{"align" => alignment}) do
-    " class='text-#{alignment}'"
-  end
-
-  defp maybeTextAlign(_) do
-    ""
-  end
-
-  defp maybeAlign(attrs) do
-    maybeColSpan(attrs) <> maybeRowSpan(attrs) <> maybeTextAlign(attrs)
-  end
-
-  def th(%Context{} = _context, next, attrs) do
-    ["<th#{maybeAlign(attrs)}>", next.(), "</th>\n"]
-  end
-
-  def td(%Context{} = _context, next, attrs) do
-    ["<td#{maybeAlign(attrs)}>", next.(), "</td>\n"]
-  end
-
-  def tc(%Context{} = _context, next, attrs) do
-    [click_class, audio_element, play_code, _] =
-      case attrs["audioSrc"] do
-        nil -> ["", "", "", ""]
-        src -> ["clickable" | audio_player(src)]
-      end
-
-    pronouns =
-      case attrs["pronouns"] do
-        nil -> []
-        pronouns -> ["<i>", pronouns, "</i> "]
-      end
-
-    [
-      "<td#{maybeAlign(attrs)} class=\"conjugation-cell #{click_class}\" onClick=#{play_code}>",
-      pronouns,
-      next.(),
-      audio_element,
-      "</td>\n"
-    ]
-  end
-
-  def ol(%Context{} = _context, next, %{"style" => style}) do
-    ["<ol class=\"list-#{style} list-inside pl-2\">", next.(), "</ol>\n"]
+  def ol(%Context{} = _context, next, %{"style" => _style}) do
+    ["\n", next.(), "\n\n"]
   end
 
   def ol(%Context{} = _context, next, _) do
-    ["<ol class=\"list-inside pl-2\">", next.(), "</ol>\n"]
+    ["\n", next.(), "\n\n"]
   end
 
   def dl(%Context{}, next, title, %{}) do
-    [
-      "<h4 class=\"dl-title\">",
-      title.(),
-      "</h4>\n",
-      "<dl>",
-      next.(),
-      "</dl>\n"
-    ]
+    ["\n", title, "\n", next.(), "\n\n"]
   end
 
   def dt(%Context{}, next, %{}) do
-    ["<dt>", next.(), "</dt>\n"]
+    [next.(), "\n"]
   end
 
   def dd(%Context{}, next, %{}) do
-    ["<dd>", next.(), "</dd>\n"]
+    [": ", next.(), "\n"]
   end
 
-  def ul(%Context{} = _context, next, %{"style" => style}) do
-    ["<ul class=\"list-#{style} list-inside pl-2\">", next.(), "</ul>\n"]
+  def ul(%Context{} = _context, next, %{"style" => _style}) do
+    ["\n", next.(), "\n\n"]
   end
 
   def ul(%Context{} = _context, next, _) do
-    ["<ul class=\"list-inside pl-2\">", next.(), "</ul>\n"]
+    ["\n", next.(), "\n\n"]
   end
 
   def li(%Context{} = _context, next, _) do
-    ["<li>", next.(), "</li>\n"]
+    ["1. ", next.(), "\n"]
   end
 
-  def conjugation(%Oli.Rendering.Context{}, render_table, render_pronunciation, attrs) do
+  def conjugation(%Oli.Rendering.Context{}, render_table, _render_pronunciation, attrs) do
     title =
       case attrs["title"] do
         nil -> ""
@@ -279,51 +202,40 @@ defmodule Oli.Rendering.Content.Markdown do
         verb -> verb
       end
 
-    [
-      "<div class=\"conjugation\">",
-      "<div class=\"title\">",
-      title,
-      "</div>",
-      "<div class=\"term\">",
-      verb,
-      render_pronunciation.(),
-      "</div>",
-      render_table.(),
-      "</div>"
-    ]
+      adhoc_group("Conjugation", [title, "\n", "verb: #{verb}\n", render_table.()])
   end
 
   def dialog(%Context{}, next, %{"title" => title}) do
-    ["<div class=\"dialog\"><h1>", title, "</h1>", next.(), "</div>"]
+    adhoc_group("Dialog", [title, "\n", next.()])
   end
 
   def dialog(%Context{}, next, _) do
-    ["<div class=\"dialog\">", next.(), "</div>"]
+    adhoc_group("Dialog", next.())
   end
 
   def dialog_speaker_portrait(image) do
-    "<img src=\"#{image}\" class=\"img-fluid speaker-portrait\"/>"
+    [
+      "![dialog speaker portrait](#{escape_xml!(image)})\n\n",
+    ]
   end
 
   def dialog_speaker_portrait() do
-    ~s|<i class="fa-solid fa-image-portrait"></i>|
+    ""
   end
 
   def dialog_speaker(speaker_id, %{"speakers" => speakers}) do
     speaker = Enum.find(speakers, fn speaker -> speaker["id"] == speaker_id end)
+    case speaker do
+      %{"name" => name, "image" => image} ->
+        [dialog_speaker_portrait(image), "Speaker: ", name, "\n"]
 
-    ["<div class=\"dialog-speaker\" >"] ++
-      case speaker do
-        %{"name" => name, "image" => image} ->
-          [dialog_speaker_portrait(image), "<div class=\"speaker-name\">", name, "</div>"]
+      %{"name" => name} ->
+        [dialog_speaker_portrait(), "Speaker: ", name, "\n"]
 
-        %{"name" => name} ->
-          [dialog_speaker_portrait(), "<div class=\"speaker-name\">", name, "</div>"]
-
-        _ ->
-          ["<div class=\"speaker-name\">", "Unknown Speaker", "</div>"]
-      end ++
-      ["</div>"]
+      _ ->
+        ["Speaker: Unknown Speaker \n"]
+    end ++
+    ["</div>"]
   end
 
   def dialog_line_class(speaker_id, %{"speakers" => speakers}) do
@@ -339,67 +251,22 @@ defmodule Oli.Rendering.Content.Markdown do
 
   def dialog_line(%Context{}, next, %{"speaker" => speaker_id}, dialog) do
     [
-      "<div class=\"dialog-line #{dialog_line_class(speaker_id, dialog)}\">",
       dialog_speaker(speaker_id, dialog),
-      "<div class=\"dialog-content\">",
       next.(),
-      "</div></div>"
+      "\n"
     ]
   end
 
   def definition_meaning(%Context{} = _context, next, _) do
-    ["<li class='meaning'>", next.(), "</li>\n"]
+    ["Meaning: ", next.(), "\n"]
   end
 
   def definition_translation(%Context{} = _context, next, _) do
-    ["<span class='translation'>", next.(), " </span>\n"]
+    ["Translation: ", next.(), "\n"]
   end
 
-  defp audio_player(nil), do: ["", "", ""]
-
-  defp audio_player(src) do
-    audio_id = UUID.uuid4()
-    # See app.ts for toggleAudio()
-    play_code = "window.toggleAudio(document.getElementById(\"#{audio_id}\"));"
-    audio_element = "<audio id='#{audio_id}' src='#{escape_xml!(src)}' preload='auto'></audio>"
-    [audio_element, play_code, audio_id]
-  end
-
-  def pronunciation(%Context{} = _context, next, element) do
-    case element["src"] do
-      nil ->
-        ["<span class='pronunciation'>", next.(), "</span>\n"]
-
-      src ->
-        [audio_element, play_code, _] = audio_player(src)
-
-        [
-          "<span class='pronunciation'>",
-          ~s|<span class='play-button' onClick='#{play_code}'><i class="fa-solid fa-circle-play"></i></span>|,
-          "<span class='pronunciation-player' onClick='#{play_code}'>",
-          audio_element,
-          next.(),
-          "</span></span>\n"
-        ]
-    end
-  end
-
-  defp maybePronunciationHeader(%{"pronunciation" => pronunciation}) do
-    if Oli.Activities.ParseUtils.has_content?(pronunciation) do
-      "Pronunciation: "
-    else
-      ""
-    end
-  end
-
-  defp maybePronunciationHeader(_), do: ""
-
-  defp meaningClass(meanings) do
-    case Enum.count(meanings) do
-      0 -> "meanings-empty"
-      1 -> "meanings-single"
-      _ -> "meanings"
-    end
+  def pronunciation(%Context{} = _context, next, _element) do
+    ["Pronunciation: ", next.()]
   end
 
   def definition(
@@ -407,32 +274,24 @@ defmodule Oli.Rendering.Content.Markdown do
         render_translation,
         render_pronunciation,
         render_meaning,
-        %{"term" => term, "meanings" => meanings} = element
+        %{"term" => term} = _element
       ) do
-    [
-      "<div class='definition'><div class='term'>",
+
+    adhoc_group("Definition", [
       term,
-      "</div><i>(definition)</i> <span class='definition-header'>",
-      maybePronunciationHeader(element),
+      "\n",
       render_pronunciation.(),
-      "<span class='definition-pronunciation'>",
       render_translation.(),
-      "</span></span><ol class='#{meaningClass(meanings)}'>",
-      render_meaning.(),
-      "</ol></div>\n"
-    ]
+      render_meaning.()
+    ])
   end
 
   def foreign(
-        %Oli.Rendering.Context{learning_language: learning_language},
+        %Oli.Rendering.Context{learning_language: _learning_language},
         next,
-        attrs
+        _attrs
       ) do
-    [
-      "<span class='foreign' lang='#{attrs["lang"] || learning_language}'>",
-      next.(),
-      "</span>"
-    ]
+    next.()
   end
 
   def formula_class(false), do: "formula"
@@ -446,7 +305,7 @@ defmodule Oli.Rendering.Content.Markdown do
         %{"subtype" => "latex", "src" => src, "legacyBlockRendered" => true},
         true
       ) do
-    ["<span class=\"#{formula_class(false)}\">\\(", escape_xml!(src), "\\)</span>\n"]
+    ["$$ ", escape_xml!(src), " $$\n"]
   end
 
   def formula(
@@ -455,7 +314,7 @@ defmodule Oli.Rendering.Content.Markdown do
         %{"subtype" => "latex", "src" => src},
         true
       ) do
-    ["<span class=\"#{formula_class(true)}\">\\(", escape_xml!(src), "\\)</span>\n"]
+    ["$$ ", escape_xml!(src), " $$\n"]
   end
 
   def formula(
@@ -464,29 +323,27 @@ defmodule Oli.Rendering.Content.Markdown do
         %{"subtype" => "latex", "src" => src},
         false
       ) do
-    ["<span class=\"#{formula_class(false)}\">\\[", escape_xml!(src), "\\]</span>\n"]
+    ["$$ ", escape_xml!(src), " $$\n"]
   end
 
   def formula(
         %Oli.Rendering.Context{} = _context,
         _next,
         %{"subtype" => "mathml", "src" => src},
-        inline
+        _inline
       ) do
     [
-      "<span class=\"#{formula_class(inline)}\">",
       Scrubber.scrub(src, MathMLSanitizer),
-      "</span>\n"
+      "\n"
     ]
   end
 
   def figure(%Context{} = _context, render_children, render_title, _) do
     [
-      "<div class='figure'><figure><figcaption>",
       render_title.(),
-      "</figcaption><div class='figure-content'>",
+      "\n",
       render_children.(),
-      "</div></figure></div>\n"
+      "\n"
     ]
   end
 
@@ -495,7 +352,7 @@ defmodule Oli.Rendering.Content.Markdown do
   end
 
   def math(%Context{} = _context, next, _) do
-    ["<div>\\[", next.(), "\\]</div>\n"]
+    ["$$ ", next.(), " $$\n"]
   end
 
   def math_line(%Context{} = _context, next, _) do
@@ -504,12 +361,12 @@ defmodule Oli.Rendering.Content.Markdown do
 
   # V2 - presence of "code" attr
   def code(
-        %Context{} = context,
+        %Context{} = _context,
         _next,
         %{
           "language" => language,
           "code" => code
-        } = attrs
+        } = _attrs
       ) do
     safe_language = escape_xml!(language)
 
@@ -520,18 +377,20 @@ defmodule Oli.Rendering.Content.Markdown do
         "text"
       end
 
-    captioned_content(context, attrs, [
-      ~s|<pre><code class="torus-code language-#{language}">#{escape_xml!(code)}</code></pre>\n|
-    ])
+    [
+      "```#{language}\n",
+      escape_xml!(code),
+      "\n```\n"
+    ]
   end
 
   # V1 - content as children
   def code(
-        %Context{} = context,
+        %Context{} = _context,
         next,
         %{
           "language" => language
-        } = attrs
+        } = _attrs
       ) do
     safe_language = escape_xml!(language)
 
@@ -542,67 +401,38 @@ defmodule Oli.Rendering.Content.Markdown do
         "text"
       end
 
-    captioned_content(context, attrs, [
-      ~s|<pre><code class="torus-code language-#{language}">|,
+    [
+      "```#{language}\n",
       next.(),
-      "</code></pre>\n"
-    ])
+      "\n```\n"
+    ]
   end
 
   def code(
-        %Context{} = context,
+        %Context{} = _dcontext,
         next,
         attrs
       ) do
     {_error_id, _error_msg} =
       log_error("Malformed content element. Missing language attribute", attrs)
 
-    captioned_content(context, attrs, [
-      ~s|<pre><code class="torus-code language-none">|,
+    [
+      "```\n",
       next.(),
-      "</code></pre>\n"
-    ])
+      "\n```\n"
+    ]
   end
 
   def code_line(%Context{} = _context, next, _) do
     [next.(), "\n"]
   end
 
-  def command_button(%Context{} = _context, next, %{
-        "style" => style,
-        "target" => target,
-        "message" => message
-      }) do
-    css_class =
-      case style do
-        "link" -> "btn btn-link command-button"
-        _ -> "btn btn-primary command-button"
-      end
-
-    [
-      "<span class=\"#{css_class}\" data-action=\"command-button\" data-target=\"#{escape_xml!(target)}\" data-message=\"#{message}\">",
-      next.(),
-      "</span>"
-    ]
-  end
-
-  def command_button(%Context{} = _context, next, %{
-        "target" => target,
-        "message" => message
-      }) do
-    [
-      "<span class=\"btn btn-primary command-button\" data-action=\"command-button\" data-target=\"#{escape_xml!(target)}\" data-message=\"#{message}\">",
-      next.(),
-      "</span>"
-    ]
-  end
-
-  def command_button(%Context{} = _context, next, _attrs) do
-    [next.()]
+  def command_button(%Context{} = _context, _next, _) do
+    ""
   end
 
   def blockquote(%Context{} = _context, next, _) do
-    ["<blockquote>", next.(), "</blockquote>\n"]
+    ["> ", next.(), "\n\n"]
   end
 
   def a(%Context{} = context, next, %{"href" => href}) do
@@ -613,18 +443,15 @@ defmodule Oli.Rendering.Content.Markdown do
     end
   end
 
-  def a(%Context{} = context, next, attrs) do
-    {_error_id, _error_msg} =
-      log_error("Malformed content element. Missing href attribute", attrs)
-
-    external_link(context, next, "#")
+  def a(%Context{} = _context, next, _attrs) do
+    next.()
   end
 
   defp internal_link(
          %Context{section_slug: section_slug, mode: mode, project_slug: project_slug},
          next,
          href,
-         opts \\ []
+         _opts \\ []
        ) do
     href =
       case section_slug do
@@ -648,80 +475,32 @@ defmodule Oli.Rendering.Content.Markdown do
           end
       end
 
-    target_rel =
-      case Keyword.get(opts, :target) do
-        nil -> ""
-        target -> ~s| target="#{target}" rel="noreferrer"|
-      end
-
-    [~s|<a class="internal-link" href="#{escape_xml!(href)}"#{target_rel}>|, next.(), "</a>\n"]
+    ["[", next.(), "](#{href})"]
   end
 
   defp external_link(%Context{} = _context, next, href) do
-    [
-      ~s|<a class="external-link" href="#{escape_xml!(href)}" target="_blank" rel="noreferrer">|,
-      next.(),
-      "</a>\n"
-    ]
+    ["[", next.(), "](#{href})"]
   end
 
-  def page_link(%Context{resource_summary_fn: resource_summary_fn} = context, _next, %{
-        "idref" => idref,
-        "purpose" => purpose
+  def page_link(%Context{resource_summary_fn: resource_summary_fn} = _context, _next, %{
+        "idref" => idref
       }) do
     %ResourceSummary{title: title, slug: slug} = resource_summary_fn.(idref)
     href = "/course/link/#{slug}"
 
-    [
-      ~s|<div class="content-page-link content-purpose #{purpose}"><div class="content-purpose-label">#{Purposes.label_for(purpose)}</div>|,
-      internal_link(
-        context,
-        fn ->
-          [
-            ~s|<div class="content-purpose-content d-flex flex-row">|,
-            ~s|<div class="title flex-grow-1">|,
-            escape_xml!(title),
-            "</div>",
-            ~s|<i class="fas fa-external-link-square-alt la-2x self-center"></i>|,
-            "</div>\n"
-          ]
-        end,
-        href,
-        target: "_blank"
-      ),
-      "</div>"
-    ]
+    ["[", escape_xml!(title), "](#{href})"]
   end
 
-  def cite(%Context{} = context, next, a) do
-    bib_references = Map.get(context, :bib_app_params, [])
-    bib_entry = Enum.find(bib_references, fn x -> x.id == Map.get(a, "bibref") end)
-
-    if bib_entry != nil do
-      [~s|<cite><sup>
-      [<a onclick="var d=document.getElementById('#{bib_entry.slug}'); if (d &amp;&amp; d.scrollIntoView) d.scrollIntoView();return false;" href="##{bib_entry.slug}" class="ref">#{bib_entry.ordinal}</a>]
-      </sup></cite>\n|]
-    else
-      ["<cite><sup>", next.(), "</sup></cite>\n"]
-    end
+  def cite(%Context{} = _context, next, _a) do
+    next.()
   end
 
-  def popup(%Context{} = context, _next, element) do
-    {:safe, rendered} =
-      OliWeb.Common.React.component(
-        context,
-        "Components.DeliveryElementRenderer",
-        %{
-          "element" => element
-        },
-        html_element: "span"
-      )
-
-    rendered
+  def popup(%Context{} = _context, _next, _element) do
+    []
   end
 
-  def selection(%Context{} = context, _, selection) do
-    Oli.Rendering.Content.Selection.render(context, selection, true)
+  def selection(%Context{} = _context, _, _selection) do
+    []
   end
 
   defp revision_slug_from_course_link(href) do
@@ -733,47 +512,20 @@ defmodule Oli.Rendering.Content.Markdown do
     escape_xml!(text) |> wrap_with_marks(text_entity)
   end
 
-  def error(%Context{} = _context, element, error) do
-    case error do
-      {:unsupported, error_id, _error_msg} ->
-        [
-          ~s|<div class="content unsupported">Content element type '#{element["type"]}' is not supported. Please contact support with issue ##{error_id}</div>\n|
-        ]
-
-      {:invalid, error_id, _error_msg} ->
-        [
-          ~s|<div class="content invalid">Content element is invalid. Please contact support with issue ##{error_id}</div>\n|
-        ]
-
-      {_, error_id, _error_msg} ->
-        [
-          ~s|<div class="content invalid">An error occurred while rendering content. Please contact support with issue ##{error_id}</div>\n|
-        ]
-    end
+  def error(%Context{} = _context, _element, _error) do
+    "rendering error\n\n"
   end
 
   def example(%Context{} = _context, next, _) do
-    [
-      ~s|<div class="content-purpose example"><div class="content-purpose-label">Example</div><div class="content-purpose-content">|,
-      next.(),
-      "</div></div>\n"
-    ]
+    adhoc_group("Example", next.())
   end
 
   def learn_more(%Context{} = _context, next, _) do
-    [
-      ~s|<div class="content-purpose learnmore"><div class="content-purpose-label">Learn more</div><div class="content-purpose-content">|,
-      next.(),
-      "</div></div>\n"
-    ]
+    adhoc_group("Learn More", next.())
   end
 
   def manystudentswonder(%Context{} = _context, next, _) do
-    [
-      ~s|<div class="content-purpose manystudentswonder"><div class="content-purpose-label">Many Students Wonder</div><div class="content-purpose-content">|,
-      next.(),
-      "</div></div>\n"
-    ]
+    adhoc_group("Many Students Wonder", next.())
   end
 
   def escape_xml!(text) do
@@ -784,19 +536,19 @@ defmodule Oli.Rendering.Content.Markdown do
 
   defp wrap_with_marks(text, text_entity) do
     supported_mark_tags = %{
-      "em" => "em",
-      "strong" => "strong",
-      "mark" => "mark",
-      "del" => "del",
-      "var" => "var",
-      "term" => "term",
-      "code" => "code",
-      "sub" => "sub",
-      "doublesub" => "doublesub",
-      "deemphasis" => "deemphasis",
-      "sup" => "sup",
-      "underline" => "underline",
-      "strikethrough" => "strikethrough"
+      "em" => "*",
+      "strong" => "**",
+      "mark" => "==",
+      "del" => "",
+      "var" => "",
+      "term" => "",
+      "code" => "`",
+      "sub" => "~",
+      "doublesub" => "",
+      "deemphasis" => "",
+      "sup" => "^",
+      "underline" => "",
+      "strikethrough" => "~~"
     }
 
     marks =
@@ -813,49 +565,10 @@ defmodule Oli.Rendering.Content.Markdown do
       text,
       fn mark, acc ->
         case mark do
-          "term" -> ~s|<span class="term">#{acc}</span>|
-          "underline" -> ~s|<span style="text-decoration: underline;">#{acc}</span>|
-          "strikethrough" -> ~s|<span style="text-decoration: line-through;">#{acc}</span>|
-          "doublesub" -> ~s|<sub><sub>#{acc}</sub></sub>|
-          "deemphasis" -> ~s|<em class="deemphasis">#{acc}</em>|
-          _ -> "<#{mark}>#{acc}</#{mark}>"
+          _ -> "#{mark}#{acc}#{mark}"
         end
       end
     )
-  end
-
-  # Accessible captions are created using a combination of the <figure /> and <figcaption /> elements.
-  defp captioned_content(_context, %{"caption" => ""} = _attrs, content), do: content
-
-  defp captioned_content(%Context{} = context, %{"caption" => caption_content} = _attrs, content) do
-    [~s|<div class="caption-wrapper">|] ++
-      [~s|<figure class="figure embed-responsive">|] ++
-      content ++
-      [~s|<figcaption class="figure-caption text-center">|] ++
-      [caption(context, caption_content)] ++
-      ["</figcaption>"] ++
-      ["</figure>"] ++
-      ["</div>"]
-  end
-
-  defp captioned_content(_context, _attrs, content), do: content
-
-  defp caption(_context, content) when is_binary(content) do
-    escape_xml!(content)
-  end
-
-  defp caption(context, content) do
-    Oli.Rendering.Content.render(context, content, __MODULE__)
-  end
-
-  defp figure_only(_context, _attrs, content) do
-    [
-      ~s|<figure class="figure embed-responsive">|,
-      ~s|<div class="figure-content">|,
-      content,
-      "</div>",
-      "</figure>"
-    ]
   end
 
   defp missing_media_src(%Context{render_opts: render_opts} = context, element) do
