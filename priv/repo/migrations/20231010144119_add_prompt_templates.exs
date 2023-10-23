@@ -24,13 +24,13 @@ defmodule Oli.Repo.Migrations.AddPromptTemplates do
 
   """
 
-  def change do
+  def up do
     execute "CREATE EXTENSION IF NOT EXISTS vector"
 
     flush()
 
     alter table(:sections) do
-      add(:page_prompt_template, :text)
+      add(:page_prompt_template, :text, default: @page_prompt)
     end
 
     create table("default_prompts", primary_key: false) do
@@ -46,5 +46,15 @@ defmodule Oli.Repo.Migrations.AddPromptTemplates do
         prompt: @page_prompt
       }
     ])
+  end
+
+  def down do
+    drop table("default_prompts")
+
+    alter table(:sections) do
+      remove(:page_prompt_template)
+    end
+
+    execute "DROP EXTENSION vector"
   end
 end
