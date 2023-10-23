@@ -99,11 +99,11 @@ export const AdaptivityEditor: React.FC<AdaptivityEditorProps> = () => {
   const handleRuleChange = (rule: any) => {
     const existing = currentActivity?.authoring?.rules?.find((r: any) => r.id === rule.id);
     const diff = JSON.stringify(rule) !== JSON.stringify(existing);
-    /*console.log('RULE CHANGE: ', {
+    console.log('RULE CHANGE: ', {
       rule,
       existing,
       diff,
-    });*/
+    });
     if (!existing) {
       console.warn("rule not found, shouldn't happen!!!");
       return;
@@ -122,26 +122,41 @@ export const AdaptivityEditor: React.FC<AdaptivityEditorProps> = () => {
         rule.conditions.any || rule.conditions.all,
       );
 
+      const conditionWithExpression = getReferencedKeysInConditions(
+        rule.conditions.any || rule.conditions.all,
+        true,
+      );
       const actions = rule?.event?.params?.actions || [];
       const actionsRefs = findReferencedActivitiesInActions(actions);
       const variableRefsInActions = getReferencedKeysInActions(actions);
-
+      const actionsWithExpression = getReferencedKeysInActions(actions, true);
       if (!activityClone.authoring.variablesRequiredForEvaluation) {
         activityClone.authoring.variablesRequiredForEvaluation = [];
       }
-
+      if (!activityClone.authoring.conditionsRequiredEvaluation) {
+        activityClone.authoring.conditionsRequiredEvaluation = [];
+      }
       const concatVars = [...variableRefsInConditions, ...variableRefsInActions];
-
+      const concatConditionsRequiredEvaluation = [
+        ...conditionWithExpression,
+        ...actionsWithExpression,
+      ];
       activityClone.authoring.variablesRequiredForEvaluation.push(concatVars);
+
+      activityClone.authoring.conditionsRequiredEvaluation.push(concatConditionsRequiredEvaluation);
       // make unique
       activityClone.authoring.variablesRequiredForEvaluation = uniq(
         flatten([...new Set(activityClone.authoring.variablesRequiredForEvaluation)]),
       );
-
+      activityClone.authoring.conditionsRequiredEvaluation = uniq(
+        flatten([...new Set(activityClone.authoring.conditionsRequiredEvaluation)]),
+      );
       if (!activityClone.authoring.activitiesRequiredForEvaluation) {
         activityClone.authoring.activitiesRequiredForEvaluation = [];
       }
-
+      if (!activityClone.authoring.conditionsRequiredEvaluation) {
+        activityClone.authoring.conditionsRequiredEvaluation = [];
+      }
       // finally need to add to the required activities any variables that are required but inherited from the sequence
       const treeRefs = activityClone.authoring.variablesRequiredForEvaluation
         .map((key: string) => {
@@ -198,7 +213,7 @@ export const AdaptivityEditor: React.FC<AdaptivityEditorProps> = () => {
   );
 
   const handleConditionsEditorChange = (updatedConditionsBlock: any) => {
-    /* console.log('CONDITION ED: ', updatedConditionsBlock); */
+    console.log('CONDITION ED: ', updatedConditionsBlock);
     const conds = updatedConditionsBlock.all || updatedConditionsBlock.any || [];
     const updatedIsAll = !!updatedConditionsBlock.all;
     const rootChanged = updatedIsAll !== rootConditionIsAll;

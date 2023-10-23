@@ -327,8 +327,11 @@ export const defaultWrongRule = {
   },
 };
 
-export const findReferencedActivitiesInConditions = (conditions: any) => {
-  const referencedKeys = getReferencedKeysInConditions(conditions);
+export const findReferencedActivitiesInConditions = (
+  conditions: any,
+  checkExpressionInTarget = false,
+) => {
+  const referencedKeys = getReferencedKeysInConditions(conditions, checkExpressionInTarget);
   const sequenceRefs = referencedKeys
     .filter((key) => key.indexOf('|stage.') !== -1)
     .map((key) => key.split('|')[0]);
@@ -338,7 +341,7 @@ export const findReferencedActivitiesInConditions = (conditions: any) => {
   return Array.from(new Set(sequenceRefs));
 };
 
-export const getReferencedKeysInConditions = (conditions: any) => {
+export const getReferencedKeysInConditions = (conditions: any, checkExpressionInTarget = false) => {
   const references: Set<string> = new Set();
 
   conditions.forEach(
@@ -347,33 +350,55 @@ export const getReferencedKeysInConditions = (conditions: any) => {
       any: boolean;
       fact: string;
       value: string | number | boolean | unknown;
+      target?: string;
     }) => {
       // the fact *must* be a reference to a key we need
-      if (condition.fact) {
+      if (!checkExpressionInTarget && condition.fact) {
         references.add(condition.fact);
       }
       // the value *might* contain a reference to a key we need
       if (typeof condition.value === 'string') {
-        extractUniqueVariablesFromText(condition.value).forEach((v) => references.add(v));
+        const variablesInCondition = checkExpressionInTarget
+          ? extractAllExpressionsFromText(condition.value)
+          : extractUniqueVariablesFromText(condition.value);
+        if (checkExpressionInTarget && variablesInCondition && variablesInCondition?.length) {
+          const target = condition.target || condition.fact;
+          references.add(target);
+        } else {
+          variablesInCondition.forEach((v) => references.add(v));
+        }
       } else if (Array.isArray(condition.value)) {
         condition.value.forEach((value: any) => {
           if (typeof value === 'string') {
-            extractUniqueVariablesFromText(value).forEach((v) => references.add(v));
+            const variablesInCondition = checkExpressionInTarget
+              ? extractAllExpressionsFromText(value)
+              : extractUniqueVariablesFromText(value);
+            if (checkExpressionInTarget && variablesInCondition && variablesInCondition?.length) {
+              const target = condition.target || condition.fact;
+              references.add(target);
+            } else {
+              variablesInCondition.forEach((v) => references.add(v));
+            }
           }
         });
       }
       if (condition.any || condition.all) {
-        const childRefs = getReferencedKeysInConditions(condition.any || condition.all);
+        const childRefs = getReferencedKeysInConditions(
+          condition.any || condition.all,
+          checkExpressionInTarget,
+        );
         childRefs.forEach((ref) => references.add(ref));
       }
     },
   );
-
   return Array.from(references);
 };
 
-export const findReferencedActivitiesInActions = (actions: any) => {
-  const referencedKeys = getReferencedKeysInActions(actions);
+export const findReferencedActivitiesInActions = (
+  actions: any,
+  checkExpressionInTarget = false,
+) => {
+  const referencedKeys = getReferencedKeysInActions(actions, checkExpressionInTarget);
   const sequenceRefs = referencedKeys
     .filter((key) => key.indexOf('|stage.') !== -1)
     .map((key) => key.split('|')[0]);
@@ -383,7 +408,7 @@ export const findReferencedActivitiesInActions = (actions: any) => {
   return Array.from(new Set(sequenceRefs));
 };
 
-export const getReferencedKeysInActions = (actions: any) => {
+export const getReferencedKeysInActions = (actions: any, checkExpressionInTarget = false) => {
   const references: Set<string> = new Set();
   actions.forEach(
     (action: {
@@ -398,11 +423,27 @@ export const getReferencedKeysInActions = (actions: any) => {
 
         // the value *might* contain a reference to a key we need
         if (typeof action.params.value === 'string') {
-          extractUniqueVariablesFromText(action.params.value).forEach((v) => references.add(v));
+          const variablesInCondition = checkExpressionInTarget
+            ? extractAllExpressionsFromText(action.params.value)
+            : extractUniqueVariablesFromText(action.params.value);
+          if (checkExpressionInTarget && variablesInCondition && variablesInCondition?.length) {
+            const target = action.params.target;
+            references.add(target);
+          } else {
+            variablesInCondition.forEach((v) => references.add(v));
+          }
         } else if (Array.isArray(action.params.value)) {
           action.params.value.forEach((value: any) => {
             if (typeof value === 'string') {
-              extractUniqueVariablesFromText(value).forEach((v) => references.add(v));
+              const variablesInCondition = checkExpressionInTarget
+                ? extractAllExpressionsFromText(value)
+                : extractUniqueVariablesFromText(value);
+              if (checkExpressionInTarget && variablesInCondition && variablesInCondition?.length) {
+                const target = action.params.target;
+                references.add(target);
+              } else {
+                variablesInCondition.forEach((v) => references.add(v));
+              }
             }
           });
         }

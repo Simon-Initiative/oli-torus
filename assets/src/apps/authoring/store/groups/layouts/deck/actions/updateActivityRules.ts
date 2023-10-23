@@ -115,9 +115,13 @@ export const updateActivityRules = createAsyncThunk(
         const activityRules = childActivity?.authoring?.rules || [];
         const activityRulesClone = clone(activityRules);
 
+        const activityInitState = childActivity?.content?.custom.facts;
+        const activityInitStateClone = clone(activityInitState);
+
         const referencedSequenceIds: string[] = [];
         let referencedVariableKeys: string[] = [];
 
+        const conditionWithExpression: string[] = [];
         // ensure that all conditions and condition blocks are assigned an id
         await Promise.all(
           activityRulesClone.map(async (rule: any) => {
@@ -134,10 +138,16 @@ export const updateActivityRules = createAsyncThunk(
               .map((sequenceItem) => selectActivityById(rootState, sequenceItem.resourceId!))
               .filter((activity) => !!activity) as IActivity[];
             await updateNestedConditions(conditionsToUpdate, activityTree);
+
             referencedSequenceIds.push(...findReferencedActivitiesInConditions(conditionsToUpdate));
             referencedVariableKeys.push(...getReferencedKeysInConditions(conditionsToUpdate));
             referencedSequenceIds.push(...findReferencedActivitiesInActions(actionsToUpdate));
             referencedVariableKeys.push(...getReferencedKeysInActions(actionsToUpdate));
+
+            conditionWithExpression.push(
+              ...getReferencedKeysInConditions(conditionsToUpdate, true),
+            );
+            conditionWithExpression.push(...getReferencedKeysInActions(actionsToUpdate, true));
             rule.conditions = rootCondition;
             if (forceProgress) {
               const nav = rule.event.params.actions.find(
@@ -149,6 +159,27 @@ export const updateActivityRules = createAsyncThunk(
             }
           }),
         );
+
+        // ensure that all conditions and condition blocks are assigned an id
+
+        if (activityInitStateClone.length) {
+          conditionWithExpression.push(
+            ...getReferencedKeysInConditions(activityInitStateClone, true),
+          );
+        }
+        // lets check if CAPI - configData has any variable that contains any expression.
+        const iFrameParts = childActivity?.content?.partsLayout.filter(
+          (part) => part.type === 'janus-capi-iframe',
+        );
+        iFrameParts?.forEach((part) => {
+          const configDetails = part.custom.configData;
+          const conditions = configDetails.map((data: any) => {
+            return { target: `stage.${part.id}.${data.key}`, value: data.value };
+          });
+          if (conditions?.length) {
+            conditionWithExpression.push(...getReferencedKeysInConditions(conditions, true));
+          }
+        });
 
         // ensure referencedVariableKeys are unique
         referencedVariableKeys = [...new Set(referencedVariableKeys)];
@@ -200,11 +231,26 @@ export const updateActivityRules = createAsyncThunk(
           }
         }
 
+        childActivityClone.authoring.conditionsRequiredEvaluation =
+          childActivityClone.authoring.conditionsRequiredEvaluation || [];
+
         childActivityClone.authoring.variablesRequiredForEvaluation =
           childActivityClone.authoring.variablesRequiredForEvaluation || [];
+
+        const refConditionWithExpressionLengthEqual =
+          childActivityClone.authoring.conditionsRequiredEvaluation.length ===
+          conditionWithExpression.length;
+
         const refVarLengthEqual =
           childActivityClone.authoring.variablesRequiredForEvaluation.length ===
           referencedVariableKeys.length;
+
+        const hasAllConditionsWithExpression =
+          refConditionWithExpressionLengthEqual &&
+          conditionWithExpression.every((rv) =>
+            childActivityClone.authoring.conditionsRequiredEvaluation.includes(rv),
+          );
+
         const hasAllReferencedVariables =
           refVarLengthEqual &&
           referencedVariableKeys.every((rv) =>
@@ -217,6 +263,21 @@ export const updateActivityRules = createAsyncThunk(
           );
           console.log('UPDATE VARS REQUIRED FOR EVALUATION', {
             referencedVariableKeys,
+            childActivityClone,
+          });
+          // add to activitiesToUpdate if not already in there (check by id)
+          if (!activitiesToUpdate.find((a) => a.id === childActivityClone.id)) {
+            activitiesToUpdate.push(childActivityClone);
+          }
+        }
+
+        if (!hasAllConditionsWithExpression) {
+          childActivityClone.authoring.conditionsRequiredEvaluation = conditionWithExpression;
+          childActivityClone.authoring.conditionsRequiredEvaluation = uniq(
+            flatten(childActivityClone.authoring.conditionsRequiredEvaluation),
+          );
+          console.log('UPDATE CONDITIONS REQUIRED EVALUATION', {
+            conditionWithExpression,
             childActivityClone,
           });
           // add to activitiesToUpdate if not already in there (check by id)
