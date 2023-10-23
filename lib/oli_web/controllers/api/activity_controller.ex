@@ -406,19 +406,19 @@ defmodule OliWeb.Api.ActivityController do
   end
 
   defp document_to_delivery_result(is_preview_mode, %{
-    title: title,
-    activity_type_id: activity_type_id,
-    content: content,
-    resource_id: resource_id
-  }) do
+         title: title,
+         activity_type_id: activity_type_id,
+         content: content,
+         resource_id: resource_id
+       }) do
     {authoring, content} = Map.pop(content, "authoring")
 
     result = %{
-    "result" => "success",
-    "title" => title,
-    "activityType" => activity_type_id,
-    "resourceId" => resource_id,
-    "content" => content
+      "result" => "success",
+      "title" => title,
+      "activityType" => activity_type_id,
+      "resourceId" => resource_id,
+      "content" => content
     }
 
     if is_preview_mode,

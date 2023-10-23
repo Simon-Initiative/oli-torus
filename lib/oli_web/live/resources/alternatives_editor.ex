@@ -59,18 +59,26 @@ defmodule OliWeb.Resources.AlternativesEditor do
   @impl Phoenix.LiveView
   def render(assigns) do
     ~H"""
-      <%= render_modal(assigns) %>
+    <%= render_modal(assigns) %>
 
-      <div class="alternatives-groups container">
-        <h2>Alternatives</h2>
-        <div class="d-flex flex-row">
-          <div class="flex-grow-1"></div>
-          <%= if @project.has_experiments do %>
-          <button disabled={!@can_add_decision_point} class="btn btn-primary mr-3" phx-click="show_create_experiment"><i class="fa fa-plus"></i> New Decision Point</button>
-          <% end %>
-          <button class="btn btn-primary" phx-click="show_create_modal"><i class="fa fa-plus"></i> New Alternative</button>
-        </div>
-        <div class="d-flex flex-column my-4">
+    <div class="alternatives-groups container">
+      <h2>Alternatives</h2>
+      <div class="d-flex flex-row">
+        <div class="flex-grow-1"></div>
+        <%= if @project.has_experiments do %>
+          <button
+            disabled={!@can_add_decision_point}
+            class="btn btn-primary mr-3"
+            phx-click="show_create_experiment"
+          >
+            <i class="fa fa-plus"></i> New Decision Point
+          </button>
+        <% end %>
+        <button class="btn btn-primary" phx-click="show_create_modal">
+          <i class="fa fa-plus"></i> New Alternative
+        </button>
+      </div>
+      <div class="d-flex flex-column my-4">
         <%= if Enum.count(@alternatives) > 0 do %>
           <%= for group <- @alternatives do %>
             <.group group={group} />
@@ -78,39 +86,57 @@ defmodule OliWeb.Resources.AlternativesEditor do
         <% else %>
           <div class="text-center"><em>There are no alternatives groups</em></div>
         <% end %>
-          </div>
       </div>
+    </div>
     """
   end
 
   def group(assigns) do
     ~H"""
-      <div class="alternatives-group bg-gray-100 dark:bg-neutral-800 dark:border-gray-700 border p-3 my-2">
-        <div class="d-flex flex-row align-items-center">
-          <div><b><%= @group.title %></b>
-            <%= if @group.content["strategy"] == "upgrade_decision_point" do %>
-              <i>Upgrade Decision Point</i>
-            <% end %>
-          </div>
-          <div class="flex-grow-1"></div>
-          <.icon_button class="mr-1" icon="fa-solid fa-pencil" on_click="show_edit_group_modal" values={["phx-value-resource-id": @group.resource_id]} />
-          <button class="btn btn-danger btn-sm mr-2" phx-click="show_delete_group_modal" phx-value-resource_id={@group.resource_id}>Delete</button>
-        </div>
-        <div class="mt-3">
-          <%= if Enum.count(@group.content["options"]) > 0 do %>
-            <ul class="list-group">
-              <%= for option <- @group.content["options"] do %>
-                <.group_option group={@group} option={option} show_actions={true} />
-              <% end %>
-            </ul>
-          <% else %>
-            <div class="my-2">
-              <div class="text-center"><em>There are no options in this group</em></div>
-            </div>
+    <div class="alternatives-group bg-gray-100 dark:bg-neutral-800 dark:border-gray-700 border p-3 my-2">
+      <div class="d-flex flex-row align-items-center">
+        <div>
+          <b><%= @group.title %></b>
+          <%= if @group.content["strategy"] == "upgrade_decision_point" do %>
+            <i>Upgrade Decision Point</i>
           <% end %>
-          <button class="btn btn-link btn-sm my-2" phx-click="show_create_option_modal" phx-value-resource_id={@group.resource_id}><i class="fa fa-plus"></i> New Option</button>
         </div>
+        <div class="flex-grow-1"></div>
+        <.icon_button
+          class="mr-1"
+          icon="fa-solid fa-pencil"
+          on_click="show_edit_group_modal"
+          values={["phx-value-resource-id": @group.resource_id]}
+        />
+        <button
+          class="btn btn-danger btn-sm mr-2"
+          phx-click="show_delete_group_modal"
+          phx-value-resource_id={@group.resource_id}
+        >
+          Delete
+        </button>
       </div>
+      <div class="mt-3">
+        <%= if Enum.count(@group.content["options"]) > 0 do %>
+          <ul class="list-group">
+            <%= for option <- @group.content["options"] do %>
+              <.group_option group={@group} option={option} show_actions={true} />
+            <% end %>
+          </ul>
+        <% else %>
+          <div class="my-2">
+            <div class="text-center"><em>There are no options in this group</em></div>
+          </div>
+        <% end %>
+        <button
+          class="btn btn-link btn-sm my-2"
+          phx-click="show_create_option_modal"
+          phx-value-resource_id={@group.resource_id}
+        >
+          <i class="fa fa-plus"></i> New Option
+        </button>
+      </div>
+    </div>
     """
   end
 
@@ -144,14 +170,16 @@ defmodule OliWeb.Resources.AlternativesEditor do
 
     form_body_fn = fn assigns ->
       ~H"""
-        <div class="form-group">
-          <%= text_input @form,
-            :name,
-            class: "form-control my-2" <> error_class(@form, :name, "is-invalid"),
-            placeholder: "Enter the name of the experiment decision point from Upgrade",
-            phx_hook: "InputAutoSelect",
-            required: true %>
-        </div>
+      <div class="form-group">
+        <%= text_input(
+          @form,
+          :name,
+          class: "form-control my-2" <> error_class(@form, :name, "is-invalid"),
+          placeholder: "Enter the name of the experiment decision point from Upgrade",
+          phx_hook: "InputAutoSelect",
+          required: true
+        ) %>
+      </div>
       """
     end
 
@@ -167,7 +195,7 @@ defmodule OliWeb.Resources.AlternativesEditor do
 
     modal = fn assigns ->
       ~H"""
-        <FormModal.modal {@modal_assigns} />
+      <FormModal.modal {@modal_assigns} />
       """
     end
 
@@ -181,14 +209,16 @@ defmodule OliWeb.Resources.AlternativesEditor do
 
     form_body_fn = fn assigns ->
       ~H"""
-        <div class="form-group">
-          <%= text_input @form,
-            :name,
-            class: "form-control my-2" <> error_class(@form, :name, "is-invalid"),
-            placeholder: "Enter a name for the alternative",
-            phx_hook: "InputAutoSelect",
-            required: true %>
-        </div>
+      <div class="form-group">
+        <%= text_input(
+          @form,
+          :name,
+          class: "form-control my-2" <> error_class(@form, :name, "is-invalid"),
+          placeholder: "Enter a name for the alternative",
+          phx_hook: "InputAutoSelect",
+          required: true
+        ) %>
+      </div>
       """
     end
 
@@ -204,7 +234,7 @@ defmodule OliWeb.Resources.AlternativesEditor do
 
     modal = fn assigns ->
       ~H"""
-        <FormModal.modal {@modal_assigns} />
+      <FormModal.modal {@modal_assigns} />
       """
     end
 
@@ -252,17 +282,19 @@ defmodule OliWeb.Resources.AlternativesEditor do
 
     form_body_fn = fn assigns ->
       ~H"""
-        <div class="form-group">
-          <%= hidden_input @form, :id %>
-          <%= hidden_input @form, :resource_id %>
+      <div class="form-group">
+        <%= hidden_input(@form, :id) %>
+        <%= hidden_input(@form, :resource_id) %>
 
-          <%= text_input @form,
-            :name,
-            class: "form-control my-2" <> error_class(@form, :name, "is-invalid"),
-            placeholder: "Enter a name",
-            phx_hook: "InputAutoSelect",
-            required: true %>
-        </div>
+        <%= text_input(
+          @form,
+          :name,
+          class: "form-control my-2" <> error_class(@form, :name, "is-invalid"),
+          placeholder: "Enter a name",
+          phx_hook: "InputAutoSelect",
+          required: true
+        ) %>
+      </div>
       """
     end
 
@@ -278,7 +310,7 @@ defmodule OliWeb.Resources.AlternativesEditor do
 
     modal = fn assigns ->
       ~H"""
-        <FormModal.modal {@modal_assigns} />
+      <FormModal.modal {@modal_assigns} />
       """
     end
 
@@ -332,7 +364,7 @@ defmodule OliWeb.Resources.AlternativesEditor do
       [] ->
         preview_fn = fn assigns ->
           ~H"""
-            <div class="text-center mt-3"><b><%= @group.title %></b></div>
+          <div class="text-center mt-3"><b><%= @group.title %></b></div>
           """
         end
 
@@ -348,7 +380,7 @@ defmodule OliWeb.Resources.AlternativesEditor do
 
         modal = fn assigns ->
           ~H"""
-            <DeleteModal.modal {@modal_assigns} />
+          <DeleteModal.modal {@modal_assigns} />
           """
         end
 
@@ -363,7 +395,7 @@ defmodule OliWeb.Resources.AlternativesEditor do
 
         modal = fn assigns ->
           ~H"""
-            <PreventDeletionModal.modal {@modal_assigns} />
+          <PreventDeletionModal.modal {@modal_assigns} />
           """
         end
 
@@ -407,17 +439,19 @@ defmodule OliWeb.Resources.AlternativesEditor do
 
     form_body_fn = fn assigns ->
       ~H"""
-        <div class="form-group">
-          <%= hidden_input @form, :id %>
-          <%= hidden_input @form, :resource_id %>
+      <div class="form-group">
+        <%= hidden_input(@form, :id) %>
+        <%= hidden_input(@form, :resource_id) %>
 
-          <%= text_input @form,
-            :title,
-            class: "form-control my-2" <> error_class(@form, :name, "is-invalid"),
-            placeholder: "Enter a title",
-            phx_hook: "InputAutoSelect",
-            required: true %>
-        </div>
+        <%= text_input(
+          @form,
+          :title,
+          class: "form-control my-2" <> error_class(@form, :name, "is-invalid"),
+          placeholder: "Enter a title",
+          phx_hook: "InputAutoSelect",
+          required: true
+        ) %>
+      </div>
       """
     end
 
@@ -433,7 +467,7 @@ defmodule OliWeb.Resources.AlternativesEditor do
 
     modal = fn assigns ->
       ~H"""
-        <FormModal.modal {@modal_assigns} />
+      <FormModal.modal {@modal_assigns} />
       """
     end
 
@@ -483,17 +517,19 @@ defmodule OliWeb.Resources.AlternativesEditor do
 
     form_body_fn = fn assigns ->
       ~H"""
-        <div class="form-group">
-          <%= hidden_input @form, :id %>
-          <%= hidden_input @form, :resource_id %>
+      <div class="form-group">
+        <%= hidden_input(@form, :id) %>
+        <%= hidden_input(@form, :resource_id) %>
 
-          <%= text_input @form,
-            :name,
-            class: "form-control my-2" <> error_class(@form, :name, "is-invalid"),
-            placeholder: "Enter a name",
-            phx_hook: "InputAutoSelect",
-            required: true %>
-        </div>
+        <%= text_input(
+          @form,
+          :name,
+          class: "form-control my-2" <> error_class(@form, :name, "is-invalid"),
+          placeholder: "Enter a name",
+          phx_hook: "InputAutoSelect",
+          required: true
+        ) %>
+      </div>
       """
     end
 
@@ -509,7 +545,7 @@ defmodule OliWeb.Resources.AlternativesEditor do
 
     modal = fn assigns ->
       ~H"""
-        <FormModal.modal {@modal_assigns} />
+      <FormModal.modal {@modal_assigns} />
       """
     end
 
@@ -565,9 +601,9 @@ defmodule OliWeb.Resources.AlternativesEditor do
 
     preview_fn = fn assigns ->
       ~H"""
-        <ul class="list-group">
-          <.group_option group={@group} option={@option} show_actions={false} />
-        </ul>
+      <ul class="list-group">
+        <.group_option group={@group} option={@option} show_actions={false} />
+      </ul>
       """
     end
 
@@ -584,7 +620,7 @@ defmodule OliWeb.Resources.AlternativesEditor do
 
     modal = fn assigns ->
       ~H"""
-        <DeleteModal.modal {@modal_assigns} />
+      <DeleteModal.modal {@modal_assigns} />
       """
     end
 

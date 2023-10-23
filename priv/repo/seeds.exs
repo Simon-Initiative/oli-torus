@@ -35,7 +35,9 @@ end
 pow_config = OliWeb.Pow.PowHelpers.get_pow_config(:author)
 
 # create admin author
-if !Oli.Repo.get_by(Oli.Accounts.Author, email: System.get_env("ADMIN_EMAIL", "admin@example.edu")) do
+if !Oli.Repo.get_by(Oli.Accounts.Author,
+     email: System.get_env("ADMIN_EMAIL", "admin@example.edu")
+   ) do
   case Pow.Ecto.Context.create(
          %{
            email: System.get_env("ADMIN_EMAIL", "admin@example.edu"),

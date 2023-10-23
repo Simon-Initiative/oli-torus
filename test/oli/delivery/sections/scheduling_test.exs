@@ -58,10 +58,27 @@ defmodule Oli.Delivery.Sections.SchedulingTest do
       refute page_two.graded
       assert page_two.scheduling_type == :read_by
 
-      assert {:ok, 2} = Scheduling.update(section, [
-        %{id: root.id, scheduling_type: "inclass_activity", start_date: "2023-02-03", end_date: "2023-02-06", manually_scheduled: true},
-        %{id: page_one.id, scheduling_type: "inclass_activity", start_date: nil, end_date: "2023-02-06", manually_scheduled: false}
-      ], "Etc/UTC")
+      assert {:ok, 2} =
+               Scheduling.update(
+                 section,
+                 [
+                   %{
+                     id: root.id,
+                     scheduling_type: "inclass_activity",
+                     start_date: "2023-02-03",
+                     end_date: "2023-02-06",
+                     manually_scheduled: true
+                   },
+                   %{
+                     id: page_one.id,
+                     scheduling_type: "inclass_activity",
+                     start_date: nil,
+                     end_date: "2023-02-06",
+                     manually_scheduled: false
+                   }
+                 ],
+                 "Etc/UTC"
+               )
 
       scheduled_resources = Scheduling.retrieve(section)
 
@@ -84,7 +101,6 @@ defmodule Oli.Delivery.Sections.SchedulingTest do
       assert page_one.manually_scheduled == false
       refute page_one.graded
       assert page_one.scheduling_type == :inclass_activity
-
     end
 
     test "cannot edit section resources of a different section", %{
@@ -130,11 +146,20 @@ defmodule Oli.Delivery.Sections.SchedulingTest do
 
       # Simulate a malicious client-side attempt to bulk edit section resource
       # schedule of srs from not this section
-      assert {:ok, 0} = Scheduling.update(section2, [
-        %{id: root.id, scheduling_type: "inclass_activity", start_date: "2023-02-03", end_date: "2023-02-06", manually_scheduled: true}
-      ],"Etc/UTC")
-
+      assert {:ok, 0} =
+               Scheduling.update(
+                 section2,
+                 [
+                   %{
+                     id: root.id,
+                     scheduling_type: "inclass_activity",
+                     start_date: "2023-02-03",
+                     end_date: "2023-02-06",
+                     manually_scheduled: true
+                   }
+                 ],
+                 "Etc/UTC"
+               )
     end
   end
-
 end

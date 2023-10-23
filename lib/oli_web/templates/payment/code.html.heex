@@ -6,9 +6,9 @@
   </p>
 
   <%= form_for @conn, Routes.payment_path(@conn, :apply_code, @section_slug), [as: :code], fn f -> %>
-
     <div class="form-label-group mt-4">
-      <div class="g-recaptcha" data-sitekey={ Application.fetch_env!(:oli, :recaptcha)[:site_key] }></div>
+      <div class="g-recaptcha" data-sitekey={Application.fetch_env!(:oli, :recaptcha)[:site_key]}>
+      </div>
 
       <%= case assigns[:recaptcha_error] do %>
         <% recaptcha_error -> %>
@@ -18,16 +18,14 @@
 
     <div class="form-group" style="width: 100%;">
       <label>Enter your payment code</label>
-      <%= text_input f, :value, class: "form-control", maxlength: 8%>
+      <%= text_input(f, :value, class: "form-control", maxlength: 8) %>
 
       <%= case assigns[:error] do %>
         <% error -> %>
           <div class="help-block text-danger"><%= error %></div>
       <% end %>
 
-      <%= submit "Submit", class: "btn btn-primary mt-3" %>
+      <%= submit("Submit", class: "btn btn-primary mt-3") %>
     </div>
-
   <% end %>
-
 </div>

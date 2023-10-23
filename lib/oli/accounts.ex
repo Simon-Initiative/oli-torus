@@ -411,9 +411,9 @@ defmodule Oli.Accounts do
   Returns true if a user belongs to an LMS.
   """
   def is_lms_user?(email) do
-
-    query = from user in User,
-      where: user.email == ^email and user.independent_learner == false
+    query =
+      from user in User,
+        where: user.email == ^email and user.independent_learner == false
 
     Repo.exists?(query)
   end

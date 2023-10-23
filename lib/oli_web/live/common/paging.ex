@@ -23,7 +23,7 @@ defmodule OliWeb.Common.Paging do
 
     ~H"""
     <div id={@id} class="d-flex justify-content-between items-center px-5 py-2">
-      <div :if={@show_pagination} ><%= @params.label %></div>
+      <div :if={@show_pagination}><%= @params.label %></div>
       <div class="flex-1"></div>
       <.form id={"#{@id}_page_size_form"} for={%{}} phx-change={@limit_change}>
         <div :if={@show_limit_change} class="inline-flex flex-col gap-1 mr-2">
@@ -31,11 +31,7 @@ defmodule OliWeb.Common.Paging do
             Page size
           </small>
           <select class="torus-select" name="limit">
-            <option
-              :for={page_size <- @page_sizes}
-              selected={@limit == page_size}
-              value={page_size}
-            >
+            <option :for={page_size <- @page_sizes} selected={@limit == page_size} value={page_size}>
               <%= page_size %>
             </option>
           </select>
@@ -45,7 +41,13 @@ defmodule OliWeb.Common.Paging do
       <nav :if={@show_pagination} aria-label="Paging">
         <ul class="pagination">
           <li class={"page-item #{if @params.current_page_index == 0, do: "disabled"}"}>
-            <button class="page-link" phx-click={@click} phx-value-offset={0} phx-value-limit={@limit} disabled={@params.current_page_index == 0}>
+            <button
+              class="page-link"
+              phx-click={@click}
+              phx-value-offset={0}
+              phx-value-limit={@limit}
+              disabled={@params.current_page_index == 0}
+            >
               <i class="fas fa-angle-double-left"></i>
             </button>
           </li>

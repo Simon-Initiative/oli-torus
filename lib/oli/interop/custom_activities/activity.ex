@@ -1,14 +1,11 @@
 defmodule Oli.Interop.CustomActivities.Activity do
-
   alias Oli.Interop.CustomActivities.{ItemInfo}
 
   import XmlBuilder
 
-  def setup(
-        %{
-          context: context
-        }
-      ) do
+  def setup(%{
+        context: context
+      }) do
     element(
       :activity,
       %{
@@ -18,11 +15,9 @@ defmodule Oli.Interop.CustomActivities.Activity do
         section_guid: context.section.id
       },
       [
-        ItemInfo.setup(
-          %{
-            context: context
-          }
-        )
+        ItemInfo.setup(%{
+          context: context
+        })
       ]
     )
   end

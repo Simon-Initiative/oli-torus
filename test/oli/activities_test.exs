@@ -12,16 +12,22 @@ defmodule Oli.ActivitiesTest do
       Activities.enable_activity_in_project(project.slug, custom_activity.slug)
       project_activities = Activities.activities_for_project(project)
 
-      assert project_activities |> Enum.filter(&match?(%{
-        id: _,
-        authoring_element: "oli-image-coding-authoring",
-        delivery_element: "oli-image-coding-delivery",
-        enabled: true,
-        global: false,
-        slug: "oli_image_coding",
-        title: "Image Coding"
-      }, &1)) |> length == 1
-
+      assert project_activities
+             |> Enum.filter(
+               &match?(
+                 %{
+                   id: _,
+                   authoring_element: "oli-image-coding-authoring",
+                   delivery_element: "oli-image-coding-delivery",
+                   enabled: true,
+                   global: false,
+                   slug: "oli_image_coding",
+                   title: "Image Coding"
+                 },
+                 &1
+               )
+             )
+             |> length == 1
     end
 
     test "removing a custom registered activity from a project", %{project: project} do
@@ -31,15 +37,22 @@ defmodule Oli.ActivitiesTest do
       Activities.disable_activity_in_project(project.slug, custom_activity.slug)
       project_activities = Activities.activities_for_project(project)
 
-      assert project_activities |> Enum.filter(&match?(%{
-               id: _,
-               authoring_element: "oli-image-coding-authoring",
-               delivery_element: "oli-image-coding-delivery",
-               enabled: false,
-               global: false,
-               slug: "oli_image_coding",
-               title: "Image Coding"
-             }, &1)) |> length == 1
+      assert project_activities
+             |> Enum.filter(
+               &match?(
+                 %{
+                   id: _,
+                   authoring_element: "oli-image-coding-authoring",
+                   delivery_element: "oli-image-coding-delivery",
+                   enabled: false,
+                   global: false,
+                   slug: "oli_image_coding",
+                   title: "Image Coding"
+                 },
+                 &1
+               )
+             )
+             |> length == 1
     end
 
     test "default editor menu should not include custom activity", %{project: project} do

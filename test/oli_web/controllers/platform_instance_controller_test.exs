@@ -71,7 +71,9 @@ defmodule OliWeb.PlatformInstanceControllerTest do
 
     test "renders errors when data is invalid", %{conn: conn} do
       conn =
-        post(conn, Routes.platform_instance_path(conn, :create), platform_instance: @invalid_attrs)
+        post(conn, Routes.platform_instance_path(conn, :create),
+          platform_instance: @invalid_attrs
+        )
 
       assert html_response(conn, 200) =~ "New Platform instance"
     end

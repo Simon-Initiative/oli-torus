@@ -38,14 +38,16 @@ defmodule Oli.Interop.Ingest.Processor.Hierarchy do
         end
       end)
 
-    labels = Map.get(hierarchy_details, "children")
-    |> Enum.filter(fn c -> c["type"] == "labels" end)
-    |> Enum.reduce(%{}, fn item, acc ->
-      Map.merge(acc, %{
-        unit: Map.get(item, "unit"),
-        module: Map.get(item, "module"),
-        section: Map.get(item, "section")
-        }) end)
+    labels =
+      Map.get(hierarchy_details, "children")
+      |> Enum.filter(fn c -> c["type"] == "labels" end)
+      |> Enum.reduce(%{}, fn item, acc ->
+        Map.merge(acc, %{
+          unit: Map.get(item, "unit"),
+          module: Map.get(item, "module"),
+          section: Map.get(item, "section")
+        })
+      end)
 
     custom_labels =
       case Map.equal?(labels, %{}) do
@@ -53,7 +55,9 @@ defmodule Oli.Interop.Ingest.Processor.Hierarchy do
         _ -> labels
       end
 
-    {:ok, updated_project} = Oli.Authoring.Course.update_project(project, %{customizations: custom_labels})
+    {:ok, updated_project} =
+      Oli.Authoring.Course.update_project(project, %{customizations: custom_labels})
+
     # wire those newly created top-level containers into the root resource
     ChangeTracker.track_revision(project.slug, root_revision, %{children: children})
 

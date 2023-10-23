@@ -10,7 +10,12 @@ defmodule Oli.Repo.Migrations.CreateCommunitiesVisibilities do
       timestamps(type: :timestamptz)
     end
 
-    create unique_index(:communities_visibilities, [:community_id, :project_id], name: :index_community_project)
-    create unique_index(:communities_visibilities, [:community_id, :section_id], name: :index_community_section)
+    create unique_index(:communities_visibilities, [:community_id, :project_id],
+             name: :index_community_project
+           )
+
+    create unique_index(:communities_visibilities, [:community_id, :section_id],
+             name: :index_community_section
+           )
   end
 end
