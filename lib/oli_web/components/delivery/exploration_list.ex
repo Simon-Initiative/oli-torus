@@ -7,7 +7,6 @@ defmodule OliWeb.Components.Delivery.ExplorationList do
   def mount(_params, %{"section_slug" => section_slug, "preview_mode" => preview_mode}, socket) do
     explorations = Resolver.get_by_purpose(section_slug, :application)
 
-
     {:ok,
      assign(socket,
        explorations: explorations,
@@ -18,17 +17,21 @@ defmodule OliWeb.Components.Delivery.ExplorationList do
 
   def render(assigns) do
     ~H"""
-      <div class="flex flex-col gap-4">
-        <%= if length(@explorations) > 0 do %>
-          <%= for exploration <- @explorations do %>
-            <ExplorationCard.render exploration={exploration} section_slug={@section_slug} preview_mode={@preview_mode} />
-          <% end %>
-        <% else %>
-          <div class="bg-white dark:bg-gray-800 border-l-4 border-delivery-primary p-4" role="alert">
-            <h6>There are no exploration pages available</h6>
-          </div>
+    <div class="flex flex-col gap-4">
+      <%= if length(@explorations) > 0 do %>
+        <%= for exploration <- @explorations do %>
+          <ExplorationCard.render
+            exploration={exploration}
+            section_slug={@section_slug}
+            preview_mode={@preview_mode}
+          />
         <% end %>
-      </div>
+      <% else %>
+        <div class="bg-white dark:bg-gray-800 border-l-4 border-delivery-primary p-4" role="alert">
+          <h6>There are no exploration pages available</h6>
+        </div>
+      <% end %>
+    </div>
     """
   end
 end

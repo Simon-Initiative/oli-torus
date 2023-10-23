@@ -1,14 +1,13 @@
 defmodule Oli.Analytics.DataTables.DataTable do
-
   alias CSV
 
   defstruct headers: [],
-    rows: []
+            rows: []
 
   @type t() :: %__MODULE__{
-    headers: [key: :atom] ,
-    rows: [any()],
-  }
+          headers: [key: :atom],
+          rows: [any()]
+        }
 
   def new(rows \\ []), do: %__MODULE__{rows: rows}
 
@@ -31,5 +30,4 @@ defmodule Oli.Analytics.DataTables.DataTable do
     |> CSV.encode(headers: headers)
     |> Enum.join()
   end
-
 end

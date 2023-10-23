@@ -1,5 +1,4 @@
 defmodule Oli.Analytics.Summary.MetricsV2Test do
-
   use Oli.DataCase
 
   alias Oli.Analytics.Summary
@@ -8,7 +7,6 @@ defmodule Oli.Analytics.Summary.MetricsV2Test do
 
   describe "v2 metrics calculations" do
     setup do
-
       map =
         Seeder.base_project_with_resource2()
         |> Seeder.create_section()
@@ -22,7 +20,6 @@ defmodule Oli.Analytics.Summary.MetricsV2Test do
       Seeder.ensure_published(map.publication.id)
 
       Seeder.create_section_resources(map)
-
     end
 
     test "proficiency for objectives", %{
@@ -34,7 +31,6 @@ defmodule Oli.Analytics.Summary.MetricsV2Test do
       page1: page1,
       project: project
     } do
-
       objective_type_id = Oli.Resources.ResourceType.get_id_by_type("objective")
       page_type_id = Oli.Resources.ResourceType.get_id_by_type("page")
       {:ok, section} = Oli.Delivery.Sections.update_section(section, %{analytics_version: :v2})
@@ -43,7 +39,8 @@ defmodule Oli.Analytics.Summary.MetricsV2Test do
       id2 = o2.resource.id
 
       [
-        [-1, -1, section.id, -1, page1.id, nil, page_type_id, 4, 10, 1, 5, 1],  # page record
+        # page record
+        [-1, -1, section.id, -1, page1.id, nil, page_type_id, 4, 10, 1, 5, 1],
         [-1, -1, section.id, -1, id, nil, objective_type_id, 4, 10, 1, 5, 1],
         [-1, -1, section.id, user1.id, id, nil, objective_type_id, 2, 6, 1, 1, 0],
         [-1, -1, section.id, user2.id, id, nil, objective_type_id, 2, 4, 0, 1, 1],
@@ -59,9 +56,11 @@ defmodule Oli.Analytics.Summary.MetricsV2Test do
       assert Map.keys(results) |> Enum.count() == 2
       assert assert %{^id => {1, 5}, ^id2 => {10, 50}} = results
 
-      assert %{^id => {0, 1}, ^id2 => {1, 3}} = Metrics.raw_proficiency_for_student_per_learning_objective(section, user1.id)
-      assert %{^id => {1, 1}, ^id2 => {2, 4}} = Metrics.raw_proficiency_for_student_per_learning_objective(section, user2.id)
+      assert %{^id => {0, 1}, ^id2 => {1, 3}} =
+               Metrics.raw_proficiency_for_student_per_learning_objective(section, user1.id)
 
+      assert %{^id => {1, 1}, ^id2 => {2, 4}} =
+               Metrics.raw_proficiency_for_student_per_learning_objective(section, user2.id)
     end
 
     test "proficiency for page", %{
@@ -73,7 +72,6 @@ defmodule Oli.Analytics.Summary.MetricsV2Test do
       page2: page2,
       project: project
     } do
-
       objective_type_id = Oli.Resources.ResourceType.get_id_by_type("objective")
       page_type_id = Oli.Resources.ResourceType.get_id_by_type("page")
       {:ok, section} = Oli.Delivery.Sections.update_section(section, %{analytics_version: :v2})
@@ -133,26 +131,22 @@ defmodule Oli.Analytics.Summary.MetricsV2Test do
       assert Map.keys(results) |> Enum.count() == 2
       assert %{^user1_id => "High", ^user2_id => "Low"} = results
     end
-
   end
 
   defp add_resource_summary([prj, pub, section, user, resource, part, type, nc, na, nh, nfa, nfac]) do
-    Summary.create_resource_summary(
-      %{
-        project_id: prj,
-        publication_id: pub,
-        section_id: section,
-        user_id: user,
-        resource_id: resource,
-        part_id: part,
-        resource_type_id: type,
-        num_correct: nc,
-        num_attempts: na,
-        num_hints: nh,
-        num_first_attempts: nfa,
-        num_first_attempts_correct: nfac
-      }
-    )
+    Summary.create_resource_summary(%{
+      project_id: prj,
+      publication_id: pub,
+      section_id: section,
+      user_id: user,
+      resource_id: resource,
+      part_id: part,
+      resource_type_id: type,
+      num_correct: nc,
+      num_attempts: na,
+      num_hints: nh,
+      num_first_attempts: nfa,
+      num_first_attempts_correct: nfac
+    })
   end
-
 end

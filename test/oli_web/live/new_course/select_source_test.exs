@@ -122,7 +122,7 @@ defmodule OliWeb.NewCourse.SelectSourceTest do
       refute has_element?(view, "div", last_s.title)
 
       view
-      |> element(".page-item a", "2")
+      |> element(".page-item button", "2")
       |> render_click()
 
       refute has_element?(view, "div", first_s.title)
@@ -263,7 +263,7 @@ defmodule OliWeb.NewCourse.SelectSourceTest do
       refute has_element?(view, "a[phx-value-id=\"product:#{last_s.id}\"]")
 
       view
-      |> element(".page-item a", "2")
+      |> element(".page-item button", "2")
       |> render_click()
 
       refute has_element?(view, "a[phx-value-id=\"publication:#{publication_id}\"]")
@@ -407,7 +407,7 @@ defmodule OliWeb.NewCourse.SelectSourceTest do
       refute has_element?(view, "a[phx-value-id=\"product:#{last_s.id}\"]")
 
       view
-      |> element(".page-item a", "2")
+      |> element(".page-item button", "2")
       |> render_click()
 
       refute has_element?(view, "a[phx-value-id=\"publication:#{publication_id}\"]")

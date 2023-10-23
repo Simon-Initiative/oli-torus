@@ -536,4 +536,194 @@ defmodule OliWeb.Delivery.StudentDashboard.Components.QuizzScoresTabTest do
              )
     end
   end
+
+  describe "page size change" do
+    setup [:instructor_conn, :section_with_gating_conditions]
+
+    test "lists table elements according to the default page size", %{
+      conn: conn,
+      instructor: instructor,
+      section: section,
+      student_with_gating_condition: student_with_gating_condition,
+      graded_page_1: graded_page_1,
+      graded_page_2: graded_page_2,
+      graded_page_3: graded_page_3,
+      graded_page_4: graded_page_4,
+      graded_page_5: graded_page_5,
+      graded_page_6: graded_page_6
+    } do
+      Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
+
+      {:ok, view, _html} =
+        live(
+          conn,
+          live_view_students_dashboard_route(
+            section.slug,
+            student_with_gating_condition.id,
+            :quizz_scores
+          )
+        )
+
+      assert has_element?(
+               view,
+               "div",
+               "#{graded_page_1.title}"
+             )
+
+      assert has_element?(
+               view,
+               "div",
+               "#{graded_page_2.title}"
+             )
+
+      assert has_element?(
+               view,
+               "div",
+               "#{graded_page_3.title}"
+             )
+
+      assert has_element?(
+               view,
+               "div",
+               "#{graded_page_4.title}"
+             )
+
+      assert has_element?(
+               view,
+               "div",
+               "#{graded_page_5.title}"
+             )
+
+      assert has_element?(
+               view,
+               "div",
+               "#{graded_page_6.title}"
+             )
+
+      # It does not display pagination options
+      refute has_element?(view, "nav[aria-label=\"Paging\"]")
+
+      # It displays page size dropdown
+      assert has_element?(view, "form select.torus-select option[selected]", "20")
+    end
+
+    test "updates page size and list expected elements", %{
+      conn: conn,
+      instructor: instructor,
+      section: section,
+      student_with_gating_condition: student_with_gating_condition,
+      graded_page_1: graded_page_1,
+      graded_page_2: graded_page_2,
+      graded_page_3: graded_page_3,
+      graded_page_4: graded_page_4,
+      graded_page_5: graded_page_5,
+      graded_page_6: graded_page_6
+    } do
+      Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
+
+      {:ok, view, _html} =
+        live(
+          conn,
+          live_view_students_dashboard_route(
+            section.slug,
+            student_with_gating_condition.id,
+            :quizz_scores
+          )
+        )
+
+      # Change page size from default (20) to 2
+      view
+      |> element("#header_paging_page_size_form")
+      |> render_change(%{limit: "2"})
+
+      # Page 1
+      assert has_element?(
+               view,
+               "div",
+               "#{graded_page_1.title}"
+             )
+
+      assert has_element?(
+               view,
+               "div",
+               "#{graded_page_2.title}"
+             )
+
+      # Page 2
+      refute has_element?(
+               view,
+               "div",
+               "#{graded_page_3.title}"
+             )
+
+      refute has_element?(
+               view,
+               "div",
+               "#{graded_page_4.title}"
+             )
+
+      # Page 3
+      refute has_element?(
+               view,
+               "div",
+               "#{graded_page_5.title}"
+             )
+
+      refute has_element?(
+               view,
+               "div",
+               "#{graded_page_6.title}"
+             )
+    end
+
+    test "keeps showing the same elements when changing the page size", %{
+      conn: conn,
+      instructor: instructor,
+      section: section,
+      student_with_gating_condition: student_with_gating_condition,
+      graded_page_3: graded_page_3,
+      graded_page_4: graded_page_4
+    } do
+      Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
+
+      {:ok, view, _html} =
+        live(
+          conn,
+          live_view_students_dashboard_route(
+            section.slug,
+            student_with_gating_condition.id,
+            :quizz_scores,
+            %{
+              limit: 2,
+              offset: 2
+            }
+          )
+        )
+
+      # Page 2
+      assert has_element?(
+               view,
+               "div",
+               "#{graded_page_3.title}"
+             )
+
+      assert has_element?(
+               view,
+               "div",
+               "#{graded_page_4.title}"
+             )
+
+      # Change page size from 2 to 1
+      view
+      |> element("#header_paging_page_size_form")
+      |> render_change(%{limit: "1"})
+
+      # Page 3. It keeps showing the same element.
+      assert has_element?(
+               view,
+               "div",
+               "#{graded_page_3.title}"
+             )
+    end
+  end
 end

@@ -52,7 +52,7 @@ defmodule Oli.Interop.Ingest.State do
 
   def new() do
     %__MODULE__{
-      bypass_validation: false,
+      bypass_validation: true,
       errors: [],
       entries: nil,
       resource_map: nil,

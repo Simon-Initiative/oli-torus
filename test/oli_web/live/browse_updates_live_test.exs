@@ -123,7 +123,7 @@ defmodule OliWeb.BrowseUpdatesLiveTest do
       refute has_element?(view, "##{old_update.id}")
 
       view
-      |> element("#header_paging a[phx-click=\"paged_table_page_change\"]", "2")
+      |> element("#header_paging button[phx-click=\"paged_table_page_change\"]", "2")
       |> render_click()
 
       refute has_element?(view, "##{first_u.id}")

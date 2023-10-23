@@ -6,7 +6,10 @@ defmodule Oli.Delivery.Attempts.Core.ResourceAttempt do
     field(:attempt_guid, :string)
     field(:attempt_number, :integer)
 
-    field(:lifecycle_state, Ecto.Enum, values: [:active, :submitted, :evaluated], default: :active)
+    field(:lifecycle_state, Ecto.Enum,
+      values: [:active, :submitted, :evaluated],
+      default: :active
+    )
 
     field(:date_evaluated, :utc_datetime)
     field(:date_submitted, :utc_datetime)

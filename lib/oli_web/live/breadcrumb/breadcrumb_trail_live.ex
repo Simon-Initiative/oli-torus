@@ -30,26 +30,26 @@ defmodule OliWeb.Breadcrumb.BreadcrumbTrailLive do
     ~H"""
     <nav aria-label="breadcrumb overflow-hidden">
       <ol class="breadcrumb custom-breadcrumb">
-
         <%= if !is_nil(@project) do %>
-          <%= live_component BreadcrumbLive,
+          <%= live_component(BreadcrumbLive,
             id: "breadcrumb-project",
-            breadcrumb: Breadcrumb.new(%{
-              full_title: @project.title,
-              link: Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.OverviewLive, @project.slug)
-            }),
+            breadcrumb:
+              Breadcrumb.new(%{
+                full_title: @project.title,
+                link: Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.OverviewLive, @project.slug)
+              }),
             is_last: false,
             show_short: false
-          %>
+          ) %>
         <% end %>
 
         <%= for {breadcrumb, index} <- Enum.with_index(@breadcrumbs) do %>
-          <%= live_component BreadcrumbLive,
+          <%= live_component(BreadcrumbLive,
             id: "breadcrumb-#{index}",
             breadcrumb: breadcrumb,
             is_last: length(@breadcrumbs) - 1 == index,
             show_short: length(@breadcrumbs) > 3
-          %>
+          ) %>
         <% end %>
       </ol>
     </nav>

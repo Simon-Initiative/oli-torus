@@ -143,7 +143,7 @@ defmodule OliWeb.PublisherLiveTest do
       refute has_element?(view, "##{last_p.id}")
 
       view
-      |> element("a[phx-click=\"page_change\"]", "2")
+      |> element("button[phx-click=\"page_change\"]", "2")
       |> render_click()
 
       refute has_element?(view, "##{first_p.id}")

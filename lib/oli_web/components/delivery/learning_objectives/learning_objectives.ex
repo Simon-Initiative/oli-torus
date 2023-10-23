@@ -9,7 +9,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
 
   @default_params %{
     offset: 0,
-    limit: 10,
+    limit: 20,
     container_id: nil,
     sort_order: :asc,
     sort_by: :objective,
@@ -82,14 +82,20 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
             </a>
           </div>
           <div class="flex flex-col-reverse sm:flex-row gap-2 items-end">
-            <.form for={%{}} class={"w-full"} phx-change="filter_by" phx-target={@myself}>
+            <.form for={%{}} class="w-full" phx-change="filter_by" phx-target={@myself}>
               <label class="cursor-pointer inline-flex flex-col gap-1 w-full">
                 <small class="torus-small uppercase">
                   Filter by module
-                  <i id="filter-disabled-tooltip" :if={@filter_disabled?} class="fas fa-info-circle" title="This filter will be available soon" phx-hook="TooltipInit"/>
+                  <i
+                    :if={@filter_disabled?}
+                    id="filter-disabled-tooltip"
+                    class="fas fa-info-circle"
+                    title="This filter will be available soon"
+                    phx-hook="TooltipInit"
+                  />
                 </small>
                 <select class="torus-select" name="filter" disabled={@filter_disabled?}>
-                  <option selected={@params.filter_by == "root"} value={"root"}>Root</option>
+                  <option selected={@params.filter_by == "root"} value="root">Root</option>
                   <option
                     :for={module <- @units_modules}
                     selected={@params.filter_by == module.container_id}
@@ -122,6 +128,8 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
               additional_table_class="instructor_dashboard_table"
               show_bottom_paging={false}
               render_top_info={false}
+              limit_change={JS.push("paged_table_limit_change", target: @myself)}
+              show_limit_change={true}
             />
           </div>
         <% else %>
@@ -187,6 +195,31 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
          route_for(
            socket,
            %{limit: limit, offset: offset},
+           socket.assigns.patch_url_type
+         )
+     )}
+  end
+
+  def handle_event(
+        "paged_table_limit_change",
+        params,
+        %{assigns: %{params: current_params}} = socket
+      ) do
+    new_limit = Params.get_int_param(params, "limit", 20)
+
+    new_offset =
+      OliWeb.Common.PagingParams.calculate_new_offset(
+        current_params.offset,
+        new_limit,
+        socket.assigns.total_count
+      )
+
+    {:noreply,
+     push_patch(socket,
+       to:
+         route_for(
+           socket,
+           %{limit: new_limit, offset: new_offset},
            socket.assigns.patch_url_type
          )
      )}

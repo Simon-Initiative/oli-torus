@@ -44,20 +44,24 @@ defmodule Oli.Interop.Ingest.Processor.Hyperlinks do
   # populated by an export from a Torus course, which guarantees that these "string ids" will
   # always actually be integers, as strings - as opposed to a legacy OLI id.
   defp rewire_relates_to(page_map) do
-
     Map.values(page_map)
     |> Enum.each(fn revision ->
       case revision.relates_to do
-        nil -> revision
-        [] -> revision
+        nil ->
+          revision
+
+        [] ->
+          revision
+
         ids ->
-          mapped_ids = Enum.map(ids, fn id ->
-            case Map.get(page_map, "#{id}") do
-              nil -> nil
-              relates_to -> relates_to.resource_id
-            end
-          end)
-          |> Enum.reject(fn id -> is_nil(id) end)
+          mapped_ids =
+            Enum.map(ids, fn id ->
+              case Map.get(page_map, "#{id}") do
+                nil -> nil
+                relates_to -> relates_to.resource_id
+              end
+            end)
+            |> Enum.reject(fn id -> is_nil(id) end)
 
           Oli.Resources.update_revision(revision, %{relates_to: mapped_ids})
       end

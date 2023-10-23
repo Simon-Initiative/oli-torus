@@ -83,11 +83,15 @@ defmodule Oli.Conversation.Dialogue do
   end
 
   def engage(%__MODULE__{messages: messages} = dialogue, :sync) do
-     result = OpenAI.chat_completion([
-      model: "gpt-3.5-turbo",
-      messages: encode_messages(messages),
-      functions: dialogue.functions,
-    ], config(:sync))
+    result =
+      OpenAI.chat_completion(
+        [
+          model: "gpt-3.5-turbo",
+          messages: encode_messages(messages),
+          functions: dialogue.functions
+        ],
+        config(:sync)
+      )
 
     result
   end

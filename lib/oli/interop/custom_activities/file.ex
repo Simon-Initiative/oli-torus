@@ -1,12 +1,9 @@
 defmodule Oli.Interop.CustomActivities.File do
-
   import XmlBuilder
 
-  def setup(
-        %{
-          context: _context
-        }
-      ) do
+  def setup(%{
+        context: _context
+      }) do
     element(
       :file,
       %{

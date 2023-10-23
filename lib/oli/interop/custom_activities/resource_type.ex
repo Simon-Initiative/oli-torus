@@ -1,12 +1,9 @@
 defmodule Oli.Interop.CustomActivities.ResourceType do
-
   import XmlBuilder
 
-  def setup(
-        %{
-          context: context
-        }
-      ) do
+  def setup(%{
+        context: context
+      }) do
     element(
       :resource_type,
       %{

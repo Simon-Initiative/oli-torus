@@ -15,16 +15,16 @@ defmodule OliWeb.Storybook.ModalExample do
   @impl true
   def render(assigns) do
     ~H"""
-      <div>
-        <.button variant={:primary} phx-click={show_modal(%JS{}, "confirm-modal")}>Show modal</.button>
+    <div>
+      <.button variant={:primary} phx-click={show_modal(%JS{}, "confirm-modal")}>Show modal</.button>
 
-        <.modal id="confirm-modal">
-          <:title>Example</:title>
-          Here is an example modal.
-          <:confirm>OK</:confirm>
-          <:cancel>Cancel</:cancel>
-        </.modal>
-      </div>
+      <.modal id="confirm-modal">
+        <:title>Example</:title>
+        Here is an example modal.
+        <:confirm>OK</:confirm>
+        <:cancel>Cancel</:cancel>
+      </.modal>
+    </div>
     """
   end
 end

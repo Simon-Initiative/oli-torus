@@ -33,12 +33,17 @@ defmodule Oli.Delivery.Attempts do
       answer: p_att.response
     })
     |> Repo.all()
-    |> Enum.map(fn %{question: question, transformed_model: transformed_model, raw_model: raw_model, answer: answer} ->
-
-      model_to_use = case transformed_model do
-        nil -> raw_model
-        _ -> transformed_model
-      end
+    |> Enum.map(fn %{
+                     question: question,
+                     transformed_model: transformed_model,
+                     raw_model: raw_model,
+                     answer: answer
+                   } ->
+      model_to_use =
+        case transformed_model do
+          nil -> raw_model
+          _ -> transformed_model
+        end
 
       %{
         title: question,

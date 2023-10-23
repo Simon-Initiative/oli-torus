@@ -31,7 +31,9 @@ defmodule Oli.Delivery.Paywall.Discount do
     |> validate_required_if([:percentage], &is_percentage_type?/1)
     |> validate_required_if([:amount], &is_amount_type?/1)
     |> validate_number_if(:percentage, &is_percentage_type?/1, 0, 100)
-    |> unique_constraint([:section_id, :institution_id], name: :index_discount_section_institution)
+    |> unique_constraint([:section_id, :institution_id],
+      name: :index_discount_section_institution
+    )
     |> foreign_key_constraint(:institution_id)
   end
 
@@ -39,7 +41,9 @@ defmodule Oli.Delivery.Paywall.Discount do
     case changeset do
       %Ecto.Changeset{valid?: true} = changeset ->
         get_field(changeset, :type) == :percentage
-      _ -> false
+
+      _ ->
+        false
     end
   end
 
@@ -47,7 +51,9 @@ defmodule Oli.Delivery.Paywall.Discount do
     case changeset do
       %Ecto.Changeset{valid?: true} = changeset ->
         get_field(changeset, :type) == :fixed_amount
-      _ -> false
+
+      _ ->
+        false
     end
   end
 end

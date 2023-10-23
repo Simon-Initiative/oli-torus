@@ -12,10 +12,12 @@ defmodule OliWeb.Common.PagedTable do
   attr :sort, :string, default: "paged_table_sort"
   attr :page_change, :string, default: "paged_table_page_change"
   attr :selection_change, :string, default: "paged_table_selection_change"
+  attr :limit_change, :string, default: "paged_table_limit_change"
   attr :show_bottom_paging, :boolean, default: true
   attr :show_top_paging, :boolean, default: true
   attr :additional_table_class, :string, default: ""
   attr :render_top_info, :boolean, default: true
+  attr :show_limit_change, :boolean, default: false
 
   def render(assigns) do
     ~H"""
@@ -24,7 +26,10 @@ defmodule OliWeb.Common.PagedTable do
         <strong>Results filtered on &quot;<%= @filter %>&quot;</strong>
       <% end %>
 
-      <%= if(@total_count > 0 and @total_count > @limit) do %>
+      <%= if @total_count > 0 do %>
+        <div :if={@total_count <= @limit and @render_top_info} class="px-5 py-2">
+          Showing all results (<%= @total_count %> total)
+        </div>
         <%= if @show_top_paging do %>
           <Paging.render
             id="header_paging"
@@ -32,6 +37,8 @@ defmodule OliWeb.Common.PagedTable do
             offset={@offset}
             limit={@limit}
             click={@page_change}
+            limit_change={@limit_change}
+            show_limit_change={@show_limit_change}
           />
         <% end %>
         <%= render_table(%{
@@ -48,23 +55,11 @@ defmodule OliWeb.Common.PagedTable do
             offset={@offset}
             limit={@limit}
             click={@page_change}
+            limit_change={@limit_change}
           />
         <% end %>
       <% else %>
-        <%= if @total_count > 0 do %>
-          <%= if @render_top_info do %>
-            <div class="px-5 py-2">Showing all results (<%= @total_count %> total)</div>
-          <% end %>
-          <%= render_table(%{
-            allow_selection: @allow_selection,
-            table_model: @table_model,
-            sort: @sort,
-            selection_change: @selection_change,
-            additional_table_class: @additional_table_class
-          }) %>
-        <% else %>
-          <p class="px-5 py-2">None exist</p>
-        <% end %>
+        <p class="px-5 py-2">None exist</p>
       <% end %>
     </div>
     """
@@ -94,6 +89,29 @@ defmodule OliWeb.Common.PagedTable do
 
   def delegate_handle_event("paged_table_page_change", %{"offset" => offset}, socket, patch_fn, _) do
     patch_fn.(socket, %{offset: offset})
+  end
+
+  def delegate_handle_event(
+        "paged_table_limit_change",
+        params,
+        %{assigns: %{params: current_params}} = socket,
+        patch_fn,
+        _
+      ) do
+    new_limit = OliWeb.Common.Params.get_int_param(params, "limit", 20)
+
+    new_offset =
+      if socket.assigns.total_count < new_limit do
+        0
+      else
+        OliWeb.Common.PagingParams.calculate_new_offset(
+          current_params.offset,
+          new_limit,
+          socket.assigns.total_count
+        )
+      end
+
+    patch_fn.(socket, %{limit: new_limit, offset: new_offset})
   end
 
   def delegate_handle_event(

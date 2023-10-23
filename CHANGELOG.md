@@ -6,6 +6,18 @@
 
 ### Bug Fixes
 
+## 0.25.1 (2023-10-13)
+
+### Bug Fixes
+
+- Fix an issue where admin attempting to create a new institution when an existing registration with the same issuer and client_id fails
+
+### Environment
+
+#### Infrastructure Changes
+
+- [ ] Update deployment migration scripts to use `Oli.Release.migrate_and_seed` instead of `Oli.ReleaseTasks.migrate_and_seed`
+
 ## 0.25.0 (2023-10-5)
 
 ### Enhancements
@@ -50,21 +62,33 @@
 - Restores ctrl-z undo support
 - Fixes several issues with MediaManager UI
 
-## 0.24.5 (2023-9-19)
-
-### Enhancements
-
-- Expose settings related to configuring at runtime sizes and constraints on HTTP server header contents
+## 0.24.5 (2023-9-12)
 
 ### Bug Fixes
 
 - Corrects evaluation of student input with scientific notation that does not include a decimal point (e.g. 1e-9)
 - Fixes a bug where customized assessment settings can revert when new publications apply an update to that graded page
 
+### Enhancements
+
+- Allow configuration of HTTP/HTTPS cowboy protocol options
+- Expose settings related to configuring at runtime sizes and constraints on HTTP server header contents
+
+### Environment Configs
+
+```
+HTTP_MAX_HEADER_NAME_LENGTH       (Optional) HTTP/HTTPS Maximum length of header names for Cowboy (Default 64)
+HTTP_MAX_HEADER_VALUE_LENGTH      (Optional) HTTP/HTTPS Maximum length of header values for Cowboy (Default 4096)
+HTTP_MAX_HEADERS                  (Optional) HTTP/HTTPS Maximum number of headers allowed per request for Cowboy (Default 100)
+
+LOG_INCOMPLETE_HTTP_REQUESTS      (Optional) Log incomplete HTTP requests (Default true)
+```
+
 ## 0.24.4 (2023-8-11)
 
 ### Bug Fixes
 
+- Query performance for proficiency calculations
 - Fix performance issue for learning proficiency calculation
 
 ### Configs

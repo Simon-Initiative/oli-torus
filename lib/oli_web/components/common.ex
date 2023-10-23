@@ -593,7 +593,11 @@ defmodule OliWeb.Components.Common do
   def loader(assigns) do
     ~H"""
     <div :if={@if} class="h-full w-full flex items-center justify-center">
-      <span class="spinner-border spinner-border-sm text-primary h-16 w-16" role="status" aria-hidden="true" />
+      <span
+        class="spinner-border spinner-border-sm text-primary h-16 w-16"
+        role="status"
+        aria-hidden="true"
+      />
     </div>
     """
   end

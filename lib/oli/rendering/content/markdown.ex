@@ -89,7 +89,7 @@ defmodule Oli.Rendering.Content.Markdown do
 
   def img(%Context{} = _context, _, %{"src" => src} = attrs) do
     [
-      "![#{maybeAlt(attrs)}](#{escape_xml!(src)})\n\n",
+      "![#{maybeAlt(attrs)}](#{escape_xml!(src)})\n\n"
     ]
   end
 
@@ -97,7 +97,7 @@ defmodule Oli.Rendering.Content.Markdown do
 
   def img_inline(%Context{} = _context, _, %{"src" => src} = attrs) do
     [
-      "![#{maybeAlt(attrs)}](#{escape_xml!(src)})\n\n",
+      "![#{maybeAlt(attrs)}](#{escape_xml!(src)})\n\n"
     ]
   end
 
@@ -587,5 +587,4 @@ defmodule Oli.Rendering.Content.Markdown do
       _ -> ""
     end
   end
-
 end

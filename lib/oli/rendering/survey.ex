@@ -6,7 +6,7 @@ defmodule Oli.Rendering.Survey do
 
   alias Oli.Rendering.Context
 
-  @type next :: (() -> String.t())
+  @type next :: (-> String.t())
 
   @callback survey(%Context{}, next, %{}) :: [any()]
   @callback elements(%Context{}, []) :: [any()]

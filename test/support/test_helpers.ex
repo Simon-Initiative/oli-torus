@@ -258,6 +258,13 @@ defmodule Oli.TestHelpers do
     {:ok, conn: conn, user: user}
   end
 
+  def guest_conn(%{conn: conn}) do
+    guest = user_fixture(%{guest: true})
+    conn = Pow.Plug.assign_current_user(conn, guest, OliWeb.Pow.PowHelpers.get_pow_config(:user))
+
+    {:ok, conn: conn, guest: guest}
+  end
+
   def instructor_conn(%{conn: conn}) do
     {:ok, instructor} =
       Accounts.update_user_platform_roles(
@@ -3155,6 +3162,23 @@ defmodule Oli.TestHelpers do
       {:ok, entries} -> entries
       _ -> []
     end
+  end
+
+  # Required in order to prevent '(Postgrex.Error) ERROR 25001 (active_sql_transaction): SET TRANSACTION ISOLATION LEVEL must be called before any query' error from occurring in tests
+  # https://stackoverflow.com/questions/54169171/phoenix-elixir-testing-when-setting-isolation-level-of-transaction/57328722#57328722
+  def setup_tags(tags) do
+    if tags[:isolation] do
+      Ecto.Adapters.SQL.Sandbox.checkin(Repo)
+      Ecto.Adapters.SQL.Sandbox.checkout(Repo, isolation: tags[:isolation])
+    else
+      Ecto.Adapters.SQL.Sandbox.checkout(Repo)
+    end
+
+    unless tags[:async] do
+      Ecto.Adapters.SQL.Sandbox.mode(Repo, {:shared, self()})
+    end
+
+    :ok
   end
 
   def visit_page(page_revision, section, enrolled_user) do
