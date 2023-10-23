@@ -202,7 +202,7 @@ defmodule Oli.Rendering.Content.Markdown do
         verb -> verb
       end
 
-      adhoc_group("Conjugation", [title, "\n", "verb: #{verb}\n", render_table.()])
+    adhoc_group("Conjugation", [title, "\n", "verb: #{verb}\n", render_table.()])
   end
 
   def dialog(%Context{}, next, %{"title" => title}) do
@@ -215,7 +215,7 @@ defmodule Oli.Rendering.Content.Markdown do
 
   def dialog_speaker_portrait(image) do
     [
-      "![dialog speaker portrait](#{escape_xml!(image)})\n\n",
+      "![dialog speaker portrait](#{escape_xml!(image)})\n\n"
     ]
   end
 
@@ -225,6 +225,7 @@ defmodule Oli.Rendering.Content.Markdown do
 
   def dialog_speaker(speaker_id, %{"speakers" => speakers}) do
     speaker = Enum.find(speakers, fn speaker -> speaker["id"] == speaker_id end)
+
     case speaker do
       %{"name" => name, "image" => image} ->
         [dialog_speaker_portrait(image), "Speaker: ", name, "\n"]
@@ -235,7 +236,7 @@ defmodule Oli.Rendering.Content.Markdown do
       _ ->
         ["Speaker: Unknown Speaker \n"]
     end ++
-    ["</div>"]
+      ["</div>"]
   end
 
   def dialog_line_class(speaker_id, %{"speakers" => speakers}) do
@@ -276,7 +277,6 @@ defmodule Oli.Rendering.Content.Markdown do
         render_meaning,
         %{"term" => term} = _element
       ) do
-
     adhoc_group("Definition", [
       term,
       "\n",
