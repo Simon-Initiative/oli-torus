@@ -42,7 +42,7 @@ export const AuthoringElementProvider: React.FC<AuthoringElementProps<ActivityMo
     causing previous updates to be undone.
 
     ie: these were not the same value when called:
-      model.authoring.parts[0].responses[0].feedback
+                  model.authoring.parts[0].responses[0].feedback
       modelRef.current?.authoring.parts[0].responses[0].feedback
     */
     const newModel = produce(modelRef.current, (draftState) => action(draftState, onPostUndoable));

@@ -35,8 +35,9 @@ export const Responses = {
 };
 
 export const RESPONSES_PATH = '$..responses';
-export const getResponses = (model: HasParts, path = RESPONSES_PATH): Response[] =>
-  Operations.apply(model, Operations.find(path));
+export const getResponses = (model: HasParts): Response[] =>
+  model.authoring.parts.map((p) => p.responses).flat();
+
 
 export const getResponsesByPartId = (model: HasParts, partId: string): Response[] =>
   getPartById(model, partId).responses;
