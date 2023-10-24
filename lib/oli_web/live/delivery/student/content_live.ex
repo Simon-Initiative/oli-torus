@@ -17,12 +17,20 @@ defmodule OliWeb.Delivery.Student.ContentLive do
      assign(socket, hierarchy: hierarchy, selected_unit_uuid: nil, selected_module_uuid: nil)}
   end
 
-  def handle_event("select_module", %{"unit_uuid" => uuid, "module_uuid" => module_uuid}, socket) do
-    if module_uuid == socket.assigns.selected_module_uuid do
-      {:noreply, assign(socket, selected_unit_uuid: nil, selected_module_uuid: nil)}
-    else
-      {:noreply, assign(socket, selected_unit_uuid: uuid, selected_module_uuid: module_uuid)}
-    end
+  def handle_event(
+        "select_module",
+        %{"unit_uuid" => unit_uuid, "module_uuid" => module_uuid},
+        socket
+      ) do
+    socket =
+      if module_uuid == socket.assigns.selected_module_uuid do
+        assign(socket, selected_unit_uuid: nil, selected_module_uuid: nil)
+      else
+        assign(socket, selected_unit_uuid: unit_uuid, selected_module_uuid: module_uuid)
+      end
+      |> push_event("scroll_to_target", %{id: "unit_#{unit_uuid}"})
+
+    {:noreply, socket}
   end
 
   def handle_event("play_intro_video", %{"video_url" => _url}, socket) do
@@ -42,7 +50,7 @@ defmodule OliWeb.Delivery.Student.ContentLive do
       preview_mode={@preview_mode}
       active_tab={:content}
     >
-      <div class="container mx-auto p-[25px] space-y-4">
+      <div id="student_content" class="container mx-auto p-[25px] space-y-4" phx-hook="ScrollToTarget">
         <.unit
           :for={child <- @hierarchy.children}
           unit={child}
@@ -64,7 +72,7 @@ defmodule OliWeb.Delivery.Student.ContentLive do
 
   def unit(assigns) do
     ~H"""
-    <div class="p-[25px] pl-[50px]">
+    <div id={"unit_#{@unit.uuid}"} class="p-[25px] pl-[50px]">
       <div class="mb-6 flex flex-col items-start gap-[6px]">
         <h3 class="text-[26px] leading-[32px] tracking-[0.02px] font-semibold ml-2">
           <%= "#{@unit.numbering.index}. #{@unit.revision.title}" %>
@@ -89,7 +97,7 @@ defmodule OliWeb.Delivery.Student.ContentLive do
           </div>
         </div>
       </div>
-      <div class="flex gap-4 overflow-x-scroll">
+      <div class="flex gap-4 overflow-x-scroll pt-[2px] pl-[2px] -mt-[2px] -ml-[2px]">
         <.intro_card
           :if={@unit.revision.intro_video || @unit.revision.poster_image}
           bg_image_url={@unit.revision.poster_image}
@@ -173,12 +181,13 @@ defmodule OliWeb.Delivery.Student.ContentLive do
     ~H"""
     <div flex="h-[170px] w-[288px]">
       <div
+        id={"module_#{@module.uuid}"}
         phx-click="select_module"
         phx-value-unit_uuid={@unit_uuid}
         phx-value-module_uuid={@module.uuid}
         class={[
           "flex flex-col gap-[5px] cursor-pointer rounded-xl h-[162px] w-[288px] bg-gray-300 shrink-0 mb-1 px-5 pt-[15px] bg-[url('#{@bg_image_url}')]",
-          if(@selected, do: "bg-gray-400 border-2 border-gray-800")
+          if(@selected, do: "bg-gray-400 outline outline-2 outline-gray-800")
         ]}
       >
         <span class="text-[12px] leading-[16px] font-bold opacity-60 text-gray-500">
