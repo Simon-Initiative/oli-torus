@@ -25,7 +25,12 @@ defmodule Oli.Repo.Migrations.AddPromptTemplates do
   """
 
   def up do
-    execute "CREATE EXTENSION IF NOT EXISTS vector"
+    try do
+      execute "CREATE EXTENSION IF NOT EXISTS vector"
+    rescue
+      _ ->
+        IO.puts("Could not create extension vector. You may need to install it manually.")
+    end
 
     flush()
 
@@ -55,6 +60,11 @@ defmodule Oli.Repo.Migrations.AddPromptTemplates do
       remove(:page_prompt_template)
     end
 
-    execute "DROP EXTENSION vector"
+    try do
+      execute "DROP EXTENSION vector"
+    rescue
+      _ ->
+        IO.puts("Could not drop extension vector. You may need to uninstall it manually.")
+    end
   end
 end
