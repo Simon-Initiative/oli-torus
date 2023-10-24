@@ -8,7 +8,6 @@ import {
 } from 'components/activities/types';
 import { containsRule, eqRule, equalsRule, matchRule } from 'data/activities/model/rules';
 import { getByUnsafe, getPartById } from 'data/activities/model/utils';
-import { Operations } from 'utils/pathOperations';
 
 export const Responses = {
   catchAll: (text = 'Incorrect') => makeResponse(matchRule('.*'), 0, text),
@@ -35,8 +34,8 @@ export const Responses = {
 };
 
 export const RESPONSES_PATH = '$..responses';
-export const getResponses = (model: HasParts, path = RESPONSES_PATH): Response[] =>
-  Operations.apply(model, Operations.find(path));
+export const getResponses = (model: HasParts): Response[] =>
+  model.authoring.parts.map((p) => p.responses).flat();
 
 export const getResponsesByPartId = (model: HasParts, partId: string): Response[] =>
   getPartById(model, partId).responses;
