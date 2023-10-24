@@ -25,9 +25,10 @@ defmodule Oli.Repo.Migrations.AddPromptTemplates do
   """
 
   def up do
+    # NOTE: vector extension needs to be enabled in database
     try do
       execute "CREATE EXTENSION IF NOT EXISTS vector"
-    rescue
+    catch
       _ ->
         IO.puts("Could not create extension vector. You may need to install it manually.")
     end
@@ -62,7 +63,7 @@ defmodule Oli.Repo.Migrations.AddPromptTemplates do
 
     try do
       execute "DROP EXTENSION vector"
-    rescue
+    catch
       _ ->
         IO.puts("Could not drop extension vector. You may need to uninstall it manually.")
     end
