@@ -1,6 +1,6 @@
 <div class="container">
   <h3 class="display-6">CSV Import</h3>
-  <p class="lead">Upload a CSV file to inject data into existing project.</p>
+  <p class="lead">Upload a <code>.csv</code> file to inject data into existing project.</p>
   <hr class="my-4">
 
     <%= form_for @conn, "upload_csv", [as: :upload_csv, multipart: true], fn f -> %>
@@ -15,5 +15,10 @@
       </div>
 
     <% end %>
+
+  <hr class="my-4">
+
+  <p class="lead"><a href="<%= Routes.ingest_path(@conn, :download_current, @project_slug) %>">Download</a> a <code>.csv</code>
+   file for this project with all pages and containers and current values for nextgen attrs</p>
 
 </div>
