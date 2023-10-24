@@ -20,7 +20,7 @@ defmodule Oli.Rendering.Content.Markdown do
       "---\n",
       "##### #{label}\n",
       content,
-      "---\n"
+      "---\n\n"
     ]
   end
 
@@ -166,7 +166,7 @@ defmodule Oli.Rendering.Content.Markdown do
   end
 
   def dl(%Context{}, next, title, %{}) do
-    ["\n", title, "\n", next.(), "\n\n"]
+    ["\n", "definition list: #{title}", "\n", next.(), "\n\n"]
   end
 
   def dt(%Context{}, next, %{}) do
