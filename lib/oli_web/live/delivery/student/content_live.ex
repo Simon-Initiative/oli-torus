@@ -5,6 +5,7 @@ defmodule OliWeb.Delivery.Student.ContentLive do
 
   alias OliWeb.Common.FormatDateTime
   alias Phoenix.LiveView.JS
+  alias OliWeb.Components.Modal
 
   def mount(_params, _session, socket) do
     # TODO replace this with a call to the Cache data in ETS
@@ -24,13 +25,16 @@ defmodule OliWeb.Delivery.Student.ContentLive do
     end
   end
 
-  def handle_event("play_intro_video", %{"video_url" => url}, socket) do
+  def handle_event("play_intro_video", %{"video_url" => _url}, socket) do
     # TODO play video
     {:noreply, socket}
   end
 
   def render(assigns) do
     ~H"""
+    <Modal.modal id="video_player">
+      <div class="h-[80vh]">"imagine a video being played :)"</div>
+    </Modal.modal>
     <.header_with_sidebar_nav
       ctx={@ctx}
       section={@section}
@@ -88,7 +92,10 @@ defmodule OliWeb.Delivery.Student.ContentLive do
           :if={@unit.revision.intro_video || @unit.revision.poster_image}
           bg_image_url={@unit.revision.poster_image}
           video_url={@unit.revision.intro_video}
-          on_play={JS.push("play_intro_video", value: %{video_url: @unit.revision.intro_video})}
+          on_play={
+            Modal.show_modal("video_player")
+            |> JS.push("play_intro_video", value: %{video_url: @unit.revision.intro_video})
+          }
         />
         <.module_card
           :for={{module, module_index} <- Enum.with_index(@unit.children, 1)}
