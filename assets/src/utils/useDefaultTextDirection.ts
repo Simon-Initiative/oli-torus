@@ -5,7 +5,7 @@ export const useDefaultTextDirection = () =>
   useStateFromLocalStorage<string>('ltr', 'lastTextDirection');
 
 export const getDefaultTextDirection = (): TextDirection => {
-  switch (JSON.parse(localStorage.getItem('lastTextDirection') || '')) {
+  switch (JSON.parse(localStorage.getItem('lastTextDirection') || '"ltr"')) {
     case 'rtl':
       return 'rtl';
     default:
