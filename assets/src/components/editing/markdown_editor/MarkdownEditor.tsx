@@ -49,7 +49,7 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = (props) => {
   };
 
   const textLabel = props.textDirection === 'ltr' ? 'Right to Left' : 'Left to Right';
-  const textIcon = props.textDirection === 'rtl' ?   'right-long' : 'left-long';
+  const textIcon = props.textDirection === 'rtl' ? 'right-long' : 'left-long';
 
   const changeTextDirectionCommand: ICommand = {
     name: `Change to ${textLabel} text direction`,
@@ -57,7 +57,8 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = (props) => {
     buttonProps: { 'aria-label': `Change to ${textLabel} text direction` },
     icon: <Icon icon={textIcon} />,
     execute: () => {
-      props.onChangeTextDirection && props.onChangeTextDirection(props.textDirection === 'ltr' ? 'rtl' : 'ltr');
+      props.onChangeTextDirection &&
+        props.onChangeTextDirection(props.textDirection === 'ltr' ? 'rtl' : 'ltr');
     },
   };
 
@@ -98,7 +99,7 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = (props) => {
   }, [value, saveChanges]);
 
   const extraCommands = [switchToSlateCommand, commands.fullscreen];
-  if(props.onChangeTextDirection) {
+  if (props.onChangeTextDirection) {
     extraCommands.unshift(changeTextDirectionCommand);
   }
 

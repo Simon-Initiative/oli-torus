@@ -18,7 +18,7 @@ import {
 export class LikertChoice implements Choice, SpecifiesTextDirection {
   id: ID;
   content: RichText;
-  textDirection?: TextDirection ;
+  textDirection?: TextDirection;
   // set only if using non-default value:
   value: Maybe<number>;
 }
@@ -33,7 +33,7 @@ export const makeLikertChoice: (s: string) => LikertChoice = (text) => {
 export class LikertItem implements Stem, SpecifiesTextDirection {
   id: ID;
   content: RichText;
-  textDirection?: TextDirection ;
+  textDirection?: TextDirection;
   // optional group id:
   group: Maybe<string> = Maybe.nothing();
   required = false;

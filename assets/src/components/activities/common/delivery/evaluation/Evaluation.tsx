@@ -47,7 +47,11 @@ export function renderPartFeedback(partState: PartState, context: WriterContext)
               <b>Explanation:</b>
             </div>
             <div>
-              <HtmlContentModelRenderer direction={explanationDirection} content={explanation} context={context} />
+              <HtmlContentModelRenderer
+                direction={explanationDirection}
+                content={explanation}
+                context={context}
+              />
             </div>
           </div>
         </Component>

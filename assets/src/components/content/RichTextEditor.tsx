@@ -72,7 +72,6 @@ export const RichTextEditor: React.FC<Props> = ({
   );
 };
 
-
 export const RichTextEditorConnected: React.FC<Omit<Props, 'projectSlug' | 'editMode'>> = (
   props,
 ) => {

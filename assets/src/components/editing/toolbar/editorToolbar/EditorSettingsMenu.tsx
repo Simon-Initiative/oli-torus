@@ -41,7 +41,7 @@ export const EditorSettingsMenu = ({
             onClick={() => onChangeTextDirection(textDirection === 'ltr' ? 'rtl' : 'ltr')}
             className={classNames(styles.toolbarButton, styles.descriptive)}
           >
-            <Icon  icon={textDirection === 'rtl' ? 'right-long' : 'left-long'} />
+            <Icon icon={textDirection === 'rtl' ? 'right-long' : 'left-long'} />
             <span className={styles.description}>
               Change To
               {textDirection === 'ltr' ? ' Right-to-Left ' : ' Left-to-Right '}

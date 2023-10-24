@@ -48,7 +48,6 @@ const CheckAllThatApply = () => {
           onChangeEditorType={(id, editorType) => dispatch(Choices.setEditor(id, editorType))}
           onRemove={(id) => dispatch(CATAActions.removeChoiceAndUpdateRules(id))}
           onChangeEditorTextDirection={(id, dir) => dispatch(Choices.setTextDirection(id, dir))}
-
         />
       </TabbedNavigation.Tab>
 

@@ -7,7 +7,7 @@ import { ContentWriter } from './writer';
 
 interface Props {
   content: RichText | CaptionV2 | string | TextBlock | Pronunciation;
-  direction?: TextDirection | 'auto' ;
+  direction?: TextDirection | 'auto';
   context: WriterContext;
 }
 export const HtmlContentModelRenderer: React.FC<Props> = (props) => {

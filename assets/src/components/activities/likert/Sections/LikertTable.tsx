@@ -35,7 +35,11 @@ export const LikertTable: React.FC<Props> = ({
           {needItemColumn(items) && <th></th>}
           {choices.map((choice) => (
             <th key={choice.id}>
-              <HtmlContentModelRenderer direction={choice.textDirection} content={choice.content} context={context} />
+              <HtmlContentModelRenderer
+                direction={choice.textDirection}
+                content={choice.content}
+                context={context}
+              />
             </th>
           ))}
         </tr>
@@ -45,7 +49,11 @@ export const LikertTable: React.FC<Props> = ({
           <tr key={item.id} className="even:bg-gray-100 dark:even:bg-gray-700">
             {needItemColumn(items) && (
               <td>
-                <HtmlContentModelRenderer direction={item.textDirection} content={item.content} context={context} />
+                <HtmlContentModelRenderer
+                  direction={item.textDirection}
+                  content={item.content}
+                  context={context}
+                />
               </td>
             )}
             {choices.map((choice) => (

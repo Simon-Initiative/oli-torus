@@ -16,7 +16,11 @@ interface StemProps {
 export const StemDelivery: React.FC<StemProps> = (props) => {
   return (
     <div className={`stem__delivery content${props.className ? ' ' + props.className : ''}`}>
-      <HtmlContentModelRenderer content={props.stem.content} context={props.context} direction={props.stem.textDirection} />
+      <HtmlContentModelRenderer
+        content={props.stem.content}
+        context={props.context}
+        direction={props.stem.textDirection}
+      />
     </div>
   );
 };

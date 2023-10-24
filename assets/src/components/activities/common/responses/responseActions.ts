@@ -31,7 +31,8 @@ export const ResponseActions = {
   editResponseFeedbackTextDirection(responseId: ResponseId, direction: 'ltr' | 'rtl') {
     return (model: HasParts) => {
       getResponseBy(model, (r) => r.id === responseId).feedback.textDirection = direction;
-    };0
+    };
+    0;
   },
 
   editResponseFeedbackEditor(responseId: ResponseId, editor: EditorType) {

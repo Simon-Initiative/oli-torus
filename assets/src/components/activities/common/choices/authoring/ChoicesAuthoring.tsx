@@ -7,10 +7,10 @@ import { Choice, makeContent } from 'components/activities/types';
 import { Draggable } from 'components/common/DraggableColumn';
 import { SlateOrMarkdownEditor } from 'components/editing/SlateOrMarkdownEditor';
 import { toSimpleText } from 'components/editing/slateUtils';
+import { TextDirection } from 'data/content/model/elements/types';
 import { DEFAULT_EDITOR, EditorType } from 'data/content/resource';
 import { classNames } from 'utils/classNames';
 import styles from './ChoicesAuthoring.modules.scss';
-import { TextDirection } from 'data/content/model/elements/types';
 
 const renderChoiceIcon = (icon: any, choice: any, index: any) =>
   icon ? (
@@ -95,7 +95,8 @@ export const Choices: React.FC<Props> = ({
                             }
                             textDirection={choice.textDirection}
                             onChangeTextDirection={(dir) =>
-                              onChangeEditorTextDirection && onChangeEditorTextDirection(choice.id, dir)
+                              onChangeEditorTextDirection &&
+                              onChangeEditorTextDirection(choice.id, dir)
                             }
                             projectSlug={projectSlug}
                           />

@@ -143,7 +143,13 @@ export const CognitiveHints: React.FC<CognitiveProps> = ({
   </Card.Card>
 );
 
-const BottomOutHint: React.FC<HintProps> = ({ hint, updateOne, projectSlug, updateOneEditor, updateOneTextDirection }) => (
+const BottomOutHint: React.FC<HintProps> = ({
+  hint,
+  updateOne,
+  projectSlug,
+  updateOneEditor,
+  updateOneTextDirection,
+}) => (
   <HintCard
     title={<>{'"Bottom out" hint'}</>}
     placeholder="Explain the answer for students who are still confused"
