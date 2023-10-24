@@ -42,7 +42,7 @@ defmodule OliWeb.Delivery.Student.ContentLive do
       preview_mode={@preview_mode}
       active_tab={:content}
     >
-      <div class="container mx-auto px-10 py-8 space-y-4">
+      <div class="container mx-auto p-[25px] space-y-4">
         <.unit
           :for={child <- @hierarchy.children}
           unit={child}
@@ -64,30 +64,32 @@ defmodule OliWeb.Delivery.Student.ContentLive do
 
   def unit(assigns) do
     ~H"""
-    <div class="p-9">
-      <div class="py-6">
-        <h3 class="text-2xl tracking-[0.02px] font-semibold">
+    <div class="p-[25px] pl-[50px]">
+      <div class="mb-6 flex flex-col items-start gap-[6px]">
+        <h3 class="text-[26px] leading-[32px] tracking-[0.02px] font-semibold ml-2">
           <%= "#{@unit.numbering.index}. #{@unit.revision.title}" %>
         </h3>
-        <div class="mt-4 flex flex-row w-full items-center">
-          <div class="text-sm tracking-[0.02px] font-semibold">
-            <span class="text-gray-400">Week</span> <%= week_number(
-              @section_start_date,
-              @unit.section_resource.start_date
-            ) %>
-          </div>
-          <div class="ml-3 text-sm tracking-[0.02px] font-semibold">
-            <span class="text-gray-400">Due:</span> <%= parse_datetime(
-              @unit.section_resource.end_date,
-              @ctx
-            ) %>
+        <div class="flex items-center w-full">
+          <div class="flex items-center gap-3 ">
+            <div class="text-[14px] leading-[32px] tracking-[0.02px] font-semibold">
+              <span class="text-gray-400 opacity-80">Week</span> <%= week_number(
+                @section_start_date,
+                @unit.section_resource.start_date
+              ) %>
+            </div>
+            <div class="text-[14px] leading-[32px] tracking-[0.02px] font-semibold">
+              <span class="text-gray-400 opacity-80">Due:</span> <%= parse_datetime(
+                @unit.section_resource.end_date,
+                @ctx
+              ) %>
+            </div>
           </div>
           <div class="ml-auto w-36">
             <.progress_bar percent={:rand.uniform(100)} width="100px" />
           </div>
         </div>
       </div>
-      <div class="flex space-x-4 overflow-x-scroll">
+      <div class="flex gap-4 overflow-x-scroll">
         <.intro_card
           :if={@unit.revision.intro_video || @unit.revision.poster_image}
           bg_image_url={@unit.revision.poster_image}
@@ -106,15 +108,22 @@ defmodule OliWeb.Delivery.Student.ContentLive do
           selected={module.uuid == @selected_module_uuid}
         />
       </div>
-      <div :if={@selected_unit} class="flex gap-10">
-        <div class="w-1/2 flex flex-col space-y-4 p-10">
-          <h5>If you Can't Measure it...</h5>
-          <p :for={_i <- Enum.take(Enum.to_list(1..5), Enum.random(1..5))}>
-            Lorem ipsum dolor sit amet consectetur adipisicing elit. Error voluptate cupiditate, quae minus illo quo repellendus! Molestiae commodi, tenetur nam explicabo, aut repellendus dolorum ex amet delectus asperiores eligendi exercitationem?
-          </p>
-          <button class="btn btn-primary mr-auto">Let's discuss?</button>
-        </div>
-        <div class="p-10">index goes here</div>
+    </div>
+    <div :if={@selected_unit} class="flex py-[24px] px-[50px] gap-x-12">
+      <div class="w-1/2 flex flex-col px-6">
+        <h5 class="mb-[20px] text-2xl tracking-[0.02px] font-light">If you Can't Measure it...</h5>
+        <p
+          :for={_i <- Enum.take(Enum.to_list(1..5), Enum.random(1..5))}
+          class="py-2 text-[14px] leading-[30px] font-normal "
+        >
+          Lorem ipsum dolor sit amet consectetur adipisicing elit. Error voluptate cupiditate, quae minus illo quo repellendus! Molestiae commodi, tenetur nam explicabo, aut repellendus dolorum ex amet delectus asperiores eligendi exercitationem?
+        </p>
+        <button class="btn btn-primary mr-auto mt-[42px]">Let's discuss?</button>
+      </div>
+      <div class="mt-[52px]">
+        <p class="py-2 text-[14px] leading-[30px] font-normal ">
+          index goes here
+        </p>
       </div>
     </div>
     """
@@ -131,8 +140,8 @@ defmodule OliWeb.Delivery.Student.ContentLive do
 
   def intro_card(assigns) do
     ~H"""
-    <div class={"flex flex-col items-center rounded-lg h-[170px] w-[288px] bg-gray-300 shrink-0 p-4 bg-[url('#{@bg_image_url}')]"}>
-      <h5 class="text-xs font-bold self-start"><%= @title %></h5>
+    <div class={"flex flex-col items-center rounded-lg h-[162px] w-[288px] bg-gray-300 shrink-0 px-5 pt-[15px] bg-[url('#{@bg_image_url}')]"}>
+      <h5 class="text-[13px] leading-[18px] font-bold self-start"><%= @title %></h5>
       <div :if={@video_url} phx-click={@on_play} class="w-[70px] h-[70px] relative my-auto -top-2">
         <div class="w-full h-full rounded-full backdrop-blur bg-gray/50"></div>
         <button class="w-full h-full absolute top-0 left-0 flex items-center justify-center">
@@ -160,21 +169,21 @@ defmodule OliWeb.Delivery.Student.ContentLive do
 
   def module_card(assigns) do
     ~H"""
-    <div flex="flex flex-col">
+    <div flex="h-[170px] w-[288px]">
       <div
         phx-click="select_module"
         phx-value-unit_uuid={@unit_uuid}
         phx-value-module_uuid={@module.uuid}
         class={[
-          "flex flex-col cursor-pointer rounded-lg h-[170px] w-[288px] bg-gray-300 shrink-0 px-4 pt-4",
-          if(@selected, do: "bg-gray-400 border-2 border-gray-800 pt-[14px] px-[14px]")
+          "flex flex-col gap-[5px] cursor-pointer rounded-xl h-[162px] w-[288px] bg-gray-300 shrink-0 mb-1 px-5 pt-[15px]",
+          if(@selected, do: "bg-gray-400 border-2 border-gray-800")
         ]}
       >
-        <span class="text-xs font-bold opacity-60 text-gray-500">
+        <span class="text-[12px] leading-[16px] font-bold opacity-60 text-gray-500">
           <%= "#{@unit_numbering_index}.#{@module_index}" %>
         </span>
-        <h5 class="text-lg font-bold"><%= @module.revision.title %></h5>
-        <div :if={!@selected} class="mt-auto flex h-5 justify-center items-center">
+        <h5 class="text-[18px] leading-[25px] font-bold"><%= @module.revision.title %></h5>
+        <div :if={!@selected} class="mt-auto flex h-[21px] justify-center items-center">
           <svg
             xmlns="http://www.w3.org/2000/svg"
             width="10"
@@ -186,10 +195,11 @@ defmodule OliWeb.Delivery.Student.ContentLive do
           </svg>
         </div>
       </div>
+      <.progress_bar :if={!@selected} percent={:rand.uniform(100)} width="60%" show_percent={false} />
       <div
         :if={@selected}
         class={[
-          "flex justify-center items-center"
+          "flex justify-center items-center -mt-1"
         ]}
       >
         <svg
@@ -208,16 +218,19 @@ defmodule OliWeb.Delivery.Student.ContentLive do
 
   attr(:percent, :integer, required: true)
   attr(:width, :string, default: "100%")
+  attr(:show_percent, :boolean, default: true)
 
   def progress_bar(assigns) do
     ~H"""
-    <div class="flex flex-row items-center">
-      <div class="flex-1 mr-1">
-        <div class={"w-[#{@width}] rounded-full bg-gray-200 h-1"}>
+    <div class="flex flex-row items-center mx-auto">
+      <div class="flex justify-center w-full">
+        <div class="rounded-full bg-gray-200 h-1" style={"width: #{@width}"}>
           <div class="rounded-full bg-green-600 h-1" style={"width: #{@percent}%"}></div>
         </div>
       </div>
-      <div class="text-base tracking-[0.02px] font-bold"><%= @percent %>%</div>
+      <div :if={@show_percent} class="text-[16px] leading-[32px] tracking-[0.02px] font-bold">
+        <%= @percent %>%
+      </div>
     </div>
     """
   end
