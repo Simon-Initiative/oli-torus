@@ -25,7 +25,6 @@ defmodule Oli.Repo.Migrations.AddPromptTemplates do
   """
 
   def up do
-    # NOTE: vector extension needs to be enabled in database
     try do
       execute "CREATE EXTENSION IF NOT EXISTS vector"
     catch
