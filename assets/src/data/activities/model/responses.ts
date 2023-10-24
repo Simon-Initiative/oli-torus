@@ -8,7 +8,6 @@ import {
 } from 'components/activities/types';
 import { containsRule, eqRule, equalsRule, matchRule } from 'data/activities/model/rules';
 import { getByUnsafe, getPartById } from 'data/activities/model/utils';
-import { Operations } from 'utils/pathOperations';
 
 export const Responses = {
   catchAll: (text = 'Incorrect') => makeResponse(matchRule('.*'), 0, text),
