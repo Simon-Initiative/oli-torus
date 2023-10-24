@@ -33,7 +33,7 @@ defmodule OliWeb.Delivery.Student.ContentLive do
   def render(assigns) do
     ~H"""
     <Modal.modal id="video_player">
-      <div class="h-[80vh]">"imagine a video being played :)"</div>
+      <div class="h-[80vh]">imagine a video being played :)</div>
     </Modal.modal>
     <.header_with_sidebar_nav
       ctx={@ctx}
@@ -105,7 +105,7 @@ defmodule OliWeb.Delivery.Student.ContentLive do
           module_index={module_index}
           unit_uuid={@unit.uuid}
           unit_numbering_index={@unit.numbering.index}
-          bg_image_url={module.revision.poster_image}
+          bg_image_url={module.revision.poster_image || "/images/course_default.jpg"}
           selected={module.uuid == @selected_module_uuid}
         />
       </div>
@@ -152,7 +152,7 @@ defmodule OliWeb.Delivery.Student.ContentLive do
             width="33"
             height="38"
             viewBox="0 0 16.984 24.8075"
-            class="scale-110 ml-[6px] mt-[10px]"
+            class="scale-110 ml-[6px] mt-[9px]"
           >
             <path d="M0.759,0.158c0.39-0.219,0.932-0.21,1.313,0.021l14.303,8.687c0.368,0.225,0.609,0.625,0.609,1.057   s-0.217,0.832-0.586,1.057L2.132,19.666c-0.382,0.231-0.984,0.24-1.375,0.021C0.367,19.468,0,19.056,0,18.608V1.237   C0,0.79,0.369,0.378,0.759,0.158z" />
           </svg>
@@ -167,7 +167,7 @@ defmodule OliWeb.Delivery.Student.ContentLive do
   attr :unit_numbering_index, :integer
   attr :unit_uuid, :string
   attr :selected, :boolean, default: false
-  attr :bg_image_url, :string, doc: "the background image url for the card", default: ""
+  attr :bg_image_url, :string, doc: "the background image url for the card"
 
   def module_card(assigns) do
     ~H"""
