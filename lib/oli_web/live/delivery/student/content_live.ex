@@ -105,6 +105,7 @@ defmodule OliWeb.Delivery.Student.ContentLive do
           module_index={module_index}
           unit_uuid={@unit.uuid}
           unit_numbering_index={@unit.numbering.index}
+          bg_image_url={module.revision.poster_image}
           selected={module.uuid == @selected_module_uuid}
         />
       </div>
@@ -166,6 +167,7 @@ defmodule OliWeb.Delivery.Student.ContentLive do
   attr :unit_numbering_index, :integer
   attr :unit_uuid, :string
   attr :selected, :boolean, default: false
+  attr :bg_image_url, :string, doc: "the background image url for the card", default: ""
 
   def module_card(assigns) do
     ~H"""
@@ -175,7 +177,7 @@ defmodule OliWeb.Delivery.Student.ContentLive do
         phx-value-unit_uuid={@unit_uuid}
         phx-value-module_uuid={@module.uuid}
         class={[
-          "flex flex-col gap-[5px] cursor-pointer rounded-xl h-[162px] w-[288px] bg-gray-300 shrink-0 mb-1 px-5 pt-[15px]",
+          "flex flex-col gap-[5px] cursor-pointer rounded-xl h-[162px] w-[288px] bg-gray-300 shrink-0 mb-1 px-5 pt-[15px] bg-[url('#{@bg_image_url}')]",
           if(@selected, do: "bg-gray-400 border-2 border-gray-800")
         ]}
       >
