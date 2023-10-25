@@ -14,19 +14,34 @@ defmodule OliWeb.Delivery.Student.ContentLive do
       Oli.Publishing.DeliveryResolver.full_hierarchy(socket.assigns.section.slug)
 
     {:ok,
-     assign(socket, hierarchy: hierarchy, selected_unit_uuid: nil, selected_module_uuid: nil)}
+     assign(socket,
+       hierarchy: hierarchy,
+       selected_unit_uuid: nil,
+       selected_module: nil,
+       selected_module_index: nil
+     )}
   end
 
   def handle_event(
         "select_module",
-        %{"unit_uuid" => unit_uuid, "module_uuid" => module_uuid},
+        %{
+          "unit_uuid" => unit_uuid,
+          "module_uuid" => module_uuid,
+          "module_index" => selected_module_index
+        },
         socket
       ) do
     socket =
-      if module_uuid == socket.assigns.selected_module_uuid do
-        assign(socket, selected_unit_uuid: nil, selected_module_uuid: nil)
+      if module_uuid == (socket.assigns.selected_module && socket.assigns.selected_module.uuid) do
+        assign(socket, selected_unit_uuid: nil, selected_module: nil)
       else
-        assign(socket, selected_unit_uuid: unit_uuid, selected_module_uuid: module_uuid)
+        selected_module = get_module(socket.assigns.hierarchy, unit_uuid, module_uuid)
+
+        assign(socket,
+          selected_unit_uuid: unit_uuid,
+          selected_module: selected_module,
+          selected_module_index: selected_module_index
+        )
       end
       |> push_event("scroll_to_target", %{id: "unit_#{unit_uuid}"})
 
@@ -57,7 +72,8 @@ defmodule OliWeb.Delivery.Student.ContentLive do
           section_start_date={@section.start_date}
           ctx={@ctx}
           selected_unit={child.uuid == @selected_unit_uuid}
-          selected_module_uuid={@selected_module_uuid}
+          selected_module={@selected_module}
+          selected_module_index={@selected_module_index}
         />
       </div>
     </.header_with_sidebar_nav>
@@ -67,7 +83,8 @@ defmodule OliWeb.Delivery.Student.ContentLive do
   attr :unit, :map
   attr :ctx, :map, doc: "the context is needed to format the date considering the user's timezone"
   attr :selected_unit, :boolean, default: false
-  attr :selected_module_uuid, :string
+  attr :selected_module, :map
+  attr :selected_module_index, :string
   attr :section_start_date, :string, doc: "required to calculate the week number"
 
   def unit(assigns) do
@@ -114,25 +131,63 @@ defmodule OliWeb.Delivery.Student.ContentLive do
           unit_uuid={@unit.uuid}
           unit_numbering_index={@unit.numbering.index}
           bg_image_url={module.revision.poster_image || "/images/course_default.jpg"}
-          selected={module.uuid == @selected_module_uuid}
+          selected={if @selected_module, do: module.uuid == @selected_module.uuid, else: false}
         />
       </div>
     </div>
     <div :if={@selected_unit} class="flex py-[24px] px-[50px] gap-x-12">
       <div class="w-1/2 flex flex-col px-6">
-        <h5 class="mb-[20px] text-2xl tracking-[0.02px] font-light">If you Can't Measure it...</h5>
-        <p
-          :for={_i <- Enum.take(Enum.to_list(1..5), Enum.random(1..5))}
-          class="py-2 text-[14px] leading-[30px] font-normal "
-        >
-          Lorem ipsum dolor sit amet consectetur adipisicing elit. Error voluptate cupiditate, quae minus illo quo repellendus! Molestiae commodi, tenetur nam explicabo, aut repellendus dolorum ex amet delectus asperiores eligendi exercitationem?
+        <h5 class="mb-[20px] text-2xl tracking-[0.02px] font-light"></h5>
+        <p class="py-2 text-[14px] leading-[30px] font-normal">
+          <%= @selected_module.revision.intro_content %>
         </p>
         <button class="btn btn-primary mr-auto mt-[42px]">Let's discuss?</button>
       </div>
-      <div class="mt-[52px]">
-        <p class="py-2 text-[14px] leading-[30px] font-normal ">
-          index goes here
-        </p>
+      <div class="mt-[52px] w-1/2">
+        <.index module={@selected_module} module_index={@selected_module_index} />
+        <p class="py-2 text-[14px] leading-[30px] font-normal"></p>
+      </div>
+    </div>
+    """
+  end
+
+  attr :module, :map
+  attr :module_index, :integer
+
+  def index(assigns) do
+    ~H"""
+    <div
+      :for={{page, page_index} <- Enum.with_index(@module.children, 1)}
+      class="flex gap-[14px] h-[42px] w-full"
+    >
+      <div class="flex justify-center items-center gap-[10px] h-6 w-6">
+        <svg
+          :if={:rand.uniform() > 0.5}
+          xmlns="http://www.w3.org/2000/svg"
+          height="1.25em"
+          viewBox="0 0 448 512"
+        >
+          <path
+            fill="#1E9531"
+            d="M438.6 105.4c12.5 12.5 12.5 32.8 0 45.3l-256 256c-12.5 12.5-32.8 12.5-45.3 0l-128-128c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0L160 338.7 393.4 105.4c12.5-12.5 32.8-12.5 45.3 0z"
+          />
+        </svg>
+      </div>
+      <div class="flex items-center gap-3 w-full border-b-2 border-gray-600">
+        <span class="text-[16px] leading-[22px] font-normal">
+          <%= "#{@module_index}.#{page_index} #{page.revision.title}" %>
+        </span>
+        <div class="flex items-center gap-[6px] ml-auto">
+          <svg xmlns="http://www.w3.org/2000/svg" height="1.25em" viewBox="0 0 512 512">
+            <path d="M464 256A208 208 0 1 1 48 256a208 208 0 1 1 416 0zM0 256a256 256 0 1 0 512 0A256 256 0 1 0 0 256zM232 120V256c0 8 4 15.5 10.7 20l96 64c11 7.4 25.9 4.4 33.3-6.7s4.4-25.9-6.7-33.3L280 243.2V120c0-13.3-10.7-24-24-24s-24 10.7-24 24z" />
+          </svg>
+          <span class="text-[12px] leading-[16px] font-bold uppercase tracking-[0.96px] w-[15px] text-right">
+            <%= page.revision.duration_minutes %>
+          </span>
+          <span class="text-[12px] leading-[16px] font-bold uppercase tracking-[0.96px]">
+            min
+          </span>
+        </div>
       </div>
     </div>
     """
@@ -185,6 +240,7 @@ defmodule OliWeb.Delivery.Student.ContentLive do
         phx-click="select_module"
         phx-value-unit_uuid={@unit_uuid}
         phx-value-module_uuid={@module.uuid}
+        phx-value-module_index={@module_index}
         class={[
           "flex flex-col gap-[5px] cursor-pointer rounded-xl h-[162px] w-[288px] bg-gray-300 shrink-0 mb-1 px-5 pt-[15px] bg-[url('#{@bg_image_url}')]",
           if(@selected, do: "bg-gray-400 outline outline-2 outline-gray-800")
@@ -236,7 +292,7 @@ defmodule OliWeb.Delivery.Student.ContentLive do
     <div class="flex flex-row items-center mx-auto">
       <div class="flex justify-center w-full">
         <div class="rounded-full bg-gray-200 h-1" style={"width: #{@width}"}>
-          <div class="rounded-full bg-green-600 h-1" style={"width: #{@percent}%"}></div>
+          <div class="rounded-full bg-[#1E9531] h-1" style={"width: #{@percent}%"}></div>
         </div>
       </div>
       <div :if={@show_percent} class="text-[16px] leading-[32px] tracking-[0.02px] font-bold">
@@ -273,5 +329,16 @@ defmodule OliWeb.Delivery.Student.ContentLive do
 
         week_num
     end
+  end
+
+  defp get_module(hierarchy, unit_uuid, module_uuid) do
+    unit =
+      Enum.find(hierarchy.children, fn unit ->
+        unit.uuid == unit_uuid
+      end)
+
+    Enum.find(unit.children, fn module ->
+      module.uuid == module_uuid
+    end)
   end
 end
