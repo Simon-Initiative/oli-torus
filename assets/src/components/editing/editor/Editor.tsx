@@ -143,7 +143,11 @@ export const Editor: React.FC<EditorProps> = React.memo((props: EditorProps) => 
 
   return (
     <React.Fragment>
-      <Slate editor={editor} initialValue={validateEditorContentValue(props.value)} onChange={onChange}>
+      <Slate
+        editor={editor}
+        initialValue={validateEditorContentValue(props.value)}
+        onChange={onChange}
+      >
         {props.children}
 
         <EditorToolbar

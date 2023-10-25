@@ -1,7 +1,7 @@
+import { Descendant } from 'slate';
 import { validateEditorContentValue } from 'components/editing/editor/Editor';
 import { Model } from 'data/content/model/elements/factories';
 import { expectAnyId } from './normalize-test-utils';
-import { Descendant } from 'slate';
 
 describe('validateEditorContentValue', () => {
   it('should return default value for undefined value', () => {
@@ -30,7 +30,7 @@ describe('validateEditorContentValue', () => {
 
   it('should return input array value for valid array value', () => {
     const value = [{ type: 'p', id: '1', children: [{ text: 'Hello, world!' }] }];
-    const expectedOutput = value as Descendant[];;
+    const expectedOutput = value as Descendant[];
     expect(validateEditorContentValue(value)).toEqual(expectAnyId(expectedOutput));
   });
 });
