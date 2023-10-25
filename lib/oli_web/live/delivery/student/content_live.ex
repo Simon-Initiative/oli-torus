@@ -53,6 +53,10 @@ defmodule OliWeb.Delivery.Student.ContentLive do
     {:noreply, socket}
   end
 
+  def handle_event("navigate_to_resource", %{"slug" => resource_slug}, socket) do
+    {:noreply, push_navigate(socket, to: get_url(resource_slug, socket.assigns.section.slug))}
+  end
+
   def render(assigns) do
     ~H"""
     <Modal.modal id="video_player">
@@ -65,7 +69,7 @@ defmodule OliWeb.Delivery.Student.ContentLive do
       preview_mode={@preview_mode}
       active_tab={:content}
     >
-      <div id="student_content" class="container mx-auto p-[25px] space-y-4" phx-hook="ScrollToTarget">
+      <div id="student_content" class="container mx-auto p-[25px]" phx-hook="ScrollToTarget">
         <.unit
           :for={child <- @hierarchy.children}
           unit={child}
@@ -137,13 +141,21 @@ defmodule OliWeb.Delivery.Student.ContentLive do
     </div>
     <div :if={@selected_unit} class="flex py-[24px] px-[50px] gap-x-12">
       <div class="w-1/2 flex flex-col px-6">
-        <h5 class="mb-[20px] text-2xl tracking-[0.02px] font-light"></h5>
-        <p class="py-2 text-[14px] leading-[30px] font-normal">
-          <%= @selected_module.revision.intro_content %>
-        </p>
+        <div class={[
+          "intro-content",
+          maybe_additional_margin_top(@selected_module.revision.intro_content["children"])
+        ]}>
+          <%= Phoenix.HTML.raw(
+            Oli.Rendering.Content.render(
+              %Oli.Rendering.Context{},
+              @selected_module.revision.intro_content["children"],
+              Oli.Rendering.Content.Html
+            )
+          ) %>
+        </div>
         <button class="btn btn-primary mr-auto mt-[42px]">Let's discuss?</button>
       </div>
-      <div class="mt-[52px] w-1/2">
+      <div class="mt-[62px] w-1/2">
         <.index module={@selected_module} module_index={@selected_module_index} />
         <p class="py-2 text-[14px] leading-[30px] font-normal"></p>
       </div>
@@ -173,7 +185,11 @@ defmodule OliWeb.Delivery.Student.ContentLive do
           />
         </svg>
       </div>
-      <div class="flex items-center gap-3 w-full border-b-2 border-gray-600">
+      <div
+        phx-click="navigate_to_resource"
+        phx-value-slug={page.revision.slug}
+        class="flex items-center gap-3 w-full border-b-2 border-gray-600 cursor-pointer"
+      >
         <span class="text-[16px] leading-[22px] font-normal">
           <%= "#{@module_index}.#{page_index} #{page.revision.title}" %>
         </span>
@@ -302,6 +318,16 @@ defmodule OliWeb.Delivery.Student.ContentLive do
     """
   end
 
+  _docp = """
+    Currently the intro_content for a revision does not support h1 tags. So,
+    if there is no <h1> tag in the content then we need to add an aditional margin
+    to match the given figma design.
+  """
+
+  defp maybe_additional_margin_top(content) do
+    if !String.contains?(Jason.encode!(content), "\"type\":\"h1\""), do: "mt-[52px]"
+  end
+
   defp parse_datetime(nil, _ctx), do: "not yet scheduled"
 
   defp parse_datetime(datetime, ctx) do
@@ -340,5 +366,11 @@ defmodule OliWeb.Delivery.Student.ContentLive do
     Enum.find(unit.children, fn module ->
       module.uuid == module_uuid
     end)
+  end
+
+  # TODO: for other courses with other hierarchy, the url might be a container url:
+  # ~p"/sections/#{section_slug}/container/:revision_slug
+  defp get_url(resource_slug, section_slug) do
+    ~p"/sections/#{section_slug}/page/#{resource_slug}"
   end
 end
