@@ -6,13 +6,14 @@ defmodule Oli.Repo.Migrations.Embeddings do
 
       add :revision_id, references(:revisions)
       add :resource_id, references(:resources)
+      add :resource_type_id, references(:resource_types)
 
       add :component_type, :string
       add :chunk_type, :string
       add :chunk_ordinal, :integer
       add :fingerprint_md5, :string
       add :content, :text
-      add :embedding, :vector, size: 1551
+      add :embedding, :vector, size: 1536
     end
   end
 

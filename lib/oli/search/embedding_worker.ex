@@ -1,4 +1,5 @@
 defmodule Oli.Search.EmbeddingWorker do
+  alias ElixirSense.Core.Struct
   use Oban.Worker, queue: :embeddings, max_attempts: 3
 
   import Ecto.Query, warn: false
@@ -18,7 +19,6 @@ defmodule Oli.Search.EmbeddingWorker do
 
     get_revision(revision_id)
     |> render_to_chunks()
-    |> Enum.map(&(calculate_fingerprint(&1)))
     |> Enum.map(&(reuse_existing_embedding(&1)))
     |> calculate_embeddings()
     |> persist()
@@ -26,7 +26,19 @@ defmodule Oli.Search.EmbeddingWorker do
   end
 
   defp persist({:ok, revision_embeddings}) do
-    Repo.insert_all(RevisionEmbedding, revision_embeddings)
+
+    attrs = Enum.map(revision_embeddings, fn r ->
+      Map.delete(r, :__struct__)
+      |> Map.delete(:__meta__)
+      |> Map.delete(:resource)
+      |> Map.delete(:revision)
+      |> Map.delete(:resource_type)
+      |> Map.delete(:id)
+      |> Map.delete(:updated_at)
+      |> Map.delete(:inserted_at)
+    end)
+
+    Repo.insert_all(RevisionEmbedding, attrs)
   end
 
   defp persist(e), do: e
@@ -34,9 +46,10 @@ defmodule Oli.Search.EmbeddingWorker do
   # TODO: We will eventually want to front this "one at a time db lookup" with an
   # in memory cache of "fingerprint -> embedding" so that we don't have to hit the db
   defp reuse_existing_embedding(%RevisionEmbedding{fingerprint_md5: fingerprint_md5} = re) do
+
     result = RevisionEmbedding
     |> where([re], re.fingerprint_md5 == ^fingerprint_md5)
-    |> select([_, re], re.embedding)
+    |> select([re], re.embedding)
     |> limit(1)
     |> Repo.all()
 
@@ -85,10 +98,6 @@ defmodule Oli.Search.EmbeddingWorker do
 
   defp render_to_chunks(revision) do
     MarkdownRenderer.to_markdown(revision)
-  end
-
-  defp calculate_fingerprint(%RevisionEmbedding{content: content} = re) do
-    %{re | fingerprint_md5: :erlang.md5(content)}
   end
 
 end

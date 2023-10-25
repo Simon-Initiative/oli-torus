@@ -20,6 +20,7 @@ defmodule Oli.Search.MarkdownRenderer do
 
     # Chunk
     String.split(markdown, "\n\n")
+    |> Enum.filter(fn chunk -> String.trim(chunk) != "" end)
     |> Enum.with_index(1)
     |> Enum.map(fn {chunk, ordinal} ->
       %RevisionEmbedding{
@@ -30,7 +31,7 @@ defmodule Oli.Search.MarkdownRenderer do
         chunk_type: categorize_chunk(chunk),
         chunk_ordinal: ordinal,
         content: chunk,
-        fingerprint_md5: :erlang.md5(chunk)
+        fingerprint_md5: :crypto.hash(:md5, chunk) |> Base.encode16()
       }
     end)
 
@@ -68,8 +69,8 @@ defmodule Oli.Search.MarkdownRenderer do
       "$$" <> _  -> :formula
       "#" <> _  -> :heading
       "---" <> _  ->
-        parts = String.split(chunk, "\n")
-        case parts[0] do
+        [first_part | _rest] = String.split(chunk, "\n")
+        case first_part do
           "##### Video" -> :video
           "##### Emerald Cloud Lab Code" -> :code
           "##### YouTube Video" -> :youtube
