@@ -120,7 +120,7 @@ defmodule Oli.Conversation.Dialogue do
     end
   end
 
-  defp config(:sync) do
+  def config(:sync) do
     %OpenAI.Config{
       http_options: [recv_timeout: 30000],
       api_key: System.get_env("OPENAI_API_KEY"),
@@ -129,7 +129,7 @@ defmodule Oli.Conversation.Dialogue do
     }
   end
 
-  defp config(:async) do
+  def config(:async) do
     %OpenAI.Config{
       http_options: [recv_timeout: :infinity, stream_to: self(), async: :once],
       api_key: System.get_env("OPENAI_API_KEY"),

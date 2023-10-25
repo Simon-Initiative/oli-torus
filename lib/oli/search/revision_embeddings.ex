@@ -1,4 +1,4 @@
-defmodule Oli.Search.RevisionEmbeddings do
+defmodule Oli.Search.RevisionEmbedding do
   use Ecto.Schema
   import Ecto.Changeset
 
@@ -25,15 +25,15 @@ defmodule Oli.Search.RevisionEmbeddings do
     :other
   ]
 
-  @derive {Phoenix.Param, key: :slug}
   schema "revision_embeddings" do
 
-    field :revision, references(:revisions)
-    field :resource, references(:resources)
-    field :resource_type: references(:resource_types)
+
+    belongs_to :revision, Oli.Resources.Revision
+    belongs_to :resource, Oli.Resources.Resource
+    belongs_to :resource_type, Oli.Resources.ResourceType
 
     field :component_type, Ecto.Enum, values: [:stem, :hint, :feedback, :other]
-    field :chunk_type, , Ecto.Enum, values: @chunk_types
+    field :chunk_type, Ecto.Enum, values: @chunk_types
     field :chunk_ordinal, :integer
     field :fingerprint_md5, :string
     field :content, :string

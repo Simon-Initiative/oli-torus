@@ -2,7 +2,8 @@ defmodule Oli.Search.MarkdownRenderer do
 
   alias Oli.Resources.Revision
   alias Oli.Rendering.Context
-  alias Oli.Search.RenderedChunk
+  alias Oli.Search.RevisionEmbedding
+  alias Oli.Rendering.Page
 
   def to_markdown(%Revision{resource_type_id: resource_type_id} = revision) do
 
@@ -21,14 +22,17 @@ defmodule Oli.Search.MarkdownRenderer do
     String.split(markdown, "\n\n")
     |> Enum.with_index(1)
     |> Enum.map(fn {chunk, ordinal} ->
-      RenderedChunk.new([
+      %RevisionEmbedding{
+        revision_id: revision.id,
+        resource_id: revision.resource_id,
+        resource_type_id: revision.resource_type_id,
         component_type: :other,
         chunk_type: categorize_chunk(chunk),
         chunk_ordinal: ordinal,
         content: chunk,
         fingerprint_md5: :erlang.md5(chunk)
-      ]) end)
-    end
+      }
+    end)
 
   end
 
