@@ -11,6 +11,7 @@ defmodule OliWeb.DeliveryController do
   alias Oli.Lti.LtiParams
   alias Oli.Repo
   alias Oli.Repo.{Paging, Sorting}
+  alias OliWeb.Common.Params
   alias OliWeb.Delivery.InstructorDashboard.Helpers
 
   require Logger
@@ -424,16 +425,38 @@ defmodule OliWeb.DeliveryController do
     |> halt()
   end
 
-  def download_course_content_info(conn, %{"section_slug" => slug}) do
+  def download_course_content_info(conn, %{"section_slug" => slug} = params) do
     case Oli.Delivery.Sections.get_section_by_slug(slug) do
       nil ->
         Phoenix.Controller.redirect(conn, to: Routes.static_page_path(OliWeb.Endpoint, :not_found))
 
       section ->
-        {_total_count, containers_with_metrics} = Helpers.get_containers(section)
+        {_total_count, containers_with_metrics} = Helpers.get_containers(section, async: false)
+
+        container_filter_by =
+          Params.get_atom_param(
+            params,
+            "container_filter_by",
+            [:modules, :units, :pages],
+            :units
+          )
+
+        filter_fn = fn container ->
+          case container_filter_by do
+            :units ->
+              container.numbering_level == 1
+
+            :modules ->
+              container.numbering_level == 2
+
+            _ ->
+              true
+          end
+        end
 
         contents =
           containers_with_metrics
+          |> Enum.filter(filter_fn)
           |> Enum.map(
             &%{
               title: &1.title,
