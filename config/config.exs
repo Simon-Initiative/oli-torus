@@ -1,8 +1,13 @@
 # This file is responsible for configuring your application
 # and its dependencies with the aid of the Config module.
 #
-# This configuration file is loaded before any dependency and
-# is restricted to this project.
+# NOTICE: All configurations defined here are set at COMPILE time. For runtime
+# configurations, use `config/runtime.exs`. These configurations can also serve
+# as defaults and be overridden by `config/runtime.exs` as well.
+#
+# If you are unsure where a configuration belongs, it likely belongs in `config/runtime.exs`.
+#
+# This configuration file is loaded before any dependency and is restricted to this project.
 
 # General application configuration
 import Config
@@ -219,8 +224,6 @@ config :mnesia,
   dump_log_write_threshold: 10000
 
 config :appsignal, :config, revision: System.get_env("SHA", default_sha)
-
-config :appsignal, :client_key, System.get_env("APPSIGNAL_PUSH_API_KEY", nil)
 
 # Configure Privacy Policies link
 config :oli, :privacy_policies,

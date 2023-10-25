@@ -12,6 +12,23 @@ get_env_as_boolean = fn key, default ->
   end
 end
 
+# Appsignal client key is required for appsignal integration
+config :appsignal, :client_key, System.get_env("APPSIGNAL_PUSH_API_KEY", nil)
+
+# Configure runtime log level if LOG_LEVEL is set
+case System.get_env("LOG_LEVEL", nil) do
+  nil ->
+    nil
+
+  log_level ->
+    config :logger, level: String.to_existing_atom(log_level)
+end
+
+if get_env_as_boolean.("APPSIGNAL_ENABLE_LOGGING", "false") do
+  config :logger, backends: [:console, {Appsignal.Logger.Backend, [group: "phoenix"]}]
+end
+
+# Production-only configurations
 if config_env() == :prod do
   database_url =
     System.get_env("DATABASE_URL") ||
@@ -260,15 +277,6 @@ if config_env() == :prod do
   # Configure Mnesia directory (used by pow persistent sessions)
   config :mnesia, :dir, to_charlist(System.get_env("MNESIA_DIR", ".mnesia"))
 
-  # Configure runtime log level if LOG_LEVEL is set
-  case System.get_env("LOG_LEVEL", nil) do
-    nil ->
-      nil
-
-    log_level ->
-      config :logger, level: String.to_atom(log_level)
-  end
-
   truncate =
     System.get_env("LOGGER_TRUNCATE", "8192")
     |> String.downcase()
@@ -327,6 +335,4 @@ if config_env() == :prod do
             ]
         end
     ]
-
-  config :appsignal, :client_key, System.get_env("APPSIGNAL_PUSH_API_KEY", nil)
 end
