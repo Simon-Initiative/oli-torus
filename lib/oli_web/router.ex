@@ -926,7 +926,6 @@ defmodule OliWeb.Router do
 
   ### NextGen23 Student Course Delivery
   scope "/ng23/sections/:section_slug", OliWeb do
-    # TODO: Do we need all these pipeline steps?
     pipe_through([
       :browser,
       :delivery,
