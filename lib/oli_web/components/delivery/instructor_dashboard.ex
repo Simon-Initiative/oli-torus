@@ -203,7 +203,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard do
           <%= if @preview_mode do %>
             <UserAccountMenu.preview_user />
           <% else %>
-            <UserAccountMenu.menu ctx={@ctx} section={@section} />
+            <UserAccountMenu.menu id="user-account-menu" ctx={@ctx} section={@section} />
           <% end %>
         </div>
 
