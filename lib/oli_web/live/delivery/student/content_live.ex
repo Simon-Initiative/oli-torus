@@ -190,7 +190,7 @@ defmodule OliWeb.Delivery.Student.ContentLive do
       <div
         phx-click="navigate_to_resource"
         phx-value-slug={page.revision.slug}
-        class="flex items-center gap-3 w-full border-b-2 border-gray-600 cursor-pointer"
+        class="flex items-center gap-3 w-full border-b-2 border-gray-600 cursor-pointer hover:bg-gray-200 px-2"
       >
         <span class="text-[16px] leading-[22px] font-normal truncate">
           <%= "#{@module_index}.#{page_index} #{page.revision.title}" %>
@@ -222,22 +222,24 @@ defmodule OliWeb.Delivery.Student.ContentLive do
 
   def intro_card(assigns) do
     ~H"""
-    <div class={"flex flex-col items-center rounded-lg h-[162px] w-[288px] bg-gray-300 shrink-0 px-5 pt-[15px] bg-[url('#{@bg_image_url}')]"}>
-      <h5 class="text-[13px] leading-[18px] font-bold self-start"><%= @title %></h5>
-      <div :if={@video_url} phx-click={@on_play} class="w-[70px] h-[70px] relative my-auto -top-2">
-        <div class="w-full h-full rounded-full backdrop-blur bg-gray/50"></div>
-        <button class="w-full h-full absolute top-0 left-0 flex items-center justify-center">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            fill="white"
-            width="33"
-            height="38"
-            viewBox="0 0 16.984 24.8075"
-            class="scale-110 ml-[6px] mt-[9px]"
-          >
-            <path d="M0.759,0.158c0.39-0.219,0.932-0.21,1.313,0.021l14.303,8.687c0.368,0.225,0.609,0.625,0.609,1.057   s-0.217,0.832-0.586,1.057L2.132,19.666c-0.382,0.231-0.984,0.24-1.375,0.021C0.367,19.468,0,19.056,0,18.608V1.237   C0,0.79,0.369,0.378,0.759,0.158z" />
-          </svg>
-        </button>
+    <div class="hover:scale-[1.01]">
+      <div class={"flex flex-col items-center rounded-lg h-[162px] w-[288px] bg-gray-300 shrink-0 px-5 pt-[15px] bg-[url('#{@bg_image_url}')]"}>
+        <h5 class="text-[13px] leading-[18px] font-bold self-start"><%= @title %></h5>
+        <div :if={@video_url} phx-click={@on_play} class="w-[70px] h-[70px] relative my-auto -top-2">
+          <div class="w-full h-full rounded-full backdrop-blur bg-gray/50"></div>
+          <button class="w-full h-full absolute top-0 left-0 flex items-center justify-center">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              fill="white"
+              width="33"
+              height="38"
+              viewBox="0 0 16.984 24.8075"
+              class="scale-110 ml-[6px] mt-[9px]"
+            >
+              <path d="M0.759,0.158c0.39-0.219,0.932-0.21,1.313,0.021l14.303,8.687c0.368,0.225,0.609,0.625,0.609,1.057   s-0.217,0.832-0.586,1.057L2.132,19.666c-0.382,0.231-0.984,0.24-1.375,0.021C0.367,19.468,0,19.056,0,18.608V1.237   C0,0.79,0.369,0.378,0.759,0.158z" />
+            </svg>
+          </button>
+        </div>
       </div>
     </div>
     """
@@ -253,50 +255,52 @@ defmodule OliWeb.Delivery.Student.ContentLive do
   def module_card(assigns) do
     # TODO: render real student progress for module
     ~H"""
-    <div flex="h-[170px] w-[288px]">
-      <div
-        id={"module_#{@module.uuid}"}
-        phx-click="select_module"
-        phx-value-unit_uuid={@unit_uuid}
-        phx-value-module_uuid={@module.uuid}
-        phx-value-module_index={@module_index}
-        class={[
-          "flex flex-col gap-[5px] cursor-pointer rounded-xl h-[162px] w-[288px] bg-gray-300 shrink-0 mb-1 px-5 pt-[15px] bg-[url('#{@bg_image_url}')]",
-          if(@selected, do: "bg-gray-400 outline outline-2 outline-gray-800")
-        ]}
-      >
-        <span class="text-[12px] leading-[16px] font-bold opacity-60 text-gray-500">
-          <%= "#{@unit_numbering_index}.#{@module_index}" %>
-        </span>
-        <h5 class="text-[18px] leading-[25px] font-bold"><%= @module.revision.title %></h5>
-        <div :if={!@selected} class="mt-auto flex h-[21px] justify-center items-center">
+    <div class="hover:scale-[1.01]">
+      <div flex="h-[170px] w-[288px]">
+        <div
+          id={"module_#{@module.uuid}"}
+          phx-click="select_module"
+          phx-value-unit_uuid={@unit_uuid}
+          phx-value-module_uuid={@module.uuid}
+          phx-value-module_index={@module_index}
+          class={[
+            "flex flex-col gap-[5px] cursor-pointer rounded-xl h-[162px] w-[288px] bg-gray-300 shrink-0 mb-1 px-5 pt-[15px] bg-[url('#{@bg_image_url}')]",
+            if(@selected, do: "bg-gray-400 outline outline-2 outline-gray-800")
+          ]}
+        >
+          <span class="text-[12px] leading-[16px] font-bold opacity-60 text-gray-500">
+            <%= "#{@unit_numbering_index}.#{@module_index}" %>
+          </span>
+          <h5 class="text-[18px] leading-[25px] font-bold"><%= @module.revision.title %></h5>
+          <div :if={!@selected} class="mt-auto flex h-[21px] justify-center items-center">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="10"
+              height="5"
+              viewBox="0 0 10 5"
+              fill="currentColor"
+            >
+              <path d="M0 0L10 0L5 5Z" />
+            </svg>
+          </div>
+        </div>
+        <.progress_bar :if={!@selected} percent={:rand.uniform(100)} width="60%" show_percent={false} />
+        <div
+          :if={@selected}
+          class={[
+            "flex justify-center items-center -mt-1"
+          ]}
+        >
           <svg
             xmlns="http://www.w3.org/2000/svg"
-            width="10"
-            height="5"
-            viewBox="0 0 10 5"
+            width="27"
+            height="12"
+            viewBox="0 0 27 12"
             fill="currentColor"
           >
-            <path d="M0 0L10 0L5 5Z" />
+            <path d="M0 0L27 0L13.5 12Z" />
           </svg>
         </div>
-      </div>
-      <.progress_bar :if={!@selected} percent={:rand.uniform(100)} width="60%" show_percent={false} />
-      <div
-        :if={@selected}
-        class={[
-          "flex justify-center items-center -mt-1"
-        ]}
-      >
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          width="27"
-          height="12"
-          viewBox="0 0 27 12"
-          fill="currentColor"
-        >
-          <path d="M0 0L27 0L13.5 12Z" />
-        </svg>
       </div>
     </div>
     """
