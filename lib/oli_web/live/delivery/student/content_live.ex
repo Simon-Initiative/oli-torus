@@ -92,6 +92,7 @@ defmodule OliWeb.Delivery.Student.ContentLive do
   attr :section_start_date, :string, doc: "required to calculate the week number"
 
   def unit(assigns) do
+    # TODO: render real student progress for unit
     ~H"""
     <div id={"unit_#{@unit.uuid}"} class="p-[25px] pl-[50px]">
       <div class="mb-6 flex flex-col items-start gap-[6px]">
@@ -139,7 +140,7 @@ defmodule OliWeb.Delivery.Student.ContentLive do
         />
       </div>
     </div>
-    <div :if={@selected_unit} class="flex py-[24px] px-[50px] gap-x-12">
+    <div :if={@selected_unit} class="flex py-[24px] px-[50px] gap-x-4 lg:gap-x-12">
       <div class="w-1/2 flex flex-col px-6">
         <div class={[
           "intro-content",
@@ -167,6 +168,7 @@ defmodule OliWeb.Delivery.Student.ContentLive do
   attr :module_index, :integer
 
   def index(assigns) do
+    # TODO: render real check if student has visited the page
     ~H"""
     <div
       :for={{page, page_index} <- Enum.with_index(@module.children, 1)}
@@ -249,6 +251,7 @@ defmodule OliWeb.Delivery.Student.ContentLive do
   attr :bg_image_url, :string, doc: "the background image url for the card"
 
   def module_card(assigns) do
+    # TODO: render real student progress for module
     ~H"""
     <div flex="h-[170px] w-[288px]">
       <div
