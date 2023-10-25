@@ -190,7 +190,7 @@ defmodule OliWeb.Delivery.Student.ContentLive do
         phx-value-slug={page.revision.slug}
         class="flex items-center gap-3 w-full border-b-2 border-gray-600 cursor-pointer"
       >
-        <span class="text-[16px] leading-[22px] font-normal">
+        <span class="text-[16px] leading-[22px] font-normal truncate">
           <%= "#{@module_index}.#{page_index} #{page.revision.title}" %>
         </span>
         <div class="flex items-center gap-[6px] ml-auto">
