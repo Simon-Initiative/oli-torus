@@ -1032,22 +1032,6 @@ defmodule OliWeb.Router do
     live("/:section_slug/source_materials", Delivery.ManageSourceMaterials, as: :source_materials)
     live("/:section_slug/remix", Delivery.RemixSection)
     live("/:section_slug/remix/:section_resource_slug", Delivery.RemixSection)
-    live("/:section_slug/enrollments", Sections.EnrollmentsViewLive)
-    post("/:section_slug/enrollments", InviteController, :create_bulk)
-
-    live_session :enrolled_students,
-      on_mount: [
-        OliWeb.LiveSessionPlugs.SetRouteName,
-        OliWeb.Delivery.StudentDashboard.InitialAssigns
-      ],
-      root_layout: {OliWeb.LayoutView, :delivery_student_dashboard} do
-      live(
-        "/:section_slug/enrollments/students/:student_id/:active_tab",
-        Delivery.StudentDashboard.StudentDashboardLive,
-        as: :enrollment_student_info,
-        metadata: %{route_name: :enrollments_student_info}
-      )
-    end
 
     post("/:section_slug/enrollments/export", PageDeliveryController, :export_enrollments)
     live("/:section_slug/invitations", Sections.InviteView)

@@ -130,33 +130,6 @@ defmodule OliWeb.Delivery.StudentDashboard.StudentDashboardLiveTest do
 
       assert html =~ ~s(#{student.name} information)
     end
-
-    test "breadcrumbs get render correctly when coming from the enrollments view", %{
-      instructor: instructor,
-      student: student,
-      section: section,
-      conn: conn
-    } do
-      Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
-
-      route =
-        Routes.enrollment_student_info_path(
-          OliWeb.Endpoint,
-          OliWeb.Delivery.StudentDashboard.StudentDashboardLive,
-          section.slug,
-          student.id,
-          :content
-        )
-
-      {:ok, _view, html} =
-        live(conn, route)
-
-      assert html =~
-               ~s(<a href="/sections/#{section.slug}/instructor_dashboard/manage">Manage Section</a>)
-
-      assert html =~ ~s(<a href="/sections/#{section.slug}/enrollments">Enrollments</a>)
-      assert html =~ ~s(#{student.name} information)
-    end
   end
 
   def section_with_survey() do
