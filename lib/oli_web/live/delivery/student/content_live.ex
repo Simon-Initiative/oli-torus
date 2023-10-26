@@ -135,7 +135,7 @@ defmodule OliWeb.Delivery.Student.ContentLive do
           module_index={module_index}
           unit_uuid={@unit.uuid}
           unit_numbering_index={@unit.numbering.index}
-          bg_image_url={module.revision.poster_image || "/images/course_default.jpg"}
+          bg_image_url={module.revision.poster_image}
           selected={if @selected_module, do: module.uuid == @selected_module.uuid, else: false}
         />
       </div>
@@ -190,7 +190,7 @@ defmodule OliWeb.Delivery.Student.ContentLive do
       <div
         phx-click="navigate_to_resource"
         phx-value-slug={page.revision.slug}
-        class="flex items-center gap-3 w-full border-b-2 border-gray-600 cursor-pointer hover:bg-gray-200 px-2"
+        class="flex items-center gap-3 w-full border-b-2 border-gray-600 cursor-pointer hover:bg-gray-200/70 px-2"
       >
         <span class="text-[16px] leading-[22px] font-normal truncate">
           <%= "#{@module_index}.#{page_index} #{page.revision.title}" %>
@@ -217,13 +217,19 @@ defmodule OliWeb.Delivery.Student.ContentLive do
        :string,
        doc: "the video url is optional and, if provided, the play button will be rendered"
 
-  attr :bg_image_url, :string, doc: "the background image url for the card"
   attr :on_play, :any, doc: "the event to be triggered when the play button is clicked"
+  attr :bg_image_url, :string, doc: "the background image url for the card"
 
   def intro_card(assigns) do
     ~H"""
     <div class="hover:scale-[1.01]">
-      <div class={"flex flex-col items-center rounded-lg h-[162px] w-[288px] bg-gray-300 shrink-0 px-5 pt-[15px] bg-[url('#{@bg_image_url}')]"}>
+      <div class={[
+        "flex flex-col items-center rounded-lg h-[162px] w-[288px] bg-gray-200 shrink-0 px-5 pt-[15px]",
+        if(@bg_image_url in ["", nil],
+          do: "bg-[url('/images/course_default.jpg')]",
+          else: "bg-[url('#{@bg_image_url}')]"
+        )
+      ]}>
         <h5 class="text-[13px] leading-[18px] font-bold self-start"><%= @title %></h5>
         <div :if={@video_url} phx-click={@on_play} class="w-[70px] h-[70px] relative my-auto -top-2">
           <div class="w-full h-full rounded-full backdrop-blur bg-gray/50"></div>
@@ -264,8 +270,12 @@ defmodule OliWeb.Delivery.Student.ContentLive do
           phx-value-module_uuid={@module.uuid}
           phx-value-module_index={@module_index}
           class={[
-            "flex flex-col gap-[5px] cursor-pointer rounded-xl h-[162px] w-[288px] bg-gray-300 shrink-0 mb-1 px-5 pt-[15px] bg-[url('#{@bg_image_url}')]",
-            if(@selected, do: "bg-gray-400 outline outline-2 outline-gray-800")
+            "flex flex-col gap-[5px] cursor-pointer rounded-xl h-[162px] w-[288px] shrink-0 mb-1 px-5 pt-[15px] bg-gray-200",
+            if(@selected, do: "bg-gray-400 outline outline-2 outline-gray-800"),
+            if(@bg_image_url in ["", nil],
+              do: "bg-[url('/images/course_default.jpg')]",
+              else: "bg-[url('#{@bg_image_url}')]"
+            )
           ]}
         >
           <span class="text-[12px] leading-[16px] font-bold opacity-60 text-gray-500">
