@@ -175,20 +175,12 @@ defmodule OliWeb.LtiController do
                 "placement" => "assignment_selection",
                 "message_type" => "LtiResourceLinkRequest"
               },
-              case Map.get(params, "course_navigation_default") do
-                "disabled" ->
-                  %{
-                    "default" => "disabled",
-                    "placement" => "course_navigation",
-                    "message_type" => "LtiResourceLinkRequest"
-                  }
-
-                _ ->
-                  %{
-                    "placement" => "course_navigation",
-                    "message_type" => "LtiResourceLinkRequest"
-                  }
-              end
+              %{
+                "placement" => "course_navigation",
+                "message_type" => "LtiResourceLinkRequest",
+                "default" => get_course_navigation_default(params),
+                "windowTarget" => "_blank"
+              }
               ## TODO: add support for more placement types in the future, possibly configurable by LMS admin
               # assignment_selection when we support deep linking
               # %{
@@ -231,6 +223,9 @@ defmodule OliWeb.LtiController do
     conn
     |> json(developer_key_config)
   end
+
+  defp get_course_navigation_default(%{"course_navigation_default" => "enabled"}), do: "enabled"
+  defp get_course_navigation_default(_params), do: "disabled"
 
   def jwks(conn, _params) do
     conn
