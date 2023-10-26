@@ -928,22 +928,14 @@ defmodule OliWeb.Router do
 
   ### NextGen23 Student Course Delivery
   scope "/ng23/sections/:section_slug", OliWeb do
-    # TODO: Do we need all these pipeline steps?
     pipe_through([
       :browser,
-      :require_section,
       :delivery,
-      :require_exploration_pages,
-      :delivery_preview,
-      :delivery_protected,
-      :maybe_gated_resource,
-      :enforce_enroll_and_paywall,
-      :ensure_user_section_visit,
-      :force_required_survey,
-      :pow_email_layout
+      :delivery_and_admin
     ])
 
     live_session :delivery,
+      root_layout: {OliWeb.LayoutView, :delivery},
       on_mount: [
         OliWeb.LiveSessionPlugs.SetSection,
         OliWeb.LiveSessionPlugs.SetCurrentUser,
