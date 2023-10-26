@@ -10,6 +10,11 @@ export const StemActions = {
       Operations.apply(model, Operations.setKey(stemPath, 'editor', mode));
     };
   },
+  changeTextDirection(direction: 'ltr' | 'rtl', stemPath = STEM_PATH) {
+    return (model: any) => {
+      Operations.apply(model, Operations.setKey(stemPath, 'textDirection', direction));
+    };
+  },
   editStem(content: Descendant[], stemPath = STEM_PATH) {
     return (model: any) => {
       Operations.apply(model, Operations.replace(stemPath + '.content', content));

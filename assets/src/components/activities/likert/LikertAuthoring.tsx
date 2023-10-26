@@ -51,6 +51,9 @@ const Likert = (props: AuthoringElementProps<LikertModelSchema>) => {
               onChangeEditorType={(id, editorType) => dispatch(Choices.setEditor(id, editorType))}
               addOne={() => dispatch(LikertActions.addChoice())}
               onRemove={(id) => dispatch(LikertActions.removeChoice(id))}
+              onChangeEditorTextDirection={(id, textDirection) =>
+                dispatch(Choices.setTextDirection(id, textDirection))
+              }
             />
             <div className="form-check mb-2">
               <input
@@ -75,6 +78,9 @@ const Likert = (props: AuthoringElementProps<LikertModelSchema>) => {
             onChangeEditorType={(id, editorType) => dispatch(Items.setEditor(id, editorType))}
             addOne={() => dispatch(LikertActions.addItem())}
             onRemove={(id) => dispatch(LikertActions.removeItem(id))}
+            onChangeEditorTextDirection={(id, textDirection) =>
+              dispatch(Items.setTextDirection(id, textDirection))
+            }
           />
         </TabbedNavigation.Tab>
         <TabbedNavigation.Tab label="Answer Key">
