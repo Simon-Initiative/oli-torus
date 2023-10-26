@@ -10,6 +10,7 @@ defmodule OliWeb.Components.Delivery.UserAccountMenu do
   alias OliWeb.Common.SessionContext
   alias OliWeb.Common.React
 
+  attr(:id, :string, required: true)
   attr(:ctx, SessionContext)
   attr(:section, Section, default: nil)
 
@@ -28,7 +29,7 @@ defmodule OliWeb.Components.Delivery.UserAccountMenu do
         selectedTimezone: @selected_timezone,
         timezones: @timezones
       },
-      id: "menu"
+      id: @id
     ) %>
     """
   end

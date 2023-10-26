@@ -25,9 +25,10 @@ defmodule Oli.Repo.Migrations.AddPromptTemplates do
   """
 
   def up do
-    execute "CREATE EXTENSION IF NOT EXISTS vector"
+    # NOTE: This extension requires su privs on RDS and therefore must be run manually
+    # execute "CREATE EXTENSION IF NOT EXISTS vector"
 
-    flush()
+    # flush()
 
     alter table(:sections) do
       add(:page_prompt_template, :text, default: @page_prompt)
@@ -55,6 +56,6 @@ defmodule Oli.Repo.Migrations.AddPromptTemplates do
       remove(:page_prompt_template)
     end
 
-    execute "DROP EXTENSION vector"
+    # execute "DROP EXTENSION vector"
   end
 end
