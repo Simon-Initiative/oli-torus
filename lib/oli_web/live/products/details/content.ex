@@ -47,7 +47,7 @@ defmodule OliWeb.Products.Details.Content do
         <div class="col-span-12">
           <.form for={@changeset} phx-change={@save} class="d-flex">
             <div class="form-group">
-              <div class="form-row">
+              <div class="form-row my-3">
                 <div class="custom-control custom-switch pl-4">
                   <div class="form-check">
                     <.input
@@ -58,6 +58,21 @@ defmodule OliWeb.Products.Details.Content do
                     />
                     <p class="text-muted">
                       Enable students to see the curriculum's module and unit numbers
+                    </p>
+                  </div>
+                </div>
+              </div>
+              <div class="form-row my-3">
+                <div class="custom-control custom-switch pl-4">
+                  <div class="form-check">
+                    <.input
+                      type="checkbox"
+                      class="custom-control-input"
+                      field={@changeset[:apply_major_updates]}
+                      label="Apply major updates to course sections"
+                    />
+                    <p class="text-muted">
+                      Allow major project publications to be applied to course sections created from this product
                     </p>
                   </div>
                 </div>
