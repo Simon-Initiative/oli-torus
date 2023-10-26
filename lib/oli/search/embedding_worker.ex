@@ -7,22 +7,30 @@ defmodule Oli.Search.EmbeddingWorker do
   alias Oli.Search.MarkdownRenderer
   alias Oli.Resources.Revision
   alias Oli.Search.RevisionEmbedding
+  alias Oli.Authoring.Broadcaster
 
   @impl Oban.Worker
   def perform(%Oban.Job{
-        args: %{"revision_id" => revision_id}
+        args: %{"revision_id" => revision_id, "publication_id" => publication_id}
       }) do
-    perform_now(revision_id)
+    perform_now(revision_id, publication_id)
   end
 
-  def perform_now(revision_id) do
+  def perform_now(revision_id, publication_id) do
+    result = do_perform(revision_id)
 
-    get_revision(revision_id)
+    Broadcaster.broadcast_revision_embedding(publication_id, result)
+
+    result
+  end
+
+  defp do_perform(revision_id) do
+    revision_id
+    |> get_revision()
     |> render_to_chunks()
     |> Enum.map(&(reuse_existing_embedding(&1)))
     |> calculate_embeddings()
     |> persist()
-
   end
 
   defp persist({:ok, revision_embeddings}) do
@@ -32,13 +40,20 @@ defmodule Oli.Search.EmbeddingWorker do
       |> Map.delete(:__meta__)
       |> Map.delete(:resource)
       |> Map.delete(:revision)
+      |> Map.delete(:title)
       |> Map.delete(:resource_type)
       |> Map.delete(:id)
       |> Map.delete(:updated_at)
       |> Map.delete(:inserted_at)
     end)
 
-    Repo.insert_all(RevisionEmbedding, attrs)
+    expected_num_inserts = Enum.count(attrs)
+
+    case Repo.insert_all(RevisionEmbedding, attrs) do
+      {^expected_num_inserts, _} -> :ok
+      _ -> {:error, "unexpected number of inserts"}
+    end
+
   end
 
   defp persist(e), do: e

@@ -151,6 +151,7 @@ config :oli, Oban,
   queues: [
     default: 10,
     snapshots: 20,
+    embeddings: 1,
     s3_uploader: 20,
     selections: 2,
     updates: 10,

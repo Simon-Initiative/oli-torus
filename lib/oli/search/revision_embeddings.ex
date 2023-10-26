@@ -39,7 +39,8 @@ defmodule Oli.Search.RevisionEmbedding do
     field :content, :string
     field :embedding, Pgvector.Ecto.Vector
 
-    timestamps(type: :utc_datetime)
+    field(:title, :string, virtual: true)
+
   end
 
   @doc false
