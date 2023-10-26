@@ -2637,7 +2637,7 @@ defmodule Oli.Delivery.Sections do
     |> then(&Repo.insert_all(SectionResource, &1))
   end
 
-  defp is_structural?(%Revision{resource_type_id: resource_type_id}) do
+  def is_structural?(%Revision{resource_type_id: resource_type_id}) do
     container = ResourceType.get_id_by_type("container")
 
     resource_type_id == container
