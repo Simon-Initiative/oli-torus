@@ -1457,7 +1457,7 @@ defmodule Oli.TestHelpers do
         objectives: %{"1" => objectives},
         scoring_strategy_id: Oli.Resources.ScoringStrategy.get_id_by_type("average"),
         resource_type_id: ResourceType.get_id_by_type("activity"),
-        activity_type_id: Activities.get_registration_by_slug("oli_multiple_choice").id,
+        activity_type_id: Oli.Activities.get_registration_by_slug("oli_multiple_choice").id,
         children: [],
         content: %{"model" => []},
         deleted: false,
