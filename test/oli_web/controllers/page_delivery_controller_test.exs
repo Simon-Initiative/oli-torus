@@ -1284,12 +1284,15 @@ defmodule OliWeb.PageDeliveryControllerTest do
              |> Floki.attribute("data-react-props")
              |> hd =~ ~s[\"name\":\"#{user.name}"]
 
-      assert html_response(conn, 200)
-             |> Floki.parse_document!()
-             |> Floki.find(~s{div[data-react-class="Components.Navbar"]})
-             |> Floki.attribute("data-react-props")
-             |> hd =~
-               ~s{\"roleColor\":\"#3498db\",\"roleLabel\":\"Student\"}
+      props =
+        html_response(conn, 200)
+        |> Floki.parse_document!()
+        |> Floki.find(~s{div[data-react-class="Components.Navbar"]})
+        |> Floki.attribute("data-react-props")
+        |> hd
+
+      assert props =~ ~s{\"roleColor\":\"#3498db\"}
+      assert props =~ ~s{\"roleLabel\":\"Student\"}
     end
 
     test "shows role label correctly when user is enrolled as student with platform_role=instructor",
