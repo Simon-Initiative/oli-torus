@@ -96,10 +96,6 @@ defmodule Oli.Authoring.Broadcaster.Subscriber do
     PubSub.unsubscribe(Oli.PubSub, message_analytics_export_status(project_slug))
   end
 
-  def unsubscribe_to_analytics_export_status(project_slug) do
-    PubSub.unsubscribe(Oli.PubSub, message_analytics_export_status(project_slug))
-  end
-
   def subscribe_to_revision_embedding(publication_id) do
     PubSub.subscribe(Oli.PubSub, message_revision_embedding(publication_id))
   end

@@ -10,7 +10,7 @@ defmodule Oli.Rendering.Group.Markdown do
 
   @behaviour Oli.Rendering.Group
 
-  def group(%Context{} = _context, next, %{"id" => id, "purpose" => purpose}) do
+  def group(%Context{} = _context, next, %{"purpose" => purpose}) do
     [
       "---\n",
       "##### Group (purpose: #{Purposes.label_for(purpose)})\n",

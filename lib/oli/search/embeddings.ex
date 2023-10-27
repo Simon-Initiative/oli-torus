@@ -2,7 +2,7 @@ defmodule Oli.Search.Embeddings do
 
   import Ecto.Query, warn: false
   alias Oli.Search.RevisionEmbedding
-  alias Oli.Search.MarkdownRenderer
+
   alias Oli.Search.EmbeddingWorker
   alias Oli.Resources.Revision
   alias Oli.Publishing.PublishedResource
@@ -54,7 +54,7 @@ defmodule Oli.Search.Embeddings do
 
         result = Repo.all(query)
         |> Enum.group_by(fn %{revision_id: revision_id} -> revision_id end)
-        |> Enum.map(fn {revision_id, [first_chunk | _rest] = chunks} ->
+        |> Enum.map(fn {_revision_id, [first_chunk | _rest] = chunks} ->
           %{revision_id: first_chunk.revision_id, title: first_chunk.title, chunks: chunks}
         end)
 

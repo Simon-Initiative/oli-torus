@@ -26,9 +26,9 @@ defmodule Oli.Repo.Migrations.AddPromptTemplates do
 
   def up do
     # NOTE: This extension requires su privs on RDS and therefore must be run manually
-    # execute "CREATE EXTENSION IF NOT EXISTS vector"
+    #execute "CREATE EXTENSION IF NOT EXISTS vector"
 
-    # flush()
+    #flush()
 
     alter table(:sections) do
       add(:page_prompt_template, :text, default: @page_prompt)

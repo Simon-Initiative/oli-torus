@@ -1,5 +1,5 @@
 defmodule Oli.Search.EmbeddingWorker do
-  alias ElixirSense.Core.Struct
+
   use Oban.Worker, queue: :embeddings, max_attempts: 3
 
   import Ecto.Query, warn: false

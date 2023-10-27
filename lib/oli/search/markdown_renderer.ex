@@ -11,15 +11,26 @@ defmodule Oli.Search.MarkdownRenderer do
     |> to_markdown(revision)
   end
 
-  defp to_markdown("page", %Revision{content: content, title: title, resource_id: resource_id} = revision) do
+  defp to_markdown("page", %Revision{content: content, title: title} = revision) do
 
     # Render the resource to markdown
     markdown = ctx(revision)
     |> Page.render(content, Page.Markdown)
     |> :erlang.iolist_to_binary()
 
-    # Chunk
-    String.split(markdown, "\n\n")
+    title_chunk = %RevisionEmbedding{
+      revision_id: revision.id,
+      resource_id: revision.resource_id,
+      resource_type_id: revision.resource_type_id,
+      component_type: :other,
+      chunk_type: :title,
+      chunk_ordinal: 0,
+      content: title,
+      fingerprint_md5: :crypto.hash(:md5, title) |> Base.encode16()
+    }
+
+    # Chunk the page contents
+    content_chunks = String.split(markdown, "\n\n")
     |> Enum.filter(fn chunk -> String.trim(chunk) != "" end)
     |> Enum.with_index(1)
     |> Enum.map(fn {chunk, ordinal} ->
@@ -35,9 +46,11 @@ defmodule Oli.Search.MarkdownRenderer do
       }
     end)
 
+    [title_chunk | content_chunks]
+
   end
 
-  defp to_markdown("activity", %Revision{content: content, title: title, resource_id: resource_id} = revision) do
+  defp to_markdown("activity", _revision) do
 
     # Render the resource to markdown
 

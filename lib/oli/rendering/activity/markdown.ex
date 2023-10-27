@@ -2,7 +2,6 @@ defmodule Oli.Rendering.Activity.Markdown do
   @moduledoc """
   Implements the Markdown writer for activity rendering
   """
-  import Oli.Utils
 
   alias Oli.Rendering.Context
   alias Oli.Rendering.Error
@@ -11,7 +10,7 @@ defmodule Oli.Rendering.Activity.Markdown do
 
   def activity(
         _context,
-        %{"activity_id" => activity_id} = activity
+        %{"activity_id" => activity_id} = _activity
       ) do
     ["\n", "Activity: #{activity_id}", "\n\n"]
   end

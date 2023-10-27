@@ -11,7 +11,6 @@ defmodule Oli.Rendering.Content.Markdown do
   alias Phoenix.HTML
   alias Oli.Rendering.Content.MathMLSanitizer
   alias HtmlSanitizeEx.Scrubber
-  alias Oli.Rendering.Content.ResourceSummary
 
   @behaviour Oli.Rendering.Content
 

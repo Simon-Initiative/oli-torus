@@ -30,9 +30,6 @@ defmodule Oli.Rendering.Alternatives.Markdown do
 
   end
 
-  defp maybe_hidden(true), do: " hidden"
-  defp maybe_hidden(false), do: ""
-
   @impl Oli.Rendering.Alternatives
   def preference_selector(_context, _selection), do: []
 

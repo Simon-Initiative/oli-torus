@@ -2,17 +2,13 @@ defmodule OliWeb.Search.EmbeddingsLive do
   use Phoenix.LiveView, layout: {OliWeb.LayoutView, :live_no_flash}
   use Phoenix.HTML
   import Ecto.Query, warn: false
-  alias Oli.Repo
   import Phoenix.Component
   alias OliWeb.Dialogue.UserInput
-  alias OliWeb.Router.Helpers, as: Routes
-  alias Oli.Conversation.Dialogue
   alias OliWeb.Dialogue.UserInput
-  alias Oli.Conversation.Message
 
   def mount(
         %{"project_id" => project_slug},
-        session,
+        _session,
         socket
       ) do
 

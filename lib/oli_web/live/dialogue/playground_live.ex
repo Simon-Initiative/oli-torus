@@ -2,7 +2,7 @@ defmodule OliWeb.Dialogue.PlaygroundLive do
   use Phoenix.LiveView, layout: {OliWeb.LayoutView, :live_no_flash}
   use Phoenix.HTML
   import Ecto.Query, warn: false
-  alias Oli.Publishing.DeliveryResolver
+
   alias Oli.Repo
   import Phoenix.Component
 
