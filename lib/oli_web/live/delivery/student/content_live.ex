@@ -7,6 +7,7 @@ defmodule OliWeb.Delivery.Student.ContentLive do
   alias Phoenix.LiveView.JS
   alias OliWeb.Components.Modal
   alias Oli.Delivery.{Metrics, Sections}
+  alias OliWeb.Components.Delivery.Utils
 
   def mount(_params, _session, socket) do
     # TODO replace this with a call to the Cache data in ETS
@@ -45,7 +46,7 @@ defmodule OliWeb.Delivery.Student.ContentLive do
         socket
       ) do
     socket =
-      if module_uuid == (socket.assigns.selected_module && socket.assigns.selected_module.uuid) do
+      if module_uuid == get_in(socket.assigns, [:selected_module, Access.key!(:uuid)]) do
         assign(socket, selected_unit_uuid: nil, selected_module: nil)
       else
         selected_module =
@@ -58,7 +59,7 @@ defmodule OliWeb.Delivery.Student.ContentLive do
           selected_module_index: selected_module_index
         )
       end
-      |> push_event("scroll_to_target", %{id: "unit_#{unit_uuid}"})
+      |> push_event("scroll-to-target", %{id: "unit_#{unit_uuid}"})
 
     {:noreply, socket}
   end
@@ -69,7 +70,8 @@ defmodule OliWeb.Delivery.Student.ContentLive do
   end
 
   def handle_event("navigate_to_resource", %{"slug" => resource_slug}, socket) do
-    {:noreply, push_navigate(socket, to: get_url(resource_slug, socket.assigns.section.slug))}
+    {:noreply,
+     push_navigate(socket, to: resource_url(resource_slug, socket.assigns.section.slug))}
   end
 
   def handle_info(
@@ -107,7 +109,7 @@ defmodule OliWeb.Delivery.Student.ContentLive do
           unit={child}
           section_start_date={@section.start_date}
           ctx={@ctx}
-          selected_unit={child.uuid == @selected_unit_uuid}
+          unit_selected={child.uuid == @selected_unit_uuid}
           selected_module={@selected_module}
           selected_module_index={@selected_module_index}
           student_progress_per_resource_id={@student_progress_per_resource_id}
@@ -119,7 +121,7 @@ defmodule OliWeb.Delivery.Student.ContentLive do
 
   attr :unit, :map
   attr :ctx, :map, doc: "the context is needed to format the date considering the user's timezone"
-  attr :selected_unit, :boolean, default: false
+  attr :unit_selected, :boolean, default: false
   attr :selected_module, :map
   attr :selected_module_index, :string
   attr :section_start_date, :string, doc: "required to calculate the week number"
@@ -136,7 +138,7 @@ defmodule OliWeb.Delivery.Student.ContentLive do
         <div class="flex items-center w-full">
           <div class="flex items-center gap-3 ">
             <div class="text-[14px] leading-[32px] tracking-[0.02px] font-semibold">
-              <span class="text-gray-400 opacity-80">Week</span> <%= week_number(
+              <span class="text-gray-400 opacity-80">Week</span> <%= Utils.week_number(
                 @section_start_date,
                 @unit.section_resource.start_date
               ) %>
@@ -183,7 +185,7 @@ defmodule OliWeb.Delivery.Student.ContentLive do
         />
       </div>
     </div>
-    <div :if={@selected_unit} class="flex py-[24px] px-[50px] gap-x-4 lg:gap-x-12">
+    <div :if={@unit_selected} class="flex py-[24px] px-[50px] gap-x-4 lg:gap-x-12">
       <div class="w-1/2 flex flex-col px-6">
         <div class={[
           "intro-content",
@@ -407,27 +409,6 @@ defmodule OliWeb.Delivery.Student.ContentLive do
     |> Timex.format!("{WDshort} {Mshort} {D}, {YYYY}")
   end
 
-  defp week_number(_section_start_date, nil), do: "not yet scheduled"
-
-  defp week_number(section_start_datetime, unit_start_datetime) do
-    case Date.diff(
-           DateTime.to_date(unit_start_datetime),
-           DateTime.to_date(section_start_datetime)
-         ) do
-      0 ->
-        1
-
-      day_diff ->
-        {week_num, _} =
-          (day_diff / 7)
-          |> Float.ceil()
-          |> Float.to_string()
-          |> Integer.parse()
-
-        week_num
-    end
-  end
-
   defp get_module(hierarchy, unit_uuid, module_uuid) do
     unit =
       Enum.find(hierarchy.children, fn unit ->
@@ -441,7 +422,7 @@ defmodule OliWeb.Delivery.Student.ContentLive do
 
   # TODO: for other courses with other hierarchy, the url might be a container url:
   # ~p"/sections/#{section_slug}/container/:revision_slug
-  defp get_url(resource_slug, section_slug) do
+  defp resource_url(resource_slug, section_slug) do
     ~p"/sections/#{section_slug}/page/#{resource_slug}"
   end
 
