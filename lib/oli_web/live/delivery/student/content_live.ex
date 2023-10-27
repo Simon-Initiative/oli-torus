@@ -119,7 +119,7 @@ defmodule OliWeb.Delivery.Student.ContentLive do
               ) %>
             </div>
             <div class="text-[14px] leading-[32px] tracking-[0.02px] font-semibold">
-              <span class="text-gray-400 opacity-80">Due:</span> <%= parse_datetime(
+              <span class="text-gray-400 opacity-80">Complete by:</span> <%= parse_datetime(
                 @unit.section_resource.end_date,
                 @ctx
               ) %>
@@ -384,7 +384,7 @@ defmodule OliWeb.Delivery.Student.ContentLive do
     |> Timex.format!("{WDshort} {Mshort} {D}, {YYYY}")
   end
 
-  defp week_number(_section_start_date, nil), do: 1
+  defp week_number(_section_start_date, nil), do: "not yet scheduled"
 
   defp week_number(section_start_datetime, unit_start_datetime) do
     case Date.diff(
@@ -453,7 +453,7 @@ defmodule OliWeb.Delivery.Student.ContentLive do
   end
 
   defp parse_student_progress_for_resource(student_progress_per_resource_id, resource_id) do
-    Map.get(student_progress_per_resource_id, resource_id)
+    Map.get(student_progress_per_resource_id, resource_id, 0.0)
     |> Kernel.*(100)
     |> round()
     |> trunc()
