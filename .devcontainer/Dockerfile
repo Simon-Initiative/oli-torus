@@ -38,9 +38,9 @@ RUN /bin/bash -c "\
   asdf plugin-add yarn \
   "
 
-WORKDIR /app
+WORKDIR /workspace
 
-COPY .tool-versions /app
+COPY .tool-versions /workspace
 
 RUN /bin/bash -c "ls -la && asdf install"
 
@@ -49,5 +49,3 @@ RUN /bin/bash -c "mix local.hex --force"
 RUN /bin/bash -c "mix local.rebar --force"
 
 ENV LANG C.UTF-8
-
-WORKDIR /workspace
