@@ -213,13 +213,9 @@ export const getExpressionStringForValue = (
     // for janus-script
     // PMP-2785: Replacing the new line with the space
     val = `"${val.replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/\n/g, ' ')}"`;
-  }
-
-  if (v.type === CapiVariableTypes.ARRAY || v.type === CapiVariableTypes.ARRAY_POINT) {
+  } else if (v.type === CapiVariableTypes.ARRAY || v.type === CapiVariableTypes.ARRAY_POINT) {
     val = isEverAppArrayObject ? JSON.stringify(val) : JSON.stringify(parseArray(val));
-  }
-
-  if (v.type === CapiVariableTypes.NUMBER) {
+  } else if (v.type === CapiVariableTypes.NUMBER) {
     // val = convertExponentialToDecimal(val);
     val = parseFloat(val);
     if (val === '') {
@@ -228,17 +224,9 @@ export const getExpressionStringForValue = (
       // hits this block, so we'll never get here.
       val = 'null';
     }
-  }
-
-  if (v.type === CapiVariableTypes.BOOLEAN) {
+  } else if (v.type === CapiVariableTypes.BOOLEAN) {
     val = parseBoolean(val);
-  }
-
-  if (typeof val === 'object') {
-    val = JSON.stringify(val);
-  }
-
-  if (!v.type || v.type === CapiVariableTypes.UNKNOWN) {
+  } else if (!v.type || v.type === CapiVariableTypes.UNKNOWN) {
     if (typeof v.value === 'object' && Array.isArray(v.value)) {
       val = JSON.stringify(v.value);
     } else if (typeof val === 'string' && val[0] !== '"' && val.slice(-1) !== '"') {
@@ -246,6 +234,9 @@ export const getExpressionStringForValue = (
     }
   }
 
+  if (typeof val === 'object') {
+    val = JSON.stringify(val);
+  }
   return `${val}`;
 };
 
@@ -373,6 +364,7 @@ export const applyState = (
         {
           value: operation.value,
           type: targetType,
+          key: targetKey,
         },
         env,
       )};`;
@@ -383,6 +375,7 @@ export const applyState = (
         {
           value: operation.value,
           type: targetType,
+          key: targetKey,
         },
         env,
       )};`;
@@ -419,6 +412,7 @@ export const applyState = (
         {
           value: operation.value,
           type: targetType,
+          key: targetKey,
         },
         env,
       )};`;
@@ -587,11 +581,18 @@ export const templatizeText = (
   useFormattedText = true,
 ): string => {
   let innerEnv = new Environment(env);
-  // if the text contains backslash, it is probably a math expr like: '16^{\\frac{1}{2}}=\\sqrt {16}={\\editable{}}'
+  // if the text contains backslash, it is probably a math exprs like: '16^{\\frac{1}{2}}=\\sqrt {16}={\\editable{}}'
   // and we should just return it as is; if it has variables inside, then we still need to evaluate it
   if (
     typeof text !== 'string' ||
     (text?.indexOf('\\') >= 0 && text?.search(/app\.|variables\.|stage\.|session\./) === -1)
+  ) {
+    return text;
+  } else if (
+    typeof text === 'string' &&
+    text?.search(/app\.|variables\.|stage\.|session\./) === -1 &&
+    text?.indexOf('{') === -1 &&
+    text?.indexOf('}') === -1
   ) {
     return text;
   }
