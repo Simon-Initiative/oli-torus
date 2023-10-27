@@ -697,19 +697,20 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
       Object.keys(filterVars).forEach((variable: any) => {
         const formatted: Record<string, any> = {};
         formatted[variable] = filterVars[variable];
-        const value = formatted[variable].value;
-        const isMathExpr = formatted[variable].type === CapiVariableTypes.MATH_EXPR;
-
-        if (typeof value === 'string' && !isMathExpr) {
-          //we don't want to evaluate a JSON string
-          const looksLikeJSON = looksLikeJson(value);
-          formatted[variable].value = looksLikeJSON
-            ? JSON.stringify(evaluateJsonObject(JSON.parse(value), scriptEnv))
-            : templatizeText(formatted[variable].value, simLife.snapshot, scriptEnv, true, false);
-        } else if (typeof value === 'string' && isMathExpr) {
-          if (value.search(/app\.|variables\.|stage\.|session\./) >= 0) {
-            // math expr could be like: 16^{\\frac{1}{2}}=\\sqrt {16}={\\editable{}} which does NOT need processing
-            formatted[variable].value = templatizeText(value, simLife.snapshot, scriptEnv, true);
+        if (context !== contexts.REVIEW) {
+          const value = formatted[variable].value;
+          const isMathExpr = formatted[variable].type === CapiVariableTypes.MATH_EXPR;
+          if (typeof value === 'string' && !isMathExpr) {
+            //we don't want to evaluate a JSON string
+            const looksLikeJSON = looksLikeJson(value);
+            formatted[variable].value = looksLikeJSON
+              ? JSON.stringify(evaluateJsonObject(JSON.parse(value), scriptEnv))
+              : templatizeText(formatted[variable].value, simLife.snapshot, scriptEnv, true, false);
+          } else if (typeof value === 'string' && isMathExpr) {
+            if (value.search(/app\.|variables\.|stage\.|session\./) >= 0) {
+              // math expr could be like: 16^{\\frac{1}{2}}=\\sqrt {16}={\\editable{}} which does NOT need processing
+              formatted[variable].value = templatizeText(value, simLife.snapshot, scriptEnv, true);
+            }
           }
         }
         sendFormedResponse(simLife.handshake, {}, JanusCAPIRequestTypes.VALUE_CHANGE, formatted);
