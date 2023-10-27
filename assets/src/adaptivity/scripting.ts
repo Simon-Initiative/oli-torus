@@ -1,8 +1,20 @@
 import { EntityId } from '@reduxjs/toolkit';
 import { Environment, Evaluator, Lexer, Parser } from 'janus-script';
+import flatten from 'lodash/flatten';
+import uniq from 'lodash/uniq';
 import { parseArray, parseBoolean } from 'utils/common';
 import { CapiVariableTypes, getCapiType } from './capi';
 import { janus_std } from './janus-scripts/builtin_functions';
+
+let conditionsNeedEvaluation: string[] = [];
+
+export const setConditionsWithExpression = (facts: string[]) => {
+  console.log('BEFORE!!', { facts, conditionsNeedEvaluation });
+
+  conditionsNeedEvaluation.push(...facts);
+  conditionsNeedEvaluation = uniq(flatten([...new Set(conditionsNeedEvaluation)]));
+  console.log('AFTER!!', { facts, conditionsNeedEvaluation });
+};
 
 export const looksLikeJson = (str: string) => {
   const emptyJsonObj = '{}';
@@ -586,6 +598,8 @@ export const templatizeText = (
   isFromTrapStates = false,
   useFormattedText = true,
 ): string => {
+  console.log({ conditionsNeedEvaluation, text, locals });
+
   let innerEnv = new Environment(env);
   // if the text contains backslash, it is probably a math expr like: '16^{\\frac{1}{2}}=\\sqrt {16}={\\editable{}}'
   // and we should just return it as is; if it has variables inside, then we still need to evaluate it

@@ -89,12 +89,12 @@ const Adaptive = (
         if (conditions?.length) {
           conditionWithExpression.push(...getReferencedKeysInConditions(conditions, true));
         }
-        if (!modelClone.authoring.conditionsRequiredEvaluation) {
-          modelClone.authoring.conditionsRequiredEvaluation = [];
+        if (!modelClone.content.custom.conditionsRequiredEvaluation) {
+          modelClone.content.custom.conditionsRequiredEvaluation = [];
         }
-        modelClone.authoring.conditionsRequiredEvaluation.push(conditionWithExpression);
-        modelClone.authoring.conditionsRequiredEvaluation = uniq(
-          flatten([...new Set(modelClone.authoring.conditionsRequiredEvaluation)]),
+        modelClone.content.custom.conditionsRequiredEvaluation.push(conditionWithExpression);
+        modelClone.content.custom.conditionsRequiredEvaluation = uniq(
+          flatten([...new Set(modelClone.content.custom.conditionsRequiredEvaluation)]),
         );
       });
       console.log({ modelClone });

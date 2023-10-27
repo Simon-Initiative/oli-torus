@@ -223,12 +223,12 @@ export const InitStateEditor: React.FC<InitStateEditorProps> = ({ authoringConta
     const conditionWithExpression = [];
     conditionWithExpression.push(...getReferencedKeysInConditions(initStateClone, true));
 
-    if (!activityClone.authoring.conditionsRequiredEvaluation) {
-      activityClone.authoring.conditionsRequiredEvaluation = [];
+    if (!activityClone.content.custom.conditionsRequiredEvaluation) {
+      activityClone.content.custom.conditionsRequiredEvaluation = [];
     }
-    activityClone.authoring.conditionsRequiredEvaluation.push(conditionWithExpression);
-    activityClone.authoring.conditionsRequiredEvaluation = uniq(
-      flatten([...new Set(activityClone.authoring.conditionsRequiredEvaluation)]),
+    activityClone.content.custom.conditionsRequiredEvaluation.push(conditionWithExpression);
+    activityClone.content.custom.conditionsRequiredEvaluation = uniq(
+      flatten([...new Set(activityClone.content.custom.conditionsRequiredEvaluation)]),
     );
     dispatch(saveActivity({ activity: activityClone, undoable: true, immediate: true }));
     setIsDirty(false);

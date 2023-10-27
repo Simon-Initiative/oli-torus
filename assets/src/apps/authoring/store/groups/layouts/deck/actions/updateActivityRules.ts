@@ -231,14 +231,14 @@ export const updateActivityRules = createAsyncThunk(
           }
         }
 
-        childActivityClone.authoring.conditionsRequiredEvaluation =
-          childActivityClone.authoring.conditionsRequiredEvaluation || [];
+        childActivityClone.content.custom.conditionsRequiredEvaluation =
+          childActivityClone.content.custom.conditionsRequiredEvaluation || [];
 
         childActivityClone.authoring.variablesRequiredForEvaluation =
           childActivityClone.authoring.variablesRequiredForEvaluation || [];
 
         const refConditionWithExpressionLengthEqual =
-          childActivityClone.authoring.conditionsRequiredEvaluation.length ===
+          childActivityClone.content.custom.conditionsRequiredEvaluation.length ===
           conditionWithExpression.length;
 
         const refVarLengthEqual =
@@ -248,7 +248,7 @@ export const updateActivityRules = createAsyncThunk(
         const hasAllConditionsWithExpression =
           refConditionWithExpressionLengthEqual &&
           conditionWithExpression.every((rv) =>
-            childActivityClone.authoring.conditionsRequiredEvaluation.includes(rv),
+            childActivityClone.content.custom.conditionsRequiredEvaluation.includes(rv),
           );
 
         const hasAllReferencedVariables =
@@ -272,9 +272,9 @@ export const updateActivityRules = createAsyncThunk(
         }
 
         if (!hasAllConditionsWithExpression) {
-          childActivityClone.authoring.conditionsRequiredEvaluation = conditionWithExpression;
-          childActivityClone.authoring.conditionsRequiredEvaluation = uniq(
-            flatten(childActivityClone.authoring.conditionsRequiredEvaluation),
+          childActivityClone.content.custom.conditionsRequiredEvaluation = conditionWithExpression;
+          childActivityClone.content.custom.conditionsRequiredEvaluation = uniq(
+            flatten(childActivityClone.content.custom.conditionsRequiredEvaluation),
           );
           console.log('UPDATE CONDITIONS REQUIRED EVALUATION', {
             conditionWithExpression,

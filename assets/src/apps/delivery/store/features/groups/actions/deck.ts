@@ -1,7 +1,7 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
 import { ActivityState } from 'components/activities/types';
 import { CapiVariableTypes } from 'adaptivity/capi';
-import { applyState, templatizeText } from 'adaptivity/scripting';
+import { applyState, setConditionsWithExpression, templatizeText } from 'adaptivity/scripting';
 import { handleValueExpression } from 'apps/delivery/layouts/deck/DeckLayoutFooter';
 import {
   getBulkActivitiesForAuthoring,
@@ -496,6 +496,10 @@ export const loadActivities = createAsyncThunk(
         hasMoreHints: result.hasMoreHints || true,
         groupId: null,
       };
+      if (activityModel.content.custom.conditionsRequiredEvaluation?.length) {
+        setConditionsWithExpression(activityModel.content.custom.conditionsRequiredEvaluation);
+      }
+
       return { model: activityModel, state: attemptState };
     });
 

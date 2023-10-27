@@ -133,8 +133,8 @@ export const AdaptivityEditor: React.FC<AdaptivityEditorProps> = () => {
       if (!activityClone.authoring.variablesRequiredForEvaluation) {
         activityClone.authoring.variablesRequiredForEvaluation = [];
       }
-      if (!activityClone.authoring.conditionsRequiredEvaluation) {
-        activityClone.authoring.conditionsRequiredEvaluation = [];
+      if (!activityClone.content.custom.conditionsRequiredEvaluation) {
+        activityClone.content.custom.conditionsRequiredEvaluation = [];
       }
       const concatVars = [...variableRefsInConditions, ...variableRefsInActions];
       const concatConditionsRequiredEvaluation = [
@@ -143,19 +143,21 @@ export const AdaptivityEditor: React.FC<AdaptivityEditorProps> = () => {
       ];
       activityClone.authoring.variablesRequiredForEvaluation.push(concatVars);
 
-      activityClone.authoring.conditionsRequiredEvaluation.push(concatConditionsRequiredEvaluation);
+      activityClone.content.custom.conditionsRequiredEvaluation.push(
+        concatConditionsRequiredEvaluation,
+      );
       // make unique
       activityClone.authoring.variablesRequiredForEvaluation = uniq(
         flatten([...new Set(activityClone.authoring.variablesRequiredForEvaluation)]),
       );
-      activityClone.authoring.conditionsRequiredEvaluation = uniq(
-        flatten([...new Set(activityClone.authoring.conditionsRequiredEvaluation)]),
+      activityClone.content.custom.conditionsRequiredEvaluation = uniq(
+        flatten([...new Set(activityClone.content.custom.conditionsRequiredEvaluation)]),
       );
       if (!activityClone.authoring.activitiesRequiredForEvaluation) {
         activityClone.authoring.activitiesRequiredForEvaluation = [];
       }
-      if (!activityClone.authoring.conditionsRequiredEvaluation) {
-        activityClone.authoring.conditionsRequiredEvaluation = [];
+      if (!activityClone.content.custom.conditionsRequiredEvaluation) {
+        activityClone.content.custom.conditionsRequiredEvaluation = [];
       }
       // finally need to add to the required activities any variables that are required but inherited from the sequence
       const treeRefs = activityClone.authoring.variablesRequiredForEvaluation
