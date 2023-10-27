@@ -14,9 +14,15 @@ defmodule OliWeb.Delivery.Student.ContentLive do
     hierarchy =
       Oli.Publishing.DeliveryResolver.full_hierarchy(socket.assigns.section.slug)
 
-    # TODO use async_assign for this two...
-    {student_visited_pages, student_progress_per_resource_id} =
-      get_student_metrics(socket.assigns.section, socket.assigns.current_user.id)
+    # when updating to Liveview 0.20 we should replace this with assign_async/3
+    # https://hexdocs.pm/phoenix_live_view/Phoenix.LiveView.html#assign_async/3
+    if connected?(socket),
+      do:
+        async_calculate_student_metrics(
+          self(),
+          socket.assigns.section,
+          socket.assigns.current_user.id
+        )
 
     {:ok,
      assign(socket,
@@ -24,8 +30,8 @@ defmodule OliWeb.Delivery.Student.ContentLive do
        selected_unit_uuid: nil,
        selected_module: nil,
        selected_module_index: nil,
-       student_visited_pages: student_visited_pages,
-       student_progress_per_resource_id: student_progress_per_resource_id
+       student_visited_pages: %{},
+       student_progress_per_resource_id: %{}
      )}
   end
 
@@ -65,6 +71,23 @@ defmodule OliWeb.Delivery.Student.ContentLive do
   def handle_event("navigate_to_resource", %{"slug" => resource_slug}, socket) do
     {:noreply, push_navigate(socket, to: get_url(resource_slug, socket.assigns.section.slug))}
   end
+
+  def handle_info(
+        {:student_metrics, {student_visited_pages, student_progress_per_resource_id}},
+        socket
+      ) do
+    {:noreply,
+     assign(socket,
+       student_visited_pages: student_visited_pages,
+       student_progress_per_resource_id: student_progress_per_resource_id,
+       selected_module:
+         socket.assigns.selected_module &&
+           mark_visited_pages(socket.assigns.selected_module, student_visited_pages)
+     )}
+  end
+
+  # needed to ignore results of Task invocation
+  def handle_info(_, socket), do: {:noreply, socket}
 
   def render(assigns) do
     ~H"""
@@ -457,5 +480,11 @@ defmodule OliWeb.Delivery.Student.ContentLive do
     |> Kernel.*(100)
     |> round()
     |> trunc()
+  end
+
+  defp async_calculate_student_metrics(liveview_pid, section, current_user_id) do
+    Task.async(fn ->
+      send(liveview_pid, {:student_metrics, get_student_metrics(section, current_user_id)})
+    end)
   end
 end
