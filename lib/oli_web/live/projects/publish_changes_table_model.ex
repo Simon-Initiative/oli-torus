@@ -7,19 +7,16 @@ defmodule OliWeb.Projects.PublishChangesTableModel do
     column_specs = [
       %ColumnSpec{
         name: :title,
-        label: "Title",
-        td_class: "text-center"
+        label: "Title"
       },
       %ColumnSpec{
         name: :type,
         label: "Change Type",
-        td_class: "text-center",
         render_fn: &__MODULE__.render_type/3
       },
       %ColumnSpec{
         name: :is_structural,
         label: "Change Categorization",
-        td_class: "text-center",
         render_fn: &__MODULE__.render_structural/3
       }
     ]
