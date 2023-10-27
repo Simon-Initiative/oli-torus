@@ -102,7 +102,6 @@ defmodule OliWeb.Search.EmbeddingsLive do
 
     results = Oli.Search.Embeddings.search(content)
 
-    IO.inspect results
     {:noreply, assign(socket, results: results)}
   end
 

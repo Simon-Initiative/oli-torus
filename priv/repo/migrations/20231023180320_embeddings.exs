@@ -15,9 +15,19 @@ defmodule Oli.Repo.Migrations.Embeddings do
       add :content, :text
       add :embedding, :vector, size: 1536
     end
+
+    execute """
+    CREATE INDEX revision_embeddings_idx ON revision_embeddings USING ivfflat (embedding vector_cosine_ops) WITH (lists = 100)
+    """
+
   end
 
   def down do
+
+    execute """
+    DROP INDEX revision_embeddings_idx
+    """
+
     drop table("revision_embeddings")
 
   end

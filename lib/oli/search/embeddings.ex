@@ -12,18 +12,70 @@ defmodule Oli.Search.Embeddings do
   import Pgvector.Ecto.Query
 
   def search(input) do
-    case OpenAI.embeddings([model: "text-embedding-ada-002", input: input], Oli.Conversation.Dialogue.config(:sync)) do
-      {:ok, %{data: [result]}} ->
 
-        embedding = result["embedding"]
+    case embedding_for_input(input) do
+      {:ok, embedding} ->
 
         query = from i in RevisionEmbedding,
           join: r in Revision, on: r.id == i.revision_id,
-          order_by: l2_distance(i.embedding, ^embedding),
+          order_by: cosine_distance(i.embedding, ^embedding),
           limit: 5,
           select_merge: %{title: r.title}
 
         Repo.all(query)
+
+      e -> e
+    end
+  end
+
+  def most_relevant_pages(input) do
+
+    case embedding_for_input(input) do
+      {:ok, embedding} ->
+
+        query = from i in RevisionEmbedding,
+          join: r in Revision, on: r.id == i.revision_id,
+          order_by: cosine_distance(i.embedding, ^embedding),
+          limit: 10,
+          select_merge: %{title: r.title}
+
+        most_relevant_revisions = Repo.all(query)
+        |> Enum.map(fn %{revision_id: revision_id} -> revision_id end)
+        # Dedupe and take 2 gets us the top two most relevant pages
+        # [3, 2, 3, 3, 3, 2, 1] -> [3, 2, 3, 2, 1] -> [3, 2]
+        |> Enum.dedup()
+        |> Enum.take(2)
+
+        query = from i in RevisionEmbedding,
+          join: r in Revision, on: r.id == i.revision_id,
+          where: i.revision_id in ^most_relevant_revisions,
+          order_by: i.chunk_ordinal,
+          select_merge: %{title: r.title}
+
+        result = Repo.all(query)
+        |> Enum.group_by(fn %{revision_id: revision_id} -> revision_id end)
+        |> Enum.map(fn {revision_id, [first_chunk | _rest] = chunks} ->
+          %{revision_id: first_chunk.revision_id, title: first_chunk.title, chunks: chunks}
+        end)
+
+        {:ok, result}
+
+      e -> e
+    end
+
+  end
+
+  def concat_chunks(chunks) do
+    chunks
+    |> Enum.map(fn %{content: content} -> content end)
+    |> Enum.join("\n\n")
+  end
+
+  def embedding_for_input(input) do
+    case OpenAI.embeddings([model: "text-embedding-ada-002", input: input], Oli.Conversation.Dialogue.config(:sync)) do
+      {:ok, %{data: [result]}} ->
+
+        {:ok, result["embedding"]}
 
       e ->
         e
