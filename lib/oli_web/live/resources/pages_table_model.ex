@@ -30,7 +30,7 @@ defmodule OliWeb.Resources.PagesTableModel do
       },
       %ColumnSpec{
         name: :actions,
-        label: "",
+        label: "Actions",
         render_fn: &__MODULE__.render_actions_column/3,
         sortable: false,
         th_class: "w-4",
