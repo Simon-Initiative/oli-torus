@@ -1,4 +1,8 @@
 defmodule OliWeb.Components.Delivery.Utils do
+  @moduledoc """
+  NOTICE: MODULE DEPRECATED - USE OliWeb.Components.Utils INSTEAD
+  If there are functions here that are required, copy them to OliWeb.Components.Utils.
+  """
   use Phoenix.Component
   use OliWeb, :verified_routes
 
@@ -148,15 +152,14 @@ defmodule OliWeb.Components.Delivery.Utils do
 
   def user_icon(%{current_user: _} = assigns) do
     ~H"""
-      <%= case @current_user.picture do %>
-        <% nil -> %>
-          <.user_icon />
-
-        <% picture -> %>
-          <div class="user-icon">
-            <img src={picture} referrerpolicy="no-referrer" class="rounded-full" />
-          </div>
-      <% end %>
+    <%= case @current_user.picture do %>
+      <% nil -> %>
+        <.user_icon />
+      <% picture -> %>
+        <div class="user-icon">
+          <img src={picture} referrerpolicy="no-referrer" class="rounded-full" />
+        </div>
+    <% end %>
     """
   end
 
@@ -280,14 +283,14 @@ defmodule OliWeb.Components.Delivery.Utils do
 
   def progress_bar(assigns) do
     ~H"""
-      <div class="my-2 flex flex-row items-center">
-        <div class="font-bold"><%= @percent %>%</div>
-        <div class="flex-1 ml-3">
-          <div class={"w-[#{@width}] rounded-full bg-gray-200 h-2"}>
-            <div class="rounded-full bg-green-600 h-2" style={"width: #{@percent}%"}></div>
-          </div>
+    <div class="my-2 flex flex-row items-center">
+      <div class="font-bold"><%= @percent %>%</div>
+      <div class="flex-1 ml-3">
+        <div class={"w-[#{@width}] rounded-full bg-gray-200 h-2"}>
+          <div class="rounded-full bg-green-600 h-2" style={"width: #{@percent}%"}></div>
         </div>
       </div>
+    </div>
     """
   end
 

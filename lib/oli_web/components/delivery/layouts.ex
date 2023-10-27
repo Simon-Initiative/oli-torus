@@ -4,6 +4,8 @@ defmodule OliWeb.Components.Delivery.Layouts do
   """
   use OliWeb, :html
 
+  import OliWeb.Components.Utils
+
   alias Phoenix.LiveView.JS
   alias OliWeb.Common.SessionContext
   alias OliWeb.Common.React
@@ -11,7 +13,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
   alias Oli.Accounts.{User, Author}
   alias Oli.Branding
   alias Oli.Branding.Brand
-  alias OliWeb.Components.Delivery.UserAccountMenu
+  alias OliWeb.Components.Delivery.UserAccount
 
   attr(:ctx, SessionContext)
   attr(:section, Section)
@@ -52,38 +54,24 @@ defmodule OliWeb.Components.Delivery.Layouts do
           <.logo_img />
         </a>
       </div>
-      <div class="flex-grow-1 p-2">
+      <div class="flex-1 p-2">
         <div class="hidden md:block">
           <span class="text-2xl text-bold"><%= @section.title %></span>
         </div>
       </div>
-      <div class="p-2">
-        <div class="hidden md:block">
-          <UserAccountMenu.menu ctx={@ctx} section={@section} />
+      <div class="p-2 flex items-center">
+        <div class="hidden md:flex">
+          <UserAccount.menu id="user-account-menu" ctx={@ctx} section={@section} />
         </div>
         <button
           class="block md:hidden py-1.5 px-3 rounded border border-transparent hover:border-gray-300 active:bg-gray-100"
-          phx-click={toggle_collapsed_nav()}
+          phx-click={toggle_class(%JS{}, "hidden", to: "#nav-menu")}
         >
           <i class="fa-solid fa-bars"></i>
         </button>
       </div>
     </div>
     """
-  end
-
-  # This is a workaround for toggling the hidden class and having it survive DOM patching.
-  # https://elixirforum.com/t/toggle-classes-with-phoenix-liveview-js/45608/5
-  defp toggle_collapsed_nav(js \\ %JS{}) do
-    js
-    |> JS.remove_class(
-      "hidden",
-      to: "#nav-menu.hidden"
-    )
-    |> JS.add_class(
-      "hidden",
-      to: "#nav-menu:not(.hidden)"
-    )
   end
 
   attr(:ctx, SessionContext)
@@ -146,7 +134,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
         </div>
 
         <div class="px-6 py-4">
-          <UserAccountMenu.menu ctx={@ctx} section={@section} />
+          <UserAccount.menu id="sidebar-user-account-menu" ctx={@ctx} section={@section} />
         </div>
       </div>
     </nav>
@@ -246,26 +234,6 @@ defmodule OliWeb.Components.Delivery.Layouts do
 
       true ->
         Routes.static_page_path(OliWeb.Endpoint, :index)
-    end
-  end
-
-  defp is_open_and_free_section?(section) do
-    case section do
-      %Section{open_and_free: open_and_free} ->
-        open_and_free
-
-      _ ->
-        false
-    end
-  end
-
-  defp is_independent_learner?(current_user) do
-    case current_user do
-      %User{independent_learner: independent_learner} ->
-        independent_learner
-
-      _ ->
-        false
     end
   end
 end

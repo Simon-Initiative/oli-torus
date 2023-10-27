@@ -4,6 +4,7 @@ defmodule OliWeb.StaticPageController do
   import Oli.Branding
 
   alias Oli.Accounts
+  alias OliWeb.Common.FormatDateTime
 
   def index(conn, _params) do
     render(conn, "index.html")
@@ -58,6 +59,19 @@ defmodule OliWeb.StaticPageController do
     conn
     |> put_session(:dismissed_messages, [id | dismissed_messages])
     |> send_resp(200, "Ok")
+  end
+
+  def list_timezones(conn, _params) do
+    timezones =
+      Enum.map(Tzdata.zone_list(), fn tz ->
+        {tz, tz}
+      end)
+      |> Enum.map(&Tuple.to_list/1)
+
+    conn
+    |> json(%{
+      "timezones" => timezones
+    })
   end
 
   def update_timezone(conn, %{

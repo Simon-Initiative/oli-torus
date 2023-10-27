@@ -25,7 +25,7 @@ defmodule OliWeb.Components.Delivery.UserAccountMenu do
         preview: @preview,
         routes: @routes,
         sectionSlug: @section_slug,
-        selectedTimezone: @selected_timezone,
+        selectedTimezone: @ctx.local_tz,
         timezones: @timezones
       },
       id: "menu",
@@ -131,7 +131,6 @@ defmodule OliWeb.Components.Delivery.UserAccountMenu do
       :section_slug,
       maybe_section_slug(assigns)
     )
-    |> OliWeb.Common.SelectTimezone.timezone_assigns()
   end
 
   def preview_user(assigns) do

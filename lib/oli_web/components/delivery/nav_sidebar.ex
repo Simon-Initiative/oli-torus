@@ -11,7 +11,6 @@ defmodule OliWeb.Components.Delivery.NavSidebar do
   alias Oli.Resources.Revision
   alias Oli.Publishing.AuthoringResolver
   alias Oli.Branding.Brand
-  alias OliWeb.Components.Delivery.UserAccountMenu
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.Section
   alias OliWeb.Common.SessionContext
@@ -49,7 +48,6 @@ defmodule OliWeb.Components.Delivery.NavSidebar do
           get_links(assigns, assigns.path_info)
         end
       )
-      |> UserAccountMenu.user_account_menu_assigns()
 
     ~H"""
     <div id="navbar" phx-update="ignore">

@@ -6,7 +6,7 @@ defmodule OliWeb.Delivery.StudentDashboard.Components.Helpers do
   alias OliWeb.Router.Helpers, as: Routes
   alias Oli.Accounts.User
   alias Oli.Delivery.Sections.Section
-  alias OliWeb.Components.Delivery.UserAccountMenu
+  alias OliWeb.Components.Delivery.UserAccount
   alias OliWeb.Components.Header
   alias OliWeb.Common.SessionContext
 
@@ -150,9 +150,9 @@ defmodule OliWeb.Delivery.StudentDashboard.Components.Helpers do
           </a>
         </div>
         <%= if @preview_mode do %>
-          <UserAccountMenu.preview_user />
+          <UserAccount.preview_user_menu />
         <% else %>
-          <UserAccountMenu.menu ctx={@ctx} />
+          <UserAccountMenu.menu id="user-account-menu" ctx={@ctx} />
         <% end %>
         <div class="flex items-center border-l border-slate-300">
           <button

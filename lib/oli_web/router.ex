@@ -310,6 +310,7 @@ defmodule OliWeb.Router do
     get("/not_found", StaticPageController, :not_found)
 
     # update session timezone information
+    get("/timezones", StaticPageController, :list_timezones)
     post("/update_timezone", StaticPageController, :update_timezone)
   end
 
@@ -924,55 +925,50 @@ defmodule OliWeb.Router do
     end
   end
 
-  ### NextGen23 Student Course Delivery
-  scope "/ng23/sections/:section_slug", OliWeb do
-    # TODO: Do we need all these pipeline steps?
+  ### NextGen23
+  scope "/ng23", OliWeb do
     pipe_through([
       :browser,
-      :require_section,
       :delivery,
-      :require_exploration_pages,
-      :delivery_preview,
-      :delivery_protected,
-      :maybe_gated_resource,
-      :enforce_enroll_and_paywall,
-      :ensure_user_section_visit,
-      :force_required_survey,
-      :pow_email_layout
+      :delivery_and_admin
     ])
 
-    live_session :delivery,
-      on_mount: [
-        OliWeb.LiveSessionPlugs.SetSection,
-        OliWeb.LiveSessionPlugs.SetCurrentUser,
-        OliWeb.LiveSessionPlugs.SetSessionContext,
-        OliWeb.LiveSessionPlugs.SetBrand,
-        OliWeb.LiveSessionPlugs.SetPreviewMode,
-        OliWeb.LiveSessionPlugs.RequireEnrollment
-      ] do
-      live("/", Delivery.Student.IndexLive)
-      live("/content", Delivery.Student.ContentLive)
-      live("/discussion", Delivery.Student.DiscussionLive)
-      live("/assignments", Delivery.Student.AssignmentsLive)
-      live("/explorations", Delivery.Student.ExplorationsLive)
-    end
+    ### Student Course Delivery
+    scope "/sections/:section_slug" do
+      live_session :delivery,
+        root_layout: {OliWeb.LayoutView, :delivery},
+        on_mount: [
+          OliWeb.LiveSessionPlugs.SetSection,
+          OliWeb.LiveSessionPlugs.SetCurrentUser,
+          OliWeb.LiveSessionPlugs.SetSessionContext,
+          OliWeb.LiveSessionPlugs.SetBrand,
+          OliWeb.LiveSessionPlugs.SetPreviewMode,
+          OliWeb.LiveSessionPlugs.RequireEnrollment
+        ] do
+        live("/", Delivery.Student.IndexLive)
+        live("/content", Delivery.Student.ContentLive)
+        live("/discussion", Delivery.Student.DiscussionLive)
+        live("/assignments", Delivery.Student.AssignmentsLive)
+        live("/explorations", Delivery.Student.ExplorationsLive)
+      end
 
-    # TODO: Implement preview mode for NextGen23
-    # live_session :delivery_preview,
-    #   on_mount: [
-    #     OliWeb.LiveSessionPlugs.SetSection,
-    #     OliWeb.LiveSessionPlugs.SetCurrentUser,
-    #     OliWeb.LiveSessionPlugs.SetSessionContext,
-    #     OliWeb.LiveSessionPlugs.SetBrand,
-    #     OliWeb.LiveSessionPlugs.SetPreviewMode,
-    #     OliWeb.LiveSessionPlugs.RequireEnrollment
-    #   ] do
-    #   live("/", Delivery.Student.IndexLive, :preview)
-    #   live("/content", Delivery.Student.ContentLive, :preview)
-    #   live("/discussion", Delivery.Student.DiscussionLive, :preview)
-    #   live("/assignments", Delivery.Student.AssignmentsLive, :preview)
-    #   live("/explorations", Delivery.Student.ExplorationsLive, :preview)
-    # end
+      # TODO: Implement preview mode for NextGen23
+      # live_session :delivery_preview,
+      #   on_mount: [
+      #     OliWeb.LiveSessionPlugs.SetSection,
+      #     OliWeb.LiveSessionPlugs.SetCurrentUser,
+      #     OliWeb.LiveSessionPlugs.SetSessionContext,
+      #     OliWeb.LiveSessionPlugs.SetBrand,
+      #     OliWeb.LiveSessionPlugs.SetPreviewMode,
+      #     OliWeb.LiveSessionPlugs.RequireEnrollment
+      #   ] do
+      #   live("/", Delivery.Student.IndexLive, :preview)
+      #   live("/content", Delivery.Student.ContentLive, :preview)
+      #   live("/discussion", Delivery.Student.DiscussionLive, :preview)
+      #   live("/assignments", Delivery.Student.AssignmentsLive, :preview)
+      #   live("/explorations", Delivery.Student.ExplorationsLive, :preview)
+      # end
+    end
   end
 
   ### Sections - Student Course Delivery

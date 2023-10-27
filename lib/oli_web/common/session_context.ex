@@ -17,16 +17,18 @@ defmodule OliWeb.Common.SessionContext do
   in LiveViews. The result can then be passed in to a view via assigns.
   """
 
+  alias Oli.Accounts
+  alias Oli.Accounts.{User, Author}
   alias Oli.AccountLookupCache
   alias OliWeb.Common.FormatDateTime
-  alias Oli.Accounts.{User, Author}
 
   @enforce_keys [
     :browser_timezone,
     :local_tz,
     :author,
     :user,
-    :is_liveview
+    :is_liveview,
+    :is_admin
   ]
 
   defstruct [
@@ -34,7 +36,8 @@ defmodule OliWeb.Common.SessionContext do
     :local_tz,
     :author,
     :user,
-    :is_liveview
+    :is_liveview,
+    :is_admin
   ]
 
   @type t() :: %__MODULE__{
@@ -42,7 +45,8 @@ defmodule OliWeb.Common.SessionContext do
           local_tz: String.t(),
           author: Author.t(),
           user: User.t(),
-          is_liveview: boolean()
+          is_liveview: boolean(),
+          is_admin: boolean()
         }
 
   def init() do
@@ -51,7 +55,8 @@ defmodule OliWeb.Common.SessionContext do
       local_tz: nil,
       author: nil,
       user: nil,
-      is_liveview: false
+      is_liveview: false,
+      is_admin: false
     }
   end
 
@@ -91,7 +96,8 @@ defmodule OliWeb.Common.SessionContext do
       local_tz: FormatDateTime.tz_preference_or_default(author, user, browser_timezone),
       author: author,
       user: user,
-      is_liveview: false
+      is_liveview: false,
+      is_admin: Accounts.is_admin?(author)
     }
   end
 
@@ -146,7 +152,8 @@ defmodule OliWeb.Common.SessionContext do
       local_tz: FormatDateTime.tz_preference_or_default(author, user, browser_timezone),
       author: author,
       user: user,
-      is_liveview: true
+      is_liveview: true,
+      is_admin: Accounts.is_admin?(author)
     }
   end
 
@@ -158,5 +165,6 @@ defmodule OliWeb.Common.SessionContext do
       :local_tz,
       FormatDateTime.tz_preference_or_default(author, user, ctx.browser_timezone)
     )
+    |> Map.put(:is_admin, Accounts.is_admin?(author))
   end
 end

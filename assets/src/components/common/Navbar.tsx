@@ -1,6 +1,6 @@
 import React, { PropsWithChildren, useCallback, useState } from 'react';
 import { Transition } from '@tailwindui/react';
-import { useOnClickOutside } from 'hooks/click_outside';
+import { useClickOutside } from 'components/hooks/useClickOutside';
 import { MediaSize, useMediaQuery } from 'hooks/media_query';
 import { classNames } from 'utils/classNames';
 import { TechSupportButton } from './TechSupportButton';
@@ -68,9 +68,7 @@ export const Navbar = ({
   const [showNavbar, setShowNavbar] = useState(false);
   const [popoutContainer, setPopoutContianer] = useState<Popout>();
   const isLargeScreen = useMediaQuery(MediaSize.lg);
-  const ref = useOnClickOutside<HTMLDivElement>(
-    useCallback(() => setPopoutContianer(undefined), []),
-  );
+  const ref = useClickOutside<HTMLDivElement>(useCallback(() => setPopoutContianer(undefined), []));
 
   return (
     <div ref={ref}>
@@ -197,7 +195,7 @@ const NavExpand = ({
   const [show, setShow] = useState(false);
   const isLargeScreen = useMediaQuery(MediaSize.lg);
 
-  const ref = useOnClickOutside<HTMLDivElement>(useCallback(() => setShow(false), []));
+  const ref = useClickOutside<HTMLDivElement>(useCallback(() => setShow(false), []));
 
   return (
     <div ref={ref}>

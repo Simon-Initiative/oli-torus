@@ -1,11 +1,13 @@
 import LiveReact from 'phoenix_live_react';
 import { BeforeUnloadListener } from './before_unload';
 import { CheckboxListener } from './checkbox_listener';
+import { ClickOutside } from './click_outside';
 import { CopyListener } from './copy_listener';
 import { DateTimeLocalInputListener } from './datetimelocal_input_listener';
 import { DragSource, DropTarget } from './dragdrop';
 import { EmailList } from './email_list';
 import { GraphNavigation } from './graph';
+import { HideOnOutsideClick } from './hide_on_outside_click';
 import { HierarchySelector } from './hierarchy_selector';
 import { InputAutoSelect } from './input_auto_select';
 import { LiveModal } from './live_modal';
@@ -49,4 +51,6 @@ export const Hooks = {
   LoadSurveyScripts,
   LiveModal,
   EmailList,
+  ClickOutside,
+  HideOnOutsideClick,
 };
