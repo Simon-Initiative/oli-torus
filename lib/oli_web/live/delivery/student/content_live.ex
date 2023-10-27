@@ -6,6 +6,7 @@ defmodule OliWeb.Delivery.Student.ContentLive do
   alias OliWeb.Common.FormatDateTime
   alias Phoenix.LiveView.JS
   alias OliWeb.Components.Modal
+  alias Oli.Delivery.{Metrics, Sections}
 
   def mount(_params, _session, socket) do
     # TODO replace this with a call to the Cache data in ETS
@@ -13,12 +14,18 @@ defmodule OliWeb.Delivery.Student.ContentLive do
     hierarchy =
       Oli.Publishing.DeliveryResolver.full_hierarchy(socket.assigns.section.slug)
 
+    # TODO use async_assign for this two...
+    {student_visited_pages, student_progress_per_resource_id} =
+      get_student_metrics(socket.assigns.section, socket.assigns.current_user.id)
+
     {:ok,
      assign(socket,
        hierarchy: hierarchy,
        selected_unit_uuid: nil,
        selected_module: nil,
-       selected_module_index: nil
+       selected_module_index: nil,
+       student_visited_pages: student_visited_pages,
+       student_progress_per_resource_id: student_progress_per_resource_id
      )}
   end
 
@@ -35,7 +42,9 @@ defmodule OliWeb.Delivery.Student.ContentLive do
       if module_uuid == (socket.assigns.selected_module && socket.assigns.selected_module.uuid) do
         assign(socket, selected_unit_uuid: nil, selected_module: nil)
       else
-        selected_module = get_module(socket.assigns.hierarchy, unit_uuid, module_uuid)
+        selected_module =
+          get_module(socket.assigns.hierarchy, unit_uuid, module_uuid)
+          |> mark_visited_pages(socket.assigns.student_visited_pages)
 
         assign(socket,
           selected_unit_uuid: unit_uuid,
@@ -78,6 +87,7 @@ defmodule OliWeb.Delivery.Student.ContentLive do
           selected_unit={child.uuid == @selected_unit_uuid}
           selected_module={@selected_module}
           selected_module_index={@selected_module_index}
+          student_progress_per_resource_id={@student_progress_per_resource_id}
         />
       </div>
     </.header_with_sidebar_nav>
@@ -90,6 +100,7 @@ defmodule OliWeb.Delivery.Student.ContentLive do
   attr :selected_module, :map
   attr :selected_module_index, :string
   attr :section_start_date, :string, doc: "required to calculate the week number"
+  attr :student_progress_per_resource_id, :map
 
   def unit(assigns) do
     # TODO: render real student progress for unit
@@ -115,7 +126,15 @@ defmodule OliWeb.Delivery.Student.ContentLive do
             </div>
           </div>
           <div class="ml-auto w-36">
-            <.progress_bar percent={:rand.uniform(100)} width="100px" />
+            <.progress_bar
+              percent={
+                parse_student_progress_for_resource(
+                  @student_progress_per_resource_id,
+                  @unit.revision.resource_id
+                )
+              }
+              width="100px"
+            />
           </div>
         </div>
       </div>
@@ -136,6 +155,7 @@ defmodule OliWeb.Delivery.Student.ContentLive do
           unit_uuid={@unit.uuid}
           unit_numbering_index={@unit.numbering.index}
           bg_image_url={module.revision.poster_image}
+          student_progress_per_resource_id={@student_progress_per_resource_id}
           selected={if @selected_module, do: module.uuid == @selected_module.uuid, else: false}
         />
       </div>
@@ -176,7 +196,7 @@ defmodule OliWeb.Delivery.Student.ContentLive do
     >
       <div class="flex justify-center items-center gap-[10px] h-6 w-6">
         <svg
-          :if={:rand.uniform() > 0.5}
+          :if={page.visited}
           xmlns="http://www.w3.org/2000/svg"
           height="1.25em"
           viewBox="0 0 448 512"
@@ -257,6 +277,7 @@ defmodule OliWeb.Delivery.Student.ContentLive do
   attr :unit_uuid, :string
   attr :selected, :boolean, default: false
   attr :bg_image_url, :string, doc: "the background image url for the card"
+  attr :student_progress_per_resource_id, :map
 
   def module_card(assigns) do
     # TODO: render real student progress for module
@@ -294,7 +315,17 @@ defmodule OliWeb.Delivery.Student.ContentLive do
             </svg>
           </div>
         </div>
-        <.progress_bar :if={!@selected} percent={:rand.uniform(100)} width="60%" show_percent={false} />
+        <.progress_bar
+          :if={!@selected}
+          percent={
+            parse_student_progress_for_resource(
+              @student_progress_per_resource_id,
+              @module.revision.resource_id
+            )
+          }
+          width="60%"
+          show_percent={false}
+        />
         <div
           :if={@selected}
           class={[
@@ -389,5 +420,42 @@ defmodule OliWeb.Delivery.Student.ContentLive do
   # ~p"/sections/#{section_slug}/container/:revision_slug
   defp get_url(resource_slug, section_slug) do
     ~p"/sections/#{section_slug}/page/#{resource_slug}"
+  end
+
+  defp get_student_metrics(section, current_user_id) do
+    visited_pages_map = Sections.get_visited_pages(section.id, current_user_id)
+
+    %{"container" => container_ids, "page" => page_ids} =
+      Sections.get_resource_ids_group_by_resource_type(section.slug)
+
+    progress_per_container_id =
+      Metrics.progress_across(section.id, container_ids, current_user_id)
+      |> Enum.into(%{}, fn {container_id, progress} ->
+        {container_id, progress || 0.0}
+      end)
+
+    progress_per_page_id =
+      Metrics.progress_across_for_pages(section.id, page_ids, [current_user_id])
+
+    progress_per_resource_id = Map.merge(progress_per_page_id, progress_per_container_id)
+
+    {visited_pages_map, progress_per_resource_id}
+  end
+
+  defp mark_visited_pages(module, visited_pages) do
+    update_in(
+      module,
+      [Access.key!(:children)],
+      &Enum.map(&1, fn page ->
+        Map.put(page, :visited, Map.get(visited_pages, page.revision.id, false))
+      end)
+    )
+  end
+
+  defp parse_student_progress_for_resource(student_progress_per_resource_id, resource_id) do
+    Map.get(student_progress_per_resource_id, resource_id)
+    |> Kernel.*(100)
+    |> round()
+    |> trunc()
   end
 end
