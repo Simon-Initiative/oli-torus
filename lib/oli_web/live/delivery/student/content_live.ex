@@ -4,8 +4,6 @@ defmodule OliWeb.Delivery.Student.ContentLive do
   import OliWeb.Components.Delivery.Layouts
 
   alias OliWeb.Common.FormatDateTime
-  alias Phoenix.LiveView.JS
-  alias OliWeb.Components.Modal
   alias Oli.Delivery.{Metrics, Sections}
   alias OliWeb.Components.Delivery.Utils
 
