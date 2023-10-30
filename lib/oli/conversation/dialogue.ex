@@ -53,12 +53,11 @@ defmodule Oli.Conversation.Dialogue do
         },
         %{
           name: "relevant_course_content",
-          description:
-            """
-            Useful when a question asked by a student cannot be adequately answered by the context of the current lesson.
-            Allows the retrieval of relevant course content from other lessons in the course based on the
-            student's question. Returns an array of course lessons with the following keys: title, url, content.
-            """,
+          description: """
+          Useful when a question asked by a student cannot be adequately answered by the context of the current lesson.
+          Allows the retrieval of relevant course content from other lessons in the course based on the
+          student's question. Returns an array of course lessons with the following keys: title, url, content.
+          """,
           parameters: %{
             type: "object",
             properties: %{
@@ -106,8 +105,7 @@ defmodule Oli.Conversation.Dialogue do
   end
 
   def engage(%__MODULE__{messages: messages} = dialogue, :sync) do
-    result
-     =
+    result =
       OpenAI.chat_completion(
         [
           model: "gpt-3.5-turbo",

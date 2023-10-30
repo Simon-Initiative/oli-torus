@@ -21,13 +21,11 @@ defmodule Oli.Rendering.Alternatives.Markdown do
           hidden: hidden
         }
       ) do
-
     if hidden do
       []
     else
       Elements.render(context, children, Elements.Markdown)
     end
-
   end
 
   @impl Oli.Rendering.Alternatives

@@ -27,8 +27,6 @@ defmodule Oli.Search.RevisionEmbedding do
   ]
 
   schema "revision_embeddings" do
-
-
     belongs_to :revision, Oli.Resources.Revision
     belongs_to :resource, Oli.Resources.Resource
     belongs_to :resource_type, Oli.Resources.ResourceType
@@ -42,7 +40,6 @@ defmodule Oli.Search.RevisionEmbedding do
 
     field(:title, :string, virtual: true)
     field(:distance, :float, virtual: true)
-
   end
 
   @doc false
@@ -58,8 +55,17 @@ defmodule Oli.Search.RevisionEmbedding do
       :fingerprint_md5,
       :content,
       :embedding
-      ])
-    |> validate_required([:revision_id, :resource_id, :resource_type_id, :component_type, :chunk_type, :chunk_ordinal, :fingerprint_md5, :content, :embedding])
-
+    ])
+    |> validate_required([
+      :revision_id,
+      :resource_id,
+      :resource_type_id,
+      :component_type,
+      :chunk_type,
+      :chunk_ordinal,
+      :fingerprint_md5,
+      :content,
+      :embedding
+    ])
   end
 end
