@@ -26,9 +26,6 @@ defmodule Oli.Repo.Migrations.AddPromptTemplates do
 
   def up do
     # NOTE: This extension requires su privs on RDS and therefore must be run manually
-    # execute "CREATE EXTENSION IF NOT EXISTS vector"
-
-    # flush()
 
     alter table(:sections) do
       add(:page_prompt_template, :text, default: @page_prompt)
@@ -47,6 +44,34 @@ defmodule Oli.Repo.Migrations.AddPromptTemplates do
         prompt: @page_prompt
       }
     ])
+
+    flush()
+
+    execute(fn ->
+      case repo().query!("""
+           SELECT
+               proname
+           FROM
+               pg_catalog.pg_proc
+           WHERE
+               proname = 'cosine_distance'
+               AND pronamespace = (
+                   SELECT oid
+                   FROM pg_namespace
+                   WHERE nspname = 'public'
+               );
+           """) do
+        %{rows: []} ->
+          execute """
+          CREATE EXTENSION IF NOT EXISTS vector
+          """
+
+          flush()
+
+        e ->
+          true
+      end
+    end)
   end
 
   def down do
