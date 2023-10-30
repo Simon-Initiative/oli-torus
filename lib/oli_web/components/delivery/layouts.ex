@@ -59,7 +59,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
       </div>
       <div class="p-2">
         <div class="hidden md:block">
-          <UserAccountMenu.menu ctx={@ctx} section={@section} />
+          <UserAccountMenu.menu id="user-account-menu" ctx={@ctx} section={@section} />
         </div>
         <button
           class="block md:hidden py-1.5 px-3 rounded border border-transparent hover:border-gray-300 active:bg-gray-100"
@@ -146,7 +146,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
         </div>
 
         <div class="px-6 py-4">
-          <UserAccountMenu.menu ctx={@ctx} section={@section} />
+          <UserAccountMenu.menu id="user-account-menu-sidebar" ctx={@ctx} section={@section} />
         </div>
       </div>
     </nav>
