@@ -11,16 +11,21 @@ defmodule Oli.Search.Embeddings do
   import Ecto.Query
   import Pgvector.Ecto.Query
 
-  def search(input) do
+
+  def search(input, publication_id) do
 
     case embedding_for_input(input) do
       {:ok, embedding} ->
 
-        query = from i in RevisionEmbedding,
-          join: r in Revision, on: r.id == i.revision_id,
-          order_by: cosine_distance(i.embedding, ^embedding),
+        query =
+          from re in RevisionEmbedding,
+          join: pr in PublishedResource, on: re.revision_id == pr.revision_id,
+          join: r in Revision, on: r.id == re.revision_id,
+          where: pr.publication_id == ^publication_id,
+          where: re.chunk_type == :paragraph,
+          order_by: cosine_distance(re.embedding, ^embedding),
           limit: 5,
-          select_merge: %{title: r.title}
+          select_merge: %{title: r.title, distance: cosine_distance(re.embedding, ^embedding)}
 
         Repo.all(query)
 
@@ -28,19 +33,22 @@ defmodule Oli.Search.Embeddings do
     end
   end
 
-  def most_relevant_pages(input) do
+  def most_relevant_pages(input, section_id) do
 
     case embedding_for_input(input) do
       {:ok, embedding} ->
 
-        query = from i in RevisionEmbedding,
-          join: r in Revision, on: r.id == i.revision_id,
-          order_by: cosine_distance(i.embedding, ^embedding),
-          limit: 10,
-          select_merge: %{title: r.title}
+        query =
+          Oli.Delivery.Sections.SectionsProjectsPublications
+          |> join(:right, [spp], p in PublishedResource, on: p.publication_id == spp.publication_id)
+          |> join(:right, [_spp, pr], re in RevisionEmbedding, on: re.revision_id == pr.revision_id)
+          |> join(:left, [_spp, _p, re], r in Revision, on: r.id == re.revision_id)
+          |> where([spp, _p, re, _r], spp.section_id == ^section_id and re.chunk_type == :paragraph)
+          |> order_by([_spp, _p, re, _r], cosine_distance(re.embedding, ^embedding))
+          |> limit(10)
+          |> select([_spp, _p, re, _r], re.revision_id)
 
         most_relevant_revisions = Repo.all(query)
-        |> Enum.map(fn %{revision_id: revision_id} -> revision_id end)
         # Dedupe and take 2 gets us the top two most relevant pages
         # [3, 2, 3, 3, 3, 2, 1] -> [3, 2, 3, 2, 1] -> [3, 2]
         |> Enum.dedup()
@@ -107,12 +115,44 @@ defmodule Oli.Search.Embeddings do
     |> Repo.one()
   end
 
+  def project_embeddings_summary(publication_id) do
+
+    total_to_embed = count_revision_to_embed(publication_id)
+
+    total_embedded = existing_embedded_query(publication_id)
+    |> select([_p, r], count(r.id))
+    |> Repo.one()
+
+    total_revisions_embedded = existing_embedded_query(publication_id)
+    |> distinct([_p, r, re], re.revision_id)
+    |> Repo.all()
+    |> length()
+
+    %{
+      total_embedded: total_embedded,
+      total_revisions_embedded: total_revisions_embedded,
+      total_to_embed: total_to_embed
+    }
+  end
+
   defp to_embed_query(publication_id) do
     page_type_id = Oli.Resources.ResourceType.get_id_by_type("page")
 
     PublishedResource
     |> join(:left, [p], r in Revision, on: r.id == p.revision_id)
-    |> where([p, r], p.publication_id == ^publication_id and r.resource_type_id == ^page_type_id)
+    |> join(:left, [p, _r], re in RevisionEmbedding, on: p.revision_id == re.revision_id)
+    |> where([p, r, re], is_nil(re.revision_id) and p.publication_id == ^publication_id and r.resource_type_id == ^page_type_id)
   end
+
+  defp existing_embedded_query(publication_id) do
+    page_type_id = Oli.Resources.ResourceType.get_id_by_type("page")
+
+    PublishedResource
+    |> join(:left, [p], r in Revision, on: r.id == p.revision_id)
+    |> join(:right, [p, _r], re in RevisionEmbedding, on: p.revision_id == re.revision_id)
+    |> where([p, r, re], p.publication_id == ^publication_id and r.resource_type_id == ^page_type_id)
+  end
+
+
 
 end

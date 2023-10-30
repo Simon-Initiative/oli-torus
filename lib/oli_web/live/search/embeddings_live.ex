@@ -15,15 +15,21 @@ defmodule OliWeb.Search.EmbeddingsLive do
     publication_id = Oli.Publishing.get_latest_published_publication_by_slug(project_slug).id
     Oli.Authoring.Broadcaster.Subscriber.subscribe_to_revision_embedding(publication_id)
 
-    total = Oli.Search.Embeddings.count_revision_to_embed(publication_id)
+    %{
+      total_embedded: total_embedded,
+      total_revisions_embedded: total_revisions_embedded,
+      total_to_embed: total_to_embed
+    } = Oli.Search.Embeddings.project_embeddings_summary(publication_id)
 
     {:ok,
      assign(socket,
        results: [],
        changeset: UserInput.changeset(%UserInput{}, %{content: ""}),
        processing: false,
-       remaining: total,
-       total: total,
+       remaining: total_to_embed,
+       total_to_embed: total_to_embed,
+       total: total_revisions_embedded,
+       total_embedded: total_embedded,
        failed: 0,
        publication_id: publication_id,
        title: "Embeddings Playground"
@@ -33,20 +39,26 @@ defmodule OliWeb.Search.EmbeddingsLive do
   def render(assigns) do
     ~H"""
     <div>
-      <button class="btn btn-primary" phx-click="calculate">Calculate Embeddings</button>
 
-      <hr/>
+      <h3>Revision Embedding Status</h3>
 
-      <p>Total: <%= @total %></p>
+      <p><%= @total %> pages embedded across <%= @total_embedded %> chunks</p>
+      <p><%= @total_to_embed %> pages need to be embedded</p>
 
       <%= if @processing do %>
 
         <p>Remaining: <%= @remaining %></p>
         <p>Failed: <%= @failed %></p>
 
-        <hr/>
 
       <% end %>
+
+      <button class="btn btn-primary" phx-click="calculate">Calculate Embeddings</button>
+
+      <hr class="mt-5 mb-5"/>
+
+      <h3>Semantic Search</h3>
+      <p><small class="text-muted">Enter some text and see what chunks are returned</small></p>
 
       <%= render_input(assigns) %>
       <%= render_results(assigns) %>
@@ -86,6 +98,7 @@ defmodule OliWeb.Search.EmbeddingsLive do
             <td><%= result.title %></td>
             <td><%= result.chunk_type %></td>
             <td><%= result.chunk_ordinal %></td>
+            <td><%= result.distance %></td>
             <td><%= result.content %></td>
           </tr>
         <% end %>
@@ -96,7 +109,7 @@ defmodule OliWeb.Search.EmbeddingsLive do
 
   def handle_event("update", %{"user_input" => %{"content" => content}}, socket) do
 
-    results = Oli.Search.Embeddings.search(content)
+    results = Oli.Search.Embeddings.search(content, socket.assigns.publication_id)
 
     {:noreply, assign(socket, results: results)}
   end

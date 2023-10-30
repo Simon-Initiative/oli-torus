@@ -3,6 +3,7 @@ defmodule Oli.Search.RevisionEmbedding do
   import Ecto.Changeset
 
   @chunk_types [
+    :title,
     :paragraph,
     :code,
     :image,
@@ -40,6 +41,7 @@ defmodule Oli.Search.RevisionEmbedding do
     field :embedding, Pgvector.Ecto.Vector
 
     field(:title, :string, virtual: true)
+    field(:distance, :float, virtual: true)
 
   end
 

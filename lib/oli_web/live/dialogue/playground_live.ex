@@ -283,7 +283,7 @@ defmodule OliWeb.Dialogue.PlaygroundLive do
 
     section = Oli.Delivery.Sections.get_section!(section_id)
 
-    case Oli.Search.Embeddings.most_relevant_pages(input) do
+    case Oli.Search.Embeddings.most_relevant_pages(input, section_id) do
 
       {:ok, relevant_pages} ->
         Enum.map(relevant_pages, fn page ->
