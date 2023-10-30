@@ -48,21 +48,19 @@ defmodule Oli.Repo.Migrations.AddPromptTemplates do
     flush()
 
     execute(fn ->
-
-      case repo().query! """
-      SELECT
-          proname
-      FROM
-          pg_catalog.pg_proc
-      WHERE
-          proname = 'cosine_distance'
-          AND pronamespace = (
-              SELECT oid
-              FROM pg_namespace
-              WHERE nspname = 'public'
-          );
-      """ do
-
+      case repo().query!("""
+           SELECT
+               proname
+           FROM
+               pg_catalog.pg_proc
+           WHERE
+               proname = 'cosine_distance'
+               AND pronamespace = (
+                   SELECT oid
+                   FROM pg_namespace
+                   WHERE nspname = 'public'
+               );
+           """) do
         %{rows: []} ->
           execute """
           CREATE EXTENSION IF NOT EXISTS vector
@@ -73,10 +71,7 @@ defmodule Oli.Repo.Migrations.AddPromptTemplates do
         e ->
           true
       end
-
-
     end)
-
   end
 
   def down do
