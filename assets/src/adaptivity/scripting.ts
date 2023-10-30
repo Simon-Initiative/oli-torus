@@ -54,9 +54,13 @@ export const getExpressionStringForValue = (
   env: Environment = defaultGlobalEnv,
 ): string => {
   let shouldEvaluateExpression = true;
-  const conditionsNeedEvaluations = getValue('session.conditionsNeedEvaluation', env);
-  if (conditionsNeedEvaluations?.length && v.key) {
-    shouldEvaluateExpression = conditionsNeedEvaluations.includes(v.key);
+  try {
+    const conditionsNeedEvaluations = getValue('session.conditionsNeedEvaluation', env);
+    if (conditionsNeedEvaluations?.length && v.key) {
+      shouldEvaluateExpression = conditionsNeedEvaluations.includes(v.key);
+    }
+  } catch (er) {
+    console.warn('Error at getExpressionStringForValue for ', { key: v.key });
   }
   let val: any = v.value;
   let isValueVar = false;
@@ -604,16 +608,19 @@ export const templatizeText = (
   key?: string,
 ): string => {
   let shouldEvaluateExpression = true;
+  try {
+    const conditionsNeedEvaluations = Object.keys(locals)?.length
+      ? locals['session.conditionsNeedEvaluation']
+      : getValue('session.conditionsNeedEvaluation', defaultGlobalEnv);
 
-  const conditionsNeedEvaluations = Object.keys(locals)?.length
-    ? locals['session.conditionsNeedEvaluation']
-    : getValue('session.conditionsNeedEvaluation', defaultGlobalEnv);
-
-  if (conditionsNeedEvaluations?.length && key) {
-    shouldEvaluateExpression = conditionsNeedEvaluations.includes(key);
-  }
-  if (shouldEvaluateExpression) {
-    return text;
+    if (conditionsNeedEvaluations?.length && key) {
+      shouldEvaluateExpression = conditionsNeedEvaluations.includes(key);
+    }
+    if (shouldEvaluateExpression) {
+      return text;
+    }
+  } catch (er) {
+    console.warn('Error at templatizeText for key', { key });
   }
   let innerEnv = new Environment(env);
   // if the text contains backslash, it is probably a math exprs like: '16^{\\frac{1}{2}}=\\sqrt {16}={\\editable{}}'
