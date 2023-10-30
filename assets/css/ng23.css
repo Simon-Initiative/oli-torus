@@ -1,0 +1,15 @@
+/*
+The following classes are used to style the html rendered with Oli.Rendering.Content.render/3
+We should try to avoid defining classes in this way.
+The prefered way is to do it directly in the HTML with TailwindCSS, as explained:
+
+https://tailwindcss.com/docs/utility-first
+*/
+
+.intro-content p {
+  @apply pb-2 text-[14px] leading-[30px] font-normal;
+}
+
+.intro-content h1 {
+  @apply mb-[20px] text-2xl tracking-[0.02px] font-light;
+}
