@@ -11,7 +11,6 @@ defmodule OliWeb.Search.EmbeddingsLive do
         _session,
         socket
       ) do
-
     publication_id = Oli.Publishing.get_latest_published_publication_by_slug(project_slug).id
     Oli.Authoring.Broadcaster.Subscriber.subscribe_to_revision_embedding(publication_id)
 
@@ -39,30 +38,25 @@ defmodule OliWeb.Search.EmbeddingsLive do
   def render(assigns) do
     ~H"""
     <div>
-
       <h3>Revision Embedding Status</h3>
 
       <p><%= @total %> pages embedded across <%= @total_embedded %> chunks</p>
       <p><%= @total_to_embed %> pages need to be embedded</p>
 
       <%= if @processing do %>
-
         <p>Remaining: <%= @remaining %></p>
         <p>Failed: <%= @failed %></p>
-
-
       <% end %>
 
       <button class="btn btn-primary" phx-click="calculate">Calculate Embeddings</button>
 
-      <hr class="mt-5 mb-5"/>
+      <hr class="mt-5 mb-5" />
 
       <h3>Semantic Search</h3>
       <p><small class="text-muted">Enter some text and see what chunks are returned</small></p>
 
       <%= render_input(assigns) %>
       <%= render_results(assigns) %>
-
     </div>
     """
   end
@@ -108,27 +102,26 @@ defmodule OliWeb.Search.EmbeddingsLive do
   end
 
   def handle_event("update", %{"user_input" => %{"content" => content}}, socket) do
-
     results = Oli.Search.Embeddings.search(content, socket.assigns.publication_id)
 
     {:noreply, assign(socket, results: results)}
   end
 
   def handle_event("calculate", _, socket) do
-
     Oli.Search.Embeddings.update_all(socket.assigns.publication_id, false)
     {:noreply, assign(socket, processing: true)}
   end
 
   def handle_info({:revision_embedding_complete, result}, socket) do
-
-    {failed, total, remaining} = case result do
-      :ok -> {socket.assigns.failed, socket.assigns.total, socket.assigns.remaining - 1}
-      _ -> {socket.assigns.failed + 1, socket.assigns.total + 1, socket.assigns.remaining}
-    end
+    {failed, total, remaining} =
+      case result do
+        :ok -> {socket.assigns.failed, socket.assigns.total, socket.assigns.remaining - 1}
+        _ -> {socket.assigns.failed + 1, socket.assigns.total + 1, socket.assigns.remaining}
+      end
 
     processing = remaining > 0
 
-    {:noreply, assign(socket, remaining: remaining, failed: failed, total: total, processing: processing)}
+    {:noreply,
+     assign(socket, remaining: remaining, failed: failed, total: total, processing: processing)}
   end
 end

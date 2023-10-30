@@ -22,7 +22,8 @@ defmodule Oli.Delivery.Hierarchy.HierarchyNode do
             revision: nil,
             section_resource: nil,
             ancestors: [],
-            finalized: true
+            finalized: true,
+            visited: false
 
   def simplify(%Oli.Delivery.Hierarchy.HierarchyNode{} = node) do
     %{

@@ -280,20 +280,18 @@ defmodule OliWeb.Dialogue.PlaygroundLive do
   end
 
   def relevant_course_content(%{"student_input" => input, "section_id" => section_id}) do
-
     section = Oli.Delivery.Sections.get_section!(section_id)
 
     case Oli.Search.Embeddings.most_relevant_pages(input, section_id) do
-
       {:ok, relevant_pages} ->
         Enum.map(relevant_pages, fn page ->
-
           revision = Oli.Resources.get_revision!(page.revision_id)
 
-          content = Enum.map(page.chunks, fn chunk ->
-            chunk.content
-          end)
-          |> Enum.join("\n\n")
+          content =
+            Enum.map(page.chunks, fn chunk ->
+              chunk.content
+            end)
+            |> Enum.join("\n\n")
 
           %{
             title: page.title,
@@ -302,10 +300,9 @@ defmodule OliWeb.Dialogue.PlaygroundLive do
           }
         end)
 
-      e -> e
-
+      e ->
+        e
     end
-
   end
 
   def get_next_activities_for_student(section_id, user_id) do

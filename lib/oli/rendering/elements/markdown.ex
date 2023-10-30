@@ -44,5 +44,4 @@ defmodule Oli.Rendering.Elements.Markdown do
   def paginate(_context, {rendered, _br_count}) do
     rendered
   end
-
 end
