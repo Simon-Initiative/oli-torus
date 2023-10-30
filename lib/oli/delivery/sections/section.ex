@@ -193,7 +193,8 @@ defmodule Oli.Delivery.Sections.Section do
       :course_section_number,
       :preferred_scheduling_time,
       :v25_migration,
-      :page_prompt_template
+      :page_prompt_template,
+      :full_hierarchy
     ])
     |> cast_embed(:customizations, required: false)
     |> validate_required([

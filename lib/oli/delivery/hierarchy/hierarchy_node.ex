@@ -12,7 +12,7 @@ defmodule Oli.Delivery.Hierarchy.HierarchyNode do
   hierarchy. This uuid is intended to be ephemeral and not expected to persist pass the lifecycle
   of a given in-memory hierarchy.
   """
-
+  @derive Jason.Encoder
   defstruct uuid: nil,
             numbering: nil,
             children: [],

@@ -10,11 +10,6 @@ defmodule OliWeb.Delivery.Student.ContentLive do
   alias OliWeb.Components.Delivery.Utils
 
   def mount(_params, _session, socket) do
-    # TODO replace this with a call to the Cache data in ETS
-    # (finally it will be stored as a json in a new section field maybe called "cached_hierarchy")
-    hierarchy =
-      Oli.Publishing.DeliveryResolver.full_hierarchy(socket.assigns.section.slug)
-
     # when updating to Liveview 0.20 we should replace this with assign_async/3
     # https://hexdocs.pm/phoenix_live_view/Phoenix.LiveView.html#assign_async/3
     if connected?(socket),
@@ -27,7 +22,6 @@ defmodule OliWeb.Delivery.Student.ContentLive do
 
     {:ok,
      assign(socket,
-       hierarchy: hierarchy,
        selected_unit_uuid: nil,
        selected_module: nil,
        selected_module_index: nil,
@@ -46,11 +40,11 @@ defmodule OliWeb.Delivery.Student.ContentLive do
         socket
       ) do
     socket =
-      if module_uuid == get_in(socket.assigns, [:selected_module, Access.key!(:uuid)]) do
+      if module_uuid == socket.assigns.selected_module["uuid"] do
         assign(socket, selected_unit_uuid: nil, selected_module: nil)
       else
         selected_module =
-          get_module(socket.assigns.hierarchy, unit_uuid, module_uuid)
+          get_module(socket.assigns.section.full_hierarchy, unit_uuid, module_uuid)
           |> mark_visited_pages(socket.assigns.student_visited_pages)
 
         assign(socket,
@@ -105,11 +99,11 @@ defmodule OliWeb.Delivery.Student.ContentLive do
     >
       <div id="student_content" class="container mx-auto p-[25px]" phx-hook="ScrollToTarget">
         <.unit
-          :for={child <- @hierarchy.children}
+          :for={child <- @section.full_hierarchy["children"]}
           unit={child}
           section_start_date={@section.start_date}
           ctx={@ctx}
-          unit_selected={child.uuid == @selected_unit_uuid}
+          unit_selected={child["uuid"] == @selected_unit_uuid}
           selected_module={@selected_module}
           selected_module_index={@selected_module_index}
           student_progress_per_resource_id={@student_progress_per_resource_id}
@@ -128,24 +122,23 @@ defmodule OliWeb.Delivery.Student.ContentLive do
   attr :student_progress_per_resource_id, :map
 
   def unit(assigns) do
-    # TODO: render real student progress for unit
     ~H"""
-    <div id={"unit_#{@unit.uuid}"} class="p-[25px] pl-[50px]">
+    <div id={"unit_#{@unit["uuid"]}"} class="p-[25px] pl-[50px]">
       <div class="mb-6 flex flex-col items-start gap-[6px]">
         <h3 class="text-[26px] leading-[32px] tracking-[0.02px] font-semibold ml-2">
-          <%= "#{@unit.numbering.index}. #{@unit.revision.title}" %>
+          <%= "#{@unit["numbering"]["index"]}. #{@unit["revision"]["title"]}" %>
         </h3>
         <div class="flex items-center w-full">
           <div class="flex items-center gap-3 ">
             <div class="text-[14px] leading-[32px] tracking-[0.02px] font-semibold">
               <span class="text-gray-400 opacity-80">Week</span> <%= Utils.week_number(
                 @section_start_date,
-                @unit.section_resource.start_date
+                to_datetime(@unit["section_resource"]["start_date"])
               ) %>
             </div>
             <div class="text-[14px] leading-[32px] tracking-[0.02px] font-semibold">
               <span class="text-gray-400 opacity-80">Complete by:</span> <%= parse_datetime(
-                @unit.section_resource.end_date,
+                @unit["section_resource"]["end_date"],
                 @ctx
               ) %>
             </div>
@@ -155,7 +148,7 @@ defmodule OliWeb.Delivery.Student.ContentLive do
               percent={
                 parse_student_progress_for_resource(
                   @student_progress_per_resource_id,
-                  @unit.revision.resource_id
+                  @unit["revision"]["resource_id"]
                 )
               }
               width="100px"
@@ -165,36 +158,39 @@ defmodule OliWeb.Delivery.Student.ContentLive do
       </div>
       <div class="flex gap-4 overflow-x-scroll pt-[2px] pl-[2px] -mt-[2px] -ml-[2px]">
         <.intro_card
-          :if={@unit.revision.intro_video || @unit.revision.poster_image}
-          bg_image_url={@unit.revision.poster_image}
-          video_url={@unit.revision.intro_video}
+          :if={@unit["revision"]["intro_video"] || @unit["revision"]["poster_image"]}
+          bg_image_url={@unit["revision"]["poster_image"]}
+          video_url={@unit["revision"]["intro_video"]}
           on_play={
             Modal.show_modal("video_player")
-            |> JS.push("play_intro_video", value: %{video_url: @unit.revision.intro_video})
+            |> JS.push("play_intro_video", value: %{video_url: @unit["revision"]["intro_video"]})
           }
         />
         <.module_card
-          :for={{module, module_index} <- Enum.with_index(@unit.children, 1)}
+          :for={{module, module_index} <- Enum.with_index(@unit["children"], 1)}
           module={module}
           module_index={module_index}
-          unit_uuid={@unit.uuid}
-          unit_numbering_index={@unit.numbering.index}
-          bg_image_url={module.revision.poster_image}
+          unit_uuid={@unit["uuid"]}
+          unit_numbering_index={@unit["numbering"]["index"]}
+          bg_image_url={module["revision"]["poster_image"]}
           student_progress_per_resource_id={@student_progress_per_resource_id}
-          selected={if @selected_module, do: module.uuid == @selected_module.uuid, else: false}
+          selected={if @selected_module, do: module["uuid"] == @selected_module["uuid"], else: false}
         />
       </div>
     </div>
     <div :if={@unit_selected} class="flex py-[24px] px-[50px] gap-x-4 lg:gap-x-12">
       <div class="w-1/2 flex flex-col px-6">
-        <div class={[
-          "intro-content",
-          maybe_additional_margin_top(@selected_module.revision.intro_content["children"])
-        ]}>
+        <div
+          :if={@selected_module["revision"]["intro_content"]["children"]}
+          class={[
+            "intro-content",
+            maybe_additional_margin_top(@selected_module["revision"]["intro_content"]["children"])
+          ]}
+        >
           <%= Phoenix.HTML.raw(
             Oli.Rendering.Content.render(
               %Oli.Rendering.Context{},
-              @selected_module.revision.intro_content["children"],
+              @selected_module["revision"]["intro_content"]["children"],
               Oli.Rendering.Content.Html
             )
           ) %>
@@ -213,15 +209,14 @@ defmodule OliWeb.Delivery.Student.ContentLive do
   attr :module_index, :integer
 
   def index(assigns) do
-    # TODO: render real check if student has visited the page
     ~H"""
     <div
-      :for={{page, page_index} <- Enum.with_index(@module.children, 1)}
+      :for={{page, page_index} <- Enum.with_index(@module["children"], 1)}
       class="flex gap-[14px] h-[42px] w-full"
     >
       <div class="flex justify-center items-center gap-[10px] h-6 w-6">
         <svg
-          :if={page.visited}
+          :if={page["visited"]}
           xmlns="http://www.w3.org/2000/svg"
           height="1.25em"
           viewBox="0 0 448 512"
@@ -234,18 +229,18 @@ defmodule OliWeb.Delivery.Student.ContentLive do
       </div>
       <div
         phx-click="navigate_to_resource"
-        phx-value-slug={page.revision.slug}
+        phx-value-slug={page["revision"]["slug"]}
         class="flex items-center gap-3 w-full border-b-2 border-gray-600 cursor-pointer hover:bg-gray-200/70 px-2"
       >
         <span class="text-[16px] leading-[22px] font-normal truncate">
-          <%= "#{@module_index}.#{page_index} #{page.revision.title}" %>
+          <%= "#{@module_index}.#{page_index} #{page["revision"]["title"]}" %>
         </span>
         <div class="flex items-center gap-[6px] ml-auto">
           <svg xmlns="http://www.w3.org/2000/svg" height="1.25em" viewBox="0 0 512 512">
             <path d="M464 256A208 208 0 1 1 48 256a208 208 0 1 1 416 0zM0 256a256 256 0 1 0 512 0A256 256 0 1 0 0 256zM232 120V256c0 8 4 15.5 10.7 20l96 64c11 7.4 25.9 4.4 33.3-6.7s4.4-25.9-6.7-33.3L280 243.2V120c0-13.3-10.7-24-24-24s-24 10.7-24 24z" />
           </svg>
           <span class="text-[12px] leading-[16px] font-bold uppercase tracking-[0.96px] w-[15px] text-right">
-            <%= page.revision.duration_minutes %>
+            <%= page["revision"]["duration_minutes"] %>
           </span>
           <span class="text-[12px] leading-[16px] font-bold uppercase tracking-[0.96px]">
             min
@@ -305,15 +300,14 @@ defmodule OliWeb.Delivery.Student.ContentLive do
   attr :student_progress_per_resource_id, :map
 
   def module_card(assigns) do
-    # TODO: render real student progress for module
     ~H"""
     <div class="hover:scale-[1.01]">
       <div flex="h-[170px] w-[288px]">
         <div
-          id={"module_#{@module.uuid}"}
+          id={"module_#{@module["uuid"]}"}
           phx-click="select_module"
           phx-value-unit_uuid={@unit_uuid}
-          phx-value-module_uuid={@module.uuid}
+          phx-value-module_uuid={@module["uuid"]}
           phx-value-module_index={@module_index}
           class={[
             "flex flex-col gap-[5px] cursor-pointer rounded-xl h-[162px] w-[288px] shrink-0 mb-1 px-5 pt-[15px] bg-gray-200",
@@ -327,7 +321,7 @@ defmodule OliWeb.Delivery.Student.ContentLive do
           <span class="text-[12px] leading-[16px] font-bold opacity-60 text-gray-500">
             <%= "#{@unit_numbering_index}.#{@module_index}" %>
           </span>
-          <h5 class="text-[18px] leading-[25px] font-bold"><%= @module.revision.title %></h5>
+          <h5 class="text-[18px] leading-[25px] font-bold"><%= @module["revision"]["title"] %></h5>
           <div :if={!@selected} class="mt-auto flex h-[21px] justify-center items-center">
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -345,7 +339,7 @@ defmodule OliWeb.Delivery.Student.ContentLive do
           percent={
             parse_student_progress_for_resource(
               @student_progress_per_resource_id,
-              @module.revision.resource_id
+              @module["revision"]["resource_id"]
             )
           }
           width="60%"
@@ -403,20 +397,29 @@ defmodule OliWeb.Delivery.Student.ContentLive do
 
   defp parse_datetime(nil, _ctx), do: "not yet scheduled"
 
-  defp parse_datetime(datetime, ctx) do
-    datetime
+  defp parse_datetime(string_datetime, ctx) do
+    string_datetime
+    |> to_datetime
     |> FormatDateTime.convert_datetime(ctx)
     |> Timex.format!("{WDshort} {Mshort} {D}, {YYYY}")
   end
 
+  defp to_datetime(nil), do: "not yet scheduled"
+
+  defp to_datetime(string_datetime) do
+    {:ok, datetime, _} = DateTime.from_iso8601(string_datetime)
+
+    datetime
+  end
+
   defp get_module(hierarchy, unit_uuid, module_uuid) do
     unit =
-      Enum.find(hierarchy.children, fn unit ->
-        unit.uuid == unit_uuid
+      Enum.find(hierarchy["children"], fn unit ->
+        unit["uuid"] == unit_uuid
       end)
 
-    Enum.find(unit.children, fn module ->
-      module.uuid == module_uuid
+    Enum.find(unit["children"], fn module ->
+      module["uuid"] == module_uuid
     end)
   end
 
@@ -449,9 +452,9 @@ defmodule OliWeb.Delivery.Student.ContentLive do
   defp mark_visited_pages(module, visited_pages) do
     update_in(
       module,
-      [Access.key!(:children)],
+      ["children"],
       &Enum.map(&1, fn page ->
-        Map.put(page, :visited, Map.get(visited_pages, page.revision.id, false))
+        Map.put(page, "visited", Map.get(visited_pages, page["revision"]["id"], false))
       end)
     )
   end

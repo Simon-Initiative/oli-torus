@@ -15,6 +15,7 @@ defmodule Oli.SectionsTest do
   alias Oli.Delivery.Snapshots.Snapshot
   alias Oli.Delivery.Snapshots
   alias Oli.Delivery.Transfer
+  alias Oli.Resources.ResourceType
 
   describe "enrollments" do
     @valid_attrs %{
@@ -1737,5 +1738,102 @@ defmodule Oli.SectionsTest do
 
       refute Sections.get_latest_visited_page(section.slug, student.id)
     end
+  end
+
+  describe "rebuild_full_hierarchy/1" do
+    setup do
+      author = insert(:author)
+      project = insert(:project, authors: [author])
+
+      page_1_revision =
+        insert(:revision,
+          resource_type_id: ResourceType.get_id_by_type("page"),
+          content: %{"model" => []},
+          slug: "page_1",
+          title: "Page #1"
+        )
+
+      page_2_revision =
+        insert(:revision,
+          resource_type_id: ResourceType.get_id_by_type("page"),
+          content: %{"model" => []},
+          slug: "page_2",
+          title: "Page #2"
+        )
+
+      insert(:project_resource, %{
+        project_id: project.id,
+        resource_id: page_1_revision.resource_id
+      })
+
+      insert(:project_resource, %{
+        project_id: project.id,
+        resource_id: page_2_revision.resource_id
+      })
+
+      container_revision =
+        insert(:revision, %{
+          resource_type_id: ResourceType.get_id_by_type("container"),
+          children: [page_1_revision.resource_id, page_2_revision.resource_id],
+          content: %{},
+          deleted: false,
+          slug: "root_container",
+          title: "Root Container"
+        })
+
+      insert(:project_resource, %{
+        project_id: project.id,
+        resource_id: container_revision.resource_id
+      })
+
+      publication =
+        insert(:publication, %{
+          project: project,
+          root_resource_id: container_revision.resource_id,
+          published: nil
+        })
+
+      insert(:published_resource, %{
+        publication: publication,
+        resource: container_revision.resource,
+        revision: container_revision,
+        author: author
+      })
+
+      insert(:published_resource, %{
+        publication: publication,
+        resource: page_1_revision.resource,
+        revision: page_1_revision,
+        author: author
+      })
+
+      insert(:published_resource, %{
+        publication: publication,
+        resource: page_2_revision.resource,
+        revision: page_2_revision,
+        author: author
+      })
+
+      section = insert(:section, base_project: project)
+      {:ok, _sr} = Sections.create_section_resources(section, publication)
+
+      %{section: section}
+    end
+
+    test "updates the full_hierarchy field of the given section", %{section: section} do
+      expected_hierarchy =
+        DeliveryResolver.full_hierarchy(section.slug)
+
+      {:ok, updated_section} = Sections.rebuild_full_hierarchy(section)
+
+      assert ignore_uuids(updated_section.full_hierarchy) ==
+               ignore_uuids(expected_hierarchy)
+    end
+  end
+
+  defp ignore_uuids(map) do
+    Map.from_struct(map)
+    |> Map.drop([:uuid])
+    |> update_in([:children], &Enum.map(&1, fn child -> Map.drop(child, [:uuid]) end))
   end
 end
