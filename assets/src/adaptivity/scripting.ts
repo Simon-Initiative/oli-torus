@@ -626,7 +626,7 @@ export const templatizeText = (
     if (conditionsNeedEvaluations?.length && key) {
       shouldEvaluateExpression = conditionsNeedEvaluations.includes(key);
     }
-    if (shouldEvaluateExpression) {
+    if (!shouldEvaluateExpression) {
       return text;
     }
   } catch (er) {
