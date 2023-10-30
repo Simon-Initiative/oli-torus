@@ -6,6 +6,12 @@ defmodule OliWeb.Common.SessionContext do
   providing a common abstraction that can be used in both types of views, as opposed to
   directly accessing Plug.Conn or LiveView.Socket.
 
+  The SessionContext struct holds useful information such as the current user, timezone information
+  and preferences, etc. When deciding whether to expand this struct, consider whether the data is
+  commonly used across multiple nested components/views, or whether it is used in both static and
+  LiveViews. If so, it may be a good candidate to add to the SessionContext struct, otherwise it may
+  be better to add it to the conn/socket assigns directly via a plug.
+
   To ensure a view is compatible with either static rendered page or LiveView, use/replace
   all instances of conn or socket with this module, and optionally add any required data fields
   which can be initialized on the `SessionContext.init()` call when a view is instantiated.
