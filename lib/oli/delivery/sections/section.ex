@@ -136,6 +136,9 @@ defmodule Oli.Delivery.Sections.Section do
 
     field(:page_prompt_template, :string)
 
+    # we store the full section hierarchy to avoid having to build it on the fly when needed.
+    field :full_hierarchy, :map, default: %{}
+
     timestamps(type: :utc_datetime)
   end
 
