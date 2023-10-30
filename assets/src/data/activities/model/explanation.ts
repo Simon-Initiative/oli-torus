@@ -1,5 +1,6 @@
 import { HasParts, Part, PostUndoable, makeFeedback } from 'components/activities/types';
 import { getDefaultEditor } from 'components/editing/markdown_editor/markdown_util';
+import { TextDirection } from 'data/content/model/elements/types';
 import { EditorType } from 'data/content/resource';
 import { getPartById } from './utils';
 
@@ -17,6 +18,11 @@ export const getExplanationEditor = (model: HasParts, partId: string): EditorTyp
   return explanation?.editor || getDefaultEditor();
 };
 
+export const getExplanationTextDirection = (model: HasParts, partId: string): TextDirection => {
+  const explanation = getExplanation(model, partId);
+  return explanation?.textDirection || 'ltr';
+};
+
 type PartWithExplanation = Required<Pick<Part, 'explanation'>> & Part;
 
 const initializeExplanation = (part: Part): PartWithExplanation => {
@@ -31,6 +37,13 @@ export const setExplanationContent = (partId: string, content: any) => {
   return (model: HasParts, _post: PostUndoable) => {
     const part = getPartById(model, partId);
     initializeExplanation(part).explanation.content = content;
+  };
+};
+
+export const setExplanationTextDirection = (partId: string, textDirection: TextDirection) => {
+  return (model: HasParts, _post: PostUndoable) => {
+    const part = getPartById(model, partId);
+    initializeExplanation(part).explanation.textDirection = textDirection;
   };
 };
 

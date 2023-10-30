@@ -56,6 +56,9 @@ export const AnswerKey: React.FC<Props> = (props) => {
           updateFeedbackEditor={(id, editor) =>
             dispatch(ResponseActions.editResponseFeedbackEditor(response.id, editor))
           }
+          updateFeedbackTextDirection={(id, textDirection) =>
+            dispatch(ResponseActions.editResponseFeedbackTextDirection(response.id, textDirection))
+          }
           updateFeedback={(_id, content) =>
             dispatch(ResponseActions.editResponseFeedback(response.id, content as RichText))
           }
