@@ -23,6 +23,7 @@ import { TextInputListener } from './text_input_listener';
 import { TextareaListener } from './textarea_listener';
 import { ThemeToggle } from './theme_toggle';
 import { TooltipInit } from './tooltip';
+import { VideoPlayer } from './video_player';
 
 export const Hooks = {
   GraphNavigation,
@@ -51,4 +52,5 @@ export const Hooks = {
   LiveModal,
   EmailList,
   ScrollToTarget,
+  VideoPlayer,
 };

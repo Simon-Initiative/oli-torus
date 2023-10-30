@@ -58,11 +58,6 @@ defmodule OliWeb.Delivery.Student.ContentLive do
     {:noreply, socket}
   end
 
-  def handle_event("play_intro_video", %{"video_url" => _url}, socket) do
-    # TODO play video
-    {:noreply, socket}
-  end
-
   def handle_event("navigate_to_resource", %{"slug" => resource_slug}, socket) do
     {:noreply,
      push_navigate(socket, to: resource_url(resource_slug, socket.assigns.section.slug))}
@@ -87,9 +82,6 @@ defmodule OliWeb.Delivery.Student.ContentLive do
 
   def render(assigns) do
     ~H"""
-    <Modal.modal id="video_player">
-      <div class="h-[80vh]">imagine a video being played :)</div>
-    </Modal.modal>
     <.header_with_sidebar_nav
       ctx={@ctx}
       section={@section}
@@ -161,10 +153,7 @@ defmodule OliWeb.Delivery.Student.ContentLive do
           :if={@unit["revision"]["intro_video"] || @unit["revision"]["poster_image"]}
           bg_image_url={@unit["revision"]["poster_image"]}
           video_url={@unit["revision"]["intro_video"]}
-          on_play={
-            Modal.show_modal("video_player")
-            |> JS.push("play_intro_video", value: %{video_url: @unit["revision"]["intro_video"]})
-          }
+          card_uuid={@unit["uuid"]}
         />
         <.module_card
           :for={{module, module_index} <- Enum.with_index(@unit["children"], 1)}
@@ -257,8 +246,8 @@ defmodule OliWeb.Delivery.Student.ContentLive do
        :string,
        doc: "the video url is optional and, if provided, the play button will be rendered"
 
-  attr :on_play, :any, doc: "the event to be triggered when the play button is clicked"
   attr :bg_image_url, :string, doc: "the background image url for the card"
+  attr :card_uuid, :string
 
   def intro_card(assigns) do
     ~H"""
@@ -271,7 +260,12 @@ defmodule OliWeb.Delivery.Student.ContentLive do
         )
       ]}>
         <h5 class="text-[13px] leading-[18px] font-bold self-start"><%= @title %></h5>
-        <div :if={@video_url} phx-click={@on_play} class="w-[70px] h-[70px] relative my-auto -top-2">
+        <div
+          :if={@video_url}
+          id={@card_uuid}
+          phx-hook="VideoPlayer"
+          class="w-[70px] h-[70px] relative my-auto -top-2 cursor-pointer"
+        >
           <div class="w-full h-full rounded-full backdrop-blur bg-gray/50"></div>
           <button class="w-full h-full absolute top-0 left-0 flex items-center justify-center">
             <svg
@@ -285,6 +279,9 @@ defmodule OliWeb.Delivery.Student.ContentLive do
               <path d="M0.759,0.158c0.39-0.219,0.932-0.21,1.313,0.021l14.303,8.687c0.368,0.225,0.609,0.625,0.609,1.057   s-0.217,0.832-0.586,1.057L2.132,19.666c-0.382,0.231-0.984,0.24-1.375,0.021C0.367,19.468,0,19.056,0,18.608V1.237   C0,0.79,0.369,0.378,0.759,0.158z" />
             </svg>
           </button>
+          <video id={"video_#{@card_uuid}"} class="hidden" controls>
+            <source src={@video_url} type="video/mp4" /> Your browser does not support the video tag.
+          </video>
         </div>
       </div>
     </div>
