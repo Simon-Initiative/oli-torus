@@ -16,17 +16,6 @@ import { CapiIframeModel } from './schema';
 
 const externalActivityMap: Map<string, any> = new Map();
 let context = 'VIEWER';
-const _getExternalActivityMap = () => {
-  const result: any = {};
-
-  externalActivityMap.forEach((value, key) => {
-    // TODO: cut out functions?
-    result[key] = value;
-  });
-
-  return result;
-};
-
 const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) => {
   const [state, setState] = useState<any[]>(Array.isArray(props.state) ? props.state : []);
   const [model, setModel] = useState<any>(Array.isArray(props.model) ? props.model : {});
@@ -56,9 +45,6 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
 
   // these rely on being set every render and the "model" useState value being set
   const { title, allowScrolling, configData } = model;
-
-  // console.log('ExternalActivity', props, model);
-
   const getInterestedVariable = (StateSnapshot: Record<string, any>, domain: string) => {
     return Object.keys(StateSnapshot).reduce((collect: Record<string, any>, key) => {
       if (key.indexOf(`${domain}.${id}.`) === 0) {
@@ -705,11 +691,24 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
             const looksLikeJSON = looksLikeJson(value);
             formatted[variable].value = looksLikeJSON
               ? JSON.stringify(evaluateJsonObject(JSON.parse(value), scriptEnv))
-              : templatizeText(formatted[variable].value, simLife.snapshot, scriptEnv, true, false);
+              : templatizeText(
+                  formatted[variable].value,
+                  simLife.snapshot,
+                  scriptEnv,
+                  true,
+                  false,
+                  variable,
+                );
           } else if (typeof value === 'string' && isMathExpr) {
             if (value.search(/app\.|variables\.|stage\.|session\./) >= 0) {
               // math expr could be like: 16^{\\frac{1}{2}}=\\sqrt {16}={\\editable{}} which does NOT need processing
-              formatted[variable].value = templatizeText(value, simLife.snapshot, scriptEnv, true);
+              formatted[variable].value = templatizeText(
+                value,
+                simLife.snapshot,
+                scriptEnv,
+                true,
+                variable,
+              );
             }
           }
         }

@@ -7,13 +7,13 @@ import { CapiVariableTypes, getCapiType } from './capi';
 import { janus_std } from './janus-scripts/builtin_functions';
 
 let conditionsNeedEvaluation: string[] = [];
-
 export const setConditionsWithExpression = (facts: string[]) => {
-  console.log('BEFORE!!', { facts, conditionsNeedEvaluation });
-
   conditionsNeedEvaluation.push(...facts);
   conditionsNeedEvaluation = uniq(flatten([...new Set(conditionsNeedEvaluation)]));
-  console.log('AFTER!!', { facts, conditionsNeedEvaluation });
+  const script = `let session.conditionsNeedEvaluation = ${JSON.stringify(
+    conditionsNeedEvaluation,
+  )}`;
+  evalScript(script, defaultGlobalEnv);
 };
 
 export const looksLikeJson = (str: string) => {
@@ -53,163 +53,173 @@ export const getExpressionStringForValue = (
   v: { type: CapiVariableTypes; value: any; key?: string },
   env: Environment = defaultGlobalEnv,
 ): string => {
+  let shouldEvaluateExpression = true;
+  const conditionsNeedEvaluations = getValue('session.conditionsNeedEvaluation', env);
+  if (conditionsNeedEvaluations?.length && v.key) {
+    shouldEvaluateExpression = conditionsNeedEvaluations.includes(v.key);
+  }
   let val: any = v.value;
   let isValueVar = false;
   let isEverAppArrayObject = false;
-  if (typeof val === 'string') {
-    let canEval = false;
-    try {
-      const test = evalScript(val, env);
-      canEval = test?.result !== undefined && !test.result.message;
-      if (
-        test?.result &&
-        test?.result?.length &&
-        v.key &&
-        v.key.startsWith('app.') &&
-        typeof val === 'string' &&
-        val[0] === '[' &&
-        val[val.length - 1] === ']' &&
-        v.type === CapiVariableTypes.ARRAY
-      ) {
-        //Is there a possibility that EverApp variable of type array can have expression in them?
-        isEverAppArrayObject = true;
-      }
-      /* console.log('can actually eval:', { val, canEval, test, t: typeof test.result }); */
-    } catch (e) {
-      // failed for any reason
-    }
-
-    const looksLikeAFunction = val.includes('(') && val.includes(')');
-
-    // we're assuming this is {stage.foo.whatever} as opposed to JSON {"foo": 1}
-    // note this will break if number keys are used {1:2} !!
-
-    const looksLikeJSON = looksLikeJson(val);
-
-    const hasCurlies = val.includes('{') && val.includes('}');
-
-    // need to support nested values within JSON
-    if (looksLikeJSON) {
+  if (shouldEvaluateExpression) {
+    if (typeof val === 'string') {
+      let canEval = false;
       try {
-        const valObj = evaluateJsonObject(JSON.parse(val), env);
-        val = JSON.stringify(valObj);
+        const test = evalScript(val, env);
+        canEval = test?.result !== undefined && !test.result.message;
+        if (
+          test?.result &&
+          test?.result?.length &&
+          v.key &&
+          v.key.startsWith('app.') &&
+          typeof val === 'string' &&
+          val[0] === '[' &&
+          val[val.length - 1] === ']' &&
+          v.type === CapiVariableTypes.ARRAY
+        ) {
+          //Is there a possibility that EverApp variable of type array can have expression in them?
+          isEverAppArrayObject = true;
+        }
+        /* console.log('can actually eval:', { val, canEval, test, t: typeof test.result }); */
       } catch (e) {
-        // failed for any reason, ignore
+        // failed for any reason
       }
-    }
 
-    const hasBackslash = val.includes('\\');
-    isValueVar =
-      (canEval && !looksLikeJSON && looksLikeAFunction && !hasBackslash && !isEverAppArrayObject) ||
-      (hasCurlies && !looksLikeJSON && !hasBackslash && !isEverAppArrayObject);
-  }
+      const looksLikeAFunction = val.includes('(') && val.includes(')');
 
-  if (isValueVar) {
-    // PMP-750 support expression arrays
-    if (val[0] === '[' && val[1] === '{' && (val.includes('},{') || val.includes('}, {'))) {
-      val = val.replace(/[[\]]+/g, '');
-    }
-    if (val.includes('},{') || val.includes('}, {')) {
-      const expressions = extractAllExpressionsFromText(val);
-      if (val[0] === '{' && val[val.length - 1] === '}' && expressions?.length === 1) {
+      // we're assuming this is {stage.foo.whatever} as opposed to JSON {"foo": 1}
+      // note this will break if number keys are used {1:2} !!
+
+      const looksLikeJSON = looksLikeJson(val);
+
+      const hasCurlies = val.includes('{') && val.includes('}');
+
+      // need to support nested values within JSON
+      if (looksLikeJSON) {
         try {
-          const modifiedValue = val.substring(1, val.length - 1);
-          const evaluatedValue = evalScript(modifiedValue, env).result;
-          if (evaluatedValue !== undefined) {
-            val = evaluatedValue;
+          const valObj = evaluateJsonObject(JSON.parse(val), env);
+          val = JSON.stringify(valObj);
+        } catch (e) {
+          // failed for any reason, ignore
+        }
+      }
+
+      const hasBackslash = val.includes('\\');
+      isValueVar =
+        (canEval &&
+          !looksLikeJSON &&
+          looksLikeAFunction &&
+          !hasBackslash &&
+          !isEverAppArrayObject) ||
+        (hasCurlies && !looksLikeJSON && !hasBackslash && !isEverAppArrayObject);
+    }
+
+    if (isValueVar) {
+      // PMP-750 support expression arrays
+      if (val[0] === '[' && val[1] === '{' && (val.includes('},{') || val.includes('}, {'))) {
+        val = val.replace(/[[\]]+/g, '');
+      }
+      if (val.includes('},{') || val.includes('}, {')) {
+        const expressions = extractAllExpressionsFromText(val);
+        if (val[0] === '{' && val[val.length - 1] === '}' && expressions?.length === 1) {
+          try {
+            const modifiedValue = val.substring(1, val.length - 1);
+            const evaluatedValue = evalScript(modifiedValue, env).result;
+            if (evaluatedValue !== undefined) {
+              val = evaluatedValue;
+            }
+          } catch (ex) {
+            val = JSON.stringify(val.split(',')).replace(/"/g, '');
           }
-        } catch (ex) {
+        } else {
           val = JSON.stringify(val.split(',')).replace(/"/g, '');
         }
-      } else {
-        val = JSON.stringify(val.split(',')).replace(/"/g, '');
       }
-    }
 
-    // it might be CSS string, which can be decieving
-    let actuallyAString = false;
-    const expressions = extractAllExpressionsFromText(val);
-    // A expression will not have a ';' inside it.So if there is a ';' inside it, it is CSS.
-    const isCSSString = expressions.filter((e) => e.includes(';'));
-    if (isCSSString?.length) {
-      actuallyAString = true;
-    }
+      // it might be CSS string, which can be decieving
+      let actuallyAString = false;
+      const expressions = extractAllExpressionsFromText(val);
+      // A expression will not have a ';' inside it.So if there is a ';' inside it, it is CSS.
+      const isCSSString = expressions.filter((e) => e.includes(';'));
+      if (isCSSString?.length) {
+        actuallyAString = true;
+      }
 
-    // at this point, if the value fails an evalScript check, it is probably a math expression
-    try {
-      const testEnv = new Environment(env);
-      evalScript(val, testEnv);
-    } catch (err) {
-      actuallyAString = true;
-    }
-
-    if (!actuallyAString) {
+      // at this point, if the value fails an evalScript check, it is probably a math expression
       try {
         const testEnv = new Environment(env);
-        const testResult = evalScript(`let foo = ${val};`, testEnv);
-        if (testResult?.result !== null) {
-          //lets evaluat everything if first and last char are {}
-          if (val[0] === '{' && val[val.length - 1] === '}') {
-            const evaluatedValuess = evalScript(expressions[0], env).result;
-            if (evaluatedValuess !== undefined) {
-              val = evaluatedValuess;
-              actuallyAString = false;
-            } else {
-              //expression {stage.foo} + {stage.bar} was failling if we set actuallyAString= true
-              actuallyAString = expressions?.length ? false : true;
-            }
-          }
-        } else {
-          let evaluatedValue = getValue('foo', testEnv);
-          if (evaluatedValue === undefined) {
+        evalScript(val, testEnv);
+      } catch (err) {
+        actuallyAString = true;
+      }
+
+      if (!actuallyAString) {
+        try {
+          const testEnv = new Environment(env);
+          const testResult = evalScript(`let foo = ${val};`, testEnv);
+          if (testResult?.result !== null) {
             //lets evaluat everything if first and last char are {}
             if (val[0] === '{' && val[val.length - 1] === '}') {
-              try {
-                evaluatedValue = evalScript(expressions[0], env).result;
-                if (evaluatedValue !== undefined) {
-                  val = evaluatedValue;
-                  actuallyAString = false;
-                } else {
-                  actuallyAString = true;
-                }
-              } catch (ex) {
-                //console.log('asdasd');
+              const evaluatedValuess = evalScript(expressions[0], env).result;
+              if (evaluatedValuess !== undefined) {
+                val = evaluatedValuess;
+                actuallyAString = false;
+              } else {
+                //expression {stage.foo} + {stage.bar} was failling if we set actuallyAString= true
+                actuallyAString = expressions?.length ? false : true;
               }
-            }
-          }
-        }
-      } catch (e) {
-        //lets evaluat everything if first and last char are {}
-        if (val[0] === '{' && val[val.length - 1] === '}') {
-          const evaluatedValues = evalScript(expressions[0], env).result;
-          if (evaluatedValues !== undefined) {
-            val = evaluatedValues;
-            actuallyAString = false;
-          }
-        } else {
-          const containsExpression = val.match(/{([^{^}]+)}/g) || [];
-          if (containsExpression?.length) {
-            try {
-              const modifiedVal = templatizeText(val, {}, env);
-              const updatedValue = evalScript(modifiedVal, env).result;
-              if (updatedValue !== undefined) {
-                val = updatedValue;
-              }
-            } catch (ex) {
-              actuallyAString = true;
             }
           } else {
-            // if we have parsing error then we're guessing it's CSS
-            actuallyAString = true;
+            let evaluatedValue = getValue('foo', testEnv);
+            if (evaluatedValue === undefined) {
+              //lets evaluat everything if first and last char are {}
+              if (val[0] === '{' && val[val.length - 1] === '}') {
+                try {
+                  evaluatedValue = evalScript(expressions[0], env).result;
+                  if (evaluatedValue !== undefined) {
+                    val = evaluatedValue;
+                    actuallyAString = false;
+                  } else {
+                    actuallyAString = true;
+                  }
+                } catch (ex) {
+                  //console.log('asdasd');
+                }
+              }
+            }
+          }
+        } catch (e) {
+          //lets evaluat everything if first and last char are {}
+          if (val[0] === '{' && val[val.length - 1] === '}') {
+            const evaluatedValues = evalScript(expressions[0], env).result;
+            if (evaluatedValues !== undefined) {
+              val = evaluatedValues;
+              actuallyAString = false;
+            }
+          } else {
+            const containsExpression = val.match(/{([^{^}]+)}/g) || [];
+            if (containsExpression?.length) {
+              try {
+                const modifiedVal = templatizeText(val, {}, env, false, true, v.key);
+                const updatedValue = evalScript(modifiedVal, env).result;
+                if (updatedValue !== undefined) {
+                  val = updatedValue;
+                }
+              } catch (ex) {
+                actuallyAString = true;
+              }
+            } else {
+              // if we have parsing error then we're guessing it's CSS
+              actuallyAString = true;
+            }
           }
         }
       }
-    }
-    if (!actuallyAString) {
-      return `${val}`;
+      if (!actuallyAString) {
+        return `${val}`;
+      }
     }
   }
-
   if (
     v.type === CapiVariableTypes.STRING ||
     v.type === CapiVariableTypes.ENUM ||
@@ -591,9 +601,20 @@ export const templatizeText = (
   env?: Environment,
   isFromTrapStates = false,
   useFormattedText = true,
+  key?: string,
 ): string => {
-  console.log({ conditionsNeedEvaluation, text, locals });
+  let shouldEvaluateExpression = true;
 
+  const conditionsNeedEvaluations = Object.keys(locals)?.length
+    ? locals['session.conditionsNeedEvaluation']
+    : getValue('session.conditionsNeedEvaluation', defaultGlobalEnv);
+
+  if (conditionsNeedEvaluations?.length && key) {
+    shouldEvaluateExpression = conditionsNeedEvaluations.includes(key);
+  }
+  if (shouldEvaluateExpression) {
+    return text;
+  }
   let innerEnv = new Environment(env);
   // if the text contains backslash, it is probably a math exprs like: '16^{\\frac{1}{2}}=\\sqrt {16}={\\editable{}}'
   // and we should just return it as is; if it has variables inside, then we still need to evaluate it

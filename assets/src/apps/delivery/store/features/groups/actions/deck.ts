@@ -192,7 +192,7 @@ export const initializeActivity = createAsyncThunk(
       let modifiedValue = handleValueExpression(currentActivityTree, s.value, s.operator);
       modifiedValue =
         typeof modifiedValue === 'string'
-          ? templatizeText(modifiedValue, {}, defaultGlobalEnv, false)
+          ? templatizeText(modifiedValue, {}, defaultGlobalEnv, false, true, s.target)
           : modifiedValue;
 
       if (s.target.indexOf('stage.') !== 0) {
