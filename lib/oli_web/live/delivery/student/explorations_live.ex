@@ -36,7 +36,7 @@ defmodule OliWeb.Delivery.Student.ExplorationsLive do
         </div>
       </div>
       <div class="container mx-auto flex flex-col px-16">
-        <h2 class="font-bold my-6 uppercase text-gray-700">Unit 1</h2>
+        <h2 class="text-sm font-bold my-6 uppercase text-gray-700">Unit 1</h2>
 
         <div class="flex flex-col lg:flex-row-reverse items-center rounded-lg bg-black/5 dark:bg-white/5">
           <img
