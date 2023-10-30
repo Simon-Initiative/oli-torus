@@ -5,8 +5,10 @@ import { SlateOrMarkdownEditor } from 'components/editing/SlateOrMarkdownEditor'
 import {
   getExplanationContent,
   getExplanationEditor,
+  getExplanationTextDirection,
   setExplanationContent,
   setExplanationEditor,
+  setExplanationTextDirection,
 } from 'data/activities/model/explanation';
 import { EditorType } from 'data/content/resource';
 
@@ -27,6 +29,10 @@ export const Explanation: React.FC<Props> = (props) => {
       editorType={getExplanationEditor(model, props.partId)}
       allowBlockElements={true}
       projectSlug={projectSlug}
+      textDirection={getExplanationTextDirection(model, props.partId)}
+      onChangeTextDirection={(textDirection) =>
+        dispatch(setExplanationTextDirection(props.partId, textDirection))
+      }
     />
   );
 };

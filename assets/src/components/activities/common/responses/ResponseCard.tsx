@@ -5,6 +5,7 @@ import { RemoveButtonConnected } from 'components/activities/common/authoring/Re
 import { Response } from 'components/activities/types';
 import { SlateOrMarkdownEditor } from 'components/editing/SlateOrMarkdownEditor';
 import { Card } from 'components/misc/Card';
+import { TextDirection } from 'data/content/model/elements/types';
 import { ID } from 'data/content/model/other';
 import { DEFAULT_EDITOR, EditorType } from 'data/content/resource';
 import { AuthoringCheckboxConnected } from '../authoring/AuthoringCheckbox';
@@ -12,16 +13,21 @@ import { AuthoringCheckboxConnected } from '../authoring/AuthoringCheckbox';
 interface Props {
   title: React.ReactNode;
   response: Response;
+  updateFeedbackTextDirection: (responseId: ID, textDirection: TextDirection) => void;
   updateFeedbackEditor: (responseId: ID, editor: EditorType) => void;
   updateFeedback: (responseId: ID, content: Descendant[]) => void;
   updateCorrectness: (responseId: ID, correct: boolean) => void;
   removeResponse: (responseId: ID) => void;
 }
+
 export const ResponseCard: React.FC<Props> = (props) => {
   const { projectSlug } = useAuthoringElementContext();
 
   const onEditorTypeChange = (editor: EditorType) =>
     props.updateFeedbackEditor!(props.response.id, editor);
+
+  const onChangeTextDirection = (textDirection: TextDirection) =>
+    props.updateFeedbackTextDirection!(props.response.id, textDirection);
 
   const editorType = props.response.feedback.editor || DEFAULT_EDITOR;
 
@@ -48,6 +54,8 @@ export const ResponseCard: React.FC<Props> = (props) => {
           editorType={editorType}
           editMode={true}
           projectSlug={projectSlug}
+          textDirection={props.response.feedback.textDirection}
+          onChangeTextDirection={onChangeTextDirection}
         />
 
         {props.children}

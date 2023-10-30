@@ -2215,7 +2215,11 @@ defmodule Oli.Delivery.Sections do
 
             # Case 2: The course section is based on this project and was seeded from a product
             section.base_project_id == project_id and !is_nil(section.blueprint_id) ->
-              perform_update(:minor, section, project_id, new_publication, current_hierarchy)
+              if section.blueprint.apply_major_updates do
+                perform_update(:major, section, project_id, current_publication, new_publication)
+              else
+                perform_update(:minor, section, project_id, new_publication, current_hierarchy)
+              end
 
             # Case 3: The course section is a product based on this project
             section.base_project_id == project_id and section.type == :blueprint ->
