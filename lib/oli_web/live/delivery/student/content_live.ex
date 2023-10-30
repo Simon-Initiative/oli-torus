@@ -300,14 +300,24 @@ defmodule OliWeb.Delivery.Student.ContentLive do
   attr :student_progress_per_resource_id, :map
 
   def module_card(assigns) do
+    # TODO: get real url for page logo (currently using pinterest logo)
+    # and re-check size and position with Figma design (access to Figma has been required)
     ~H"""
-    <div class="hover:scale-[1.01]">
-      <div flex="h-[170px] w-[288px]">
+    <div class="relative hover:scale-[1.01]">
+      <img
+        :if={is_page(@module["revision"])}
+        class="h-6 w-6 absolute top-0 right-0 mt-2 mr-2"
+        src="https://upload.wikimedia.org/wikipedia/commons/0/08/Pinterest-logo.png"
+      />
+      <div class="h-[170px] w-[288px]">
         <div
           id={"module_#{@module["uuid"]}"}
-          phx-click="select_module"
+          phx-click={
+            if is_page(@module["revision"]), do: "navigate_to_resource", else: "select_module"
+          }
           phx-value-unit_uuid={@unit_uuid}
           phx-value-module_uuid={@module["uuid"]}
+          phx-value-slug={@module["revision"]["slug"]}
           phx-value-module_index={@module_index}
           class={[
             "flex flex-col gap-[5px] cursor-pointer rounded-xl h-[162px] w-[288px] shrink-0 mb-1 px-5 pt-[15px] bg-gray-200",
@@ -322,7 +332,10 @@ defmodule OliWeb.Delivery.Student.ContentLive do
             <%= "#{@unit_numbering_index}.#{@module_index}" %>
           </span>
           <h5 class="text-[18px] leading-[25px] font-bold"><%= @module["revision"]["title"] %></h5>
-          <div :if={!@selected} class="mt-auto flex h-[21px] justify-center items-center">
+          <div
+            :if={!@selected and !is_page(@module["revision"])}
+            class="mt-auto flex h-[21px] justify-center items-center"
+          >
             <svg
               xmlns="http://www.w3.org/2000/svg"
               width="10"
@@ -335,7 +348,7 @@ defmodule OliWeb.Delivery.Student.ContentLive do
           </div>
         </div>
         <.progress_bar
-          :if={!@selected}
+          :if={!@selected and !is_page(@module["revision"])}
           percent={
             parse_student_progress_for_resource(
               @student_progress_per_resource_id,
@@ -471,4 +484,7 @@ defmodule OliWeb.Delivery.Student.ContentLive do
       send(liveview_pid, {:student_metrics, get_student_metrics(section, current_user_id)})
     end)
   end
+
+  defp is_page(%{"resource_type_id" => resource_type_id}),
+    do: resource_type_id == Oli.Resources.ResourceType.get_id_by_type("page")
 end
