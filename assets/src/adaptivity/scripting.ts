@@ -54,8 +54,13 @@ export const getExpressionStringForValue = (
   env: Environment = defaultGlobalEnv,
 ): string => {
   let shouldEvaluateExpression = true;
+  //To improve the performance, when a lesson is opened in authoring, we generate a list of variables that contains expression and needs evaluation
+  // we stored them in conditionsNeedEvaluation in activity.content.custom.conditionsNeedEvaluation. When this function is called
+  // we only process variables that is present in conditionsNeedEvaluation array and ignore others.
   try {
     const conditionsNeedEvaluations = getValue('session.conditionsNeedEvaluation', env);
+    // if they key is not passed then it means that this function was called from the janu-text component so this logic will not apply
+    // we need to process it with the old behaviour
     if (conditionsNeedEvaluations?.length && v.key) {
       shouldEvaluateExpression = conditionsNeedEvaluations.includes(v.key);
     }
@@ -609,10 +614,15 @@ export const templatizeText = (
 ): string => {
   let shouldEvaluateExpression = true;
   try {
+    //To improve the performance, when a lesson is opened in authoring, we generate a list of variables that contains expression and needs evaluation
+    // we stored them in conditionsNeedEvaluation in activity.content.custom.conditionsNeedEvaluation. When this function is called
+    // we only process variables that is present in conditionsNeedEvaluation array and ignore others.
     const conditionsNeedEvaluations = Object.keys(locals)?.length
       ? locals['session.conditionsNeedEvaluation']
       : getValue('session.conditionsNeedEvaluation', defaultGlobalEnv);
 
+    // if they key is not passed then it means that this function was called from the janu-text component so this logic will not apply
+    // we need to process it with the old behaviour
     if (conditionsNeedEvaluations?.length && key) {
       shouldEvaluateExpression = conditionsNeedEvaluations.includes(key);
     }

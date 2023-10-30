@@ -496,6 +496,11 @@ export const loadActivities = createAsyncThunk(
         hasMoreHints: result.hasMoreHints || true,
         groupId: null,
       };
+      //To improve the performance, when a lesson is opened in authoring, we generate a list of variables that contains expression and needs evaluation
+      // we stored them in conditionsNeedEvaluation in activity.content.custom.conditionsNeedEvaluation. When this function is called
+      // we only process variables that is present in conditionsNeedEvaluation array and ignore others.
+      // Reason for storing it in activityModel.content.custom.conditionsRequiredEvaluation is because,
+      //in student mode, activityModel.authoring is not available in delivery
       if (activityModel.content.custom.conditionsRequiredEvaluation?.length) {
         setConditionsWithExpression(activityModel.content.custom.conditionsRequiredEvaluation);
       }
