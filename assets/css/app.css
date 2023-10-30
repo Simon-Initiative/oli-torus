@@ -8,6 +8,7 @@
 @import 'button';
 @import 'table';
 @import 'markdown-editor';
+@import 'ng23';
 
 /**
  * Automatically style all links with blue text and underline on hover.

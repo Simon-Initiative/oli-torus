@@ -38,7 +38,7 @@ defmodule Oli.Delivery.Sections do
   alias Oli.Delivery
   alias Ecto.Multi
   alias Oli.Delivery.Gating.GatingCondition
-  alias Oli.Delivery.Attempts.Core.ResourceAccess
+  alias Oli.Delivery.Attempts.Core.{ResourceAccess, ResourceAttempt}
   alias Oli.Delivery.Metrics
   alias Oli.Delivery.Paywall
   alias Oli.Branding.CustomLabels
@@ -3051,6 +3051,59 @@ defmodule Oli.Delivery.Sections do
       select: rev
     )
     |> Repo.one()
+  end
+
+  @doc """
+    Returns the revision_ids of the pages visited by a user in a section.
+    Instead of returning a list of revision_ids, it returns a map of revision_id to true,
+    to make it more efficient to check if a page was visited (O(1) instead of O(n)).
+
+    %{
+      7185 => true,
+      7349 => true
+    }
+  """
+  def get_visited_pages(section_id, user_id) do
+    page_resource_type_id = Oli.Resources.ResourceType.get_id_by_type("page")
+
+    from(ra in ResourceAccess,
+      join: r_att in ResourceAttempt,
+      on: r_att.resource_access_id == ra.id,
+      join: rev in Revision,
+      on: r_att.revision_id == rev.id,
+      where:
+        rev.resource_type_id == ^page_resource_type_id and ra.section_id == ^section_id and
+          ra.user_id == ^user_id,
+      select: {rev.id, true}
+    )
+    |> Repo.all()
+    |> Enum.into(%{})
+  end
+
+  @doc """
+  Returns all the resource_ids of a section grouped by resource type.
+
+  %{
+    "activity" => [4630, 6927, 593],
+    "container" => [7742, 7743, 7744, 7745],
+    "objective" => [4260, 4249, 4308, 4309, 4277, 4254, 4316],
+    "page" => [7400, 7568, 7436, 7714, 7165, 7433, 7181, 7451, 7592, 7449, 7587,
+    7638, 7286, 7564, 7244, 7172, 7404, 7424],
+    "tag" => [3986, 4035, 4102, 3959, 4205, 3975, 4235, 4134, 4087, 4075, 4165,
+    4036, 4052, 3973, 4023, 4030]
+  }
+  """
+
+  def get_resource_ids_group_by_resource_type(section_slug) do
+    from([_sr, _s, _spp, _pr, rev] in DeliveryResolver.section_resource_revisions(section_slug),
+      join: rt in ResourceType,
+      on: rt.id == rev.resource_type_id,
+      select: {rt.type, rev.resource_id}
+    )
+    |> Repo.all()
+    |> Enum.group_by(fn {resource_type, _resource_id} -> resource_type end, fn {_, resource_id} ->
+      resource_id
+    end)
   end
 
   @doc """
