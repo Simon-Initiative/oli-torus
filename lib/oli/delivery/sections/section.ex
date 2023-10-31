@@ -136,6 +136,8 @@ defmodule Oli.Delivery.Sections.Section do
 
     field(:page_prompt_template, :string)
 
+    # we store the full section hierarchy to avoid having to build it on the fly when needed.
+    field :full_hierarchy, :map, default: %{}
     # Allow major project publications to be applied to course sections created from this product
     field(:apply_major_updates, :boolean, default: false)
 
@@ -194,6 +196,7 @@ defmodule Oli.Delivery.Sections.Section do
       :preferred_scheduling_time,
       :v25_migration,
       :page_prompt_template,
+      :full_hierarchy,
       :apply_major_updates
     ])
     |> cast_embed(:customizations, required: false)

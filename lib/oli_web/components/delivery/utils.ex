@@ -294,6 +294,7 @@ defmodule OliWeb.Components.Delivery.Utils do
   Returns the course week number of a resource based on the section start date
   """
   def week_number(_section_start_date, nil), do: "not yet scheduled"
+  def week_number(_section_start_date, "not yet scheduled"), do: "not yet scheduled"
 
   def week_number(section_start_datetime, resource_datetime) do
     case Date.diff(
