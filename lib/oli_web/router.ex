@@ -412,6 +412,8 @@ defmodule OliWeb.Router do
     post("/:project_id/export", ProjectController, :download_export)
     post("/:project_id/duplicate", ProjectController, :clone_project)
 
+    live("/:project_id/embeddings", Search.EmbeddingsLive)
+
     # Alternatives Groups
     live("/:project_id/alternatives", Resources.AlternativesEditor)
 

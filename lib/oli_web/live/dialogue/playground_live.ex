@@ -2,6 +2,7 @@ defmodule OliWeb.Dialogue.PlaygroundLive do
   use Phoenix.LiveView, layout: {OliWeb.LayoutView, :live_no_flash}
   use Phoenix.HTML
   import Ecto.Query, warn: false
+
   alias Oli.Repo
   import Phoenix.Component
 
@@ -223,7 +224,7 @@ defmodule OliWeb.Dialogue.PlaygroundLive do
   def handle_info({:reply_finished}, socket) do
     case socket.assigns.function_call do
       nil ->
-        message = Earmark.as_html!(socket.assigns.active_message, all: true)
+        message = Earmark.as_html!(socket.assigns.active_message)
         dialogue = Dialogue.add_message(socket.assigns.dialogue, Message.new(:assistant, message))
 
         {:noreply, assign(socket, dialogue: dialogue, streaming: false, active_message: nil)}
@@ -276,6 +277,32 @@ defmodule OliWeb.Dialogue.PlaygroundLive do
 
   def up_next(%{"current_user_id" => user_id, "section_id" => section_id}) do
     get_next_activities_for_student(section_id, user_id)
+  end
+
+  def relevant_course_content(%{"student_input" => input, "section_id" => section_id}) do
+    section = Oli.Delivery.Sections.get_section!(section_id)
+
+    case Oli.Search.Embeddings.most_relevant_pages(input, section_id) do
+      {:ok, relevant_pages} ->
+        Enum.map(relevant_pages, fn page ->
+          revision = Oli.Resources.get_revision!(page.revision_id)
+
+          content =
+            Enum.map(page.chunks, fn chunk ->
+              chunk.content
+            end)
+            |> Enum.join("\n\n")
+
+          %{
+            title: page.title,
+            url: Routes.page_delivery_url(OliWeb.Endpoint, :page, section.slug, revision.slug),
+            content: content
+          }
+        end)
+
+      e ->
+        e
+    end
   end
 
   def get_next_activities_for_student(section_id, user_id) do

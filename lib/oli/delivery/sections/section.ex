@@ -138,6 +138,8 @@ defmodule Oli.Delivery.Sections.Section do
 
     # we store the full section hierarchy to avoid having to build it on the fly when needed.
     field :full_hierarchy, :map, default: %{}
+    # Allow major project publications to be applied to course sections created from this product
+    field(:apply_major_updates, :boolean, default: false)
 
     timestamps(type: :utc_datetime)
   end
@@ -194,7 +196,8 @@ defmodule Oli.Delivery.Sections.Section do
       :preferred_scheduling_time,
       :v25_migration,
       :page_prompt_template,
-      :full_hierarchy
+      :full_hierarchy,
+      :apply_major_updates
     ])
     |> cast_embed(:customizations, required: false)
     |> validate_required([
@@ -205,7 +208,7 @@ defmodule Oli.Delivery.Sections.Section do
     ])
     |> validate_required_if([:amount], &requires_payment?/1)
     |> validate_required_if([:grace_period_days], &has_grace_period?/1)
-    |> validate_required_if([:publisher_id], &is_product?/1)
+    |> validate_required_if([:publisher_id, :apply_major_updates], &is_product?/1)
     |> foreign_key_constraint_if(:publisher_id, &is_product?/1)
     |> validate_positive_grace_period()
     |> Oli.Delivery.Utils.validate_positive_money(:amount)

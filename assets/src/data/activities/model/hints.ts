@@ -16,6 +16,10 @@ interface Hints extends Omit<List<Hint>, 'addOne' | 'removeOne'> {
   addCognitiveHint(hint: Hint, partId: string): (model: HasHints, _post: PostUndoable) => void;
   setContent(id: string, content: RichText): (model: HasHints, _post: PostUndoable) => void;
   setEditor(id: string, mode: EditorType): (model: HasHints, _post: PostUndoable) => void;
+  setTextDirection(
+    id: string,
+    direction: 'ltr' | 'rtl',
+  ): (model: HasHints, _post: PostUndoable) => void;
   removeOne: (id: string, partId: string) => (model: any, post: PostUndoable) => void;
 }
 
@@ -49,6 +53,12 @@ export const Hints: Hints = {
       // right before the bottomOut hint at the end of the list
       const bottomOutIndex = Hints.byPart(model, partId).length - 1;
       model.authoring.parts.find((p) => p.id === partId)?.hints.splice(bottomOutIndex, 0, hint);
+    };
+  },
+
+  setTextDirection(id: string, direction: 'ltr' | 'rtl') {
+    return (model: HasHints, _post: PostUndoable) => {
+      Hints.getOne(model, id).textDirection = direction;
     };
   },
 

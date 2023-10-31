@@ -136,4 +136,15 @@ defmodule Oli.Authoring.Broadcaster do
       {:datashop_export_status, status}
     )
   end
+
+  @doc """
+  Broadcasts a datashop export status update
+  """
+  def broadcast_revision_embedding(publication_id, status) do
+    PubSub.broadcast(
+      Oli.PubSub,
+      message_revision_embedding(publication_id),
+      {:revision_embedding_complete, status}
+    )
+  end
 end

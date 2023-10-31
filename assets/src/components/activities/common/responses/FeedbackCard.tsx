@@ -4,6 +4,7 @@ import { useAuthoringElementContext } from 'components/activities/AuthoringEleme
 import { Feedback } from 'components/activities/types';
 import { SlateOrMarkdownEditor } from 'components/editing/SlateOrMarkdownEditor';
 import { Card } from 'components/misc/Card';
+import { TextDirection } from 'data/content/model/elements/types';
 import { ID } from 'data/content/model/other';
 import { DEFAULT_EDITOR, EditorType } from 'data/content/resource';
 
@@ -12,9 +13,10 @@ export const FeedbackCard: React.FC<{
   title: React.ReactNode;
   update: (id: ID, content: Descendant[]) => void;
   updateEditor: (editor: EditorType) => void;
+  updateTextDirection: (textDirection: TextDirection) => void;
   placeholder?: string;
   children: any;
-}> = ({ title, feedback, update, placeholder, children, updateEditor }) => {
+}> = ({ title, feedback, update, placeholder, children, updateEditor, updateTextDirection }) => {
   const { projectSlug } = useAuthoringElementContext();
   return (
     <Card.Card>
@@ -29,6 +31,8 @@ export const FeedbackCard: React.FC<{
           editorType={feedback.editor || DEFAULT_EDITOR}
           allowBlockElements={true}
           projectSlug={projectSlug}
+          textDirection={feedback.textDirection}
+          onChangeTextDirection={updateTextDirection}
         />
         {/* <RichTextEditorConnected
           placeholder={placeholder === undefined ? 'Enter feedback' : placeholder}

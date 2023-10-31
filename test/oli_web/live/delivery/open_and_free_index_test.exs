@@ -54,12 +54,15 @@ defmodule OliWeb.Delivery.OpenAndFreeIndexTest do
 
       {:ok, view, _html} = live(conn, ~p"/sections")
 
-      assert render(view)
-             |> Floki.parse_document!()
-             |> Floki.find(~s{div[data-live-react-class="Components.UserAccountMenu"]})
-             |> Floki.attribute("data-live-react-props")
-             |> hd =~
-               ~s{\"roleColor\":\"#2ecc71\",\"roleLabel\":\"Instructor\"}
+      props =
+        render(view)
+        |> Floki.parse_document!()
+        |> Floki.find(~s{div[data-live-react-class="Components.UserAccountMenu"]})
+        |> Floki.attribute("data-live-react-props")
+        |> hd()
+
+      assert props =~ ~s{\"roleColor\":\"#2ecc71\"}
+      assert props =~ ~s{\"roleLabel\":\"Instructor\"}
     end
 
     test "gets the 'student' label role in the user account menu if the user with platform_role=student can not create sections",
@@ -76,12 +79,15 @@ defmodule OliWeb.Delivery.OpenAndFreeIndexTest do
 
       {:ok, view, _html} = live(conn, ~p"/sections")
 
-      assert render(view)
-             |> Floki.parse_document!()
-             |> Floki.find(~s{div[data-live-react-class="Components.UserAccountMenu"]})
-             |> Floki.attribute("data-live-react-props")
-             |> hd =~
-               ~s{\"roleColor\":\"#3498db\",\"roleLabel\":\"Student\"}
+      props =
+        render(view)
+        |> Floki.parse_document!()
+        |> Floki.find(~s{div[data-live-react-class="Components.UserAccountMenu"]})
+        |> Floki.attribute("data-live-react-props")
+        |> hd()
+
+      assert props =~ ~s{\"roleLabel\":\"Student\"}
+      assert props =~ ~s{\"roleColor\":\"#3498db\"}
     end
 
     test "renders product title, image and description in sections index with a link to acces to it",
