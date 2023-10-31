@@ -11,6 +11,9 @@ export const Stem: React.FC = () => {
       stem={model.stem}
       onEdit={(content) => dispatch(StemActions.editStemAndPreviewText(content))}
       onChangeEditorType={(editorType) => dispatch(StemActions.changeEditorMode(editorType))}
+      onChangeTextDirection={(textDirection) =>
+        dispatch(StemActions.changeTextDirection(textDirection))
+      }
       editMode={editMode}
       projectSlug={projectSlug}
     />

@@ -276,8 +276,8 @@ defmodule OliWeb.Projects.OverviewLive do
       ) %>
 
       <Overview.section
-        title="Collaboration Space"
-        description="Allows to activate and configure a collaborative space for the root resource of a project."
+        title="Collaboration Spaces"
+        description="Manage the Collaborative Spaces within the project."
       >
         <div class="container mx-auto">
           <%= live_render(@socket, OliWeb.CollaborationLive.CollabSpaceConfigView,

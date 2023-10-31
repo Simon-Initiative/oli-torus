@@ -18,6 +18,9 @@ janus-multi-line-text label {
   width: 100%;
   padding-bottom: 0.5rem;
   min-height: 1rem;
+
+  font-size: 1em;
+  margin-bottom: 10px;
 }
 
 /*-- input --*/
@@ -33,7 +36,7 @@ janus-multi-line-text textarea {
   background-color: $lightBackgroundGrey;
   border: 1px solid $lightBackgroundGrey;
   color: $lightForeground;
-  font-size: 14px;
+  font-size: 1em !important;
   line-height: 18px;
   @include control-border;
 }
@@ -103,6 +106,6 @@ janus-input-number .unitsLabel {
   font-family: 'Open Sans';
   font-style: normal;
   font-weight: 400;
-  font-size: 10px;
+  font-size: 14px;
   line-height: 18px;
 }

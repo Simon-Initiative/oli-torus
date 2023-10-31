@@ -21,6 +21,8 @@ type Props = {
   normalizerContext?: NormalizerContext;
   fixedToolbar?: boolean;
   allowBlockElements?: boolean;
+  textDirection?: 'ltr' | 'rtl';
+  onChangeTextDirection?: (textDirection: 'ltr' | 'rtl') => void;
   onEdit: (value: Descendant[], editor: SlateEditor, operations: Operation[]) => void;
   onRequestMedia?: (request: MediaItemRequest) => Promise<string | boolean>;
 };
@@ -38,6 +40,8 @@ export const RichTextEditor: React.FC<Props> = ({
   onEdit,
   onRequestMedia,
   children,
+  textDirection,
+  onChangeTextDirection,
 }) => {
   // Support content persisted when RichText had a `model` property.
   value = (value as any).model ? (value as any).model : value;
@@ -54,6 +58,8 @@ export const RichTextEditor: React.FC<Props> = ({
           commandContext={commandContext ?? { projectSlug: projectSlug }}
           onEdit={onEdit}
           value={value}
+          textDirection={textDirection}
+          onChangeTextDirection={onChangeTextDirection}
           toolbarInsertDescs={blockInsertOptions({
             type: allowBlockElements ? 'extended' : 'inline',
             onRequestMedia: onRequestMedia,
@@ -78,4 +84,8 @@ export const RichTextEditorConnected: React.FC<Omit<Props, 'projectSlug' | 'edit
       {...props}
     />
   );
+};
+
+RichTextEditorConnected.defaultProps = {
+  textDirection: 'ltr',
 };

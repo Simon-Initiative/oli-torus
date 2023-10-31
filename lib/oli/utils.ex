@@ -254,6 +254,35 @@ defmodule Oli.Utils do
     end)
   end
 
+  @doc """
+  Updates specific fields in a given Ecto changeset using a provided function.
+
+  ## Parameters:
+
+  - `changeset`: An Ecto.Changeset that contains the changes we want to apply to.
+  - `fields`: A list of fields (atoms) that we want to update within the changeset.
+  - `fun`: A function that will be applied to the current value of each specified field in the changeset. This function should accept the current value of the field and return the new value.
+
+  ## Returns:
+
+  - A new Ecto.Changeset with the specified fields updated based on the provided function.
+
+  ## Example:
+
+  Suppose you have a changeset for a User schema and you want to update the fields `:first_name` and `:last_name` to be in uppercase:
+
+      changeset = %Ecto.Changeset{data: %User{first_name: "john", last_name: "doe"}}
+      updated_changeset = update_changes(changeset, [:first_name, :last_name], &String.upcase/1)
+
+  The `updated_changeset` will now contain the values "JOHN" for `:first_name` and "DOE" for `:last_name`.
+
+  """
+  def update_changes(changeset, fields, fun) do
+    Enum.reduce(fields, changeset, fn field, changeset ->
+      Ecto.Changeset.update_change(changeset, field, fun)
+    end)
+  end
+
   @spec read_json_file(
           binary
           | maybe_improper_list(

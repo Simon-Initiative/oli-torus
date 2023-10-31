@@ -13,6 +13,7 @@ import { ModelEditorProps } from '../schema';
 interface FeedbackProps extends ModelEditorProps {
   onEditResponse: (score: number, content: Descendant[]) => void;
   onEditEditorType: (score: number, editor: EditorType) => void;
+  onChangeTextDirection: (score: number, textDirection: 'ltr' | 'rtl') => void;
   projectSlug: ProjectSlug;
   onRequestMedia: any;
 }
@@ -40,6 +41,8 @@ const Item = (props: ItemProps) => {
         onEditorTypeChange={(editor) => props.onEditEditorType(score, editor)}
         editorType={feedback.editor || DEFAULT_EDITOR}
         allowBlockElements={true}
+        onChangeTextDirection={(dir) => props.onChangeTextDirection(score, dir)}
+        textDirection={feedback.textDirection}
       />
     </div>
   );
