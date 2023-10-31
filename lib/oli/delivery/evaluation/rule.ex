@@ -142,10 +142,23 @@ defmodule Oli.Delivery.Evaluation.Rule do
   # checks the precision
   defp check_precision(str, count) when is_binary(str) do
     digit_count =
-      str
-      |> String.split("")
-      |> Enum.filter(&is_digit?/1)
-      |> Enum.count()
+      case String.split(str, ".") do
+        ["0", decimal] ->
+          decimal
+          |> String.replace_leading("0", "")
+          |> String.split("")
+          |> Enum.filter(&is_digit?/1)
+          |> Enum.count()
+
+        [_integer, _decimal] ->
+          str
+          |> String.split("")
+          |> Enum.filter(&is_digit?/1)
+          |> Enum.count()
+
+        [integer] ->
+          integer |> String.split("") |> Enum.filter(&is_digit?/1) |> Enum.count()
+      end
 
     digit_count == count
   end
