@@ -163,7 +163,7 @@ defmodule OliWeb.Delivery.Student.ContentLive do
           </div>
         </div>
       </div>
-      <div class="flex gap-4 overflow-x-scroll pt-[2px] pl-[2px] -mt-[2px] -ml-[2px]">
+      <div class="flex gap-4 overflow-x-auto overflow-y-hidden pt-[2px] pl-[2px] -mt-[2px] -ml-[2px]">
         <.intro_card
           :if={@unit.revision.intro_video || @unit.revision.poster_image}
           bg_image_url={@unit.revision.poster_image}
@@ -307,7 +307,7 @@ defmodule OliWeb.Delivery.Student.ContentLive do
   def module_card(assigns) do
     # TODO: render real student progress for module
     ~H"""
-    <div class="hover:scale-[1.01]">
+    <div class="hover:scale-[1.01] transition-transform duration-150">
       <div flex="h-[170px] w-[288px]">
         <div
           id={"module_#{@module.uuid}"}
@@ -372,31 +372,9 @@ defmodule OliWeb.Delivery.Student.ContentLive do
     """
   end
 
-  attr(:percent, :integer, required: true)
-  attr(:width, :string, default: "100%")
-  attr(:show_percent, :boolean, default: true)
-
-  def progress_bar(assigns) do
-    ~H"""
-    <div class="flex flex-row items-center mx-auto">
-      <div class="flex justify-center w-full">
-        <div class="rounded-full bg-gray-200 h-1" style={"width: #{@width}"}>
-          <div class="rounded-full bg-[#1E9531] h-1" style={"width: #{@percent}%"}></div>
-        </div>
-      </div>
-      <div :if={@show_percent} class="text-[16px] leading-[32px] tracking-[0.02px] font-bold">
-        <%= @percent %>%
-      </div>
-    </div>
-    """
-  end
-
-  _docp = """
-    Currently the intro_content for a revision does not support h1 tags. So,
-    if there is no <h1> tag in the content then we need to add an aditional margin
-    to match the given figma design.
-  """
-
+  # Currently the intro_content for a revision does not support h1 tags. So,
+  # if there is no <h1> tag in the content then we need to add an additional margin
+  # to match the given figma design.
   defp maybe_additional_margin_top(content) do
     if !String.contains?(Jason.encode!(content), "\"type\":\"h1\""), do: "mt-[52px]"
   end

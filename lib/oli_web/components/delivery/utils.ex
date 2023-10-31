@@ -275,6 +275,7 @@ defmodule OliWeb.Components.Delivery.Utils do
   def socket_or_conn(%{conn: conn} = _assigns), do: conn
 
   attr(:percent, :integer, required: true)
+  attr(:show_percent, :boolean, default: false)
   attr(:width, :string, default: "100%")
 
   def progress_bar(assigns) do
