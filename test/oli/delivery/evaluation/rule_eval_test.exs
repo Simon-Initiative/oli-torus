@@ -204,6 +204,7 @@ defmodule Oli.Delivery.Evaluation.RuleEvalTest do
   test "evaluating float and integer precision" do
     # precision specified, should evaluate matching precision to true
     assert eval("attemptNumber = {1} && input = {3.1#2}", "3.1")
+    assert eval("attemptNumber = {1} && input = {0.36#2}", "0.36")
 
     # no precision specified, should evaluate extra precision to true
     assert eval("attemptNumber = {1} && input = {3.1}", "3.10")
@@ -211,7 +212,7 @@ defmodule Oli.Delivery.Evaluation.RuleEvalTest do
     # precision specified, should evaluate extra precision to false
     refute eval("attemptNumber = {1} && input = {3.1#2}", "3.10")
 
-    assert eval("attemptNumber = {1} && input = {0.001#4}", "0.001")
+    assert eval("attemptNumber = {1} && input = {0.001#1}", "0.001")
     assert eval("attemptNumber = {1} && input = {3.100#4}", "3.100")
 
     # eval returns false, although the precision is correct the value is wrong
