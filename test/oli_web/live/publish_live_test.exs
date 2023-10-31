@@ -255,11 +255,11 @@ defmodule OliWeb.PublishLiveTest do
 
       assert view
              |> element(".publish_changes_table tr:first-child > td:nth-child(3)")
-             |> render() =~ "Structural"
+             |> render() =~ "Major"
 
       assert view
              |> element(".publish_changes_table tr:last-child > td:nth-child(3)")
-             |> render() =~ "Non-structural"
+             |> render() =~ "Minor"
     end
 
     test "applies sorting to publication details table", %{
