@@ -51,7 +51,7 @@ defmodule OliWeb.Delivery.Student.ContentLive do
           selected_module_index: selected_module_index
         )
       end
-      |> push_event("scroll-to-target", %{id: "unit_#{unit_uuid}"})
+      |> push_event("scroll-to-target", %{id: "unit_#{unit_uuid}", offset: 80})
 
     {:noreply, socket}
   end
