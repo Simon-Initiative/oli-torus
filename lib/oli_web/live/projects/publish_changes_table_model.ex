@@ -43,7 +43,7 @@ defmodule OliWeb.Projects.PublishChangesTableModel do
     ~H"""
     <div data-is-structural={if @is_structural, do: "true", else: "false"}>
       <span class={if @is_structural, do: "font-bold", else: "font-light"}>
-        <%= if @is_structural, do: "Structural", else: "Non-structural" %>
+        <%= if @is_structural, do: "Major", else: "Minor" %>
       </span>
     </div>
     """
