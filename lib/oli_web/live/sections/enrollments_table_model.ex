@@ -106,25 +106,13 @@ defmodule OliWeb.Delivery.Sections.EnrollmentsTableModel do
         family_name: family_name,
         given_name: given_name,
         link:
-          case Map.get(assigns.ctx, :is_enrollment_page) do
-            true ->
-              Routes.enrollment_student_info_path(
-                OliWeb.Endpoint,
-                OliWeb.Delivery.StudentDashboard.StudentDashboardLive,
-                assigns.section.slug,
-                id,
-                :content
-              )
-
-            _ ->
-              Routes.live_path(
-                OliWeb.Endpoint,
-                OliWeb.Delivery.StudentDashboard.StudentDashboardLive,
-                assigns.section.slug,
-                id,
-                :content
-              )
-          end
+          Routes.live_path(
+            OliWeb.Endpoint,
+            OliWeb.Delivery.StudentDashboard.StudentDashboardLive,
+            assigns.section.slug,
+            id,
+            :content
+          )
       })
 
     ~H"""

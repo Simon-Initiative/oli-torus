@@ -69,33 +69,6 @@ defmodule OliWeb.Delivery.StudentDashboard.InitialAssigns do
       if !is_nil(params["container_id"]), do: %{container_id: params["container_id"]}, else: %{}
 
     case socket.assigns[:route_name] do
-      :enrollments_student_info ->
-        [
-          Breadcrumb.new(%{
-            full_title: "Manage Section",
-            link:
-              Routes.live_path(
-                OliWeb.Endpoint,
-                OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
-                socket.assigns.section.slug,
-                :manage
-              )
-          }),
-          Breadcrumb.new(%{
-            full_title: "Enrollments",
-            link:
-              Routes.live_path(
-                OliWeb.Endpoint,
-                OliWeb.Sections.EnrollmentsViewLive,
-                socket.assigns.section.slug,
-                url_params
-              )
-          }),
-          Breadcrumb.new(%{
-            full_title: "#{Utils.user_name(socket.assigns.student)} information"
-          })
-        ]
-
       :student_dashboard_preview ->
         [
           Breadcrumb.new(%{

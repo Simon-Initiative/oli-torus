@@ -224,16 +224,6 @@ defmodule OliWeb.Sections.OverviewView do
       </Group.render>
       <Group.render label="Manage" description="Manage all aspects of course delivery">
         <ul class="link-list">
-          <li>
-            <a
-              href={
-                Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.EnrollmentsViewLive, @section.slug)
-              }
-              class="btn btn-link"
-            >
-              Manage Enrollments
-            </a>
-          </li>
           <%= if @section.open_and_free do %>
             <li>
               <a
