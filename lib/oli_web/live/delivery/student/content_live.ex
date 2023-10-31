@@ -146,7 +146,11 @@ defmodule OliWeb.Delivery.Student.ContentLive do
           </div>
         </div>
       </div>
-      <div class="flex gap-4 overflow-x-scroll pt-[2px] pl-[2px] -mt-[2px] -ml-[2px]">
+      <div
+        id={"slider_#{@unit["uuid"]}"}
+        phx-hook="SliderCenterScroll"
+        class="flex gap-4 overflow-x-scroll overflow-y-hidden h-[178px] pt-[3px] px-[3px] -mt-[2px] -ml-[2px]"
+      >
         <.intro_card
           :if={@unit["revision"]["intro_video"] || @unit["revision"]["poster_image"]}
           bg_image_url={@unit["revision"]["poster_image"]}
@@ -186,7 +190,6 @@ defmodule OliWeb.Delivery.Student.ContentLive do
       </div>
       <div class="mt-[62px] w-1/2">
         <.index module={@selected_module} module_index={@selected_module_index} />
-        <p class="py-2 text-[14px] leading-[30px] font-normal"></p>
       </div>
     </div>
     """
@@ -249,7 +252,7 @@ defmodule OliWeb.Delivery.Student.ContentLive do
 
   def intro_card(assigns) do
     ~H"""
-    <div class="hover:scale-[1.01]">
+    <div class="slider-card hover:scale-[1.01]">
       <div class={[
         "flex flex-col items-center rounded-lg h-[162px] w-[288px] bg-gray-200 shrink-0 px-5 pt-[15px]",
         if(@bg_image_url in ["", nil],
@@ -296,7 +299,7 @@ defmodule OliWeb.Delivery.Student.ContentLive do
 
   def module_card(assigns) do
     ~H"""
-    <div class="relative hover:scale-[1.01]">
+    <div class="slider-card relative hover:scale-[1.01]">
       <.page_icon :if={is_page(@module["revision"])} />
       <div class="h-[170px] w-[288px]">
         <div
