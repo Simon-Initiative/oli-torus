@@ -154,7 +154,7 @@ defmodule OliWeb.Delivery.Student.ContentLive do
         id={"slider_#{@unit["uuid"]}"}
         role="slider"
         phx-hook="SliderCenterScroll"
-        class="flex gap-4 overflow-x-scroll overflow-y-hidden h-[178px] pt-[3px] px-[3px] -mt-[2px] -ml-[2px]"
+        class="flex gap-4 overflow-x-scroll overflow-y-hidden h-[178px] pt-[3px] px-[3px] -mt-[2px] -ml-[2px] scrollbar-hide"
       >
         <.intro_card
           :if={@unit["revision"]["intro_video"] || @unit["revision"]["poster_image"]}

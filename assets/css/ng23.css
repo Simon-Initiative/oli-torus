@@ -13,3 +13,13 @@ https://tailwindcss.com/docs/utility-first
 .intro-content h1 {
   @apply mb-[20px] text-2xl tracking-[0.02px] font-light dark:text-white;
 }
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* For IE, Edge and Firefox */
+.scrollbar-hide {
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
+}
