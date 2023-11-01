@@ -5,7 +5,6 @@ defmodule OliWeb.Delivery.Student.ContentLive do
 
   alias OliWeb.Common.FormatDateTime
   alias Oli.Delivery.{Metrics, Sections}
-  alias OliWeb.Components.Delivery.Utils
 
   def mount(_params, _session, socket) do
     # when updating to Liveview 0.20 we should replace this with assign_async/3
@@ -125,13 +124,7 @@ defmodule OliWeb.Delivery.Student.ContentLive do
         <div class="flex items-center w-full">
           <div class="flex items-center gap-3" role="schedule_details">
             <div class="text-[14px] leading-[32px] tracking-[0.02px] font-semibold">
-              <span class="text-gray-400 opacity-80">Week</span> <%= Utils.week_number(
-                @section_start_date,
-                to_datetime(@unit["section_resource"]["start_date"])
-              ) %>
-            </div>
-            <div class="text-[14px] leading-[32px] tracking-[0.02px] font-semibold">
-              <span class="text-gray-400 opacity-80">Complete by:</span> <%= parse_datetime(
+              <span class="text-gray-400 opacity-80 mr-1">Complete By:</span><%= parse_datetime(
                 @unit["section_resource"]["end_date"],
                 @ctx
               ) %>
@@ -434,7 +427,7 @@ defmodule OliWeb.Delivery.Student.ContentLive do
     string_datetime
     |> to_datetime
     |> FormatDateTime.convert_datetime(ctx)
-    |> Timex.format!("{WDshort} {Mshort} {D}, {YYYY}")
+    |> Timex.format!("{WDshort} {Mshort} {D}, {YYYY} ({h12}:{m}{am})")
   end
 
   defp to_datetime(nil), do: "not yet scheduled"
