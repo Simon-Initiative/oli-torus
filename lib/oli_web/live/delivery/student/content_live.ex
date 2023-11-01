@@ -95,7 +95,6 @@ defmodule OliWeb.Delivery.Student.ContentLive do
         <.unit
           :for={child <- @section.full_hierarchy["children"]}
           unit={child}
-          section_start_date={@section.start_date}
           ctx={@ctx}
           unit_selected={child["uuid"] == @selected_unit_uuid}
           selected_module={@selected_module}
@@ -112,7 +111,6 @@ defmodule OliWeb.Delivery.Student.ContentLive do
   attr :unit_selected, :boolean, default: false
   attr :selected_module, :map
   attr :selected_module_index, :string
-  attr :section_start_date, :string, doc: "required to calculate the week number"
   attr :student_progress_per_resource_id, :map
 
   def unit(assigns) do
