@@ -251,7 +251,7 @@ defmodule OliWeb.Delivery.Student.ContentLive do
             />
           </svg>
           <span class="text-[12px] leading-[16px] font-bold uppercase tracking-[0.96px] w-[15px] text-right">
-            <%= page["revision"]["duration_minutes"] %>
+            <%= parse_minutes(page["revision"]["duration_minutes"]) %>
           </span>
           <span class="text-[12px] leading-[16px] font-bold uppercase tracking-[0.96px]">
             min
@@ -520,6 +520,9 @@ defmodule OliWeb.Delivery.Student.ContentLive do
     |> round()
     |> trunc()
   end
+
+  defp parse_minutes(minutes) when minutes in ["", nil], do: "?"
+  defp parse_minutes(minutes), do: minutes
 
   defp async_calculate_student_metrics(liveview_pid, section, current_user_id) do
     Task.async(fn ->
