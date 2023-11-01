@@ -3,6 +3,7 @@ defmodule OliWeb.Delivery.Student.ExplorationsLive do
 
   import OliWeb.Components.Delivery.Layouts
 
+  alias Oli.Accounts.User
   alias OliWeb.Common.SessionContext
   alias Oli.Publishing.DeliveryResolver
   alias Oli.Rendering.Content
@@ -11,17 +12,18 @@ defmodule OliWeb.Delivery.Student.ExplorationsLive do
   def mount(_params, _session, socket) do
     explorations = DeliveryResolver.get_by_purpose(socket.assigns.section.slug, :application)
 
-    # TODO: Replace with real implementation that sorts by week
+    # TODO: Replace with real implementation that sorts by week. For now, just render all
+    # explorations without week headers
     explorations_by_week = %{
-      1 => explorations
+      0 => explorations
     }
 
     %{ctx: ctx, section: section} = socket.assigns
-    explorations_progress = calculate_explorations_progress(section, ctx.user.id, explorations)
+    explorations_progress = calculate_explorations_progress(section, ctx, explorations)
 
     # TODO: Replace with real average score
-    average_score = 46
-    average_score_out_of = 60
+    average_score = "--"
+    average_score_out_of = "--"
 
     {:ok,
      assign(socket,
@@ -48,25 +50,31 @@ defmodule OliWeb.Delivery.Student.ExplorationsLive do
             <p>All your explorations in one place.</p>
             <p>You unlock explorations as you solve problems and gain useful skills.</p>
           </div>
-          <div class="lg:flex-1 flex flex-col mt-8 lg:mt-0 lg:ml-8">
-            <div class="my-2 uppercase gap-2 lg:gap-8 columns-2">
-              <div class="font-bold">Exploration Progress</div>
-              <.progress_bar percent={@explorations_progress} width="80%" show_percent={true} />
+          <%= if @explorations_progress do %>
+            <div class="lg:flex-1 flex flex-col mt-8 lg:mt-0 lg:ml-8">
+              <div class="my-2 uppercase gap-2 lg:gap-8 columns-2">
+                <div class="font-bold">Exploration Progress</div>
+                <.progress_bar percent={@explorations_progress} width="80%" show_percent={true} />
+              </div>
+              <div class="my-2 uppercase gap-2 lg:gap-8 columns-2">
+                <div class="font-bold">Average Score</div>
+                <div class="flex justify-end">
+                  <%= "#{@average_score}/#{@average_score_out_of}" %>
+                </div>
+              </div>
             </div>
-            <div class="my-2 uppercase gap-2 lg:gap-8 columns-2">
-              <div class="font-bold">Average Score</div>
-              <div class="flex justify-end"><%= "#{@average_score}/#{@average_score_out_of}" %></div>
-            </div>
-          </div>
+          <% end %>
         </div>
       </div>
-      <div class="container mx-auto flex flex-col px-16">
+      <div class="container mx-auto flex flex-col mt-6 px-16">
         <div :if={Enum.count(@explorations_by_week) == 0} class="text-center" role="alert">
           <h6>There are no explorations available</h6>
         </div>
 
         <%= for {week, explorations} <- @explorations_by_week do %>
-          <h2 class="text-sm font-bold my-6 uppercase text-gray-700">Week <%= week %></h2>
+          <h2 :if={week > 0} class="text-sm font-bold my-6 uppercase text-gray-700">
+            Week <%= week %>
+          </h2>
 
           <.exploration_card
             :for={exploration <- explorations}
@@ -144,30 +152,36 @@ defmodule OliWeb.Delivery.Student.ExplorationsLive do
     end
   end
 
-  defp calculate_explorations_progress(section, user_id, explorations) do
-    page_ids =
-      explorations
-      |> Enum.map(fn exploration -> exploration.resource_id end)
+  defp calculate_explorations_progress(section, ctx, explorations) do
+    case ctx.user do
+      %User{id: user_id} ->
+        page_ids =
+          explorations
+          |> Enum.map(fn exploration -> exploration.resource_id end)
 
-    progress_by_exploration =
-      Metrics.progress_across_for_pages(section.id, page_ids, user_id)
+        progress_by_exploration =
+          Metrics.progress_across_for_pages(section.id, page_ids, user_id)
 
-    explorations_progress =
-      page_ids
-      |> Enum.reduce(0, fn page_id, acc ->
-        case Map.get(progress_by_exploration, page_id) do
-          nil ->
-            acc
+        explorations_progress =
+          page_ids
+          |> Enum.reduce(0, fn page_id, acc ->
+            case Map.get(progress_by_exploration, page_id) do
+              nil ->
+                acc
 
-          progress ->
-            acc + progress
-        end
-      end)
-      |> Kernel./(Enum.count(page_ids))
-      |> Kernel.*(100)
-      |> round()
-      |> trunc()
+              progress ->
+                acc + progress
+            end
+          end)
+          |> Kernel./(Enum.count(page_ids))
+          |> Kernel.*(100)
+          |> round()
+          |> trunc()
 
-    explorations_progress
+        explorations_progress
+
+      _ ->
+        nil
+    end
   end
 end
