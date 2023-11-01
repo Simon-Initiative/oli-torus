@@ -27,6 +27,11 @@ defmodule OliWeb.Delivery.Student.ContentLive do
      )}
   end
 
+  def handle_event("open_dot_bot", _, socket) do
+    # TODO: this button should open DOT bot when implemented here.
+    {:noreply, socket}
+  end
+
   def handle_event(
         "select_module",
         %{
@@ -86,7 +91,7 @@ defmodule OliWeb.Delivery.Student.ContentLive do
       preview_mode={@preview_mode}
       active_tab={:content}
     >
-      <div id="student_content" class="container mx-auto p-[25px]" phx-hook="ScrollToTarget">
+      <div id="student_content" class="lg:container lg:mx-auto p-[25px]" phx-hook="ScrollToTarget">
         <.unit
           :for={child <- @section.full_hierarchy["children"]}
           unit={child}
@@ -118,13 +123,16 @@ defmodule OliWeb.Delivery.Student.ContentLive do
       role={"unit_#{@unit["numbering"]["index"]}"}
     >
       <div class="mb-6 flex flex-col items-start gap-[6px]">
-        <h3 class="text-[26px] leading-[32px] tracking-[0.02px] font-semibold ml-2">
+        <h3 class="text-[26px] leading-[32px] tracking-[0.02px] font-normal ml-2 dark:text-[#DDD]">
           <%= "#{@unit["numbering"]["index"]}. #{@unit["revision"]["title"]}" %>
         </h3>
         <div class="flex items-center w-full">
           <div class="flex items-center gap-3" role="schedule_details">
             <div class="text-[14px] leading-[32px] tracking-[0.02px] font-semibold">
-              <span class="text-gray-400 opacity-80 mr-1">Complete By:</span><%= parse_datetime(
+              <span class="text-gray-400 opacity-80 dark:text-[#696974] dark:opacity-100 mr-1">
+                Complete By:
+              </span>
+              <%= parse_datetime(
                 @unit["section_resource"]["end_date"],
                 @ctx
               ) %>
@@ -185,7 +193,12 @@ defmodule OliWeb.Delivery.Student.ContentLive do
             )
           ) %>
         </div>
-        <button class="btn btn-primary mr-auto mt-[42px]">Let's discuss?</button>
+        <button
+          phx-click="open_dot_bot"
+          class="rounded-[4px] p-[10px] flex justify-center items-center mr-auto mt-[42px] text-[14px] leading-[19px] tracking-[0.024px] font-normal text-white bg-blue-500 hover:bg-blue-600 dark:text-white dark:bg-[rgba(255,255,255,0.10);] dark:hover:bg-gray-800"
+        >
+          Let's discuss?
+        </button>
       </div>
       <div class="mt-[62px] w-1/2">
         <.index module={@selected_module} module_index={@selected_module_index} />
@@ -204,7 +217,7 @@ defmodule OliWeb.Delivery.Student.ContentLive do
       class="flex gap-[14px] h-[42px] w-full"
       role={"page_#{page_index}_details"}
     >
-      <div class="flex justify-center items-center gap-[10px] h-6 w-6">
+      <div class="flex justify-center items-center gap-[10px] h-6 w-6 shrink-0">
         <svg
           :if={page["visited"]}
           xmlns="http://www.w3.org/2000/svg"
@@ -221,14 +234,23 @@ defmodule OliWeb.Delivery.Student.ContentLive do
       <div
         phx-click="navigate_to_resource"
         phx-value-slug={page["revision"]["slug"]}
-        class="flex items-center gap-3 w-full border-b-2 border-gray-600 cursor-pointer hover:bg-gray-200/70 px-2"
+        class="flex shrink items-center gap-3 w-full border-b-2 border-gray-600 cursor-pointer hover:bg-gray-200/70 px-2 dark:border-[rgba(255,255,255,0.20);] dark:hover:bg-gray-800 dark:text-white"
       >
         <span class="text-[16px] leading-[22px] font-normal truncate">
           <%= "#{@module_index}.#{page_index} #{page["revision"]["title"]}" %>
         </span>
-        <div class="flex items-center gap-[6px] ml-auto">
-          <svg xmlns="http://www.w3.org/2000/svg" height="1.25em" viewBox="0 0 512 512">
-            <path d="M464 256A208 208 0 1 1 48 256a208 208 0 1 1 416 0zM0 256a256 256 0 1 0 512 0A256 256 0 1 0 0 256zM232 120V256c0 8 4 15.5 10.7 20l96 64c11 7.4 25.9 4.4 33.3-6.7s4.4-25.9-6.7-33.3L280 243.2V120c0-13.3-10.7-24-24-24s-24 10.7-24 24z" />
+        <div class="flex items-center gap-[6px] ml-auto dark:text-white dark:opacity-50">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="20"
+            height="20"
+            viewBox="0 0 20 20"
+            fill="none"
+          >
+            <path
+              fill="currentColor"
+              d="M18.125 10C18.125 12.1549 17.269 14.2215 15.7452 15.7452C14.2215 17.269 12.1549 18.125 10 18.125C7.84512 18.125 5.77849 17.269 4.25476 15.7452C2.73102 14.2215 1.875 12.1549 1.875 10C1.875 7.84512 2.73102 5.77849 4.25476 4.25476C5.77849 2.73102 7.84512 1.875 10 1.875C12.1549 1.875 14.2215 2.73102 15.7452 4.25476C17.269 5.77849 18.125 7.84512 18.125 10ZM0 10C0 12.6522 1.05357 15.1957 2.92893 17.0711C4.8043 18.9464 7.34784 20 10 20C12.6522 20 15.1957 18.9464 17.0711 17.0711C18.9464 15.1957 20 12.6522 20 10C20 7.34784 18.9464 4.8043 17.0711 2.92893C15.1957 1.05357 12.6522 0 10 0C7.34784 0 4.8043 1.05357 2.92893 2.92893C1.05357 4.8043 0 7.34784 0 10ZM9.0625 4.6875V10C9.0625 10.3125 9.21875 10.6055 9.48047 10.7812L13.2305 13.2812C13.6602 13.5703 14.2422 13.4531 14.5312 13.0195C14.8203 12.5859 14.7031 12.0078 14.2695 11.7188L10.9375 9.5V4.6875C10.9375 4.16797 10.5195 3.75 10 3.75C9.48047 3.75 9.0625 4.16797 9.0625 4.6875Z"
+            />
           </svg>
           <span class="text-[12px] leading-[16px] font-bold uppercase tracking-[0.96px] w-[15px] text-right">
             <%= page["revision"]["duration_minutes"] %>
@@ -261,7 +283,7 @@ defmodule OliWeb.Delivery.Student.ContentLive do
           else: "bg-[url('#{@bg_image_url}')]"
         )
       ]}>
-        <h5 class="text-[13px] leading-[18px] font-bold self-start"><%= @title %></h5>
+        <h5 class="text-[13px] leading-[18px] font-bold self-start dark:text-white"><%= @title %></h5>
         <div
           :if={@video_url}
           id={@card_uuid}
@@ -317,19 +339,21 @@ defmodule OliWeb.Delivery.Student.ContentLive do
       <div class="h-[170px] w-[288px]">
         <div class={[
           "flex flex-col gap-[5px] cursor-pointer rounded-xl h-[162px] w-[288px] shrink-0 mb-1 px-5 pt-[15px] bg-gray-200",
-          if(@selected, do: "bg-gray-400 outline outline-2 outline-gray-800"),
+          if(@selected, do: "bg-gray-400 outline outline-2 outline-gray-800 dark:outline-white"),
           if(@bg_image_url in ["", nil],
             do: "bg-[url('/images/course_default.jpg')]",
             else: "bg-[url('#{@bg_image_url}')]"
           )
         ]}>
-          <span class="text-[12px] leading-[16px] font-bold opacity-60 text-gray-500">
+          <span class="text-[12px] leading-[16px] font-bold opacity-60 text-gray-500 dark:text-white dark:text-opacity-50">
             <%= "#{@unit_numbering_index}.#{@module_index}" %>
           </span>
-          <h5 class="text-[18px] leading-[25px] font-bold"><%= @module["revision"]["title"] %></h5>
+          <h5 class="text-[18px] leading-[25px] font-bold dark:text-white">
+            <%= @module["revision"]["title"] %>
+          </h5>
           <div
             :if={!@selected and !is_page(@module["revision"])}
-            class="mt-auto flex h-[21px] justify-center items-center"
+            class="mt-auto flex h-[21px] justify-center items-center text-gray-600 dark:text-white"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -338,7 +362,7 @@ defmodule OliWeb.Delivery.Student.ContentLive do
               viewBox="0 0 10 5"
               fill="currentColor"
             >
-              <path d="M0 0L10 0L5 5Z" />
+              <path opacity="0.5" d="M5 5L0 0H10L5 5Z" fill="currentColor" />
             </svg>
           </div>
         </div>
@@ -384,11 +408,18 @@ defmodule OliWeb.Delivery.Student.ContentLive do
     ~H"""
     <div class="flex flex-row items-center mx-auto" role={@role}>
       <div class="flex justify-center w-full">
-        <div class="rounded-full bg-gray-200 h-1" style={"width: #{@width}"}>
-          <div class="rounded-full bg-[#1E9531] h-1" style={"width: #{@percent}%"}></div>
+        <div
+          class="rounded-[60px] bg-gray-200 h-1 dark:bg-[rgba(170,170,170,0.20)]"
+          style={"width: #{@width}"}
+        >
+          <div class="rounded-[60px] bg-[#1E9531] dark:bg-white h-1" style={"width: #{@percent}%"}>
+          </div>
         </div>
       </div>
-      <div :if={@show_percent} class="text-[16px] leading-[32px] tracking-[0.02px] font-bold">
+      <div
+        :if={@show_percent}
+        class="text-[16px] dark:text-[#DDD] leading-[32px] tracking-[0.02px] font-semibold"
+      >
         <%= @percent %>%
       </div>
     </div>
