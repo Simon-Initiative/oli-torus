@@ -399,12 +399,12 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       # unit 1 has been scheduled by instructor, so there must be schedule details data
       assert view
              |> element(~s{div[role="unit_1"] div[role="schedule_details"]})
-             |> render() =~ "Complete By:</span>Sun Dec 31, 2023 (8:00pm)"
+             |> render() =~ "Complete By:\n          </span>\n          Sun Dec 31, 2023 (8:00pm)"
 
       # unit 2 has not been scheduled by instructor, so there must not be a schedule details data
       assert view
              |> element(~s{div[role="unit_2"] div[role="schedule_details"]})
-             |> render() =~ "Complete By:</span>not yet scheduled"
+             |> render() =~ "Complete By:\n          </span>\n          not yet scheduled"
     end
 
     test "can see units and modules progress", %{
@@ -426,7 +426,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       assert view
              |> element(~s{div[role="unit_1"] div[role="unit_1_progress"]})
-             |> render() =~ "font-bold\">\n    38%\n"
+             |> render() =~ "font-semibold\">\n    38%\n"
 
       # module 1 progress is 75% ((1 + 0.5) / 2)
       assert view
