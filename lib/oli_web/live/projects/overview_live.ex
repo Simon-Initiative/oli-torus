@@ -463,6 +463,16 @@ defmodule OliWeb.Projects.OverviewLive do
     end
   end
 
+  def handle_event("kill_datashop_snapshot", _params, socket) do
+    :ok = Course.kill_datashop_export(socket.assigns.project.slug, "datashop_export")
+
+    socket =
+      socket
+      |> put_flash(:info, "Snapshots killed")
+
+    {:noreply, socket}
+  end
+
   def handle_event("generate_datashop_snapshot", _params, socket) do
     project = socket.assigns.project
 
