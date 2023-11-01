@@ -6,7 +6,8 @@ defmodule Oli.Analytics.DatashopExportWorker do
 
   require Logger
 
-  alias Oli.Utils
+  @upload_chunk_size 100
+
   alias Oli.Authoring.Broadcaster
   alias Oli.Analytics.Datashop
   alias Oli.Authoring.Course
@@ -36,27 +37,75 @@ defmodule Oli.Analytics.DatashopExportWorker do
     :ok
   end
 
-  def generate(project_slug) do
-    project = Course.get_project_by_slug(project_slug)
-
-    datashop_xml = Datashop.export(project.id)
-
+  defp build_filename(project) do
     timestamp = DateTime.utc_now()
     random_string = Oli.Utils.random_string(16)
 
     {:ok, file_timestamp} = timestamp |> Timex.format("%Y-%m-%d-%H%M%S", :strftime)
 
-    filename = "datashop_#{project_slug}_#{file_timestamp}.xml"
+    filename = "datashop_#{project.slug}_#{file_timestamp}.xml"
+
+    Path.join(["datashop", project.slug, random_string, filename])
+  end
+
+  def generate(project_slug) do
+    project = Course.get_project_by_slug(project_slug)
 
     bucket_name = Application.fetch_env!(:oli, :s3_media_bucket_name)
-    datashop_snapshot_path = Path.join(["datashop", project_slug, random_string, filename])
 
-    {:ok, full_upload_url} =
-      Utils.S3Storage.put(bucket_name, datashop_snapshot_path, datashop_xml)
+    datashop_snapshot_path = build_filename(project)
 
-    # update the project's last_exported_at timestamp
-    Course.update_project_latest_datashop_snapshot_url(project_slug, full_upload_url, timestamp)
+    first_chunk = Datashop.content_prefix()
+    last_chunk = Datashop.content_suffix()
 
-    {full_upload_url, timestamp}
+    total = Datashop.count(project.id)
+
+    {:ok, result} = Oli.Repo.transaction(fn ->
+
+      Oli.Utils.use_tmp(fn tmp_dir ->
+
+        temp_file_name = Path.join([tmp_dir, "datashop_#{project_slug}_#{Oli.Utils.random_string(16)}.xml"])
+
+        Datashop.build_context(project.id)
+        |> Datashop.content_stream()
+        |> Stream.with_index(1)
+        |> Stream.map(fn {chunk, index} ->
+
+          chunk = chunk |> XmlBuilder.generate()
+
+          chunk = if index == 1 do
+            first_chunk <> chunk
+          else
+            chunk
+          end
+
+          chunk = if index == total do
+            chunk <> last_chunk
+          else
+            chunk
+          end
+
+          chunk
+
+        end)
+        |> Stream.into(File.stream!(temp_file_name))
+        |> Stream.run()
+
+        {:ok, full_upload_url} = Oli.Utils.S3Storage.stream_file(bucket_name, datashop_snapshot_path, temp_file_name)
+
+        timestamp = DateTime.utc_now()
+
+        # update the project's last_exported_at timestamp
+        Course.update_project_latest_datashop_snapshot_url(project_slug, full_upload_url, timestamp)
+
+        {full_upload_url, timestamp}
+
+
+      end)
+
+
+    end)
+
+    result
   end
 end

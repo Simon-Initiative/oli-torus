@@ -9,8 +9,10 @@ defmodule Oli.Analytics.Datashop do
 
   import XmlBuilder
   import Oli.Utils, only: [value_or: 2]
-
+  alias Oli.Repo
+  import Ecto.Query
   alias Oli.Publishing
+  alias Oli.Delivery.Snapshots.Snapshot
   alias Oli.Authoring.Course
   alias Oli.Delivery.Attempts.Core, as: Attempts
   alias Oli.Analytics.Datashop.Messages.{Context, Tool, Tutor}
@@ -24,6 +26,8 @@ defmodule Oli.Analytics.Datashop do
     |> document
     |> generate
   end
+
+
 
   # Creates a map of resource ids to lists, where the lists are the
   # full paths of revisons from the root to that resource's position in the hierarchy.
@@ -162,6 +166,32 @@ defmodule Oli.Analytics.Datashop do
     |> Enum.map(fn {k, v} -> {k, v} end)
   end
 
+  defp part_attempts_stream(project_id) do
+
+    from(snapshot in Snapshot,
+      join: user in Oli.Accounts.User,
+      on: snapshot.user_id == user.id,
+      join: activity_revision in Oli.Resources.Revision,
+      on: activity_revision.id == snapshot.revision_id,
+      join: part_attempt in Oli.Delivery.Attempts.Core.PartAttempt,
+      on: snapshot.part_attempt_id == part_attempt.id,
+      where: snapshot.project_id == ^project_id,
+      select: %{
+        email: user.email,
+        sub: user.sub,
+        slug: activity_revision.slug,
+        part_attempt: part_attempt,
+        page_id: snapshot.resource_id,
+        objective_revision_id: snapshot.objective_revision_id,
+        activity_type_id: snapshot.activity_type_id,
+      },
+      order_by: [asc: user.email, asc: user.sub, asc: activity_revision.slug, asc: snapshot.part_id, desc: snapshot.inserted_at]
+    )
+    |> Repo.stream()
+
+  end
+
+
   defp safely_build_key(r) do
     [
       r.user.email,
@@ -191,6 +221,136 @@ defmodule Oli.Analytics.Datashop do
       },
       children
     )
+  end
+
+  def count(project_id) do
+    from(snapshot in Snapshot,
+      where: snapshot.project_id == ^project_id,
+      select: count(snapshot.id)
+    )
+    |> Repo.one()
+  end
+
+  def content_stream(context) do
+
+    %{
+      hierarchy_map: hierarchy_map,
+      activity_types: activity_types,
+      skill_titles: skill_titles,
+      dataset_name: dataset_name,
+      project: project,
+      publication: publication
+    } = context
+
+
+
+    part_attempts_stream(project.id)
+    |> Stream.map(fn %{
+      email: email,
+      sub: sub,
+      slug: activity_slug,
+      part_attempt: part_attempt
+    } ->
+
+      # TODO, it may make a lot of sense to front these next four fetches with an
+      # in memory cache
+      activity_attempt = Oli.Repo.get(Oli.Delivery.Attempts.Core.ActivityAttempt, part_attempt.activity_attempt_id)
+      activity_revision = Oli.Repo.get(Oli.Resources.Revision, activity_attempt.revision_id)
+      resource_attempt = Oli.Repo.get(Oli.Delivery.Attempts.Core.ResourceAttempt, activity_attempt.resource_attempt_id)
+      page_revision = Oli.Repo.get(Oli.Resources.Revision, resource_attempt.revision_id)
+
+      resource_attempt = %{resource_attempt | revision: page_revision}
+      activity_attempt = %{activity_attempt | revision: activity_revision}
+      activity_attempt = %{activity_attempt | resource_attempt: resource_attempt}
+      part_attempt = %{part_attempt | activity_attempt: activity_attempt}
+
+      context = %{
+        date: part_attempt.date_submitted,
+        email: email,
+        sub: sub,
+        # datashop_session_id will be set to the latest part attempt datashop_session_id
+        # unless it is nil, then it will be set to a generated UUID. This will handle any
+        # part attempts that existed before this value was tracked in the part attempt record
+        datashop_session_id: value_or(part_attempt.datashop_session_id, UUID.uuid4()),
+        context_message_id: Utils.make_unique_id(activity_slug, part_attempt.part_id),
+        problem_name: Utils.make_problem_name(activity_slug, part_attempt.part_id),
+        transaction_id: Utils.make_unique_id(activity_slug, part_attempt.part_id),
+        dataset_name: dataset_name,
+        part_attempt: part_attempt,
+        publication: publication,
+        project: project,
+        hierarchy_map: hierarchy_map,
+        activity_types: activity_types,
+        skill_titles: skill_titles,
+        skill_ids: part_attempt.activity_attempt.revision.objectives[part_attempt.part_id] || [],
+        total_hints_available: get_hints_for_part(part_attempt) |> length
+      }
+
+      context_message = Context.setup("START_PROBLEM", context)
+
+      hint_message_pairs =
+        create_hint_message_pairs(
+          part_attempt,
+          context
+        )
+
+      # Attempt / Result pairs must have a different transaction ID from the hint message pairs
+      context =
+        Map.put(context, :transaction_id, Utils.make_unique_id(activity_slug, part_attempt.part_id))
+
+      all = hint_message_pairs ++
+        [
+          Tool.setup("ATTEMPT", "ATTEMPT", context),
+          Tutor.setup("RESULT", context)
+        ]
+
+      [context_message | all]
+    end)
+
+  end
+
+  def build_context(project_id) do
+    project = Course.get_project!(project_id)
+    publication = Publishing.get_latest_published_publication_by_slug(project.slug)
+
+    # Fetch context information such as hierarchy revisions, skill titles and
+    # registered activity slugs ahead of time and place them into the context
+
+    # a map of resource ids to published revision
+    hierarchy_map =
+      Publishing.get_published_resources_by_publication(publication.id)
+      |> Enum.reduce(%{}, fn pr, m -> Map.put(m, pr.resource_id, pr.revision) end)
+      |> build_hierarchy_map(publication.root_resource_id)
+
+    activity_types =
+      Oli.Activities.list_activity_registrations()
+      |> Enum.reduce(%{}, fn a, m -> Map.put(m, a.id, a) end)
+
+    skill_titles =
+      Oli.Publishing.get_published_objective_details(publication.id)
+      |> Enum.reduce(%{}, fn a, m -> Map.put(m, a.resource_id, a.title) end)
+
+    %{
+      hierarchy_map: hierarchy_map,
+      activity_types: activity_types,
+      skill_titles: skill_titles,
+      dataset_name: Utils.make_dataset_name(project.slug),
+      project: project,
+      publication: publication
+    }
+  end
+
+  def content_prefix() do
+    """
+    <?xml version= \"1.0\" encoding= \"UTF-8\"?>
+    <tutor_related_message_sequence version_number= \"4\" xmlns:xsi= \"http://www.w3.org/2001/XMLSchema-instance\" xsi:noNamespaceSchemaLocation= \"http://pslcdatashop.org/dtd/tutor_message_v4.xsd\">
+    """
+  end
+
+  def content_suffix() do
+    """
+    </tutor_related_message_sequence>
+    """
   end
 
   defp create_hint_message_pairs(
