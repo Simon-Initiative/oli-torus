@@ -6,7 +6,7 @@ defmodule Oli.Analytics.DatashopExportWorker do
 
   require Logger
 
-  @upload_chunk_size 100
+  # @upload_chunk_size 100
 
   alias Oli.Authoring.Broadcaster
   alias Oli.Analytics.Datashop
