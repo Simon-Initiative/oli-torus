@@ -212,7 +212,7 @@ defmodule OliWeb.Delivery.Student.ContentLive do
     ~H"""
     <div
       :for={{page, page_index} <- Enum.with_index(@module["children"], 1)}
-      class="flex gap-[14px] h-[42px] w-full"
+      class="flex gap-[14px] w-full"
       role={"page_#{page_index}_details"}
     >
       <div class="flex justify-center items-center gap-[10px] h-6 w-6 shrink-0">
@@ -234,10 +234,10 @@ defmodule OliWeb.Delivery.Student.ContentLive do
         phx-value-slug={page["revision"]["slug"]}
         class="flex shrink items-center gap-3 w-full border-b-2 border-gray-600 cursor-pointer hover:bg-gray-200/70 px-2 dark:border-[rgba(255,255,255,0.20);] dark:hover:bg-gray-800 dark:text-white"
       >
-        <span class="text-[16px] leading-[22px] font-normal truncate">
+        <span class="text-[16px] leading-[22px] font-normal">
           <%= "#{@module_index}.#{page_index} #{page["revision"]["title"]}" %>
         </span>
-        <div class="flex items-center gap-[6px] ml-auto dark:text-white dark:opacity-50">
+        <div class="flex items-center h-[42px] gap-[6px] ml-auto dark:text-white dark:opacity-50">
           <svg
             xmlns="http://www.w3.org/2000/svg"
             width="20"
