@@ -113,13 +113,17 @@ defmodule OliWeb.Delivery.Student.ContentLive do
 
   def unit(assigns) do
     ~H"""
-    <div id={"unit_#{@unit["uuid"]}"} class="p-[25px] pl-[50px]">
+    <div
+      id={"unit_#{@unit["uuid"]}"}
+      class="p-[25px] pl-[50px]"
+      role={"unit_#{@unit["numbering"]["index"]}"}
+    >
       <div class="mb-6 flex flex-col items-start gap-[6px]">
         <h3 class="text-[26px] leading-[32px] tracking-[0.02px] font-semibold ml-2">
           <%= "#{@unit["numbering"]["index"]}. #{@unit["revision"]["title"]}" %>
         </h3>
         <div class="flex items-center w-full">
-          <div class="flex items-center gap-3 ">
+          <div class="flex items-center gap-3" role="schedule_details">
             <div class="text-[14px] leading-[32px] tracking-[0.02px] font-semibold">
               <span class="text-gray-400 opacity-80">Week</span> <%= Utils.week_number(
                 @section_start_date,
@@ -142,12 +146,14 @@ defmodule OliWeb.Delivery.Student.ContentLive do
                 )
               }
               width="100px"
+              role={"unit_#{@unit["numbering"]["index"]}_progress"}
             />
           </div>
         </div>
       </div>
       <div
         id={"slider_#{@unit["uuid"]}"}
+        role="slider"
         phx-hook="SliderCenterScroll"
         class="flex gap-4 overflow-x-scroll overflow-y-hidden h-[178px] pt-[3px] px-[3px] -mt-[2px] -ml-[2px]"
       >
@@ -203,6 +209,7 @@ defmodule OliWeb.Delivery.Student.ContentLive do
     <div
       :for={{page, page_index} <- Enum.with_index(@module["children"], 1)}
       class="flex gap-[14px] h-[42px] w-full"
+      role={"page_#{page_index}_details"}
     >
       <div class="flex justify-center items-center gap-[10px] h-6 w-6">
         <svg
@@ -210,6 +217,7 @@ defmodule OliWeb.Delivery.Student.ContentLive do
           xmlns="http://www.w3.org/2000/svg"
           height="1.25em"
           viewBox="0 0 448 512"
+          role="visited_check_icon"
         >
           <path
             fill="#1E9531"
@@ -252,7 +260,7 @@ defmodule OliWeb.Delivery.Student.ContentLive do
 
   def intro_card(assigns) do
     ~H"""
-    <div class="slider-card hover:scale-[1.01]">
+    <div class="slider-card hover:scale-[1.01]" role="intro_card">
       <div class={[
         "flex flex-col items-center rounded-lg h-[162px] w-[288px] bg-gray-200 shrink-0 px-5 pt-[15px]",
         if(@bg_image_url in ["", nil],
@@ -268,7 +276,10 @@ defmodule OliWeb.Delivery.Student.ContentLive do
           class="w-[70px] h-[70px] relative my-auto -top-2 cursor-pointer"
         >
           <div class="w-full h-full rounded-full backdrop-blur bg-gray/50"></div>
-          <button class="w-full h-full absolute top-0 left-0 flex items-center justify-center">
+          <button
+            role="play_unit_intro_video"
+            class="w-full h-full absolute top-0 left-0 flex items-center justify-center"
+          >
             <svg
               xmlns="http://www.w3.org/2000/svg"
               fill="white"
@@ -299,27 +310,26 @@ defmodule OliWeb.Delivery.Student.ContentLive do
 
   def module_card(assigns) do
     ~H"""
-    <div class="slider-card relative hover:scale-[1.01]">
+    <div
+      id={"module_#{@module["uuid"]}"}
+      phx-click={if is_page(@module["revision"]), do: "navigate_to_resource", else: "select_module"}
+      phx-value-unit_uuid={@unit_uuid}
+      phx-value-module_uuid={@module["uuid"]}
+      phx-value-slug={@module["revision"]["slug"]}
+      phx-value-module_index={@module_index}
+      class="slider-card relative hover:scale-[1.01]"
+      role={"card_#{@module_index}"}
+    >
       <.page_icon :if={is_page(@module["revision"])} />
       <div class="h-[170px] w-[288px]">
-        <div
-          id={"module_#{@module["uuid"]}"}
-          phx-click={
-            if is_page(@module["revision"]), do: "navigate_to_resource", else: "select_module"
-          }
-          phx-value-unit_uuid={@unit_uuid}
-          phx-value-module_uuid={@module["uuid"]}
-          phx-value-slug={@module["revision"]["slug"]}
-          phx-value-module_index={@module_index}
-          class={[
-            "flex flex-col gap-[5px] cursor-pointer rounded-xl h-[162px] w-[288px] shrink-0 mb-1 px-5 pt-[15px] bg-gray-200",
-            if(@selected, do: "bg-gray-400 outline outline-2 outline-gray-800"),
-            if(@bg_image_url in ["", nil],
-              do: "bg-[url('/images/course_default.jpg')]",
-              else: "bg-[url('#{@bg_image_url}')]"
-            )
-          ]}
-        >
+        <div class={[
+          "flex flex-col gap-[5px] cursor-pointer rounded-xl h-[162px] w-[288px] shrink-0 mb-1 px-5 pt-[15px] bg-gray-200",
+          if(@selected, do: "bg-gray-400 outline outline-2 outline-gray-800"),
+          if(@bg_image_url in ["", nil],
+            do: "bg-[url('/images/course_default.jpg')]",
+            else: "bg-[url('#{@bg_image_url}')]"
+          )
+        ]}>
           <span class="text-[12px] leading-[16px] font-bold opacity-60 text-gray-500">
             <%= "#{@unit_numbering_index}.#{@module_index}" %>
           </span>
@@ -349,6 +359,7 @@ defmodule OliWeb.Delivery.Student.ContentLive do
           }
           width="60%"
           show_percent={false}
+          role={"card_#{@module_index}_progress"}
         />
         <div
           :if={@selected}
@@ -374,10 +385,11 @@ defmodule OliWeb.Delivery.Student.ContentLive do
   attr(:percent, :integer, required: true)
   attr(:width, :string, default: "100%")
   attr(:show_percent, :boolean, default: true)
+  attr(:role, :string, default: "progress_bar")
 
   def progress_bar(assigns) do
     ~H"""
-    <div class="flex flex-row items-center mx-auto">
+    <div class="flex flex-row items-center mx-auto" role={@role}>
       <div class="flex justify-center w-full">
         <div class="rounded-full bg-gray-200 h-1" style={"width: #{@width}"}>
           <div class="rounded-full bg-[#1E9531] h-1" style={"width: #{@percent}%"}></div>
@@ -392,7 +404,7 @@ defmodule OliWeb.Delivery.Student.ContentLive do
 
   def page_icon(assigns) do
     ~H"""
-    <div class="h-[45px] w-[36px] absolute top-0 right-0">
+    <div class="h-[45px] w-[36px] absolute top-0 right-0" role="page_icon">
       <img src={~p"/images/ng23/course_content/rectangle_421.png"} />
       <div class="absolute top-0 right-0 h-[36px] w-[36px] flex justify-center items-center">
         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="20" viewBox="0 0 18 20" fill="none">
