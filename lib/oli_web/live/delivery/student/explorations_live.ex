@@ -3,11 +3,9 @@ defmodule OliWeb.Delivery.Student.ExplorationsLive do
 
   import OliWeb.Components.Delivery.Layouts
 
-  alias Oli.Accounts.User
   alias OliWeb.Common.SessionContext
   alias Oli.Publishing.DeliveryResolver
   alias Oli.Rendering.Content
-  alias Oli.Delivery.{Metrics, Sections}
 
   def mount(_params, _session, socket) do
     explorations = DeliveryResolver.get_by_purpose(socket.assigns.section.slug, :application)
@@ -18,19 +16,9 @@ defmodule OliWeb.Delivery.Student.ExplorationsLive do
       0 => explorations
     }
 
-    %{ctx: ctx, section: section} = socket.assigns
-    explorations_progress = calculate_explorations_progress(section, ctx, explorations)
-
-    # TODO: Replace with real average score
-    average_score = "--"
-    average_score_out_of = "--"
-
     {:ok,
      assign(socket,
-       explorations_by_week: explorations_by_week,
-       explorations_progress: explorations_progress,
-       average_score: average_score,
-       average_score_out_of: average_score_out_of
+       explorations_by_week: explorations_by_week
      )}
   end
 
@@ -50,20 +38,6 @@ defmodule OliWeb.Delivery.Student.ExplorationsLive do
             <p>All your explorations in one place.</p>
             <p>You unlock explorations as you solve problems and gain useful skills.</p>
           </div>
-          <%= if @explorations_progress do %>
-            <div class="lg:flex-1 flex flex-col mt-8 lg:mt-0 lg:ml-8">
-              <div class="my-2 uppercase gap-2 lg:gap-8 columns-2">
-                <div class="font-bold">Exploration Progress</div>
-                <.progress_bar percent={@explorations_progress} width="80%" show_percent={true} />
-              </div>
-              <div class="my-2 uppercase gap-2 lg:gap-8 columns-2">
-                <div class="font-bold">Average Score</div>
-                <div class="flex justify-end">
-                  <%= "#{@average_score}/#{@average_score_out_of}" %>
-                </div>
-              </div>
-            </div>
-          <% end %>
         </div>
       </div>
       <div class="container mx-auto flex flex-col mt-6 px-16">
@@ -126,12 +100,6 @@ defmodule OliWeb.Delivery.Student.ExplorationsLive do
           <%= raw(@description) %>
         </div>
         <div class="flex flex-row justify-end items-center space-x-6">
-          <div>
-            <span class="font-bold">Due</span> <%= Timex.now()
-            |> Timex.shift(days: 7)
-            |> Timex.to_date()
-            |> date(@ctx) %>
-          </div>
           <.button
             variant={:primary}
             href={exploration_link(@section_slug, @exploration, @preview_mode)}
@@ -149,39 +117,6 @@ defmodule OliWeb.Delivery.Student.ExplorationsLive do
       ~p"/sections/#{section_slug}/preview/page/#{exploration.slug}"
     else
       ~p"/sections/#{section_slug}/page/#{exploration.slug}"
-    end
-  end
-
-  defp calculate_explorations_progress(section, ctx, explorations) do
-    case ctx.user do
-      %User{id: user_id} ->
-        page_ids =
-          explorations
-          |> Enum.map(fn exploration -> exploration.resource_id end)
-
-        progress_by_exploration =
-          Metrics.progress_across_for_pages(section.id, page_ids, user_id)
-
-        explorations_progress =
-          page_ids
-          |> Enum.reduce(0, fn page_id, acc ->
-            case Map.get(progress_by_exploration, page_id) do
-              nil ->
-                acc
-
-              progress ->
-                acc + progress
-            end
-          end)
-          |> Kernel./(Enum.count(page_ids))
-          |> Kernel.*(100)
-          |> round()
-          |> trunc()
-
-        explorations_progress
-
-      _ ->
-        nil
     end
   end
 end
