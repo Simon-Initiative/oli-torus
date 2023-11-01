@@ -174,32 +174,56 @@ defmodule OliWeb.Delivery.Student.ContentLive do
         />
       </div>
     </div>
-    <div :if={@unit_selected} class="flex py-[24px] px-[50px] gap-x-4 lg:gap-x-12">
-      <div class="w-1/2 flex flex-col px-6">
-        <div
-          :if={@selected_module["revision"]["intro_content"]["children"]}
-          class={[
-            "intro-content",
-            maybe_additional_margin_top(@selected_module["revision"]["intro_content"]["children"])
-          ]}
-        >
-          <%= Phoenix.HTML.raw(
-            Oli.Rendering.Content.render(
-              %Oli.Rendering.Context{},
-              @selected_module["revision"]["intro_content"]["children"],
-              Oli.Rendering.Content.Html
-            )
-          ) %>
+    <div
+      :if={@unit_selected}
+      class="flex flex-col py-6 px-[50px] gap-x-4 lg:gap-x-12"
+      role="module_details"
+    >
+      <div class="flex">
+        <div class="w-1/2 flex flex-col px-6">
+          <div
+            :if={@selected_module["revision"]["intro_content"]["children"]}
+            class={[
+              "intro-content",
+              maybe_additional_margin_top(@selected_module["revision"]["intro_content"]["children"])
+            ]}
+          >
+            <%= Phoenix.HTML.raw(
+              Oli.Rendering.Content.render(
+                %Oli.Rendering.Context{},
+                @selected_module["revision"]["intro_content"]["children"],
+                Oli.Rendering.Content.Html
+              )
+            ) %>
+          </div>
+          <button
+            phx-click="open_dot_bot"
+            class="rounded-[4px] p-[10px] flex justify-center items-center mr-auto mt-[42px] text-[14px] leading-[19px] tracking-[0.024px] font-normal text-white bg-blue-500 hover:bg-blue-600 dark:text-white dark:bg-[rgba(255,255,255,0.10);] dark:hover:bg-gray-800"
+          >
+            Let's discuss?
+          </button>
         </div>
-        <button
-          phx-click="open_dot_bot"
-          class="rounded-[4px] p-[10px] flex justify-center items-center mr-auto mt-[42px] text-[14px] leading-[19px] tracking-[0.024px] font-normal text-white bg-blue-500 hover:bg-blue-600 dark:text-white dark:bg-[rgba(255,255,255,0.10);] dark:hover:bg-gray-800"
-        >
-          Let's discuss?
-        </button>
+        <div class="mt-[62px] w-1/2">
+          <.index module={@selected_module} module_index={@selected_module_index} />
+        </div>
       </div>
-      <div class="mt-[62px] w-1/2">
-        <.index module={@selected_module} module_index={@selected_module_index} />
+      <div class="flex items-center justify-center py-[6px] px-[10px] mt-6" role="collapse_bar">
+        <span class="w-1/2 rounded-lg h-[2px] bg-gray-600/10 dark:bg-[#D9D9D9] dark:bg-opacity-10">
+        </span>
+        <div class="text-gray-600/10 dark:text-[#D9D9D9] dark:text-opacity-10 flex items-center justify-center px-[44px]">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="12"
+            height="6"
+            viewBox="0 0 12 6"
+            fill="currentColor"
+            role="up_arrow"
+          >
+            <path d="M6 0L0 6H12L6 0Z" fill="currentColor" />
+          </svg>
+        </div>
+        <span class="w-1/2 rounded-lg h-[2px] bg-gray-600/10 dark:bg-[#D9D9D9] dark:bg-opacity-10">
+        </span>
       </div>
     </div>
     """
