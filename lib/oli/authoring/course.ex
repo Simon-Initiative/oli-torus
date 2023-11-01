@@ -467,7 +467,7 @@ defmodule Oli.Authoring.Course do
     |> where([j], j.queue == ^queue)
     |> where([j], fragment("?->>'project_slug' = ?", j.args, ^project_slug))
     |> Repo.all()
-    |> Enum.each(fn job -> Oban.cancel(job) end)
+    |> Enum.each(fn job -> Oban.cancel_job(job) end)
   end
 
   @doc """
