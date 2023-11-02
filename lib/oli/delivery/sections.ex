@@ -898,7 +898,28 @@ defmodule Oli.Delivery.Sections do
   def bulk_create_section_resource([], _opts), do: {0, []}
 
   def bulk_create_section_resource(section_resource_rows, opts) do
-    Repo.insert_all(SectionResource, section_resource_rows, returning: opts[:returning] || true)
+    section_resource_rows
+    |> Enum.chunk_every(calculate_chunk_size(section_resource_rows))
+    |> Enum.reduce({0, []}, fn chunk, {total, acc} ->
+      {new_total, new_acc} =
+        Repo.insert_all(SectionResource, chunk, returning: opts[:returning] || true)
+
+      {total + new_total, acc ++ new_acc}
+    end)
+  end
+
+  defp calculate_chunk_size(section_resource_rows) do
+    # We want to split the list of section resources into chunks
+    # to avoid hitting the max number of bind variables in a query.
+    max_bind_variables = 65535
+
+    fields_count =
+      section_resource_rows
+      |> List.first()
+      |> Map.keys()
+      |> length()
+
+    div(max_bind_variables, fields_count)
   end
 
   @doc """

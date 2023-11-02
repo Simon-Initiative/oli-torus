@@ -17,11 +17,12 @@ defmodule OliWeb.Common.PagedTable do
   attr :show_top_paging, :boolean, default: true
   attr :additional_table_class, :string, default: ""
   attr :render_top_info, :boolean, default: true
+  attr :scrollable, :boolean, default: true
   attr :show_limit_change, :boolean, default: false
 
   def render(assigns) do
     ~H"""
-    <div class="overflow-x-scroll">
+    <div class={if @scrollable, do: "overflow-x-scroll"}>
       <%= if @filter != "" and @render_top_info do %>
         <strong>Results filtered on &quot;<%= @filter %>&quot;</strong>
       <% end %>
