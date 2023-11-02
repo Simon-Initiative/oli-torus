@@ -28,7 +28,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
       <main role="main" class="flex-1 flex flex-col relative md:flex-row overscroll-contain">
         <.sidebar_nav ctx={@ctx} section={@section} active_tab={@active_tab} />
 
-        <div class="flex-1 flex flex-col">
+        <div class="md:w-[calc(100%-192px)] flex-1 flex flex-col md:ml-48 mt-14">
           <%= render_slot(@inner_block) %>
         </div>
       </main>
@@ -43,7 +43,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
 
   def header(assigns) do
     ~H"""
-    <div class="h-14 flex flex-row bg-delivery-header dark:bg-delivery-header-dark">
+    <div class="fixed z-50 w-full h-14 flex flex-row bg-delivery-header dark:bg-delivery-header-dark">
       <div class="w-48 p-2">
         <a
           className="block lg:p-2 lg:mb-14 mx-auto"
@@ -95,6 +95,10 @@ defmodule OliWeb.Components.Delivery.Layouts do
     <nav
       id="nav-menu"
       class="
+        fixed
+        z-50
+        mt-14
+        md:h-[calc(100vh-56px)]
         flex
         hidden
         md:flex
@@ -134,9 +138,8 @@ defmodule OliWeb.Components.Delivery.Layouts do
       >
         Explorations
       </.nav_link>
-      <div class="flex-grow-1"></div>
 
-      <div class="hidden md:flex w-full px-6 py-4 text-center">
+      <div class="hidden md:flex w-full px-6 py-4 text-center mt-auto">
         <.tech_support_button id="tech-support" ctx={@ctx} />
       </div>
 
