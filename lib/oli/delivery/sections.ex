@@ -901,7 +901,9 @@ defmodule Oli.Delivery.Sections do
     section_resource_rows
     |> Enum.chunk_every(calculate_chunk_size(section_resource_rows))
     |> Enum.reduce({0, []}, fn chunk, {total, acc} ->
-      {new_total, new_acc} = Repo.insert_all(SectionResource, chunk, returning: opts[:returning] || true)
+      {new_total, new_acc} =
+        Repo.insert_all(SectionResource, chunk, returning: opts[:returning] || true)
+
       {total + new_total, acc ++ new_acc}
     end)
   end
