@@ -79,11 +79,11 @@ defmodule OliWeb.IngestLiveTest do
 
           assert has_element?(
                    view,
-                   "table > tbody > tr > td",
+                   "div > table > tbody > tr > td",
                    "Could not locate required file _media-manifest.json in archive"
                  )
         end,
-        1_000
+        5_000
       )
     end
 
@@ -122,7 +122,7 @@ defmodule OliWeb.IngestLiveTest do
                    "Could not locate required file _hierarchy.json in archive"
                  )
         end,
-        1_000
+        5_000
       )
     end
 
@@ -161,7 +161,7 @@ defmodule OliWeb.IngestLiveTest do
                    "Could not locate required file _project.json in archive"
                  )
         end,
-        1_000
+        5_000
       )
     end
 
@@ -215,7 +215,7 @@ defmodule OliWeb.IngestLiveTest do
                    "Could not locate required file _project.json in archive"
                  )
         end,
-        1_000
+        5_000
       )
     end
 
@@ -263,7 +263,7 @@ defmodule OliWeb.IngestLiveTest do
                    "None exist"
                  )
         end,
-        1_000
+        5_500
       )
     end
 

@@ -156,7 +156,6 @@ defmodule Oli.Delivery.PaywallTest do
       assert summary.reason == :within_grace_period
       days = summary.grace_period_remaining |> AccessSummary.as_days()
       assert days > 1.0 and days < 2.0
-
     end
 
     test "summarize_access/2 suceeds during grace period, strategy relative to student enrollment",
@@ -175,9 +174,7 @@ defmodule Oli.Delivery.PaywallTest do
       summary = Paywall.summarize_access(user, section)
       assert summary.available
       assert summary.reason == :within_grace_period
-
     end
-
   end
 
   describe "redeeming codes" do
@@ -446,10 +443,10 @@ defmodule Oli.Delivery.PaywallTest do
 
       # amount from paid is #Money<:USD, 100>
       test "section_cost_from_product/2 correctly applies percentage discount for #{discount}",
-          %{
-            paid: paid,
-            institution: institution
-          } do
+           %{
+             paid: paid,
+             institution: institution
+           } do
         {:ok, _} =
           Paywall.create_discount(%{
             institution_id: institution.id,
@@ -459,14 +456,16 @@ defmodule Oli.Delivery.PaywallTest do
             amount: Money.new(:USD, @expected_amount)
           })
 
-        assert {:ok, Money.new(:USD, @expected_amount)} == Paywall.section_cost_from_product(paid, institution)
+        assert {:ok, Money.new(:USD, @expected_amount)} ==
+                 Paywall.section_cost_from_product(paid, institution)
       end
     end
 
-    test "section_cost_from_product/2 doesn't apply institution-specific discount to other institutions", %{
-      institution: institution_a,
-      paid: paid
-    } do
+    test "section_cost_from_product/2 doesn't apply institution-specific discount to other institutions",
+         %{
+           institution: institution_a,
+           paid: paid
+         } do
       Paywall.create_discount(%{
         institution_id: institution_a.id,
         section_id: nil,
@@ -508,6 +507,7 @@ defmodule Oli.Delivery.PaywallTest do
 
     test "create_discount/1 with invalid percentage returns error changeset" do
       institution = insert(:institution)
+
       params = %{
         institution_id: institution.id,
         section_id: nil,
@@ -531,6 +531,7 @@ defmodule Oli.Delivery.PaywallTest do
       institution = insert(:institution)
       product = insert(:section, type: :blueprint)
       insert(:discount, institution: institution, section: product)
+
       params = %{
         institution_id: institution.id,
         section_id: product.id,
@@ -549,10 +550,11 @@ defmodule Oli.Delivery.PaywallTest do
     test "get_discount_by!/1 returns a discount when exists one for the section and the institution" do
       discount = insert(:discount)
 
-      returned_discount = Paywall.get_discount_by!(%{
-        section_id: discount.section_id,
-        institution_id: discount.institution_id
-      })
+      returned_discount =
+        Paywall.get_discount_by!(%{
+          section_id: discount.section_id,
+          institution_id: discount.institution_id
+        })
 
       assert discount.id == returned_discount.id
       assert discount.type == returned_discount.type
@@ -567,8 +569,8 @@ defmodule Oli.Delivery.PaywallTest do
       insert(:discount, section: discount.section)
 
       assert_raise Ecto.MultipleResultsError,
-                  ~r/^expected at most one result but got 2 in query/,
-                  fn -> Paywall.get_discount_by!(%{section_id: discount.section_id}) end
+                   ~r/^expected at most one result but got 2 in query/,
+                   fn -> Paywall.get_discount_by!(%{section_id: discount.section_id}) end
     end
 
     test "get_institution_wide_discount!/1 returns a discount when exists one for the institution" do
@@ -589,8 +591,8 @@ defmodule Oli.Delivery.PaywallTest do
       insert(:discount, institution: discount.institution, section: nil)
 
       assert_raise Ecto.MultipleResultsError,
-                  ~r/^expected at most one result but got 2 in query/,
-                  fn -> Paywall.get_institution_wide_discount!(discount.institution_id) end
+                   ~r/^expected at most one result but got 2 in query/,
+                   fn -> Paywall.get_institution_wide_discount!(discount.institution_id) end
     end
 
     test "get_product_discounts/1 returns empty if a discount does not exist for the product" do
@@ -599,10 +601,13 @@ defmodule Oli.Delivery.PaywallTest do
 
     test "get_product_discounts/1 returns the discounts associated with one product" do
       %Discount{id: first_discount_id} = first_discount = insert(:discount)
-      %Discount{id: second_discount_id} = insert(:discount, section: first_discount.section, percentage: 90)
 
-      assert [%Discount{id: ^first_discount_id}, %Discount{id: ^second_discount_id}]
-        = Paywall.get_product_discounts(first_discount.section.id) |> Enum.sort_by(& &1.percentage)
+      %Discount{id: second_discount_id} =
+        insert(:discount, section: first_discount.section, percentage: 90)
+
+      assert [%Discount{id: ^first_discount_id}, %Discount{id: ^second_discount_id}] =
+               Paywall.get_product_discounts(first_discount.section.id)
+               |> Enum.sort_by(& &1.percentage)
     end
 
     test "update_discount/2 updates the discount successfully" do
@@ -617,7 +622,9 @@ defmodule Oli.Delivery.PaywallTest do
     test "update_discount/2 does not update the discount when there is an invalid field" do
       amount_discount = insert(:discount)
 
-      {:error, changeset} = Paywall.update_discount(amount_discount, %{type: :fixed_amount, amount: nil})
+      {:error, changeset} =
+        Paywall.update_discount(amount_discount, %{type: :fixed_amount, amount: nil})
+
       {error, _} = changeset.errors[:amount]
 
       refute changeset.valid?
@@ -625,7 +632,9 @@ defmodule Oli.Delivery.PaywallTest do
 
       percentage_discount = insert(:discount)
 
-      {:error, changeset} = Paywall.update_discount(percentage_discount, %{type: :percentage, percentage: nil})
+      {:error, changeset} =
+        Paywall.update_discount(percentage_discount, %{type: :percentage, percentage: nil})
+
       {error, _} = changeset.errors[:percentage]
 
       refute changeset.valid?
@@ -655,6 +664,7 @@ defmodule Oli.Delivery.PaywallTest do
 
     test "create_or_update_discount/1 updates an existing discount" do
       discount = insert(:discount)
+
       params = %{
         institution_id: discount.institution_id,
         section_id: discount.section_id,
@@ -672,6 +682,7 @@ defmodule Oli.Delivery.PaywallTest do
 
     test "create_or_update_discount/1 updates an existing discount (only institution)" do
       discount = insert(:discount, section: nil)
+
       params = %{
         institution_id: discount.institution_id,
         section_id: nil,

@@ -11,14 +11,32 @@ defmodule Oli.Utils.Stagehand.SimulateProgress do
 
   require Logger
 
-  def simulate_student_working_through_course(section, student, all_pages, datashop_session_id, pct_correct) do
+  def simulate_student_working_through_course(
+        section,
+        student,
+        all_pages,
+        datashop_session_id,
+        pct_correct
+      ) do
     all_pages
     |> Enum.each(fn page_revision ->
-      simulate_student_working_through_page(section, page_revision, student, datashop_session_id, pct_correct)
+      simulate_student_working_through_page(
+        section,
+        page_revision,
+        student,
+        datashop_session_id,
+        pct_correct
+      )
     end)
   end
 
-  defp simulate_student_working_through_page(section, page_revision, student, datashop_session_id, pct_correct) do
+  defp simulate_student_working_through_page(
+         section,
+         page_revision,
+         student,
+         datashop_session_id,
+         pct_correct
+       ) do
     case page_revision do
       %Revision{graded: true} ->
         %{
@@ -57,35 +75,41 @@ defmodule Oli.Utils.Stagehand.SimulateProgress do
             %{activities: activities, latest_attempts: attempt_hierarchy} ->
               activities
               |> Enum.reduce(map, fn {_id, activity_summary}, acc ->
-                  # get attempt and parts map from attempt hierarchy corresponding to this activity
-                  found = Enum.find(attempt_hierarchy, fn
+                # get attempt and parts map from attempt hierarchy corresponding to this activity
+                found =
+                  Enum.find(attempt_hierarchy, fn
                     {_id,
-                      {%Oli.Delivery.Attempts.Core.ActivityAttempt{
+                     {%Oli.Delivery.Attempts.Core.ActivityAttempt{
                         attempt_guid: attempt_guid
                       }, _part_attempts_map}} ->
                       attempt_guid == activity_summary.attempt_guid
+
                     attempt ->
                       IO.inspect(attempt, label: "Not a supported ActivityAttempt record")
 
                       false
                   end)
 
-                  case found do
-                    {_id, {activity_attempt, part_attempts_map}} ->
-                      submit_attempt_for_activity(
-                        acc,
-                        ref(:section),
-                        activity_attempt,
-                        part_attempts_map,
-                        fn %PartAttempt{attempt_guid: _attempt_guid, part_id: part_id} ->
-                          get_randomized_part_response(part_id, activity_attempt.revision, pct_correct)
-                        end,
-                        datashop_session_id
-                      )
+                case found do
+                  {_id, {activity_attempt, part_attempts_map}} ->
+                    submit_attempt_for_activity(
+                      acc,
+                      ref(:section),
+                      activity_attempt,
+                      part_attempts_map,
+                      fn %PartAttempt{attempt_guid: _attempt_guid, part_id: part_id} ->
+                        get_randomized_part_response(
+                          part_id,
+                          activity_attempt.revision,
+                          pct_correct
+                        )
+                      end,
+                      datashop_session_id
+                    )
 
-                    _ ->
-                      acc
-                  end
+                  _ ->
+                    acc
+                end
               end)
           end
         end)
@@ -122,7 +146,11 @@ defmodule Oli.Utils.Stagehand.SimulateProgress do
     part_inputs =
       part_attempts_map
       |> Enum.map(fn {_id, part_attempt} ->
-        %{part_id: part_attempt.part_id, attempt_guid: part_attempt.attempt_guid, input: create_part_input_fn.(part_attempt)}
+        %{
+          part_id: part_attempt.part_id,
+          attempt_guid: part_attempt.attempt_guid,
+          input: create_part_input_fn.(part_attempt)
+        }
       end)
       # only include parts with valid inputs, ignore parts with nil inputs (unsupported part types)
       |> Enum.filter(fn %{input: input} -> input != nil end)
@@ -208,5 +236,4 @@ defmodule Oli.Utils.Stagehand.SimulateProgress do
       1.0 - pct_correct
     end
   end
-
 end

@@ -224,16 +224,6 @@ defmodule OliWeb.Sections.OverviewView do
       </Group.render>
       <Group.render label="Manage" description="Manage all aspects of course delivery">
         <ul class="link-list">
-          <li>
-            <a
-              href={
-                Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.EnrollmentsViewLive, @section.slug)
-              }
-              class="btn btn-link"
-            >
-              Manage Enrollments
-            </a>
-          </li>
           <%= if @section.open_and_free do %>
             <li>
               <a
@@ -307,26 +297,20 @@ defmodule OliWeb.Sections.OverviewView do
         <% end %>
       </Group.render>
       <Group.render
-        label="Collaborative Space"
-        description="Activate and configure a collaborative space for this section"
+        label="Collaboration Spaces"
+        description="Manage the Collaborative Spaces within the course"
       >
         <div class="container mx-auto">
-          <%= if @collab_space_config && @collab_space_config.status != :disabled do %>
-            <%= live_render(@socket, OliWeb.CollaborationLive.CollabSpaceConfigView,
-              id: "collab_space_config",
-              session: %{
-                "collab_space_config" => @collab_space_config,
-                "section_slug" => @section.slug,
-                "resource_slug" => @resource_slug,
-                "is_overview_render" => true,
-                "is_delivery" => true
-              }
-            ) %>
-          <% else %>
-            <p class="ml-8 mt-2">
-              Collaborative spaces are not enabled by the course project.<br />Please contact a system administrator to enable.
-            </p>
-          <% end %>
+          <%= live_render(@socket, OliWeb.CollaborationLive.CollabSpaceConfigView,
+            id: "collab_space_config",
+            session: %{
+              "collab_space_config" => @collab_space_config,
+              "section_slug" => @section.slug,
+              "resource_slug" => @resource_slug,
+              "is_overview_render" => true,
+              "is_delivery" => true
+            }
+          ) %>
         </div>
       </Group.render>
       <Group.render

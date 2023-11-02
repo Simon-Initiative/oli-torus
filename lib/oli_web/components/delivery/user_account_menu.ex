@@ -21,14 +21,19 @@ defmodule OliWeb.Components.Delivery.UserAccountMenu do
     # so for now, just render this component as if it were in a static page - is_liveview: false
 
     ~H"""
-      <%= React.component(%SessionContext{@ctx | is_liveview: @is_liveview }, "Components.UserAccountMenu", %{
-          user: @user,
-          preview: @preview,
-          routes: @routes,
-          sectionSlug: @section_slug,
-          selectedTimezone: @selected_timezone,
-          timezones: @timezones,
-        }, id: "menu") %>
+    <%= React.component(
+      %SessionContext{@ctx | is_liveview: @is_liveview},
+      "Components.UserAccountMenu",
+      %{
+        user: @user,
+        preview: @preview,
+        routes: @routes,
+        sectionSlug: @section_slug,
+        selectedTimezone: @selected_timezone,
+        timezones: @timezones
+      },
+      id: "menu"
+    ) %>
     """
   end
 
@@ -92,9 +97,9 @@ defmodule OliWeb.Components.Delivery.UserAccountMenu do
 
   def preview_user(assigns) do
     ~H"""
-      <div class="flex">
-        <button
-          class="
+    <div class="flex">
+      <button
+        class="
             dropdown-toggle
             px-6
             py-2.5
@@ -108,20 +113,20 @@ defmodule OliWeb.Components.Delivery.UserAccountMenu do
             items-center
             whitespace-nowrap
           "
-          type="button"
-          data-bs-toggle="dropdown"
-          aria-expanded="false"
-        >
-          <div class="user-icon">
-            <.user_icon />
+        type="button"
+        data-bs-toggle="dropdown"
+        aria-expanded="false"
+      >
+        <div class="user-icon">
+          <.user_icon />
+        </div>
+        <div class="block lg:inline-block lg:mt-0 text-grey-darkest mx-2">
+          <div class="username">
+            Preview
           </div>
-          <div class="block lg:inline-block lg:mt-0 text-grey-darkest mx-2">
-            <div class="username">
-              Preview
-            </div>
-          </div>
-        </button>
-      </div>
+        </div>
+      </button>
+    </div>
     """
   end
 

@@ -20,7 +20,7 @@ defmodule Oli.HoundCase do
         rescue
           error ->
             take_screenshot(unquote(filename))
-            Logger.warn("Test failed, screenshot saved to #{unquote(filename)}")
+            Logger.warning("Test failed, screenshot saved to #{unquote(filename)}")
             Kernel.reraise(error, __STACKTRACE__)
         end
       end

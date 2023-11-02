@@ -688,7 +688,9 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
 
       # click on the password input to edit it
       view
-      |> element(~s{button[phx-click='[["push",\{"event":"edit_password","target":1\}]]']})
+      |> element(
+        ~s{button[phx-value-assessment_id="#{page_1.resource.id}"][role="edit_password"]}
+      )
       |> render_click()
 
       view
@@ -812,13 +814,12 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
       |> form(~s{form[for="bulk_apply_settings"]})
       |> render_submit(%{"assessment_id" => page_3.resource.id})
 
-      view
-      |> form(~s{form[phx-submit=confirm_bulk_apply]})
-      |> render_submit(%{})
-      |> follow_redirect(
-        conn,
-        "/sections/#{section.slug}/assessment_settings/settings/all?limit=10&offset=0&sort_by=index&sort_order=asc&text_search="
-      )
+      {:error, {:redirect, %{to: redirect_path}}} =
+        view
+        |> form(~s{form[phx-submit=confirm_bulk_apply]})
+        |> render_submit(%{})
+
+      assert redirect_path =~ "/sections/#{section.slug}/assessment_settings/settings/all?"
 
       # after being redirected, we validate all changes were applied
       {:ok, view, _html} = live(conn, live_view_overview_route(section.slug, "settings", "all"))

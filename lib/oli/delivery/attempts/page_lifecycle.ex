@@ -10,6 +10,7 @@ defmodule Oli.Delivery.Attempts.PageLifecycle do
 
   import Oli.Delivery.Attempts.Core
   alias Oli.Accounts.User
+  alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.Section
   alias Oli.Delivery.Snapshots
   alias Oli.Resources.Revision
@@ -107,6 +108,8 @@ defmodule Oli.Delivery.Attempts.PageLifecycle do
   If the attempt has not started, and must be started manually, returns a tuple of the form:
 
   `{:ok, {:not_started, %HistorySummary{}}}`
+
+  It also updates the latest visited page for the user in the section.
   """
   @spec visit(Revision.t(), String.t(), String.t(), User.t(), any, any) ::
           {:ok, {:in_progress | :revised, AttemptState.t()}}
@@ -121,6 +124,9 @@ defmodule Oli.Delivery.Attempts.PageLifecycle do
         activity_provider
       ) do
     Repo.transaction(fn ->
+      {:ok, _enrollment} =
+        update_latest_visited_page(section_slug, user.id, page_revision.resource_id)
+
       {graded, latest_resource_attempt} =
         get_latest_resource_attempt(page_revision.resource_id, section_slug, user.id)
         |> handle_type_transitions(page_revision)
@@ -148,6 +154,11 @@ defmodule Oli.Delivery.Attempts.PageLifecycle do
         {:error, error} -> Repo.rollback(error)
       end
     end)
+  end
+
+  defp update_latest_visited_page(section_slug, user_id, resource_id) do
+    Sections.get_enrollment(section_slug, user_id)
+    |> Sections.update_enrollment(%{most_recently_visited_resource_id: resource_id})
   end
 
   @doc """

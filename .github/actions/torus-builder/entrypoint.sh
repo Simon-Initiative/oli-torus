@@ -5,6 +5,10 @@ set -x
 
 RELEASE_SHA=$1
 
+LANG="en_US.utf8"
+LANGUAGE="en_US:"
+LC_ALL=en_US.UTF-8
+
 mix local.hex --force
 mix local.rebar --force
 # mix archive.install hex phx_new 1.5.9 --force

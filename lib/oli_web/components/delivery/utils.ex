@@ -148,15 +148,14 @@ defmodule OliWeb.Components.Delivery.Utils do
 
   def user_icon(%{current_user: _} = assigns) do
     ~H"""
-      <%= case @current_user.picture do %>
-        <% nil -> %>
-          <.user_icon />
-
-        <% picture -> %>
-          <div class="user-icon">
-            <img src={picture} referrerpolicy="no-referrer" class="rounded-full" />
-          </div>
-      <% end %>
+    <%= case @current_user.picture do %>
+      <% nil -> %>
+        <.user_icon />
+      <% picture -> %>
+        <div class="user-icon">
+          <img src={picture} referrerpolicy="no-referrer" class="rounded-full" />
+        </div>
+    <% end %>
     """
   end
 
@@ -280,14 +279,28 @@ defmodule OliWeb.Components.Delivery.Utils do
 
   def progress_bar(assigns) do
     ~H"""
-      <div class="my-2 flex flex-row items-center">
-        <div class="font-bold"><%= @percent %>%</div>
-        <div class="flex-1 ml-3">
-          <div class={"w-[#{@width}] rounded-full bg-gray-200 h-2"}>
-            <div class="rounded-full bg-green-600 h-2" style={"width: #{@percent}%"}></div>
-          </div>
+    <div class="my-2 flex flex-row items-center">
+      <div class="font-bold"><%= @percent %>%</div>
+      <div class="flex-1 ml-3">
+        <div class={"w-[#{@width}] rounded-full bg-gray-200 h-2"}>
+          <div class="rounded-full bg-green-600 h-2" style={"width: #{@percent}%"}></div>
         </div>
       </div>
+    </div>
     """
   end
+
+  def get_resource_scheduled_date(resource_id, scheduled_dates, ctx) do
+    case scheduled_dates[resource_id] do
+      %{end_date: nil} ->
+        "No due date"
+
+      data ->
+        "#{scheduled_date_type(data.scheduled_type)} #{OliWeb.Common.FormatDateTime.date(data.end_date, ctx)}"
+    end
+  end
+
+  defp scheduled_date_type(:read_by), do: "Read by"
+  defp scheduled_date_type(:inclass_activity), do: "In class on"
+  defp scheduled_date_type(_), do: "Due by"
 end

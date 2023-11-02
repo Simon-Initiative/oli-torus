@@ -6,6 +6,7 @@ defmodule Oli.TestHelpers do
   alias Oli.Repo
   alias Oli.Accounts
   alias Oli.Accounts.{Author, AuthorPreferences, User}
+  alias Oli.Activities
   alias Oli.Authoring.Course
   alias Oli.Authoring.Course.Project
   alias Oli.Delivery.Sections
@@ -17,6 +18,9 @@ defmodule Oli.TestHelpers do
   alias Lti_1p3.Tool.ContextRoles
   alias Oli.Delivery.Gating.GatingConditionData
   alias Oli.Resources.ResourceType
+  alias Oli.Delivery.Attempts.PageLifecycle
+  alias Oli.Delivery.Settings
+  alias Oli.Delivery.Page.PageContext
 
   Mox.defmock(Oli.Test.MockHTTP, for: HTTPoison.Base)
   Mox.defmock(Oli.Test.MockAws, for: ExAws.Behaviour)
@@ -252,6 +256,13 @@ defmodule Oli.TestHelpers do
     conn = Pow.Plug.assign_current_user(conn, user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
 
     {:ok, conn: conn, user: user}
+  end
+
+  def guest_conn(%{conn: conn}) do
+    guest = user_fixture(%{guest: true})
+    conn = Pow.Plug.assign_current_user(conn, guest, OliWeb.Pow.PowHelpers.get_pow_config(:user))
+
+    {:ok, conn: conn, guest: guest}
   end
 
   def instructor_conn(%{conn: conn}) do
@@ -3276,5 +3287,30 @@ defmodule Oli.TestHelpers do
     end
 
     :ok
+  end
+
+  def visit_page(page_revision, section, enrolled_user) do
+    activity_provider = &Oli.Delivery.ActivityProvider.provide/6
+    datashop_session_id = UUID.uuid4()
+
+    effective_settings =
+      Settings.get_combined_settings(page_revision, section.id, enrolled_user.id)
+
+    PageContext.create_for_visit(
+      section,
+      page_revision.slug,
+      enrolled_user,
+      datashop_session_id
+    )
+
+    {:ok, {_status, _ra}} =
+      PageLifecycle.visit(
+        page_revision,
+        section.slug,
+        datashop_session_id,
+        enrolled_user,
+        effective_settings,
+        activity_provider
+      )
   end
 end

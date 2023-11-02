@@ -1,5 +1,4 @@
 defmodule Oli.Utils.BibUtils do
-
   @doc """
   Assembles all of the bibliography references from a page and the activities that are
   contained within it.  Returns a list of the unique revisions of the bibliography
@@ -8,14 +7,15 @@ defmodule Oli.Utils.BibUtils do
   def assemble_bib_entries(content, activities, activity_bib_provider_fn, section_slug, resolver) do
     page_bib_ids = Map.get(content, "bibrefs", [])
 
-    activity_bib_ids = if activities != nil do
-      Enum.map(activities, fn a ->
-        activity_bib_provider_fn.(a)
-      end)
-      |> List.flatten()
-    else
-      []
-    end
+    activity_bib_ids =
+      if activities != nil do
+        Enum.map(activities, fn a ->
+          activity_bib_provider_fn.(a)
+        end)
+        |> List.flatten()
+      else
+        []
+      end
 
     all_unique_bib_ids = Enum.uniq(page_bib_ids ++ activity_bib_ids)
 
@@ -32,5 +32,4 @@ defmodule Oli.Utils.BibUtils do
       ordinal: ordinal
     }
   end
-
 end

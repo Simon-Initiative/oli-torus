@@ -1,11 +1,10 @@
 defmodule OliWeb.Components.Delivery.CourseContent do
   use Phoenix.LiveComponent
 
-  import OliWeb.Common.FormatDateTime
-
   alias Oli.Delivery.Metrics
   alias OliWeb.Router.Helpers, as: Routes
   alias OliWeb.Components.Delivery.Buttons
+  alias OliWeb.Components.Delivery.Utils, as: DeliveryUtils
 
   attr(:breadcrumbs_tree, :map, required: true)
   attr(:current_position, :integer, required: true)
@@ -49,30 +48,62 @@ defmodule OliWeb.Components.Delivery.CourseContent do
     <div class="bg-white dark:bg-gray-800 shadow-sm">
       <div class="flex flex-col divide-y divide-gray-100 dark:divide-gray-700">
         <section class="flex flex-col p-8">
-          <h4 class="text-base font-semibold mr-auto tracking-wide text-gray-800 dark:text-white h-8">Course Content</h4>
-          <span class="text-sm font-normal tracking-wide text-gray-800 dark:text-white mt-2">Find all your course content, material, assignments and class activities here.</span>
+          <h4 class="text-base font-semibold mr-auto tracking-wide text-gray-800 dark:text-white h-8">
+            Course Content
+          </h4>
+          <span class="text-sm font-normal tracking-wide text-gray-800 dark:text-white mt-2">
+            Find all your course content, material, assignments and class activities here.
+          </span>
         </section>
         <%= if get_current_node(@current_level_nodes, @current_position)["level"] != "-1" do %>
-        <section class="flex flex-row justify-between p-8">
-          <div class="text-xs absolute -mt-5"><%= render_breadcrumbs(%{breadcrumbs_tree: @breadcrumbs_tree, myself: @myself}) %></div>
-          <button phx-click="previous_node" phx-target={@myself} class={if @current_position == 0, do: "grayscale pointer-events-none"}>
-            <i class="fa-regular fa-circle-left text-primary text-xl"></i>
-          </button>
-          <div class="flex flex-col">
-            <h4 id="course_browser_node_title" class="text-lg font-semibold tracking-wide text-gray-800 dark:text-white mx-auto h-9"><%= get_resource_name(@current_level_nodes, @current_position, @section.display_curriculum_item_numbering) %> </h4>
-            <%= if !assigns[:is_instructor] do %>
-              <div class="flex items-center justify-center space-x-3 mt-1">
-                <span class="uppercase text-[10px] tracking-wide text-gray-800 dark:text-white"><%= "#{get_resource_prefix(get_current_node(@current_level_nodes, @current_position), @section.display_curriculum_item_numbering)} overall progress" %></span>
-                <div id="browser_overall_progress_bar" class="w-52 rounded-full bg-gray-200 h-2">
-                  <div class="rounded-full bg-primary h-2" style={"width: #{get_current_node_progress(@current_level_nodes, @current_position, @current_user_id, @section.id)}%"}></div>
+          <section class="flex flex-row justify-between p-8">
+            <div class="text-xs absolute -mt-5">
+              <%= render_breadcrumbs(%{breadcrumbs_tree: @breadcrumbs_tree, myself: @myself}) %>
+            </div>
+            <button
+              phx-click="previous_node"
+              phx-target={@myself}
+              class={if @current_position == 0, do: "grayscale pointer-events-none"}
+            >
+              <i class="fa-regular fa-circle-left text-primary text-xl"></i>
+            </button>
+            <div class="flex flex-col">
+              <h4
+                id="course_browser_node_title"
+                class="text-lg font-semibold tracking-wide text-gray-800 dark:text-white mx-auto h-9"
+              >
+                <%= get_resource_name(
+                  @current_level_nodes,
+                  @current_position,
+                  @section.display_curriculum_item_numbering
+                ) %>
+              </h4>
+              <%= if !assigns[:is_instructor] do %>
+                <div class="flex items-center justify-center space-x-3 mt-1">
+                  <span class="uppercase text-[10px] tracking-wide text-gray-800 dark:text-white">
+                    <%= "#{get_resource_prefix(get_current_node(@current_level_nodes, @current_position), @section.display_curriculum_item_numbering)} overall progress" %>
+                  </span>
+                  <div id="browser_overall_progress_bar" class="w-52 rounded-full bg-gray-200 h-2">
+                    <div
+                      class="rounded-full bg-primary h-2"
+                      style={"width: #{get_current_node_progress(@current_level_nodes, @current_position, @current_user_id, @section.id)}%"}
+                    >
+                    </div>
+                  </div>
                 </div>
-              </div>
-            <% end %>
-          </div>
-          <button phx-click="next_node" phx-target={@myself} class={if @current_position + 1 == length(@current_level_nodes), do: "grayscale pointer-events-none"}>
-            <i class="fa-regular fa-circle-right text-primary text-xl"></i>
-          </button>
-        </section>
+              <% end %>
+            </div>
+            <button
+              phx-click="next_node"
+              phx-target={@myself}
+              class={
+                if @current_position + 1 == length(@current_level_nodes),
+                  do: "grayscale pointer-events-none"
+              }
+            >
+              <i class="fa-regular fa-circle-right text-primary text-xl"></i>
+            </button>
+          </section>
         <% end %>
         <%= for {resource, index} <- get_current_node(@current_level_nodes, @current_position)["children"] |> Enum.with_index() do %>
           <section class="flex flex-row justify-between items-center w-full p-8">
@@ -82,32 +113,54 @@ defmodule OliWeb.Components.Delivery.CourseContent do
               phx-click="go_down"
               phx-value-resource_id={resource["id"]}
               phx-value-selected_resource_index={index}
-              phx-value-resource_type={resource["type"]}>
-              <%= if resource["type"] == "container", do: "#{get_current_node(@current_level_nodes, @current_position)["index"]}.#{resource["index"]} #{resource["title"]}", else: resource["title"] %>
+              phx-value-resource_type={resource["type"]}
+            >
+              <%= if resource["type"] == "container",
+                do:
+                  "#{get_current_node(@current_level_nodes, @current_position)["index"]}.#{resource["index"]} #{resource["title"]}",
+                else: resource["title"] %>
             </h4>
 
             <%= if !assigns[:is_instructor] do %>
-              <span class="w-64 h-10 text-sm tracking-wide text-gray-800 dark:text-white bg-gray-100 dark:bg-gray-500 rounded-sm flex justify-center items-center ml-auto mr-3"><%= get_resource_scheduled_date(resource["id"], @scheduled_dates, @ctx) %></span>
-              <button class="torus-button primary h-10" phx-target={@myself} phx-click="open_resource" phx-value-resource_slug={resource["slug"]} phx-value-resource_type={resource["type"]} phx-value-preview={"#{@preview_mode}"}>Open</button>
+              <span class="w-64 h-10 text-sm tracking-wide text-gray-800 dark:text-white bg-gray-100 dark:bg-gray-500 rounded-sm flex justify-center items-center ml-auto mr-3">
+                <%= DeliveryUtils.get_resource_scheduled_date(
+                  String.to_integer(resource["id"]),
+                  @scheduled_dates,
+                  @ctx
+                ) %>
+              </span>
+              <button
+                class="torus-button primary h-10"
+                phx-target={@myself}
+                phx-click="open_resource"
+                phx-value-resource_slug={resource["slug"]}
+                phx-value-resource_type={resource["type"]}
+                phx-value-preview={"#{@preview_mode}"}
+              >
+                Open
+              </button>
             <% else %>
               <Buttons.button_with_options
                 id={"open-resource-button-#{index}"}
-                href={Routes.page_delivery_path(
-                  OliWeb.Endpoint,
-                  preview_resource_type(resource["type"]),
-                  @section.slug,
-                  resource["slug"]
-                )}
-                target={"_blank"}
+                href={
+                  Routes.page_delivery_path(
+                    OliWeb.Endpoint,
+                    preview_resource_type(resource["type"]),
+                    @section.slug,
+                    resource["slug"]
+                  )
+                }
+                target="_blank"
                 options={[
                   %{
                     text: "Open as student",
-                    href: Routes.page_delivery_path(
-                      OliWeb.Endpoint,
-                      String.to_existing_atom(resource["type"]),
-                      @section.slug,
-                      resource["slug"]
-                    ),
+                    href:
+                      Routes.page_delivery_path(
+                        OliWeb.Endpoint,
+                        String.to_existing_atom(resource["type"]),
+                        @section.slug,
+                        resource["slug"]
+                      ),
                     target: "_blank"
                   }
                 ]}
@@ -132,7 +185,8 @@ defmodule OliWeb.Components.Delivery.CourseContent do
           phx-target={@myself}
           phx-click="breadcrumb-navigate"
           phx-value-target_level={target_level}
-          phx-value-target_position={target_position}>
+          phx-value-target_position={target_position}
+        >
           <%= text %>
         </button>
       <% end %>
@@ -142,7 +196,8 @@ defmodule OliWeb.Components.Delivery.CourseContent do
           phx-target={@myself}
           phx-click="breadcrumb-navigate"
           phx-value-target_level={target_level}
-          phx-value-target_position={target_position}>
+          phx-value-target_position={target_position}
+        >
           <%= text %>
         </button>
       <% end %>
@@ -369,20 +424,6 @@ defmodule OliWeb.Components.Delivery.CourseContent do
         0.0
     end
   end
-
-  defp get_resource_scheduled_date(resource_id, scheduled_dates, ctx) do
-    case scheduled_dates[String.to_integer(resource_id)] do
-      %{end_date: nil} ->
-        "No due date"
-
-      data ->
-        "#{scheduled_date_type(data.scheduled_type)} #{date(data.end_date, ctx)}"
-    end
-  end
-
-  defp scheduled_date_type(:read_by), do: "Read by"
-  defp scheduled_date_type(:inclass_activity), do: "In class on"
-  defp scheduled_date_type(_), do: "Due by"
 
   defp get_resource_name(current_level_nodes, current_position, display_curriculum_item_numbering) do
     current_node = get_current_node(current_level_nodes, current_position)

@@ -203,19 +203,24 @@ defmodule Oli.Interop.Ingest do
       Oli.Publishing.publish_project(project, "New containers for product")
     end
 
-    labels = Map.get(product, "children")
-    |> Enum.filter(fn c -> c["type"] == "labels" end)
-    |> Enum.reduce(%{}, fn item, acc ->
-      Map.merge(acc, %{
-        unit: Map.get(item, "unit"),
-        module: Map.get(item, "module"),
-        section: Map.get(item, "section")
-        }) end)
+    labels =
+      Map.get(product, "children")
+      |> Enum.filter(fn c -> c["type"] == "labels" end)
+      |> Enum.reduce(%{}, fn item, acc ->
+        Map.merge(acc, %{
+          unit: Map.get(item, "unit"),
+          module: Map.get(item, "module"),
+          section: Map.get(item, "section")
+        })
+      end)
 
     custom_labels =
       case Map.equal?(labels, %{}) do
-        true -> if project.customizations == nil, do: nil, else: Map.from_struct(project.customizations)
-        _ -> labels
+        true ->
+          if project.customizations == nil, do: nil, else: Map.from_struct(project.customizations)
+
+        _ ->
+          labels
       end
 
     # Create the blueprint (aka 'product'), with the hierarchy definition that was just built
@@ -322,14 +327,16 @@ defmodule Oli.Interop.Ingest do
         {:error, :empty_project_title}
 
       title ->
-        labels = Map.get(hierarchy, "children")
-        |> Enum.filter(fn c -> c["type"] == "labels" end)
-        |> Enum.reduce(%{}, fn item, acc ->
-          Map.merge(acc, %{
-            unit: Map.get(item, "unit"),
-            module: Map.get(item, "module"),
-            section: Map.get(item, "section")
-          }) end)
+        labels =
+          Map.get(hierarchy, "children")
+          |> Enum.filter(fn c -> c["type"] == "labels" end)
+          |> Enum.reduce(%{}, fn item, acc ->
+            Map.merge(acc, %{
+              unit: Map.get(item, "unit"),
+              module: Map.get(item, "module"),
+              section: Map.get(item, "section")
+            })
+          end)
 
         custom_labels =
           case Map.equal?(labels, %{}) do
@@ -443,7 +450,11 @@ defmodule Oli.Interop.Ingest do
                     as_author
                   ) do
                {:ok, revision} ->
-                 if id == required_student_survey_id, do: Course.update_project(project, %{required_survey_resource_id: revision.resource_id})
+                 if id == required_student_survey_id,
+                   do:
+                     Course.update_project(project, %{
+                       required_survey_resource_id: revision.resource_id
+                     })
 
                  {:cont, Map.put(map, id, revision)}
 

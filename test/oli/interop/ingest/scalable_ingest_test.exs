@@ -21,12 +21,12 @@ defmodule Oli.Interop.Ingest.ScalableIngestTest do
 
     m = Enum.reduce(entries, %{}, fn {f, c}, m -> Map.put(m, f, c) end)
 
-    assert Map.has_key?(m, '_hierarchy.json')
-    assert Map.has_key?(m, '_media-manifest.json')
-    assert Map.has_key?(m, '_project.json')
+    assert Map.has_key?(m, ~c"_hierarchy.json")
+    assert Map.has_key?(m, ~c"_media-manifest.json")
+    assert Map.has_key?(m, ~c"_project.json")
 
     hierarchy =
-      Map.get(m, '_hierarchy.json')
+      Map.get(m, ~c"_hierarchy.json")
       |> Jason.decode!()
 
     assert length(Map.get(hierarchy, "children")) == 1

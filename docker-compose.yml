@@ -1,8 +1,16 @@
 version: "3.5"
 services:
+  app:
+    build: .
+    depends_on:
+      - postgres
+    env_file: ./oli.env
+    ports:
+      - 80:80
+      - 443:443
+
   postgres:
     image: postgres
-    container_name: oli_postgres
     logging:
       driver: "json-file"
       options:
@@ -13,24 +21,9 @@ services:
     env_file: ./postgres.env
     volumes:
       - postgres_data:/var/lib/postgresql/data
-    networks:
-      - default
-  web:
-    build: .
-    depends_on:
-      - postgres
-    env_file: ./oli.env
-    command: bash -c "
-      mix ecto.setup
-      && mix phx.server"
-    ports:
-      - 80:80
-      - 443:443
-    networks:
-      - default
+
   minio:
     image: minio/minio
-    container_name: my-minio
     ports:
       - "9000:9000"
       - "9001:9001"

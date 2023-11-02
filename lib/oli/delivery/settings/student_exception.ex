@@ -4,28 +4,29 @@ defmodule Oli.Delivery.Settings.StudentException do
   import Ecto.Changeset
 
   schema "delivery_settings" do
-    belongs_to :user, Oli.Accounts.User
-    belongs_to :section, Oli.Delivery.Sections.Section
-    belongs_to :resource, Oli.Resources.Resource
+    belongs_to(:user, Oli.Accounts.User)
+    belongs_to(:section, Oli.Delivery.Sections.Section)
+    belongs_to(:resource, Oli.Resources.Resource)
 
-    embeds_one :collab_space_config, Oli.Resources.Collaboration.CollabSpaceConfig,
+    embeds_one(:collab_space_config, Oli.Resources.Collaboration.CollabSpaceConfig,
       on_replace: :delete
+    )
 
-    embeds_one :explanation_strategy, Oli.Resources.ExplanationStrategy, on_replace: :delete
+    embeds_one(:explanation_strategy, Oli.Resources.ExplanationStrategy, on_replace: :delete)
 
-    field :start_date, :utc_datetime, null: true
-    field :end_date, :utc_datetime, null: true
-    field :password, :string, null: true
-    field :max_attempts, :integer, null: true
-    field :retake_mode, Ecto.Enum, values: [:normal, :targeted], null: true
-    field :late_submit, Ecto.Enum, values: [:allow, :disallow], null: true
-    field :late_start, Ecto.Enum, values: [:allow, :disallow], null: true
-    field :time_limit, :integer, null: true
-    field :grace_period, :integer, null: true
-    field :scoring_strategy_id, :integer, null: true
-    field :review_submission, Ecto.Enum, values: [:allow, :disallow], null: true
-    field :feedback_mode, Ecto.Enum, values: [:allow, :disallow, :scheduled], null: true
-    field :feedback_scheduled_date, :utc_datetime, null: true
+    field(:start_date, :utc_datetime)
+    field(:end_date, :utc_datetime)
+    field(:password, :string)
+    field(:max_attempts, :integer)
+    field(:retake_mode, Ecto.Enum, values: [:normal, :targeted])
+    field(:late_submit, Ecto.Enum, values: [:allow, :disallow])
+    field(:late_start, Ecto.Enum, values: [:allow, :disallow])
+    field(:time_limit, :integer)
+    field(:grace_period, :integer)
+    field(:scoring_strategy_id, :integer)
+    field(:review_submission, Ecto.Enum, values: [:allow, :disallow])
+    field(:feedback_mode, Ecto.Enum, values: [:allow, :disallow, :scheduled])
+    field(:feedback_scheduled_date, :utc_datetime)
 
     timestamps(type: :utc_datetime)
   end

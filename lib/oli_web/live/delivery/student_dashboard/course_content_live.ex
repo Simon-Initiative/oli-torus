@@ -11,7 +11,8 @@ defmodule OliWeb.Delivery.StudentDashboard.CourseContentLive do
         %{
           "section_slug" => section_slug,
           "current_user_id" => current_user_id,
-          "preview_mode" => preview_mode
+          "preview_mode" => preview_mode,
+          "scheduled_dates" => scheduled_dates
         } = session,
         socket
       ) do
@@ -36,8 +37,7 @@ defmodule OliWeb.Delivery.StudentDashboard.CourseContentLive do
        current_level_nodes: hierarchy["children"],
        current_position: current_position,
        current_level: current_level,
-       scheduled_dates:
-         Sections.get_resources_scheduled_dates_for_student(section.slug, current_user_id),
+       scheduled_dates: scheduled_dates,
        section: section,
        breadcrumbs_tree: [{current_level, current_position, "Curriculum"}],
        current_user_id: current_user_id,
@@ -48,20 +48,20 @@ defmodule OliWeb.Delivery.StudentDashboard.CourseContentLive do
   @impl Phoenix.LiveView
   def render(assigns) do
     ~H"""
-      <.live_component
-        module={OliWeb.Components.Delivery.CourseContent}
-        id="course_content_tab"
-        ctx={assigns.ctx}
-        hierarchy={assigns.hierarchy}
-        current_position={assigns.current_position}
-        current_level={assigns.current_level}
-        current_level_nodes={assigns.current_level_nodes}
-        breadcrumbs_tree={assigns.breadcrumbs_tree}
-        section={assigns.section}
-        scheduled_dates={assigns.scheduled_dates}
-        current_user_id={assigns.current_user_id}
-        preview_mode={assigns.preview_mode}
-      />
+    <.live_component
+      module={OliWeb.Components.Delivery.CourseContent}
+      id="course_content_tab"
+      ctx={assigns.ctx}
+      hierarchy={assigns.hierarchy}
+      current_position={assigns.current_position}
+      current_level={assigns.current_level}
+      current_level_nodes={assigns.current_level_nodes}
+      breadcrumbs_tree={assigns.breadcrumbs_tree}
+      section={assigns.section}
+      scheduled_dates={assigns.scheduled_dates}
+      current_user_id={assigns.current_user_id}
+      preview_mode={assigns.preview_mode}
+    />
     """
   end
 end

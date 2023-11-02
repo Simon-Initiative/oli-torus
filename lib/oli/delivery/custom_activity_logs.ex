@@ -1,5 +1,4 @@
 defmodule Oli.Delivery.CustomActivityLogs do
-
   @doc """
   If background async job execution is enabled, queue the creation of activity log records for
   exising activity attempt record guid. If background job execution is disabled, just create

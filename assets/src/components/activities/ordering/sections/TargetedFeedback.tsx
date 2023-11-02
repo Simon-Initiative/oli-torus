@@ -23,6 +23,11 @@ export const TargetedFeedback: React.FC = () => {
         <ResponseCard
           title="Targeted feedback"
           response={mapping.response}
+          updateFeedbackTextDirection={(_id, textDirection) =>
+            dispatch(
+              ResponseActions.editResponseFeedbackTextDirection(mapping.response.id, textDirection),
+            )
+          }
           updateFeedbackEditor={(_id, editor) =>
             dispatch(ResponseActions.editResponseFeedbackEditor(mapping.response.id, editor))
           }

@@ -14,6 +14,9 @@ export const Hints: React.FC<Props> = (props) => {
       addOne={() => dispatch(HintUtils.addCognitiveHint(makeHint(''), props.partId))}
       updateOne={(id, content) => dispatch(HintUtils.setContent(id, content))}
       updateOneEditor={(id, editor) => dispatch(HintUtils.setEditor(id, editor))}
+      updateOneTextDirection={(id, textDirection) =>
+        dispatch(HintUtils.setTextDirection(id, textDirection))
+      }
       removeOne={(id) => dispatch(HintUtils.removeOne(id, props.partId))}
       deerInHeadlightsHint={HintUtils.getDeerInHeadlightsHint(model, props.partId)}
       cognitiveHints={HintUtils.getCognitiveHints(model, props.partId)}

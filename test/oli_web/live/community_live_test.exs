@@ -175,7 +175,7 @@ defmodule OliWeb.CommunityLiveTest do
       refute has_element?(view, "##{last_c.id}")
 
       view
-      |> element("a[phx-click=\"page_change\"]", "2")
+      |> element("button[phx-click=\"page_change\"]", "2")
       |> render_click()
 
       refute has_element?(view, "##{first_c.id}")
@@ -1010,7 +1010,7 @@ defmodule OliWeb.CommunityLiveTest do
       refute has_element?(view, "##{last_cv.id}")
 
       view
-      |> element("a[phx-click=\"page_change\"]", "2")
+      |> element("button[phx-click=\"page_change\"]", "2")
       |> render_click()
 
       refute has_element?(view, "##{first_cv.id}")
@@ -1166,7 +1166,7 @@ defmodule OliWeb.CommunityLiveTest do
                last_p.title
 
       view
-      |> element("a[phx-click=\"page_change\"]", "2")
+      |> element("button[phx-click=\"page_change\"]", "2")
       |> render_click()
 
       assert view
@@ -1332,7 +1332,7 @@ defmodule OliWeb.CommunityLiveTest do
                last_cma.user.name
 
       view
-      |> element("a[phx-click=\"page_change\"]", "2")
+      |> element("button[phx-click=\"page_change\"]", "2")
       |> render_click()
 
       refute view

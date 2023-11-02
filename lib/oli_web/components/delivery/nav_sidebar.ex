@@ -21,15 +21,13 @@ defmodule OliWeb.Components.Delivery.NavSidebar do
 
   def main_with_nav(assigns) do
     ~H"""
-      <main role="main" class="flex-1 flex flex-col relative lg:flex-row">
-        <.navbar {assigns} path_info={@conn.path_info} />
+    <main role="main" class="flex-1 flex flex-col relative lg:flex-row">
+      <.navbar {assigns} path_info={@conn.path_info} />
 
-        <div class="flex-1 flex flex-col lg:pl-[200px]">
-
-          <%= render_slot(@inner_block) %>
-
-        </div>
-      </main>
+      <div class="flex-1 flex flex-col lg:pl-[200px]">
+        <%= render_slot(@inner_block) %>
+      </div>
+    </main>
     """
   end
 
@@ -54,18 +52,18 @@ defmodule OliWeb.Components.Delivery.NavSidebar do
       |> UserAccountMenu.user_account_menu_assigns()
 
     ~H"""
-      <div id="navbar" phx-update="ignore">
-        <%= ReactPhoenix.ClientSide.react_component("Components.Navbar", %{
-          logo: @logo,
-          links: @links,
-          user: @user,
-          preview: @preview,
-          routes: @routes,
-          sectionSlug: @section_slug,
-          selectedTimezone: @selected_timezone,
-          timezones: @timezones,
-        }) %>
-      </div>
+    <div id="navbar" phx-update="ignore">
+      <%= ReactPhoenix.ClientSide.react_component("Components.Navbar", %{
+        logo: @logo,
+        links: @links,
+        user: @user,
+        preview: @preview,
+        routes: @routes,
+        sectionSlug: @section_slug,
+        selectedTimezone: @selected_timezone,
+        timezones: @timezones
+      }) %>
+    </div>
     """
   end
 

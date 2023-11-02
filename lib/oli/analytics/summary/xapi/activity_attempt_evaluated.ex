@@ -1,28 +1,30 @@
 defmodule Oli.Analytics.Summary.XAPI.ActivityAttemptEvaluated do
-
   alias Oli.Analytics.Summary.Context
   alias Oli.Delivery.Attempts.Core.ActivityAttempt
 
-  def new(%Context{
-    user_id: user_id,
-    host_name: host_name,
-    section_id: section_id,
-    project_id: project_id,
-    publication_id: publication_id
-  }, %ActivityAttempt{
-    attempt_guid: attempt_guid,
-    attempt_number: attempt_number,
-    score: score,
-    out_of: out_of,
-    date_evaluated: timestamp,
-    resource_id: activity_id,
-    revision_id: activity_revision_id
-  }, %{
-    attempt_guid: page_attempt_guid,
-    attempt_number: page_attempt_number,
-    resource_id: page_id
-  }) do
-
+  def new(
+        %Context{
+          user_id: user_id,
+          host_name: host_name,
+          section_id: section_id,
+          project_id: project_id,
+          publication_id: publication_id
+        },
+        %ActivityAttempt{
+          attempt_guid: attempt_guid,
+          attempt_number: attempt_number,
+          score: score,
+          out_of: out_of,
+          date_evaluated: timestamp,
+          resource_id: activity_id,
+          revision_id: activity_revision_id
+        },
+        %{
+          attempt_guid: page_attempt_guid,
+          attempt_number: page_attempt_number,
+          resource_id: page_id
+        }
+      ) do
     %{
       "actor" => %{
         "account" => %{
@@ -49,7 +51,12 @@ defmodule Oli.Analytics.Summary.XAPI.ActivityAttemptEvaluated do
       },
       "result" => %{
         "score" => %{
-          "scaled" => if out_of == 0.0 do 0.0 else score / out_of end,
+          "scaled" =>
+            if out_of == 0.0 do
+              0.0
+            else
+              score / out_of
+            end,
           "raw" => score,
           "min" => 0,
           "max" => out_of
@@ -74,5 +81,4 @@ defmodule Oli.Analytics.Summary.XAPI.ActivityAttemptEvaluated do
       "timestamp" => timestamp
     }
   end
-
 end

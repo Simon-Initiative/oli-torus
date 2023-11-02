@@ -1,5 +1,4 @@
 defmodule Oli.Analytics.Summary.Context do
-
   @enforce_keys [
     :user_id,
     :host_name,
@@ -9,5 +8,4 @@ defmodule Oli.Analytics.Summary.Context do
   ]
 
   defstruct @enforce_keys
-
 end

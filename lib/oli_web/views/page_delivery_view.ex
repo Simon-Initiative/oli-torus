@@ -57,37 +57,38 @@ defmodule OliWeb.PageDeliveryView do
 
   def prev_link(assigns) do
     ~H"""
-      <%= link to: @to, class: "page-nav-link btn", onclick: assigns[:onclick] do %>
-        <div class="flex items-center justify-between">
-          <div class="mr-4">
-            <i class="fas fa-arrow-left nav-icon"></i>
-          </div>
-          <div class="flex flex-col text-right overflow-hidden">
-            <div class="nav-label"><%= value_or(assigns[:label], "Previous") %></div>
-            <div class="nav-title"><%= @title %></div>
-          </div>
+    <%= link to: @to, class: "page-nav-link btn", onclick: assigns[:onclick] do %>
+      <div class="flex items-center justify-between">
+        <div class="mr-4">
+          <i class="fas fa-arrow-left nav-icon"></i>
         </div>
-      <% end %>
+        <div class="flex flex-col text-right overflow-hidden">
+          <div class="nav-label"><%= value_or(assigns[:label], "Previous") %></div>
+          <div class="nav-title"><%= @title %></div>
+        </div>
+      </div>
+    <% end %>
     """
   end
 
   def next_link(assigns) do
     ~H"""
-      <%= link to: @to, class: "page-nav-link btn", onclick: assigns[:onclick] do %>
-        <div class="flex items-center justify-between">
-          <div class="flex flex-col text-left overflow-hidden">
-            <div class="nav-label"><%= value_or(assigns[:label], "Next") %></div>
-            <div class="nav-title"><%= @title %></div>
-          </div>
-          <div class="ml-4">
-            <i class="fas fa-arrow-right nav-icon"></i>
-          </div>
+    <%= link to: @to, class: "page-nav-link btn", onclick: assigns[:onclick] do %>
+      <div class="flex items-center justify-between">
+        <div class="flex flex-col text-left overflow-hidden">
+          <div class="nav-label"><%= value_or(assigns[:label], "Next") %></div>
+          <div class="nav-title"><%= @title %></div>
         </div>
-      <% end %>
+        <div class="ml-4">
+          <i class="fas fa-arrow-right nav-icon"></i>
+        </div>
+      </div>
+    <% end %>
     """
   end
 
-  def action(preview_mode, %{resource_type_id: _resource_type_id} = revision), do: action(preview_mode, container?(revision))
+  def action(preview_mode, %{resource_type_id: _resource_type_id} = revision),
+    do: action(preview_mode, container?(revision))
 
   def action(preview_mode, %{"type" => type}), do: action(preview_mode, type == "container")
 

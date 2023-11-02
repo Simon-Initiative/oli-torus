@@ -6,5 +6,8 @@
   "editor.defaultFormatter": "esbenp.prettier-vscode",
   "[elixir]": {
     "editor.defaultFormatter": "JakeBecker.elixir-ls"
+  },
+  "[phoenix-heex]": {
+    "editor.defaultFormatter": "JakeBecker.elixir-ls"
   }
 }

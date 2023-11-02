@@ -394,6 +394,8 @@ export interface Hyperlink extends SlateElement<Text[]> {
   linkType?: HyperlinkType;
 }
 
+export type TextDirection = 'ltr' | 'rtl';
+
 export interface CommandButton extends SlateElement<Text[]> {
   type: 'command_button';
   message: string;

@@ -38,31 +38,32 @@ defmodule Oli.Interop.Ingest.Processor.InternalActivityRefs do
   end
 
   defp rewire_internal_refs(revision, activity_map) do
-
     try do
-
       case revision.content do
         %{"authoring" => %{"flowchart" => %{"paths" => paths} = flowchart} = authoring} ->
-
           if Enum.any?(paths, fn p -> Map.has_key?(p, "destinationScreenId") end) do
+            paths =
+              Enum.map(paths, fn path ->
+                case path do
+                  %{"destinationScreenId" => id} ->
+                    id_as_str = Integer.to_string(id)
 
-            paths = Enum.map(paths, fn path ->
-              case path do
-                %{"destinationScreenId" => id} ->
+                    Map.put(
+                      path,
+                      "destinationScreenId",
+                      Map.get(activity_map, id_as_str).resource_id
+                    )
 
-                  id_as_str = Integer.to_string(id)
-                  Map.put(path, "destinationScreenId", Map.get(activity_map, id_as_str).resource_id)
-
-                other -> other
-              end
-            end)
+                  other ->
+                    other
+                end
+              end)
 
             flowchart = Map.put(flowchart, "paths", paths)
             authoring = Map.put(authoring, "flowchart", flowchart)
             content = Map.put(revision.content, "authoring", authoring)
 
             Oli.Resources.update_revision(revision, %{content: content})
-
           else
             {:ok, revision}
           end
@@ -70,10 +71,8 @@ defmodule Oli.Interop.Ingest.Processor.InternalActivityRefs do
         _ ->
           {:ok, revision}
       end
-
     rescue
       _ in KeyError -> {:ok, revision}
     end
   end
-
 end

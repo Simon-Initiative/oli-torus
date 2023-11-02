@@ -104,15 +104,17 @@ defmodule OliWeb.OpenAndFreeControllerTest do
   end
 
   describe "create open_and_free" do
-    setup [:create_fixtures]
+    setup [:create_full_project_with_objectives]
 
     test "redirects to show when data is valid", %{
       conn: conn,
       admin: admin,
       project: project,
-      user: user,
-      revision1: revision1
+      resources: resources,
+      revisions: %{page_revision_1: page_revision_1}
     } do
+      user = insert(:user)
+
       conn =
         post(conn, Routes.admin_open_and_free_path(conn, :create),
           section: Enum.into(@create_attrs, %{project_slug: project.slug})
@@ -125,6 +127,21 @@ defmodule OliWeb.OpenAndFreeControllerTest do
 
       # can access open and free index and pages
       section = Sections.get_section_by(slug: slug)
+
+      # Check Root Container objectives
+      root_container_objectives = Sections.get_section_contained_objectives(section.id, nil)
+
+      # C, C1, D, E and F are the objectives attached to the inner activities
+      assert length(root_container_objectives) == 5
+
+      assert Enum.sort(root_container_objectives) ==
+               Enum.sort([
+                 resources.obj_resource_c.id,
+                 resources.obj_resource_c1.id,
+                 resources.obj_resource_d.id,
+                 resources.obj_resource_e.id,
+                 resources.obj_resource_f.id
+               ])
 
       conn =
         conn
@@ -139,9 +156,9 @@ defmodule OliWeb.OpenAndFreeControllerTest do
       conn =
         conn
         |> recycle_user_session(user)
-        |> get(Routes.page_delivery_path(conn, :page, section.slug, revision1.slug))
+        |> get(Routes.page_delivery_path(conn, :page, section.slug, page_revision_1.slug))
 
-      assert html_response(conn, 200) =~ "Page one"
+      assert html_response(conn, 200) =~ "Page 1"
     end
   end
 
@@ -187,7 +204,9 @@ defmodule OliWeb.OpenAndFreeControllerTest do
 
     test "renders errors when data is invalid", %{conn: conn, section: section} do
       conn =
-        put(conn, Routes.admin_open_and_free_path(conn, :update, section), section: @invalid_attrs)
+        put(conn, Routes.admin_open_and_free_path(conn, :update, section),
+          section: @invalid_attrs
+        )
 
       assert html_response(conn, 200) =~ "Edit Section"
     end

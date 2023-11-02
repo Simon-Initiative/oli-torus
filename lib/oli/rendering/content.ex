@@ -8,7 +8,7 @@ defmodule Oli.Rendering.Content do
 
   alias Oli.Rendering.Context
 
-  @type next :: (() -> String.t())
+  @type next :: (-> String.t())
   @type children :: [%{}]
 
   @callback text(%Context{}, %{}) :: [any()]
@@ -116,8 +116,16 @@ defmodule Oli.Rendering.Content do
     writer.manystudentswonder(context, next, element)
   end
 
-  def render(%Context{} = context, %{"type" => "content", "children" => children}, writer) do
-    Enum.map(children, fn child -> render(context, child, writer) end)
+  def render(
+        %Context{} = context,
+        %{"type" => "content", "children" => children} = element,
+        writer
+      ) do
+    [
+      "<div dir=\"#{Map.get(element, "textDirection", "ltr")}\">",
+      Enum.map(children, fn child -> render(context, child, writer) end),
+      "</div>"
+    ]
   end
 
   # Renders text content

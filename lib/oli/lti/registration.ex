@@ -1,6 +1,7 @@
 defmodule Oli.Lti.Tool.Registration do
   use Ecto.Schema
   import Ecto.Changeset
+  import Oli.Utils, only: [update_changes: 3]
 
   schema "lti_1p3_registrations" do
     field(:issuer, :string)
@@ -43,5 +44,20 @@ defmodule Oli.Lti.Tool.Registration do
       :auth_server,
       :tool_jwk_id
     ])
+    |> update_changes(
+      [
+        :issuer,
+        :client_id,
+        :key_set_url,
+        :auth_token_url,
+        :auth_login_url,
+        :auth_server,
+        :line_items_service_domain
+      ],
+      &maybe_trim/1
+    )
   end
+
+  defp maybe_trim(value) when is_binary(value) and not is_nil(value), do: String.trim(value)
+  defp maybe_trim(value), do: value
 end

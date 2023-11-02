@@ -6,11 +6,9 @@ defmodule Oli.Delivery.Sections.ContainedPage do
   alias Oli.Resources.Resource
 
   schema "contained_pages" do
-
     belongs_to :section, Section
     belongs_to :container, Resource
     belongs_to :page, Resource
-
   end
 
   @doc false
@@ -27,5 +25,4 @@ defmodule Oli.Delivery.Sections.ContainedPage do
       :page_id
     ])
   end
-
 end

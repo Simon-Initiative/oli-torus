@@ -10,13 +10,13 @@ defmodule OliWeb.Common.SelectTimezone do
     assigns = timezone_assigns(assigns)
 
     ~H"""
-      <div id="select-timezone" phx-update="ignore">
-        <%= ReactPhoenix.ClientSide.react_component("Components.SelectTimezone", %{
-          selectedTimezone: @selected_timezone,
-          timezones: @timezones,
-          submitAction: Routes.static_page_path(OliWeb.Endpoint, :update_timezone)
-        }) %>
-      </div>
+    <div id="select-timezone" phx-update="ignore">
+      <%= ReactPhoenix.ClientSide.react_component("Components.SelectTimezone", %{
+        selectedTimezone: @selected_timezone,
+        timezones: @timezones,
+        submitAction: Routes.static_page_path(OliWeb.Endpoint, :update_timezone)
+      }) %>
+    </div>
     """
   end
 

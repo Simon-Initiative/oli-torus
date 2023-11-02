@@ -1,4 +1,8 @@
-defmodule Oli.ReleaseTasks do
+defmodule Oli.Release do
+  @moduledoc """
+  Used for executing DB release tasks when run in production without Mix
+  installed.
+  """
   @app :oli
 
   def reset() do
@@ -8,8 +12,8 @@ defmodule Oli.ReleaseTasks do
     seed()
   end
 
-  def reset(%{force: true}) do
-    drop(%{force: true})
+  def reset(%{dangerously_force: true}) do
+    drop(%{dangerously_force: true})
     create()
     migrate()
     seed()
@@ -23,17 +27,18 @@ defmodule Oli.ReleaseTasks do
 
   def drop do
     IO.puts("WARNING! This will completely erase all data from the database.")
+    IO.puts("THIS IS A DANGEROUS AND PERMANENT OPERATION WHICH WILL RESULT IN DATA LOSS")
     confirm = IO.gets("Are you sure you want to continue? (Enter YES to continue): ")
 
     if String.upcase(confirm) == "YES\n" do
-      drop(%{force: true})
+      drop(%{dangerously_force: true})
     else
-      IO.puts("drop operation cancelled by user.")
+      IO.puts("ABORTED: Operation was not confirmed by user.")
       :init.stop()
     end
   end
 
-  def drop(%{force: true}) do
+  def drop(%{dangerously_force: true}) do
     load_app()
 
     for repo <- repos() do
