@@ -1468,7 +1468,7 @@ defmodule Oli.TestHelpers do
         objectives: %{"1" => objectives},
         scoring_strategy_id: Oli.Resources.ScoringStrategy.get_id_by_type("average"),
         resource_type_id: ResourceType.get_id_by_type("activity"),
-        activity_type_id: Oli.Activities.get_registration_by_slug("oli_multiple_choice").id,
+        activity_type_id: Activities.get_registration_by_slug("oli_multiple_choice").id,
         children: [],
         content: %{"model" => []},
         deleted: false,
@@ -1562,7 +1562,7 @@ defmodule Oli.TestHelpers do
     # Project survey
     survey_question_resource = insert(:resource)
 
-    mcq_reg = Oli.Activities.get_registration_by_slug("oli_multiple_choice")
+    mcq_reg = Activities.get_registration_by_slug("oli_multiple_choice")
 
     survey_question_revision =
       insert(:revision,
