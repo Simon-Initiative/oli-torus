@@ -5,6 +5,7 @@ defmodule OliWeb.Delivery.Student.ContentLive do
 
   alias OliWeb.Common.FormatDateTime
   alias Oli.Delivery.{Metrics, Sections}
+  alias Phoenix.LiveView.JS
 
   def mount(_params, _session, socket) do
     # when updating to Liveview 0.20 we should replace this with assign_async/3
@@ -56,6 +57,10 @@ defmodule OliWeb.Delivery.Student.ContentLive do
         )
       end
       |> push_event("scroll-to-target", %{id: "unit_#{unit_uuid}", offset: 80})
+      |> push_event("js-exec", %{
+        to: "#selected_module_details",
+        attr: "data-animate"
+      })
 
     {:noreply, socket}
   end
@@ -176,8 +181,16 @@ defmodule OliWeb.Delivery.Student.ContentLive do
     </div>
     <div
       :if={@unit_selected}
-      class="flex flex-col py-6 px-[50px] gap-x-4 lg:gap-x-12"
+      class="hidden flex-col py-6 px-[50px] gap-x-4 lg:gap-x-12"
       role="module_details"
+      id="selected_module_details"
+      data-animate={
+        JS.show(
+          to: "#selected_module_details",
+          display: "flex",
+          transition: {"ease-out duration-1000", "opacity-0", "opacity-100"}
+        )
+      }
     >
       <div class="flex">
         <div class="w-1/2 flex flex-col px-6">
@@ -349,7 +362,16 @@ defmodule OliWeb.Delivery.Student.ContentLive do
     ~H"""
     <div
       id={"module_#{@module["uuid"]}"}
-      phx-click={if is_page(@module["revision"]), do: "navigate_to_resource", else: "select_module"}
+      phx-click={
+        if is_page(@module["revision"]),
+          do: "navigate_to_resource",
+          else:
+            JS.hide(
+              to: "#selected_module_details",
+              transition: {"ease-out duration-500", "opacity-100", "opacity-0"}
+            )
+            |> JS.push("select_module")
+      }
       phx-value-unit_uuid={@unit_uuid}
       phx-value-module_uuid={@module["uuid"]}
       phx-value-slug={@module["revision"]["slug"]}
@@ -361,7 +383,10 @@ defmodule OliWeb.Delivery.Student.ContentLive do
       <div class="h-[170px] w-[288px]">
         <div class={[
           "flex flex-col gap-[5px] cursor-pointer rounded-xl h-[162px] w-[288px] shrink-0 mb-1 px-5 pt-[15px] bg-gray-200",
-          if(@selected, do: "bg-gray-400 outline outline-2 outline-gray-800 dark:outline-white"),
+          if(@selected,
+            do:
+              "bg-gray-400 outline outline-2 outline-gray-800 dark:outline-white animate-[pulse_0.5s_cubic-bezier(0.4,0,0.6,1)]"
+          ),
           if(@bg_image_url in ["", nil],
             do: "bg-[url('/images/course_default.jpg')]",
             else: "bg-[url('#{@bg_image_url}')]"
