@@ -8,11 +8,9 @@ defmodule Oli.Rendering.Utils do
       |> Phoenix.HTML.safe_to_string()
       # Remove trailing newlines
       |> String.trim()
-
     rescue
       _e -> "Error rendering content"
     end
-
   end
 
   # Code block language options

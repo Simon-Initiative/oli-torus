@@ -169,7 +169,6 @@ defmodule Oli.Analytics.Datashop do
   end
 
   defp part_attempts_stream(project_id) do
-
     max = max_record_size()
 
     from(snapshot in Snapshot,
@@ -187,15 +186,13 @@ defmodule Oli.Analytics.Datashop do
         part_attempt: part_attempt,
         page_id: snapshot.resource_id,
         objective_revision_id: snapshot.objective_revision_id,
-        activity_type_id: snapshot.activity_type_id,
+        activity_type_id: snapshot.activity_type_id
       },
       order_by: [desc: snapshot.inserted_at],
       limit: ^max
     )
     |> Repo.stream()
-
   end
-
 
   defp safely_build_key(r) do
     [
@@ -237,7 +234,6 @@ defmodule Oli.Analytics.Datashop do
   end
 
   def content_stream(context) do
-
     %{
       hierarchy_map: hierarchy_map,
       activity_types: activity_types,
@@ -247,21 +243,26 @@ defmodule Oli.Analytics.Datashop do
       publication: publication
     } = context
 
-
-
     part_attempts_stream(project.id)
     |> Stream.map(fn %{
-      email: email,
-      sub: sub,
-      slug: activity_slug,
-      part_attempt: part_attempt
-    } ->
-
+                       email: email,
+                       sub: sub,
+                       slug: activity_slug,
+                       part_attempt: part_attempt
+                     } ->
       # TODO, it may make a lot of sense to front these next four fetches with an
       # in memory cache
-      activity_attempt = Oli.Repo.get(Oli.Delivery.Attempts.Core.ActivityAttempt, part_attempt.activity_attempt_id)
+      activity_attempt =
+        Oli.Repo.get(Oli.Delivery.Attempts.Core.ActivityAttempt, part_attempt.activity_attempt_id)
+
       activity_revision = Oli.Repo.get(Oli.Resources.Revision, activity_attempt.revision_id)
-      resource_attempt = Oli.Repo.get(Oli.Delivery.Attempts.Core.ResourceAttempt, activity_attempt.resource_attempt_id)
+
+      resource_attempt =
+        Oli.Repo.get(
+          Oli.Delivery.Attempts.Core.ResourceAttempt,
+          activity_attempt.resource_attempt_id
+        )
+
       page_revision = Oli.Repo.get(Oli.Resources.Revision, resource_attempt.revision_id)
 
       resource_attempt = %{resource_attempt | revision: page_revision}
@@ -301,17 +302,21 @@ defmodule Oli.Analytics.Datashop do
 
       # Attempt / Result pairs must have a different transaction ID from the hint message pairs
       context =
-        Map.put(context, :transaction_id, Utils.make_unique_id(activity_slug, part_attempt.part_id))
+        Map.put(
+          context,
+          :transaction_id,
+          Utils.make_unique_id(activity_slug, part_attempt.part_id)
+        )
 
-      all = hint_message_pairs ++
-        [
-          Tool.setup("ATTEMPT", "ATTEMPT", context),
-          Tutor.setup("RESULT", context)
-        ]
+      all =
+        hint_message_pairs ++
+          [
+            Tool.setup("ATTEMPT", "ATTEMPT", context),
+            Tutor.setup("RESULT", context)
+          ]
 
       [context_message | all]
     end)
-
   end
 
   def build_context(project_id) do

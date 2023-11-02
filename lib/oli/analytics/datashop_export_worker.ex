@@ -49,7 +49,6 @@ defmodule Oli.Analytics.DatashopExportWorker do
   end
 
   def generate(project_slug) do
-
     Logger.info("Generating datashop export for project #{project_slug}")
 
     project = Course.get_project_by_slug(project_slug)
@@ -63,56 +62,60 @@ defmodule Oli.Analytics.DatashopExportWorker do
 
     total = min(Datashop.count(project.id), Datashop.max_record_size())
 
-    {:ok, result} = Oli.Repo.transaction(fn ->
+    {:ok, result} =
+      Oli.Repo.transaction(fn ->
+        Oli.Utils.use_tmp(fn tmp_dir ->
+          temp_file_name =
+            Path.join([tmp_dir, "datashop_#{project_slug}_#{Oli.Utils.random_string(16)}.xml"])
 
-      Oli.Utils.use_tmp(fn tmp_dir ->
+          Datashop.build_context(project.id)
+          |> Datashop.content_stream()
+          |> Stream.with_index(1)
+          |> Stream.map(fn {chunk, index} ->
+            Logger.info(
+              "Streaming chunk #{index} of #{total} chunks for Datashop export for project #{project_slug}"
+            )
 
-        temp_file_name = Path.join([tmp_dir, "datashop_#{project_slug}_#{Oli.Utils.random_string(16)}.xml"])
+            chunk = chunk |> XmlBuilder.generate()
 
-        Datashop.build_context(project.id)
-        |> Datashop.content_stream()
-        |> Stream.with_index(1)
-        |> Stream.map(fn {chunk, index} ->
+            chunk =
+              if index == 1 do
+                first_chunk <> chunk
+              else
+                chunk
+              end
 
-          Logger.info("Streaming chunk #{index} of #{total} chunks for Datashop export for project #{project_slug}")
-          chunk = chunk |> XmlBuilder.generate()
+            chunk =
+              if index == total do
+                chunk <> last_chunk
+              else
+                chunk
+              end
 
-          chunk = if index == 1 do
-            first_chunk <> chunk
-          else
             chunk
-          end
+          end)
+          |> Stream.into(File.stream!(temp_file_name))
+          |> Stream.run()
 
-          chunk = if index == total do
-            chunk <> last_chunk
-          else
-            chunk
-          end
+          Logger.info("Wrote Datashop file #{temp_file_name} for project #{project_slug}")
 
-          chunk
+          {:ok, full_upload_url} =
+            Oli.Utils.S3Storage.stream_file(bucket_name, datashop_snapshot_path, temp_file_name)
 
+          Logger.info("Uploaded Datashop file #{full_upload_url} for project #{project_slug}")
+
+          timestamp = DateTime.utc_now()
+
+          # update the project's last_exported_at timestamp
+          Course.update_project_latest_datashop_snapshot_url(
+            project_slug,
+            full_upload_url,
+            timestamp
+          )
+
+          {full_upload_url, timestamp}
         end)
-        |> Stream.into(File.stream!(temp_file_name))
-        |> Stream.run()
-
-        Logger.info("Wrote Datashop file #{temp_file_name} for project #{project_slug}")
-
-        {:ok, full_upload_url} = Oli.Utils.S3Storage.stream_file(bucket_name, datashop_snapshot_path, temp_file_name)
-
-        Logger.info("Uploaded Datashop file #{full_upload_url} for project #{project_slug}")
-
-        timestamp = DateTime.utc_now()
-
-        # update the project's last_exported_at timestamp
-        Course.update_project_latest_datashop_snapshot_url(project_slug, full_upload_url, timestamp)
-
-        {full_upload_url, timestamp}
-
-
       end)
-
-
-    end)
 
     result
   end
