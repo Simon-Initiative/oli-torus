@@ -27,7 +27,9 @@ defmodule Oli.Analytics.Datashop do
     |> generate
   end
 
-
+  def max_record_size() do
+    20000
+  end
 
   # Creates a map of resource ids to lists, where the lists are the
   # full paths of revisons from the root to that resource's position in the hierarchy.
@@ -185,7 +187,8 @@ defmodule Oli.Analytics.Datashop do
         objective_revision_id: snapshot.objective_revision_id,
         activity_type_id: snapshot.activity_type_id,
       },
-      order_by: [asc: user.email, asc: user.sub, asc: activity_revision.slug, asc: snapshot.part_id, desc: snapshot.inserted_at]
+      order_by: [asc: user.email, asc: user.sub, asc: activity_revision.slug, asc: snapshot.part_id, desc: snapshot.inserted_at],
+      limit: max_record_size()
     )
     |> Repo.stream()
 

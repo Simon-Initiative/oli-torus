@@ -61,7 +61,7 @@ defmodule Oli.Analytics.DatashopExportWorker do
     first_chunk = Datashop.content_prefix()
     last_chunk = Datashop.content_suffix()
 
-    total = Datashop.count(project.id)
+    total = max(Datashop.count(project.id), Datashop.max_records_size())
 
     {:ok, result} = Oli.Repo.transaction(fn ->
 
