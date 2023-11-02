@@ -43,15 +43,15 @@ defmodule OliWeb.Delivery.Student.ContentLive do
     current_selected_module_for_unit =
       Map.get(socket.assigns.selected_module_per_unit_uuid, unit_uuid)
 
-    selected_module_per_unit_uuid =
+    {selected_module_per_unit_uuid, expand_module?} =
       case current_selected_module_for_unit do
         nil ->
-          Map.merge(socket.assigns.selected_module_per_unit_uuid, %{
-            unit_uuid =>
-              get_module(socket.assigns.section.full_hierarchy, unit_uuid, module_uuid)
-              |> mark_visited_pages(socket.assigns.student_visited_pages)
-              |> Map.merge(%{"module_index_in_unit" => selected_module_index})
-          })
+          {Map.merge(socket.assigns.selected_module_per_unit_uuid, %{
+             unit_uuid =>
+               get_module(socket.assigns.section.full_hierarchy, unit_uuid, module_uuid)
+               |> mark_visited_pages(socket.assigns.student_visited_pages)
+               |> Map.merge(%{"module_index_in_unit" => selected_module_index})
+           }), true}
 
         current_module ->
           clicked_module =
@@ -59,29 +59,27 @@ defmodule OliWeb.Delivery.Student.ContentLive do
 
           if clicked_module["uuid"] == current_module["uuid"] do
             # if the user clicked in an already expanded module, then we should collapse it
-            Map.drop(
-              socket.assigns.selected_module_per_unit_uuid,
-              [unit_uuid]
-            )
+            {Map.drop(
+               socket.assigns.selected_module_per_unit_uuid,
+               [unit_uuid]
+             ), false}
           else
-            Map.merge(socket.assigns.selected_module_per_unit_uuid, %{
-              unit_uuid =>
-                mark_visited_pages(clicked_module, socket.assigns.student_visited_pages)
-                |> Map.merge(%{"module_index_in_unit" => selected_module_index})
-            })
+            {Map.merge(socket.assigns.selected_module_per_unit_uuid, %{
+               unit_uuid =>
+                 mark_visited_pages(clicked_module, socket.assigns.student_visited_pages)
+                 |> Map.merge(%{"module_index_in_unit" => selected_module_index})
+             }), true}
           end
       end
 
-    socket =
-      socket
-      |> assign(selected_module_per_unit_uuid: selected_module_per_unit_uuid)
-      |> push_event("scroll-to-target", %{id: "unit_#{unit_uuid}", offset: 80})
-      |> push_event("js-exec", %{
-        to: "#selected_module_in_unit_#{unit_uuid}",
-        attr: "data-animate"
-      })
-
-    {:noreply, socket}
+    {:noreply,
+     socket
+     |> assign(selected_module_per_unit_uuid: selected_module_per_unit_uuid)
+     |> maybe_scroll_y_to_unit(unit_uuid, expand_module?)
+     |> push_event("js-exec", %{
+       to: "#selected_module_in_unit_#{unit_uuid}",
+       attr: "data-animate"
+     })}
   end
 
   def handle_event("navigate_to_resource", %{"slug" => resource_slug}, socket) do
@@ -622,4 +620,15 @@ defmodule OliWeb.Delivery.Student.ContentLive do
 
   defp is_page(%{"resource_type_id" => resource_type_id}),
     do: resource_type_id == Oli.Resources.ResourceType.get_id_by_type("page")
+
+  _docp = """
+    When a user collapses a module card, we do not want to autoscroll in the Y
+    direction to focus on the unit that contains that card.
+  """
+
+  defp maybe_scroll_y_to_unit(socket, _unit_uuid, false), do: socket
+
+  defp maybe_scroll_y_to_unit(socket, unit_uuid, true) do
+    push_event(socket, "scroll-to-target", %{id: "unit_#{unit_uuid}", offset: 80})
+  end
 end
