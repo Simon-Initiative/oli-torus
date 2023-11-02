@@ -17,7 +17,7 @@ import { ProjectsTypeahead } from './projects_typeahead';
 import { ReviewActivity } from './review_activity';
 import { ScrollToTarget } from './scroll_to_target';
 import { SelectListener } from './select_listener';
-import { SliderCenterScroll } from './slider_center_scroll';
+import { SliderScroll } from './slider_scroll';
 import { SubmitForm } from './submit_form';
 import { SystemMessage } from './system_message';
 import { TextInputListener } from './text_input_listener';
@@ -53,6 +53,6 @@ export const Hooks = {
   LiveModal,
   EmailList,
   ScrollToTarget,
-  SliderCenterScroll,
+  SliderScroll,
   VideoPlayer,
 };

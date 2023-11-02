@@ -155,33 +155,48 @@ defmodule OliWeb.Delivery.Student.ContentLive do
           </div>
         </div>
       </div>
-      <div
-        id={"slider_#{@unit["uuid"]}"}
-        role="slider"
-        phx-hook="SliderCenterScroll"
-        class="flex gap-4 overflow-x-scroll overflow-y-hidden h-[178px] pt-[3px] px-[3px] -mt-[2px] -ml-[2px] scrollbar-hide"
-      >
-        <.intro_card
-          :if={@unit["revision"]["intro_video"] || @unit["revision"]["poster_image"]}
-          bg_image_url={@unit["revision"]["poster_image"]}
-          video_url={@unit["revision"]["intro_video"]}
-          card_uuid={@unit["uuid"]}
-        />
-        <.module_card
-          :for={{module, module_index} <- Enum.with_index(@unit["children"], 1)}
-          module={module}
-          module_index={module_index}
-          unit_uuid={@unit["uuid"]}
-          unit_numbering_index={@unit["numbering"]["index"]}
-          bg_image_url={module["revision"]["poster_image"]}
-          student_progress_per_resource_id={@student_progress_per_resource_id}
-          selected={if @selected_module, do: module["uuid"] == @selected_module["uuid"], else: false}
-        />
+      <div class="flex relative">
+        <div
+          id={"slider_left_blur_#{@unit["uuid"]}"}
+          class="hidden absolute -top-1 -left-1 w-8 bg-gradient-to-r from-gray-100 dark:from-gray-900 h-[180px] z-10"
+        >
+        </div>
+        <div
+          id={"slider_right_blur_#{@unit["uuid"]}"}
+          class="absolute -top-1 -right-1 w-8 bg-gradient-to-l from-gray-100 dark:from-gray-900 h-[180px] z-10"
+        >
+        </div>
+        <div
+          id={"slider_#{@unit["uuid"]}"}
+          role="slider"
+          phx-hook="SliderScroll"
+          data-uuid={@unit["uuid"]}
+          class="flex gap-4 overflow-x-scroll overflow-y-hidden h-[178px] pt-[3px] px-[3px] -mt-[2px] -ml-[2px] scrollbar-hide"
+        >
+          <.intro_card
+            :if={@unit["revision"]["intro_video"] || @unit["revision"]["poster_image"]}
+            bg_image_url={@unit["revision"]["poster_image"]}
+            video_url={@unit["revision"]["intro_video"]}
+            card_uuid={@unit["uuid"]}
+          />
+          <.module_card
+            :for={{module, module_index} <- Enum.with_index(@unit["children"], 1)}
+            module={module}
+            module_index={module_index}
+            unit_uuid={@unit["uuid"]}
+            unit_numbering_index={@unit["numbering"]["index"]}
+            bg_image_url={module["revision"]["poster_image"]}
+            student_progress_per_resource_id={@student_progress_per_resource_id}
+            selected={
+              if @selected_module, do: module["uuid"] == @selected_module["uuid"], else: false
+            }
+          />
+        </div>
       </div>
     </div>
     <div
       :if={@unit_selected}
-      class="hidden flex-col py-6 px-[50px] gap-x-4 lg:gap-x-12"
+      class="flex-col py-6 px-[50px] gap-x-4 lg:gap-x-12"
       role="module_details"
       id="selected_module_details"
       data-animate={
@@ -384,8 +399,7 @@ defmodule OliWeb.Delivery.Student.ContentLive do
         <div class={[
           "flex flex-col gap-[5px] cursor-pointer rounded-xl h-[162px] w-[288px] shrink-0 mb-1 px-5 pt-[15px] bg-gray-200",
           if(@selected,
-            do:
-              "bg-gray-400 outline outline-2 outline-gray-800 dark:outline-white animate-[pulse_0.5s_cubic-bezier(0.4,0,0.6,1)]"
+            do: "bg-gray-400 outline outline-2 outline-gray-800 dark:outline-white"
           ),
           if(@bg_image_url in ["", nil],
             do: "bg-[url('/images/course_default.jpg')]",
