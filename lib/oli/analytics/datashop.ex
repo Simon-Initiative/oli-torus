@@ -179,7 +179,7 @@ defmodule Oli.Analytics.Datashop do
       on: activity_revision.id == snapshot.revision_id,
       join: part_attempt in Oli.Delivery.Attempts.Core.PartAttempt,
       on: snapshot.part_attempt_id == part_attempt.id,
-      where: snapshot.project_id == ^project_id,
+      where: snapshot.project_id == ^project_id and !is_nil(snapshot.objective_revision_id),
       select: %{
         email: user.email,
         sub: user.sub,
