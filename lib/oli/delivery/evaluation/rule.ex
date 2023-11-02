@@ -146,21 +146,23 @@ defmodule Oli.Delivery.Evaluation.Rule do
         ["0", decimal] ->
           decimal
           |> String.replace_leading("0", "")
-          |> String.split("")
-          |> Enum.filter(&is_digit?/1)
-          |> Enum.count()
+          |> count_digits()
 
         [_integer, _decimal] ->
-          str
-          |> String.split("")
-          |> Enum.filter(&is_digit?/1)
-          |> Enum.count()
+          count_digits(str)
 
         [integer] ->
-          integer |> String.split("") |> Enum.filter(&is_digit?/1) |> Enum.count()
+          count_digits(integer)
       end
 
     digit_count == count
+  end
+
+  defp count_digits(string_number) do
+    string_number
+    |> String.split("")
+    |> Enum.filter(&is_digit?/1)
+    |> Enum.count()
   end
 
   defp is_range?(str), do: String.starts_with?(str, ["[", "("])
