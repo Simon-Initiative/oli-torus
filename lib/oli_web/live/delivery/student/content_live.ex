@@ -20,9 +20,7 @@ defmodule OliWeb.Delivery.Student.ContentLive do
 
     {:ok,
      assign(socket,
-       selected_unit_uuid: nil,
-       selected_module: nil,
-       selected_module_index: nil,
+       selected_module_per_unit_uuid: %{},
        student_visited_pages: %{},
        student_progress_per_resource_id: %{}
      )}
@@ -42,23 +40,44 @@ defmodule OliWeb.Delivery.Student.ContentLive do
         },
         socket
       ) do
-    socket =
-      if module_uuid == socket.assigns.selected_module["uuid"] do
-        assign(socket, selected_unit_uuid: nil, selected_module: nil)
-      else
-        selected_module =
-          get_module(socket.assigns.section.full_hierarchy, unit_uuid, module_uuid)
-          |> mark_visited_pages(socket.assigns.student_visited_pages)
+    current_selected_module_for_unit =
+      Map.get(socket.assigns.selected_module_per_unit_uuid, unit_uuid)
 
-        assign(socket,
-          selected_unit_uuid: unit_uuid,
-          selected_module: selected_module,
-          selected_module_index: selected_module_index
-        )
+    selected_module_per_unit_uuid =
+      case current_selected_module_for_unit do
+        nil ->
+          Map.merge(socket.assigns.selected_module_per_unit_uuid, %{
+            unit_uuid =>
+              get_module(socket.assigns.section.full_hierarchy, unit_uuid, module_uuid)
+              |> mark_visited_pages(socket.assigns.student_visited_pages)
+              |> Map.merge(%{"module_index_in_unit" => selected_module_index})
+          })
+
+        current_module ->
+          clicked_module =
+            get_module(socket.assigns.section.full_hierarchy, unit_uuid, module_uuid)
+
+          if clicked_module["uuid"] == current_module["uuid"] do
+            # if the user clicked in an already expanded module, then we should collapse it
+            Map.drop(
+              socket.assigns.selected_module_per_unit_uuid,
+              [unit_uuid]
+            )
+          else
+            Map.merge(socket.assigns.selected_module_per_unit_uuid, %{
+              unit_uuid =>
+                mark_visited_pages(clicked_module, socket.assigns.student_visited_pages)
+                |> Map.merge(%{"module_index_in_unit" => selected_module_index})
+            })
+          end
       end
+
+    socket =
+      socket
+      |> assign(selected_module_per_unit_uuid: selected_module_per_unit_uuid)
       |> push_event("scroll-to-target", %{id: "unit_#{unit_uuid}", offset: 80})
       |> push_event("js-exec", %{
-        to: "#selected_module_details",
+        to: "#selected_module_in_unit_#{unit_uuid}",
         attr: "data-animate"
       })
 
@@ -78,9 +97,14 @@ defmodule OliWeb.Delivery.Student.ContentLive do
      assign(socket,
        student_visited_pages: student_visited_pages,
        student_progress_per_resource_id: student_progress_per_resource_id,
-       selected_module:
-         socket.assigns.selected_module &&
-           mark_visited_pages(socket.assigns.selected_module, student_visited_pages)
+       selected_module_per_unit_uuid:
+         Enum.into(
+           socket.assigns.selected_module_per_unit_uuid,
+           %{},
+           fn {unit_uuid, selected_module} ->
+             {unit_uuid, mark_visited_pages(selected_module, student_visited_pages)}
+           end
+         )
      )}
   end
 
@@ -101,10 +125,8 @@ defmodule OliWeb.Delivery.Student.ContentLive do
           :for={child <- @section.full_hierarchy["children"]}
           unit={child}
           ctx={@ctx}
-          unit_selected={child["uuid"] == @selected_unit_uuid}
-          selected_module={@selected_module}
-          selected_module_index={@selected_module_index}
           student_progress_per_resource_id={@student_progress_per_resource_id}
+          selected_module_per_unit_uuid={@selected_module_per_unit_uuid}
         />
       </div>
     </.header_with_sidebar_nav>
@@ -113,10 +135,8 @@ defmodule OliWeb.Delivery.Student.ContentLive do
 
   attr :unit, :map
   attr :ctx, :map, doc: "the context is needed to format the date considering the user's timezone"
-  attr :unit_selected, :boolean, default: false
-  attr :selected_module, :map
-  attr :selected_module_index, :string
   attr :student_progress_per_resource_id, :map
+  attr :selected_module_per_unit_uuid, :map
 
   def unit(assigns) do
     ~H"""
@@ -187,21 +207,19 @@ defmodule OliWeb.Delivery.Student.ContentLive do
             unit_numbering_index={@unit["numbering"]["index"]}
             bg_image_url={module["revision"]["poster_image"]}
             student_progress_per_resource_id={@student_progress_per_resource_id}
-            selected={
-              if @selected_module, do: module["uuid"] == @selected_module["uuid"], else: false
-            }
+            selected={@selected_module_per_unit_uuid["#{@unit["uuid"]}"]["uuid"] == module["uuid"]}
           />
         </div>
       </div>
     </div>
     <div
-      :if={@unit_selected}
+      :if={Map.has_key?(@selected_module_per_unit_uuid, @unit["uuid"])}
       class="flex-col py-6 px-[50px] gap-x-4 lg:gap-x-12"
       role="module_details"
-      id="selected_module_details"
+      id={"selected_module_in_unit_#{@unit["uuid"]}"}
       data-animate={
         JS.show(
-          to: "#selected_module_details",
+          to: "#selected_module_in_unit_#{@unit["uuid"]}",
           display: "flex",
           transition: {"ease-out duration-1000", "opacity-0", "opacity-100"}
         )
@@ -210,16 +228,26 @@ defmodule OliWeb.Delivery.Student.ContentLive do
       <div class="flex">
         <div class="w-1/2 flex flex-col px-6">
           <div
-            :if={@selected_module["revision"]["intro_content"]["children"]}
+            :if={
+              Map.get(@selected_module_per_unit_uuid, @unit["uuid"])["revision"]["intro_content"][
+                "children"
+              ]
+            }
             class={[
               "intro-content",
-              maybe_additional_margin_top(@selected_module["revision"]["intro_content"]["children"])
+              maybe_additional_margin_top(
+                Map.get(@selected_module_per_unit_uuid, @unit["uuid"])["revision"]["intro_content"][
+                  "children"
+                ]
+              )
             ]}
           >
             <%= Phoenix.HTML.raw(
               Oli.Rendering.Content.render(
                 %Oli.Rendering.Context{},
-                @selected_module["revision"]["intro_content"]["children"],
+                Map.get(@selected_module_per_unit_uuid, @unit["uuid"])["revision"]["intro_content"][
+                  "children"
+                ],
                 Oli.Rendering.Content.Html
               )
             ) %>
@@ -232,7 +260,7 @@ defmodule OliWeb.Delivery.Student.ContentLive do
           </button>
         </div>
         <div class="mt-[62px] w-1/2">
-          <.index module={@selected_module} module_index={@selected_module_index} />
+          <.index module={Map.get(@selected_module_per_unit_uuid, @unit["uuid"])} />
         </div>
       </div>
       <div class="flex items-center justify-center py-[6px] px-[10px] mt-6" role="collapse_bar">
@@ -258,7 +286,6 @@ defmodule OliWeb.Delivery.Student.ContentLive do
   end
 
   attr :module, :map
-  attr :module_index, :integer
 
   def index(assigns) do
     ~H"""
@@ -287,7 +314,7 @@ defmodule OliWeb.Delivery.Student.ContentLive do
         class="flex shrink items-center gap-3 w-full border-b-2 border-gray-600 cursor-pointer hover:bg-gray-200/70 px-2 dark:border-[rgba(255,255,255,0.20);] dark:hover:bg-gray-800 dark:text-white"
       >
         <span class="text-[16px] leading-[22px] font-normal">
-          <%= "#{@module_index}.#{page_index} #{page["revision"]["title"]}" %>
+          <%= "#{@module["module_index_in_unit"]}.#{page_index} #{page["revision"]["title"]}" %>
         </span>
         <div class="flex items-center h-[42px] gap-[6px] ml-auto dark:text-white dark:opacity-50">
           <svg
@@ -382,7 +409,7 @@ defmodule OliWeb.Delivery.Student.ContentLive do
           do: "navigate_to_resource",
           else:
             JS.hide(
-              to: "#selected_module_details",
+              to: "#selected_module_in_unit_#{@unit_uuid}",
               transition: {"ease-out duration-500", "opacity-100", "opacity-0"}
             )
             |> JS.push("select_module")
