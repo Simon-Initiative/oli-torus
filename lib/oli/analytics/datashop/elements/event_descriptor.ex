@@ -138,7 +138,7 @@ defmodule Oli.Analytics.Datashop.Elements.EventDescriptor do
   end
 
   # For non-native OLI activities, we don't know what the model looks like.
-  def unregistered_activity_input(_part_attempt, input) do
+  def unregistered_activity_input(_part_attempt, _input) do
     "Unknown Activity"
   end
 
