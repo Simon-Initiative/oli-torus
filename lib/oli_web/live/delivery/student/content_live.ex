@@ -376,7 +376,7 @@ defmodule OliWeb.Delivery.Student.ContentLive do
       phx-value-module_uuid={@module["uuid"]}
       phx-value-slug={@module["revision"]["slug"]}
       phx-value-module_index={@module_index}
-      class="slider-card relative hover:scale-[1.01]"
+      class={["relative hover:scale-[1.01]", if(!is_page(@module["revision"]), do: "slider-card")]}
       role={"card_#{@module_index}"}
     >
       <.page_icon :if={is_page(@module["revision"])} />
