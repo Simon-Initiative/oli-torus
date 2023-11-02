@@ -189,7 +189,7 @@ defmodule Oli.Analytics.Datashop do
         objective_revision_id: snapshot.objective_revision_id,
         activity_type_id: snapshot.activity_type_id,
       },
-      order_by: [asc: user.email, asc: user.sub, asc: activity_revision.slug, asc: snapshot.part_id, desc: snapshot.inserted_at],
+      order_by: [desc: snapshot.inserted_at],
       limit: ^max
     )
     |> Repo.stream()
