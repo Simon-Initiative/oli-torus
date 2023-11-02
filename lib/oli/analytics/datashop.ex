@@ -170,6 +170,8 @@ defmodule Oli.Analytics.Datashop do
 
   defp part_attempts_stream(project_id) do
 
+    max = max_record_size()
+
     from(snapshot in Snapshot,
       join: user in Oli.Accounts.User,
       on: snapshot.user_id == user.id,
@@ -188,7 +190,7 @@ defmodule Oli.Analytics.Datashop do
         activity_type_id: snapshot.activity_type_id,
       },
       order_by: [asc: user.email, asc: user.sub, asc: activity_revision.slug, asc: snapshot.part_id, desc: snapshot.inserted_at],
-      limit: max_record_size()
+      limit: ^max
     )
     |> Repo.stream()
 
