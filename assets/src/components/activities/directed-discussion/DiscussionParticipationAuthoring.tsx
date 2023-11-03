@@ -10,12 +10,12 @@ export const DiscussionParticipationAuthoring: React.FC = () => {
     useAuthoringElementContext<DirectedDiscussionActivitySchema>();
 
   const { minPosts, maxPosts, minReplies, maxReplies, postDeadline, replyDeadline } =
-    model.authoring.participation;
+    model.participation;
 
   const onChangeParticipation = (field: keyof DDParticipationDefinition) => (value: number | string) => {
     dispatch(
       DirectedDiscussionActions.editParticipation({
-        ...model.authoring.participation,
+        ...model.participation,
         [field]: value,
       }),
     );

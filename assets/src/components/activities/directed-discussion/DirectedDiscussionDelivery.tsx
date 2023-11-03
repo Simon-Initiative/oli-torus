@@ -11,9 +11,6 @@ import {
   listenForParentSurveyReset,
   listenForParentSurveySubmit,
   listenForReviewAttemptChange,
-  resetAndSubmitActivity,
-  setSelection,
-  submit,
 } from 'data/activities/DeliveryState';
 import { initialPartInputs } from 'data/activities/utils';
 import { configureStore } from 'state/store';
@@ -24,6 +21,7 @@ import * as ActivityTypes from '../types';
 import { DiscussionParticipation } from './DiscussionParticipation';
 import { DiscussionThread } from './DiscussionThread';
 import { DirectedDiscussionActivitySchema } from './schema';
+import { useDiscussion } from './discussion-hook';
 
 // Used instead of the real 'onSaveActivity' to bypass saving state to the server when we are just
 // about to submit that state with a submission. This saves a network call that isn't necessary and avoids
@@ -46,6 +44,11 @@ export const DirectedDiscussion: React.FC = () => {
   const dispatch = useDispatch();
   const { surveyId } = context;
   const { writerContext } = useDeliveryElementContext<HasChoices & ActivityModelSchema>();
+
+  const { loaded, posts, addPost } = useDiscussion(
+    writerContext.sectionSlug,
+    context.resourceId,
+  );
 
   const { activityId } = activityState;
   const hasActivityId = !!activityId;
@@ -218,8 +221,8 @@ model:
     <div className="activity mc-activity">
       <div className="activity-content">
         <StemDeliveryConnected />
-        <DiscussionParticipation requirements={model.authoring.participation} />
-        <DiscussionThread enabled={hasActivityId} />
+        <DiscussionParticipation requirements={model.participation} />
+        <DiscussionThread posts={posts} />
         <HintsDeliveryConnected
           partId={castPartId(activityState.parts[0].partId)}
           resetPartInputs={{ [activityState.parts[0].partId]: [] }}
@@ -237,6 +240,7 @@ export class DirectedDiscussionDelivery extends DeliveryElement<DirectedDiscussi
     mountPoint: HTMLDivElement,
     props: DeliveryElementProps<DirectedDiscussionActivitySchema>,
   ) {
+
     const store = configureStore({}, activityDeliverySlice.reducer, {
       name: 'DirectedDiscussionDelivery',
     });

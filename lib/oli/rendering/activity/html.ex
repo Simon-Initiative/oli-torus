@@ -159,6 +159,7 @@ defmodule Oli.Rendering.Activity.Html do
          bib_params,
          model_json
        ) do
+
     activity_context =
       %{
         graded: graded,
@@ -170,6 +171,7 @@ defmodule Oli.Rendering.Activity.Html do
         bibParams: bib_params,
         learningLanguage: learning_language,
         showFeedback: Oli.Delivery.Settings.show_feedback?(effective_settings),
+        resourceId: effective_settings.resource_id, # TODO - is this the best place to grab this?
         pageAttemptGuid:
           if is_nil(resource_attempt) do
             ""

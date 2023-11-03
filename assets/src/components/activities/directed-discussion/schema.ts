@@ -12,11 +12,12 @@ export interface DDParticipationDefinition {
 export interface DirectedDiscussionActivitySchema extends ActivityModelSchema {
   stem: Stem;
 
+  participation: DDParticipationDefinition;
+  maxWords: number;
+
   authoring: {
     version: 1;
     parts: Part[];
-    maxWords: number;
-    participation: DDParticipationDefinition;
     transformations: Transformation[];
   };
 }

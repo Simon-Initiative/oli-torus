@@ -29,6 +29,7 @@ export const DeliveryElementProvider: React.FC<DeliveryElementProps<any>> = (pro
 
   const writerContext = defaultWriterContext({
     graded: props.context.graded,
+    resourceId: props.context.resourceId,
     sectionSlug: props.context.sectionSlug,
     projectSlug: props.context.projectSlug,
     bibParams: props.context.bibParams,

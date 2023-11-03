@@ -3,6 +3,7 @@ import { VlabInputDelivery } from 'components/activities/vlab/schema';
 import { ID } from 'data/content/model/other';
 
 export interface WriterContext {
+  resourceId: number;
   graded?: boolean;
   sectionSlug?: string;
   projectSlug?: string;

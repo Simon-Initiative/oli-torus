@@ -3,6 +3,6 @@ import { DDParticipationDefinition, DirectedDiscussionActivitySchema } from './s
 export const DirectedDiscussionActions = {
   editParticipation:
     (participation: DDParticipationDefinition) => (model: DirectedDiscussionActivitySchema) => {
-      model.authoring.participation = participation;
+      model.participation = participation;
     },
 };

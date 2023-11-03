@@ -10,16 +10,16 @@ import { DirectedDiscussionActivitySchema } from './schema';
 export const defaultDDModel: () => DirectedDiscussionActivitySchema = () => {
   return {
     stem: makeStem(''),
+    maxWords: 0,
+    participation: {
+      maxPosts: 0,
+      maxReplies: 0,
+      minPosts: 0,
+      minReplies: 0,
+    },
     authoring: {
       version: 1,
-      maxWords: 0,
       transformations: [],
-      participation: {
-        maxPosts: 0,
-        maxReplies: 0,
-        minPosts: 0,
-        minReplies: 0,
-      },
       parts: [
         makePart(
           [makeResponse(matchRule('.*'), 0, 'Default Part')],
