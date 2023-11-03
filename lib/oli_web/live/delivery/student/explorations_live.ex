@@ -6,19 +6,16 @@ defmodule OliWeb.Delivery.Student.ExplorationsLive do
   alias OliWeb.Common.SessionContext
   alias Oli.Publishing.DeliveryResolver
   alias Oli.Rendering.Content
+  alias Oli.Delivery.Sections
 
   def mount(_params, _session, socket) do
-    explorations = DeliveryResolver.get_by_purpose(socket.assigns.section.slug, :application)
-
-    # TODO: Replace with real implementation that sorts by week. For now, just render all
+    # TODO: Replace with real implementation that sorts by container. For now, just render all
     # explorations without week headers
-    explorations_by_week = %{
-      0 => explorations
-    }
+    explorations_by_container = Sections.get_explorations_by_containers(socket.assigns.section)
 
     {:ok,
      assign(socket,
-       explorations_by_week: explorations_by_week
+       explorations_by_container: explorations_by_container
      )}
   end
 
@@ -41,13 +38,13 @@ defmodule OliWeb.Delivery.Student.ExplorationsLive do
         </div>
       </div>
       <div class="container mx-auto flex flex-col mt-6 px-16">
-        <div :if={Enum.count(@explorations_by_week) == 0} class="text-center" role="alert">
+        <div :if={Enum.count(@explorations_by_container) == 0} class="text-center" role="alert">
           <h6>There are no explorations available</h6>
         </div>
 
-        <%= for {week, explorations} <- @explorations_by_week do %>
-          <h2 :if={week > 0} class="text-sm font-bold my-6 uppercase text-gray-700">
-            Week <%= week %>
+        <%= for {container_name, explorations} <- @explorations_by_container do %>
+          <h2 :if={container_name != :default} class="text-sm font-bold my-6 uppercase text-gray-700">
+            <%= container_name %>
           </h2>
 
           <.exploration_card

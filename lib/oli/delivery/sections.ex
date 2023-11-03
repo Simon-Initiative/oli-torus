@@ -1139,7 +1139,7 @@ defmodule Oli.Delivery.Sections do
     )
   end
 
-  # For a given section id and the list of resource ids that exist in its hiearchy,
+  # For a given section id and the list of resource ids that exist in its hierarchy,
   # determine and return the list of page resource ids that are not reachable from that
   # hierarchy, taking into account links from pages to other pages and the 'relates_to'
   # relationship between pages.
@@ -1152,7 +1152,7 @@ defmodule Oli.Delivery.Sections do
     # create a map of page resource ids to a list of target resource ids that they link to. We
     # do this both for resource-to-page links and for page to activity links (aka activity-references).
     # We do this because we want to treat these links the same way when we traverse the graph, and
-    # we want to be able to handle cases where a page from the hierarhcy embeds an activity which
+    # we want to be able to handle cases where a page from the hierarchy embeds an activity which
     # links to a page outside the hierarchy.
     all_links =
       [
@@ -1171,7 +1171,7 @@ defmodule Oli.Delivery.Sections do
         end
       end)
 
-    # Now traverse the pages in the hiearchy, and follow (recursively) the links that
+    # Now traverse the pages in the hierarchy, and follow (recursively) the links that
     # they have to other pages.
     {unreachable, _} = traverse_links(link_map, hierarchy_ids, unreachable, MapSet.new())
 
@@ -1182,11 +1182,11 @@ defmodule Oli.Delivery.Sections do
   # from the pages in the hierarchy, removing them from the candidate set of unreachable pages
   # This also tracks seen pages to avoid infinite recursion, in cases where pages create a
   # a circular link structure.
-  def traverse_links(link_map, hiearchy_ids, unreachable, seen) do
-    unreachable = MapSet.difference(unreachable, MapSet.new(hiearchy_ids))
-    seen = MapSet.union(seen, MapSet.new(hiearchy_ids))
+  def traverse_links(link_map, hierarchy_ids, unreachable, seen) do
+    unreachable = MapSet.difference(unreachable, MapSet.new(hierarchy_ids))
+    seen = MapSet.union(seen, MapSet.new(hierarchy_ids))
 
-    Enum.reduce(hiearchy_ids, {unreachable, seen}, fn id, {unreachable, seen} ->
+    Enum.reduce(hierarchy_ids, {unreachable, seen}, fn id, {unreachable, seen} ->
       case Map.get(link_map, id) do
         nil ->
           {unreachable, seen}
@@ -1200,6 +1200,44 @@ defmodule Oli.Delivery.Sections do
           traverse_links(link_map, not_already_seen, unreachable, seen)
       end
     end)
+  end
+
+  @doc """
+  Builds a map of all page links in a given section. Returns a map of resource ids to a list of
+  resource ids of the pages that they are linked from. Typically this will be a single
+  resource id, but in cases where a page is linked from multiple pages it can be more than one.
+
+  This function does not account for pages which are linked more than "one hop" away from the
+  hierarchy.
+
+  ## Examples
+      iex> build_page_link_map(publication_ids)
+      %{1 => [], 2 => [], 3 => [1, 2], 4 => [4]}
+  """
+  def build_page_link_map(publication_ids) do
+    all_page_ids = Oli.Publishing.all_page_resource_ids(publication_ids)
+    all_page_links = MapSet.new(get_all_page_links(publication_ids))
+
+    # For each page, find the set of pages that link to it and add those links to the map
+    Enum.reduce(all_page_ids, %{}, fn id, acc ->
+      links_to_page =
+        Enum.filter(all_page_ids, fn page_id ->
+          MapSet.member?(all_page_links, {page_id, id})
+        end)
+
+      Map.put(acc, id, links_to_page)
+    end)
+  end
+
+  @doc """
+  Returns a map of all explorations in the section, grouped by their container.
+  """
+  def get_explorations_by_containers(section) do
+    # TODO: Implement this function. For now, just return a map of all explorations keyed
+    # by :default
+    %{
+      default: DeliveryResolver.get_by_purpose(section.slug, :application)
+    }
   end
 
   # Returns a mapset of two element tuples of the form {source_resource_id, target_resource_id}
@@ -1684,6 +1722,16 @@ defmodule Oli.Delivery.Sections do
       select: pub
     )
     |> Repo.one!()
+  end
+
+  def get_current_publications(section_id) do
+    from(spp in SectionsProjectsPublications,
+      join: pub in Publication,
+      on: spp.publication_id == pub.id,
+      where: spp.section_id == ^section_id,
+      select: pub
+    )
+    |> Repo.all()
   end
 
   @doc """

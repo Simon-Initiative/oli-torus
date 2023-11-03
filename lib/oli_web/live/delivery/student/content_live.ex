@@ -316,13 +316,18 @@ defmodule OliWeb.Delivery.Student.ContentLive do
           phx-value-module_uuid={@module.uuid}
           phx-value-module_index={@module_index}
           class={[
-            "flex flex-col gap-[5px] cursor-pointer rounded-xl h-[162px] w-[288px] shrink-0 mb-1 px-5 pt-[15px] bg-gray-200",
+            "flex flex-col gap-[5px] cursor-pointer rounded-xl h-[162px] w-[288px] shrink-0 mb-1 px-5 pt-[15px] bg-gray-200 bg-no-repeat bg-cover bg-center text-white",
             if(@selected, do: "bg-gray-400 outline outline-2 outline-gray-800"),
             if(@bg_image_url in ["", nil],
               do: "bg-[url('/images/course_default.jpg')]",
               else: "bg-[url('#{@bg_image_url}')]"
             )
           ]}
+          style={
+            if @bg_image_url not in ["", nil],
+              do: "background-image: url('#{@bg_image_url}'); text-shadow: 1px 1px 8px black",
+              else: "text-shadow: 1px 1px 8px black"
+          }
         >
           <span class="text-[12px] leading-[16px] font-bold opacity-60 text-gray-500">
             <%= "#{@unit_numbering_index}.#{@module_index}" %>
