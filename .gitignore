@@ -78,7 +78,7 @@ postgres.env
 /docker-compose-dev.yml
 assets/yarn.lock
 lib/oli/analytics/test.xml
-.devcontainer
+.devcontainer/data
 registrations.json
 seeds.json
 docker-compose.override.yml

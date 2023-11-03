@@ -11,7 +11,6 @@ defmodule Oli.Rendering.Content.Markdown do
   alias Phoenix.HTML
   alias Oli.Rendering.Content.MathMLSanitizer
   alias HtmlSanitizeEx.Scrubber
-  alias Oli.Rendering.Content.ResourceSummary
 
   @behaviour Oli.Rendering.Content
 
@@ -20,7 +19,7 @@ defmodule Oli.Rendering.Content.Markdown do
       "---\n",
       "##### #{label}\n",
       content,
-      "---\n"
+      "---\n\n"
     ]
   end
 
@@ -166,7 +165,7 @@ defmodule Oli.Rendering.Content.Markdown do
   end
 
   def dl(%Context{}, next, title, %{}) do
-    ["\n", title, "\n", next.(), "\n\n"]
+    ["\n", "definition list: #{title.()}", "\n", next.(), "\n\n"]
   end
 
   def dt(%Context{}, next, %{}) do
@@ -482,13 +481,10 @@ defmodule Oli.Rendering.Content.Markdown do
     ["[", next.(), "](#{href})"]
   end
 
-  def page_link(%Context{resource_summary_fn: resource_summary_fn} = _context, _next, %{
-        "idref" => idref
+  def page_link(%Context{} = _context, _next, %{
+        "idref" => _idref
       }) do
-    %ResourceSummary{title: title, slug: slug} = resource_summary_fn.(idref)
-    href = "/course/link/#{slug}"
-
-    ["[", escape_xml!(title), "](#{href})"]
+    [""]
   end
 
   def cite(%Context{} = _context, next, _a) do

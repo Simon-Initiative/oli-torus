@@ -50,6 +50,27 @@ defmodule OliWeb.ProductsLiveTest do
              |> element("#section_display_curriculum_item_numbering")
              |> render() =~ "checked"
     end
+
+    test "save event updates apply_major_updates", %{conn: conn, product: product} do
+      {:ok, view, _html} = live(conn, live_view_details_route(product.slug))
+
+      refute view
+             |> element("#section_apply_major_updates")
+             |> render() =~ "checked"
+
+      view
+      |> element("#content-form form[phx-change=\"save\"")
+      |> render_change(%{
+        "section" => %{"apply_major_updates" => "true"}
+      })
+
+      updated_section = Sections.get_section!(product.id)
+      assert updated_section.apply_major_updates
+
+      assert view
+             |> element("#section_display_curriculum_item_numbering")
+             |> render() =~ "checked"
+    end
   end
 
   describe "browse all products" do

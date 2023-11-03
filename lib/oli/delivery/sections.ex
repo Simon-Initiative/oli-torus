@@ -1941,6 +1941,7 @@ defmodule Oli.Delivery.Sections do
 
       {:ok, _} = rebuild_contained_pages(section, section_resources)
       {:ok, _} = rebuild_contained_objectives(section)
+      {:ok, _} = rebuild_full_hierarchy(section)
 
       section_resources
     end)
@@ -1951,6 +1952,18 @@ defmodule Oli.Delivery.Sections do
       where: cp.section_id == ^section_id
     )
     |> Repo.all()
+  end
+
+  @doc """
+  Rebuilds the full_hierachy field for a course section,
+  needed as "cache" data for student's content view (OliWeb.Delivery.Student.ContentLive).
+  The full hierarchy represents the main structure in which a course curriculum is organized
+  to be delivered (see Oli.Delivery.Hierarchy)
+  """
+  def rebuild_full_hierarchy(%Section{slug: slug} = section) do
+    update_section(section, %{
+      full_hierarchy: DeliveryResolver.full_hierarchy(slug)
+    })
   end
 
   @doc """
@@ -2263,7 +2276,11 @@ defmodule Oli.Delivery.Sections do
 
             # Case 2: The course section is based on this project and was seeded from a product
             section.base_project_id == project_id and !is_nil(section.blueprint_id) ->
-              perform_update(:minor, section, project_id, new_publication, current_hierarchy)
+              if section.blueprint.apply_major_updates do
+                perform_update(:major, section, project_id, current_publication, new_publication)
+              else
+                perform_update(:minor, section, project_id, new_publication, current_hierarchy)
+              end
 
             # Case 3: The course section is a product based on this project
             section.base_project_id == project_id and section.type == :blueprint ->

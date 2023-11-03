@@ -18,7 +18,14 @@ defmodule Oli.Resources.Revision do
              :max_attempts,
              :time_limit,
              :scoring_strategy_id,
-             :activity_type_id
+             :activity_type_id,
+             :title,
+             :resource_id,
+             :intro_video,
+             :poster_image,
+             :intro_content,
+             :duration_minutes,
+             :id
            ]}
   schema "revisions" do
     #

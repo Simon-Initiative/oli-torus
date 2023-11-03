@@ -4,7 +4,6 @@ defmodule OliWeb.Delivery.Student.ExplorationsLive do
   import OliWeb.Components.Delivery.Layouts
 
   alias OliWeb.Common.SessionContext
-  alias Oli.Publishing.DeliveryResolver
   alias Oli.Rendering.Content
   alias Oli.Delivery.Sections
 

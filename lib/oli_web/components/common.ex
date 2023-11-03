@@ -580,16 +580,24 @@ defmodule OliWeb.Components.Common do
   attr(:percent, :integer, required: true)
   attr(:width, :string, default: "100%")
   attr(:show_percent, :boolean, default: true)
+  attr(:role, :string, default: "progress_bar")
 
   def progress_bar(assigns) do
     ~H"""
-    <div class="flex flex-row items-center mx-auto">
+    <div class="flex flex-row items-center mx-auto" role={@role}>
       <div class="flex justify-center w-full">
-        <div class="rounded-full bg-gray-200 h-1" style={"width: #{@width}"}>
-          <div class="rounded-full bg-[#1E9531] h-1" style={"width: #{@percent}%"}></div>
+        <div
+          class="rounded-[60px] bg-gray-200 h-1 dark:bg-[rgba(170,170,170,0.20)]"
+          style={"width: #{@width}"}
+        >
+          <div class="rounded-[60px] bg-[#1E9531] dark:bg-white h-1" style={"width: #{@percent}%"}>
+          </div>
         </div>
       </div>
-      <div :if={@show_percent} class="text-[16px] leading-[32px] tracking-[0.02px] font-bold">
+      <div
+        :if={@show_percent}
+        class="text-[16px] dark:text-[#DDD] leading-[32px] tracking-[0.02px] font-semibold"
+      >
         <%= @percent %>%
       </div>
     </div>
