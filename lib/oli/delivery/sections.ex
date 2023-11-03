@@ -42,6 +42,7 @@ defmodule Oli.Delivery.Sections do
   alias Oli.Delivery.Metrics
   alias Oli.Delivery.Paywall
   alias Oli.Branding.CustomLabels
+  alias OliWeb.Delivery.RebuildFullHierarchyWorker
 
   require Logger
 
@@ -1911,11 +1912,21 @@ defmodule Oli.Delivery.Sections do
   needed as "cache" data for student's content view (OliWeb.Delivery.Student.ContentLive).
   The full hierarchy represents the main structure in which a course curriculum is organized
   to be delivered (see Oli.Delivery.Hierarchy)
+
+  If `async` is set to true, the rebuild will be performed asynchronously relying on an Oban worker.
   """
-  def rebuild_full_hierarchy(%Section{slug: slug} = section) do
+
+  def rebuild_full_hierarchy(section, async \\ false)
+
+  def rebuild_full_hierarchy(%Section{slug: slug} = section, false) do
     update_section(section, %{
       full_hierarchy: DeliveryResolver.full_hierarchy(slug)
     })
+  end
+
+  def rebuild_full_hierarchy(%Section{slug: slug} = _section, true) do
+    RebuildFullHierarchyWorker.new(%{section_slug: slug})
+    |> Oban.insert()
   end
 
   @doc """
