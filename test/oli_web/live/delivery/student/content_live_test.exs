@@ -339,6 +339,59 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       assert has_element?(view, "p", "Thoughout this unit you will learn how to use this course.")
     end
 
+    test "can expand more than one module card", %{
+      conn: conn,
+      user: user,
+      section: section,
+      page_1: page_1,
+      page_5: page_5
+    } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      {:ok, view, _html} = live(conn, live_view_content_live_route(section.slug))
+
+      # page 1 belongs to module 1 (of unit 1) and page 5 belongs to module 3 (of unit 2)
+      # Both should not be visible since they are not expanded yet
+      refute has_element?(
+               view,
+               ~s{div[phx-click="navigate_to_resource"][phx-value-slug="#{page_1.slug}"]}
+             )
+
+      refute has_element?(
+               view,
+               ~s{div[phx-click="navigate_to_resource"][phx-value-slug="#{page_5.slug}"]}
+             )
+
+      # expand unit 1/module 1 details
+      view
+      |> element(~s{div[role="unit_1"] div[role="card_1"]})
+      |> render_click()
+
+      assert has_element?(
+               view,
+               ~s{div[phx-click="navigate_to_resource"][phx-value-slug="#{page_1.slug}"]}
+             )
+
+      refute has_element?(
+               view,
+               ~s{div[phx-click="navigate_to_resource"][phx-value-slug="#{page_5.slug}"]}
+             )
+
+      # expand unit 2/module 3 details
+      view
+      |> element(~s{div[role="unit_2"] div[role="card_1"]})
+      |> render_click()
+
+      assert has_element?(
+               view,
+               ~s{div[phx-click="navigate_to_resource"][phx-value-slug="#{page_1.slug}"]}
+             )
+
+      assert has_element?(
+               view,
+               ~s{div[phx-click="navigate_to_resource"][phx-value-slug="#{page_5.slug}"]}
+             )
+    end
+
     # TODO: finish this test when the handle event for the "Let's discuss" button is implemented
     @tag :skip
     test "can click on let's discuss button to open DOT AI Bot interface", %{
