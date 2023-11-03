@@ -4,6 +4,9 @@ defmodule Oli.Resources.Collaboration.Post do
   import Ecto.Changeset
 
   schema "posts" do
+
+    @derive {Jason.Encoder, except: [:user, :resource, :section]}
+
     embeds_one :content, Oli.Resources.Collaboration.PostContent, on_replace: :update
 
     field :status, Ecto.Enum,
