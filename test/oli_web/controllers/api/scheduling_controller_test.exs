@@ -1,5 +1,6 @@
 defmodule OliWeb.SchedulingControllerTest do
   use OliWeb.ConnCase
+  use Oban.Testing, repo: Oli.Repo
 
   alias Oli.Seeder
   alias Oli.Delivery.Sections
@@ -52,6 +53,13 @@ defmodule OliWeb.SchedulingControllerTest do
       assert length(resources) == 3
 
       Enum.each(resources, fn sr -> assert sr["end_date"] == "2024-01-02" end)
+
+      # a worker is scheduled to update section full_hierarchy
+      assert_enqueued(
+        worker: OliWeb.Delivery.RebuildFullHierarchyWorker,
+        args: %{section_slug: map.section.slug},
+        queue: :rebuild_full_hierarchy
+      )
     end
 
     test "can catch unauthorized user access", %{

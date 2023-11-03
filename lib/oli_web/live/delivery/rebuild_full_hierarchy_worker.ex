@@ -11,7 +11,8 @@ defmodule OliWeb.Delivery.RebuildFullHierarchyWorker do
 
   @impl Oban.Worker
   def perform(%Oban.Job{args: %{"section_slug" => section_slug} = _args}) do
-    Sections.get_section_by_slug(section_slug)
+    section_slug
+    |> Sections.get_section_by_slug()
     |> Sections.rebuild_full_hierarchy()
   end
 end
