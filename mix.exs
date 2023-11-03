@@ -130,7 +130,7 @@ defmodule Oli.MixProject do
   # Type `mix help deps` for examples and options.
   defp deps do
     [
-      {:appsignal_phoenix, "~> 2.1"},
+      {:appsignal_phoenix, "~> 2.3"},
       {:bamboo, "~> 2.2"},
       {:bamboo_ses, "~> 0.3.0"},
       {:bamboo_phoenix, "~> 1.0"},
