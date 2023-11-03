@@ -6258,6 +6258,10 @@ table.table-striped tbody tr:nth-child(even) {
   font-weight: 800;
 }
 
+.font-light {
+  font-weight: 300;
+}
+
 .font-medium {
   font-weight: 500;
 }
@@ -7724,6 +7728,18 @@ a {
 }
 
 .dark .instructor_dashboard_table tr:has(a[data-score-check='true']) td {
+  --tw-bg-opacity: 1;
+  background-color: rgb(38 38 38 / var(--tw-bg-opacity));
+  --tw-text-opacity: 1;
+  color: rgb(255 255 255 / var(--tw-text-opacity));
+}
+
+.publish_changes_table tr:has(div[data-is-structural='true']) td {
+  --tw-bg-opacity: 1;
+  background-color: rgb(212 212 212 / var(--tw-bg-opacity));
+}
+
+.dark .publish_changes_table tr:has(div[data-is-structural='true']) td {
   --tw-bg-opacity: 1;
   background-color: rgb(38 38 38 / var(--tw-bg-opacity));
   --tw-text-opacity: 1;
