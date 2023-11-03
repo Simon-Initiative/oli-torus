@@ -66,11 +66,11 @@ const applyToEveryCondition = (top: TopLevelCondition | NestedCondition, callbac
   });
 };
 
-const evaluateValueExpression = (value: string, env: Environment) => {
+const evaluateValueExpression = (value: string, env: Environment, key?: string) => {
   if (typeof value !== 'string') {
     return value;
   }
-  const expr = getExpressionStringForValue({ type: CapiVariableTypes.STRING, value }, env);
+  const expr = getExpressionStringForValue({ type: CapiVariableTypes.STRING, value, key }, env);
   let { result } = evalScript(expr, env);
   if (result === value) {
     try {
@@ -132,7 +132,7 @@ const processRules = (rules: JanusRuleProperties[], env: Environment) => {
       let modifiedValue = ogValue;
       if (Array.isArray(ogValue)) {
         modifiedValue = ogValue.map((value) =>
-          typeof value === 'string' ? evaluateValueExpression(value, env) : value,
+          typeof value === 'string' ? evaluateValueExpression(value, env, condition.id) : value,
         );
       }
       if (
@@ -157,27 +157,27 @@ const processRules = (rules: JanusRuleProperties[], env: Environment) => {
         } else {
           actualValue = ogValue;
         }
-        const evaluatedValue = evaluateValueExpression(actualValue, env);
+        const evaluatedValue = evaluateValueExpression(actualValue, env, condition.id);
         modifiedValue = `${evaluatedValue},${toleranceValue}`;
       } else if (condition?.operator === 'inRange' || condition?.operator === 'notInRange') {
         // these have min, max, and optionally (unused) tolerance
         if (Array.isArray(ogValue)) {
           modifiedValue = ogValue
             .map((value) =>
-              typeof value === 'string' ? evaluateValueExpression(value, env) : value,
+              typeof value === 'string' ? evaluateValueExpression(value, env, condition.id) : value,
             )
             .join(',');
         } else if (typeof ogValue === 'string') {
           modifiedValue = parseArray(ogValue)
             .map((value) =>
-              typeof value === 'string' ? evaluateValueExpression(value, env) : value,
+              typeof value === 'string' ? evaluateValueExpression(value, env, condition.id) : value,
             )
             .join(',');
         }
       } else if (typeof ogValue === 'string' && ogValue.indexOf('{') === -1) {
         modifiedValue = ogValue;
       } else {
-        const evaluatedValue = evaluateValueExpression(ogValue, env);
+        const evaluatedValue = evaluateValueExpression(ogValue, env, condition.id);
         if (typeof evaluatedValue === 'string') {
           //if the converted value is string then we don't have to stringify (e.g. if the evaluatedValue = L and we stringyfy it then the value becomes '"L"' instead if 'L'
           // hence a trap state checking 'L' === 'L' returns false as the expression becomes 'L' === '"L"')
@@ -186,7 +186,7 @@ const processRules = (rules: JanusRuleProperties[], env: Environment) => {
           return modifiedValue;
         } else if (typeof ogValue === 'string') {
           //Need to stringify only if it was converted into object during evaluation process and we expect it to be string
-          modifiedValue = JSON.stringify(evaluateValueExpression(ogValue, env));
+          modifiedValue = JSON.stringify(evaluateValueExpression(ogValue, env, condition.id));
         }
       }
       //if it type ===3 then it is a array. We need to wrap it in [] if it is not already wrapped.
@@ -327,8 +327,11 @@ export const defaultWrongRule = {
   },
 };
 
-export const findReferencedActivitiesInConditions = (conditions: any) => {
-  const referencedKeys = getReferencedKeysInConditions(conditions);
+export const findReferencedActivitiesInConditions = (
+  conditions: any,
+  checkExpressionInTarget = false,
+) => {
+  const referencedKeys = getReferencedKeysInConditions(conditions, checkExpressionInTarget);
   const sequenceRefs = referencedKeys
     .filter((key) => key.indexOf('|stage.') !== -1)
     .map((key) => key.split('|')[0]);
@@ -338,7 +341,7 @@ export const findReferencedActivitiesInConditions = (conditions: any) => {
   return Array.from(new Set(sequenceRefs));
 };
 
-export const getReferencedKeysInConditions = (conditions: any) => {
+export const getReferencedKeysInConditions = (conditions: any, checkExpressionInTarget = false) => {
   const references: Set<string> = new Set();
 
   conditions.forEach(
@@ -347,33 +350,55 @@ export const getReferencedKeysInConditions = (conditions: any) => {
       any: boolean;
       fact: string;
       value: string | number | boolean | unknown;
+      target?: string;
     }) => {
       // the fact *must* be a reference to a key we need
-      if (condition.fact) {
+      if (!checkExpressionInTarget && condition.fact) {
         references.add(condition.fact);
       }
       // the value *might* contain a reference to a key we need
       if (typeof condition.value === 'string') {
-        extractUniqueVariablesFromText(condition.value).forEach((v) => references.add(v));
+        const variablesInCondition = checkExpressionInTarget
+          ? extractAllExpressionsFromText(condition.value)
+          : extractUniqueVariablesFromText(condition.value);
+        if (checkExpressionInTarget && variablesInCondition && variablesInCondition?.length) {
+          const target = condition.target || condition.fact;
+          references.add(target);
+        } else {
+          variablesInCondition.forEach((v) => references.add(v));
+        }
       } else if (Array.isArray(condition.value)) {
         condition.value.forEach((value: any) => {
           if (typeof value === 'string') {
-            extractUniqueVariablesFromText(value).forEach((v) => references.add(v));
+            const variablesInCondition = checkExpressionInTarget
+              ? extractAllExpressionsFromText(value)
+              : extractUniqueVariablesFromText(value);
+            if (checkExpressionInTarget && variablesInCondition && variablesInCondition?.length) {
+              const target = condition.target || condition.fact;
+              references.add(target);
+            } else {
+              variablesInCondition.forEach((v) => references.add(v));
+            }
           }
         });
       }
       if (condition.any || condition.all) {
-        const childRefs = getReferencedKeysInConditions(condition.any || condition.all);
+        const childRefs = getReferencedKeysInConditions(
+          condition.any || condition.all,
+          checkExpressionInTarget,
+        );
         childRefs.forEach((ref) => references.add(ref));
       }
     },
   );
-
   return Array.from(references);
 };
 
-export const findReferencedActivitiesInActions = (actions: any) => {
-  const referencedKeys = getReferencedKeysInActions(actions);
+export const findReferencedActivitiesInActions = (
+  actions: any,
+  checkExpressionInTarget = false,
+) => {
+  const referencedKeys = getReferencedKeysInActions(actions, checkExpressionInTarget);
   const sequenceRefs = referencedKeys
     .filter((key) => key.indexOf('|stage.') !== -1)
     .map((key) => key.split('|')[0]);
@@ -383,7 +408,7 @@ export const findReferencedActivitiesInActions = (actions: any) => {
   return Array.from(new Set(sequenceRefs));
 };
 
-export const getReferencedKeysInActions = (actions: any) => {
+export const getReferencedKeysInActions = (actions: any, checkExpressionInTarget = false) => {
   const references: Set<string> = new Set();
   actions.forEach(
     (action: {
@@ -398,11 +423,27 @@ export const getReferencedKeysInActions = (actions: any) => {
 
         // the value *might* contain a reference to a key we need
         if (typeof action.params.value === 'string') {
-          extractUniqueVariablesFromText(action.params.value).forEach((v) => references.add(v));
+          const variablesInCondition = checkExpressionInTarget
+            ? extractAllExpressionsFromText(action.params.value)
+            : extractUniqueVariablesFromText(action.params.value);
+          if (checkExpressionInTarget && variablesInCondition && variablesInCondition?.length) {
+            const target = action.params.target;
+            references.add(target);
+          } else {
+            variablesInCondition.forEach((v) => references.add(v));
+          }
         } else if (Array.isArray(action.params.value)) {
           action.params.value.forEach((value: any) => {
             if (typeof value === 'string') {
-              extractUniqueVariablesFromText(value).forEach((v) => references.add(v));
+              const variablesInCondition = checkExpressionInTarget
+                ? extractAllExpressionsFromText(value)
+                : extractUniqueVariablesFromText(value);
+              if (checkExpressionInTarget && variablesInCondition && variablesInCondition?.length) {
+                const target = action.params.target;
+                references.add(target);
+              } else {
+                variablesInCondition.forEach((v) => references.add(v));
+              }
             }
           });
         }
