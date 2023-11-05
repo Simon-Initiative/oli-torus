@@ -320,7 +320,7 @@ const PrecisionInput: React.FC<PrecisionInputProps> = ({ input, onEditInput }) =
               onChange={onTogglePrecision}
             />
             <label className="custom-control-label" htmlFor={precisionCheckboxId}>
-              Precision
+              Significant Figures
             </label>
           </div>
           <input
@@ -331,7 +331,7 @@ const PrecisionInput: React.FC<PrecisionInputProps> = ({ input, onEditInput }) =
             disabled={!editMode || !precisionEdit}
             value={precisionInputValue(precision)}
             onChange={onEditPrecision}
-            aria-label="Precision"
+            aria-label="Significant Figures"
             onWheel={disableScrollWheelChange(numericInputRef)}
           />
         </div>

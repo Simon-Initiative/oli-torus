@@ -139,23 +139,35 @@ defmodule Oli.Delivery.Evaluation.Rule do
   # if a precision is not specified (nil) then always evaluate to true
   defp check_precision(_value, nil), do: true
 
-  # checks the precision
+  # checks the precision, now interpreted as # of significant figures
   defp check_precision(str, count) when is_binary(str) do
-    digit_count =
-      case String.split(str, ".") do
-        ["0", decimal] ->
-          decimal
-          |> String.replace_leading("0", "")
-          |> count_digits()
+    sigfigs =
+      case String.split(String.downcase(str), "e") do
+        [number, _exponent] ->
+          count_digits_after_zeros(number)
 
-        [_integer, _decimal] ->
-          count_digits(str)
-
-        [integer] ->
-          count_digits(integer)
+        [number] ->
+          number
+          |> strip_integer_trailing_zeros()
+          |> count_digits_after_zeros()
       end
 
-    digit_count == count
+    sigfigs == count
+  end
+
+  defp strip_integer_trailing_zeros(str_number) do
+    if not String.contains?(str_number, "."),
+      do: String.replace_trailing(str_number, "0", ""),
+      else: str_number
+  end
+
+  defp count_digits_after_zeros(string_number) do
+    string_number
+    |> String.replace(".", "")
+    |> String.replace_leading("0", "")
+    |> String.split("")
+    |> Enum.filter(&is_digit?/1)
+    |> Enum.count()
   end
 
   defp count_digits(string_number) do
