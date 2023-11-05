@@ -164,7 +164,8 @@ config :oli, Oban,
     auto_submit: 3,
     analytics_export: 3,
     datashop_export: 3,
-    objectives: 3
+    objectives: 3,
+    rebuild_full_hierarchy: 3
   ]
 
 config :ex_money,
