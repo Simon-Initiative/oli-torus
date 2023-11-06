@@ -6,6 +6,7 @@ import { HtmlContentModelRenderer } from 'data/content/writers/renderer';
 interface DeliveryElementRendererProps {
   element: RichText;
   context?: WriterContext;
+  inline?: boolean;
 }
 
 /**
@@ -27,8 +28,13 @@ interface DeliveryElementRendererProps {
 export const DeliveryElementRenderer: React.FC<DeliveryElementRendererProps> = ({
   element,
   context,
+  inline
 }) => {
   const writerContext = defaultWriterContext(context);
 
-  return <HtmlContentModelRenderer content={element} context={writerContext} direction="auto" />;
+  return <HtmlContentModelRenderer inline={inline} content={element} context={writerContext} direction="auto" />;
+};
+
+DeliveryElementRenderer.defaultProps = {
+  inline: false,
 };

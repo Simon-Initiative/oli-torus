@@ -743,7 +743,8 @@ defmodule Oli.Rendering.Content.Html do
         context,
         "Components.DeliveryElementRenderer",
         %{
-          "element" => element
+          "element" => element,
+          "inline" => true,
         },
         html_element: "span"
       )
@@ -806,6 +807,12 @@ defmodule Oli.Rendering.Content.Html do
       "</div></div>\n"
     ]
   end
+
+
+
+
+
+
 
   defp directionAttr(element) do
     case Map.get(element, "textDirection", "ltr") do
