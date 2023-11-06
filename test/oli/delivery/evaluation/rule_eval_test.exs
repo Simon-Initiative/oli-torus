@@ -103,8 +103,11 @@ defmodule Oli.Delivery.Evaluation.RuleEvalTest do
     assert eval("attemptNumber = {1} && input = {[-5, 5]#4}", "1.002") == true
     assert eval("attemptNumber = {1} && input = {(100, 101)#5}", "100.20") == true
     assert eval("attemptNumber = {1} && input = {(100, 101)#3}", "100.1") == false
+    # significant figures of 0 maybe problematic
     assert eval("attemptNumber = {1} && input = {(-1, 1)#1}", "0") == true
     assert eval("attemptNumber = {1} && input = {(-1, 1)#1}", "0.0") == false
+    assert eval("attemptNumber = {1} && input = {(-1, 1)#1}", "0.5") == true
+    assert eval("attemptNumber = {1} && input = {(-1, 1)#1}", "0.50") == false
   end
 
   test "evaluating like" do
@@ -211,9 +214,23 @@ defmodule Oli.Delivery.Evaluation.RuleEvalTest do
 
     # precision specified, should evaluate extra precision to false
     refute eval("attemptNumber = {1} && input = {3.1#2}", "3.10")
+    refute eval("attemptNumber = {1} && input = {0.036#2}", "3.60e-2")
 
     assert eval("attemptNumber = {1} && input = {0.001#1}", "0.001")
     assert eval("attemptNumber = {1} && input = {3.100#4}", "3.100")
+
+    # significant figures: trailing zeros in decimal significant
+    assert eval("attemptNumber = {1} && input = {0.0360#3}", "0.0360")
+    # significant figures: e notation
+    assert eval("attemptNumber = {1} && input = {0.0360#3}", "3.60E-2")
+    refute eval("attemptNumber = {1} && input = {0.0360#3}", "3.6e-2")
+    assert eval("attemptNumber = {1} && input = {0.360#3}", "360e-3")
+
+    # significant figures in integers: trailing zeros not significant
+    assert eval("attemptNumber = {1} && input = {3400#2}", "3400")
+    refute eval("attemptNumber = {1} && input = {3400#2}", "3.400e3")
+    refute eval("attemptNumber = {1} && input = {3400#4}", "3400")
+    assert eval("attemptNumber = {1} && input = {3400#4}", "3.400e3")
 
     # eval returns false, although the precision is correct the value is wrong
     refute eval("attemptNumber = {1} && input = {3.268#2}", "3.2")
