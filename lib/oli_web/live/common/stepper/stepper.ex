@@ -36,9 +36,16 @@ defmodule OliWeb.Common.Stepper do
 
     ~H"""
     <div id={@id} class="flex md:flex-row flex-col-reverse h-screen w-full">
-      <div class="bg-delivery-body-color-dark dark:bg-gray-900 h-3/5 w-full md:h-full md:w-3/5" />
       <div class="bg-blue-700 h-2/5 w-full md:h-full md:w-2/5" />
+      <div class="bg-delivery-body-color-dark dark:bg-gray-900 h-3/5 w-full md:h-full md:w-3/5" />
       <div class="flex md:flex-row flex-col-reverse absolute p-16 top-0 bottom-0 left-0 right-0 m-auto">
+        <div class="w-full md:w-1/3 my-auto z-20">
+          <div class="flex md:flex-col flex-row gap-4 md:-mr-[29px] scrollbar-hide overflow-x-auto md:overflow-x-hidden">
+            <%= for {step, index} <- @steps do %>
+              <.step index={index + 1} step={step} active={index == @current_step} />
+            <% end %>
+          </div>
+        </div>
         <div class="bg-white dark:bg-gray-800 w-full md:w-2/3 border border-gray-200 dark:border-gray-600 flex flex-col overflow-hidden">
           <%= @selected_step.render_fn.(@data) %>
           <div class={"px-9 py-4 flex items-center border-gray-200 dark:border-gray-600 border-t #{if is_nil(@on_cancel), do: "justify-end", else: "justify-between"}"}>
@@ -63,13 +70,6 @@ defmodule OliWeb.Common.Stepper do
             </div>
           </div>
         </div>
-        <div class="w-full md:w-1/3 my-auto z-10">
-          <div class="flex md:flex-col flex-row gap-4 md:-ml-7 scrollbar-hide overflow-x-auto md:overflow-x-hidden">
-            <%= for {step, index} <- @steps do %>
-              <.step index={index + 1} step={step} active={index == @current_step} />
-            <% end %>
-          </div>
-        </div>
       </div>
     </div>
     """
@@ -82,12 +82,12 @@ defmodule OliWeb.Common.Stepper do
   def step(%{index: _index, step: %Step{}, active: _active} = assigns) do
     ~H"""
     <div class="flex gap-8 items-center shrink-0 w-80 md:w-auto">
-      <div class={"flex shrink-0 items-center justify-center text-xl font-extrabold h-14 w-14 rounded-full shadow-sm #{if @active, do: "bg-primary text-white", else: "bg-white dark:bg-gray-800 border text-gray-400 border-gray-300 dark:border-gray-600"}"}>
-        <%= @index %>
-      </div>
       <div class={"flex flex-col text-white #{if !@active, do: "opacity-50"}"}>
         <h4 class="font-bold"><%= @step.title %></h4>
         <p class="font-normal"><%= @step.description %></p>
+      </div>
+      <div class={"flex shrink-0 items-center justify-center text-xl font-extrabold h-14 w-14 rounded-full shadow-sm #{if @active, do: "bg-primary text-white", else: "bg-white dark:bg-gray-800 border text-gray-400 border-gray-300 dark:border-gray-600"}"}>
+        <%= @index %>
       </div>
     </div>
     """
