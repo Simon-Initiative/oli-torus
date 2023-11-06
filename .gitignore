@@ -1,6 +1,8 @@
 .vscode
 lib/oli/analytics/test.xml
-Mnesia.nonode@nohost
+Mnesia.nonode@nohost*
+MnesiaCore.nonode@nohost*
+_imports
 
 # IDEA
 *.iml
