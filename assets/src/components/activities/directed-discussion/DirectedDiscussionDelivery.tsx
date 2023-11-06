@@ -20,8 +20,8 @@ import { castPartId } from '../common/utils';
 import * as ActivityTypes from '../types';
 import { DiscussionParticipation } from './DiscussionParticipation';
 import { DiscussionThread } from './DiscussionThread';
-import { DirectedDiscussionActivitySchema } from './schema';
 import { useDiscussion } from './discussion-hook';
+import { DirectedDiscussionActivitySchema } from './schema';
 
 // Used instead of the real 'onSaveActivity' to bypass saving state to the server when we are just
 // about to submit that state with a submission. This saves a network call that isn't necessary and avoids
@@ -45,161 +45,11 @@ export const DirectedDiscussion: React.FC = () => {
   const { surveyId } = context;
   const { writerContext } = useDeliveryElementContext<HasChoices & ActivityModelSchema>();
 
-  const { loaded, posts, addPost } = useDiscussion(
-    writerContext.sectionSlug,
-    context.resourceId,
-  );
+  const { loaded, posts, addPost } = useDiscussion(writerContext.sectionSlug, context.resourceId);
 
   const { activityId } = activityState;
   const hasActivityId = !!activityId;
 
-  /*
-  Context:
-  {
-    "surveyId": null,
-    "showFeedback": true,
-    "pageState": "{}",
-    "learningLanguage": null,
-    "bibParams": [],
-    "pageAttemptGuid": "",
-    "groupId": null,
-    "userId": 4,
-    "sectionSlug": "test_project",
-    "projectSlug": "test_project",
-    "graded": false
-}
-
-model:
-{
-    "authoring": {
-        "maxWords": 0,
-        "participation": {
-            "maxPosts": 0,
-            "maxReplies": 0,
-            "minPosts": 0,
-            "minReplies": 0
-        },
-        "parts": [
-            {
-                "gradingApproach": "automatic",
-                "hints": [
-                    {
-                        "content": [
-                            {
-                                "children": [
-                                    {
-                                        "text": "h1"
-                                    }
-                                ],
-                                "id": "1227250327",
-                                "type": "p"
-                            }
-                        ],
-                        "editor": "slate",
-                        "id": "1779218916",
-                        "textDirection": "ltr"
-                    },
-                    {
-                        "content": [
-                            {
-                                "children": [
-                                    {
-                                        "text": "h2"
-                                    }
-                                ],
-                                "id": "291658633",
-                                "type": "p"
-                            }
-                        ],
-                        "editor": "slate",
-                        "id": "61726355",
-                        "textDirection": "ltr"
-                    },
-                    {
-                        "content": [
-                            {
-                                "children": [
-                                    {
-                                        "text": "h3"
-                                    }
-                                ],
-                                "id": "845208702",
-                                "type": "p"
-                            }
-                        ],
-                        "editor": "slate",
-                        "id": "1574926061",
-                        "textDirection": "ltr"
-                    },
-                    {
-                        "content": [
-                            {
-                                "children": [
-                                    {
-                                        "text": "h4"
-                                    }
-                                ],
-                                "id": "869599047",
-                                "type": "p"
-                            }
-                        ],
-                        "editor": "slate",
-                        "id": "4077745342",
-                        "textDirection": "ltr"
-                    }
-                ],
-                "id": "1",
-                "outOf": null,
-                "responses": [
-                    {
-                        "feedback": {
-                            "content": [
-                                {
-                                    "children": [
-                                        {
-                                            "text": "Default Part"
-                                        }
-                                    ],
-                                    "id": "3849278281",
-                                    "type": "p"
-                                }
-                            ],
-                            "editor": "slate",
-                            "id": "2792502927",
-                            "textDirection": "ltr"
-                        },
-                        "id": "3732856362",
-                        "rule": "input like {.*}",
-                        "score": 0
-                    }
-                ],
-                "scoringStrategy": "average"
-            }
-        ],
-        "targeted": [],
-        "version": 1
-    },
-    "bibrefs": [],
-    "stem": {
-        "content": [
-            {
-                "children": [
-                    {
-                        "text": "Here is my stem"
-                    }
-                ],
-                "id": "3356743076",
-                "type": "p"
-            }
-        ],
-        "editor": "slate",
-        "id": "342990028",
-        "textDirection": "ltr"
-    }
-}
-
-
-  */
   useEffect(() => {
     listenForParentSurveySubmit(surveyId, dispatch, onSubmitActivity);
     listenForParentSurveyReset(surveyId, dispatch, onResetActivity, {
@@ -222,7 +72,7 @@ model:
       <div className="activity-content">
         <StemDeliveryConnected />
         <DiscussionParticipation requirements={model.participation} />
-        <DiscussionThread posts={posts} />
+        <DiscussionThread posts={posts} onPost={addPost} />
         <HintsDeliveryConnected
           partId={castPartId(activityState.parts[0].partId)}
           resetPartInputs={{ [activityState.parts[0].partId]: [] }}
@@ -240,7 +90,6 @@ export class DirectedDiscussionDelivery extends DeliveryElement<DirectedDiscussi
     mountPoint: HTMLDivElement,
     props: DeliveryElementProps<DirectedDiscussionActivitySchema>,
   ) {
-
     const store = configureStore({}, activityDeliverySlice.reducer, {
       name: 'DirectedDiscussionDelivery',
     });

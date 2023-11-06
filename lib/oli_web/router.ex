@@ -700,6 +700,7 @@ defmodule OliWeb.Router do
     pipe_through([:api, :delivery_protected])
 
     get("/", Api.DirectedDiscussionController, :get_discussion)
+    post("/", Api.DirectedDiscussionController, :create_post)
   end
 
   # User State Service, extrinsic state

@@ -18,6 +18,25 @@ export interface ThreadedPost extends Post {
   children: ThreadedPost[];
 }
 
+export const writePost = (
+  sectionSlug: string,
+  resourceId: string,
+  content: string,
+  parent?: number,
+) => {
+  const body = {
+    content,
+    parent_post_id: parent,
+  };
+  return fetch(`/api/v1/discussion/${sectionSlug}/${resourceId}`, {
+    method: 'POST',
+    body: JSON.stringify(body),
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  }).then((r) => r.json());
+};
+
 export const getPosts = (sectionSlug: string, resourceId: string) => {
   return fetch(`/api/v1/discussion/${sectionSlug}/${resourceId}`)
     .then((r) => r.json())

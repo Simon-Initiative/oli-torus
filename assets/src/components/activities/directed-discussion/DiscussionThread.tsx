@@ -1,17 +1,20 @@
 import React from 'react';
+import { CreatePost } from './CreatePost';
 import { ThreadedPost } from './discussion-service';
 
 interface Props {
   posts: ThreadedPost[];
+  onPost: (content: string) => void;
 }
 
-export const DiscussionThread: React.FC<Props> = ({ posts }) => {
+export const DiscussionThread: React.FC<Props> = ({ posts, onPost }) => {
   // if (!enabled) {
   //   return <DiscussionPreview />;
   // }
   return (
     <div>
       <h1>Discussion Thread</h1>
+      <CreatePost onPost={onPost} />
       <PostList posts={posts} />
     </div>
   );

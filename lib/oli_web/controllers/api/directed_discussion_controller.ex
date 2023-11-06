@@ -7,10 +7,51 @@ defmodule OliWeb.Api.DirectedDiscussionController do
   use OliWeb, :controller
   use OpenApiSpex.Controller
 
+  alias Oli.Repo
   alias Oli.Delivery.Sections
 
   alias Oli.Resources.Collaboration
   alias OliWeb.Api.State
+
+  def create_post(conn, %{"resource_id" => resource_id, "section_slug" => section_slug}) do
+    content = conn.body_params["content"]
+    parent_post_id = Map.get(conn.body_params, "parent_post_id", nil)
+    current_user = Map.get(conn.assigns, :current_user)
+    section = Sections.get_section_by_slug(section_slug)
+
+    Collaboration.create_post(%{
+      :status => :approved,
+      :user_id => current_user.id,
+      :section_id => section.id,
+      :resource_id => resource_id,
+      :parent_post_id => parent_post_id,
+      :thread_root_id => parent_post_id,
+      :replies_count => 0,
+      :anonymous => false,
+      :content => %{"message" => content}
+    })
+    |> preload_post_user
+    |> case do
+      {:ok, post} ->
+        json(conn, %{
+          "result" => "success",
+          "post" => post_response(post)
+        })
+
+      error ->
+        json(conn, %{
+          "result" => "failure",
+          "error" => error
+        })
+    end
+  end
+
+  defp preload_post_user(post) do
+    case post do
+      {:ok, post} -> {:ok, Repo.preload(post, :user)}
+      error -> error
+    end
+  end
 
   def get_discussion(conn, %{"resource_id" => resource_id, "section_slug" => section_slug}) do
     section = Sections.get_section_by_slug(section_slug)
@@ -33,8 +74,6 @@ defmodule OliWeb.Api.DirectedDiscussionController do
   end
 
   defp post_response(post) do
-    IO.inspect(post)
-
     %{
       id: post.id,
       content: post.content.message,
