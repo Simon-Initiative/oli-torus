@@ -33,7 +33,8 @@ defmodule OliWeb.Storybook.Components.Button do
         id: :variants,
         description: "Variants",
         variations:
-          for variant <- ~w(primary secondary tertiary light dark info success warning danger)a do
+          for variant <-
+                ~w(primary secondary tertiary light dark info success warning danger link link_info link_success link_warning link_danger)a do
             %Variation{
               id: variant,
               attributes: %{
@@ -68,7 +69,7 @@ defmodule OliWeb.Storybook.Components.Button do
         id: :disabled,
         description: "Disabled",
         variations:
-          for variant <- ~w(primary secondary tertiary light dark info success warning danger)a do
+          for variant <- ~w(primary link)a do
             %Variation{
               id: variant,
               attributes: %{
