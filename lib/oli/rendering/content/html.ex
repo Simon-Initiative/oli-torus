@@ -744,7 +744,7 @@ defmodule Oli.Rendering.Content.Html do
         "Components.DeliveryElementRenderer",
         %{
           "element" => element,
-          "inline" => true,
+          "inline" => true
         },
         html_element: "span"
       )
@@ -808,11 +808,13 @@ defmodule Oli.Rendering.Content.Html do
     ]
   end
 
-
-
-
-
-
+  def content(%Context{} = _context, next, element) do
+    [
+      ~s|<div class="content" #{directionAttr(element)}>|,
+      next.(),
+      "</div>"
+    ]
+  end
 
   defp directionAttr(element) do
     case Map.get(element, "textDirection", "ltr") do

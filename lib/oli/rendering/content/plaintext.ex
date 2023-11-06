@@ -15,6 +15,10 @@ defmodule Oli.Rendering.Content.Plaintext do
     ["[Learn more]: ", next.(), " "]
   end
 
+  def content(%Context{} = _context, next, _) do
+    next.()
+  end
+
   def manystudentswonder(%Context{} = _context, next, _) do
     ["[Many students wonder]: ", next.(), " "]
   end
