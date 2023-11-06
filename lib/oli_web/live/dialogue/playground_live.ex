@@ -62,6 +62,7 @@ defmodule OliWeb.Dialogue.PlaygroundLive do
        dialogue: dialogue,
        changeset: UserInput.changeset(%UserInput{}, %{content: ""}),
        streaming: false,
+       allow_submission?: true,
        active_message: nil,
        function_call: nil,
        title: "Dialogue Playground"
@@ -86,10 +87,8 @@ defmodule OliWeb.Dialogue.PlaygroundLive do
       <div class="flex justify-between border-b-2 border-gray p-3">
         <div>Dot (prototype)</div>
         <div>
-          <i phx-click="minimize" class="cursor-pointer fa-regular fa-window-minimize mr-2"></i><i
-            phx-click="restore"
-            class="cursor-pointer fa-regular fa-window-restore"
-          ></i>
+          <i phx-click="minimize" class="cursor-pointer fa-regular fa-window-minimize mr-2"></i>
+          <i phx-click="restore" class="cursor-pointer fa-regular fa-window-restore"></i>
         </div>
       </div>
 
@@ -110,7 +109,7 @@ defmodule OliWeb.Dialogue.PlaygroundLive do
   def render_messages(assigns) do
     ~H"""
     <div class="messages">
-      <%= for message <- @dialogue.messages do %>
+      <%= for message <- @dialogue.rendered_messages do %>
         <%= if message.role != :system and message.role != :function do %>
           <div class={styles(message.role)}>
             <%= raw(message.content) %>
@@ -133,6 +132,7 @@ defmodule OliWeb.Dialogue.PlaygroundLive do
         ) %>
         <div class="absolute inset-y-0 right-0 flex items-center">
           <button
+            disabled={!@allow_submission?}
             class="h-full rounded-md border-0 bg-transparent py-0 px-2 text-gray-500 focus:ring-2 focus:ring-inset focus:ring-blue-500 sm:text-sm"
             type="submit"
           >
@@ -193,7 +193,7 @@ defmodule OliWeb.Dialogue.PlaygroundLive do
       send(pid, {:reply_finished})
     end)
 
-    {:noreply, assign(socket, streaming: true, dialogue: dialogue)}
+    {:noreply, assign(socket, streaming: true, dialogue: dialogue, allow_submission?: false)}
   end
 
   def handle_info({:reply_chunk, type, content}, socket) do
@@ -221,13 +221,31 @@ defmodule OliWeb.Dialogue.PlaygroundLive do
     end
   end
 
+  def handle_info({:summarization_finished, dialogue}, socket) do
+    {:noreply, assign(socket, dialogue: dialogue, allow_submission?: true)}
+  end
+
   def handle_info({:reply_finished}, socket) do
     case socket.assigns.function_call do
       nil ->
         message = Earmark.as_html!(socket.assigns.active_message)
         dialogue = Dialogue.add_message(socket.assigns.dialogue, Message.new(:assistant, message))
 
-        {:noreply, assign(socket, dialogue: dialogue, streaming: false, active_message: nil)}
+        allow_submission? = if Dialogue.should_summarize?(dialogue) do
+
+          pid = self()
+
+          Task.async(fn ->
+            dialogue = Dialogue.summarize(dialogue)
+            send(pid, {:summarization_finished, dialogue})
+          end)
+
+          false
+        else
+          true
+        end
+
+        {:noreply, assign(socket, dialogue: dialogue, streaming: false, active_message: nil, allow_submission?: allow_submission?)}
 
       fc ->
         name = String.to_existing_atom(fc["name"])
