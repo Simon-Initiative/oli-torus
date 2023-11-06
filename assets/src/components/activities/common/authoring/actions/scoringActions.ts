@@ -1,6 +1,21 @@
+import { ActivityLevelScoring, ScoringStrategy } from 'components/activities/types';
 import { getCorrectResponse, getIncorrectResponse } from 'data/activities/model/responses';
 
 export const ScoringActions = {
+  toggleActivityDefaultScoring() {
+    // This toggles an activity-level default scoring flag, currently only used for multi input questions.
+    return (model: ActivityLevelScoring) => {
+      model.customScoring = !model.customScoring;
+    };
+  },
+
+  editActivityScoringStrategy(scoringStrategy: ScoringStrategy) {
+    return (model: ActivityLevelScoring) => {
+      // This changes an activity-level scoring strategy, currently only used for multi input questions.
+      model.scoringStrategy = scoringStrategy;
+    };
+  },
+
   editPartScoringStrategy(partId: string, scoringStrategy: string) {
     return (model: any) => {
       const part = model.authoring.parts.find((p: any) => p.id === partId);

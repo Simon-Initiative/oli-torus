@@ -607,6 +607,11 @@ export interface HasParts {
   };
 }
 
+export interface ActivityLevelScoring {
+  customScoring?: boolean;
+  scoringStrategy?: ScoringStrategy;
+}
+
 /**
  * The types of grading, or scoring, supported for a part.
  */
@@ -629,6 +634,7 @@ export enum ScoringStrategy {
   'average' = 'average',
   'best' = 'best',
   'most_recent' = 'most_recent',
+  'total' = 'total',
 }
 
 /**

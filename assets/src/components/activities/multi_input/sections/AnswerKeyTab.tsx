@@ -23,6 +23,7 @@ import { Radio } from 'components/misc/icons/radio/Radio';
 import { getCorrectResponse, hasCustomScoring } from 'data/activities/model/responses';
 import { containsRule, eqRule, equalsRule } from 'data/activities/model/rules';
 import { defaultWriterContext } from 'data/content/writers/context';
+import { MultiInputScoringMethod } from '../MultiInputScoringMethod';
 
 const defaultRuleForInputType = (inputType: string | undefined) => {
   switch (inputType) {
@@ -70,8 +71,13 @@ export const AnswerKeyTab: React.FC<Props> = (props) => {
           isEvaluated={false}
           context={defaultWriterContext({ projectSlug: projectSlug })}
         />
+
         <SimpleFeedback partId={props.input.partId} />
-        <ActivityScoring partId={props.input.partId} />
+
+        <MultiInputScoringMethod />
+        {model.customScoring && (
+          <ActivityScoring partId={props.input.partId} promptForDefault={false} />
+        )}
 
         <TargetedFeedback
           choices={model.choices.filter((choice) =>
@@ -98,7 +104,10 @@ export const AnswerKeyTab: React.FC<Props> = (props) => {
         onEditResponseRule={(id, rule) => dispatch(ResponseActions.editRule(id, rule))}
       />
       <SimpleFeedback partId={props.input.partId} />
-      <ActivityScoring partId={props.input.partId} shouldSetStrategy={true} />
+      <MultiInputScoringMethod />
+      {model.customScoring && (
+        <ActivityScoring partId={props.input.partId} promptForDefault={false} />
+      )}
       {getTargetedResponses(model, props.input.partId).map((response: Response) => (
         <ResponseCard
           title="Targeted feedback"
