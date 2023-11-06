@@ -743,7 +743,8 @@ defmodule Oli.Rendering.Content.Html do
         context,
         "Components.DeliveryElementRenderer",
         %{
-          "element" => element
+          "element" => element,
+          "inline" => true
         },
         html_element: "span"
       )
@@ -804,6 +805,14 @@ defmodule Oli.Rendering.Content.Html do
       ~s|<div class="content-purpose manystudentswonder"><div class="content-purpose-label">Many Students Wonder</div><div #{directionAttr(element)} class="content-purpose-content">|,
       next.(),
       "</div></div>\n"
+    ]
+  end
+
+  def content(%Context{} = _context, next, element) do
+    [
+      ~s|<div class="content" #{directionAttr(element)}>|,
+      next.(),
+      "</div>"
     ]
   end
 

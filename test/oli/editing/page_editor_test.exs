@@ -490,7 +490,7 @@ defmodule Oli.EditingTest do
       html = PageEditor.render_page_html(project.slug, revision.content, author)
 
       assert html == [
-               "<div dir=\"ltr\">",
+               "<div class=\"content\" >",
                [["<p>", [[[[], "Here" | "&#39;"] | "s some test content"]], "</p>\n"]],
                "</div>"
              ]

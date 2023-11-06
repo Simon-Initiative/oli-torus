@@ -9,11 +9,21 @@ interface Props {
   content: RichText | CaptionV2 | string | TextBlock | Pronunciation;
   direction?: TextDirection | 'auto';
   context: WriterContext;
+  inline?: boolean;
 }
 export const HtmlContentModelRenderer: React.FC<Props> = (props) => {
   // Support content persisted when RichText had a `model` property.
   const content = (props.content as any).model ? (props.content as any).model : props.content;
+  const className = props.inline ? 'inline' : '';
 
   const rendered = new ContentWriter().render(props.context, content, new HtmlParser());
-  return <div dir={props.direction}>{rendered}</div>;
+  return (
+    <div dir={props.direction} className={className}>
+      {rendered}
+    </div>
+  );
+};
+
+HtmlContentModelRenderer.defaultProps = {
+  inline: false,
 };
