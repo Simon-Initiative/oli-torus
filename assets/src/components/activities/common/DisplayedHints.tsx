@@ -14,7 +14,11 @@ const DisplayedHint = ({ hint, context, index }: DisplayedHintProps) => {
     <div key={hint.id} aria-label={`hint ${index + 1}`} className="hint mb-2 d-flex">
       <i className="fas fa-lightbulb"></i>
       <div className="flex-fill ml-2">
-        <HtmlContentModelRenderer content={hint.content} context={context} />
+        <HtmlContentModelRenderer
+          direction={hint.textDirection}
+          content={hint.content}
+          context={context}
+        />
       </div>
     </div>
   );

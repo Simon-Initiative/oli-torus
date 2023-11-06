@@ -80,7 +80,14 @@ defmodule OliWeb.InviteController do
     conn
     |> put_flash(:info, "Users were enrolled successfully")
     |> redirect(
-      to: Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.EnrollmentsViewLive, section_slug)
+      to:
+        Routes.live_path(
+          OliWeb.Endpoint,
+          OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
+          section_slug,
+          :reports,
+          :students
+        )
     )
   end
 

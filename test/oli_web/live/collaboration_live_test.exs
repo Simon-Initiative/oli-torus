@@ -1356,6 +1356,9 @@ defmodule OliWeb.CollaborationLiveTest do
              |> render() =~
                "Post successfully created"
 
+      # refute that the flash message has sticky class applied
+      refute has_element?(view, "div.alert.alert-info.sticky", "Post successfully created")
+
       post_created_by = user.id
       assert_receive {:post_created, %PostSchema{}, ^post_created_by}
 
@@ -1406,6 +1409,9 @@ defmodule OliWeb.CollaborationLiveTest do
              |> element("div.alert.alert-info")
              |> render() =~
                "Post successfully created"
+
+      # refute that the flash message has sticky class applied
+      refute has_element?(view, "div.alert.alert-info.sticky", "Post successfully created")
 
       post_created_by = user.id
       assert_receive {:post_created, %PostSchema{}, ^post_created_by}
@@ -1627,6 +1633,9 @@ defmodule OliWeb.CollaborationLiveTest do
              |> render() =~
                "Post successfully created"
 
+      # refute that the flash message has sticky class applied
+      refute has_element?(view, "div.alert.alert-info.sticky", "Post successfully created")
+
       post_created_by = user.id
       assert_receive {:post_created, %PostSchema{}, ^post_created_by}
 
@@ -1828,6 +1837,9 @@ defmodule OliWeb.CollaborationLiveTest do
              |> render() =~
                "Post successfully created"
 
+      # refute that the flash message has sticky class applied
+      refute has_element?(view, "div.alert.alert-info.sticky", "Post successfully created")
+
       post_created_by = user.id
       assert_receive {:post_created, %PostSchema{}, ^post_created_by}
 
@@ -1958,6 +1970,9 @@ defmodule OliWeb.CollaborationLiveTest do
              |> render() =~
                "Post successfully created"
 
+      # refute that the flash message has sticky class applied
+      refute has_element?(view, "div.alert.alert-info.sticky", "Post successfully created")
+
       post_created_by = user.id
       assert_receive {:post_created, %PostSchema{}, ^post_created_by}
 
@@ -1983,6 +1998,9 @@ defmodule OliWeb.CollaborationLiveTest do
              |> element("div.alert.alert-info")
              |> render() =~
                "Post successfully created"
+
+      # refute that the flash message has sticky class applied
+      refute has_element?(view, "div.alert.alert-info.sticky", "Post successfully created")
 
       assert_receive {:post_created, %PostSchema{}, ^post_created_by}
 
@@ -2099,6 +2117,9 @@ defmodule OliWeb.CollaborationLiveTest do
              |> render() =~
                "Post successfully created"
 
+      # refute that the flash message has sticky class applied
+      refute has_element?(view, "div.alert.alert-info.sticky", "Post successfully created")
+
       post_created_by = user.id
       assert_receive {:post_created, %PostSchema{}, ^post_created_by}
 
@@ -2200,6 +2221,9 @@ defmodule OliWeb.CollaborationLiveTest do
              |> element("div.alert.alert-info")
              |> render() =~
                "Post successfully created"
+
+      # refute that the flash message has sticky class applied
+      refute has_element?(view, "div.alert.alert-info.sticky", "Post successfully created")
 
       post_created_by = instructor.id
       assert_receive {:post_created, %PostSchema{}, ^post_created_by}

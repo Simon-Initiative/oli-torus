@@ -5,7 +5,7 @@ import { SwitchToMarkdownModal } from 'components/editing/editor/SwitchToMarkdow
 import { CommandDescription } from 'components/editing/elements/commands/interfaces';
 import { MarkdownEditor } from 'components/editing/markdown_editor/MarkdownEditor';
 import { useToggle } from 'components/hooks/useToggle';
-import { ModelElement } from 'data/content/model/elements/types';
+import { ModelElement, TextDirection } from 'data/content/model/elements/types';
 import { EditorType } from 'data/content/resource';
 import { ProjectSlug, ResourceSlug } from 'data/types';
 import { SwitchToSlateModal } from './markdown_editor/SwitchToSlateModal';
@@ -24,6 +24,8 @@ type SlateOrMarkdownEditorProps = {
   toolbarInsertDescs?: CommandDescription[]; // Content insertion options
   style?: React.CSSProperties;
   className?: string;
+  textDirection?: TextDirection;
+  onChangeTextDirection?: (textDirection: TextDirection) => void;
 };
 
 /*
@@ -49,6 +51,8 @@ export const SlateOrMarkdownEditor: React.FC<SlateOrMarkdownEditorProps> = ({
   allowBlockElements,
   style,
   className,
+  textDirection,
+  onChangeTextDirection,
 }) => {
   // Bit of a hack. Since this isn't a real controlled component, need to keep track of the latest
   // version for validation reasons.
@@ -93,6 +97,8 @@ export const SlateOrMarkdownEditor: React.FC<SlateOrMarkdownEditorProps> = ({
           onSwitchModes={toggleSwitchToSlateModal}
           onEdit={onContentEdited}
           style={style}
+          textDirection={textDirection}
+          onChangeTextDirection={onChangeTextDirection}
         />
         {switchToSlateModal && (
           <SwitchToSlateModal
@@ -114,6 +120,8 @@ export const SlateOrMarkdownEditor: React.FC<SlateOrMarkdownEditorProps> = ({
           onEdit={onContentEdited}
           toolbarInsertDescs={toolbarInsertDescs || []}
           onSwitchToMarkdown={toggleSwitchToMarkdownModal}
+          textDirection={textDirection}
+          onChangeTextDirection={onChangeTextDirection}
           style={style}
         />
         {switchToMarkdownModal && (
@@ -130,4 +138,5 @@ export const SlateOrMarkdownEditor: React.FC<SlateOrMarkdownEditorProps> = ({
 
 SlateOrMarkdownEditor.defaultProps = {
   allowBlockElements: true,
+  textDirection: 'ltr',
 };

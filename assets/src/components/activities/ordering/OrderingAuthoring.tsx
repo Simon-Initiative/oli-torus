@@ -50,6 +50,7 @@ export const Ordering: React.FC = () => {
           onChangeEditorType={(id, editor) => dispatch(Choices.setEditor(id, editor))}
           onRemove={(id) => dispatch(Actions.removeChoiceAndUpdateRules(id))}
           colorMap={model.choiceColors ? new Map(model.choiceColors) : undefined}
+          onChangeEditorTextDirection={(id, dir) => dispatch(Choices.setTextDirection(id, dir))}
         />
       </TabbedNavigation.Tab>
 

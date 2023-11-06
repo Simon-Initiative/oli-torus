@@ -1,7 +1,10 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import ReactDOM from 'react-dom';
 import EventEmitter from 'events';
+import flatten from 'lodash/flatten';
+import uniq from 'lodash/uniq';
 import { AnyPartComponent } from 'components/parts/types/parts';
+import { getReferencedKeysInConditions } from 'adaptivity/rules-engine';
 import {
   NotificationContext,
   NotificationType,
@@ -72,9 +75,30 @@ const Adaptive = (
 
   const handleLayoutChange = useCallback(
     async (parts: AnyPartComponent[]) => {
-      /* console.log('Layout Change!', parts); */
+      /* console.log('Layout Change!', { parts }); */
       const modelClone = clone(props.model);
       modelClone.content.partsLayout = parts;
+      // lets check if CAPI - configData has any variable that contains any expression.
+      const conditionWithExpression: string[] = [];
+      const iFrameParts = parts.filter((part) => part.type === 'janus-capi-iframe');
+      iFrameParts?.forEach((part) => {
+        const configDetails = part.custom.configData;
+        const conditions = configDetails.map((data: any) => {
+          return { target: `stage.${part.id}.${data.key}`, value: data.value };
+        });
+        if (conditions?.length) {
+          conditionWithExpression.push(...getReferencedKeysInConditions(conditions, true));
+        }
+        if (!modelClone.content.custom.conditionsRequiredEvaluation) {
+          modelClone.content.custom.conditionsRequiredEvaluation = [];
+        }
+        modelClone.content.custom.conditionsRequiredEvaluation.push(conditionWithExpression);
+        modelClone.content.custom.conditionsRequiredEvaluation = uniq(
+          flatten([...new Set(modelClone.content.custom.conditionsRequiredEvaluation)]),
+        );
+      });
+      console.log({ modelClone });
+
       props.onEdit(modelClone);
     },
     [props.model],
