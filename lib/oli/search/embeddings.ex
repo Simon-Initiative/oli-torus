@@ -21,8 +21,8 @@ defmodule Oli.Search.Embeddings do
             on: r.id == re.revision_id,
             where: pr.publication_id == ^publication_id,
             where: re.chunk_type == :paragraph,
-            order_by: cosine_distance(re.embedding, ^embedding),
-            limit: 5,
+            order_by: l2_distance(re.embedding, ^embedding),
+            limit: 10,
             select_merge: %{title: r.title, distance: cosine_distance(re.embedding, ^embedding)}
 
         Repo.all(query)
@@ -48,7 +48,7 @@ defmodule Oli.Search.Embeddings do
             [spp, _p, re, _r],
             spp.section_id == ^section_id and re.chunk_type == :paragraph
           )
-          |> order_by([_spp, _p, re, _r], cosine_distance(re.embedding, ^embedding))
+          |> order_by([_spp, _p, re, _r], l2_distance(re.embedding, ^embedding))
           |> limit(10)
           |> select([_spp, _p, re, _r], re.revision_id)
 

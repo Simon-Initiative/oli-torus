@@ -44,6 +44,7 @@ defmodule Oli.Search.EmbeddingWorker do
         |> Map.delete(:id)
         |> Map.delete(:updated_at)
         |> Map.delete(:inserted_at)
+        |> Map.delete(:distance)
       end)
 
     expected_num_inserts = Enum.count(attrs)
