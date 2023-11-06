@@ -17,7 +17,11 @@ export const HtmlContentModelRenderer: React.FC<Props> = (props) => {
   const className = props.inline ? 'inline' : '';
 
   const rendered = new ContentWriter().render(props.context, content, new HtmlParser());
-  return <div dir={props.direction} className={className} >{rendered}</div>;
+  return (
+    <div dir={props.direction} className={className}>
+      {rendered}
+    </div>
+  );
 };
 
 HtmlContentModelRenderer.defaultProps = {

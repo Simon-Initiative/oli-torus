@@ -121,8 +121,8 @@ defmodule Oli.Rendering.Content do
         %{"type" => "content", "children" => children} = element,
         writer
       ) do
-      next = fn -> Enum.map(children, fn child -> render(context, child, writer) end) end
-      writer.content(context, next, element)
+    next = fn -> Enum.map(children, fn child -> render(context, child, writer) end) end
+    writer.content(context, next, element)
   end
 
   # Renders text content

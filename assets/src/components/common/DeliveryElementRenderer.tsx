@@ -28,11 +28,18 @@ interface DeliveryElementRendererProps {
 export const DeliveryElementRenderer: React.FC<DeliveryElementRendererProps> = ({
   element,
   context,
-  inline
+  inline,
 }) => {
   const writerContext = defaultWriterContext(context);
 
-  return <HtmlContentModelRenderer inline={inline} content={element} context={writerContext} direction="auto" />;
+  return (
+    <HtmlContentModelRenderer
+      inline={inline}
+      content={element}
+      context={writerContext}
+      direction="auto"
+    />
+  );
 };
 
 DeliveryElementRenderer.defaultProps = {
