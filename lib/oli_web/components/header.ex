@@ -73,7 +73,7 @@ defmodule OliWeb.Components.Header do
               </button>
             </div>
           <% user_signed_in?(assigns) -> %>
-            <div class="max-w-[400px]">
+            <div class="max-w-[400px] my-auto">
               <UserAccountMenu.menu id="user-account-menu" ctx={@ctx} />
             </div>
           <% true -> %>
