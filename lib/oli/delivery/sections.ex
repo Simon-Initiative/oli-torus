@@ -893,13 +893,13 @@ defmodule Oli.Delivery.Sections do
   end
 
   defp calculate_chunk_size(section_resource_rows) do
-    # define a fields_count_buffer to account for the fields that are not
+    # define a max_bind_buffer to account for the fields that are not
     # part of the section resource row, such as inserted_at, updated_at, etc.
-    fields_count_buffer = 10
+    max_bind_buffer = 100
 
     # We want to split the list of section resources into chunks
     # to avoid hitting the max number of bind variables in a query.
-    max_bind_variables = 65535 - fields_count_buffer
+    max_bind_variables = 65535 - max_bind_buffer
 
     fields_count =
       section_resource_rows
