@@ -43,7 +43,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
 
   def header(assigns) do
     ~H"""
-    <div class="fixed z-50 w-full h-14 flex flex-row bg-delivery-header dark:bg-delivery-header-dark">
+    <div class="fixed z-50 w-full h-14 flex flex-row bg-delivery-header dark:bg-delivery-header-dark shadow-sm">
       <div class="w-48 p-2">
         <a
           className="block lg:p-2 lg:mb-14 mx-auto"
@@ -105,7 +105,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
         flex-col
         w-full
         md:w-48
-        shadow-xl
+        shadow-sm
         bg-delivery-navbar
         dark:bg-delivery-navbar-dark
       "
