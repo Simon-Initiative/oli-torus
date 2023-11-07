@@ -8,6 +8,8 @@ defmodule OliWeb.Delivery.StudentOnboarding.Wizard do
 
   alias Phoenix.LiveView.JS
 
+  import OliWeb.Components.Delivery.Layouts
+
   @intro_step :intro
   @survey_step :survey
   @explorations_step :explorations
@@ -102,7 +104,8 @@ defmodule OliWeb.Delivery.StudentOnboarding.Wizard do
 
   def render(assigns) do
     ~H"""
-    <div>
+    <.header ctx={@ctx} section={@section} brand={@brand} preview_mode={@preview_mode} />
+    <div class="mt-14 h-[calc(100vh-56px)]">
       <.live_component
         id="student-onboarding-wizard"
         module={Stepper}
@@ -118,12 +121,9 @@ defmodule OliWeb.Delivery.StudentOnboarding.Wizard do
   slot(:inner_block, required: true)
   attr(:section, :map, required: true)
 
-  defp header(assigns) do
+  defp wizard_header(assigns) do
     ~H"""
-    <h5 class="px-9 py-4 border-gray-200 dark:border-gray-600 border-b text-sm font-semibold">
-      <%= @section.title %> Set Up
-    </h5>
-    <div class="overflow-y-auto scrollbar-hide relative h-full px-10 py-4">
+    <div class="overflow-y-auto scrollbar-hide relative h-full pb-4">
       <%= render_slot(@inner_block) %>
     </div>
     """
@@ -133,15 +133,15 @@ defmodule OliWeb.Delivery.StudentOnboarding.Wizard do
 
   def render_step(%{current_step_name: @intro_step} = assigns) do
     ~H"""
-    <.header section={@section}>
+    <.wizard_header section={@section}>
       <Intro.render section={@section} />
-    </.header>
+    </.wizard_header>
     """
   end
 
   def render_step(%{current_step_name: @survey_step} = assigns) do
     ~H"""
-    <.header section={@section}>
+    <.wizard_header section={@section}>
       <.live_component
         id="onboarding_wizard_survey"
         module={Survey}
@@ -150,15 +150,15 @@ defmodule OliWeb.Delivery.StudentOnboarding.Wizard do
         survey={@survey}
         datashop_session_id={@datashop_session_id}
       />
-    </.header>
+    </.wizard_header>
     """
   end
 
   def render_step(%{current_step_name: @explorations_step} = assigns) do
     ~H"""
-    <.header section={@section}>
+    <.wizard_header section={@section}>
       <Explorations.render />
-    </.header>
+    </.wizard_header>
     """
   end
 

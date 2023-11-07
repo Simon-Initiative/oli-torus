@@ -1049,6 +1049,9 @@ defmodule OliWeb.Router do
       on_mount: [
         OliWeb.LiveSessionPlugs.SetSection,
         OliWeb.LiveSessionPlugs.SetCurrentUser,
+        OliWeb.LiveSessionPlugs.SetSessionContext,
+        OliWeb.LiveSessionPlugs.SetBrand,
+        OliWeb.LiveSessionPlugs.SetPreviewMode,
         OliWeb.LiveSessionPlugs.RequireEnrollment
       ] do
       live(
