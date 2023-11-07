@@ -9,7 +9,10 @@ import { janus_std } from './janus-scripts/builtin_functions';
 let conditionsNeedEvaluation: string[] = [];
 export const setConditionsWithExpression = (facts: string[]) => {
   conditionsNeedEvaluation.push(...facts);
-  conditionsNeedEvaluation = uniq(flatten([...new Set(conditionsNeedEvaluation)]));
+  if(!conditionsNeedEvaluation?.length){
+    return;
+  }
+  conditionsNeedEvaluation = uniq(flatten([...Array.from(new Set(conditionsNeedEvaluation))]));
   const script = `let session.conditionsNeedEvaluation = ${JSON.stringify(
     conditionsNeedEvaluation,
   )}`;
