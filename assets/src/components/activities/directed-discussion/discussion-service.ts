@@ -44,10 +44,11 @@ export const getPosts = (sectionSlug: string, resourceId: string) => {
 };
 
 const threadPosts = (response: DiscussionResult): ThreadedPost[] => {
-  const posts = response.posts.map((post) => ({ ...post, children: [] }));
+  const posts: ThreadedPost[] = response.posts.map((post) => ({ ...post, children: [] }));
+
   const threadedPosts = posts.reduce((threads, post) => {
     if (post.parent_post_id) {
-      const parent = threads.find((thread) => thread.id === post.parent_post_id);
+      const parent = posts.find((thread) => thread.id === post.parent_post_id);
       if (parent) {
         parent.children.push(post);
       }

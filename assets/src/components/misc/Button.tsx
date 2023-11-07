@@ -47,3 +47,12 @@ export const BaseButton: React.FC<ButtonProps> = ({ variant, children, className
 BaseButton.defaultProps = {
   variant: 'primary',
 };
+
+export const LinkButton: React.FC<ButtonProps> = ({ children, ...other }) => (
+  <button
+    className={`background-none font-medium text-primary dark:text-blue-500 hover:underline border-none`}
+    {...other}
+  >
+    {children}
+  </button>
+);

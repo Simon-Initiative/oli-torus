@@ -2,8 +2,9 @@ import React, { useState } from 'react';
 
 interface Props {
   onPost: (content: string) => void;
+  autoFocus?: boolean;
 }
-export const CreatePost: React.FC<Props> = ({ onPost }) => {
+export const CreatePost: React.FC<Props> = ({ onPost, autoFocus }) => {
   const [content, setContent] = useState('');
   const expanded = content && content.length > 0;
   const canPost = content && content.length > 10;
@@ -17,6 +18,7 @@ export const CreatePost: React.FC<Props> = ({ onPost }) => {
   return (
     <div>
       <textarea
+        autoFocus={autoFocus}
         placeholder="Write a post..."
         className={`${sizeClass} transition-[height] w-full rounded-sm`}
         value={content}
