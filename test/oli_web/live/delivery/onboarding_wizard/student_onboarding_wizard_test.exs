@@ -145,7 +145,7 @@ defmodule OliWeb.Deliver.StudentOnboarding.WizardTest do
       |> element("#eventIntercept")
       |> render_hook("survey_scripts_loaded", %{"loaded" => true})
 
-      assert has_element?(view, "h1", "Course Survey")
+      assert has_element?(view, "h2", "Course Survey")
       assert has_element?(view, "oli-multiple-choice-delivery")
       assert has_element?(view, "button", "Go to course")
     end

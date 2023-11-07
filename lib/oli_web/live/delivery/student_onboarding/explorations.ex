@@ -15,7 +15,7 @@ defmodule OliWeb.Delivery.StudentOnboarding.Explorations do
           </span>
         </div>
       </div>
-      <img class="aspect-video w-full my-10n h-[334px]" src="/images/exploration.gif" />
+      <img class="aspect-video w-full h-[334px]" src="/images/exploration.gif" />
       <p class="text-[14px] leading-[20px] tracking-[0.02px] dark:text-white px-[84px] py-9">
         You will have access to both simulations and digital versions of tools used in the real world to help you explore the topics brought up in the course from a real-world perspective.
       </p>
