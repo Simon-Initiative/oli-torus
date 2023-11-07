@@ -1,6 +1,7 @@
 defmodule OliWeb.Delivery.StudentOnboarding.Explorations do
   use Phoenix.Component
 
+  # TODO add real DOT svg icon instead of the gray rounded placeholder
   def render(assigns) do
     ~H"""
     <div class="h-full">

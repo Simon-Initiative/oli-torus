@@ -99,6 +99,7 @@ defmodule OliWeb.Delivery.StudentOnboarding.Survey do
   attr :survey, :map, required: true
   attr :datashop_session_id, :string, required: true
 
+  # TODO add real DOT svg icon instead of the gray rounded placeholder
   def render(assigns) do
     ~H"""
     <div id="eventIntercept" phx-target={@myself} phx-hook="LoadSurveyScripts" class="h-full">
