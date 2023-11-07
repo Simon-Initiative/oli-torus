@@ -224,15 +224,13 @@ defmodule Oli.Utils.Database do
       Oli.Utils.Database.batch_insert_all(SectionResource, rows, %{})
     ```
   """
-  def batch_insert_all(table, rows, opts \\ []) do
+  def batch_insert_all(schema, rows, opts \\ []) do
     rows
     |> Enum.chunk_every(calculate_chunk_size(rows))
     |> Enum.reduce({0, []}, fn chunk, {total, acc} ->
-      {new_total, new_acc} =
-        Repo.insert_all(SectionResource, chunk, opts)
+      {new_total, new_acc} = Repo.insert_all(schema, chunk, opts)
 
       {total + new_total, acc ++ new_acc}
     end)
   end
-
 end
