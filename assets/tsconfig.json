@@ -23,8 +23,7 @@
       "*": ["src/*"]
     },
     "types": ["node", "jest", "jquery"],
-    "esModuleInterop": true,
-    "downlevelIteration": true
+    "esModuleInterop": true
   },
   "include": ["src/**/*", "test/**/*"],
   "exclude": ["node_modules"]

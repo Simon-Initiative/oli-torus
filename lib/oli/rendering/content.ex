@@ -121,11 +121,8 @@ defmodule Oli.Rendering.Content do
         %{"type" => "content", "children" => children} = element,
         writer
       ) do
-    [
-      "<div dir=\"#{Map.get(element, "textDirection", "ltr")}\">",
-      Enum.map(children, fn child -> render(context, child, writer) end),
-      "</div>"
-    ]
+    next = fn -> Enum.map(children, fn child -> render(context, child, writer) end) end
+    writer.content(context, next, element)
   end
 
   # Renders text content
