@@ -5,7 +5,7 @@ defmodule OliWeb.Delivery.StudentOnboarding.Explorations do
     ~H"""
     <div class="h-full">
       <div class="flex pt-12 pb-6 px-[84px] gap-3">
-        <div class="h-14 w-14 bg-gray-700 rounded-full" />
+        <div class="h-14 w-14 bg-gray-700 rounded-full shrink-0" />
         <div class="flex flex-col gap-3">
           <h2 class="text-[40px] leading-[54px] tracking-[0.02px] dark:text-white">
             Exploration Activities
