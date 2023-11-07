@@ -13,8 +13,8 @@ defmodule OliWeb.Delivery.StudentOnboarding.Wizard do
   @explorations_step :explorations
   @course_step :course
 
-  @survey_label "Start survey"
-  @explorations_label "Go to explorations"
+  @survey_label "Start Survey"
+  @explorations_label "Let's Begin"
   @course_label "Go to course"
 
   def mount(_params, %{"datashop_session_id" => datashop_session_id}, socket) do
