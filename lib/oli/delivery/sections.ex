@@ -893,20 +893,19 @@ defmodule Oli.Delivery.Sections do
   end
 
   defp calculate_chunk_size(section_resource_rows) do
-    # We want to split the list of section resources into chunks
-    # to avoid hitting the max number of bind variables in a query.
-    max_bind_variables = 65535
-
     # define a fields_count_buffer to account for the fields that are not
     # part of the section resource row, such as inserted_at, updated_at, etc.
     fields_count_buffer = 10
+
+    # We want to split the list of section resources into chunks
+    # to avoid hitting the max number of bind variables in a query.
+    max_bind_variables = 65535 - fields_count_buffer
 
     fields_count =
       section_resource_rows
       |> List.first()
       |> Map.keys()
       |> length()
-      |> Kernel.+(fields_count_buffer)
 
     div(max_bind_variables, fields_count)
   end
