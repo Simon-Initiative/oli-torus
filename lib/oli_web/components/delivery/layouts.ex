@@ -52,12 +52,12 @@ defmodule OliWeb.Components.Delivery.Layouts do
           <.logo_img />
         </a>
       </div>
-      <div class="flex-grow-1 p-2">
+      <div class="flex items-center flex-grow-1 p-2">
         <div class="hidden md:block">
           <span class="text-2xl text-bold"><%= @section.title %></span>
         </div>
       </div>
-      <div class="p-2">
+      <div class="flex items-center p-2">
         <div class="hidden md:block">
           <UserAccountMenu.menu id="user-account-menu" ctx={@ctx} section={@section} />
         </div>
