@@ -29,6 +29,8 @@ RUN yum install https://rpm.nodesource.com/pub_16.x/nodistro/repo/nodesource-rel
 RUN yum install nodejs -y --setopt=nodesource-nodejs.module_hotfixes=1
 RUN npm install -g yarn
 
+WORKDIR /app
+
 # fix elixir encoding warning
 # https://stackoverflow.com/questions/32407164/the-vm-is-running-with-native-name-encoding-of-latin1-which-may-cause-elixir-to
 ENV LANG="en_US.utf8"
