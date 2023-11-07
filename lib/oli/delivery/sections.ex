@@ -887,19 +887,17 @@ defmodule Oli.Delivery.Sections do
     section_resource_rows
     |> Enum.chunk_every(calculate_chunk_size(section_resource_rows))
     |> Enum.reduce({0, []}, fn chunk, {total, acc} ->
-      {new_total, new_acc} = Repo.insert_all(SectionResource, chunk, returning: opts[:returning] || true)
+      {new_total, new_acc} =
+        Repo.insert_all(SectionResource, chunk, returning: opts[:returning] || true)
+
       {total + new_total, acc ++ new_acc}
     end)
   end
 
   defp calculate_chunk_size(section_resource_rows) do
-    # define a max_bind_buffer to account for the fields that are not
-    # part of the section resource row, such as inserted_at, updated_at, etc.
-    max_bind_buffer = 100
-
     # We want to split the list of section resources into chunks
     # to avoid hitting the max number of bind variables in a query.
-    max_bind_variables = 65535 - max_bind_buffer
+    max_bind_variables = 65535
 
     fields_count =
       section_resource_rows
@@ -935,11 +933,18 @@ defmodule Oli.Delivery.Sections do
   def bulk_update_section_resource([], _), do: {0, []}
 
   def bulk_update_section_resource(section_resource_rows, opts) do
-    Repo.insert_all(SectionResource, section_resource_rows,
-      returning: opts[:returning] || true,
-      on_conflict: {:replace, [:children]},
-      conflict_target: [:id]
-    )
+    section_resource_rows
+    |> Enum.chunk_every(calculate_chunk_size(section_resource_rows))
+    |> Enum.reduce({0, []}, fn chunk, {total, acc} ->
+      {new_total, new_acc} =
+        Repo.insert_all(SectionResource, chunk,
+          returning: opts[:returning] || true,
+          on_conflict: {:replace, [:children]},
+          conflict_target: [:id]
+        )
+
+      {total + new_total, acc ++ new_acc}
+    end)
   end
 
   @doc """
@@ -1801,26 +1806,28 @@ defmodule Oli.Delivery.Sections do
       |> then(
         &Repo.insert_all(SectionResource, &1,
           placeholders: placeholders,
-          on_conflict: {:replace_all_except, [
-            :inserted_at,
-            :scoring_strategy_id,
-            :scheduling_type,
-            :manually_scheduled,
-            :start_date,
-            :end_date,
-            :collab_space_config,
-            :explanation_strategy,
-            :max_attempts,
-            :retake_mode,
-            :password,
-            :late_submit,
-            :late_start,
-            :time_limit,
-            :grace_period,
-            :review_submission,
-            :feedback_mode,
-            :feedback_scheduled_date
-            ]},
+          on_conflict:
+            {:replace_all_except,
+             [
+               :inserted_at,
+               :scoring_strategy_id,
+               :scheduling_type,
+               :manually_scheduled,
+               :start_date,
+               :end_date,
+               :collab_space_config,
+               :explanation_strategy,
+               :max_attempts,
+               :retake_mode,
+               :password,
+               :late_submit,
+               :late_start,
+               :time_limit,
+               :grace_period,
+               :review_submission,
+               :feedback_mode,
+               :feedback_scheduled_date
+             ]},
           conflict_target: [:section_id, :resource_id]
         )
       )
@@ -2164,26 +2171,28 @@ defmodule Oli.Delivery.Sections do
       |> then(
         &Repo.insert_all(SectionResource, &1,
           placeholders: placeholders,
-          on_conflict: {:replace_all_except, [
-            :inserted_at,
-            :scoring_strategy_id,
-            :scheduling_type,
-            :manually_scheduled,
-            :start_date,
-            :end_date,
-            :collab_space_config,
-            :explanation_strategy,
-            :max_attempts,
-            :retake_mode,
-            :password,
-            :late_submit,
-            :late_start,
-            :time_limit,
-            :grace_period,
-            :review_submission,
-            :feedback_mode,
-            :feedback_scheduled_date
-          ]},
+          on_conflict:
+            {:replace_all_except,
+             [
+               :inserted_at,
+               :scoring_strategy_id,
+               :scheduling_type,
+               :manually_scheduled,
+               :start_date,
+               :end_date,
+               :collab_space_config,
+               :explanation_strategy,
+               :max_attempts,
+               :retake_mode,
+               :password,
+               :late_submit,
+               :late_start,
+               :time_limit,
+               :grace_period,
+               :review_submission,
+               :feedback_mode,
+               :feedback_scheduled_date
+             ]},
           conflict_target: [:section_id, :resource_id]
         )
       )
@@ -2281,26 +2290,28 @@ defmodule Oli.Delivery.Sections do
       |> then(
         &Repo.insert_all(SectionResource, &1,
           placeholders: placeholders,
-          on_conflict: {:replace_all_except, [
-            :inserted_at,
-            :scoring_strategy_id,
-            :scheduling_type,
-            :manually_scheduled,
-            :start_date,
-            :end_date,
-            :collab_space_config,
-            :explanation_strategy,
-            :max_attempts,
-            :retake_mode,
-            :password,
-            :late_submit,
-            :late_start,
-            :time_limit,
-            :grace_period,
-            :review_submission,
-            :feedback_mode,
-            :feedback_scheduled_date
-          ]},
+          on_conflict:
+            {:replace_all_except,
+             [
+               :inserted_at,
+               :scoring_strategy_id,
+               :scheduling_type,
+               :manually_scheduled,
+               :start_date,
+               :end_date,
+               :collab_space_config,
+               :explanation_strategy,
+               :max_attempts,
+               :retake_mode,
+               :password,
+               :late_submit,
+               :late_start,
+               :time_limit,
+               :grace_period,
+               :review_submission,
+               :feedback_mode,
+               :feedback_scheduled_date
+             ]},
           conflict_target: [:section_id, :resource_id]
         )
       )
@@ -2414,26 +2425,28 @@ defmodule Oli.Delivery.Sections do
             # if there is a conflict on the unique section_id resource_id constraint,
             # we assume it is because a resource has been moved or removed/readded in
             # a remix operation, so we simply replace the existing section_resource record
-            on_conflict: {:replace_all_except, [
-              :inserted_at,
-              :scoring_strategy_id,
-              :scheduling_type,
-              :manually_scheduled,
-              :start_date,
-              :end_date,
-              :collab_space_config,
-              :explanation_strategy,
-              :max_attempts,
-              :retake_mode,
-              :password,
-              :late_submit,
-              :late_start,
-              :time_limit,
-              :grace_period,
-              :review_submission,
-              :feedback_mode,
-              :feedback_scheduled_date
-            ]},
+            on_conflict:
+              {:replace_all_except,
+               [
+                 :inserted_at,
+                 :scoring_strategy_id,
+                 :scheduling_type,
+                 :manually_scheduled,
+                 :start_date,
+                 :end_date,
+                 :collab_space_config,
+                 :explanation_strategy,
+                 :max_attempts,
+                 :retake_mode,
+                 :password,
+                 :late_submit,
+                 :late_start,
+                 :time_limit,
+                 :grace_period,
+                 :review_submission,
+                 :feedback_mode,
+                 :feedback_scheduled_date
+               ]},
             conflict_target: [:section_id, :resource_id]
           )
 
