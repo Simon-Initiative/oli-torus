@@ -899,7 +899,7 @@ defmodule Oli.Delivery.Sections do
 
     # define a fields_count_buffer to account for the fields that are not
     # part of the section resource row, such as inserted_at, updated_at, etc.
-    fields_count_buffer = 2
+    fields_count_buffer = 10
 
     fields_count =
       section_resource_rows
