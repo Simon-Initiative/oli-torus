@@ -53,7 +53,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
         </a>
       </div>
       <div class="flex items-center flex-grow-1 p-2">
-        <div class="hidden md:block">
+        <div :if={@section} class="hidden md:block">
           <span class="text-2xl text-bold"><%= @section.title %></span>
         </div>
       </div>

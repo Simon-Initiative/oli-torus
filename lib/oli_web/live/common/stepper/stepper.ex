@@ -46,7 +46,10 @@ defmodule OliWeb.Common.Stepper do
             <% end %>
           </div>
         </div>
-        <div class="bg-white dark:bg-[#0B0C11] w-full md:w-2/3 flex flex-col my-auto overflow-hidden shadow-xl">
+        <div class={[
+          "bg-white dark:bg-[#0B0C11] w-full md:w-2/3 flex flex-col overflow-y-scroll shadow-xl",
+          if(@id == "course_creation_stepper", do: "my-10", else: "my-32")
+        ]}>
           <%= @selected_step.render_fn.(@data) %>
           <div class={"p-3 flex items-center bg-gray-100/50 dark:bg-black #{if is_nil(@on_cancel), do: "justify-end", else: "justify-between"}"}>
             <%= if !is_nil(@on_cancel) do %>

@@ -26,6 +26,6 @@ defmodule OliWeb.LiveSessionPlugs.SetSection do
   end
 
   def on_mount(:default, _params, _session, socket) do
-    {:cont, socket}
+    {:cont, assign(socket, section: nil)}
   end
 end
