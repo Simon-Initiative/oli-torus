@@ -16,7 +16,7 @@ defmodule OliWeb.Components.Header do
 
   def header(assigns) do
     ~H"""
-    <nav class="navbar py-1">
+    <nav class="navbar py-1 bg-delivery-header dark:bg-delivery-header-dark">
       <div class="container mx-auto flex flex-row">
         <a
           class="navbar-brand torus-logo my-1 mr-auto"
