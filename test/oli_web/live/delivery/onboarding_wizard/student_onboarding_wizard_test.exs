@@ -64,7 +64,6 @@ defmodule OliWeb.Deliver.StudentOnboarding.WizardTest do
 
       {:ok, view, _html} = live(conn, onboarding_wizard_route(section.slug))
 
-      assert has_element?(view, "h5", "Chemistry 201 Set Up")
       assert has_element?(view, "h2", "Welcome to Chemistry 201!")
 
       assert has_element?(
@@ -101,10 +100,10 @@ defmodule OliWeb.Deliver.StudentOnboarding.WizardTest do
       assert has_element?(
                view,
                "li",
-               "Explorations will bring the course to life, showing its relevance in the real world"
+               "Learning about the new ‘Exploration’ activities that provide real-world examples"
              )
 
-      assert has_element?(view, "button", "Go to explorations")
+      assert has_element?(view, "button", "Let's Begin")
     end
 
     test "the survey description rendered when the section has a survey", %{
@@ -122,7 +121,7 @@ defmodule OliWeb.Deliver.StudentOnboarding.WizardTest do
                "A 5 minute survey to help shape learning your experience and let your instructor get to know you"
              )
 
-      assert has_element?(view, "button", "Start survey")
+      assert has_element?(view, "button", "Start Survey")
     end
   end
 
@@ -139,7 +138,7 @@ defmodule OliWeb.Deliver.StudentOnboarding.WizardTest do
       {:ok, view, _html} = live(conn, onboarding_wizard_route(section.slug))
 
       view
-      |> element("button", "Start survey")
+      |> element("button", "Start Survey")
       |> render_click()
 
       view
@@ -165,7 +164,7 @@ defmodule OliWeb.Deliver.StudentOnboarding.WizardTest do
       {:ok, view, _html} = live(conn, onboarding_wizard_route(section.slug))
 
       view
-      |> element("button", "Go to explorations")
+      |> element("button", "Let's Begin")
       |> render_click()
 
       assert has_element?(view, "h2", "Exploration Activities")
