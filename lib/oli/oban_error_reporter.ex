@@ -4,7 +4,7 @@ defmodule Oli.ObanErrorReporter do
   @doc false
   @spec handle_event([atom()], map(), map(), Keyword.t()) :: :ok
   def handle_event([:oban, :job, event], measure, meta, opts) do
-    Logger.error(opts, fn ->
+    log(opts, fn ->
       details = Map.take(meta.job, ~w(attempt args id max_attempts meta queue tags worker)a)
 
       extra =
@@ -45,4 +45,18 @@ defmodule Oli.ObanErrorReporter do
   end
 
   defp convert(value), do: System.convert_time_unit(value, :native, :microsecond)
+
+  defp log(opts, fun) do
+    level = Keyword.fetch!(opts, :level)
+
+    Logger.log(level, fn ->
+      output = Map.put(fun.(), :source, "oban")
+
+      if Keyword.fetch!(opts, :encode) do
+        Jason.encode_to_iodata!(output)
+      else
+        output
+      end
+    end)
+  end
 end
