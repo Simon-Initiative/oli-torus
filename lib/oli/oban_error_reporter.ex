@@ -47,9 +47,7 @@ defmodule Oli.ObanErrorReporter do
   defp convert(value), do: System.convert_time_unit(value, :native, :microsecond)
 
   defp log(opts, fun) do
-    level = Keyword.fetch!(opts, :level)
-
-    Logger.log(level, fn ->
+    Logger.error(fn ->
       output = Map.put(fun.(), :source, "oban")
 
       if Keyword.fetch!(opts, :encode) do
