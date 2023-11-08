@@ -44,6 +44,7 @@ defmodule OliWeb.Pow.PowHelpers do
       controller_callbacks: Pow.Extension.Phoenix.ControllerCallbacks,
       cache_store_backend: Pow.Store.Backend.MnesiaCache,
       users_context: OliWeb.Pow.AuthorContext,
+      messages_backend: OliWeb.Pow.Messages,
       mailer_backend: OliWeb.Pow.Mailer,
       web_mailer_module: OliWeb,
       pow_assent: [
@@ -95,11 +96,20 @@ defmodule OliWeb.Pow.PowHelpers do
     available_providers = Plug.available_providers(conn)
     providers_for_user = Plug.providers_for_current_user(conn)
 
-    available_providers
-    |> Enum.map(&{&1, &1 in providers_for_user})
+    providers =
+      available_providers
+      |> Enum.map(&{&1, &1 in providers_for_user})
+
+    providers_length = length(providers)
+
+    providers
+    |> Enum.with_index(1)
     |> Enum.map(fn
-      {provider, true} -> deauthorization_link(conn, provider, link_opts)
-      {provider, false} -> authorization_link(conn, provider, link_opts)
+      {{provider, true}, index} ->
+        deauthorization_link(conn, provider, providers_length == index, link_opts)
+
+      {{provider, false}, index} ->
+        authorization_link(conn, provider, providers_length == index, link_opts)
     end)
   end
 
@@ -109,7 +119,7 @@ defmodule OliWeb.Pow.PowHelpers do
   `:invited_user` is assigned to the conn, the invitation token will be passed
   on through the URL query params.
   """
-  def authorization_link(conn, provider, opts \\ []) do
+  def authorization_link(conn, provider, is_last_provider, opts \\ []) do
     query_params = invitation_token_query_params(conn) ++ request_path_query_params(conn)
 
     msg =
@@ -140,7 +150,16 @@ defmodule OliWeb.Pow.PowHelpers do
 
     button_box = Tag.content_tag(:div, [icon, msg_box], class: provider_name <> "-auth-container")
 
-    Link.link(button_box, opts)
+    link = Link.link(button_box, opts)
+
+    if is_last_provider do
+      link
+    else
+      or_text =
+        Tag.content_tag(:div, "OR", [{:data, [test: [or: "test-data"]]}, class: "text-center"])
+
+      Tag.content_tag(:div, [link, Tag.tag(:br), or_text])
+    end
   end
 
   defp invitation_token_query_params(%{assigns: %{invited_user: %{invitation_token: token}}}),
@@ -157,8 +176,8 @@ defmodule OliWeb.Pow.PowHelpers do
   Generates a provider deauthorization link.
   The link is used to remove authorization with the provider.
   """
-  @spec deauthorization_link(Conn.t(), atom(), keyword()) :: HTML.safe()
-  def deauthorization_link(conn, provider, opts \\ []) do
+  @spec deauthorization_link(Conn.t(), atom(), boolean(), keyword()) :: HTML.safe()
+  def deauthorization_link(conn, provider, is_last_provider, opts \\ []) do
     msg =
       AuthorizationController.extension_messages(conn).remove_provider_authentication(%{
         conn
@@ -182,8 +201,15 @@ defmodule OliWeb.Pow.PowHelpers do
     msg_box = Tag.content_tag(:div, msg, class: provider_name <> "-text-container")
 
     button_box = Tag.content_tag(:div, [icon, msg_box], class: provider_name <> "-auth-container")
+    link = Link.link(button_box, opts)
 
-    Link.link(button_box, opts)
+    if is_last_provider do
+      link
+    else
+      or_text = Tag.content_tag(:div, "OR", class: "text-center")
+
+      Tag.content_tag(:div, [link, Tag.tag(:br), or_text])
+    end
   end
 
   def provider_icon(provider) do

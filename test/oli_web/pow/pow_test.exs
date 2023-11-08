@@ -56,10 +56,10 @@ defmodule OliWeb.Common.PowTest do
 
       response = html_response(conn, 200)
 
-      assert response =~ "Sign in with Google"
+      assert response =~ "Continue with Google"
       assert response =~ "div class=\"google-auth-container\""
 
-      assert response =~ "Sign in with Github"
+      assert response =~ "Continue with Github"
       assert response =~ "div class=\"github-auth-container\""
     end
   end
@@ -166,10 +166,10 @@ defmodule OliWeb.Common.PowTest do
 
       response = html_response(conn, 200)
 
-      assert response =~ "Sign in with Google"
+      assert response =~ "Continue with Google"
       assert response =~ "div class=\"google-auth-container\""
 
-      assert response =~ "Sign in with Github"
+      assert response =~ "Continue with Github"
       assert response =~ "div class=\"github-auth-container\""
     end
   end
@@ -279,10 +279,10 @@ defmodule OliWeb.Common.PowTest do
 
       response = html_response(conn, 200)
 
-      assert response =~ "Sign in with Google"
+      assert response =~ "Continue with Google"
       assert response =~ "div class=\"google-auth-container\""
 
-      assert response =~ "Sign in with Github"
+      assert response =~ "Continue with Github"
       assert response =~ "div class=\"github-auth-container\""
     end
   end
@@ -348,10 +348,10 @@ defmodule OliWeb.Common.PowTest do
 
       response = html_response(conn, 200)
 
-      assert response =~ "Sign in with Google"
+      assert response =~ "Continue with Google"
       assert response =~ "div class=\"google-auth-container\""
-
-      assert response =~ "Sign in with Github"
+      assert Monocle.we_see_exactly(response, 1, attribute: "or")
+      assert response =~ "Continue with Github"
       assert response =~ "div class=\"github-auth-container\""
     end
   end
@@ -368,8 +368,8 @@ defmodule OliWeb.Common.PowTest do
 
       response = html_response(conn, 200)
 
-      refute response =~ "Sign in with Google"
-      refute response =~ "Sign in with Github"
+      refute response =~ "Continue with Google"
+      refute response =~ "Continue with Github"
     end
   end
 
