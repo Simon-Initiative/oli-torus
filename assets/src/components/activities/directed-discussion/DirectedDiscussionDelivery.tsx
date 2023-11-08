@@ -18,9 +18,9 @@ import { DeliveryElement, DeliveryElementProps } from '../DeliveryElement';
 import { DeliveryElementProvider, useDeliveryElementContext } from '../DeliveryElementProvider';
 import { castPartId } from '../common/utils';
 import * as ActivityTypes from '../types';
-import { DiscussionParticipation } from './DiscussionParticipation';
-import { DiscussionThread } from './DiscussionThread';
-import { useDiscussion } from './discussion-hook';
+import { DiscussionParticipation } from './discussion/DiscussionParticipation';
+import { DiscussionThread } from './discussion/DiscussionThread';
+import { useDiscussion } from './discussion/discussion-hook';
 import { DirectedDiscussionActivitySchema } from './schema';
 
 // Used instead of the real 'onSaveActivity' to bypass saving state to the server when we are just

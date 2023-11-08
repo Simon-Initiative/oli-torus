@@ -1,5 +1,5 @@
 import React from 'react';
-import { DDParticipationDefinition } from './schema';
+import { DDParticipationDefinition } from '../schema';
 
 type Props = {
   requirements: DDParticipationDefinition;

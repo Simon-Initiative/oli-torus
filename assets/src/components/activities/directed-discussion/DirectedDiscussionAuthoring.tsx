@@ -10,7 +10,7 @@ import { configureStore } from 'state/store';
 import { AuthoringElement, AuthoringElementProps } from '../AuthoringElement';
 import { AuthoringElementProvider, useAuthoringElementContext } from '../AuthoringElementProvider';
 import * as ActivityTypes from '../types';
-import { DiscussionParticipationAuthoring } from './DiscussionParticipationAuthoring';
+import { DiscussionParticipationAuthoring } from './discussion/DiscussionParticipationAuthoring';
 import { DirectedDiscussionActivitySchema } from './schema';
 import { VariableEditorOrNot } from '../common/variables/VariableEditorOrNot';
 import { VariableActions } from '../common/variables/variableActions';

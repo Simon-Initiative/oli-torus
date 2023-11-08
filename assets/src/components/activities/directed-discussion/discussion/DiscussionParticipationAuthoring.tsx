@@ -1,9 +1,9 @@
 import React from 'react';
 import { Card } from 'components/misc/Card';
-import { useAuthoringElementContext } from '../AuthoringElementProvider';
-import { ParticipationDateInput, ParticipationInput } from './ParticipationInput';
-import { DirectedDiscussionActions } from './actions';
-import { DDParticipationDefinition, DirectedDiscussionActivitySchema } from './schema';
+import { useAuthoringElementContext } from '../../AuthoringElementProvider';
+import { ParticipationDateInput, ParticipationInput } from '../ParticipationInput';
+import { DirectedDiscussionActions } from '../actions';
+import { DDParticipationDefinition, DirectedDiscussionActivitySchema } from '../schema';
 
 export const DiscussionParticipationAuthoring: React.FC = () => {
   const { model, dispatch, editMode } =

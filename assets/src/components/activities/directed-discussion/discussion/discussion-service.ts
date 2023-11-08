@@ -16,6 +16,7 @@ interface DiscussionResult {
 
 export interface ThreadedPost extends Post {
   children: ThreadedPost[];
+  timestamp: number;
 }
 
 export const writePost = (
@@ -43,8 +44,24 @@ export const getPosts = (sectionSlug: string, resourceId: string) => {
     .then(threadPosts);
 };
 
+const sortPosts = (a: ThreadedPost, b: ThreadedPost) => {
+  if (a.timestamp > b.timestamp) {
+    return -1;
+  }
+  if (a.timestamp < b.timestamp) {
+    return 1;
+  }
+  return 0;
+};
+
+const postToThreadedPost = (post: Post): ThreadedPost => ({
+  ...post,
+  children: [],
+  timestamp: Date.parse(post.updated_at),
+});
+
 const threadPosts = (response: DiscussionResult): ThreadedPost[] => {
-  const posts: ThreadedPost[] = response.posts.map((post) => ({ ...post, children: [] }));
+  const posts: ThreadedPost[] = response.posts.map(postToThreadedPost).sort(sortPosts);
 
   const threadedPosts = posts.reduce((threads, post) => {
     if (post.parent_post_id) {
