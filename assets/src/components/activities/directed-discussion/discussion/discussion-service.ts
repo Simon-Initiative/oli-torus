@@ -12,12 +12,19 @@ interface Post {
 
 interface DiscussionResult {
   posts: Post[];
+  current_user: number;
 }
 
 export interface ThreadedPost extends Post {
   children: ThreadedPost[];
   timestamp: number;
 }
+
+export const deletePost = (sectionSlug: string, resourceId: string, postId: number) => {
+  return fetch(`/api/v1/discussion/${sectionSlug}/${resourceId}/${postId}`, {
+    method: 'DELETE',
+  }).then((r) => r.json());
+};
 
 export const writePost = (
   sectionSlug: string,
@@ -60,7 +67,12 @@ const postToThreadedPost = (post: Post): ThreadedPost => ({
   timestamp: Date.parse(post.updated_at),
 });
 
-const threadPosts = (response: DiscussionResult): ThreadedPost[] => {
+const threadPosts = (
+  response: DiscussionResult,
+): {
+  currentUserId: number;
+  threadedPosts: ThreadedPost[];
+} => {
   const posts: ThreadedPost[] = response.posts.map(postToThreadedPost).sort(sortPosts);
 
   const threadedPosts = posts.reduce((threads, post) => {
@@ -74,5 +86,11 @@ const threadPosts = (response: DiscussionResult): ThreadedPost[] => {
     }
     return threads;
   }, [] as ThreadedPost[]);
-  return threadedPosts;
+  return {
+    currentUserId: response.current_user,
+    threadedPosts,
+  };
 };
+
+export type OnPostHandler = (content: string, parentPost?: number) => void;
+export type OnDeletePostHandler = (postId: number) => void;

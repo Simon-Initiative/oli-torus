@@ -45,7 +45,10 @@ export const DirectedDiscussion: React.FC = () => {
   const { surveyId } = context;
   const { writerContext } = useDeliveryElementContext<HasChoices & ActivityModelSchema>();
 
-  const { loaded, posts, addPost } = useDiscussion(writerContext.sectionSlug, context.resourceId);
+  const { loaded, posts, addPost, currentUserId, deletePost } = useDiscussion(
+    writerContext.sectionSlug,
+    context.resourceId,
+  );
 
   const { activityId } = activityState;
   const hasActivityId = !!activityId;
@@ -62,6 +65,10 @@ export const DirectedDiscussion: React.FC = () => {
     );
   }, []);
 
+  if (!loaded || !currentUserId) {
+    return <div>Loading Discussion...</div>;
+  }
+
   // First render initializes state
   if (!uiState.partState) {
     return null;
@@ -72,7 +79,12 @@ export const DirectedDiscussion: React.FC = () => {
       <div className="activity-content">
         <StemDeliveryConnected />
         <DiscussionParticipation requirements={model.participation} />
-        <DiscussionThread posts={posts} onPost={addPost} />
+        <DiscussionThread
+          posts={posts}
+          onPost={addPost}
+          currentUserId={currentUserId}
+          onDeletePost={deletePost}
+        />
         <HintsDeliveryConnected
           partId={castPartId(activityState.parts[0].partId)}
           resetPartInputs={{ [activityState.parts[0].partId]: [] }}

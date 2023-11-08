@@ -46,6 +46,28 @@ defmodule OliWeb.Api.DirectedDiscussionController do
     end
   end
 
+  def delete_post(conn, %{
+        "resource_id" => resource_id,
+        "section_slug" => section_slug,
+        "post_id" => post_id
+      }) do
+    current_user = Map.get(conn.assigns, :current_user)
+    post = Collaboration.get_post_by(%{id: post_id})
+
+    if post.user_id == current_user.id do
+      Collaboration.delete_posts(post)
+
+      json(conn, %{
+        "result" => "success"
+      })
+    else
+      json(conn, %{
+        "result" => "failure",
+        "error" => "User does not have permission to delete this post."
+      })
+    end
+  end
+
   defp preload_post_user(post) do
     case post do
       {:ok, post} -> {:ok, Repo.preload(post, :user)}
@@ -69,7 +91,8 @@ defmodule OliWeb.Api.DirectedDiscussionController do
       "result" => "success",
       "resource" => resource_id,
       "section" => section_slug,
-      "posts" => posts
+      "posts" => posts,
+      "current_user" => current_user.id
     })
   end
 

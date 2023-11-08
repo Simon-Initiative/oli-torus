@@ -701,6 +701,7 @@ defmodule OliWeb.Router do
 
     get("/", Api.DirectedDiscussionController, :get_discussion)
     post("/", Api.DirectedDiscussionController, :create_post)
+    delete("/:post_id", Api.DirectedDiscussionController, :delete_post)
   end
 
   # User State Service, extrinsic state
