@@ -186,14 +186,12 @@ defmodule Oli.Utils.Database do
     end
   end
 
-  @doc """
-  Given a list of resources (as maps), calculate the "chunk size" for a chunked insert_all operation such that
-  the number of bind variables in the query does not exceed the maximum allowed by the database.
-  """
-  def calculate_chunk_size(rows) do
+  # Given a list of resources (as maps), calculate the "chunk size" for a chunked insert_all operation such that
+  # the number of bind variables in the query does not exceed the maximum allowed by the database.
+  defp calculate_chunk_size(rows) do
     # For large insertion operations, we want to split the list of section resources into chunks to
     # avoid hitting the max number of bind variables in a query.
-    max_bind_variables = 65535
+    max_bind_variables = 65_535
 
     fields_count =
       rows
@@ -224,7 +222,10 @@ defmodule Oli.Utils.Database do
       Oli.Utils.Database.batch_insert_all(SectionResource, rows, %{})
     ```
   """
-  def batch_insert_all(schema, rows, opts \\ []) do
+  def batch_insert_all(_schema, rows, opts \\ [])
+  def batch_insert_all(_schema, [], _opts), do: {0, []}
+
+  def batch_insert_all(schema, rows, opts) do
     rows
     |> Enum.chunk_every(calculate_chunk_size(rows))
     |> Enum.reduce({0, []}, fn chunk, {total, acc} ->
