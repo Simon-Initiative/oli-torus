@@ -43,7 +43,7 @@ export const SliderScroll = {
       console.log('scrollling');
       const slider = this.el;
 
-      if (slider.scrollLeft === 0) {
+      if (slider.scrollLeft <= 0) {
         // If the left part is fully visible, hide the left blur element
         sliderLeftBlur?.classList.add('hidden');
       } else {
@@ -51,7 +51,7 @@ export const SliderScroll = {
         sliderLeftBlur?.classList.remove('hidden');
       }
 
-      if (slider.scrollWidth - slider.clientWidth === slider.scrollLeft) {
+      if (slider.scrollLeft >= slider.scrollWidth - slider.clientWidth) {
         sliderRightBlur?.classList.add('hidden');
       } else {
         sliderRightBlur?.classList.remove('hidden');
