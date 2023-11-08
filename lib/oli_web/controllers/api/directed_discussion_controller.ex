@@ -104,7 +104,6 @@ defmodule OliWeb.Api.DirectedDiscussionController do
       user_name: post.user.name,
       parent_post_id: post.parent_post_id,
       thread_root_id: post.thread_root_id,
-      replies_count: post.replies_count,
       anonymous: post.anonymous,
       updated_at: post.updated_at
     }

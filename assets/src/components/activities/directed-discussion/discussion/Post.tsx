@@ -10,7 +10,8 @@ export const Post: React.FC<{
   post: ThreadedPost;
   onPost: OnPostHandler;
   onDeletePost: OnDeletePostHandler;
-}> = ({ post, onPost, currentUserId, onDeletePost }) => {
+  canPost: boolean;
+}> = ({ post, onPost, currentUserId, onDeletePost, canPost }) => {
   const [replyOpen, toggleReplyOpen] = useToggle(false);
   const onPostReply = (content: string) => {
     toggleReplyOpen();
@@ -23,19 +24,28 @@ export const Post: React.FC<{
     <div className="mb-4">
       <div>
         {post.user_name}
-        Replies: {post.replies_count}
+        Replies: {post.children.length}
         {post.updated_at}
         {canDelete && <DeleteLink onClick={() => onDeletePost(post.id)} />}
       </div>
       <div>{post.content}</div>
-      {replyOpen || <LinkButton onClick={toggleReplyOpen}>Reply</LinkButton>}
-      {replyOpen && <CreatePost onPost={onPostReply} autoFocus={true} />}
+      {canPost && (
+        <>
+          {replyOpen || <LinkButton onClick={toggleReplyOpen}>Reply</LinkButton>}
+          {replyOpen && (
+            <div className="ml-4">
+              <CreatePost onPost={onPostReply} autoFocus={true} />
+            </div>
+          )}
+        </>
+      )}
       <div className="ml-4">
         <PostList
           posts={post.children}
           onPost={onPost}
           currentUserId={currentUserId}
           onDeletePost={onDeletePost}
+          canPost={canPost}
         />
       </div>
     </div>

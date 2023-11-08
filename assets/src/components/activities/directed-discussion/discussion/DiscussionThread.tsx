@@ -8,6 +8,8 @@ interface Props {
   onPost: OnPostHandler;
   currentUserId: number;
   onDeletePost: OnDeletePostHandler;
+  canPost: boolean;
+  canReply: boolean;
 }
 
 export const DiscussionThread: React.FC<Props> = ({
@@ -15,6 +17,8 @@ export const DiscussionThread: React.FC<Props> = ({
   onPost,
   currentUserId,
   onDeletePost,
+  canPost,
+  canReply,
 }) => {
   // if (!enabled) {
   //   return <DiscussionPreview />;
@@ -22,12 +26,13 @@ export const DiscussionThread: React.FC<Props> = ({
   return (
     <div>
       <h1>Discussion Thread</h1>
-      <CreatePost onPost={onPost} />
+      {canPost && <CreatePost onPost={onPost} />}
       <PostList
         posts={posts}
         onPost={onPost}
         currentUserId={currentUserId}
         onDeletePost={onDeletePost}
+        canPost={canReply}
       />
     </div>
   );
@@ -38,7 +43,8 @@ export const PostList: React.FC<{
   onPost: OnPostHandler;
   currentUserId: number;
   onDeletePost: OnDeletePostHandler;
-}> = ({ posts, onPost, currentUserId, onDeletePost }) => {
+  canPost: boolean;
+}> = ({ posts, onPost, currentUserId, onDeletePost, canPost }) => {
   return (
     <>
       {posts.map((post) => (
@@ -48,6 +54,7 @@ export const PostList: React.FC<{
           onPost={onPost}
           currentUserId={currentUserId}
           onDeletePost={onDeletePost}
+          canPost={canPost}
         />
       ))}
     </>

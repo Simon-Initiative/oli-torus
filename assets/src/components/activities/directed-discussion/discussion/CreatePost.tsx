@@ -28,3 +28,4 @@ export const CreatePost: React.FC<Props> = ({ onPost, autoFocus }) => {
     </div>
   );
 };
+

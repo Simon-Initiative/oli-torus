@@ -1,10 +1,9 @@
-interface Post {
+export interface Post {
   id: number;
   content: string;
   user_name: string;
   updated_at: string;
   user_id: number;
-  replies_count: null | number;
   parent_post_id: null | number;
   thread_root_id: null | number;
   anonymous: false;

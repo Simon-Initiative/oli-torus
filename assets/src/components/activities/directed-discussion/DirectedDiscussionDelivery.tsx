@@ -1,9 +1,9 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import ReactDOM from 'react-dom';
 import { Provider, useDispatch, useSelector } from 'react-redux';
 import { HintsDeliveryConnected } from 'components/activities/common/hints/delivery/HintsDeliveryConnected';
 import { StemDeliveryConnected } from 'components/activities/common/stem/delivery/StemDelivery';
-import { ActivityModelSchema, HasChoices } from 'components/activities/types';
+import { ActivityModelSchema } from 'components/activities/types';
 import {
   ActivityDeliveryState,
   activityDeliverySlice,
@@ -21,37 +21,32 @@ import * as ActivityTypes from '../types';
 import { DiscussionParticipation } from './discussion/DiscussionParticipation';
 import { DiscussionThread } from './discussion/DiscussionThread';
 import { useDiscussion } from './discussion/discussion-hook';
+import { calculateParticipation } from './discussion/participation-util';
 import { DirectedDiscussionActivitySchema } from './schema';
-
-// Used instead of the real 'onSaveActivity' to bypass saving state to the server when we are just
-// about to submit that state with a submission. This saves a network call that isn't necessary and avoids
-// perhaps a weird race condition (where the submit request could arrive before the save)
-const noOpSave = (
-  _guid: string,
-  _partResponses: ActivityTypes.PartResponse[],
-): Promise<ActivityTypes.Success> => Promise.resolve({ type: 'success' });
 
 export const DirectedDiscussion: React.FC = () => {
   const {
     state: activityState,
     context,
     onSubmitActivity,
-    onSaveActivity,
     onResetActivity,
     model,
   } = useDeliveryElementContext<DirectedDiscussionActivitySchema>();
+
   const uiState = useSelector((state: ActivityDeliveryState) => state);
   const dispatch = useDispatch();
   const { surveyId } = context;
-  const { writerContext } = useDeliveryElementContext<HasChoices & ActivityModelSchema>();
+  const { writerContext } = useDeliveryElementContext<ActivityModelSchema>();
 
   const { loaded, posts, addPost, currentUserId, deletePost } = useDiscussion(
     writerContext.sectionSlug,
     context.resourceId,
   );
 
-  const { activityId } = activityState;
-  const hasActivityId = !!activityId;
+  const currentParticipation = useMemo(
+    () => calculateParticipation(model.participation, posts, currentUserId),
+    [posts, currentUserId],
+  );
 
   useEffect(() => {
     listenForParentSurveySubmit(surveyId, dispatch, onSubmitActivity);
@@ -78,8 +73,14 @@ export const DirectedDiscussion: React.FC = () => {
     <div className="activity mc-activity">
       <div className="activity-content">
         <StemDeliveryConnected />
-        <DiscussionParticipation requirements={model.participation} />
+        <DiscussionParticipation
+          requirements={model.participation}
+          participation={currentParticipation}
+          currentUserId={currentUserId}
+        />
         <DiscussionThread
+          canPost={currentParticipation.canPost}
+          canReply={currentParticipation.canReply}
           posts={posts}
           onPost={addPost}
           currentUserId={currentUserId}
