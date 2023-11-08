@@ -88,17 +88,13 @@ defmodule Oli.Application do
   # Returns the Oban configuration for the application.
   # It makes sure that only one node in the cluster has the part_mapping_refresh queue configured.
   defp oban_config do
-    attach_oban_logger()
+    Oban.Telemetry.attach_default_logger()
 
     Application.fetch_env!(:oli, Oban)
   end
 
   def current_oban_config do
     Application.fetch_env!(:oli, Oban)
-  end
-
-  defp attach_oban_logger() do
-    :telemetry.attach("oban-logger", [:oban, :job, :exception], &Oli.ObanErrorReporter.handle_event/4, nil)
   end
 
   # Only add in the NodeJS config if it is being used for either the rule evaluator or the

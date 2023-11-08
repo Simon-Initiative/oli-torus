@@ -885,7 +885,9 @@ defmodule Oli.Delivery.Sections do
   def bulk_create_section_resource([], _opts), do: {0, []}
 
   def bulk_create_section_resource(section_resource_rows, opts) do
-    Database.batch_insert_all(SectionResource, section_resource_rows, returning: opts[:returning] || true)
+    Database.batch_insert_all(SectionResource, section_resource_rows,
+      returning: opts[:returning] || true
+    )
   end
 
   @doc """
@@ -914,9 +916,9 @@ defmodule Oli.Delivery.Sections do
 
   def bulk_update_section_resource(section_resource_rows, opts) do
     Database.batch_insert_all(SectionResource, section_resource_rows,
-        returning: opts[:returning] || true,
-        on_conflict: {:replace, [:children]},
-        conflict_target: [:id]
+      returning: opts[:returning] || true,
+      on_conflict: {:replace, [:children]},
+      conflict_target: [:id]
     )
   end
 
@@ -1778,30 +1780,32 @@ defmodule Oli.Delivery.Sections do
           }
         end)
 
-      Database.batch_insert_all(SectionResource, section_resource_rows, placeholders: placeholders,
-          on_conflict:
-            {:replace_all_except,
-             [
-               :inserted_at,
-               :scoring_strategy_id,
-               :scheduling_type,
-               :manually_scheduled,
-               :start_date,
-               :end_date,
-               :collab_space_config,
-               :explanation_strategy,
-               :max_attempts,
-               :retake_mode,
-               :password,
-               :late_submit,
-               :late_start,
-               :time_limit,
-               :grace_period,
-               :review_submission,
-               :feedback_mode,
-               :feedback_scheduled_date
-             ]},
-          conflict_target: [:section_id, :resource_id])
+      Database.batch_insert_all(SectionResource, section_resource_rows,
+        placeholders: placeholders,
+        on_conflict:
+          {:replace_all_except,
+           [
+             :inserted_at,
+             :scoring_strategy_id,
+             :scheduling_type,
+             :manually_scheduled,
+             :start_date,
+             :end_date,
+             :collab_space_config,
+             :explanation_strategy,
+             :max_attempts,
+             :retake_mode,
+             :password,
+             :late_submit,
+             :late_start,
+             :time_limit,
+             :grace_period,
+             :review_submission,
+             :feedback_mode,
+             :feedback_scheduled_date
+           ]},
+        conflict_target: [:section_id, :resource_id]
+      )
 
       # Cleanup any deleted or non-hierarchical section resources
       processed_section_resources_by_id =
@@ -2141,30 +2145,32 @@ defmodule Oli.Delivery.Sections do
           }
         end)
 
-      Database.batch_insert_all(SectionResource, section_resource_rows, placeholders: placeholders,
-          on_conflict:
-            {:replace_all_except,
-             [
-               :inserted_at,
-               :scoring_strategy_id,
-               :scheduling_type,
-               :manually_scheduled,
-               :start_date,
-               :end_date,
-               :collab_space_config,
-               :explanation_strategy,
-               :max_attempts,
-               :retake_mode,
-               :password,
-               :late_submit,
-               :late_start,
-               :time_limit,
-               :grace_period,
-               :review_submission,
-               :feedback_mode,
-               :feedback_scheduled_date
-             ]},
-          conflict_target: [:section_id, :resource_id])
+      Database.batch_insert_all(SectionResource, section_resource_rows,
+        placeholders: placeholders,
+        on_conflict:
+          {:replace_all_except,
+           [
+             :inserted_at,
+             :scoring_strategy_id,
+             :scheduling_type,
+             :manually_scheduled,
+             :start_date,
+             :end_date,
+             :collab_space_config,
+             :explanation_strategy,
+             :max_attempts,
+             :retake_mode,
+             :password,
+             :late_submit,
+             :late_start,
+             :time_limit,
+             :grace_period,
+             :review_submission,
+             :feedback_mode,
+             :feedback_scheduled_date
+           ]},
+        conflict_target: [:section_id, :resource_id]
+      )
 
       # get all section resources including freshly minted ones
       section_resources = get_section_resources(section.id)
@@ -2258,30 +2264,32 @@ defmodule Oli.Delivery.Sections do
           }
         end)
 
-      Database.batch_insert_all(SectionResource, section_resource_rows, placeholders: placeholders,
-          on_conflict:
-            {:replace_all_except,
-             [
-               :inserted_at,
-               :scoring_strategy_id,
-               :scheduling_type,
-               :manually_scheduled,
-               :start_date,
-               :end_date,
-               :collab_space_config,
-               :explanation_strategy,
-               :max_attempts,
-               :retake_mode,
-               :password,
-               :late_submit,
-               :late_start,
-               :time_limit,
-               :grace_period,
-               :review_submission,
-               :feedback_mode,
-               :feedback_scheduled_date
-             ]},
-          conflict_target: [:section_id, :resource_id])
+      Database.batch_insert_all(SectionResource, section_resource_rows,
+        placeholders: placeholders,
+        on_conflict:
+          {:replace_all_except,
+           [
+             :inserted_at,
+             :scoring_strategy_id,
+             :scheduling_type,
+             :manually_scheduled,
+             :start_date,
+             :end_date,
+             :collab_space_config,
+             :explanation_strategy,
+             :max_attempts,
+             :retake_mode,
+             :password,
+             :late_submit,
+             :late_start,
+             :time_limit,
+             :grace_period,
+             :review_submission,
+             :feedback_mode,
+             :feedback_scheduled_date
+           ]},
+        conflict_target: [:section_id, :resource_id]
+      )
 
       # Finally, we must fetch and renumber the final hierarchy in order to generate the proper numberings
       {new_hierarchy, _numberings} =
@@ -2452,30 +2460,30 @@ defmodule Oli.Delivery.Sections do
     skip_set = MapSet.new(skip_resource_ids ++ unreachable_page_resource_ids)
 
     section_resource_rows =
-    published_resources_by_resource_id
-    |> Enum.filter(fn {resource_id, %{revision: rev}} ->
-      !MapSet.member?(skip_set, resource_id) && !is_structural?(rev)
-    end)
-    |> generate_slugs_until_uniq()
-    |> Enum.map(fn {slug, %PublishedResource{revision: revision, publication: pub}} ->
-      [
-        slug: slug,
-        resource_id: revision.resource_id,
-        project_id: pub.project_id,
-        section_id: section_id,
-        inserted_at: now,
-        updated_at: now,
-        collab_space_config: revision.collab_space_config,
-        max_attempts:
-          if is_nil(revision.max_attempts) do
-            0
-          else
-            revision.max_attempts
-          end,
-        scoring_strategy_id: revision.scoring_strategy_id,
-        retake_mode: revision.retake_mode
-      ]
-    end)
+      published_resources_by_resource_id
+      |> Enum.filter(fn {resource_id, %{revision: rev}} ->
+        !MapSet.member?(skip_set, resource_id) && !is_structural?(rev)
+      end)
+      |> generate_slugs_until_uniq()
+      |> Enum.map(fn {slug, %PublishedResource{revision: revision, publication: pub}} ->
+        %{
+          slug: slug,
+          resource_id: revision.resource_id,
+          project_id: pub.project_id,
+          section_id: section_id,
+          inserted_at: now,
+          updated_at: now,
+          collab_space_config: revision.collab_space_config,
+          max_attempts:
+            if is_nil(revision.max_attempts) do
+              0
+            else
+              revision.max_attempts
+            end,
+          scoring_strategy_id: revision.scoring_strategy_id,
+          retake_mode: revision.retake_mode
+        }
+      end)
 
     Database.batch_insert_all(SectionResource, section_resource_rows)
   end
