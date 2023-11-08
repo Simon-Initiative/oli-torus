@@ -10,7 +10,8 @@ defmodule OliWeb.Products.PaymentsView do
   alias OliWeb.Products.Payments.CreateCodes
   alias OliWeb.Router.Helpers, as: Routes
 
-  @limit 25
+  @limit 20
+
   def live_path(socket, params) do
     Routes.live_path(socket, OliWeb.Products.PaymentsView, socket.assigns.product_slug, params)
   end
@@ -39,7 +40,7 @@ defmodule OliWeb.Products.PaymentsView do
        title: "Payments",
        code_count: 50,
        offset: 0,
-       limit: 20,
+       limit: @limit,
        text_search: "",
        download_enabled: false
      )}
@@ -75,11 +76,9 @@ defmodule OliWeb.Products.PaymentsView do
         sort="paged_table_sort"
         total_count={@total_count}
         filter={@text_search}
-        allow_selection={false}
         limit={@limit}
         offset={@offset}
         table_model={@table_model}
-        show_bottom_paging={true}
       />
     </div>
     """

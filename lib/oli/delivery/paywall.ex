@@ -677,9 +677,7 @@ defmodule Oli.Delivery.Paywall do
         dynamic(
           [p, _, _, s],
           fragment(
-            """
-            ((crockford_base32_encode(?) ILIKE ?) OR (NOT (? IS NULL) AND (? ILIKE ?)))
-            """,
+            "((crockford_base32_encode(?) ILIKE ?) OR (NOT (? IS NULL) AND (? ILIKE ?)))",
             p.code,
             ^"%#{text_search}%",
             s,
@@ -738,9 +736,7 @@ defmodule Oli.Delivery.Paywall do
             [_, _, u, _],
             {^direction,
              fragment(
-               """
-               CONCAT(COALESCE(?, ''), ' ', COALESCE(?, ''))
-               """,
+               "CONCAT(COALESCE(?, ''), ' ', COALESCE(?, ''))",
                u.family_name,
                u.given_name
              )}

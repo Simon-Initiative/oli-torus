@@ -12,6 +12,7 @@ defmodule Oli.Delivery.Sections.Blueprint do
   alias Oli.Groups.CommunityVisibility
   alias Oli.Institutions.Institution
   alias Oli.Repo
+  alias Oli.Repo.{Paging, Sorting}
 
   @doc """
   From a slug, retrieve a valid section blueprint.  A section is a
@@ -356,6 +357,90 @@ defmodule Oli.Delivery.Sections.Blueprint do
     |> where(^filter_by_status)
     |> preload([:base_project])
     |> Repo.all()
+  end
+
+  def browse(
+        %Paging{offset: offset, limit: limit},
+        %Sorting{direction: direction, field: field},
+        opts \\ []
+      ) do
+    filter_by_project =
+      case opts[:project_id] do
+        nil -> true
+        project_id -> dynamic([s, _], s.base_project_id == ^project_id)
+      end
+
+    filter_by_status =
+      if opts[:include_archived],
+        do: dynamic([s, _], s.status in [:active, :archived]),
+        else: dynamic([s, _], s.status == :active)
+
+    filter_by_text =
+      case opts[:text_search] do
+        "" ->
+          true
+
+        text_search ->
+          dynamic(
+            [s, bp],
+            fragment(
+              """
+              ((? ILIKE ?) OR (? ILIKE ?) OR (? AND ? ->> 'amount' ILIKE ?))
+              """,
+              s.title,
+              ^"%#{text_search}%",
+              bp.title,
+              ^"%#{text_search}%",
+              s.requires_payment,
+              s.amount,
+              ^"#{text_search}%"
+            )
+          )
+      end
+
+    query =
+      Section
+      |> join(:inner, [s], bp in Project, on: s.base_project_id == bp.id)
+      |> preload([s, bp], base_project: bp)
+      |> where([s, _], s.type == :blueprint)
+      |> where(^filter_by_text)
+      |> where(^filter_by_project)
+      |> where(^filter_by_status)
+      |> limit(^limit)
+      |> offset(^offset)
+      |> order_by([p, _, _, _], {^direction, field(p, ^field)})
+
+    query =
+      case field do
+        :base_project_id ->
+          order_by(
+            query,
+            [s, bp],
+            [{^direction, bp.title}]
+          )
+
+        :requires_payment ->
+          order_by(
+            query,
+            [s, _],
+            {^direction,
+             fragment(
+               """
+                 CASE
+                   WHEN ? THEN COALESCE(? ->> 'id', 'Yes')
+                   ELSE 'None'
+                 END
+               """,
+               s.requires_payment,
+               s.amount
+             )}
+          )
+
+        _ ->
+          order_by(query, [p, _, _, _], {^direction, field(p, ^field)})
+      end
+
+    Repo.all(query)
   end
 
   @doc """
