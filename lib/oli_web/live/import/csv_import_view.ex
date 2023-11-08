@@ -75,13 +75,15 @@ defmodule OliWeb.Import.CSVImportView do
 
   defp process_rows(pid, project_slug, ingest_file) do
     to_content = fn content ->
-      children =
-        String.split(content, "|")
-        |> Enum.map(fn p -> to_paragraph(p) end)
+      # if content is valid JSON, parse it and return the parsed content
+      # otherwise, content is treated as plain text and converted to a paragraph
+      case Jason.decode(content) do
+        {:ok, content} ->
+          content
 
-      %{
-        children: children
-      }
+        {:error, _} ->
+          plaintext_to_paragraph(content)
+      end
     end
 
     File.stream!(ingest_file)
@@ -141,7 +143,6 @@ defmodule OliWeb.Import.CSVImportView do
           if needs_change? do
             case Oli.Resources.update_revision(revision, change) do
               {:ok, _} ->
-                IO.inspect(change)
                 send(pid, {:update, row_num, :success})
 
               {:error, _} ->
@@ -153,37 +154,8 @@ defmodule OliWeb.Import.CSVImportView do
     end)
   end
 
-  defp to_paragraph(text) do
-    children =
-      case String.contains?(text, "**") do
-        false ->
-          [%{text: text}]
-
-        true ->
-          items = String.split(" " <> text <> " ", "**")
-
-          last = Enum.count(items)
-
-          Enum.with_index(items, 1)
-          |> Enum.map(fn {t, i} ->
-            # if i is even it is bold
-
-            t =
-              case i do
-                1 -> String.trim_leading(t)
-                ^last -> String.trim_trailing(t)
-                _ -> t
-              end
-
-            if rem(i, 2) == 0 do
-              %{text: t, bold: true}
-            else
-              %{text: t}
-            end
-          end)
-      end
-
-    %{type: "p", children: children}
+  defp plaintext_to_paragraph(text) do
+    %{type: "p", children: [%{text: text}]}
   end
 
   def handle_info({:update, row_num, result}, socket) do
