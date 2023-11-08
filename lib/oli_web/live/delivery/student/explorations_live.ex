@@ -86,7 +86,7 @@ defmodule OliWeb.Delivery.Student.ExplorationsLive do
     <div class="flex flex-col lg:flex-row-reverse items-center rounded-lg bg-black/5 dark:bg-white/5 mb-4">
       <img
         class="object-cover rounded-t-lg lg:rounded-tl-none w-full lg:w-[300px] lg:rounded-r-lg h-64 lg:h-full shrink-0"
-        src={@exploration.poster_image}
+        src={poster_image(@exploration)}
       />
       <div class="flex-1 flex flex-col justify-between p-8 leading-normal">
         <h5 class="mb-3 text-2xl font-bold tracking-tight text-gray-900 dark:text-white">
@@ -113,6 +113,16 @@ defmodule OliWeb.Delivery.Student.ExplorationsLive do
       ~p"/sections/#{section_slug}/preview/page/#{exploration.slug}"
     else
       ~p"/sections/#{section_slug}/page/#{exploration.slug}"
+    end
+  end
+
+  defp poster_image(exploration) do
+    case exploration.poster_image do
+      nil ->
+        ~p"/images/ng23/explorations/default_poster.jpg"
+
+      image ->
+        image
     end
   end
 end
