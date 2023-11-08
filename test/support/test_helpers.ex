@@ -1335,8 +1335,7 @@ defmodule Oli.TestHelpers do
     author = insert(:author)
     project = insert(:project, authors: [author])
 
-    {act_resource_w, act_revision_w} =
-      create_activity("Activity W", "activity_w", project)
+    {act_resource_w, act_revision_w} = create_activity("Activity W", "activity_w", project)
 
     # Create pages
     build_content_for_page = fn activity_ids ->
@@ -3244,21 +3243,6 @@ defmodule Oli.TestHelpers do
       end
 
     System.cmd(cmd, args)
-  end
-
-  @doc """
-    Provides set of helpers to test async events
-  """
-  def wait_until(fun), do: wait_until(fun, 500)
-
-  def wait_until(fun, 0), do: fun.()
-
-  def wait_until(fun, timeout) do
-    fun.()
-  rescue
-    ExUnit.AssertionError ->
-      :timer.sleep(100)
-      wait_until(fun, max(0, timeout - 100))
   end
 
   def unzip_to_memory(data) do
