@@ -2,7 +2,6 @@ defmodule OliWeb.Common.TextSearch do
   use OliWeb, :live_component
 
   attr(:id, :string)
-  attr(:apply, :string, default: "text_search_apply")
   attr(:reset, :string, default: "text_search_reset")
   attr(:change, :string, default: "text_search_change")
   attr(:placeholder, :string, default: "Search...")

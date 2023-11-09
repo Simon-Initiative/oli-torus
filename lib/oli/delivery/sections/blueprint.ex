@@ -409,6 +409,7 @@ defmodule Oli.Delivery.Sections.Blueprint do
       |> limit(^limit)
       |> offset(^offset)
       |> order_by([p, _, _, _], {^direction, field(p, ^field)})
+      |> select([s, _bp], %{s | total_count: fragment("count(*) OVER()")})
 
     query =
       case field do

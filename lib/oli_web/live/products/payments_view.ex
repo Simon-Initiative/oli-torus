@@ -66,7 +66,6 @@ defmodule OliWeb.Products.PaymentsView do
 
       <TextSearch.render
         id="text-search"
-        apply="text_search_apply"
         reset="text_search_reset"
         change="text_search_change"
         text={@text_search}

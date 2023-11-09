@@ -81,7 +81,7 @@ defmodule OliWeb.Products.ProductsView do
         project_id: project_id
       )
 
-    total_count = length(products)
+    total_count = determine_total(products)
 
     ctx = SessionContext.init(socket, session)
     {:ok, table_model} = OliWeb.Products.ProductsTableModel.new(products, ctx)
@@ -121,7 +121,6 @@ defmodule OliWeb.Products.ProductsView do
         <%= if @is_admin_view do %>
           <TextSearch.render
             id="text-search"
-            apply="text_search_apply"
             reset="text_search_reset"
             change="text_search_change"
             text={@text_search}
@@ -176,7 +175,7 @@ defmodule OliWeb.Products.ProductsView do
 
     table_model = Map.put(table_model, :rows, products)
 
-    total_count = length(products)
+    total_count = determine_total(products)
 
     {:noreply,
      assign(socket,
@@ -275,5 +274,12 @@ defmodule OliWeb.Products.ProductsView do
          ),
        replace: true
      )}
+  end
+
+  defp determine_total(products) do
+    case products do
+      [] -> 0
+      [hd | _] -> hd.total_count
+    end
   end
 end

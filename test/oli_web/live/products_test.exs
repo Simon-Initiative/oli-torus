@@ -93,19 +93,13 @@ defmodule OliWeb.ProductsLiveTest do
       assert has_element?(view, "a", product.title)
       assert has_element?(view, "a", product_2.title)
 
-      view
-      |> element("input[phx-blur=\"change_search\"]")
-      |> render_blur(%{value: product.title})
-
-      view
-      |> element("button[phx-click=\"apply_search\"]")
-      |> render_click()
+      render_hook(view, "text_search_change", %{value: product.title})
 
       assert has_element?(view, "a", product.title)
       refute has_element?(view, "a", product_2.title)
 
       view
-      |> element("button[phx-click=\"reset_search\"]")
+      |> element("button[phx-click=\"text_search_reset\"]")
       |> render_click()
 
       assert has_element?(view, "a", product.title)
@@ -120,23 +114,42 @@ defmodule OliWeb.ProductsLiveTest do
       assert has_element?(view, "a", product.base_project.title)
       assert has_element?(view, "a", product_2.base_project.title)
 
-      view
-      |> element("input[phx-blur=\"change_search\"]")
-      |> render_blur(%{value: product_2.base_project.title})
-
-      view
-      |> element("button[phx-click=\"apply_search\"]")
-      |> render_click()
+      render_hook(view, "text_search_change", %{value: product_2.base_project.title})
 
       refute has_element?(view, "a", product.base_project.title)
       assert has_element?(view, "a", product_2.base_project.title)
 
       view
-      |> element("button[phx-click=\"reset_search\"]")
+      |> element("button[phx-click=\"text_search_reset\"]")
       |> render_click()
 
       assert has_element?(view, "a", product.base_project.title)
       assert has_element?(view, "a", product_2.base_project.title)
+    end
+
+    test "search product by amount", %{conn: conn, product: product} do
+      [{_, product_2} | _] = create_product(conn)
+
+      {:ok, product_2} = Sections.update_section(product_2, %{
+        amount: Money.new(:USD, 25)
+      })
+
+      {:ok, view, _html} = live(conn, @live_view_all_products)
+
+      assert has_element?(view, "a", product.title)
+      assert has_element?(view, "a", product_2.title)
+
+      render_hook(view, "text_search_change", %{value: "25"})
+
+      refute has_element?(view, "a", product.title)
+      assert has_element?(view, "a", product_2.title)
+
+      view
+      |> element("button[phx-click=\"text_search_reset\"]")
+      |> render_click()
+
+      assert has_element?(view, "a", product.title)
+      assert has_element?(view, "a", product_2.title)
     end
 
     test "applies sorting by creation date", %{conn: conn, product: product} do
@@ -154,8 +167,9 @@ defmodule OliWeb.ProductsLiveTest do
              |> element("tr:first-child > td:first-child")
              |> render() =~ product.title
 
+
       view
-      |> element("th[phx-click=\"sort\"][phx-value-sort_by=\"inserted_at\"]")
+      |> element("th[phx-click=\"paged_table_sort\"]:first-of-type")
       |> render_click(%{sort_by: "inserted_at"})
 
       assert view
@@ -184,6 +198,23 @@ defmodule OliWeb.ProductsLiveTest do
 
       assert has_element?(view, "a", product.base_project.title)
       assert has_element?(view, "a", product_2.base_project.title)
+    end
+
+    test "applies paging", %{conn: conn} do
+      [first_p | tail] = insert_list(21, :section) |> Enum.sort_by(& &1.title)
+      last_p = List.last(tail)
+
+      {:ok, view, _html} = live(conn, @live_view_all_products)
+
+      assert has_element?(view, "##{first_p.id}")
+      refute has_element?(view, "##{last_p.id}")
+
+      view
+      |> element("#header_paging button[phx-click=\"paged_table_page_change\"]", "2")
+      |> render_click()
+
+      refute has_element?(view, "##{first_p.id}")
+      assert has_element?(view, "##{last_p.id}")
     end
   end
 
