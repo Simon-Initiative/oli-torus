@@ -45,7 +45,6 @@ defmodule OliWeb.Delivery.OpenAndFreeIndex do
 
   @impl Phoenix.LiveView
   # TODO add bg image to welcome header when we can export it from Figma
-  # add tests
 
   def render(assigns) do
     ~H"""
@@ -95,12 +94,13 @@ defmodule OliWeb.Delivery.OpenAndFreeIndex do
                   <div class="top-0 left-0 rounded-xl absolute w-full h-full backdrop-blur" />
                   <span
                     :if={section.progress == 100}
+                    role={"complete_badge_for_section_#{section.id}"}
                     class="absolute w-32 top-0 right-0 rounded-tr-xl rounded-bl-xl bg-[#0CAF61] uppercase py-2 text-black text-center text-[12px] leading-[16px] tracking-[1.2px] font-bold"
                   >
                     Complete
                   </span>
                   <span
-                    role={"role_for_section_#{section.title}"}
+                    role={"role_badge_for_section_#{section.id}"}
                     class="absolute w-32 top-0 left-0 rounded-br-xl rounded-tl-xl bg-primary uppercase py-2 text-white text-center text-[12px] leading-[16px] tracking-[1.2px] font-bold"
                   >
                     <%= section.user_role %>
@@ -110,7 +110,11 @@ defmodule OliWeb.Delivery.OpenAndFreeIndex do
                       <h5 class="text-gray-900 text-[36px] leading-[49px] font-semibold dark:text-white">
                         <%= section.title %>
                       </h5>
-                      <div :if={!is_independent_instructor?(@current_user)} class="flex">
+                      <div
+                        :if={section.user_role == "student"}
+                        class="flex"
+                        role={"progress_for_section_#{section.id}"}
+                      >
                         <h4 class="text-[16px] leading-[32px] tracking-[1.28px] uppercase mr-9">
                           Course Progress
                         </h4>
