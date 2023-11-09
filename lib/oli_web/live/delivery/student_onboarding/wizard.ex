@@ -105,13 +105,23 @@ defmodule OliWeb.Delivery.StudentOnboarding.Wizard do
   def render(assigns) do
     ~H"""
     <.header ctx={@ctx} section={@section} brand={@brand} preview_mode={@preview_mode} />
-    <div class="mt-14 h-[calc(100vh-56px)]">
+    <div
+      id="content"
+      phx-mounted={JS.remove_class("opacity-0")}
+      class="mt-14 h-[calc(100vh-56px)] transition-all duration-75 opacity-0"
+    >
       <.live_component
         id="student-onboarding-wizard"
         module={Stepper}
         steps={@steps}
         current_step={@current_step_index}
-        on_cancel={if !@is_lti, do: JS.navigate(~p"/sections"), else: nil}
+        on_cancel={
+          if !@is_lti,
+            do:
+              JS.add_class("opacity-0", to: "#content")
+              |> JS.navigate(~p"/sections"),
+            else: nil
+        }
         data={get_step_data(assigns)}
       />
     </div>

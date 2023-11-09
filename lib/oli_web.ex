@@ -143,6 +143,8 @@ defmodule OliWeb do
 
       import ReactPhoenix.ClientSide
 
+      alias Phoenix.LiveView.JS
+
       # Routes generation with the ~p sigil
       unquote(verified_routes())
     end
