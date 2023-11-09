@@ -105,11 +105,7 @@ defmodule OliWeb.Delivery.StudentOnboarding.Wizard do
   def render(assigns) do
     ~H"""
     <.header ctx={@ctx} section={@section} brand={@brand} preview_mode={@preview_mode} />
-    <div
-      id="content"
-      phx-mounted={JS.remove_class("opacity-0")}
-      class="mt-14 h-[calc(100vh-56px)] transition-all duration-75 opacity-0"
-    >
+    <div id="content" class="mt-14 h-[calc(100vh-56px)] transition-all duration-100">
       <.live_component
         id="student-onboarding-wizard"
         module={Stepper}

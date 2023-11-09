@@ -50,7 +50,7 @@ defmodule OliWeb.Delivery.OpenAndFreeIndex do
     ~H"""
     <main role="main" class="relative flex flex-col pb-[60px]">
       <Components.Header.header {assigns} />
-      <div id="content" phx-mounted={JS.remove_class("opacity-0")} class="transition-all duration-75">
+      <div id="content" class="transition-all duration-100">
         <div class="flex items-center h-[247px] bg-gray-300">
           <h1 class="text-[64px] leading-[87px] tracking-[0.02px] pl-[100px]">
             Hi, <span class="font-bold"><%= user_given_name(@ctx) %></span>
