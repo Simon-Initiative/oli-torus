@@ -43,7 +43,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
 
   def header(assigns) do
     ~H"""
-    <div class="fixed z-50 w-full h-14 flex flex-row bg-delivery-header dark:bg-delivery-header-dark">
+    <div class="fixed z-50 w-full h-14 flex flex-row bg-delivery-header dark:bg-delivery-header-dark shadow-sm">
       <div class="w-48 p-2">
         <a
           className="block lg:p-2 lg:mb-14 mx-auto"
@@ -52,12 +52,12 @@ defmodule OliWeb.Components.Delivery.Layouts do
           <.logo_img />
         </a>
       </div>
-      <div class="flex-grow-1 p-2">
-        <div class="hidden md:block">
+      <div class="flex items-center flex-grow-1 p-2">
+        <div :if={@section} class="hidden md:block">
           <span class="text-2xl text-bold"><%= @section.title %></span>
         </div>
       </div>
-      <div class="p-2">
+      <div class="flex items-center p-2">
         <div class="hidden md:block">
           <UserAccountMenu.menu id="user-account-menu" ctx={@ctx} section={@section} />
         </div>
@@ -105,7 +105,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
         flex-col
         w-full
         md:w-48
-        shadow-xl
+        shadow-sm
         bg-delivery-navbar
         dark:bg-delivery-navbar-dark
       "
