@@ -93,17 +93,25 @@ defmodule OliWeb.Pow.PowHelpers do
   `deauthorization_link/2` will be used for any already authorized providers.
   """
   def provider_links(conn, link_opts \\ []) do
-    available_providers = Plug.available_providers(conn)
-    providers_for_user = Plug.providers_for_current_user(conn)
-
-    providers =
-      available_providers
-      |> Enum.map(&{&1, &1 in providers_for_user})
+    providers = get_providers(conn)
 
     providers_length = length(providers)
 
     providers
     |> Enum.with_index(1)
+    |> generate_provider_links(conn, providers_length, link_opts)
+  end
+
+  defp get_providers(conn) do
+    available_providers = Plug.available_providers(conn)
+    providers_for_user = Plug.providers_for_current_user(conn)
+
+    available_providers
+    |> Enum.map(&{&1, &1 in providers_for_user})
+  end
+
+  defp generate_provider_links(list_providers_with_index, conn, providers_length, link_opts) do
+    list_providers_with_index
     |> Enum.map(fn
       {{provider, true}, index} ->
         deauthorization_link(conn, provider, providers_length == index, link_opts)
@@ -120,35 +128,9 @@ defmodule OliWeb.Pow.PowHelpers do
   on through the URL query params.
   """
   def authorization_link(conn, provider, is_last_provider, opts \\ []) do
-    query_params = invitation_token_query_params(conn) ++ request_path_query_params(conn)
+    opts = build_otps(opts, conn, provider)
 
-    msg =
-      AuthorizationController.extension_messages(conn).login_with_provider(%{
-        conn
-        | params: %{"provider" => provider}
-      })
-
-    icon = provider_icon(provider)
-
-    path =
-      AuthorizationController.routes(conn).path_for(
-        conn,
-        AuthorizationController,
-        :new,
-        [provider],
-        query_params
-      )
-
-    opts = Keyword.merge(opts, to: path)
-
-    opts =
-      Keyword.merge(opts, class: "btn btn-md #{provider_class(provider)} btn-block social-signin")
-
-    provider_name = provider_name(provider, downcase: true)
-
-    msg_box = Tag.content_tag(:div, msg, class: provider_name <> "-text-container")
-
-    button_box = Tag.content_tag(:div, [icon, msg_box], class: provider_name <> "-auth-container")
+    button_box = build_button_box(conn, provider)
 
     link = Link.link(button_box, opts)
 
@@ -160,6 +142,43 @@ defmodule OliWeb.Pow.PowHelpers do
 
       Tag.content_tag(:div, [link, Tag.tag(:br), or_text])
     end
+  end
+
+  defp build_button_box(conn, provider) do
+    icon = provider_icon(provider)
+    provider_name = provider_name(provider, downcase: true)
+    msg_box = build_msg_box(conn, provider, provider_name)
+    Tag.content_tag(:div, [icon, msg_box], class: provider_name <> "-auth-container")
+  end
+
+  defp build_msg_box(conn, provider, provider_name) do
+    msg =
+      AuthorizationController.extension_messages(conn).login_with_provider(%{
+        conn
+        | params: %{"provider" => provider}
+      })
+
+    Tag.content_tag(:div, msg, class: provider_name <> "-text-container")
+  end
+
+  defp build_otps(opts, conn, provider) do
+    path = build_authentication_path(conn, provider)
+
+    opts = Keyword.merge(opts, to: path)
+
+    Keyword.merge(opts, class: "btn btn-md #{provider_class(provider)} btn-block social-signin")
+  end
+
+  defp build_authentication_path(conn, provider) do
+    query_params = invitation_token_query_params(conn) ++ request_path_query_params(conn)
+
+    AuthorizationController.routes(conn).path_for(
+      conn,
+      AuthorizationController,
+      :new,
+      [provider],
+      query_params
+    )
   end
 
   defp invitation_token_query_params(%{assigns: %{invited_user: %{invitation_token: token}}}),
