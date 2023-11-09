@@ -6,8 +6,9 @@ defmodule Oli.Delivery.PaywallTest do
 
   alias Lti_1p3.Tool.ContextRoles
   alias Oli.Delivery.{Sections, Paywall}
-  alias Oli.Delivery.Paywall.{AccessSummary, Discount}
+  alias Oli.Delivery.Paywall.{AccessSummary, Payment, Discount}
   alias Oli.Publishing
+  alias Oli.Repo.{Paging, Sorting}
 
   def last_week() do
     {:ok, datetime} = DateTime.now("Etc/UTC")
@@ -800,6 +801,61 @@ defmodule Oli.Delivery.PaywallTest do
 
       assert Paywall.list_payments(section_1.slug) |> length() == 0
       assert Paywall.list_payments(section_2.slug) |> length() == 2
+    end
+  end
+
+  describe "browse payments" do
+    setup do
+      product =
+        insert(:section, %{
+          type: :blueprint
+        })
+      [product: product]
+    end
+
+    test "browse_payments/4 applies paging", %{product: product} do
+      payment_1_id = insert(:payment, section: product, code: 123_456_789).id
+      _payment_2_id = insert(:payment, section: product, code: 987_654_321).id
+
+      [%{payment: %Payment{id: ^payment_1_id}}] = Paywall.browse_payments(product.slug, %Paging{limit: 1, offset: 0}, %Sorting{direction: :asc, field: :type})
+    end
+
+    test "browse_payments/4 applies sorting by type", %{product: product} do
+      payment_1_id = insert(:payment, section: product, type: :deferred).id
+      _payment_2_id = insert(:payment, section: product, type: :direct).id
+
+      [%{payment: %Payment{id: ^payment_1_id}}] = Paywall.browse_payments(product.slug, %Paging{limit: 1, offset: 0}, %Sorting{direction: :asc, field: :type})
+    end
+
+    test "browse_payments/4 applies sorting by user name", %{product: product} do
+      user_1 = insert(:user, given_name: "A", family_name: "A")
+      user_2 = insert(:user, given_name: "B", family_name: "B")
+
+      enrollment_1 = insert(:enrollment, user: user_1)
+      enrollment_2 = insert(:enrollment, user: user_2)
+
+      payment_1_id = insert(:payment, section: product, enrollment: enrollment_1).id
+      _payment_2_id = insert(:payment, section: product, enrollment: enrollment_2).id
+
+      [%{payment: %Payment{id: ^payment_1_id}}] = Paywall.browse_payments(product.slug, %Paging{limit: 1, offset: 0}, %Sorting{direction: :asc, field: :user})
+    end
+
+    test "browse_payments/4 applies sorting by details", %{product: product} do
+      payment_1_id = insert(:payment, section: product, type: :direct, provider_type: :stripe, provider_payload: %{id: 1}).id
+      _payment_2_id = insert(:payment, section: product, type: :deferred).id
+
+      [%{payment: %Payment{id: ^payment_1_id}}] = Paywall.browse_payments(product.slug, %Paging{limit: 1, offset: 0}, %Sorting{direction: :desc, field: :details})
+    end
+
+    test "browse_payments/4 applies searching by code", %{product: product} do
+      code_1 = 123_456_789
+      code_2 = 987_654_321
+      payment_1_id = insert(:payment, section: product, code: code_1).id
+      _payment_2_id = insert(:payment, section: product, code: code_2).id
+
+      human_code_1 = Paywall.Payment.to_human_readable(code_1)
+
+      [%{payment: %Payment{id: ^payment_1_id}}] = Paywall.browse_payments(product.slug, %Paging{limit: 1, offset: 0}, %Sorting{direction: :asc, field: :type}, text_search: human_code_1)
     end
   end
 end

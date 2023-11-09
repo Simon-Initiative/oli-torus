@@ -359,6 +359,26 @@ defmodule Oli.Delivery.Sections.Blueprint do
     |> Repo.all()
   end
 
+  @doc """
+  Fetches and filters section records based on various parameters.
+
+  This function retrieves section records, optionally filtering them based on paging, sorting, and text search criteria.
+
+  ## Parameters
+
+  - `%Paging{offset: offset, limit: limit}` (Paging struct): Specifies the limit and offset for paging the results.
+  - `%Sorting{direction: direction, field: field}` (Sorting struct): Specifies the sorting direction and field for ordering the results.
+  - `opts` (Keyword list, optional): Additional options, including `:project_id`, `:include_archived`, and `:text_search` for filtering.
+
+  ## Returns
+
+  A list of section records matching the specified criteria.
+
+  ## Examples
+
+  iex> browse(%Paging{offset: 0, limit: 10}, %Sorting{direction: :asc, field: :title}, [project_id: 1234, include_archived: false, text_search: "example"])
+  [%Section{}, %Section{}, ...]
+  """
   def browse(
         %Paging{offset: offset, limit: limit},
         %Sorting{direction: direction, field: field},
@@ -428,7 +448,7 @@ defmodule Oli.Delivery.Sections.Blueprint do
              fragment(
                """
                  CASE
-                   WHEN ? THEN COALESCE(? ->> 'id', 'Yes')
+                   WHEN ? THEN COALESCE(? ->> 'amount', 'Yes')
                    ELSE 'None'
                  END
                """,
