@@ -45,7 +45,6 @@ defmodule OliWeb.Delivery.OpenAndFreeIndex do
 
   @impl Phoenix.LiveView
   # TODO add bg image to welcome header when we can export it from Figma
-  # show complete badge if progress = 100%
   # add tests
 
   def render(assigns) do
@@ -98,7 +97,10 @@ defmodule OliWeb.Delivery.OpenAndFreeIndex do
                   class={"relative flex items-center self-stretch h-[201px] w-full bg-cover py-12 px-24 bg-[url('#{cover_image(section)}')] text-black hover:text-black dark:text-white dark:hover:text-white rounded-xl shadow-lg hover:no-underline hover:scale-[1.002]"}
                 >
                   <div class="top-0 left-0 rounded-xl absolute w-full h-full backdrop-blur" />
-                  <span class="absolute w-32 top-0 right-0 rounded-tr-xl rounded-bl-xl bg-[#0CAF61] uppercase py-2 text-black text-center text-[12px] leading-[16px] tracking-[1.2px] font-bold">
+                  <span
+                    :if={section.progress == 100}
+                    class="absolute w-32 top-0 right-0 rounded-tr-xl rounded-bl-xl bg-[#0CAF61] uppercase py-2 text-black text-center text-[12px] leading-[16px] tracking-[1.2px] font-bold"
+                  >
                     Complete
                   </span>
                   <span class="absolute w-32 top-0 left-0 rounded-br-xl rounded-tl-xl bg-primary uppercase py-2 text-white text-center text-[12px] leading-[16px] tracking-[1.2px] font-bold">
