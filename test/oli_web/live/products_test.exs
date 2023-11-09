@@ -130,9 +130,10 @@ defmodule OliWeb.ProductsLiveTest do
     test "search product by amount", %{conn: conn, product: product} do
       [{_, product_2} | _] = create_product(conn)
 
-      {:ok, product_2} = Sections.update_section(product_2, %{
-        amount: Money.new(:USD, 25)
-      })
+      {:ok, product_2} =
+        Sections.update_section(product_2, %{
+          amount: Money.new(:USD, 25)
+        })
 
       {:ok, view, _html} = live(conn, @live_view_all_products)
 
@@ -166,7 +167,6 @@ defmodule OliWeb.ProductsLiveTest do
       assert view
              |> element("tr:first-child > td:first-child")
              |> render() =~ product.title
-
 
       view
       |> element("th[phx-click=\"paged_table_sort\"]:first-of-type")

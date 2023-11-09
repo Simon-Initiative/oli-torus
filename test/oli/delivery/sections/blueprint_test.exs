@@ -110,7 +110,12 @@ defmodule Oli.Delivery.Sections.BlueprintTest do
     test "browse/3 lists products and applies paging" do
       product_id = insert(:section).id
       _product_id_2 = insert(:section).id
-      assert [%Sections.Section{id: ^product_id}] = Blueprint.browse(%Paging{offset: 0, limit: 1}, %Sorting{direction: :asc, field: :title})
+
+      assert [%Sections.Section{id: ^product_id}] =
+               Blueprint.browse(%Paging{offset: 0, limit: 1}, %Sorting{
+                 direction: :asc,
+                 field: :title
+               })
     end
 
     test "browse/3 lists products and applies sorting by base project title" do
@@ -119,21 +124,34 @@ defmodule Oli.Delivery.Sections.BlueprintTest do
       product_id_1 = insert(:section, base_project: project_1).id
       product_id_2 = insert(:section, base_project: project_2).id
 
-      assert [%Sections.Section{id: ^product_id_1}, %Sections.Section{id: ^product_id_2}] = Blueprint.browse(%Paging{offset: 0, limit: 2}, %Sorting{direction: :asc, field: :base_project_id})
+      assert [%Sections.Section{id: ^product_id_1}, %Sections.Section{id: ^product_id_2}] =
+               Blueprint.browse(%Paging{offset: 0, limit: 2}, %Sorting{
+                 direction: :asc,
+                 field: :base_project_id
+               })
     end
 
     test "browse/3 lists products and applies sorting by amount" do
       product_id_1 = insert(:section, requires_payment: true, amount: Money.new(:USD, 10)).id
       product_id_2 = insert(:section, requires_payment: true, amount: Money.new(:USD, 20)).id
 
-      assert [%Sections.Section{id: ^product_id_1}, %Sections.Section{id: ^product_id_2}] = Blueprint.browse(%Paging{offset: 0, limit: 2}, %Sorting{direction: :asc, field: :requires_payment})
+      assert [%Sections.Section{id: ^product_id_1}, %Sections.Section{id: ^product_id_2}] =
+               Blueprint.browse(%Paging{offset: 0, limit: 2}, %Sorting{
+                 direction: :asc,
+                 field: :requires_payment
+               })
     end
 
     test "browse/3 lists products and applies searching by product title" do
       product_id_1 = insert(:section, title: "A1").id
       _product_id_2 = insert(:section, title: "B1").id
 
-      assert [%Sections.Section{id: ^product_id_1}] = Blueprint.browse(%Paging{offset: 0, limit: 2}, %Sorting{direction: :asc, field: :title}, [text_search: "A1"])
+      assert [%Sections.Section{id: ^product_id_1}] =
+               Blueprint.browse(
+                 %Paging{offset: 0, limit: 2},
+                 %Sorting{direction: :asc, field: :title},
+                 text_search: "A1"
+               )
     end
 
     test "browse/3 lists products and applies searching by base project title" do
@@ -142,14 +160,24 @@ defmodule Oli.Delivery.Sections.BlueprintTest do
       product_id_1 = insert(:section, base_project: project_1).id
       _product_id_2 = insert(:section, base_project: project_2).id
 
-      assert [%Sections.Section{id: ^product_id_1}] = Blueprint.browse(%Paging{offset: 0, limit: 2}, %Sorting{direction: :asc, field: :title}, [text_search: "A1"])
+      assert [%Sections.Section{id: ^product_id_1}] =
+               Blueprint.browse(
+                 %Paging{offset: 0, limit: 2},
+                 %Sorting{direction: :asc, field: :title},
+                 text_search: "A1"
+               )
     end
 
     test "browse/3 lists products and applies searching by amount" do
       product_id_1 = insert(:section, requires_payment: true, amount: Money.new(:USD, 10)).id
       _product_id_2 = insert(:section, requires_payment: true, amount: Money.new(:USD, 20)).id
 
-      assert [%Sections.Section{id: ^product_id_1}] = Blueprint.browse(%Paging{offset: 0, limit: 2}, %Sorting{direction: :asc, field: :title}, [text_search: "10"])
+      assert [%Sections.Section{id: ^product_id_1}] =
+               Blueprint.browse(
+                 %Paging{offset: 0, limit: 2},
+                 %Sorting{direction: :asc, field: :title},
+                 text_search: "10"
+               )
     end
 
     test "browse/3 lists products and applies filtering by base project" do
@@ -158,14 +186,24 @@ defmodule Oli.Delivery.Sections.BlueprintTest do
       product_id_1 = insert(:section, base_project: project_1).id
       _product_id_2 = insert(:section, base_project: project_2).id
 
-      assert [%Sections.Section{id: ^product_id_1}] = Blueprint.browse(%Paging{offset: 0, limit: 2}, %Sorting{direction: :asc, field: :title}, [project_id: project_1.id])
+      assert [%Sections.Section{id: ^product_id_1}] =
+               Blueprint.browse(
+                 %Paging{offset: 0, limit: 2},
+                 %Sorting{direction: :asc, field: :title},
+                 project_id: project_1.id
+               )
     end
 
     test "browse/3 lists products and applies filtering by status" do
       archived_product_id = insert(:section, title: "B", status: :archived).id
       product_id = insert(:section, title: "A").id
 
-      assert [%Sections.Section{id: ^product_id}, %Sections.Section{id: ^archived_product_id}] = Blueprint.browse(%Paging{offset: 0, limit: 2}, %Sorting{direction: :asc, field: :title}, [include_archived: true])
+      assert [%Sections.Section{id: ^product_id}, %Sections.Section{id: ^archived_product_id}] =
+               Blueprint.browse(
+                 %Paging{offset: 0, limit: 2},
+                 %Sorting{direction: :asc, field: :title},
+                 include_archived: true
+               )
     end
 
     def get_resources(id) do

@@ -810,6 +810,7 @@ defmodule Oli.Delivery.PaywallTest do
         insert(:section, %{
           type: :blueprint
         })
+
       [product: product]
     end
 
@@ -817,14 +818,22 @@ defmodule Oli.Delivery.PaywallTest do
       payment_1_id = insert(:payment, section: product, code: 123_456_789).id
       _payment_2_id = insert(:payment, section: product, code: 987_654_321).id
 
-      [%{payment: %Payment{id: ^payment_1_id}}] = Paywall.browse_payments(product.slug, %Paging{limit: 1, offset: 0}, %Sorting{direction: :asc, field: :type})
+      [%{payment: %Payment{id: ^payment_1_id}}] =
+        Paywall.browse_payments(product.slug, %Paging{limit: 1, offset: 0}, %Sorting{
+          direction: :asc,
+          field: :type
+        })
     end
 
     test "browse_payments/4 applies sorting by type", %{product: product} do
       payment_1_id = insert(:payment, section: product, type: :deferred).id
       _payment_2_id = insert(:payment, section: product, type: :direct).id
 
-      [%{payment: %Payment{id: ^payment_1_id}}] = Paywall.browse_payments(product.slug, %Paging{limit: 1, offset: 0}, %Sorting{direction: :asc, field: :type})
+      [%{payment: %Payment{id: ^payment_1_id}}] =
+        Paywall.browse_payments(product.slug, %Paging{limit: 1, offset: 0}, %Sorting{
+          direction: :asc,
+          field: :type
+        })
     end
 
     test "browse_payments/4 applies sorting by user name", %{product: product} do
@@ -837,14 +846,29 @@ defmodule Oli.Delivery.PaywallTest do
       payment_1_id = insert(:payment, section: product, enrollment: enrollment_1).id
       _payment_2_id = insert(:payment, section: product, enrollment: enrollment_2).id
 
-      [%{payment: %Payment{id: ^payment_1_id}}] = Paywall.browse_payments(product.slug, %Paging{limit: 1, offset: 0}, %Sorting{direction: :asc, field: :user})
+      [%{payment: %Payment{id: ^payment_1_id}}] =
+        Paywall.browse_payments(product.slug, %Paging{limit: 1, offset: 0}, %Sorting{
+          direction: :asc,
+          field: :user
+        })
     end
 
     test "browse_payments/4 applies sorting by details", %{product: product} do
-      payment_1_id = insert(:payment, section: product, type: :direct, provider_type: :stripe, provider_payload: %{id: 1}).id
+      payment_1_id =
+        insert(:payment,
+          section: product,
+          type: :direct,
+          provider_type: :stripe,
+          provider_payload: %{id: 1}
+        ).id
+
       _payment_2_id = insert(:payment, section: product, type: :deferred).id
 
-      [%{payment: %Payment{id: ^payment_1_id}}] = Paywall.browse_payments(product.slug, %Paging{limit: 1, offset: 0}, %Sorting{direction: :desc, field: :details})
+      [%{payment: %Payment{id: ^payment_1_id}}] =
+        Paywall.browse_payments(product.slug, %Paging{limit: 1, offset: 0}, %Sorting{
+          direction: :desc,
+          field: :details
+        })
     end
 
     test "browse_payments/4 applies searching by code", %{product: product} do
@@ -855,7 +879,13 @@ defmodule Oli.Delivery.PaywallTest do
 
       human_code_1 = Paywall.Payment.to_human_readable(code_1)
 
-      [%{payment: %Payment{id: ^payment_1_id}}] = Paywall.browse_payments(product.slug, %Paging{limit: 1, offset: 0}, %Sorting{direction: :asc, field: :type}, text_search: human_code_1)
+      [%{payment: %Payment{id: ^payment_1_id}}] =
+        Paywall.browse_payments(
+          product.slug,
+          %Paging{limit: 1, offset: 0},
+          %Sorting{direction: :asc, field: :type},
+          text_search: human_code_1
+        )
     end
   end
 end

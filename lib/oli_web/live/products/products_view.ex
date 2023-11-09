@@ -191,7 +191,8 @@ defmodule OliWeb.Products.ProductsView do
 
     include_archived = !socket.assigns.include_archived
 
-    %{offset: offset, limit: limit, table_model: table_model, text_search: text_search} = socket.assigns
+    %{offset: offset, limit: limit, table_model: table_model, text_search: text_search} =
+      socket.assigns
 
     products =
       Blueprint.browse(

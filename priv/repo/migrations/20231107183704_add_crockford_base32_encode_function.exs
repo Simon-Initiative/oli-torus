@@ -2,7 +2,6 @@ defmodule Oli.Repo.Migrations.AddCrockfordBase32EncodeFunction do
   use Ecto.Migration
 
   def up do
-
     execute """
     CREATE OR REPLACE FUNCTION crockford_base32_encode(number BIGINT) RETURNS TEXT AS $$
     DECLARE

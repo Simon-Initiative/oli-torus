@@ -227,7 +227,7 @@ defmodule OliWeb.PaymentsLiveTest do
       assert view
              |> element("tr:first-child > td:first-child")
              |> render() =~
-             code1
+               code1
 
       view
       |> element("th[phx-click=\"paged_table_sort\"]:first-of-type")
@@ -236,7 +236,7 @@ defmodule OliWeb.PaymentsLiveTest do
       assert view
              |> element("tr:first-child > td:first-child")
              |> render() =~
-             code2
+               code2
     end
   end
 end

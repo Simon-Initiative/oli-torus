@@ -36,7 +36,12 @@ defmodule OliWeb.Common.TextSearch do
         </div>
       <% end %>
       <div :if={@tooltip} class="m-2 opacity-50 hover:cursor-help">
-        <span id={@id <> "_tooltip"} title={@tooltip} class="fas fa-info-circle" phx-hook="TooltipInit"/>
+        <span
+          id={@id <> "_tooltip"}
+          title={@tooltip}
+          class="fas fa-info-circle"
+          phx-hook="TooltipInit"
+        />
       </div>
     </div>
     """
