@@ -78,6 +78,7 @@ defmodule OliWeb.Resources.PagesView do
 
         assign(socket,
           ctx: ctx,
+          last_selected_slug: nil,
           breadcrumbs: breadcrumb(project),
           project_hierarchy: project_hierarchy,
           project: project,
@@ -522,6 +523,8 @@ defmodule OliWeb.Resources.PagesView do
       """
     end
 
+    socket = socket |> assign(last_selected_slug: slug)
+
     {:noreply,
      show_modal(
        socket,
@@ -546,6 +549,27 @@ defmodule OliWeb.Resources.PagesView do
     %{revision: to_container} = Hierarchy.find_in_hierarchy(hierarchy, to_uuid)
 
     {:ok, _} = ContainerEditor.move_to(revision, from_container, to_container, author, project)
+
+    {:noreply, hide_modal(socket, modal_assigns: nil)}
+  end
+
+  def handle_event(
+        "MoveModal.move_item",
+        %{"to_uuid" => to_uuid},
+        socket
+      ) do
+    %{
+      author: author,
+      project: project,
+      modal_assigns: %{hierarchy: hierarchy}
+    } = socket.assigns
+
+    # This handles the case where the page that was selected to be moved
+    # does not exist within the hierarchy.
+    revision = AuthoringResolver.from_revision_slug(project.slug, socket.assigns.last_selected_slug)
+    %{revision: to_container} = Hierarchy.find_in_hierarchy(hierarchy, to_uuid)
+
+    {:ok, _} = ContainerEditor.move_to(revision, nil, to_container, author, project)
 
     {:noreply, hide_modal(socket, modal_assigns: nil)}
   end
