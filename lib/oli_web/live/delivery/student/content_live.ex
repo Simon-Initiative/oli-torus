@@ -12,7 +12,7 @@ defmodule OliWeb.Delivery.Student.ContentLive do
     # https://hexdocs.pm/phoenix_live_view/Phoenix.LiveView.html#assign_async/3
     if connected?(socket),
       do:
-        async_calculate_student_metrics(
+        async_calculate_student_metrics_and_enable_slider_buttons(
           self(),
           socket.assigns.section,
           socket.assigns.current_user.id
@@ -76,6 +76,9 @@ defmodule OliWeb.Delivery.Student.ContentLive do
      socket
      |> assign(selected_module_per_unit_uuid: selected_module_per_unit_uuid)
      |> maybe_scroll_y_to_unit(unit_uuid, expand_module?)
+     |> push_event("hide-or-show-buttons-on-sliders", %{
+       unit_uuids: Enum.map(socket.assigns.section.full_hierarchy["children"], & &1["uuid"])
+     })
      |> push_event("js-exec", %{
        to: "#selected_module_in_unit_#{unit_uuid}",
        attr: "data-animate"
@@ -88,7 +91,8 @@ defmodule OliWeb.Delivery.Student.ContentLive do
   end
 
   def handle_info(
-        {:student_metrics, {student_visited_pages, student_progress_per_resource_id}},
+        {:student_metrics_and_enable_slider_buttons,
+         {student_visited_pages, student_progress_per_resource_id}},
         socket
       ) do
     {:noreply,
@@ -103,7 +107,10 @@ defmodule OliWeb.Delivery.Student.ContentLive do
              {unit_uuid, mark_visited_pages(selected_module, student_visited_pages)}
            end
          )
-     )}
+     )
+     |> push_event("enable-slider-buttons", %{
+       unit_uuids: Enum.map(socket.assigns.section.full_hierarchy["children"], & &1["uuid"])
+     })}
   end
 
   # needed to ignore results of Task invocation
@@ -118,7 +125,7 @@ defmodule OliWeb.Delivery.Student.ContentLive do
       preview_mode={@preview_mode}
       active_tab={:content}
     >
-      <div id="student_content" class="lg:container lg:mx-auto p-[25px]" phx-hook="ScrollToTarget">
+      <div id="student_content" class="lg:container lg:mx-auto p-[25px]" phx-hook="Scroller">
         <.unit
           :for={child <- @section.full_hierarchy["children"]}
           unit={child}
@@ -174,16 +181,18 @@ defmodule OliWeb.Delivery.Student.ContentLive do
         </div>
       </div>
       <div class="flex relative">
-        <div
-          id={"slider_left_blur_#{@unit["uuid"]}"}
-          class="hidden absolute -top-1 -left-1 w-8 bg-gradient-to-r from-gray-100 dark:from-gray-900 h-[180px] z-10"
+        <button
+          id={"slider_left_button_#{@unit["uuid"]}"}
+          class="hidden absolute items-center justify-start -top-1 -left-1 w-10 bg-gradient-to-r from-gray-100 dark:from-gray-900 h-[180px] z-20 text-gray-400 hover:text-gray-700 dark:text-gray-600 hover:text-xl hover:dark:text-gray-200 hover:w-16 cursor-pointer"
         >
-        </div>
-        <div
-          id={"slider_right_blur_#{@unit["uuid"]}"}
-          class="absolute -top-1 -right-1 w-8 bg-gradient-to-l from-gray-100 dark:from-gray-900 h-[180px] z-10"
+          <i class="fa-solid fa-chevron-left ml-3"></i>
+        </button>
+        <button
+          id={"slider_right_button_#{@unit["uuid"]}"}
+          class="hidden absolute items-center justify-end -top-1 -right-1 w-10 bg-gradient-to-l from-gray-100 dark:from-gray-900 h-[180px] z-20 text-gray-400 hover:text-gray-700 dark:text-gray-600 hover:text-xl hover:dark:text-gray-200 hover:w-16 cursor-pointer"
         >
-        </div>
+          <i class="fa-solid fa-chevron-right mr-3"></i>
+        </button>
         <div
           id={"slider_#{@unit["uuid"]}"}
           role="slider"
@@ -588,9 +597,17 @@ defmodule OliWeb.Delivery.Student.ContentLive do
   defp parse_minutes(minutes) when minutes in ["", nil], do: "?"
   defp parse_minutes(minutes), do: minutes
 
-  defp async_calculate_student_metrics(liveview_pid, section, current_user_id) do
+  defp async_calculate_student_metrics_and_enable_slider_buttons(
+         liveview_pid,
+         section,
+         current_user_id
+       ) do
     Task.async(fn ->
-      send(liveview_pid, {:student_metrics, get_student_metrics(section, current_user_id)})
+      send(
+        liveview_pid,
+        {:student_metrics_and_enable_slider_buttons,
+         get_student_metrics(section, current_user_id)}
+      )
     end)
   end
 
