@@ -25,7 +25,7 @@ defmodule OliWeb.Delivery.OpenAndFreeIndexTest do
     test "can access when logged in as student", %{conn: conn} do
       {:ok, view, _html} = live(conn, ~p"/sections")
 
-      assert has_element?(view, "h3", "My Courses")
+      assert has_element?(view, "h3", "Courses available")
       assert has_element?(view, "p", "You are not enrolled in any courses.")
     end
 
@@ -90,7 +90,7 @@ defmodule OliWeb.Delivery.OpenAndFreeIndexTest do
       assert props =~ ~s{\"roleColor\":\"#3498db\"}
     end
 
-    test "renders product title, image and description in sections index with a link to acces to it",
+    test "renders product title and image in sections index with a link to acces to it",
          %{
            conn: conn,
            user: user
@@ -107,8 +107,7 @@ defmodule OliWeb.Delivery.OpenAndFreeIndexTest do
 
       {:ok, view, _html} = live(conn, ~p"/sections")
 
-      assert render(view) =~ ~s|src="https://example.com/some-image-url.png"|
-      assert render(view) =~ "This is a description"
+      assert render(view) =~ ~s|bg-[url(&#39;https://example.com/some-image-url.png&#39;)]|
       assert has_element?(view, "h5", "The best course ever!")
       assert has_element?(view, ~s{a[href="/sections/#{section.slug}/overview"]})
     end
@@ -139,13 +138,13 @@ defmodule OliWeb.Delivery.OpenAndFreeIndexTest do
 
       assert has_element?(
                view,
-               ~s{a[href="/sections/#{section_1.slug}/overview"] span.badge},
+               ~s{span[role="role_for_section_The best course ever!"]},
                "student"
              )
 
       assert has_element?(
                view,
-               ~s{a[href="/sections/#{section_2.slug}/overview"] span.badge},
+               ~s{span[role="role_for_section_Advanced Elixir"]},
                "instructor"
              )
     end
@@ -160,7 +159,7 @@ defmodule OliWeb.Delivery.OpenAndFreeIndexTest do
 
       {:ok, view, _html} = live(conn, ~p"/sections")
 
-      assert render(view) =~ ~s|src="/images/course_default.jpg"|
+      assert render(view) =~ ~s|bg-[url(&#39;/images/course_default.jpg&#39;)]|
     end
 
     test "can search by course name", %{conn: conn, user: user} do

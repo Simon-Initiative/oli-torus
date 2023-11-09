@@ -51,11 +51,7 @@ defmodule OliWeb.Delivery.OpenAndFreeIndex do
     ~H"""
     <main role="main" class="relative flex flex-col pb-[60px]">
       <Components.Header.header {assigns} />
-      <div
-        id="content"
-        phx-mounted={JS.remove_class("opacity-0")}
-        class="transition-all duration-75 opacity-0"
-      >
+      <div id="content" phx-mounted={JS.remove_class("opacity-0")} class="transition-all duration-75">
         <div class="flex items-center h-[247px] bg-gray-300">
           <h1 class="text-[64px] leading-[87px] tracking-[0.02px] pl-[100px]">
             Hi, <span class="font-bold"><%= user_given_name(@ctx) %></span>
@@ -103,7 +99,10 @@ defmodule OliWeb.Delivery.OpenAndFreeIndex do
                   >
                     Complete
                   </span>
-                  <span class="absolute w-32 top-0 left-0 rounded-br-xl rounded-tl-xl bg-primary uppercase py-2 text-white text-center text-[12px] leading-[16px] tracking-[1.2px] font-bold">
+                  <span
+                    role={"role_for_section_#{section.title}"}
+                    class="absolute w-32 top-0 left-0 rounded-br-xl rounded-tl-xl bg-primary uppercase py-2 text-white text-center text-[12px] leading-[16px] tracking-[1.2px] font-bold"
+                  >
                     <%= section.user_role %>
                   </span>
                   <div class="z-10 flex w-full items-center">
