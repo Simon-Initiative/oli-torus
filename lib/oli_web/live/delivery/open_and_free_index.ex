@@ -7,6 +7,7 @@ defmodule OliWeb.Delivery.OpenAndFreeIndex do
   alias Oli.Delivery.Sections
   alias OliWeb.Components.Delivery.Utils
   alias OliWeb.Common.SearchInput
+  alias Oli.Delivery.Metrics
 
   import Ecto.Query, warn: false
   import OliWeb.Common.SourceImage
@@ -20,6 +21,7 @@ defmodule OliWeb.Delivery.OpenAndFreeIndex do
       Sections.list_user_open_and_free_sections(socket.assigns.current_user)
       |> add_user_role(socket.assigns.current_user)
       |> add_instructors()
+      |> add_sections_progress(socket.assigns.current_user.id)
 
     {:ok,
      assign(socket, sections: sections, params: @default_params, filtered_sections: sections)}
@@ -43,8 +45,8 @@ defmodule OliWeb.Delivery.OpenAndFreeIndex do
 
   @impl Phoenix.LiveView
   # TODO add bg image to welcome header when we can export it from Figma
-  # add real course progress (only for student role?)
   # show complete badge if progress = 100%
+  # add tests
 
   def render(assigns) do
     ~H"""
@@ -107,11 +109,11 @@ defmodule OliWeb.Delivery.OpenAndFreeIndex do
                       <h5 class="text-gray-900 text-[36px] leading-[49px] font-semibold dark:text-white">
                         <%= section.title %>
                       </h5>
-                      <div class="flex">
+                      <div :if={!is_independent_instructor?(@current_user)} class="flex">
                         <h4 class="text-[16px] leading-[32px] tracking-[1.28px] uppercase mr-9">
                           Course Progress
                         </h4>
-                        <.progress_bar percent={10} show_percent={true} width="100px" />
+                        <.progress_bar percent={section.progress} show_percent={true} width="100px" />
                       </div>
                     </div>
                     <i class="fa-solid fa-arrow-right ml-auto text-2xl p-[7px] dark:text-white"></i>
@@ -152,6 +154,20 @@ defmodule OliWeb.Delivery.OpenAndFreeIndex do
     sections
     |> Enum.map(fn section ->
       Map.merge(section, %{instructors: Map.get(instructors_per_section, section.id, [])})
+    end)
+  end
+
+  defp add_sections_progress([], _user_id), do: []
+
+  defp add_sections_progress(sections, user_id) do
+    Enum.map(sections, fn section ->
+      progress =
+        Metrics.progress_for(section.id, user_id)
+        |> Kernel.*(100)
+        |> round()
+        |> trunc()
+
+      Map.merge(section, %{progress: progress})
     end)
   end
 
