@@ -15,6 +15,9 @@ defmodule OliWeb.Products.ProductsView do
   alias Oli.Publishing
 
   @limit 20
+  @text_search_tooltip """
+    Search by section title, amount or base project title.
+  """
 
   def live_path(socket, params) do
     if socket.assigns.is_admin_view do
@@ -105,6 +108,7 @@ defmodule OliWeb.Products.ProductsView do
        limit: @limit,
        query: "",
        text_search: "",
+       text_search_tooltip: @text_search_tooltip,
        creation_title: "",
        ctx: ctx
      )}
@@ -122,6 +126,7 @@ defmodule OliWeb.Products.ProductsView do
             change="text_search_change"
             text={@text_search}
             event_target={nil}
+            tooltip={@text_search_tooltip}
           />
         <% else %>
           <Create.render title={@creation_title} change="title" click="create" />

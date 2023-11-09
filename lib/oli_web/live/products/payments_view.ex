@@ -11,6 +11,9 @@ defmodule OliWeb.Products.PaymentsView do
   alias OliWeb.Router.Helpers, as: Routes
 
   @limit 20
+  @text_search_tooltip """
+  Search by payment code and section title.
+  """
 
   def live_path(socket, params) do
     Routes.live_path(socket, OliWeb.Products.PaymentsView, socket.assigns.product_slug, params)
@@ -42,6 +45,7 @@ defmodule OliWeb.Products.PaymentsView do
        offset: 0,
        limit: @limit,
        text_search: "",
+       text_search_tooltip: @text_search_tooltip,
        download_enabled: false
      )}
   end
@@ -67,6 +71,7 @@ defmodule OliWeb.Products.PaymentsView do
         change="text_search_change"
         text={@text_search}
         event_target={nil}
+        tooltip={@text_search_tooltip}
       />
 
       <div class="mb-3" />
