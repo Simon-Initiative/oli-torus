@@ -169,14 +169,14 @@ defmodule Oli.Delivery.Sections.BlueprintTest do
     end
 
     test "browse/3 lists products and applies searching by amount" do
-      product_id_1 = insert(:section, requires_payment: true, amount: Money.new(:USD, 10)).id
-      _product_id_2 = insert(:section, requires_payment: true, amount: Money.new(:USD, 20)).id
+      product_id_1 = insert(:section, requires_payment: true, amount: Money.new(:USD, 500)).id
+      _product_id_2 = insert(:section, requires_payment: true, amount: Money.new(:USD, 100)).id
 
       assert [%Sections.Section{id: ^product_id_1}] =
                Blueprint.browse(
                  %Paging{offset: 0, limit: 2},
                  %Sorting{direction: :asc, field: :title},
-                 text_search: "10"
+                 text_search: "500"
                )
     end
 
