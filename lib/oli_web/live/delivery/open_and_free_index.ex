@@ -10,6 +10,7 @@ defmodule OliWeb.Delivery.OpenAndFreeIndex do
 
   import Ecto.Query, warn: false
   import OliWeb.Common.SourceImage
+  import OliWeb.Components.Delivery.Layouts
 
   @default_params %{text_search: ""}
 
@@ -41,62 +42,82 @@ defmodule OliWeb.Delivery.OpenAndFreeIndex do
   def handle_params(_params, _uri, socket), do: {:noreply, socket}
 
   @impl Phoenix.LiveView
+  # TODO add bg image to welcome header when we can export it from Figma
+  # add real course progress (only for student role?)
+  # show complete badge if progress = 100%
+  # add animations on navigate
+
   def render(assigns) do
     ~H"""
     <main role="main" class="relative flex flex-col pb-[60px]">
       <Components.Header.header {assigns} />
-      <div class="container mx-auto px-8">
-        <h3 class="mt-4 mb-4">My Courses</h3>
-        <div class="flex items-center w-full justify-between">
-          <.link
-            :if={is_independent_instructor?(@current_user)}
-            href={~p"/sections/independent/create"}
-            class="btn btn-md btn-outline-primary"
-          >
-            New Section
-          </.link>
-          <.form for={%{}} phx-change="search_section" class="w-[330px]">
-            <SearchInput.render
-              id="section_search_input"
-              name="search"
-              placeholder="Search by course or instructor name"
-              text={@params.text_search}
-            />
-          </.form>
+
+      <div class="flex items-center h-[247px] bg-gray-300">
+        <h1 class="text-[64px] leading-[87px] tracking-[0.02px] pl-[100px]">
+          Hi, <span class="font-bold"><%= user_given_name(@ctx) %></span>
+        </h1>
+      </div>
+      <div class="flex flex-col items-start py-[60px] px-[100px]">
+        <div class="flex mb-9 w-full">
+          <h3 class="w-full text-[26px] leading-[32px] tracking-[0.02px] font-semibold dark:text-white">
+            Courses available
+          </h3>
+          <div class="ml-auto flex items-center w-full justify-end gap-3">
+            <.link
+              :if={is_independent_instructor?(@current_user)}
+              href={~p"/sections/independent/create"}
+              class="torus-button primary !py-[10px] !px-5 !rounded-[3px] !text-sm flex items-center justify-center"
+            >
+              New Section
+            </.link>
+            <.form for={%{}} phx-change="search_section" class="w-[330px]">
+              <SearchInput.render
+                id="section_search_input"
+                name="search"
+                placeholder="Search by course or instructor name"
+                text={@params.text_search}
+              />
+            </.form>
+          </div>
         </div>
 
-        <div class="grid grid-cols-12 mt-4">
-          <div class="col-span-12">
-            <%= if length(@sections) == 0 do %>
-              <p>You are not enrolled in any courses.</p>
-            <% else %>
-              <div class="flex flex-wrap">
-                <.link
-                  :for={section <- @filtered_sections}
-                  href={~p"/sections/#{section.slug}/overview"}
-                  class="rounded-lg shadow-lg bg-white dark:bg-gray-600 max-w-xs mr-3 mb-3 border-2 border-transparent hover:border-blue-500 hover:no-underline"
-                >
-                  <img
-                    class="rounded-t-lg object-cover h-64 w-96"
-                    src={cover_image(section)}
-                    alt="course image"
-                  />
-                  <span class="badge badge-info ml-2 mt-2 capitalize"><%= section.user_role %></span>
-                  <div class="p-6">
-                    <h5 class="text-gray-900 dark:text-white text-xl font-medium mb-2">
+        <div class="flex w-full mb-10">
+          <%= if length(@sections) == 0 do %>
+            <p>You are not enrolled in any courses.</p>
+          <% else %>
+            <div class="flex flex-col w-full gap-3">
+              <.link
+                :for={section <- @filtered_sections}
+                href={~p"/sections/#{section.slug}/overview"}
+                class={"relative flex items-center self-stretch h-[201px] w-full bg-cover py-12 px-24 bg-[url('#{cover_image(section)}')] text-black hover:text-black dark:text-white dark:hover:text-white rounded-xl shadow-lg hover:no-underline hover:scale-[1.002]"}
+              >
+                <div class="top-0 left-0 rounded-xl absolute w-full h-full backdrop-blur" />
+                <span class="absolute w-32 top-0 right-0 rounded-tr-xl rounded-bl-xl bg-[#0CAF61] uppercase py-2 text-black text-center text-[12px] leading-[16px] tracking-[1.2px] font-bold">
+                  Complete
+                </span>
+                <span class="absolute w-32 top-0 left-0 rounded-br-xl rounded-tl-xl bg-primary uppercase py-2 text-white text-center text-[12px] leading-[16px] tracking-[1.2px] font-bold">
+                  <%= section.user_role %>
+                </span>
+                <div class="z-10 flex w-full items-center">
+                  <div class="flex flex-col items-start gap-6">
+                    <h5 class="text-gray-900 text-[36px] leading-[49px] font-semibold dark:text-white">
                       <%= section.title %>
                     </h5>
-                    <p class="text-gray-700 dark:text-white text-base mb-4">
-                      <%= section.description %>
-                    </p>
+                    <div class="flex">
+                      <h4 class="text-[16px] leading-[32px] tracking-[1.28px] uppercase mr-9">
+                        Course Progress
+                      </h4>
+                      <.progress_bar percent={10} show_percent={true} width="100px" />
+                    </div>
                   </div>
-                </.link>
-                <p :if={length(@filtered_sections) == 0} class="mt-4">
-                  No course found matching <strong>"<%= @params.text_search %>"</strong>
-                </p>
-              </div>
-            <% end %>
-          </div>
+                  <i class="fa-solid fa-arrow-right ml-auto text-2xl p-[7px] dark:text-white"></i>
+                </div>
+              </.link>
+              <p :if={length(@filtered_sections) == 0} class="mt-4">
+                No course found matching <strong>"<%= @params.text_search %>"</strong>
+              </p>
+            </div>
+          <% end %>
         </div>
       </div>
     </main>
