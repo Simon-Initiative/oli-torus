@@ -10,7 +10,14 @@ defmodule OliWeb.Delivery.Student.ExplorationsLive do
   def mount(_params, _session, socket) do
     # TODO: Replace with real implementation that sorts by container. For now, just render all
     # explorations without week headers
-    explorations_by_container = Sections.get_explorations_by_containers(socket.assigns.section)
+    explorations_by_container =
+      Sections.get_explorations_by_containers(socket.assigns.section)
+      |> Enum.map(fn {container, explorations} ->
+        {container,
+         Enum.map(explorations, fn exploration ->
+           {exploration, :not_started}
+         end)}
+      end)
 
     {:ok,
      assign(socket,
@@ -47,9 +54,10 @@ defmodule OliWeb.Delivery.Student.ExplorationsLive do
           </h2>
 
           <.exploration_card
-            :for={exploration <- explorations}
+            :for={{exploration, status} <- explorations}
             ctx={@ctx}
             exploration={exploration}
+            status={status}
             section_slug={@section.slug}
             preview_mode={@preview_mode}
           />
@@ -61,6 +69,7 @@ defmodule OliWeb.Delivery.Student.ExplorationsLive do
 
   attr :ctx, SessionContext, required: true
   attr :exploration, :map, required: true
+  attr :status, :atom, required: true, values: [:not_started, :started]
   attr :section_slug, :string, required: true
   attr :preview_mode, :boolean, default: false
 
@@ -100,7 +109,7 @@ defmodule OliWeb.Delivery.Student.ExplorationsLive do
             variant={:primary}
             href={exploration_link(@section_slug, @exploration, @preview_mode)}
           >
-            Let's Begin
+            <%= exploration_link_text(@status) %>
           </.button>
         </div>
       </div>
@@ -123,6 +132,16 @@ defmodule OliWeb.Delivery.Student.ExplorationsLive do
 
       image ->
         image
+    end
+  end
+
+  defp exploration_link_text(exploration_status) do
+    case exploration_status do
+      :started ->
+        "Continue"
+
+      _ ->
+        "Let's Begin"
     end
   end
 end
