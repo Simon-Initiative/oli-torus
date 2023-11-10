@@ -336,7 +336,6 @@ defmodule Oli.Delivery.SectionsTest do
         ref(:author),
         ref(:proj),
         ref(:unit1_module1),
-        # ref(:unit1),
         refs([:exploration_page3], fn [exploration_page3] ->
           %{
             content: %{
