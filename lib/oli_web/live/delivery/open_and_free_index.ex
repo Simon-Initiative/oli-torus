@@ -24,7 +24,12 @@ defmodule OliWeb.Delivery.OpenAndFreeIndex do
       |> add_sections_progress(socket.assigns.current_user.id)
 
     {:ok,
-     assign(socket, sections: sections, params: @default_params, filtered_sections: sections)}
+     assign(socket,
+       sections: sections,
+       params: @default_params,
+       filtered_sections: sections,
+       show_role_badges: show_role_badges(sections)
+     )}
   end
 
   @impl Phoenix.LiveView
@@ -108,6 +113,7 @@ defmodule OliWeb.Delivery.OpenAndFreeIndex do
                     Complete
                   </span>
                   <span
+                    :if={@show_role_badges}
                     role={"role_badge_for_section_#{section.id}"}
                     class="absolute w-32 top-0 left-0 rounded-br-xl rounded-tl-xl bg-primary uppercase py-2 text-white text-center text-[12px] leading-[16px] tracking-[1.2px] font-bold"
                   >
@@ -201,6 +207,24 @@ defmodule OliWeb.Delivery.OpenAndFreeIndex do
             normalized_text_search
           )
         end)
+    end)
+  end
+
+  _docp =
+    """
+    Returns true if in any of the sections the user has "instructor" role.
+    We do not want to show the role badge for students.
+    """
+
+  defp show_role_badges([]), do: false
+
+  defp show_role_badges(sections) do
+    Enum.reduce_while(sections, false, fn section, acc ->
+      if section.user_role == "instructor" do
+        {:halt, true}
+      else
+        {:cont, acc}
+      end
     end)
   end
 end
