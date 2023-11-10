@@ -19,18 +19,27 @@ export interface ThreadedPost extends Post {
   timestamp: number;
 }
 
+export interface CreatePostResponseSuccess {
+  post: Post;
+  result: 'success' | 'error';
+}
+
+export interface CreatePostResponseError {
+  result: 'error';
+}
+
 export const deletePost = (sectionSlug: string, resourceId: string, postId: number) => {
   return fetch(`/api/v1/discussion/${sectionSlug}/${resourceId}/${postId}`, {
     method: 'DELETE',
   }).then((r) => r.json());
 };
 
-export const writePost = (
+export const createPost = (
   sectionSlug: string,
   resourceId: string,
   content: string,
   parent?: number,
-) => {
+): Promise<CreatePostResponseSuccess | CreatePostResponseError> => {
   const body = {
     content,
     parent_post_id: parent,
@@ -43,6 +52,12 @@ export const writePost = (
     },
   }).then((r) => r.json());
 };
+
+export const postToThreadedPost = (post: Post): ThreadedPost => ({
+  ...post,
+  children: [],
+  timestamp: Date.parse(post.updated_at),
+});
 
 export const getPosts = (sectionSlug: string, resourceId: string) => {
   return fetch(`/api/v1/discussion/${sectionSlug}/${resourceId}`)
@@ -59,12 +74,6 @@ const sortPosts = (a: ThreadedPost, b: ThreadedPost) => {
   }
   return 0;
 };
-
-const postToThreadedPost = (post: Post): ThreadedPost => ({
-  ...post,
-  children: [],
-  timestamp: Date.parse(post.updated_at),
-});
 
 const threadPosts = (
   response: DiscussionResult,

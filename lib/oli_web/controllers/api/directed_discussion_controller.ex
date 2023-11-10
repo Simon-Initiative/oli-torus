@@ -11,7 +11,9 @@ defmodule OliWeb.Api.DirectedDiscussionController do
   alias Oli.Delivery.Sections
 
   alias Oli.Resources.Collaboration
+  alias Phoenix.PubSub
   alias OliWeb.Api.State
+  alias Oli.Resources.Collaboration.Post
 
   def create_post(conn, %{"resource_id" => resource_id, "section_slug" => section_slug}) do
     content = conn.body_params["content"]
@@ -33,9 +35,17 @@ defmodule OliWeb.Api.DirectedDiscussionController do
     |> preload_post_user
     |> case do
       {:ok, post} ->
+        IO.puts("Sending broadcast to #{topic_name(section_slug, resource_id)}")
+
+        PubSub.broadcast(
+          Oli.PubSub,
+          topic_name(section_slug, resource_id),
+          {:post_created, Repo.preload(post, :user), current_user.id }
+        )
+
         json(conn, %{
           "result" => "success",
-          "post" => post_response(post)
+          "post" => Post.post_response(post)
         })
 
       error ->
@@ -46,16 +56,29 @@ defmodule OliWeb.Api.DirectedDiscussionController do
     end
   end
 
+  defp topic_name(project_slug, resource_id) do
+    "collab_space_#{project_slug}_#{resource_id}"
+  end
+
   def delete_post(conn, %{
         "resource_id" => resource_id,
         "section_slug" => section_slug,
         "post_id" => post_id
       }) do
     current_user = Map.get(conn.assigns, :current_user)
+
+    {post_id, ""} = Integer.parse(post_id)
+
     post = Collaboration.get_post_by(%{id: post_id})
 
     if post.user_id == current_user.id do
       Collaboration.delete_posts(post)
+
+      PubSub.broadcast(
+        Oli.PubSub,
+        topic_name(section_slug, resource_id),
+        {:post_deleted, post_id, current_user.id}
+      )
 
       json(conn, %{
         "result" => "success"
@@ -85,7 +108,7 @@ defmodule OliWeb.Api.DirectedDiscussionController do
         resource_id,
         current_user.id
       )
-      |> Enum.map(&post_response/1)
+      |> Enum.map(&Post.post_response/1)
 
     json(conn, %{
       "result" => "success",
@@ -96,16 +119,5 @@ defmodule OliWeb.Api.DirectedDiscussionController do
     })
   end
 
-  defp post_response(post) do
-    %{
-      id: post.id,
-      content: post.content.message,
-      user_id: post.user_id,
-      user_name: post.user.name,
-      parent_post_id: post.parent_post_id,
-      thread_root_id: post.thread_root_id,
-      anonymous: post.anonymous,
-      updated_at: post.updated_at
-    }
-  end
+
 end
