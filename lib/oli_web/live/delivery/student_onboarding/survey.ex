@@ -99,6 +99,7 @@ defmodule OliWeb.Delivery.StudentOnboarding.Survey do
   attr :survey, :map, required: true
   attr :datashop_session_id, :string, required: true
 
+  # TODO add real DOT svg icon instead of the gray rounded placeholder
   def render(assigns) do
     ~H"""
     <div id="eventIntercept" phx-target={@myself} phx-hook="LoadSurveyScripts" class="h-full">
@@ -110,14 +111,23 @@ defmodule OliWeb.Delivery.StudentOnboarding.Survey do
           Something went wrong when loading the survey
         </div>
       <% else %>
+        <div class="flex pt-12 pb-6 px-[84px] gap-3">
+          <div class="h-14 w-14 bg-gray-700 rounded-full shrink-0" />
+          <div class="flex flex-col gap-3">
+            <h2 class="text-[40px] leading-[54px] tracking-[0.02px] dark:text-white">
+              <%= @title %>
+            </h2>
+            <span class="text-[14px] leading-[20px] tracking-[0.02px] dark:text-white">
+              We’ve pulled the information we can from your LMS, but feel free to adjust it!
+            </span>
+          </div>
+        </div>
         <%= if @loaded do %>
-          <h1 class="mb-4"><%= @title %></h1>
-          <hr class="text-gray-400 my-4" />
-          <div class="pb-1">
+          <div class="px-[84px] py-9 my-10 h-[334px]">
             <%= Phoenix.HTML.raw(@html) %>
           </div>
         <% else %>
-          <div class="h-full w-full flex items-center justify-center">
+          <div class="w-full flex items-center justify-center my-10 h-[334px]">
             <span
               class="spinner-border spinner-border-sm text-primary h-16 w-16"
               role="status"
