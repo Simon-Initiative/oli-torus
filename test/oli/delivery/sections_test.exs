@@ -275,7 +275,7 @@ defmodule Oli.Delivery.SectionsTest do
       non_hierarchical_page3: non_hierarchical_page3,
       non_hierarchical_page5: non_hierarchical_page5
     } do
-      page_link_map = Sections.build_page_link_map([pub.id])
+      page_link_map = Sections.build_resource_link_map([pub.id])
 
       assert page_link_map[unit1.resource_id] == [curriculum.resource_id]
       assert page_link_map[unscored_page1.resource_id] == [unit1.resource_id]
@@ -402,10 +402,11 @@ defmodule Oli.Delivery.SectionsTest do
       exploration_page3_id = exploration_page3.id
       exploration_page4_id = exploration_page4.id
 
-      assert [%Oli.Resources.Revision{id: ^exploration_page3_id}] =
-               explorations["Module 1: Nested Unit 1 Module 1"]
-
-      assert [%Oli.Resources.Revision{id: ^exploration_page4_id}] = explorations["Unit 1: Unit 1"]
+      assert [
+               {"Unit 1: Unit 1", [%Oli.Resources.Revision{id: ^exploration_page4_id}]},
+               {"Module 1: Nested Unit 1 Module 1",
+                [%Oli.Resources.Revision{id: ^exploration_page3_id}]}
+             ] = explorations
     end
   end
 end

@@ -1300,10 +1300,10 @@ defmodule Oli.Delivery.Sections do
   hierarchy.
 
   ## Examples
-      iex> build_page_link_map(publication_ids)
+      iex> build_resource_link_map(publication_ids)
       %{1 => [], 2 => [], 3 => [1, 2], 4 => [4]}
   """
-  def build_page_link_map(publication_ids) do
+  def build_resource_link_map(publication_ids) do
     # Returns a MapSet of two element tuples of the form {source_resource_id, target_resource_id}
     # representing all of the links between resources
     all_page_links =
@@ -1351,7 +1351,7 @@ defmodule Oli.Delivery.Sections do
   """
   def get_explorations_by_containers(section) do
     publication_ids = section_publication_ids(section.slug)
-    page_link_map = build_page_link_map(publication_ids)
+    resource_link_map = build_resource_link_map(publication_ids)
 
     container_titles =
       fetch_container_titles(section.slug)
@@ -1361,65 +1361,95 @@ defmodule Oli.Delivery.Sections do
     # get all explorations in the section and group them by their container title
     DeliveryResolver.get_by_purpose(section.slug, :application)
     |> Enum.reduce(%{}, fn exploration, acc ->
-      container_label =
-        case get_hierarchy_container_label(
+      container_id =
+        case get_hierarchy_container(
                exploration.resource_id,
-               page_link_map,
+               resource_link_map,
                container_titles,
                MapSet.new(hierarchy_container_ids),
                MapSet.new()
              ) do
           {nil, _send} -> :default
-          {label, _seen} -> label
+          {id, _seen} -> id
         end
 
-      Map.update(acc, container_label, [exploration], fn explorations ->
+      Map.update(acc, container_id, [exploration], fn explorations ->
         [exploration | explorations]
       end)
     end)
-
-    # |> sort_explorations_by_container_hierarchy(section.slug)
+    |> explorations_to_sorted_list_by_container_hierarchy(section.slug)
+    |> map_hierarchy_container_id_to_label(container_titles)
   end
 
-  # defp sort_explorations_by_container_hierarchy(explorations_map, section_slug) do
-  #   container_numbering_indexes_map = DeliveryResolver.full_hierarchy(section_slug)
-  #     |> Hierarchy.flatten_hierarchy()
-  #     |> Enum.reduce(%{}, fn %HierarchyNode{resource_id: resource_id, revision: revision, numbering: numbering}, acc ->
-  #       if revision.resource_type_id == Oli.Resources.ResourceType.get_id_by_type("container") do
-  #         Map.put(acc, resource_id, numbering.index)
-  #       else
-  #         acc
-  #       end
-  #     end)
+  defp map_hierarchy_container_id_to_label(explorations, container_titles) do
+    Enum.map(explorations, fn {container_id, explorations} ->
+      container_label = Map.get(container_titles, container_id, :default)
 
-  #   Enum.reduce(explorations_map, %{}, fn {container_label, explorations}, acc ->
-  #     container_numbering_index = Map.get(container_numbering_indexes_map, container_label, 0)
-  #     Map.put(acc, container_label, Enum.sort_by(explorations, fn exploration ->
-  #       Map.get(container_numbering_indexes_map, exploration.resource_id, container_numbering_index)
-  #     end))
-  #   end)
-  #   end
-  # end
+      {container_label, explorations}
+    end)
+  end
 
-  defp get_hierarchy_container_label(
-         page_id,
-         page_link_map,
+  defp explorations_to_sorted_list_by_container_hierarchy(explorations_map, section_slug) do
+    fetch_ordered_container_ids(section_slug)
+    |> Enum.reduce(
+      case explorations_map[:default] do
+        nil -> []
+        default -> [{:default, default}]
+      end,
+      fn resource_id, acc ->
+        if explorations_map[resource_id] do
+          [{resource_id, explorations_map[resource_id]} | acc]
+        else
+          acc
+        end
+      end
+    )
+    |> Enum.reverse()
+  end
+
+  def fetch_ordered_container_ids(section_slug) do
+    container_type_id = Oli.Resources.ResourceType.get_id_by_type("container")
+
+    SectionResource
+    |> join(:inner, [sr], s in Section, on: sr.section_id == s.id)
+    |> join(:inner, [sr, s], spp in SectionsProjectsPublications,
+      on: spp.section_id == s.id and spp.project_id == sr.project_id
+    )
+    |> join(:inner, [sr, _, spp], pr in PublishedResource,
+      on: pr.publication_id == spp.publication_id and pr.resource_id == sr.resource_id
+    )
+    |> join(:inner, [sr, _, _, pr], rev in Revision, on: rev.id == pr.revision_id)
+    |> where(
+      [sr, s, _, _, rev],
+      s.slug == ^section_slug and rev.resource_type_id == ^container_type_id
+    )
+    |> select([sr, s, _, _, rev], rev.resource_id)
+    |> order_by([
+      {:asc_nulls_last, fragment("numbering_level")},
+      {:asc_nulls_last, fragment("numbering_index")}
+    ])
+    |> Repo.all()
+  end
+
+  defp get_hierarchy_container(
+         resource_id,
+         resource_link_map,
          container_titles,
          hierarchy_container_ids,
          seen
        ) do
-    if MapSet.member?(seen, page_id) do
+    if MapSet.member?(seen, resource_id) do
       # we've already seen this page, so we've reached a cycle in the recursion and it is not linked
       # from any page in the hierarchy
       {nil, seen}
     else
-      if MapSet.member?(hierarchy_container_ids, page_id) do
+      if MapSet.member?(hierarchy_container_ids, resource_id) do
         # found the first hierarchical container for this page, so return it
-        {Map.get(container_titles, page_id), seen}
+        {resource_id, seen}
       else
-        case Map.get(page_link_map, page_id) do
+        case Map.get(resource_link_map, resource_id) do
           nil ->
-            # page_link_map has no links for this page, so we've reached the end of the
+            # resource_link_map has no links for this resource, so we've reached the end of the
             # recursion and it is not linked from any page in the hierarchy
             {nil, seen}
 
@@ -1428,12 +1458,12 @@ defmodule Oli.Delivery.Sections do
             |> Enum.reduce({nil, seen}, fn id, acc ->
               case acc do
                 {nil, seen} ->
-                  get_hierarchy_container_label(
+                  get_hierarchy_container(
                     id,
-                    page_link_map,
+                    resource_link_map,
                     container_titles,
                     hierarchy_container_ids,
-                    MapSet.put(seen, page_id)
+                    MapSet.put(seen, resource_id)
                   )
 
                 _ ->

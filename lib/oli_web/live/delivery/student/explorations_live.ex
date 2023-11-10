@@ -19,6 +19,8 @@ defmodule OliWeb.Delivery.Student.ExplorationsLive do
          end)}
       end)
 
+    IO.inspect(explorations_by_container, label: "explorations_by_container")
+
     {:ok,
      assign(socket,
        explorations_by_container: explorations_by_container
