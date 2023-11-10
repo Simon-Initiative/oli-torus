@@ -133,7 +133,10 @@ export const loadInitialPageState = createAsyncThunk(
       if (shouldResume && !isReviewMode) {
         // state should be all up to date by now
         const snapshot = getEnvState(defaultGlobalEnv);
-        const resumeId = snapshot['session.resume'];
+        let resumeId = snapshot['session.resume'];
+        if (!resumeId) {
+          resumeId = sessionState['session.resume'];
+        }
         /* console.log('RESUMING!: ', { attempts, resumeId }); */
         // if we are resuming, then session.tutorialScore should be set based on the total attempt.score
         // and session.currentQuestionScore should be 0
