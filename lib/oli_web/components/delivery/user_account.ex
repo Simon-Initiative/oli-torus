@@ -14,13 +14,15 @@ defmodule OliWeb.Components.Delivery.UserAccount do
   attr(:id, :string, required: true)
   attr(:ctx, SessionContext)
   attr(:section, Section, default: nil)
+  attr(:class, :string, default: "")
+  attr(:dropdown_class, :string, default: "")
 
   def menu(assigns) do
     ~H"""
     <div class="relative">
       <button
         id={@id}
-        class="
+        class={"
           flex
           flex-row
           px-3
@@ -34,7 +36,8 @@ defmodule OliWeb.Components.Delivery.UserAccount do
           dark:active:bg-gray-600
           focus:bg-gray-100
           dark:focus:bg-gray-700
-        "
+          #{@class}
+        "}
         phx-click={toggle_menu("##{@id}-dropdown")}
         phx-hook="HideOnOutsideClick"
         phx-value-hide-target={"##{@id}-dropdown"}
@@ -47,7 +50,7 @@ defmodule OliWeb.Components.Delivery.UserAccount do
         </div>
         <.user_icon ctx={@ctx} />
       </button>
-      <.dropdown_menu id={"#{@id}-dropdown"}>
+      <.dropdown_menu id={"#{@id}-dropdown"} class={@dropdown_class}>
         <%= case assigns.ctx do %>
           <% %SessionContext{author: %Author{}, is_admin: true} -> %>
             <.admin_menu_items id={"#{@id}-menu-items-admin"} ctx={@ctx} />
@@ -122,13 +125,14 @@ defmodule OliWeb.Components.Delivery.UserAccount do
   end
 
   attr(:id, :string, required: true)
+  attr(:class, :string, default: "")
   slot :inner_block, required: true
 
   def dropdown_menu(assigns) do
     ~H"""
     <div
       id={@id}
-      class="hidden absolute top-[50px] right-0 z-50 whitespace-nowrap bg-white dark:bg-black p-2 rounded-lg shadow-lg"
+      class={"hidden absolute top-[50px] right-0 z-50 whitespace-nowrap bg-white dark:bg-black p-2 rounded-lg shadow-lg #{@class}"}
     >
       <ul>
         <%= render_slot(@inner_block) %>

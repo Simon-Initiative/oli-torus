@@ -102,7 +102,9 @@ defmodule OliWeb.Components.Delivery.Layouts do
       </div>
       <div class="flex items-center flex-grow-1 p-2">
         <div :if={@section} class="hidden md:block">
-          <span class="text-2xl text-bold"><%= @section.title %></span>
+          <span class="text-2xl text-bold">
+            <%= @section.title %><%= if @preview_mode, do: " (Preview Mode)" %>
+          </span>
         </div>
       </div>
       <div class="flex items-center p-2">
@@ -144,30 +146,27 @@ defmodule OliWeb.Components.Delivery.Layouts do
         dark:bg-delivery-navbar-dark
       "
     >
-      <.nav_link href={~p"/ng23/sections/#{@section.slug}"} is_active={@active_tab == :index}>
+      <.nav_link href={~p"/sections/#{@section.slug}"} is_active={@active_tab == :index}>
         Home
       </.nav_link>
-      <.nav_link
-        href={~p"/ng23/sections/#{@section.slug}/content"}
-        is_active={@active_tab == :content}
-      >
+      <.nav_link href={~p"/sections/#{@section.slug}/content"} is_active={@active_tab == :content}>
         Content
       </.nav_link>
 
       <.nav_link
-        href={~p"/ng23/sections/#{@section.slug}/discussion"}
+        href={~p"/sections/#{@section.slug}/discussion"}
         is_active={@active_tab == :discussion}
       >
         Discussion
       </.nav_link>
       <.nav_link
-        href={~p"/ng23/sections/#{@section.slug}/assignments"}
+        href={~p"/sections/#{@section.slug}/assignments"}
         is_active={@active_tab == :assignments}
       >
         Assignments
       </.nav_link>
       <.nav_link
-        href={~p"/ng23/sections/#{@section.slug}/explorations"}
+        href={~p"/sections/#{@section.slug}/explorations"}
         is_active={@active_tab == :explorations}
       >
         Explorations
@@ -273,7 +272,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
     end
   end
 
-  def logo_link_path(is_preview_mode, section, user) do
+  defp logo_link_path(is_preview_mode, section, user) do
     cond do
       is_preview_mode ->
         "#"

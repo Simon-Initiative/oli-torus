@@ -4,7 +4,13 @@
     </script>
   <% end %>
 
-  <Components.Delivery.NavSidebar.main_with_nav {assigns}>
+  <Components.Delivery.Layouts.header_with_sidebar_nav
+    ctx={@ctx}
+    section={@section}
+    brand={Oli.Branding.get_section_brand(@section)}
+    preview_mode={@preview_mode}
+    active_tab={:content}
+  >
     <div class="relative flex-1 flex flex-col pb-[60px]">
       <div class="w-full md:container md:mx-auto lg:px-10">
         <div class="message flex justify-content-between alert alert-info rounded-none md:rounded-md mb-0 enter-done md:my-5">
@@ -49,5 +55,5 @@
         ) %>
       </div>
     </div>
-  </Components.Delivery.NavSidebar.main_with_nav>
+  </Components.Delivery.Layouts.header_with_sidebar_nav>
 <% end %>

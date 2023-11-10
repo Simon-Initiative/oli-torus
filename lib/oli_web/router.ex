@@ -927,16 +927,25 @@ defmodule OliWeb.Router do
     end
   end
 
-  ### NextGen23
-  scope "/ng23", OliWeb do
+  ### Sections - Student Course Delivery
+  scope "/sections/:section_slug", OliWeb do
     pipe_through([
       :browser,
+      :require_section,
       :delivery,
-      :delivery_and_admin
+      # :delivery_and_admin
+      :require_exploration_pages,
+      :delivery_preview,
+      :delivery_protected,
+      :maybe_gated_resource,
+      :enforce_enroll_and_paywall,
+      :ensure_user_section_visit,
+      :force_required_survey,
+      :pow_email_layout
     ])
 
     ### Student Course Delivery
-    scope "/sections/:section_slug" do
+    scope "/" do
       live_session :delivery,
         root_layout: {OliWeb.LayoutView, :delivery},
         on_mount: [
@@ -955,9 +964,8 @@ defmodule OliWeb.Router do
       end
     end
 
-    # ### Course Delivery Preview
-    # # TODO: Implement preview mode
-    # scope "/sections/:section_slug/preview" do
+    # # TODO: Implement preview modes
+    # scope "/preview" do
     #   live_session :delivery_preview,
     #     root_layout: {OliWeb.LayoutView, :delivery},
     #     on_mount: [
@@ -975,29 +983,7 @@ defmodule OliWeb.Router do
     #     live("/explorations", Delivery.Student.ExplorationsLive, :preview)
     #   end
     # end
-  end
 
-  ### Sections - Student Course Delivery
-  scope "/sections/:section_slug", OliWeb do
-    pipe_through([
-      :browser,
-      :require_section,
-      :delivery,
-      :require_exploration_pages,
-      :delivery_preview,
-      :delivery_protected,
-      :maybe_gated_resource,
-      :enforce_enroll_and_paywall,
-      :ensure_user_section_visit,
-      :force_required_survey,
-      :pow_email_layout
-    ])
-
-    get("/overview", PageDeliveryController, :index)
-
-    get("/exploration", PageDeliveryController, :exploration)
-    get("/discussion", PageDeliveryController, :discussion)
-    get("/my_assignments", PageDeliveryController, :assignments)
     get("/container/:revision_slug", PageDeliveryController, :container)
     get("/page/:revision_slug", PageDeliveryController, :page)
     get("/page_fullscreen/:revision_slug", PageDeliveryController, :page_fullscreen)

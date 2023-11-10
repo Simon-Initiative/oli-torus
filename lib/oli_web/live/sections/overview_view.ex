@@ -127,11 +127,7 @@ defmodule OliWeb.Sections.OverviewView do
         <ReadOnly.render label="Course Section ID" value={@section.slug} />
         <ReadOnly.render label="Title" value={@section.title} />
         <ReadOnly.render label="Course Section Type" value={type_to_string(@section)} />
-        <ReadOnly.render
-          label="URL"
-          show_copy_btn={true}
-          value={Routes.page_delivery_url(OliWeb.Endpoint, :index, @section.slug)}
-        />
+        <ReadOnly.render label="URL" show_copy_btn={true} value={url(~p"/sections/#{@section.slug}")} />
         <%= unless is_nil(@deployment) do %>
           <ReadOnly.render
             label="Institution"

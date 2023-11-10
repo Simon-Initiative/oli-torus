@@ -107,7 +107,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard do
     if preview_mode do
       Routes.instructor_dashboard_path(OliWeb.Endpoint, :preview, section.slug, :content)
     else
-      Routes.page_delivery_path(OliWeb.Endpoint, :index, section.slug)
+      ~p"/sections/#{section.slug}"
     end
   end
 
@@ -203,7 +203,13 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard do
           <%= if @preview_mode do %>
             <UserAccount.preview_user_menu />
           <% else %>
-            <UserAccount.menu id="user-account-menu" ctx={@ctx} section={@section} />
+            <UserAccount.menu
+              id="user-account-menu"
+              ctx={@ctx}
+              section={@section}
+              class="hover:!bg-delivery-instructor-dashboard-header-700"
+              dropdown_class="text-body-color dark:text-body-color-dark"
+            />
           <% end %>
         </div>
 
