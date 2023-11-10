@@ -8,7 +8,6 @@ import {
   evalAssignScript,
   evalScript,
   getAssignScript,
-  getEnvState,
 } from '../../../../../../adaptivity/scripting';
 import { DeliveryRootState } from '../../../rootReducer';
 import { setExtrinsicState, setResourceAttemptGuid } from '../../attempt/slice';
@@ -131,12 +130,8 @@ export const loadInitialPageState = createAsyncThunk(
 
       const shouldResume = attempts.some((attempt: any) => attempt.dateEvaluated !== null);
       if (shouldResume && !isReviewMode) {
-        // state should be all up to date by now
-        const snapshot = getEnvState(defaultGlobalEnv);
-        let resumeId = snapshot['session.resume'];
-        if (!resumeId) {
-          resumeId = sessionState['session.resume'];
-        }
+        //sessionState variable already have this info so lets get it from there because sometimes the defaultGlobalEnv state was not up to date by now
+        const resumeId = sessionState['session.resume'];
         /* console.log('RESUMING!: ', { attempts, resumeId }); */
         // if we are resuming, then session.tutorialScore should be set based on the total attempt.score
         // and session.currentQuestionScore should be 0
