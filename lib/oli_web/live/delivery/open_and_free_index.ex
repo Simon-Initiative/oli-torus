@@ -86,8 +86,8 @@ defmodule OliWeb.Delivery.OpenAndFreeIndex do
             <% else %>
               <div class="flex flex-col w-full gap-3">
                 <.link
-                  :for={{section, index} <- Enum.with_index(@filtered_sections, 1)}
-                  href={~p"/sections/#{section.slug}/overview"}
+                  :for={{section, index} <- Enum.with_index(@filtered_sections)}
+                  href={~p"/ng23/sections/#{section.slug}"}
                   phx-click={JS.add_class("opacity-0", to: "#content")}
                   phx-mounted={
                     JS.transition(
