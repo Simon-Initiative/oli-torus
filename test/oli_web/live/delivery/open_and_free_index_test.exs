@@ -136,7 +136,7 @@ defmodule OliWeb.Delivery.OpenAndFreeIndexTest do
 
       assert render(view) =~ ~s|bg-[url(&#39;https://example.com/some-image-url.png&#39;)]|
       assert has_element?(view, "h5", "The best course ever!")
-      assert has_element?(view, ~s{a[href="/sections/#{section.slug}/overview"]})
+      assert has_element?(view, ~s{a[href="/ng23/sections/#{section.slug}"]})
     end
 
     test "section badge gets rendered correctly considering the user role",
