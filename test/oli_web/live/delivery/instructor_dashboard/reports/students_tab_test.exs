@@ -259,7 +259,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
       assert student_for_tr_1 =~ "Jr, Neymar"
       assert student_for_tr_2 =~ "Di Maria, Angelito"
 
-      assert element(view, "#header_paging div:first-child") |> render() =~
+      assert element(view, "#header_paging > div:first-child") |> render() =~
                "Showing result 3 - 4 of 4 total"
 
       assert element(view, "li.page-item.active a", "2")
@@ -427,6 +427,177 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
       assert payment_status_1 =~ "Grace Period: 8d remaining"
       assert payment_status_2 =~ "Grace Period: 8d remaining"
       assert payment_status_3 =~ "Grace Period: 8d remaining"
+    end
+  end
+
+  describe "page size change" do
+    setup [:instructor_conn, :set_timezone, :section_with_assessment]
+
+    test "lists table elements according to the default page size", %{
+      instructor: instructor,
+      conn: conn
+    } do
+      %{section: section, mod1_pages: mod1_pages} =
+        Oli.Seeder.base_project_with_larger_hierarchy()
+
+      [page_1, _page_2, _page_3] = mod1_pages
+
+      user_1 = insert(:user, %{given_name: "Lionel", family_name: "Messi"})
+      user_2 = insert(:user, %{given_name: "Luis", family_name: "Suarez"})
+      user_3 = insert(:user, %{given_name: "Neymar", family_name: "Jr"})
+      user_4 = insert(:user, %{given_name: "Angelito", family_name: "Di Maria"})
+      user_5 = insert(:user, %{given_name: "Lionel", family_name: "Scaloni"})
+
+      Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
+      Sections.enroll(user_1.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.enroll(user_2.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.enroll(user_3.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.enroll(user_4.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.enroll(user_5.id, section.id, [ContextRoles.get_role(:context_instructor)])
+
+      {:ok, _} = Sections.rebuild_contained_pages(section)
+
+      set_progress(section.id, page_1.published_resource.resource_id, user_1.id, 0.9)
+      set_progress(section.id, page_1.published_resource.resource_id, user_2.id, 0.6)
+      set_progress(section.id, page_1.published_resource.resource_id, user_3.id, 0)
+      set_progress(section.id, page_1.published_resource.resource_id, user_4.id, 0.3)
+      set_progress(section.id, page_1.published_resource.resource_id, user_5.id, 0.7)
+
+      {:ok, view, _html} = live(conn, live_view_students_route(section.slug))
+
+      [student_for_tr_1, student_for_tr_2, student_for_tr_3, student_for_tr_4] =
+        view
+        |> render()
+        |> Floki.parse_fragment!()
+        |> Floki.find(~s{.instructor_dashboard_table tr a})
+        |> Enum.map(fn a_tag -> Floki.text(a_tag) end)
+
+      assert student_for_tr_1 =~ "Di Maria, Angelito"
+      assert student_for_tr_2 =~ "Jr, Neymar"
+      assert student_for_tr_3 =~ "Messi, Lionel"
+      assert student_for_tr_4 =~ "Suarez, Luis"
+
+      # It does not display pagination options
+      refute has_element?(view, "nav[aria-label=\"Paging\"]")
+
+      # It displays page size dropdown
+      assert has_element?(view, "form select.torus-select option[selected]", "20")
+    end
+
+    test "updates page size and list expected elements", %{
+      instructor: instructor,
+      conn: conn
+    } do
+      %{section: section, mod1_pages: mod1_pages} =
+        Oli.Seeder.base_project_with_larger_hierarchy()
+
+      [page_1, _page_2, _page_3] = mod1_pages
+
+      user_1 = insert(:user, %{given_name: "Lionel", family_name: "Messi"})
+      user_2 = insert(:user, %{given_name: "Luis", family_name: "Suarez"})
+      user_3 = insert(:user, %{given_name: "Neymar", family_name: "Jr"})
+      user_4 = insert(:user, %{given_name: "Angelito", family_name: "Di Maria"})
+      user_5 = insert(:user, %{given_name: "Lionel", family_name: "Scaloni"})
+
+      Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
+      Sections.enroll(user_1.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.enroll(user_2.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.enroll(user_3.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.enroll(user_4.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.enroll(user_5.id, section.id, [ContextRoles.get_role(:context_instructor)])
+
+      {:ok, _} = Sections.rebuild_contained_pages(section)
+
+      set_progress(section.id, page_1.published_resource.resource_id, user_1.id, 0.9)
+      set_progress(section.id, page_1.published_resource.resource_id, user_2.id, 0.6)
+      set_progress(section.id, page_1.published_resource.resource_id, user_3.id, 0)
+      set_progress(section.id, page_1.published_resource.resource_id, user_4.id, 0.3)
+      set_progress(section.id, page_1.published_resource.resource_id, user_5.id, 0.7)
+
+      {:ok, view, _html} = live(conn, live_view_students_route(section.slug))
+
+      # Change page size from default (20) to 2
+      view
+      |> element("#header_paging_page_size_form")
+      |> render_change(%{limit: "2"})
+
+      [student_for_tr_1, student_for_tr_2] =
+        view
+        |> render()
+        |> Floki.parse_fragment!()
+        |> Floki.find(~s{.instructor_dashboard_table tr a})
+        |> Enum.map(fn a_tag -> Floki.text(a_tag) end)
+
+      # Page 1
+      assert student_for_tr_1 =~ "Di Maria, Angelito"
+      assert student_for_tr_2 =~ "Jr, Neymar"
+    end
+
+    test "keeps showing the same elements when changing the page size", %{
+      instructor: instructor,
+      conn: conn
+    } do
+      %{section: section, mod1_pages: mod1_pages} =
+        Oli.Seeder.base_project_with_larger_hierarchy()
+
+      [page_1, _page_2, _page_3] = mod1_pages
+
+      user_1 = insert(:user, %{given_name: "Lionel", family_name: "Messi"})
+      user_2 = insert(:user, %{given_name: "Luis", family_name: "Suarez"})
+      user_3 = insert(:user, %{given_name: "Neymar", family_name: "Jr"})
+      user_4 = insert(:user, %{given_name: "Angelito", family_name: "Di Maria"})
+      user_5 = insert(:user, %{given_name: "Lionel", family_name: "Scaloni"})
+
+      Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
+      Sections.enroll(user_1.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.enroll(user_2.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.enroll(user_3.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.enroll(user_4.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.enroll(user_5.id, section.id, [ContextRoles.get_role(:context_instructor)])
+
+      {:ok, _} = Sections.rebuild_contained_pages(section)
+
+      set_progress(section.id, page_1.published_resource.resource_id, user_1.id, 0.9)
+      set_progress(section.id, page_1.published_resource.resource_id, user_2.id, 0.6)
+      set_progress(section.id, page_1.published_resource.resource_id, user_3.id, 0)
+      set_progress(section.id, page_1.published_resource.resource_id, user_4.id, 0.3)
+      set_progress(section.id, page_1.published_resource.resource_id, user_5.id, 0.7)
+
+      # Starts in page 2
+      {:ok, view, _html} =
+        live(
+          conn,
+          live_view_students_route(section.slug, %{
+            limit: 2,
+            offset: 2
+          })
+        )
+
+      [student_for_tr_3, student_for_tr_4] =
+        view
+        |> render()
+        |> Floki.parse_fragment!()
+        |> Floki.find(~s{.instructor_dashboard_table tr a})
+        |> Enum.map(fn a_tag -> Floki.text(a_tag) end)
+
+      # Page 1
+      assert student_for_tr_3 =~ "Messi, Lionel"
+      assert student_for_tr_4 =~ "Suarez, Luis"
+
+      # Change page size from 2 to 1
+      view
+      |> element("#header_paging_page_size_form")
+      |> render_change(%{limit: "1"})
+
+      [student_for_tr_3] =
+        view
+        |> render()
+        |> Floki.parse_fragment!()
+        |> Floki.find(~s{.instructor_dashboard_table tr a})
+        |> Enum.map(fn a_tag -> Floki.text(a_tag) end)
+
+      # Page 3. It keeps showing the same element.
+      assert student_for_tr_3 =~ "Messi, Lionel"
     end
   end
 

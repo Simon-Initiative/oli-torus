@@ -50,6 +50,28 @@ defmodule Oli.Conversation.Dialogue do
             },
             required: ["current_user_id", "section_id"]
           }
+        },
+        %{
+          name: "relevant_course_content",
+          description: """
+          Useful when a question asked by a student cannot be adequately answered by the context of the current lesson.
+          Allows the retrieval of relevant course content from other lessons in the course based on the
+          student's question. Returns an array of course lessons with the following keys: title, url, content.
+          """,
+          parameters: %{
+            type: "object",
+            properties: %{
+              student_input: %{
+                type: "string",
+                description: "The student question or input"
+              },
+              section_id: %{
+                type: "integer",
+                description: "The current course section's id"
+              }
+            },
+            required: ["student_input", "section_id"]
+          }
         }
       ]
     }
@@ -83,11 +105,15 @@ defmodule Oli.Conversation.Dialogue do
   end
 
   def engage(%__MODULE__{messages: messages} = dialogue, :sync) do
-     result = OpenAI.chat_completion([
-      model: "gpt-3.5-turbo",
-      messages: encode_messages(messages),
-      functions: dialogue.functions,
-    ], config(:sync))
+    result =
+      OpenAI.chat_completion(
+        [
+          model: "gpt-3.5-turbo",
+          messages: encode_messages(messages),
+          functions: dialogue.functions
+        ],
+        config(:sync)
+      )
 
     result
   end
@@ -115,7 +141,7 @@ defmodule Oli.Conversation.Dialogue do
     end
   end
 
-  defp config(:sync) do
+  def config(:sync) do
     %OpenAI.Config{
       http_options: [recv_timeout: 30000],
       api_key: System.get_env("OPENAI_API_KEY"),
@@ -124,7 +150,7 @@ defmodule Oli.Conversation.Dialogue do
     }
   end
 
-  defp config(:async) do
+  def config(:async) do
     %OpenAI.Config{
       http_options: [recv_timeout: :infinity, stream_to: self(), async: :once],
       api_key: System.get_env("OPENAI_API_KEY"),

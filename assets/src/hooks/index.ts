@@ -17,13 +17,16 @@ import { ModalLaunch } from './modal';
 import { MonacoEditor } from './monaco_editor';
 import { ProjectsTypeahead } from './projects_typeahead';
 import { ReviewActivity } from './review_activity';
+import { Scroller } from './scroller';
 import { SelectListener } from './select_listener';
+import { SliderScroll } from './slider_scroll';
 import { SubmitForm } from './submit_form';
 import { SystemMessage } from './system_message';
 import { TextInputListener } from './text_input_listener';
 import { TextareaListener } from './textarea_listener';
 import { ThemeToggle } from './theme_toggle';
 import { TooltipInit } from './tooltip';
+import { VideoPlayer } from './video_player';
 
 export const Hooks = {
   GraphNavigation,
@@ -53,4 +56,7 @@ export const Hooks = {
   EmailList,
   ClickOutside,
   HideOnOutsideClick,
+  Scroller,
+  SliderScroll,
+  VideoPlayer,
 };

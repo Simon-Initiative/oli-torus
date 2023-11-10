@@ -1,7 +1,7 @@
 defmodule Oli.Repo.Migrations.AssessmentSettings do
   use Ecto.Migration
 
-   def up do
+  def up do
     alter table(:delivery_settings) do
       add :explanation_strategy, :map
 

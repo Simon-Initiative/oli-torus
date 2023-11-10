@@ -38,9 +38,10 @@ defmodule Oli.Utils.Stagehand do
 
         map =
           if num_instructors > 0 do
-            map = Enum.reduce(1..num_instructors, map, fn _i, map ->
-              Seeder.Section.create_and_enroll_instructor(map, section)
-            end)
+            map =
+              Enum.reduce(1..num_instructors, map, fn _i, map ->
+                Seeder.Section.create_and_enroll_instructor(map, section)
+              end)
 
             Logger.info("Enrolled #{num_instructors} instructors in section #{section_slug}")
 
@@ -51,9 +52,10 @@ defmodule Oli.Utils.Stagehand do
 
         map =
           if num_students > 0 do
-            map = Enum.reduce(1..num_students, map, fn _i, map ->
-              Seeder.Section.create_and_enroll_learner(map, section)
-            end)
+            map =
+              Enum.reduce(1..num_students, map, fn _i, map ->
+                Seeder.Section.create_and_enroll_learner(map, section)
+              end)
 
             Logger.info("Enrolled #{num_students} students in section #{section_slug}")
 
@@ -102,5 +104,4 @@ defmodule Oli.Utils.Stagehand do
       |> Task.await_many()
     end)
   end
-
 end

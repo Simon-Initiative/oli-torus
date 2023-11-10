@@ -170,7 +170,10 @@ defmodule OliWeb.OpenAndFreeController do
         |> Map.put("end_date", utc_end_date)
         |> Map.put("customizations", customizations)
         |> Map.put("has_experiments", has_experiments)
-        |> Map.put("page_prompt_template", Oli.Conversation.DefaultPrompts.get_prompt("page_prompt"))
+        |> Map.put(
+          "page_prompt_template",
+          Oli.Conversation.DefaultPrompts.get_prompt("page_prompt")
+        )
         |> Map.put("analytics_version", :v2)
 
       case create_from_publication(conn, publication, section_params) do
@@ -355,6 +358,7 @@ defmodule OliWeb.OpenAndFreeController do
            {:ok, section} <- Sections.create_section_resources(section, publication),
            {:ok, _} <- Sections.rebuild_contained_pages(section),
            {:ok, _} <- Sections.rebuild_contained_objectives(section),
+           {:ok, _} <- Sections.rebuild_full_hierarchy(section),
            {:ok, _enrollment} <- enroll(conn, section),
            {:ok, updated_section} <- Delivery.maybe_update_section_contains_explorations(section) do
         updated_section

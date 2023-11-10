@@ -151,11 +151,14 @@ defmodule Oli.Authoring.Editing.ContainerEditorTest do
     } do
       assert length(root_container.children) == 3
 
-      {:ok, _} = ContainerEditor.move_to(page1_revision, root_container, unit1_container, author, project)
+      {:ok, _} =
+        ContainerEditor.move_to(page1_revision, root_container, unit1_container, author, project)
 
-      root_container = AuthoringResolver.from_resource_id(project.slug, root_container.resource_id)
+      root_container =
+        AuthoringResolver.from_resource_id(project.slug, root_container.resource_id)
 
-      unit1_container = AuthoringResolver.from_resource_id(project.slug, unit1_container.resource_id)
+      unit1_container =
+        AuthoringResolver.from_resource_id(project.slug, unit1_container.resource_id)
 
       # Ensure that the edit has inserted the moved page into unit1 container
       assert length(root_container.children) == 2
@@ -260,7 +263,8 @@ defmodule Oli.Authoring.Editing.ContainerEditorTest do
       activity_reference = duplicated_page_revision.content["model"] |> Enum.at(1)
       refute activity_reference["activity_id"] == activity_revision.resource_id
 
-      created_activity = Repo.get_by(Oli.Resources.Revision, %{resource_id: activity_reference["activity_id"]})
+      created_activity =
+        Repo.get_by(Oli.Resources.Revision, %{resource_id: activity_reference["activity_id"]})
 
       assert created_activity.objectives["1"] == activity_revision.objectives["1"]
     end

@@ -2,6 +2,7 @@ import React from 'react';
 import { Editor } from 'slate';
 import { ReactEditor } from 'slate-react';
 import { useAuthoringElementContext } from 'components/activities/AuthoringElementProvider';
+import { StemActions } from 'components/activities/common/authoring/actions/stemActions';
 import { MultiInputActions } from 'components/activities/multi_input/actions';
 import { MultiInputSchema } from 'components/activities/multi_input/schema';
 import { InputRefToolbar } from 'components/activities/multi_input/sections/InputRefToolbar';
@@ -44,6 +45,10 @@ export const MultiInputStem: React.FC<Props> = (props) => {
         placeholder="Question..."
         commandContext={commandContext}
         style={{ borderTopLeftRadius: 0 }}
+        textDirection={model.stem.textDirection}
+        onChangeTextDirection={(textDirection) =>
+          dispatch(StemActions.changeTextDirection(textDirection))
+        }
       >
         <InputRefToolbar setEditor={props.setEditor} />
       </RichTextEditorConnected>

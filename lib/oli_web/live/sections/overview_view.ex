@@ -309,26 +309,20 @@ defmodule OliWeb.Sections.OverviewView do
         <% end %>
       </Group.render>
       <Group.render
-        label="Collaborative Space"
-        description="Activate and configure a collaborative space for this section"
+        label="Collaboration Spaces"
+        description="Manage the Collaborative Spaces within the course"
       >
         <div class="container mx-auto">
-          <%= if @collab_space_config && @collab_space_config.status != :disabled do %>
-            <%= live_render(@socket, OliWeb.CollaborationLive.CollabSpaceConfigView,
-              id: "collab_space_config",
-              session: %{
-                "collab_space_config" => @collab_space_config,
-                "section_slug" => @section.slug,
-                "resource_slug" => @resource_slug,
-                "is_overview_render" => true,
-                "is_delivery" => true
-              }
-            ) %>
-          <% else %>
-            <p class="ml-8 mt-2">
-              Collaborative spaces are not enabled by the course project.<br />Please contact a system administrator to enable.
-            </p>
-          <% end %>
+          <%= live_render(@socket, OliWeb.CollaborationLive.CollabSpaceConfigView,
+            id: "collab_space_config",
+            session: %{
+              "collab_space_config" => @collab_space_config,
+              "section_slug" => @section.slug,
+              "resource_slug" => @resource_slug,
+              "is_overview_render" => true,
+              "is_delivery" => true
+            }
+          ) %>
         </div>
       </Group.render>
       <Group.render
@@ -433,13 +427,21 @@ defmodule OliWeb.Sections.OverviewView do
       </Group.render>
 
       <%= if @is_lms_or_system_admin and !@section.open_and_free do %>
-        <Group.render label="LMS Admin" description="Administrator LMS Connection" is_last={!@is_system_admin}>
+        <Group.render
+          label="LMS Admin"
+          description="Administrator LMS Connection"
+          is_last={!@is_system_admin}
+        >
           <UnlinkSection.render unlink="unlink" section={@section} />
         </Group.render>
       <% end %>
 
-      <%= if @is_system_admin do %>
-        <Group.render label="Prompt Templates" description="Edit the GenAI prompt templates" is_last={true}>
+      <div :if={@is_system_admin} class="border-t dark:border-gray-700">
+        <Group.render
+          label="Prompt Templates"
+          description="Edit the GenAI prompt templates"
+          is_last={true}
+        >
           <MonacoEditor.render
             id="attribute-monaco-editor"
             height="200px"
@@ -449,7 +451,13 @@ defmodule OliWeb.Sections.OverviewView do
             set_value="monaco_editor_set_value"
             get_value="monaco_editor_get_value"
             validate_schema_uri=""
-            default_value={if is_nil(@section.page_prompt_template) do "" else @section.page_prompt_template end}
+            default_value={
+              if is_nil(@section.page_prompt_template) do
+                ""
+              else
+                @section.page_prompt_template
+              end
+            }
             default_options={
               %{
                 "readOnly" => false,
@@ -459,18 +467,13 @@ defmodule OliWeb.Sections.OverviewView do
                 "tabSize" => 2
               }
             }
-            use_code_lenses={[
-
-            ]}
+            use_code_lenses={[]}
           />
-          <button
-            type="button"
-            class="btn btn-primary action-button"
-            phx-click="save_prompt">
+          <button type="button" class="btn btn-primary action-button mt-4" phx-click="save_prompt">
             Save
           </button>
         </Group.render>
-      <% end %>
+      </div>
     </Groups.render>
     """
   end
@@ -487,13 +490,15 @@ defmodule OliWeb.Sections.OverviewView do
   end
 
   def handle_event("save_prompt", _, socket) do
-
     section = socket.assigns.section
 
-    Oli.Delivery.Sections.update_section(section, %{page_prompt_template: socket.assigns.page_prompt_template})
+    Oli.Delivery.Sections.update_section(section, %{
+      page_prompt_template: socket.assigns.page_prompt_template
+    })
 
-    socket = socket
-    |> put_flash(:info, "Prompt successfully saved")
+    socket =
+      socket
+      |> put_flash(:info, "Prompt successfully saved")
 
     {:noreply, socket}
   end

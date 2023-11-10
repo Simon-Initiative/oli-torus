@@ -254,6 +254,145 @@ defmodule Oli.Resources.Collaboration do
     end
   end
 
+  defp project_working_publication(project_slug) do
+    from(p in Publication,
+      join: c in Project,
+      on: p.project_id == c.id,
+      where: is_nil(p.published) and c.slug == ^project_slug,
+      select: p.id
+    )
+  end
+
+  @doc """
+  Counts the number of pages with collab space enabled and the number of total pages for a given project,
+  for the current working publication.
+  Returns a tuple like {pages_with_collab_space_enabled_count, total_pages_count}
+
+  ## Examples
+
+      iex> count_collab_spaces_enabled_in_pages_for_project("project_slug")
+      {1, 18}
+  """
+  def count_collab_spaces_enabled_in_pages_for_project(project_slug) do
+    page_id = Oli.Resources.ResourceType.get_id_by_type("page")
+
+    from(m in PublishedResource,
+      join: rev in Revision,
+      on: rev.id == m.revision_id,
+      where:
+        m.publication_id in subquery(project_working_publication(project_slug)) and
+          rev.resource_type_id == ^page_id and rev.deleted == false,
+      select: {
+        count(
+          fragment(
+            "CASE WHEN ?->> ? = ? THEN 1 ELSE NULL END",
+            rev.collab_space_config,
+            ^"status",
+            ^"enabled"
+          )
+        ),
+        count(rev)
+      }
+    )
+    |> Repo.one()
+  end
+
+  @doc """
+  Counts the number of pages with collab space enabled and the number of total pages for a given section,
+  for the current working publication.
+  Returns a tuple like {pages_with_collab_space_enabled_count, total_pages_count}
+
+  ## Examples
+
+      iex> count_collab_spaces_enabled_in_pages_for_section("section_slug")
+      {1, 18}
+  """
+  def count_collab_spaces_enabled_in_pages_for_section(section_slug) do
+    page_id = Oli.Resources.ResourceType.get_id_by_type("page")
+
+    from([sr: sr, rev: rev] in DeliveryResolver.section_resource_revisions(section_slug),
+      where: rev.resource_type_id == ^page_id and rev.deleted == false,
+      select: {
+        count(
+          fragment(
+            "CASE WHEN ?->> ? = ? THEN 1 ELSE NULL END",
+            sr.collab_space_config,
+            ^"status",
+            ^"enabled"
+          )
+        ),
+        count(rev)
+      }
+    )
+    |> Repo.one()
+  end
+
+  @doc """
+  Disables all page collaborative spaces for a given project,
+  for the current working publication.
+  """
+
+  def disable_all_page_collab_spaces_for_project(project_slug) do
+    page_id = Oli.Resources.ResourceType.get_id_by_type("page")
+
+    from(rev in Revision,
+      join: m in PublishedResource,
+      on: m.revision_id == rev.id,
+      where:
+        m.publication_id in subquery(project_working_publication(project_slug)) and
+          rev.resource_type_id == ^page_id and rev.deleted == false,
+      select: rev
+    )
+    |> Repo.update_all(set: [collab_space_config: %CollabSpaceConfig{}])
+  end
+
+  @doc """
+  Enables all page collaborative spaces for a given project,
+  for the current working publication, bulk applying the collab space config provided.
+  """
+
+  def enable_all_page_collab_spaces_for_project(project_slug, collab_space_config) do
+    page_id = Oli.Resources.ResourceType.get_id_by_type("page")
+
+    from(rev in Revision,
+      join: m in PublishedResource,
+      on: m.revision_id == rev.id,
+      where:
+        m.publication_id in subquery(project_working_publication(project_slug)) and
+          rev.resource_type_id == ^page_id and rev.deleted == false,
+      select: rev
+    )
+    |> Repo.update_all(set: [collab_space_config: collab_space_config])
+  end
+
+  @doc """
+  Disables all page collaborative spaces for a given section.
+  """
+
+  def disable_all_page_collab_spaces_for_section(section_slug) do
+    page_id = Oli.Resources.ResourceType.get_id_by_type("page")
+
+    from([sr: sr, rev: rev] in DeliveryResolver.section_resource_revisions(section_slug),
+      where: rev.resource_type_id == ^page_id and rev.deleted == false,
+      select: sr
+    )
+    |> Repo.update_all(set: [collab_space_config: %CollabSpaceConfig{}])
+  end
+
+  @doc """
+  Enables all page collaborative spaces for a given section, bulk applying the collab space config provided.
+  """
+
+  def enable_all_page_collab_spaces_for_section(section_slug, collab_space_config) do
+    page_id = Oli.Resources.ResourceType.get_id_by_type("page")
+
+    from([sr: sr, rev: rev] in DeliveryResolver.section_resource_revisions(section_slug),
+      where: rev.resource_type_id == ^page_id and rev.deleted == false,
+      select: sr
+    )
+    |> Repo.update_all(set: [collab_space_config: collab_space_config])
+  end
+
   # ------------------------------------------------------------
   # Posts
 

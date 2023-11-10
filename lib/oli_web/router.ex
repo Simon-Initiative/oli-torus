@@ -413,6 +413,8 @@ defmodule OliWeb.Router do
     post("/:project_id/export", ProjectController, :download_export)
     post("/:project_id/duplicate", ProjectController, :clone_project)
 
+    live("/:project_id/embeddings", Search.EmbeddingsLive)
+
     # Alternatives Groups
     live("/:project_id/alternatives", Resources.AlternativesEditor)
 
@@ -951,24 +953,28 @@ defmodule OliWeb.Router do
         live("/assignments", Delivery.Student.AssignmentsLive)
         live("/explorations", Delivery.Student.ExplorationsLive)
       end
-
-      # TODO: Implement preview mode for NextGen23
-      # live_session :delivery_preview,
-      #   on_mount: [
-      #     OliWeb.LiveSessionPlugs.SetSection,
-      #     OliWeb.LiveSessionPlugs.SetCurrentUser,
-      #     OliWeb.LiveSessionPlugs.SetSessionContext,
-      #     OliWeb.LiveSessionPlugs.SetBrand,
-      #     OliWeb.LiveSessionPlugs.SetPreviewMode,
-      #     OliWeb.LiveSessionPlugs.RequireEnrollment
-      #   ] do
-      #   live("/", Delivery.Student.IndexLive, :preview)
-      #   live("/content", Delivery.Student.ContentLive, :preview)
-      #   live("/discussion", Delivery.Student.DiscussionLive, :preview)
-      #   live("/assignments", Delivery.Student.AssignmentsLive, :preview)
-      #   live("/explorations", Delivery.Student.ExplorationsLive, :preview)
-      # end
     end
+
+    # ### Course Delivery Preview
+    # # TODO: Implement preview mode
+    # scope "/sections/:section_slug/preview" do
+    #   live_session :delivery_preview,
+    #     root_layout: {OliWeb.LayoutView, :delivery},
+    #     on_mount: [
+    #       OliWeb.LiveSessionPlugs.SetSection,
+    #       OliWeb.LiveSessionPlugs.SetCurrentUser,
+    #       OliWeb.LiveSessionPlugs.SetSessionContext,
+    #       OliWeb.LiveSessionPlugs.SetBrand,
+    #       OliWeb.LiveSessionPlugs.SetPreviewMode,
+    #       OliWeb.LiveSessionPlugs.RequireEnrollment
+    #     ] do
+    #     live("/", Delivery.Student.IndexLive, :preview)
+    #     live("/content", Delivery.Student.ContentLive, :preview)
+    #     live("/discussion", Delivery.Student.DiscussionLive, :preview)
+    #     live("/assignments", Delivery.Student.AssignmentsLive, :preview)
+    #     live("/explorations", Delivery.Student.ExplorationsLive, :preview)
+    #   end
+    # end
   end
 
   ### Sections - Student Course Delivery
@@ -1051,6 +1057,9 @@ defmodule OliWeb.Router do
       on_mount: [
         OliWeb.LiveSessionPlugs.SetSection,
         OliWeb.LiveSessionPlugs.SetCurrentUser,
+        OliWeb.LiveSessionPlugs.SetSessionContext,
+        OliWeb.LiveSessionPlugs.SetBrand,
+        OliWeb.LiveSessionPlugs.SetPreviewMode,
         OliWeb.LiveSessionPlugs.RequireEnrollment
       ] do
       live(
@@ -1298,6 +1307,7 @@ defmodule OliWeb.Router do
 
     get("/:project_slug/import/index", IngestController, :index_csv)
     post("/:project_slug/import/upload_csv", IngestController, :upload_csv)
+    get("/:project_slug/import/download", IngestController, :download_current)
     live("/:project_slug/import/csv", Import.CSVImportView)
 
     live("/ingest", Admin.Ingest)

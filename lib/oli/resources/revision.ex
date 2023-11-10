@@ -18,7 +18,14 @@ defmodule Oli.Resources.Revision do
              :max_attempts,
              :time_limit,
              :scoring_strategy_id,
-             :activity_type_id
+             :activity_type_id,
+             :title,
+             :resource_id,
+             :intro_video,
+             :poster_image,
+             :intro_content,
+             :duration_minutes,
+             :id
            ]}
   schema "revisions" do
     #
@@ -46,7 +53,6 @@ defmodule Oli.Resources.Revision do
     field :intro_video, :string, default: nil
     field :poster_image, :string, default: nil
 
-
     # 0 represents "unlimited" attempts
     field :max_attempts, :integer, default: 0
     field :recommended_attempts, :integer, default: 0
@@ -58,7 +64,9 @@ defmodule Oli.Resources.Revision do
 
     embeds_one :legacy, Oli.Resources.Legacy, on_replace: :delete
     embeds_one :explanation_strategy, Oli.Resources.ExplanationStrategy, on_replace: :delete
-    embeds_one :collab_space_config, Oli.Resources.Collaboration.CollabSpaceConfig, on_replace: :delete
+
+    embeds_one :collab_space_config, Oli.Resources.Collaboration.CollabSpaceConfig,
+      on_replace: :delete
 
     belongs_to :scoring_strategy, Oli.Resources.ScoringStrategy
     belongs_to :activity_type, Oli.Activities.ActivityRegistration

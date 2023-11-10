@@ -3,7 +3,6 @@ defmodule Oli.Analytics.Summary.ResourcePartResponse do
   import Ecto.Changeset
 
   schema "resource_part_responses" do
-
     belongs_to(:resource, Oli.Resources.Resource)
     field(:part_id, :string)
     field(:response, :string)
@@ -16,5 +15,4 @@ defmodule Oli.Analytics.Summary.ResourcePartResponse do
     |> cast(attrs, [:resource_id, :part_id, :response, :label])
     |> validate_required([:resource_id, :part_id, :response, :label])
   end
-
 end

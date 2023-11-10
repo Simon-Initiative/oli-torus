@@ -12,8 +12,17 @@ export const HintCard: React.FC<{
   hint: Hint;
   updateOne: (id: ID, content: Descendant[]) => void;
   updateOneEditor: (id: ID, editor: EditorType) => void;
+  updateOneTextDirection: (id: ID, textDirection: string) => void;
   projectSlug: string;
-}> = ({ title, placeholder, hint, updateOne, updateOneEditor, projectSlug }) => {
+}> = ({
+  title,
+  placeholder,
+  hint,
+  updateOne,
+  updateOneEditor,
+  updateOneTextDirection,
+  projectSlug,
+}) => {
   return (
     <Card.Card>
       <Card.Title>{title}</Card.Title>
@@ -27,6 +36,8 @@ export const HintCard: React.FC<{
           onEditorTypeChange={(editor) => updateOneEditor(hint.id, editor)}
           allowBlockElements={true}
           projectSlug={projectSlug}
+          textDirection={hint.textDirection}
+          onChangeTextDirection={(textDirection) => updateOneTextDirection(hint.id, textDirection)}
         />
       </Card.Content>
     </Card.Card>

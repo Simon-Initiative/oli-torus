@@ -1,5 +1,6 @@
 defmodule Oli.SectionsTest do
   use Oli.DataCase
+  use Oban.Testing, repo: Oli.Repo
 
   import Oli.Factory
   import Oli.Utils.Seeder.Utils
@@ -15,6 +16,7 @@ defmodule Oli.SectionsTest do
   alias Oli.Delivery.Snapshots.Snapshot
   alias Oli.Delivery.Snapshots
   alias Oli.Delivery.Transfer
+  alias Oli.Resources.ResourceType
 
   describe "enrollments" do
     @valid_attrs %{
@@ -1056,6 +1058,46 @@ defmodule Oli.SectionsTest do
           section_tag: :section
         )
 
+      # one week ago
+      one_week_ago = DateTime.utc_now() |> DateTime.add(-7, :day) |> DateTime.truncate(:second)
+      a_day_later = DateTime.utc_now() |> DateTime.add(-6, :day) |> DateTime.truncate(:second)
+
+      # Simulate customizing assessment settings for page1
+      page1_sr = Oli.Delivery.Sections.get_section_resource(section.id, page1.id)
+
+      {:ok, _} =
+        Oli.Delivery.Sections.update_section_resource(page1_sr, %{
+          scoring_strategy_id: 2,
+          scheduling_type: :due_by,
+          manually_scheduled: true,
+          start_date: one_week_ago,
+          end_date: a_day_later,
+          collab_space_config: %Oli.Resources.Collaboration.CollabSpaceConfig{
+            status: :enabled,
+            threaded: false,
+            auto_accept: false,
+            show_full_history: false,
+            anonymous_posting: false,
+            participation_min_posts: 100,
+            participation_min_replies: 101
+          },
+          explanation_strategy: %Oli.Resources.ExplanationStrategy{
+            type: :after_set_num_attempts,
+            set_num_attempts: 10
+          },
+          max_attempts: 200,
+          retake_mode: :targeted,
+          # "I've got the same combination on my luggage"
+          password: "12345",
+          late_submit: :disallow,
+          late_start: :disallow,
+          time_limit: 90,
+          grace_period: 100,
+          review_submission: :disallow,
+          feedback_mode: :scheduled,
+          feedback_scheduled_date: a_day_later
+        })
+
       # verify the curriculum precondition
       hierarchy = DeliveryResolver.full_hierarchy(section.slug)
 
@@ -1194,6 +1236,33 @@ defmodule Oli.SectionsTest do
              |> Enum.at(1)
              |> Map.get(:resource_id) == nested_page2.id
 
+      # verify the assessment settings remain unchanged
+      page1_sr = Oli.Delivery.Sections.get_section_resource(section.id, page1.id)
+      assert page1_sr.scoring_strategy_id == 2
+      assert page1_sr.scheduling_type == :due_by
+      assert page1_sr.manually_scheduled == true
+      assert page1_sr.start_date == one_week_ago
+      assert page1_sr.end_date == a_day_later
+      assert page1_sr.collab_space_config.status == :enabled
+      assert page1_sr.collab_space_config.threaded == false
+      assert page1_sr.collab_space_config.auto_accept == false
+      assert page1_sr.collab_space_config.show_full_history == false
+      assert page1_sr.collab_space_config.anonymous_posting == false
+      assert page1_sr.collab_space_config.participation_min_posts == 100
+      assert page1_sr.collab_space_config.participation_min_replies == 101
+      assert page1_sr.explanation_strategy.type == :after_set_num_attempts
+      assert page1_sr.explanation_strategy.set_num_attempts == 10
+      assert page1_sr.max_attempts == 200
+      assert page1_sr.retake_mode == :targeted
+      assert page1_sr.password == "12345"
+      assert page1_sr.late_submit == :disallow
+      assert page1_sr.late_start == :disallow
+      assert page1_sr.time_limit == 90
+      assert page1_sr.grace_period == 100
+      assert page1_sr.review_submission == :disallow
+      assert page1_sr.feedback_mode == :scheduled
+      assert page1_sr.feedback_scheduled_date == a_day_later
+
       # verify the final number of section resource records matches what is
       # expected to guard against section resource record leaks
       section_id = section.id
@@ -1205,6 +1274,403 @@ defmodule Oli.SectionsTest do
         |> Repo.all()
 
       assert section_resources |> Enum.count() == 7
+    end
+
+    @tag capture_log: true
+    test "apply_publication_update/2 applies major changes to section based from product when apply_major_updates is true",
+         %{
+           author: author,
+           project: project,
+           container: %{resource: container_resource, revision: container_revision},
+           page1: page1,
+           revision1: revision1,
+           page2: page2,
+           revision2: revision2
+         } do
+      {:ok, _initial_pub} = Publishing.publish_project(project, "some changes")
+
+      seeds =
+        %{product: product} =
+        Oli.Utils.Seeder.Project.create_product(%{}, "Product 1", project, product_tag: :product)
+
+      Oli.Delivery.Sections.update_section(product, %{apply_major_updates: true})
+
+      %{section: section} =
+        Oli.Utils.Seeder.Section.create_section_from_product(
+          seeds,
+          ref(:product),
+          nil,
+          nil,
+          %{blueprint_id: product.id},
+          section_tag: :section
+        )
+
+      section = Repo.preload(section, :blueprint)
+      # one week ago
+      one_week_ago = DateTime.utc_now() |> DateTime.add(-7, :day) |> DateTime.truncate(:second)
+      a_day_later = DateTime.utc_now() |> DateTime.add(-6, :day) |> DateTime.truncate(:second)
+
+      # Simulate customizing assessment settings for page1
+      page1_sr = Oli.Delivery.Sections.get_section_resource(section.id, page1.id)
+
+      {:ok, _} =
+        Oli.Delivery.Sections.update_section_resource(page1_sr, %{
+          scoring_strategy_id: 2,
+          scheduling_type: :due_by,
+          manually_scheduled: true,
+          start_date: one_week_ago,
+          end_date: a_day_later,
+          collab_space_config: %Oli.Resources.Collaboration.CollabSpaceConfig{
+            status: :enabled,
+            threaded: false,
+            auto_accept: false,
+            show_full_history: false,
+            anonymous_posting: false,
+            participation_min_posts: 100,
+            participation_min_replies: 101
+          },
+          explanation_strategy: %Oli.Resources.ExplanationStrategy{
+            type: :after_set_num_attempts,
+            set_num_attempts: 10
+          },
+          max_attempts: 200,
+          retake_mode: :targeted,
+          # "I've got the same combination on my luggage"
+          password: "12345",
+          late_submit: :disallow,
+          late_start: :disallow,
+          time_limit: 90,
+          grace_period: 100,
+          review_submission: :disallow,
+          feedback_mode: :scheduled,
+          feedback_scheduled_date: a_day_later
+        })
+
+      # verify the curriculum precondition
+      hierarchy = DeliveryResolver.full_hierarchy(section.slug)
+
+      assert hierarchy.children |> Enum.count() == 2
+      assert hierarchy.children |> Enum.at(0) |> Map.get(:resource_id) == page1.id
+      assert hierarchy.children |> Enum.at(1) |> Map.get(:resource_id) == page2.id
+
+      # make some changes to project and publish
+      working_pub = Publishing.project_working_publication(project.slug)
+
+      # minor resource content changes
+      page1_changes = %{
+        "content" => %{
+          "model" => [
+            %{
+              "type" => "content",
+              "children" => [%{"type" => "p", "children" => [%{"text" => "SECOND"}]}]
+            }
+          ]
+        }
+      }
+
+      Seeder.revise_page(page1_changes, page1, revision1, working_pub)
+
+      # add some pages to the root container
+      %{resource: p1_new_page1, revision: _revision} =
+        Seeder.create_page("P1 New Page one", working_pub, project, author)
+
+      %{resource: p1_new_page2, revision: _revision} =
+        Seeder.create_page("P1 New Page two", working_pub, project, author)
+
+      container_revision =
+        Seeder.attach_pages_to(
+          [p1_new_page1, p1_new_page2],
+          container_resource,
+          container_revision,
+          working_pub
+        )
+
+      # create a unit
+      %{resource: unit1_resource, revision: unit1_revision} =
+        Seeder.create_container("Unit 1", working_pub, project, author)
+
+      # create some nested children
+      %{resource: nested_page1, revision: _nested_revision1} =
+        Seeder.create_page("Nested Page One", working_pub, project, author)
+
+      %{resource: nested_page2, revision: _nested_revision2} =
+        Seeder.create_page(
+          "Nested Page Two",
+          working_pub,
+          project,
+          author,
+          Seeder.create_sample_content()
+        )
+
+      _unit1_revision =
+        Seeder.attach_pages_to(
+          [nested_page1, nested_page2],
+          unit1_resource,
+          unit1_revision,
+          working_pub
+        )
+
+      container_revision =
+        Seeder.attach_pages_to(
+          [unit1_resource],
+          container_resource,
+          container_revision,
+          working_pub
+        )
+
+      # remove page 2
+      _deleted_revision =
+        Seeder.delete_page(page2, revision2, container_resource, container_revision, working_pub)
+
+      # publish changes
+      {:ok, latest_publication} = Publishing.publish_project(project, "some changes")
+
+      # apply the new publication update to the section
+      Sections.apply_publication_update(section, latest_publication.id)
+
+      # reload latest hierarchy
+      hierarchy = DeliveryResolver.full_hierarchy(section.slug)
+
+      # verify non-structural changes are applied as expected
+      assert hierarchy.children |> Enum.at(0) |> then(& &1.revision.content) ==
+               page1_changes["content"]
+
+      # verify the updated curriculum structure matches the expected result
+
+      assert hierarchy.children |> Enum.count() == 4
+      assert hierarchy.children |> Enum.at(0) |> Map.get(:resource_id) == page1.id
+      assert hierarchy.children |> Enum.at(1) |> Map.get(:resource_id) == p1_new_page1.id
+      assert hierarchy.children |> Enum.at(2) |> Map.get(:resource_id) == p1_new_page2.id
+      assert hierarchy.children |> Enum.at(3) |> Map.get(:resource_id) == unit1_resource.id
+
+      assert hierarchy.children |> Enum.at(3) |> Map.get(:children) |> Enum.count() == 2
+
+      assert hierarchy.children
+             |> Enum.at(3)
+             |> Map.get(:children)
+             |> Enum.at(0)
+             |> Map.get(:resource_id) == nested_page1.id
+
+      assert hierarchy.children
+             |> Enum.at(3)
+             |> Map.get(:children)
+             |> Enum.at(1)
+             |> Map.get(:resource_id) == nested_page2.id
+
+      # verify the assessment settings remain unchanged
+      page1_sr = Oli.Delivery.Sections.get_section_resource(section.id, page1.id)
+      assert page1_sr.scoring_strategy_id == 2
+      assert page1_sr.scheduling_type == :due_by
+      assert page1_sr.manually_scheduled == true
+      assert page1_sr.start_date == one_week_ago
+      assert page1_sr.end_date == a_day_later
+      assert page1_sr.collab_space_config.status == :enabled
+      assert page1_sr.collab_space_config.threaded == false
+      assert page1_sr.collab_space_config.auto_accept == false
+      assert page1_sr.collab_space_config.show_full_history == false
+      assert page1_sr.collab_space_config.anonymous_posting == false
+      assert page1_sr.collab_space_config.participation_min_posts == 100
+      assert page1_sr.collab_space_config.participation_min_replies == 101
+      assert page1_sr.explanation_strategy.type == :after_set_num_attempts
+      assert page1_sr.explanation_strategy.set_num_attempts == 10
+      assert page1_sr.max_attempts == 200
+      assert page1_sr.retake_mode == :targeted
+      assert page1_sr.password == "12345"
+      assert page1_sr.late_submit == :disallow
+      assert page1_sr.late_start == :disallow
+      assert page1_sr.time_limit == 90
+      assert page1_sr.grace_period == 100
+      assert page1_sr.review_submission == :disallow
+      assert page1_sr.feedback_mode == :scheduled
+      assert page1_sr.feedback_scheduled_date == a_day_later
+
+      # verify the final number of section resource records matches what is
+      # expected to guard against section resource record leaks
+      section_id = section.id
+
+      section_resources =
+        from(sr in SectionResource,
+          where: sr.section_id == ^section_id
+        )
+        |> Repo.all()
+
+      assert section_resources |> Enum.count() == 7
+    end
+
+    @tag capture_log: true
+    test "apply_publication_update/2 applies minor changes to section based from product when apply_major_updates is false",
+         %{
+           author: author,
+           project: project,
+           container: %{resource: container_resource, revision: container_revision},
+           page1: page1,
+           revision1: revision1,
+           page2: page2,
+           revision2: revision2
+         } do
+      {:ok, _initial_pub} = Publishing.publish_project(project, "some changes")
+
+      seeds =
+        %{product: product} =
+        Oli.Utils.Seeder.Project.create_product(%{}, "Product 1", project, product_tag: :product)
+
+      %{section: section} =
+        Oli.Utils.Seeder.Section.create_section_from_product(
+          seeds,
+          ref(:product),
+          nil,
+          nil,
+          %{apply_major_updates: false, blueprint_id: product.id},
+          section_tag: :section
+        )
+
+      section = Repo.preload(section, :blueprint)
+
+      # one week ago
+      one_week_ago = DateTime.utc_now() |> DateTime.add(-7, :day) |> DateTime.truncate(:second)
+      a_day_later = DateTime.utc_now() |> DateTime.add(-6, :day) |> DateTime.truncate(:second)
+
+      # Simulate customizing assessment settings for page1
+      page1_sr = Oli.Delivery.Sections.get_section_resource(section.id, page1.id)
+
+      {:ok, _} =
+        Oli.Delivery.Sections.update_section_resource(page1_sr, %{
+          scoring_strategy_id: 2,
+          scheduling_type: :due_by,
+          manually_scheduled: true,
+          start_date: one_week_ago,
+          end_date: a_day_later,
+          collab_space_config: %Oli.Resources.Collaboration.CollabSpaceConfig{
+            status: :enabled,
+            threaded: false,
+            auto_accept: false,
+            show_full_history: false,
+            anonymous_posting: false,
+            participation_min_posts: 100,
+            participation_min_replies: 101
+          },
+          explanation_strategy: %Oli.Resources.ExplanationStrategy{
+            type: :after_set_num_attempts,
+            set_num_attempts: 10
+          },
+          max_attempts: 200,
+          retake_mode: :targeted,
+          # "I've got the same combination on my luggage"
+          password: "12345",
+          late_submit: :disallow,
+          late_start: :disallow,
+          time_limit: 90,
+          grace_period: 100,
+          review_submission: :disallow,
+          feedback_mode: :scheduled,
+          feedback_scheduled_date: a_day_later
+        })
+
+      # verify the curriculum precondition
+      hierarchy = DeliveryResolver.full_hierarchy(section.slug)
+
+      assert hierarchy.children |> Enum.count() == 2
+      assert hierarchy.children |> Enum.at(0) |> Map.get(:resource_id) == page1.id
+      assert hierarchy.children |> Enum.at(1) |> Map.get(:resource_id) == page2.id
+
+      # make some changes to project and publish
+      working_pub = Publishing.project_working_publication(project.slug)
+
+      # minor resource content changes
+      page1_changes = %{
+        "content" => %{
+          "model" => [
+            %{
+              "type" => "content",
+              "children" => [%{"type" => "p", "children" => [%{"text" => "SECOND"}]}]
+            }
+          ]
+        }
+      }
+
+      Seeder.revise_page(page1_changes, page1, revision1, working_pub)
+
+      # add some pages to the root container
+      %{resource: p1_new_page1, revision: _revision} =
+        Seeder.create_page("P1 New Page one", working_pub, project, author)
+
+      %{resource: p1_new_page2, revision: _revision} =
+        Seeder.create_page("P1 New Page two", working_pub, project, author)
+
+      container_revision =
+        Seeder.attach_pages_to(
+          [p1_new_page1, p1_new_page2],
+          container_resource,
+          container_revision,
+          working_pub
+        )
+
+      # create a unit
+      %{resource: unit1_resource, revision: unit1_revision} =
+        Seeder.create_container("Unit 1", working_pub, project, author)
+
+      # create some nested children
+      %{resource: nested_page1, revision: _nested_revision1} =
+        Seeder.create_page("Nested Page One", working_pub, project, author)
+
+      %{resource: nested_page2, revision: _nested_revision2} =
+        Seeder.create_page(
+          "Nested Page Two",
+          working_pub,
+          project,
+          author,
+          Seeder.create_sample_content()
+        )
+
+      _unit1_revision =
+        Seeder.attach_pages_to(
+          [nested_page1, nested_page2],
+          unit1_resource,
+          unit1_revision,
+          working_pub
+        )
+
+      container_revision =
+        Seeder.attach_pages_to(
+          [unit1_resource],
+          container_resource,
+          container_revision,
+          working_pub
+        )
+
+      # remove page 2
+      _deleted_revision =
+        Seeder.delete_page(page2, revision2, container_resource, container_revision, working_pub)
+
+      # publish changes
+      {:ok, latest_publication} = Publishing.publish_project(project, "some changes")
+
+      # apply the new publication update to the section
+      Sections.apply_publication_update(section, latest_publication.id)
+
+      # reload latest hierarchy
+      section_hierarchy = DeliveryResolver.full_hierarchy(section.slug)
+
+      # verify non-structural changes are applied as expected
+      assert section_hierarchy.children |> Enum.at(0) |> then(& &1.revision.content) ==
+               page1_changes["content"]
+
+      # verify structural changes are not applied to section
+      assert section_hierarchy.children |> Enum.count() == 2
+      assert section_hierarchy.children |> Enum.at(0) |> Map.get(:resource_id) == page1.id
+      assert section_hierarchy.children |> Enum.at(1) |> Map.get(:resource_id) == page2.id
+
+      # verify the final number of section resource records matches what is
+      # expected to guard against section resource record leaks
+      section_id = section.id
+
+      section_resources =
+        from(sr in SectionResource,
+          where: sr.section_id == ^section_id
+        )
+        |> Repo.all()
+
+      assert Enum.count(section_resources) == 3
     end
   end
 
@@ -1670,5 +2136,127 @@ defmodule Oli.SectionsTest do
 
       refute Sections.get_latest_visited_page(section.slug, student.id)
     end
+  end
+
+  describe "rebuild_full_hierarchy/2" do
+    setup do
+      author = insert(:author)
+      project = insert(:project, authors: [author])
+
+      page_1_revision =
+        insert(:revision,
+          resource_type_id: ResourceType.get_id_by_type("page"),
+          content: %{"model" => []},
+          slug: "page_1",
+          title: "Page #1"
+        )
+
+      page_2_revision =
+        insert(:revision,
+          resource_type_id: ResourceType.get_id_by_type("page"),
+          content: %{"model" => []},
+          slug: "page_2",
+          title: "Page #2"
+        )
+
+      insert(:project_resource, %{
+        project_id: project.id,
+        resource_id: page_1_revision.resource_id
+      })
+
+      insert(:project_resource, %{
+        project_id: project.id,
+        resource_id: page_2_revision.resource_id
+      })
+
+      container_revision =
+        insert(:revision, %{
+          resource_type_id: ResourceType.get_id_by_type("container"),
+          children: [page_1_revision.resource_id, page_2_revision.resource_id],
+          content: %{},
+          deleted: false,
+          slug: "root_container",
+          title: "Root Container"
+        })
+
+      insert(:project_resource, %{
+        project_id: project.id,
+        resource_id: container_revision.resource_id
+      })
+
+      publication =
+        insert(:publication, %{
+          project: project,
+          root_resource_id: container_revision.resource_id,
+          published: nil
+        })
+
+      insert(:published_resource, %{
+        publication: publication,
+        resource: container_revision.resource,
+        revision: container_revision,
+        author: author
+      })
+
+      insert(:published_resource, %{
+        publication: publication,
+        resource: page_1_revision.resource,
+        revision: page_1_revision,
+        author: author
+      })
+
+      insert(:published_resource, %{
+        publication: publication,
+        resource: page_2_revision.resource,
+        revision: page_2_revision,
+        author: author
+      })
+
+      section = insert(:section, base_project: project)
+      {:ok, _sr} = Sections.create_section_resources(section, publication)
+
+      %{section: section}
+    end
+
+    test "updates the full_hierarchy field of the given section", %{section: section} do
+      expected_hierarchy =
+        DeliveryResolver.full_hierarchy(section.slug)
+
+      {:ok, updated_section} = Sections.rebuild_full_hierarchy(section)
+
+      assert ignore_uuids(updated_section.full_hierarchy) ==
+               ignore_uuids(expected_hierarchy)
+    end
+
+    test "schedules an oban job if `async` is set to true", %{section: section} do
+      Sections.rebuild_full_hierarchy(section, true)
+
+      assert_enqueued(
+        worker: OliWeb.Delivery.RebuildFullHierarchyWorker,
+        args: %{section_slug: section.slug},
+        queue: :rebuild_full_hierarchy
+      )
+    end
+
+    test "when the scheduled job is performed, the full_hierarchy is the correct one", %{
+      section: section
+    } do
+      expected_hierarchy =
+        DeliveryResolver.full_hierarchy(section.slug)
+
+      Sections.rebuild_full_hierarchy(section, true)
+
+      {:ok, updated_section} =
+        perform_job(OliWeb.Delivery.RebuildFullHierarchyWorker, %{section_slug: section.slug})
+
+      assert ignore_uuids(updated_section.full_hierarchy) ==
+               ignore_uuids(expected_hierarchy)
+    end
+  end
+
+  defp ignore_uuids(map) do
+    Map.from_struct(map)
+    |> Map.drop([:uuid])
+    |> update_in([:children], &Enum.map(&1, fn child -> Map.drop(child, [:uuid]) end))
   end
 end

@@ -89,7 +89,6 @@ defmodule Oli.Utils.SlugTest do
       assert new_revision.slug == "a_different_title"
     end
 
-
     test "update_on_change/2 handles the case when there isn't a previous revision", %{
       revision1: r
     } do

@@ -178,4 +178,83 @@ defmodule Oli.Delivery.SectionsTest do
       assert [] == Sections.get_section_contained_objectives(section.id, nil)
     end
   end
+
+  describe "build_page_link_map/1" do
+    setup(_) do
+      %{}
+      |> Seeder.Project.create_author(author_tag: :author)
+      |> Seeder.Project.create_sample_project(
+        ref(:author),
+        project_tag: :proj,
+        publication_tag: :pub,
+        curriculum_revision_tag: :curriculum,
+        unscored_page1_tag: :unscored_page1,
+        unscored_page1_activity_tag: :unscored_page1_activity,
+        scored_page2_tag: :scored_page2,
+        scored_page2_activity_tag: :scored_page2_activity
+      )
+      |> Seeder.Project.create_page(
+        ref(:author),
+        ref(:proj),
+        nil,
+        %{},
+        revision_tag: :non_hierarchical_page3
+      )
+      |> Seeder.Project.create_page(
+        ref(:author),
+        ref(:proj),
+        nil,
+        %{},
+        revision_tag: :non_hierarchical_page4
+      )
+      |> then(fn seeds ->
+        Seeder.Project.edit_page(
+          seeds,
+          ref(:proj),
+          ref(:scored_page2),
+          %{
+            content: %{
+              "model" => [
+                %{
+                  "type" => "content",
+                  "children" => [
+                    %{
+                      "type" => "page_link",
+                      "idref" => seeds[:non_hierarchical_page3].resource_id,
+                      "purpose" => "none",
+                      "children" => [%{"text" => "Link to detached page"}]
+                    }
+                  ]
+                }
+              ]
+            }
+          },
+          revision_tag: :scored_page2
+        )
+      end)
+      |> Seeder.Project.ensure_published(ref(:pub))
+      |> Seeder.Section.create_section(
+        ref(:proj),
+        ref(:pub),
+        nil,
+        %{},
+        section_tag: :section
+      )
+    end
+
+    test "returns a map with linked page resource ids", %{
+      pub: pub,
+      unscored_page1: unscored_page1,
+      scored_page2: scored_page2,
+      non_hierarchical_page3: non_hierarchical_page3,
+      non_hierarchical_page4: non_hierarchical_page4
+    } do
+      page_link_map = Sections.build_page_link_map([pub.id])
+
+      assert page_link_map[unscored_page1.resource_id] == []
+      assert page_link_map[scored_page2.resource_id] == []
+      assert page_link_map[non_hierarchical_page3.resource_id] == [scored_page2.resource_id]
+      assert page_link_map[non_hierarchical_page4.resource_id] == []
+    end
+  end
 end

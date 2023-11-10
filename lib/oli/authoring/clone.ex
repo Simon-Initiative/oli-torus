@@ -31,7 +31,7 @@ defmodule Oli.Authoring.Clone do
                publisher_id: base_project.publisher_id,
                customizations: customizations,
                attributes: attributes,
-               analytics_version: :v2,
+               analytics_version: :v2
              }),
            {:ok, _} <- Collaborators.add_collaborator(author, cloned_project),
            base_root_container <- AuthoringResolver.root_container(base_project.slug),

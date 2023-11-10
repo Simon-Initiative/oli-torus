@@ -10,6 +10,7 @@ defmodule OliWeb.Components.Delivery.UserAccountMenu do
   alias OliWeb.Common.SessionContext
   alias OliWeb.Common.React
 
+  attr(:id, :string, required: true)
   attr(:ctx, SessionContext)
   attr(:section, Section, default: nil)
 
@@ -28,51 +29,8 @@ defmodule OliWeb.Components.Delivery.UserAccountMenu do
         selectedTimezone: @ctx.local_tz,
         timezones: @timezones
       },
-      id: "menu",
-      target_id: "user-menu"
+      id: @id
     ) %>
-    """
-  end
-
-  def user_menu_loader(assigns) do
-    ~H"""
-    <svg
-      width="158.507"
-      height="43.756"
-      viewBox="0 0 40.857 11.279"
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      <!-- Animated gradient -->
-      <defs>
-        <linearGradient id="loader-gradient" gradientTransform="rotate(20)">
-          <stop offset="5%" stop-color="#eee">
-            <animate
-              attributeName="stop-color"
-              values="#EEEEEE; #CCCCCC; #EEEEEE"
-              dur="1s"
-              repeatCount="indefinite"
-            >
-            </animate>
-          </stop>
-          <stop offset="95%" stop-color="#aaa">
-            <animate
-              attributeName="stop-color"
-              values="#EEEEEE; #DDDDDD; #EEEEEE"
-              dur="3s"
-              repeatCount="indefinite"
-            >
-            </animate>
-          </stop>
-        </linearGradient>
-      </defs>
-
-      <g transform="translate(-8.79 -1.99)">
-        <circle fill="url(#loader-gradient)" cx="44.009" cy="7.63" r="5.639" /><path
-          fill="url(#loader-gradient)"
-          d="M8.791 4.478h27.588v2.267H8.791z"
-        /><path fill="url(#loader-gradient)" d="M16.78 8.321h19.627v2.267H16.78z" />
-      </g>
-    </svg>
     """
   end
 

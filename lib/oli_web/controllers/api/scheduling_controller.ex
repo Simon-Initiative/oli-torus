@@ -162,9 +162,17 @@ defmodule OliWeb.Api.SchedulingController do
 
     if can_access_section?(conn, section) do
       case Scheduling.update(section, updates, ctx.local_tz) do
-        {:ok, count} -> json(conn, %{"result" => "success", "count" => count})
-        {:error, :missing_update_parameters} -> error(conn, 400, "Missing update parameters")
-        e -> error(conn, 500, e)
+        {:ok, count} ->
+          # a worker is scheduled to update section full_hierarchy
+          # since this may take some time...
+          Sections.rebuild_full_hierarchy(section, true)
+          json(conn, %{"result" => "success", "count" => count})
+
+        {:error, :missing_update_parameters} ->
+          error(conn, 400, "Missing update parameters")
+
+        e ->
+          error(conn, 500, e)
       end
     else
       error(conn, 401, "Unauthorized")
@@ -204,12 +212,12 @@ defmodule OliWeb.Api.SchedulingController do
       "resource_type_id" => sr.resource_type_id,
       "graded" => sr.graded,
       "start_date" =>
-          if sr.graded do
-            # Using start_date as the availablility date for graded items
-            sr.start_date
-          else
-            sr.start_date |> just_date.()
-          end,
+        if sr.graded do
+          # Using start_date as the availablility date for graded items
+          sr.start_date
+        else
+          sr.start_date |> just_date.()
+        end,
       "end_date" =>
         if sr.scheduling_type == :due_by do
           sr.end_date

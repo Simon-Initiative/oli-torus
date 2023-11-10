@@ -347,9 +347,18 @@ defmodule Oli.Utils.Seeder.Project do
       revision,
       published_resource_tag: published_resource_tag
     )
-    |> attach_to([resource], attach_to_container_revision, publication,
-      container_revision_tag: container_revision_tag
-    )
+    |> then(fn seeds ->
+      case attach_to_container_revision do
+        nil ->
+          seeds
+
+        attach_to_container_revision ->
+          seeds
+          |> attach_to([resource], attach_to_container_revision, publication,
+            container_revision_tag: container_revision_tag
+          )
+      end
+    end)
     |> tag(resource_tag, resource)
     |> tag(revision_tag, revision)
   end
@@ -406,9 +415,18 @@ defmodule Oli.Utils.Seeder.Project do
       revision,
       published_resource_tag: published_resource_tag
     )
-    |> attach_to([resource], attach_to_container_revision, publication,
-      container_revision_tag: container_revision_tag
-    )
+    |> then(fn seeds ->
+      case attach_to_container_revision do
+        nil ->
+          seeds
+
+        attach_to_container_revision ->
+          seeds
+          |> attach_to([resource], attach_to_container_revision, publication,
+            container_revision_tag: container_revision_tag
+          )
+      end
+    end)
     |> tag(resource_tag, resource)
     |> tag(revision_tag, revision)
   end
@@ -657,5 +675,21 @@ defmodule Oli.Utils.Seeder.Project do
 
     seeds
     |> tag(tags[:revision_tag], revision)
+  end
+
+  def edit_page(seeds, project, page, attrs, tags \\ []) do
+    [project, page] = unpack(seeds, [project, page])
+
+    revision_tag = tags[:revision_tag]
+
+    publication = Publishing.project_working_publication(project.slug)
+
+    {:ok, updated} = Oli.Resources.create_revision_from_previous(page, attrs)
+
+    Publishing.get_published_resource!(publication.id, page.resource_id)
+    |> Publishing.update_published_resource(%{revision_id: updated.id})
+
+    seeds
+    |> tag(revision_tag, updated)
   end
 end

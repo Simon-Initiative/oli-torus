@@ -279,6 +279,7 @@ defmodule OliWeb.Components.Delivery.Utils do
   def socket_or_conn(%{conn: conn} = _assigns), do: conn
 
   attr(:percent, :integer, required: true)
+  attr(:show_percent, :boolean, default: false)
   attr(:width, :string, default: "100%")
 
   def progress_bar(assigns) do
@@ -292,6 +293,27 @@ defmodule OliWeb.Components.Delivery.Utils do
       </div>
     </div>
     """
+  end
+
+  @doc """
+  Returns the course week number of a resource based on the section start date
+  """
+  def week_number(_section_start_date, nil), do: "not yet scheduled"
+  def week_number(_section_start_date, "not yet scheduled"), do: "not yet scheduled"
+
+  def week_number(section_start_datetime, resource_datetime) do
+    case Date.diff(
+           DateTime.to_date(resource_datetime),
+           DateTime.to_date(section_start_datetime)
+         ) do
+      0 ->
+        1
+
+      day_diff ->
+        (day_diff / 7)
+        |> Float.ceil()
+        |> trunc()
+    end
   end
 
   def get_resource_scheduled_date(resource_id, scheduled_dates, ctx) do

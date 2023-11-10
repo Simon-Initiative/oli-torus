@@ -4,6 +4,7 @@ import { FeedbackCard } from 'components/activities/common/responses/FeedbackCar
 import { ResponseActions } from 'components/activities/common/responses/responseActions';
 import { HasParts, RichText } from 'components/activities/types';
 import { getCorrectResponse, getIncorrectResponse } from 'data/activities/model/responses';
+import { TextDirection } from 'data/content/model/elements/types';
 import { EditorType } from 'data/content/resource';
 import { ShowPage } from './ShowPage';
 
@@ -27,12 +28,18 @@ export const SimpleFeedback: React.FC<Props> = ({ partId }) => {
   const updateShowPage = (responseId: string, showPage: number | undefined) =>
     dispatch(ResponseActions.editShowPage(responseId, showPage));
 
+  const updateTextDirection = (responseId: string, textDirection: TextDirection) =>
+    dispatch(ResponseActions.editResponseFeedbackTextDirection(responseId, textDirection));
+
   return (
     <>
       <FeedbackCard
         key={`correct-${partId}`}
         title="Feedback for correct answer"
         feedback={correctResponse.feedback}
+        updateTextDirection={(textDirection) =>
+          updateTextDirection(correctResponse.id, textDirection)
+        }
         update={(_id, content) => updateFeedback(correctResponse.id, content as RichText)}
         updateEditor={(editor) => updateFeedbackEditor(correctResponse.id, editor)}
         placeholder="Encourage students or explain why the answer is correct"
@@ -51,6 +58,9 @@ export const SimpleFeedback: React.FC<Props> = ({ partId }) => {
         feedback={incorrectResponse.feedback}
         update={(_id, content) => updateFeedback(incorrectResponse.id, content as RichText)}
         updateEditor={(editor) => updateFeedbackEditor(incorrectResponse.id, editor)}
+        updateTextDirection={(textDirection) =>
+          updateTextDirection(incorrectResponse.id, textDirection)
+        }
         placeholder="Enter catch-all feedback for incorrect answers"
       >
         {authoringContext.contentBreaksExist ? (

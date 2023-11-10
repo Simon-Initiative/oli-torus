@@ -12,6 +12,23 @@ get_env_as_boolean = fn key, default ->
   end
 end
 
+# Appsignal client key is required for appsignal integration
+config :appsignal, :client_key, System.get_env("APPSIGNAL_PUSH_API_KEY", nil)
+
+# Configure runtime log level if LOG_LEVEL is set
+case System.get_env("LOG_LEVEL", nil) do
+  nil ->
+    nil
+
+  log_level ->
+    config :logger, level: String.to_existing_atom(log_level)
+end
+
+if get_env_as_boolean.("APPSIGNAL_ENABLE_LOGGING", "false") do
+  config :logger, backends: [:console, {Appsignal.Logger.Backend, [group: "phoenix"]}]
+end
+
+# Production-only configurations
 if config_env() == :prod do
   database_url =
     System.get_env("DATABASE_URL") ||
@@ -121,7 +138,8 @@ if config_env() == :prod do
     screen_idle_timeout_in_seconds:
       String.to_integer(System.get_env("SCREEN_IDLE_TIMEOUT_IN_SECONDS", "1800")),
     always_use_persistent_login_sessions:
-      get_env_as_boolean.("ALWAYS_USE_PERSISTENT_LOGIN_SESSIONS", "false")
+      get_env_as_boolean.("ALWAYS_USE_PERSISTENT_LOGIN_SESSIONS", "false"),
+    log_incomplete_requests: get_env_as_boolean.("LOG_INCOMPLETE_REQUESTS", "true")
 
   default_description = """
   The Open Learning Initiative enables research and experimentation with all aspects of the learning experience.
@@ -209,6 +227,16 @@ if config_env() == :prod do
 
   config :oli, :help, dispatcher: help_provider
 
+  # Configurable http/https protocol options for cowboy
+  # https://ninenines.eu/docs/en/cowboy/2.5/manual/cowboy_http/
+  http_max_header_name_length =
+    System.get_env("HTTP_MAX_HEADER_NAME_LENGTH", "64") |> String.to_integer()
+
+  http_max_header_value_length =
+    System.get_env("HTTP_MAX_HEADER_VALUE_LENGTH", "4096") |> String.to_integer()
+
+  http_max_headers = System.get_env("HTTP_MAX_HEADERS", "100") |> String.to_integer()
+
   if System.get_env("PHX_SERVER") do
     config :oli, OliWeb.Endpoint, server: true
   end
@@ -216,7 +244,12 @@ if config_env() == :prod do
   config :oli, OliWeb.Endpoint,
     http: [
       :inet6,
-      port: String.to_integer(System.get_env("HTTP_PORT", "80"))
+      port: String.to_integer(System.get_env("HTTP_PORT", "80")),
+      protocol_options: [
+        max_header_name_length: http_max_header_name_length,
+        max_header_value_length: http_max_header_value_length,
+        max_headers: http_max_headers
+      ]
     ],
     url: [
       scheme: System.get_env("SCHEME", "https"),
@@ -232,21 +265,17 @@ if config_env() == :prod do
         port: 443,
         otp_app: :oli,
         keyfile: System.get_env("SSL_CERT_PATH", "priv/ssl/localhost.key"),
-        certfile: System.get_env("SSL_KEY_PATH", "priv/ssl/localhost.crt")
+        certfile: System.get_env("SSL_KEY_PATH", "priv/ssl/localhost.crt"),
+        protocol_options: [
+          max_header_name_length: http_max_header_name_length,
+          max_header_value_length: http_max_header_value_length,
+          max_headers: http_max_headers
+        ]
       ]
   end
 
   # Configure Mnesia directory (used by pow persistent sessions)
   config :mnesia, :dir, to_charlist(System.get_env("MNESIA_DIR", ".mnesia"))
-
-  # Configure runtime log level if LOG_LEVEL is set
-  case System.get_env("LOG_LEVEL", nil) do
-    nil ->
-      nil
-
-    log_level ->
-      config :logger, level: String.to_atom(log_level)
-  end
 
   truncate =
     System.get_env("LOGGER_TRUNCATE", "8192")
@@ -306,6 +335,4 @@ if config_env() == :prod do
             ]
         end
     ]
-
-  config :appsignal, :client_key, System.get_env("APPSIGNAL_PUSH_API_KEY", nil)
 end

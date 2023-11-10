@@ -53,7 +53,7 @@ defmodule Hound.LoginTest do
 
   defp create_user_account(role_id) do
     password =
-      for _ <- 1..20, into: "", do: <<Enum.random('0123456789abcdefghijklmnopqrstuvwxyz_$#@!')>>
+      for _ <- 1..20, into: "", do: <<Enum.random(~c"0123456789abcdefghijklmnopqrstuvwxyz_$#@!")>>
 
     {:ok, user} =
       Oli.Accounts.Author.changeset(Factory.author_factory(), %{

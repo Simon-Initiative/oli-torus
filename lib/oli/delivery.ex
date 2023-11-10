@@ -106,6 +106,7 @@ defmodule Oli.Delivery do
 
       {:ok, _} = Sections.rebuild_contained_pages(section)
       {:ok, _} = Sections.rebuild_contained_objectives(section)
+      {:ok, _} = Sections.rebuild_full_hierarchy(section)
 
       enroll(user.id, section.id, lti_params)
 
@@ -155,6 +156,7 @@ defmodule Oli.Delivery do
       {:ok, %Section{} = section} = Sections.create_section_resources(section, publication)
       {:ok, _} = Sections.rebuild_contained_pages(section)
       {:ok, _} = Sections.rebuild_contained_objectives(section)
+      {:ok, _} = Sections.rebuild_full_hierarchy(section)
 
       enroll(user.id, section.id, lti_params)
       {:ok, updated_section} = maybe_update_section_contains_explorations(section)

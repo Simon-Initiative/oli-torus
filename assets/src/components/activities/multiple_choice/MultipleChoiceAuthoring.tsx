@@ -48,6 +48,9 @@ const MultipleChoice: React.FC = () => {
             onEdit={(id, content) => dispatch(Choices.setContent(id, content))}
             onRemove={(id) => dispatch(Actions.removeChoice(id, model.authoring.parts[0].id))}
             onChangeEditorType={(id, editor) => dispatch(Choices.setEditor(id, editor))}
+            onChangeEditorTextDirection={(id, textDirection) => {
+              dispatch(Choices.setTextDirection(id, textDirection));
+            }}
           />
         </TabbedNavigation.Tab>
         <TabbedNavigation.Tab label="Answer Key">

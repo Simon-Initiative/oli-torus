@@ -154,7 +154,8 @@ defmodule Oli.Content.Page.HtmlTest do
                rendered_html_string =
                  Phoenix.HTML.raw(rendered_html) |> Phoenix.HTML.safe_to_string()
 
-               assert rendered_html_string == "<p>some specific content</p>\n"
+               assert rendered_html_string ==
+                        "<div dir=\"ltr\"><p>some specific content</p>\n</div>"
              end)
     end
 
@@ -168,7 +169,8 @@ defmodule Oli.Content.Page.HtmlTest do
                rendered_html_string =
                  Phoenix.HTML.raw(rendered_html) |> Phoenix.HTML.safe_to_string()
 
-               assert rendered_html_string == "<p>some specific content</p>\n"
+               assert rendered_html_string ==
+                        "<div dir=\"ltr\"><p>some specific content</p>\n</div>"
              end)
     end
 

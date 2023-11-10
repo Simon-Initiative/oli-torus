@@ -38,10 +38,11 @@ defmodule Oli.Delivery.Sections do
   alias Oli.Delivery
   alias Ecto.Multi
   alias Oli.Delivery.Gating.GatingCondition
-  alias Oli.Delivery.Attempts.Core.ResourceAccess
+  alias Oli.Delivery.Attempts.Core.{ResourceAccess, ResourceAttempt}
   alias Oli.Delivery.Metrics
   alias Oli.Delivery.Paywall
   alias Oli.Branding.CustomLabels
+  alias OliWeb.Delivery.RebuildFullHierarchyWorker
 
   require Logger
 
@@ -386,9 +387,9 @@ defmodule Oli.Delivery.Sections do
   end
 
   @doc """
-  Unenrolls a user from a section by removing the provided context roles. If no context roles are provided, no change is made. If all context roles are removed from the user, the enrollment is deleted.
+  Unenrolls a user from a section by removing the provided context roles. If no context roles are provided, no change is made. If all context roles are removed from the user, the enrollment is marked as suspended.
 
-  To unenroll a student, use unenrolle_learner/2
+  To unenroll a student, use unenroll_learner/2
   """
   def unenroll(user_id, section_id, context_roles) do
     context_roles = EctoProvider.Marshaler.to(context_roles)
@@ -422,10 +423,26 @@ defmodule Oli.Delivery.Sections do
   end
 
   @doc """
-  Unenrolls a student from a section by removing the :context_learner role. If this is their only context_role, the enrollment is deleted.
+  Unenrolls a student from a section by removing the :context_learner role. If this is their only context_role, the enrollment is marked as suspended.
   """
   def unenroll_learner(user_id, section_id) do
     unenroll(user_id, section_id, [ContextRoles.get_role(:context_learner)])
+  end
+
+  @doc """
+  Re-enrolls a student in a section by marking the enrollment as enrolled again.
+  """
+  def re_enroll_learner(user_id, section_id) do
+    case Repo.get_by(Enrollment, user_id: user_id, section_id: section_id, status: :suspended) do
+      nil ->
+        # Enrollment not found
+        {:error, :not_found}
+
+      enrollment ->
+        enrollment
+        |> Enrollment.changeset(%{status: :enrolled})
+        |> Repo.update()
+    end
   end
 
   @doc """
@@ -1123,7 +1140,7 @@ defmodule Oli.Delivery.Sections do
     )
   end
 
-  # For a given section id and the list of resource ids that exist in its hiearchy,
+  # For a given section id and the list of resource ids that exist in its hierarchy,
   # determine and return the list of page resource ids that are not reachable from that
   # hierarchy, taking into account links from pages to other pages and the 'relates_to'
   # relationship between pages.
@@ -1136,7 +1153,7 @@ defmodule Oli.Delivery.Sections do
     # create a map of page resource ids to a list of target resource ids that they link to. We
     # do this both for resource-to-page links and for page to activity links (aka activity-references).
     # We do this because we want to treat these links the same way when we traverse the graph, and
-    # we want to be able to handle cases where a page from the hierarhcy embeds an activity which
+    # we want to be able to handle cases where a page from the hierarchy embeds an activity which
     # links to a page outside the hierarchy.
     all_links =
       [
@@ -1155,7 +1172,7 @@ defmodule Oli.Delivery.Sections do
         end
       end)
 
-    # Now traverse the pages in the hiearchy, and follow (recursively) the links that
+    # Now traverse the pages in the hierarchy, and follow (recursively) the links that
     # they have to other pages.
     {unreachable, _} = traverse_links(link_map, hierarchy_ids, unreachable, MapSet.new())
 
@@ -1166,11 +1183,11 @@ defmodule Oli.Delivery.Sections do
   # from the pages in the hierarchy, removing them from the candidate set of unreachable pages
   # This also tracks seen pages to avoid infinite recursion, in cases where pages create a
   # a circular link structure.
-  def traverse_links(link_map, hiearchy_ids, unreachable, seen) do
-    unreachable = MapSet.difference(unreachable, MapSet.new(hiearchy_ids))
-    seen = MapSet.union(seen, MapSet.new(hiearchy_ids))
+  def traverse_links(link_map, hierarchy_ids, unreachable, seen) do
+    unreachable = MapSet.difference(unreachable, MapSet.new(hierarchy_ids))
+    seen = MapSet.union(seen, MapSet.new(hierarchy_ids))
 
-    Enum.reduce(hiearchy_ids, {unreachable, seen}, fn id, {unreachable, seen} ->
+    Enum.reduce(hierarchy_ids, {unreachable, seen}, fn id, {unreachable, seen} ->
       case Map.get(link_map, id) do
         nil ->
           {unreachable, seen}
@@ -1184,6 +1201,44 @@ defmodule Oli.Delivery.Sections do
           traverse_links(link_map, not_already_seen, unreachable, seen)
       end
     end)
+  end
+
+  @doc """
+  Builds a map of all page links in a given section. Returns a map of resource ids to a list of
+  resource ids of the pages that they are linked from. Typically this will be a single
+  resource id, but in cases where a page is linked from multiple pages it can be more than one.
+
+  This function does not account for pages which are linked more than "one hop" away from the
+  hierarchy.
+
+  ## Examples
+      iex> build_page_link_map(publication_ids)
+      %{1 => [], 2 => [], 3 => [1, 2], 4 => [4]}
+  """
+  def build_page_link_map(publication_ids) do
+    all_page_ids = Oli.Publishing.all_page_resource_ids(publication_ids)
+    all_page_links = MapSet.new(get_all_page_links(publication_ids))
+
+    # For each page, find the set of pages that link to it and add those links to the map
+    Enum.reduce(all_page_ids, %{}, fn id, acc ->
+      links_to_page =
+        Enum.filter(all_page_ids, fn page_id ->
+          MapSet.member?(all_page_links, {page_id, id})
+        end)
+
+      Map.put(acc, id, links_to_page)
+    end)
+  end
+
+  @doc """
+  Returns a map of all explorations in the section, grouped by their container.
+  """
+  def get_explorations_by_containers(section) do
+    # TODO: Implement this function. For now, just return a map of all explorations keyed
+    # by :default
+    %{
+      default: DeliveryResolver.get_by_purpose(section.slug, :application)
+    }
   end
 
   # Returns a mapset of two element tuples of the form {source_resource_id, target_resource_id}
@@ -1670,6 +1725,16 @@ defmodule Oli.Delivery.Sections do
     |> Repo.one!()
   end
 
+  def get_current_publications(section_id) do
+    from(spp in SectionsProjectsPublications,
+      join: pub in Publication,
+      on: spp.publication_id == pub.id,
+      where: spp.section_id == ^section_id,
+      select: pub
+    )
+    |> Repo.all()
+  end
+
   @doc """
   Updates a single project in a section to use the specified publication
   """
@@ -1777,7 +1842,28 @@ defmodule Oli.Delivery.Sections do
       |> then(
         &Repo.insert_all(SectionResource, &1,
           placeholders: placeholders,
-          on_conflict: {:replace_all_except, [:inserted_at, :scoring_strategy_id]},
+          on_conflict:
+            {:replace_all_except,
+             [
+               :inserted_at,
+               :scoring_strategy_id,
+               :scheduling_type,
+               :manually_scheduled,
+               :start_date,
+               :end_date,
+               :collab_space_config,
+               :explanation_strategy,
+               :max_attempts,
+               :retake_mode,
+               :password,
+               :late_submit,
+               :late_start,
+               :time_limit,
+               :grace_period,
+               :review_submission,
+               :feedback_mode,
+               :feedback_scheduled_date
+             ]},
           conflict_target: [:section_id, :resource_id]
         )
       )
@@ -1856,6 +1942,7 @@ defmodule Oli.Delivery.Sections do
 
       {:ok, _} = rebuild_contained_pages(section, section_resources)
       {:ok, _} = rebuild_contained_objectives(section)
+      {:ok, _} = rebuild_full_hierarchy(section)
 
       section_resources
     end)
@@ -1866,6 +1953,28 @@ defmodule Oli.Delivery.Sections do
       where: cp.section_id == ^section_id
     )
     |> Repo.all()
+  end
+
+  @doc """
+  Rebuilds the full_hierachy field for a course section,
+  needed as "cache" data for student's content view (OliWeb.Delivery.Student.ContentLive).
+  The full hierarchy represents the main structure in which a course curriculum is organized
+  to be delivered (see Oli.Delivery.Hierarchy)
+
+  If `async` is set to true, the rebuild will be performed asynchronously relying on an Oban worker.
+  """
+
+  def rebuild_full_hierarchy(section, async \\ false)
+
+  def rebuild_full_hierarchy(%Section{slug: slug} = section, false) do
+    update_section(section, %{
+      full_hierarchy: DeliveryResolver.full_hierarchy(slug)
+    })
+  end
+
+  def rebuild_full_hierarchy(%Section{slug: slug} = _section, true) do
+    RebuildFullHierarchyWorker.new(%{section_slug: slug})
+    |> Oban.insert()
   end
 
   @doc """
@@ -2178,7 +2287,11 @@ defmodule Oli.Delivery.Sections do
 
             # Case 2: The course section is based on this project and was seeded from a product
             section.base_project_id == project_id and !is_nil(section.blueprint_id) ->
-              perform_update(:minor, section, project_id, new_publication, current_hierarchy)
+              if section.blueprint.apply_major_updates do
+                perform_update(:major, section, project_id, current_publication, new_publication)
+              else
+                perform_update(:minor, section, project_id, new_publication, current_hierarchy)
+              end
 
             # Case 3: The course section is a product based on this project
             section.base_project_id == project_id and section.type == :blueprint ->
@@ -2256,7 +2369,28 @@ defmodule Oli.Delivery.Sections do
       |> then(
         &Repo.insert_all(SectionResource, &1,
           placeholders: placeholders,
-          on_conflict: {:replace_all_except, [:inserted_at, :scoring_strategy_id]},
+          on_conflict:
+            {:replace_all_except,
+             [
+               :inserted_at,
+               :scoring_strategy_id,
+               :scheduling_type,
+               :manually_scheduled,
+               :start_date,
+               :end_date,
+               :collab_space_config,
+               :explanation_strategy,
+               :max_attempts,
+               :retake_mode,
+               :password,
+               :late_submit,
+               :late_start,
+               :time_limit,
+               :grace_period,
+               :review_submission,
+               :feedback_mode,
+               :feedback_scheduled_date
+             ]},
           conflict_target: [:section_id, :resource_id]
         )
       )
@@ -2354,7 +2488,28 @@ defmodule Oli.Delivery.Sections do
       |> then(
         &Repo.insert_all(SectionResource, &1,
           placeholders: placeholders,
-          on_conflict: {:replace_all_except, [:inserted_at, :scoring_strategy_id]},
+          on_conflict:
+            {:replace_all_except,
+             [
+               :inserted_at,
+               :scoring_strategy_id,
+               :scheduling_type,
+               :manually_scheduled,
+               :start_date,
+               :end_date,
+               :collab_space_config,
+               :explanation_strategy,
+               :max_attempts,
+               :retake_mode,
+               :password,
+               :late_submit,
+               :late_start,
+               :time_limit,
+               :grace_period,
+               :review_submission,
+               :feedback_mode,
+               :feedback_scheduled_date
+             ]},
           conflict_target: [:section_id, :resource_id]
         )
       )
@@ -2468,7 +2623,28 @@ defmodule Oli.Delivery.Sections do
             # if there is a conflict on the unique section_id resource_id constraint,
             # we assume it is because a resource has been moved or removed/readded in
             # a remix operation, so we simply replace the existing section_resource record
-            on_conflict: :replace_all,
+            on_conflict:
+              {:replace_all_except,
+               [
+                 :inserted_at,
+                 :scoring_strategy_id,
+                 :scheduling_type,
+                 :manually_scheduled,
+                 :start_date,
+                 :end_date,
+                 :collab_space_config,
+                 :explanation_strategy,
+                 :max_attempts,
+                 :retake_mode,
+                 :password,
+                 :late_submit,
+                 :late_start,
+                 :time_limit,
+                 :grace_period,
+                 :review_submission,
+                 :feedback_mode,
+                 :feedback_scheduled_date
+               ]},
             conflict_target: [:section_id, :resource_id]
           )
 
@@ -2689,16 +2865,23 @@ defmodule Oli.Delivery.Sections do
     {:ok, _, previous_next_index} =
       PreviousNextIndex.retrieve(section, section.root_section_resource.resource_id)
 
-      previous_next_index = previous_next_index
-        |>Enum.map(fn {k, v} ->
-          label = if Map.get(v, "type") === "container" do
-            get_container_label(String.to_integer(Map.get(v, "level")), section.customizations || Map.from_struct(CustomLabels.default()))
+    previous_next_index =
+      previous_next_index
+      |> Enum.map(fn {k, v} ->
+        label =
+          if Map.get(v, "type") === "container" do
+            get_container_label(
+              String.to_integer(Map.get(v, "level")),
+              section.customizations || Map.from_struct(CustomLabels.default())
+            )
           else
             ""
           end
-          {k, Map.put(v, "label", label)}
-        end)
-        |> Map.new()
+
+        {k, Map.put(v, "label", label)}
+      end)
+      |> Map.new()
+
     # Retrieve the top level resource ids, and convert them to strings
     resource_ids =
       Oli.Delivery.Sections.map_section_resource_children_to_resource_ids(
@@ -2944,6 +3127,59 @@ defmodule Oli.Delivery.Sections do
       select: rev
     )
     |> Repo.one()
+  end
+
+  @doc """
+    Returns the revision_ids of the pages visited by a user in a section.
+    Instead of returning a list of revision_ids, it returns a map of revision_id to true,
+    to make it more efficient to check if a page was visited (O(1) instead of O(n)).
+
+    %{
+      7185 => true,
+      7349 => true
+    }
+  """
+  def get_visited_pages(section_id, user_id) do
+    page_resource_type_id = Oli.Resources.ResourceType.get_id_by_type("page")
+
+    from(ra in ResourceAccess,
+      join: r_att in ResourceAttempt,
+      on: r_att.resource_access_id == ra.id,
+      join: rev in Revision,
+      on: r_att.revision_id == rev.id,
+      where:
+        rev.resource_type_id == ^page_resource_type_id and ra.section_id == ^section_id and
+          ra.user_id == ^user_id,
+      select: {rev.id, true}
+    )
+    |> Repo.all()
+    |> Enum.into(%{})
+  end
+
+  @doc """
+  Returns all the resource_ids of a section grouped by resource type.
+
+  %{
+    "activity" => [4630, 6927, 593],
+    "container" => [7742, 7743, 7744, 7745],
+    "objective" => [4260, 4249, 4308, 4309, 4277, 4254, 4316],
+    "page" => [7400, 7568, 7436, 7714, 7165, 7433, 7181, 7451, 7592, 7449, 7587,
+    7638, 7286, 7564, 7244, 7172, 7404, 7424],
+    "tag" => [3986, 4035, 4102, 3959, 4205, 3975, 4235, 4134, 4087, 4075, 4165,
+    4036, 4052, 3973, 4023, 4030]
+  }
+  """
+
+  def get_resource_ids_group_by_resource_type(section_slug) do
+    from([_sr, _s, _spp, _pr, rev] in DeliveryResolver.section_resource_revisions(section_slug),
+      join: rt in ResourceType,
+      on: rt.id == rev.resource_type_id,
+      select: {rt.type, rev.resource_id}
+    )
+    |> Repo.all()
+    |> Enum.group_by(fn {resource_type, _resource_id} -> resource_type end, fn {_, resource_id} ->
+      resource_id
+    end)
   end
 
   @doc """

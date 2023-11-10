@@ -96,6 +96,38 @@ defmodule OliWeb.Common.PowTest do
                ~p"/sections"
     end
 
+    test "hides authoring sign in box when coming from an invitation link", %{
+      conn: conn,
+      user: user
+    } do
+      conn =
+        conn
+        |> get(Routes.pow_session_path(conn, :new, from_invitation_link?: true))
+
+      assert html_response(conn, 200) =~ "Learner/Educator Sign In"
+
+      refute html_response(conn, 200) =~
+               "Looking for Authoring or your LMS?"
+
+      # sign user in
+      conn =
+        recycle(conn)
+        |> post(Routes.pow_session_path(conn, :create),
+          user: %{email: user.email, password: "password123"}
+        )
+
+      assert html_response(conn, 302) =~
+               ~p"/sections"
+
+      # user who is already signed in should be automatically redirected away from sign in page
+      conn =
+        recycle_user_session(conn, user)
+        |> get(Routes.pow_session_path(conn, :new))
+
+      assert html_response(conn, 302) =~
+               ~p"/sections"
+    end
+
     test "handles new session failure for non LMS user", %{conn: conn, user: user} do
       # sign user in
       conn =

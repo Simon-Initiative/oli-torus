@@ -34,7 +34,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
           <div>0%</div>
         </div>
         <div class="my-2 uppercase gap-2 lg:gap-8 columns-2 lg:columns-3">
-          <div class="font-bold">Average Grade</div>
+          <div class="font-bold">Average Score</div>
           <div>0/60</div>
         </div>
       </div>
