@@ -360,6 +360,7 @@ defmodule OliWeb.Delivery.Student.ContentLive do
   def intro_card(assigns) do
     ~H"""
     <div class="slider-card hover:scale-[1.01]" role="intro_card">
+      <div class="rounded-lg absolute h-[162px] w-[288px] cursor-pointer dark:bg-[linear-gradient(180deg,#223_0%,rgba(34,34,51,0.72)_52.6%,rgba(34,34,51,0.00)_100%)]" />
       <div class={[
         "flex flex-col items-center rounded-lg h-[162px] w-[288px] bg-gray-200 shrink-0 px-5 pt-[15px]",
         if(@bg_image_url in ["", nil],
@@ -431,10 +432,11 @@ defmodule OliWeb.Delivery.Student.ContentLive do
       ]}
       role={"card_#{@module_index}"}
     >
+      <div class="rounded-xl absolute h-[162px] w-[288px] cursor-pointer dark:bg-[linear-gradient(180deg,#223_0%,rgba(34,34,51,0.72)_52.6%,rgba(34,34,51,0.00)_100%)]" />
       <.page_icon :if={is_page(@module["revision"])} />
       <div class="h-[170px] w-[288px]">
         <div class={[
-          "flex flex-col gap-[5px] cursor-pointer rounded-xl h-[162px] w-[288px] shrink-0 mb-1 px-5 pt-[15px] bg-gray-200",
+          "flex flex-col gap-[5px] cursor-pointer rounded-xl h-[162px] w-[288px] shrink-0 mb-1 px-5 pt-[15px] bg-gray-200 z-10",
           if(@selected,
             do: "bg-gray-400 outline outline-2 outline-gray-800 dark:outline-white"
           ),
@@ -446,12 +448,12 @@ defmodule OliWeb.Delivery.Student.ContentLive do
           <span class="text-[12px] leading-[16px] font-bold opacity-60 text-gray-500 dark:text-white dark:text-opacity-50">
             <%= "#{@unit_numbering_index}.#{@module_index}" %>
           </span>
-          <h5 class="text-[18px] leading-[25px] font-bold dark:text-white">
+          <h5 class="text-[18px] leading-[25px] font-bold dark:text-white z-10">
             <%= @module["revision"]["title"] %>
           </h5>
           <div
             :if={!@selected and !is_page(@module["revision"])}
-            class="mt-auto flex h-[21px] justify-center items-center text-gray-600 dark:text-white"
+            class="mt-auto flex h-[21px] justify-center items-center text-gray-600 dark:text-white z-10"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
