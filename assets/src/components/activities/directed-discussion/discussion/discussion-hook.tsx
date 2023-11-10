@@ -7,7 +7,6 @@ import {
 import * as DiscussionService from './discussion-service';
 import { mergePost, removeFromPosts } from './post-util';
 
-
 export const useDiscussion = (sectionSlug: string | undefined, resourceId: number) => {
   /* Posts are stored in a tree structure, with each post having a list of children. This array will have the
      top level posts in it. */
@@ -16,8 +15,8 @@ export const useDiscussion = (sectionSlug: string | undefined, resourceId: numbe
   /* The current user id is used to determine if the current user is the author of a post. */
   const [currentUserId, setCurrentUserId] = useState<number | undefined>(undefined);
 
-  /* The loaded flag is used to determine if the posts have been loaded from the server yet. */
-  const [loaded, setLoaded] = useState(false);
+  /* The loadong flag is used to determine if the posts have been loaded from the server yet. */
+  const [loading, setLoading] = useState(false);
 
   /* Given a postId, remove it from our internal list of posts. */
   const removePost = (postId: number) => {
@@ -33,9 +32,9 @@ export const useDiscussion = (sectionSlug: string | undefined, resourceId: numbe
   /* Make an API call to reload the full list of posts from the server */
   const refreshPosts = () => {
     if (!sectionSlug || !resourceId) return;
-    setLoaded(false);
+    setLoading(true);
     return DiscussionService.getPosts(sectionSlug, String(resourceId)).then((response) => {
-      setLoaded(true);
+      setLoading(false);
       setPosts(response.threadedPosts);
       setCurrentUserId(response.currentUserId);
     });
@@ -44,9 +43,9 @@ export const useDiscussion = (sectionSlug: string | undefined, resourceId: numbe
   /* Make an API call to delete a post and remove it from our internal state. */
   const deletePost = (postId: number) => {
     if (!sectionSlug) return;
-    setLoaded(false);
+    setLoading(true);
     return DiscussionService.deletePost(sectionSlug, String(resourceId), postId).then(() => {
-      setLoaded(true);
+      setLoading(false);
       removePost(postId);
     });
   };
@@ -54,10 +53,10 @@ export const useDiscussion = (sectionSlug: string | undefined, resourceId: numbe
   /* Make an API call to create a new post and add it to our internal state. */
   const createNewPost = (content: string, parentId?: number) => {
     if (!sectionSlug) return;
-    setLoaded(false);
+    setLoading(true);
     return DiscussionService.createPost(sectionSlug, String(resourceId), content, parentId).then(
       (postResponse) => {
-        setLoaded(true);
+        setLoading(false);
         switch (postResponse.result) {
           case 'success':
             addPost(postResponse.post);
@@ -104,5 +103,5 @@ export const useDiscussion = (sectionSlug: string | undefined, resourceId: numbe
     };
   }, [sectionSlug, resourceId]);
 
-  return { loaded, posts, addPost: createNewPost, currentUserId, deletePost, refreshPosts };
+  return { loading, posts, addPost: createNewPost, currentUserId, deletePost, refreshPosts };
 };

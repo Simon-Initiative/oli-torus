@@ -38,7 +38,7 @@ export const DirectedDiscussion: React.FC = () => {
   const { surveyId } = context;
   const { writerContext } = useDeliveryElementContext<ActivityModelSchema>();
 
-  const { loaded, posts, addPost, currentUserId, deletePost } = useDiscussion(
+  const { loading, posts, addPost, currentUserId, deletePost } = useDiscussion(
     writerContext.sectionSlug,
     context.resourceId,
   );
@@ -60,7 +60,7 @@ export const DirectedDiscussion: React.FC = () => {
     );
   }, []);
 
-  if (!loaded || !currentUserId) {
+  if (!currentUserId) {
     return <div>Loading Discussion...</div>;
   }
 
@@ -91,7 +91,7 @@ export const DirectedDiscussion: React.FC = () => {
           resetPartInputs={{ [activityState.parts[0].partId]: [] }}
           shouldShow
         />
-        {/* <EvaluationConnected /> */}
+        {loading && <div className="inline p-2 fixed bottom-1 right-1 bg-gray-600 rounded-md text-white">Working...</div>}
       </div>
     </div>
   );
