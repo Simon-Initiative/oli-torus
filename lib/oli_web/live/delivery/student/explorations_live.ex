@@ -8,18 +8,15 @@ defmodule OliWeb.Delivery.Student.ExplorationsLive do
   alias Oli.Delivery.Sections
 
   def mount(_params, _session, socket) do
-    # TODO: Replace with real implementation that sorts by container. For now, just render all
-    # explorations without week headers
     explorations_by_container =
       Sections.get_explorations_by_containers(socket.assigns.section)
+      # TODO: Determine exploration status so that we can show the correct button label
       |> Enum.map(fn {container, explorations} ->
         {container,
          Enum.map(explorations, fn exploration ->
            {exploration, :not_started}
          end)}
       end)
-
-    IO.inspect(explorations_by_container, label: "explorations_by_container")
 
     {:ok,
      assign(socket,

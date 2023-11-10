@@ -1407,7 +1407,7 @@ defmodule Oli.Delivery.Sections do
     |> Enum.reverse()
   end
 
-  def fetch_ordered_container_ids(section_slug) do
+  defp fetch_ordered_container_ids(section_slug) do
     container_type_id = Oli.Resources.ResourceType.get_id_by_type("container")
 
     SectionResource
