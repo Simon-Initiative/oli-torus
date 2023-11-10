@@ -57,7 +57,7 @@ defmodule OliWeb.Common.Stepper do
           <div class={"p-3 flex items-center bg-gray-100/50 dark:bg-black #{if is_nil(@on_cancel), do: "justify-end", else: "justify-between"}"}>
             <%= if !is_nil(@on_cancel) do %>
               <button
-                phx-click={@on_cancel |> fade_out_transition("stepper_content")}
+                phx-click={@on_cancel}
                 class="torus-button secondary !py-[10px] !px-5 !rounded-[3px] !text-sm flex items-center justify-center  dark:!text-white dark:!bg-black dark:hover:!bg-gray-900"
               >
                 <%= @cancel_button_label %>
