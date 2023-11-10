@@ -89,7 +89,7 @@ defmodule OliWeb.Delivery.OpenAndFreeIndex do
                   :for={section <- @filtered_sections}
                   href={~p"/sections/#{section.slug}/overview"}
                   phx-click={JS.add_class("opacity-0", to: "#content")}
-                  class={"relative flex items-center self-stretch h-[201px] w-full bg-cover py-12 px-24 bg-[url('#{cover_image(section)}')] text-black hover:text-black dark:text-white dark:hover:text-white rounded-xl shadow-lg hover:no-underline hover:scale-[1.002]"}
+                  class={"relative flex items-center self-stretch h-[201px] w-full bg-cover py-12 px-24 bg-[url('#{cover_image(section)}')] text-black hover:text-black dark:text-white dark:hover:text-white rounded-xl shadow-lg hover:no-underline hover:scale-[1.002] transition-all hover:translate-x-3"}
                 >
                   <div class="top-0 left-0 rounded-xl absolute w-full h-full backdrop-blur" />
                   <span

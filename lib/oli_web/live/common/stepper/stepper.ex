@@ -1,5 +1,5 @@
 defmodule OliWeb.Common.Stepper do
-  use Phoenix.LiveComponent
+  use OliWeb, :live_component
 
   alias OliWeb.Common.Stepper.Step
 
@@ -38,7 +38,7 @@ defmodule OliWeb.Common.Stepper do
     <div id={@id} class="flex md:flex-row flex-col-reverse h-full w-full">
       <div class="bg-blue-700 dark:bg-black h-2/5 w-full md:h-full md:w-2/5" />
       <div class="dark:bg-gray-900 h-3/5 w-full md:h-full md:w-3/5" />
-      <div class="flex md:flex-row flex-col-reverse absolute px-8 sm:px-16 lg:px-24 xl:px-32 top-14 bottom-0 left-0 right-0 m-auto">
+      <div class="flex md:flex-row flex-col-reverse absolute px-8 sm:px-16 lg:pl-24 lg:pr-16 xl:px-32 top-14 bottom-0 left-0 right-0 m-auto">
         <div class="w-full md:w-1/3 my-auto z-20">
           <div class="flex md:flex-col flex-row gap-[42px] md:-mr-[30px] scrollbar-hide overflow-x-auto md:overflow-x-hidden">
             <%= for {step, index} <- @steps do %>
@@ -48,13 +48,16 @@ defmodule OliWeb.Common.Stepper do
         </div>
         <div class={[
           "bg-white dark:bg-[#0B0C11] w-full md:w-2/3 flex flex-col overflow-y-scroll shadow-xl",
-          if(@id == "course_creation_stepper", do: "my-10", else: "my-32")
+          if(@id == "course_creation_stepper", do: "my-10", else: "my-16 xl:my-32")
         ]}>
-          <%= @selected_step.render_fn.(@data) %>
+          <div id="stepper_content" class="flex flex-col h-[calc(100%-64px)] w-full">
+            <%= @selected_step.render_fn.(@data) %>
+          </div>
+
           <div class={"p-3 flex items-center bg-gray-100/50 dark:bg-black #{if is_nil(@on_cancel), do: "justify-end", else: "justify-between"}"}>
             <%= if !is_nil(@on_cancel) do %>
               <button
-                phx-click={@on_cancel}
+                phx-click={@on_cancel |> fade_out_transition("stepper_content")}
                 class="torus-button secondary !py-[10px] !px-5 !rounded-[3px] !text-sm flex items-center justify-center  dark:!text-white dark:!bg-black dark:hover:!bg-gray-900"
               >
                 <%= @cancel_button_label %>
@@ -63,7 +66,9 @@ defmodule OliWeb.Common.Stepper do
             <div class="flex gap-2">
               <%= if @current_step != 0 do %>
                 <button
-                  phx-click={@selected_step.on_previous_step}
+                  phx-click={
+                    @selected_step.on_previous_step |> fade_out_transition("stepper_content")
+                  }
                   class="torus-button secondary !py-[10px] !px-5 !rounded-[3px] !text-sm flex items-center justify-center  dark:!text-white dark:!bg-black dark:hover:!bg-gray-900"
                 >
                   <i class="fa-solid fa-arrow-left mr-2"></i><%= @selected_step.previous_button_label ||
@@ -72,7 +77,7 @@ defmodule OliWeb.Common.Stepper do
               <% end %>
               <button
                 disabled={@next_step_disabled}
-                phx-click={@selected_step.on_next_step}
+                phx-click={@selected_step.on_next_step |> fade_out_transition("stepper_content")}
                 class="torus-button primary !py-[10px] !px-5 !rounded-[3px] !text-sm flex items-center justify-center"
               >
                 <%= @selected_step.next_button_label || "Next step" %>
@@ -109,5 +114,15 @@ defmodule OliWeb.Common.Stepper do
     ~H"""
     <h3>Invalid stepper index</h3>
     """
+  end
+
+  defp fade_out_transition(%JS{} = js, target_id) do
+    js
+    |> JS.transition(
+      {"ease-out duration-300", "opacity-0", "opacity-100"},
+      to: "##{target_id}",
+      time: 300
+    )
+    |> JS.remove_class("opacity-100", to: "##{target_id}")
   end
 end
