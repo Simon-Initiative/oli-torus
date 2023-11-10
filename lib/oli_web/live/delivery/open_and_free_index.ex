@@ -56,8 +56,12 @@ defmodule OliWeb.Delivery.OpenAndFreeIndex do
     <main role="main" class="relative flex flex-col pb-[60px]">
       <Components.Header.header {assigns} />
       <div id="content" class="transition-all duration-100">
-        <div class="flex items-center h-[247px] bg-gray-300">
-          <h1 class="text-[64px] leading-[87px] tracking-[0.02px] pl-[100px]">
+        <div class="relative flex items-center h-[247px] w-full bg-gray-100 dark:bg-[#0B0C11]">
+          <div
+            class="absolute top-0 left-0 h-full w-full"
+            style="background: linear-gradient(90deg, #D9D9D9 0%, rgba(217, 217, 217, 0.00) 100%);"
+          />
+          <h1 class="text-[64px] leading-[87px] tracking-[0.02px] pl-[100px] z-10">
             Hi, <span class="font-bold"><%= user_given_name(@ctx) %></span>
           </h1>
         </div>
