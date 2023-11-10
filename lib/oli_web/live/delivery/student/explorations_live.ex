@@ -9,14 +9,7 @@ defmodule OliWeb.Delivery.Student.ExplorationsLive do
 
   def mount(_params, _session, socket) do
     explorations_by_container =
-      Sections.get_explorations_by_containers(socket.assigns.section)
-      # TODO: Determine exploration status so that we can show the correct button label
-      |> Enum.map(fn {container, explorations} ->
-        {container,
-         Enum.map(explorations, fn exploration ->
-           {exploration, :not_started}
-         end)}
-      end)
+      Sections.get_explorations_by_containers(socket.assigns.section, socket.assigns.ctx.user)
 
     {:ok,
      assign(socket,

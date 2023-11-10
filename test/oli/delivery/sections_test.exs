@@ -397,15 +397,16 @@ defmodule Oli.Delivery.SectionsTest do
       exploration_page3: exploration_page3,
       exploration_page4: exploration_page4
     } do
-      explorations = Sections.get_explorations_by_containers(section)
+      explorations = Sections.get_explorations_by_containers(section, nil)
 
       exploration_page3_id = exploration_page3.id
       exploration_page4_id = exploration_page4.id
 
       assert [
-               {"Unit 1: Unit 1", [%Oli.Resources.Revision{id: ^exploration_page4_id}]},
+               {"Unit 1: Unit 1",
+                [{%Oli.Resources.Revision{id: ^exploration_page4_id}, :not_started}]},
                {"Module 1: Nested Unit 1 Module 1",
-                [%Oli.Resources.Revision{id: ^exploration_page3_id}]}
+                [{%Oli.Resources.Revision{id: ^exploration_page3_id}, :not_started}]}
              ] = explorations
     end
   end
