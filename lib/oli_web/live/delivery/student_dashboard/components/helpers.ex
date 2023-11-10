@@ -152,7 +152,7 @@ defmodule OliWeb.Delivery.StudentDashboard.Components.Helpers do
         <%= if @preview_mode do %>
           <UserAccount.preview_user_menu />
         <% else %>
-          <UserAccountMenu.menu id="user-account-menu" ctx={@ctx} />
+          <UserAccount.menu id="user-account-menu" ctx={@ctx} />
         <% end %>
         <div class="flex items-center border-l border-slate-300">
           <button

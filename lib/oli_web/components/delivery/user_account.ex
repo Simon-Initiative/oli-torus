@@ -49,11 +49,11 @@ defmodule OliWeb.Components.Delivery.UserAccount do
       </button>
       <.dropdown_menu id={"#{@id}-dropdown"}>
         <%= case assigns.ctx do %>
-          <% %SessionContext{author: %Author{} = author, is_admin: true} -> %>
+          <% %SessionContext{author: %Author{}, is_admin: true} -> %>
             <.admin_menu_items id={"#{@id}-menu-items-admin"} ctx={@ctx} />
           <% %SessionContext{user: %User{guest: true}} -> %>
             <.guest_menu_items id={"#{@id}-menu-items-admin"} ctx={@ctx} />
-          <% %SessionContext{user: %User{} = user} -> %>
+          <% %SessionContext{user: %User{}} -> %>
             <.user_menu_items id={"#{@id}-menu-items-admin"} ctx={@ctx} />
           <% _ -> %>
         <% end %>
@@ -115,6 +115,9 @@ defmodule OliWeb.Components.Delivery.UserAccount do
     }>
       Create account or sign in
     </.menu_item_link>
+    <.menu_item_link href={signout_path(@ctx)}>
+      <%= if @ctx.user.is_guest, do: "Leave course", else: "Sign out" %>
+    </.menu_item_link>
     """
   end
 
@@ -163,6 +166,14 @@ defmodule OliWeb.Components.Delivery.UserAccount do
     >
       <%= render_slot(@inner_block) %>
     </a>
+    """
+  end
+
+  def menu_item_my_courses_link(assigns) do
+    ~H"""
+    <.menu_item_link href={~p"/sections"}>
+      My Courses
+    </.menu_item_link>
     """
   end
 
@@ -238,7 +249,7 @@ defmodule OliWeb.Components.Delivery.UserAccount do
     ~H"""
     <.menu_item>
       <div class="text-xs font-semibold mb-1">Timezone</div>
-      <div>
+      <div class="w-64">
         <Timezone.select id={@id} ctx={@ctx} />
       </div>
     </.menu_item>
@@ -325,155 +336,15 @@ defmodule OliWeb.Components.Delivery.UserAccount do
   def linked_author_account(%User{author: %Author{email: email}}), do: email
   def linked_author_account(_), do: nil
 
-  # attr :user, User, default: nil
+  defp signout_path(%SessionContext{user: user, author: author}) do
+    admin_role_id = Oli.Accounts.SystemRole.role_id().admin
 
-  # def user_icon(assigns) do
-  #   ~H"""
-  #   <%= case @user do %>
-  #     <% nil -> %>
-  #       <div className="user-icon">
-  #         <div className="user-img rounded-full">
-  #           <i className="fa-solid fa-circle-user fa-2xl mt-[-1px] ml-[-1px] text-gray-600"></i>
-  #         </div>
-  #       </div>
-  #     <% %User{picture: picture} -> %>
-  #       <div className="user-icon">
-  #         <img src={picture} className="rounded-full" referrerPolicy="no-referrer" />
-  #       </div>
-  #   <% end %>
-  #   """
-  # end
+    case {user, author} do
+      {_, %Author{system_role_id: ^admin_role_id}} ->
+        Routes.authoring_session_path(OliWeb.Endpoint, :signout, type: :author)
 
-  # def menu(assigns) do
-  #   assigns = user_account_menu_assigns(assigns)
-
-  #   ~H"""
-  #   <%= React.component(
-  #     @ctx,
-  #     "Components.UserAccountMenu",
-  #     %{
-  #       user: @user,
-  #       preview: @preview,
-  #       routes: @routes,
-  #       sectionSlug: @section_slug,
-  #       selectedTimezone: @selected_timezone,
-  #       timezones: @timezones
-  #     },
-  #     id: "menu",
-  #     target_id: "user-menu"
-  #   ) %>
-  #   """
-  # end
-
-  # def user_menu_loader(assigns) do
-  #   ~H"""
-  #   <svg
-  #     width="158.507"
-  #     height="43.756"
-  #     viewBox="0 0 40.857 11.279"
-  #     xmlns="http://www.w3.org/2000/svg"
-  #   >
-  #     <!-- Animated gradient -->
-  #     <defs>
-  #       <linearGradient id="loader-gradient" gradientTransform="rotate(20)">
-  #         <stop offset="5%" stop-color="#eee">
-  #           <animate
-  #             attributeName="stop-color"
-  #             values="#EEEEEE; #CCCCCC; #EEEEEE"
-  #             dur="1s"
-  #             repeatCount="indefinite"
-  #           >
-  #           </animate>
-  #         </stop>
-  #         <stop offset="95%" stop-color="#aaa">
-  #           <animate
-  #             attributeName="stop-color"
-  #             values="#EEEEEE; #DDDDDD; #EEEEEE"
-  #             dur="3s"
-  #             repeatCount="indefinite"
-  #           >
-  #           </animate>
-  #         </stop>
-  #       </linearGradient>
-  #     </defs>
-
-  #     <g transform="translate(-8.79 -1.99)">
-  #       <circle fill="url(#loader-gradient)" cx="44.009" cy="7.63" r="5.639" /><path
-  #         fill="url(#loader-gradient)"
-  #         d="M8.791 4.478h27.588v2.267H8.791z"
-  #       /><path fill="url(#loader-gradient)" d="M16.78 8.321h19.627v2.267H16.78z" />
-  #     </g>
-  #   </svg>
-  #   """
-  # end
-
-  # def user_account_menu_assigns(assigns) do
-  #   assigns
-  #   |> assign(
-  #     :user,
-  #     case assigns.ctx do
-  #       %SessionContext{user: user_or_admin} when not is_nil(user_or_admin) ->
-  #         %{
-  #           picture: user_or_admin.picture,
-  #           name: user_name(user_or_admin),
-  #           role: user_role(assigns[:section], user_or_admin),
-  #           roleLabel: user_role_text(assigns[:section], user_or_admin),
-  #           roleColor: user_role_color(assigns[:section], user_or_admin),
-  #           isGuest: user_is_guest?(assigns),
-  #           isIndependentInstructor: Sections.is_independent_instructor?(user_or_admin),
-  #           isIndependentLearner: user_is_independent_learner?(user_or_admin),
-  #           linkedAuthorAccount: linked_author_account(user_or_admin),
-  #           selectedTimezone: timezone_preference(user_or_admin)
-  #         }
-
-  #       %SessionContext{author: author} when not is_nil(author) ->
-  #         %{
-  #           picture: author.picture,
-  #           name: user_name(author),
-  #           role: user_role(assigns[:section], author),
-  #           roleLabel: user_role_text(assigns[:section], author),
-  #           roleColor: user_role_color(assigns[:section], author),
-  #           isGuest: user_is_guest?(assigns),
-  #           isIndependentInstructor: Sections.is_independent_instructor?(author),
-  #           isIndependentLearner: user_is_independent_learner?(author),
-  #           linkedAuthorAccount: linked_author_account(author),
-  #           selectedTimezone: timezone_preference(author)
-  #         }
-
-  #       _ ->
-  #         nil
-  #     end
-  #   )
-  #   |> assign(:preview, is_preview_mode?(assigns))
-  #   |> assign(
-  #     :routes,
-  #     %{
-  #       signin:
-  #         Routes.delivery_path(OliWeb.Endpoint, :signin, section: maybe_section_slug(assigns)),
-  #       signout: signout_path(assigns.ctx),
-  #       projects: Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.ProjectsLive),
-  #       linkAccount: Routes.delivery_path(OliWeb.Endpoint, :link_account),
-  #       editAccount: Routes.pow_registration_path(OliWeb.Endpoint, :edit),
-  #       updateTimezone: Routes.static_page_path(OliWeb.Endpoint, :update_timezone),
-  #       openAndFreeIndex: ~p"/sections"
-  #     }
-  #   )
-  #   |> assign(
-  #     :section_slug,
-  #     maybe_section_slug(assigns)
-  #   )
-  #   |> OliWeb.Common.SelectTimezone.timezone_assigns()
-  # end
-
-  # defp signout_path(%SessionContext{user: user_or_admin}) do
-  #   admin_role_id = SystemRole.role_id().admin
-
-  #   case user_or_admin do
-  #     %Author{system_role_id: ^admin_role_id} ->
-  #       Routes.authoring_session_path(OliWeb.Endpoint, :signout, type: :author)
-
-  #     _ ->
-  #       Routes.session_path(OliWeb.Endpoint, :signout, type: :user)
-  #   end
-  # end
+      {_user, _} ->
+        Routes.session_path(OliWeb.Endpoint, :signout, type: :user)
+    end
+  end
 end

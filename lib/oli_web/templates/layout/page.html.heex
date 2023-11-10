@@ -1,6 +1,14 @@
 <%= render_layout "delivery.html", assigns do %>
-  <Components.Delivery.NavSidebar.main_with_nav {assigns}>
+  <Components.Delivery.Layouts.header_with_sidebar_nav
+    ctx={@ctx}
+    section={@section}
+    brand={Oli.Branding.get_section_brand(@section)}
+    preview_mode={@preview_mode}
+    active_tab={:content}
+  >
     <div class="flex-1 flex flex-col pb-[60px]">
+      <Components.Delivery.Layouts.flash_messages flash={@flash} />
+
       <%= render(OliWeb.LayoutView, "_pay_early.html", assigns) %>
 
       <%= for script <- @scripts do %>
@@ -73,5 +81,5 @@
 
       <%= render(OliWeb.LayoutView, "_delivery_footer.html", assigns) %>
     </div>
-  </Components.Delivery.NavSidebar.main_with_nav>
+  </Components.Delivery.Layouts.header_with_sidebar_nav>
 <% end %>

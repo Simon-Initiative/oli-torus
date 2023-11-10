@@ -5,7 +5,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard do
 
   alias OliWeb.Router.Helpers, as: Routes
   alias Oli.Delivery.Sections.Section
-  alias OliWeb.Components.Delivery.UserAccountMenu
+  alias OliWeb.Components.Delivery.UserAccount
   alias OliWeb.Components.Header
   alias OliWeb.Common.SessionContext
 
@@ -203,7 +203,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard do
           <%= if @preview_mode do %>
             <UserAccount.preview_user_menu />
           <% else %>
-            <UserAccountMenu.menu id="user-account-menu" ctx={@ctx} section={@section} />
+            <UserAccount.menu id="user-account-menu" ctx={@ctx} section={@section} />
           <% end %>
         </div>
 

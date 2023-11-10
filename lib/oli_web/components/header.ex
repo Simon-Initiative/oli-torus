@@ -7,7 +7,7 @@ defmodule OliWeb.Components.Header do
   import OliWeb.Components.Delivery.Utils
 
   alias OliWeb.Router.Helpers, as: Routes
-  alias OliWeb.Components.Delivery.UserAccountMenu
+  alias OliWeb.Components.Delivery.UserAccount
   alias OliWeb.Components.Delivery.Buttons
   alias OliWeb.Breadcrumb.BreadcrumbTrailLive
   alias OliWeb.Common.SessionContext
@@ -74,7 +74,7 @@ defmodule OliWeb.Components.Header do
             </div>
           <% user_signed_in?(assigns) -> %>
             <div class="max-w-[400px] my-auto">
-              <UserAccountMenu.menu id="user-account-menu" ctx={@ctx} />
+              <UserAccount.menu id="user-account-menu" ctx={@ctx} />
             </div>
           <% true -> %>
             <%= link("Learner/Educator Sign In",
