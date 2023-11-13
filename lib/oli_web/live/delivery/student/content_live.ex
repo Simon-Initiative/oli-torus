@@ -359,16 +359,18 @@ defmodule OliWeb.Delivery.Student.ContentLive do
 
   def intro_card(assigns) do
     ~H"""
-    <div class="slider-card hover:scale-[1.01]" role="intro_card">
-      <div class="rounded-lg absolute h-[162px] w-[288px] cursor-pointer dark:bg-[linear-gradient(180deg,#223_0%,rgba(34,34,51,0.72)_52.6%,rgba(34,34,51,0.00)_100%)]" />
+    <div class="relative slider-card hover:scale-[1.01]" role="intro_card">
+      <div class="rounded-lg absolute -top-[0.7px] -left-[0.7px] h-[163px] w-[289.5px] cursor-pointer bg-[linear-gradient(180deg,#D9D9D9_0%,rgba(217,217,217,0.00)_100%)] dark:bg-[linear-gradient(180deg,#223_0%,rgba(34,34,51,0.72)_52.6%,rgba(34,34,51,0.00)_100%)]" />
       <div class={[
-        "flex flex-col items-center rounded-lg h-[162px] w-[288px] bg-gray-200 shrink-0 px-5 pt-[15px]",
+        "flex flex-col items-center rounded-lg h-[162px] w-[288px] bg-gray-200/50 shrink-0 px-5 pt-[15px]",
         if(@bg_image_url in ["", nil],
           do: "bg-[url('/images/course_default.jpg')]",
           else: "bg-[url('#{@bg_image_url}')]"
         )
       ]}>
-        <h5 class="text-[13px] leading-[18px] font-bold self-start dark:text-white"><%= @title %></h5>
+        <h5 class="text-[13px] leading-[18px] font-bold opacity-60 text-gray-500 dark:text-white dark:text-opacity-50 self-start">
+          <%= @title %>
+        </h5>
         <div
           :if={@video_url}
           id={@card_uuid}
@@ -432,7 +434,7 @@ defmodule OliWeb.Delivery.Student.ContentLive do
       ]}
       role={"card_#{@module_index}"}
     >
-      <div class="rounded-xl absolute h-[162px] w-[288px] cursor-pointer dark:bg-[linear-gradient(180deg,#223_0%,rgba(34,34,51,0.72)_52.6%,rgba(34,34,51,0.00)_100%)]" />
+      <div class="rounded-xl absolute -top-[0.7px] -left-[0.7px] h-[163px] w-[289.5px] cursor-pointer bg-[linear-gradient(180deg,#D9D9D9_0%,rgba(217,217,217,0.00)_100%)] dark:bg-[linear-gradient(180deg,#223_0%,rgba(34,34,51,0.72)_52.6%,rgba(34,34,51,0.00)_100%)]" />
       <.page_icon :if={is_page(@module["revision"])} />
       <div class="h-[170px] w-[288px]">
         <div class={[
