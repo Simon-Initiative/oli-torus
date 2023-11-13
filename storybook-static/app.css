@@ -9871,6 +9871,10 @@ body {
   background-color: rgb(245 245 245 / var(--tw-bg-opacity));
 }
 
+.hover\:cursor-help:hover {
+  cursor: help;
+}
+
 .hover\:border-b-4:hover {
   border-bottom-width: 4px;
 }
