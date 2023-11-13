@@ -504,7 +504,7 @@ defmodule OliWeb.Delivery.Student.ContentLive do
   def page_icon(assigns) do
     ~H"""
     <div class="h-[45px] w-[36px] absolute top-0 right-0" role="page_icon">
-      <img src={~p"/images/ng23/course_content/rectangle_421.png"} />
+      <img src={~p"/images/ng23/course_content/page_icon.png"} />
       <div class="absolute top-0 right-0 h-[36px] w-[36px] flex justify-center items-center">
         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="20" viewBox="0 0 18 20" fill="none">
           <path
