@@ -63,6 +63,7 @@ defmodule Oli.Delivery.Sections.Section do
 
     field(:resource_gating_index, :map, default: %{})
     field(:previous_next_index, :map, default: nil)
+    field(:resource_to_container_map, :map, default: nil)
     field(:display_curriculum_item_numbering, :boolean, default: true)
     field(:contains_explorations, :boolean, default: false)
 
@@ -137,7 +138,7 @@ defmodule Oli.Delivery.Sections.Section do
     field(:page_prompt_template, :string)
 
     # we store the full section hierarchy to avoid having to build it on the fly when needed.
-    field :full_hierarchy, :map, default: %{}
+    field(:full_hierarchy, :map, default: %{})
     # Allow major project publications to be applied to course sections created from this product
     field(:apply_major_updates, :boolean, default: false)
 
@@ -177,6 +178,7 @@ defmodule Oli.Delivery.Sections.Section do
       :nrps_context_memberships_url,
       :resource_gating_index,
       :previous_next_index,
+      :resource_to_container_map,
       :lti_1p3_deployment_id,
       :institution_id,
       :base_project_id,

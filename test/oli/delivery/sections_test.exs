@@ -391,6 +391,7 @@ defmodule Oli.Delivery.SectionsTest do
       )
     end
 
+    @tag capture_log: true
     test "returns a map with container labels as keys and the explorations they link to", %{
       section: section,
       exploration_page3: exploration_page3,
