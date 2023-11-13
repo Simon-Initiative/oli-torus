@@ -101,7 +101,7 @@ defmodule OliWeb.Delivery.NewCourse do
       <.live_component
         id="course_creation_stepper"
         module={Stepper}
-        on_cancel="redirect_to_courses"
+        on_cancel={JS.push("redirect_to_courses")}
         steps={@steps || []}
         current_step={@current_step}
         next_step_disabled={next_step_disabled?(assigns)}
