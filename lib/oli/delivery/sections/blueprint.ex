@@ -163,7 +163,9 @@ defmodule Oli.Delivery.Sections.Blueprint do
               case Sections.create_section_resources(blueprint, publication, hierarchy_definition) do
                 {:ok, section} ->
                   {:ok, section} = Delivery.maybe_update_section_contains_explorations(section)
-                  {:ok, section} = Delivery.maybe_update_section_contains_deliberate_practice(section)
+
+                  {:ok, section} =
+                    Delivery.maybe_update_section_contains_deliberate_practice(section)
 
                   section
 

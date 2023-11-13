@@ -376,9 +376,8 @@ defmodule OliWeb.Delivery.NewCourse do
            {:ok, _enrollment} <- enroll(socket, section),
            {:ok, section} <-
              Oli.Delivery.maybe_update_section_contains_explorations(section),
-            {:ok, updated_section} <-
-              Oli.Delivery.maybe_update_section_contains_deliberate_practice(section)
-             do
+           {:ok, updated_section} <-
+             Oli.Delivery.maybe_update_section_contains_deliberate_practice(section) do
         updated_section
       else
         {:error, changeset} ->

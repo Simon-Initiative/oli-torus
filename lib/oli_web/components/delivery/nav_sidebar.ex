@@ -193,26 +193,32 @@ defmodule OliWeb.Components.Delivery.NavSidebar do
       }
     ]
 
-    all = if assigns.section.contains_explorations do
-      all ++ [%{
-        name: "Exploration",
-        href: exploration_url(assigns),
-        active: is_active(path_info, :exploration)
-      }]
-    else
-      all
-    end
+    all =
+      if assigns.section.contains_explorations do
+        all ++
+          [
+            %{
+              name: "Exploration",
+              href: exploration_url(assigns),
+              active: is_active(path_info, :exploration)
+            }
+          ]
+      else
+        all
+      end
 
     if assigns.section.contains_deliberate_practice do
-      all ++ [%{
-        name: "Practice",
-        href: deliberate_practice_url(assigns),
-        active: is_active(path_info, :deliberate_practice)
-      }]
+      all ++
+        [
+          %{
+            name: "Practice",
+            href: deliberate_practice_url(assigns),
+            active: is_active(path_info, :deliberate_practice)
+          }
+        ]
     else
       all
     end
-
   end
 
   defp logo_details(assigns) do
@@ -273,7 +279,11 @@ defmodule OliWeb.Components.Delivery.NavSidebar do
 
   defp deliberate_practice_url(assigns) do
     if assigns[:preview_mode] do
-      Routes.page_delivery_path(OliWeb.Endpoint, :deliberate_practice_preview, assigns[:section_slug])
+      Routes.page_delivery_path(
+        OliWeb.Endpoint,
+        :deliberate_practice_preview,
+        assigns[:section_slug]
+      )
     else
       Routes.page_delivery_path(OliWeb.Endpoint, :deliberate_practice, assigns[:section_slug])
     end
