@@ -354,7 +354,8 @@ defmodule OliWeb.OpenAndFreeController do
            {:ok, _} <- Sections.rebuild_contained_pages(section),
            {:ok, _} <- Sections.rebuild_contained_objectives(section),
            {:ok, _enrollment} <- enroll(conn, section),
-           {:ok, updated_section} <- Delivery.maybe_update_section_contains_explorations(section) do
+           {:ok, section} <- Delivery.maybe_update_section_contains_explorations(section),
+           {:ok, updated_section} <- Delivery.maybe_update_section_contains_deliberate_practice(section) do
         updated_section
       else
         {:error, changeset} -> Repo.rollback(changeset)

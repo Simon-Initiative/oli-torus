@@ -163,6 +163,8 @@ defmodule Oli.Delivery.Sections.Blueprint do
               case Sections.create_section_resources(blueprint, publication, hierarchy_definition) do
                 {:ok, section} ->
                   {:ok, section} = Delivery.maybe_update_section_contains_explorations(section)
+                  {:ok, section} = Delivery.maybe_update_section_contains_deliberate_practice(section)
+
                   section
 
                 {:error, e} ->
@@ -224,6 +226,7 @@ defmodule Oli.Delivery.Sections.Blueprint do
           delivery_policy_id: nil,
           customizations: custom_labels,
           contains_explorations: section.contains_explorations,
+          contains_deliberate_practice: section.contains_deliberate_practice,
           cover_image: section.cover_image,
           skip_email_verification: section.skip_email_verification,
           registration_open: section.registration_open,
