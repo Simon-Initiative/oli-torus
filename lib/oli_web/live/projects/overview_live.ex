@@ -476,7 +476,9 @@ defmodule OliWeb.Projects.OverviewLive do
   def handle_event("generate_datashop_snapshot", _params, socket) do
     project = socket.assigns.project
 
-    case Course.generate_datashop_snapshot(project) do
+    section_ids = []
+
+    case Course.generate_datashop_snapshot(project, section_ids) do
       {:ok, _job} ->
         Broadcaster.broadcast_datashop_export_status(project.slug, {:in_progress})
 

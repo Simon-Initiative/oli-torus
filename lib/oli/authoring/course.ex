@@ -561,18 +561,18 @@ defmodule Oli.Authoring.Course do
   @doc """
   Generates a datashop snapshot for the given project if one is not already in progress
   """
-  def generate_datashop_snapshot(project) do
+  def generate_datashop_snapshot(project, section_ids) do
     case datashop_export_status(project) do
       {:in_progress} ->
         {:error, "Datashop snapshot is already in progress"}
 
       _ ->
-        generate_datashop_snapshot!(project)
+        generate_datashop_snapshot!(project, section_ids)
     end
   end
 
-  defp generate_datashop_snapshot!(project) do
-    %{project_slug: project.slug}
+  defp generate_datashop_snapshot!(project, section_ids) do
+    %{project_slug: project.slug, section_ids: section_ids}
     |> Oli.Analytics.DatashopExportWorker.new()
     |> Oban.insert()
   end
