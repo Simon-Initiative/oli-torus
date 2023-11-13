@@ -13,6 +13,7 @@ import { MediaIcon } from './MediaIcon';
 import './MediaManager.scss';
 import { VideoUploadWarning } from './VideoUploadWarning';
 import { uploadFiles } from './upload';
+import { formatDate } from 'components/activities/common/utils';
 
 const PAGELOAD_TRIGGER_MARGIN_PX = 100;
 const MAX_NAME_LENGTH = 30;
@@ -142,10 +143,6 @@ const getMediaManagerLayoutSetting = (): LAYOUTS => {
   }
 };
 
-const formatDate = (date: string) => {
-  const d = new Date(date);
-  return `${d.toLocaleDateString()} ${d.toLocaleTimeString()}`;
-};
 
 /**
  * MediaManager React Component

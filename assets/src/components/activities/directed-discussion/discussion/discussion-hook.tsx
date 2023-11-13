@@ -7,7 +7,7 @@ import {
 import * as DiscussionService from './discussion-service';
 import { mergePost, removeFromPosts } from './post-util';
 
-export const useDiscussion = (sectionSlug: string | undefined, resourceId: number) => {
+export const useDiscussion = (sectionSlug: string | undefined, resourceId?: number) => {
   /* Posts are stored in a tree structure, with each post having a list of children. This array will have the
      top level posts in it. */
   const [posts, setPosts] = useState<DiscussionService.ThreadedPost[]>([]);
@@ -76,7 +76,7 @@ export const useDiscussion = (sectionSlug: string | undefined, resourceId: numbe
     refreshPosts();
 
     // Connect & subscribe to the discussion channel to get realtime updates
-    const channel = connectToDiscussionChannel(sectionSlug, resourceId);
+    const channel = resourceId && connectToDiscussionChannel(sectionSlug, resourceId);
 
     channel.join().receive('ok', (e: any) => {
       console.log('Joined channel', e);

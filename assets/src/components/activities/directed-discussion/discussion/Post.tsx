@@ -1,8 +1,10 @@
 import React from 'react';
+import { formatDate } from 'components/activities/common/utils';
 import { useToggle } from 'components/hooks/useToggle';
 import { LinkButton } from 'components/misc/Button';
 import { CreatePost } from './CreatePost';
 import { PostList } from './DiscussionThread';
+import { DiscussionPortrait } from './Portrait';
 import { OnDeletePostHandler, OnPostHandler, ThreadedPost } from './discussion-service';
 
 export const Post: React.FC<{
@@ -11,36 +13,39 @@ export const Post: React.FC<{
   onPost: OnPostHandler;
   onDeletePost: OnDeletePostHandler;
   canPost: boolean;
-}> = ({ post, onPost, currentUserId, onDeletePost, canPost }) => {
-  const [replyOpen, toggleReplyOpen] = useToggle(false);
-  const onPostReply = (content: string) => {
-    toggleReplyOpen();
-    onPost(content, post.id);
+  maxWords: number;
+}> = ({ post, onPost, currentUserId, onDeletePost, canPost, maxWords }) => {
+    const onPostReply = (content: string) => {
+      onPost(content, post.id);
   };
 
   const canDelete = currentUserId === post.user_id && post.children.length === 0;
 
   return (
-    <div className="mb-4">
-      <div>
-        {post.user_name}
-        Replies: {post.children.length}
-        {post.updated_at}
-        {canDelete && <DeleteLink onClick={() => onDeletePost(post.id)} />}
+    <div className="mb-4 mt-2">
+      <div className="flex flex-row items-start gap-3 relative">
+        <DiscussionPortrait />
+        <div className="text-xs">
+          <b>{post.user_name}</b>
+          <br />
+          {formatDate(post.updated_at)}
+          {canDelete && <DeleteLink onClick={() => onDeletePost(post.id)} />}
+        </div>
       </div>
-      <div>{post.content}</div>
+
+      <div className="mt-4 ml-15">{post.content}</div>
+
       {canPost && (
-        <>
-          {replyOpen || <LinkButton onClick={toggleReplyOpen}>Reply</LinkButton>}
-          {replyOpen && (
-            <div className="ml-4">
-              <CreatePost onPost={onPostReply} autoFocus={true} />
-            </div>
-          )}
-        </>
+        <CreatePost
+          onPost={onPostReply}
+          autoFocus={true}
+          placeholder="Reply..."
+          maxWords={maxWords}
+        />
       )}
-      <div className="ml-4">
+      <div className="ml-12 mt-25">
         <PostList
+          maxWords={maxWords}
           posts={post.children}
           onPost={onPost}
           currentUserId={currentUserId}
@@ -55,7 +60,7 @@ export const Post: React.FC<{
 const DeleteLink: React.FC<{ onClick: () => void }> = ({ onClick }) => {
   const [confirm, toggleConfirm] = useToggle(false);
   return (
-    <div>
+    <div className="absolute right-1 top-1">
       {confirm || <LinkButton onClick={toggleConfirm}>Delete</LinkButton>}
       {confirm && (
         <>

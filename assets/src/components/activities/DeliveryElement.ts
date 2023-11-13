@@ -60,7 +60,7 @@ export interface ActivityContext {
   pageAttemptGuid: string;
   pageState?: any;
   showFeedback: boolean | null;
-  resourceId: number;
+  resourceId?: number;
 }
 
 /**

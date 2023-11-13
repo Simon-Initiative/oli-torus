@@ -85,6 +85,7 @@ export const DirectedDiscussion: React.FC = () => {
           onPost={addPost}
           currentUserId={currentUserId}
           onDeletePost={deletePost}
+          maxWords={model.participation.maxWordLength}
         />
         <HintsDeliveryConnected
           partId={castPartId(activityState.parts[0].partId)}

@@ -5,6 +5,7 @@ export interface DDParticipationDefinition {
   maxPosts: number;
   minReplies: number;
   maxReplies: number;
+  maxWordLength: number;
   postDeadline?: string;
   replyDeadline?: string;
 }

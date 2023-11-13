@@ -16,6 +16,7 @@ export const defaultDDModel: () => DirectedDiscussionActivitySchema = () => {
       maxReplies: 0,
       minPosts: 0,
       minReplies: 0,
+      maxWordLength: 0,
     },
     authoring: {
       version: 1,

@@ -8,6 +8,9 @@ export interface CurrentParticipation {
   canReply: boolean;
 }
 
+const MAX_POSTS = 1000;
+const MAX_REPLIES = 1000;
+
 export const calculateParticipation = (
   requirements: DDParticipationDefinition,
   posts: Post[],
@@ -17,8 +20,12 @@ export const calculateParticipation = (
   const userPosts = posts.filter((post) => post.parent_post_id === null && post.user_id === userId);
   const replies = posts.filter((post) => post.parent_post_id !== null && post.user_id === userId);
 
-  const canPost = requirements.maxPosts === 0 || userPosts.length < requirements.maxPosts;
-  const canReply = requirements.maxReplies === 0 || replies.length < requirements.maxReplies;
+  const canPost =
+    (requirements.maxPosts === 0 || userPosts.length < requirements.maxPosts) &&
+    userPosts.length < MAX_POSTS;
+  const canReply =
+    (requirements.maxReplies === 0 || replies.length < requirements.maxReplies) &&
+    replies.length < MAX_REPLIES;
 
   return {
     canPost,
@@ -28,3 +35,7 @@ export const calculateParticipation = (
   };
 };
 
+export const countWords = (text: string) => {
+  const words = text.trim().split(/\s+/).length
+  return words;
+};

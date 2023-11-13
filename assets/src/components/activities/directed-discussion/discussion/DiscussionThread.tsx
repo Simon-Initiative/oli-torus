@@ -1,5 +1,6 @@
 import React from 'react';
 import { CreatePost } from './CreatePost';
+import { HorizontalRule } from './DiscussionStyles';
 import { Post } from './Post';
 import { OnDeletePostHandler, OnPostHandler, ThreadedPost } from './discussion-service';
 
@@ -10,6 +11,7 @@ interface Props {
   onDeletePost: OnDeletePostHandler;
   canPost: boolean;
   canReply: boolean;
+  maxWords: number;
 }
 
 export const DiscussionThread: React.FC<Props> = ({
@@ -19,20 +21,27 @@ export const DiscussionThread: React.FC<Props> = ({
   onDeletePost,
   canPost,
   canReply,
+  maxWords,
 }) => {
   // if (!enabled) {
   //   return <DiscussionPreview />;
   // }
   return (
     <div>
-      <h1>Discussion Thread</h1>
-      {canPost && <CreatePost onPost={onPost} />}
+      {canPost && (
+        <div className="mb-4">
+          <HorizontalRule />
+          <CreatePost onPost={onPost} maxWords={maxWords} />
+          <HorizontalRule />
+        </div>
+      )}
       <PostList
         posts={posts}
         onPost={onPost}
         currentUserId={currentUserId}
         onDeletePost={onDeletePost}
         canPost={canReply}
+        maxWords={maxWords}
       />
     </div>
   );
@@ -44,7 +53,8 @@ export const PostList: React.FC<{
   currentUserId: number;
   onDeletePost: OnDeletePostHandler;
   canPost: boolean;
-}> = ({ posts, onPost, currentUserId, onDeletePost, canPost }) => {
+  maxWords: number;
+}> = ({ posts, onPost, currentUserId, onDeletePost, canPost, maxWords }) => {
   return (
     <>
       {posts.map((post) => (
@@ -55,6 +65,7 @@ export const PostList: React.FC<{
           currentUserId={currentUserId}
           onDeletePost={onDeletePost}
           canPost={canPost}
+          maxWords={maxWords}
         />
       ))}
     </>
