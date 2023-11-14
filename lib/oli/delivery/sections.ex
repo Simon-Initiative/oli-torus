@@ -1348,7 +1348,7 @@ defmodule Oli.Delivery.Sections do
   @doc """
   Builds a section's resource_to_container_map and updates the section with it.
   """
-  defp update_resource_to_container_map(section) do
+  def update_resource_to_container_map(section) do
     update_section(section, %{
       resource_to_container_map: build_resource_to_container_map(section)
     })
