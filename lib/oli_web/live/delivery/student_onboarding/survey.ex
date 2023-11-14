@@ -1,5 +1,5 @@
 defmodule OliWeb.Delivery.StudentOnboarding.Survey do
-  use Phoenix.LiveComponent
+  use OliWeb, :live_component
 
   alias Oli.Delivery.Sections
   alias Oli.Resources.PageContent
@@ -99,7 +99,6 @@ defmodule OliWeb.Delivery.StudentOnboarding.Survey do
   attr :survey, :map, required: true
   attr :datashop_session_id, :string, required: true
 
-  # TODO add real DOT svg icon instead of the gray rounded placeholder
   def render(assigns) do
     ~H"""
     <div id="eventIntercept" phx-target={@myself} phx-hook="LoadSurveyScripts" class="h-full">
@@ -112,14 +111,21 @@ defmodule OliWeb.Delivery.StudentOnboarding.Survey do
         </div>
       <% else %>
         <div class="flex pt-12 pb-6 px-[84px] gap-3">
-          <div class="h-14 w-14 bg-gray-700 rounded-full shrink-0" />
-          <div class="flex flex-col gap-3">
-            <h2 class="text-[40px] leading-[54px] tracking-[0.02px] dark:text-white">
-              <%= @title %>
-            </h2>
-            <span class="text-[14px] leading-[20px] tracking-[0.02px] dark:text-white">
-              We’ve pulled the information we can from your LMS, but feel free to adjust it!
-            </span>
+          <div class="flex relative">
+            <img
+              src={~p"/images/ng23/dot_ai_icon.png"}
+              alt="dot icon"
+              class="w-24 absolute -top-4 -left-2"
+            />
+            <div class="w-14 shrink-0 mr-5" />
+            <div class="flex flex-col gap-3">
+              <h2 class="text-[40px] leading-[54px] tracking-[0.02px] dark:text-white">
+                <%= @title %>
+              </h2>
+              <span class="text-[14px] leading-[20px] tracking-[0.02px] dark:text-white">
+                We’ve pulled the information we can from your LMS, but feel free to adjust it!
+              </span>
+            </div>
           </div>
         </div>
         <%= if @loaded do %>
