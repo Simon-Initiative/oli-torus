@@ -38,7 +38,7 @@ export const Post: React.FC<{
       {canPost && (
         <CreatePost
           onPost={onPostReply}
-          autoFocus={true}
+          autoFocus={false}
           placeholder="Reply..."
           maxWords={maxWords}
         />

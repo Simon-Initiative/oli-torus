@@ -14,47 +14,53 @@ export const DiscussionParticipation: React.FC<Props> = ({
   requirements,
   participation,
 }) => {
-  const { minPosts, maxPosts, minReplies, maxReplies } = requirements;
+  const { minPosts, minReplies } = requirements;
 
   const showMinPosts = minPosts > 0;
-  const showMaxPosts = maxPosts > 0;
   const showMinReplies = minReplies > 0;
-  const showMaxReplies = maxReplies > 0;
 
   const hasParticipationRequirement = minPosts > 0 || minReplies > 0;
 
   if (!hasParticipationRequirement) return null;
 
   return (
-    <div>
-      {showMinPosts && (
-        <ParticipationState
-          target={minPosts}
-          current={participation.posts}
-          status={participation.posts >= minPosts ? 'complete' : 'incomplete'}
-        >
-          Minimum Posts
-        </ParticipationState>
-      )}
-      {showMaxPosts && (
-        <ParticipationState target={maxPosts} current={participation.posts} status="">
-          Maximum Posts
-        </ParticipationState>
-      )}
-      {showMinReplies && (
-        <ParticipationState
-          target={minReplies}
-          current={participation.replies}
-          status={participation.replies >= minReplies ? 'complete' : 'incomplete'}
-        >
-          Minimum Replies
-        </ParticipationState>
-      )}
-      {showMaxReplies && (
-        <ParticipationState target={maxReplies} current={participation.replies} status="">
-          Maximum Replies
-        </ParticipationState>
-      )}
+    <div className="absolute right-0 top-0 w-24 text-sm text-center">
+      Participation
+      <table
+        style={
+          { minWidth: 0, width: 96 } /* There are page styles that override the tailwind classes */
+        }
+      >
+        <TopTableDivider />
+        {showMinPosts && (
+          <ParticipationState
+            target={minPosts}
+            current={participation.posts}
+            status={participation.posts >= minPosts ? 'complete' : 'incomplete'}
+          >
+            Post
+          </ParticipationState>
+        )}
+        {/* {showMaxPosts && (
+          <ParticipationState target={maxPosts} current={participation.posts} status="">
+            Maximum Posts
+          </ParticipationState>
+        )} */}
+        {showMinReplies && (
+          <ParticipationState
+            target={minReplies}
+            current={participation.replies}
+            status={participation.replies >= minReplies ? 'complete' : 'incomplete'}
+          >
+            Reply
+          </ParticipationState>
+        )}
+        {/* {showMaxReplies && (
+          <ParticipationState target={maxReplies} current={participation.replies} status="">
+            Maximum Replies
+          </ParticipationState>
+        )} */}
+      </table>
     </div>
   );
 };
@@ -65,17 +71,43 @@ const ParticipationState: React.FC<{
   status: 'complete' | 'incomplete' | '';
   children: React.ReactNode;
 }> = ({ children, target, current, status }) => {
-  const icon =
-    status === 'complete' ? (
-      <Icon icon="check" className="text-green-600" />
-    ) : status === 'incomplete' ? (
-      <Icon className="text-red-700" icon="times" />
-    ) : (
-      ''
-    );
+  // There are some page-styles inherited which prevent our tailwind classes from working
+  const tailwindTablePageReset = {
+    minWidth: 0,
+    maxWidth: 48,
+    padding: '0px 3px',
+    border: '1px solid #E6E6E6',
+  };
+
   return (
-    <label className="bg-gray-400 rounded-md px-2 m-2 text-sm">
-      {children} {current}/{target} {icon}
-    </label>
+    <tr className="bg-gray-100 rounded-md px-2 m-2 text-sm">
+      <td style={tailwindTablePageReset}>{children}</td>
+      <td className="text-center" style={tailwindTablePageReset}>
+        {current}/{target}
+      </td>
+    </tr>
+  );
+};
+
+const TopTableDivider: React.FC = () => {
+  return (
+    <tr
+      style={{
+        padding: 0,
+        border: 0,
+        height: 3,
+      }}
+    >
+      <td
+        style={{
+          padding: 0,
+          border: 0,
+          height: 3,
+        }}
+        colSpan={2}
+      >
+        <div className="rounded-sm border-t-2 border-delivery-primary"></div>
+      </td>
+    </tr>
   );
 };

@@ -31,7 +31,7 @@ export const DiscussionThread: React.FC<Props> = ({
       {canPost && (
         <div className="mb-4">
           <HorizontalRule />
-          <CreatePost onPost={onPost} maxWords={maxWords} />
+          <CreatePost onPost={onPost} maxWords={maxWords} autoFocus={true} />
           <HorizontalRule />
         </div>
       )}
