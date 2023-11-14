@@ -2800,8 +2800,6 @@ defmodule Oli.Delivery.Sections do
 
       Delivery.maybe_update_section_contains_explorations(section)
 
-      update_resource_to_container_map(section)
-
       {:ok}
     end)
   end
