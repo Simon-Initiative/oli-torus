@@ -4,7 +4,6 @@ defmodule OliWeb.Delivery.StudentOnboarding.Wizard do
   alias OliWeb.Common.Stepper
   alias OliWeb.Common.Stepper.Step
   alias OliWeb.Delivery.StudentOnboarding.{Explorations, Intro, Survey}
-  alias OliWeb.Router.Helpers, as: Routes
 
   alias Phoenix.LiveView.JS
 
@@ -194,7 +193,7 @@ defmodule OliWeb.Delivery.StudentOnboarding.Wizard do
 
       {:noreply,
        push_navigate(socket,
-         to: Routes.page_delivery_path(socket, :index, socket.assigns.section.slug)
+         to: ~p"/ng23/sections/#{socket.assigns.section.slug}"
        )}
     else
       {:noreply,
