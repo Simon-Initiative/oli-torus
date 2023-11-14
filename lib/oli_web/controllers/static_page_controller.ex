@@ -4,7 +4,6 @@ defmodule OliWeb.StaticPageController do
   import Oli.Branding
 
   alias Oli.Accounts
-  alias OliWeb.Common.FormatDateTime
 
   def index(conn, _params) do
     render(conn, "index.html")

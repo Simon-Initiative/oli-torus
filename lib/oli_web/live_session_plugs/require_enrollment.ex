@@ -5,15 +5,21 @@ defmodule OliWeb.LiveSessionPlugs.RequireEnrollment do
   import Phoenix.LiveView, only: [redirect: 2, put_flash: 3]
 
   alias Oli.Delivery.Sections
+  alias Oli.Accounts.{Author, SystemRole}
 
   def on_mount(:default, %{"section_slug" => section_slug}, _session, socket) do
-    case socket.assigns[:current_user] do
-      nil ->
+    admin_system_role_id = SystemRole.role_id().admin
+
+    case {socket.assigns[:current_user], socket.assigns[:current_author]} do
+      {_, %Author{system_role_id: ^admin_system_role_id}} ->
+        {:cont, assign(socket, is_enrolled: true)}
+
+      {nil, _} ->
         # if this plug is checking for enrollment, we can infer that
         # we are expecting a user already logged in
         {:halt, redirect(socket, to: ~p"/session/new?request_path=%2Fsections")}
 
-      user ->
+      {user, _} ->
         is_enrolled = Sections.is_enrolled?(user.id, section_slug)
 
         if is_enrolled do

@@ -160,6 +160,8 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard do
   attr(:view, :atom)
 
   def header(assigns) do
+    assigns = assign(assigns, :is_system_admin, assigns[:is_system_admin] || false)
+
     ~H"""
     <div class="w-full bg-delivery-instructor-dashboard-header text-white border-b border-slate-600">
       <div class="container mx-auto flex flex-row">
@@ -209,6 +211,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard do
               section={@section}
               class="hover:!bg-delivery-instructor-dashboard-header-700"
               dropdown_class="text-body-color dark:text-body-color-dark"
+              is_system_admin={@is_system_admin}
             />
           <% end %>
         </div>

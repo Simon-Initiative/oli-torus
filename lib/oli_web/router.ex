@@ -189,7 +189,7 @@ defmodule OliWeb.Router do
 
   # Ensure that the user logged in is an admin user
   pipeline :admin do
-    plug(Oli.Plugs.EnsureAdmin)
+    plug(Oli.Plugs.RequireAdmin)
   end
 
   # parse url encoded forms
@@ -398,7 +398,10 @@ defmodule OliWeb.Router do
     pipe_through([:browser, :authoring_protected, :workspace, :authorize_project])
 
     live_session :load_projects,
-      on_mount: [OliWeb.LiveSessionPlugs.SetCurrentAuthor, OliWeb.LiveSessionPlugs.SetProject] do
+      on_mount: [
+        OliWeb.LiveSessionPlugs.SetUser,
+        OliWeb.LiveSessionPlugs.SetProject
+      ] do
       live("/:project_id/overview", Projects.OverviewLive)
       live("/:project_id", Projects.OverviewLive)
     end
@@ -863,7 +866,10 @@ defmodule OliWeb.Router do
     ])
 
     live_session :instructor_dashboard_preview,
-      on_mount: OliWeb.Delivery.InstructorDashboard.InitialAssigns,
+      on_mount: [
+        OliWeb.LiveSessionPlugs.SetUser,
+        OliWeb.Delivery.InstructorDashboard.InitialAssigns
+      ],
       root_layout: {OliWeb.LayoutView, :delivery_dashboard} do
       live("/", Delivery.InstructorDashboard.InstructorDashboardLive, :preview)
       live("/:view", Delivery.InstructorDashboard.InstructorDashboardLive, :preview)
@@ -915,7 +921,10 @@ defmodule OliWeb.Router do
     )
 
     live_session :instructor_dashboard,
-      on_mount: OliWeb.Delivery.InstructorDashboard.InitialAssigns,
+      on_mount: [
+        OliWeb.LiveSessionPlugs.SetUser,
+        OliWeb.Delivery.InstructorDashboard.InitialAssigns
+      ],
       root_layout: {OliWeb.LayoutView, :delivery_dashboard} do
       live("/:view", Delivery.InstructorDashboard.InstructorDashboardLive)
       live("/:view/:active_tab", Delivery.InstructorDashboard.InstructorDashboardLive)
@@ -933,10 +942,9 @@ defmodule OliWeb.Router do
       :browser,
       :require_section,
       :delivery,
-      # :delivery_and_admin
+      :delivery_protected,
       :require_exploration_pages,
       :delivery_preview,
-      :delivery_protected,
       :maybe_gated_resource,
       :enforce_enroll_and_paywall,
       :ensure_user_section_visit,
@@ -949,9 +957,8 @@ defmodule OliWeb.Router do
       live_session :delivery,
         root_layout: {OliWeb.LayoutView, :delivery},
         on_mount: [
+          OliWeb.LiveSessionPlugs.SetUser,
           OliWeb.LiveSessionPlugs.SetSection,
-          OliWeb.LiveSessionPlugs.SetCurrentUser,
-          OliWeb.LiveSessionPlugs.SetSessionContext,
           OliWeb.LiveSessionPlugs.SetBrand,
           OliWeb.LiveSessionPlugs.SetPreviewMode,
           OliWeb.LiveSessionPlugs.RequireEnrollment
@@ -970,8 +977,7 @@ defmodule OliWeb.Router do
     #     root_layout: {OliWeb.LayoutView, :delivery},
     #     on_mount: [
     #       OliWeb.LiveSessionPlugs.SetSection,
-    #       OliWeb.LiveSessionPlugs.SetCurrentUser,
-    #       OliWeb.LiveSessionPlugs.SetSessionContext,
+    #       OliWeb.LiveSessionPlugs.SetUser,
     #       OliWeb.LiveSessionPlugs.SetBrand,
     #       OliWeb.LiveSessionPlugs.SetPreviewMode,
     #       OliWeb.LiveSessionPlugs.RequireEnrollment
@@ -1042,8 +1048,7 @@ defmodule OliWeb.Router do
     live_session :load_section,
       on_mount: [
         OliWeb.LiveSessionPlugs.SetSection,
-        OliWeb.LiveSessionPlugs.SetCurrentUser,
-        OliWeb.LiveSessionPlugs.SetSessionContext,
+        OliWeb.LiveSessionPlugs.SetUser,
         OliWeb.LiveSessionPlugs.SetBrand,
         OliWeb.LiveSessionPlugs.SetPreviewMode,
         OliWeb.LiveSessionPlugs.RequireEnrollment
@@ -1064,8 +1069,6 @@ defmodule OliWeb.Router do
       :pow_email_layout
     ])
 
-    live("/:section_slug", Sections.OverviewView)
-
     live("/:section_slug/grades/lms", Grades.GradesLive)
     live("/:section_slug/grades/lms_grade_updates", Grades.BrowseUpdatesView)
     live("/:section_slug/grades/failed", Grades.FailedGradeSyncLive)
@@ -1075,11 +1078,12 @@ defmodule OliWeb.Router do
     live("/:section_slug/snapshots", Snapshots.SnapshotsView)
     live("/:section_slug/progress/:user_id/:resource_id", Progress.StudentResourceView)
     live("/:section_slug/progress/:user_id", Progress.StudentView)
-    get("/:section_slug/grades/export", PageDeliveryController, :export_gradebook)
     live("/:section_slug/source_materials", Delivery.ManageSourceMaterials, as: :source_materials)
     live("/:section_slug/remix", Delivery.RemixSection)
     live("/:section_slug/remix/:section_resource_slug", Delivery.RemixSection)
     live("/:section_slug/enrollments", Sections.EnrollmentsViewLive)
+
+    get("/:section_slug/grades/export", PageDeliveryController, :export_gradebook)
     post("/:section_slug/enrollments", InviteController, :create_bulk)
 
     live_session :enrolled_students,

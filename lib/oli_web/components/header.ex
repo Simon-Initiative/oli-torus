@@ -15,6 +15,8 @@ defmodule OliWeb.Components.Header do
   attr(:ctx, SessionContext, required: true)
 
   def header(assigns) do
+    assigns = assign(assigns, :is_system_admin, assigns[:is_system_admin] || false)
+
     ~H"""
     <nav class="navbar py-1 bg-delivery-header dark:bg-delivery-header-dark shadow-sm">
       <div class="container mx-auto flex flex-row">
@@ -74,7 +76,7 @@ defmodule OliWeb.Components.Header do
             </div>
           <% user_signed_in?(assigns) -> %>
             <div class="max-w-[400px] my-auto">
-              <UserAccount.menu id="user-account-menu" ctx={@ctx} />
+              <UserAccount.menu id="user-account-menu" ctx={@ctx} is_system_admin={@is_system_admin} />
             </div>
           <% true -> %>
             <%= link("Learner/Educator Sign In",

@@ -104,7 +104,13 @@ defmodule OliWeb.Delivery.StudentOnboarding.Wizard do
 
   def render(assigns) do
     ~H"""
-    <.header ctx={@ctx} section={@section} brand={@brand} preview_mode={@preview_mode} />
+    <.header
+      ctx={@ctx}
+      is_system_admin={@is_system_admin}
+      section={@section}
+      brand={@brand}
+      preview_mode={@preview_mode}
+    />
     <div class="mt-14 h-[calc(100vh-56px)]">
       <.live_component
         id="student-onboarding-wizard"

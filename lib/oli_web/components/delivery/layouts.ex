@@ -23,12 +23,25 @@ defmodule OliWeb.Components.Delivery.Layouts do
   slot(:inner_block, required: true)
 
   def header_with_sidebar_nav(assigns) do
+    assigns = assign(assigns, :is_system_admin, assigns[:is_system_admin] || false)
+
     ~H"""
     <div class="h-screen flex flex-col overscroll-none">
-      <.header ctx={@ctx} section={@section} brand={@brand} preview_mode={@preview_mode} />
+      <.header
+        ctx={@ctx}
+        is_system_admin={@is_system_admin}
+        section={@section}
+        brand={@brand}
+        preview_mode={@preview_mode}
+      />
 
       <main role="main" class="flex-1 flex flex-col relative md:flex-row overscroll-contain">
-        <.sidebar_nav ctx={@ctx} section={@section} active_tab={@active_tab} />
+        <.sidebar_nav
+          ctx={@ctx}
+          is_system_admin={@is_system_admin}
+          section={@section}
+          active_tab={@active_tab}
+        />
 
         <div class="md:w-[calc(100%-192px)] flex-1 flex flex-col md:ml-48 mt-14">
           <%= render_slot(@inner_block) %>
@@ -85,6 +98,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
   end
 
   attr(:ctx, SessionContext)
+  attr(:is_system_admin, :boolean, required: true)
   attr(:section, Section)
   attr(:brand, Brand)
   attr(:preview_mode, :boolean)
@@ -109,7 +123,12 @@ defmodule OliWeb.Components.Delivery.Layouts do
       </div>
       <div class="flex items-center p-2">
         <div class="hidden md:block">
-          <UserAccount.menu id="user-account-menu" ctx={@ctx} section={@section} />
+          <UserAccount.menu
+            id="user-account-menu"
+            ctx={@ctx}
+            section={@section}
+            is_system_admin={@is_system_admin}
+          />
         </div>
         <button
           class="block md:hidden py-1.5 px-3 rounded border border-transparent hover:border-gray-300 active:bg-gray-100"
@@ -123,6 +142,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
   end
 
   attr(:ctx, SessionContext)
+  attr(:is_system_admin, :boolean, required: true)
   attr(:section, Section)
   attr(:active_tab, :atom)
 
@@ -182,7 +202,12 @@ defmodule OliWeb.Components.Delivery.Layouts do
         </div>
 
         <div class="px-6 py-4">
-          <UserAccount.menu id="user-account-menu-sidebar" ctx={@ctx} section={@section} />
+          <UserAccount.menu
+            id="user-account-menu-sidebar"
+            ctx={@ctx}
+            is_system_admin={@is_system_admin}
+            section={@section}
+          />
         </div>
       </div>
     </nav>

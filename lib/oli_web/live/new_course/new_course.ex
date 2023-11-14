@@ -2,8 +2,6 @@ defmodule OliWeb.Delivery.NewCourse do
   use OliWeb, :live_view
 
   on_mount(OliWeb.LiveSessionPlugs.SetSection)
-  on_mount(OliWeb.LiveSessionPlugs.SetCurrentUser)
-  on_mount(OliWeb.LiveSessionPlugs.SetSessionContext)
   on_mount(OliWeb.LiveSessionPlugs.SetBrand)
   on_mount(OliWeb.LiveSessionPlugs.SetPreviewMode)
 
@@ -96,7 +94,13 @@ defmodule OliWeb.Delivery.NewCourse do
 
   def render(assigns) do
     ~H"""
-    <.header ctx={@ctx} section={@section} brand={@brand} preview_mode={@preview_mode} />
+    <.header
+      ctx={@ctx}
+      section={@section}
+      brand={@brand}
+      preview_mode={@preview_mode}
+      is_system_admin={@is_system_admin}
+    />
     <div id={@form_id} phx-hook="SubmitForm" class="mt-14 h-[calc(100vh-56px)]">
       <.live_component
         id="course_creation_stepper"

@@ -1,9 +1,6 @@
 defmodule OliWeb.Delivery.OpenAndFreeIndex do
   use OliWeb, :live_view
 
-  on_mount({OliWeb.LiveSessionPlugs.SetCurrentUser, :with_preloads})
-  on_mount(OliWeb.LiveSessionPlugs.SetCtx)
-
   alias Oli.Delivery.Sections
   alias OliWeb.Components.Delivery.Utils
   alias OliWeb.Common.SearchInput
@@ -73,7 +70,7 @@ defmodule OliWeb.Delivery.OpenAndFreeIndex do
               <div class="flex flex-wrap">
                 <.link
                   :for={section <- @filtered_sections}
-                  href={~p"/sections/#{section.slug}/overview"}
+                  href={~p"/sections/#{section.slug}"}
                   class="rounded-lg shadow-lg bg-white dark:bg-gray-600 max-w-xs mr-3 mb-3 border-2 border-transparent hover:border-blue-500 hover:no-underline"
                 >
                   <img

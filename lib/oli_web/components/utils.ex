@@ -2,9 +2,7 @@ defmodule OliWeb.Components.Utils do
   alias Phoenix.LiveView.JS
 
   alias OliWeb.Common.SessionContext
-  alias Oli.Accounts.{User, Author, SystemRole}
-  alias Lti_1p3.Tool.ContextRoles
-  alias Lti_1p3.Tool.PlatformRoles
+  alias Oli.Accounts.{User, Author}
   alias Oli.Delivery.Sections.Section
 
   @doc """
