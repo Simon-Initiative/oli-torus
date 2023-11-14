@@ -374,8 +374,10 @@ defmodule OliWeb.Delivery.NewCourse do
            {:ok, _} <- Sections.rebuild_contained_pages(section),
            {:ok, _} <- Sections.rebuild_contained_objectives(section),
            {:ok, _enrollment} <- enroll(socket, section),
+           {:ok, section} <-
+             Oli.Delivery.maybe_update_section_contains_explorations(section),
            {:ok, updated_section} <-
-             Oli.Delivery.maybe_update_section_contains_explorations(section) do
+             Oli.Delivery.maybe_update_section_contains_deliberate_practice(section) do
         updated_section
       else
         {:error, changeset} ->

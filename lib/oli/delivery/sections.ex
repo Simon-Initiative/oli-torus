@@ -1756,6 +1756,7 @@ defmodule Oli.Delivery.Sections do
         fn _repo, _ ->
           # updates contains_explorations field in sections
           Delivery.maybe_update_section_contains_explorations(section)
+          Delivery.maybe_update_section_contains_deliberate_practice(section)
         end
       )
       |> Repo.transaction()
@@ -2473,6 +2474,7 @@ defmodule Oli.Delivery.Sections do
       pinned_project_publications = get_pinned_project_publications(section.id)
       rebuild_section_curriculum(section, new_hierarchy, pinned_project_publications)
       Delivery.maybe_update_section_contains_explorations(section)
+      Delivery.maybe_update_section_contains_deliberate_practice(section)
 
       {:ok}
     end)
