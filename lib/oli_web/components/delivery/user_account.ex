@@ -14,10 +14,10 @@ defmodule OliWeb.Components.Delivery.UserAccount do
 
   attr(:id, :string, required: true)
   attr(:ctx, SessionContext)
+  attr(:is_system_admin, :boolean, required: true)
   attr(:section, Section, default: nil)
   attr(:class, :string, default: "")
   attr(:dropdown_class, :string, default: "")
-  attr(:is_system_admin, :boolean, default: false)
 
   def menu(assigns) do
     ~H"""
@@ -48,17 +48,19 @@ defmodule OliWeb.Components.Delivery.UserAccount do
       >
         <div class="mr-2 block">
           <div class={if !@is_system_admin, do: "py-2", else: ""}><%= username(@ctx) %></div>
-          <div :if={@is_system_admin} class="text-sm font-bold text-yellow">System Admin</div>
+          <div :if={@is_system_admin} class="text-xs text-right uppercase font-bold text-yellow">
+            Admin
+          </div>
         </div>
         <.user_icon ctx={@ctx} />
       </button>
       <.dropdown_menu id={"#{@id}-dropdown"} class={@dropdown_class}>
-        <%= case {assigns.ctx, @is_system_admin} do %>
-          <% {%SessionContext{author: %Author{}}, true} -> %>
-            <.admin_menu_items id={"#{@id}-menu-items-admin"} ctx={@ctx} />
-          <% {%SessionContext{user: %User{guest: true}}, _} -> %>
+        <%= case assigns.ctx do %>
+          <% %SessionContext{author: %Author{}} -> %>
+            <.author_menu_items id={"#{@id}-menu-items-admin"} ctx={@ctx} />
+          <% %SessionContext{user: %User{guest: true}} -> %>
             <.guest_menu_items id={"#{@id}-menu-items-admin"} ctx={@ctx} />
-          <% {%SessionContext{user: %User{}}, _} -> %>
+          <% %SessionContext{user: %User{}} -> %>
             <.user_menu_items id={"#{@id}-menu-items-admin"} ctx={@ctx} />
           <% _ -> %>
         <% end %>
@@ -80,8 +82,9 @@ defmodule OliWeb.Components.Delivery.UserAccount do
   attr(:id, :string, required: true)
   attr(:ctx, SessionContext, required: true)
 
-  def admin_menu_items(assigns) do
+  def author_menu_items(assigns) do
     ~H"""
+    <.menu_item_edit_author_account author={@ctx.author} />
     <.menu_item_dark_mode_selector id={"#{@id}-dark-mode-selector"} ctx={@ctx} />
     <.menu_item_timezone_selector id={"#{@id}-tz-selector"} ctx={@ctx} />
     <.menu_divider />
@@ -100,7 +103,7 @@ defmodule OliWeb.Components.Delivery.UserAccount do
   def user_menu_items(assigns) do
     ~H"""
     <.menu_item_maybe_linked_account user={@ctx.user} />
-    <.menu_item_edit_account user={@ctx.user} />
+    <.maybe_menu_item_edit_user_account user={@ctx.user} />
     <.menu_item_link href={~p"/sections"}>
       My Courses
     </.menu_item_link>
@@ -234,12 +237,24 @@ defmodule OliWeb.Components.Delivery.UserAccount do
 
   attr :user, User, required: true
 
-  def menu_item_edit_account(assigns) do
+  def maybe_menu_item_edit_user_account(assigns) do
     ~H"""
     <.menu_item_link
       :if={is_independent_learner?(@user)}
       href={Routes.pow_registration_path(OliWeb.Endpoint, :edit)}
     >
+      Edit Account
+    </.menu_item_link>
+
+    <.menu_divider />
+    """
+  end
+
+  attr :author, Author, required: true
+
+  def menu_item_edit_author_account(assigns) do
+    ~H"""
+    <.menu_item_link href={Routes.live_path(OliWeb.Endpoint, OliWeb.Workspace.AccountDetailsLive)}>
       Edit Account
     </.menu_item_link>
 

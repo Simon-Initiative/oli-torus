@@ -10,6 +10,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard do
   alias OliWeb.Common.SessionContext
 
   attr(:ctx, SessionContext)
+  attr(:is_system_admin, :boolean, required: true)
   attr(:section, Section)
   attr(:breadcrumbs, :list, required: true)
   attr(:socket_or_conn, :any, required: true)
@@ -22,6 +23,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard do
       <.header
         socket_or_conn={@socket_or_conn}
         ctx={@ctx}
+        is_system_admin={@is_system_admin}
         view={@view}
         section={@section}
         preview_mode={@preview_mode}
@@ -154,14 +156,13 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard do
   defp is_active?(current_view, view), do: current_view == view
 
   attr(:ctx, SessionContext)
+  attr(:is_system_admin, :boolean, required: true)
   attr(:section, Section)
   attr(:preview_mode, :boolean, default: false)
   attr(:socket_or_conn, :any, required: true)
   attr(:view, :atom)
 
   def header(assigns) do
-    assigns = assign(assigns, :is_system_admin, assigns[:is_system_admin] || false)
-
     ~H"""
     <div class="w-full bg-delivery-instructor-dashboard-header text-white border-b border-slate-600">
       <div class="container mx-auto flex flex-row">

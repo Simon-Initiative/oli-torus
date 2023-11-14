@@ -142,7 +142,7 @@ defmodule OliWeb.Router do
       handler: PowAssent.Phoenix.ReauthorizationPlugHandler
     )
 
-    plug(Pow.Plug.RequireAuthenticated,
+    plug(OliWeb.Plugs.RequireAuthenticated,
       error_handler: Pow.Phoenix.PlugErrorHandler
     )
 
@@ -153,26 +153,6 @@ defmodule OliWeb.Router do
     plug(:delivery_layout)
   end
 
-  pipeline :delivery_and_admin do
-    plug(:delivery)
-    plug(:authoring)
-    plug(Oli.Plugs.GiveAdminPriority)
-
-    plug(PowAssent.Plug.Reauthorization,
-      handler: PowAssent.Phoenix.ReauthorizationPlugHandler
-    )
-
-    plug(Pow.Plug.RequireAuthenticated,
-      error_handler: Pow.Phoenix.PlugErrorHandler
-    )
-
-    plug(OliWeb.EnsureUserNotLockedPlug)
-
-    plug(Oli.Plugs.RemoveXFrameOptions)
-
-    plug(Oli.Plugs.LayoutBasedOnUser)
-  end
-
   pipeline :authoring_protected do
     plug(:authoring)
 
@@ -180,7 +160,7 @@ defmodule OliWeb.Router do
       handler: PowAssent.Phoenix.ReauthorizationPlugHandler
     )
 
-    plug(Pow.Plug.RequireAuthenticated,
+    plug(OliWeb.Plugs.RequireAuthenticated,
       error_handler: Pow.Phoenix.PlugErrorHandler
     )
 
@@ -224,10 +204,6 @@ defmodule OliWeb.Router do
 
   pipeline :ensure_user_section_visit do
     plug(Oli.Plugs.EnsureUserSectionVisit)
-  end
-
-  pipeline :delivery_preview do
-    plug(Oli.Plugs.DeliveryPreview)
   end
 
   ### HELPERS ###
@@ -658,7 +634,7 @@ defmodule OliWeb.Router do
 
   # Endpoints for client-side scheduling UI
   scope "/api/v1/scheduling/:section_slug", OliWeb.Api do
-    pipe_through([:api, :delivery_and_admin, :require_section])
+    pipe_through([:api, :delivery_protected, :require_section])
 
     put("/", SchedulingController, :update)
     get("/", SchedulingController, :index)
@@ -826,7 +802,7 @@ defmodule OliWeb.Router do
   scope "/sections/:section_slug/student_dashboard/:student_id", OliWeb do
     pipe_through([
       :browser,
-      :delivery_and_admin,
+      :delivery_protected,
       :pow_email_layout
     ])
 
@@ -861,7 +837,7 @@ defmodule OliWeb.Router do
   scope "/sections/:section_slug/instructor_dashboard/preview", OliWeb do
     pipe_through([
       :browser,
-      :delivery_and_admin,
+      :delivery_protected,
       :pow_email_layout
     ])
 
@@ -880,7 +856,7 @@ defmodule OliWeb.Router do
   scope "/sections/:section_slug/instructor_dashboard", OliWeb do
     pipe_through([
       :browser,
-      :delivery_and_admin,
+      :delivery_protected,
       :pow_email_layout
     ])
 
@@ -944,7 +920,6 @@ defmodule OliWeb.Router do
       :delivery,
       :delivery_protected,
       :require_exploration_pages,
-      :delivery_preview,
       :maybe_gated_resource,
       :enforce_enroll_and_paywall,
       :ensure_user_section_visit,
@@ -1022,7 +997,7 @@ defmodule OliWeb.Router do
       :require_section,
       :require_exploration_pages,
       :authorize_section_preview,
-      :delivery_and_admin,
+      :delivery_protected,
       :delivery_layout,
       :pow_email_layout
     ])
@@ -1065,7 +1040,7 @@ defmodule OliWeb.Router do
     pipe_through([
       :browser,
       :require_section,
-      :delivery_and_admin,
+      :delivery_protected,
       :pow_email_layout
     ])
 
@@ -1144,7 +1119,7 @@ defmodule OliWeb.Router do
     pipe_through([
       :browser,
       :require_section,
-      :delivery_and_admin,
+      :delivery_protected,
       :pow_email_layout
     ])
 

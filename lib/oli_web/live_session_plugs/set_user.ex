@@ -2,7 +2,7 @@ defmodule OliWeb.LiveSessionPlugs.SetUser do
   import Phoenix.Component, only: [assign: 2]
 
   alias Oli.Accounts
-  alias Oli.Accounts.{Author, SystemRole}
+  alias Oli.Accounts.{User, Author, SystemRole}
   alias Oli.AccountLookupCache
 
   def on_mount(:with_preloads, _, session, socket) do
@@ -23,7 +23,9 @@ defmodule OliWeb.LiveSessionPlugs.SetUser do
      |> update_ctx(session)}
   end
 
-  def set_author(socket, %{"current_author_id" => current_author_id}) do
+  def set_author(socket, %{"current_author_id" => current_author_id} = session) do
+    IO.inspect({session, socket.assigns}, label: "session, socket.assigns")
+
     with {:ok, current_author} <- AccountLookupCache.get_author(current_author_id) do
       case current_author do
         %Author{system_role_id: system_role_id} ->
@@ -67,12 +69,12 @@ defmodule OliWeb.LiveSessionPlugs.SetUser do
 
   defp set_user_token(socket) do
     case socket.assigns[:current_user] do
-      nil ->
-        socket
-
-      user ->
-        token = Phoenix.Token.sign(socket, "user socket", user.sub)
+      %User{sub: sub} ->
+        token = Phoenix.Token.sign(socket, "user socket", sub)
         assign(socket, user_token: token)
+
+      _ ->
+        socket
     end
   end
 
