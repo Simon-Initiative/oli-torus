@@ -715,7 +715,7 @@ defmodule OliWeb.PageDeliveryController do
         previewMode: preview_mode,
         isInstructor: true,
         reviewMode: context.review_mode,
-        overviewURL: Routes.page_delivery_path(OliWeb.Endpoint, :index, section.slug),
+        overviewURL: ~p"/sections/#{section_slug}",
         finalizeGradedURL:
           Routes.page_lifecycle_path(
             conn,

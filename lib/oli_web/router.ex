@@ -1069,6 +1069,8 @@ defmodule OliWeb.Router do
       :pow_email_layout
     ])
 
+    live("/:section_slug/manage", Sections.OverviewView)
+
     live("/:section_slug/grades/lms", Grades.GradesLive)
     live("/:section_slug/grades/lms_grade_updates", Grades.BrowseUpdatesView)
     live("/:section_slug/grades/failed", Grades.FailedGradeSyncLive)

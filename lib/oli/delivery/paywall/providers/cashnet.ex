@@ -6,7 +6,7 @@ defmodule Oli.Delivery.Paywall.Providers.Cashnet do
   alias OliWeb.Router.Helpers, as: Routes
   alias Phoenix.PubSub
 
-  @spec create_form(%Section{}, %User{}, String.t()) :: {:ok, any} | {:error, any}
+  @spec create_form(Section.t(), User.t(), String.t()) :: {:ok, any} | {:error, any}
   def create_form(section, user, host) do
     attrs = %{
       type: :direct,
@@ -32,7 +32,7 @@ defmodule Oli.Delivery.Paywall.Providers.Cashnet do
          cashnet_form:
            ~s|<form action="#{cashnet_checkout_url}" id="cmupayment" name="cashnet" method="post" target="_self">
            <input type="hidden" name="virtual" value="#{cashnet_client}#{cashnet_store}"/>
-           <input type="hidden" id="signouturlfield" name="signouturl" value="https://#{host}#{Routes.page_delivery_path(OliWeb.Endpoint, :index, section.slug)}"/>
+           <input type="hidden" id="signouturlfield" name="signouturl" value="https://#{host}#{Routes.live_path(OliWeb.Endpoint, OliWeb.Delivery.Student.IndexLive, section.slug)}"/>
            <input type="hidden" name="ref1type1" value="#{cashnet_store}-payment_ref"/>
            <input type="hidden" id="ref1val1field" name="ref1val1" value="#{payment.provider_id}"/>
 

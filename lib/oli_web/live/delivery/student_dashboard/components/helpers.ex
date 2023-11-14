@@ -128,7 +128,7 @@ defmodule OliWeb.Delivery.StudentDashboard.Components.Helpers do
     if preview_mode do
       Routes.student_dashboard_path(OliWeb.Endpoint, :preview, section.slug, student_id, :content)
     else
-      Routes.page_delivery_path(OliWeb.Endpoint, :index, section.slug)
+      ~p"/sections/#{section.slug}"
     end
   end
 

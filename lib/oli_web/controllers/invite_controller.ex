@@ -56,8 +56,7 @@ defmodule OliWeb.InviteController do
                   {"Join now", Routes.delivery_pow_invitation_invitation_path(conn, :edit, token)}
 
                 :existing_user ->
-                  {"Go to the course",
-                   Routes.page_delivery_path(OliWeb.Endpoint, :index, section.slug)}
+                  {"Go to the course", ~p"/sections/#{section.slug}"}
               end
 
             Oli.Email.invitation_email(
