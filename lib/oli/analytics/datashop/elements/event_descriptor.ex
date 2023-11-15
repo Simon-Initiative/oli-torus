@@ -133,13 +133,13 @@ defmodule Oli.Analytics.Datashop.Elements.EventDescriptor do
 
   # Adaptive inputs are another special case.
   # Just give back the raw student input.
-  def adaptive_input(_part_attempt, input) do
-    input
+  def adaptive_input(_part_attempt, _input) do
+    "Adaptive Activity"
   end
 
   # For non-native OLI activities, we don't know what the model looks like.
-  def unregistered_activity_input(_part_attempt, input) do
-    input
+  def unregistered_activity_input(_part_attempt, _input) do
+    "Unknown Activity"
   end
 
   defp activity_type(%PartAttempt{} = part_attempt, activity_types) do

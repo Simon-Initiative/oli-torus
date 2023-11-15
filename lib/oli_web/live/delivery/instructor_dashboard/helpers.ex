@@ -2,7 +2,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.Helpers do
   alias Oli.Delivery.{Metrics, Sections}
   alias Oli.Publishing.DeliveryResolver
 
-  def get_containers(section) do
+  def get_containers(section, opts \\ [async: true]) do
     case Sections.get_units_and_modules_containers(section.slug) do
       {0, pages} ->
         page_ids = Enum.map(pages, & &1.id)
@@ -39,11 +39,19 @@ defmodule OliWeb.Delivery.InstructorDashboard.Helpers do
             Sections.count_enrollments(section.slug)
           )
 
+        proficiency_per_container =
+          if opts[:async] do
+            %{}
+          else
+            contained_pages = Oli.Delivery.Sections.get_contained_pages(section)
+            Metrics.proficiency_per_container(section, contained_pages)
+          end
+
         containers_with_metrics =
           Enum.map(containers, fn container ->
             Map.merge(container, %{
               progress: student_progress[container.id] || 0.0,
-              student_proficiency: "Loading..."
+              student_proficiency: Map.get(proficiency_per_container, container.id, "Loading...")
             })
           end)
 
