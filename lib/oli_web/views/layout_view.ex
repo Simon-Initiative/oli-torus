@@ -1,13 +1,6 @@
 defmodule OliWeb.LayoutView do
   use OliWeb, :view
 
-  import OliWeb.AuthoringView,
-    only: [
-      author_role_text: 1,
-      author_role_color: 1,
-      author_icon: 1
-    ]
-
   import Oli.Branding
 
   alias Oli.Accounts

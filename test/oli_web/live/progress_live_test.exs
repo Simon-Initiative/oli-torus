@@ -277,8 +277,10 @@ defmodule OliWeb.ProgressLiveTest do
       student: student,
       resource: resource
     } do
-      {:ok, _view, html} =
+      {:ok, view, html} =
         live(conn, live_view_student_resource_route(section.slug, student.id, resource.id))
+
+      open_browser(view)
 
       assert html =~ "<nav class=\"breadcrumb-bar"
       refute html =~ "<a href=\"#{Routes.live_path(OliWeb.Endpoint, OliWeb.Admin.AdminView)}\""

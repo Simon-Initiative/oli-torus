@@ -7,7 +7,7 @@ defmodule OliWeb.AuthoringView do
 
   def author_role_text(author) do
     if Accounts.is_admin?(author),
-      do: "Administrator",
+      do: "Admin",
       else: "Author"
   end
 

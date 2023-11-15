@@ -23,9 +23,7 @@ defmodule OliWeb.LiveSessionPlugs.SetUser do
      |> update_ctx(session)}
   end
 
-  def set_author(socket, %{"current_author_id" => current_author_id} = session) do
-    IO.inspect({session, socket.assigns}, label: "session, socket.assigns")
-
+  def set_author(socket, %{"current_author_id" => current_author_id}) do
     with {:ok, current_author} <- AccountLookupCache.get_author(current_author_id) do
       case current_author do
         %Author{system_role_id: system_role_id} ->
