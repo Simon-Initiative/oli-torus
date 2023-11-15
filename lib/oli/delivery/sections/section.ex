@@ -66,6 +66,7 @@ defmodule Oli.Delivery.Sections.Section do
     field(:resource_to_container_map, :map, default: nil)
     field(:display_curriculum_item_numbering, :boolean, default: true)
     field(:contains_explorations, :boolean, default: false)
+    field(:contains_deliberate_practice, :boolean, default: false)
 
     belongs_to(:required_survey, Oli.Resources.Resource,
       foreign_key: :required_survey_resource_id
@@ -191,6 +192,7 @@ defmodule Oli.Delivery.Sections.Section do
       :publisher_id,
       :display_curriculum_item_numbering,
       :contains_explorations,
+      :contains_deliberate_practice,
       :required_survey_resource_id,
       :class_modality,
       :class_days,

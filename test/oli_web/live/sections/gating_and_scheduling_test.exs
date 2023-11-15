@@ -71,6 +71,21 @@ defmodule OliWeb.Sections.GatingAndSchedulingTest do
       assert html =~ "Admin"
       assert html =~ "Gating and Scheduling"
     end
+
+    test "renders ok description", %{conn: conn, section_1: section} do
+      {:ok, view, _html} =
+        live(conn, Routes.live_path(@endpoint, OliWeb.Sections.GatingAndScheduling, section.slug))
+
+      assert view
+             |> element("ul>li:nth-child(1)")
+             |> render() =~
+               "Time-Based Restrictions for Units/Modules"
+
+      assert view
+             |> element("ul>li:nth-child(2)")
+             |> render() =~
+               "Conditional Accessibility Based on Student Performance"
+    end
   end
 
   describe "gating and scheduling live test instructor" do

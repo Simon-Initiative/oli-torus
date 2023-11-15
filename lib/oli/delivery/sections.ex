@@ -899,7 +899,28 @@ defmodule Oli.Delivery.Sections do
   def bulk_create_section_resource([], _opts), do: {0, []}
 
   def bulk_create_section_resource(section_resource_rows, opts) do
-    Repo.insert_all(SectionResource, section_resource_rows, returning: opts[:returning] || true)
+    section_resource_rows
+    |> Enum.chunk_every(calculate_chunk_size(section_resource_rows))
+    |> Enum.reduce({0, []}, fn chunk, {total, acc} ->
+      {new_total, new_acc} =
+        Repo.insert_all(SectionResource, chunk, returning: opts[:returning] || true)
+
+      {total + new_total, acc ++ new_acc}
+    end)
+  end
+
+  defp calculate_chunk_size(section_resource_rows) do
+    # We want to split the list of section resources into chunks
+    # to avoid hitting the max number of bind variables in a query.
+    max_bind_variables = 65535
+
+    fields_count =
+      section_resource_rows
+      |> List.first()
+      |> Map.keys()
+      |> length()
+
+    div(max_bind_variables, fields_count)
   end
 
   @doc """
@@ -2052,6 +2073,7 @@ defmodule Oli.Delivery.Sections do
         fn _repo, _ ->
           # updates contains_explorations field in sections
           Delivery.maybe_update_section_contains_explorations(section)
+          Delivery.maybe_update_section_contains_deliberate_practice(section)
         end
       )
       |> Multi.run(
@@ -2799,6 +2821,7 @@ defmodule Oli.Delivery.Sections do
       rebuild_section_curriculum(section, new_hierarchy, pinned_project_publications)
 
       Delivery.maybe_update_section_contains_explorations(section)
+      Delivery.maybe_update_section_contains_deliberate_practice(section)
 
       {:ok}
     end)
@@ -2984,7 +3007,7 @@ defmodule Oli.Delivery.Sections do
     |> then(&Repo.insert_all(SectionResource, &1))
   end
 
-  defp is_structural?(%Revision{resource_type_id: resource_type_id}) do
+  def is_structural?(%Revision{resource_type_id: resource_type_id}) do
     container = ResourceType.get_id_by_type("container")
 
     resource_type_id == container

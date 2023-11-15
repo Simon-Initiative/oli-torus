@@ -94,7 +94,9 @@ defmodule OliWeb.Components.Delivery.Content do
             </.form>
             <a
               href={
-                Routes.delivery_path(OliWeb.Endpoint, :download_course_content_info, @section_slug)
+                Routes.delivery_path(OliWeb.Endpoint, :download_course_content_info, @section_slug,
+                  container_filter_by: @params.container_filter_by
+                )
               }
               download="course_content.csv"
               class="self-end"

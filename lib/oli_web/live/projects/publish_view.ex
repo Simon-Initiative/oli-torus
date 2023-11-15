@@ -14,7 +14,6 @@ defmodule OliWeb.Projects.PublishView do
   alias OliWeb.Projects.{
     ActiveSectionsTableModel,
     LtiConnectInstructions,
-    PublicationDetails,
     VersioningDetails
   }
 
@@ -102,6 +101,18 @@ defmodule OliWeb.Projects.PublishView do
 
     {:ok, table_model} = ActiveSectionsTableModel.new(ctx, active_sections, project)
 
+    publication_changes =
+      case active_publication_changes do
+        nil ->
+          []
+
+        changes ->
+          Enum.map(Map.values(changes), fn {type, data} ->
+            Map.put(data.revision, :type, type)
+            |> Map.put(:is_structural, Sections.is_structural?(data.revision))
+          end)
+      end
+
     {:ok,
      assign(socket,
        active_publication: active_publication,
@@ -115,6 +126,7 @@ defmodule OliWeb.Projects.PublishView do
        lti_connect_info: lti_connect_info,
        parent_pages: parent_pages,
        project: project,
+       publication_changes: publication_changes,
        push_affected: push_affected,
        table_model: table_model,
        version_change: version_change,
@@ -137,13 +149,16 @@ defmodule OliWeb.Projects.PublishView do
     <div class="publish container">
       <div class="flex flex-row">
         <div class="flex-1">
-          <PublicationDetails.render
+          <.live_component
+            id="publication_details"
+            module={OliWeb.Projects.PublicationDetails}
             active_publication_changes={@active_publication_changes}
             ctx={@ctx}
             has_changes={@has_changes}
             latest_published_publication={@latest_published_publication}
             parent_pages={@parent_pages}
             project={@project}
+            publication_changes={@publication_changes}
           />
 
           <%= if @has_changes do %>
