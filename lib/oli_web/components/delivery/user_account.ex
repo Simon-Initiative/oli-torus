@@ -57,7 +57,11 @@ defmodule OliWeb.Components.Delivery.UserAccount do
       <.dropdown_menu id={"#{@id}-dropdown"} class={@dropdown_class}>
         <%= case assigns.ctx do %>
           <% %SessionContext{author: %Author{}} -> %>
-            <.author_menu_items id={"#{@id}-menu-items-admin"} ctx={@ctx} />
+            <.author_menu_items
+              id={"#{@id}-menu-items-admin"}
+              ctx={@ctx}
+              is_system_admin={@is_system_admin}
+            />
           <% %SessionContext{user: %User{guest: true}} -> %>
             <.guest_menu_items id={"#{@id}-menu-items-admin"} ctx={@ctx} />
           <% %SessionContext{user: %User{}} -> %>
@@ -81,9 +85,11 @@ defmodule OliWeb.Components.Delivery.UserAccount do
 
   attr(:id, :string, required: true)
   attr(:ctx, SessionContext, required: true)
+  attr(:is_system_admin, :boolean, required: true)
 
   def author_menu_items(assigns) do
     ~H"""
+    <.maybe_menu_item_open_admin_panel is_system_admin={@is_system_admin} />
     <.menu_item_edit_author_account author={@ctx.author} />
     <.menu_item_dark_mode_selector id={"#{@id}-dark-mode-selector"} ctx={@ctx} />
     <.menu_item_timezone_selector id={"#{@id}-tz-selector"} ctx={@ctx} />
@@ -176,20 +182,21 @@ defmodule OliWeb.Components.Delivery.UserAccount do
 
   attr :href, :string, required: true
   attr :method, :atom, default: nil
+  attr :target, :string, default: nil
   slot :inner_block, required: true
 
   def menu_item_link(assigns) do
     case assigns[:method] do
       nil ->
         ~H"""
-        <%= link to: @href, class: "block py-2 px-4 hover:no-underline text-body-color dark:text-body-color-dark hover:text-body-color hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer first:rounded-t last:rounded-b" do %>
+        <%= link to: @href, class: "block py-2 px-4 hover:no-underline text-body-color dark:text-body-color-dark hover:text-body-color hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer first:rounded-t last:rounded-b", target: @target do %>
           <%= render_slot(@inner_block) %>
         <% end %>
         """
 
       _method ->
         ~H"""
-        <%= link to: @href, method: @method, class: "block py-2 px-4 hover:no-underline text-body-color dark:text-body-color-dark hover:text-body-color hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer first:rounded-t last:rounded-b" do %>
+        <%= link to: @href, method: @method, class: "block py-2 px-4 hover:no-underline text-body-color dark:text-body-color-dark hover:text-body-color hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer first:rounded-t last:rounded-b", target: @target do %>
           <%= render_slot(@inner_block) %>
         <% end %>
         """
@@ -294,6 +301,22 @@ defmodule OliWeb.Components.Delivery.UserAccount do
         <Timezone.select id={@id} ctx={@ctx} />
       </div>
     </.menu_item>
+    """
+  end
+
+  attr :is_system_admin, :boolean, required: true
+
+  def maybe_menu_item_open_admin_panel(assigns) do
+    ~H"""
+    <%= if @is_system_admin do %>
+      <.menu_item_link href={~p"/admin"}>
+        <div class="inline-flex w-full justify-between items-center">
+          <span>Open Admin Panel</span>
+          <.icon name="fa-solid fa-arrow-up-right-from-square" />
+        </div>
+      </.menu_item_link>
+      <.menu_divider />
+    <% end %>
     """
   end
 

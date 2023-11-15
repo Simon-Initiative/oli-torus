@@ -94,13 +94,17 @@ defmodule OliWeb.Delivery.NewCourse do
 
   def render(assigns) do
     ~H"""
-    <.header
-      ctx={@ctx}
-      section={@section}
-      brand={@brand}
-      preview_mode={@preview_mode}
-      is_system_admin={@is_system_admin}
-    />
+    <%= case @live_action do %>
+      <% :admin -> %>
+      <% _ -> %>
+        <.header
+          ctx={@ctx}
+          section={@section}
+          brand={@brand}
+          preview_mode={@preview_mode}
+          is_system_admin={@is_system_admin}
+        />
+    <% end %>
     <div id={@form_id} phx-hook="SubmitForm" class="mt-14 h-[calc(100vh-56px)]">
       <.live_component
         id="course_creation_stepper"
@@ -311,7 +315,7 @@ defmodule OliWeb.Delivery.NewCourse do
 
             {:noreply,
              redirect(socket,
-               to: Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.OverviewView, section.slug)
+               to: ~p"/sections/#{section.slug}/instructor_dashboard/manage"
              )}
 
           {:error, error} ->

@@ -1234,13 +1234,9 @@ defmodule OliWeb.Router do
       as: :discount
     )
 
-    # Section Management (+ Open and Free)
+    # Section Management
     live("/sections", Sections.SectionsView)
     live("/sections/create", Delivery.NewCourse, :admin, as: :select_source)
-
-    live("/sections/:section_slug", Sections.OverviewView)
-
-    # live("/open_and_free/:section_slug/remix", Delivery.RemixSection, as: :open_and_free_remix)
 
     # Institutions, LTI Registrations and Deployments
     resources("/institutions", InstitutionController, except: [:index])
