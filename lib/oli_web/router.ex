@@ -394,8 +394,14 @@ defmodule OliWeb.Router do
 
     live_session :load_projects,
       on_mount: [OliWeb.LiveSessionPlugs.SetCurrentAuthor, OliWeb.LiveSessionPlugs.SetProject] do
-      live("/:project_id/overview", Projects.OverviewLive)
       live("/:project_id", Projects.OverviewLive)
+      live("/:project_id/overview", Projects.OverviewLive)
+
+      scope "/:project_id/datashop" do
+        pipe_through([:admin])
+
+        live("/analytics", Datashop.AnalyticsLive)
+      end
     end
   end
 

@@ -244,7 +244,8 @@ defmodule Oli.Analytics.Datashop do
       section_ids: section_ids
     } = context
 
-    part_attempts_stream(section_ids)
+    section_ids
+    |> part_attempts_stream()
     |> Stream.map(fn %{
                        email: email,
                        sub: sub,

@@ -559,7 +559,7 @@ defmodule Oli.Authoring.Course do
   end
 
   @doc """
-  Generates a datashop snapshot for the given project if one is not already in progress
+  Generates a datashop snapshot for the given project and sections if one is not already in progress
   """
   def generate_datashop_snapshot(project, section_ids) do
     case datashop_export_status(project) do

@@ -13,6 +13,7 @@ defmodule Oli.Delivery.Sections.BrowseTest do
   @default_opts %BrowseOptions{
     institution_id: nil,
     blueprint_id: nil,
+    project_id: nil,
     text_search: "",
     active_today: false,
     filter_status: nil,
