@@ -121,10 +121,10 @@ defmodule OliWeb.Components.Delivery.Layouts do
       </.nav_link>
 
       <.nav_link
-        href={~p"/ng23/sections/#{@section.slug}/discussion"}
-        is_active={@active_tab == :discussion}
+        href={~p"/ng23/sections/#{@section.slug}/discussions"}
+        is_active={@active_tab == :discussions}
       >
-        Discussion
+        Discussions
       </.nav_link>
       <.nav_link
         href={~p"/ng23/sections/#{@section.slug}/assignments"}

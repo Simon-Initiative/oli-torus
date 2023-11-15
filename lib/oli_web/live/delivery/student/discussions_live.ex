@@ -1,4 +1,4 @@
-defmodule OliWeb.Delivery.Student.DiscussionLive do
+defmodule OliWeb.Delivery.Student.DiscussionsLive do
   use OliWeb, :live_view
 
   import OliWeb.Components.Delivery.Layouts
@@ -18,10 +18,10 @@ defmodule OliWeb.Delivery.Student.DiscussionLive do
       section={@section}
       brand={@brand}
       preview_mode={@preview_mode}
-      active_tab={:discussion}
+      active_tab={:discussions}
     >
       <div class="container mx-auto px-10 py-8">
-        <h3>Discussion Board</h3>
+        <h3>Discussions</h3>
       </div>
     </.header_with_sidebar_nav>
     """
