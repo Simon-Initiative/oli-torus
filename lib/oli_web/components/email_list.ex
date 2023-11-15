@@ -5,6 +5,7 @@ defmodule OliWeb.Components.EmailList do
   attr :users_list, :list, required: true
   attr :on_update, :string, required: true
   attr :on_remove, :string, required: true
+  attr :target, :string, required: false, default: nil
 
   attr :is_list_empty, :boolean, default: true
   attr :current_user, :string, default: ""
@@ -18,11 +19,17 @@ defmodule OliWeb.Components.EmailList do
       class="flex flex-wrap rounded-md border border-gray-300 p-4 gap-2 cursor-text"
       phx-hook="EmailList"
       phx-event={@on_update}
+      phx-target-id={@target}
     >
       <%= for user <- @users_list do %>
         <div class="rounded-md bg-gray-100 dark:bg-neutral-600 cursor-default p-2 shadow-md flex items-center gap-2 user-email max-h-80 scroll-y-overflow">
           <p><%= user %></p>
-          <button phx-click={@on_remove} phx-value-user={user} class="close">
+          <button
+            phx-click={@on_remove}
+            phx-target={if @target, do: "##{@target}"}
+            phx-value-user={user}
+            class="close"
+          >
             <i class="fa-solid fa-xmark mt-0" />
           </button>
         </div>

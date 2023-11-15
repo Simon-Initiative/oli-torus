@@ -109,7 +109,7 @@ defmodule OliWeb.Delivery.NewCourse do
       <.live_component
         id="course_creation_stepper"
         module={Stepper}
-        on_cancel="redirect_to_courses"
+        on_cancel={JS.push("redirect_to_courses")}
         steps={@steps || []}
         current_step={@current_step}
         next_step_disabled={next_step_disabled?(assigns)}
@@ -394,8 +394,10 @@ defmodule OliWeb.Delivery.NewCourse do
            {:ok, _} <- Sections.rebuild_contained_objectives(section),
            {:ok, _} <- Sections.rebuild_full_hierarchy(section),
            {:ok, _enrollment} <- enroll(socket, section),
+           {:ok, section} <-
+             Oli.Delivery.maybe_update_section_contains_explorations(section),
            {:ok, updated_section} <-
-             Oli.Delivery.maybe_update_section_contains_explorations(section) do
+             Oli.Delivery.maybe_update_section_contains_deliberate_practice(section) do
         updated_section
       else
         {:error, changeset} ->

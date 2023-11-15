@@ -191,6 +191,9 @@ defmodule OliWeb.Components.Delivery.Layouts do
       >
         Explorations
       </.nav_link>
+      <.nav_link href={~p"/sections/#{@section.slug}/practice"} is_active={@active_tab == :practice}>
+        Practice
+      </.nav_link>
 
       <div class="hidden md:flex w-full px-6 py-4 text-center mt-auto">
         <.tech_support_button id="tech-support" ctx={@ctx} />

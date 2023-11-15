@@ -154,7 +154,7 @@ defmodule Oli.Rendering.Alternatives.HtmlTest do
 
       # renders R alternative
       assert rendered_html_string =~
-               ~s|<div class="alternative alternative-DhY8ERStw7vXActR5U5BqR"><div dir="ltr"><p>R</p>|
+               ~s|<div class="alternative alternative-DhY8ERStw7vXActR5U5BqR"><div class="content" ><p>R</p>|
 
       # renders activity embedded in R alternative
       assert rendered_html_string =~
@@ -162,11 +162,11 @@ defmodule Oli.Rendering.Alternatives.HtmlTest do
 
       # renders Excel alternative
       assert rendered_html_string =~
-               ~s|<div class="alternative alternative-kQqFWsHyXeMenEDzT9rymP"><div dir=\"ltr\"><p>Excel</p>\n</div>|
+               ~s|<div class="alternative alternative-kQqFWsHyXeMenEDzT9rymP"><div class=\"content\" ><p>Excel</p>\n</div>|
 
       # renders Python alternative
       assert rendered_html_string =~
-               ~s|<div class="alternative alternative-bdaqYkKs8RFE4LWLmPCLnf"><div dir=\"ltr\"><p>Python</p>\n</div>|
+               ~s|<div class="alternative alternative-bdaqYkKs8RFE4LWLmPCLnf"><div class=\"content\" ><p>Python</p>\n</div>|
     end
   end
 end

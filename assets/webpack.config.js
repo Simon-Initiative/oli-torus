@@ -323,6 +323,7 @@ module.exports = (env, options) => ({
         'janus-script@1.9.2': 'MIT',
         'phoenix_html@3.3.1': 'MIT',
         'phoenix_html@3.3.2': 'MIT',
+        'phoenix_html@3.3.3': 'MIT',
         'typed-function@2.0.0': 'MIT',
       },
       unacceptableLicenseTest: (licenseIdentifier) => {

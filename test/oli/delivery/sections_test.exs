@@ -188,6 +188,7 @@ defmodule Oli.Delivery.SectionsTest do
         project_tag: :proj,
         publication_tag: :pub,
         curriculum_revision_tag: :curriculum,
+        unit1_tag: :unit1,
         unscored_page1_tag: :unscored_page1,
         unscored_page1_activity_tag: :unscored_page1_activity,
         scored_page2_tag: :scored_page2,
@@ -205,13 +206,12 @@ defmodule Oli.Delivery.SectionsTest do
         ref(:proj),
         nil,
         %{},
-        revision_tag: :non_hierarchical_page4
+        revision_tag: :non_hierarchical_page5
       )
-      |> then(fn seeds ->
-        Seeder.Project.edit_page(
-          seeds,
-          ref(:proj),
-          ref(:scored_page2),
+      |> Seeder.Project.edit_page(
+        ref(:proj),
+        ref(:scored_page2),
+        refs([:non_hierarchical_page3], fn [non_hierarchical_page3] ->
           %{
             content: %{
               "model" => [
@@ -220,7 +220,7 @@ defmodule Oli.Delivery.SectionsTest do
                   "children" => [
                     %{
                       "type" => "page_link",
-                      "idref" => seeds[:non_hierarchical_page3].resource_id,
+                      "idref" => non_hierarchical_page3.resource_id,
                       "purpose" => "none",
                       "children" => [%{"text" => "Link to detached page"}]
                     }
@@ -228,10 +228,34 @@ defmodule Oli.Delivery.SectionsTest do
                 }
               ]
             }
-          },
-          revision_tag: :scored_page2
-        )
-      end)
+          }
+        end),
+        revision_tag: :scored_page2
+      )
+      |> Seeder.Project.edit_page(
+        ref(:proj),
+        ref(:non_hierarchical_page3),
+        refs([:non_hierarchical_page5], fn [non_hierarchical_page5] ->
+          %{
+            content: %{
+              "model" => [
+                %{
+                  "type" => "content",
+                  "children" => [
+                    %{
+                      "type" => "page_link",
+                      "idref" => non_hierarchical_page5.resource_id,
+                      "purpose" => "none",
+                      "children" => [%{"text" => "Link to detached page"}]
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        end),
+        revision_tag: :non_hierarchical_page3
+      )
       |> Seeder.Project.ensure_published(ref(:pub))
       |> Seeder.Section.create_section(
         ref(:proj),
@@ -244,17 +268,146 @@ defmodule Oli.Delivery.SectionsTest do
 
     test "returns a map with linked page resource ids", %{
       pub: pub,
+      curriculum: curriculum,
+      unit1: unit1,
       unscored_page1: unscored_page1,
       scored_page2: scored_page2,
       non_hierarchical_page3: non_hierarchical_page3,
-      non_hierarchical_page4: non_hierarchical_page4
+      non_hierarchical_page5: non_hierarchical_page5
     } do
-      page_link_map = Sections.build_page_link_map([pub.id])
+      page_link_map = Sections.build_resource_link_map([pub.id])
 
-      assert page_link_map[unscored_page1.resource_id] == []
-      assert page_link_map[scored_page2.resource_id] == []
+      assert page_link_map[unit1.resource_id] == [curriculum.resource_id]
+      assert page_link_map[unscored_page1.resource_id] == [unit1.resource_id]
+      assert page_link_map[scored_page2.resource_id] == [unit1.resource_id]
       assert page_link_map[non_hierarchical_page3.resource_id] == [scored_page2.resource_id]
-      assert page_link_map[non_hierarchical_page4.resource_id] == []
+
+      assert page_link_map[non_hierarchical_page5.resource_id] == [
+               non_hierarchical_page3.resource_id
+             ]
+    end
+  end
+
+  describe "get_explorations_by_containers/1" do
+    setup(_) do
+      %{}
+      |> Seeder.Project.create_author(author_tag: :author)
+      |> Seeder.Project.create_sample_project(
+        ref(:author),
+        project_tag: :proj,
+        publication_tag: :pub,
+        curriculum_revision_tag: :curriculum,
+        unit1_tag: :unit1,
+        unscored_page1_tag: :unscored_page1,
+        unscored_page1_activity_tag: :unscored_page1_activity,
+        scored_page2_tag: :scored_page2,
+        scored_page2_activity_tag: :scored_page2_activity
+      )
+      |> Seeder.Project.create_container(
+        ref(:author),
+        ref(:proj),
+        ref(:unit1),
+        %{
+          title: "Nested Unit 1 Module 1"
+        },
+        revision_tag: :unit1_module1
+      )
+      |> Seeder.Project.create_page(
+        ref(:author),
+        ref(:proj),
+        nil,
+        %{
+          title: "Exploration Page 3",
+          purpose: :application
+        },
+        revision_tag: :exploration_page3
+      )
+      |> Seeder.Project.create_page(
+        ref(:author),
+        ref(:proj),
+        nil,
+        %{
+          title: "Exploration Page 4",
+          purpose: :application
+        },
+        revision_tag: :exploration_page4
+      )
+      |> Seeder.Project.create_page(
+        ref(:author),
+        ref(:proj),
+        ref(:unit1_module1),
+        refs([:exploration_page3], fn [exploration_page3] ->
+          %{
+            content: %{
+              "model" => [
+                %{
+                  "type" => "content",
+                  "children" => [
+                    %{
+                      "type" => "page_link",
+                      "idref" => exploration_page3.resource_id,
+                      "purpose" => "none",
+                      "children" => [%{"text" => "Link to Exploration 3"}]
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        end),
+        revision_tag: :unit1_module1_page5
+      )
+      |> Seeder.Project.edit_page(
+        ref(:proj),
+        ref(:unscored_page1),
+        refs([:exploration_page4], fn [exploration_page4] ->
+          %{
+            content: %{
+              "model" => [
+                %{
+                  "type" => "content",
+                  "children" => [
+                    %{
+                      "type" => "page_link",
+                      "idref" => exploration_page4.resource_id,
+                      "purpose" => "none",
+                      "children" => [%{"text" => "Link to Exploration 4"}]
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        end),
+        revision_tag: :unscored_page1
+      )
+      |> Seeder.Project.ensure_published(ref(:pub))
+      |> Seeder.Section.create_section(
+        ref(:proj),
+        ref(:pub),
+        nil,
+        %{},
+        section_tag: :section
+      )
+    end
+
+    @tag capture_log: true
+    test "returns a map with container labels as keys and the explorations they link to", %{
+      section: section,
+      exploration_page3: exploration_page3,
+      exploration_page4: exploration_page4
+    } do
+      explorations = Sections.get_explorations_by_containers(section, nil)
+
+      exploration_page3_id = exploration_page3.id
+      exploration_page4_id = exploration_page4.id
+
+      assert [
+               {"Unit 1: Unit 1",
+                [{%Oli.Resources.Revision{id: ^exploration_page4_id}, :not_started}]},
+               {"Module 1: Nested Unit 1 Module 1",
+                [{%Oli.Resources.Revision{id: ^exploration_page3_id}, :not_started}]}
+             ] = explorations
     end
   end
 end

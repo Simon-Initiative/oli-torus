@@ -64,6 +64,21 @@ function areEqual(prevProps: EditorProps, nextProps: EditorProps) {
   );
 }
 
+const defaultValue = () => [Model.p()];
+export const validateEditorContentValue = (value: any): Descendant[] => {
+  if (!value) {
+    return defaultValue();
+  }
+  if (!Array.isArray(value) && Array.isArray(value.model)) {
+    // MER-2689 - Some content had an extra model property that was the array of elements.
+    return value.model;
+  }
+  if (!Array.isArray(value) || value.length === 0) {
+    return defaultValue();
+  }
+  return value;
+};
+
 export const Editor: React.FC<EditorProps> = React.memo((props: EditorProps) => {
   const editor = useMemo(() => {
     if (props.editorOverride) {
@@ -133,7 +148,7 @@ export const Editor: React.FC<EditorProps> = React.memo((props: EditorProps) => 
     <React.Fragment>
       <Slate
         editor={editor}
-        initialValue={props.value.length === 0 ? [Model.p()] : props.value}
+        initialValue={validateEditorContentValue(props.value)}
         onChange={onChange}
       >
         {props.children}

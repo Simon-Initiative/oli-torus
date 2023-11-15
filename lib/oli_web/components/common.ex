@@ -598,7 +598,7 @@ defmodule OliWeb.Components.Common do
       </div>
       <div
         :if={@show_percent}
-        class="text-[16px] dark:text-[#DDD] leading-[32px] tracking-[0.02px] font-semibold"
+        class="ml-[6px] text-[16px] dark:text-[#DDD] leading-[32px] tracking-[0.02px] font-semibold"
       >
         <%= @percent %>%
       </div>

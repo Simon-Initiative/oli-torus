@@ -61,6 +61,10 @@
   @apply bg-white dark:bg-neutral-800 dark:text-white;
 }
 
+.publish_changes_table tr:has(div[data-is-structural='true']) td {
+  @apply bg-gray-300 dark:bg-neutral-800 dark:text-white;
+}
+
 .instructor_dashboard_table td:has(div.highlight-exception) {
   @apply bg-blue-100 rounded-md bg-opacity-50;
 }

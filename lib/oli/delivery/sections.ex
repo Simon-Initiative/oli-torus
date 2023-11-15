@@ -899,7 +899,28 @@ defmodule Oli.Delivery.Sections do
   def bulk_create_section_resource([], _opts), do: {0, []}
 
   def bulk_create_section_resource(section_resource_rows, opts) do
-    Repo.insert_all(SectionResource, section_resource_rows, returning: opts[:returning] || true)
+    section_resource_rows
+    |> Enum.chunk_every(calculate_chunk_size(section_resource_rows))
+    |> Enum.reduce({0, []}, fn chunk, {total, acc} ->
+      {new_total, new_acc} =
+        Repo.insert_all(SectionResource, chunk, returning: opts[:returning] || true)
+
+      {total + new_total, acc ++ new_acc}
+    end)
+  end
+
+  defp calculate_chunk_size(section_resource_rows) do
+    # We want to split the list of section resources into chunks
+    # to avoid hitting the max number of bind variables in a query.
+    max_bind_variables = 65535
+
+    fields_count =
+      section_resource_rows
+      |> List.first()
+      |> Map.keys()
+      |> length()
+
+    div(max_bind_variables, fields_count)
   end
 
   @doc """
@@ -1083,6 +1104,9 @@ defmodule Oli.Delivery.Sections do
   """
   def fetch_unscored_pages(section_slug), do: fetch_all_pages(section_slug, false)
 
+  @doc """
+  Returns all pages for the given section.
+  """
   def fetch_all_pages(section_slug, graded \\ nil) do
     maybe_filter_by_graded =
       case graded do
@@ -1203,44 +1227,6 @@ defmodule Oli.Delivery.Sections do
     end)
   end
 
-  @doc """
-  Builds a map of all page links in a given section. Returns a map of resource ids to a list of
-  resource ids of the pages that they are linked from. Typically this will be a single
-  resource id, but in cases where a page is linked from multiple pages it can be more than one.
-
-  This function does not account for pages which are linked more than "one hop" away from the
-  hierarchy.
-
-  ## Examples
-      iex> build_page_link_map(publication_ids)
-      %{1 => [], 2 => [], 3 => [1, 2], 4 => [4]}
-  """
-  def build_page_link_map(publication_ids) do
-    all_page_ids = Oli.Publishing.all_page_resource_ids(publication_ids)
-    all_page_links = MapSet.new(get_all_page_links(publication_ids))
-
-    # For each page, find the set of pages that link to it and add those links to the map
-    Enum.reduce(all_page_ids, %{}, fn id, acc ->
-      links_to_page =
-        Enum.filter(all_page_ids, fn page_id ->
-          MapSet.member?(all_page_links, {page_id, id})
-        end)
-
-      Map.put(acc, id, links_to_page)
-    end)
-  end
-
-  @doc """
-  Returns a map of all explorations in the section, grouped by their container.
-  """
-  def get_explorations_by_containers(section) do
-    # TODO: Implement this function. For now, just return a map of all explorations keyed
-    # by :default
-    %{
-      default: DeliveryResolver.get_by_purpose(section.slug, :application)
-    }
-  end
-
   # Returns a mapset of two element tuples of the form {source_resource_id, target_resource_id}
   # representing all of the links between pages in the section
   defp get_all_page_links(publication_ids) do
@@ -1325,6 +1311,309 @@ defmodule Oli.Delivery.Sections do
       # to how relates_to is used, we will follow these 'links' in both directions
       Enum.reduce(relates_to, links, fn target_id, links ->
         MapSet.put(links, {source_id, target_id}) |> MapSet.put({target_id, source_id})
+      end)
+    end)
+  end
+
+  @doc """
+  Builds a map of all page links in a given section. Returns a map of resource ids to a list of
+  resource ids of the pages that they are linked from. Typically this will be a single
+  resource id, but in cases where a page is linked from multiple pages it can be more than one.
+
+  ## Examples
+      iex> build_resource_link_map(publication_ids)
+      %{1 => [], 2 => [], 3 => [1, 2], 4 => [4]}
+  """
+  def build_resource_link_map(publication_ids) do
+    # Returns a MapSet of two element tuples of the form {source_resource_id, target_resource_id}
+    # representing all of the links between resources
+    all_page_links =
+      [
+        get_all_page_links(publication_ids),
+        get_activity_references(publication_ids),
+        get_relates_to(publication_ids),
+        get_hierarchical_parent_links(publication_ids)
+      ]
+      |> Enum.reduce(MapSet.new(), fn links, acc -> MapSet.union(links, acc) end)
+
+    # For each page, find the set of pages that link to it and add those links to the map
+    all_resource_ids(publication_ids)
+    |> Enum.reduce(%{}, fn id, acc ->
+      Enum.reduce(all_page_links, acc, fn {source, target}, acc ->
+        if target == id do
+          Map.update(acc, id, [source], fn links ->
+            [source | links]
+          end)
+        else
+          acc
+        end
+      end)
+    end)
+  end
+
+  def get_resource_to_container_map(section) do
+    case section do
+      %Section{resource_to_container_map: nil} ->
+        Logger.warning(
+          "Section #{section.slug} has no precomputed resource_to_container_map. One will be generated now."
+        )
+
+        {:ok, section} = update_resource_to_container_map(section)
+        section.resource_to_container_map
+
+      %Section{resource_to_container_map: resource_to_container_map} ->
+        resource_to_container_map
+    end
+  end
+
+  @doc """
+  Builds a section's resource_to_container_map and updates the section with it.
+  """
+  def update_resource_to_container_map(section) do
+    update_section(section, %{
+      resource_to_container_map: build_resource_to_container_map(section)
+    })
+  end
+
+  defp build_resource_to_container_map(section) do
+    publication_ids = section_publication_ids(section.slug)
+    resource_link_map = build_resource_link_map(publication_ids)
+
+    all_pages = fetch_all_pages(section.slug)
+
+    all_containers =
+      DeliveryResolver.revisions_of_type(
+        section.slug,
+        Oli.Resources.ResourceType.get_id_by_type("container")
+      )
+
+    container_ids = Enum.map(all_containers, fn c -> c.resource_id end)
+
+    # get all explorations in the section and group them by their container title
+    all_pages
+    |> Enum.reduce(%{}, fn page, acc ->
+      {container_id, _seen} =
+        find_parent_container(
+          page.resource_id,
+          resource_link_map,
+          MapSet.new(container_ids),
+          MapSet.new()
+        )
+
+      Map.put(acc, Integer.to_string(page.resource_id), container_id)
+    end)
+  end
+
+  defp section_publication_ids(section_slug) do
+    from(s in Section,
+      where: s.slug == ^section_slug,
+      join: spp in SectionsProjectsPublications,
+      on: s.id == spp.section_id,
+      select: spp.publication_id
+    )
+    |> Repo.all()
+  end
+
+  defp all_resource_ids(publication_ids) do
+    from(pr in PublishedResource,
+      join: rev in Revision,
+      on: pr.revision_id == rev.id,
+      where: pr.publication_id in ^publication_ids,
+      select: rev.resource_id,
+      distinct: true
+    )
+    |> Repo.all()
+  end
+
+  defp find_parent_container(
+         resource_id,
+         resource_link_map,
+         container_ids,
+         seen
+       ) do
+    if MapSet.member?(seen, resource_id) do
+      # we've already seen this page, so we've reached a cycle in the recursion and it is not linked
+      # from any page in the hierarchy
+      {nil, seen}
+    else
+      if MapSet.member?(container_ids, resource_id) do
+        # found the first hierarchical container for this page, so return it
+        {resource_id, seen}
+      else
+        case Map.get(resource_link_map, resource_id) do
+          nil ->
+            # resource_link_map has no links for this resource, so we've reached the end of the
+            # recursion and it is not linked from any page in the hierarchy
+            {nil, seen}
+
+          link_ids ->
+            link_ids
+            |> Enum.reduce({nil, seen}, fn id, acc ->
+              case acc do
+                {nil, seen} ->
+                  find_parent_container(
+                    id,
+                    resource_link_map,
+                    container_ids,
+                    MapSet.put(seen, resource_id)
+                  )
+
+                _ ->
+                  acc
+              end
+            end)
+        end
+      end
+    end
+  end
+
+  @doc """
+  Returns a map of all explorations in the section, grouped by their container. Each exploration
+  returned as a tuple of the exploration and its status.
+
+  ## Examples
+      iex> get_explorations_by_containers(section)
+      %{
+        default: [
+          {exploration, :not_started},
+          {exploration, :started},
+          ...
+        ],
+        "Unit 1: Acids and Bases" => [
+          {exploration, :not_started},
+          {exploration, :started},
+          ...
+        ]
+      }
+  """
+  def get_explorations_by_containers(section, user) do
+    resource_to_container_map = get_resource_to_container_map(section)
+
+    # get all explorations in the section and group them by their container title
+    DeliveryResolver.get_by_purpose(section.slug, :application)
+    |> Enum.reduce(%{}, fn exploration, acc ->
+      container_id =
+        Map.get(resource_to_container_map, Integer.to_string(exploration.resource_id), :default)
+
+      # group by container resource_id
+      Map.update(acc, container_id, [exploration], fn explorations ->
+        [exploration | explorations]
+      end)
+    end)
+    |> label_and_sort_explorations_by_hierarchy(section.slug)
+    |> attach_statuses_for_user(section.slug, user)
+  end
+
+  defp attach_statuses_for_user(explorations_map, _section_slug, nil),
+    do:
+      explorations_map
+      |> Enum.map(fn {container_id, explorations} ->
+        {container_id, Enum.map(explorations, fn exploration -> {exploration, :not_started} end)}
+      end)
+
+  defp attach_statuses_for_user(explorations_map, section_slug, user) do
+    started_explorations = fetch_started_explorations(section_slug, user.id)
+
+    explorations_map
+    |> Enum.map(fn {container_id, explorations} ->
+      {container_id,
+       Enum.map(explorations, fn exploration ->
+         {exploration, Map.get(started_explorations, exploration.resource_id, :not_started)}
+       end)}
+    end)
+  end
+
+  defp fetch_started_explorations(section_slug, user_id) do
+    page_id = Oli.Resources.ResourceType.get_id_by_type("page")
+
+    from([sr: sr, rev: rev] in DeliveryResolver.section_resource_revisions(section_slug),
+      join: ra in ResourceAccess,
+      on: ra.resource_id == rev.resource_id,
+      join: resource_attempt in ResourceAttempt,
+      on: resource_attempt.resource_access_id == ra.id,
+      join: user in assoc(ra, :user),
+      where:
+        rev.purpose == :application and rev.deleted == false and
+          rev.resource_type_id == ^page_id and user.id == ^user_id,
+      order_by: [asc: rev.resource_id],
+      group_by: [rev.id, resource_attempt.id],
+      select: rev.resource_id
+    )
+    |> Repo.all()
+    |> Enum.reduce(%{}, fn id, acc -> Map.put(acc, id, :started) end)
+  end
+
+  defp label_and_sort_explorations_by_hierarchy(explorations_map, section_slug) do
+    fetch_ordered_containers(section_slug)
+    |> Enum.reduce(
+      case explorations_map[:default] do
+        nil -> []
+        default -> [{:default, default}]
+      end,
+      fn {resource_id, title}, acc ->
+        if explorations_map[resource_id] do
+          [{title, explorations_map[resource_id]} | acc]
+        else
+          acc
+        end
+      end
+    )
+    |> Enum.reverse()
+  end
+
+  defp fetch_ordered_containers(section_slug) do
+    container_type_id = Oli.Resources.ResourceType.get_id_by_type("container")
+
+    SectionResource
+    |> join(:inner, [sr], s in Section, on: sr.section_id == s.id)
+    |> join(:inner, [sr, s], spp in SectionsProjectsPublications,
+      on: spp.section_id == s.id and spp.project_id == sr.project_id
+    )
+    |> join(:inner, [sr, _, spp], pr in PublishedResource,
+      on: pr.publication_id == spp.publication_id and pr.resource_id == sr.resource_id
+    )
+    |> join(:inner, [sr, _, _, pr], rev in Revision, on: rev.id == pr.revision_id)
+    |> join(:inner, [sr, _, spp, _, _], p in Project, on: p.id == spp.project_id)
+    |> where(
+      [sr, s, _, _, rev, _],
+      s.slug == ^section_slug and rev.resource_type_id == ^container_type_id
+    )
+    |> select([sr, s, _, _, rev, p], %{
+      id: rev.resource_id,
+      title: rev.title,
+      numbering_level: sr.numbering_level,
+      numbering_index: sr.numbering_index,
+      children: rev.children,
+      customizations: p.customizations
+    })
+    |> order_by([
+      {:asc_nulls_last, fragment("numbering_level")},
+      {:asc_nulls_last, fragment("numbering_index")}
+    ])
+    |> Repo.all()
+    |> Enum.map(fn c ->
+      {
+        c.id,
+        ~s{#{get_container_label(c.numbering_level, c.customizations || Map.from_struct(CustomLabels.default()))} #{c.numbering_index}: #{c.title}}
+      }
+    end)
+  end
+
+  defp get_hierarchical_parent_links(publication_ids) do
+    container_type_id = Oli.Resources.ResourceType.get_id_by_type("container")
+
+    from(pr in PublishedResource,
+      join: rev in Revision,
+      on: pr.revision_id == rev.id,
+      where: rev.resource_type_id == ^container_type_id and pr.publication_id in ^publication_ids,
+      select: %{id: rev.resource_id, children: rev.children},
+      distinct: true
+    )
+    |> Repo.all()
+    |> Enum.reduce(MapSet.new(), fn %{id: resource_id, children: children}, links ->
+      Enum.reduce(children, links, fn child_id, links ->
+        # MapSet.put(links, {child_id, resource_id})
+        MapSet.put(links, {resource_id, child_id})
       end)
     end)
   end
@@ -1784,6 +2073,13 @@ defmodule Oli.Delivery.Sections do
         fn _repo, _ ->
           # updates contains_explorations field in sections
           Delivery.maybe_update_section_contains_explorations(section)
+          Delivery.maybe_update_section_contains_deliberate_practice(section)
+        end
+      )
+      |> Multi.run(
+        :update_resource_to_container_map,
+        fn _repo, _ ->
+          update_resource_to_container_map(section)
         end
       )
       |> Repo.transaction()
@@ -2523,7 +2819,9 @@ defmodule Oli.Delivery.Sections do
       # resources and cleaning up any deleted ones
       pinned_project_publications = get_pinned_project_publications(section.id)
       rebuild_section_curriculum(section, new_hierarchy, pinned_project_publications)
+
       Delivery.maybe_update_section_contains_explorations(section)
+      Delivery.maybe_update_section_contains_deliberate_practice(section)
 
       {:ok}
     end)
@@ -2709,7 +3007,7 @@ defmodule Oli.Delivery.Sections do
     |> then(&Repo.insert_all(SectionResource, &1))
   end
 
-  defp is_structural?(%Revision{resource_type_id: resource_type_id}) do
+  def is_structural?(%Revision{resource_type_id: resource_type_id}) do
     container = ResourceType.get_id_by_type("container")
 
     resource_type_id == container

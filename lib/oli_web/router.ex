@@ -946,6 +946,7 @@ defmodule OliWeb.Router do
         live("/discussion", Delivery.Student.DiscussionLive)
         live("/assignments", Delivery.Student.AssignmentsLive)
         live("/explorations", Delivery.Student.ExplorationsLive)
+        live("/practice", Delivery.Student.PracticeLive)
       end
     end
 
@@ -1008,6 +1009,7 @@ defmodule OliWeb.Router do
     # Redirect deprecated routes
     get("/overview", PageDeliveryController, :index_preview)
     get("/exploration", PageDeliveryController, :exploration_preview)
+    get("/practice", PageDeliveryController, :deliberate_practice_preview)
     get("/discussion", PageDeliveryController, :discussion_preview)
     get("/my_assignments", PageDeliveryController, :assignments_preview)
 

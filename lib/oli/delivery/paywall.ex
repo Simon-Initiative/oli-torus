@@ -4,6 +4,7 @@ defmodule Oli.Delivery.Paywall do
   require Logger
 
   alias Oli.Repo
+  alias Oli.Repo.{Paging, Sorting}
   alias Oli.Accounts.User
   alias Oli.Delivery.Paywall.Payment
   alias Oli.Delivery.Paywall.Discount
@@ -655,5 +656,135 @@ defmodule Oli.Delivery.Paywall do
   """
   def get_payment_by(clauses) do
     Repo.get_by(Payment, clauses)
+  end
+
+  @doc """
+  Fetches and filters payment records based on various parameters.
+
+  This function retrieves payment records, optionally filtering them based on product, paging, sorting, and text search criteria.
+
+  ## Parameters
+
+  - `product_slug` (String): The slug of the product to filter payments for.
+  - `%Paging{limit: limit, offset: offset}` (Paging struct): Specifies the limit and offset for paging the results.
+  - `%Sorting{direction: direction, field: field}` (Sorting struct): Specifies the sorting direction and field for ordering the results.
+  - `opts` (Keyword list, optional): Additional options, including `:text_search` for text-based filtering.
+
+  ## Returns
+
+  A list of payment records matching the specified criteria.
+
+  ## Examples
+
+  iex> browse_payments("example-product", %Paging{limit: 10, offset: 0}, %Sorting{direction: :asc, field: :type})
+    [%Payment{}, %Payment{}, ...]
+  """
+  def browse_payments(
+        product_slug,
+        %Paging{limit: limit, offset: offset},
+        %Sorting{direction: direction, field: field},
+        opts \\ []
+      ) do
+    text_search =
+      opts
+      |> Keyword.get(:text_search, "")
+      |> String.trim()
+      |> String.replace("-", "")
+
+    filter_by_text =
+      if text_search == "" do
+        true
+      else
+        dynamic(
+          [p, _, _, s],
+          fragment(
+            "((crockford_base32_encode(?) ILIKE ?) OR (NOT (? IS NULL) AND (? ILIKE ?)))",
+            p.code,
+            ^"%#{text_search}%",
+            s,
+            s.title,
+            ^"%#{text_search}%"
+          )
+        )
+      end
+
+    query =
+      Payment
+      |> join(:left, [p], e in Enrollment, on: e.id == p.enrollment_id)
+      |> join(:left, [_p, e], u in User, on: e.user_id == u.id)
+      |> join(:inner, [p, _e, _u], s in Section,
+        on: p.section_id == s.id and s.slug == ^product_slug
+      )
+      |> where(^filter_by_text)
+      |> limit(^limit)
+      |> offset(^offset)
+      |> select([p, _, u, s], %{
+        payment: p,
+        user: u,
+        section: s,
+        total_count: fragment("count(*) OVER()")
+      })
+
+    query =
+      case field do
+        :type ->
+          order_by(
+            query,
+            [p, _, _, _],
+            [
+              {^direction,
+               fragment(
+                 """
+                   CASE
+                     WHEN ? = 'deferred' THEN 1
+                     WHEN ? = 'direct' THEN 2
+                     ELSE 3
+                   END
+                 """,
+                 p.type,
+                 p.type
+               )},
+              {:desc, p.generation_date}
+            ]
+          )
+
+        :section ->
+          order_by(query, [_, _, _, s], {^direction, s.title})
+
+        :user ->
+          order_by(
+            query,
+            [_, _, u, _],
+            {^direction,
+             fragment(
+               "CONCAT(COALESCE(?, ''), ' ', COALESCE(?, ''))",
+               u.family_name,
+               u.given_name
+             )}
+          )
+
+        :details ->
+          order_by(
+            query,
+            [p, _, _, _],
+            {^direction,
+             fragment(
+               """
+                 CASE
+                   WHEN ? = 'direct' AND ? = 'stripe' THEN COALESCE(? ->> 'id', '')
+                   ELSE ''
+                 END
+               """,
+               p.type,
+               p.provider_type,
+               p.provider_payload
+             )}
+          )
+
+        _ ->
+          order_by(query, [p, _, _, _], {^direction, field(p, ^field)})
+      end
+
+    Repo.all(query)
   end
 end
