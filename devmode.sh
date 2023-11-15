@@ -7,7 +7,7 @@ echo "## "
 if [ ! -f .devmode ]; then
   echo "## It looks like this is your first time using devmode. Lets gather some prerequisites..." && sleep 1
   mix deps.get
-  cd assets && yarn
+  cd assets && yarn && yarn deploy
   cd ..
 
   echo "## Creating config files. Using defaults"
