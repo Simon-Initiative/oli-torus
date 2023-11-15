@@ -8,9 +8,8 @@ defmodule OliWeb.Delivery.Student.ExplorationsLive do
   alias Oli.Delivery.Sections
 
   def mount(_params, _session, socket) do
-    # TODO: Replace with real implementation that sorts by container. For now, just render all
-    # explorations without week headers
-    explorations_by_container = Sections.get_explorations_by_containers(socket.assigns.section)
+    explorations_by_container =
+      Sections.get_explorations_by_containers(socket.assigns.section, socket.assigns.ctx.user)
 
     {:ok,
      assign(socket,
@@ -47,9 +46,10 @@ defmodule OliWeb.Delivery.Student.ExplorationsLive do
           </h2>
 
           <.exploration_card
-            :for={exploration <- explorations}
+            :for={{exploration, status} <- explorations}
             ctx={@ctx}
             exploration={exploration}
+            status={status}
             section_slug={@section.slug}
             preview_mode={@preview_mode}
           />
@@ -61,6 +61,7 @@ defmodule OliWeb.Delivery.Student.ExplorationsLive do
 
   attr :ctx, SessionContext, required: true
   attr :exploration, :map, required: true
+  attr :status, :atom, required: true, values: [:not_started, :started]
   attr :section_slug, :string, required: true
   attr :preview_mode, :boolean, default: false
 
@@ -86,7 +87,7 @@ defmodule OliWeb.Delivery.Student.ExplorationsLive do
     <div class="flex flex-col lg:flex-row-reverse items-center rounded-lg bg-black/5 dark:bg-white/5 mb-4">
       <img
         class="object-cover rounded-t-lg lg:rounded-tl-none w-full lg:w-[300px] lg:rounded-r-lg h-64 lg:h-full shrink-0"
-        src={@exploration.poster_image}
+        src={poster_image(@exploration)}
       />
       <div class="flex-1 flex flex-col justify-between p-8 leading-normal">
         <h5 class="mb-3 text-2xl font-bold tracking-tight text-gray-900 dark:text-white">
@@ -100,7 +101,7 @@ defmodule OliWeb.Delivery.Student.ExplorationsLive do
             variant={:primary}
             href={exploration_link(@section_slug, @exploration, @preview_mode)}
           >
-            Let's Begin
+            <%= exploration_link_text(@status) %>
           </.button>
         </div>
       </div>
@@ -113,6 +114,26 @@ defmodule OliWeb.Delivery.Student.ExplorationsLive do
       ~p"/sections/#{section_slug}/preview/page/#{exploration.slug}"
     else
       ~p"/sections/#{section_slug}/page/#{exploration.slug}"
+    end
+  end
+
+  defp poster_image(exploration) do
+    case exploration.poster_image do
+      nil ->
+        ~p"/images/ng23/explorations/default_poster.jpg"
+
+      image ->
+        image
+    end
+  end
+
+  defp exploration_link_text(exploration_status) do
+    case exploration_status do
+      :started ->
+        "Continue"
+
+      _ ->
+        "Let's Begin"
     end
   end
 end

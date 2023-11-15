@@ -59,7 +59,9 @@ defmodule OliWeb.Import.CSVImportView do
     ~H"""
     <div>
       <%= for r <- @results do %>
-        <p>Row #<%= r.row_num %> - <%= r.result %></p>
+        <p class={if r.result == :failure, do: "text-danger"}>
+          Row #<%= r.row_num %> - <%= r.result %>
+        </p>
       <% end %>
 
       <%= if @finished do %>
@@ -101,54 +103,59 @@ defmodule OliWeb.Import.CSVImportView do
                        intro_content
                      ]}, row_num} ->
       if row_num > 0 do
-        revision = Oli.Publishing.AuthoringResolver.from_revision_slug(project_slug, slug)
+        case Oli.Publishing.AuthoringResolver.from_revision_slug(project_slug, slug) do
+          nil ->
+            send(pid, {:update, row_num, :failure})
 
-        has_change? =
-          duration_minutes != "" or poster_image != "" or intro_video != "" or intro_content != ""
+          revision ->
+            has_change? =
+              duration_minutes != "" or poster_image != "" or intro_video != "" or
+                intro_content != ""
 
-        if has_change? do
-          change = %{
-            duration_minutes:
-              if duration_minutes != "" do
-                String.to_integer(duration_minutes)
-              else
-                nil
-              end,
-            poster_image:
-              if poster_image != "" do
-                poster_image
-              else
-                nil
-              end,
-            intro_video:
-              if intro_video != "" do
-                intro_video
-              else
-                nil
-              end,
-            intro_content:
-              if intro_content != "" do
-                to_content.(intro_content)
-              else
-                nil
+            if has_change? do
+              change = %{
+                duration_minutes:
+                  if duration_minutes != "" do
+                    String.to_integer(duration_minutes)
+                  else
+                    nil
+                  end,
+                poster_image:
+                  if poster_image != "" do
+                    poster_image
+                  else
+                    nil
+                  end,
+                intro_video:
+                  if intro_video != "" do
+                    intro_video
+                  else
+                    nil
+                  end,
+                intro_content:
+                  if intro_content != "" do
+                    to_content.(intro_content)
+                  else
+                    nil
+                  end
+              }
+
+              needs_change? =
+                revision.duration_minutes != change.duration_minutes or
+                  revision.poster_image != change.poster_image or
+                  revision.intro_video != change.intro_video or
+                  revision.intro_content != change.intro_content
+
+              if needs_change? do
+                case Oli.Resources.update_revision(revision, change) do
+                  {:ok, _} ->
+                    send(pid, {:update, row_num, :success})
+
+                  {:error, _} ->
+                    send(pid, {:update, row_num, :failure})
+                end
               end
-          }
-
-          needs_change? =
-            revision.duration_minutes != change.duration_minutes or
-              revision.poster_image != change.poster_image or
-              revision.intro_video != change.intro_video or
-              revision.intro_content != change.intro_content
-
-          if needs_change? do
-            case Oli.Resources.update_revision(revision, change) do
-              {:ok, _} ->
-                send(pid, {:update, row_num, :success})
-
-              {:error, _} ->
-                send(pid, {:update, row_num, :failure})
             end
-          end
         end
       end
     end)

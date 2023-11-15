@@ -42,7 +42,7 @@ export const SliderScroll = {
     this.el.addEventListener('scroll', () => {
       const slider = this.el;
 
-      if (slider.scrollLeft === 0) {
+      if (slider.scrollLeft <= 0) {
         // If the left part is fully visible, hide the left button
         sliderLeftButton?.classList.add('hidden');
         sliderLeftButton?.classList.remove('flex');
@@ -52,7 +52,7 @@ export const SliderScroll = {
         sliderLeftButton?.classList.add('flex');
       }
 
-      if (slider.scrollWidth - slider.clientWidth === slider.scrollLeft) {
+      if (slider.scrollLeft >= slider.scrollWidth - slider.clientWidth) {
         sliderRightButton?.classList.add('hidden');
         sliderRightButton?.classList.remove('flex');
       } else {
