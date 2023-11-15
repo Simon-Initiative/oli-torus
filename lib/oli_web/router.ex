@@ -939,6 +939,7 @@ defmodule OliWeb.Router do
     get("/overview", PageDeliveryController, :index)
 
     get("/exploration", PageDeliveryController, :exploration)
+    get("/practice", PageDeliveryController, :deliberate_practice)
     get("/discussion", PageDeliveryController, :discussion)
     get("/my_assignments", PageDeliveryController, :assignments)
     get("/container/:revision_slug", PageDeliveryController, :container)
@@ -981,6 +982,7 @@ defmodule OliWeb.Router do
     # Redirect deprecated routes
     get("/overview", PageDeliveryController, :index_preview)
     get("/exploration", PageDeliveryController, :exploration_preview)
+    get("/practice", PageDeliveryController, :deliberate_practice_preview)
     get("/discussion", PageDeliveryController, :discussion_preview)
     get("/my_assignments", PageDeliveryController, :assignments_preview)
     get("/container/:revision_slug", PageDeliveryController, :container_preview)

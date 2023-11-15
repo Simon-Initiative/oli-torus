@@ -1,36 +1,19 @@
 defmodule OliWeb.Products.PaymentsView do
   use OliWeb, :live_view
-  use OliWeb.Common.SortableTable.TableHandlers
 
-  alias OliWeb.Common.Filter
-  alias OliWeb.Common.Listing
-  alias OliWeb.Common.Breadcrumb
-  alias OliWeb.Products.Payments.CreateCodes
+  import OliWeb.DelegatedEvents
+
+  alias Oli.Delivery.Paywall
+  alias Oli.Repo.{Paging, Sorting}
+  alias OliWeb.Common.{Breadcrumb, Params, PagedTable, SessionContext, TextSearch}
   alias OliWeb.Common.Table.SortableTableModel
+  alias OliWeb.Products.Payments.CreateCodes
   alias OliWeb.Router.Helpers, as: Routes
-  alias OliWeb.Common.SessionContext
 
-  @table_filter_fn &OliWeb.Products.PaymentsView.filter_rows/3
-  @table_push_patch_path &OliWeb.Products.PaymentsView.live_path/2
-
-  def filter_rows(socket, query, _filter) do
-    case String.downcase(query) do
-      "" ->
-        socket.assigns.payments
-
-      str ->
-        Enum.filter(socket.assigns.payments, fn p ->
-          title =
-            case is_nil(p.section) do
-              true -> ""
-              false -> p.section.title
-            end
-
-          String.contains?(String.downcase(p.code), str) or
-            String.contains?(String.downcase(title), str)
-        end)
-    end
-  end
+  @limit 20
+  @text_search_tooltip """
+  Search by payment code and section title.
+  """
 
   def live_path(socket, params) do
     Routes.live_path(socket, OliWeb.Products.PaymentsView, socket.assigns.product_slug, params)
@@ -39,9 +22,13 @@ defmodule OliWeb.Products.PaymentsView do
   def mount(%{"product_id" => product_slug}, session, socket) do
     ctx = SessionContext.init(socket, session)
 
-    payments = list_payments(product_slug)
+    payments =
+      browse_payments(product_slug, %Paging{offset: 0, limit: @limit}, %Sorting{
+        direction: :asc,
+        field: :type
+      })
 
-    total_count = length(payments)
+    total_count = determine_total(payments)
 
     {:ok, table_model} = OliWeb.Products.Payments.TableModel.new(payments, ctx)
 
@@ -50,15 +37,15 @@ defmodule OliWeb.Products.PaymentsView do
        ctx: ctx,
        product: Oli.Delivery.Sections.get_section_by(slug: product_slug),
        product_slug: product_slug,
-       payments: payments,
        total_count: total_count,
        table_model: table_model,
        breadcrumbs: [Breadcrumb.new(%{full_title: "Payments"})],
        title: "Payments",
        code_count: 50,
        offset: 0,
-       limit: 20,
-       applied_query: "",
+       limit: @limit,
+       text_search: "",
+       text_search_tooltip: @text_search_tooltip,
        download_enabled: false
      )}
   end
@@ -77,63 +64,112 @@ defmodule OliWeb.Products.PaymentsView do
 
       <hr class="mt-5 mb-5" />
 
-      <Filter.render apply="apply_search" change="change_search" reset="reset_search" />
+      <TextSearch.render
+        id="text-search"
+        reset="text_search_reset"
+        change="text_search_change"
+        text={@text_search}
+        event_target={nil}
+        tooltip={@text_search_tooltip}
+      />
 
       <div class="mb-3" />
 
-      <Listing.render
-        filter={@applied_query}
-        table_model={@table_model}
+      <PagedTable.render
+        page_change="paged_table_page_change"
+        sort="paged_table_sort"
         total_count={@total_count}
-        offset={@offset}
+        filter={@text_search}
         limit={@limit}
-        sort="sort"
-        page_change="page_change"
+        offset={@offset}
+        table_model={@table_model}
       />
     </div>
     """
   end
 
-  defp list_payments(product_slug) do
-    Oli.Delivery.Paywall.list_payments(product_slug)
+  def handle_params(params, _, socket) do
+    table_model =
+      SortableTableModel.update_from_params(
+        socket.assigns.table_model,
+        params
+      )
+
+    offset = Params.get_int_param(params, "offset", 0)
+    text_search = Params.get_param(params, "text_search", "")
+
+    payments =
+      browse_payments(
+        socket.assigns.product_slug,
+        %Paging{offset: offset, limit: @limit},
+        %Sorting{direction: table_model.sort_order, field: table_model.sort_by_spec.name},
+        text_search
+      )
+
+    table_model = Map.put(table_model, :rows, payments)
+
+    total_count = determine_total(payments)
+
+    {:noreply,
+     assign(socket,
+       offset: offset,
+       table_model: table_model,
+       total_count: total_count,
+       text_search: text_search
+     )}
+  end
+
+  defp browse_payments(product_slug, paging, sorting, text_search \\ "") do
+    Paywall.browse_payments(
+      product_slug,
+      paging,
+      sorting,
+      text_search: text_search
+    )
     |> Enum.map(fn element ->
       Map.put(
         element,
         :code,
-        if is_nil(element.payment.code) do
-          ""
-        else
-          Oli.Delivery.Paywall.Payment.to_human_readable(element.payment.code)
+        case element.payment.code do
+          nil ->
+            ""
+
+          code ->
+            Paywall.Payment.to_human_readable(code)
         end
       )
       |> Map.put(:unique_id, element.payment.id)
     end)
   end
 
-  def handle_event("create", _, socket) do
+  def handle_event("create", _, %{assigns: assigns} = socket) do
     create_payment_codes =
-      Oli.Delivery.Paywall.create_payment_codes(
-        socket.assigns.product_slug,
-        socket.assigns.code_count
+      Paywall.create_payment_codes(
+        assigns.product_slug,
+        assigns.code_count
       )
 
     case create_payment_codes do
       {:ok, _} ->
-        payments = list_payments(socket.assigns.product_slug)
-
-        {:ok, table_model} =
-          OliWeb.Products.Payments.TableModel.new(
-            payments,
-            socket.assigns.ctx
+        payments =
+          browse_payments(
+            assigns.product_slug,
+            %Paging{offset: assigns.offset, limit: @limit},
+            %Sorting{
+              direction: assigns.table_model.sort_order,
+              field: assigns.table_model.sort_by_spec.name
+            },
+            assigns.text_search
           )
 
-        total_count = length(payments)
+        table_model = Map.put(assigns.table_model, :rows, payments)
+
+        total_count = determine_total(payments)
 
         {:noreply,
          socket
          |> put_flash(:info, "Payment codes successfully added.")
          |> assign(
-           payments: payments,
            total_count: total_count,
            table_model: table_model,
            download_enabled: true
@@ -154,5 +190,40 @@ defmodule OliWeb.Products.PaymentsView do
       end
 
     {:noreply, assign(socket, code_count: count, download_enabled: false)}
+  end
+
+  def handle_event(event, params, socket) do
+    {event, params, socket, &__MODULE__.patch_with/2}
+    |> delegate_to([
+      &TextSearch.handle_delegated/4,
+      &PagedTable.handle_delegated/4
+    ])
+  end
+
+  def patch_with(socket, changes) do
+    {:noreply,
+     push_patch(socket,
+       to:
+         live_path(
+           socket,
+           Map.merge(
+             %{
+               sort_by: socket.assigns.table_model.sort_by_spec.name,
+               sort_order: socket.assigns.table_model.sort_order,
+               offset: socket.assigns.offset,
+               text_search: socket.assigns.text_search
+             },
+             changes
+           )
+         ),
+       replace: true
+     )}
+  end
+
+  defp determine_total(payments) do
+    case payments do
+      [] -> 0
+      [hd | _] -> hd.total_count
+    end
   end
 end

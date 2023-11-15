@@ -249,7 +249,7 @@ $element-margin-bottom: 1.5em;
     .meanings-single {
       display: inline;
       padding-left: 3px;
-      li {
+      & > li {
         list-style: none;
         display: inline;
         p {
