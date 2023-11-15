@@ -60,11 +60,22 @@ defmodule OliWeb.Delivery.InstructorDashboard.Helpers do
   end
 
   def get_assessments(section, students) do
-    student_ids = Enum.map(students, & &1.id)
-
     graded_pages_and_section_resources =
       DeliveryResolver.graded_pages_revisions_and_section_resources(section.slug)
 
+    return_page(
+      graded_pages_and_section_resources,
+      section,
+      students
+    )
+  end
+
+  defp return_page(
+         graded_pages_and_section_resources,
+         section,
+         students
+       ) do
+    student_ids = Enum.map(students, & &1.id)
     page_ids = Enum.map(graded_pages_and_section_resources, fn {rev, _} -> rev.resource_id end)
 
     progress_across_for_pages =
@@ -101,6 +112,17 @@ defmodule OliWeb.Delivery.InstructorDashboard.Helpers do
         total_attempts: Map.get(attempts_across_for_pages, rev.resource_id)
       })
     end)
+  end
+
+  def get_assessments_with_surveys(section, students) do
+    graded_pages_and_section_resources =
+      DeliveryResolver.graded_pages_revisions_and_section_resources_with_surveys(section.slug)
+
+    return_page(
+      graded_pages_and_section_resources,
+      section,
+      students
+    )
   end
 
   def get_students(section, params \\ %{container_id: nil}) do

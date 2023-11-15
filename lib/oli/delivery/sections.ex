@@ -1131,6 +1131,20 @@ defmodule Oli.Delivery.Sections do
     |> Repo.all()
   end
 
+  def fetch_pages_with_survey(slug) do
+    page_type_id = ResourceType.get_id_by_type("page")
+
+    from([rev: rev] in Oli.Publishing.DeliveryResolver.section_resource_revisions(slug),
+      join: content_elem in fragment("jsonb_array_elements(?->'model')", rev.content),
+      on: true,
+      where:
+        rev.resource_type_id == ^page_type_id and rev.deleted == false and
+          fragment("?->>'type'", content_elem) == "survey",
+      select: rev
+    )
+    |> Repo.all()
+  end
+
   # Creates a 'hierarchy definition' strictly from a a project and the recursive
   # definition of containers starting with the root revision container.  This hierarchy
   # definition is a map of resource ids to a list of the child resource ids, effectively
