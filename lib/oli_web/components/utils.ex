@@ -5,6 +5,9 @@ defmodule OliWeb.Components.Utils do
   alias Oli.Accounts.{User, Author}
   alias Oli.Delivery.Sections.Section
 
+  def socket_or_conn(%{socket: socket} = _assigns), do: socket
+  def socket_or_conn(%{conn: conn} = _assigns), do: conn
+
   @doc """
   A Phoenix JS utility for toggling a class and having it survive DOM patching.
   https://elixirforum.com/t/toggle-classes-with-phoenix-liveview-js/45608/5

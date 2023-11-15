@@ -37,7 +37,7 @@ defmodule OliWeb.Snapshots.SnapshotsView do
         Mount.handle_error(socket, {:error, e})
 
       {type, _, section} ->
-        missing = get_missing(section) |> IO.inspect()
+        missing = get_missing(section)
         count_missing = Enum.count(missing)
 
         {:ok,

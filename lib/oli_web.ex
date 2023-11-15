@@ -77,6 +77,7 @@ defmodule OliWeb do
       # after the specified on_mounts, and therefore should be included
       # in the live_session on_mount if needed before other on_mount plugs
       on_mount OliWeb.LiveSessionPlugs.SetUser
+      on_mount OliWeb.LiveSessionPlugs.SetPreviewMode
 
       unquote(html_helpers())
     end

@@ -35,13 +35,7 @@ defmodule OliWeb.Delivery.RemixSection do
   alias Phoenix.LiveView.JS
 
   defp redirect_after_save(:instructor, %Section{slug: slug}),
-    do: ~p"/sections/#{slug}/remix"
-
-  defp redirect_after_save(:open_and_free, section),
-    do: Routes.admin_open_and_free_path(OliWeb.Endpoint, :show, section)
-
-  defp redirect_after_save(:admin, %Section{slug: slug}, socket),
-    do: Routes.live_path(socket, OliWeb.Sections.OverviewView, slug)
+    do: ~p"/sections/#{slug}/manage/remix"
 
   defp redirect_after_save(:product_creator, %Section{slug: slug}, socket),
     do: Routes.live_path(socket, OliWeb.Products.DetailsView, slug)
@@ -127,7 +121,7 @@ defmodule OliWeb.Delivery.RemixSection do
     init_state(socket,
       breadcrumbs: set_breadcrumbs(:user, section),
       section: section,
-      redirect_after_save: redirect_after_save(:admin, section, socket),
+      redirect_after_save: redirect_after_save(:instructor, section, socket),
       available_publications: available_publications
     )
   end
@@ -141,7 +135,7 @@ defmodule OliWeb.Delivery.RemixSection do
     init_state(socket,
       breadcrumbs: set_breadcrumbs(:admin, section),
       section: section,
-      redirect_after_save: redirect_after_save(:open_and_free, section),
+      redirect_after_save: redirect_after_save(:instructor, section),
       available_publications: Publishing.all_available_publications()
     )
   end

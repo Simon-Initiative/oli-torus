@@ -78,11 +78,6 @@ defmodule OliWeb.Admin.AdminView do
               Browse all Collaborative Spaces
             </a>
           </li>
-          <li>
-            <a href={Routes.admin_open_and_free_path(OliWeb.Endpoint, :index)}>
-              Manage Open and Free Sections
-            </a>
-          </li>
           <li><a href={Routes.live_path(OliWeb.Endpoint, OliWeb.Admin.Ingest)}>Ingest Project</a></li>
           <li><a href={Routes.ingest_path(OliWeb.Endpoint, :index)}>V2 Ingest Project</a></li>
           <li><a href={Routes.brand_path(OliWeb.Endpoint, :index)}>Manage Branding</a></li>

@@ -371,7 +371,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
     ~H"""
     <InstructorDashboard.tabs tabs={overview_tabs(@section_slug, @preview_mode, @active_tab)} />
 
-    <div class="mx-10 mb-10">
+    <div class="container mx-auto mb-10">
       <.live_component
         id="scored_activities_tab"
         module={OliWeb.Components.Delivery.ScoredActivities}
@@ -392,7 +392,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
     ~H"""
     <InstructorDashboard.tabs tabs={overview_tabs(@section_slug, @preview_mode, @active_tab)} />
 
-    <div class="mx-10 mb-10 p-6 bg-white dark:bg-gray-800 shadow-sm">
+    <div class="container mx-auto mb-10 p-6 bg-white dark:bg-gray-800 shadow-sm">
       <OliWeb.Components.Delivery.RecommendedActions.render
         section_slug={@section_slug}
         has_scheduled_resources={@has_scheduled_resources}
@@ -409,7 +409,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
     ~H"""
     <InstructorDashboard.tabs tabs={overview_tabs(@section_slug, @preview_mode, @active_tab)} />
 
-    <div class="mx-10 mb-10 bg-white dark:bg-gray-800 shadow-sm">
+    <div class="container mx-auto mb-10 bg-white dark:bg-gray-800 shadow-sm">
       <.live_component
         module={OliWeb.Components.Delivery.CourseContent}
         id="course_content_tab"
@@ -434,19 +434,21 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
       container_details_tab(@section_slug, @preview_mode, @selected_container)
     } />
 
-    <.live_component
-      id="container_details_table"
-      module={OliWeb.Components.Delivery.Students}
-      title={@selected_container.title}
-      tab_name={@active_tab}
-      show_progress_csv_download={true}
-      params={@params}
-      ctx={@ctx}
-      section={@section}
-      view={@view}
-      students={@users}
-      dropdown_options={@dropdown_options}
-    />
+    <div class="container mx-auto">
+      <.live_component
+        id="container_details_table"
+        module={OliWeb.Components.Delivery.Students}
+        title={@selected_container.title}
+        tab_name={@active_tab}
+        show_progress_csv_download={true}
+        params={@params}
+        ctx={@ctx}
+        section={@section}
+        view={@view}
+        students={@users}
+        dropdown_options={@dropdown_options}
+      />
+    </div>
     """
   end
 
@@ -454,15 +456,17 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
     ~H"""
     <InstructorDashboard.tabs tabs={reports_tabs(@section_slug, @preview_mode, @active_tab)} />
 
-    <.live_component
-      id="content_table"
-      module={OliWeb.Components.Delivery.Content}
-      params={@params}
-      section_slug={@section.slug}
-      view={@view}
-      containers={@containers}
-      patch_url_type={:instructor_dashboard}
-    />
+    <div class="container mx-auto">
+      <.live_component
+        id="content_table"
+        module={OliWeb.Components.Delivery.Content}
+        params={@params}
+        section_slug={@section.slug}
+        view={@view}
+        containers={@containers}
+        patch_url_type={:instructor_dashboard}
+      />
+    </div>
     """
   end
 
@@ -470,16 +474,18 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
     ~H"""
     <InstructorDashboard.tabs tabs={reports_tabs(@section_slug, @preview_mode, @active_tab)} />
 
-    <.live_component
-      id="students_table"
-      module={OliWeb.Components.Delivery.Students}
-      params={@params}
-      ctx={@ctx}
-      section={@section}
-      view={@view}
-      students={@users}
-      dropdown_options={@dropdown_options}
-    />
+    <div class="container mx-auto">
+      <.live_component
+        id="students_table"
+        module={OliWeb.Components.Delivery.Students}
+        params={@params}
+        ctx={@ctx}
+        section={@section}
+        view={@view}
+        students={@users}
+        dropdown_options={@dropdown_options}
+      />
+    </div>
     """
   end
 
@@ -487,15 +493,17 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
     ~H"""
     <InstructorDashboard.tabs tabs={reports_tabs(@section_slug, @preview_mode, @active_tab)} />
 
-    <.live_component
-      id="objectives_table"
-      module={OliWeb.Components.Delivery.LearningObjectives}
-      params={@params}
-      view={@view}
-      objectives_tab={@objectives_tab}
-      section={@section}
-      patch_url_type={:instructor_dashboard}
-    />
+    <div class="container mx-auto">
+      <.live_component
+        id="objectives_table"
+        module={OliWeb.Components.Delivery.LearningObjectives}
+        params={@params}
+        view={@view}
+        objectives_tab={@objectives_tab}
+        section={@section}
+        patch_url_type={:instructor_dashboard}
+      />
+    </div>
     """
   end
 
@@ -503,14 +511,16 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
     ~H"""
     <InstructorDashboard.tabs tabs={reports_tabs(@section_slug, @preview_mode, @active_tab)} />
 
-    <.live_component
-      id="quiz_scores_table"
-      module={OliWeb.Components.Delivery.QuizScores}
-      params={@params}
-      section={@section}
-      view={@view}
-      patch_url_type={:quiz_scores_instructor}
-    />
+    <div class="container mx-auto">
+      <.live_component
+        id="quiz_scores_table"
+        module={OliWeb.Components.Delivery.QuizScores}
+        params={@params}
+        section={@section}
+        view={@view}
+        patch_url_type={:quiz_scores_instructor}
+      />
+    </div>
     """
   end
 
@@ -532,7 +542,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
     ~H"""
     <InstructorDashboard.tabs tabs={reports_tabs(@section_slug, @preview_mode, @active_tab)} />
 
-    <div class="mx-10 mb-10">
+    <div class="container mx-auto">
       <div class="bg-white dark:bg-gray-800 p-8 shadow">
         <%= if !is_nil(@collab_space_config) do %>
           <%= live_render(@socket, OliWeb.CollaborationLive.CollabSpaceView,
@@ -555,8 +565,8 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
 
   def render(%{view: :manage} = assigns) do
     ~H"""
-    <div class="container mx-auto mt-3 mb-5">
-      <div class="bg-white dark:bg-gray-800 p-8 shadow">
+    <div class="container mx-auto">
+      <div class="bg-white dark:bg-gray-800 p-8">
         <%= live_render(@socket, OliWeb.Sections.OverviewView,
           id: "overview",
           session: %{"section_slug" => @section_slug}
@@ -568,13 +578,15 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
 
   def render(%{view: :discussions} = assigns) do
     ~H"""
-    <.live_component
-      id="discussion_activity_table"
-      module={OliWeb.Components.Delivery.DiscussionActivity}
-      ctx={@ctx}
-      params={@params}
-      section={@section}
-    />
+    <div class="container mx-auto">
+      <.live_component
+        id="discussion_activity_table"
+        module={OliWeb.Components.Delivery.DiscussionActivity}
+        ctx={@ctx}
+        params={@params}
+        section={@section}
+      />
+    </div>
     """
   end
 

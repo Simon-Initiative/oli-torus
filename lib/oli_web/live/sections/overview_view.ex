@@ -28,7 +28,7 @@ defmodule OliWeb.Sections.OverviewView do
     previous ++
       [
         Breadcrumb.new(%{
-          full_title: "Manage Section",
+          full_title: section.title,
           link:
             Routes.live_path(
               OliWeb.Endpoint,

@@ -191,7 +191,7 @@ defmodule OliWeb.Admin.Institutions.IndexLive do
     <Modal.modal class="w-5/6" id="decline-registration-modal">
       <:title>Decline Registration</:title>
       <div
-        data-hide_modal={Modal.hide("#decline-registration-modal")}
+        data-hide_modal={Modal.hide_modal("decline-registration-modal")}
         id="decline-registration-modal-trigger"
       />
       <div :if={@registration_changeset} class="contents">
@@ -200,7 +200,7 @@ defmodule OliWeb.Admin.Institutions.IndexLive do
         </p>
         <div :if={@registration_changeset} class="flex justify-end border-0">
           <button
-            phx-click={Modal.hide("#decline-registration-modal")}
+            phx-click={Modal.hide_modal("decline-registration-modal")}
             type="button"
             class="btn btn-secondary mr-2"
           >
@@ -221,7 +221,7 @@ defmodule OliWeb.Admin.Institutions.IndexLive do
     <Modal.modal class="w-5/6" id="review-registration-modal">
       <:title>Review Registration</:title>
       <div
-        data-hide_modal={Modal.hide("#review-registration-modal")}
+        data-hide_modal={Modal.hide_modal("review-registration-modal")}
         id="review-registration-modal-trigger"
       />
       <div :if={@registration_changeset} class="contents">
@@ -344,7 +344,7 @@ defmodule OliWeb.Admin.Institutions.IndexLive do
 
             <div class="flex justify-end border-0">
               <button
-                phx-click={Modal.hide("#review-registration-modal")}
+                phx-click={Modal.hide_modal("review-registration-modal")}
                 type="button"
                 class="btn btn-secondary mr-2"
               >

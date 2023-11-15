@@ -114,7 +114,7 @@ defmodule OliWeb.CollaborationLive.CollabSpaceConfigView do
       <:cancel>Cancel</:cancel>
     </Modal.modal>
 
-    <div class={"card max-w-full #{if @is_overview_render, do: "shadow-none p-0"}"}>
+    <div class={"max-w-full #{if @is_overview_render, do: "shadow-none p-0"}"}>
       <section>
         <h5 :if={@is_overview_render} class="mb-2">Student Course Portal Collaborative Space</h5>
         <div class="flex flex-col md:flex-row md:items-center card-body justify-between">

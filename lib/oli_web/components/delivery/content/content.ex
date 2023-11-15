@@ -69,7 +69,7 @@ defmodule OliWeb.Components.Delivery.Content do
 
   def render(assigns) do
     ~H"""
-    <div class="flex flex-col gap-2 mx-10 mb-10">
+    <div class="flex flex-col gap-2 mb-10">
       <div class="bg-white dark:bg-gray-800 shadow-sm">
         <div
           style="min-height: 83px;"

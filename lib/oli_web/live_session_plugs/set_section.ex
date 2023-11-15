@@ -7,6 +7,8 @@ defmodule OliWeb.LiveSessionPlugs.SetSection do
   alias Oli.Delivery.Sections
 
   def on_mount(:default, %{"section_slug" => section_slug}, _session, socket) do
+    IO.inspect(section_slug, label: "section_slug")
+
     case Sections.get_section_by_slug(section_slug) do
       nil ->
         {:halt,
@@ -25,7 +27,9 @@ defmodule OliWeb.LiveSessionPlugs.SetSection do
     end
   end
 
-  def on_mount(:default, _params, _session, socket) do
+  def on_mount(:default, params, _session, socket) do
+    IO.inspect(params, label: "no section_slug")
+
     {:cont, assign(socket, section: nil)}
   end
 end

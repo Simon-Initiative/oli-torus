@@ -24,19 +24,20 @@ defmodule OliWeb.LiveSessionPlugs.SetUser do
   end
 
   def set_author(socket, %{"current_author_id" => current_author_id}) do
-    with {:ok, current_author} <- AccountLookupCache.get_author(current_author_id) do
-      case current_author do
-        %Author{system_role_id: system_role_id} ->
-          socket
-          |> assign(
-            current_author: current_author,
-            is_system_admin: system_role_id == SystemRole.role_id().admin
-          )
+    case AccountLookupCache.get_author(current_author_id) do
+      {:ok, current_author} ->
+        case current_author do
+          %Author{system_role_id: system_role_id} ->
+            socket
+            |> assign(
+              current_author: current_author,
+              is_system_admin: system_role_id == SystemRole.role_id().admin
+            )
 
-        _ ->
-          assign(socket, is_system_admin: false)
-      end
-    else
+          _ ->
+            assign(socket, is_system_admin: false)
+        end
+
       _ ->
         assign(socket, is_system_admin: false)
     end

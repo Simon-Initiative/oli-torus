@@ -86,8 +86,8 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLive do
   @impl true
   def render(assigns) do
     ~H"""
-    <div class="mx-auto my-4">
-      <div class="flex mx-10">
+    <div class="container mx-auto">
+      <div class="flex">
         <ul
           class="nav nav-tabs flex flex-col md:flex-row flex-wrap list-none border-b-0 pl-0 mb-4"
           id="tabs-tab"

@@ -3,11 +3,18 @@ defmodule OliWeb.Delivery.Student.AssignmentsLive do
 
   import OliWeb.Components.Delivery.Layouts
 
+  alias Oli.Accounts.{User}
   alias Oli.Delivery.Sections
 
   def mount(_params, _session, socket) do
     assignments =
-      Sections.get_graded_pages(socket.assigns.section.slug, socket.assigns.ctx.user.id)
+      case socket.assigns.ctx.user do
+        %User{id: user_id} ->
+          Sections.get_graded_pages(socket.assigns.section.slug, user_id)
+
+        _ ->
+          []
+      end
 
     {:ok, assign(socket, assignments: assignments)}
   end

@@ -197,10 +197,10 @@ defmodule OliWeb.Delivery.NewCourse do
   end
 
   def breadcrumbs(:admin) do
-    OliWeb.OpenAndFreeController.set_breadcrumbs() ++
+    OliWeb.Sections.SectionsView.set_breadcrumbs() ++
       [
         Breadcrumb.new(%{
-          full_title: "Course Creation",
+          full_title: "Create Section",
           link: Routes.select_source_path(OliWeb.Endpoint, :admin)
         })
       ]

@@ -1,5 +1,5 @@
 defmodule OliWeb.Components.Header do
-  use Phoenix.Component
+  use OliWeb, :html
 
   import Phoenix.HTML.Link
   import OliWeb.ViewHelpers, only: [brand_logo: 1]
@@ -103,6 +103,7 @@ defmodule OliWeb.Components.Header do
         <nav class="breadcrumb-bar d-flex align-items-center mt-3 mb-1">
           <div class="flex-1">
             <%= live_render(@socket_or_conn, BreadcrumbTrailLive,
+              id: "breadcrumb-trail",
               session: %{"breadcrumbs" => @breadcrumbs}
             ) %>
           </div>
