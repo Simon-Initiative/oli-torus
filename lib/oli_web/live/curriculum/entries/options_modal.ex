@@ -225,7 +225,11 @@ defmodule OliWeb.Curriculum.OptionsModal do
                     placeholder="Purpose"
                     class="form-control custom-select"
                     value={fetch_field(@changeset, :purpose)}
-                    options={[{"Foundation", :foundation}, {"Exploration", :application}]}
+                    options={[
+                      {"Foundation", :foundation},
+                      {"Deliberate Practice", :deliberate_practice},
+                      {"Exploration", :application}
+                    ]}
                   />
                 </div>
 

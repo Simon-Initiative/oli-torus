@@ -12,7 +12,7 @@ defmodule OliWeb.Delivery.Student.ContentLive do
     # https://hexdocs.pm/phoenix_live_view/Phoenix.LiveView.html#assign_async/3
     if connected?(socket),
       do:
-        async_calculate_student_metrics(
+        async_calculate_student_metrics_and_enable_slider_buttons(
           self(),
           socket.assigns.section,
           socket.assigns.current_user.id
@@ -76,6 +76,9 @@ defmodule OliWeb.Delivery.Student.ContentLive do
      socket
      |> assign(selected_module_per_unit_uuid: selected_module_per_unit_uuid)
      |> maybe_scroll_y_to_unit(unit_uuid, expand_module?)
+     |> push_event("hide-or-show-buttons-on-sliders", %{
+       unit_uuids: Enum.map(socket.assigns.section.full_hierarchy["children"], & &1["uuid"])
+     })
      |> push_event("js-exec", %{
        to: "#selected_module_in_unit_#{unit_uuid}",
        attr: "data-animate"
@@ -88,7 +91,8 @@ defmodule OliWeb.Delivery.Student.ContentLive do
   end
 
   def handle_info(
-        {:student_metrics, {student_visited_pages, student_progress_per_resource_id}},
+        {:student_metrics_and_enable_slider_buttons,
+         {student_visited_pages, student_progress_per_resource_id}},
         socket
       ) do
     {:noreply,
@@ -103,7 +107,10 @@ defmodule OliWeb.Delivery.Student.ContentLive do
              {unit_uuid, mark_visited_pages(selected_module, student_visited_pages)}
            end
          )
-     )}
+     )
+     |> push_event("enable-slider-buttons", %{
+       unit_uuids: Enum.map(socket.assigns.section.full_hierarchy["children"], & &1["uuid"])
+     })}
   end
 
   # needed to ignore results of Task invocation
@@ -118,7 +125,7 @@ defmodule OliWeb.Delivery.Student.ContentLive do
       preview_mode={@preview_mode}
       active_tab={:content}
     >
-      <div id="student_content" class="lg:container lg:mx-auto p-[25px]" phx-hook="ScrollToTarget">
+      <div id="student_content" class="lg:container lg:mx-auto p-[25px]" phx-hook="Scroller">
         <.unit
           :for={child <- @section.full_hierarchy["children"]}
           unit={child}
@@ -174,16 +181,18 @@ defmodule OliWeb.Delivery.Student.ContentLive do
         </div>
       </div>
       <div class="flex relative">
-        <div
-          id={"slider_left_blur_#{@unit["uuid"]}"}
-          class="hidden absolute -top-1 -left-1 w-8 bg-gradient-to-r from-gray-100 dark:from-gray-900 h-[180px] z-10"
+        <button
+          id={"slider_left_button_#{@unit["uuid"]}"}
+          class="hidden absolute items-center justify-start -top-1 -left-1 w-10 bg-gradient-to-r from-gray-100 dark:from-gray-900 h-[180px] z-20 text-gray-400 hover:text-gray-700 dark:text-gray-600 hover:text-xl hover:dark:text-gray-200 hover:w-16 cursor-pointer"
         >
-        </div>
-        <div
-          id={"slider_right_blur_#{@unit["uuid"]}"}
-          class="absolute -top-1 -right-1 w-8 bg-gradient-to-l from-gray-100 dark:from-gray-900 h-[180px] z-10"
+          <i class="fa-solid fa-chevron-left ml-3"></i>
+        </button>
+        <button
+          id={"slider_right_button_#{@unit["uuid"]}"}
+          class="hidden absolute items-center justify-end -top-1 -right-1 w-10 bg-gradient-to-l from-gray-100 dark:from-gray-900 h-[180px] z-20 text-gray-400 hover:text-gray-700 dark:text-gray-600 hover:text-xl hover:dark:text-gray-200 hover:w-16 cursor-pointer"
         >
-        </div>
+          <i class="fa-solid fa-chevron-right mr-3"></i>
+        </button>
         <div
           id={"slider_#{@unit["uuid"]}"}
           role="slider"
@@ -350,15 +359,18 @@ defmodule OliWeb.Delivery.Student.ContentLive do
 
   def intro_card(assigns) do
     ~H"""
-    <div class="slider-card hover:scale-[1.01]" role="intro_card">
+    <div class="relative slider-card hover:scale-[1.01]" role="intro_card">
+      <div class="rounded-lg absolute -top-[0.7px] -left-[0.7px] h-[163px] w-[289.5px] cursor-pointer bg-[linear-gradient(180deg,#D9D9D9_0%,rgba(217,217,217,0.00)_100%)] dark:bg-[linear-gradient(180deg,#223_0%,rgba(34,34,51,0.72)_52.6%,rgba(34,34,51,0.00)_100%)]" />
       <div class={[
-        "flex flex-col items-center rounded-lg h-[162px] w-[288px] bg-gray-200 shrink-0 px-5 pt-[15px]",
+        "flex flex-col items-center rounded-lg h-[162px] w-[288px] bg-gray-200/50 shrink-0 px-5 pt-[15px]",
         if(@bg_image_url in ["", nil],
           do: "bg-[url('/images/course_default.jpg')]",
           else: "bg-[url('#{@bg_image_url}')]"
         )
       ]}>
-        <h5 class="text-[13px] leading-[18px] font-bold self-start dark:text-white"><%= @title %></h5>
+        <h5 class="text-[13px] leading-[18px] font-bold opacity-60 text-gray-500 dark:text-white dark:text-opacity-50 self-start">
+          <%= @title %>
+        </h5>
         <div
           :if={@video_url}
           id={@card_uuid}
@@ -416,13 +428,17 @@ defmodule OliWeb.Delivery.Student.ContentLive do
       phx-value-module_uuid={@module["uuid"]}
       phx-value-slug={@module["revision"]["slug"]}
       phx-value-module_index={@module_index}
-      class={["relative hover:scale-[1.01]", if(!is_page(@module["revision"]), do: "slider-card")]}
+      class={[
+        "relative hover:scale-[1.01] transition-transform duration-150",
+        if(!is_page(@module["revision"]), do: "slider-card")
+      ]}
       role={"card_#{@module_index}"}
     >
+      <div class="rounded-xl absolute -top-[0.7px] -left-[0.7px] h-[163px] w-[289.5px] cursor-pointer bg-[linear-gradient(180deg,#D9D9D9_0%,rgba(217,217,217,0.00)_100%)] dark:bg-[linear-gradient(180deg,#223_0%,rgba(34,34,51,0.72)_52.6%,rgba(34,34,51,0.00)_100%)]" />
       <.page_icon :if={is_page(@module["revision"])} />
       <div class="h-[170px] w-[288px]">
         <div class={[
-          "flex flex-col gap-[5px] cursor-pointer rounded-xl h-[162px] w-[288px] shrink-0 mb-1 px-5 pt-[15px] bg-gray-200",
+          "flex flex-col gap-[5px] cursor-pointer rounded-xl h-[162px] w-[288px] shrink-0 mb-1 px-5 pt-[15px] bg-gray-200 z-10",
           if(@selected,
             do: "bg-gray-400 outline outline-2 outline-gray-800 dark:outline-white"
           ),
@@ -434,12 +450,12 @@ defmodule OliWeb.Delivery.Student.ContentLive do
           <span class="text-[12px] leading-[16px] font-bold opacity-60 text-gray-500 dark:text-white dark:text-opacity-50">
             <%= "#{@unit_numbering_index}.#{@module_index}" %>
           </span>
-          <h5 class="text-[18px] leading-[25px] font-bold dark:text-white">
+          <h5 class="text-[18px] leading-[25px] font-bold dark:text-white z-10">
             <%= @module["revision"]["title"] %>
           </h5>
           <div
             :if={!@selected and !is_page(@module["revision"])}
-            class="mt-auto flex h-[21px] justify-center items-center text-gray-600 dark:text-white"
+            class="mt-auto flex h-[21px] justify-center items-center text-gray-600 dark:text-white z-10"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -485,37 +501,10 @@ defmodule OliWeb.Delivery.Student.ContentLive do
     """
   end
 
-  attr(:percent, :integer, required: true)
-  attr(:width, :string, default: "100%")
-  attr(:show_percent, :boolean, default: true)
-  attr(:role, :string, default: "progress_bar")
-
-  def progress_bar(assigns) do
-    ~H"""
-    <div class="flex flex-row items-center mx-auto" role={@role}>
-      <div class="flex justify-center w-full">
-        <div
-          class="rounded-[60px] bg-gray-200 h-1 dark:bg-[rgba(170,170,170,0.20)]"
-          style={"width: #{@width}"}
-        >
-          <div class="rounded-[60px] bg-[#1E9531] dark:bg-white h-1" style={"width: #{@percent}%"}>
-          </div>
-        </div>
-      </div>
-      <div
-        :if={@show_percent}
-        class="text-[16px] dark:text-[#DDD] leading-[32px] tracking-[0.02px] font-semibold"
-      >
-        <%= @percent %>%
-      </div>
-    </div>
-    """
-  end
-
   def page_icon(assigns) do
     ~H"""
     <div class="h-[45px] w-[36px] absolute top-0 right-0" role="page_icon">
-      <img src={~p"/images/ng23/course_content/rectangle_421.png"} />
+      <img src={~p"/images/ng23/course_content/page_icon.png"} />
       <div class="absolute top-0 right-0 h-[36px] w-[36px] flex justify-center items-center">
         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="20" viewBox="0 0 18 20" fill="none">
           <path
@@ -530,7 +519,7 @@ defmodule OliWeb.Delivery.Student.ContentLive do
 
   _docp = """
     Currently the intro_content for a revision does not support h1 tags. So,
-    if there is no <h1> tag in the content then we need to add an aditional margin
+    if there is no <h1> tag in the content then we need to add an additional margin
     to match the given figma design.
   """
 
@@ -612,9 +601,17 @@ defmodule OliWeb.Delivery.Student.ContentLive do
   defp parse_minutes(minutes) when minutes in ["", nil], do: "?"
   defp parse_minutes(minutes), do: minutes
 
-  defp async_calculate_student_metrics(liveview_pid, section, current_user_id) do
+  defp async_calculate_student_metrics_and_enable_slider_buttons(
+         liveview_pid,
+         section,
+         current_user_id
+       ) do
     Task.async(fn ->
-      send(liveview_pid, {:student_metrics, get_student_metrics(section, current_user_id)})
+      send(
+        liveview_pid,
+        {:student_metrics_and_enable_slider_buttons,
+         get_student_metrics(section, current_user_id)}
+      )
     end)
   end
 

@@ -187,16 +187,14 @@ defmodule OliWeb.Sections.GatingAndScheduling do
 
   def render(assigns) do
     ~H"""
-    <div class="container">
-      <div class="d-flex">
+    <div class="container flex flex-col">
+      <div class="d-flex mb-3">
         <TextSearch.render id="text-search" />
         <div class="flex-grow-1"></div>
         <.link class="btn btn-primary ml-2" href={link_new(assigns)}>
           <i class="fas fa-plus"></i> New <%= render_type(assigns) %>
         </.link>
       </div>
-
-      <div class="mb-3" />
 
       <PagedTable.render
         filter={@text_search}
@@ -205,6 +203,27 @@ defmodule OliWeb.Sections.GatingAndScheduling do
         offset={@offset}
         limit={@limit}
       />
+
+      <div class="alert bg-gray-100 border-gray-400 dark:bg-gray-600">
+        <div class="grid gap-y-3 text-xs text-gray-600 dark:text-delivery-body-color-dark">
+          <p>
+            Advanced Gating is specifically designed for instructors who require a higher level of control over their course material accessibility. Please review the following intended use cases to ensure this feature meets your needs:
+          </p>
+          <ul class="grid gap-y-1 ml-6 list-disc">
+            <li>
+              <strong>Time-Based Restrictions for Units/Modules:</strong>
+              This advanced feature allows instructors to block access to entire units or modules for a specified time period. For instance, if you wish to make Unit 3 available only from March 1st to March 15th, you can set that up here. However, if your intention is to make a single graded page available for a specific duration, we recommend using the "Availability Date" and "Due Date" options found in the simpler "Assessment Settings" feature.
+            </li>
+            <li>
+              <strong>Conditional Accessibility Based on Student Performance:</strong>
+              One of the primary use cases of this feature is to conditionally grant access to course materials based on student achievements. For example, if you want to ensure that students only access Unit 2 after scoring 80% or higher on the quiz at the end of Unit 1, you can configure such requirements here.
+            </li>
+          </ul>
+          <p>
+            For all other scheduling and assessment-related configurations, please refer to the "Assessment Settings / Scheduler" features. These features offer a more straightforward and intuitive interface suitable for most common use cases.
+          </p>
+        </div>
+      </div>
     </div>
     """
   end

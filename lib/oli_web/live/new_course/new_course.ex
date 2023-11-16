@@ -1,6 +1,12 @@
 defmodule OliWeb.Delivery.NewCourse do
   use OliWeb, :live_view
 
+  on_mount(OliWeb.LiveSessionPlugs.SetSection)
+  on_mount(OliWeb.LiveSessionPlugs.SetCurrentUser)
+  on_mount(OliWeb.LiveSessionPlugs.SetSessionContext)
+  on_mount(OliWeb.LiveSessionPlugs.SetBrand)
+  on_mount(OliWeb.LiveSessionPlugs.SetPreviewMode)
+
   alias Oli.Accounts
   alias Oli.Delivery
   alias Oli.Lti.LtiParams
@@ -15,6 +21,8 @@ defmodule OliWeb.Delivery.NewCourse do
   alias Lti_1p3.Tool.ContextRoles
 
   alias Phoenix.LiveView.JS
+
+  import OliWeb.Components.Delivery.Layouts
 
   @form_id "open_and_free_form"
   def mount(_params, session, socket) do
@@ -88,11 +96,12 @@ defmodule OliWeb.Delivery.NewCourse do
 
   def render(assigns) do
     ~H"""
-    <div id={@form_id} phx-hook="SubmitForm">
+    <.header ctx={@ctx} section={@section} brand={@brand} preview_mode={@preview_mode} />
+    <div id={@form_id} phx-hook="SubmitForm" class="mt-14 h-[calc(100vh-56px)]">
       <.live_component
         id="course_creation_stepper"
         module={Stepper}
-        on_cancel="redirect_to_courses"
+        on_cancel={JS.push("redirect_to_courses")}
         steps={@steps || []}
         current_step={@current_step}
         next_step_disabled={next_step_disabled?(assigns)}
@@ -104,7 +113,7 @@ defmodule OliWeb.Delivery.NewCourse do
 
   slot(:inner_block, required: true)
 
-  defp header(assigns) do
+  defp new_course_header(assigns) do
     ~H"""
     <h5 class="px-9 py-4 border-gray-200 dark:border-gray-600 border-b text-sm font-semibold">
       New course set up
@@ -140,8 +149,8 @@ defmodule OliWeb.Delivery.NewCourse do
 
   def render_step(:select_source, assigns) do
     ~H"""
-    <.header>
-      <div class="flex flex-col items-center gap-3 pl-9 pr-16 py-6">
+    <.new_course_header>
+      <div class="flex flex-col items-center gap-3 pr-9 pl-16 py-6">
         <h2>Select source</h2>
         <.live_component
           id="select_source_step"
@@ -153,33 +162,33 @@ defmodule OliWeb.Delivery.NewCourse do
           lti_params={@lti_params}
         />
       </div>
-    </.header>
+    </.new_course_header>
     """
   end
 
   def render_step(:name_course, assigns) do
     ~H"""
-    <.header>
-      <div class="flex flex-col items-center gap-3 pl-9 pr-16 py-6">
+    <.new_course_header>
+      <div class="flex flex-col items-center gap-3 pr-9 pl-16 py-6">
         <img src="/images/icons/course-creation-wizard-step-1.svg" style="height: 170px;" />
         <h2>Name your course</h2>
         <.render_flash flash={@flash} />
         <NameCourse.render changeset={to_form(@changeset)} />
       </div>
-    </.header>
+    </.new_course_header>
     """
   end
 
   def render_step(:course_details, assigns) do
     ~H"""
-    <.header>
-      <div class="flex flex-col items-center gap-3 pl-9 pr-16 py-6">
+    <.new_course_header>
+      <div class="flex flex-col items-center gap-3 pr-9 pl-16 py-6">
         <img src="/images/icons/course-creation-wizard-step-2.svg" style="height: 170px;" />
         <h2>Course details</h2>
         <.render_flash flash={@flash} />
         <CourseDetails.render changeset={to_form(@changeset)} />
       </div>
-    </.header>
+    </.new_course_header>
     """
   end
 
@@ -377,8 +386,10 @@ defmodule OliWeb.Delivery.NewCourse do
            {:ok, _} <- Sections.rebuild_contained_objectives(section),
            {:ok, _} <- Sections.rebuild_full_hierarchy(section),
            {:ok, _enrollment} <- enroll(socket, section),
+           {:ok, section} <-
+             Oli.Delivery.maybe_update_section_contains_explorations(section),
            {:ok, updated_section} <-
-             Oli.Delivery.maybe_update_section_contains_explorations(section) do
+             Oli.Delivery.maybe_update_section_contains_deliberate_practice(section) do
         updated_section
       else
         {:error, changeset} ->

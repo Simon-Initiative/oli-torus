@@ -15,7 +15,7 @@ import { ModalLaunch } from './modal';
 import { MonacoEditor } from './monaco_editor';
 import { ProjectsTypeahead } from './projects_typeahead';
 import { ReviewActivity } from './review_activity';
-import { ScrollToTarget } from './scroll_to_target';
+import { Scroller } from './scroller';
 import { SelectListener } from './select_listener';
 import { SliderScroll } from './slider_scroll';
 import { SubmitForm } from './submit_form';
@@ -52,7 +52,7 @@ export const Hooks = {
   LoadSurveyScripts,
   LiveModal,
   EmailList,
-  ScrollToTarget,
+  Scroller,
   SliderScroll,
   VideoPlayer,
 };

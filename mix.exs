@@ -130,7 +130,7 @@ defmodule Oli.MixProject do
   # Type `mix help deps` for examples and options.
   defp deps do
     [
-      {:appsignal_phoenix, "~> 2.1"},
+      {:appsignal_phoenix, "~> 2.3"},
       {:bamboo, "~> 2.2"},
       {:bamboo_ses, "~> 0.3.0"},
       {:bamboo_phoenix, "~> 1.0"},
@@ -173,6 +173,7 @@ defmodule Oli.MixProject do
       {:libcluster_ec2, "~> 0.6"},
       {:mime, "~> 1.2"},
       {:mix_test_watch, "~> 1.0", only: :dev, runtime: false},
+      {:monocle, "~> 0.0.1"},
       {:mox, "~> 0.5", only: [:test, :hound]},
       {:nimble_parsec, "~> 1.2"},
       {:nodejs, "~> 2.0"},

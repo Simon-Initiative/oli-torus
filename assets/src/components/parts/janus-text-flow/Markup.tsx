@@ -64,7 +64,7 @@ const Markup: React.FC<any> = ({
   let processedText = text;
   // allow (authoring usually) skipping the template processing
   if (!displayRawText) {
-    processedText = templatizeText(text, state, env);
+    processedText = text?.length ? templatizeText(text, state, env) : text;
   }
 
   // eslint-disable-next-line

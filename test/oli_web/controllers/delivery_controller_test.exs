@@ -244,17 +244,22 @@ defmodule OliWeb.DeliveryControllerTest do
   end
 
   describe "download_course_content_info" do
-    setup [:setup_lti_session]
+    setup [:setup_lti_session, :create_project_with_units_and_modules]
 
-    test "downloads the course content when section exists", %{
+    test "downloads the course content when section exists and filters by units", %{
       conn: conn,
       lti_param_ids: lti_param_ids,
       section: section
     } do
+      # Filter by units
       conn =
         conn
         |> LtiSession.put_session_lti_params(lti_param_ids.instructor)
-        |> get(Routes.delivery_path(conn, :download_course_content_info, section.slug))
+        |> get(
+          Routes.delivery_path(conn, :download_course_content_info, section.slug,
+            container_filter_by: :units
+          )
+        )
 
       Enum.any?(conn.resp_headers, fn h ->
         h ==
@@ -262,6 +267,33 @@ defmodule OliWeb.DeliveryControllerTest do
       end)
 
       Enum.any?(conn.resp_headers, fn h -> h == {"content-type", "text/csv"} end)
+
+      assert conn.resp_body =~ "Unit Container"
+      refute conn.resp_body =~ "Module Container"
+      refute conn.resp_body =~ "Loading..."
+
+      assert response(conn, 200)
+    end
+
+    test "downloads the course content when section exists and filters by modules", %{
+      conn: conn,
+      lti_param_ids: lti_param_ids,
+      section: section
+    } do
+      # Filter by modules
+      conn =
+        conn
+        |> LtiSession.put_session_lti_params(lti_param_ids.instructor)
+        |> get(
+          Routes.delivery_path(conn, :download_course_content_info, section.slug,
+            container_filter_by: :modules
+          )
+        )
+
+      refute conn.resp_body =~ "Unit Container"
+      assert conn.resp_body =~ "Module Container"
+      refute conn.resp_body =~ "Loading..."
+
       assert response(conn, 200)
     end
 

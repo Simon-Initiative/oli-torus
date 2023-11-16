@@ -196,16 +196,6 @@ defmodule OliWeb.Sections.OverviewView do
           </li>
           <li>
             <a
-              href={
-                Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.GatingAndScheduling, @section.slug)
-              }
-              class="btn btn-link"
-            >
-              Advanced Gating and Scheduling
-            </a>
-          </li>
-          <li>
-            <a
               disabled={@updates_count == 0}
               href={
                 Routes.source_materials_path(
@@ -226,16 +216,6 @@ defmodule OliWeb.Sections.OverviewView do
       </Group.render>
       <Group.render label="Manage" description="Manage all aspects of course delivery">
         <ul class="link-list">
-          <li>
-            <a
-              href={
-                Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.EnrollmentsViewLive, @section.slug)
-              }
-              class="btn btn-link"
-            >
-              Manage Enrollments
-            </a>
-          </li>
           <%= if @section.open_and_free do %>
             <li>
               <a

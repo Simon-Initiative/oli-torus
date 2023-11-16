@@ -232,10 +232,120 @@ defmodule OliWeb.PublishLiveTest do
       {:ok, view, _html} = live(conn, live_view_publish_route(project.slug))
 
       assert has_element?(view, "h5", "Publication Details")
-      assert has_element?(view, ".badge.badge-secondary.badge-added", "added")
-      assert has_element?(view, ".badge.badge-secondary.badge-added", "added")
-      assert has_element?(view, "a", page_revision.title)
-      assert has_element?(view, "a", container_revision.title)
+
+      assert view
+             |> element(".publish_changes_table tr:first-child > td:first-child")
+             |> render() =~ container_revision.title
+
+      assert view
+             |> element(".publish_changes_table tr:last-child > td:first-child")
+             |> render() =~ page_revision.title
+
+      assert view
+             |> element(
+               ".publish_changes_table tr:first-child > td:nth-child(2) .badge.badge-added"
+             )
+             |> render() =~ "added"
+
+      assert view
+             |> element(
+               ".publish_changes_table tr:last-child > td:nth-child(2) .badge.badge-added"
+             )
+             |> render() =~ "added"
+
+      assert view
+             |> element(".publish_changes_table tr:first-child > td:nth-child(3)")
+             |> render() =~ "Major"
+
+      assert view
+             |> element(".publish_changes_table tr:last-child > td:nth-child(3)")
+             |> render() =~ "Minor"
+    end
+
+    test "applies sorting to publication details table", %{
+      conn: conn,
+      project: project,
+      page_revision: page_revision,
+      container_revision: container_revision
+    } do
+      insert(:publication, project: project, published: yesterday())
+      {:ok, view, _html} = live(conn, live_view_publish_route(project.slug))
+
+      assert view
+             |> element(".publish_changes_table tr:first-child > td:first-child")
+             |> render() =~ container_revision.title
+
+      assert view
+             |> element(".publish_changes_table tr:last-child > td:first-child")
+             |> render() =~ page_revision.title
+
+      view
+      |> element(".publish_changes_table th[phx-value-sort_by=\"title\"]", "Title")
+      |> render_click(%{sort_by: "title"})
+
+      assert view
+             |> element(".publish_changes_table tr:first-child > td:first-child")
+             |> render() =~ page_revision.title
+
+      assert view
+             |> element(".publish_changes_table tr:last-child > td:first-child")
+             |> render() =~ container_revision.title
+    end
+
+    test "applies paging to publication details table", %{
+      conn: conn,
+      project: project,
+      container_revision: container_revision,
+      author: author
+    } do
+      publication = insert(:publication, project: project, published: yesterday())
+
+      last_revision =
+        Enum.reduce(0..9, [], fn elem, acc ->
+          page_resource = insert(:resource)
+
+          page_revision =
+            insert(:revision,
+              resource: page_resource,
+              resource_type_id: ResourceType.get_id_by_type("page"),
+              content: %{"model" => []},
+              title: "revision#{elem}"
+            )
+
+          insert(:project_resource, %{project_id: project.id, resource_id: page_resource.id})
+
+          insert(:published_resource, %{
+            publication: publication,
+            resource: page_resource,
+            revision: page_revision,
+            author: author
+          })
+
+          acc ++ [page_revision]
+        end)
+        |> List.last()
+
+      {:ok, view, _html} = live(conn, live_view_publish_route(project.slug))
+
+      assert view
+             |> element(".publish_changes_table tr:first-child > td:first-child")
+             |> render() =~ container_revision.title
+
+      refute view
+             |> element(".publish_changes_table tr:last-child > td:first-child")
+             |> render() =~ last_revision.title
+
+      view
+      |> element("#publish-changes-table button", "2")
+      |> render_click()
+
+      refute view
+             |> element(".publish_changes_table tr:first-child > td:first-child")
+             |> render() =~ container_revision.title
+
+      assert view
+             |> element(".publish_changes_table tr:last-child > td:first-child")
+             |> render() =~ last_revision.title
     end
 
     test "shows a message when the project has not been published yet", %{

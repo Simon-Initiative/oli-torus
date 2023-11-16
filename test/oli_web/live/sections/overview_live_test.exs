@@ -196,7 +196,7 @@ defmodule OliWeb.Sections.OverviewLiveTest do
                "Scheduling"
              )
 
-      assert has_element?(
+      refute has_element?(
                view,
                "a[href=\"#{Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.GatingAndScheduling, section.slug)}\"]",
                "Advanced Gating and Scheduling"
@@ -210,11 +210,6 @@ defmodule OliWeb.Sections.OverviewLiveTest do
 
       assert render(view) =~ "Manage"
       assert render(view) =~ "Manage all aspects of course delivery"
-
-      assert has_element?(
-               view,
-               "a[href=\"#{Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.EnrollmentsViewLive, section.slug)}\"]"
-             )
 
       assert has_element?(
                view,

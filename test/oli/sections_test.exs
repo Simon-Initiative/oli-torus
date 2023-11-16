@@ -1,5 +1,6 @@
 defmodule Oli.SectionsTest do
   use Oli.DataCase
+  use Oban.Testing, repo: Oli.Repo
 
   import Oli.Factory
   import Oli.Utils.Seeder.Utils
@@ -2137,7 +2138,7 @@ defmodule Oli.SectionsTest do
     end
   end
 
-  describe "rebuild_full_hierarchy/1" do
+  describe "rebuild_full_hierarchy/2" do
     setup do
       author = insert(:author)
       project = insert(:project, authors: [author])
@@ -2222,6 +2223,31 @@ defmodule Oli.SectionsTest do
         DeliveryResolver.full_hierarchy(section.slug)
 
       {:ok, updated_section} = Sections.rebuild_full_hierarchy(section)
+
+      assert ignore_uuids(updated_section.full_hierarchy) ==
+               ignore_uuids(expected_hierarchy)
+    end
+
+    test "schedules an oban job if `async` is set to true", %{section: section} do
+      Sections.rebuild_full_hierarchy(section, true)
+
+      assert_enqueued(
+        worker: OliWeb.Delivery.RebuildFullHierarchyWorker,
+        args: %{section_slug: section.slug},
+        queue: :rebuild_full_hierarchy
+      )
+    end
+
+    test "when the scheduled job is performed, the full_hierarchy is the correct one", %{
+      section: section
+    } do
+      expected_hierarchy =
+        DeliveryResolver.full_hierarchy(section.slug)
+
+      Sections.rebuild_full_hierarchy(section, true)
+
+      {:ok, updated_section} =
+        perform_job(OliWeb.Delivery.RebuildFullHierarchyWorker, %{section_slug: section.slug})
 
       assert ignore_uuids(updated_section.full_hierarchy) ==
                ignore_uuids(expected_hierarchy)

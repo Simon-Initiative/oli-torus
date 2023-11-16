@@ -4,17 +4,18 @@ defmodule OliWeb.Delivery.StudentOnboarding.Wizard do
   alias OliWeb.Common.Stepper
   alias OliWeb.Common.Stepper.Step
   alias OliWeb.Delivery.StudentOnboarding.{Explorations, Intro, Survey}
-  alias OliWeb.Router.Helpers, as: Routes
 
   alias Phoenix.LiveView.JS
+
+  import OliWeb.Components.Delivery.Layouts
 
   @intro_step :intro
   @survey_step :survey
   @explorations_step :explorations
   @course_step :course
 
-  @survey_label "Start survey"
-  @explorations_label "Go to explorations"
+  @survey_label "Start Survey"
+  @explorations_label "Let's Begin"
   @course_label "Go to course"
 
   def mount(_params, %{"datashop_session_id" => datashop_session_id}, socket) do
@@ -102,13 +103,20 @@ defmodule OliWeb.Delivery.StudentOnboarding.Wizard do
 
   def render(assigns) do
     ~H"""
-    <div>
+    <.header ctx={@ctx} section={@section} brand={@brand} preview_mode={@preview_mode} />
+    <div id="content" class="mt-14 h-[calc(100vh-56px)] transition-all duration-100">
       <.live_component
         id="student-onboarding-wizard"
         module={Stepper}
         steps={@steps}
         current_step={@current_step_index}
-        on_cancel={if !@is_lti, do: JS.navigate(~p"/sections"), else: nil}
+        on_cancel={
+          if !@is_lti,
+            do:
+              JS.add_class("opacity-0", to: "#content")
+              |> JS.navigate(~p"/sections"),
+            else: nil
+        }
         data={get_step_data(assigns)}
       />
     </div>
@@ -118,12 +126,9 @@ defmodule OliWeb.Delivery.StudentOnboarding.Wizard do
   slot(:inner_block, required: true)
   attr(:section, :map, required: true)
 
-  defp header(assigns) do
+  defp wizard_header(assigns) do
     ~H"""
-    <h5 class="px-9 py-4 border-gray-200 dark:border-gray-600 border-b text-sm font-semibold">
-      <%= @section.title %> Set Up
-    </h5>
-    <div class="overflow-y-auto scrollbar-hide relative h-full px-10 py-4">
+    <div class="overflow-y-auto scrollbar-hide relative h-full pb-4 w-full">
       <%= render_slot(@inner_block) %>
     </div>
     """
@@ -133,15 +138,15 @@ defmodule OliWeb.Delivery.StudentOnboarding.Wizard do
 
   def render_step(%{current_step_name: @intro_step} = assigns) do
     ~H"""
-    <.header section={@section}>
+    <.wizard_header section={@section}>
       <Intro.render section={@section} />
-    </.header>
+    </.wizard_header>
     """
   end
 
   def render_step(%{current_step_name: @survey_step} = assigns) do
     ~H"""
-    <.header section={@section}>
+    <.wizard_header section={@section}>
       <.live_component
         id="onboarding_wizard_survey"
         module={Survey}
@@ -150,15 +155,15 @@ defmodule OliWeb.Delivery.StudentOnboarding.Wizard do
         survey={@survey}
         datashop_session_id={@datashop_session_id}
       />
-    </.header>
+    </.wizard_header>
     """
   end
 
   def render_step(%{current_step_name: @explorations_step} = assigns) do
     ~H"""
-    <.header section={@section}>
+    <.wizard_header section={@section}>
       <Explorations.render />
-    </.header>
+    </.wizard_header>
     """
   end
 
@@ -188,7 +193,7 @@ defmodule OliWeb.Delivery.StudentOnboarding.Wizard do
 
       {:noreply,
        push_navigate(socket,
-         to: Routes.page_delivery_path(socket, :index, socket.assigns.section.slug)
+         to: ~p"/ng23/sections/#{socket.assigns.section.slug}"
        )}
     else
       {:noreply,
