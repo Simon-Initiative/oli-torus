@@ -742,9 +742,9 @@ defmodule OliWeb.Components.Common do
     # with our gettext backend as first argument. Translations are
     # available in the errors.po file (as we use the "errors" domain).
     if count = opts[:count] do
-      Gettext.dngettext(PhoenixNewWeb.Gettext, "errors", msg, msg, count, opts)
+      Gettext.dngettext(OliWeb.Gettext, "errors", msg, msg, count, opts)
     else
-      Gettext.dgettext(PhoenixNewWeb.Gettext, "errors", msg, opts)
+      Gettext.dgettext(OliWeb.Gettext, "errors", msg, opts)
     end
   end
 
