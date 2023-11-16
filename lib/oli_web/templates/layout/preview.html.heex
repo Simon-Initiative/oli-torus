@@ -6,8 +6,9 @@
 
   <Components.Delivery.Layouts.header_with_sidebar_nav
     ctx={@ctx}
-    section={@section}
-    brand={Oli.Branding.get_section_brand(@section)}
+    is_system_admin={@is_system_admin}
+    section={nil}
+    brand={nil}
     preview_mode={@preview_mode}
     active_tab={:content}
   >

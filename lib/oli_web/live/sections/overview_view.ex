@@ -165,7 +165,11 @@ defmodule OliWeb.Sections.OverviewView do
       <Group.render label="Curriculum" description="Manage content delivered to students">
         <ul class="link-list">
           <li>
-            <a target="_blank" href={~p"/sections/#{@section.slug}"} class="btn btn-link">
+            <a
+              target="_blank"
+              href={~p"/sections/#{@section.slug}/preview/overview"}
+              class="btn btn-link"
+            >
               <span>Preview Course as Instructor</span>
               <i class="fas fa-external-link-alt self-center ml-1" />
             </a>

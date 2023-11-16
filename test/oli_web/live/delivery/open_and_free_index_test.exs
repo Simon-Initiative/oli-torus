@@ -115,7 +115,7 @@ defmodule OliWeb.Delivery.OpenAndFreeIndexTest do
 
       assert has_element?(
                view,
-               ~s{a[href="/sections/#{section_2.slug}"] span.badge},
+               ~s{a[href="/sections/#{section_2.slug}/instructor_dashboard/manage"] span.badge},
                "instructor"
              )
     end

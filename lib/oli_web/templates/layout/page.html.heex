@@ -1,6 +1,7 @@
 <%= render_layout "delivery.html", assigns do %>
   <Components.Delivery.Layouts.header_with_sidebar_nav
     ctx={@ctx}
+    is_system_admin={@is_system_admin}
     section={@section}
     brand={Oli.Branding.get_section_brand(@section)}
     preview_mode={@preview_mode}

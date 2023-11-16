@@ -118,7 +118,7 @@ defmodule OliWeb.Delivery.OpenAndFreeIndex do
                   <span
                     :if={@show_role_badges}
                     role={"role_badge_for_section_#{section.id}"}
-                    class="absolute w-32 top-0 left-0 rounded-br-xl rounded-tl-xl bg-primary uppercase py-2 text-white text-center text-[12px] leading-[16px] tracking-[1.2px] font-bold"
+                    class="badge absolute w-32 top-0 left-0 rounded-br-xl rounded-tl-xl bg-primary uppercase py-2 text-white text-center text-[12px] leading-[16px] tracking-[1.2px] font-bold"
                   >
                     <%= section.user_role %>
                   </span>

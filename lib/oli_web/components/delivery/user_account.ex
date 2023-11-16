@@ -312,7 +312,7 @@ defmodule OliWeb.Components.Delivery.UserAccount do
       <.menu_item_link href={~p"/admin"}>
         <div class="inline-flex w-full justify-between items-center">
           <span>Open Admin Panel</span>
-          <.icon name="fa-solid fa-arrow-up-right-from-square" />
+          <.icon name="fa-solid fa-wrench" />
         </div>
       </.menu_item_link>
       <.menu_divider />
@@ -329,6 +329,8 @@ defmodule OliWeb.Components.Delivery.UserAccount do
         <.user_picture_icon picture={user.picture} />
       <% %SessionContext{author: author} when author != nil -> %>
         <.user_picture_icon picture={author.picture} />
+      <% _ -> %>
+        <.default_user_icon />
     <% end %>
     """
   end
@@ -349,6 +351,16 @@ defmodule OliWeb.Components.Delivery.UserAccount do
           <img src={picture} referrerpolicy="no-referrer" class="rounded-full max-w-[28px]" />
         </div>
     <% end %>
+    """
+  end
+
+  def default_user_icon(assigns) do
+    ~H"""
+    <div class="self-center">
+      <div class="max-w-[28px] rounded-full">
+        <i class="fa-solid fa-circle-user fa-2xl mt-[-1px] ml-[-1px] text-gray-600"></i>
+      </div>
+    </div>
     """
   end
 

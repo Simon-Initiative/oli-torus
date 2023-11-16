@@ -30,7 +30,7 @@ defmodule OliWeb.Sections.OverviewLiveTest do
       section_slug = section.slug
 
       redirect_path =
-        "/session/new?request_path=%2Fsections%2F#{section_slug}&section=#{section_slug}"
+        "/session/new?request_path=%2Fsections%2F#{section_slug}%2Fmanage&section=#{section_slug}"
 
       {:error, {:redirect, %{to: ^redirect_path}}} =
         live(conn, live_view_overview_route(section.slug))
@@ -46,7 +46,7 @@ defmodule OliWeb.Sections.OverviewLiveTest do
     } do
       conn = get(conn, live_view_overview_route(section.slug))
 
-      redirect_path = "/session/new?request_path=%2Fsections%2F#{section.slug}"
+      redirect_path = "/session/new?request_path=%2Fsections%2F#{section.slug}%2Fmanage"
       assert redirected_to(conn, 302) =~ redirect_path
     end
   end

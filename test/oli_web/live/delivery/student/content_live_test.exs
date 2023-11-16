@@ -246,7 +246,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
     setup [:user_conn, :create_elixir_project]
 
     test "can not access when not enrolled to course", %{conn: conn, section: section} do
-      {:error, {:redirect, %{to: redirect_path, flash: flash_msg}}} =
+      {:error, {:redirect, %{to: redirect_path, flash: _flash_msg}}} =
         live(conn, live_view_content_live_route(section.slug))
 
       assert redirect_path == "/unauthorized"

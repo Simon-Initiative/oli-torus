@@ -39,7 +39,7 @@ defmodule OliWeb.Components.Utils do
         name
 
       _ ->
-        throw("Invalid user or author")
+        ""
     end
   end
 

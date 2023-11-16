@@ -1042,7 +1042,7 @@ defmodule OliWeb.Router do
   end
 
   ### Sections - Management
-  scope "/sections/:section_slug/manage", OliWeb do
+  scope "/sections/:section_slug", OliWeb do
     pipe_through([
       :browser,
       :require_section,
@@ -1071,6 +1071,7 @@ defmodule OliWeb.Router do
         # OliWeb.LiveSessionPlugs.RequireInstructor
       ],
       layout: {OliWeb.Layouts, :instructor_dashboard} do
+      live("/manage", Sections.OverviewView)
       live("/grades/lms", Grades.GradesLive)
       live("/grades/lms_grade_updates", Grades.BrowseUpdatesView)
       live("/grades/failed", Grades.FailedGradeSyncLive)
@@ -1241,7 +1242,6 @@ defmodule OliWeb.Router do
     live("/sections", Sections.SectionsView)
     live("/sections/create", Delivery.NewCourse, :admin, as: :select_source)
 
-    live("/sections/:section_slug", Sections.OverviewView)
     live("/open_and_free/:section_slug/remix", Delivery.RemixSection, as: :open_and_free_remix)
 
     # Institutions, LTI Registrations and Deployments
