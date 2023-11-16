@@ -207,6 +207,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard do
 
         <div class="flex items-center border-l border-slate-300 my-2">
           <button
+            aria-label="Request Help"
             class="
                 btn
                 rounded
