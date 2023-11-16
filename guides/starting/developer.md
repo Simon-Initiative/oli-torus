@@ -109,7 +109,7 @@ with the Torus server running directly on the host machine.
 
 > To access email verification message and activate your locally-created account, visit `http://localhost/dev/sent_emails`.
 
-> Default administrator credentials are defined in `oli.env` as `ADMIN_EMAIL` and `ADMIN_PASSWORD`.
+> Default administrator credentials are defined in `oli.env` as `ADMIN_EMAIL` and `ADMIN_PASSWORD`. These values are only used to seed the database during `mix ecto.setup` / `mix ecto.reset`.
 
 > Docker is not a strict dependency. We use it here to simplify the install and running of Postgres. You can choose to install and run Postgres bare-metal, but you will not be able to use the **Mostly Automated Steps** above (since the `./devmode.sh` script depends on Docker).
 
