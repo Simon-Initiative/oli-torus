@@ -36,88 +36,94 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
         </h1>
       </div>
       <div id="disussions_content" class="flex flex-col p-6 gap-6 items-start">
-        <section id="posts" class="flex flex-col items-start px-40 w-full gap-6">
-          <div role="posts header" class="flex justify-between items-center w-full self-stretch">
-            <h3 class="text-2xl tracking-[0.02px] font-semibold dark:text-white">
-              Posts
-            </h3>
-            <div role="posts actions" class="flex items-center justify-end gap-6">
-              <div class="flex space-x-3">
-                <button
-                  role="filter"
-                  class="flex items-center gap-[10px] px-[10px] py-[4px] dark:text-white dark:hover:text-white/50"
-                >
-                  <span class="text-[14px] leading-[20px]">Filter</span>
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="24"
-                    height="24"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="2"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                  >
-                    <line x1="3" y1="6" x2="21" y2="6"></line>
-                    <line x1="6" y1="12" x2="18" y2="12"></line>
-                    <line x1="9" y1="18" x2="15" y2="18"></line>
-                  </svg>
-                </button>
-
-                <button
-                  role="sort"
-                  class="flex items-center gap-[10px] px-[10px] py-[4px] dark:text-white dark:hover:text-white/50"
-                >
-                  <span class="text-[14px] leading-[20px]">Sort</span>
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="24"
-                    height="24"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="2"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                  >
-                    <line x1="3" y1="6" x2="21" y2="6"></line>
-                    <line x1="3" y1="12" x2="14" y2="12"></line>
-                    <line x1="3" y1="18" x2="7" y2="18"></line>
-                  </svg>
-                </button>
-              </div>
-
-              <button
-                role="new discussion"
-                class="rounded-[3px] py-[10px] pl-[18px] pr-6 flex justify-center items-center text-[14px] leading-[20px] font-normal text-white bg-[#0F6CF5] hover:bg-blue-600"
-              >
-                <svg
-                  role="plus icon"
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke-width="1.5"
-                  stroke="currentColor"
-                  class="w-6 h-6 mr-[10px]"
-                >
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-                </svg>
-                New Discussion
-              </button>
-            </div>
-          </div>
-
-          <div
-            role="posts list"
-            class="rounded-xl w-full bg-gray-500 dark:bg-[rgba(255,255,255,0.06)] divide-y-[1px] divide-gray-400 dark:divide-white/20"
-          >
-            <.class_post />
-            <.page_post />
-          </div>
-        </section>
+        <.posts_section />
       </div>
     </.header_with_sidebar_nav>
+    """
+  end
+
+  defp posts_section(assigns) do
+    ~H"""
+    <section id="posts" class="flex flex-col items-start px-40 w-full gap-6">
+      <div role="posts header" class="flex justify-between items-center w-full self-stretch">
+        <h3 class="text-2xl tracking-[0.02px] font-semibold dark:text-white">
+          Posts
+        </h3>
+        <div role="posts actions" class="flex items-center justify-end gap-6">
+          <div class="flex space-x-3">
+            <button
+              role="filter"
+              class="flex items-center gap-[10px] px-[10px] py-[4px] hover:text-gray-400 dark:text-white dark:hover:text-white/50"
+            >
+              <span class="text-[14px] leading-[20px]">Filter</span>
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <line x1="3" y1="6" x2="21" y2="6"></line>
+                <line x1="6" y1="12" x2="18" y2="12"></line>
+                <line x1="9" y1="18" x2="15" y2="18"></line>
+              </svg>
+            </button>
+
+            <button
+              role="sort"
+              class="flex items-center gap-[10px] px-[10px] py-[4px] hover:text-gray-400 dark:text-white dark:hover:text-white/50"
+            >
+              <span class="text-[14px] leading-[20px]">Sort</span>
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <line x1="3" y1="6" x2="21" y2="6"></line>
+                <line x1="3" y1="12" x2="14" y2="12"></line>
+                <line x1="3" y1="18" x2="7" y2="18"></line>
+              </svg>
+            </button>
+          </div>
+
+          <button
+            role="new discussion"
+            class="rounded-[3px] py-[10px] pl-[18px] pr-6 flex justify-center items-center text-[14px] leading-[20px] font-normal text-white bg-[#0F6CF5] hover:bg-blue-600"
+          >
+            <svg
+              role="plus icon"
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke-width="1.5"
+              stroke="currentColor"
+              class="w-6 h-6 mr-[10px]"
+            >
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+            </svg>
+            New Discussion
+          </button>
+        </div>
+      </div>
+
+      <div
+        role="posts list"
+        class="rounded-xl w-full bg-white shadow-md dark:bg-[rgba(255,255,255,0.06)] divide-y-[1px] divide-gray-200 dark:divide-white/20"
+      >
+        <.class_post />
+        <.page_post />
+      </div>
+    </section>
     """
   end
 
@@ -171,7 +177,7 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
             </span>
           </div>
         </div>
-        <button class="text-[14px] leading-[20px] dark:text-[#468AEF] hover:dark:text-[#468AEF]/70">
+        <button class="text-[14px] leading-[20px] text-[#468AEF] hover:text-[#468AEF]/70">
           Open
         </button>
       </div>
@@ -200,7 +206,10 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
           </span>
         </div>
       </div>
-      <div role="page details" class="flex flex-col gap-[6px] px-4 py-3 rounded-lg dark:bg-black/40">
+      <div
+        role="page details"
+        class="flex flex-col gap-[6px] px-4 py-3 rounded-lg bg-blue-100/20 dark:bg-black/40"
+      >
         <div role="post location" class="flex items-center gap-1">
           <span class="text-[12px] leading-[16px] tracking-[1.2px] font-bold uppercase dark:text-white">
             Module 3.1 Page 7
@@ -243,7 +252,7 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
             </span>
           </div>
         </div>
-        <button class="flex items-center gap-1 text-[14px] leading-[20px] dark:text-[#468AEF] hover:dark:text-[#468AEF]/70">
+        <button class="flex items-center gap-1 text-[14px] leading-[20px] text-[#468AEF] hover:text-[#468AEF]/70">
           <span>Go to page</span>
           <svg
             role="right arrow"
