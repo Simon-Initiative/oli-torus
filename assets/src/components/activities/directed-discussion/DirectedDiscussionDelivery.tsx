@@ -1,8 +1,6 @@
-import React, { useEffect, useMemo } from 'react';
+import React, { useEffect } from 'react';
 import ReactDOM from 'react-dom';
 import { Provider, useDispatch, useSelector } from 'react-redux';
-import { HintsDeliveryConnected } from 'components/activities/common/hints/delivery/HintsDeliveryConnected';
-import { StemDeliveryConnected } from 'components/activities/common/stem/delivery/StemDelivery';
 import { ActivityModelSchema } from 'components/activities/types';
 import {
   ActivityDeliveryState,
@@ -16,17 +14,11 @@ import { initialPartInputs } from 'data/activities/utils';
 import { configureStore } from 'state/store';
 import { DeliveryElement, DeliveryElementProps } from '../DeliveryElement';
 import { DeliveryElementProvider, useDeliveryElementContext } from '../DeliveryElementProvider';
-import { castPartId } from '../common/utils';
 import * as ActivityTypes from '../types';
-import { DiscussionParticipation } from './discussion/DiscussionParticipation';
-import { DiscussionSearchResults } from './discussion/DiscussionSearchResults';
-import { DiscussionSearchSortBar } from './discussion/DiscussionSearchSortBar';
-import { DiscussionThread } from './discussion/DiscussionThread';
-import { useDiscussion } from './discussion/discussion-hook';
-import { calculateParticipation } from './discussion/participation-util';
+import { DirectedDiscussion } from './discussion/DirectedDiscussion';
 import { DirectedDiscussionActivitySchema } from './schema';
 
-export const DirectedDiscussion: React.FC = () => {
+export const InternalDirectedDiscussion: React.FC = () => {
   const {
     state: activityState,
     context,
@@ -35,23 +27,10 @@ export const DirectedDiscussion: React.FC = () => {
     model,
   } = useDeliveryElementContext<DirectedDiscussionActivitySchema>();
 
-  const [searchTerm, setSearchTerm] = React.useState('');
-  const [focusId, setFocusId] = React.useState<number | null>(null);
-
   const uiState = useSelector((state: ActivityDeliveryState) => state);
   const dispatch = useDispatch();
   const { surveyId } = context;
   const { writerContext } = useDeliveryElementContext<ActivityModelSchema>();
-
-  const { loading, posts, addPost, currentUserId, deletePost } = useDiscussion(
-    writerContext.sectionSlug,
-    context.resourceId,
-  );
-
-  const currentParticipation = useMemo(
-    () => calculateParticipation(model.participation, posts, currentUserId),
-    [posts, currentUserId],
-  );
 
   useEffect(() => {
     listenForParentSurveySubmit(surveyId, dispatch, onSubmitActivity);
@@ -65,68 +44,17 @@ export const DirectedDiscussion: React.FC = () => {
     );
   }, []);
 
-  if (!currentUserId) {
-    return <div>Loading Discussion...</div>;
-  }
-
   // First render initializes state
-  if (!uiState.partState) {
+  if (!uiState.partState || !context.resourceId || !writerContext.sectionSlug) {
     return null;
   }
 
-  const onSearch = (search: string) => {
-    setSearchTerm(search);
-    setFocusId(null);
-  };
-
-  const hasSearchTerm = !!searchTerm && searchTerm.length > 0;
-  const hasFocusId = focusId !== null;
-
-  const displaySearchResults = !hasFocusId && hasSearchTerm;
-  const displayThreads = !displaySearchResults;
-
   return (
-    <div className="activity mc-activity">
-      <div className="activity-content relative">
-        <h2>Discussion</h2>
-        <StemDeliveryConnected />
-        <DiscussionParticipation
-          requirements={model.participation}
-          participation={currentParticipation}
-          currentUserId={currentUserId}
-        />
-        <DiscussionSearchSortBar onSearch={onSearch} />
-        {displaySearchResults && (
-          <DiscussionSearchResults
-            searchTerm={searchTerm}
-            posts={posts}
-            onFocus={(id) => setFocusId(id)}
-          />
-        )}
-        {displayThreads && (
-          <DiscussionThread
-            focusId={focusId}
-            canPost={currentParticipation.canPost}
-            canReply={currentParticipation.canReply}
-            posts={posts}
-            onPost={addPost}
-            currentUserId={currentUserId}
-            onDeletePost={deletePost}
-            maxWords={model.participation.maxWordLength}
-          />
-        )}
-        <HintsDeliveryConnected
-          partId={castPartId(activityState.parts[0].partId)}
-          resetPartInputs={{ [activityState.parts[0].partId]: [] }}
-          shouldShow
-        />
-        {loading && (
-          <div className="inline p-2 fixed bottom-1 right-1 bg-gray-600 rounded-md text-white">
-            Working...
-          </div>
-        )}
-      </div>
-    </div>
+    <DirectedDiscussion
+      model={model}
+      resourceId={context.resourceId}
+      sectionSlug={writerContext.sectionSlug}
+    />
   );
 };
 
@@ -143,7 +71,7 @@ export class DirectedDiscussionDelivery extends DeliveryElement<DirectedDiscussi
     ReactDOM.render(
       <Provider store={store}>
         <DeliveryElementProvider {...props}>
-          <DirectedDiscussion />
+          <InternalDirectedDiscussion />
         </DeliveryElementProvider>
       </Provider>,
       mountPoint,

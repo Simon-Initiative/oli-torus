@@ -9,11 +9,11 @@ import { TabbedNavigation } from 'components/tabbed_navigation/Tabs';
 import { configureStore } from 'state/store';
 import { AuthoringElement, AuthoringElementProps } from '../AuthoringElement';
 import { AuthoringElementProvider, useAuthoringElementContext } from '../AuthoringElementProvider';
+import { VariableEditorOrNot } from '../common/variables/VariableEditorOrNot';
+import { VariableActions } from '../common/variables/variableActions';
 import * as ActivityTypes from '../types';
 import { DiscussionParticipationAuthoring } from './discussion/DiscussionParticipationAuthoring';
 import { DirectedDiscussionActivitySchema } from './schema';
-import { VariableEditorOrNot } from '../common/variables/VariableEditorOrNot';
-import { VariableActions } from '../common/variables/variableActions';
 
 const store = configureStore();
 
@@ -29,6 +29,7 @@ const DirectedDiscussion: React.FC = () => {
     <>
       <TabbedNavigation.Tabs>
         <TabbedNavigation.Tab label="Question">
+          {JSON.stringify(model)}
           <Stem />
         </TabbedNavigation.Tab>
         <TabbedNavigation.Tab label="Participation">
