@@ -9,14 +9,6 @@ defmodule Oli.Conversation.Common do
     String.length(content) |> div(4)
   end
 
-  def token_limit("gpt-3.5-turbo") do
-    4096
-  end
-
-  def token_limit("gpt-4") do
-    8192
-  end
-
   def summarize_prompt() do
     """
     You are a converstational summarization agent that is tasked with summarizing long conversations between

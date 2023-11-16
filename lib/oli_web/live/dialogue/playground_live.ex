@@ -52,9 +52,9 @@ defmodule OliWeb.Dialogue.PlaygroundLive do
 
     dialogue =
       build_page_prompt(session)
-      |> Dialogue.init(fn _d, type, chunk ->
+      |> Dialogue.new(fn _d, type, chunk ->
         send(pid, {:reply_chunk, type, chunk})
-      end)
+      end, model: :larger_context)
 
     {:ok,
      assign(socket,
@@ -197,6 +197,12 @@ defmodule OliWeb.Dialogue.PlaygroundLive do
   end
 
   def handle_info({:reply_chunk, type, content}, socket) do
+
+    IO.inspect "REPLY CHUNK"
+    IO.inspect type
+    IO.inspect content
+
+
     case type do
       :function_call ->
         case socket.assigns.function_call do
@@ -228,6 +234,7 @@ defmodule OliWeb.Dialogue.PlaygroundLive do
   def handle_info({:reply_finished}, socket) do
     case socket.assigns.function_call do
       nil ->
+        IO.inspect socket.assigns.active_message
         message = Earmark.as_html!(socket.assigns.active_message)
         dialogue = Dialogue.add_message(socket.assigns.dialogue, Message.new(:assistant, message))
 

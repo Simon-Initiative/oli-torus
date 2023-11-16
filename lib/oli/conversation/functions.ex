@@ -65,7 +65,7 @@ defmodule Oli.Conversation.Functions do
     }
   ]
 
-  def functionns, do: @functions
+  def functions, do: @functions
 
   def total_token_length, do: Enum.reduce(@functions, 0, fn f, acc -> acc + estimate_token_length(f) end)
 

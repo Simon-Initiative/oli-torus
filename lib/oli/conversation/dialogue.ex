@@ -3,6 +3,7 @@ defmodule Oli.Conversation.Dialogue do
   alias Oli.Conversation.Message
   alias Oli.Conversation.Functions
   import Oli.Conversation.Common
+  alias Oli.Converstation.Model
 
   defstruct [
     :model,
@@ -15,7 +16,9 @@ defmodule Oli.Conversation.Dialogue do
 
   @token_usage_high_watermark 0.9
 
-  def init(system_message, response_handler_fn, model \\ "gpt-3.5-turbo") do
+  def new(system_message, response_handler_fn, options \\ []) do
+
+    model = options[:model] || Oli.Converstation.Model.default_model()
 
     system_message = Message.new(:system, system_message)
 
@@ -24,7 +27,7 @@ defmodule Oli.Conversation.Dialogue do
       rendered_messages: [],
       messages: [system_message],
       response_handler_fn: response_handler_fn,
-      functions: Functions.functionns(),
+      functions: Functions.functions(),
       functions_token_length: Functions.total_token_length()
     }
   end
@@ -110,7 +113,7 @@ defmodule Oli.Conversation.Dialogue do
 
     total_usage = total_token_length(dialog)
 
-    if total_usage > token_limit(model) * @token_usage_high_watermark do
+    if total_usage > Model.token_limit(model) * @token_usage_high_watermark do
       true
     else
       false
@@ -118,7 +121,7 @@ defmodule Oli.Conversation.Dialogue do
 
   end
 
-  def total_token_length(%__MODULE__{messages: messages, functions_token_length: functions_token_length} = dialog) do
+  def total_token_length(%__MODULE__{messages: messages, functions_token_length: functions_token_length}) do
     Enum.reduce(messages, functions_token_length, fn message, acc -> acc + message.token_length end)
   end
 
