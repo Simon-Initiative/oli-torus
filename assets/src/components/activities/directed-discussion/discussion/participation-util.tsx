@@ -1,5 +1,6 @@
 import { DDParticipationDefinition } from '../schema';
 import { ThreadedPost } from './discussion-service';
+import { flatPosts } from './post-util';
 
 export interface CurrentParticipation {
   posts: number;
@@ -10,19 +11,6 @@ export interface CurrentParticipation {
 
 const MAX_POSTS = 1000;
 const MAX_REPLIES = 1000;
-
-const flatPosts = (posts: ThreadedPost[]): ThreadedPost[] => {
-  const allPosts: ThreadedPost[] = [];
-
-  posts.forEach((post) => {
-    allPosts.push(post);
-    if (post.children) {
-      allPosts.push(...flatPosts(post.children));
-    }
-  });
-
-  return allPosts;
-};
 
 export const calculateParticipation = (
   requirements: DDParticipationDefinition,

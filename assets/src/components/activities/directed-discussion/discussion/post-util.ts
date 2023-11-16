@@ -40,3 +40,16 @@ const addPostToPostList = (post: ThreadedPost, posts: ThreadedPost[]) => {
   if (posts.find((p) => p.id === post.id)) return posts; // Already in
   return [post, ...posts];
 };
+
+export const flatPosts = (posts: ThreadedPost[]): ThreadedPost[] => {
+  const allPosts: ThreadedPost[] = [];
+
+  posts.forEach((post) => {
+    allPosts.push(post);
+    if (post.children) {
+      allPosts.push(...flatPosts(post.children));
+    }
+  });
+
+  return allPosts;
+};

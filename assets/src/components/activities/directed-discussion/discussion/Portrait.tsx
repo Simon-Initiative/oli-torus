@@ -1,8 +1,12 @@
 import React from 'react';
 
-export const DiscussionPortrait: React.FC = () => (
+interface Props {
+  showBullet?: boolean;
+}
+
+export const DiscussionPortrait: React.FC<Props> = ({ showBullet }) => (
   <>
-    <Bullet />
+    {showBullet && <Bullet />}
     <svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
       <g clipPath="url(#clip0_17_64)">
         <path
@@ -19,8 +23,19 @@ export const DiscussionPortrait: React.FC = () => (
   </>
 );
 
+DiscussionPortrait.defaultProps = {
+  showBullet: true,
+};
+
 const Bullet: React.FC = () => (
-  <svg className='absolute top-2 left-[-10px]' width="5" height="5" viewBox="0 0 5 5" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <svg
+    className="absolute top-2 left-[-10px]"
+    width="5"
+    height="5"
+    viewBox="0 0 5 5"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+  >
     <circle cx="2.5" cy="2.5" r="2" fill="white" stroke="black" />
   </svg>
 );

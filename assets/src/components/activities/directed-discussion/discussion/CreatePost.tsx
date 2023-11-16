@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Button } from 'components/misc/Button';
+import { InputClasses } from './DiscussionStyles';
 import { countWords } from './participation-util';
 
 interface Props {
@@ -28,7 +29,7 @@ export const CreatePost: React.FC<Props> = ({ onPost, autoFocus, placeholder, ma
       <textarea
         autoFocus={autoFocus}
         placeholder={placeholder || 'Create your new post...'}
-        className={`${sizeClass} mt-2 text-xs transition-[height]  w-full rounded-sm border-gray-300 line-h leading-3`}
+        className={`${sizeClass} ${InputClasses}`}
         value={content}
         onChange={(e) => setContent(e.target.value)}
       />
@@ -36,7 +37,7 @@ export const CreatePost: React.FC<Props> = ({ onPost, autoFocus, placeholder, ma
         <div className="flex justify-between items-center mt-1 mb-2">
           <div className="flex-grow" />
           {hasWordLimit && (
-            <span className={`mx-2 ${overWordLimit && "text-red-600"}`}>
+            <span className={`mx-2 ${overWordLimit && 'text-red-600'}`}>
               {overWordLimit && 'Over max word limit: '}
               {wordsCount} / {maxWords}
             </span>

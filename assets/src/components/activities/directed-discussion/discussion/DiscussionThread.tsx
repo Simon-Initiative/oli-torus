@@ -12,6 +12,7 @@ interface Props {
   canPost: boolean;
   canReply: boolean;
   maxWords: number;
+  focusId: number | null;
 }
 
 export const DiscussionThread: React.FC<Props> = ({
@@ -22,6 +23,7 @@ export const DiscussionThread: React.FC<Props> = ({
   canPost,
   canReply,
   maxWords,
+  focusId,
 }) => {
   // if (!enabled) {
   //   return <DiscussionPreview />;
@@ -36,6 +38,7 @@ export const DiscussionThread: React.FC<Props> = ({
         </div>
       )}
       <PostList
+        focusId={focusId}
         posts={posts}
         onPost={onPost}
         currentUserId={currentUserId}
@@ -54,11 +57,13 @@ export const PostList: React.FC<{
   onDeletePost: OnDeletePostHandler;
   canPost: boolean;
   maxWords: number;
-}> = ({ posts, onPost, currentUserId, onDeletePost, canPost, maxWords }) => {
+  focusId: number | null;
+}> = ({ posts, onPost, currentUserId, onDeletePost, canPost, maxWords, focusId }) => {
   return (
     <>
       {posts.map((post) => (
         <Post
+          focusId={focusId}
           key={post.id}
           post={post}
           onPost={onPost}

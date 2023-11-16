@@ -19,6 +19,8 @@ import { DeliveryElementProvider, useDeliveryElementContext } from '../DeliveryE
 import { castPartId } from '../common/utils';
 import * as ActivityTypes from '../types';
 import { DiscussionParticipation } from './discussion/DiscussionParticipation';
+import { DiscussionSearchResults } from './discussion/DiscussionSearchResults';
+import { DiscussionSearchSortBar } from './discussion/DiscussionSearchSortBar';
 import { DiscussionThread } from './discussion/DiscussionThread';
 import { useDiscussion } from './discussion/discussion-hook';
 import { calculateParticipation } from './discussion/participation-util';
@@ -32,6 +34,9 @@ export const DirectedDiscussion: React.FC = () => {
     onResetActivity,
     model,
   } = useDeliveryElementContext<DirectedDiscussionActivitySchema>();
+
+  const [searchTerm, setSearchTerm] = React.useState('');
+  const [focusId, setFocusId] = React.useState<number | null>(null);
 
   const uiState = useSelector((state: ActivityDeliveryState) => state);
   const dispatch = useDispatch();
@@ -69,6 +74,17 @@ export const DirectedDiscussion: React.FC = () => {
     return null;
   }
 
+  const onSearch = (search: string) => {
+    setSearchTerm(search);
+    setFocusId(null);
+  };
+
+  const hasSearchTerm = !!searchTerm && searchTerm.length > 0;
+  const hasFocusId = focusId !== null;
+
+  const displaySearchResults = !hasFocusId && hasSearchTerm;
+  const displayThreads = !displaySearchResults;
+
   return (
     <div className="activity mc-activity">
       <div className="activity-content relative">
@@ -79,21 +95,36 @@ export const DirectedDiscussion: React.FC = () => {
           participation={currentParticipation}
           currentUserId={currentUserId}
         />
-        <DiscussionThread
-          canPost={currentParticipation.canPost}
-          canReply={currentParticipation.canReply}
-          posts={posts}
-          onPost={addPost}
-          currentUserId={currentUserId}
-          onDeletePost={deletePost}
-          maxWords={model.participation.maxWordLength}
-        />
+        <DiscussionSearchSortBar onSearch={onSearch} />
+        {displaySearchResults && (
+          <DiscussionSearchResults
+            searchTerm={searchTerm}
+            posts={posts}
+            onFocus={(id) => setFocusId(id)}
+          />
+        )}
+        {displayThreads && (
+          <DiscussionThread
+            focusId={focusId}
+            canPost={currentParticipation.canPost}
+            canReply={currentParticipation.canReply}
+            posts={posts}
+            onPost={addPost}
+            currentUserId={currentUserId}
+            onDeletePost={deletePost}
+            maxWords={model.participation.maxWordLength}
+          />
+        )}
         <HintsDeliveryConnected
           partId={castPartId(activityState.parts[0].partId)}
           resetPartInputs={{ [activityState.parts[0].partId]: [] }}
           shouldShow
         />
-        {loading && <div className="inline p-2 fixed bottom-1 right-1 bg-gray-600 rounded-md text-white">Working...</div>}
+        {loading && (
+          <div className="inline p-2 fixed bottom-1 right-1 bg-gray-600 rounded-md text-white">
+            Working...
+          </div>
+        )}
       </div>
     </div>
   );
