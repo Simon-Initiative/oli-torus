@@ -13,7 +13,7 @@ export const CreatePost: React.FC<Props> = ({ onPost, autoFocus, placeholder, ma
   const [content, setContent] = useState('');
   const wordsCount = countWords(content);
   const expanded = content && content.length > 0;
-  const canPost = content && content.length > 10;
+  const canPost = content && content.length > 3;
   const sizeClass = expanded ? 'h-24 overflow-auto' : 'h-[30px] overflow-hidden resize-none';
 
   const onPostClick = () => {

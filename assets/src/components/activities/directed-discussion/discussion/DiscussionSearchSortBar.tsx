@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useToggle } from 'components/hooks/useToggle';
+import { Icon } from 'components/misc/Icon';
 import { InputClasses } from './DiscussionStyles';
 
 type SortType = 'newest' | 'popularity';
@@ -19,6 +20,14 @@ export const DiscussionSearchSortBar: React.FC<Props> = ({ onSearch }) => {
     }
   };
 
+  const onSearchClick = () => {
+    if (searchFieldOpen) {
+      onSearch && onSearch(searchTerm);
+    } else {
+      openSearchField();
+    }
+  };
+
   return (
     <div className="flex flex-row justify-end gap-2">
       {searchFieldOpen && (
@@ -32,13 +41,19 @@ export const DiscussionSearchSortBar: React.FC<Props> = ({ onSearch }) => {
           type="text"
         />
       )}
-      {searchFieldOpen || (
-        <button className="flex-grow-0" onClick={openSearchField}>
-          Search
-        </button>
-      )}
-      <button className="flex-grow-0">Newest</button>
-      <button className="flex-grow-0">Popularity</button>
+
+      <button className="flex-grow-0" onClick={onSearchClick}>
+        <Icon icon="magnifying-glass" />
+      </button>
+
+      {/*
+      <Button variant="secondary-box" className="flex-grow-0 text-sm rounded-none">
+        Newest
+      </Button>
+      <Button variant="secondary-box" className="flex-grow-0 text-sm rounded-none">
+        Popularity
+      </Button>
+      <SortIcon /> */}
     </div>
   );
 };

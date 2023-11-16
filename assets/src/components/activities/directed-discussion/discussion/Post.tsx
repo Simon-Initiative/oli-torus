@@ -24,39 +24,43 @@ export const Post: React.FC<{
   const focused = post.id === focusId;
 
   return (
-    <div className={`mb-4 mt-2 ${focused && 'border-primary border-2 p-4'}`}>
-      <div className="flex flex-row items-start gap-3 relative">
-        <DiscussionPortrait />
-        <div className="text-xs">
-          <b>{post.user_name}</b>
-          <br />
-          {formatDate(post.updated_at)}
-          {canDelete && <DeleteLink onClick={() => onDeletePost(post.id)} />}
+    <>
+      <div className={`mb-4 mt-2 ${focused && 'border-primary border-2 p-4'}`}>
+        <div className="flex flex-row items-start gap-3 relative">
+          <DiscussionPortrait />
+          <div className="text-xs">
+            <b>{post.user_name}</b>
+            <br />
+            {formatDate(post.updated_at)}
+            {canDelete && <DeleteLink onClick={() => onDeletePost(post.id)} />}
+          </div>
+        </div>
+
+        <div className="mt-4 ml-15">{post.content}</div>
+      </div>
+
+      <div>
+        {canPost && (
+          <CreatePost
+            onPost={onPostReply}
+            autoFocus={false}
+            placeholder="Reply..."
+            maxWords={maxWords}
+          />
+        )}
+        <div className="ml-12 mt-25">
+          <PostList
+            focusId={focusId}
+            maxWords={maxWords}
+            posts={post.children}
+            onPost={onPost}
+            currentUserId={currentUserId}
+            onDeletePost={onDeletePost}
+            canPost={canPost}
+          />
         </div>
       </div>
-
-      <div className="mt-4 ml-15">{post.content}</div>
-
-      {canPost && (
-        <CreatePost
-          onPost={onPostReply}
-          autoFocus={false}
-          placeholder="Reply..."
-          maxWords={maxWords}
-        />
-      )}
-      <div className="ml-12 mt-25">
-        <PostList
-          focusId={focusId}
-          maxWords={maxWords}
-          posts={post.children}
-          onPost={onPost}
-          currentUserId={currentUserId}
-          onDeletePost={onDeletePost}
-          canPost={canPost}
-        />
-      </div>
-    </div>
+    </>
   );
 };
 

@@ -1,10 +1,16 @@
 import React from 'react';
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: 'primary' | 'secondary';
+  variant?: 'primary' | 'secondary' | 'secondary-box';
 }
 
-type ColorSchemes = 'primary-disabled' | 'primary' | 'secondary' | 'secondary-disabled';
+type ColorSchemes =
+  | 'primary-disabled'
+  | 'primary'
+  | 'secondary'
+  | 'secondary-disabled'
+  | 'secondary-box'
+  | 'secondary-box-disabled';
 
 const variantColorSchemes: Record<ColorSchemes, string> = {
   'primary-disabled': 'torus-primary-disabled bg-delivery-primary-200 text-delivery-body',
@@ -13,6 +19,11 @@ const variantColorSchemes: Record<ColorSchemes, string> = {
   secondary:
     'torus-secondary bg-delivery-secondary hover:bg-gray-100 text-delivery-primary active:bg-gray-200',
   'secondary-disabled': 'torus-secondary-disabled bg-delivery-secondary text-delivery-primary-300 ',
+
+  'secondary-box':
+    'torus-secondary bg-delivery-secondary hover:bg-gray-100 text-delivery active:bg-gray-200 border-2',
+  'secondary-box-disabled':
+    'torus-secondary bg-delivery-secondary hover:bg-gray-100 text-delivery active:bg-gray-200 border-2',
 };
 
 export const LargeButton: React.FC<ButtonProps> = ({ className, children, ...other }) => (

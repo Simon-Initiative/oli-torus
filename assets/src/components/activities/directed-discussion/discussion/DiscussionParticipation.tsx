@@ -41,11 +41,6 @@ export const DiscussionParticipation: React.FC<Props> = ({
             Post
           </ParticipationState>
         )}
-        {/* {showMaxPosts && (
-          <ParticipationState target={maxPosts} current={participation.posts} status="">
-            Maximum Posts
-          </ParticipationState>
-        )} */}
         {showMinReplies && (
           <ParticipationState
             target={minReplies}
@@ -55,11 +50,6 @@ export const DiscussionParticipation: React.FC<Props> = ({
             Reply
           </ParticipationState>
         )}
-        {/* {showMaxReplies && (
-          <ParticipationState target={maxReplies} current={participation.replies} status="">
-            Maximum Replies
-          </ParticipationState>
-        )} */}
       </table>
     </div>
   );
@@ -83,7 +73,8 @@ const ParticipationState: React.FC<{
     <tr className="bg-gray-100 rounded-md px-2 m-2 text-sm">
       <td style={tailwindTablePageReset}>{children}</td>
       <td className="text-center" style={tailwindTablePageReset}>
-        {current}/{target}
+        {current < target && `${current}/${target}`}
+        {current >= target && `✅`}
       </td>
     </tr>
   );
