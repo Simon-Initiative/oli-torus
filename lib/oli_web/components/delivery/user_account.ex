@@ -306,14 +306,12 @@ defmodule OliWeb.Components.Delivery.UserAccount do
 
   attr :is_system_admin, :boolean, required: true
 
+  @spec maybe_menu_item_open_admin_panel(map()) :: Phoenix.LiveView.Rendered.t()
   def maybe_menu_item_open_admin_panel(assigns) do
     ~H"""
     <%= if @is_system_admin do %>
       <.menu_item_link href={~p"/admin"}>
-        <div class="inline-flex w-full justify-between items-center">
-          <span>Open Admin Panel</span>
-          <.icon name="fa-solid fa-wrench" />
-        </div>
+        <.icon name="fa-solid fa-wrench" class="mr-2" /> Admin Panel
       </.menu_item_link>
       <.menu_divider />
     <% end %>

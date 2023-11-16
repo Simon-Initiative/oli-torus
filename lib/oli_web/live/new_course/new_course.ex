@@ -315,7 +315,7 @@ defmodule OliWeb.Delivery.NewCourse do
 
             {:noreply,
              redirect(socket,
-               to: ~p"/sections/#{section.slug}/instructor_dashboard/manage"
+               to: Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.OverviewView, section.slug)
              )}
 
           {:error, error} ->

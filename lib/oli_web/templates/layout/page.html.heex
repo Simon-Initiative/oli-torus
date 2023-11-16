@@ -8,7 +8,9 @@
     active_tab={:content}
   >
     <div class="flex-1 flex flex-col pb-[60px]">
-      <Components.Delivery.Layouts.flash_messages flash={@flash} />
+      <div class="container mx-auto sticky top-0">
+        <.flash_group flash={@flash} />
+      </div>
 
       <%= render(OliWeb.LayoutView, "_pay_early.html", assigns) %>
 

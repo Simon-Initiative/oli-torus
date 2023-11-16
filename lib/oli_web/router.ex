@@ -951,24 +951,26 @@ defmodule OliWeb.Router do
       end
     end
 
-    # # TODO: Implement preview modes
-    # scope "/preview" do
-    #   live_session :delivery_preview,
-    #     root_layout: {OliWeb.LayoutView, :delivery},
-    #     on_mount: [
-    #       OliWeb.LiveSessionPlugs.SetSection,
-    #       OliWeb.LiveSessionPlugs.SetUser,
-    #       OliWeb.LiveSessionPlugs.SetBrand,
-    #       OliWeb.LiveSessionPlugs.SetPreviewMode,
-    #       OliWeb.LiveSessionPlugs.RequireEnrollment
-    #     ] do
-    #     live("/", Delivery.Student.IndexLive, :preview)
-    #     live("/content", Delivery.Student.ContentLive, :preview)
-    #     live("/discussion", Delivery.Student.DiscussionLive, :preview)
-    #     live("/assignments", Delivery.Student.AssignmentsLive, :preview)
-    #     live("/explorations", Delivery.Student.ExplorationsLive, :preview)
-    #   end
-    # end
+    # TODO: Ensure that all these liveviews actually respect preview mode flag
+    ### Instructor Preview Modes
+    scope "/preview" do
+      live_session :delivery_preview,
+        root_layout: {OliWeb.LayoutView, :delivery},
+        on_mount: [
+          OliWeb.LiveSessionPlugs.SetSection,
+          OliWeb.LiveSessionPlugs.SetUser,
+          OliWeb.LiveSessionPlugs.SetBrand,
+          OliWeb.LiveSessionPlugs.SetPreviewMode,
+          OliWeb.LiveSessionPlugs.RequireEnrollment
+        ] do
+        live("/", Delivery.Student.IndexLive, :preview)
+        live("/content", Delivery.Student.ContentLive, :preview)
+        live("/discussion", Delivery.Student.DiscussionLive, :preview)
+        live("/assignments", Delivery.Student.AssignmentsLive, :preview)
+        live("/explorations", Delivery.Student.ExplorationsLive, :preview)
+        live("/practice", Delivery.Student.PracticeLive)
+      end
+    end
 
     get("/container/:revision_slug", PageDeliveryController, :container)
     get("/page/:revision_slug", PageDeliveryController, :page)
@@ -1006,13 +1008,6 @@ defmodule OliWeb.Router do
       :delivery_layout,
       :pow_email_layout
     ])
-
-    # Redirect deprecated routes
-    get("/overview", PageDeliveryController, :index_preview)
-    get("/exploration", PageDeliveryController, :exploration_preview)
-    get("/practice", PageDeliveryController, :deliberate_practice_preview)
-    get("/discussion", PageDeliveryController, :discussion_preview)
-    get("/my_assignments", PageDeliveryController, :assignments_preview)
 
     get("/container/:revision_slug", PageDeliveryController, :container_preview)
     get("/page/:revision_slug", PageDeliveryController, :page_preview)

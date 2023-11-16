@@ -43,7 +43,6 @@ defmodule OliWeb.Components.Delivery.Layouts do
           ctx={@ctx}
           is_system_admin={@is_system_admin}
           section={@section}
-          project={@project}
           active_tab={@active_tab}
           preview_mode={@preview_mode}
         />
@@ -52,52 +51,6 @@ defmodule OliWeb.Components.Delivery.Layouts do
           <%= render_slot(@inner_block) %>
         </div>
       </main>
-    </div>
-    """
-  end
-
-  attr :flash, :any, required: true
-
-  def flash_messages(assigns) do
-    ~H"""
-    <div id="live_flash_container" class="flash container mx-auto px-0 sticky top-[80px]">
-      <%= if live_flash(@flash, :info) do %>
-        <div class="alert alert-info flex flex-row" role="alert">
-          <div class="flex-1">
-            <%= live_flash(@flash, :info) %>
-          </div>
-
-          <button
-            type="button"
-            class="close"
-            data-bs-dismiss="alert"
-            aria-label="Close"
-            phx-click="lv:clear-flash"
-            phx-value-key="info"
-          >
-            <i class="fa-solid fa-xmark fa-lg"></i>
-          </button>
-        </div>
-      <% end %>
-
-      <%= if live_flash(@flash, :error) do %>
-        <div class="alert alert-danger flex flex-row" role="alert">
-          <div class="flex-1">
-            <%= live_flash(@flash, :error) %>
-          </div>
-
-          <button
-            type="button"
-            class="close"
-            data-bs-dismiss="alert"
-            aria-label="Close"
-            phx-click="lv:clear-flash"
-            phx-value-key="error"
-          >
-            <i class="fa-solid fa-xmark fa-lg"></i>
-          </button>
-        </div>
-      <% end %>
     </div>
     """
   end
@@ -121,7 +74,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
         </a>
       </div>
       <div class="flex items-center flex-grow-1 p-2">
-        <.title section={@section} project={@project} />
+        <.title section={@section} project={@project} preview_mode={@preview_mode} />
       </div>
       <div class="flex items-center p-2">
         <div class="hidden md:block">

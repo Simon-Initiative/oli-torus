@@ -13,7 +13,9 @@
   />
 
   <div class="relative flex-1 flex flex-col pt-4 pb-[60px]">
-    <.flash_group flash={@flash} />
+    <div class="container mx-auto sticky top-0">
+      <.flash_group flash={@flash} />
+    </div>
 
     <%= @inner_content %>
 
