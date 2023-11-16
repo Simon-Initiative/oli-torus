@@ -21,7 +21,7 @@ defmodule OliWeb.Components.Delivery.NavSidebar do
 
   def main_with_nav(assigns) do
     ~H"""
-    <main role="main" class="flex-1 flex flex-col relative lg:flex-row">
+    <main role="main" class="flex-1 flex flex-col lg:flex-row">
       <.navbar {assigns} path_info={@conn.path_info} />
 
       <div class="flex-1 flex flex-col lg:pl-[200px]">
