@@ -1,5 +1,4 @@
 defmodule Oli.Conversation.Functions do
-
   import Oli.Conversation.Common
 
   @functions [
@@ -67,6 +66,6 @@ defmodule Oli.Conversation.Functions do
 
   def functionns, do: @functions
 
-  def total_token_length, do: Enum.reduce(@functions, 0, fn f, acc -> acc + estimate_token_length(f) end)
-
+  def total_token_length,
+    do: Enum.reduce(@functions, 0, fn f, acc -> acc + estimate_token_length(f) end)
 end

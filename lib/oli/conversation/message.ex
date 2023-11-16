@@ -1,5 +1,4 @@
 defmodule Oli.Conversation.Message do
-
   import Oli.Conversation.Common
 
   @derive Jason.Encoder
@@ -26,6 +25,4 @@ defmodule Oli.Conversation.Message do
       token_length: estimate_token_length(content)
     }
   end
-
-
 end

@@ -122,8 +122,8 @@
   <% end %>
 
   <%= live_render(@conn, OliWeb.Dialogue.PlaygroundLive,
-    session: %{"section_slug" => @section_slug, "revision_id" => @page.id})
-  %>
+    session: %{"section_slug" => @section_slug, "revision_id" => @page.id}
+  ) %>
   <%= if @review_mode == true do %>
     <div class="d-flex align-items-center justify-content-center">
       <%= link("Continue",
