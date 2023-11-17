@@ -31,25 +31,27 @@ export const DiscussionParticipation: React.FC<Props> = ({
           { minWidth: 0, width: 96 } /* There are page styles that override the tailwind classes */
         }
       >
-        <TopTableDivider />
-        {showMinPosts && (
-          <ParticipationState
-            target={minPosts}
-            current={participation.posts}
-            status={participation.posts >= minPosts ? 'complete' : 'incomplete'}
-          >
-            Post
-          </ParticipationState>
-        )}
-        {showMinReplies && (
-          <ParticipationState
-            target={minReplies}
-            current={participation.replies}
-            status={participation.replies >= minReplies ? 'complete' : 'incomplete'}
-          >
-            Reply
-          </ParticipationState>
-        )}
+        <tbody>
+          <TopTableDivider />
+          {showMinPosts && (
+            <ParticipationState
+              target={minPosts}
+              current={participation.posts}
+              status={participation.posts >= minPosts ? 'complete' : 'incomplete'}
+            >
+              Post
+            </ParticipationState>
+          )}
+          {showMinReplies && (
+            <ParticipationState
+              target={minReplies}
+              current={participation.replies}
+              status={participation.replies >= minReplies ? 'complete' : 'incomplete'}
+            >
+              Reply
+            </ParticipationState>
+          )}
+        </tbody>
       </table>
     </div>
   );

@@ -30,6 +30,12 @@ export const Post: React.FC<{
           <DiscussionPortrait />
           <div className="text-xs">
             <b>{post.user_name}</b>
+            {post.parentAuthorName && (
+              <>
+                &nbsp;replied&nbsp;
+                <b>{post.parentAuthorName}</b>
+              </>
+            )}
             <br />
             {formatDate(post.updated_at)}
             {canDelete && <DeleteLink onClick={() => onDeletePost(post.id)} />}

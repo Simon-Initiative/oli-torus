@@ -51,7 +51,7 @@ defmodule Oli.Rendering.Activity.Html do
            mode: mode,
            section_slug: section_slug,
            resource_attempt: resource_attempt,
-           bib_app_params: bib_app_params
+           bib_app_params: bib_app_params,
          } = context,
          %ActivitySummary{
            authoring_element: authoring_element,
@@ -80,7 +80,7 @@ defmodule Oli.Rendering.Activity.Html do
         activity_html_id = get_activity_html_id(activity_id, model_json)
 
         [
-          ~s|<#{tag} activity_id=\"#{activity_html_id}\" model="#{model_json}" editmode="false" projectSlug="#{section_slug}" bib_params="#{Base.encode64(bib_params_json)}"></#{tag}>\n|
+          ~s|<#{tag} section_slug=\"#{section_slug}\" activity_id=\"#{activity_html_id}\" model="#{model_json}" activityId="#{activity_id}" editmode="false" projectSlug="#{section_slug}" bib_params="#{Base.encode64(bib_params_json)}"></#{tag}>\n|
         ]
 
       :review ->
@@ -159,7 +159,6 @@ defmodule Oli.Rendering.Activity.Html do
          bib_params,
          model_json
        ) do
-
     activity_context =
       %{
         graded: graded,
@@ -171,7 +170,8 @@ defmodule Oli.Rendering.Activity.Html do
         bibParams: bib_params,
         learningLanguage: learning_language,
         showFeedback: Oli.Delivery.Settings.show_feedback?(effective_settings),
-        resourceId: effective_settings.resource_id, # TODO - is this the best place to grab this?
+        # TODO - is this the best place to grab this?
+        resourceId: effective_settings.resource_id,
         pageAttemptGuid:
           if is_nil(resource_attempt) do
             ""

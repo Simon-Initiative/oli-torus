@@ -45,14 +45,19 @@ export const InternalDirectedDiscussion: React.FC = () => {
   }, []);
 
   // First render initializes state
-  if (!uiState.partState || !context.resourceId || !writerContext.sectionSlug) {
-    return null;
+  if (!uiState.partState || !activityState.activityId || !writerContext.sectionSlug) {
+    console.warn('Discussion activity not initialized yet', {
+      partState: uiState.partState,
+      activityState: activityState,
+      writerContext: writerContext,
+    });
+    return <div>Discussion Activity Loading</div>;
   }
 
   return (
     <DirectedDiscussion
       model={model}
-      resourceId={context.resourceId}
+      resourceId={activityState.activityId}
       sectionSlug={writerContext.sectionSlug}
     />
   );

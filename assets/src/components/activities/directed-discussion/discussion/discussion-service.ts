@@ -17,6 +17,7 @@ interface DiscussionResult {
 export interface ThreadedPost extends Post {
   children: ThreadedPost[];
   timestamp: number;
+  parentAuthorName: null | string;
 }
 
 export interface CreatePostResponseSuccess {
@@ -57,6 +58,7 @@ export const postToThreadedPost = (post: Post): ThreadedPost => ({
   ...post,
   children: [],
   timestamp: Date.parse(post.updated_at),
+  parentAuthorName: null,
 });
 
 export const getPosts = (sectionSlug: string, resourceId: string) => {
@@ -86,6 +88,7 @@ const threadPosts = (
   const threadedPosts = posts.reduce((threads, post) => {
     if (post.parent_post_id) {
       const parent = posts.find((thread) => thread.id === post.parent_post_id);
+      post.parentAuthorName = parent?.user_name || null;
       if (parent) {
         parent.children.push(post);
       }

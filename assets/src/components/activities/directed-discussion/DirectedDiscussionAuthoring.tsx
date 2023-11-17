@@ -1,29 +1,36 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 import { Provider } from 'react-redux';
-import { Maybe } from 'tsmonad';
 import { Hints } from 'components/activities/common/hints/authoring/HintsAuthoringConnected';
 import { Stem } from 'components/activities/common/stem/authoring/StemAuthoringConnected';
-import { mcV1toV2 } from 'components/activities/multiple_choice/transformations/v2';
 import { TabbedNavigation } from 'components/tabbed_navigation/Tabs';
 import { configureStore } from 'state/store';
-import { AuthoringElement, AuthoringElementProps } from '../AuthoringElement';
+import {
+  AuthoringElement,
+  AuthoringElementProps,
+  SectionAuthoringProps,
+} from '../AuthoringElement';
 import { AuthoringElementProvider, useAuthoringElementContext } from '../AuthoringElementProvider';
+import { DeliveryElementProvider } from '../DeliveryElementProvider';
 import { VariableEditorOrNot } from '../common/variables/VariableEditorOrNot';
 import { VariableActions } from '../common/variables/variableActions';
 import * as ActivityTypes from '../types';
+import { DirectedDiscussion } from './discussion/DirectedDiscussion';
 import { DiscussionParticipationAuthoring } from './discussion/DiscussionParticipationAuthoring';
+import { MockDiscussionDeliveryProvider } from './discussion/MockDiscussionDeliveryProvider';
 import { DirectedDiscussionActivitySchema } from './schema';
 
 const store = configureStore();
 
-const DirectedDiscussion: React.FC = () => {
-  const { dispatch, model, editMode } =
+const DirectedDiscussionAuthoringInternal: React.FC<SectionAuthoringProps> = ({
+  activityId,
+  sectionSlug,
+}) => {
+  const { dispatch, model, editMode, projectSlug } =
     useAuthoringElementContext<DirectedDiscussionActivitySchema>();
 
-  // const writerContext = defaultWriterContext({
-  //   projectSlug: projectSlug,
-  // });
+  const displayDiscussion =
+    !editMode && activityId && activityId > 0 && sectionSlug && sectionSlug.length > 0;
 
   return (
     <>
@@ -48,28 +55,37 @@ const DirectedDiscussion: React.FC = () => {
           />
         </TabbedNavigation.Tab>
 
-        {/* <ActivitySettings settings={[shuffleAnswerChoiceSetting(model, dispatch)]} /> */}
+        {displayDiscussion && (
+          <MockDiscussionDeliveryProvider
+            activityId={activityId}
+            model={model}
+            projectSlug={projectSlug}
+            sectionSlug={sectionSlug}
+          >
+            <DirectedDiscussion model={model} sectionSlug={sectionSlug} resourceId={activityId} />
+          </MockDiscussionDeliveryProvider>
+        )}
       </TabbedNavigation.Tabs>
     </>
   );
 };
 
+type DirectedDiscussionAuthoringProps = AuthoringElementProps<DirectedDiscussionActivitySchema> &
+  SectionAuthoringProps;
+
 export class DirectedDiscussionAuthoring extends AuthoringElement<DirectedDiscussionActivitySchema> {
   migrateModelVersion(model: any): DirectedDiscussionActivitySchema {
-    return Maybe.maybe(model.authoring.version).caseOf({
-      just: (_v2) => model,
-      nothing: () => mcV1toV2(model),
-    });
+    return model;
   }
 
-  render(
-    mountPoint: HTMLDivElement,
-    props: AuthoringElementProps<DirectedDiscussionActivitySchema>,
-  ) {
+  render(mountPoint: HTMLDivElement, props: DirectedDiscussionAuthoringProps) {
     ReactDOM.render(
       <Provider store={store}>
         <AuthoringElementProvider {...props}>
-          <DirectedDiscussion />
+          <DirectedDiscussionAuthoringInternal
+            activityId={props.activityId}
+            sectionSlug={props.sectionSlug}
+          />
         </AuthoringElementProvider>
       </Provider>,
       mountPoint,

@@ -26,6 +26,7 @@ const addChildPostToParent = (posts: ThreadedPost[], child: ThreadedPost) => {
   const parent = posts.find((p) => p.id === child.parent_post_id);
   if (parent) {
     parent.children = addPostToPostList(child, parent.children);
+    child.parentAuthorName = parent.user_name;
   }
   posts.forEach((p) => {
     if (p.children) {
