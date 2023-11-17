@@ -276,4 +276,22 @@ defmodule OliWeb.Common.FormatDateTime do
     end
     |> value_or(@utc_timezone)
   end
+
+  @doc """
+  Parses a DateTime (UTC) considering the given context to localize it,
+  and formats it using the given format string.
+
+  ## Examples
+    iex> parse_datetime(~U[2023-11-17 12:25:31.887855Z], %SessionContext{local_tz: "America/Montevideo"})
+    "Fri Nov 17, 2023"
+
+    iex> parse_datetime(~U[2023-11-17 12:25:31.887855Z], %SessionContext{local_tz: "America/Montevideo"}, "{YYYY}-{0M}-{D}")
+    "2023-11-17"
+  """
+
+  def parse_datetime(datetime, ctx, format_string \\ "{WDshort} {Mshort} {D}, {YYYY}") do
+    datetime
+    |> convert_datetime(ctx)
+    |> Timex.format!(format_string)
+  end
 end

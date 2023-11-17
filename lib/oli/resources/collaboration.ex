@@ -478,6 +478,74 @@ defmodule Oli.Resources.Collaboration do
     )
   end
 
+  def list_level_0_course_and_page_posts_for_section(user_id, section_id, limit) do
+    Repo.all(
+      from(
+        post in Post,
+        join: sr in SectionResource,
+        on: sr.resource_id == post.resource_id and sr.section_id == post.section_id,
+        join: spp in SectionsProjectsPublications,
+        on: spp.section_id == post.section_id and spp.project_id == sr.project_id,
+        join: pr in PublishedResource,
+        on: pr.publication_id == spp.publication_id and pr.resource_id == post.resource_id,
+        join: rev in Revision,
+        on: rev.id == pr.revision_id,
+        join: user in User,
+        on: post.user_id == user.id,
+        where:
+          post.section_id == ^section_id and
+            (post.status in [:approved, :archived] or
+               (post.status == :submitted and post.user_id == ^user_id)) and
+            is_nil(post.parent_post_id) and is_nil(post.thread_root_id),
+        select: %{
+          id: post.id,
+          content: post.content,
+          user_name: user.name,
+          posted_anonymously: post.anonymous,
+          title: rev.title,
+          slug: rev.slug,
+          resource_type_id: rev.resource_type_id,
+          updated_at: post.updated_at
+        },
+        order_by: [asc: :updated_at],
+        limit: ^limit
+      )
+    )
+    |> build_metrics_for_posts()
+  end
+
+  defp build_metrics_for_posts(posts) do
+    post_ids = Enum.map(posts, &Map.get(&1, :id))
+
+    posts_metrics =
+      Repo.all(
+        from(
+          post in Post,
+          where: post.parent_post_id in ^post_ids,
+          group_by: post.parent_post_id,
+          select:
+            {post.parent_post_id,
+             %{
+               reply_count: count(post.id),
+               last_reply: max(post.updated_at),
+               unread_reply_count: 0
+             }}
+        )
+      )
+      |> Enum.into(%{})
+
+    Enum.map(posts, fn post ->
+      Map.merge(
+        post,
+        Map.get(posts_metrics, post.id, %{
+          reply_count: 0,
+          last_reply: nil,
+          unread_reply_count: 0
+        })
+      )
+    end)
+  end
+
   @doc """
   Returns the list of posts created by an user in a section.
 
@@ -550,8 +618,9 @@ defmodule Oli.Resources.Collaboration do
         join: user in User,
         on: post.user_id == user.id,
         where:
-          post.section_id == ^section_id and post.user_id != ^user_id and
-            post.status in [:approved, :archived],
+          (post.section_id == ^section_id and post.user_id != ^user_id and
+             post.status in [:approved, :archived]) or
+            (post.status == :submitted and post.user_id != ^user_id),
         select: %{
           id: post.id,
           content: post.content,

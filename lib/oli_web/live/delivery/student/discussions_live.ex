@@ -3,12 +3,29 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
 
   import OliWeb.Components.Delivery.Layouts
 
+  alias Oli.Resources.Collaboration
+  alias OliWeb.Common.FormatDateTime
+
   def mount(
         _params,
         _session,
         socket
       ) do
-    {:ok, socket}
+    posts =
+      Collaboration.list_level_0_course_and_page_posts_for_section(
+        socket.assigns.current_user.id,
+        socket.assigns.section.id,
+        20
+      )
+      |> Enum.reduce(%{course_posts: [], page_posts: []}, fn post, acc ->
+        if post.resource_type_id == 2 do
+          %{acc | course_posts: [post | acc.course_posts]}
+        else
+          %{acc | page_posts: [post | acc.page_posts]}
+        end
+      end)
+
+    {:ok, assign(socket, posts: posts)}
   end
 
   # TODO add real bg-image for header and svg icons for:
@@ -36,11 +53,15 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
         </h1>
       </div>
       <div id="disussions_content" class="flex flex-col p-6 gap-6 items-start">
-        <.posts_section />
+        <.posts_section posts={@posts} ctx={@ctx} section_slug={@section.slug} />
       </div>
     </.header_with_sidebar_nav>
     """
   end
+
+  attr :posts, :list
+  attr :ctx, :map
+  attr :section_slug, :string
 
   defp posts_section(assigns) do
     ~H"""
@@ -120,36 +141,46 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
         role="posts list"
         class="rounded-xl w-full bg-white shadow-md dark:bg-[rgba(255,255,255,0.06)] divide-y-[1px] divide-gray-200 dark:divide-white/20"
       >
-        <.class_post />
-        <.page_post />
+        <.course_post :for={post <- @posts.course_posts} post={post} ctx={@ctx} />
+        <.page_post
+          :for={post <- @posts.page_posts}
+          post={post}
+          ctx={@ctx}
+          section_slug={@section_slug}
+        />
       </div>
     </section>
     """
   end
 
   _docp = """
-  A class post is not associated with a page
+  A course post belongs to the curriculum level.
   """
 
-  defp class_post(assigns) do
+  attr :post, :map
+  attr :ctx, :map
+
+  defp course_post(assigns) do
     ~H"""
     <div role="post-1" class="flex flex-col gap-6 p-6">
       <div role="post header" class="flex items-center gap-2">
-        <div class="w-8 h-8 rounded-full flex items-center justify-center shrink-0 bg-[#29BFFF]">
-          <span class="text-[14px] text-white">DH</span>
-        </div>
+        <.avatar user_name={@post.user_name} />
         <div class="flex flex-col items-start gap-[1px]">
           <span class="text-[16px] leading-[22px] tracking-[0.02px] font-semibold dark:text-white">
-            Darnell Harris
+            <%= @post.user_name %>
           </span>
           <span class="text-[14px] leading-[19px] tracking-[0.02px] dark:text-white/50">
-            Mon, Oct 12th, 2023
+            <%= FormatDateTime.parse_datetime(
+              @post.updated_at,
+              @ctx,
+              "{WDshort}, {Mshort} {D}, {YYYY}"
+            ) %>
           </span>
         </div>
       </div>
       <div role="post content" class="w-full">
         <p class="truncate text-[18px] leading-[25px] dark:text-white">
-          Hey, everyone! I've been trying to wrap my head around the concept of chemical bonding. It's so fascinating, but also a bit confusing.
+          <%= @post.content.message %>
         </p>
       </div>
       <div role="post footer" class="flex justify-between items-center">
@@ -158,22 +189,27 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
             <div class="relative h-8 w-8 flex items-center">
               <i class="fa-solid fa-message h-4 w-4" style="transform: scaleX(-1);" />
               <span
+                :if={@post.unread_reply_count > 0}
                 role="unread count"
                 class="absolute -top-0.5 right-2 w-4 h-4 shrink-0 rounded-full bg-[#FF4B47] text-white text-[9px] font-bold flex items-center justify-center"
               >
-                2
+                <%= @post.unread_reply_count %>
               </span>
             </div>
             <span class="text-[14px] leading-[22px] tracking-[0.02px] dark:text-white">
-              3 replies
+              <%= @post.reply_count %> <%= if @post.reply_count == 1, do: "reply", else: "replies" %>
             </span>
           </div>
-          <div class="flex items-center gap-[6px]">
+          <div :if={@post.reply_count > 0} class="flex items-center gap-[6px]">
             <span class="text-[14px] font-semibold leading-[22px] tracking-[0.02px] dark:text-white">
               Last Reply:
             </span>
             <span class="text-[14px] leading-[19px] tracking-[0.02px] dark:text-white/50">
-              Tue 20 Sep, 2024
+              <%= FormatDateTime.parse_datetime(
+                @post.last_reply,
+                @ctx,
+                "{WDshort}, {Mshort} {D}, {YYYY}"
+              ) %>
             </span>
           </div>
         </div>
@@ -186,23 +222,29 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
   end
 
   _docp = """
-  A page post is associated with a page, so it renders additional information,
+  A page post belongs to a page, so it renders additional information,
   as the page title and the container it belongs to.
   """
+
+  attr :post, :map
+  attr :ctx, :map
+  attr :section_slug, :string
 
   defp page_post(assigns) do
     ~H"""
     <div role="post-2" class="flex flex-col gap-6 p-6">
       <div role="post header" class="flex items-center gap-2">
-        <div class="w-8 h-8 rounded-full flex items-center justify-center shrink-0 bg-[#FF9029]">
-          <span class="text-[14px] text-white">CR</span>
-        </div>
+        <.avatar user_name={@post.user_name} />
         <div class="flex flex-col items-start gap-[1px]">
           <span class="text-[16px] leading-[22px] tracking-[0.02px] font-semibold dark:text-white">
-            Carmela Ruis
+            <%= @post.user_name %>
           </span>
           <span class="text-[14px] leading-[19px] tracking-[0.02px] dark:text-white/50">
-            Mon, Oct 11th, 2023
+            <%= FormatDateTime.parse_datetime(
+              @post.updated_at,
+              @ctx,
+              "{WDshort}, {Mshort} {D}, {YYYY}"
+            ) %>
           </span>
         </div>
       </div>
@@ -215,16 +257,16 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
             Module 3.1 Page 7
           </span>
           <span class="text-[14px] leading-[19px] dark:text-white/50">
-            — The Wave-Particle Duality of Matter
+            — <%= @post.title %>
           </span>
         </div>
-        <span class="text-[14px] leading-[19px] truncate dark:text-white">
-          Interference pattern? How does this experiment demonstrate that particles have wave-like properties?
+        <span class="hidden text-[14px] leading-[19px] truncate dark:text-white">
+          <%!-- this will render the text the user highlighted for the post --%>
         </span>
       </div>
       <div role="post content" class="w-full">
         <p class="truncate text-[18px] leading-[25px] dark:text-white">
-          I'm confused about how particles like electrons create an interference pattern. If they are particles, shouldn't they pass through one slit or the other and create two distinct lines, rather than an interference pattern? How does this experiment demonstrate that particles have wave-like properties?
+          <%= @post.content.message %>
         </p>
       </div>
       <div role="post footer" class="flex justify-between items-center">
@@ -233,26 +275,34 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
             <div class="relative h-8 w-8 flex items-center">
               <i class="fa-solid fa-message h-4 w-4" style="transform: scaleX(-1);" />
               <span
+                :if={@post.unread_reply_count > 0}
                 role="unread count"
-                class="hidden absolute -top-0.5 right-2 w-4 h-4 shrink-0 rounded-full bg-[#FF4B47] text-white text-[9px] font-bold flex items-center justify-center"
+                class="absolute -top-0.5 right-2 w-4 h-4 shrink-0 rounded-full bg-[#FF4B47] text-white text-[9px] font-bold flex items-center justify-center"
               >
-                2
+                <%= @post.unread_reply_count %>
               </span>
             </div>
             <span class="text-[14px] leading-[22px] tracking-[0.02px] dark:text-white">
-              4 replies
+              <%= @post.reply_count %> <%= if @post.reply_count == 1, do: "reply", else: "replies" %>
             </span>
           </div>
-          <div class="flex items-center gap-[6px]">
+          <div :if={@post.reply_count > 0} class="flex items-center gap-[6px]">
             <span class="text-[14px] font-semibold leading-[22px] tracking-[0.02px] dark:text-white">
               Last Reply:
             </span>
             <span class="text-[14px] leading-[19px] tracking-[0.02px] dark:text-white/50">
-              Tue 20 Sep, 2024
+              <%= FormatDateTime.parse_datetime(
+                @post.last_reply,
+                @ctx,
+                "{WDshort}, {Mshort} {D}, {YYYY}"
+              ) %>
             </span>
           </div>
         </div>
-        <button class="flex items-center gap-1 text-[14px] leading-[20px] text-[#468AEF] hover:text-[#468AEF]/70">
+        <.link
+          navigate={~p"/sections/#{@section_slug}/page/#{@post.slug}"}
+          class="flex items-center gap-1 text-[14px] leading-[20px] text-[#468AEF] hover:text-[#468AEF]/70"
+        >
           <span>Go to page</span>
           <svg
             role="right arrow"
@@ -269,9 +319,51 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
               d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3"
             />
           </svg>
-        </button>
+        </.link>
       </div>
     </div>
     """
+  end
+
+  attr :user_name, :string
+
+  # Define a list of avatar color options.
+  @colors [
+    "bg-[#FAE52D]",
+    "bg-[#C33131]",
+    "bg-[#D024A0]",
+    "bg-[#FFC107]",
+    "bg-[#DF8028]",
+    "bg-[#168F8B]",
+    "bg-[#7940F3]",
+    "bg-[#2080F0]"
+  ]
+
+  def avatar(assigns) do
+    ~H"""
+    <div class={[
+      "w-8 h-8 rounded-full flex items-center justify-center shrink-0",
+      get_color_for_name(@user_name)
+    ]}>
+      <span class="text-[14px] text-white uppercase"><%= to_initials(@user_name) %></span>
+    </div>
+    """
+  end
+
+  # Generate a consistent color based on the user's name.
+  defp get_color_for_name(user_name) do
+    # Create a hash of the user name.
+    hash = :erlang.phash2(user_name)
+
+    # Use the hash to select a color.
+    Enum.at(@colors, rem(hash, length(@colors)))
+  end
+
+  defp to_initials(user_name) do
+    user_name
+    |> String.split(" ")
+    |> Enum.take(2)
+    |> Enum.map(&String.slice(&1, 0..0))
+    |> Enum.join()
   end
 end

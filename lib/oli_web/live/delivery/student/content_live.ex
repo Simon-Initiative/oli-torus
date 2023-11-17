@@ -160,7 +160,7 @@ defmodule OliWeb.Delivery.Student.ContentLive do
               <span class="text-gray-400 opacity-80 dark:text-[#696974] dark:opacity-100 mr-1">
                 Complete By:
               </span>
-              <%= parse_datetime(
+              <%= to_formatted_datetime(
                 @unit["section_resource"]["end_date"],
                 @ctx
               ) %>
@@ -527,13 +527,12 @@ defmodule OliWeb.Delivery.Student.ContentLive do
     if !String.contains?(Jason.encode!(content), "\"type\":\"h1\""), do: "mt-[52px]"
   end
 
-  defp parse_datetime(nil, _ctx), do: "not yet scheduled"
+  defp to_formatted_datetime(nil, _ctx), do: "not yet scheduled"
 
-  defp parse_datetime(string_datetime, ctx) do
+  defp to_formatted_datetime(string_datetime, ctx) do
     string_datetime
     |> to_datetime
-    |> FormatDateTime.convert_datetime(ctx)
-    |> Timex.format!("{WDshort} {Mshort} {D}, {YYYY} ({h12}:{m}{am})")
+    |> FormatDateTime.parse_datetime(ctx, "{WDshort} {Mshort} {D}, {YYYY} ({h12}:{m}{am})")
   end
 
   defp to_datetime(nil), do: "not yet scheduled"
