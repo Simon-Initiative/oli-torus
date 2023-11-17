@@ -188,7 +188,7 @@ const ConditionsBlockEditor: React.FC<CondtionsBlockEditorProps> = (props) => {
         }
       }
     });
-    /* console.log('[handleConditionItemChange]', { changes, condition, updatedConditions }); */
+    console.log('[handleConditionItemChange]', { changes, condition, updatedConditions });
     setConditions(updatedConditions);
   };
 

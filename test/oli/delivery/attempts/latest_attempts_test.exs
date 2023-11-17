@@ -115,7 +115,6 @@ defmodule Oli.Delivery.Attempts.LatestAttemptsTest do
         :graded_page_user1_attempt1,
         :user1_activity_attempt1
       )
-
       |> Seeder.create_resource_attempt(
         %{attempt_number: 1},
         :user1,
@@ -179,7 +178,6 @@ defmodule Oli.Delivery.Attempts.LatestAttemptsTest do
       ra5: ra5,
       aa9: aa9
     } do
-
       # Tests the identification of evaluated attempt in the following ordering
       # orderings of activity attempts.  The * indicates with attempt it should be
       # identifying as 'latest'
@@ -200,8 +198,6 @@ defmodule Oli.Delivery.Attempts.LatestAttemptsTest do
       # -Submitted *
       [a] = Attempts.get_latest_non_active_activity_attempts(ra5.id)
       assert a.id == aa9.id
-
     end
-
   end
 end

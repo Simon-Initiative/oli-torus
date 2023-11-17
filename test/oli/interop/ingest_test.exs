@@ -20,12 +20,12 @@ defmodule Oli.Interop.IngestTest do
     m = Enum.reduce(entries, %{}, fn {f, c}, m -> Map.put(m, f, c) end)
 
     assert length(entries) == 31
-    assert Map.has_key?(m, '_hierarchy.json')
-    assert Map.has_key?(m, '_media-manifest.json')
-    assert Map.has_key?(m, '_project.json')
+    assert Map.has_key?(m, ~c"_hierarchy.json")
+    assert Map.has_key?(m, ~c"_media-manifest.json")
+    assert Map.has_key?(m, ~c"_project.json")
 
     hierarchy =
-      Map.get(m, '_hierarchy.json')
+      Map.get(m, ~c"_hierarchy.json")
       |> Jason.decode!()
 
     assert length(Map.get(hierarchy, "children")) == 1
@@ -191,23 +191,23 @@ defmodule Oli.Interop.IngestTest do
       assert [] |> Ingest.process(author) == {:error, :invalid_digest}
 
       assert [
-               {'file1', "some content"},
-               {'_media-manifest', "{}"},
-               {'_hierarchy', "{}"}
+               {~c"file1", "some content"},
+               {~c"_media-manifest", "{}"},
+               {~c"_hierarchy", "{}"}
              ]
              |> Ingest.process(author) == {:error, :invalid_digest}
 
       assert [
-               {'_project', "{}"},
-               {'file1', "some content"},
-               {'_hierarchy', "{}"}
+               {~c"_project", "{}"},
+               {~c"file1", "some content"},
+               {~c"_hierarchy", "{}"}
              ]
              |> Ingest.process(author) == {:error, :invalid_digest}
 
       assert [
-               {'_project', "{}"},
-               {'_media-manifest', "{}"},
-               {'file1', "some content"}
+               {~c"_project", "{}"},
+               {~c"_media-manifest", "{}"},
+               {~c"file1", "some content"}
              ]
              |> Ingest.process(author) == {:error, :invalid_digest}
     end
@@ -216,13 +216,13 @@ defmodule Oli.Interop.IngestTest do
       assert simulate_unzipping()
              |> Enum.map(fn item ->
                case item do
-                 {'_project.json', contents} ->
+                 {~c"_project.json", contents} ->
                    without_title =
                      Jason.decode!(contents)
                      |> Map.delete("title")
                      |> Jason.encode!()
 
-                   {'_project.json', without_title}
+                   {~c"_project.json", without_title}
 
                  _ ->
                    item
@@ -235,13 +235,13 @@ defmodule Oli.Interop.IngestTest do
       assert simulate_unzipping()
              |> Enum.map(fn item ->
                case item do
-                 {'_project.json', contents} ->
+                 {~c"_project.json", contents} ->
                    without_title =
                      Jason.decode!(contents)
                      |> Map.put("title", "")
                      |> Jason.encode!()
 
-                   {'_project.json', without_title}
+                   {~c"_project.json", without_title}
 
                  _ ->
                    item
@@ -254,7 +254,7 @@ defmodule Oli.Interop.IngestTest do
       assert simulate_unzipping()
              |> Enum.map(fn item ->
                case item do
-                 {'_hierarchy.json', contents} ->
+                 {~c"_hierarchy.json", contents} ->
                    with_invalid_idref =
                      Jason.decode!(contents)
                      |> update_in(
@@ -272,7 +272,7 @@ defmodule Oli.Interop.IngestTest do
                      )
                      |> Jason.encode!()
 
-                   {'_hierarchy.json', with_invalid_idref}
+                   {~c"_hierarchy.json", with_invalid_idref}
 
                  _ ->
                    item
@@ -294,7 +294,7 @@ defmodule Oli.Interop.IngestTest do
                simulate_unzipping()
                |> Enum.map(fn item ->
                  case item do
-                   {'35.json', contents} ->
+                   {~c"35.json", contents} ->
                      with_invalid_json =
                        Jason.decode!(contents)
                        |> update_in(
@@ -312,7 +312,7 @@ defmodule Oli.Interop.IngestTest do
                        )
                        |> Jason.encode!()
 
-                     {'35.json', with_invalid_json}
+                     {~c"35.json", with_invalid_json}
 
                    _ ->
                      item

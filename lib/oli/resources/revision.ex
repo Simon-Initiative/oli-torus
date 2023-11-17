@@ -53,7 +53,9 @@ defmodule Oli.Resources.Revision do
 
     embeds_one :legacy, Oli.Resources.Legacy, on_replace: :delete
     embeds_one :explanation_strategy, Oli.Resources.ExplanationStrategy, on_replace: :delete
-    embeds_one :collab_space_config, Oli.Resources.Collaboration.CollabSpaceConfig, on_replace: :delete
+
+    embeds_one :collab_space_config, Oli.Resources.Collaboration.CollabSpaceConfig,
+      on_replace: :delete
 
     belongs_to :scoring_strategy, Oli.Resources.ScoringStrategy
     belongs_to :activity_type, Oli.Activities.ActivityRegistration
@@ -65,7 +67,10 @@ defmodule Oli.Resources.Revision do
     field(:page_type, :string, virtual: true)
     field(:parent_slug, :string, virtual: true)
 
-    field :purpose, Ecto.Enum, values: [:foundation, :application], default: :foundation
+    field :purpose, Ecto.Enum,
+      values: [:foundation, :application, :deliberate_practice],
+      default: :foundation
+
     field :relates_to, {:array, :id}, default: []
 
     timestamps(type: :utc_datetime)

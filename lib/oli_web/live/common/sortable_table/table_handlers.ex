@@ -166,16 +166,16 @@ defmodule OliWeb.Common.SortableTable.TableHandlers do
           end)
 
         {:noreply,
-          assign(socket,
-            table_model: table_model,
-            offset: offset,
-            applied_query: query,
-            query: query,
-            filter: filter,
-            total_count: length(filtered),
-            selected: selected,
-            params: get_patch_params(table_model, offset, query, filter, selected)
-          )}
+         assign(socket,
+           table_model: table_model,
+           offset: offset,
+           applied_query: query,
+           query: query,
+           filter: filter,
+           total_count: length(filtered),
+           selected: selected,
+           params: get_patch_params(table_model, offset, query, filter, selected)
+         )}
       end
 
       def withelist_filter(filter, filter_name, allowed_values) do

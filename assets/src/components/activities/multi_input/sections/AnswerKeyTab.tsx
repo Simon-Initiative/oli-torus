@@ -99,6 +99,9 @@ export const AnswerKeyTab: React.FC<Props> = (props) => {
         <ResponseCard
           title="Targeted feedback"
           response={response}
+          updateFeedbackTextDirection={(_id, textDirection) =>
+            dispatch(ResponseActions.editResponseFeedbackTextDirection(response.id, textDirection))
+          }
           updateFeedbackEditor={(id, editor) =>
             dispatch(ResponseActions.editResponseFeedbackEditor(response.id, editor))
           }

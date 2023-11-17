@@ -9,7 +9,9 @@ defmodule OliWeb.Components.Project.AsyncExporter do
   attr(:ctx, SessionContext, required: true)
   attr(:latest_publication, Publication, default: nil)
 
-  attr(:analytics_export_status, :atom, values: [:not_available, :in_progress, :available, :error])
+  attr(:analytics_export_status, :atom,
+    values: [:not_available, :in_progress, :available, :error]
+  )
 
   attr(:analytics_export_url, :string)
   attr(:analytics_export_timestamp, :string)
@@ -72,6 +74,7 @@ defmodule OliWeb.Components.Project.AsyncExporter do
   attr(:datashop_export_url, :string)
   attr(:datashop_export_timestamp, :string)
   attr(:on_generate_datashop_snapshot, :string, default: "generate_datashop_snapshot")
+  attr(:on_kill, :string, default: "kill_datashop_snapshot")
 
   def datashop(assigns) do
     ~H"""
@@ -88,6 +91,9 @@ defmodule OliWeb.Components.Project.AsyncExporter do
             <div>Create a <.datashop_link /> snapshot for download</div>
           <% :in_progress -> %>
             <.button_link disabled>Datashop</.button_link>
+            <.button_link variant={:primary} phx-click={@on_kill}>
+              Kill Active Datashop Export
+            </.button_link>
             <div class="flex flex-col">
               <div>Create a <.datashop_link /> snapshot for download</div>
               <div class="text-sm text-gray-500">
@@ -98,6 +104,9 @@ defmodule OliWeb.Components.Project.AsyncExporter do
           <% :available -> %>
             <.button_link variant={:primary} href={@datashop_export_url} download>
               <i class="fa-solid fa-download mr-1"></i> Datashop
+            </.button_link>
+            <.button_link variant={:primary} phx-click={@on_kill}>
+              Kill Active Datashop Export
             </.button_link>
             <div class="flex flex-col">
               <div>Download <.datashop_link /> snapshot.</div>

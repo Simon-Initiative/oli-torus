@@ -939,6 +939,7 @@ defmodule OliWeb.Router do
     get("/overview", PageDeliveryController, :index)
 
     get("/exploration", PageDeliveryController, :exploration)
+    get("/practice", PageDeliveryController, :deliberate_practice)
     get("/discussion", PageDeliveryController, :discussion)
     get("/my_assignments", PageDeliveryController, :assignments)
     get("/container/:revision_slug", PageDeliveryController, :container)
@@ -981,6 +982,7 @@ defmodule OliWeb.Router do
     # Redirect deprecated routes
     get("/overview", PageDeliveryController, :index_preview)
     get("/exploration", PageDeliveryController, :exploration_preview)
+    get("/practice", PageDeliveryController, :deliberate_practice_preview)
     get("/discussion", PageDeliveryController, :discussion_preview)
     get("/my_assignments", PageDeliveryController, :assignments_preview)
     get("/container/:revision_slug", PageDeliveryController, :container_preview)
@@ -1032,22 +1034,7 @@ defmodule OliWeb.Router do
     live("/:section_slug/source_materials", Delivery.ManageSourceMaterials, as: :source_materials)
     live("/:section_slug/remix", Delivery.RemixSection)
     live("/:section_slug/remix/:section_resource_slug", Delivery.RemixSection)
-    live("/:section_slug/enrollments", Sections.EnrollmentsViewLive)
     post("/:section_slug/enrollments", InviteController, :create_bulk)
-
-    live_session :enrolled_students,
-      on_mount: [
-        OliWeb.LiveSessionPlugs.SetRouteName,
-        OliWeb.Delivery.StudentDashboard.InitialAssigns
-      ],
-      root_layout: {OliWeb.LayoutView, :delivery_student_dashboard} do
-      live(
-        "/:section_slug/enrollments/students/:student_id/:active_tab",
-        Delivery.StudentDashboard.StudentDashboardLive,
-        as: :enrollment_student_info,
-        metadata: %{route_name: :enrollments_student_info}
-      )
-    end
 
     post("/:section_slug/enrollments/export", PageDeliveryController, :export_enrollments)
     live("/:section_slug/invitations", Sections.InviteView)

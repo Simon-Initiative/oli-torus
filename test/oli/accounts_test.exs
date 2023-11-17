@@ -111,6 +111,7 @@ defmodule Oli.AccountsTest do
 
     @valid_attrs %{
       email: "some_email@example.com",
+      email_confirmation: "some_email@example.com",
       given_name: "some given_name",
       family_name: "some family_name",
       sub: "some sub",
@@ -336,7 +337,6 @@ defmodule Oli.AccountsTest do
 
       refute Accounts.is_lms_user?(user1.email)
     end
-
 
     test "is_lms_user?/1 returns false when the user does not exist" do
       refute Accounts.is_lms_user?("invalid_email")

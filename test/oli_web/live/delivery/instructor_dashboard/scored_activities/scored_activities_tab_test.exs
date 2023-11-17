@@ -997,17 +997,24 @@ defmodule OliWeb.Delivery.InstructorDashboard.ScoredActivitiesTabTest do
       |> element("table tbody tr:nth-of-type(1) a")
       |> render_click(%{id: page_5.id})
 
-      # we assert that the url was patched correctly after click
-      current_params =
-        "?assessment_table_params[assessment_id]=&assessment_table_params[assessment_table_params]=&assessment_table_params[limit]=10&assessment_table_params[offset]=0&assessment_table_params[selected_activity]=&assessment_table_params[sort_by]=title&assessment_table_params[sort_order]=asc&assessment_table_params[text_search]="
-
       url =
         live_view_scored_activities_route(section.slug, %{
           assessment_id: page_5.id
-        }) <>
-          current_params
+        })
 
-      assert_receive {_ref, {:patch, _topic, %{to: ^url}}}
+      # we assert that the url was patched correctly after click
+      receive do
+        {_ref, {:patch, _topic, %{kind: :push, to: url_with_params}}} ->
+          assert String.starts_with?(url_with_params, url)
+          assert url_with_params =~ "assessment_table_params[offset]=0"
+          assert url_with_params =~ "assessment_table_params[limit]=20"
+          assert url_with_params =~ "assessment_table_params[sort_by]=title"
+          assert url_with_params =~ "assessment_table_params[assessment_id]="
+          assert url_with_params =~ "assessment_table_params[text_search]="
+          assert url_with_params =~ "assessment_table_params[sort_order]=asc"
+          assert url_with_params =~ "assessment_table_params[assessment_table_params]="
+          assert url_with_params =~ "assessment_table_params[selected_activity]="
+      end
 
       # and that the activitiy content was rendered
       assert view
@@ -1835,6 +1842,79 @@ defmodule OliWeb.Delivery.InstructorDashboard.ScoredActivitiesTabTest do
 
       assert view
              |> has_element?("#copy_emails_button", "Copy email addresses")
+    end
+  end
+
+  describe "page size change" do
+    setup [:instructor_conn, :create_project]
+
+    test "lists table elements according to the default page size", %{
+      conn: conn,
+      section: section
+    } do
+      {:ok, view, _html} = live(conn, live_view_scored_activities_route(section.slug))
+
+      [a0, a1, a2, a3, a4] = table_as_list_of_maps(view, :assessments)
+
+      assert a0.title == "Orphaned Page"
+      assert a1.title == "Module 1: IntroductionPage 1"
+      assert a2.title == "Module 1: IntroductionPage 2"
+      assert a3.title == "Module 2: BasicsPage 3"
+      assert a4.title == "Module 2: BasicsPage 4"
+
+      # It does not display pagination options
+      refute has_element?(view, "nav[aria-label=\"Paging\"]")
+
+      # It displays page size dropdown
+      assert has_element?(view, "form select.torus-select option[selected]", "20")
+    end
+
+    test "updates page size and list expected elements", %{
+      conn: conn,
+      section: section
+    } do
+      {:ok, view, _html} = live(conn, live_view_scored_activities_route(section.slug))
+
+      # Change page size from default (20) to 2
+      view
+      |> element("#header_paging_page_size_form")
+      |> render_change(%{limit: "2"})
+
+      [a0, a1] = table_as_list_of_maps(view, :assessments)
+
+      # Page 1
+      assert a0.title == "Orphaned Page"
+      assert a1.title == "Module 1: IntroductionPage 1"
+    end
+
+    test "keeps showing the same elements when changing the page size", %{
+      conn: conn,
+      section: section
+    } do
+      {:ok, view, _html} =
+        live(
+          conn,
+          live_view_scored_activities_route(section.slug, %{
+            limit: 2,
+            offset: 2
+          })
+        )
+
+      [a2, a3] = table_as_list_of_maps(view, :assessments)
+
+      # Page 2
+      assert a2.title == "Module 1: IntroductionPage 2"
+      assert a3.title == "Module 2: BasicsPage 3"
+
+      # Change page size from 2 to 1
+      view
+      |> element("#header_paging_page_size_form")
+      |> render_change(%{limit: "1"})
+
+      [a2] = table_as_list_of_maps(view, :assessments)
+
+      # Page 3. It keeps showing the same element.
+      assert a2.title == "Module 1: IntroductionPage 2"
     end
   end
 end

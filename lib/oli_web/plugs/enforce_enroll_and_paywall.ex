@@ -21,11 +21,13 @@ defmodule Oli.Plugs.EnforceEnrollAndPaywall do
       %AccessSummary{available: true} ->
         conn
         |> Plug.Conn.assign(:paywall_summary, summary)
+
       %AccessSummary{available: false, reason: :not_enrolled} ->
         conn
         |> put_view(OliWeb.PageDeliveryView)
         |> render("not_authorized.html")
         |> halt()
+
       _ ->
         conn
         |> redirect(to: Routes.payment_path(conn, :guard, section.slug))

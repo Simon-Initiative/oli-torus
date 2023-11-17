@@ -6,8 +6,9 @@ defmodule Oli.Delivery.PaywallTest do
 
   alias Lti_1p3.Tool.ContextRoles
   alias Oli.Delivery.{Sections, Paywall}
-  alias Oli.Delivery.Paywall.{AccessSummary, Discount}
+  alias Oli.Delivery.Paywall.{AccessSummary, Payment, Discount}
   alias Oli.Publishing
+  alias Oli.Repo.{Paging, Sorting}
 
   def last_week() do
     {:ok, datetime} = DateTime.now("Etc/UTC")
@@ -156,7 +157,6 @@ defmodule Oli.Delivery.PaywallTest do
       assert summary.reason == :within_grace_period
       days = summary.grace_period_remaining |> AccessSummary.as_days()
       assert days > 1.0 and days < 2.0
-
     end
 
     test "summarize_access/2 suceeds during grace period, strategy relative to student enrollment",
@@ -175,9 +175,7 @@ defmodule Oli.Delivery.PaywallTest do
       summary = Paywall.summarize_access(user, section)
       assert summary.available
       assert summary.reason == :within_grace_period
-
     end
-
   end
 
   describe "redeeming codes" do
@@ -446,10 +444,10 @@ defmodule Oli.Delivery.PaywallTest do
 
       # amount from paid is #Money<:USD, 100>
       test "section_cost_from_product/2 correctly applies percentage discount for #{discount}",
-          %{
-            paid: paid,
-            institution: institution
-          } do
+           %{
+             paid: paid,
+             institution: institution
+           } do
         {:ok, _} =
           Paywall.create_discount(%{
             institution_id: institution.id,
@@ -459,14 +457,16 @@ defmodule Oli.Delivery.PaywallTest do
             amount: Money.new(:USD, @expected_amount)
           })
 
-        assert {:ok, Money.new(:USD, @expected_amount)} == Paywall.section_cost_from_product(paid, institution)
+        assert {:ok, Money.new(:USD, @expected_amount)} ==
+                 Paywall.section_cost_from_product(paid, institution)
       end
     end
 
-    test "section_cost_from_product/2 doesn't apply institution-specific discount to other institutions", %{
-      institution: institution_a,
-      paid: paid
-    } do
+    test "section_cost_from_product/2 doesn't apply institution-specific discount to other institutions",
+         %{
+           institution: institution_a,
+           paid: paid
+         } do
       Paywall.create_discount(%{
         institution_id: institution_a.id,
         section_id: nil,
@@ -508,6 +508,7 @@ defmodule Oli.Delivery.PaywallTest do
 
     test "create_discount/1 with invalid percentage returns error changeset" do
       institution = insert(:institution)
+
       params = %{
         institution_id: institution.id,
         section_id: nil,
@@ -531,6 +532,7 @@ defmodule Oli.Delivery.PaywallTest do
       institution = insert(:institution)
       product = insert(:section, type: :blueprint)
       insert(:discount, institution: institution, section: product)
+
       params = %{
         institution_id: institution.id,
         section_id: product.id,
@@ -549,10 +551,11 @@ defmodule Oli.Delivery.PaywallTest do
     test "get_discount_by!/1 returns a discount when exists one for the section and the institution" do
       discount = insert(:discount)
 
-      returned_discount = Paywall.get_discount_by!(%{
-        section_id: discount.section_id,
-        institution_id: discount.institution_id
-      })
+      returned_discount =
+        Paywall.get_discount_by!(%{
+          section_id: discount.section_id,
+          institution_id: discount.institution_id
+        })
 
       assert discount.id == returned_discount.id
       assert discount.type == returned_discount.type
@@ -567,8 +570,8 @@ defmodule Oli.Delivery.PaywallTest do
       insert(:discount, section: discount.section)
 
       assert_raise Ecto.MultipleResultsError,
-                  ~r/^expected at most one result but got 2 in query/,
-                  fn -> Paywall.get_discount_by!(%{section_id: discount.section_id}) end
+                   ~r/^expected at most one result but got 2 in query/,
+                   fn -> Paywall.get_discount_by!(%{section_id: discount.section_id}) end
     end
 
     test "get_institution_wide_discount!/1 returns a discount when exists one for the institution" do
@@ -589,8 +592,8 @@ defmodule Oli.Delivery.PaywallTest do
       insert(:discount, institution: discount.institution, section: nil)
 
       assert_raise Ecto.MultipleResultsError,
-                  ~r/^expected at most one result but got 2 in query/,
-                  fn -> Paywall.get_institution_wide_discount!(discount.institution_id) end
+                   ~r/^expected at most one result but got 2 in query/,
+                   fn -> Paywall.get_institution_wide_discount!(discount.institution_id) end
     end
 
     test "get_product_discounts/1 returns empty if a discount does not exist for the product" do
@@ -599,10 +602,13 @@ defmodule Oli.Delivery.PaywallTest do
 
     test "get_product_discounts/1 returns the discounts associated with one product" do
       %Discount{id: first_discount_id} = first_discount = insert(:discount)
-      %Discount{id: second_discount_id} = insert(:discount, section: first_discount.section, percentage: 90)
 
-      assert [%Discount{id: ^first_discount_id}, %Discount{id: ^second_discount_id}]
-        = Paywall.get_product_discounts(first_discount.section.id) |> Enum.sort_by(& &1.percentage)
+      %Discount{id: second_discount_id} =
+        insert(:discount, section: first_discount.section, percentage: 90)
+
+      assert [%Discount{id: ^first_discount_id}, %Discount{id: ^second_discount_id}] =
+               Paywall.get_product_discounts(first_discount.section.id)
+               |> Enum.sort_by(& &1.percentage)
     end
 
     test "update_discount/2 updates the discount successfully" do
@@ -617,7 +623,9 @@ defmodule Oli.Delivery.PaywallTest do
     test "update_discount/2 does not update the discount when there is an invalid field" do
       amount_discount = insert(:discount)
 
-      {:error, changeset} = Paywall.update_discount(amount_discount, %{type: :fixed_amount, amount: nil})
+      {:error, changeset} =
+        Paywall.update_discount(amount_discount, %{type: :fixed_amount, amount: nil})
+
       {error, _} = changeset.errors[:amount]
 
       refute changeset.valid?
@@ -625,7 +633,9 @@ defmodule Oli.Delivery.PaywallTest do
 
       percentage_discount = insert(:discount)
 
-      {:error, changeset} = Paywall.update_discount(percentage_discount, %{type: :percentage, percentage: nil})
+      {:error, changeset} =
+        Paywall.update_discount(percentage_discount, %{type: :percentage, percentage: nil})
+
       {error, _} = changeset.errors[:percentage]
 
       refute changeset.valid?
@@ -655,6 +665,7 @@ defmodule Oli.Delivery.PaywallTest do
 
     test "create_or_update_discount/1 updates an existing discount" do
       discount = insert(:discount)
+
       params = %{
         institution_id: discount.institution_id,
         section_id: discount.section_id,
@@ -672,6 +683,7 @@ defmodule Oli.Delivery.PaywallTest do
 
     test "create_or_update_discount/1 updates an existing discount (only institution)" do
       discount = insert(:discount, section: nil)
+
       params = %{
         institution_id: discount.institution_id,
         section_id: nil,
@@ -789,6 +801,91 @@ defmodule Oli.Delivery.PaywallTest do
 
       assert Paywall.list_payments(section_1.slug) |> length() == 0
       assert Paywall.list_payments(section_2.slug) |> length() == 2
+    end
+  end
+
+  describe "browse payments" do
+    setup do
+      product =
+        insert(:section, %{
+          type: :blueprint
+        })
+
+      [product: product]
+    end
+
+    test "browse_payments/4 applies paging", %{product: product} do
+      payment_1_id = insert(:payment, section: product, code: 123_456_789).id
+      _payment_2_id = insert(:payment, section: product, code: 987_654_321).id
+
+      [%{payment: %Payment{id: ^payment_1_id}}] =
+        Paywall.browse_payments(product.slug, %Paging{limit: 1, offset: 0}, %Sorting{
+          direction: :asc,
+          field: :type
+        })
+    end
+
+    test "browse_payments/4 applies sorting by type", %{product: product} do
+      payment_1_id = insert(:payment, section: product, type: :deferred).id
+      _payment_2_id = insert(:payment, section: product, type: :direct).id
+
+      [%{payment: %Payment{id: ^payment_1_id}}] =
+        Paywall.browse_payments(product.slug, %Paging{limit: 1, offset: 0}, %Sorting{
+          direction: :asc,
+          field: :type
+        })
+    end
+
+    test "browse_payments/4 applies sorting by user name", %{product: product} do
+      user_1 = insert(:user, given_name: "A", family_name: "A")
+      user_2 = insert(:user, given_name: "B", family_name: "B")
+
+      enrollment_1 = insert(:enrollment, user: user_1)
+      enrollment_2 = insert(:enrollment, user: user_2)
+
+      payment_1_id = insert(:payment, section: product, enrollment: enrollment_1).id
+      _payment_2_id = insert(:payment, section: product, enrollment: enrollment_2).id
+
+      [%{payment: %Payment{id: ^payment_1_id}}] =
+        Paywall.browse_payments(product.slug, %Paging{limit: 1, offset: 0}, %Sorting{
+          direction: :asc,
+          field: :user
+        })
+    end
+
+    test "browse_payments/4 applies sorting by details", %{product: product} do
+      payment_1_id =
+        insert(:payment,
+          section: product,
+          type: :direct,
+          provider_type: :stripe,
+          provider_payload: %{id: 1}
+        ).id
+
+      _payment_2_id = insert(:payment, section: product, type: :deferred).id
+
+      [%{payment: %Payment{id: ^payment_1_id}}] =
+        Paywall.browse_payments(product.slug, %Paging{limit: 1, offset: 0}, %Sorting{
+          direction: :desc,
+          field: :details
+        })
+    end
+
+    test "browse_payments/4 applies searching by code", %{product: product} do
+      code_1 = 123_456_789
+      code_2 = 987_654_321
+      payment_1_id = insert(:payment, section: product, code: code_1).id
+      _payment_2_id = insert(:payment, section: product, code: code_2).id
+
+      human_code_1 = Paywall.Payment.to_human_readable(code_1)
+
+      [%{payment: %Payment{id: ^payment_1_id}}] =
+        Paywall.browse_payments(
+          product.slug,
+          %Paging{limit: 1, offset: 0},
+          %Sorting{direction: :asc, field: :type},
+          text_search: human_code_1
+        )
     end
   end
 end

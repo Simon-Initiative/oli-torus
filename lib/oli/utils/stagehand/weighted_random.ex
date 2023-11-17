@@ -20,8 +20,12 @@ defmodule Oli.Utils.Stagehand.WeightedRandom do
   end
 
   defp find_item_by_weight([], _, _), do: nil
+
   defp find_item_by_weight([{item, weight} | tail], random_number, current_weight) do
     new_weight = current_weight + weight
-    if random_number < new_weight, do: item, else: find_item_by_weight(tail, random_number, new_weight)
+
+    if random_number < new_weight,
+      do: item,
+      else: find_item_by_weight(tail, random_number, new_weight)
   end
 end

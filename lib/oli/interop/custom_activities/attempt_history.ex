@@ -1,13 +1,10 @@
 defmodule Oli.Interop.CustomActivities.AttemptHistory do
-
   import XmlBuilder
   alias Oli.Interop.CustomActivities.{Problem, ActivityAttempt}
 
-  def setup(
-        %{
-          context: context
-        }
-      ) do
+  def setup(%{
+        context: context
+      }) do
     element(
       :attempt_history,
       %{
@@ -23,18 +20,14 @@ defmodule Oli.Interop.CustomActivities.AttemptHistory do
         user_guid: context.user.id
       },
       [
-        Problem.setup(
-          %{
-            context: context
-          }
-        ),
+        Problem.setup(%{
+          context: context
+        }),
         context.resource_attempt.activity_attempts
         |> Enum.map(fn attempt ->
-          ActivityAttempt.setup(
-            %{
-              activity_attempt: attempt
-            }
-          )
+          ActivityAttempt.setup(%{
+            activity_attempt: attempt
+          })
         end)
       ]
     )

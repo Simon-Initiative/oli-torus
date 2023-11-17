@@ -1,45 +1,23 @@
 defmodule OliWeb.Products.ProductsView do
   use OliWeb, :live_view
 
-  import OliWeb.Common.Params
+  import OliWeb.DelegatedEvents
 
   alias Oli.Repo
-  alias OliWeb.Common.{Breadcrumb, Check, Filter, Listing, SessionContext}
+  alias Oli.Repo.{Paging, Sorting}
+  alias OliWeb.Common.{Breadcrumb, Check, PagedTable, Params, SessionContext, TextSearch}
   alias OliWeb.Products.Create
   alias Oli.Authoring.Course
   alias Oli.Accounts.Author
   alias Oli.Delivery.Sections.Blueprint
-  alias Oli.Delivery.Sections.BlueprintBrowseOptions
   alias OliWeb.Common.Table.SortableTableModel
   alias OliWeb.Router.Helpers, as: Routes
   alias Oli.Publishing
 
-  @table_filter_fn &OliWeb.Products.ProductsView.filter_rows/3
-  @table_push_patch_path &OliWeb.Products.ProductsView.live_path/2
-
-  def filter_rows(socket, query, _filter) do
-    case String.downcase(query) do
-      "" ->
-        socket.assigns.products
-
-      str ->
-        Enum.filter(socket.assigns.products, fn p ->
-          amount_str =
-            if p.requires_payment do
-              case Money.to_string(p.amount) do
-                {:ok, money} -> String.downcase(money)
-                _ -> ""
-              end
-            else
-              "none"
-            end
-
-          String.contains?(String.downcase(p.title), str) or
-            String.contains?(String.downcase(p.base_project.title), str) or
-            String.contains?(amount_str, str)
-        end)
-    end
-  end
+  @limit 20
+  @text_search_tooltip """
+    Search by section title, amount or base project title.
+  """
 
   def live_path(socket, params) do
     if socket.assigns.is_admin_view do
@@ -93,13 +71,17 @@ defmodule OliWeb.Products.ProductsView do
 
   defp mount_as(params, author, is_admin_view, project, breadcrumbs, title, socket, session) do
     project_id = if project === nil, do: nil, else: project.id
-    options = %BlueprintBrowseOptions{
-      project_id: project_id,
-      include_archived: get_boolean_param(params, "include_archived", false)
-    }
-    products = Blueprint.list(options)
 
-    total_count = length(products)
+    products =
+      Blueprint.browse(
+        %Paging{offset: 0, limit: @limit},
+        %Sorting{direction: :asc, field: :title},
+        text_search: Params.get_param(params, "text_search", ""),
+        include_archived: Params.get_boolean_param(params, "include_archived", false),
+        project_id: project_id
+      )
+
+    total_count = determine_total(products)
 
     ctx = SessionContext.init(socket, session)
     {:ok, table_model} = OliWeb.Products.ProductsTableModel.new(products, ctx)
@@ -120,12 +102,13 @@ defmodule OliWeb.Products.ProductsView do
        products: products,
        total_count: total_count,
        table_model: table_model,
-       include_archived: get_boolean_param(params, "include_archived", false),
+       include_archived: Params.get_boolean_param(params, "include_archived", false),
        title: title,
        offset: 0,
-       limit: 20,
+       limit: @limit,
        query: "",
-       applied_query: "",
+       text_search: "",
+       text_search_tooltip: @text_search_tooltip,
        creation_title: "",
        ctx: ctx
      )}
@@ -135,10 +118,17 @@ defmodule OliWeb.Products.ProductsView do
     ~H"""
     <div>
       <%= if @published? do %>
-        <%= if @is_admin_view == false do %>
-          <Create.render title={@creation_title} change="title" click="create" />
+        <%= if @is_admin_view do %>
+          <TextSearch.render
+            id="text-search"
+            reset="text_search_reset"
+            change="text_search_change"
+            text={@text_search}
+            event_target={nil}
+            tooltip={@text_search_tooltip}
+          />
         <% else %>
-          <Filter.render change="change_search" reset="reset_search" apply="apply_search" />
+          <Create.render title={@creation_title} change="title" click="create" />
         <% end %>
 
         <Check.render checked={@include_archived} click="include_archived">
@@ -147,14 +137,14 @@ defmodule OliWeb.Products.ProductsView do
 
         <div class="mb-3" />
 
-        <Listing.render
-          filter={@query}
-          table_model={@table_model}
+        <PagedTable.render
+          page_change="paged_table_page_change"
+          sort="paged_table_sort"
           total_count={@total_count}
-          offset={@offset}
+          filter={@text_search}
           limit={@limit}
-          sort="sort"
-          page_change="page_change"
+          offset={@offset}
+          table_model={@table_model}
         />
       <% else %>
         <div>Products cannot be created until project is published.</div>
@@ -163,40 +153,69 @@ defmodule OliWeb.Products.ProductsView do
     """
   end
 
+  def handle_params(params, _, socket) do
+    table_model =
+      SortableTableModel.update_from_params(
+        socket.assigns.table_model,
+        params
+      )
+
+    offset = Params.get_int_param(params, "offset", 0)
+    text_search = Params.get_param(params, "text_search", "")
+    include_archived = Params.get_boolean_param(params, "include_archived", false)
+
+    products =
+      Blueprint.browse(
+        %Paging{offset: offset, limit: @limit},
+        %Sorting{direction: table_model.sort_order, field: table_model.sort_by_spec.name},
+        text_search: text_search,
+        include_archived: include_archived,
+        project_id: socket.assigns.project && socket.assigns.project.id
+      )
+
+    table_model = Map.put(table_model, :rows, products)
+
+    total_count = determine_total(products)
+
+    {:noreply,
+     assign(socket,
+       offset: offset,
+       table_model: table_model,
+       total_count: total_count,
+       text_search: text_search
+     )}
+  end
+
   def handle_event("include_archived", __params, socket) do
     project_id = if socket.assigns.project === nil, do: nil, else: socket.assigns.project.id
 
     include_archived = !socket.assigns.include_archived
 
-    options = %BlueprintBrowseOptions{
-      project_id: project_id,
-      include_archived: include_archived
-    }
-    products = Blueprint.list(options)
+    %{offset: offset, limit: limit, table_model: table_model, text_search: text_search} =
+      socket.assigns
+
+    products =
+      Blueprint.browse(
+        %Paging{offset: offset, limit: limit},
+        %Sorting{direction: table_model.sort_order, field: table_model.sort_by_spec.name},
+        text_search: text_search,
+        include_archived: include_archived,
+        project_id: project_id
+      )
 
     total_count = length(products)
 
-    {:ok, table_model} = OliWeb.Products.ProductsTableModel.new(products, socket.assigns.ctx)
+    table_model = Map.put(table_model, :rows, products)
 
-    socket = assign(socket,
-      include_archived: include_archived,
-      products: products,
-      total_count: total_count,
-      table_model: table_model
-    )
+    socket =
+      assign(socket,
+        include_archived: include_archived,
+        products: products,
+        total_count: total_count,
+        table_model: table_model
+      )
 
-    {:noreply,
-     push_patch(socket,
-       to:
-        live_path(
-          socket,
-          Map.merge(socket.assigns.params,
-          %{
-             include_archived: include_archived
-           })
-         ),
-       replace: true
-     )}
+    patch_with(socket, %{include_archived: include_archived})
   end
 
   def handle_event("title", %{"value" => title}, socket) do
@@ -230,5 +249,38 @@ defmodule OliWeb.Products.ProductsView do
     {:noreply, assign(socket, show_feature_overview: false)}
   end
 
-  use OliWeb.Common.SortableTable.TableHandlers
+  def handle_event(event, params, socket) do
+    {event, params, socket, &__MODULE__.patch_with/2}
+    |> delegate_to([
+      &TextSearch.handle_delegated/4,
+      &PagedTable.handle_delegated/4
+    ])
+  end
+
+  def patch_with(socket, changes) do
+    {:noreply,
+     push_patch(socket,
+       to:
+         live_path(
+           socket,
+           Map.merge(
+             %{
+               sort_by: socket.assigns.table_model.sort_by_spec.name,
+               sort_order: socket.assigns.table_model.sort_order,
+               offset: socket.assigns.offset,
+               text_search: socket.assigns.text_search
+             },
+             changes
+           )
+         ),
+       replace: true
+     )}
+  end
+
+  defp determine_total(products) do
+    case products do
+      [] -> 0
+      [hd | _] -> hd.total_count
+    end
+  end
 end

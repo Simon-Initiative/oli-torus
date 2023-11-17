@@ -75,6 +75,11 @@ export class ICActions {
     };
   }
 
+  static editFeedbackTextDirection(score: number, direction: 'ltr' | 'rtl') {
+    return (draftState: ImageCodingModelSchema, _post: PostUndoable) => {
+      draftState.feedback[score].textDirection = direction;
+    };
+  }
   static editFeedbackEditorType(score: number, editor: EditorType) {
     return (draftState: ImageCodingModelSchema, _post: PostUndoable) => {
       draftState.feedback[score].editor = editor;

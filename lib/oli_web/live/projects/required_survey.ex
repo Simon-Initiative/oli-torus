@@ -17,14 +17,23 @@ defmodule OliWeb.Projects.RequiredSurvey do
       <form phx-change="set-required-survey" phx-target={@myself}>
         <div class="form-check">
           <label class="form-check-label">
-            <input name="survey" class="survey_check" type="checkbox" id="survey_check" checked={@enabled}>
+            <input
+              name="survey"
+              class="survey_check"
+              type="checkbox"
+              id="survey_check"
+              checked={@enabled}
+            />
             <span>
               Require students to take a survey before starting the course
             </span>
           </label>
         </div>
         <%= if (!@is_section and @required_survey) do %>
-          <a class="torus-button primary mt-3" href={Routes.resource_path(OliWeb.Endpoint, :edit, @project.slug, @required_survey.slug)}>
+          <a
+            class="torus-button primary mt-3"
+            href={Routes.resource_path(OliWeb.Endpoint, :edit, @project.slug, @required_survey.slug)}
+          >
             Edit survey
           </a>
         <% end %>
@@ -49,7 +58,7 @@ defmodule OliWeb.Projects.RequiredSurvey do
   def handle_event("set-required-survey", params, socket) do
     %{project: project, author_id: author_id} = socket.assigns
     allow_survey = Map.has_key?(params, "survey") and String.length(params["survey"]) > 0
- 
+
     required_survey =
       if allow_survey do
         Course.create_project_survey(project, author_id)

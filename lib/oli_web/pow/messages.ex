@@ -1,8 +1,9 @@
 defmodule OliWeb.Pow.Messages do
   @moduledoc """
-  Custom module that handles returned messages by pow actions.
+  Custom module that handles returned messages by pow actions for users.
   """
   use Pow.Phoenix.Messages
+  alias Phoenix.Naming
 
   use Pow.Extension.Phoenix.Messages,
     extensions: [
@@ -37,5 +38,37 @@ defmodule OliWeb.Pow.Messages do
     else
       Messages.invalid_credentials(conn)
     end
+  end
+
+  @doc """
+  Flash message to show when user registers but e-mail is yet to be confirmed.
+  """
+  def pow_email_confirmation_email_confirmation_required(conn) do
+    email = conn.params["user"]["email"]
+
+    if email do
+      """
+      To continue, check #{email} for a confirmation email.\n
+      If you don’t receive this email, check your Spam folder or verify that #{email} is correct.\n
+      You can close this tab if you received the email.
+      """
+    else
+      PowEmailConfirmation.Phoenix.Messages.email_confirmation_required(conn)
+    end
+  end
+
+  def pow_assent_login_with_provider(conn),
+    do:
+      interpolate("Continue with %{provider}", provider: Naming.humanize(conn.params["provider"]))
+
+  defp interpolate(msg, opts) do
+    Enum.reduce(opts, msg, fn {key, value}, msg ->
+      token = "%{#{key}}"
+
+      case String.contains?(msg, token) do
+        true -> String.replace(msg, token, to_string(value), global: false)
+        false -> msg
+      end
+    end)
   end
 end

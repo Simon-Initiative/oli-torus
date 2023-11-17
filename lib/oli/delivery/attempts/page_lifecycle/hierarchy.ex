@@ -38,7 +38,8 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Hierarchy do
 
     constraining_attempt_prototypes = construct_attempt_prototypes(context)
 
-    audience_filtered_content = Oli.Delivery.Audience.filter_for_role(context.audience_role, context.page_revision.content)
+    audience_filtered_content =
+      Oli.Delivery.Audience.filter_for_role(context.audience_role, context.page_revision.content)
 
     %Result{
       errors: errors,

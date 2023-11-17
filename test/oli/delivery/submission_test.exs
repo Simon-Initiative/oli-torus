@@ -12,6 +12,8 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
   alias Oli.Delivery.Snapshots.Snapshot
   alias Oli.Delivery.Page.PageContext
   alias Oli.Delivery.Attempts.PageLifecycle.FinalizationSummary
+  alias Oli.Delivery.Sections
+  alias Lti_1p3.Tool.ContextRoles
 
   defp setup_concurrent_activity(_) do
     content = %{
@@ -96,6 +98,9 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
          } do
       datashop_session_id_user1 = UUID.uuid4()
       datashop_session_id_user2 = UUID.uuid4()
+
+      Sections.enroll(user1.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.enroll(user2.id, section.id, [ContextRoles.get_role(:context_learner)])
 
       effective_settings =
         Oli.Delivery.Settings.get_combined_settings(revision, section.id, user1.id)
@@ -410,6 +415,7 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
     } do
       activity_provider = &Oli.Delivery.ActivityProvider.provide/6
       datashop_session_id_user1 = UUID.uuid4()
+      Sections.enroll(user1.id, section.id, [ContextRoles.get_role(:context_learner)])
 
       effective_settings =
         Oli.Delivery.Settings.get_combined_settings(revision, section.id, user1.id)
@@ -464,6 +470,7 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
     } do
       activity_provider = &Oli.Delivery.ActivityProvider.provide/6
       datashop_session_id_user1 = UUID.uuid4()
+      Sections.enroll(user1.id, section.id, [ContextRoles.get_role(:context_learner)])
 
       effective_settings =
         Oli.Delivery.Settings.get_combined_settings(revision, section.id, user1.id)
@@ -514,6 +521,8 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
       datashop_session_id_user1 = UUID.uuid4()
       datashop_session_id_user2 = UUID.uuid4()
 
+      Sections.enroll(user1.id, section.id, [ContextRoles.get_role(:context_learner)])
+
       effective_settings =
         Oli.Delivery.Settings.get_combined_settings(revision, section.id, user1.id)
 
@@ -555,6 +564,8 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
           effective_settings,
           activity_provider
         )
+
+      Sections.enroll(user2.id, section.id, [ContextRoles.get_role(:context_learner)])
 
       # User 2
       {:ok, {:in_progress, resource_attempt_user2}} =

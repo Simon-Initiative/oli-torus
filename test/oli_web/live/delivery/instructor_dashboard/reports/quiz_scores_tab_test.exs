@@ -200,4 +200,166 @@ defmodule OliWeb.Delivery.InstructorDashboard.QuizScoreTabTest do
              )
     end
   end
+
+  describe "page size change" do
+    setup [:instructor_conn, :section_with_gating_conditions]
+
+    test "lists table elements according to the default page size", %{
+      conn: conn,
+      instructor: instructor,
+      section: section,
+      student_with_gating_condition: student_1,
+      student_with_gating_condition_2: student_2
+    } do
+      student_3 = insert(:user, %{family_name: "Lee", given_name: "Bob"})
+      student_4 = insert(:user, %{family_name: "Smith", given_name: "Adam"})
+      student_5 = insert(:user, %{family_name: "Zisk", given_name: "Tom"})
+      Sections.enroll(student_3.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.enroll(student_4.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.enroll(student_5.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
+
+      {:ok, view, _html} = live(conn, live_view_quiz_scores_route(section.slug))
+
+      assert has_element?(
+               view,
+               "table.instructor_dashboard_table > tbody > tr:nth-child(1)",
+               student_1.family_name
+             )
+
+      assert has_element?(
+               view,
+               "table.instructor_dashboard_table > tbody > tr:nth-child(2)",
+               student_2.family_name
+             )
+
+      assert has_element?(
+               view,
+               "table.instructor_dashboard_table > tbody > tr:nth-child(3)",
+               student_3.family_name
+             )
+
+      assert has_element?(
+               view,
+               "table.instructor_dashboard_table > tbody > tr:nth-child(4)",
+               student_4.family_name
+             )
+
+      assert has_element?(
+               view,
+               "table.instructor_dashboard_table > tbody > tr:nth-child(5)",
+               student_5.family_name
+             )
+
+      # It does not display pagination options
+      refute has_element?(view, "nav[aria-label=\"Paging\"]")
+
+      # It displays page size dropdown
+      assert has_element?(view, "form select.torus-select option[selected]", "20")
+    end
+
+    test "updates page size and list expected elements", %{
+      conn: conn,
+      instructor: instructor,
+      section: section,
+      student_with_gating_condition: student_1,
+      student_with_gating_condition_2: student_2
+    } do
+      student_3 = insert(:user, %{family_name: "Lee", given_name: "Bob"})
+      student_4 = insert(:user, %{family_name: "Smith", given_name: "Adam"})
+      student_5 = insert(:user, %{family_name: "Zisk", given_name: "Tom"})
+      Sections.enroll(student_3.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.enroll(student_4.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.enroll(student_5.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
+
+      {:ok, view, _html} = live(conn, live_view_quiz_scores_route(section.slug))
+
+      # Change page size from default (20) to 2
+      view
+      |> element("#header_paging_page_size_form")
+      |> render_change(%{limit: "2"})
+
+      # Page 1
+      assert has_element?(
+               view,
+               "table.instructor_dashboard_table > tbody > tr:nth-child(1)",
+               student_1.family_name
+             )
+
+      assert has_element?(
+               view,
+               "table.instructor_dashboard_table > tbody > tr:nth-child(2)",
+               student_2.family_name
+             )
+
+      # Page 2
+      refute has_element?(
+               view,
+               "table.instructor_dashboard_table > tbody > tr:nth-child(3)",
+               student_3.family_name
+             )
+
+      refute has_element?(
+               view,
+               "table.instructor_dashboard_table > tbody > tr:nth-child(4)",
+               student_4.family_name
+             )
+
+      # Page 3
+      refute has_element?(
+               view,
+               "table.instructor_dashboard_table > tbody > tr:nth-child(5)",
+               student_5.family_name
+             )
+    end
+
+    test "keeps showing the same elements when changing the page size", %{
+      conn: conn,
+      instructor: instructor,
+      section: section
+    } do
+      student_3 = insert(:user, %{family_name: "Lee", given_name: "Bob"})
+      student_4 = insert(:user, %{family_name: "Smith", given_name: "Adam"})
+      student_5 = insert(:user, %{family_name: "Zisk", given_name: "Tom"})
+      Sections.enroll(student_3.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.enroll(student_4.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.enroll(student_5.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
+
+      {:ok, view, _html} =
+        live(
+          conn,
+          live_view_quiz_scores_route(section.slug, %{
+            limit: 2,
+            offset: 2
+          })
+        )
+
+      # Page 2
+      assert has_element?(
+               view,
+               "table.instructor_dashboard_table > tbody > tr:nth-child(1)",
+               student_3.family_name
+             )
+
+      assert has_element?(
+               view,
+               "table.instructor_dashboard_table > tbody > tr:nth-child(2)",
+               student_4.family_name
+             )
+
+      # Change page size from 2 to 1
+      view
+      |> element("#header_paging_page_size_form")
+      |> render_change(%{limit: "1"})
+
+      # Page 3. It keeps showing the same element.
+      assert has_element?(
+               view,
+               "table.instructor_dashboard_table > tbody > tr:nth-child(1)",
+               student_3.family_name
+             )
+    end
+  end
 end

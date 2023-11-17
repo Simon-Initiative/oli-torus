@@ -119,7 +119,7 @@ defmodule Oli.Lti.LtiParams do
     |> Repo.all()
   end
 
-  def peek_client_id(%{"aud" => [client_id|_]}), do: client_id
+  def peek_client_id(%{"aud" => [client_id | _]}), do: client_id
   def peek_client_id(%{"aud" => client_id}), do: client_id
   def peek_client_id(_), do: nil
 end

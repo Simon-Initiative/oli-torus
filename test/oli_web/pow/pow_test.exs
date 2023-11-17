@@ -13,6 +13,7 @@ defmodule OliWeb.Common.PowTest do
 
   @user_form_attrs %{
     email: @user_email,
+    email_confirmation: @user_email,
     given_name: "me",
     family_name: "too",
     password: "passingby",
@@ -55,10 +56,10 @@ defmodule OliWeb.Common.PowTest do
 
       response = html_response(conn, 200)
 
-      assert response =~ "Sign in with Google"
+      assert response =~ "Continue with Google"
       assert response =~ "div class=\"google-auth-container\""
 
-      assert response =~ "Sign in with Github"
+      assert response =~ "Continue with Github"
       assert response =~ "div class=\"github-auth-container\""
     end
   end
@@ -75,6 +76,38 @@ defmodule OliWeb.Common.PowTest do
 
       assert html_response(conn, 200) =~
                "This sign in page is for <b>Independent Learner and Educator</b> accounts."
+
+      # sign user in
+      conn =
+        recycle(conn)
+        |> post(Routes.pow_session_path(conn, :create),
+          user: %{email: user.email, password: "password123"}
+        )
+
+      assert html_response(conn, 302) =~
+               ~p"/sections"
+
+      # user who is already signed in should be automatically redirected away from sign in page
+      conn =
+        recycle_user_session(conn, user)
+        |> get(Routes.pow_session_path(conn, :new))
+
+      assert html_response(conn, 302) =~
+               ~p"/sections"
+    end
+
+    test "hides authoring sign in box when coming from an invitation link", %{
+      conn: conn,
+      user: user
+    } do
+      conn =
+        conn
+        |> get(Routes.pow_session_path(conn, :new, from_invitation_link?: true))
+
+      assert html_response(conn, 200) =~ "Learner/Educator Sign In"
+
+      refute html_response(conn, 200) =~
+               "Looking for Authoring or your LMS?"
 
       # sign user in
       conn =
@@ -133,10 +166,10 @@ defmodule OliWeb.Common.PowTest do
 
       response = html_response(conn, 200)
 
-      assert response =~ "Sign in with Google"
+      assert response =~ "Continue with Google"
       assert response =~ "div class=\"google-auth-container\""
 
-      assert response =~ "Sign in with Github"
+      assert response =~ "Continue with Github"
       assert response =~ "div class=\"github-auth-container\""
     end
   end
@@ -168,6 +201,32 @@ defmodule OliWeb.Common.PowTest do
       refute Accounts.get_user_by(%{email: @user_email})
     end
 
+    test "returns error when email confirmation does not match email", %{conn: conn} do
+      expect_recaptcha_http_post()
+
+      attr =
+        @user_form_attrs
+        |> Map.put(:email_confirmation, "email_with_typo@test.com")
+        |> Map.put(:age_verified, true)
+
+      conn =
+        post(
+          conn,
+          Routes.pow_registration_path(conn, :create),
+          %{
+            user: attr,
+            "g-recaptcha-response": "any"
+          }
+        )
+
+      assert html_response(conn, 200) =~ "Create a Learner/Educator Account"
+
+      assert html_response(conn, 200) =~
+               "Email confirmation does not match Email"
+
+      refute Accounts.get_user_by(%{email: @user_email})
+    end
+
     test "creates the user when age verification is checked", %{conn: conn} do
       expect_recaptcha_http_post()
 
@@ -190,6 +249,29 @@ defmodule OliWeb.Common.PowTest do
                Accounts.get_user_by(%{email: @user_email})
     end
 
+    test "an email confirmation flash message is set when account is created", %{conn: conn} do
+      expect_recaptcha_http_post()
+
+      conn =
+        post(
+          conn,
+          Routes.pow_registration_path(conn, :create),
+          %{
+            user:
+              Map.merge(@user_form_attrs, %{
+                age_verified: "true"
+              }),
+            "g-recaptcha-response": "any"
+          }
+        )
+
+      assert conn.assigns.flash["info"] ==
+               "To continue, check #{@user_email} for a confirmation email.\n\nIf you don’t receive this email, check your Spam folder or verify that testing@example.edu is correct.\n\nYou can close this tab if you received the email.\n"
+
+      assert %User{email: @user_email, email_confirmed_at: nil} =
+               Accounts.get_user_by(%{email: @user_email})
+    end
+
     test "shows auth providers sign in buttons", %{conn: conn} do
       conn =
         conn
@@ -197,10 +279,10 @@ defmodule OliWeb.Common.PowTest do
 
       response = html_response(conn, 200)
 
-      assert response =~ "Sign in with Google"
+      assert response =~ "Continue with Google"
       assert response =~ "div class=\"google-auth-container\""
 
-      assert response =~ "Sign in with Github"
+      assert response =~ "Continue with Github"
       assert response =~ "div class=\"github-auth-container\""
     end
   end
@@ -266,10 +348,10 @@ defmodule OliWeb.Common.PowTest do
 
       response = html_response(conn, 200)
 
-      assert response =~ "Sign in with Google"
+      assert response =~ "Continue with Google"
       assert response =~ "div class=\"google-auth-container\""
-
-      assert response =~ "Sign in with Github"
+      assert Monocle.we_see_exactly(response, 1, attribute: "or")
+      assert response =~ "Continue with Github"
       assert response =~ "div class=\"github-auth-container\""
     end
   end
@@ -286,8 +368,8 @@ defmodule OliWeb.Common.PowTest do
 
       response = html_response(conn, 200)
 
-      refute response =~ "Sign in with Google"
-      refute response =~ "Sign in with Github"
+      refute response =~ "Continue with Google"
+      refute response =~ "Continue with Github"
     end
   end
 

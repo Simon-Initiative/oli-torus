@@ -1,12 +1,22 @@
 # Changelog
 
-## 0.25.1 (Unreleased)
+## 0.26.0 (Unreleased)
 
 ### Enhancements
 
 ### Bug Fixes
 
+## 0.25.1 (2023-10-13)
+
+### Bug Fixes
+
 - Fix an issue where admin attempting to create a new institution when an existing registration with the same issuer and client_id fails
+
+### Environment
+
+#### Infrastructure Changes
+
+- [ ] Update deployment migration scripts to use `Oli.Release.migrate_and_seed` instead of `Oli.ReleaseTasks.migrate_and_seed`
 
 ## 0.25.0 (2023-10-5)
 
@@ -56,11 +66,13 @@
 
 ### Bug Fixes
 
-- Scientific notation in single response range question handling
+- Corrects evaluation of student input with scientific notation that does not include a decimal point (e.g. 1e-9)
+- Fixes a bug where customized assessment settings can revert when new publications apply an update to that graded page
 
 ### Enhancements
 
 - Allow configuration of HTTP/HTTPS cowboy protocol options
+- Expose settings related to configuring at runtime sizes and constraints on HTTP server header contents
 
 ### Environment Configs
 

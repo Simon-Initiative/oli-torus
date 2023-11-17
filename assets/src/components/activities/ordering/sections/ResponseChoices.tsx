@@ -34,6 +34,7 @@ export const ResponseChoices: React.FC<Props> = ({
               <Draggable.DragIndicator isDragDisabled={disabled ?? false} />
               <div style={{ marginRight: '0.5rem' }}>{index + 1}.</div>
               <HtmlContentModelRenderer
+                direction={choice.textDirection}
                 content={choice.content}
                 context={defaultWriterContext({ projectSlug: projectSlug })}
               />

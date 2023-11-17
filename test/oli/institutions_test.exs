@@ -186,6 +186,27 @@ defmodule Oli.InstitutionsTest do
       assert registration.line_items_service_domain == "some updated line_items_service_domain"
     end
 
+    test "update_registration/2 with non-normalized data removes extra whitespaces and updates the registration",
+         %{
+           registration: registration
+         } do
+      non_normalized_attrs =
+        @update_attrs
+        |> Enum.map(fn {k, v} -> {k, "  #{v}  "} end)
+        |> Enum.into(%{})
+
+      assert {:ok, %Registration{} = registration} =
+               Institutions.update_registration(registration, non_normalized_attrs)
+
+      assert registration.auth_login_url == "some updated auth_login_url"
+      assert registration.auth_server == "some updated auth_server"
+      assert registration.auth_token_url == "some updated auth_token_url"
+      assert registration.client_id == "some updated client_id"
+      assert registration.issuer == "some updated issuer"
+      assert registration.key_set_url == "some updated key_set_url"
+      assert registration.line_items_service_domain == "some updated line_items_service_domain"
+    end
+
     test "update_registration/2 with invalid data returns error changeset", %{
       registration: registration
     } do

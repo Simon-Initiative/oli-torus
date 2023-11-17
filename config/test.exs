@@ -73,7 +73,7 @@ config :oli, Oli.Publishing, refresh_adapter: Oli.Publishing.PartMappingRefreshS
 config :oli, :lti_access_token_provider, provider: Oli.Lti.AccessTokenTest
 
 # Print only warnings and errors during test
-config :logger, level: :warn
+config :logger, level: :warning
 
 truncate =
   System.get_env("LOGGER_TRUNCATE", "8192")

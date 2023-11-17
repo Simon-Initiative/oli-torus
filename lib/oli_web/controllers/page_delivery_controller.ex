@@ -85,7 +85,11 @@ defmodule OliWeb.PageDeliveryController do
               progress: learner_progress(section.id, user.id),
               next_activities: next_activities,
               independent_learner: user.independent_learner,
-              current_user_id: user.id
+              current_user_id: user.id,
+              latest_visited_page: Sections.get_latest_visited_page(section_slug, user.id),
+              scheduled_dates:
+                Sections.get_resources_scheduled_dates_for_student(section_slug, user.id),
+              context: context
             )
           end
       end
@@ -122,6 +126,40 @@ defmodule OliWeb.PageDeliveryController do
 
         section ->
           render(conn, "exploration.html",
+            title: section.title,
+            description: section.description,
+            section_slug: section_slug,
+            hierarchy: Sections.build_hierarchy(section),
+            display_curriculum_item_numbering: section.display_curriculum_item_numbering,
+            preview_mode: false,
+            page_link_url: &Routes.page_delivery_path(conn, :page, section_slug, &1),
+            container_link_url: &Routes.page_delivery_path(conn, :container, section_slug, &1)
+          )
+      end
+    else
+      case section do
+        %Section{open_and_free: true, requires_enrollment: false} ->
+          conn
+          |> redirect(to: Routes.delivery_path(conn, :show_enroll, section_slug))
+
+        _ ->
+          render(conn, "not_authorized.html")
+      end
+    end
+  end
+
+  def deliberate_practice(conn, %{"section_slug" => section_slug}) do
+    user = conn.assigns.current_user
+    section = conn.assigns.section
+
+    if Sections.is_enrolled?(user.id, section_slug) do
+      case section
+           |> Oli.Repo.preload([:base_project, :root_section_resource]) do
+        nil ->
+          render(conn, "error.html")
+
+        section ->
+          render(conn, "deliberate_practice.html",
             title: section.title,
             description: section.description,
             section_slug: section_slug,
@@ -396,7 +434,7 @@ defmodule OliWeb.PageDeliveryController do
     resource_attempts =
       Enum.filter(resource_attempts, fn r -> r.date_submitted != nil end)
       |> Enum.sort(fn r1, r2 ->
-        r1.date_submitted <= r2.date_submitted
+        DateTime.before?(r1.date_submitted, r2.date_submitted)
       end)
 
     {:ok, {previous, next, current}, _} = PreviousNextIndex.retrieve(section, page.resource_id)
@@ -560,7 +598,17 @@ defmodule OliWeb.PageDeliveryController do
     }
 
     this_attempt = context.resource_attempts |> hd
-    html = render_content_html(render_context, this_attempt.content, context.page.slug)
+
+    attempt_content =
+      if Enum.any?(this_attempt.errors, fn e ->
+           e == "Selection failed to fulfill: no values provided for expression"
+         end) and context.is_student do
+        %{"model" => []}
+      else
+        this_attempt.content
+      end
+
+    html = render_content_html(render_context, attempt_content, context.page.slug)
     conn = put_root_layout(conn, {OliWeb.LayoutView, "page.html"})
 
     all_activities = Activities.list_activity_registrations()
@@ -771,7 +819,11 @@ defmodule OliWeb.PageDeliveryController do
       revision_slug: revision.slug,
       is_instructor: false,
       is_student: false,
-      current_user_id: current_user.id
+      current_user_id: current_user.id,
+      latest_visited_page: Sections.get_latest_visited_page(section_slug, current_user.id),
+      scheduled_dates:
+        Sections.get_resources_scheduled_dates_for_student(section_slug, current_user.id),
+      context: conn.assigns[:ctx]
     )
   end
 
@@ -781,6 +833,23 @@ defmodule OliWeb.PageDeliveryController do
       |> Oli.Repo.preload([:base_project, :root_section_resource])
 
     render(conn, "exploration.html",
+      title: section.title,
+      description: section.description,
+      section_slug: section_slug,
+      hierarchy: Sections.build_hierarchy(section),
+      display_curriculum_item_numbering: section.display_curriculum_item_numbering,
+      preview_mode: true,
+      page_link_url: &Routes.page_delivery_path(conn, :page, section_slug, &1),
+      container_link_url: &Routes.page_delivery_path(conn, :container, section_slug, &1)
+    )
+  end
+
+  def deliberate_practice_preview(conn, %{"section_slug" => section_slug}) do
+    section =
+      conn.assigns.section
+      |> Oli.Repo.preload([:base_project, :root_section_resource])
+
+    render(conn, "deliberate_practice.html",
       title: section.title,
       description: section.description,
       section_slug: section_slug,

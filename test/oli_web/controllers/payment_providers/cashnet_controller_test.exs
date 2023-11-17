@@ -188,6 +188,5 @@ defmodule OliWeb.PaymentProviders.CashnetControllerTest do
       assert finalized.provider_type == :cashnet
       assert finalized.provider_id == payment_ref
     end
-
   end
 end

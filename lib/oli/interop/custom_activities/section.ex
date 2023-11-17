@@ -1,13 +1,10 @@
 defmodule Oli.Interop.CustomActivities.Section do
-
   import XmlBuilder
   alias Oli.Interop.CustomActivities.{Instructors}
 
-  def setup(
-        %{
-          context: context
-        }
-      ) do
+  def setup(%{
+        context: context
+      }) do
     element(
       :section,
       %{
@@ -19,20 +16,19 @@ defmodule Oli.Interop.CustomActivities.Section do
         end_date: context.section.end_date,
         guest_section: context.section.open_and_free,
         guid: context.section.id,
-        institution: case context.section.institution do
-          nil -> "none"
-          _ -> context.section.institution.name
-        end,
+        institution:
+          case context.section.institution do
+            nil -> "none"
+            _ -> context.section.institution.name
+          end,
         registration_closed: context.section.registration_open,
         start_date: context.section.start_date,
         title: context.section.title
       },
       [
-        Instructors.setup(
-          %{
-            context: context
-          }
-        )
+        Instructors.setup(%{
+          context: context
+        })
       ]
     )
   end

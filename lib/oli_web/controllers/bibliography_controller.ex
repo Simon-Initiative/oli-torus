@@ -26,5 +26,4 @@ defmodule OliWeb.BibliographyController do
         OliWeb.ResourceController.render_not_found(conn, project_slug)
     end
   end
-
 end
