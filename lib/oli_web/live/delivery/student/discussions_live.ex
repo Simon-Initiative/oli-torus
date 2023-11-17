@@ -25,7 +25,27 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
         end
       end)
 
-    {:ok, assign(socket, posts: posts)}
+    {:ok, assign(socket, posts: posts, expanded_posts: %{})}
+  end
+
+  def handle_event("expand_post", %{"post_id" => post_id}, socket) do
+    post_replies =
+      Collaboration.list_replies_for_post(
+        socket.assigns.current_user.id,
+        post_id
+      )
+
+    updated_expanded_posts =
+      Map.merge(
+        socket.assigns.expanded_posts,
+        Enum.into([{String.to_integer(post_id), post_replies}], %{})
+      )
+
+    {:noreply, assign(socket, expanded_posts: updated_expanded_posts)}
+  end
+
+  def handle_event("collapse_post", %{"post_id" => post_id}, socket) do
+    {:noreply, update(socket, :expanded_posts, &Map.drop(&1, [String.to_integer(post_id)]))}
   end
 
   # TODO add real bg-image for header and svg icons for:
@@ -53,7 +73,12 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
         </h1>
       </div>
       <div id="disussions_content" class="flex flex-col p-6 gap-6 items-start">
-        <.posts_section posts={@posts} ctx={@ctx} section_slug={@section.slug} />
+        <.posts_section
+          posts={@posts}
+          ctx={@ctx}
+          section_slug={@section.slug}
+          expanded_posts={@expanded_posts}
+        />
       </div>
     </.header_with_sidebar_nav>
     """
@@ -62,6 +87,7 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
   attr :posts, :list
   attr :ctx, :map
   attr :section_slug, :string
+  attr :expanded_posts, :map
 
   defp posts_section(assigns) do
     ~H"""
@@ -141,7 +167,18 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
         role="posts list"
         class="rounded-xl w-full bg-white shadow-md dark:bg-[rgba(255,255,255,0.06)] divide-y-[1px] divide-gray-200 dark:divide-white/20"
       >
-        <.course_post :for={post <- @posts.course_posts} post={post} ctx={@ctx} />
+        <%= for post <- @posts.course_posts do %>
+          <div class="p-6">
+            <.course_post
+              post={post}
+              ctx={@ctx}
+              is_expanded={post.id in Map.keys(@expanded_posts)}
+              is_reply={false}
+              replies={Map.get(@expanded_posts, post.id, [])}
+              expanded_posts={@expanded_posts}
+            />
+          </div>
+        <% end %>
         <.page_post
           :for={post <- @posts.page_posts}
           post={post}
@@ -159,10 +196,21 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
 
   attr :post, :map
   attr :ctx, :map
+  attr :is_expanded, :boolean, default: false
+  attr :replies, :list
+  attr :is_reply, :boolean
+  attr :expanded_posts, :map
 
   defp course_post(assigns) do
     ~H"""
-    <div role="post-1" class="flex flex-col gap-6 p-6">
+    <div
+      role="course post"
+      id={"post-#{@post.id}"}
+      class={[
+        "flex flex-col gap-6",
+        if(@is_reply, do: "border-l-8 border-gray-100 dark:border-gray-900/60 pl-3 pt-2")
+      ]}
+    >
       <div role="post header" class="flex items-center gap-2">
         <.avatar user_name={@post.user_name} />
         <div class="flex flex-col items-start gap-[1px]">
@@ -179,11 +227,11 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
         </div>
       </div>
       <div role="post content" class="w-full">
-        <p class="truncate text-[18px] leading-[25px] dark:text-white">
+        <p class={["text-[18px] leading-[25px] dark:text-white", if(!@is_expanded, do: "truncate")]}>
           <%= @post.content.message %>
         </p>
       </div>
-      <div role="post footer" class="flex justify-between items-center">
+      <div :if={!@is_expanded} role="post footer" class="flex justify-between items-center">
         <div role="reply details" class="flex gap-6 items-center">
           <div class="ml-[10px] flex items-center">
             <div class="relative h-8 w-8 flex items-center">
@@ -213,8 +261,36 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
             </span>
           </div>
         </div>
-        <button class="text-[14px] leading-[20px] text-[#468AEF] hover:text-[#468AEF]/70">
+        <button
+          :if={!@is_expanded}
+          phx-click="expand_post"
+          phx-value-post_id={@post.id}
+          class="text-[14px] leading-[20px] text-[#468AEF] hover:text-[#468AEF]/70"
+        >
           Open
+        </button>
+      </div>
+      <div :if={@is_expanded} role="post replies" class="flex flex-col">
+        <%= for reply <- @replies do %>
+          <div class="pl-6 pb-6">
+            <.course_post
+              post={reply}
+              ctx={@ctx}
+              is_expanded={reply.id in Map.keys(@expanded_posts)}
+              is_reply={true}
+              replies={Map.get(@expanded_posts, reply.id, [])}
+              expanded_posts={@expanded_posts}
+            />
+          </div>
+        <% end %>
+        <input type="text" placeholder="Write a response..." />
+        <button
+          :if={@is_expanded}
+          phx-click="collapse_post"
+          phx-value-post_id={@post.id}
+          class="mt-6 ml-auto text-[14px] leading-[20px] text-[#468AEF] hover:text-[#468AEF]/70"
+        >
+          Close Discussion
         </button>
       </div>
     </div>

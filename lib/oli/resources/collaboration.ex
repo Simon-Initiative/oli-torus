@@ -514,6 +514,40 @@ defmodule Oli.Resources.Collaboration do
     |> build_metrics_for_posts()
   end
 
+  def list_replies_for_post(user_id, post_id) do
+    Repo.all(
+      from(
+        post in Post,
+        join: sr in SectionResource,
+        on: sr.resource_id == post.resource_id and sr.section_id == post.section_id,
+        join: spp in SectionsProjectsPublications,
+        on: spp.section_id == post.section_id and spp.project_id == sr.project_id,
+        join: pr in PublishedResource,
+        on: pr.publication_id == spp.publication_id and pr.resource_id == post.resource_id,
+        join: rev in Revision,
+        on: rev.id == pr.revision_id,
+        join: user in User,
+        on: post.user_id == user.id,
+        where:
+          post.parent_post_id == ^post_id and
+            (post.status in [:approved, :archived] or
+               (post.status == :submitted and post.user_id == ^user_id)),
+        select: %{
+          id: post.id,
+          content: post.content,
+          user_name: user.name,
+          posted_anonymously: post.anonymous,
+          title: rev.title,
+          slug: rev.slug,
+          resource_type_id: rev.resource_type_id,
+          updated_at: post.updated_at
+        },
+        order_by: [desc: :updated_at]
+      )
+    )
+    |> build_metrics_for_posts()
+  end
+
   defp build_metrics_for_posts(posts) do
     post_ids = Enum.map(posts, &Map.get(&1, :id))
 
