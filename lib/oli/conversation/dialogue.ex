@@ -3,7 +3,7 @@ defmodule Oli.Conversation.Dialogue do
   alias Oli.Conversation.Message
   alias Oli.Conversation.Functions
   import Oli.Conversation.Common
-  alias Oli.Converstation.Model
+  alias Oli.Conversation.Model
 
   defstruct [
     :model,
@@ -23,7 +23,7 @@ defmodule Oli.Conversation.Dialogue do
     system_message = Message.new(:system, system_message)
 
     %__MODULE__{
-      model: model,
+      model: Oli.Conversation.Model.model(model),
       rendered_messages: [],
       messages: [system_message],
       response_handler_fn: response_handler_fn,
