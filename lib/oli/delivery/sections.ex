@@ -19,6 +19,7 @@ defmodule Oli.Delivery.Sections do
   alias Oli.Publishing
   alias Oli.Publishing.Publications.Publication
   alias Oli.Delivery.Paywall.Payment
+  alias Oli.Delivery.Sections.ContainedObjective
   alias Oli.Delivery.Sections.SectionsProjectsPublications
   alias Oli.Resources.Numbering
   alias Oli.Authoring.Course.{Project, ProjectAttributes}
