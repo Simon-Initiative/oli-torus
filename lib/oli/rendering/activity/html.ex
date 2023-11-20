@@ -51,7 +51,7 @@ defmodule Oli.Rendering.Activity.Html do
            mode: mode,
            section_slug: section_slug,
            resource_attempt: resource_attempt,
-           bib_app_params: bib_app_params,
+           bib_app_params: bib_app_params
          } = context,
          %ActivitySummary{
            authoring_element: authoring_element,

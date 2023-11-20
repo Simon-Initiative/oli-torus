@@ -39,7 +39,7 @@ defmodule OliWeb.Api.DirectedDiscussionController do
         PubSub.broadcast(
           Oli.PubSub,
           topic_name(section_slug, resource_id),
-          {:post_created, Repo.preload(post, :user), current_user.id }
+          {:post_created, Repo.preload(post, :user), current_user.id}
         )
 
         json(conn, %{
@@ -117,6 +117,4 @@ defmodule OliWeb.Api.DirectedDiscussionController do
       "current_user" => current_user.id
     })
   end
-
-
 end

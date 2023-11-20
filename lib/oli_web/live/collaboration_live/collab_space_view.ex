@@ -298,7 +298,6 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
       {:ok, %PostSchema{} = post} ->
         socket = put_flash(socket, :info, "Post successfully created")
 
-
         PubSub.broadcast(
           Oli.PubSub,
           socket.assigns.topic,
