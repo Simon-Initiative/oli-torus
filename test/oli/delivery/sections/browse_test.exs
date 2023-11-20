@@ -143,7 +143,7 @@ defmodule Oli.Delivery.Sections.BrowseTest do
       assert hd(results).title == "zzz ;:-|'<$p#(!*) characters"
     end
 
-    test "filtering", %{second: second, sections: sections} do
+    test "filtering", %{second: second, sections: sections, project: project} do
       # by institution
       results = browse(0, :title, :asc, Map.merge(@default_opts, %{institution_id: second.id}))
       assert length(results) == 3
@@ -184,6 +184,11 @@ defmodule Oli.Delivery.Sections.BrowseTest do
 
       assert length(results) == 1
       assert hd(results).total_count == 1
+
+      # by project
+      results = browse(0, :title, :asc, Map.merge(@default_opts, %{project_id: project.id}))
+      assert length(results) == 3
+      assert hd(results).total_count == 30
     end
   end
 

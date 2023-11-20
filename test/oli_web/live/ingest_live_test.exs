@@ -19,22 +19,6 @@ defmodule OliWeb.IngestLiveTest do
     zip_tmp_filepath
   end
 
-  defp upload_file(file_name, conn) do
-    path = simulate_open_zip("./test/support/digests/#{file_name}")
-
-    file_upload = %{
-      "digest" => %Plug.Upload{
-        content_type: "application/zip",
-        filename: file_name,
-        path: path
-      }
-    }
-
-    post(conn, Routes.ingest_path(conn, :upload), %{
-      upload: file_upload
-    })
-  end
-
   describe "user cannot access when is not logged in" do
     test "redirects to new session when accessing the ingest project view", %{
       conn: conn

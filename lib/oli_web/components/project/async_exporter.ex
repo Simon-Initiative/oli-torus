@@ -152,7 +152,13 @@ defmodule OliWeb.Components.Project.AsyncExporter do
     ~H"""
     <button
       id={@id}
-      class={"bg-#{@color}-500 hover:bg-#{@color}-600 text-white py-2 px-4 rounded disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-#{@color}-500"}
+      class={[
+        "text-white py-2 px-4 rounded disabled:opacity-50 disabled:cursor-not-allowed",
+        if(@color == "blue",
+          do: "bg-blue-500 hover:bg-blue-600  disabled:hover:bg-blue-500",
+          else: "bg-red-500 hover:bg-red-600  disabled:hover:bg-red-500"
+        )
+      ]}
       phx-click={@on_datashop_action}
       disabled={@disabled}
     >

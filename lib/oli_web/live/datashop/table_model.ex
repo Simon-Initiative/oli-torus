@@ -85,7 +85,7 @@ defmodule OliWeb.Datashop.SectionsTableModel do
     ~H"""
     <div class="form-check flex justify-center items-center">
       <input
-        id="id"
+        id={"select-section-#{@section.id}"}
         type="checkbox"
         class="form-check-input hover:cursor-pointer"
         checked={@checked}
