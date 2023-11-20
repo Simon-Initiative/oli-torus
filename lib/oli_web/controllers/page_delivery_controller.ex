@@ -1346,14 +1346,7 @@ defmodule OliWeb.PageDeliveryController do
           case get_req_header(conn, "referer") do
             [] ->
               conn
-              |> redirect(
-                to:
-                  Routes.page_delivery_path(
-                    OliWeb.Endpoint,
-                    :index,
-                    section_slug
-                  )
-              )
+              |> redirect(to: ~p"/sections/#{section_slug}")
 
             [origin_url] ->
               conn |> put_flash(:error, "Invalid page index") |> redirect(external: origin_url)

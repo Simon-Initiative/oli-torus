@@ -140,7 +140,7 @@ defmodule OliWeb.Components.Delivery.UserAccount do
       Create account or sign in
     </.menu_item_link>
     <.menu_item_link href={signout_path(@ctx)}>
-      <%= if @ctx.user.is_guest, do: "Leave course", else: "Sign out" %>
+      <%= if @ctx.user.guest, do: "Leave course", else: "Sign out" %>
     </.menu_item_link>
     """
   end

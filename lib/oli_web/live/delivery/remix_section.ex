@@ -37,6 +37,9 @@ defmodule OliWeb.Delivery.RemixSection do
   defp redirect_after_save(:instructor, %Section{slug: slug}),
     do: ~p"/sections/#{slug}/remix"
 
+  defp redirect_after_save(:instructor, %Section{slug: slug}, _socket),
+    do: ~p"/sections/#{slug}/manage"
+
   defp redirect_after_save(:product_creator, %Section{slug: slug}, socket),
     do: Routes.live_path(socket, OliWeb.Products.DetailsView, slug)
 
