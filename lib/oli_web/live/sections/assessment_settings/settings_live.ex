@@ -124,28 +124,30 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLive do
         </ul>
         <div class="ml-auto"><.flash_message flash={@flash} /></div>
       </div>
-      <%= if @active_tab == :settings do %>
-        <.live_component
-          id="assessment_settings_table"
-          module={OliWeb.Sections.AssessmentSettings.SettingsTable}
-          assessments={@assessments}
-          params={@params}
-          section={@section}
-          ctx={@ctx}
-          update_sort_order={@update_sort_order}
-        />
-      <% else %>
-        <.live_component
-          id="student_exeptions_table"
-          module={OliWeb.Sections.AssessmentSettings.StudentExceptionsTable}
-          student_exceptions={@student_exceptions}
-          students={@students}
-          assessments={@assessments}
-          params={@params}
-          section={@section}
-          ctx={@ctx}
-        />
-      <% end %>
+      <div class="mb-5">
+        <%= if @active_tab == :settings do %>
+          <.live_component
+            id="assessment_settings_table"
+            module={OliWeb.Sections.AssessmentSettings.SettingsTable}
+            assessments={@assessments}
+            params={@params}
+            section={@section}
+            ctx={@ctx}
+            update_sort_order={@update_sort_order}
+          />
+        <% else %>
+          <.live_component
+            id="student_exeptions_table"
+            module={OliWeb.Sections.AssessmentSettings.StudentExceptionsTable}
+            student_exceptions={@student_exceptions}
+            students={@students}
+            assessments={@assessments}
+            params={@params}
+            section={@section}
+            ctx={@ctx}
+          />
+        <% end %>
+      </div>
     </div>
     """
   end

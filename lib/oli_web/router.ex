@@ -957,13 +957,13 @@ defmodule OliWeb.Router do
     scope "/preview" do
       live_session :delivery_preview,
         root_layout: {OliWeb.LayoutView, :delivery},
+        layout: {OliWeb.Layouts, :student_delivery},
         on_mount: [
           OliWeb.LiveSessionPlugs.SetSection,
           OliWeb.LiveSessionPlugs.SetUser,
           OliWeb.LiveSessionPlugs.SetBrand,
           OliWeb.LiveSessionPlugs.SetPreviewMode,
-          OliWeb.LiveSessionPlugs.RequireEnrollment,
-          OliWeb.Delivery.Student.InitialAssigns
+          OliWeb.LiveSessionPlugs.RequireEnrollment
         ] do
         live("/", Delivery.Student.IndexLive, :preview)
         live("/content", Delivery.Student.ContentLive, :preview)
