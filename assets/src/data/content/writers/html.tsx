@@ -246,9 +246,6 @@ export class HtmlParser implements WriterImpl {
   formula(ctx: WriterContext, next: Next, element: FormulaBlock | FormulaInline) {
     const forceBlockRendering =
       element.legacyBlockRendered !== undefined && element.legacyBlockRendered;
-    console.log(
-      `formula legacyBlockRendered=${element.legacyBlockRendered} forceBlock=${forceBlockRendering}`,
-    );
     switch (element.subtype) {
       case 'latex':
         return (
