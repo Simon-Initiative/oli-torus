@@ -17,7 +17,6 @@ defmodule Oli.Conversation.Dialogue do
   @token_usage_high_watermark 0.9
 
   def new(system_message, response_handler_fn, options \\ []) do
-
     model = options[:model] || Oli.Converstation.Model.default_model()
 
     system_message = Message.new(:system, system_message)
@@ -124,8 +123,13 @@ defmodule Oli.Conversation.Dialogue do
     end
   end
 
-  def total_token_length(%__MODULE__{messages: messages, functions_token_length: functions_token_length}) do
-    Enum.reduce(messages, functions_token_length, fn message, acc -> acc + message.token_length end)
+  def total_token_length(%__MODULE__{
+        messages: messages,
+        functions_token_length: functions_token_length
+      }) do
+    Enum.reduce(messages, functions_token_length, fn message, acc ->
+      acc + message.token_length
+    end)
   end
 
   defp delta(chunk) do
