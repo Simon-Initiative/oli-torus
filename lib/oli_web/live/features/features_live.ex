@@ -53,22 +53,52 @@ defmodule OliWeb.Features.FeaturesLive do
             <button type="button" class="btn btn-secondary" phx-click="logging" phx-value-level="info">
               Info
             </button>
-            <button type="button" class="btn btn-secondary" phx-click="logging" phx-value-level="notice">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              phx-click="logging"
+              phx-value-level="notice"
+            >
               Notice
             </button>
-            <button type="button" class="btn btn-secondary" phx-click="logging" phx-value-level="warning">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              phx-click="logging"
+              phx-value-level="warning"
+            >
               Warning
             </button>
-            <button type="button" class="btn btn-secondary" phx-click="logging" phx-value-level="error">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              phx-click="logging"
+              phx-value-level="error"
+            >
               Error
             </button>
-            <button type="button" class="btn btn-secondary" phx-click="logging" phx-value-level="critical">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              phx-click="logging"
+              phx-value-level="critical"
+            >
               Critical
             </button>
-            <button type="button" class="btn btn-secondary" phx-click="logging" phx-value-level="alert">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              phx-click="logging"
+              phx-value-level="alert"
+            >
               Alert
             </button>
-            <button type="button" class="btn btn-secondary" phx-click="logging" phx-value-level="emergency">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              phx-click="logging"
+              phx-value-level="emergency"
+            >
               Emergency (least verbose)
             </button>
           </p>
@@ -125,17 +155,17 @@ defmodule OliWeb.Features.FeaturesLive do
   end
 
   def handle_event("logging", %{"level" => level}, socket) do
+    socket =
+      case Logger.configure(level: String.to_atom(level)) do
+        :ok ->
+          socket
+          |> put_flash(:info, "Logging level changed to #{level}")
+          |> assign(log_level: Logger.level())
 
-    socket = case Logger.configure(level: String.to_atom(level)) do
-      :ok ->
-        socket
-        |> put_flash(:info, "Logging level changed to #{level}")
-        |> assign(log_level: Logger.level())
-
-      _ ->
-        socket
-        |> put_flash(:error, "Logging level could not be changed to #{level}")
-    end
+        _ ->
+          socket
+          |> put_flash(:error, "Logging level could not be changed to #{level}")
+      end
 
     {:noreply, socket}
   end
