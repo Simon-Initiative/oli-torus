@@ -71,7 +71,6 @@ export const MathJaxMathMLFormula: React.FC<MathJaxFormulaProps> = ({
   onClick,
 }) => {
   const ref = useMathJax(src);
-  console.log(`MathML inline=${inline} src=${src}`);
   return (
     <span
       onClick={onClick}
