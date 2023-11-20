@@ -257,7 +257,10 @@ defmodule OliWeb.PageDeliveryController do
 
       preview_mode = Map.get(conn.assigns, :preview_mode, false)
 
-      conn = put_root_layout(conn, {OliWeb.LayoutView, "page.html"})
+      conn =
+        conn
+        |> put_root_layout(html: {OliWeb.LayoutView, :delivery})
+        |> put_layout(html: {OliWeb.Layouts, :page})
 
       {page_link_url, container_link_url} =
         if preview_mode do
@@ -435,7 +438,10 @@ defmodule OliWeb.PageDeliveryController do
           end
       end
 
-    conn = put_root_layout(conn, {OliWeb.LayoutView, "page.html"})
+    conn =
+      conn
+      |> put_root_layout(html: {OliWeb.LayoutView, :delivery})
+      |> put_layout(html: {OliWeb.Layouts, :page})
 
     resource_attempts =
       Enum.filter(resource_attempts, fn r -> r.date_submitted != nil end)
@@ -620,7 +626,10 @@ defmodule OliWeb.PageDeliveryController do
     page_as_text = render_content_text(render_context, attempt_content, context.page.slug)
     Oli.Converstation.PageContentCache.put(context.page.id, page_as_text)
 
-    conn = put_root_layout(conn, {OliWeb.LayoutView, "page.html"})
+    conn =
+      conn
+      |> put_root_layout(html: {OliWeb.LayoutView, :delivery})
+      |> put_layout(html: {OliWeb.Layouts, :page})
 
     all_activities = Activities.list_activity_registrations()
 
@@ -942,7 +951,8 @@ defmodule OliWeb.PageDeliveryController do
             numbered_revisions = Sections.get_revision_indexes(section.slug)
 
             conn
-            |> put_root_layout({OliWeb.LayoutView, "page.html"})
+            |> put_root_layout({OliWeb.LayoutView, :delivery})
+            |> put_layout(html: {OliWeb.Layouts, :page})
             |> render(
               "instructor_page_preview.html",
               %{
@@ -1104,7 +1114,8 @@ defmodule OliWeb.PageDeliveryController do
       ObjectivesRollup.rollup_objectives(revision, activity_revisions, Resolver, section_slug)
 
     conn
-    |> put_root_layout({OliWeb.LayoutView, "page.html"})
+    |> put_root_layout(html: {OliWeb.LayoutView, :delivery})
+    |> put_layout(html: {OliWeb.Layouts, :page})
     |> render(
       "instructor_page_preview.html",
       %{

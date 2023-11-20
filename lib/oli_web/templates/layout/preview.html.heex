@@ -1,60 +1,44 @@
-<%= render_layout "delivery.html", assigns |> Map.put_new(:preview_mode, true) do %>
-  <%= for script <- @scripts do %>
-    <script type="text/javascript" src={Routes.static_path(@conn, "/js/" <> script)}>
-    </script>
-  <% end %>
-
-  <Components.Delivery.Layouts.header_with_sidebar_nav
-    ctx={@ctx}
-    is_system_admin={@is_system_admin}
-    section={nil}
-    brand={nil}
-    preview_mode={@preview_mode}
-    active_tab={:content}
-  >
-    <div class="relative flex-1 flex flex-col pb-[60px]">
-      <div class="w-full md:container md:mx-auto lg:px-10">
-        <div class="message flex justify-content-between alert alert-info rounded-none md:rounded-md mb-0 enter-done md:my-5">
-          <div>
-            <div>
-              <strong>Preview Mode</strong>
-              <br />
-              <%= if @context.graded do %>
-                <p>
-                  This is a preview of your graded assessment but it is displayed as an ungraded page to show feedback and hints.
-                </p>
-              <% else %>
-                <p>This is a preview of your ungraded page.</p>
-              <% end %>
-            </div>
-          </div>
-          <div class="form-inline m-2 my-lg-0">
-            <button
-              class="btn btn-action btn-warning"
-              type="button"
-              style="white-space: nowrap;"
-              onclick="window.close()"
-            >
-              Exit Preview
-            </button>
-          </div>
+<div class="relative flex-1 flex flex-col pb-[60px]">
+  <div class="w-full md:container md:mx-auto lg:px-10">
+    <div class="message flex justify-content-between alert alert-info rounded-none md:rounded-md mb-0 enter-done md:my-5">
+      <div>
+        <div>
+          <strong>Preview Mode</strong>
+          <br />
+          <%= if @context.graded do %>
+            <p>
+              This is a preview of your graded assessment but it is displayed as an ungraded page to show feedback and hints.
+            </p>
+          <% else %>
+            <p>This is a preview of your ungraded page.</p>
+          <% end %>
         </div>
-
-        <div class="bg-white dark:bg-gray-800 p-8 shadow">
-          <div id="wrapper d-block mb-4">
-            <!-- Page Content -->
-            <div id="page-content">
-              <%= @inner_content %>
-            </div>
-          </div>
-        </div>
-
-        <%= render(OliWeb.ResourceView, "_preview_previous_next_nav.html",
-          conn: @conn,
-          context: @context,
-          action: :preview
-        ) %>
+      </div>
+      <div class="form-inline m-2 my-lg-0">
+        <button
+          class="btn btn-action btn-warning"
+          type="button"
+          style="white-space: nowrap;"
+          onclick="window.close()"
+        >
+          Exit Preview
+        </button>
       </div>
     </div>
-  </Components.Delivery.Layouts.header_with_sidebar_nav>
-<% end %>
+
+    <div class="bg-white dark:bg-gray-800 p-8 shadow">
+      <div id="wrapper d-block mb-4">
+        <!-- Page Content -->
+        <div id="page-content">
+          <%= @inner_content %>
+        </div>
+      </div>
+    </div>
+
+    <%= render(OliWeb.ResourceView, "_preview_previous_next_nav.html",
+      conn: @conn,
+      context: @context,
+      action: :preview
+    ) %>
+  </div>
+</div>

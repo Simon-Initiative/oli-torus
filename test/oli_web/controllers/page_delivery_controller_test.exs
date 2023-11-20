@@ -2206,7 +2206,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
       conn =
         recycle(conn)
         |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
-        |> get(~p"/sections/#{section.slug}/discussion")
+        |> get(~p"/sections/#{section.slug}/discussions")
 
       assert html_response(conn, 200) =~ section.title
     end
@@ -2218,7 +2218,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
       conn =
         recycle(conn)
         |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
-        |> get(~p"/sections/#{section.slug}/discussion")
+        |> get(~p"/sections/#{section.slug}/discussions")
 
       assert html_response(conn, 200)
     end
@@ -2230,7 +2230,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
     } do
       {:ok, conn: conn, admin: _admin} = admin_conn(%{conn: conn})
 
-      conn = get(conn, ~p"/sections/#{section.slug}/preview/discussion")
+      conn = get(conn, ~p"/sections/#{section.slug}/preview/discussions")
 
       assert html_response(conn, 200) =~ "Your Latest Discussion Activity"
     end
@@ -2246,7 +2246,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
       conn =
         recycle(conn)
         |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
-        |> get(~p"/sections/#{section.slug}/discussion")
+        |> get(~p"/sections/#{section.slug}/discussions")
 
       assert html_response(conn, 200) =~ "Your Latest Discussion Activity"
       posts = Collaboration.list_lasts_posts_for_user(user.id, section.id, 5)
@@ -2269,7 +2269,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
       conn =
         recycle(conn)
         |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
-        |> get(~p"/sections/#{section.slug}/discussion")
+        |> get(~p"/sections/#{section.slug}/discussions")
 
       assert html_response(conn, 200) =~ "All Discussion Activity"
       posts = Collaboration.list_lasts_posts_for_section(user.id, section.id, 5)
@@ -2295,7 +2295,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
       conn =
         recycle(conn)
         |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
-        |> get(~p"/sections/#{section.slug}/discussion")
+        |> get(~p"/sections/#{section.slug}/discussions")
 
       assert html_response(conn, 200) =~ "<h6>There are no posts to show</h6>"
     end

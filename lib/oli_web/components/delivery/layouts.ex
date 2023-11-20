@@ -15,6 +15,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
   alias Oli.Branding
   alias Oli.Branding.Brand
   alias OliWeb.Components.Delivery.UserAccount
+  alias Oli.Resources.Collaboration.CollabSpaceConfig
 
   attr(:ctx, SessionContext)
   attr(:is_system_admin, :boolean, required: true)
@@ -185,9 +186,9 @@ defmodule OliWeb.Components.Delivery.Layouts do
 
   defp path_for(:discussion, %Section{slug: section_slug}, preview_mode) do
     if preview_mode do
-      ~p"/sections/#{section_slug}/preview/discussion"
+      ~p"/sections/#{section_slug}/preview/discussions"
     else
-      ~p"/sections/#{section_slug}/discussion"
+      ~p"/sections/#{section_slug}/discussions"
     end
   end
 
@@ -326,4 +327,8 @@ defmodule OliWeb.Components.Delivery.Layouts do
         Routes.static_page_path(OliWeb.Endpoint, :index)
     end
   end
+
+  def show_collab_space?(nil), do: false
+  def show_collab_space?(%CollabSpaceConfig{status: :disabled}), do: false
+  def show_collab_space?(_), do: true
 end
