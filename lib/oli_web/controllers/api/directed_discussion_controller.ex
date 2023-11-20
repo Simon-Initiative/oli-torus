@@ -12,7 +12,6 @@ defmodule OliWeb.Api.DirectedDiscussionController do
 
   alias Oli.Resources.Collaboration
   alias Phoenix.PubSub
-  alias OliWeb.Api.State
   alias Oli.Resources.Collaboration.Post
 
   def create_post(conn, %{"resource_id" => resource_id, "section_slug" => section_slug}) do

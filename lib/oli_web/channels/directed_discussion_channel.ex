@@ -1,7 +1,6 @@
 defmodule OliWeb.DirectedDiscussionChannel do
   use Phoenix.Channel
   alias Oli.Resources.Collaboration.Post
-  alias Oli.Delivery.ExtrinsicState
   alias Phoenix.PubSub
 
   def join("directed_discussion:" <> section_resource, _, socket) do
