@@ -935,6 +935,7 @@ defmodule OliWeb.Router do
     scope "/" do
       live_session :delivery,
         root_layout: {OliWeb.LayoutView, :delivery},
+        layout: {OliWeb.Layouts, :student_delivery},
         on_mount: [
           OliWeb.LiveSessionPlugs.SetUser,
           OliWeb.LiveSessionPlugs.SetSection,
@@ -961,7 +962,8 @@ defmodule OliWeb.Router do
           OliWeb.LiveSessionPlugs.SetUser,
           OliWeb.LiveSessionPlugs.SetBrand,
           OliWeb.LiveSessionPlugs.SetPreviewMode,
-          OliWeb.LiveSessionPlugs.RequireEnrollment
+          OliWeb.LiveSessionPlugs.RequireEnrollment,
+          OliWeb.Delivery.Student.InitialAssigns
         ] do
         live("/", Delivery.Student.IndexLive, :preview)
         live("/content", Delivery.Student.ContentLive, :preview)
@@ -1062,8 +1064,8 @@ defmodule OliWeb.Router do
         OliWeb.LiveSessionPlugs.SetSection,
         OliWeb.LiveSessionPlugs.SetBrand,
         OliWeb.LiveSessionPlugs.SetPreviewMode,
-        OliWeb.Delivery.InstructorDashboard.InitialAssigns
         # OliWeb.LiveSessionPlugs.RequireInstructor
+        OliWeb.Delivery.InstructorDashboard.InitialAssigns
       ],
       layout: {OliWeb.Layouts, :instructor_dashboard} do
       live("/manage", Sections.OverviewView)

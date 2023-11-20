@@ -17,45 +17,6 @@ defmodule OliWeb.Components.Delivery.Layouts do
   alias OliWeb.Components.Delivery.UserAccount
 
   attr(:ctx, SessionContext)
-  attr(:section, Section, default: nil)
-  attr(:project, Project, default: nil)
-  attr(:brand, Brand)
-  attr(:preview_mode, :boolean)
-  attr(:active_tab, :atom, required: true)
-  slot(:inner_block, required: true)
-
-  def header_with_sidebar_nav(assigns) do
-    assigns = assign(assigns, :is_system_admin, assigns[:is_system_admin] || false)
-
-    ~H"""
-    <div class="h-screen flex flex-col overscroll-none">
-      <.header
-        ctx={@ctx}
-        is_system_admin={@is_system_admin}
-        section={@section}
-        project={@project}
-        brand={@brand}
-        preview_mode={@preview_mode}
-      />
-
-      <main role="main" class="flex-1 flex flex-col relative md:flex-row overscroll-contain">
-        <.sidebar_nav
-          ctx={@ctx}
-          is_system_admin={@is_system_admin}
-          section={@section}
-          active_tab={@active_tab}
-          preview_mode={@preview_mode}
-        />
-
-        <div class="md:w-[calc(100%-192px)] flex-1 flex flex-col md:ml-48 mt-14">
-          <%= render_slot(@inner_block) %>
-        </div>
-      </main>
-    </div>
-    """
-  end
-
-  attr(:ctx, SessionContext)
   attr(:is_system_admin, :boolean, required: true)
   attr(:section, Section, default: nil)
   attr(:project, Project, default: nil)

@@ -1,8 +1,6 @@
 defmodule OliWeb.Delivery.Student.ContentLive do
   use OliWeb, :live_view
 
-  import OliWeb.Components.Delivery.Layouts
-
   alias Oli.Accounts.{User}
   alias OliWeb.Common.FormatDateTime
   alias Oli.Delivery.{Metrics, Sections}
@@ -21,6 +19,7 @@ defmodule OliWeb.Delivery.Student.ContentLive do
 
     {:ok,
      assign(socket,
+       active_tab: :content,
        selected_module_per_unit_uuid: %{},
        student_visited_pages: %{},
        student_progress_per_resource_id: %{}
@@ -126,23 +125,15 @@ defmodule OliWeb.Delivery.Student.ContentLive do
 
   def render(assigns) do
     ~H"""
-    <.header_with_sidebar_nav
-      ctx={@ctx}
-      section={@section}
-      brand={@brand}
-      preview_mode={@preview_mode}
-      active_tab={:content}
-    >
-      <div id="student_content" class="lg:container lg:mx-auto p-[25px]" phx-hook="Scroller">
-        <.unit
-          :for={child <- @section.full_hierarchy["children"]}
-          unit={child}
-          ctx={@ctx}
-          student_progress_per_resource_id={@student_progress_per_resource_id}
-          selected_module_per_unit_uuid={@selected_module_per_unit_uuid}
-        />
-      </div>
-    </.header_with_sidebar_nav>
+    <div id="student_content" class="lg:container lg:mx-auto p-[25px]" phx-hook="Scroller">
+      <.unit
+        :for={child <- @section.full_hierarchy["children"]}
+        unit={child}
+        ctx={@ctx}
+        student_progress_per_resource_id={@student_progress_per_resource_id}
+        selected_module_per_unit_uuid={@selected_module_per_unit_uuid}
+      />
+    </div>
     """
   end
 
