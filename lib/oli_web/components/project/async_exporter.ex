@@ -89,12 +89,14 @@ defmodule OliWeb.Components.Project.AsyncExporter do
           <i class="fa-solid fa-file-export"></i> Generate Datashop Export
         </.datashop_button>
       <% :in_progress -> %>
-        <.datashop_button id="button-kill-datashop" on_datashop_action={@on_kill} color="red">
-          <i class="fa-solid fa-file-export"></i> Kill Datashop Export
-        </.datashop_button>
-        <div class="text-sm text-gray-500">
-          <i class="fa-solid fa-circle-notch fa-spin text-primary"></i>
-          Generating datashop snapshot... this might take a while.
+        <div class="flex flex-col my-4 items-end">
+          <.datashop_button id="button-kill-datashop" on_datashop_action={@on_kill} color="red">
+            <i class="fa-solid fa-file-export"></i> Kill Datashop Export
+          </.datashop_button>
+          <div class="text-sm text-gray-500 mt-2">
+            <i class="fa-solid fa-circle-notch fa-spin text-primary"></i>
+            Generating datashop snapshot... this might take a while.
+          </div>
         </div>
       <% :available -> %>
         <div class="flex flex-col mx-4 text-center">
@@ -114,16 +116,16 @@ defmodule OliWeb.Components.Project.AsyncExporter do
           <i class="fa-solid fa-rotate-right mr-1"></i> Regenerate
         </.datashop_button>
       <% :error -> %>
-        <.datashop_button
-          id="button-generate-datashop"
-          on_datashop_action={@on_generate_datashop_snapshot}
-          disabled={@disabled}
-          color="blue"
-        >
-          <i class="fa-solid fa-file-export"></i> Generate Datashop Export
-        </.datashop_button>
-        <div class="flex flex-col">
-          <div class="text-sm text-gray-500">
+        <div class="flex flex-col my-4 items-end">
+          <.datashop_button
+            id="button-generate-datashop"
+            on_datashop_action={@on_generate_datashop_snapshot}
+            disabled={@disabled}
+            color="blue"
+          >
+            <i class="fa-solid fa-file-export"></i> Generate Datashop Export
+          </.datashop_button>
+          <div class="text-sm text-gray-500 mt-2">
             <i class="fa-solid fa-exclamation-circle text-red-500"></i>
             Error generating datashop snapshot. Please try again later or contact support.
           </div>
@@ -153,7 +155,7 @@ defmodule OliWeb.Components.Project.AsyncExporter do
     <button
       id={@id}
       class={[
-        "text-white py-2 px-4 rounded disabled:opacity-50 disabled:cursor-not-allowed",
+        "text-white py-2 px-4 w-auto rounded disabled:opacity-50 disabled:cursor-not-allowed",
         if(@color == "blue",
           do: "bg-blue-500 hover:bg-blue-600  disabled:hover:bg-blue-500",
           else: "bg-red-500 hover:bg-red-600  disabled:hover:bg-red-500"

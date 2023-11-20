@@ -188,8 +188,6 @@ defmodule OliWeb.Datashop.AnalyticsLiveTest do
         {:error, "export failed"}
       )
 
-      open_browser(view)
-
       assert has_element?(view, "#button-generate-datashop", "Generate Datashop Export")
 
       assert render(view) =~
