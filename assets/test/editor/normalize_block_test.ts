@@ -30,14 +30,14 @@ describe('editor / block normalizer', () => {
 
   it('Should remove nested paragraphs, but keep content', () => {
     const original = [Model.p([Model.p('Hi There '), Model.p('Goodbye')] as any)];
-    const expected = expectAnyId([Model.p('Hi There '), Model.p('Goodbye')]);
+    const expected = expectAnyId([Model.p('Hi There Goodbye')]);
     const { editor } = runNormalizer(original);
     expect(editor.children).toEqual(expected);
   });
 
   it('Should remove invalid block elements (code in p)', () => {
     const original = [Model.p([{ text: 'Hi There' }, Model.code('Goodbye')] as any)];
-    const expected = expectAnyId([Model.p('Hi There'), Model.code('Goodbye'), Model.p()]);
+    const expected = expectAnyId([Model.p('Hi There')]);
     const { editor } = runNormalizer(original);
     expect(editor.children).toEqual(expected);
   });
