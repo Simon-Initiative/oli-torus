@@ -18,7 +18,7 @@ defmodule Oli.Conversation.Dialogue do
 
   def new(system_message, response_handler_fn, options \\ []) do
 
-    model = options[:model] || Oli.Converstation.Model.default_model()
+    model = options[:model] || Oli.Conversation.Model.default()
 
     system_message = Message.new(:system, system_message)
 
