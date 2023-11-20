@@ -1,5 +1,4 @@
 defmodule Oli.Conversation.Model do
-
   @default_model :fast
 
   def default(), do: @default_model
@@ -10,11 +9,10 @@ defmodule Oli.Conversation.Model do
 
   def token_limit("gpt-3.5-turbo"), do: 4096
   def token_limit("gpt-4"), do: 8192
-  def token_limit("gpt-4-1106-preview"), do: 128000
+  def token_limit("gpt-4-1106-preview"), do: 128_000
 
   def token_limit(atom) when is_atom(atom) do
     model(atom)
     |> token_limit()
   end
-
 end
