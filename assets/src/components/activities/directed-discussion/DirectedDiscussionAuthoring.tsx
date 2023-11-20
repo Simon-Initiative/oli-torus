@@ -11,7 +11,6 @@ import {
   SectionAuthoringProps,
 } from '../AuthoringElement';
 import { AuthoringElementProvider, useAuthoringElementContext } from '../AuthoringElementProvider';
-import { DeliveryElementProvider } from '../DeliveryElementProvider';
 import { VariableEditorOrNot } from '../common/variables/VariableEditorOrNot';
 import { VariableActions } from '../common/variables/variableActions';
 import * as ActivityTypes from '../types';
@@ -36,7 +35,6 @@ const DirectedDiscussionAuthoringInternal: React.FC<SectionAuthoringProps> = ({
     <>
       <TabbedNavigation.Tabs>
         <TabbedNavigation.Tab label="Question">
-          {JSON.stringify(model)}
           <Stem />
         </TabbedNavigation.Tab>
         <TabbedNavigation.Tab label="Participation">
@@ -54,8 +52,10 @@ const DirectedDiscussionAuthoringInternal: React.FC<SectionAuthoringProps> = ({
             onEdit={(t) => dispatch(VariableActions.onUpdateTransformations(t))}
           />
         </TabbedNavigation.Tab>
-
-        {displayDiscussion && (
+      </TabbedNavigation.Tabs>
+      {displayDiscussion && (
+        <>
+          <hr />
           <MockDiscussionDeliveryProvider
             activityId={activityId}
             model={model}
@@ -64,8 +64,8 @@ const DirectedDiscussionAuthoringInternal: React.FC<SectionAuthoringProps> = ({
           >
             <DirectedDiscussion model={model} sectionSlug={sectionSlug} resourceId={activityId} />
           </MockDiscussionDeliveryProvider>
-        )}
-      </TabbedNavigation.Tabs>
+        </>
+      )}
     </>
   );
 };
