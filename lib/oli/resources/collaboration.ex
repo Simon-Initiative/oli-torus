@@ -478,7 +478,7 @@ defmodule Oli.Resources.Collaboration do
     )
   end
 
-  def list_level_0_course_and_page_posts_for_section(user_id, section_id, limit) do
+  def list_root_posts_for_section(user_id, section_id, limit) do
     Repo.all(
       from(
         post in Post,
@@ -501,6 +501,7 @@ defmodule Oli.Resources.Collaboration do
           id: post.id,
           content: post.content,
           user_name: user.name,
+          user_id: user.id,
           posted_anonymously: post.anonymous,
           title: rev.title,
           slug: rev.slug,
@@ -511,7 +512,7 @@ defmodule Oli.Resources.Collaboration do
         limit: ^limit
       )
     )
-    |> build_metrics_for_posts()
+    |> build_metrics_for_root_posts()
   end
 
   def list_replies_for_post(user_id, post_id) do
@@ -536,6 +537,7 @@ defmodule Oli.Resources.Collaboration do
           id: post.id,
           content: post.content,
           user_name: user.name,
+          user_id: user.id,
           posted_anonymously: post.anonymous,
           title: rev.title,
           slug: rev.slug,
@@ -545,20 +547,21 @@ defmodule Oli.Resources.Collaboration do
         order_by: [desc: :updated_at]
       )
     )
-    |> build_metrics_for_posts()
+    |> build_metrics_for_reply_posts()
   end
 
-  defp build_metrics_for_posts(posts) do
+  defp build_metrics_for_root_posts(posts) do
+    # TODO get real unread_reply_count
     post_ids = Enum.map(posts, &Map.get(&1, :id))
 
     posts_metrics =
       Repo.all(
         from(
           post in Post,
-          where: post.parent_post_id in ^post_ids,
-          group_by: post.parent_post_id,
+          where: post.thread_root_id in ^post_ids,
+          group_by: post.thread_root_id,
           select:
-            {post.parent_post_id,
+            {post.thread_root_id,
              %{
                reply_count: count(post.id),
                last_reply: max(post.updated_at),
@@ -574,10 +577,55 @@ defmodule Oli.Resources.Collaboration do
         Map.get(posts_metrics, post.id, %{
           reply_count: 0,
           last_reply: nil,
-          unread_reply_count: 0
+          unread_reply_count: Enum.random(0..2)
         })
       )
     end)
+  end
+
+  defp build_metrics_for_reply_posts(posts) do
+    # TODO get real unread_reply_count
+    Enum.map(posts, fn post ->
+      case get_post_children([post]) do
+        [] ->
+          Map.merge(post, %{
+            reply_count: 0,
+            last_reply: nil,
+            unread_reply_count: Enum.random(0..2)
+          })
+
+        child_posts ->
+          Map.merge(post, %{
+            reply_count: Enum.count(child_posts),
+            last_reply:
+              Enum.max_by(
+                child_posts,
+                fn child_post -> child_post.updated_at end
+              )
+              |> Map.get(:updated_at),
+            unread_reply_count: Enum.random(0..2)
+          })
+      end
+    end)
+  end
+
+  defp get_post_children(parent_post, acum_child_posts \\ [])
+
+  defp get_post_children([], acum_child_posts), do: List.flatten(acum_child_posts)
+
+  defp get_post_children(parent_posts, acum_child_posts) do
+    parent_post_ids = Enum.map(parent_posts, &Map.get(&1, :id))
+
+    child_posts =
+      Repo.all(
+        from(
+          post in Post,
+          where: post.parent_post_id in ^parent_post_ids,
+          select: post
+        )
+      )
+
+    get_post_children(child_posts, [child_posts | acum_child_posts])
   end
 
   @doc """

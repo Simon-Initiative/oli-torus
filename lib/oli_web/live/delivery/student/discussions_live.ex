@@ -5,6 +5,8 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
 
   alias Oli.Resources.Collaboration
   alias OliWeb.Common.FormatDateTime
+  alias OliWeb.Components.Modal
+  alias OliWeb.Components.Delivery.Buttons
 
   def mount(
         _params,
@@ -12,7 +14,7 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
         socket
       ) do
     posts =
-      Collaboration.list_level_0_course_and_page_posts_for_section(
+      Collaboration.list_root_posts_for_section(
         socket.assigns.current_user.id,
         socket.assigns.section.id,
         20
@@ -63,6 +65,32 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
       preview_mode={@preview_mode}
       active_tab={:discussions}
     >
+      <Modal.modal class="w-1/2" id="discussion-modal">
+        <:title>New Discussion</:title>
+        <textarea class="w-full h-28 p-3 border-gray-500" placeholder="Start a discussion..." />
+        <div class="flex items-center justify-end">
+          <.button
+            phx-click={Modal.hide_modal("discussion-modal")}
+            class="bg-transparent text-blue-500 hover:underline hover:bg-transparent"
+          >
+            Cancel
+          </.button>
+          <Buttons.button_with_options
+            id="create_post_button"
+            type="submit"
+            options={[
+              %{
+                text: "Post anonymously",
+                on_click:
+                  JS.dispatch("click", to: "#new_post_anonymous_checkbox")
+                  |> JS.dispatch("click", to: "#create_post_button_button")
+              }
+            ]}
+          >
+            Create Post
+          </Buttons.button_with_options>
+        </div>
+      </Modal.modal>
       <div
         id="discussions_header"
         class="relative flex items-center h-[184px] w-full bg-gray-100 dark:bg-[#0B0C11]"
@@ -78,6 +106,7 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
           ctx={@ctx}
           section_slug={@section.slug}
           expanded_posts={@expanded_posts}
+          current_user_id={@current_user.id}
         />
       </div>
     </.header_with_sidebar_nav>
@@ -88,6 +117,7 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
   attr :ctx, :map
   attr :section_slug, :string
   attr :expanded_posts, :map
+  attr :current_user_id, :integer
 
   defp posts_section(assigns) do
     ~H"""
@@ -145,6 +175,7 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
 
           <button
             role="new discussion"
+            phx-click={Modal.show_modal("discussion-modal")}
             class="rounded-[3px] py-[10px] pl-[18px] pr-6 flex justify-center items-center text-[14px] leading-[20px] font-normal text-white bg-[#0F6CF5] hover:bg-blue-600"
           >
             <svg
@@ -176,6 +207,7 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
               is_reply={false}
               replies={Map.get(@expanded_posts, post.id, [])}
               expanded_posts={@expanded_posts}
+              current_user_id={@current_user_id}
             />
           </div>
         <% end %>
@@ -184,6 +216,7 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
           post={post}
           ctx={@ctx}
           section_slug={@section_slug}
+          current_user_id={@current_user_id}
         />
       </div>
     </section>
@@ -200,6 +233,7 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
   attr :replies, :list
   attr :is_reply, :boolean
   attr :expanded_posts, :map
+  attr :current_user_id, :integer
 
   defp course_post(assigns) do
     ~H"""
@@ -212,22 +246,13 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
       ]}
     >
       <div role="post header" class="flex items-center gap-2">
-        <.avatar user_name={@post.user_name} />
-        <div class="flex flex-col items-start gap-[1px]">
-          <span class="text-[16px] leading-[22px] tracking-[0.02px] font-semibold dark:text-white">
-            <%= @post.user_name %>
-          </span>
-          <span class="text-[14px] leading-[19px] tracking-[0.02px] dark:text-white/50">
-            <%= FormatDateTime.parse_datetime(
-              @post.updated_at,
-              @ctx,
-              "{WDshort}, {Mshort} {D}, {YYYY}"
-            ) %>
-          </span>
-        </div>
+        <.avatar post={@post} ctx={@ctx} current_user_id={@current_user_id} />
       </div>
       <div role="post content" class="w-full">
-        <p class={["text-[18px] leading-[25px] dark:text-white", if(!@is_expanded, do: "truncate")]}>
+        <p class={[
+          "text-[18px] leading-[25px] dark:text-white",
+          if(!@is_expanded, do: "truncate")
+        ]}>
           <%= @post.content.message %>
         </p>
       </div>
@@ -280,10 +305,27 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
               is_reply={true}
               replies={Map.get(@expanded_posts, reply.id, [])}
               expanded_posts={@expanded_posts}
+              current_user_id={@current_user_id}
             />
           </div>
         <% end %>
-        <input type="text" placeholder="Write a response..." />
+        <div class="flex items-center w-full gap-2 whitespace-nowrap">
+          <input type="text" class="w-full h-9 rounded-lg" placeholder="Write a response..." />
+          <Buttons.button_with_options
+            id={"create_post_button_#{@post.id}"}
+            type="submit"
+            options={[
+              %{
+                text: "Post anonymously",
+                on_click:
+                  JS.dispatch("click", to: "#new_post_anonymous_checkbox")
+                  |> JS.dispatch("click", to: "#create_post_button_button")
+              }
+            ]}
+          >
+            Create Post
+          </Buttons.button_with_options>
+        </div>
         <button
           :if={@is_expanded}
           phx-click="collapse_post"
@@ -305,24 +347,13 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
   attr :post, :map
   attr :ctx, :map
   attr :section_slug, :string
+  attr :current_user_id, :integer
 
   defp page_post(assigns) do
     ~H"""
     <div role="post-2" class="flex flex-col gap-6 p-6">
       <div role="post header" class="flex items-center gap-2">
-        <.avatar user_name={@post.user_name} />
-        <div class="flex flex-col items-start gap-[1px]">
-          <span class="text-[16px] leading-[22px] tracking-[0.02px] font-semibold dark:text-white">
-            <%= @post.user_name %>
-          </span>
-          <span class="text-[14px] leading-[19px] tracking-[0.02px] dark:text-white/50">
-            <%= FormatDateTime.parse_datetime(
-              @post.updated_at,
-              @ctx,
-              "{WDshort}, {Mshort} {D}, {YYYY}"
-            ) %>
-          </span>
-        </div>
+        <.avatar post={@post} ctx={@ctx} current_user_id={@current_user_id} />
       </div>
       <div
         role="page details"
@@ -401,7 +432,9 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
     """
   end
 
-  attr :user_name, :string
+  attr :post, :map
+  attr :ctx, :map
+  attr :current_user_id, :integer
 
   # Define a list of avatar color options.
   @colors [
@@ -419,12 +452,40 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
     ~H"""
     <div class={[
       "w-8 h-8 rounded-full flex items-center justify-center shrink-0",
-      get_color_for_name(@user_name)
+      get_color_for_name(@post.user_name)
     ]}>
-      <span class="text-[14px] text-white uppercase"><%= to_initials(@user_name) %></span>
+      <span class="text-[14px] text-white uppercase">
+        <%= to_initials(@post, @current_user_id) %>
+      </span>
+    </div>
+    <div class="flex flex-col items-start gap-[1px]">
+      <span class="text-[16px] leading-[22px] tracking-[0.02px] font-semibold dark:text-white">
+        <%= user_name(@post, @current_user_id) %>
+      </span>
+      <span class="text-[14px] leading-[19px] tracking-[0.02px] dark:text-white/50">
+        <%= FormatDateTime.parse_datetime(
+          @post.updated_at,
+          @ctx,
+          "{WDshort}, {Mshort} {D}, {YYYY}"
+        ) %>
+      </span>
     </div>
     """
   end
+
+  defp user_name(%{posted_anonymously: false, user_name: user_name} = _post, _current_user_id),
+    do: user_name
+
+  defp user_name(
+         %{posted_anonymously: true, user_name: user_name, user_id: user_id} = _post,
+         current_user_id
+       )
+       when user_id == current_user_id,
+       do: "#{user_name} (anonymously)"
+
+  defp user_name(%{posted_anonymously: true, user_id: user_id} = _post, current_user_id)
+       when user_id != current_user_id,
+       do: "Anonymous User"
 
   # Generate a consistent color based on the user's name.
   defp get_color_for_name(user_name) do
@@ -435,7 +496,11 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
     Enum.at(@colors, rem(hash, length(@colors)))
   end
 
-  defp to_initials(user_name) do
+  defp to_initials(%{posted_anonymously: true, user_id: user_id}, current_user_id)
+       when current_user_id != user_id,
+       do: "?"
+
+  defp to_initials(%{user_name: user_name}, _current_user_id) do
     user_name
     |> String.split(" ")
     |> Enum.take(2)
