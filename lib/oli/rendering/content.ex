@@ -118,10 +118,11 @@ defmodule Oli.Rendering.Content do
 
   def render(
         %Context{} = context,
-        %{"type" => "content", "children" => children} = _element,
+        %{"type" => "content", "children" => children} = element,
         writer
       ) do
-    Enum.map(children, fn child -> render(context, child, writer) end)
+    next = fn -> Enum.map(children, fn child -> render(context, child, writer) end) end
+    writer.content(context, next, element)
   end
 
   # Renders text content
