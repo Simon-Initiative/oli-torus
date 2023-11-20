@@ -33,11 +33,16 @@ export const useDiscussion = (sectionSlug: string | undefined, resourceId?: numb
   const refreshPosts = () => {
     if (!sectionSlug || !resourceId) return;
     setLoading(true);
-    return DiscussionService.getPosts(sectionSlug, String(resourceId)).then((response) => {
-      setLoading(false);
-      setPosts(response.threadedPosts);
-      setCurrentUserId(response.currentUserId);
-    });
+    return DiscussionService.getPosts(sectionSlug, String(resourceId))
+      .then((response) => {
+        setLoading(false);
+        setPosts(response.threadedPosts);
+        setCurrentUserId(response.currentUserId);
+      })
+      .catch(() => {
+        setPosts([]);
+        setLoading(false);
+      });
   };
 
   /* Make an API call to delete a post and remove it from our internal state. */

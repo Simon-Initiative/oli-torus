@@ -18,12 +18,9 @@ export const channelName = (sectionSlug: string, resourceId: number) =>
 export const connectToDiscussionChannel = (sectionSlug: string, resourceId: number) => {
   const socket = new Socket('/v1/api/state', { params: { token: (window as any).userToken } });
 
-  socket.onOpen(function () {
-    console.info('the socket was opened');
-  });
-
   socket.onError(function (error: any) {
     console.error('Socket failed, an error occurred', error);
+    socket.disconnect();
   });
 
   socket.connect();

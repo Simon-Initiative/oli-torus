@@ -31,7 +31,7 @@ export const DirectedDiscussion: React.FC<Props> = ({ sectionSlug, resourceId, m
   );
 
   if (!currentUserId) {
-    return <div>Loading Discussion...</div>;
+    return null;
   }
 
   const onSearch = (search: string) => {
