@@ -233,21 +233,27 @@ defmodule OliWeb.Dialogue.PlaygroundLive do
         message = Earmark.as_html!(socket.assigns.active_message)
         dialogue = Dialogue.add_message(socket.assigns.dialogue, Message.new(:assistant, message))
 
-        allow_submission? = if Dialogue.should_summarize?(dialogue) do
+        allow_submission? =
+          if Dialogue.should_summarize?(dialogue) do
+            pid = self()
 
-          pid = self()
+            Task.async(fn ->
+              dialogue = Dialogue.summarize(dialogue)
+              send(pid, {:summarization_finished, dialogue})
+            end)
 
-          Task.async(fn ->
-            dialogue = Dialogue.summarize(dialogue)
-            send(pid, {:summarization_finished, dialogue})
-          end)
+            false
+          else
+            true
+          end
 
-          false
-        else
-          true
-        end
-
-        {:noreply, assign(socket, dialogue: dialogue, streaming: false, active_message: nil, allow_submission?: allow_submission?)}
+        {:noreply,
+         assign(socket,
+           dialogue: dialogue,
+           streaming: false,
+           active_message: nil,
+           allow_submission?: allow_submission?
+         )}
 
       fc ->
         name = String.to_existing_atom(fc["name"])

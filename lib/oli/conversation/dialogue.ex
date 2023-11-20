@@ -33,7 +33,8 @@ defmodule Oli.Conversation.Dialogue do
   end
 
   def engage(
-        %__MODULE__{model: model, messages: messages, response_handler_fn: response_handler_fn} = dialogue,
+        %__MODULE__{model: model, messages: messages, response_handler_fn: response_handler_fn} =
+          dialogue,
         :async
       ) do
     OpenAI.chat_completion(
@@ -46,7 +47,6 @@ defmodule Oli.Conversation.Dialogue do
       config(:async)
     )
     |> Stream.each(fn response ->
-
       case delta(response) do
         {:delta, type, content} ->
           response_handler_fn.(dialogue, type, content)
@@ -81,36 +81,40 @@ defmodule Oli.Conversation.Dialogue do
     end)
   end
 
-  def add_message(%__MODULE__{messages: messages, rendered_messages: rendered_messages} = dialog, message) do
+  def add_message(
+        %__MODULE__{messages: messages, rendered_messages: rendered_messages} = dialog,
+        message
+      ) do
     dialog = %{dialog | rendered_messages: rendered_messages ++ [message]}
     %{dialog | messages: messages ++ [message]}
   end
 
   def summarize(%__MODULE__{messages: messages, model: model} = dialog) do
-
-    summarize_messages = case messages do
-      [_system | rest] -> [Message.new(:system, summarize_prompt()) | rest]
-    end
+    summarize_messages =
+      case messages do
+        [_system | rest] -> [Message.new(:system, summarize_prompt()) | rest]
+      end
 
     [system | _rest] = messages
 
-    case OpenAI.chat_completion([model: model, messages: encode_messages(summarize_messages)], config(:sync)) do
+    case OpenAI.chat_completion(
+           [model: model, messages: encode_messages(summarize_messages)],
+           config(:sync)
+         ) do
       {:ok, %{choices: [first | _rest]}} ->
-
         summary = Message.new(:system, first["message"]["content"])
 
         messages = [system, summary]
 
         %{dialog | messages: messages}
+
       _e ->
-        IO.inspect "Failed to summarize"
+        IO.inspect("Failed to summarize")
         dialog
     end
-
   end
 
   def should_summarize?(%__MODULE__{model: model} = dialog) do
-
     total_usage = total_token_length(dialog)
 
     if total_usage > Model.token_limit(model) * @token_usage_high_watermark do
@@ -118,7 +122,6 @@ defmodule Oli.Conversation.Dialogue do
     else
       false
     end
-
   end
 
   def total_token_length(%__MODULE__{messages: messages, functions_token_length: functions_token_length}) do

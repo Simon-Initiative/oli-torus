@@ -1,5 +1,4 @@
 defmodule Oli.Conversation.Common do
-
   def estimate_token_length(function) when is_map(function) do
     Jason.encode!(function)
     |> estimate_token_length()
@@ -18,5 +17,4 @@ defmodule Oli.Conversation.Common do
     along the lines of "user asked about X. Assistant responded with Y. User asked about Z. Assistant responded with A. etc"
     """
   end
-
 end
