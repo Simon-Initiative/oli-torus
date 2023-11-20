@@ -17,7 +17,6 @@ defmodule Oli.Conversation.Dialogue do
   @token_usage_high_watermark 0.9
 
   def new(system_message, response_handler_fn, options \\ []) do
-
     model = options[:model] || Oli.Conversation.Model.default()
 
     system_message = Message.new(:system, system_message)
