@@ -210,6 +210,14 @@ config :logger, :console,
   format: "$time $metadata[$level] $message\n",
   metadata: [:request_id]
 
+case System.get_env("LOG_LEVEL", nil) do
+  nil ->
+    nil
+
+  log_level ->
+    config :logger, level: String.to_existing_atom(log_level)
+end
+
 # Use Jason for JSON parsing in Phoenix
 config :phoenix, :json_library, Jason
 
