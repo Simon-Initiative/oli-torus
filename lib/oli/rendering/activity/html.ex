@@ -170,8 +170,6 @@ defmodule Oli.Rendering.Activity.Html do
         bibParams: bib_params,
         learningLanguage: learning_language,
         showFeedback: Oli.Delivery.Settings.show_feedback?(effective_settings),
-        # TODO - is this the best place to grab this?
-        resourceId: effective_settings.resource_id,
         pageAttemptGuid:
           if is_nil(resource_attempt) do
             ""
