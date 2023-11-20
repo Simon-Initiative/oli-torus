@@ -1,5 +1,4 @@
 import React, { useMemo } from 'react';
-import { Post } from './Post';
 import { SearchResultPost } from './SearchResultPost';
 import { ThreadedPost } from './discussion-service';
 import { flatPosts } from './post-util';

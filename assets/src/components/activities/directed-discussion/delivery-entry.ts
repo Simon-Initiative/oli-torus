@@ -2,4 +2,4 @@
 // the multiple choice activitity.  All that needs to be exposed
 // is the actual delivery web component.
 
-export { DirectedDiscussionDelivery  } from './DirectedDiscussionDelivery';
+export { DirectedDiscussionDelivery } from './DirectedDiscussionDelivery';

@@ -1,5 +1,4 @@
 import React from 'react';
-import { Icon } from 'components/misc/Icon';
 import { DDParticipationDefinition } from '../schema';
 import { CurrentParticipation } from './participation-util';
 

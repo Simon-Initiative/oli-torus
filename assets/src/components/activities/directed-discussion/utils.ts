@@ -1,9 +1,4 @@
-import {
-  makeHint,
-  makePart,
-  makeResponse,
-  makeStem,
-} from 'components/activities/types';
+import { makeHint, makePart, makeResponse, makeStem } from 'components/activities/types';
 import { matchRule } from 'data/activities/model/rules';
 import { DirectedDiscussionActivitySchema } from './schema';
 

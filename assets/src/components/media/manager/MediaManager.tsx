@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { Dropdown } from 'react-bootstrap';
 import * as Immutable from 'immutable';
 import { Maybe } from 'tsmonad';
+import { formatDate } from 'components/activities/common/utils';
 import { LoadingSpinner, LoadingSpinnerSize } from 'components/common/LoadingSpinner';
 import { MediaItem } from 'types/media';
 import { classNames } from 'utils/classNames';
@@ -13,7 +14,6 @@ import { MediaIcon } from './MediaIcon';
 import './MediaManager.scss';
 import { VideoUploadWarning } from './VideoUploadWarning';
 import { uploadFiles } from './upload';
-import { formatDate } from 'components/activities/common/utils';
 
 const PAGELOAD_TRIGGER_MARGIN_PX = 100;
 const MAX_NAME_LENGTH = 30;
@@ -142,7 +142,6 @@ const getMediaManagerLayoutSetting = (): LAYOUTS => {
       return LAYOUTS.GRID;
   }
 };
-
 
 /**
  * MediaManager React Component
