@@ -93,6 +93,7 @@ defmodule Oli.Analytics.Datashop.Elements.EventDescriptor do
       "oli_multi_input" -> multi_input_input(part_attempt, input)
       "oli_image_coding" -> image_coding_input(part_attempt, input)
       "oli_adaptive" -> adaptive_input(part_attempt, input)
+      "oli_directed_discussion" -> directed_discussion(part_attempt, input)
       _unregistered -> unregistered_activity_input(part_attempt, input)
     end
   end
@@ -135,6 +136,10 @@ defmodule Oli.Analytics.Datashop.Elements.EventDescriptor do
   # Just give back the raw student input.
   def adaptive_input(_part_attempt, _input) do
     "Adaptive Activity"
+  end
+
+  def directed_discussion(_part_attempt, _input) do
+    "Directed Discussion"
   end
 
   # For non-native OLI activities, we don't know what the model looks like.
