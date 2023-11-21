@@ -75,14 +75,17 @@ defmodule OliWeb.Sections.SectionsTableModel do
     assigns = Map.merge(assigns, %{section: section})
 
     ~H"""
-    <a href={
-      Routes.live_path(
-        OliWeb.Endpoint,
-        OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
-        @section.slug,
-        :manage
-      )
-    }>
+    <a
+      href={
+        Routes.live_path(
+          OliWeb.Endpoint,
+          OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
+          @section.slug,
+          :manage
+        )
+      }
+      target="_blank"
+    >
       <%= @section.title %>
     </a>
     """

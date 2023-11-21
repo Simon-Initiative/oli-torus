@@ -36,7 +36,7 @@
         title: next_title(@next_page)
       }) %>
     <% true -> %>
-      <%= link to: Routes.page_delivery_path(@conn, :index, @section_slug), class: "page-nav-link btn" do %>
+      <%= link to: ~p"/sections/#{@section_slug}", class: "page-nav-link btn" do %>
         <div class="flex items-center justify-between">
           <div class="flex flex-col text-left">
             <div class="nav-label">Complete</div>

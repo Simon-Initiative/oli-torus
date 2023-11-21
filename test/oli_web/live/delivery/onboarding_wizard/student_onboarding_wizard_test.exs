@@ -13,7 +13,7 @@ defmodule OliWeb.Deliver.StudentOnboarding.WizardTest do
   end
 
   defp section_overview_route(section_slug) do
-    Routes.page_delivery_path(OliWeb.Endpoint, :index, section_slug)
+    ~p"/sections/#{section_slug}"
   end
 
   describe "Student Onboarding Wizard - Redirection" do

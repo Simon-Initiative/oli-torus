@@ -1,5 +1,5 @@
 defmodule OliWeb.Components.Delivery.RecommendedActions do
-  use Phoenix.Component
+  use OliWeb, :html
 
   alias OliWeb.Router.Helpers, as: Routes
 
@@ -55,7 +55,7 @@ defmodule OliWeb.Components.Delivery.RecommendedActions do
         </.action_card>
       <% end %>
       <%= if @approval_pending_posts_count > 0 do %>
-        <.action_card to={Routes.page_delivery_path(OliWeb.Endpoint, :discussion, @section_slug)}>
+        <.action_card to={~p"/sections/#{@section_slug}/discussions"}>
           <:icon><i class="fa-solid fa-circle-check" /></:icon>
           <:title>Approve Pending Posts</:title>
           <:description>

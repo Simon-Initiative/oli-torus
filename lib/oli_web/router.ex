@@ -142,7 +142,7 @@ defmodule OliWeb.Router do
       handler: PowAssent.Phoenix.ReauthorizationPlugHandler
     )
 
-    plug(Pow.Plug.RequireAuthenticated,
+    plug(OliWeb.Plugs.RequireAuthenticated,
       error_handler: Pow.Phoenix.PlugErrorHandler
     )
 
@@ -153,26 +153,6 @@ defmodule OliWeb.Router do
     plug(:delivery_layout)
   end
 
-  pipeline :delivery_and_admin do
-    plug(:delivery)
-    plug(:authoring)
-    plug(Oli.Plugs.GiveAdminPriority)
-
-    plug(PowAssent.Plug.Reauthorization,
-      handler: PowAssent.Phoenix.ReauthorizationPlugHandler
-    )
-
-    plug(Pow.Plug.RequireAuthenticated,
-      error_handler: Pow.Phoenix.PlugErrorHandler
-    )
-
-    plug(OliWeb.EnsureUserNotLockedPlug)
-
-    plug(Oli.Plugs.RemoveXFrameOptions)
-
-    plug(Oli.Plugs.LayoutBasedOnUser)
-  end
-
   pipeline :authoring_protected do
     plug(:authoring)
 
@@ -180,7 +160,7 @@ defmodule OliWeb.Router do
       handler: PowAssent.Phoenix.ReauthorizationPlugHandler
     )
 
-    plug(Pow.Plug.RequireAuthenticated,
+    plug(OliWeb.Plugs.RequireAuthenticated,
       error_handler: Pow.Phoenix.PlugErrorHandler
     )
 
@@ -189,7 +169,7 @@ defmodule OliWeb.Router do
 
   # Ensure that the user logged in is an admin user
   pipeline :admin do
-    plug(Oli.Plugs.EnsureAdmin)
+    plug(Oli.Plugs.RequireAdmin)
   end
 
   # parse url encoded forms
@@ -224,10 +204,6 @@ defmodule OliWeb.Router do
 
   pipeline :ensure_user_section_visit do
     plug(Oli.Plugs.EnsureUserSectionVisit)
-  end
-
-  pipeline :delivery_preview do
-    plug(Oli.Plugs.DeliveryPreview)
   end
 
   ### HELPERS ###
@@ -310,6 +286,7 @@ defmodule OliWeb.Router do
     get("/not_found", StaticPageController, :not_found)
 
     # update session timezone information
+    get("/timezones", StaticPageController, :list_timezones)
     post("/update_timezone", StaticPageController, :update_timezone)
   end
 
@@ -397,7 +374,10 @@ defmodule OliWeb.Router do
     pipe_through([:browser, :authoring_protected, :workspace, :authorize_project])
 
     live_session :load_projects,
-      on_mount: [OliWeb.LiveSessionPlugs.SetCurrentAuthor, OliWeb.LiveSessionPlugs.SetProject] do
+      on_mount: [
+        OliWeb.LiveSessionPlugs.SetUser,
+        OliWeb.LiveSessionPlugs.SetProject
+      ] do
       live("/:project_id/overview", Projects.OverviewLive)
       live("/:project_id", Projects.OverviewLive)
     end
@@ -654,7 +634,7 @@ defmodule OliWeb.Router do
 
   # Endpoints for client-side scheduling UI
   scope "/api/v1/scheduling/:section_slug", OliWeb.Api do
-    pipe_through([:api, :delivery_and_admin, :require_section])
+    pipe_through([:api, :delivery_protected, :require_section])
 
     put("/", SchedulingController, :update)
     get("/", SchedulingController, :index)
@@ -822,7 +802,7 @@ defmodule OliWeb.Router do
   scope "/sections/:section_slug/student_dashboard/:student_id", OliWeb do
     pipe_through([
       :browser,
-      :delivery_and_admin,
+      :delivery_protected,
       :pow_email_layout
     ])
 
@@ -857,13 +837,17 @@ defmodule OliWeb.Router do
   scope "/sections/:section_slug/instructor_dashboard/preview", OliWeb do
     pipe_through([
       :browser,
-      :delivery_and_admin,
+      :delivery,
+      :delivery_protected,
       :pow_email_layout
     ])
 
     live_session :instructor_dashboard_preview,
-      on_mount: OliWeb.Delivery.InstructorDashboard.InitialAssigns,
-      root_layout: {OliWeb.LayoutView, :delivery_dashboard} do
+      on_mount: [
+        OliWeb.LiveSessionPlugs.SetUser,
+        OliWeb.Delivery.InstructorDashboard.InitialAssigns
+      ],
+      layout: {OliWeb.Layouts, :instructor_dashboard} do
       live("/", Delivery.InstructorDashboard.InstructorDashboardLive, :preview)
       live("/:view", Delivery.InstructorDashboard.InstructorDashboardLive, :preview)
       live("/:view/:active_tab", Delivery.InstructorDashboard.InstructorDashboardLive, :preview)
@@ -873,7 +857,7 @@ defmodule OliWeb.Router do
   scope "/sections/:section_slug/instructor_dashboard", OliWeb do
     pipe_through([
       :browser,
-      :delivery_and_admin,
+      :delivery_protected,
       :pow_email_layout
     ])
 
@@ -914,8 +898,14 @@ defmodule OliWeb.Router do
     )
 
     live_session :instructor_dashboard,
-      on_mount: OliWeb.Delivery.InstructorDashboard.InitialAssigns,
-      root_layout: {OliWeb.LayoutView, :delivery_dashboard} do
+      on_mount: [
+        OliWeb.LiveSessionPlugs.SetUser,
+        OliWeb.LiveSessionPlugs.SetSection,
+        OliWeb.LiveSessionPlugs.SetBrand,
+        OliWeb.LiveSessionPlugs.SetPreviewMode,
+        OliWeb.Delivery.InstructorDashboard.InitialAssigns
+      ],
+      layout: {OliWeb.Layouts, :instructor_dashboard} do
       live("/:view", Delivery.InstructorDashboard.InstructorDashboardLive)
       live("/:view/:active_tab", Delivery.InstructorDashboard.InstructorDashboardLive)
 
@@ -926,58 +916,14 @@ defmodule OliWeb.Router do
     end
   end
 
-  ### NextGen23 Student Course Delivery
-  scope "/ng23/sections/:section_slug", OliWeb do
-    pipe_through([
-      :browser,
-      :delivery,
-      :delivery_and_admin
-    ])
-
-    live_session :delivery,
-      root_layout: {OliWeb.LayoutView, :delivery},
-      on_mount: [
-        OliWeb.LiveSessionPlugs.SetSection,
-        OliWeb.LiveSessionPlugs.SetCurrentUser,
-        OliWeb.LiveSessionPlugs.SetSessionContext,
-        OliWeb.LiveSessionPlugs.SetBrand,
-        OliWeb.LiveSessionPlugs.SetPreviewMode,
-        OliWeb.LiveSessionPlugs.RequireEnrollment
-      ] do
-      live("/", Delivery.Student.IndexLive)
-      live("/content", Delivery.Student.ContentLive)
-      live("/discussion", Delivery.Student.DiscussionLive)
-      live("/assignments", Delivery.Student.AssignmentsLive)
-      live("/explorations", Delivery.Student.ExplorationsLive)
-    end
-
-    # TODO: Implement preview mode for NextGen23
-    # live_session :delivery_preview,
-    #   on_mount: [
-    #     OliWeb.LiveSessionPlugs.SetSection,
-    #     OliWeb.LiveSessionPlugs.SetCurrentUser,
-    #     OliWeb.LiveSessionPlugs.SetSessionContext,
-    #     OliWeb.LiveSessionPlugs.SetBrand,
-    #     OliWeb.LiveSessionPlugs.SetPreviewMode,
-    #     OliWeb.LiveSessionPlugs.RequireEnrollment
-    #   ] do
-    #   live("/", Delivery.Student.IndexLive, :preview)
-    #   live("/content", Delivery.Student.ContentLive, :preview)
-    #   live("/discussion", Delivery.Student.DiscussionLive, :preview)
-    #   live("/assignments", Delivery.Student.AssignmentsLive, :preview)
-    #   live("/explorations", Delivery.Student.ExplorationsLive, :preview)
-    # end
-  end
-
   ### Sections - Student Course Delivery
   scope "/sections/:section_slug", OliWeb do
     pipe_through([
       :browser,
       :require_section,
       :delivery,
-      :require_exploration_pages,
-      :delivery_preview,
       :delivery_protected,
+      :require_exploration_pages,
       :maybe_gated_resource,
       :enforce_enroll_and_paywall,
       :ensure_user_section_visit,
@@ -985,12 +931,49 @@ defmodule OliWeb.Router do
       :pow_email_layout
     ])
 
-    get("/overview", PageDeliveryController, :index)
+    ### Student Course Delivery
+    scope "/" do
+      live_session :delivery,
+        root_layout: {OliWeb.LayoutView, :delivery},
+        layout: {OliWeb.Layouts, :student_delivery},
+        on_mount: [
+          OliWeb.LiveSessionPlugs.SetUser,
+          OliWeb.LiveSessionPlugs.SetSection,
+          OliWeb.LiveSessionPlugs.SetBrand,
+          OliWeb.LiveSessionPlugs.SetPreviewMode,
+          OliWeb.LiveSessionPlugs.RequireEnrollment
+        ] do
+        live("/", Delivery.Student.IndexLive)
+        live("/content", Delivery.Student.ContentLive)
+        live("/discussions", Delivery.Student.DiscussionLive)
+        live("/assignments", Delivery.Student.AssignmentsLive)
+        live("/explorations", Delivery.Student.ExplorationsLive)
+        live("/practice", Delivery.Student.PracticeLive)
+      end
+    end
 
-    get("/exploration", PageDeliveryController, :exploration)
-    get("/practice", PageDeliveryController, :deliberate_practice)
-    get("/discussion", PageDeliveryController, :discussion)
-    get("/my_assignments", PageDeliveryController, :assignments)
+    # TODO: Ensure that all these liveviews actually respect preview mode flag
+    ### Instructor Preview Modes
+    scope "/preview" do
+      live_session :delivery_preview,
+        root_layout: {OliWeb.LayoutView, :delivery},
+        layout: {OliWeb.Layouts, :student_delivery},
+        on_mount: [
+          OliWeb.LiveSessionPlugs.SetSection,
+          OliWeb.LiveSessionPlugs.SetUser,
+          OliWeb.LiveSessionPlugs.SetBrand,
+          OliWeb.LiveSessionPlugs.SetPreviewMode,
+          OliWeb.LiveSessionPlugs.RequireEnrollment
+        ] do
+        live("/", Delivery.Student.IndexLive, :preview)
+        live("/content", Delivery.Student.ContentLive, :preview)
+        live("/discussions", Delivery.Student.DiscussionLive, :preview)
+        live("/assignments", Delivery.Student.AssignmentsLive, :preview)
+        live("/explorations", Delivery.Student.ExplorationsLive, :preview)
+        live("/practice", Delivery.Student.PracticeLive)
+      end
+    end
+
     get("/container/:revision_slug", PageDeliveryController, :container)
     get("/page/:revision_slug", PageDeliveryController, :page)
     get("/page_fullscreen/:revision_slug", PageDeliveryController, :page_fullscreen)
@@ -1023,17 +1006,10 @@ defmodule OliWeb.Router do
       :require_section,
       :require_exploration_pages,
       :authorize_section_preview,
-      :delivery_and_admin,
+      :delivery_protected,
       :delivery_layout,
       :pow_email_layout
     ])
-
-    # Redirect deprecated routes
-    get("/overview", PageDeliveryController, :index_preview)
-    get("/exploration", PageDeliveryController, :exploration_preview)
-    get("/practice", PageDeliveryController, :deliberate_practice_preview)
-    get("/discussion", PageDeliveryController, :discussion_preview)
-    get("/my_assignments", PageDeliveryController, :assignments_preview)
 
     get("/container/:revision_slug", PageDeliveryController, :container_preview)
     get("/page/:revision_slug", PageDeliveryController, :page_preview)
@@ -1050,8 +1026,7 @@ defmodule OliWeb.Router do
     live_session :load_section,
       on_mount: [
         OliWeb.LiveSessionPlugs.SetSection,
-        OliWeb.LiveSessionPlugs.SetCurrentUser,
-        OliWeb.LiveSessionPlugs.SetSessionContext,
+        OliWeb.LiveSessionPlugs.SetUser,
         OliWeb.LiveSessionPlugs.SetBrand,
         OliWeb.LiveSessionPlugs.SetPreviewMode,
         OliWeb.LiveSessionPlugs.RequireEnrollment
@@ -1064,74 +1039,100 @@ defmodule OliWeb.Router do
   end
 
   ### Sections - Management
-  scope "/sections", OliWeb do
+  scope "/sections/:section_slug", OliWeb do
     pipe_through([
       :browser,
       :require_section,
-      :delivery_and_admin,
+      :delivery_protected,
       :pow_email_layout
     ])
 
-    live("/:section_slug", Sections.OverviewView)
-
-    live("/:section_slug/grades/lms", Grades.GradesLive)
-    live("/:section_slug/grades/lms_grade_updates", Grades.BrowseUpdatesView)
-    live("/:section_slug/grades/failed", Grades.FailedGradeSyncLive)
-    live("/:section_slug/grades/observe", Grades.ObserveGradeUpdatesView)
-    live("/:section_slug/grades/gradebook", Grades.GradebookView)
-    live("/:section_slug/scoring", ManualGrading.ManualGradingView)
-    live("/:section_slug/snapshots", Snapshots.SnapshotsView)
-    live("/:section_slug/progress/:user_id/:resource_id", Progress.StudentResourceView)
-    live("/:section_slug/progress/:user_id", Progress.StudentView)
-    get("/:section_slug/grades/export", PageDeliveryController, :export_gradebook)
-    live("/:section_slug/source_materials", Delivery.ManageSourceMaterials, as: :source_materials)
-    live("/:section_slug/remix", Delivery.RemixSection)
-    live("/:section_slug/remix/:section_resource_slug", Delivery.RemixSection)
-    post("/:section_slug/enrollments", InviteController, :create_bulk)
-
-    post("/:section_slug/enrollments/export", PageDeliveryController, :export_enrollments)
-    live("/:section_slug/invitations", Sections.InviteView)
-    live("/:section_slug/schedule", Sections.ScheduleView)
-    live("/:section_slug/edit", Sections.EditView)
-    live("/:section_slug/gating_and_scheduling", Sections.GatingAndScheduling)
-    live("/:section_slug/gating_and_scheduling/new", Sections.GatingAndScheduling.New)
-
-    live("/:section_slug/debugger/:attempt_guid", Attempt.AttemptLive)
-
-    live(
-      "/:section_slug/gating_and_scheduling/new/:parent_gate_id",
-      Sections.GatingAndScheduling.New
-    )
-
-    live("/:section_slug/gating_and_scheduling/edit/:id", Sections.GatingAndScheduling.Edit)
-
-    live(
-      "/:section_slug/gating_and_scheduling/exceptions/:parent_gate_id",
-      Sections.GatingAndScheduling
-    )
+    get("/grades/export", PageDeliveryController, :export_gradebook)
+    post("/enrollments", InviteController, :create_bulk)
+    post("/enrollments/export", PageDeliveryController, :export_enrollments)
 
     get(
-      "/:section_slug/review/:attempt_guid",
+      "/review/:attempt_guid",
       PageDeliveryController,
       :review_attempt,
       as: :instructor_review
     )
 
-    live("/:section_slug/collaborative_spaces", CollaborationLive.IndexView, :instructor,
-      as: :collab_spaces_index
-    )
+    live_session :manage_section,
+      on_mount: [
+        OliWeb.LiveSessionPlugs.SetUser,
+        OliWeb.LiveSessionPlugs.SetSection,
+        OliWeb.LiveSessionPlugs.SetBrand,
+        OliWeb.LiveSessionPlugs.SetPreviewMode,
+        # OliWeb.LiveSessionPlugs.RequireInstructor
+        OliWeb.Delivery.InstructorDashboard.InitialAssigns
+      ],
+      layout: {OliWeb.Layouts, :instructor_dashboard} do
+      live("/manage", Sections.OverviewView)
+      live("/grades/lms", Grades.GradesLive)
+      live("/grades/lms_grade_updates", Grades.BrowseUpdatesView)
+      live("/grades/failed", Grades.FailedGradeSyncLive)
+      live("/grades/observe", Grades.ObserveGradeUpdatesView)
+      live("/grades/gradebook", Grades.GradebookView)
+      live("/scoring", ManualGrading.ManualGradingView)
+      live("/snapshots", Snapshots.SnapshotsView)
+      live("/progress/:user_id/:resource_id", Progress.StudentResourceView)
+      live("/progress/:user_id", Progress.StudentView)
+      live("/source_materials", Delivery.ManageSourceMaterials, as: :source_materials)
+      live("/remix", Delivery.RemixSection)
+      live("/remix/:section_resource_slug", Delivery.RemixSection)
+      live("/enrollments", Sections.EnrollmentsViewLive)
 
-    live(
-      "/:section_slug/assessment_settings/:active_tab/:assessment_id",
-      Sections.AssessmentSettings.SettingsLive
-    )
+      live("/invitations", Sections.InviteView)
+      live("/schedule", Sections.ScheduleView)
+      live("/edit", Sections.EditView)
+      live("/gating_and_scheduling", Sections.GatingAndScheduling)
+      live("/gating_and_scheduling/new", Sections.GatingAndScheduling.New)
+
+      live("/debugger/:attempt_guid", Attempt.AttemptLive)
+
+      live(
+        "/gating_and_scheduling/new/:parent_gate_id",
+        Sections.GatingAndScheduling.New
+      )
+
+      live("/gating_and_scheduling/edit/:id", Sections.GatingAndScheduling.Edit)
+
+      live(
+        "/gating_and_scheduling/exceptions/:parent_gate_id",
+        Sections.GatingAndScheduling
+      )
+
+      live("/collaborative_spaces", CollaborationLive.IndexView, :instructor,
+        as: :collab_spaces_index
+      )
+
+      live(
+        "/assessment_settings/:active_tab/:assessment_id",
+        Sections.AssessmentSettings.SettingsLive
+      )
+    end
+
+    live_session :enrolled_students,
+      on_mount: [
+        OliWeb.LiveSessionPlugs.SetRouteName,
+        OliWeb.Delivery.StudentDashboard.InitialAssigns
+      ],
+      root_layout: {OliWeb.LayoutView, :delivery_student_dashboard} do
+      live(
+        "/enrollments/students/:student_id/:active_tab",
+        Delivery.StudentDashboard.StudentDashboardLive,
+        as: :enrollment_student_info,
+        metadata: %{route_name: :enrollments_student_info}
+      )
+    end
   end
 
   scope "/api/v1/state/course/:section_slug/activity_attempt", OliWeb do
     pipe_through([
       :browser,
       :require_section,
-      :delivery_and_admin,
+      :delivery_protected,
       :pow_email_layout
     ])
 
@@ -1236,8 +1237,8 @@ defmodule OliWeb.Router do
 
     # Section Management (+ Open and Free)
     live("/sections", Sections.SectionsView)
-    live("/open_and_free/create", Delivery.NewCourse, :admin, as: :select_source)
-    resources("/open_and_free", OpenAndFreeController, as: :admin_open_and_free)
+    live("/sections/create", Delivery.NewCourse, :admin, as: :select_source)
+
     live("/open_and_free/:section_slug/remix", Delivery.RemixSection, as: :open_and_free_remix)
 
     # Institutions, LTI Registrations and Deployments

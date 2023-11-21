@@ -1,8 +1,6 @@
 defmodule OliWeb.Delivery.Student.ExplorationsLive do
   use OliWeb, :live_view
 
-  import OliWeb.Components.Delivery.Layouts
-
   alias OliWeb.Common.SessionContext
   alias Oli.Rendering.Content
   alias Oli.Delivery.Sections
@@ -13,49 +11,42 @@ defmodule OliWeb.Delivery.Student.ExplorationsLive do
 
     {:ok,
      assign(socket,
+       active_tab: :explorations,
        explorations_by_container: explorations_by_container
      )}
   end
 
   def render(assigns) do
     ~H"""
-    <.header_with_sidebar_nav
-      ctx={@ctx}
-      section={@section}
-      brand={@brand}
-      preview_mode={@preview_mode}
-      active_tab={:explorations}
-    >
-      <div class="w-full bg-cover bg-center bg-no-repeat bg-gray-700 text-white py-24 px-16">
-        <div class="container mx-auto flex flex-col lg:flex-row">
-          <div class="lg:flex-1">
-            <h1 class="text-4xl mb-8">Your Explorations</h1>
-            <p>All your explorations in one place.</p>
-            <p>You unlock explorations as you solve problems and gain useful skills.</p>
-          </div>
+    <div class="w-full bg-cover bg-center bg-no-repeat bg-gray-700 text-white py-24 px-16">
+      <div class="container mx-auto flex flex-col lg:flex-row">
+        <div class="lg:flex-1">
+          <h1 class="text-4xl mb-8">Your Explorations</h1>
+          <p>All your explorations in one place.</p>
+          <p>You unlock explorations as you solve problems and gain useful skills.</p>
         </div>
       </div>
-      <div class="container mx-auto flex flex-col mt-6 px-16">
-        <div :if={Enum.count(@explorations_by_container) == 0} class="text-center" role="alert">
-          <h6>There are no explorations available</h6>
-        </div>
-
-        <%= for {container_name, explorations} <- @explorations_by_container do %>
-          <h2 :if={container_name != :default} class="text-sm font-bold my-6 uppercase text-gray-700">
-            <%= container_name %>
-          </h2>
-
-          <.exploration_card
-            :for={{exploration, status} <- explorations}
-            ctx={@ctx}
-            exploration={exploration}
-            status={status}
-            section_slug={@section.slug}
-            preview_mode={@preview_mode}
-          />
-        <% end %>
+    </div>
+    <div class="container mx-auto flex flex-col mt-6 px-16">
+      <div :if={Enum.count(@explorations_by_container) == 0} class="text-center" role="alert">
+        <h6>There are no explorations available</h6>
       </div>
-    </.header_with_sidebar_nav>
+
+      <%= for {container_name, explorations} <- @explorations_by_container do %>
+        <h2 :if={container_name != :default} class="text-sm font-bold my-6 uppercase text-gray-700">
+          <%= container_name %>
+        </h2>
+
+        <.exploration_card
+          :for={{exploration, status} <- explorations}
+          ctx={@ctx}
+          exploration={exploration}
+          status={status}
+          section_slug={@section.slug}
+          preview_mode={@preview_mode}
+        />
+      <% end %>
+    </div>
     """
   end
 

@@ -181,7 +181,7 @@ defmodule OliWeb.Components.Delivery.Students do
 
   def render(assigns) do
     ~H"""
-    <div id={@id} class="flex flex-col gap-2 mx-10 mb-10">
+    <div id={@id} class="flex flex-col gap-2 mb-10">
       <.live_component
         module={OliWeb.Components.LiveModal}
         id="students_table_add_enrollments_modal"
@@ -211,6 +211,7 @@ defmodule OliWeb.Components.Delivery.Students do
           target={@id}
         />
       </.live_component>
+
       <div class="bg-white dark:bg-gray-800 shadow-sm">
         <div class="flex justify-between sm:items-end px-4 sm:px-9 py-4 instructor_dashboard_table">
           <div>

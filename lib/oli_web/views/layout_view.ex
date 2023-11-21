@@ -1,20 +1,12 @@
 defmodule OliWeb.LayoutView do
   use OliWeb, :view
 
-  import OliWeb.AuthoringView,
-    only: [
-      author_role_text: 1,
-      author_role_color: 1,
-      author_icon: 1
-    ]
-
   import Oli.Branding
 
   alias Oli.Accounts
   alias Oli.Publishing.AuthoringResolver
   alias OliWeb.Breadcrumb.BreadcrumbTrailLive
   alias Oli.Delivery.Paywall.AccessSummary
-  alias Oli.Resources.Collaboration.CollabSpaceConfig
 
   def show_pay_early(%AccessSummary{reason: :within_grace_period}), do: true
   def show_pay_early(_), do: false
@@ -113,13 +105,6 @@ defmodule OliWeb.LayoutView do
     end
   end
 
-  def account_dropdown(%{assigns: %{ctx: ctx}} = conn),
-    do:
-      render(__MODULE__, "_author_account_dropdown.html",
-        conn: conn,
-        ctx: ctx
-      )
-
   def render_layout(layout, assigns, do: content) do
     render(layout, Map.put(assigns, :inner_layout, content))
   end
@@ -127,8 +112,4 @@ defmodule OliWeb.LayoutView do
   def dev_mode?() do
     Application.fetch_env!(:oli, :env) == :dev
   end
-
-  defp show_collab_space?(nil), do: false
-  defp show_collab_space?(%CollabSpaceConfig{status: :disabled}), do: false
-  defp show_collab_space?(_), do: true
 end
