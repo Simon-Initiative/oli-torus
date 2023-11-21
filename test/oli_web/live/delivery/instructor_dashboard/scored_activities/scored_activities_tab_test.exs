@@ -65,9 +65,12 @@ defmodule OliWeb.Delivery.InstructorDashboard.ScoredActivitiesTabTest do
         date_evaluated: ~U[2020-01-01 00:00:00Z]
       })
 
+    multiple_choice_activity = Oli.Activities.get_registration_by_slug("oli_multiple_choice")
+    multiple_choice_type_id = multiple_choice_activity.id
+
     transformed_model =
       case activity_type_id do
-        9 ->
+        multiple_choice_type_id ->
           %{choices: generate_choices(activity_revision.id)}
 
         _ ->
