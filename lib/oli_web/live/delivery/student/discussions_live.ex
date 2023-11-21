@@ -35,11 +35,15 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
   # Do we consider only direct replies to the post or all replies in the thread? All levels (no 100% seguro)
 
   # view all posts -> we do not want to fetch all posts (it might be expensive) => implement it with infinite scroll + stream (Chis McCord's talk)
-  def mount(
-        _params,
-        _session,
-        socket
-      ) do
+
+  def mount(_params, _session, socket) do
+    if connected?(socket),
+      do:
+        Phoenix.PubSub.subscribe(
+          Oli.PubSub,
+          "collab_space_discussion_#{socket.assigns.section.slug}"
+        )
+
     {
       :ok,
       assign(socket,
@@ -66,12 +70,6 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
   def handle_event("create_new_discussion", %{"post" => attrs} = _params, socket) do
     case Collaboration.create_post(attrs) do
       {:ok, %Post{} = post} ->
-        # PubSub.broadcast(
-        #   Oli.PubSub,
-        #   socket.assigns.topic,
-        #   {:post_created, Repo.preload(post, :user), socket.assigns.user.id}
-        # )
-
         new_post = %{
           id: post.id,
           content: post.content,
@@ -86,6 +84,13 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
           last_reply: nil,
           unread_reply_count: 0
         }
+
+        Phoenix.PubSub.broadcast_from(
+          Oli.PubSub,
+          self(),
+          "collab_space_discussion_#{socket.assigns.section.slug}",
+          {:post_created, new_post}
+        )
 
         {:noreply, assign(socket, :posts, [new_post | socket.assigns.posts])}
 
@@ -114,6 +119,10 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
 
   def handle_event("collapse_post", %{"post_id" => post_id}, socket) do
     {:noreply, update(socket, :expanded_posts, &Map.drop(&1, [String.to_integer(post_id)]))}
+  end
+
+  def handle_info({:post_created, new_post}, socket) do
+    {:noreply, assign(socket, :posts, [new_post | socket.assigns.posts])}
   end
 
   # TODO add real bg-image for header and svg icons for:
