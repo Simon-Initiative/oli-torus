@@ -196,6 +196,19 @@ defmodule Oli.Resources.Collaboration do
   end
 
   @doc """
+  Returns the collab space config at the course level, the one "attached"
+  at the curriculum level.
+  """
+  def get_course_collab_space_config(root_section_resource_id) do
+    Repo.one(
+      from(sr in SectionResource,
+        where: sr.id == ^root_section_resource_id,
+        select: sr.collab_space_config
+      )
+    )
+  end
+
+  @doc """
   Returns the collaborative space config for a specific page in a section.
   Prioritize the config present in the "delivery_settings" relation and fallback to
   the config present in the page revision.
@@ -508,7 +521,7 @@ defmodule Oli.Resources.Collaboration do
           resource_type_id: rev.resource_type_id,
           updated_at: post.updated_at
         },
-        order_by: [asc: :updated_at],
+        order_by: [desc: rev.resource_type_id, desc: post.updated_at],
         limit: ^limit
       )
     )

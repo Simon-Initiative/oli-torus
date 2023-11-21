@@ -4,30 +4,96 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
   import OliWeb.Components.Delivery.Layouts
 
   alias Oli.Resources.Collaboration
+  alias Oli.Resources.Collaboration.Post
   alias OliWeb.Common.FormatDateTime
   alias OliWeb.Components.Modal
   alias OliWeb.Components.Delivery.Buttons
 
+  # There are many Figma designs, I assumed I must consider the one at the top.
+
+  # course_post
+  # only consider posts attached to a container
+
+  # always consider posts from level 0 (parent_post_id and thread_root_id are null)
+  # to render a card. For course posts level 1 posts will be shown when clicking "open"
+  # How do we handle cases when there are posts at level 2 or more? we can expand them again (an open button
+  # should be added), and rendered indented.
+  # We will be able to repond to course_posts at level 0, right? yes
+
+  # we actually do not handle "uread posts" functionality. This must be done (leave it for the end in case design changes)
+
+  # what is the text rendered in a page post under the module and page title?
+  # it is supposed to be the text the user highlighted from the page while submitting the post.
+
+  # do we have a way to get the module a page belongs to (MODULE 3.1 PAGE 7)? see resource_to_container_map to get the parent container.
+  # Number them in the "original way".
+
+  # NEW DISCUSSION button:
+  # what is the behavior? no design, but it should render a modal to enter a new post (only for course level posts)
+
+  # REPLY COUNT and LAST REPLY DATE:
+  # Do we consider only direct replies to the post or all replies in the thread? All levels (no 100% seguro)
+
+  # view all posts -> we do not want to fetch all posts (it might be expensive) => implement it with infinite scroll + stream (Chis McCord's talk)
   def mount(
         _params,
         _session,
         socket
       ) do
-    posts =
-      Collaboration.list_root_posts_for_section(
-        socket.assigns.current_user.id,
-        socket.assigns.section.id,
-        20
+    {
+      :ok,
+      assign(socket,
+        posts:
+          Collaboration.list_root_posts_for_section(
+            socket.assigns.current_user.id,
+            socket.assigns.section.id,
+            20
+          ),
+        expanded_posts: %{},
+        course_collab_space_config:
+          Collaboration.get_course_collab_space_config(
+            socket.assigns.section.root_section_resource_id
+          )
       )
-      |> Enum.reduce(%{course_posts: [], page_posts: []}, fn post, acc ->
-        if post.resource_type_id == 2 do
-          %{acc | course_posts: [post | acc.course_posts]}
-        else
-          %{acc | page_posts: [post | acc.page_posts]}
-        end
-      end)
+      |> assign_new_discussion_form()
+    }
+  end
 
-    {:ok, assign(socket, posts: posts, expanded_posts: %{})}
+  def handle_event("reset_discussion_modal", _, socket) do
+    {:noreply, assign_new_discussion_form(socket)}
+  end
+
+  def handle_event("create_new_discussion", %{"post" => attrs} = _params, socket) do
+    case Collaboration.create_post(attrs) do
+      {:ok, %Post{} = post} ->
+        # PubSub.broadcast(
+        #   Oli.PubSub,
+        #   socket.assigns.topic,
+        #   {:post_created, Repo.preload(post, :user), socket.assigns.user.id}
+        # )
+
+        new_post = %{
+          id: post.id,
+          content: post.content,
+          user_name: socket.assigns.current_user.name,
+          user_id: socket.assigns.current_user.id,
+          posted_anonymously: post.anonymous,
+          title: nil,
+          slug: nil,
+          resource_type_id: 2,
+          updated_at: post.updated_at,
+          reply_count: 0,
+          last_reply: nil,
+          unread_reply_count: 0
+        }
+
+        {:noreply, assign(socket, :posts, [new_post | socket.assigns.posts])}
+
+      {:error, %Ecto.Changeset{} = _changeset} ->
+        {:noreply,
+         socket
+         |> put_flash(:error, "Couldn't create post")}
+    end
   end
 
   def handle_event("expand_post", %{"post_id" => post_id}, socket) do
@@ -65,32 +131,83 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
       preview_mode={@preview_mode}
       active_tab={:discussions}
     >
-      <Modal.modal class="w-1/2" id="discussion-modal">
-        <:title>New Discussion</:title>
-        <textarea class="w-full h-28 p-3 border-gray-500" placeholder="Start a discussion..." />
-        <div class="flex items-center justify-end">
-          <.button
-            phx-click={Modal.hide_modal("discussion-modal")}
-            class="bg-transparent text-blue-500 hover:underline hover:bg-transparent"
+      <div phx-hook="TextareaListener" id="modal_wrapper">
+        <Modal.modal
+          class="w-1/2"
+          on_cancel={JS.push("reset_discussion_modal")}
+          id={"new-discussion-modal-#{@new_discussion_form_uuid}"}
+        >
+          <:title>New Discussion</:title>
+          <.form
+            for={@new_discussion_form}
+            phx-submit={
+              JS.push("create_new_discussion")
+              |> Modal.hide_modal("new-discussion-modal-#{@new_discussion_form_uuid}")
+              |> JS.push("reset_discussion_modal")
+            }
           >
-            Cancel
-          </.button>
-          <Buttons.button_with_options
-            id="create_post_button"
-            type="submit"
-            options={[
-              %{
-                text: "Post anonymously",
-                on_click:
-                  JS.dispatch("click", to: "#new_post_anonymous_checkbox")
-                  |> JS.dispatch("click", to: "#create_post_button_button")
-              }
-            ]}
-          >
-            Create Post
-          </Buttons.button_with_options>
-        </div>
-      </Modal.modal>
+            <.input type="hidden" field={@new_discussion_form[:user_id]} />
+            <.input type="hidden" field={@new_discussion_form[:section_id]} />
+            <.input type="hidden" field={@new_discussion_form[:resource_id]} />
+            <.input type="hidden" field={@new_discussion_form[:parent_post_id]} />
+            <.input type="hidden" field={@new_discussion_form[:thread_root_id]} />
+            <.input type="hidden" field={@new_discussion_form[:status]} />
+
+            <.inputs_for :let={post_content} field={@new_discussion_form[:content]}>
+              <.input
+                type="textarea"
+                field={post_content[:message]}
+                autocomplete="off"
+                placeholder="Start a discussion..."
+                data-grow="true"
+                data-initial-height={44}
+                onkeyup="resizeTextArea(this)"
+                class="torus-input border-r-0 collab-space__textarea"
+              />
+            </.inputs_for>
+
+            <div class="flex items-center justify-end">
+              <.button
+                phx-click={
+                  Modal.hide_modal("new-discussion-modal-#{@new_discussion_form_uuid}")
+                  |> JS.push("reset_discussion_modal")
+                }
+                type="button"
+                class="bg-transparent text-blue-500 hover:underline hover:bg-transparent"
+              >
+                Cancel
+              </.button>
+              <%= if @course_collab_space_config.anonymous_posting do %>
+                <div class="hidden">
+                  <.input
+                    type="checkbox"
+                    id="new_discussion_anonymous_checkbox"
+                    field={@new_discussion_form[:anonymous]}
+                  />
+                </div>
+                <Buttons.button_with_options
+                  id="create_post_button"
+                  type="submit"
+                  options={[
+                    %{
+                      text: "Post anonymously",
+                      on_click:
+                        JS.dispatch("click", to: "#new_discussion_anonymous_checkbox")
+                        |> JS.dispatch("click", to: "#create_post_button_button")
+                    }
+                  ]}
+                >
+                  Create Post
+                </Buttons.button_with_options>
+              <% else %>
+                <Buttons.button type="submit">
+                  Create Post
+                </Buttons.button>
+              <% end %>
+            </div>
+          </.form>
+        </Modal.modal>
+      </div>
       <div
         id="discussions_header"
         class="relative flex items-center h-[184px] w-full bg-gray-100 dark:bg-[#0B0C11]"
@@ -107,6 +224,8 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
           section_slug={@section.slug}
           expanded_posts={@expanded_posts}
           current_user_id={@current_user.id}
+          course_collab_space_config={@course_collab_space_config}
+          new_discussion_form_uuid={@new_discussion_form_uuid}
         />
       </div>
     </.header_with_sidebar_nav>
@@ -118,6 +237,8 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
   attr :section_slug, :string
   attr :expanded_posts, :map
   attr :current_user_id, :integer
+  attr :course_collab_space_config, Oli.Resources.Collaboration.CollabSpaceConfig
+  attr :new_discussion_form_uuid, :string
 
   defp posts_section(assigns) do
     ~H"""
@@ -174,8 +295,9 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
           </div>
 
           <button
+            :if={@course_collab_space_config.status == :enabled}
             role="new discussion"
-            phx-click={Modal.show_modal("discussion-modal")}
+            phx-click={Modal.show_modal("new-discussion-modal-#{@new_discussion_form_uuid}")}
             class="rounded-[3px] py-[10px] pl-[18px] pr-6 flex justify-center items-center text-[14px] leading-[20px] font-normal text-white bg-[#0F6CF5] hover:bg-blue-600"
           >
             <svg
@@ -198,8 +320,8 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
         role="posts list"
         class="rounded-xl w-full bg-white shadow-md dark:bg-[rgba(255,255,255,0.06)] divide-y-[1px] divide-gray-200 dark:divide-white/20"
       >
-        <%= for post <- @posts.course_posts do %>
-          <div class="p-6">
+        <%= for post <- @posts do %>
+          <div :if={post.resource_type_id == 2} class="p-6">
             <.course_post
               post={post}
               ctx={@ctx}
@@ -210,14 +332,14 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
               current_user_id={@current_user_id}
             />
           </div>
+          <.page_post
+            :if={post.resource_type_id != 2}
+            post={post}
+            ctx={@ctx}
+            section_slug={@section_slug}
+            current_user_id={@current_user_id}
+          />
         <% end %>
-        <.page_post
-          :for={post <- @posts.page_posts}
-          post={post}
-          ctx={@ctx}
-          section_slug={@section_slug}
-          current_user_id={@current_user_id}
-        />
       </div>
     </section>
     """
@@ -506,5 +628,28 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
     |> Enum.take(2)
     |> Enum.map(&String.slice(&1, 0..0))
     |> Enum.join()
+  end
+
+  defp assign_new_discussion_form(socket) do
+    assign(socket,
+      new_discussion_form_uuid: UUID.uuid4(),
+      new_discussion_form:
+        new_discussion_form(
+          socket.assigns.current_user.id,
+          socket.assigns.section.id,
+          socket.assigns.course_collab_space_config
+        )
+    )
+  end
+
+  defp new_discussion_form(current_user_id, section_id, course_collab_space_config) do
+    to_form(
+      Collaboration.change_post(%Post{
+        user_id: current_user_id,
+        section_id: section_id,
+        resource_id: 4,
+        status: if(course_collab_space_config.auto_accept, do: :approved, else: :submitted)
+      })
+    )
   end
 end
