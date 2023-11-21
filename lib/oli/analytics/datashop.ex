@@ -28,7 +28,7 @@ defmodule Oli.Analytics.Datashop do
   end
 
   def max_record_size() do
-    20000
+    20_000
   end
 
   # Creates a map of resource ids to lists, where the lists are the
@@ -168,9 +168,7 @@ defmodule Oli.Analytics.Datashop do
     |> Enum.map(fn {k, v} -> {k, v} end)
   end
 
-  defp part_attempts_stream(section_ids) do
-    max = max_record_size()
-
+  defp part_attempts_stream(section_ids, offset, limit) do
     from(snapshot in Snapshot,
       join: user in Oli.Accounts.User,
       on: snapshot.user_id == user.id,
@@ -189,7 +187,8 @@ defmodule Oli.Analytics.Datashop do
         activity_type_id: snapshot.activity_type_id
       },
       order_by: [desc: snapshot.inserted_at],
-      limit: ^max
+      offset: ^offset,
+      limit: ^limit
     )
     |> Repo.stream()
   end
@@ -233,7 +232,7 @@ defmodule Oli.Analytics.Datashop do
     |> Repo.one()
   end
 
-  def content_stream(context) do
+  def content_stream(context, offset, limit) do
     %{
       hierarchy_map: hierarchy_map,
       activity_types: activity_types,
@@ -245,7 +244,7 @@ defmodule Oli.Analytics.Datashop do
     } = context
 
     section_ids
-    |> part_attempts_stream()
+    |> part_attempts_stream(offset, limit)
     |> Stream.map(fn %{
                        email: email,
                        sub: sub,
