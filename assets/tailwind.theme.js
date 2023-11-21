@@ -197,9 +197,11 @@ module.exports = {
       primary: {
         DEFAULT: colors.azure['600'],
         active: colors.azure['700'],
+        hover: colors.azure['700'],
         dark: {
           DEFAULT: colors.azure['500'],
           active: colors.azure['400'],
+          hover: colors.azure['400'],
         },
         ...colors.azure,
       },

@@ -56,7 +56,15 @@ $element-margin-bottom: 1.5em;
     color: var(--color-delivery-primary);
 
     &:hover {
-      color: var(--color-delivery-primary-600);
+      color: var(--color-delivery-primary-hover);
+    }
+
+    .dark & {
+      color: var(--color-delivery-primary-dark);
+
+      &:hover {
+        color: var(--color-delivery-primary-dark-hover);
+      }
     }
   }
 

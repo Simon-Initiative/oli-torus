@@ -79,7 +79,7 @@ export const Popup: React.FC<Props> = ({ children, popupContent, popup }) => {
       containerClassName="z-50 react-tiny-popover structured-content pointer-events-none max-w-[300px]"
     >
       <span
-        className="italic font-bold cursor-pointer text-delivery-primary dark:text-delivery-primary-dark hover:text-delivery-primary-active dark:hover:text-delivery-primary-dark-active"
+        className="italic font-bold cursor-pointer text-delivery-primary dark:text-delivery-primary-dark hover:text-delivery-primary-hover dark:hover:text-delivery-primary-dark-hover"
         onMouseEnter={onHover}
         onMouseLeave={onBlur}
         onClick={onClick}
