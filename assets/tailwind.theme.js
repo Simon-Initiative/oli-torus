@@ -36,6 +36,21 @@ const colors = {
     800: '#7C5005',
     900: '#462D03',
   },
+  // new colors from UX audit 11.2023
+  offWhite: '#E8E8E8',
+  offBlack: '#373A44',
+  azure: {
+    50: '#D1DFF5',
+    100: '#E9F4FF',
+    200: '#CEE7FF',
+    300: '#A1D2FF',
+    400: '#69B0FB',
+    500: '#2B8BFE',
+    600: '#0165D9',
+    700: '#004A9F',
+    800: '#002E72',
+    900: '#071538',
+  },
 };
 
 module.exports = {
@@ -180,8 +195,13 @@ module.exports = {
         },
       },
       primary: {
-        DEFAULT: colors.blue['500'],
-        ...colors.blue,
+        DEFAULT: colors.azure['600'],
+        active: colors.azure['700'],
+        dark: {
+          DEFAULT: colors.azure['500'],
+          active: colors.azure['400'],
+        },
+        ...colors.azure,
       },
       hints: {
         bg: {
@@ -205,6 +225,16 @@ module.exports = {
               DEFAULT: colors.gray['600'],
             },
           },
+        },
+      },
+      tooltip: {
+        bg: {
+          DEFAULT: colors.offBlack,
+          dark: colors.offWhite,
+        },
+        content: {
+          DEFAULT: colors.white,
+          dark: colors.black,
         },
       },
     },
