@@ -113,7 +113,7 @@ defmodule OliWeb.Admin.AdminView do
           </li>
           <li>
             <a href={Routes.live_path(OliWeb.Endpoint, OliWeb.Features.FeaturesLive)}>
-              Enable and Disable Feature Flags
+              Feature Flags and Logging
             </a>
           </li>
           <li>

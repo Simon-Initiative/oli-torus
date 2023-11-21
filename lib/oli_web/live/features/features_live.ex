@@ -19,6 +19,7 @@ defmodule OliWeb.Features.FeaturesLive do
     {:ok,
      assign(socket,
        title: "Feature Flags",
+       log_level: Logger.level(),
        active: :features,
        features: Features.list_features_and_states(),
        breadcrumbs: set_breadcrumbs()
@@ -37,11 +38,77 @@ defmodule OliWeb.Features.FeaturesLive do
   def render(assigns) do
     ~H"""
     <div class="container">
-      <div class="grid grid-cols-12">
+      <div class="grid grid-cols-12 mb-5">
         <div class="col-span-12">
-          <p class="mb-3">
-            Change the status of system-wide feature flags
+          <h2 class="mb-5">
+            Change the logging level of the system.
+          </h2>
+          <p class="mb-5">
+            Current log level is: <strong><mark><%= @log_level %></mark></strong>.
           </p>
+          <p>
+            <button type="button" class="btn btn-danger" phx-click="logging" phx-value-level="debug">
+              Debug (most verbose)
+            </button>
+            <button type="button" class="btn btn-secondary" phx-click="logging" phx-value-level="info">
+              Info
+            </button>
+            <button
+              type="button"
+              class="btn btn-secondary"
+              phx-click="logging"
+              phx-value-level="notice"
+            >
+              Notice
+            </button>
+            <button
+              type="button"
+              class="btn btn-secondary"
+              phx-click="logging"
+              phx-value-level="warning"
+            >
+              Warning
+            </button>
+            <button
+              type="button"
+              class="btn btn-secondary"
+              phx-click="logging"
+              phx-value-level="error"
+            >
+              Error
+            </button>
+            <button
+              type="button"
+              class="btn btn-secondary"
+              phx-click="logging"
+              phx-value-level="critical"
+            >
+              Critical
+            </button>
+            <button
+              type="button"
+              class="btn btn-secondary"
+              phx-click="logging"
+              phx-value-level="alert"
+            >
+              Alert
+            </button>
+            <button
+              type="button"
+              class="btn btn-secondary"
+              phx-click="logging"
+              phx-value-level="emergency"
+            >
+              Emergency (least verbose)
+            </button>
+          </p>
+        </div>
+      </div>
+      <div class="grid grid-cols-12 mt-5">
+        <div class="col-span-12">
+          <h2 class="mb-5">
+            Change the status of system-wide feature flags
+          </h2>
         </div>
       </div>
       <div class="grid grid-cols-12">
@@ -85,5 +152,21 @@ defmodule OliWeb.Features.FeaturesLive do
   def handle_event("toggle", %{"label" => label, "action" => action}, socket) do
     Features.change_state(label, to_state(action))
     {:noreply, assign(socket, features: Features.list_features_and_states())}
+  end
+
+  def handle_event("logging", %{"level" => level}, socket) do
+    socket =
+      case Logger.configure(level: String.to_atom(level)) do
+        :ok ->
+          socket
+          |> put_flash(:info, "Logging level changed to #{level}")
+          |> assign(log_level: Logger.level())
+
+        _ ->
+          socket
+          |> put_flash(:error, "Logging level could not be changed to #{level}")
+      end
+
+    {:noreply, socket}
   end
 end
