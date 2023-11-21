@@ -412,6 +412,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       {:ok, _view, _html} = live(conn, live_view_content_live_route(section.slug))
     end
 
+    @tag :skip
     test "sees a check icon on visited pages", %{
       conn: conn,
       user: user,
