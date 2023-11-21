@@ -183,12 +183,14 @@ interface NavLinkProps {
 const NavLink = ({ href, active, name }: NavLinkProps) => (
   <a
     href={href}
-    className="block no-underline px-6 py-2 hover:no-underline text-current hover:text-delivery-primary-400"
+    className="block no-underline px-6 py-2 hover:no-underline text-current hover:text-delivery-primary-active hover:dark:text-delivery-primary-dark-active"
   >
     <div
       className={classNames(
         'border-b-2',
-        active ? 'font-bold border-delivery-primary !text-delivery-primary' : 'border-transparent',
+        active
+          ? 'font-bold border-delivery-primary dark:border-delivery-primary-dark text-delivery-primary dark:text-delivery-primary-dark'
+          : 'border-transparent',
       )}
     >
       {name}
@@ -219,7 +221,7 @@ const NavExpand = ({
   return (
     <div ref={ref}>
       <div
-        className="block no-underline px-6 py-2 cursor-pointer hover:no-underline text-current hover:text-delivery-primary-400"
+        className="block no-underline px-6 py-2 cursor-pointer hover:no-underline text-current hover:text-delivery-primary-active dark:hover:text-delivery-primary-dark-active"
         onClick={() => {
           popoutContainer ? setPopoutContianer(undefined) : setPopoutContianer(popout);
           setShow(!show);
@@ -229,7 +231,7 @@ const NavExpand = ({
           className={classNames(
             'border-b-2',
             active
-              ? 'font-bold border-delivery-primary !text-delivery-primary'
+              ? 'font-bold border-delivery-primary dark:border-delivery-primary-dark text-delivery-primary dark:text-delivery-primary-dark'
               : 'border-transparent',
           )}
         >
