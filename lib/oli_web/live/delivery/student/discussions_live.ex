@@ -121,6 +121,80 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
     {:noreply, update(socket, :expanded_posts, &Map.drop(&1, [String.to_integer(post_id)]))}
   end
 
+  def handle_event(
+        "post_reply",
+        %{"content" => %{"message" => ""}},
+        socket
+      ) do
+    # TODO give feedback to user
+    {:noreply, socket}
+  end
+
+  def handle_event(
+        "post_reply",
+        attrs,
+        socket
+      ) do
+    attrs =
+      Map.merge(attrs, %{
+        "user_id" => socket.assigns.current_user.id,
+        "section_id" => socket.assigns.section.id,
+        "resource_id" => 4,
+        "status" =>
+          if(socket.assigns.course_collab_space_config.auto_accept,
+            do: :approved,
+            else: :submitted
+          )
+      })
+
+    case Collaboration.create_post(attrs) do
+      {:ok, %Post{} = new_post} ->
+        # we need to update the metrics for the root post the new post belongs to
+        updated_root_posts =
+          Enum.map(socket.assigns.posts, fn root_post ->
+            if root_post.id == new_post.thread_root_id do
+              Collaboration.build_metrics_for_root_posts(root_post)
+            else
+              root_post
+            end
+          end)
+
+        # as well as the metrics for the expanded posts that belong
+        # to the same thread as the new post
+        updated_expanded_posts =
+          socket.assigns.expanded_posts
+          |> Enum.into(%{}, fn {expanded_post_id, expanded_replies} ->
+            if expanded_post_id == new_post.parent_post_id do
+              # the new post must be shown in the expanded replies
+              # of the post it replies to
+              {expanded_post_id,
+               Collaboration.list_replies_for_post(
+                 socket.assigns.current_user.id,
+                 new_post.parent_post_id
+               )}
+            else
+              case expanded_replies do
+                [expanded_reply | _rest]
+                when expanded_reply.thread_root_id == new_post.thread_root_id ->
+                  {expanded_post_id,
+                   Collaboration.build_metrics_for_reply_posts(expanded_replies)}
+
+                _ ->
+                  {expanded_post_id, expanded_replies}
+              end
+            end
+          end)
+
+        {:noreply,
+         assign(socket, expanded_posts: updated_expanded_posts, posts: updated_root_posts)}
+
+      {:error, %Ecto.Changeset{} = _changeset} ->
+        {:noreply,
+         socket
+         |> put_flash(:error, "Couldn't create post")}
+    end
+  end
+
   def handle_info({:post_created, new_post}, socket) do
     {:noreply, assign(socket, :posts, [new_post | socket.assigns.posts])}
   end
@@ -339,6 +413,7 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
               replies={Map.get(@expanded_posts, post.id, [])}
               expanded_posts={@expanded_posts}
               current_user_id={@current_user_id}
+              course_collab_space_config={@course_collab_space_config}
             />
           </div>
           <.page_post
@@ -365,6 +440,7 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
   attr :is_reply, :boolean
   attr :expanded_posts, :map
   attr :current_user_id, :integer
+  attr :course_collab_space_config, Oli.Resources.Collaboration.CollabSpaceConfig
 
   defp course_post(assigns) do
     ~H"""
@@ -437,26 +513,52 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
               replies={Map.get(@expanded_posts, reply.id, [])}
               expanded_posts={@expanded_posts}
               current_user_id={@current_user_id}
+              course_collab_space_config={@course_collab_space_config}
             />
           </div>
         <% end %>
-        <div class="flex items-center w-full gap-2 whitespace-nowrap">
-          <input type="text" class="w-full h-9 rounded-lg" placeholder="Write a response..." />
-          <Buttons.button_with_options
-            id={"create_post_button_#{@post.id}"}
-            type="submit"
-            options={[
-              %{
-                text: "Post anonymously",
-                on_click:
-                  JS.dispatch("click", to: "#new_post_anonymous_checkbox")
-                  |> JS.dispatch("click", to: "#create_post_button_button")
-              }
-            ]}
-          >
-            Create Post
-          </Buttons.button_with_options>
-        </div>
+        <form
+          for={%{}}
+          phx-submit="post_reply"
+          class="flex items-center w-full gap-2 whitespace-nowrap"
+        >
+          <input
+            name="content[message]"
+            type="text"
+            class="w-full h-9 rounded-lg"
+            placeholder="Write a response..."
+          />
+          <input type="hidden" name={:parent_post_id} value={@post.id} />
+          <input type="hidden" name={:thread_root_id} value={@post.thread_root_id || @post.id} />
+          <%= if @course_collab_space_config.anonymous_posting do %>
+            <div class="hidden">
+              <.input
+                name={:anonymous}
+                type="checkbox"
+                value={false}
+                id={"reply_anonymous_checkbox_#{@post.id}"}
+              />
+            </div>
+            <Buttons.button_with_options
+              id={"create_post_button_#{@post.id}"}
+              type="submit"
+              options={[
+                %{
+                  text: "Post anonymously",
+                  on_click:
+                    JS.dispatch("click", to: "#reply_anonymous_checkbox_#{@post.id}")
+                    |> JS.dispatch("click", to: "#create_post_button_#{@post.id}_button")
+                }
+              ]}
+            >
+              Create Post
+            </Buttons.button_with_options>
+          <% else %>
+            <Buttons.button type="submit">
+              Create Post
+            </Buttons.button>
+          <% end %>
+        </form>
         <button
           :if={@is_expanded}
           phx-click="collapse_post"

@@ -512,6 +512,7 @@ defmodule Oli.Resources.Collaboration do
             is_nil(post.parent_post_id) and is_nil(post.thread_root_id),
         select: %{
           id: post.id,
+          thread_root_id: post.thread_root_id,
           content: post.content,
           user_name: user.name,
           user_id: user.id,
@@ -527,6 +528,8 @@ defmodule Oli.Resources.Collaboration do
     )
     |> build_metrics_for_root_posts()
   end
+
+  def get_metrics_for_root_post(root_post), do: build_metrics_for_root_posts([root_post])
 
   def list_replies_for_post(user_id, post_id) do
     Repo.all(
@@ -548,6 +551,7 @@ defmodule Oli.Resources.Collaboration do
                (post.status == :submitted and post.user_id == ^user_id)),
         select: %{
           id: post.id,
+          thread_root_id: post.thread_root_id,
           content: post.content,
           user_name: user.name,
           user_id: user.id,
@@ -563,7 +567,10 @@ defmodule Oli.Resources.Collaboration do
     |> build_metrics_for_reply_posts()
   end
 
-  defp build_metrics_for_root_posts(posts) do
+  def build_metrics_for_root_posts(post) when not is_list(post),
+    do: hd(build_metrics_for_root_posts([post]))
+
+  def build_metrics_for_root_posts(posts) do
     # TODO get real unread_reply_count
     post_ids = Enum.map(posts, &Map.get(&1, :id))
 
@@ -596,7 +603,7 @@ defmodule Oli.Resources.Collaboration do
     end)
   end
 
-  defp build_metrics_for_reply_posts(posts) do
+  def build_metrics_for_reply_posts(posts) do
     # TODO get real unread_reply_count
     Enum.map(posts, fn post ->
       case get_post_children([post]) do
