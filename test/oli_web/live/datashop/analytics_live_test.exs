@@ -10,7 +10,7 @@ defmodule OliWeb.Datashop.AnalyticsLiveTest do
       project = insert(:project)
 
       expected_path =
-        "/authoring/session/new?request_path=%2Fauthoring%2Fproject%2F#{project.slug}%2Fdatashop%2Fanalytics"
+        "/authoring/session/new?request_path=%2Fproject%2F#{project.slug}%2Fdatashop"
 
       {:error,
        {:redirect,

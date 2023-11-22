@@ -396,12 +396,6 @@ defmodule OliWeb.Router do
       on_mount: [OliWeb.LiveSessionPlugs.SetCurrentAuthor, OliWeb.LiveSessionPlugs.SetProject] do
       live("/:project_id", Projects.OverviewLive)
       live("/:project_id/overview", Projects.OverviewLive)
-
-      scope "/:project_id/datashop" do
-        pipe_through([:admin])
-
-        live("/analytics", Datashop.AnalyticsLive)
-      end
     end
   end
 
@@ -1294,6 +1288,8 @@ defmodule OliWeb.Router do
     live("/:project_id/history/resource_id/:resource_id", RevisionHistory,
       as: :history_by_resource_id
     )
+
+    live("/:project_id/datashop", Datashop.AnalyticsLive)
   end
 
   # Support for cognito JWT auth currently used by Infiniscope

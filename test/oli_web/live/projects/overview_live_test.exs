@@ -111,7 +111,7 @@ defmodule OliWeb.Projects.OverviewLiveTest do
 
       refute has_element?(
                view,
-               "a[href=#{~p"/authoring/project/#{project.slug}/datashop/analytics"}]",
+               "a[href=#{~p"/project/#{project.slug}/datashop"}]",
                "Datashop Analytics"
              )
     end
@@ -141,7 +141,7 @@ defmodule OliWeb.Projects.OverviewLiveTest do
 
       assert has_element?(
                view,
-               "a[href=\"/authoring/project/#{project.slug}/datashop/analytics\"]",
+               "a[href=\"/project/#{project.slug}/datashop\"]",
                "Datashop Analytics"
              )
     end

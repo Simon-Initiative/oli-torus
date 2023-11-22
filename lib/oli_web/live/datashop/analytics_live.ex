@@ -22,6 +22,8 @@ defmodule OliWeb.Datashop.AnalyticsLive do
 
   @limit 25
 
+  on_mount(OliWeb.LiveSessionPlugs.SetProject)
+
   def mount(_params, session, socket) do
     ctx = SessionContext.init(socket, session)
     project = socket.assigns.project
@@ -146,7 +148,7 @@ defmodule OliWeb.Datashop.AnalyticsLive do
     ~H"""
     <Modal.modal
       id="generate_datashop_export_modal"
-      class="w-1/3"
+      class="w-1/2"
       on_confirm={
         JS.push("generate_datashop_snapshot")
         |> Modal.hide_modal("generate_datashop_export_modal")
@@ -154,16 +156,8 @@ defmodule OliWeb.Datashop.AnalyticsLive do
     >
       <:title>Generate Datashop Export</:title>
       <div class="flex flex-col items-center justify-center text-center p-4">
-        <div class="mb-4 p-4 border border-orange-300 dark:border-orange-700 bg-orange-100 dark:bg-orange-800 rounded-lg shadow-md">
-          <i class="fas fa-exclamation-triangle text-orange-500 dark:text-orange-200 text-xl mr-2">
-          </i>
-          <span class="text-orange-600 dark:text-orange-300">
-            DataShop Download is an unstable feature at the moment as the memory demands that it places on the system can cause the server to crash.
-            Please use with extreme caution and consult Torus engineering staff before doing so.
-          </span>
-        </div>
-        <div class="text-xl font-semibold">
-          Are you sure you want to generate a DataShop export?
+        <div class="text-xl">
+          Are you sure you want to generate a Datashop export?
         </div>
       </div>
 

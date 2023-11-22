@@ -323,7 +323,7 @@ defmodule OliWeb.Projects.OverviewLive do
             <% _pub -> %>
               <.button_link
                 class="btn btn-link action-button"
-                href={~p"/authoring/project/#{@project.slug}/datashop/analytics"}
+                href={~p"/project/#{@project.slug}/datashop"}
               >
                 Datashop Analytics
               </.button_link>
