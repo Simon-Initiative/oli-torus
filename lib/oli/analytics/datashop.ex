@@ -168,7 +168,7 @@ defmodule Oli.Analytics.Datashop do
     |> Enum.map(fn {k, v} -> {k, v} end)
   end
 
-  defp part_attempts_stream(project_id) do
+  defp part_attempts_stream(section_ids) do
     max = max_record_size()
 
     from(snapshot in Snapshot,
@@ -178,7 +178,7 @@ defmodule Oli.Analytics.Datashop do
       on: activity_revision.id == snapshot.revision_id,
       join: part_attempt in Oli.Delivery.Attempts.Core.PartAttempt,
       on: snapshot.part_attempt_id == part_attempt.id,
-      where: snapshot.project_id == ^project_id and not is_nil(snapshot.objective_revision_id),
+      where: snapshot.section_id in ^section_ids and not is_nil(snapshot.objective_revision_id),
       select: %{
         email: user.email,
         sub: user.sub,
@@ -225,9 +225,9 @@ defmodule Oli.Analytics.Datashop do
     )
   end
 
-  def count(project_id) do
+  def count(section_ids) do
     from(snapshot in Snapshot,
-      where: snapshot.project_id == ^project_id,
+      where: snapshot.section_id in ^section_ids and not is_nil(snapshot.objective_revision_id),
       select: count(snapshot.id)
     )
     |> Repo.one()
@@ -240,10 +240,12 @@ defmodule Oli.Analytics.Datashop do
       skill_titles: skill_titles,
       dataset_name: dataset_name,
       project: project,
-      publication: publication
+      publication: publication,
+      section_ids: section_ids
     } = context
 
-    part_attempts_stream(project.id)
+    section_ids
+    |> part_attempts_stream()
     |> Stream.map(fn %{
                        email: email,
                        sub: sub,
@@ -319,7 +321,7 @@ defmodule Oli.Analytics.Datashop do
     end)
   end
 
-  def build_context(project_id) do
+  def build_context(project_id, section_ids) do
     project = Course.get_project!(project_id)
     publication = Publishing.get_latest_published_publication_by_slug(project.slug)
 
@@ -346,7 +348,8 @@ defmodule Oli.Analytics.Datashop do
       skill_titles: skill_titles,
       dataset_name: Utils.make_dataset_name(project.slug),
       project: project,
-      publication: publication
+      publication: publication,
+      section_ids: section_ids
     }
   end
 
