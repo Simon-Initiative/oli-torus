@@ -3386,13 +3386,14 @@ defmodule Oli.Delivery.Sections do
               page_id in container.children
             end) do
          nil ->
-           nil
+           {nil, nil}
 
          %{numbering_level: 0} ->
-           nil
+           {nil, nil}
 
          c ->
-           ~s{#{get_container_label(c.numbering_level, c.customizations || Map.from_struct(CustomLabels.default()))} #{c.numbering_index}: #{c.title}}
+           {c.id,
+            ~s{#{get_container_label(c.numbering_level, c.customizations || Map.from_struct(CustomLabels.default()))} #{c.numbering_index}: #{c.title}}}
        end}
     end)
     |> Enum.into(%{})
