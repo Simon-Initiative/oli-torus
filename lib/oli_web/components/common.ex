@@ -603,4 +603,47 @@ defmodule OliWeb.Components.Common do
     </div>
     """
   end
+
+  attr :role, :string
+  attr :id, :string
+  attr :button_class, :string
+  attr :options, :list
+  slot(:inner_block)
+
+  def dropdown(assigns) do
+    ~H"""
+    <div class="relative" phx-click-away={JS.hide(to: "##{@id}-options")}>
+      <button
+        phx-click={
+          JS.toggle(
+            to: "##{@id}-options",
+            in: {"ease-out duration-300", "opacity-0", "opacity-100"},
+            out: {"ease-out duration-200", "opacity-100", "opacity-0"}
+          )
+        }
+        id={@id}
+        role={@role}
+        class={[@button_class]}
+      >
+        <%= render_slot(@inner_block) %>
+      </button>
+      <ul
+        class="hidden absolute top-10 rounded-lg bg-white dark:bg-gray-800 dark:border dark:border-gray-900 p-4 z-10 shadow-lg"
+        id={"#{@id}-options"}
+        class="hidden"
+      >
+        <%= for option <- @options do %>
+          <li>
+            <button
+              phx-click={option.on_click |> JS.hide(to: "##{@id}-options")}
+              class="flex items-center w-full gap-[10px] px-[10px] py-[4px] hover:text-gray-400 dark:text-white dark:hover:text-white/50"
+            >
+              <span class="text-[14px] leading-[20px]"><%= option.text %></span>
+            </button>
+          </li>
+        <% end %>
+      </ul>
+    </div>
+    """
+  end
 end

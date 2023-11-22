@@ -329,9 +329,24 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
         </h3>
         <div role="posts actions" class="flex items-center justify-end gap-6">
           <div class="flex space-x-3">
-            <button
+            <.dropdown
+              id="filter-dropdown"
               role="filter"
-              class="flex items-center gap-[10px] px-[10px] py-[4px] hover:text-gray-400 dark:text-white dark:hover:text-white/50"
+              button_class="flex items-center gap-[10px] px-[10px] py-[4px] hover:text-gray-400 dark:text-white dark:hover:text-white/50"
+              options={[
+                %{
+                  text: "All",
+                  on_click: JS.push("filter_posts", value: %{filter_by: "all"})
+                },
+                %{
+                  text: "Unread",
+                  on_click: JS.push("filter_posts", value: %{filter_by: "unread"})
+                },
+                %{
+                  text: "test",
+                  on_click: JS.push("filter_posts", value: %{filter_by: "unread"})
+                }
+              ]}
             >
               <span class="text-[14px] leading-[20px]">Filter</span>
               <svg
@@ -349,11 +364,26 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
                 <line x1="6" y1="12" x2="18" y2="12"></line>
                 <line x1="9" y1="18" x2="15" y2="18"></line>
               </svg>
-            </button>
+            </.dropdown>
 
-            <button
+            <.dropdown
+              id="sort-dropdown"
               role="sort"
-              class="flex items-center gap-[10px] px-[10px] py-[4px] hover:text-gray-400 dark:text-white dark:hover:text-white/50"
+              button_class="flex items-center gap-[10px] px-[10px] py-[4px] hover:text-gray-400 dark:text-white dark:hover:text-white/50"
+              options={[
+                %{
+                  text: "All",
+                  on_click: JS.push("filter_posts", value: %{filter_by: "all"})
+                },
+                %{
+                  text: "Unread",
+                  on_click: JS.push("filter_posts", value: %{filter_by: "unread"})
+                },
+                %{
+                  text: "test",
+                  on_click: JS.push("filter_posts", value: %{filter_by: "unread"})
+                }
+              ]}
             >
               <span class="text-[14px] leading-[20px]">Sort</span>
               <svg
@@ -371,7 +401,7 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
                 <line x1="3" y1="12" x2="14" y2="12"></line>
                 <line x1="3" y1="18" x2="7" y2="18"></line>
               </svg>
-            </button>
+            </.dropdown>
           </div>
 
           <button
