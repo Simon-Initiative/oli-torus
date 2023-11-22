@@ -85,12 +85,15 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
           unread_reply_count: 0
         }
 
-        Phoenix.PubSub.broadcast_from(
-          Oli.PubSub,
-          self(),
-          "collab_space_discussion_#{socket.assigns.section.slug}",
-          {:post_created, new_post}
-        )
+        # collab space may be configured to need approval from instructor
+        if post.status == :approved,
+          do:
+            Phoenix.PubSub.broadcast_from(
+              Oli.PubSub,
+              self(),
+              "collab_space_discussion_#{socket.assigns.section.slug}",
+              {:discussion_created, new_post}
+            )
 
         {:noreply, assign(socket, :posts, [new_post | socket.assigns.posts])}
 
@@ -149,41 +152,23 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
 
     case Collaboration.create_post(attrs) do
       {:ok, %Post{} = new_post} ->
-        # we need to update the metrics for the root post the new post belongs to
-        updated_root_posts =
-          Enum.map(socket.assigns.posts, fn root_post ->
-            if root_post.id == new_post.thread_root_id do
-              Collaboration.build_metrics_for_root_posts(root_post)
-            else
-              root_post
-            end
-          end)
+        {updated_root_posts, updated_expanded_posts} =
+          update_metrics_of_thread(
+            socket.assigns.posts,
+            socket.assigns.expanded_posts,
+            new_post,
+            socket.assigns.current_user.id
+          )
 
-        # as well as the metrics for the expanded posts that belong
-        # to the same thread as the new post
-        updated_expanded_posts =
-          socket.assigns.expanded_posts
-          |> Enum.into(%{}, fn {expanded_post_id, expanded_replies} ->
-            if expanded_post_id == new_post.parent_post_id do
-              # the new post must be shown in the expanded replies
-              # of the post it replies to
-              {expanded_post_id,
-               Collaboration.list_replies_for_post(
-                 socket.assigns.current_user.id,
-                 new_post.parent_post_id
-               )}
-            else
-              case expanded_replies do
-                [expanded_reply | _rest]
-                when expanded_reply.thread_root_id == new_post.thread_root_id ->
-                  {expanded_post_id,
-                   Collaboration.build_metrics_for_reply_posts(expanded_replies)}
-
-                _ ->
-                  {expanded_post_id, expanded_replies}
-              end
-            end
-          end)
+        # collab space may be configured to need approval from instructor
+        if new_post.status == :approved,
+          do:
+            Phoenix.PubSub.broadcast_from(
+              Oli.PubSub,
+              self(),
+              "collab_space_discussion_#{socket.assigns.section.slug}",
+              {:reply_posted, new_post}
+            )
 
         {:noreply,
          assign(socket, expanded_posts: updated_expanded_posts, posts: updated_root_posts)}
@@ -195,8 +180,20 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
     end
   end
 
-  def handle_info({:post_created, new_post}, socket) do
+  def handle_info({:discussion_created, new_post}, socket) do
     {:noreply, assign(socket, :posts, [new_post | socket.assigns.posts])}
+  end
+
+  def handle_info({:reply_posted, new_post}, socket) do
+    {updated_root_posts, updated_expanded_posts} =
+      update_metrics_of_thread(
+        socket.assigns.posts,
+        socket.assigns.expanded_posts,
+        new_post,
+        socket.assigns.current_user.id
+      )
+
+    {:noreply, assign(socket, expanded_posts: updated_expanded_posts, posts: updated_root_posts)}
   end
 
   # TODO add real bg-image for header and svg icons for:
@@ -762,5 +759,39 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
         status: if(course_collab_space_config.auto_accept, do: :approved, else: :submitted)
       })
     )
+  end
+
+  defp update_metrics_of_thread(root_posts, expanded_posts, new_post, current_user_id) do
+    # we need to update the metrics of the root post the new post belongs to
+    updated_root_posts =
+      Enum.map(root_posts, fn root_post ->
+        if root_post.id == new_post.thread_root_id do
+          Collaboration.build_metrics_for_root_posts(root_post)
+        else
+          root_post
+        end
+      end)
+
+    # and update the metrics for the expanded posts that belong
+    # to the same thread as the new post
+    updated_expanded_posts =
+      Enum.into(expanded_posts, %{}, fn
+        {expanded_post_id, _expanded_replies} when expanded_post_id == new_post.parent_post_id ->
+          # the new post must be shown as part of the expanded replies
+          {expanded_post_id,
+           Collaboration.list_replies_for_post(
+             current_user_id,
+             new_post.parent_post_id
+           )}
+
+        {expanded_post_id, [expanded_reply | _rest] = expanded_replies}
+        when expanded_reply.thread_root_id == new_post.thread_root_id ->
+          {expanded_post_id, Collaboration.build_metrics_for_reply_posts(expanded_replies)}
+
+        {expanded_post_id, expanded_replies} ->
+          {expanded_post_id, expanded_replies}
+      end)
+
+    {updated_root_posts, updated_expanded_posts}
   end
 end
