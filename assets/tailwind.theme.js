@@ -200,7 +200,7 @@ module.exports = {
       purpose: {
         label: {
           bg: {
-            DEFAULT: '#222439',
+            DEFAULT: colors.gray['300'],
             dark: {
               DEFAULT: colors.gray['600'],
             },

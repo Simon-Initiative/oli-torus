@@ -1,12 +1,28 @@
 .content-purpose {
-  margin-bottom: 1rem;
+  margin-top: 2rem;
+  margin-bottom: 2rem;
+  border: 1px solid var(--color-delivery-purpose-label-bg);
+  .dark & {
+    border-color: var(--color-delivery-purpose-label-bg-dark);
+  }
+  border-radius: 8px;
+  overflow: hidden;
 
   & > .content-purpose-label {
     text-transform: uppercase;
     background: var(--color-delivery-purpose-label-bg);
-    padding: 4px 0;
-    color: var(--color-white);
-    margin-bottom: 1rem;
+    color: var(--color-gray-900);
+    .dark & {
+      background: var(--color-delivery-purpose-label-bg-dark);
+      color: var(--color-gray-50);
+    }
+    padding: 20px 32px;
+    font-size: 20px;
+    font-weight: 600;
+  }
+
+  & > .content-purpose-content {
+    padding: 32px;
   }
 
   &.none {
@@ -24,9 +40,9 @@
       /** icon */
       &::before {
         font-family: 'Font Awesome 6 Free';
+        font-size: 22px;
         font-weight: 900;
-        margin-left: 8px;
-        margin-right: 8px;
+        margin-right: 12px;
         content: '\f11e';
       }
     }
@@ -37,29 +53,28 @@
       /** icon */
       &::before {
         font-family: 'Font Awesome 6 Free';
+        font-size: 22px;
         font-weight: 900;
-        margin-left: 8px;
-        margin-right: 8px;
+        margin-right: 12px;
         content: '\f256';
       }
     }
   }
 
   &.example {
-    border-bottom: 1px dashed rgba(#74b9ff, 0.75);
-
     & > .content-purpose-label {
-      border-bottom: 1px dashed rgba(#74b9ff, 0.75);
-      font-weight: 700;
       background: transparent;
-      color: var(--body-color);
+      border-bottom: 1px solid var(--color-delivery-purpose-label-bg);
+      .dark & {
+        border-color: var(--color-delivery-purpose-label-bg-dark);
+      }
 
       /** icon */
       &::before {
         font-family: 'Font Awesome 6 Free';
+        font-size: 22px;
         font-weight: 900;
-        margin-left: 8px;
-        margin-right: 8px;
+        margin-right: 12px;
         content: '\f1e5';
       }
     }
@@ -70,9 +85,9 @@
       /** icon */
       &::before {
         font-family: 'Font Awesome 6 Free';
+        font-size: 22px;
         font-weight: 900;
-        margin-left: 8px;
-        margin-right: 8px;
+        margin-right: 12px;
         content: '\f610';
       }
     }
@@ -83,9 +98,9 @@
       /** icon */
       &::before {
         font-family: 'Font Awesome 6 Free';
+        font-size: 22px;
         font-weight: 900;
-        margin-left: 8px;
-        margin-right: 8px;
+        margin-right: 12px;
         content: '\f51c';
       }
     }
@@ -96,9 +111,9 @@
       /** icon */
       &::before {
         font-family: 'Font Awesome 6 Free';
+        font-size: 22px;
         font-weight: 900;
-        margin-left: 8px;
-        margin-right: 8px;
+        margin-right: 12px;
         content: '\f51b';
       }
     }
@@ -109,9 +124,9 @@
       /** icon */
       &::before {
         font-family: 'Font Awesome 6 Free';
+        font-size: 22px;
         font-weight: 900;
-        margin-left: 8px;
-        margin-right: 8px;
+        margin-right: 12px;
         content: '\f5da';
       }
     }
@@ -122,9 +137,9 @@
       /** icon */
       &::before {
         font-family: 'Font Awesome 6 Free';
+        font-size: 22px;
         font-weight: 900;
-        margin-left: 8px;
-        margin-right: 8px;
+        margin-right: 12px;
         content: '\f46c';
       }
     }
@@ -135,9 +150,9 @@
       /** icon */
       &::before {
         font-family: 'Font Awesome 6 Free';
+        font-size: 22px;
         font-weight: 900;
-        margin-left: 8px;
-        margin-right: 8px;
+        margin-right: 12px;
         content: '\f681';
       }
     }
@@ -145,12 +160,14 @@
 
   &.simulation {
     & > .content-purpose-label {
+      background-color: #3d81f6;
+      color: white;
       /** icon */
       &::before {
         font-family: 'Font Awesome 6 Free';
+        font-size: 22px;
         font-weight: 900;
-        margin-left: 8px;
-        margin-right: 8px;
+        margin-right: 12px;
         content: '\f109';
       }
     }
@@ -161,9 +178,9 @@
       /** icon */
       &::before {
         font-family: 'Font Awesome 6 Free';
+        font-size: 22px;
         font-weight: 900;
-        margin-left: 8px;
-        margin-right: 8px;
+        margin-right: 12px;
         content: '\f6ec';
       }
     }
