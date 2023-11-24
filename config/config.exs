@@ -292,6 +292,9 @@ config :ex_cldr,
   default_locale: "en",
   default_backend: Oli.Cldr
 
+config :oli, :datashop,
+  cache_limit: String.to_integer(System.get_env("DATASHOP_CACHE_LIMIT", "200"))
+
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
 import_config "#{Mix.env()}.exs"

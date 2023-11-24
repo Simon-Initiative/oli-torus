@@ -9,8 +9,10 @@ defmodule Oli.Analytics.Datashop do
 
   import XmlBuilder
   import Oli.Utils, only: [value_or: 2]
-  alias Oli.Repo
   import Ecto.Query
+  alias Oli.Repo
+
+  alias Oli.DatashopCache
   alias Oli.Publishing
   alias Oli.Delivery.Snapshots.Snapshot
   alias Oli.Authoring.Course
@@ -251,20 +253,13 @@ defmodule Oli.Analytics.Datashop do
                        slug: activity_slug,
                        part_attempt: part_attempt
                      } ->
-      # TODO, it may make a lot of sense to front these next four fetches with an
-      # in memory cache
-      activity_attempt =
-        Oli.Repo.get(Oli.Delivery.Attempts.Core.ActivityAttempt, part_attempt.activity_attempt_id)
+      activity_attempt = DatashopCache.get_activity_attempt!(part_attempt.activity_attempt_id)
 
-      activity_revision = Oli.Repo.get(Oli.Resources.Revision, activity_attempt.revision_id)
+      activity_revision = DatashopCache.get_revision!(activity_attempt.revision_id)
 
-      resource_attempt =
-        Oli.Repo.get(
-          Oli.Delivery.Attempts.Core.ResourceAttempt,
-          activity_attempt.resource_attempt_id
-        )
+      resource_attempt = DatashopCache.get_resource_attempt!(activity_attempt.resource_attempt_id)
 
-      page_revision = Oli.Repo.get(Oli.Resources.Revision, resource_attempt.revision_id)
+      page_revision = DatashopCache.get_revision!(resource_attempt.revision_id)
 
       resource_attempt = %{resource_attempt | revision: page_revision}
       activity_attempt = %{activity_attempt | revision: activity_revision}
