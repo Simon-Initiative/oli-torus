@@ -491,7 +491,29 @@ defmodule Oli.Resources.Collaboration do
     )
   end
 
-  def list_root_posts_for_section(user_id, section_id, limit) do
+  def list_root_posts_for_section(user_id, section_id, limit, filter_by \\ nil) do
+    filter =
+      case filter_by do
+        f when f in [nil, "all"] ->
+          true
+
+        "my_activity" ->
+          post_thread_ids_user_interacted_with =
+            from(p in Post,
+              where: p.section_id == ^section_id and p.user_id == ^user_id,
+              select: coalesce(p.thread_root_id, p.id)
+            )
+
+          dynamic(
+            [post, _sr, _spp, _pr, _rev, _user],
+            post.id in subquery(post_thread_ids_user_interacted_with)
+          )
+
+        "unread" ->
+          # TODO implement it when unread feature is developed
+          true
+      end
+
     Repo.all(
       from(
         post in Post,
@@ -510,6 +532,7 @@ defmodule Oli.Resources.Collaboration do
             (post.status in [:approved, :archived] or
                (post.status == :submitted and post.user_id == ^user_id)) and
             is_nil(post.parent_post_id) and is_nil(post.thread_root_id),
+        where: ^filter,
         select: %{
           id: post.id,
           thread_root_id: post.thread_root_id,

@@ -636,9 +636,13 @@ defmodule OliWeb.Components.Common do
           <li>
             <button
               phx-click={option.on_click |> JS.hide(to: "##{@id}-options")}
-              class="flex items-center w-full gap-[10px] px-[10px] py-[4px] hover:text-gray-400 dark:text-white dark:hover:text-white/50"
+              class={[
+                "flex items-center w-full gap-[10px] px-[10px] py-[4px] hover:text-gray-400 dark:text-white dark:hover:text-white/50",
+                option[:class]
+              ]}
             >
-              <span class="text-[14px] leading-[20px]"><%= option.text %></span>
+              <span class="text-[14px] leading-[20px] whitespace-nowrap"><%= option.text %></span>
+              <%= Phoenix.HTML.raw(option[:icon]) %>
             </button>
           </li>
         <% end %>

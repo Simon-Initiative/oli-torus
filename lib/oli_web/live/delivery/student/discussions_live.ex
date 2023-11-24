@@ -36,6 +36,7 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
 
   # view all posts -> we do not want to fetch all posts (it might be expensive) => implement it with infinite scroll + stream (Chis McCord's talk)
 
+  @default_post_params %{sort_by: "date", sort_order: :desc, filter_by: "all"}
   def mount(_params, _session, socket) do
     if connected?(socket),
       do:
@@ -51,16 +52,65 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
           Collaboration.list_root_posts_for_section(
             socket.assigns.current_user.id,
             socket.assigns.section.id,
-            20
+            nil
           ),
         expanded_posts: %{},
         course_collab_space_config:
           Collaboration.get_course_collab_space_config(
             socket.assigns.section.root_section_resource_id
-          )
+          ),
+        post_params: @default_post_params
       )
       |> assign_new_discussion_form()
     }
+  end
+
+  def handle_event("filter_posts", %{"filter_by" => filter_by}, socket) do
+    {:noreply,
+     assign(
+       socket,
+       posts:
+         Collaboration.list_root_posts_for_section(
+           socket.assigns.current_user.id,
+           socket.assigns.section.id,
+           nil,
+           filter_by
+         )
+         |> sort_posts(socket.assigns.post_params.sort_by, socket.assigns.post_params.sort_order),
+       post_params: Map.merge(socket.assigns.post_params, %{filter_by: filter_by})
+     )}
+  end
+
+  def handle_event("sort_posts", %{"sort_by" => sort_by}, socket) do
+    {:noreply,
+     assign(
+       socket,
+       posts:
+         Collaboration.list_root_posts_for_section(
+           socket.assigns.current_user.id,
+           socket.assigns.section.id,
+           nil,
+           socket.assigns.post_params.filter_by
+         )
+         |> sort_posts(
+           sort_by,
+           get_sort_order(
+             socket.assigns.post_params.sort_by,
+             sort_by,
+             socket.assigns.post_params.sort_order
+           )
+         ),
+       post_params:
+         Map.merge(socket.assigns.post_params, %{
+           sort_by: sort_by,
+           sort_order:
+             get_sort_order(
+               socket.assigns.post_params.sort_by,
+               sort_by,
+               socket.assigns.post_params.sort_order
+             )
+         })
+     )}
   end
 
   def handle_event("reset_discussion_modal", _, socket) do
@@ -306,6 +356,7 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
           current_user_id={@current_user.id}
           course_collab_space_config={@course_collab_space_config}
           new_discussion_form_uuid={@new_discussion_form_uuid}
+          post_params={@post_params}
         />
       </div>
     </.header_with_sidebar_nav>
@@ -319,6 +370,7 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
   attr :current_user_id, :integer
   attr :course_collab_space_config, Oli.Resources.Collaboration.CollabSpaceConfig
   attr :new_discussion_form_uuid, :string
+  attr :post_params, :map
 
   defp posts_section(assigns) do
     ~H"""
@@ -336,15 +388,30 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
               options={[
                 %{
                   text: "All",
-                  on_click: JS.push("filter_posts", value: %{filter_by: "all"})
+                  on_click: JS.push("filter_posts", value: %{filter_by: "all"}),
+                  class:
+                    if(@post_params.filter_by == "all",
+                      do: "font-bold dark:font-extrabold",
+                      else: "dark:font-light"
+                    )
                 },
                 %{
                   text: "Unread",
-                  on_click: JS.push("filter_posts", value: %{filter_by: "unread"})
+                  on_click: JS.push("filter_posts", value: %{filter_by: "unread"}),
+                  class:
+                    if(@post_params.filter_by == "unread",
+                      do: "font-bold dark:font-extrabold",
+                      else: "dark:font-light"
+                    )
                 },
                 %{
-                  text: "test",
-                  on_click: JS.push("filter_posts", value: %{filter_by: "unread"})
+                  text: "My Activity",
+                  on_click: JS.push("filter_posts", value: %{filter_by: "my_activity"}),
+                  class:
+                    if(@post_params.filter_by == "my_activity",
+                      do: "font-bold dark:font-extrabold",
+                      else: "dark:font-light"
+                    )
                 }
               ]}
             >
@@ -372,16 +439,24 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
               button_class="flex items-center gap-[10px] px-[10px] py-[4px] hover:text-gray-400 dark:text-white dark:hover:text-white/50"
               options={[
                 %{
-                  text: "All",
-                  on_click: JS.push("filter_posts", value: %{filter_by: "all"})
+                  text: "Date",
+                  on_click: JS.push("sort_posts", value: %{sort_by: "date"}),
+                  icon: sort_by_icon(@post_params.sort_by == "date", @post_params.sort_order),
+                  class:
+                    if(@post_params.sort_by == "date",
+                      do: "font-bold dark:font-extrabold",
+                      else: "dark:font-light"
+                    )
                 },
                 %{
-                  text: "Unread",
-                  on_click: JS.push("filter_posts", value: %{filter_by: "unread"})
-                },
-                %{
-                  text: "test",
-                  on_click: JS.push("filter_posts", value: %{filter_by: "unread"})
+                  text: "Popularity",
+                  on_click: JS.push("sort_posts", value: %{sort_by: "popularity"}),
+                  icon: sort_by_icon(@post_params.sort_by == "popularity", @post_params.sort_order),
+                  class:
+                    if(@post_params.sort_by == "popularity",
+                      do: "font-bold dark:font-extrabold",
+                      else: "dark:font-light"
+                    )
                 }
               ]}
             >
@@ -824,4 +899,27 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
 
     {updated_root_posts, updated_expanded_posts}
   end
+
+  defp sort_posts(posts, sort_by, sort_order) do
+    case sort_by do
+      "date" ->
+        Enum.sort_by(posts, & &1.updated_at, {sort_order, DateTime})
+
+      "popularity" ->
+        Enum.sort_by(posts, & &1.reply_count, sort_order)
+    end
+  end
+
+  defp get_sort_order(current_sort_by, new_sort_by, sort_order)
+       when current_sort_by == new_sort_by,
+       do: toggle_sort_order(sort_order)
+
+  defp get_sort_order(_current_sort_by, _new_sort_by, sort_order), do: sort_order
+
+  defp toggle_sort_order(:asc), do: :desc
+  defp toggle_sort_order(:desc), do: :asc
+
+  defp sort_by_icon(true, :desc), do: ~s{<i class="fa-solid fa-arrow-down"></i>}
+  defp sort_by_icon(true, :asc), do: ~s{<i class="fa-solid fa-arrow-up"></i>}
+  defp sort_by_icon(false, _), do: nil
 end
