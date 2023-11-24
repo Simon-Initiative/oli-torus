@@ -135,12 +135,13 @@ defmodule OliWeb.Datashop.AnalyticsLiveTest do
 
       for s <- rest_s do
         render_click(view, "toggle_section", %{"section_id" => s.id, "value" => "on"})
+        assert has_element?(view, "##{s.id}[aria-selected=\"true\"]")
       end
 
       assert has_element?(view, "#select-section-#{first_s.id}[disabled]")
     end
 
-    test "generates amd kills export", %{
+    test "generates and kills export", %{
       conn: conn,
       project: project
     } do
@@ -150,6 +151,8 @@ defmodule OliWeb.Datashop.AnalyticsLiveTest do
 
       # Select section and generate export
       render_click(view, "toggle_section", %{"section_id" => section.id, "value" => "on"})
+      assert has_element?(view, "##{section.id}[aria-selected=\"true\"]")
+
       render_click(view, "generate_datashop_snapshot")
 
       assert has_element?(view, "#button-kill-datashop", "Kill Datashop Export")
