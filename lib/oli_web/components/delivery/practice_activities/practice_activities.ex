@@ -2,6 +2,7 @@ defmodule OliWeb.Components.Delivery.PracticeActivities do
   use OliWeb, :live_component
 
   import Ecto.Query
+
   alias Oli.Accounts.User
 
   alias Oli.Analytics.Summary.{
@@ -11,33 +12,26 @@ defmodule OliWeb.Components.Delivery.PracticeActivities do
     StudentResponse
   }
 
-  alias Oli.Publishing.PublishedResource
-  alias Oli.Repo
-
-  alias Oli.Publishing.DeliveryResolver
-
-  alias OliWeb.Delivery.PracticeActivities.PracticeAssessmentsTableModel
-
-  alias OliWeb.Common.Params
-  alias Phoenix.LiveView.JS
-  alias OliWeb.Common.{PagedTable, SearchInput}
-  alias OliWeb.Router.Helpers, as: Routes
-  alias OliWeb.Common.Table.SortableTableModel
   alias Oli.Delivery.Attempts.Core
-  alias OliWeb.ManualGrading.RenderedActivity
-  alias Oli.Repo
-  alias Oli.Delivery.Sections.SectionsProjectsPublications
 
   alias Oli.Delivery.Attempts.Core.{
+    ActivityAttempt,
     ResourceAccess,
-    ResourceAttempt,
-    ActivityAttempt
+    ResourceAttempt
   }
 
-  alias Oli.Delivery.Sections.Section
-
-  alias Oli.Resources.Revision
   alias Oli.Delivery.Sections
+  alias Oli.Delivery.Sections.Section
+  alias Oli.Delivery.Sections.SectionsProjectsPublications
+  alias Oli.Publishing.{DeliveryResolver, PublishedResource}
+  alias Oli.Repo
+  alias Oli.Resources.Revision
+  alias OliWeb.Common.{Params, PagedTable, SearchInput}
+  alias OliWeb.Common.Table.SortableTableModel
+  alias OliWeb.Delivery.PracticeActivities.PracticeAssessmentsTableModel
+  alias OliWeb.ManualGrading.RenderedActivity
+  alias OliWeb.Router.Helpers, as: Routes
+  alias Phoenix.LiveView.JS
 
   @default_params %{
     offset: 0,
@@ -102,7 +96,7 @@ defmodule OliWeb.Components.Delivery.PracticeActivities do
         <div class="flex flex-col space-y-4 lg:space-y-0 lg:flex-row lg:justify-between px-9 lg:items-center">
           <h4 class="torus-h4 whitespace-nowrap">Practice Activities</h4>
           <div class="flex flex-col">
-            <div class="flex flex-row gap-x-2 items-center">
+            <div class="flex sm:flex-row gap-y-4 flex-col gap-x-2 items-center sm:justify-between">
               <form
                 for="search"
                 phx-target={@myself}
@@ -156,102 +150,82 @@ defmodule OliWeb.Components.Delivery.PracticeActivities do
           show_limit_change={true}
         />
       </div>
-      <%= if is_nil(@activities) or @activities == [] do %>
-        <div class="bg-white dark:bg-gray-800 dark:text-white shadow-sm px-10 my-5 mx-10">
-          <p class="py-5">No attempt registered for this question</p>
-        </div>
-      <% else %>
-        <div class="mt-9">
-          <div :for={activity <- @activities} class="px-10">
-            <div class="flex flex-col bg-white dark:bg-gray-800 dark:text-white w-min whitespace-nowrap rounded-t-md block font-medium text-sm leading-tight uppercase border-x-1 border-t-1 border-b-0 border-gray-300 px-6 py-4 my-4 gap-y-2">
-              <%= activity.title %> - Question details
-              <div
-                :if={@current_assessment != nil and @activities not in [nil, []]}
-                id="student_attempts_summary"
-                class="flex flex-row gap-x-2 lowercase"
-              >
-                <span class="text-xs">
-                  <%= if activity.students_with_attempts_count == 0 do %>
-                    No student has completed any attempts.
-                  <% else %>
-                    <%= ~s{#{activity.students_with_attempts_count} #{Gettext.ngettext(OliWeb.Gettext, "student has", "students have", activity.students_with_attempts_count)} completed #{activity.total_attempts_count} #{Gettext.ngettext(OliWeb.Gettext, "attempt", "attempts", activity.total_attempts_count)}.} %>
-                  <% end %>
-                </span>
+
+      <%= unless is_nil(@activities) do %>
+        <%= if @activities == [] do %>
+          <div class="bg-white dark:bg-gray-800 dark:text-white shadow-sm px-10 my-5 mx-10">
+            <p class="py-5">No attempt registered for this question</p>
+          </div>
+        <% else %>
+          <div class="mt-9">
+            <div :for={activity <- @activities} class="px-10">
+              <div class="flex flex-col bg-white dark:bg-gray-800 dark:text-white w-min whitespace-nowrap rounded-t-md block font-medium text-sm leading-tight uppercase border-x-1 border-t-1 border-b-0 border-gray-300 px-6 py-4 my-4 gap-y-2">
+                <%= activity.title %> - Question details
                 <div
-                  :if={activity.students_with_attempts_count < Enum.count(@students)}
-                  class="flex flex-col gap-x-2 items-center"
+                  :if={@current_assessment != nil and @activities not in [nil, []]}
+                  id="student_attempts_summary"
+                  class="flex flex-row gap-x-2 lowercase"
                 >
                   <span class="text-xs">
-                    <%= ~s{#{Enum.count(activity.student_emails_without_attempts)} #{Gettext.ngettext(OliWeb.Gettext,
-                    "student has",
-                    "students have",
-                    Enum.count(activity.student_emails_without_attempts))} not completed any attempt.} %>
+                    <%= if activity.students_with_attempts_count == 0 do %>
+                      No student has completed any attempts.
+                    <% else %>
+                      <%= ~s{#{activity.students_with_attempts_count} #{Gettext.ngettext(OliWeb.Gettext, "student has", "students have", activity.students_with_attempts_count)} completed #{activity.total_attempts_count} #{Gettext.ngettext(OliWeb.Gettext, "attempt", "attempts", activity.total_attempts_count)}.} %>
+                    <% end %>
                   </span>
-                  <input
-                    type="text"
-                    id="email_inputs"
-                    class="form-control hidden"
-                    value={Enum.join(activity.student_emails_without_attempts, "; ")}
-                    readonly
-                  />
-                  <button
-                    id="copy_emails_button"
-                    class="text-xs text-primary underline ml-auto"
-                    phx-hook="CopyListener"
-                    data-clipboard-target="#email_inputs"
+                  <div
+                    :if={activity.students_with_attempts_count < Enum.count(@students)}
+                    class="flex flex-col gap-x-2 items-center"
                   >
-                    <i class="fa-solid fa-copy mr-2" /><%= Gettext.ngettext(
-                      OliWeb.Gettext,
-                      "Copy email address",
-                      "Copy email addresses",
-                      Enum.count(activity.student_emails_without_attempts)
-                    ) %>
-                  </button>
+                    <span class="text-xs">
+                      <%= ~s{#{Enum.count(activity.student_emails_without_attempts)} #{Gettext.ngettext(OliWeb.Gettext,
+                      "student has",
+                      "students have",
+                      Enum.count(activity.student_emails_without_attempts))} not completed any attempt.} %>
+                    </span>
+                    <input
+                      type="text"
+                      id="email_inputs"
+                      class="form-control hidden"
+                      value={Enum.join(activity.student_emails_without_attempts, "; ")}
+                      readonly
+                    />
+                    <button
+                      id="copy_emails_button"
+                      class="text-xs text-primary underline ml-auto"
+                      phx-hook="CopyListener"
+                      data-clipboard-target="#email_inputs"
+                    >
+                      <i class="fa-solid fa-copy mr-2" /><%= Gettext.ngettext(
+                        OliWeb.Gettext,
+                        "Copy email address",
+                        "Copy email addresses",
+                        Enum.count(activity.student_emails_without_attempts)
+                      ) %>
+                    </button>
+                  </div>
                 </div>
               </div>
-            </div>
-            <div
-              class="bg-white dark:bg-gray-800 dark:text-white shadow-sm px-6 -mt-5"
-              id="activity_detail"
-              phx-hook="LoadSurveyScripts"
-            >
-              <%= if activity.preview_rendered != nil do %>
-                <RenderedActivity.render
-                  id={"activity_#{activity.id}"}
-                  rendered_activity={activity.preview_rendered}
-                />
-              <% else %>
-                <p class="pt-9 pb-5">No attempt registered for this question</p>
-              <% end %>
+              <div
+                class="bg-white dark:bg-gray-800 dark:text-white shadow-sm px-6 -mt-5"
+                id="activity_detail"
+                phx-hook="LoadSurveyScripts"
+              >
+                <%= if activity.preview_rendered != nil do %>
+                  <RenderedActivity.render
+                    id={"activity_#{activity.id}"}
+                    rendered_activity={activity.preview_rendered}
+                  />
+                <% else %>
+                  <p class="pt-9 pb-5">No attempt registered for this question</p>
+                <% end %>
+              </div>
             </div>
           </div>
-        </div>
+        <% end %>
       <% end %>
     </div>
     """
-  end
-
-  defp add_activity_attempts_info(activity, students, student_ids, section) do
-    students_with_attempts =
-      DeliveryResolver.students_with_attempts_for_page(
-        activity,
-        section,
-        student_ids
-      )
-
-    student_emails_without_attempts =
-      Enum.reduce(students, [], fn s, acc ->
-        if s.id in students_with_attempts do
-          acc
-        else
-          [s.email | acc]
-        end
-      end)
-
-    activity
-    |> Map.put(:students_with_attempts_count, Enum.count(students_with_attempts))
-    |> Map.put(:student_emails_without_attempts, student_emails_without_attempts)
-    |> Map.put(:total_attempts_count, count_attempts(activity, section, student_ids) || 0)
   end
 
   def handle_event(
@@ -395,54 +369,6 @@ defmodule OliWeb.Components.Delivery.PracticeActivities do
      )}
   end
 
-  defp get_preview_rendered(activity, socket) do
-    case get_activity_details(
-           activity,
-           socket.assigns.section,
-           socket.assigns.activity_types_map
-         ) do
-      nil ->
-        socket
-
-      activity_attempt ->
-        part_attempts = Core.get_latest_part_attempts(activity_attempt.attempt_guid)
-
-        rendering_context =
-          OliWeb.ManualGrading.Rendering.create_rendering_context(
-            activity_attempt,
-            part_attempts,
-            socket.assigns.activity_types_map,
-            socket.assigns.section
-          )
-          |> Map.merge(%{is_liveview: true})
-
-        OliWeb.ManualGrading.Rendering.render(
-          rendering_context,
-          :instructor_preview
-        )
-    end
-  end
-
-  defp assign_selected_assessment(socket, selected_assessment_id)
-       when selected_assessment_id in ["", nil] do
-    case socket.assigns.table_model.rows do
-      [] ->
-        socket
-
-      rows ->
-        assign_selected_assessment(socket, hd(rows).resource_id)
-    end
-  end
-
-  defp assign_selected_assessment(socket, selected_assessment_id) do
-    table_model =
-      Map.merge(socket.assigns.table_model, %{
-        selected: "#{selected_assessment_id}"
-      })
-
-    assign(socket, table_model: table_model)
-  end
-
   defp apply_filters(assessments, params) do
     assessments =
       assessments
@@ -570,6 +496,77 @@ defmodule OliWeb.Components.Delivery.PracticeActivities do
       :practice_activities,
       params
     )
+  end
+
+  defp add_activity_attempts_info(activity, students, student_ids, section) do
+    students_with_attempts =
+      DeliveryResolver.students_with_attempts_for_page(
+        activity,
+        section,
+        student_ids
+      )
+
+    student_emails_without_attempts =
+      Enum.reduce(students, [], fn s, acc ->
+        if s.id in students_with_attempts do
+          acc
+        else
+          [s.email | acc]
+        end
+      end)
+
+    activity
+    |> Map.put(:students_with_attempts_count, Enum.count(students_with_attempts))
+    |> Map.put(:student_emails_without_attempts, student_emails_without_attempts)
+    |> Map.put(:total_attempts_count, count_attempts(activity, section, student_ids) || 0)
+  end
+
+  defp get_preview_rendered(activity, socket) do
+    case get_activity_details(
+           activity,
+           socket.assigns.section,
+           socket.assigns.activity_types_map
+         ) do
+      nil ->
+        socket
+
+      activity_attempt ->
+        part_attempts = Core.get_latest_part_attempts(activity_attempt.attempt_guid)
+
+        rendering_context =
+          OliWeb.ManualGrading.Rendering.create_rendering_context(
+            activity_attempt,
+            part_attempts,
+            socket.assigns.activity_types_map,
+            socket.assigns.section
+          )
+          |> Map.merge(%{is_liveview: true})
+
+        OliWeb.ManualGrading.Rendering.render(
+          rendering_context,
+          :instructor_preview
+        )
+    end
+  end
+
+  defp assign_selected_assessment(socket, selected_assessment_id)
+       when selected_assessment_id in ["", nil] do
+    case socket.assigns.table_model.rows do
+      [] ->
+        socket
+
+      rows ->
+        assign_selected_assessment(socket, hd(rows).resource_id)
+    end
+  end
+
+  defp assign_selected_assessment(socket, selected_assessment_id) do
+    table_model =
+      Map.merge(socket.assigns.table_model, %{
+        selected: "#{selected_assessment_id}"
+      })
+
+    assign(socket, table_model: table_model)
   end
 
   defp count_attempts(
@@ -711,6 +708,10 @@ defmodule OliWeb.Components.Delivery.PracticeActivities do
       Enum.find(activity_types_map, fn {_k, v} -> v.title == "Multi Input" end)
       |> elem(0)
 
+    likert_type_id =
+      Enum.find(activity_types_map, fn {_k, v} -> v.title == "Likert" end)
+      |> elem(0)
+
     case Repo.one(query) do
       nil ->
         nil
@@ -726,6 +727,10 @@ defmodule OliWeb.Components.Delivery.PracticeActivities do
       %{activity_type_id: activity_type_id} = activity_attempt
       when activity_type_id == multi_input_type_id ->
         add_multi_input_details(activity_attempt, section)
+
+      %{activity_type_id: activity_type_id} = activity_attempt
+      when activity_type_id == likert_type_id ->
+        add_likert_details(activity_attempt, section)
 
       activity_attempt ->
         activity_attempt
@@ -923,6 +928,74 @@ defmodule OliWeb.Components.Delivery.PracticeActivities do
           &List.insert_at(&1, -1, "0")
         )
     end
+  end
+
+  defp add_likert_details(activity_attempt, %Section{analytics_version: :v1}),
+    do: activity_attempt
+
+  defp add_likert_details(activity_attempt, section) do
+    choice_frequency_mapper =
+      from(rs in ResponseSummary,
+        where:
+          rs.section_id == ^section.id and
+            rs.project_id == -1 and
+            rs.publication_id == -1 and
+            rs.page_id == ^activity_attempt.page_id and
+            rs.activity_id == ^activity_attempt.resource_id,
+        join: rpp in assoc(rs, :resource_part_response),
+        preload: [resource_part_response: rpp],
+        select: rs
+      )
+      |> Repo.all()
+      |> Enum.reduce(%{}, fn response_summary, acc ->
+        Map.put(acc, response_summary.resource_part_response.response, response_summary.count)
+      end)
+
+    choices =
+      activity_attempt.revision.content["choices"]
+      |> Enum.map(fn choice ->
+        Map.merge(choice, %{
+          "frequency" => Map.get(choice_frequency_mapper, choice["id"]) || 0
+        })
+      end)
+      |> Kernel.++(
+        if Map.has_key?(choice_frequency_mapper, "") do
+          [
+            %{
+              "content" => [
+                %{
+                  "children" => [
+                    %{
+                      "text" =>
+                        "Blank attempt (user submitted assessment without selecting any choice for this activity)"
+                    }
+                  ],
+                  "type" => "p"
+                }
+              ],
+              "editor" => "slate",
+              "frequency" => Map.get(choice_frequency_mapper, ""),
+              "id" => "0",
+              "textDirection" => "ltr"
+            }
+          ]
+        else
+          []
+        end
+      )
+
+    update_in(
+      activity_attempt,
+      [Access.key!(:revision), Access.key!(:content)],
+      &Map.put(&1, "choices", choices)
+    )
+    |> update_in(
+      [
+        Access.key!(:revision),
+        Access.key!(:content)
+      ],
+      &Map.put(&1, "activityTitle", activity_attempt.revision.title)
+    )
   end
 
   defp build_units_and_modules(modules_and_units) do

@@ -1,6 +1,16 @@
 import React from 'react';
+import { Bar } from 'react-chartjs-2';
 import ReactDOM from 'react-dom';
 import { Provider } from 'react-redux';
+import {
+  BarElement,
+  CategoryScale,
+  Chart as ChartJS,
+  Legend,
+  LinearScale,
+  Title,
+  Tooltip,
+} from 'chart.js';
 import { Choices as ChoicesAuthoring } from 'components/activities/common/choices/authoring/ChoicesAuthoring';
 import { Hints } from 'components/activities/common/hints/authoring/HintsAuthoringConnected';
 import { Stem } from 'components/activities/common/stem/authoring/StemAuthoringConnected';
@@ -35,6 +45,54 @@ const Likert = (props: AuthoringElementProps<LikertModelSchema>) => {
     projectSlug: projectSlug,
   });
 
+  ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
+
+  const likertChartOptions = {
+    plugins: {
+      title: {
+        display: true,
+        text: model.activityTitle,
+      },
+    },
+    indexAxis: 'y' as 'y' | 'x' | undefined,
+    responsive: true,
+    scales: {
+      x: {
+        stacked: true,
+      },
+      y: {
+        stacked: true,
+      },
+    },
+  };
+
+  function getRandomPastelColor() {
+    const min = 130;
+    const max = 255;
+
+    const r = Math.floor(Math.random() * (max - min + 1) + min);
+    const g = Math.floor(Math.random() * (max - min + 1) + min);
+    const b = Math.floor(Math.random() * (max - min + 1) + min);
+
+    return `rgb(${r}, ${g}, ${b})`;
+  }
+
+  const dataToRender = {
+    labels: model.items.map((item) =>
+      'text' in item.content[0].children[0] ? item.content[0].children[0].text : 'No text',
+    ),
+    datasets: model.choices
+      .filter((choice) => choice.frequency > 0)
+      .map((choice) => ({
+        label:
+          'text' in choice.content[0].children[0] ? choice.content[0].children[0].text : 'No text',
+        data: [choice.frequency],
+        backgroundColor: getRandomPastelColor(),
+      })),
+  };
+
+  const dataLong = dataToRender.datasets.length;
+
   return (
     <React.Fragment>
       <TabbedNavigation.Tabs>
@@ -43,18 +101,34 @@ const Likert = (props: AuthoringElementProps<LikertModelSchema>) => {
           <div>
             <br />
             <p>Choices:</p>
-            <ChoicesAuthoring
-              icon={<Radio.Unchecked />}
-              choices={model.choices}
-              setAll={(choices: ActivityTypes.Choice[]) => dispatch(Choices.setAll(choices))}
-              onEdit={(id, content) => dispatch(Choices.setContent(id, content))}
-              onChangeEditorType={(id, editorType) => dispatch(Choices.setEditor(id, editorType))}
-              addOne={() => dispatch(LikertActions.addChoice())}
-              onRemove={(id) => dispatch(LikertActions.removeChoice(id))}
-              onChangeEditorTextDirection={(id, textDirection) =>
-                dispatch(Choices.setTextDirection(id, textDirection))
-              }
-            />
+            <div className="flex flex-col lg:flex-row">
+              <div className={`${dataLong > 0 ? 'w-full lg:w-1/2' : 'w-full'}`}>
+                <ChoicesAuthoring
+                  icon={<Radio.Unchecked />}
+                  choices={model.choices}
+                  setAll={(choices: ActivityTypes.Choice[]) => dispatch(Choices.setAll(choices))}
+                  onEdit={(id, content) => dispatch(Choices.setContent(id, content))}
+                  onChangeEditorType={(id, editorType) =>
+                    dispatch(Choices.setEditor(id, editorType))
+                  }
+                  addOne={() => dispatch(LikertActions.addChoice())}
+                  onRemove={(id) => dispatch(LikertActions.removeChoice(id))}
+                  onChangeEditorTextDirection={(id, textDirection) =>
+                    dispatch(Choices.setTextDirection(id, textDirection))
+                  }
+                />
+              </div>
+              {dataLong > 0 && (
+                <>
+                  <div className="hidden lg:flex border-r border-2 border-gray-500 mx-4" />
+                  <div
+                    className={`${dataLong > 0 && 'flex items-center w-full my-5 lg:w-1/2 px-2'}`}
+                  >
+                    <Bar options={likertChartOptions} data={dataToRender} />
+                  </div>
+                </>
+              )}
+            </div>
             <div className="form-check mb-2">
               <input
                 className="form-check-input"
