@@ -160,7 +160,7 @@ defmodule OliWeb.Components.Delivery.PracticeActivities do
           <div class="mt-9">
             <div :for={activity <- @activities} class="px-10">
               <div class="flex flex-col bg-white dark:bg-gray-800 dark:text-white w-min whitespace-nowrap rounded-t-md block font-medium text-sm leading-tight uppercase border-x-1 border-t-1 border-b-0 border-gray-300 px-6 py-4 my-4 gap-y-2">
-                <%= activity.title %> - Question details
+                <div role="activity_title"><%= activity.title %> - Question details</div>
                 <div
                   :if={@current_assessment != nil and @activities not in [nil, []]}
                   id="student_attempts_summary"
@@ -453,7 +453,6 @@ defmodule OliWeb.Components.Delivery.PracticeActivities do
         ),
       text_search: Params.get_param(params, "text_search", @default_params.text_search),
       assessment_id: Params.get_int_param(params, "assessment_id", nil),
-      assessment_table_params: params["assessment_table_params"],
       selected_activity: Params.get_param(params, "selected_activity", nil),
       container_id: Params.get_int_param(params, "container_id", nil)
     }
@@ -574,7 +573,7 @@ defmodule OliWeb.Components.Delivery.PracticeActivities do
          %Section{analytics_version: :v2, id: section_id},
          student_ids
        ) do
-    page_type_id = Oli.Resources.ResourceType.get_id_by_type("page")
+    page_type_id = Oli.Resources.ResourceType.get_id_by_type("activity")
 
     from(rs in ResourceSummary,
       where:

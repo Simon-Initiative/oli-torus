@@ -44,7 +44,7 @@ export const QuestionTab: React.FC<Props> = (props) => {
       <Card.Content>
         <InputSizeEditor input={props.input} />
 
-        {['text', 'numeric'].includes(props.input.inputType) ? (
+        {['text', 'numeric'].includes(props.input.inputType) && model.authoring.responses ? (
           <div className="mt-5">
             <table>
               <tr>
