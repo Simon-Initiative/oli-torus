@@ -1756,16 +1756,16 @@ defmodule Oli.TestHelpers do
           "model" => [
             %{
               "type" => "survey",
-              "id" => "00001",
+              "title" => "survey test",
+              "id" => "1",
               "children" => [
-                %{"type" => "activity-reference", "activity_id" => 1}
+                %{
+                  "type" => "activity-reference",
+                  "id" => "123",
+                  "children" => [],
+                  "activity_id" => survey_question_revision.resource_id
+                }
               ]
-            },
-            %{
-              "id" => "3330767711",
-              "type" => "activity-reference",
-              "children" => [],
-              "activity_id" => survey_question_revision.resource_id
             }
           ],
           bibrefs: [],
@@ -1783,16 +1783,16 @@ defmodule Oli.TestHelpers do
           "model" => [
             %{
               "type" => "survey",
-              "id" => "00002",
+              "title" => "survey test 2",
+              "id" => "2",
               "children" => [
-                %{"type" => "activity-reference", "activity_id" => 1}
+                %{
+                  "type" => "activity-reference",
+                  "id" => "123",
+                  "children" => [],
+                  "activity_id" => survey_question_revision.resource_id
+                }
               ]
-            },
-            %{
-              "id" => "3330767711",
-              "type" => "activity-reference",
-              "children" => [],
-              "activity_id" => survey_question_revision.resource_id
             }
           ],
           bibrefs: [],

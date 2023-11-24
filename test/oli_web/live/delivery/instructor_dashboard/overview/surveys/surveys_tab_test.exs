@@ -40,10 +40,10 @@ defmodule OliWeb.Delivery.InstructorDashboard.Overview.SurveysTabTest do
 
     test "it lists all surveys", %{conn: conn, section: section, surveys: surveys} do
       {:ok, view, _html} = live(conn, surveys_path(section.slug))
-      IO.inspect(surveys, label: "inspect_survey")
-      assert(surveys != nil)
-      # open_browser(view)
-      # assert has_element?(view, "#instructor_dashboard_table")
+
+      for survey <- surveys do
+        assert has_element?(view, "##{survey.id}", survey.title)
+      end
     end
 
     test "it not show question details when a row is not selected", %{
@@ -52,6 +52,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.Overview.SurveysTabTest do
       surveys: surveys
     } do
       {:ok, view, _html} = live(conn, surveys_path(section.slug))
+      refute has_element?(view, "#activity_detail")
     end
 
     test "it show a question details when a row is selected", %{
@@ -61,36 +62,21 @@ defmodule OliWeb.Delivery.InstructorDashboard.Overview.SurveysTabTest do
     } do
       {:ok, view, _html} = live(conn, surveys_path(section.slug))
 
-      # |> element("tr#314248")
-      # |> render_click()
+      [survey | _] = surveys
 
-      open_browser(view)
-    end
-
-    # test "it should display correct question details when an assessment is selected", conn do
-    #   conn = get(conn, "/")
-
-    #   # create the assessment
-
-    #   # create the survey
-    #   survey = %{}
-
-    #   # create the question details
-
-    #   {:ok, html, lv} = live(conn, "/sdf")
-    #   # obtain the assesment iD
-    #   html = lv |> element("tr ##{}") |> render_click()
-
-    #   assert_push_event(lv, "load", payload)
-
-    # end
-  end
-
-  describe "Survey list none exist" do
-    test "it lists all surveys", %{conn: conn, section: section, surveys: surveys} do
-      {:ok, view, _html} = live(conn, surveys_path(section.slug))
+      view
+      |> element("##{survey.id}")
+      |> render_click(%{id: Integer.to_string(survey.id)})
 
       open_browser(view)
     end
   end
+
+  # describe "Survey list none exist" do
+  #   test "it lists all surveys", %{conn: conn, section: section, surveys: surveys} do
+  #     {:ok, view, _html} = live(conn, surveys_path(section.slug))
+
+  #     open_browser(view)
+  #   end
+  # end
 end
