@@ -17,7 +17,6 @@ defmodule OliWeb.Components.Delivery.Surveys do
   alias Oli.Publishing.DeliveryResolver
 
   alias OliWeb.Delivery.Surveys.{
-    SurveysActivitiesTableModel,
     SurveysAssessmentsTableModel
   }
 
@@ -56,99 +55,88 @@ defmodule OliWeb.Components.Delivery.Surveys do
   def update(assigns, socket) do
     params = decode_params(assigns.params)
 
-    socket =
-      assign(socket,
-        params: params,
-        params: params,
-        section: assigns.section,
-        view: assigns.view,
-        ctx: assigns.ctx,
-        assessments: assigns.assessments,
-        students: assigns.students,
-        scripts: assigns.scripts,
-        activity_types_map: assigns.activity_types_map,
-        preview_rendered: nil
-      )
+    {total_count, rows} = apply_filters(assigns.assessments, params)
 
-    case params.assessment_id do
-      nil ->
-        {total_count, rows} = apply_filters(assigns.assessments, params)
+    IO.inspect(rows, label: "SURVEYS")
 
-        {:ok, table_model} =
-          SurveysAssessmentsTableModel.new(rows, assigns.ctx, socket.assigns.myself)
+    {:ok, table_model} =
+      SurveysAssessmentsTableModel.new(rows, assigns.ctx, socket.assigns.myself)
 
-        table_model =
-          Map.merge(table_model, %{
-            rows: rows,
-            sort_order: params.sort_order
-          })
-          |> SortableTableModel.update_sort_params(params.sort_by)
+    students_id = Enum.map(assigns.students, & &1.id)
 
-        {:ok,
-         assign(socket,
-           table_model: table_model,
-           total_count: total_count,
-           current_assessment: nil
-         )}
+    {:ok,
+     assign(socket,
+       params: params,
+       section: assigns.section,
+       view: assigns.view,
+       ctx: assigns.ctx,
+       assessments: assigns.assessments,
+       total_count: total_count,
+       table_model: table_model,
+       #  students: assigns.students,
+       scripts: assigns.scripts,
+       activity_types_map: assigns.activity_types_map,
+       preview_rendered: nil,
+       current_activities: nil,
+       students_id: students_id
+     )}
 
-      assessment_id ->
-        case Enum.find(assigns.assessments, fn a ->
-               a.id == assessment_id
-             end) do
-          nil ->
-            send(self(), {:redirect_with_warning, "The assessment doesn't exist"})
-            {:ok, socket}
+    # case assigns.assessments do
+    #   nil ->
+    #     send(self(), {:redirect_with_warning, "The assessment doesn't exist"})
+    #     {:ok, socket}
 
-          current_assessment ->
-            student_ids = Enum.map(assigns.students, & &1.id)
+    #   assessments ->
+    #     Enum.map(assessments, fn assessment ->
+    #       student_ids = Enum.map(assigns.students, & &1.id)
+    #       activities = get_activities(assessment, assigns.section, student_ids)
 
-            activities = get_activities(current_assessment, assigns.section, student_ids)
+    #       students_with_attempts =
+    #         DeliveryResolver.students_with_attempts_for_page(
+    #           assessment,
+    #           assigns.section,
+    #           student_ids
+    #         )
 
-            students_with_attempts =
-              DeliveryResolver.students_with_attempts_for_page(
-                current_assessment,
-                assigns.section,
-                student_ids
-              )
+    #       student_emails_without_attempts =
+    #         Enum.reduce(assigns.students, [], fn s, acc ->
+    #           if s.id in students_with_attempts do
+    #             acc
+    #           else
+    #             [s.email | acc]
+    #           end
+    #         end)
 
-            student_emails_without_attempts =
-              Enum.reduce(assigns.students, [], fn s, acc ->
-                if s.id in students_with_attempts do
-                  acc
-                else
-                  [s.email | acc]
-                end
-              end)
+    #       {total_count, rows} = apply_filters(activities, params)
 
-            {total_count, rows} = apply_filters(activities, params)
+    #       {:ok, table_model} = SurveysActivitiesTableModel.new(rows)
 
-            {:ok, table_model} = SurveysActivitiesTableModel.new(rows)
+    #       table_model =
+    #         table_model
+    #         |> Map.merge(%{
+    #           rows: rows,
+    #           sort_order: params.sort_order
+    #         })
+    #         |> SortableTableModel.update_sort_params(params.sort_by)
 
-            table_model =
-              table_model
-              |> Map.merge(%{
-                rows: rows,
-                sort_order: params.sort_order
-              })
-              |> SortableTableModel.update_sort_params(params.sort_by)
-
-            {:ok,
-             assign(socket,
-               current_assessment: current_assessment,
-               activities: activities,
-               table_model: table_model,
-               total_count: total_count,
-               students_with_attempts_count: Enum.count(students_with_attempts),
-               student_emails_without_attempts: student_emails_without_attempts,
-               total_attempts_count:
-                 count_attempts(current_assessment, assigns.section, student_ids),
-               rendered_activity_id: UUID.uuid4()
-             )
-             |> assign_selected_activity(
-               params[:selected_activity] && String.to_integer(params[:selected_activity])
-             )}
-        end
-    end
+    #       {
+    #         :ok,
+    #         assign(socket,
+    #           current_assessment: assessment,
+    #           activities: activities,
+    #           table_model: table_model,
+    #           total_count: total_count,
+    #           students_with_attempts_count: Enum.count(students_with_attempts),
+    #           student_emails_without_attempts: student_emails_without_attempts,
+    #           total_attempts_count: count_attempts(assessment, assigns.section, student_ids),
+    #           rendered_activity_id: UUID.uuid4()
+    #         )
+    #  |> assign_selected_activity(
+    #    params[:selected_activity] && String.to_integer(params[:selected_activity])
+    #  )
+    #   }
+    # end)
+    # end
   end
 
   def render(assigns) do
@@ -157,25 +145,8 @@ defmodule OliWeb.Components.Delivery.Surveys do
       <.loader if={!@table_model} />
       <div :if={@table_model} class="bg-white shadow-sm dark:bg-gray-800 dark:text-white">
         <div class="flex flex-col space-y-4 lg:space-y-0 lg:flex-row lg:justify-between px-9">
-          <%= if @current_assessment != nil do %>
-            <div class="flex flex-col">
-              <%= if @current_assessment.container_label do %>
-                <h4 class="torus-h4 whitespace-nowrap"><%= @current_assessment.container_label %></h4>
-                <span class="text-lg"><%= @current_assessment.title %></span>
-              <% else %>
-                <h4 class="torus-h4 whitespace-nowrap"><%= @current_assessment.title %></h4>
-              <% end %>
-              <button
-                class="btn btn-primary whitespace-nowrap mr-auto my-6"
-                phx-click="back"
-                phx-target={@myself}
-              >
-                Go back
-              </button>
-            </div>
-          <% else %>
-            <h4 class="torus-h4 whitespace-nowrap">Surveys</h4>
-          <% end %>
+          <h4 class="torus-h4 whitespace-nowrap">Surveys</h4>
+
           <div class="flex flex-col">
             <form
               for="search"
@@ -189,47 +160,6 @@ defmodule OliWeb.Components.Delivery.Surveys do
                 text={@params.text_search}
               />
             </form>
-            <div
-              :if={@current_assessment != nil}
-              id="student_attempts_summary"
-              class="flex flex-row mt-auto"
-            >
-              <span class="text-xs">
-                <%= if @students_with_attempts_count == 0 do %>
-                  No student has completed any attempts.
-                <% else %>
-                  <%= ~s{#{@students_with_attempts_count} #{Gettext.ngettext(OliWeb.Gettext, "student has", "students have", @students_with_attempts_count)} completed #{@total_attempts_count} #{Gettext.ngettext(OliWeb.Gettext, "attempt", "attempts", @total_attempts_count)}.} %>
-                <% end %>
-              </span>
-              <div :if={@students_with_attempts_count < Enum.count(@students)} class="flex flex-col">
-                <span class="text-xs ml-2">
-                  <%= ~s{#{Enum.count(@student_emails_without_attempts)} #{Gettext.ngettext(OliWeb.Gettext,
-                  "student has",
-                  "students have",
-                  Enum.count(@student_emails_without_attempts))} not completed any attempt.} %>
-                </span>
-                <input
-                  type="text"
-                  id="email_inputs"
-                  class="form-control hidden"
-                  value={Enum.join(@student_emails_without_attempts, "; ")}
-                  readonly
-                />
-                <button
-                  id="copy_emails_button"
-                  class="text-xs text-primary underline ml-auto mb-6"
-                  phx-hook="CopyListener"
-                  data-clipboard-target="#email_inputs"
-                >
-                  <i class="fa-solid fa-copy mr-2" /><%= Gettext.ngettext(
-                    OliWeb.Gettext,
-                    "Copy email address",
-                    "Copy email addresses",
-                    Enum.count(@student_emails_without_attempts)
-                  ) %>
-                </button>
-              </div>
-            </div>
           </div>
         </div>
 
@@ -242,25 +172,30 @@ defmodule OliWeb.Components.Delivery.Surveys do
           selection_change={JS.push("paged_table_selection_change", target: @myself)}
           sort={JS.push("paged_table_sort", target: @myself)}
           additional_table_class="instructor_dashboard_table"
-          allow_selection={!is_nil(@current_assessment)}
+          allow_selection={true}
           show_bottom_paging={false}
           limit_change={JS.push("paged_table_limit_change", target: @myself)}
           show_limit_change={true}
         />
-      </div>
-      <div :if={@current_assessment != nil and @activities != []} class="mt-9">
-        <div class="bg-white dark:bg-gray-800 dark:text-white w-min whitespace-nowrap rounded-t-md block font-medium text-sm leading-tight uppercase border-x-1 border-t-1 border-b-0 border-gray-300 px-6 py-4">
-          Question details
-        </div>
-        <div
-          class="bg-white dark:bg-gray-800 dark:text-white shadow-sm px-6 -mt-5"
-          id="activity_detail"
-          phx-hook="LoadSurveyScripts"
-        >
-          <%= if @preview_rendered != nil do %>
-            <RenderedActivity.render id={@rendered_activity_id} rendered_activity={@preview_rendered} />
-          <% else %>
-            <p class="pt-9 pb-5">No attempt registered for this question</p>
+        <div :if={@current_assessment}>
+          <%= for activity <- @current_activities do %>
+            <div class="bg-white dark:bg-gray-800 dark:text-white w-min whitespace-nowrap rounded-t-md block font-medium text-sm leading-tight uppercase border-x-1 border-t-1 border-b-0 border-gray-300 px-6 py-4">
+              Question details
+            </div>
+            <div
+              class="bg-white dark:bg-gray-800 dark:text-white shadow-sm px-6 -mt-5"
+              id="activity_detail"
+              phx-hook="LoadSurveyScripts"
+            >
+              <%= if activity.preview_render != nil do %>
+                <RenderedActivity.render
+                  id={"activity_#{activity.id}"}
+                  rendered_activity={activity.preview_render}
+                />
+              <% else %>
+                <p class="pt-9 pb-5">No attempt registered for this question</p>
+              <% end %>
+            </div>
           <% end %>
         </div>
       </div>
@@ -268,58 +203,72 @@ defmodule OliWeb.Components.Delivery.Surveys do
     """
   end
 
-  def handle_event("back", _params, socket) do
-    socket =
-      assign(socket,
-        params: Map.put(socket.assigns.params, :assessment_id, nil),
-        current_assessment: nil
-      )
-
-    {:noreply,
-     push_patch(socket,
-       to: route_to(socket, socket.assigns.params.assessment_table_params)
-     )}
-  end
-
   def handle_event(
         "paged_table_selection_change",
-        %{"id" => activity_resource_id},
-        socket
-      )
-      when not is_nil(socket.assigns.current_assessment) do
-    {:noreply,
-     push_patch(socket,
-       to:
-         route_to(
-           socket,
-           update_params(socket.assigns.params, %{
-             selected_activity: activity_resource_id
-           })
-         )
-     )}
-  end
-
-  def handle_event(
-        "paged_table_selection_change",
-        %{"id" => selected_assessment_id},
+        %{"id" => survey_id},
         socket
       ) do
-    assessment_table_params = socket.assigns.params
+    current_assessment = find_current_assessment(socket, survey_id)
 
-    socket =
-      assign(socket,
-        params:
-          Map.put(
-            socket.assigns.params,
-            :assessment_id,
-            selected_assessment_id
-          )
-      )
+    table_model = assign_selected_survey(socket, survey_id)
 
+    current_activities = find_current_activities(current_assessment, socket)
+
+    assign_assessments_activities_table_model(
+      socket,
+      current_assessment,
+      table_model,
+      current_activities
+    )
+  end
+
+  defp assign_assessments_activities_table_model(
+         socket,
+         current_assessment,
+         table_model,
+         current_activities
+       ) do
     {:noreply,
-     push_patch(socket,
-       to: route_to(socket, %{assessment_table_params: assessment_table_params})
-     )}
+     assign(socket,
+       current_assessment: current_assessment,
+       current_activities: current_activities,
+       table_model: table_model
+     )
+     |> case do
+       %{assigns: %{scripts_loaded: true}} = socket ->
+         socket
+
+       socket ->
+         push_event(socket, "load_survey_scripts", %{
+           script_sources: socket.assigns.scripts
+         })
+     end}
+  end
+
+  defp assign_selected_survey(socket, survey_id) do
+    Map.merge(socket.assigns.table_model, %{
+      selected: "#{survey_id}"
+    })
+  end
+
+  defp find_current_activities(current_assessment, socket) do
+    get_activities(current_assessment, socket.assigns.section, socket.assigns.students_id)
+    |> Enum.map(fn activity ->
+      Map.put(
+        activity,
+        :preview_render,
+        get_preview_render(socket, activity)
+      )
+    end)
+  end
+
+  defp find_current_assessment(socket, survey_id) do
+    Enum.find(socket.assigns.assessments, fn assessment ->
+      assessment.id == String.to_integer(survey_id)
+    end)
+  end
+
+  defp assign_assessments_and_activities(survey_id) do
   end
 
   def handle_event(
@@ -417,14 +366,9 @@ defmodule OliWeb.Components.Delivery.Surveys do
 
   defp assign_selected_activity(socket, selected_activity_id) do
     selected_activity =
-      Enum.find(socket.assigns.activities, fn a ->
+      Enum.find(socket.assigns.current_activities, fn a ->
         a.resource_id == selected_activity_id
       end)
-
-    table_model =
-      Map.merge(socket.assigns.table_model, %{
-        selected: "#{selected_activity_id}"
-      })
 
     case get_activity_details(
            selected_activity,
@@ -433,7 +377,6 @@ defmodule OliWeb.Components.Delivery.Surveys do
          ) do
       nil ->
         socket
-        |> assign(table_model: table_model)
 
       activity_attempt ->
         part_attempts = Core.get_latest_part_attempts(activity_attempt.attempt_guid)
@@ -454,7 +397,7 @@ defmodule OliWeb.Components.Delivery.Surveys do
           )
 
         socket
-        |> assign(table_model: table_model, preview_rendered: preview_rendered)
+        |> assign(preview_rendered: preview_rendered)
         |> case do
           %{assigns: %{scripts_loaded: true}} = socket ->
             socket
@@ -464,6 +407,34 @@ defmodule OliWeb.Components.Delivery.Surveys do
               script_sources: socket.assigns.scripts
             })
         end
+    end
+  end
+
+  defp get_preview_render(socket, activity) do
+    case get_activity_details(
+           activity,
+           socket.assigns.section,
+           socket.assigns.activity_types_map
+         ) do
+      nil ->
+        socket
+
+      activity_attempt ->
+        part_attempts = Core.get_latest_part_attempts(activity_attempt.attempt_guid)
+
+        rendering_context =
+          OliWeb.ManualGrading.Rendering.create_rendering_context(
+            activity_attempt,
+            part_attempts,
+            socket.assigns.activity_types_map,
+            socket.assigns.section
+          )
+          |> Map.merge(%{is_liveview: true})
+
+        OliWeb.ManualGrading.Rendering.render(
+          rendering_context,
+          :instructor_preview
+        )
     end
   end
 

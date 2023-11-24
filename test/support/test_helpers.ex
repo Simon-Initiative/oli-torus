@@ -1721,6 +1721,182 @@ defmodule Oli.TestHelpers do
     {:ok, section: section, survey: survey_revision, survey_questions: [survey_question_revision]}
   end
 
+  def section_with_surveys(_context) do
+    author = insert(:author)
+    project = insert(:project, authors: [author])
+
+    # Create page 1
+
+    page_revision =
+      insert(:revision, %{
+        scoring_strategy_id: Oli.Resources.ScoringStrategy.get_id_by_type("average"),
+        resource_type_id: ResourceType.get_id_by_type("page"),
+        children: [],
+        content: %{"model" => []},
+        deleted: false,
+        title: "Page 1",
+        slug: "page_1"
+      })
+
+    mcq_reg = Activities.get_registration_by_slug("oli_multiple_choice")
+
+    survey_question_revision =
+      insert(:revision,
+        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("activity"),
+        activity_type_id: mcq_reg.id,
+        title: "Experience",
+        content: generate_attempt_content()
+      )
+
+    survey_revision =
+      insert(:revision,
+        graded: true,
+        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("page"),
+        content: %{
+          "model" => [
+            %{
+              "type" => "survey",
+              "id" => "00001",
+              "children" => [
+                %{"type" => "activity-reference", "activity_id" => 1}
+              ]
+            },
+            %{
+              "id" => "3330767711",
+              "type" => "activity-reference",
+              "children" => [],
+              "activity_id" => survey_question_revision.resource_id
+            }
+          ],
+          bibrefs: [],
+          version: "0.1.0"
+        },
+        author_id: author.id,
+        title: "Course Survey"
+      )
+
+    survey_revision_2 =
+      insert(:revision,
+        graded: true,
+        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("page"),
+        content: %{
+          "model" => [
+            %{
+              "type" => "survey",
+              "id" => "00002",
+              "children" => [
+                %{"type" => "activity-reference", "activity_id" => 1}
+              ]
+            },
+            %{
+              "id" => "3330767711",
+              "type" => "activity-reference",
+              "children" => [],
+              "activity_id" => survey_question_revision.resource_id
+            }
+          ],
+          bibrefs: [],
+          version: "0.1.0"
+        },
+        author_id: author.id,
+        title: "Course Survey 2"
+      )
+
+    container_revision =
+      insert(:revision, %{
+        objectives: %{},
+        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("container"),
+        children: [
+          page_revision.resource_id,
+          survey_revision.resource_id,
+          survey_revision_2.resource_id
+        ],
+        content: %{},
+        deleted: false,
+        title: "Root Container"
+      })
+
+    # asociate resources to project
+    insert(:project_resource, %{
+      project_id: project.id,
+      resource_id: page_revision.resource_id
+    })
+
+    insert(:project_resource, %{
+      project_id: project.id,
+      resource_id: survey_question_revision.resource_id
+    })
+
+    insert(:project_resource, %{
+      project_id: project.id,
+      resource_id: survey_revision.resource_id
+    })
+
+    insert(:project_resource, %{
+      project_id: project.id,
+      resource_id: survey_revision_2.resource_id
+    })
+
+    insert(:project_resource, %{
+      project_id: project.id,
+      resource_id: container_revision.resource_id
+    })
+
+    # publish project and resources
+
+    publication =
+      insert(:publication, %{project: project, root_resource_id: container_revision.resource_id})
+
+    # Publish page resource
+    insert(:published_resource, %{
+      author: author,
+      publication: publication,
+      resource: page_revision.resource,
+      revision: page_revision
+    })
+
+    insert(:published_resource, %{
+      author: author,
+      publication: publication,
+      resource: survey_question_revision.resource,
+      revision: survey_question_revision
+    })
+
+    insert(:published_resource, %{
+      author: author,
+      publication: publication,
+      resource: survey_revision.resource,
+      revision: survey_revision
+    })
+
+    insert(:published_resource, %{
+      author: author,
+      publication: publication,
+      resource: survey_revision_2.resource,
+      revision: survey_revision_2
+    })
+
+    insert(:published_resource, %{
+      author: author,
+      publication: publication,
+      resource: container_revision.resource,
+      revision: container_revision
+    })
+
+    section =
+      insert(:section,
+        base_project: project,
+        context_id: UUID.uuid4(),
+        open_and_free: true,
+        registration_open: true,
+        type: :enrollable
+      )
+
+    {:ok, section} = Sections.create_section_resources(section, publication)
+
+    {:ok, section: section, surveys: [survey_revision, survey_revision_2]}
+  end
+
   def create_survey_access(student, section, survey, survey_questions) do
     create_activity_attempts(student, section, survey, survey_questions, "active")
   end
