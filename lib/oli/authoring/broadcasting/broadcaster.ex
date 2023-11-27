@@ -136,4 +136,15 @@ defmodule Oli.Authoring.Broadcaster do
       {:datashop_export_status, status}
     )
   end
+
+  @doc """
+  Broadcasts a datashop export batch started update
+  """
+  def broadcast_datashop_export_batch_started(project_slug, current_batch, batch_count) do
+    PubSub.broadcast(
+      Oli.PubSub,
+      message_datashop_export_batch_started(project_slug),
+      {:datashop_export_batch_started, {:batch_started, current_batch, batch_count}}
+    )
+  end
 end

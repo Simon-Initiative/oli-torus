@@ -49,6 +49,10 @@ defmodule Oli.Authoring.Broadcaster.Messages do
     ["datashop_export_status", project(project_slug)] |> join
   end
 
+  def message_datashop_export_batch_started(project_slug) do
+    ["datashop_export_batch_started", project(project_slug)] |> join
+  end
+
   ## Private helpers
   defp resource_type(resource_type_id),
     do: "resource_type:" <> Integer.to_string(resource_type_id)
