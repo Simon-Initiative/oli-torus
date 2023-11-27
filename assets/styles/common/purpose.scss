@@ -12,11 +12,12 @@
     text-transform: uppercase;
     background: var(--color-delivery-purpose-label-bg);
     color: var(--color-gray-900);
+    line-height: 1em;
     .dark & {
       background: var(--color-delivery-purpose-label-bg-dark);
       color: var(--color-gray-50);
     }
-    padding: 20px 32px;
+    padding: 16px 32px;
     font-size: 20px;
     font-weight: 600;
   }
@@ -43,7 +44,7 @@
         font-size: 22px;
         font-weight: 900;
         margin-right: 12px;
-        content: '\f11e';
+        content: '\f14a';
       }
     }
   }
@@ -56,7 +57,7 @@
         font-size: 22px;
         font-weight: 900;
         margin-right: 12px;
-        content: '\f256';
+        content: '\3f';
       }
     }
   }
@@ -75,7 +76,7 @@
         font-size: 22px;
         font-weight: 900;
         margin-right: 12px;
-        content: '\f1e5';
+        content: '\f06e';
       }
     }
   }
@@ -88,7 +89,7 @@
         font-size: 22px;
         font-weight: 900;
         margin-right: 12px;
-        content: '\f610';
+        content: '\f0c3';
       }
     }
   }
@@ -101,7 +102,7 @@
         font-size: 22px;
         font-weight: 900;
         margin-right: 12px;
-        content: '\f51c';
+        content: '\f304';
       }
     }
   }
@@ -114,7 +115,7 @@
         font-size: 22px;
         font-weight: 900;
         margin-right: 12px;
-        content: '\f51b';
+        content: '\f109';
       }
     }
   }
@@ -160,15 +161,13 @@
 
   &.simulation {
     & > .content-purpose-label {
-      background-color: #3d81f6;
-      color: white;
       /** icon */
       &::before {
         font-family: 'Font Awesome 6 Free';
         font-size: 22px;
         font-weight: 900;
         margin-right: 12px;
-        content: '\f109';
+        content: '\f1b2';
       }
     }
   }
@@ -181,7 +180,7 @@
         font-size: 22px;
         font-weight: 900;
         margin-right: 12px;
-        content: '\f6ec';
+        content: '\f14e';
       }
     }
   }
