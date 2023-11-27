@@ -67,7 +67,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
 
   def render(assigns) do
     ~H"""
-    <div class="flex flex-col gap-2 mx-10 mb-10">
+    <div class="flex flex-col gap-2 mb-10">
       <div class="bg-white shadow-sm">
         <div class="flex justify-between sm:items-end px-4 sm:px-9 py-4 instructor_dashboard_table">
           <div>

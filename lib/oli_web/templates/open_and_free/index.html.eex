@@ -51,7 +51,7 @@
               <% end %>
             </td>
             <td class="text-nowrap">
-              <%= link "Details", to: Routes.admin_open_and_free_path(@conn, :show, section), class: "btn btn-sm btn-outline-primary" %>
+              <%= link "Details", to: Routes.independent_sections_path(@conn, :show, section), class: "btn btn-sm btn-outline-primary" %>
             </td>
           </tr>
         <% end %>

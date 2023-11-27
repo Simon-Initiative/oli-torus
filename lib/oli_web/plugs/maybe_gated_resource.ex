@@ -73,7 +73,8 @@ defmodule Oli.Plugs.MaybeGatedResource do
 
     conn
     |> put_view(OliWeb.DeliveryView)
-    |> put_root_layout({OliWeb.LayoutView, "page.html"})
+    |> put_root_layout(html: {OliWeb.Layouts, :delivery})
+    |> put_layout(html: {OliWeb.Layouts, :page})
     |> put_status(403)
     |> render("gated_resource_unavailable.html",
       section_slug: section.slug,

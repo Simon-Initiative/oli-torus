@@ -1,5 +1,5 @@
 defmodule OliWeb.Components.Header do
-  use Phoenix.Component
+  use OliWeb, :html
 
   import Phoenix.HTML.Link
   import OliWeb.ViewHelpers, only: [brand_logo: 1]
@@ -7,7 +7,7 @@ defmodule OliWeb.Components.Header do
   import OliWeb.Components.Delivery.Utils
 
   alias OliWeb.Router.Helpers, as: Routes
-  alias OliWeb.Components.Delivery.UserAccountMenu
+  alias OliWeb.Components.Delivery.UserAccount
   alias OliWeb.Components.Delivery.Buttons
   alias OliWeb.Breadcrumb.BreadcrumbTrailLive
   alias OliWeb.Common.SessionContext
@@ -15,6 +15,8 @@ defmodule OliWeb.Components.Header do
   attr(:ctx, SessionContext, required: true)
 
   def header(assigns) do
+    assigns = assign(assigns, :is_system_admin, assigns[:is_system_admin] || false)
+
     ~H"""
     <nav class="navbar py-1 bg-delivery-header dark:bg-delivery-header-dark shadow-sm">
       <div class="container mx-auto flex flex-row">
@@ -74,7 +76,7 @@ defmodule OliWeb.Components.Header do
             </div>
           <% user_signed_in?(assigns) -> %>
             <div class="max-w-[400px] my-auto">
-              <UserAccountMenu.menu id="user-account-menu" ctx={@ctx} />
+              <UserAccount.menu id="user-account-menu" ctx={@ctx} is_system_admin={@is_system_admin} />
             </div>
           <% true -> %>
             <%= link("Learner/Educator Sign In",
@@ -101,6 +103,7 @@ defmodule OliWeb.Components.Header do
         <nav class="breadcrumb-bar d-flex align-items-center mt-3 mb-1">
           <div class="flex-1">
             <%= live_render(@socket_or_conn, BreadcrumbTrailLive,
+              id: "breadcrumb-trail",
               session: %{"breadcrumbs" => @breadcrumbs}
             ) %>
           </div>

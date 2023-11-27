@@ -4,21 +4,13 @@ defmodule OliWeb.Delivery.Student.IndexLive do
   import OliWeb.Components.Delivery.Layouts
 
   def mount(_params, _session, socket) do
-    {:ok, socket}
+    {:ok, assign(socket, active_tab: :index)}
   end
 
   def render(assigns) do
     ~H"""
-    <.header_with_sidebar_nav
-      ctx={@ctx}
-      section={@section}
-      brand={@brand}
-      preview_mode={@preview_mode}
-      active_tab={:index}
-    >
-      <.welcome_banner ctx={@ctx} />
-      <div class="container mx-auto"></div>
-    </.header_with_sidebar_nav>
+    <.welcome_banner ctx={@ctx} />
+    <div class="container mx-auto"></div>
     """
   end
 

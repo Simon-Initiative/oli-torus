@@ -5,7 +5,6 @@ defmodule OliWeb.Delivery.OpenAndFreeIndexTest do
   import Phoenix.LiveViewTest
   import Oli.Factory
 
-  alias Oli.Accounts
   alias Lti_1p3.Tool.ContextRoles
   alias Oli.Delivery.Sections
   alias Oli.Seeder
@@ -62,62 +61,7 @@ defmodule OliWeb.Delivery.OpenAndFreeIndexTest do
       assert has_element?(view, "p", "You are not enrolled in any courses.")
     end
 
-    test "gets the 'instructor' label role in the user account menu if the user with platform_role=student can create sections",
-         %{
-           conn: conn,
-           user: user
-         } do
-      Accounts.update_user(
-        user,
-        %{can_create_sections: true}
-      )
-
-      Accounts.update_user_platform_roles(
-        user,
-        [
-          Lti_1p3.Tool.PlatformRoles.get_role(:institution_student)
-        ]
-      )
-
-      {:ok, view, _html} = live(conn, ~p"/sections")
-
-      props =
-        render(view)
-        |> Floki.parse_document!()
-        |> Floki.find(~s{div[data-live-react-class="Components.UserAccountMenu"]})
-        |> Floki.attribute("data-live-react-props")
-        |> hd()
-
-      assert props =~ ~s{\"roleColor\":\"#2ecc71\"}
-      assert props =~ ~s{\"roleLabel\":\"Instructor\"}
-    end
-
-    test "gets the 'student' label role in the user account menu if the user with platform_role=student can not create sections",
-         %{
-           conn: conn,
-           user: user
-         } do
-      Accounts.update_user_platform_roles(
-        user,
-        [
-          Lti_1p3.Tool.PlatformRoles.get_role(:institution_student)
-        ]
-      )
-
-      {:ok, view, _html} = live(conn, ~p"/sections")
-
-      props =
-        render(view)
-        |> Floki.parse_document!()
-        |> Floki.find(~s{div[data-live-react-class="Components.UserAccountMenu"]})
-        |> Floki.attribute("data-live-react-props")
-        |> hd()
-
-      assert props =~ ~s{\"roleLabel\":\"Student\"}
-      assert props =~ ~s{\"roleColor\":\"#3498db\"}
-    end
-
-    test "renders product title and image in sections index with a link to acces to it",
+    test "renders product title, image and description in sections index with a link to access to it",
          %{
            conn: conn,
            user: user
@@ -136,7 +80,7 @@ defmodule OliWeb.Delivery.OpenAndFreeIndexTest do
 
       assert render(view) =~ ~s|bg-[url(&#39;https://example.com/some-image-url.png&#39;)]|
       assert has_element?(view, "h5", "The best course ever!")
-      assert has_element?(view, ~s{a[href="/ng23/sections/#{section.slug}"]})
+      assert has_element?(view, ~s{a[href="/sections/#{section.slug}"]})
     end
 
     test "section badge gets rendered correctly considering the user role",
@@ -165,13 +109,13 @@ defmodule OliWeb.Delivery.OpenAndFreeIndexTest do
 
       assert has_element?(
                view,
-               ~s{span[role="role_badge_for_section_#{section_1.id}"]},
+               ~s{a[href="/sections/#{section_1.slug}"] span.badge},
                "student"
              )
 
       assert has_element?(
                view,
-               ~s{span[role="role_badge_for_section_#{section_2.id}"]},
+               ~s{a[href="/sections/#{section_2.slug}/instructor_dashboard/manage"] span.badge},
                "instructor"
              )
     end

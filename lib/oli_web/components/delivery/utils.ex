@@ -1,4 +1,8 @@
 defmodule OliWeb.Components.Delivery.Utils do
+  @moduledoc """
+  NOTICE: MODULE DEPRECATED - USE OliWeb.Components.Utils INSTEAD
+  If there are functions here that are required, copy them to OliWeb.Components.Utils.
+  """
   use Phoenix.Component
   use OliWeb, :verified_routes
 

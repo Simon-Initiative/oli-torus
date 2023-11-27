@@ -100,7 +100,7 @@ defmodule OliWeb.CollaborationLiveTest do
       author: author
     })
 
-    section = insert(:section, base_project: project, type: :enrollable)
+    section = insert(:section, title: "Example Section", base_project: project, type: :enrollable)
     {:ok, _sr} = Sections.create_section_resources(section, publication)
 
     sr = Sections.get_section_resource(section.id, page_resource_cs.id)
@@ -920,7 +920,7 @@ defmodule OliWeb.CollaborationLiveTest do
           conn,
           CollabSpaceConfigView,
           session: %{
-            "current_user_id" => author.id,
+            "current_author_id" => author.id,
             "collab_space_config" => page_revision_cs.collab_space_config,
             "project_slug" => project.slug,
             "is_delivery" => false,
@@ -971,7 +971,7 @@ defmodule OliWeb.CollaborationLiveTest do
           conn,
           CollabSpaceConfigView,
           session: %{
-            "current_user_id" => author.id,
+            "current_author_id" => author.id,
             "collab_space_config" => page_revision_cs.collab_space_config,
             "project_slug" => project.slug,
             "is_delivery" => false,
@@ -1120,6 +1120,7 @@ defmodule OliWeb.CollaborationLiveTest do
       section: section
     } do
       enroll_user_to_section(user, section, :context_instructor)
+
       {:ok, view, _html} = live(conn, live_view_collab_space_index(:instructor, section.slug))
 
       assert has_element?(view, "#collaborative-spaces-table")
@@ -1195,7 +1196,9 @@ defmodule OliWeb.CollaborationLiveTest do
         create_for_paging(project.id, publication, author, "Page #{i}")
       end
 
-      section = insert(:section, base_project: project, type: :enrollable)
+      section =
+        insert(:section, title: "Example Section", base_project: project, type: :enrollable)
+
       {:ok, _sr} = Sections.create_section_resources(section, publication)
       enroll_user_to_section(user, section, :context_instructor)
 

@@ -1,9 +1,6 @@
 defmodule OliWeb.Delivery.OpenAndFreeIndex do
   use OliWeb, :live_view
 
-  on_mount({OliWeb.LiveSessionPlugs.SetCurrentUser, :with_preloads})
-  on_mount(OliWeb.LiveSessionPlugs.SetCtx)
-
   alias Oli.Delivery.Sections
   alias OliWeb.Components.Delivery.Utils
   alias OliWeb.Common.SearchInput
@@ -121,7 +118,7 @@ defmodule OliWeb.Delivery.OpenAndFreeIndex do
                   <span
                     :if={@show_role_badges}
                     role={"role_badge_for_section_#{section.id}"}
-                    class="absolute w-32 top-0 left-0 rounded-br-xl rounded-tl-xl bg-primary uppercase py-2 text-white text-center text-[12px] leading-[16px] tracking-[1.2px] font-bold"
+                    class="badge absolute w-32 top-0 left-0 rounded-br-xl rounded-tl-xl bg-primary uppercase py-2 text-white text-center text-[12px] leading-[16px] tracking-[1.2px] font-bold"
                   >
                     <%= section.user_role %>
                   </span>
@@ -234,6 +231,6 @@ defmodule OliWeb.Delivery.OpenAndFreeIndex do
     end)
   end
 
-  defp get_course_url(%{user_role: "student", slug: slug}), do: ~p"/ng23/sections/#{slug}"
-  defp get_course_url(%{slug: slug}), do: ~p"/sections/#{slug}/overview"
+  defp get_course_url(%{user_role: "student", slug: slug}), do: ~p"/sections/#{slug}"
+  defp get_course_url(%{slug: slug}), do: ~p"/sections/#{slug}/instructor_dashboard/manage"
 end
