@@ -1,8 +1,10 @@
 import React, { useContext } from 'react';
 import { Maybe } from 'tsmonad';
 import { WriterContext, defaultWriterContext } from 'data/content/writers/context';
+import { ActivityErrorDisplay } from './ActivityErrorDisplay';
 import { DeliveryElementProps } from './DeliveryElement';
 import { ActivityModelSchema } from './types';
+import { useDeliveryErrorHandlers } from './useDeliveryErrorHandlers';
 
 export interface DeliveryElementState<T extends ActivityModelSchema>
   extends DeliveryElementProps<T> {
@@ -19,6 +21,7 @@ export function useDeliveryElementContext<T extends ActivityModelSchema>() {
   );
 }
 export const DeliveryElementProvider: React.FC<DeliveryElementProps<any>> = (props) => {
+  const { onSaveActivity, onSavePart, error } = useDeliveryErrorHandlers(props);
   const writerContext = defaultWriterContext({
     graded: props.context.graded,
     sectionSlug: props.context.sectionSlug,
@@ -29,8 +32,10 @@ export const DeliveryElementProvider: React.FC<DeliveryElementProps<any>> = (pro
   });
 
   return (
-    <DeliveryElementContext.Provider value={{ ...props, writerContext }}>
-      {props.children}
+    <DeliveryElementContext.Provider
+      value={{ ...props, writerContext, onSaveActivity, onSavePart }}
+    >
+      <ActivityErrorDisplay error={error}>{props.children}</ActivityErrorDisplay>
     </DeliveryElementContext.Provider>
   );
 };
