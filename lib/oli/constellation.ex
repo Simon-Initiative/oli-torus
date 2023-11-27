@@ -122,6 +122,12 @@ defmodule ECL.Constellation do
         body = Poison.encode!(data)
         HTTPoison.post(path, body, headers, [])
     end
+    |> Autoretry.autoretry(
+      max_attempts: 5,
+      wait: 1000,
+      include_404s: false,
+      retry_unknown_errors: false
+    )
     |> handle_constellation_response()
   end
 
