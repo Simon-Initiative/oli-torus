@@ -1,5 +1,4 @@
 defmodule Oli.Analytics.Summary.AttemptGroup do
-
   import Ecto.Query, warn: false
   alias Oli.Repo
 
@@ -28,7 +27,12 @@ defmodule Oli.Analytics.Summary.AttemptGroup do
     :context
   ]
 
-  def from_attempt_summary(%Oli.Analytics.Common.Pipeline{} = pipeline, attempt_summary, project_id, host_name) do
+  def from_attempt_summary(
+        %Oli.Analytics.Common.Pipeline{} = pipeline,
+        attempt_summary,
+        project_id,
+        host_name
+      ) do
     Map.put(pipeline, :data, from_attempt_summary(attempt_summary, project_id, host_name))
     |> Oli.Analytics.Common.Pipeline.step_done(:query)
   end
@@ -39,20 +43,22 @@ defmodule Oli.Analytics.Summary.AttemptGroup do
   to both emit an xAPI statement for each part attempt, and to process all summary analytics.
   """
   def from_attempt_summary([], _project_id, _host_name), do: nil
-  def from_attempt_summary(attempt_summary, project_id, host_name) do
 
+  def from_attempt_summary(attempt_summary, project_id, host_name) do
     {_, _, ra, _, page_revision, _} = List.first(attempt_summary)
 
-    part_attempts = Enum.map(attempt_summary, fn {pa, aa, _, _, _, ar} ->
-      Map.merge(pa, %{
-        activity_attempt: aa,
-        activity_revision: ar
-      })
-    end)
+    part_attempts =
+      Enum.map(attempt_summary, fn {pa, aa, _, _, _, ar} ->
+        Map.merge(pa, %{
+          activity_attempt: aa,
+          activity_revision: ar
+        })
+      end)
 
-    activity_attempts = Enum.map(attempt_summary, fn {_, aa, _, _, _, _} -> aa end)
-    |> Enum.filter(fn activity_attempt -> activity_attempt.lifecycle_state == :evaluated end)
-    |> Enum.dedup()
+    activity_attempts =
+      Enum.map(attempt_summary, fn {_, aa, _, _, _, _} -> aa end)
+      |> Enum.filter(fn activity_attempt -> activity_attempt.lifecycle_state == :evaluated end)
+      |> Enum.dedup()
 
     resource_attempt = Map.merge(ra, %{resource_id: page_revision.resource_id})
 
@@ -64,7 +70,6 @@ defmodule Oli.Analytics.Summary.AttemptGroup do
       activity_attempts: activity_attempts,
       resource_attempt: resource_attempt
     }
-
   end
 
   defp build_context([{_, _, _, access, _, _} | _rest], project_id, host_name) do
@@ -78,9 +83,10 @@ defmodule Oli.Analytics.Summary.AttemptGroup do
   end
 
   defp pub_id_for_section_project(section_id, nil) do
-    query = from spp in Oli.Delivery.Sections.SectionsProjectsPublications,
-      where: spp.section_id == ^section_id,
-      select: spp.publication_id
+    query =
+      from spp in Oli.Delivery.Sections.SectionsProjectsPublications,
+        where: spp.section_id == ^section_id,
+        select: spp.publication_id
 
     case Repo.all(query) do
       [] -> nil
@@ -89,11 +95,11 @@ defmodule Oli.Analytics.Summary.AttemptGroup do
   end
 
   defp pub_id_for_section_project(section_id, project_id) do
-    query = from spp in Oli.Delivery.Sections.SectionsProjectsPublications,
-      where: spp.section_id == ^section_id and spp.project_id == ^project_id,
-      select: spp.publication_id
+    query =
+      from spp in Oli.Delivery.Sections.SectionsProjectsPublications,
+        where: spp.section_id == ^section_id and spp.project_id == ^project_id,
+        select: spp.publication_id
 
     Repo.one(query)
   end
-
 end

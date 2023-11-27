@@ -173,7 +173,6 @@ defmodule Oli.Rendering.Content.Html do
   defp tableRowClass(_), do: ""
 
   def table(%Context{} = context, next, attrs) do
-
     # We want to ensure that tables are always wrapped
     # in a figure element, even if there is no caption. When
     # a caption attr is present but "empty" we still want the figure,
@@ -182,13 +181,13 @@ defmodule Oli.Rendering.Content.Html do
     # table display.
 
     wrapping_fn =
-       case attrs do
-         %{"caption" => ""} -> &figure_only/3
-         %{"caption" => nil} -> &figure_only/3
-         %{"caption" => [%{"children" => [%{"text" => ""}], "type" => "p"}]} -> &figure_only/3
-         %{"caption" => _an_actual_caption} -> &captioned_content/3
-         _ -> &figure_only/3
-       end
+      case attrs do
+        %{"caption" => ""} -> &figure_only/3
+        %{"caption" => nil} -> &figure_only/3
+        %{"caption" => [%{"children" => [%{"text" => ""}], "type" => "p"}]} -> &figure_only/3
+        %{"caption" => _an_actual_caption} -> &captioned_content/3
+        _ -> &figure_only/3
+      end
 
     wrapping_fn.(context, attrs, [
       "<table class='#{tableBorderClass(attrs)} #{tableRowClass(attrs)}'>",
@@ -472,13 +471,8 @@ defmodule Oli.Rendering.Content.Html do
 
   def formula(context, next, properties, inline \\ false)
 
-  def formula(
-        %Oli.Rendering.Context{} = _context,
-        _next,
-        %{"subtype" => "latex", "src" => src, "legacyBlockRendered" => true},
-        true
-      ) do
-    ["<span class=\"#{formula_class(false)}\">\\(", escape_xml!(src), "\\)</span>\n"]
+  def formula(context, next, %{"legacyBlockRendered" => true} = properties, _inline) do
+    formula(context, next, Map.delete(properties, "legacyBlockRendered"), false)
   end
 
   def formula(
@@ -744,7 +738,8 @@ defmodule Oli.Rendering.Content.Html do
         context,
         "Components.DeliveryElementRenderer",
         %{
-          "element" => element
+          "element" => element,
+          "inline" => true
         },
         html_element: "span"
       )
@@ -784,28 +779,44 @@ defmodule Oli.Rendering.Content.Html do
     end
   end
 
-  def example(%Context{} = _context, next, _) do
+  def example(%Context{} = _context, next, element) do
     [
-      ~s|<div class="content-purpose example"><div class="content-purpose-label">Example</div><div class="content-purpose-content">|,
+      ~s|<div class="content-purpose example"><div class="content-purpose-label">Example</div><div #{directionAttr(element)} class="content-purpose-content">|,
       next.(),
       "</div></div>\n"
     ]
   end
 
-  def learn_more(%Context{} = _context, next, _) do
+  def learn_more(%Context{} = _context, next, element) do
     [
-      ~s|<div class="content-purpose learnmore"><div class="content-purpose-label">Learn more</div><div class="content-purpose-content">|,
+      ~s|<div class="content-purpose learnmore"><div class="content-purpose-label">Learn more</div><div #{directionAttr(element)} class="content-purpose-content">|,
       next.(),
       "</div></div>\n"
     ]
   end
 
-  def manystudentswonder(%Context{} = _context, next, _) do
+  def manystudentswonder(%Context{} = _context, next, element) do
     [
-      ~s|<div class="content-purpose manystudentswonder"><div class="content-purpose-label">Many Students Wonder</div><div class="content-purpose-content">|,
+      ~s|<div class="content-purpose manystudentswonder"><div class="content-purpose-label">Many Students Wonder</div><div #{directionAttr(element)} class="content-purpose-content">|,
       next.(),
       "</div></div>\n"
     ]
+  end
+
+  def content(%Context{} = _context, next, element) do
+    [
+      ~s|<div class="content" #{directionAttr(element)}>|,
+      next.(),
+      "</div>"
+    ]
+  end
+
+  defp directionAttr(element) do
+    case Map.get(element, "textDirection", "ltr") do
+      "ltr" -> ""
+      "rtl" -> " dir=\"rtl\""
+      _ -> ""
+    end
   end
 
   def escape_xml!(text) do

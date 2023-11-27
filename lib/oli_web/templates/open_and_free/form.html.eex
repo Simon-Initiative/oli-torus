@@ -117,8 +117,8 @@
 
   <div>
     <%= submit value_or(assigns[:submit_text], "Save"), class: "submit btn btn-md btn-primary btn-block" %>
-    <%= if assigns[:cancel], do:
-      link "Cancel", to: assigns[:cancel], class: "btn btn-md btn-outline-secondary btn-block mt-3"
+    <%= if(assigns[:cancel], do:
+      (link "Cancel", to: assigns[:cancel], class: "btn btn-md btn-outline-secondary btn-block mt-3"))
     %>
   </div>
 <% end %>

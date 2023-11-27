@@ -11,7 +11,7 @@ defmodule OliWeb.Components.Delivery.QuizScores do
 
   @default_params %{
     offset: 0,
-    limit: 10,
+    limit: 20,
     sort_order: :asc,
     sort_by: :name,
     text_search: nil,
@@ -106,6 +106,8 @@ defmodule OliWeb.Components.Delivery.QuizScores do
             show_bottom_paging={false}
             sort={JS.push("paged_table_sort", target: @myself)}
             page_change={JS.push("paged_table_page_change", target: @myself)}
+            limit_change={JS.push("paged_table_limit_change", target: @myself)}
+            show_limit_change={true}
           />
         <% else %>
           <h6 class="text-center py-4">There are no quiz scores to show</h6>
@@ -214,6 +216,31 @@ defmodule OliWeb.Components.Delivery.QuizScores do
          route_for(
            socket,
            %{limit: limit, offset: offset},
+           socket.assigns.patch_url_type
+         )
+     )}
+  end
+
+  def handle_event(
+        "paged_table_limit_change",
+        params,
+        %{assigns: %{params: current_params}} = socket
+      ) do
+    new_limit = Params.get_int_param(params, "limit", 20)
+
+    new_offset =
+      OliWeb.Common.PagingParams.calculate_new_offset(
+        current_params.offset,
+        new_limit,
+        socket.assigns.total_count
+      )
+
+    {:noreply,
+     push_patch(socket,
+       to:
+         route_for(
+           socket,
+           %{limit: new_limit, offset: new_offset},
            socket.assigns.patch_url_type
          )
      )}

@@ -13,10 +13,11 @@ defmodule Oli.Delivery.Sections.BrowseTest do
   @default_opts %BrowseOptions{
     institution_id: nil,
     blueprint_id: nil,
+    project_id: nil,
     text_search: "",
     active_today: false,
     filter_status: nil,
-    filter_type: nil,
+    filter_type: nil
   }
 
   describe "basic browsing" do
@@ -129,13 +130,20 @@ defmodule Oli.Delivery.Sections.BrowseTest do
       assert hd(results).total_count == 30
 
       # exclude special characters
-      results = browse(0, :title, :asc, Map.merge(@default_opts, %{text_search: ";:-|'<$p#(!*) characters"}))
+      results =
+        browse(
+          0,
+          :title,
+          :asc,
+          Map.merge(@default_opts, %{text_search: ";:-|'<$p#(!*) characters"})
+        )
+
       assert length(results) == 1
       assert hd(results).total_count == 1
       assert hd(results).title == "zzz ;:-|'<$p#(!*) characters"
     end
 
-    test "filtering", %{second: second, sections: sections} do
+    test "filtering", %{second: second, sections: sections, project: project} do
       # by institution
       results = browse(0, :title, :asc, Map.merge(@default_opts, %{institution_id: second.id}))
       assert length(results) == 3
@@ -171,9 +179,16 @@ defmodule Oli.Delivery.Sections.BrowseTest do
       refute hd(results).title == "aA"
 
       # by blueprint
-      results = browse(0, :title, :asc, Map.merge(@default_opts, %{blueprint_id: hd(sections).id}))
+      results =
+        browse(0, :title, :asc, Map.merge(@default_opts, %{blueprint_id: hd(sections).id}))
+
       assert length(results) == 1
       assert hd(results).total_count == 1
+
+      # by project
+      results = browse(0, :title, :asc, Map.merge(@default_opts, %{project_id: project.id}))
+      assert length(results) == 3
+      assert hd(results).total_count == 30
     end
   end
 
@@ -209,7 +224,7 @@ defmodule Oli.Delivery.Sections.BrowseTest do
       end_date: tomorrow(),
       open_and_free: true,
       requires_payment: false,
-      amount: Money.new(:USD, 10000000)
+      amount: Money.new(:USD, 10_000_000)
     })
 
     # There is only one section that differs in the amount

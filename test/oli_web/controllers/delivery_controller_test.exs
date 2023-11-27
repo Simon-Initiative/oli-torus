@@ -473,14 +473,26 @@ defmodule OliWeb.DeliveryControllerTest do
                "You are being <a href=\"/sections/join/invalid\">redirected"
     end
 
-    test "redirects to login form with section slug as query param", %{conn: conn} do
+    test "redirects to login form with section slug and from_invitation_link? as true as query params",
+         %{conn: conn} do
       section = insert(:section)
       section_invite = insert(:section_invite, %{section: section})
 
       conn = get(conn, Routes.delivery_path(conn, :enroll_independent, section_invite.slug))
 
       assert html_response(conn, 302) =~
-               "You are being <a href=\"/session/new?request_path=%2Fsections%2Fjoin%2F#{section_invite.slug}&amp;section=#{section.slug}\">redirected"
+               "You are being <a href=\"/session/new?request_path=%2Fsections%2Fjoin%2F#{section_invite.slug}&amp;section=#{section.slug}&amp;from_invitation_link%3F=true\">redirected"
+    end
+
+    test "redirects to enroll page when section is open and free and does not require enrollment",
+         %{conn: conn} do
+      section = insert(:section, requires_enrollment: false, open_and_free: true)
+      section_invite = insert(:section_invite, %{section: section})
+
+      conn = get(conn, Routes.delivery_path(conn, :enroll_independent, section_invite.slug))
+
+      assert html_response(conn, 302) =~
+               "You are being <a href=\"/sections/#{section.slug}/enroll?from_invitation_link%3F=true\">redirected</a>"
     end
   end
 
@@ -541,6 +553,88 @@ defmodule OliWeb.DeliveryControllerTest do
     end
   end
 
+  describe "enroll independent (as guest user)" do
+    setup [:guest_conn]
+
+    test "redirects to invalid join view", %{conn: conn} do
+      section = insert(:section)
+      date_expires = DateTime.add(DateTime.utc_now(), -3600)
+      section_invite = insert(:section_invite, %{section: section, date_expires: date_expires})
+
+      conn = get(conn, Routes.delivery_path(conn, :enroll_independent, section_invite.slug))
+
+      assert html_response(conn, 302) =~
+               "You are being <a href=\"/sections/join/invalid\">redirected"
+    end
+
+    test "redirects to section unavailable when section has yet to be started", %{conn: conn} do
+      section = insert(:section)
+      later = DateTime.add(DateTime.utc_now(), 100_000)
+
+      {:ok, section} = Oli.Delivery.Sections.update_section(section, %{start_date: later})
+      assert {:unavailable, :before_start_date} == Oli.Delivery.Sections.available?(section)
+
+      section_invite = insert(:section_invite, %{section: section})
+      refute Oli.Delivery.Sections.SectionInvites.link_expired?(section_invite)
+
+      conn = get(conn, Routes.delivery_path(conn, :enroll_independent, section_invite.slug))
+
+      assert html_response(conn, 403) =~
+               "You are attempting to access a section before its scheduled start date."
+    end
+
+    test "redirects to section unavailable when section has already ended", %{conn: conn} do
+      section = insert(:section)
+      in_the_past = DateTime.add(DateTime.utc_now(), -100_000)
+
+      {:ok, section} = Oli.Delivery.Sections.update_section(section, %{end_date: in_the_past})
+      assert {:unavailable, :after_end_date} == Oli.Delivery.Sections.available?(section)
+
+      section_invite = insert(:section_invite, %{section: section})
+      refute Oli.Delivery.Sections.SectionInvites.link_expired?(section_invite)
+
+      conn = get(conn, Routes.delivery_path(conn, :enroll_independent, section_invite.slug))
+
+      assert html_response(conn, 403) =~
+               "You are attempting to access a section after its scheduled end date."
+    end
+
+    test "redirects to login form with section slug and from_invitation_link? as true as query params",
+         %{conn: conn} do
+      section = insert(:section, requires_enrollment: true)
+      section_invite = insert(:section_invite, %{section: section})
+
+      conn =
+        get(
+          conn,
+          Routes.delivery_path(conn, :enroll_independent, section_invite.slug,
+            from_invitation_link?: true
+          )
+        )
+
+      assert html_response(conn, 302) =~
+               "You are being <a href=\"/session/new?section=#{section.slug}&amp;from_invitation_link%3F=true\">redirected"
+    end
+
+    test "shows enroll view and Sign In link", %{conn: conn} do
+      section = insert(:section)
+      section_invite = insert(:section_invite, %{section: section})
+
+      conn =
+        get(
+          conn,
+          Routes.delivery_path(conn, :enroll_independent, section_invite.slug,
+            from_invitation_link?: true
+          )
+        )
+
+      assert html_response(conn, 200) =~ "Enroll in Course Section"
+
+      assert html_response(conn, 200) =~
+               ~s(<a href="/session/new?section=#{section.slug}&amp;from_invitation_link%3F=true" )
+    end
+  end
+
   describe "enroll in the section while logged in" do
     setup [:user_conn]
 
@@ -579,7 +673,7 @@ defmodule OliWeb.DeliveryControllerTest do
       conn = get(conn, Routes.delivery_path(conn, :show_enroll, section.slug))
 
       assert html_response(conn, 302) =~
-               "<html><body>You are being <a href=\"/session/new?section=#{section.slug}\">redirected</a>.</body></html>"
+               "<html><body>You are being <a href=\"/session/new?section=#{section.slug}&amp;from_invitation_link%3F=false\">redirected</a>.</body></html>"
 
       conn = mock_captcha(conn, section)
 

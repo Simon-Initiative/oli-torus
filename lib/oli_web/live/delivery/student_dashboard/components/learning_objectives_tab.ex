@@ -8,7 +8,7 @@ defmodule OliWeb.Delivery.StudentDashboard.Components.LearningObjectivesTab do
         id="objectives_table"
         module={OliWeb.Components.Delivery.LearningObjectives}
         params={@params}
-        section_slug={@section_slug}
+        section={@section}
         objectives_tab={@objectives_tab}
         student_id={@student_id}
         patch_url_type={:student_dashboard}

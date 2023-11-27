@@ -8,7 +8,6 @@ defmodule Oli.Delivery.Paywall.Providers.Cashnet do
 
   @spec create_form(%Section{}, %User{}, String.t()) :: {:ok, any} | {:error, any}
   def create_form(section, user, host) do
-
     attrs = %{
       type: :direct,
       generation_date: DateTime.utc_now(),
@@ -96,9 +95,16 @@ defmodule Oli.Delivery.Paywall.Providers.Cashnet do
                    provider_payload: payload
                  }) do
               {:ok, _} ->
-                PubSub.broadcast(Oli.PubSub, "section:payment:"<>Integer.to_string(payment.pending_user_id), {:payment, "paid"})
+                PubSub.broadcast(
+                  Oli.PubSub,
+                  "section:payment:" <> Integer.to_string(payment.pending_user_id),
+                  {:payment, "paid"}
+                )
+
                 {:ok, section}
-              _ -> {:error, "Could not finalize payment"}
+
+              _ ->
+                {:error, "Could not finalize payment"}
             end
         end
 

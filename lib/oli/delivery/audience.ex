@@ -63,6 +63,7 @@ defmodule Oli.Delivery.Audience do
     case Map.has_key?(content, "children") do
       true ->
         Map.put(content, "children", filter_for_role_inner(role, content["children"]))
+
       false ->
         content
     end
@@ -77,7 +78,6 @@ defmodule Oli.Delivery.Audience do
       _never -> false
     end
   end
-
 
   @spec is_intended_audience?(String.t() | nil, role(), boolean()) :: boolean()
 
@@ -95,6 +95,4 @@ defmodule Oli.Delivery.Audience do
 
   # for all other cases, do not show the content
   defp is_intended_audience?(_audience, _role, _review_mode), do: false
-
-
 end

@@ -119,7 +119,9 @@ defmodule OliWeb.CollaboratorController do
       {:success, false} ->
         conn
         |> put_flash(:error, "reCaptcha failed, please try again")
-        |> redirect(to: Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.OverviewLive, project_id))
+        |> redirect(
+          to: Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.OverviewLive, project_id)
+        )
     end
   end
 
@@ -130,12 +132,16 @@ defmodule OliWeb.CollaboratorController do
   def delete(conn, %{"project_id" => project_id, "author_email" => author_email}) do
     case Collaborators.remove_collaborator(author_email, project_id) do
       {:ok, _} ->
-        redirect(conn, to: Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.OverviewLive, project_id))
+        redirect(conn,
+          to: Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.OverviewLive, project_id)
+        )
 
       {:error, message} ->
         conn
         |> put_flash(:error, "We couldn't remove that author from the project. #{message}")
-        |> redirect(to: Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.OverviewLive, project_id))
+        |> redirect(
+          to: Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.OverviewLive, project_id)
+        )
     end
   end
 

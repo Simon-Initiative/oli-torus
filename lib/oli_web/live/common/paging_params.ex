@@ -57,4 +57,45 @@ defmodule OliWeb.Common.PagingParams do
       label: label
     }
   end
+
+  @doc """
+  Calculates a new offset based on a given old offset, new limit, and the total count of items.
+
+  The function is designed to ensure a consistent user experience during pagination adjustments:
+
+  1. If the total count of items is less than the new limit, it will return an offset of 0.
+  2. If changing the page size (`limit`), the function adjusts the `offset` to make sure
+     that the current view still displays at least one of the items that were visible
+     with the previous limit.
+  3. The function also ensures that the resulting offset, combined with the new limit,
+     does not exceed the total count of items.
+
+  ## Examples
+
+      iex> calculate_new_offset(4, 1, 8)
+      4
+      iex> calculate_new_offset(4, 10, 8)
+      0
+
+  ## Parameters
+
+    - `old_offset`: The original offset (usually representing the starting point of the current page).
+    - `new_limit`: The new desired limit (or page size).
+    - `total_count`: The total number of items available for pagination.
+
+  ## Returns
+
+    - The new offset that is consistent with the current view and remains within the range of total items.
+  """
+  def calculate_new_offset(_old_offset, new_limit, total_count)
+      when new_limit > total_count,
+      do: 0
+
+  def calculate_new_offset(old_offset, new_limit, total_count) do
+    # Calculate new offset
+    new_offset = old_offset - rem(old_offset, new_limit)
+
+    # Ensure the new offset is within range
+    if new_offset > total_count - new_limit, do: total_count - new_limit, else: new_offset
+  end
 end

@@ -196,7 +196,7 @@ defmodule OliWeb.Sections.OverviewLiveTest do
                "Scheduling"
              )
 
-      assert has_element?(
+      refute has_element?(
                view,
                "a[href=\"#{Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.GatingAndScheduling, section.slug)}\"]",
                "Advanced Gating and Scheduling"
@@ -210,11 +210,6 @@ defmodule OliWeb.Sections.OverviewLiveTest do
 
       assert render(view) =~ "Manage"
       assert render(view) =~ "Manage all aspects of course delivery"
-
-      assert has_element?(
-               view,
-               "a[href=\"#{Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.EnrollmentsViewLive, section.slug)}\"]"
-             )
 
       assert has_element?(
                view,
@@ -363,15 +358,6 @@ defmodule OliWeb.Sections.OverviewLiveTest do
                "Section had student activity recently. It can now only be archived, please try again."
 
       assert %Section{status: :active} = Sections.get_section!(section.id)
-    end
-
-    test "renders Collaboration Space config correctly (when not enabled by authoring)", %{
-      conn: conn,
-      section: section
-    } do
-      {:ok, view, _html} = live(conn, live_view_overview_route(section.slug))
-      assert render(view) =~ "Collaborative Space"
-      assert render(view) =~ "Collaborative spaces are not enabled by the course project"
     end
 
     test "renders Collaboration Space config correctly (when enabled by authoring)", %{

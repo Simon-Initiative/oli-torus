@@ -2,11 +2,15 @@ defmodule Oli.Rendering.Utils do
   alias Oli.Rendering.{Content, Context}
 
   def parse_html_content(content, context \\ %Context{}) do
-    Content.render(context, content, Content.Html)
-    |> Phoenix.HTML.raw()
-    |> Phoenix.HTML.safe_to_string()
-    # Remove trailing newlines
-    |> String.trim()
+    try do
+      Content.render(context, content, Content.Html)
+      |> Phoenix.HTML.raw()
+      |> Phoenix.HTML.safe_to_string()
+      # Remove trailing newlines
+      |> String.trim()
+    rescue
+      _e -> "Error rendering content"
+    end
   end
 
   # Code block language options
@@ -34,7 +38,7 @@ defmodule Oli.Rendering.Utils do
       "SQL" => "sql",
       "Text" => "text",
       "TypeScript" => "typescript",
-      "XML" => "xml",
+      "XML" => "xml"
     }
   end
 end

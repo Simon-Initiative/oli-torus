@@ -1,36 +1,39 @@
 defmodule Oli.Analytics.Summary.XAPI.PartAttemptEvaluated do
-
   alias Oli.Analytics.Summary.Context
 
-  def new(%Context{
-    user_id: user_id,
-    host_name: host_name,
-    section_id: section_id,
-    project_id: project_id,
-    publication_id: publication_id
-  }, %{
-    activity_revision: activity_revision,
-    activity_attempt: activity_attempt,
-    attempt_guid: part_attempt_guid,
-    attempt_number: part_attempt_number,
-    hints: hints,
-    response: response,
-    score: score,
-    out_of: out_of,
-    feedback: feedback,
-    date_evaluated: timestamp,
-    part_id: part_id
-  }, %{
-    attempt_guid: page_attempt_guid,
-    attempt_number: page_attempt_number,
-    resource_id: page_id
-  }) do
-
-    attached_objectives = case activity_revision.objectives do
-      nil -> []
-      list when is_list(list) -> list
-      map when is_map(map) -> Map.get(map, part_id, [])
-    end
+  def new(
+        %Context{
+          user_id: user_id,
+          host_name: host_name,
+          section_id: section_id,
+          project_id: project_id,
+          publication_id: publication_id
+        },
+        %{
+          activity_revision: activity_revision,
+          activity_attempt: activity_attempt,
+          attempt_guid: part_attempt_guid,
+          attempt_number: part_attempt_number,
+          hints: hints,
+          response: response,
+          score: score,
+          out_of: out_of,
+          feedback: feedback,
+          date_evaluated: timestamp,
+          part_id: part_id
+        },
+        %{
+          attempt_guid: page_attempt_guid,
+          attempt_number: page_attempt_number,
+          resource_id: page_id
+        }
+      ) do
+    attached_objectives =
+      case activity_revision.objectives do
+        nil -> []
+        list when is_list(list) -> list
+        map when is_map(map) -> Map.get(map, part_id, [])
+      end
 
     %{
       "actor" => %{
@@ -58,7 +61,12 @@ defmodule Oli.Analytics.Summary.XAPI.PartAttemptEvaluated do
       },
       "result" => %{
         "score" => %{
-          "scaled" => if out_of == 0.0 do 0.0 else score / out_of end,
+          "scaled" =>
+            if out_of == 0.0 do
+              0.0
+            else
+              score / out_of
+            end,
           "raw" => score,
           "min" => 0,
           "max" => out_of
@@ -74,7 +82,8 @@ defmodule Oli.Analytics.Summary.XAPI.PartAttemptEvaluated do
         "extensions" => %{
           "http://oli.cmu.edu/extensions/hints_requested" => hints,
           "http://oli.cmu.edu/extensions/part_attempt_number" => part_attempt_number,
-          "http://oli.cmu.edu/extensions/activity_attempt_number" => activity_attempt.attempt_number,
+          "http://oli.cmu.edu/extensions/activity_attempt_number" =>
+            activity_attempt.attempt_number,
           "http://oli.cmu.edu/extensions/page_attempt_number" => page_attempt_number,
           "http://oli.cmu.edu/extensions/part_attempt_guid" => part_attempt_guid,
           "http://oli.cmu.edu/extensions/activity_attempt_guid" => activity_attempt.attempt_guid,
@@ -92,5 +101,4 @@ defmodule Oli.Analytics.Summary.XAPI.PartAttemptEvaluated do
       "timestamp" => timestamp
     }
   end
-
 end

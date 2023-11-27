@@ -381,6 +381,6 @@ defmodule Oli.AutomationSetup do
   end
 
   defp random_password do
-    for _ <- 1..20, into: "", do: <<Enum.random('0123456789abcdefghijklmnopqrstuvwxyz_$#@!')>>
+    for _ <- 1..20, into: "", do: <<Enum.random(~c"0123456789abcdefghijklmnopqrstuvwxyz_$#@!")>>
   end
 end

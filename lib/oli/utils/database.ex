@@ -97,8 +97,8 @@ defmodule Oli.Utils.Database do
         _ -> Exception.format_stacktrace()
       end
 
-    Logger.warn(reason)
-    Logger.warn(trace)
+    Logger.warning(reason)
+    Logger.warning(trace)
     log_output(result, :json)
   end
 
@@ -138,7 +138,7 @@ defmodule Oli.Utils.Database do
     results
     |> Map.get(:rows)
     |> Enum.join("\n")
-    |> Logger.warn()
+    |> Logger.warning()
   end
 
   defp log_output(results, :json) do
@@ -146,14 +146,14 @@ defmodule Oli.Utils.Database do
     |> Map.get(:rows)
     |> List.first()
     |> Jason.encode!(pretty: true)
-    |> Logger.warn()
+    |> Logger.warning()
   end
 
   defp log_output(results, :yaml) do
     results
     |> Map.get(:rows)
     |> List.first()
-    |> Logger.warn()
+    |> Logger.warning()
   end
 
   defp format_to_sql(:text), do: "FORMAT TEXT"

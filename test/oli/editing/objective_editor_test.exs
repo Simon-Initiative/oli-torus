@@ -12,8 +12,12 @@ defmodule Oli.Authoring.Editing.ObjectiveEditorTest do
         |> Seeder.add_objective("sub objective 1", :subobjective12A)
         |> Seeder.add_objective("sub objective 2", :subobjective2B)
         |> Seeder.add_objective("sub objective 3", :subobjective3A)
-        |> Seeder.add_objective_with_children("objective 1",[:subobjective12A], :objective1)
-        |> Seeder.add_objective_with_children("objective 2", [:subobjective12A, :subobjective2B], :objective2)
+        |> Seeder.add_objective_with_children("objective 1", [:subobjective12A], :objective1)
+        |> Seeder.add_objective_with_children(
+          "objective 2",
+          [:subobjective12A, :subobjective2B],
+          :objective2
+        )
         |> Seeder.add_objective_with_children("objective 3", [:subobjective3A], :objective3)
 
       %{
@@ -314,14 +318,21 @@ defmodule Oli.Authoring.Editing.ObjectiveEditorTest do
       author: author,
       map: %{
         objective1: %{revision: %Revision{slug: objective1_slug, children: objective1_children}},
-        subobjective3A: %{revision: %Revision{resource_id: subobjective3A_resource_id, slug: subobjective3A_slug}}
+        subobjective3A: %{
+          revision: %Revision{resource_id: subobjective3A_resource_id, slug: subobjective3A_slug}
+        }
       }
     } do
       assert length(objective1_children) == 1
       refute Enum.member?(objective1_children, subobjective3A_resource_id)
 
       {:ok, %Revision{slug: slug, children: children}} =
-        ObjectiveEditor.add_new_parent_for_sub_objective(subobjective3A_slug, objective1_slug, project.slug, author)
+        ObjectiveEditor.add_new_parent_for_sub_objective(
+          subobjective3A_slug,
+          objective1_slug,
+          project.slug,
+          author
+        )
 
       assert slug == objective1_slug
       assert length(children) == 2
@@ -332,16 +343,28 @@ defmodule Oli.Authoring.Editing.ObjectiveEditorTest do
       project: project,
       author: author,
       map: %{
-        objective1: %{revision: %Revision{slug: objective1_slug, children: objective1_children} = objective1},
+        objective1: %{
+          revision: %Revision{slug: objective1_slug, children: objective1_children} = objective1
+        },
         objective2: %{revision: %Revision{children: objective2_children}},
-        subobjective12A: %{revision: %Revision{resource_id: subobjective12A_resource_id, slug: subobjective12A_slug}}
+        subobjective12A: %{
+          revision: %Revision{
+            resource_id: subobjective12A_resource_id,
+            slug: subobjective12A_slug
+          }
+        }
       }
     } do
       assert length(objective1_children) == 1
       assert Enum.member?(objective1_children, subobjective12A_resource_id)
 
       {:ok, %Revision{slug: slug, children: children}} =
-        ObjectiveEditor.remove_sub_objective_from_parent(subobjective12A_slug, author, project, objective1)
+        ObjectiveEditor.remove_sub_objective_from_parent(
+          subobjective12A_slug,
+          author,
+          project,
+          objective1
+        )
 
       assert slug == objective1_slug
       assert length(children) == 0

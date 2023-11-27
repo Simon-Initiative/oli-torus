@@ -10,7 +10,6 @@ defmodule OliWeb.Api.ActivityRegistrationControllerTest do
     test "can register an activity", %{
       conn: conn
     } do
-
       _original_count = Oli.Activities.list_activity_registrations() |> Enum.count()
 
       payload = %{"upload" => %{path: "./test/oli_web/controllers/api/activity/bundle.zip"}}
@@ -32,7 +31,6 @@ defmodule OliWeb.Api.ActivityRegistrationControllerTest do
   end
 
   defp create_key(attrs) do
-
     code = UUID.uuid4()
 
     case Oli.Interop.create_key(code, "there is no hint") do
@@ -41,7 +39,9 @@ defmodule OliWeb.Api.ActivityRegistrationControllerTest do
           {:ok, _} -> {:ok, code}
           e -> e
         end
-      e -> e
+
+      e ->
+        e
     end
   end
 

@@ -10,6 +10,8 @@ defmodule Oli.Delivery.AttemptsTest do
   alias Oli.Activities.Model.{Part, Feedback}
   alias Oli.Delivery.Page.PageContext
   alias Oli.Delivery.Attempts.Core.{ClientEvaluation, StudentInput, ActivityAttempt}
+  alias Lti_1p3.Tool.ContextRoles
+  alias Oli.Delivery.Sections
 
   import Oli.Factory
 
@@ -158,6 +160,8 @@ defmodule Oli.Delivery.AttemptsTest do
       effective_settings =
         Oli.Delivery.Settings.get_combined_settings(revision, section.id, user1.id)
 
+      Sections.enroll(user1.id, section.id, [ContextRoles.get_role(:context_learner)])
+
       PageContext.create_for_visit(section, revision.slug, user1, datashop_session_id)
 
       # Page 1
@@ -221,6 +225,9 @@ defmodule Oli.Delivery.AttemptsTest do
 
       effective_settings =
         Oli.Delivery.Settings.get_combined_settings(revision, section.id, user1.id)
+
+      Sections.enroll(user1.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.enroll(user2.id, section.id, [ContextRoles.get_role(:context_learner)])
 
       PageContext.create_for_visit(section, revision.slug, user1, datashop_session_id_user1)
       PageContext.create_for_visit(section, revision.slug, user2, datashop_session_id_user2)
@@ -417,6 +424,8 @@ defmodule Oli.Delivery.AttemptsTest do
       effective_settings =
         Oli.Delivery.Settings.get_combined_settings(revision, section.id, user1.id)
 
+      Sections.enroll(user1.id, section.id, [ContextRoles.get_role(:context_learner)])
+
       PageContext.create_for_visit(section, revision.slug, user1, datashop_session_id_user1)
 
       {:ok, %AttemptState{} = _} =
@@ -460,6 +469,8 @@ defmodule Oli.Delivery.AttemptsTest do
       effective_settings =
         Oli.Delivery.Settings.get_combined_settings(revision, section.id, user1.id)
 
+      Sections.enroll(user1.id, section.id, [ContextRoles.get_role(:context_learner)])
+
       PageContext.create_for_visit(section, revision.slug, user1, datashop_session_id_user1)
 
       {:ok, %AttemptState{} = _} =
@@ -471,6 +482,8 @@ defmodule Oli.Delivery.AttemptsTest do
           effective_settings,
           activity_provider
         )
+
+      Sections.enroll(user2.id, section.id, [ContextRoles.get_role(:context_learner)])
 
       PageContext.create_for_visit(section, revision.slug, user2, datashop_session_id_user2)
 
@@ -600,6 +613,8 @@ defmodule Oli.Delivery.AttemptsTest do
 
       effective_settings =
         Oli.Delivery.Settings.get_combined_settings(revision, section.id, user1.id)
+
+      Sections.enroll(user1.id, section.id, [ContextRoles.get_role(:context_learner)])
 
       PageContext.create_for_visit(section, revision.slug, user1, datashop_session_id_user1)
 

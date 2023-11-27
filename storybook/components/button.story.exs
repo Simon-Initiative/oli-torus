@@ -11,7 +11,7 @@ defmodule OliWeb.Storybook.Components.Button do
         slots: [
           """
           Default
-          """,
+          """
         ]
       },
       %VariationGroup{
@@ -26,11 +26,11 @@ defmodule OliWeb.Storybook.Components.Button do
                 variant: variant
               },
               slots: [
-                Atom.to_string(variant),
+                Atom.to_string(variant)
               ]
             }
           end
-      },
+      }
     ]
   end
 end

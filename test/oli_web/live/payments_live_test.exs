@@ -24,7 +24,7 @@ defmodule OliWeb.PaymentsLiveTest do
     code_to_test = Payment.to_human_readable(payment.code)
 
     Paywall.redeem_code(code_to_test, user, product.slug)
-    {user, product}
+    {user, product, payment}
   end
 
   defp live_view_payments_route(product_slug) do
@@ -139,7 +139,7 @@ defmodule OliWeb.PaymentsLiveTest do
     end
 
     test "section title is a link to the instructor dashboard", %{conn: conn, product: product} do
-      {user, product} = create_payment_code(product)
+      {user, product, _} = create_payment_code(product)
 
       {:ok, view, _html} = live(conn, live_view_payments_route(product.slug))
 
@@ -158,7 +158,7 @@ defmodule OliWeb.PaymentsLiveTest do
 
     test "The username is a link to the student details view for that student in that section",
          %{conn: conn, product: product} do
-      {user, product} = create_payment_code(product)
+      {user, product, _} = create_payment_code(product)
 
       {:ok, view, _html} = live(conn, live_view_payments_route(product.slug))
 
@@ -173,6 +173,70 @@ defmodule OliWeb.PaymentsLiveTest do
                "a[href=\"/sections/#{product.slug}/student_dashboard/#{user.id}/content\"]",
                "#{user.family_name}, #{user.given_name}"
              )
+    end
+
+    test "search payment by code", %{conn: conn, product: product} do
+      {_, product, payment1} = create_payment_code(product)
+      {_, product, payment2} = create_payment_code(product)
+
+      {:ok, view, _html} = live(conn, live_view_payments_route(product.slug))
+
+      code1 = Paywall.Payment.to_human_readable(payment1.code)
+      code2 = Paywall.Payment.to_human_readable(payment2.code)
+
+      assert has_element?(view, "div", code1)
+      assert has_element?(view, "div", code2)
+
+      render_hook(view, "text_search_change", %{value: code1})
+
+      assert has_element?(view, "div", code1)
+      refute has_element?(view, "div", code2)
+
+      view
+      |> element("button[phx-click=\"text_search_reset\"]")
+      |> render_click()
+
+      assert has_element?(view, "div", code1)
+      assert has_element?(view, "div", code2)
+    end
+
+    test "search payment by section title", %{conn: conn, product: product} do
+      {_, _product, _payment1} = create_payment_code(product)
+      {_, _product, _payment2} = create_payment_code(product)
+
+      {:ok, view, _html} = live(conn, live_view_payments_route(product.slug))
+
+      assert has_element?(view, "div", product.title)
+      assert has_element?(view, "div", product.title)
+
+      render_hook(view, "text_search_change", %{value: product.title})
+
+      assert has_element?(view, "div", product.title)
+      assert has_element?(view, "div", product.title)
+    end
+
+    test "applies sorting", %{conn: conn, product: product} do
+      {_, _product, payment1} = create_payment_code(product)
+      {_, _product, payment2} = create_payment_code(product)
+
+      {:ok, view, _html} = live(conn, live_view_payments_route(product.slug))
+
+      code1 = Paywall.Payment.to_human_readable(payment1.code)
+      code2 = Paywall.Payment.to_human_readable(payment2.code)
+
+      assert view
+             |> element("tr:first-child > td:first-child")
+             |> render() =~
+               code1
+
+      view
+      |> element("th[phx-click=\"paged_table_sort\"]:first-of-type")
+      |> render_click(%{sort_by: "user"})
+
+      assert view
+             |> element("tr:first-child > td:first-child")
+             |> render() =~
+               code2
     end
   end
 end

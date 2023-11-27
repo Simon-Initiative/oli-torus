@@ -19,6 +19,7 @@ defmodule Oli.Delivery.Sections do
   alias Oli.Publishing
   alias Oli.Publishing.Publications.Publication
   alias Oli.Delivery.Paywall.Payment
+  alias Oli.Delivery.Sections.ContainedObjective
   alias Oli.Delivery.Sections.SectionsProjectsPublications
   alias Oli.Resources.Numbering
   alias Oli.Authoring.Course.{Project, ProjectAttributes}
@@ -389,9 +390,9 @@ defmodule Oli.Delivery.Sections do
   end
 
   @doc """
-  Unenrolls a user from a section by removing the provided context roles. If no context roles are provided, no change is made. If all context roles are removed from the user, the enrollment is deleted.
+  Unenrolls a user from a section by removing the provided context roles. If no context roles are provided, no change is made. If all context roles are removed from the user, the enrollment is marked as suspended.
 
-  To unenroll a student, use unenrolle_learner/2
+  To unenroll a student, use unenroll_learner/2
   """
   def unenroll(user_id, section_id, context_roles) do
     context_roles = EctoProvider.Marshaler.to(context_roles)
@@ -425,10 +426,26 @@ defmodule Oli.Delivery.Sections do
   end
 
   @doc """
-  Unenrolls a student from a section by removing the :context_learner role. If this is their only context_role, the enrollment is deleted.
+  Unenrolls a student from a section by removing the :context_learner role. If this is their only context_role, the enrollment is marked as suspended.
   """
   def unenroll_learner(user_id, section_id) do
     unenroll(user_id, section_id, [ContextRoles.get_role(:context_learner)])
+  end
+
+  @doc """
+  Re-enrolls a student in a section by marking the enrollment as enrolled again.
+  """
+  def re_enroll_learner(user_id, section_id) do
+    case Repo.get_by(Enrollment, user_id: user_id, section_id: section_id, status: :suspended) do
+      nil ->
+        # Enrollment not found
+        {:error, :not_found}
+
+      enrollment ->
+        enrollment
+        |> Enrollment.changeset(%{status: :enrolled})
+        |> Repo.update()
+    end
   end
 
   @doc """
@@ -725,7 +742,7 @@ defmodule Oli.Delivery.Sections do
         first
 
       [first | _] ->
-        Logger.warn("More than one active section was returned for context_id #{context_id}")
+        Logger.warning("More than one active section was returned for context_id #{context_id}")
 
         first
     end
@@ -1616,6 +1633,7 @@ defmodule Oli.Delivery.Sections do
             limit: 1
           )
         ),
+      on: true,
       preload: [:project],
       select: {spp, current_pub, latest_pub}
     )
@@ -1723,6 +1741,7 @@ defmodule Oli.Delivery.Sections do
         fn _repo, _ ->
           # updates contains_explorations field in sections
           Delivery.maybe_update_section_contains_explorations(section)
+          Delivery.maybe_update_section_contains_deliberate_practice(section)
         end
       )
       |> Repo.transaction()
@@ -1880,6 +1899,7 @@ defmodule Oli.Delivery.Sections do
       PreviousNextIndex.rebuild(section)
 
       {:ok, _} = rebuild_contained_pages(section, section_resources)
+      {:ok, _} = rebuild_contained_objectives(section)
 
       section_resources
     end)
@@ -2023,6 +2043,140 @@ defmodule Oli.Delivery.Sections do
   end
 
   @doc """
+  Rebuilds the "contained objectives" relations for a course section. A "contained objective" for a
+  container is the full set of objectives found within the activities (within the pages) included in the container or in any of
+  its sub-containers.  For every container in a course section, one row will exist in this
+  "contained objectives" table for each contained objective. This allows a straightforward join through
+  this relation from a container to then all of its contained objectives.
+  It does not take into account the objectives attached to the pages within a container.
+
+  There will be always at least one entry per objective with the container_id being nil, which represents the inclusion of the objective in the root container.
+  """
+
+  def rebuild_contained_objectives(section) do
+    timestamps = %{
+      inserted_at: {:placeholder, :now},
+      updated_at: {:placeholder, :now}
+    }
+
+    placeholders = %{
+      now: DateTime.utc_now() |> DateTime.truncate(:second)
+    }
+
+    Multi.new()
+    |> Multi.delete_all(
+      :delete_all_objectives,
+      from(ContainedObjective, where: [section_id: ^section.id])
+    )
+    |> Multi.run(:contained_objectives, &build_contained_objectives(&1, &2, section.slug))
+    |> Multi.insert_all(
+      :inserted_contained_objectives,
+      ContainedObjective,
+      &objectives_with_timestamps(&1, timestamps),
+      placeholders: placeholders
+    )
+    |> Repo.transaction()
+    |> case do
+      {:ok, res} ->
+        {:ok, res}
+
+      {:error, _, changeset, _} ->
+        {:error, changeset}
+    end
+  end
+
+  def build_contained_objectives(repo, _changes, section_slug) do
+    page_type_id = ResourceType.get_id_by_type("page")
+    activity_type_id = ResourceType.get_id_by_type("activity")
+
+    section_resource_pages =
+      from(
+        [sr: sr, rev: rev, s: s] in DeliveryResolver.section_resource_revisions(section_slug),
+        where: not rev.deleted and rev.resource_type_id == ^page_type_id
+      )
+
+    section_resource_activities =
+      from(
+        [sr: sr, rev: rev, s: s] in DeliveryResolver.section_resource_revisions(section_slug),
+        where: not rev.deleted and rev.resource_type_id == ^activity_type_id,
+        select: rev
+      )
+
+    activity_references =
+      from(
+        rev in Revision,
+        join: content_elem in fragment("jsonb_array_elements(?->'model')", rev.content),
+        on: true,
+        select: %{
+          revision_id: rev.id,
+          activity_id: fragment("(?->>'activity_id')::integer", content_elem)
+        },
+        where: fragment("?->>'type'", content_elem) == "activity-reference"
+      )
+
+    activity_objectives =
+      from(
+        rev in Revision,
+        join: obj in fragment("jsonb_each_text(?)", rev.objectives),
+        on: true,
+        select: %{
+          objective_revision_id: rev.id,
+          objective_resource_id:
+            fragment("jsonb_array_elements_text(?::jsonb)::integer", obj.value)
+        },
+        where: rev.deleted == false and rev.resource_type_id == ^activity_type_id
+      )
+
+    contained_objectives =
+      from(
+        [sr: sr, rev: rev, s: s] in section_resource_pages,
+        join: cp in ContainedPage,
+        on: cp.page_id == rev.resource_id and cp.section_id == s.id,
+        join: ar in subquery(activity_references),
+        on: ar.revision_id == rev.id,
+        join: act in subquery(section_resource_activities),
+        on: act.resource_id == ar.activity_id,
+        join: ao in subquery(activity_objectives),
+        on: ao.objective_revision_id == act.id,
+        group_by: [cp.section_id, cp.container_id, ao.objective_resource_id],
+        select: %{
+          section_id: cp.section_id,
+          container_id: cp.container_id,
+          objective_id: ao.objective_resource_id
+        }
+      )
+      |> repo.all()
+
+    {:ok, contained_objectives}
+  end
+
+  defp objectives_with_timestamps(%{contained_objectives: contained_objectives}, timestamps) do
+    Enum.map(contained_objectives, &Map.merge(&1, timestamps))
+  end
+
+  @doc """
+  Returns the contained objectives for a given section and container.
+  If the container id is nil, then it returns the contained objectives for the root container (all objectives of the section).
+  """
+  def get_section_contained_objectives(section_id, nil) do
+    Repo.all(
+      from(co in ContainedObjective,
+        where: co.section_id == ^section_id and is_nil(co.container_id),
+        select: co.objective_id
+      )
+    )
+  end
+
+  def get_section_contained_objectives(section_id, container_id) do
+    Repo.all(
+      from(co in ContainedObjective,
+        where: [section_id: ^section_id, container_id: ^container_id],
+        select: co.objective_id
+      )
+    )
+  end
+
+  @doc """
   Gracefully applies the specified publication update to a given section by leaving the existing
   curriculum and section modifications in-tact while applying the structural changes that
   occurred between the old and new publication.
@@ -2068,7 +2222,11 @@ defmodule Oli.Delivery.Sections do
 
             # Case 2: The course section is based on this project and was seeded from a product
             section.base_project_id == project_id and !is_nil(section.blueprint_id) ->
-              perform_update(:minor, section, project_id, new_publication, current_hierarchy)
+              if section.blueprint.apply_major_updates do
+                perform_update(:major, section, project_id, current_publication, new_publication)
+              else
+                perform_update(:minor, section, project_id, new_publication, current_hierarchy)
+              end
 
             # Case 3: The course section is a product based on this project
             section.base_project_id == project_id and section.type == :blueprint ->
@@ -2301,6 +2459,7 @@ defmodule Oli.Delivery.Sections do
       pinned_project_publications = get_pinned_project_publications(section.id)
       rebuild_section_curriculum(section, new_hierarchy, pinned_project_publications)
       Delivery.maybe_update_section_contains_explorations(section)
+      Delivery.maybe_update_section_contains_deliberate_practice(section)
 
       {:ok}
     end)
@@ -2488,7 +2647,7 @@ defmodule Oli.Delivery.Sections do
     Database.batch_insert_all(SectionResource, section_resource_rows)
   end
 
-  defp is_structural?(%Revision{resource_type_id: resource_type_id}) do
+  def is_structural?(%Revision{resource_type_id: resource_type_id}) do
     container = ResourceType.get_id_by_type("container")
 
     resource_type_id == container
@@ -2643,6 +2802,23 @@ defmodule Oli.Delivery.Sections do
   def build_hierarchy(section) do
     {:ok, _, previous_next_index} =
       PreviousNextIndex.retrieve(section, section.root_section_resource.resource_id)
+
+    previous_next_index =
+      previous_next_index
+      |> Enum.map(fn {k, v} ->
+        label =
+          if Map.get(v, "type") === "container" do
+            get_container_label(
+              String.to_integer(Map.get(v, "level")),
+              section.customizations || Map.from_struct(CustomLabels.default())
+            )
+          else
+            ""
+          end
+
+        {k, Map.put(v, "label", label)}
+      end)
+      |> Map.new()
 
     # Retrieve the top level resource ids, and convert them to strings
     resource_ids =
@@ -2879,6 +3055,19 @@ defmodule Oli.Delivery.Sections do
   end
 
   @doc """
+    Returns the latest page revision visited by a user in a section.
+  """
+  def get_latest_visited_page(section_slug, user_id) do
+    from([rev: rev, s: s] in DeliveryResolver.section_resource_revisions(section_slug),
+      join: e in Enrollment,
+      on: e.section_id == s.id and rev.resource_id == e.most_recently_visited_resource_id,
+      where: e.user_id == ^user_id and s.slug == ^section_slug,
+      select: rev
+    )
+    |> Repo.one()
+  end
+
+  @doc """
     Returns the activities that a student need to complete next.
   """
   def get_next_activities_for_student(section_slug, user_id, session_context) do
@@ -3046,14 +3235,16 @@ defmodule Oli.Delivery.Sections do
     objective_id = Oli.Resources.ResourceType.get_id_by_type("objective")
 
     objectives =
-      from([rev: rev] in DeliveryResolver.section_resource_revisions(section_slug),
-        where: rev.deleted == false and rev.resource_type_id == ^objective_id,
-        select: %{
-          title: rev.title,
-          resource_id: rev.resource_id,
-          children: rev.children
-        }
-      )
+      from([rev: rev, s: s] in DeliveryResolver.section_resource_revisions(section_slug))
+      |> join_contained_objectives(section.v25_migration)
+      |> where([rev: rev, s: s], rev.deleted == false and rev.resource_type_id == ^objective_id)
+      |> group_by([rev: rev], [rev.title, rev.resource_id, rev.children])
+      |> select([rev: rev, co: co], %{
+        title: rev.title,
+        resource_id: rev.resource_id,
+        children: rev.children,
+        container_ids: fragment("array_agg(DISTINCT ?)", co.container_id)
+      })
       |> Repo.all()
 
     lookup_map =
@@ -3137,6 +3328,30 @@ defmodule Oli.Delivery.Sections do
       end
     end)
   end
+
+  _docp = """
+    Join to take into account sections that have already created the contained objectives.
+    This will filter out any objective directly attached to a page, and will only consider objectives attached to activities.
+  """
+
+  defp join_contained_objectives(query, :done),
+    do:
+      join(query, :inner, [rev: rev], co in ContainedObjective,
+        as: :co,
+        on: co.objective_id == rev.resource_id
+      )
+
+  _docp = """
+    Join to take into account sections that have no contained objectives yet.
+    This will still return objectives attached to pages but not to activities, just to be consistent with how it used to work until we migrate all sections.
+  """
+
+  defp join_contained_objectives(query, _),
+    do:
+      join(query, :left, [rev: rev], co in ContainedObjective,
+        as: :co,
+        on: co.objective_id == rev.resource_id
+      )
 
   @doc """
   Maps each resource with its parent container label, being the label (if any) like
@@ -3252,7 +3467,9 @@ defmodule Oli.Delivery.Sections do
   defp do_get_survey(section_slug) do
     Section
     |> join(:inner, [s], spp in SectionsProjectsPublications, on: spp.section_id == s.id)
-    |> join(:inner, [_, spp], pr in PublishedResource, on: pr.publication_id == spp.publication_id)
+    |> join(:inner, [_, spp], pr in PublishedResource,
+      on: pr.publication_id == spp.publication_id
+    )
     |> join(:inner, [_, _, pr], rev in Revision, on: pr.revision_id == rev.id)
     |> join(:inner, [s], proj in Project, on: proj.id == s.base_project_id)
     |> where(
@@ -3452,4 +3669,21 @@ defmodule Oli.Delivery.Sections do
       )
     )
   end
+
+  @doc """
+    Get all sections filtered by the clauses passed as the first argument.
+    The second argument is a list of fields to be selected from the Section table.
+    If the second argument is not passed, all fields will be selected.
+  """
+  def get_sections_by(clauses, select_fields \\ nil) do
+    Section
+    |> from(where: ^clauses)
+    |> maybe_select_section_fields(select_fields)
+    |> Repo.all()
+  end
+
+  defp maybe_select_section_fields(query, nil), do: query
+
+  defp maybe_select_section_fields(query, select_fields),
+    do: select(query, [s], struct(s, ^select_fields))
 end

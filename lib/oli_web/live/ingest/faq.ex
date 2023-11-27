@@ -59,7 +59,9 @@ defmodule OliWeb.Admin.Ingest.FAQ do
             An archive can be created manually or created from an OLI Legacy course using the
             <code>course-digest</code>
             creation tool at
-            <a href="https://github.com/Simon-Initiative/course-digest">https://github.com/Simon-Initiative/course-digest</a>
+            <a href="https://github.com/Simon-Initiative/course-digest">
+              https://github.com/Simon-Initiative/course-digest
+            </a>
           </div>
         </div>
       </div>

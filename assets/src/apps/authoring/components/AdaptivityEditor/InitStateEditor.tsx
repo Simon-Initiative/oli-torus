@@ -2,6 +2,9 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { OverlayTrigger, Tooltip } from 'react-bootstrap';
 import { useDispatch, useSelector } from 'react-redux';
 import debounce from 'lodash/debounce';
+import flatten from 'lodash/flatten';
+import uniq from 'lodash/uniq';
+import { getReferencedKeysInConditions } from 'adaptivity/rules-engine';
 import { clone } from 'utils/common';
 import guid from 'utils/guid';
 import { CapiVariableTypes } from '../../../../adaptivity/capi';
@@ -217,6 +220,16 @@ export const InitStateEditor: React.FC<InitStateEditorProps> = ({ authoringConta
     const activityClone = clone(currentActivity);
     const initStateClone = clone(initState);
     activityClone.content.custom.facts = initStateClone;
+    const conditionWithExpression = [];
+    conditionWithExpression.push(...getReferencedKeysInConditions(initStateClone, true));
+
+    if (!activityClone.content.custom.conditionsRequiredEvaluation) {
+      activityClone.content.custom.conditionsRequiredEvaluation = [];
+    }
+    activityClone.content.custom.conditionsRequiredEvaluation.push(conditionWithExpression);
+    activityClone.content.custom.conditionsRequiredEvaluation = uniq(
+      flatten([...new Set(activityClone.content.custom.conditionsRequiredEvaluation)]),
+    );
     dispatch(saveActivity({ activity: activityClone, undoable: true, immediate: true }));
     setIsDirty(false);
   }, [isDirty]);

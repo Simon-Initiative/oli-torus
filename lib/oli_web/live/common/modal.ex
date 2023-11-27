@@ -75,7 +75,10 @@ defmodule OliWeb.Common.Modal do
             {:noreply,
              assign(
                socket,
-               Keyword.merge(assigns_after_hide, __modal__: nil, __modal_assigns_after_hide__: nil)
+               Keyword.merge(assigns_after_hide,
+                 __modal__: nil,
+                 __modal_assigns_after_hide__: nil
+               )
              )}
 
           _ ->

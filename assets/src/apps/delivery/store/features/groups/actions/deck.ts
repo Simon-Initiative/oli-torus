@@ -1,7 +1,7 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
 import { ActivityState } from 'components/activities/types';
 import { CapiVariableTypes } from 'adaptivity/capi';
-import { applyState, templatizeText } from 'adaptivity/scripting';
+import { applyState, setConditionsWithExpression, templatizeText } from 'adaptivity/scripting';
 import { handleValueExpression } from 'apps/delivery/layouts/deck/DeckLayoutFooter';
 import {
   getBulkActivitiesForAuthoring,
@@ -192,7 +192,7 @@ export const initializeActivity = createAsyncThunk(
       let modifiedValue = handleValueExpression(currentActivityTree, s.value, s.operator);
       modifiedValue =
         typeof modifiedValue === 'string'
-          ? templatizeText(modifiedValue, {}, defaultGlobalEnv, false)
+          ? templatizeText(modifiedValue, {}, defaultGlobalEnv, false, true, s.target)
           : modifiedValue;
 
       if (s.target.indexOf('stage.') !== 0) {
@@ -496,6 +496,15 @@ export const loadActivities = createAsyncThunk(
         hasMoreHints: result.hasMoreHints || true,
         groupId: null,
       };
+      //To improve the performance, when a lesson is opened in authoring, we generate a list of variables that contains expression and needs evaluation
+      // we stored them in conditionsNeedEvaluation in activity.content.custom.conditionsNeedEvaluation. When this function is called
+      // we only process variables that is present in conditionsNeedEvaluation array and ignore others.
+      // Reason for storing it in activityModel.content.custom.conditionsRequiredEvaluation is because,
+      //in student mode, activityModel.authoring is not available in delivery
+      if (activityModel.content.custom.conditionsRequiredEvaluation?.length) {
+        setConditionsWithExpression(activityModel.content.custom.conditionsRequiredEvaluation);
+      }
+
       return { model: activityModel, state: attemptState };
     });
 

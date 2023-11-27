@@ -2,12 +2,12 @@ defmodule OliWeb.Common.TextSearch do
   use OliWeb, :live_component
 
   attr(:id, :string)
-  attr(:apply, :string, default: "text_search_apply")
   attr(:reset, :string, default: "text_search_reset")
   attr(:change, :string, default: "text_search_change")
   attr(:placeholder, :string, default: "Search...")
   attr(:text, :string, default: "")
   attr(:event_target, :any, required: false, default: :live_view)
+  attr(:tooltip, :string, required: false, default: nil)
 
   def render(assigns) do
     ~H"""
@@ -35,6 +35,14 @@ defmodule OliWeb.Common.TextSearch do
           </button>
         </div>
       <% end %>
+      <div :if={@tooltip} class="m-2 opacity-50 hover:cursor-help">
+        <span
+          id={@id <> "_tooltip"}
+          title={@tooltip}
+          class="fas fa-info-circle"
+          phx-hook="TooltipInit"
+        />
+      </div>
     </div>
     """
   end

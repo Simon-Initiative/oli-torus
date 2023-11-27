@@ -417,7 +417,6 @@ defmodule Oli.Delivery.Metrics do
         pages_ids,
         user_ids
       ) do
-
     from(ra in ResourceAttempt,
       join: access in ResourceAccess,
       on: access.id == ra.resource_access_id,

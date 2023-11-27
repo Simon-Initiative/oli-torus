@@ -93,7 +93,8 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.HierarchyTest do
           activity_provider: activity_provider,
           blacklisted_activity_ids: [],
           publication_id: pub.id,
-          effective_settings: Oli.Delivery.Settings.get_combined_settings(p1.revision, section.id, user.id)
+          effective_settings:
+            Oli.Delivery.Settings.get_combined_settings(p1.revision, section.id, user.id)
         })
 
       assert resource_attempt.lifecycle_state == :active

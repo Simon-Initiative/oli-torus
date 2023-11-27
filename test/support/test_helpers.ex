@@ -6,6 +6,7 @@ defmodule Oli.TestHelpers do
   alias Oli.Repo
   alias Oli.Accounts
   alias Oli.Accounts.{Author, AuthorPreferences, User}
+  alias Oli.Activities
   alias Oli.Authoring.Course
   alias Oli.Authoring.Course.Project
   alias Oli.Delivery.Sections
@@ -17,6 +18,9 @@ defmodule Oli.TestHelpers do
   alias Lti_1p3.Tool.ContextRoles
   alias Oli.Delivery.Gating.GatingConditionData
   alias Oli.Resources.ResourceType
+  alias Oli.Delivery.Attempts.PageLifecycle
+  alias Oli.Delivery.Settings
+  alias Oli.Delivery.Page.PageContext
 
   Mox.defmock(Oli.Test.MockHTTP, for: HTTPoison.Base)
   Mox.defmock(Oli.Test.MockAws, for: ExAws.Behaviour)
@@ -252,6 +256,13 @@ defmodule Oli.TestHelpers do
     conn = Pow.Plug.assign_current_user(conn, user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
 
     {:ok, conn: conn, user: user}
+  end
+
+  def guest_conn(%{conn: conn}) do
+    guest = user_fixture(%{guest: true})
+    conn = Pow.Plug.assign_current_user(conn, guest, OliWeb.Pow.PowHelpers.get_pow_config(:user))
+
+    {:ok, conn: conn, guest: guest}
   end
 
   def instructor_conn(%{conn: conn}) do
@@ -1324,8 +1335,7 @@ defmodule Oli.TestHelpers do
     author = insert(:author)
     project = insert(:project, authors: [author])
 
-    {act_resource_w, act_revision_w} =
-      create_activity("Activity W", "activity_w", project)
+    {act_resource_w, act_revision_w} = create_activity("Activity W", "activity_w", project)
 
     # Create pages
     build_content_for_page = fn activity_ids ->
@@ -1457,7 +1467,7 @@ defmodule Oli.TestHelpers do
         objectives: %{"1" => objectives},
         scoring_strategy_id: Oli.Resources.ScoringStrategy.get_id_by_type("average"),
         resource_type_id: ResourceType.get_id_by_type("activity"),
-        activity_type_id: Oli.Activities.get_registration_by_slug("oli_multiple_choice").id,
+        activity_type_id: Activities.get_registration_by_slug("oli_multiple_choice").id,
         children: [],
         content: %{"model" => []},
         deleted: false,
@@ -1551,7 +1561,7 @@ defmodule Oli.TestHelpers do
     # Project survey
     survey_question_resource = insert(:resource)
 
-    mcq_reg = Oli.Activities.get_registration_by_slug("oli_multiple_choice")
+    mcq_reg = Activities.get_registration_by_slug("oli_multiple_choice")
 
     survey_question_revision =
       insert(:revision,
@@ -3235,21 +3245,6 @@ defmodule Oli.TestHelpers do
     System.cmd(cmd, args)
   end
 
-  @doc """
-    Provides set of helpers to test async events
-  """
-  def wait_until(fun), do: wait_until(fun, 500)
-
-  def wait_until(fun, 0), do: fun.()
-
-  def wait_until(fun, timeout) do
-    fun.()
-  rescue
-    ExUnit.AssertionError ->
-      :timer.sleep(100)
-      wait_until(fun, max(0, timeout - 100))
-  end
-
   def unzip_to_memory(data) do
     File.write("export.zip", data)
     result = :zip.unzip(to_charlist("export.zip"), [:memory])
@@ -3276,5 +3271,30 @@ defmodule Oli.TestHelpers do
     end
 
     :ok
+  end
+
+  def visit_page(page_revision, section, enrolled_user) do
+    activity_provider = &Oli.Delivery.ActivityProvider.provide/6
+    datashop_session_id = UUID.uuid4()
+
+    effective_settings =
+      Settings.get_combined_settings(page_revision, section.id, enrolled_user.id)
+
+    PageContext.create_for_visit(
+      section,
+      page_revision.slug,
+      enrolled_user,
+      datashop_session_id
+    )
+
+    {:ok, {_status, _ra}} =
+      PageLifecycle.visit(
+        page_revision,
+        section.slug,
+        datashop_session_id,
+        enrolled_user,
+        effective_settings,
+        activity_provider
+      )
   end
 end

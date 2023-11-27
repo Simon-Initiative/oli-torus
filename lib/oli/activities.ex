@@ -43,7 +43,7 @@ defmodule Oli.Activities do
             if String.starts_with?(manifest.id, "#{expected_namespace}_") do
               process_register_from_bundle(manifest, entries)
             else
-              Logger.warn("Invalid namespace")
+              Logger.warning("Invalid namespace")
               {:error, :invalid_namespace}
             end
 
@@ -52,7 +52,7 @@ defmodule Oli.Activities do
         end
 
       _ ->
-        Logger.warn("Invalid archive")
+        Logger.warning("Invalid archive")
         {:error, :invalid_archive}
     end
   end
@@ -69,7 +69,7 @@ defmodule Oli.Activities do
   end
 
   defp parse_manifest({nil, _}) do
-    Logger.warn("Missing manifest")
+    Logger.warning("Missing manifest")
     {:error, :missing_manifest}
   end
 
@@ -79,7 +79,7 @@ defmodule Oli.Activities do
         Manifest.parse(json)
 
       e ->
-        Logger.warn("Could not parse manifest")
+        Logger.warning("Could not parse manifest")
         e
     end
   end
@@ -98,7 +98,7 @@ defmodule Oli.Activities do
           end)
 
         e ->
-          Logger.warn("Error encountered creating directory")
+          Logger.warning("Error encountered creating directory")
           e
       end
 
@@ -107,7 +107,7 @@ defmodule Oli.Activities do
         register_activity(manifest, "#{manifest.id}/")
 
       e ->
-        Logger.warn("Error encountered writing bundle files")
+        Logger.warning("Error encountered writing bundle files")
         e
     end
   end

@@ -150,6 +150,9 @@ defmodule OliWeb.ActivityBankController do
           e ->
             e
         end
+
+      {:error, "no values provided for expression"} ->
+        {:ok, {revision, selection, [], 0}}
     end
   end
 end

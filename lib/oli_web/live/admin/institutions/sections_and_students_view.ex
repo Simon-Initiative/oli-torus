@@ -54,6 +54,7 @@ defmodule OliWeb.Admin.Institutions.SectionsAndStudentsView do
         %Sorting{direction: decoded_params.sort_order, field: decoded_params.sort_by},
         %BrowseOptions{
           blueprint_id: nil,
+          project_id: nil,
           text_search: decoded_params.text_search,
           active_today: false,
           filter_status: nil,
