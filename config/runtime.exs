@@ -336,5 +336,6 @@ if config_env() == :prod do
         end
     ]
 
-  config :oli, :datashop, cache_limit: System.get_env("DATASHOP_CACHE_LIMIT", "200")
+  config :oli, :datashop,
+    cache_limit: String.to_integer(System.get_env("DATASHOP_CACHE_LIMIT", "200"))
 end

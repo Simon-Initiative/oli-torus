@@ -98,6 +98,8 @@ defmodule Oli.Analytics.DatashopExportWorker do
     total = Datashop.count(section_ids)
     batch_count = ceil(total / batch_size)
 
+    context = Datashop.build_context(project.id, section_ids)
+
     if batch_count != 0 do
       Enum.reduce(1..batch_count, 0, fn batch_index, offset ->
         # notify subscribers that a new batch has started
@@ -107,7 +109,7 @@ defmodule Oli.Analytics.DatashopExportWorker do
           batch_count
         )
 
-        Datashop.build_context(project.id, section_ids)
+        context
         |> Datashop.content_stream(offset, batch_size)
         |> Stream.with_index(offset + 1)
         |> Stream.map(fn {chunk, index} ->
