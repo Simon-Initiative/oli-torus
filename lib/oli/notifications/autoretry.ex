@@ -1,6 +1,7 @@
 defmodule Oli.Notifications.Autoretry do
   import Elixir.HTTPoison
-
+  @max_attempts 5
+  @reattempt_wait 15_000
   defmacro autoretry(attempt, opts \\ []) do
     quote location: :keep, generated: true do
       attempt_fn = fn -> unquote(attempt) end
