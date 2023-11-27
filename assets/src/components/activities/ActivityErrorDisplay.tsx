@@ -7,7 +7,7 @@ interface Props {
 }
 
 const ErrorContainer: React.FC<Props> = ({ children, error }) => {
-  const className = error ? 'border-l-4 py-4 pl-4 border-red-200' : '';
+  const className = error ? 'border-l-4 mb-4 py-4 pl-4 border-red-200' : '';
   return <div className={className}>{children}</div>;
 };
 
