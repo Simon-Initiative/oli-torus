@@ -1,42 +1,65 @@
 defmodule Oli.Notifications.Autoretry do
-  use Oban.Worker
+  import Elixir.HTTPoison
 
-  alias HTTPoison, as: H
-  alias Oli.Notifications.HttpRetryUtils
+  defmacro autoretry(attempt, opts \\ []) do
+    quote location: :keep, generated: true do
+      attempt_fn = fn -> unquote(attempt) end
 
-  @impl Oban.Worker
-  def perform(job) do
-    attempt_fn = fn -> H.get(job.args[:url]) end
+      opts =
+        Keyword.merge(
+          [
+            max_attempts: unquote(@max_attempts),
+            wait: unquote(@reattempt_wait),
+            include_404s: false,
+            retry_unknown_errors: false,
+            attempt: 1
+          ],
+          unquote(opts)
+        )
 
-    opts = %{
-      max_attempts: Application.get_env(:my_app, Oli.Repo).max_attempts || 3,
-      wait: Application.get_env(:my_app, Oli.Repo).wait || 1000,
-      include_404s: Application.get_env(:my_app, Oli.Repo).include_404s || false,
-      retry_unknown_errors: Application.get_env(:my_app, Oli.Repo).retry_unknown_errors || false,
-      attempt: 1
-    }
+      case attempt_fn.() do
+        # Error conditions
+        {:error, %HTTPoison.Error{id: nil, reason: :nxdomain}} ->
+          next_attempt(attempt_fn, opts)
 
-    case attempt_fn.() do
-      {:ok, %H.Response{status_code: 200}} ->
-        :ok
+        {:error, %HTTPoison.Error{id: nil, reason: :timeout}} ->
+          next_attempt(attempt_fn, opts)
 
-      {:ok, %H.Response{status_code: 404}} = response when opts[:include_404s] ->
-        Oli.HttpRetryUtils.retry(job, opts)
+        {:error, %HTTPoison.Error{id: nil, reason: :closed}} ->
+          next_attempt(attempt_fn, opts)
 
-      {:error, %H.Error{reason: :nxdomain}} ->
-        Oli.HttpRetryUtils.retry(job, opts)
+        {:error, %HTTPoison.Error{id: nil, reason: _}} = response ->
+          if Keyword.get(opts, :retry_unknown_errors) do
+            next_attempt(attempt_fn, opts)
+          else
+            response
+          end
 
-      {:error, %H.Error{reason: :timeout}} ->
-        Oli.HttpRetryUtils.retry(job, opts)
+        # OK conditions
+        {:ok, %HTTPoison.Response{status_code: 500}} ->
+          next_attempt(attempt_fn, opts)
 
-      {:error, %H.Error{reason: :closed}} ->
-        Oli.HttpRetryUtils.retry(job, opts)
+        {:ok, %HTTPoison.Response{status_code: 404}} = response ->
+          if Keyword.get(opts, :include_404s) do
+            next_attempt(attempt_fn, opts)
+          else
+            response
+          end
 
-      {:error, %H.Error{reason: _}} = response when opts[:retry_unknown_errors] ->
-        Oli.HttpRetryUtils.retry(job, opts)
+        response ->
+          response
+      end
+    end
+  end
 
-      _ ->
-        :ok
+  def next_attempt(attempt, opts) do
+    Process.sleep(opts[:wait])
+
+    if opts[:max_attempts] == :infinity || opts[:attempt] < opts[:max_attempts] - 1 do
+      opts = Keyword.put(opts, :attempt, opts[:attempt] + 1)
+      autoretry(attempt.(), opts)
+    else
+      attempt.()
     end
   end
 end

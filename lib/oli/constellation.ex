@@ -122,7 +122,6 @@ defmodule ECL.Constellation do
         body = Poison.encode!(data)
         HTTPoison.post(path, body, headers, [])
     end
-    |> Autoretry.perform()
     |> handle_constellation_response()
   end
 
