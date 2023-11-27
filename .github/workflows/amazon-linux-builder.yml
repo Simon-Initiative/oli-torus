@@ -8,6 +8,10 @@ on:
         required: true
         default: "latest"
 
+  push:
+    branches:
+      - update-ci-configs
+
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: amazon-linux-builder
