@@ -114,13 +114,7 @@ defmodule Oli.Conversation.Dialogue do
   end
 
   def should_summarize?(%__MODULE__{model: model} = dialog) do
-    total_usage = total_token_length(dialog)
-
-    if total_usage > Model.token_limit(model) * @token_usage_high_watermark do
-      true
-    else
-      false
-    end
+    total_token_length(dialog) > Model.token_limit(model) * @token_usage_high_watermark
   end
 
   def total_token_length(%__MODULE__{
