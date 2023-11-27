@@ -228,10 +228,22 @@ defmodule Oli.Utils.Database do
   def batch_insert_all(schema, rows, opts) do
     rows
     |> Enum.chunk_every(calculate_chunk_size(rows))
-    |> Enum.reduce({0, []}, fn chunk, {total, acc} ->
+    |> Enum.reduce({0, nil}, fn chunk, {total, acc} ->
       {new_total, new_acc} = Repo.insert_all(schema, chunk, opts)
 
-      {total + new_total, acc ++ new_acc}
+      # safely combine the results of the "returning" portion
+      # of insert_all. For queries that return something, these will
+      # be lists, but for queries that do not return anything, these
+      # are nil
+      acc =
+        case {acc, new_acc} do
+          {nil, nil} -> nil
+          {nil, list} when is_list(list) -> list
+          {list, nil} when is_list(list) -> list
+          {list1, list2} when is_list(list1) and is_list(list2) -> list1 ++ list2
+        end
+
+      {total + new_total, acc}
     end)
   end
 end
