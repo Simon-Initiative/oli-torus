@@ -59,5 +59,6 @@ export interface MultiInputSchema extends ActivityModelSchema {
     parts: Part[];
     transformations: Transformation[];
     previewText: string;
+    responses?: { user_name: string; text: string }[];
   };
 }

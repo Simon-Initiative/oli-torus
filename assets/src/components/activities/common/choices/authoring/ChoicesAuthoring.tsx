@@ -72,7 +72,7 @@ export const Choices: React.FC<Props> = ({
                         {renderChoiceIcon(icon, choice, index)}
                         {simpleText ? (
                           <input
-                            className="form-control"
+                            className="form-control border-none"
                             placeholder="Answer choice"
                             value={toSimpleText(choice.content)}
                             onChange={(e) => onEdit(choice.id, makeContent(e.target.value).content)}

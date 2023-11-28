@@ -102,12 +102,15 @@ defmodule OliWeb.Delivery.InstructorDashboard.Helpers do
     container_labels = Sections.map_resources_with_container_labels(section.slug, page_ids)
 
     graded_pages_and_section_resources
-    |> Enum.map(fn {rev, sr} ->
+    |> Enum.with_index(1)
+    |> Enum.map(fn {{rev, sr}, index} ->
       Map.merge(rev, %{
+        container_id: Map.get(container_labels, rev.resource_id) |> elem(0),
+        order: index,
         end_date: sr.end_date,
         students_completion: Map.get(progress_across_for_pages, rev.resource_id),
         scheduling_type: sr.scheduling_type,
-        container_label: Map.get(container_labels, rev.resource_id),
+        container_label: Map.get(container_labels, rev.resource_id) |> elem(1),
         avg_score: Map.get(avg_score_across_for_pages, rev.resource_id),
         total_attempts: Map.get(attempts_across_for_pages, rev.resource_id)
       })

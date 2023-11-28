@@ -21,6 +21,7 @@ export class LikertChoice implements Choice, SpecifiesTextDirection {
   textDirection?: TextDirection;
   // set only if using non-default value:
   value: Maybe<number>;
+  frequency: number;
 }
 
 export const makeLikertChoice: (s: string) => LikertChoice = (text) => {
@@ -57,6 +58,7 @@ export interface LikertModelSchema extends ActivityModelSchema {
     transformations: Transformation[];
     previewText: string;
   };
+  activityTitle: string;
 }
 
 export interface ModelEditorProps {
