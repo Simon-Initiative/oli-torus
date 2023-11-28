@@ -1,3 +1,5 @@
+# Manually build and push the Docker image for the Amazon Linux Builder
+# Normally this is done automatically by the GitHub Action defined in .github/workflows/package.yml
 name: Build amazon-linux-builder Docker Image
 
 on:
