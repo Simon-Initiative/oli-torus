@@ -583,7 +583,11 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
 
   defp course_post(assigns) do
     ~H"""
-    <div :if={@post[:is_first_unread]} class="flex items-center gap-[10px] mb-4">
+    <div
+      :if={@post[:is_first_unread]}
+      role="unread division"
+      class="flex items-center gap-[10px] mb-4"
+    >
       <span class="h-[1px] bg-[#FF4B47] w-full" />
       <span class="text-[12px] tracking-[1.2px] text-[#FF4B47] whitespace-nowrap">
         UNREAD REPLIES
@@ -917,7 +921,7 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
     updated_root_posts =
       Enum.map(root_posts, fn root_post ->
         if root_post.id == new_post.thread_root_id or root_post.id == new_post.id do
-          Collaboration.build_metrics_for_root_posts(root_post, current_user_id)
+          Collaboration.rebuild_metrics_for_root_post(root_post, current_user_id)
         else
           root_post
         end

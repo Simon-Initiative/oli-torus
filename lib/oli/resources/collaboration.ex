@@ -637,43 +637,31 @@ defmodule Oli.Resources.Collaboration do
     |> build_metrics_for_reply_posts(user_id)
   end
 
-  def build_metrics_for_root_posts(post, user_id) when not is_list(post),
-    do: hd(build_metrics_for_root_posts([post], user_id))
+  @doc """
+  This query is an optimization used to update the metrics of a thread root post
+  every time it is expanded, collapsed or changed by a new reply post broadcasted.
+  It avoids having to refetch all thread posts with list_root_posts_for_section/4
+  """
 
-  def build_metrics_for_root_posts(posts, user_id) do
-    root_post_ids = Enum.map(posts, &Map.get(&1, :id))
-
-    posts_metrics =
-      Repo.all(
+  def rebuild_metrics_for_root_post(root_post, user_id) do
+    post_metrics =
+      Repo.one(
         from(
           post in Post,
           left_join: urp in UserReadPost,
           on: urp.post_id == post.id and urp.user_id == ^user_id,
-          where: post.thread_root_id in ^root_post_ids,
+          where: post.thread_root_id == ^root_post.id,
           group_by: post.thread_root_id,
-          select:
-            {post.thread_root_id,
-             %{
-               #  replies_count: count(post.id),
-               #  last_reply: max(post.updated_at),
-               #  read_replies_count: count(urp.user_id == ^user_id and post.user_id != ^user_id),
-               is_read: count(urp.user_id == ^user_id and post.id == urp.post_id) > 0
-             }}
+          select: %{
+            replies_count: count(post.id),
+            last_reply: max(post.updated_at),
+            read_replies_count: count(urp.user_id == ^user_id and post.user_id != ^user_id),
+            is_read: count(urp.user_id == ^user_id and post.id == urp.post_id) > 0
+          }
         )
       )
-      |> Enum.into(%{})
 
-    Enum.map(posts, fn post ->
-      Map.merge(
-        post,
-        Map.get(posts_metrics, post.id, %{
-          replies_count: 0,
-          last_reply: nil,
-          read_replies_count: 0,
-          is_read: false
-        })
-      )
-    end)
+    Map.merge(root_post, post_metrics)
   end
 
   def build_metrics_for_reply_posts(posts, user_id) do
