@@ -1,5 +1,4 @@
-defmodule Oli.Notifications.Autoretry do
-  import Elixir.HTTPoison
+defmodule Oli.Utils.Autoretry do
   @max_attempts 5
   @reattempt_wait 15_000
   defmacro autoretry(attempt, opts \\ []) do
@@ -53,7 +52,7 @@ defmodule Oli.Notifications.Autoretry do
     end
   end
 
-  defp next_attempt(attempt, opts) do
+  def next_attempt(attempt, opts) do
     Process.sleep(opts[:wait])
 
     if opts[:max_attempts] == :infinity || opts[:attempt] < opts[:max_attempts] - 1 do

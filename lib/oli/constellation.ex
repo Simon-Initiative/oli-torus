@@ -2,10 +2,7 @@ defmodule ECL.Constellation do
   @moduledoc """
   Constellation SDK.
   """
-  alias Oli.Notifications.Autoretry
-  require Oli.Notifications.Autoretry
-
-  import Elixir.HTTPoison
+  import Oli.Utils.Autoretry
 
   @spec login(String.t(), String.t()) :: String.t()
   def login(username, password) do
@@ -123,7 +120,7 @@ defmodule ECL.Constellation do
         body = Poison.encode!(data)
         HTTPoison.post(path, body, headers, [])
     end
-    |> Autoretry.autoretry(
+    |> autoretry(
       max_attempts: 5,
       wait: 1000,
       include_404s: false,
