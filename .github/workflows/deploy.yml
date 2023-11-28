@@ -34,7 +34,7 @@ jobs:
     steps:
       - name: Verify user is authorized to deploy to target
         id: check_deployment_authorization
-        run: echo "authorized=$(actor="${{ github.triggering_actor }}"; authorized_users="$AUTHORIZED_DEPLOY_USERS"; [[ -z $authorized_users || $authorized_users =~ (^|,)$actor(,|$) ]] && echo "true" || echo "false")" >> $GITHUB_OUTPUT
+        run: echo "authorized=$(actor="${{ github.triggering_actor }}"; authorized_users="${{ env.AUTHORIZED_DEPLOY_USERS }}"; [[ -z $authorized_users || $authorized_users =~ (^|,)$actor(,|$) ]] && echo "true" || echo "false")" >> $GITHUB_OUTPUT
 
   deployment:
     runs-on: ubuntu-latest
