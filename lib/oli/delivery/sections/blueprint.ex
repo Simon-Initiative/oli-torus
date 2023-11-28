@@ -359,6 +359,111 @@ defmodule Oli.Delivery.Sections.Blueprint do
   end
 
   @doc """
+  Fetches and filters section records based on various parameters.
+
+  This function retrieves section records, optionally filtering them based on paging, sorting, and text search criteria.
+
+  ## Parameters
+
+  - `%Paging{offset: offset, limit: limit}` (Paging struct): Specifies the limit and offset for paging the results.
+  - `%Sorting{direction: direction, field: field}` (Sorting struct): Specifies the sorting direction and field for ordering the results.
+  - `opts` (Keyword list, optional): Additional options, including `:project_id`, `:include_archived`, and `:text_search` for filtering.
+
+  ## Returns
+
+  A list of section records matching the specified criteria.
+
+  ## Examples
+
+  iex> browse(%Paging{offset: 0, limit: 10}, %Sorting{direction: :asc, field: :title}, [project_id: 1234, include_archived: false, text_search: "example"])
+  [%Section{}, %Section{}, ...]
+  """
+  def browse(
+        %Paging{offset: offset, limit: limit},
+        %Sorting{direction: direction, field: field},
+        opts \\ []
+      ) do
+    filter_by_project =
+      case opts[:project_id] do
+        nil -> true
+        project_id -> dynamic([s, _], s.base_project_id == ^project_id)
+      end
+
+    filter_by_status =
+      if opts[:include_archived],
+        do: dynamic([s, _], s.status in [:active, :archived]),
+        else: dynamic([s, _], s.status == :active)
+
+    filter_by_text =
+      case opts[:text_search] do
+        "" ->
+          true
+
+        text_search ->
+          dynamic(
+            [s, bp],
+            fragment(
+              """
+              ((? ILIKE ?) OR (? ILIKE ?) OR (? AND ? ->> 'amount' ILIKE ?))
+              """,
+              s.title,
+              ^"%#{text_search}%",
+              bp.title,
+              ^"%#{text_search}%",
+              s.requires_payment,
+              s.amount,
+              ^"#{text_search}%"
+            )
+          )
+      end
+
+    query =
+      Section
+      |> join(:inner, [s], bp in Project, on: s.base_project_id == bp.id)
+      |> preload([s, bp], base_project: bp)
+      |> where([s, _], s.type == :blueprint)
+      |> where(^filter_by_text)
+      |> where(^filter_by_project)
+      |> where(^filter_by_status)
+      |> limit(^limit)
+      |> offset(^offset)
+      |> order_by([p, _, _, _], {^direction, field(p, ^field)})
+      |> select([s, _bp], %{s | total_count: fragment("count(*) OVER()")})
+
+    query =
+      case field do
+        :base_project_id ->
+          order_by(
+            query,
+            [s, bp],
+            [{^direction, bp.title}]
+          )
+
+        :requires_payment ->
+          order_by(
+            query,
+            [s, _],
+            {^direction,
+             fragment(
+               """
+                 CASE
+                   WHEN ? THEN COALESCE(? ->> 'amount', 'Yes')
+                   ELSE 'None'
+                 END
+               """,
+               s.requires_payment,
+               s.amount
+             )}
+          )
+
+        _ ->
+          order_by(query, [p, _, _, _], {^direction, field(p, ^field)})
+      end
+
+    Repo.all(query)
+  end
+
+  @doc """
   Get all the products that are not associated within a community.
 
   ## Examples

@@ -57,6 +57,8 @@ defmodule Oli.Application do
 
         # Starts Cachex to store user/author info across requests
         Oli.AccountLookupCache,
+        # Starts Cachex to store datashop export info
+        Oli.DatashopCache,
 
         # a supervisor which can be used to dynamically supervise tasks
         {Task.Supervisor, name: Oli.TaskSupervisor}
