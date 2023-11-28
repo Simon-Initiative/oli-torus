@@ -9,7 +9,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  package:
+  amazon-linux:
     runs-on: ubuntu-latest
 
     outputs:
@@ -29,7 +29,7 @@ jobs:
           echo "deploy_host=$(echo tokamak.oli.cmu.edu)" >> $GITHUB_OUTPUT
           echo "workspace=$GITHUB_WORKSPACE" >> $GITHUB_OUTPUT
 
-      - name: 📦 Package
+      - name: 📦 Package for Amazon Linux
         uses: ./.github/actions/amazon-linux-builder
         with:
           build-sha: ${{ steps.info.outputs.sha_short }}
@@ -75,7 +75,7 @@ jobs:
           echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
           echo "app_version=$(cat mix.exs | grep version | sed -e 's/.*version: "\(.*\)",/\1/')" >> $GITHUB_OUTPUT
 
-      - name: Docker meta
+      - name: 🧾 Docker Metadata
         id: meta
         uses: docker/metadata-action@v5
         with:
@@ -107,8 +107,8 @@ jobs:
             SHA_SHORT=${{ steps.info.outputs.sha_short }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          # cache-from: type=gha
+          # cache-to: type=gha,mode=max
 
   check-auto-deploy:
     name: Check AUTO_DEPLOY_ENABLED config
@@ -124,11 +124,11 @@ jobs:
   deployment:
     runs-on: ubuntu-latest
     environment: tokamak.oli.cmu.edu
-    needs: [package, check-auto-deploy]
+    needs: [amazon-linux, check-auto-deploy]
     if: github.ref == 'refs/heads/master' && needs.check-auto-deploy.outputs.enabled == 'true'
 
     steps:
-      - run: echo "deploying ${{ github.sha }} ${{ github.ref }} ${{ github.ref_name }} to ${{ needs.package.outputs.deploy_host }}"
+      - run: echo "deploying ${{ github.sha }} ${{ github.ref }} ${{ github.ref_name }} to ${{ needs.amazon-linux.outputs.deploy_host }}"
 
       - name: 🚢💰 Deploy to test using SSH
         uses: fifsky/ssh-action@master
@@ -136,8 +136,8 @@ jobs:
         with:
           command: |
             cd /torus
-            sh deploy.sh -r ${{ github.ref }} ${{ needs.package.outputs.app_version }} ${{ needs.package.outputs.sha_short }}
-          host: ${{ needs.package.outputs.deploy_host }}
+            sh deploy.sh -r ${{ github.ref }} ${{ needs.amazon-linux.outputs.app_version }} ${{ needs.amazon-linux.outputs.sha_short }}
+          host: ${{ needs.amazon-linux.outputs.deploy_host }}
           user: simon-bot
           key: ${{ secrets.SIMON_BOT_PRIVATE_KEY}}
           port: 44067
