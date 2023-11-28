@@ -1,7 +1,7 @@
 name: Build amazon-linux-builder Docker Image
 
 on:
-  # workflow_dispatch:
+  workflow_dispatch:
   #   inputs:
   #     tag:
   #       description: "Tag to use for the Docker image"
