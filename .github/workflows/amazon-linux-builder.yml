@@ -1,12 +1,15 @@
 name: Build amazon-linux-builder Docker Image
 
 on:
-  workflow_dispatch:
-    inputs:
-      tag:
-        description: "Tag to use for the Docker image"
-        required: true
-        default: "latest"
+  # workflow_dispatch:
+  #   inputs:
+  #     tag:
+  #       description: "Tag to use for the Docker image"
+  #       required: true
+  #       default: "latest"
+  push:
+    branches:
+      - update-ci-configs
 
 jobs:
   build:
@@ -36,7 +39,8 @@ jobs:
         uses: docker/metadata-action@9ec57ed1fcdbf14dcef7dfbe97b2010124a938b7
         with:
           images: ghcr.io/simon-initiative/amazon-linux-builder
-          tags: latest,${{ github.event.inputs.tag }}
+          # tags: latest,${{ github.event.inputs.tag }}
+          tags: latest
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
