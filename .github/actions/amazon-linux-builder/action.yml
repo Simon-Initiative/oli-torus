@@ -6,8 +6,8 @@ inputs:
     required: true
 runs:
   using: "docker"
-  image: "Dockerfile"
+  # image: "Dockerfile"
   ## Use the prebuilt builder image on docker hub until github improves caching across builds
-  # image: ghcr.io/simon-initiative/amazon-linux-builder:1.3.2
+  image: amazon-linux-builder:local
   args:
     - ${{ inputs.build-sha }}

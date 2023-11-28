@@ -29,6 +29,20 @@ jobs:
           echo "deploy_host=$(echo tokamak.oli.cmu.edu)" >> $GITHUB_OUTPUT
           echo "workspace=$GITHUB_WORKSPACE" >> $GITHUB_OUTPUT
 
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+        # builds the amazon-linux-builder image, used by the next step to build the release for Amazon Linux 2
+      - name: 🐳 Build amazon-linux-builder image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./.github/actions/amazon-linux-builder
+          load: true
+          push: false
+          tags: amazon-linux-builder:local
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
       - name: 📦 Package for Amazon Linux
         uses: ./.github/actions/amazon-linux-builder
         with:
