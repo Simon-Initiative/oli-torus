@@ -49,4 +49,6 @@ ALIASES="alias dc=docker-compose; alias reload-env='set -a;source oli.env;';"
 FUNCTIONS="cd() { builtin cd \"\$@\" && ls; };"
 PROMPT="PS1='\n\[\e[0m\]🚧 oli-dev \[\e[0;34m\][\[\e[0;34m\]\w\[\e[0;34m\]]\[\e[0m\] $ \[\e[0m\]';"
 
-bash --init-file <(echo "${ALIASES}${FUNCTIONS}${PROMPT}set -a;source oli.env;")
+{ echo "${ALIASES}${FUNCTIONS}${PROMPT}set -a; source oli.env;"; } > temp_init_file
+bash --init-file temp_init_file
+rm temp_init_file
