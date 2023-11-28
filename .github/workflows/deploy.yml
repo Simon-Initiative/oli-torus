@@ -24,25 +24,12 @@ on:
   #
 
 jobs:
-  authorize-deployment:
-    runs-on: ubuntu-latest
-    outputs:
-      authorized: ${{ steps.check_deployment_authorization.outputs.authorized }}
-    environment: ${{ github.event.inputs.deploy_target }}
-    steps:
-      - name: Verify user is authorized to deploy to target
-        id: check_deployment_authorization
-        run: echo "authorized=$(actor="${{ github.triggering_actor }}"; authorized_users="${{ env.AUTHORIZED_DEPLOY_USERS }}"; [[ -z $authorized_users || $authorized_users =~ (^|,)$actor(,|$) ]] && echo "true" || echo "false")" >> $GITHUB_OUTPUT
-
   deployment:
     runs-on: ubuntu-latest
 
-    needs: [authorize-deployment]
-    if: needs.authorize-deployment.outputs.authorized == 'true'
-
     environment:
       name: ${{ github.event.inputs.deploy_target }}
-      url: ${{ github.event.inputs.deploy_target }}
+      url: https://${{ github.event.inputs.deploy_target }}
 
     outputs:
       app_version: ${{ steps.info.outputs.app_version }}
