@@ -130,9 +130,11 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
           slug: nil,
           resource_type_id: 2,
           updated_at: post.updated_at,
-          reply_count: 0,
+          replies_count: 0,
           last_reply: nil,
-          unread_reply_count: 0
+          read_replies_count: 0,
+          thread_root_id: post.thread_root_id,
+          is_read: true
         }
 
         # collab space may be configured to need approval from instructor
@@ -142,7 +144,7 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
               Oli.PubSub,
               self(),
               "collab_space_discussion_#{socket.assigns.section.slug}",
-              {:discussion_created, new_post}
+              {:discussion_created, %{new_post | is_read: false}}
             )
 
         {:noreply, assign(socket, :posts, [new_post | socket.assigns.posts])}
@@ -160,6 +162,7 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
         socket.assigns.current_user.id,
         post_id
       )
+      |> group_unread_last()
 
     updated_expanded_posts =
       Map.merge(
@@ -167,11 +170,39 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
         Enum.into([{String.to_integer(post_id), post_replies}], %{})
       )
 
+    mark_posts_as_read(post_replies, socket.assigns.current_user.id)
+
     {:noreply, assign(socket, expanded_posts: updated_expanded_posts)}
   end
 
   def handle_event("collapse_post", %{"post_id" => post_id}, socket) do
-    {:noreply, update(socket, :expanded_posts, &Map.drop(&1, [String.to_integer(post_id)]))}
+    # mark the collapsed posts replies as read
+    # although we mark them when expanded, we need to handle the
+    # case when a post reply is shown because a new_post broadcast is recieved
+    # while having the parent post expanded.
+    mark_posts_as_read(
+      Map.get(socket.assigns.expanded_posts, String.to_integer(post_id), []),
+      socket.assigns.current_user.id
+    )
+
+    # update the metrics of the parent post that just was collapsed
+    # and remove it from the expanded posts map.
+    collapsed_post = Collaboration.get_post_by(id: post_id)
+
+    {updated_root_posts, updated_expanded_posts} =
+      update_metrics_of_thread(
+        socket.assigns.posts,
+        Map.drop(socket.assigns.expanded_posts, [String.to_integer(post_id)]),
+        collapsed_post,
+        socket.assigns.current_user.id
+      )
+
+    # TODO, when collapsing a post, also collapse all expanded children
+
+    {:noreply,
+     socket
+     |> assign(posts: updated_root_posts)
+     |> assign(expanded_posts: updated_expanded_posts)}
   end
 
   def handle_event(
@@ -546,6 +577,14 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
 
   defp course_post(assigns) do
     ~H"""
+    <div :if={@post[:is_first_unread]} class="flex items-center gap-[10px] mb-4">
+      <span class="h-[1px] bg-[#FF4B47] w-full" />
+      <span class="text-[12px] tracking-[1.2px] text-[#FF4B47] whitespace-nowrap">
+        UNREAD REPLIES
+      </span>
+      <span class="h-[1px] bg-[#FF4B47] w-full" />
+    </div>
+
     <div
       role="course post"
       id={"post-#{@post.id}"}
@@ -571,18 +610,18 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
             <div class="relative h-8 w-8 flex items-center">
               <i class="fa-solid fa-message h-4 w-4" style="transform: scaleX(-1);" />
               <span
-                :if={@post.unread_reply_count > 0}
+                :if={@post.replies_count - @post.read_replies_count > 0}
                 role="unread count"
                 class="absolute -top-0.5 right-2 w-4 h-4 shrink-0 rounded-full bg-[#FF4B47] text-white text-[9px] font-bold flex items-center justify-center"
               >
-                <%= @post.unread_reply_count %>
+                <%= @post.replies_count - @post.read_replies_count %>
               </span>
             </div>
             <span class="text-[14px] leading-[22px] tracking-[0.02px] dark:text-white">
-              <%= @post.reply_count %> <%= if @post.reply_count == 1, do: "reply", else: "replies" %>
+              <%= @post.replies_count %> <%= if @post.replies_count == 1, do: "reply", else: "replies" %>
             </span>
           </div>
-          <div :if={@post.reply_count > 0} class="flex items-center gap-[6px]">
+          <div :if={@post.replies_count > 0} class="flex items-center gap-[6px]">
             <span class="text-[14px] font-semibold leading-[22px] tracking-[0.02px] dark:text-white">
               Last Reply:
             </span>
@@ -717,18 +756,18 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
             <div class="relative h-8 w-8 flex items-center">
               <i class="fa-solid fa-message h-4 w-4" style="transform: scaleX(-1);" />
               <span
-                :if={@post.unread_reply_count > 0}
+                :if={@post.replies_count - @post.read_replies_count > 0}
                 role="unread count"
                 class="absolute -top-0.5 right-2 w-4 h-4 shrink-0 rounded-full bg-[#FF4B47] text-white text-[9px] font-bold flex items-center justify-center"
               >
-                <%= @post.unread_reply_count %>
+                <%= @post.replies_count - @post.read_replies_count %>
               </span>
             </div>
             <span class="text-[14px] leading-[22px] tracking-[0.02px] dark:text-white">
-              <%= @post.reply_count %> <%= if @post.reply_count == 1, do: "reply", else: "replies" %>
+              <%= @post.replies_count %> <%= if @post.replies_count == 1, do: "reply", else: "replies" %>
             </span>
           </div>
-          <div :if={@post.reply_count > 0} class="flex items-center gap-[6px]">
+          <div :if={@post.replies_count > 0} class="flex items-center gap-[6px]">
             <span class="text-[14px] font-semibold leading-[22px] tracking-[0.02px] dark:text-white">
               Last Reply:
             </span>
@@ -868,10 +907,11 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
 
   defp update_metrics_of_thread(root_posts, expanded_posts, new_post, current_user_id) do
     # we need to update the metrics of the root post the new post belongs to
+    # (considering the case where the new post is a root post itself)
     updated_root_posts =
       Enum.map(root_posts, fn root_post ->
-        if root_post.id == new_post.thread_root_id do
-          Collaboration.build_metrics_for_root_posts(root_post)
+        if root_post.id == new_post.thread_root_id or root_post.id == new_post.id do
+          Collaboration.build_metrics_for_root_posts(root_post, current_user_id)
         else
           root_post
         end
@@ -887,11 +927,14 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
            Collaboration.list_replies_for_post(
              current_user_id,
              new_post.parent_post_id
-           )}
+           )
+           |> group_unread_last()}
 
         {expanded_post_id, [expanded_reply | _rest] = expanded_replies}
         when expanded_reply.thread_root_id == new_post.thread_root_id ->
-          {expanded_post_id, Collaboration.build_metrics_for_reply_posts(expanded_replies)}
+          {expanded_post_id,
+           Collaboration.build_metrics_for_reply_posts(expanded_replies, current_user_id)
+           |> group_unread_last()}
 
         {expanded_post_id, expanded_replies} ->
           {expanded_post_id, expanded_replies}
@@ -906,7 +949,7 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
         Enum.sort_by(posts, & &1.updated_at, {sort_order, DateTime})
 
       "popularity" ->
-        Enum.sort_by(posts, & &1.reply_count, sort_order)
+        Enum.sort_by(posts, & &1.replies_count, sort_order)
     end
   end
 
@@ -922,4 +965,54 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
   defp sort_by_icon(true, :desc), do: ~s{<i class="fa-solid fa-arrow-down"></i>}
   defp sort_by_icon(true, :asc), do: ~s{<i class="fa-solid fa-arrow-up"></i>}
   defp sort_by_icon(false, _), do: nil
+
+  _docp = """
+   If there are any unread posts (or posts with unread replies), they are grouped at the end of the list
+   and, in case there are any read post, the first unread post is marked with a flag.
+   This flag is used to render the "UNREAD REPLIES" label in the UI.
+  """
+
+  defp group_unread_last(posts) when posts in [nil, []], do: []
+
+  defp group_unread_last(posts) do
+    {read_posts, unread_posts} =
+      Enum.reduce(posts, {[], []}, fn post, {read_posts, unread_posts} ->
+        if post.replies_count - post.read_replies_count > 0 or
+             !post.is_read do
+          {read_posts, [post | unread_posts]}
+        else
+          {[post | read_posts], unread_posts}
+        end
+      end)
+
+    Enum.reverse(read_posts) ++
+      add_first_unread_flag(Enum.reverse(unread_posts), length(read_posts))
+  end
+
+  _docp = """
+  The first unread post is marked with a flag, so it can be rendered differently in the UI, showing
+  a "UNREAD REPLIES" label on top.
+  We also need to mark the other posts in the thread as `is_first_unread: false` to
+  avoid issues when the current liveview recieves a broadcasted new post in the expanded thread.
+  If not, two unread posts end up having the flag => two "UNREAD REPLIES" labels.
+  """
+
+  defp add_first_unread_flag([], _), do: []
+
+  defp add_first_unread_flag(posts, 0),
+    do: Enum.map(posts, fn p -> Map.merge(p, %{is_first_unread: false}) end)
+
+  defp add_first_unread_flag([first_unread_post | rest], read_posts_count)
+       when read_posts_count > 0,
+       do: [
+         Map.merge(first_unread_post, %{is_first_unread: true})
+         | Enum.map(rest, fn r -> Map.merge(r, %{is_first_unread: false}) end)
+       ]
+
+  defp mark_posts_as_read(posts, user_id) do
+    Enum.reduce(posts, [], fn post, acc ->
+      if post.user_id != user_id, do: [post.id | acc], else: acc
+    end)
+    |> Collaboration.read_posts(user_id)
+  end
 end

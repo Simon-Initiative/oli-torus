@@ -7,7 +7,7 @@ defmodule Oli.Resources.Collaboration do
   alias Oli.Delivery.Sections.{Section, SectionResource, SectionsProjectsPublications}
   alias Oli.Resources
   alias Oli.Resources.{ResourceType, Revision}
-  alias Oli.Resources.Collaboration.{CollabSpaceConfig, Post}
+  alias Oli.Resources.Collaboration.{CollabSpaceConfig, Post, UserReadPost}
   alias Oli.Repo
   alias Oli.Accounts.User
 
@@ -549,10 +549,8 @@ defmodule Oli.Resources.Collaboration do
         limit: ^limit
       )
     )
-    |> build_metrics_for_root_posts()
+    |> build_metrics_for_root_posts(user_id)
   end
-
-  def get_metrics_for_root_post(root_post), do: build_metrics_for_root_posts([root_post])
 
   def list_replies_for_post(user_id, post_id) do
     Repo.all(
@@ -568,6 +566,8 @@ defmodule Oli.Resources.Collaboration do
         on: rev.id == pr.revision_id,
         join: user in User,
         on: post.user_id == user.id,
+        left_join: urp in UserReadPost,
+        on: urp.post_id == post.id and urp.user_id == ^user_id,
         where:
           post.parent_post_id == ^post_id and
             (post.status in [:approved, :archived] or
@@ -582,33 +582,36 @@ defmodule Oli.Resources.Collaboration do
           title: rev.title,
           slug: rev.slug,
           resource_type_id: rev.resource_type_id,
-          updated_at: post.updated_at
+          updated_at: post.updated_at,
+          is_read: not is_nil(urp.id) or post.user_id == ^user_id
         },
-        order_by: [desc: :updated_at]
+        order_by: [asc: :updated_at]
       )
     )
-    |> build_metrics_for_reply_posts()
+    |> build_metrics_for_reply_posts(user_id)
   end
 
-  def build_metrics_for_root_posts(post) when not is_list(post),
-    do: hd(build_metrics_for_root_posts([post]))
+  def build_metrics_for_root_posts(post, user_id) when not is_list(post),
+    do: hd(build_metrics_for_root_posts([post], user_id))
 
-  def build_metrics_for_root_posts(posts) do
-    # TODO get real unread_reply_count
+  def build_metrics_for_root_posts(posts, user_id) do
     post_ids = Enum.map(posts, &Map.get(&1, :id))
 
     posts_metrics =
       Repo.all(
         from(
           post in Post,
+          left_join: urp in UserReadPost,
+          on: urp.post_id == post.id and urp.user_id == ^user_id,
           where: post.thread_root_id in ^post_ids,
           group_by: post.thread_root_id,
           select:
             {post.thread_root_id,
              %{
-               reply_count: count(post.id),
+               replies_count: count(post.id),
                last_reply: max(post.updated_at),
-               unread_reply_count: 0
+               read_replies_count: count(urp.user_id == ^user_id and post.user_id != ^user_id),
+               is_read: count(urp.user_id == ^user_id and post.id == urp.post_id) > 0
              }}
         )
       )
@@ -618,57 +621,66 @@ defmodule Oli.Resources.Collaboration do
       Map.merge(
         post,
         Map.get(posts_metrics, post.id, %{
-          reply_count: 0,
+          replies_count: 0,
           last_reply: nil,
-          unread_reply_count: Enum.random(0..2)
+          read_replies_count: 0,
+          is_read: false
         })
       )
     end)
   end
 
-  def build_metrics_for_reply_posts(posts) do
-    # TODO get real unread_reply_count
+  def build_metrics_for_reply_posts(posts, user_id) do
     Enum.map(posts, fn post ->
-      case get_post_children([post]) do
+      case get_post_children([post], user_id) do
         [] ->
           Map.merge(post, %{
-            reply_count: 0,
+            replies_count: 0,
             last_reply: nil,
-            unread_reply_count: Enum.random(0..2)
+            read_replies_count: 0
           })
 
         child_posts ->
           Map.merge(post, %{
-            reply_count: Enum.count(child_posts),
+            replies_count: Enum.count(child_posts),
             last_reply:
               Enum.max_by(
                 child_posts,
                 fn child_post -> child_post.updated_at end
               )
               |> Map.get(:updated_at),
-            unread_reply_count: Enum.random(0..2)
+            read_replies_count:
+              Enum.reduce(child_posts, 0, fn child_post, acc ->
+                child_post.read_replies_count + acc
+              end)
           })
       end
     end)
   end
 
-  defp get_post_children(parent_post, acum_child_posts \\ [])
+  defp get_post_children(parent_post, user_id, acum_child_posts \\ [])
 
-  defp get_post_children([], acum_child_posts), do: List.flatten(acum_child_posts)
+  defp get_post_children([], _user_id, acum_child_posts), do: List.flatten(acum_child_posts)
 
-  defp get_post_children(parent_posts, acum_child_posts) do
+  defp get_post_children(parent_posts, user_id, acum_child_posts) do
     parent_post_ids = Enum.map(parent_posts, &Map.get(&1, :id))
 
     child_posts =
       Repo.all(
         from(
           post in Post,
+          left_join: urp in UserReadPost,
+          on: urp.post_id == post.id and urp.user_id == ^user_id,
           where: post.parent_post_id in ^parent_post_ids,
-          select: post
+          group_by: post.id,
+          select: %{
+            post
+            | read_replies_count: count(urp.user_id == ^user_id and post.user_id != ^user_id)
+          }
         )
       )
 
-    get_post_children(child_posts, [child_posts | acum_child_posts])
+    get_post_children(child_posts, user_id, [child_posts | acum_child_posts])
   end
 
   @doc """
@@ -946,5 +958,22 @@ defmodule Oli.Resources.Collaboration do
   """
   def change_post(%Post{} = post, attrs \\ %{}) do
     Post.changeset(post, attrs)
+  end
+
+  @doc """
+  Marks the given posts as read for the given user.
+  In case the user has already read the posts, it updates the :updated_at field
+  """
+  def read_posts(post_ids, user_id) do
+    Repo.transaction(fn ->
+      Enum.each(post_ids, fn post_id ->
+        %UserReadPost{}
+        |> UserReadPost.changeset(%{post_id: post_id, user_id: user_id})
+        |> Repo.insert(
+          on_conflict: {:replace, [:updated_at]},
+          conflict_target: [:post_id, :user_id]
+        )
+      end)
+    end)
   end
 end
