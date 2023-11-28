@@ -3,6 +3,7 @@ defmodule ECL.Constellation do
   Constellation SDK.
   """
   alias Oli.Notifications.Autoretry
+  require Oli.Notifications.Autoretry
 
   import Elixir.HTTPoison
 
