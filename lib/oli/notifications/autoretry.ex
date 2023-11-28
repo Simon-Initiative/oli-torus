@@ -53,7 +53,7 @@ defmodule Oli.Notifications.Autoretry do
     end
   end
 
-  def next_attempt(attempt, opts) do
+  defp next_attempt(attempt, opts) do
     Process.sleep(opts[:wait])
 
     if opts[:max_attempts] == :infinity || opts[:attempt] < opts[:max_attempts] - 1 do
