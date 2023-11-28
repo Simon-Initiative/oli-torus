@@ -22,6 +22,9 @@ defmodule Oli.Rendering.Content.Markdown do
       "---\n\n"
     ]
   end
+  def content(%Context{} = _context, next, _) do
+    next.()
+  end
 
   def callout(%Oli.Rendering.Context{} = _context, next, _) do
     adhoc_group("Callout", next.())

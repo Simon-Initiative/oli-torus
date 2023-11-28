@@ -257,19 +257,8 @@ defmodule OliWeb.Dialogue.PlaygroundLive do
          )}
 
       fc ->
-        name = String.to_existing_atom(fc["name"])
 
-        as_map = Jason.decode!(fc["arguments"])
-
-        result = apply(__MODULE__, name, [as_map])
-
-        result =
-          case result do
-            result when is_binary(result) -> result
-            result when is_map(result) -> Jason.encode!(result)
-            result when is_list(result) -> Jason.encode!(%{result: result})
-            result -> Kernel.to_string(result)
-          end
+        result = Oli.Conversation.Functions.call(fc["name"], Jason.decode!(fc["arguments"]))
 
         dialogue =
           Dialogue.add_message(
@@ -292,73 +281,5 @@ defmodule OliWeb.Dialogue.PlaygroundLive do
     {:noreply, socket}
   end
 
-  def memory(%{"memory_type" => type}) do
-    String.to_atom(type)
-    |> :erlang.memory()
-  end
 
-  def avg_score_for(%{"current_user_id" => user_id, "section_id" => section_id}) do
-    Oli.Delivery.Metrics.avg_score_for(section_id, user_id, nil)
-  end
-
-  def up_next(%{"current_user_id" => user_id, "section_id" => section_id}) do
-    get_next_activities_for_student(section_id, user_id)
-  end
-
-  def relevant_course_content(%{"student_input" => input, "section_id" => section_id}) do
-    section = Oli.Delivery.Sections.get_section!(section_id)
-
-    case Oli.Search.Embeddings.most_relevant_pages(input, section_id) do
-      {:ok, relevant_pages} ->
-        Enum.map(relevant_pages, fn page ->
-          revision = Oli.Resources.get_revision!(page.revision_id)
-
-          content =
-            Enum.map(page.chunks, fn chunk ->
-              chunk.content
-            end)
-            |> Enum.join("\n\n")
-
-          %{
-            title: page.title,
-            url: Routes.page_delivery_url(OliWeb.Endpoint, :page, section.slug, revision.slug),
-            content: content
-          }
-        end)
-
-      e ->
-        e
-    end
-  end
-
-  def get_next_activities_for_student(section_id, user_id) do
-    section = Oli.Delivery.Sections.get_section!(section_id)
-    student_pages_query = Oli.Delivery.Sections.get_student_pages(section.slug, user_id)
-
-    ras =
-      Oli.Delivery.Attempts.Core.get_resource_accesses(section.slug, user_id)
-      |> Enum.reduce(%{}, fn ra, acc -> Map.put(acc, ra.resource_id, ra) end)
-
-    query =
-      from(sp in subquery(student_pages_query),
-        where:
-          sp.graded == true and
-            not is_nil(sp.end_date) and
-            sp.end_date >= ^DateTime.utc_now() and
-            sp.resource_type_id == ^Oli.Resources.ResourceType.get_id_by_type("page"),
-        limit: 2
-      )
-
-    query
-    |> Repo.all()
-    |> Enum.map(fn page ->
-      %{
-        title: page.title,
-        url: Routes.page_delivery_path(OliWeb.Endpoint, :page, section.slug, page.slug),
-        due_date: page.end_date,
-        num_attempts_taken:
-          Map.get(ras, page.resource_id, %{resource_attempts_count: 0}).resource_attempts_count
-      }
-    end)
-  end
 end
