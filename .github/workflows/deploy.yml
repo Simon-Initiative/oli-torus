@@ -28,9 +28,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       authorized: ${{ steps.check_deployment_authorization.outputs.authorized }}
-    environment:
-      name: ${{ github.event.inputs.deploy_target }}
-      url: ${{ github.event.inputs.deploy_target }}
+    environment: ${{ github.event.inputs.deploy_target }}
     steps:
       - name: Verify user is authorized to deploy to target
         id: check_deployment_authorization
