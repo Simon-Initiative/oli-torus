@@ -32,7 +32,7 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-        # builds the amazon-linux-builder image, used by the next step to build the release for Amazon Linux 2
+        # build (or retrieve from cache) the amazon-linux-builder image, used by the next step to build the release for Amazon Linux 2
       - name: 🐳 Build amazon-linux-builder image
         uses: docker/build-push-action@v5
         with:
