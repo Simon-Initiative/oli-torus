@@ -37,6 +37,12 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
   # view all posts -> we do not want to fetch all posts (it might be expensive) => implement it with infinite scroll + stream (Chis McCord's talk)
 
   @default_post_params %{sort_by: "date", sort_order: :desc, filter_by: "all"}
+
+  # TODO para el viernes...
+  # esta mal cómo estoy haciendo el sort, debería hacerlo en la query como hago con el filter (no se cómo en el caso de popularity...)
+  # pensar el tema de los broadcasts... si me llega un post de otro usuario y tengo filtrado por "my activity" no debería aparecer (salvo que sea una reply a un thread en el que sí tengo actividad)
+  # pensar el tema de los broadcasts... si me llega un post de otro usuario y tengo filtrado por "unread" creo que siempre debería aparecer
+  # pensar cómo voy a matchear el tema de los unread y su modelo de datos de caras a los broadcast y a que no sea un chino para las metricas
   def mount(_params, _session, socket) do
     if connected?(socket),
       do:

@@ -492,29 +492,36 @@ defmodule Oli.Resources.Collaboration do
   end
 
   def list_root_posts_for_section(user_id, section_id, limit, filter_by \\ nil) do
-    filter =
-      case filter_by do
-        f when f in [nil, "all"] ->
-          true
+    # Define a subquery for root thread post replies count
+    replies_subquery =
+      from(p in Post,
+        group_by: p.thread_root_id,
+        select: %{
+          thread_root_id: p.thread_root_id,
+          count: count(p.id),
+          last_reply: max(p.updated_at)
+        }
+      )
 
-        "my_activity" ->
-          post_thread_ids_user_interacted_with =
-            from(p in Post,
-              where: p.section_id == ^section_id and p.user_id == ^user_id,
-              select: coalesce(p.thread_root_id, p.id)
-            )
+    # Define a subquery for root thread post read replies count
+    # (replies by the user are counted as read)
+    read_replies_subquery =
+      from(
+        p in Post,
+        left_join: urp in UserReadPost,
+        on: urp.post_id == p.id,
+        where:
+          not is_nil(p.thread_root_id) and
+            (p.user_id == ^user_id or (urp.user_id == ^user_id and not is_nil(urp.post_id))),
+        group_by: p.thread_root_id,
+        select: %{
+          thread_root_id: p.thread_root_id,
+          # Counting both user's posts and read posts
+          count: count(p.id)
+        }
+      )
 
-          dynamic(
-            [post, _sr, _spp, _pr, _rev, _user],
-            post.id in subquery(post_thread_ids_user_interacted_with)
-          )
-
-        "unread" ->
-          # TODO implement it when unread feature is developed
-          true
-      end
-
-    Repo.all(
+    main_query =
       from(
         post in Post,
         join: sr in SectionResource,
@@ -527,12 +534,15 @@ defmodule Oli.Resources.Collaboration do
         on: rev.id == pr.revision_id,
         join: user in User,
         on: post.user_id == user.id,
+        left_join: replies in subquery(replies_subquery),
+        on: replies.thread_root_id == post.id,
+        left_join: read_replies in subquery(read_replies_subquery),
+        on: read_replies.thread_root_id == post.id,
         where:
           post.section_id == ^section_id and
             (post.status in [:approved, :archived] or
                (post.status == :submitted and post.user_id == ^user_id)) and
             is_nil(post.parent_post_id) and is_nil(post.thread_root_id),
-        where: ^filter,
         select: %{
           id: post.id,
           thread_root_id: post.thread_root_id,
@@ -543,13 +553,49 @@ defmodule Oli.Resources.Collaboration do
           title: rev.title,
           slug: rev.slug,
           resource_type_id: rev.resource_type_id,
-          updated_at: post.updated_at
+          updated_at: post.updated_at,
+          replies_count: coalesce(replies.count, 0),
+          read_replies_count: coalesce(read_replies.count, 0),
+          last_reply: coalesce(replies.last_reply, nil),
+          unread_replies_count: coalesce(replies.count, 0) - coalesce(read_replies.count, 0),
+          is_read: true
         },
+        # the discussions (attached to the root container with resource_type_id == 2) should be listed first,
+        # then the posts (attached to pages with resource_type_id == 1)
         order_by: [desc: rev.resource_type_id, desc: post.updated_at],
         limit: ^limit
       )
-    )
-    |> build_metrics_for_root_posts(user_id)
+
+    case filter_by do
+      f when f in [nil, "all"] ->
+        Repo.all(main_query)
+
+      "my_activity" ->
+        post_thread_ids_user_interacted_with =
+          from(p in Post,
+            where: p.section_id == ^section_id and p.user_id == ^user_id,
+            select: coalesce(p.thread_root_id, p.id)
+          )
+
+        main_query
+        |> where(
+          ^dynamic(
+            [post, _sr, _spp, _pr, _rev, _user],
+            post.id in subquery(post_thread_ids_user_interacted_with)
+          )
+        )
+        |> Repo.all()
+
+      "unread" ->
+        from(
+          p in subquery(main_query),
+          where: p.unread_replies_count > 0,
+          order_by: [desc: p.unread_replies_count],
+          select: p,
+          limit: ^limit
+        )
+        |> Repo.all()
+    end
   end
 
   def list_replies_for_post(user_id, post_id) do
@@ -595,7 +641,7 @@ defmodule Oli.Resources.Collaboration do
     do: hd(build_metrics_for_root_posts([post], user_id))
 
   def build_metrics_for_root_posts(posts, user_id) do
-    post_ids = Enum.map(posts, &Map.get(&1, :id))
+    root_post_ids = Enum.map(posts, &Map.get(&1, :id))
 
     posts_metrics =
       Repo.all(
@@ -603,14 +649,14 @@ defmodule Oli.Resources.Collaboration do
           post in Post,
           left_join: urp in UserReadPost,
           on: urp.post_id == post.id and urp.user_id == ^user_id,
-          where: post.thread_root_id in ^post_ids,
+          where: post.thread_root_id in ^root_post_ids,
           group_by: post.thread_root_id,
           select:
             {post.thread_root_id,
              %{
-               replies_count: count(post.id),
-               last_reply: max(post.updated_at),
-               read_replies_count: count(urp.user_id == ^user_id and post.user_id != ^user_id),
+               #  replies_count: count(post.id),
+               #  last_reply: max(post.updated_at),
+               #  read_replies_count: count(urp.user_id == ^user_id and post.user_id != ^user_id),
                is_read: count(urp.user_id == ^user_id and post.id == urp.post_id) > 0
              }}
         )
