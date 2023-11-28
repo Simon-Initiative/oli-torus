@@ -1,4 +1,5 @@
 defmodule OliWeb.Delivery.Student.DiscussionsLive do
+  alias Cachex.Actions.Load
   use OliWeb, :live_view
 
   import OliWeb.Components.Delivery.Layouts
@@ -36,7 +37,13 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
 
   # view all posts -> we do not want to fetch all posts (it might be expensive) => implement it with infinite scroll + stream (Chis McCord's talk)
 
-  @default_post_params %{sort_by: "date", sort_order: :desc, filter_by: "all"}
+  @default_post_params %{
+    sort_by: "date",
+    sort_order: :desc,
+    filter_by: "all",
+    offset: 0,
+    limit: 4
+  }
 
   # TODO para el viernes...
   # esta mal cómo estoy haciendo el sort, debería hacerlo en la query como hago con el filter (no se cómo en el caso de popularity...)
@@ -51,53 +58,68 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
           "collab_space_discussion_#{socket.assigns.section.slug}"
         )
 
+    {posts, more_posts_exist?} =
+      Collaboration.list_root_posts_for_section(
+        socket.assigns.current_user.id,
+        socket.assigns.section.id,
+        @default_post_params.limit,
+        @default_post_params.offset,
+        @default_post_params.filter_by
+      )
+
     {
       :ok,
       assign(socket,
-        posts:
-          Collaboration.list_root_posts_for_section(
-            socket.assigns.current_user.id,
-            socket.assigns.section.id,
-            nil
-          ),
+        posts: posts,
         expanded_posts: %{},
         course_collab_space_config:
           Collaboration.get_course_collab_space_config(
             socket.assigns.section.root_section_resource_id
           ),
-        post_params: @default_post_params
+        post_params: @default_post_params,
+        more_posts_exist?: more_posts_exist?
       )
       |> assign_new_discussion_form()
     }
   end
 
   def handle_event("filter_posts", %{"filter_by" => filter_by}, socket) do
+    {posts, more_posts_exist?} =
+      Collaboration.list_root_posts_for_section(
+        socket.assigns.current_user.id,
+        socket.assigns.section.id,
+        socket.assigns.post_params.limit,
+        # reset the offset when changing the filter
+        0,
+        filter_by
+      )
+
     {:noreply,
      assign(
        socket,
        posts:
-         Collaboration.list_root_posts_for_section(
-           socket.assigns.current_user.id,
-           socket.assigns.section.id,
-           nil,
-           filter_by
-         )
+         posts
          |> sort_posts(socket.assigns.post_params.sort_by, socket.assigns.post_params.sort_order),
+       more_posts_exist?: more_posts_exist?,
        post_params: Map.merge(socket.assigns.post_params, %{filter_by: filter_by})
      )}
   end
 
   def handle_event("sort_posts", %{"sort_by" => sort_by}, socket) do
+    {posts, more_posts_exist?} =
+      Collaboration.list_root_posts_for_section(
+        socket.assigns.current_user.id,
+        socket.assigns.section.id,
+        socket.assigns.post_params.limit,
+        socket.assigns.post_params.offset,
+        socket.assigns.post_params.filter_by
+      )
+
     {:noreply,
      assign(
        socket,
        posts:
-         Collaboration.list_root_posts_for_section(
-           socket.assigns.current_user.id,
-           socket.assigns.section.id,
-           nil,
-           socket.assigns.post_params.filter_by
-         )
+         posts
          |> sort_posts(
            sort_by,
            get_sort_order(
@@ -115,7 +137,8 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
                sort_by,
                socket.assigns.post_params.sort_order
              )
-         })
+         }),
+       more_posts_exist?: more_posts_exist?
      )}
   end
 
@@ -267,6 +290,35 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
     end
   end
 
+  def handle_event("load_more_posts", _, socket) do
+    updated_post_params =
+      Map.merge(socket.assigns.post_params, %{
+        offset: socket.assigns.post_params.offset + socket.assigns.post_params.limit
+      })
+
+    {posts, more_posts_exist?} =
+      Collaboration.list_root_posts_for_section(
+        socket.assigns.current_user.id,
+        socket.assigns.section.id,
+        updated_post_params.limit,
+        updated_post_params.offset,
+        updated_post_params.filter_by
+      )
+
+    case posts do
+      [] ->
+        {:noreply, assign(socket, more_posts_exist?: false)}
+
+      more_posts ->
+        {:noreply,
+         assign(socket,
+           posts: socket.assigns.posts ++ more_posts,
+           post_params: updated_post_params,
+           more_posts_exist?: more_posts_exist?
+         )}
+    end
+  end
+
   def handle_info({:discussion_created, new_post}, socket) do
     {:noreply, assign(socket, :posts, [new_post | socket.assigns.posts])}
   end
@@ -394,6 +446,7 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
           course_collab_space_config={@course_collab_space_config}
           new_discussion_form_uuid={@new_discussion_form_uuid}
           post_params={@post_params}
+          more_posts_exist?={@more_posts_exist?}
         />
       </div>
     </.header_with_sidebar_nav>
@@ -408,6 +461,7 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
   attr :course_collab_space_config, Oli.Resources.Collaboration.CollabSpaceConfig
   attr :new_discussion_form_uuid, :string
   attr :post_params, :map
+  attr :more_posts_exist?, :boolean
 
   defp posts_section(assigns) do
     ~H"""
@@ -563,6 +617,15 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
             current_user_id={@current_user_id}
           />
         <% end %>
+        <div class="flex w-full justify-end">
+          <button
+            :if={@more_posts_exist?}
+            phx-click="load_more_posts"
+            class="text-primary text-sm px-6 py-2 hover:text-primary/70"
+          >
+            Load more posts
+          </button>
+        </div>
       </div>
     </section>
     """

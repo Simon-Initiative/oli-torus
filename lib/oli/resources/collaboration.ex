@@ -491,7 +491,7 @@ defmodule Oli.Resources.Collaboration do
     )
   end
 
-  def list_root_posts_for_section(user_id, section_id, limit, filter_by \\ nil) do
+  def list_root_posts_for_section(user_id, section_id, limit, offset, filter_by \\ nil) do
     # Define a subquery for root thread post replies count
     replies_subquery =
       from(p in Post,
@@ -562,40 +562,53 @@ defmodule Oli.Resources.Collaboration do
         },
         # the discussions (attached to the root container with resource_type_id == 2) should be listed first,
         # then the posts (attached to pages with resource_type_id == 1)
-        order_by: [desc: rev.resource_type_id, desc: post.updated_at],
-        limit: ^limit
+        order_by: [desc: rev.resource_type_id, desc: post.updated_at]
       )
 
-    case filter_by do
-      f when f in [nil, "all"] ->
-        Repo.all(main_query)
+    posts =
+      case filter_by do
+        f when f in [nil, "all"] ->
+          main_query
+          |> limit(^limit + 1)
+          |> offset(^offset)
+          |> Repo.all()
 
-      "my_activity" ->
-        post_thread_ids_user_interacted_with =
-          from(p in Post,
-            where: p.section_id == ^section_id and p.user_id == ^user_id,
-            select: coalesce(p.thread_root_id, p.id)
+        "my_activity" ->
+          post_thread_ids_user_interacted_with =
+            from(p in Post,
+              where: p.section_id == ^section_id and p.user_id == ^user_id,
+              select: coalesce(p.thread_root_id, p.id)
+            )
+
+          main_query
+          |> where(
+            ^dynamic(
+              [post, _sr, _spp, _pr, _rev, _user],
+              post.id in subquery(post_thread_ids_user_interacted_with)
+            )
           )
+          |> limit(^limit + 1)
+          |> offset(^offset)
+          |> Repo.all()
 
-        main_query
-        |> where(
-          ^dynamic(
-            [post, _sr, _spp, _pr, _rev, _user],
-            post.id in subquery(post_thread_ids_user_interacted_with)
+        "unread" ->
+          from(
+            p in subquery(main_query),
+            where: p.unread_replies_count > 0,
+            order_by: [desc: p.unread_replies_count],
+            select: p,
+            limit: ^limit + 1,
+            offset: ^offset
           )
-        )
-        |> Repo.all()
+          |> Repo.all()
+      end
 
-      "unread" ->
-        from(
-          p in subquery(main_query),
-          where: p.unread_replies_count > 0,
-          order_by: [desc: p.unread_replies_count],
-          select: p,
-          limit: ^limit
-        )
-        |> Repo.all()
-    end
+    # Determine if more records exist beyond the current page
+    more_posts_exist? = length(posts) > limit
+    # Trim the posts to the desired limit
+    final_posts = Enum.take(posts, limit)
+
+    {final_posts, more_posts_exist?}
   end
 
   def list_replies_for_post(user_id, post_id) do
