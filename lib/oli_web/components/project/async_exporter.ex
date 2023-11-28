@@ -73,6 +73,8 @@ defmodule OliWeb.Components.Project.AsyncExporter do
   attr(:datashop_export_status, :atom, values: [:not_available, :in_progress, :available, :error])
   attr(:datashop_export_url, :string)
   attr(:datashop_export_timestamp, :string)
+  attr(:datashop_export_current_batch, :integer)
+  attr(:datashop_export_batch_count, :integer)
   attr(:on_generate_datashop_snapshot, :string)
   attr(:on_kill, :string)
 
@@ -96,6 +98,9 @@ defmodule OliWeb.Components.Project.AsyncExporter do
           <div class="text-sm text-gray-500 mt-2">
             <i class="fa-solid fa-circle-notch fa-spin text-primary"></i>
             Generating datashop snapshot... this might take a while.
+            <div :if={@datashop_export_current_batch && @datashop_export_batch_count}>
+              Processing Batch <%= @datashop_export_current_batch %> of <%= @datashop_export_batch_count %>
+            </div>
           </div>
         </div>
       <% :available -> %>

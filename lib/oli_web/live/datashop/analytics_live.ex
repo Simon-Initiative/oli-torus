@@ -60,6 +60,7 @@ defmodule OliWeb.Datashop.AnalyticsLive do
 
     # Subscribe to any raw analytics snapshot progress updates for this project
     Subscriber.subscribe_to_datashop_export_status(project.slug)
+    Subscriber.subscribe_to_datashop_export_batch_started(project.slug)
 
     socket =
       assign(socket,
@@ -71,6 +72,8 @@ defmodule OliWeb.Datashop.AnalyticsLive do
         datashop_export_status: datashop_export_status,
         datashop_export_url: datashop_export_url,
         datashop_export_timestamp: datashop_export_timestamp,
+        datashop_export_current_batch: nil,
+        datashop_export_batch_count: nil,
         selected_sections: selected_sections
       )
 
@@ -183,6 +186,8 @@ defmodule OliWeb.Datashop.AnalyticsLive do
             datashop_export_status={@datashop_export_status}
             datashop_export_url={@datashop_export_url}
             datashop_export_timestamp={@datashop_export_timestamp}
+            datashop_export_current_batch={@datashop_export_current_batch}
+            datashop_export_batch_count={@datashop_export_batch_count}
             disabled={Enum.empty?(@selected_sections)}
           />
         </div>
@@ -236,10 +241,16 @@ defmodule OliWeb.Datashop.AnalyticsLive do
 
     selected_sections = toggle_fn.(socket.assigns.selected_sections, section_id)
 
+    rows =
+      Enum.map(
+        socket.assigns.table_model.rows,
+        &Map.put(&1, :selected, MapSet.member?(selected_sections, &1.id))
+      )
+
     {:ok, table_model} =
       SectionsTableModel.new(
         socket.assigns.ctx,
-        socket.assigns.table_model.rows,
+        rows,
         selected_sections
       )
 
@@ -289,25 +300,52 @@ defmodule OliWeb.Datashop.AnalyticsLive do
         {:datashop_export_status, {:available, datashop_export_url, datashop_export_timestamp}},
         socket
       ) do
-    {:noreply,
-     assign(socket,
-       datashop_export_status: :available,
-       datashop_export_url: datashop_export_url,
-       datashop_export_timestamp: datashop_export_timestamp
-     )}
+    socket =
+      socket
+      |> assign(
+        datashop_export_status: :available,
+        datashop_export_url: datashop_export_url,
+        datashop_export_timestamp: datashop_export_timestamp
+      )
+      |> maybe_reset_current_batch(:available)
+
+    {:noreply, socket}
   end
 
   def handle_info(
         {:datashop_export_status, {:error, _e}},
         socket
       ) do
-    {:noreply,
-     assign(socket,
-       datashop_export_status: :error
-     )}
+    socket =
+      socket
+      |> assign(datashop_export_status: :error)
+      |> maybe_reset_current_batch(:error)
+
+    {:noreply, socket}
   end
 
   def handle_info({:datashop_export_status, {status}}, socket) do
-    {:noreply, assign(socket, datashop_export_status: status)}
+    socket =
+      socket
+      |> assign(datashop_export_status: status)
+      |> maybe_reset_current_batch(status)
+
+    {:noreply, socket}
   end
+
+  def handle_info(
+        {:datashop_export_batch_started, {:batch_started, current_batch, batch_count}},
+        socket
+      ) do
+    {:noreply,
+     assign(socket,
+       datashop_export_current_batch: current_batch,
+       datashop_export_batch_count: batch_count
+     )}
+  end
+
+  defp maybe_reset_current_batch(socket, :in_progress), do: socket
+
+  defp maybe_reset_current_batch(socket, _status),
+    do: assign(socket, datashop_export_current_batch: nil, datashop_export_batch_count: nil)
 end
