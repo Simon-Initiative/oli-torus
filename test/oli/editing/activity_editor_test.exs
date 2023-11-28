@@ -169,6 +169,77 @@ defmodule Oli.ActivityEditingTest do
       assert {:ok, _} = result
     end
 
+    test "edit/5 it updates the activity scoring strategy", %{
+      author: author,
+      project: project,
+      revision1: revision
+    } do
+      content = %{"stem" => "Hey there"}
+
+      {:ok, {%{slug: slug, resource_id: resource_id}, _}} =
+        ActivityEditor.create(project.slug, "oli_multi_input", author, content, [])
+
+      # Verify that we can issue a resource edit that attaches the activity
+      update = %{
+        "content" => %{
+          "customScoring" => true,
+          "scoringStrategy" => "best",
+          "version" => "0.1.0",
+          "model" => [
+            %{
+              "type" => "activity-reference",
+              "id" => "1",
+              "activitySlug" => slug
+            }
+          ]
+        }
+      }
+
+      PageEditor.acquire_lock(project.slug, revision.slug, author.email)
+      assert {:ok, _} = PageEditor.edit(project.slug, revision.slug, author.email, update)
+
+      {:ok, first} =
+        ActivityEditor.edit(project.slug, revision.resource_id, resource_id, author.email, update)
+
+      actual = Resources.get_revision!(first.id)
+      assert actual.scoring_strategy_id == Oli.Resources.ScoringStrategy.get_id_by_type("best")
+    end
+
+    test "edit/5 it sets the default activity scoring strategy when customScoring is false", %{
+      author: author,
+      project: project,
+      revision1: revision
+    } do
+      content = %{"stem" => "Hey there"}
+
+      {:ok, {%{slug: slug, resource_id: resource_id}, _}} =
+        ActivityEditor.create(project.slug, "oli_multi_input", author, content, [])
+
+      # Verify that we can issue a resource edit that attaches the activity
+      update = %{
+        "content" => %{
+          "customScoring" => false,
+          "version" => "0.1.0",
+          "model" => [
+            %{
+              "type" => "activity-reference",
+              "id" => "1",
+              "activitySlug" => slug
+            }
+          ]
+        }
+      }
+
+      PageEditor.acquire_lock(project.slug, revision.slug, author.email)
+      assert {:ok, _} = PageEditor.edit(project.slug, revision.slug, author.email, update)
+
+      {:ok, first} =
+        ActivityEditor.edit(project.slug, revision.resource_id, resource_id, author.email, update)
+
+      actual = Resources.get_revision!(first.id)
+      assert actual.scoring_strategy_id == Oli.Resources.ScoringStrategy.get_id_by_type("total")
+    end
+
     test "can create and attach an activity to a resource", %{
       author: author,
       project: project,
