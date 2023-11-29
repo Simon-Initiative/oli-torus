@@ -491,7 +491,15 @@ defmodule Oli.Resources.Collaboration do
     )
   end
 
-  def list_root_posts_for_section(user_id, section_id, limit, offset, filter_by \\ nil) do
+  def list_root_posts_for_section(
+        user_id,
+        section_id,
+        limit,
+        offset,
+        filter_by,
+        sort_by,
+        sort_order
+      ) do
     # Define a subquery for root thread post replies count
     replies_subquery =
       from(p in Post,
@@ -520,6 +528,30 @@ defmodule Oli.Resources.Collaboration do
           count: count(p.id)
         }
       )
+
+    order_clause =
+      case {sort_by, sort_order} do
+        {"popularity", :desc} ->
+          {:desc_nulls_last,
+           dynamic(
+             [_post, _sr, _spp, _pr, _rev, _user, replies, _read_replies],
+             replies.count
+           )}
+
+        {"popularity", :asc} ->
+          {:asc_nulls_first,
+           dynamic(
+             [_post, _sr, _spp, _pr, _rev, _user, replies, _read_replies],
+             replies.count
+           )}
+
+        {"date", sort_order} ->
+          {sort_order,
+           dynamic(
+             [post, _sr, _spp, _pr, _rev, _user, _replies, _read_replies],
+             post.updated_at
+           )}
+      end
 
     main_query =
       from(
@@ -560,9 +592,7 @@ defmodule Oli.Resources.Collaboration do
           unread_replies_count: coalesce(replies.count, 0) - coalesce(read_replies.count, 0),
           is_read: true
         },
-        # the discussions (attached to the root container with resource_type_id == 2) should be listed first,
-        # then the posts (attached to pages with resource_type_id == 1)
-        order_by: [desc: rev.resource_type_id, desc: post.updated_at]
+        order_by: ^order_clause
       )
 
     posts =
@@ -595,7 +625,6 @@ defmodule Oli.Resources.Collaboration do
           from(
             p in subquery(main_query),
             where: p.unread_replies_count > 0,
-            order_by: [desc: p.unread_replies_count],
             select: p,
             limit: ^limit + 1,
             offset: ^offset

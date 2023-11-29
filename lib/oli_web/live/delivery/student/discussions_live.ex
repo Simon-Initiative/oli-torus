@@ -45,11 +45,8 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
     limit: 4
   }
 
-  # TODO para el viernes...
-  # esta mal cómo estoy haciendo el sort, debería hacerlo en la query como hago con el filter (no se cómo en el caso de popularity...)
   # pensar el tema de los broadcasts... si me llega un post de otro usuario y tengo filtrado por "my activity" no debería aparecer (salvo que sea una reply a un thread en el que sí tengo actividad)
   # pensar el tema de los broadcasts... si me llega un post de otro usuario y tengo filtrado por "unread" creo que siempre debería aparecer
-  # pensar cómo voy a matchear el tema de los unread y su modelo de datos de caras a los broadcast y a que no sea un chino para las metricas
   def mount(_params, _session, socket) do
     if connected?(socket),
       do:
@@ -64,7 +61,9 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
         socket.assigns.section.id,
         @default_post_params.limit,
         @default_post_params.offset,
-        @default_post_params.filter_by
+        @default_post_params.filter_by,
+        @default_post_params.sort_by,
+        @default_post_params.sort_order
       )
 
     {
@@ -91,52 +90,47 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
         socket.assigns.post_params.limit,
         # reset the offset when changing the filter
         0,
-        filter_by
+        filter_by,
+        socket.assigns.post_params.sort_by,
+        socket.assigns.post_params.sort_order
       )
 
     {:noreply,
      assign(
        socket,
-       posts:
-         posts
-         |> sort_posts(socket.assigns.post_params.sort_by, socket.assigns.post_params.sort_order),
+       posts: posts,
        more_posts_exist?: more_posts_exist?,
-       post_params: Map.merge(socket.assigns.post_params, %{filter_by: filter_by})
+       post_params: Map.merge(socket.assigns.post_params, %{filter_by: filter_by, offset: 0})
      )}
   end
 
   def handle_event("sort_posts", %{"sort_by" => sort_by}, socket) do
+    sort_order =
+      get_sort_order(
+        socket.assigns.post_params.sort_by,
+        sort_by,
+        socket.assigns.post_params.sort_order
+      )
+
     {posts, more_posts_exist?} =
       Collaboration.list_root_posts_for_section(
         socket.assigns.current_user.id,
         socket.assigns.section.id,
         socket.assigns.post_params.limit,
         socket.assigns.post_params.offset,
-        socket.assigns.post_params.filter_by
+        socket.assigns.post_params.filter_by,
+        sort_by,
+        sort_order
       )
 
     {:noreply,
      assign(
        socket,
-       posts:
-         posts
-         |> sort_posts(
-           sort_by,
-           get_sort_order(
-             socket.assigns.post_params.sort_by,
-             sort_by,
-             socket.assigns.post_params.sort_order
-           )
-         ),
+       posts: posts,
        post_params:
          Map.merge(socket.assigns.post_params, %{
            sort_by: sort_by,
-           sort_order:
-             get_sort_order(
-               socket.assigns.post_params.sort_by,
-               sort_by,
-               socket.assigns.post_params.sort_order
-             )
+           sort_order: sort_order
          }),
        more_posts_exist?: more_posts_exist?
      )}
@@ -302,7 +296,9 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
         socket.assigns.section.id,
         updated_post_params.limit,
         updated_post_params.offset,
-        updated_post_params.filter_by
+        updated_post_params.filter_by,
+        updated_post_params.sort_by,
+        updated_post_params.sort_order
       )
 
     case posts do
@@ -1014,16 +1010,6 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
       end)
 
     {updated_root_posts, updated_expanded_posts}
-  end
-
-  defp sort_posts(posts, sort_by, sort_order) do
-    case sort_by do
-      "date" ->
-        Enum.sort_by(posts, & &1.updated_at, {sort_order, DateTime})
-
-      "popularity" ->
-        Enum.sort_by(posts, & &1.replies_count, sort_order)
-    end
   end
 
   defp get_sort_order(current_sort_by, new_sort_by, sort_order)
