@@ -1054,7 +1054,7 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
       end)
 
     Enum.reverse(read_posts) ++
-      add_first_unread_flag(Enum.reverse(unread_posts), length(read_posts))
+      add_first_unread_flag(Enum.reverse(unread_posts))
   end
 
   _docp = """
@@ -1065,15 +1065,11 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
   If not, two unread posts end up having the flag => two "UNREAD REPLIES" labels.
   """
 
-  defp add_first_unread_flag([], _), do: []
+  defp add_first_unread_flag([]), do: []
 
-  defp add_first_unread_flag(posts, 0),
-    do: Enum.map(posts, fn p -> Map.merge(p, %{is_first_unread: false}) end)
-
-  defp add_first_unread_flag([first_unread_post | rest], read_posts_count)
-       when read_posts_count > 0,
-       do: [
-         Map.merge(first_unread_post, %{is_first_unread: true})
-         | Enum.map(rest, fn r -> Map.merge(r, %{is_first_unread: false}) end)
-       ]
+  defp add_first_unread_flag([first_unread_post | rest]),
+    do: [
+      Map.merge(first_unread_post, %{is_first_unread: true})
+      | Enum.map(rest, fn r -> Map.merge(r, %{is_first_unread: false}) end)
+    ]
 end
