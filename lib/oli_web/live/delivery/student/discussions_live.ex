@@ -81,6 +81,12 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
     }
   end
 
+  def handle_event("filter_posts", %{"filter_by" => filter_by}, socket)
+      when filter_by == socket.assigns.post_params.filter_by do
+    # do not change the UI if the user selects the same filter as before
+    {:noreply, socket}
+  end
+
   def handle_event("filter_posts", %{"filter_by" => filter_by}, socket) do
     {posts, more_posts_exist?} =
       Collaboration.list_root_posts_for_section(
@@ -99,7 +105,8 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
        socket,
        posts: posts,
        more_posts_exist?: more_posts_exist?,
-       post_params: Map.merge(socket.assigns.post_params, %{filter_by: filter_by, offset: 0})
+       post_params: Map.merge(socket.assigns.post_params, %{filter_by: filter_by, offset: 0}),
+       expanded_posts: %{}
      )}
   end
 
