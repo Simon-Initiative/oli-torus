@@ -1,3 +1,4 @@
+import { PartResponse, Success } from 'components/activities';
 import * as PageLifecycle from 'data/persistence/page_lifecycle';
 
 /**
@@ -17,23 +18,30 @@ export function finalize(
   buttonId: string | null = null,
 ) {
   setButtonContent(buttonId, graded ? 'Submitting...' : 'Resetting...');
-
-  PageLifecycle.finalizePageAttempt(sectionSlug, revisionSlug, attemptGuid).then((result) => {
-    if (result.result === 'success' && result.commandResult === 'success') {
-      location.href = result.redirectTo;
-    } else {
-      if (result.result === 'success' && result.commandResult === 'failure') {
-        console.info('Page finalization failure: ' + result.reason);
+  retryFailedActivitySaves().then(() => {
+    PageLifecycle.finalizePageAttempt(sectionSlug, revisionSlug, attemptGuid).then((result) => {
+      if (result.result === 'success' && result.commandResult === 'success') {
+        location.href = result.redirectTo;
       } else {
-        console.info('Page finalization failure');
+        if (result.result === 'success' && result.commandResult === 'failure') {
+          console.info('Page finalization failure: ' + result.reason);
+        } else {
+          console.info('Page finalization failure');
+        }
+        setButtonContent(buttonId, 'An error occurred. Please reload the page and try again.', {
+          error: true,
+        });
       }
-
-      setButtonContent(buttonId, 'An error occurred. Please reload the page and try again.', {
-        error: true,
-      });
-    }
+    });
   });
 }
+
+const retryFailedActivitySaves = () => {
+  const retryQueue = window.retryQueue || [];
+  return Promise.all(retryQueue.map((r) => r.fn())).catch((e) =>
+    console.error('Activity resubmission failed', e),
+  );
+};
 
 function setButtonContent(id: string | null, content: string, opts?: { error?: boolean }) {
   if (id !== null) {
@@ -48,5 +56,16 @@ function setButtonContent(id: string | null, content: string, opts?: { error?: b
         (el as HTMLButtonElement).classList.remove('!text-danger');
       }
     }
+  }
+}
+
+interface RequestRetry {
+  id: string;
+  responses: PartResponse[];
+}
+
+declare global {
+  interface Window {
+    retryQueue?: RequestRetry[];
   }
 }

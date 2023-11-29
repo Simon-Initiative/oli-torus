@@ -10,9 +10,11 @@ export interface DeliveryElementState<T extends ActivityModelSchema>
   extends DeliveryElementProps<T> {
   writerContext: WriterContext;
 }
+
 const DeliveryElementContext = React.createContext<DeliveryElementState<any> | undefined>(
   undefined,
 );
+
 export function useDeliveryElementContext<T extends ActivityModelSchema>() {
   return Maybe.maybe(
     useContext<DeliveryElementState<T> | undefined>(DeliveryElementContext),
@@ -20,8 +22,11 @@ export function useDeliveryElementContext<T extends ActivityModelSchema>() {
     new Error('useDeliveryElementContext must be used within an DeliveryElementProvider'),
   );
 }
+
 export const DeliveryElementProvider: React.FC<DeliveryElementProps<any>> = (props) => {
-  const { onSaveActivity, onSavePart, error } = useDeliveryErrorHandlers(props);
+  const { onSaveActivity, onSavePart, onSubmitActivity, onResetActivity, onSubmitPart, error } =
+    useDeliveryErrorHandlers(props);
+
   const writerContext = defaultWriterContext({
     graded: props.context.graded,
     sectionSlug: props.context.sectionSlug,
@@ -33,7 +38,15 @@ export const DeliveryElementProvider: React.FC<DeliveryElementProps<any>> = (pro
 
   return (
     <DeliveryElementContext.Provider
-      value={{ ...props, writerContext, onSaveActivity, onSavePart }}
+      value={{
+        ...props,
+        writerContext,
+        onSaveActivity,
+        onSavePart,
+        onSubmitActivity,
+        onResetActivity,
+        onSubmitPart,
+      }}
     >
       <ActivityErrorDisplay error={error}>{props.children}</ActivityErrorDisplay>
     </DeliveryElementContext.Provider>
