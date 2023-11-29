@@ -1037,10 +1037,30 @@ defmodule Oli.Resources.Collaboration do
   end
 
   @doc """
-  Marks the given posts as read for the given user.
-  In case the user has already read the posts, it updates the :updated_at field
+  Marks the given posts as read for the given user, excluding posts that where posted by the user.
+  In case the user has already read the posts, it updates the :updated_at field.
+  The third optional argument is a boolean that indicates if the operation should be performed in an async way.
   """
-  def read_posts(post_ids, user_id) do
+
+  def mark_posts_as_read(posts, user_id, async \\ false)
+
+  def mark_posts_as_read(posts, user_id, false) do
+    Enum.reduce(posts, [], fn post, acc ->
+      if post.user_id != user_id, do: [post.id | acc], else: acc
+    end)
+    |> read_posts(user_id)
+  end
+
+  def mark_posts_as_read(posts, user_id, true) do
+    Task.Supervisor.start_child(Oli.TaskSupervisor, fn ->
+      Enum.reduce(posts, [], fn post, acc ->
+        if post.user_id != user_id, do: [post.id | acc], else: acc
+      end)
+      |> read_posts(user_id)
+    end)
+  end
+
+  defp read_posts(post_ids, user_id) do
     Repo.transaction(fn ->
       Enum.each(post_ids, fn post_id ->
         %UserReadPost{}

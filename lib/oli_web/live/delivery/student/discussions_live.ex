@@ -192,7 +192,7 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
         Enum.into([{String.to_integer(post_id), post_replies}], %{})
       )
 
-    mark_posts_as_read(post_replies, socket.assigns.current_user.id)
+    Collaboration.mark_posts_as_read(post_replies, socket.assigns.current_user.id, true)
 
     {:noreply, assign(socket, expanded_posts: updated_expanded_posts)}
   end
@@ -202,7 +202,7 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
     # although we mark them when expanded, we need to handle the
     # case when a post reply is shown because a new_post broadcast is recieved
     # while having the parent post expanded.
-    mark_posts_as_read(
+    Collaboration.mark_posts_as_read(
       Map.get(socket.assigns.expanded_posts, String.to_integer(post_id), []),
       socket.assigns.current_user.id
     )
@@ -1066,11 +1066,4 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
          Map.merge(first_unread_post, %{is_first_unread: true})
          | Enum.map(rest, fn r -> Map.merge(r, %{is_first_unread: false}) end)
        ]
-
-  defp mark_posts_as_read(posts, user_id) do
-    Enum.reduce(posts, [], fn post, acc ->
-      if post.user_id != user_id, do: [post.id | acc], else: acc
-    end)
-    |> Collaboration.read_posts(user_id)
-  end
 end
