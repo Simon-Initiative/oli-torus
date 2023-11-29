@@ -6,7 +6,7 @@ defmodule OliWeb.OpenAndFreeController do
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.Section
   alias Oli.Authoring.Course
-  alias OliWeb.Common.{Breadcrumb, FormatDateTime}
+  alias OliWeb.Common.{FormatDateTime}
   alias Lti_1p3.Tool.ContextRoles
 
   alias OliWeb.Router.Helpers, as: Routes
@@ -15,7 +15,7 @@ defmodule OliWeb.OpenAndFreeController do
 
   defp add_assigns(conn, _opts) do
     merge_assigns(conn,
-      route: determine_route(conn),
+      route: :independent_learner,
       active: :open_and_free,
       title: "Open and Free"
     )
@@ -44,18 +44,10 @@ defmodule OliWeb.OpenAndFreeController do
     end
   end
 
-  def index(conn, _params) do
-    render(conn, "index.html",
-      sections: Sections.list_open_and_free_sections(),
-      breadcrumbs: set_breadcrumbs()
-    )
-  end
-
   def new(conn, %{"source_id" => source_id}) do
     {source, source_label, source_param_name} = source_info(source_id)
 
     render(conn, "new.html",
-      breadcrumbs: set_breadcrumbs() |> new_breadcrumb(),
       changeset: Sections.change_independent_learner_section(%Section{registration_open: true}),
       source_id: source_id,
       source: source,
@@ -110,7 +102,6 @@ defmodule OliWeb.OpenAndFreeController do
 
           render(conn, "new.html",
             changeset: changeset,
-            breadcrumbs: set_breadcrumbs() |> new_breadcrumb(),
             source_id: source_id,
             source: source,
             source_label: source_label,
@@ -129,7 +120,6 @@ defmodule OliWeb.OpenAndFreeController do
 
         render(conn, "new.html",
           changeset: changeset,
-          breadcrumbs: set_breadcrumbs() |> new_breadcrumb(),
           source_id: source_id,
           source: source,
           source_label: source_label,
@@ -190,7 +180,6 @@ defmodule OliWeb.OpenAndFreeController do
 
           render(conn, "new.html",
             changeset: changeset,
-            breadcrumbs: set_breadcrumbs() |> new_breadcrumb(),
             source_id: source_id,
             source: source,
             source_label: source_label,
@@ -209,7 +198,6 @@ defmodule OliWeb.OpenAndFreeController do
 
         render(conn, "new.html",
           changeset: changeset,
-          breadcrumbs: set_breadcrumbs() |> new_breadcrumb(),
           source_id: source_id,
           source: source,
           source_label: source_label,
@@ -226,8 +214,7 @@ defmodule OliWeb.OpenAndFreeController do
 
     render(conn, "show.html",
       section: section,
-      updates: Sections.check_for_available_publication_updates(section),
-      breadcrumbs: set_breadcrumbs() |> show_breadcrumb()
+      updates: Sections.check_for_available_publication_updates(section)
     )
   end
 
@@ -237,7 +224,6 @@ defmodule OliWeb.OpenAndFreeController do
       |> Sections.localize_section_start_end_datetimes(conn.assigns.ctx)
 
     render(conn, "edit.html",
-      breadcrumbs: set_breadcrumbs() |> edit_breadcrumb(),
       section: section,
       changeset: Sections.change_section(section),
       available_brands: available_brands()
@@ -266,7 +252,6 @@ defmodule OliWeb.OpenAndFreeController do
 
       {:error, %Ecto.Changeset{} = changeset} ->
         render(conn, "edit.html",
-          breadcrumbs: set_breadcrumbs() |> edit_breadcrumb(),
           section: section,
           changeset: changeset,
           available_brands: available_brands()
@@ -277,60 +262,6 @@ defmodule OliWeb.OpenAndFreeController do
   ###
   ### Helpers
   ###
-
-  # This controller is used across two scopes (admin and independent learner
-  # section management, so template links need to know where to route)
-  defp determine_route(conn) do
-    if Enum.member?(conn.path_info, "admin") do
-      :admin
-    else
-      :independent_learner
-    end
-  end
-
-  # The OpenAndFree controller is used with multiple routes. Breadcrumbs
-  # are only needed for the authoring admin route.
-  def set_breadcrumbs() do
-    OliWeb.Admin.AdminView.breadcrumb()
-    |> breadcrumb()
-  end
-
-  def breadcrumb(previous) do
-    previous ++
-      [
-        Breadcrumb.new(%{
-          full_title: "Open and Free Sections",
-          link: Routes.admin_open_and_free_path(OliWeb.Endpoint, :index)
-        })
-      ]
-  end
-
-  def edit_breadcrumb(previous) do
-    previous ++
-      [
-        Breadcrumb.new(%{
-          full_title: "Edit"
-        })
-      ]
-  end
-
-  def new_breadcrumb(previous) do
-    previous ++
-      [
-        Breadcrumb.new(%{
-          full_title: "New"
-        })
-      ]
-  end
-
-  def show_breadcrumb(previous) do
-    previous ++
-      [
-        Breadcrumb.new(%{
-          full_title: "Show"
-        })
-      ]
-  end
 
   defp to_atom_keys(map) do
     Map.keys(map)
@@ -360,9 +291,7 @@ defmodule OliWeb.OpenAndFreeController do
            {:ok, _} <- Sections.rebuild_contained_objectives(section),
            {:ok, _} <- Sections.rebuild_full_hierarchy(section),
            {:ok, _enrollment} <- enroll(conn, section),
-           {:ok, section} <- Delivery.maybe_update_section_contains_explorations(section),
-           {:ok, updated_section} <-
-             Delivery.maybe_update_section_contains_deliberate_practice(section) do
+           {:ok, updated_section} <- Delivery.maybe_update_section_contains_explorations(section) do
         updated_section
       else
         {:error, changeset} -> Repo.rollback(changeset)

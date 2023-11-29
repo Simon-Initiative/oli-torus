@@ -2,8 +2,6 @@ defmodule OliWeb.Delivery.NewCourse do
   use OliWeb, :live_view
 
   on_mount(OliWeb.LiveSessionPlugs.SetSection)
-  on_mount(OliWeb.LiveSessionPlugs.SetCurrentUser)
-  on_mount(OliWeb.LiveSessionPlugs.SetSessionContext)
   on_mount(OliWeb.LiveSessionPlugs.SetBrand)
   on_mount(OliWeb.LiveSessionPlugs.SetPreviewMode)
 
@@ -96,7 +94,17 @@ defmodule OliWeb.Delivery.NewCourse do
 
   def render(assigns) do
     ~H"""
-    <.header ctx={@ctx} section={@section} brand={@brand} preview_mode={@preview_mode} />
+    <%= case @live_action do %>
+      <% :admin -> %>
+      <% _ -> %>
+        <.header
+          ctx={@ctx}
+          section={@section}
+          brand={@brand}
+          preview_mode={@preview_mode}
+          is_system_admin={@is_system_admin}
+        />
+    <% end %>
     <div id={@form_id} phx-hook="SubmitForm" class="mt-14 h-[calc(100vh-56px)]">
       <.live_component
         id="course_creation_stepper"
@@ -193,10 +201,10 @@ defmodule OliWeb.Delivery.NewCourse do
   end
 
   def breadcrumbs(:admin) do
-    OliWeb.OpenAndFreeController.set_breadcrumbs() ++
+    OliWeb.Sections.SectionsView.set_breadcrumbs() ++
       [
         Breadcrumb.new(%{
-          full_title: "Course Creation",
+          full_title: "Create Section",
           link: Routes.select_source_path(OliWeb.Endpoint, :admin)
         })
       ]

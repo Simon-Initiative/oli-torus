@@ -1,4 +1,4 @@
-defmodule Oli.Plugs.EnsureAdmin do
+defmodule Oli.Plugs.RequireAdmin do
   import Plug.Conn
   alias Oli.Accounts.SystemRole
 

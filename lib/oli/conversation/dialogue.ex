@@ -1,89 +1,44 @@
 defmodule Oli.Conversation.Dialogue do
   require Logger
   alias Oli.Conversation.Message
+  alias Oli.Conversation.Functions
+  import Oli.Conversation.Common
+  alias Oli.Conversation.Model
 
   defstruct [
+    :model,
+    :rendered_messages,
     :messages,
     :response_handler_fn,
-    :functions
+    :functions,
+    :functions_token_length
   ]
 
-  def init(system_message, response_handler_fn) do
+  @token_usage_high_watermark 0.9
+
+  def new(system_message, response_handler_fn, options \\ []) do
+    model = options[:model] || Oli.Conversation.Model.default()
+
+    system_message = Message.new(:system, system_message)
+
     %__MODULE__{
-      messages: [%Message{role: :system, content: system_message}],
+      model: Oli.Conversation.Model.model(model),
+      rendered_messages: [],
+      messages: [system_message],
       response_handler_fn: response_handler_fn,
-      functions: [
-        %{
-          name: "up_next",
-          description:
-            "Returns the next scheduled lessons in the course as a list of objects with the following keys: title, url, due_date, num_attempts_taken",
-          parameters: %{
-            type: "object",
-            properties: %{
-              current_user_id: %{
-                type: "integer",
-                description: "The current student's user id"
-              },
-              section_id: %{
-                type: "integer",
-                description: "The current course section's id"
-              }
-            },
-            required: ["current_user_id", "section_id"]
-          }
-        },
-        %{
-          name: "avg_score_for",
-          description:
-            "Returns average score across all scored assessments, as a floating point number between 0 and 1, for a given user and section",
-          parameters: %{
-            type: "object",
-            properties: %{
-              current_user_id: %{
-                type: "integer",
-                description: "The current student's user id"
-              },
-              section_id: %{
-                type: "integer",
-                description: "The current course section's id"
-              }
-            },
-            required: ["current_user_id", "section_id"]
-          }
-        },
-        %{
-          name: "relevant_course_content",
-          description: """
-          Useful when a question asked by a student cannot be adequately answered by the context of the current lesson.
-          Allows the retrieval of relevant course content from other lessons in the course based on the
-          student's question. Returns an array of course lessons with the following keys: title, url, content.
-          """,
-          parameters: %{
-            type: "object",
-            properties: %{
-              student_input: %{
-                type: "string",
-                description: "The student question or input"
-              },
-              section_id: %{
-                type: "integer",
-                description: "The current course section's id"
-              }
-            },
-            required: ["student_input", "section_id"]
-          }
-        }
-      ]
+      functions: Functions.functions(),
+      functions_token_length: Functions.total_token_length()
     }
   end
 
   def engage(
-        %__MODULE__{messages: messages, response_handler_fn: response_handler_fn} = dialogue,
+        %__MODULE__{model: model, messages: messages, response_handler_fn: response_handler_fn} =
+          dialogue,
         :async
       ) do
     OpenAI.chat_completion(
       [
-        model: "gpt-3.5-turbo",
+        model: model,
         messages: encode_messages(messages),
         functions: dialogue.functions,
         stream: true
@@ -95,20 +50,18 @@ defmodule Oli.Conversation.Dialogue do
         {:delta, type, content} ->
           response_handler_fn.(dialogue, type, content)
 
-        e ->
-          IO.inspect(e)
+        _e ->
           Logger.info("Response finished")
       end
     end)
     |> Enum.to_list()
-    |> IO.inspect()
   end
 
-  def engage(%__MODULE__{messages: messages} = dialogue, :sync) do
+  def engage(%__MODULE__{messages: messages, model: model} = dialogue, :sync) do
     result =
       OpenAI.chat_completion(
         [
-          model: "gpt-3.5-turbo",
+          model: model,
           messages: encode_messages(messages),
           functions: dialogue.functions
         ],
@@ -127,8 +80,50 @@ defmodule Oli.Conversation.Dialogue do
     end)
   end
 
-  def add_message(%__MODULE__{messages: messages} = dialog, message) do
+  def add_message(
+        %__MODULE__{messages: messages, rendered_messages: rendered_messages} = dialog,
+        message
+      ) do
+    dialog = %{dialog | rendered_messages: rendered_messages ++ [message]}
     %{dialog | messages: messages ++ [message]}
+  end
+
+  def summarize(%__MODULE__{messages: messages, model: model} = dialog) do
+    summarize_messages =
+      case messages do
+        [_system | rest] -> [Message.new(:system, summarize_prompt()) | rest]
+      end
+
+    [system | _rest] = messages
+
+    case OpenAI.chat_completion(
+           [model: model, messages: encode_messages(summarize_messages)],
+           config(:sync)
+         ) do
+      {:ok, %{choices: [first | _rest]}} ->
+        summary = Message.new(:system, first["message"]["content"])
+
+        messages = [system, summary]
+
+        %{dialog | messages: messages}
+
+      _e ->
+        IO.inspect("Failed to summarize")
+        dialog
+    end
+  end
+
+  def should_summarize?(%__MODULE__{model: model} = dialog) do
+    total_token_length(dialog) > Model.token_limit(model) * @token_usage_high_watermark
+  end
+
+  def total_token_length(%__MODULE__{
+        messages: messages,
+        functions_token_length: functions_token_length
+      }) do
+    Enum.reduce(messages, functions_token_length, fn message, acc ->
+      acc + message.token_length
+    end)
   end
 
   defp delta(chunk) do

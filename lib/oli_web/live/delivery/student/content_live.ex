@@ -1,8 +1,7 @@
 defmodule OliWeb.Delivery.Student.ContentLive do
   use OliWeb, :live_view
 
-  import OliWeb.Components.Delivery.Layouts
-
+  alias Oli.Accounts.{User}
   alias OliWeb.Common.FormatDateTime
   alias Oli.Delivery.{Metrics, Sections}
   alias Phoenix.LiveView.JS
@@ -15,11 +14,12 @@ defmodule OliWeb.Delivery.Student.ContentLive do
         async_calculate_student_metrics_and_enable_slider_buttons(
           self(),
           socket.assigns.section,
-          socket.assigns.current_user.id
+          socket.assigns[:current_user]
         )
 
     {:ok,
      assign(socket,
+       active_tab: :content,
        selected_module_per_unit_uuid: %{},
        student_visited_pages: %{},
        student_progress_per_resource_id: %{}
@@ -91,6 +91,13 @@ defmodule OliWeb.Delivery.Student.ContentLive do
   end
 
   def handle_info(
+        {:student_metrics_and_enable_slider_buttons, nil},
+        socket
+      ) do
+    {:noreply, socket}
+  end
+
+  def handle_info(
         {:student_metrics_and_enable_slider_buttons,
          {student_visited_pages, student_progress_per_resource_id}},
         socket
@@ -118,23 +125,15 @@ defmodule OliWeb.Delivery.Student.ContentLive do
 
   def render(assigns) do
     ~H"""
-    <.header_with_sidebar_nav
-      ctx={@ctx}
-      section={@section}
-      brand={@brand}
-      preview_mode={@preview_mode}
-      active_tab={:content}
-    >
-      <div id="student_content" class="lg:container lg:mx-auto p-[25px]" phx-hook="Scroller">
-        <.unit
-          :for={child <- @section.full_hierarchy["children"]}
-          unit={child}
-          ctx={@ctx}
-          student_progress_per_resource_id={@student_progress_per_resource_id}
-          selected_module_per_unit_uuid={@selected_module_per_unit_uuid}
-        />
-      </div>
-    </.header_with_sidebar_nav>
+    <div id="student_content" class="lg:container lg:mx-auto p-[25px]" phx-hook="Scroller">
+      <.unit
+        :for={child <- @section.full_hierarchy["children"]}
+        unit={child}
+        ctx={@ctx}
+        student_progress_per_resource_id={@student_progress_per_resource_id}
+        selected_module_per_unit_uuid={@selected_module_per_unit_uuid}
+      />
+    </div>
     """
   end
 
@@ -603,13 +602,26 @@ defmodule OliWeb.Delivery.Student.ContentLive do
   defp async_calculate_student_metrics_and_enable_slider_buttons(
          liveview_pid,
          section,
-         current_user_id
+         %User{id: current_user_id}
        ) do
     Task.async(fn ->
       send(
         liveview_pid,
         {:student_metrics_and_enable_slider_buttons,
          get_student_metrics(section, current_user_id)}
+      )
+    end)
+  end
+
+  defp async_calculate_student_metrics_and_enable_slider_buttons(
+         liveview_pid,
+         _section,
+         _current_user
+       ) do
+    Task.async(fn ->
+      send(
+        liveview_pid,
+        {:student_metrics_and_enable_slider_buttons, nil}
       )
     end)
   end

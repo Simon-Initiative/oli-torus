@@ -6,7 +6,7 @@ defmodule OliWeb.Delivery.StudentDashboard.Components.Helpers do
   alias OliWeb.Router.Helpers, as: Routes
   alias Oli.Accounts.User
   alias Oli.Delivery.Sections.Section
-  alias OliWeb.Components.Delivery.UserAccountMenu
+  alias OliWeb.Components.Delivery.UserAccount
   alias OliWeb.Components.Header
   alias OliWeb.Common.SessionContext
 
@@ -128,7 +128,7 @@ defmodule OliWeb.Delivery.StudentDashboard.Components.Helpers do
     if preview_mode do
       Routes.student_dashboard_path(OliWeb.Endpoint, :preview, section.slug, student_id, :content)
     else
-      Routes.page_delivery_path(OliWeb.Endpoint, :index, section.slug)
+      ~p"/sections/#{section.slug}"
     end
   end
 
@@ -138,6 +138,8 @@ defmodule OliWeb.Delivery.StudentDashboard.Components.Helpers do
   attr(:preview_mode, :boolean, default: false)
 
   def header(assigns) do
+    assigns = assign(assigns, :is_system_admin, assigns[:is_system_admin] || false)
+
     ~H"""
     <div class="w-full bg-delivery-instructor-dashboard-header text-white border-b border-slate-600">
       <div class="container mx-auto py-2 flex flex-row justify-between">
@@ -150,9 +152,9 @@ defmodule OliWeb.Delivery.StudentDashboard.Components.Helpers do
           </a>
         </div>
         <%= if @preview_mode do %>
-          <UserAccountMenu.preview_user />
+          <UserAccount.preview_user_menu />
         <% else %>
-          <UserAccountMenu.menu id="user-account-menu" ctx={@ctx} />
+          <UserAccount.menu id="user-account-menu" ctx={@ctx} is_system_admin={@is_system_admin} />
         <% end %>
         <div class="flex items-center border-l border-slate-300">
           <button

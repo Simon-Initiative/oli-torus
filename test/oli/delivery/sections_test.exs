@@ -53,7 +53,7 @@ defmodule Oli.Delivery.SectionsTest do
 
       conn =
         conn
-        |> get(Routes.page_delivery_path(conn, :index, section.slug))
+        |> get(~p"/sections/#{section.slug}")
 
       assert html_response(conn, 200) =~ "Example Section"
     end

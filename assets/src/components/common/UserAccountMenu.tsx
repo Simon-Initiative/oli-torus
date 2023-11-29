@@ -147,7 +147,6 @@ export const UserAccountMenu = ({
                 <br />
                 <SelectTimezone
                   selectedTimezone={user.selectedTimezone}
-                  timezones={timezones}
                   submitAction={routes.updateTimezone}
                 />
               </div>

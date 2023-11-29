@@ -95,7 +95,7 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTable do
     assigns = assign(assigns, assessment_changeset: to_form(%{}, as: :assessments))
 
     ~H"""
-    <div id="student_exceptions_table" class="mx-10 mb-10 bg-white dark:bg-gray-800 shadow-sm">
+    <div id="student_exceptions_table" class="bg-white dark:bg-gray-800 shadow-sm">
       <%= due_date_modal(assigns) %>
       <%= available_date_modal(assigns) %>
       <%= modal(@modal_assigns) %>

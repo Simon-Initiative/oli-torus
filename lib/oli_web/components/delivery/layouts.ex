@@ -4,40 +4,23 @@ defmodule OliWeb.Components.Delivery.Layouts do
   """
   use OliWeb, :html
 
+  import OliWeb.Components.Utils
+
   alias Phoenix.LiveView.JS
   alias OliWeb.Common.SessionContext
   alias OliWeb.Common.React
+  alias Oli.Authoring.Course.Project
   alias Oli.Delivery.Sections.Section
   alias Oli.Accounts.{User, Author}
   alias Oli.Branding
   alias Oli.Branding.Brand
-  alias OliWeb.Components.Delivery.UserAccountMenu
+  alias OliWeb.Components.Delivery.UserAccount
+  alias Oli.Resources.Collaboration.CollabSpaceConfig
 
   attr(:ctx, SessionContext)
-  attr(:section, Section)
-  attr(:brand, Brand)
-  attr(:preview_mode, :boolean)
-  attr(:active_tab, :atom, required: true)
-  slot(:inner_block, required: true)
-
-  def header_with_sidebar_nav(assigns) do
-    ~H"""
-    <div class="h-screen flex flex-col overscroll-none">
-      <.header ctx={@ctx} section={@section} brand={@brand} preview_mode={@preview_mode} />
-
-      <main role="main" class="flex-1 flex flex-col relative md:flex-row overscroll-contain">
-        <.sidebar_nav ctx={@ctx} section={@section} active_tab={@active_tab} />
-
-        <div class="md:w-[calc(100%-192px)] flex-1 flex flex-col md:ml-48 mt-14">
-          <%= render_slot(@inner_block) %>
-        </div>
-      </main>
-    </div>
-    """
-  end
-
-  attr(:ctx, SessionContext)
-  attr(:section, Section)
+  attr(:is_system_admin, :boolean, required: true)
+  attr(:section, Section, default: nil)
+  attr(:project, Project, default: nil)
   attr(:brand, Brand)
   attr(:preview_mode, :boolean)
 
@@ -53,17 +36,20 @@ defmodule OliWeb.Components.Delivery.Layouts do
         </a>
       </div>
       <div class="flex items-center flex-grow-1 p-2">
-        <div :if={@section} class="hidden md:block">
-          <span class="text-2xl text-bold"><%= @section.title %></span>
-        </div>
+        <.title section={@section} project={@project} preview_mode={@preview_mode} />
       </div>
       <div class="flex items-center p-2">
         <div class="hidden md:block">
-          <UserAccountMenu.menu id="user-account-menu" ctx={@ctx} section={@section} />
+          <UserAccount.menu
+            id="user-account-menu"
+            ctx={@ctx}
+            section={@section}
+            is_system_admin={@is_system_admin}
+          />
         </div>
         <button
           class="block md:hidden py-1.5 px-3 rounded border border-transparent hover:border-gray-300 active:bg-gray-100"
-          phx-click={toggle_collapsed_nav()}
+          phx-click={toggle_class(%JS{}, "hidden", to: "#nav-menu")}
         >
           <i class="fa-solid fa-bars"></i>
         </button>
@@ -72,23 +58,30 @@ defmodule OliWeb.Components.Delivery.Layouts do
     """
   end
 
-  # This is a workaround for toggling the hidden class and having it survive DOM patching.
-  # https://elixirforum.com/t/toggle-classes-with-phoenix-liveview-js/45608/5
-  defp toggle_collapsed_nav(js \\ %JS{}) do
-    js
-    |> JS.remove_class(
-      "hidden",
-      to: "#nav-menu.hidden"
-    )
-    |> JS.add_class(
-      "hidden",
-      to: "#nav-menu:not(.hidden)"
-    )
+  attr(:section, Section, default: nil)
+  attr(:project, Project, default: nil)
+  attr(:preview_mode, :boolean)
+
+  def title(assigns) do
+    ~H"""
+    <div :if={@section} class="hidden md:block">
+      <span class="text-2xl text-bold">
+        <%= @section.title %><%= if @preview_mode, do: " (Preview Mode)" %>
+      </span>
+    </div>
+    <div :if={@project} class="hidden md:block">
+      <span class="text-2xl text-bold">
+        <%= @project.title %>
+      </span>
+    </div>
+    """
   end
 
   attr(:ctx, SessionContext)
-  attr(:section, Section)
+  attr(:is_system_admin, :boolean, required: true)
+  attr(:section, Section, default: nil)
   attr(:active_tab, :atom)
+  attr(:preview_mode, :boolean)
 
   def sidebar_nav(assigns) do
     ~H"""
@@ -110,33 +103,39 @@ defmodule OliWeb.Components.Delivery.Layouts do
         dark:bg-delivery-navbar-dark
       "
     >
-      <.nav_link href={~p"/ng23/sections/#{@section.slug}"} is_active={@active_tab == :index}>
+      <.nav_link href={path_for(:index, @section, @preview_mode)} is_active={@active_tab == :index}>
         Home
       </.nav_link>
       <.nav_link
-        href={~p"/ng23/sections/#{@section.slug}/content"}
+        href={path_for(:content, @section, @preview_mode)}
         is_active={@active_tab == :content}
       >
         Content
       </.nav_link>
 
       <.nav_link
-        href={~p"/ng23/sections/#{@section.slug}/discussions"}
+        href={path_for(:discussions, @section, @preview_mode)}
         is_active={@active_tab == :discussions}
       >
         Discussions
       </.nav_link>
       <.nav_link
-        href={~p"/ng23/sections/#{@section.slug}/assignments"}
+        href={path_for(:assignments, @section, @preview_mode)}
         is_active={@active_tab == :assignments}
       >
         Assignments
       </.nav_link>
       <.nav_link
-        href={~p"/ng23/sections/#{@section.slug}/explorations"}
+        href={path_for(:explorations, @section, @preview_mode)}
         is_active={@active_tab == :explorations}
       >
         Explorations
+      </.nav_link>
+      <.nav_link
+        href={path_for(:practice, @section, @preview_mode)}
+        is_active={@active_tab == :practice}
+      >
+        Practice
       </.nav_link>
 
       <div class="hidden md:flex w-full px-6 py-4 text-center mt-auto">
@@ -149,11 +148,88 @@ defmodule OliWeb.Components.Delivery.Layouts do
         </div>
 
         <div class="px-6 py-4">
-          <UserAccountMenu.menu id="user-account-menu-sidebar" ctx={@ctx} section={@section} />
+          <UserAccount.menu
+            id="user-account-menu-sidebar"
+            ctx={@ctx}
+            is_system_admin={@is_system_admin}
+            section={@section}
+          />
         </div>
       </div>
     </nav>
     """
+  end
+
+  defp path_for(:index, %Section{slug: section_slug}, preview_mode) do
+    if preview_mode do
+      ~p"/sections/#{section_slug}/preview"
+    else
+      ~p"/sections/#{section_slug}"
+    end
+  end
+
+  defp path_for(:index, _section, _preview_mode) do
+    "#"
+  end
+
+  defp path_for(:content, %Section{slug: section_slug}, preview_mode) do
+    if preview_mode do
+      ~p"/sections/#{section_slug}/preview/content"
+    else
+      ~p"/sections/#{section_slug}/content"
+    end
+  end
+
+  defp path_for(:content, _section, _preview_mode) do
+    "#"
+  end
+
+  defp path_for(:discussions, %Section{slug: section_slug}, preview_mode) do
+    if preview_mode do
+      ~p"/sections/#{section_slug}/preview/discussions"
+    else
+      ~p"/sections/#{section_slug}/discussions"
+    end
+  end
+
+  defp path_for(:discussions, _section, _preview_mode) do
+    "#"
+  end
+
+  defp path_for(:assignments, %Section{slug: section_slug}, preview_mode) do
+    if preview_mode do
+      ~p"/sections/#{section_slug}/preview/assignments"
+    else
+      ~p"/sections/#{section_slug}/assignments"
+    end
+  end
+
+  defp path_for(:assignments, _section, _preview_mode) do
+    "#"
+  end
+
+  defp path_for(:explorations, %Section{slug: section_slug}, preview_mode) do
+    if preview_mode do
+      ~p"/sections/#{section_slug}/preview/explorations"
+    else
+      ~p"/sections/#{section_slug}/explorations"
+    end
+  end
+
+  defp path_for(:explorations, _section, _preview_mode) do
+    "#"
+  end
+
+  defp path_for(:practice, %Section{slug: section_slug}, preview_mode) do
+    if preview_mode do
+      ~p"/sections/#{section_slug}/preview/practice"
+    else
+      ~p"/sections/#{section_slug}/practice"
+    end
+  end
+
+  defp path_for(:practice, _section, _preview_mode) do
+    "#"
   end
 
   attr :href, :string, required: true
@@ -239,9 +315,9 @@ defmodule OliWeb.Components.Delivery.Layouts do
     end
   end
 
-  def logo_link_path(is_preview_mode, section, user) do
+  defp logo_link_path(preview_mode, section, user) do
     cond do
-      is_preview_mode ->
+      preview_mode ->
         "#"
 
       is_open_and_free_section?(section) or is_independent_learner?(user) ->
@@ -252,23 +328,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
     end
   end
 
-  defp is_open_and_free_section?(section) do
-    case section do
-      %Section{open_and_free: open_and_free} ->
-        open_and_free
-
-      _ ->
-        false
-    end
-  end
-
-  defp is_independent_learner?(current_user) do
-    case current_user do
-      %User{independent_learner: independent_learner} ->
-        independent_learner
-
-      _ ->
-        false
-    end
-  end
+  def show_collab_space?(nil), do: false
+  def show_collab_space?(%CollabSpaceConfig{status: :disabled}), do: false
+  def show_collab_space?(_), do: true
 end

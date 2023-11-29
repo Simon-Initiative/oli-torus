@@ -1,8 +1,6 @@
 defmodule OliWeb.Delivery.Student.DiscussionsLive do
   use OliWeb, :live_view
 
-  import OliWeb.Components.Delivery.Layouts
-
   alias Oli.Resources.Collaboration
   alias Oli.Resources.Collaboration.Post
   alias OliWeb.Common.FormatDateTime
@@ -75,7 +73,8 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
             socket.assigns.section.root_section_resource_id
           ),
         post_params: @default_post_params,
-        more_posts_exist?: more_posts_exist?
+        more_posts_exist?: more_posts_exist?,
+        active_tab: :discussions
       )
       |> assign_new_discussion_form()
     }
@@ -345,113 +344,105 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
 
   def render(assigns) do
     ~H"""
-    <.header_with_sidebar_nav
-      ctx={@ctx}
-      section={@section}
-      brand={@brand}
-      preview_mode={@preview_mode}
-      active_tab={:discussions}
-    >
-      <div phx-hook="TextareaListener" id="modal_wrapper">
-        <Modal.modal
-          class="w-1/2"
-          on_cancel={JS.push("reset_discussion_modal")}
-          id={"new-discussion-modal-#{@new_discussion_form_uuid}"}
-        >
-          <:title>New Discussion</:title>
-          <.form
-            for={@new_discussion_form}
-            phx-submit={
-              JS.push("create_new_discussion")
-              |> Modal.hide_modal("new-discussion-modal-#{@new_discussion_form_uuid}")
-              |> JS.push("reset_discussion_modal")
-            }
-          >
-            <.input type="hidden" field={@new_discussion_form[:user_id]} />
-            <.input type="hidden" field={@new_discussion_form[:section_id]} />
-            <.input type="hidden" field={@new_discussion_form[:resource_id]} />
-            <.input type="hidden" field={@new_discussion_form[:parent_post_id]} />
-            <.input type="hidden" field={@new_discussion_form[:thread_root_id]} />
-            <.input type="hidden" field={@new_discussion_form[:status]} />
-
-            <.inputs_for :let={post_content} field={@new_discussion_form[:content]}>
-              <.input
-                type="textarea"
-                field={post_content[:message]}
-                autocomplete="off"
-                placeholder="Start a discussion..."
-                data-grow="true"
-                data-initial-height={44}
-                onkeyup="resizeTextArea(this)"
-                class="torus-input border-r-0 collab-space__textarea"
-              />
-            </.inputs_for>
-
-            <div class="flex items-center justify-end">
-              <.button
-                phx-click={
-                  Modal.hide_modal("new-discussion-modal-#{@new_discussion_form_uuid}")
-                  |> JS.push("reset_discussion_modal")
-                }
-                type="button"
-                class="bg-transparent text-blue-500 hover:underline hover:bg-transparent"
-              >
-                Cancel
-              </.button>
-              <%= if @course_collab_space_config.anonymous_posting do %>
-                <div class="hidden">
-                  <.input
-                    type="checkbox"
-                    id="new_discussion_anonymous_checkbox"
-                    field={@new_discussion_form[:anonymous]}
-                  />
-                </div>
-                <Buttons.button_with_options
-                  id="create_post_button"
-                  type="submit"
-                  options={[
-                    %{
-                      text: "Post anonymously",
-                      on_click:
-                        JS.dispatch("click", to: "#new_discussion_anonymous_checkbox")
-                        |> JS.dispatch("click", to: "#create_post_button_button")
-                    }
-                  ]}
-                >
-                  Create Post
-                </Buttons.button_with_options>
-              <% else %>
-                <Buttons.button type="submit">
-                  Create Post
-                </Buttons.button>
-              <% end %>
-            </div>
-          </.form>
-        </Modal.modal>
-      </div>
-      <div
-        id="discussions_header"
-        class="relative flex items-center h-[184px] w-full bg-gray-100 dark:bg-[#0B0C11]"
+    <div phx-hook="TextareaListener" id="modal_wrapper">
+      <Modal.modal
+        class="w-1/2"
+        on_cancel={JS.push("reset_discussion_modal")}
+        id={"new-discussion-modal-#{@new_discussion_form_uuid}"}
       >
-        <div class="absolute w-full h-full top-0 left-0 bg-[linear-gradient(90deg,#D9D9D9_0%,rgba(217,217,217,0.00)_100%)]" />
-        <h1 class="pl-[100px] text-[64px] tracking-[0.02px] leading-[87px] dark:text-white z-10">
-          Discussions
-        </h1>
-      </div>
-      <div id="disussions_content" class="flex flex-col p-6 gap-6 items-start">
-        <.posts_section
-          posts={@posts}
-          ctx={@ctx}
-          section_slug={@section.slug}
-          expanded_posts={@expanded_posts}
-          current_user_id={@current_user.id}
-          course_collab_space_config={@course_collab_space_config}
-          new_discussion_form_uuid={@new_discussion_form_uuid}
-          post_params={@post_params}
-          more_posts_exist?={@more_posts_exist?}
-        />
-      </div>
-    </.header_with_sidebar_nav>
+        <:title>New Discussion</:title>
+        <.form
+          for={@new_discussion_form}
+          phx-submit={
+            JS.push("create_new_discussion")
+            |> Modal.hide_modal("new-discussion-modal-#{@new_discussion_form_uuid}")
+            |> JS.push("reset_discussion_modal")
+          }
+        >
+          <.input type="hidden" field={@new_discussion_form[:user_id]} />
+          <.input type="hidden" field={@new_discussion_form[:section_id]} />
+          <.input type="hidden" field={@new_discussion_form[:resource_id]} />
+          <.input type="hidden" field={@new_discussion_form[:parent_post_id]} />
+          <.input type="hidden" field={@new_discussion_form[:thread_root_id]} />
+          <.input type="hidden" field={@new_discussion_form[:status]} />
+
+          <.inputs_for :let={post_content} field={@new_discussion_form[:content]}>
+            <.input
+              type="textarea"
+              field={post_content[:message]}
+              autocomplete="off"
+              placeholder="Start a discussion..."
+              data-grow="true"
+              data-initial-height={44}
+              onkeyup="resizeTextArea(this)"
+              class="torus-input border-r-0 collab-space__textarea"
+            />
+          </.inputs_for>
+
+          <div class="flex items-center justify-end">
+            <.button
+              phx-click={
+                Modal.hide_modal("new-discussion-modal-#{@new_discussion_form_uuid}")
+                |> JS.push("reset_discussion_modal")
+              }
+              type="button"
+              class="bg-transparent text-blue-500 hover:underline hover:bg-transparent"
+            >
+              Cancel
+            </.button>
+            <%= if @course_collab_space_config.anonymous_posting do %>
+              <div class="hidden">
+                <.input
+                  type="checkbox"
+                  id="new_discussion_anonymous_checkbox"
+                  field={@new_discussion_form[:anonymous]}
+                />
+              </div>
+              <Buttons.button_with_options
+                id="create_post_button"
+                type="submit"
+                options={[
+                  %{
+                    text: "Post anonymously",
+                    on_click:
+                      JS.dispatch("click", to: "#new_discussion_anonymous_checkbox")
+                      |> JS.dispatch("click", to: "#create_post_button_button")
+                  }
+                ]}
+              >
+                Create Post
+              </Buttons.button_with_options>
+            <% else %>
+              <Buttons.button type="submit">
+                Create Post
+              </Buttons.button>
+            <% end %>
+          </div>
+        </.form>
+      </Modal.modal>
+    </div>
+    <div
+      id="discussions_header"
+      class="relative flex items-center h-[184px] w-full bg-gray-100 dark:bg-[#0B0C11]"
+    >
+      <div class="absolute w-full h-full top-0 left-0 bg-[linear-gradient(90deg,#D9D9D9_0%,rgba(217,217,217,0.00)_100%)]" />
+      <h1 class="pl-[100px] text-[64px] tracking-[0.02px] leading-[87px] dark:text-white z-10">
+        Discussions
+      </h1>
+    </div>
+    <div id="disussions_content" class="flex flex-col p-6 gap-6 items-start">
+      <.posts_section
+        posts={@posts}
+        ctx={@ctx}
+        section_slug={@section.slug}
+        expanded_posts={@expanded_posts}
+        current_user_id={@current_user.id}
+        course_collab_space_config={@course_collab_space_config}
+        new_discussion_form_uuid={@new_discussion_form_uuid}
+        post_params={@post_params}
+        more_posts_exist?={@more_posts_exist?}
+      />
+    </div>
     """
   end
 

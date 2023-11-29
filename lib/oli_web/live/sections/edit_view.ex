@@ -29,7 +29,7 @@ defmodule OliWeb.Sections.EditView do
     previous ++
       [
         Breadcrumb.new(%{
-          full_title: "Edit Section",
+          full_title: "Edit Section Details",
           link: Routes.live_path(OliWeb.Endpoint, __MODULE__, section.slug)
         })
       ]

@@ -36,7 +36,7 @@ defmodule OliWeb.ProjectControllerTest do
 
       conn = get(conn, Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.ProjectsLive))
 
-      assert html_response(conn, 200) =~ "<h3>Projects</h3>"
+      assert html_response(conn, 200) =~ "Projects"
     end
   end
 

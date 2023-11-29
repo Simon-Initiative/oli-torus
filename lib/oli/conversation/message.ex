@@ -1,15 +1,19 @@
 defmodule Oli.Conversation.Message do
+  import Oli.Conversation.Common
+
   @derive Jason.Encoder
   defstruct [
     :role,
     :content,
-    :name
+    :name,
+    :token_length
   ]
 
   def new(role, content) do
     %__MODULE__{
       role: role,
-      content: content
+      content: content,
+      token_length: estimate_token_length(content)
     }
   end
 
@@ -17,7 +21,8 @@ defmodule Oli.Conversation.Message do
     %__MODULE__{
       role: role,
       content: content,
-      name: name
+      name: name,
+      token_length: estimate_token_length(content)
     }
   end
 end
