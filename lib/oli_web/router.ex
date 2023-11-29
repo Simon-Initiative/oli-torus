@@ -380,7 +380,6 @@ defmodule OliWeb.Router do
       ] do
       live("/:project_id/overview", Projects.OverviewLive)
       live("/:project_id", Projects.OverviewLive)
-      live("/:project_id/overview", Projects.OverviewLive)
     end
   end
 

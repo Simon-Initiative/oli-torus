@@ -329,7 +329,7 @@ defmodule OliWeb.Projects.OverviewLive do
         <div :if={@is_admin} class="d-flex align-items-center">
           <%= case @latest_publication do %>
             <% nil -> %>
-              <.button type={:link} disabled>Datashop Analytics</.button>
+              <.button variant={:link} disabled>Datashop Analytics</.button>
               <span>
                 Project must be published to create a <.datashop_link /> snapshot for download
               </span>
