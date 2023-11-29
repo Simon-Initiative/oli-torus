@@ -2,9 +2,17 @@ defmodule Oli.Conversation.Functions do
   import Oli.Conversation.Common
   import Ecto.Query, warn: false
 
+  alias OliWeb.Router.Helpers, as: Routes
+
+  @lookup_table %{
+    "avg_score_for" => "Elixir.Oli.Conversation.Functions.avg_score_for",
+    "up_next" => "Elixir.Oli.Conversation.Functions.up_next",
+    "relevant_course_content" => "Elixir.Oli.Conversation.Functions.relevant_course_content"
+  }
+
   @functions [
     %{
-      name: "Elixir.Oli.Conversation.Functions.up_next",
+      name: "up_next",
       description:
         "Returns the next scheduled lessons in the course as a list of objects with the following keys: title, url, due_date, num_attempts_taken",
       parameters: %{
@@ -23,7 +31,7 @@ defmodule Oli.Conversation.Functions do
       }
     },
     %{
-      name: "Elixir.Oli.Conversation.Functions.avg_score_for",
+      name: "avg_score_for",
       description:
         "Returns average score across all scored assessments, as a floating point number between 0 and 1, for a given user and section",
       parameters: %{
@@ -42,7 +50,7 @@ defmodule Oli.Conversation.Functions do
       }
     },
     %{
-      name: "Elixir.Oli.Conversation.Functions.relevant_course_content",
+      name: "relevant_course_content",
       description: """
       Useful when a question asked by a student cannot be adequately answered by the context of the current lesson.
       Allows the retrieval of relevant course content from other lessons in the course based on the
@@ -70,8 +78,15 @@ defmodule Oli.Conversation.Functions do
   map of arguments, executes that function with the arguments and prepares the returned
   result for sending back to an LLM based agent.
   """
-  def call(name_with_module, arguments_as_map) do
-    case String.split(name_with_module, ".") do
+  def call(name, arguments_as_map) do
+
+    full_name = Map.get(@lookup_table, name)
+
+    if full_name == nil do
+      raise "Invalid function name: #{name}"
+    end
+
+    case String.split(full_name, ".") do
       [module_parts | name] ->
 
         result = Enum.join(module_parts, ".")
@@ -86,7 +101,7 @@ defmodule Oli.Conversation.Functions do
         end
 
       _ ->
-        raise "Invalid function name: #{name_with_module}"
+        raise "Invalid function name: #{full_name}"
     end
   end
 
@@ -148,7 +163,7 @@ defmodule Oli.Conversation.Functions do
       )
 
     query
-    |> Repo.all()
+    |> Oli.Repo.all()
     |> Enum.map(fn page ->
       %{
         title: page.title,

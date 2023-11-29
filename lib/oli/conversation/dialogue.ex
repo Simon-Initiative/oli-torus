@@ -36,6 +36,10 @@ defmodule Oli.Conversation.Dialogue do
           dialogue,
         :async
       ) do
+
+    IO.inspect "ENGAGING"
+    IO.inspect messages
+
     OpenAI.chat_completion(
       [
         model: model,
@@ -108,7 +112,6 @@ defmodule Oli.Conversation.Dialogue do
         %{dialog | messages: messages}
 
       _e ->
-        IO.inspect("Failed to summarize")
         dialog
     end
   end

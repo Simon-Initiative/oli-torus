@@ -1,12 +1,10 @@
-defmodule OliWeb.Dialogue.PlaygroundLive do
+defmodule OliWeb.Dialogue.WindowLive do
   use Phoenix.LiveView, layout: {OliWeb.LayoutView, :live_no_flash}
   use Phoenix.HTML
   import Ecto.Query, warn: false
 
-  alias Oli.Repo
   import Phoenix.Component
 
-  alias OliWeb.Router.Helpers, as: Routes
   alias Oli.Conversation.Dialogue
   alias OliWeb.Dialogue.UserInput
   alias Oli.Conversation.Message
@@ -68,7 +66,7 @@ defmodule OliWeb.Dialogue.PlaygroundLive do
        allow_submission?: true,
        active_message: nil,
        function_call: nil,
-       title: "Dialogue Playground"
+       title: "Dot"
      )}
   end
 
@@ -199,87 +197,6 @@ defmodule OliWeb.Dialogue.PlaygroundLive do
     {:noreply, assign(socket, streaming: true, dialogue: dialogue, allow_submission?: false)}
   end
 
-  def handle_info({:reply_chunk, type, content}, socket) do
-    case type do
-      :function_call ->
-        case socket.assigns.function_call do
-          nil ->
-            {:noreply, assign(socket, function_call: content)}
-
-          fc ->
-            updated =
-              Map.keys(content)
-              |> Enum.reduce(fc, fn key, acc ->
-                case Map.get(acc, key) do
-                  nil -> Map.put(acc, key, content[key])
-                  current_value -> Map.put(acc, key, "#{current_value}#{content[key]}")
-                end
-              end)
-
-            {:noreply, assign(socket, function_call: updated)}
-        end
-
-      :content ->
-        {:noreply, assign(socket, active_message: "#{socket.assigns.active_message}#{content}")}
-    end
-  end
-
-  def handle_info({:summarization_finished, dialogue}, socket) do
-    {:noreply, assign(socket, dialogue: dialogue, allow_submission?: true)}
-  end
-
-  def handle_info({:reply_finished}, socket) do
-    case socket.assigns.function_call do
-      nil ->
-        message = Earmark.as_html!(socket.assigns.active_message)
-        dialogue = Dialogue.add_message(socket.assigns.dialogue, Message.new(:assistant, message))
-
-        allow_submission? =
-          if Dialogue.should_summarize?(dialogue) do
-            pid = self()
-
-            Task.async(fn ->
-              dialogue = Dialogue.summarize(dialogue)
-              send(pid, {:summarization_finished, dialogue})
-            end)
-
-            false
-          else
-            true
-          end
-
-        {:noreply,
-         assign(socket,
-           dialogue: dialogue,
-           streaming: false,
-           active_message: nil,
-           allow_submission?: allow_submission?
-         )}
-
-      fc ->
-
-        result = Oli.Conversation.Functions.call(fc["name"], Jason.decode!(fc["arguments"]))
-
-        dialogue =
-          Dialogue.add_message(
-            socket.assigns.dialogue,
-            Message.new(:function, result, fc["name"])
-          )
-
-        pid = self()
-
-        Task.async(fn ->
-          Dialogue.engage(dialogue, :async)
-          send(pid, {:reply_finished})
-        end)
-
-        {:noreply, assign(socket, dialogue: dialogue, function_call: nil)}
-    end
-  end
-
-  def handle_info(_, socket) do
-    {:noreply, socket}
-  end
-
+  use Oli.Conversation.DialogueHandler
 
 end

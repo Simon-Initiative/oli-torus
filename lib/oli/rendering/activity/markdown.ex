@@ -10,7 +10,7 @@ defmodule Oli.Rendering.Activity.Markdown do
 
   def activity(
         context,
-        %{"activity_id" => activity_id} = activity
+        %{"activity_id" => activity_id}
       ) do
 
     model = Map.get(context.activity_map, activity_id, %{unencoded_model: %{}})

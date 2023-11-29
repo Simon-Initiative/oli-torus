@@ -121,7 +121,7 @@
     </div>
   <% end %>
 
-  <%= live_render(@conn, OliWeb.Dialogue.PlaygroundLive,
+  <%= live_render(@conn, OliWeb.Dialogue.WindowLive,
     session: %{"section_slug" => @section_slug, "revision_id" => @page.id}
   ) %>
   <%= if @review_mode == true do %>
