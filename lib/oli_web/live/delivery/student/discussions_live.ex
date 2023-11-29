@@ -619,6 +619,9 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
             current_user_id={@current_user_id}
           />
         <% end %>
+        <div :if={@posts == []} class="flex p-4 text-center w-full">
+          There are no discussions to show.
+        </div>
         <div class="flex w-full justify-end">
           <button
             :if={@more_posts_exist?}
