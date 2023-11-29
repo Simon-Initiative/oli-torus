@@ -20,11 +20,6 @@ defmodule OliWeb.Delivery.PracticeActivities.PracticeAssessmentsTableModel do
         th_class: "pl-10"
       },
       %ColumnSpec{
-        name: :due_date,
-        label: "DUE DATE",
-        render_fn: &__MODULE__.render_due_date_column/3
-      },
-      %ColumnSpec{
         name: :avg_score,
         label: "AVG SCORE",
         render_fn: &__MODULE__.render_avg_score_column/3
@@ -89,18 +84,6 @@ defmodule OliWeb.Delivery.PracticeActivities.PracticeAssessmentsTableModel do
     """
   end
 
-  def render_due_date_column(assigns, assessment, _) do
-    assigns =
-      Map.merge(assigns, %{
-        due_date: assessment.end_date,
-        scheduling_type: assessment.scheduling_type
-      })
-
-    ~H"""
-    <%= parse_due_date(@due_date, @ctx, @scheduling_type) %>
-    """
-  end
-
   def render_avg_score_column(assigns, assessment, _) do
     assigns = Map.merge(assigns, %{avg_score: assessment.avg_score})
 
@@ -136,14 +119,6 @@ defmodule OliWeb.Delivery.PracticeActivities.PracticeAssessmentsTableModel do
     <% end %>
     """
   end
-
-  defp parse_due_date(datetime, ctx, :due_by) do
-    datetime
-    |> FormatDateTime.convert_datetime(ctx)
-    |> Timex.format!("{Mshort}. {0D}, {YYYY} - {h12}:{m} {AM}")
-  end
-
-  defp parse_due_date(_datetime, _ctx, _scheduling_type), do: "No due date"
 
   defp format_value(nil), do: "-"
   defp format_value(value), do: "#{parse_percentage(value)}%"
