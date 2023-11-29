@@ -1061,15 +1061,16 @@ defmodule Oli.Resources.Collaboration do
   end
 
   defp read_posts(post_ids, user_id) do
-    Repo.transaction(fn ->
-      Enum.each(post_ids, fn post_id ->
-        %UserReadPost{}
-        |> UserReadPost.changeset(%{post_id: post_id, user_id: user_id})
-        |> Repo.insert(
-          on_conflict: {:replace, [:updated_at]},
-          conflict_target: [:post_id, :user_id]
-        )
-      end)
+    now = DateTime.utc_now(:second)
+
+    Enum.map(post_ids, fn post_id ->
+      %{post_id: post_id, user_id: user_id, inserted_at: now, updated_at: now}
+    end)
+    |> then(fn posts ->
+      Repo.insert_all(UserReadPost, posts,
+        on_conflict: {:replace, [:updated_at]},
+        conflict_target: [:post_id, :user_id]
+      )
     end)
   end
 end
