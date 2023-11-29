@@ -9,7 +9,10 @@ const tailwindColors = require('tailwindcss/colors');
  */
 const colors = {
   ...tailwindColors,
-  gray: tailwindColors.neutral,
+  gray: {
+    ...tailwindColors.neutral,
+    850: '#1E1E1E',
+  },
   blue: {
     DEFAULT: '#3B76D3',
     50: '#D1DFF5',
