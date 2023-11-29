@@ -1,5 +1,4 @@
 defmodule OliWeb.Delivery.Student.DiscussionsLive do
-  alias Cachex.Actions.Load
   use OliWeb, :live_view
 
   import OliWeb.Components.Delivery.Layouts
