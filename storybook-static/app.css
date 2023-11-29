@@ -1149,8 +1149,8 @@ select {
   --color-delivery-hints-bg-dark: #404040;
   --color-delivery-hints-border: #e5e5e5;
   --color-delivery-hints-border-dark: #525252;
-  --color-delivery-purpose-label-bg: #222439;
-  --color-delivery-purpose-label-bg-dark: #525252;
+  --color-delivery-purpose-label-bg: #ddd;
+  --color-delivery-purpose-label-bg-dark: #404040;
   --screen-sm: 640px;
   --screen-md: 768px;
   --screen-lg: 1024px;
