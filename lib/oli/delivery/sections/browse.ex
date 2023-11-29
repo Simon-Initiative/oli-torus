@@ -77,6 +77,11 @@ defmodule Oli.Delivery.Sections.Browse do
         do: true,
         else: dynamic([s, _], s.blueprint_id == ^options.blueprint_id)
 
+    filter_by_project =
+      if is_nil(options.project_id),
+        do: true,
+        else: dynamic([s, _], s.base_project_id == ^options.project_id)
+
     instructor_role_id = ContextRoles.get_role(:context_instructor).id
 
     instructor =
@@ -109,6 +114,7 @@ defmodule Oli.Delivery.Sections.Browse do
       |> where(^filter_by_text)
       |> where(^filter_by_institution)
       |> where(^filter_by_blueprint)
+      |> where(^filter_by_project)
       |> limit(^limit)
       |> offset(^offset)
       |> preload([:institution, :base_project, :blueprint])

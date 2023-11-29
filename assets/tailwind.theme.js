@@ -197,9 +197,9 @@ module.exports = {
       purpose: {
         label: {
           bg: {
-            DEFAULT: '#222439',
+            DEFAULT: '#ddd',
             dark: {
-              DEFAULT: colors.gray['600'],
+              DEFAULT: '#404040',
             },
           },
         },

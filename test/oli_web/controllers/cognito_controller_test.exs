@@ -639,7 +639,7 @@ defmodule OliWeb.CognitoControllerTest do
                "Would you like to\n<a href=\"/cognito/clone/#{project.slug}\">create another copy</a>"
 
       assert html =~
-               "<a href=\"/authoring/project/#{duplicated.slug}/overview\">#{duplicated.title}</a>"
+               "<a href=\"/authoring/project/#{duplicated.slug}\">#{duplicated.title}</a>"
     end
   end
 

@@ -433,7 +433,6 @@ defmodule Oli.Delivery.Sections.Blueprint do
       |> where(^filter_by_status)
       |> limit(^limit)
       |> offset(^offset)
-      |> order_by([p, _, _, _], {^direction, field(p, ^field)})
       |> select([s, _bp], %{s | total_count: fragment("count(*) OVER()")})
 
     query =

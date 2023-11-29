@@ -72,7 +72,6 @@ defmodule OliWeb.Sections.GatingAndSchedulingTest do
       assert html =~ "Gating and Scheduling"
     end
 
-    @tag :skip
     test "renders ok description", %{conn: conn, section_1: section} do
       {:ok, view, _html} =
         live(conn, Routes.live_path(@endpoint, OliWeb.Sections.GatingAndScheduling, section.slug))

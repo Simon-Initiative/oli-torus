@@ -214,6 +214,14 @@ config :logger, :console,
   format: "$time $metadata[$level] $message\n",
   metadata: [:request_id]
 
+case System.get_env("LOG_LEVEL", nil) do
+  nil ->
+    nil
+
+  log_level ->
+    config :logger, level: String.to_existing_atom(log_level)
+end
+
 # Use Jason for JSON parsing in Phoenix
 config :phoenix, :json_library, Jason
 
@@ -287,6 +295,9 @@ config :tailwind,
 config :ex_cldr,
   default_locale: "en",
   default_backend: Oli.Cldr
+
+config :oli, :datashop,
+  cache_limit: String.to_integer(System.get_env("DATASHOP_CACHE_LIMIT", "200"))
 
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.

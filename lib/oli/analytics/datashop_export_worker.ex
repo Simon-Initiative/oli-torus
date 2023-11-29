@@ -13,9 +13,11 @@ defmodule Oli.Analytics.DatashopExportWorker do
   alias Oli.Authoring.Course
 
   @impl Oban.Worker
-  def perform(%Oban.Job{args: %{"project_slug" => project_slug} = _args}) do
+  def perform(%Oban.Job{
+        args: %{"project_slug" => project_slug, "section_ids" => section_ids} = _args
+      }) do
     try do
-      {full_upload_url, timestamp} = generate(project_slug)
+      {full_upload_url, timestamp} = generate(project_slug, section_ids)
 
       # notify subscribers that the export is available
       Broadcaster.broadcast_datashop_export_status(
@@ -48,7 +50,7 @@ defmodule Oli.Analytics.DatashopExportWorker do
     Path.join(["datashop", project.slug, random_string, filename])
   end
 
-  def generate(project_slug) do
+  def generate(project_slug, section_ids) do
     Logger.info("Generating datashop export for project #{project_slug}")
 
     project = Course.get_project_by_slug(project_slug)
@@ -57,45 +59,13 @@ defmodule Oli.Analytics.DatashopExportWorker do
 
     datashop_snapshot_path = build_filename(project)
 
-    first_chunk = Datashop.content_prefix()
-    last_chunk = Datashop.content_suffix()
-
-    total = min(Datashop.count(project.id), Datashop.max_record_size())
-
     {:ok, result} =
       Oli.Repo.transaction(fn ->
         Oli.Utils.use_tmp(fn tmp_dir ->
           temp_file_name =
             Path.join([tmp_dir, "datashop_#{project_slug}_#{Oli.Utils.random_string(16)}.xml"])
 
-          Datashop.build_context(project.id)
-          |> Datashop.content_stream()
-          |> Stream.with_index(1)
-          |> Stream.map(fn {chunk, index} ->
-            Logger.info(
-              "Streaming chunk #{index} of #{total} chunks for Datashop export for project #{project_slug}"
-            )
-
-            chunk = chunk |> XmlBuilder.generate()
-
-            chunk =
-              if index == 1 do
-                first_chunk <> chunk
-              else
-                chunk
-              end
-
-            chunk =
-              if index == total do
-                chunk <> last_chunk
-              else
-                chunk
-              end
-
-            chunk
-          end)
-          |> Stream.into(File.stream!(temp_file_name))
-          |> Stream.run()
+          write_to_file(temp_file_name, project, section_ids)
 
           Logger.info("Wrote Datashop file #{temp_file_name} for project #{project_slug}")
 
@@ -118,5 +88,48 @@ defmodule Oli.Analytics.DatashopExportWorker do
       end)
 
     result
+  end
+
+  defp write_to_file(temp_file_name, project, section_ids) do
+    first_chunk = Datashop.content_prefix()
+    last_chunk = Datashop.content_suffix()
+
+    batch_size = Datashop.max_record_size()
+    total = Datashop.count(section_ids)
+    batch_count = ceil(total / batch_size)
+
+    context = Datashop.build_context(project.id, section_ids)
+
+    if batch_count != 0 do
+      Enum.reduce(1..batch_count, 0, fn batch_index, offset ->
+        # notify subscribers that a new batch has started
+        Broadcaster.broadcast_datashop_export_batch_started(
+          project.slug,
+          batch_index,
+          batch_count
+        )
+
+        context
+        |> Datashop.content_stream(offset, batch_size)
+        |> Stream.with_index(offset + 1)
+        |> Stream.map(fn {chunk, index} ->
+          Logger.info(
+            "Streaming chunk #{index} of #{total} chunks for Datashop export for project #{project.slug}"
+          )
+
+          chunk = XmlBuilder.generate(chunk)
+
+          case index do
+            1 -> first_chunk <> chunk
+            ^total -> chunk <> last_chunk
+            _ -> chunk
+          end
+        end)
+        |> Stream.into(File.stream!(temp_file_name, [:append]))
+        |> Stream.run()
+
+        offset + batch_size
+      end)
+    end
   end
 end
