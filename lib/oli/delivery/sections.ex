@@ -1351,6 +1351,25 @@ defmodule Oli.Delivery.Sections do
     end)
   end
 
+  @doc """
+  Returns the resource_to_container map for the given section,
+  that maps all resources ids to their parent container id.
+  If the section does not have a precomputed resource_to_container_map, one will be generated.
+
+  ## Examples
+      iex> get_resource_to_container_map(section)
+      %{
+        "21" => 39,
+        "22" => 40,
+        "23" => 42,
+        "24" => 42,
+        "25" => 42,
+        "26" => 42,
+        "27" => 42,
+        "28" => 43,
+      }
+  """
+
   def get_resource_to_container_map(section) do
     case section do
       %Section{resource_to_container_map: nil} ->
@@ -1561,7 +1580,29 @@ defmodule Oli.Delivery.Sections do
     |> Enum.reverse()
   end
 
-  defp fetch_ordered_containers(section_slug) do
+  @doc """
+  Returns a map of all containers numbering index and title for the given section,
+  ordered in the way they appear in the course, considering the customizations that
+  could be configured to containers (ex, naming SubModules to Sections)
+
+  ## Examples
+      iex> get_ordered_containers(section_slug)
+      %{
+        4 => "Section 1: Curriculum",
+        39 => "Module 1: Setup",
+        40 => "Module 2: Phoenix project",
+        41 => "Unit 1: Getting Started",
+        42 => "Module 3: Types",
+        43 => "Module 4: Enum",
+        44 => "Unit 2: Basics",
+        45 => "Module 5: OTP",
+        46 => "Module 6: GenServers",
+        47 => "Unit 3: Advanced",
+        48 => "Unit 4: Final"
+      }
+  """
+
+  def fetch_ordered_containers(section_slug) do
     container_type_id = Oli.Resources.ResourceType.get_id_by_type("container")
 
     SectionResource
