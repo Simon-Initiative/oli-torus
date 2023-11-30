@@ -2231,7 +2231,26 @@ defmodule Oli.Delivery.Sections do
   end
 
   @doc """
-  Rebuilds the full_hierachy field for a course section,
+  Rebuilds the full_hierarchy index for a course section. If a full hierarchy is not
+  available, one will be generated. Otherwise, the existing full hierarchy will be
+  returned.
+  """
+  def get_full_hierarchy(%Section{full_hierarchy: nil} = section) do
+    Logger.warning(
+      "Section #{section.slug} has no precomputed full_hierarchy. One will be generated now."
+    )
+
+    {:ok, section} = rebuild_full_hierarchy(section, false)
+
+    section.full_hierarchy
+  end
+
+  def get_full_hierarchy(%Section{full_hierarchy: full_hierarchy}) do
+    full_hierarchy
+  end
+
+  @doc """
+  Rebuilds the full_hierarchy field for a course section,
   needed as "cache" data for student's content view (OliWeb.Delivery.Student.ContentLive).
   The full hierarchy represents the main structure in which a course curriculum is organized
   to be delivered (see Oli.Delivery.Hierarchy)
@@ -2254,7 +2273,7 @@ defmodule Oli.Delivery.Sections do
 
   @doc """
   Rebuilds the "contained pages" relations for a course section.  A "contained page" for a
-  container is the full set of pages found immeidately within that container or in any of
+  container is the full set of pages found immediately within that container or in any of
   its sub-containers.  For every container in a course section, one row will exist in this
   "contained pages" table for each contained page.  This allows a straightforward join through
   this relation from a container to then all of its contained pages - to power calculations like

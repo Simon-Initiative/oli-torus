@@ -45,8 +45,7 @@ if config_env() == :prod do
     pool_size: String.to_integer(System.get_env("POOL_SIZE") || "10"),
     timeout: 600_000,
     ownership_timeout: 600_000,
-    socket_options: maybe_ipv6,
-    ssl: get_env_as_boolean.("DATABASE_SSL", "false")
+    socket_options: maybe_ipv6
 
   config :ex_aws, :s3,
     region: System.get_env("AWS_REGION", "us-east-1"),
