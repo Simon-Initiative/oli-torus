@@ -2,7 +2,6 @@ defmodule OliWeb.Delivery.PracticeActivities.PracticeAssessmentsTableModel do
   use Phoenix.Component
 
   alias OliWeb.Common.Table.{ColumnSpec, SortableTableModel}
-  alias OliWeb.Common.FormatDateTime
   alias Phoenix.LiveView.JS
 
   def new(assessments, ctx, target) do
