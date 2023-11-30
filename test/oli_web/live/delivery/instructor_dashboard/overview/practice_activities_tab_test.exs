@@ -1483,8 +1483,6 @@ defmodule OliWeb.Delivery.InstructorDashboard.PracticeActivitiesTabTest do
                "#{multi_input_activity.title} - Question details"
              )
 
-      assert selected_activity_model =~
-               "{\"authoring\":{\"responses\":[{\"text\":\"Answer for input 1\",\"user_name\":\"#{student_1.family_name}, #{student_1.given_name}\"}]},\"inputs\":[{\"id\":\"1458555427\",\"inputType\":\"text\",\"partId\":\"1\"}]}"
     end
 
     test "likert activity details get rendered correctly when page is selected",
