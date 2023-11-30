@@ -325,6 +325,7 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
     ~H"""
     <div phx-hook="TextareaListener" id="modal_wrapper">
       <Modal.modal
+        :if={@course_collab_space_config && @course_collab_space_config.status == :enabled}
         class="w-1/2"
         on_cancel={JS.push("reset_discussion_modal")}
         id={"new-discussion-modal-#{@new_discussion_form_uuid}"}
@@ -448,53 +449,62 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
               id="filter-dropdown"
               role="filter"
               button_class="flex items-center gap-[10px] px-[10px] py-[4px] hover:text-gray-400 dark:text-white dark:hover:text-white/50"
-              options={[
-                %{
-                  text: "All",
-                  on_click: JS.push("filter_posts", value: %{filter_by: "all"}),
-                  class:
-                    if(@post_params.filter_by == "all",
-                      do: "font-bold dark:font-extrabold",
-                      else: "dark:font-light"
-                    )
-                },
-                %{
-                  text: "Course Discussions",
-                  on_click: JS.push("filter_posts", value: %{filter_by: "course_discussions"}),
-                  class:
-                    if(@post_params.filter_by == "course_discussions",
-                      do: "font-bold dark:font-extrabold",
-                      else: "dark:font-light"
-                    )
-                },
-                %{
-                  text: "Page Discussions",
-                  on_click: JS.push("filter_posts", value: %{filter_by: "page_discussions"}),
-                  class:
-                    if(@post_params.filter_by == "page_discussions",
-                      do: "font-bold dark:font-extrabold",
-                      else: "dark:font-light"
-                    )
-                },
-                %{
-                  text: "Unread",
-                  on_click: JS.push("filter_posts", value: %{filter_by: "unread"}),
-                  class:
-                    if(@post_params.filter_by == "unread",
-                      do: "font-bold dark:font-extrabold",
-                      else: "dark:font-light"
-                    )
-                },
-                %{
-                  text: "My Activity",
-                  on_click: JS.push("filter_posts", value: %{filter_by: "my_activity"}),
-                  class:
-                    if(@post_params.filter_by == "my_activity",
-                      do: "font-bold dark:font-extrabold",
-                      else: "dark:font-light"
-                    )
-                }
-              ]}
+              options={
+                [
+                  %{
+                    text: "All",
+                    on_click: JS.push("filter_posts", value: %{filter_by: "all"}),
+                    class:
+                      if(@post_params.filter_by == "all",
+                        do: "font-bold dark:font-extrabold",
+                        else: "dark:font-light"
+                      )
+                  }
+                ] ++
+                  if(@course_collab_space_config && @course_collab_space_config.status == :enabled,
+                    do: [
+                      %{
+                        text: "Course Discussions",
+                        on_click: JS.push("filter_posts", value: %{filter_by: "course_discussions"}),
+                        class:
+                          if(@post_params.filter_by == "course_discussions",
+                            do: "font-bold dark:font-extrabold",
+                            else: "dark:font-light"
+                          )
+                      },
+                      %{
+                        text: "Page Discussions",
+                        on_click: JS.push("filter_posts", value: %{filter_by: "page_discussions"}),
+                        class:
+                          if(@post_params.filter_by == "page_discussions",
+                            do: "font-bold dark:font-extrabold",
+                            else: "dark:font-light"
+                          )
+                      }
+                    ],
+                    else: []
+                  ) ++
+                  [
+                    %{
+                      text: "Unread",
+                      on_click: JS.push("filter_posts", value: %{filter_by: "unread"}),
+                      class:
+                        if(@post_params.filter_by == "unread",
+                          do: "font-bold dark:font-extrabold",
+                          else: "dark:font-light"
+                        )
+                    },
+                    %{
+                      text: "My Activity",
+                      on_click: JS.push("filter_posts", value: %{filter_by: "my_activity"}),
+                      class:
+                        if(@post_params.filter_by == "my_activity",
+                          do: "font-bold dark:font-extrabold",
+                          else: "dark:font-light"
+                        )
+                    }
+                  ]
+              }
             >
               <span class="text-[14px] leading-[20px]">Filter</span>
               <svg
@@ -561,7 +571,7 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
           </div>
 
           <button
-            :if={@course_collab_space_config.status == :enabled}
+            :if={@course_collab_space_config && @course_collab_space_config.status == :enabled}
             role="new discussion"
             phx-click={Modal.show_modal("new-discussion-modal-#{@new_discussion_form_uuid}")}
             class="rounded-[3px] py-[10px] pl-[18px] pr-6 flex justify-center items-center whitespace-nowrap text-[14px] leading-[20px] font-normal text-white bg-[#0F6CF5] hover:bg-blue-600"
@@ -1014,15 +1024,18 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
   end
 
   defp assign_new_discussion_form(socket) do
-    assign(socket,
-      new_discussion_form_uuid: UUID.uuid4(),
-      new_discussion_form:
-        new_discussion_form(
-          socket.assigns.current_user.id,
-          socket.assigns.section.id,
-          socket.assigns.course_collab_space_config
-        )
-    )
+    if socket.assigns.course_collab_space_config,
+      do:
+        assign(socket,
+          new_discussion_form_uuid: UUID.uuid4(),
+          new_discussion_form:
+            new_discussion_form(
+              socket.assigns.current_user.id,
+              socket.assigns.section.id,
+              socket.assigns.course_collab_space_config
+            )
+        ),
+      else: assign(socket, new_discussion_form_uuid: nil, new_discussion_form: nil)
   end
 
   defp new_discussion_form(current_user_id, section_id, course_collab_space_config) do
