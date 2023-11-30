@@ -1,4 +1,4 @@
-import { PartResponse } from 'components/activities';
+import { PartResponse, Success } from 'components/activities';
 import * as PageLifecycle from 'data/persistence/page_lifecycle';
 
 /**
@@ -62,6 +62,7 @@ function setButtonContent(id: string | null, content: string, opts?: { error?: b
 interface RequestRetry {
   id: string;
   responses: PartResponse[];
+  fn: () => Promise<Success>;
 }
 
 declare global {

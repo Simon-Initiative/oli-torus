@@ -27,7 +27,7 @@ import { CreateAccountPopup } from 'components/messages/CreateAccountPopup';
 import { commandButtonClicked } from '../components/editing/elements/command_button/commandButtonClicked';
 import { initActivityBridge, initPreviewActivityBridge } from './activity_bridge';
 import { initCountdownTimer, initEndDateTimer } from './countdownTimer';
-import { finalize, queueActivitySaveRetry, removeActivitySaveRetry } from './finalize';
+import { finalize } from './finalize';
 import { showModal } from './modal';
 import { enableSubmitWhenTitleMatches } from './package_delete';
 import { onReady } from './ready';
@@ -94,8 +94,6 @@ window.OLI = {
   finalize,
   initCountdownTimer,
   initEndDateTimer,
-  queueActivitySaveRetry,
-  removeActivitySaveRetry,
   CreateAccountPopup: (node: any, props: any) => mount(CreateAccountPopup, node, props),
 };
 
@@ -186,8 +184,6 @@ declare global {
       initCountdownTimer: typeof initCountdownTimer;
       initEndDateTimer: typeof initEndDateTimer;
       CreateAccountPopup: (node: any, props: any) => void;
-      queueActivitySaveRetry: typeof queueActivitySaveRetry;
-      removeActivitySaveRetry: typeof removeActivitySaveRetry;
     };
     keepAlive: () => void;
   }
