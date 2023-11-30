@@ -1,5 +1,4 @@
 import { useCallback, useState } from 'react';
-import { set } from 'nprogress';
 import { EvaluationResponse, ResetActivityResponse } from './DeliveryElement';
 import { PartResponse, StudentResponse, Success } from './types';
 
