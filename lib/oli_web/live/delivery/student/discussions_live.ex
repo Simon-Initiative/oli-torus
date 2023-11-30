@@ -11,9 +11,9 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
   @default_post_params %{
     sort_by: "date",
     sort_order: :desc,
-    filter_by: "page_discussions",
+    filter_by: "all",
     offset: 0,
-    limit: 10
+    limit: 5
   }
 
   def mount(_params, _session, socket) do
@@ -291,6 +291,14 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
     end
   end
 
+  def handle_info({:discussion_created, _new_post}, socket)
+      when socket.assigns.post_params.filter_by in ["my_activity", "page_discussions"] do
+    # new broadcasted post should not be added to the UI if the user is filtering by "my activity"
+    # since the new post belongs to another user and the current user has not yet interacted/replied to it.
+    # The same applies to "page_discussions" since the new broadcasted posts belong to course discussions.
+    {:noreply, socket}
+  end
+
   def handle_info({:discussion_created, new_post}, socket) do
     {:noreply, assign(socket, :posts, [new_post | socket.assigns.posts])}
   end
@@ -446,6 +454,24 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
                   on_click: JS.push("filter_posts", value: %{filter_by: "all"}),
                   class:
                     if(@post_params.filter_by == "all",
+                      do: "font-bold dark:font-extrabold",
+                      else: "dark:font-light"
+                    )
+                },
+                %{
+                  text: "Course Discussions",
+                  on_click: JS.push("filter_posts", value: %{filter_by: "course_discussions"}),
+                  class:
+                    if(@post_params.filter_by == "course_discussions",
+                      do: "font-bold dark:font-extrabold",
+                      else: "dark:font-light"
+                    )
+                },
+                %{
+                  text: "Page Discussions",
+                  on_click: JS.push("filter_posts", value: %{filter_by: "page_discussions"}),
+                  class:
+                    if(@post_params.filter_by == "page_discussions",
                       do: "font-bold dark:font-extrabold",
                       else: "dark:font-light"
                     )

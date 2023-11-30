@@ -623,6 +623,20 @@ defmodule Oli.Resources.Collaboration do
           |> offset(^offset)
           |> Repo.all()
 
+        "course_discussions" ->
+          main_query
+          |> where([_post, _sr, _spp, _pr, rev, _user], rev.resource_type_id == 2)
+          |> limit(^limit + 1)
+          |> offset(^offset)
+          |> Repo.all()
+
+        "page_discussions" ->
+          main_query
+          |> where([_post, _sr, _spp, _pr, rev, _user], rev.resource_type_id == 1)
+          |> limit(^limit + 1)
+          |> offset(^offset)
+          |> Repo.all()
+
         "unread" ->
           from(
             p in subquery(main_query),
