@@ -392,6 +392,7 @@ const CapiIframeAuthor: React.FC<AuthorPartComponentProps<CapiIframeModel>> = (p
             data-janus-type={tagName}
             src={props.model.src}
             scrolling={props.type?.toLowerCase() === 'janus-capi-iframe' ? 'no' : ''}
+            allow="accelerometer; magnetometer; gyroscope; fullscreen; autoplay; clipboard-write; encrypted-media; xr-spatial-tracking; gamepad;"
           />
         ) : (
           <div className="container h-100">

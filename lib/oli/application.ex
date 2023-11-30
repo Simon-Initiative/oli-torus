@@ -59,6 +59,9 @@ defmodule Oli.Application do
         Oli.AccountLookupCache,
         {Cachex, name: :page_content_cache},
 
+        # Starts Cachex to store datashop export info
+        Oli.DatashopCache,
+
         # a supervisor which can be used to dynamically supervise tasks
         {Task.Supervisor, name: Oli.TaskSupervisor}
       ] ++ maybe_node_js_config()

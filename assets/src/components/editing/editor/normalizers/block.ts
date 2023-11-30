@@ -28,7 +28,14 @@ export const normalize = (
           return true;
         }
 
-        Transforms.unwrapNodes(editor, { at: path });
+        if (parent.type === 'p') {
+          // If we have a block element inside a paragraph, lets try to save the paragraph content
+          // by lifting the block element instead of unwrapping it.
+          Transforms.liftNodes(editor, { at: path });
+        } else {
+          Transforms.unwrapNodes(editor, { at: path });
+        }
+
         console.warn(
           `Normalizing content: Invalid child type for parent ${parent.type} > ${node.type}`,
         );
