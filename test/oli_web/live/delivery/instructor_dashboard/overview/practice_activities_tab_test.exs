@@ -1482,7 +1482,6 @@ defmodule OliWeb.Delivery.InstructorDashboard.PracticeActivitiesTabTest do
                ~s(div[role="activity_title"]),
                "#{multi_input_activity.title} - Question details"
              )
-
     end
 
     test "likert activity details get rendered correctly when page is selected",
