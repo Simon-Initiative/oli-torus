@@ -38,7 +38,6 @@ defmodule Oli.Analytics.Summary.ResponseLabel do
   end
 
   def build(part_attempt, "oli_multi_input") do
-
     case Enum.find(part_attempt.activity_revision.content["inputs"], fn input ->
            input["partId"] == part_attempt.part_id
          end) do

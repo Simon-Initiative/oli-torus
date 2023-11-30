@@ -418,36 +418,36 @@ defmodule Oli.Delivery.Metrics do
         user_ids,
         evaluated_only \\ true
       ) do
+    query =
+      case evaluated_only do
+        true ->
+          from(ra in ResourceAttempt,
+            join: access in ResourceAccess,
+            on: access.id == ra.resource_access_id,
+            where:
+              ra.lifecycle_state == :evaluated and access.section_id == ^section_id and
+                access.resource_id in ^pages_ids and access.user_id in ^user_ids,
+            group_by: access.resource_id,
+            select: {
+              access.resource_id,
+              count(ra.id)
+            }
+          )
 
-    query = case evaluated_only do
-      true ->
-        from(ra in ResourceAttempt,
-        join: access in ResourceAccess,
-        on: access.id == ra.resource_access_id,
-        where:
-          ra.lifecycle_state == :evaluated and access.section_id == ^section_id and
-            access.resource_id in ^pages_ids and access.user_id in ^user_ids,
-        group_by: access.resource_id,
-        select: {
-          access.resource_id,
-          count(ra.id)
-        }
-      )
-
-      _ ->
-        from(ra in ResourceAttempt,
-        join: access in ResourceAccess,
-        on: access.id == ra.resource_access_id,
-        where:
-          access.section_id == ^section_id and
-            access.resource_id in ^pages_ids and access.user_id in ^user_ids,
-        group_by: access.resource_id,
-        select: {
-          access.resource_id,
-          count(ra.id)
-        }
-      )
-    end
+        _ ->
+          from(ra in ResourceAttempt,
+            join: access in ResourceAccess,
+            on: access.id == ra.resource_access_id,
+            where:
+              access.section_id == ^section_id and
+                access.resource_id in ^pages_ids and access.user_id in ^user_ids,
+            group_by: access.resource_id,
+            select: {
+              access.resource_id,
+              count(ra.id)
+            }
+          )
+      end
 
     Repo.all(query)
     |> Enum.into(%{})
