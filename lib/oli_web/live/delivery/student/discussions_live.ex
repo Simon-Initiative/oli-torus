@@ -696,11 +696,18 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
                 <%= @post.replies_count - @post.read_replies_count %>
               </span>
             </div>
-            <span class="text-[14px] leading-[22px] tracking-[0.02px] dark:text-white">
+            <span
+              role="replies count"
+              class="text-[14px] leading-[22px] tracking-[0.02px] dark:text-white"
+            >
               <%= @post.replies_count %> <%= if @post.replies_count == 1, do: "reply", else: "replies" %>
             </span>
           </div>
-          <div :if={@post.replies_count > 0} class="flex items-center gap-[6px]">
+          <div
+            :if={@post.replies_count > 0}
+            role="last reply date"
+            class="flex items-center gap-[6px]"
+          >
             <span class="text-[14px] font-semibold leading-[22px] tracking-[0.02px] dark:text-white">
               Last Reply:
             </span>
@@ -804,7 +811,7 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
 
   defp page_post(assigns) do
     ~H"""
-    <div role="post-2" class="flex flex-col gap-6 p-6">
+    <div role="page post" id={"post-#{@post.id}"} class="flex flex-col gap-6 p-6">
       <div role="post header" class="flex items-center gap-2">
         <.avatar post={@post} ctx={@ctx} current_user_id={@current_user_id} />
       </div>
@@ -813,10 +820,13 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
         class="flex flex-col gap-[6px] px-4 py-3 rounded-lg bg-blue-100/20 dark:bg-black/40"
       >
         <div role="post location" class="flex items-center gap-1">
-          <span class="text-[12px] leading-[16px] tracking-[1.2px] font-bold uppercase dark:text-white">
+          <span
+            role="numbering"
+            class="text-[12px] leading-[16px] tracking-[1.2px] font-bold uppercase dark:text-white"
+          >
             <%= @post.page_title_with_numbering %>
           </span>
-          <span class="text-[14px] leading-[19px] dark:text-white/50">
+          <span role="page title" class="text-[14px] leading-[19px] dark:text-white/50">
             — <%= @post.title %>
           </span>
         </div>
@@ -842,11 +852,18 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
                 <%= @post.replies_count - @post.read_replies_count %>
               </span>
             </div>
-            <span class="text-[14px] leading-[22px] tracking-[0.02px] dark:text-white">
+            <span
+              role="replies count"
+              class="text-[14px] leading-[22px] tracking-[0.02px] dark:text-white"
+            >
               <%= @post.replies_count %> <%= if @post.replies_count == 1, do: "reply", else: "replies" %>
             </span>
           </div>
-          <div :if={@post.replies_count > 0} class="flex items-center gap-[6px]">
+          <div
+            :if={@post.replies_count > 0}
+            role="last reply date"
+            class="flex items-center gap-[6px]"
+          >
             <span class="text-[14px] font-semibold leading-[22px] tracking-[0.02px] dark:text-white">
               Last Reply:
             </span>
@@ -907,15 +924,18 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
       "w-8 h-8 rounded-full flex items-center justify-center shrink-0",
       get_color_for_name(@post.user_name)
     ]}>
-      <span class="text-[14px] text-white uppercase">
+      <span role="avatar initials" class="text-[14px] text-white uppercase">
         <%= to_initials(@post, @current_user_id) %>
       </span>
     </div>
     <div class="flex flex-col items-start gap-[1px]">
-      <span class="text-[16px] leading-[22px] tracking-[0.02px] font-semibold dark:text-white">
+      <span
+        role="user name"
+        class="text-[16px] leading-[22px] tracking-[0.02px] font-semibold dark:text-white"
+      >
         <%= user_name(@post, @current_user_id) %>
       </span>
-      <span class="text-[14px] leading-[19px] tracking-[0.02px] dark:text-white/50">
+      <span role="posted at" class="text-[14px] leading-[19px] tracking-[0.02px] dark:text-white/50">
         <%= FormatDateTime.parse_datetime(
           @post.updated_at,
           @ctx,
