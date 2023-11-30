@@ -143,7 +143,11 @@ defmodule OliWeb.Components.Delivery.Students do
         Enum.sort_by(students, fn student -> student.last_interaction end, sort_order)
 
       :progress ->
-        Enum.sort_by(students, fn student -> student.progress end, sort_order)
+        Enum.sort_by(
+          students,
+          fn student -> {student.progress || 0, student.family_name} end,
+          sort_order
+        )
 
       :overall_proficiency ->
         Enum.sort_by(students, fn student -> student.overall_proficiency end, sort_order)

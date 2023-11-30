@@ -71,6 +71,11 @@ const DEFAULT_LAYOUT_STYLES = `
   border-color: black;
 }
 
+:host-context(.dark) .initiator {
+  background-color: white;
+  color: black;
+}
+
 .dragdropspacer {
   height: 30px;
 }
