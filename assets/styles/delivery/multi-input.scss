@@ -1,8 +1,13 @@
 .multi-input-activity {
+  line-height: 2em;
+
   .dropdown-input {
     width: unset;
-    padding-right: 35px;
+    padding: 6px 30px 6px 12px;
     margin: 0px 0.1rem;
     min-width: 2rem;
+    line-height: 1em;
+    white-space: nowrap;
+    text-overflow: ellipsis;
   }
 }

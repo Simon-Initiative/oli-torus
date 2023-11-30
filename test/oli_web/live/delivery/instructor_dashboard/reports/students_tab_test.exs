@@ -194,9 +194,9 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
 
       {:ok, _} = Sections.rebuild_contained_pages(section)
 
-      set_progress(section.id, page_1.published_resource.resource_id, user_1.id, 0.9)
-      set_progress(section.id, page_1.published_resource.resource_id, user_2.id, 0.6)
-      set_progress(section.id, page_1.published_resource.resource_id, user_3.id, 0)
+      set_progress(section.id, page_1.published_resource.resource_id, user_1.id, 0)
+      set_progress(section.id, page_1.published_resource.resource_id, user_2.id, 0.2)
+      set_progress(section.id, page_1.published_resource.resource_id, user_3.id, 0.2)
       set_progress(section.id, page_1.published_resource.resource_id, user_4.id, 0.3)
       set_progress(section.id, page_1.published_resource.resource_id, user_5.id, 0.7)
 
@@ -219,6 +219,29 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
       assert student_for_tr_3 =~ "Jr, Neymar"
       assert student_for_tr_2 =~ "Messi, Lionel"
       assert student_for_tr_1 =~ "Suarez, Luis"
+
+      ### sorting by progress
+      params = %{
+        sort_order: :asc,
+        sort_by: :progress
+      }
+
+      {:ok, view, _html} = live(conn, live_view_students_route(section.slug, params))
+
+      [student_for_tr_1, student_for_tr_2, student_for_tr_3, student_for_tr_4] =
+        view
+        |> render()
+        |> Floki.parse_fragment!()
+        |> Floki.find(~s{.instructor_dashboard_table tr a})
+        |> Enum.map(fn a_tag -> Floki.text(a_tag) end)
+
+      assert student_for_tr_1 =~ "Messi, Lionel"
+
+      # it sorts by name when progress is the same
+      assert student_for_tr_2 =~ "Jr, Neymar"
+      assert student_for_tr_3 =~ "Suarez, Luis"
+
+      assert student_for_tr_4 =~ "Di Maria, Angelito"
 
       ### text filtering
       params = %{
@@ -280,7 +303,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
         |> Floki.find(~s{.instructor_dashboard_table tr [data-progress-check]})
         |> Enum.map(fn div_tag -> Floki.text(div_tag) |> String.trim() end)
 
-      assert progress == ["10%", "0%", "30%", "20%"]
+      assert progress == ["10%", "7%", "0%", "7%"]
 
       ### filtering by no container
       ### (we want to get the progress across all course section)
@@ -295,7 +318,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
         |> Floki.find(~s{.instructor_dashboard_table tr [data-progress-check]})
         |> Enum.map(fn div_tag -> Floki.text(div_tag) |> String.trim() end)
 
-      assert progress == ["3%", "0%", "8%", "5%"]
+      assert progress == ["3%", "2%", "0%", "2%"]
 
       ### filtering by non existing container
       params = %{container_id: 99999}
@@ -323,7 +346,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
         |> Floki.find(~s{.instructor_dashboard_table tr [data-progress-check]})
         |> Enum.map(fn div_tag -> Floki.text(div_tag) |> String.trim() end)
 
-      assert progress == ["30%", "0%", "90%", "60%"]
+      assert progress == ["30%", "20%", "0%", "20%"]
 
       ### filtering by non students option
       params = %{filter_by: :non_students}
