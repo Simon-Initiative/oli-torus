@@ -132,7 +132,8 @@ defmodule OliWeb.Delivery.InstructorDashboard.Helpers do
       Metrics.attempts_across_for_pages(
         section,
         page_ids,
-        student_ids
+        student_ids,
+        false
       )
 
     container_labels = Sections.map_resources_with_container_labels(section.slug, page_ids)
