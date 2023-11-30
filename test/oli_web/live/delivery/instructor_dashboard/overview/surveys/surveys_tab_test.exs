@@ -1265,6 +1265,12 @@ defmodule OliWeb.Delivery.InstructorDashboard.SurveysTabTest do
           })
         )
 
+      view
+      |> element("table tbody tr td div[phx-value-id=\"#{page_1.id}\"]")
+      |> render_click()
+
+      open_browser(view)
+
       selected_activity_model =
         view
         |> render()
@@ -1295,6 +1301,10 @@ defmodule OliWeb.Delivery.InstructorDashboard.SurveysTabTest do
             assessment_id: page_1.id
           })
         )
+
+      view
+      |> element("table tbody tr td div[phx-value-id=\"#{page_1.id}\"]")
+      |> render_click()
 
       selected_activity_model =
         view
@@ -1347,7 +1357,6 @@ defmodule OliWeb.Delivery.InstructorDashboard.SurveysTabTest do
           })
         )
 
-      open_browser(view)
       [_act_1, act_2] = table_as_list_of_maps(view)
 
       second_table_row_html =
@@ -1405,13 +1414,11 @@ defmodule OliWeb.Delivery.InstructorDashboard.SurveysTabTest do
           })
         )
 
-      assert view
-             |> element(~s{#student_attempts_summary})
-             |> render() =~ "No student has completed any attempts."
+      view
+      |> element("table tbody tr td div[phx-value-id=\"#{page_1.id}\"]")
+      |> render_click()
 
-      assert view
-             |> element(~s{#student_attempts_summary})
-             |> render() =~ "4 students have not completed any attempt"
+      assert has_element?(view, "p", "No attempt registered for this question")
     end
   end
 
