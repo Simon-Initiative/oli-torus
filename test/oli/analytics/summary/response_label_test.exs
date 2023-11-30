@@ -33,7 +33,7 @@ defmodule Oli.Analytics.Summary.ResponseLabelTest do
 
   defp attempt_with_response(response, part_id \\ "part1") do
     %{
-      id: part_id,
+      part_id: part_id,
       activity_revision: %{
         content: @reusable_model,
         resource_id: 33
