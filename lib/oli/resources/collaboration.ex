@@ -584,6 +584,8 @@ defmodule Oli.Resources.Collaboration do
           posted_anonymously: post.anonymous,
           title: rev.title,
           slug: rev.slug,
+          resource_numbering_index: sr.numbering_index,
+          resource_id: sr.resource_id,
           resource_type_id: rev.resource_type_id,
           updated_at: post.updated_at,
           replies_count: coalesce(replies.count, 0),

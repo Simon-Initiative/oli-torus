@@ -6,44 +6,16 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
   alias OliWeb.Common.FormatDateTime
   alias OliWeb.Components.Modal
   alias OliWeb.Components.Delivery.Buttons
-
-  # There are many Figma designs, I assumed I must consider the one at the top.
-
-  # course_post
-  # only consider posts attached to a container
-
-  # always consider posts from level 0 (parent_post_id and thread_root_id are null)
-  # to render a card. For course posts level 1 posts will be shown when clicking "open"
-  # How do we handle cases when there are posts at level 2 or more? we can expand them again (an open button
-  # should be added), and rendered indented.
-  # We will be able to repond to course_posts at level 0, right? yes
-
-  # we actually do not handle "uread posts" functionality. This must be done (leave it for the end in case design changes)
-
-  # what is the text rendered in a page post under the module and page title?
-  # it is supposed to be the text the user highlighted from the page while submitting the post.
-
-  # do we have a way to get the module a page belongs to (MODULE 3.1 PAGE 7)? see resource_to_container_map to get the parent container.
-  # Number them in the "original way".
-
-  # NEW DISCUSSION button:
-  # what is the behavior? no design, but it should render a modal to enter a new post (only for course level posts)
-
-  # REPLY COUNT and LAST REPLY DATE:
-  # Do we consider only direct replies to the post or all replies in the thread? All levels (no 100% seguro)
-
-  # view all posts -> we do not want to fetch all posts (it might be expensive) => implement it with infinite scroll + stream (Chis McCord's talk)
+  alias Oli.Delivery.Sections
 
   @default_post_params %{
     sort_by: "date",
     sort_order: :desc,
-    filter_by: "all",
+    filter_by: "page_discussions",
     offset: 0,
-    limit: 4
+    limit: 10
   }
 
-  # pensar el tema de los broadcasts... si me llega un post de otro usuario y tengo filtrado por "my activity" no debería aparecer (salvo que sea una reply a un thread en el que sí tengo actividad)
-  # pensar el tema de los broadcasts... si me llega un post de otro usuario y tengo filtrado por "unread" creo que siempre debería aparecer
   def mount(_params, _session, socket) do
     if connected?(socket),
       do:
@@ -52,20 +24,25 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
           "collab_space_discussion_#{socket.assigns.section.slug}"
         )
 
+    ordered_containers_map =
+      Sections.fetch_ordered_containers(socket.assigns.section.slug)
+      |> Enum.into(%{})
+
+    resource_to_container_map = Sections.get_resource_to_container_map(socket.assigns.section)
+
     {posts, more_posts_exist?} =
-      Collaboration.list_root_posts_for_section(
+      get_posts(
         socket.assigns.current_user.id,
         socket.assigns.section.id,
-        @default_post_params.limit,
-        @default_post_params.offset,
-        @default_post_params.filter_by,
-        @default_post_params.sort_by,
-        @default_post_params.sort_order
+        @default_post_params,
+        ordered_containers_map,
+        resource_to_container_map
       )
 
     {
       :ok,
       assign(socket,
+        active_tab: :discussions,
         posts: posts,
         expanded_posts: %{},
         course_collab_space_config:
@@ -74,7 +51,8 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
           ),
         post_params: @default_post_params,
         more_posts_exist?: more_posts_exist?,
-        active_tab: :discussions
+        ordered_containers_map: ordered_containers_map,
+        resource_to_container_map: resource_to_container_map
       )
       |> assign_new_discussion_form()
     }
@@ -87,16 +65,16 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
   end
 
   def handle_event("filter_posts", %{"filter_by" => filter_by}, socket) do
+    updated_post_params =
+      Map.merge(socket.assigns.post_params, %{filter_by: filter_by, offset: 0})
+
     {posts, more_posts_exist?} =
-      Collaboration.list_root_posts_for_section(
+      get_posts(
         socket.assigns.current_user.id,
         socket.assigns.section.id,
-        socket.assigns.post_params.limit,
-        # reset the offset when changing the filter
-        0,
-        filter_by,
-        socket.assigns.post_params.sort_by,
-        socket.assigns.post_params.sort_order
+        updated_post_params,
+        socket.assigns.ordered_containers_map,
+        socket.assigns.resource_to_container_map
       )
 
     {:noreply,
@@ -104,39 +82,37 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
        socket,
        posts: posts,
        more_posts_exist?: more_posts_exist?,
-       post_params: Map.merge(socket.assigns.post_params, %{filter_by: filter_by, offset: 0}),
+       post_params: updated_post_params,
        expanded_posts: %{}
      )}
   end
 
   def handle_event("sort_posts", %{"sort_by" => sort_by}, socket) do
-    sort_order =
-      get_sort_order(
-        socket.assigns.post_params.sort_by,
-        sort_by,
-        socket.assigns.post_params.sort_order
-      )
+    updated_post_params =
+      Map.merge(socket.assigns.post_params, %{
+        sort_by: sort_by,
+        sort_order:
+          get_sort_order(
+            socket.assigns.post_params.sort_by,
+            sort_by,
+            socket.assigns.post_params.sort_order
+          )
+      })
 
     {posts, more_posts_exist?} =
-      Collaboration.list_root_posts_for_section(
+      get_posts(
         socket.assigns.current_user.id,
         socket.assigns.section.id,
-        socket.assigns.post_params.limit,
-        socket.assigns.post_params.offset,
-        socket.assigns.post_params.filter_by,
-        sort_by,
-        sort_order
+        updated_post_params,
+        socket.assigns.ordered_containers_map,
+        socket.assigns.resource_to_container_map
       )
 
     {:noreply,
      assign(
        socket,
        posts: posts,
-       post_params:
-         Map.merge(socket.assigns.post_params, %{
-           sort_by: sort_by,
-           sort_order: sort_order
-         }),
+       post_params: updated_post_params,
        more_posts_exist?: more_posts_exist?
      )}
   end
@@ -225,8 +201,6 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
         socket.assigns.current_user.id
       )
 
-    # TODO, when collapsing a post, also collapse all expanded children
-
     {:noreply,
      socket
      |> assign(posts: updated_root_posts)
@@ -238,7 +212,6 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
         %{"content" => %{"message" => ""}},
         socket
       ) do
-    # TODO give feedback to user
     {:noreply, socket}
   end
 
@@ -296,14 +269,12 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
       })
 
     {posts, more_posts_exist?} =
-      Collaboration.list_root_posts_for_section(
+      get_posts(
         socket.assigns.current_user.id,
         socket.assigns.section.id,
-        updated_post_params.limit,
-        updated_post_params.offset,
-        updated_post_params.filter_by,
-        updated_post_params.sort_by,
-        updated_post_params.sort_order
+        updated_post_params,
+        socket.assigns.ordered_containers_map,
+        socket.assigns.resource_to_container_map
       )
 
     case posts do
@@ -567,7 +538,7 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
             :if={@course_collab_space_config.status == :enabled}
             role="new discussion"
             phx-click={Modal.show_modal("new-discussion-modal-#{@new_discussion_form_uuid}")}
-            class="rounded-[3px] py-[10px] pl-[18px] pr-6 flex justify-center items-center text-[14px] leading-[20px] font-normal text-white bg-[#0F6CF5] hover:bg-blue-600"
+            class="rounded-[3px] py-[10px] pl-[18px] pr-6 flex justify-center items-center whitespace-nowrap text-[14px] leading-[20px] font-normal text-white bg-[#0F6CF5] hover:bg-blue-600"
           >
             <svg
               role="plus icon"
@@ -590,7 +561,10 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
         class="rounded-xl w-full bg-white shadow-md dark:bg-[rgba(255,255,255,0.06)] divide-y-[1px] divide-gray-200 dark:divide-white/20"
       >
         <%= for post <- @posts do %>
-          <div :if={post.resource_type_id == 2} class="p-6">
+          <div
+            :if={post.resource_type_id == Oli.Resources.ResourceType.get_id_by_type("container")}
+            class="p-6"
+          >
             <.course_post
               post={post}
               ctx={@ctx}
@@ -603,7 +577,7 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
             />
           </div>
           <.page_post
-            :if={post.resource_type_id != 2}
+            :if={post.resource_type_id == Oli.Resources.ResourceType.get_id_by_type("page")}
             post={post}
             ctx={@ctx}
             section_slug={@section_slug}
@@ -804,7 +778,7 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
       >
         <div role="post location" class="flex items-center gap-1">
           <span class="text-[12px] leading-[16px] tracking-[1.2px] font-bold uppercase dark:text-white">
-            Module 3.1 Page 7
+            <%= @post.page_title_with_numbering %>
           </span>
           <span class="text-[14px] leading-[19px] dark:text-white/50">
             — <%= @post.title %>
@@ -949,6 +923,68 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
     |> Enum.take(2)
     |> Enum.map(&String.slice(&1, 0..0))
     |> Enum.join()
+  end
+
+  defp get_posts(
+         current_user_id,
+         section_id,
+         post_params,
+         ordered_containers_map,
+         resource_to_container_map
+       ) do
+    {posts_without_page_title, more_posts_exist?} =
+      Collaboration.list_root_posts_for_section(
+        current_user_id,
+        section_id,
+        post_params.limit,
+        post_params.offset,
+        post_params.filter_by,
+        post_params.sort_by,
+        post_params.sort_order
+      )
+
+    posts_with_page_title =
+      add_page_title_with_numbering_to_page_posts(
+        posts_without_page_title,
+        ordered_containers_map,
+        resource_to_container_map
+      )
+
+    {posts_with_page_title, more_posts_exist?}
+  end
+
+  defp add_page_title_with_numbering_to_page_posts([], _ordered_containers_map, _section), do: []
+
+  defp add_page_title_with_numbering_to_page_posts(
+         posts,
+         ordered_containers_map,
+         resource_to_container_map
+       ) do
+    Enum.map(posts, fn post ->
+      if post.resource_type_id == Oli.Resources.ResourceType.get_id_by_type("page") do
+        page_title_with_numbering =
+          case Map.get(resource_to_container_map, Integer.to_string(post.resource_id)) do
+            nil ->
+              "Page #{post.resource_numbering_index}"
+
+            container_resource_id ->
+              container_with_numbering_index =
+                Map.get(ordered_containers_map, container_resource_id)
+                |> String.split(":")
+                |> hd()
+
+              "#{container_with_numbering_index}: Page #{post.resource_numbering_index}"
+          end
+
+        post
+        |> Map.put(
+          :page_title_with_numbering,
+          page_title_with_numbering
+        )
+      else
+        post
+      end
+    end)
   end
 
   defp assign_new_discussion_form(socket) do
