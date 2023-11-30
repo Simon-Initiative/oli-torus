@@ -55,7 +55,7 @@ defmodule OliWeb.Components.Delivery.PracticeActivities do
   def update(assigns, socket) do
     params = decode_params(assigns.params)
 
-    {_count, units_and_modules} =
+    {container_count, units_and_modules} =
       Sections.get_units_and_modules_containers(assigns.section.slug)
 
     {total_count, rows} = apply_filters(assigns.assessments, params)
@@ -82,7 +82,7 @@ defmodule OliWeb.Components.Delivery.PracticeActivities do
        scripts: assigns.scripts,
        activity_types_map: assigns.activity_types_map,
        preview_rendered: nil,
-       units_and_modules: build_units_and_modules(units_and_modules),
+       units_and_modules: build_units_and_modules(container_count, units_and_modules),
        table_model: table_model,
        total_count: total_count
      )}
@@ -602,7 +602,7 @@ defmodule OliWeb.Components.Delivery.PracticeActivities do
       from(aa in ActivityAttempt,
         join: res_attempt in ResourceAttempt,
         on: aa.resource_attempt_id == res_attempt.id,
-        where: res_attempt.lifecycle_state == :evaluated and aa.lifecycle_state == :evaluated,
+        where: aa.lifecycle_state == :evaluated,
         join: res_access in ResourceAccess,
         on: res_attempt.resource_access_id == res_access.id,
         where:
@@ -997,16 +997,20 @@ defmodule OliWeb.Components.Delivery.PracticeActivities do
     )
   end
 
-  defp build_units_and_modules(modules_and_units) do
-    Enum.map(modules_and_units, fn container ->
-      type =
-        case container.numbering_level do
-          1 -> "Unit"
-          2 -> "Module"
-          3 -> "Section"
-        end
+  defp build_units_and_modules(container_count, modules_and_units) do
+    if container_count == 0 do
+      []
+    else
+      Enum.map(modules_and_units, fn container ->
+        type =
+          case container.numbering_level do
+            1 -> "Unit"
+            2 -> "Module"
+            3 -> "Section"
+          end
 
-      Map.merge(container, %{type: type})
-    end)
+        Map.merge(container, %{type: type})
+      end)
+    end
   end
 end

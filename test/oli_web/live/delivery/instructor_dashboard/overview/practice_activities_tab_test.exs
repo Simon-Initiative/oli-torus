@@ -644,7 +644,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.PracticeActivitiesTabTest do
         resource_type_id: ResourceType.get_id_by_type("page"),
         objectives: %{"attached" => [objective_1_revision.resource_id]},
         title: "Page 1",
-        graded: true,
+        graded: false,
         content: %{
           model: [
             %{
@@ -703,7 +703,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.PracticeActivitiesTabTest do
         resource_type_id: ResourceType.get_id_by_type("page"),
         objectives: %{"attached" => [objective_2_revision.resource_id]},
         title: "Page 2",
-        graded: true
+        graded: false
       )
 
     page_3_revision =
@@ -711,7 +711,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.PracticeActivitiesTabTest do
         resource_type_id: ResourceType.get_id_by_type("page"),
         objectives: %{"attached" => [objective_3_revision.resource_id]},
         title: "Page 3",
-        graded: true
+        graded: false
       )
 
     page_4_revision =
@@ -719,7 +719,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.PracticeActivitiesTabTest do
         resource_type_id: ResourceType.get_id_by_type("page"),
         objectives: %{"attached" => [objective_4_revision.resource_id]},
         title: "Page 4",
-        graded: true
+        graded: false
       )
 
     page_5_revision =
@@ -727,7 +727,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.PracticeActivitiesTabTest do
         resource_type_id: ResourceType.get_id_by_type("page"),
         objectives: %{"attached" => [objective_4_revision.resource_id]},
         title: "Orphaned Page",
-        graded: true
+        graded: false
       )
 
     ## modules...

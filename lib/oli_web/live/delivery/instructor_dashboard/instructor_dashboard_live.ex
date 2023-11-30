@@ -240,7 +240,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
         |> Enum.reject(fn s -> s.user_role_id != 4 end)
       end)
       |> assign_new(:practice_activities, fn %{students: students} ->
-        Helpers.get_assessments(socket.assigns.section, students)
+        Helpers.get_practice_pages(socket.assigns.section, students)
       end)
       |> assign_new(:activities, fn -> Oli.Activities.list_activity_registrations() end)
       |> assign_new(:scripts, fn %{activities: activities} ->

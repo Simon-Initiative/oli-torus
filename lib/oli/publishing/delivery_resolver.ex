@@ -52,6 +52,15 @@ defmodule Oli.Publishing.DeliveryResolver do
     |> Repo.all()
   end
 
+  def ungraded_pages_revisions_and_section_resources(section_slug) do
+    from([sr, s, _spp, _pr, rev] in section_resource_revisions(section_slug),
+      where: rev.resource_type_id == 1 and rev.graded == false,
+      select: {rev, sr},
+      order_by: [asc: sr.numbering_level, asc: sr.numbering_index]
+    )
+    |> Repo.all()
+  end
+
   def graded_pages_revisions_and_section_resources_with_surveys(section_slug) do
     from([sr, s, _spp, _pr, rev] in section_resource_revisions(section_slug),
       join: content_elem in fragment("jsonb_array_elements(?->'model')", rev.content),

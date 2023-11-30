@@ -1,16 +1,7 @@
 import React from 'react';
-import { Bar } from 'react-chartjs-2';
 import ReactDOM from 'react-dom';
 import { Provider } from 'react-redux';
-import {
-  BarElement,
-  CategoryScale,
-  Chart as ChartJS,
-  Legend,
-  LinearScale,
-  Title,
-  Tooltip,
-} from 'chart.js';
+import { VegaLite, VisualizationSpec } from 'react-vega';
 import { Choices as ChoicesAuthoring } from 'components/activities/common/choices/authoring/ChoicesAuthoring';
 import { Hints } from 'components/activities/common/hints/authoring/HintsAuthoringConnected';
 import { Stem } from 'components/activities/common/stem/authoring/StemAuthoringConnected';
@@ -45,53 +36,84 @@ const Likert = (props: AuthoringElementProps<LikertModelSchema>) => {
     projectSlug: projectSlug,
   });
 
-  ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
-
-  const likertChartOptions = {
-    plugins: {
-      title: {
-        display: true,
-        text: model.activityTitle,
-      },
-    },
-    indexAxis: 'y' as 'y' | 'x' | undefined,
-    responsive: true,
-    scales: {
-      x: {
-        stacked: true,
-      },
-      y: {
-        stacked: true,
-      },
-    },
-  };
-
-  function getRandomPastelColor() {
-    const min = 130;
-    const max = 255;
-
-    const r = Math.floor(Math.random() * (max - min + 1) + min);
-    const g = Math.floor(Math.random() * (max - min + 1) + min);
-    const b = Math.floor(Math.random() * (max - min + 1) + min);
-
-    return `rgb(${r}, ${g}, ${b})`;
-  }
-
-  const dataToRender = {
-    labels: model.items.map((item) =>
-      'text' in item.content[0].children[0] ? item.content[0].children[0].text : 'No text',
-    ),
-    datasets: model.choices
+  const transformedData = {
+    values: model.choices
       .filter((choice) => choice.frequency > 0)
       .map((choice) => ({
         label:
           'text' in choice.content[0].children[0] ? choice.content[0].children[0].text : 'No text',
-        data: [choice.frequency],
-        backgroundColor: getRandomPastelColor(),
+        value: choice.frequency,
       })),
   };
 
-  const dataLong = dataToRender.datasets.length;
+  const colorsList = [
+    'rgb(198, 207, 241)',
+    'rgb(220, 198, 224)',
+    'rgb(202, 233, 198)',
+    'rgb(209, 196, 233)',
+    'rgb(160, 219, 206)',
+    'rgb(242, 205, 176)',
+    'rgb(187, 223, 179)',
+    'rgb(231, 174, 125)',
+    'rgb(187, 192, 206)',
+    'rgb(241, 196, 198)',
+    'rgb(194, 220, 232)',
+    'rgb(236, 217, 203)',
+    'rgb(172, 225, 240)',
+    'rgb(247, 214, 199)',
+    'rgb(207, 241, 206)',
+  ];
+
+  const spec: VisualizationSpec = {
+    $schema: 'https://vega.github.io/schema/vega-lite/v5.json',
+    data: transformedData,
+    title: {
+      text: model.activityTitle,
+      subtitle: model.items.map((item) =>
+        'text' in item.content[0].children[0] ? item.content[0].children[0].text : 'No text',
+      ),
+      subtitlePadding: 10,
+    },
+    mark: { type: 'bar' },
+    width: 500,
+    height: 200,
+    encoding: {
+      x: {
+        aggregate: 'sum',
+        field: 'value',
+        type: 'quantitative',
+        axis: { title: null },
+      },
+      y: {
+        field: 'category',
+        type: 'ordinal',
+        axis: { title: null, labels: false },
+      },
+      color: {
+        field: 'label',
+        type: 'nominal',
+        scale: {
+          range: colorsList,
+        },
+      },
+      tooltip: [
+        { field: 'value', type: 'quantitative', title: 'Value' },
+        { field: 'label', type: 'nominal', title: 'Text' },
+      ],
+    },
+    config: {
+      view: { stroke: 'transparent' },
+      axisX: { labels: true },
+      legend: {
+        orient: 'right',
+        title: null,
+        padding: 10,
+        rowPadding: 10,
+      },
+    },
+  };
+
+  const dataLong = transformedData.values.length;
 
   return (
     <React.Fragment>
@@ -124,7 +146,7 @@ const Likert = (props: AuthoringElementProps<LikertModelSchema>) => {
                   <div
                     className={`${dataLong > 0 && 'flex items-center w-full my-5 lg:w-1/2 px-2'}`}
                   >
-                    <Bar options={likertChartOptions} data={dataToRender} />
+                    <VegaLite spec={spec} />
                   </div>
                 </>
               )}
