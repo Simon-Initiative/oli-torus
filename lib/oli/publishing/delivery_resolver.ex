@@ -61,12 +61,12 @@ defmodule Oli.Publishing.DeliveryResolver do
     |> Repo.all()
   end
 
-  def graded_pages_revisions_and_section_resources_with_surveys(section_slug) do
+  def practice_pages_revisions_and_section_resources_with_surveys(section_slug) do
     from([sr, s, _spp, _pr, rev] in section_resource_revisions(section_slug),
       join: content_elem in fragment("jsonb_array_elements(?->'model')", rev.content),
       on: true,
       where:
-        rev.resource_type_id == 1 and rev.graded == true and rev.deleted == false and
+        rev.resource_type_id == 1 and rev.graded == false and rev.deleted == false and
           fragment("?->>'type'", content_elem) == "survey",
       select: {rev, sr},
       order_by: [asc: sr.numbering_level, asc: sr.numbering_index]
