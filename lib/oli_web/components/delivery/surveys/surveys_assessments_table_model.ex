@@ -54,15 +54,21 @@ defmodule OliWeb.Delivery.Surveys.SurveysAssessmentsTableModel do
       Map.merge(assigns, %{
         title: assessment.title,
         container_label: assessment.container_label,
-        resource_id: assessment.resource_id
+        id: assessment.id
       })
 
     ~H"""
-    <div class="pl-9 pr-4 flex flex-col">
+    <div
+      class="pl-9 pr-4 flex flex-col"
+      phx-click={JS.push("paged_table_selection_change", target: @target)}
+      phx-value-id={@id}
+    >
       <%= if @container_label do %>
         <span class="text-gray-600 font-bold text-sm"><%= @container_label %></span>
       <% end %>
-      <%= @title %>
+      <span>
+        <%= @title %>
+      </span>
     </div>
     """
   end

@@ -12,6 +12,7 @@ defmodule Oli.Delivery.Sections.Blueprint do
   alias Oli.Groups.CommunityVisibility
   alias Oli.Institutions.Institution
   alias Oli.Repo
+  alias Oli.Repo.{Paging, Sorting}
 
   @doc """
   From a slug, retrieve a valid section blueprint.  A section is a
