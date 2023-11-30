@@ -397,13 +397,6 @@ $element-margin-bottom: 1.5em;
     align-items: center;
     justify-content: center;
     margin-bottom: $element-margin-bottom;
-
-    figure {
-      figcaption {
-        color: var(--color-primary);
-      }
-      padding: 1rem;
-    }
   }
 
   .caption-wrapper {
@@ -417,6 +410,7 @@ $element-margin-bottom: 1.5em;
 
       figcaption {
         text-align: center;
+        font-size: 0.85rem;
       }
 
       .embed-responsive {
@@ -425,11 +419,14 @@ $element-margin-bottom: 1.5em;
     }
   }
 
+  .caption-wrapper-image .img-fluid {
+    margin-bottom: 0.5em;
+  }
+
   .figure-img {
     display: block;
     margin-left: auto;
     margin-right: auto;
-    margin-bottom: $element-margin-bottom;
   }
 
   .embed-responsive {
