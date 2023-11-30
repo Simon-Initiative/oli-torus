@@ -48,8 +48,6 @@ if config_env() == :prod do
     socket_options: maybe_ipv6,
     ssl: get_env_as_boolean.("DATABASE_SSL", "false")
 
-  # config :myapp, MyApp.Repo, adapter: Ecto.Adapters.Postgres,
-
   config :ex_aws, :s3,
     region: System.get_env("AWS_REGION", "us-east-1"),
     scheme: System.get_env("AWS_S3_SCHEME", "https") <> "://",
