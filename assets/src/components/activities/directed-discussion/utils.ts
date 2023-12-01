@@ -23,7 +23,6 @@ export const defaultDDModel: () => DirectedDiscussionActivitySchema = () => {
           '1',
         ),
       ],
-      targeted: [],
     },
   };
 };
