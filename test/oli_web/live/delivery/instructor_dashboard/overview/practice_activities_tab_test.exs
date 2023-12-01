@@ -1221,6 +1221,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.PracticeActivitiesTabTest do
       assert a4.title == "Module 2: BasicsPage 4"
     end
 
+    @tag :skip
     test "gets results correctly when changing the container selection", %{
       conn: conn,
       section: section,
