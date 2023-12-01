@@ -1470,7 +1470,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.PracticeActivitiesTabTest do
       |> render_click()
 
       # check that the multi input details render correctly
-      selected_activity_model =
+      _selected_activity_model =
         view
         |> render()
         |> Floki.parse_fragment!()
