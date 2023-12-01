@@ -1,7 +1,7 @@
 import React from 'react';
 import { Card } from 'components/misc/Card';
 import { useAuthoringElementContext } from '../../AuthoringElementProvider';
-import { ParticipationDateInput, ParticipationInput } from '../ParticipationInput';
+import { ParticipationInput } from '../ParticipationInput';
 import { DirectedDiscussionActions } from '../actions';
 import { DDParticipationDefinition, DirectedDiscussionActivitySchema } from '../schema';
 
@@ -9,8 +9,7 @@ export const DiscussionParticipationAuthoring: React.FC = () => {
   const { model, dispatch, editMode } =
     useAuthoringElementContext<DirectedDiscussionActivitySchema>();
 
-  const { minPosts, maxPosts, minReplies, maxReplies, postDeadline, replyDeadline, maxWordLength } =
-    model.participation;
+  const { minPosts, maxPosts, minReplies, maxReplies, maxWordLength } = model.participation;
 
   const onChangeParticipation =
     (field: keyof DDParticipationDefinition) => (value: number | string) => {
@@ -63,7 +62,7 @@ export const DiscussionParticipationAuthoring: React.FC = () => {
         >
           Maximum number of words:
         </ParticipationInput>
-        <ParticipationDateInput
+        {/* <ParticipationDateInput
           value={postDeadline}
           onChange={onChangeParticipation('postDeadline')}
           editMode={editMode}
@@ -76,7 +75,7 @@ export const DiscussionParticipationAuthoring: React.FC = () => {
           editMode={editMode}
         >
           Reply deadline:
-        </ParticipationDateInput>
+        </ParticipationDateInput> */}
       </Card.Content>
     </Card.Card>
   );

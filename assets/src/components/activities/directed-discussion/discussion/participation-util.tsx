@@ -24,21 +24,13 @@ export const calculateParticipation = (
     (post: ThreadedPost) => post.parent_post_id !== null && post.user_id === userId,
   );
 
-  const pastPostDeadline =
-    requirements.postDeadline && Date.now() > new Date(requirements.postDeadline).getTime();
-
-  const pastReplyDeadline =
-    requirements.replyDeadline && Date.now() > new Date(requirements.replyDeadline).getTime();
-
   const canPost =
     (requirements.maxPosts === 0 || userPosts.length < requirements.maxPosts) &&
-    userPosts.length < MAX_POSTS &&
-    !pastPostDeadline;
+    userPosts.length < MAX_POSTS;
 
   const canReply =
     (requirements.maxReplies === 0 || replies.length < requirements.maxReplies) &&
-    replies.length < MAX_REPLIES &&
-    !pastReplyDeadline;
+    replies.length < MAX_REPLIES;
 
   return {
     canPost,

@@ -6,8 +6,6 @@ export interface DDParticipationDefinition {
   minReplies: number;
   maxReplies: number;
   maxWordLength: number;
-  postDeadline?: string;
-  replyDeadline?: string;
 }
 
 export interface DirectedDiscussionActivitySchema extends ActivityModelSchema {
