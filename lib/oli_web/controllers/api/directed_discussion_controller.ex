@@ -22,15 +22,15 @@ defmodule OliWeb.Api.DirectedDiscussionController do
 
     if Sections.is_enrolled?(current_user.id, section_slug) do
       Collaboration.create_post(%{
-        :status => :approved,
-        :user_id => current_user.id,
-        :section_id => section.id,
-        :resource_id => resource_id,
-        :parent_post_id => parent_post_id,
-        :thread_root_id => parent_post_id,
-        :replies_count => 0,
-        :anonymous => false,
-        :content => %{"message" => content}
+        status: :approved,
+        user_id: current_user.id,
+        section_id: section.id,
+        resource_id: resource_id,
+        parent_post_id: parent_post_id,
+        thread_root_id: parent_post_id,
+        replies_count: 0,
+        anonymous: false,
+        content: %{"message" => content}
       })
       |> preload_post_user
       |> case do
