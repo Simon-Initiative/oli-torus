@@ -139,15 +139,39 @@ defmodule Oli.Delivery.Evaluation.Rule do
   # if a precision is not specified (nil) then always evaluate to true
   defp check_precision(_value, nil), do: true
 
-  # checks the precision
+  # checks the precision, now interpreted as number of significant figures
   defp check_precision(str, count) when is_binary(str) do
-    digit_count =
-      str
-      |> String.split("")
-      |> Enum.filter(&is_digit?/1)
-      |> Enum.count()
+    sigfigs =
+      case String.split(String.downcase(str), "e") do
+        [number, _exponent] ->
+          count_digits_after_zeros(number)
 
-    digit_count == count
+        [number] ->
+          number
+          |> strip_integer_trailing_zeros()
+          |> count_digits_after_zeros()
+      end
+
+    sigfigs == count
+  end
+
+  #  Leading zeros before first non-zero digit are just placeholders so not significant.
+  #  Require non-zero digit so in edge case of all zeros they count: 0.0 => 2 sigfigs
+  defp count_digits_after_zeros(str_number) do
+    str_number
+    |> String.replace(".", "")
+    |> String.replace(~r"^0+(?=[1-9])", "")
+    |> String.split("")
+    |> Enum.filter(&is_digit?/1)
+    |> Enum.count()
+  end
+
+  # Trailing zeros afer non-zero digit in integers assumed placeholders so not significant
+  # In edge case of plain 0 it counts: 0 => 1 sigfig
+  defp strip_integer_trailing_zeros(str_number) do
+    if not String.contains?(str_number, "."),
+      do: String.replace(str_number, ~r"(?<=[1-9])0+$", ""),
+      else: str_number
   end
 
   defp is_range?(str), do: String.starts_with?(str, ["[", "("])

@@ -256,7 +256,10 @@ export class HtmlParser implements WriterImpl {
         );
       case 'mathml':
         return (
-          <MathJaxMathMLFormula src={element.src} inline={element.type === 'formula_inline'} />
+          <MathJaxMathMLFormula
+            src={element.src}
+            inline={element.type === 'formula_inline' && !forceBlockRendering}
+          />
         );
       default:
         return <span className="formula">Unknown formula type</span>;

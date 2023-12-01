@@ -81,6 +81,7 @@ defmodule OliWeb.Common.SortableTable.Table do
     <tr
       id={id_field(@row, @model)}
       class={@row_class <> if Map.get(@row, :selected) || id_field(@row, @model) == @model.selected, do: " bg-delivery-primary-100 shadow-inner dark:bg-gray-700 dark:text-black", else: ""}
+      aria-selected={if Map.get(@row, :selected), do: "true", else: "false"}
       phx-click={@select}
       phx-value-id={id_field(@row, @model)}
     >
