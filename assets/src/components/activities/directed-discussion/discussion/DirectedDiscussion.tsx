@@ -48,7 +48,6 @@ export const DirectedDiscussion: React.FC<Props> = ({ sectionSlug, resourceId, m
   return (
     <div className="activity mc-activity">
       <div className="activity-content relative">
-        <h2>Discussion</h2>
         <StemDeliveryConnected />
         <DiscussionParticipation
           requirements={model.participation}
