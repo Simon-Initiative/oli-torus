@@ -481,6 +481,11 @@ export interface Response extends Identifiable {
   feedback: Feedback;
 
   /**
+   * Is this response, the default correct response?
+   */
+  correct?: boolean;
+
+  /**
    * Optional, show a page by index when this response is evaluated.
    */
   showPage?: number;
@@ -493,11 +498,17 @@ export interface Response extends Identifiable {
  * @param text simple text to formulate a Feedback from
  * @returns
  */
-export const makeResponse = (rule: string, score: number, text = ''): Response => ({
+export const makeResponse = (
+  rule: string,
+  score: number,
+  text = '',
+  correct?: boolean,
+): Response => ({
   id: guid(),
   rule,
   score,
   feedback: makeFeedback(text),
+  correct,
 });
 
 /**
@@ -562,6 +573,7 @@ export interface Part extends Identifiable {
   scoringStrategy: ScoringStrategy;
   gradingApproach?: GradingApproach;
   outOf?: null | number;
+  incorrectScore?: null | number;
 }
 
 /**
@@ -595,6 +607,14 @@ export interface HasParts {
   };
 }
 
+export interface ActivityLevelScoring {
+  customScoring?: boolean;
+  scoringStrategy?: ScoringStrategy;
+  authoring: {
+    parts: Part[];
+  };
+}
+
 /**
  * The types of grading, or scoring, supported for a part.
  */
@@ -617,6 +637,7 @@ export enum ScoringStrategy {
   'average' = 'average',
   'best' = 'best',
   'most_recent' = 'most_recent',
+  'total' = 'total',
 }
 
 /**

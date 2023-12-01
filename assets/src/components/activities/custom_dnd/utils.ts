@@ -8,7 +8,7 @@ export function createNewPart(id: string, answer: string) {
     scoringStrategy: ScoringStrategy.average,
     gradingApproach: GradingApproach.automatic,
     responses: [
-      makeResponse(matchRule(answer), 1, 'Correct'),
+      makeResponse(matchRule(answer), 1, 'Correct', true),
       makeResponse(matchRule('.*'), 0, 'Incorrect'),
     ],
     hints: [makeHint(''), makeHint(''), makeHint('')],

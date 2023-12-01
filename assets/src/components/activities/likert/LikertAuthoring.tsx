@@ -16,6 +16,7 @@ import { AuthoringElementProvider, useAuthoringElementContext } from '../Authori
 import { MCActions } from '../common/authoring/actions/multipleChoiceActions';
 import { ChoicesDelivery } from '../common/choices/delivery/ChoicesDelivery';
 import { Explanation } from '../common/explanation/ExplanationAuthoring';
+import { ActivityScoring } from '../common/responses/ActivityScoring';
 import { SimpleFeedback } from '../common/responses/SimpleFeedback';
 import { TargetedFeedback } from '../common/responses/TargetedFeedback';
 import { StemDelivery } from '../common/stem/delivery/StemDelivery';
@@ -195,6 +196,8 @@ const Likert = (props: AuthoringElementProps<LikertModelSchema>) => {
             context={writerContext}
           />
           <SimpleFeedback partId={selectedPartId} />
+          <ActivityScoring partId={model.authoring.parts[0].id} />
+
           <TargetedFeedback
             toggleChoice={(choiceId, mapping) => {
               dispatch(MCActions.editTargetedFeedbackChoice(mapping.response.id, choiceId));

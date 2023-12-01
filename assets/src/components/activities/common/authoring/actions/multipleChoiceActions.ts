@@ -11,6 +11,7 @@ import {
 import { Choices } from 'data/activities/model/choices';
 import { getCorrectResponse, getResponseBy, getResponseId } from 'data/activities/model/responses';
 import { matchRule } from 'data/activities/model/rules';
+import { getPartById } from 'data/activities/model/utils';
 import { clone } from 'utils/common';
 import { Operations } from 'utils/pathOperations';
 
@@ -39,7 +40,12 @@ export const MCActions = {
 
   toggleChoiceCorrectness(id: string, partId: string) {
     return (model: HasParts, _post: PostUndoable) => {
-      getCorrectResponse(model, partId).rule = matchRule(id);
+      const part = getPartById(model, partId);
+      const correctScore = part.outOf || 1;
+      const correctResponse = getCorrectResponse(model, partId);
+      correctResponse.rule = matchRule(id);
+      correctResponse.score = correctScore;
+      correctResponse.correct = true; // Upgrade older content that didn't have the correct flag and relied on score to determine correctness
     };
   },
 
