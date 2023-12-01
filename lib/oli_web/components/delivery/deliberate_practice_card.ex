@@ -1,7 +1,7 @@
 defmodule OliWeb.Components.Delivery.DeliberatePractice do
   use OliWeb, :html
 
-  alias OliWeb.Router.Helpers, as: Routes
+  alias Oli.Rendering.Content
 
   attr :dark, :boolean, default: false
   attr :practice, :map
