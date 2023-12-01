@@ -1,4 +1,4 @@
-defmodule OliWeb.Components.Delivery.DeliberatePracticeCard do
+defmodule OliWeb.Components.Delivery.DeliberatePractice do
   use OliWeb, :html
 
   alias OliWeb.Router.Helpers, as: Routes
@@ -8,7 +8,7 @@ defmodule OliWeb.Components.Delivery.DeliberatePracticeCard do
   attr :section_slug, :string
   attr :preview_mode, :boolean, default: false
 
-  def render(assigns) do
+  def practice_card(assigns) do
     assigns =
       assign(
         assigns,
