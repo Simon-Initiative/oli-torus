@@ -31,7 +31,7 @@ export const ResponseCard: React.FC<Props> = (props) => {
 
   const onChangeTextDirection = (textDirection: TextDirection) =>
     props.updateFeedbackTextDirection!(props.response.id, textDirection);
-    
+
   const onScoreChange = (score: number) => {
     props.updateScore && props.updateScore(props.response.id, score);
   };
