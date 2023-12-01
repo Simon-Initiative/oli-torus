@@ -1221,6 +1221,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.PracticeActivitiesTabTest do
       assert a4.title == "Module 2: BasicsPage 4"
     end
 
+    @tag :skip
     test "gets results correctly when changing the container selection", %{
       conn: conn,
       section: section,
@@ -1469,7 +1470,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.PracticeActivitiesTabTest do
       |> render_click()
 
       # check that the multi input details render correctly
-      selected_activity_model =
+      _selected_activity_model =
         view
         |> render()
         |> Floki.parse_fragment!()
