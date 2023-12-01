@@ -642,6 +642,7 @@ defmodule OliWeb.Components.Common do
                 "flex items-center w-full gap-[10px] px-[10px] py-[4px] hover:text-gray-400 dark:text-white dark:hover:text-white/50",
                 option[:class]
               ]}
+              role={"dropdown-item #{option.text}"}
             >
               <span class="text-[14px] leading-[20px] whitespace-nowrap"><%= option.text %></span>
               <%= Phoenix.HTML.raw(option[:icon]) %>

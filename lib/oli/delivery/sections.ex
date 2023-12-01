@@ -1940,6 +1940,16 @@ defmodule Oli.Delivery.Sections do
     |> Repo.all()
   end
 
+  def get_root_section_resource_resource_id(
+        %Section{root_section_resource_id: root_section_resource_id} = _section
+      ) do
+    Repo.one(
+      from sr in SectionResource,
+        where: sr.id == ^root_section_resource_id,
+        select: sr.resource_id
+    )
+  end
+
   @doc """
   Returns information about the projects that have been remixed in a section.
 

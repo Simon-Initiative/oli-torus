@@ -52,7 +52,9 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
         post_params: @default_post_params,
         more_posts_exist?: more_posts_exist?,
         ordered_containers_map: ordered_containers_map,
-        resource_to_container_map: resource_to_container_map
+        resource_to_container_map: resource_to_container_map,
+        root_section_resource_resource_id:
+          Sections.get_root_section_resource_resource_id(socket.assigns.section)
       )
       |> assign_new_discussion_form()
     }
@@ -224,7 +226,7 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
       Map.merge(attrs, %{
         "user_id" => socket.assigns.current_user.id,
         "section_id" => socket.assigns.section.id,
-        "resource_id" => 4,
+        "resource_id" => socket.assigns.root_section_resource_resource_id,
         "status" =>
           if(socket.assigns.course_collab_space_config.auto_accept,
             do: :approved,
@@ -333,6 +335,7 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
         <:title>New Discussion</:title>
         <.form
           for={@new_discussion_form}
+          id="new_discussion_form"
           phx-submit={
             JS.push("create_new_discussion")
             |> Modal.hide_modal("new-discussion-modal-#{@new_discussion_form_uuid}")
@@ -654,8 +657,9 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
     ~H"""
     <div
       :if={@post[:is_first_unread]}
+      id={"unread-division-post-#{@post.id}"}
       role="unread division"
-      class="flex items-center gap-[10px] mb-4"
+      class="flex items-center gp-[10px] mb-4"
     >
       <span class="h-[1px] bg-[#FF4B47] w-full" />
       <span class="text-[12px] tracking-[1.2px] text-[#FF4B47] whitespace-nowrap">
@@ -747,6 +751,7 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
         <form
           for={%{}}
           phx-submit="post_reply"
+          id={"post_reply_form_#{@post.id}"}
           class="flex items-center w-full gap-2 whitespace-nowrap"
         >
           <input
@@ -877,6 +882,7 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
           </div>
         </div>
         <.link
+          id={"page_link_#{@post.id}"}
           navigate={~p"/sections/#{@section_slug}/page/#{@post.slug}"}
           class="flex items-center gap-1 text-[14px] leading-[20px] text-[#468AEF] hover:text-[#468AEF]/70"
         >
@@ -1052,18 +1058,24 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
             new_discussion_form(
               socket.assigns.current_user.id,
               socket.assigns.section.id,
-              socket.assigns.course_collab_space_config
+              socket.assigns.course_collab_space_config,
+              socket.assigns.root_section_resource_resource_id
             )
         ),
       else: assign(socket, new_discussion_form_uuid: nil, new_discussion_form: nil)
   end
 
-  defp new_discussion_form(current_user_id, section_id, course_collab_space_config) do
+  defp new_discussion_form(
+         current_user_id,
+         section_id,
+         course_collab_space_config,
+         root_section_resource_resource_id
+       ) do
     to_form(
       Collaboration.change_post(%Post{
         user_id: current_user_id,
         section_id: section_id,
-        resource_id: 4,
+        resource_id: root_section_resource_resource_id,
         status: if(course_collab_space_config.auto_accept, do: :approved, else: :submitted)
       })
     )

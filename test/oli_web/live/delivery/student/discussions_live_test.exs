@@ -15,6 +15,20 @@ defmodule OliWeb.Delivery.Student.DiscussionsLiveTest do
     ~p"/sections/#{section_slug}/discussions"
   end
 
+  defp expand_post(view, post_id) do
+    view
+    |> element(
+      "div[id=\"post-#{post_id}\"] div[role=\"post footer\"] button[phx-click=\"expand_post\"]"
+    )
+    |> render_click
+  end
+
+  defp collapse_post(view, post_id) do
+    view
+    |> element("div[id=\"post-#{post_id}\"] button[phx-click=\"collapse_post\"]")
+    |> render_click
+  end
+
   defp create_elixir_project(_) do
     author = insert(:author)
     project = insert(:project, authors: [author])
@@ -139,6 +153,15 @@ defmodule OliWeb.Delivery.Student.DiscussionsLiveTest do
     {:ok, _} = Sections.update_resource_to_container_map(section)
     {:ok, _} = Sections.rebuild_full_hierarchy(section)
 
+    # enable course collab space
+    root_container_sr =
+      Oli.Delivery.Sections.get_section_resource(section.id, container_revision.resource_id)
+
+    {:ok, _} =
+      Oli.Delivery.Sections.update_section_resource(root_container_sr, %{
+        collab_space_config: build(:collab_space_config, status: :enabled)
+      })
+
     # enroll another student to the section
     student_2 = insert(:user, %{name: "Angel Di Maria"})
     Sections.enroll(student_2.id, section.id, [ContextRoles.get_role(:context_learner)])
@@ -154,7 +177,8 @@ defmodule OliWeb.Delivery.Student.DiscussionsLiveTest do
       unit_1: unit_1_revision,
       unit_2: unit_2_revision,
       root_container: container_revision,
-      student_2: student_2
+      student_2: student_2,
+      root_container_sr: root_container_sr
     }
   end
 
@@ -173,7 +197,7 @@ defmodule OliWeb.Delivery.Student.DiscussionsLiveTest do
     end
   end
 
-  describe "student" do
+  describe "student with course collab space enabled" do
     setup attrs do
       {:ok, conn: conn, user: user} = user_conn(attrs, %{name: "Lionel Messi"})
 
@@ -454,12 +478,684 @@ defmodule OliWeb.Delivery.Student.DiscussionsLiveTest do
              |> render() =~ "Sun, Dec 3, 2023"
     end
 
-    # can create a new discussion
+    test "can create a new discussion", %{
+      conn: conn,
+      student: student,
+      section: section,
+      root_container: root_container
+    } do
+      Sections.enroll(student.id, section.id, [ContextRoles.get_role(:context_learner)])
+      # this prevents being redirected to the onboarding wizard
+      Sections.mark_section_visited_for_student(section, student)
 
-    # can expand and collapse discussions
+      {:ok, view, _html} = live(conn, live_view_discussions_live_route(section.slug))
 
-    # can expand and collapse replies
+      refute render(view) =~ "My first discussion :)"
 
-    # can navigate to a page from a page post
+      form(view, "form[id=\"new_discussion_form\"]")
+      |> render_submit(%{
+        post: %{
+          user_id: student.id,
+          section_id: section.id,
+          resource_id: root_container.resource_id,
+          content: %{message: "My first discussion :)"},
+          status: :approved,
+          anonymous: false
+        }
+      })
+
+      assert render(view) =~ "My first discussion :)"
+    end
+
+    test "can create a new discussion anonymously", %{
+      conn: conn,
+      student: student,
+      section: section,
+      root_container: root_container
+    } do
+      Sections.enroll(student.id, section.id, [ContextRoles.get_role(:context_learner)])
+      # this prevents being redirected to the onboarding wizard
+      Sections.mark_section_visited_for_student(section, student)
+
+      {:ok, view, _html} = live(conn, live_view_discussions_live_route(section.slug))
+
+      refute render(view) =~ "My first anon discussion :)"
+
+      form(view, "form[id=\"new_discussion_form\"]")
+      |> render_submit(%{
+        post: %{
+          user_id: student.id,
+          section_id: section.id,
+          resource_id: root_container.resource_id,
+          content: %{message: "My first anon discussion :)"},
+          status: :approved,
+          anonymous: true
+        }
+      })
+
+      assert render(view) =~ "My first anon discussion :)"
+      assert render(view) =~ "Lionel Messi (anonymously)"
+    end
+
+    test "can reply to a discussion", %{
+      conn: conn,
+      section: section,
+      root_container: root_container,
+      student: student,
+      student_2: student_2
+    } do
+      Sections.enroll(student.id, section.id, [ContextRoles.get_role(:context_learner)])
+      # this prevents being redirected to the onboarding wizard
+      Sections.mark_section_visited_for_student(section, student)
+
+      course_discussion =
+        insert(:post, %{
+          section: section,
+          resource: root_container.resource,
+          user: student_2,
+          content: %{message: "My first discussion"},
+          inserted_at: ~U[2023-12-01 00:00:00Z],
+          updated_at: ~U[2023-12-01 00:00:00Z]
+        })
+
+      {:ok, view, _html} = live(conn, live_view_discussions_live_route(section.slug))
+
+      expand_post(view, course_discussion.id)
+
+      refute render(view) =~ "This is a reply"
+
+      form(view, "form[id=\"post_reply_form_#{course_discussion.id}\"]")
+      |> render_submit(%{
+        anonymous: false,
+        content: %{message: "This is a reply"},
+        parent_post_id: course_discussion.id,
+        thread_root_id: course_discussion.id
+      })
+
+      assert render(view) =~ "This is a reply"
+    end
+
+    test "can expand and collapse discussions", %{
+      conn: conn,
+      student: student,
+      section: section,
+      root_container: root_container,
+      student_2: student_2
+    } do
+      Sections.enroll(student.id, section.id, [ContextRoles.get_role(:context_learner)])
+      # this prevents being redirected to the onboarding wizard
+      Sections.mark_section_visited_for_student(section, student)
+
+      course_discussion =
+        insert(:post, %{
+          section: section,
+          resource: root_container.resource,
+          user: student,
+          content: %{message: "My first discussion"},
+          inserted_at: ~U[2023-12-01 00:00:00Z],
+          updated_at: ~U[2023-12-01 00:00:00Z]
+        })
+
+      _reply =
+        insert(:post,
+          section: section,
+          resource: root_container.resource,
+          user: student_2,
+          content: %{message: "This is a reply to the first discussion"},
+          thread_root_id: course_discussion.id,
+          parent_post_id: course_discussion.id,
+          inserted_at: ~U[2023-12-02 00:00:00Z],
+          updated_at: ~U[2023-12-02 00:00:00Z]
+        )
+
+      {:ok, view, _html} = live(conn, live_view_discussions_live_route(section.slug))
+
+      assert render(view) =~ "My first discussion"
+      refute render(view) =~ "This is a reply to the first discussion"
+
+      expand_post(view, course_discussion.id)
+
+      assert render(view) =~ "My first discussion"
+      assert render(view) =~ "This is a reply to the first discussion"
+
+      collapse_post(view, course_discussion.id)
+
+      assert render(view) =~ "My first discussion"
+      refute render(view) =~ "This is a reply to the first discussion"
+    end
+
+    test "can expand and collapse a reply in a discussion", %{
+      conn: conn,
+      student: student,
+      section: section,
+      root_container: root_container,
+      student_2: student_2
+    } do
+      Sections.enroll(student.id, section.id, [ContextRoles.get_role(:context_learner)])
+      # this prevents being redirected to the onboarding wizard
+      Sections.mark_section_visited_for_student(section, student)
+
+      course_discussion =
+        insert(:post, %{
+          section: section,
+          resource: root_container.resource,
+          user: student,
+          content: %{message: "My first discussion"},
+          inserted_at: ~U[2023-12-01 00:00:00Z],
+          updated_at: ~U[2023-12-01 00:00:00Z]
+        })
+
+      reply =
+        insert(:post,
+          section: section,
+          resource: root_container.resource,
+          user: student_2,
+          content: %{message: "This is a reply to the first discussion"},
+          thread_root_id: course_discussion.id,
+          parent_post_id: course_discussion.id,
+          inserted_at: ~U[2023-12-02 00:00:00Z],
+          updated_at: ~U[2023-12-02 00:00:00Z]
+        )
+
+      _reply_to_reply =
+        insert(:post,
+          section: section,
+          resource: root_container.resource,
+          user: student,
+          content: %{message: "This is a reply to the reply"},
+          thread_root_id: course_discussion.id,
+          parent_post_id: reply.id,
+          inserted_at: ~U[2023-12-03 00:00:00Z],
+          updated_at: ~U[2023-12-03 00:00:00Z]
+        )
+
+      {:ok, view, _html} = live(conn, live_view_discussions_live_route(section.slug))
+
+      assert render(view) =~ "My first discussion"
+      refute render(view) =~ "This is a reply to the first discussion"
+      refute render(view) =~ "This is a reply to the reply"
+
+      expand_post(view, course_discussion.id)
+
+      assert render(view) =~ "My first discussion"
+      assert render(view) =~ "This is a reply to the first discussion"
+      refute render(view) =~ "This is a reply to the reply"
+
+      expand_post(view, reply.id)
+
+      assert render(view) =~ "My first discussion"
+      assert render(view) =~ "This is a reply to the first discussion"
+      assert render(view) =~ "This is a reply to the reply"
+
+      collapse_post(view, reply.id)
+
+      assert render(view) =~ "My first discussion"
+      assert render(view) =~ "This is a reply to the first discussion"
+      refute render(view) =~ "This is a reply to the reply"
+    end
+
+    test "can navigate to a page from a page post", %{
+      conn: conn,
+      student: student,
+      section: section,
+      page_1: page_1
+    } do
+      Sections.enroll(student.id, section.id, [ContextRoles.get_role(:context_learner)])
+      # this prevents being redirected to the onboarding wizard
+      Sections.mark_section_visited_for_student(section, student)
+
+      page_post =
+        insert(:post, %{
+          section: section,
+          resource: page_1.resource,
+          user: student,
+          content: %{message: "A page post"},
+          inserted_at: ~U[2023-12-01 00:00:00Z],
+          updated_at: ~U[2023-12-01 00:00:00Z]
+        })
+
+      {:ok, view, _html} = live(conn, live_view_discussions_live_route(section.slug))
+
+      view
+      |> element("div[id=\"post-#{page_post.id}\"] a[id=\"page_link_#{page_post.id}\"]")
+      |> render_click
+
+      assert_redirect(
+        view,
+        ~p"/sections/#{section.slug}/page/#{page_1.slug}"
+      )
+    end
+
+    test "can not see the name of an anonymous post of other student", %{
+      conn: conn,
+      student: student,
+      student_2: student_2,
+      section: section,
+      root_container: root_container
+    } do
+      Sections.enroll(student.id, section.id, [ContextRoles.get_role(:context_learner)])
+      # this prevents being redirected to the onboarding wizard
+      Sections.mark_section_visited_for_student(section, student)
+
+      _course_discussion =
+        insert(:post, %{
+          section: section,
+          resource: root_container.resource,
+          user: student_2,
+          content: %{message: "My first anonymous discussion"},
+          inserted_at: ~U[2023-12-01 00:00:00Z],
+          updated_at: ~U[2023-12-01 00:00:00Z],
+          anonymous: true
+        })
+
+      {:ok, view, _html} = live(conn, live_view_discussions_live_route(section.slug))
+      assert render(view) =~ "My first anonymous discussion"
+      assert render(view) =~ "Anonymous User"
+    end
+
+    test "can see the `no posts` message when there are no posts", %{
+      conn: conn,
+      student: student,
+      section: section
+    } do
+      Sections.enroll(student.id, section.id, [ContextRoles.get_role(:context_learner)])
+      # this prevents being redirected to the onboarding wizard
+      Sections.mark_section_visited_for_student(section, student)
+
+      {:ok, view, _html} = live(conn, live_view_discussions_live_route(section.slug))
+
+      assert render(view) =~ "There are no discussions to show."
+    end
+
+    test "can see the `unread replies` divider above the FIRST unread post when expanding a discussion",
+         %{
+           conn: conn,
+           student: student,
+           section: section,
+           student_2: student_2,
+           root_container: root_container
+         } do
+      Sections.enroll(student.id, section.id, [ContextRoles.get_role(:context_learner)])
+      # this prevents being redirected to the onboarding wizard
+      Sections.mark_section_visited_for_student(section, student)
+
+      course_discussion =
+        insert(:post, %{
+          section: section,
+          resource: root_container.resource,
+          user: student,
+          content: %{message: "My first discussion"},
+          inserted_at: ~U[2023-12-01 00:00:00Z],
+          updated_at: ~U[2023-12-01 00:00:00Z]
+        })
+
+      already_read_reply =
+        insert(:post,
+          section: section,
+          resource: root_container.resource,
+          user: student_2,
+          content: %{message: "This is a reply to the first discussion"},
+          thread_root_id: course_discussion.id,
+          parent_post_id: course_discussion.id,
+          inserted_at: ~U[2023-12-02 00:00:00Z],
+          updated_at: ~U[2023-12-02 00:00:00Z]
+        )
+
+      Collaboration.mark_posts_as_read([already_read_reply], student.id)
+
+      first_not_read_reply =
+        insert(:post,
+          section: section,
+          resource: root_container.resource,
+          user: student_2,
+          content: %{message: "This is an unread reply"},
+          thread_root_id: course_discussion.id,
+          parent_post_id: course_discussion.id,
+          inserted_at: ~U[2023-12-03 00:00:00Z],
+          updated_at: ~U[2023-12-03 00:00:00Z]
+        )
+
+      second_not_read_reply =
+        insert(:post,
+          section: section,
+          resource: root_container.resource,
+          user: student_2,
+          content: %{message: "This is another unread reply"},
+          thread_root_id: course_discussion.id,
+          parent_post_id: course_discussion.id,
+          inserted_at: ~U[2023-12-03 00:00:00Z],
+          updated_at: ~U[2023-12-03 00:00:00Z]
+        )
+
+      {:ok, view, _html} = live(conn, live_view_discussions_live_route(section.slug))
+
+      expand_post(view, course_discussion.id)
+
+      assert has_element?(
+               view,
+               "div[id=\"unread-division-post-#{first_not_read_reply.id}\"]",
+               "UNREAD REPLIES"
+             )
+
+      refute has_element?(
+               view,
+               "div[id=\"unread-division-post-#{second_not_read_reply.id}\"]",
+               "UNREAD REPLIES"
+             )
+    end
+
+    test "can filter by unread posts", %{
+      conn: conn,
+      student: student,
+      section: section,
+      root_container: root_container,
+      student_2: student_2
+    } do
+      Sections.enroll(student.id, section.id, [ContextRoles.get_role(:context_learner)])
+      # this prevents being redirected to the onboarding wizard
+      Sections.mark_section_visited_for_student(section, student)
+
+      read_discussion =
+        insert(:post, %{
+          section: section,
+          resource: root_container.resource,
+          user: student,
+          content: %{message: "This is a read discussion"}
+        })
+
+      read_reply =
+        insert(:post,
+          section: section,
+          resource: root_container.resource,
+          user: student_2,
+          content: %{message: "This is a read reply"},
+          thread_root_id: read_discussion.id,
+          parent_post_id: read_discussion.id
+        )
+
+      Collaboration.mark_posts_as_read([read_reply], student.id)
+
+      unread_discussion =
+        insert(:post, %{
+          section: section,
+          resource: root_container.resource,
+          user: student_2,
+          content: %{message: "This is an unread discussion"}
+        })
+
+      _unread_reply =
+        insert(:post,
+          section: section,
+          resource: root_container.resource,
+          user: student_2,
+          content: %{message: "This is an unread reply"},
+          thread_root_id: unread_discussion.id,
+          parent_post_id: unread_discussion.id
+        )
+
+      {:ok, view, _html} = live(conn, live_view_discussions_live_route(section.slug))
+
+      assert has_element?(
+               view,
+               "div[id=\"post-#{read_discussion.id}\"]",
+               "This is a read discussion"
+             )
+
+      assert has_element?(
+               view,
+               "div[id=\"post-#{unread_discussion.id}\"]",
+               "This is an unread discussion"
+             )
+
+      view
+      |> element("button[role=\"dropdown-item Unread\"]")
+      |> render_click()
+
+      refute has_element?(
+               view,
+               "div[id=\"post-#{read_discussion.id}\"]",
+               "This is a read discussion"
+             )
+
+      assert has_element?(
+               view,
+               "div[id=\"post-#{unread_discussion.id}\"]",
+               "This is an unread discussion"
+             )
+    end
+
+    test "can filter by my activity (discussions student created or student replied to)", %{
+      conn: conn,
+      student: student,
+      section: section,
+      root_container: root_container,
+      student_2: student_2
+    } do
+      Sections.enroll(student.id, section.id, [ContextRoles.get_role(:context_learner)])
+      # this prevents being redirected to the onboarding wizard
+      Sections.mark_section_visited_for_student(section, student)
+
+      my_discussion =
+        insert(:post, %{
+          section: section,
+          resource: root_container.resource,
+          user: student,
+          content: %{message: "This is a discussion I started"}
+        })
+
+      other_discussion =
+        insert(:post, %{
+          section: section,
+          resource: root_container.resource,
+          user: student_2,
+          content: %{message: "This is a discussion started by other student"}
+        })
+
+      other_discussion_i_replied_to =
+        insert(:post, %{
+          section: section,
+          resource: root_container.resource,
+          user: student_2,
+          content: %{message: "This is a discussion started by other student and I replied to"}
+        })
+
+      _my_reply =
+        insert(:post,
+          section: section,
+          resource: root_container.resource,
+          user: student,
+          content: %{message: "This is my reply"},
+          thread_root_id: other_discussion_i_replied_to.id,
+          parent_post_id: other_discussion_i_replied_to.id
+        )
+
+      {:ok, view, _html} = live(conn, live_view_discussions_live_route(section.slug))
+
+      assert has_element?(
+               view,
+               "div[id=\"post-#{my_discussion.id}\"]",
+               "This is a discussion I started"
+             )
+
+      assert has_element?(
+               view,
+               "div[id=\"post-#{other_discussion.id}\"]",
+               "This is a discussion started by other student"
+             )
+
+      assert has_element?(
+               view,
+               "div[id=\"post-#{other_discussion_i_replied_to.id}\"]",
+               "This is a discussion started by other student and I replied to"
+             )
+
+      view
+      |> element("button[role=\"dropdown-item My Activity\"]")
+      |> render_click()
+
+      assert has_element?(
+               view,
+               "div[id=\"post-#{my_discussion.id}\"]",
+               "This is a discussion I started"
+             )
+
+      refute has_element?(
+               view,
+               "div[id=\"post-#{other_discussion.id}\"]",
+               "This is a discussion started by other student"
+             )
+
+      assert has_element?(
+               view,
+               "div[id=\"post-#{other_discussion_i_replied_to.id}\"]",
+               "This is a discussion started by other student and I replied to"
+             )
+    end
+
+    test "can filter by Course discussions and Page discussions", %{
+      conn: conn,
+      student: student,
+      section: section,
+      root_container: root_container,
+      student_2: student_2,
+      page_1: page_1
+    } do
+      Sections.enroll(student.id, section.id, [ContextRoles.get_role(:context_learner)])
+      # this prevents being redirected to the onboarding wizard
+      Sections.mark_section_visited_for_student(section, student)
+
+      _course_discussion =
+        insert(:post, %{
+          section: section,
+          resource: root_container.resource,
+          user: student,
+          content: %{message: "This is a course discussion"}
+        })
+
+      _page_discussion =
+        insert(:post, %{
+          section: section,
+          resource: page_1.resource,
+          user: student_2,
+          content: %{message: "This is a page discussion"}
+        })
+
+      {:ok, view, _html} = live(conn, live_view_discussions_live_route(section.slug))
+
+      assert render(view) =~ "This is a course discussion"
+      assert render(view) =~ "This is a page discussion"
+
+      view
+      |> element("button[role=\"dropdown-item Course Discussions\"]")
+      |> render_click()
+
+      assert render(view) =~ "This is a course discussion"
+      refute render(view) =~ "This is a page discussion"
+
+      view
+      |> element("button[role=\"dropdown-item Page Discussions\"]")
+      |> render_click()
+
+      refute render(view) =~ "This is a course discussion"
+      assert render(view) =~ "This is a page discussion"
+    end
+
+    test "can read more posts (until there are no more left)", %{
+      conn: conn,
+      student: student,
+      section: section,
+      root_container: root_container
+    } do
+      Sections.enroll(student.id, section.id, [ContextRoles.get_role(:context_learner)])
+      # this prevents being redirected to the onboarding wizard
+      Sections.mark_section_visited_for_student(section, student)
+
+      Enum.each(
+        1..11,
+        fn i ->
+          insert(:post, %{
+            section: section,
+            resource: root_container.resource,
+            user: student,
+            content: %{message: "Discussion #{i} :)"},
+            inserted_at: DateTime.new!(Date.new!(2023, 12, i), ~T[00:00:00]),
+            updated_at: DateTime.new!(Date.new!(2023, 12, i), ~T[00:00:00])
+          })
+        end
+      )
+
+      {:ok, view, _html} = live(conn, live_view_discussions_live_route(section.slug))
+
+      refute render(view) =~ "Discussion 1 :)"
+      refute render(view) =~ "Discussion 2 :)"
+      refute render(view) =~ "Discussion 3 :)"
+      refute render(view) =~ "Discussion 4 :)"
+      refute render(view) =~ "Discussion 5 :)"
+      refute render(view) =~ "Discussion 6 :)"
+      assert render(view) =~ "Discussion 7 :)"
+      assert render(view) =~ "Discussion 8 :)"
+      assert render(view) =~ "Discussion 9 :)"
+      assert render(view) =~ "Discussion 10 :)"
+      assert render(view) =~ "Discussion 11 :)"
+
+      render_click(element(view, "button[phx-click=\"load_more_posts\"]"))
+
+      refute render(view) =~ "Discussion 1 :)"
+      assert render(view) =~ "Discussion 2 :)"
+      assert render(view) =~ "Discussion 3 :)"
+      assert render(view) =~ "Discussion 4 :)"
+      assert render(view) =~ "Discussion 6 :)"
+      assert render(view) =~ "Discussion 7 :)"
+      assert render(view) =~ "Discussion 8 :)"
+      assert render(view) =~ "Discussion 9 :)"
+      assert render(view) =~ "Discussion 10 :)"
+      assert render(view) =~ "Discussion 11 :)"
+
+      render_click(element(view, "button[phx-click=\"load_more_posts\"]"))
+
+      assert render(view) =~ "Discussion 1 :)"
+      assert render(view) =~ "Discussion 2 :)"
+      assert render(view) =~ "Discussion 3 :)"
+      assert render(view) =~ "Discussion 4 :)"
+      assert render(view) =~ "Discussion 6 :)"
+      assert render(view) =~ "Discussion 7 :)"
+      assert render(view) =~ "Discussion 8 :)"
+      assert render(view) =~ "Discussion 9 :)"
+      assert render(view) =~ "Discussion 10 :)"
+      assert render(view) =~ "Discussion 11 :)"
+
+      refute has_element?(view, "button[phx-click=\"load_more_posts\"]", "Load more posts")
+    end
+  end
+
+  describe "student with course collab space disabled" do
+    setup attrs do
+      {:ok, conn: conn, user: user} = user_conn(attrs, %{name: "Lionel Messi"})
+
+      Map.merge(%{conn: conn, student: user}, create_elixir_project(conn))
+    end
+
+    test "can not initiate a new course discussion if that option is disabled", %{
+      conn: conn,
+      student: student,
+      section: section,
+      root_container_sr: root_container_sr
+    } do
+      Sections.enroll(student.id, section.id, [ContextRoles.get_role(:context_learner)])
+      # this prevents being redirected to the onboarding wizard
+      Sections.mark_section_visited_for_student(section, student)
+
+      {:ok, view, _html} = live(conn, live_view_discussions_live_route(section.slug))
+
+      assert has_element?(view, "button[role=\"new discussion\"]", "New Discussion")
+
+      {:ok, _root_container_sr} =
+        Oli.Delivery.Sections.update_section_resource(root_container_sr, %{
+          collab_space_config: build(:collab_space_config, status: :disabled)
+        })
+
+      {:ok, view, _html} = live(conn, live_view_discussions_live_route(section.slug))
+      refute has_element?(view, "button[role=\"new discussion\"]", "New Discussion")
+    end
   end
 end

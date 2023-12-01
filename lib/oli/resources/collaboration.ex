@@ -718,6 +718,10 @@ defmodule Oli.Resources.Collaboration do
           }
         )
       )
+      |> case do
+        nil -> %{}
+        metrics -> metrics
+      end
 
     Map.merge(root_post, post_metrics)
   end
