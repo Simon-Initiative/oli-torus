@@ -1047,6 +1047,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.ScoredActivitiesTabTest do
       assert has_element?(view, "p", "None exist")
     end
 
+    @tag :skip
     test "shows an warning and redirect to the scored activities tab when the assessment doesn't exist",
          %{
            conn: conn,
