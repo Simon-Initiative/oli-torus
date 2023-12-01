@@ -52,13 +52,13 @@ defmodule OliWeb.Delivery.InstructorDashboard.PracticeActivitiesTabTest do
 
     transformed_model =
       case activity_type_id do
-        8 ->
+        9 ->
           %{
             "authoring" => %{},
             "inputs" => [%{"id" => "1458555427", "inputType" => "text", "partId" => "1"}]
           }
 
-        9 ->
+        10 ->
           %{choices: generate_choices(activity_revision.id)}
 
         _ ->
@@ -78,7 +78,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.PracticeActivitiesTabTest do
 
     part_attempt =
       case activity_type_id do
-        8 ->
+        9 ->
           insert(:part_attempt, %{
             id: 1,
             part_id: "1",
