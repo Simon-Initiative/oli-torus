@@ -11,7 +11,6 @@ defmodule OliWeb.Components.Delivery.Surveys do
     StudentResponse
   }
 
-  alias Oli.Publishing.PublishedResource
   alias Oli.Repo
 
   alias Oli.Publishing.DeliveryResolver
@@ -28,7 +27,6 @@ defmodule OliWeb.Components.Delivery.Surveys do
   alias Oli.Delivery.Attempts.Core
   alias OliWeb.ManualGrading.RenderedActivity
   alias Oli.Repo
-  alias Oli.Delivery.Sections.SectionsProjectsPublications
 
   alias Oli.Delivery.Attempts.Core.{
     ResourceAccess,

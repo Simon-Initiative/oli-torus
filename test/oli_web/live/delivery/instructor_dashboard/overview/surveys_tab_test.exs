@@ -1454,9 +1454,6 @@ defmodule OliWeb.Delivery.InstructorDashboard.SurveysTabTest do
         |> Floki.find(~s{oli-multi-input-authoring})
         |> Floki.attribute("model")
         |> hd
-        |> IO.inspect()
-
-      open_browser(view)
 
       assert has_element?(
                view,

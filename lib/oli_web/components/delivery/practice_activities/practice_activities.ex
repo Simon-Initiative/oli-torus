@@ -22,8 +22,7 @@ defmodule OliWeb.Components.Delivery.PracticeActivities do
 
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.Section
-  alias Oli.Delivery.Sections.SectionsProjectsPublications
-  alias Oli.Publishing.{DeliveryResolver, PublishedResource}
+  alias Oli.Publishing.DeliveryResolver
   alias Oli.Repo
   alias Oli.Resources.Revision
   alias OliWeb.Common.{Params, PagedTable, SearchInput}
