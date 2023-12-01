@@ -3957,6 +3957,10 @@ table.table-striped tbody tr:nth-child(even) {
   left: 0px;
 }
 
+.left-2 {
+  left: 0.5rem;
+}
+
 .left-20 {
   left: 5rem;
 }
@@ -3995,6 +3999,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .top-12 {
   top: 3rem;
+}
+
+.top-2 {
+  top: 0.5rem;
 }
 
 .top-20 {
@@ -5531,6 +5539,11 @@ table.table-striped tbody tr:nth-child(even) {
 .border-primary {
   --tw-border-opacity: 1;
   border-color: rgb(59 118 211 / var(--tw-border-opacity));
+}
+
+.border-red-200 {
+  --tw-border-opacity: 1;
+  border-color: rgb(254 202 202 / var(--tw-border-opacity));
 }
 
 .border-red-400 {
