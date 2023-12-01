@@ -395,8 +395,6 @@ defmodule OliWeb.Components.Delivery.PracticeActivities do
   defp maybe_filter_by_container_id(assessments, ""), do: assessments
 
   defp maybe_filter_by_container_id(assessments, container_id) do
-    dbg({Enum.map(assessments, fn a -> a.container_id end), container_id})
-
     Enum.filter(assessments, fn assessment ->
       assessment.container_id == container_id
     end)
