@@ -7,7 +7,11 @@ export const ScoringActions = {
     return (model: ActivityLevelScoring) => {
       model.customScoring = !model.customScoring;
 
-      if (!model.customScoring) {
+      if (model.customScoring) {
+        model.authoring?.parts?.forEach((part: Part) => {
+          part.outOf = 1;
+        });
+      } else {
         // When going from custom to default, we need to reset the scores for each part to 1 or 0
         model.scoringStrategy = ScoringStrategy.average;
         model.authoring?.parts?.forEach((part: Part) => {

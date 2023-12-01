@@ -20,7 +20,9 @@ export const ActivityScoring: React.FC<ActivityScoreProps> = ({ partId, promptFo
   const checkboxInputId = useMemo(() => guid(), []);
   const outOf = getOutOfPoints(model, partId);
   const incorrect = getIncorrectPoints(model, partId);
-  const [useDefaultScoring, setDefaultScoring] = useState(outOf === null || outOf === undefined);
+  const [useDefaultScoring, setDefaultScoring] = useState(
+    (outOf === null || outOf === undefined) && promptForDefault,
+  );
   const outOfPoints = outOf || 1;
   const incorrectPoints = incorrect || 0;
 
