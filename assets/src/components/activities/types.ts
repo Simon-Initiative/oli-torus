@@ -610,6 +610,9 @@ export interface HasParts {
 export interface ActivityLevelScoring {
   customScoring?: boolean;
   scoringStrategy?: ScoringStrategy;
+  authoring: {
+    parts: Part[];
+  };
 }
 
 /**

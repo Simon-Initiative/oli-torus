@@ -20,17 +20,14 @@ export const ActivityScoring: React.FC<ActivityScoreProps> = ({ partId, promptFo
   const checkboxInputId = useMemo(() => guid(), []);
   const outOf = getOutOfPoints(model, partId);
   const incorrect = getIncorrectPoints(model, partId);
-  const [useDefaultScoring, setDefaultScoring] = useState(
-    !promptForDefault && (outOf === null || outOf === undefined),
-  );
+  const [useDefaultScoring, setDefaultScoring] = useState(outOf === null || outOf === undefined);
   const outOfPoints = outOf || 1;
   const incorrectPoints = incorrect || 0;
 
   const onChangeDefault = (e: React.ChangeEvent<HTMLInputElement>) => {
     setDefaultScoring(e.target.checked);
     if (e.target.checked) {
-      dispatch(ScoringActions.editPartScore(partId, null, null));
-      dispatch(ScoringActions.editPartScoringStrategy(partId, 'average'));
+      dispatch(ScoringActions.editPartScore(partId, null, null, 'average'));
     } else {
       dispatch(ScoringActions.editPartScore(partId, 1, 0));
     }
