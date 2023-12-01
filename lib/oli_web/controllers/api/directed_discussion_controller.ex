@@ -20,38 +20,43 @@ defmodule OliWeb.Api.DirectedDiscussionController do
     current_user = Map.get(conn.assigns, :current_user)
     section = Sections.get_section_by_slug(section_slug)
 
-    Collaboration.create_post(%{
-      :status => :approved,
-      :user_id => current_user.id,
-      :section_id => section.id,
-      :resource_id => resource_id,
-      :parent_post_id => parent_post_id,
-      :thread_root_id => parent_post_id,
-      :replies_count => 0,
-      :anonymous => false,
-      :content => %{"message" => content}
-    })
-    |> preload_post_user
-    |> case do
-      {:ok, post} ->
-        IO.puts("Sending broadcast to #{topic_name(section_slug, resource_id)}")
+    if Sections.is_enrolled?(current_user.id, section_slug) do
+      Collaboration.create_post(%{
+        :status => :approved,
+        :user_id => current_user.id,
+        :section_id => section.id,
+        :resource_id => resource_id,
+        :parent_post_id => parent_post_id,
+        :thread_root_id => parent_post_id,
+        :replies_count => 0,
+        :anonymous => false,
+        :content => %{"message" => content}
+      })
+      |> preload_post_user
+      |> case do
+        {:ok, post} ->
+          PubSub.broadcast(
+            Oli.PubSub,
+            topic_name(section_slug, resource_id),
+            {:post_created, Repo.preload(post, :user), current_user.id}
+          )
 
-        PubSub.broadcast(
-          Oli.PubSub,
-          topic_name(section_slug, resource_id),
-          {:post_created, Repo.preload(post, :user), current_user.id}
-        )
+          json(conn, %{
+            "result" => "success",
+            "post" => Post.post_response(post)
+          })
 
-        json(conn, %{
-          "result" => "success",
-          "post" => Post.post_response(post)
-        })
-
-      error ->
-        json(conn, %{
-          "result" => "failure",
-          "error" => error
-        })
+        error ->
+          json(conn, %{
+            "result" => "failure",
+            "error" => error
+          })
+      end
+    else
+      json(conn, %{
+        "result" => "failure",
+        "error" => "User does not have permission to create a post."
+      })
     end
   end
 
@@ -70,7 +75,7 @@ defmodule OliWeb.Api.DirectedDiscussionController do
 
     post = Collaboration.get_post_by(%{id: post_id})
 
-    if post.user_id == current_user.id do
+    if post.user_id == current_user.id and Sections.is_enrolled(current_user.id, section_slug) do
       Collaboration.delete_posts(post)
 
       PubSub.broadcast(
@@ -90,31 +95,35 @@ defmodule OliWeb.Api.DirectedDiscussionController do
     end
   end
 
-  defp preload_post_user(post) do
-    case post do
-      {:ok, post} -> {:ok, Repo.preload(post, :user)}
-      error -> error
-    end
-  end
+  defp preload_post_user({:ok, post}), do: {:ok, Repo.preload(post, :user)}
+  defp preload_post_user(error), do: error
 
   def get_discussion(conn, %{"resource_id" => resource_id, "section_slug" => section_slug}) do
-    section = Sections.get_section_by_slug(section_slug)
     current_user = Map.get(conn.assigns, :current_user)
 
-    posts =
-      Collaboration.list_posts_for_user_in_page_section(
-        section.id,
-        resource_id,
-        current_user.id
-      )
-      |> Enum.map(&Post.post_response/1)
+    if Sections.is_enrolled?(current_user.id, section_slug) do
+      section = Sections.get_section_by_slug(section_slug)
 
-    json(conn, %{
-      "result" => "success",
-      "resource" => resource_id,
-      "section" => section_slug,
-      "posts" => posts,
-      "current_user" => current_user.id
-    })
+      posts =
+        Collaboration.list_posts_for_user_in_page_section(
+          section.id,
+          resource_id,
+          current_user.id
+        )
+        |> Enum.map(&Post.post_response/1)
+
+      json(conn, %{
+        "result" => "success",
+        "resource" => resource_id,
+        "section" => section_slug,
+        "posts" => posts,
+        "current_user" => current_user.id
+      })
+    else
+      json(conn, %{
+        "result" => "failure",
+        "error" => "User does not have permission to view these posts."
+      })
+    end
   end
 end
