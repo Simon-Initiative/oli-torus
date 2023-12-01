@@ -14,6 +14,7 @@ import { YoutubePlayer } from 'components/youtube_player/YoutubePlayer';
 import { registerApplication } from 'apps/app';
 import { globalStore } from 'state/store';
 import { VideoPlayer } from '../components/video_player/VideoPlayer';
+import { OfflineDetector } from './OfflineDetector';
 import { References } from './bibliography/References';
 
 registerApplication('ModalDisplay', ModalDisplay, globalStore);
@@ -31,3 +32,4 @@ registerApplication('DeliveryElementRenderer', DeliveryElementRenderer, globalSt
 registerApplication('ECLRepl', ECLRepl, globalStore);
 registerApplication('SelectTimezone', SelectTimezone, globalStore);
 registerApplication('YoutubePlayer', YoutubePlayer, globalStore);
+registerApplication('OfflineDetector', OfflineDetector, globalStore);
