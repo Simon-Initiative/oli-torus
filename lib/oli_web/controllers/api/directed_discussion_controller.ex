@@ -75,7 +75,7 @@ defmodule OliWeb.Api.DirectedDiscussionController do
 
     post = Collaboration.get_post_by(%{id: post_id})
 
-    if post.user_id == current_user.id and Sections.is_enrolled(current_user.id, section_slug) do
+    if post.user_id == current_user.id and Sections.is_enrolled?(current_user.id, section_slug) do
       Collaboration.delete_posts(post)
 
       PubSub.broadcast(
