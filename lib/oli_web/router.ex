@@ -696,6 +696,14 @@ defmodule OliWeb.Router do
     )
   end
 
+  scope "/api/v1/discussion/:section_slug/:resource_id", OliWeb do
+    pipe_through([:api, :delivery_protected])
+
+    get("/", Api.DirectedDiscussionController, :get_discussion)
+    post("/", Api.DirectedDiscussionController, :create_post)
+    delete("/:post_id", Api.DirectedDiscussionController, :delete_post)
+  end
+
   # User State Service, extrinsic state
   scope "/api/v1/state", OliWeb do
     pipe_through([:api, :delivery_protected])

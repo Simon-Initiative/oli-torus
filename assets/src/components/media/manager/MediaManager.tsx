@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { Dropdown } from 'react-bootstrap';
 import * as Immutable from 'immutable';
 import { Maybe } from 'tsmonad';
+import { formatDate } from 'components/activities/common/utils';
 import { LoadingSpinner, LoadingSpinnerSize } from 'components/common/LoadingSpinner';
 import { MediaItem } from 'types/media';
 import { classNames } from 'utils/classNames';
@@ -140,11 +141,6 @@ const getMediaManagerLayoutSetting = (): LAYOUTS => {
     default:
       return LAYOUTS.GRID;
   }
-};
-
-const formatDate = (date: string) => {
-  const d = new Date(date);
-  return `${d.toLocaleDateString()} ${d.toLocaleTimeString()}`;
 };
 
 /**

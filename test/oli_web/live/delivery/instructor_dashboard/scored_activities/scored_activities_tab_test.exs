@@ -65,9 +65,16 @@ defmodule OliWeb.Delivery.InstructorDashboard.ScoredActivitiesTabTest do
         date_evaluated: ~U[2020-01-01 00:00:00Z]
       })
 
+    # TODO - If you add an activity, that 10 constant below might not correspond to multiple choice anymore.
+    # I had changed the "10" below to use this:
+    #      multiple_choice_activity = Oli.Activities.get_registration_by_slug("oli_multiple_choice")
+    #      multiple_choice_type_id = multiple_choice_activity.id
+    # but then we started getting non-deterministric failures in this test, likely due to some kind of timing issue, so
+    # I'm giving up and leaving this like I found it using a hard-coded constant.
+
     transformed_model =
       case activity_type_id do
-        9 ->
+        10 ->
           %{choices: generate_choices(activity_revision.id)}
 
         _ ->
