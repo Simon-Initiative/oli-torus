@@ -611,11 +611,6 @@ defmodule OliWeb.Components.Delivery.PracticeActivities do
             res_access.user_id in ^student_ids and is_nil(aa.survey_id),
         join: rev in Revision,
         on: aa.revision_id == rev.id,
-        join: pr in PublishedResource,
-        on: rev.id == pr.revision_id,
-        join: spp in SectionsProjectsPublications,
-        on: pr.publication_id == spp.publication_id,
-        where: spp.section_id == ^section.id,
         group_by: [rev.resource_id, rev.id],
         select:
           {rev, count(aa.id),

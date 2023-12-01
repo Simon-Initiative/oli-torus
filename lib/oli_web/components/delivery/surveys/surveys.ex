@@ -572,7 +572,7 @@ defmodule OliWeb.Components.Delivery.Surveys do
       from(aa in ActivityAttempt,
         join: res_attempt in ResourceAttempt,
         on: aa.resource_attempt_id == res_attempt.id,
-        where: res_attempt.lifecycle_state == :evaluated and aa.lifecycle_state == :evaluated,
+        where: aa.lifecycle_state == :evaluated,
         join: res_access in ResourceAccess,
         on: res_attempt.resource_access_id == res_access.id,
         where:
@@ -581,11 +581,6 @@ defmodule OliWeb.Components.Delivery.Surveys do
             res_access.user_id in ^student_ids and not is_nil(aa.survey_id),
         join: rev in Revision,
         on: aa.revision_id == rev.id,
-        join: pr in PublishedResource,
-        on: rev.id == pr.revision_id,
-        join: spp in SectionsProjectsPublications,
-        on: pr.publication_id == spp.publication_id,
-        where: spp.section_id == ^section.id,
         group_by: [rev.resource_id, rev.id],
         select:
           {rev, count(aa.id),
