@@ -44,6 +44,25 @@ export const QuestionTab: React.FC<Props> = (props) => {
       <Card.Content>
         <InputSizeEditor input={props.input} />
 
+        {['text', 'numeric'].includes(props.input.inputType) && model.authoring.responses ? (
+          <div className="mt-5">
+            <table>
+              <tr>
+                <th>Student</th>
+                <th>Response</th>
+              </tr>
+              <tbody>
+                {model.authoring.responses?.map((response, index) => (
+                  <tr key={index}>
+                    <td className="whitespace-nowrap">{response.user_name}</td>
+                    <td>{response.text}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : null}
+
         {props.input.inputType === 'dropdown' && <DropdownQuestionEditor input={props.input} />}
       </Card.Content>
     </Card.Card>
