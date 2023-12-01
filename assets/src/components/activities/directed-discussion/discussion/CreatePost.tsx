@@ -8,8 +8,15 @@ interface Props {
   autoFocus?: boolean;
   placeholder?: string;
   maxWords: number;
+  readonly: boolean;
 }
-export const CreatePost: React.FC<Props> = ({ onPost, autoFocus, placeholder, maxWords }) => {
+export const CreatePost: React.FC<Props> = ({
+  readonly,
+  onPost,
+  autoFocus,
+  placeholder,
+  maxWords,
+}) => {
   const [content, setContent] = useState('');
   const wordsCount = countWords(content);
   const expanded = content && content.length > 0;
@@ -17,6 +24,7 @@ export const CreatePost: React.FC<Props> = ({ onPost, autoFocus, placeholder, ma
   const sizeClass = expanded ? 'h-24 overflow-auto' : 'h-[30px] overflow-hidden resize-none';
 
   const onPostClick = () => {
+    if (readonly) return;
     onPost(content);
     setContent('');
   };
@@ -32,6 +40,7 @@ export const CreatePost: React.FC<Props> = ({ onPost, autoFocus, placeholder, ma
         className={`${sizeClass} ${InputClasses}`}
         value={content}
         onChange={(e) => setContent(e.target.value)}
+        disabled={readonly}
       />
       {expanded && (
         <div className="flex justify-between items-center mt-1 mb-2">
@@ -42,7 +51,7 @@ export const CreatePost: React.FC<Props> = ({ onPost, autoFocus, placeholder, ma
               {wordsCount} / {maxWords}
             </span>
           )}
-          <Button disabled={!canPost || overWordLimit} onClick={onPostClick}>
+          <Button disabled={!canPost || overWordLimit || readonly} onClick={onPostClick}>
             Post
           </Button>
         </div>

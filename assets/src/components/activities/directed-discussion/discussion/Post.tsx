@@ -48,6 +48,7 @@ export const Post: React.FC<{
       <div>
         {canPost && (
           <CreatePost
+            readonly={!canPost}
             onPost={onPostReply}
             autoFocus={false}
             placeholder="Reply..."

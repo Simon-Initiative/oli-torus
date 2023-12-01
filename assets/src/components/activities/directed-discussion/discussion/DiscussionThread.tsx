@@ -30,13 +30,11 @@ export const DiscussionThread: React.FC<Props> = ({
   // }
   return (
     <div>
-      {canPost && (
-        <div className="mb-4">
-          <HorizontalRule />
-          <CreatePost onPost={onPost} maxWords={maxWords} autoFocus={true} />
-          <HorizontalRule />
-        </div>
-      )}
+      <div className="mb-4">
+        <HorizontalRule />
+        <CreatePost readonly={!canPost} onPost={onPost} maxWords={maxWords} autoFocus={true} />
+        <HorizontalRule />
+      </div>
       <PostList
         focusId={focusId}
         posts={posts}

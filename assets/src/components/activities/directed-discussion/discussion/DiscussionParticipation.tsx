@@ -5,14 +5,9 @@ import { CurrentParticipation } from './participation-util';
 type Props = {
   requirements: DDParticipationDefinition;
   participation: CurrentParticipation;
-  currentUserId: number;
 };
 
-export const DiscussionParticipation: React.FC<Props> = ({
-  currentUserId,
-  requirements,
-  participation,
-}) => {
+export const DiscussionParticipation: React.FC<Props> = ({ requirements, participation }) => {
   const { minPosts, minReplies } = requirements;
 
   const showMinPosts = minPosts > 0;

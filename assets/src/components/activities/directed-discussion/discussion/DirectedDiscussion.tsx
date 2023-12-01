@@ -30,10 +30,6 @@ export const DirectedDiscussion: React.FC<Props> = ({ sectionSlug, resourceId, m
     [posts, currentUserId],
   );
 
-  if (!currentUserId) {
-    return null;
-  }
-
   const onSearch = (search: string) => {
     setSearchTerm(search);
     setFocusId(null);
@@ -52,7 +48,6 @@ export const DirectedDiscussion: React.FC<Props> = ({ sectionSlug, resourceId, m
         <DiscussionParticipation
           requirements={model.participation}
           participation={currentParticipation}
-          currentUserId={currentUserId}
         />
         <DiscussionSearchSortBar onSearch={onSearch} />
         {displaySearchResults && (
@@ -69,7 +64,7 @@ export const DirectedDiscussion: React.FC<Props> = ({ sectionSlug, resourceId, m
             canReply={currentParticipation.canReply}
             posts={posts}
             onPost={addPost}
-            currentUserId={currentUserId}
+            currentUserId={currentUserId || -1}
             onDeletePost={deletePost}
             maxWords={model.participation.maxWordLength}
           />
