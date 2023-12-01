@@ -39,7 +39,7 @@ defmodule OliWeb.Curriculum.Actions do
           </svg>
         </button>
         <div
-          class="hidden dropdown-menu dropdown-menu-right"
+          class="hidden dropdown-menu right-0"
           id={"dropdownMenu_#{@child.slug}"}
           phx-click-away={JS.toggle(to: "#dropdownMenu_#{@child.slug}")}
           aria-labelledby={"dropdownMenuButton_#{@child.slug}"}
