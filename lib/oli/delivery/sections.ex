@@ -1605,7 +1605,6 @@ defmodule Oli.Delivery.Sections do
   """
 
   def fetch_ordered_containers(section_slug) do
-
     container_type_id = Oli.Resources.ResourceType.get_id_by_type("container")
 
     SectionResource
