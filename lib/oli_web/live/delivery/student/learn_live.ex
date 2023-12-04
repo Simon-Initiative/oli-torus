@@ -159,35 +159,40 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       class="p-[25px] pl-[50px]"
       role={"unit_#{@unit["numbering"]["index"]}"}
     >
-      <div class="mb-6 flex flex-col items-start gap-[6px]">
-        <h3 class="text-[26px] leading-[32px] tracking-[0.02px] font-normal ml-2 dark:text-[#DDD]">
-          <%= "#{@unit["numbering"]["index"]}. #{@unit["revision"]["title"]}" %>
-        </h3>
-        <div class="flex items-center w-full">
-          <div class="flex items-center gap-3" role="schedule_details">
-            <div class="text-[14px] leading-[32px] tracking-[0.02px] font-semibold">
-              <span class="text-gray-400 opacity-80 dark:text-[#696974] dark:opacity-100 mr-1">
-                Complete By:
-              </span>
-              <%= to_formatted_datetime(
-                @unit["section_resource"]["end_date"],
-                @ctx
-              ) %>
+      <div class="flex gap-[30px]">
+        <div class="text-[14px] leading-[19px] tracking-[1.4px] uppercase mt-[7px] whitespace-nowrap opacity-60">
+          <%= "UNIT #{@unit["numbering"]["index"]}" %>
+        </div>
+        <div class="mb-6 flex flex-col items-start gap-[6px] w-full">
+          <h3 class="text-[26px] leading-[32px] tracking-[0.02px] font-normal dark:text-[#DDD]">
+            <%= @unit["revision"]["title"] %>
+          </h3>
+          <div class="flex items-center w-full">
+            <div class="flex items-center gap-3" role="schedule_details">
+              <div class="text-[14px] leading-[32px] tracking-[0.02px] font-semibold">
+                <span class="text-gray-400 opacity-80 dark:text-[#696974] dark:opacity-100 mr-1">
+                  Due:
+                </span>
+                <%= to_formatted_datetime(
+                  @unit["section_resource"]["end_date"],
+                  @ctx
+                ) %>
+              </div>
             </div>
-          </div>
-          <div class="ml-auto w-36">
-            <.progress_bar
-              percent={
-                parse_student_progress_for_resource(
-                  @student_progress_per_resource_id,
-                  @unit["revision"]["resource_id"]
-                )
-              }
-              width="100px"
-              on_going_colour="bg-[#0F6CF5]"
-              completed_colour="bg-[#0CAF61]"
-              role={"unit_#{@unit["numbering"]["index"]}_progress"}
-            />
+            <div class="ml-auto w-36">
+              <.progress_bar
+                percent={
+                  parse_student_progress_for_resource(
+                    @student_progress_per_resource_id,
+                    @unit["revision"]["resource_id"]
+                  )
+                }
+                width="100px"
+                on_going_colour="bg-[#0F6CF5]"
+                completed_colour="bg-[#0CAF61]"
+                role={"unit_#{@unit["numbering"]["index"]}_progress"}
+              />
+            </div>
           </div>
         </div>
       </div>
@@ -549,7 +554,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   defp to_formatted_datetime(string_datetime, ctx) do
     string_datetime
     |> to_datetime
-    |> FormatDateTime.parse_datetime(ctx, "{WDshort} {Mshort} {D}, {YYYY} ({h12}:{m}{am})")
+    |> FormatDateTime.parse_datetime(ctx, "{WDshort}, {Mshort} {D}, {YYYY} ({h12}:{m}{am})")
   end
 
   defp to_datetime(nil), do: "not yet scheduled"
