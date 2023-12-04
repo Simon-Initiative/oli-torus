@@ -29,7 +29,7 @@ jobs:
 
     environment:
       name: ${{ github.event.inputs.deploy_target }}
-      url: ${{ github.event.inputs.deploy_target }}
+      url: https://${{ github.event.inputs.deploy_target }}
 
     outputs:
       app_version: ${{ steps.info.outputs.app_version }}

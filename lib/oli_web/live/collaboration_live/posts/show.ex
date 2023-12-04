@@ -40,7 +40,7 @@ defmodule OliWeb.CollaborationLive.Posts.Show do
                   section_id: assigns.post.section_id,
                   resource_id: assigns.post.resource_id,
                   parent_post_id: assigns.post.id,
-                  thread_root_id: assigns.post.parent_post_id || assigns.post.id
+                  thread_root_id: assigns.post.thread_root_id || assigns.post.id
                 })
               )
           )

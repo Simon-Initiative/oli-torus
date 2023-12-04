@@ -15,6 +15,7 @@ defmodule OliWeb.Sections.SectionsView do
   @default_options %BrowseOptions{
     institution_id: nil,
     blueprint_id: nil,
+    project_id: nil,
     text_search: "",
     active_today: false,
     filter_status: nil,
@@ -74,7 +75,8 @@ defmodule OliWeb.Sections.SectionsView do
       filter_type: get_atom_param(params, "filter_type", @type_opts, nil),
       # This view is currently for all institutions and all root products
       institution_id: nil,
-      blueprint_id: nil
+      blueprint_id: nil,
+      project_id: nil
     }
 
     sections =

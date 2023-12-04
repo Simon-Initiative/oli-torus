@@ -471,13 +471,8 @@ defmodule Oli.Rendering.Content.Html do
 
   def formula(context, next, properties, inline \\ false)
 
-  def formula(
-        %Oli.Rendering.Context{} = _context,
-        _next,
-        %{"subtype" => "latex", "src" => src, "legacyBlockRendered" => true},
-        true
-      ) do
-    ["<span class=\"#{formula_class(false)}\">\\(", escape_xml!(src), "\\)</span>\n"]
+  def formula(context, next, %{"legacyBlockRendered" => true} = properties, _inline) do
+    formula(context, next, Map.delete(properties, "legacyBlockRendered"), false)
   end
 
   def formula(

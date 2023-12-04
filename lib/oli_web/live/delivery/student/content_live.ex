@@ -48,14 +48,22 @@ defmodule OliWeb.Delivery.Student.ContentLive do
         nil ->
           {Map.merge(socket.assigns.selected_module_per_unit_uuid, %{
              unit_uuid =>
-               get_module(socket.assigns.section.full_hierarchy, unit_uuid, module_uuid)
+               get_module(
+                 Sections.get_full_hierarchy(socket.assigns.section),
+                 unit_uuid,
+                 module_uuid
+               )
                |> mark_visited_pages(socket.assigns.student_visited_pages)
                |> Map.merge(%{"module_index_in_unit" => selected_module_index})
            }), true}
 
         current_module ->
           clicked_module =
-            get_module(socket.assigns.section.full_hierarchy, unit_uuid, module_uuid)
+            get_module(
+              Sections.get_full_hierarchy(socket.assigns.section),
+              unit_uuid,
+              module_uuid
+            )
 
           if clicked_module["uuid"] == current_module["uuid"] do
             # if the user clicked in an already expanded module, then we should collapse it
@@ -77,7 +85,8 @@ defmodule OliWeb.Delivery.Student.ContentLive do
      |> assign(selected_module_per_unit_uuid: selected_module_per_unit_uuid)
      |> maybe_scroll_y_to_unit(unit_uuid, expand_module?)
      |> push_event("hide-or-show-buttons-on-sliders", %{
-       unit_uuids: Enum.map(socket.assigns.section.full_hierarchy["children"], & &1["uuid"])
+       unit_uuids:
+         Enum.map(Sections.get_full_hierarchy(socket.assigns.section)["children"], & &1["uuid"])
      })
      |> push_event("js-exec", %{
        to: "#selected_module_in_unit_#{unit_uuid}",
@@ -116,7 +125,8 @@ defmodule OliWeb.Delivery.Student.ContentLive do
          )
      )
      |> push_event("enable-slider-buttons", %{
-       unit_uuids: Enum.map(socket.assigns.section.full_hierarchy["children"], & &1["uuid"])
+       unit_uuids:
+         Enum.map(Sections.get_full_hierarchy(socket.assigns.section)["children"], & &1["uuid"])
      })}
   end
 
@@ -127,7 +137,7 @@ defmodule OliWeb.Delivery.Student.ContentLive do
     ~H"""
     <div id="student_content" class="lg:container lg:mx-auto p-[25px]" phx-hook="Scroller">
       <.unit
-        :for={child <- @section.full_hierarchy["children"]}
+        :for={child <- Sections.get_full_hierarchy(@section)["children"]}
         unit={child}
         ctx={@ctx}
         student_progress_per_resource_id={@student_progress_per_resource_id}
@@ -159,7 +169,7 @@ defmodule OliWeb.Delivery.Student.ContentLive do
               <span class="text-gray-400 opacity-80 dark:text-[#696974] dark:opacity-100 mr-1">
                 Complete By:
               </span>
-              <%= parse_datetime(
+              <%= to_formatted_datetime(
                 @unit["section_resource"]["end_date"],
                 @ctx
               ) %>
@@ -503,7 +513,7 @@ defmodule OliWeb.Delivery.Student.ContentLive do
   def page_icon(assigns) do
     ~H"""
     <div class="h-[45px] w-[36px] absolute top-0 right-0" role="page_icon">
-      <img src={~p"/images/ng23/course_content/page_icon.png"} />
+      <img src={~p"/images/course_content/page_icon.png"} />
       <div class="absolute top-0 right-0 h-[36px] w-[36px] flex justify-center items-center">
         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="20" viewBox="0 0 18 20" fill="none">
           <path
@@ -526,13 +536,12 @@ defmodule OliWeb.Delivery.Student.ContentLive do
     if !String.contains?(Jason.encode!(content), "\"type\":\"h1\""), do: "mt-[52px]"
   end
 
-  defp parse_datetime(nil, _ctx), do: "not yet scheduled"
+  defp to_formatted_datetime(nil, _ctx), do: "not yet scheduled"
 
-  defp parse_datetime(string_datetime, ctx) do
+  defp to_formatted_datetime(string_datetime, ctx) do
     string_datetime
     |> to_datetime
-    |> FormatDateTime.convert_datetime(ctx)
-    |> Timex.format!("{WDshort} {Mshort} {D}, {YYYY} ({h12}:{m}{am})")
+    |> FormatDateTime.parse_datetime(ctx, "{WDshort} {Mshort} {D}, {YYYY} ({h12}:{m}{am})")
   end
 
   defp to_datetime(nil), do: "not yet scheduled"

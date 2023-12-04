@@ -945,7 +945,7 @@ defmodule OliWeb.Router do
         ] do
         live("/", Delivery.Student.IndexLive)
         live("/content", Delivery.Student.ContentLive)
-        live("/discussions", Delivery.Student.DiscussionLive)
+        live("/discussions", Delivery.Student.DiscussionsLive)
         live("/assignments", Delivery.Student.AssignmentsLive)
         live("/explorations", Delivery.Student.ExplorationsLive)
         live("/practice", Delivery.Student.PracticeLive)
@@ -1351,6 +1351,8 @@ defmodule OliWeb.Router do
     live("/:project_id/history/resource_id/:resource_id", RevisionHistory,
       as: :history_by_resource_id
     )
+
+    live("/:project_id/datashop", Datashop.AnalyticsLive)
   end
 
   # Support for cognito JWT auth currently used by Infiniscope

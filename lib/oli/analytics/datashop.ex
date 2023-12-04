@@ -9,8 +9,10 @@ defmodule Oli.Analytics.Datashop do
 
   import XmlBuilder
   import Oli.Utils, only: [value_or: 2]
-  alias Oli.Repo
   import Ecto.Query
+
+  alias Oli.Repo
+  alias Oli.DatashopCache
   alias Oli.Publishing
   alias Oli.Delivery.Snapshots.Snapshot
   alias Oli.Authoring.Course
@@ -28,7 +30,7 @@ defmodule Oli.Analytics.Datashop do
   end
 
   def max_record_size() do
-    20000
+    20_000
   end
 
   # Creates a map of resource ids to lists, where the lists are the
@@ -168,9 +170,7 @@ defmodule Oli.Analytics.Datashop do
     |> Enum.map(fn {k, v} -> {k, v} end)
   end
 
-  defp part_attempts_stream(project_id) do
-    max = max_record_size()
-
+  defp part_attempts_stream(section_ids, offset, limit) do
     from(snapshot in Snapshot,
       join: user in Oli.Accounts.User,
       on: snapshot.user_id == user.id,
@@ -178,7 +178,7 @@ defmodule Oli.Analytics.Datashop do
       on: activity_revision.id == snapshot.revision_id,
       join: part_attempt in Oli.Delivery.Attempts.Core.PartAttempt,
       on: snapshot.part_attempt_id == part_attempt.id,
-      where: snapshot.project_id == ^project_id and not is_nil(snapshot.objective_revision_id),
+      where: snapshot.section_id in ^section_ids and not is_nil(snapshot.objective_revision_id),
       select: %{
         email: user.email,
         sub: user.sub,
@@ -189,7 +189,8 @@ defmodule Oli.Analytics.Datashop do
         activity_type_id: snapshot.activity_type_id
       },
       order_by: [desc: snapshot.inserted_at],
-      limit: ^max
+      offset: ^offset,
+      limit: ^limit
     )
     |> Repo.stream()
   end
@@ -225,45 +226,40 @@ defmodule Oli.Analytics.Datashop do
     )
   end
 
-  def count(project_id) do
+  def count(section_ids) do
     from(snapshot in Snapshot,
-      where: snapshot.project_id == ^project_id,
+      where: snapshot.section_id in ^section_ids and not is_nil(snapshot.objective_revision_id),
       select: count(snapshot.id)
     )
     |> Repo.one()
   end
 
-  def content_stream(context) do
+  def content_stream(context, offset, limit) do
     %{
       hierarchy_map: hierarchy_map,
       activity_types: activity_types,
       skill_titles: skill_titles,
       dataset_name: dataset_name,
       project: project,
-      publication: publication
+      publication: publication,
+      section_ids: section_ids
     } = context
 
-    part_attempts_stream(project.id)
+    section_ids
+    |> part_attempts_stream(offset, limit)
     |> Stream.map(fn %{
                        email: email,
                        sub: sub,
                        slug: activity_slug,
                        part_attempt: part_attempt
                      } ->
-      # TODO, it may make a lot of sense to front these next four fetches with an
-      # in memory cache
-      activity_attempt =
-        Oli.Repo.get(Oli.Delivery.Attempts.Core.ActivityAttempt, part_attempt.activity_attempt_id)
+      activity_attempt = DatashopCache.get_activity_attempt!(part_attempt.activity_attempt_id)
 
-      activity_revision = Oli.Repo.get(Oli.Resources.Revision, activity_attempt.revision_id)
+      activity_revision = DatashopCache.get_revision!(activity_attempt.revision_id)
 
-      resource_attempt =
-        Oli.Repo.get(
-          Oli.Delivery.Attempts.Core.ResourceAttempt,
-          activity_attempt.resource_attempt_id
-        )
+      resource_attempt = DatashopCache.get_resource_attempt!(activity_attempt.resource_attempt_id)
 
-      page_revision = Oli.Repo.get(Oli.Resources.Revision, resource_attempt.revision_id)
+      page_revision = DatashopCache.get_revision!(resource_attempt.revision_id)
 
       resource_attempt = %{resource_attempt | revision: page_revision}
       activity_attempt = %{activity_attempt | revision: activity_revision}
@@ -319,7 +315,7 @@ defmodule Oli.Analytics.Datashop do
     end)
   end
 
-  def build_context(project_id) do
+  def build_context(project_id, section_ids) do
     project = Course.get_project!(project_id)
     publication = Publishing.get_latest_published_publication_by_slug(project.slug)
 
@@ -346,7 +342,8 @@ defmodule Oli.Analytics.Datashop do
       skill_titles: skill_titles,
       dataset_name: Utils.make_dataset_name(project.slug),
       project: project,
-      publication: publication
+      publication: publication,
+      section_ids: section_ids
     }
   end
 

@@ -7,7 +7,10 @@ defmodule Oli.Delivery.Sections do
   alias Oli.Delivery.Sections.EnrollmentContextRole
   alias Oli.Repo
   alias Oli.Repo.{Paging, Sorting}
-  alias Oli.Delivery.Sections.{ContainedObjective, ContainedPage, Enrollment, Section}
+  alias Oli.Utils.Database
+  alias Oli.Delivery.Sections.Section
+  alias Oli.Delivery.Sections.ContainedPage
+  alias Oli.Delivery.Sections.Enrollment
   alias Lti_1p3.Tool.ContextRole
   alias Lti_1p3.DataProviders.EctoProvider
   alias Oli.Lti.Tool.{Deployment, Registration}
@@ -16,6 +19,7 @@ defmodule Oli.Delivery.Sections do
   alias Oli.Publishing
   alias Oli.Publishing.Publications.Publication
   alias Oli.Delivery.Paywall.Payment
+  alias Oli.Delivery.Sections.ContainedObjective
   alias Oli.Delivery.Sections.SectionsProjectsPublications
   alias Oli.Resources.Numbering
   alias Oli.Authoring.Course.{Project, ProjectAttributes}
@@ -899,28 +903,9 @@ defmodule Oli.Delivery.Sections do
   def bulk_create_section_resource([], _opts), do: {0, []}
 
   def bulk_create_section_resource(section_resource_rows, opts) do
-    section_resource_rows
-    |> Enum.chunk_every(calculate_chunk_size(section_resource_rows))
-    |> Enum.reduce({0, []}, fn chunk, {total, acc} ->
-      {new_total, new_acc} =
-        Repo.insert_all(SectionResource, chunk, returning: opts[:returning] || true)
-
-      {total + new_total, acc ++ new_acc}
-    end)
-  end
-
-  defp calculate_chunk_size(section_resource_rows) do
-    # We want to split the list of section resources into chunks
-    # to avoid hitting the max number of bind variables in a query.
-    max_bind_variables = 65535
-
-    fields_count =
-      section_resource_rows
-      |> List.first()
-      |> Map.keys()
-      |> length()
-
-    div(max_bind_variables, fields_count)
+    Database.batch_insert_all(SectionResource, section_resource_rows,
+      returning: opts[:returning] || true
+    )
   end
 
   @doc """
@@ -948,7 +933,7 @@ defmodule Oli.Delivery.Sections do
   def bulk_update_section_resource([], _), do: {0, []}
 
   def bulk_update_section_resource(section_resource_rows, opts) do
-    Repo.insert_all(SectionResource, section_resource_rows,
+    Database.batch_insert_all(SectionResource, section_resource_rows,
       returning: opts[:returning] || true,
       on_conflict: {:replace, [:children]},
       conflict_target: [:id]
@@ -1351,6 +1336,25 @@ defmodule Oli.Delivery.Sections do
     end)
   end
 
+  @doc """
+  Returns the resource_to_container map for the given section,
+  that maps all resources ids to their parent container id.
+  If the section does not have a precomputed resource_to_container_map, one will be generated.
+
+  ## Examples
+      iex> get_resource_to_container_map(section)
+      %{
+        "21" => 39,
+        "22" => 40,
+        "23" => 42,
+        "24" => 42,
+        "25" => 42,
+        "26" => 42,
+        "27" => 42,
+        "28" => 43,
+      }
+  """
+
   def get_resource_to_container_map(section) do
     case section do
       %Section{resource_to_container_map: nil} ->
@@ -1500,7 +1504,7 @@ defmodule Oli.Delivery.Sections do
         [exploration | explorations]
       end)
     end)
-    |> label_and_sort_explorations_by_hierarchy(section.slug)
+    |> label_and_sort_resources_by_hierarchy(section.slug)
     |> attach_statuses_for_user(section.slug, user)
   end
 
@@ -1543,16 +1547,16 @@ defmodule Oli.Delivery.Sections do
     |> Enum.reduce(%{}, fn id, acc -> Map.put(acc, id, :started) end)
   end
 
-  defp label_and_sort_explorations_by_hierarchy(explorations_map, section_slug) do
+  defp label_and_sort_resources_by_hierarchy(resource_map, section_slug) do
     fetch_ordered_containers(section_slug)
     |> Enum.reduce(
-      case explorations_map[:default] do
+      case resource_map[:default] do
         nil -> []
         default -> [{:default, default}]
       end,
       fn {resource_id, title}, acc ->
-        if explorations_map[resource_id] do
-          [{title, explorations_map[resource_id]} | acc]
+        if resource_map[resource_id] do
+          [{title, resource_map[resource_id]} | acc]
         else
           acc
         end
@@ -1561,7 +1565,46 @@ defmodule Oli.Delivery.Sections do
     |> Enum.reverse()
   end
 
-  defp fetch_ordered_containers(section_slug) do
+  def get_practice_pages_by_containers(section) do
+    resource_to_container_map = get_resource_to_container_map(section)
+
+    # get all practice pages in the section and group them by their container title
+    DeliveryResolver.get_by_purpose(section.slug, :deliberate_practice)
+    |> Enum.reduce(%{}, fn practice, acc ->
+      container_id =
+        Map.get(resource_to_container_map, Integer.to_string(practice.resource_id), :default)
+
+      # group by container resource_id
+      Map.update(acc, container_id, [practice], fn practice_pages ->
+        [practice | practice_pages]
+      end)
+    end)
+    |> label_and_sort_resources_by_hierarchy(section.slug)
+  end
+
+  @doc """
+  Returns a map of all containers numbering index and title for the given section,
+  ordered in the way they appear in the course, considering the customizations that
+  could be configured to containers (ex, naming SubModules to Sections)
+
+  ## Examples
+      iex> get_ordered_containers(section_slug)
+      %{
+        4 => "Section 1: Curriculum",
+        39 => "Module 1: Setup",
+        40 => "Module 2: Phoenix project",
+        41 => "Unit 1: Getting Started",
+        42 => "Module 3: Types",
+        43 => "Module 4: Enum",
+        44 => "Unit 2: Basics",
+        45 => "Module 5: OTP",
+        46 => "Module 6: GenServers",
+        47 => "Unit 3: Advanced",
+        48 => "Unit 4: Final"
+      }
+  """
+
+  def fetch_ordered_containers(section_slug) do
     container_type_id = Oli.Resources.ResourceType.get_id_by_type("container")
 
     SectionResource
@@ -1899,6 +1942,16 @@ defmodule Oli.Delivery.Sections do
     |> Repo.all()
   end
 
+  def get_root_section_resource_resource_id(
+        %Section{root_section_resource_id: root_section_resource_id} = _section
+      ) do
+    Repo.one(
+      from sr in SectionResource,
+        where: sr.id == ^root_section_resource_id,
+        select: sr.resource_id
+    )
+  end
+
   @doc """
   Returns information about the projects that have been remixed in a section.
 
@@ -2076,12 +2129,6 @@ defmodule Oli.Delivery.Sections do
           Delivery.maybe_update_section_contains_deliberate_practice(section)
         end
       )
-      |> Multi.run(
-        :update_resource_to_container_map,
-        fn _repo, _ ->
-          update_resource_to_container_map(section)
-        end
-      )
       |> Repo.transaction()
     else
       throw(
@@ -2127,41 +2174,41 @@ defmodule Oli.Delivery.Sections do
       now = DateTime.utc_now() |> DateTime.truncate(:second)
       placeholders = %{timestamp: now}
 
-      section_resources
-      |> Enum.map(fn section_resource ->
-        %{
-          SectionResource.to_map(section_resource)
-          | inserted_at: {:placeholder, :timestamp},
-            updated_at: {:placeholder, :timestamp}
-        }
-      end)
-      |> then(
-        &Repo.insert_all(SectionResource, &1,
-          placeholders: placeholders,
-          on_conflict:
-            {:replace_all_except,
-             [
-               :inserted_at,
-               :scoring_strategy_id,
-               :scheduling_type,
-               :manually_scheduled,
-               :start_date,
-               :end_date,
-               :collab_space_config,
-               :explanation_strategy,
-               :max_attempts,
-               :retake_mode,
-               :password,
-               :late_submit,
-               :late_start,
-               :time_limit,
-               :grace_period,
-               :review_submission,
-               :feedback_mode,
-               :feedback_scheduled_date
-             ]},
-          conflict_target: [:section_id, :resource_id]
-        )
+      section_resource_rows =
+        section_resources
+        |> Enum.map(fn section_resource ->
+          %{
+            SectionResource.to_map(section_resource)
+            | inserted_at: {:placeholder, :timestamp},
+              updated_at: {:placeholder, :timestamp}
+          }
+        end)
+
+      Database.batch_insert_all(SectionResource, section_resource_rows,
+        placeholders: placeholders,
+        on_conflict:
+          {:replace_all_except,
+           [
+             :inserted_at,
+             :scoring_strategy_id,
+             :scheduling_type,
+             :manually_scheduled,
+             :start_date,
+             :end_date,
+             :collab_space_config,
+             :explanation_strategy,
+             :max_attempts,
+             :retake_mode,
+             :password,
+             :late_submit,
+             :late_start,
+             :time_limit,
+             :grace_period,
+             :review_submission,
+             :feedback_mode,
+             :feedback_scheduled_date
+           ]},
+        conflict_target: [:section_id, :resource_id]
       )
 
       # Cleanup any deleted or non-hierarchical section resources
@@ -2252,7 +2299,26 @@ defmodule Oli.Delivery.Sections do
   end
 
   @doc """
-  Rebuilds the full_hierachy field for a course section,
+  Rebuilds the full_hierarchy index for a course section. If a full hierarchy is not
+  available, one will be generated. Otherwise, the existing full hierarchy will be
+  returned.
+  """
+  def get_full_hierarchy(%Section{full_hierarchy: nil} = section) do
+    Logger.warning(
+      "Section #{section.slug} has no precomputed full_hierarchy. One will be generated now."
+    )
+
+    {:ok, section} = rebuild_full_hierarchy(section, false)
+
+    section.full_hierarchy
+  end
+
+  def get_full_hierarchy(%Section{full_hierarchy: full_hierarchy}) do
+    full_hierarchy
+  end
+
+  @doc """
+  Rebuilds the full_hierarchy field for a course section,
   needed as "cache" data for student's content view (OliWeb.Delivery.Student.ContentLive).
   The full hierarchy represents the main structure in which a course curriculum is organized
   to be delivered (see Oli.Delivery.Hierarchy)
@@ -2275,7 +2341,7 @@ defmodule Oli.Delivery.Sections do
 
   @doc """
   Rebuilds the "contained pages" relations for a course section.  A "contained page" for a
-  container is the full set of pages found immeidately within that container or in any of
+  container is the full set of pages found immediately within that container or in any of
   its sub-containers.  For every container in a course section, one row will exist in this
   "contained pages" table for each contained page.  This allows a straightforward join through
   this relation from a container to then all of its contained pages - to power calculations like
@@ -2645,50 +2711,50 @@ defmodule Oli.Delivery.Sections do
       now = DateTime.utc_now() |> DateTime.truncate(:second)
       placeholders = %{timestamp: now}
 
-      new_published_resources_map
-      |> Enum.filter(fn {resource_id, _pr} ->
-        !Map.has_key?(prev_published_resources_map, resource_id)
-      end)
-      |> Enum.map(fn {resource_id, pr} ->
-        %{
-          resource_id: resource_id,
-          project_id: project_id,
-          section_id: section.id,
-          # we set children to nil here so that we know it needs to be set in the next step
-          children: nil,
-          scoring_strategy_id: pr.revision.scoring_strategy_id,
-          slug: Oli.Utils.Slug.generate("section_resources", pr.revision.title),
-          inserted_at: {:placeholder, :timestamp},
-          updated_at: {:placeholder, :timestamp}
-        }
-      end)
-      |> then(
-        &Repo.insert_all(SectionResource, &1,
-          placeholders: placeholders,
-          on_conflict:
-            {:replace_all_except,
-             [
-               :inserted_at,
-               :scoring_strategy_id,
-               :scheduling_type,
-               :manually_scheduled,
-               :start_date,
-               :end_date,
-               :collab_space_config,
-               :explanation_strategy,
-               :max_attempts,
-               :retake_mode,
-               :password,
-               :late_submit,
-               :late_start,
-               :time_limit,
-               :grace_period,
-               :review_submission,
-               :feedback_mode,
-               :feedback_scheduled_date
-             ]},
-          conflict_target: [:section_id, :resource_id]
-        )
+      section_resource_rows =
+        new_published_resources_map
+        |> Enum.filter(fn {resource_id, _pr} ->
+          !Map.has_key?(prev_published_resources_map, resource_id)
+        end)
+        |> Enum.map(fn {resource_id, pr} ->
+          %{
+            resource_id: resource_id,
+            project_id: project_id,
+            section_id: section.id,
+            # we set children to nil here so that we know it needs to be set in the next step
+            children: nil,
+            scoring_strategy_id: pr.revision.scoring_strategy_id,
+            slug: Oli.Utils.Slug.generate("section_resources", pr.revision.title),
+            inserted_at: {:placeholder, :timestamp},
+            updated_at: {:placeholder, :timestamp}
+          }
+        end)
+
+      Database.batch_insert_all(SectionResource, section_resource_rows,
+        placeholders: placeholders,
+        on_conflict:
+          {:replace_all_except,
+           [
+             :inserted_at,
+             :scoring_strategy_id,
+             :scheduling_type,
+             :manually_scheduled,
+             :start_date,
+             :end_date,
+             :collab_space_config,
+             :explanation_strategy,
+             :max_attempts,
+             :retake_mode,
+             :password,
+             :late_submit,
+             :late_start,
+             :time_limit,
+             :grace_period,
+             :review_submission,
+             :feedback_mode,
+             :feedback_scheduled_date
+           ]},
+        conflict_target: [:section_id, :resource_id]
       )
 
       # get all section resources including freshly minted ones
@@ -2774,40 +2840,40 @@ defmodule Oli.Delivery.Sections do
       now = DateTime.utc_now() |> DateTime.truncate(:second)
       placeholders = %{timestamp: now}
 
-      merged_section_resources
-      |> Enum.map(fn section_resource ->
-        %{
-          SectionResource.to_map(section_resource)
-          | updated_at: {:placeholder, :timestamp}
-        }
-      end)
-      |> then(
-        &Repo.insert_all(SectionResource, &1,
-          placeholders: placeholders,
-          on_conflict:
-            {:replace_all_except,
-             [
-               :inserted_at,
-               :scoring_strategy_id,
-               :scheduling_type,
-               :manually_scheduled,
-               :start_date,
-               :end_date,
-               :collab_space_config,
-               :explanation_strategy,
-               :max_attempts,
-               :retake_mode,
-               :password,
-               :late_submit,
-               :late_start,
-               :time_limit,
-               :grace_period,
-               :review_submission,
-               :feedback_mode,
-               :feedback_scheduled_date
-             ]},
-          conflict_target: [:section_id, :resource_id]
-        )
+      section_resource_rows =
+        merged_section_resources
+        |> Enum.map(fn section_resource ->
+          %{
+            SectionResource.to_map(section_resource)
+            | updated_at: {:placeholder, :timestamp}
+          }
+        end)
+
+      Database.batch_insert_all(SectionResource, section_resource_rows,
+        placeholders: placeholders,
+        on_conflict:
+          {:replace_all_except,
+           [
+             :inserted_at,
+             :scoring_strategy_id,
+             :scheduling_type,
+             :manually_scheduled,
+             :start_date,
+             :end_date,
+             :collab_space_config,
+             :explanation_strategy,
+             :max_attempts,
+             :retake_mode,
+             :password,
+             :late_submit,
+             :late_start,
+             :time_limit,
+             :grace_period,
+             :review_submission,
+             :feedback_mode,
+             :feedback_scheduled_date
+           ]},
+        conflict_target: [:section_id, :resource_id]
       )
 
       # Finally, we must fetch and renumber the final hierarchy in order to generate the proper numberings
@@ -2980,31 +3046,33 @@ defmodule Oli.Delivery.Sections do
 
     skip_set = MapSet.new(skip_resource_ids ++ unreachable_page_resource_ids)
 
-    published_resources_by_resource_id
-    |> Enum.filter(fn {resource_id, %{revision: rev}} ->
-      !MapSet.member?(skip_set, resource_id) && !is_structural?(rev)
-    end)
-    |> generate_slugs_until_uniq()
-    |> Enum.map(fn {slug, %PublishedResource{revision: revision, publication: pub}} ->
-      [
-        slug: slug,
-        resource_id: revision.resource_id,
-        project_id: pub.project_id,
-        section_id: section_id,
-        inserted_at: now,
-        updated_at: now,
-        collab_space_config: revision.collab_space_config,
-        max_attempts:
-          if is_nil(revision.max_attempts) do
-            0
-          else
-            revision.max_attempts
-          end,
-        scoring_strategy_id: revision.scoring_strategy_id,
-        retake_mode: revision.retake_mode
-      ]
-    end)
-    |> then(&Repo.insert_all(SectionResource, &1))
+    section_resource_rows =
+      published_resources_by_resource_id
+      |> Enum.filter(fn {resource_id, %{revision: rev}} ->
+        !MapSet.member?(skip_set, resource_id) && !is_structural?(rev)
+      end)
+      |> generate_slugs_until_uniq()
+      |> Enum.map(fn {slug, %PublishedResource{revision: revision, publication: pub}} ->
+        %{
+          slug: slug,
+          resource_id: revision.resource_id,
+          project_id: pub.project_id,
+          section_id: section_id,
+          inserted_at: now,
+          updated_at: now,
+          collab_space_config: revision.collab_space_config,
+          max_attempts:
+            if is_nil(revision.max_attempts) do
+              0
+            else
+              revision.max_attempts
+            end,
+          scoring_strategy_id: revision.scoring_strategy_id,
+          retake_mode: revision.retake_mode
+        }
+      end)
+
+    Database.batch_insert_all(SectionResource, section_resource_rows)
   end
 
   def is_structural?(%Revision{resource_type_id: resource_type_id}) do
