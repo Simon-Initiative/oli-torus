@@ -1,4 +1,4 @@
-defmodule OliWeb.Delivery.Student.ContentLive do
+defmodule OliWeb.Delivery.Student.LearnLive do
   use OliWeb, :live_view
 
   alias Oli.Accounts.{User}
@@ -19,7 +19,7 @@ defmodule OliWeb.Delivery.Student.ContentLive do
 
     {:ok,
      assign(socket,
-       active_tab: :content,
+       active_tab: :learn,
        selected_module_per_unit_uuid: %{},
        student_visited_pages: %{},
        student_progress_per_resource_id: %{}
@@ -135,7 +135,7 @@ defmodule OliWeb.Delivery.Student.ContentLive do
 
   def render(assigns) do
     ~H"""
-    <div id="student_content" class="lg:container lg:mx-auto p-[25px]" phx-hook="Scroller">
+    <div id="student_learn" class="lg:container lg:mx-auto p-[25px]" phx-hook="Scroller">
       <.unit
         :for={child <- Sections.get_full_hierarchy(@section)["children"]}
         unit={child}
