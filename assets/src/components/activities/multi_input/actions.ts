@@ -91,7 +91,6 @@ export const MultiInputActions = {
 
   addMissingParts(operations: Operation[]) {
     return (model: MultiInputSchema) => {
-      // if (model.multInputsPerPart) return;
       elementsAdded<InputRef>(operations, 'input_ref').forEach((inputRef) =>
         MultiInputActions.addPart(inputRef.id)(model),
       );
@@ -100,7 +99,6 @@ export const MultiInputActions = {
 
   removeExtraParts(operations: Operation[]) {
     return (model: MultiInputSchema, post: PostUndoable) => {
-      if (model.multInputsPerPart) return;
       const removedInputRefs = elementsRemoved<InputRef>(operations, 'input_ref');
       const clonedStem = clone(model.stem);
       const clonedPreviewText = clone(model.authoring.previewText);
@@ -339,10 +337,17 @@ export const MultiInputActions = {
         MultiInputActions.removeChoicesForInput(input)(model);
       }
 
-      Operations.applyAll(model, [
-        Operations.filter('$..parts', `[?(@.id!=${part.id})]`),
-        Operations.filter('$.inputs', `[?(@.id!=${inputId})]`),
-      ]);
+      const targets = part.targets?.filter((v) => v != input.id);
+      if (!targets || targets.length < 1) {
+        Operations.applyAll(model, [
+          Operations.filter('$..parts', `[?(@.id!=${part.id})]`),
+          Operations.filter('$.inputs', `[?(@.id!=${inputId})]`),
+        ]);
+      } else {
+        Operations.applyAll(model, [
+          Operations.filter('$.inputs', `[?(@.id!=${inputId})]`),
+        ]);
+      }
 
       post(undoables);
     };

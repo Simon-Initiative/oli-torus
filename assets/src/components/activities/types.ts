@@ -495,17 +495,6 @@ export interface Response extends Identifiable {
   showPage?: number;
 
   matchStyle?: 'any' | 'all' | 'none';
-
-  matches?: MatchResponse[];
-}
-
-export interface MatchResponse extends Identifiable {
-  /**
-   * Rule based match.
-   */
-  rule: string;
-
-  input: string;
 }
 
 /**
