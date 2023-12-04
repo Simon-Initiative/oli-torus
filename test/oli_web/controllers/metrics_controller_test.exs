@@ -7,25 +7,26 @@ defmodule OliWeb.MetricsControllerTest do
   setup [:setup_session]
 
   describe "verify download of container progress" do
-
     test "retrieves the download", %{
       conn: conn,
       section: section,
       unit1_container: unit1
     } do
-
       conn =
         get(
           conn,
           Routes.metrics_path(conn, :download_container_progress, section.slug, unit1.resource.id)
         )
 
-      Enum.any?(conn.resp_headers, fn h -> h == {"content-disposition", "attachment; filename=\"progress_#{section.slug}_#{unit1.resource.id}_.csv\""} end)
+      Enum.any?(conn.resp_headers, fn h ->
+        h ==
+          {"content-disposition",
+           "attachment; filename=\"progress_#{section.slug}_#{unit1.resource.id}_.csv\""}
+      end)
+
       Enum.any?(conn.resp_headers, fn h -> h == {"content-type", "text/csv"} end)
       assert response(conn, 200)
-
     end
-
   end
 
   defp setup_session(%{conn: conn}) do
@@ -51,10 +52,6 @@ defmodule OliWeb.MetricsControllerTest do
       |> Pow.Plug.assign_current_user(map.author, OliWeb.Pow.PowHelpers.get_pow_config(:author))
       |> Pow.Plug.assign_current_user(instructor, OliWeb.Pow.PowHelpers.get_pow_config(:user))
 
-    {:ok,
-     conn: conn,
-     map: map,
-     section: map.section,
-     unit1_container: map.unit1_container}
+    {:ok, conn: conn, map: map, section: map.section, unit1_container: map.unit1_container}
   end
 end

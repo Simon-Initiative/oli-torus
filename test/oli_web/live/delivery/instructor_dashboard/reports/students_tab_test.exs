@@ -4,10 +4,12 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
 
   import Phoenix.LiveViewTest
   import Oli.Factory
+  import Ecto.Query
 
   alias Lti_1p3.Tool.ContextRoles
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Attempts.Core
+  alias Oli.{Repo, Seeder}
 
   defp live_view_students_route(section_slug, params \\ %{}) do
     Routes.live_path(
@@ -192,9 +194,9 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
 
       {:ok, _} = Sections.rebuild_contained_pages(section)
 
-      set_progress(section.id, page_1.published_resource.resource_id, user_1.id, 0.9)
-      set_progress(section.id, page_1.published_resource.resource_id, user_2.id, 0.6)
-      set_progress(section.id, page_1.published_resource.resource_id, user_3.id, 0)
+      set_progress(section.id, page_1.published_resource.resource_id, user_1.id, 0)
+      set_progress(section.id, page_1.published_resource.resource_id, user_2.id, 0.2)
+      set_progress(section.id, page_1.published_resource.resource_id, user_3.id, 0.2)
       set_progress(section.id, page_1.published_resource.resource_id, user_4.id, 0.3)
       set_progress(section.id, page_1.published_resource.resource_id, user_5.id, 0.7)
 
@@ -217,6 +219,29 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
       assert student_for_tr_3 =~ "Jr, Neymar"
       assert student_for_tr_2 =~ "Messi, Lionel"
       assert student_for_tr_1 =~ "Suarez, Luis"
+
+      ### sorting by progress
+      params = %{
+        sort_order: :asc,
+        sort_by: :progress
+      }
+
+      {:ok, view, _html} = live(conn, live_view_students_route(section.slug, params))
+
+      [student_for_tr_1, student_for_tr_2, student_for_tr_3, student_for_tr_4] =
+        view
+        |> render()
+        |> Floki.parse_fragment!()
+        |> Floki.find(~s{.instructor_dashboard_table tr a})
+        |> Enum.map(fn a_tag -> Floki.text(a_tag) end)
+
+      assert student_for_tr_1 =~ "Messi, Lionel"
+
+      # it sorts by name when progress is the same
+      assert student_for_tr_2 =~ "Jr, Neymar"
+      assert student_for_tr_3 =~ "Suarez, Luis"
+
+      assert student_for_tr_4 =~ "Di Maria, Angelito"
 
       ### text filtering
       params = %{
@@ -259,7 +284,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
       assert student_for_tr_1 =~ "Jr, Neymar"
       assert student_for_tr_2 =~ "Di Maria, Angelito"
 
-      assert element(view, "#header_paging div:first-child") |> render() =~
+      assert element(view, "#header_paging > div:first-child") |> render() =~
                "Showing result 3 - 4 of 4 total"
 
       assert element(view, "li.page-item.active a", "2")
@@ -278,7 +303,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
         |> Floki.find(~s{.instructor_dashboard_table tr [data-progress-check]})
         |> Enum.map(fn div_tag -> Floki.text(div_tag) |> String.trim() end)
 
-      assert progress == ["10%", "0%", "30%", "20%"]
+      assert progress == ["10%", "7%", "0%", "7%"]
 
       ### filtering by no container
       ### (we want to get the progress across all course section)
@@ -293,7 +318,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
         |> Floki.find(~s{.instructor_dashboard_table tr [data-progress-check]})
         |> Enum.map(fn div_tag -> Floki.text(div_tag) |> String.trim() end)
 
-      assert progress == ["3%", "0%", "8%", "5%"]
+      assert progress == ["3%", "2%", "0%", "2%"]
 
       ### filtering by non existing container
       params = %{container_id: 99999}
@@ -321,7 +346,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
         |> Floki.find(~s{.instructor_dashboard_table tr [data-progress-check]})
         |> Enum.map(fn div_tag -> Floki.text(div_tag) |> String.trim() end)
 
-      assert progress == ["30%", "0%", "90%", "60%"]
+      assert progress == ["30%", "20%", "0%", "20%"]
 
       ### filtering by non students option
       params = %{filter_by: :non_students}
@@ -430,6 +455,283 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
     end
   end
 
+  describe "page size change" do
+    setup [:instructor_conn, :set_timezone, :section_with_assessment]
+
+    test "lists table elements according to the default page size", %{
+      instructor: instructor,
+      conn: conn
+    } do
+      %{section: section, mod1_pages: mod1_pages} =
+        Oli.Seeder.base_project_with_larger_hierarchy()
+
+      [page_1, _page_2, _page_3] = mod1_pages
+
+      user_1 = insert(:user, %{given_name: "Lionel", family_name: "Messi"})
+      user_2 = insert(:user, %{given_name: "Luis", family_name: "Suarez"})
+      user_3 = insert(:user, %{given_name: "Neymar", family_name: "Jr"})
+      user_4 = insert(:user, %{given_name: "Angelito", family_name: "Di Maria"})
+      user_5 = insert(:user, %{given_name: "Lionel", family_name: "Scaloni"})
+
+      Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
+      Sections.enroll(user_1.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.enroll(user_2.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.enroll(user_3.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.enroll(user_4.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.enroll(user_5.id, section.id, [ContextRoles.get_role(:context_instructor)])
+
+      {:ok, _} = Sections.rebuild_contained_pages(section)
+
+      set_progress(section.id, page_1.published_resource.resource_id, user_1.id, 0.9)
+      set_progress(section.id, page_1.published_resource.resource_id, user_2.id, 0.6)
+      set_progress(section.id, page_1.published_resource.resource_id, user_3.id, 0)
+      set_progress(section.id, page_1.published_resource.resource_id, user_4.id, 0.3)
+      set_progress(section.id, page_1.published_resource.resource_id, user_5.id, 0.7)
+
+      {:ok, view, _html} = live(conn, live_view_students_route(section.slug))
+
+      [student_for_tr_1, student_for_tr_2, student_for_tr_3, student_for_tr_4] =
+        view
+        |> render()
+        |> Floki.parse_fragment!()
+        |> Floki.find(~s{.instructor_dashboard_table tr a})
+        |> Enum.map(fn a_tag -> Floki.text(a_tag) end)
+
+      assert student_for_tr_1 =~ "Di Maria, Angelito"
+      assert student_for_tr_2 =~ "Jr, Neymar"
+      assert student_for_tr_3 =~ "Messi, Lionel"
+      assert student_for_tr_4 =~ "Suarez, Luis"
+
+      # It does not display pagination options
+      refute has_element?(view, "nav[aria-label=\"Paging\"]")
+
+      # It displays page size dropdown
+      assert has_element?(view, "form select.torus-select option[selected]", "20")
+    end
+
+    test "updates page size and list expected elements", %{
+      instructor: instructor,
+      conn: conn
+    } do
+      %{section: section, mod1_pages: mod1_pages} =
+        Oli.Seeder.base_project_with_larger_hierarchy()
+
+      [page_1, _page_2, _page_3] = mod1_pages
+
+      user_1 = insert(:user, %{given_name: "Lionel", family_name: "Messi"})
+      user_2 = insert(:user, %{given_name: "Luis", family_name: "Suarez"})
+      user_3 = insert(:user, %{given_name: "Neymar", family_name: "Jr"})
+      user_4 = insert(:user, %{given_name: "Angelito", family_name: "Di Maria"})
+      user_5 = insert(:user, %{given_name: "Lionel", family_name: "Scaloni"})
+
+      Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
+      Sections.enroll(user_1.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.enroll(user_2.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.enroll(user_3.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.enroll(user_4.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.enroll(user_5.id, section.id, [ContextRoles.get_role(:context_instructor)])
+
+      {:ok, _} = Sections.rebuild_contained_pages(section)
+
+      set_progress(section.id, page_1.published_resource.resource_id, user_1.id, 0.9)
+      set_progress(section.id, page_1.published_resource.resource_id, user_2.id, 0.6)
+      set_progress(section.id, page_1.published_resource.resource_id, user_3.id, 0)
+      set_progress(section.id, page_1.published_resource.resource_id, user_4.id, 0.3)
+      set_progress(section.id, page_1.published_resource.resource_id, user_5.id, 0.7)
+
+      {:ok, view, _html} = live(conn, live_view_students_route(section.slug))
+
+      # Change page size from default (20) to 2
+      view
+      |> element("#header_paging_page_size_form")
+      |> render_change(%{limit: "2"})
+
+      [student_for_tr_1, student_for_tr_2] =
+        view
+        |> render()
+        |> Floki.parse_fragment!()
+        |> Floki.find(~s{.instructor_dashboard_table tr a})
+        |> Enum.map(fn a_tag -> Floki.text(a_tag) end)
+
+      # Page 1
+      assert student_for_tr_1 =~ "Di Maria, Angelito"
+      assert student_for_tr_2 =~ "Jr, Neymar"
+    end
+
+    test "keeps showing the same elements when changing the page size", %{
+      instructor: instructor,
+      conn: conn
+    } do
+      %{section: section, mod1_pages: mod1_pages} =
+        Oli.Seeder.base_project_with_larger_hierarchy()
+
+      [page_1, _page_2, _page_3] = mod1_pages
+
+      user_1 = insert(:user, %{given_name: "Lionel", family_name: "Messi"})
+      user_2 = insert(:user, %{given_name: "Luis", family_name: "Suarez"})
+      user_3 = insert(:user, %{given_name: "Neymar", family_name: "Jr"})
+      user_4 = insert(:user, %{given_name: "Angelito", family_name: "Di Maria"})
+      user_5 = insert(:user, %{given_name: "Lionel", family_name: "Scaloni"})
+
+      Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
+      Sections.enroll(user_1.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.enroll(user_2.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.enroll(user_3.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.enroll(user_4.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.enroll(user_5.id, section.id, [ContextRoles.get_role(:context_instructor)])
+
+      {:ok, _} = Sections.rebuild_contained_pages(section)
+
+      set_progress(section.id, page_1.published_resource.resource_id, user_1.id, 0.9)
+      set_progress(section.id, page_1.published_resource.resource_id, user_2.id, 0.6)
+      set_progress(section.id, page_1.published_resource.resource_id, user_3.id, 0)
+      set_progress(section.id, page_1.published_resource.resource_id, user_4.id, 0.3)
+      set_progress(section.id, page_1.published_resource.resource_id, user_5.id, 0.7)
+
+      # Starts in page 2
+      {:ok, view, _html} =
+        live(
+          conn,
+          live_view_students_route(section.slug, %{
+            limit: 2,
+            offset: 2
+          })
+        )
+
+      [student_for_tr_3, student_for_tr_4] =
+        view
+        |> render()
+        |> Floki.parse_fragment!()
+        |> Floki.find(~s{.instructor_dashboard_table tr a})
+        |> Enum.map(fn a_tag -> Floki.text(a_tag) end)
+
+      # Page 1
+      assert student_for_tr_3 =~ "Messi, Lionel"
+      assert student_for_tr_4 =~ "Suarez, Luis"
+
+      # Change page size from 2 to 1
+      view
+      |> element("#header_paging_page_size_form")
+      |> render_change(%{limit: "1"})
+
+      [student_for_tr_3] =
+        view
+        |> render()
+        |> Floki.parse_fragment!()
+        |> Floki.find(~s{.instructor_dashboard_table tr a})
+        |> Enum.map(fn a_tag -> Floki.text(a_tag) end)
+
+      # Page 3. It keeps showing the same element.
+      assert student_for_tr_3 =~ "Messi, Lionel"
+    end
+  end
+
+  describe "instructor - invitations" do
+    setup [:setup_enrollments_view]
+
+    test "can invite new users to the section", %{section: section, conn: conn} do
+      students_url = live_view_students_route(section.slug)
+      {:ok, view, _html} = live(conn, students_url)
+
+      user_1 = insert(:user)
+      user_2 = insert(:user)
+      non_existant_email_1 = "non_existant_user_1@test.com"
+      non_existant_email_2 = "non_existant_user_2@test.com"
+
+      # Open "Add enrollments modal"
+      view
+      |> with_target("#students_table_add_enrollments_modal")
+      |> render_click("open")
+
+      assert has_element?(view, "h5", "Add enrollments")
+      assert has_element?(view, "input[placeholder=\"user@email.com\"]")
+
+      # Add emails to the list
+      view
+      |> with_target("#students_table")
+      |> render_hook("add_enrollments_update_list", %{
+        value: [user_1.email, user_2.email, non_existant_email_1, non_existant_email_2]
+      })
+
+      assert has_element?(view, "p", user_1.email)
+      assert has_element?(view, "p", user_2.email)
+      assert has_element?(view, "p", non_existant_email_1)
+      assert has_element?(view, "p", non_existant_email_2)
+
+      # Go to second step
+      view
+      |> with_target("#students_table")
+      |> render_hook("add_enrollments_go_to_step_2")
+
+      assert has_element?(view, "p", "The following emails don't exist in the database")
+
+      assert has_element?(
+               view,
+               "#students_table_add_enrollments_modal li ul p",
+               non_existant_email_1
+             )
+
+      assert has_element?(
+               view,
+               "#students_table_add_enrollments_modal li ul p",
+               non_existant_email_2
+             )
+
+      refute has_element?(view, "#students_table_add_enrollments_modal li ul p", user_1.email)
+      refute has_element?(view, "#students_table_add_enrollments_modal li ul p", user_2.email)
+
+      # Remove an email from the "Users not found" list
+      view
+      |> with_target("#students_table")
+      |> render_hook("add_enrollments_remove_from_list", %{user: non_existant_email_2})
+
+      refute has_element?(
+               view,
+               "#students_table_add_enrollments_modal li ul p",
+               non_existant_email_2
+             )
+
+      view
+      |> with_target("#students_table")
+      |> render_hook("add_enrollments_go_to_step_3")
+
+      assert has_element?(view, "p", "Are you sure you want to enroll 3 users?")
+
+      # Send the invitations (this mocks the POST request made by the form)
+      conn =
+        post(
+          conn,
+          Routes.invite_path(conn, :create_bulk, section.slug,
+            emails: [user_1.email, user_2.email, non_existant_email_1],
+            role: "instructor",
+            "g-recaptcha-response": "any"
+          )
+        )
+
+      assert redirected_to(conn, 302) =~ students_url
+
+      new_users =
+        Oli.Accounts.User
+        |> where([u], u.email in [^user_1.email, ^user_2.email, ^non_existant_email_1])
+        |> select([u], {u.email, u.invitation_token})
+        |> Repo.all()
+        |> Enum.into(%{})
+
+      assert length(Map.keys(new_users)) == 3
+      assert Map.get(new_users, user_1.email) == nil
+      assert Map.get(new_users, user_2.email) == nil
+      assert Map.get(new_users, non_existant_email_1) != nil
+    end
+
+    test "can't invite new users to the section if section is not open and free", %{conn: conn} do
+      section = insert(:section)
+
+      {:ok, _view, html} = live(conn, live_view_students_route(section.slug))
+
+      refute html =~ "Add Enrollments"
+    end
+  end
+
   defp set_progress(section_id, resource_id, user_id, progress) do
     Core.track_access(resource_id, section_id, user_id)
     |> Core.update_resource_access(%{progress: progress})
@@ -443,5 +745,81 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
       inserted_at: timestamp,
       updated_at: timestamp
     })
+  end
+
+  defp setup_enrollments_view(%{conn: conn}) do
+    map = Seeder.base_project_with_resource2()
+
+    section = make(map.project, map.institution, "a", %{open_and_free: true})
+
+    enroll(section)
+
+    admin =
+      author_fixture(%{
+        system_role_id: Oli.Accounts.SystemRole.role_id().admin,
+        preferences:
+          %Oli.Accounts.AuthorPreferences{show_relative_dates: false} |> Map.from_struct()
+      })
+
+    conn =
+      Plug.Test.init_test_session(conn, [])
+      |> Pow.Plug.assign_current_user(admin, OliWeb.Pow.PowHelpers.get_pow_config(:author))
+
+    map
+    |> Map.merge(%{
+      conn: conn,
+      section: section,
+      admin: admin
+    })
+  end
+
+  def enroll(section) do
+    to_attrs = fn v ->
+      %{
+        sub: UUID.uuid4(),
+        name: "#{v}",
+        given_name: "#{v}",
+        family_name: "#{v}",
+        middle_name: "",
+        picture: "https://platform.example.edu/jane.jpg",
+        email: "test#{v}@example.edu",
+        locale: "en-US"
+      }
+    end
+
+    Enum.map(1..11, fn v -> to_attrs.(v) |> user_fixture() end)
+    |> Enum.with_index(fn user, index ->
+      roles =
+        case rem(index, 2) do
+          0 ->
+            [ContextRoles.get_role(:context_learner)]
+
+          _ ->
+            [ContextRoles.get_role(:context_learner), ContextRoles.get_role(:context_instructor)]
+        end
+
+      {:ok, enrollment} = Sections.enroll(user.id, section.id, roles)
+
+      # Have the first enrolled student also have made a payment for this section
+      case index do
+        2 ->
+          Oli.Delivery.Paywall.create_payment(%{
+            type: :direct,
+            generation_date: DateTime.utc_now(),
+            application_date: DateTime.utc_now(),
+            amount: "$100.00",
+            provider_type: :stripe,
+            provider_id: "1",
+            provider_payload: %{},
+            pending_user_id: user.id,
+            pending_section_id: section.id,
+            enrollment_id: enrollment.id,
+            section_id: section.id
+          })
+
+        _ ->
+          true
+      end
+    end)
   end
 end

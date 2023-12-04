@@ -460,6 +460,16 @@ defmodule Oli.Authoring.Course do
     |> Enum.count() > 0
   end
 
+  def kill_datashop_export(project_slug, queue) do
+    # Cancel all Oban jobs matching this project_slug and queue
+    Oban.Job
+    |> where([j], j.state in ["available", "executing", "scheduled"])
+    |> where([j], j.queue == ^queue)
+    |> where([j], fragment("?->>'project_slug' = ?", j.args, ^project_slug))
+    |> Repo.all()
+    |> Enum.each(fn job -> Oban.cancel_job(job.id) end)
+  end
+
   @doc """
   Returns the status of the analytics export for the given project.
   """
@@ -549,20 +559,20 @@ defmodule Oli.Authoring.Course do
   end
 
   @doc """
-  Generates a datashop snapshot for the given project if one is not already in progress
+  Generates a datashop snapshot for the given project and sections if one is not already in progress
   """
-  def generate_datashop_snapshot(project) do
+  def generate_datashop_snapshot(project, section_ids) do
     case datashop_export_status(project) do
       {:in_progress} ->
         {:error, "Datashop snapshot is already in progress"}
 
       _ ->
-        generate_datashop_snapshot!(project)
+        generate_datashop_snapshot!(project, section_ids)
     end
   end
 
-  defp generate_datashop_snapshot!(project) do
-    %{project_slug: project.slug}
+  defp generate_datashop_snapshot!(project, section_ids) do
+    %{project_slug: project.slug, section_ids: section_ids}
     |> Oli.Analytics.DatashopExportWorker.new()
     |> Oban.insert()
   end

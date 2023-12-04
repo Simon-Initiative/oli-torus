@@ -9,13 +9,14 @@ import { OrderingSchema } from 'components/activities/ordering/schema';
 import { ResponseChoices } from 'components/activities/ordering/sections/ResponseChoices';
 import { RichText } from 'components/activities/types';
 import { Choices } from 'data/activities/model/choices';
-import { getTargetedResponseMappings } from 'data/activities/model/responses';
+import { getTargetedResponseMappings, hasCustomScoring } from 'data/activities/model/responses';
 import { defaultWriterContext } from 'data/content/writers/context';
 
 export const TargetedFeedback: React.FC = () => {
   const { model, dispatch, authoringContext, editMode, projectSlug } =
     useAuthoringElementContext<OrderingSchema>();
   const writerContext = defaultWriterContext({ projectSlug });
+  const customScoring = hasCustomScoring(model);
 
   return (
     <>
@@ -23,6 +24,11 @@ export const TargetedFeedback: React.FC = () => {
         <ResponseCard
           title="Targeted feedback"
           response={mapping.response}
+          updateFeedbackTextDirection={(_id, textDirection) =>
+            dispatch(
+              ResponseActions.editResponseFeedbackTextDirection(mapping.response.id, textDirection),
+            )
+          }
           updateFeedbackEditor={(_id, editor) =>
             dispatch(ResponseActions.editResponseFeedbackEditor(mapping.response.id, editor))
           }
@@ -33,6 +39,8 @@ export const TargetedFeedback: React.FC = () => {
             dispatch(ResponseActions.editResponseCorrectness(mapping.response.id, correct))
           }
           removeResponse={(id) => dispatch(ResponseActions.removeTargetedFeedback(id))}
+          updateScore={(id, score) => dispatch(ResponseActions.editResponseScore(id, score))}
+          customScoring={customScoring}
           key={mapping.response.id}
         >
           <ResponseChoices

@@ -3,6 +3,7 @@ import MDEditor, { ICommand, commands } from '@uiw/react-md-editor';
 import { debounce } from 'lodash';
 import { Descendant } from 'slate';
 import { Icon } from 'components/misc/Icon';
+import { TextDirection } from 'data/content/model/elements/types';
 import { NormalizerContext } from '../editor/normalizers/normalizer';
 import { CommandContext } from '../elements/commands/interfaces';
 import { contentMarkdownDeserializer } from './content_markdown_deserializer';
@@ -25,6 +26,8 @@ interface MarkdownEditorProps {
   children?: React.ReactNode;
   onFocus?: FocusEventHandler | undefined;
   onBlur?: FocusEventHandler | undefined;
+  textDirection?: TextDirection;
+  onChangeTextDirection?: (textDirection: TextDirection) => void;
 }
 
 export const MarkdownEditor: React.FC<MarkdownEditorProps> = (props) => {
@@ -42,6 +45,20 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = (props) => {
       props.onSwitchModes();
       const content = serializeMarkdown(value || '');
       props.onEdit(content as Descendant[], null, []); // Trigger a save as well
+    },
+  };
+
+  const textLabel = props.textDirection === 'ltr' ? 'Right to Left' : 'Left to Right';
+  const textIcon = props.textDirection === 'rtl' ? 'right-long' : 'left-long';
+
+  const changeTextDirectionCommand: ICommand = {
+    name: `Change to ${textLabel} text direction`,
+    keyCommand: 'switch-to-slate',
+    buttonProps: { 'aria-label': `Change to ${textLabel} text direction` },
+    icon: <Icon icon={textIcon} />,
+    execute: () => {
+      props.onChangeTextDirection &&
+        props.onChangeTextDirection(props.textDirection === 'ltr' ? 'rtl' : 'ltr');
     },
   };
 
@@ -78,9 +95,13 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = (props) => {
   );
 
   const onBlur = useCallback(() => {
-    console.info('onblur');
     saveChanges(value || '');
   }, [value, saveChanges]);
+
+  const extraCommands = [switchToSlateCommand, commands.fullscreen];
+  if (props.onChangeTextDirection) {
+    extraCommands.unshift(changeTextDirectionCommand);
+  }
 
   return (
     <MDEditor
@@ -93,6 +114,7 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = (props) => {
       preview="edit"
       defaultTabEnable={true}
       style={props.style}
+      direction={props.textDirection}
       commands={[
         commands.bold,
         commands.italic,
@@ -107,7 +129,7 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = (props) => {
         commands.unorderedListCommand,
         commands.orderedListCommand,
       ]}
-      extraCommands={[switchToSlateCommand, commands.fullscreen]}
+      extraCommands={extraCommands}
     />
   );
 };

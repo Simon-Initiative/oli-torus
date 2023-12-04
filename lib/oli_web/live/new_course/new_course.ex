@@ -174,7 +174,7 @@ defmodule OliWeb.Delivery.NewCourse do
     ~H"""
     <.header>
       <div class="flex flex-col items-center gap-3 pl-9 pr-16 py-6">
-        <img src="/images/icons/course-creation-wizard-step-2.svg" style="height: 170px;"/>
+        <img src="/images/icons/course-creation-wizard-step-2.svg" style="height: 170px;" />
         <h2>Course details</h2>
         <.render_flash flash={@flash} />
         <CourseDetails.render changeset={to_form(@changeset)} />
@@ -374,8 +374,10 @@ defmodule OliWeb.Delivery.NewCourse do
            {:ok, _} <- Sections.rebuild_contained_pages(section),
            {:ok, _} <- Sections.rebuild_contained_objectives(section),
            {:ok, _enrollment} <- enroll(socket, section),
+           {:ok, section} <-
+             Oli.Delivery.maybe_update_section_contains_explorations(section),
            {:ok, updated_section} <-
-             Oli.Delivery.maybe_update_section_contains_explorations(section) do
+             Oli.Delivery.maybe_update_section_contains_deliberate_practice(section) do
         updated_section
       else
         {:error, changeset} ->

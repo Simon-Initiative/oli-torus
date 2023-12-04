@@ -89,3 +89,8 @@ export function setUnion<T>(list1: T[], list2: T[]) {
 }
 
 export const castPartId = (partId: string | number): PartId => `${partId}`;
+
+export const formatDate = (date: string) => {
+  const d = new Date(date);
+  return `${d.toLocaleDateString()} ${d.toLocaleTimeString()}`;
+};

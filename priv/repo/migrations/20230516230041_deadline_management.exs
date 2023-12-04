@@ -6,6 +6,7 @@ defmodule Oli.Repo.Migrations.DeadlineManagement do
       add :was_late, :boolean, default: false, null: false
       add :auto_submit_job_id, :integer
     end
+
     alter table(:resource_accesses) do
       add :was_late, :boolean, default: false, null: false
     end
@@ -16,6 +17,7 @@ defmodule Oli.Repo.Migrations.DeadlineManagement do
       remove :was_late, :boolean
       remove :auto_submit_job_id, :boolean
     end
+
     alter table(:resource_accesses) do
       remove :was_late, :boolean
     end

@@ -348,7 +348,7 @@ defmodule OliWeb.Delivery.RemixSection do
 
     modal = fn assigns ->
       ~H"""
-        <Cancel.render {@modal_assigns}>Are you sure you want to cancel?</Cancel.render>
+      <Cancel.render {@modal_assigns}>Are you sure you want to cancel?</Cancel.render>
       """
     end
 
@@ -401,7 +401,7 @@ defmodule OliWeb.Delivery.RemixSection do
 
     modal = fn assigns ->
       ~H"""
-        <MoveModal.render {@modal_assigns} />
+      <MoveModal.render {@modal_assigns} />
       """
     end
 
@@ -447,7 +447,7 @@ defmodule OliWeb.Delivery.RemixSection do
 
     modal = fn assigns ->
       ~H"""
-        <AddMaterialsModal.render {@modal_assigns} />
+      <AddMaterialsModal.render {@modal_assigns} />
       """
     end
 
@@ -819,7 +819,7 @@ defmodule OliWeb.Delivery.RemixSection do
 
     modal = fn assigns ->
       ~H"""
-        <RemoveModal.render {@modal_assigns} />
+      <RemoveModal.render {@modal_assigns} />
       """
     end
 
@@ -899,17 +899,30 @@ defmodule OliWeb.Delivery.RemixSection do
     assigns = assign(assigns, :arrow_disabled, Enum.count(assigns.breadcrumbs) == 1)
 
     ~H"""
-      <div class="breadcrumb custom-breadcrumb p-1 px-2">
-        <button disabled={@arrow_disabled} id="curriculum-back" class="btn btn-sm btn-link" phx-click="set_active" phx-value-uuid={previous_uuid(@breadcrumbs)}><i class="fas fa-arrow-left"></i></button>
+    <div class="breadcrumb custom-breadcrumb p-1 px-2">
+      <button
+        disabled={@arrow_disabled}
+        id="curriculum-back"
+        class="btn btn-sm btn-link"
+        phx-click="set_active"
+        phx-value-uuid={previous_uuid(@breadcrumbs)}
+      >
+        <i class="fas fa-arrow-left"></i>
+      </button>
 
-        <%= for {breadcrumb, index} <- Enum.with_index(@breadcrumbs) do %>
-          <%= render_breadcrumb_item Enum.into(%{
-            breadcrumb: breadcrumb,
-            show_short: length(@breadcrumbs) > 3,
-            is_last: length(@breadcrumbs) - 1 == index,
-           }, assigns) %>
-        <% end %>
-      </div>
+      <%= for {breadcrumb, index} <- Enum.with_index(@breadcrumbs) do %>
+        <%= render_breadcrumb_item(
+          Enum.into(
+            %{
+              breadcrumb: breadcrumb,
+              show_short: length(@breadcrumbs) > 3,
+              is_last: length(@breadcrumbs) - 1 == index
+            },
+            assigns
+          )
+        ) %>
+      <% end %>
+    </div>
     """
   end
 
@@ -926,7 +939,12 @@ defmodule OliWeb.Delivery.RemixSection do
       )
 
     ~H"""
-    <button class="breadcrumb-item btn btn-xs btn-link pl-0 pr-8" {@maybe_disabled} phx-click="set_active" phx-value-uuid={@breadcrumb.slug}>
+    <button
+      class="breadcrumb-item btn btn-xs btn-link pl-0 pr-8"
+      {@maybe_disabled}
+      phx-click="set_active"
+      phx-value-uuid={@breadcrumb.slug}
+    >
       <%= get_title(@breadcrumb, @show_short) %>
     </button>
     """

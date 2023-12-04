@@ -9,9 +9,14 @@ defmodule OliWeb.Components.Delivery.AssignmentsList do
       <h3>Assignments</h3>
       <p>Find all your assignments, quizzes and activities associated with graded material.</p>
       <div class="flex flex-col gap-4 mt-6">
-      <%= for assignment <- @assignments do %>
-        <AssignmentCard.render assignment={assignment} section_slug={@section_slug} format_datetime_fn={@format_datetime_fn} preview_mode={@preview_mode}/>
-      <% end %>
+        <%= for assignment <- @assignments do %>
+          <AssignmentCard.render
+            assignment={assignment}
+            section_slug={@section_slug}
+            format_datetime_fn={@format_datetime_fn}
+            preview_mode={@preview_mode}
+          />
+        <% end %>
       </div>
     </div>
     """

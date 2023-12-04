@@ -53,9 +53,14 @@ defmodule Oli.Rendering.Content.Html do
   end
 
   def img(%Context{} = context, _, %{"src" => src} = attrs) do
-    captioned_content(context, attrs, [
-      ~s|<img class="figure-img img-fluid"#{maybeAlt(attrs)}#{maybeWidth(attrs)} src="#{escape_xml!(src)}"/>\n|
-    ])
+    captioned_content(
+      context,
+      attrs,
+      [
+        ~s|<img class="figure-img img-fluid"#{maybeAlt(attrs)}#{maybeWidth(attrs)} src="#{escape_xml!(src)}"/>\n|
+      ],
+      "image"
+    )
   end
 
   def img(%Context{} = _context, _, _e), do: ""
@@ -173,7 +178,6 @@ defmodule Oli.Rendering.Content.Html do
   defp tableRowClass(_), do: ""
 
   def table(%Context{} = context, next, attrs) do
-
     # We want to ensure that tables are always wrapped
     # in a figure element, even if there is no caption. When
     # a caption attr is present but "empty" we still want the figure,
@@ -182,13 +186,13 @@ defmodule Oli.Rendering.Content.Html do
     # table display.
 
     wrapping_fn =
-       case attrs do
-         %{"caption" => ""} -> &figure_only/3
-         %{"caption" => nil} -> &figure_only/3
-         %{"caption" => [%{"children" => [%{"text" => ""}], "type" => "p"}]} -> &figure_only/3
-         %{"caption" => _an_actual_caption} -> &captioned_content/3
-         _ -> &figure_only/3
-       end
+      case attrs do
+        %{"caption" => ""} -> &figure_only/3
+        %{"caption" => nil} -> &figure_only/3
+        %{"caption" => [%{"children" => [%{"text" => ""}], "type" => "p"}]} -> &figure_only/3
+        %{"caption" => _an_actual_caption} -> &captioned_content/3
+        _ -> &figure_only/3
+      end
 
     wrapping_fn.(context, attrs, [
       "<table class='#{tableBorderClass(attrs)} #{tableRowClass(attrs)}'>",
@@ -472,13 +476,8 @@ defmodule Oli.Rendering.Content.Html do
 
   def formula(context, next, properties, inline \\ false)
 
-  def formula(
-        %Oli.Rendering.Context{} = _context,
-        _next,
-        %{"subtype" => "latex", "src" => src, "legacyBlockRendered" => true},
-        true
-      ) do
-    ["<span class=\"#{formula_class(false)}\">\\(", escape_xml!(src), "\\)</span>\n"]
+  def formula(context, next, %{"legacyBlockRendered" => true} = properties, _inline) do
+    formula(context, next, Map.delete(properties, "legacyBlockRendered"), false)
   end
 
   def formula(
@@ -744,7 +743,8 @@ defmodule Oli.Rendering.Content.Html do
         context,
         "Components.DeliveryElementRenderer",
         %{
-          "element" => element
+          "element" => element,
+          "inline" => true
         },
         html_element: "span"
       )
@@ -784,28 +784,44 @@ defmodule Oli.Rendering.Content.Html do
     end
   end
 
-  def example(%Context{} = _context, next, _) do
+  def example(%Context{} = _context, next, element) do
     [
-      ~s|<div class="content-purpose example"><div class="content-purpose-label">Example</div><div class="content-purpose-content">|,
+      ~s|<div class="content-purpose example"><div class="content-purpose-label">Example</div><div #{directionAttr(element)} class="content-purpose-content">|,
       next.(),
       "</div></div>\n"
     ]
   end
 
-  def learn_more(%Context{} = _context, next, _) do
+  def learn_more(%Context{} = _context, next, element) do
     [
-      ~s|<div class="content-purpose learnmore"><div class="content-purpose-label">Learn more</div><div class="content-purpose-content">|,
+      ~s|<div class="content-purpose learnmore"><div class="content-purpose-label">Learn more</div><div #{directionAttr(element)} class="content-purpose-content">|,
       next.(),
       "</div></div>\n"
     ]
   end
 
-  def manystudentswonder(%Context{} = _context, next, _) do
+  def manystudentswonder(%Context{} = _context, next, element) do
     [
-      ~s|<div class="content-purpose manystudentswonder"><div class="content-purpose-label">Many Students Wonder</div><div class="content-purpose-content">|,
+      ~s|<div class="content-purpose manystudentswonder"><div class="content-purpose-label">Many Students Wonder</div><div #{directionAttr(element)} class="content-purpose-content">|,
       next.(),
       "</div></div>\n"
     ]
+  end
+
+  def content(%Context{} = _context, next, element) do
+    [
+      ~s|<div class="content" #{directionAttr(element)}>|,
+      next.(),
+      "</div>"
+    ]
+  end
+
+  defp directionAttr(element) do
+    case Map.get(element, "textDirection", "ltr") do
+      "ltr" -> ""
+      "rtl" -> " dir=\"rtl\""
+      _ -> ""
+    end
   end
 
   def escape_xml!(text) do
@@ -856,11 +872,27 @@ defmodule Oli.Rendering.Content.Html do
     )
   end
 
-  # Accessible captions are created using a combination of the <figure /> and <figcaption /> elements.
-  defp captioned_content(_context, %{"caption" => ""} = _attrs, content), do: content
+  defp maybe_content_type(content_type) do
+    if content_type != "" do
+      " caption-wrapper-#{content_type}"
+    else
+      ""
+    end
+  end
 
-  defp captioned_content(%Context{} = context, %{"caption" => caption_content} = _attrs, content) do
-    [~s|<div class="caption-wrapper">|] ++
+  defp captioned_content(context, attrs, content, content_type \\ "")
+
+  # Accessible captions are created using a combination of the <figure /> and <figcaption /> elements.
+  defp captioned_content(_context, %{"caption" => ""} = _attrs, content, _content_type),
+    do: content
+
+  defp captioned_content(
+         %Context{} = context,
+         %{"caption" => caption_content} = _attrs,
+         content,
+         content_type
+       ) do
+    [~s|<div class="caption-wrapper#{maybe_content_type(content_type)}">|] ++
       [~s|<figure class="figure embed-responsive">|] ++
       content ++
       [~s|<figcaption class="figure-caption text-center">|] ++
@@ -870,7 +902,7 @@ defmodule Oli.Rendering.Content.Html do
       ["</div>"]
   end
 
-  defp captioned_content(_context, _attrs, content), do: content
+  defp captioned_content(_context, _attrs, content, _content_type), do: content
 
   defp caption(_context, content) when is_binary(content) do
     escape_xml!(content)

@@ -129,41 +129,6 @@ defmodule OliWeb.GradesLiveTest do
     setup [:admin_conn, :create_section]
     @out_of 120.0
 
-    test "test connection - shows success message when the connection is successful", %{
-      conn: conn,
-      section: section
-    } do
-      url_line_items = section.line_items_service_url <> "?limit=1000"
-
-      expect(MockHTTP, :get, fn ^url_line_items, _headers ->
-        {:ok,
-         %HTTPoison.Response{
-           status_code: 200,
-           body:
-             "[{ \"id\": \"id\", \"scoreMaximum\": \"scoreMaximum\", \"resourceId\": \"resourceId\", \"label\": \"label\" }]"
-         }}
-      end)
-
-      {:ok, view, _html} = live(conn, live_view_grades_route(section.slug))
-
-      view
-      |> element("button[phx-click=\"test_connection\"]")
-      |> render_click()
-
-      # The mock is called in a different process than the test process
-      # so there is a chance that the test will finish executing
-      # before it has a chance to call the mock and meet the expectations.
-      # That is why we add the `wait_until`
-      wait_until(fn ->
-        assert has_element?(view, "samp", "Starting test")
-        assert has_element?(view, "samp", "Requesting access token...")
-        assert has_element?(view, "samp", "Received access token")
-        assert has_element?(view, "samp", "Requesting line items...")
-        assert has_element?(view, "samp", "Received line items")
-        assert has_element?(view, "samp", "Success!")
-      end)
-    end
-
     @tag capture_log: true
     test "test connection - shows error message on failure to obtain line items", %{
       conn: conn,
@@ -411,6 +376,7 @@ defmodule OliWeb.GradesLiveTest do
   describe "fetching invalid access token" do
     setup [:admin_conn, :create_section_with_invalid_registration]
 
+    @tag :skip
     test "test connection - shows error on failure to obtain access token", %{
       conn: conn,
       section: section

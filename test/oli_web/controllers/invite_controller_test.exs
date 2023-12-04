@@ -1,11 +1,11 @@
 defmodule OliWeb.InviteControllerTest do
   use OliWeb.ConnCase
 
+  import Oli.Factory
+
   alias Oli.Repo
   alias Oli.Accounts
   alias Oli.Accounts.Author
-
-  import Oli.Factory
 
   @invite_email "invite@example.com"
   setup [:create_admin]

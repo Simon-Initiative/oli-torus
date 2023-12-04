@@ -1,8 +1,13 @@
 # This file is responsible for configuring your application
 # and its dependencies with the aid of the Config module.
 #
-# This configuration file is loaded before any dependency and
-# is restricted to this project.
+# NOTICE: All configurations defined here are set at COMPILE time. For runtime
+# configurations, use `config/runtime.exs`. These configurations can also serve
+# as defaults and be overridden by `config/runtime.exs` as well.
+#
+# If you are unsure where a configuration belongs, it likely belongs in `config/runtime.exs`.
+#
+# This configuration file is loaded before any dependency and is restricted to this project.
 
 # General application configuration
 import Config
@@ -56,7 +61,8 @@ config :oli,
   node_js_pool_size: String.to_integer(System.get_env("NODE_JS_POOL_SIZE", "2")),
   screen_idle_timeout_in_seconds:
     String.to_integer(System.get_env("SCREEN_IDLE_TIMEOUT_IN_SECONDS", "1800")),
-  always_use_persistent_login_sessions: false
+  always_use_persistent_login_sessions: false,
+  log_incomplete_requests: true
 
 rule_evaluator_provider =
   case System.get_env("RULE_EVALUATOR_PROVIDER") do
@@ -204,6 +210,14 @@ config :logger, :console,
   format: "$time $metadata[$level] $message\n",
   metadata: [:request_id]
 
+case System.get_env("LOG_LEVEL", nil) do
+  nil ->
+    nil
+
+  log_level ->
+    config :logger, level: String.to_existing_atom(log_level)
+end
+
 # Use Jason for JSON parsing in Phoenix
 config :phoenix, :json_library, Jason
 
@@ -218,8 +232,6 @@ config :mnesia,
   dump_log_write_threshold: 10000
 
 config :appsignal, :config, revision: System.get_env("SHA", default_sha)
-
-config :appsignal, :client_key, System.get_env("APPSIGNAL_PUSH_API_KEY", nil)
 
 # Configure Privacy Policies link
 config :oli, :privacy_policies,
@@ -279,6 +291,9 @@ config :tailwind,
 config :ex_cldr,
   default_locale: "en",
   default_backend: Oli.Cldr
+
+config :oli, :datashop,
+  cache_limit: String.to_integer(System.get_env("DATASHOP_CACHE_LIMIT", "200"))
 
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.

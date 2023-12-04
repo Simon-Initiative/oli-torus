@@ -148,6 +148,40 @@ defmodule OliWeb.PageDeliveryController do
     end
   end
 
+  def deliberate_practice(conn, %{"section_slug" => section_slug}) do
+    user = conn.assigns.current_user
+    section = conn.assigns.section
+
+    if Sections.is_enrolled?(user.id, section_slug) do
+      case section
+           |> Oli.Repo.preload([:base_project, :root_section_resource]) do
+        nil ->
+          render(conn, "error.html")
+
+        section ->
+          render(conn, "deliberate_practice.html",
+            title: section.title,
+            description: section.description,
+            section_slug: section_slug,
+            hierarchy: Sections.build_hierarchy(section),
+            display_curriculum_item_numbering: section.display_curriculum_item_numbering,
+            preview_mode: false,
+            page_link_url: &Routes.page_delivery_path(conn, :page, section_slug, &1),
+            container_link_url: &Routes.page_delivery_path(conn, :container, section_slug, &1)
+          )
+      end
+    else
+      case section do
+        %Section{open_and_free: true, requires_enrollment: false} ->
+          conn
+          |> redirect(to: Routes.delivery_path(conn, :show_enroll, section_slug))
+
+        _ ->
+          render(conn, "not_authorized.html")
+      end
+    end
+  end
+
   def assignments(conn, %{"section_slug" => section_slug}) do
     user = conn.assigns.current_user
     section = conn.assigns.section
@@ -400,7 +434,7 @@ defmodule OliWeb.PageDeliveryController do
     resource_attempts =
       Enum.filter(resource_attempts, fn r -> r.date_submitted != nil end)
       |> Enum.sort(fn r1, r2 ->
-        r1.date_submitted <= r2.date_submitted
+        DateTime.before?(r1.date_submitted, r2.date_submitted)
       end)
 
     {:ok, {previous, next, current}, _} = PreviousNextIndex.retrieve(section, page.resource_id)
@@ -810,6 +844,23 @@ defmodule OliWeb.PageDeliveryController do
     )
   end
 
+  def deliberate_practice_preview(conn, %{"section_slug" => section_slug}) do
+    section =
+      conn.assigns.section
+      |> Oli.Repo.preload([:base_project, :root_section_resource])
+
+    render(conn, "deliberate_practice.html",
+      title: section.title,
+      description: section.description,
+      section_slug: section_slug,
+      hierarchy: Sections.build_hierarchy(section),
+      display_curriculum_item_numbering: section.display_curriculum_item_numbering,
+      preview_mode: true,
+      page_link_url: &Routes.page_delivery_path(conn, :page, section_slug, &1),
+      container_link_url: &Routes.page_delivery_path(conn, :container, section_slug, &1)
+    )
+  end
+
   def discussion_preview(conn, %{"section_slug" => section_slug}) do
     section =
       conn.assigns.section
@@ -1120,12 +1171,12 @@ defmodule OliWeb.PageDeliveryController do
     end
   end
 
-  defp do_start_attempt(conn, section, user, revision, effective_settings) do
+  def do_start_attempt(conn, section, user, revision, effective_settings) do
     datashop_session_id = Plug.Conn.get_session(conn, :datashop_session_id)
     activity_provider = &Oli.Delivery.ActivityProvider.provide/6
 
     # We must check gating conditions here to account for gates that activated after
-    # the prologue page was rendered, and for malicous/deliberate attempts to start an attempt via
+    # the prologue page was rendered, and for malicious/deliberate attempts to start an attempt via
     # hitting this endpoint.
     case Oli.Delivery.Gating.blocked_by(section, user, revision.resource_id) do
       [] ->

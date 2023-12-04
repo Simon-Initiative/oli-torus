@@ -16,7 +16,11 @@ interface StemProps {
 export const StemDelivery: React.FC<StemProps> = (props) => {
   return (
     <div className={`stem__delivery content${props.className ? ' ' + props.className : ''}`}>
-      <HtmlContentModelRenderer content={props.stem.content} context={props.context} />
+      <HtmlContentModelRenderer
+        content={props.stem.content}
+        context={props.context}
+        direction={props.stem.textDirection}
+      />
     </div>
   );
 };
@@ -25,7 +29,8 @@ interface Props {
   className?: string;
 }
 export const StemDeliveryConnected: React.FC<Props> = (props) => {
-  const { writerContext } = useDeliveryElementContext<HasStem>();
+  const { writerContext, model } = useDeliveryElementContext<HasStem>();
   const uiState = useSelector((state: ActivityDeliveryState) => state);
-  return <StemDelivery stem={(uiState.model as any).stem} context={writerContext} {...props} />;
+  const effectiveModel = uiState.model || model;
+  return <StemDelivery stem={(effectiveModel as any).stem} context={writerContext} {...props} />;
 };

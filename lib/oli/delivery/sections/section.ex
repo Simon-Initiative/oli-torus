@@ -65,8 +65,11 @@ defmodule Oli.Delivery.Sections.Section do
     field(:previous_next_index, :map, default: nil)
     field(:display_curriculum_item_numbering, :boolean, default: true)
     field(:contains_explorations, :boolean, default: false)
+    field(:contains_deliberate_practice, :boolean, default: false)
 
-    belongs_to(:required_survey, Oli.Resources.Resource, foreign_key: :required_survey_resource_id)
+    belongs_to(:required_survey, Oli.Resources.Resource,
+      foreign_key: :required_survey_resource_id
+    )
 
     embeds_one(:customizations, CustomLabels, on_replace: :delete)
 
@@ -132,6 +135,9 @@ defmodule Oli.Delivery.Sections.Section do
       default: :done
     )
 
+    # Allow major project publications to be applied to course sections created from this product
+    field(:apply_major_updates, :boolean, default: false)
+
     timestamps(type: :utc_datetime)
   end
 
@@ -180,12 +186,14 @@ defmodule Oli.Delivery.Sections.Section do
       :publisher_id,
       :display_curriculum_item_numbering,
       :contains_explorations,
+      :contains_deliberate_practice,
       :required_survey_resource_id,
       :class_modality,
       :class_days,
       :course_section_number,
       :preferred_scheduling_time,
-      :v25_migration
+      :v25_migration,
+      :apply_major_updates
     ])
     |> cast_embed(:customizations, required: false)
     |> validate_required([
@@ -196,7 +204,7 @@ defmodule Oli.Delivery.Sections.Section do
     ])
     |> validate_required_if([:amount], &requires_payment?/1)
     |> validate_required_if([:grace_period_days], &has_grace_period?/1)
-    |> validate_required_if([:publisher_id], &is_product?/1)
+    |> validate_required_if([:publisher_id, :apply_major_updates], &is_product?/1)
     |> foreign_key_constraint_if(:publisher_id, &is_product?/1)
     |> validate_positive_grace_period()
     |> Oli.Delivery.Utils.validate_positive_money(:amount)

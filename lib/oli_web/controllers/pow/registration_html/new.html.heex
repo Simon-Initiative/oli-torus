@@ -79,7 +79,7 @@
         <%= hidden_input(f, :link_account, value: @link_account) %>
       <% end %>
 
-      <%= submit("Register", class: "btn btn-md btn-primary btn-block") %>
+      <%= submit("Create Account", class: "btn btn-md btn-primary btn-block") %>
       <%= link("Cancel",
         to: value_or(assigns[:cancel_path], Routes.static_page_path(@conn, :index)),
         class: "btn btn-md btn-outline-secondary btn-block mt-3"
@@ -189,7 +189,7 @@
         <%= hidden_input(f, :section, value: @conn.params["section"]) %>
       <% end %>
 
-      <%= submit("Register", class: "btn btn-md btn-primary btn-block") %>
+      <%= submit("Create Account", class: "btn btn-md btn-primary btn-block") %>
       <%= link("Cancel",
         to: value_or(assigns[:cancel_path], Routes.static_page_path(@conn, :index)),
         class: "btn btn-md btn-outline-secondary btn-block mt-3"

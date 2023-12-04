@@ -10,7 +10,7 @@ defmodule OliWeb.Components.Delivery.Content do
 
   @default_params %{
     offset: 0,
-    limit: 25,
+    limit: 20,
     container_id: nil,
     sort_order: :asc,
     sort_by: :numbering_index,
@@ -94,7 +94,9 @@ defmodule OliWeb.Components.Delivery.Content do
             </.form>
             <a
               href={
-                Routes.delivery_path(OliWeb.Endpoint, :download_course_content_info, @section_slug)
+                Routes.delivery_path(OliWeb.Endpoint, :download_course_content_info, @section_slug,
+                  container_filter_by: @params.container_filter_by
+                )
               }
               download="course_content.csv"
               class="self-end"
@@ -120,6 +122,8 @@ defmodule OliWeb.Components.Delivery.Content do
           additional_table_class="instructor_dashboard_table"
           sort={JS.push("paged_table_sort", target: @myself)}
           page_change={JS.push("paged_table_page_change", target: @myself)}
+          limit_change={JS.push("paged_table_limit_change", target: @myself)}
+          show_limit_change={true}
         />
       </div>
     </div>
@@ -164,6 +168,31 @@ defmodule OliWeb.Components.Delivery.Content do
          route_for(
            socket,
            %{limit: limit, offset: offset},
+           socket.assigns.patch_url_type
+         )
+     )}
+  end
+
+  def handle_event(
+        "paged_table_limit_change",
+        params,
+        %{assigns: %{params: current_params}} = socket
+      ) do
+    new_limit = Params.get_int_param(params, "limit", 20)
+
+    new_offset =
+      OliWeb.Common.PagingParams.calculate_new_offset(
+        current_params.offset,
+        new_limit,
+        socket.assigns.total_count
+      )
+
+    {:noreply,
+     push_patch(socket,
+       to:
+         route_for(
+           socket,
+           %{limit: new_limit, offset: new_offset},
            socket.assigns.patch_url_type
          )
      )}

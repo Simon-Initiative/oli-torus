@@ -8,7 +8,7 @@ defmodule OliWeb.Components.Delivery.Progress do
 
   @default_params %{
     offset: 0,
-    limit: 10,
+    limit: 20,
     sort_order: :asc,
     sort_by: :title,
     text_search: nil
@@ -93,6 +93,8 @@ defmodule OliWeb.Components.Delivery.Progress do
             additional_table_class="instructor_dashboard_table"
             show_bottom_paging={false}
             render_top_info={false}
+            limit_change={JS.push("paged_table_limit_change", target: @myself)}
+            show_limit_change={true}
           />
         </div>
       <% else %>
@@ -143,6 +145,34 @@ defmodule OliWeb.Components.Delivery.Progress do
            socket.assigns.student_id,
            :progress,
            update_params(socket.assigns.params, %{limit: limit, offset: offset})
+         )
+     )}
+  end
+
+  def handle_event(
+        "paged_table_limit_change",
+        params,
+        %{assigns: %{params: current_params}} = socket
+      ) do
+    new_limit = Params.get_int_param(params, "limit", 20)
+
+    new_offset =
+      OliWeb.Common.PagingParams.calculate_new_offset(
+        current_params.offset,
+        new_limit,
+        socket.assigns.total_count
+      )
+
+    {:noreply,
+     push_patch(socket,
+       to:
+         Routes.live_path(
+           socket,
+           OliWeb.Delivery.StudentDashboard.StudentDashboardLive,
+           socket.assigns.section_slug,
+           socket.assigns.student_id,
+           :progress,
+           update_params(socket.assigns.params, %{limit: new_limit, offset: new_offset})
          )
      )}
   end

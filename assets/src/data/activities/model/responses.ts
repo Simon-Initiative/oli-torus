@@ -8,20 +8,19 @@ import {
 } from 'components/activities/types';
 import { containsRule, eqRule, equalsRule, matchRule } from 'data/activities/model/rules';
 import { getByUnsafe, getPartById } from 'data/activities/model/utils';
-import { Operations } from 'utils/pathOperations';
 
 export const Responses = {
   catchAll: (text = 'Incorrect') => makeResponse(matchRule('.*'), 0, text),
   forTextInput: (correctText = 'Correct', incorrectText = 'Incorrect') => [
-    makeResponse(containsRule('answer'), 1, correctText),
+    makeResponse(containsRule('answer'), 1, correctText, true),
     Responses.catchAll(incorrectText),
   ],
   forNumericInput: (correctText = 'Correct', incorrectText = 'Incorrect') => [
-    makeResponse(eqRule(1), 1, correctText),
+    makeResponse(eqRule(1), 1, correctText, true),
     Responses.catchAll(incorrectText),
   ],
   forMathInput: (correctText = 'Correct', incorrectText = 'Incorrect') => [
-    makeResponse(equalsRule(''), 1, correctText),
+    makeResponse(equalsRule(''), 1, correctText, true),
     Responses.catchAll(incorrectText),
   ],
   forMultipleChoice: (
@@ -29,14 +28,14 @@ export const Responses = {
     correctText = 'Correct',
     incorrectText = 'Incorrect',
   ) => [
-    makeResponse(matchRule(correctChoiceId), 1, correctText),
+    makeResponse(matchRule(correctChoiceId), 1, correctText, true),
     makeResponse(matchRule('.*'), 0, incorrectText),
   ],
 };
 
 export const RESPONSES_PATH = '$..responses';
-export const getResponses = (model: HasParts, path = RESPONSES_PATH): Response[] =>
-  Operations.apply(model, Operations.find(path));
+export const getResponses = (model: HasParts): Response[] =>
+  model.authoring.parts.map((p) => p.responses).flat();
 
 export const getResponsesByPartId = (model: HasParts, partId: string): Response[] =>
   getPartById(model, partId).responses;
@@ -44,11 +43,32 @@ export const getResponsesByPartId = (model: HasParts, partId: string): Response[
 export const getResponseBy = (model: HasParts, predicate: (x: Response) => boolean) =>
   getByUnsafe(getResponses(model), predicate);
 
+export const hasCustomScoring = (model: HasParts, partId?: string): boolean => {
+  const outOf = getOutOfPoints(model, partId || model.authoring.parts[0].id);
+  return outOf !== null && outOf !== undefined;
+};
+
+export const getOutOfPoints = (model: HasParts, partId: string) => {
+  const part = getPartById(model, partId);
+  return part?.outOf;
+};
+
+export const getScoringStrategy = (model: HasParts, partId: string) => {
+  const part = getPartById(model, partId);
+  return part?.scoringStrategy;
+};
+
+export const getIncorrectPoints = (model: HasParts, partId: string) => {
+  const part = getPartById(model, partId);
+  return part?.incorrectScore;
+};
+
 // Does not take into account partial credit
 export const getCorrectResponse = (model: HasParts, partId: string) => {
-  return Maybe.maybe(getResponsesByPartId(model, partId).find((r) => r.score >= 1)).valueOrThrow(
-    new Error('Could not find correct response'),
-  );
+  return Maybe.maybe(
+    getResponsesByPartId(model, partId).find((r) => r.correct) ||
+      getResponsesByPartId(model, partId).find((r) => r.score >= 1),
+  ).valueOrThrow(new Error('Could not find correct response'));
 };
 export const getIncorrectResponse = (model: HasParts, partId: string) => {
   return Maybe.maybe(

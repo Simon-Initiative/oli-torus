@@ -9,6 +9,7 @@ defmodule Oli.Delivery.Experiments.LogWorker do
     ResourceAttempt,
     ActivityAttempt
   }
+
   alias Oli.Delivery.Sections.Enrollment
 
   @moduledoc """
@@ -24,12 +25,9 @@ defmodule Oli.Delivery.Experiments.LogWorker do
   end
 
   def perform_now(attempt_guid, section_slug) do
-
     # Fetch the section, fail fast if experiments are not enabled, we are done
     case Oli.Delivery.Sections.get_section_by(slug: section_slug) do
-
       %Oli.Delivery.Sections.Section{has_experiments: true} ->
-
         {score, out_of, enrollment_id} =
           from(aa in ActivityAttempt,
             join: ra in ResourceAttempt,
@@ -43,21 +41,23 @@ defmodule Oli.Delivery.Experiments.LogWorker do
           )
           |> Repo.one()
 
-        correctness = case score do
-          0.0 -> 0.0
-          s -> case out_of do
-            0.0 -> 0.0
-            o -> s / o
+        correctness =
+          case score do
+            0.0 ->
+              0.0
+
+            s ->
+              case out_of do
+                0.0 -> 0.0
+                o -> s / o
+              end
           end
-        end
 
         Oli.Delivery.Experiments.log(enrollment_id, correctness)
 
       _ ->
-        {:nothing_to_do}
-
+        {:ok, :nothing_to_do}
     end
-
   end
 
   @doc """
@@ -65,7 +65,6 @@ defmodule Oli.Delivery.Experiments.LogWorker do
   instance of the platform, do nothing.
   """
   def maybe_schedule(result, activity_attempt_guid, section_slug) do
-
     case Oli.Delivery.Experiments.experiments_enabled?() do
       true ->
         %{activity_attempt_guid: activity_attempt_guid, section_slug: section_slug}
@@ -74,10 +73,8 @@ defmodule Oli.Delivery.Experiments.LogWorker do
 
       _ ->
         true
-
     end
 
     result
   end
-
 end

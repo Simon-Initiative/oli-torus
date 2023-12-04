@@ -64,22 +64,22 @@ export const Popup: React.FC<Props> = ({ children, popupContent, popup }) => {
           childRect={childRect}
           popoverRect={popoverRect}
           arrowSize={10}
-          className="popup-arrow"
-          arrowColor="white"
+          arrowColor="currentColor"
+          arrowClassName="text-delivery-tooltip-bg dark:text-delivery-tooltip-bg-dark z-10 translate-y-[-1px]"
         >
-          <div className="popup-content dark:text-white dark:bg-neutral-600 bg-body p-4 drop-shadow rounded">
+          <div className="popup-content text-sm text-delivery-tooltip-content dark:text-delivery-tooltip-content-dark bg-delivery-tooltip-bg dark:bg-delivery-tooltip-bg-dark p-4 drop-shadow rounded">
             {isEmptyContent(popup.content) ? (
-              <i className="fa-solid fa-volume-high"></i>
+              <i className="fa-solid fa-volume-high" />
             ) : (
-              popupContent
+              <span className="pointer-events-auto">{popupContent}</span>
             )}
           </div>
         </ArrowContainer>
       )}
-      containerClassName="z-50 react-tiny-popover structured-content"
+      containerClassName="z-50 react-tiny-popover structured-content pointer-events-none max-w-[300px]"
     >
       <span
-        className={`popup-anchor${popup.trigger === 'hover' ? '' : ' popup-click'}`}
+        className="italic font-bold cursor-pointer text-delivery-primary dark:text-delivery-primary-dark hover:text-delivery-primary-hover dark:hover:text-delivery-primary-dark-hover"
         onMouseEnter={onHover}
         onMouseLeave={onBlur}
         onClick={onClick}

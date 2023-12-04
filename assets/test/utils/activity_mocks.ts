@@ -61,13 +61,15 @@ const requestHintResponse: RequestHintResponse = {
 };
 
 const onSubmitActivity = jest.fn().mockImplementation(() => Promise.resolve(evaluationResponse));
-const onSaveActivity = jest.fn();
-const onResetActivity = jest.fn();
+const onSaveActivity = jest.fn().mockImplementation(() => Promise.resolve({ type: 'success' }));
+const onResetActivity = jest.fn().mockImplementation(() => Promise.resolve({ type: 'success' }));
 const onRequestHint = jest.fn().mockImplementation(() => Promise.resolve(requestHintResponse));
-const onSavePart = jest.fn();
-const onSubmitPart = jest.fn();
-const onResetPart = jest.fn();
-const onSubmitEvaluations = jest.fn();
+const onSavePart = jest.fn().mockImplementation(() => Promise.resolve({ type: 'success' }));
+const onSubmitPart = jest.fn().mockImplementation(() => Promise.resolve({ type: 'success' }));
+const onResetPart = jest.fn().mockImplementation(() => Promise.resolve({ type: 'success' }));
+const onSubmitEvaluations = jest
+  .fn()
+  .mockImplementation(() => Promise.resolve({ type: 'success' }));
 
 export const defaultDeliveryElementProps = {
   onSaveActivity,

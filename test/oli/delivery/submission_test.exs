@@ -15,77 +15,80 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
   alias Oli.Delivery.Sections
   alias Lti_1p3.Tool.ContextRoles
 
-  describe "concurrent activity accesses with two students" do
-    setup do
-      content = %{
-        "stem" => "1",
-        "authoring" => %{
-          "parts" => [
-            %{
-              "id" => "1",
-              "responses" => [
-                %{
-                  "rule" => "input like {a}",
-                  "score" => 10,
-                  "id" => "r1",
-                  "feedback" => %{"id" => "1", "content" => "yes"}
-                },
-                %{
-                  "rule" => "input like {b}",
-                  "score" => 1,
-                  "id" => "r2",
-                  "feedback" => %{"id" => "2", "content" => "almost"}
-                },
-                %{
-                  "rule" => "input like {c}",
-                  "score" => 0,
-                  "id" => "r3",
-                  "feedback" => %{"id" => "3", "content" => "no"}
-                }
-              ],
-              "scoringStrategy" => "best",
-              "evaluationStrategy" => "regex"
-            }
-          ]
-        }
-      }
-
-      map =
-        Seeder.base_project_with_resource2()
-        |> Seeder.create_section()
-        |> Seeder.add_objective("objective one", :o1)
-        |> Seeder.add_activity(%{title: "one", max_attempts: 5, content: content}, :activity1)
-        |> Seeder.add_activity(%{title: "two", max_attempts: 5, content: content}, :activity2)
-        |> Seeder.add_user(%{}, :user1)
-        |> Seeder.add_user(%{}, :user2)
-
-      Seeder.ensure_published(map.publication.id)
-
-      Seeder.add_page(
-        map,
-        %{
-          title: "graded page",
-          content: %{
-            "model" => [
+  defp setup_concurrent_activity(_) do
+    content = %{
+      "stem" => "1",
+      "authoring" => %{
+        "parts" => [
+          %{
+            "id" => "1",
+            "responses" => [
               %{
-                "type" => "activity-reference",
-                "activity_id" => Map.get(map, :activity1).revision.resource_id
+                "rule" => "input like {a}",
+                "score" => 10,
+                "id" => "r1",
+                "feedback" => %{"id" => "1", "content" => "yes"}
               },
               %{
-                "type" => "activity-reference",
-                "activity_id" => Map.get(map, :activity2).revision.resource_id
+                "rule" => "input like {b}",
+                "score" => 1,
+                "id" => "r2",
+                "feedback" => %{"id" => "2", "content" => "almost"}
+              },
+              %{
+                "rule" => "input like {c}",
+                "score" => 0,
+                "id" => "r3",
+                "feedback" => %{"id" => "3", "content" => "no"}
               }
-            ]
-          },
-          objectives: %{"attached" => [Map.get(map, :o1).resource.id]},
-          graded: true
-        },
-        :container,
-        :graded_page
-      )
-      |> Seeder.create_section_resources()
-    end
+            ],
+            "scoringStrategy" => "best",
+            "evaluationStrategy" => "regex"
+          }
+        ]
+      }
+    }
 
+    map =
+      Seeder.base_project_with_resource2()
+      |> Seeder.create_section()
+      |> Seeder.add_objective("objective one", :o1)
+      |> Seeder.add_activity(%{title: "one", max_attempts: 5, content: content}, :activity1)
+      |> Seeder.add_activity(%{title: "two", max_attempts: 5, content: content}, :activity2)
+      |> Seeder.add_user(%{}, :user1)
+      |> Seeder.add_user(%{}, :user2)
+
+    Seeder.ensure_published(map.publication.id)
+
+    Seeder.add_page(
+      map,
+      %{
+        title: "graded page",
+        content: %{
+          "model" => [
+            %{
+              "type" => "activity-reference",
+              "activity_id" => Map.get(map, :activity1).revision.resource_id
+            },
+            %{
+              "type" => "activity-reference",
+              "activity_id" => Map.get(map, :activity2).revision.resource_id
+            }
+          ]
+        },
+        objectives: %{"attached" => [Map.get(map, :o1).resource.id]},
+        graded: true
+      },
+      :container,
+      :graded_page
+    )
+    |> Seeder.create_section_resources()
+  end
+
+  describe "concurrent activity accesses with two students" do
+    setup [:setup_tags, :setup_concurrent_activity]
+
+    @tag isolation: "serializable"
     test "graded page : determine_resource_attempt_state works with 2 users after user1 has started a page and user2 has not",
          %{
            graded_page: %{resource: resource, revision: revision},
@@ -662,8 +665,8 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
 
       # verify that the submission rolled up to the activity attempt
       updated_attempt = Oli.Repo.get!(ActivityAttempt, activity_attempt.id)
-      assert updated_attempt.score == 1.0
-      assert updated_attempt.out_of == 1.0
+      assert updated_attempt.score == 10.0
+      assert updated_attempt.out_of == 10.0
       refute updated_attempt.date_evaluated == nil
 
       # now reset the activity
@@ -735,8 +738,8 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
 
       # verify that the submission rolled up to the activity attempt
       updated_attempt = Oli.Repo.get!(ActivityAttempt, activity_attempt.id)
-      assert updated_attempt.score == 1.0
-      assert updated_attempt.out_of == 1.0
+      assert updated_attempt.score == 10.0
+      assert updated_attempt.out_of == 10.0
       refute updated_attempt.date_evaluated == nil
 
       # Now simulate something having gone wrong, perhaps a rogue activity using
@@ -951,8 +954,8 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
 
       # verify that the submission rolled up to the activity attempt
       updated_attempt = Oli.Repo.get!(ActivityAttempt, activity_attempt.id)
-      assert updated_attempt.score == 1.0
-      assert updated_attempt.out_of == 1.0
+      assert updated_attempt.score == 10.0
+      assert updated_attempt.out_of == 10.0
       refute updated_attempt.date_evaluated == nil
 
       # verify that the updated part attempt has the latest datashop session id
@@ -1237,8 +1240,8 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
       # verify that the submission did roll up to the activity attempt
       # with the fact that the scoring strategy defaults to best
       updated_attempt = Oli.Repo.get!(ActivityAttempt, activity_attempt.id)
-      assert updated_attempt.score == 1.0
-      assert updated_attempt.out_of == 1.0
+      assert updated_attempt.score == 10.0
+      assert updated_attempt.out_of == 10.0
       refute updated_attempt.date_evaluated == nil
     end
   end

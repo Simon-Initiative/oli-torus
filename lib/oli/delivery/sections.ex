@@ -7,7 +7,10 @@ defmodule Oli.Delivery.Sections do
   alias Oli.Delivery.Sections.EnrollmentContextRole
   alias Oli.Repo
   alias Oli.Repo.{Paging, Sorting}
-  alias Oli.Delivery.Sections.{ContainedObjective, ContainedPage, Enrollment, Section}
+  alias Oli.Utils.Database
+  alias Oli.Delivery.Sections.Section
+  alias Oli.Delivery.Sections.ContainedPage
+  alias Oli.Delivery.Sections.Enrollment
   alias Lti_1p3.Tool.ContextRole
   alias Lti_1p3.DataProviders.EctoProvider
   alias Oli.Lti.Tool.{Deployment, Registration}
@@ -16,6 +19,7 @@ defmodule Oli.Delivery.Sections do
   alias Oli.Publishing
   alias Oli.Publishing.Publications.Publication
   alias Oli.Delivery.Paywall.Payment
+  alias Oli.Delivery.Sections.ContainedObjective
   alias Oli.Delivery.Sections.SectionsProjectsPublications
   alias Oli.Resources.Numbering
   alias Oli.Authoring.Course.{Project, ProjectAttributes}
@@ -386,9 +390,9 @@ defmodule Oli.Delivery.Sections do
   end
 
   @doc """
-  Unenrolls a user from a section by removing the provided context roles. If no context roles are provided, no change is made. If all context roles are removed from the user, the enrollment is deleted.
+  Unenrolls a user from a section by removing the provided context roles. If no context roles are provided, no change is made. If all context roles are removed from the user, the enrollment is marked as suspended.
 
-  To unenroll a student, use unenrolle_learner/2
+  To unenroll a student, use unenroll_learner/2
   """
   def unenroll(user_id, section_id, context_roles) do
     context_roles = EctoProvider.Marshaler.to(context_roles)
@@ -422,10 +426,26 @@ defmodule Oli.Delivery.Sections do
   end
 
   @doc """
-  Unenrolls a student from a section by removing the :context_learner role. If this is their only context_role, the enrollment is deleted.
+  Unenrolls a student from a section by removing the :context_learner role. If this is their only context_role, the enrollment is marked as suspended.
   """
   def unenroll_learner(user_id, section_id) do
     unenroll(user_id, section_id, [ContextRoles.get_role(:context_learner)])
+  end
+
+  @doc """
+  Re-enrolls a student in a section by marking the enrollment as enrolled again.
+  """
+  def re_enroll_learner(user_id, section_id) do
+    case Repo.get_by(Enrollment, user_id: user_id, section_id: section_id, status: :suspended) do
+      nil ->
+        # Enrollment not found
+        {:error, :not_found}
+
+      enrollment ->
+        enrollment
+        |> Enrollment.changeset(%{status: :enrolled})
+        |> Repo.update()
+    end
   end
 
   @doc """
@@ -882,7 +902,9 @@ defmodule Oli.Delivery.Sections do
   def bulk_create_section_resource([], _opts), do: {0, []}
 
   def bulk_create_section_resource(section_resource_rows, opts) do
-    Repo.insert_all(SectionResource, section_resource_rows, returning: opts[:returning] || true)
+    Database.batch_insert_all(SectionResource, section_resource_rows,
+      returning: opts[:returning] || true
+    )
   end
 
   @doc """
@@ -910,7 +932,7 @@ defmodule Oli.Delivery.Sections do
   def bulk_update_section_resource([], _), do: {0, []}
 
   def bulk_update_section_resource(section_resource_rows, opts) do
-    Repo.insert_all(SectionResource, section_resource_rows,
+    Database.batch_insert_all(SectionResource, section_resource_rows,
       returning: opts[:returning] || true,
       on_conflict: {:replace, [:children]},
       conflict_target: [:id]
@@ -1719,6 +1741,7 @@ defmodule Oli.Delivery.Sections do
         fn _repo, _ ->
           # updates contains_explorations field in sections
           Delivery.maybe_update_section_contains_explorations(section)
+          Delivery.maybe_update_section_contains_deliberate_practice(section)
         end
       )
       |> Repo.transaction()
@@ -1766,20 +1789,41 @@ defmodule Oli.Delivery.Sections do
       now = DateTime.utc_now() |> DateTime.truncate(:second)
       placeholders = %{timestamp: now}
 
-      section_resources
-      |> Enum.map(fn section_resource ->
-        %{
-          SectionResource.to_map(section_resource)
-          | inserted_at: {:placeholder, :timestamp},
-            updated_at: {:placeholder, :timestamp}
-        }
-      end)
-      |> then(
-        &Repo.insert_all(SectionResource, &1,
-          placeholders: placeholders,
-          on_conflict: {:replace_all_except, [:inserted_at, :scoring_strategy_id]},
-          conflict_target: [:section_id, :resource_id]
-        )
+      section_resource_rows =
+        section_resources
+        |> Enum.map(fn section_resource ->
+          %{
+            SectionResource.to_map(section_resource)
+            | inserted_at: {:placeholder, :timestamp},
+              updated_at: {:placeholder, :timestamp}
+          }
+        end)
+
+      Database.batch_insert_all(SectionResource, section_resource_rows,
+        placeholders: placeholders,
+        on_conflict:
+          {:replace_all_except,
+           [
+             :inserted_at,
+             :scoring_strategy_id,
+             :scheduling_type,
+             :manually_scheduled,
+             :start_date,
+             :end_date,
+             :collab_space_config,
+             :explanation_strategy,
+             :max_attempts,
+             :retake_mode,
+             :password,
+             :late_submit,
+             :late_start,
+             :time_limit,
+             :grace_period,
+             :review_submission,
+             :feedback_mode,
+             :feedback_scheduled_date
+           ]},
+        conflict_target: [:section_id, :resource_id]
       )
 
       # Cleanup any deleted or non-hierarchical section resources
@@ -2178,7 +2222,11 @@ defmodule Oli.Delivery.Sections do
 
             # Case 2: The course section is based on this project and was seeded from a product
             section.base_project_id == project_id and !is_nil(section.blueprint_id) ->
-              perform_update(:minor, section, project_id, new_publication, current_hierarchy)
+              if section.blueprint.apply_major_updates do
+                perform_update(:major, section, project_id, current_publication, new_publication)
+              else
+                perform_update(:minor, section, project_id, new_publication, current_hierarchy)
+              end
 
             # Case 3: The course section is a product based on this project
             section.base_project_id == project_id and section.type == :blueprint ->
@@ -2236,29 +2284,50 @@ defmodule Oli.Delivery.Sections do
       now = DateTime.utc_now() |> DateTime.truncate(:second)
       placeholders = %{timestamp: now}
 
-      new_published_resources_map
-      |> Enum.filter(fn {resource_id, _pr} ->
-        !Map.has_key?(prev_published_resources_map, resource_id)
-      end)
-      |> Enum.map(fn {resource_id, pr} ->
-        %{
-          resource_id: resource_id,
-          project_id: project_id,
-          section_id: section.id,
-          # we set children to nil here so that we know it needs to be set in the next step
-          children: nil,
-          scoring_strategy_id: pr.revision.scoring_strategy_id,
-          slug: Oli.Utils.Slug.generate("section_resources", pr.revision.title),
-          inserted_at: {:placeholder, :timestamp},
-          updated_at: {:placeholder, :timestamp}
-        }
-      end)
-      |> then(
-        &Repo.insert_all(SectionResource, &1,
-          placeholders: placeholders,
-          on_conflict: {:replace_all_except, [:inserted_at, :scoring_strategy_id]},
-          conflict_target: [:section_id, :resource_id]
-        )
+      section_resource_rows =
+        new_published_resources_map
+        |> Enum.filter(fn {resource_id, _pr} ->
+          !Map.has_key?(prev_published_resources_map, resource_id)
+        end)
+        |> Enum.map(fn {resource_id, pr} ->
+          %{
+            resource_id: resource_id,
+            project_id: project_id,
+            section_id: section.id,
+            # we set children to nil here so that we know it needs to be set in the next step
+            children: nil,
+            scoring_strategy_id: pr.revision.scoring_strategy_id,
+            slug: Oli.Utils.Slug.generate("section_resources", pr.revision.title),
+            inserted_at: {:placeholder, :timestamp},
+            updated_at: {:placeholder, :timestamp}
+          }
+        end)
+
+      Database.batch_insert_all(SectionResource, section_resource_rows,
+        placeholders: placeholders,
+        on_conflict:
+          {:replace_all_except,
+           [
+             :inserted_at,
+             :scoring_strategy_id,
+             :scheduling_type,
+             :manually_scheduled,
+             :start_date,
+             :end_date,
+             :collab_space_config,
+             :explanation_strategy,
+             :max_attempts,
+             :retake_mode,
+             :password,
+             :late_submit,
+             :late_start,
+             :time_limit,
+             :grace_period,
+             :review_submission,
+             :feedback_mode,
+             :feedback_scheduled_date
+           ]},
+        conflict_target: [:section_id, :resource_id]
       )
 
       # get all section resources including freshly minted ones
@@ -2344,19 +2413,40 @@ defmodule Oli.Delivery.Sections do
       now = DateTime.utc_now() |> DateTime.truncate(:second)
       placeholders = %{timestamp: now}
 
-      merged_section_resources
-      |> Enum.map(fn section_resource ->
-        %{
-          SectionResource.to_map(section_resource)
-          | updated_at: {:placeholder, :timestamp}
-        }
-      end)
-      |> then(
-        &Repo.insert_all(SectionResource, &1,
-          placeholders: placeholders,
-          on_conflict: {:replace_all_except, [:inserted_at, :scoring_strategy_id]},
-          conflict_target: [:section_id, :resource_id]
-        )
+      section_resource_rows =
+        merged_section_resources
+        |> Enum.map(fn section_resource ->
+          %{
+            SectionResource.to_map(section_resource)
+            | updated_at: {:placeholder, :timestamp}
+          }
+        end)
+
+      Database.batch_insert_all(SectionResource, section_resource_rows,
+        placeholders: placeholders,
+        on_conflict:
+          {:replace_all_except,
+           [
+             :inserted_at,
+             :scoring_strategy_id,
+             :scheduling_type,
+             :manually_scheduled,
+             :start_date,
+             :end_date,
+             :collab_space_config,
+             :explanation_strategy,
+             :max_attempts,
+             :retake_mode,
+             :password,
+             :late_submit,
+             :late_start,
+             :time_limit,
+             :grace_period,
+             :review_submission,
+             :feedback_mode,
+             :feedback_scheduled_date
+           ]},
+        conflict_target: [:section_id, :resource_id]
       )
 
       # Finally, we must fetch and renumber the final hierarchy in order to generate the proper numberings
@@ -2369,6 +2459,7 @@ defmodule Oli.Delivery.Sections do
       pinned_project_publications = get_pinned_project_publications(section.id)
       rebuild_section_curriculum(section, new_hierarchy, pinned_project_publications)
       Delivery.maybe_update_section_contains_explorations(section)
+      Delivery.maybe_update_section_contains_deliberate_practice(section)
 
       {:ok}
     end)
@@ -2468,7 +2559,28 @@ defmodule Oli.Delivery.Sections do
             # if there is a conflict on the unique section_id resource_id constraint,
             # we assume it is because a resource has been moved or removed/readded in
             # a remix operation, so we simply replace the existing section_resource record
-            on_conflict: :replace_all,
+            on_conflict:
+              {:replace_all_except,
+               [
+                 :inserted_at,
+                 :scoring_strategy_id,
+                 :scheduling_type,
+                 :manually_scheduled,
+                 :start_date,
+                 :end_date,
+                 :collab_space_config,
+                 :explanation_strategy,
+                 :max_attempts,
+                 :retake_mode,
+                 :password,
+                 :late_submit,
+                 :late_start,
+                 :time_limit,
+                 :grace_period,
+                 :review_submission,
+                 :feedback_mode,
+                 :feedback_scheduled_date
+               ]},
             conflict_target: [:section_id, :resource_id]
           )
 
@@ -2506,34 +2618,36 @@ defmodule Oli.Delivery.Sections do
 
     skip_set = MapSet.new(skip_resource_ids ++ unreachable_page_resource_ids)
 
-    published_resources_by_resource_id
-    |> Enum.filter(fn {resource_id, %{revision: rev}} ->
-      !MapSet.member?(skip_set, resource_id) && !is_structural?(rev)
-    end)
-    |> generate_slugs_until_uniq()
-    |> Enum.map(fn {slug, %PublishedResource{revision: revision, publication: pub}} ->
-      [
-        slug: slug,
-        resource_id: revision.resource_id,
-        project_id: pub.project_id,
-        section_id: section_id,
-        inserted_at: now,
-        updated_at: now,
-        collab_space_config: revision.collab_space_config,
-        max_attempts:
-          if is_nil(revision.max_attempts) do
-            0
-          else
-            revision.max_attempts
-          end,
-        scoring_strategy_id: revision.scoring_strategy_id,
-        retake_mode: revision.retake_mode
-      ]
-    end)
-    |> then(&Repo.insert_all(SectionResource, &1))
+    section_resource_rows =
+      published_resources_by_resource_id
+      |> Enum.filter(fn {resource_id, %{revision: rev}} ->
+        !MapSet.member?(skip_set, resource_id) && !is_structural?(rev)
+      end)
+      |> generate_slugs_until_uniq()
+      |> Enum.map(fn {slug, %PublishedResource{revision: revision, publication: pub}} ->
+        %{
+          slug: slug,
+          resource_id: revision.resource_id,
+          project_id: pub.project_id,
+          section_id: section_id,
+          inserted_at: now,
+          updated_at: now,
+          collab_space_config: revision.collab_space_config,
+          max_attempts:
+            if is_nil(revision.max_attempts) do
+              0
+            else
+              revision.max_attempts
+            end,
+          scoring_strategy_id: revision.scoring_strategy_id,
+          retake_mode: revision.retake_mode
+        }
+      end)
+
+    Database.batch_insert_all(SectionResource, section_resource_rows)
   end
 
-  defp is_structural?(%Revision{resource_type_id: resource_type_id}) do
+  def is_structural?(%Revision{resource_type_id: resource_type_id}) do
     container = ResourceType.get_id_by_type("container")
 
     resource_type_id == container
@@ -2689,16 +2803,23 @@ defmodule Oli.Delivery.Sections do
     {:ok, _, previous_next_index} =
       PreviousNextIndex.retrieve(section, section.root_section_resource.resource_id)
 
-      previous_next_index = previous_next_index
-        |>Enum.map(fn {k, v} ->
-          label = if Map.get(v, "type") === "container" do
-            get_container_label(String.to_integer(Map.get(v, "level")), section.customizations || Map.from_struct(CustomLabels.default()))
+    previous_next_index =
+      previous_next_index
+      |> Enum.map(fn {k, v} ->
+        label =
+          if Map.get(v, "type") === "container" do
+            get_container_label(
+              String.to_integer(Map.get(v, "level")),
+              section.customizations || Map.from_struct(CustomLabels.default())
+            )
           else
             ""
           end
-          {k, Map.put(v, "label", label)}
-        end)
-        |> Map.new()
+
+        {k, Map.put(v, "label", label)}
+      end)
+      |> Map.new()
+
     # Retrieve the top level resource ids, and convert them to strings
     resource_ids =
       Oli.Delivery.Sections.map_section_resource_children_to_resource_ids(
@@ -3265,13 +3386,14 @@ defmodule Oli.Delivery.Sections do
               page_id in container.children
             end) do
          nil ->
-           nil
+           {nil, nil}
 
          %{numbering_level: 0} ->
-           nil
+           {nil, nil}
 
          c ->
-           ~s{#{get_container_label(c.numbering_level, c.customizations || Map.from_struct(CustomLabels.default()))} #{c.numbering_index}: #{c.title}}
+           {c.id,
+            ~s{#{get_container_label(c.numbering_level, c.customizations || Map.from_struct(CustomLabels.default()))} #{c.numbering_index}: #{c.title}}}
        end}
     end)
     |> Enum.into(%{})

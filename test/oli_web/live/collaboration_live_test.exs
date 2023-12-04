@@ -458,27 +458,39 @@ defmodule OliWeb.CollaborationLiveTest do
       assert has_element?(view, "span", "Enabled")
 
       assert view
-             |> element("#section_resource_collab_space_config_0_threaded")
+             |> element(
+               "#collab_space_config_form #section_resource_collab_space_config_0_threaded"
+             )
              |> render() =~ "checked"
 
       assert view
-             |> element("#section_resource_collab_space_config_0_auto_accept")
+             |> element(
+               "#collab_space_config_form #section_resource_collab_space_config_0_auto_accept"
+             )
              |> render() =~ "checked"
 
       assert view
-             |> element("#section_resource_collab_space_config_0_show_full_history")
+             |> element(
+               "#collab_space_config_form #section_resource_collab_space_config_0_show_full_history"
+             )
              |> render() =~ "checked"
 
       assert view
-             |> element("#section_resource_collab_space_config_0_anonymous_posting")
+             |> element(
+               "#collab_space_config_form #section_resource_collab_space_config_0_anonymous_posting"
+             )
              |> render() =~ "checked"
 
       assert view
-             |> element("#section_resource_collab_space_config_0_participation_min_replies")
+             |> element(
+               "#collab_space_config_form #section_resource_collab_space_config_0_participation_min_replies"
+             )
              |> render() =~ "0"
 
       assert view
-             |> element("#section_resource_collab_space_config_0_participation_min_posts")
+             |> element(
+               "#collab_space_config_form #section_resource_collab_space_config_0_participation_min_posts"
+             )
              |> render() =~ "0"
     end
 
@@ -515,19 +527,27 @@ defmodule OliWeb.CollaborationLiveTest do
       })
 
       refute view
-             |> element("#section_resource_collab_space_config_0_threaded")
+             |> element(
+               "#collab_space_config_form #section_resource_collab_space_config_0_threaded"
+             )
              |> render() =~ "checked"
 
       refute view
-             |> element("#section_resource_collab_space_config_0_auto_accept")
+             |> element(
+               "#collab_space_config_form #section_resource_collab_space_config_0_auto_accept"
+             )
              |> render() =~ "checked"
 
       refute view
-             |> element("#section_resource_collab_space_config_0_anonymous_posting")
+             |> element(
+               "#collab_space_config_form #section_resource_collab_space_config_0_anonymous_posting"
+             )
              |> render() =~ "checked"
 
       assert view
-             |> element("#section_resource_collab_space_config_0_participation_min_replies")
+             |> element(
+               "#collab_space_config_form #section_resource_collab_space_config_0_participation_min_replies"
+             )
              |> render() =~ "2"
 
       assert_receive {
@@ -566,14 +586,109 @@ defmodule OliWeb.CollaborationLiveTest do
       })
 
       refute view
-             |> element("#section_resource_collab_space_config_0_participation_min_replies")
+             |> element(
+               "#collab_space_config_form #section_resource_collab_space_config_0_participation_min_replies"
+             )
              |> render() =~ "-1"
 
       assert view
-             |> element("#section_resource_collab_space_config_0_participation_min_replies")
+             |> element(
+               "#collab_space_config_form #section_resource_collab_space_config_0_participation_min_replies"
+             )
              |> render() =~ "0"
 
       refute_receive {:updated_collab_space_config, _}
+    end
+
+    test "can enable Collab spaces for all pages in course", %{
+      conn: conn,
+      instructor: instructor,
+      section: section,
+      page_revision_cs: page_revision_cs
+    } do
+      {:ok, view, _html} =
+        live_isolated(
+          conn,
+          CollabSpaceConfigView,
+          session: %{
+            "current_user_id" => instructor.id,
+            "collab_space_config" => page_revision_cs.collab_space_config,
+            "section_slug" => section.slug,
+            "is_delivery" => true,
+            "resource_slug" => page_revision_cs.slug,
+            "is_overview_render" => true
+          }
+        )
+
+      assert element(view, "h5[role='collab_space_page_summary']")
+             |> render() =~ "1 page currently has Collaborative Spaces enabled"
+
+      # can not trigger a JS command from a test to show the confirmation modal (hidden to the user),
+      # so we directly submit the form in the modal
+      element(view, ~s{form[phx-submit="enable_all_page_collab_spaces"]})
+      |> render_submit(%{
+        section_resource: %{
+          collab_space_config: %{
+            anonymous_posting: false,
+            auto_accept: true,
+            participation_min_posts: 0,
+            participation_min_replies: 0,
+            show_full_history: true,
+            status: :enabled,
+            threaded: true
+          }
+        }
+      })
+
+      assert element(view, "h5[role='collab_space_page_summary']")
+             |> render() =~ "All 2 pages currently have Collaborative Spaces enabled"
+
+      # enable all pages button is disabled
+      assert has_element?(
+               view,
+               "button[disabled=disabled]",
+               "Enable Collaboration Spaces for all pages in the course"
+             )
+    end
+
+    test "can disable Collab spaces for all pages in course", %{
+      conn: conn,
+      instructor: instructor,
+      section: section,
+      page_revision_cs: page_revision_cs
+    } do
+      {:ok, view, _html} =
+        live_isolated(
+          conn,
+          CollabSpaceConfigView,
+          session: %{
+            "current_user_id" => instructor.id,
+            "collab_space_config" => page_revision_cs.collab_space_config,
+            "section_slug" => section.slug,
+            "is_delivery" => true,
+            "resource_slug" => page_revision_cs.slug,
+            "is_overview_render" => true
+          }
+        )
+
+      assert element(view, "h5[role='collab_space_page_summary']")
+             |> render() =~ "1 page currently has Collaborative Spaces enabled"
+
+      # can not trigger a JS command from a test to show the confirmation modal (hidden to the user),
+      # so we directly confirm the modal
+      view
+      |> element(~s{div[id="disable_collab_space_modal"] button}, "OK")
+      |> render_click()
+
+      assert element(view, "h5[role='collab_space_page_summary']")
+             |> render() =~ "0 pages currently have Collaborative Spaces enabled"
+
+      # disable all pages button is disabled
+      assert has_element?(
+               view,
+               "button[disabled=disabled]",
+               "Disable Collaboration Spaces for all pages in the course"
+             )
     end
   end
 
@@ -668,23 +783,39 @@ defmodule OliWeb.CollaborationLiveTest do
       assert has_element?(view, "h3", "Collaborative Space Config")
       assert has_element?(view, "span", "Enabled")
 
-      assert view |> element("#revision_collab_space_config_0_threaded") |> render() =~ "checked"
+      assert view
+             |> element("#collab_space_config_form #revision_collab_space_config_0_threaded")
+             |> render() =~ "checked"
 
-      assert view |> element("#revision_collab_space_config_0_auto_accept") |> render() =~
-               "checked"
-
-      assert view |> element("#revision_collab_space_config_0_show_full_history") |> render() =~
-               "checked"
-
-      assert view |> element("#revision_collab_space_config_0_anonymous_posting") |> render() =~
+      assert view
+             |> element("#collab_space_config_form #revision_collab_space_config_0_auto_accept")
+             |> render() =~
                "checked"
 
       assert view
-             |> element("#revision_collab_space_config_0_participation_min_replies")
+             |> element(
+               "#collab_space_config_form #revision_collab_space_config_0_show_full_history"
+             )
+             |> render() =~
+               "checked"
+
+      assert view
+             |> element(
+               "#collab_space_config_form #revision_collab_space_config_0_anonymous_posting"
+             )
+             |> render() =~
+               "checked"
+
+      assert view
+             |> element(
+               "#collab_space_config_form #revision_collab_space_config_0_participation_min_replies"
+             )
              |> render() =~ "0"
 
       assert view
-             |> element("#revision_collab_space_config_0_participation_min_posts")
+             |> element(
+               "#collab_space_config_form #revision_collab_space_config_0_participation_min_posts"
+             )
              |> render() =~
                "0"
     end
@@ -720,16 +851,26 @@ defmodule OliWeb.CollaborationLiveTest do
         }
       })
 
-      refute view |> element("#revision_collab_space_config_0_threaded") |> render() =~ "checked"
+      refute view
+             |> element("#collab_space_config_form #revision_collab_space_config_0_threaded")
+             |> render() =~ "checked"
 
-      refute view |> element("#revision_collab_space_config_0_auto_accept") |> render() =~
+      refute view
+             |> element("#collab_space_config_form #revision_collab_space_config_0_auto_accept")
+             |> render() =~
                "checked"
 
-      refute view |> element("#revision_collab_space_config_0_anonymous_posting") |> render() =~
+      refute view
+             |> element(
+               "#collab_space_config_form #revision_collab_space_config_0_anonymous_posting"
+             )
+             |> render() =~
                "checked"
 
       assert view
-             |> element("#revision_collab_space_config_0_participation_min_replies")
+             |> element(
+               "#collab_space_config_form #revision_collab_space_config_0_participation_min_replies"
+             )
              |> render() =~ "2"
     end
 
@@ -756,12 +897,107 @@ defmodule OliWeb.CollaborationLiveTest do
       |> render_submit(%{revision: %{collab_space_config: %{participation_min_replies: -1}}})
 
       refute view
-             |> element("#revision_collab_space_config_0_participation_min_replies")
+             |> element(
+               "#collab_space_config_form #revision_collab_space_config_0_participation_min_replies"
+             )
              |> render() =~ "-1"
 
       assert view
-             |> element("#revision_collab_space_config_0_participation_min_replies")
+             |> element(
+               "#collab_space_config_form #revision_collab_space_config_0_participation_min_replies"
+             )
              |> render() =~ "0"
+    end
+
+    test "can enable Collab spaces for all pages in course", %{
+      conn: conn,
+      author: author,
+      project: project,
+      page_revision_cs: page_revision_cs
+    } do
+      {:ok, view, _html} =
+        live_isolated(
+          conn,
+          CollabSpaceConfigView,
+          session: %{
+            "current_user_id" => author.id,
+            "collab_space_config" => page_revision_cs.collab_space_config,
+            "project_slug" => project.slug,
+            "is_delivery" => false,
+            "resource_slug" => page_revision_cs.slug,
+            "is_overview_render" => true
+          }
+        )
+
+      assert element(view, "h5[role='collab_space_page_summary']")
+             |> render() =~ "1 page currently has Collaborative Spaces enabled"
+
+      # can not trigger a JS command from a test to show the confirmation modal (hidden to the user),
+      # so we directly submit the form in the modal
+      element(view, ~s{form[phx-submit="enable_all_page_collab_spaces"]})
+      |> render_submit(%{
+        revision: %{
+          collab_space_config: %{
+            anonymous_posting: false,
+            auto_accept: true,
+            participation_min_posts: 0,
+            participation_min_replies: 0,
+            show_full_history: true,
+            status: :enabled,
+            threaded: true
+          }
+        }
+      })
+
+      assert element(view, "h5[role='collab_space_page_summary']")
+             |> render() =~ "All 2 pages currently have Collaborative Spaces enabled"
+
+      # enable all pages button is disabled
+      assert has_element?(
+               view,
+               "button[disabled=disabled]",
+               "Enable Collaboration Spaces for all pages in the course"
+             )
+    end
+
+    test "can disable Collab spaces for all pages in course", %{
+      conn: conn,
+      author: author,
+      project: project,
+      page_revision_cs: page_revision_cs
+    } do
+      {:ok, view, _html} =
+        live_isolated(
+          conn,
+          CollabSpaceConfigView,
+          session: %{
+            "current_user_id" => author.id,
+            "collab_space_config" => page_revision_cs.collab_space_config,
+            "project_slug" => project.slug,
+            "is_delivery" => false,
+            "resource_slug" => page_revision_cs.slug,
+            "is_overview_render" => true
+          }
+        )
+
+      assert element(view, "h5[role='collab_space_page_summary']")
+             |> render() =~ "1 page currently has Collaborative Spaces enabled"
+
+      # can not trigger a JS command from a test to show the confirmation modal (hidden to the user),
+      # so we directly confirm the modal
+      view
+      |> element(~s{div[id="disable_collab_space_modal"] button}, "OK")
+      |> render_click()
+
+      assert element(view, "h5[role='collab_space_page_summary']")
+             |> render() =~ "0 pages currently have Collaborative Spaces enabled"
+
+      # disable all pages button is disabled
+      assert has_element?(
+               view,
+               "button[disabled=disabled]",
+               "Disable Collaboration Spaces for all pages in the course"
+             )
     end
   end
 
@@ -1120,6 +1356,9 @@ defmodule OliWeb.CollaborationLiveTest do
              |> render() =~
                "Post successfully created"
 
+      # refute that the flash message has sticky class applied
+      refute has_element?(view, "div.alert.alert-info.sticky", "Post successfully created")
+
       post_created_by = user.id
       assert_receive {:post_created, %PostSchema{}, ^post_created_by}
 
@@ -1170,6 +1409,9 @@ defmodule OliWeb.CollaborationLiveTest do
              |> element("div.alert.alert-info")
              |> render() =~
                "Post successfully created"
+
+      # refute that the flash message has sticky class applied
+      refute has_element?(view, "div.alert.alert-info.sticky", "Post successfully created")
 
       post_created_by = user.id
       assert_receive {:post_created, %PostSchema{}, ^post_created_by}
@@ -1391,6 +1633,9 @@ defmodule OliWeb.CollaborationLiveTest do
              |> render() =~
                "Post successfully created"
 
+      # refute that the flash message has sticky class applied
+      refute has_element?(view, "div.alert.alert-info.sticky", "Post successfully created")
+
       post_created_by = user.id
       assert_receive {:post_created, %PostSchema{}, ^post_created_by}
 
@@ -1592,6 +1837,9 @@ defmodule OliWeb.CollaborationLiveTest do
              |> render() =~
                "Post successfully created"
 
+      # refute that the flash message has sticky class applied
+      refute has_element?(view, "div.alert.alert-info.sticky", "Post successfully created")
+
       post_created_by = user.id
       assert_receive {:post_created, %PostSchema{}, ^post_created_by}
 
@@ -1722,6 +1970,9 @@ defmodule OliWeb.CollaborationLiveTest do
              |> render() =~
                "Post successfully created"
 
+      # refute that the flash message has sticky class applied
+      refute has_element?(view, "div.alert.alert-info.sticky", "Post successfully created")
+
       post_created_by = user.id
       assert_receive {:post_created, %PostSchema{}, ^post_created_by}
 
@@ -1747,6 +1998,9 @@ defmodule OliWeb.CollaborationLiveTest do
              |> element("div.alert.alert-info")
              |> render() =~
                "Post successfully created"
+
+      # refute that the flash message has sticky class applied
+      refute has_element?(view, "div.alert.alert-info.sticky", "Post successfully created")
 
       assert_receive {:post_created, %PostSchema{}, ^post_created_by}
 
@@ -1863,6 +2117,9 @@ defmodule OliWeb.CollaborationLiveTest do
              |> render() =~
                "Post successfully created"
 
+      # refute that the flash message has sticky class applied
+      refute has_element?(view, "div.alert.alert-info.sticky", "Post successfully created")
+
       post_created_by = user.id
       assert_receive {:post_created, %PostSchema{}, ^post_created_by}
 
@@ -1964,6 +2221,9 @@ defmodule OliWeb.CollaborationLiveTest do
              |> element("div.alert.alert-info")
              |> render() =~
                "Post successfully created"
+
+      # refute that the flash message has sticky class applied
+      refute has_element?(view, "div.alert.alert-info.sticky", "Post successfully created")
 
       post_created_by = instructor.id
       assert_receive {:post_created, %PostSchema{}, ^post_created_by}

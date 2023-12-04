@@ -25,9 +25,18 @@ defmodule OliWeb.Components.Delivery.CourseLatestVisitedPage do
 
           <%= if !@is_instructor do %>
             <span class="w-64 h-10 text-sm tracking-wide text-gray-800 dark:text-white bg-gray-100 dark:bg-gray-500 rounded-sm flex justify-center items-center ml-auto mr-3">
-              <%= DeliveryUtils.get_resource_scheduled_date(@page_revision.resource_id, @scheduled_dates, @ctx) %>
+              <%= DeliveryUtils.get_resource_scheduled_date(
+                @page_revision.resource_id,
+                @scheduled_dates,
+                @ctx
+              ) %>
             </span>
-            <.link navigate={~p"/sections/#{@section_slug}/page/#{@page_revision.slug}"} class="torus-button primary h-10">Open</.link>
+            <.link
+              navigate={~p"/sections/#{@section_slug}/page/#{@page_revision.slug}"}
+              class="torus-button primary h-10"
+            >
+              Open
+            </.link>
           <% else %>
             <Buttons.button_with_options
               id="open-latest-visited-page-button"

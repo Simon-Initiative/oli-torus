@@ -296,6 +296,24 @@ defmodule Oli.Delivery do
     end
   end
 
+  defp contains_deliberate_practice(section_slug) do
+    page_id = Oli.Resources.ResourceType.get_id_by_type("page")
+
+    Repo.one(
+      from([sr: sr, rev: rev] in DeliveryResolver.section_resource_revisions(section_slug),
+        where:
+          rev.purpose == :deliberate_practice and rev.deleted == false and
+            rev.resource_type_id == ^page_id,
+        select: rev.id,
+        limit: 1
+      )
+    )
+    |> case do
+      nil -> false
+      _ -> true
+    end
+  end
+
   defp update_contains_explorations(section, value) do
     section
     |> Section.changeset(%{contains_explorations: value})
@@ -314,6 +332,30 @@ defmodule Oli.Delivery do
 
       {false, true} ->
         update_contains_explorations(section, false)
+
+      _ ->
+        {:ok, section}
+    end
+  end
+
+  defp update_contains_deliberate_practice(section, value) do
+    section
+    |> Section.changeset(%{contains_deliberate_practice: value})
+    |> Repo.update()
+  end
+
+  def maybe_update_section_contains_deliberate_practice(
+        %Section{
+          slug: section_slug,
+          contains_deliberate_practice: contains_deliberate_practice
+        } = section
+      ) do
+    case {contains_deliberate_practice(section_slug), contains_deliberate_practice} do
+      {true, false} ->
+        update_contains_deliberate_practice(section, true)
+
+      {false, true} ->
+        update_contains_deliberate_practice(section, false)
 
       _ ->
         {:ok, section}

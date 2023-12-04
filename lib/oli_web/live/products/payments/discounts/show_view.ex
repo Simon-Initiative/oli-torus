@@ -142,17 +142,18 @@ defmodule OliWeb.Products.Payments.Discounts.ShowView do
 
   def render(assigns) do
     ~H"""
-      <FormContainer.render title={@title}>
-        <Form.render
-          institution_name={@institution_name}
-          institutions={@institutions}
-          discount={@discount}
-          form={@changeset}
-          save="save"
-          change="change"
-          live_action={@live_action}
-          clear="clear" />
-      </FormContainer.render>
+    <FormContainer.render title={@title}>
+      <Form.render
+        institution_name={@institution_name}
+        institutions={@institutions}
+        discount={@discount}
+        form={@changeset}
+        save="save"
+        change="change"
+        live_action={@live_action}
+        clear="clear"
+      />
+    </FormContainer.render>
     """
   end
 

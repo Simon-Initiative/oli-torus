@@ -105,7 +105,12 @@ defmodule OliWeb.Common.Utils do
     ""
   """
 
-  def datetime_input_limit(:start_date, %{start_date: nil = _old_start_date, end_date: end_date}, ctx) when not is_nil(end_date) do
+  def datetime_input_limit(
+        :start_date,
+        %{start_date: nil = _old_start_date, end_date: end_date},
+        ctx
+      )
+      when not is_nil(end_date) do
     end_date
     |> convert_datetime(ctx)
     |> DateTime.add(-1, :day)
@@ -114,7 +119,12 @@ defmodule OliWeb.Common.Utils do
 
   def datetime_input_limit(:start_date, _settings, _ctx), do: ""
 
-  def datetime_input_limit(:end_date, %{start_date: start_date, end_date: nil = _old_end_date}, ctx) when not is_nil(start_date) do
+  def datetime_input_limit(
+        :end_date,
+        %{start_date: start_date, end_date: nil = _old_end_date},
+        ctx
+      )
+      when not is_nil(start_date) do
     start_date
     |> convert_datetime(ctx)
     |> DateTime.add(1, :day)
@@ -135,7 +145,8 @@ defmodule OliWeb.Common.Utils do
   iex> maybe_preserve_dates_distance(:end_date, nil, %{start_date: ~U[2023-09-01 13:28:00Z], end_date: ~U[2023-09-02 13:28:00Z]})
   {~U[2023-09-01 13:28:00Z], nil, nil}
   """
-  def maybe_preserve_dates_distance(:start_date, new_start_date, %{end_date: end_date}) when is_nil(new_start_date) or is_nil(end_date) do
+  def maybe_preserve_dates_distance(:start_date, new_start_date, %{end_date: end_date})
+      when is_nil(new_start_date) or is_nil(end_date) do
     {new_start_date, end_date, nil}
   end
 
@@ -153,7 +164,8 @@ defmodule OliWeb.Common.Utils do
     end
   end
 
-  def maybe_preserve_dates_distance(:end_date, new_end_date, %{start_date: start_date}) when is_nil(new_end_date) or is_nil(start_date) do
+  def maybe_preserve_dates_distance(:end_date, new_end_date, %{start_date: start_date})
+      when is_nil(new_end_date) or is_nil(start_date) do
     {start_date, new_end_date, nil}
   end
 

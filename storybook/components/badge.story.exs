@@ -11,7 +11,7 @@ defmodule OliWeb.Storybook.Components.Badge do
         slots: [
           """
           Default
-          """,
+          """
         ]
       },
       %VariationGroup{
@@ -27,11 +27,11 @@ defmodule OliWeb.Storybook.Components.Badge do
               slots: [
                 """
                 #{Atom.to_string(variant)}
-                """,
+                """
               ]
             }
           end
-      },
+      }
     ]
   end
 end

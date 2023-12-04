@@ -22,6 +22,7 @@ import { configureStore } from 'state/store';
 import { AuthoringElement, AuthoringElementProps } from '../AuthoringElement';
 import { AuthoringElementProvider, useAuthoringElementContext } from '../AuthoringElementProvider';
 import { Explanation } from '../common/explanation/ExplanationAuthoring';
+import { ActivityScoring } from '../common/responses/ActivityScoring';
 import { VariableEditorOrNot } from '../common/variables/VariableEditorOrNot';
 import { VariableActions } from '../common/variables/variableActions';
 import * as ActivityTypes from '../types';
@@ -47,6 +48,7 @@ const CheckAllThatApply = () => {
           onEdit={(id, content) => dispatch(Choices.setContent(id, content))}
           onChangeEditorType={(id, editorType) => dispatch(Choices.setEditor(id, editorType))}
           onRemove={(id) => dispatch(CATAActions.removeChoiceAndUpdateRules(id))}
+          onChangeEditorTextDirection={(id, dir) => dispatch(Choices.setTextDirection(id, dir))}
         />
       </TabbedNavigation.Tab>
 
@@ -63,6 +65,8 @@ const CheckAllThatApply = () => {
           context={writerContext}
         />
         <SimpleFeedback partId={model.authoring.parts[0].id} />
+        <ActivityScoring partId={model.authoring.parts[0].id} />
+
         <TargetedFeedback
           toggleChoice={(choiceId, mapping) => {
             dispatch(

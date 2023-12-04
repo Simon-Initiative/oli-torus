@@ -258,6 +258,13 @@ defmodule Oli.TestHelpers do
     {:ok, conn: conn, user: user}
   end
 
+  def guest_conn(%{conn: conn}) do
+    guest = user_fixture(%{guest: true})
+    conn = Pow.Plug.assign_current_user(conn, guest, OliWeb.Pow.PowHelpers.get_pow_config(:user))
+
+    {:ok, conn: conn, guest: guest}
+  end
+
   def instructor_conn(%{conn: conn}) do
     {:ok, instructor} =
       Accounts.update_user_platform_roles(
@@ -1324,6 +1331,113 @@ defmodule Oli.TestHelpers do
     }
   end
 
+  def create_project_with_units_and_modules(_conn) do
+    author = insert(:author)
+    project = insert(:project, authors: [author])
+
+    {act_resource_w, act_revision_w} = create_activity("Activity W", "activity_w", project)
+
+    # Create pages
+    build_content_for_page = fn activity_ids ->
+      Enum.with_index(activity_ids, fn activity_id, id ->
+        %{
+          "activity_id" => activity_id,
+          "id" => id,
+          "type" => "activity-reference"
+        }
+      end)
+    end
+
+    {page_resource_1, page_revision_1} =
+      create_page("Page 1", "page_1", project, build_content_for_page.([act_resource_w.id]))
+
+    {page_resource_2, page_revision_2} =
+      create_page(
+        "Page 2",
+        "page_2",
+        project,
+        build_content_for_page.([act_resource_w.id])
+      )
+
+    {page_resource_3, page_revision_3} =
+      create_page("Page 3", "page_3", project, build_content_for_page.([act_resource_w.id]))
+
+    # Create modules
+    {module_resource_1, module_revision_1} =
+      create_container("Module Container 1", "module_container_1", project, [page_resource_2.id])
+
+    # Create Unit
+    {unit_resource, unit_revision} =
+      create_container("Unit Container", "unit_container", project, [module_resource_1.id])
+
+    # Create Root
+    {root_resource, root_revision} =
+      create_container("Root Container", "root_container", project, [
+        page_resource_1.id,
+        unit_resource.id
+      ])
+
+    # Publication of project with root container
+    publication =
+      insert(:publication, %{
+        project: project,
+        root_resource_id: root_resource.id
+      })
+
+    # Publish all resources
+    [
+      {act_resource_w, act_revision_w},
+      {page_resource_1, page_revision_1},
+      {page_resource_2, page_revision_2},
+      {page_resource_3, page_revision_3},
+      {module_resource_1, module_revision_1},
+      {unit_resource, unit_revision},
+      {root_resource, root_revision}
+    ]
+    |> Enum.each(fn {resource, revision} ->
+      insert(:published_resource, %{
+        publication: publication,
+        resource: resource,
+        revision: revision,
+        author: author
+      })
+    end)
+
+    section =
+      insert(:section,
+        base_project: project,
+        context_id: UUID.uuid4(),
+        open_and_free: true,
+        registration_open: true,
+        type: :enrollable
+      )
+
+    {:ok, section} = Sections.create_section_resources(section, publication)
+    Sections.rebuild_contained_pages(section)
+
+    %{
+      project: project,
+      section: section,
+      publication: publication,
+      resources: %{
+        page_resource_1: page_resource_1,
+        page_resource_2: page_resource_2,
+        page_resource_3: page_resource_3,
+        module_resource_1: module_resource_1,
+        unit_resource: unit_resource,
+        root_resource: root_resource
+      },
+      revisions: %{
+        page_revision_1: page_revision_1,
+        page_revision_2: page_revision_2,
+        page_revision_3: page_revision_3,
+        module_revision_1: module_revision_1,
+        unit_revision: unit_revision,
+        root_revision: root_revision
+      }
+    }
+  end
+
   defp create_objective(title, slug, project, subobjectives \\ []) do
     obj_resource = insert(:resource)
 
@@ -1447,7 +1561,7 @@ defmodule Oli.TestHelpers do
     # Project survey
     survey_question_resource = insert(:resource)
 
-    mcq_reg = Oli.Activities.get_registration_by_slug("oli_multiple_choice")
+    mcq_reg = Activities.get_registration_by_slug("oli_multiple_choice")
 
     survey_question_revision =
       insert(:revision,
@@ -3131,21 +3245,6 @@ defmodule Oli.TestHelpers do
     System.cmd(cmd, args)
   end
 
-  @doc """
-    Provides set of helpers to test async events
-  """
-  def wait_until(fun), do: wait_until(fun, 500)
-
-  def wait_until(fun, 0), do: fun.()
-
-  def wait_until(fun, timeout) do
-    fun.()
-  rescue
-    ExUnit.AssertionError ->
-      :timer.sleep(100)
-      wait_until(fun, max(0, timeout - 100))
-  end
-
   def unzip_to_memory(data) do
     File.write("export.zip", data)
     result = :zip.unzip(to_charlist("export.zip"), [:memory])
@@ -3155,6 +3254,23 @@ defmodule Oli.TestHelpers do
       {:ok, entries} -> entries
       _ -> []
     end
+  end
+
+  # Required in order to prevent '(Postgrex.Error) ERROR 25001 (active_sql_transaction): SET TRANSACTION ISOLATION LEVEL must be called before any query' error from occurring in tests
+  # https://stackoverflow.com/questions/54169171/phoenix-elixir-testing-when-setting-isolation-level-of-transaction/57328722#57328722
+  def setup_tags(tags) do
+    if tags[:isolation] do
+      Ecto.Adapters.SQL.Sandbox.checkin(Repo)
+      Ecto.Adapters.SQL.Sandbox.checkout(Repo, isolation: tags[:isolation])
+    else
+      Ecto.Adapters.SQL.Sandbox.checkout(Repo)
+    end
+
+    unless tags[:async] do
+      Ecto.Adapters.SQL.Sandbox.mode(Repo, {:shared, self()})
+    end
+
+    :ok
   end
 
   def visit_page(page_revision, section, enrolled_user) do

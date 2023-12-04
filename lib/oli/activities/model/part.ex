@@ -26,10 +26,11 @@ defmodule Oli.Activities.Model.Part do
     grading_approach_str =
       Map.get(part, "gradingApproach", "automatic")
 
-    grading_approach = case MapSet.member?(@grading_approaches, grading_approach_str) do
-      true -> String.to_atom(grading_approach_str)
-      false -> :automatic
-    end
+    grading_approach =
+      case MapSet.member?(@grading_approaches, grading_approach_str) do
+        true -> String.to_atom(grading_approach_str)
+        false -> :automatic
+      end
 
     out_of = Map.get(part, "outOf")
 

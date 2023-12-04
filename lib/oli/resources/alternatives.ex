@@ -13,7 +13,6 @@ defmodule Oli.Resources.Alternatives do
         %AlternativesStrategyContext{alternative_groups_by_id: by_id} = context,
         %{"alternatives_id" => alternatives_id} = alternatives_element
       ) do
-
     strategy_name = Map.get(by_id, alternatives_id).strategy
 
     strategy(strategy_name).select(context, alternatives_element)

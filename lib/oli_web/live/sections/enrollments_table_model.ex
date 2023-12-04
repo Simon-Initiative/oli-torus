@@ -15,46 +15,45 @@ defmodule OliWeb.Delivery.Sections.EnrollmentsTableModel do
 
   def new(users, section, ctx) do
     column_specs =
-        [
-          %ColumnSpec{
-            name: :name,
-            label: "STUDENT NAME",
-            render_fn: &__MODULE__.render_name_column/3,
-            sort_fn: &__MODULE__.sort_name_column/2,
-            th_class: "pl-10"
-          },
-          %ColumnSpec{
-            name: :email,
-            label: "EMAIL",
-            render_fn: &__MODULE__.render_email_column/3
-          },
-          %ColumnSpec{
-            name: :last_interaction,
-            label: "LAST INTERACTED",
-            render_fn: &__MODULE__.render_last_interaction_column/3
-          },
-          %ColumnSpec{
-            name: :progress,
-            label: "COURSE PROGRESS",
-            tooltip:
-              "Progress is percent attempted of activities present on the page from the most recent page attempt. If there are no activities within the page, and if the student has visited that page, we count that as an attempt.",
-            render_fn: &__MODULE__.render_progress_column/3
-          },
-          %ColumnSpec{
-            name: :overall_proficiency,
-            label: "OVERALL COURSE PROFICIENCY",
-            render_fn: &__MODULE__.render_overall_proficiency_column/3,
-            tooltip:
-              "For all students, or one specific student, proficiency for a learning objective will be calculated off the percentage of correct answers for first part attempts within first activity attempts - for those parts that have that learning objective or any of its sub-objectives attached to it."
-          },
-          %ColumnSpec{
-            name: :type,
-            label: "TYPE",
-            render_fn: &__MODULE__.render_type_column/3,
-            sortable: false
-          }
-        ]
-       ++
+      [
+        %ColumnSpec{
+          name: :name,
+          label: "STUDENT NAME",
+          render_fn: &__MODULE__.render_name_column/3,
+          sort_fn: &__MODULE__.sort_name_column/2,
+          th_class: "pl-10"
+        },
+        %ColumnSpec{
+          name: :email,
+          label: "EMAIL",
+          render_fn: &__MODULE__.render_email_column/3
+        },
+        %ColumnSpec{
+          name: :last_interaction,
+          label: "LAST INTERACTED",
+          render_fn: &__MODULE__.render_last_interaction_column/3
+        },
+        %ColumnSpec{
+          name: :progress,
+          label: "COURSE PROGRESS",
+          tooltip:
+            "Progress is percent attempted of activities present on the page from the most recent page attempt. If there are no activities within the page, and if the student has visited that page, we count that as an attempt.",
+          render_fn: &__MODULE__.render_progress_column/3
+        },
+        %ColumnSpec{
+          name: :overall_proficiency,
+          label: "OVERALL COURSE PROFICIENCY",
+          render_fn: &__MODULE__.render_overall_proficiency_column/3,
+          tooltip:
+            "For all students, or one specific student, proficiency for a learning objective will be calculated off the percentage of correct answers for first part attempts within first activity attempts - for those parts that have that learning objective or any of its sub-objectives attached to it."
+        },
+        %ColumnSpec{
+          name: :type,
+          label: "TYPE",
+          render_fn: &__MODULE__.render_type_column/3,
+          sortable: false
+        }
+      ] ++
         if section.requires_payment do
           [
             %ColumnSpec{
@@ -107,25 +106,13 @@ defmodule OliWeb.Delivery.Sections.EnrollmentsTableModel do
         family_name: family_name,
         given_name: given_name,
         link:
-          case Map.get(assigns.ctx, :is_enrollment_page) do
-            true ->
-              Routes.enrollment_student_info_path(
-                OliWeb.Endpoint,
-                OliWeb.Delivery.StudentDashboard.StudentDashboardLive,
-                assigns.section.slug,
-                id,
-                :content
-              )
-
-            _ ->
-              Routes.live_path(
-                OliWeb.Endpoint,
-                OliWeb.Delivery.StudentDashboard.StudentDashboardLive,
-                assigns.section.slug,
-                id,
-                :content
-              )
-          end
+          Routes.live_path(
+            OliWeb.Endpoint,
+            OliWeb.Delivery.StudentDashboard.StudentDashboardLive,
+            assigns.section.slug,
+            id,
+            :content
+          )
       })
 
     ~H"""

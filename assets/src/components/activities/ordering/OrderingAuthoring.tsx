@@ -20,6 +20,7 @@ import { configureStore } from 'state/store';
 import { AuthoringElement, AuthoringElementProps } from '../AuthoringElement';
 import { AuthoringElementProvider, useAuthoringElementContext } from '../AuthoringElementProvider';
 import { Explanation } from '../common/explanation/ExplanationAuthoring';
+import { ActivityScoring } from '../common/responses/ActivityScoring';
 import { VariableEditorOrNot } from '../common/variables/VariableEditorOrNot';
 import { VariableActions } from '../common/variables/variableActions';
 import * as ActivityTypes from '../types';
@@ -50,6 +51,7 @@ export const Ordering: React.FC = () => {
           onChangeEditorType={(id, editor) => dispatch(Choices.setEditor(id, editor))}
           onRemove={(id) => dispatch(Actions.removeChoiceAndUpdateRules(id))}
           colorMap={model.choiceColors ? new Map(model.choiceColors) : undefined}
+          onChangeEditorTextDirection={(id, dir) => dispatch(Choices.setTextDirection(id, dir))}
         />
       </TabbedNavigation.Tab>
 
@@ -63,6 +65,7 @@ export const Ordering: React.FC = () => {
           setChoices={(choices) => dispatch(Actions.setCorrectChoices(choices))}
         />
         <SimpleFeedback partId={model.authoring.parts[0].id} />
+        <ActivityScoring partId={model.authoring.parts[0].id} />
         <TargetedFeedback />
       </TabbedNavigation.Tab>
 

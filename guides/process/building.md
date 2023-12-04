@@ -16,7 +16,7 @@ curl --fail -L https://oli-torus-releases.s3.amazonaws.com/oli-${RELEASE_VERSION
 
 Torus recommends using [elixir releases](https://hexdocs.pm/mix/Mix.Tasks.Release.html) for production deployments. You will have to have [Elixir installed on your machine](https://elixir-lang.org/install.html) to build Torus.
 
-A release can be created by executing [the following script](https://github.com/Simon-Initiative/oli-torus/blob/master/.github/actions/torus-builder/entrypoint.sh) in the oli-torus repository with a current git commit SHA set to `RELEASE_SHA`. This will compile a release for the system architecture on which it is executed:
+A release can be created by executing [the following script](https://github.com/Simon-Initiative/oli-torus/blob/master/.github/actions/amazon-linux-builder/entrypoint.sh) in the oli-torus repository with a current git commit SHA set to `RELEASE_SHA`. This will compile a release for the system architecture on which it is executed:
 
 ```
 # clone the oli-torus repository
@@ -29,7 +29,7 @@ npm install -g yarn
 yarn --cwd ./assets
 
 RELEASE_SHA=$(git rev-parse --short HEAD)
-sh .github/actions/torus-builder/entrypoint.sh
+sh .github/actions/amazon-linux-builder/entrypoint.sh
 ```
 
 You'll find the newly built release under `_build/prod/rel/oli`. This can be zipped and deployed however you see fit (e.g. sftp, S3 and curl, etc.).

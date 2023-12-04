@@ -6,6 +6,7 @@ defmodule Oli.Delivery.Sections.BrowseOptions do
   @enforce_keys [
     :institution_id,
     :blueprint_id,
+    :project_id,
     :text_search,
     :active_today,
     :filter_status,
@@ -15,6 +16,7 @@ defmodule Oli.Delivery.Sections.BrowseOptions do
   defstruct [
     :institution_id,
     :blueprint_id,
+    :project_id,
     :text_search,
     :active_today,
     :filter_status,
@@ -24,6 +26,7 @@ defmodule Oli.Delivery.Sections.BrowseOptions do
   @type t() :: %__MODULE__{
           institution_id: integer(),
           blueprint_id: integer(),
+          project_id: integer(),
           text_search: String.t(),
           active_today: boolean(),
           filter_status: atom(),

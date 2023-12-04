@@ -4,13 +4,15 @@ defmodule OliWeb.LegacyLogsController do
   import SweetXml
 
   def process(conn, _params) do
+    doc =
+      case Map.get(conn.assigns, :raw_body) do
+        nil ->
+          {:ok, raw_body, _conn} = Plug.Conn.read_body(conn, length: 20_000_000)
+          raw_body
 
-    doc = case Map.get(conn.assigns, :raw_body) do
-      nil ->
-        {:ok, raw_body, _conn} = Plug.Conn.read_body(conn, length: 20_000_000)
-        raw_body
-      raw_body -> raw_body
-    end
+        raw_body ->
+          raw_body
+      end
 
     activity_attempt_guid = to_string(xpath(doc, ~x"//*/@external_object_id"))
     action = to_string(xpath(doc, ~x"//*/@action_id"))
@@ -22,6 +24,5 @@ defmodule OliWeb.LegacyLogsController do
     conn
     |> put_resp_content_type("text/xml")
     |> send_resp(200, "status=success")
-
   end
 end

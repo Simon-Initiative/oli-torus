@@ -56,10 +56,10 @@ defmodule OliWeb.Common.PowTest do
 
       response = html_response(conn, 200)
 
-      assert response =~ "Sign in with Google"
+      assert response =~ "Continue with Google"
       assert response =~ "div class=\"google-auth-container\""
 
-      assert response =~ "Sign in with Github"
+      assert response =~ "Continue with Github"
       assert response =~ "div class=\"github-auth-container\""
     end
   end
@@ -76,6 +76,38 @@ defmodule OliWeb.Common.PowTest do
 
       assert html_response(conn, 200) =~
                "This sign in page is for <b>Independent Learner and Educator</b> accounts."
+
+      # sign user in
+      conn =
+        recycle(conn)
+        |> post(Routes.pow_session_path(conn, :create),
+          user: %{email: user.email, password: "password123"}
+        )
+
+      assert html_response(conn, 302) =~
+               ~p"/sections"
+
+      # user who is already signed in should be automatically redirected away from sign in page
+      conn =
+        recycle_user_session(conn, user)
+        |> get(Routes.pow_session_path(conn, :new))
+
+      assert html_response(conn, 302) =~
+               ~p"/sections"
+    end
+
+    test "hides authoring sign in box when coming from an invitation link", %{
+      conn: conn,
+      user: user
+    } do
+      conn =
+        conn
+        |> get(Routes.pow_session_path(conn, :new, from_invitation_link?: true))
+
+      assert html_response(conn, 200) =~ "Learner/Educator Sign In"
+
+      refute html_response(conn, 200) =~
+               "Looking for Authoring or your LMS?"
 
       # sign user in
       conn =
@@ -134,10 +166,10 @@ defmodule OliWeb.Common.PowTest do
 
       response = html_response(conn, 200)
 
-      assert response =~ "Sign in with Google"
+      assert response =~ "Continue with Google"
       assert response =~ "div class=\"google-auth-container\""
 
-      assert response =~ "Sign in with Github"
+      assert response =~ "Continue with Github"
       assert response =~ "div class=\"github-auth-container\""
     end
   end
@@ -247,10 +279,10 @@ defmodule OliWeb.Common.PowTest do
 
       response = html_response(conn, 200)
 
-      assert response =~ "Sign in with Google"
+      assert response =~ "Continue with Google"
       assert response =~ "div class=\"google-auth-container\""
 
-      assert response =~ "Sign in with Github"
+      assert response =~ "Continue with Github"
       assert response =~ "div class=\"github-auth-container\""
     end
   end
@@ -316,10 +348,10 @@ defmodule OliWeb.Common.PowTest do
 
       response = html_response(conn, 200)
 
-      assert response =~ "Sign in with Google"
+      assert response =~ "Continue with Google"
       assert response =~ "div class=\"google-auth-container\""
-
-      assert response =~ "Sign in with Github"
+      assert Monocle.we_see_exactly(response, 1, attribute: "or")
+      assert response =~ "Continue with Github"
       assert response =~ "div class=\"github-auth-container\""
     end
   end
@@ -336,8 +368,8 @@ defmodule OliWeb.Common.PowTest do
 
       response = html_response(conn, 200)
 
-      refute response =~ "Sign in with Google"
-      refute response =~ "Sign in with Github"
+      refute response =~ "Continue with Google"
+      refute response =~ "Continue with Github"
     end
   end
 

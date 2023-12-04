@@ -54,6 +54,8 @@ defmodule Oli.Delivery.Attempts.PageLifecycle do
         activity_provider
       ) do
     Repo.transaction(fn ->
+      Repo.query!("set transaction isolation level SERIALIZABLE;")
+
       case DeliveryResolver.from_revision_slug(section_slug, revision_slug) do
         nil ->
           Repo.rollback({:not_found})
@@ -109,9 +111,9 @@ defmodule Oli.Delivery.Attempts.PageLifecycle do
 
   It also updates the latest visited page for the user in the section.
   """
-  @spec visit(%Revision{}, String.t(), String.t(), User.t(), any, any) ::
-          {:ok, {:in_progress | :revised, %AttemptState{}}}
-          | {:ok, {:not_started, %HistorySummary{}}}
+  @spec visit(Revision.t(), String.t(), String.t(), User.t(), any, any) ::
+          {:ok, {:in_progress | :revised, AttemptState.t()}}
+          | {:ok, {:not_started, HistorySummary.t()}}
           | {:error, any}
   def visit(
         page_revision,

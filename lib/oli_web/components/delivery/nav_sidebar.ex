@@ -21,15 +21,13 @@ defmodule OliWeb.Components.Delivery.NavSidebar do
 
   def main_with_nav(assigns) do
     ~H"""
-      <main role="main" class="flex-1 flex flex-col relative lg:flex-row">
-        <.navbar {assigns} path_info={@conn.path_info} />
+    <main role="main" class="flex-1 flex flex-col relative lg:flex-row">
+      <.navbar {assigns} path_info={@conn.path_info} />
 
-        <div class="flex-1 flex flex-col lg:pl-[200px]">
-
-          <%= render_slot(@inner_block) %>
-
-        </div>
-      </main>
+      <div class="flex-1 flex flex-col lg:pl-[200px]">
+        <%= render_slot(@inner_block) %>
+      </div>
+    </main>
     """
   end
 
@@ -54,18 +52,18 @@ defmodule OliWeb.Components.Delivery.NavSidebar do
       |> UserAccountMenu.user_account_menu_assigns()
 
     ~H"""
-      <div id="navbar" phx-update="ignore">
-        <%= ReactPhoenix.ClientSide.react_component("Components.Navbar", %{
-          logo: @logo,
-          links: @links,
-          user: @user,
-          preview: @preview,
-          routes: @routes,
-          sectionSlug: @section_slug,
-          selectedTimezone: @selected_timezone,
-          timezones: @timezones,
-        }) %>
-      </div>
+    <div id="navbar" phx-update="ignore">
+      <%= ReactPhoenix.ClientSide.react_component("Components.Navbar", %{
+        logo: @logo,
+        links: @links,
+        user: @user,
+        preview: @preview,
+        routes: @routes,
+        sectionSlug: @section_slug,
+        selectedTimezone: @selected_timezone,
+        timezones: @timezones
+      }) %>
+    </div>
     """
   end
 
@@ -116,6 +114,22 @@ defmodule OliWeb.Components.Delivery.NavSidebar do
           links
       end
     end)
+    |> then(fn links ->
+      case section do
+        %Section{contains_deliberate_practice: true} ->
+          links ++
+            [
+              %{
+                name: "Practice",
+                href: deliberate_practice_url(assigns),
+                active: is_active(assigns.path_info, :deliberate_practice)
+              }
+            ]
+
+        _ ->
+          links
+      end
+    end)
   end
 
   defp get_preview_links(%{project: %Project{} = project}) do
@@ -147,51 +161,13 @@ defmodule OliWeb.Components.Delivery.NavSidebar do
     ]
   end
 
-  defp get_links(%{section: %{contains_explorations: true}} = assigns, path_info) do
-    hierarchy =
-      assigns[:section]
-      |> Oli.Repo.preload([:root_section_resource])
-      |> Sections.build_hierarchy()
-
-    [
-      %{
-        name: "Home",
-        href: home_url(assigns),
-        active: is_active(path_info, :overview)
-      },
-      %{
-        name: "Course Content",
-        popout: %{
-          component: "Components.CourseContentOutline",
-          props: %{hierarchy: hierarchy, sectionSlug: assigns[:section].slug}
-        },
-        active: is_active(path_info, :content)
-      },
-      %{
-        name: "Discussion",
-        href: discussion_url(assigns),
-        active: is_active(path_info, :discussion)
-      },
-      %{
-        name: "Assignments",
-        href: assignments_url(assigns),
-        active: is_active(path_info, :assignments)
-      },
-      %{
-        name: "Exploration",
-        href: exploration_url(assigns),
-        active: is_active(path_info, :exploration)
-      }
-    ]
-  end
-
   defp get_links(assigns, path_info) do
     hierarchy =
       assigns[:section]
       |> Oli.Repo.preload([:root_section_resource])
       |> Sections.build_hierarchy()
-      
-    [
+
+    all = [
       %{
         name: "Home",
         href: home_url(assigns),
@@ -216,6 +192,33 @@ defmodule OliWeb.Components.Delivery.NavSidebar do
         active: is_active(path_info, :assignments)
       }
     ]
+
+    all =
+      if assigns.section.contains_explorations do
+        all ++
+          [
+            %{
+              name: "Exploration",
+              href: exploration_url(assigns),
+              active: is_active(path_info, :exploration)
+            }
+          ]
+      else
+        all
+      end
+
+    if assigns.section.contains_deliberate_practice do
+      all ++
+        [
+          %{
+            name: "Practice",
+            href: deliberate_practice_url(assigns),
+            active: is_active(path_info, :deliberate_practice)
+          }
+        ]
+    else
+      all
+    end
   end
 
   defp logo_details(assigns) do
@@ -252,6 +255,7 @@ defmodule OliWeb.Components.Delivery.NavSidebar do
       {"overview", :overview} -> true
       {"exploration", :exploration} -> true
       {"discussion", :discussion} -> true
+      {"practice", :deliberate_practice} -> true
       {"my_assignments", :assignments} -> true
       _ -> false
     end
@@ -270,6 +274,18 @@ defmodule OliWeb.Components.Delivery.NavSidebar do
       Routes.page_delivery_path(OliWeb.Endpoint, :exploration_preview, assigns[:section_slug])
     else
       Routes.page_delivery_path(OliWeb.Endpoint, :exploration, assigns[:section_slug])
+    end
+  end
+
+  defp deliberate_practice_url(assigns) do
+    if assigns[:preview_mode] do
+      Routes.page_delivery_path(
+        OliWeb.Endpoint,
+        :deliberate_practice_preview,
+        assigns[:section_slug]
+      )
+    else
+      Routes.page_delivery_path(OliWeb.Endpoint, :deliberate_practice, assigns[:section_slug])
     end
   end
 

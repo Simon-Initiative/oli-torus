@@ -1,6 +1,7 @@
 import { Maybe } from 'tsmonad';
 import { SelectOption } from 'components/activities/common/authoring/InputTypeDropdown';
 import {
+  ActivityLevelScoring,
   ActivityModelSchema,
   Choice,
   ChoiceId,
@@ -45,7 +46,7 @@ export const multiInputTypeFriendly = (type: MultiInputType): string =>
     }[type],
   ).valueOr(assertNever(type));
 
-export interface MultiInputSchema extends ActivityModelSchema {
+export interface MultiInputSchema extends ActivityModelSchema, ActivityLevelScoring {
   stem: Stem;
   // This is a separated out rather than putting a dropdown's choices under
   // its item in the `inputs` array because the backend transformation logic
@@ -60,5 +61,6 @@ export interface MultiInputSchema extends ActivityModelSchema {
     parts: Part[];
     transformations: Transformation[];
     previewText: string;
+    responses?: { user_name: string; text: string }[];
   };
 }

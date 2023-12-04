@@ -156,11 +156,20 @@ defmodule OliWeb.Resources.PagesView do
         show_sort={false}
         show_more_opts={true}
       >
-        <TextSearch.render id="text-search" text={@options.text_search} event_target={"#text-search-input"}/>
+        <TextSearch.render
+          id="text-search"
+          text={@options.text_search}
+          event_target="#text-search-input"
+        />
 
         <:extra_opts>
           <form phx-change="change_graded" class="d-flex">
-            <select name="graded" id="select_graded" class="custom-select custom-select mr-2" style="width: 170px;">
+            <select
+              name="graded"
+              id="select_graded"
+              class="custom-select custom-select mr-2"
+              style="width: 170px;"
+            >
               <option value="" selected>Grading Type</option>
               <option
                 :for={
@@ -176,7 +185,12 @@ defmodule OliWeb.Resources.PagesView do
           </form>
 
           <form phx-change="change_type" class="d-flex">
-            <select name="type" id="select_type" class="custom-select custom-select mr-2" style="width: 170px;">
+            <select
+              name="type"
+              id="select_type"
+              class="custom-select custom-select mr-2"
+              style="width: 170px;"
+            >
               <option value="" selected>Page Type</option>
               <option
                 :for={
@@ -242,6 +256,7 @@ defmodule OliWeb.Resources.PagesView do
         total_count={@total_count}
         offset={@offset}
         limit={limit()}
+        scrollable={false}
       />
     </div>
     """
@@ -517,29 +532,17 @@ defmodule OliWeb.Resources.PagesView do
 
   def handle_event(
         "MoveModal.move_item",
-        %{"to_uuid" => to_uuid} = params,
+        %{"uuid" => uuid, "to_uuid" => to_uuid, "from_uuid" => from_uuid},
         socket
       ) do
     %{
       author: author,
       project: project,
-      modal_assigns: %{node: node, hierarchy: hierarchy}
+      modal_assigns: %{hierarchy: hierarchy}
     } = socket.assigns
 
-    %{revision: revision} = node
-
-    from_container =
-      case params["from_uuid"] do
-        nil ->
-          nil
-
-        from_uuid ->
-          case Hierarchy.find_parent_in_hierarchy(hierarchy, from_uuid) do
-            %{revision: from_container} -> from_container
-            _ -> nil
-          end
-      end
-
+    %{revision: revision} = Hierarchy.find_in_hierarchy(hierarchy, uuid)
+    %{revision: from_container} = Hierarchy.find_in_hierarchy(hierarchy, from_uuid)
     %{revision: to_container} = Hierarchy.find_in_hierarchy(hierarchy, to_uuid)
 
     {:ok, _} = ContainerEditor.move_to(revision, from_container, to_container, author, project)

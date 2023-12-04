@@ -19,8 +19,6 @@ defmodule Oli.Delivery.Attempts.ManualGrading do
     ActivityAttempt
   }
 
-  alias Oli.Activities.Model
-
   def count_submitted_attempts(%Section{} = section) do
     case browse_submitted_attempts(
            section,
@@ -251,22 +249,11 @@ defmodule Oli.Delivery.Attempts.ManualGrading do
     graded = activity_attempt.graded
     resource_attempt_guid = activity_attempt.resource_attempt_guid
 
-    activity_model = Core.select_model(activity_attempt)
-
-    normalization_strategy =
-      case Model.parse(activity_model) do
-        {:ok, %Model{rules: []}} -> :normalize
-        _ -> :do_not_normalize
-      end
-
     Oli.Repo.transaction(fn _ ->
       with {:ok, finalized_part_attempts} <-
              finalize_part_attempts(activity_attempt, score_feedbacks_map),
            {:ok, _} <-
-             Evaluate.rollup_part_attempt_evaluations(
-               activity_attempt.attempt_guid,
-               normalization_strategy
-             ),
+             Evaluate.rollup_part_attempt_evaluations(activity_attempt.attempt_guid),
            {:ok, _} <-
              to_attempt_guid(finalized_part_attempts)
              |> Oli.Delivery.Snapshots.queue_or_create_snapshot(section_slug),
@@ -310,21 +297,38 @@ defmodule Oli.Delivery.Attempts.ManualGrading do
     do: {:ok, resource_attempt_guid}
 
   defp maybe_finalize_resource_attempt(section, true, resource_attempt_guid) do
-
-    resource_attempt = Oli.Delivery.Attempts.Core.get_resource_attempt(attempt_guid: resource_attempt_guid)
-    |> Oli.Repo.preload(:revision)
+    resource_attempt =
+      Oli.Delivery.Attempts.Core.get_resource_attempt(attempt_guid: resource_attempt_guid)
+      |> Oli.Repo.preload(:revision)
 
     resource_access = Oli.Repo.get(ResourceAccess, resource_attempt.resource_access_id)
-    effective_settings = Oli.Delivery.Settings.get_combined_settings(resource_attempt.revision, section.id, resource_access.user_id)
+
+    effective_settings =
+      Oli.Delivery.Settings.get_combined_settings(
+        resource_attempt.revision,
+        section.id,
+        resource_access.user_id
+      )
 
     case Oli.Delivery.Attempts.PageLifecycle.Graded.roll_up_activities_to_resource_attempt(
            resource_attempt,
            effective_settings
          ) do
-      {:ok, %ResourceAttempt{lifecycle_state: :evaluated, revision: revision, resource_access_id: resource_access_id, was_late: was_late}} ->
-
+      {:ok,
+       %ResourceAttempt{
+         lifecycle_state: :evaluated,
+         revision: revision,
+         resource_access_id: resource_access_id,
+         was_late: was_late
+       }} ->
         resource_access = Oli.Repo.get(ResourceAccess, resource_access_id)
-        effective_settings = Oli.Delivery.Settings.get_combined_settings(revision, section.id, resource_access.user_id)
+
+        effective_settings =
+          Oli.Delivery.Settings.get_combined_settings(
+            revision,
+            section.id,
+            resource_access.user_id
+          )
 
         Oli.Delivery.Attempts.PageLifecycle.Graded.roll_up_resource_attempts_to_access(
           effective_settings,

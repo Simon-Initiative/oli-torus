@@ -4,6 +4,7 @@ import { withHistory } from 'slate-history';
 import { Editable, RenderElementProps, RenderLeafProps, Slate, withReact } from 'slate-react';
 import { EditorToolbar } from 'components/editing/toolbar/editorToolbar/EditorToolbar';
 import { Model } from 'data/content/model/elements/factories';
+import { TextDirection } from 'data/content/model/elements/types';
 import { Mark, Marks } from 'data/content/model/text';
 import { classNames } from 'utils/classNames';
 import { CommandContext, CommandDescription } from '../elements/commands/interfaces';
@@ -43,6 +44,8 @@ export type EditorProps = {
   onFocus?: FocusEventHandler | undefined;
   onBlur?: FocusEventHandler | undefined;
   onSwitchToMarkdown?: () => void;
+  textDirection?: TextDirection;
+  onChangeTextDirection?: (textDirection: TextDirection) => void;
 };
 
 // Necessary to work around FireFox focus and selection issues with Slate
@@ -60,6 +63,21 @@ function areEqual(prevProps: EditorProps, nextProps: EditorProps) {
     prevProps.children === nextProps.children
   );
 }
+
+const defaultValue = () => [Model.p()];
+export const validateEditorContentValue = (value: any): Descendant[] => {
+  if (!value) {
+    return defaultValue();
+  }
+  if (!Array.isArray(value) && Array.isArray(value.model)) {
+    // MER-2689 - Some content had an extra model property that was the array of elements.
+    return value.model;
+  }
+  if (!Array.isArray(value) || value.length === 0) {
+    return defaultValue();
+  }
+  return value;
+};
 
 export const Editor: React.FC<EditorProps> = React.memo((props: EditorProps) => {
   const editor = useMemo(() => {
@@ -130,7 +148,7 @@ export const Editor: React.FC<EditorProps> = React.memo((props: EditorProps) => 
     <React.Fragment>
       <Slate
         editor={editor}
-        initialValue={props.value.length === 0 ? [Model.p()] : props.value}
+        initialValue={validateEditorContentValue(props.value)}
         onChange={onChange}
       >
         {props.children}
@@ -140,9 +158,12 @@ export const Editor: React.FC<EditorProps> = React.memo((props: EditorProps) => 
           insertOptions={props.toolbarInsertDescs}
           fixedToolbar={props.fixedToolbar}
           onSwitchToMarkdown={props.onSwitchToMarkdown}
+          textDirection={props.textDirection}
+          onChangeTextDirection={props.onChangeTextDirection}
         />
 
         <Editable
+          dir={props.textDirection}
           style={props.style}
           className={classNames(
             'slate-editor',

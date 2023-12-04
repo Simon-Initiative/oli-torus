@@ -10,6 +10,10 @@ defmodule Oli.Delivery.Updates.Worker do
   def perform(%Oban.Job{
         args: %{"section_slug" => section_slug, "publication_id" => publication_id}
       }) do
+    perform_now(section_slug, publication_id)
+  end
+
+  def perform_now(section_slug, publication_id) do
     section = Sections.get_section_by_slug(section_slug)
 
     Sections.apply_publication_update(
