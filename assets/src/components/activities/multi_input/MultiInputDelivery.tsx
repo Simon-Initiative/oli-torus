@@ -120,6 +120,16 @@ export const MultiInputComponent: React.FC = () => {
     {},
   );
 
+  const extractValue = (inputId: string, v: string[]) => {
+    if (v[0] && (uiState.model as MultiInputSchema).multInputsPerPart) {
+      const vj = JSON.parse(v[0]);
+      if (vj) {
+        return vj[inputId];
+      }
+    }
+    return v[0];
+  };
+
   const inputs = new Map(
     (uiState.model as MultiInputSchema).inputs.map((input) => [
       input.id,
@@ -136,7 +146,7 @@ export const MultiInputComponent: React.FC = () => {
                 size: input.size,
               }
             : { id: input.id, inputType: input.inputType, size: input.size },
-        value: (uiState.partState[input.partId]?.studentInput || [''])[0],
+        value: (extractValue(input.id, uiState.partState[input.partId]?.studentInput as string[] || [''])),
         hasHints: uiState.partState[input.partId].hasMoreHints,
       },
     ]),
@@ -180,8 +190,22 @@ export const MultiInputComponent: React.FC = () => {
   //
   const onChange = (id: string, value: string) => {
     const input = getByUnsafe((uiState.model as MultiInputSchema).inputs, (x) => x.id === id);
+    console.log((uiState.model as MultiInputSchema));
+    // const modelPart = getPartById((uiState.model as MultiInputSchema), input.partId);
+    // console.log('----the part');
+    // console.log(modelPart);
     const part = uiState.attemptState.parts.find((p) => p.partId === input.partId);
-    const response = { input: value };
+
+    if ((uiState.model as MultiInputSchema).multInputsPerPart) {
+      // const targets: string[] = modelPart.targets;
+      const partState = uiState.partState[input.partId];
+      const prevInput = partState.studentInput[0];
+      const oldInput = prevInput ? JSON.parse(prevInput) : {};
+      oldInput[input.id] = value;
+      value = JSON.stringify(oldInput);
+    }
+
+    const response = {input: value};
 
     if (part !== undefined) {
       // Here we handle the case that the student is typing again into an input whose
@@ -189,7 +213,7 @@ export const MultiInputComponent: React.FC = () => {
       // part attempt, then either submit (if dropdown) or save the input to that part attempt
       if (part.dateEvaluated !== null && (uiState.model as MultiInputSchema).submitPerPart) {
         if (input.inputType === 'dropdown') {
-          const payload = { input: value };
+          const payload = {input: value};
           dispatch(
             resetAndSubmitPart(
               uiState.attemptState.attemptGuid,
@@ -225,7 +249,7 @@ export const MultiInputComponent: React.FC = () => {
           onSaveActivity(uiState.attemptState.attemptGuid, [
             {
               attemptGuid: part.attemptGuid,
-              response: { input: value },
+              response: {input: value},
             },
           ]);
 
@@ -248,7 +272,7 @@ export const MultiInputComponent: React.FC = () => {
 
   const hasActualInput = (id: string) => {
     const input = getByUnsafe((uiState.model as MultiInputSchema).inputs, (x) => x.id === id);
-    const studentInput = uiState.partState[input.partId].studentInput[0];
+    const studentInput: string = uiState.partState[input.partId].studentInput[0];
 
     return studentInput !== undefined && studentInput.trim() !== '';
   };

@@ -9,10 +9,11 @@ import {
   MultiInputSize,
 } from 'components/activities/multi_input/schema';
 import { DropdownQuestionEditor } from 'components/activities/multi_input/sections/DropdownQuestionEditor';
-import { partTitle } from 'components/activities/multi_input/utils';
+import { inputTitle} from 'components/activities/multi_input/utils';
 import { Card } from 'components/misc/Card';
 import { getParts } from 'data/activities/model/utils';
 import { MultiInputActions } from '../actions';
+import { Part } from 'components/activities/types';
 
 interface Props {
   editor: ReactEditor & Editor;
@@ -34,7 +35,7 @@ export const QuestionTab: React.FC<Props> = (props) => {
     <Card.Card key={props.input.id}>
       <Card.Title>
         <>
-          {partTitle(props.input, props.index)}
+          {inputTitle(props.input, props.index)}
           <div className="flex-grow-1"></div>
           <div className="choicesAuthoring__removeButtonContainer">
             {getParts(model).length > 1 && <RemoveButtonConnected onClick={removeInputRef} />}
@@ -45,6 +46,10 @@ export const QuestionTab: React.FC<Props> = (props) => {
         <InputSizeEditor input={props.input} />
 
         {props.input.inputType === 'dropdown' && <DropdownQuestionEditor input={props.input} />}
+
+        <div>
+          {model.multInputsPerPart && <MoveInputIntoPart input={props.input} parts={getParts(model)} />}
+        </div>
       </Card.Content>
     </Card.Card>
   );
@@ -70,6 +75,32 @@ const InputSizeEditor: React.FC<InputSizeEditorProps> = ({ input }) => {
         <option value="small">Small</option>
         <option value="medium">Medium</option>
         <option value="large">Large</option>
+      </select>
+    </div>
+  );
+};
+
+interface MoveInputIntoPartProps {
+  input: MultiInput;
+  parts: Part[];
+}
+const MoveInputIntoPart: React.FC<MoveInputIntoPartProps> = ({ input, parts }) => {
+  const { dispatch } = useAuthoringElementContext<MultiInputSchema>();
+
+  return (
+    <div className="inline-flex items-baseline mb-2">
+      <label className="flex-shrink-0">Move to:</label>
+      <select
+        className="flex-shrink-0 border py-1 px-1.5 border-neutral-300 rounded w-full disabled:bg-neutral-100 disabled:text-neutral-600 dark:bg-neutral-800 dark:border-neutral-700 dark:text-white ml-2"
+        value={input.partId}
+        onChange={({ target: { value } }) => {
+          dispatch(MultiInputActions.moveInputToPart(input.id, value));
+        }}
+      >
+        {parts.map((part, index: number) => (
+          <option key={part.id} value={part.id}>Part {index+1}</option>
+        ))}
+
       </select>
     </div>
   );

@@ -22,6 +22,7 @@ import { Radio } from 'components/misc/icons/radio/Radio';
 import { getCorrectResponse } from 'data/activities/model/responses';
 import { containsRule, eqRule, equalsRule } from 'data/activities/model/rules';
 import { defaultWriterContext } from 'data/content/writers/context';
+import { MultiInputActions } from '../actions';
 
 const defaultRuleForInputType = (inputType: string | undefined) => {
   switch (inputType) {
@@ -65,7 +66,7 @@ export const AnswerKeyTab: React.FC<Props> = (props) => {
           selectedIcon={<Radio.Checked />}
           choices={choices}
           selected={[correctChoice.id]}
-          onSelect={(id) => dispatch(MCActions.toggleChoiceCorrectness(id, props.input.partId))}
+          onSelect={(id) => dispatch(MultiInputActions.toggleChoiceCorrectness(id, props.input.partId, props.input.id))}
           isEvaluated={false}
           context={defaultWriterContext({ projectSlug: projectSlug })}
         />
@@ -92,7 +93,7 @@ export const AnswerKeyTab: React.FC<Props> = (props) => {
         key={getCorrectResponse(model, props.input.partId).id}
         inputType={props.input.inputType}
         response={getCorrectResponse(model, props.input.partId)}
-        onEditResponseRule={(id, rule) => dispatch(ResponseActions.editRule(id, rule))}
+        onEditResponseRule={(id, rule) => dispatch(MultiInputActions.editRule(id, props.input.id, rule))}
       />
       <SimpleFeedback partId={props.input.partId} />
       {getTargetedResponses(model, props.input.partId).map((response: Response) => (
@@ -115,7 +116,7 @@ export const AnswerKeyTab: React.FC<Props> = (props) => {
             key={response.id}
             inputType={(props.input as FillInTheBlank).inputType}
             response={response}
-            onEditResponseRule={(id, rule) => dispatch(ResponseActions.editRule(id, rule))}
+            onEditResponseRule={(id, rule) => dispatch(MultiInputActions.editRule(id,  props.input.id, rule))}
           />
           {authoringContext.contentBreaksExist ? (
             <ShowPage

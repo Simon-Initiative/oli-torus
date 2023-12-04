@@ -35,7 +35,9 @@ defmodule Oli.Delivery.Evaluation.Rule do
     try do
       {:ok, eval(tree, context)}
     rescue
-      e -> {:error, e}
+      e ->
+        IO.inspect(Exception.format(:error, e, __STACKTRACE__))
+        {:error, e}
     end
   end
 
@@ -70,6 +72,16 @@ defmodule Oli.Delivery.Evaluation.Rule do
   end
 
   defp eval(:attempt_number, context), do: context.activity_attempt_number |> Integer.to_string()
+
+  defp eval({:input, ref}, context) do
+    try do
+      input_json = Poison.decode!(context.input)
+      Oli.Utils.normalize_whitespace(Map.get(input_json, ref, ""))
+    rescue
+      RuntimeError -> Oli.Utils.normalize_whitespace(context.input)
+    end
+
+  end
 
   defp eval(:input, context) do
     Oli.Utils.normalize_whitespace(context.input)

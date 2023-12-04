@@ -425,6 +425,10 @@ export interface HasPerPartSubmissionOption {
   submitPerPart: boolean;
 }
 
+export interface HasMultInputsPerPartOption {
+  multInputsPerPart: boolean;
+}
+
 /**
  * Helper function to create a transformation.
  * @param path  JSON path of the node within the model to transform
@@ -474,6 +478,19 @@ export interface Response extends Identifiable {
    * Optional, show a page by index when this response is evaluated.
    */
   showPage?: number;
+
+  matchStyle?: 'any' | 'all' | 'none';
+
+  matches?: MatchResponse[];
+}
+
+export interface MatchResponse extends Identifiable {
+  /**
+   * Rule based match.
+   */
+  rule: string;
+
+  input: string;
 }
 
 /**
@@ -552,6 +569,7 @@ export interface Part extends Identifiable {
   scoringStrategy: ScoringStrategy;
   gradingApproach?: GradingApproach;
   outOf?: null | number;
+  targets?: string[]
 }
 
 /**
@@ -567,6 +585,7 @@ export const makePart = (
   // Multiinput activity parts start with just one hint
   hints = [makeHint(''), makeHint(''), makeHint('')],
   id?: ID,
+  targets: string[] = []
 ): Part => ({
   id: id ? id : guid(),
   gradingApproach: GradingApproach.automatic,
@@ -574,6 +593,7 @@ export const makePart = (
   scoringStrategy: ScoringStrategy.average,
   responses,
   hints,
+  targets,
 });
 
 /**

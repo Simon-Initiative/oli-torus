@@ -76,12 +76,19 @@ defmodule Oli.Delivery.Evaluation.Evaluator do
         false -> out_of
       end
 
+      # IO.inspect("------------------")
+      # IO.inspect(current)
+      # IO.inspect(context)
     matches =
       case Rule.parse_and_evaluate(rule, context) do
         {:ok, result} -> result
-        {:error, _} -> false
+        {:error, er} -> IO.inspect(er)
+          # IO.inspect(Process.info(self(), :current_stacktrace))
+          false
       end
 
+    # IO.inspect(matches)
+    # IO.inspect("-------------------end")
     if matches and (best_score < score or is_nil(best_response)) do
       {context, current, score, out_of}
     else

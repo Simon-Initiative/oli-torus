@@ -6,6 +6,7 @@ import { ReactEditor } from 'slate-react';
 import { ActivitySettings } from 'components/activities/common/authoring/settings/ActivitySettings';
 import {
   changePerPartSubmission,
+  changeMultInputPerPartSubmission,
   shuffleAnswerChoiceSetting,
 } from 'components/activities/common/authoring/settings/activitySettingsActions';
 import { MultiInputSchema } from 'components/activities/multi_input/schema';
@@ -23,6 +24,7 @@ import { AuthoringElementProvider, useAuthoringElementContext } from '../Authori
 import { VariableEditorOrNot } from '../common/variables/VariableEditorOrNot';
 import { VariableActions } from '../common/variables/variableActions';
 import { ExplanationTab } from './sections/ExplanationTab';
+import { PartsTab } from './sections/PartsTab';
 
 const store = configureStore();
 
@@ -57,8 +59,11 @@ export const MultiInputComponent = () => {
       />
       {editor && input ? (
         <TabbedNavigation.Tabs>
-          <TabbedNavigation.Tab label="Question">
+          <TabbedNavigation.Tab label="Input">
             <QuestionTab editor={editor} input={input} index={index} />
+          </TabbedNavigation.Tab>
+          <TabbedNavigation.Tab label="Parts">
+            <PartsTab editor={editor} input={input} index={index} />
           </TabbedNavigation.Tab>
           <TabbedNavigation.Tab label="Answer Key">
             <AnswerKeyTab input={input} />
@@ -80,6 +85,7 @@ export const MultiInputComponent = () => {
             settings={[
               shuffleAnswerChoiceSetting(model, dispatch, input),
               changePerPartSubmission(model, dispatch),
+              changeMultInputPerPartSubmission(model, dispatch),
             ]}
           />
         </TabbedNavigation.Tabs>

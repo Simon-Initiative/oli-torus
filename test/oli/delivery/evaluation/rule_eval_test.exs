@@ -27,6 +27,7 @@ defmodule Oli.Delivery.Evaluation.RuleEvalTest do
 
   test "evaluating integers" do
     assert eval("attemptNumber = {1} && input = {3}", "3")
+    assert eval("attemptNumber = {1} && input_ref_ehdgwe = {3}", Poison.encode!(%{"ehdgwe" => 3}))
     refute eval("attemptNumber = {1} && input = {3}", "4")
     refute eval("attemptNumber = {1} && input = {3}", "33")
     refute eval("attemptNumber = {1} && input = {3}", "3.3")

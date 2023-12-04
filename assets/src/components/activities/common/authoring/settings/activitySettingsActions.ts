@@ -2,9 +2,10 @@ import {
   isShuffled,
   toggleAnswerChoiceShuffling,
   togglePerPartSubmissionOption,
+  toggleMultInputsPerPartOption,
 } from 'components/activities/common/utils';
 import { MultiInput } from 'components/activities/multi_input/schema';
-import { HasPerPartSubmissionOption, HasTransformations } from 'components/activities/types';
+import { HasPerPartSubmissionOption, HasTransformations, HasMultInputsPerPartOption } from 'components/activities/types';
 
 export const shuffleAnswerChoiceSetting = (
   model: HasTransformations,
@@ -30,4 +31,13 @@ export const changePerPartSubmission = (
   isEnabled: model.submitPerPart === true,
   label: 'Submit answers per input',
   onToggle: () => dispatch(togglePerPartSubmissionOption()),
+});
+
+export const changeMultInputPerPartSubmission = (
+  model: HasMultInputsPerPartOption,
+  dispatch: (action: any) => void,
+) => ({
+  isEnabled: model.multInputsPerPart === true,
+  label: 'Author response multi',
+  onToggle: () => dispatch(toggleMultInputsPerPartOption()),
 });

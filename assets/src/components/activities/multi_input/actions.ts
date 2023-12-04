@@ -11,8 +11,10 @@ import {
 import {
   Choice,
   ChoiceId,
+  HasParts,
   Part,
   PostUndoable,
+  ResponseId,
   Stem,
   Transform,
   makeChoice,
@@ -24,16 +26,24 @@ import {
 import { elementsAdded, elementsOfType, elementsRemoved } from 'components/editing/slateUtils';
 import { Choices } from 'data/activities/model/choices';
 import { List } from 'data/activities/model/list';
-import { Responses, getCorrectResponse } from 'data/activities/model/responses';
+import { getCorrectResponse, getResponseBy } from 'data/activities/model/responses';
 import { matchRule } from 'data/activities/model/rules';
 import { getByUnsafe, getPartById, getParts } from 'data/activities/model/utils';
 import { InputRef } from 'data/content/model/elements/types';
 import { clone } from 'utils/common';
 import { Operations } from 'utils/pathOperations';
+import { MultiInputResponses, replaceWithInputRef } from './utils';
 
 export const MultiInputActions = {
   editStemAndPreviewText(content: Descendant[], editor: Editor, operations: Operation[]) {
     return (model: MultiInputSchema, post: PostUndoable) => {
+      console.log('-----editStemAndPreviewText');
+    //   try {
+    //     // Code throwing an exception
+    //     throw new Error();
+    // } catch(e) {
+    //     console.log(e.stack);
+    // }
       const removedInputRefs = elementsRemoved<InputRef>(operations, 'input_ref');
 
       // Handle error condition - removing an extra input ref that is not present in the model
@@ -41,11 +51,13 @@ export const MultiInputActions = {
         removedInputRefs.length > 0 &&
         removedInputRefs.every((ref) => !model.inputs.find((input) => input.id === ref.id))
       ) {
+        console.log('-----editStemAndPreviewText 1');
         StemActions.editStemAndPreviewText(content)(model);
         return;
       }
 
       if (getParts(model).length - removedInputRefs.length < 1) {
+        console.log('-----editStemAndPreviewText 2');
         return;
       }
       if (
@@ -57,12 +69,17 @@ export const MultiInputActions = {
             model.inputs.find((input) => input.id === (op.node as InputRef).id),
         )
       ) {
+        console.log('-----editStemAndPreviewText 3');
         // duplicate input id, do nothing
         return;
       }
 
+      console.log('-----editStemAndPreviewText 4');
+      // if (!model.multInputsPerPart) {
+      //   console.log('-----editStemAndPreviewText 5');
       MultiInputActions.addMissingParts(operations)(model);
       MultiInputActions.removeExtraParts(operations)(model, post);
+      // }
       StemActions.editStemAndPreviewText(content)(model);
 
       // Reorder parts and inputs by new editor model
@@ -74,6 +91,7 @@ export const MultiInputActions = {
 
   addMissingParts(operations: Operation[]) {
     return (model: MultiInputSchema) => {
+      // if (model.multInputsPerPart) return;
       elementsAdded<InputRef>(operations, 'input_ref').forEach((inputRef) =>
         MultiInputActions.addPart(inputRef.id)(model),
       );
@@ -82,12 +100,64 @@ export const MultiInputActions = {
 
   removeExtraParts(operations: Operation[]) {
     return (model: MultiInputSchema, post: PostUndoable) => {
+      if (model.multInputsPerPart) return;
       const removedInputRefs = elementsRemoved<InputRef>(operations, 'input_ref');
       const clonedStem = clone(model.stem);
       const clonedPreviewText = clone(model.authoring.previewText);
       removedInputRefs.forEach((inputRef) =>
         MultiInputActions.removePart(inputRef.id, clonedStem, clonedPreviewText)(model, post),
       );
+    };
+  },
+
+  moveInputToPart(inputId: string, partId: string) {
+    return (model: MultiInputSchema, post: PostUndoable) => {
+      if (getParts(model).length < 2 || !model.multInputsPerPart) {
+        return;
+      }
+
+      const undoables = makeUndoable('Removed a part', [
+        Operations.replace('$.inputs', clone(model.inputs)),
+        Operations.replace('$.choices', clone(model.choices)),
+        Operations.replace('$.authoring', clone(model.authoring)),
+      ]);
+
+      const input = getByUnsafe(model.inputs, (input) => input.id === inputId);
+      const part = getPartById(model, input.partId);
+      const partTo = getPartById(model, partId);
+      const rule = part.responses[0].rule;
+      // const r: string | undefined = rule.match(new RegExp('input_ref_' + input.id + '\\s=\\s' + '.*\\}'))?.pop();
+
+      const targets = part.targets?.filter((value) => value !== input.id);
+      if (!targets || targets.length < 1) {
+        Operations.applyAll(model, [
+          Operations.filter('$..parts', `[?(@.id!=${part.id})]`),
+        ]);
+      } else {
+        part.targets = targets;
+      }
+
+      partTo.targets ? partTo.targets.push(input.id) : partTo.targets = [input.id];
+      input.partId = partTo.id;
+      partTo.responses[0].rule = partTo.responses[0].rule + ' && ' + rule;
+      const response = partTo.responses.find((r) => r.rule.endsWith('{.*}'));
+      if (response) {
+        response.rule = response?.rule + ' && input_ref_' + input.id + ' like {.*}';
+      }
+
+      post(undoables);
+    };
+  },
+
+  editRule(id: ResponseId, inputId: string, rule: string) {
+    return (draftState: HasParts) => {
+      getResponseBy(draftState, (r) => r.id === id).rule = replaceWithInputRef(inputId, rule);
+    };
+  },
+
+  toggleChoiceCorrectness(id: string, partId: string, inputId: string,) {
+    return (model: HasParts, _post: PostUndoable) => {
+      getCorrectResponse(model, partId).rule = replaceWithInputRef(inputId, matchRule(id));
     };
   },
 
@@ -186,10 +256,10 @@ export const MultiInputActions = {
       }
 
       part.responses = {
-        dropdown: Responses.forMultipleChoice(choices[0].id),
-        text: Responses.forTextInput(),
-        numeric: Responses.forNumericInput(),
-        math: Responses.forMathInput(),
+        dropdown: MultiInputResponses.forMultipleChoice(input.id, choices[0].id),
+        text: MultiInputResponses.forTextInput(input.id),
+        numeric: MultiInputResponses.forNumericInput(input.id),
+        math: MultiInputResponses.forMathInput(input.id),
       }[type];
 
       input.inputType = type;
@@ -209,8 +279,17 @@ export const MultiInputActions = {
   },
 
   addPart(inputId: string) {
+    console.log('------ Adding part not wanted 1');
     return (model: MultiInputSchema) => {
-      const part = makePart(Responses.forTextInput(), [makeHint('')]);
+      console.log('------ Adding part not wanted');
+      try {
+        // Code throwing an exception
+        throw new Error();
+    } catch(e) {
+        console.log(e.stack);
+    }
+      const part = makePart(MultiInputResponses.forTextInput(inputId), [makeHint('')]);
+      part.targets?.push(inputId);
       model.inputs.push({ inputType: 'text', partId: part.id, id: inputId });
       model.authoring.parts.push(part);
     };
