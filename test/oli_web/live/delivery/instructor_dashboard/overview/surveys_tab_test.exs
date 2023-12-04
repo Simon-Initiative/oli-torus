@@ -14,6 +14,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.SurveysTabTest do
 
   alias Oli.Analytics.Summary
   alias Oli.Analytics.Common.Pipeline
+  alias Oli.Activities
 
   alias Oli.Analytics.Summary.{
     Context,
@@ -51,15 +52,17 @@ defmodule OliWeb.Delivery.InstructorDashboard.SurveysTabTest do
         date_evaluated: ~U[2020-01-01 00:00:00Z]
       })
 
+    activity_registration = Activities.get_registration(activity_type_id)
+
     transformed_model =
-      case activity_type_id do
-        8 ->
+      case activity_registration.slug do
+        "oli_multi_input" ->
           %{
             "authoring" => %{},
             "inputs" => [%{"id" => "1458555427", "inputType" => "text", "partId" => "1"}]
           }
 
-        9 ->
+        "oli_multiple_choice" ->
           %{choices: generate_choices(activity_revision.id)}
 
         _ ->
@@ -79,22 +82,11 @@ defmodule OliWeb.Delivery.InstructorDashboard.SurveysTabTest do
       })
 
     part_attempt =
-      case activity_type_id do
-        8 ->
-          insert(:part_attempt, %{
-            id: 1,
-            part_id: "1",
-            activity_attempt: activity_attempt,
-            response: %{"files" => [], "input" => response_input_value}
-          })
-
-        _ ->
-          insert(:part_attempt, %{
-            part_id: "1",
-            activity_attempt: activity_attempt,
-            response: %{"files" => [], "input" => response_input_value}
-          })
-      end
+      insert(:part_attempt, %{
+        part_id: "1",
+        activity_attempt: activity_attempt,
+        response: %{"files" => [], "input" => response_input_value}
+      })
 
     context = %Context{
       user_id: student.id,
