@@ -37,9 +37,6 @@ defmodule Oli.Conversation.Dialogue do
         :async
       ) do
 
-    IO.inspect "ENGAGING"
-    IO.inspect messages
-
     OpenAI.chat_completion(
       [
         model: model,

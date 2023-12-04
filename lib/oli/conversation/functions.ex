@@ -87,7 +87,10 @@ defmodule Oli.Conversation.Functions do
     end
 
     case String.split(full_name, ".") do
-      [module_parts | name] ->
+      parts when is_list(parts) ->
+
+        module_parts = Enum.take(parts, Enum.count(parts) - 1)
+        name = Enum.at(parts, -1) |> String.to_existing_atom()
 
         result = Enum.join(module_parts, ".")
         |> String.to_existing_atom()
