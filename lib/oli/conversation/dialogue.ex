@@ -36,7 +36,6 @@ defmodule Oli.Conversation.Dialogue do
           dialogue,
         :async
       ) do
-
     OpenAI.chat_completion(
       [
         model: model,

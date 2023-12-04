@@ -198,5 +198,4 @@ defmodule OliWeb.Dialogue.WindowLive do
   end
 
   use Oli.Conversation.DialogueHandler
-
 end

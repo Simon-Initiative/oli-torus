@@ -22,6 +22,7 @@ defmodule Oli.Rendering.Content.Markdown do
       "---\n\n"
     ]
   end
+
   def content(%Context{} = _context, next, _) do
     next.()
   end

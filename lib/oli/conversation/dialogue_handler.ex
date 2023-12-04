@@ -1,5 +1,4 @@
 defmodule Oli.Conversation.DialogueHandler do
-
   defmacro __using__(_options) do
     quote do
       import unquote(__MODULE__)
@@ -10,7 +9,6 @@ defmodule Oli.Conversation.DialogueHandler do
 
   defmacro __before_compile__(_env) do
     quote do
-
       def handle_info({:reply_chunk, type, content}, socket) do
         case type do
           :function_call ->
@@ -32,7 +30,8 @@ defmodule Oli.Conversation.DialogueHandler do
             end
 
           :content ->
-            {:noreply, assign(socket, active_message: "#{socket.assigns.active_message}#{content}")}
+            {:noreply,
+             assign(socket, active_message: "#{socket.assigns.active_message}#{content}")}
         end
       end
 
@@ -44,7 +43,12 @@ defmodule Oli.Conversation.DialogueHandler do
         case socket.assigns.function_call do
           nil ->
             message = Earmark.as_html!(socket.assigns.active_message)
-            dialogue = Oli.Conversation.Dialogue.add_message(socket.assigns.dialogue, Oli.Conversation.Message.new(:assistant, message))
+
+            dialogue =
+              Oli.Conversation.Dialogue.add_message(
+                socket.assigns.dialogue,
+                Oli.Conversation.Message.new(:assistant, message)
+              )
 
             allow_submission? =
               if Oli.Conversation.Dialogue.should_summarize?(dialogue) do
@@ -61,15 +65,14 @@ defmodule Oli.Conversation.DialogueHandler do
               end
 
             {:noreply,
-            assign(socket,
-              dialogue: dialogue,
-              streaming: false,
-              active_message: nil,
-              allow_submission?: allow_submission?
-            )}
+             assign(socket,
+               dialogue: dialogue,
+               streaming: false,
+               active_message: nil,
+               allow_submission?: allow_submission?
+             )}
 
           fc ->
-
             result = Oli.Conversation.Functions.call(fc["name"], Jason.decode!(fc["arguments"]))
 
             dialogue =

@@ -79,7 +79,6 @@ defmodule Oli.Conversation.Functions do
   result for sending back to an LLM based agent.
   """
   def call(name, arguments_as_map) do
-
     full_name = Map.get(@lookup_table, name)
 
     if full_name == nil do
@@ -88,13 +87,13 @@ defmodule Oli.Conversation.Functions do
 
     case String.split(full_name, ".") do
       parts when is_list(parts) ->
-
         module_parts = Enum.take(parts, Enum.count(parts) - 1)
         name = Enum.at(parts, -1) |> String.to_existing_atom()
 
-        result = Enum.join(module_parts, ".")
-        |> String.to_existing_atom()
-        |> apply(name, [arguments_as_map])
+        result =
+          Enum.join(module_parts, ".")
+          |> String.to_existing_atom()
+          |> apply(name, [arguments_as_map])
 
         case result do
           result when is_binary(result) -> result
