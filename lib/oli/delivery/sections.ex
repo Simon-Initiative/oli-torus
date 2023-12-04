@@ -45,7 +45,6 @@ defmodule Oli.Delivery.Sections do
   alias Oli.Delivery.Attempts.Core.ResourceAccess
   alias Oli.Delivery.Metrics
   alias Oli.Delivery.Paywall
-  alias Oli.Branding.CustomLabels
 
   require Logger
 
@@ -2808,10 +2807,10 @@ defmodule Oli.Delivery.Sections do
       |> Enum.map(fn {k, v} ->
         label =
           if Map.get(v, "type") === "container" do
-            get_container_label(
-              String.to_integer(Map.get(v, "level")),
-              section.customizations || Map.from_struct(CustomLabels.default())
-            )
+            Numbering.container_type_label(%Numbering{
+              level: Map.get(v, "level") |> String.to_integer(),
+              labels: section.customizations
+            })
           else
             ""
           end
@@ -3366,8 +3365,6 @@ defmodule Oli.Delivery.Sections do
 
     containers =
       from([sr, s, spp, _pr, rev] in DeliveryResolver.section_resource_revisions(section_slug),
-        join: p in Project,
-        on: p.id == spp.project_id,
         where: s.slug == ^section_slug and rev.resource_type_id == ^resource_type_id,
         select: %{
           id: rev.resource_id,
@@ -3375,7 +3372,7 @@ defmodule Oli.Delivery.Sections do
           numbering_level: sr.numbering_level,
           numbering_index: sr.numbering_index,
           children: rev.children,
-          customizations: p.customizations
+          customizations: s.customizations
         }
       )
       |> Repo.all()
@@ -3392,22 +3389,16 @@ defmodule Oli.Delivery.Sections do
            {nil, nil}
 
          c ->
-           {c.id,
-            ~s{#{get_container_label(c.numbering_level, c.customizations || Map.from_struct(CustomLabels.default()))} #{c.numbering_index}: #{c.title}}}
+           container_label =
+             Numbering.container_type_label(%Numbering{
+               level: c.numbering_level,
+               labels: c.customizations
+             })
+
+           {c.id, ~s{#{container_label} #{c.numbering_index}: #{c.title}}}
        end}
     end)
     |> Enum.into(%{})
-  end
-
-  defp get_container_label(
-         numbering_level,
-         customizations
-       ) do
-    case numbering_level do
-      1 -> Map.get(customizations, :unit)
-      2 -> Map.get(customizations, :module)
-      _ -> Map.get(customizations, :section)
-    end
   end
 
   def get_units_and_modules_from_a_section(section_slug) do
