@@ -84,6 +84,13 @@ export const MathJaxMathMLFormula: React.FC<MathJaxFormulaProps> = ({
 
 MathJaxMathMLFormula.defaultProps = { style: {} };
 
+// MathJax 3.0 only handles \\ as newlines if wrapped in \displaylines{..}
+const fixNL = (s: string) =>
+  // look for double slash followed by any other character to avoid matching at end
+  s.match(/\\\\./) && !s.startsWith('\\begin{array}') && !s.startsWith('\\displaylines')
+    ? `\\displaylines{${s}}`
+    : s;
+
 export const MathJaxLatexFormula: React.FC<MathJaxFormulaProps> = ({
   src,
   inline,
@@ -91,7 +98,8 @@ export const MathJaxLatexFormula: React.FC<MathJaxFormulaProps> = ({
   onClick,
 }) => {
   const ref = useMathJax(src);
-  const wrapped = inline ? `\\(${src}\\)` : `\\[${src}\\]`;
+  const fixed = fixNL(src);
+  const wrapped = inline ? `\\(${fixed}\\)` : `\\[${fixed}\\]`;
 
   return (
     <span onClick={onClick} style={style} className={cssClass(inline)} ref={ref}>
