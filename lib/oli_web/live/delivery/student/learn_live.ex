@@ -184,6 +184,8 @@ defmodule OliWeb.Delivery.Student.LearnLive do
                 )
               }
               width="100px"
+              on_going_colour="bg-[#0F6CF5]"
+              completed_colour="bg-[#0CAF61]"
               role={"unit_#{@unit["numbering"]["index"]}_progress"}
             />
           </div>
@@ -207,7 +209,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
           role="slider"
           phx-hook="SliderScroll"
           data-uuid={@unit["uuid"]}
-          class="flex gap-4 overflow-x-scroll overflow-y-hidden h-[178px] pt-[3px] px-[3px] -mt-[2px] -ml-[2px] scrollbar-hide"
+          class="flex gap-4 overflow-x-scroll overflow-y-hidden h-[178px] pt-[3px] px-[3px] scrollbar-hide"
         >
           <.intro_card
             :if={@unit["revision"]["intro_video"] || @unit["revision"]["poster_image"]}
@@ -443,8 +445,25 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       ]}
       role={"card_#{@module_index}"}
     >
-      <div class="rounded-xl absolute -top-[0.7px] -left-[0.7px] h-[163px] w-[289.5px] cursor-pointer bg-[linear-gradient(180deg,#D9D9D9_0%,rgba(217,217,217,0.00)_100%)] dark:bg-[linear-gradient(180deg,#223_0%,rgba(34,34,51,0.72)_52.6%,rgba(34,34,51,0.00)_100%)]" />
+      <div class="rounded-xl overflow-hidden absolute h-[163px] w-[288px] cursor-pointer bg-[linear-gradient(180deg,#D9D9D9_0%,rgba(217,217,217,0.00)_100%)] dark:bg-[linear-gradient(180deg,#223_0%,rgba(34,34,51,0.72)_52.6%,rgba(34,34,51,0.00)_100%)]">
+        <.progress_bar
+          :if={!is_page(@module["revision"])}
+          percent={
+            parse_student_progress_for_resource(
+              @student_progress_per_resource_id,
+              @module["revision"]["resource_id"]
+            )
+          }
+          width="100%"
+          height="h-[4px]"
+          show_percent={false}
+          on_going_colour="bg-[#0F6CF5]"
+          completed_colour="bg-[#0CAF61]"
+          role={"card_#{@module_index}_progress"}
+        />
+      </div>
       <.page_icon :if={is_page(@module["revision"])} />
+
       <div class="h-[170px] w-[288px]">
         <div class={[
           "flex flex-col gap-[5px] cursor-pointer rounded-xl h-[162px] w-[288px] shrink-0 mb-1 px-5 pt-[15px] bg-gray-200 z-10",
@@ -477,18 +496,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
             </svg>
           </div>
         </div>
-        <.progress_bar
-          :if={!@selected and !is_page(@module["revision"])}
-          percent={
-            parse_student_progress_for_resource(
-              @student_progress_per_resource_id,
-              @module["revision"]["resource_id"]
-            )
-          }
-          width="60%"
-          show_percent={false}
-          role={"card_#{@module_index}_progress"}
-        />
+
         <div
           :if={@selected}
           class={[
