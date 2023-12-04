@@ -1,4 +1,4 @@
-defmodule OliWeb.Delivery.InstructorDashboard.ScoredActivitiesTabTest do
+defmodule OliWeb.Delivery.InstructorDashboard.SurveysTabTest do
   use ExUnit.Case, async: true
   use OliWeb.ConnCase
 
@@ -21,29 +21,15 @@ defmodule OliWeb.Delivery.InstructorDashboard.ScoredActivitiesTabTest do
     AttemptGroup
   }
 
-  defp live_view_scored_activities_route(section_slug, params \\ %{}) do
-    case params[:assessment_id] do
-      nil ->
-        Routes.live_path(
-          OliWeb.Endpoint,
-          OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
-          section_slug,
-          :overview,
-          :scored_activities,
-          params
-        )
-
-      assessment_id ->
-        Routes.live_path(
-          OliWeb.Endpoint,
-          OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
-          section_slug,
-          :overview,
-          :scored_activities,
-          assessment_id,
-          params
-        )
-    end
+  defp live_surveys_route(section_slug, params \\ %{}) do
+    Routes.live_path(
+      OliWeb.Endpoint,
+      OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
+      section_slug,
+      :overview,
+      :surveys,
+      params
+    )
   end
 
   defp set_activity_attempt(
@@ -70,6 +56,12 @@ defmodule OliWeb.Delivery.InstructorDashboard.ScoredActivitiesTabTest do
 
     transformed_model =
       case activity_registration.slug do
+        "oli_multi_input" ->
+          %{
+            "authoring" => %{},
+            "inputs" => [%{"id" => "1458555427", "inputType" => "text", "partId" => "1"}]
+          }
+
         "oli_multiple_choice" ->
           %{choices: generate_choices(activity_revision.id)}
 
@@ -85,7 +77,8 @@ defmodule OliWeb.Delivery.InstructorDashboard.ScoredActivitiesTabTest do
         lifecycle_state: :evaluated,
         transformed_model: transformed_model,
         score: if(correct, do: 1, else: 0),
-        out_of: 1
+        out_of: 1,
+        survey_id: "4286170280"
       })
 
     part_attempt =
@@ -123,6 +116,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.ScoredActivitiesTabTest do
       context: context,
       part_attempts: [
         %{
+          id: part_attempt.id,
           part_id: part_attempt.part_id,
           response: part_attempt.response,
           score: activity_attempt.score,
@@ -328,6 +322,189 @@ defmodule OliWeb.Delivery.InstructorDashboard.ScoredActivitiesTabTest do
     }
   end
 
+  defp generate_multi_input_content(title) do
+    %{
+      "authoring" => %{
+        "parts" => [
+          %{
+            "gradingApproach" => "automatic",
+            "hints" => [
+              %{
+                "content" => [
+                  %{
+                    "children" => [%{"text" => ""}],
+                    "id" => "3144326996",
+                    "type" => "p"
+                  }
+                ],
+                "editor" => "slate",
+                "id" => "2324370830",
+                "textDirection" => "ltr"
+              }
+            ],
+            "id" => "1",
+            "outOf" => nil,
+            "responses" => [
+              %{
+                "feedback" => %{
+                  "content" => [
+                    %{
+                      "children" => [%{"text" => "Correct"}],
+                      "id" => "1443012830",
+                      "type" => "p"
+                    }
+                  ],
+                  "editor" => "slate",
+                  "id" => "4023967540",
+                  "textDirection" => "ltr"
+                },
+                "id" => "3595683503",
+                "rule" => "input = {1}",
+                "score" => 1
+              },
+              %{
+                "feedback" => %{
+                  "content" => [
+                    %{
+                      "children" => [%{"text" => "Incorrect"}],
+                      "id" => "862813719",
+                      "type" => "p"
+                    }
+                  ],
+                  "editor" => "slate",
+                  "id" => "409522953",
+                  "textDirection" => "ltr"
+                },
+                "id" => "2117868767",
+                "rule" => "input like {.*}",
+                "score" => 0
+              }
+            ],
+            "scoringStrategy" => "average"
+          }
+        ],
+        "previewText" => "Write NUMBER .",
+        "targeted" => [],
+        "transformations" => [
+          %{
+            "firstAttemptOnly" => true,
+            "id" => "273348963",
+            "operation" => "shuffle",
+            "path" => "choices"
+          }
+        ]
+      },
+      "bibrefs" => [],
+      "choices" => [],
+      "inputs" => [%{"id" => "1458555427", "inputType" => "text", "partId" => 1}],
+      "stem" => %{
+        "content" => [
+          %{
+            "children" => [
+              %{"text" => title},
+              %{
+                "children" => [%{"text" => ""}],
+                "id" => "763756970",
+                "type" => "input_ref"
+              },
+              %{"text" => "."}
+            ],
+            "id" => "1622099819",
+            "type" => "p"
+          }
+        ],
+        "id" => "3205611195"
+      },
+      "submitPerPart" => false
+    }
+  end
+
+  defp generate_likert_content(title) do
+    %{
+      "stem" => %{
+        "id" => "2028833010",
+        "content" => [
+          %{"id" => "280825708", "type" => "p", "children" => [%{"text" => title}]}
+        ]
+      },
+      "choices" => generate_choices("2028833010"),
+      "authoring" => %{
+        "parts" => [
+          %{
+            "id" => "1",
+            "hints" => [
+              %{
+                "id" => "540968727",
+                "content" => [
+                  %{"id" => "2256338253", "type" => "p", "children" => [%{"text" => ""}]}
+                ]
+              },
+              %{
+                "id" => "2627194758",
+                "content" => [
+                  %{"id" => "3013119256", "type" => "p", "children" => [%{"text" => ""}]}
+                ]
+              },
+              %{
+                "id" => "2413327578",
+                "content" => [
+                  %{"id" => "3742562774", "type" => "p", "children" => [%{"text" => ""}]}
+                ]
+              }
+            ],
+            "outOf" => nil,
+            "responses" => [
+              %{
+                "id" => "4122423546",
+                "rule" => "(!(input like {1968053412})) && (input like {1436663133})",
+                "score" => 1,
+                "feedback" => %{
+                  "id" => "685174561",
+                  "content" => [
+                    %{
+                      "id" => "2621700133",
+                      "type" => "p",
+                      "children" => [%{"text" => "Correct"}]
+                    }
+                  ]
+                }
+              },
+              %{
+                "id" => "3738563441",
+                "rule" => "input like {.*}",
+                "score" => 0,
+                "feedback" => %{
+                  "id" => "3796426513",
+                  "content" => [
+                    %{
+                      "id" => "1605260471",
+                      "type" => "p",
+                      "children" => [%{"text" => "Incorrect"}]
+                    }
+                  ]
+                }
+              }
+            ],
+            "gradingApproach" => "automatic",
+            "scoringStrategy" => "average"
+          }
+        ],
+        "correct" => [["1436663133"], "4122423546"],
+        "version" => 2,
+        "targeted" => [],
+        "previewText" => "",
+        "transformations" => [
+          %{
+            "id" => "1349799137",
+            "path" => "choices",
+            "operation" => "shuffle",
+            "firstAttemptOnly" => true
+          }
+        ]
+      }
+    }
+  end
+
   defp generate_choices(id),
     do: [
       %{
@@ -395,6 +572,8 @@ defmodule OliWeb.Delivery.InstructorDashboard.ScoredActivitiesTabTest do
     ## activities...
     mcq_reg = Oli.Activities.get_registration_by_slug("oli_multiple_choice")
     single_response_reg = Oli.Activities.get_registration_by_slug("oli_short_answer")
+    multi_input_reg = Oli.Activities.get_registration_by_slug("oli_multi_input")
+    likert_reg = Oli.Activities.get_registration_by_slug("oli_likert")
 
     mcq_activity_1_revision =
       insert(:revision,
@@ -434,27 +613,46 @@ defmodule OliWeb.Delivery.InstructorDashboard.ScoredActivitiesTabTest do
         content: generate_single_response_content("This is a single response question")
       )
 
+    multi_input_activity_revision =
+      insert(:revision,
+        resource_type_id: ResourceType.get_id_by_type("activity"),
+        objectives: %{
+          "1" => []
+        },
+        activity_type_id: multi_input_reg.id,
+        title: "The Multi Input question",
+        content: generate_multi_input_content("This is a multi input question")
+      )
+
+    likert_activity_revision =
+      insert(:revision,
+        resource_type_id: ResourceType.get_id_by_type("activity"),
+        objectives: %{
+          "1" => []
+        },
+        activity_type_id: likert_reg.id,
+        title: "The Likert question",
+        content: generate_likert_content("This is a likert question")
+      )
+
     ## graded pages (assessments)...
     page_1_revision =
       insert(:revision,
         resource_type_id: ResourceType.get_id_by_type("page"),
         objectives: %{"attached" => [objective_1_revision.resource_id]},
         title: "Page 1",
-        graded: true,
+        graded: false,
         content: %{
           model: [
             %{
               id: "4286170280",
-              type: "content",
+              type: "survey",
               children: [
                 %{
-                  id: "2905665054",
-                  type: "p",
-                  children: [
-                    %{
-                      text: "This is a page with a multiple choice activity."
-                    }
-                  ]
+                  id: "3330767711",
+                  type: "activity-reference",
+                  children: [],
+                  activity_id: mcq_activity_1_revision.resource.id
                 }
               ]
             },
@@ -475,6 +673,18 @@ defmodule OliWeb.Delivery.InstructorDashboard.ScoredActivitiesTabTest do
               type: "activity-reference",
               children: [],
               activity_id: single_response_activity_revision.resource.id
+            },
+            %{
+              id: "3330767714",
+              type: "activity-reference",
+              children: [],
+              activity_id: multi_input_activity_revision.resource.id
+            },
+            %{
+              id: "3330767714",
+              type: "activity-reference",
+              children: [],
+              activity_id: likert_activity_revision.resource.id
             }
           ],
           bibrefs: [],
@@ -487,7 +697,18 @@ defmodule OliWeb.Delivery.InstructorDashboard.ScoredActivitiesTabTest do
         resource_type_id: ResourceType.get_id_by_type("page"),
         objectives: %{"attached" => [objective_2_revision.resource_id]},
         title: "Page 2",
-        graded: true
+        graded: false,
+        content: %{
+          model: [
+            %{
+              id: "4286170281",
+              type: "survey",
+              children: []
+            }
+          ],
+          bibrefs: [],
+          version: "0.1.0"
+        }
       )
 
     page_3_revision =
@@ -495,7 +716,18 @@ defmodule OliWeb.Delivery.InstructorDashboard.ScoredActivitiesTabTest do
         resource_type_id: ResourceType.get_id_by_type("page"),
         objectives: %{"attached" => [objective_3_revision.resource_id]},
         title: "Page 3",
-        graded: true
+        graded: false,
+        content: %{
+          model: [
+            %{
+              id: "4286170282",
+              type: "survey",
+              children: []
+            }
+          ],
+          bibrefs: [],
+          version: "0.1.0"
+        }
       )
 
     page_4_revision =
@@ -503,7 +735,18 @@ defmodule OliWeb.Delivery.InstructorDashboard.ScoredActivitiesTabTest do
         resource_type_id: ResourceType.get_id_by_type("page"),
         objectives: %{"attached" => [objective_4_revision.resource_id]},
         title: "Page 4",
-        graded: true
+        graded: false,
+        content: %{
+          model: [
+            %{
+              id: "4286170283",
+              type: "survey",
+              children: []
+            }
+          ],
+          bibrefs: [],
+          version: "0.1.0"
+        }
       )
 
     page_5_revision =
@@ -511,7 +754,18 @@ defmodule OliWeb.Delivery.InstructorDashboard.ScoredActivitiesTabTest do
         resource_type_id: ResourceType.get_id_by_type("page"),
         objectives: %{"attached" => [objective_4_revision.resource_id]},
         title: "Orphaned Page",
-        graded: true
+        graded: false,
+        content: %{
+          model: [
+            %{
+              id: "4286170284",
+              type: "survey",
+              children: []
+            }
+          ],
+          bibrefs: [],
+          version: "0.1.0"
+        }
       )
 
     ## modules...
@@ -610,6 +864,16 @@ defmodule OliWeb.Delivery.InstructorDashboard.ScoredActivitiesTabTest do
     insert(:project_resource, %{
       project_id: project.id,
       resource_id: single_response_activity_revision.resource_id
+    })
+
+    insert(:project_resource, %{
+      project_id: project.id,
+      resource_id: multi_input_activity_revision.resource_id
+    })
+
+    insert(:project_resource, %{
+      project_id: project.id,
+      resource_id: likert_activity_revision.resource_id
     })
 
     insert(:project_resource, %{
@@ -715,6 +979,20 @@ defmodule OliWeb.Delivery.InstructorDashboard.ScoredActivitiesTabTest do
       publication: publication,
       resource: single_response_activity_revision.resource,
       revision: single_response_activity_revision,
+      author: author
+    })
+
+    insert(:published_resource, %{
+      publication: publication,
+      resource: multi_input_activity_revision.resource,
+      revision: multi_input_activity_revision,
+      author: author
+    })
+
+    insert(:published_resource, %{
+      publication: publication,
+      resource: likert_activity_revision.resource,
+      revision: likert_activity_revision,
       author: author
     })
 
@@ -858,6 +1136,8 @@ defmodule OliWeb.Delivery.InstructorDashboard.ScoredActivitiesTabTest do
       mcq_activity_1: mcq_activity_1_revision,
       mcq_activity_2: mcq_activity_2_revision,
       single_response_activity: single_response_activity_revision,
+      multi_input_activity: multi_input_activity_revision,
+      likert_activity: likert_activity_revision,
       page_1: page_1_revision,
       page_2: page_2_revision,
       page_3: page_3_revision,
@@ -879,26 +1159,15 @@ defmodule OliWeb.Delivery.InstructorDashboard.ScoredActivitiesTabTest do
     }
   end
 
-  defp table_as_list_of_maps(view, tab_name) do
+  defp table_as_list_of_maps(view) do
     keys =
-      case tab_name do
-        :assessments ->
-          [
-            :title,
-            :due_date,
-            :avg_score,
-            :total_attempts,
-            :students_completion
-          ]
-
-        :activities ->
-          [
-            :title,
-            :learning_objectives,
-            :avg_score,
-            :total_attempts
-          ]
-      end
+      [
+        :title,
+        :due_date,
+        :avg_score,
+        :total_attempts,
+        :students_completion
+      ]
 
     rows =
       view
@@ -932,10 +1201,10 @@ defmodule OliWeb.Delivery.InstructorDashboard.ScoredActivitiesTabTest do
       section = insert(:section)
 
       redirect_path =
-        "/session/new?request_path=%2Fsections%2F#{section.slug}%2Finstructor_dashboard%2Foverview%2Fscored_activities"
+        "/session/new?request_path=%2Fsections%2F#{section.slug}%2Finstructor_dashboard%2Foverview%2Fsurveys"
 
       assert {:error, {:redirect, %{to: ^redirect_path}}} =
-               live(conn, live_view_scored_activities_route(section.slug))
+               live(conn, live_surveys_route(section.slug))
     end
   end
 
@@ -952,81 +1221,41 @@ defmodule OliWeb.Delivery.InstructorDashboard.ScoredActivitiesTabTest do
       redirect_path = "/unauthorized"
 
       assert {:error, {:redirect, %{to: ^redirect_path}}} =
-               live(conn, live_view_scored_activities_route(section.slug))
+               live(conn, live_surveys_route(section.slug))
     end
   end
 
-  describe "scored activities assessments table" do
+  describe "surveys assessments table" do
     setup [:instructor_conn, :section_without_pages, :enroll_instructor]
 
     test "loads correctly when there are no assessments", %{
       conn: conn,
       section: section
     } do
-      {:ok, view, _html} = live(conn, live_view_scored_activities_route(section.slug))
+      {:ok, view, _html} = live(conn, live_surveys_route(section.slug))
 
-      assert has_element?(view, "h4", "Scored Activities")
+      assert has_element?(view, "h4", "Surveys")
       assert has_element?(view, "p", "None exist")
     end
   end
 
-  describe "scored activities assessments table WITH activities" do
+  describe "surveys assessments table WITH assessments" do
     setup [:instructor_conn, :create_project]
 
     test "loads correctly", %{
       conn: conn,
       section: section
     } do
-      {:ok, view, _html} = live(conn, live_view_scored_activities_route(section.slug))
+      {:ok, view, _html} = live(conn, live_surveys_route(section.slug))
 
-      [a0, a1, a2, a3, a4] = table_as_list_of_maps(view, :assessments)
+      [a0, a1, a2, a3, a4] = table_as_list_of_maps(view)
 
-      assert has_element?(view, "h4", "Scored Activities")
+      assert has_element?(view, "h4", "Surveys")
       assert a0.title == "Orphaned Page"
       assert a1.title == "Module 1: IntroductionPage 1"
       assert a2.title == "Module 1: IntroductionPage 2"
       assert a3.title == "Module 2: BasicsPage 3"
       assert a4.title == "Module 2: BasicsPage 4"
-    end
-
-    test "patches url to see activity details when a row is clicked", %{
-      conn: conn,
-      section: section,
-      page_5: page_5
-    } do
-      {:ok, view, _html} = live(conn, live_view_scored_activities_route(section.slug))
-
-      view
-      |> element("table tbody tr:nth-of-type(1) a")
-      |> render_click(%{id: page_5.id})
-
-      url =
-        live_view_scored_activities_route(section.slug, %{
-          assessment_id: page_5.id
-        })
-
-      # we assert that the url was patched correctly after click
-      receive do
-        {_ref, {:patch, _topic, %{kind: :push, to: url_with_params}}} ->
-          assert String.starts_with?(url_with_params, url)
-          assert url_with_params =~ "assessment_table_params[offset]=0"
-          assert url_with_params =~ "assessment_table_params[limit]=20"
-          assert url_with_params =~ "assessment_table_params[sort_by]=title"
-          assert url_with_params =~ "assessment_table_params[assessment_id]="
-          assert url_with_params =~ "assessment_table_params[text_search]="
-          assert url_with_params =~ "assessment_table_params[sort_order]=asc"
-          assert url_with_params =~ "assessment_table_params[assessment_table_params]="
-          assert url_with_params =~ "assessment_table_params[selected_activity]="
-      end
-
-      # and that the activitiy content was rendered
-      assert view
-             |> element("h4", "Orphaned Page")
-             |> has_element?()
-
-      assert view
-             |> element("p", "None exist")
-             |> has_element?()
     end
   end
 
@@ -1041,34 +1270,17 @@ defmodule OliWeb.Delivery.InstructorDashboard.ScoredActivitiesTabTest do
       {:ok, view, _html} =
         live(
           conn,
-          live_view_scored_activities_route(section.slug, %{
-            assessment_id: page_5.id
-          })
+          live_surveys_route(section.slug)
         )
 
-      assert has_element?(view, "h4", "Orphaned Page")
-      assert has_element?(view, "p", "None exist")
+      view
+      |> element("table tbody tr td div[phx-value-id=\"#{page_5.id}\"]")
+      |> render_click()
+
+      assert has_element?(view, "p", "No attempt registered for this question")
     end
 
-    @tag :skip
-    test "shows an warning and redirect to the scored activities tab when the assessment doesn't exist",
-         %{
-           conn: conn,
-           section: section
-         } do
-      {:ok, _view, _html} =
-        live(
-          conn,
-          live_view_scored_activities_route(section.slug, %{
-            assessment_id: 500
-          })
-        )
-
-      assert_receive {_ref, {:redirect, _lv, %{flash: _flash_msg, to: url}}}
-      assert url == ~p"/sections/#{section.slug}/instructor_dashboard/overview/scored_activities"
-    end
-
-    test "loads correctly activity details", %{
+    test "multiple choice details get rendered correctly when page is selected", %{
       conn: conn,
       section: section,
       page_1: page_1,
@@ -1091,172 +1303,19 @@ defmodule OliWeb.Delivery.InstructorDashboard.ScoredActivitiesTabTest do
       {:ok, view, _html} =
         live(
           conn,
-          live_view_scored_activities_route(section.slug, %{
-            assessment_id: page_1.id
-          })
+          live_surveys_route(section.slug)
         )
 
-      [activity] = table_as_list_of_maps(view, :activities)
+      view
+      |> element("table tbody tr td div[phx-value-id=\"#{page_1.id}\"]")
+      |> render_click()
 
-      assert activity.title == "Multiple Choice 1:This is the first question"
-      assert activity.learning_objectives == "Objective 1"
-      assert activity.avg_score == "100%"
-      assert activity.total_attempts =~ "1"
-    end
+      assert element(
+               view,
+               "table tbody tr:nth-of-type(1)[class=\"table-active bg-delivery-primary-100\"]"
+             )
 
-    test "loads correctly an activity with more than one objective attached", %{
-      conn: conn,
-      section: section,
-      page_1: page_1,
-      student_1: student_1,
-      single_response_activity: single_response_activity,
-      project: project,
-      publication: publication
-    } do
-      set_activity_attempt(
-        page_1,
-        single_response_activity,
-        student_1,
-        section,
-        project.id,
-        publication.id,
-        "this is my answer to the single response question",
-        false
-      )
-
-      {:ok, view, _html} =
-        live(
-          conn,
-          live_view_scored_activities_route(section.slug, %{
-            assessment_id: page_1.id
-          })
-        )
-
-      [activity] = table_as_list_of_maps(view, :activities)
-
-      assert activity.title ==
-               "The Single Response question:This is a single response question"
-
-      assert activity.learning_objectives == "Objective 1Objective 2"
-      assert activity.avg_score == "0%"
-      assert activity.total_attempts =~ "1"
-    end
-
-    test "loads correctly an activity with no objective attached", %{
-      conn: conn,
-      section: section,
-      page_1: page_1,
-      student_1: student_1,
-      mcq_activity_2: mcq_activity_2,
-      project: project,
-      publication: publication
-    } do
-      set_activity_attempt(
-        page_1,
-        mcq_activity_2,
-        student_1,
-        section,
-        project.id,
-        publication.id,
-        "id_for_option_b",
-        false
-      )
-
-      {:ok, view, _html} =
-        live(
-          conn,
-          live_view_scored_activities_route(section.slug, %{
-            assessment_id: page_1.id
-          })
-        )
-
-      [activity] = table_as_list_of_maps(view, :activities)
-
-      assert activity.title == "Multiple Choice 2:This is the second question"
-      assert activity.learning_objectives == ""
-      assert activity.avg_score == "0%"
-      assert activity.total_attempts =~ "1"
-    end
-
-    test "first activity (MCQ) gets pre-selected and its question details get rendered correctly",
-         %{
-           conn: conn,
-           section: section,
-           page_1: page_1,
-           student_1: student_1,
-           student_2: student_2,
-           student_3: student_3,
-           mcq_activity_1: mcq_activity_1,
-           mcq_activity_2: mcq_activity_2,
-           project: project,
-           publication: publication
-         } do
-      set_activity_attempt(
-        page_1,
-        mcq_activity_1,
-        student_1,
-        section,
-        project.id,
-        publication.id,
-        "id_for_option_a",
-        true
-      )
-
-      set_activity_attempt(
-        page_1,
-        mcq_activity_1,
-        student_2,
-        section,
-        project.id,
-        publication.id,
-        "id_for_option_b",
-        false
-      )
-
-      # a blank attempt
-      set_activity_attempt(
-        page_1,
-        mcq_activity_1,
-        student_3,
-        section,
-        project.id,
-        publication.id,
-        "",
-        false
-      )
-
-      set_activity_attempt(
-        page_1,
-        mcq_activity_2,
-        student_1,
-        section,
-        project.id,
-        publication.id,
-        "id_for_option_b",
-        false
-      )
-
-      {:ok, view, _html} =
-        live(
-          conn,
-          live_view_scored_activities_route(section.slug, %{
-            assessment_id: page_1.id
-          })
-        )
-
-      [act_1, _act_2] = table_as_list_of_maps(view, :activities)
-
-      first_table_row_html =
-        view
-        |> render()
-        |> Floki.parse_fragment!()
-        |> Floki.find(~s{table tbody tr:first-of-type})
-        |> Floki.raw_html()
-
-      # first row is highlighted as selected
-      assert first_table_row_html =~ ~s{class="border-b table-active}
-      assert act_1.title == "Multiple Choice 1:This is the first question"
-
+      # check that the multiple choice details render correctly
       selected_activity_model =
         view
         |> render()
@@ -1265,10 +1324,14 @@ defmodule OliWeb.Delivery.InstructorDashboard.ScoredActivitiesTabTest do
         |> Floki.attribute("model")
         |> hd
 
-      # and the question details are rendered
-      # including the frequency per choice
+      assert has_element?(
+               view,
+               ~s(div[role="activity_title"]),
+               "#{mcq_activity_1.title} - Question details"
+             )
+
       assert selected_activity_model =~
-               "{\"choices\":[{\"content\":[{\"children\":[{\"text\":\"Choice 1 for #{mcq_activity_1.id}\"}],\"id\":\"1866911747\",\"type\":\"p\"}],\"frequency\":1,\"id\":\"id_for_option_a\"},{\"content\":[{\"children\":[{\"text\":\"Choice 2 for #{mcq_activity_1.id}\"}],\"id\":\"3926142114\",\"type\":\"p\"}],\"frequency\":1,\"id\":\"id_for_option_b\"},{\"content\":[{\"children\":[{\"text\":\"Blank attempt (user submitted assessment without selecting any choice for this activity)\"}],\"type\":\"p\"}],\"frequency\":1}]}"
+               "{\"choices\":[{\"content\":[{\"children\":[{\"text\":\"Choice 1 for #{mcq_activity_1.id}\"}],\"id\":\"1866911747\",\"type\":\"p\"}],\"frequency\":1,\"id\":\"id_for_option_a\"},{\"content\":[{\"children\":[{\"text\":\"Choice 2 for #{mcq_activity_1.id}\"}],\"id\":\"3926142114\",\"type\":\"p\"}],\"frequency\":0,\"id\":\"id_for_option_b\"}]}"
     end
 
     test "single response details get rendered correctly when activity is selected",
@@ -1327,13 +1390,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.ScoredActivitiesTabTest do
         true
       )
 
-      {:ok, view, _html} =
-        live(
-          conn,
-          live_view_scored_activities_route(section.slug, %{
-            assessment_id: page_1.id
-          })
-        )
+      {:ok, view, _html} = live(conn, live_surveys_route(section.slug))
 
       # we click on the single response activity
       view
@@ -1352,6 +1409,98 @@ defmodule OliWeb.Delivery.InstructorDashboard.ScoredActivitiesTabTest do
 
       assert selected_activity_model =~
                "\"responses\":[{\"text\":\"This is an incorrect answer from student 2\",\"user_name\":\"Di Maria, Angel\"},{\"text\":\"This is the second answer (correct) from student 2\",\"user_name\":\"Di Maria, Angel\"},{\"text\":\"This is the first answer (correct) from the GOAT\",\"user_name\":\"Messi, Lionel\"}]"
+    end
+
+    test "multi input activity details get rendered correctly when page is selected",
+         %{
+           conn: conn,
+           section: section,
+           page_1: page_1,
+           student_1: student_1,
+           multi_input_activity: multi_input_activity,
+           project: project,
+           publication: publication
+         } do
+      set_activity_attempt(
+        page_1,
+        multi_input_activity,
+        student_1,
+        section,
+        project.id,
+        publication.id,
+        "Answer for input 1",
+        true
+      )
+
+      {:ok, view, _html} = live(conn, live_surveys_route(section.slug))
+
+      view
+      |> element("table tbody tr td div[phx-value-id=\"#{page_1.id}\"]")
+      |> render_click()
+
+      # check that the multi input details render correctly
+      selected_activity_model =
+        view
+        |> render()
+        |> Floki.parse_fragment!()
+        |> Floki.find(~s{oli-multi-input-authoring})
+        |> Floki.attribute("model")
+        |> hd
+
+      assert has_element?(
+               view,
+               ~s(div[role="activity_title"]),
+               "#{multi_input_activity.title} - Question details"
+             )
+
+      assert selected_activity_model =~
+               "{\"authoring\":{\"responses\":[{\"text\":\"unsupported\",\"user_name\":\"#{student_1.family_name}, #{student_1.given_name}\"}]},\"inputs\":[{\"id\":\"1458555427\",\"inputType\":\"text\",\"partId\":\"1\"}]}"
+    end
+
+    test "likert activity details get rendered correctly when page is selected",
+         %{
+           conn: conn,
+           section: section,
+           page_1: page_1,
+           student_1: student_1,
+           likert_activity: likert_activity,
+           project: project,
+           publication: publication
+         } do
+      set_activity_attempt(
+        page_1,
+        likert_activity,
+        student_1,
+        section,
+        project.id,
+        publication.id,
+        "id_for_option_a",
+        true
+      )
+
+      {:ok, view, _html} = live(conn, live_surveys_route(section.slug))
+
+      view
+      |> element("table tbody tr td div[phx-value-id=\"#{page_1.id}\"]")
+      |> render_click()
+
+      # check that the multi input details render correctly
+      selected_activity_model =
+        view
+        |> render()
+        |> Floki.parse_fragment!()
+        |> Floki.find(~s{oli-likert-authoring})
+        |> Floki.attribute("model")
+        |> hd
+
+      assert has_element?(
+               view,
+               ~s(div[role="activity_title"]),
+               "#{likert_activity.title} - Question details"
+             )
+
+      assert selected_activity_model =~
+               "{\"activityTitle\":\"The Likert question\",\"authoring\":{\"correct\":[[\"1436663133\"],\"4122423546\"],\"parts\":[{\"gradingApproach\":\"automatic\",\"hints\":[{\"content\":[{\"children\":[{\"text\":\"\"}],\"id\":\"2256338253\",\"type\":\"p\"}],\"id\":\"540968727\"},{\"content\":[{\"children\":[{\"text\":\"\"}],\"id\":\"3013119256\",\"type\":\"p\"}],\"id\":\"2627194758\"},{\"content\":[{\"children\":[{\"text\":\"\"}],\"id\":\"3742562774\",\"type\":\"p\"}],\"id\":\"2413327578\"}],\"id\":\"1\",\"outOf\":null,\"responses\":[{\"feedback\":{\"content\":[{\"children\":[{\"text\":\"Correct\"}],\"id\":\"2621700133\",\"type\":\"p\"}],\"id\":\"685174561\"},\"id\":\"4122423546\",\"rule\":\"(!(input like {1968053412})) && (input like {1436663133})\",\"score\":1},{\"feedback\":{\"content\":[{\"children\":[{\"text\":\"Incorrect\"}],\"id\":\"1605260471\",\"type\":\"p\"}],\"id\":\"3796426513\"},\"id\":\"3738563441\",\"rule\":\"input like {.*}\",\"score\":0}],\"scoringStrategy\":\"average\"}],\"previewText\":\"\",\"targeted\":[],\"transformations\":[{\"firstAttemptOnly\":true,\"id\":\"1349799137\",\"operation\":\"shuffle\",\"path\":\"choices\"}],\"version\":2},\"choices\":[{\"content\":[{\"children\":[{\"text\":\"Choice 1 for 2028833010\"}],\"id\":\"1866911747\",\"type\":\"p\"}],\"frequency\":1,\"id\":\"id_for_option_a\"},{\"content\":[{\"children\":[{\"text\":\"Choice 2 for 2028833010\"}],\"id\":\"3926142114\",\"type\":\"p\"}],\"frequency\":0,\"id\":\"id_for_option_b\"}],\"stem\":{\"content\":[{\"children\":[{\"text\":\"This is a likert question\"}],\"id\":\"280825708\",\"type\":\"p\"}],\"id\":\"2028833010\"}}"
     end
 
     test "single response details get rendered for a section with analytics_version :v2 but not for :v1",
@@ -1377,13 +1526,11 @@ defmodule OliWeb.Delivery.InstructorDashboard.ScoredActivitiesTabTest do
         false
       )
 
-      {:ok, view, _html} =
-        live(
-          conn,
-          live_view_scored_activities_route(section_v1.slug, %{
-            assessment_id: page_1.id
-          })
-        )
+      {:ok, view, _html} = live(conn, live_surveys_route(section_v1.slug))
+
+      view
+      |> element("table tbody tr td div[phx-value-id=\"#{page_1.id}\"]")
+      |> render_click()
 
       selected_activity_model =
         view
@@ -1407,13 +1554,11 @@ defmodule OliWeb.Delivery.InstructorDashboard.ScoredActivitiesTabTest do
         false
       )
 
-      {:ok, view, _html} =
-        live(
-          conn,
-          live_view_scored_activities_route(section.slug, %{
-            assessment_id: page_1.id
-          })
-        )
+      {:ok, view, _html} = live(conn, live_surveys_route(section.slug))
+
+      view
+      |> element("table tbody tr td div[phx-value-id=\"#{page_1.id}\"]")
+      |> render_click()
 
       selected_activity_model =
         view
@@ -1449,13 +1594,11 @@ defmodule OliWeb.Delivery.InstructorDashboard.ScoredActivitiesTabTest do
         true
       )
 
-      {:ok, view, _html} =
-        live(
-          conn,
-          live_view_scored_activities_route(section_v1.slug, %{
-            assessment_id: page_1.id
-          })
-        )
+      {:ok, view, _html} = live(conn, live_surveys_route(section_v1.slug))
+
+      view
+      |> element("table tbody tr td div[phx-value-id=\"#{page_1.id}\"]")
+      |> render_click()
 
       selected_activity_model =
         view
@@ -1480,13 +1623,11 @@ defmodule OliWeb.Delivery.InstructorDashboard.ScoredActivitiesTabTest do
         true
       )
 
-      {:ok, view, _html} =
-        live(
-          conn,
-          live_view_scored_activities_route(section.slug, %{
-            assessment_id: page_1.id
-          })
-        )
+      {:ok, view, _html} = live(conn, live_surveys_route(section.slug))
+
+      view
+      |> element("table tbody tr td div[phx-value-id=\"#{page_1.id}\"]")
+      |> render_click()
 
       selected_activity_model =
         view
@@ -1497,6 +1638,85 @@ defmodule OliWeb.Delivery.InstructorDashboard.ScoredActivitiesTabTest do
         |> hd
 
       assert selected_activity_model =~ ~s{"frequency":1,"id":"id_for_option_a"}
+    end
+
+    test "multi input details get not rendered for a section with analytics_version :v1",
+         %{
+           conn: conn,
+           section_v1: section_v1,
+           page_1: page_1,
+           student_1: student_1,
+           multi_input_activity: multi_input_activity,
+           project: project,
+           publication: publication
+         } do
+      ## section with analytics_version :v1
+      set_activity_attempt(
+        page_1,
+        multi_input_activity,
+        student_1,
+        section_v1,
+        project.id,
+        publication.id,
+        "Incorrect answer",
+        false
+      )
+
+      {:ok, view, _html} = live(conn, live_surveys_route(section_v1.slug))
+
+      view
+      |> element("table tbody tr td div[phx-value-id=\"#{page_1.id}\"]")
+      |> render_click()
+
+      selected_activity_model =
+        view
+        |> render()
+        |> Floki.parse_fragment!()
+        |> Floki.find(~s{oli-multi-input-authoring})
+        |> Floki.attribute("model")
+        |> hd
+
+      refute selected_activity_model =~ "Incorrect answer"
+    end
+
+    test "likert activity details get not rendered for a section with analytics_version :v1",
+         %{
+           conn: conn,
+           section_v1: section_v1,
+           page_1: page_1,
+           student_1: student_1,
+           likert_activity: likert_activity,
+           project: project,
+           publication: publication
+         } do
+      ## section with analytics_version :v1
+      set_activity_attempt(
+        page_1,
+        likert_activity,
+        student_1,
+        section_v1,
+        project.id,
+        publication.id,
+        "id_for_option_a",
+        false
+      )
+
+      {:ok, view, _html} = live(conn, live_surveys_route(section_v1.slug))
+
+      view
+      |> element("table tbody tr td div[phx-value-id=\"#{page_1.id}\"]")
+      |> render_click()
+
+      selected_activity_model =
+        view
+        |> render()
+        |> Floki.parse_fragment!()
+        |> Floki.find(~s{oli-likert-authoring})
+        |> Floki.attribute("model")
+        |> hd
+
+      assert selected_activity_model =~ ~s{"id":"id_for_option_a"}
+      refute selected_activity_model =~ ~s{"frequency":}
     end
 
     test "question details responds to user click on an activity", %{
@@ -1531,44 +1751,16 @@ defmodule OliWeb.Delivery.InstructorDashboard.ScoredActivitiesTabTest do
         false
       )
 
-      {:ok, view, _html} =
-        live(
-          conn,
-          live_view_scored_activities_route(section.slug, %{
-            assessment_id: page_1.id
-          })
-        )
+      {:ok, view, _html} = live(conn, live_surveys_route(section.slug))
 
-      [_act_1, act_2] = table_as_list_of_maps(view, :activities)
-
-      second_table_row_html =
-        view
-        |> render()
-        |> Floki.parse_fragment!()
-        |> Floki.find(~s{table tbody tr:nth-of-type(2)})
-        |> Floki.raw_html()
-
-      # second row is not highlighted as selected
-      refute second_table_row_html =~ ~s{class="border-b table-active}
-      assert act_2.title == "Multiple Choice 2:This is the second question"
-
-      # we click on the second activity
       view
-      |> element(~s{table tbody tr:nth-of-type(2)})
+      |> element("table tbody tr td div[phx-value-id=\"#{page_1.id}\"]")
       |> render_click()
 
-      # and check the highlighted row has changed
-      [_act_1, act_2] = table_as_list_of_maps(view, :activities)
-
-      second_table_row_html =
-        view
-        |> render()
-        |> Floki.parse_fragment!()
-        |> Floki.find(~s{table tbody tr:nth-of-type(2)})
-        |> Floki.raw_html()
-
-      assert second_table_row_html =~ ~s{class="border-b table-active}
-      assert act_2.title == "Multiple Choice 2:This is the second question"
+      assert element(
+               view,
+               "table tbody tr:nth-of-type(1)[class=\"table-active bg-delivery-primary-100\"]"
+             )
 
       # and check that the question details have changed to match the selected activity
       selected_activity_model =
@@ -1580,7 +1772,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.ScoredActivitiesTabTest do
         |> hd
 
       assert selected_activity_model =~
-               "{\"choices\":[{\"content\":[{\"children\":[{\"text\":\"Choice 1 for #{mcq_activity_2.id}\"}],\"id\":\"1866911747\",\"type\":\"p\"}],\"frequency\":0,\"id\":\"id_for_option_a\"},{\"content\":[{\"children\":[{\"text\":\"Choice 2 for #{mcq_activity_2.id}\"}],\"id\":\"3926142114\",\"type\":\"p\"}],\"frequency\":1,\"id\":\"id_for_option_b\"}]}"
+               "{\"choices\":[{\"content\":[{\"children\":[{\"text\":\"Choice 1 for #{mcq_activity_1.id}\"}],\"id\":\"1866911747\",\"type\":\"p\"}],\"frequency\":1,\"id\":\"id_for_option_a\"},{\"content\":[{\"children\":[{\"text\":\"Choice 2 for #{mcq_activity_1.id}\"}],\"id\":\"3926142114\",\"type\":\"p\"}],\"frequency\":0,\"id\":\"id_for_option_b\"}]}"
     end
 
     test "student attempts summary gets rendered correctly when no students have attempted", %{
@@ -1591,261 +1783,16 @@ defmodule OliWeb.Delivery.InstructorDashboard.ScoredActivitiesTabTest do
       {:ok, view, _html} =
         live(
           conn,
-          live_view_scored_activities_route(section.slug, %{
+          live_surveys_route(section.slug, %{
             assessment_id: page_1.id
           })
         )
 
-      assert view
-             |> element(~s{#student_attempts_summary})
-             |> render() =~ "No student has completed any attempts."
+      view
+      |> element("table tbody tr td div[phx-value-id=\"#{page_1.id}\"]")
+      |> render_click()
 
-      assert view
-             |> element(~s{#student_attempts_summary})
-             |> render() =~ "4 students have not completed any attempt"
-    end
-
-    test "student attempts summary gets rendered correctly when one student has attempted", %{
-      conn: conn,
-      section: section,
-      page_1: page_1,
-      student_1: student_1,
-      mcq_activity_1: mcq_activity_1,
-      project: project,
-      publication: publication
-    } do
-      set_activity_attempt(
-        page_1,
-        mcq_activity_1,
-        student_1,
-        section,
-        project.id,
-        publication.id,
-        "id_for_option_a",
-        true
-      )
-
-      {:ok, view, _html} =
-        live(
-          conn,
-          live_view_scored_activities_route(section.slug, %{
-            assessment_id: page_1.id
-          })
-        )
-
-      assert view
-             |> element(~s{#student_attempts_summary})
-             |> render() =~ "1 student has completed 1 attempt."
-
-      assert view
-             |> element(~s{#student_attempts_summary})
-             |> render() =~ "3 students have not completed any attempt"
-    end
-
-    test "student attempts summary gets rendered correctly when more than one student has attempted",
-         %{
-           conn: conn,
-           section: section,
-           page_1: page_1,
-           student_1: student_1,
-           student_2: student_2,
-           student_3: student_3,
-           mcq_activity_1: mcq_activity_1,
-           project: project,
-           publication: publication
-         } do
-      set_activity_attempt(
-        page_1,
-        mcq_activity_1,
-        student_1,
-        section,
-        project.id,
-        publication.id,
-        "id_for_option_a",
-        true
-      )
-
-      set_activity_attempt(
-        page_1,
-        mcq_activity_1,
-        student_2,
-        section,
-        project.id,
-        publication.id,
-        "id_for_option_a",
-        true
-      )
-
-      set_activity_attempt(
-        page_1,
-        mcq_activity_1,
-        student_3,
-        section,
-        project.id,
-        publication.id,
-        "id_for_option_a",
-        true
-      )
-
-      {:ok, view, _html} =
-        live(
-          conn,
-          live_view_scored_activities_route(section.slug, %{
-            assessment_id: page_1.id
-          })
-        )
-
-      assert view
-             |> element(~s{#student_attempts_summary})
-             |> render() =~ "3 students have completed 3 attempts."
-
-      assert view
-             |> element(~s{#student_attempts_summary})
-             |> render() =~ "1 student has not completed any attempt"
-    end
-
-    test "student attempts summary gets rendered correctly when all students have attempted (even more than once)",
-         %{
-           conn: conn,
-           section: section,
-           page_1: page_1,
-           student_1: student_1,
-           student_2: student_2,
-           student_3: student_3,
-           student_4: student_4,
-           mcq_activity_1: mcq_activity_1,
-           project: project,
-           publication: publication
-         } do
-      set_activity_attempt(
-        page_1,
-        mcq_activity_1,
-        student_1,
-        section,
-        project.id,
-        publication.id,
-        "id_for_option_a",
-        true
-      )
-
-      set_activity_attempt(
-        page_1,
-        mcq_activity_1,
-        student_2,
-        section,
-        project.id,
-        publication.id,
-        "id_for_option_a",
-        true
-      )
-
-      set_activity_attempt(
-        page_1,
-        mcq_activity_1,
-        student_3,
-        section,
-        project.id,
-        publication.id,
-        "id_for_option_b",
-        false
-      )
-
-      set_activity_attempt(
-        page_1,
-        mcq_activity_1,
-        student_3,
-        section,
-        project.id,
-        publication.id,
-        "id_for_option_a",
-        true
-      )
-
-      set_activity_attempt(
-        page_1,
-        mcq_activity_1,
-        student_4,
-        section,
-        project.id,
-        publication.id,
-        "id_for_option_b",
-        false
-      )
-
-      set_activity_attempt(
-        page_1,
-        mcq_activity_1,
-        student_4,
-        section,
-        project.id,
-        publication.id,
-        "id_for_option_a",
-        true
-      )
-
-      {:ok, view, _html} =
-        live(
-          conn,
-          live_view_scored_activities_route(section.slug, %{
-            assessment_id: page_1.id
-          })
-        )
-
-      assert view
-             |> element(~s{#student_attempts_summary})
-             |> render() =~ "4 students have completed 6 attempts."
-
-      refute view
-             |> element(~s{#student_attempts_summary})
-             |> render() =~ "not completed"
-
-      refute view
-             |> has_element?("#copy_emails_button", "Copy their email addresses")
-    end
-
-    test "instructor can copy email of students that have not yet attempted",
-         %{
-           conn: conn,
-           section: section,
-           page_1: page_1,
-           student_1: student_1,
-           student_2: student_2,
-           mcq_activity_1: mcq_activity_1,
-           project: project,
-           publication: publication
-         } do
-      set_activity_attempt(
-        page_1,
-        mcq_activity_1,
-        student_1,
-        section,
-        project.id,
-        publication.id,
-        "id_for_option_a",
-        true
-      )
-
-      set_activity_attempt(
-        page_1,
-        mcq_activity_1,
-        student_2,
-        section,
-        project.id,
-        publication.id,
-        "id_for_option_a",
-        true
-      )
-
-      {:ok, view, _html} =
-        live(
-          conn,
-          live_view_scored_activities_route(section.slug, %{
-            assessment_id: page_1.id
-          })
-        )
-
-      assert view
-             |> has_element?("#copy_emails_button", "Copy email addresses")
+      assert has_element?(view, "p", "No attempt registered for this question")
     end
   end
 
@@ -1856,9 +1803,9 @@ defmodule OliWeb.Delivery.InstructorDashboard.ScoredActivitiesTabTest do
       conn: conn,
       section: section
     } do
-      {:ok, view, _html} = live(conn, live_view_scored_activities_route(section.slug))
+      {:ok, view, _html} = live(conn, live_surveys_route(section.slug))
 
-      [a0, a1, a2, a3, a4] = table_as_list_of_maps(view, :assessments)
+      [a0, a1, a2, a3, a4] = table_as_list_of_maps(view)
 
       assert a0.title == "Orphaned Page"
       assert a1.title == "Module 1: IntroductionPage 1"
@@ -1877,14 +1824,14 @@ defmodule OliWeb.Delivery.InstructorDashboard.ScoredActivitiesTabTest do
       conn: conn,
       section: section
     } do
-      {:ok, view, _html} = live(conn, live_view_scored_activities_route(section.slug))
+      {:ok, view, _html} = live(conn, live_surveys_route(section.slug))
 
       # Change page size from default (20) to 2
       view
       |> element("#header_paging_page_size_form")
       |> render_change(%{limit: "2"})
 
-      [a0, a1] = table_as_list_of_maps(view, :assessments)
+      [a0, a1] = table_as_list_of_maps(view)
 
       # Page 1
       assert a0.title == "Orphaned Page"
@@ -1898,13 +1845,13 @@ defmodule OliWeb.Delivery.InstructorDashboard.ScoredActivitiesTabTest do
       {:ok, view, _html} =
         live(
           conn,
-          live_view_scored_activities_route(section.slug, %{
+          live_surveys_route(section.slug, %{
             limit: 2,
             offset: 2
           })
         )
 
-      [a2, a3] = table_as_list_of_maps(view, :assessments)
+      [a2, a3] = table_as_list_of_maps(view)
 
       # Page 2
       assert a2.title == "Module 1: IntroductionPage 2"
@@ -1915,7 +1862,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.ScoredActivitiesTabTest do
       |> element("#header_paging_page_size_form")
       |> render_change(%{limit: "1"})
 
-      [a2] = table_as_list_of_maps(view, :assessments)
+      [a2] = table_as_list_of_maps(view)
 
       # Page 3. It keeps showing the same element.
       assert a2.title == "Module 1: IntroductionPage 2"
