@@ -446,6 +446,12 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
   def handle_event("set_selected", %{"id" => value}, socket) do
     socket = clear_flash(socket)
 
+    # we mark the expanded post replies as read
+    socket.assigns.posts
+    |> Enum.find(fn {post, _} -> post.id == String.to_integer(value) end)
+    |> then(fn {expanded_post, _} -> expanded_post end)
+    |> mark_replies_as_read(socket.assigns.user.id)
+
     {:noreply, assign(socket, selected: (socket.assigns.selected != value && value) || nil)}
   end
 
@@ -626,6 +632,7 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
          %{
            section_id: section_id,
            resource_id: resource_id,
+           user_id: user_id,
            collab_space_config: collab_space_config,
            is_instructor: true
          },
@@ -635,6 +642,7 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
       section_id,
       resource_id
     )
+    |> mark_root_posts_as_read(user_id)
     |> maybe_threading(collab_space_config)
     |> sort(sort_by, sort_order)
     |> Enum.with_index(1)
@@ -657,6 +665,7 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
       user_id,
       enter_time
     )
+    |> mark_root_posts_as_read(user_id)
     |> maybe_threading(collab_space_config)
     |> sort(sort_by, sort_order)
     |> Enum.with_index(1)
@@ -676,20 +685,43 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
       resource_id,
       user_id
     )
+    |> mark_root_posts_as_read(user_id)
     |> maybe_threading(collab_space_config)
     |> sort(sort_by, sort_order)
     |> Enum.with_index(1)
   end
 
   defp get_posts(
-         %{collab_space_config: collab_space_config},
+         %{user_id: user_id, collab_space_config: collab_space_config},
          %{by: sort_by, order: sort_order},
          posts
        ) do
     posts
+    |> mark_root_posts_as_read(user_id)
     |> maybe_threading(collab_space_config)
     |> sort(sort_by, sort_order)
     |> Enum.with_index(1)
+  end
+
+  _docp =
+    "when the user enters the page, we asume that all the posts (thread root posts) shown are read"
+
+  defp mark_root_posts_as_read(posts, user_id) do
+    posts
+    |> Enum.filter(fn post -> is_nil(post.parent_post_id) end)
+    |> Collaboration.mark_posts_as_read(user_id, true)
+
+    posts
+  end
+
+  _docp =
+    "this funciton will be called when a user expands a thread root post, to mark all replies as read asynchronously"
+
+  defp mark_replies_as_read(expanded_post, user_id) do
+    Enum.reduce(expanded_post.replies, [], fn {reply, _}, acc_replies ->
+      [reply | acc_replies]
+    end)
+    |> Collaboration.mark_posts_as_read(user_id, true)
   end
 
   defp maybe_threading(all_posts, %CollabSpaceConfig{threaded: true}) do

@@ -17,6 +17,9 @@ defmodule Oli.Resources.Collaboration.Post do
     belongs_to :thread_root, Oli.Resources.Collaboration.Post
 
     field :replies_count, :integer, virtual: true
+    field :read_replies_count, :integer, virtual: true
+    field :is_read, :boolean, virtual: true
+
     field :anonymous, :boolean, default: false
 
     timestamps(type: :utc_datetime)
