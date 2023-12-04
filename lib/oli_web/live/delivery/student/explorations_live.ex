@@ -65,6 +65,9 @@ defmodule OliWeb.Delivery.Student.ExplorationsLive do
           nil ->
             nil
 
+          %{} ->
+            nil
+
           intro_content ->
             Content.render(
               %Oli.Rendering.Context{render_opts: %{render_errors: true}},
@@ -111,7 +114,7 @@ defmodule OliWeb.Delivery.Student.ExplorationsLive do
   defp poster_image(exploration) do
     case exploration.poster_image do
       nil ->
-        ~p"/images/ng23/explorations/default_poster.jpg"
+        ~p"/images/explorations/default_poster.jpg"
 
       image ->
         image

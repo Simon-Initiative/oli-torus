@@ -2080,7 +2080,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
         |> get(~p"/sections/#{section.slug}/explorations")
 
       assert html_response(conn, 200)
-      assert html_response(conn, 200) =~ "#{section.title} | Your Exploration Activities"
+      assert html_response(conn, 200) =~ "Your Exploration Activities"
     end
 
     test "instructor can access if is enrolled in the section", %{conn: conn, section: section} do
@@ -2104,7 +2104,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
 
       conn = get(conn, ~p"/sections/#{section.slug}/preview/explorations")
 
-      assert html_response(conn, 200) =~ "#{section.title} | Your Exploration Activities"
+      assert html_response(conn, 200) =~ "Your Exploration Activities"
     end
 
     test "redirects to enroll page if not is enrolled in the section", %{
@@ -2137,7 +2137,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
         |> get(~p"/sections/#{section.slug}/explorations")
 
       assert html_response(conn, 200) =~ other_revision.title
-      assert html_response(conn, 200) =~ "#{section.title} | Your Exploration Activities"
+      assert html_response(conn, 200) =~ "Your Exploration Activities"
     end
 
     @tag :skip

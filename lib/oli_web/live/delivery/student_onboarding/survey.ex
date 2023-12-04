@@ -113,7 +113,7 @@ defmodule OliWeb.Delivery.StudentOnboarding.Survey do
         <div class="flex pt-12 pb-6 px-[84px] gap-3">
           <div class="flex relative">
             <img
-              src={~p"/images/ng23/dot_ai_icon.png"}
+              src={~p"/images/assistant/dot_ai_icon.png"}
               alt="dot icon"
               class="w-24 absolute -top-4 -left-2"
             />

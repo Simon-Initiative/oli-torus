@@ -13,7 +13,7 @@ defmodule OliWeb.Components.Delivery.ExplorationShade do
       <div class="container mx-auto md:px-10 py-2 flex flex-row justify-between text-sm md:text-lg">
         <div class="flex items-center gap-2">
           <h4 class="p-2 md:p-0 md:leading-loose">
-            <%= "#{@title} | " %>Your Exploration Activities
+            Your Exploration Activities
           </h4>
           <%= if @exploration_pages && length(@exploration_pages) > 0 do %>
             <span class="badge badge-info rounded-full"><%= length(@exploration_pages) %></span>

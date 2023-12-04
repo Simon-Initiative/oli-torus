@@ -1504,7 +1504,7 @@ defmodule Oli.Delivery.Sections do
         [exploration | explorations]
       end)
     end)
-    |> label_and_sort_explorations_by_hierarchy(section.slug)
+    |> label_and_sort_resources_by_hierarchy(section.slug)
     |> attach_statuses_for_user(section.slug, user)
   end
 
@@ -1547,22 +1547,39 @@ defmodule Oli.Delivery.Sections do
     |> Enum.reduce(%{}, fn id, acc -> Map.put(acc, id, :started) end)
   end
 
-  defp label_and_sort_explorations_by_hierarchy(explorations_map, section_slug) do
+  defp label_and_sort_resources_by_hierarchy(resource_map, section_slug) do
     fetch_ordered_containers(section_slug)
     |> Enum.reduce(
-      case explorations_map[:default] do
+      case resource_map[:default] do
         nil -> []
         default -> [{:default, default}]
       end,
       fn {resource_id, title}, acc ->
-        if explorations_map[resource_id] do
-          [{title, explorations_map[resource_id]} | acc]
+        if resource_map[resource_id] do
+          [{title, resource_map[resource_id]} | acc]
         else
           acc
         end
       end
     )
     |> Enum.reverse()
+  end
+
+  def get_practice_pages_by_containers(section) do
+    resource_to_container_map = get_resource_to_container_map(section)
+
+    # get all practice pages in the section and group them by their container title
+    DeliveryResolver.get_by_purpose(section.slug, :deliberate_practice)
+    |> Enum.reduce(%{}, fn practice, acc ->
+      container_id =
+        Map.get(resource_to_container_map, Integer.to_string(practice.resource_id), :default)
+
+      # group by container resource_id
+      Map.update(acc, container_id, [practice], fn practice_pages ->
+        [practice | practice_pages]
+      end)
+    end)
+    |> label_and_sort_resources_by_hierarchy(section.slug)
   end
 
   @doc """
