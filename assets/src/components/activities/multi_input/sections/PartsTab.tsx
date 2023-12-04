@@ -7,9 +7,9 @@ import {
   MultiInputSchema,
 } from 'components/activities/multi_input/schema';
 import { getParts } from 'data/activities/model/utils';
-import { Accordion, Card } from 'react-bootstrap';
-import { AnswerKeyTab } from './AnswerKeyTab';
+import { Card } from 'components/misc/Card';
 import { Part } from 'components/activities/types';
+import { ResponseTab } from './ResponseTab';
 
 interface Props {
   editor: ReactEditor & Editor;
@@ -18,35 +18,52 @@ interface Props {
 }
 export const PartsTab: React.FC<Props> = (props) => {
   const { model } = useAuthoringElementContext<MultiInputSchema>();
+  const [selectedPart, setSelectedPart] = React.useState<Part | undefined>(getParts(model).find((p) => p.id === props.input.partId));
+  const parts = getParts(model);
 
-  const getInputBody = (part: Part) => {
-    const inputs: MultiInput[] = model.inputs.filter((input) => input.partId === part.id);
-    return inputs ? (
-      inputs.map((input) => (
-        <AnswerKeyTab key={input.id} input={input} />
+
+  const getResponsesBody = (part: Part) => {
+    return (
+      part.responses.map((response, index) => (
+        <ResponseTab key={response.id} response={response} index={index} />
       ))
-    ) : null;
-
+    );
   };
 
   return (
-    <Accordion>
-      {getParts(model).map((part, index) => (
-          <Card key={part.id}>
-          <Accordion.Toggle as={Card.Header} eventKey={part.id}>
-              Part {index+1}
-          </Accordion.Toggle>
-
-          <Accordion.Collapse eventKey={part.id}>
-              <Card.Body>
-                {getInputBody(part)}
-              </Card.Body>
-          </Accordion.Collapse>
-       </Card>
-
-        ))}
-
-    </Accordion>
+    <Card.Card key={props.input.id}>
+      <Card.Title>
+        <SelectPart parts={parts} selected={props.input.partId} onSelect={setSelectedPart}/>
+      </Card.Title>
+    <Card.Content>
+      {selectedPart && getResponsesBody(selectedPart)}
+    </Card.Content>
+    </Card.Card>
   );
 };
 
+interface SelectPartProps {
+  parts: Part[];
+  selected: string;
+  onSelect: (value: Part | undefined) => void;
+}
+const SelectPart: React.FC<SelectPartProps> = ({ parts, selected, onSelect }) => {
+
+  return (
+    <div className="inline-flex items-baseline mb-2">
+      <label className="flex-shrink-0">Move to:</label>
+      <select
+        className="flex-shrink-0 border py-1 px-1.5 border-neutral-300 rounded w-full disabled:bg-neutral-100 disabled:text-neutral-600 dark:bg-neutral-800 dark:border-neutral-700 dark:text-white ml-2"
+        value={selected}
+        onChange={({ target: { value } }) => {
+          onSelect(parts.find((p) => p.id == value));
+        }}
+      >
+        {parts.map((part, index: number) => (
+          <option key={part.id} value={part.id}>Part {index+1}</option>
+        ))}
+
+      </select>
+    </div>
+  );
+};

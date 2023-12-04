@@ -133,14 +133,21 @@ export const MultiInputActions = {
         ]);
       } else {
         part.targets = targets;
+        part.responses.forEach((r) => {
+          if(r.inputRefs) r.inputRefs = r.inputRefs.filter((rf) => rf !== inputId);
+        })
       }
 
       partTo.targets ? partTo.targets.push(input.id) : partTo.targets = [input.id];
       input.partId = partTo.id;
       partTo.responses[0].rule = partTo.responses[0].rule + ' && ' + rule;
+      if (!partTo.responses[0].inputRefs) partTo.responses[0].inputRefs = [];
+      if(!partTo.responses[0].inputRefs.find((i) => i === inputId)) partTo.responses[0].inputRefs.push(inputId);
       const response = partTo.responses.find((r) => r.rule.endsWith('{.*}'));
       if (response) {
         response.rule = response?.rule + ' && input_ref_' + input.id + ' like {.*}';
+        if (!response.inputRefs) response.inputRefs = [];
+        if(!response.inputRefs.find((i) => i === inputId)) response.inputRefs.push(inputId);
       }
 
       post(undoables);

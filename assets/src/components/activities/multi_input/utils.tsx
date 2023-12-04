@@ -9,6 +9,7 @@ import {
 import {
   ChoiceId,
   Part,
+  Response,
   Transform,
   makeChoice,
   makeHint,
@@ -41,17 +42,17 @@ export const multiInputStem = (input: InputRef) => ({
 });
 
 export const MultiInputResponses = {
-  catchAll: (inputId:string, text = 'Incorrect') => makeResponse(replaceWithInputRef(inputId, matchRule('.*')), 0, text),
+  catchAll: (inputId:string, text = 'Incorrect') => addRef(inputId, makeResponse(replaceWithInputRef(inputId, matchRule('.*')), 0, text)),
   forTextInput: (inputId:string, correctText = 'Correct', incorrectText = 'Incorrect') => [
-    makeResponse(replaceWithInputRef(inputId, containsRule('answer')), 1, correctText),
+    addRef(inputId, makeResponse(replaceWithInputRef(inputId, containsRule('answer')), 1, correctText)),
     MultiInputResponses.catchAll(inputId, incorrectText),
   ],
   forNumericInput: (inputId:string, correctText = 'Correct', incorrectText = 'Incorrect') => [
-    makeResponse(replaceWithInputRef(inputId, eqRule(1)), 1, correctText),
+    addRef(inputId, makeResponse(replaceWithInputRef(inputId, eqRule(1)), 1, correctText)),
     MultiInputResponses.catchAll(inputId, incorrectText),
   ],
   forMathInput: (inputId:string, correctText = 'Correct', incorrectText = 'Incorrect') => [
-    makeResponse(replaceWithInputRef(inputId, equalsRule('')), 1, correctText),
+    addRef(inputId, makeResponse(replaceWithInputRef(inputId, equalsRule('')), 1, correctText)),
     MultiInputResponses.catchAll(inputId, incorrectText),
   ],
   forMultipleChoice: (
@@ -60,13 +61,19 @@ export const MultiInputResponses = {
     correctText = 'Correct',
     incorrectText = 'Incorrect',
   ) => [
-    makeResponse(replaceWithInputRef(inputId, matchRule(correctChoiceId)), 1, correctText),
-    makeResponse(replaceWithInputRef(inputId, matchRule('.*')), 0, incorrectText),
+    addRef(inputId, makeResponse(replaceWithInputRef(inputId, matchRule(correctChoiceId)), 1, correctText)),
+    addRef(inputId, makeResponse(replaceWithInputRef(inputId, matchRule('.*')), 0, incorrectText)),
   ],
 };
 
 export const replaceWithInputRef =(inputId: string, rule: string) => {
   return rule.replace(/input/g, 'input_ref_' + inputId);
+}
+
+export const addRef = (inputId: string, response: Response): Response => {
+  if (!response.inputRefs) response.inputRefs = [];
+  if(!response.inputRefs.find((i) => i === inputId)) response.inputRefs.push(inputId);
+  return response;
 }
 
 export const defaultModel = (): MultiInputSchema => {

@@ -495,6 +495,8 @@ export interface Response extends Identifiable {
   showPage?: number;
 
   matchStyle?: 'any' | 'all' | 'none';
+
+  inputRefs?: string[];
 }
 
 /**
