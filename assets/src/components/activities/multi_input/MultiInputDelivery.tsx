@@ -146,7 +146,10 @@ export const MultiInputComponent: React.FC = () => {
                 size: input.size,
               }
             : { id: input.id, inputType: input.inputType, size: input.size },
-        value: (extractValue(input.id, uiState.partState[input.partId]?.studentInput as string[] || [''])),
+        value: extractValue(
+          input.id,
+          (uiState.partState[input.partId]?.studentInput as string[]) || [''],
+        ),
         hasHints: uiState.partState[input.partId].hasMoreHints,
       },
     ]),
@@ -190,7 +193,7 @@ export const MultiInputComponent: React.FC = () => {
   //
   const onChange = (id: string, value: string) => {
     const input = getByUnsafe((uiState.model as MultiInputSchema).inputs, (x) => x.id === id);
-    console.log((uiState.model as MultiInputSchema));
+    console.log(uiState.model as MultiInputSchema);
     // const modelPart = getPartById((uiState.model as MultiInputSchema), input.partId);
     // console.log('----the part');
     // console.log(modelPart);
@@ -205,7 +208,7 @@ export const MultiInputComponent: React.FC = () => {
       value = JSON.stringify(oldInput);
     }
 
-    const response = {input: value};
+    const response = { input: value };
 
     if (part !== undefined) {
       // Here we handle the case that the student is typing again into an input whose
@@ -213,7 +216,7 @@ export const MultiInputComponent: React.FC = () => {
       // part attempt, then either submit (if dropdown) or save the input to that part attempt
       if (part.dateEvaluated !== null && (uiState.model as MultiInputSchema).submitPerPart) {
         if (input.inputType === 'dropdown') {
-          const payload = {input: value};
+          const payload = { input: value };
           dispatch(
             resetAndSubmitPart(
               uiState.attemptState.attemptGuid,
@@ -249,7 +252,7 @@ export const MultiInputComponent: React.FC = () => {
           onSaveActivity(uiState.attemptState.attemptGuid, [
             {
               attemptGuid: part.attemptGuid,
-              response: {input: value},
+              response: { input: value },
             },
           ]);
 

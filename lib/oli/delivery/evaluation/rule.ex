@@ -80,7 +80,6 @@ defmodule Oli.Delivery.Evaluation.Rule do
     rescue
       RuntimeError -> Oli.Utils.normalize_whitespace(context.input)
     end
-
   end
 
   defp eval(:input, context) do

@@ -582,7 +582,7 @@ export interface Part extends Identifiable {
   gradingApproach?: GradingApproach;
   outOf?: null | number;
   incorrectScore?: null | number;
-  targets?: string[]
+  targets?: string[];
 }
 
 /**
@@ -598,7 +598,7 @@ export const makePart = (
   // Multiinput activity parts start with just one hint
   hints = [makeHint(''), makeHint(''), makeHint('')],
   id?: ID,
-  targets: string[] = []
+  targets: string[] = [],
 ): Part => ({
   id: id ? id : guid(),
   gradingApproach: GradingApproach.automatic,

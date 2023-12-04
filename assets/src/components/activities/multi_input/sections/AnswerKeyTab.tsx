@@ -68,7 +68,11 @@ export const AnswerKeyTab: React.FC<Props> = (props) => {
           selectedIcon={<Radio.Checked />}
           choices={choices}
           selected={[correctChoice.id]}
-          onSelect={(id) => dispatch(MultiInputActions.toggleChoiceCorrectness(id, props.input.partId, props.input.id))}
+          onSelect={(id) =>
+            dispatch(
+              MultiInputActions.toggleChoiceCorrectness(id, props.input.partId, props.input.id),
+            )
+          }
           isEvaluated={false}
           context={defaultWriterContext({ projectSlug: projectSlug })}
         />
@@ -102,7 +106,9 @@ export const AnswerKeyTab: React.FC<Props> = (props) => {
         key={getCorrectResponse(model, props.input.partId).id}
         inputType={props.input.inputType}
         response={getCorrectResponse(model, props.input.partId)}
-        onEditResponseRule={(id, rule) => dispatch(MultiInputActions.editRule(id, props.input.id, rule))}
+        onEditResponseRule={(id, rule) =>
+          dispatch(MultiInputActions.editRule(id, props.input.id, rule))
+        }
       />
       <SimpleFeedback partId={props.input.partId} />
       <MultiInputScoringMethod />
@@ -136,7 +142,9 @@ export const AnswerKeyTab: React.FC<Props> = (props) => {
             key={response.id}
             inputType={(props.input as FillInTheBlank).inputType}
             response={response}
-            onEditResponseRule={(id, rule) => dispatch(MultiInputActions.editRule(id,  props.input.id, rule))}
+            onEditResponseRule={(id, rule) =>
+              dispatch(MultiInputActions.editRule(id, props.input.id, rule))
+            }
           />
           {authoringContext.contentBreaksExist ? (
             <ShowPage

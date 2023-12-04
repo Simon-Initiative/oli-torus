@@ -5,8 +5,8 @@ import { Editor, Transforms } from 'slate';
 import { ReactEditor } from 'slate-react';
 import { ActivitySettings } from 'components/activities/common/authoring/settings/ActivitySettings';
 import {
-  changePerPartSubmission,
   changeMultInputPerPartSubmission,
+  changePerPartSubmission,
   shuffleAnswerChoiceSetting,
 } from 'components/activities/common/authoring/settings/activitySettingsActions';
 import { MultiInputSchema } from 'components/activities/multi_input/schema';

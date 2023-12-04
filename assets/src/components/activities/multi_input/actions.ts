@@ -38,12 +38,12 @@ export const MultiInputActions = {
   editStemAndPreviewText(content: Descendant[], editor: Editor, operations: Operation[]) {
     return (model: MultiInputSchema, post: PostUndoable) => {
       console.log('-----editStemAndPreviewText');
-    //   try {
-    //     // Code throwing an exception
-    //     throw new Error();
-    // } catch(e) {
-    //     console.log(e.stack);
-    // }
+      //   try {
+      //     // Code throwing an exception
+      //     throw new Error();
+      // } catch(e) {
+      //     console.log(e.stack);
+      // }
       const removedInputRefs = elementsRemoved<InputRef>(operations, 'input_ref');
 
       // Handle error condition - removing an extra input ref that is not present in the model
@@ -128,26 +128,25 @@ export const MultiInputActions = {
 
       const targets = part.targets?.filter((value) => value !== input.id);
       if (!targets || targets.length < 1) {
-        Operations.applyAll(model, [
-          Operations.filter('$..parts', `[?(@.id!=${part.id})]`),
-        ]);
+        Operations.applyAll(model, [Operations.filter('$..parts', `[?(@.id!=${part.id})]`)]);
       } else {
         part.targets = targets;
         part.responses.forEach((r) => {
-          if(r.inputRefs) r.inputRefs = r.inputRefs.filter((rf) => rf !== inputId);
-        })
+          if (r.inputRefs) r.inputRefs = r.inputRefs.filter((rf) => rf !== inputId);
+        });
       }
 
-      partTo.targets ? partTo.targets.push(input.id) : partTo.targets = [input.id];
+      partTo.targets ? partTo.targets.push(input.id) : (partTo.targets = [input.id]);
       input.partId = partTo.id;
       partTo.responses[0].rule = partTo.responses[0].rule + ' && ' + rule;
       if (!partTo.responses[0].inputRefs) partTo.responses[0].inputRefs = [];
-      if(!partTo.responses[0].inputRefs.find((i) => i === inputId)) partTo.responses[0].inputRefs.push(inputId);
+      if (!partTo.responses[0].inputRefs.find((i) => i === inputId))
+        partTo.responses[0].inputRefs.push(inputId);
       const response = partTo.responses.find((r) => r.rule.endsWith('{.*}'));
       if (response) {
         response.rule = response?.rule + ' && input_ref_' + input.id + ' like {.*}';
         if (!response.inputRefs) response.inputRefs = [];
-        if(!response.inputRefs.find((i) => i === inputId)) response.inputRefs.push(inputId);
+        if (!response.inputRefs.find((i) => i === inputId)) response.inputRefs.push(inputId);
       }
 
       post(undoables);
@@ -160,7 +159,7 @@ export const MultiInputActions = {
     };
   },
 
-  toggleChoiceCorrectness(id: string, partId: string, inputId: string,) {
+  toggleChoiceCorrectness(id: string, partId: string, inputId: string) {
     return (model: HasParts, _post: PostUndoable) => {
       getCorrectResponse(model, partId).rule = replaceWithInputRef(inputId, matchRule(id));
     };
@@ -290,9 +289,9 @@ export const MultiInputActions = {
       try {
         // Code throwing an exception
         throw new Error();
-    } catch(e) {
+      } catch (e) {
         console.log(e.stack);
-    }
+      }
       const part = makePart(MultiInputResponses.forTextInput(inputId), [makeHint('')]);
       part.targets?.push(inputId);
       model.inputs.push({ inputType: 'text', partId: part.id, id: inputId });
@@ -351,9 +350,7 @@ export const MultiInputActions = {
           Operations.filter('$.inputs', `[?(@.id!=${inputId})]`),
         ]);
       } else {
-        Operations.applyAll(model, [
-          Operations.filter('$.inputs', `[?(@.id!=${inputId})]`),
-        ]);
+        Operations.applyAll(model, [Operations.filter('$.inputs', `[?(@.id!=${inputId})]`)]);
       }
 
       post(undoables);

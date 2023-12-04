@@ -1,11 +1,15 @@
 import {
   isShuffled,
   toggleAnswerChoiceShuffling,
-  togglePerPartSubmissionOption,
   toggleMultInputsPerPartOption,
+  togglePerPartSubmissionOption,
 } from 'components/activities/common/utils';
 import { MultiInput } from 'components/activities/multi_input/schema';
-import { HasPerPartSubmissionOption, HasTransformations, HasMultInputsPerPartOption } from 'components/activities/types';
+import {
+  HasMultInputsPerPartOption,
+  HasPerPartSubmissionOption,
+  HasTransformations,
+} from 'components/activities/types';
 
 export const shuffleAnswerChoiceSetting = (
   model: HasTransformations,

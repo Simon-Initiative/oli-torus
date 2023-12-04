@@ -9,11 +9,11 @@ import {
   MultiInputSize,
 } from 'components/activities/multi_input/schema';
 import { DropdownQuestionEditor } from 'components/activities/multi_input/sections/DropdownQuestionEditor';
-import { inputTitle} from 'components/activities/multi_input/utils';
+import { inputTitle } from 'components/activities/multi_input/utils';
+import { Part } from 'components/activities/types';
 import { Card } from 'components/misc/Card';
 import { getParts } from 'data/activities/model/utils';
 import { MultiInputActions } from '../actions';
-import { Part } from 'components/activities/types';
 
 interface Props {
   editor: ReactEditor & Editor;
@@ -67,7 +67,9 @@ export const QuestionTab: React.FC<Props> = (props) => {
         {props.input.inputType === 'dropdown' && <DropdownQuestionEditor input={props.input} />}
 
         <div>
-          {model.multInputsPerPart && <MoveInputIntoPart input={props.input} parts={getParts(model)} />}
+          {model.multInputsPerPart && (
+            <MoveInputIntoPart input={props.input} parts={getParts(model)} />
+          )}
         </div>
       </Card.Content>
     </Card.Card>
@@ -117,9 +119,10 @@ const MoveInputIntoPart: React.FC<MoveInputIntoPartProps> = ({ input, parts }) =
         }}
       >
         {parts.map((part, index: number) => (
-          <option key={part.id} value={part.id}>Part {index+1}</option>
+          <option key={part.id} value={part.id}>
+            Part {index + 1}
+          </option>
         ))}
-
       </select>
     </div>
   );

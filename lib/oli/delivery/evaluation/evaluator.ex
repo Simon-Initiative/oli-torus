@@ -76,13 +76,16 @@ defmodule Oli.Delivery.Evaluation.Evaluator do
         false -> out_of
       end
 
-      # IO.inspect("------------------")
-      # IO.inspect(current)
-      # IO.inspect(context)
+    # IO.inspect("------------------")
+    # IO.inspect(current)
+    # IO.inspect(context)
     matches =
       case Rule.parse_and_evaluate(rule, context) do
-        {:ok, result} -> result
-        {:error, er} -> IO.inspect(er)
+        {:ok, result} ->
+          result
+
+        {:error, er} ->
+          IO.inspect(er)
           # IO.inspect(Process.info(self(), :current_stacktrace))
           false
       end

@@ -2,13 +2,10 @@ import React from 'react';
 import { Editor } from 'slate';
 import { ReactEditor } from 'slate-react';
 import { useAuthoringElementContext } from 'components/activities/AuthoringElementProvider';
-import {
-  MultiInput,
-  MultiInputSchema,
-} from 'components/activities/multi_input/schema';
-import { getParts } from 'data/activities/model/utils';
-import { Card } from 'components/misc/Card';
+import { MultiInput, MultiInputSchema } from 'components/activities/multi_input/schema';
 import { Part } from 'components/activities/types';
+import { Card } from 'components/misc/Card';
+import { getParts } from 'data/activities/model/utils';
 import { ResponseTab } from './ResponseTab';
 
 interface Props {
@@ -18,26 +15,23 @@ interface Props {
 }
 export const PartsTab: React.FC<Props> = (props) => {
   const { model } = useAuthoringElementContext<MultiInputSchema>();
-  const [selectedPart, setSelectedPart] = React.useState<Part | undefined>(getParts(model).find((p) => p.id === props.input.partId));
+  const [selectedPart, setSelectedPart] = React.useState<Part | undefined>(
+    getParts(model).find((p) => p.id === props.input.partId),
+  );
   const parts = getParts(model);
 
-
   const getResponsesBody = (part: Part) => {
-    return (
-      part.responses.map((response, index) => (
-        <ResponseTab key={response.id} response={response} index={index} />
-      ))
-    );
+    return part.responses.map((response, index) => (
+      <ResponseTab key={response.id} response={response} index={index} />
+    ));
   };
 
   return (
     <Card.Card key={props.input.id}>
       <Card.Title>
-        <SelectPart parts={parts} selected={props.input.partId} onSelect={setSelectedPart}/>
+        <SelectPart parts={parts} selected={props.input.partId} onSelect={setSelectedPart} />
       </Card.Title>
-    <Card.Content>
-      {selectedPart && getResponsesBody(selectedPart)}
-    </Card.Content>
+      <Card.Content>{selectedPart && getResponsesBody(selectedPart)}</Card.Content>
     </Card.Card>
   );
 };
@@ -48,7 +42,6 @@ interface SelectPartProps {
   onSelect: (value: Part | undefined) => void;
 }
 const SelectPart: React.FC<SelectPartProps> = ({ parts, selected, onSelect }) => {
-
   return (
     <div className="inline-flex items-baseline mb-2">
       <label className="flex-shrink-0">Move to:</label>
@@ -60,9 +53,10 @@ const SelectPart: React.FC<SelectPartProps> = ({ parts, selected, onSelect }) =>
         }}
       >
         {parts.map((part, index: number) => (
-          <option key={part.id} value={part.id}>Part {index+1}</option>
+          <option key={part.id} value={part.id}>
+            Part {index + 1}
+          </option>
         ))}
-
       </select>
     </div>
   );

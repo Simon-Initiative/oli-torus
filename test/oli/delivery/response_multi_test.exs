@@ -42,7 +42,8 @@ defmodule Oli.Delivery.ResponseMultiTest do
                       "id" => "3936475886"
                     },
                     "id" => "1596796291",
-                    "rule" => "input_ref_1637853221 contains {answer} && input_ref_2369651067 = {1}",
+                    "rule" =>
+                      "input_ref_1637853221 contains {answer} && input_ref_2369651067 = {1}",
                     "score" => 1
                   },
                   %{
@@ -119,23 +120,31 @@ defmodule Oli.Delivery.ResponseMultiTest do
           "tags" => [],
           "title" => "Multi Input"
         }
-     }
-
+      }
     end
 
     test "performing evaulations", %{content: content} do
       part_inputs = [
-        %{part_id: "651271558", input: %StudentInput{input: Poison.encode!(%{"1637853221" => "answer", "2369651067" => "1"})}}
+        %{
+          part_id: "651271558",
+          input: %StudentInput{
+            input: Poison.encode!(%{"1637853221" => "answer", "2369651067" => "1"})
+          }
+        }
       ]
 
       assert {:ok, [%FeedbackAction{part_id: "651271558", score: _, out_of: _, feedback: _}]} =
                Evaluate.evaluate_from_preview(content, part_inputs)
-
     end
 
     test "performing evaluations where one is a non-matching input", %{content: content} do
       part_inputs = [
-        %{part_id: "651271558", input: %StudentInput{input: Poison.encode!(%{"1637853221" => "bad", "2369651067" => "1"})}}
+        %{
+          part_id: "651271558",
+          input: %StudentInput{
+            input: Poison.encode!(%{"1637853221" => "bad", "2369651067" => "1"})
+          }
+        }
       ]
 
       assert {:ok,

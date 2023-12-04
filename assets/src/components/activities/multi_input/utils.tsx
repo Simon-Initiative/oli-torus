@@ -18,7 +18,13 @@ import {
   makeTransformation,
 } from 'components/activities/types';
 // import { Responses } from 'data/activities/model/responses';
-import { containsRule, eqRule, equalsRule, isTextRule, matchRule } from 'data/activities/model/rules';
+import {
+  containsRule,
+  eqRule,
+  equalsRule,
+  isTextRule,
+  matchRule,
+} from 'data/activities/model/rules';
 import { Model } from 'data/content/model/elements/factories';
 import { InputRef, Paragraph } from 'data/content/model/elements/types';
 import { elementsOfType } from 'data/content/utils';
@@ -42,39 +48,46 @@ export const multiInputStem = (input: InputRef) => ({
 });
 
 export const MultiInputResponses = {
-  catchAll: (inputId:string, text = 'Incorrect') => addRef(inputId, makeResponse(replaceWithInputRef(inputId, matchRule('.*')), 0, text)),
-  forTextInput: (inputId:string, correctText = 'Correct', incorrectText = 'Incorrect') => [
-    addRef(inputId, makeResponse(replaceWithInputRef(inputId, containsRule('answer')), 1, correctText)),
+  catchAll: (inputId: string, text = 'Incorrect') =>
+    addRef(inputId, makeResponse(replaceWithInputRef(inputId, matchRule('.*')), 0, text)),
+  forTextInput: (inputId: string, correctText = 'Correct', incorrectText = 'Incorrect') => [
+    addRef(
+      inputId,
+      makeResponse(replaceWithInputRef(inputId, containsRule('answer')), 1, correctText),
+    ),
     MultiInputResponses.catchAll(inputId, incorrectText),
   ],
-  forNumericInput: (inputId:string, correctText = 'Correct', incorrectText = 'Incorrect') => [
+  forNumericInput: (inputId: string, correctText = 'Correct', incorrectText = 'Incorrect') => [
     addRef(inputId, makeResponse(replaceWithInputRef(inputId, eqRule(1)), 1, correctText)),
     MultiInputResponses.catchAll(inputId, incorrectText),
   ],
-  forMathInput: (inputId:string, correctText = 'Correct', incorrectText = 'Incorrect') => [
+  forMathInput: (inputId: string, correctText = 'Correct', incorrectText = 'Incorrect') => [
     addRef(inputId, makeResponse(replaceWithInputRef(inputId, equalsRule('')), 1, correctText)),
     MultiInputResponses.catchAll(inputId, incorrectText),
   ],
   forMultipleChoice: (
-    inputId:string,
+    inputId: string,
     correctChoiceId: ChoiceId,
     correctText = 'Correct',
     incorrectText = 'Incorrect',
   ) => [
-    addRef(inputId, makeResponse(replaceWithInputRef(inputId, matchRule(correctChoiceId)), 1, correctText)),
+    addRef(
+      inputId,
+      makeResponse(replaceWithInputRef(inputId, matchRule(correctChoiceId)), 1, correctText),
+    ),
     addRef(inputId, makeResponse(replaceWithInputRef(inputId, matchRule('.*')), 0, incorrectText)),
   ],
 };
 
-export const replaceWithInputRef =(inputId: string, rule: string) => {
+export const replaceWithInputRef = (inputId: string, rule: string) => {
   return rule.replace(/input/g, 'input_ref_' + inputId);
-}
+};
 
 export const addRef = (inputId: string, response: Response): Response => {
   if (!response.inputRefs) response.inputRefs = [];
-  if(!response.inputRefs.find((i) => i === inputId)) response.inputRefs.push(inputId);
+  if (!response.inputRefs.find((i) => i === inputId)) response.inputRefs.push(inputId);
   return response;
-}
+};
 
 export const defaultModel = (): MultiInputSchema => {
   const input = Model.inputRef();
@@ -87,7 +100,9 @@ export const defaultModel = (): MultiInputSchema => {
     submitPerPart: false,
     multInputsPerPart: true,
     authoring: {
-      parts: [makePart(MultiInputResponses.forTextInput(input.id), [makeHint('')], partId, [input.id])],
+      parts: [
+        makePart(MultiInputResponses.forTextInput(input.id), [makeHint('')], partId, [input.id]),
+      ],
       targeted: [],
       transformations: [makeTransformation('choices', Transform.shuffle, true)],
       previewText: 'Example question with a fill in the blank',
@@ -272,7 +287,8 @@ function matchInputsToParts(model: MultiInputSchema) {
       inputType: type === 'dropdown' ? 'text' : type,
       partId: part.id,
     });
-    part.responses = type === 'dropdown' ? MultiInputResponses.forTextInput(ref.id) : part.responses;
+    part.responses =
+      type === 'dropdown' ? MultiInputResponses.forTextInput(ref.id) : part.responses;
     // add inputRef to end of first paragraph in stem
     const firstParagraph = model.stem.content.find((elem) => elem.type === 'p') as
       | Paragraph
