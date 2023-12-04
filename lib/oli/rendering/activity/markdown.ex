@@ -16,15 +16,24 @@ defmodule Oli.Rendering.Activity.Markdown do
     model = Map.get(context.activity_map, activity_id, %{unencoded_model: %{}})
     |> Map.get(:unencoded_model)
 
-    stem_content = case Map.has_key?(model, "stem") do
-      true -> Oli.Rendering.Content.render(context, model["stem"]["content"], Oli.Rendering.Content.Markdown)
-      false -> []
+    stem_content = case Map.get(model, "stem") do
+      value when is_map(value) ->
+        Oli.Rendering.Content.render(context, model["stem"]["content"], Oli.Rendering.Content.Markdown)
+      _ ->
+        []
     end
 
     choices_content = case Map.has_key?(model, "choices") do
       true ->
         Enum.map(model["choices"], fn choice ->
-          Oli.Rendering.Content.render(context, choice["content"], Oli.Rendering.Content.Markdown)
+
+          case choice do
+            map when is_map(map) ->
+              Oli.Rendering.Content.render(context, choice["content"], Oli.Rendering.Content.Markdown)
+            _ ->
+              []
+          end
+
         end)
       false -> []
     end
