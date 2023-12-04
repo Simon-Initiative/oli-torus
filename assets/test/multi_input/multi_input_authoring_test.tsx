@@ -34,6 +34,7 @@ const _dropdownModel: MultiInputSchema = {
   stem: multiInputStem(input),
   choices,
   submitPerPart: false,
+  multInputsPerPart: false,
   inputs: [
     {
       inputType: 'dropdown',
@@ -54,6 +55,7 @@ const _numericModel: MultiInputSchema = {
   stem: multiInputStem(input),
   choices: [],
   submitPerPart: false,
+  multInputsPerPart: false,
   inputs: [{ inputType: 'numeric', id: input.id, partId: DEFAULT_PART_ID }],
   authoring: {
     parts: [makePart(Responses.forNumericInput(), [makeHint('')], DEFAULT_PART_ID)],
