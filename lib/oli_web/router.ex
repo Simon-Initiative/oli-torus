@@ -945,7 +945,7 @@ defmodule OliWeb.Router do
         ] do
         live("/", Delivery.Student.IndexLive)
         live("/content", Delivery.Student.ContentLive)
-        live("/discussions", Delivery.Student.DiscussionLive)
+        live("/discussions", Delivery.Student.DiscussionsLive)
         live("/assignments", Delivery.Student.AssignmentsLive)
         live("/explorations", Delivery.Student.ExplorationsLive)
         live("/practice", Delivery.Student.PracticeLive)
