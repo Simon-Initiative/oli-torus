@@ -484,9 +484,18 @@ defmodule Oli.Rendering.Content.Html do
         %Oli.Rendering.Context{} = _context,
         _next,
         %{"subtype" => "latex", "src" => src},
-        inline
+        true
       ) do
-    ["<span class=\"#{formula_class(inline)}\">\\(", escape_xml!(fix_nl(src)), "\\)</span>\n"]
+    ["<span class=\"#{formula_class(true)}\">\\(", escape_xml!(fix_nl(src)), "\\)</span>\n"]
+  end
+
+  def formula(
+        %Oli.Rendering.Context{} = _context,
+        _next,
+        %{"subtype" => "latex", "src" => src},
+        false
+      ) do
+    ["<span class=\"#{formula_class(false)}\">\\[", escape_xml!(fix_nl(src)), "\\]</span>\n"]
   end
 
   def formula(
