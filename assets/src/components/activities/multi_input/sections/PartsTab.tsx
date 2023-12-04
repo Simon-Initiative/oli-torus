@@ -3,10 +3,10 @@ import { Editor } from 'slate';
 import { ReactEditor } from 'slate-react';
 import { useAuthoringElementContext } from 'components/activities/AuthoringElementProvider';
 import { MultiInput, MultiInputSchema } from 'components/activities/multi_input/schema';
+import { ResponseTab } from 'components/activities/multi_input/sections/ResponseTab';
 import { Part } from 'components/activities/types';
 import { Card } from 'components/misc/Card';
 import { getParts } from 'data/activities/model/utils';
-import { ResponseTab } from 'components/activities/multi_input/sections/ResponseTab';
 
 interface Props {
   editor: ReactEditor & Editor;
