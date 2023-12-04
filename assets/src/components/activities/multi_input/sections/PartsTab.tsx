@@ -6,7 +6,7 @@ import { MultiInput, MultiInputSchema } from 'components/activities/multi_input/
 import { Part } from 'components/activities/types';
 import { Card } from 'components/misc/Card';
 import { getParts } from 'data/activities/model/utils';
-import { ResponseTab } from '../sections/ResponseTab';
+import { ResponseTab } from 'components/activities/multi_input/sections/ResponseTab';
 
 interface Props {
   editor: ReactEditor & Editor;
