@@ -484,18 +484,9 @@ defmodule Oli.Rendering.Content.Html do
         %Oli.Rendering.Context{} = _context,
         _next,
         %{"subtype" => "latex", "src" => src},
-        true
+        inline
       ) do
-    ["<span class=\"#{formula_class(true)}\">\\(", escape_xml!(src), "\\)</span>\n"]
-  end
-
-  def formula(
-        %Oli.Rendering.Context{} = _context,
-        _next,
-        %{"subtype" => "latex", "src" => src},
-        false
-      ) do
-    ["<span class=\"#{formula_class(false)}\">\\[", escape_xml!(src), "\\]</span>\n"]
+    ["<span class=\"#{formula_class(inline)}\">\\(", escape_xml!(fix_nl(src)), "\\)</span>\n"]
   end
 
   def formula(
@@ -509,6 +500,15 @@ defmodule Oli.Rendering.Content.Html do
       Scrubber.scrub(src, MathMLSanitizer),
       "</span>\n"
     ]
+  end
+
+  # workaround lack of support in MathJax 3.0 for LaTeX newline \\
+  def fix_nl(src) do
+    if String.match?(src, ~r/\\\\./) and
+         not (String.starts_with?(src, "\\displaylines") or
+                String.starts_with?(src, "\\begin{array}")),
+       do: "\displaylines{#{src}}",
+       else: src
   end
 
   def figure(%Context{} = _context, render_children, render_title, _) do
