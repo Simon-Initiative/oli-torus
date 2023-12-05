@@ -175,7 +175,8 @@ defmodule OliWeb.Delivery.Student.LearnLive do
                 </span>
                 <%= to_formatted_datetime(
                   @unit["section_resource"]["end_date"],
-                  @ctx
+                  @ctx,
+                  "{WDshort}, {Mshort} {D}, {YYYY} ({h12}:{m}{am})"
                 ) %>
               </div>
             </div>
@@ -237,7 +238,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     </div>
     <div
       :if={Map.has_key?(@selected_module_per_unit_uuid, @unit["uuid"])}
-      class="flex-col py-6 px-[50px] gap-x-4 lg:gap-x-12"
+      class="flex-col py-6 px-[50px] gap-x-4 lg:gap-x-12 gap-y-6"
       role="module_details"
       id={"selected_module_in_unit_#{@unit["uuid"]}"}
       data-animate={
@@ -248,7 +249,19 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         )
       }
     >
-      <div class="flex">
+      <div role="expanded module header" class="flex flex-col gap-[8px] items-center">
+        <h2 class="text-[26px] leading-[32px] tracking-[0.02px] dark:text-white">
+          <%= Map.get(@selected_module_per_unit_uuid, @unit["uuid"])["revision"]["title"] %>
+        </h2>
+        <span class="text-[12px] leading-[16px] opacity-50 dark:text-white">
+          Due: <%= to_formatted_datetime(
+            Map.get(@selected_module_per_unit_uuid, @unit["uuid"])["section_resource"]["end_date"],
+            @ctx,
+            "{WDshort} {Mshort} {D}, {YYYY}"
+          ) %>
+        </span>
+      </div>
+      <div role="intro content and index" class="flex">
         <div class="w-1/2 flex flex-col px-6">
           <div
             :if={
@@ -286,7 +299,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
           <.index module={Map.get(@selected_module_per_unit_uuid, @unit["uuid"])} />
         </div>
       </div>
-      <div class="flex items-center justify-center py-[6px] px-[10px] mt-6" role="collapse_bar">
+      <div role="collapse_bar" class="flex items-center justify-center py-[6px] px-[10px] mt-6">
         <span class="w-1/2 rounded-lg h-[2px] bg-gray-600/10 dark:bg-[#D9D9D9] dark:bg-opacity-10">
         </span>
         <div class="text-gray-600/10 dark:text-[#D9D9D9] dark:text-opacity-10 flex items-center justify-center px-[44px]">
@@ -535,12 +548,12 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     if !String.contains?(Jason.encode!(content), "\"type\":\"h1\""), do: "mt-[52px]"
   end
 
-  defp to_formatted_datetime(nil, _ctx), do: "not yet scheduled"
+  defp to_formatted_datetime(nil, _ctx, _format), do: "not yet scheduled"
 
-  defp to_formatted_datetime(string_datetime, ctx) do
+  defp to_formatted_datetime(string_datetime, ctx, format) do
     string_datetime
     |> to_datetime
-    |> FormatDateTime.parse_datetime(ctx, "{WDshort}, {Mshort} {D}, {YYYY} ({h12}:{m}{am})")
+    |> FormatDateTime.parse_datetime(ctx, format)
   end
 
   defp to_datetime(nil), do: "not yet scheduled"
