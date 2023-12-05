@@ -339,11 +339,33 @@ defmodule OliWeb.Components.Delivery.Surveys do
   # end
 
   defp find_current_activities(current_assessment, section, student_ids, students, socket) do
-    get_activities(current_assessment, section, student_ids)
-    |> Enum.map(fn activity ->
-      Map.put(activity, :preview_rendered, get_preview_rendered(activity, socket))
-      |> add_activity_attempts_info(students, student_ids, section)
+    activities = get_activities(current_assessment, section, student_ids)
+
+    activity_ids =
+      Enum.map(activities, fn a -> a.id end)
+
+    # ids = [1, 4, 6, 7, 9]
+
+    aditional_activities_data_mapper =
+      %{
+        1 => %{A: "valor de a", B: "el valor de B", C: "el valor de C", D: "el valor de D"},
+        4 => %{A: "valor de a", B: "el valor de B", C: "el valor de C", D: "el valor de D"},
+        6 => %{A: "valor de a", B: "el valor de B", C: "el valor de C", D: "el valor de D"},
+        7 => %{A: "valor de a", B: "el valor de B", C: "el valor de C", D: "el valor de D"},
+        9 => %{A: "valor de a", B: "el valor de B", C: "el valor de C", D: "el valor de D"}
+      }
+
+    Enum.map(activities, fn activity ->
+      Map.merge(activity, aditional_activities_data_mapper[activity.id])
     end)
+
+    # Bloque agrega a la revision los campos
+    # A, B, C, D
+
+    # |> Enum.map(fn activity ->
+    #   Map.put(activity, :preview_rendered, get_preview_rendered(activity, socket))
+    #   |> add_activity_attempts_info(students, student_ids, section)
+    # end)
   end
 
   defp find_current_assessment(socket, survey_id) do
@@ -566,56 +588,28 @@ defmodule OliWeb.Components.Delivery.Surveys do
   end
 
   defp get_activities(current_assessment, section, student_ids) do
-    activities =
-      from(aa in ActivityAttempt,
-        join: res_attempt in ResourceAttempt,
-        on: aa.resource_attempt_id == res_attempt.id,
-        where: aa.lifecycle_state == :evaluated,
-        join: res_access in ResourceAccess,
-        on: res_attempt.resource_access_id == res_access.id,
-        where:
-          res_access.section_id == ^section.id and
-            res_access.resource_id == ^current_assessment.resource_id and
-            res_access.user_id in ^student_ids and not is_nil(aa.survey_id),
-        join: rev in Revision,
-        on: aa.revision_id == rev.id,
-        group_by: [rev.resource_id, rev.id],
-        select:
-          {rev, count(aa.id),
-           sum(aa.score) /
-             fragment("CASE WHEN SUM(?) = 0.0 THEN 1.0 ELSE SUM(?) END", aa.out_of, aa.out_of)}
-      )
-      |> Repo.all()
-      |> Enum.map(fn {rev, total_attempts, avg_score} ->
-        Map.merge(rev, %{total_attempts: total_attempts, avg_score: avg_score})
-      end)
-
-    objectives_mapper =
-      Enum.reduce(activities, [], fn activity, acc ->
-        (Map.values(activity.objectives) |> List.flatten()) ++ acc
-      end)
-      |> Enum.uniq()
-      |> DeliveryResolver.objectives_by_resource_ids(section.slug)
-      |> Enum.map(fn objective -> {objective.resource_id, objective} end)
-      |> Enum.into(%{})
-
-    activities
-    |> Enum.map(fn activity ->
-      case Map.values(activity.objectives) |> List.flatten() do
-        [] ->
-          Map.put(activity, :objectives, [])
-
-        objective_ids ->
-          Map.put(
-            activity,
-            :objectives,
-            Enum.reduce(objective_ids, MapSet.new(), fn id, activity_objectives ->
-              MapSet.put(activity_objectives, Map.get(objectives_mapper, id))
-            end)
-            |> MapSet.to_list()
-          )
-      end
-    end)
+    from(aa in ActivityAttempt,
+      join: res_attempt in ResourceAttempt,
+      on: aa.resource_attempt_id == res_attempt.id,
+      where: aa.lifecycle_state == :evaluated,
+      join: res_access in ResourceAccess,
+      on: res_attempt.resource_access_id == res_access.id,
+      where:
+        res_access.section_id == ^section.id and
+          res_access.resource_id == ^current_assessment.resource_id and
+          res_access.user_id in ^student_ids and not is_nil(aa.survey_id),
+      join: rev in Revision,
+      on: aa.revision_id == rev.id,
+      group_by: [rev.resource_id, rev.id],
+      select: %{
+        rev
+        | total_attempts: count(aa.id),
+          avg_score:
+            sum(aa.score) /
+              fragment("CASE WHEN SUM(?) = 0.0 THEN 1.0 ELSE SUM(?) END", aa.out_of, aa.out_of)
+      }
+    )
+    |> Repo.all()
   end
 
   defp get_activity_details(selected_activity, section, activity_types_map) do
