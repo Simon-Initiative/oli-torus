@@ -90,6 +90,7 @@ export const MultiInputActions = {
   },
 
   addMissingParts(operations: Operation[]) {
+    console.log('-----addMissingParts');
     return (model: MultiInputSchema) => {
       elementsAdded<InputRef>(operations, 'input_ref').forEach((inputRef) =>
         MultiInputActions.addPart(inputRef.id)(model),
@@ -219,7 +220,7 @@ export const MultiInputActions = {
       // if the choice being removed is the correct choice, a new correct choice
       // must be set
       const authoringClone = clone(model.authoring);
-      if (getCorrectResponse(model, input.partId).rule === matchRule(choiceId)) {
+      if (getCorrectResponse(model, input.partId).rule === replaceWithInputRef(inputId, matchRule(choiceId))) {
         MCActions.toggleChoiceCorrectness(input.choiceIds[0], input.partId)(model, post);
       }
 
@@ -286,12 +287,8 @@ export const MultiInputActions = {
     console.log('------ Adding part not wanted 1');
     return (model: MultiInputSchema) => {
       console.log('------ Adding part not wanted');
-      try {
-        // Code throwing an exception
-        throw new Error();
-      } catch (e) {
-        console.log(e.stack);
-      }
+
+      if (getParts(model).find((p) => p.targets?.find((t) => t === inputId))) return;
       const part = makePart(MultiInputResponses.forTextInput(inputId), [makeHint('')]);
       part.targets?.push(inputId);
       model.inputs.push({ inputType: 'text', partId: part.id, id: inputId });

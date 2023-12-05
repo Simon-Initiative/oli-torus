@@ -80,6 +80,7 @@ export const MultiInputResponses = {
 };
 
 export const replaceWithInputRef = (inputId: string, rule: string) => {
+  if (rule.includes('input_ref_')) rule;
   return rule.replace(/input/g, 'input_ref_' + inputId);
 };
 
@@ -141,6 +142,19 @@ export const inputTitle = (input: MultiInput, index: number) => (
     <span className="text-muted">{friendlyType(input.inputType)}</span>
   </div>
 );
+
+export const purseMultiInputRule = (rule: string): any => {
+
+  const ruleRegex = RegExp('input_ref_.*?}', 'g');
+
+  let reg;
+  const entries: Map<string, string> = new Map<string,string>();
+
+  while ((reg = ruleRegex.exec(rule)) !== null) {
+    entries.set(reg[0].split('_')[2].split(' ')[0], reg[0])
+  }
+  return Object.fromEntries(entries);
+};
 
 export function guaranteeMultiInputValidity(model: MultiInputSchema): MultiInputSchema {
   // Check whether model is valid first to save unnecessarily cloning the model
@@ -274,6 +288,7 @@ function matchInputsToParts(model: MultiInputSchema) {
         ? MultiInputResponses.forNumericInput(input.id)
         : MultiInputResponses.forTextInput(input.id),
     );
+    console.log('---unmatchedInputs')
     model.authoring.parts.push(part);
   });
 
@@ -328,6 +343,7 @@ function matchInputsToInputRefs(model: MultiInputSchema) {
     // create new input and part for the input ref in the stem
     const part = makePart(MultiInputResponses.forTextInput(ref.id), [makeHint('')]);
     model.inputs.push({ id: ref.id, inputType: 'text', partId: part.id } as MultiInput);
+    console.log('----unmatchedInputRefs')
     model.authoring.parts.push(part);
   });
   return model;

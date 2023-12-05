@@ -22,14 +22,14 @@ export const PartsTab: React.FC<Props> = (props) => {
 
   const getResponsesBody = (part: Part) => {
     return part.responses.map((response, index) => (
-      <ResponseTab key={response.id} response={response} index={index} />
+      <ResponseTab key={response.id} response={response} />
     ));
   };
 
   return (
     <Card.Card key={props.input.id}>
       <Card.Title>
-        <SelectPart parts={parts} selected={props.input.partId} onSelect={setSelectedPart} />
+        <SelectPart parts={parts} selected={selectedPart?.id} onSelect={setSelectedPart} />
       </Card.Title>
       <Card.Content>{selectedPart && getResponsesBody(selectedPart)}</Card.Content>
     </Card.Card>
@@ -38,13 +38,13 @@ export const PartsTab: React.FC<Props> = (props) => {
 
 interface SelectPartProps {
   parts: Part[];
-  selected: string;
+  selected: string | undefined;
   onSelect: (value: Part | undefined) => void;
 }
 const SelectPart: React.FC<SelectPartProps> = ({ parts, selected, onSelect }) => {
   return (
     <div className="inline-flex items-baseline mb-2">
-      <label className="flex-shrink-0">Move to:</label>
+      <label className="flex-shrink-0">Parts </label>
       <select
         className="flex-shrink-0 border py-1 px-1.5 border-neutral-300 rounded w-full disabled:bg-neutral-100 disabled:text-neutral-600 dark:bg-neutral-800 dark:border-neutral-700 dark:text-white ml-2"
         value={selected}
