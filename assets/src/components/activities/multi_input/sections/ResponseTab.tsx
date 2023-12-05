@@ -29,7 +29,6 @@ export const ResponseTab: React.FC<Props> = (props) => {
 
   const toggleCorrectness = (id: string, partId: string, inputId: string) => {
     console.log(id + '--' + partId + '--' + inputId);
-    
   };
 
   const editRule = (id: ResponseId, inputId: string, rule: string) => {
