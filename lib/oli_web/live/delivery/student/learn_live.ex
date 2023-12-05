@@ -486,20 +486,6 @@ defmodule OliWeb.Delivery.Student.LearnLive do
           <h5 class="text-[18px] leading-[25px] font-bold dark:text-white z-10">
             <%= @module["revision"]["title"] %>
           </h5>
-          <div
-            :if={!@selected and !is_page(@module["revision"])}
-            class="mt-auto flex h-[21px] justify-center items-center text-gray-600 dark:text-white z-10"
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="10"
-              height="5"
-              viewBox="0 0 10 5"
-              fill="currentColor"
-            >
-              <path opacity="0.5" d="M5 5L0 0H10L5 5Z" fill="currentColor" />
-            </svg>
-          </div>
         </div>
 
         <div
