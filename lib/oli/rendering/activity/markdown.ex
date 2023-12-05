@@ -9,10 +9,48 @@ defmodule Oli.Rendering.Activity.Markdown do
   @behaviour Oli.Rendering.Activity
 
   def activity(
-        _context,
-        %{"activity_id" => activity_id} = _activity
+        context,
+        %{"activity_id" => activity_id}
       ) do
-    ["\n", "Activity: #{activity_id}", "\n\n"]
+    model =
+      Map.get(context.activity_map, activity_id, %{unencoded_model: %{}})
+      |> Map.get(:unencoded_model)
+
+    stem_content =
+      case Map.get(model, "stem") do
+        value when is_map(value) ->
+          Oli.Rendering.Content.render(
+            context,
+            model["stem"]["content"],
+            Oli.Rendering.Content.Markdown
+          )
+
+        _ ->
+          []
+      end
+
+    choices_content =
+      case Map.has_key?(model, "choices") do
+        true ->
+          Enum.map(model["choices"], fn choice ->
+            case choice do
+              map when is_map(map) ->
+                Oli.Rendering.Content.render(
+                  context,
+                  choice["content"],
+                  Oli.Rendering.Content.Markdown
+                )
+
+              _ ->
+                []
+            end
+          end)
+
+        false ->
+          []
+      end
+
+    ["\n", "Question / Activity: #{activity_id}", stem_content, choices_content, "\n\n"]
   end
 
   def error(%Context{} = context, element, error) do

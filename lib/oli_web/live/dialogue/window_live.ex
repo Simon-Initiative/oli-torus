@@ -1,12 +1,10 @@
-defmodule OliWeb.Dialogue.PlaygroundLive do
+defmodule OliWeb.Dialogue.WindowLive do
   use Phoenix.LiveView, layout: {OliWeb.LayoutView, :live_no_flash}
   use Phoenix.HTML
   import Ecto.Query, warn: false
 
-  alias Oli.Repo
   import Phoenix.Component
 
-  alias OliWeb.Router.Helpers, as: Routes
   alias Oli.Conversation.Dialogue
   alias OliWeb.Dialogue.UserInput
   alias Oli.Conversation.Message
@@ -68,7 +66,7 @@ defmodule OliWeb.Dialogue.PlaygroundLive do
        allow_submission?: true,
        active_message: nil,
        function_call: nil,
-       title: "Dialogue Playground"
+       title: "Dot"
      )}
   end
 
@@ -199,166 +197,5 @@ defmodule OliWeb.Dialogue.PlaygroundLive do
     {:noreply, assign(socket, streaming: true, dialogue: dialogue, allow_submission?: false)}
   end
 
-  def handle_info({:reply_chunk, type, content}, socket) do
-    case type do
-      :function_call ->
-        case socket.assigns.function_call do
-          nil ->
-            {:noreply, assign(socket, function_call: content)}
-
-          fc ->
-            updated =
-              Map.keys(content)
-              |> Enum.reduce(fc, fn key, acc ->
-                case Map.get(acc, key) do
-                  nil -> Map.put(acc, key, content[key])
-                  current_value -> Map.put(acc, key, "#{current_value}#{content[key]}")
-                end
-              end)
-
-            {:noreply, assign(socket, function_call: updated)}
-        end
-
-      :content ->
-        {:noreply, assign(socket, active_message: "#{socket.assigns.active_message}#{content}")}
-    end
-  end
-
-  def handle_info({:summarization_finished, dialogue}, socket) do
-    {:noreply, assign(socket, dialogue: dialogue, allow_submission?: true)}
-  end
-
-  def handle_info({:reply_finished}, socket) do
-    case socket.assigns.function_call do
-      nil ->
-        message = Earmark.as_html!(socket.assigns.active_message)
-        dialogue = Dialogue.add_message(socket.assigns.dialogue, Message.new(:assistant, message))
-
-        allow_submission? =
-          if Dialogue.should_summarize?(dialogue) do
-            pid = self()
-
-            Task.async(fn ->
-              dialogue = Dialogue.summarize(dialogue)
-              send(pid, {:summarization_finished, dialogue})
-            end)
-
-            false
-          else
-            true
-          end
-
-        {:noreply,
-         assign(socket,
-           dialogue: dialogue,
-           streaming: false,
-           active_message: nil,
-           allow_submission?: allow_submission?
-         )}
-
-      fc ->
-        name = String.to_existing_atom(fc["name"])
-
-        as_map = Jason.decode!(fc["arguments"])
-
-        result = apply(__MODULE__, name, [as_map])
-
-        result =
-          case result do
-            result when is_binary(result) -> result
-            result when is_map(result) -> Jason.encode!(result)
-            result when is_list(result) -> Jason.encode!(%{result: result})
-            result -> Kernel.to_string(result)
-          end
-
-        dialogue =
-          Dialogue.add_message(
-            socket.assigns.dialogue,
-            Message.new(:function, result, fc["name"])
-          )
-
-        pid = self()
-
-        Task.async(fn ->
-          Dialogue.engage(dialogue, :async)
-          send(pid, {:reply_finished})
-        end)
-
-        {:noreply, assign(socket, dialogue: dialogue, function_call: nil)}
-    end
-  end
-
-  def handle_info(_, socket) do
-    {:noreply, socket}
-  end
-
-  def memory(%{"memory_type" => type}) do
-    String.to_atom(type)
-    |> :erlang.memory()
-  end
-
-  def avg_score_for(%{"current_user_id" => user_id, "section_id" => section_id}) do
-    Oli.Delivery.Metrics.avg_score_for(section_id, user_id, nil)
-  end
-
-  def up_next(%{"current_user_id" => user_id, "section_id" => section_id}) do
-    get_next_activities_for_student(section_id, user_id)
-  end
-
-  def relevant_course_content(%{"student_input" => input, "section_id" => section_id}) do
-    section = Oli.Delivery.Sections.get_section!(section_id)
-
-    case Oli.Search.Embeddings.most_relevant_pages(input, section_id) do
-      {:ok, relevant_pages} ->
-        Enum.map(relevant_pages, fn page ->
-          revision = Oli.Resources.get_revision!(page.revision_id)
-
-          content =
-            Enum.map(page.chunks, fn chunk ->
-              chunk.content
-            end)
-            |> Enum.join("\n\n")
-
-          %{
-            title: page.title,
-            url: Routes.page_delivery_url(OliWeb.Endpoint, :page, section.slug, revision.slug),
-            content: content
-          }
-        end)
-
-      e ->
-        e
-    end
-  end
-
-  def get_next_activities_for_student(section_id, user_id) do
-    section = Oli.Delivery.Sections.get_section!(section_id)
-    student_pages_query = Oli.Delivery.Sections.get_student_pages(section.slug, user_id)
-
-    ras =
-      Oli.Delivery.Attempts.Core.get_resource_accesses(section.slug, user_id)
-      |> Enum.reduce(%{}, fn ra, acc -> Map.put(acc, ra.resource_id, ra) end)
-
-    query =
-      from(sp in subquery(student_pages_query),
-        where:
-          sp.graded == true and
-            not is_nil(sp.end_date) and
-            sp.end_date >= ^DateTime.utc_now() and
-            sp.resource_type_id == ^Oli.Resources.ResourceType.get_id_by_type("page"),
-        limit: 2
-      )
-
-    query
-    |> Repo.all()
-    |> Enum.map(fn page ->
-      %{
-        title: page.title,
-        url: Routes.page_delivery_path(OliWeb.Endpoint, :page, section.slug, page.slug),
-        due_date: page.end_date,
-        num_attempts_taken:
-          Map.get(ras, page.resource_id, %{resource_attempts_count: 0}).resource_attempts_count
-      }
-    end)
-  end
+  use Oli.Conversation.DialogueHandler
 end
