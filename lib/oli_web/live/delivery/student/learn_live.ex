@@ -295,7 +295,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
             Let's discuss?
           </button>
         </div>
-        <div class="mt-[62px] w-1/2">
+        <div class="mt-[57px] w-1/2">
           <.index module={Map.get(@selected_module_per_unit_uuid, @unit["uuid"])} />
         </div>
       </div>
@@ -325,52 +325,48 @@ defmodule OliWeb.Delivery.Student.LearnLive do
 
   def index(assigns) do
     ~H"""
-    <div
-      :for={{page, page_index} <- Enum.with_index(@module["children"], 1)}
-      class="flex gap-[14px] w-full"
-      role={"page_#{page_index}_details"}
-    >
-      <div class="flex justify-center items-center gap-[10px] h-6 w-6 shrink-0">
-        <svg
-          :if={page["visited"]}
-          xmlns="http://www.w3.org/2000/svg"
-          height="1.25em"
-          viewBox="0 0 448 512"
-          role="visited_check_icon"
-        >
-          <path
-            fill="#1E9531"
-            d="M438.6 105.4c12.5 12.5 12.5 32.8 0 45.3l-256 256c-12.5 12.5-32.8 12.5-45.3 0l-128-128c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0L160 338.7 393.4 105.4c12.5-12.5 32.8-12.5 45.3 0z"
-          />
-        </svg>
-      </div>
+    <div class="flex flex-col gap-[6px] items-start">
       <div
-        phx-click="navigate_to_resource"
-        phx-value-slug={page["revision"]["slug"]}
-        class="flex shrink items-center gap-3 w-full border-b-2 border-gray-600 cursor-pointer hover:bg-gray-200/70 px-2 dark:border-[rgba(255,255,255,0.20);] dark:hover:bg-gray-800 dark:text-white"
+        :for={{page, page_index} <- Enum.with_index(@module["children"], 1)}
+        class="flex items-center gap-[14px] px-[10px] w-full"
+        role={"page_#{page_index}_details"}
       >
-        <span class="text-[16px] leading-[22px] font-normal">
-          <%= "#{@module["module_index_in_unit"]}.#{page_index} #{page["revision"]["title"]}" %>
-        </span>
-        <div class="flex items-center h-[42px] gap-[6px] ml-auto dark:text-white dark:opacity-50">
+        <div role="icon" class="flex justify-center items-center h-7 w-7 shrink-0">
           <svg
+            :if={page["visited"]}
             xmlns="http://www.w3.org/2000/svg"
-            width="20"
-            height="20"
-            viewBox="0 0 20 20"
-            fill="none"
+            height="1.25em"
+            viewBox="0 0 448 512"
+            role="visited_check_icon"
           >
             <path
-              fill="currentColor"
-              d="M18.125 10C18.125 12.1549 17.269 14.2215 15.7452 15.7452C14.2215 17.269 12.1549 18.125 10 18.125C7.84512 18.125 5.77849 17.269 4.25476 15.7452C2.73102 14.2215 1.875 12.1549 1.875 10C1.875 7.84512 2.73102 5.77849 4.25476 4.25476C5.77849 2.73102 7.84512 1.875 10 1.875C12.1549 1.875 14.2215 2.73102 15.7452 4.25476C17.269 5.77849 18.125 7.84512 18.125 10ZM0 10C0 12.6522 1.05357 15.1957 2.92893 17.0711C4.8043 18.9464 7.34784 20 10 20C12.6522 20 15.1957 18.9464 17.0711 17.0711C18.9464 15.1957 20 12.6522 20 10C20 7.34784 18.9464 4.8043 17.0711 2.92893C15.1957 1.05357 12.6522 0 10 0C7.34784 0 4.8043 1.05357 2.92893 2.92893C1.05357 4.8043 0 7.34784 0 10ZM9.0625 4.6875V10C9.0625 10.3125 9.21875 10.6055 9.48047 10.7812L13.2305 13.2812C13.6602 13.5703 14.2422 13.4531 14.5312 13.0195C14.8203 12.5859 14.7031 12.0078 14.2695 11.7188L10.9375 9.5V4.6875C10.9375 4.16797 10.5195 3.75 10 3.75C9.48047 3.75 9.0625 4.16797 9.0625 4.6875Z"
+              fill="#1E9531"
+              d="M438.6 105.4c12.5 12.5 12.5 32.8 0 45.3l-256 256c-12.5 12.5-32.8 12.5-45.3 0l-128-128c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0L160 338.7 393.4 105.4c12.5-12.5 32.8-12.5 45.3 0z"
             />
           </svg>
-          <span class="text-[12px] leading-[16px] font-bold uppercase tracking-[0.96px] w-[15px] text-right">
-            <%= parse_minutes(page["revision"]["duration_minutes"]) %>
+        </div>
+        <div
+          phx-click="navigate_to_resource"
+          phx-value-slug={page["revision"]["slug"]}
+          class="flex shrink items-center gap-3 w-full px-2 dark:text-white cursor-pointer hover:bg-gray-200/70 dark:hover:bg-gray-800"
+        >
+          <span class="text-[12px] leading-[16px] font-bold w-[30px] shrink-0 opacity-40 dark:text-white">
+            <%= "#{page_index}" %>
           </span>
-          <span class="text-[12px] leading-[16px] font-bold uppercase tracking-[0.96px]">
-            min
+          <span class={[
+            "text-[16px] leading-[22px] dark:text-white",
+            if(page["visited"], do: "opacity-50")
+          ]}>
+            <%= "#{page["revision"]["title"]}" %>
           </span>
+          <div class="text-right dark:text-white opacity-50 whitespace-nowrap ml-auto">
+            <span class="text-[12px] leading-[16px] font-bold uppercase tracking-[0.96px] text-right">
+              <%= parse_minutes(page["revision"]["duration_minutes"]) %>
+              <span class="text-[9px] font-bold uppercase tracking-[0.72px] text-right">
+                min
+              </span>
+            </span>
+          </div>
         </div>
       </div>
     </div>
