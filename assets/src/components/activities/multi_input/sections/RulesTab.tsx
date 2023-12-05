@@ -1,17 +1,12 @@
 import React from 'react';
 import { useAuthoringElementContext } from 'components/activities/AuthoringElementProvider';
 import { ChoicesDelivery } from 'components/activities/common/choices/delivery/ChoicesDelivery';
-import {
-  Dropdown,
-  MultiInput,
-  MultiInputSchema,
-} from 'components/activities/multi_input/schema';
+import { Dropdown, MultiInput, MultiInputSchema } from 'components/activities/multi_input/schema';
 import { getCorrectChoice } from 'components/activities/multiple_choice/utils';
 import { InputEntry } from 'components/activities/short_answer/sections/InputEntry';
-import { Radio } from 'components/misc/icons/radio/Radio';
 import { Response, ResponseId } from 'components/activities/types';
+import { Radio } from 'components/misc/icons/radio/Radio';
 import { defaultWriterContext } from 'data/content/writers/context';
-
 
 interface Props {
   input: MultiInput;
@@ -20,8 +15,7 @@ interface Props {
   editRule: (id: ResponseId, inputId: string, rule: string) => void;
 }
 export const RulesTab: React.FC<Props> = (props) => {
-  const { model, projectSlug } =
-    useAuthoringElementContext<MultiInputSchema>();
+  const { model, projectSlug } = useAuthoringElementContext<MultiInputSchema>();
 
   if (props.input.inputType === 'dropdown') {
     const choices = model.choices.filter((choice) =>

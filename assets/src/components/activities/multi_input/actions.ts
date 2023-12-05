@@ -220,7 +220,10 @@ export const MultiInputActions = {
       // if the choice being removed is the correct choice, a new correct choice
       // must be set
       const authoringClone = clone(model.authoring);
-      if (getCorrectResponse(model, input.partId).rule === replaceWithInputRef(inputId, matchRule(choiceId))) {
+      if (
+        getCorrectResponse(model, input.partId).rule ===
+        replaceWithInputRef(inputId, matchRule(choiceId))
+      ) {
         MCActions.toggleChoiceCorrectness(input.choiceIds[0], input.partId)(model, post);
       }
 

@@ -144,14 +144,13 @@ export const inputTitle = (input: MultiInput, index: number) => (
 );
 
 export const purseMultiInputRule = (rule: string): any => {
-
   const ruleRegex = RegExp('input_ref_.*?}', 'g');
 
   let reg;
-  const entries: Map<string, string> = new Map<string,string>();
+  const entries: Map<string, string> = new Map<string, string>();
 
   while ((reg = ruleRegex.exec(rule)) !== null) {
-    entries.set(reg[0].split('_')[2].split(' ')[0], reg[0])
+    entries.set(reg[0].split('_')[2].split(' ')[0], reg[0]);
   }
   return Object.fromEntries(entries);
 };
@@ -288,7 +287,7 @@ function matchInputsToParts(model: MultiInputSchema) {
         ? MultiInputResponses.forNumericInput(input.id)
         : MultiInputResponses.forTextInput(input.id),
     );
-    console.log('---unmatchedInputs')
+    console.log('---unmatchedInputs');
     model.authoring.parts.push(part);
   });
 
@@ -343,7 +342,7 @@ function matchInputsToInputRefs(model: MultiInputSchema) {
     // create new input and part for the input ref in the stem
     const part = makePart(MultiInputResponses.forTextInput(ref.id), [makeHint('')]);
     model.inputs.push({ id: ref.id, inputType: 'text', partId: part.id } as MultiInput);
-    console.log('----unmatchedInputRefs')
+    console.log('----unmatchedInputRefs');
     model.authoring.parts.push(part);
   });
   return model;

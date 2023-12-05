@@ -62,12 +62,16 @@ export const MultiInputComponent = () => {
           <TabbedNavigation.Tab label="Input">
             <QuestionTab editor={editor} input={input} index={index} />
           </TabbedNavigation.Tab>
-          {model.multInputsPerPart && <TabbedNavigation.Tab label="Parts">
-            <PartsTab editor={editor} input={input} index={index} />
-          </TabbedNavigation.Tab>}
-          {!model.multInputsPerPart && <TabbedNavigation.Tab label="Answer Key">
-            <AnswerKeyTab input={input} />
-          </TabbedNavigation.Tab>}
+          {model.multInputsPerPart && (
+            <TabbedNavigation.Tab label="Parts">
+              <PartsTab editor={editor} input={input} index={index} />
+            </TabbedNavigation.Tab>
+          )}
+          {!model.multInputsPerPart && (
+            <TabbedNavigation.Tab label="Answer Key">
+              <AnswerKeyTab input={input} />
+            </TabbedNavigation.Tab>
+          )}
           <TabbedNavigation.Tab label="Hints">
             <HintsTab input={input} index={index} />
           </TabbedNavigation.Tab>
