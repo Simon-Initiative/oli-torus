@@ -261,8 +261,8 @@ defmodule OliWeb.Delivery.Student.LearnLive do
           ) %>
         </span>
       </div>
-      <div role="intro content and index" class="flex">
-        <div class="w-1/2 flex flex-col px-6">
+      <div role="intro content and index" class="flex gap-12">
+        <div class="w-1/2 flex flex-col">
           <div
             :if={
               Map.get(@selected_module_per_unit_uuid, @unit["uuid"])["revision"]["intro_content"][
@@ -290,7 +290,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
           </div>
           <button
             phx-click="open_dot_bot"
-            class="rounded-[4px] p-[10px] flex justify-center items-center mr-auto mt-[42px] text-[14px] leading-[19px] tracking-[0.024px] font-normal text-white bg-blue-500 hover:bg-blue-600 dark:text-white dark:bg-[rgba(255,255,255,0.10);] dark:hover:bg-gray-800"
+            class="rounded-[4px] p-[10px] flex justify-center items-center ml-auto mt-[42px] text-[14px] leading-[19px] tracking-[0.024px] font-normal text-white bg-blue-500 hover:bg-blue-600 dark:text-white dark:bg-[rgba(255,255,255,0.10);] dark:hover:bg-gray-800"
           >
             Let's discuss?
           </button>
