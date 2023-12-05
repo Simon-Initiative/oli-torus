@@ -362,6 +362,8 @@ defmodule OliWeb.Components.Delivery.Surveys do
     # Bloque agrega a la revision los campos
     # A, B, C, D
 
+    # Bucear adentro de esto para unificar todo y que devuelva el activity mapper
+
     # |> Enum.map(fn activity ->
     #   Map.put(activity, :preview_rendered, get_preview_rendered(activity, socket))
     #   |> add_activity_attempts_info(students, student_ids, section)
@@ -603,7 +605,10 @@ defmodule OliWeb.Components.Delivery.Surveys do
       group_by: [rev.resource_id, rev.id],
       select: %{
         rev
-        | total_attempts: count(aa.id),
+        | # necesitamos realmente TOOODOS los campos de la revision????
+          # map(rev, [:id, :title, :content, :resource_id, :graded, :total_count, :page_type, :parent_slug]) ---> esto en lugar de rev
+          # y nos evitamos agregar los campos total_attempts y avg_score como virtual en el struct de Revision
+          total_attempts: count(aa.id),
           avg_score:
             sum(aa.score) /
               fragment("CASE WHEN SUM(?) = 0.0 THEN 1.0 ELSE SUM(?) END", aa.out_of, aa.out_of)
