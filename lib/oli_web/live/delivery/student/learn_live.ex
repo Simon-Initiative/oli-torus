@@ -296,7 +296,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
           </button>
         </div>
         <div class="mt-[57px] w-1/2">
-          <.index module={Map.get(@selected_module_per_unit_uuid, @unit["uuid"])} />
+          <.module_index module={Map.get(@selected_module_per_unit_uuid, @unit["uuid"])} />
         </div>
       </div>
       <div role="collapse_bar" class="flex items-center justify-center py-[6px] px-[10px] mt-6">
@@ -323,17 +323,103 @@ defmodule OliWeb.Delivery.Student.LearnLive do
 
   attr :module, :map
 
-  def index(assigns) do
+  def module_index(assigns) do
     ~H"""
+    <video
+      :if={module_has_intro_video(@module)}
+      id={"video_#{@module["uuid"]}"}
+      class="hidden"
+      controls
+    >
+      <source src={@module["revision"]["intro_video"]} type="video/mp4" />
+      Your browser does not support the video tag.
+    </video>
     <div class="flex flex-col gap-[6px] items-start">
+      <.index_item
+        :if={module_has_intro_video(@module)}
+        title="Introduction"
+        type="intro"
+        numbering_index={1}
+        was_visited={false}
+        graded={@module["revision"]["graded"]}
+        duration_minutes={@module["revision"]["duration_minutes"]}
+        revision_slug={@module["revision"]["slug"]}
+        uuid={@module["uuid"]}
+      />
+
+      <.index_item
+        :for={
+          {page, page_index} <-
+            Enum.with_index(@module["children"], if(module_has_intro_video(@module), do: 2, else: 1))
+        }
+        title={page["revision"]["title"]}
+        type="page"
+        numbering_index={page_index}
+        was_visited={page["visited"]}
+        duration_minutes={page["revision"]["duration_minutes"]}
+        graded={page["revision"]["graded"]}
+        revision_slug={page["revision"]["slug"]}
+        uuid={@module["uuid"]}
+      />
+    </div>
+    """
+  end
+
+  attr :title, :string
+  attr :type, :string
+  attr :numbering_index, :integer
+  attr :was_visited, :boolean
+  attr :duration_minutes, :integer
+  attr :revision_slug, :string
+  attr :graded, :boolean
+  attr :uuid, :string
+
+  def index_item(assigns) do
+    ~H"""
+    <div
+      role={"page_#{@numbering_index}_details"}
+      class="flex items-center gap-[14px] px-[10px] w-full"
+    >
+      <.index_item_icon item_type={@type} was_visited={@was_visited} graded={@graded} />
       <div
-        :for={{page, page_index} <- Enum.with_index(@module["children"], 1)}
-        class="flex items-center gap-[14px] px-[10px] w-full"
-        role={"page_#{page_index}_details"}
+        id={@uuid}
+        phx-click={if @type != "intro", do: "navigate_to_resource"}
+        phx-hook={if @type == "intro", do: "VideoPlayer"}
+        phx-value-slug={@revision_slug}
+        class="flex shrink items-center gap-3 w-full px-2 dark:text-white cursor-pointer hover:bg-gray-200/70 dark:hover:bg-gray-800"
       >
-        <div role="icon" class="flex justify-center items-center h-7 w-7 shrink-0">
+        <span class="text-[12px] leading-[16px] font-bold w-[30px] shrink-0 opacity-40 dark:text-white">
+          <%= "#{@numbering_index}" %>
+        </span>
+        <span class={[
+          "text-[16px] leading-[22px] dark:text-white",
+          if(@was_visited, do: "opacity-50")
+        ]}>
+          <%= "#{@title}" %>
+        </span>
+        <div class="text-right dark:text-white opacity-50 whitespace-nowrap ml-auto">
+          <span class="text-[12px] leading-[16px] font-bold uppercase tracking-[0.96px] text-right">
+            <%= parse_minutes(@duration_minutes) %>
+            <span class="text-[9px] font-bold uppercase tracking-[0.72px] text-right">
+              min
+            </span>
+          </span>
+        </div>
+      </div>
+    </div>
+    """
+  end
+
+  attr :item_type, :string
+  attr :was_visited, :boolean
+  attr :graded, :boolean
+
+  def index_item_icon(assigns) do
+    case {assigns.was_visited, assigns.item_type} do
+      {true, "page"} ->
+        ~H"""
+        <div role="check icon" class="flex justify-center items-center h-7 w-7 shrink-0">
           <svg
-            :if={page["visited"]}
             xmlns="http://www.w3.org/2000/svg"
             height="1.25em"
             viewBox="0 0 448 512"
@@ -345,32 +431,26 @@ defmodule OliWeb.Delivery.Student.LearnLive do
             />
           </svg>
         </div>
-        <div
-          phx-click="navigate_to_resource"
-          phx-value-slug={page["revision"]["slug"]}
-          class="flex shrink items-center gap-3 w-full px-2 dark:text-white cursor-pointer hover:bg-gray-200/70 dark:hover:bg-gray-800"
-        >
-          <span class="text-[12px] leading-[16px] font-bold w-[30px] shrink-0 opacity-40 dark:text-white">
-            <%= "#{page_index}" %>
-          </span>
-          <span class={[
-            "text-[16px] leading-[22px] dark:text-white",
-            if(page["visited"], do: "opacity-50")
-          ]}>
-            <%= "#{page["revision"]["title"]}" %>
-          </span>
-          <div class="text-right dark:text-white opacity-50 whitespace-nowrap ml-auto">
-            <span class="text-[12px] leading-[16px] font-bold uppercase tracking-[0.96px] text-right">
-              <%= parse_minutes(page["revision"]["duration_minutes"]) %>
-              <span class="text-[9px] font-bold uppercase tracking-[0.72px] text-right">
-                min
-              </span>
-            </span>
-          </div>
+        """
+
+      {false, "page"} ->
+        ~H"""
+        <div role="no icon" class="flex justify-center items-center h-7 w-7 shrink-0"></div>
+        """
+
+      {_, "intro"} ->
+        ~H"""
+        <div role="video icon" class="flex justify-center items-center h-7 w-7 shrink-0">
+          <svg xmlns="http://www.w3.org/2000/svg" height="16" width="16" viewBox="0 0 512 512">
+            <!--!Font Awesome Free 6.5.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2023 Fonticons, Inc.-->
+            <path
+              fill="#1E9531"
+              d="M0 256a256 256 0 1 1 512 0A256 256 0 1 1 0 256zM188.3 147.1c-7.6 4.2-12.3 12.3-12.3 20.9V344c0 8.7 4.7 16.7 12.3 20.9s16.8 4.1 24.3-.5l144-88c7.1-4.4 11.5-12.1 11.5-20.5s-4.4-16.1-11.5-20.5l-144-88c-7.4-4.5-16.7-4.7-24.3-.5z"
+            />
+          </svg>
         </div>
-      </div>
-    </div>
-    """
+        """
+    end
   end
 
   attr :title, :string, default: "Intro"
@@ -657,4 +737,6 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   defp maybe_scroll_y_to_unit(socket, unit_uuid, true) do
     push_event(socket, "scroll-to-target", %{id: "unit_#{unit_uuid}", offset: 80})
   end
+
+  defp module_has_intro_video(module), do: module["revision"]["intro_video"] != nil
 end
