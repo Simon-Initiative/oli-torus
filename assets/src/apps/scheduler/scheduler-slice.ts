@@ -2,8 +2,12 @@ import { createSlice } from '@reduxjs/toolkit';
 import type { PayloadAction } from '@reduxjs/toolkit';
 import { DateWithoutTime } from 'epoq';
 import { toDateWithoutTime } from './date-utils';
-import { resetScheduleItem } from './schedule-reset';
-import { scheduleAppFlushChanges, scheduleAppStartup } from './scheduling-thunk';
+import { clearScheduleItem, resetScheduleItem } from './schedule-reset';
+import {
+  clearSectionSchedule,
+  scheduleAppFlushChanges,
+  scheduleAppStartup,
+} from './scheduling-thunk';
 
 export enum ScheduleItemType {
   Page = 1,
@@ -315,6 +319,17 @@ const schedulerSlice = createSlice({
     },
   },
   extraReducers: (builder) => {
+    builder.addCase(clearSectionSchedule.pending, (state, action) => {
+      state.saving = true;
+    });
+
+    builder.addCase(clearSectionSchedule.fulfilled, (state, action) => {
+      const root = getScheduleRoot(state.schedule);
+      root && clearScheduleItem(root, state.schedule);
+      state.dirty = [];
+      state.saving = false;
+    });
+
     builder.addCase(scheduleAppStartup.pending, (state, action) => {
       state.appLoading = true;
     });
@@ -381,6 +396,7 @@ const schedulerSlice = createSlice({
 export const {
   moveScheduleItem,
   resetSchedule,
+  clearSchedule,
   selectItem,
   unlockScheduleItem,
   changeScheduleType,

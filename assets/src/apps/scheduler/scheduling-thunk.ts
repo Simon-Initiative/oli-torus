@@ -3,9 +3,9 @@ import uniq from 'lodash/uniq';
 import { dateTimeInTorusFormat, dateWithoutTimeLabel } from './date-utils';
 import { SchedulerAppState } from './scheduler-reducer';
 import { StringDate, getScheduleItem } from './scheduler-slice';
-import { ScheduleUpdate, loadSchedule, updateSchedule } from './scheduling-service';
+import { ScheduleUpdate, clearSchedule, loadSchedule, updateSchedule } from './scheduling-service';
 
-interface Payload {
+interface StartupPayload {
   start_date: StringDate;
   end_date: StringDate;
   title: string;
@@ -13,6 +13,17 @@ interface Payload {
   display_curriculum_item_numbering: boolean;
   preferred_scheduling_time: string;
 }
+
+interface ClearPayload {
+  section_slug: string;
+}
+
+export const clearSectionSchedule = createAsyncThunk(
+  'schedule/clear',
+  async (param: ClearPayload, thunkAPI) => {
+    return clearSchedule(param.section_slug);
+  },
+);
 
 export const scheduleAppFlushChanges = createAsyncThunk(
   'schedule/flushChanges',
@@ -69,7 +80,7 @@ export const scheduleAppStartup = createAsyncThunk(
       section_slug,
       display_curriculum_item_numbering,
       preferred_scheduling_time,
-    }: Payload,
+    }: StartupPayload,
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     thunkAPI,
   ) => {
