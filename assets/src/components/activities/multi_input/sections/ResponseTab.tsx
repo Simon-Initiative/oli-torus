@@ -44,11 +44,13 @@ export const ResponseTab: React.FC<Props> = (props) => {
         updatedRule = updatedRule === '' ? editedRule : updatedRule + ruleSeparator + editedRule;
       } else {
         updatedRule =
-          updatedRule === '' ? ''+inputRules.get(k) : updatedRule + ruleSeparator + inputRules.get(k);
+          updatedRule === ''
+            ? '' + inputRules.get(k)
+            : updatedRule + ruleSeparator + inputRules.get(k);
       }
     });
     if (matchStyle === 'none') {
-      updatedRule = '!('+ updatedRule + ')';
+      updatedRule = '!(' + updatedRule + ')';
     }
     console.log('updated rule -- ' + updatedRule);
     return updatedRule;
