@@ -466,6 +466,7 @@ export const makeTransformation = (
         firstAttemptOnly,
       };
 
+export type MatchStyle = 'any' | 'all' | 'none';
 /**
  * Defines a response.
  */
@@ -494,9 +495,11 @@ export interface Response extends Identifiable {
    */
   showPage?: number;
 
-  matchStyle?: 'any' | 'all' | 'none';
+  matchStyle?: MatchStyle;
 
   inputRefs?: string[];
+
+  catchAll?: boolean;
 }
 
 /**
@@ -582,7 +585,7 @@ export interface Part extends Identifiable {
   gradingApproach?: GradingApproach;
   outOf?: null | number;
   incorrectScore?: null | number;
-  targets?: string[];
+  targets?: string[]
 }
 
 /**
@@ -598,7 +601,7 @@ export const makePart = (
   // Multiinput activity parts start with just one hint
   hints = [makeHint(''), makeHint(''), makeHint('')],
   id?: ID,
-  targets: string[] = [],
+  targets: string[] = []
 ): Part => ({
   id: id ? id : guid(),
   gradingApproach: GradingApproach.automatic,

@@ -48,8 +48,11 @@ export const multiInputStem = (input: InputRef) => ({
 });
 
 export const MultiInputResponses = {
-  catchAll: (inputId: string, text = 'Incorrect') =>
-    addRef(inputId, makeResponse(replaceWithInputRef(inputId, matchRule('.*')), 0, text)),
+  catchAll: (inputId: string, text = 'Incorrect') => {
+    const catchAllRespose = makeResponse(replaceWithInputRef(inputId, matchRule('.*')), 0, text);
+    catchAllRespose.catchAll = true;
+    return addRef(inputId, catchAllRespose)
+  },
   forTextInput: (inputId: string, correctText = 'Correct', incorrectText = 'Incorrect') => [
     addRef(
       inputId,
@@ -152,7 +155,7 @@ export const purseMultiInputRule = (rule: string): any => {
   while ((reg = ruleRegex.exec(rule)) !== null) {
     entries.set(reg[0].split('_')[2].split(' ')[0], reg[0]);
   }
-  return Object.fromEntries(entries);
+  return entries;
 };
 
 export function guaranteeMultiInputValidity(model: MultiInputSchema): MultiInputSchema {

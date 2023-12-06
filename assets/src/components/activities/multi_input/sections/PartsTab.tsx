@@ -21,7 +21,7 @@ export const PartsTab: React.FC<Props> = (props) => {
   const parts = getParts(model);
 
   const getResponsesBody = (part: Part) => {
-    return part.responses.map((response, index) => (
+    return part.responses.map((response, index) => response.catchAll ? null :(
       <ResponseTab key={response.id} response={response} />
     ));
   };

@@ -166,6 +166,18 @@ export const MultiInputActions = {
     };
   },
 
+  editResponseMultiRule(id: ResponseId, rule: string) {
+    return (draftState: HasParts) => {
+      getResponseBy(draftState, (r) => r.id === id).rule = rule;
+    };
+  },
+
+  toggleMultiChoice(id: ResponseId, rule: string) {
+    return (draftState: HasParts) => {
+      getResponseBy(draftState, (r) => r.id === id).rule = rule;
+    };
+  },
+
   addChoice(inputId: string, choice: Choice) {
     return (model: MultiInputSchema) => {
       const input = model.inputs.find((input) => input.id === inputId);

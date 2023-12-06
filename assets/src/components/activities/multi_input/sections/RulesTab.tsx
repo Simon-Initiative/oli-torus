@@ -2,7 +2,6 @@ import React from 'react';
 import { useAuthoringElementContext } from 'components/activities/AuthoringElementProvider';
 import { ChoicesDelivery } from 'components/activities/common/choices/delivery/ChoicesDelivery';
 import { Dropdown, MultiInput, MultiInputSchema } from 'components/activities/multi_input/schema';
-import { getCorrectChoice } from 'components/activities/multiple_choice/utils';
 import { InputEntry } from 'components/activities/short_answer/sections/InputEntry';
 import { Response, ResponseId } from 'components/activities/types';
 import { Radio } from 'components/misc/icons/radio/Radio';
@@ -22,10 +21,9 @@ export const RulesTab: React.FC<Props> = (props) => {
       (props.input as Dropdown).choiceIds.includes(choice.id),
     );
 
-    const correctChoice = getCorrectChoice(model, props.input.partId).caseOf({
-      just: (choice) => choice,
-      nothing: () => choices[0],
-    });
+    let value = props.response.rule.substring(props.response.rule.indexOf('{') + 1);
+    value = value.substring(0, value.indexOf('}'));
+    if (value === '.*') value = choices[0].id;
 
     return (
       <>
@@ -33,7 +31,7 @@ export const RulesTab: React.FC<Props> = (props) => {
           unselectedIcon={<Radio.Unchecked />}
           selectedIcon={<Radio.Checked />}
           choices={choices}
-          selected={[correctChoice.id]}
+          selected={[value]}
           onSelect={(id) => props.toggleCorrectness(id, props.input.partId, props.input.id)}
           isEvaluated={false}
           context={defaultWriterContext({ projectSlug: projectSlug })}

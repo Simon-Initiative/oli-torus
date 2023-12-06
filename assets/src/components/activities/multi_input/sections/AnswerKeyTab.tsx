@@ -25,6 +25,7 @@ import { containsRule, eqRule, equalsRule } from 'data/activities/model/rules';
 import { defaultWriterContext } from 'data/content/writers/context';
 import { MultiInputScoringMethod } from '../MultiInputScoringMethod';
 import { MultiInputActions } from '../actions';
+import { addRef } from '../utils';
 
 const defaultRuleForInputType = (inputType: string | undefined) => {
   switch (inputType) {
@@ -40,7 +41,7 @@ const defaultRuleForInputType = (inputType: string | undefined) => {
 
 export const addTargetedFeedbackFillInTheBlank = (input: FillInTheBlank) =>
   ResponseActions.addResponse(
-    makeResponse(defaultRuleForInputType(input.inputType), 0, ''),
+    addRef(input.id, makeResponse(defaultRuleForInputType(input.inputType), 0, '')),
     input.partId,
   );
 
