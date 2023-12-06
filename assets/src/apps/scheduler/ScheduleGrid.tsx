@@ -11,8 +11,9 @@ interface GridProps {
   startDate: string;
   endDate: string;
   onReset: () => void;
+  onClear: () => void;
 }
-export const ScheduleGrid: React.FC<GridProps> = ({ startDate, endDate, onReset }) => {
+export const ScheduleGrid: React.FC<GridProps> = ({ startDate, endDate, onReset, onClear }) => {
   const [barContainer, attachBarContainer] = useCallbackRef<HTMLElement>();
   const rect = useResizeObserver(barContainer || null);
 
@@ -30,9 +31,16 @@ export const ScheduleGrid: React.FC<GridProps> = ({ startDate, endDate, onReset 
 
   return (
     <div className="pb-20">
-      <div className="flex container justify-end">
+      <div className="flex container justify-end gap-x-4">
         <button className=" text-delivery-primary uppercase underline" onClick={onReset}>
           Reset Timelines
+        </button>
+        <button
+          id="clear-schedule"
+          className=" text-delivery-primary uppercase underline"
+          onClick={onClear}
+        >
+          Clear Timelines
         </button>
       </div>
 
