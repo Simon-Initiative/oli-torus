@@ -91,12 +91,16 @@ defmodule Oli.Delivery.Sections.Scheduling do
     end
   end
 
-  def clear(%Section{id: section_id}, _timezone) do
+  @doc """
+  Clear the scheduling for all section resources for a given course section.
+  """
+
+  def clear(%Section{id: section_id}) do
     from(
       sr in SectionResource,
       where: sr.section_id == ^section_id
     )
-    |> Repo.update_all(set: [start_date: nil, end_date: nil, manually_scheduled: false])
+    |> Repo.update_all(set: [start_date: nil, end_date: nil])
   end
 
   defp is_valid_update?(updates) do

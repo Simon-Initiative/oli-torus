@@ -173,16 +173,15 @@ defmodule OliWeb.Api.SchedulingController do
 
   def clear(conn, %{"section_slug" => _section_slug}) do
     section = conn.assigns.section
-    ctx = SessionContext.init(conn)
 
     if can_access_section?(conn, section) do
-      case Scheduling.clear(section, ctx.local_tz) do
-        {_count, nil} ->
+      case Scheduling.clear(section) do
+        {changes_count, nil} when is_integer(changes_count) ->
           conn
           |> json(%{"result" => "success"})
 
-        e ->
-          error(conn, 500, e)
+        error ->
+          error(conn, 500, error)
       end
     else
       error(conn, 401, "Unauthorized")
