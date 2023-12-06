@@ -404,8 +404,7 @@ defmodule OliWeb.LegacySuperactivityController do
 
           rest =
             ActivityEvaluation.rollup_part_attempt_evaluations(
-              context.activity_attempt.attempt_guid,
-              :normalize
+              context.activity_attempt.attempt_guid
             )
 
           rest

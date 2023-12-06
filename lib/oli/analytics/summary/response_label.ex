@@ -8,6 +8,7 @@ defmodule Oli.Analytics.Summary.ResponseLabel do
   def build(_part_attempt, "oli_adaptive"), do: unsupported()
   def build(_part_attempt, "oli_embedded"), do: unsupported()
   def build(_part_attempt, "oli_image_coding"), do: unsupported()
+  def build(_part_attempt, "oli_directed_discussion"), do: unsupported()
 
   def build(part_attempt, "oli_multiple_choice"), do: from_choices(part_attempt)
   def build(part_attempt, "oli_ordering"), do: from_choices(part_attempt)
@@ -39,7 +40,7 @@ defmodule Oli.Analytics.Summary.ResponseLabel do
 
   def build(part_attempt, "oli_multi_input") do
     case Enum.find(part_attempt.activity_revision.content["inputs"], fn input ->
-           input["partId"] == part_attempt.id
+           input["partId"] == part_attempt.part_id
          end) do
       %{"inputType" => "text"} ->
         build(part_attempt, "oli_short_answer")

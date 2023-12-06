@@ -37,13 +37,8 @@ with the Torus server running directly on the host machine.
    ```
 
 1. Configure `oli.env` for running natively:
-   REPLACE:
 
-   ```
-   DB_HOST=postgres
-   ```
-
-   WITH:
+   Make sure `DB_HOST` is set to `localhost` (as opposed to `postgress`).
 
    ```
    DB_HOST=localhost
@@ -60,6 +55,12 @@ with the Torus server running directly on the host machine.
    ```
    $ mix deps.get
    $ cd assets && yarn
+   ```
+
+1. Build frontend assets
+
+   ```
+   $ yarn deploy
    ```
 
 1. Create database
@@ -106,6 +107,10 @@ with the Torus server running directly on the host machine.
 
 > In order to sign in, you must use **https** and accept the self-signed cert browser warning to avoid CSRF issues. If you would like to provide your own cert instead of accepting the included one, simply replace `priv/ssl/localhost.crt` -or- use the localhost tunneling method below to generate a public URL with SSL enabled.
 
+> To access email verification message and activate your locally-created account, visit `http://localhost/dev/sent_emails`.
+
+> Default administrator credentials are defined in `oli.env` as `ADMIN_EMAIL` and `ADMIN_PASSWORD`. These values are only used to seed the database during `mix ecto.setup` / `mix ecto.reset`.
+
 > Docker is not a strict dependency. We use it here to simplify the install and running of Postgres. You can choose to install and run Postgres bare-metal, but you will not be able to use the **Mostly Automated Steps** above (since the `./devmode.sh` script depends on Docker).
 
 ## Running Tests
@@ -115,7 +120,7 @@ with the Torus server running directly on the host machine.
 1. Run JavaScript tests
 
    ```
-   $ cd assets && npm run test
+   $ cd assets && yarn test
    ```
 
 1. Run elixir tests

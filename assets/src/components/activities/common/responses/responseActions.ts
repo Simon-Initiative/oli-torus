@@ -47,6 +47,12 @@ export const ResponseActions = {
     };
   },
 
+  editResponseScore(responseId: ResponseId, score: number) {
+    return (model: HasParts) => {
+      getResponseBy(model, (r) => r.id === responseId).score = score;
+    };
+  },
+
   editResponseCorrectness(responseId: ResponseId, correct: boolean) {
     return (model: HasParts) => {
       getResponseBy(model, (r) => r.id === responseId).score = correct ? 1 : 0;

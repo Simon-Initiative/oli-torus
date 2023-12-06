@@ -410,8 +410,8 @@ defmodule OliWeb.PageDeliveryControllerTest do
 
       # fetch the resource id record and verify the grade rolled up
       [access] = Oli.Repo.all(ResourceAccess)
-      assert abs(access.score - 0.909) < 0.01
-      assert access.out_of == 1
+      assert access.score == 10.0
+      assert access.out_of == 11.0
 
       # now visit the page again, verifying that we see the prologue, but this time it
       # does not allow us to start a new attempt

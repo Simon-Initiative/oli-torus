@@ -532,17 +532,23 @@ defmodule OliWeb.Resources.PagesView do
 
   def handle_event(
         "MoveModal.move_item",
-        %{"uuid" => uuid, "to_uuid" => to_uuid, "from_uuid" => from_uuid},
+        %{"to_uuid" => to_uuid} = params,
         socket
       ) do
     %{
       author: author,
       project: project,
-      modal_assigns: %{hierarchy: hierarchy}
+      modal_assigns: %{node: node, hierarchy: hierarchy}
     } = socket.assigns
 
-    %{revision: revision} = Hierarchy.find_in_hierarchy(hierarchy, uuid)
-    %{revision: from_container} = Hierarchy.find_in_hierarchy(hierarchy, from_uuid)
+    %{revision: revision} = node
+
+    %{revision: from_container} =
+      case params["from_uuid"] do
+        nil -> %{revision: nil}
+        from_uuid -> Hierarchy.find_in_hierarchy(hierarchy, from_uuid)
+      end
+
     %{revision: to_container} = Hierarchy.find_in_hierarchy(hierarchy, to_uuid)
 
     {:ok, _} = ContainerEditor.move_to(revision, from_container, to_container, author, project)

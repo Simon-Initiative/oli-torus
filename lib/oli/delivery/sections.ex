@@ -1412,8 +1412,19 @@ defmodule Oli.Delivery.Sections do
                 sr,
                 :children,
                 Enum.map(hierarchy_definition[sr.resource_id] || [], fn child_resource_id ->
-                  section_resources_by_resource_id[child_resource_id].id
+                  case section_resources_by_resource_id[child_resource_id] do
+                    nil ->
+                      Logger.error(
+                        "Resource #{child_resource_id} is referenced in the hierarchy but does not exist in the publication"
+                      )
+
+                      nil
+
+                    %SectionResource{id: id} ->
+                      id
+                  end
                 end)
+                |> Enum.filter(&(&1 != nil))
               )
               |> Map.take([:id, :children, :inserted_at, :updated_at])
 
@@ -1483,23 +1494,31 @@ defmodule Oli.Delivery.Sections do
         children,
         {[], numbering_tracker, slugs},
         fn resource_id, {processed_children, numbering_tracker, slugs} ->
-          %PublishedResource{revision: child} = published_resources_by_resource_id[resource_id]
+          case published_resources_by_resource_id[resource_id] do
+            nil ->
+              Logger.error(
+                "Resource #{resource_id} is referenced in the hierarchy but does not exist in the publication"
+              )
 
-          {section_resources, numbering_tracker, slugs} =
-            build_section_resource_insertion(%{
-              section: section,
-              publication: publication,
-              published_resources_by_resource_id: published_resources_by_resource_id,
-              processed_ids: processed_ids,
-              revision: child,
-              level: level + 1,
-              numbering_tracker: numbering_tracker,
-              hierarchy_definition: hierarchy_definition,
-              date: date,
-              slugs: slugs
-            })
+              {processed_children, numbering_tracker, slugs}
 
-          {section_resources ++ processed_children, numbering_tracker, slugs}
+            %PublishedResource{revision: child} ->
+              {section_resources, numbering_tracker, slugs} =
+                build_section_resource_insertion(%{
+                  section: section,
+                  publication: publication,
+                  published_resources_by_resource_id: published_resources_by_resource_id,
+                  processed_ids: processed_ids,
+                  revision: child,
+                  level: level + 1,
+                  numbering_tracker: numbering_tracker,
+                  hierarchy_definition: hierarchy_definition,
+                  date: date,
+                  slugs: slugs
+                })
+
+              {section_resources ++ processed_children, numbering_tracker, slugs}
+          end
         end
       )
 
@@ -3386,13 +3405,14 @@ defmodule Oli.Delivery.Sections do
               page_id in container.children
             end) do
          nil ->
-           nil
+           {nil, nil}
 
          %{numbering_level: 0} ->
-           nil
+           {nil, nil}
 
          c ->
-           ~s{#{get_container_label(c.numbering_level, c.customizations || Map.from_struct(CustomLabels.default()))} #{c.numbering_index}: #{c.title}}
+           {c.id,
+            ~s{#{get_container_label(c.numbering_level, c.customizations || Map.from_struct(CustomLabels.default()))} #{c.numbering_index}: #{c.title}}}
        end}
     end)
     |> Enum.into(%{})

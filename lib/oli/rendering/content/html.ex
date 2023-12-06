@@ -53,9 +53,14 @@ defmodule Oli.Rendering.Content.Html do
   end
 
   def img(%Context{} = context, _, %{"src" => src} = attrs) do
-    captioned_content(context, attrs, [
-      ~s|<img class="figure-img img-fluid"#{maybeAlt(attrs)}#{maybeWidth(attrs)} src="#{escape_xml!(src)}"/>\n|
-    ])
+    captioned_content(
+      context,
+      attrs,
+      [
+        ~s|<img class="figure-img img-fluid"#{maybeAlt(attrs)}#{maybeWidth(attrs)} src="#{escape_xml!(src)}"/>\n|
+      ],
+      "image"
+    )
   end
 
   def img(%Context{} = _context, _, _e), do: ""
@@ -481,7 +486,7 @@ defmodule Oli.Rendering.Content.Html do
         %{"subtype" => "latex", "src" => src},
         true
       ) do
-    ["<span class=\"#{formula_class(true)}\">\\(", escape_xml!(src), "\\)</span>\n"]
+    ["<span class=\"#{formula_class(true)}\">\\(", escape_xml!(fix_nl(src)), "\\)</span>\n"]
   end
 
   def formula(
@@ -490,7 +495,7 @@ defmodule Oli.Rendering.Content.Html do
         %{"subtype" => "latex", "src" => src},
         false
       ) do
-    ["<span class=\"#{formula_class(false)}\">\\[", escape_xml!(src), "\\]</span>\n"]
+    ["<span class=\"#{formula_class(false)}\">\\[", escape_xml!(fix_nl(src)), "\\]</span>\n"]
   end
 
   def formula(
@@ -504,6 +509,15 @@ defmodule Oli.Rendering.Content.Html do
       Scrubber.scrub(src, MathMLSanitizer),
       "</span>\n"
     ]
+  end
+
+  # workaround lack of support in MathJax 3.0 for LaTeX newline \\
+  def fix_nl(src) do
+    if String.match?(src, ~r/\\\\./) and
+         not (String.starts_with?(src, "\\displaylines") or
+                String.starts_with?(src, "\\begin{array}")),
+       do: "\displaylines{#{src}}",
+       else: src
   end
 
   def figure(%Context{} = _context, render_children, render_title, _) do
@@ -867,11 +881,27 @@ defmodule Oli.Rendering.Content.Html do
     )
   end
 
-  # Accessible captions are created using a combination of the <figure /> and <figcaption /> elements.
-  defp captioned_content(_context, %{"caption" => ""} = _attrs, content), do: content
+  defp maybe_content_type(content_type) do
+    if content_type != "" do
+      " caption-wrapper-#{content_type}"
+    else
+      ""
+    end
+  end
 
-  defp captioned_content(%Context{} = context, %{"caption" => caption_content} = _attrs, content) do
-    [~s|<div class="caption-wrapper">|] ++
+  defp captioned_content(context, attrs, content, content_type \\ "")
+
+  # Accessible captions are created using a combination of the <figure /> and <figcaption /> elements.
+  defp captioned_content(_context, %{"caption" => ""} = _attrs, content, _content_type),
+    do: content
+
+  defp captioned_content(
+         %Context{} = context,
+         %{"caption" => caption_content} = _attrs,
+         content,
+         content_type
+       ) do
+    [~s|<div class="caption-wrapper#{maybe_content_type(content_type)}">|] ++
       [~s|<figure class="figure embed-responsive">|] ++
       content ++
       [~s|<figcaption class="figure-caption text-center">|] ++
@@ -881,7 +911,7 @@ defmodule Oli.Rendering.Content.Html do
       ["</div>"]
   end
 
-  defp captioned_content(_context, _attrs, content), do: content
+  defp captioned_content(_context, _attrs, content, _content_type), do: content
 
   defp caption(_context, content) when is_binary(content) do
     escape_xml!(content)
