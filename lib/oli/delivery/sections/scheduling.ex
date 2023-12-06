@@ -91,6 +91,14 @@ defmodule Oli.Delivery.Sections.Scheduling do
     end
   end
 
+  def clear(%Section{id: section_id}, _timezone) do
+    from(
+      sr in SectionResource,
+      where: sr.section_id == ^section_id
+    )
+    |> Repo.update_all(set: [start_date: nil, end_date: nil, manually_scheduled: false])
+  end
+
   defp is_valid_update?(updates) do
     keys = ["id", "scheduling_type", "start_date", "end_date", "manually_scheduled"]
     atoms = Enum.map(keys, fn k -> String.to_existing_atom(k) end)
