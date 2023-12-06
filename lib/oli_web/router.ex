@@ -652,6 +652,7 @@ defmodule OliWeb.Router do
 
     put("/", SchedulingController, :update)
     get("/", SchedulingController, :index)
+    delete("/", SchedulingController, :clear)
   end
 
   # User State Service, instrinsic state
