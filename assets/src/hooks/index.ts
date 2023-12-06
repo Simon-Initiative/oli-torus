@@ -1,6 +1,7 @@
 import LiveReact from 'phoenix_live_react';
 import { BeforeUnloadListener } from './before_unload';
 import { CheckboxListener } from './checkbox_listener';
+import { ClearSchedulerListener } from './clear_schedule_listener';
 import { CopyListener } from './copy_listener';
 import { DateTimeLocalInputListener } from './datetimelocal_input_listener';
 import { DragSource, DropTarget } from './dragdrop';
@@ -49,4 +50,5 @@ export const Hooks = {
   LoadSurveyScripts,
   LiveModal,
   EmailList,
+  ClearSchedulerListener,
 };
