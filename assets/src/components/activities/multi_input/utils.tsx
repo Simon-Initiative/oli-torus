@@ -51,7 +51,7 @@ export const MultiInputResponses = {
   catchAll: (inputId: string, text = 'Incorrect') => {
     const catchAllRespose = makeResponse(replaceWithInputRef(inputId, matchRule('.*')), 0, text);
     catchAllRespose.catchAll = true;
-    return addRef(inputId, catchAllRespose)
+    return addRef(inputId, catchAllRespose);
   },
   forTextInput: (inputId: string, correctText = 'Correct', incorrectText = 'Incorrect') => [
     addRef(
