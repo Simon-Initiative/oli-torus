@@ -47,6 +47,21 @@ export const multiInputStem = (input: InputRef) => ({
   ],
 });
 
+export const defaultRuleForInputType = (inputType: string | undefined, choiceId?: string) => {
+  switch (inputType) {
+    case 'numeric':
+      return eqRule(0);
+    case 'math':
+      return equalsRule('');
+    case 'text':
+    case 'dropdown':
+      if (!choiceId) throw new Error('choiceId paramenter required for dropdown input type');
+      return matchRule(choiceId);
+    default:
+      return containsRule('');
+  }
+};
+
 export const MultiInputResponses = {
   catchAll: (inputId: string, text = 'Incorrect') => {
     const catchAllRespose = makeResponse(replaceWithInputRef(inputId, matchRule('.*')), 0, text);

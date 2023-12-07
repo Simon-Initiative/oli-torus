@@ -6,19 +6,51 @@ import { FeedbackCard } from 'components/activities/common/responses/FeedbackCar
 import { ScoreInput } from 'components/activities/common/responses/ScoreInput';
 import { ShowPage } from 'components/activities/common/responses/ShowPage';
 import { ResponseActions } from 'components/activities/common/responses/responseActions';
-import { MultiInput, MultiInputSchema } from 'components/activities/multi_input/schema';
+import { Dropdown, MultiInput, MultiInputSchema } from 'components/activities/multi_input/schema';
 import { RulesTab } from 'components/activities/multi_input/sections/RulesTab';
 import { MatchStyle, Response, ResponseId, RichText } from 'components/activities/types';
 import { Card } from 'components/misc/Card';
 import { matchRule } from 'data/activities/model/rules';
+import { getPartById } from 'data/activities/model/utils';
 import { TextDirection } from 'data/content/model/elements/types';
 import { ID } from 'data/content/model/other';
 import { EditorType } from 'data/content/resource';
 import { MultiInputActions } from '../actions';
-import { purseMultiInputRule, replaceWithInputRef } from '../utils';
+import {
+  defaultRuleForInputType,
+  friendlyType,
+  purseMultiInputRule,
+  replaceWithInputRef,
+} from '../utils';
+
+const constructRule = (response: Response, inputId: string, rule: string): string => {
+  const inputRules: Map<string, string> = purseMultiInputRule(response.rule);
+  const matchStyle: MatchStyle = response.matchStyle ? response.matchStyle : 'all';
+  let ruleSeparator = ' && ';
+  if (matchStyle === 'any' || matchStyle === 'none') {
+    ruleSeparator = ' || ';
+  }
+  const editedRule: string = replaceWithInputRef(inputId, rule);
+  let updatedRule = '';
+  Array.from(inputRules.keys()).forEach((k) => {
+    if (k === inputId) {
+      updatedRule = updatedRule === '' ? editedRule : updatedRule + ruleSeparator + editedRule;
+    } else {
+      updatedRule =
+        updatedRule === ''
+          ? '' + inputRules.get(k)
+          : updatedRule + ruleSeparator + inputRules.get(k);
+    }
+  });
+  if (matchStyle === 'none') {
+    updatedRule = '!(' + updatedRule + ')';
+  }
+  return updatedRule;
+};
 
 interface Props {
   response: Response;
+  partId: string;
   customScoring?: boolean;
   removeResponse: (responseId: ID) => void;
   updateScore?: (responseId: ID, score: number) => void;
@@ -32,7 +64,6 @@ export const ResponseTab: React.FC<Props> = (props) => {
     response.matchStyle ? response.matchStyle : 'all',
   );
 
-  const inputRules: Map<string, string> = purseMultiInputRule(response.rule);
   const inputs: MultiInput[] = model.inputs.filter((input) => {
     if (response.inputRefs && response.inputRefs.find((r) => r === input.id)) {
       return true;
@@ -40,43 +71,19 @@ export const ResponseTab: React.FC<Props> = (props) => {
     return false;
   });
 
-  const constructRule = (inputId: string, rule: string): string => {
-    let ruleSeparator = ' && ';
-    if (matchStyle === 'any' || matchStyle === 'none') {
-      ruleSeparator = ' || ';
-    }
-    const editedRule: string = replaceWithInputRef(inputId, rule);
-    let updatedRule = '';
-    Array.from(inputRules.keys()).forEach((k) => {
-      if (k === inputId) {
-        updatedRule = updatedRule === '' ? editedRule : updatedRule + ruleSeparator + editedRule;
-      } else {
-        updatedRule =
-          updatedRule === ''
-            ? '' + inputRules.get(k)
-            : updatedRule + ruleSeparator + inputRules.get(k);
-      }
-    });
-    if (matchStyle === 'none') {
-      updatedRule = '!(' + updatedRule + ')';
-    }
-    console.log('updated rule -- ' + updatedRule);
-    return updatedRule;
-  };
-
   const toggleCorrectness = (id: string, partId: string, inputId: string) => {
-    console.log(id + '--' + partId + '--' + inputId);
     const rule = matchRule(id);
-    dispatch(MultiInputActions.toggleMultiChoice(response.id, constructRule(inputId, rule)));
+    dispatch(
+      MultiInputActions.editResponseMultiRule(response.id, constructRule(response, inputId, rule)),
+    );
   };
 
   const editRule = (id: ResponseId, inputId: string, rule: string) => {
-    console.log(id + '--' + rule + '--' + inputId);
-    dispatch(MultiInputActions.editResponseMultiRule(id, constructRule(inputId, rule)));
+    dispatch(MultiInputActions.editResponseMultiRule(id, constructRule(response, inputId, rule)));
   };
 
   const cloneResponse = (inputId: string): Response => {
-    const singlRule = inputRules.get(inputId);
+    const singlRule = purseMultiInputRule(response.rule).get(inputId);
     return { ...response, rule: singlRule ? singlRule : response.rule };
   };
 
@@ -114,6 +121,21 @@ export const ResponseTab: React.FC<Props> = (props) => {
     const value = e.target.value as MatchStyle;
     setMatchStyle(value);
     dispatch(ResponseActions.editResponseMatchStyle(response.id, value));
+  };
+
+  const getInputOptions = (): MultiInput[] => {
+    const targets: string[] | undefined = getPartById(model, props.partId).targets;
+    if (targets) {
+      let inputs: MultiInput[] = model.inputs.filter((i) =>
+        targets.find((t: string) => t === i.id),
+      );
+      const inputRefs: string[] | undefined = response.inputRefs;
+      if (inputRefs) {
+        inputs = inputs.filter((i) => inputRefs.find((t: string) => t === i.id));
+      }
+      return inputs;
+    }
+    return [];
   };
 
   const matchStyleOptions = (
@@ -191,6 +213,9 @@ export const ResponseTab: React.FC<Props> = (props) => {
       <Card.Content>
         <div className="d-flex flex-row justify-between">
           <div>Rules</div>
+          {getInputOptions().length > 0 && (
+            <AddRule inputs={getInputOptions()} response={response} />
+          )}
           {matchStyleOptions}
         </div>
         {getResponseBody()}
@@ -213,5 +238,52 @@ export const ResponseTab: React.FC<Props> = (props) => {
         </FeedbackCard>
       </Card.Content>
     </Card.Card>
+  );
+};
+
+interface AddRuleProps {
+  inputs: MultiInput[];
+  response: Response;
+}
+const AddRule: React.FC<AddRuleProps> = ({ inputs, response }) => {
+  const { model, dispatch } = useAuthoringElementContext<MultiInputSchema>();
+
+  const addRule = (inputId: string) => {
+    const input: MultiInput | undefined = inputs.find((i) => i.id === inputId);
+    if (input) {
+      let choiceId: string | undefined;
+      if (input.inputType === 'dropdown') {
+        const choices = model.choices.filter((choice) =>
+          (input as Dropdown).choiceIds.includes(choice.id),
+        );
+        choiceId = choices[0].id;
+      }
+      const rule: string = defaultRuleForInputType(input.inputType, choiceId);
+      dispatch(
+        MultiInputActions.editResponseMultiRule(
+          response.id,
+          constructRule(response, inputId, rule),
+        ),
+      );
+    }
+  };
+
+  return (
+    <div className="inline-flex items-baseline mb-2">
+      <label className="flex-shrink-0">Add Rule</label>
+      <select
+        className="flex-shrink-0 border py-1 px-1.5 border-neutral-300 rounded w-full disabled:bg-neutral-100 disabled:text-neutral-600 dark:bg-neutral-800 dark:border-neutral-700 dark:text-white ml-2"
+        value={inputs[0].id}
+        onChange={({ target: { value } }) => {
+          addRule(value);
+        }}
+      >
+        {inputs.map((input, index: number) => (
+          <option key={input.id} value={input.id}>
+            Input {friendlyType(input.inputType)}
+          </option>
+        ))}
+      </select>
+    </div>
   );
 };

@@ -70,6 +70,7 @@ export const PartsTab: React.FC<Props> = (props) => {
         <ResponseTab
           key={response.id}
           response={response}
+          partId={props.input.partId}
           customScoring={hasCustomScoring(model, props.input.partId)}
           removeResponse={(id) => dispatch(ResponseActions.removeResponse(id))}
           updateScore={(_id, score) =>
@@ -110,6 +111,7 @@ export const PartsTab: React.FC<Props> = (props) => {
             <ResponseTab
               key={response.id}
               response={response}
+              partId={props.input.partId}
               customScoring={hasCustomScoring(model, props.input.partId)}
               removeResponse={(id) => dispatch(ResponseActions.removeResponse(id))}
               updateScore={(_id, score) =>
