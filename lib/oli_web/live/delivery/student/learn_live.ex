@@ -7,7 +7,6 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   alias Phoenix.LiveView.JS
 
   # TODO
-  # bug in module index when collapsing and expanding many cards
   # mark video as viewed at student enrollment level (in the state field)
   # introduction and learning objectives at module index. intro corresponds to intro_content revision field for the module
   # 15 / 20 at unit level (when completed)
@@ -371,7 +370,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       <source src={@module["revision"]["intro_video"]} type="video/mp4" />
       Your browser does not support the video tag.
     </video>
-    <div class="flex flex-col gap-[6px] items-start">
+    <div id={"index_for_#{@module["uuid"]}"} class="flex flex-col gap-[6px] items-start">
       <.index_item
         :if={module_has_intro_video(@module)}
         title="Introduction"
@@ -880,13 +879,6 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   """
 
   defp get_due_date_for_student(end_date, resource_id, section_id, student_id, context, format) do
-    IO.inspect(end_date, label: "end_date")
-    IO.inspect(resource_id, label: "resource_id")
-    IO.inspect(section_id, label: "section_id")
-    IO.inspect(student_id, label: "student_id")
-    IO.inspect(context, label: "context")
-    IO.inspect(format, label: "format")
-
     case Oli.Delivery.Settings.get_student_exception(resource_id, section_id, student_id) do
       nil ->
         end_date
