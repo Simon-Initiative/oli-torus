@@ -147,12 +147,18 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     ~H"""
     <div id="student_learn" class="lg:container lg:mx-auto p-[25px]" phx-hook="Scroller">
       <.unit
-        :for={child <- Sections.get_full_hierarchy(@section)["children"]}
-        unit={child}
+        :for={unit <- Sections.get_full_hierarchy(@section)["children"]}
+        unit={unit}
         ctx={@ctx}
         student_progress_per_resource_id={@student_progress_per_resource_id}
         selected_module_per_unit_uuid={@selected_module_per_unit_uuid}
         student_raw_avg_score_per_page_id={@student_raw_avg_score_per_page_id}
+        progress={
+          parse_student_progress_for_resource(
+            @student_progress_per_resource_id,
+            unit["revision"]["resource_id"]
+          )
+        }
       />
     </div>
     """
@@ -163,6 +169,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   attr :student_progress_per_resource_id, :map
   attr :student_raw_avg_score_per_page_id, :map
   attr :selected_module_per_unit_uuid, :map
+  attr :progress, :integer
 
   def unit(assigns) do
     ~H"""
@@ -192,19 +199,28 @@ defmodule OliWeb.Delivery.Student.LearnLive do
                 ) %>
               </div>
             </div>
-            <div class="ml-auto w-36">
+            <div class="ml-auto flex items-center gap-6">
               <.progress_bar
-                percent={
-                  parse_student_progress_for_resource(
-                    @student_progress_per_resource_id,
-                    @unit["revision"]["resource_id"]
-                  )
-                }
+                percent={@progress}
                 width="100px"
                 on_going_colour="bg-[#0F6CF5]"
                 completed_colour="bg-[#0CAF61]"
                 role={"unit_#{@unit["numbering"]["index"]}_progress"}
+                show_percent={@progress != 100}
               />
+              <svg
+                :if={@progress == 100}
+                xmlns="http://www.w3.org/2000/svg"
+                width="25"
+                height="24"
+                viewBox="0 0 25 24"
+                fill="none"
+              >
+                <path
+                  d="M10.0496 17.9996L4.34961 12.2996L5.77461 10.8746L10.0496 15.1496L19.2246 5.97461L20.6496 7.39961L10.0496 17.9996Z"
+                  fill="#0CAF61"
+                />
+              </svg>
             </div>
           </div>
         </div>
