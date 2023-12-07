@@ -500,6 +500,8 @@ export interface Response extends Identifiable {
   inputRefs?: string[];
 
   catchAll?: boolean;
+
+  targeted?: boolean;
 }
 
 /**

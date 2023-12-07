@@ -12,8 +12,10 @@ import {
   Choice,
   ChoiceId,
   HasParts,
+  MatchStyle,
   Part,
   PostUndoable,
+  Response,
   ResponseId,
   Stem,
   Transform,
@@ -32,32 +34,24 @@ import { getByUnsafe, getPartById, getParts } from 'data/activities/model/utils'
 import { InputRef } from 'data/content/model/elements/types';
 import { clone } from 'utils/common';
 import { Operations } from 'utils/pathOperations';
-import { MultiInputResponses, replaceWithInputRef } from './utils';
+import { MultiInputResponses, purseMultiInputRule, replaceWithInputRef } from './utils';
 
 export const MultiInputActions = {
   editStemAndPreviewText(content: Descendant[], editor: Editor, operations: Operation[]) {
     return (model: MultiInputSchema, post: PostUndoable) => {
-      console.log('-----editStemAndPreviewText');
-      //   try {
-      //     // Code throwing an exception
-      //     throw new Error();
-      // } catch(e) {
-      //     console.log(e.stack);
-      // }
       const removedInputRefs = elementsRemoved<InputRef>(operations, 'input_ref');
 
+      console.log('---editStemAndPreviewText');
       // Handle error condition - removing an extra input ref that is not present in the model
       if (
         removedInputRefs.length > 0 &&
         removedInputRefs.every((ref) => !model.inputs.find((input) => input.id === ref.id))
       ) {
-        console.log('-----editStemAndPreviewText 1');
         StemActions.editStemAndPreviewText(content)(model);
         return;
       }
 
       if (getParts(model).length - removedInputRefs.length < 1) {
-        console.log('-----editStemAndPreviewText 2');
         return;
       }
       if (
@@ -69,17 +63,12 @@ export const MultiInputActions = {
             model.inputs.find((input) => input.id === (op.node as InputRef).id),
         )
       ) {
-        console.log('-----editStemAndPreviewText 3');
         // duplicate input id, do nothing
         return;
       }
 
-      console.log('-----editStemAndPreviewText 4');
-      // if (!model.multInputsPerPart) {
-      //   console.log('-----editStemAndPreviewText 5');
       MultiInputActions.addMissingParts(operations)(model);
       MultiInputActions.removeExtraParts(operations)(model, post);
-      // }
       StemActions.editStemAndPreviewText(content)(model);
 
       // Reorder parts and inputs by new editor model
@@ -90,7 +79,6 @@ export const MultiInputActions = {
   },
 
   addMissingParts(operations: Operation[]) {
-    console.log('-----addMissingParts');
     return (model: MultiInputSchema) => {
       elementsAdded<InputRef>(operations, 'input_ref').forEach((inputRef) =>
         MultiInputActions.addPart(inputRef.id)(model),
@@ -124,8 +112,7 @@ export const MultiInputActions = {
       const input = getByUnsafe(model.inputs, (input) => input.id === inputId);
       const part = getPartById(model, input.partId);
       const partTo = getPartById(model, partId);
-      const rule = part.responses[0].rule;
-      // const r: string | undefined = rule.match(new RegExp('input_ref_' + input.id + '\\s=\\s' + '.*\\}'))?.pop();
+      // const rule = part.responses[0].rule;
 
       const targets = part.targets?.filter((value) => value !== input.id);
       if (!targets || targets.length < 1) {
@@ -139,13 +126,36 @@ export const MultiInputActions = {
 
       partTo.targets ? partTo.targets.push(input.id) : (partTo.targets = [input.id]);
       input.partId = partTo.id;
-      partTo.responses[0].rule = partTo.responses[0].rule + ' && ' + rule;
+
+      // merge the rules
+      const inputRule: string = purseMultiInputRule(part.responses[0].rule).get(input.id);
+      const toRules: Map<string, string> = purseMultiInputRule(partTo.responses[0].rule);
+
+      let matchStyle: MatchStyle | undefined = partTo.responses[0].matchStyle;
+      if (!matchStyle) matchStyle = 'all';
+      let ruleSeparator = ' && ';
+      if (matchStyle === 'any' || matchStyle === 'none') {
+        ruleSeparator = ' || ';
+      }
+
+      let updatedRule = '';
+      Array.from(toRules.keys()).forEach((k) => {
+        updatedRule =
+          updatedRule === '' ? '' + toRules.get(k) : updatedRule + ruleSeparator + toRules.get(k);
+      });
+      updatedRule = updatedRule === '' ? '' + inputRule : updatedRule + ruleSeparator + inputRule;
+      if (matchStyle === 'none') {
+        updatedRule = '!(' + updatedRule + ')';
+      }
+      partTo.responses[0].rule = updatedRule;
+
       if (!partTo.responses[0].inputRefs) partTo.responses[0].inputRefs = [];
       if (!partTo.responses[0].inputRefs.find((i) => i === inputId))
         partTo.responses[0].inputRefs.push(inputId);
-      const response = partTo.responses.find((r) => r.rule.endsWith('{.*}'));
+
+      const response = partTo.responses.find((r) => r.catchAll);
       if (response) {
-        response.rule = response?.rule + ' && input_ref_' + input.id + ' like {.*}';
+        response.rule = response.rule + ' && input_ref_' + input.id + ' like {.*}';
         if (!response.inputRefs) response.inputRefs = [];
         if (!response.inputRefs.find((i) => i === inputId)) response.inputRefs.push(inputId);
       }
@@ -204,7 +214,10 @@ export const MultiInputActions = {
       const { getOne, setAll } = List<Part>('$..parts');
       const orderedPartIds = model.inputs.map((input) => input.partId);
       // safety filter in case somehow there's a missing input
-      setAll(orderedPartIds.map((id) => getOne(model, id)).filter((x) => !!x))(model);
+      let parts: Part[] = orderedPartIds.map((id) => getOne(model, id)).filter((x) => !!x);
+      // remove duplicates
+      parts = Array.from(new Set(parts));
+      setAll(parts)(model);
     };
   },
 
@@ -212,7 +225,10 @@ export const MultiInputActions = {
     return (model: MultiInputSchema) => {
       const { getOne, setAll } = List<MultiInput>('$.inputs');
       // safety filter in case somehow there's a missing input
-      setAll(reorderedIds.map((id) => getOne(model, id)).filter((x) => !!x))(model);
+      let inputs: MultiInput[] = reorderedIds.map((id) => getOne(model, id)).filter((x) => !!x);
+      // remove duplicates
+      inputs = Array.from(new Set(inputs));
+      setAll(inputs)(model);
     };
   },
 
@@ -250,6 +266,7 @@ export const MultiInputActions = {
   },
 
   setInputType(id: string, type: MultiInputType) {
+    console.log('---setInputType');
     return (model: MultiInputSchema) => {
       const input = getByUnsafe(model.inputs, (x) => x.id === id);
 
@@ -275,12 +292,53 @@ export const MultiInputActions = {
         );
       }
 
-      part.responses = {
+      const existingResponses: Response[] = part.responses.filter((r) => {
+        const f = r.inputRefs?.find((i) => i === id);
+        return f ? true : false;
+      });
+
+      const switchedReponses = {
         dropdown: MultiInputResponses.forMultipleChoice(input.id, choices[0].id),
         text: MultiInputResponses.forTextInput(input.id),
         numeric: MultiInputResponses.forNumericInput(input.id),
         math: MultiInputResponses.forMathInput(input.id),
       }[type];
+
+      if (existingResponses.length > 0) {
+        existingResponses.forEach((r) => {
+          if (r.catchAll) return;
+          const toRules: Map<string, string> = purseMultiInputRule(r.rule);
+          let matchStyle: MatchStyle | undefined = r.matchStyle;
+          if (!matchStyle) matchStyle = 'all';
+          let ruleSeparator = ' && ';
+          if (matchStyle === 'any' || matchStyle === 'none') {
+            ruleSeparator = ' || ';
+          }
+
+          let updatedRule = '';
+          Array.from(toRules.keys()).forEach((k) => {
+            console.log(k + ' vs ' + input.id);
+            if (k === input.id) {
+              updatedRule =
+                updatedRule === ''
+                  ? '' + switchedReponses[0].rule
+                  : updatedRule + ruleSeparator + switchedReponses[0].rule;
+            } else {
+              updatedRule =
+                updatedRule === ''
+                  ? '' + toRules.get(k)
+                  : updatedRule + ruleSeparator + toRules.get(k);
+            }
+          });
+
+          if (matchStyle === 'none') {
+            updatedRule = '!(' + updatedRule + ')';
+          }
+          r.rule = updatedRule;
+        });
+      } else {
+        part.responses = switchedReponses;
+      }
 
       input.inputType = type;
     };
@@ -299,10 +357,7 @@ export const MultiInputActions = {
   },
 
   addPart(inputId: string) {
-    console.log('------ Adding part not wanted 1');
     return (model: MultiInputSchema) => {
-      console.log('------ Adding part not wanted');
-
       if (getParts(model).find((p) => p.targets?.find((t) => t === inputId))) return;
       const part = makePart(MultiInputResponses.forTextInput(inputId), [makeHint('')]);
       part.targets?.push(inputId);
