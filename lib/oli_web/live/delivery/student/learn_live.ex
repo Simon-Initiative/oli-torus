@@ -8,7 +8,6 @@ defmodule OliWeb.Delivery.Student.LearnLive do
 
   # TODO
   # mark video as viewed at student enrollment level (in the state field)
-  # check at unit progress bar when p = 100%
   # introduction and learning objectives at module index. intro corresponds to intro_content revision field for the module
   # 15 / 20 at assessment item level and at unit level (when completed)
   # checkpoint icon at module card level when page = graded (instead of simple page icon)
@@ -159,6 +158,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
             unit["revision"]["resource_id"]
           )
         }
+        student_id={@current_user.id}
       />
     </div>
     """
@@ -170,6 +170,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   attr :student_raw_avg_score_per_page_id, :map
   attr :selected_module_per_unit_uuid, :map
   attr :progress, :integer
+  attr :student_id, :integer
 
   def unit(assigns) do
     ~H"""
@@ -328,6 +329,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
             module={Map.get(@selected_module_per_unit_uuid, @unit["uuid"])}
             student_raw_avg_score_per_page_id={@student_raw_avg_score_per_page_id}
             ctx={@ctx}
+            student_id={@student_id}
           />
         </div>
       </div>
@@ -356,6 +358,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   attr :module, :map
   attr :student_raw_avg_score_per_page_id, :map
   attr :ctx, :map
+  attr :student_id, :integer
 
   def module_index(assigns) do
     ~H"""
@@ -396,11 +399,16 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         revision_slug={page["revision"]["slug"]}
         uuid={@module["uuid"]}
         due_date={
-          to_formatted_datetime(
-            page["section_resource"]["end_date"],
-            @ctx,
-            "{WDshort} {Mshort} {D}, {YYYY}"
-          )
+          if page["revision"]["graded"],
+            do:
+              get_due_date_for_student(
+                page["section_resource"]["end_date"],
+                page["section_resource"]["resource_id"],
+                page["section_resource"]["section_id"],
+                @student_id,
+                @ctx,
+                "{WDshort} {Mshort} {D}, {YYYY}"
+              )
         }
         raw_avg_score={Map.get(@student_raw_avg_score_per_page_id, page["revision"]["resource_id"])}
       />
@@ -729,10 +737,14 @@ defmodule OliWeb.Delivery.Student.LearnLive do
 
   defp to_formatted_datetime(nil, _ctx, _format), do: "not yet scheduled"
 
-  defp to_formatted_datetime(string_datetime, ctx, format) do
-    string_datetime
-    |> to_datetime
-    |> FormatDateTime.parse_datetime(ctx, format)
+  defp to_formatted_datetime(datetime, ctx, format) do
+    if is_binary(datetime) do
+      datetime
+      |> to_datetime
+      |> FormatDateTime.parse_datetime(ctx, format)
+    else
+      FormatDateTime.parse_datetime(datetime, ctx, format)
+    end
   end
 
   defp to_datetime(nil), do: "not yet scheduled"
@@ -845,4 +857,22 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   end
 
   defp module_has_intro_video(module), do: module["revision"]["intro_video"] != nil
+
+  _docp = """
+  This function returns the end date for a resource considering the student exception (if any)
+  """
+
+  defp get_due_date_for_student(end_date, resource_id, section_id, student_id, context, format) do
+    case Oli.Delivery.Settings.get_student_exception(resource_id, section_id, student_id) do
+      nil ->
+        end_date
+
+      student_exception ->
+        student_exception.end_date
+    end
+    |> to_formatted_datetime(
+      context,
+      format
+    )
+  end
 end
