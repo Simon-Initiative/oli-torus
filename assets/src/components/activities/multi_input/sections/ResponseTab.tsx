@@ -166,9 +166,7 @@ export const ResponseTab: React.FC<Props> = (props) => {
 
   return (
     <Card.Card key={response.id}>
-      <Card.Title>
-        {response.targeted ? 'Targeted Feedback' : 'Feedback'}
-      </Card.Title>
+      <Card.Title>{response.targeted ? 'Targeted Feedback' : 'Feedback'}</Card.Title>
 
       {
         /* No custom scoring, so a correct/incorrect checkbox that sets 1/0 score */

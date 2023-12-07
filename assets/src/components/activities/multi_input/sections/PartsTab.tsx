@@ -99,12 +99,14 @@ export const PartsTab: React.FC<Props> = (props) => {
         {/* <SelectPart parts={parts} selected={selectedPart?.id} onSelect={setSelectedPart} /> */}
       </Card.Title>
       <Card.Content>
-      <MultiInputScoringMethod />
+        <MultiInputScoringMethod />
         {model.customScoring && (
           <ActivityScoring partId={props.input.partId} promptForDefault={false} />
         )}
         {getResponsesBody(getPartById(model, props.input.partId))}
-        {getPartById(model, props.input.partId).responses.filter((r) => r.targeted).map((response: Response) => (
+        {getPartById(model, props.input.partId)
+          .responses.filter((r) => r.targeted)
+          .map((response: Response) => (
             <ResponseTab
               key={response.id}
               response={response}
