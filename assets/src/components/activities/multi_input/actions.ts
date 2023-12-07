@@ -358,7 +358,7 @@ export const MultiInputActions = {
 
   addPart(inputId: string) {
     return (model: MultiInputSchema) => {
-      if (getParts(model).find((p) => p.targets?.find((t) => t === inputId))) return;
+      if (getParts(model).find((p: Part) => p.targets?.find((t: string) => t === inputId))) return;
       const part = makePart(MultiInputResponses.forTextInput(inputId), [makeHint('')]);
       part.targets?.push(inputId);
       model.inputs.push({ inputType: 'text', partId: part.id, id: inputId });

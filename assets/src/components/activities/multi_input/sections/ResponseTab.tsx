@@ -1,6 +1,9 @@
 import React, { useState } from 'react';
 import { useAuthoringElementContext } from 'components/activities/AuthoringElementProvider';
+import { AuthoringCheckboxConnected } from 'components/activities/common/authoring/AuthoringCheckbox';
+import { RemoveButtonConnected } from 'components/activities/common/authoring/RemoveButton';
 import { FeedbackCard } from 'components/activities/common/responses/FeedbackCard';
+import { ScoreInput } from 'components/activities/common/responses/ScoreInput';
 import { ShowPage } from 'components/activities/common/responses/ShowPage';
 import { ResponseActions } from 'components/activities/common/responses/responseActions';
 import { MultiInput, MultiInputSchema } from 'components/activities/multi_input/schema';
@@ -9,12 +12,17 @@ import { MatchStyle, Response, ResponseId, RichText } from 'components/activitie
 import { Card } from 'components/misc/Card';
 import { matchRule } from 'data/activities/model/rules';
 import { TextDirection } from 'data/content/model/elements/types';
+import { ID } from 'data/content/model/other';
 import { EditorType } from 'data/content/resource';
 import { MultiInputActions } from '../actions';
 import { purseMultiInputRule, replaceWithInputRef } from '../utils';
 
 interface Props {
   response: Response;
+  customScoring?: boolean;
+  removeResponse: (responseId: ID) => void;
+  updateScore?: (responseId: ID, score: number) => void;
+  updateCorrectness: (responseId: ID, correct: boolean) => void;
 }
 export const ResponseTab: React.FC<Props> = (props) => {
   const { response } = props;
@@ -70,6 +78,10 @@ export const ResponseTab: React.FC<Props> = (props) => {
   const cloneResponse = (inputId: string): Response => {
     const singlRule = inputRules.get(inputId);
     return { ...response, rule: singlRule ? singlRule : response.rule };
+  };
+
+  const onScoreChange = (score: number) => {
+    props.updateScore && props.updateScore(props.response.id, score);
   };
 
   const getResponseBody = () => {
@@ -154,7 +166,30 @@ export const ResponseTab: React.FC<Props> = (props) => {
 
   return (
     <Card.Card key={response.id}>
-      <Card.Title>Response: {response.id}</Card.Title>
+      <Card.Title>
+        {response.targeted ? 'Targeted Feedback' : 'Feedback'}
+      </Card.Title>
+
+      {
+        /* No custom scoring, so a correct/incorrect checkbox that sets 1/0 score */
+        props.customScoring || (
+          <AuthoringCheckboxConnected
+            label="Correct"
+            id={props.response.id + '-correct'}
+            value={!!response.score}
+            onChange={(value) => props.updateCorrectness(props.response.id, value)}
+          />
+        )
+      }
+
+      {props.customScoring && (
+        /* We are using custom scoring, so prompt for a score instead of correct/incorrect */
+        <ScoreInput score={props.response.score} onChange={onScoreChange} editMode={true}>
+          Score:
+        </ScoreInput>
+      )}
+
+      <RemoveButtonConnected onClick={() => props.removeResponse(props.response.id)} />
       <Card.Content>
         <div className="d-flex flex-row justify-between">
           <div>Rules</div>
