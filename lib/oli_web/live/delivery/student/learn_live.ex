@@ -7,6 +7,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   alias Phoenix.LiveView.JS
 
   # TODO
+  # bug in module index when collapsing and expanding many cards
   # mark video as viewed at student enrollment level (in the state field)
   # introduction and learning objectives at module index. intro corresponds to intro_content revision field for the module
   # 15 / 20 at unit level (when completed)
@@ -402,7 +403,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
             do:
               get_due_date_for_student(
                 page["section_resource"]["end_date"],
-                page["section_resource"]["resource_id"],
+                page["revision"]["resource_id"],
                 page["section_resource"]["section_id"],
                 @student_id,
                 @ctx,
@@ -879,6 +880,13 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   """
 
   defp get_due_date_for_student(end_date, resource_id, section_id, student_id, context, format) do
+    IO.inspect(end_date, label: "end_date")
+    IO.inspect(resource_id, label: "resource_id")
+    IO.inspect(section_id, label: "section_id")
+    IO.inspect(student_id, label: "student_id")
+    IO.inspect(context, label: "context")
+    IO.inspect(format, label: "format")
+
     case Oli.Delivery.Settings.get_student_exception(resource_id, section_id, student_id) do
       nil ->
         end_date
@@ -886,9 +894,6 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       student_exception ->
         student_exception.end_date
     end
-    |> to_formatted_datetime(
-      context,
-      format
-    )
+    |> to_formatted_datetime(context, format)
   end
 end
