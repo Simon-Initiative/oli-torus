@@ -396,7 +396,6 @@ const schedulerSlice = createSlice({
 export const {
   moveScheduleItem,
   resetSchedule,
-  clearSchedule,
   selectItem,
   unlockScheduleItem,
   changeScheduleType,
