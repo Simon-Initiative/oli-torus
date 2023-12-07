@@ -399,6 +399,56 @@ defmodule Oli.Delivery.Metrics do
   end
 
   @doc """
+  Calculates the raw average score ('score' and 'out_of' separately) for all students in a collection of pages
+  (only considering finished attempts).
+
+  The last parameter gives flexibility for including specific users in the calculation.
+  This exists primarily to exclude instructors.
+  """
+
+  def raw_avg_score_across_for_pages(
+        %Section{id: section_id, analytics_version: :v2} = _section,
+        pages_ids,
+        user_ids
+      ) do
+    page_type_id = Oli.Resources.ResourceType.get_id_by_type("page")
+
+    from(rs in ResourceSummary,
+      where:
+        rs.section_id == ^section_id and rs.resource_id in ^pages_ids and rs.user_id in ^user_ids and
+          rs.publication_id == -1 and rs.project_id == -1 and rs.resource_type_id == ^page_type_id,
+      group_by: rs.resource_id,
+      select: {
+        rs.resource_id,
+        %{
+          score: fragment("CAST(SUM(?) as float)", rs.num_correct),
+          out_of: fragment("CAST(SUM(?) as float)", rs.num_attempts)
+        }
+      }
+    )
+    |> Repo.all()
+    |> Enum.into(%{})
+  end
+
+  def raw_avg_score_across_for_pages(%Section{id: section_id} = _section, pages_ids, user_ids) do
+    from(ra in ResourceAccess,
+      where:
+        ra.resource_id in ^pages_ids and ra.section_id == ^section_id and
+          ra.user_id in ^user_ids and not is_nil(ra.score),
+      group_by: ra.resource_id,
+      select: {
+        ra.resource_id,
+        %{
+          score: sum(ra.score),
+          out_of: fragment("SUM(?)", ra.out_of)
+        }
+      }
+    )
+    |> Repo.all()
+    |> Enum.into(%{})
+  end
+
+  @doc """
   Returns the number of attempts for a given list of pages.
   The last parameter gives flexibility for including specific users in the calculation.
   This exists primarily to exclude instructors.

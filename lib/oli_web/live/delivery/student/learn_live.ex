@@ -6,6 +6,13 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   alias Oli.Delivery.{Metrics, Sections}
   alias Phoenix.LiveView.JS
 
+  # TODO
+  # mark video as viewed at student enrollment level (in the state field)
+  # check at unit progress bar when p = 100%
+  # introduction and learning objectives at module index. intro corresponds to intro_content revision field for the module
+  # 15 / 20 at assessment item level and at unit level (when completed)
+  # checkpoint icon at module card level when page = graded (instead of simple page icon)
+
   def mount(_params, _session, socket) do
     # when updating to Liveview 0.20 we should replace this with assign_async/3
     # https://hexdocs.pm/phoenix_live_view/Phoenix.LiveView.html#assign_async/3
@@ -22,7 +29,8 @@ defmodule OliWeb.Delivery.Student.LearnLive do
        active_tab: :learn,
        selected_module_per_unit_uuid: %{},
        student_visited_pages: %{},
-       student_progress_per_resource_id: %{}
+       student_progress_per_resource_id: %{},
+       student_raw_avg_score_per_page_id: %{}
      )}
   end
 
@@ -108,13 +116,15 @@ defmodule OliWeb.Delivery.Student.LearnLive do
 
   def handle_info(
         {:student_metrics_and_enable_slider_buttons,
-         {student_visited_pages, student_progress_per_resource_id}},
+         {student_visited_pages, student_progress_per_resource_id,
+          student_raw_avg_score_per_page_id}},
         socket
       ) do
     {:noreply,
      assign(socket,
        student_visited_pages: student_visited_pages,
        student_progress_per_resource_id: student_progress_per_resource_id,
+       student_raw_avg_score_per_page_id: student_raw_avg_score_per_page_id,
        selected_module_per_unit_uuid:
          Enum.into(
            socket.assigns.selected_module_per_unit_uuid,
@@ -142,6 +152,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         ctx={@ctx}
         student_progress_per_resource_id={@student_progress_per_resource_id}
         selected_module_per_unit_uuid={@selected_module_per_unit_uuid}
+        student_raw_avg_score_per_page_id={@student_raw_avg_score_per_page_id}
       />
     </div>
     """
@@ -150,6 +161,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   attr :unit, :map
   attr :ctx, :map, doc: "the context is needed to format the date considering the user's timezone"
   attr :student_progress_per_resource_id, :map
+  attr :student_raw_avg_score_per_page_id, :map
   attr :selected_module_per_unit_uuid, :map
 
   def unit(assigns) do
@@ -296,7 +308,11 @@ defmodule OliWeb.Delivery.Student.LearnLive do
           </button>
         </div>
         <div class="mt-[57px] w-1/2">
-          <.module_index module={Map.get(@selected_module_per_unit_uuid, @unit["uuid"])} />
+          <.module_index
+            module={Map.get(@selected_module_per_unit_uuid, @unit["uuid"])}
+            student_raw_avg_score_per_page_id={@student_raw_avg_score_per_page_id}
+            ctx={@ctx}
+          />
         </div>
       </div>
       <div role="collapse_bar" class="flex items-center justify-center py-[6px] px-[10px] mt-6">
@@ -322,6 +338,8 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   end
 
   attr :module, :map
+  attr :student_raw_avg_score_per_page_id, :map
+  attr :ctx, :map
 
   def module_index(assigns) do
     ~H"""
@@ -345,6 +363,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         duration_minutes={@module["revision"]["duration_minutes"]}
         revision_slug={@module["revision"]["slug"]}
         uuid={@module["uuid"]}
+        raw_avg_score={%{}}
       />
 
       <.index_item
@@ -360,6 +379,14 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         graded={page["revision"]["graded"]}
         revision_slug={page["revision"]["slug"]}
         uuid={@module["uuid"]}
+        due_date={
+          to_formatted_datetime(
+            page["section_resource"]["end_date"],
+            @ctx,
+            "{WDshort} {Mshort} {D}, {YYYY}"
+          )
+        }
+        raw_avg_score={Map.get(@student_raw_avg_score_per_page_id, page["revision"]["resource_id"])}
       />
     </div>
     """
@@ -373,6 +400,8 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   attr :revision_slug, :string
   attr :graded, :boolean
   attr :uuid, :string
+  attr :raw_avg_score, :map
+  attr :due_date, :string
 
   def index_item(assigns) do
     ~H"""
@@ -380,7 +409,12 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       role={"page_#{@numbering_index}_details"}
       class="flex items-center gap-[14px] px-[10px] w-full"
     >
-      <.index_item_icon item_type={@type} was_visited={@was_visited} graded={@graded} />
+      <.index_item_icon
+        item_type={@type}
+        was_visited={@was_visited}
+        graded={@graded}
+        raw_avg_score={@raw_avg_score[:score]}
+      />
       <div
         id={@uuid}
         phx-click={if @type != "intro", do: "navigate_to_resource"}
@@ -391,19 +425,46 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         <span class="text-[12px] leading-[16px] font-bold w-[30px] shrink-0 opacity-40 dark:text-white">
           <%= "#{@numbering_index}" %>
         </span>
-        <span class={[
-          "text-[16px] leading-[22px] dark:text-white",
-          if(@was_visited, do: "opacity-50")
-        ]}>
-          <%= "#{@title}" %>
-        </span>
-        <div class="text-right dark:text-white opacity-50 whitespace-nowrap ml-auto">
-          <span class="text-[12px] leading-[16px] font-bold uppercase tracking-[0.96px] text-right">
-            <%= parse_minutes(@duration_minutes) %>
-            <span class="text-[9px] font-bold uppercase tracking-[0.72px] text-right">
-              min
+        <div class="flex flex-col gap-1 w-full">
+          <div class="flex">
+            <span class={[
+              "text-[16px] leading-[22px] dark:text-white",
+              if(@was_visited, do: "opacity-50")
+            ]}>
+              <%= "#{@title}" %>
             </span>
-          </span>
+
+            <div class="text-right dark:text-white opacity-50 whitespace-nowrap ml-auto">
+              <span class="text-[12px] leading-[16px] font-bold uppercase tracking-[0.96px] text-right">
+                <%= parse_minutes(@duration_minutes) %>
+                <span class="text-[9px] font-bold uppercase tracking-[0.72px] text-right">
+                  min
+                </span>
+              </span>
+            </div>
+          </div>
+          <div :if={@graded} role="due date and score" class="flex">
+            <span class="text-[12px] leading-[16px] opacity-50 dark:text-white">
+              Due: <%= @due_date %>
+            </span>
+            <div :if={@raw_avg_score[:score]} class="flex items-center gap-[6px] ml-auto">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="16"
+                height="16"
+                viewBox="0 0 16 16"
+                fill="none"
+              >
+                <path
+                  d="M3.88301 14.0007L4.96634 9.31732L1.33301 6.16732L6.13301 5.75065L7.99967 1.33398L9.86634 5.75065L14.6663 6.16732L11.033 9.31732L12.1163 14.0007L7.99967 11.5173L3.88301 14.0007Z"
+                  fill="#0CAF61"
+                />
+              </svg>
+              <span class="text-[12px] leading-[16px] tracking-[0.02px] text-[#0CAF61] font-semibold">
+                <%= @raw_avg_score[:score] %> / <%= @raw_avg_score[:out_of] %>
+              </span>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -413,39 +474,65 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   attr :item_type, :string
   attr :was_visited, :boolean
   attr :graded, :boolean
+  attr :raw_avg_score, :map
 
   def index_item_icon(assigns) do
-    case {assigns.was_visited, assigns.item_type} do
-      {true, "page"} ->
+    case {assigns.was_visited, assigns.item_type, assigns.graded, assigns.raw_avg_score} do
+      {true, "page", false, _} ->
+        # visited practice page
         ~H"""
         <div role="check icon" class="flex justify-center items-center h-7 w-7 shrink-0">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            height="1.25em"
-            viewBox="0 0 448 512"
-            role="visited_check_icon"
-          >
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
             <path
-              fill="#1E9531"
-              d="M438.6 105.4c12.5 12.5 12.5 32.8 0 45.3l-256 256c-12.5 12.5-32.8 12.5-45.3 0l-128-128c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0L160 338.7 393.4 105.4c12.5-12.5 32.8-12.5 45.3 0z"
+              d="M9.54961 17.9996L3.84961 12.2996L5.27461 10.8746L9.54961 15.1496L18.7246 5.97461L20.1496 7.39961L9.54961 17.9996Z"
+              fill="#0CAF61"
             />
           </svg>
         </div>
         """
 
-      {false, "page"} ->
+      {false, "page", false, _} ->
+        # not visited practice page
         ~H"""
         <div role="no icon" class="flex justify-center items-center h-7 w-7 shrink-0"></div>
         """
 
-      {_, "intro"} ->
+      {true, "page", true, raw_avg_score} when not is_nil(raw_avg_score) ->
+        # completed graded page
+        ~H"""
+        <div role="square check icon" class="flex justify-center items-center h-7 w-7 shrink-0">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
+            <path
+              d="M5 21C4.45 21 3.97917 20.8042 3.5875 20.4125C3.19583 20.0208 3 19.55 3 19V5C3 4.45 3.19583 3.97917 3.5875 3.5875C3.97917 3.19583 4.45 3 5 3H17.925L15.925 5H5V19H19V12.05L21 10.05V19C21 19.55 20.8042 20.0208 20.4125 20.4125C20.0208 20.8042 19.55 21 19 21H5Z"
+              fill="#0CAF61"
+            />
+            <path
+              d="M11.7 16.025L6 10.325L7.425 8.9L11.7 13.175L20.875 4L22.3 5.425L11.7 16.025Z"
+              fill="#0CAF61"
+            />
+          </svg>
+        </div>
+        """
+
+      {_, "page", true, nil} ->
+        # not completed graded page
+        ~H"""
+        <div role="orange flag icon" class="flex justify-center items-center h-7 w-7 shrink-0">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
+            <path d="M5 21V4H14L14.4 6H20V16H13L12.6 14H7V21H5Z" fill="#F68E2E" />
+          </svg>
+        </div>
+        """
+
+      {_, "intro", _, _} ->
+        # intro video
         ~H"""
         <div role="video icon" class="flex justify-center items-center h-7 w-7 shrink-0">
-          <svg xmlns="http://www.w3.org/2000/svg" height="16" width="16" viewBox="0 0 512 512">
-            <!--!Font Awesome Free 6.5.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2023 Fonticons, Inc.-->
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
             <path
-              fill="#1E9531"
-              d="M0 256a256 256 0 1 1 512 0A256 256 0 1 1 0 256zM188.3 147.1c-7.6 4.2-12.3 12.3-12.3 20.9V344c0 8.7 4.7 16.7 12.3 20.9s16.8 4.1 24.3-.5l144-88c7.1-4.4 11.5-12.1 11.5-20.5s-4.4-16.1-11.5-20.5l-144-88c-7.4-4.5-16.7-4.7-24.3-.5z"
+              opacity="0.5"
+              d="M9.5 16.5L16.5 12L9.5 7.5V16.5ZM4 20C3.45 20 2.97917 19.8042 2.5875 19.4125C2.19583 19.0208 2 18.55 2 18V6C2 5.45 2.19583 4.97917 2.5875 4.5875C2.97917 4.19583 3.45 4 4 4H20C20.55 4 21.0208 4.19583 21.4125 4.5875C21.8042 4.97917 22 5.45 22 6V18C22 18.55 21.8042 19.0208 21.4125 19.4125C21.0208 19.8042 20.55 20 20 20H4Z"
+              fill="#0CAF61"
             />
           </svg>
         </div>
@@ -672,9 +759,12 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     progress_per_page_id =
       Metrics.progress_across_for_pages(section.id, page_ids, [current_user_id])
 
+    raw_avg_score_per_page_id =
+      Metrics.raw_avg_score_across_for_pages(section, page_ids, [current_user_id])
+
     progress_per_resource_id = Map.merge(progress_per_page_id, progress_per_container_id)
 
-    {visited_pages_map, progress_per_resource_id}
+    {visited_pages_map, progress_per_resource_id, raw_avg_score_per_page_id}
   end
 
   defp mark_visited_pages(module, visited_pages) do
