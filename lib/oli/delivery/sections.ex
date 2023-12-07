@@ -4,23 +4,29 @@ defmodule Oli.Delivery.Sections do
   """
   import Ecto.Query, warn: false
 
-  alias Oli.Delivery.Sections.EnrollmentContextRole
   alias Oli.Repo
   alias Oli.Repo.{Paging, Sorting}
   alias Oli.Utils.Database
-  alias Oli.Delivery.Sections.Section
-  alias Oli.Delivery.Sections.ContainedPage
-  alias Oli.Delivery.Sections.Enrollment
+
+  alias Oli.Delivery.Sections.{
+    Section,
+    SectionCache,
+    ContainedPage,
+    SectionResource,
+    ContainedObjective,
+    SectionsProjectsPublications,
+    Enrollment,
+    EnrollmentBrowseOptions,
+    EnrollmentContextRole
+  }
+
   alias Lti_1p3.Tool.ContextRole
   alias Lti_1p3.DataProviders.EctoProvider
   alias Oli.Lti.Tool.{Deployment, Registration}
   alias Oli.Lti.LtiParams
-  alias Oli.Delivery.Sections.SectionResource
   alias Oli.Publishing
   alias Oli.Publishing.Publications.Publication
   alias Oli.Delivery.Paywall.Payment
-  alias Oli.Delivery.Sections.ContainedObjective
-  alias Oli.Delivery.Sections.SectionsProjectsPublications
   alias Oli.Resources.Numbering
   alias Oli.Authoring.Course.{Project, ProjectAttributes}
   alias Oli.Delivery.Hierarchy
@@ -35,7 +41,6 @@ defmodule Oli.Delivery.Sections do
   alias Lti_1p3.Tool.ContextRoles
   alias Lti_1p3.Tool.PlatformRoles
   alias Oli.Delivery.Updates.Broadcaster
-  alias Oli.Delivery.Sections.EnrollmentBrowseOptions
   alias Oli.Utils.Slug
   alias OliWeb.Common.FormatDateTime
   alias Oli.Delivery.PreviousNextIndex
@@ -1548,7 +1553,7 @@ defmodule Oli.Delivery.Sections do
   end
 
   defp label_and_sort_resources_by_hierarchy(resource_map, section_slug) do
-    fetch_ordered_containers(section_slug)
+    get_ordered_container_labels(section_slug)
     |> Enum.reduce(
       case resource_map[:default] do
         nil -> []
@@ -1583,28 +1588,33 @@ defmodule Oli.Delivery.Sections do
   end
 
   @doc """
-  Returns a map of all containers numbering index and title for the given section,
+  Returns a keyword list of all containers numbering index and title for the given section,
   ordered in the way they appear in the course, considering the customizations that
   could be configured to containers (ex, naming SubModules to Sections)
 
   ## Examples
-      iex> get_ordered_containers(section_slug)
-      %{
-        4 => "Section 1: Curriculum",
-        39 => "Module 1: Setup",
-        40 => "Module 2: Phoenix project",
-        41 => "Unit 1: Getting Started",
-        42 => "Module 3: Types",
-        43 => "Module 4: Enum",
-        44 => "Unit 2: Basics",
-        45 => "Module 5: OTP",
-        46 => "Module 6: GenServers",
-        47 => "Unit 3: Advanced",
-        48 => "Unit 4: Final"
-      }
+      iex> get_ordered_container_labels(section_slug)
+      [
+        {4 => "Section 1: Curriculum"},
+        {39, "Module 1: Setup"},
+        {40, "Module 2: Phoenix project"},
+        {41, "Unit 1: Getting Started"},
+        {42, "Module 3: Types"},
+        {43, "Module 4: Enum"},
+        {44, "Unit 2: Basics"},
+        {45, "Module 5: OTP"},
+        {46, "Module 6: GenServers"},
+        {47, "Unit 3: Advanced"},
+        {48, "Unit 4: Final}"
+      ]
   """
+  def get_ordered_container_labels(section_slug) do
+    SectionCache.get_or_compute(section_slug, :ordered_container_labels, fn ->
+      fetch_ordered_containers(section_slug)
+    end)
+  end
 
-  def fetch_ordered_containers(section_slug) do
+  defp fetch_ordered_containers(section_slug) do
     container_type_id = Oli.Resources.ResourceType.get_id_by_type("container")
 
     SectionResource
@@ -2130,6 +2140,9 @@ defmodule Oli.Delivery.Sections do
         end
       )
       |> Repo.transaction()
+
+      # reset any section cached data
+      SectionCache.clear(section.slug)
     else
       throw(
         "Cannot rebuild section curriculum with a hierarchy that has unfinalized changes. See Oli.Delivery.Hierarchy.finalize/1 for details."
