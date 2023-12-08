@@ -17,36 +17,11 @@ import { ID } from 'data/content/model/other';
 import { EditorType } from 'data/content/resource';
 import { MultiInputActions } from '../actions';
 import {
+  constructRule,
   defaultRuleForInputType,
   friendlyType,
   purseMultiInputRule,
-  replaceWithInputRef,
 } from '../utils';
-
-const constructRule = (response: Response, inputId: string, rule: string): string => {
-  const inputRules: Map<string, string> = purseMultiInputRule(response.rule);
-  const matchStyle: MatchStyle = response.matchStyle ? response.matchStyle : 'all';
-  let ruleSeparator = ' && ';
-  if (matchStyle === 'any' || matchStyle === 'none') {
-    ruleSeparator = ' || ';
-  }
-  const editedRule: string = replaceWithInputRef(inputId, rule);
-  let updatedRule = '';
-  Array.from(inputRules.keys()).forEach((k) => {
-    if (k === inputId) {
-      updatedRule = updatedRule === '' ? editedRule : updatedRule + ruleSeparator + editedRule;
-    } else {
-      updatedRule =
-        updatedRule === ''
-          ? '' + inputRules.get(k)
-          : updatedRule + ruleSeparator + inputRules.get(k);
-    }
-  });
-  if (matchStyle === 'none') {
-    updatedRule = '!(' + updatedRule + ')';
-  }
-  return updatedRule;
-};
 
 interface Props {
   response: Response;
@@ -65,7 +40,7 @@ export const ResponseTab: React.FC<Props> = (props) => {
   );
 
   const inputs: MultiInput[] = model.inputs.filter((input) => {
-    if (response.inputRefs && response.inputRefs.find((r) => r === input.id)) {
+    if (response.inputRefs && response.inputRefs.includes(input.id)) {
       return true;
     }
     return false;
@@ -74,12 +49,22 @@ export const ResponseTab: React.FC<Props> = (props) => {
   const toggleCorrectness = (id: string, partId: string, inputId: string) => {
     const rule = matchRule(id);
     dispatch(
-      MultiInputActions.editResponseMultiRule(response.id, constructRule(response, inputId, rule)),
+      MultiInputActions.editResponseMultiRule(
+        response.id,
+        inputId,
+        constructRule(response.rule, response.matchStyle, inputId, rule, false),
+      ),
     );
   };
 
   const editRule = (id: ResponseId, inputId: string, rule: string) => {
-    dispatch(MultiInputActions.editResponseMultiRule(id, constructRule(response, inputId, rule)));
+    dispatch(
+      MultiInputActions.editResponseMultiRule(
+        id,
+        inputId,
+        constructRule(response.rule, response.matchStyle, inputId, rule, false),
+      ),
+    );
   };
 
   const cloneResponse = (inputId: string): Response => {
@@ -126,12 +111,10 @@ export const ResponseTab: React.FC<Props> = (props) => {
   const getInputOptions = (): MultiInput[] => {
     const targets: string[] | undefined = getPartById(model, props.partId).targets;
     if (targets) {
-      let inputs: MultiInput[] = model.inputs.filter((i) =>
-        targets.find((t: string) => t === i.id),
-      );
+      let inputs: MultiInput[] = model.inputs.filter((i) => targets.includes(i.id));
       const inputRefs: string[] | undefined = response.inputRefs;
       if (inputRefs) {
-        inputs = inputs.filter((i) => inputRefs.find((t: string) => t === i.id));
+        inputs = inputs.filter((i) => !inputRefs.includes(i.id));
       }
       return inputs;
     }
@@ -258,11 +241,18 @@ const AddRule: React.FC<AddRuleProps> = ({ inputs, response }) => {
         );
         choiceId = choices[0].id;
       }
-      const rule: string = defaultRuleForInputType(input.inputType, choiceId);
+
       dispatch(
         MultiInputActions.editResponseMultiRule(
           response.id,
-          constructRule(response, inputId, rule),
+          inputId,
+          constructRule(
+            response.rule,
+            response.matchStyle,
+            inputId,
+            defaultRuleForInputType(input.inputType, choiceId),
+            true,
+          ),
         ),
       );
     }
@@ -273,11 +263,14 @@ const AddRule: React.FC<AddRuleProps> = ({ inputs, response }) => {
       <label className="flex-shrink-0">Add Rule</label>
       <select
         className="flex-shrink-0 border py-1 px-1.5 border-neutral-300 rounded w-full disabled:bg-neutral-100 disabled:text-neutral-600 dark:bg-neutral-800 dark:border-neutral-700 dark:text-white ml-2"
-        value={inputs[0].id}
+        value={undefined}
         onChange={({ target: { value } }) => {
           addRule(value);
         }}
       >
+        <option disabled selected value={undefined}>
+          select option
+        </option>
         {inputs.map((input, index: number) => (
           <option key={input.id} value={input.id}>
             Input {friendlyType(input.inputType)}

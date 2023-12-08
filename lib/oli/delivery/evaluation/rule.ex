@@ -36,7 +36,6 @@ defmodule Oli.Delivery.Evaluation.Rule do
       {:ok, eval(tree, context)}
     rescue
       e ->
-        IO.inspect(Exception.format(:error, e, __STACKTRACE__))
         {:error, e}
     end
   end

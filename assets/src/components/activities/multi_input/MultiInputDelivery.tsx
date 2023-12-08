@@ -193,14 +193,10 @@ export const MultiInputComponent: React.FC = () => {
   //
   const onChange = (id: string, value: string) => {
     const input = getByUnsafe((uiState.model as MultiInputSchema).inputs, (x) => x.id === id);
-    console.log(uiState.model as MultiInputSchema);
-    // const modelPart = getPartById((uiState.model as MultiInputSchema), input.partId);
-    // console.log('----the part');
-    // console.log(modelPart);
+
     const part = uiState.attemptState.parts.find((p) => p.partId === input.partId);
 
     if ((uiState.model as MultiInputSchema).multInputsPerPart) {
-      // const targets: string[] = modelPart.targets;
       const partState = uiState.partState[input.partId];
       const prevInput = partState.studentInput[0];
       const oldInput = prevInput ? JSON.parse(prevInput) : {};

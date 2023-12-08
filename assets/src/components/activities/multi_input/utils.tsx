@@ -8,6 +8,7 @@ import {
 } from 'components/activities/multi_input/schema';
 import {
   ChoiceId,
+  MatchStyle,
   Part,
   Response,
   Transform,
@@ -53,13 +54,56 @@ export const defaultRuleForInputType = (inputType: string | undefined, choiceId?
       return eqRule(0);
     case 'math':
       return equalsRule('');
-    case 'text':
     case 'dropdown':
-      if (!choiceId) throw new Error('choiceId paramenter required for dropdown input type');
+      if (choiceId === undefined)
+        throw new Error('choiceId paramenter required for dropdown input type');
       return matchRule(choiceId);
+    case 'text':
     default:
       return containsRule('');
   }
+};
+
+export const constructRule = (
+  inputRule: string,
+  inputMatchStyle: MatchStyle | undefined,
+  inputId: string,
+  rule: string,
+  append: boolean,
+  exclude?: boolean,
+): string => {
+  const inputRules: Map<string, string> = purseMultiInputRule(inputRule);
+
+  const matchStyle: MatchStyle = inputMatchStyle ? inputMatchStyle : 'all';
+  let ruleSeparator = ' && ';
+  if (matchStyle === 'any' || matchStyle === 'none') {
+    ruleSeparator = ' || ';
+  }
+  const editedRule: string = replaceWithInputRef(inputId, rule);
+
+  let updatedRule = '';
+  let alreadyIncluded = false;
+  Array.from(inputRules.keys()).forEach((k) => {
+    if (k === inputId) {
+      alreadyIncluded = true;
+      if (!exclude) {
+        updatedRule = updatedRule === '' ? editedRule : updatedRule + ruleSeparator + editedRule;
+      }
+    } else {
+      updatedRule =
+        updatedRule === ''
+          ? '' + inputRules.get(k)
+          : updatedRule + ruleSeparator + inputRules.get(k);
+    }
+  });
+
+  if (append && !alreadyIncluded) {
+    updatedRule = updatedRule === '' ? '' + editedRule : updatedRule + ruleSeparator + editedRule;
+  }
+  if (matchStyle === 'none' && updatedRule !== '') {
+    updatedRule = '!(' + updatedRule + ')';
+  }
+  return updatedRule;
 };
 
 export const MultiInputResponses = {
@@ -98,13 +142,13 @@ export const MultiInputResponses = {
 };
 
 export const replaceWithInputRef = (inputId: string, rule: string) => {
-  if (rule.includes('input_ref_')) rule;
+  if (rule.includes('input_ref_')) return rule;
   return rule.replace(/input/g, 'input_ref_' + inputId);
 };
 
 export const addRef = (inputId: string, response: Response): Response => {
   if (!response.inputRefs) response.inputRefs = [];
-  if (!response.inputRefs.find((i) => i === inputId)) response.inputRefs.push(inputId);
+  if (!response.inputRefs.includes(inputId)) response.inputRefs.push(inputId);
   return response;
 };
 
@@ -247,7 +291,6 @@ function ensureHasInput(model: MultiInputSchema) {
   firstParagraph?.children.push({ text: '' });
 
   model.inputs.push(input);
-  console.log('------ ensureHasInput');
   model.authoring.parts.push(part);
 
   return model;
@@ -305,7 +348,6 @@ function matchInputsToParts(model: MultiInputSchema) {
         ? MultiInputResponses.forNumericInput(input.id)
         : MultiInputResponses.forTextInput(input.id),
     );
-    console.log('---unmatchedInputs');
     model.authoring.parts.push(part);
   });
 
@@ -360,7 +402,6 @@ function matchInputsToInputRefs(model: MultiInputSchema) {
     // create new input and part for the input ref in the stem
     const part = makePart(MultiInputResponses.forTextInput(ref.id), [makeHint('')]);
     model.inputs.push({ id: ref.id, inputType: 'text', partId: part.id } as MultiInput);
-    console.log('----unmatchedInputRefs');
     model.authoring.parts.push(part);
   });
   return model;

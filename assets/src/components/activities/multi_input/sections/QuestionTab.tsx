@@ -111,15 +111,20 @@ const MoveInputIntoPart: React.FC<MoveInputIntoPartProps> = ({ input, parts }) =
   return (
     <div className="inline-flex items-baseline mb-2">
       <label className="flex-shrink-0">
-        Move from Part {parts.findIndex((p) => p.id === input.partId) + 1} to
+        Move Input from Part {parts.findIndex((p) => p.id === input.partId) + 1} to
       </label>
       <select
         className="flex-shrink-0 border py-1 px-1.5 border-neutral-300 rounded w-full disabled:bg-neutral-100 disabled:text-neutral-600 dark:bg-neutral-800 dark:border-neutral-700 dark:text-white ml-2"
-        value={input.partId}
+        value={undefined}
         onChange={({ target: { value } }) => {
-          dispatch(MultiInputActions.moveInputToPart(input.id, value));
+          if (value !== input.partId) {
+            dispatch(MultiInputActions.moveInputToPart(input.id, value));
+          }
         }}
       >
+        <option disabled selected value={undefined}>
+          select option
+        </option>
         {parts.map((part, index: number) => (
           <option key={part.id} value={part.id}>
             Part {index + 1}
