@@ -50,12 +50,12 @@ export const RulesTab: React.FC<Props> = (props) => {
   return (
     <div className="d-flex flex-row mb-2">
       <div className="flex-grow-1">
-      <InputEntry
-        key={props.response.id}
-        inputType={props.input.inputType}
-        response={props.response}
-        onEditResponseRule={(id, rule) => props.editRule(id, props.input.id, rule)}
-      />
+        <InputEntry
+          key={props.response.id}
+          inputType={props.input.inputType}
+          response={props.response}
+          onEditResponseRule={(id, rule) => props.editRule(id, props.input.id, rule)}
+        />
       </div>
       <div className="choicesAuthoring__removeButtonContainer">
         {<RemoveButtonConnected onClick={removeInputFromResponse} />}
