@@ -7,7 +7,6 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   alias Phoenix.LiveView.JS
 
   # TODO
-  # mark video as viewed at student enrollment level (in the state field)
   # introduction and learning objectives at module index. intro corresponds to intro_content revision field for the module
   # 15 / 20 at unit level (when completed)
 
@@ -28,8 +27,39 @@ defmodule OliWeb.Delivery.Student.LearnLive do
        selected_module_per_unit_uuid: %{},
        student_visited_pages: %{},
        student_progress_per_resource_id: %{},
-       student_raw_avg_score_per_page_id: %{}
+       student_raw_avg_score_per_page_id: %{},
+       viewed_intro_video_resource_ids:
+         get_viewed_intro_video_resource_ids(
+           socket.assigns.section.slug,
+           socket.assigns.current_user.id
+         )
      )}
+  end
+
+  def handle_event(
+        "play_video",
+        %{"video_url" => video_url, "resource_id" => resource_id},
+        socket
+      ) do
+    resource_id = String.to_integer(resource_id)
+
+    updated_viewed_videos =
+      if resource_id in socket.assigns.viewed_intro_video_resource_ids do
+        socket.assigns.viewed_intro_video_resource_ids
+      else
+        async_mark_video_as_viewed_in_student_enrollment_state(
+          socket.assigns.current_user.id,
+          socket.assigns.section.slug,
+          resource_id
+        )
+
+        [resource_id | socket.assigns.viewed_intro_video_resource_ids]
+      end
+
+    {:noreply,
+     socket
+     |> assign(viewed_intro_video_resource_ids: updated_viewed_videos)
+     |> push_event("play_video", %{"video_url" => video_url})}
   end
 
   def handle_event("open_dot_bot", _, socket) do
@@ -144,6 +174,9 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   def render(assigns) do
     ~H"""
     <div id="student_learn" class="lg:container lg:mx-auto p-[25px]" phx-hook="Scroller">
+      <video phx-hook="VideoPlayer" id="student_learn_video" class="hidden" controls>
+        <source src="" type="video/mp4" /> Your browser does not support the video tag.
+      </video>
       <.unit
         :for={unit <- Sections.get_full_hierarchy(@section)["children"]}
         unit={unit}
@@ -151,6 +184,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         student_progress_per_resource_id={@student_progress_per_resource_id}
         selected_module_per_unit_uuid={@selected_module_per_unit_uuid}
         student_raw_avg_score_per_page_id={@student_raw_avg_score_per_page_id}
+        viewed_intro_video_resource_ids={@viewed_intro_video_resource_ids}
         progress={
           parse_student_progress_for_resource(
             @student_progress_per_resource_id,
@@ -170,6 +204,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   attr :selected_module_per_unit_uuid, :map
   attr :progress, :integer
   attr :student_id, :integer
+  attr :viewed_intro_video_resource_ids, :list
 
   def unit(assigns) do
     ~H"""
@@ -250,6 +285,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
             bg_image_url={@unit["revision"]["poster_image"]}
             video_url={@unit["revision"]["intro_video"]}
             card_uuid={@unit["uuid"]}
+            resource_id={@unit["revision"]["resource_id"]}
           />
           <.module_card
             :for={{module, module_index} <- Enum.with_index(@unit["children"], 1)}
@@ -329,6 +365,9 @@ defmodule OliWeb.Delivery.Student.LearnLive do
             student_raw_avg_score_per_page_id={@student_raw_avg_score_per_page_id}
             ctx={@ctx}
             student_id={@student_id}
+            intro_video_viewed={
+              Map.get(@selected_module_per_unit_uuid, @unit["uuid"])["resource_id"] in @viewed_intro_video_resource_ids
+            }
           />
         </div>
       </div>
@@ -358,18 +397,10 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   attr :student_raw_avg_score_per_page_id, :map
   attr :ctx, :map
   attr :student_id, :integer
+  attr :intro_video_viewed, :boolean
 
   def module_index(assigns) do
     ~H"""
-    <video
-      :if={module_has_intro_video(@module)}
-      id={"video_#{@module["uuid"]}"}
-      class="hidden"
-      controls
-    >
-      <source src={@module["revision"]["intro_video"]} type="video/mp4" />
-      Your browser does not support the video tag.
-    </video>
     <div id={"index_for_#{@module["uuid"]}"} class="flex flex-col gap-[6px] items-start">
       <.index_item
         :if={module_has_intro_video(@module)}
@@ -380,8 +411,11 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         graded={@module["revision"]["graded"]}
         duration_minutes={@module["revision"]["duration_minutes"]}
         revision_slug={@module["revision"]["slug"]}
+        resource_id={@module["revision"]["resource_id"]}
         uuid={@module["uuid"]}
         raw_avg_score={%{}}
+        video_url={@module["revision"]["intro_video"]}
+        intro_video_viewed={@intro_video_viewed}
       />
 
       <.index_item
@@ -396,6 +430,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         duration_minutes={page["revision"]["duration_minutes"]}
         graded={page["revision"]["graded"]}
         revision_slug={page["revision"]["slug"]}
+        resource_id={@module["revision"]["resource_id"]}
         uuid={@module["uuid"]}
         due_date={
           if page["revision"]["graded"],
@@ -410,6 +445,8 @@ defmodule OliWeb.Delivery.Student.LearnLive do
               )
         }
         raw_avg_score={Map.get(@student_raw_avg_score_per_page_id, page["revision"]["resource_id"])}
+        intro_video_viewed={@intro_video_viewed}
+        video_url={@module["revision"]["intro_video"]}
       />
     </div>
     """
@@ -421,10 +458,13 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   attr :was_visited, :boolean
   attr :duration_minutes, :integer
   attr :revision_slug, :string
+  attr :resource_id, :integer
   attr :graded, :boolean
   attr :uuid, :string
   attr :raw_avg_score, :map
   attr :due_date, :string
+  attr :intro_video_viewed, :boolean
+  attr :video_url, :string
 
   def index_item(assigns) do
     ~H"""
@@ -435,14 +475,16 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       <.index_item_icon
         item_type={@type}
         was_visited={@was_visited}
+        intro_video_viewed={@intro_video_viewed}
         graded={@graded}
         raw_avg_score={@raw_avg_score[:score]}
       />
       <div
-        id={@uuid}
-        phx-click={if @type != "intro", do: "navigate_to_resource"}
-        phx-hook={if @type == "intro", do: "VideoPlayer"}
+        id={"index_item_#{@numbering_index}_#{@uuid}"}
+        phx-click={if @type != "intro", do: "navigate_to_resource", else: "play_video"}
         phx-value-slug={@revision_slug}
+        phx-value-resource_id={@resource_id}
+        phx-value-video_url={@video_url}
         class="flex shrink items-center gap-3 w-full px-2 dark:text-white cursor-pointer hover:bg-gray-200/70 dark:hover:bg-gray-800"
       >
         <span class="text-[12px] leading-[16px] font-bold w-[30px] shrink-0 opacity-40 dark:text-white">
@@ -498,6 +540,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   attr :was_visited, :boolean
   attr :graded, :boolean
   attr :raw_avg_score, :map
+  attr :intro_video_viewed, :boolean
 
   def index_item_icon(assigns) do
     case {assigns.was_visited, assigns.item_type, assigns.graded, assigns.raw_avg_score} do
@@ -551,11 +594,17 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         # intro video
         ~H"""
         <div role="video icon" class="flex justify-center items-center h-7 w-7 shrink-0">
-          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            class="fill-black dark:fill-white"
+          >
             <path
               opacity="0.5"
               d="M9.5 16.5L16.5 12L9.5 7.5V16.5ZM4 20C3.45 20 2.97917 19.8042 2.5875 19.4125C2.19583 19.0208 2 18.55 2 18V6C2 5.45 2.19583 4.97917 2.5875 4.5875C2.97917 4.19583 3.45 4 4 4H20C20.55 4 21.0208 4.19583 21.4125 4.5875C21.8042 4.97917 22 5.45 22 6V18C22 18.55 21.8042 19.0208 21.4125 19.4125C21.0208 19.8042 20.55 20 20 20H4Z"
-              fill="#0CAF61"
+              fill={if @intro_video_viewed, do: "#0CAF61"}
             />
           </svg>
         </div>
@@ -571,6 +620,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
 
   attr :bg_image_url, :string, doc: "the background image url for the card"
   attr :card_uuid, :string
+  attr :resource_id, :string
 
   def intro_card(assigns) do
     ~H"""
@@ -588,14 +638,16 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         </h5>
         <div
           :if={@video_url}
-          id={@card_uuid}
-          phx-hook="VideoPlayer"
+          id={"intro_card_#{@card_uuid}"}
           class="w-[70px] h-[70px] relative my-auto -top-2 cursor-pointer"
         >
           <div class="w-full h-full rounded-full backdrop-blur bg-gray/50"></div>
           <button
             role="play_unit_intro_video"
             class="w-full h-full absolute top-0 left-0 flex items-center justify-center"
+            phx-click="play_video"
+            phx-value-video_url={@video_url}
+            phx-value-resource_id={@resource_id}
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -608,9 +660,6 @@ defmodule OliWeb.Delivery.Student.LearnLive do
               <path d="M0.759,0.158c0.39-0.219,0.932-0.21,1.313,0.021l14.303,8.687c0.368,0.225,0.609,0.625,0.609,1.057   s-0.217,0.832-0.586,1.057L2.132,19.666c-0.382,0.231-0.984,0.24-1.375,0.021C0.367,19.468,0,19.056,0,18.608V1.237   C0,0.79,0.369,0.378,0.759,0.158z" />
             </svg>
           </button>
-          <video id={"video_#{@card_uuid}"} class="hidden" controls>
-            <source src={@video_url} type="video/mp4" /> Your browser does not support the video tag.
-          </video>
         </div>
       </div>
     </div>
@@ -887,5 +936,40 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         student_exception.end_date
     end
     |> to_formatted_datetime(context, format)
+  end
+
+  defp get_viewed_intro_video_resource_ids(section_slug, current_user_id) do
+    Sections.get_enrollment(section_slug, current_user_id).state[
+      "viewed_intro_video_resource_ids"
+    ] ||
+      []
+  end
+
+  defp async_mark_video_as_viewed_in_student_enrollment_state(
+         student_id,
+         section_slug,
+         resource_id
+       ) do
+    Task.Supervisor.start_child(Oli.TaskSupervisor, fn ->
+      student_enrollment =
+        Sections.get_enrollment(section_slug, student_id)
+
+      updated_state =
+        case student_enrollment.state["viewed_intro_video_resource_ids"] do
+          nil ->
+            Map.merge(student_enrollment.state, %{
+              "viewed_intro_video_resource_ids" => [resource_id]
+            })
+
+          viewed_intro_video_resource_ids ->
+            Map.merge(student_enrollment.state, %{
+              "viewed_intro_video_resource_ids" => [
+                resource_id | viewed_intro_video_resource_ids
+              ]
+            })
+        end
+
+      Sections.update_enrollment(student_enrollment, %{state: updated_state})
+    end)
   end
 end

@@ -1,11 +1,11 @@
 export const VideoPlayer = {
   mounted() {
-    const play_button = document.getElementById(this.el.id);
-    const video = document.getElementById('video_' + this.el.id) as HTMLVideoElement;
+    const video = document.getElementById('student_learn_video') as HTMLVideoElement;
 
-    play_button?.addEventListener('click', () => {
+    window.addEventListener('phx:play_video', (e) => {
       video.classList.remove('hidden');
       video.requestFullscreen();
+      video.setAttribute('src', (e as CustomEvent).detail.video_url);
       video.play();
     });
 
