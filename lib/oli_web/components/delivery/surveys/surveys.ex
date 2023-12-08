@@ -1,4 +1,5 @@
 defmodule OliWeb.Components.Delivery.Surveys do
+  alias PhoenixStorybook.Rendering.RenderingContext
   use OliWeb, :live_component
 
   import Ecto.Query
@@ -341,23 +342,33 @@ defmodule OliWeb.Components.Delivery.Surveys do
   defp find_current_activities(current_assessment, section, student_ids, students, socket) do
     activities = get_activities(current_assessment, section, student_ids)
 
-    activity_ids =
-      Enum.map(activities, fn a -> a.id end)
+    activity_resource_ids =
+      Enum.map(activities, fn a -> a.resource_id end)
+
+    activity_details =
+      get_activity_details(
+        activity_resource_ids,
+        socket.assigns.section,
+        socket.assigns.activity_types_map
+      )
+
+    get_preview_rendered(activity_details, socket)
+    |> add_activity_attempts_info(students, student_ids, section)
 
     # ids = [1, 4, 6, 7, 9]
 
-    aditional_activities_data_mapper =
-      %{
-        1 => %{A: "valor de a", B: "el valor de B", C: "el valor de C", D: "el valor de D"},
-        4 => %{A: "valor de a", B: "el valor de B", C: "el valor de C", D: "el valor de D"},
-        6 => %{A: "valor de a", B: "el valor de B", C: "el valor de C", D: "el valor de D"},
-        7 => %{A: "valor de a", B: "el valor de B", C: "el valor de C", D: "el valor de D"},
-        9 => %{A: "valor de a", B: "el valor de B", C: "el valor de C", D: "el valor de D"}
-      }
+    # aditional_activities_data_mapper =
+    #   %{
+    #     1 => %{A: "valor de a", B: "el valor de B", C: "el valor de C", D: "el valor de D"},
+    #     4 => %{A: "valor de a", B: "el valor de B", C: "el valor de C", D: "el valor de D"},
+    #     6 => %{A: "valor de a", B: "el valor de B", C: "el valor de C", D: "el valor de D"},
+    #     7 => %{A: "valor de a", B: "el valor de B", C: "el valor de C", D: "el valor de D"},
+    #     9 => %{A: "valor de a", B: "el valor de B", C: "el valor de C", D: "el valor de D"}
+    #   }
 
-    Enum.map(activities, fn activity ->
-      Map.merge(activity, aditional_activities_data_mapper[activity.id])
-    end)
+    # Enum.map(activities, fn activity ->
+    #   Map.merge(activity, aditional_activities_data_mapper[activity.id])
+    # end)
 
     # Bloque agrega a la revision los campos
     # A, B, C, D
@@ -398,11 +409,13 @@ defmodule OliWeb.Components.Delivery.Surveys do
 
   defp add_activity_attempts_info(activity, students, student_ids, section) do
     students_with_attempts =
-      DeliveryResolver.students_with_attempts_for_page(
-        activity,
-        section,
-        student_ids
-      )
+      Enum.map(activity, fn a ->
+        DeliveryResolver.students_with_attempts_for_page(
+          a,
+          section,
+          student_ids
+        )
+      end)
 
     student_emails_without_attempts =
       Enum.reduce(students, [], fn s, acc ->
@@ -419,31 +432,44 @@ defmodule OliWeb.Components.Delivery.Surveys do
     |> Map.put(:total_attempts_count, count_attempts(activity, section, student_ids) || 0)
   end
 
-  defp get_preview_rendered(activity, socket) do
-    case get_activity_details(
-           activity,
-           socket.assigns.section,
-           socket.assigns.activity_types_map
-         ) do
+  defp get_preview_rendered(activity_details, socket) do
+    case activity_details do
       nil ->
         socket
 
       activity_attempt ->
-        part_attempts = Core.get_latest_part_attempts(activity_attempt.attempt_guid)
-
         rendering_context =
-          OliWeb.ManualGrading.Rendering.create_rendering_context(
-            activity_attempt,
-            part_attempts,
-            socket.assigns.activity_types_map,
-            socket.assigns.section
-          )
-          |> Map.merge(%{is_liveview: true})
+          Enum.map(activity_attempt, fn a ->
+            OliWeb.ManualGrading.Rendering.create_rendering_context(
+              a,
+              Core.get_latest_part_attempts(a.attempt_guid),
+              socket.assigns.activity_types_map,
+              socket.assigns.section
+            )
+            |> Map.merge(%{is_liveview: true})
+          end)
 
-        OliWeb.ManualGrading.Rendering.render(
-          rendering_context,
-          :instructor_preview
-        )
+        # part_attempts = Core.get_latest_part_attempts(activity_attempt.attempt_guid)
+
+        # rendering_context =
+        #   Enum.map(part_attempts, fn part_attempt ->
+        #     OliWeb.ManualGrading.Rendering.create_rendering_context(
+        #       activity_attempt,
+        #       part_attempt,
+        #       socket.assigns.activity_types_map,
+        #       socket.assigns.section
+        #     )
+        #     |> Map.merge(%{is_liveview: true})
+        #   end)
+
+        IO.inspect(rendering_context, label: "rendering_context")
+
+        Enum.map(rendering_context, fn rendering ->
+          OliWeb.ManualGrading.Rendering.render(
+            rendering,
+            :instructor_preview
+          )
+        end)
     end
   end
 
@@ -603,21 +629,12 @@ defmodule OliWeb.Components.Delivery.Surveys do
       join: rev in Revision,
       on: aa.revision_id == rev.id,
       group_by: [rev.resource_id, rev.id],
-      select: %{
-        rev
-        | # necesitamos realmente TOOODOS los campos de la revision????
-          # map(rev, [:id, :title, :content, :resource_id, :graded, :total_count, :page_type, :parent_slug]) ---> esto en lugar de rev
-          # y nos evitamos agregar los campos total_attempts y avg_score como virtual en el struct de Revision
-          total_attempts: count(aa.id),
-          avg_score:
-            sum(aa.score) /
-              fragment("CASE WHEN SUM(?) = 0.0 THEN 1.0 ELSE SUM(?) END", aa.out_of, aa.out_of)
-      }
+      select: map(rev, [:id, :resource_id, :title])
     )
     |> Repo.all()
   end
 
-  defp get_activity_details(selected_activity, section, activity_types_map) do
+  defp get_activity_details(activity_resource_ids, section, activity_types_map) do
     query =
       ActivityAttempt
       |> join(:left, [aa], resource_attempt in ResourceAttempt,
@@ -636,7 +653,7 @@ defmodule OliWeb.Components.Delivery.Surveys do
       |> where(
         [aa, _resource_attempt, resource_access, _u, activity_revision, _resource_revision],
         resource_access.section_id == ^section.id and
-          activity_revision.resource_id == ^selected_activity.resource_id
+          activity_revision.resource_id in ^activity_resource_ids
       )
       |> order_by([aa, _, _, _, _, _], desc: aa.inserted_at)
       |> limit(1)
@@ -677,7 +694,7 @@ defmodule OliWeb.Components.Delivery.Surveys do
       Enum.find(activity_types_map, fn {_k, v} -> v.title == "Likert" end)
       |> elem(0)
 
-    case Repo.one(query) do
+    case Repo.all(query) do
       nil ->
         nil
 
