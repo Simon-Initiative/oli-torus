@@ -76,7 +76,7 @@ export const ResponseTab: React.FC<Props> = (props) => {
     props.updateScore && props.updateScore(props.response.id, score);
   };
 
-  const getResponseBody = () => {
+  const getRulesComponents = () => {
     return inputs
       ? inputs.map((i) => (
           <RulesTab
@@ -201,7 +201,9 @@ export const ResponseTab: React.FC<Props> = (props) => {
           )}
           {matchStyleOptions}
         </div>
-        {getResponseBody()}
+        <div className="d-flex flex-column justify-between border border-gray-300 p-2 rounded">
+          {getRulesComponents()}
+        </div>
         <FeedbackCard
           key={`feedb-${response.id}`}
           title="Feedback"

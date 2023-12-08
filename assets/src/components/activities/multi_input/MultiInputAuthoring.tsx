@@ -17,6 +17,7 @@ import { QuestionTab } from 'components/activities/multi_input/sections/Question
 import { Manifest } from 'components/activities/types';
 import { elementsOfType } from 'components/editing/slateUtils';
 import { TabbedNavigation } from 'components/tabbed_navigation/Tabs';
+import { getPartById } from 'data/activities/model/utils';
 import { InputRef } from 'data/content/model/elements/types';
 import { configureStore } from 'state/store';
 import { AuthoringElement, AuthoringElementProps } from '../AuthoringElement';
@@ -48,6 +49,8 @@ export const MultiInputComponent = () => {
 
   const input = model.inputs.find((input) => input.id === selectedInputRef?.id);
   const index = model.inputs.findIndex((input) => input.id === selectedInputRef?.id);
+  let refsTargeted: string[] | undefined;
+  if (input) refsTargeted = getPartById(model, input.partId).targets;
 
   return (
     <>
@@ -56,6 +59,7 @@ export const MultiInputComponent = () => {
         setSelectedInputRef={setSelectedInputRef}
         setEditor={setEditor}
         isMultiInput={true}
+        refsTargeted={refsTargeted}
       />
       {editor && input ? (
         <TabbedNavigation.Tabs>
@@ -63,7 +67,7 @@ export const MultiInputComponent = () => {
             <QuestionTab editor={editor} input={input} index={index} />
           </TabbedNavigation.Tab>
           {model.multInputsPerPart && (
-            <TabbedNavigation.Tab label="Part">
+            <TabbedNavigation.Tab label="Answer Key">
               <PartsTab editor={editor} input={input} index={index} />
             </TabbedNavigation.Tab>
           )}
