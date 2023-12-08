@@ -31,20 +31,16 @@ export const ScheduleGrid: React.FC<GridProps> = ({ startDate, endDate, onReset,
 
   return (
     <div className="pb-20">
-      <div className="flex container justify-end gap-x-4">
-        <button className=" text-delivery-primary uppercase underline" onClick={onReset}>
+      <div className="flex flex-row justify-end gap-x-4 mb-6 px-6">
+        <button className="btn btn-sm btn-primary" onClick={onReset}>
           Reset Timelines
         </button>
-        <button
-          id="clear-schedule"
-          className=" text-delivery-primary uppercase underline"
-          onClick={onClear}
-        >
+        <button id="clear-schedule" className="btn btn-sm btn-primary" onClick={onClear}>
           Clear Timelines
         </button>
       </div>
 
-      <div className="w-full overflow-x-auto">
+      <div className="w-full overflow-x-auto px-4">
         <table className="select-none table-striped border-t-0">
           <thead>
             <ScheduleHeaderRow

@@ -5,6 +5,7 @@ defmodule Oli.Delivery.Sections.Scheduling do
 
   import Ecto.Query, warn: false
 
+  alias Ecto.Multi
   alias Oli.Publishing.PublishedResource
   alias Oli.Delivery.Sections.Section
   alias Oli.Delivery.Sections.SectionResource
@@ -96,11 +97,45 @@ defmodule Oli.Delivery.Sections.Scheduling do
   """
 
   def clear(%Section{id: section_id}) do
+    res =
+      Multi.new()
+      |> Multi.run(:section_resources_count, fn repo, changes ->
+        count =
+          get_section_resources_with_schedule(changes, section_id)
+          |> repo.aggregate(:count, :id)
+
+        {:ok, count}
+      end)
+      |> Multi.update_all(
+        :updated_resources,
+        &get_section_resources_with_schedule(&1, section_id),
+        set: [start_date: nil, end_date: nil]
+      )
+      |> Repo.transaction()
+
+    case res do
+      {:error, _} ->
+        {:error, :failed_to_clear_scheduling}
+
+      {:ok,
+       %{
+         section_resources_count: resources_to_update_count,
+         updated_resources: {updated_count, _}
+       }}
+      when resources_to_update_count == updated_count ->
+        {:ok, updated_count}
+
+      {:ok, _} ->
+        {:error, :uncomplete_clear_scheduling}
+    end
+  end
+
+  def get_section_resources_with_schedule(_changes, section_id) do
     from(
       sr in SectionResource,
-      where: sr.section_id == ^section_id
+      where:
+        sr.section_id == ^section_id and (not is_nil(sr.start_date) or not is_nil(sr.end_date))
     )
-    |> Repo.update_all(set: [start_date: nil, end_date: nil])
   end
 
   defp is_valid_update?(updates) do
