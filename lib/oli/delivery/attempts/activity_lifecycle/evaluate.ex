@@ -384,7 +384,7 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
           part_attempt_guid: part_id,
           input: input.input
         }
-        
+
         Oli.Delivery.Evaluation.Evaluator.evaluate(part, context)
       end)
       |> Enum.map(fn e ->
