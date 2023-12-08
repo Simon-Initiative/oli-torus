@@ -301,6 +301,8 @@ defmodule Oli.Delivery.SectionsTest do
       page3_resource_id = page3.resource_id
       scored_page2_resource_id = scored_page2.resource_id
 
+      # verify that the assignments are sorted by schedule and then by hierarchy
+      # assignments without a scheduled date are listed after and are just sorted by hierarchy
       assert [
                %{resource_id: ^page4_resource_id},
                %{resource_id: ^page5_resource_id},
