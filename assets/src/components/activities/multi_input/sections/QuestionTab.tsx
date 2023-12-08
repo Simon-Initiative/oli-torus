@@ -38,7 +38,7 @@ export const QuestionTab: React.FC<Props> = (props) => {
           {inputTitle(props.input, props.index)}
           <div className="flex-grow-1"></div>
           <div className="choicesAuthoring__removeButtonContainer">
-            {getParts(model).length > 1 && <RemoveButtonConnected onClick={removeInputRef} />}
+            {<RemoveButtonConnected onClick={removeInputRef} />}
           </div>
         </>
       </Card.Title>

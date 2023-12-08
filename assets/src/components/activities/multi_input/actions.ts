@@ -403,4 +403,28 @@ export const MultiInputActions = {
       post(undoables);
     };
   },
+
+  removeInputFromResponse(inputId: string, responseId: string) {
+    return (model: MultiInputSchema, post: PostUndoable) => {
+      const input = getByUnsafe(model.inputs, (input) => input.id === inputId);
+      const part = getPartById(model, input.partId);
+      const response = part.responses.find((r) => r.id === responseId);
+
+      if (!response || !response.inputRefs || response.inputRefs.length < 2) {
+        return;
+      }
+
+      if (response.inputRefs) {
+        response.inputRefs = response.inputRefs.filter((i) => i !== inputId);
+      }
+      response.rule = constructRule(
+        response.rule,
+        response.matchStyle,
+        inputId,
+        containsRule(''),
+        false,
+        true,
+      );
+    };
+  },
 };
