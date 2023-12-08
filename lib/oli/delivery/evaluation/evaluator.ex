@@ -80,6 +80,7 @@ defmodule Oli.Delivery.Evaluation.Evaluator do
       case Rule.parse_and_evaluate(rule, context) do
         {:ok, result} ->
           result
+
         {:error, _er} ->
           false
       end
