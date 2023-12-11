@@ -605,7 +605,9 @@ defmodule OliWeb.Delivery.Student.LearnLive do
                 />
               </svg>
               <span class="text-[12px] leading-[16px] tracking-[0.02px] text-[#0CAF61] font-semibold">
-                <%= @raw_avg_score[:score] %> / <%= @raw_avg_score[:out_of] %>
+                <%= format_float(@raw_avg_score[:score]) %> / <%= format_float(
+                  @raw_avg_score[:out_of]
+                ) %>
               </span>
             </div>
           </div>
@@ -960,6 +962,11 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   defp parse_student_progress_for_resource(student_progress_per_resource_id, resource_id) do
     Map.get(student_progress_per_resource_id, resource_id, 0.0)
     |> Kernel.*(100)
+    |> format_float()
+  end
+
+  defp format_float(float) do
+    float
     |> round()
     |> trunc()
   end
