@@ -3,15 +3,15 @@ import { Provider } from 'react-redux';
 import '@testing-library/jest-dom';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { AuthoringElementProvider } from 'components/activities/AuthoringElementProvider';
-import { MultiInputComponent } from 'components/activities/multi_input/MultiInputAuthoring';
-import { MultiInputActions } from 'components/activities/multi_input/actions';
+import { ResponseMultiInputComponent } from 'components/activities/response_multi/ResponseMultiInputAuthoring';
+import { ResponseMultiInputActions } from 'components/activities/response_multi/actions';
 import {
   Dropdown,
   FillInTheBlank,
-  MultiInputSchema,
-} from 'components/activities/multi_input/schema';
-import { addTargetedFeedbackFillInTheBlank } from 'components/activities/multi_input/sections/AnswerKeyTab';
-import { defaultModel, multiInputStem } from 'components/activities/multi_input/utils';
+  ResponseMultiInputSchema,
+} from 'components/activities/response_multi/schema';
+import { addTargetedFeedbackFillInTheBlank } from 'components/activities/response_multi/sections/AnswerKeyTab';
+import { defaultModel, multiInputStem } from 'components/activities/response_multi/utils';
 import {
   Transform,
   makeChoice,
@@ -22,18 +22,20 @@ import {
 import { Responses } from 'data/activities/model/responses';
 import { Model } from 'data/content/model/elements/factories';
 import { configureStore } from 'state/store';
+import guid from 'utils/guid';
 import { Operations } from 'utils/pathOperations';
 import { dispatch } from 'utils/test_utils';
 import { defaultAuthoringElementProps } from '../utils/activity_mocks';
 
-const DEFAULT_PART_ID = '1';
+const DEFAULT_PART_ID = guid();
 const input = Model.inputRef();
 const choices = [makeChoice('Choice A'), makeChoice('Choice B')];
 
-const _dropdownModel: MultiInputSchema = {
+const _dropdownModel: ResponseMultiInputSchema = {
   stem: multiInputStem(input),
   choices,
   submitPerPart: false,
+  multInputsPerPart: true,
   inputs: [
     {
       inputType: 'dropdown',
@@ -50,10 +52,11 @@ const _dropdownModel: MultiInputSchema = {
   },
 };
 
-const _numericModel: MultiInputSchema = {
+const _numericModel: ResponseMultiInputSchema = {
   stem: multiInputStem(input),
   choices: [],
   submitPerPart: false,
+  multInputsPerPart: false,
   inputs: [{ inputType: 'numeric', id: input.id, partId: DEFAULT_PART_ID }],
   authoring: {
     parts: [makePart(Responses.forNumericInput(), [makeHint('')], DEFAULT_PART_ID)],
@@ -64,7 +67,7 @@ const _numericModel: MultiInputSchema = {
 };
 
 describe('multi input question - default (with text input)', () => {
-  const props = defaultAuthoringElementProps<MultiInputSchema>(defaultModel());
+  const props = defaultAuthoringElementProps<ResponseMultiInputSchema>(defaultModel());
   const { model } = props;
   const store = configureStore();
 
@@ -75,7 +78,7 @@ describe('multi input question - default (with text input)', () => {
   it('has an input', () => {
     expect(model.inputs).toHaveLength(1);
     expect(model.inputs[0]).toHaveProperty('inputType', 'text');
-    expect(model.inputs[0]).toHaveProperty('partId', '1');
+    expect(model.inputs[0]).toHaveProperty('partId', DEFAULT_PART_ID);
   });
 
   it('has a part with text input responses', () => {
@@ -85,7 +88,11 @@ describe('multi input question - default (with text input)', () => {
     expect(part.responses[0]).toHaveProperty('score', 1);
     expect(part.responses[0].rule).toMatch(/contains/);
     expect(part.responses[1]).toHaveProperty('score', 0);
-    expect(part.responses[1]).toHaveProperty('rule', 'input like {.*}');
+    let t = '';
+    if (part.targets) {
+      t = part.targets[0];
+    }
+    expect(part.responses[1]).toHaveProperty('rule', 'input_ref_' + t + ' like {.*}');
   });
 
   it('has no choices', () => {
@@ -108,7 +115,7 @@ describe('multi input question - default (with text input)', () => {
     render(
       <Provider store={store}>
         <AuthoringElementProvider {...props}>
-          <MultiInputComponent />
+          <ResponseMultiInputComponent />
         </AuthoringElementProvider>
       </Provider>,
     );
@@ -117,9 +124,13 @@ describe('multi input question - default (with text input)', () => {
     fireEvent.click(answerKeyLink);
     const feedbackLink = await screen.findByText('Add targeted feedback');
     fireEvent.click(feedbackLink);
+    let t = '';
+    if (model.authoring.parts[0].targets) {
+      t = model.authoring.parts[0].targets[0];
+    }
     const responses = model.authoring.parts[0].responses;
     expect(responses).toHaveLength(3);
-    expect(responses[1]).toHaveProperty('rule', 'input contains {}');
+    expect(responses[1]).toHaveProperty('rule', 'input_ref_' + t + ' contains {}');
     expect(responses[1]).toHaveProperty('score', 0);
   });
 
@@ -128,7 +139,10 @@ describe('multi input question - default (with text input)', () => {
     const input = model.inputs[0] as FillInTheBlank;
     const withTargeted = dispatch(model, addTargetedFeedbackFillInTheBlank(input));
 
-    const updated = dispatch(withTargeted, MultiInputActions.setInputType(input.id, 'dropdown'));
+    const updated = dispatch(
+      withTargeted,
+      ResponseMultiInputActions.setInputType(input.id, 'dropdown'),
+    );
 
     // choices
     expect(updated.choices).toHaveLength(2);
@@ -138,9 +152,9 @@ describe('multi input question - default (with text input)', () => {
 
     // responses
     const responses = updated.authoring.parts[0].responses;
-    expect(responses).toHaveLength(2);
+    expect(responses).toHaveLength(4);
     expect(responses.map((r) => ({ rule: r.rule, score: r.score }))).toEqual(
-      Responses.forMultipleChoice(updated.choices[0].id).map((r) => ({
+      Responses.forMultipleChoice(input.id, updated.choices[0].id).map((r) => ({
         rule: r.rule,
         score: r.score,
       })),
@@ -151,7 +165,7 @@ describe('multi input question - default (with text input)', () => {
     render(
       <Provider store={store}>
         <AuthoringElementProvider {...props}>
-          <MultiInputComponent />
+          <ResponseMultiInputComponent />
         </AuthoringElementProvider>
       </Provider>,
     );
@@ -169,8 +183,15 @@ describe('multi input question - default (with text input)', () => {
 
     // new part should be added with text input responses
     expect(model.authoring.parts).toHaveLength(2);
+    let t = '';
+    if (model.authoring.parts[1].targets) {
+      t = model.authoring.parts[1].targets[0];
+    }
     expect(
-      model.authoring.parts[1].responses.map((r) => ({ rule: r.rule, score: r.score })),
+      model.authoring.parts[1].responses.map((r) => ({
+        rule: r.rule.replace('input_ref_' + t, 'input'),
+        score: r.score,
+      })),
     ).toEqual(Responses.forTextInput().map((r) => ({ rule: r.rule, score: r.score })));
 
     // input should be added as text input

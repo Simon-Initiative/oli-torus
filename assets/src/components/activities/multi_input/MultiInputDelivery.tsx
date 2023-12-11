@@ -120,16 +120,6 @@ export const MultiInputComponent: React.FC = () => {
     {},
   );
 
-  const extractValue = (inputId: string, v: string[]) => {
-    if (v[0] && (uiState.model as MultiInputSchema).multInputsPerPart) {
-      const vj = JSON.parse(v[0]);
-      if (vj) {
-        return vj[inputId];
-      }
-    }
-    return v[0];
-  };
-
   const inputs = new Map(
     (uiState.model as MultiInputSchema).inputs.map((input) => [
       input.id,
@@ -146,10 +136,7 @@ export const MultiInputComponent: React.FC = () => {
                 size: input.size,
               }
             : { id: input.id, inputType: input.inputType, size: input.size },
-        value: extractValue(
-          input.id,
-          (uiState.partState[input.partId]?.studentInput as string[]) || [''],
-        ),
+        value: (uiState.partState[input.partId]?.studentInput || [''])[0],
         hasHints: uiState.partState[input.partId].hasMoreHints,
       },
     ]),
@@ -193,17 +180,7 @@ export const MultiInputComponent: React.FC = () => {
   //
   const onChange = (id: string, value: string) => {
     const input = getByUnsafe((uiState.model as MultiInputSchema).inputs, (x) => x.id === id);
-
     const part = uiState.attemptState.parts.find((p) => p.partId === input.partId);
-
-    if ((uiState.model as MultiInputSchema).multInputsPerPart) {
-      const partState = uiState.partState[input.partId];
-      const prevInput = partState.studentInput[0];
-      const oldInput = prevInput ? JSON.parse(prevInput) : {};
-      oldInput[input.id] = value;
-      value = JSON.stringify(oldInput);
-    }
-
     const response = { input: value };
 
     if (part !== undefined) {
@@ -271,7 +248,7 @@ export const MultiInputComponent: React.FC = () => {
 
   const hasActualInput = (id: string) => {
     const input = getByUnsafe((uiState.model as MultiInputSchema).inputs, (x) => x.id === id);
-    const studentInput: string = uiState.partState[input.partId].studentInput[0];
+    const studentInput = uiState.partState[input.partId].studentInput[0];
 
     return studentInput !== undefined && studentInput.trim() !== '';
   };

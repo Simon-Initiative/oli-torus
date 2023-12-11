@@ -24,8 +24,6 @@ import { getCorrectResponse, hasCustomScoring } from 'data/activities/model/resp
 import { containsRule, eqRule, equalsRule } from 'data/activities/model/rules';
 import { defaultWriterContext } from 'data/content/writers/context';
 import { MultiInputScoringMethod } from '../MultiInputScoringMethod';
-import { MultiInputActions } from '../actions';
-import { addRef } from '../utils';
 
 const defaultRuleForInputType = (inputType: string | undefined) => {
   switch (inputType) {
@@ -41,7 +39,7 @@ const defaultRuleForInputType = (inputType: string | undefined) => {
 
 export const addTargetedFeedbackFillInTheBlank = (input: FillInTheBlank) =>
   ResponseActions.addResponse(
-    addRef(input.id, makeResponse(defaultRuleForInputType(input.inputType), 0, '')),
+    makeResponse(defaultRuleForInputType(input.inputType), 0, ''),
     input.partId,
   );
 
@@ -69,11 +67,7 @@ export const AnswerKeyTab: React.FC<Props> = (props) => {
           selectedIcon={<Radio.Checked />}
           choices={choices}
           selected={[correctChoice.id]}
-          onSelect={(id) =>
-            dispatch(
-              MultiInputActions.toggleChoiceCorrectness(id, props.input.partId, props.input.id),
-            )
-          }
+          onSelect={(id) => dispatch(MCActions.toggleChoiceCorrectness(id, props.input.partId))}
           isEvaluated={false}
           context={defaultWriterContext({ projectSlug: projectSlug })}
         />
@@ -107,9 +101,7 @@ export const AnswerKeyTab: React.FC<Props> = (props) => {
         key={getCorrectResponse(model, props.input.partId).id}
         inputType={props.input.inputType}
         response={getCorrectResponse(model, props.input.partId)}
-        onEditResponseRule={(id, rule) =>
-          dispatch(MultiInputActions.editRule(id, props.input.id, rule))
-        }
+        onEditResponseRule={(id, rule) => dispatch(ResponseActions.editRule(id, rule))}
       />
       <SimpleFeedback partId={props.input.partId} />
       <MultiInputScoringMethod />
@@ -143,9 +135,7 @@ export const AnswerKeyTab: React.FC<Props> = (props) => {
             key={response.id}
             inputType={(props.input as FillInTheBlank).inputType}
             response={response}
-            onEditResponseRule={(id, rule) =>
-              dispatch(MultiInputActions.editRule(id, props.input.id, rule))
-            }
+            onEditResponseRule={(id, rule) => dispatch(ResponseActions.editRule(id, rule))}
           />
           {authoringContext.contentBreaksExist ? (
             <ShowPage

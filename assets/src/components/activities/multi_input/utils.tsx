@@ -7,25 +7,15 @@ import {
   MultiInputType,
 } from 'components/activities/multi_input/schema';
 import {
-  ChoiceId,
-  MatchStyle,
   Part,
-  Response,
   Transform,
   makeChoice,
   makeHint,
   makePart,
-  makeResponse,
   makeTransformation,
 } from 'components/activities/types';
-// import { Responses } from 'data/activities/model/responses';
-import {
-  containsRule,
-  eqRule,
-  equalsRule,
-  isTextRule,
-  matchRule,
-} from 'data/activities/model/rules';
+import { Responses } from 'data/activities/model/responses';
+import { isTextRule } from 'data/activities/model/rules';
 import { Model } from 'data/content/model/elements/factories';
 import { InputRef, Paragraph } from 'data/content/model/elements/types';
 import { elementsOfType } from 'data/content/utils';
@@ -48,124 +38,16 @@ export const multiInputStem = (input: InputRef) => ({
   ],
 });
 
-export const defaultRuleForInputType = (inputType: string | undefined, choiceId?: string) => {
-  switch (inputType) {
-    case 'numeric':
-      return eqRule(0);
-    case 'math':
-      return equalsRule('');
-    case 'dropdown':
-      if (choiceId === undefined)
-        throw new Error('choiceId paramenter required for dropdown input type');
-      return matchRule(choiceId);
-    case 'text':
-    default:
-      return containsRule('');
-  }
-};
-
-export const constructRule = (
-  inputRule: string,
-  inputMatchStyle: MatchStyle | undefined,
-  inputId: string,
-  rule: string,
-  append: boolean,
-  exclude?: boolean,
-): string => {
-  const inputRules: Map<string, string> = purseMultiInputRule(inputRule);
-
-  const matchStyle: MatchStyle = inputMatchStyle ? inputMatchStyle : 'all';
-  let ruleSeparator = ' && ';
-  if (matchStyle === 'any' || matchStyle === 'none') {
-    ruleSeparator = ' || ';
-  }
-  const editedRule: string = replaceWithInputRef(inputId, rule);
-
-  let updatedRule = '';
-  let alreadyIncluded = false;
-  Array.from(inputRules.keys()).forEach((k) => {
-    if (k === inputId) {
-      alreadyIncluded = true;
-      if (!exclude) {
-        updatedRule = updatedRule === '' ? editedRule : updatedRule + ruleSeparator + editedRule;
-      }
-    } else {
-      updatedRule =
-        updatedRule === ''
-          ? '' + inputRules.get(k)
-          : updatedRule + ruleSeparator + inputRules.get(k);
-    }
-  });
-
-  if (append && !alreadyIncluded) {
-    updatedRule = updatedRule === '' ? '' + editedRule : updatedRule + ruleSeparator + editedRule;
-  }
-  if (matchStyle === 'none' && updatedRule !== '') {
-    updatedRule = '!(' + updatedRule + ')';
-  }
-  return updatedRule;
-};
-
-export const MultiInputResponses = {
-  catchAll: (inputId: string, text = 'Incorrect') => {
-    const catchAllRespose = makeResponse(replaceWithInputRef(inputId, matchRule('.*')), 0, text);
-    catchAllRespose.catchAll = true;
-    return addRef(inputId, catchAllRespose);
-  },
-  forTextInput: (inputId: string, correctText = 'Correct', incorrectText = 'Incorrect') => [
-    addRef(
-      inputId,
-      makeResponse(replaceWithInputRef(inputId, containsRule('answer')), 1, correctText),
-    ),
-    MultiInputResponses.catchAll(inputId, incorrectText),
-  ],
-  forNumericInput: (inputId: string, correctText = 'Correct', incorrectText = 'Incorrect') => [
-    addRef(inputId, makeResponse(replaceWithInputRef(inputId, eqRule(1)), 1, correctText)),
-    MultiInputResponses.catchAll(inputId, incorrectText),
-  ],
-  forMathInput: (inputId: string, correctText = 'Correct', incorrectText = 'Incorrect') => [
-    addRef(inputId, makeResponse(replaceWithInputRef(inputId, equalsRule('')), 1, correctText)),
-    MultiInputResponses.catchAll(inputId, incorrectText),
-  ],
-  forMultipleChoice: (
-    inputId: string,
-    correctChoiceId: ChoiceId,
-    correctText = 'Correct',
-    incorrectText = 'Incorrect',
-  ) => [
-    addRef(
-      inputId,
-      makeResponse(replaceWithInputRef(inputId, matchRule(correctChoiceId)), 1, correctText),
-    ),
-    addRef(inputId, makeResponse(replaceWithInputRef(inputId, matchRule('.*')), 0, incorrectText)),
-  ],
-};
-
-export const replaceWithInputRef = (inputId: string, rule: string) => {
-  if (rule.includes('input_ref_')) return rule;
-  return rule.replace(/input/g, 'input_ref_' + inputId);
-};
-
-export const addRef = (inputId: string, response: Response): Response => {
-  if (!response.inputRefs) response.inputRefs = [];
-  if (!response.inputRefs.includes(inputId)) response.inputRefs.push(inputId);
-  return response;
-};
-
 export const defaultModel = (): MultiInputSchema => {
   const input = Model.inputRef();
-  const partId = guid();
 
   return {
     stem: multiInputStem(input),
     choices: [],
-    inputs: [{ inputType: 'text', id: input.id, partId: partId }],
+    inputs: [{ inputType: 'text', id: input.id, partId: '1' }],
     submitPerPart: false,
-    multInputsPerPart: true,
     authoring: {
-      parts: [
-        makePart(MultiInputResponses.forTextInput(input.id), [makeHint('')], partId, [input.id]),
-      ],
+      parts: [makePart(Responses.forTextInput(), [makeHint('')], '1')],
       targeted: [],
       transformations: [makeTransformation('choices', Transform.shuffle, true)],
       previewText: 'Example question with a fill in the blank',
@@ -198,25 +80,6 @@ export const partTitle = (input: MultiInput, index: number) => (
   </div>
 );
 
-export const inputTitle = (input: MultiInput, index: number) => (
-  <div>
-    {`Input ${index + 1}: `}
-    <span className="text-muted">{friendlyType(input.inputType)}</span>
-  </div>
-);
-
-export const purseMultiInputRule = (rule: string): any => {
-  const ruleRegex = RegExp('input_ref_.*?}', 'g');
-
-  let reg;
-  const entries: Map<string, string> = new Map<string, string>();
-
-  while ((reg = ruleRegex.exec(rule)) !== null) {
-    entries.set(reg[0].split('_')[2].split(' ')[0], reg[0]);
-  }
-  return entries;
-};
-
 export function guaranteeMultiInputValidity(model: MultiInputSchema): MultiInputSchema {
   // Check whether model is valid first to save unnecessarily cloning the model
   if (isValidModel(model)) {
@@ -239,7 +102,6 @@ function inputsMatchInputRefs(model: MultiInputSchema) {
 }
 
 function inputsMatchParts(model: MultiInputSchema) {
-  if (model.multInputsPerPart) return true;
   const parts = model.authoring.parts;
   const union = setUnion(
     model.inputs.map(({ partId }) => partId),
@@ -281,7 +143,7 @@ function ensureHasInput(model: MultiInputSchema) {
   // Make new input ref, add to first paragraph of stem, add new input to model.inputs,
   // add new part.
   const ref = Model.inputRef();
-  const part = makePart(MultiInputResponses.forTextInput(ref.id), [makeHint('')]);
+  const part = makePart(Responses.forTextInput(), [makeHint('')]);
   const input: MultiInput = { id: ref.id, inputType: 'text', partId: part.id };
 
   const firstParagraph = model.stem.content.find((elem) => elem.type === 'p') as
@@ -339,14 +201,13 @@ function matchInputsToParts(model: MultiInputSchema) {
   );
 
   unmatchedInputs.forEach((input: MultiInput) => {
-    if (model.multInputsPerPart) return;
     const choices = [makeChoice('Choice A'), makeChoice('Choice B')];
     const part = makePart(
       input.inputType === 'dropdown'
-        ? MultiInputResponses.forMultipleChoice(input.id, choices[0].id)
+        ? Responses.forMultipleChoice(choices[0].id)
         : input.inputType === 'numeric'
-        ? MultiInputResponses.forNumericInput(input.id)
-        : MultiInputResponses.forTextInput(input.id),
+        ? Responses.forNumericInput()
+        : Responses.forTextInput(),
     );
     model.authoring.parts.push(part);
   });
@@ -361,8 +222,7 @@ function matchInputsToParts(model: MultiInputSchema) {
       inputType: type === 'dropdown' ? 'text' : type,
       partId: part.id,
     });
-    part.responses =
-      type === 'dropdown' ? MultiInputResponses.forTextInput(ref.id) : part.responses;
+    part.responses = type === 'dropdown' ? Responses.forTextInput() : part.responses;
     // add inputRef to end of first paragraph in stem
     const firstParagraph = model.stem.content.find((elem) => elem.type === 'p') as
       | Paragraph
@@ -398,9 +258,8 @@ function matchInputsToInputRefs(model: MultiInputSchema) {
   });
 
   unmatchedInputRefs.forEach((ref) => {
-    if (model.multInputsPerPart) return;
     // create new input and part for the input ref in the stem
-    const part = makePart(MultiInputResponses.forTextInput(ref.id), [makeHint('')]);
+    const part = makePart(Responses.forTextInput(), [makeHint('')]);
     model.inputs.push({ id: ref.id, inputType: 'text', partId: part.id } as MultiInput);
     model.authoring.parts.push(part);
   });

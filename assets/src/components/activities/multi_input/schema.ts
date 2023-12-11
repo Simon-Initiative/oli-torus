@@ -55,7 +55,6 @@ export interface MultiInputSchema extends ActivityModelSchema, ActivityLevelScor
   // The actual student-answerable inputs, designated by their type
   inputs: MultiInput[];
   submitPerPart: boolean;
-  multInputsPerPart: boolean;
   authoring: {
     targeted: ChoiceIdsToResponseId[];
     parts: Part[];
