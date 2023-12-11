@@ -573,7 +573,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
           <div class="flex">
             <span class={[
               "text-[16px] leading-[22px] dark:text-white",
-              if(@was_visited, do: "opacity-50")
+              if(@was_visited or @intro_video_viewed, do: "opacity-50")
             ]}>
               <%= "#{@title}" %>
             </span>
