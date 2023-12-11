@@ -215,7 +215,7 @@ export const ResponseMultiInputComponent: React.FC = () => {
 
     if (part !== undefined) {
       // Here we handle the case that the student is typing again into an input whose
-      // part attempt had already been evaluated. So we must first reset to get a new
+      // part attempt had  already been evaluated. So we must first reset to get a new
       // part attempt, then either submit (if dropdown) or save the input to that part attempt
       if (
         part.dateEvaluated !== null &&
