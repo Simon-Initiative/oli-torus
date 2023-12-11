@@ -264,7 +264,7 @@ textarea.form-control,
 .input-group select,
 select.custom-select,
 select.form-control {
-  @apply border py-1 px-1.5 border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-850 rounded w-full disabled:bg-neutral-100 disabled:text-neutral-600 dark:text-white;
+  @apply border py-1 px-1.5 border-gray-300 dark:border-gray-600 dark:bg-gray-850 rounded w-full disabled:bg-neutral-100 disabled:text-neutral-600 dark:text-white;
 }
 
 input.form-control-sm,
