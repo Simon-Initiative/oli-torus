@@ -6,10 +6,6 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   alias Oli.Delivery.{Metrics, Sections}
   alias Phoenix.LiveView.JS
 
-  # TODO
-  # introduction and learning objectives at module index. intro corresponds to intro_content revision field for the module
-  # 15 / 20 at unit level (when completed)
-
   def mount(_params, _session, socket) do
     # when updating to Liveview 0.20 we should replace this with assign_async/3
     # https://hexdocs.pm/phoenix_live_view/Phoenix.LiveView.html#assign_async/3
@@ -90,6 +86,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
                  module_uuid
                )
                |> mark_visited_pages(socket.assigns.student_visited_pages)
+               |> fetch_learning_objectives(socket.assigns.section.id)
                |> Map.merge(%{"module_index_in_unit" => selected_module_index})
            }), true}
 
@@ -111,6 +108,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
             {Map.merge(socket.assigns.selected_module_per_unit_uuid, %{
                unit_uuid =>
                  mark_visited_pages(clicked_module, socket.assigns.student_visited_pages)
+                 |> fetch_learning_objectives(socket.assigns.section.id)
                  |> Map.merge(%{"module_index_in_unit" => selected_module_index})
              }), true}
           end
@@ -401,7 +399,82 @@ defmodule OliWeb.Delivery.Student.LearnLive do
 
   def module_index(assigns) do
     ~H"""
-    <div id={"index_for_#{@module["uuid"]}"} class="flex flex-col gap-[6px] items-start">
+    <div id={"index_for_#{@module["uuid"]}"} class="relative flex flex-col gap-[6px] items-start">
+      <div
+        phx-click-away={JS.hide(to: "#learning_objectives_#{@module["uuid"]}")}
+        class="hidden flex flex-col gap-3 w-full p-6 bg-white dark:bg-[#242533] shadow-xl rounded-xl absolute -top-[18px] left-0 transform -translate-x-[calc(100%+10px)] z-50"
+        id={"learning_objectives_#{@module["uuid"]}"}
+        role="learning objectives tooltip"
+      >
+        <svg
+          class="absolute top-6 -right-4 w-[27px] h-3 fill-white dark:fill-[#242533]"
+          xmlns="http://www.w3.org/2000/svg"
+          width="12"
+          height="27"
+          viewBox="0 0 12 27"
+          fill="none"
+        >
+          <path d="M12 13.5L0 27L-1.18021e-06 1.90735e-06L12 13.5Z" />
+        </svg>
+        <div class="flex items-center gap-[10px] mb-3">
+          <h3 class="text-[12px] leading-[16px] tracking-[0.96px] dark:opacity-40 font-bold uppercase dark:text-white">
+            Learning Objectives
+          </h3>
+          <svg
+            phx-click={JS.hide(to: "#learning_objectives_#{@module["uuid"]}")}
+            class="ml-auto cursor-pointer hover:opacity-50 hover:scale-105"
+            xmlns="http://www.w3.org/2000/svg"
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+          >
+            <path
+              class="stroke-black dark:stroke-white"
+              d="M6 18L18 6M6 6L18 18"
+              stroke-width="2"
+              stroke-linejoin="round"
+            />
+          </svg>
+        </div>
+        <ul class="flex flex-col gap-[6px]">
+          <li
+            :for={{learning_objective, index} <- Enum.with_index(@module["learning_objectives"], 1)}
+            class="flex py-1"
+          >
+            <span class="w-[30px] text-[12px] leading-[24px] font-bold dark:text-white dark:opacity-40">
+              <%= "L#{index}" %>
+            </span>
+            <span class="text-[14px] leading-[24px] tracking-[0.02px] dark:text-white dark:opacity-80">
+              <%= learning_objective.title %>
+            </span>
+          </li>
+        </ul>
+      </div>
+      <div
+        :if={@module["learning_objectives"] != []}
+        role="module learning objectives"
+        class="flex items-center gap-[14px] px-[10px] w-full cursor-pointer"
+        phx-click={JS.toggle(to: "#learning_objectives_#{@module["uuid"]}")}
+      >
+        <svg
+          class="fill-black dark:fill-white"
+          xmlns="http://www.w3.org/2000/svg"
+          width="24"
+          height="24"
+          viewBox="0 0 24 24"
+          fill="none"
+        >
+          <path
+            opacity="0.5"
+            fill-rule="evenodd"
+            clip-rule="evenodd"
+            d="M20.5 15L23.5 12L20.5 9V5C20.5 4.45 20.3042 3.97917 19.9125 3.5875C19.5208 3.19583 19.05 3 18.5 3H4.5C3.95 3 3.47917 3.19583 3.0875 3.5875C2.69583 3.97917 2.5 4.45 2.5 5V19C2.5 19.55 2.69583 20.0208 3.0875 20.4125C3.47917 20.8042 3.95 21 4.5 21H18.5C19.05 21 19.5208 20.8042 19.9125 20.4125C20.3042 20.0208 20.5 19.55 20.5 19V15ZM10.5 14.15H12.35C12.35 13.8667 12.3625 13.625 12.3875 13.425C12.4125 13.225 12.4667 13.0333 12.55 12.85C12.6333 12.6667 12.7375 12.4958 12.8625 12.3375C12.9875 12.1792 13.1667 11.9833 13.4 11.75C13.9833 11.1667 14.3958 10.6792 14.6375 10.2875C14.8792 9.89583 15 9.45 15 8.95C15 8.06667 14.7 7.35417 14.1 6.8125C13.5 6.27083 12.6917 6 11.675 6C10.7583 6 9.97917 6.225 9.3375 6.675C8.69583 7.125 8.25 7.75 8 8.55L9.65 9.2C9.76667 8.75 10 8.3875 10.35 8.1125C10.7 7.8375 11.1083 7.7 11.575 7.7C12.025 7.7 12.4 7.82083 12.7 8.0625C13 8.30417 13.15 8.625 13.15 9.025C13.15 9.30833 13.0583 9.60833 12.875 9.925C12.6917 10.2417 12.3833 10.5917 11.95 10.975C11.6667 11.2083 11.4375 11.4375 11.2625 11.6625C11.0875 11.8875 10.9417 12.125 10.825 12.375C10.7083 12.625 10.625 12.8875 10.575 13.1625C10.525 13.4375 10.5 13.7667 10.5 14.15ZM11.4 18C11.75 18 12.0458 17.8792 12.2875 17.6375C12.5292 17.3958 12.65 17.1 12.65 16.75C12.65 16.4 12.5292 16.1042 12.2875 15.8625C12.0458 15.6208 11.75 15.5 11.4 15.5C11.05 15.5 10.7542 15.6208 10.5125 15.8625C10.2708 16.1042 10.15 16.4 10.15 16.75C10.15 17.1 10.2708 17.3958 10.5125 17.6375C10.7542 17.8792 11.05 18 11.4 18Z"
+          />
+        </svg>
+        <h3 class="text-[16px] leading-[22px] font-semibold dark:text-white">
+          Introduction and Learning Objectives
+        </h3>
+      </div>
       <.index_item
         :if={module_has_intro_video(@module)}
         title="Introduction"
@@ -971,5 +1044,15 @@ defmodule OliWeb.Delivery.Student.LearnLive do
 
       Sections.update_enrollment(student_enrollment, %{state: updated_state})
     end)
+  end
+
+  defp fetch_learning_objectives(module, section_id) do
+    Map.merge(module, %{
+      "learning_objectives" =>
+        Sections.get_learning_objectives_for_container_id(
+          section_id,
+          module["revision"]["resource_id"]
+        )
+    })
   end
 end

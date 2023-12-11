@@ -2603,6 +2603,17 @@ defmodule Oli.Delivery.Sections do
     )
   end
 
+  def get_learning_objectives_for_container_id(section_id, container_id) do
+    from(
+      rev in Revision,
+      join: co in ContainedObjective,
+      on: co.objective_id == rev.resource_id,
+      where: co.section_id == ^section_id and co.container_id == ^container_id,
+      select: %{title: rev.title}
+    )
+    |> Repo.all()
+  end
+
   @doc """
   Gracefully applies the specified publication update to a given section by leaving the existing
   curriculum and section modifications in-tact while applying the structural changes that
