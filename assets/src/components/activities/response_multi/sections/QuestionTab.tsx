@@ -124,7 +124,7 @@ const MoveInputIntoPart: React.FC<MoveInputIntoPartProps> = ({ input, parts }) =
           }
         }}
       >
-        <option disabled selected value={undefined}>
+        <option disabled value={undefined}>
           select option
         </option>
         {parts.map((part, index: number) => (

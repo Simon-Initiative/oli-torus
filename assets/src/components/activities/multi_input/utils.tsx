@@ -154,7 +154,7 @@ export const addRef = (inputId: string, response: Response): Response => {
 
 export const defaultModel = (): MultiInputSchema => {
   const input = Model.inputRef();
-  const partId = guid();
+  const partId = '1';
 
   return {
     stem: multiInputStem(input),

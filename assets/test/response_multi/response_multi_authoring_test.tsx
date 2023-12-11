@@ -3,15 +3,15 @@ import { Provider } from 'react-redux';
 import '@testing-library/jest-dom';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { AuthoringElementProvider } from 'components/activities/AuthoringElementProvider';
-import { MultiInputComponent } from 'components/activities/multi_input/MultiInputAuthoring';
-import { MultiInputActions } from 'components/activities/multi_input/actions';
+import { ResponseMultiInputComponent } from 'components/activities/response_multi/ResponseMultiInputAuthoring';
+import { ResponseMultiInputActions } from 'components/activities/response_multi/actions';
 import {
   Dropdown,
   FillInTheBlank,
-  MultiInputSchema,
-} from 'components/activities/multi_input/schema';
-import { addTargetedFeedbackFillInTheBlank } from 'components/activities/multi_input/sections/AnswerKeyTab';
-import { defaultModel, multiInputStem } from 'components/activities/multi_input/utils';
+  ResponseMultiInputSchema,
+} from 'components/activities/response_multi/schema';
+import { addTargetedFeedbackFillInTheBlank } from 'components/activities/response_multi/sections/AnswerKeyTab';
+import { defaultModel, multiInputStem } from 'components/activities/response_multi/utils';
 import {
   Transform,
   makeChoice,
@@ -22,19 +22,20 @@ import {
 import { Responses } from 'data/activities/model/responses';
 import { Model } from 'data/content/model/elements/factories';
 import { configureStore } from 'state/store';
+import guid from 'utils/guid';
 import { Operations } from 'utils/pathOperations';
 import { dispatch } from 'utils/test_utils';
 import { defaultAuthoringElementProps } from '../utils/activity_mocks';
 
-const DEFAULT_PART_ID = '1';
+const DEFAULT_PART_ID = guid();
 const input = Model.inputRef();
 const choices = [makeChoice('Choice A'), makeChoice('Choice B')];
 
-const _dropdownModel: MultiInputSchema = {
+const _dropdownModel: ResponseMultiInputSchema = {
   stem: multiInputStem(input),
   choices,
   submitPerPart: false,
-  multInputsPerPart: false,
+  multInputsPerPart: true,
   inputs: [
     {
       inputType: 'dropdown',
@@ -51,7 +52,7 @@ const _dropdownModel: MultiInputSchema = {
   },
 };
 
-const _numericModel: MultiInputSchema = {
+const _numericModel: ResponseMultiInputSchema = {
   stem: multiInputStem(input),
   choices: [],
   submitPerPart: false,
@@ -66,7 +67,7 @@ const _numericModel: MultiInputSchema = {
 };
 
 describe('multi input question - default (with text input)', () => {
-  const props = defaultAuthoringElementProps<MultiInputSchema>(defaultModel());
+  const props = defaultAuthoringElementProps<ResponseMultiInputSchema>(defaultModel());
   const { model } = props;
   const store = configureStore();
 
@@ -77,7 +78,7 @@ describe('multi input question - default (with text input)', () => {
   it('has an input', () => {
     expect(model.inputs).toHaveLength(1);
     expect(model.inputs[0]).toHaveProperty('inputType', 'text');
-    expect(model.inputs[0]).toHaveProperty('partId', '1');
+    expect(model.inputs[0]).toHaveProperty('partId', DEFAULT_PART_ID);
   });
 
   it('has a part with text input responses', () => {
@@ -114,7 +115,7 @@ describe('multi input question - default (with text input)', () => {
     render(
       <Provider store={store}>
         <AuthoringElementProvider {...props}>
-          <MultiInputComponent />
+          <ResponseMultiInputComponent />
         </AuthoringElementProvider>
       </Provider>,
     );
@@ -138,7 +139,10 @@ describe('multi input question - default (with text input)', () => {
     const input = model.inputs[0] as FillInTheBlank;
     const withTargeted = dispatch(model, addTargetedFeedbackFillInTheBlank(input));
 
-    const updated = dispatch(withTargeted, MultiInputActions.setInputType(input.id, 'dropdown'));
+    const updated = dispatch(
+      withTargeted,
+      ResponseMultiInputActions.setInputType(input.id, 'dropdown'),
+    );
 
     // choices
     expect(updated.choices).toHaveLength(2);
@@ -161,7 +165,7 @@ describe('multi input question - default (with text input)', () => {
     render(
       <Provider store={store}>
         <AuthoringElementProvider {...props}>
-          <MultiInputComponent />
+          <ResponseMultiInputComponent />
         </AuthoringElementProvider>
       </Provider>,
     );
