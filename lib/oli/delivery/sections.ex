@@ -1595,7 +1595,7 @@ defmodule Oli.Delivery.Sections do
   ## Examples
       iex> get_ordered_container_labels(section_slug)
       [
-        {4 => "Section 1: Curriculum"},
+        {4, "Section 1: Curriculum"},
         {39, "Module 1: Setup"},
         {40, "Module 2: Phoenix project"},
         {41, "Unit 1: Getting Started"},
