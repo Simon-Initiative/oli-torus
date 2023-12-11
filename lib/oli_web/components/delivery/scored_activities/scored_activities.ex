@@ -131,6 +131,11 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
               })
               |> SortableTableModel.update_sort_params(params.sort_by)
 
+            selected_activity =
+              if params[:selected_activity] in ["", nil],
+                do: nil,
+                else: String.to_integer(params[:selected_activity])
+
             {:ok,
              assign(socket,
                current_assessment: current_assessment,
@@ -143,9 +148,7 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
                  count_attempts(current_assessment, assigns.section, student_ids),
                rendered_activity_id: UUID.uuid4()
              )
-             |> assign_selected_activity(
-               params[:selected_activity] && String.to_integer(params[:selected_activity])
-             )}
+             |> assign_selected_activity(selected_activity)}
         end
     end
   end
