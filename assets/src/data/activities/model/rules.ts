@@ -178,6 +178,10 @@ export const rangeRule = (
     return makeRangeRule(0, 0, inclusive);
   }
 
+  // don't sort if either end is a variable
+  if (typeof left === 'string' || typeof right === 'string')
+    return makeRangeRule(left, right, inclusive, precision);
+
   const lowerBound = left < right ? left : right;
   const upperBound = lowerBound === left ? right : left;
   return makeRangeRule(lowerBound, upperBound, inclusive, precision);
