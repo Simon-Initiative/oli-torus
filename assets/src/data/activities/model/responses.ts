@@ -72,7 +72,13 @@ export const getCorrectResponse = (model: HasParts, partId: string) => {
 };
 export const getIncorrectResponse = (model: HasParts, partId: string) => {
   return Maybe.maybe(
-    getResponsesByPartId(model, partId).find((r) => r.rule === matchRule('.*')),
+    getResponsesByPartId(model, partId).find((r) => {
+      const rule: string = matchRule('.*');
+      const incorrectValue: string = rule.substring(rule.indexOf('{') + 1, rule.indexOf('}'));
+      const valueToCheck: string = r.rule.substring(r.rule.indexOf('{') + 1, r.rule.indexOf('}'));
+
+      return valueToCheck === incorrectValue;
+    }),
   ).valueOrThrow(new Error('Could not find incorrect response'));
 };
 

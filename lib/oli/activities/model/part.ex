@@ -7,7 +7,8 @@ defmodule Oli.Activities.Model.Part do
     :parts,
     :grading_approach,
     :out_of,
-    :explanation
+    :explanation,
+    :targets
   ]
 
   @grading_approaches MapSet.new(["automatic", "manual"])
@@ -20,6 +21,7 @@ defmodule Oli.Activities.Model.Part do
     parts = Map.get(part, "parts", [])
     responses = Map.get(part, "responses", [])
     explanation = Map.get(part, "explanation")
+    targets = Map.get(part, "targets", [])
 
     grading_approach_str =
       Map.get(part, "gradingApproach", "automatic")
@@ -45,7 +47,8 @@ defmodule Oli.Activities.Model.Part do
          scoring_strategy: scoring_strategy,
          grading_approach: grading_approach,
          out_of: out_of,
-         explanation: explanation
+         explanation: explanation,
+         targets: targets
        }}
     else
       error -> error

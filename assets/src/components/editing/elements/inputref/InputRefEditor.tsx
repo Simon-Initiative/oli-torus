@@ -68,6 +68,8 @@ export const InputRefEditor = (props: InputRefEditorProps) => {
             'input-ref inline-block align-middle select-none rounded p-1 px-2 whitespace-nowrap overflow-hidden border',
             inputRefContext.selectedInputRef?.id === props.model.id
               ? 'border-primary bg-blue-100 dark:bg-blue-700 text-primary dark:text-body-color-dark'
+              : inputRefContext.refsTargeted?.includes(props.model.id)
+              ? 'border-primary bg-purple-500/10 text-gray-400 dark:text-gray-600'
               : 'border-gray-400 dark:border-gray-600 text-gray-400 dark:text-gray-600',
             input.size && `input-size-${input.size}`,
           )}

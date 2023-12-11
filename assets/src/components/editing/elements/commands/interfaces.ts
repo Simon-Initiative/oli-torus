@@ -36,6 +36,7 @@ export interface CommandContext {
     selectedInputRef: InputRef | undefined;
     setSelectedInputRef: (ref: InputRef | undefined) => void;
     isMultiInput: boolean;
+    refsTargeted?: string[] | undefined;
   };
 }
 
