@@ -5,7 +5,6 @@ import { Editor, Transforms } from 'slate';
 import { ReactEditor } from 'slate-react';
 import { ActivitySettings } from 'components/activities/common/authoring/settings/ActivitySettings';
 import {
-  changeMultInputPerPartSubmission,
   changePerPartSubmission,
   shuffleAnswerChoiceSetting,
 } from 'components/activities/common/authoring/settings/activitySettingsActions';
@@ -17,7 +16,6 @@ import { QuestionTab } from 'components/activities/multi_input/sections/Question
 import { Manifest } from 'components/activities/types';
 import { elementsOfType } from 'components/editing/slateUtils';
 import { TabbedNavigation } from 'components/tabbed_navigation/Tabs';
-import { getPartById } from 'data/activities/model/utils';
 import { InputRef } from 'data/content/model/elements/types';
 import { configureStore } from 'state/store';
 import { AuthoringElement, AuthoringElementProps } from '../AuthoringElement';
@@ -25,7 +23,6 @@ import { AuthoringElementProvider, useAuthoringElementContext } from '../Authori
 import { VariableEditorOrNot } from '../common/variables/VariableEditorOrNot';
 import { VariableActions } from '../common/variables/variableActions';
 import { ExplanationTab } from './sections/ExplanationTab';
-import { PartsTab } from './sections/PartsTab';
 
 const store = configureStore();
 
@@ -49,8 +46,6 @@ export const MultiInputComponent = () => {
 
   const input = model.inputs.find((input) => input.id === selectedInputRef?.id);
   const index = model.inputs.findIndex((input) => input.id === selectedInputRef?.id);
-  let refsTargeted: string[] | undefined;
-  if (input) refsTargeted = getPartById(model, input.partId).targets;
 
   return (
     <>
@@ -59,23 +54,15 @@ export const MultiInputComponent = () => {
         setSelectedInputRef={setSelectedInputRef}
         setEditor={setEditor}
         isMultiInput={true}
-        refsTargeted={refsTargeted}
       />
       {editor && input ? (
         <TabbedNavigation.Tabs>
-          <TabbedNavigation.Tab label="Input">
+          <TabbedNavigation.Tab label="Question">
             <QuestionTab editor={editor} input={input} index={index} />
           </TabbedNavigation.Tab>
-          {model.multInputsPerPart && (
-            <TabbedNavigation.Tab label="Answer Key">
-              <PartsTab editor={editor} input={input} index={index} />
-            </TabbedNavigation.Tab>
-          )}
-          {!model.multInputsPerPart && (
-            <TabbedNavigation.Tab label="Answer Key">
-              <AnswerKeyTab input={input} />
-            </TabbedNavigation.Tab>
-          )}
+          <TabbedNavigation.Tab label="Answer Key">
+            <AnswerKeyTab input={input} />
+          </TabbedNavigation.Tab>
           <TabbedNavigation.Tab label="Hints">
             <HintsTab input={input} index={index} />
           </TabbedNavigation.Tab>
@@ -93,7 +80,6 @@ export const MultiInputComponent = () => {
             settings={[
               shuffleAnswerChoiceSetting(model, dispatch, input),
               changePerPartSubmission(model, dispatch),
-              changeMultInputPerPartSubmission(model, dispatch),
             ]}
           />
         </TabbedNavigation.Tabs>

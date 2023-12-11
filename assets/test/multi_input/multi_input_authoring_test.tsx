@@ -34,7 +34,6 @@ const _dropdownModel: MultiInputSchema = {
   stem: multiInputStem(input),
   choices,
   submitPerPart: false,
-  multInputsPerPart: false,
   inputs: [
     {
       inputType: 'dropdown',
@@ -55,7 +54,6 @@ const _numericModel: MultiInputSchema = {
   stem: multiInputStem(input),
   choices: [],
   submitPerPart: false,
-  multInputsPerPart: false,
   inputs: [{ inputType: 'numeric', id: input.id, partId: DEFAULT_PART_ID }],
   authoring: {
     parts: [makePart(Responses.forNumericInput(), [makeHint('')], DEFAULT_PART_ID)],
@@ -87,11 +85,7 @@ describe('multi input question - default (with text input)', () => {
     expect(part.responses[0]).toHaveProperty('score', 1);
     expect(part.responses[0].rule).toMatch(/contains/);
     expect(part.responses[1]).toHaveProperty('score', 0);
-    let t = '';
-    if (part.targets) {
-      t = part.targets[0];
-    }
-    expect(part.responses[1]).toHaveProperty('rule', 'input_ref_' + t + ' like {.*}');
+    expect(part.responses[1]).toHaveProperty('rule', 'input like {.*}');
   });
 
   it('has no choices', () => {
@@ -123,13 +117,9 @@ describe('multi input question - default (with text input)', () => {
     fireEvent.click(answerKeyLink);
     const feedbackLink = await screen.findByText('Add targeted feedback');
     fireEvent.click(feedbackLink);
-    let t = '';
-    if (model.authoring.parts[0].targets) {
-      t = model.authoring.parts[0].targets[0];
-    }
     const responses = model.authoring.parts[0].responses;
     expect(responses).toHaveLength(3);
-    expect(responses[1]).toHaveProperty('rule', 'input_ref_' + t + ' contains {}');
+    expect(responses[1]).toHaveProperty('rule', 'input contains {}');
     expect(responses[1]).toHaveProperty('score', 0);
   });
 
@@ -148,9 +138,9 @@ describe('multi input question - default (with text input)', () => {
 
     // responses
     const responses = updated.authoring.parts[0].responses;
-    expect(responses).toHaveLength(4);
+    expect(responses).toHaveLength(2);
     expect(responses.map((r) => ({ rule: r.rule, score: r.score }))).toEqual(
-      Responses.forMultipleChoice(input.id, updated.choices[0].id).map((r) => ({
+      Responses.forMultipleChoice(updated.choices[0].id).map((r) => ({
         rule: r.rule,
         score: r.score,
       })),
@@ -179,15 +169,8 @@ describe('multi input question - default (with text input)', () => {
 
     // new part should be added with text input responses
     expect(model.authoring.parts).toHaveLength(2);
-    let t = '';
-    if (model.authoring.parts[1].targets) {
-      t = model.authoring.parts[1].targets[0];
-    }
     expect(
-      model.authoring.parts[1].responses.map((r) => ({
-        rule: r.rule.replace('input_ref_' + t, 'input'),
-        score: r.score,
-      })),
+      model.authoring.parts[1].responses.map((r) => ({ rule: r.rule, score: r.score })),
     ).toEqual(Responses.forTextInput().map((r) => ({ rule: r.rule, score: r.score })));
 
     // input should be added as text input

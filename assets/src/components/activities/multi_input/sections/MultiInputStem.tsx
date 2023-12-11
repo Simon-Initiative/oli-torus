@@ -16,7 +16,6 @@ interface Props {
   setSelectedInputRef: React.Dispatch<React.SetStateAction<InputRef | undefined>>;
   setEditor: React.Dispatch<React.SetStateAction<(ReactEditor & Editor) | undefined>>;
   isMultiInput: boolean;
-  refsTargeted: string[] | undefined;
 }
 export const MultiInputStem: React.FC<Props> = (props) => {
   const { model, dispatch, projectSlug } = useAuthoringElementContext<MultiInputSchema>();
@@ -29,7 +28,6 @@ export const MultiInputStem: React.FC<Props> = (props) => {
       selectedInputRef: props.selectedInputRef,
       setSelectedInputRef: props.setSelectedInputRef,
       isMultiInput: props.isMultiInput,
-      refsTargeted: props.refsTargeted,
     },
   };
 
