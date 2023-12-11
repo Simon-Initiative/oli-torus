@@ -408,6 +408,8 @@ defmodule OliWeb.Components.Delivery.Surveys do
   end
 
   defp add_activity_attempts_info(activity, students, student_ids, section) do
+    IO.inspect(activity, "activities")
+
     students_with_attempts =
       Enum.map(activity, fn a ->
         DeliveryResolver.students_with_attempts_for_page(
@@ -461,8 +463,6 @@ defmodule OliWeb.Components.Delivery.Surveys do
         #     )
         #     |> Map.merge(%{is_liveview: true})
         #   end)
-
-        IO.inspect(rendering_context, label: "rendering_context")
 
         Enum.map(rendering_context, fn rendering ->
           OliWeb.ManualGrading.Rendering.render(
