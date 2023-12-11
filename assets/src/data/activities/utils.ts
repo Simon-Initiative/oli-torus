@@ -38,7 +38,6 @@ export const safelySelectInputs = (activityState: ActivityState | undefined): Ma
 export const safelySelectStringInputs = (
   activityState: ActivityState | undefined,
 ): Maybe<PartInputs> => {
-  console.log(activityState);
   const partInputs = activityState?.parts.filter((part) => !!part?.response?.input);
   if (!partInputs) return Maybe.nothing();
 

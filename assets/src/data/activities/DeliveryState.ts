@@ -33,11 +33,6 @@ export type AppThunk<ReturnType = void> = ThunkAction<
   AnyAction
 >;
 
-// export type StudentInputMult = {
-//   input: string;
-//   inputMult: {[key: string]: string;};
-// }
-
 export type StudentInput = string[];
 export type PartInputs = Record<PartId, StudentInput>;
 
