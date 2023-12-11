@@ -361,6 +361,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
           <.module_index
             module={Map.get(@selected_module_per_unit_uuid, @unit["uuid"])}
             student_raw_avg_score_per_page_id={@student_raw_avg_score_per_page_id}
+            student_progress_per_resource_id={@student_progress_per_resource_id}
             ctx={@ctx}
             student_id={@student_id}
             intro_video_viewed={
@@ -396,13 +397,14 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   attr :ctx, :map
   attr :student_id, :integer
   attr :intro_video_viewed, :boolean
+  attr :student_progress_per_resource_id, :map
 
   def module_index(assigns) do
     ~H"""
     <div id={"index_for_#{@module["uuid"]}"} class="relative flex flex-col gap-[6px] items-start">
       <div
         phx-click-away={JS.hide(to: "#learning_objectives_#{@module["uuid"]}")}
-        class="hidden flex flex-col gap-3 w-full p-6 bg-white dark:bg-[#242533] shadow-xl rounded-xl absolute -top-[18px] left-0 transform -translate-x-[calc(100%+10px)] z-50"
+        class="hidden flex-col gap-3 w-full p-6 bg-white dark:bg-[#242533] shadow-xl rounded-xl absolute -top-[18px] left-0 transform -translate-x-[calc(100%+10px)] z-50"
         id={"learning_objectives_#{@module["uuid"]}"}
         role="learning objectives tooltip"
       >
@@ -454,7 +456,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         :if={@module["learning_objectives"] != []}
         role="module learning objectives"
         class="flex items-center gap-[14px] px-[10px] w-full cursor-pointer"
-        phx-click={JS.toggle(to: "#learning_objectives_#{@module["uuid"]}")}
+        phx-click={JS.toggle(to: "#learning_objectives_#{@module["uuid"]}", display: "flex")}
       >
         <svg
           class="fill-black dark:fill-white"
@@ -489,6 +491,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         raw_avg_score={%{}}
         video_url={@module["revision"]["intro_video"]}
         intro_video_viewed={@intro_video_viewed}
+        progress={0.0}
       />
 
       <.index_item
@@ -520,6 +523,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         raw_avg_score={Map.get(@student_raw_avg_score_per_page_id, page["revision"]["resource_id"])}
         intro_video_viewed={@intro_video_viewed}
         video_url={@module["revision"]["intro_video"]}
+        progress={Map.get(@student_progress_per_resource_id, page["revision"]["resource_id"])}
       />
     </div>
     """
@@ -538,6 +542,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   attr :due_date, :string
   attr :intro_video_viewed, :boolean
   attr :video_url, :string
+  attr :progress, :float
 
   def index_item(assigns) do
     ~H"""
@@ -551,6 +556,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         intro_video_viewed={@intro_video_viewed}
         graded={@graded}
         raw_avg_score={@raw_avg_score[:score]}
+        progress={@progress}
       />
       <div
         id={"index_item_#{@numbering_index}_#{@uuid}"}
@@ -614,14 +620,22 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   attr :graded, :boolean
   attr :raw_avg_score, :map
   attr :intro_video_viewed, :boolean
+  attr :progress, :float
 
   def index_item_icon(assigns) do
     case {assigns.was_visited, assigns.item_type, assigns.graded, assigns.raw_avg_score} do
       {true, "page", false, _} ->
-        # visited practice page
+        # visited practice page (check icon shown when progress = 100%)
         ~H"""
         <div role="check icon" class="flex justify-center items-center h-7 w-7 shrink-0">
-          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
+          <svg
+            :if={@progress == 1.0}
+            xmlns="http://www.w3.org/2000/svg"
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+          >
             <path
               d="M9.54961 17.9996L3.84961 12.2996L5.27461 10.8746L9.54961 15.1496L18.7246 5.97461L20.1496 7.39961L9.54961 17.9996Z"
               fill="#0CAF61"
@@ -653,7 +667,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         </div>
         """
 
-      {_, "page", true, nil} ->
+      {false, "page", true, _} ->
         # not completed graded page
         ~H"""
         <div role="orange flag icon" class="flex justify-center items-center h-7 w-7 shrink-0">
