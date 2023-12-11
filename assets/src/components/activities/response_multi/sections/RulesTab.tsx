@@ -2,11 +2,8 @@ import React from 'react';
 import { useAuthoringElementContext } from 'components/activities/AuthoringElementProvider';
 import { RemoveButtonConnected } from 'components/activities/common/authoring/RemoveButton';
 import { ChoicesDelivery } from 'components/activities/common/choices/delivery/ChoicesDelivery';
-import {
-  Dropdown,
-  ResponseMultiInput,
-  ResponseMultiInputSchema,
-} from 'components/activities/response_multi/schema';
+import { Dropdown, MultiInput } from 'components/activities/multi_input/schema';
+import { ResponseMultiInputSchema } from 'components/activities/response_multi/schema';
 import { InputEntry } from 'components/activities/short_answer/sections/InputEntry';
 import { Response, ResponseId } from 'components/activities/types';
 import { Radio } from 'components/misc/icons/radio/Radio';
@@ -14,7 +11,7 @@ import { defaultWriterContext } from 'data/content/writers/context';
 import { ResponseMultiInputActions } from '../actions';
 
 interface Props {
-  input: ResponseMultiInput;
+  input: MultiInput;
   response: Response;
   toggleCorrectness: (id: string, partId: string, inputId: string) => void;
   editRule: (id: ResponseId, inputId: string, rule: string) => void;

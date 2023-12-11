@@ -1,9 +1,9 @@
 import React from 'react';
 import { Explanation } from 'components/activities/common/explanation/ExplanationAuthoring';
-import { ResponseMultiInput } from 'components/activities/response_multi/schema';
+import { MultiInput } from 'components/activities/multi_input/schema';
 
 interface Props {
-  input: ResponseMultiInput;
+  input: MultiInput;
 }
 
 export const ExplanationTab: React.FC<Props> = (props) => {

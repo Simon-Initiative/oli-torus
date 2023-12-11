@@ -5,12 +5,8 @@ import { useAuthoringElementContext } from 'components/activities/AuthoringEleme
 import { AuthoringButtonConnected } from 'components/activities/common/authoring/AuthoringButton';
 import { ActivityScoring } from 'components/activities/common/responses/ActivityScoring';
 import { ResponseActions } from 'components/activities/common/responses/responseActions';
-import {
-  Dropdown,
-  FillInTheBlank,
-  ResponseMultiInput,
-  ResponseMultiInputSchema,
-} from 'components/activities/response_multi/schema';
+import { Dropdown, FillInTheBlank, MultiInput } from 'components/activities/multi_input/schema';
+import { ResponseMultiInputSchema } from 'components/activities/response_multi/schema';
 import { ResponseTab } from 'components/activities/response_multi/sections/ResponseTab';
 import { Part, Response, makeResponse } from 'components/activities/types';
 import { Card } from 'components/misc/Card';
@@ -52,17 +48,12 @@ export const addResponseMultiTargetedDropdown = (input: Dropdown, choiceId: stri
 
 interface Props {
   editor: ReactEditor & Editor;
-  input: ResponseMultiInput;
+  input: MultiInput;
   index: number;
 }
 
 export const PartsTab: React.FC<Props> = (props) => {
   const { model, dispatch } = useAuthoringElementContext<ResponseMultiInputSchema>();
-
-  // const [selectedPart, setSelectedPart] = React.useState<Part>(
-  //   getPartById(model, props.input.partId)
-  // );
-  // const parts = getParts(model);
 
   const getResponsesBody = (part: Part) => {
     return part.responses.map((response) =>
@@ -96,9 +87,7 @@ export const PartsTab: React.FC<Props> = (props) => {
 
   return (
     <Card.Card key={props.input.id}>
-      <Card.Title>
-        {/* <SelectPart parts={parts} selected={selectedPart?.id} onSelect={setSelectedPart} /> */}
-      </Card.Title>
+      <Card.Title></Card.Title>
       <Card.Content>
         <ResponseMultiInputScoringMethod />
         {model.customScoring && (
@@ -133,29 +122,3 @@ export const PartsTab: React.FC<Props> = (props) => {
     </Card.Card>
   );
 };
-
-// interface SelectPartProps {
-//   parts: Part[];
-//   selected: string | undefined;
-//   onSelect: (value: Part | undefined) => void;
-// }
-// const SelectPart: React.FC<SelectPartProps> = ({ parts, selected, onSelect }) => {
-//   return (
-//     <div className="inline-flex items-baseline mb-2">
-//       <label className="flex-shrink-0">Parts </label>
-//       <select
-//         className="flex-shrink-0 border py-1 px-1.5 border-neutral-300 rounded w-full disabled:bg-neutral-100 disabled:text-neutral-600 dark:bg-neutral-800 dark:border-neutral-700 dark:text-white ml-2"
-//         value={selected}
-//         onChange={({ target: { value } }) => {
-//           onSelect(parts.find((p) => p.id == value));
-//         }}
-//       >
-//         {parts.map((part, index: number) => (
-//           <option key={part.id} value={part.id}>
-//             Part {index + 1}
-//           </option>
-//         ))}
-//       </select>
-//     </div>
-//   );
-// };

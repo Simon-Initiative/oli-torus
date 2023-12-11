@@ -1,8 +1,9 @@
 import React from 'react';
 import { useAuthoringElementContext } from 'components/activities/AuthoringElementProvider';
 import { Choices as ChoicesAuthoring } from 'components/activities/common/choices/authoring/ChoicesAuthoring';
+import { Dropdown } from 'components/activities/multi_input/schema';
 import { ResponseMultiInputActions } from 'components/activities/response_multi/actions';
-import { Dropdown, ResponseMultiInputSchema } from 'components/activities/response_multi/schema';
+import { ResponseMultiInputSchema } from 'components/activities/response_multi/schema';
 import { makeChoice } from 'components/activities/types';
 import { Choices } from 'data/activities/model/choices';
 

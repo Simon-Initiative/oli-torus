@@ -1,11 +1,7 @@
 import React from 'react';
 import { SelectOption } from 'components/activities/common/authoring/InputTypeDropdown';
 import { setDifference, setUnion } from 'components/activities/common/utils';
-import {
-  ResponseMultiInput,
-  ResponseMultiInputSchema,
-  ResponseMultiInputType,
-} from 'components/activities/response_multi/schema';
+import { ResponseMultiInputSchema } from 'components/activities/response_multi/schema';
 import {
   ChoiceId,
   MatchStyle,
@@ -18,7 +14,6 @@ import {
   makeResponse,
   makeTransformation,
 } from 'components/activities/types';
-// import { Responses } from 'data/activities/model/responses';
 import {
   containsRule,
   eqRule,
@@ -31,6 +26,7 @@ import { InputRef, Paragraph } from 'data/content/model/elements/types';
 import { elementsOfType } from 'data/content/utils';
 import { clone } from 'utils/common';
 import guid from 'utils/guid';
+import { MultiInput, MultiInputType } from '../multi_input/schema';
 
 export const multiInputOptions: SelectOption<'text' | 'numeric'>[] = [
   { value: 'numeric', displayValue: 'Number' },
@@ -175,7 +171,7 @@ export const defaultModel = (): ResponseMultiInputSchema => {
   };
 };
 
-export const friendlyType = (type: ResponseMultiInputType) => {
+export const friendlyType = (type: MultiInputType) => {
   if (type === 'dropdown') {
     return 'Dropdown';
   }
@@ -193,14 +189,14 @@ export const friendlyType = (type: ResponseMultiInputType) => {
   }
 };
 
-export const partTitle = (input: ResponseMultiInput, index: number) => (
+export const partTitle = (input: MultiInput, index: number) => (
   <div>
     {`Part ${index + 1}: `}
     <span className="text-muted">{friendlyType(input.inputType)}</span>
   </div>
 );
 
-export const inputTitle = (input: ResponseMultiInput, index: number) => (
+export const inputTitle = (input: MultiInput, index: number) => (
   <div>
     {`Input ${index + 1}: `}
     <span className="text-muted">{friendlyType(input.inputType)}</span>
@@ -286,7 +282,7 @@ function ensureHasInput(model: ResponseMultiInputSchema) {
   // add new part.
   const ref = Model.inputRef();
   const part = makePart(ResponseMultiInputResponses.forTextInput(ref.id), [makeHint('')]);
-  const input: ResponseMultiInput = { id: ref.id, inputType: 'text', partId: part.id };
+  const input: MultiInput = { id: ref.id, inputType: 'text', partId: part.id };
 
   const firstParagraph = model.stem.content.find((elem) => elem.type === 'p') as
     | Paragraph
@@ -342,7 +338,7 @@ function matchInputsToParts(model: ResponseMultiInputSchema) {
     model.authoring.parts.find((part) => part.id === id),
   );
 
-  unmatchedInputs.forEach((input: ResponseMultiInput) => {
+  unmatchedInputs.forEach((input: MultiInput) => {
     if (model.multInputsPerPart) return;
     const choices = [makeChoice('Choice A'), makeChoice('Choice B')];
     const part = makePart(
@@ -394,7 +390,7 @@ function matchInputsToInputRefs(model: ResponseMultiInputSchema) {
     (id) => ({ id, type: 'input_ref' } as InputRef),
   );
 
-  unmatchedInputs.forEach((input: ResponseMultiInput) => {
+  unmatchedInputs.forEach((input: MultiInput) => {
     // add inputRef to end of first paragraph in stem
     const firstParagraph = model.stem.content.find((e) => e.type === 'p') as Paragraph | undefined;
     firstParagraph?.children.push({ ...Model.inputRef(), id: input.id });
@@ -405,7 +401,7 @@ function matchInputsToInputRefs(model: ResponseMultiInputSchema) {
     if (model.multInputsPerPart) return;
     // create new input and part for the input ref in the stem
     const part = makePart(ResponseMultiInputResponses.forTextInput(ref.id), [makeHint('')]);
-    model.inputs.push({ id: ref.id, inputType: 'text', partId: part.id } as ResponseMultiInput);
+    model.inputs.push({ id: ref.id, inputType: 'text', partId: part.id } as MultiInput);
     model.authoring.parts.push(part);
   });
   return model;

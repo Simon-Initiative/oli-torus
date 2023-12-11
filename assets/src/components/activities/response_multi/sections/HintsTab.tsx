@@ -1,16 +1,14 @@
 import React from 'react';
 import { useAuthoringElementContext } from 'components/activities/AuthoringElementProvider';
 import { CognitiveHints } from 'components/activities/common/hints/authoring/HintsAuthoring';
-import {
-  ResponseMultiInput,
-  ResponseMultiInputSchema,
-} from 'components/activities/response_multi/schema';
+import { MultiInput } from 'components/activities/multi_input/schema';
+import { ResponseMultiInputSchema } from 'components/activities/response_multi/schema';
 import { partTitle } from 'components/activities/response_multi/utils';
 import { RichText, makeHint } from 'components/activities/types';
 import { Hints } from 'data/activities/model/hints';
 
 interface Props {
-  input: ResponseMultiInput;
+  input: MultiInput;
   index: number;
 }
 export const HintsTab: React.FC<Props> = (props) => {
