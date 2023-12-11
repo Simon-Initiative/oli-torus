@@ -11,7 +11,7 @@ interface Props {
 
 const searchFunc = (searchTerm: string) => (post: ThreadedPost) => {
   const { content } = post;
-  return content.includes(searchTerm);
+  return content.toLowerCase().includes(searchTerm.toLowerCase());
 };
 
 export const DiscussionSearchResults: React.FC<Props> = ({ onFocus, searchTerm, posts }) => {
