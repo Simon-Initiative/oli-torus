@@ -3,11 +3,10 @@ import { MCActions } from 'components/activities/common/authoring/actions/multip
 import { StemActions } from 'components/activities/common/authoring/actions/stemActions';
 import {
   Dropdown,
-  ResponseMultiInput,
-  ResponseMultiInputSchema,
-  ResponseMultiInputSize,
-  ResponseMultiInputType,
-} from 'components/activities/response_multi/schema';
+  MultiInput,
+  MultiInputSize,
+  MultiInputType,
+} from 'components/activities/multi_input/schema';
 import {
   Choice,
   ChoiceId,
@@ -33,6 +32,7 @@ import { getByUnsafe, getPartById, getParts } from 'data/activities/model/utils'
 import { InputRef } from 'data/content/model/elements/types';
 import { clone } from 'utils/common';
 import { Operations } from 'utils/pathOperations';
+import { ResponseMultiInputSchema } from './schema';
 import {
   ResponseMultiInputResponses,
   addRef,
@@ -134,16 +134,22 @@ export const ResponseMultiInputActions = {
       partTo.targets ? partTo.targets.push(input.id) : (partTo.targets = [input.id]);
       input.partId = partTo.id;
 
+      const fromRules = purseResponseMultiInputRule(partFrom.responses[0].rule);
+
       // merge the rules
       const updatedRule: string = constructRule(
         partTo.responses[0].rule,
         partTo.responses[0].matchStyle,
         inputId,
-        purseResponseMultiInputRule(partFrom.responses[0].rule).get(input.id),
+        fromRules.get(input.id),
         true,
       );
-
       partTo.responses[0].rule = updatedRule;
+
+      partFrom.responses.forEach((r) => {
+        const changed: string = constructRule(r.rule, r.matchStyle, inputId, '', false, true);
+        r.rule = changed;
+      });
 
       if (!partTo.responses[0].inputRefs) partTo.responses[0].inputRefs = [];
       if (!partTo.responses[0].inputRefs.includes(inputId))
@@ -215,11 +221,9 @@ export const ResponseMultiInputActions = {
 
   reorderInputs(reorderedIds: string[]) {
     return (model: ResponseMultiInputSchema) => {
-      const { getOne, setAll } = List<ResponseMultiInput>('$.inputs');
+      const { getOne, setAll } = List<MultiInput>('$.inputs');
       // safety filter in case somehow there's a missing input
-      let inputs: ResponseMultiInput[] = reorderedIds
-        .map((id) => getOne(model, id))
-        .filter((x) => !!x);
+      let inputs: MultiInput[] = reorderedIds.map((id) => getOne(model, id)).filter((x) => !!x);
       // remove duplicates
       inputs = Array.from(new Set(inputs));
       setAll(inputs)(model);
@@ -259,7 +263,7 @@ export const ResponseMultiInputActions = {
     };
   },
 
-  setInputType(id: string, type: ResponseMultiInputType) {
+  setInputType(id: string, type: MultiInputType) {
     return (model: ResponseMultiInputSchema) => {
       const input = getByUnsafe(model.inputs, (x) => x.id === id);
 
@@ -318,7 +322,7 @@ export const ResponseMultiInputActions = {
     };
   },
 
-  setInputSize(inputId: string, size: ResponseMultiInputSize) {
+  setInputSize(inputId: string, size: MultiInputSize) {
     return (model: ResponseMultiInputSchema) => {
       const input = getByUnsafe(model.inputs, (x) => x.id === inputId);
       if (!input) return;

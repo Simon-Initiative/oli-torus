@@ -4,13 +4,8 @@ import { Provider } from 'react-redux';
 import { Editor, Transforms } from 'slate';
 import { ReactEditor } from 'slate-react';
 import { ActivitySettings } from 'components/activities/common/authoring/settings/ActivitySettings';
-import {
-  changeMultInputPerPartSubmission,
-  changePerPartSubmission,
-  shuffleAnswerChoiceSetting,
-} from 'components/activities/common/authoring/settings/activitySettingsActions';
+import { shuffleAnswerChoiceSetting } from 'components/activities/common/authoring/settings/activitySettingsActions';
 import { ResponseMultiInputSchema } from 'components/activities/response_multi/schema';
-import { AnswerKeyTab } from 'components/activities/response_multi/sections/AnswerKeyTab';
 import { HintsTab } from 'components/activities/response_multi/sections/HintsTab';
 import { QuestionTab } from 'components/activities/response_multi/sections/QuestionTab';
 import { ResponseMultiInputStem } from 'components/activities/response_multi/sections/ResponseMultiInputStem';
@@ -66,16 +61,9 @@ export const ResponseMultiInputComponent = () => {
           <TabbedNavigation.Tab label="Input">
             <QuestionTab editor={editor} input={input} index={index} />
           </TabbedNavigation.Tab>
-          {model.multInputsPerPart && (
-            <TabbedNavigation.Tab label="Answer Key">
-              <PartsTab editor={editor} input={input} index={index} />
-            </TabbedNavigation.Tab>
-          )}
-          {!model.multInputsPerPart && (
-            <TabbedNavigation.Tab label="Answer Key">
-              <AnswerKeyTab input={input} />
-            </TabbedNavigation.Tab>
-          )}
+          <TabbedNavigation.Tab label="Answer Key">
+            <PartsTab editor={editor} input={input} index={index} />
+          </TabbedNavigation.Tab>
           <TabbedNavigation.Tab label="Hints">
             <HintsTab input={input} index={index} />
           </TabbedNavigation.Tab>
@@ -89,13 +77,7 @@ export const ResponseMultiInputComponent = () => {
               onEdit={(t) => dispatch(VariableActions.onUpdateTransformations(t))}
             />
           </TabbedNavigation.Tab>
-          <ActivitySettings
-            settings={[
-              shuffleAnswerChoiceSetting(model, dispatch, input),
-              changePerPartSubmission(model, dispatch),
-              changeMultInputPerPartSubmission(model, dispatch),
-            ]}
-          />
+          <ActivitySettings settings={[shuffleAnswerChoiceSetting(model, dispatch, input)]} />
         </TabbedNavigation.Tabs>
       ) : (
         'Select an input to edit it'

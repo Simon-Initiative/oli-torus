@@ -3,11 +3,8 @@ import { Editor, Element, Transforms } from 'slate';
 import { ReactEditor } from 'slate-react';
 import { useAuthoringElementContext } from 'components/activities/AuthoringElementProvider';
 import { RemoveButtonConnected } from 'components/activities/common/authoring/RemoveButton';
-import {
-  ResponseMultiInput,
-  ResponseMultiInputSchema,
-  ResponseMultiInputSize,
-} from 'components/activities/response_multi/schema';
+import { MultiInput, MultiInputSize } from 'components/activities/multi_input/schema';
+import { ResponseMultiInputSchema } from 'components/activities/response_multi/schema';
 import { DropdownQuestionEditor } from 'components/activities/response_multi/sections/DropdownQuestionEditor';
 import { inputTitle } from 'components/activities/response_multi/utils';
 import { Part } from 'components/activities/types';
@@ -17,7 +14,7 @@ import { ResponseMultiInputActions } from '../actions';
 
 interface Props {
   editor: ReactEditor & Editor;
-  input: ResponseMultiInput;
+  input: MultiInput;
   index: number;
 }
 export const QuestionTab: React.FC<Props> = (props) => {
@@ -67,9 +64,7 @@ export const QuestionTab: React.FC<Props> = (props) => {
         {props.input.inputType === 'dropdown' && <DropdownQuestionEditor input={props.input} />}
 
         <div>
-          {model.multInputsPerPart && (
-            <MoveInputIntoPart input={props.input} parts={getParts(model)} />
-          )}
+          <MoveInputIntoPart input={props.input} parts={getParts(model)} />
         </div>
       </Card.Content>
     </Card.Card>
@@ -77,7 +72,7 @@ export const QuestionTab: React.FC<Props> = (props) => {
 };
 
 interface InputSizeEditorProps {
-  input: ResponseMultiInput;
+  input: MultiInput;
 }
 
 const InputSizeEditor: React.FC<InputSizeEditorProps> = ({ input }) => {
@@ -90,9 +85,7 @@ const InputSizeEditor: React.FC<InputSizeEditorProps> = ({ input }) => {
         className="flex-shrink-0 border py-1 px-1.5 border-neutral-300 rounded w-full disabled:bg-neutral-100 disabled:text-neutral-600 dark:bg-neutral-800 dark:border-neutral-700 dark:text-white ml-2"
         value={input.size || 'medium'}
         onChange={({ target: { value } }) => {
-          dispatch(
-            ResponseMultiInputActions.setInputSize(input.id, value as ResponseMultiInputSize),
-          );
+          dispatch(ResponseMultiInputActions.setInputSize(input.id, value as MultiInputSize));
         }}
       >
         <option value="small">Small</option>
@@ -104,7 +97,7 @@ const InputSizeEditor: React.FC<InputSizeEditorProps> = ({ input }) => {
 };
 
 interface MoveInputIntoPartProps {
-  input: ResponseMultiInput;
+  input: MultiInput;
   parts: Part[];
 }
 const MoveInputIntoPart: React.FC<MoveInputIntoPartProps> = ({ input, parts }) => {
@@ -118,13 +111,14 @@ const MoveInputIntoPart: React.FC<MoveInputIntoPartProps> = ({ input, parts }) =
       <select
         className="flex-shrink-0 border py-1 px-1.5 border-neutral-300 rounded w-full disabled:bg-neutral-100 disabled:text-neutral-600 dark:bg-neutral-800 dark:border-neutral-700 dark:text-white ml-2"
         value={undefined}
+        defaultValue={undefined}
         onChange={({ target: { value } }) => {
           if (value !== input.partId) {
             dispatch(ResponseMultiInputActions.moveInputToPart(input.id, value));
           }
         }}
       >
-        <option disabled value={undefined}>
+        <option disabled selected value={undefined}>
           select option
         </option>
         {parts.map((part, index: number) => (

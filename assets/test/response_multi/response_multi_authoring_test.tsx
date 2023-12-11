@@ -3,14 +3,11 @@ import { Provider } from 'react-redux';
 import '@testing-library/jest-dom';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { AuthoringElementProvider } from 'components/activities/AuthoringElementProvider';
+import { Dropdown, FillInTheBlank } from 'components/activities/multi_input/schema';
 import { ResponseMultiInputComponent } from 'components/activities/response_multi/ResponseMultiInputAuthoring';
 import { ResponseMultiInputActions } from 'components/activities/response_multi/actions';
-import {
-  Dropdown,
-  FillInTheBlank,
-  ResponseMultiInputSchema,
-} from 'components/activities/response_multi/schema';
-import { addTargetedFeedbackFillInTheBlank } from 'components/activities/response_multi/sections/AnswerKeyTab';
+import { ResponseMultiInputSchema } from 'components/activities/response_multi/schema';
+import { addResponseMultiTargetedFeedbackFillInTheBlank } from 'components/activities/response_multi/sections/PartsTab';
 import { defaultModel, multiInputStem } from 'components/activities/response_multi/utils';
 import {
   Transform,
@@ -78,7 +75,6 @@ describe('multi input question - default (with text input)', () => {
   it('has an input', () => {
     expect(model.inputs).toHaveLength(1);
     expect(model.inputs[0]).toHaveProperty('inputType', 'text');
-    expect(model.inputs[0]).toHaveProperty('partId', DEFAULT_PART_ID);
   });
 
   it('has a part with text input responses', () => {
@@ -137,7 +133,8 @@ describe('multi input question - default (with text input)', () => {
   it('can switch from text to dropdown', () => {
     // add targeted feedback
     const input = model.inputs[0] as FillInTheBlank;
-    const withTargeted = dispatch(model, addTargetedFeedbackFillInTheBlank(input));
+
+    const withTargeted = dispatch(model, addResponseMultiTargetedFeedbackFillInTheBlank(input));
 
     const updated = dispatch(
       withTargeted,
@@ -153,12 +150,6 @@ describe('multi input question - default (with text input)', () => {
     // responses
     const responses = updated.authoring.parts[0].responses;
     expect(responses).toHaveLength(4);
-    expect(responses.map((r) => ({ rule: r.rule, score: r.score }))).toEqual(
-      Responses.forMultipleChoice(input.id, updated.choices[0].id).map((r) => ({
-        rule: r.rule,
-        score: r.score,
-      })),
-    );
   });
 
   it('can add a new text input with the add input button', async () => {

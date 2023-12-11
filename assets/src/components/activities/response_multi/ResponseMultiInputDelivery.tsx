@@ -9,10 +9,7 @@ import { ResetButtonConnected } from 'components/activities/common/delivery/rese
 import { SubmitButtonConnected } from 'components/activities/common/delivery/submit_button/SubmitButtonConnected';
 import { HintsDeliveryConnected } from 'components/activities/common/hints/delivery/HintsDeliveryConnected';
 import { StemDelivery } from 'components/activities/common/stem/delivery/StemDelivery';
-import {
-  ResponseMultiInput,
-  ResponseMultiInputSchema,
-} from 'components/activities/response_multi/schema';
+import { ResponseMultiInputSchema } from 'components/activities/response_multi/schema';
 import { Choice, Manifest, PartId } from 'components/activities/types';
 import { toSimpleText } from 'components/editing/slateUtils';
 import {
@@ -36,6 +33,7 @@ import { defaultWriterContext } from 'data/content/writers/context';
 import { configureStore } from 'state/store';
 import { DeliveryElementProvider, useDeliveryElementContext } from '../DeliveryElementProvider';
 import { initializePersistence } from '../common/delivery/persistence';
+import { MultiInput } from '../multi_input/schema';
 
 export const ResponseMultiInputComponent: React.FC = () => {
   const {
@@ -63,7 +61,7 @@ export const ResponseMultiInputComponent: React.FC = () => {
   );
 
   const deferredSaves = useRef(
-    model.inputs.reduce((m: any, input: ResponseMultiInput) => {
+    model.inputs.reduce((m: any, input: MultiInput) => {
       const p = initializePersistence();
       m[input.id] = p;
       return m;

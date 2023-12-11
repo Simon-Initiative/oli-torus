@@ -1,6 +1,5 @@
 import React from 'react';
 import {
-  HasMultInputsPerPartOption,
   HasPerPartSubmissionOption,
   PartId,
   Transform,
@@ -33,13 +32,6 @@ export const togglePerPartSubmissionOption = () => {
   return (model: HasPerPartSubmissionOption): void => {
     model.submitPerPart =
       model.submitPerPart === undefined || model.submitPerPart === false ? true : false;
-  };
-};
-
-export const toggleMultInputsPerPartOption = () => {
-  return (model: HasMultInputsPerPartOption): void => {
-    model.multInputsPerPart =
-      model.multInputsPerPart === undefined || model.multInputsPerPart === false ? true : false;
   };
 };
 

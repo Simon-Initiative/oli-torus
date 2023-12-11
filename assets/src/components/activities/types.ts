@@ -435,10 +435,6 @@ export interface HasPerPartSubmissionOption {
   submitPerPart: boolean;
 }
 
-export interface HasMultInputsPerPartOption {
-  multInputsPerPart: boolean;
-}
-
 /**
  * Helper function to create a transformation.
  * @param path  JSON path of the node within the model to transform

@@ -6,11 +6,8 @@ import { FeedbackCard } from 'components/activities/common/responses/FeedbackCar
 import { ScoreInput } from 'components/activities/common/responses/ScoreInput';
 import { ShowPage } from 'components/activities/common/responses/ShowPage';
 import { ResponseActions } from 'components/activities/common/responses/responseActions';
-import {
-  Dropdown,
-  ResponseMultiInput,
-  ResponseMultiInputSchema,
-} from 'components/activities/response_multi/schema';
+import { Dropdown, MultiInput } from 'components/activities/multi_input/schema';
+import { ResponseMultiInputSchema } from 'components/activities/response_multi/schema';
 import { RulesTab } from 'components/activities/response_multi/sections/RulesTab';
 import { MatchStyle, Response, ResponseId, RichText } from 'components/activities/types';
 import { Card } from 'components/misc/Card';
@@ -43,7 +40,7 @@ export const ResponseTab: React.FC<Props> = (props) => {
     response.matchStyle ? response.matchStyle : 'all',
   );
 
-  const inputs: ResponseMultiInput[] = model.inputs.filter((input) => {
+  const inputs: MultiInput[] = model.inputs.filter((input) => {
     if (response.inputRefs && response.inputRefs.includes(input.id)) {
       return true;
     }
@@ -112,10 +109,10 @@ export const ResponseTab: React.FC<Props> = (props) => {
     dispatch(ResponseActions.editResponseMatchStyle(response.id, value));
   };
 
-  const getInputOptions = (): ResponseMultiInput[] => {
+  const getInputOptions = (): MultiInput[] => {
     const targets: string[] | undefined = getPartById(model, props.partId).targets;
     if (targets) {
-      let inputs: ResponseMultiInput[] = model.inputs.filter((i) => targets.includes(i.id));
+      let inputs: MultiInput[] = model.inputs.filter((i) => targets.includes(i.id));
       const inputRefs: string[] | undefined = response.inputRefs;
       if (inputRefs) {
         inputs = inputs.filter((i) => !inputRefs.includes(i.id));
@@ -127,7 +124,7 @@ export const ResponseTab: React.FC<Props> = (props) => {
 
   const matchStyleOptions = (
     <div className="d-flex flex-row">
-      <div className="mr-2">MatchStyle</div>
+      <div className="mr-2">Match</div>
       <div className="form-check mr-1">
         <input
           className="form-check-input mr-1"
@@ -231,14 +228,14 @@ export const ResponseTab: React.FC<Props> = (props) => {
 };
 
 interface AddRuleProps {
-  inputs: ResponseMultiInput[];
+  inputs: MultiInput[];
   response: Response;
 }
 const AddRule: React.FC<AddRuleProps> = ({ inputs, response }) => {
   const { model, dispatch } = useAuthoringElementContext<ResponseMultiInputSchema>();
 
   const addRule = (inputId: string) => {
-    const input: ResponseMultiInput | undefined = inputs.find((i) => i.id === inputId);
+    const input: MultiInput | undefined = inputs.find((i) => i.id === inputId);
     if (input) {
       let choiceId: string | undefined;
       if (input.inputType === 'dropdown') {
