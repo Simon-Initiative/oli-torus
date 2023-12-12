@@ -347,9 +347,21 @@ defmodule Oli.Utils.Seeder.Project do
       revision,
       published_resource_tag: published_resource_tag
     )
-    |> attach_to([resource], attach_to_container_revision, publication,
-      container_revision_tag: container_revision_tag
-    )
+    |> then(fn seeds ->
+      case attach_to_container_revision do
+        nil ->
+          seeds
+
+        container_revision ->
+          attach_to(
+            seeds,
+            [resource],
+            container_revision,
+            publication,
+            container_revision_tag: container_revision_tag
+          )
+      end
+    end)
     |> tag(resource_tag, resource)
     |> tag(revision_tag, revision)
   end
@@ -406,9 +418,21 @@ defmodule Oli.Utils.Seeder.Project do
       revision,
       published_resource_tag: published_resource_tag
     )
-    |> attach_to([resource], attach_to_container_revision, publication,
-      container_revision_tag: container_revision_tag
-    )
+    |> then(fn seeds ->
+      case attach_to_container_revision do
+        nil ->
+          seeds
+
+        container_revision ->
+          attach_to(
+            seeds,
+            [resource],
+            container_revision,
+            publication,
+            container_revision_tag: container_revision_tag
+          )
+      end
+    end)
     |> tag(resource_tag, resource)
     |> tag(revision_tag, revision)
   end
@@ -635,7 +659,10 @@ defmodule Oli.Utils.Seeder.Project do
     |> tag(published_resource_tag, published_resource)
   end
 
-  defp attach_to(seeds, resources, container_revision, publication, tags) do
+  def attach_to(seeds, resources, container_revision, publication, tags \\ []) do
+    resources = unpack(seeds, resources)
+    [container_revision, publication] = unpack(seeds, [container_revision, publication])
+
     children_ids = Enum.map(resources, fn r -> r.id end)
 
     {:ok, updated} =

@@ -3030,6 +3030,8 @@ defmodule Oli.Delivery.Sections do
   end
 
   defp get_student_pages(section_slug, user_id) do
+    page_type_id = ResourceType.get_id_by_type("page")
+
     SectionResource
     |> join(:inner, [sr], s in Section, on: sr.section_id == s.id)
     |> join(:inner, [sr, s], spp in SectionsProjectsPublications,
@@ -3044,7 +3046,10 @@ defmodule Oli.Delivery.Sections do
         ds.section_id == sr.section_id and ds.resource_id == sr.resource_id and
           ds.user_id == ^user_id
     )
-    |> where([sr, s, _, _, _, ds], s.slug == ^section_slug)
+    |> where(
+      [sr, s, _, _, rev, ds],
+      s.slug == ^section_slug and rev.resource_type_id == ^page_type_id
+    )
     |> select([sr, s, _, _, rev, ds], %{
       id: sr.id,
       title: rev.title,
@@ -3068,7 +3073,6 @@ defmodule Oli.Delivery.Sections do
     })
     |> order_by([
       {:asc_nulls_last, fragment("end_date")},
-      {:asc_nulls_last, fragment("numbering_level")},
       {:asc_nulls_last, fragment("numbering_index")}
     ])
   end
@@ -3153,11 +3157,7 @@ defmodule Oli.Delivery.Sections do
       Map.put(
         sr,
         :end_date,
-        if is_nil(sr.end_date) do
-          nil
-        else
-          to_datetime(sr.end_date)
-        end
+        if(is_nil(sr.end_date), do: nil, else: to_datetime(sr.end_date))
       )
     end)
   end
@@ -3183,7 +3183,7 @@ defmodule Oli.Delivery.Sections do
 
     Enum.reverse(reachable_graded_pages) ++
       (Map.values(unreachable_graded_pages)
-       |> Enum.sort_by(&{&1.numbering_level, &1.numbering_index}))
+       |> Enum.sort_by(&{&1.numbering_index}))
   end
 
   defp get_root_container_and_graded_pages(resources) do
