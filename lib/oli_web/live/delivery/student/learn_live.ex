@@ -24,6 +24,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
        student_visited_pages: %{},
        student_progress_per_resource_id: %{},
        student_raw_avg_score_per_page_id: %{},
+       student_raw_avg_score_per_container_id: %{},
        viewed_intro_video_resource_ids:
          get_viewed_intro_video_resource_ids(
            socket.assigns.section.slug,
@@ -143,7 +144,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   def handle_info(
         {:student_metrics_and_enable_slider_buttons,
          {student_visited_pages, student_progress_per_resource_id,
-          student_raw_avg_score_per_page_id}},
+          student_raw_avg_score_per_page_id, student_raw_avg_score_per_container_id}},
         socket
       ) do
     {:noreply,
@@ -151,6 +152,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
        student_visited_pages: student_visited_pages,
        student_progress_per_resource_id: student_progress_per_resource_id,
        student_raw_avg_score_per_page_id: student_raw_avg_score_per_page_id,
+       student_raw_avg_score_per_container_id: student_raw_avg_score_per_container_id,
        selected_module_per_unit_uuid:
          Enum.into(
            socket.assigns.selected_module_per_unit_uuid,
@@ -190,6 +192,13 @@ defmodule OliWeb.Delivery.Student.LearnLive do
           )
         }
         student_id={@current_user.id}
+        unit_raw_avg_score={
+          Map.get(
+            @student_raw_avg_score_per_container_id,
+            unit["revision"]["resource_id"],
+            %{}
+          )
+        }
       />
     </div>
     """
@@ -203,6 +212,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   attr :progress, :integer
   attr :student_id, :integer
   attr :viewed_intro_video_resource_ids, :list
+  attr :unit_raw_avg_score, :map
 
   def unit(assigns) do
     ~H"""
@@ -233,6 +243,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
               </div>
             </div>
             <div class="ml-auto flex items-center gap-6">
+              <.score_summary :if={@progress == 100} raw_avg_score={@unit_raw_avg_score} />
               <.progress_bar
                 percent={@progress}
                 width="100px"
@@ -591,25 +602,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
             <span class="text-[12px] leading-[16px] opacity-50 dark:text-white">
               Due: <%= @due_date %>
             </span>
-            <div :if={@raw_avg_score[:score]} class="flex items-center gap-[6px] ml-auto">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="16"
-                height="16"
-                viewBox="0 0 16 16"
-                fill="none"
-              >
-                <path
-                  d="M3.88301 14.0007L4.96634 9.31732L1.33301 6.16732L6.13301 5.75065L7.99967 1.33398L9.86634 5.75065L14.6663 6.16732L11.033 9.31732L12.1163 14.0007L7.99967 11.5173L3.88301 14.0007Z"
-                  fill="#0CAF61"
-                />
-              </svg>
-              <span class="text-[12px] leading-[16px] tracking-[0.02px] text-[#0CAF61] font-semibold">
-                <%= format_float(@raw_avg_score[:score]) %> / <%= format_float(
-                  @raw_avg_score[:out_of]
-                ) %>
-              </span>
-            </div>
+            <.score_summary raw_avg_score={@raw_avg_score} />
           </div>
         </div>
       </div>
@@ -879,6 +872,24 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     end
   end
 
+  attr :raw_avg_score, :map
+
+  def score_summary(assigns) do
+    ~H"""
+    <div :if={@raw_avg_score[:score]} class="flex items-center gap-[6px] ml-auto">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="none">
+        <path
+          d="M3.88301 14.0007L4.96634 9.31732L1.33301 6.16732L6.13301 5.75065L7.99967 1.33398L9.86634 5.75065L14.6663 6.16732L11.033 9.31732L12.1163 14.0007L7.99967 11.5173L3.88301 14.0007Z"
+          fill="#0CAF61"
+        />
+      </svg>
+      <span class="text-[12px] leading-[16px] tracking-[0.02px] text-[#0CAF61] font-semibold">
+        <%= format_float(@raw_avg_score[:score]) %> / <%= format_float(@raw_avg_score[:out_of]) %>
+      </span>
+    </div>
+    """
+  end
+
   _docp = """
     Currently the intro_content for a revision does not support h1 tags. So,
     if there is no <h1> tag in the content then we need to add an additional margin
@@ -944,9 +955,13 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     raw_avg_score_per_page_id =
       Metrics.raw_avg_score_across_for_pages(section, page_ids, [current_user_id])
 
+    raw_avg_score_per_container_id =
+      Metrics.raw_avg_score_across_for_containers(section, container_ids, [current_user_id])
+
     progress_per_resource_id = Map.merge(progress_per_page_id, progress_per_container_id)
 
-    {visited_pages_map, progress_per_resource_id, raw_avg_score_per_page_id}
+    {visited_pages_map, progress_per_resource_id, raw_avg_score_per_page_id,
+     raw_avg_score_per_container_id}
   end
 
   defp mark_visited_pages(module, visited_pages) do
