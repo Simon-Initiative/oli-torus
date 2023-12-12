@@ -462,6 +462,7 @@ export const makeTransformation = (
         firstAttemptOnly,
       };
 
+export type MatchStyle = 'any' | 'all' | 'none';
 /**
  * Defines a response.
  */
@@ -481,9 +482,22 @@ export interface Response extends Identifiable {
   feedback: Feedback;
 
   /**
+   * Is this response, the default correct response?
+   */
+  correct?: boolean;
+
+  /**
    * Optional, show a page by index when this response is evaluated.
    */
   showPage?: number;
+
+  matchStyle?: MatchStyle;
+
+  inputRefs?: string[];
+
+  catchAll?: boolean;
+
+  targeted?: boolean;
 }
 
 /**
@@ -493,11 +507,17 @@ export interface Response extends Identifiable {
  * @param text simple text to formulate a Feedback from
  * @returns
  */
-export const makeResponse = (rule: string, score: number, text = ''): Response => ({
+export const makeResponse = (
+  rule: string,
+  score: number,
+  text = '',
+  correct?: boolean,
+): Response => ({
   id: guid(),
   rule,
   score,
   feedback: makeFeedback(text),
+  correct,
 });
 
 /**
@@ -562,6 +582,8 @@ export interface Part extends Identifiable {
   scoringStrategy: ScoringStrategy;
   gradingApproach?: GradingApproach;
   outOf?: null | number;
+  incorrectScore?: null | number;
+  targets?: string[];
 }
 
 /**
@@ -577,6 +599,7 @@ export const makePart = (
   // Multiinput activity parts start with just one hint
   hints = [makeHint(''), makeHint(''), makeHint('')],
   id?: ID,
+  targets: string[] = [],
 ): Part => ({
   id: id ? id : guid(),
   gradingApproach: GradingApproach.automatic,
@@ -584,12 +607,21 @@ export const makePart = (
   scoringStrategy: ScoringStrategy.average,
   responses,
   hints,
+  targets,
 });
 
 /**
  * Marker interface for an entity that has parts.
  */
 export interface HasParts {
+  authoring: {
+    parts: Part[];
+  };
+}
+
+export interface ActivityLevelScoring {
+  customScoring?: boolean;
+  scoringStrategy?: ScoringStrategy;
   authoring: {
     parts: Part[];
   };
@@ -617,6 +649,7 @@ export enum ScoringStrategy {
   'average' = 'average',
   'best' = 'best',
   'most_recent' = 'most_recent',
+  'total' = 'total',
 }
 
 /**

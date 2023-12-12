@@ -495,7 +495,11 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
       end
 
     parts = update["content"]["authoring"]["parts"]
-    update = sync_objectives_to_parts(objectives, update, parts)
+
+    update =
+      objectives
+      |> sync_objectives_to_parts(update, parts)
+      |> maybe_update_scoring_strategy()
 
     # do not allow resource_id, if present, to be editable.  resource_id is only allowed to be
     # present in bulk update situations so that the server knows which resource we are editing
@@ -505,6 +509,30 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
 
     updated
   end
+
+  defp maybe_update_scoring_strategy(update) do
+    case {update["content"]["customScoring"], get_scoring_strategy_from_content(update)} do
+      {false, _} ->
+        Map.put(
+          update,
+          "scoring_strategy_id",
+          Oli.Resources.ScoringStrategy.get_id_by_type("total")
+        )
+
+      {_, scoring_strategy} ->
+        Map.put(
+          update,
+          "scoring_strategy_id",
+          Oli.Resources.ScoringStrategy.get_id_by_type(scoring_strategy)
+        )
+    end
+  end
+
+  defp get_scoring_strategy_from_content(%{"content" => %{"scoringStrategy" => scoring_strategy}})
+       when scoring_strategy in ["best", "average"],
+       do: scoring_strategy
+
+  defp get_scoring_strategy_from_content(_), do: "total"
 
   # Check to see if this update is valid
   defp validate_request(update) when is_list(update) do

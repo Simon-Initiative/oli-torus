@@ -1787,8 +1787,19 @@ defmodule Oli.Delivery.Sections do
                 sr,
                 :children,
                 Enum.map(hierarchy_definition[sr.resource_id] || [], fn child_resource_id ->
-                  section_resources_by_resource_id[child_resource_id].id
+                  case section_resources_by_resource_id[child_resource_id] do
+                    nil ->
+                      Logger.error(
+                        "Resource #{child_resource_id} is referenced in the hierarchy but does not exist in the publication"
+                      )
+
+                      nil
+
+                    %SectionResource{id: id} ->
+                      id
+                  end
                 end)
+                |> Enum.filter(&(&1 != nil))
               )
               |> Map.take([:id, :children, :inserted_at, :updated_at])
 
@@ -1858,23 +1869,31 @@ defmodule Oli.Delivery.Sections do
         children,
         {[], numbering_tracker, slugs},
         fn resource_id, {processed_children, numbering_tracker, slugs} ->
-          %PublishedResource{revision: child} = published_resources_by_resource_id[resource_id]
+          case published_resources_by_resource_id[resource_id] do
+            nil ->
+              Logger.error(
+                "Resource #{resource_id} is referenced in the hierarchy but does not exist in the publication"
+              )
 
-          {section_resources, numbering_tracker, slugs} =
-            build_section_resource_insertion(%{
-              section: section,
-              publication: publication,
-              published_resources_by_resource_id: published_resources_by_resource_id,
-              processed_ids: processed_ids,
-              revision: child,
-              level: level + 1,
-              numbering_tracker: numbering_tracker,
-              hierarchy_definition: hierarchy_definition,
-              date: date,
-              slugs: slugs
-            })
+              {processed_children, numbering_tracker, slugs}
 
-          {section_resources ++ processed_children, numbering_tracker, slugs}
+            %PublishedResource{revision: child} ->
+              {section_resources, numbering_tracker, slugs} =
+                build_section_resource_insertion(%{
+                  section: section,
+                  publication: publication,
+                  published_resources_by_resource_id: published_resources_by_resource_id,
+                  processed_ids: processed_ids,
+                  revision: child,
+                  level: level + 1,
+                  numbering_tracker: numbering_tracker,
+                  hierarchy_definition: hierarchy_definition,
+                  date: date,
+                  slugs: slugs
+                })
+
+              {section_resources ++ processed_children, numbering_tracker, slugs}
+          end
         end
       )
 
@@ -3452,6 +3471,8 @@ defmodule Oli.Delivery.Sections do
   end
 
   def get_student_pages(section_slug, user_id) do
+    page_type_id = ResourceType.get_id_by_type("page")
+
     SectionResource
     |> join(:inner, [sr], s in Section, on: sr.section_id == s.id)
     |> join(:inner, [sr, s], spp in SectionsProjectsPublications,
@@ -3466,7 +3487,10 @@ defmodule Oli.Delivery.Sections do
         ds.section_id == sr.section_id and ds.resource_id == sr.resource_id and
           ds.user_id == ^user_id
     )
-    |> where([sr, s, _, _, _, ds], s.slug == ^section_slug)
+    |> where(
+      [sr, s, _, _, rev, ds],
+      s.slug == ^section_slug and rev.resource_type_id == ^page_type_id
+    )
     |> select([sr, s, _, _, rev, ds], %{
       id: sr.id,
       title: rev.title,
@@ -3490,7 +3514,6 @@ defmodule Oli.Delivery.Sections do
     })
     |> order_by([
       {:asc_nulls_last, fragment("end_date")},
-      {:asc_nulls_last, fragment("numbering_level")},
       {:asc_nulls_last, fragment("numbering_index")}
     ])
   end
@@ -3628,11 +3651,7 @@ defmodule Oli.Delivery.Sections do
       Map.put(
         sr,
         :end_date,
-        if is_nil(sr.end_date) do
-          nil
-        else
-          to_datetime(sr.end_date)
-        end
+        if(is_nil(sr.end_date), do: nil, else: to_datetime(sr.end_date))
       )
     end)
   end
@@ -3658,7 +3677,7 @@ defmodule Oli.Delivery.Sections do
 
     Enum.reverse(reachable_graded_pages) ++
       (Map.values(unreachable_graded_pages)
-       |> Enum.sort_by(&{&1.numbering_level, &1.numbering_index}))
+       |> Enum.sort_by(&{&1.numbering_index}))
   end
 
   defp get_root_container_and_graded_pages(resources) do
@@ -3880,13 +3899,14 @@ defmodule Oli.Delivery.Sections do
               page_id in container.children
             end) do
          nil ->
-           nil
+           {nil, nil}
 
          %{numbering_level: 0} ->
-           nil
+           {nil, nil}
 
          c ->
-           ~s{#{get_container_label(c.numbering_level, c.customizations || Map.from_struct(CustomLabels.default()))} #{c.numbering_index}: #{c.title}}
+           {c.id,
+            ~s{#{get_container_label(c.numbering_level, c.customizations || Map.from_struct(CustomLabels.default()))} #{c.numbering_index}: #{c.title}}}
        end}
     end)
     |> Enum.into(%{})

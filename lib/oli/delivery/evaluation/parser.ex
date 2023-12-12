@@ -59,14 +59,30 @@ defmodule Oli.Delivery.Evaluation.Parser do
     |> reduce({List, :to_string, []})
   )
 
+  defcombinatorp(
+    :string_until_space,
+    repeat(
+      lookahead_not(ascii_char([?\t, ?\v, 32, ?\t]))
+      |> concat(character)
+    )
+    |> reduce({List, :to_string, []})
+  )
+
   defcombinatorp(:value, ignore(lbrace) |> parsec(:string_until_rbrace) |> ignore(rbrace))
 
-  # <component> :== "attemptNumber" | "input" | "length(input)"
+  # <component> :== "inputRef" | attemptNumber" | "input" | "length(input)"
   attempt_number_ =
     string("attemptNumber")
     |> optional(string(" "))
     |> replace(:attempt_number)
     |> label("attemptNumber")
+
+  input_ref_ =
+    string("input_ref_")
+    |> parsec(:string_until_space)
+    |> ignore(string(" "))
+    |> reduce(:to_input_ref)
+    |> label("input with ref")
 
   input_ = string("input") |> optional(string(" ")) |> replace(:input) |> label("input")
 
@@ -76,7 +92,7 @@ defmodule Oli.Delivery.Evaluation.Parser do
     |> replace(:input_length)
     |> label("input_length")
 
-  defcombinatorp(:component, choice([attempt_number_, input_, input_length_]))
+  defcombinatorp(:component, choice([input_ref_, attempt_number_, input_, input_length_]))
 
   # <operator> :== "<" | ">" | "=" | "like" | "contains"
   defcombinatorp(
@@ -120,6 +136,13 @@ defmodule Oli.Delivery.Evaluation.Parser do
       [lhs, op, rhs] -> {op, lhs, rhs}
       [f, o] -> {:eval, f, o}
       [!: [negated]] -> {:!, negated}
+      [item] -> item
+    end
+  end
+
+  defp to_input_ref(acc) do
+    case acc do
+      [_f, o] -> {:input, o}
       [item] -> item
     end
   end

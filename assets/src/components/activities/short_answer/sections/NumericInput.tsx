@@ -363,6 +363,7 @@ export const operatorOptions: { value: RuleOperator; displayValue: string }[] = 
   { value: 'neq', displayValue: 'Not equal to' },
   { value: 'btw', displayValue: 'Between' },
   { value: 'nbtw', displayValue: 'Not between' },
+  { value: 'regex', displayValue: 'Regex' },
 ];
 
 export const NumericInput: React.FC<InputProps> = ({ input, onEditInput }) => {

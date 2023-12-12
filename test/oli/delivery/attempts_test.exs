@@ -744,7 +744,6 @@ defmodule Oli.Delivery.AttemptsTest do
                context_id,
                activity_attempt_guid,
                client_evaluations,
-               :normalize,
                datashop_session_id
              ) ==
                {:ok,

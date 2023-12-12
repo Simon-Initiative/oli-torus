@@ -12,7 +12,11 @@ import {
   HasParts,
   RichText,
 } from 'components/activities/types';
-import { ResponseMapping, getTargetedResponseMappings } from 'data/activities/model/responses';
+import {
+  ResponseMapping,
+  getTargetedResponseMappings,
+  hasCustomScoring,
+} from 'data/activities/model/responses';
 import { TextDirection } from 'data/content/model/elements/types';
 import { EditorType } from 'data/content/resource';
 import { defaultWriterContext } from 'data/content/writers/context';
@@ -46,6 +50,8 @@ export const useTargetedFeedback = () => {
       dispatch(ResponseActions.removeTargetedFeedback(responseId)),
     updateShowPage: (responseId: string, showPage: number | undefined) =>
       dispatch(ResponseActions.editShowPage(responseId, showPage)),
+    updateScore: (responseId: string, score: number) =>
+      dispatch(ResponseActions.editResponseScore(responseId, score)),
   };
 };
 
@@ -75,6 +81,8 @@ export const TargetedFeedback: React.FC<Props> = (props) => {
 
   // only show feedbacks for relevant choice set, presumably current part's on multipart
   const partMappings = getFeedbackForChoices(props.choices || model.choices, hook.targetedMappings);
+  const customScoring = hasCustomScoring(model);
+
   return (
     <>
       {partMappings.map((mapping) => (
@@ -85,8 +93,10 @@ export const TargetedFeedback: React.FC<Props> = (props) => {
           updateFeedback={hook.updateFeedback}
           updateFeedbackEditor={hook.updateFeedbackEditor}
           updateCorrectness={hook.updateCorrectness}
+          updateScore={hook.updateScore}
           removeResponse={hook.removeFeedback}
           updateFeedbackTextDirection={hook.updateFeedbackTextDirection}
+          customScoring={customScoring}
         >
           <ChoicesDelivery
             unselectedIcon={props.unselectedIcon}
@@ -97,6 +107,7 @@ export const TargetedFeedback: React.FC<Props> = (props) => {
             isEvaluated={false}
             context={writerContext}
           />
+
           {authoringContext.contentBreaksExist ? (
             <ShowPage
               editMode={editMode}

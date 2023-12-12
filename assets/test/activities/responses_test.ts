@@ -16,7 +16,7 @@ const DEFAULT_PART_ID = '1';
 
 describe('responses', () => {
   const choice = makeChoice('a');
-  const response = makeResponse(matchRule(choice.id), 1, '');
+  const response = makeResponse(matchRule(choice.id), 1, '', true);
   const model: HasParts & HasChoices & { authoring: { targeted: ChoiceIdsToResponseId[] } } = {
     choices: [choice],
     authoring: {
