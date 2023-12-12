@@ -378,8 +378,8 @@ defmodule OliWeb.Router do
         OliWeb.LiveSessionPlugs.SetUser,
         OliWeb.LiveSessionPlugs.SetProject
       ] do
-      live("/:project_id/overview", Projects.OverviewLive)
       live("/:project_id", Projects.OverviewLive)
+      live("/:project_id/overview", Projects.OverviewLive)
     end
   end
 
@@ -680,6 +680,14 @@ defmodule OliWeb.Router do
       Api.AttemptController,
       :get_hint
     )
+  end
+
+  scope "/api/v1/discussion/:section_slug/:resource_id", OliWeb do
+    pipe_through([:api, :delivery_protected])
+
+    get("/", Api.DirectedDiscussionController, :get_discussion)
+    post("/", Api.DirectedDiscussionController, :create_post)
+    delete("/:post_id", Api.DirectedDiscussionController, :delete_post)
   end
 
   # User State Service, extrinsic state

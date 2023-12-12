@@ -19,8 +19,6 @@ defmodule Oli.Delivery.Attempts.ManualGrading do
     ActivityAttempt
   }
 
-  alias Oli.Activities.Model
-
   def count_submitted_attempts(%Section{} = section) do
     case browse_submitted_attempts(
            section,
@@ -251,22 +249,11 @@ defmodule Oli.Delivery.Attempts.ManualGrading do
     graded = activity_attempt.graded
     resource_attempt_guid = activity_attempt.resource_attempt_guid
 
-    activity_model = Core.select_model(activity_attempt)
-
-    normalization_strategy =
-      case Model.parse(activity_model) do
-        {:ok, %Model{rules: []}} -> :normalize
-        _ -> :do_not_normalize
-      end
-
     Oli.Repo.transaction(fn _ ->
       with {:ok, finalized_part_attempts} <-
              finalize_part_attempts(activity_attempt, score_feedbacks_map),
            {:ok, _} <-
-             Evaluate.rollup_part_attempt_evaluations(
-               activity_attempt.attempt_guid,
-               normalization_strategy
-             ),
+             Evaluate.rollup_part_attempt_evaluations(activity_attempt.attempt_guid),
            {:ok, _} <-
              to_attempt_guid(finalized_part_attempts)
              |> Oli.Delivery.Snapshots.queue_or_create_snapshot(section_slug),

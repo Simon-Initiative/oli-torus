@@ -168,7 +168,6 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
                  section_slug,
                  activity_attempt_guid,
                  client_evaluations,
-                 :do_not_normalize,
                  datashop_session_id,
                  part_attempts,
                  {score, out_of}
@@ -514,7 +513,6 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
         section_slug,
         activity_attempt_guid,
         client_evaluations,
-        normalize_mode \\ :normalize,
         datashop_session_id,
         part_attempts_input \\ nil,
         use_fixed_score \\ nil
@@ -543,8 +541,7 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
                 determine_activity_rollup_fn(
                   activity_attempt_guid,
                   part_inputs,
-                  part_attempts,
-                  normalize_mode
+                  part_attempts
                 )
 
               {score, out_of} ->
@@ -666,7 +663,7 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
     end
   end
 
-  def rollup_part_attempt_evaluations(activity_attempt_guid, normalize_mode) do
+  def rollup_part_attempt_evaluations(activity_attempt_guid) do
     # find the latest part attempts
     part_attempts = get_latest_part_attempts(activity_attempt_guid)
 
@@ -677,12 +674,6 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
       Scoring.calculate_score(activity_attempt.revision.scoring_strategy_id, part_attempts)
 
     Logger.debug("rollup_part_attempt_evaluations: score: #{score}, out_of: #{out_of}")
-
-    {score, out_of} =
-      case normalize_mode do
-        :do_not_normalize -> {score, out_of}
-        _ -> {normalize_to_one(score, out_of), 1.0}
-      end
 
     now = DateTime.utc_now()
 
@@ -710,13 +701,6 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
       date_evaluated: now,
       date_submitted: now
     })
-  end
-
-  defp normalize_to_one(score, out_of) do
-    case out_of do
-      0 -> 0
-      _ -> score / out_of
-    end
   end
 
   # Evaluate a list of part_input submissions for a matching list of part_attempt records
@@ -796,11 +780,10 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
   defp determine_activity_rollup_fn(
          activity_attempt_guid,
          part_inputs,
-         part_attempts,
-         normalize_mode \\ :normalize
+         part_attempts
        ) do
     evaluated_fn = fn result ->
-      rollup_part_attempt_evaluations(activity_attempt_guid, normalize_mode)
+      rollup_part_attempt_evaluations(activity_attempt_guid)
       result
     end
 
@@ -823,8 +806,6 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
       :evaluated ->
         %Result{score: score, out_of: out_of} =
           Scoring.calculate_score(activity_attempt.revision.scoring_strategy_id, part_attempts)
-
-        {score, out_of} = {normalize_to_one(score, out_of), 1.0}
 
         %{
           score: score,

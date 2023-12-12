@@ -22,6 +22,7 @@ import { configureStore } from 'state/store';
 import { AuthoringElement, AuthoringElementProps } from '../AuthoringElement';
 import { AuthoringElementProvider, useAuthoringElementContext } from '../AuthoringElementProvider';
 import { Explanation } from '../common/explanation/ExplanationAuthoring';
+import { ActivityScoring } from '../common/responses/ActivityScoring';
 import { VariableEditorOrNot } from '../common/variables/VariableEditorOrNot';
 import { VariableActions } from '../common/variables/variableActions';
 import * as ActivityTypes from '../types';
@@ -64,6 +65,8 @@ const CheckAllThatApply = () => {
           context={writerContext}
         />
         <SimpleFeedback partId={model.authoring.parts[0].id} />
+        <ActivityScoring partId={model.authoring.parts[0].id} />
+
         <TargetedFeedback
           toggleChoice={(choiceId, mapping) => {
             dispatch(

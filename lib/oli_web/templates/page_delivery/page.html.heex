@@ -1,5 +1,6 @@
 <div class="pt-5 mx-auto max-w-[900px]">
   <%= if not (Map.has_key?(@resource_attempt.content, "advancedDelivery") and @resource_attempt.content["advancedDelivery"]) do %>
+    <%= react_component("Components.OfflineDetector") %>
     <Components.Delivery.PageDelivery.header
       title={@title}
       page_number={@page_number}

@@ -80,7 +80,7 @@ defmodule Oli.Rendering.Activity.Html do
         activity_html_id = get_activity_html_id(activity_id, model_json)
 
         [
-          ~s|<#{tag} activity_id=\"#{activity_html_id}\" model="#{model_json}" editmode="false" projectSlug="#{section_slug}" bib_params="#{Base.encode64(bib_params_json)}"></#{tag}>\n|
+          ~s|<#{tag} section_slug=\"#{section_slug}\" activity_id=\"#{activity_html_id}\" model="#{model_json}" activityId="#{activity_id}" editmode="false" projectSlug="#{section_slug}" bib_params="#{Base.encode64(bib_params_json)}"></#{tag}>\n|
         ]
 
       :review ->

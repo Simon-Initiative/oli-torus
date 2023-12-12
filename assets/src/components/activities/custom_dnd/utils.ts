@@ -8,7 +8,7 @@ export function createNewPart(id: string, answer: string) {
     scoringStrategy: ScoringStrategy.average,
     gradingApproach: GradingApproach.automatic,
     responses: [
-      makeResponse(matchRule(answer), 1, 'Correct'),
+      makeResponse(matchRule(answer), 1, 'Correct', true),
       makeResponse(matchRule('.*'), 0, 'Incorrect'),
     ],
     hints: [makeHint(''), makeHint(''), makeHint('')],
@@ -69,6 +69,11 @@ const DEFAULT_LAYOUT_STYLES = `
   border-style: solid;
   border-width: 1px;
   border-color: black;
+}
+
+:host-context(.dark) .initiator {
+  background-color: white;
+  color: black;
 }
 
 .dragdropspacer {

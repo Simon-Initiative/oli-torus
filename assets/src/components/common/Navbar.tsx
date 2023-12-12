@@ -66,9 +66,9 @@ export const Navbar = ({
   timezones,
 }: NavbarProps) => {
   const [showNavbar, setShowNavbar] = useState(false);
-  const [popoutContainer, setPopoutContianer] = useState<Popout>();
+  const [popoutContainer, setPopoutContainer] = useState<Popout>();
   const isLargeScreen = useMediaQuery(MediaSize.lg);
-  const ref = useClickOutside<HTMLDivElement>(useCallback(() => setPopoutContianer(undefined), []));
+  const ref = useClickOutside<HTMLDivElement>(useCallback(() => setPopoutContainer(undefined), []));
 
   return (
     <div ref={ref}>
@@ -124,7 +124,7 @@ export const Navbar = ({
                   active={active}
                   popout={popout}
                   popoutContainer={popoutContainer}
-                  setPopoutContianer={setPopoutContianer}
+                  setPopoutContainer={setPopoutContainer}
                 />
               ) : (
                 <NavLink key={name} name={name} active={active} href={href} />
@@ -147,7 +147,7 @@ export const Navbar = ({
       </nav>
 
       {isLargeScreen && (
-        <LargePopoutContainer show={!!popoutContainer} setPopoutContianer={setPopoutContianer}>
+        <LargePopoutContainer show={!!popoutContainer} setPopoutContainer={setPopoutContainer}>
           {popoutContainer && renderComponent(popoutContainer?.component, popoutContainer?.props)}
         </LargePopoutContainer>
       )}
@@ -164,12 +164,14 @@ interface NavLinkProps {
 const NavLink = ({ href, active, name }: NavLinkProps) => (
   <a
     href={href}
-    className="block no-underline px-6 py-2 hover:no-underline text-current hover:text-delivery-primary-400"
+    className="block no-underline px-6 py-2 hover:no-underline text-current hover:text-delivery-primary-hover hover:dark:text-delivery-primary-dark-hover"
   >
     <div
       className={classNames(
         'border-b-2',
-        active ? 'font-bold border-delivery-primary !text-delivery-primary' : 'border-transparent',
+        active
+          ? 'font-bold border-delivery-primary dark:border-delivery-primary-dark text-delivery-primary dark:text-delivery-primary-dark'
+          : 'border-transparent',
       )}
     >
       {name}
@@ -182,7 +184,7 @@ interface NavExpandProps {
   active: boolean;
   popout: Popout;
   popoutContainer?: Popout;
-  setPopoutContianer: (p: Popout | undefined) => void;
+  setPopoutContainer: (p: Popout | undefined) => void;
 }
 
 const NavExpand = ({
@@ -190,7 +192,7 @@ const NavExpand = ({
   popout,
   active,
   popoutContainer,
-  setPopoutContianer,
+  setPopoutContainer,
 }: PropsWithChildren<NavExpandProps>) => {
   const [show, setShow] = useState(false);
   const isLargeScreen = useMediaQuery(MediaSize.lg);
@@ -200,9 +202,9 @@ const NavExpand = ({
   return (
     <div ref={ref}>
       <div
-        className="block no-underline px-6 py-2 cursor-pointer hover:no-underline text-current hover:text-delivery-primary-400"
+        className="block no-underline px-6 py-2 cursor-pointer hover:no-underline text-current hover:text-delivery-primary-hover dark:hover:text-delivery-primary-dark-hover"
         onClick={() => {
-          popoutContainer ? setPopoutContianer(undefined) : setPopoutContianer(popout);
+          popoutContainer ? setPopoutContainer(undefined) : setPopoutContainer(popout);
           setShow(!show);
         }}
       >
@@ -210,7 +212,7 @@ const NavExpand = ({
           className={classNames(
             'border-b-2',
             active
-              ? 'font-bold border-delivery-primary !text-delivery-primary'
+              ? 'font-bold border-delivery-primary dark:border-delivery-primary-dark text-delivery-primary dark:text-delivery-primary-dark'
               : 'border-transparent',
           )}
         >
@@ -228,7 +230,7 @@ const NavExpand = ({
 
 interface LargePopoutContainerProps {
   show: boolean;
-  setPopoutContianer: (p: Popout | undefined) => void;
+  setPopoutContainer: (p: Popout | undefined) => void;
 }
 
 const LargePopoutContainer = ({ show, children }: PropsWithChildren<LargePopoutContainerProps>) => (

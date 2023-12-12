@@ -2,6 +2,12 @@ import { EventEmitter } from 'events';
 import { ProjectSlug } from 'data/types';
 import { ActivityModelSchema, MediaItemRequest, Undoable } from './types';
 
+// When an authoring element is used inside a section as part of the instructor preview, it gets some extra params sent in.
+export interface SectionAuthoringProps {
+  activityId?: number;
+  sectionSlug?: string;
+}
+
 export interface AuthoringElementProps<T extends ActivityModelSchema> {
   model: T;
   onEdit: (model: T) => void;
@@ -58,11 +64,16 @@ export abstract class AuthoringElement<T extends ActivityModelSchema> extends HT
     this._notify = new EventEmitter().setMaxListeners(50);
   }
 
-  props(): AuthoringElementProps<T> {
+  props(): AuthoringElementProps<T> & SectionAuthoringProps {
     const getProp = (key: string) => JSON.parse(this.getAttribute(key) as any);
     const model = this.migrateModelVersion(getProp('model'));
     const editMode: boolean = this.getAttribute('editmode') === 'true';
     const projectSlug: ProjectSlug = this.getAttribute('projectSlug') as string;
+
+    const sectionSlug = this.getAttribute('section_slug') || '';
+    const htmlActivityId = this.getAttribute('activity_id') || 'activityid_-1';
+    const [, activityId] = htmlActivityId.split('_');
+
     let authoringContext: any = {};
     if (this.getAttribute('authoringcontext')) {
       authoringContext = getProp('authoringcontext');
@@ -84,6 +95,8 @@ export abstract class AuthoringElement<T extends ActivityModelSchema> extends HT
     };
 
     return {
+      activityId: parseInt(activityId, 10),
+      sectionSlug,
       onEdit,
       onPostUndoable,
       onRequestMedia,
