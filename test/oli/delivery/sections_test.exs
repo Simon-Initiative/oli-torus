@@ -266,7 +266,7 @@ defmodule Oli.Delivery.SectionsTest do
         Sections.Scheduling.retrieve(section)
         |> Enum.reduce(%{}, fn sr, acc -> Map.put(acc, sr.resource_id, sr) end)
 
-      # update assignments to have same scheduled date
+      # update assignments to have same scheduled date and different start_date
       assert {:ok, 3} =
                Sections.Scheduling.update(
                  section,
@@ -281,14 +281,14 @@ defmodule Oli.Delivery.SectionsTest do
                    %{
                      id: scheduled_resources[page4.resource_id].id,
                      scheduling_type: "due_by",
-                     start_date: "2023-02-03",
+                     start_date: "2023-02-04",
                      end_date: "2023-02-06",
                      manually_scheduled: true
                    },
                    %{
                      id: scheduled_resources[page5.resource_id].id,
                      scheduling_type: "due_by",
-                     start_date: "2023-02-03",
+                     start_date: "2023-02-05",
                      end_date: "2023-02-06",
                      manually_scheduled: true
                    }
@@ -301,13 +301,208 @@ defmodule Oli.Delivery.SectionsTest do
       page3_resource_id = page3.resource_id
       scored_page2_resource_id = scored_page2.resource_id
 
+      page_4_numbering_index =
+        Sections.get_section_resource(section.id, page4.resource_id).numbering_index
+
+      page_5_numbering_index =
+        Sections.get_section_resource(section.id, page5.resource_id).numbering_index
+
+      page_3_numbering_index =
+        Sections.get_section_resource(section.id, page3.resource_id).numbering_index
+
+      scored_page_2_numbering_index =
+        Sections.get_section_resource(section.id, scored_page2.resource_id).numbering_index
+
       # verify that the assignments are sorted by schedule and then by hierarchy
       # assignments without a scheduled date are listed after and are just sorted by hierarchy
+      # to sort the resources does not matter the start_date
+      # as the resources has the same scheduled date, so the order is by hierarchy
       assert [
+               %{resource_id: ^page4_resource_id, numbering_index: ^page_4_numbering_index},
+               %{resource_id: ^page5_resource_id, numbering_index: ^page_5_numbering_index},
+               %{resource_id: ^page3_resource_id, numbering_index: ^page_3_numbering_index},
+               %{
+                 resource_id: ^scored_page2_resource_id,
+                 numbering_index: ^scored_page_2_numbering_index
+               }
+             ] =
+               Sections.get_graded_pages(section.slug, student1.id)
+    end
+
+    test "properly sorts assignments without a scheduled date by hierarchy", %{
+      student1: student1,
+      section: section,
+      page3: page3,
+      page4: page4,
+      page5: page5,
+      scored_page2: scored_page2
+    } do
+      page4_resource_id = page4.resource_id
+      page5_resource_id = page5.resource_id
+      page3_resource_id = page3.resource_id
+      scored_page2_resource_id = scored_page2.resource_id
+
+      page_4_numbering_index =
+        Sections.get_section_resource(section.id, page4.resource_id).numbering_index
+
+      page_5_numbering_index =
+        Sections.get_section_resource(section.id, page5.resource_id).numbering_index
+
+      page_3_numbering_index =
+        Sections.get_section_resource(section.id, page3.resource_id).numbering_index
+
+      scored_page_2_numbering_index =
+        Sections.get_section_resource(section.id, scored_page2.resource_id).numbering_index
+
+      # verify that the assignments are sorted by hierarchy because they do not have a scheduled date
+      # scored_page_2_numbering_index: 2
+      # page_4_numbering_index: 3
+      # page_5_numbering_index: 4
+      # page_3_numbering_index: 5
+
+      assert [
+               %{
+                 resource_id: ^scored_page2_resource_id,
+                 numbering_index: ^scored_page_2_numbering_index
+               },
+               %{resource_id: ^page4_resource_id, numbering_index: ^page_4_numbering_index},
+               %{resource_id: ^page5_resource_id, numbering_index: ^page_5_numbering_index},
+               %{resource_id: ^page3_resource_id, numbering_index: ^page_3_numbering_index}
+             ] =
+               Sections.get_graded_pages(section.slug, student1.id)
+    end
+
+    test "properly sorts assignments with different scheduled date by scheduled date", %{
+      student1: student1,
+      section: section,
+      page3: page3,
+      page4: page4,
+      page5: page5,
+      scored_page2: scored_page2
+    } do
+      scheduled_resources =
+        Sections.Scheduling.retrieve(section)
+        |> Enum.reduce(%{}, fn sr, acc -> Map.put(acc, sr.resource_id, sr) end)
+
+      # update assignments to have differents scheduled date (end_date)
+      assert {:ok, 4} =
+               Sections.Scheduling.update(
+                 section,
+                 [
+                   %{
+                     id: scheduled_resources[page3.resource_id].id,
+                     scheduling_type: "due_by",
+                     start_date: "2023-02-04",
+                     end_date: "2023-02-06",
+                     manually_scheduled: true
+                   },
+                   %{
+                     id: scheduled_resources[page4.resource_id].id,
+                     scheduling_type: "due_by",
+                     start_date: "2023-02-05",
+                     end_date: "2023-02-07",
+                     manually_scheduled: true
+                   },
+                   %{
+                     id: scheduled_resources[page5.resource_id].id,
+                     scheduling_type: "due_by",
+                     start_date: "2023-02-03",
+                     end_date: "2023-02-08",
+                     manually_scheduled: true
+                   },
+                   %{
+                     id: scheduled_resources[scored_page2.resource_id].id,
+                     scheduling_type: "due_by",
+                     start_date: "2023-02-02",
+                     end_date: "2023-02-09",
+                     manually_scheduled: true
+                   }
+                 ],
+                 "Etc/UTC"
+               )
+
+      page4_resource_id = page4.resource_id
+      page5_resource_id = page5.resource_id
+      page3_resource_id = page3.resource_id
+      scored_page2_resource_id = scored_page2.resource_id
+
+      # verify that the assignments have different scheduled date then are sorted by scheduled date (end_date)
+
+      assert [
+               %{resource_id: ^page3_resource_id},
                %{resource_id: ^page4_resource_id},
                %{resource_id: ^page5_resource_id},
+               %{
+                 resource_id: ^scored_page2_resource_id
+               }
+             ] =
+               Sections.get_graded_pages(section.slug, student1.id)
+    end
+
+    test "properly sorts assignments that have due_by and read_by scheduling_type", %{
+      student1: student1,
+      section: section,
+      page3: page3,
+      page4: page4,
+      page5: page5,
+      scored_page2: scored_page2
+    } do
+      scheduled_resources =
+        Sections.Scheduling.retrieve(section)
+        |> Enum.reduce(%{}, fn sr, acc -> Map.put(acc, sr.resource_id, sr) end)
+
+      # update assignments to have differents scheduled date, and set numbering_level and numbering_index
+      assert {:ok, 4} =
+               Sections.Scheduling.update(
+                 section,
+                 [
+                   %{
+                     id: scheduled_resources[page3.resource_id].id,
+                     scheduling_type: "due_by",
+                     start_date: "2023-02-04",
+                     end_date: "2023-02-06",
+                     manually_scheduled: true
+                   },
+                   %{
+                     id: scheduled_resources[page4.resource_id].id,
+                     scheduling_type: "due_by",
+                     start_date: "2023-02-05",
+                     end_date: "2023-02-07",
+                     manually_scheduled: true
+                   },
+                   %{
+                     id: scheduled_resources[page5.resource_id].id,
+                     scheduling_type: "read_by",
+                     start_date: "2023-02-03",
+                     end_date: nil,
+                     manually_scheduled: true
+                   },
+                   %{
+                     id: scheduled_resources[scored_page2.resource_id].id,
+                     scheduling_type: "read_by",
+                     start_date: "2023-02-02",
+                     end_date: nil,
+                     manually_scheduled: true
+                   }
+                 ],
+                 "Etc/UTC"
+               )
+
+      page4_resource_id = page4.resource_id
+      page5_resource_id = page5.resource_id
+      page3_resource_id = page3.resource_id
+      scored_page2_resource_id = scored_page2.resource_id
+
+      # verify that the assignments are sorted by scheduled date (end_date) and then by hierarchy
+      # first are ordered the assignments with scheduling_type = "due_by" depending this date, and then are ordered the assignments by hierarchy (numbering_index)
+
+      assert [
                %{resource_id: ^page3_resource_id},
-               %{resource_id: ^scored_page2_resource_id}
+               %{resource_id: ^page4_resource_id},
+               %{
+                 resource_id: ^scored_page2_resource_id
+               },
+               %{resource_id: ^page5_resource_id}
              ] =
                Sections.get_graded_pages(section.slug, student1.id)
     end
