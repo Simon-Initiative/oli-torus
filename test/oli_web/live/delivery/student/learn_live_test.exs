@@ -259,9 +259,9 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       {:ok, view, _html} = live(conn, live_view_learn_live_route(section.slug))
 
       assert has_element?(view, "span", "The best course ever!")
-      assert has_element?(view, "h3", "1. Introduction")
-      assert has_element?(view, "h3", "2. Building a Phoenix app")
-      assert has_element?(view, "h3", "3. Implementing LiveView")
+      assert has_element?(view, "h3", "Introduction")
+      assert has_element?(view, "h3", "Building a Phoenix app")
+      assert has_element?(view, "h3", "Implementing LiveView")
     end
 
     test "can see unit intro as first slider card and play the video (if provided)", %{
@@ -326,7 +326,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
           ~s{div[phx-click="navigate_to_resource"][phx-value-slug="#{page_1.slug}"]}
         )
 
-      assert render(page_1_element) =~ "1.1 Page 1"
+      assert render(page_1_element) =~ "Page 1"
       assert render(page_1_element) =~ "10"
       assert render(page_1_element) =~ "min"
 
@@ -336,7 +336,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
           ~s{div[phx-click="navigate_to_resource"][phx-value-slug="#{page_2.slug}"]}
         )
 
-      assert render(page_2_element) =~ "1.2 Page 2"
+      assert render(page_2_element) =~ "Page 2"
       assert render(page_2_element) =~ "15"
       assert render(page_2_element) =~ "min"
 
@@ -468,12 +468,12 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       # unit 1 has been scheduled by instructor, so there must be schedule details data
       assert view
              |> element(~s{div[role="unit_1"] div[role="schedule_details"]})
-             |> render() =~ "Complete By:\n          </span>\n          Sun Dec 31, 2023 (8:00pm)"
+             |> render() =~ "Due:\n            </span>\n            Sun, Dec 31, 2023 (8:00pm)"
 
       # unit 2 has not been scheduled by instructor, so there must not be a schedule details data
       assert view
              |> element(~s{div[role="unit_2"] div[role="schedule_details"]})
-             |> render() =~ "Complete By:\n          </span>\n          not yet scheduled"
+             |> render() =~ "Due:\n            </span>\n            not yet scheduled"
     end
 
     @tag :skip
@@ -518,7 +518,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       {:ok, view, _html} = live(conn, live_view_learn_live_route(section.slug))
 
-      assert has_element?(view, ~s{div[role="unit_3"] div[role="card_1"] div[role="page_icon"]})
+      assert has_element?(view, ~s{div[role="unit_3"] div[role="card_1"] div[role="page icon"]})
 
       # click on page 7 card to navigate to that page
       view
