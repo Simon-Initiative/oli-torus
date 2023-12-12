@@ -7,7 +7,6 @@ defmodule OliWeb.Delivery.NewCourse do
   alias Oli.Delivery.Sections.{Section}
   alias Oli.Delivery.Sections
   alias Oli.Repo
-  alias Oli.Notifications.CreateSectionAsync
   alias OliWeb.Common.{Breadcrumb, Stepper}
   alias OliWeb.Common.Stepper.Step
   alias OliWeb.Delivery.NewCourse.{CourseDetails, NameCourse, SelectSource}
