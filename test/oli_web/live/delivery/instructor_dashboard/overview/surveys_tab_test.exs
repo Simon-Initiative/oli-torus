@@ -1235,7 +1235,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.SurveysTabTest do
       {:ok, view, _html} = live(conn, live_surveys_route(section.slug))
 
       assert has_element?(view, "h4", "Surveys")
-      assert has_element?(view, "p", "None exist")
+      assert has_element?(view, "p", "There are no surveys present in this course")
     end
   end
 
