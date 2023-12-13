@@ -10,6 +10,15 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
   alias Oli.Delivery.Sections
   alias Oli.Resources.ResourceType
   alias Oli.Delivery.Attempts.Core
+  alias Oli.Delivery.Attempts.Core.ResourceAccess
+  alias Oli.Repo
+  alias Oli.Analytics.Summary
+  alias Oli.Analytics.Common.Pipeline
+
+  alias Oli.Analytics.Summary.{
+    Context,
+    AttemptGroup
+  }
 
   defp live_view_learn_live_route(section_slug) do
     ~p"/sections/#{section_slug}/learn"
@@ -32,6 +41,50 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
     project = insert(:project, authors: [author])
 
     # revisions...
+    ## objectives
+    objective_1_revision =
+      insert(:revision,
+        resource_type_id: ResourceType.get_id_by_type("objective"),
+        title: "Objective 1"
+      )
+
+    objective_2_revision =
+      insert(:revision,
+        resource_type_id: ResourceType.get_id_by_type("objective"),
+        title: "Objective 2"
+      )
+
+    objective_3_revision =
+      insert(:revision,
+        resource_type_id: ResourceType.get_id_by_type("objective"),
+        title: "Objective 3"
+      )
+
+    objective_4_revision =
+      insert(:revision,
+        resource_type_id: ResourceType.get_id_by_type("objective"),
+        title: "Objective 4"
+      )
+
+    ## activities...
+    mcq_reg = Oli.Activities.get_registration_by_slug("oli_multiple_choice")
+
+    mcq_activity_1_revision =
+      insert(:revision,
+        resource_type_id: ResourceType.get_id_by_type("activity"),
+        objectives: %{
+          "1" => [
+            objective_1_revision.resource_id,
+            objective_2_revision.resource_id,
+            objective_3_revision.resource_id,
+            objective_4_revision.resource_id
+          ]
+        },
+        activity_type_id: mcq_reg.id,
+        title: "Multiple Choice 1",
+        content: generate_mcq_content("This is the first question")
+      )
+
     ## pages...
     page_1_revision =
       insert(:revision,
@@ -56,7 +109,35 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
     page_4_revision =
       insert(:revision,
         resource_type_id: ResourceType.get_id_by_type("page"),
-        title: "Page 4"
+        title: "Page 4",
+        graded: true,
+        content: %{
+          model: [
+            %{
+              id: "4286170280",
+              type: "content",
+              children: [
+                %{
+                  id: "2905665054",
+                  type: "p",
+                  children: [
+                    %{
+                      text: "This is a page with a multiple choice activity."
+                    }
+                  ]
+                }
+              ]
+            },
+            %{
+              id: "3330767711",
+              type: "activity-reference",
+              children: [],
+              activity_id: mcq_activity_1_revision.resource.id
+            }
+          ],
+          bibrefs: [],
+          version: "0.1.0"
+        }
       )
 
     page_5_revision =
@@ -77,6 +158,13 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
         title: "Page 7"
       )
 
+    page_8_revision =
+      insert(:revision,
+        resource_type_id: ResourceType.get_id_by_type("page"),
+        title: "Page 8",
+        graded: true
+      )
+
     ## modules...
     module_1_revision =
       insert(:revision, %{
@@ -95,7 +183,8 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
               ]
             }
           ]
-        }
+        },
+        intro_video: "some_intro_video_url"
       })
 
     module_2_revision =
@@ -133,7 +222,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
     unit_3_revision =
       insert(:revision, %{
         resource_type_id: Oli.Resources.ResourceType.get_id_by_type("container"),
-        children: [page_7_revision.resource_id],
+        children: [page_7_revision.resource_id, page_8_revision.resource_id],
         title: "Implementing LiveView"
       })
 
@@ -151,6 +240,11 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
     all_revisions =
       [
+        objective_1_revision,
+        objective_2_revision,
+        objective_3_revision,
+        objective_4_revision,
+        mcq_activity_1_revision,
         page_1_revision,
         page_2_revision,
         page_3_revision,
@@ -158,6 +252,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
         page_5_revision,
         page_6_revision,
         page_7_revision,
+        page_8_revision,
         module_1_revision,
         module_2_revision,
         module_3_revision,
@@ -194,23 +289,42 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       insert(:section,
         base_project: project,
         title: "The best course ever!",
-        start_date: ~U[2023-10-30 20:00:00Z]
+        start_date: ~U[2023-10-30 20:00:00Z],
+        analytics_version: :v2
       )
 
     {:ok, section} = Sections.create_section_resources(section, publication)
     {:ok, _} = Sections.rebuild_contained_pages(section)
+    {:ok, _} = Sections.rebuild_contained_objectives(section)
 
-    # schedule start and end date for unit 1 section resource
+    # schedule start and end date for unit 1 section_resource
     Sections.get_section_resource(section.id, unit_1_revision.resource_id)
     |> Sections.update_section_resource(%{
       start_date: ~U[2023-10-31 20:00:00Z],
       end_date: ~U[2023-12-31 20:00:00Z]
     })
 
+    # schedule start and end date for module 1 section_resource
+    Sections.get_section_resource(section.id, module_1_revision.resource_id)
+    |> Sections.update_section_resource(%{
+      start_date: ~U[2023-11-01 20:00:00Z],
+      end_date: ~U[2023-11-15 20:00:00Z]
+    })
+
+    # schedule start and end date for page 4 section_resource
+    Sections.get_section_resource(section.id, page_4_revision.resource_id)
+    |> Sections.update_section_resource(%{
+      start_date: ~U[2023-11-02 20:00:00Z],
+      end_date: ~U[2023-11-03 20:00:00Z]
+    })
+
     {:ok, _} = Sections.rebuild_full_hierarchy(section)
 
     %{
       section: section,
+      project: project,
+      publication: publication,
+      mcq_1: mcq_activity_1_revision,
       page_1: page_1_revision,
       page_2: page_2_revision,
       page_3: page_3_revision,
@@ -218,6 +332,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       page_5: page_5_revision,
       page_6: page_6_revision,
       page_7: page_7_revision,
+      page_8: page_8_revision,
       module_1: module_1_revision,
       module_2: module_2_revision,
       module_3: module_3_revision,
@@ -225,6 +340,237 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       unit_2: unit_2_revision,
       unit_3: unit_3_revision
     }
+  end
+
+  defp generate_mcq_content(title) do
+    %{
+      "stem" => %{
+        "id" => "2028833010",
+        "content" => [
+          %{"id" => "280825708", "type" => "p", "children" => [%{"text" => title}]}
+        ]
+      },
+      "choices" => generate_choices("2028833010"),
+      "authoring" => %{
+        "parts" => [
+          %{
+            "id" => "1",
+            "hints" => [
+              %{
+                "id" => "540968727",
+                "content" => [
+                  %{"id" => "2256338253", "type" => "p", "children" => [%{"text" => ""}]}
+                ]
+              },
+              %{
+                "id" => "2627194758",
+                "content" => [
+                  %{"id" => "3013119256", "type" => "p", "children" => [%{"text" => ""}]}
+                ]
+              },
+              %{
+                "id" => "2413327578",
+                "content" => [
+                  %{"id" => "3742562774", "type" => "p", "children" => [%{"text" => ""}]}
+                ]
+              }
+            ],
+            "outOf" => nil,
+            "responses" => [
+              %{
+                "id" => "4122423546",
+                "rule" => "(!(input like {1968053412})) && (input like {1436663133})",
+                "score" => 1,
+                "feedback" => %{
+                  "id" => "685174561",
+                  "content" => [
+                    %{
+                      "id" => "2621700133",
+                      "type" => "p",
+                      "children" => [%{"text" => "Correct"}]
+                    }
+                  ]
+                }
+              },
+              %{
+                "id" => "3738563441",
+                "rule" => "input like {.*}",
+                "score" => 0,
+                "feedback" => %{
+                  "id" => "3796426513",
+                  "content" => [
+                    %{
+                      "id" => "1605260471",
+                      "type" => "p",
+                      "children" => [%{"text" => "Incorrect"}]
+                    }
+                  ]
+                }
+              }
+            ],
+            "gradingApproach" => "automatic",
+            "scoringStrategy" => "average"
+          }
+        ],
+        "correct" => [["1436663133"], "4122423546"],
+        "version" => 2,
+        "targeted" => [],
+        "previewText" => "",
+        "transformations" => [
+          %{
+            "id" => "1349799137",
+            "path" => "choices",
+            "operation" => "shuffle",
+            "firstAttemptOnly" => true
+          }
+        ]
+      }
+    }
+  end
+
+  defp generate_choices(id),
+    do: [
+      %{
+        # this id value is the one that should be passed to set_activity_attempt as response_input_value
+        id: "id_for_option_a",
+        content: [
+          %{
+            id: "1866911747",
+            type: "p",
+            children: [%{text: "Choice 1 for #{id}"}]
+          }
+        ]
+      },
+      %{
+        id: "id_for_option_b",
+        content: [
+          %{
+            id: "3926142114",
+            type: "p",
+            children: [%{text: "Choice 2 for #{id}"}]
+          }
+        ]
+      }
+    ]
+
+  defp set_activity_attempt(
+         page,
+         %{activity_type_id: activity_type_id} = activity_revision,
+         student,
+         section,
+         project_id,
+         publication_id,
+         response_input_value,
+         correct
+       ) do
+    resource_access =
+      get_or_insert_resource_access(student, section, page.resource)
+
+    resource_attempt =
+      insert(:resource_attempt, %{
+        resource_access: resource_access,
+        revision: page,
+        lifecycle_state: :evaluated,
+        date_evaluated: ~U[2020-01-01 00:00:00Z]
+      })
+
+    transformed_model =
+      case activity_type_id do
+        9 ->
+          %{choices: generate_choices(activity_revision.id)}
+
+        _ ->
+          nil
+      end
+
+    activity_attempt =
+      insert(:activity_attempt, %{
+        revision: activity_revision,
+        resource: activity_revision.resource,
+        resource_attempt: resource_attempt,
+        lifecycle_state: :evaluated,
+        transformed_model: transformed_model,
+        score: if(correct, do: 1, else: 0),
+        out_of: 1
+      })
+
+    part_attempt =
+      insert(:part_attempt, %{
+        part_id: "1",
+        activity_attempt: activity_attempt,
+        response: %{"files" => [], "input" => response_input_value}
+      })
+
+    context = %Context{
+      user_id: student.id,
+      host_name: "localhost",
+      section_id: section.id,
+      project_id: project_id,
+      publication_id: publication_id
+    }
+
+    build_analytics_v2(
+      context,
+      page.resource_id,
+      activity_revision,
+      activity_attempt,
+      part_attempt
+    )
+  end
+
+  defp build_analytics_v2(
+         context,
+         page_id,
+         activity_revision,
+         activity_attempt,
+         part_attempt
+       ) do
+    group = %AttemptGroup{
+      context: context,
+      part_attempts: [
+        %{
+          part_id: part_attempt.part_id,
+          response: part_attempt.response,
+          score: activity_attempt.score,
+          lifecycle_state: :evaluated,
+          out_of: activity_attempt.out_of,
+          activity_revision: activity_revision,
+          hints: [],
+          attempt_number: activity_attempt.attempt_number,
+          activity_attempt: activity_attempt
+        }
+      ],
+      activity_attempts: [],
+      resource_attempt: %{resource_id: page_id}
+    }
+
+    Pipeline.init("test")
+    |> Map.put(:data, group)
+    |> Summary.upsert_resource_summaries()
+    |> Summary.upsert_response_summaries()
+  end
+
+  defp get_or_insert_resource_access(student, section, resource) do
+    resource_access =
+      Repo.get_by(
+        ResourceAccess,
+        resource_id: resource.id,
+        section_id: section.id,
+        user_id: student.id
+      )
+
+    if resource_access do
+      resource_access
+    else
+      insert(:resource_access, %{
+        resource: resource,
+        resource_id: resource.id,
+        section: section,
+        section_id: section.id,
+        user: student,
+        user_id: student.id
+      })
+    end
   end
 
   describe "user" do
@@ -298,13 +644,14 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
              )
     end
 
-    test "can expand a module card to view its details (intro content and page details)", %{
-      conn: conn,
-      user: user,
-      section: section,
-      page_1: page_1,
-      page_2: page_2
-    } do
+    test "can expand a module card to view its details (header with title and due date, intro content and page details)",
+         %{
+           conn: conn,
+           user: user,
+           section: section,
+           page_1: page_1,
+           page_2: page_2
+         } do
       Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
       Sections.mark_section_visited_for_student(section, user)
 
@@ -342,6 +689,299 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       # intro content is shown
       assert has_element?(view, "p", "Thoughout this unit you will learn how to use this course.")
+
+      # header is shown with title and due date
+      assert has_element?(
+               view,
+               ~s{div[role="expanded module header"] h2},
+               "How to use this course"
+             )
+
+      assert has_element?(
+               view,
+               ~s{div[role="expanded module header"] span},
+               "Due: Wed Nov 15, 2023"
+             )
+    end
+
+    test "can see intro video (if any) when expanding a module card",
+         %{
+           conn: conn,
+           user: user,
+           section: section
+         } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+
+      {:ok, view, _html} = live(conn, live_view_learn_live_route(section.slug))
+
+      # module 1 has intro video
+      view
+      |> element(~s{div[role="unit_1"] div[role="card_1"]})
+      |> render_click()
+
+      assert view
+             |> element(~s{div[role="intro 1 details"]})
+             |> render() =~ "Introduction"
+
+      assert has_element?(
+               view,
+               ~s{div[role="intro 1 details"] div[role="unseen video icon"]}
+             )
+
+      # module 2 has no intro video
+      view
+      |> element(~s{div[role="unit_1"] div[role="card_2"]})
+      |> render_click()
+
+      refute has_element?(view, ~s{div[role="intro 1 details"] div[role="unseen video icon"]})
+    end
+
+    test "intro video is marked as seen after playing it",
+         %{
+           conn: conn,
+           user: user,
+           section: section,
+           module_1: module_1
+         } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+
+      %{state: enrollment_state} =
+        Sections.get_enrollment(section.slug, user.id)
+
+      {:ok, view, _html} = live(conn, live_view_learn_live_route(section.slug))
+
+      refute enrollment_state["viewed_intro_video_resource_ids"]
+
+      view
+      |> element(~s{div[role="unit_1"] div[role="card_1"]})
+      |> render_click()
+
+      assert has_element?(
+               view,
+               ~s{div[role="intro 1 details"] div[role="unseen video icon"]}
+             )
+
+      view
+      |> element(~s{div[role="intro 1 details"] div[phx-click="play_video"]})
+      |> render_click()
+
+      # since the video is marked as seen in an async way, we revisit the page to check if the icon changed
+      {:ok, view, _html} = live(conn, live_view_learn_live_route(section.slug))
+
+      %{state: enrollment_state} =
+        Sections.get_enrollment(section.slug, user.id)
+
+      assert enrollment_state["viewed_intro_video_resource_ids"] == [module_1.resource_id]
+
+      view
+      |> element(~s{div[role="unit_1"] div[role="card_1"]})
+      |> render_click()
+
+      assert has_element?(
+               view,
+               ~s{div[role="intro 1 details"] div[role="seen video icon"]}
+             )
+    end
+
+    test "can see orange flag and due date for graded pages in the module index details",
+         %{
+           conn: conn,
+           user: user,
+           section: section
+         } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+
+      {:ok, view, _html} = live(conn, live_view_learn_live_route(section.slug))
+
+      view
+      |> element(~s{div[role="unit_1"] div[role="card_2"]})
+      |> render_click()
+
+      # page number 2 in the module index is the graded page with title "Page 4" in the hierarchy
+      assert has_element?(
+               view,
+               ~s{div[role="page 2 details"] div[role="orange flag icon"]}
+             )
+
+      assert has_element?(
+               view,
+               ~s{div[role="page 2 details"] div[role="due date and score"]},
+               "Due: Fri Nov 3, 2023"
+             )
+    end
+
+    test "can see checked square icon and score details for attempted graded pages in the module index details",
+         %{
+           conn: conn,
+           user: user,
+           section: section,
+           mcq_1: mcq_1,
+           page_4: page_4_revision,
+           project: project,
+           publication: publication
+         } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+
+      set_progress(section.id, page_4_revision.resource_id, user.id, 1.0, page_4_revision)
+
+      set_activity_attempt(
+        page_4_revision,
+        mcq_1,
+        user,
+        section,
+        project.id,
+        publication.id,
+        "id_for_option_a",
+        true
+      )
+
+      set_activity_attempt(
+        page_4_revision,
+        mcq_1,
+        user,
+        section,
+        project.id,
+        publication.id,
+        "id_for_option_a",
+        false
+      )
+
+      {:ok, view, _html} = live(conn, live_view_learn_live_route(section.slug))
+
+      view
+      |> element(~s{div[role="unit_1"] div[role="card_2"]})
+      |> render_click()
+
+      # page number 2 in the module index is the graded page with title "Page 4" in the hierarchy
+      # has the correct icon
+      assert has_element?(
+               view,
+               ~s{div[role="page 2 details"] div[role="square check icon"]}
+             )
+
+      # correct due date
+      assert has_element?(
+               view,
+               ~s{div[role="page 2 details"] div[role="due date and score"]},
+               "Due: Fri Nov 3, 2023"
+             )
+
+      # and correct score summary
+      assert has_element?(
+               view,
+               ~s{div[role="page 2 details"] div[role="due date and score"]},
+               "1 / 2"
+             )
+    end
+
+    test "can see module learning objectives (if any) in the tooltip", %{
+      conn: conn,
+      user: user,
+      section: section
+    } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+
+      {:ok, view, _html} = live(conn, live_view_learn_live_route(section.slug))
+
+      # expand unit 1/module 1 details
+      view
+      |> element(~s{div[role="unit_1"] div[role="card_1"]})
+      |> render_click()
+
+      # there are no learning objectives for this module
+
+      refute has_element?(
+               view,
+               ~s{div[role="module learning objectives"]},
+               "Introduction and Learning Objectives"
+             )
+
+      refute has_element?(view, ~s{div[role="learning objectives tooltip"]})
+
+      # expand unit 1/module 2 details
+      view
+      |> element(~s{div[role="unit_1"] div[role="card_2"]})
+      |> render_click()
+
+      assert has_element?(
+               view,
+               ~s{div[role="module learning objectives"]},
+               "Introduction and Learning Objectives"
+             )
+
+      learning_objectives_tooltip = element(view, ~s{div[role="learning objectives tooltip"]})
+
+      assert has_element?(learning_objectives_tooltip)
+
+      assert render(learning_objectives_tooltip) =~ "Objective 1"
+      assert render(learning_objectives_tooltip) =~ "Objective 2"
+      assert render(learning_objectives_tooltip) =~ "Objective 3"
+      assert render(learning_objectives_tooltip) =~ "Objective 4"
+    end
+
+    test "can see unit check icon and score summary when all pages are completed",
+         %{
+           conn: conn,
+           user: user,
+           section: section,
+           mcq_1: mcq_1,
+           page_1: page_1_revision,
+           page_2: page_2_revision,
+           page_3: page_3_revision,
+           page_4: page_4_revision,
+           project: project,
+           publication: publication
+         } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+
+      set_progress(section.id, page_1_revision.resource_id, user.id, 1.0, page_1_revision)
+      set_progress(section.id, page_2_revision.resource_id, user.id, 1.0, page_2_revision)
+      set_progress(section.id, page_3_revision.resource_id, user.id, 1.0, page_3_revision)
+      set_progress(section.id, page_4_revision.resource_id, user.id, 1.0, page_4_revision)
+
+      set_activity_attempt(
+        page_4_revision,
+        mcq_1,
+        user,
+        section,
+        project.id,
+        publication.id,
+        "id_for_option_a",
+        false
+      )
+
+      set_activity_attempt(
+        page_4_revision,
+        mcq_1,
+        user,
+        section,
+        project.id,
+        publication.id,
+        "id_for_option_a",
+        true
+      )
+
+      {:ok, view, _html} = live(conn, live_view_learn_live_route(section.slug))
+
+      # when the slider buttons are enabled we know the student async metrics were loaded
+      assert_receive({_ref, {:push_event, "enable-slider-buttons", _}}, 2_000)
+
+      assert has_element?(
+               view,
+               ~s{div[role="unit_1"] div[role="score summary"]},
+               "1 / 2"
+             )
+
+      assert has_element?(
+               view,
+               ~s{div[role="unit_1"] svg[role="unit completed check icon"]}
+             )
     end
 
     test "can expand more than one module card", %{
@@ -412,8 +1052,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       {:ok, _view, _html} = live(conn, live_view_learn_live_route(section.slug))
     end
 
-    @tag :skip
-    test "sees a check icon on visited pages", %{
+    test "sees a check icon on visited and completed pages", %{
       conn: conn,
       user: user,
       section: section,
@@ -425,14 +1064,41 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       set_progress(section.id, page_1.resource_id, user.id, 1.0, page_1)
       {:ok, view, _html} = live(conn, live_view_learn_live_route(section.slug))
 
+      # when the slider buttons are enabled we know the student async metrics were loaded
+      assert_receive({_ref, {:push_event, "enable-slider-buttons", _}}, 2_000)
+
       # expand unit 1/module 1 details
       view
       |> element(~s{div[role="unit_1"] div[role="card_1"]})
       |> render_click()
 
-      assert has_element?(view, ~s{div[role="page_1_details"] svg[role="visited_check_icon"]})
-      assert has_element?(view, ~s{div[role="page_2_details"]})
-      refute has_element?(view, ~s{div[role="page_2_details"] svg[role="visited_check_icon"]})
+      # pages are numbered starting from 2 since there is an intro video for this module
+      assert has_element?(view, ~s{div[role="page 2 details"] div[role="check icon"]})
+      assert has_element?(view, ~s{div[role="page 3 details"]})
+      refute has_element?(view, ~s{div[role="page 3 details"] div[role="check icon"]})
+    end
+
+    test "does not see a check icon on visited pages that are not fully completed", %{
+      conn: conn,
+      user: user,
+      section: section,
+      page_1: page_1
+    } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+
+      set_progress(section.id, page_1.resource_id, user.id, 0.5, page_1)
+      {:ok, view, _html} = live(conn, live_view_learn_live_route(section.slug))
+
+      # expand unit 1/module 1 details
+      view
+      |> element(~s{div[role="unit_1"] div[role="card_1"]})
+      |> render_click()
+
+      assert has_element?(view, ~s{div[role="page 2 details"]})
+      refute has_element?(view, ~s{div[role="page 1 details"] svg[role="visited check icon"]})
+      assert has_element?(view, ~s{div[role="page 2 details"]})
+      refute has_element?(view, ~s{div[role="page 2 details"] svg[role="visited check icon"]})
     end
 
     test "can visit a page", %{conn: conn, user: user, section: section, page_1: page_1} do
@@ -476,7 +1142,6 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
              |> render() =~ "Due:\n            </span>\n            not yet scheduled"
     end
 
-    @tag :skip
     test "can see units and modules progress", %{
       conn: conn,
       user: user,
@@ -490,6 +1155,9 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       set_progress(section.id, page_1.resource_id, user.id, 1.0, page_1)
       set_progress(section.id, page_2.resource_id, user.id, 0.5, page_2)
       {:ok, view, _html} = live(conn, live_view_learn_live_route(section.slug))
+
+      # when the slider buttons are enabled we know the student async metrics were loaded
+      assert_receive({_ref, {:push_event, "enable-slider-buttons", _}}, 2_000)
 
       # unit 1 progress is 38% ((1 + 0.5 + 0.0 + 0.0) / 4)
       assert view
@@ -506,7 +1174,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
              |> render() =~ "style=\"width: 75%\""
     end
 
-    test "can see icon that identifies pages at level 2 of hierarchy (and can navigate to them)",
+    test "can see icon that identifies practice pages at level 2 of hierarchy (and can navigate to them)",
          %{
            conn: conn,
            user: user,
@@ -526,6 +1194,31 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       |> render_click()
 
       assert_redirect(view, "/sections/#{section.slug}/page/#{page_7.slug}")
+    end
+
+    test "can see icon that identifies graded pages at level 2 of hierarchy (and can navigate to them)",
+         %{
+           conn: conn,
+           user: user,
+           section: section,
+           page_8: page_8
+         } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+
+      {:ok, view, _html} = live(conn, live_view_learn_live_route(section.slug))
+
+      assert has_element?(
+               view,
+               ~s{div[role="unit_3"] div[role="card_2"] div[role="graded page icon"]}
+             )
+
+      # click on page 8 card to navigate to that page
+      view
+      |> element(~s{div[role="unit_3"] div[role="card_2"]})
+      |> render_click()
+
+      assert_redirect(view, "/sections/#{section.slug}/page/#{page_8.slug}")
     end
 
     test "can see card progress bar for modules at level 2 of hierarchy, but not for pages at level 2",
