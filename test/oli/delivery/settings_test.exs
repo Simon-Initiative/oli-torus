@@ -329,7 +329,7 @@ defmodule Oli.Delivery.SettingsTest do
     assert Settings.check_password(%{}, nil) == {:allowed}
   end
 
-  test "check_password/2 returns allowed when the received password is empty" do
+  test "check_password/2 returns Empty password when the received password is empty" do
     assert Settings.check_password(%{}, "") == {:empty_password}
   end
 
