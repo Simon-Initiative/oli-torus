@@ -108,7 +108,6 @@ defmodule Oli.Conversation.Dialogue do
         %{dialog | messages: messages}
 
       _e ->
-        IO.inspect("Failed to summarize")
         dialog
     end
   end

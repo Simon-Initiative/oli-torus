@@ -9,9 +9,10 @@ import { InputEntry } from 'components/activities/short_answer/sections/InputEnt
 import { getTargetedResponses } from 'components/activities/short_answer/utils';
 import { Response, RichText, makeResponse } from 'components/activities/types';
 import { TextInput } from 'components/common/TextInput';
-import { getCorrectResponse } from 'data/activities/model/responses';
+import { getCorrectResponse, hasCustomScoring } from 'data/activities/model/responses';
 import { InputKind, containsRule } from 'data/activities/model/rules';
 import { makeRule } from 'data/activities/model/rules';
+import { ActivityScoring } from '../common/responses/ActivityScoring';
 
 export const addTargetedFeedbackFillInTheBlank = (partId: string) =>
   ResponseActions.addResponse(makeResponse(containsRule('another answer'), 0, ''), partId);
@@ -26,6 +27,8 @@ function parseFromRule(rule: string) {
 
 export const AnswerKey: React.FC<Props> = (props) => {
   const { model, dispatch, editMode } = useAuthoringElementContext<CustomDnDSchema>();
+
+  const customScoring = hasCustomScoring(model, props.partId);
 
   return (
     <div className="d-flex flex-column mb-2">
@@ -49,6 +52,9 @@ export const AnswerKey: React.FC<Props> = (props) => {
       />
       <div className="mt-3 mb-3" />
       <SimpleFeedback partId={props.partId} />
+
+      <ActivityScoring partId={props.partId} />
+
       {getTargetedResponses(model, props.partId).map((response: Response) => (
         <ResponseCard
           title="Targeted feedback"
@@ -65,8 +71,12 @@ export const AnswerKey: React.FC<Props> = (props) => {
           updateCorrectness={(_id, correct) =>
             dispatch(ResponseActions.editResponseCorrectness(response.id, correct))
           }
+          updateScore={(_id, score) =>
+            dispatch(ResponseActions.editResponseScore(response.id, score))
+          }
           removeResponse={(id) => dispatch(ResponseActions.removeResponse(id))}
           key={response.id}
+          customScoring={customScoring}
         >
           <InputEntry
             key={response.id}

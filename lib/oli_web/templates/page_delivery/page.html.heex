@@ -1,5 +1,6 @@
 <div class="pt-5 mx-auto max-w-[900px]">
   <%= if not (Map.has_key?(@resource_attempt.content, "advancedDelivery") and @resource_attempt.content["advancedDelivery"]) do %>
+    <%= react_component("Components.OfflineDetector") %>
     <Components.Delivery.PageDelivery.header
       title={@title}
       page_number={@page_number}
@@ -121,7 +122,7 @@
     </div>
   <% end %>
 
-  <%= live_render(@conn, OliWeb.Dialogue.PlaygroundLive,
+  <%= live_render(@conn, OliWeb.Dialogue.WindowLive,
     session: %{"section_slug" => @section_slug, "revision_id" => @page.id}
   ) %>
   <%= if @review_mode == true do %>

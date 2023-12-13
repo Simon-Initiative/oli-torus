@@ -1,0 +1,19 @@
+{
+  "id": "oli_response_multi",
+  "friendlyName": "ResponseMulti Input",
+  "petiteLabel": "ResponseMulti",
+  "description": "A question type with a multiple inline inputs in the question stem that can be grouped in one or more parts",
+  "icon": "check-double",
+  "delivery": {
+    "element": "oli-response-multi-input-delivery",
+    "entry": "./delivery-entry.ts"
+  },
+  "authoring": {
+    "element": "oli-response-multi-input-authoring",
+    "entry": "./authoring-entry.ts"
+  },
+  "schemaPruning": {
+    "type": "keys",
+    "keys": ["feedback"]
+  }
+}

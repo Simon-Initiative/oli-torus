@@ -375,9 +375,9 @@ defmodule OliWeb.PageDeliveryController do
   end
 
   def render_content_text(render_context, content, _page_slug) do
-    # Render a basic page content.  This is the default for all pages that do not have
-    # displayApplicationChrome set to true
-    Page.render(render_context, content, Page.Plaintext) |> :erlang.iolist_to_binary()
+    # Render a basic page content.
+
+    Page.render(render_context, content, Page.Markdown) |> :erlang.iolist_to_binary()
   end
 
   # Matches a not-started page that displays the "start attempt" button

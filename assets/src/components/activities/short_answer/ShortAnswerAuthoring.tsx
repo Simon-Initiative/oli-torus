@@ -20,13 +20,14 @@ import {
   makeResponse,
 } from 'components/activities/types';
 import { TabbedNavigation } from 'components/tabbed_navigation/Tabs';
-import { getCorrectResponse } from 'data/activities/model/responses';
+import { getCorrectResponse, hasCustomScoring } from 'data/activities/model/responses';
 import { containsRule, eqRule } from 'data/activities/model/rules';
 import { defaultWriterContext } from 'data/content/writers/context';
 import { configureStore } from 'state/store';
 import { AuthoringElement, AuthoringElementProps } from '../AuthoringElement';
 import { AuthoringElementProvider, useAuthoringElementContext } from '../AuthoringElementProvider';
 import { Explanation } from '../common/explanation/ExplanationAuthoring';
+import { ActivityScoring } from '../common/responses/ActivityScoring';
 import { VariableEditorOrNot } from '../common/variables/VariableEditorOrNot';
 import { VariableActions } from '../common/variables/variableActions';
 import { ShortAnswerActions } from './actions';
@@ -99,10 +100,15 @@ const ShortAnswer = () => {
               onEditResponseRule={(id, rule) => dispatch(ResponseActions.editRule(id, rule))}
             />
             <SimpleFeedback partId={model.authoring.parts[0].id} />
+            <ActivityScoring partId={model.authoring.parts[0].id} />
             {getTargetedResponses(model, model.authoring.parts[0].id).map((response: Response) => (
               <ResponseCard
                 title="Targeted feedback"
                 response={response}
+                customScoring={hasCustomScoring(model, model.authoring.parts[0].id)}
+                updateScore={(_id, score) =>
+                  dispatch(ResponseActions.editResponseScore(response.id, score))
+                }
                 updateFeedbackEditor={(_id, editor) =>
                   dispatch(ResponseActions.editResponseFeedbackEditor(response.id, editor))
                 }

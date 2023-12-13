@@ -8,6 +8,11 @@ defmodule Oli.Delivery.Evaluation.ParserTest do
              parse("input = {[3.0e+5,4.0e+5]}")
   end
 
+  test "parses scientific with + and target" do
+    assert {:ok, {:eq, {:input, "2wuey7612"}, "[3.0e+5,4.0e+5]"}} ==
+             parse("input_ref_2wuey7612 = {[3.0e+5,4.0e+5]}")
+  end
+
   test "parses conjunction" do
     assert {:ok, {:&&, {:gt, :attempt_number, "1"}, {:like, :input, "cat.*"}}} ==
              parse("attemptNumber > {1} && input like {cat.*}")

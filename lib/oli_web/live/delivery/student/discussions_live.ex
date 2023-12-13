@@ -25,7 +25,7 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
         )
 
     ordered_containers_map =
-      Sections.fetch_ordered_containers(socket.assigns.section.slug)
+      Sections.get_ordered_container_labels(socket.assigns.section.slug)
       |> Enum.into(%{})
 
     resource_to_container_map = Sections.get_resource_to_container_map(socket.assigns.section)

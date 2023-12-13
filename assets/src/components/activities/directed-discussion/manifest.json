@@ -1,0 +1,19 @@
+{
+  "id": "oli_directed_discussion",
+  "friendlyName": "Directed Discussion",
+  "petiteLabel": "DD",
+  "description": "Group discussion based on a topic",
+  "icon": "comments",
+  "delivery": {
+    "element": "oli-directed-discussion-delivery",
+    "entry": "./delivery-entry.ts"
+  },
+  "authoring": {
+    "element": "oli-directed-discussion-authoring",
+    "entry": "./authoring-entry.ts"
+  },
+  "schemaPruning": {
+    "type": "keys",
+    "keys": ["feedback"]
+  }
+}
