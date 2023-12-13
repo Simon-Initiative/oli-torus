@@ -38,6 +38,7 @@ defmodule Oli.Analytics.Datashop.Elements.EventDescriptor do
       "oli_check_all_that_apply" -> "Check all that apply submission"
       "oli_ordering" -> "Ordering submission"
       "oli_multi_input" -> "Multi input submission"
+      "oli_response_multi" -> "Response multi submission"
       "oli_image_coding" -> "Image coding submission"
       "oli_adaptive" -> "Adaptive submission"
       _unregistered -> "Activity submission"
@@ -91,6 +92,7 @@ defmodule Oli.Analytics.Datashop.Elements.EventDescriptor do
       "oli_check_all_that_apply" -> check_all_that_apply_input(part_attempt, input)
       "oli_ordering" -> ordering_input(part_attempt, input)
       "oli_multi_input" -> multi_input_input(part_attempt, input)
+      "oli_response_multi" -> multi_input_input(part_attempt, input)
       "oli_image_coding" -> image_coding_input(part_attempt, input)
       "oli_adaptive" -> adaptive_input(part_attempt, input)
       "oli_directed_discussion" -> directed_discussion(part_attempt, input)
