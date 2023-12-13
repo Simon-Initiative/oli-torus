@@ -229,6 +229,8 @@ defmodule OliWeb.Delivery.NewCourse do
   end
 
   def create_section(:lms_instructor, socket) do
+    # IO.inspect(socket, label: "aca")
+
     section_params =
       socket.assigns.changeset
       |> Ecto.Changeset.apply_changes()
@@ -264,6 +266,7 @@ defmodule OliWeb.Delivery.NewCourse do
 
   def create_section(_, socket) do
     %{source: source, changeset: changeset} = socket.assigns
+    IO.inspect(socket, label: "aca")
 
     liveview_pid = self()
 
@@ -340,6 +343,7 @@ defmodule OliWeb.Delivery.NewCourse do
               #  redirect(socket,
               #    to: Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.OverviewView, section.slug)
               #  )}
+
               send(liveview_pid, {:section_created, section.slug})
 
             {:error, error} ->
@@ -448,7 +452,6 @@ defmodule OliWeb.Delivery.NewCourse do
         %{"form_id" => _form_id, "current_step" => _current_step} = params,
         socket
       ) do
-    IO.inspect(params, label: "paso")
     {:noreply, push_event(socket, "js_form_data_request", Map.put(params, :target_id, @form_id))}
   end
 
