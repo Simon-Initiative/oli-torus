@@ -229,8 +229,6 @@ defmodule OliWeb.Delivery.NewCourse do
   end
 
   def create_section(:lms_instructor, socket) do
-    # IO.inspect(socket, label: "aca")
-
     section_params =
       socket.assigns.changeset
       |> Ecto.Changeset.apply_changes()
@@ -257,11 +255,8 @@ defmodule OliWeb.Delivery.NewCourse do
 
       {:error, error} ->
         {_error_id, error_msg} = log_error("Failed to create new section", error)
-        socket = put_flash(socket, :form_error, error_msg)
-        {:noreply, socket}
+        put_flash(socket, :form_error, error_msg)
     end
-
-    {:noreply, socket}
   end
 
   def create_section(_, socket) do
@@ -337,19 +332,11 @@ defmodule OliWeb.Delivery.NewCourse do
 
           case create_from_product(socket, blueprint, section_params) do
             {:ok, section} ->
-              # socket = put_flash(socket, :info, "Section successfully created.")
-
-              # {:noreply,
-              #  redirect(socket,
-              #    to: Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.OverviewView, section.slug)
-              #  )}
-
               send(liveview_pid, {:section_created, section.slug})
 
             {:error, error} ->
               {_error_id, error_msg} = log_error("Failed to create new section", error)
-              # socket = put_flash(socket, :form_error, error_msg)
-              # {:noreply, socket}
+
               send(liveview_pid, {:section_created_error, error_msg})
           end
       end
