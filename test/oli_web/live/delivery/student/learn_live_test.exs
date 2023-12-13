@@ -851,6 +851,8 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       )
 
       {:ok, view, _html} = live(conn, live_view_learn_live_route(section.slug))
+      # when the slider buttons are enabled we know the student async metrics were loaded
+      assert_receive({_ref, {:push_event, "enable-slider-buttons", _}}, 2_000)
 
       view
       |> element(~s{div[role="unit_1"] div[role="card_2"]})
