@@ -111,7 +111,6 @@ defmodule OliWeb.Components.Delivery.Surveys do
             </form>
           </div>
         </div>
-
         <PagedTable.render
           table_model={@table_model}
           total_count={@total_count}
@@ -125,6 +124,7 @@ defmodule OliWeb.Components.Delivery.Surveys do
           show_bottom_paging={false}
           limit_change={JS.push("paged_table_limit_change", target: @myself)}
           show_limit_change={true}
+          no_records_message="There are no surveys present in this course"
         />
         <%= unless is_nil(@activities) do %>
           <%= if @activities == [] do %>
