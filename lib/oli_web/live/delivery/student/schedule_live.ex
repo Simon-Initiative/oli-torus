@@ -5,9 +5,15 @@ defmodule OliWeb.Delivery.Student.ScheduleLive do
   alias Oli.Delivery.Sections
 
   def mount(_params, _session, socket) do
-    schedule = Sections.get_ordered_schedule(socket.assigns[:section])
+    section = socket.assigns[:section]
 
-    {:ok, assign(socket, active_tab: :schedule, schedule: schedule)}
+    schedule = Sections.get_ordered_schedule(section)
+
+    {:ok,
+     assign(socket,
+       active_tab: :schedule,
+       schedule: schedule
+     )}
   end
 
   def render(assigns) do
@@ -39,32 +45,35 @@ defmodule OliWeb.Delivery.Student.ScheduleLive do
 
             <div class="flex-1 flex flex-col">
               <%= for {week, range_schedules} <- weekly_schedule do %>
-                <div class="flex flex-row border-l border-gray-500 pl-4">
+                <div class="flex flex-row border-l border-gray-500 px-4">
                   <div class="mr-8 uppercase">Week <%= week %>:</div>
 
                   <div class="flex-1 flex flex-col">
-                    <%= for {date_range, scheduled_resources} <- range_schedules do %>
+                    <%= for {date_range, container_groups} <- range_schedules do %>
                       <div class="flex-1 flex flex-col mb-4">
                         <div>
                           <%= render_date_range(date_range, @ctx) %>
                         </div>
-                        <div class="flex flex-row">
-                          <div class="basis-1/4 flex flex-col">
-                            <div class="font-bold">Pre-Read</div>
-                            <div>Module 2.1</div>
-                          </div>
-                          <div class="flex-1 flex flex-col">
-                            <%= for resource <- scheduled_resources do %>
-                              <div class="">
-                                <div><%= resource.title %></div>
-                                <div>
-                                  Due: <%= date(resource.end_date, ctx: @ctx, precision: :date) %>
+
+                        <%= for {container_label, scheduled_resources} <- container_groups do %>
+                          <div class="flex flex-row">
+                            <div class="basis-1/4 flex flex-col mr-4">
+                              <div class="font-bold">Pre-Read</div>
+                              <div><%= container_label %></div>
+                            </div>
+                            <div class="flex-1 flex flex-col mr-4">
+                              <%= for resource <- scheduled_resources do %>
+                                <div class="flex flex-col mb-4">
+                                  <div><%= resource.title %></div>
+                                  <div class="text-sm text-gray-500">
+                                    Due: <%= date(resource.end_date, ctx: @ctx, precision: :date) %>
+                                  </div>
                                 </div>
-                              </div>
-                            <% end %>
+                              <% end %>
+                            </div>
+                            <div class="basis-1/4 flex flex-col"></div>
                           </div>
-                          <div class="basis-1/4 flex flex-col"></div>
-                        </div>
+                        <% end %>
                       </div>
                     <% end %>
                   </div>

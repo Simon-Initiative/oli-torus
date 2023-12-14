@@ -1674,56 +1674,16 @@ defmodule Oli.Delivery.Sections do
   end
 
   @doc """
-  Returns Up Next information for the given section and user.
+  Returns a structured schedule of all scheduled section resources for the given section, ordered by month,
+  week, date range, and container module.
   """
-  def get_up_next(section, user) do
-    # TODO: implement read-through caching
-    fetch_up_next(section, user)
-  end
-
-  defp fetch_up_next(section, _user) do
-    scheduled_section_resources =
-      Scheduling.retrieve(section)
-      |> Enum.reduce(%{}, fn sr, acc -> Map.put(acc, sr.resource_id, sr) end)
-
-    # group by {start_date, end_date} and sort by start_date
-    scheduled_section_resources =
-      scheduled_section_resources
-      |> Enum.map(fn {_resource_id, sr} -> sr end)
-      |> Enum.group_by(fn sr ->
-        {sr.start_date, sr.end_date}
-      end)
-      |> Enum.sort(fn {start_date_1, _end_date_1}, {start_date_2, _end_date_2} ->
-        case start_date_1 do
-          nil -> true
-          _ -> start_date_1 < start_date_2
-        end
-      end)
-
-    # filter out unscheduled resources
-    scheduled_section_resources
-    |> Enum.filter(fn {{start_date, end_date}, _ssr} ->
-      case {start_date, end_date} do
-        {nil, nil} -> false
-        {_, _} -> true
-      end
-    end)
-  end
-
-  @doc """
-  Returns a list of ScheduledSectionResource structs for the given section.
-  """
-  # def get_structured_schedule(section) do
   def get_ordered_schedule(section) do
-    # container_labels_map =
-    #   get_ordered_container_labels(section.slug)
-    #   |> Enum.reduce(%{}, fn {container_id, label}, acc -> Map.put(acc, container_id, label) end)
+    container_labels_map =
+      get_ordered_container_labels(section.slug)
+      |> Enum.reduce(%{}, fn {container_id, label}, acc -> Map.put(acc, container_id, label) end)
 
-    # resource_to_container_label_map =
-    #   get_resource_to_container_map(section)
-    #   |> Enum.reduce(%{}, fn {resource_id, container_id}, acc ->
-    #     Map.put(acc, resource_id, container_labels_map[container_id])
-    #   end)
+    resource_to_container_map =
+      get_resource_to_container_map(section)
 
     scheduled_section_resources =
       Scheduling.retrieve(section)
@@ -1734,14 +1694,15 @@ defmodule Oli.Delivery.Sections do
           _ -> true
         end
       end)
-      # group items by month and year
+      # group items by month and year, start date take precedence over end date
       |> Enum.group_by(fn sr ->
-        case sr.start_date do
-          %DateTime{month: month, year: year} -> {month, year}
+        case sr do
+          %SectionResource{start_date: %DateTime{month: month, year: year}} -> {month, year}
+          %SectionResource{end_date: %DateTime{month: month, year: year}} -> {month, year}
           _ -> {nil, nil}
         end
       end)
-      # sort by month and year
+      # sort by month and year such that months are chronological
       |> Enum.sort(fn first, second ->
         {{month_1, year_1}, _} = first
         {{month_2, year_2}, _} = second
@@ -1755,18 +1716,50 @@ defmodule Oli.Delivery.Sections do
       |> Enum.map(fn {{month, year}, section_resources} ->
         {{month, year},
          section_resources
-         # group by {start_date, end_date} and sort by start_date
+         # group by week number
          |> Enum.group_by(fn sr ->
-           {sr.start_date, sr.end_date}
-         end)
-         |> Enum.sort(fn {start_date_1, _end_date_1}, {start_date_2, _end_date_2} ->
-           case start_date_1 do
-             nil -> true
-             _ -> start_date_1 < start_date_2
+           case sr do
+             %SectionResource{start_date: nil, end_date: nil} ->
+               nil
+
+             %SectionResource{start_date: nil, end_date: end_date} ->
+               OliWeb.Components.Delivery.Utils.week_number(section.start_date, end_date)
+
+             %SectionResource{start_date: start_date} ->
+               OliWeb.Components.Delivery.Utils.week_number(section.start_date, start_date)
            end
          end)
-         |> Enum.group_by(fn {{start_date, _end_date}, _section_resources} ->
-           OliWeb.Components.Delivery.Utils.week_number(section.start_date, start_date)
+         |> Enum.sort(fn first, second ->
+           {week_number_1, _} = first
+           {week_number_2, _} = second
+
+           week_number_1 <= week_number_2
+         end)
+         |> Enum.map(fn {week_number, section_resources} ->
+           {week_number,
+            section_resources
+            # group by {start_date, end_date} and sort by start_date
+            |> Enum.group_by(fn sr ->
+              {sr.start_date, sr.end_date}
+            end)
+            |> Enum.sort(fn first, second ->
+              {{start_date_1, _end_date_1}, _} = first
+              {{start_date_2, _end_date_2}, _} = second
+
+              case start_date_1 do
+                nil -> true
+                _ -> start_date_1 < start_date_2
+              end
+            end)
+            |> Enum.map(fn {date_range, section_resources} ->
+              {date_range,
+               section_resources
+               |> Enum.group_by(fn sr ->
+                 container_id = resource_to_container_map[Integer.to_string(sr.resource_id)]
+
+                 container_labels_map[container_id]
+               end)}
+            end)}
          end)}
       end)
 
