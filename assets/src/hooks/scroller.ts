@@ -23,10 +23,10 @@ export const Scroller = {
   // It is triggered from the backend as follows:
   //
   //    def handle_info(..., socket) do
-  //      {:no_reply, push_event(socket, "enable-slider-buttons", %{unit_uuids: ["uuid1", "uuid2"]})
+  //      {:no_reply, push_event(socket, "enable-slider-buttons", %{unit_resource_ids: ["resource_id1", "resource_id2"]})
   //    end
   //
-  // Expects the uuids of the sliders to enable buttons on.
+  // Expects the resource_ids of the sliders to enable buttons on.
   // The enabled buttons will scroll on click 2/3 of the width of the slider.
   // It also hides or shows the buttons after window resize
   //
@@ -36,7 +36,7 @@ export const Scroller = {
   // and a handle_event is triggered as follows:
   //
   //    def handle_event(..., socket) do
-  //      {:no_reply, push_event(socket, "hide-or-show-buttons-on-sliders", %{unit_uuids: ["uuid1", "uuid2"]})
+  //      {:no_reply, push_event(socket, "hide-or-show-buttons-on-sliders", %{unit_resource_ids: ["resource_id1", "resource_id2"]})
   //    end
 
   mounted() {
@@ -79,12 +79,12 @@ export const Scroller = {
     });
 
     window.addEventListener('phx:enable-slider-buttons', (e: Event) => {
-      const uuids = (e as CustomEvent).detail.unit_uuids;
+      const resource_ids = (e as CustomEvent).detail.unit_resource_ids;
 
-      uuids.forEach((uuid: string) => {
-        const slider = document.getElementById('slider_' + uuid);
-        const sliderRightButton = document.getElementById('slider_right_button_' + uuid);
-        const sliderLeftButton = document.getElementById('slider_left_button_' + uuid);
+      resource_ids.forEach((resource_id: string) => {
+        const slider = document.getElementById('slider_' + resource_id);
+        const sliderRightButton = document.getElementById('slider_right_button_' + resource_id);
+        const sliderLeftButton = document.getElementById('slider_left_button_' + resource_id);
 
         hide_or_show_slider_buttons(slider, sliderRightButton, sliderLeftButton);
 
@@ -100,22 +100,22 @@ export const Scroller = {
 
       // we also need to enable/disable the right slider button on window resize
       window.addEventListener('resize', () => {
-        uuids.forEach((uuid: string) => {
-          const slider = document.getElementById('slider_' + uuid);
-          const sliderRightButton = document.getElementById('slider_right_button_' + uuid);
-          const sliderLeftButton = document.getElementById('slider_left_button_' + uuid);
+        resource_ids.forEach((resource_id: string) => {
+          const slider = document.getElementById('slider_' + resource_id);
+          const sliderRightButton = document.getElementById('slider_right_button_' + resource_id);
+          const sliderLeftButton = document.getElementById('slider_left_button_' + resource_id);
           hide_or_show_slider_buttons(slider, sliderRightButton, sliderLeftButton);
         });
       });
     });
 
     window.addEventListener('phx:hide-or-show-buttons-on-sliders', (e: Event) => {
-      const uuids = (e as CustomEvent).detail.unit_uuids;
+      const resource_ids = (e as CustomEvent).detail.unit_resource_ids;
 
-      uuids.forEach((uuid: string) => {
-        const slider = document.getElementById('slider_' + uuid);
-        const sliderRightButton = document.getElementById('slider_right_button_' + uuid);
-        const sliderLeftButton = document.getElementById('slider_left_button_' + uuid);
+      resource_ids.forEach((resource_id: string) => {
+        const slider = document.getElementById('slider_' + resource_id);
+        const sliderRightButton = document.getElementById('slider_right_button_' + resource_id);
+        const sliderLeftButton = document.getElementById('slider_left_button_' + resource_id);
 
         hide_or_show_slider_buttons(slider, sliderRightButton, sliderLeftButton);
       });
