@@ -66,11 +66,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
 
   def handle_event(
         "select_module",
-        %{
-          "unit_uuid" => unit_uuid,
-          "module_uuid" => module_uuid,
-          "module_index" => selected_module_index
-        },
+        %{"unit_uuid" => unit_uuid, "module_uuid" => module_uuid},
         socket
       ) do
     current_selected_module_for_unit =
@@ -88,7 +84,6 @@ defmodule OliWeb.Delivery.Student.LearnLive do
                )
                |> mark_visited_pages(socket.assigns.student_visited_pages)
                |> fetch_learning_objectives(socket.assigns.section.id)
-               |> Map.merge(%{"module_index_in_unit" => selected_module_index})
            }), true}
 
         current_module ->
@@ -110,7 +105,6 @@ defmodule OliWeb.Delivery.Student.LearnLive do
                unit_uuid =>
                  mark_visited_pages(clicked_module, socket.assigns.student_visited_pages)
                  |> fetch_learning_objectives(socket.assigns.section.id)
-                 |> Map.merge(%{"module_index_in_unit" => selected_module_index})
              }), true}
           end
       end
@@ -778,7 +772,6 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       phx-value-unit_uuid={@unit_uuid}
       phx-value-module_uuid={@module["uuid"]}
       phx-value-slug={@module["revision"]["slug"]}
-      phx-value-module_index={@module_index}
       class={[
         "relative hover:scale-[1.01] transition-transform duration-150",
         if(!is_page(@module["revision"]), do: "slider-card")
