@@ -111,26 +111,21 @@ defmodule OliWeb.Components.Delivery.Surveys do
             </form>
           </div>
         </div>
-        <%= if @total_count > 0 do %>
-          <PagedTable.render
-            table_model={@table_model}
-            total_count={@total_count}
-            offset={@params.offset}
-            limit={@params.limit}
-            page_change={JS.push("paged_table_page_change", target: @myself)}
-            selection_change={JS.push("paged_table_selection_change", target: @myself)}
-            sort={JS.push("paged_table_sort", target: @myself)}
-            additional_table_class="instructor_dashboard_table"
-            allow_selection={true}
-            show_bottom_paging={false}
-            limit_change={JS.push("paged_table_limit_change", target: @myself)}
-            show_limit_change={true}
-          />
-        <% else %>
-          <div class="bg-white dark:bg-gray-800 dark:text-white shadow-sm px-10 my-5">
-            <p class="py-5">There are no surveys present in this course</p>
-          </div>
-        <% end %>
+        <PagedTable.render
+          table_model={@table_model}
+          total_count={@total_count}
+          offset={@params.offset}
+          limit={@params.limit}
+          page_change={JS.push("paged_table_page_change", target: @myself)}
+          selection_change={JS.push("paged_table_selection_change", target: @myself)}
+          sort={JS.push("paged_table_sort", target: @myself)}
+          additional_table_class="instructor_dashboard_table"
+          allow_selection={true}
+          show_bottom_paging={false}
+          limit_change={JS.push("paged_table_limit_change", target: @myself)}
+          show_limit_change={true}
+          no_records_message="There are no surveys present in this course"
+        />
         <%= unless is_nil(@activities) do %>
           <%= if @activities == [] do %>
             <div class="bg-white dark:bg-gray-800 dark:text-white shadow-sm px-10 my-5 mx-10">
