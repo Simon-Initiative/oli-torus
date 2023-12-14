@@ -411,6 +411,175 @@ defmodule Oli.Delivery.SectionsTest do
     end
   end
 
+  describe "get_up_next/2" do
+    setup do
+      %{}
+      |> Seeder.Project.create_author(author_tag: :author)
+      |> Seeder.Project.create_sample_project(
+        ref(:author),
+        project_tag: :proj,
+        publication_tag: :pub,
+        curriculum_revision_tag: :curriculum,
+        unit1_tag: :unit1,
+        unscored_page1_tag: :unscored_page1,
+        unscored_page1_activity_tag: :unscored_page1_activity,
+        scored_page2_tag: :scored_page2,
+        scored_page2_activity_tag: :scored_page2_activity
+      )
+      |> Seeder.Project.create_page(
+        ref(:author),
+        ref(:proj),
+        nil,
+        %{
+          title: "Assessment 3",
+          graded: true
+        },
+        resource_tag: :page3_resource,
+        revision_tag: :page3
+      )
+      |> Seeder.Project.create_page(
+        ref(:author),
+        ref(:proj),
+        nil,
+        %{
+          title: "Assessment 4",
+          graded: true
+        },
+        resource_tag: :page4_resource,
+        revision_tag: :page4
+      )
+      |> Seeder.Project.create_page(
+        ref(:author),
+        ref(:proj),
+        nil,
+        %{
+          title: "Assessment 5",
+          graded: true
+        },
+        resource_tag: :page5_resource,
+        revision_tag: :page5
+      )
+      # attach pages to unit in a different order than creation
+      |> Seeder.Project.attach_to(
+        [ref(:page4_resource), ref(:page5_resource), ref(:page3_resource)],
+        ref(:unit1),
+        ref(:pub),
+        container_revision_tag: :unit1
+      )
+      |> Seeder.Project.ensure_published(ref(:pub), publication_tag: :pub)
+      |> Seeder.Section.create_section(
+        ref(:proj),
+        ref(:pub),
+        nil,
+        %{
+          start_date: ~U[2023-01-27 23:59:59Z]
+        },
+        section_tag: :section
+      )
+      |> then(fn seeds ->
+        section = seeds[:section]
+        page3 = seeds[:page3]
+        page4 = seeds[:page4]
+        page5 = seeds[:page5]
+
+        # create soft scheduling for pages
+        scheduled_resources =
+          Sections.Scheduling.retrieve(section)
+          |> Enum.reduce(%{}, fn sr, acc -> Map.put(acc, sr.resource_id, sr) end)
+
+        assert {:ok, 3} =
+                 Sections.Scheduling.update(
+                   section,
+                   [
+                     %{
+                       id: scheduled_resources[page3.resource_id].id,
+                       scheduling_type: "due_by",
+                       start_date: "2023-02-03",
+                       end_date: "2023-02-06",
+                       manually_scheduled: true
+                     },
+                     %{
+                       id: scheduled_resources[page4.resource_id].id,
+                       scheduling_type: "due_by",
+                       start_date: "2023-02-03",
+                       end_date: "2023-02-06",
+                       manually_scheduled: true
+                     },
+                     %{
+                       id: scheduled_resources[page5.resource_id].id,
+                       scheduling_type: "due_by",
+                       start_date: "2023-02-05",
+                       end_date: "2023-02-08",
+                       manually_scheduled: true
+                     }
+                   ],
+                   "Etc/UTC"
+                 )
+
+        seeds
+      end)
+      |> Seeder.Section.create_and_enroll_learner(
+        ref(:section),
+        %{},
+        user_tag: :student1
+      )
+      |> Seeder.Section.create_and_enroll_instructor(
+        ref(:section),
+        %{},
+        user_tag: :instructor1
+      )
+    end
+
+    test "returns the content that is up next for a student", %{
+      student1: student1,
+      section: section,
+      page3: page3,
+      page4: page4,
+      page5: page5
+    } do
+      page3_resource_id = page3.resource_id
+      page4_resource_id = page4.resource_id
+      page5_resource_id = page5.resource_id
+
+      assert [
+               {{~U[2023-02-03 23:59:59Z], ~U[2023-02-06 23:59:59Z]},
+                [
+                  %Oli.Delivery.Sections.SectionResource{
+                    scheduling_type: :due_by,
+                    manually_scheduled: true,
+                    start_date: ~U[2023-02-03 23:59:59Z],
+                    end_date: ~U[2023-02-06 23:59:59Z],
+                    resource_id: ^page3_resource_id,
+                    title: "Assessment 3"
+                  },
+                  %Oli.Delivery.Sections.SectionResource{
+                    scheduling_type: :due_by,
+                    manually_scheduled: true,
+                    start_date: ~U[2023-02-03 23:59:59Z],
+                    end_date: ~U[2023-02-06 23:59:59Z],
+                    resource_id: ^page4_resource_id,
+                    title: "Assessment 4"
+                  }
+                ]},
+               {{~U[2023-02-05 23:59:59Z], ~U[2023-02-08 23:59:59Z]},
+                [
+                  %Oli.Delivery.Sections.SectionResource{
+                    scheduling_type: :due_by,
+                    manually_scheduled: true,
+                    start_date: ~U[2023-02-05 23:59:59Z],
+                    end_date: ~U[2023-02-08 23:59:59Z],
+                    resource_id: ^page5_resource_id,
+                    title: "Assessment 5"
+                  }
+                ]}
+             ] = Sections.get_up_next(section, student1)
+    end
+
+    test "get_ordered_schedule", %{section: section} do
+      IO.inspect(Sections.get_ordered_schedule(section), label: "get_ordered_schedule")
+    end
+  end
+
   describe "get_graded_pages/2" do
     setup do
       %{}

@@ -17,8 +17,11 @@ defmodule Oli.Delivery.Sections do
     SectionsProjectsPublications,
     Enrollment,
     EnrollmentBrowseOptions,
-    EnrollmentContextRole
+    EnrollmentContextRole,
+    Scheduling
   }
+
+  alias Oli.Delivery.Sections.Scheduling.{ScheduledRange, ScheduledResource}
 
   alias Lti_1p3.Tool.ContextRole
   alias Lti_1p3.DataProviders.EctoProvider
@@ -1341,6 +1344,24 @@ defmodule Oli.Delivery.Sections do
     end)
   end
 
+  defp get_hierarchical_parent_links(publication_ids) do
+    container_type_id = Oli.Resources.ResourceType.get_id_by_type("container")
+
+    from(pr in PublishedResource,
+      join: rev in Revision,
+      on: pr.revision_id == rev.id,
+      where: rev.resource_type_id == ^container_type_id and pr.publication_id in ^publication_ids,
+      select: %{id: rev.resource_id, children: rev.children},
+      distinct: true
+    )
+    |> Repo.all()
+    |> Enum.reduce(MapSet.new(), fn %{id: resource_id, children: children}, links ->
+      Enum.reduce(children, links, fn child_id, links ->
+        MapSet.put(links, {resource_id, child_id})
+      end)
+    end)
+  end
+
   @doc """
   Returns the resource_to_container map for the given section,
   that maps all resources ids to their parent container id.
@@ -1652,23 +1673,104 @@ defmodule Oli.Delivery.Sections do
     end)
   end
 
-  defp get_hierarchical_parent_links(publication_ids) do
-    container_type_id = Oli.Resources.ResourceType.get_id_by_type("container")
+  @doc """
+  Returns Up Next information for the given section and user.
+  """
+  def get_up_next(section, user) do
+    # TODO: implement read-through caching
+    fetch_up_next(section, user)
+  end
 
-    from(pr in PublishedResource,
-      join: rev in Revision,
-      on: pr.revision_id == rev.id,
-      where: rev.resource_type_id == ^container_type_id and pr.publication_id in ^publication_ids,
-      select: %{id: rev.resource_id, children: rev.children},
-      distinct: true
-    )
-    |> Repo.all()
-    |> Enum.reduce(MapSet.new(), fn %{id: resource_id, children: children}, links ->
-      Enum.reduce(children, links, fn child_id, links ->
-        # MapSet.put(links, {child_id, resource_id})
-        MapSet.put(links, {resource_id, child_id})
+  defp fetch_up_next(section, _user) do
+    scheduled_section_resources =
+      Scheduling.retrieve(section)
+      |> Enum.reduce(%{}, fn sr, acc -> Map.put(acc, sr.resource_id, sr) end)
+
+    # group by {start_date, end_date} and sort by start_date
+    scheduled_section_resources =
+      scheduled_section_resources
+      |> Enum.map(fn {_resource_id, sr} -> sr end)
+      |> Enum.group_by(fn sr ->
+        {sr.start_date, sr.end_date}
       end)
+      |> Enum.sort(fn {start_date_1, _end_date_1}, {start_date_2, _end_date_2} ->
+        case start_date_1 do
+          nil -> true
+          _ -> start_date_1 < start_date_2
+        end
+      end)
+
+    # filter out unscheduled resources
+    scheduled_section_resources
+    |> Enum.filter(fn {{start_date, end_date}, _ssr} ->
+      case {start_date, end_date} do
+        {nil, nil} -> false
+        {_, _} -> true
+      end
     end)
+  end
+
+  @doc """
+  Returns a list of ScheduledSectionResource structs for the given section.
+  """
+  # def get_structured_schedule(section) do
+  def get_ordered_schedule(section) do
+    # container_labels_map =
+    #   get_ordered_container_labels(section.slug)
+    #   |> Enum.reduce(%{}, fn {container_id, label}, acc -> Map.put(acc, container_id, label) end)
+
+    # resource_to_container_label_map =
+    #   get_resource_to_container_map(section)
+    #   |> Enum.reduce(%{}, fn {resource_id, container_id}, acc ->
+    #     Map.put(acc, resource_id, container_labels_map[container_id])
+    #   end)
+
+    scheduled_section_resources =
+      Scheduling.retrieve(section)
+      # filter out unscheduled resources
+      |> Enum.filter(fn section_resource ->
+        case section_resource do
+          %SectionResource{start_date: nil, end_date: nil} -> false
+          _ -> true
+        end
+      end)
+      # group items by month and year
+      |> Enum.group_by(fn sr ->
+        case sr.start_date do
+          %DateTime{month: month, year: year} -> {month, year}
+          _ -> {nil, nil}
+        end
+      end)
+      # sort by month and year
+      |> Enum.sort(fn first, second ->
+        {{month_1, year_1}, _} = first
+        {{month_2, year_2}, _} = second
+
+        if year_1 == year_2 do
+          month_1 <= month_2
+        else
+          year_1 <= year_2
+        end
+      end)
+      |> Enum.map(fn {{month, year}, section_resources} ->
+        {{month, year},
+         section_resources
+         # group by {start_date, end_date} and sort by start_date
+         |> Enum.group_by(fn sr ->
+           {sr.start_date, sr.end_date}
+         end)
+         |> Enum.sort(fn {start_date_1, _end_date_1}, {start_date_2, _end_date_2} ->
+           case start_date_1 do
+             nil -> true
+             _ -> start_date_1 < start_date_2
+           end
+         end)
+         |> Enum.group_by(fn {{start_date, _end_date}, _section_resources} ->
+           OliWeb.Components.Delivery.Utils.week_number(section.start_date, start_date)
+         end)}
+      end)
+
+    scheduled_section_resources
   end
 
   @doc """

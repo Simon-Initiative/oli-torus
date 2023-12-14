@@ -72,6 +72,14 @@ body {
   background-image: url('/images/gradients/colorful-light-opacity-25.png');
 }
 
+.bg-index {
+  background-image: url('/images/gradients/index-bg.png');
+}
+
+.bg-schedule {
+  background-image: url('/images/gradients/schedule-bg.png');
+}
+
 /*
 The following classes are used to style the html rendered with Oli.Rendering.Content.render/3
 We should try to avoid defining classes in this way.

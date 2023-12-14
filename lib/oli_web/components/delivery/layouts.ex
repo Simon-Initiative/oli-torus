@@ -120,10 +120,10 @@ defmodule OliWeb.Components.Delivery.Layouts do
         Discussions
       </.nav_link>
       <.nav_link
-        href={path_for(:assignments, @section, @preview_mode)}
-        is_active={@active_tab == :assignments}
+        href={path_for(:schedule, @section, @preview_mode)}
+        is_active={@active_tab == :schedule}
       >
-        Assignments
+        Schedule
       </.nav_link>
       <.nav_link
         href={path_for(:explorations, @section, @preview_mode)}
@@ -196,7 +196,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
     "#"
   end
 
-  defp path_for(:assignments, %Section{slug: section_slug}, preview_mode) do
+  defp path_for(:schedule, %Section{slug: section_slug}, preview_mode) do
     if preview_mode do
       ~p"/sections/#{section_slug}/preview/assignments"
     else
@@ -204,7 +204,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
     end
   end
 
-  defp path_for(:assignments, _section, _preview_mode) do
+  defp path_for(:schedule, _section, _preview_mode) do
     "#"
   end
 
