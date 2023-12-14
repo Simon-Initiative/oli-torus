@@ -32,7 +32,7 @@ export const PromptModal: React.FC<PromptModalProps> = ({
       <Card.Content>
         <div>{children}</div>
 
-        <div className="flex flex-row items-center justify-end">
+        <div className="flex flex-row items-center justify-end mt-6">
           <Button onClick={onCancel} className="min-w-[6rem]" variant="secondary">
             {cancelText}
           </Button>

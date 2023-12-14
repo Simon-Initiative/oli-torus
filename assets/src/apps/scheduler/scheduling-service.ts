@@ -2,6 +2,19 @@ import { HierarchyItemSrc, SchedulingType, StringDate } from './scheduler-slice'
 
 const apiUrl = (sectionSlug: string) => `/api/v1/scheduling/${sectionSlug}`;
 
+export const clearSchedule = async (sectionSlug: string) => {
+  const response = await fetch(apiUrl(sectionSlug), {
+    method: 'DELETE',
+  });
+  const data = await response.json();
+  if (!data.result || data.result !== 'success') {
+    throw new Error('Could not clear schedule ' + response);
+  }
+  return {
+    result: data.result as string,
+  };
+};
+
 export const loadSchedule = async (sectionSlug: string): Promise<HierarchyItemSrc[]> => {
   const response = await fetch(apiUrl(sectionSlug));
   const data = await response.json();
