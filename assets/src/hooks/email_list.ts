@@ -4,6 +4,16 @@ const isValidEmail = (email: string): boolean =>
 const parseEmails = (content: string): string[] =>
   content.match(/[a-zA-Z0-9._+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}/g) || [];
 
+const isEmailAlreadyIncluded = (email: string): boolean => {
+  const enrollments_email_list_div = document.getElementById(
+    'enrollments_email_list',
+  ) as HTMLDivElement;
+  const divCollection = enrollments_email_list_div!.getElementsByTagName('div') as HTMLCollection;
+  const arr = [].slice.call(divCollection);
+  const emailList = arr.map((element: any) => element.querySelector('p').innerHTML);
+  return emailList.includes(email);
+};
+
 export const EmailList = {
   maybePushEventToTarget(phxTarget: string | null, phxEvent: string | null, value: string) {
     console.log(phxTarget);
@@ -36,6 +46,11 @@ export const EmailList = {
     });
     input.addEventListener('blur', () => {
       const value = input.value.trim();
+
+      if (isEmailAlreadyIncluded(value)) {
+        input.value = '';
+      }
+
       if (isValidEmail(value)) {
         this.maybePushEventToTarget(phxTarget, phxEvent, value);
       } else {
