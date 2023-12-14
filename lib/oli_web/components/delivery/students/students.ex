@@ -423,31 +423,21 @@ defmodule OliWeb.Components.Delivery.Students do
 
   def handle_event("add_enrollments_update_list", %{"value" => list}, socket)
       when is_list(list) do
-    add_enrollments_emails = socket.assigns.add_enrollments_emails
+    current_emails = socket.assigns.add_enrollments_emails
 
-    socket =
-      if list != [] do
-        add_enrollments_emails = Enum.concat(add_enrollments_emails, list) |> Enum.uniq()
+    maybe_updated_add_enrollments_emails = remove_duplicates(current_emails, list)
 
-        assign(socket, %{
-          add_enrollments_emails: add_enrollments_emails
-        })
-      end
+    socket = assign(socket, add_enrollments_emails: maybe_updated_add_enrollments_emails)
 
     {:noreply, socket}
   end
 
   def handle_event("add_enrollments_update_list", %{"value" => value}, socket) do
-    add_enrollments_emails = socket.assigns.add_enrollments_emails
+    current_emails = socket.assigns.add_enrollments_emails
 
-    socket =
-      if String.length(value) != 0 && !Enum.member?(add_enrollments_emails, value) do
-        add_enrollments_emails = add_enrollments_emails ++ [String.downcase(value)]
+    maybe_updated_add_enrollments_emails = remove_duplicates(current_emails, value)
 
-        assign(socket, %{
-          add_enrollments_emails: add_enrollments_emails
-        })
-      end
+    socket = assign(socket, add_enrollments_emails: maybe_updated_add_enrollments_emails)
 
     {:noreply, socket}
   end
@@ -622,5 +612,17 @@ defmodule OliWeb.Components.Delivery.Students do
     Map.filter(params, fn {key, value} ->
       @default_params[key] != value
     end)
+  end
+
+  defp remove_duplicates(current_elements, new_elements) when is_list(new_elements) do
+    MapSet.union(MapSet.new(current_elements), MapSet.new(new_elements))
+    |> MapSet.to_list()
+  end
+
+  defp remove_duplicates(current_elements, new_elements) do
+    current_elements
+    |> MapSet.new()
+    |> MapSet.put(new_elements)
+    |> MapSet.to_list()
   end
 end
