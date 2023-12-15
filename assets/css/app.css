@@ -79,6 +79,9 @@ body {
 .bg-schedule {
   background-image: url('/images/gradients/schedule-bg.png');
 }
+.dark .bg-schedule {
+  background-image: url('/images/gradients/schedule-bg-dark.png');
+}
 
 /*
 The following classes are used to style the html rendered with Oli.Rendering.Content.render/3

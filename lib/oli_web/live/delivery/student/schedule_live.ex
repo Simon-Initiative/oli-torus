@@ -18,7 +18,7 @@ defmodule OliWeb.Delivery.Student.ScheduleLive do
 
   def render(assigns) do
     ~H"""
-    <.hero_banner class="bg-schedule text-white">
+    <.hero_banner class="bg-schedule">
       <h1 class="text-6xl mb-8">Course Schedule</h1>
     </.hero_banner>
 
