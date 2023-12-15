@@ -306,7 +306,7 @@ defmodule OliWeb.Components.Delivery.Students do
       </p>
       <OliWeb.Components.EmailList.render
         id="enrollments_email_list"
-        users_list={@add_enrollments_emails}
+        emails_list={@add_enrollments_emails}
         on_update="add_enrollments_update_list"
         on_remove="add_enrollments_remove_from_list"
         target={@target}
@@ -442,11 +442,11 @@ defmodule OliWeb.Components.Delivery.Students do
     {:noreply, socket}
   end
 
-  def handle_event("add_enrollments_remove_from_list", %{"user" => user}, socket) do
-    add_enrollments_emails = Enum.filter(socket.assigns.add_enrollments_emails, &(&1 != user))
+  def handle_event("add_enrollments_remove_from_list", %{"email" => email}, socket) do
+    add_enrollments_emails = Enum.filter(socket.assigns.add_enrollments_emails, &(&1 != email))
 
     add_enrollments_users_not_found =
-      Enum.filter(socket.assigns.add_enrollments_users_not_found, &(&1 != user))
+      Enum.filter(socket.assigns.add_enrollments_users_not_found, &(&1 != email))
 
     step =
       cond do
