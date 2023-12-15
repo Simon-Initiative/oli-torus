@@ -615,15 +615,11 @@ defmodule OliWeb.Components.Delivery.Students do
     end)
   end
 
-  defp remove_duplicates(current_elements, new_elements) when is_list(new_elements) do
-    MapSet.union(MapSet.new(current_elements), MapSet.new(new_elements))
-    |> MapSet.to_list()
-  end
-
   defp remove_duplicates(current_elements, new_elements) do
-    current_elements
+    new_elements
+    |> List.wrap()
     |> MapSet.new()
-    |> MapSet.put(new_elements)
+    |> MapSet.union(MapSet.new(current_elements))
     |> MapSet.to_list()
   end
 end
