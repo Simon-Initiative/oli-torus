@@ -213,6 +213,7 @@ defmodule OliWeb.Components.Delivery.Students do
           add_enrollments_users_not_found={@add_enrollments_users_not_found}
           section_slug={@section_slug}
           target={@id}
+          myself={@myself}
         />
       </.live_component>
       <div class="bg-white dark:bg-gray-800 shadow-sm">
@@ -313,7 +314,7 @@ defmodule OliWeb.Components.Delivery.Students do
       />
       <label class="flex flex-col mt-4 w-40 ml-auto">
         <small class="torus-small uppercase">Role</small>
-        <form class="w-full" phx-change="add_enrollments_change_selected_role">
+        <form class="w-full" phx-change="add_enrollments_change_selected_role" phx-target={@myself}>
           <select name="role" class="torus-select w-full">
             <option selected={:instructor == @add_enrollments_selected_role} value={:instructor}>
               Instructor
