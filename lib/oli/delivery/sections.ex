@@ -21,8 +21,6 @@ defmodule Oli.Delivery.Sections do
     Scheduling
   }
 
-  alias Oli.Delivery.Sections.Scheduling.{ScheduledRange, ScheduledResource}
-
   alias Lti_1p3.Tool.ContextRole
   alias Lti_1p3.DataProviders.EctoProvider
   alias Oli.Lti.Tool.{Deployment, Registration}
