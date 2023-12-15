@@ -55,10 +55,10 @@ defmodule OliWeb.Delivery.Student.ScheduleLive do
                           <%= render_date_range(date_range, @ctx) %>
                         </div>
 
-                        <%= for {container_label, scheduled_resources} <- container_groups do %>
+                        <%= for {{container_label, graded}, scheduled_resources} <- container_groups do %>
                           <div class="flex flex-row">
                             <div class="basis-1/4 flex flex-col mr-4">
-                              <div class="font-bold">Pre-Read</div>
+                              <div class="font-bold"><%= graded_label(graded) %></div>
                               <div><%= container_label %></div>
                             </div>
                             <div class="flex-1 flex flex-col mr-4">
@@ -86,6 +86,9 @@ defmodule OliWeb.Delivery.Student.ScheduleLive do
     </div>
     """
   end
+
+  defp graded_label(true), do: "Assessment"
+  defp graded_label(_), do: "Pre-Read"
 
   defp render_date_range({start_date, end_date}, ctx) do
     cond do

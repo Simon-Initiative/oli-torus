@@ -1729,7 +1729,7 @@ defmodule Oli.Delivery.Sections do
             |> Enum.map(fn {date_range, section_resources} ->
               {date_range,
                section_resources
-               |> group_by_container_label(container_labels_map, resource_to_container_map)}
+               |> group_by_container_and_graded(container_labels_map, resource_to_container_map)}
             end)}
          end)}
       end)
@@ -1797,7 +1797,7 @@ defmodule Oli.Delivery.Sections do
     end)
   end
 
-  defp group_by_container_label(
+  defp group_by_container_and_graded(
          section_resources,
          container_labels_map,
          resource_to_container_map
@@ -1806,7 +1806,7 @@ defmodule Oli.Delivery.Sections do
     |> Enum.group_by(fn sr ->
       container_id = resource_to_container_map[Integer.to_string(sr.resource_id)]
 
-      container_labels_map[container_id]
+      {container_labels_map[container_id], sr.graded}
     end)
   end
 
