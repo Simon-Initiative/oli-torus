@@ -408,7 +408,7 @@ defmodule OliWeb.Components.Delivery.Surveys do
   end
 
   defp add_activity_attempts_info(activity, students, student_ids, section) do
-    IO.inspect(activity, "activities")
+    # IO.inspect(activity, label: "activities")
 
     students_with_attempts =
       Enum.map(activity, fn a ->
@@ -441,10 +441,10 @@ defmodule OliWeb.Components.Delivery.Surveys do
 
       activity_attempt ->
         rendering_context =
-          Enum.map(activity_attempt, fn a ->
+          Enum.map(activity_attempt, fn activity ->
             OliWeb.ManualGrading.Rendering.create_rendering_context(
-              a,
-              Core.get_latest_part_attempts(a.attempt_guid),
+              activity,
+              Core.get_latest_part_attempts(activity.attempt_guid),
               socket.assigns.activity_types_map,
               socket.assigns.section
             )
@@ -635,7 +635,7 @@ defmodule OliWeb.Components.Delivery.Surveys do
   end
 
   defp get_activity_details(activity_resource_ids, section, activity_types_map) do
-    query =
+    all_activity_attempts =
       ActivityAttempt
       |> join(:left, [aa], resource_attempt in ResourceAttempt,
         on: aa.resource_attempt_id == resource_attempt.id
@@ -655,24 +655,44 @@ defmodule OliWeb.Components.Delivery.Surveys do
         resource_access.section_id == ^section.id and
           activity_revision.resource_id in ^activity_resource_ids
       )
-      |> order_by([aa, _, _, _, _, _], desc: aa.inserted_at)
-      |> limit(1)
-      |> Ecto.Query.select([aa, _, _, _, _, _], aa)
       |> select_merge(
         [aa, resource_attempt, resource_access, user, activity_revision, resource_revision],
         %{
-          activity_type_id: activity_revision.activity_type_id,
-          activity_title: activity_revision.title,
-          page_title: resource_revision.title,
-          page_id: resource_revision.resource_id,
-          resource_attempt_number: resource_attempt.attempt_number,
-          graded: resource_revision.graded,
-          user: user,
-          revision: activity_revision,
-          resource_attempt_guid: resource_attempt.attempt_guid,
-          resource_access_id: resource_access.id
+          row_number:
+            fragment(
+              "ROW_NUMBER() OVER (PARTITION BY ? ORDER BY ? DESC)",
+              activity_revision.resource_id,
+              aa.inserted_at
+            )
         }
       )
+
+    # |> order_by([aa, _, _, _, _, _], desc: aa.inserted_at)
+    # |> limit(1)
+    query =
+      from(aa in subquery(all_activity_attempts),
+        where: aa.row_number == 1
+      )
+
+    # |> Ecto.Query.select([aa, _, _, _, _, _], aa)
+    # |> select_merge(
+    #   [aa, resource_attempt, resource_access, user, activity_revision, resource_revision],
+    #   %{
+    #     activity_type_id: activity_revision.activity_type_id,
+    #     activity_title: activity_revision.title,
+    #     page_title: resource_revision.title,
+    #     page_id: resource_revision.resource_id,
+    #     resource_attempt_number: resource_attempt.attempt_number,
+    #     graded: resource_revision.graded,
+    #     user: user,
+    #     revision: activity_revision,
+    #     resource_attempt_guid: resource_attempt.attempt_guid,
+    #     resource_access_id: resource_access.id
+    #   }
+    # )
+
+    Repo.all(query)
+    |> IO.inspect()
 
     multiple_choice_type_id =
       Enum.find(activity_types_map, fn {_k, v} -> v.title == "Multiple Choice" end)
