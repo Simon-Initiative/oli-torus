@@ -411,7 +411,7 @@ defmodule Oli.Delivery.SectionsTest do
     end
   end
 
-  describe "get_up_next/2" do
+  describe "get_ordered_schedule/1" do
     setup do
       %{}
       |> Seeder.Project.create_author(author_tag: :author)
@@ -426,15 +426,15 @@ defmodule Oli.Delivery.SectionsTest do
         scored_page2_tag: :scored_page2,
         scored_page2_activity_tag: :scored_page2_activity
       )
-      # |> Seeder.Project.create_container(
-      #   ref(:author),
-      #   ref(:proj),
-      #   ref(:unit1),
-      #   %{
-      #     title: "Unit 1 Module 1"
-      #   },
-      #   revision_tag: :unit1_module1
-      # )
+      |> Seeder.Project.create_container(
+        ref(:author),
+        ref(:proj),
+        ref(:unit1),
+        %{
+          title: "Unit 1 Module 1"
+        },
+        revision_tag: :unit1_module1
+      )
       |> Seeder.Project.create_page(
         ref(:author),
         ref(:proj),
@@ -468,17 +468,18 @@ defmodule Oli.Delivery.SectionsTest do
         resource_tag: :page5_resource,
         revision_tag: :page5
       )
-      # |> Seeder.Project.create_page(
-      #   ref(:author),
-      #   ref(:proj),
-      #   ref(:unit1_module1),
-      #   %{
-      #     title: "Assessment 6",
-      #     graded: true
-      #   },
-      #   resource_tag: :page6_resource,
-      #   revision_tag: :page6
-      # )
+      |> Seeder.Project.create_page(
+        ref(:author),
+        ref(:proj),
+        ref(:unit1_module1),
+        %{
+          title: "Assessment 6",
+          graded: true
+        },
+        resource_tag: :page6_resource,
+        revision_tag: :page6,
+        container_revision_tag: :unit1_module1
+      )
       # attach pages to unit in a different order than creation
       |> Seeder.Project.attach_to(
         [ref(:page4_resource), ref(:page5_resource), ref(:page3_resource)],
@@ -501,14 +502,14 @@ defmodule Oli.Delivery.SectionsTest do
         page3 = seeds[:page3]
         page4 = seeds[:page4]
         page5 = seeds[:page5]
-        # page6 = seeds[:page6]
+        page6 = seeds[:page6]
 
         # create soft scheduling for pages
         scheduled_resources =
           Sections.Scheduling.retrieve(section)
           |> Enum.reduce(%{}, fn sr, acc -> Map.put(acc, sr.resource_id, sr) end)
 
-        assert {:ok, 3} =
+        assert {:ok, 4} =
                  Sections.Scheduling.update(
                    section,
                    [
@@ -532,14 +533,14 @@ defmodule Oli.Delivery.SectionsTest do
                        start_date: "2023-02-05",
                        end_date: "2023-02-08",
                        manually_scheduled: true
+                     },
+                     %{
+                       id: scheduled_resources[page6.resource_id].id,
+                       scheduling_type: "due_by",
+                       start_date: "2023-02-05",
+                       end_date: "2023-02-08",
+                       manually_scheduled: true
                      }
-                     #  %{
-                     #    id: scheduled_resources[page6.resource_id].id,
-                     #    scheduling_type: "due_by",
-                     #    start_date: "2023-02-05",
-                     #    end_date: "2023-02-08",
-                     #    manually_scheduled: true
-                     #  }
                    ],
                    "Etc/UTC"
                  )
@@ -563,13 +564,13 @@ defmodule Oli.Delivery.SectionsTest do
       section: section,
       page3: page3,
       page4: page4,
-      page5: page5
-      # page6: page6
+      page5: page5,
+      page6: page6
     } do
       page3_resource_id = page3.resource_id
       page4_resource_id = page4.resource_id
       page5_resource_id = page5.resource_id
-      # page6_resource_id = page6.resource_id
+      page6_resource_id = page6.resource_id
 
       assert [
                {
@@ -612,19 +613,17 @@ defmodule Oli.Delivery.SectionsTest do
                              resource_id: ^page5_resource_id,
                              title: "Assessment 5"
                            }
+                         ],
+                         "Module 1: Unit 1 Module 1" => [
+                           %Oli.Delivery.Sections.SectionResource{
+                             scheduling_type: :due_by,
+                             manually_scheduled: true,
+                             start_date: ~U[2023-02-05 23:59:59Z],
+                             end_date: ~U[2023-02-08 23:59:59Z],
+                             resource_id: ^page6_resource_id,
+                             title: "Assessment 6"
+                           }
                          ]
-
-                         # "Module 1: Unit 1 Module 1" =>
-                         #  [
-                         #    %Oli.Delivery.Sections.SectionResource{
-                         #      scheduling_type: :due_by,
-                         #      manually_scheduled: true,
-                         #      start_date: ~U[2023-02-05 23:59:59Z],
-                         #      end_date: ~U[2023-02-08 23:59:59Z],
-                         #      resource_id: ^page6_resource_id,
-                         #      title: "Assessment 6"
-                         #    }
-                         #  ],
                        }}
                     ]}
                  ]
