@@ -261,7 +261,6 @@ defmodule OliWeb.Delivery.NewCourse do
 
   def create_section(_, socket) do
     %{source: source, changeset: changeset} = socket.assigns
-    IO.inspect(socket, label: "aca")
 
     liveview_pid = self()
 
