@@ -280,6 +280,100 @@ defmodule OliWeb.Components.Delivery.Layouts do
     """
   end
 
+  attr(:current_page, :map)
+  attr(:previous_page, :map)
+  attr(:next_page, :map)
+
+  def previous_next_nav(assigns) do
+    ~H"""
+    <div
+      :if={!is_nil(@current_page)}
+      class="fixed bottom-0 left-1/2 transform -translate-x-1/2 w-[720px] h-[74px] py-[17px] shadow-lg bg-white dark:bg-black rounded-tl-[40px] rounded-tr-[40px] flex justify-start items-center gap-6"
+    >
+      <div class="absolute -left-[114px] z-0">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="170"
+          height="74"
+          viewBox="0 0 170 74"
+          fill="none"
+        >
+          <path
+            class="fill-white dark:fill-black"
+            d="M170 0H134C107 0 92.5 13 68.5 37C44.5 61 24.2752 74 0 74H170V0Z"
+          />
+        </svg>
+      </div>
+
+      <div
+        :if={!is_nil(@previous_page)}
+        class="grow shrink basis-0 h-10 justify-start items-center gap-6 flex z-10"
+      >
+        <div class="px-6 py-2 rounded justify-end items-center gap-2 flex">
+          <div class="w-[72px] h-10 bg-blue-600 flex items-center justify-center">
+            <.left_arrow />
+          </div>
+        </div>
+        <div class="grow shrink basis-0 dark:text-white text-xs font-normal font-['Open Sans']">
+          <%= previous_title(@previous_page) %>
+        </div>
+      </div>
+
+      <div
+        :if={!is_nil(@next_page)}
+        class="grow shrink basis-0 h-10 justify-end items-center gap-6 flex z-10"
+      >
+        <div class="grow shrink basis-0 text-right dark:text-white text-xs font-normal font-['Open Sans']">
+          <%= next_title(@next_page) %>
+        </div>
+        <div class="px-6 py-2 rounded justify-end items-center gap-2 flex">
+          <div class="w-[72px] h-10 bg-blue-600 flex items-center justify-center">
+            <.right_arrow />
+          </div>
+        </div>
+      </div>
+
+      <div class="absolute -right-[114px] z-0">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="170"
+          height="74"
+          viewBox="0 0 170 74"
+          fill="none"
+        >
+          <path
+            class="fill-white dark:fill-black"
+            d="M0 0H36C63 0 77.5 13 101.5 37C125.5 61 145.725 74 170 74H0V0Z"
+          />
+        </svg>
+      </div>
+    </div>
+    """
+  end
+
+  defp left_arrow(assigns) do
+    ~H"""
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
+      <path d="M7.825 13H20V11H7.825L13.425 5.4L12 4L4 12L12 20L13.425 18.6L7.825 13Z" fill="white" />
+    </svg>
+    """
+  end
+
+  defp right_arrow(assigns) do
+    ~H"""
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="24"
+      height="24"
+      viewBox="0 0 24 24"
+      fill="none"
+      class="rotate-180"
+    >
+      <path d="M7.825 13H20V11H7.825L13.425 5.4L12 4L4 12L12 20L13.425 18.6L7.825 13Z" fill="white" />
+    </svg>
+    """
+  end
+
   def user_given_name(%SessionContext{user: user, author: author}) do
     case {user, author} do
       {%User{guest: true}, _} ->

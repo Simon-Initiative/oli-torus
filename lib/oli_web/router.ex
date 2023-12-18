@@ -957,6 +957,7 @@ defmodule OliWeb.Router do
         live("/assignments", Delivery.Student.ScheduleLive)
         live("/explorations", Delivery.Student.ExplorationsLive)
         live("/practice", Delivery.Student.PracticeLive)
+        live("/page-ng/:revision_slug", Delivery.Student.PageLive)
       end
     end
 

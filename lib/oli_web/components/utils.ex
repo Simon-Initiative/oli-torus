@@ -68,4 +68,34 @@ defmodule OliWeb.Components.Utils do
         false
     end
   end
+
+  # defp url_from_desc(conn, %{"type" => "container", "slug" => slug}),
+  #   do: conn.assigns.container_link_url.(slug)
+
+  # defp url_from_desc(conn, %{"type" => "page", "slug" => slug}),
+  #   do: conn.assigns.page_link_url.(slug)
+
+  # def previous_url(conn) do
+  #   url_from_desc(conn, conn.assigns.previous_page)
+  # end
+
+  # def previous_url(conn, %{"slug" => slug} = previous_page, preview_mode, section_slug) do
+  #   Routes.page_delivery_path(conn, action(preview_mode, previous_page), section_slug, slug)
+  # end
+
+  def previous_title(%{"title" => title}) do
+    title
+  end
+
+  # def next_url(conn) do
+  #   url_from_desc(conn, conn.assigns.next_page)
+  # end
+
+  # def next_url(conn, %{"slug" => slug} = next_page, preview_mode, section_slug) do
+  #   Routes.page_delivery_path(conn, action(preview_mode, next_page), section_slug, slug)
+  # end
+
+  def next_title(%{"title" => title}) do
+    title
+  end
 end
