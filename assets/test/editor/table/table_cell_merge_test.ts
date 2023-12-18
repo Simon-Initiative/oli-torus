@@ -1,5 +1,5 @@
 import { getVisualGrid } from '../../../src/components/editing/elements/table/table-util';
-import { Table } from '../../../src/data/content/model/elements/types';
+import { Table, TableCell } from '../../../src/data/content/model/elements/types';
 import { generateRow, testGridIds } from './table-test-util';
 
 describe('Table cell merging', () => {
@@ -15,6 +15,7 @@ describe('Table cell merging', () => {
       };
       const grid = getVisualGrid(table);
 
+      //printDebugGrid(grid);
       testGridIds(grid, [
         ['a', 'b', 'c'],
         ['e', 'f', 'g'],
@@ -23,6 +24,28 @@ describe('Table cell merging', () => {
       expect(grid.length).toEqual(2);
       expect(grid[0].length).toEqual(3);
       expect(grid[1].length).toEqual(3);
+    });
+
+    it('should work with 2 merged columns', () => {
+      // This represents the bug found in TOR-63
+      const table: Table = {
+        type: 'table',
+        id: 'T',
+        children: [
+          generateRow([{ id: 'h1' }, { id: 'h2' }, { id: 'h3' }, { id: 'h4' }]),
+          generateRow([{ id: 'a', rowspan: 3 }, { id: 'b', rowspan: 2 }, { id: 'c' }, { id: 'd' }]),
+          generateRow([{ id: 'e' }, { id: 'f' }]),
+          generateRow([{ id: 'g' }, { id: 'h' }, { id: 'i' }]),
+        ],
+      };
+      const grid = getVisualGrid(table);
+
+      testGridIds(grid, [
+        ['h1', 'h2', 'h3', 'h4'],
+        ['a', 'b', 'c', 'd'],
+        ['a', 'b', 'e', 'f'],
+        ['a', 'g', 'h', 'i'],
+      ]);
     });
 
     it('should respect colspan of cells', () => {
@@ -71,13 +94,34 @@ describe('Table cell merging', () => {
       expect(grid[0][0]).toBe(grid[1][0]);
     });
 
+    it('should respect rowspan of cells in middle', () => {
+      const table: Table = {
+        type: 'table',
+        id: 'T',
+        children: [
+          generateRow([{ id: 'A' }, { id: 'B', rowspan: 2 }, { id: 'C' }]),
+          generateRow([{ id: 'D' }, { id: 'E' }]),
+        ],
+      };
+      const grid = getVisualGrid(table);
+      //printDebugGrid(grid);
+      testGridIds(grid, [
+        ['A', 'B', 'C'],
+        ['D', 'B', 'E'],
+      ]);
+    });
+
     it('should respect rowspan of cells at end', () => {
       const table: Table = {
         type: 'table',
         id: 'T',
-        children: [generateRow([{}, {}, { rowspan: 2 }]), generateRow([{}, {}])],
+        children: [
+          generateRow([{ id: 'A' }, { id: 'B' }, { id: 'C', rowspan: 2 }]),
+          generateRow([{ id: 'D' }, { id: 'E' }]),
+        ],
       };
       const grid = getVisualGrid(table);
+      //printDebugGrid(grid);
 
       expect(grid.length).toEqual(2);
       expect(grid[0].length).toEqual(3);
@@ -145,3 +189,12 @@ describe('Table cell merging', () => {
     });
   });
 });
+
+// Prints a nice grid of ID's to the console for debugging
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const printDebugGrid = (grid: TableCell[][]) => {
+  const rows = grid
+    .map((row) => row.map((cell) => (cell === null ? 'NULL' : cell.id)).join(' '))
+    .join('\n');
+  console.info(rows);
+};
