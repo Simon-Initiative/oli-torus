@@ -50,13 +50,15 @@ defmodule Oli.Resources.Numbering do
 
   defstruct level: 0,
             index: 0,
-            labels: Map.from_struct(CustomLabels.default())
+            labels: CustomLabels.default_map()
 
   def container_type_label(numbering) do
+    labels = numbering.labels || CustomLabels.default_map()
+
     case numbering.level do
-      1 -> Map.get(numbering.labels, :unit)
-      2 -> Map.get(numbering.labels, :module)
-      _ -> Map.get(numbering.labels, :section)
+      1 -> Map.get(labels, :unit)
+      2 -> Map.get(labels, :module)
+      _ -> Map.get(labels, :section)
     end
   end
 

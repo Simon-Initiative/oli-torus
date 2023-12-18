@@ -1786,6 +1786,73 @@ defmodule OliWeb.PageDeliveryControllerTest do
     end
   end
 
+  describe "displaying custom labels" do
+    setup [:setup_tags, :create_project_with_units_and_modules]
+
+    test "displays custom labels if setting are set", %{
+      conn: conn,
+      section: section,
+      revisions: %{unit_revision: unit_revision}
+    } do
+      user = insert(:user)
+
+      {:ok, section} =
+        Sections.update_section(section, %{
+          display_curriculum_item_numbering: true,
+          customizations: %{unit: "Volume", module: "Chapter", section: "Lesson"}
+        })
+
+      enroll_as_student(%{section: section, user: user})
+
+      conn =
+        recycle(conn)
+        |> Pow.Plug.assign_current_user(
+          user,
+          OliWeb.Pow.PowHelpers.get_pow_config(:user)
+        )
+
+      # Check visibility at the unit level
+      conn =
+        get(conn, Routes.page_delivery_path(conn, :container, section.slug, unit_revision.slug))
+
+      response = html_response(conn, 200)
+
+      assert response =~ "Volume 1: Unit Container"
+      assert response =~ "Chapter 1: Module Container 1"
+    end
+
+    test "displays default labels if setting are not set", %{
+      conn: conn,
+      section: section,
+      revisions: %{unit_revision: unit_revision}
+    } do
+      user = insert(:user)
+
+      {:ok, section} =
+        Sections.update_section(section, %{
+          display_curriculum_item_numbering: true
+        })
+
+      enroll_as_student(%{section: section, user: user})
+
+      conn =
+        recycle(conn)
+        |> Pow.Plug.assign_current_user(
+          user,
+          OliWeb.Pow.PowHelpers.get_pow_config(:user)
+        )
+
+      # Check visibility at the unit level
+      conn =
+        get(conn, Routes.page_delivery_path(conn, :container, section.slug, unit_revision.slug))
+
+      response = html_response(conn, 200)
+
+      assert response =~ "Unit 1: Unit Container"
+      assert response =~ "Module 1: Module Container 1"
+    end
+  end
+
   describe "export" do
     setup [:admin_conn]
 
