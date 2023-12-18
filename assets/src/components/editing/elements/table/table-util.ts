@@ -20,6 +20,10 @@ export const cellAttributes = (attrs: ContentModel.TableCell, additionalClass = 
 export const getColspan = (cell: ContentModel.TableCell): number => cell.colspan || 1;
 export const getRowspan = (cell: ContentModel.TableCell): number => cell.rowspan || 1;
 
+const getRowColspan = (row: ContentModel.TableRow): number => {
+  return row.children.reduce((sum, cell) => sum + getColspan(cell), 0);
+};
+
 /**
  * Given a Table, with cells that may have colspan / rowspan attributes,
  * return a 2 dimensional array that represents what cells would be in which position.
@@ -39,38 +43,6 @@ export const getRowspan = (cell: ContentModel.TableCell): number => cell.rowspan
  *  returned value)
  *
  */
-// export const getVisualGrid = (table: ContentModel.Table): ContentModel.TableCell[][] => {
-//   const grid: ContentModel.TableCell[][] = Array(table.children.length)
-//     .fill(null)
-//     .map(() => []);
-
-//   const maxColIndex = table.children.reduce((max, row) => Math.max(max, row.children.length), 0);
-
-//   for (let rowIndex = 0; rowIndex < table.children.length; rowIndex++) {
-//     for (let colIndex = 0; colIndex < maxColIndex; colIndex++) {
-//       const cell = table.children[rowIndex]?.children[colIndex];
-//       if (!cell) continue;
-//       const colspan = getColspan(cell);
-//       const rowspan = getRowspan(cell);
-//       for (let i = 0; i < colspan; i++) {
-//         for (let j = 0; j < rowspan; j++) {
-//           grid[rowIndex + j] && grid[rowIndex + j].push(cell);
-//         }
-//       }
-//     }
-//   }
-
-//   return grid;
-// };
-
-const getRowColspan = (row: ContentModel.TableRow): number => {
-  return row.children.reduce((sum, cell) => sum + getColspan(cell), 0);
-};
-
-const getFirstNullIndex = (row: ContentModel.TableRow): number => {
-  return row.children.findIndex((cell) => cell === null);
-};
-
 export const getVisualGrid = (table: ContentModel.Table): ContentModel.TableCell[][] => {
   const maxColumns = table.children.reduce((max, row) => Math.max(max, getRowColspan(row)), 0);
 
