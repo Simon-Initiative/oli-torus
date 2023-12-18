@@ -20,7 +20,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     {:ok,
      assign(socket,
        active_tab: :learn,
-       selected_module_per_unit_uuid: %{},
+       selected_module_per_unit_resource_id: %{},
        student_visited_pages: %{},
        student_progress_per_resource_id: %{},
        student_raw_avg_score_per_page_id: %{},
@@ -33,9 +33,135 @@ defmodule OliWeb.Delivery.Student.LearnLive do
      )}
   end
 
+  def handle_params(%{"target_resource_id" => resource_id}, _uri, socket) do
+    # the goal of this callbak is to scroll to the target resource.
+    # the target can be a unit, a module, a page contained at a module level, or a page contained in a module
+
+    container_resource_type_id = Oli.Resources.ResourceType.get_id_by_type("container")
+    page_resource_type_id = Oli.Resources.ResourceType.get_id_by_type("page")
+
+    case Sections.get_section_resource_with_resource_type(socket.assigns.section.id, resource_id) do
+      %{resource_type_id: resource_type_id, numbering_level: 1}
+      when resource_type_id == container_resource_type_id ->
+        # the target is a unit, so we sroll in the Y direction to it
+        {:noreply,
+         push_event(socket, "scroll-y-to-target", %{
+           id: "unit_#{resource_id}",
+           offset: 80,
+           pulse: true,
+           pulse_delay: 500
+         })}
+
+      %{resource_type_id: resource_type_id, numbering_level: 2}
+      when resource_type_id == container_resource_type_id ->
+        # the target is a module, so we scroll in the Y direction to the unit that is parent of that module,
+        # and then scroll X in the slider to that module and expand it
+
+        module_resource_id = String.to_integer(resource_id)
+
+        unit_resource_id =
+          Oli.Delivery.Hierarchy.find_parent_in_hierarchy(
+            socket.assigns.section.full_hierarchy,
+            fn node -> node["resource_id"] == module_resource_id end
+          )["resource_id"]
+
+        {:noreply,
+         socket
+         |> assign(
+           selected_module_per_unit_resource_id:
+             merge_target_module_as_selected(
+               socket.assigns.selected_module_per_unit_resource_id,
+               socket.assigns.section,
+               socket.assigns.student_visited_pages,
+               module_resource_id,
+               unit_resource_id
+             )
+         )
+         |> push_event("scroll-y-to-target", %{id: "unit_#{unit_resource_id}", offset: 80})
+         |> push_event("scroll-x-to-card-in-slider", %{
+           card_id: "module_#{resource_id}",
+           scroll_delay: 300,
+           unit_resource_id: unit_resource_id,
+           pulse_target_id: "module_#{resource_id}",
+           pulse_delay: 500
+         })}
+
+      %{resource_type_id: resource_type_id, numbering_level: 2}
+      when resource_type_id == page_resource_type_id ->
+        # the target is a page at a module level, so we scroll in the Y direction to the unit that is parent of that page,
+        # and then scroll X in the slider to that page
+
+        unit_resource_id =
+          Oli.Delivery.Hierarchy.find_parent_in_hierarchy(
+            socket.assigns.section.full_hierarchy,
+            fn node -> node["resource_id"] == String.to_integer(resource_id) end
+          )["resource_id"]
+
+        {:noreply,
+         socket
+         |> push_event("scroll-y-to-target", %{id: "unit_#{unit_resource_id}", offset: 80})
+         |> push_event("scroll-x-to-card-in-slider", %{
+           card_id: "page_#{resource_id}",
+           scroll_delay: 300,
+           unit_resource_id: unit_resource_id,
+           pulse_target_id: "page_#{resource_id}",
+           pulse_delay: 500
+         })}
+
+      %{resource_type_id: resource_type_id, numbering_level: 3}
+      when resource_type_id == page_resource_type_id ->
+        # the target is a page contained in a module, so we scroll in the Y direction to the unit that is parent of that module,
+        # and then scroll X in the slider to that module and expand it
+
+        module_resource_id =
+          Oli.Delivery.Hierarchy.find_parent_in_hierarchy(
+            socket.assigns.section.full_hierarchy,
+            fn node ->
+              node["resource_id"] == String.to_integer(resource_id)
+            end
+          )["resource_id"]
+
+        unit_resource_id =
+          Oli.Delivery.Hierarchy.find_parent_in_hierarchy(
+            socket.assigns.section.full_hierarchy,
+            fn node ->
+              node["resource_id"] == module_resource_id
+            end
+          )["resource_id"]
+
+        {:noreply,
+         socket
+         |> assign(
+           selected_module_per_unit_resource_id:
+             merge_target_module_as_selected(
+               socket.assigns.selected_module_per_unit_resource_id,
+               socket.assigns.section,
+               socket.assigns.student_visited_pages,
+               module_resource_id,
+               unit_resource_id
+             )
+         )
+         |> push_event("scroll-y-to-target", %{id: "unit_#{unit_resource_id}", offset: 80})
+         |> push_event("scroll-x-to-card-in-slider", %{
+           card_id: "module_#{module_resource_id}",
+           scroll_delay: 300,
+           unit_resource_id: unit_resource_id,
+           pulse_target_id: "index_item_#{resource_id}",
+           pulse_delay: 500
+         })}
+
+      _ ->
+        {:noreply, socket}
+    end
+  end
+
+  def handle_params(_params, _uri, socket) do
+    {:noreply, socket}
+  end
+
   def handle_event(
         "play_video",
-        %{"video_url" => video_url, "resource_id" => resource_id},
+        %{"video_url" => video_url, "module_resource_id" => resource_id},
         socket
       ) do
     resource_id = String.to_integer(resource_id)
@@ -66,67 +192,72 @@ defmodule OliWeb.Delivery.Student.LearnLive do
 
   def handle_event(
         "select_module",
-        %{
-          "unit_uuid" => unit_uuid,
-          "module_uuid" => module_uuid,
-          "module_index" => selected_module_index
-        },
+        %{"unit_resource_id" => unit_resource_id, "module_resource_id" => module_resource_id},
         socket
       ) do
-    current_selected_module_for_unit =
-      Map.get(socket.assigns.selected_module_per_unit_uuid, unit_uuid)
+    unit_resource_id = String.to_integer(unit_resource_id)
+    module_resource_id = String.to_integer(module_resource_id)
 
-    {selected_module_per_unit_uuid, expand_module?} =
+    current_selected_module_for_unit =
+      Map.get(
+        socket.assigns.selected_module_per_unit_resource_id,
+        unit_resource_id
+      )
+
+    {selected_module_per_unit_resource_id, expand_module?} =
       case current_selected_module_for_unit do
         nil ->
-          {Map.merge(socket.assigns.selected_module_per_unit_uuid, %{
-             unit_uuid =>
+          {Map.merge(socket.assigns.selected_module_per_unit_resource_id, %{
+             unit_resource_id =>
                get_module(
                  Sections.get_full_hierarchy(socket.assigns.section),
-                 unit_uuid,
-                 module_uuid
+                 unit_resource_id,
+                 module_resource_id
                )
                |> mark_visited_pages(socket.assigns.student_visited_pages)
                |> fetch_learning_objectives(socket.assigns.section.id)
-               |> Map.merge(%{"module_index_in_unit" => selected_module_index})
            }), true}
 
         current_module ->
           clicked_module =
             get_module(
               Sections.get_full_hierarchy(socket.assigns.section),
-              unit_uuid,
-              module_uuid
+              unit_resource_id,
+              module_resource_id
             )
 
-          if clicked_module["uuid"] == current_module["uuid"] do
+          if clicked_module["resource_id"] == current_module["resource_id"] do
             # if the user clicked in an already expanded module, then we should collapse it
             {Map.drop(
-               socket.assigns.selected_module_per_unit_uuid,
-               [unit_uuid]
+               socket.assigns.selected_module_per_unit_resource_id,
+               [unit_resource_id]
              ), false}
           else
-            {Map.merge(socket.assigns.selected_module_per_unit_uuid, %{
-               unit_uuid =>
+            {Map.merge(socket.assigns.selected_module_per_unit_resource_id, %{
+               unit_resource_id =>
                  mark_visited_pages(clicked_module, socket.assigns.student_visited_pages)
                  |> fetch_learning_objectives(socket.assigns.section.id)
-                 |> Map.merge(%{"module_index_in_unit" => selected_module_index})
              }), true}
           end
       end
 
-    {:noreply,
-     socket
-     |> assign(selected_module_per_unit_uuid: selected_module_per_unit_uuid)
-     |> maybe_scroll_y_to_unit(unit_uuid, expand_module?)
-     |> push_event("hide-or-show-buttons-on-sliders", %{
-       unit_uuids:
-         Enum.map(Sections.get_full_hierarchy(socket.assigns.section)["children"], & &1["uuid"])
-     })
-     |> push_event("js-exec", %{
-       to: "#selected_module_in_unit_#{unit_uuid}",
-       attr: "data-animate"
-     })}
+    {
+      :noreply,
+      socket
+      |> assign(selected_module_per_unit_resource_id: selected_module_per_unit_resource_id)
+      |> maybe_scroll_y_to_unit(unit_resource_id, expand_module?)
+      |> push_event("hide-or-show-buttons-on-sliders", %{
+        unit_resource_ids:
+          Enum.map(
+            Sections.get_full_hierarchy(socket.assigns.section)["children"],
+            & &1["resource_id"]
+          )
+      })
+      |> push_event("js-exec", %{
+        to: "#selected_module_in_unit_#{unit_resource_id}",
+        attr: "data-animate"
+      })
+    }
   end
 
   def handle_event("navigate_to_resource", %{"slug" => resource_slug}, socket) do
@@ -153,18 +284,21 @@ defmodule OliWeb.Delivery.Student.LearnLive do
        student_progress_per_resource_id: student_progress_per_resource_id,
        student_raw_avg_score_per_page_id: student_raw_avg_score_per_page_id,
        student_raw_avg_score_per_container_id: student_raw_avg_score_per_container_id,
-       selected_module_per_unit_uuid:
+       selected_module_per_unit_resource_id:
          Enum.into(
-           socket.assigns.selected_module_per_unit_uuid,
+           socket.assigns.selected_module_per_unit_resource_id,
            %{},
-           fn {unit_uuid, selected_module} ->
-             {unit_uuid, mark_visited_pages(selected_module, student_visited_pages)}
+           fn {unit_resource_id, selected_module} ->
+             {unit_resource_id, mark_visited_pages(selected_module, student_visited_pages)}
            end
          )
      )
      |> push_event("enable-slider-buttons", %{
-       unit_uuids:
-         Enum.map(Sections.get_full_hierarchy(socket.assigns.section)["children"], & &1["uuid"])
+       unit_resource_ids:
+         Enum.map(
+           Sections.get_full_hierarchy(socket.assigns.section)["children"],
+           & &1["resource_id"]
+         )
      })}
   end
 
@@ -182,7 +316,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         unit={unit}
         ctx={@ctx}
         student_progress_per_resource_id={@student_progress_per_resource_id}
-        selected_module_per_unit_uuid={@selected_module_per_unit_uuid}
+        selected_module_per_unit_resource_id={@selected_module_per_unit_resource_id}
         student_raw_avg_score_per_page_id={@student_raw_avg_score_per_page_id}
         viewed_intro_video_resource_ids={@viewed_intro_video_resource_ids}
         progress={
@@ -208,7 +342,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   attr :ctx, :map, doc: "the context is needed to format the date considering the user's timezone"
   attr :student_progress_per_resource_id, :map
   attr :student_raw_avg_score_per_page_id, :map
-  attr :selected_module_per_unit_uuid, :map
+  attr :selected_module_per_unit_resource_id, :map
   attr :progress, :integer
   attr :student_id, :integer
   attr :viewed_intro_video_resource_ids, :list
@@ -217,7 +351,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   def unit(assigns) do
     ~H"""
     <div
-      id={"unit_#{@unit["uuid"]}"}
+      id={"unit_#{@unit["resource_id"]}"}
       class="p-[25px] pl-[50px]"
       role={"unit_#{@unit["numbering"]["index"]}"}
     >
@@ -272,52 +406,55 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       </div>
       <div class="flex relative">
         <button
-          id={"slider_left_button_#{@unit["uuid"]}"}
+          id={"slider_left_button_#{@unit["resource_id"]}"}
           class="hidden absolute items-center justify-start -top-1 -left-1 w-10 bg-gradient-to-r from-gray-100 dark:from-gray-900 h-[180px] z-20 text-gray-400 hover:text-gray-700 dark:text-gray-600 hover:text-xl hover:dark:text-gray-200 hover:w-16 cursor-pointer"
         >
           <i class="fa-solid fa-chevron-left ml-3"></i>
         </button>
         <button
-          id={"slider_right_button_#{@unit["uuid"]}"}
+          id={"slider_right_button_#{@unit["resource_id"]}"}
           class="hidden absolute items-center justify-end -top-1 -right-1 w-10 bg-gradient-to-l from-gray-100 dark:from-gray-900 h-[180px] z-20 text-gray-400 hover:text-gray-700 dark:text-gray-600 hover:text-xl hover:dark:text-gray-200 hover:w-16 cursor-pointer"
         >
           <i class="fa-solid fa-chevron-right mr-3"></i>
         </button>
         <div
-          id={"slider_#{@unit["uuid"]}"}
+          id={"slider_#{@unit["resource_id"]}"}
           role="slider"
           phx-hook="SliderScroll"
-          data-uuid={@unit["uuid"]}
+          data-resource_id={@unit["resource_id"]}
           class="flex gap-4 overflow-x-scroll overflow-y-hidden h-[178px] pt-[3px] px-[3px] scrollbar-hide"
         >
           <.intro_card
             :if={@unit["revision"]["intro_video"] || @unit["revision"]["poster_image"]}
             bg_image_url={@unit["revision"]["poster_image"]}
             video_url={@unit["revision"]["intro_video"]}
-            card_uuid={@unit["uuid"]}
+            card_resource_id={@unit["resource_id"]}
             resource_id={@unit["revision"]["resource_id"]}
           />
           <.module_card
             :for={{module, module_index} <- Enum.with_index(@unit["children"], 1)}
             module={module}
             module_index={module_index}
-            unit_uuid={@unit["uuid"]}
+            unit_resource_id={@unit["resource_id"]}
             unit_numbering_index={@unit["numbering"]["index"]}
             bg_image_url={module["revision"]["poster_image"]}
             student_progress_per_resource_id={@student_progress_per_resource_id}
-            selected={@selected_module_per_unit_uuid["#{@unit["uuid"]}"]["uuid"] == module["uuid"]}
+            selected={
+              @selected_module_per_unit_resource_id[@unit["resource_id"]]["resource_id"] ==
+                module["resource_id"]
+            }
           />
         </div>
       </div>
     </div>
     <div
-      :if={Map.has_key?(@selected_module_per_unit_uuid, @unit["uuid"])}
+      :if={Map.has_key?(@selected_module_per_unit_resource_id, @unit["resource_id"])}
       class="flex-col py-6 px-[50px] gap-x-4 lg:gap-x-12 gap-y-6"
       role="module_details"
-      id={"selected_module_in_unit_#{@unit["uuid"]}"}
+      id={"selected_module_in_unit_#{@unit["resource_id"]}"}
       data-animate={
         JS.show(
-          to: "#selected_module_in_unit_#{@unit["uuid"]}",
+          to: "#selected_module_in_unit_#{@unit["resource_id"]}",
           display: "flex",
           transition: {"ease-out duration-1000", "opacity-0", "opacity-100"}
         )
@@ -325,11 +462,15 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     >
       <div role="expanded module header" class="flex flex-col gap-[8px] items-center">
         <h2 class="text-[26px] leading-[32px] tracking-[0.02px] dark:text-white">
-          <%= Map.get(@selected_module_per_unit_uuid, @unit["uuid"])["revision"]["title"] %>
+          <%= Map.get(@selected_module_per_unit_resource_id, @unit["resource_id"])["revision"][
+            "title"
+          ] %>
         </h2>
         <span class="text-[12px] leading-[16px] opacity-50 dark:text-white">
           Due: <%= to_formatted_datetime(
-            Map.get(@selected_module_per_unit_uuid, @unit["uuid"])["section_resource"]["end_date"],
+            Map.get(@selected_module_per_unit_resource_id, @unit["resource_id"])["section_resource"][
+              "end_date"
+            ],
             @ctx,
             "{WDshort} {Mshort} {D}, {YYYY}"
           ) %>
@@ -339,14 +480,18 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         <div class="w-1/2 flex flex-col">
           <div
             :if={
-              Map.get(@selected_module_per_unit_uuid, @unit["uuid"])["revision"]["intro_content"][
+              Map.get(@selected_module_per_unit_resource_id, @unit["resource_id"])["revision"][
+                "intro_content"
+              ][
                 "children"
               ]
             }
             class={[
               "intro-content",
               maybe_additional_margin_top(
-                Map.get(@selected_module_per_unit_uuid, @unit["uuid"])["revision"]["intro_content"][
+                Map.get(@selected_module_per_unit_resource_id, @unit["resource_id"])["revision"][
+                  "intro_content"
+                ][
                   "children"
                 ]
               )
@@ -355,7 +500,9 @@ defmodule OliWeb.Delivery.Student.LearnLive do
             <%= Phoenix.HTML.raw(
               Oli.Rendering.Content.render(
                 %Oli.Rendering.Context{},
-                Map.get(@selected_module_per_unit_uuid, @unit["uuid"])["revision"]["intro_content"][
+                Map.get(@selected_module_per_unit_resource_id, @unit["resource_id"])["revision"][
+                  "intro_content"
+                ][
                   "children"
                 ],
                 Oli.Rendering.Content.Html
@@ -371,13 +518,13 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         </div>
         <div class="mt-[57px] w-1/2">
           <.module_index
-            module={Map.get(@selected_module_per_unit_uuid, @unit["uuid"])}
+            module={Map.get(@selected_module_per_unit_resource_id, @unit["resource_id"])}
             student_raw_avg_score_per_page_id={@student_raw_avg_score_per_page_id}
             student_progress_per_resource_id={@student_progress_per_resource_id}
             ctx={@ctx}
             student_id={@student_id}
             intro_video_viewed={
-              Map.get(@selected_module_per_unit_uuid, @unit["uuid"])["resource_id"] in @viewed_intro_video_resource_ids
+              Map.get(@selected_module_per_unit_resource_id, @unit["resource_id"])["resource_id"] in @viewed_intro_video_resource_ids
             }
           />
         </div>
@@ -413,12 +560,15 @@ defmodule OliWeb.Delivery.Student.LearnLive do
 
   def module_index(assigns) do
     ~H"""
-    <div id={"index_for_#{@module["uuid"]}"} class="relative flex flex-col gap-[6px] items-start">
+    <div
+      id={"index_for_#{@module["resource_id"]}"}
+      class="relative flex flex-col gap-[6px] items-start"
+    >
       <div
         :if={@module["learning_objectives"] != []}
-        phx-click-away={JS.hide(to: "#learning_objectives_#{@module["uuid"]}")}
+        phx-click-away={JS.hide(to: "#learning_objectives_#{@module["resource_id"]}")}
         class="hidden flex-col gap-3 w-full p-6 bg-white dark:bg-[#242533] shadow-xl rounded-xl absolute -top-[18px] left-0 transform -translate-x-[calc(100%+10px)] z-50"
-        id={"learning_objectives_#{@module["uuid"]}"}
+        id={"learning_objectives_#{@module["resource_id"]}"}
         role="learning objectives tooltip"
       >
         <svg
@@ -436,7 +586,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
             Learning Objectives
           </h3>
           <svg
-            phx-click={JS.hide(to: "#learning_objectives_#{@module["uuid"]}")}
+            phx-click={JS.hide(to: "#learning_objectives_#{@module["resource_id"]}")}
             class="ml-auto cursor-pointer hover:opacity-50 hover:scale-105"
             xmlns="http://www.w3.org/2000/svg"
             width="24"
@@ -469,7 +619,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         :if={@module["learning_objectives"] != []}
         role="module learning objectives"
         class="flex items-center gap-[14px] px-[10px] w-full cursor-pointer"
-        phx-click={JS.toggle(to: "#learning_objectives_#{@module["uuid"]}", display: "flex")}
+        phx-click={JS.toggle(to: "#learning_objectives_#{@module["resource_id"]}", display: "flex")}
       >
         <svg
           class="fill-black dark:fill-white"
@@ -499,8 +649,8 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         graded={@module["revision"]["graded"]}
         duration_minutes={@module["revision"]["duration_minutes"]}
         revision_slug={@module["revision"]["slug"]}
-        resource_id={@module["revision"]["resource_id"]}
-        uuid={@module["uuid"]}
+        module_resource_id={@module["resource_id"]}
+        resource_id="intro"
         raw_avg_score={%{}}
         video_url={@module["revision"]["intro_video"]}
         intro_video_viewed={@intro_video_viewed}
@@ -519,8 +669,8 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         duration_minutes={page["revision"]["duration_minutes"]}
         graded={page["revision"]["graded"]}
         revision_slug={page["revision"]["slug"]}
-        resource_id={@module["revision"]["resource_id"]}
-        uuid={@module["uuid"]}
+        module_resource_id={@module["resource_id"]}
+        resource_id={page["resource_id"]}
         due_date={
           if page["revision"]["graded"],
             do:
@@ -548,9 +698,9 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   attr :was_visited, :boolean
   attr :duration_minutes, :integer
   attr :revision_slug, :string
-  attr :resource_id, :integer
+  attr :module_resource_id, :integer
+  attr :resource_id, :string
   attr :graded, :boolean
-  attr :uuid, :string
   attr :raw_avg_score, :map
   attr :due_date, :string
   attr :intro_video_viewed, :boolean
@@ -562,6 +712,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     <div
       role={"#{@type} #{@numbering_index} details"}
       class="flex items-center gap-[14px] px-[10px] w-full"
+      id={"index_item_#{@resource_id}"}
     >
       <.index_item_icon
         item_type={@type}
@@ -572,10 +723,10 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         progress={@progress}
       />
       <div
-        id={"index_item_#{@numbering_index}_#{@uuid}"}
+        id={"index_item_#{@numbering_index}_#{@resource_id}"}
         phx-click={if @type != "intro", do: "navigate_to_resource", else: "play_video"}
         phx-value-slug={@revision_slug}
-        phx-value-resource_id={@resource_id}
+        phx-value-module_resource_id={@module_resource_id}
         phx-value-video_url={@video_url}
         class="flex shrink items-center gap-3 w-full px-2 dark:text-white cursor-pointer hover:bg-gray-200/70 dark:hover:bg-gray-800"
       >
@@ -585,7 +736,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         <div class="flex flex-col gap-1 w-full">
           <div class="flex">
             <span class={[
-              "text-[16px] leading-[22px] dark:text-white",
+              "text-[16px] leading-[22px] pr-2 dark:text-white",
               if(@was_visited or (@intro_video_viewed and @type == "intro"), do: "opacity-50")
             ]}>
               <%= "#{@title}" %>
@@ -706,7 +857,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
        doc: "the video url is optional and, if provided, the play button will be rendered"
 
   attr :bg_image_url, :string, doc: "the background image url for the card"
-  attr :card_uuid, :string
+  attr :card_resource_id, :string
   attr :resource_id, :string
 
   def intro_card(assigns) do
@@ -725,7 +876,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         </h5>
         <div
           :if={@video_url}
-          id={"intro_card_#{@card_uuid}"}
+          id={"intro_card_#{@card_resource_id}"}
           class="w-[70px] h-[70px] relative my-auto -top-2 cursor-pointer"
         >
           <div class="w-full h-full rounded-full backdrop-blur bg-gray/50"></div>
@@ -734,7 +885,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
             class="w-full h-full absolute top-0 left-0 flex items-center justify-center"
             phx-click="play_video"
             phx-value-video_url={@video_url}
-            phx-value-resource_id={@resource_id}
+            phx-value-module_resource_id={@resource_id}
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -756,7 +907,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   attr :module, :map
   attr :module_index, :integer
   attr :unit_numbering_index, :integer
-  attr :unit_uuid, :string
+  attr :unit_resource_id, :string
   attr :selected, :boolean, default: false
   attr :bg_image_url, :string, doc: "the background image url for the card"
   attr :student_progress_per_resource_id, :map
@@ -764,21 +915,24 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   def module_card(assigns) do
     ~H"""
     <div
-      id={"module_#{@module["uuid"]}"}
+      id={
+        if is_page(@module["revision"]),
+          do: "page_#{@module["resource_id"]}",
+          else: "module_#{@module["resource_id"]}"
+      }
       phx-click={
         if is_page(@module["revision"]),
           do: "navigate_to_resource",
           else:
             JS.hide(
-              to: "#selected_module_in_unit_#{@unit_uuid}",
+              to: "#selected_module_in_unit_#{@unit_resource_id}",
               transition: {"ease-out duration-500", "opacity-100", "opacity-0"}
             )
             |> JS.push("select_module")
       }
-      phx-value-unit_uuid={@unit_uuid}
-      phx-value-module_uuid={@module["uuid"]}
+      phx-value-unit_resource_id={@unit_resource_id}
+      phx-value-module_resource_id={@module["resource_id"]}
       phx-value-slug={@module["revision"]["slug"]}
-      phx-value-module_index={@module_index}
       class={[
         "relative hover:scale-[1.01] transition-transform duration-150",
         if(!is_page(@module["revision"]), do: "slider-card")
@@ -925,14 +1079,14 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     datetime
   end
 
-  defp get_module(hierarchy, unit_uuid, module_uuid) do
+  defp get_module(hierarchy, unit_resource_id, module_resource_id) do
     unit =
       Enum.find(hierarchy["children"], fn unit ->
-        unit["uuid"] == unit_uuid
+        unit["resource_id"] == unit_resource_id
       end)
 
     Enum.find(unit["children"], fn module ->
-      module["uuid"] == module_uuid
+      module["resource_id"] == module_resource_id
     end)
   end
 
@@ -1029,10 +1183,10 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     direction to focus on the unit that contains that card.
   """
 
-  defp maybe_scroll_y_to_unit(socket, _unit_uuid, false), do: socket
+  defp maybe_scroll_y_to_unit(socket, _unit_resource_id, false), do: socket
 
-  defp maybe_scroll_y_to_unit(socket, unit_uuid, true) do
-    push_event(socket, "scroll-to-target", %{id: "unit_#{unit_uuid}", offset: 80})
+  defp maybe_scroll_y_to_unit(socket, unit_resource_id, true) do
+    push_event(socket, "scroll-y-to-target", %{id: "unit_#{unit_resource_id}", offset: 80})
   end
 
   defp module_has_intro_video(module), do: module["revision"]["intro_video"] != nil
@@ -1095,5 +1249,27 @@ defmodule OliWeb.Delivery.Student.LearnLive do
           module["revision"]["resource_id"]
         )
     })
+  end
+
+  defp merge_target_module_as_selected(
+         selected_module_per_unit_resource_id,
+         section,
+         student_visited_pages,
+         module_resource_id,
+         unit_resource_id
+       ) do
+    Map.merge(
+      selected_module_per_unit_resource_id,
+      %{
+        unit_resource_id =>
+          get_module(
+            Sections.get_full_hierarchy(section),
+            unit_resource_id,
+            module_resource_id
+          )
+          |> mark_visited_pages(student_visited_pages)
+          |> fetch_learning_objectives(section.id)
+      }
+    )
   end
 end

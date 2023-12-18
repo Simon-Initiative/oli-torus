@@ -20,8 +20,8 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
     AttemptGroup
   }
 
-  defp live_view_learn_live_route(section_slug) do
-    ~p"/sections/#{section_slug}/learn"
+  defp live_view_learn_live_route(section_slug, params \\ %{}) do
+    ~p"/sections/#{section_slug}/learn?#{params}"
   end
 
   defp set_progress(section_id, resource_id, user_id, progress, revision) do
@@ -1256,6 +1256,146 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       assert view
              |> element(~s{div[role="unit_1"] div[role="card_2"]"})
              |> render =~ "bg-[url(&#39;/images/course_default.jpg&#39;)]"
+    end
+
+    test "can navigate to a unit through url params",
+         %{
+           conn: conn,
+           user: user,
+           section: section,
+           unit_2: unit_2
+         } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+      unit_id = "unit_#{unit_2.resource_id}"
+
+      {:ok, view, _html} =
+        live(
+          conn,
+          live_view_learn_live_route(section.slug, %{target_resource_id: unit_2.resource_id})
+        )
+
+      # scrolling and pulse animation are triggered
+      assert_push_event(view, "scroll-y-to-target", %{
+        id: ^unit_id,
+        offset: 80,
+        pulse: true,
+        pulse_delay: 500
+      })
+    end
+
+    test "can navigate to a module through url params",
+         %{
+           conn: conn,
+           user: user,
+           section: section,
+           unit_2: unit_2,
+           module_3: module_3
+         } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+      unit_id = "unit_#{unit_2.resource_id}"
+      card_id = "module_#{module_3.resource_id}"
+      unit_resource_id = unit_2.resource_id
+
+      {:ok, view, _html} =
+        live(
+          conn,
+          live_view_learn_live_route(section.slug, %{target_resource_id: module_3.resource_id})
+        )
+
+      # scrolling and pulse animations are triggered
+      assert_push_event(view, "scroll-y-to-target", %{id: ^unit_id, offset: 80})
+
+      assert_push_event(view, "scroll-x-to-card-in-slider", %{
+        card_id: ^card_id,
+        scroll_delay: 300,
+        unit_resource_id: ^unit_resource_id,
+        pulse_target_id: ^card_id,
+        pulse_delay: 500
+      })
+
+      # module 3 must be expanded so we can see its details
+      assert has_element?(
+               view,
+               ~s{div[role="expanded module header"] h2},
+               "Installing Elixir, OTP and Phoenix"
+             )
+
+      assert has_element?(view, ~s{div[id="index_for_#{module_3.resource_id}"]}, "Page 5")
+    end
+
+    test "can navigate to a page at module level through url params",
+         %{
+           conn: conn,
+           user: user,
+           section: section,
+           unit_3: unit_3,
+           page_8: page_8
+         } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+      unit_id = "unit_#{unit_3.resource_id}"
+      card_id = "page_#{page_8.resource_id}"
+      unit_resource_id = unit_3.resource_id
+
+      {:ok, view, _html} =
+        live(
+          conn,
+          live_view_learn_live_route(section.slug, %{target_resource_id: page_8.resource_id})
+        )
+
+      # scrolling and pulse animations are triggered
+      assert_push_event(view, "scroll-y-to-target", %{id: ^unit_id, offset: 80})
+
+      assert_push_event(view, "scroll-x-to-card-in-slider", %{
+        card_id: ^card_id,
+        scroll_delay: 300,
+        unit_resource_id: ^unit_resource_id,
+        pulse_target_id: ^card_id,
+        pulse_delay: 500
+      })
+    end
+
+    test "can navigate to a page through url params",
+         %{
+           conn: conn,
+           user: user,
+           section: section,
+           unit_2: unit_2,
+           module_3: module_3,
+           page_6: page_6
+         } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+      unit_id = "unit_#{unit_2.resource_id}"
+      card_id = "module_#{module_3.resource_id}"
+      unit_resource_id = unit_2.resource_id
+      pulse_target_id = "index_item_#{page_6.resource_id}"
+
+      {:ok, view, _html} =
+        live(
+          conn,
+          live_view_learn_live_route(section.slug, %{target_resource_id: page_6.resource_id})
+        )
+
+      # scrolling and pulse animations are triggered
+      assert_push_event(view, "scroll-y-to-target", %{id: ^unit_id, offset: 80})
+
+      assert_push_event(
+        view,
+        "scroll-x-to-card-in-slider",
+        %{
+          card_id: ^card_id,
+          scroll_delay: 300,
+          unit_resource_id: ^unit_resource_id,
+          pulse_target_id: ^pulse_target_id,
+          pulse_delay: 500
+        }
+      )
+
+      # The module that contains Page 6 must be expanded so we can see that page
+      assert has_element?(view, ~s{div[id="index_item_2_#{page_6.resource_id}"]}, "Page 6")
     end
   end
 end
