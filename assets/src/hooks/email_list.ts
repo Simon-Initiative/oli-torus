@@ -51,7 +51,7 @@ export const EmailList = {
 
       if (isValidEmail(value)) {
         pushEventToTarget(this, phxTarget, phxEvent, value);
-        // Don't delete the next line otherwise the event is send twice
+        // Don't delete the next line otherwise the event is sent twice
         input.value = '';
       }
     });
