@@ -3,6 +3,7 @@ defmodule OliWeb.Delivery.Student.ScheduleLive do
 
   alias OliWeb.Common.SessionContext
   alias Oli.Delivery.Sections
+  alias OliWeb.Components.Delivery.Schedule
 
   def mount(_params, _session, socket) do
     section = socket.assigns[:section]
@@ -41,42 +42,12 @@ defmodule OliWeb.Delivery.Student.ScheduleLive do
       <div class="flex flex-col">
         <%= for {{month, _year}, weekly_schedule} <- @schedule do %>
           <div class="flex flex-row">
-            <div class="w-32 uppercase"><%= month_name(month) %></div>
+            <div class="w-32 uppercase font-bold text-gray-500"><%= month_name(month) %></div>
 
             <div class="flex-1 flex flex-col">
-              <%= for {week, range_schedules} <- weekly_schedule do %>
-                <div class="flex flex-row border-l border-gray-500 px-4">
-                  <div class="mr-8 uppercase">Week <%= week %>:</div>
-
-                  <div class="flex-1 flex flex-col">
-                    <%= for {date_range, container_groups} <- range_schedules do %>
-                      <div class="flex-1 flex flex-col mb-4">
-                        <div>
-                          <%= render_date_range(date_range, @ctx) %>
-                        </div>
-
-                        <%= for {{container_label, graded}, scheduled_resources} <- container_groups do %>
-                          <div class="flex flex-row">
-                            <div class="basis-1/4 flex flex-col mr-4">
-                              <div class="font-bold"><%= graded_label(graded) %></div>
-                              <div><%= container_label %></div>
-                            </div>
-                            <div class="flex-1 flex flex-col mr-4">
-                              <%= for resource <- scheduled_resources do %>
-                                <div class="flex flex-col mb-4">
-                                  <div><%= resource.title %></div>
-                                  <div class="text-sm text-gray-500">
-                                    Due: <%= date(resource.end_date, ctx: @ctx, precision: :date) %>
-                                  </div>
-                                </div>
-                              <% end %>
-                            </div>
-                            <div class="basis-1/4 flex flex-col"></div>
-                          </div>
-                        <% end %>
-                      </div>
-                    <% end %>
-                  </div>
+              <%= for {week, schedule_ranges} <- weekly_schedule do %>
+                <div class="flex flex-row border-l border-gray-300 dark:border-gray-700 px-4">
+                  <Schedule.week ctx={@ctx} week_number={week} schedule_ranges={schedule_ranges} />
                 </div>
               <% end %>
             </div>
@@ -85,25 +56,6 @@ defmodule OliWeb.Delivery.Student.ScheduleLive do
       </div>
     </div>
     """
-  end
-
-  defp graded_label(true), do: "Assessment"
-  defp graded_label(_), do: "Pre-Read"
-
-  defp render_date_range({start_date, end_date}, ctx) do
-    cond do
-      date(start_date, ctx: ctx, precision: :day) == date(end_date, ctx: ctx, precision: :day) ->
-        start_date
-
-      is_nil(start_date) ->
-        "Due #{date(end_date, ctx: ctx, precision: :day)}"
-
-      is_nil(end_date) ->
-        "Start #{date(start_date, ctx: ctx, precision: :day)}"
-
-      true ->
-        "#{date(start_date, ctx: ctx, precision: :day)} - #{date(end_date, ctx: ctx, precision: :day)}"
-    end
   end
 
   defp month_name(nil), do: ""

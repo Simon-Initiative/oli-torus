@@ -76,11 +76,31 @@ body {
   background-image: url('/images/gradients/index-bg.png');
 }
 
+.dark .bg-index {
+  background-image: url('/images/gradients/index-bg-dark.png');
+}
+
 .bg-schedule {
   background-image: url('/images/gradients/schedule-bg.png');
 }
 .dark .bg-schedule {
   background-image: url('/images/gradients/schedule-bg-dark.png');
+}
+
+.bg-explorations {
+  background-image: url('/images/gradients/explorations-bg.png');
+}
+
+.dark .bg-explorations {
+  background-image: url('/images/gradients/explorations-bg-dark.png');
+}
+
+.bg-practice {
+  background-image: url('/images/gradients/practice-bg.png');
+}
+
+.dark .bg-practice {
+  background-image: url('/images/gradients/practice-bg-dark.png');
 }
 
 /*

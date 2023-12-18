@@ -1810,6 +1810,18 @@ defmodule Oli.Delivery.Sections do
     end)
   end
 
+  def get_schedule_for_current_week(section) do
+    current_week_number =
+      OliWeb.Components.Delivery.Utils.week_number(section.start_date, DateTime.utc_now())
+
+    get_ordered_schedule(section)
+    |> Enum.map(fn {{_month, _year}, weeks} ->
+      Enum.find(weeks, fn {week_number, _} -> week_number == current_week_number end)
+    end)
+    |> Enum.filter(fn week -> week != nil end)
+    |> Enum.at(0)
+  end
+
   @doc """
   Create all section resources from the given section and publication and optional hierarchy definition.
   The hierarchy definition is a map of resource ids to the list of directly contained children (referenced
