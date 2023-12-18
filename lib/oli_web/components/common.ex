@@ -829,4 +829,20 @@ defmodule OliWeb.Components.Common do
   def translate_errors(errors, field) when is_list(errors) do
     for {^field, {msg, opts}} <- errors, do: translate_error({msg, opts})
   end
+
+  @doc """
+  Renders a hero banner.
+  """
+  attr(:class, :string, default: nil)
+  slot(:inner_block, required: true)
+
+  def hero_banner(assigns) do
+    ~H"""
+    <div class={["w-full bg-cover bg-center bg-no-repeat py-24 px-16", @class]}>
+      <div class="container mx-auto flex flex-col">
+        <%= render_slot(@inner_block) %>
+      </div>
+    </div>
+    """
+  end
 end

@@ -16,9 +16,24 @@ defmodule Oli.Delivery.Sections.Scheduling do
   For a given course section, return a list of all soft schedulable
   section resources (that is, all containers and pages).
   """
-  def retrieve(%Section{id: section_id}) do
+  def retrieve(%Section{id: section_id}, filter_resource_type \\ false) do
     page_type_id = Oli.Resources.ResourceType.get_id_by_type("page")
     container_type_id = Oli.Resources.ResourceType.get_id_by_type("container")
+
+    filter_by_resource_type =
+      case filter_resource_type do
+        :pages ->
+          dynamic([sr, _s, _spp, _pr, rev], rev.resource_type_id == ^page_type_id)
+
+        :containers ->
+          dynamic([sr, _s, _spp, _pr, rev], rev.resource_type_id == ^container_type_id)
+
+        _ ->
+          dynamic(
+            [sr, _s, _spp, _pr, rev],
+            rev.resource_type_id == ^container_type_id or rev.resource_type_id == ^page_type_id
+          )
+      end
 
     query =
       SectionResource
@@ -31,9 +46,9 @@ defmodule Oli.Delivery.Sections.Scheduling do
       |> where(
         [sr, s, spp, pr, rev],
         sr.project_id == spp.project_id and s.id == ^section_id and
-          pr.resource_id == sr.resource_id and
-          (rev.resource_type_id == ^container_type_id or rev.resource_type_id == ^page_type_id)
+          pr.resource_id == sr.resource_id
       )
+      |> where(^filter_by_resource_type)
       |> select_merge([_sr, _s, _spp, _pr, rev], %{
         title: rev.title,
         resource_type_id: rev.resource_type_id,

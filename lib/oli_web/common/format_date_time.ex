@@ -190,6 +190,9 @@ defmodule OliWeb.Common.FormatDateTime do
       :date ->
         Timex.format!(datetime, "{Mfull} {D}, {YYYY}#{maybe_timezone}")
 
+      :day ->
+        Timex.format!(datetime, "{WDshort}, {D}#{maybe_timezone}")
+
       :minutes ->
         Timex.format!(datetime, "{Mfull} {D}, {YYYY} {h12}:{m} {AM}#{maybe_timezone}")
 
