@@ -6,15 +6,12 @@ export const Scroller = {
   // It is triggered from the backend as follows:
   //
   //    def handle_event(..., socket) do
-  //      {:no_reply, push_event(socket, "scroll-y-to-target", %{id: "element-id", offset: 50})
-  //    end
-  // or
-  //    def handle_event(..., socket) do
-  //      {:no_reply, push_event(socket, "scroll-y-to-target", %{id: "element-id"})
+  //      {:no_reply, push_event(socket, "scroll-y-to-target", %{id: "element-id", offset: 50, scroll: true, scroll_delay: 500})
   //    end
   //
-  // Expects the id of the element to scroll to and an optional offset
-  // to add to the scroll position. The optional offset is to consider the case, for example,
+  // Expects the id of the element to scroll to, an optional offset
+  // to add to the scroll position, an optional pulse animtation boolean with its pulse_delay in milliseconds.
+  // The optional offset is to consider the case, for example,
   // where you have a fixed header and you want to scroll to the element but you want to
   // consider the height of the header when scrolling to the element.
   //
@@ -29,8 +26,7 @@ export const Scroller = {
   //                                scroll_delay: 300,
   //                                unit_resource_id: unit_resource_id,
   //                                pulse_target_id: "index_item_#{resource_id}",
-  //                                pulse_delay: 330,
-  //                                pulse_times: 4
+  //                                pulse_delay: 330
   //                              }
   //                             )
   //       }
@@ -38,7 +34,7 @@ export const Scroller = {
   //
   // Expects the card_id of the elemento to scroll X to, the unit_resource_id of the slider that contains that module,
   // the scroll animation delay in milliseconds (defaults to 0), the id of the element to animate with a pulse effect (optional),
-  // the pulse animation delay in milliseconds (defaults to 300) and the number of times to animate (defaults to 2).
+  // and the pulse animation delay in milliseconds (defaults to 300).
   //
   // ** Enable Slider Buttons **
   // It initializes the slider buttons the first time the liveview is mounted (actually, after the metrics are fetched).
@@ -97,6 +93,12 @@ export const Scroller = {
       const offset = (e as CustomEvent).detail.offset || 0;
       if (el) {
         window.scrollTo({ top: el.offsetTop - offset, behavior: 'smooth' });
+
+        if ((e as CustomEvent).detail.pulse == true) {
+          setTimeout(() => {
+            el.classList.add('animate-[pulse_0.7s_cubic-bezier(0.4,0,0.6,1)2]');
+          }, (e as CustomEvent).detail.pulse_delay || 300);
+        }
       }
     });
 
@@ -135,18 +137,8 @@ export const Scroller = {
 
         // pulse animation after scroll
         if (pulse_target) {
-          console.log(
-            'pulse_target',
-            'animate-[pulse_0.7s_cubic-bezier(0.4,0,0.6,1)' +
-              ((e as CustomEvent).detail.pulse_times || 2) +
-              ']',
-          );
           setTimeout(() => {
-            pulse_target.classList.add(
-              'animate-[pulse_0.7s_cubic-bezier(0.4,0,0.6,1)' +
-                ((e as CustomEvent).detail.pulse_times || 2) +
-                ']',
-            );
+            pulse_target.classList.add('animate-[pulse_0.7s_cubic-bezier(0.4,0,0.6,1)2]');
           }, (e as CustomEvent).detail.pulse_delay || 300);
         }
       }, (e as CustomEvent).detail.scroll_delay || 0);

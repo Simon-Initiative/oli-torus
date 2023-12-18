@@ -45,7 +45,12 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       when resource_type_id == container_resource_type_id ->
         # the target is a unit, so we sroll in the Y direction to it
         {:noreply,
-         push_event(socket, "scroll-y-to-target", %{id: "unit_#{resource_id}", offset: 80})}
+         push_event(socket, "scroll-y-to-target", %{
+           id: "unit_#{resource_id}",
+           offset: 80,
+           pulse: true,
+           pulse_delay: 500
+         })}
 
       %{resource_type_id: resource_type_id, numbering_level: 2}
       when resource_type_id == container_resource_type_id ->
@@ -77,7 +82,8 @@ defmodule OliWeb.Delivery.Student.LearnLive do
            card_id: "module_#{resource_id}",
            scroll_delay: 300,
            unit_resource_id: unit_resource_id,
-           pulse_target_id: "module_#{resource_id}"
+           pulse_target_id: "module_#{resource_id}",
+           pulse_delay: 500
          })}
 
       %{resource_type_id: resource_type_id, numbering_level: 2}
@@ -98,7 +104,8 @@ defmodule OliWeb.Delivery.Student.LearnLive do
            card_id: "page_#{resource_id}",
            scroll_delay: 300,
            unit_resource_id: unit_resource_id,
-           pulse_target_id: "page_#{resource_id}"
+           pulse_target_id: "page_#{resource_id}",
+           pulse_delay: 500
          })}
 
       %{resource_type_id: resource_type_id, numbering_level: 3}
@@ -140,8 +147,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
            scroll_delay: 300,
            unit_resource_id: unit_resource_id,
            pulse_target_id: "index_item_#{resource_id}",
-           pulse_delay: 330,
-           pulse_times: 5
+           pulse_delay: 500
          })}
 
       _ ->
