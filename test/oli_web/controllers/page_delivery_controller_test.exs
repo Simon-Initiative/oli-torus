@@ -1184,22 +1184,6 @@ defmodule OliWeb.PageDeliveryControllerTest do
       refute html_response(conn, 200) =~ "<h3 class=\"text-xl font-bold\">Discussion</h3>"
     end
 
-    test "doesn't render student's upcoming activities when they don't exist", %{
-      conn: conn,
-      user: user,
-      section: section
-    } do
-      enroll_as_student(%{section: section, user: user})
-
-      conn =
-        conn
-        |> get(~p"/sections/#{section.slug}")
-
-      refute html_response(conn, 200) =~ "Up Next"
-      refute html_response(conn, 200) =~ "Upcoming Activity 1"
-      refute html_response(conn, 200) =~ "Upcoming Activity 2"
-    end
-
     @tag :skip
     test "render student's upcoming activities if any exists", %{
       conn: conn,

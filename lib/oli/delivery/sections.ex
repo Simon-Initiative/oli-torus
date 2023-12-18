@@ -17,7 +17,8 @@ defmodule Oli.Delivery.Sections do
     SectionsProjectsPublications,
     Enrollment,
     EnrollmentBrowseOptions,
-    EnrollmentContextRole
+    EnrollmentContextRole,
+    Scheduling
   }
 
   alias Lti_1p3.Tool.ContextRole
@@ -1341,6 +1342,24 @@ defmodule Oli.Delivery.Sections do
     end)
   end
 
+  defp get_hierarchical_parent_links(publication_ids) do
+    container_type_id = Oli.Resources.ResourceType.get_id_by_type("container")
+
+    from(pr in PublishedResource,
+      join: rev in Revision,
+      on: pr.revision_id == rev.id,
+      where: rev.resource_type_id == ^container_type_id and pr.publication_id in ^publication_ids,
+      select: %{id: rev.resource_id, children: rev.children},
+      distinct: true
+    )
+    |> Repo.all()
+    |> Enum.reduce(MapSet.new(), fn %{id: resource_id, children: children}, links ->
+      Enum.reduce(children, links, fn child_id, links ->
+        MapSet.put(links, {resource_id, child_id})
+      end)
+    end)
+  end
+
   @doc """
   Returns the resource_to_container map for the given section,
   that maps all resources ids to their parent container id.
@@ -1608,9 +1627,31 @@ defmodule Oli.Delivery.Sections do
         {48, "Unit 4: Final}"
       ]
   """
-  def get_ordered_container_labels(section_slug) do
-    SectionCache.get_or_compute(section_slug, :ordered_container_labels, fn ->
-      fetch_ordered_containers(section_slug)
+  def get_ordered_container_labels(section_slug, opts \\ []) do
+    short_label = opts[:short_label] || false
+
+    label_for = fn c ->
+      container_label =
+        get_container_label(
+          c.numbering_level,
+          c.customizations || Map.from_struct(CustomLabels.default())
+        )
+
+      if short_label do
+        ~s{#{container_label} #{c.numbering_index}}
+      else
+        ~s{#{container_label} #{c.numbering_index}: #{c.title}}
+      end
+    end
+
+    ordered_containers =
+      SectionCache.get_or_compute(section_slug, :ordered_containers, fn ->
+        fetch_ordered_containers(section_slug)
+      end)
+
+    ordered_containers
+    |> Enum.map(fn {id, c} ->
+      {id, label_for.(c)}
     end)
   end
 
@@ -1647,28 +1688,138 @@ defmodule Oli.Delivery.Sections do
     |> Enum.map(fn c ->
       {
         c.id,
-        ~s{#{get_container_label(c.numbering_level, c.customizations || Map.from_struct(CustomLabels.default()))} #{c.numbering_index}: #{c.title}}
+        c
       }
     end)
   end
 
-  defp get_hierarchical_parent_links(publication_ids) do
-    container_type_id = Oli.Resources.ResourceType.get_id_by_type("container")
+  @doc """
+  Returns a structured schedule of all scheduled section resources for the given section, ordered by month,
+  week, date range, and container module.
+  """
+  def get_ordered_schedule(section) do
+    container_labels_map =
+      get_ordered_container_labels(section.slug, short_label: true)
+      |> Enum.reduce(%{}, fn {container_id, label}, acc -> Map.put(acc, container_id, label) end)
 
-    from(pr in PublishedResource,
-      join: rev in Revision,
-      on: pr.revision_id == rev.id,
-      where: rev.resource_type_id == ^container_type_id and pr.publication_id in ^publication_ids,
-      select: %{id: rev.resource_id, children: rev.children},
-      distinct: true
-    )
-    |> Repo.all()
-    |> Enum.reduce(MapSet.new(), fn %{id: resource_id, children: children}, links ->
-      Enum.reduce(children, links, fn child_id, links ->
-        # MapSet.put(links, {child_id, resource_id})
-        MapSet.put(links, {resource_id, child_id})
+    resource_to_container_map =
+      get_resource_to_container_map(section)
+
+    scheduled_section_resources =
+      Scheduling.retrieve(section, :pages)
+      # filter out unscheduled resources
+      |> Enum.filter(fn section_resource ->
+        case section_resource do
+          %SectionResource{start_date: nil, end_date: nil} -> false
+          _ -> true
+        end
       end)
+      # group items by month and year, start date take precedence over end date
+      |> group_and_sort_by_month_and_year()
+      |> Enum.map(fn {{month, year}, section_resources} ->
+        {{month, year},
+         section_resources
+         # group by week number
+         |> group_and_sort_by_week_number(section)
+         |> Enum.map(fn {week_number, section_resources} ->
+           {week_number,
+            section_resources
+            # group by {start_date, end_date} and sort by start_date
+            |> group_and_sort_by_date_range()
+            |> Enum.map(fn {date_range, section_resources} ->
+              {date_range,
+               section_resources
+               |> group_by_container_and_graded(container_labels_map, resource_to_container_map)}
+            end)}
+         end)}
+      end)
+
+    scheduled_section_resources
+  end
+
+  defp group_and_sort_by_month_and_year(section_resources) do
+    section_resources
+    |> Enum.group_by(fn sr ->
+      case sr do
+        %SectionResource{start_date: %DateTime{month: month, year: year}} -> {month, year}
+        %SectionResource{end_date: %DateTime{month: month, year: year}} -> {month, year}
+        _ -> {nil, nil}
+      end
     end)
+    # sort by month and year such that months are chronological
+    |> Enum.sort(fn first, second ->
+      {{month_1, year_1}, _} = first
+      {{month_2, year_2}, _} = second
+
+      if year_1 == year_2 do
+        month_1 <= month_2
+      else
+        year_1 <= year_2
+      end
+    end)
+  end
+
+  defp group_and_sort_by_week_number(section_resources, section) do
+    section_resources
+    |> Enum.group_by(fn sr ->
+      case sr do
+        %SectionResource{start_date: nil, end_date: nil} ->
+          nil
+
+        %SectionResource{start_date: nil, end_date: end_date} ->
+          OliWeb.Components.Delivery.Utils.week_number(section.start_date, end_date)
+
+        %SectionResource{start_date: start_date} ->
+          OliWeb.Components.Delivery.Utils.week_number(section.start_date, start_date)
+      end
+    end)
+    |> Enum.sort(fn first, second ->
+      {week_number_1, _} = first
+      {week_number_2, _} = second
+
+      week_number_1 <= week_number_2
+    end)
+  end
+
+  defp group_and_sort_by_date_range(section_resources) do
+    section_resources
+    |> Enum.group_by(fn sr ->
+      {sr.start_date, sr.end_date}
+    end)
+    |> Enum.sort(fn first, second ->
+      {{start_date_1, _end_date_1}, _} = first
+      {{start_date_2, _end_date_2}, _} = second
+
+      case start_date_1 do
+        nil -> true
+        _ -> start_date_1 < start_date_2
+      end
+    end)
+  end
+
+  defp group_by_container_and_graded(
+         section_resources,
+         container_labels_map,
+         resource_to_container_map
+       ) do
+    section_resources
+    |> Enum.group_by(fn sr ->
+      container_id = resource_to_container_map[Integer.to_string(sr.resource_id)]
+
+      {container_labels_map[container_id], sr.graded}
+    end)
+  end
+
+  def get_schedule_for_current_week(section) do
+    current_week_number =
+      OliWeb.Components.Delivery.Utils.week_number(section.start_date, DateTime.utc_now())
+
+    get_ordered_schedule(section)
+    |> Enum.map(fn {{_month, _year}, weeks} ->
+      Enum.find(weeks, fn {week_number, _} -> week_number == current_week_number end)
+    end)
+    |> Enum.filter(fn week -> week != nil end)
+    |> Enum.at(0)
   end
 
   @doc """

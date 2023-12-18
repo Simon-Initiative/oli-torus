@@ -3,32 +3,37 @@ defmodule OliWeb.Delivery.Student.IndexLive do
 
   import OliWeb.Components.Delivery.Layouts
 
+  alias Oli.Delivery.Sections
+  alias OliWeb.Components.Delivery.Schedule
+
   def mount(_params, _session, socket) do
-    {:ok, assign(socket, active_tab: :index)}
+    section = socket.assigns[:section]
+
+    schedule_for_current_week = Sections.get_schedule_for_current_week(section)
+
+    {:ok,
+     assign(socket,
+       active_tab: :index,
+       schedule_for_current_week: schedule_for_current_week
+     )}
   end
 
   def render(assigns) do
     ~H"""
-    <.welcome_banner ctx={@ctx} />
-    <div class="container mx-auto"></div>
-    """
-  end
+    <.hero_banner class="bg-index">
+      <h1 class="text-6xl mb-8">Hi, <span class="font-bold"><%= user_given_name(@ctx) %></span></h1>
+    </.hero_banner>
 
-  attr(:ctx, SessionContext)
+    <div class="container mx-auto">
+      <div class="my-8 px-16">
+        <div class="font-bold text-2xl mb-4">Up Next</div>
 
-  def welcome_banner(assigns) do
-    ~H"""
-    <div class="w-full bg-cover bg-center bg-no-repeat bg-colorful py-24 px-16">
-      <div class="container mx-auto flex flex-col">
-        <h1 class="text-4xl mb-8">Hi, <span class="font-bold"><%= user_given_name(@ctx) %></span></h1>
-        <div class="my-2 uppercase gap-2 lg:gap-8 columns-2 lg:columns-3">
-          <div class="font-bold">Course Progress</div>
-          <div>0%</div>
-        </div>
-        <div class="my-2 uppercase gap-2 lg:gap-8 columns-2 lg:columns-3">
-          <div class="font-bold">Average Score</div>
-          <div>0/60</div>
-        </div>
+        <%= case @schedule_for_current_week do %>
+          <% {week, schedule_ranges} -> %>
+            <Schedule.week ctx={@ctx} week_number={week} schedule_ranges={schedule_ranges} />
+          <% _ -> %>
+            <div class="text-xl">No schedule for this week.</div>
+        <% end %>
       </div>
     </div>
     """

@@ -13,20 +13,16 @@ defmodule OliWeb.Delivery.Student.PracticeLive do
 
   def render(assigns) do
     ~H"""
-    <div class="w-full bg-cover bg-center bg-no-repeat bg-gray-700 text-white py-24 px-16">
-      <div class="container mx-auto flex flex-col lg:flex-row">
-        <div class="lg:flex-1">
-          <h1 class="text-4xl mb-8">Your Practice Pages</h1>
-        </div>
-      </div>
-    </div>
+    <.hero_banner class="bg-practice">
+      <h1 class="text-6xl mb-8">Your Practice Pages</h1>
+    </.hero_banner>
     <div class="container mx-auto flex flex-col mt-6 px-16">
       <div :if={Enum.count(@practices_by_container) == 0} class="text-center" role="alert">
         <h6>There are no practice pages available</h6>
       </div>
 
       <%= for {container_name, practices} <- @practices_by_container do %>
-        <h2 :if={container_name != :default} class="text-sm font-bold my-6 uppercase text-gray-700">
+        <h2 :if={container_name != :default} class="text-sm font-bold my-6 uppercase text-gray-500">
           <%= container_name %>
         </h2>
 
