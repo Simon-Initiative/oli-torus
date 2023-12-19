@@ -2,6 +2,7 @@ defmodule OliWeb.InviteController do
   use OliWeb, :controller
 
   alias Oli.Accounts
+  alias Oli.Delivery.Sections
 
   @spec index(Plug.Conn.t(), any) :: Plug.Conn.t()
   def index(conn, _params) do
@@ -26,7 +27,7 @@ defmodule OliWeb.InviteController do
     existing_users = Oli.Accounts.get_users_by_email(users)
     non_found_users = users -- Enum.map(existing_users, & &1.email)
     inviter_user = conn.assigns.current_author
-    section = conn.assigns.section
+    section = Sections.get_section_by_slug(section_slug)
 
     # Enroll users
     Oli.Repo.transaction(fn ->
