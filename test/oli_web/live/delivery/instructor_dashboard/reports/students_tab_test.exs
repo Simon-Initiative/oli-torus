@@ -683,7 +683,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
       # Remove an email from the "Users not found" list
       view
       |> with_target("#students_table")
-      |> render_hook("add_enrollments_remove_from_list", %{user: non_existant_email_2})
+      |> render_hook("add_enrollments_remove_from_list", %{email: non_existant_email_2})
 
       refute has_element?(
                view,

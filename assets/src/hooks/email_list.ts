@@ -4,16 +4,26 @@ const isValidEmail = (email: string): boolean =>
 const parseEmails = (content: string): string[] =>
   content.match(/[a-zA-Z0-9._+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}/g) || [];
 
-export const EmailList = {
-  maybePushEventToTarget(phxTarget: string | null, phxEvent: string | null, value: string) {
-    console.log(phxTarget);
-    if (phxTarget) {
-      this.pushEventTo(`#${phxTarget}`, phxEvent, { value: value });
-    } else {
-      this.pushEvent(phxEvent, { value });
-    }
-  },
+const isEmailAlreadyIncluded = (email: string): boolean => {
+  const enrollments_email_list_div = document.getElementById(
+    'enrollments_email_list',
+  ) as HTMLDivElement;
+  const divCollection = enrollments_email_list_div!.getElementsByTagName('div') as HTMLCollection;
+  const arr = [].slice.call(divCollection);
+  const emailList = arr.map((element: any) => element.querySelector('p').innerHTML);
+  return emailList.includes(email);
+};
 
+const pushEventToTarget = (
+  element: any,
+  phxTarget: string | null,
+  phxEvent: string | null,
+  value: string | string[],
+) => {
+  element.pushEventTo(`#${phxTarget}`, phxEvent, { value: value });
+};
+
+export const EmailList = {
   refresh() {
     const element = this.el as HTMLDivElement;
     const phxEvent = element.getAttribute('phx-event');
@@ -36,9 +46,12 @@ export const EmailList = {
     });
     input.addEventListener('blur', () => {
       const value = input.value.trim();
+
+      if (isEmailAlreadyIncluded(value) || !isValidEmail(value)) input.value = '';
+
       if (isValidEmail(value)) {
-        this.maybePushEventToTarget(phxTarget, phxEvent, value);
-      } else {
+        pushEventToTarget(this, phxTarget, phxEvent, value);
+        // Don't delete the next line otherwise the event is sent twice
         input.value = '';
       }
     });
@@ -50,9 +63,7 @@ export const EmailList = {
 
       const emails = parseEmails(pastedText);
 
-      if (emails.length) {
-        this.maybePushEventToTarget(phxTarget, phxEvent, emails);
-      }
+      if (emails.length) pushEventToTarget(this, phxTarget, phxEvent, emails);
     });
   },
   mounted() {
