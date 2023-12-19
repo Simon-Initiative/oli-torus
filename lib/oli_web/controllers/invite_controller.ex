@@ -23,9 +23,9 @@ defmodule OliWeb.InviteController do
     end
   end
 
-  def create_bulk(conn, %{"emails" => users, "role" => role, "section_slug" => section_slug}) do
-    existing_users = Oli.Accounts.get_users_by_email(users)
-    non_found_users = users -- Enum.map(existing_users, & &1.email)
+  def create_bulk(conn, %{"emails" => emails, "role" => role, "section_slug" => section_slug}) do
+    existing_users = Oli.Accounts.get_users_by_email(emails)
+    non_found_users = emails -- Enum.map(existing_users, & &1.email)
     inviter_user = conn.assigns.current_author
     section = Sections.get_section_by_slug(section_slug)
 
