@@ -704,7 +704,8 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
           Routes.invite_path(conn, :create_bulk, section.slug,
             emails: [user_1.email, user_2.email, non_existant_email_1],
             role: "instructor",
-            "g-recaptcha-response": "any"
+            "g-recaptcha-response": "any",
+            inviter: "author"
           )
         )
 
