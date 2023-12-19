@@ -7,63 +7,36 @@
     preview_mode={@preview_mode}
   />
 
-  <main role="main" class="flex-1 flex flex-col relative md:flex-row overscroll-contain">
-    <Components.Delivery.Layouts.sidebar_nav
-      :if={!Map.get(assigns, :page_view?)}
-      ctx={@ctx}
-      is_system_admin={assigns[:is_system_admin] || false}
-      section={@section}
-      active_tab={assigns[:active_tab]}
-      preview_mode={@preview_mode}
-    />
+  <%= if Map.get(assigns, :page_view?) do %>
+    <div class="flex-1 flex flex-col mt-14">
+      <div id="page-content" class="relative justify-center items-start inline-flex">
+        <.back_arrow to={~p"/sections/#{@section.slug}/content"} />
 
-    <%= if Map.get(assigns, :page_view?) do %>
-      <div class="flex-1 flex flex-col mt-14">
-        <div id="page-content" class="relative justify-center items-start inline-flex">
-          <div class="flex justify-center items-center absolute top-10 left-12 z-50 p-4">
-            <.link navigate={~p"/sections/#{@section.slug}/content"} class="hover:no-underline">
-              <svg
-                width="34"
-                height="33"
-                viewBox="0 0 34 33"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-                class="hover:opacity-90 hover:cursor-pointer"
-              >
-                <path
-                  d="M17.0459 32.5278C8.19971 32.5278 0.884277 25.2124 0.884277 16.3662C0.884277 7.50391 8.18359 0.20459 17.0298 0.20459C25.8921 0.20459 33.2075 7.50391 33.2075 16.3662C33.2075 25.2124 25.8921 32.5278 17.0459 32.5278ZM17.0459 30.4331C24.8447 30.4331 31.1289 24.1489 31.1289 16.3662C31.1289 8.56738 24.8286 2.2832 17.0298 2.2832C9.24707 2.2832 2.979 8.56738 2.979 16.3662C2.979 24.1489 9.24707 30.4331 17.0459 30.4331ZM20.1235 24.2778C19.7852 24.6162 19.1567 24.6001 18.7861 24.2456L11.8252 17.5747C11.1162 16.9141 11.1001 15.8184 11.8252 15.1416L18.7861 8.4707C19.189 8.1001 19.7529 8.1001 20.1235 8.43848C20.5103 8.79297 20.5103 9.42139 20.1235 9.79199L13.2593 16.3501L20.1235 22.9404C20.5103 23.2949 20.5103 23.8911 20.1235 24.2778Z"
-                  fill="#9D9D9D"
-                />
-              </svg>
-            </.link>
-          </div>
-          <%!-- This feature will not be implemented in the first release. --%>
-          <div class="flex items-center gap-2.5 absolute top-10 right-12 z-50 p-4 hidden">
-            <div class="flex py-1.5 pl-[18px] items-center gap-2.5">
-              <div class="w-6 h-6 relative opacity-50">
-                <i class="fa-solid fa-eye" />
-              </div>
-              <div class="w-[132px] dark:text-white text-xs font-bold font-['Open Sans'] uppercase tracking-wide">
-                All annotations
-              </div>
-            </div>
-            <div class="w-6 h-6 justify-center items-center gap-2.5 inline-flex">
-              <i class="fa-solid fa-caret-down" />
-            </div>
-          </div>
-          <%= @inner_content %>
-        </div>
+        <%!-- This feature will not be implemented in the first release. This is just a placeholder--%>
+        <.annotations_dropdown />
 
-        <Components.Delivery.Layouts.previous_next_nav
-          current_page={@current_page}
-          previous_page={@previous_page}
-          next_page={@next_page}
-        />
+        <%= @inner_content %>
       </div>
-    <% else %>
+
+      <Components.Delivery.Layouts.previous_next_nav
+        current_page={@current_page}
+        previous_page={@previous_page}
+        next_page={@next_page}
+        section_slug={@section.slug}
+      />
+    </div>
+  <% else %>
+    <main role="main" class="flex-1 flex flex-col relative md:flex-row overscroll-contain">
+      <Components.Delivery.Layouts.sidebar_nav
+        ctx={@ctx}
+        is_system_admin={assigns[:is_system_admin] || false}
+        section={@section}
+        active_tab={assigns[:active_tab]}
+        preview_mode={@preview_mode}
+      />
       <div class="md:w-[calc(100%-192px)] flex-1 flex flex-col md:ml-48 mt-14">
         <%= @inner_content %>
       </div>
-    <% end %>
-  </main>
+    </main>
+  <% end %>
 </div>

@@ -310,9 +310,11 @@ defmodule OliWeb.Components.Delivery.Layouts do
         class="grow shrink basis-0 h-10 justify-start items-center gap-6 flex z-10"
       >
         <div class="px-6 py-2 rounded justify-end items-center gap-2 flex">
-          <div class="w-[72px] h-10 bg-blue-600 flex items-center justify-center">
-            <.left_arrow />
-          </div>
+          <.link navigate={previous_url(@previous_page, @section_slug)}>
+            <div class="w-[72px] h-10 opacity-30 hover:opacity-40 bg-blue-600 flex items-center justify-center">
+              <.left_arrow />
+            </div>
+          </.link>
         </div>
         <div class="grow shrink basis-0 dark:text-white text-xs font-normal font-['Open Sans']">
           <%= previous_title(@previous_page) %>
@@ -327,9 +329,11 @@ defmodule OliWeb.Components.Delivery.Layouts do
           <%= next_title(@next_page) %>
         </div>
         <div class="px-6 py-2 rounded justify-end items-center gap-2 flex">
-          <div class="w-[72px] h-10 bg-blue-600 flex items-center justify-center">
-            <.right_arrow />
-          </div>
+          <.link navigate={next_url(@next_page, @section_slug)}>
+            <div class="w-[72px] h-10 opacity-90 hover:opacity-100 bg-blue-600 flex items-center justify-center">
+              <.right_arrow />
+            </div>
+          </.link>
         </div>
       </div>
 
@@ -347,6 +351,30 @@ defmodule OliWeb.Components.Delivery.Layouts do
           />
         </svg>
       </div>
+    </div>
+    """
+  end
+
+  attr(:to, :string)
+
+  def back_arrow(assigns) do
+    ~H"""
+    <div class="flex justify-center items-center absolute top-10 left-12 z-50 p-4">
+      <.link navigate={@to} class="hover:no-underline">
+        <svg
+          width="34"
+          height="33"
+          viewBox="0 0 34 33"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+          class="hover:opacity-90 hover:cursor-pointer"
+        >
+          <path
+            d="M17.0459 32.5278C8.19971 32.5278 0.884277 25.2124 0.884277 16.3662C0.884277 7.50391 8.18359 0.20459 17.0298 0.20459C25.8921 0.20459 33.2075 7.50391 33.2075 16.3662C33.2075 25.2124 25.8921 32.5278 17.0459 32.5278ZM17.0459 30.4331C24.8447 30.4331 31.1289 24.1489 31.1289 16.3662C31.1289 8.56738 24.8286 2.2832 17.0298 2.2832C9.24707 2.2832 2.979 8.56738 2.979 16.3662C2.979 24.1489 9.24707 30.4331 17.0459 30.4331ZM20.1235 24.2778C19.7852 24.6162 19.1567 24.6001 18.7861 24.2456L11.8252 17.5747C11.1162 16.9141 11.1001 15.8184 11.8252 15.1416L18.7861 8.4707C19.189 8.1001 19.7529 8.1001 20.1235 8.43848C20.5103 8.79297 20.5103 9.42139 20.1235 9.79199L13.2593 16.3501L20.1235 22.9404C20.5103 23.2949 20.5103 23.8911 20.1235 24.2778Z"
+            fill="#9D9D9D"
+          />
+        </svg>
+      </.link>
     </div>
     """
   end
@@ -371,6 +399,24 @@ defmodule OliWeb.Components.Delivery.Layouts do
     >
       <path d="M7.825 13H20V11H7.825L13.425 5.4L12 4L4 12L12 20L13.425 18.6L7.825 13Z" fill="white" />
     </svg>
+    """
+  end
+
+  def annotations_dropdown(assigns) do
+    ~H"""
+    <div class="flex items-center gap-2.5 absolute top-10 right-12 z-50 p-4 hidden">
+      <div class="flex py-1.5 pl-[18px] items-center gap-2.5">
+        <div class="w-6 h-6 relative opacity-50">
+          <i class="fa-solid fa-eye" />
+        </div>
+        <div class="w-[132px] dark:text-white text-xs font-bold font-['Open Sans'] uppercase tracking-wide">
+          All annotations
+        </div>
+      </div>
+      <div class="w-6 h-6 justify-center items-center gap-2.5 inline-flex">
+        <i class="fa-solid fa-caret-down" />
+      </div>
+    </div>
     """
   end
 
