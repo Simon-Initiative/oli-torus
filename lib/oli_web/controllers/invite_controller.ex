@@ -78,18 +78,22 @@ defmodule OliWeb.InviteController do
       Enum.each(emails, fn email -> Oli.Mailer.deliver_now(email) end)
     end)
 
+    redirect_after_enrollment(conn, section_slug)
+  end
+
+  defp redirect_after_enrollment(conn, section_slug) do
+    path =
+      Routes.live_path(
+        OliWeb.Endpoint,
+        OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
+        section_slug,
+        :reports,
+        :students
+      )
+
     conn
     |> put_flash(:info, "Users were enrolled successfully")
-    |> redirect(
-      to:
-        Routes.live_path(
-          OliWeb.Endpoint,
-          OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
-          section_slug,
-          :reports,
-          :students
-        )
-    )
+    |> redirect(to: path)
   end
 
   defp render_invite_page(conn, page, keywords) do
