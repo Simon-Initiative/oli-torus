@@ -10,8 +10,8 @@ defmodule OliWeb.Delivery.Student.PageLive do
 
   def render(%{view: :page} = assigns) do
     ~H"""
-    <div class="flex pb-[80px] flex-col items-center gap-[60px] flex-1">
-      <div class="flex flex-col items-center self-stretch">
+    <div class="flex pb-20 flex-col items-center gap-15 flex-1">
+      <div class="flex flex-col items-center w-full">
         <.scored_page_banner />
         <div>
           <%!-- PAGE CONTENT --%>
@@ -30,13 +30,13 @@ defmodule OliWeb.Delivery.Student.PageLive do
 
   def scored_page_banner(assigns) do
     ~H"""
-    <div class="w-full px-[164px] py-9 bg-orange-500 bg-opacity-10 flex-col justify-center items-center gap-2.5 inline-flex">
-      <div class="px-3 py-1.5 rounded-[3px] justify-start items-start gap-2.5 inline-flex">
-        <div class="dark:text-white text-sm font-bold font-['Open Sans'] uppercase tracking-wider">
+    <div class="w-full lg:px-20 px-40 py-9 bg-orange-500 bg-opacity-10 flex flex-col justify-center items-center gap-2.5">
+      <div class="px-3 py-1.5 rounded justify-start items-start gap-2.5 flex">
+        <div class="dark:text-white text-sm font-bold uppercase tracking-wider">
           Scored Activity
         </div>
       </div>
-      <div class="w-[720px] mx-auto opacity-90 dark:text-white text-sm font-normal font-['Open Sans'] leading-[25.20px]">
+      <div class="max-w-[720px] w-full mx-auto opacity-90 dark:text-white text-sm font-normal leading-6">
         You can start or stop at any time, and your progress will be saved. When you submit your answers using the Submit button, it will count as an attempt. So make sure you have answered all the questions before submitting.
       </div>
     </div>

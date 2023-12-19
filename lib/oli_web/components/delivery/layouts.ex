@@ -288,9 +288,9 @@ defmodule OliWeb.Components.Delivery.Layouts do
     ~H"""
     <div
       :if={!is_nil(@current_page)}
-      class="fixed bottom-0 left-1/2 transform -translate-x-1/2 w-[720px] h-[74px] py-[17px] shadow-lg bg-white dark:bg-black rounded-tl-[40px] rounded-tr-[40px] flex justify-start items-center gap-6"
+      class="fixed bottom-0 left-1/2 -translate-x-1/2 h-[74px] py-4 shadow-lg bg-white dark:bg-black rounded-tl-[40px] rounded-tr-[40px] flex items-center gap-3 md:w-[720px] w-full"
     >
-      <div class="absolute -left-[114px] z-0">
+      <div class="hidden md:block absolute -left-[114px] z-0">
         <svg
           xmlns="http://www.w3.org/2000/svg"
           width="170"
@@ -316,7 +316,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
             </div>
           </.link>
         </div>
-        <div class="grow shrink basis-0 dark:text-white text-xs font-normal font-['Open Sans']">
+        <div class="grow shrink basis-0 dark:text-white text-xs font-normal">
           <%= previous_title(@previous_page) %>
         </div>
       </div>
@@ -325,7 +325,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
         :if={!is_nil(@next_page)}
         class="grow shrink basis-0 h-10 justify-end items-center gap-6 flex z-10"
       >
-        <div class="grow shrink basis-0 text-right dark:text-white text-xs font-normal font-['Open Sans']">
+        <div class="grow shrink basis-0 text-right dark:text-white text-xs font-normal">
           <%= next_title(@next_page) %>
         </div>
         <div class="px-6 py-2 rounded justify-end items-center gap-2 flex">
@@ -337,7 +337,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
         </div>
       </div>
 
-      <div class="absolute -right-[114px] z-0">
+      <div class="hidden md:block absolute -right-[114px] z-0">
         <svg
           xmlns="http://www.w3.org/2000/svg"
           width="170"
@@ -409,7 +409,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
         <div class="w-6 h-6 relative opacity-50">
           <i class="fa-solid fa-eye" />
         </div>
-        <div class="w-[132px] dark:text-white text-xs font-bold font-['Open Sans'] uppercase tracking-wide">
+        <div class="w-[132px] dark:text-white text-xs font-bold uppercase tracking-wide">
           All annotations
         </div>
       </div>
