@@ -11,7 +11,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
   alias Oli.Resources.ResourceType
 
   defp live_view_content_live_route(section_slug) do
-    ~p"/sections/#{section_slug}/content"
+    ~p"/sections/#{section_slug}/learn"
   end
 
   defp live_view_lesson_live_route(section_slug, revision_slug) do
