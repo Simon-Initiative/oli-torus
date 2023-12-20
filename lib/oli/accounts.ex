@@ -100,12 +100,7 @@ defmodule Oli.Accounts do
       Enum.map(user_emails, fn email ->
         %{changes: changes} = User.invite_changeset(%User{}, inviter_user, %{email: email})
 
-        case inviter_user do
-          %Author{} -> Map.delete(changes, :invite_by_id)
-          %User{} -> Map.put(changes, :invite_by_id, inviter_user.id)
-        end
-        |> Map.put(:inserted_at, now)
-        |> Map.put(:updated_at, now)
+        Enum.into(changes, %{inserted_at: now, updated_at: now})
       end)
 
     Repo.insert_all(User, users, returning: [:id, :invitation_token, :email])
