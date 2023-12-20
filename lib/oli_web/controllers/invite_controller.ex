@@ -49,29 +49,27 @@ defmodule OliWeb.InviteController do
         Enum.map(existing_users, &Map.put(&1, :status, :existing_user)) ++
           Enum.map(new_users, &Map.put(&1, :status, :new_user))
 
-      emails =
-        Enum.map(users, fn user ->
-          {button_label, url} =
-            case user.status do
-              :new_user ->
-                token = PowInvitation.Plug.sign_invitation_token(conn, user)
-                {"Join now", Routes.delivery_pow_invitation_invitation_path(conn, :edit, token)}
+      Enum.map(users, fn user ->
+        {button_label, url} =
+          case user.status do
+            :new_user ->
+              token = PowInvitation.Plug.sign_invitation_token(conn, user)
+              {"Join now", Routes.delivery_pow_invitation_invitation_path(conn, :edit, token)}
 
-              :existing_user ->
-                {"Go to the course",
-                 Routes.page_delivery_path(OliWeb.Endpoint, :index, section.slug)}
-            end
+            :existing_user ->
+              {"Go to the course",
+               Routes.page_delivery_path(OliWeb.Endpoint, :index, section.slug)}
+          end
 
-          Oli.Email.invitation_email(user.email, :enrollment_invitation, %{
-            inviter: inviter_struct.name,
-            url: Routes.url(conn) <> url,
-            role: role,
-            section_title: section.title,
-            button_label: button_label
-          })
-        end)
-
-      Enum.each(emails, fn email -> Oli.Mailer.deliver_now(email) end)
+        Oli.Email.invitation_email(user.email, :enrollment_invitation, %{
+          inviter: inviter_struct.name,
+          url: Routes.url(conn) <> url,
+          role: role,
+          section_title: section.title,
+          button_label: button_label
+        })
+        |> Oli.Mailer.deliver_now()
+      end)
     end)
 
     redirect_after_enrollment(conn, section_slug)
