@@ -2111,11 +2111,12 @@ defmodule Oli.Delivery.Sections do
     section_id = repo.one(from(s in Section, where: s.slug == ^section_slug, select: s.id))
 
     # Read current contained pages tuples
-    contained_pages = repo.all(
-      from(cp in ContainedPage,
-        where: cp.section_id == ^section_id
+    contained_pages =
+      repo.all(
+        from(cp in ContainedPage,
+          where: cp.section_id == ^section_id
+        )
       )
-    )
 
     # Get all activity ids for all contained pages, via a JSONB query across model content
     mark = Oli.Timing.mark()
@@ -2129,7 +2130,9 @@ defmodule Oli.Delivery.Sections do
           page_id: rev.resource_id,
           activity_id: fragment("(?->>'activity_id')::integer", content_elem)
         },
-        where: not rev.deleted and rev.resource_type_id == ^page_type_id and fragment("?->>'type'", content_elem) == "activity-reference"
+        where:
+          not rev.deleted and rev.resource_type_id == ^page_type_id and
+            fragment("?->>'type'", content_elem) == "activity-reference"
       )
       |> repo.all()
       |> Enum.reduce(%{}, fn %{page_id: page_id, activity_id: activity_id}, acc ->
@@ -2149,8 +2152,7 @@ defmodule Oli.Delivery.Sections do
         on: true,
         select: %{
           activity_id: rev.resource_id,
-          objective_id:
-            fragment("jsonb_array_elements_text(?::jsonb)::integer", obj.value)
+          objective_id: fragment("jsonb_array_elements_text(?::jsonb)::integer", obj.value)
         },
         where: rev.deleted == false and rev.resource_type_id == ^activity_type_id
       )
@@ -2162,20 +2164,24 @@ defmodule Oli.Delivery.Sections do
         end
       end)
 
-      Logger.info("build_contained_objectives activities: #{Oli.Timing.elapsed(mark) / 1000 / 1000}ms")
-      mark = Oli.Timing.mark()
+    Logger.info(
+      "build_contained_objectives activities: #{Oli.Timing.elapsed(mark) / 1000 / 1000}ms"
+    )
 
-      # Build a list of ContainedObjective tuples by mapping over the ContainedPages
-      # tuples
-      contained_objectives = Enum.map(contained_pages, fn cp ->
+    mark = Oli.Timing.mark()
 
+    # Build a list of ContainedObjective tuples by mapping over the ContainedPages
+    # tuples
+    contained_objectives =
+      Enum.map(contained_pages, fn cp ->
         # Get the activity ids for the page
         activity_ids = Map.get(page_activities, cp.page_id, [])
 
         # Get the objective ids for the activities
-        objective_ids = Enum.flat_map(activity_ids, fn activity_id ->
-          Map.get(activity_objectives, activity_id, [])
-        end)
+        objective_ids =
+          Enum.flat_map(activity_ids, fn activity_id ->
+            Map.get(activity_objectives, activity_id, [])
+          end)
 
         # Build a ContainedObjective tuple for each objective
         Enum.map(objective_ids, fn objective_id ->
@@ -2189,7 +2195,9 @@ defmodule Oli.Delivery.Sections do
       |> List.flatten()
       |> Enum.uniq()
 
-    Logger.info("build_contained_objectives contained_objectives: #{Oli.Timing.elapsed(mark) / 1000 / 1000}ms")
+    Logger.info(
+      "build_contained_objectives contained_objectives: #{Oli.Timing.elapsed(mark) / 1000 / 1000}ms"
+    )
 
     {:ok, contained_objectives}
   end

@@ -361,7 +361,6 @@ defmodule OliWeb.Delivery.NewCourse do
   end
 
   defp create_from_publication(socket, publication, section_params) do
-
     Repo.transaction(fn ->
       with {:ok, section} <- Sections.create_section(section_params),
            {:ok, section} <- Sections.create_section_resources(section, publication),
@@ -405,6 +404,7 @@ defmodule OliWeb.Delivery.NewCourse do
 
   def handle_info({:section_created, section_slug}, socket) do
     socket = put_flash(socket, :info, "Section successfully created.")
+
     {:noreply,
      redirect(socket,
        to: Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.OverviewView, section_slug)
