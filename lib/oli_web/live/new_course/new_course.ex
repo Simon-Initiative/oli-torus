@@ -10,7 +10,6 @@ defmodule OliWeb.Delivery.NewCourse do
   alias OliWeb.Common.{Breadcrumb, Stepper}
   alias OliWeb.Common.Stepper.Step
   alias OliWeb.Delivery.NewCourse.{CourseDetails, NameCourse, SelectSource}
-  import Oli.Timing
   alias Lti_1p3.Tool.ContextRoles
 
   alias Phoenix.LiveView.JS
@@ -366,31 +365,19 @@ defmodule OliWeb.Delivery.NewCourse do
 
   defp create_from_publication(socket, publication, section_params) do
 
-    mark = mark()
-
-    ms = fn v -> elapsed(v) / 1000 / 1000 end
-
     Repo.transaction(fn ->
       with {:ok, section} <- Sections.create_section(section_params),
-           _ <- Logger.info("Created section in #{ms.(mark)} ms"),
            {:ok, section} <- Sections.create_section_resources(section, publication),
-           _ <- Logger.info("Created section resources in #{ms.(mark)} ms"),
            {:ok, _} <- Sections.rebuild_contained_pages(section),
-           _ <- Logger.info("Rebuild contained pages #{ms.(mark)} ms"),
            {:ok, _} <- Sections.rebuild_contained_objectives(section),
-           _ <- Logger.info("Rebuild contained objectives #{ms.(mark)} ms"),
            {:ok, _enrollment} <- enroll(socket, section),
-           _ <- Logger.info("Enrolled #{ms.(mark)} ms"),
            {:ok, section} <-
              Oli.Delivery.maybe_update_section_contains_explorations(section),
-             _ <- Logger.info("Maybe update section contains explor #{ms.(mark)} ms"),
            {:ok, updated_section} <-
-             Oli.Delivery.maybe_update_section_contains_deliberate_practice(section),
-              _ <- Logger.info("Maybe update section deliberate practice #{ms.(mark)} ms") do
+             Oli.Delivery.maybe_update_section_contains_deliberate_practice(section) do
         updated_section
       else
         {:error, changeset} ->
-          Logger.error("Failed to create section: #{inspect(changeset)}")
           Repo.rollback(changeset)
       end
     end)
@@ -421,7 +408,6 @@ defmodule OliWeb.Delivery.NewCourse do
 
   def handle_info({:section_created, section_slug}, socket) do
     socket = put_flash(socket, :info, "Section successfully created.")
-    Logger.info("Handle info succeeded")
     {:noreply,
      redirect(socket,
        to: Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.OverviewView, section_slug)
@@ -430,7 +416,6 @@ defmodule OliWeb.Delivery.NewCourse do
 
   def handle_info({:section_created_error, error_msg}, socket) do
     socket = put_flash(socket, :form_error, error_msg)
-    Logger.info("Handle info failed")
     {:noreply, socket}
   end
 
