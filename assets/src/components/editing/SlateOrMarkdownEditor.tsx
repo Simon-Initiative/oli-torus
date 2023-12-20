@@ -1,5 +1,6 @@
-import React, { useMemo } from 'react';
-import { ErrorBoundary } from 'components/common/ErrorBoundary';
+import React, { ErrorInfo, useMemo } from 'react';
+import { Button } from 'components/common/Buttons';
+import { ErrorBoundary, ErrorMessage } from 'components/common/ErrorBoundary';
 import { Editor } from 'components/editing/editor/Editor';
 import { SwitchToMarkdownModal } from 'components/editing/editor/SwitchToMarkdownModal';
 import { CommandDescription } from 'components/editing/elements/commands/interfaces';
@@ -28,6 +29,85 @@ type SlateOrMarkdownEditorProps = {
   onChangeTextDirection?: (textDirection: TextDirection) => void;
 };
 
+interface ErrorBoundaryState {
+  error?: Error;
+  errorInfo?: ErrorInfo;
+
+  content: ModelElement[];
+  contentHistory: ModelElement[][];
+}
+export class SlateOrMarkdownEditor extends React.Component<
+  SlateOrMarkdownEditorProps,
+  ErrorBoundaryState
+> {
+  constructor(props: Readonly<SlateOrMarkdownEditorProps>) {
+    super(props);
+    this.state = { contentHistory: [props.content], content: props.content };
+  }
+
+  onEdit = (content: ModelElement[]) => {
+    this.props.onEdit(content);
+
+    console.info(this.props.content);
+
+    this.setState((state) => {
+      // Maintain a stack of previous content, but limit it to 25 old revisions.
+      const newHistory = [...state.contentHistory, content];
+      console.info('newHistory', newHistory);
+
+      if (newHistory.length > 25) {
+        newHistory.shift();
+      }
+
+      return { contentHistory: newHistory };
+    });
+  };
+
+  revert = () => {
+    this.setState((state) => {
+      const newHistory = [...state.contentHistory];
+      newHistory.pop(); // The breaking change
+      const previousContent = newHistory.pop() || []; // The previous content before the breaking change
+      console.info('reverting to', previousContent);
+      this.props.onEdit(previousContent);
+
+      return { contentHistory: newHistory, error: undefined, content: previousContent };
+    });
+  };
+
+  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+    this.setState({ error, errorInfo });
+  }
+
+  render() {
+    const { error, errorInfo } = this.state;
+
+    if (error) {
+      return (
+        <ErrorMessage
+          errorMessage={error?.message || 'Fatal error in editor'}
+          error={error}
+          info={errorInfo}
+        >
+          {this.state.contentHistory.length > 0 && (
+            <Button variant="warning" size="md" onClick={this.revert}>
+              Revert Last Change
+            </Button>
+          )}
+        </ErrorMessage>
+      );
+    } else {
+      return (
+        <InternalSlateOrMarkdownEditor
+          {...this.props}
+          onEdit={this.onEdit}
+          content={this.state.content}
+        />
+      );
+    }
+  }
+}
+
 /*
   This component:
     1. Handles displaying a slate or a markdown editor
@@ -38,7 +118,7 @@ type SlateOrMarkdownEditorProps = {
 */
 
 // The resource editor for content
-export const SlateOrMarkdownEditor: React.FC<SlateOrMarkdownEditorProps> = ({
+const InternalSlateOrMarkdownEditor: React.FC<SlateOrMarkdownEditorProps> = ({
   editMode,
   projectSlug,
   resourceSlug,
@@ -88,7 +168,7 @@ export const SlateOrMarkdownEditor: React.FC<SlateOrMarkdownEditorProps> = ({
 
   if (editorType === 'markdown') {
     return (
-      <ErrorBoundary>
+      <>
         <MarkdownEditor
           className={className}
           commandContext={{ projectSlug: projectSlug, resourceSlug: resourceSlug }}
@@ -106,11 +186,11 @@ export const SlateOrMarkdownEditor: React.FC<SlateOrMarkdownEditorProps> = ({
             onConfirm={changeEditor('slate')}
           />
         )}
-      </ErrorBoundary>
+      </>
     );
   } else {
     return (
-      <ErrorBoundary>
+      <>
         <Editor
           className={`structured-content p-1 ${className}`}
           commandContext={{ projectSlug: projectSlug, resourceSlug: resourceSlug }}
@@ -131,7 +211,7 @@ export const SlateOrMarkdownEditor: React.FC<SlateOrMarkdownEditorProps> = ({
             onConfirm={changeEditor('markdown')}
           />
         )}
-      </ErrorBoundary>
+      </>
     );
   }
 };

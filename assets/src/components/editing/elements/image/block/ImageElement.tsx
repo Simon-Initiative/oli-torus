@@ -33,6 +33,7 @@ export const ImageEditor = (props: Props) => {
 
   if (props.model.src === undefined) return <ImagePlaceholder {...props} />;
 
+  throw new Error('FAKE ERROR FROM IMAGE');
   return (
     <div {...props.attributes} contentEditable={false}>
       {props.children}
