@@ -71,7 +71,7 @@ defmodule OliWeb.Components.Utils do
   end
 
   def previous_url(%{"slug" => slug}, section_slug) do
-    ~p"/sections/#{section_slug}/page-ng/#{slug}"
+    ~p"/sections/#{section_slug}/lesson/#{slug}"
   end
 
   def previous_title(%{"title" => title}) do
@@ -79,7 +79,7 @@ defmodule OliWeb.Components.Utils do
   end
 
   def next_url(%{"slug" => slug}, section_slug) do
-    ~p"/sections/#{section_slug}/page-ng/#{slug}"
+    ~p"/sections/#{section_slug}/lesson/#{slug}"
   end
 
   def next_title(%{"title" => title}) do

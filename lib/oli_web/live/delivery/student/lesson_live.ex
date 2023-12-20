@@ -1,18 +1,18 @@
-defmodule OliWeb.Delivery.Student.PageLive do
+defmodule OliWeb.Delivery.Student.LessonLive do
   use OliWeb, :live_view
 
   on_mount {OliWeb.LiveSessionPlugs.InitPage, :page_context}
   on_mount {OliWeb.LiveSessionPlugs.InitPage, :previous_next_index}
 
   def mount(_params, _session, socket) do
-    {:ok, assign(socket, :page_view?, true)}
+    {:ok, socket}
   end
 
   def render(%{view: :page} = assigns) do
     ~H"""
     <div class="flex pb-20 flex-col items-center gap-15 flex-1">
       <div class="flex flex-col items-center w-full">
-        <.scored_page_banner />
+        <.scored_page_banner :if={@revision.graded} />
         <div>
           <%!-- PAGE CONTENT --%>
         </div>

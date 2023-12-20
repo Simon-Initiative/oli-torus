@@ -5,7 +5,6 @@ defmodule OliWeb.LiveSessionPlugs.InitPage do
 
   alias Oli.Delivery.{PreviousNextIndex, Sections}
   alias Oli.Delivery.Page.PageContext
-  alias OliWeb.Common.FormatDateTime
 
   def on_mount(
         :page_context,

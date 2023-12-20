@@ -957,7 +957,19 @@ defmodule OliWeb.Router do
         live("/assignments", Delivery.Student.ScheduleLive)
         live("/explorations", Delivery.Student.ExplorationsLive)
         live("/practice", Delivery.Student.PracticeLive)
-        live("/page-ng/:revision_slug", Delivery.Student.PageLive)
+      end
+
+      live_session :delivery_lesson,
+        root_layout: {OliWeb.LayoutView, :delivery},
+        layout: {OliWeb.Layouts, :student_delivery_lesson},
+        on_mount: [
+          OliWeb.LiveSessionPlugs.SetUser,
+          OliWeb.LiveSessionPlugs.SetSection,
+          OliWeb.LiveSessionPlugs.SetBrand,
+          OliWeb.LiveSessionPlugs.SetPreviewMode,
+          OliWeb.LiveSessionPlugs.RequireEnrollment
+        ] do
+        live("/lesson/:revision_slug", Delivery.Student.LessonLive)
       end
     end
 

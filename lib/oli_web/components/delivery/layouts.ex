@@ -283,6 +283,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
   attr(:current_page, :map)
   attr(:previous_page, :map)
   attr(:next_page, :map)
+  attr(:section_slug, :string)
 
   def previous_next_nav(assigns) do
     ~H"""

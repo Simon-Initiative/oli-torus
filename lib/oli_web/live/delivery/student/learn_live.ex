@@ -262,7 +262,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
 
   def handle_event("navigate_to_resource", %{"slug" => resource_slug}, socket) do
     {:noreply,
-     push_navigate(socket, to: resource_url(resource_slug, socket.assigns.section.slug))}
+     push_redirect(socket, to: resource_url(resource_slug, socket.assigns.section.slug))}
   end
 
   def handle_info(
