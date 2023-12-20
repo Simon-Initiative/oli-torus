@@ -106,11 +106,8 @@ defmodule OliWeb.Components.Delivery.Layouts do
       <.nav_link href={path_for(:index, @section, @preview_mode)} is_active={@active_tab == :index}>
         Home
       </.nav_link>
-      <.nav_link
-        href={path_for(:content, @section, @preview_mode)}
-        is_active={@active_tab == :content}
-      >
-        Content
+      <.nav_link href={path_for(:learn, @section, @preview_mode)} is_active={@active_tab == :learn}>
+        Learn
       </.nav_link>
 
       <.nav_link
@@ -172,15 +169,15 @@ defmodule OliWeb.Components.Delivery.Layouts do
     "#"
   end
 
-  defp path_for(:content, %Section{slug: section_slug}, preview_mode) do
+  defp path_for(:learn, %Section{slug: section_slug}, preview_mode) do
     if preview_mode do
-      ~p"/sections/#{section_slug}/preview/content"
+      ~p"/sections/#{section_slug}/preview/learn"
     else
-      ~p"/sections/#{section_slug}/content"
+      ~p"/sections/#{section_slug}/learn"
     end
   end
 
-  defp path_for(:content, _section, _preview_mode) do
+  defp path_for(:learn, _section, _preview_mode) do
     "#"
   end
 

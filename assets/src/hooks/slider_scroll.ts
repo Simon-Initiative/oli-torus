@@ -5,9 +5,9 @@ export const SliderScroll = {
   mounted() {
     // Define the cards within the slider and the righ and left button
     const cards = this.el.querySelectorAll('.slider-card');
-    const unit_uuid = this.el.dataset.uuid;
-    const sliderLeftButton = document.getElementById('slider_left_button_' + unit_uuid);
-    const sliderRightButton = document.getElementById('slider_right_button_' + unit_uuid);
+    const unit_resource_id = this.el.dataset.resource_id;
+    const sliderLeftButton = document.getElementById('slider_left_button_' + unit_resource_id);
+    const sliderRightButton = document.getElementById('slider_right_button_' + unit_resource_id);
 
     // Add a click event to each card that scrolls the slider to the clicked card
     // and animates it with a pulse effect

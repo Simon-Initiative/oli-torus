@@ -583,16 +583,33 @@ defmodule OliWeb.Components.Common do
   attr(:width, :string, default: "100%")
   attr(:show_percent, :boolean, default: true)
   attr(:role, :string, default: "progress_bar")
+  attr(:height, :string, default: "h-1")
+
+  attr(:on_going_colour, :string,
+    default: "bg-[#1E9531]",
+    doc: "the colour of the progress bar when progress < 100%"
+  )
+
+  attr(:completed_colour, :string,
+    default: "bg-[#1E9531]",
+    doc: "the colour of the progress bar when progress = 100%"
+  )
 
   def progress_bar(assigns) do
     ~H"""
     <div class="flex flex-row items-center mx-auto" role={@role}>
       <div class="flex justify-center w-full">
         <div
-          class="rounded-[60px] bg-gray-200 h-1 dark:bg-[rgba(170,170,170,0.20)]"
+          class={"rounded-[60px] bg-gray-200 #{@height} dark:bg-[rgba(170,170,170,0.20)]"}
           style={"width: #{@width}"}
         >
-          <div class="rounded-[60px] bg-[#1E9531] dark:bg-white h-1" style={"width: #{@percent}%"}>
+          <div
+            class={[
+              "rounded-[60px] #{@height}",
+              if(@percent == 100, do: @completed_colour, else: @on_going_colour)
+            ]}
+            style={"width: #{@percent}%"}
+          >
           </div>
         </div>
       </div>

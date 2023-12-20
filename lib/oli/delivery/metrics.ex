@@ -8,7 +8,7 @@ defmodule Oli.Delivery.Metrics do
   alias Oli.Analytics.DataTables.DataTable
   alias Oli.Delivery.Attempts.Core.{ResourceAccess, ActivityAttempt}
   alias Oli.Delivery.Attempts.Core
-  alias Oli.Delivery.Sections.Section
+  alias Oli.Resources.Revision
 
   alias Oli.Delivery.Sections.{
     ContainedPage,
@@ -392,6 +392,132 @@ defmodule Oli.Delivery.Metrics do
           ra.score,
           ra.out_of
         )
+      }
+    )
+    |> Repo.all()
+    |> Enum.into(%{})
+  end
+
+  @doc """
+  Calculates the raw average score ('score' and 'out_of' separately) for a list of students in a collection of pages
+  (only considering finished attempts).
+
+  The last parameter gives flexibility for including specific users in the calculation.
+  This exists primarily to exclude instructors.
+  """
+
+  def raw_avg_score_across_for_pages(
+        %Section{id: section_id, analytics_version: :v2} = _section,
+        pages_ids,
+        user_ids
+      ) do
+    page_type_id = Oli.Resources.ResourceType.get_id_by_type("page")
+
+    from(rs in ResourceSummary,
+      where:
+        rs.section_id == ^section_id and rs.resource_id in ^pages_ids and rs.user_id in ^user_ids and
+          rs.publication_id == -1 and rs.project_id == -1 and rs.resource_type_id == ^page_type_id,
+      group_by: rs.resource_id,
+      select: {
+        rs.resource_id,
+        %{
+          score: fragment("CAST(SUM(?) as float)", rs.num_correct),
+          out_of: fragment("CAST(SUM(?) as float)", rs.num_attempts)
+        }
+      }
+    )
+    |> Repo.all()
+    |> Enum.into(%{})
+  end
+
+  def raw_avg_score_across_for_pages(%Section{id: section_id} = _section, pages_ids, user_ids) do
+    from(ra in ResourceAccess,
+      where:
+        ra.resource_id in ^pages_ids and ra.section_id == ^section_id and
+          ra.user_id in ^user_ids and not is_nil(ra.score),
+      group_by: ra.resource_id,
+      select: {
+        ra.resource_id,
+        %{
+          score: sum(ra.score),
+          out_of: fragment("SUM(?)", ra.out_of)
+        }
+      }
+    )
+    |> Repo.all()
+    |> Enum.into(%{})
+  end
+
+  @doc """
+  Calculates the raw average score ('score' and 'out_of' separately) for a list of students in a collection of containers
+  (only considering finished attempts for graded pages).
+
+  The last parameter gives flexibility for including specific users in the calculation.
+  This exists primarily to exclude instructors.
+
+  It returns a map of %{container_id => %{score: score, out_of: out_of}}, for example
+
+  %{
+    17126 => %{score: 26.0, out_of: 29.0},
+    17128 => %{score: 26.0, out_of: 29.0},
+    17130 => %{score: 4.0, out_of: 19.0},
+    17131 => %{score: 4.0, out_of: 19.0}
+  }
+  """
+
+  def raw_avg_score_across_for_containers(
+        %Section{id: section_id, analytics_version: :v2} = _section,
+        container_ids,
+        user_ids
+      ) do
+    page_type_id = Oli.Resources.ResourceType.get_id_by_type("page")
+
+    from(rs in ResourceSummary,
+      join: cp in ContainedPage,
+      on: cp.page_id == rs.resource_id,
+      join: rev in Revision,
+      on: rs.resource_id == rev.resource_id,
+      where:
+        cp.container_id in ^container_ids and cp.section_id == ^section_id and
+          rs.section_id == ^section_id and
+          rs.user_id in ^user_ids and
+          rs.publication_id == -1 and rs.project_id == -1 and
+          rs.resource_type_id == ^page_type_id and
+          rev.graded,
+      group_by: cp.container_id,
+      select: {
+        cp.container_id,
+        %{
+          score: fragment("CAST(SUM(?) as float)", rs.num_correct),
+          out_of: fragment("CAST(SUM(?) as float)", rs.num_attempts)
+        }
+      }
+    )
+    |> Repo.all()
+    |> Enum.into(%{})
+  end
+
+  def raw_avg_score_across_for_containers(
+        %Section{id: section_id} = _section,
+        container_ids,
+        user_ids
+      ) do
+    from(ra in ResourceAccess,
+      join: cp in ContainedPage,
+      on: cp.page_id == ra.resource_id,
+      join: rev in Revision,
+      on: ra.resource_id == rev.resource_id,
+      where:
+        cp.container_id in ^container_ids and cp.section_id == ^section_id and
+          ra.section_id == ^section_id and
+          ra.user_id in ^user_ids and not is_nil(ra.score),
+      group_by: cp.container_id,
+      select: {
+        cp.container_id,
+        %{
+          score: sum(ra.score),
+          out_of: fragment("SUM(?)", ra.out_of)
+        }
       }
     )
     |> Repo.all()

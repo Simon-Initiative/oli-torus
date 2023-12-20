@@ -112,7 +112,7 @@ https://tailwindcss.com/docs/utility-first
 */
 
 .intro-content p {
-  @apply pb-2 text-[14px] leading-[30px] font-normal dark:text-white;
+  @apply pb-2 text-[14px] leading-[30px] font-normal dark:text-white opacity-80;
 }
 
 .intro-content h1 {

@@ -2115,6 +2115,20 @@ defmodule Oli.Delivery.Sections do
     )
   end
 
+  @doc """
+  Returns the section resource for the given section and resource id, with the resource type id
+  """
+  def get_section_resource_with_resource_type(section_id, resource_id) do
+    Repo.one(
+      from(sr in SectionResource,
+        join: rev in Revision,
+        on: sr.resource_id == rev.resource_id,
+        where: sr.section_id == ^section_id and sr.resource_id == ^resource_id,
+        select: %{sr | resource_type_id: rev.resource_type_id}
+      )
+    )
+  end
+
   def get_section_resources(section_id) do
     from(sr in SectionResource,
       where: sr.section_id == ^section_id
@@ -2784,6 +2798,17 @@ defmodule Oli.Delivery.Sections do
         select: co.objective_id
       )
     )
+  end
+
+  def get_learning_objectives_for_container_id(section_id, container_id) do
+    from(
+      rev in Revision,
+      join: co in ContainedObjective,
+      on: co.objective_id == rev.resource_id,
+      where: co.section_id == ^section_id and co.container_id == ^container_id,
+      select: %{title: rev.title}
+    )
+    |> Repo.all()
   end
 
   @doc """

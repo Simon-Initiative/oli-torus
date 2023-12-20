@@ -952,7 +952,7 @@ defmodule OliWeb.Router do
           OliWeb.LiveSessionPlugs.RequireEnrollment
         ] do
         live("/", Delivery.Student.IndexLive)
-        live("/content", Delivery.Student.ContentLive)
+        live("/learn", Delivery.Student.LearnLive)
         live("/discussions", Delivery.Student.DiscussionsLive)
         live("/assignments", Delivery.Student.ScheduleLive)
         live("/explorations", Delivery.Student.ExplorationsLive)
@@ -974,7 +974,7 @@ defmodule OliWeb.Router do
           OliWeb.LiveSessionPlugs.RequireEnrollment
         ] do
         live("/", Delivery.Student.IndexLive, :preview)
-        live("/content", Delivery.Student.ContentLive, :preview)
+        live("/learn", Delivery.Student.LearnLive, :preview)
         live("/discussions", Delivery.Student.DiscussionLive, :preview)
         live("/assignments", Delivery.Student.ScheduleLive, :preview)
         live("/explorations", Delivery.Student.ExplorationsLive, :preview)
