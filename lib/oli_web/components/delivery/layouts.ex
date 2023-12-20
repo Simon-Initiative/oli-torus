@@ -309,6 +309,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
       <div
         :if={!is_nil(@previous_page)}
         class="grow shrink basis-0 h-10 justify-start items-center gap-6 flex z-10"
+        role="prev_page"
       >
         <div class="px-6 py-2 rounded justify-end items-center gap-2 flex">
           <.link navigate={previous_url(@previous_page, @section_slug)}>
@@ -325,6 +326,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
       <div
         :if={!is_nil(@next_page)}
         class="grow shrink basis-0 h-10 justify-end items-center gap-6 flex z-10"
+        role="next_page"
       >
         <div class="grow shrink basis-0 text-right dark:text-white text-xs font-normal">
           <%= next_title(@next_page) %>
@@ -360,7 +362,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
 
   def back_arrow(assigns) do
     ~H"""
-    <div class="flex justify-center items-center absolute top-10 left-12 z-50 p-4">
+    <div class="flex justify-center items-center absolute top-10 left-12 z-50 p-4" role="back_link">
       <.link navigate={@to} class="hover:no-underline">
         <svg
           width="34"
