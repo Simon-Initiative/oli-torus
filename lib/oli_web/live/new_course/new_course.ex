@@ -1,6 +1,5 @@
 defmodule OliWeb.Delivery.NewCourse do
   use OliWeb, :live_view
-  require Logger
   alias Oli.Accounts
   alias Oli.Delivery
   alias Oli.Lti.LtiParams
@@ -295,11 +294,9 @@ defmodule OliWeb.Delivery.NewCourse do
 
           case create_from_publication(socket, publication, section_params) do
             {:ok, section} ->
-              Logger.info("Created section DONE")
               send(liveview_pid, {:section_created, section.slug})
 
             {:error, error} ->
-              Logger.info("Created section FAILED")
               {_error_id, error_msg} = log_error("Failed to create new section", error)
               send(liveview_pid, {:section_created_error, error_msg})
           end
