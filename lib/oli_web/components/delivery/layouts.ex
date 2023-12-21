@@ -312,14 +312,14 @@ defmodule OliWeb.Components.Delivery.Layouts do
         role="prev_page"
       >
         <div class="px-6 py-2 rounded justify-end items-center gap-2 flex">
-          <.link navigate={previous_url(@previous_page, @section_slug)}>
+          <.link navigate={resource_navigation_url(@previous_page, @section_slug)}>
             <div class="w-[72px] h-10 opacity-30 hover:opacity-40 bg-blue-600 flex items-center justify-center">
               <.left_arrow />
             </div>
           </.link>
         </div>
         <div class="grow shrink basis-0 dark:text-white text-xs font-normal">
-          <%= previous_title(@previous_page) %>
+          <%= @previous_page["title"] %>
         </div>
       </div>
 
@@ -329,10 +329,10 @@ defmodule OliWeb.Components.Delivery.Layouts do
         role="next_page"
       >
         <div class="grow shrink basis-0 text-right dark:text-white text-xs font-normal">
-          <%= next_title(@next_page) %>
+          <%= @next_page["title"] %>
         </div>
         <div class="px-6 py-2 rounded justify-end items-center gap-2 flex">
-          <.link navigate={next_url(@next_page, @section_slug)}>
+          <.link navigate={resource_navigation_url(@next_page, @section_slug)}>
             <div class="w-[72px] h-10 opacity-90 hover:opacity-100 bg-blue-600 flex items-center justify-center">
               <.right_arrow />
             </div>
@@ -356,6 +356,14 @@ defmodule OliWeb.Components.Delivery.Layouts do
       </div>
     </div>
     """
+  end
+
+  defp resource_navigation_url(%{"slug" => slug, "type" => "page"}, section_slug) do
+    ~p"/sections/#{section_slug}/lesson/#{slug}"
+  end
+
+  defp resource_navigation_url(%{"id" => container_id}, section_slug) do
+    ~p"/sections/#{section_slug}/learn?target_resource_id=#{container_id}"
   end
 
   attr(:to, :string)

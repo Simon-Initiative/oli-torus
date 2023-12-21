@@ -254,16 +254,19 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       )
     end
 
-    test "redirects to the learn page when the next page corresponds to a container", %{
-      conn: conn,
-      user: user,
-      section: section,
-      page_2: page_2,
-      module_2: module_2
-    } do
+    test "redirects to the learn page when the next or previous page corresponds to a container",
+         %{
+           conn: conn,
+           user: user,
+           section: section,
+           page_2: page_2,
+           page_3: page_3,
+           module_2: module_2
+         } do
       Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
       Sections.mark_section_visited_for_student(section, user)
 
+      # next page is a container
       {:ok, view, _html} = live(conn, live_view_lesson_live_route(section.slug, page_2.slug))
 
       view
@@ -274,18 +277,8 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
         view,
         live_view_learn_live_route(section.slug, module_2.resource_id)
       )
-    end
 
-    test "redirects to the learn page when the previous page corresponds to a container", %{
-      conn: conn,
-      user: user,
-      section: section,
-      page_3: page_3,
-      module_2: module_2
-    } do
-      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
-      Sections.mark_section_visited_for_student(section, user)
-
+      # previous page is a container
       {:ok, view, _html} = live(conn, live_view_lesson_live_route(section.slug, page_3.slug))
 
       view
