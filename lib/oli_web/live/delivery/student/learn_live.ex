@@ -262,7 +262,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
 
   def handle_event("navigate_to_resource", %{"slug" => resource_slug}, socket) do
     {:noreply,
-     push_navigate(socket, to: resource_url(resource_slug, socket.assigns.section.slug))}
+     push_redirect(socket, to: resource_url(resource_slug, socket.assigns.section.slug))}
   end
 
   def handle_info(
@@ -1093,7 +1093,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   # TODO: for other courses with other hierarchy, the url might be a container url:
   # ~p"/sections/#{section_slug}/container/:revision_slug
   defp resource_url(resource_slug, section_slug) do
-    ~p"/sections/#{section_slug}/page/#{resource_slug}"
+    ~p"/sections/#{section_slug}/lesson/#{resource_slug}"
   end
 
   defp get_student_metrics(section, current_user_id) do

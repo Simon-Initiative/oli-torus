@@ -1119,7 +1119,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       |> element(~s{div[phx-click="navigate_to_resource"][phx-value-slug="#{page_1.slug}"]})
       |> render_click()
 
-      assert_redirect(view, "/sections/#{section.slug}/page/#{page_1.slug}")
+      assert_redirect(view, "/sections/#{section.slug}/lesson/#{page_1.slug}")
     end
 
     test "can see the unit schedule details considering if the instructor has already scheduled it",
@@ -1195,7 +1195,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       |> element(~s{div[role="unit_3"] div[role="card_1"]})
       |> render_click()
 
-      assert_redirect(view, "/sections/#{section.slug}/page/#{page_7.slug}")
+      assert_redirect(view, "/sections/#{section.slug}/lesson/#{page_7.slug}")
     end
 
     test "can see icon that identifies graded pages at level 2 of hierarchy (and can navigate to them)",
@@ -1220,7 +1220,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       |> element(~s{div[role="unit_3"] div[role="card_2"]})
       |> render_click()
 
-      assert_redirect(view, "/sections/#{section.slug}/page/#{page_8.slug}")
+      assert_redirect(view, "/sections/#{section.slug}/lesson/#{page_8.slug}")
     end
 
     test "can see card progress bar for modules at level 2 of hierarchy, but not for pages at level 2",
