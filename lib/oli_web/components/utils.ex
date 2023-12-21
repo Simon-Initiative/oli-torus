@@ -69,20 +69,4 @@ defmodule OliWeb.Components.Utils do
         false
     end
   end
-
-  def previous_url(%{"slug" => slug}, section_slug) do
-    ~p"/sections/#{section_slug}/lesson/#{slug}"
-  end
-
-  def previous_title(%{"title" => title}) do
-    title
-  end
-
-  def next_url(%{"slug" => slug}, section_slug) do
-    ~p"/sections/#{section_slug}/lesson/#{slug}"
-  end
-
-  def next_title(%{"title" => title}) do
-    title
-  end
 end

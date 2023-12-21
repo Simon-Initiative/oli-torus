@@ -10,8 +10,8 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
   alias Oli.Delivery.Sections
   alias Oli.Resources.ResourceType
 
-  defp live_view_content_live_route(section_slug) do
-    ~p"/sections/#{section_slug}/learn"
+  defp live_view_learn_live_route(section_slug, resource_id) do
+    ~p"/sections/#{section_slug}/learn?target_resource_id=#{resource_id}"
   end
 
   defp live_view_lesson_live_route(section_slug, revision_slug) do
@@ -38,6 +38,13 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
         duration_minutes: 15
       )
 
+    page_3_revision =
+      insert(:revision,
+        resource_type_id: ResourceType.get_id_by_type("page"),
+        title: "Page 3",
+        duration_minutes: 5
+      )
+
     ## modules...
     module_1_revision =
       insert(:revision, %{
@@ -59,11 +66,31 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
         }
       })
 
+    module_2_revision =
+      insert(:revision, %{
+        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("container"),
+        children: [page_3_revision.resource_id],
+        title: "The second module is awesome!",
+        poster_image: "module_2_custom_image_url",
+        intro_content: %{
+          children: [
+            %{
+              type: "p",
+              children: [
+                %{
+                  text: "Thoughout this unit you will have a lot of fun."
+                }
+              ]
+            }
+          ]
+        }
+      })
+
     ## units...
     unit_1_revision =
       insert(:revision, %{
         resource_type_id: Oli.Resources.ResourceType.get_id_by_type("container"),
-        children: [module_1_revision.resource_id],
+        children: [module_1_revision.resource_id, module_2_revision.resource_id],
         title: "Introduction",
         poster_image: "some_image_url",
         intro_video: "some_video_url"
@@ -83,7 +110,9 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       [
         page_1_revision,
         page_2_revision,
+        page_3_revision,
         module_1_revision,
+        module_2_revision,
         unit_1_revision,
         container_revision
       ]
@@ -134,7 +163,9 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       section: section,
       page_1: page_1_revision,
       page_2: page_2_revision,
+      page_3: page_3_revision,
       module_1: module_1_revision,
+      module_2: module_2_revision,
       unit_1: unit_1_revision
     }
   end
@@ -223,6 +254,43 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       )
     end
 
+    test "redirects to the learn page when the next or previous page corresponds to a container",
+         %{
+           conn: conn,
+           user: user,
+           section: section,
+           page_2: page_2,
+           page_3: page_3,
+           module_2: module_2
+         } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+
+      # next page is a container
+      {:ok, view, _html} = live(conn, live_view_lesson_live_route(section.slug, page_2.slug))
+
+      view
+      |> element(~s{div[role="next_page"] a})
+      |> render_click
+
+      assert_redirected(
+        view,
+        live_view_learn_live_route(section.slug, module_2.resource_id)
+      )
+
+      # previous page is a container
+      {:ok, view, _html} = live(conn, live_view_lesson_live_route(section.slug, page_3.slug))
+
+      view
+      |> element(~s{div[role="prev_page"] a})
+      |> render_click
+
+      assert_redirected(
+        view,
+        live_view_learn_live_route(section.slug, module_2.resource_id)
+      )
+    end
+
     test "back link returns to content page", %{
       conn: conn,
       user: user,
@@ -240,7 +308,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
 
       assert_redirected(
         view,
-        live_view_content_live_route(section.slug)
+        live_view_learn_live_route(section.slug, page_1.resource_id)
       )
     end
   end
