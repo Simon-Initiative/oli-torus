@@ -10,6 +10,7 @@ import { GraphNavigation } from './graph';
 import { HideOnOutsideClick } from './hide_on_outside_click';
 import { HierarchySelector } from './hierarchy_selector';
 import { InputAutoSelect } from './input_auto_select';
+import { KeepScrollAtBottom } from './keep_scroll_at_bottom';
 import { LiveModal } from './live_modal';
 import { LoadSurveyScripts } from './load_survey_scripts';
 import { LtiConnectInstructions } from './lti_connect_instructions';
@@ -57,6 +58,7 @@ export const Hooks = {
   ClickOutside,
   HideOnOutsideClick,
   Scroller,
+  KeepScrollAtBottom,
   SliderScroll,
   VideoPlayer,
 };
