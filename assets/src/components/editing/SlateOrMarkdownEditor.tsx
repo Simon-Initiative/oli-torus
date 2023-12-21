@@ -47,6 +47,11 @@ export class SlateOrMarkdownEditor extends React.Component<
   SlateOrMarkdownEditorProps,
   ErrorBoundaryState
 > {
+  static defaultProps = {
+    allowBlockElements: true,
+    textDirection: 'ltr',
+  };
+
   constructor(props: Readonly<SlateOrMarkdownEditorProps>) {
     super(props);
     this.state = { contentHistory: [props.content], content: props.content, hadEdit: false };
@@ -222,9 +227,4 @@ const InternalSlateOrMarkdownEditor: React.FC<SlateOrMarkdownEditorProps> = ({
       </>
     );
   }
-};
-
-SlateOrMarkdownEditor.defaultProps = {
-  allowBlockElements: true,
-  textDirection: 'ltr',
 };
