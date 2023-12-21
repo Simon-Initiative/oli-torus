@@ -395,7 +395,7 @@ defmodule OliWeb.Components.Delivery.Students do
       <p>
         Are you sure you want to enroll <%= "#{if length(@add_enrollments_emails) == 1, do: "one user", else: "#{length(@add_enrollments_emails)} users"}" %>?
       </p>
-      <.render_inviter
+      <.inviter
         current_author={@current_author}
         current_user={@current_user}
         inviter={@inviter}
@@ -410,7 +410,7 @@ defmodule OliWeb.Components.Delivery.Students do
   attr(:inviter, :string, required: true)
   attr(:myself, :string, required: true)
 
-  defp render_inviter(assigns) do
+  defp inviter(assigns) do
     ~H"""
     <div
       :if={show_senders(@current_author, @current_user)}
@@ -427,7 +427,7 @@ defmodule OliWeb.Components.Delivery.Students do
             phx-value-inviter="author"
             phx-click="select_inviter"
             phx-target={@myself}
-            checked={if @inviter == "author", do: true, else: false}
+            checked={@inviter == "author"}
           />
           <label for="author" class="ml-2"><%= Map.get(@current_author, :name) %></label>
         </div>
@@ -439,7 +439,7 @@ defmodule OliWeb.Components.Delivery.Students do
             phx-value-inviter="user"
             phx-click="select_inviter"
             phx-target={@myself}
-            checked={if @inviter == "user", do: true, else: false}
+            checked={@inviter == "user"}
           />
           <label for="user" class="ml-2"><%= Map.get(@current_user, :name) %></label>
         </div>
