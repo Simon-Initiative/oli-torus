@@ -20,13 +20,13 @@ defmodule OliWeb.Dialogue.WindowLive do
 
   # Gets the page prompt template and gathers all pieces of information necessary
   # to realize that template into the completed page prompt
-  defp build_page_prompt(session) do
-    %{
-      "current_user_id" => current_user_id,
-      "section_slug" => section_slug,
-      "revision_id" => revision_id
-    } = session
-
+  defp build_page_prompt(
+         %{
+           "current_user_id" => current_user_id,
+           "section_slug" => section_slug,
+           "revision_id" => revision_id
+         } = _session
+       ) do
     section = Oli.Delivery.Sections.get_section_by_slug(section_slug)
     project = Oli.Authoring.Course.get_project!(section.base_project_id)
 
@@ -43,53 +43,53 @@ defmodule OliWeb.Dialogue.WindowLive do
     realize_prompt_template(section.page_prompt_template, bindings)
   end
 
+  # TODO for other types of pages, we should build a new template.
+  # for now we just use the page prompt template to be able to render
+  # the bot in other course
+  defp build_course_prompt(
+         %{
+           "current_user_id" => current_user_id,
+           "section_slug" => section_slug
+         } = _session
+       ) do
+    section = Oli.Delivery.Sections.get_section_by_slug(section_slug)
+    project = Oli.Authoring.Course.get_project!(section.base_project_id)
+
+    bindings = %{
+      current_user_id: current_user_id,
+      section_id: section.id,
+      course_title: project.title,
+      # TODO: use a different prompt template for the course prompt
+      page_content: "a page content",
+      course_description: project.description
+    }
+
+    realize_prompt_template(section.page_prompt_template, bindings)
+  end
+
+  defp build_dialogue(session, pid) do
+    if session["revision_id"] do
+      build_page_prompt(session)
+    else
+      build_course_prompt(session)
+    end
+    |> Dialogue.new(
+      fn _d, type, chunk ->
+        send(pid, {:reply_chunk, type, chunk})
+      end,
+      model: :largest_context
+    )
+  end
+
   def mount(
         _params,
         %{"current_user_id" => current_user_id} = session,
         socket
       ) do
-    pid = self()
-
-    dialogue =
-      build_page_prompt(session)
-      |> Dialogue.new(
-        fn _d, type, chunk ->
-          send(pid, {:reply_chunk, type, chunk})
-        end,
-        model: :largest_context
-      )
-
-    # dialogue = %{
-    #   rendered_messages: [
-    #     %{content: "hola mundo", role: :user},
-    #     %{content: "hi there", role: :assistant},
-    #     %{content: "what is your name", role: :user},
-    #     %{
-    #       content:
-    #         "Lorem ipsum dolor sit, amet consectetur adipisicing elit. Sequi accusantium modi facere, ipsum at rerum culpa enim dolorem voluptatem consequuntur nihil quisquam dicta saepe corrupti alias provident impedit deleniti sapiente?",
-    #       role: :assistant
-    #     },
-    #     %{content: "hola mundo", role: :user},
-    #     %{content: "hi there", role: :assistant},
-    #     %{content: "what is your name", role: :user},
-    #     %{
-    #       content:
-    #         "Lorem ipsum dolor sit, amet consectetur adipisicing elit. Sequi accusantium modi facere, ipsum at rerum culpa enim dolorem voluptatem consequuntur nihil quisquam dicta saepe corrupti alias provident impedit deleniti sapiente?",
-    #       role: :assistant
-    #     }
-    #   ]
-    # }
-
-    # dialogue = %{
-    #   rendered_messages: [
-    #     %{content: "hola mundo", role: :user}
-    #   ]
-    # }
-
     {:ok,
      assign(socket,
        minimized: true,
-       dialogue: dialogue,
+       dialogue: build_dialogue(session, self()),
        changeset: UserInput.changeset(%UserInput{}, %{content: ""}),
        streaming: false,
        allow_submission?: true,
@@ -255,7 +255,10 @@ defmodule OliWeb.Dialogue.WindowLive do
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
     >
-      <path d="M170 0H134C107 0 92.5 13 68.5 37C44.5 61 24.2752 74 0 74H170V0Z" />
+      <path
+        class="fill-white dark:fill-black"
+        d="M170 0H134C107 0 92.5 13 68.5 37C44.5 61 24.2752 74 0 74H170V0Z"
+      />
     </svg>
     """
   end
