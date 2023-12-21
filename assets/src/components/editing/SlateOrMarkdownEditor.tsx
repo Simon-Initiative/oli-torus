@@ -75,6 +75,7 @@ export class SlateOrMarkdownEditor extends React.Component<
       newHistory.pop(); // The breaking change
       const previousContent = newHistory.pop() || []; // The previous content before the breaking change
       console.info('Reverting editor to', previousContent);
+      this.props.onEdit(previousContent);
       return { contentHistory: newHistory, error: undefined, content: previousContent };
     });
   };
