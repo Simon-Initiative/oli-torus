@@ -3,6 +3,8 @@ defmodule OliWeb.Components.Delivery.Students do
 
   alias Phoenix.LiveView.JS
 
+  alias Oli.Accounts.Author
+  alias Oli.Accounts.User
   alias OliWeb.Common.{PagedTable, SearchInput, Params, Utils}
   alias OliWeb.Delivery.Sections.EnrollmentsTableModel
   alias OliWeb.Router.Helpers, as: Routes
@@ -58,7 +60,10 @@ defmodule OliWeb.Components.Delivery.Students do
        add_enrollments_step: :step_1,
        add_enrollments_selected_role: :student,
        add_enrollments_emails: [],
-       add_enrollments_users_not_found: []
+       add_enrollments_users_not_found: [],
+       inviter: "user",
+       current_user: ctx.user,
+       current_author: ctx.author
      )}
   end
 
@@ -182,6 +187,10 @@ defmodule OliWeb.Components.Delivery.Students do
   attr(:add_enrollments_selected_role, :atom, default: :student)
   attr(:add_enrollments_emails, :list, default: [])
   attr(:add_enrollments_users_not_found, :list, default: [])
+  attr(:current_user, :any, required: false)
+  attr(:current_author, :any, required: false)
+  attr(:inviter, :string, required: false)
+  attr(:myself, :string, required: false)
 
   def render(assigns) do
     ~H"""
@@ -213,6 +222,9 @@ defmodule OliWeb.Components.Delivery.Students do
           add_enrollments_users_not_found={@add_enrollments_users_not_found}
           section_slug={@section_slug}
           target={@id}
+          current_user={@current_user}
+          current_author={@current_author}
+          inviter={@inviter}
           myself={@myself}
         />
       </.live_component>
@@ -376,14 +388,68 @@ defmodule OliWeb.Components.Delivery.Students do
       <% end %>
       <input name="role" value={@add_enrollments_selected_role} />
       <input name="section_slug" value={@section_slug} />
+      <input name="inviter" value={@inviter} />
       <button type="submit" class="hidden" />
     </.form>
     <div class="px-4">
       <p>
         Are you sure you want to enroll <%= "#{if length(@add_enrollments_emails) == 1, do: "one user", else: "#{length(@add_enrollments_emails)} users"}" %>?
       </p>
+      <.inviter
+        current_author={@current_author}
+        current_user={@current_user}
+        inviter={@inviter}
+        myself={@myself}
+      />
     </div>
     """
+  end
+
+  attr(:current_author, :any, required: true)
+  attr(:current_user, :any, required: true)
+  attr(:inviter, :string, required: true)
+  attr(:myself, :string, required: true)
+
+  defp inviter(assigns) do
+    ~H"""
+    <div
+      :if={show_senders(@current_author, @current_user)}
+      class="mt-5 p-5 border-solid border-2 border-blue-400 rounded"
+    >
+      <p>You're signed with two accounts.</p>
+      <p>Please select the one to use as an inviter:</p>
+      <fieldset class="mt-2">
+        <div class="ml-2">
+          <input
+            type="radio"
+            id="author"
+            name="inviter"
+            phx-value-inviter="author"
+            phx-click="select_inviter"
+            phx-target={@myself}
+            checked={@inviter == "author"}
+          />
+          <label for="author" class="ml-2"><%= Map.get(@current_author, :name) %></label>
+        </div>
+        <div class="ml-2">
+          <input
+            type="radio"
+            id="user"
+            name="inviter"
+            phx-value-inviter="user"
+            phx-click="select_inviter"
+            phx-target={@myself}
+            checked={@inviter == "user"}
+          />
+          <label for="user" class="ml-2"><%= Map.get(@current_user, :name) %></label>
+        </div>
+      </fieldset>
+    </div>
+    """
+  end
+
+  def handle_event("select_inviter", %{"inviter" => inviter}, socket) do
+    {:noreply, assign(socket, :inviter, inviter)}
   end
 
   def handle_event("add_enrollments_go_to_step_1", _, socket) do
@@ -614,6 +680,9 @@ defmodule OliWeb.Components.Delivery.Students do
       @default_params[key] != value
     end)
   end
+
+  defp show_senders(%Author{} = _current_author, %User{} = _current_user), do: true
+  defp show_senders(_current_author, _current_user), do: false
 
   defp remove_duplicates(current_elements, new_elements) do
     new_elements

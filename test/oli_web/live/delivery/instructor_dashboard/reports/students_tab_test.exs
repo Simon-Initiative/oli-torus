@@ -638,6 +638,10 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
       non_existant_email_1 = "non_existant_user_1@test.com"
       non_existant_email_2 = "non_existant_user_2@test.com"
 
+      assert [] ==
+               [user_1.email, user_2.email, non_existant_email_1, non_existant_email_2]
+               |> get_emails_of_users_enrolled_in_section(section.slug)
+
       # Open "Add enrollments modal"
       view
       |> with_target("#students_table_add_enrollments_modal")
@@ -695,7 +699,15 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
       |> with_target("#students_table")
       |> render_hook("add_enrollments_go_to_step_3")
 
-      assert has_element?(view, "p", "Are you sure you want to enroll 3 users?")
+      assert has_element?(view, "p", "You're signed with two accounts.")
+      assert has_element?(view, "p", "Please select the one to use as an inviter:")
+
+      refute view |> element("fieldset input#author") |> render() =~ "checked=\"checked\""
+      assert view |> element("fieldset input#user") |> render() =~ "checked=\"checked\""
+
+      view |> element("fieldset input#author") |> render_click()
+      assert view |> element("fieldset input#author") |> render() =~ "checked=\"checked\""
+      refute view |> element("fieldset input#user") |> render() =~ "checked=\"checked\""
 
       # Send the invitations (this mocks the POST request made by the form)
       conn =
@@ -704,11 +716,15 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
           Routes.invite_path(conn, :create_bulk, section.slug,
             emails: [user_1.email, user_2.email, non_existant_email_1],
             role: "instructor",
-            "g-recaptcha-response": "any"
+            "g-recaptcha-response": "any",
+            inviter: "author"
           )
         )
 
-      assert redirected_to(conn, 302) =~ students_url
+      emails_sent = [user_1.email, user_2.email, non_existant_email_1] |> Enum.sort()
+      assert emails_sent == get_emails_of_users_enrolled_in_section(emails_sent, section.slug)
+
+      assert redirected_to(conn) == students_url
 
       new_users =
         Oli.Accounts.User
@@ -730,6 +746,17 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
 
       refute html =~ "Add Enrollments"
     end
+  end
+
+  defp get_emails_of_users_enrolled_in_section(emails, section_slug) when is_list(emails) do
+    from(s in Oli.Delivery.Sections.Section,
+      join: e in assoc(s, :enrollments),
+      join: u in assoc(e, :user),
+      where: s.slug == ^section_slug and u.email in ^emails,
+      select: u.email
+    )
+    |> Repo.all()
+    |> Enum.sort()
   end
 
   defp set_progress(section_id, resource_id, user_id, progress) do
@@ -761,9 +788,12 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
           %Oli.Accounts.AuthorPreferences{show_relative_dates: false} |> Map.from_struct()
       })
 
+    user = user_fixture()
+
     conn =
       Plug.Test.init_test_session(conn, [])
       |> Pow.Plug.assign_current_user(admin, OliWeb.Pow.PowHelpers.get_pow_config(:author))
+      |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
 
     map
     |> Map.merge(%{

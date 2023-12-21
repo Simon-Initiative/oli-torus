@@ -915,6 +915,8 @@ defmodule OliWeb.Router do
       :instructor_dashboard
     )
 
+    post("/enrollments", InviteController, :create_bulk)
+
     live_session :instructor_dashboard,
       on_mount: OliWeb.Delivery.InstructorDashboard.InitialAssigns,
       root_layout: {OliWeb.LayoutView, :delivery_dashboard} do
@@ -1042,7 +1044,6 @@ defmodule OliWeb.Router do
     live("/:section_slug/source_materials", Delivery.ManageSourceMaterials, as: :source_materials)
     live("/:section_slug/remix", Delivery.RemixSection)
     live("/:section_slug/remix/:section_resource_slug", Delivery.RemixSection)
-    post("/:section_slug/enrollments", InviteController, :create_bulk)
 
     post("/:section_slug/enrollments/export", PageDeliveryController, :export_enrollments)
     live("/:section_slug/invitations", Sections.InviteView)
