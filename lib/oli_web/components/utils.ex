@@ -1,6 +1,7 @@
 defmodule OliWeb.Components.Utils do
-  alias Phoenix.LiveView.JS
+  use OliWeb, :verified_routes
 
+  alias Phoenix.LiveView.JS
   alias OliWeb.Common.SessionContext
   alias Oli.Accounts.{User, Author}
   alias Oli.Delivery.Sections.Section
@@ -67,5 +68,21 @@ defmodule OliWeb.Components.Utils do
       _ ->
         false
     end
+  end
+
+  def previous_url(%{"slug" => slug}, section_slug) do
+    ~p"/sections/#{section_slug}/lesson/#{slug}"
+  end
+
+  def previous_title(%{"title" => title}) do
+    title
+  end
+
+  def next_url(%{"slug" => slug}, section_slug) do
+    ~p"/sections/#{section_slug}/lesson/#{slug}"
+  end
+
+  def next_title(%{"title" => title}) do
+    title
   end
 end

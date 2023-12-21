@@ -958,6 +958,19 @@ defmodule OliWeb.Router do
         live("/explorations", Delivery.Student.ExplorationsLive)
         live("/practice", Delivery.Student.PracticeLive)
       end
+
+      live_session :delivery_lesson,
+        root_layout: {OliWeb.LayoutView, :delivery},
+        layout: {OliWeb.Layouts, :student_delivery_lesson},
+        on_mount: [
+          OliWeb.LiveSessionPlugs.SetUser,
+          OliWeb.LiveSessionPlugs.SetSection,
+          OliWeb.LiveSessionPlugs.SetBrand,
+          OliWeb.LiveSessionPlugs.SetPreviewMode,
+          OliWeb.LiveSessionPlugs.RequireEnrollment
+        ] do
+        live("/lesson/:revision_slug", Delivery.Student.LessonLive)
+      end
     end
 
     # TODO: Ensure that all these liveviews actually respect preview mode flag
