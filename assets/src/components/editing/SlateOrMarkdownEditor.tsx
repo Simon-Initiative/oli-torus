@@ -1,6 +1,6 @@
 import React, { ErrorInfo, useMemo } from 'react';
 import { Button } from 'components/common/Buttons';
-import { ErrorBoundary, ErrorMessage } from 'components/common/ErrorBoundary';
+import { ErrorMessage } from 'components/common/ErrorBoundary';
 import { Editor } from 'components/editing/editor/Editor';
 import { SwitchToMarkdownModal } from 'components/editing/editor/SwitchToMarkdownModal';
 import { CommandDescription } from 'components/editing/elements/commands/interfaces';
@@ -32,17 +32,24 @@ type SlateOrMarkdownEditorProps = {
 interface ErrorBoundaryState {
   error?: Error;
   errorInfo?: ErrorInfo;
+  hadEdit: boolean;
 
   content: ModelElement[];
   contentHistory: ModelElement[][];
 }
+/**
+ * SlateOrMarkdownEditor is a wrapper around the real editor in InternalSlateOrMarkdownEditor
+ * This only deals with error handling and rollbacks. This is a little tricky because the slate
+ * editor is not a controlled component that we can just set the current content value to.
+ *
+ */
 export class SlateOrMarkdownEditor extends React.Component<
   SlateOrMarkdownEditorProps,
   ErrorBoundaryState
 > {
   constructor(props: Readonly<SlateOrMarkdownEditorProps>) {
     super(props);
-    this.state = { contentHistory: [props.content], content: props.content };
+    this.state = { contentHistory: [props.content], content: props.content, hadEdit: false };
   }
 
   onEdit = (content: ModelElement[]) => {
@@ -53,13 +60,12 @@ export class SlateOrMarkdownEditor extends React.Component<
     this.setState((state) => {
       // Maintain a stack of previous content, but limit it to 25 old revisions.
       const newHistory = [...state.contentHistory, content];
-      console.info('newHistory', newHistory);
 
       if (newHistory.length > 25) {
         newHistory.shift();
       }
 
-      return { contentHistory: newHistory };
+      return { contentHistory: newHistory, hadEdit: true };
     });
   };
 
@@ -68,9 +74,7 @@ export class SlateOrMarkdownEditor extends React.Component<
       const newHistory = [...state.contentHistory];
       newHistory.pop(); // The breaking change
       const previousContent = newHistory.pop() || []; // The previous content before the breaking change
-      console.info('reverting to', previousContent);
-      this.props.onEdit(previousContent);
-
+      console.info('Reverting editor to', previousContent);
       return { contentHistory: newHistory, error: undefined, content: previousContent };
     });
   };
@@ -85,14 +89,17 @@ export class SlateOrMarkdownEditor extends React.Component<
     if (error) {
       return (
         <ErrorMessage
-          errorMessage={error?.message || 'Fatal error in editor'}
+          errorMessage={'Fatal error in editor: ' + error?.message || ''}
           error={error}
           info={errorInfo}
         >
-          {this.state.contentHistory.length > 0 && (
-            <Button variant="warning" size="md" onClick={this.revert}>
-              Revert Last Change
-            </Button>
+          {this.state.hadEdit && this.state.contentHistory.length > 0 && (
+            <p>
+              You can try recovering from this error by reverting your last change:
+              <Button variant="warning" size="md" onClick={this.revert}>
+                Revert Last Change
+              </Button>
+            </p>
           )}
         </ErrorMessage>
       );
