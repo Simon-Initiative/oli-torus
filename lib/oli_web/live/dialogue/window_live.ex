@@ -112,32 +112,37 @@ defmodule OliWeb.Dialogue.WindowLive do
           dialogue={@dialogue}
           active_message={@active_message}
         />
-
-        <div id="ai_bot_collapsed" class="w-[170px] h-[74px] relative ml-auto">
-          <button
-            phx-click={
-              JS.hide(to: "#ai_bot_collapsed")
-              |> JS.show(
-                to: "#ai_bot_conversation",
-                transition:
-                  {"ease-out duration-1000", "translate-x-full translate-y-full",
-                   "translate-x-0 translate-y-0"}
-              )
-              |> JS.focus(to: "#ai_bot_input")
-              |> JS.add_class("overflow-hidden", to: "body")
-            }
-            class="absolute right-[1px] cursor-pointer hover:scale-105"
-          >
-            <img
-              class="animate-[spin_40s_cubic-bezier(0.4,0,0.6,1)_infinite]"
-              src={~p"/images/ng23/footer_dot_ai.png"}
-            />
-            <div class="w-[39.90px] h-[39.90px] absolute bottom-4 right-4 bg-zinc-300 rounded-full blur-[30px] animate-[pulse_3s_cubic-bezier(0.4,0,0.6,1)_infinite]">
-            </div>
-          </button>
-          <.left_to_right_fade_in_icon />
-        </div>
+        <.collapsed_bot />
       </div>
+    </div>
+    """
+  end
+
+  def collapsed_bot(assigns) do
+    ~H"""
+    <div id="ai_bot_collapsed" class="w-[170px] h-[74px] relative ml-auto">
+      <button
+        phx-click={
+          JS.hide(to: "#ai_bot_collapsed")
+          |> JS.show(
+            to: "#ai_bot_conversation",
+            transition:
+              {"ease-out duration-1000", "translate-x-full translate-y-full",
+               "translate-x-0 translate-y-0"}
+          )
+          |> JS.focus(to: "#ai_bot_input")
+          |> JS.add_class("overflow-hidden", to: "body")
+        }
+        class="absolute right-[1px] cursor-pointer hover:scale-105"
+      >
+        <img
+          class="animate-[spin_40s_cubic-bezier(0.4,0,0.6,1)_infinite]"
+          src={~p"/images/ng23/footer_dot_ai.png"}
+        />
+        <div class="w-[39.90px] h-[39.90px] absolute bottom-4 right-4 bg-zinc-300 rounded-full blur-[30px] animate-[pulse_3s_cubic-bezier(0.4,0,0.6,1)_infinite]">
+        </div>
+      </button>
+      <.left_to_right_fade_in_icon />
     </div>
     """
   end
@@ -188,7 +193,11 @@ defmodule OliWeb.Dialogue.WindowLive do
           active_message={@active_message}
           user_initials={to_initials(@current_user)}
         />
-        <.input changeset={@changeset} allow_submission?={@allow_submission?} streaming={@streaming} />
+        <.message_input
+          changeset={@changeset}
+          allow_submission?={@allow_submission?}
+          streaming={@streaming}
+        />
       </div>
     </.focus_wrap>
     """
@@ -360,15 +369,12 @@ defmodule OliWeb.Dialogue.WindowLive do
       phx-hook="KeepScrollAtBottom"
     >
       <div class="flex flex-col justify-end items-center px-6 gap-1.5 min-h-full">
-        <%= for {message, index} <- Enum.with_index(@dialogue.rendered_messages, 1) do %>
-          <%= if message.role not in [:system, :function] do %>
-            <.chat_message
-              index={index}
-              content={message.content}
-              user_initials={if message.role == :assistant, do: "BOT AI", else: @user_initials}
-            />
-          <% end %>
-        <% end %>
+        <.chat_message
+          :for={{message, index} <- Enum.with_index(@dialogue.rendered_messages, 1)}
+          index={index}
+          content={message.content}
+          user_initials={if message.role == :assistant, do: "BOT AI", else: @user_initials}
+        />
         <.live_response :if={@streaming} active_message={@active_message} />
       </div>
     </div>
@@ -379,7 +385,7 @@ defmodule OliWeb.Dialogue.WindowLive do
   attr :allow_submission?, :boolean
   attr :streaming, :boolean
 
-  def input(assigns) do
+  def message_input(assigns) do
     ~H"""
     <.form :let={f} class="h-[55px] w-full mt-5 px-6" for={@changeset} phx-submit="update">
       <div class="px-3 py-1.5 rounded-xl border border-black dark:border-white border-opacity-40 flex justify-start items-center gap-2 w-full">
