@@ -319,14 +319,14 @@ defmodule OliWeb.Components.Delivery.Students do
       </p>
       <OliWeb.Components.EmailList.render
         id="enrollments_email_list"
-        users_list={@add_enrollments_emails}
+        emails_list={@add_enrollments_emails}
         on_update="add_enrollments_update_list"
         on_remove="add_enrollments_remove_from_list"
         target={@target}
       />
       <label class="flex flex-col mt-4 w-40 ml-auto">
         <small class="torus-small uppercase">Role</small>
-        <form class="w-full" phx-change="add_enrollments_change_selected_role">
+        <form class="w-full" phx-change="add_enrollments_change_selected_role" phx-target={@myself}>
           <select name="role" class="torus-select w-full">
             <option selected={:instructor == @add_enrollments_selected_role} value={:instructor}>
               Instructor
@@ -490,40 +490,30 @@ defmodule OliWeb.Components.Delivery.Students do
 
   def handle_event("add_enrollments_update_list", %{"value" => list}, socket)
       when is_list(list) do
-    add_enrollments_emails = socket.assigns.add_enrollments_emails
+    current_emails = socket.assigns.add_enrollments_emails
 
-    socket =
-      if list != [] do
-        add_enrollments_emails = Enum.concat(add_enrollments_emails, list) |> Enum.uniq()
+    maybe_updated_add_enrollments_emails = remove_duplicates(current_emails, list)
 
-        assign(socket, %{
-          add_enrollments_emails: add_enrollments_emails
-        })
-      end
+    socket = assign(socket, add_enrollments_emails: maybe_updated_add_enrollments_emails)
 
     {:noreply, socket}
   end
 
   def handle_event("add_enrollments_update_list", %{"value" => value}, socket) do
-    add_enrollments_emails = socket.assigns.add_enrollments_emails
+    current_emails = socket.assigns.add_enrollments_emails
 
-    socket =
-      if String.length(value) != 0 && !Enum.member?(add_enrollments_emails, value) do
-        add_enrollments_emails = add_enrollments_emails ++ [String.downcase(value)]
+    maybe_updated_add_enrollments_emails = remove_duplicates(current_emails, value)
 
-        assign(socket, %{
-          add_enrollments_emails: add_enrollments_emails
-        })
-      end
+    socket = assign(socket, add_enrollments_emails: maybe_updated_add_enrollments_emails)
 
     {:noreply, socket}
   end
 
-  def handle_event("add_enrollments_remove_from_list", %{"user" => user}, socket) do
-    add_enrollments_emails = Enum.filter(socket.assigns.add_enrollments_emails, &(&1 != user))
+  def handle_event("add_enrollments_remove_from_list", %{"email" => email}, socket) do
+    add_enrollments_emails = Enum.filter(socket.assigns.add_enrollments_emails, &(&1 != email))
 
     add_enrollments_users_not_found =
-      Enum.filter(socket.assigns.add_enrollments_users_not_found, &(&1 != user))
+      Enum.filter(socket.assigns.add_enrollments_users_not_found, &(&1 != email))
 
     step =
       cond do
@@ -693,4 +683,12 @@ defmodule OliWeb.Components.Delivery.Students do
 
   defp show_senders(%Author{} = _current_author, %User{} = _current_user), do: true
   defp show_senders(_current_author, _current_user), do: false
+
+  defp remove_duplicates(current_elements, new_elements) do
+    new_elements
+    |> List.wrap()
+    |> MapSet.new()
+    |> MapSet.union(MapSet.new(current_elements))
+    |> MapSet.to_list()
+  end
 end

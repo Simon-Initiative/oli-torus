@@ -1,6 +1,5 @@
 defmodule OliWeb.Delivery.NewCourse do
   use OliWeb, :live_view
-
   alias Oli.Accounts
   alias Oli.Delivery
   alias Oli.Lti.LtiParams
@@ -10,7 +9,6 @@ defmodule OliWeb.Delivery.NewCourse do
   alias OliWeb.Common.{Breadcrumb, Stepper}
   alias OliWeb.Common.Stepper.Step
   alias OliWeb.Delivery.NewCourse.{CourseDetails, NameCourse, SelectSource}
-
   alias Lti_1p3.Tool.ContextRoles
 
   alias Phoenix.LiveView.JS

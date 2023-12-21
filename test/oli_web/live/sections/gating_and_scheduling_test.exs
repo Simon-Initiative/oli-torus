@@ -69,7 +69,7 @@ defmodule OliWeb.Sections.GatingAndSchedulingTest do
         live(conn, Routes.live_path(@endpoint, OliWeb.Sections.GatingAndScheduling, section.slug))
 
       assert html =~ "Admin"
-      assert html =~ "Gating and Scheduling"
+      assert html =~ "Advanced Gating"
     end
 
     test "renders ok description", %{conn: conn, section_1: section} do
@@ -96,7 +96,7 @@ defmodule OliWeb.Sections.GatingAndSchedulingTest do
         live(conn, Routes.live_path(@endpoint, OliWeb.Sections.GatingAndScheduling, section.slug))
 
       refute html =~ "Admin"
-      assert html =~ "Gating and Scheduling"
+      assert html =~ "Advanced Gating"
     end
 
     test "mount new for instructor", %{conn: conn, section_1: section} do
@@ -486,6 +486,61 @@ defmodule OliWeb.Sections.GatingAndSchedulingTest do
                created_gating_condition.data.end_datetime,
                timezone
              ) == input_end_date
+    end
+
+    test "select a type works correctly", %{conn: conn, section_1: section} do
+      {:ok, view, _html} =
+        live(
+          conn,
+          gating_condition_new_route(section.slug)
+        )
+
+      # change select option to "schedule"
+      view
+      |> element("select[phx-change=\"select-condition\"]")
+      |> render_change(%{"value" => "schedule"})
+
+      assert view
+             |> element("div[id=\"start_date\"]")
+
+      assert view
+             |> element("div[id=\"end_date\"]")
+
+      # change select option to "always open"
+      view
+      |> element("select[phx-change=\"select-condition\"]")
+      |> render_change(%{"value" => "always_open"})
+
+      assert view
+             |> element("div[class=\"alert alert-secondary\"][role=\"alert\"]")
+             |> render() =~
+               "This will always be open to this student."
+
+      # change select option to "started"
+      view
+      |> element("select[phx-change=\"select-condition\"]")
+      |> render_change(%{"value" => "started"})
+
+      assert view
+             |> element("label[for=\"source\"]")
+             |> render() =~
+               "Resource That Must Be Started"
+
+      # change select option to "finished"
+      view
+      |> element("select[phx-change=\"select-condition\"]")
+      |> render_change(%{"value" => "finished"})
+
+      assert view
+             |> element("label[for=\"source\"]")
+             |> render() =~
+               "Resource That Must Be Finished"
+
+      assert view
+             |> element("input[phx-click=\"toggle-min-score\"]")
+
+      assert view
+             |> element("input[phx-value-change=\"change-min-score\"]")
     end
   end
 
