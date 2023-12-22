@@ -89,7 +89,6 @@ defmodule OliWeb.Components.Delivery.PracticeActivities do
 
   def render(assigns) do
     assigns.activities
-    |> IO.inspect(label: "llega")
 
     ~H"""
     <div>
@@ -213,7 +212,6 @@ defmodule OliWeb.Components.Delivery.PracticeActivities do
                 id="activity_detail"
                 phx-hook="LoadSurveyScripts"
               >
-                <% IO.inspect(activity, label: "hellow") %>
                 <%= if activity.preview_rendered != nil do %>
                   <RenderedActivity.render
                     id={"activity_#{activity.id}"}
