@@ -17,6 +17,7 @@ import { LtiConnectInstructions } from './lti_connect_instructions';
 import { ModalLaunch } from './modal';
 import { MonacoEditor } from './monaco_editor';
 import { ProjectsTypeahead } from './projects_typeahead';
+import { ResizeListener } from './resize_listener';
 import { ReviewActivity } from './review_activity';
 import { Scroller } from './scroller';
 import { SelectListener } from './select_listener';
@@ -58,6 +59,7 @@ export const Hooks = {
   ClickOutside,
   HideOnOutsideClick,
   Scroller,
+  ResizeListener,
   KeepScrollAtBottom,
   SliderScroll,
   VideoPlayer,

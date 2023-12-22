@@ -101,7 +101,9 @@ defmodule OliWeb.Dialogue.WindowLive do
        active_message: nil,
        function_call: nil,
        title: "Dot",
-       current_user: Oli.Accounts.get_user!(current_user_id)
+       current_user: Oli.Accounts.get_user!(current_user_id),
+       height: 634,
+       width: 556
      )}
   end
 
@@ -115,6 +117,8 @@ defmodule OliWeb.Dialogue.WindowLive do
         streaming={@streaming}
         dialogue={@dialogue}
         active_message={@active_message}
+        height={@height}
+        width={@width}
       />
       <.collapsed_bot />
     </div>
@@ -156,6 +160,8 @@ defmodule OliWeb.Dialogue.WindowLive do
   attr :streaming, :boolean
   attr :dialogue, :list
   attr :active_message, :any
+  attr :height, :integer
+  attr :width, :integer
 
   def conversation(assigns) do
     ~H"""
@@ -166,8 +172,19 @@ defmodule OliWeb.Dialogue.WindowLive do
       phx-window-keydown={JS.dispatch("click", to: "#close_chat_button")}
       phx-key="escape"
     >
-      <div class="w-[556px] h-[634px] pb-6 shadow-lg bg-white dark:bg-[#0A0A17] rounded-3xl flex flex-col justify-between">
-        <div class="h-7 shrink-0 pr-3 rounded-t-3xl bg-slate-400 dark:bg-black flex items-center">
+      <div
+        id="conversation_container"
+        phx-hook="ResizeListener"
+        style={"height: #{@height}px; width: #{@width}px;"}
+        class="pb-6 shadow-lg bg-white dark:bg-[#0A0A17] rounded-3xl flex flex-col justify-between"
+      >
+        <div class="h-7 shrink-0 px-3 rounded-t-3xl bg-slate-400 dark:bg-black flex items-center">
+          <button
+            id="resize_handle"
+            class="w-6 flex items-center justify-center cursor-nw-resize rotate-90 opacity-60 dark:opacity-80 dark:hover:opacity-50 hover:opacity-100 hover:scale-105"
+          >
+            <.resize_icon />
+          </button>
           <button
             id="close_chat_button"
             phx-click={
@@ -199,6 +216,17 @@ defmodule OliWeb.Dialogue.WindowLive do
         <.message_input form={@form} allow_submission?={@allow_submission?} streaming={@streaming} />
       </div>
     </.focus_wrap>
+    """
+  end
+
+  def resize_icon(assigns) do
+    ~H"""
+    <svg xmlns="http://www.w3.org/2000/svg" height="12" width="12" viewBox="0 0 512 512">
+      <path
+        class="fill-black dark:fill-white"
+        d="M344 0H488c13.3 0 24 10.7 24 24V168c0 9.7-5.8 18.5-14.8 22.2s-19.3 1.7-26.2-5.2l-39-39-87 87c-9.4 9.4-24.6 9.4-33.9 0l-32-32c-9.4-9.4-9.4-24.6 0-33.9l87-87L327 41c-6.9-6.9-8.9-17.2-5.2-26.2S334.3 0 344 0zM168 512H24c-13.3 0-24-10.7-24-24V344c0-9.7 5.8-18.5 14.8-22.2s19.3-1.7 26.2 5.2l39 39 87-87c9.4-9.4 24.6-9.4 33.9 0l32 32c9.4 9.4 9.4 24.6 0 33.9l-87 87 39 39c6.9 6.9 8.9 17.2 5.2 26.2s-12.5 14.8-22.2 14.8z"
+      />
+    </svg>
     """
   end
 
@@ -374,7 +402,7 @@ defmodule OliWeb.Dialogue.WindowLive do
     <div
       role="message container"
       id="message-container"
-      class="h-[510px] overflow-y-auto pt-5"
+      class="overflow-y-auto pt-5"
       phx-hook="KeepScrollAtBottom"
     >
       <div class="flex flex-col justify-end items-center px-6 gap-1.5 min-h-full">
@@ -485,6 +513,10 @@ defmodule OliWeb.Dialogue.WindowLive do
     end)
 
     {:noreply, assign(socket, streaming: true, dialogue: dialogue, allow_submission?: false)}
+  end
+
+  def handle_event("resize", %{"height" => height, "width" => width}, socket) do
+    {:noreply, assign(socket, height: height, width: width)}
   end
 
   use Oli.Conversation.DialogueHandler
