@@ -47,7 +47,7 @@ defmodule OliWeb.Sections.GatingAndScheduling do
     previous ++
       [
         Breadcrumb.new(%{
-          full_title: "Gating and Scheduling",
+          full_title: "Advanced Gating",
           link: Routes.live_path(OliWeb.Endpoint, __MODULE__, section.slug)
         })
       ]
@@ -92,7 +92,7 @@ defmodule OliWeb.Sections.GatingAndScheduling do
     {parent_gate, title} =
       case Map.get(params, "parent_gate_id") do
         nil ->
-          {nil, "Gating and Scheduling"}
+          {nil, "Advanced Gating"}
 
         id ->
           {int_id, _} = Integer.parse(id)
@@ -202,6 +202,7 @@ defmodule OliWeb.Sections.GatingAndScheduling do
         total_count={@total_count}
         offset={@offset}
         limit={@limit}
+        no_records_message="There are no gating conditions to show"
       />
 
       <div class="alert bg-gray-100 border-gray-400 dark:bg-gray-600">

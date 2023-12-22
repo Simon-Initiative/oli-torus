@@ -2107,63 +2107,96 @@ defmodule Oli.Delivery.Sections do
     page_type_id = ResourceType.get_id_by_type("page")
     activity_type_id = ResourceType.get_id_by_type("activity")
 
-    section_resource_pages =
-      from(
-        [sr: sr, rev: rev, s: s] in DeliveryResolver.section_resource_revisions(section_slug),
-        where: not rev.deleted and rev.resource_type_id == ^page_type_id
+    section_id = repo.one(from(s in Section, where: s.slug == ^section_slug, select: s.id))
+
+    # Read current contained pages tuples
+    contained_pages =
+      repo.all(
+        from(cp in ContainedPage,
+          where: cp.section_id == ^section_id
+        )
       )
 
-    section_resource_activities =
-      from(
-        [sr: sr, rev: rev, s: s] in DeliveryResolver.section_resource_revisions(section_slug),
-        where: not rev.deleted and rev.resource_type_id == ^activity_type_id,
-        select: rev
-      )
+    # Get all activity ids for all contained pages, via a JSONB query across model content
+    mark = Oli.Timing.mark()
 
-    activity_references =
+    page_activities =
       from(
-        rev in Revision,
+        [rev: rev] in DeliveryResolver.section_resource_revisions(section_slug),
         join: content_elem in fragment("jsonb_array_elements(?->'model')", rev.content),
         on: true,
         select: %{
-          revision_id: rev.id,
+          page_id: rev.resource_id,
           activity_id: fragment("(?->>'activity_id')::integer", content_elem)
         },
-        where: fragment("?->>'type'", content_elem) == "activity-reference"
+        where:
+          not rev.deleted and rev.resource_type_id == ^page_type_id and
+            fragment("?->>'type'", content_elem) == "activity-reference"
       )
+      |> repo.all()
+      |> Enum.reduce(%{}, fn %{page_id: page_id, activity_id: activity_id}, acc ->
+        case Map.get(acc, page_id) do
+          nil -> Map.put(acc, page_id, [activity_id])
+          activities -> Map.put(acc, page_id, [activity_id | activities])
+        end
+      end)
+
+    Logger.info("build_contained_objectives pages: #{Oli.Timing.elapsed(mark) / 1000 / 1000}ms")
+    mark = Oli.Timing.mark()
 
     activity_objectives =
       from(
-        rev in Revision,
+        [rev: rev] in DeliveryResolver.section_resource_revisions(section_slug),
         join: obj in fragment("jsonb_each_text(?)", rev.objectives),
         on: true,
         select: %{
-          objective_revision_id: rev.id,
-          objective_resource_id:
-            fragment("jsonb_array_elements_text(?::jsonb)::integer", obj.value)
+          activity_id: rev.resource_id,
+          objective_id: fragment("jsonb_array_elements_text(?::jsonb)::integer", obj.value)
         },
         where: rev.deleted == false and rev.resource_type_id == ^activity_type_id
       )
-
-    contained_objectives =
-      from(
-        [sr: sr, rev: rev, s: s] in section_resource_pages,
-        join: cp in ContainedPage,
-        on: cp.page_id == rev.resource_id and cp.section_id == s.id,
-        join: ar in subquery(activity_references),
-        on: ar.revision_id == rev.id,
-        join: act in subquery(section_resource_activities),
-        on: act.resource_id == ar.activity_id,
-        join: ao in subquery(activity_objectives),
-        on: ao.objective_revision_id == act.id,
-        group_by: [cp.section_id, cp.container_id, ao.objective_resource_id],
-        select: %{
-          section_id: cp.section_id,
-          container_id: cp.container_id,
-          objective_id: ao.objective_resource_id
-        }
-      )
       |> repo.all()
+      |> Enum.reduce(%{}, fn %{activity_id: activity_id, objective_id: objective_id}, acc ->
+        case Map.get(acc, activity_id) do
+          nil -> Map.put(acc, activity_id, [objective_id])
+          objs -> Map.put(acc, activity_id, [objective_id | objs])
+        end
+      end)
+
+    Logger.info(
+      "build_contained_objectives activities: #{Oli.Timing.elapsed(mark) / 1000 / 1000}ms"
+    )
+
+    mark = Oli.Timing.mark()
+
+    # Build a list of ContainedObjective tuples by mapping over the ContainedPages
+    # tuples
+    contained_objectives =
+      Enum.map(contained_pages, fn cp ->
+        # Get the activity ids for the page
+        activity_ids = Map.get(page_activities, cp.page_id, [])
+
+        # Get the objective ids for the activities
+        objective_ids =
+          Enum.flat_map(activity_ids, fn activity_id ->
+            Map.get(activity_objectives, activity_id, [])
+          end)
+
+        # Build a ContainedObjective tuple for each objective
+        Enum.map(objective_ids, fn objective_id ->
+          %{
+            section_id: section_id,
+            container_id: cp.container_id,
+            objective_id: objective_id
+          }
+        end)
+      end)
+      |> List.flatten()
+      |> Enum.uniq()
+
+    Logger.info(
+      "build_contained_objectives contained_objectives: #{Oli.Timing.elapsed(mark) / 1000 / 1000}ms"
+    )
 
     {:ok, contained_objectives}
   end
@@ -3029,6 +3062,8 @@ defmodule Oli.Delivery.Sections do
   end
 
   defp get_student_pages(section_slug, user_id) do
+    page_type_id = ResourceType.get_id_by_type("page")
+
     SectionResource
     |> join(:inner, [sr], s in Section, on: sr.section_id == s.id)
     |> join(:inner, [sr, s], spp in SectionsProjectsPublications,
@@ -3043,7 +3078,10 @@ defmodule Oli.Delivery.Sections do
         ds.section_id == sr.section_id and ds.resource_id == sr.resource_id and
           ds.user_id == ^user_id
     )
-    |> where([sr, s, _, _, _, ds], s.slug == ^section_slug)
+    |> where(
+      [sr, s, _, _, rev, ds],
+      s.slug == ^section_slug and rev.resource_type_id == ^page_type_id
+    )
     |> select([sr, s, _, _, rev, ds], %{
       id: sr.id,
       title: rev.title,
@@ -3067,7 +3105,6 @@ defmodule Oli.Delivery.Sections do
     })
     |> order_by([
       {:asc_nulls_last, fragment("end_date")},
-      {:asc_nulls_last, fragment("numbering_level")},
       {:asc_nulls_last, fragment("numbering_index")}
     ])
   end
@@ -3152,11 +3189,7 @@ defmodule Oli.Delivery.Sections do
       Map.put(
         sr,
         :end_date,
-        if is_nil(sr.end_date) do
-          nil
-        else
-          to_datetime(sr.end_date)
-        end
+        if(is_nil(sr.end_date), do: nil, else: to_datetime(sr.end_date))
       )
     end)
   end
@@ -3182,7 +3215,7 @@ defmodule Oli.Delivery.Sections do
 
     Enum.reverse(reachable_graded_pages) ++
       (Map.values(unreachable_graded_pages)
-       |> Enum.sort_by(&{&1.numbering_level, &1.numbering_index}))
+       |> Enum.sort_by(&{&1.numbering_index}))
   end
 
   defp get_root_container_and_graded_pages(resources) do

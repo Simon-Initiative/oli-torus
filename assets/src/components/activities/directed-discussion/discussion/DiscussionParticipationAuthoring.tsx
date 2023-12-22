@@ -24,7 +24,7 @@ export const DiscussionParticipationAuthoring: React.FC = () => {
   return (
     <Card.Card>
       <Card.Title>
-        <h2>Pariticipation Requirements</h2>
+        <h2>Participation Requirements</h2>
       </Card.Title>
       <Card.Content>
         <ParticipationInput

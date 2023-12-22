@@ -78,8 +78,11 @@ defmodule Oli.Delivery.Evaluation.Evaluator do
 
     matches =
       case Rule.parse_and_evaluate(rule, context) do
-        {:ok, result} -> result
-        {:error, _} -> false
+        {:ok, result} ->
+          result
+
+        {:error, _er} ->
+          false
       end
 
     if matches and (best_score < score or is_nil(best_response)) do

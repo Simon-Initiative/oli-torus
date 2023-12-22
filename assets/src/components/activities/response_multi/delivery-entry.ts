@@ -1,0 +1,1 @@
+export { ResponseMultiInputDelivery } from './ResponseMultiInputDelivery';
