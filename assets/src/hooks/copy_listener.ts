@@ -1,6 +1,4 @@
 export const CopyListener = {
-
-
   mounted() {
     const clipTargetSelector = this.el.dataset['clipboardTarget'];
     const el = this.el;
