@@ -107,18 +107,16 @@ defmodule OliWeb.Dialogue.WindowLive do
 
   def render(assigns) do
     ~H"""
-    <div class="fixed z-[10000] w-full bottom-0 right-0 flex">
-      <div class="ml-auto">
-        <.conversation
-          current_user={@current_user}
-          form={@form}
-          allow_submission?={@allow_submission?}
-          streaming={@streaming}
-          dialogue={@dialogue}
-          active_message={@active_message}
-        />
-        <.collapsed_bot />
-      </div>
+    <div class="fixed z-[10000] bottom-0 right-0 ml-auto">
+      <.conversation
+        current_user={@current_user}
+        form={@form}
+        allow_submission?={@allow_submission?}
+        streaming={@streaming}
+        dialogue={@dialogue}
+        active_message={@active_message}
+      />
+      <.collapsed_bot />
     </div>
     """
   end
