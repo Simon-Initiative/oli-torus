@@ -5,6 +5,7 @@ defmodule OliWeb.Dialogue.WindowLive do
   import Ecto.Query, warn: false
 
   import Phoenix.Component
+  import OliWeb.Components.Common
 
   alias Oli.Conversation.Dialogue
   alias OliWeb.Dialogue.UserInput
@@ -37,15 +38,17 @@ defmodule OliWeb.Dialogue.WindowLive do
       section_id: section.id,
       page_content: page_content,
       course_title: project.title,
-      course_description: project.description
+      course_description: project.description,
+      # TODO: replace this with the actual topic
+      topic: "Chemistry"
     }
 
     realize_prompt_template(section.page_prompt_template, bindings)
   end
 
-  # TODO for other types of pages, we should build a new template.
-  # for now we just use the page prompt template to be able to render
-  # the bot in other course
+  # TODO for other types of pages (Home, Learn, Discussions, etc) we should build a new template.
+  # For now we just use the page prompt template to be able to render
+  # the bot in those pages.
   defp build_course_prompt(
          %{
            "current_user_id" => current_user_id,
@@ -55,13 +58,15 @@ defmodule OliWeb.Dialogue.WindowLive do
     section = Oli.Delivery.Sections.get_section_by_slug(section_slug)
     project = Oli.Authoring.Course.get_project!(section.base_project_id)
 
+    # TODO: use a different prompt template (and probably other bindings) for the course prompt
     bindings = %{
       current_user_id: current_user_id,
       section_id: section.id,
       course_title: project.title,
-      # TODO: use a different prompt template for the course prompt
       page_content: "a page content",
-      course_description: project.description
+      course_description: project.description,
+      # TODO: replace this with the actual topic
+      topic: "Chemistry"
     }
 
     realize_prompt_template(section.page_prompt_template, bindings)
@@ -90,7 +95,7 @@ defmodule OliWeb.Dialogue.WindowLive do
      assign(socket,
        minimized: true,
        dialogue: build_dialogue(session, self()),
-       changeset: UserInput.changeset(%UserInput{}, %{content: ""}),
+       form: to_form(UserInput.changeset(%UserInput{}, %{content: ""})),
        streaming: false,
        allow_submission?: true,
        active_message: nil,
@@ -106,7 +111,7 @@ defmodule OliWeb.Dialogue.WindowLive do
       <div class="ml-auto">
         <.conversation
           current_user={@current_user}
-          changeset={@changeset}
+          form={@form}
           allow_submission?={@allow_submission?}
           streaming={@streaming}
           dialogue={@dialogue}
@@ -148,7 +153,7 @@ defmodule OliWeb.Dialogue.WindowLive do
   end
 
   attr :current_user, :map
-  attr :changeset, :map
+  attr :form, :map
   attr :allow_submission?, :boolean
   attr :streaming, :boolean
   attr :dialogue, :list
@@ -193,11 +198,7 @@ defmodule OliWeb.Dialogue.WindowLive do
           active_message={@active_message}
           user_initials={to_initials(@current_user)}
         />
-        <.message_input
-          changeset={@changeset}
-          allow_submission?={@allow_submission?}
-          streaming={@streaming}
-        />
+        <.message_input form={@form} allow_submission?={@allow_submission?} streaming={@streaming} />
       </div>
     </.focus_wrap>
     """
@@ -381,13 +382,19 @@ defmodule OliWeb.Dialogue.WindowLive do
     """
   end
 
-  attr :changeset, :map
+  attr :form, :map
   attr :allow_submission?, :boolean
   attr :streaming, :boolean
 
   def message_input(assigns) do
     ~H"""
-    <.form :let={f} class="h-[55px] w-full mt-5 px-6" for={@changeset} phx-submit="update">
+    <.form
+      for={@form}
+      phx-submit="update"
+      id="ai_user_input_form"
+      class="w-full mt-5 px-6"
+      phx-hook="TextareaListener"
+    >
       <div class="px-3 py-1.5 rounded-xl border border-black dark:border-white border-opacity-40 flex justify-start items-center gap-2 w-full">
         <div class="rounded-xl justify-center items-center gap-3 flex">
           <div class="px-1.5 py-[3px] justify-center items-center flex">
@@ -395,14 +402,18 @@ defmodule OliWeb.Dialogue.WindowLive do
           </div>
         </div>
         <div class="grow shrink basis-0 justif-start items-center gap-2 flex w-full">
-          <%= textarea(f, :content,
-            class:
-              "h-[38px] w-full bg-transparent border-none dark:text-white text-sm font-normal font-['Open Sans'] tracking-tight focus:border-transparent focus:ring-0",
-            disabled: @streaming,
-            required: true,
-            placeholder: "How can I help?",
-            id: "ai_bot_input"
-          ) %>
+          <.input
+            type="textarea"
+            field={@form[:content]}
+            class="h-[38px] w-full bg-transparent border-none dark:text-white text-sm font-normal font-['Open Sans'] tracking-tight focus:border-transparent focus:ring-0"
+            disabled={@streaming}
+            required={true}
+            placeholder="How can I help?"
+            id="ai_bot_input"
+            data-grow="true"
+            data-initial-height={40}
+            onkeyup="resizeTextArea(this)"
+          />
         </div>
         <button
           disabled={!@allow_submission?}
