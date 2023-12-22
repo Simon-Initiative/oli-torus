@@ -215,6 +215,8 @@ defmodule OliWeb.Dialogue.WindowLive do
     """
   end
 
+  # TODO: the recording message feature is not yet developed,
+  # that is why we are hiding the mic icon for now
   def mic_icon(assigns) do
     ~H"""
     <svg
@@ -224,7 +226,7 @@ defmodule OliWeb.Dialogue.WindowLive do
       viewBox="0 0 24 25"
       fill="none"
       role="mic button"
-      class="cursor-pointer hover:scale-105 hover:opacity-50"
+      class="hidden cursor-pointer hover:scale-105 hover:opacity-50"
     >
       <path
         d="M6 10.5V11.5C6 14.8137 8.68629 17.5 12 17.5M18 10.5V11.5C18 14.8137 15.3137 17.5 12 17.5M12 17.5V21.5M12 21.5H16M12 21.5H8M12 14.5C10.3431 14.5 9 13.1569 9 11.5V6.5C9 4.84315 10.3431 3.5 12 3.5C13.6569 3.5 15 4.84315 15 6.5V11.5C15 13.1569 13.6569 14.5 12 14.5Z"
