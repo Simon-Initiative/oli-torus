@@ -370,12 +370,13 @@ defmodule OliWeb.Dialogue.WindowLive do
       phx-hook="KeepScrollAtBottom"
     >
       <div class="flex flex-col justify-end items-center px-6 gap-1.5 min-h-full">
-        <.chat_message
-          :for={{message, index} <- Enum.with_index(@dialogue.rendered_messages, 1)}
-          index={index}
-          content={message.content}
-          user_initials={if message.role == :assistant, do: "BOT AI", else: @user_initials}
-        />
+        <%= for {message, index} <- Enum.with_index(@dialogue.rendered_messages, 1), message.role not in [:system, :function] do %>
+          <.chat_message
+            index={index}
+            content={message.content}
+            user_initials={if message.role == :assistant, do: "BOT AI", else: @user_initials}
+          />
+        <% end %>
         <.live_response :if={@streaming} active_message={@active_message} />
       </div>
     </div>
