@@ -91,6 +91,25 @@ defmodule OliWeb.Delivery.StudentDashboard.CourseContentLiveTest do
     end
 
     test "navigates to next level in hierarchy", %{conn: conn, user: user, section: section} do
+      {:ok, section} =
+        Sections.update_section(section, %{
+          customizations: %{unit: "Volume", module: "Chapter", section: "Lesson"}
+        })
+
+      {:ok, view, _html} = isolated_live_view_course_content(conn, section.slug, user.id)
+
+      view
+      |> navigate_to_unit_1()
+
+      assert has_element?(view, "#course_browser_node_title", "Volume 1: Unit 1")
+
+      view
+      |> drill_down_to_module_1()
+
+      assert has_element?(view, "#course_browser_node_title", "Chapter 1: Module 1")
+    end
+
+    test "displays custom labels", %{conn: conn, user: user, section: section} do
       {:ok, view, _html} = isolated_live_view_course_content(conn, section.slug, user.id)
 
       view
