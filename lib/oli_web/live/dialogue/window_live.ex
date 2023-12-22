@@ -354,6 +354,8 @@ defmodule OliWeb.Dialogue.WindowLive do
     """
   end
 
+  defp to_initials(%{name: nil}), do: "?"
+
   defp to_initials(%{name: name}) do
     name
     |> String.split(" ")
