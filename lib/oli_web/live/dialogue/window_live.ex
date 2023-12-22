@@ -316,7 +316,13 @@ defmodule OliWeb.Dialogue.WindowLive do
           </div>
         </div>
       </div>
-      <div class="w-7 h-7 justify-center items-center flex">
+      <div class="relative w-7 h-7 justify-center items-center flex">
+        <div
+          id={"confirmation_message_#{@index}"}
+          class="absolute hidden text-xs top-6 left-1 dark:text-white"
+        >
+          copied!
+        </div>
         <button
           :if={@user_initials == "BOT AI"}
           class="grow shrink basis-0 self-stretch px-3 py-2 rounded-lg justify-center items-center gap-1.5 inline-flex"
@@ -327,11 +333,11 @@ defmodule OliWeb.Dialogue.WindowLive do
             height="16"
             viewBox="0 0 16 16"
             fill="none"
-            class="cursor-pointer hover:opacity-50"
+            class="cursor-pointer hover:opacity-50 dark:text-white"
             phx-hook="CopyListener"
             id={"copy_button_#{@index}"}
             data-clipboard-target={"#message_#{@index}_content"}
-            data-animate="true"
+            data-confirmation-message-target={"#confirmation_message_#{@index}"}
             role="copy button"
           >
             <path
