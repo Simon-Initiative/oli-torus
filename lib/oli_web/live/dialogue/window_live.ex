@@ -169,7 +169,7 @@ defmodule OliWeb.Dialogue.WindowLive do
       phx-key="escape"
     >
       <div class="w-[556px] h-[634px] pb-6 shadow-lg bg-white dark:bg-[#0A0A17] rounded-3xl flex flex-col justify-between">
-        <div class="h-[45px] shrink-0 pr-3 rounded-t-3xl bg-slate-400 dark:bg-black flex items-center">
+        <div class="h-7 shrink-0 pr-3 rounded-t-3xl bg-slate-400 dark:bg-black flex items-center">
           <button
             id="close_chat_button"
             phx-click={
@@ -372,7 +372,7 @@ defmodule OliWeb.Dialogue.WindowLive do
     <div
       role="message container"
       id="message-container"
-      class="h-[500px] overflow-y-auto pt-5"
+      class="h-[510px] overflow-y-auto pt-5"
       phx-hook="KeepScrollAtBottom"
     >
       <div class="flex flex-col justify-end items-center px-6 gap-1.5 min-h-full">
