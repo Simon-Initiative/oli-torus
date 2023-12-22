@@ -3171,8 +3171,6 @@ select.form-control {
   border-width: 1px;
   --tw-border-opacity: 1;
   border-color: rgb(212 212 212 / var(--tw-border-opacity));
-  --tw-bg-opacity: 1;
-  background-color: rgb(245 245 245 / var(--tw-bg-opacity));
   padding-top: 0.25rem;
   padding-bottom: 0.25rem;
   padding-left: 0.375rem;
@@ -4669,6 +4667,10 @@ table.table-striped tbody tr:nth-child(even) {
   min-height: 300px;
 }
 
+.min-h-\[5rem\] {
+  min-height: 5rem;
+}
+
 .min-h-full {
   min-height: 100%;
 }
@@ -5469,6 +5471,10 @@ table.table-striped tbody tr:nth-child(even) {
   border-top-width: 4px;
 }
 
+.border-solid {
+  border-style: solid;
+}
+
 .border-dashed {
   border-style: dashed;
 }
@@ -5498,6 +5504,11 @@ table.table-striped tbody tr:nth-child(even) {
 .border-black {
   --tw-border-opacity: 1;
   border-color: rgb(0 0 0 / var(--tw-border-opacity));
+}
+
+.border-blue-400 {
+  --tw-border-opacity: 1;
+  border-color: rgb(93 141 219 / var(--tw-border-opacity));
 }
 
 .border-blue-500 {
@@ -5829,6 +5840,10 @@ table.table-striped tbody tr:nth-child(even) {
   background-color: rgb(243 232 255 / var(--tw-bg-opacity));
 }
 
+.bg-purple-500\/10 {
+  background-color: rgb(168 85 247 / 0.1);
+}
+
 .bg-red-100 {
   --tw-bg-opacity: 1;
   background-color: rgb(254 226 226 / var(--tw-bg-opacity));
@@ -5903,6 +5918,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .bg-no-repeat {
   background-repeat: no-repeat;
+}
+
+.fill-blue-600 {
+  fill: #275CAF;
 }
 
 .object-cover {
