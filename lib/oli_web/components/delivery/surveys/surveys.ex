@@ -336,7 +336,7 @@ defmodule OliWeb.Components.Delivery.Surveys do
     activities = get_activities(current_assessment, section, student_ids)
 
     activity_resource_ids =
-      Enum.map(activities, fn a -> a.resource_id end)
+      Enum.map(activities, fn activity -> activity.resource_id end)
 
     activities_details =
       get_activities_details(
@@ -581,24 +581,23 @@ defmodule OliWeb.Components.Delivery.Surveys do
 
   def get_activities_details(activity_resource_ids, section, activity_types_map) do
     multiple_choice_type_id =
-      Enum.find(activity_types_map, fn {_k, v} -> v.title == "Multiple Choice" end)
-      |> elem(0)
+      Enum.find_value(activity_types_map, fn {k, v} -> if v.title == "Multiple Choice", do: k end)
 
     single_response_type_id =
-      Enum.find(activity_types_map, fn {_k, v} -> v.title == "Single Response" end)
-      |> elem(0)
+      Enum.find_value(activity_types_map, fn {k, v} -> if v.title == "Single Response", do: k end)
 
     multi_input_type_id =
-      Enum.find(activity_types_map, fn {_k, v} -> v.title == "Multi Input" end)
-      |> elem(0)
+      Enum.find_value(activity_types_map, fn {k, v} ->
+        if v.title == "Multi Input",
+          do: k
+      end)
 
     response_multi_type_id =
       Enum.find(activity_types_map, fn {_k, v} -> v.title == "ResponseMulti Input" end)
       |> elem(0)
 
     likert_type_id =
-      Enum.find(activity_types_map, fn {_k, v} -> v.title == "Likert" end)
-      |> elem(0)
+      Enum.find_value(activity_types_map, fn {k, v} -> if v.title == "Likert", do: k end)
 
     from(activity_attempt in ActivityAttempt,
       left_join: resource_attempt in assoc(activity_attempt, :resource_attempt),

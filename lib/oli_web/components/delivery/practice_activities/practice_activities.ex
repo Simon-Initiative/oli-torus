@@ -88,6 +88,9 @@ defmodule OliWeb.Components.Delivery.PracticeActivities do
   end
 
   def render(assigns) do
+    assigns.activities
+    |> IO.inspect(label: "llega")
+
     ~H"""
     <div>
       <.loader if={!@table_model} />
@@ -210,6 +213,7 @@ defmodule OliWeb.Components.Delivery.PracticeActivities do
                 id="activity_detail"
                 phx-hook="LoadSurveyScripts"
               >
+                <% IO.inspect(activity, label: "hellow") %>
                 <%= if activity.preview_rendered != nil do %>
                   <RenderedActivity.render
                     id={"activity_#{activity.id}"}
@@ -250,8 +254,25 @@ defmodule OliWeb.Components.Delivery.PracticeActivities do
         section,
         student_ids
       )
-      |> Enum.map(fn activity ->
-        Map.put(activity, :preview_rendered, get_preview_rendered(activity, socket))
+
+    activity_resource_ids =
+      Enum.map(current_activities, fn activity -> activity.resource_id end)
+
+    activities_details =
+      get_activities_details(
+        activity_resource_ids,
+        socket.assigns.section,
+        socket.assigns.activity_types_map
+      )
+
+    current_activities =
+      Enum.map(current_activities, fn activity ->
+        activity_details =
+          Enum.find(activities_details, fn activity_details ->
+            activity.resource_id == activity_details.revision.resource_id
+          end)
+
+        Map.put(activity, :preview_rendered, get_preview_rendered(activity_details, socket))
         |> add_activity_attempts_info(students, student_ids, section)
       end)
 
@@ -519,32 +540,17 @@ defmodule OliWeb.Components.Delivery.PracticeActivities do
     |> Map.put(:total_attempts_count, count_attempts(activity, section, student_ids) || 0)
   end
 
-  defp get_preview_rendered(activity, socket) do
-    case get_activity_details(
-           activity,
-           socket.assigns.section,
-           socket.assigns.activity_types_map
-         ) do
-      nil ->
-        socket
+  defp get_preview_rendered(nil, socket), do: socket
 
-      activity_attempt ->
-        part_attempts = Core.get_latest_part_attempts(activity_attempt.attempt_guid)
-
-        rendering_context =
-          OliWeb.ManualGrading.Rendering.create_rendering_context(
-            activity_attempt,
-            part_attempts,
-            socket.assigns.activity_types_map,
-            socket.assigns.section
-          )
-          |> Map.merge(%{is_liveview: true})
-
-        OliWeb.ManualGrading.Rendering.render(
-          rendering_context,
-          :instructor_preview
-        )
-    end
+  defp get_preview_rendered(activity_attempt, socket) do
+    OliWeb.ManualGrading.Rendering.create_rendering_context(
+      activity_attempt,
+      Core.get_latest_part_attempts(activity_attempt.attempt_guid),
+      socket.assigns.activity_types_map,
+      socket.assigns.section
+    )
+    |> Map.merge(%{is_liveview: true})
+    |> OliWeb.ManualGrading.Rendering.render(:instructor_preview)
   end
 
   defp assign_selected_assessment(socket, selected_assessment_id)
@@ -649,67 +655,51 @@ defmodule OliWeb.Components.Delivery.PracticeActivities do
     end)
   end
 
-  defp get_activity_details(selected_activity, section, activity_types_map) do
-    query =
-      ActivityAttempt
-      |> join(:left, [aa], resource_attempt in ResourceAttempt,
-        on: aa.resource_attempt_id == resource_attempt.id
-      )
-      |> join(:left, [_, resource_attempt], ra in ResourceAccess,
-        on: resource_attempt.resource_access_id == ra.id
-      )
-      |> join(:left, [_, _, ra], a in assoc(ra, :user))
-      |> join(:left, [aa, _, _, _], activity_revision in Revision,
-        on: activity_revision.id == aa.revision_id
-      )
-      |> join(:left, [_, resource_attempt, _, _, _], resource_revision in Revision,
-        on: resource_revision.id == resource_attempt.revision_id
-      )
-      |> where(
-        [aa, _resource_attempt, resource_access, _u, activity_revision, _resource_revision],
-        resource_access.section_id == ^section.id and
-          activity_revision.resource_id == ^selected_activity.resource_id
-      )
-      |> order_by([aa, _, _, _, _, _], desc: aa.inserted_at)
-      |> limit(1)
-      |> Ecto.Query.select([aa, _, _, _, _, _], aa)
-      |> select_merge(
-        [aa, resource_attempt, resource_access, user, activity_revision, resource_revision],
-        %{
-          activity_type_id: activity_revision.activity_type_id,
-          activity_title: activity_revision.title,
-          page_title: resource_revision.title,
-          page_id: resource_revision.resource_id,
-          resource_attempt_number: resource_attempt.attempt_number,
-          graded: resource_revision.graded,
-          user: user,
-          revision: activity_revision,
-          resource_attempt_guid: resource_attempt.attempt_guid,
-          resource_access_id: resource_access.id
-        }
-      )
-
+  defp get_activities_details(activity_resource_ids, section, activity_types_map) do
     multiple_choice_type_id =
-      Enum.find(activity_types_map, fn {_k, v} -> v.title == "Multiple Choice" end)
-      |> elem(0)
+      Enum.find_value(activity_types_map, fn {k, v} -> if v.title == "Multiple Choice", do: k end)
 
     single_response_type_id =
-      Enum.find(activity_types_map, fn {_k, v} -> v.title == "Single Response" end)
-      |> elem(0)
+      Enum.find_value(activity_types_map, fn {k, v} -> if v.title == "Single Response", do: k end)
 
     multi_input_type_id =
-      Enum.find(activity_types_map, fn {_k, v} -> v.title == "Multi Input" end)
-      |> elem(0)
+      Enum.find_value(activity_types_map, fn {k, v} ->
+        if v.title == "Multi Input",
+          do: k
+      end)
 
     response_multi_type_id =
       Enum.find(activity_types_map, fn {_k, v} -> v.title == "ResponseMulti Input" end)
       |> elem(0)
 
     likert_type_id =
-      Enum.find(activity_types_map, fn {_k, v} -> v.title == "Likert" end)
-      |> elem(0)
+      Enum.find_value(activity_types_map, fn {k, v} -> if v.title == "Likert", do: k end)
 
-    case Repo.one(query) do
+    from(activity_attempt in ActivityAttempt,
+      left_join: resource_attempt in assoc(activity_attempt, :resource_attempt),
+      left_join: resource_access in assoc(resource_attempt, :resource_access),
+      left_join: user in assoc(resource_access, :user),
+      left_join: activity_revision in assoc(activity_attempt, :revision),
+      left_join: resource_revision in assoc(resource_attempt, :revision),
+      where:
+        resource_access.section_id == ^section.id and
+          activity_revision.resource_id in ^activity_resource_ids,
+      select: activity_attempt,
+      select_merge: %{
+        activity_type_id: activity_revision.activity_type_id,
+        activity_title: activity_revision.title,
+        page_title: resource_revision.title,
+        page_id: resource_revision.resource_id,
+        resource_attempt_number: resource_attempt.attempt_number,
+        graded: resource_revision.graded,
+        user: user,
+        revision: activity_revision,
+        resource_attempt_guid: resource_attempt.attempt_guid,
+        resource_access_id: resource_access.id
+      }
+    )
+    |> Repo.all()
+    |> Enum.map(fn
       nil ->
         nil
 
@@ -735,7 +725,7 @@ defmodule OliWeb.Components.Delivery.PracticeActivities do
 
       activity_attempt ->
         activity_attempt
-    end
+    end)
   end
 
   defp add_single_response_details(activity_attempt, %Section{analytics_version: :v1}),
