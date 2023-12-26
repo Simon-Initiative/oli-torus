@@ -1912,6 +1912,41 @@ defmodule OliWeb.Delivery.InstructorDashboard.ScoredActivitiesTabTest do
       assert a1.title == "Module 1: IntroductionPage 1"
     end
 
+    test "change page size works as expected", %{
+      conn: conn,
+      section: section
+    } do
+      {:ok, view, _html} = live(conn, live_view_scored_activities_route(section.slug))
+
+      # Refute that the pagination options are displayed
+      refute has_element?(view, "nav[aria-label=\"Paging\"]")
+
+      # Change page size from default (20) to 2
+      view
+      |> element("#header_paging_page_size_form")
+      |> render_change(%{limit: "2"})
+
+      [a0, a1] = table_as_list_of_maps(view, :assessments)
+
+      # Page 1
+      assert a0.title == "Orphaned Page"
+      assert a1.title == "Module 1: IntroductionPage 1"
+
+      # Assert that the pagination options are displayed
+      assert has_element?(view, "nav[aria-label=\"Paging\"]")
+
+      # Change to page 2
+      view
+      |> element("button[phx-value-offset=\"2\"]", "2")
+      |> render_click()
+
+      [a2, a3] = table_as_list_of_maps(view, :assessments)
+
+      # Page 2
+      assert a2.title == "Module 1: IntroductionPage 2"
+      assert a3.title == "Module 2: BasicsPage 3"
+    end
+
     test "keeps showing the same elements when changing the page size", %{
       conn: conn,
       section: section

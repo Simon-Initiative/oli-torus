@@ -32,6 +32,7 @@ export type AppThunk<ReturnType = void> = ThunkAction<
   unknown,
   AnyAction
 >;
+
 export type StudentInput = string[];
 export type PartInputs = Record<PartId, StudentInput>;
 

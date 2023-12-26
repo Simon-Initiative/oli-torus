@@ -20,7 +20,7 @@ defmodule Oli.Activities.Transformers.Shuffle do
                 inputs
                 |> Enum.map(fn input ->
                   # find the specific input that matches the part_id and shuffle its choiceIds
-                  if input["partId"] == part_id,
+                  if input["partId"] == part_id && input["choiceIds"] !== nil,
                     do: Map.put(input, "choiceIds", Enum.shuffle(input["choiceIds"])),
                     else: input
                 end)

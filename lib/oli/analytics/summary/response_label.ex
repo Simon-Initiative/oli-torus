@@ -72,6 +72,11 @@ defmodule Oli.Analytics.Summary.ResponseLabel do
     build(part_attempt, "oli_multi_input")
   end
 
+  def build(part_attempt, "oli_response_multi") do
+    # identical to multi input, so delegate
+    build(part_attempt, "oli_multi_input")
+  end
+
   def build(part_attempt, "oli_short_answer") do
     case part_attempt.response do
       %{"input" => input} when is_binary(input) ->

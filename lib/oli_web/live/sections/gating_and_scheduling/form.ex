@@ -26,7 +26,7 @@ defmodule OliWeb.Sections.GatingAndScheduling.Form do
           class="form-control"
           id="conditionTypeSelect"
           phx-hook="SelectListener"
-          phx-value-change="select-condition"
+          phx-change="select-condition"
         >
           <option {maybe_type_selected(assigns, :default)} disabled hidden>
             Choose a condition...
@@ -47,7 +47,7 @@ defmodule OliWeb.Sections.GatingAndScheduling.Form do
           class="form-control"
           id="gradingPolicySelect"
           phx-hook="SelectListener"
-          phx-value-change="select-grading-policy"
+          phx-change="select-grading-policy"
         >
           <option
             :for={policy <- Oli.Delivery.Gating.GatingCondition.graded_resource_policies()}
@@ -324,6 +324,8 @@ defmodule OliWeb.Sections.GatingAndScheduling.Form do
   end
 
   def render_condition_options(%{gating_condition: %{type: :finished, data: _data}} = assigns) do
+    assigns = assign(assigns, :data, assigns.gating_condition.data)
+
     ~H"""
     <div class="form-group">
       <label for="source">Resource That Must Be Finished</label>

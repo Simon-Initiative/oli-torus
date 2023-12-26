@@ -53,7 +53,8 @@ defmodule OliWeb.InviteControllerTest do
           Routes.invite_path(conn, :create_bulk, section.slug,
             emails: ["invite@example.com", "invite2@example.com"],
             role: "instructor",
-            "g-recaptcha-response": "any"
+            "g-recaptcha-response": "any",
+            inviter: "author"
           )
         )
 

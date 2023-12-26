@@ -1167,6 +1167,9 @@ defmodule OliWeb.PageDeliveryController do
       {:invalid_password} ->
         {:error, "Incorrect password"}
 
+      {:empty_password} ->
+        {:error, "Empty password"}
+
       {:before_start_date} ->
         {:error, before_start_date_message(conn, effective_settings)}
     end

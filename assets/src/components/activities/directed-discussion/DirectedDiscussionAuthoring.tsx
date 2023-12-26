@@ -35,8 +35,9 @@ const DirectedDiscussionAuthoringInternal: React.FC<SectionAuthoringProps> = ({
     <>
       <TabbedNavigation.Tabs>
         <TabbedNavigation.Tab label="Question">
-          <Stem />
+          {displayDiscussion || <Stem />}
         </TabbedNavigation.Tab>
+
         <TabbedNavigation.Tab label="Participation">
           <DiscussionParticipationAuthoring />
         </TabbedNavigation.Tab>

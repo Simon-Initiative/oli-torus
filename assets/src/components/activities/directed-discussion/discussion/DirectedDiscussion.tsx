@@ -1,6 +1,9 @@
 import React, { useMemo } from 'react';
+import { useDeliveryElementContext } from 'components/activities/DeliveryElementProvider';
+import { HintsDeliveryConnected } from 'components/activities/common/hints/delivery/HintsDeliveryConnected';
 //import { HintsDeliveryConnected } from 'components/activities/common/hints/delivery/HintsDeliveryConnected';
 import { StemDeliveryConnected } from 'components/activities/common/stem/delivery/StemDelivery';
+import { castPartId } from 'components/activities/common/utils';
 //import { castPartId } from '../../common/utils';
 import { DirectedDiscussionActivitySchema } from '../schema';
 import { DiscussionParticipation } from './DiscussionParticipation';
@@ -19,6 +22,10 @@ interface Props {
 export const DirectedDiscussion: React.FC<Props> = ({ sectionSlug, resourceId, model }) => {
   const [searchTerm, setSearchTerm] = React.useState('');
   const [focusId, setFocusId] = React.useState<number | null>(null);
+
+  const deliveryState = useDeliveryElementContext<DirectedDiscussionActivitySchema>();
+
+  const activityState = deliveryState.state;
 
   const { loading, posts, addPost, currentUserId, deletePost } = useDiscussion(
     sectionSlug,
@@ -41,10 +48,14 @@ export const DirectedDiscussion: React.FC<Props> = ({ sectionSlug, resourceId, m
   const displaySearchResults = !hasFocusId && hasSearchTerm;
   const displayThreads = !displaySearchResults;
 
+  const isInstructorPreview = !activityState || !activityState.parts[0];
+
   return (
     <div className="activity mc-activity">
       <div className="activity-content relative">
-        <StemDeliveryConnected />
+        <div className="min-h-[5rem]">
+          <StemDeliveryConnected />
+        </div>
         <DiscussionParticipation
           requirements={model.participation}
           participation={currentParticipation}
@@ -70,11 +81,14 @@ export const DirectedDiscussion: React.FC<Props> = ({ sectionSlug, resourceId, m
           />
         )}
 
-        {/* <HintsDeliveryConnected
-          partId={castPartId(activityState.parts[0].partId)}
-          resetPartInputs={{ [activityState.parts[0].partId]: [] }}
-          shouldShow
-        /> */}
+        {isInstructorPreview || (
+          <HintsDeliveryConnected
+            partId={castPartId(activityState.parts[0]?.partId)}
+            resetPartInputs={{}}
+            shouldShow
+          />
+        )}
+
         {loading && (
           <div className="inline p-2 fixed bottom-1 right-1 bg-gray-600 rounded-md text-white">
             Working...
