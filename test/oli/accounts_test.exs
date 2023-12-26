@@ -104,6 +104,63 @@ defmodule Oli.AccountsTest do
 
       assert author.preferences.timezone == "America/Los_Angeles"
     end
+
+    test "update author password successfully" do
+      author = insert(:author)
+
+      attrs = %{
+        "current_password" => "password_1",
+        "email" => author.email,
+        "family_name" => author.family_name,
+        "given_name" => author.given_name,
+        "password" => "password_2",
+        "password_confirmation" => "password_2"
+      }
+
+      assert {:ok, _author = %Author{}} = Accounts.update_author(author, attrs)
+    end
+
+    test "update author password fails when new password and password confirmation are different" do
+      author = insert(:author)
+
+      attrs = %{
+        "current_password" => "password_1",
+        "email" => author.email,
+        "family_name" => author.family_name,
+        "given_name" => author.given_name,
+        "password" => "password_22",
+        "password_confirmation" => "password_2"
+      }
+
+      assert {:error, changeset} = Accounts.update_author(author, attrs)
+      assert changeset.valid? == false
+
+      {:password_confirmation, {error_message, [validation: :confirmation]}} =
+        List.first(changeset.errors)
+
+      assert error_message == "does not match confirmation"
+    end
+
+    test "update author password fails when the new password is less than 8 characters long" do
+      author = insert(:author)
+
+      attrs = %{
+        "current_password" => "password_1",
+        "email" => author.email,
+        "family_name" => author.family_name,
+        "given_name" => author.given_name,
+        "password" => "pass",
+        "password_confirmation" => "pass"
+      }
+
+      assert {:error, changeset} = Accounts.update_author(author, attrs)
+      assert changeset.valid? == false
+
+      {:password, {error_message, [count: 8, validation: :length, kind: :min, type: :string]}} =
+        List.first(changeset.errors)
+
+      assert error_message =~ "should be at least %{count} character(s)"
+    end
   end
 
   describe "users" do
@@ -125,7 +182,9 @@ defmodule Oli.AccountsTest do
       given_name: "some updated given_name",
       family_name: "some updated family_name",
       sub: "some updated sub",
-      picture: "some updated picture"
+      picture: "some updated picture",
+      password: "some_pass123",
+      password_confirmation: "some_pass123"
     }
     @invalid_attrs %{email: nil, given_name: nil, family_name: nil, sub: nil, picture: nil}
 
@@ -443,6 +502,63 @@ defmodule Oli.AccountsTest do
                users,
                &(!is_nil(&1.invitation_token))
              )
+    end
+
+    test "update user password successfully" do
+      user = insert(:user)
+
+      attrs = %{
+        "current_password" => "password_1",
+        "email" => user.email,
+        "family_name" => user.family_name,
+        "given_name" => user.given_name,
+        "password" => "password_2",
+        "password_confirmation" => "password_2"
+      }
+
+      assert {:ok, _user = %User{}} = Accounts.update_user(user, attrs)
+    end
+
+    test "update user password fails when new password and password confirmation are different" do
+      user = insert(:user)
+
+      attrs = %{
+        "current_password" => "password_1",
+        "email" => user.email,
+        "family_name" => user.family_name,
+        "given_name" => user.given_name,
+        "password" => "password_22",
+        "password_confirmation" => "password_2"
+      }
+
+      assert {:error, changeset} = Accounts.update_user(user, attrs)
+      assert changeset.valid? == false
+
+      {:password_confirmation, {error_message, [validation: :confirmation]}} =
+        List.first(changeset.errors)
+
+      assert error_message == "does not match confirmation"
+    end
+
+    test "update user password fails when the new password is less than 8 characters long" do
+      user = insert(:user)
+
+      attrs = %{
+        "current_password" => "password_1",
+        "email" => user.email,
+        "family_name" => user.family_name,
+        "given_name" => user.given_name,
+        "password" => "pass",
+        "password_confirmation" => "pass"
+      }
+
+      assert {:error, changeset} = Accounts.update_user(user, attrs)
+      assert changeset.valid? == false
+
+      {:password, {error_message, [count: 8, validation: :length, kind: :min, type: :string]}} =
+        List.first(changeset.errors)
+
+      assert error_message =~ "should be at least %{count} character(s)"
     end
   end
 
