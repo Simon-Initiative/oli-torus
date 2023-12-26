@@ -252,6 +252,30 @@ defmodule Oli.Accounts do
     |> Repo.insert()
   end
 
+  def update_user(
+        %User{} = user,
+        %{
+          "current_password" => _current_password,
+          "password" => _password,
+          "password_confirmation" => _password_confirmation
+        } = attrs
+      ) do
+    res =
+      user
+      |> User.update_user_changeset(attrs)
+      |> Repo.update()
+
+    case res do
+      {:ok, %User{id: user_id}} ->
+        AccountLookupCache.delete("user_#{user_id}")
+
+        res
+
+      error ->
+        error
+    end
+  end
+
   @doc """
   Updates a user.
   ## Examples
@@ -432,6 +456,30 @@ defmodule Oli.Accounts do
       end
       |> Author.noauth_changeset(changes)
       |> Repo.insert_or_update()
+
+    case res do
+      {:ok, %Author{id: author_id}} ->
+        AccountLookupCache.delete("author_#{author_id}")
+
+        res
+
+      error ->
+        error
+    end
+  end
+
+  def update_author(
+        %Author{} = author,
+        %{
+          "current_password" => _current_password,
+          "password" => _password,
+          "password_confirmation" => _password_confirmation
+        } = attrs
+      ) do
+    res =
+      author
+      |> Author.update_author_changeset(attrs)
+      |> Repo.update()
 
     case res do
       {:ok, %Author{id: author_id}} ->

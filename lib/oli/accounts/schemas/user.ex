@@ -170,6 +170,24 @@ defmodule Oli.Accounts.User do
     |> maybe_name_from_given_and_family()
   end
 
+  @doc """
+  Creates a changeset that is used to update a user's profile
+  """
+
+  def update_user_changeset(user, attrs \\ %{}) do
+    user
+    |> pow_changeset(attrs)
+    |> cast(attrs, [
+      :given_name,
+      :family_name,
+      :email
+    ])
+    |> validate_required_if([:email], &is_independent_learner_not_guest/1)
+    |> maybe_create_unique_sub()
+    |> lowercase_email()
+    |> maybe_name_from_given_and_family()
+  end
+
   def invite_changeset(user_or_changeset, invited_by, attrs) do
     user_or_changeset
     |> Ecto.Changeset.cast(attrs, [:name, :given_name, :family_name])

@@ -91,6 +91,23 @@ defmodule Oli.Accounts.Author do
     |> maybe_name_from_given_and_family()
   end
 
+  @doc """
+  Creates a changeset that is used to update an author's profile
+  """
+
+  def update_author_changeset(author, attrs \\ %{}) do
+    author
+    |> pow_changeset(attrs)
+    |> cast(attrs, [
+      :given_name,
+      :family_name,
+      :email
+    ])
+    |> default_system_role()
+    |> lowercase_email()
+    |> maybe_name_from_given_and_family()
+  end
+
   def user_identity_changeset(user_or_changeset, user_identity, attrs, user_id_attrs) do
     user_or_changeset
     |> Ecto.Changeset.cast(attrs, [:name, :given_name, :family_name, :picture])
