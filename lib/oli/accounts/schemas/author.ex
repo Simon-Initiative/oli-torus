@@ -95,14 +95,11 @@ defmodule Oli.Accounts.Author do
   Creates a changeset that is used to update an author's profile
   """
 
-  def update_author_changeset(author, attrs \\ %{}) do
+  def update_changeset(author, attrs \\ %{}) do
     author
     |> pow_changeset(attrs)
-    |> cast(attrs, [
-      :given_name,
-      :family_name,
-      :email
-    ])
+    |> cast(attrs, [:given_name, :family_name, :email])
+    |> unique_constraint(:email, name: :authors_email_index)
     |> default_system_role()
     |> lowercase_email()
     |> maybe_name_from_given_and_family()

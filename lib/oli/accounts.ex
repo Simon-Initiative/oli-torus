@@ -254,22 +254,15 @@ defmodule Oli.Accounts do
 
   def update_user(
         %User{} = user,
-        %{
-          "current_password" => _current_password,
-          "password" => _password,
-          "password_confirmation" => _password_confirmation
-        } = attrs
+        %{"current_password" => _, "password" => _, "password_confirmation" => _} = attrs
       ) do
-    res =
-      user
-      |> User.update_user_changeset(attrs)
-      |> Repo.update()
-
-    case res do
-      {:ok, %User{id: user_id}} ->
+    user
+    |> User.update_changeset(attrs)
+    |> Repo.update()
+    |> case do
+      {:ok, %User{id: user_id}} = result ->
         AccountLookupCache.delete("user_#{user_id}")
-
-        res
+        result
 
       error ->
         error
@@ -470,22 +463,15 @@ defmodule Oli.Accounts do
 
   def update_author(
         %Author{} = author,
-        %{
-          "current_password" => _current_password,
-          "password" => _password,
-          "password_confirmation" => _password_confirmation
-        } = attrs
+        %{"current_password" => _, "password" => _, "password_confirmation" => _} = attrs
       ) do
-    res =
-      author
-      |> Author.update_author_changeset(attrs)
-      |> Repo.update()
-
-    case res do
-      {:ok, %Author{id: author_id}} ->
+    author
+    |> Author.update_changeset(attrs)
+    |> Repo.update()
+    |> case do
+      {:ok, %Author{id: author_id}} = result ->
         AccountLookupCache.delete("author_#{author_id}")
-
-        res
+        result
 
       error ->
         error

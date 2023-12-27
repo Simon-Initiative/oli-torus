@@ -174,15 +174,12 @@ defmodule Oli.Accounts.User do
   Creates a changeset that is used to update a user's profile
   """
 
-  def update_user_changeset(user, attrs \\ %{}) do
+  def update_changeset(user, attrs \\ %{}) do
     user
     |> pow_changeset(attrs)
-    |> cast(attrs, [
-      :given_name,
-      :family_name,
-      :email
-    ])
+    |> cast(attrs, [:given_name, :family_name, :email])
     |> validate_required_if([:email], &is_independent_learner_not_guest/1)
+    |> unique_constraint(:email, name: :users_email_independent_learner_index)
     |> maybe_create_unique_sub()
     |> lowercase_email()
     |> maybe_name_from_given_and_family()
