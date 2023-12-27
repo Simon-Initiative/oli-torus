@@ -88,8 +88,6 @@ defmodule OliWeb.Components.Delivery.PracticeActivities do
   end
 
   def render(assigns) do
-    assigns.activities
-
     ~H"""
     <div>
       <.loader if={!@table_model} />
