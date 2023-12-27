@@ -23,4 +23,10 @@
       <%= @inner_content %>
     </div>
   </main>
+  <%= if @section do %>
+    <%= live_render(@socket, OliWeb.Dialogue.WindowLive,
+      session: %{"section_slug" => @section.slug},
+      id: "dialogue-window"
+    ) %>
+  <% end %>
 </div>
