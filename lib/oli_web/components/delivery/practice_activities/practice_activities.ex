@@ -598,57 +598,23 @@ defmodule OliWeb.Components.Delivery.PracticeActivities do
     |> Repo.one()
   end
 
-  defp get_activities(current_assessment, section, student_ids) do
-    activities =
-      from(aa in ActivityAttempt,
-        join: res_attempt in ResourceAttempt,
-        on: aa.resource_attempt_id == res_attempt.id,
-        where: aa.lifecycle_state == :evaluated,
-        join: res_access in ResourceAccess,
-        on: res_attempt.resource_access_id == res_access.id,
-        where:
-          res_access.section_id == ^section.id and
-            res_access.resource_id == ^current_assessment.resource_id and
-            res_access.user_id in ^student_ids and is_nil(aa.survey_id),
-        join: rev in Revision,
-        on: aa.revision_id == rev.id,
-        group_by: [rev.resource_id, rev.id],
-        select:
-          {rev, count(aa.id),
-           sum(aa.score) /
-             fragment("CASE WHEN SUM(?) = 0.0 THEN 1.0 ELSE SUM(?) END", aa.out_of, aa.out_of)}
-      )
-      |> Repo.all()
-      |> Enum.map(fn {rev, total_attempts, avg_score} ->
-        Map.merge(rev, %{total_attempts: total_attempts, avg_score: avg_score})
-      end)
-
-    objectives_mapper =
-      Enum.reduce(activities, [], fn activity, acc ->
-        (Map.values(activity.objectives) |> List.flatten()) ++ acc
-      end)
-      |> Enum.uniq()
-      |> DeliveryResolver.objectives_by_resource_ids(section.slug)
-      |> Enum.map(fn objective -> {objective.resource_id, objective} end)
-      |> Enum.into(%{})
-
-    activities
-    |> Enum.map(fn activity ->
-      case Map.values(activity.objectives) |> List.flatten() do
-        [] ->
-          Map.put(activity, :objectives, [])
-
-        objective_ids ->
-          Map.put(
-            activity,
-            :objectives,
-            Enum.reduce(objective_ids, MapSet.new(), fn id, activity_objectives ->
-              MapSet.put(activity_objectives, Map.get(objectives_mapper, id))
-            end)
-            |> MapSet.to_list()
-          )
-      end
-    end)
+  def get_activities(current_assessment, section, student_ids) do
+    from(activity_attempt in ActivityAttempt,
+      join: resource_attempt in ResourceAttempt,
+      on: activity_attempt.resource_attempt_id == resource_attempt.id,
+      where: activity_attempt.lifecycle_state == :evaluated,
+      join: resource_accesses in ResourceAccess,
+      on: resource_attempt.resource_access_id == resource_accesses.id,
+      where:
+        resource_accesses.section_id == ^section.id and
+          resource_accesses.resource_id == ^current_assessment.resource_id and
+          resource_accesses.user_id in ^student_ids and not is_nil(activity_attempt.survey_id),
+      join: revision in Revision,
+      on: activity_attempt.revision_id == revision.id,
+      group_by: [revision.resource_id, revision.id],
+      select: map(revision, [:id, :resource_id, :title])
+    )
+    |> Repo.all()
   end
 
   defp get_activities_details(activity_resource_ids, section, activity_types_map) do
