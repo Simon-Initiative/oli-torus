@@ -291,10 +291,6 @@ defmodule OliWeb.Components.Delivery.Layouts do
     # (for instance, the popup or the formula component from Oli.Rendering.Content.Html)
     # and the page would not react to interactions after navigatint to other page
     # ("working" loader kept spinning after interacting with an activity)
-    # drawback: we loose the speed of the liveview navigation
-    # (but do not increase time to first paint vs the previous page controller approach)
-    # HINT to increase speed: in every page reload ALL oli-delivery scripts are loaded (~1.5mb each)
-    # instead of only the scripts for the current page
     ~H"""
     <div
       :if={!is_nil(@current_page)}

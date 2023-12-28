@@ -153,13 +153,19 @@ defmodule OliWeb.LiveSessionPlugs.InitPage do
 
     assign(socket,
       html: Page.render(render_context, attempt_content, Page.Html),
-      # TODO improvement: do not load all delivery scripts (~1.5mb each)
-      # but just the one needed by the page
-      scripts: Activities.get_activity_scripts(:delivery_script)
+      scripts: get_required_activity_scripts(socket.assigns.page_context.activities)
     )
   end
 
   defp maybe_init_page_body(socket), do: socket
+
+  defp get_required_activity_scripts(activity_mapper) do
+    # this is an optimization to exclude not needed activity scripts (~1.5mb each)
+    Enum.map(activity_mapper, fn {_activity_id, activity} ->
+      activity.script
+    end)
+    |> Enum.uniq()
+  end
 
   defp get_attempt_content(socket) do
     this_attempt = socket.assigns.page_context.resource_attempts |> hd
