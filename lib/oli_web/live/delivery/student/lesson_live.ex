@@ -13,11 +13,20 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     <div class="flex pb-20 flex-col items-center gap-15 flex-1">
       <div class="flex flex-col items-center w-full">
         <.scored_page_banner :if={@revision.graded} />
-        <div>
-          <%!-- PAGE CONTENT --%>
+        <div phx-update="ignore" id="eventIntercept" class="content py-20 px-32">
+          <%= raw(@html) %>
         </div>
       </div>
     </div>
+
+    <script>
+      window.userToken = "<%= @user_token %>";
+    </script>
+    <script>
+      OLI.initActivityBridge('eventIntercept');
+    </script>
+    <script :for={script <- @scripts} type="text/javascript" src={"/js/#{script}"}>
+    </script>
     """
   end
 

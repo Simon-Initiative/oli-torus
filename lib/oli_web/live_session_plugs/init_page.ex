@@ -3,8 +3,12 @@ defmodule OliWeb.LiveSessionPlugs.InitPage do
 
   import Phoenix.Component, only: [assign: 2]
 
+  alias Oli.Activities
   alias Oli.Delivery.{PreviousNextIndex, Sections}
   alias Oli.Delivery.Page.PageContext
+  alias Oli.Publishing.DeliveryResolver, as: Resolver
+  alias Oli.Rendering.{Context, Page}
+  alias Oli.Resources
 
   def on_mount(
         :page_context,
@@ -12,8 +16,6 @@ defmodule OliWeb.LiveSessionPlugs.InitPage do
         _session,
         %{assigns: assigns} = socket
       ) do
-    numbered_revisions = Sections.get_revision_indexes(assigns.section.slug)
-
     socket =
       PageContext.create_for_visit(
         assigns.section,
@@ -22,7 +24,8 @@ defmodule OliWeb.LiveSessionPlugs.InitPage do
         assigns.datashop_session_id
       )
       |> init_context_state(socket)
-      |> assign(%{numbered_revisions: numbered_revisions})
+      |> maybe_init_page_body()
+      |> assign(numbered_revisions: Sections.get_revision_indexes(assigns.section.slug))
 
     {:cont, socket}
   end
@@ -114,5 +117,66 @@ defmodule OliWeb.LiveSessionPlugs.InitPage do
       resource_slug: page_context.page.slug,
       page_context: page_context
     })
+  end
+
+  defp maybe_init_page_body(%{assigns: %{view: :page}} = socket) do
+    render_context = %Context{
+      enrollment:
+        Oli.Delivery.Sections.get_enrollment(
+          socket.assigns.section.slug,
+          socket.assigns.current_user.id
+        ),
+      user: socket.assigns.current_user,
+      section_slug: socket.assigns.section.slug,
+      # project_slug: base_project_slug,
+      # resource_attempt: hd(context.resource_attempts),
+      mode: :delivery,
+      activity_map: socket.assigns.page_context.activities,
+      resource_summary_fn: &Resources.resource_summary(&1, socket.assigns.section.slug, Resolver),
+      alternatives_groups_fn: fn ->
+        Resources.alternatives_groups(socket.assigns.section.slug, Resolver)
+      end,
+      alternatives_selector_fn: &Resources.Alternatives.select/2,
+      extrinsic_read_section_fn: &Oli.Delivery.ExtrinsicState.read_section/3,
+      bib_app_params: socket.assigns.page_context.bib_revisions,
+      # submitted_surveys: submitted_surveys,
+      historical_attempts: socket.assigns.page_context.historical_attempts,
+      learning_language:
+        Sections.get_section_attributes(socket.assigns.section).learning_language,
+      effective_settings: socket.assigns.page_context.effective_settings
+    }
+
+    attempt_content = get_attempt_content(socket)
+
+    # Cache the page as text to allow the AI agent LV to access it.
+    cache_page_as_text(render_context, attempt_content, socket.assigns.page_context.page.id)
+
+    assign(socket,
+      html: Page.render(render_context, attempt_content, Page.Html),
+      # TODO improvement: do not load all delivery scripts (~1.5mb each)
+      # but just the one needed by the page
+      scripts: Activities.get_activity_scripts(:delivery_script)
+    )
+  end
+
+  defp maybe_init_page_body(socket), do: socket
+
+  defp get_attempt_content(socket) do
+    this_attempt = socket.assigns.page_context.resource_attempts |> hd
+
+    if Enum.any?(this_attempt.errors, fn e ->
+         e == "Selection failed to fulfill: no values provided for expression"
+       end) and socket.assigns.page_context.is_student do
+      %{"model" => []}
+    else
+      this_attempt.content
+    end
+  end
+
+  defp cache_page_as_text(render_context, content, page_id) do
+    Oli.Converstation.PageContentCache.put(
+      page_id,
+      Page.render(render_context, content, Page.Markdown) |> :erlang.iolist_to_binary()
+    )
   end
 end
