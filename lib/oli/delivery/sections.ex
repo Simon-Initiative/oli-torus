@@ -4081,11 +4081,22 @@ defmodule Oli.Delivery.Sections do
            {nil, nil}
 
          c ->
-           {c.id,
-            ~s{#{get_container_label(c.numbering_level, c.customizations || Map.from_struct(CustomLabels.default()))} #{c.numbering_index}: #{c.title}}}
+           {c.id, ~s{#{get_container_label_and_numbering(c, c.customizations)}: #{c.title}}}
        end}
     end)
     |> Enum.into(%{})
+  end
+
+  @doc """
+  Returns the container label and numbering for a given container.
+  If the container has any customizations, they are considered in the label.
+  Examples:
+  "Module 2"
+  "Unit 1"
+  "Section 1"
+  """
+  def get_container_label_and_numbering(container, customizations) do
+    ~s{#{get_container_label(container.numbering_level, customizations || Map.from_struct(CustomLabels.default()))} #{container.numbering_index}}
   end
 
   defp get_container_label(
