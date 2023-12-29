@@ -23,19 +23,51 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
     project = insert(:project, authors: [author])
 
     # revisions...
+
+    ## objectives...
+    objective_1_revision =
+      insert(:revision,
+        resource_type_id: ResourceType.get_id_by_type("objective"),
+        title: "this is the first objective"
+      )
+
+    objective_2_revision =
+      insert(:revision,
+        resource_type_id: ResourceType.get_id_by_type("objective"),
+        title: "this is the second objective"
+      )
+
     ## pages...
     page_1_revision =
       insert(:revision,
         resource_type_id: ResourceType.get_id_by_type("page"),
         title: "Page 1",
-        duration_minutes: 10
+        duration_minutes: 10,
+        content: %{
+          model: [
+            %{
+              id: "158828742",
+              type: "content",
+              children: [
+                %{
+                  id: "3371710400",
+                  type: "p",
+                  children: [%{text: "Here's some test page content"}]
+                }
+              ]
+            }
+          ]
+        }
       )
 
     page_2_revision =
       insert(:revision,
         resource_type_id: ResourceType.get_id_by_type("page"),
         title: "Page 2",
-        duration_minutes: 15
+        duration_minutes: 15,
+        objectives: %{
+          "attached" => [objective_1_revision.resource_id, objective_2_revision.resource_id]
+        }
       )
 
     page_3_revision =
@@ -108,6 +140,8 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
 
     all_revisions =
       [
+        objective_1_revision,
+        objective_2_revision,
         page_1_revision,
         page_2_revision,
         page_3_revision,
@@ -144,7 +178,8 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       insert(:section,
         base_project: project,
         title: "The best course ever!",
-        start_date: ~U[2023-10-30 20:00:00Z]
+        start_date: ~U[2023-10-30 20:00:00Z],
+        analytics_version: :v2
       )
 
     {:ok, section} = Sections.create_section_resources(section, publication)
@@ -155,6 +190,13 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
     |> Sections.update_section_resource(%{
       start_date: ~U[2023-10-31 20:00:00Z],
       end_date: ~U[2023-12-31 20:00:00Z]
+    })
+
+    # schedule start and end date for page 2 section resource
+    Sections.get_section_resource(section.id, page_2_revision.resource_id)
+    |> Sections.update_section_resource(%{
+      start_date: ~U[2023-11-10 20:00:00Z],
+      end_date: ~U[2023-11-14 20:00:00Z]
     })
 
     {:ok, _} = Sections.rebuild_full_hierarchy(section)
@@ -230,6 +272,40 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
                ~s{div[role="next_page"]},
                page_2.title
              )
+    end
+
+    test "can see page content", %{
+      conn: conn,
+      user: user,
+      section: section,
+      page_1: page_1
+    } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+
+      {:ok, view, _html} = live(conn, live_view_lesson_live_route(section.slug, page_1.slug))
+
+      assert has_element?(view, "div[role=page_content] p", "Here's some test page content")
+    end
+
+    test "can see page info on header", %{
+      conn: conn,
+      user: user,
+      section: section,
+      page_2: page_2
+    } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+
+      {:ok, view, _html} = live(conn, live_view_lesson_live_route(section.slug, page_2.slug))
+
+      assert has_element?(view, ~s{div[role="container label"]}, "Module 1")
+      assert has_element?(view, ~s{div[role="page numbering index"]}, "2.")
+      assert has_element?(view, ~s{div[role="page title"]}, "Page 2")
+      assert has_element?(view, ~s{div[role="page read time"]}, "15")
+      assert has_element?(view, ~s{div[role="page schedule"]}, "Tue Nov 14, 2023")
+      assert has_element?(view, ~s{div[role="objective 1"]}, "this is the first objective")
+      assert has_element?(view, ~s{div[role="objective 2"]}, "this is the second objective")
     end
 
     test "can navigate between pages", %{
