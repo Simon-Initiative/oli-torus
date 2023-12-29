@@ -280,6 +280,28 @@ defmodule OliWeb.Common.FormatDateTime do
     |> value_or(@utc_timezone)
   end
 
+  def to_formatted_datetime(datetime, ctx, format \\ "{WDshort} {Mshort} {D}, {YYYY}")
+
+  def to_formatted_datetime(nil, _ctx, _format), do: "not yet scheduled"
+
+  def to_formatted_datetime(datetime, ctx, format) do
+    if is_binary(datetime) do
+      datetime
+      |> to_datetime
+      |> parse_datetime(ctx, format)
+    else
+      parse_datetime(datetime, ctx, format)
+    end
+  end
+
+  defp to_datetime(nil), do: "not yet scheduled"
+
+  defp to_datetime(string_datetime) do
+    {:ok, datetime, _} = DateTime.from_iso8601(string_datetime)
+
+    datetime
+  end
+
   @doc """
   Parses a DateTime (UTC) considering the given context to localize it,
   and formats it using the given format string.
