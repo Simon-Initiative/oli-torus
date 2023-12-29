@@ -118,41 +118,44 @@ defmodule OliWeb.LiveSessionPlugs.InitPage do
     })
   end
 
-  defp maybe_init_page_body(%{assigns: %{view: :page}} = socket) do
+  defp maybe_init_page_body(%{assigns: %{view: :page} = assigns} = socket) do
+    %{section: section, current_user: current_user, page_context: page_context} = assigns
+
     render_context = %Context{
       enrollment:
         Oli.Delivery.Sections.get_enrollment(
-          socket.assigns.section.slug,
-          socket.assigns.current_user.id
+          section.slug,
+          current_user.id
         ),
-      user: socket.assigns.current_user,
-      section_slug: socket.assigns.section.slug,
-      # project_slug: base_project_slug,
-      # resource_attempt: hd(context.resource_attempts),
+      user: current_user,
+      section_slug: section.slug,
       mode: :delivery,
-      activity_map: socket.assigns.page_context.activities,
-      resource_summary_fn: &Resources.resource_summary(&1, socket.assigns.section.slug, Resolver),
+      activity_map: page_context.activities,
+      resource_summary_fn: &Resources.resource_summary(&1, section.slug, Resolver),
       alternatives_groups_fn: fn ->
-        Resources.alternatives_groups(socket.assigns.section.slug, Resolver)
+        Resources.alternatives_groups(section.slug, Resolver)
       end,
       alternatives_selector_fn: &Resources.Alternatives.select/2,
       extrinsic_read_section_fn: &Oli.Delivery.ExtrinsicState.read_section/3,
-      bib_app_params: socket.assigns.page_context.bib_revisions,
-      # submitted_surveys: submitted_surveys,
-      historical_attempts: socket.assigns.page_context.historical_attempts,
-      learning_language:
-        Sections.get_section_attributes(socket.assigns.section).learning_language,
-      effective_settings: socket.assigns.page_context.effective_settings
+      bib_app_params: page_context.bib_revisions,
+      historical_attempts: page_context.historical_attempts,
+      learning_language: Sections.get_section_attributes(section).learning_language,
+      effective_settings: page_context.effective_settings
+      # when migrating from page_delivery_controller this key-values were found
+      # to apparently not be used by the page template:
+      #   project_slug: base_project_slug,
+      #   submitted_surveys: submitted_surveys,
+      #   resource_attempt: hd(context.resource_attempts)
     }
 
-    attempt_content = get_attempt_content(socket)
+    attempt_content = get_attempt_content(page_context)
 
     # Cache the page as text to allow the AI agent LV to access it.
-    cache_page_as_text(render_context, attempt_content, socket.assigns.page_context.page.id)
+    cache_page_as_text(render_context, attempt_content, page_context.page.id)
 
     assign(socket,
       html: Page.render(render_context, attempt_content, Page.Html),
-      scripts: get_required_activity_scripts(socket.assigns.page_context.activities)
+      scripts: get_required_activity_scripts(page_context.activities)
     )
   end
 
@@ -166,12 +169,12 @@ defmodule OliWeb.LiveSessionPlugs.InitPage do
     |> Enum.uniq()
   end
 
-  defp get_attempt_content(socket) do
-    this_attempt = socket.assigns.page_context.resource_attempts |> hd
+  defp get_attempt_content(page_context) do
+    this_attempt = page_context.resource_attempts |> hd
 
     if Enum.any?(this_attempt.errors, fn e ->
          e == "Selection failed to fulfill: no values provided for expression"
-       end) and socket.assigns.page_context.is_student do
+       end) and page_context.is_student do
       %{"model" => []}
     else
       this_attempt.content
