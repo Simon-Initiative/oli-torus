@@ -2,6 +2,8 @@ defmodule Oli.Delivery.Sections.SectionResource do
   use Ecto.Schema
   import Ecto.Changeset
 
+  alias Oli.Resources.Resource
+  alias Oli.Delivery.Settings.Combined
   alias Oli.Delivery.Sections.SectionResource
   alias Oli.Authoring.Course.Project
   alias Oli.Delivery.Sections.Section
@@ -50,11 +52,12 @@ defmodule Oli.Delivery.Sections.SectionResource do
 
     # the resource slug, resource and project mapping
     field :slug, :string
-    field :resource_id, :integer
+    # field :resource_id, :integer
     belongs_to :project, Project
 
     # the section this section resource belongs to
     belongs_to :section, Section
+    belongs_to :resource, Resource
 
     # resource delivery policy
     belongs_to :delivery_policy, DeliveryPolicy
@@ -106,26 +109,34 @@ defmodule Oli.Delivery.Sections.SectionResource do
     |> unique_constraint([:section_id, :resource_id])
   end
 
+  @initial_keys [
+    :id,
+    :numbering_index,
+    :numbering_level,
+    :scheduling_type,
+    :start_date,
+    :end_date,
+    :children,
+    :contained_page_count,
+    :slug,
+    :resource_id,
+    :project_id,
+    :section_id,
+    :delivery_policy_id,
+    :scoring_strategy_id,
+    :inserted_at,
+    :updated_at
+  ]
+
   def to_map(%SectionResource{} = section_resource) do
     section_resource
     |> Map.from_struct()
-    |> Map.take([
-      :id,
-      :numbering_index,
-      :numbering_level,
-      :scheduling_type,
-      :start_date,
-      :end_date,
-      :children,
-      :contained_page_count,
-      :slug,
-      :resource_id,
-      :project_id,
-      :section_id,
-      :delivery_policy_id,
-      :scoring_strategy_id,
-      :inserted_at,
-      :updated_at
-    ])
+    |> Map.take(keys_to_take())
+  end
+
+  defp keys_to_take() do
+    @initial_keys
+    |> Enum.concat(Map.keys(Map.from_struct(%Combined{})))
+    |> Enum.uniq()
   end
 end
