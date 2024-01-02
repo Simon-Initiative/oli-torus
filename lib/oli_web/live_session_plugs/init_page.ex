@@ -3,7 +3,7 @@ defmodule OliWeb.LiveSessionPlugs.InitPage do
 
   import Phoenix.Component, only: [assign: 2]
 
-  alias Oli.Delivery.{PreviousNextIndex, Sections}
+  alias Oli.Delivery.{PreviousNextIndex, Sections, Settings}
   alias Oli.Delivery.Page.PageContext
   alias Oli.Publishing.DeliveryResolver, as: Resolver
   alias Oli.Rendering.{Context, Page}
@@ -58,12 +58,57 @@ defmodule OliWeb.LiveSessionPlugs.InitPage do
 
     section_resource = Sections.get_section_resource(section.id, page.resource_id)
 
+    # Only consider graded attempts
+    resource_attempts =
+      Enum.filter(page_context.resource_attempts, fn a -> a.revision.graded == true end)
+
+    attempts_taken = length(resource_attempts)
+
+    # The Oli.Plugs.MaybeGatedResource plug sets the blocking_gates assign if there is a blocking
+    # gate that prevents this learning from starting another attempt of this resource
+    # TODO: get this blocking_gates from the conn and handle attempt_message for this case
+
+    # blocking_gates = Map.get(conn.assigns, :blocking_gates, [])
+    blocking_gates = []
+
+    new_attempt_allowed =
+      Settings.new_attempt_allowed(
+        page_context.effective_settings,
+        attempts_taken,
+        blocking_gates
+      )
+
+    attempt_message =
+      case {new_attempt_allowed, page_context.effective_settings.max_attempts} do
+        # {{:blocking_gates}, _max_attempts} ->
+        #  Oli.Delivery.Gating.details(blocking_gates, format_datetime: format_datetime_fn(conn))
+
+        {{:no_attempts_remaining}, max_attempts} ->
+          "You have no attempts remaining out of #{max_attempts} total attempt#{plural(max_attempts)}."
+
+        {{:before_start_date}, _max_attempts} ->
+          "This assessment is not yet available. It will be available on #{OliWeb.Common.FormatDateTime.date(page_context.effective_settings.start_date, precision: :minutes)}"
+
+        {{:end_date_passed}, _max_attempts} ->
+          "The deadline for this assignment has passed."
+
+        {{:allowed}, 0} ->
+          "You can take this scored page an unlimited number of times"
+
+        {{:allowed}, max_attempts} ->
+          attempts_remaining = max_attempts - attempts_taken
+
+          "You have #{attempts_remaining} attempt#{plural(attempts_remaining)} remaining out of #{max_attempts} total attempt#{plural(max_attempts)}."
+      end
+
     assign(socket, %{
       view: :prologue,
       page_number: section_resource.numbering_index,
       revision: page,
       resource_slug: page.slug,
-      page_context: page_context
+      page_context: page_context,
+      allow_attempt?: new_attempt_allowed == {:allowed},
+      attempt_message: attempt_message
     })
   end
 
@@ -187,4 +232,7 @@ defmodule OliWeb.LiveSessionPlugs.InitPage do
       Page.render(render_context, content, Page.Markdown) |> :erlang.iolist_to_binary()
     )
   end
+
+  defp plural(1), do: ""
+  defp plural(_), do: "s"
 end

@@ -42,6 +42,131 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     """
   end
 
+  def render(%{view: :prologue} = assigns) do
+    ~H"""
+    <div class="flex pb-20 flex-col items-center gap-15 flex-1">
+      <div class="w-[720px] pt-20 pb-10 flex-col justify-start items-center gap-10 inline-flex">
+        <.page_header
+          revision={@revision}
+          page_context={@page_context}
+          ctx={@ctx}
+          index={@current_page["index"]}
+          container_label={get_container_label(@current_page["id"], @section)}
+        />
+        <div class="self-stretch h-[0px] opacity-80 dark:opacity-20 bg-white border border-gray-200">
+        </div>
+        <.attempts_summary
+          page_context={@page_context}
+          attempt_message={@attempt_message}
+          ctx={@ctx}
+          allow_attempt?={@allow_attempt?}
+        />
+      </div>
+    </div>
+    """
+  end
+
+  attr :attempt_message, :string
+  attr :page_context, Oli.Delivery.Page.PageContext
+  attr :ctx, OliWeb.Common.SessionContext
+  attr :allow_attempt?, :boolean
+
+  defp attempts_summary(assigns) do
+    ~H"""
+    <div class="w-full flex-col justify-start items-start gap-3 flex">
+      <div class="self-stretch justify-start items-start gap-6 inline-flex">
+        <div class="opacity-80 dark:text-white text-sm font-bold font-['Open Sans'] uppercase tracking-wider">
+          AttemptS <%= get_attempts_count(@page_context) %>/<%= get_max_attempts(@page_context) %>
+        </div>
+      </div>
+      <div class="self-stretch flex-col justify-start items-start flex">
+        <.attempt_summary
+          :for={
+            {attempt, index} <-
+              Enum.filter(@page_context.resource_attempts, fn a -> a.revision.graded == true end)
+              |> Enum.with_index(1)
+          }
+          index={index}
+          attempt={attempt}
+          ctx={@ctx}
+        />
+      </div>
+    </div>
+    <div class="relative w-full flex justify-center">
+      <div
+        id="attempt_button_tooltip"
+        class="hidden absolute z-10 bottom-12 text-xs bg-white py-2 px-4 text-black rounded-lg shadow-lg"
+      >
+        <%= @attempt_message %>
+      </div>
+      <button
+        id="attempt_button"
+        phx-hook="TooltipWithTarget"
+        data-tooltip-target-id="attempt_button_tooltip"
+        data-tooltip-delay={750}
+        disabled={!@allow_attempt?}
+        phx-click="begin_attempt"
+        class={[
+          "cursor-pointer px-5 py-2.5 hover:bg-opacity-40 bg-blue-600 rounded-[3px] shadow justify-center items-center gap-2.5 inline-flex text-white text-sm font-normal font-['Open Sans'] leading-tight",
+          if(!@allow_attempt?, do: "opacity-50 dark:opacity-20 disabled !cursor-not-allowed")
+        ]}
+      >
+        Begin <%= get_ordinal_attempt(@page_context) %> Attempt
+      </button>
+    </div>
+    """
+  end
+
+  attr :index, :integer
+  attr :attempt, Oli.Delivery.Attempts.Core.ResourceAttempt
+  attr :ctx, OliWeb.Common.SessionContext
+
+  defp attempt_summary(assigns) do
+    # TODO: add link to review page
+    ~H"""
+    <div class="self-stretch py-1 justify-between items-start inline-flex">
+      <div class="justify-start items-center flex">
+        <div class="w-[92px] opacity-40 dark:text-white text-xs font-bold font-['Open Sans'] uppercase leading-normal tracking-wide">
+          Attempt <%= @index %>:
+        </div>
+        <div class="py-1 justify-end items-center gap-1.5 flex">
+          <div class="w-4 h-4 relative"><.star_icon /></div>
+          <div class="justify-end items-center gap-1 flex">
+            <div class="text-emerald-600 text-xs font-semibold font-['Open Sans'] tracking-tight">
+              <%= Float.round(@attempt.score, 2) %>
+            </div>
+            <div class="text-emerald-600 text-xs font-semibold font-['Open Sans'] tracking-[4px]">
+              /
+            </div>
+            <div class="text-emerald-600 text-xs font-semibold font-['Open Sans'] tracking-tight">
+              <%= Float.round(@attempt.out_of, 2) %>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="flex-col justify-start items-end inline-flex">
+        <div class="py-1 justify-start items-start gap-1 inline-flex">
+          <div class="opacity-50 dark:text-white text-xs font-normal font-['Open Sans']">
+            Submitted:
+          </div>
+          <div class="dark:text-white text-xs font-normal font-['Open Sans']">
+            <%= FormatDateTime.to_formatted_datetime(
+              @attempt.date_submitted,
+              @ctx,
+              "{WDshort} {Mshort} {D}, {YYYY}"
+            ) %>
+          </div>
+        </div>
+        <div class="w-[124px] py-1 justify-end items-center gap-2.5 inline-flex">
+          <div class="cursor-pointer hover:opacity-40 text-blue-500 text-xs font-semibold font-['Open Sans'] uppercase tracking-wide">
+            Review
+          </div>
+        </div>
+      </div>
+    </div>
+    """
+  end
+
   # As we implement more scenarios we can add more clauses to this function depending on the :view key.
   def render(assigns) do
     ~H"""
@@ -185,6 +310,24 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     """
   end
 
+  def star_icon(assigns) do
+    ~H"""
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="16"
+      height="16"
+      viewBox="0 0 16 16"
+      fill="none"
+      role="star icon"
+    >
+      <path
+        d="M3.88301 14.0007L4.96634 9.31732L1.33301 6.16732L6.13301 5.75065L7.99967 1.33398L9.86634 5.75065L14.6663 6.16732L11.033 9.31732L12.1163 14.0007L7.99967 11.5173L3.88301 14.0007Z"
+        fill="#0CAF61"
+      />
+    </svg>
+    """
+  end
+
   def flag_icon(assigns) do
     ~H"""
     <svg
@@ -220,6 +363,11 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     """
   end
 
+  def handle_event("begin_attempt", _, socket) do
+    IO.puts("TODO: begin attempt!")
+    {:noreply, socket}
+  end
+
   defp get_container_label(page_id, section) do
     container =
       Oli.Delivery.Hierarchy.find_parent_in_hierarchy(
@@ -231,5 +379,29 @@ defmodule OliWeb.Delivery.Student.LessonLive do
       %{numbering_level: container["level"], numbering_index: container["index"]},
       section.customizations
     )
+  end
+
+  defp get_max_attempts(%{effective_settings: %{max_attempts: 0}} = _page_context),
+    do: "unlimited"
+
+  defp get_max_attempts(%{effective_settings: %{max_attempts: max_attempts}} = _page_context),
+    do: max_attempts
+
+  defp get_attempts_count(%{resource_attempts: resource_attempts} = _page_context) do
+    Enum.count(resource_attempts, fn a -> a.revision.graded == true end)
+  end
+
+  defp get_ordinal_attempt(page_context) do
+    next_attempt_number = get_attempts_count(page_context) + 1
+
+    case {rem(next_attempt_number, 10), rem(next_attempt_number, 100)} do
+      {1, _} -> Integer.to_string(next_attempt_number) <> "st"
+      {2, _} -> Integer.to_string(next_attempt_number) <> "nd"
+      {3, _} -> Integer.to_string(next_attempt_number) <> "rd"
+      {_, 11} -> Integer.to_string(next_attempt_number) <> "th"
+      {_, 12} -> Integer.to_string(next_attempt_number) <> "th"
+      {_, 13} -> Integer.to_string(next_attempt_number) <> "th"
+      _ -> Integer.to_string(next_attempt_number) <> "th"
+    end
   end
 end
