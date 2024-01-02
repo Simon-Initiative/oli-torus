@@ -86,23 +86,20 @@ defmodule OliWeb.Delivery.Student.LessonLive do
   defp attempts_summary(assigns) do
     ~H"""
     <div class="w-full flex-col justify-start items-start gap-3 flex">
-      <div class="self-stretch justify-start items-start gap-6 inline-flex">
-        <div class="relative w-full">
-          <div
-            id="attempts_summary"
-            phx-hook="TooltipWithTarget"
-            data-tooltip-target-id="attempt_button_tooltip"
-            data-tooltip-delay={150}
-            class="opacity-80 cursor-help dark:text-white text-sm font-bold font-['Open Sans'] uppercase tracking-wider"
-          >
-            AttemptS <%= get_attempts_count(@page_context) %>/<%= get_max_attempts(@page_context) %>
-          </div>
-          <div
-            id="attempt_button_tooltip"
-            class="absolute left-32 -top-2 hidden text-xs bg-white py-2 px-4 text-black rounded-lg shadow-lg"
-          >
-            <%= @attempt_message %>
-          </div>
+      <div class="self-stretch justify-start items-start gap-6 inline-flex relative">
+        <div
+          id="attempts_summary_with_tooltip"
+          phx-hook="TooltipWithTarget"
+          data-tooltip-target-id="attempt_tooltip"
+          class="opacity-80 cursor-help dark:text-white text-sm font-bold font-['Open Sans'] uppercase tracking-wider"
+        >
+          AttemptS <%= get_attempts_count(@page_context) %>/<%= get_max_attempts(@page_context) %>
+        </div>
+        <div
+          id="attempt_tooltip"
+          class="absolute hidden left-32 -top-2 text-xs bg-white py-2 px-4 text-black rounded-lg shadow-lg"
+        >
+          <%= @attempt_message %>
         </div>
       </div>
       <div class="self-stretch flex-col justify-start items-start flex">
