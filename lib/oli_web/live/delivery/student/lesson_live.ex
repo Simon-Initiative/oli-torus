@@ -6,6 +6,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
 
   alias Oli.Delivery.Sections
   alias OliWeb.Common.FormatDateTime
+  alias OliWeb.Components.Modal
 
   def mount(_params, _session, socket) do
     {:ok, socket}
@@ -44,6 +45,17 @@ defmodule OliWeb.Delivery.Student.LessonLive do
 
   def render(%{view: :prologue} = assigns) do
     ~H"""
+    <Modal.modal id="password_attempt_modal" class="w-1/2">
+      <:title>Provide Assessment Password</:title>
+      <.form
+        phx-submit={JS.push("begin_attempt") |> Modal.hide_modal("password_attempt_modal")}
+        for={%{}}
+        class="flex flex-col gap-6"
+      >
+        <input id="password_attempt_input" type="password" name="password" field={:password} value="" />
+        <.button type="submit" class="mx-auto btn btn-primary">Begin</.button>
+      </.form>
+    </Modal.modal>
     <div class="flex pb-20 flex-col items-center gap-15 flex-1">
       <div class="w-[720px] pt-20 pb-10 flex-col justify-start items-center gap-10 inline-flex">
         <.page_header
@@ -105,7 +117,12 @@ defmodule OliWeb.Delivery.Student.LessonLive do
         data-tooltip-target-id="attempt_button_tooltip"
         data-tooltip-delay={750}
         disabled={!@allow_attempt?}
-        phx-click="begin_attempt"
+        phx-click={
+          if(@page_context.effective_settings.password not in [nil, ""],
+            do: Modal.show_modal("password_attempt_modal") |> JS.focus(to: "#password_attempt_input"),
+            else: "begin_attempt"
+          )
+        }
         class={[
           "cursor-pointer px-5 py-2.5 hover:bg-opacity-40 bg-blue-600 rounded-[3px] shadow justify-center items-center gap-2.5 inline-flex text-white text-sm font-normal font-['Open Sans'] leading-tight",
           if(!@allow_attempt?, do: "opacity-50 dark:opacity-20 disabled !cursor-not-allowed")
@@ -363,8 +380,13 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     """
   end
 
-  def handle_event("begin_attempt", _, socket) do
-    IO.puts("TODO: begin attempt!")
+  def handle_event("begin_attempt", %{"password" => password}, socket)
+      when password != socket.assigns.page_context.effective_settings.password do
+    {:noreply, put_flash(socket, :error, "Incorrect password")}
+  end
+
+  def handle_event("begin_attempt", _params, socket) do
+    # TODO begin attempt
     {:noreply, socket}
   end
 
