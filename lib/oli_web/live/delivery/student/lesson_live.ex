@@ -87,8 +87,22 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     ~H"""
     <div class="w-full flex-col justify-start items-start gap-3 flex">
       <div class="self-stretch justify-start items-start gap-6 inline-flex">
-        <div class="opacity-80 dark:text-white text-sm font-bold font-['Open Sans'] uppercase tracking-wider">
-          AttemptS <%= get_attempts_count(@page_context) %>/<%= get_max_attempts(@page_context) %>
+        <div class="relative w-full">
+          <div
+            id="attempts_summary"
+            phx-hook="TooltipWithTarget"
+            data-tooltip-target-id="attempt_button_tooltip"
+            data-tooltip-delay={150}
+            class="opacity-80 cursor-help dark:text-white text-sm font-bold font-['Open Sans'] uppercase tracking-wider"
+          >
+            AttemptS <%= get_attempts_count(@page_context) %>/<%= get_max_attempts(@page_context) %>
+          </div>
+          <div
+            id="attempt_button_tooltip"
+            class="absolute left-32 -top-2 hidden text-xs bg-white py-2 px-4 text-black rounded-lg shadow-lg"
+          >
+            <%= @attempt_message %>
+          </div>
         </div>
       </div>
       <div class="self-stretch flex-col justify-start items-start flex">
@@ -104,33 +118,22 @@ defmodule OliWeb.Delivery.Student.LessonLive do
         />
       </div>
     </div>
-    <div class="relative w-full flex justify-center">
-      <div
-        id="attempt_button_tooltip"
-        class="hidden absolute z-10 bottom-12 text-xs bg-white py-2 px-4 text-black rounded-lg shadow-lg"
-      >
-        <%= @attempt_message %>
-      </div>
-      <button
-        id="attempt_button"
-        phx-hook="TooltipWithTarget"
-        data-tooltip-target-id="attempt_button_tooltip"
-        data-tooltip-delay={750}
-        disabled={!@allow_attempt?}
-        phx-click={
-          if(@page_context.effective_settings.password not in [nil, ""],
-            do: Modal.show_modal("password_attempt_modal") |> JS.focus(to: "#password_attempt_input"),
-            else: "begin_attempt"
-          )
-        }
-        class={[
-          "cursor-pointer px-5 py-2.5 hover:bg-opacity-40 bg-blue-600 rounded-[3px] shadow justify-center items-center gap-2.5 inline-flex text-white text-sm font-normal font-['Open Sans'] leading-tight",
-          if(!@allow_attempt?, do: "opacity-50 dark:opacity-20 disabled !cursor-not-allowed")
-        ]}
-      >
-        Begin <%= get_ordinal_attempt(@page_context) %> Attempt
-      </button>
-    </div>
+    <button
+      id="attempt_button"
+      disabled={!@allow_attempt?}
+      phx-click={
+        if(@page_context.effective_settings.password not in [nil, ""],
+          do: Modal.show_modal("password_attempt_modal") |> JS.focus(to: "#password_attempt_input"),
+          else: "begin_attempt"
+        )
+      }
+      class={[
+        "cursor-pointer px-5 py-2.5 hover:bg-opacity-40 bg-blue-600 rounded-[3px] shadow justify-center items-center gap-2.5 inline-flex text-white text-sm font-normal font-['Open Sans'] leading-tight",
+        if(!@allow_attempt?, do: "opacity-50 dark:opacity-20 disabled !cursor-not-allowed")
+      ]}
+    >
+      Begin <%= get_ordinal_attempt(@page_context) %> Attempt
+    </button>
     """
   end
 
