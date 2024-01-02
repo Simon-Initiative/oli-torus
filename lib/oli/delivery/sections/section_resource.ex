@@ -52,7 +52,6 @@ defmodule Oli.Delivery.Sections.SectionResource do
 
     # the resource slug, resource and project mapping
     field :slug, :string
-    # field :resource_id, :integer
     belongs_to :project, Project
 
     # the section this section resource belongs to
