@@ -2,6 +2,7 @@ defmodule Oli.Delivery.SectionsTest do
   use OliWeb.ConnCase
 
   import Oli.Utils.Seeder.Utils
+  import Oli.Factory
 
   alias Oli.Utils.Seeder
   alias Oli.Factory
@@ -917,6 +918,232 @@ defmodule Oli.Delivery.SectionsTest do
                %{resource_id: ^page5_resource_id}
              ] =
                Sections.get_graded_pages(section.slug, student1.id)
+    end
+  end
+
+  describe "get_container_label_and_numbering/2" do
+    setup _ do
+      author = insert(:author)
+      project = insert(:project, authors: [author])
+
+      # revisions...
+      ## section container...
+      section_1_revision =
+        insert(:revision, %{
+          resource_type_id: Oli.Resources.ResourceType.get_id_by_type("container")
+        })
+
+      section_2_revision =
+        insert(:revision, %{
+          resource_type_id: Oli.Resources.ResourceType.get_id_by_type("container")
+        })
+
+      ## module...
+      module_1_revision =
+        insert(:revision, %{
+          resource_type_id: Oli.Resources.ResourceType.get_id_by_type("container"),
+          children: [section_1_revision.resource_id, section_2_revision.resource_id]
+        })
+
+      module_2_revision =
+        insert(:revision, %{
+          resource_type_id: Oli.Resources.ResourceType.get_id_by_type("container")
+        })
+
+      ## unit...
+      unit_1_revision =
+        insert(:revision, %{
+          resource_type_id: Oli.Resources.ResourceType.get_id_by_type("container"),
+          children: [module_1_revision.resource_id, module_2_revision.resource_id]
+        })
+
+      unit_2_revision =
+        insert(:revision, %{
+          resource_type_id: Oli.Resources.ResourceType.get_id_by_type("container")
+        })
+
+      ## root container...
+      container_revision =
+        insert(:revision, %{
+          resource_type_id: Oli.Resources.ResourceType.get_id_by_type("container"),
+          children: [unit_1_revision.resource_id, unit_2_revision.resource_id],
+          title: "Root Container"
+        })
+
+      all_revisions =
+        [
+          section_1_revision,
+          section_2_revision,
+          module_1_revision,
+          module_2_revision,
+          unit_1_revision,
+          unit_2_revision,
+          container_revision
+        ]
+
+      # asociate resources to project
+      Enum.each(all_revisions, fn revision ->
+        insert(:project_resource, %{
+          project_id: project.id,
+          resource_id: revision.resource_id
+        })
+      end)
+
+      # publish project
+      publication =
+        insert(:publication, %{project: project, root_resource_id: container_revision.resource_id})
+
+      # publish resources
+      Enum.each(all_revisions, fn revision ->
+        insert(:published_resource, %{
+          publication: publication,
+          resource: revision.resource,
+          revision: revision,
+          author: author
+        })
+      end)
+
+      # create section...
+      section =
+        insert(:section,
+          base_project: project,
+          analytics_version: :v2
+        )
+
+      {:ok, section} = Sections.create_section_resources(section, publication)
+      {:ok, _} = Sections.rebuild_contained_pages(section)
+      {:ok, _} = Sections.rebuild_contained_objectives(section)
+      {:ok, _} = Sections.rebuild_full_hierarchy(section)
+
+      %{
+        section: section,
+        project: project,
+        publication: publication,
+        section_1: section_1_revision,
+        section_2: section_2_revision,
+        module_1: module_1_revision,
+        module_2: module_2_revision,
+        unit_1: unit_1_revision,
+        unit_2: unit_2_revision
+      }
+    end
+
+    test "returns the correct label for a section without custom labels", %{
+      section: section,
+      section_1: section_1,
+      section_2: section_2,
+      module_1: module_1,
+      module_2: module_2,
+      unit_1: unit_1,
+      unit_2: unit_2
+    } do
+      section_1_section_resource =
+        Sections.get_section_resource(section.id, section_1.resource_id)
+
+      section_2_section_resource =
+        Sections.get_section_resource(section.id, section_2.resource_id)
+
+      module_1_section_resource =
+        Sections.get_section_resource(section.id, module_1.resource_id)
+
+      module_2_section_resource =
+        Sections.get_section_resource(section.id, module_2.resource_id)
+
+      unit_1_section_resource =
+        Sections.get_section_resource(section.id, unit_1.resource_id)
+
+      unit_2_section_resource =
+        Sections.get_section_resource(section.id, unit_2.resource_id)
+
+      assert Sections.get_container_label_and_numbering(
+               section_1_section_resource,
+               section.customizations
+             ) == "Section 1"
+
+      assert Sections.get_container_label_and_numbering(
+               section_2_section_resource,
+               section.customizations
+             ) == "Section 2"
+
+      assert Sections.get_container_label_and_numbering(
+               module_1_section_resource,
+               section.customizations
+             ) == "Module 1"
+
+      assert Sections.get_container_label_and_numbering(
+               module_2_section_resource,
+               section.customizations
+             ) == "Module 2"
+
+      assert Sections.get_container_label_and_numbering(
+               unit_1_section_resource,
+               section.customizations
+             ) == "Unit 1"
+
+      assert Sections.get_container_label_and_numbering(
+               unit_2_section_resource,
+               section.customizations
+             ) == "Unit 2"
+    end
+
+    test "returns the correct label for a section with custom labels", %{
+      section: section,
+      section_1: section_1,
+      section_2: section_2,
+      module_1: module_1,
+      module_2: module_2,
+      unit_1: unit_1,
+      unit_2: unit_2
+    } do
+      section_1_section_resource =
+        Sections.get_section_resource(section.id, section_1.resource_id)
+
+      section_2_section_resource =
+        Sections.get_section_resource(section.id, section_2.resource_id)
+
+      module_1_section_resource =
+        Sections.get_section_resource(section.id, module_1.resource_id)
+
+      module_2_section_resource =
+        Sections.get_section_resource(section.id, module_2.resource_id)
+
+      unit_1_section_resource =
+        Sections.get_section_resource(section.id, unit_1.resource_id)
+
+      unit_2_section_resource =
+        Sections.get_section_resource(section.id, unit_2.resource_id)
+
+      custom_labels = %{unit: "Volume", module: "Chapter", section: "Lesson"}
+
+      assert Sections.get_container_label_and_numbering(
+               section_1_section_resource,
+               custom_labels
+             ) == "Lesson 1"
+
+      assert Sections.get_container_label_and_numbering(
+               section_2_section_resource,
+               custom_labels
+             ) == "Lesson 2"
+
+      assert Sections.get_container_label_and_numbering(
+               module_1_section_resource,
+               custom_labels
+             ) == "Chapter 1"
+
+      assert Sections.get_container_label_and_numbering(
+               module_2_section_resource,
+               custom_labels
+             ) == "Chapter 2"
+
+      assert Sections.get_container_label_and_numbering(
+               unit_1_section_resource,
+               custom_labels
+             ) == "Volume 1"
+
+      assert Sections.get_container_label_and_numbering(
+               unit_2_section_resource,
+               custom_labels
+             ) == "Volume 2"
     end
   end
 end

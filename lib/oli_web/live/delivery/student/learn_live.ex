@@ -369,7 +369,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
                 <span class="text-gray-400 opacity-80 dark:text-[#696974] dark:opacity-100 mr-1">
                   Due:
                 </span>
-                <%= to_formatted_datetime(
+                <%= FormatDateTime.to_formatted_datetime(
                   @unit["section_resource"]["end_date"],
                   @ctx,
                   "{WDshort}, {Mshort} {D}, {YYYY} ({h12}:{m}{am})"
@@ -467,7 +467,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
           ] %>
         </h2>
         <span class="text-[12px] leading-[16px] opacity-50 dark:text-white">
-          Due: <%= to_formatted_datetime(
+          Due: <%= FormatDateTime.to_formatted_datetime(
             Map.get(@selected_module_per_unit_resource_id, @unit["resource_id"])["section_resource"][
               "end_date"
             ],
@@ -1059,26 +1059,6 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     if !String.contains?(Jason.encode!(content), "\"type\":\"h1\""), do: "mt-[52px]"
   end
 
-  defp to_formatted_datetime(nil, _ctx, _format), do: "not yet scheduled"
-
-  defp to_formatted_datetime(datetime, ctx, format) do
-    if is_binary(datetime) do
-      datetime
-      |> to_datetime
-      |> FormatDateTime.parse_datetime(ctx, format)
-    else
-      FormatDateTime.parse_datetime(datetime, ctx, format)
-    end
-  end
-
-  defp to_datetime(nil), do: "not yet scheduled"
-
-  defp to_datetime(string_datetime) do
-    {:ok, datetime, _} = DateTime.from_iso8601(string_datetime)
-
-    datetime
-  end
-
   defp get_module(hierarchy, unit_resource_id, module_resource_id) do
     unit =
       Enum.find(hierarchy["children"], fn unit ->
@@ -1203,7 +1183,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       student_exception ->
         student_exception.end_date
     end
-    |> to_formatted_datetime(context, format)
+    |> FormatDateTime.to_formatted_datetime(context, format)
   end
 
   defp get_viewed_intro_video_resource_ids(section_slug, current_user_id) do

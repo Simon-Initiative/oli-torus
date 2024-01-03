@@ -5,6 +5,9 @@ defmodule OliWeb.LiveSessionPlugs.InitPage do
 
   alias Oli.Delivery.{PreviousNextIndex, Sections}
   alias Oli.Delivery.Page.PageContext
+  alias Oli.Publishing.DeliveryResolver, as: Resolver
+  alias Oli.Rendering.{Context, Page}
+  alias Oli.Resources
 
   def on_mount(
         :page_context,
@@ -12,8 +15,6 @@ defmodule OliWeb.LiveSessionPlugs.InitPage do
         _session,
         %{assigns: assigns} = socket
       ) do
-    numbered_revisions = Sections.get_revision_indexes(assigns.section.slug)
-
     socket =
       PageContext.create_for_visit(
         assigns.section,
@@ -22,7 +23,8 @@ defmodule OliWeb.LiveSessionPlugs.InitPage do
         assigns.datashop_session_id
       )
       |> init_context_state(socket)
-      |> assign(%{numbered_revisions: numbered_revisions})
+      |> maybe_init_page_body()
+      |> assign(numbered_revisions: Sections.get_revision_indexes(assigns.section.slug))
 
     {:cont, socket}
   end
@@ -114,5 +116,75 @@ defmodule OliWeb.LiveSessionPlugs.InitPage do
       resource_slug: page_context.page.slug,
       page_context: page_context
     })
+  end
+
+  defp maybe_init_page_body(%{assigns: %{view: :page} = assigns} = socket) do
+    %{section: section, current_user: current_user, page_context: page_context} = assigns
+
+    render_context = %Context{
+      enrollment:
+        Oli.Delivery.Sections.get_enrollment(
+          section.slug,
+          current_user.id
+        ),
+      user: current_user,
+      section_slug: section.slug,
+      mode: :delivery,
+      activity_map: page_context.activities,
+      resource_summary_fn: &Resources.resource_summary(&1, section.slug, Resolver),
+      alternatives_groups_fn: fn ->
+        Resources.alternatives_groups(section.slug, Resolver)
+      end,
+      alternatives_selector_fn: &Resources.Alternatives.select/2,
+      extrinsic_read_section_fn: &Oli.Delivery.ExtrinsicState.read_section/3,
+      bib_app_params: page_context.bib_revisions,
+      historical_attempts: page_context.historical_attempts,
+      learning_language: Sections.get_section_attributes(section).learning_language,
+      effective_settings: page_context.effective_settings
+      # when migrating from page_delivery_controller this key-values were found
+      # to apparently not be used by the page template:
+      #   project_slug: base_project_slug,
+      #   submitted_surveys: submitted_surveys,
+      #   resource_attempt: hd(context.resource_attempts)
+    }
+
+    attempt_content = get_attempt_content(page_context)
+
+    # Cache the page as text to allow the AI agent LV to access it.
+    cache_page_as_text(render_context, attempt_content, page_context.page.id)
+
+    assign(socket,
+      html: Page.render(render_context, attempt_content, Page.Html),
+      scripts: get_required_activity_scripts(page_context.activities)
+    )
+  end
+
+  defp maybe_init_page_body(socket), do: socket
+
+  defp get_required_activity_scripts(activity_mapper) do
+    # this is an optimization to exclude not needed activity scripts (~1.5mb each)
+    Enum.map(activity_mapper, fn {_activity_id, activity} ->
+      activity.script
+    end)
+    |> Enum.uniq()
+  end
+
+  defp get_attempt_content(page_context) do
+    this_attempt = page_context.resource_attempts |> hd
+
+    if Enum.any?(this_attempt.errors, fn e ->
+         e == "Selection failed to fulfill: no values provided for expression"
+       end) and page_context.is_student do
+      %{"model" => []}
+    else
+      this_attempt.content
+    end
+  end
+
+  defp cache_page_as_text(render_context, content, page_id) do
+    Oli.Converstation.PageContentCache.put(
+      page_id,
+      Page.render(render_context, content, Page.Markdown) |> :erlang.iolist_to_binary()
+    )
   end
 end

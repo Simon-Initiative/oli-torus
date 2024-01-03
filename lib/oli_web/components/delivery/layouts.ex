@@ -286,6 +286,11 @@ defmodule OliWeb.Components.Delivery.Layouts do
   attr(:section_slug, :string)
 
   def previous_next_nav(assigns) do
+    # <.links /> were changed from "navigate" to "href" to force a page reload
+    # to fix a bug where the page content would render incorrectly some components
+    # (for instance, the popup or the formula component from Oli.Rendering.Content.Html)
+    # and the page would not react to interactions after navigatint to other page
+    # ("working" loader kept spinning after interacting with an activity)
     ~H"""
     <div
       :if={!is_nil(@current_page)}
@@ -312,7 +317,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
         role="prev_page"
       >
         <div class="px-6 py-2 rounded justify-end items-center gap-2 flex">
-          <.link navigate={resource_navigation_url(@previous_page, @section_slug)}>
+          <.link href={resource_navigation_url(@previous_page, @section_slug)}>
             <div class="w-[72px] h-10 opacity-30 hover:opacity-40 bg-blue-600 flex items-center justify-center">
               <.left_arrow />
             </div>
@@ -332,7 +337,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
           <%= @next_page["title"] %>
         </div>
         <div class="px-6 py-2 rounded justify-end items-center gap-2 flex">
-          <.link navigate={resource_navigation_url(@next_page, @section_slug)}>
+          <.link href={resource_navigation_url(@next_page, @section_slug)}>
             <div class="w-[72px] h-10 opacity-90 hover:opacity-100 bg-blue-600 flex items-center justify-center">
               <.right_arrow />
             </div>
