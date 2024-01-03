@@ -1,6 +1,7 @@
 defmodule Oli.Authoring.Clone do
   import Ecto.Query, warn: false
   import Oli.Authoring.Editing.Utils
+  alias Oli.Authoring.Editing.Blueprint
   alias Oli.Publishing
   alias Oli.Publishing.{AuthoringResolver}
   alias Oli.Authoring.{Collaborators, Locks}
@@ -8,6 +9,11 @@ defmodule Oli.Authoring.Clone do
   alias Oli.Authoring.Course
   alias Oli.Authoring.Course.Project
   alias Oli.Authoring.Authors.AuthorProject
+  alias Oli.Delivery.Sections.Blueprint
+
+  def clone_bluprints(blueprints) do
+    Enum.map(blueprints, &Blueprint.duplicate/1)
+  end
 
   def clone_project(project_slug, author, opts \\ []) do
     new_project_title_suffix =
@@ -45,7 +51,10 @@ defmodule Oli.Authoring.Clone do
            _ <- clone_all_published_resources(base_publication.id, cloned_publication.id),
            _ <- clone_all_project_resources(base_project.id, cloned_project.id),
            _ <- clone_all_media_items(base_project.id, cloned_project.id),
-           _ <- clone_all_project_activity_registrations(base_project.id, cloned_project.id) do
+           _ <- clone_all_project_activity_registrations(base_project.id, cloned_project.id),
+           Blueprint.get_blueprint_by_base_project(base_project)
+           |> Enum.map(fn blueprint -> %{blueprint | base_project_id: cloned_project.id} end)
+           |> clone_bluprints() do
         cloned_project
       else
         {:error, error} -> Repo.rollback(error)
