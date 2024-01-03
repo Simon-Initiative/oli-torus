@@ -1550,7 +1550,7 @@ defmodule Oli.Delivery.Sections do
         numbering_level: level,
         slug: slug,
         collab_space_config: revision.collab_space_config,
-        max_attempts: revision.max_attempts,
+        max_attempts: revision.max_attempts || 0,
         resource_id: revision.resource_id,
         project_id: publication.project_id,
         scoring_strategy_id: revision.scoring_strategy_id,
