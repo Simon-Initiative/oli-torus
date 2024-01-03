@@ -87,6 +87,16 @@ export const getTotalPageCount = (schedule: HierarchyItem[]): number =>
     return item.resource_type_id === ScheduleItemType.Page || item.children.length === 0;
   }).length;
 
+export const clearScheduleItem = (target: HierarchyItem, schedule: HierarchyItem[]) => {
+  target.startDate = null;
+  target.endDate = null;
+  target.startDateTime = null;
+  target.endDateTime = null;
+  target.manually_scheduled = false;
+  const children = target.children.map((id) => getScheduleItem(id, schedule));
+  children.filter((child) => !!child).forEach((child) => clearScheduleItem(child!, schedule));
+};
+
 export const resetScheduleItem = (
   target: HierarchyItem,
   start: DateWithoutTime,

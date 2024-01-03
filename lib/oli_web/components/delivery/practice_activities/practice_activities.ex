@@ -701,6 +701,10 @@ defmodule OliWeb.Components.Delivery.PracticeActivities do
       Enum.find(activity_types_map, fn {_k, v} -> v.title == "Multi Input" end)
       |> elem(0)
 
+    response_multi_type_id =
+      Enum.find(activity_types_map, fn {_k, v} -> v.title == "ResponseMulti Input" end)
+      |> elem(0)
+
     likert_type_id =
       Enum.find(activity_types_map, fn {_k, v} -> v.title == "Likert" end)
       |> elem(0)
@@ -719,6 +723,10 @@ defmodule OliWeb.Components.Delivery.PracticeActivities do
 
       %{activity_type_id: activity_type_id} = activity_attempt
       when activity_type_id == multi_input_type_id ->
+        add_multi_input_details(activity_attempt, section)
+
+      %{activity_type_id: activity_type_id} = activity_attempt
+      when activity_type_id == response_multi_type_id ->
         add_multi_input_details(activity_attempt, section)
 
       %{activity_type_id: activity_type_id} = activity_attempt

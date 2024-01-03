@@ -25,13 +25,14 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
     )
   end
 
-  defp live_view_overview_route(section_slug, active_tab, assessment_id) do
+  defp live_view_overview_route(section_slug, active_tab, assessment_id, params \\ %{}) do
     Routes.live_path(
       OliWeb.Endpoint,
       OliWeb.Sections.AssessmentSettings.SettingsLive,
       section_slug,
       active_tab,
-      assessment_id
+      assessment_id,
+      params
     )
   end
 
@@ -942,6 +943,79 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
       assert sorted_2.late_submit == "Allow"
       assert sorted_3.late_submit == "Allow"
       assert sorted_4.late_submit == "Allow"
+    end
+
+    test "can be paginated", %{
+      conn: conn,
+      section: section,
+      page_1: page_1,
+      page_2: page_2,
+      page_3: page_3,
+      page_4: page_4
+    } do
+      # set params to limit to 2 assessments per page
+      params = %{
+        limit: 2,
+        offset: 0
+      }
+
+      {:ok, view, _html} =
+        live(conn, live_view_overview_route(section.slug, "settings", "all", params))
+
+      # assert that the first two assessments are shown
+      assert has_element?(
+               view,
+               "table.instructor_dashboard_table > tbody > tr:nth-child(1) > td > div",
+               "#{page_1.title}"
+             )
+
+      assert has_element?(
+               view,
+               "table.instructor_dashboard_table > tbody > tr:nth-child(2) > td > div",
+               "#{page_2.title}"
+             )
+
+      refute has_element?(
+               view,
+               "table.instructor_dashboard_table > tbody > tr > td > div",
+               "#{page_3.title}"
+             )
+
+      refute has_element?(
+               view,
+               "table.instructor_dashboard_table > tbody > tr > td > div",
+               "#{page_4.title}"
+             )
+
+      # click on the next page button
+      view
+      |> element("button[phx-value-offset=\"2\"][phx-value-limit=\"2\"]", "2")
+      |> render_click()
+
+      # assert that the next two assessments are shown
+      assert has_element?(
+               view,
+               "table.instructor_dashboard_table > tbody > tr:nth-child(1) > td > div",
+               "#{page_3.title}"
+             )
+
+      assert has_element?(
+               view,
+               "table.instructor_dashboard_table > tbody > tr:nth-child(2) > td > div",
+               "#{page_4.title}"
+             )
+
+      refute has_element?(
+               view,
+               "table.instructor_dashboard_table > tbody > tr > td > div",
+               "#{page_1.title}"
+             )
+
+      refute has_element?(
+               view,
+               "table.instructor_dashboard_table > tbody > tr > td > div",
+               "#{page_2.title}"
+             )
     end
 
     test "changing a value of a setting of the column used for sorting does not trigger the re-sorting",

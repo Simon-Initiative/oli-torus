@@ -325,7 +325,7 @@ defmodule Oli.Publishing.DeliveryResolver do
       |> Enum.reduce({%{}, nil}, fn {s, sr, rev, is_root?, proj_slug}, {nodes, root} ->
         labels =
           case s.customizations do
-            nil -> Map.from_struct(CustomLabels.default())
+            nil -> CustomLabels.default_map()
             l -> Map.from_struct(l)
           end
 
