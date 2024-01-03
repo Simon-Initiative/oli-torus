@@ -3297,4 +3297,8 @@ defmodule Oli.TestHelpers do
         activity_provider
       )
   end
+
+  def flush_view_mailbox(view) do
+    :sys.get_state(view.pid)
+  end
 end

@@ -229,6 +229,8 @@ defmodule OliWeb.NewCourse.CourseDetailsTest do
         "current_step" => 3
       })
 
+      flush_view_mailbox(view)
+
       flash =
         assert_redirect(
           view,
