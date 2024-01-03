@@ -317,7 +317,7 @@ defmodule OliWeb.Delivery.NewCourse do
             {:error, error} ->
               {_error_id, error_msg} = log_error("Failed to create new section", error)
               send(liveview_pid, {:section_created_error, error_msg})
-            end
+          end
 
         {blueprint, _, :product_slug} ->
           project = Oli.Repo.get(Oli.Authoring.Course.Project, blueprint.base_project_id)
