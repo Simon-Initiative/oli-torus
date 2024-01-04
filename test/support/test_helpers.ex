@@ -11,6 +11,7 @@ defmodule Oli.TestHelpers do
   alias Oli.Authoring.Course.Project
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.Section
+  alias Oli.Delivery.Sections.SectionResource
   alias Oli.Institutions
   alias Oli.PartComponents
   alias Oli.Publishing
