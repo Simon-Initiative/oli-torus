@@ -5,8 +5,6 @@ defmodule OliWeb.NewCourse.CourseDetailsTest do
   import Ecto.Query, warn: false
   import Phoenix.LiveViewTest
 
-  alias OliWeb.Sections.OverviewView
-
   @live_view_admin_route Routes.select_source_path(OliWeb.Endpoint, :admin)
   @live_view_independent_learner_route Routes.select_source_path(
                                          OliWeb.Endpoint,
@@ -111,10 +109,8 @@ defmodule OliWeb.NewCourse.CourseDetailsTest do
 
       wait_for_completion()
 
-      redirect_to = Routes.live_path(conn, OverviewView, "new_admin_course")
-      flash = assert_redirect(view, redirect_to)
-
-      assert flash["info"] == "Section successfully created."
+      assert %{"info" => "Section successfully created."} ==
+               assert_redirect(view, ~p"/sections/new_admin_course")
     end
 
     test "successfully creates a section from a product", %{conn: conn} = context do
@@ -138,10 +134,8 @@ defmodule OliWeb.NewCourse.CourseDetailsTest do
 
       wait_for_completion()
 
-      redirect_to = Routes.live_path(conn, OverviewView, "new_admin_course")
-      flash = assert_redirect(view, redirect_to)
-
-      assert flash["info"] == "Section successfully created."
+      assert %{"info" => "Section successfully created."} ==
+               assert_redirect(view, ~p"/sections/new_admin_course")
     end
   end
 
@@ -203,10 +197,8 @@ defmodule OliWeb.NewCourse.CourseDetailsTest do
 
       wait_for_completion()
 
-      redirect_to = Routes.live_path(conn, OverviewView, "new_instructor_course")
-      flash = assert_redirect(view, redirect_to)
-
-      assert flash["info"] == "Section successfully created."
+      assert %{"info" => "Section successfully created."} ==
+               assert_redirect(view, ~p"/sections/new_instructor_course")
     end
 
     test "successfully creates a section from a product", %{conn: conn} = context do
@@ -230,10 +222,8 @@ defmodule OliWeb.NewCourse.CourseDetailsTest do
 
       wait_for_completion()
 
-      redirect_to = Routes.live_path(conn, OverviewView, "new_instructor_course")
-      flash = assert_redirect(view, redirect_to)
-
-      assert flash["info"] == "Section successfully created."
+      assert %{"info" => "Section successfully created."} ==
+               assert_redirect(view, ~p"/sections/new_instructor_course")
     end
   end
 
@@ -294,10 +284,7 @@ defmodule OliWeb.NewCourse.CourseDetailsTest do
 
       wait_for_completion()
 
-      redirect_to = Routes.delivery_path(OliWeb.Endpoint, :index)
-      flash = assert_redirect(view, redirect_to)
-
-      assert flash["info"] == "Section successfully created."
+      assert %{"info" => "Section successfully created."} == assert_redirect(view, ~p"/course")
     end
 
     test "successfully creates a section from a product", %{conn: conn} = context do
@@ -330,10 +317,7 @@ defmodule OliWeb.NewCourse.CourseDetailsTest do
 
       assert blueprint_section.contains_explorations == true
 
-      redirect_to = Routes.delivery_path(OliWeb.Endpoint, :index)
-      flash = assert_redirect(view, redirect_to)
-
-      assert flash["info"] == "Section successfully created."
+      assert %{"info" => "Section successfully created."} == assert_redirect(view, ~p"/course")
     end
   end
 
