@@ -18,6 +18,29 @@ defmodule Oli.Interop.ExportTest do
       assert project_json["required_student_survey"] ==
                Integer.to_string(project.required_survey_resource_id)
     end
+
+    test "project export preserves attributes and customizations", %{project: project} do
+      export =
+        Export.export(project)
+        |> unzip_to_memory()
+        |> Enum.reduce(%{}, fn {f, c}, m -> Map.put(m, f, c) end)
+
+      {:ok, project_json} = Jason.decode(Map.get(export, ~c"_project.json"))
+
+      # Check that learning language in the project attributes is preserved
+      assert project_json["attributes"]["learning_language"] ==
+               project.attributes.learning_language
+
+      assert project_json |> get_in(["attributes"]) |> Access.get("learning_language") ==
+               project.attributes.learning_language
+
+      # Check that labels in the project customizations are preserved
+      %{unit: unit, module: module, section: section} = project.customizations
+      customizations = project_json["customizations"]
+      assert customizations["unit"] == unit
+      assert customizations["module"] == module
+      assert customizations["section"] == section
+    end
   end
 
   def setup_project_with_survey(_) do
@@ -30,7 +53,13 @@ defmodule Oli.Interop.ExportTest do
       insert(:project,
         slug: "project_with_survey",
         required_survey_resource_id: survey_revision.resource.id,
-        authors: [author]
+        authors: [author],
+        attributes: %{learning_language: "es"},
+        customizations: %{
+          unit: "Unit_Example",
+          module: "Module_Example",
+          section: "Section_Example"
+        }
       )
 
     container_revision =

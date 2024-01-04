@@ -74,6 +74,8 @@ defmodule Oli.Interop.IngestTest do
       project = Repo.get(Oli.Authoring.Course.Project, p.id)
       assert project.title == "The Cuisine of Northern Spain"
       assert p.title == project.title
+      assert p.attributes == project.attributes
+      assert p.customizations == project.customizations
 
       # verify project access for author
       access =
