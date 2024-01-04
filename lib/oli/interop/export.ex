@@ -355,7 +355,9 @@ defmodule Oli.Interop.Export do
       title: project.title,
       description: project.description,
       type: "Manifest",
-      required_student_survey: required_survey_resource_id
+      required_student_survey: required_survey_resource_id,
+      attributes: Map.get(project, :attributes),
+      customizations: Map.get(project, :customizations)
     }
     |> entry("_project.json")
   end
