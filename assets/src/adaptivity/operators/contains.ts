@@ -68,7 +68,9 @@ export const containsAnyOfOperator = (inputValue: any, conditionValue: any) => {
     if (!isNaN(inputValue)) {
       return conditionArray.includes(parseFloat(inputValue));
     } else {
-      return conditionArray.some((v) => inputValue.toString().includes(v));
+      return conditionArray.some((v) =>
+        inputValue.toString().toLocaleLowerCase().includes(v?.toString().toLocaleLowerCase()),
+      );
     }
   }
 };

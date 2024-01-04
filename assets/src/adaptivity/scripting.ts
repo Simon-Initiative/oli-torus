@@ -1,19 +1,19 @@
 import { EntityId } from '@reduxjs/toolkit';
 import { Environment, Evaluator, Lexer, Parser } from 'janus-script';
-// import flatten from 'lodash/flatten';
-// import uniq from 'lodash/uniq';
+import flatten from 'lodash/flatten';
+import uniq from 'lodash/uniq';
 import { parseArray, parseBoolean } from 'utils/common';
 import { CapiVariableTypes, getCapiType } from './capi';
 import { janus_std } from './janus-scripts/builtin_functions';
 
-//const conditionsNeedEvaluation: string[] = [];
+let conditionsNeedEvaluation: string[] = [];
 export const setConditionsWithExpression = (facts: string[]) => {
-  // conditionsNeedEvaluation.push(...facts);
-  // conditionsNeedEvaluation = uniq(flatten(Array.from(new Set(conditionsNeedEvaluation))));
-  // const script = `let session.conditionsNeedEvaluation = ${JSON.stringify(
-  //   conditionsNeedEvaluation,
-  // )}`;
-  // evalScript(script, defaultGlobalEnv);
+  conditionsNeedEvaluation.push(...facts);
+  conditionsNeedEvaluation = uniq(flatten(Array.from(new Set(conditionsNeedEvaluation))));
+  const script = `let session.conditionsNeedEvaluation = ${JSON.stringify(
+    conditionsNeedEvaluation,
+  )}`;
+  evalScript(script, defaultGlobalEnv);
 };
 
 export const looksLikeJson = (str: string) => {
@@ -53,20 +53,26 @@ export const getExpressionStringForValue = (
   v: { type: CapiVariableTypes; value: any; key?: string },
   env: Environment = defaultGlobalEnv,
 ): string => {
-  const shouldEvaluateExpression = true;
+  let shouldEvaluateExpression = true;
   //To improve the performance, when a lesson is opened in authoring, we generate a list of variables that contains expression and needs evaluation
   // we stored them in conditionsNeedEvaluation in activity.content.custom.conditionsNeedEvaluation. When this function is called
   // we only process variables that is present in conditionsNeedEvaluation array and ignore others.
-  // try {
-  //   const conditionsNeedEvaluations = getValue('session.conditionsNeedEvaluation', env);
-  //   // if they key is not passed then it means that this function was called from the janu-text component so this logic will not apply
-  //   // we need to process it with the old behaviour
-  //   if (conditionsNeedEvaluations?.length && v.key) {
-  //     shouldEvaluateExpression = conditionsNeedEvaluations.includes(v.key);
-  //   }
-  // } catch (er) {
-  //   console.warn('Error at getExpressionStringForValue for ', { key: v.key });
-  // }
+  try {
+    const conditionsNeedEvaluations = getValue('session.conditionsNeedEvaluation', env);
+    // if they key is not passed then it means that this function was called from the janu-text component so this logic will not apply
+    // we need to process it with the old behaviour
+    if (conditionsNeedEvaluations?.length && v.key) {
+      const isSessionVariable = v.key.startsWith('session.');
+      const isVarVariable = v.key.startsWith('variables.');
+      if (isSessionVariable || isVarVariable) {
+        shouldEvaluateExpression = true;
+      } else {
+        shouldEvaluateExpression = conditionsNeedEvaluations.includes(v.key);
+      }
+    }
+  } catch (er) {
+    console.warn('Error at getExpressionStringForValue for ', { key: v.key });
+  }
   let val: any = v.value;
   let isValueVar = false;
   let isEverAppArrayObject = false;
@@ -612,26 +618,32 @@ export const templatizeText = (
   useFormattedText = true,
   key?: string,
 ): string => {
-  //const shouldEvaluateExpression = true;
-  // try {
-  //   //To improve the performance, when a lesson is opened in authoring, we generate a list of variables that contains expression and needs evaluation
-  //   // we stored them in conditionsNeedEvaluation in activity.content.custom.conditionsNeedEvaluation. When this function is called
-  //   // we only process variables that is present in conditionsNeedEvaluation array and ignore others.
-  //   const conditionsNeedEvaluations = Object.keys(locals)?.length
-  //     ? locals['session.conditionsNeedEvaluation']
-  //     : getValue('session.conditionsNeedEvaluation', defaultGlobalEnv);
+  let shouldEvaluateExpression = true;
+  try {
+    //To improve the performance, when a lesson is opened in authoring, we generate a list of variables that contains expression and needs evaluation
+    // we stored them in conditionsNeedEvaluation in activity.content.custom.conditionsNeedEvaluation. When this function is called
+    // we only process variables that is present in conditionsNeedEvaluation array and ignore others.
+    const conditionsNeedEvaluations = Object.keys(locals)?.length
+      ? locals['session.conditionsNeedEvaluation']
+      : getValue('session.conditionsNeedEvaluation', defaultGlobalEnv);
 
-  //   // if they key is not passed then it means that this function was called from the janu-text component so this logic will not apply
-  //   // we need to process it with the old behaviour
-  //   if (conditionsNeedEvaluations?.length && key) {
-  //     shouldEvaluateExpression = conditionsNeedEvaluations.includes(key);
-  //   }
-  //   if (!shouldEvaluateExpression) {
-  //     return text;
-  //   }
-  // } catch (er) {
-  //   console.warn('Error at templatizeText for key', { key });
-  // }
+    // if they key is not passed then it means that this function was called from the janu-text component so this logic will not apply
+    // we need to process it with the old behaviour
+    if (conditionsNeedEvaluations?.length && key) {
+      const isSessionVariable = key.startsWith('session.');
+      const isVarVariable = key.startsWith('variables.');
+      if (isSessionVariable || isVarVariable) {
+        shouldEvaluateExpression = true;
+      } else {
+        shouldEvaluateExpression = conditionsNeedEvaluations.includes(key);
+      }
+    }
+    if (!shouldEvaluateExpression) {
+      return text;
+    }
+  } catch (er) {
+    console.warn('Error at templatizeText for key', { key });
+  }
   let innerEnv = new Environment(env);
   // if the text contains backslash, it is probably a math exprs like: '16^{\\frac{1}{2}}=\\sqrt {16}={\\editable{}}'
   // and we should just return it as is; if it has variables inside, then we still need to evaluate it
