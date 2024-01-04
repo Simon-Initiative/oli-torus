@@ -60,7 +60,7 @@ export const getExpressionStringForValue = (
   try {
     const conditionsNeedEvaluations = getValue('session.conditionsNeedEvaluation', env);
     // if they key is not passed then it means that this function was called from the janu-text component so this logic will not apply
-    // we need to process it with the  old behaviour
+    // we need to process it with the   old behaviour
     if (conditionsNeedEvaluations?.length && v.key) {
       const isSessionVariable = v.key.startsWith('session.');
       const isVarVariable = v.key.startsWith('variables.');
