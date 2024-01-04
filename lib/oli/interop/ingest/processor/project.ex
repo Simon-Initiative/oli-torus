@@ -27,7 +27,9 @@ defmodule Oli.Interop.Ingest.Processor.Project do
     {:ok, %{project: project, publication: publication, resource_revision: root_revision}} =
       Oli.Authoring.Course.create_project(title, author, %{
         description: Map.get(project_details, "description"),
-        legacy_svn_root: Map.get(project_details, "svnRoot")
+        legacy_svn_root: Map.get(project_details, "svnRoot"),
+        attributes: Map.get(project_details, "attributes"),
+        customizations: Map.get(project_details, "customizations")
       })
 
     # create alternatives groups
