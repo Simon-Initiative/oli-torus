@@ -133,6 +133,23 @@ defmodule OliWeb.ResourceControllerTest do
       assert html_response(conn, 200) =~ "<div class=\"nav-title\">#{revision1.title}</div>"
     end
 
+    test "renders page preview with hyperlink to another page", %{
+      conn: conn,
+      project: project,
+      revision1: revision1,
+      revision2: revision2
+    } do
+      {:ok, revision} =
+        Oli.Resources.update_revision(revision1, %{
+          content: create_hyperlink_content(revision2.slug)
+        })
+
+      conn = get(conn, Routes.resource_path(conn, :preview, project.slug, revision.slug))
+
+      assert html_response(conn, 200) =~
+               "<a class=\"internal-link\" href=\"/authoring/project/#{project.slug}/preview/#{revision2.slug}\">"
+    end
+
     test "renders error when resource does not exist", %{conn: conn, project: project} do
       conn = get(conn, Routes.resource_path(conn, :preview, project.slug, "does_not_exist"))
       assert html_response(conn, 200) =~ "Not Found"
@@ -163,5 +180,34 @@ defmodule OliWeb.ResourceControllerTest do
       )
 
     {:ok, Map.merge(%{conn: conn}, seeds)}
+  end
+
+  def create_hyperlink_content(revision_2_slug) do
+    %{
+      "model" => [
+        %{
+          "children" => [
+            %{
+              "children" => [
+                %{"text" => " "},
+                %{
+                  "children" => [%{"text" => "link"}],
+                  "href" => "/course/link/#{revision_2_slug}",
+                  "id" => "1914651063",
+                  "target" => "self",
+                  "type" => "a"
+                },
+                %{"text" => ""}
+              ],
+              "id" => "3636822762",
+              "type" => "p"
+            }
+          ],
+          "id" => "481882791",
+          "purpose" => "None",
+          "type" => "content"
+        }
+      ]
+    }
   end
 end

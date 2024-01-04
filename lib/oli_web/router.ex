@@ -638,6 +638,7 @@ defmodule OliWeb.Router do
 
     put("/", SchedulingController, :update)
     get("/", SchedulingController, :index)
+    delete("/", SchedulingController, :clear)
   end
 
   # User State Service, instrinsic state
@@ -904,6 +905,8 @@ defmodule OliWeb.Router do
       DeliveryController,
       :instructor_dashboard
     )
+
+    post("/enrollments", InviteController, :create_bulk)
 
     live_session :instructor_dashboard,
       on_mount: [

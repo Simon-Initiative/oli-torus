@@ -296,5 +296,29 @@ defmodule Oli.Resources.NumberingTest do
 
       assert page_2_crumb.full_title == "Lesson 1: Page 2"
     end
+
+    test "container_type_label/1 uses custom labels" do
+      custom_labels = %{unit: "Volume", module: "Chapter", section: "Lesson"}
+
+      assert Numbering.container_type_label(%Numbering{level: 1, labels: custom_labels}) ==
+               "Volume"
+
+      assert Numbering.container_type_label(%Numbering{level: 2, labels: custom_labels}) ==
+               "Chapter"
+
+      assert Numbering.container_type_label(%Numbering{level: nil, labels: custom_labels}) ==
+               "Lesson"
+    end
+
+    test "container_type_label/1 uses default labels" do
+      assert Numbering.container_type_label(%Numbering{level: 1}) ==
+               Oli.Branding.CustomLabels.default_map().unit
+
+      assert Numbering.container_type_label(%Numbering{level: 2}) ==
+               Oli.Branding.CustomLabels.default_map().module
+
+      assert Numbering.container_type_label(%Numbering{level: nil}) ==
+               Oli.Branding.CustomLabels.default_map().section
+    end
   end
 end

@@ -194,12 +194,11 @@ defmodule Oli.Delivery.Settings do
 
   def show_feedback?(nil), do: true
 
-  def check_password(_effective_settings, ""), do: {:allowed}
+  def check_password(_effective_settings, ""), do: {:empty_password}
   def check_password(_effective_settings, nil), do: {:allowed}
 
-  def check_password(%Combined{password: password}, received_password)
-      when password == received_password,
-      do: {:allowed}
+  def check_password(%Combined{password: password}, password),
+    do: {:allowed}
 
   def check_password(_, _), do: {:invalid_password}
 end

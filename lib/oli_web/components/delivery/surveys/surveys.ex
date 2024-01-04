@@ -111,7 +111,6 @@ defmodule OliWeb.Components.Delivery.Surveys do
             </form>
           </div>
         </div>
-
         <PagedTable.render
           table_model={@table_model}
           total_count={@total_count}
@@ -125,6 +124,7 @@ defmodule OliWeb.Components.Delivery.Surveys do
           show_bottom_paging={false}
           limit_change={JS.push("paged_table_limit_change", target: @myself)}
           show_limit_change={true}
+          no_records_message="There are no surveys present in this course"
         />
         <%= unless is_nil(@activities) do %>
           <%= if @activities == [] do %>
@@ -670,6 +670,10 @@ defmodule OliWeb.Components.Delivery.Surveys do
       Enum.find(activity_types_map, fn {_k, v} -> v.title == "Multi Input" end)
       |> elem(0)
 
+    response_multi_type_id =
+      Enum.find(activity_types_map, fn {_k, v} -> v.title == "ResponseMulti Input" end)
+      |> elem(0)
+
     likert_type_id =
       Enum.find(activity_types_map, fn {_k, v} -> v.title == "Likert" end)
       |> elem(0)
@@ -688,6 +692,10 @@ defmodule OliWeb.Components.Delivery.Surveys do
 
       %{activity_type_id: activity_type_id} = activity_attempt
       when activity_type_id == multi_input_type_id ->
+        add_multi_input_details(activity_attempt, section)
+
+      %{activity_type_id: activity_type_id} = activity_attempt
+      when activity_type_id == response_multi_type_id ->
         add_multi_input_details(activity_attempt, section)
 
       %{activity_type_id: activity_type_id} = activity_attempt

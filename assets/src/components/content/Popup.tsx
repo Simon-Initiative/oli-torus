@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useRef, useState } from 'react';
 import { ArrowContainer, Popover } from 'react-tiny-popover';
 import { Popup as PopupModel } from 'data/content/model/elements/types';
 import { isEmptyContent } from '../../data/content/utils';
@@ -12,6 +12,7 @@ interface Props {
 export const Popup: React.FC<Props> = ({ children, popupContent, popup }) => {
   const { audioPlayer, playAudio, isPlaying } = useAudio(popup.audioSrc);
   const hasAudio = !!popup.audioSrc;
+  const hideInterval = useRef<NodeJS.Timeout | null>(null);
 
   const [isPopoverOpen, setIsPopoverOpen] = useState<boolean>(false);
 
@@ -21,11 +22,23 @@ export const Popup: React.FC<Props> = ({ children, popupContent, popup }) => {
   }, [isPlaying, playAudio]);
 
   const onHover = useCallback(
-    (e: React.MouseEvent) => popup.trigger === 'hover' && (setIsPopoverOpen(true), playAudio()),
+    (e: React.MouseEvent) => {
+      if (popup.trigger === 'hover') {
+        setIsPopoverOpen(true);
+        playAudio();
+        hideInterval.current && clearTimeout(hideInterval.current);
+      }
+    },
     [popup, setIsPopoverOpen, playAudio],
   );
   const onBlur = useCallback(
-    (e: React.MouseEvent) => popup.trigger === 'hover' && (setIsPopoverOpen(false), pauseAudio()),
+    (e: React.MouseEvent) => {
+      if (popup.trigger === 'hover') {
+        pauseAudio();
+        hideInterval.current = setTimeout(() => setIsPopoverOpen(false), 1000);
+        // Instead of hiding right away, let's wait a bit to see if the user is moving the mouse to the popup
+      }
+    },
     [popup, setIsPopoverOpen, pauseAudio],
   );
   const onClick = useCallback(
@@ -67,7 +80,11 @@ export const Popup: React.FC<Props> = ({ children, popupContent, popup }) => {
           arrowColor="currentColor"
           arrowClassName="text-delivery-tooltip-bg dark:text-delivery-tooltip-bg-dark z-10 translate-y-[-1px]"
         >
-          <div className="popup-content text-sm text-delivery-tooltip-content dark:text-delivery-tooltip-content-dark bg-delivery-tooltip-bg dark:bg-delivery-tooltip-bg-dark p-4 drop-shadow rounded">
+          <div
+            onMouseOver={onHover}
+            onMouseLeave={onBlur}
+            className="popup-content text-sm text-delivery-tooltip-content dark:text-delivery-tooltip-content-dark bg-delivery-tooltip-bg dark:bg-delivery-tooltip-bg-dark p-4 drop-shadow rounded"
+          >
             {isEmptyContent(popup.content) ? (
               <i className="fa-solid fa-volume-high" />
             ) : (

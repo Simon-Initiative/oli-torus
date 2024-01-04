@@ -19,6 +19,7 @@ defmodule OliWeb.Common.PagedTable do
   attr :render_top_info, :boolean, default: true
   attr :scrollable, :boolean, default: true
   attr :show_limit_change, :boolean, default: false
+  attr :no_records_message, :string, default: "None exist"
 
   def render(assigns) do
     ~H"""
@@ -60,7 +61,9 @@ defmodule OliWeb.Common.PagedTable do
           />
         <% end %>
       <% else %>
-        <p class="px-5 py-2">None exist</p>
+        <div class="bg-white dark:bg-gray-800 dark:text-white px-10 my-5">
+          <p><%= @no_records_message %></p>
+        </div>
       <% end %>
     </div>
     """
