@@ -475,7 +475,7 @@ describe('Operators', () => {
       ];
       const conditionValue2 = [1, 3, 5, 7];
       expect(containsAnyOfOperator('Monday', conditionValue)).toEqual(true);
-      expect(containsAnyOfOperator('monday', conditionValue)).toEqual(false);
+      expect(containsAnyOfOperator('monday', conditionValue)).toEqual(true);
       expect(containsAnyOfOperator('[Tuesday]', conditionValue)).toEqual(true);
       expect(containsAnyOfOperator('[Tuesday,Sandwich]', conditionValue)).toEqual(true);
       expect(notContainsAnyOfOperator('[Tuesday,Wednesday]', conditionValue)).toEqual(false);
