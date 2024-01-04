@@ -56,7 +56,7 @@ export const getExpressionStringForValue = (
   let shouldEvaluateExpression = true;
   //To improve the performance, when a lesson is opened in authoring, we generate a list of variables that contains expression and needs evaluation
   // we stored them in conditionsNeedEvaluation in activity.content.custom.conditionsNeedEvaluation. When this function is called
-  // we only process variables that is present in conditionsNeedEvaluation array and ignore others.
+  // we only process variables that is present in  conditionsNeedEvaluation array and ignore others.
   try {
     const conditionsNeedEvaluations = getValue('session.conditionsNeedEvaluation', env);
     // if they key is not passed then it means that this function was called from the janu-text component so this logic will not apply
