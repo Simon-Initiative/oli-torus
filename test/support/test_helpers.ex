@@ -3103,7 +3103,8 @@ defmodule Oli.TestHelpers do
     insert(:published_resource, %{
       publication: publication,
       resource: page_revision.resource,
-      revision: page_revision
+      revision: page_revision,
+      author: insert(:author, email: "some_email@email.com")
     })
 
     section =
@@ -3297,4 +3298,101 @@ defmodule Oli.TestHelpers do
         activity_provider
       )
   end
+
+  ### Begins helpers to create resources ###
+
+  def create_bundle_for(type_id, project, author, publication, resource, opts)
+
+  def create_bundle_for(type_id, project, author, nil, nil, opts) do
+    resource = insert(:resource)
+    publication = insert(:publication, project: project, root_resource_id: resource.id)
+
+    create_bundle_for(type_id, project, author, publication, resource, opts)
+    |> Map.merge(%{publication: publication})
+  end
+
+  def create_bundle_for(type_id, project, author, publication, nil, opts),
+    do: create_bundle_for(type_id, project, author, publication, insert(:resource), opts)
+
+  def create_bundle_for(type_id, project, author, publication, resource, opts) do
+    insert(:project_resource, project_id: project.id, resource_id: resource.id)
+    title = Keyword.get(opts, :title, title_for(resource.id))
+    slug = Keyword.get(opts, :slug, slug_for(resource.id))
+    graded = Keyword.get(opts, :graded, false)
+
+    revision =
+      insert(:revision,
+        resource: resource,
+        author: author,
+        resource_type_id: type_id,
+        title: title,
+        slug: slug,
+        graded: graded
+      )
+
+    insert(:published_resource,
+      publication: publication,
+      resource: resource,
+      revision: revision
+    )
+
+    %{resource: resource, revision: revision}
+  end
+
+  def create_project_with_assocs(opts \\ [])
+  def create_project_with_assocs([]), do: insert(:project, authors: [insert(:author)])
+
+  def create_project_with_assocs([{:authors, []}]), do: create_project_with_assocs()
+
+  def create_project_with_assocs([{:authors, authors}]) when is_list(authors),
+    do: insert(:project, authors: authors)
+
+  def assoc_resources(resources, container_revision, container_resource, publication) do
+    resources
+    |> Enum.map(& &1.id)
+    |> Enum.concat(container_revision.children)
+    |> set_container_children(container_resource, container_revision, publication)
+  end
+
+  defp set_container_children(children, container, container_revision, publication) do
+    {:ok, updated_revision} =
+      Oli.Resources.create_revision_from_previous(container_revision, %{children: children})
+
+    Publishing.get_published_resource!(publication.id, container.id)
+    |> Publishing.update_published_resource(%{revision_id: updated_revision.id})
+
+    updated_revision
+  end
+
+  def get_section_resource_by_resource(resource) do
+    from(sr in SectionResource,
+      join: s in assoc(sr, :section),
+      join: r in assoc(sr, :resource),
+      where: r.id == ^resource.id
+    )
+    |> Repo.one()
+  end
+
+  defp title_for(resource_id), do: "Container title for resource_id-#{resource_id}"
+  defp slug_for(resource_id), do: "slug_for_resource_id_#{resource_id}"
+
+  ### Ends helpers to create resources ###
+
+  ### Begins helper that waits for Tasks to complete ###
+
+  def wait_for_completion() do
+    pids = Task.Supervisor.children(Oli.TaskSupervisor)
+    Enum.each(pids, &Process.monitor/1)
+    wait_for_pids(pids)
+  end
+
+  defp wait_for_pids([]), do: nil
+
+  defp wait_for_pids(pids) do
+    receive do
+      {:DOWN, _ref, :process, pid, _reason} -> wait_for_pids(List.delete(pids, pid))
+    end
+  end
+
+  ### Ends helper that waits for Tasks to complete ###
 end
