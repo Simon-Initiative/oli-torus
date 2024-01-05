@@ -356,6 +356,23 @@ defmodule OliWeb.Curriculum.ContainerLiveTest do
 
       refute render(view) =~ "View revision history"
     end
+
+    test "can navigate to all pages view", %{conn: conn, project: project} do
+      conn =
+        conn
+        |> get("/authoring/project/#{project.slug}/curriculum")
+
+      {:ok, view, _html} = live(conn)
+
+      view
+      |> element("a[role='go_to_all_pages']", "Go to all pages")
+      |> render_click()
+
+      assert_redirect(
+        view,
+        ~p"/authoring/project/#{project.slug}/pages"
+      )
+    end
   end
 
   defp setup_session(%{conn: conn}) do
