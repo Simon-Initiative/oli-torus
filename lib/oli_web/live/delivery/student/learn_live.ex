@@ -352,18 +352,18 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     ~H"""
     <div
       id={"unit_#{@unit["resource_id"]}"}
-      class="p-[25px] pl-[50px]"
+      class="md:p-[25px] md:pl-[50px]"
       role={"unit_#{@unit["numbering"]["index"]}"}
     >
-      <div class="flex gap-[30px]">
-        <div class="text-[14px] leading-[19px] tracking-[1.4px] uppercase mt-[7px] whitespace-nowrap opacity-60">
+      <div class="flex flex-col md:flex-row md:gap-[30px]">
+        <div class="text-[14px] leading-[19px] tracking-[1.4px] uppercase mt-[7px] mb-1 whitespace-nowrap opacity-60">
           <%= "UNIT #{@unit["numbering"]["index"]}" %>
         </div>
         <div class="mb-6 flex flex-col items-start gap-[6px] w-full">
           <h3 class="text-[26px] leading-[32px] tracking-[0.02px] font-normal dark:text-[#DDD]">
             <%= @unit["revision"]["title"] %>
           </h3>
-          <div class="flex items-center w-full">
+          <div class="flex items-center w-full gap-3">
             <div class="flex items-center gap-3" role="schedule_details">
               <div class="text-[14px] leading-[32px] tracking-[0.02px] font-semibold">
                 <span class="text-gray-400 opacity-80 dark:text-[#696974] dark:opacity-100 mr-1">
@@ -449,7 +449,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     </div>
     <div
       :if={Map.has_key?(@selected_module_per_unit_resource_id, @unit["resource_id"])}
-      class="flex-col py-6 px-[50px] gap-x-4 lg:gap-x-12 gap-y-6"
+      class="flex-col py-6 md:px-[50px] gap-x-4 lg:gap-x-12 gap-y-6"
       role="module_details"
       id={"selected_module_in_unit_#{@unit["resource_id"]}"}
       data-animate={
