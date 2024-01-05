@@ -179,6 +179,22 @@ defmodule OliWeb.Api.SchedulingController do
     end
   end
 
+  def clear(conn, %{"section_slug" => _section_slug}) do
+    section = conn.assigns.section
+
+    if can_access_section?(conn, section) do
+      case Scheduling.clear(section) do
+        {:ok, _} ->
+          json(conn, %{"result" => "success"})
+
+        {:error, error} ->
+          json(conn, %{"result" => "error", "error" => error})
+      end
+    else
+      error(conn, 401, "Unauthorized")
+    end
+  end
+
   # Restrict access to enrolled instructors, LMS admins, or system
   # (authoring) admins
   defp can_access_section?(conn, section) do

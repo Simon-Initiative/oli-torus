@@ -8,6 +8,7 @@ interface CourseContentOutlineProps {
   projectSlug: MaybeSlug;
   hierarchy: any;
   isPreview?: boolean;
+  displayItemNumbering?: boolean;
 }
 
 export const CourseContentOutline = ({
@@ -15,6 +16,7 @@ export const CourseContentOutline = ({
   projectSlug,
   hierarchy,
   isPreview,
+  displayItemNumbering,
 }: CourseContentOutlineProps) => {
   const items = flatten({ ...hierarchy, type: 'root' }, sectionSlug, projectSlug, isPreview);
   const active = items.find((i: FlattenedItem) => i.isActive);
@@ -43,6 +45,7 @@ export const CourseContentOutline = ({
             projectSlug={projectSlug}
             isPreview={isPreview}
             activeContainerSlug={activeContainerSlug}
+            displayItemNumbering={displayItemNumbering}
           />
         ))}
       </div>
@@ -167,6 +170,7 @@ interface PageItemProps extends FlattenedItem {
   sectionSlug: MaybeSlug;
   projectSlug: MaybeSlug;
   isPreview: boolean | undefined;
+  displayItemNumbering: boolean | undefined;
 }
 
 const PageItem = ({
@@ -181,6 +185,7 @@ const PageItem = ({
   containerSlug,
   activeContainerSlug,
   isPreview,
+  displayItemNumbering,
 }: PageItemProps) => (
   <a
     id={`outline-item-${slug}`}
@@ -197,7 +202,7 @@ const PageItem = ({
   >
     {type === 'container' ? (
       <div className="font-bold" style={{ marginLeft: level * 20 }}>
-        {label + ' ' + index + ': ' + title}
+        {`${label}${displayItemNumbering ? ` ${index}:` : ':'} ${title}`}
       </div>
     ) : (
       <div

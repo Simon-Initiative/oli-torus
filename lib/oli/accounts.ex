@@ -93,27 +93,15 @@ defmodule Oli.Accounts do
       iex> bulk_invite_users(["email_1@test.com", "email_2@test.com"], %Author{id: 1})
       [%User{id: 3}, %User{id: 4}]
   """
-  def bulk_invite_users(user_emails, %Author{} = inviter_user) do
-    date = DateTime.utc_now() |> DateTime.truncate(:second)
+  def bulk_invite_users(user_emails, inviter_user) do
+    now = DateTime.utc_now() |> DateTime.truncate(:second)
 
     users =
-      Enum.map(
-        user_emails,
-        fn email ->
-          User
-          |> struct()
-          |> User.invite_changeset(inviter_user, %{
-            email: email
-          })
-          |> Map.get(:changes)
-          |> Map.delete(:invited_by_id)
-          |> Map.merge(%{
-            state: %{},
-            inserted_at: date,
-            updated_at: date
-          })
-        end
-      )
+      Enum.map(user_emails, fn email ->
+        %{changes: changes} = User.invite_changeset(%User{}, inviter_user, %{email: email})
+
+        Enum.into(changes, %{inserted_at: now, updated_at: now})
+      end)
 
     Repo.insert_all(User, users, returning: [:id, :invitation_token, :email])
   end
@@ -262,6 +250,23 @@ defmodule Oli.Accounts do
     }
     |> User.noauth_changeset(attrs)
     |> Repo.insert()
+  end
+
+  def update_user(
+        %User{} = user,
+        %{"current_password" => _, "password" => _, "password_confirmation" => _} = attrs
+      ) do
+    user
+    |> User.update_changeset(attrs)
+    |> Repo.update()
+    |> case do
+      {:ok, %User{id: user_id}} = result ->
+        AccountLookupCache.delete("user_#{user_id}")
+        result
+
+      error ->
+        error
+    end
   end
 
   @doc """
@@ -450,6 +455,23 @@ defmodule Oli.Accounts do
         AccountLookupCache.delete("author_#{author_id}")
 
         res
+
+      error ->
+        error
+    end
+  end
+
+  def update_author(
+        %Author{} = author,
+        %{"current_password" => _, "password" => _, "password_confirmation" => _} = attrs
+      ) do
+    author
+    |> Author.update_changeset(attrs)
+    |> Repo.update()
+    |> case do
+      {:ok, %Author{id: author_id}} = result ->
+        AccountLookupCache.delete("author_#{author_id}")
+        result
 
       error ->
         error

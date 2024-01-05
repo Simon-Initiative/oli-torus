@@ -229,6 +229,8 @@ defmodule OliWeb.NewCourse.CourseDetailsTest do
         "current_step" => 3
       })
 
+      flush_view_mailbox(view)
+
       flash =
         assert_redirect(
           view,
@@ -327,6 +329,7 @@ defmodule OliWeb.NewCourse.CourseDetailsTest do
       assert blueprint_section.contains_explorations == true
 
       flash = assert_redirect(view, Routes.delivery_path(OliWeb.Endpoint, :index))
+
       assert flash["info"] == "Section successfully created."
     end
   end

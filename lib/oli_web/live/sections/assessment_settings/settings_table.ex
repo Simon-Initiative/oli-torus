@@ -5,7 +5,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
   import OliWeb.ErrorHelpers
   import Ecto.Query, only: [from: 2]
 
-  alias OliWeb.Common.{FormatDateTime, PagedTable, SearchInput, Params}
+  alias OliWeb.Common.{FormatDateTime, PagedTable, SearchInput, Params, Paging}
   alias OliWeb.Common.Utils, as: CommonUtils
 
   alias OliWeb.Sections.AssessmentSettings.SettingsTableModel
@@ -135,6 +135,13 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
           />
         </form>
       </div>
+      <Paging.render
+        id="header_paging"
+        total_count={@total_count}
+        offset={@params.offset}
+        limit={@params.limit}
+        click={JS.push("paged_table_page_change", target: @myself)}
+      />
       <form
         id={"form-#{@form_id}"}
         for="settings_table"
@@ -146,10 +153,10 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
           total_count={@total_count}
           offset={@params.offset}
           limit={@params.limit}
-          page_change={JS.push("paged_table_page_change", target: @myself)}
           sort={JS.push("paged_table_sort", target: @myself)}
           additional_table_class="instructor_dashboard_table"
           show_bottom_paging={false}
+          show_top_paging={false}
           render_top_info={false}
         />
       </form>

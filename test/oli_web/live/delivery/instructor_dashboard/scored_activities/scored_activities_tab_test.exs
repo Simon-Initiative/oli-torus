@@ -989,6 +989,27 @@ defmodule OliWeb.Delivery.InstructorDashboard.ScoredActivitiesTabTest do
       assert a4.title == "Module 2: BasicsPage 4"
     end
 
+    test "displays custom labels", %{
+      conn: conn,
+      section: section
+    } do
+      {:ok, section} =
+        Sections.update_section(section, %{
+          customizations: %{unit: "Volume", module: "Chapter", section: "Lesson"}
+        })
+
+      {:ok, view, _html} = live(conn, live_view_scored_activities_route(section.slug))
+
+      [a0, a1, a2, a3, a4] = table_as_list_of_maps(view, :assessments)
+
+      assert has_element?(view, "h4", "Scored Activities")
+      assert a0.title == "Orphaned Page"
+      assert a1.title == "Chapter 1: IntroductionPage 1"
+      assert a2.title == "Chapter 1: IntroductionPage 2"
+      assert a3.title == "Chapter 2: BasicsPage 3"
+      assert a4.title == "Chapter 2: BasicsPage 4"
+    end
+
     test "patches url to see activity details when a row is clicked", %{
       conn: conn,
       section: section,

@@ -230,6 +230,9 @@ defmodule Oli.MixProject do
       # resets the database in the :test env
       "test.ecto.reset": ["ecto.reset"],
 
+      # runs the test suite and watches for changes
+      "test.watch": ["test.watch --seed 0 --max-failures 1 --include pending --trace"],
+
       # deploy tailwind assets
       "assets.deploy": ["tailwind default --minify", "tailwind storybook --minify", "phx.digest"]
     ]

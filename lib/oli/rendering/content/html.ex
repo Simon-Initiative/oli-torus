@@ -667,8 +667,8 @@ defmodule Oli.Rendering.Content.Html do
          opts \\ []
        ) do
     href =
-      case section_slug do
-        nil ->
+      cond do
+        section_slug in [nil, project_slug] ->
           case mode do
             :author_preview ->
               "/authoring/project/#{project_slug}/preview/#{revision_slug_from_course_link(href)}"
@@ -677,7 +677,7 @@ defmodule Oli.Rendering.Content.Html do
               "#"
           end
 
-        section_slug ->
+        section_slug != project_slug ->
           # rewrite internal link using section slug and revision slug
           case mode do
             :instructor_preview ->
