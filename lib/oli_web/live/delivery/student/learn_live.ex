@@ -476,8 +476,8 @@ defmodule OliWeb.Delivery.Student.LearnLive do
           ) %>
         </span>
       </div>
-      <div role="intro content and index" class="flex gap-12">
-        <div class="w-1/2 flex flex-col">
+      <div role="intro content and index" class="flex flex-col lg:flex-row lg:gap-12">
+        <div class="flex flex-row lg:w-1/2 lg:flex-col">
           <div
             :if={
               Map.get(@selected_module_per_unit_resource_id, @unit["resource_id"])["revision"][
@@ -516,7 +516,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
             Let's discuss?
           </button>
         </div>
-        <div class="mt-[57px] w-1/2">
+        <div class="mt-[57px] lg:w-1/2">
           <.module_index
             module={Map.get(@selected_module_per_unit_resource_id, @unit["resource_id"])}
             student_raw_avg_score_per_page_id={@student_raw_avg_score_per_page_id}
