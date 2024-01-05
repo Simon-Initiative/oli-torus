@@ -70,7 +70,7 @@
 
   <%= if @section do %>
     <%= live_render(@socket, OliWeb.Dialogue.WindowLive,
-      session: %{"section_slug" => @section.slug, "revision_id" => @revision.id},
+      session: %{"section_slug" => @section.slug, "revision_id" => @page_context.page.id},
       id: "dialogue-window"
     ) %>
   <% end %>

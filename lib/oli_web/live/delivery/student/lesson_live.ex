@@ -4,22 +4,72 @@ defmodule OliWeb.Delivery.Student.LessonLive do
   on_mount {OliWeb.LiveSessionPlugs.InitPage, :page_context}
   on_mount {OliWeb.LiveSessionPlugs.InitPage, :previous_next_index}
 
-  alias Oli.Delivery.Sections
+  alias Oli.Delivery.Attempts.PageLifecycle
+  alias Oli.Delivery.Attempts.PageLifecycle.AttemptState
+  alias Oli.Delivery.{Sections, Settings}
+  alias Oli.Publishing.DeliveryResolver, as: Resolver
+  alias Oli.Rendering.{Context, Page}
+  alias Oli.Resources
   alias OliWeb.Common.FormatDateTime
   alias OliWeb.Components.Modal
 
-  def mount(_params, _session, socket) do
-    {:ok, socket}
+  def mount(_params, _session, %{assigns: %{view: :practice_page}} = socket) do
+    {:ok, assign_html_and_scripts(socket)}
   end
 
-  def render(%{view: :page} = assigns) do
+  def mount(_params, _session, %{assigns: %{view: :graded_page}} = socket) do
+    # for graded pages, we first show the prologue and when the student click "Begin/Continue Attempt"
+    # we load the html. Scripts need to be loaded in advance.
+    {:ok, assign_scripts(socket)}
+  end
+
+  def handle_event(event, %{"password" => password}, socket)
+      when event in ["begin_attempt", "continue_attempt"] and
+             password != socket.assigns.page_context.effective_settings.password do
+    {:noreply, put_flash(socket, :error, "Incorrect password")}
+  end
+
+  def handle_event("begin_attempt", _params, socket) do
+    %{
+      current_user: user,
+      section: section,
+      page_context: %{effective_settings: effective_settings, page: revision},
+      ctx: ctx
+    } = socket.assigns
+
+    case Settings.check_start_date(effective_settings) do
+      {:allowed} ->
+        do_start_attempt(socket, section, user, revision, effective_settings)
+
+      {:before_start_date} ->
+        {:noreply,
+         put_flash(
+           socket,
+           :error,
+           "This assessment is not yet available. It will be available on #{date(effective_settings.start_date, ctx: ctx, precision: :minutes)}."
+         )}
+    end
+  end
+
+  def handle_event("continue_attempt", _params, socket) do
+    {:noreply,
+     socket
+     |> assign(continue_checked: true)
+     |> assign_html()}
+  end
+
+  def render(%{view: view, continue_checked: continue_checked} = assigns)
+      when view == :practice_page or (view == :graded_page and continue_checked) do
+    # TODO after submitting answers, user should be redirected to the new NG23 review page.
+    # (now it is being redirected to old version of review page)
+    # We should replace the onClick with its equivalent function in Elixir: Oli.Delivery.Attempts.PageLifecycle.finalize
+    # and then redirect to the new review page.
     ~H"""
     <div class="flex pb-20 flex-col items-center gap-15 flex-1">
       <div class="flex flex-col items-center w-full">
-        <.scored_page_banner :if={@revision.graded} />
+        <.scored_page_banner :if={@view == :graded_page} />
         <div class="w-[720px] pt-20 pb-10 flex-col justify-start items-center gap-10 inline-flex">
           <.page_header
-            revision={@revision}
             page_context={@page_context}
             ctx={@ctx}
             index={@current_page["index"]}
@@ -28,6 +78,14 @@ defmodule OliWeb.Delivery.Student.LessonLive do
           <div phx-update="ignore" id="eventIntercept" class="content" role="page_content">
             <%= raw(@html) %>
           </div>
+          <button
+            :if={@view == :graded_page}
+            id="submit_answers"
+            onClick={"window.OLI.finalize('#{@section.slug}', '#{@page_context.page.slug}', '#{hd(@page_context.resource_attempts).attempt_guid || nil}', #{@page_context.page.graded}, 'submit_answers')"}
+            class="cursor-pointer px-5 py-2.5 hover:bg-opacity-40 bg-blue-600 rounded-[3px] shadow justify-center items-center gap-2.5 inline-flex text-white text-sm font-normal font-['Open Sans'] leading-tight"
+          >
+            Submit Answers
+          </button>
         </div>
       </div>
     </div>
@@ -43,23 +101,33 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     """
   end
 
-  def render(%{view: :prologue} = assigns) do
+  # this render corresponds to the prologue view
+  def render(%{view: :graded_page, continue_checked: false} = assigns) do
     ~H"""
     <Modal.modal id="password_attempt_modal" class="w-1/2">
       <:title>Provide Assessment Password</:title>
       <.form
-        phx-submit={JS.push("begin_attempt") |> Modal.hide_modal("password_attempt_modal")}
+        phx-submit={
+          JS.push(
+            if(@page_context.progress_state == :in_progress,
+              do: "continue_attempt",
+              else: "begin_attempt"
+            )
+          )
+          |> Modal.hide_modal("password_attempt_modal")
+        }
         for={%{}}
         class="flex flex-col gap-6"
       >
         <input id="password_attempt_input" type="password" name="password" field={:password} value="" />
-        <.button type="submit" class="mx-auto btn btn-primary">Begin</.button>
+        <.button type="submit" class="mx-auto btn btn-primary">
+          <%= if(@page_context.progress_state == :in_progress, do: "Continue", else: "Begin") %>
+        </.button>
       </.form>
     </Modal.modal>
     <div class="flex pb-20 flex-col items-center gap-15 flex-1">
       <div class="w-[720px] pt-20 pb-10 flex-col justify-start items-center gap-10 inline-flex">
         <.page_header
-          revision={@revision}
           page_context={@page_context}
           ctx={@ctx}
           index={@current_page["index"]}
@@ -75,6 +143,15 @@ defmodule OliWeb.Delivery.Student.LessonLive do
         />
       </div>
     </div>
+
+    <script>
+      window.userToken = "<%= @user_token %>";
+    </script>
+    <script>
+      OLI.initActivityBridge('eventIntercept');
+    </script>
+    <script :for={script <- @scripts} type="text/javascript" src={"/js/#{script}"}>
+    </script>
     """
   end
 
@@ -116,7 +193,8 @@ defmodule OliWeb.Delivery.Student.LessonLive do
       </div>
     </div>
     <button
-      id="attempt_button"
+      :if={@page_context.progress_state == :not_started}
+      id="begin_attempt_button"
       disabled={!@allow_attempt?}
       phx-click={
         if(@page_context.effective_settings.password not in [nil, ""],
@@ -130,6 +208,24 @@ defmodule OliWeb.Delivery.Student.LessonLive do
       ]}
     >
       Begin <%= get_ordinal_attempt(@page_context) %> Attempt
+    </button>
+
+    <button
+      :if={@page_context.progress_state == :in_progress}
+      id="continue_attempt_button"
+      disabled={!@allow_attempt?}
+      phx-click={
+        if(@page_context.effective_settings.password not in [nil, ""],
+          do: Modal.show_modal("password_attempt_modal") |> JS.focus(to: "#password_attempt_input"),
+          else: "continue_attempt"
+        )
+      }
+      class={[
+        "cursor-pointer px-5 py-2.5 hover:bg-opacity-40 bg-blue-600 rounded-[3px] shadow justify-center items-center gap-2.5 inline-flex text-white text-sm font-normal font-['Open Sans'] leading-tight",
+        if(!@allow_attempt?, do: "opacity-50 dark:opacity-20 disabled !cursor-not-allowed")
+      ]}
+    >
+      Continue <%= get_ordinal_attempt(@page_context) %> Attempt
     </button>
     """
   end
@@ -187,7 +283,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
   # As we implement more scenarios we can add more clauses to this function depending on the :view key.
   def render(assigns) do
     ~H"""
-    <div></div>
+    <div>hi, this is still in dev</div>
     """
   end
 
@@ -206,7 +302,6 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     """
   end
 
-  attr :revision, Oli.Resources.Revision
   attr :page_context, Oli.Delivery.Page.PageContext
   attr :ctx, OliWeb.Common.SessionContext
   attr :index, :string
@@ -227,10 +322,13 @@ defmodule OliWeb.Delivery.Student.LessonLive do
                 <%= @container_label %>
               </div>
 
-              <div :if={@revision.graded} class="w-px self-stretch opacity-40 bg-black dark:bg-white">
+              <div
+                :if={@page_context.page.graded}
+                class="w-px self-stretch opacity-40 bg-black dark:bg-white"
+              >
               </div>
               <div
-                :if={@revision.graded}
+                :if={@page_context.page.graded}
                 class="justify-start items-center gap-1.5 flex"
                 role="graded page marker"
               >
@@ -263,7 +361,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
               role="page title"
               class="grow shrink basis-0 dark:text-white text-[38px] font-bold font-['Open Sans']"
             >
-              <%= @revision.title %>
+              <%= @page_context.page.title %>
             </div>
           </div>
         </div>
@@ -275,7 +373,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
               </div>
               <div class="justify-end items-end gap-0.5 flex">
                 <div class="text-right dark:text-white text-xs font-bold font-['Open Sans'] uppercase tracking-wide">
-                  <%= @revision.duration_minutes %>
+                  <%= @page_context.page.duration_minutes %>
                 </div>
                 <div class="dark:text-white text-[9px] font-bold font-['Open Sans'] uppercase tracking-wide">
                   min
@@ -380,14 +478,60 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     """
   end
 
-  def handle_event("begin_attempt", %{"password" => password}, socket)
-      when password != socket.assigns.page_context.effective_settings.password do
-    {:noreply, put_flash(socket, :error, "Incorrect password")}
-  end
+  def do_start_attempt(socket, section, user, revision, effective_settings) do
+    datashop_session_id = socket.assigns.datashop_session_id
+    activity_provider = &Oli.Delivery.ActivityProvider.provide/6
 
-  def handle_event("begin_attempt", _params, socket) do
-    # TODO begin attempt
-    {:noreply, socket}
+    # We must check gating conditions here to account for gates that activated after
+    # the prologue page was rendered, and for malicious/deliberate attempts to start an attempt via
+    # hitting this endpoint.
+    case Oli.Delivery.Gating.blocked_by(section, user, revision.resource_id) do
+      [] ->
+        case PageLifecycle.start(
+               revision.slug,
+               section.slug,
+               datashop_session_id,
+               user,
+               effective_settings,
+               activity_provider
+             ) do
+          {:ok,
+           %AttemptState{
+             resource_attempt: resource_attempt,
+             attempt_hierarchy: attempt_hierarchy
+           }} ->
+            IO.inspect(resource_attempt, label: "algo")
+
+            # acá debería reconstruir el page_context como hago en el init
+            # (o de alguna manera hacer el redirect pero que se marque que ya ingresé el password pero de manera segura)
+
+            # we mark the continue_checked=true to avoid showing the prologue with the "Continue" button again
+            # since the user has just clicked the "Begin" button in that same prologue.
+            {:noreply,
+             socket
+             |> assign(continue_checked: true)
+             |> assign_html()}
+
+          {:error, {:end_date_passed}} ->
+            {:noreply, put_flash(socket, :error, "This assessment's end date passed.")}
+
+          {:error, {:active_attempt_present}} ->
+            {:noreply, put_flash(socket, :error, "You already have an active attempt.")}
+
+          {:error, {:no_more_attempts}} ->
+            {:noreply, put_flash(socket, :error, "You have no attempts remaining.")}
+
+          _ ->
+            {:noreply, put_flash(socket, :error, "Failed to start new attempt")}
+        end
+
+      _ ->
+        # In the case where a gate exists we want to redirect to this page display, which will
+        # then pick up the gate and show that feedback to the user
+        redirect(socket,
+          to: Routes.page_delivery_path(socket, :page, section.slug, revision.slug)
+        )
+    end
   end
 
   defp get_container_label(page_id, section) do
@@ -424,6 +568,85 @@ defmodule OliWeb.Delivery.Student.LessonLive do
       {_, 12} -> Integer.to_string(next_attempt_number) <> "th"
       {_, 13} -> Integer.to_string(next_attempt_number) <> "th"
       _ -> Integer.to_string(next_attempt_number) <> "th"
+    end
+  end
+
+  defp assign_html_and_scripts(socket) do
+    socket
+    |> assign_scripts()
+    |> assign_html()
+  end
+
+  defp assign_scripts(socket) do
+    assign(socket,
+      scripts: get_required_activity_scripts(socket.assigns.page_context.activities || [])
+    )
+  end
+
+  defp assign_html(socket) do
+    %{section: section, current_user: current_user, page_context: page_context} = socket.assigns
+
+    render_context = %Context{
+      enrollment:
+        Oli.Delivery.Sections.get_enrollment(
+          section.slug,
+          current_user.id
+        ),
+      user: current_user,
+      section_slug: section.slug,
+      mode: :delivery,
+      activity_map: page_context.activities,
+      resource_summary_fn: &Resources.resource_summary(&1, section.slug, Resolver),
+      alternatives_groups_fn: fn ->
+        Resources.alternatives_groups(section.slug, Resolver)
+      end,
+      alternatives_selector_fn: &Resources.Alternatives.select/2,
+      extrinsic_read_section_fn: &Oli.Delivery.ExtrinsicState.read_section/3,
+      bib_app_params: page_context.bib_revisions,
+      historical_attempts: page_context.historical_attempts,
+      learning_language: Sections.get_section_attributes(section).learning_language,
+      effective_settings: page_context.effective_settings
+      # when migrating from page_delivery_controller this key-values were found
+      # to apparently not be used by the page template:
+      #   project_slug: base_project_slug,
+      #   submitted_surveys: submitted_surveys,
+      #   resource_attempt: hd(context.resource_attempts)
+    }
+
+    attempt_content = get_attempt_content(page_context)
+
+    # Cache the page as text to allow the AI agent LV to access it.
+    cache_page_as_text(render_context, attempt_content, page_context.page.id)
+
+    assign(socket,
+      html: Page.render(render_context, attempt_content, Page.Html)
+    )
+  end
+
+  defp cache_page_as_text(render_context, content, page_id) do
+    Oli.Converstation.PageContentCache.put(
+      page_id,
+      Page.render(render_context, content, Page.Markdown) |> :erlang.iolist_to_binary()
+    )
+  end
+
+  defp get_required_activity_scripts(activity_mapper) do
+    # this is an optimization to exclude not needed activity scripts (~1.5mb each)
+    Enum.map(activity_mapper, fn {_activity_id, activity} ->
+      activity.script
+    end)
+    |> Enum.uniq()
+  end
+
+  defp get_attempt_content(page_context) do
+    this_attempt = page_context.resource_attempts |> hd
+
+    if Enum.any?(this_attempt.errors, fn e ->
+         e == "Selection failed to fulfill: no values provided for expression"
+       end) and page_context.is_student do
+      %{"model" => []}
+    else
+      this_attempt.content
     end
   end
 end
