@@ -1303,6 +1303,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         rev.resource_type_id == ^page_id or
           rev.resource_type_id == ^container_id,
       select: %{
+        "id" => rev.id,
         "numbering" => %{
           "index" => sr.numbering_index,
           "level" => sr.numbering_level
