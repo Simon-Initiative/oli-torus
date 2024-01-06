@@ -2496,25 +2496,6 @@ defmodule Oli.Delivery.Sections do
   end
 
   @doc """
-  Rebuilds the full_hierarchy index for a course section. If a full hierarchy is not
-  available, one will be generated. Otherwise, the existing full hierarchy will be
-  returned.
-  """
-  def get_full_hierarchy(%Section{full_hierarchy: nil} = section) do
-    Logger.warning(
-      "Section #{section.slug} has no precomputed full_hierarchy. One will be generated now."
-    )
-
-    {:ok, section} = rebuild_full_hierarchy(section, false)
-
-    section.full_hierarchy
-  end
-
-  def get_full_hierarchy(%Section{full_hierarchy: full_hierarchy}) do
-    full_hierarchy
-  end
-
-  @doc """
   Rebuilds the full_hierarchy field for a course section,
   needed as "cache" data for student's content view (OliWeb.Delivery.Student.ContentLive).
   The full hierarchy represents the main structure in which a course curriculum is organized
