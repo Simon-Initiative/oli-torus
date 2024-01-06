@@ -223,7 +223,6 @@ defmodule OliWeb.Delivery.Student.LessonLive do
   end
 
   defp get_container_label(page_id, section) do
-
     section_id = section.id
 
     # Query to find the parent section_resource which contains as a child
@@ -231,22 +230,25 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     # be more robust against weird hierarchies and maybe orphaned containers,
     # we look for only containers with a numbering_level >= 0 and limit to 1.
 
-    query = from(s in Oli.Delivery.Sections.SectionResource,
+    query =
+      from(s in Oli.Delivery.Sections.SectionResource,
         join: sr in Oli.Delivery.Sections.SectionResource,
         on: sr.section_id == s.section_id and sr.resource_id == ^page_id,
-        where: s.section_id == ^section_id
-          and sr.id in s.children
-          and s.numbering_level >= 0,
+        where:
+          s.section_id == ^section_id and
+            sr.id in s.children and
+            s.numbering_level >= 0,
         select: s,
         limit: 1
       )
 
     # If we find a container, use it to get the label and numbering. Otherwise,
     # fall back rendering something
-    container = case Oli.Repo.all(query) do
-      [item] -> item
-      [] -> %{numbering_index: 0, numbering_level: 0}
-    end
+    container =
+      case Oli.Repo.all(query) do
+        [item] -> item
+        [] -> %{numbering_index: 0, numbering_level: 0}
+      end
 
     Sections.get_container_label_and_numbering(
       container,
