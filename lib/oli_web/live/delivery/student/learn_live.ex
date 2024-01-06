@@ -20,23 +20,23 @@ defmodule OliWeb.Delivery.Student.LearnLive do
           socket.assigns[:current_user]
         )
 
-
     root_node = full_hierarchy(socket.assigns.section)
 
-    socket = assign(socket,
-       active_tab: :learn,
-       full_hierarchy: root_node,
-       selected_module_per_unit_resource_id: %{},
-       student_visited_pages: %{},
-       student_progress_per_resource_id: %{},
-       student_raw_avg_score_per_page_id: %{},
-       student_raw_avg_score_per_container_id: %{},
-       viewed_intro_video_resource_ids:
-         get_viewed_intro_video_resource_ids(
-           socket.assigns.section.slug,
-           socket.assigns.current_user.id
-         )
-     )
+    socket =
+      assign(socket,
+        active_tab: :learn,
+        full_hierarchy: root_node,
+        selected_module_per_unit_resource_id: %{},
+        student_visited_pages: %{},
+        student_progress_per_resource_id: %{},
+        student_raw_avg_score_per_page_id: %{},
+        student_raw_avg_score_per_container_id: %{},
+        viewed_intro_video_resource_ids:
+          get_viewed_intro_video_resource_ids(
+            socket.assigns.section.slug,
+            socket.assigns.current_user.id
+          )
+      )
 
     {:ok, socket}
   end
@@ -1294,7 +1294,9 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       end
 
     from(
-      [s: s, sr: sr, rev: rev, spp: spp] in Oli.Publishing.DeliveryResolver.section_resource_revisions(section.slug),
+      [s: s, sr: sr, rev: rev, spp: spp] in Oli.Publishing.DeliveryResolver.section_resource_revisions(
+        section.slug
+      ),
       join: p in Project,
       on: p.id == spp.project_id,
       where:
@@ -1303,7 +1305,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       select: %{
         "numbering" => %{
           "index" => sr.numbering_index,
-          "level" => sr.numbering_level,
+          "level" => sr.numbering_level
         },
         "children" => sr.children,
         "resource_id" => rev.resource_id,
@@ -1318,11 +1320,12 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         "duration_minutes" => rev.duration_minutes,
         "resource_type_id" => rev.resource_type_id,
         "section_resource" => sr,
-        "is_root?" => fragment(
-          "CASE WHEN ? = ? THEN true ELSE false END",
-          sr.id,
-          s.root_section_resource_id
-        )
+        "is_root?" =>
+          fragment(
+            "CASE WHEN ? = ? THEN true ELSE false END",
+            sr.id,
+            s.root_section_resource_id
+          )
       }
     )
     |> Oli.Repo.all()
