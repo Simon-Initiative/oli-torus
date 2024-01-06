@@ -6,7 +6,6 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   alias Oli.Delivery.{Metrics, Sections}
   alias Phoenix.LiveView.JS
   alias Oli.Authoring.Course.Project
-  alias Oli.Resources.Numbering
 
   import Ecto.Query, warn: false
 
@@ -24,8 +23,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
 
     root_node = full_hierarchy(socket.assigns.section)
 
-    {:ok,
-     assign(socket,
+    socket = assign(socket,
        active_tab: :learn,
        full_hierarchy: root_node,
        selected_module_per_unit_resource_id: %{},
@@ -38,7 +36,9 @@ defmodule OliWeb.Delivery.Student.LearnLive do
            socket.assigns.section.slug,
            socket.assigns.current_user.id
          )
-     )}
+     )
+
+    {:ok, socket}
   end
 
   def handle_params(%{"target_resource_id" => resource_id}, _uri, socket) do
@@ -259,7 +259,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       |> push_event("hide-or-show-buttons-on-sliders", %{
         unit_resource_ids:
           Enum.map(
-            socket.assigns.section.full_hierarchy["children"],
+            socket.assigns.full_hierarchy["children"],
             & &1["resource_id"]
           )
       })
