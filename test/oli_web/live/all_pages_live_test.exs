@@ -109,7 +109,7 @@ defmodule OliWeb.AllPagesLiveTest do
       assert has_element?(
                view,
                "a[href=\"/authoring/project/#{project.slug}/curriculum\"]",
-               "Go to curriculum"
+               "Curriculum"
              )
 
       assert has_element?(view, "button", "Create")
@@ -290,7 +290,7 @@ defmodule OliWeb.AllPagesLiveTest do
         live(conn, live_view_all_pages_route(project.slug))
 
       view
-      |> element("a[role='go_to_curriculum']", "Go to curriculum")
+      |> element("a[role='go_to_curriculum']", "Curriculum")
       |> render_click()
 
       assert_redirect(
