@@ -1,4 +1,5 @@
 import { remove } from 'components/activities/common/utils';
+import { updateRule } from 'components/activities/response_multi/rules';
 import {
   ChoiceIdsToResponseId,
   HasParts,
@@ -56,7 +57,13 @@ export const ResponseActions = {
 
   editResponseMatchStyle(responseId: ResponseId, matchStyle: MatchStyle) {
     return (model: HasParts) => {
-      getResponseBy(model, (r) => r.id === responseId).matchStyle = matchStyle;
+      const r = getResponseBy(model, (r) => r.id === responseId);
+      r.matchStyle = matchStyle;
+
+      // force regeneration of existing rule with new match style, no additions/modifications
+      // On change to 'all' type will ensure dropdown inputs have only one selected choice
+      r.rule = updateRule(r.rule, matchStyle, '', '', false);
+      // console.log('editMatchStyle: ' + r.rule);
     };
   },
 

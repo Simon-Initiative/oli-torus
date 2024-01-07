@@ -493,8 +493,6 @@ export interface Response extends Identifiable {
 
   matchStyle?: MatchStyle;
 
-  inputRefs?: string[];
-
   catchAll?: boolean;
 
   targeted?: boolean;

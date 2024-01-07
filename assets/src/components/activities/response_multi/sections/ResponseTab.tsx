@@ -6,6 +6,7 @@ import { FeedbackCard } from 'components/activities/common/responses/FeedbackCar
 import { ScoreInput } from 'components/activities/common/responses/ScoreInput';
 import { ShowPage } from 'components/activities/common/responses/ShowPage';
 import { ResponseActions } from 'components/activities/common/responses/responseActions';
+import { addOrRemove } from 'components/activities/common/utils';
 import { Dropdown, MultiInput } from 'components/activities/multi_input/schema';
 import { ResponseMultiInputSchema } from 'components/activities/response_multi/schema';
 import { RulesTab } from 'components/activities/response_multi/sections/RulesTab';
@@ -17,12 +18,8 @@ import { TextDirection } from 'data/content/model/elements/types';
 import { ID } from 'data/content/model/other';
 import { EditorType } from 'data/content/resource';
 import { ResponseMultiInputActions } from '../actions';
-import {
-  constructRule,
-  defaultRuleForInputType,
-  friendlyType,
-  purseResponseMultiInputRule,
-} from '../utils';
+import { combineRules, ruleInputRefs, ruleInputRules, toInputRule, updateRule } from '../rules';
+import { defaultRuleForInputType, friendlyType } from '../utils';
 
 interface Props {
   response: Response;
@@ -41,36 +38,45 @@ export const ResponseTab: React.FC<Props> = (props) => {
   );
 
   const inputs: MultiInput[] = model.inputs.filter((input) => {
-    if (response.inputRefs && response.inputRefs.includes(input.id)) {
+    if (ruleInputRefs(response.rule).includes(input.id)) {
       return true;
     }
     return false;
   });
 
   const toggleCorrectness = (id: string, partId: string, inputId: string) => {
-    const rule = matchRule(id);
+    console.log(`toggleCorrectness dropdown Id:${inputId} choiceId:${id}`);
+    const inputRule = toInputRule(inputId, matchRule(id));
+
+    if (response.matchStyle !== 'all') {
+      // disjunctive rule: really a toggle, remove if present, add if not
+      const ruleSet = ruleInputRules(response.rule);
+      addOrRemove(inputRule, ruleSet);
+      const newRule = combineRules(response.matchStyle!, ruleSet);
+      dispatch(
+        ResponseMultiInputActions.editResponseResponseMultiRule(response.id, inputId, newRule),
+      );
+      return;
+    }
+    // else this indicates unique value selection, not toggling in or out
+    const newRule = updateRule(response.rule, response.matchStyle, inputId, inputRule, false);
+    console.log(` constructRule => ${newRule}`);
     dispatch(
-      ResponseMultiInputActions.editResponseResponseMultiRule(
-        response.id,
-        inputId,
-        constructRule(response.rule, response.matchStyle, inputId, rule, false),
-      ),
+      ResponseMultiInputActions.editResponseResponseMultiRule(response.id, inputId, newRule),
     );
   };
 
   const editRule = (id: ResponseId, inputId: string, rule: string) => {
+    console.log(`editRule inputId:${inputId} rule:  ${rule}`);
+    const newRule = updateRule(response.rule, response.matchStyle, inputId, rule, false);
+    console.log(` constructRule => ${newRule}`);
     dispatch(
       ResponseMultiInputActions.editResponseResponseMultiRule(
         id,
         inputId,
-        constructRule(response.rule, response.matchStyle, inputId, rule, false),
+        updateRule(response.rule, response.matchStyle, inputId, rule, false),
       ),
     );
-  };
-
-  const cloneResponse = (inputId: string): Response => {
-    const singlRule = purseResponseMultiInputRule(response.rule).get(inputId);
-    return { ...response, rule: singlRule ? singlRule : response.rule };
   };
 
   const onScoreChange = (score: number) => {
@@ -83,7 +89,7 @@ export const ResponseTab: React.FC<Props> = (props) => {
           <RulesTab
             key={i.id}
             input={i}
-            response={cloneResponse(i.id)}
+            response={response}
             toggleCorrectness={toggleCorrectness}
             editRule={editRule}
           />
@@ -112,12 +118,10 @@ export const ResponseTab: React.FC<Props> = (props) => {
   const getInputOptions = (): MultiInput[] => {
     const targets: string[] | undefined = getPartById(model, props.partId).targets;
     if (targets) {
-      let inputs: MultiInput[] = model.inputs.filter((i) => targets.includes(i.id));
-      const inputRefs: string[] | undefined = response.inputRefs;
-      if (inputRefs) {
-        inputs = inputs.filter((i) => !inputRefs.includes(i.id));
-      }
-      return inputs;
+      const inputs: MultiInput[] = model.inputs.filter((i) => targets.includes(i.id));
+      const inputRefs: string[] = ruleInputRefs(response.rule);
+      // these are part inputs (targets) - inputs that already have rule
+      return inputs.filter((i) => !inputRefs.includes(i.id));
     }
     return [];
   };
@@ -172,28 +176,30 @@ export const ResponseTab: React.FC<Props> = (props) => {
 
   return (
     <Card.Card key={response.id}>
-      <Card.Title>{response.targeted ? 'Targeted Feedback' : 'Feedback'}</Card.Title>
+      <Card.Title>
+        <div className="d-flex justify-content-between w-100">
+          {response.targeted ? 'Targeted Feedback' : 'Feedback'}
+        </div>
 
-      {
-        /* No custom scoring, so a correct/incorrect checkbox that sets 1/0 score */
-        props.customScoring || (
+        <div className="flex-grow-1"></div>
+        {!props.customScoring ? (
+          /* No custom scoring, so a correct/incorrect checkbox that sets 1/0 score */
           <AuthoringCheckboxConnected
             label="Correct"
             id={props.response.id + '-correct'}
             value={!!response.score}
             onChange={(value) => props.updateCorrectness(props.response.id, value)}
           />
-        )
-      }
+        ) : (
+          /* We are using custom scoring, so prompt for a score instead of correct/incorrect */
+          <ScoreInput score={props.response.score} onChange={onScoreChange} editMode={true}>
+            Score:
+          </ScoreInput>
+        )}
 
-      {props.customScoring && (
-        /* We are using custom scoring, so prompt for a score instead of correct/incorrect */
-        <ScoreInput score={props.response.score} onChange={onScoreChange} editMode={true}>
-          Score:
-        </ScoreInput>
-      )}
+        <RemoveButtonConnected onClick={() => props.removeResponse(props.response.id)} />
+      </Card.Title>
 
-      <RemoveButtonConnected onClick={() => props.removeResponse(props.response.id)} />
       <Card.Content>
         <div className="d-flex flex-row justify-between">
           <div>Rules</div>
@@ -249,7 +255,7 @@ const AddRule: React.FC<AddRuleProps> = ({ inputs, response }) => {
         ResponseMultiInputActions.editResponseResponseMultiRule(
           response.id,
           inputId,
-          constructRule(
+          updateRule(
             response.rule,
             response.matchStyle,
             inputId,
@@ -271,12 +277,14 @@ const AddRule: React.FC<AddRuleProps> = ({ inputs, response }) => {
           addRule(value);
         }}
       >
-        <option disabled selected value={undefined}>
+        <option hidden selected value={undefined}>
           select option
         </option>
         {inputs.map((input, index: number) => (
           <option key={input.id} value={input.id}>
-            Input {friendlyType(input.inputType)}
+            {`Input ${model.inputs.findIndex((inp) => inp.id === input.id) + 1} (${friendlyType(
+              input.inputType,
+            )})`}
           </option>
         ))}
       </select>

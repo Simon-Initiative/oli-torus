@@ -14,7 +14,7 @@ import { hasCustomScoring } from 'data/activities/model/responses';
 import { containsRule, eqRule, equalsRule, matchRule } from 'data/activities/model/rules';
 import { getPartById } from 'data/activities/model/utils';
 import { ResponseMultiInputScoringMethod } from '../ResponseMultiInputScoringMethod';
-import { addRef, replaceWithInputRef } from '../utils';
+import { toInputRule } from '../rules';
 
 const defaultRuleForInputType = (inputType: string | undefined) => {
   switch (inputType) {
@@ -29,19 +29,17 @@ const defaultRuleForInputType = (inputType: string | undefined) => {
 };
 
 export const addResponseMultiTargetedFeedbackFillInTheBlank = (input: FillInTheBlank) => {
-  const response: Response = addRef(
-    input.id,
-    makeResponse(replaceWithInputRef(input.id, defaultRuleForInputType(input.inputType)), 0, ''),
+  const response: Response = makeResponse(
+    toInputRule(input.id, defaultRuleForInputType(input.inputType)),
+    0,
+    '',
   );
   response.targeted = true;
   return ResponseActions.addResponse(response, input.partId);
 };
 
 export const addResponseMultiTargetedDropdown = (input: Dropdown, choiceId: string) => {
-  const response: Response = addRef(
-    input.id,
-    makeResponse(replaceWithInputRef(input.id, matchRule(choiceId)), 0, ''),
-  );
+  const response: Response = makeResponse(toInputRule(input.id, matchRule(choiceId)), 0, '');
   response.targeted = true;
   return ResponseActions.addResponse(response, input.partId);
 };
