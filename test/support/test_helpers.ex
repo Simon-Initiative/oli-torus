@@ -3103,7 +3103,8 @@ defmodule Oli.TestHelpers do
     insert(:published_resource, %{
       publication: publication,
       resource: page_revision.resource,
-      revision: page_revision
+      revision: page_revision,
+      author: insert(:author, email: "some_email@email.com")
     })
 
     section =
@@ -3297,4 +3298,22 @@ defmodule Oli.TestHelpers do
         activity_provider
       )
   end
+
+  ### Begins helper that waits for Tasks to complete ###
+
+  def wait_for_completion() do
+    pids = Task.Supervisor.children(Oli.TaskSupervisor)
+    Enum.each(pids, &Process.monitor/1)
+    wait_for_pids(pids)
+  end
+
+  defp wait_for_pids([]), do: nil
+
+  defp wait_for_pids(pids) do
+    receive do
+      {:DOWN, _ref, :process, pid, _reason} -> wait_for_pids(List.delete(pids, pid))
+    end
+  end
+
+  ### Ends helper that waits for Tasks to complete ###
 end
