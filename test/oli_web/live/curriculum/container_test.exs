@@ -365,7 +365,7 @@ defmodule OliWeb.Curriculum.ContainerLiveTest do
       {:ok, view, _html} = live(conn)
 
       view
-      |> element("a[role='go_to_all_pages']", "Go to all pages")
+      |> element("a[role='go_to_all_pages']", "All Pages")
       |> render_click()
 
       assert_redirect(
