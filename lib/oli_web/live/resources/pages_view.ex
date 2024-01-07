@@ -209,11 +209,10 @@ defmodule OliWeb.Resources.PagesView do
         </FilterBox.render>
         <div>
           <.link
-            class="torus-button primary self-start w-max"
             href={~p"/authoring/project/#{@project.slug}/curriculum"}
             role="go_to_curriculum"
           >
-            Go to curriculum
+            Curriculum
           </.link>
         </div>
       </div>
