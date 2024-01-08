@@ -325,10 +325,10 @@ defmodule OliWeb.Dialogue.WindowLive do
         </div>
       </div>
       <div class={[
-        "grow shrink basis-0 p-3 rounded-xl shadow justify-start items-start gap-6 flex bg-opacity-10 dark:bg-opacity-100",
+        "grow shrink basis-0 p-3 rounded-xl shadow justify-start items-start gap-6 flex bg-opacity-30 dark:bg-opacity-100",
         if(@user_initials == "BOT AI",
-          do: "bg-gray-500 dark:bg-gray-600",
-          else: "bg-gray-900 dark:bg-gray-800"
+          do: "bg-gray-300 dark:bg-gray-600",
+          else: "bg-gray-800 dark:bg-gray-800"
         )
       ]}>
         <div class="grow shrink basis-0 p-2 flex-col justify-start items-start gap-6 inline-flex">
