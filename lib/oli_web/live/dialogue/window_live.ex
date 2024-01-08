@@ -431,6 +431,8 @@ defmodule OliWeb.Dialogue.WindowLive do
       id="ai_user_input_form"
       class="w-full mt-5 px-6"
       phx-hook="TextareaListener"
+      phx-window-keydown={JS.dispatch("click", to: "#bot_submit_button")}
+      phx-key="enter"
     >
       <div class="px-3 py-1.5 rounded-xl border border-black dark:border-white border-opacity-40 flex justify-start items-center gap-2 w-full">
         <div class="rounded-xl justify-center items-center gap-3 flex">
@@ -454,6 +456,7 @@ defmodule OliWeb.Dialogue.WindowLive do
         </div>
         <button
           disabled={!@allow_submission?}
+          id="bot_submit_button"
           class="w-[38px] h-[38px] px-6 py-2 opacity-60 bg-blue-800 rounded-lg justify-center items-center gap-3 flex cursor-pointer hover:opacity-50"
         >
           <div class="w-[25px] h-[25px] pl-[3.12px] pr-[2.08px] py-[4.17px] justify-center items-center flex">
