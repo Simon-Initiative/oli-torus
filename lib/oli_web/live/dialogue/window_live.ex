@@ -144,7 +144,7 @@ defmodule OliWeb.Dialogue.WindowLive do
       >
         <img
           class="animate-[spin_40s_cubic-bezier(0.4,0,0.6,1)_infinite]"
-          src={~p"/images/ng23/footer_dot_ai.png"}
+          src={~p"/images/assistant/footer_dot_ai.png"}
         />
         <div class="w-[39.90px] h-[39.90px] absolute bottom-4 right-4 bg-zinc-300 rounded-full blur-[30px] animate-[pulse_3s_cubic-bezier(0.4,0,0.6,1)_infinite]">
         </div>
@@ -313,7 +313,8 @@ defmodule OliWeb.Dialogue.WindowLive do
           :if={@user_initials == "BOT AI"}
           class="-mt-1.5 w-11 h-11 rounded-full justify-center items-center flex"
         >
-          <div class="w-12 h-12 bg-[url('/images/ng23/footer_dot_ai.png')] bg-cover bg-center"></div>
+          <div class="w-12 h-12 bg-[url('/images/assistant/footer_dot_ai.png')] bg-cover bg-center">
+          </div>
         </div>
         <div
           :if={@user_initials != "BOT AI"}
