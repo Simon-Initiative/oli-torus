@@ -72,7 +72,7 @@ export const toggleUnorderedList: CommandDescription = {
   category: 'Structure',
   type: 'CommandDesc',
   icon: () => <i className="fa-solid fa-list-ul"></i>,
-  description: () => 'Unordered List',
+  description: () => 'Bulleted List',
   command: listCommandMaker('ul'),
   active: (editor) => isActive(editor, ['ul']),
 };
@@ -81,7 +81,7 @@ export const toggleOrderedList: CommandDescription = {
   category: 'Structure',
   type: 'CommandDesc',
   icon: () => <i className="fa-solid fa-list-ol"></i>,
-  description: () => 'Ordered List',
+  description: () => 'Numbered List',
   command: listCommandMaker('ol'),
   active: (editor) => isActive(editor, ['ol']),
 };
@@ -153,7 +153,7 @@ export const listSettingButtonGroups = [
   [
     createButtonCommandDesc({
       icon: <i className="fa-solid fa-list-ul"></i>,
-      description: 'Unordered List',
+      description: 'Bulleted List',
       category: 'Structure',
       active: (editor) => listTypeActive(editor, 'ul'),
       execute: (_ctx, editor) => {
@@ -174,7 +174,7 @@ export const listSettingButtonGroups = [
     }),
     createButtonCommandDesc({
       icon: <i className="fa-solid fa-list-ol"></i>,
-      description: 'Ordered List',
+      description: 'Numbered List',
       category: 'Structure',
       active: (editor) => listTypeActive(editor, 'ol'),
       execute: (_ctx, editor) => {
@@ -197,13 +197,13 @@ export const listSettingButtonGroups = [
   [
     createButtonCommandDesc({
       icon: <i className="fa-solid fa-outdent"></i>,
-      description: 'Outdent',
+      description: 'Decrease Indent',
       active: (_e) => false,
       execute: (_ctx, editor) => handleOutdent(editor),
     }),
     createButtonCommandDesc({
       icon: <i className="fa-solid fa-indent"></i>,
-      description: 'Indent',
+      description: 'Increase Indent',
       active: (_e) => false,
       execute: (_ctx, editor) => handleIndent(editor),
     }),
