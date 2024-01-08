@@ -4,8 +4,9 @@ defmodule OliWeb.Delivery.Student.LessonLive do
   on_mount {OliWeb.LiveSessionPlugs.InitPage, :page_context}
   on_mount {OliWeb.LiveSessionPlugs.InitPage, :previous_next_index}
 
+  alias Oli.Activities
   alias Oli.Delivery.Attempts.PageLifecycle
-  alias Oli.Delivery.Attempts.PageLifecycle.AttemptState
+  alias Oli.Delivery.Page.PageContext
   alias Oli.Delivery.{Sections, Settings}
   alias Oli.Publishing.DeliveryResolver, as: Resolver
   alias Oli.Rendering.{Context, Page}
@@ -55,6 +56,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     {:noreply,
      socket
      |> assign(continue_checked: true)
+     |> clear_flash()
      |> assign_html()}
   end
 
@@ -497,21 +499,22 @@ defmodule OliWeb.Delivery.Student.LessonLive do
                effective_settings,
                activity_provider
              ) do
-          {:ok,
-           %AttemptState{
-             resource_attempt: resource_attempt,
-             attempt_hierarchy: attempt_hierarchy
-           }} ->
-            IO.inspect(resource_attempt, label: "algo")
-
-            # acá debería reconstruir el page_context como hago en el init
-            # (o de alguna manera hacer el redirect pero que se marque que ya ingresé el password pero de manera segura)
+          {:ok, _attempt_state} ->
+            page_context =
+              PageContext.create_for_visit(
+                socket.assigns.section,
+                socket.assigns.page_context.page.slug,
+                socket.assigns.current_user,
+                socket.assigns.datashop_session_id
+              )
 
             # we mark the continue_checked=true to avoid showing the prologue with the "Continue" button again
             # since the user has just clicked the "Begin" button in that same prologue.
             {:noreply,
              socket
+             |> assign(page_context: page_context)
              |> assign(continue_checked: true)
+             |> clear_flash()
              |> assign_html()}
 
           {:error, {:end_date_passed}} ->
@@ -590,7 +593,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
 
   defp assign_scripts(socket) do
     assign(socket,
-      scripts: get_required_activity_scripts(socket.assigns.page_context.activities || [])
+      scripts: get_required_activity_scripts(socket.assigns.page_context)
     )
   end
 
@@ -641,12 +644,20 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     )
   end
 
-  defp get_required_activity_scripts(activity_mapper) do
+  defp get_required_activity_scripts(%{activities: activities} = _page_context)
+       when activities != nil do
     # this is an optimization to exclude not needed activity scripts (~1.5mb each)
-    Enum.map(activity_mapper, fn {_activity_id, activity} ->
+    Enum.map(activities, fn {_activity_id, activity} ->
       activity.script
     end)
     |> Enum.uniq()
+  end
+
+  defp get_required_activity_scripts(_page_context) do
+    # TODO Optimization: get only activity scripts of activities contained in the page.
+    # We could infer the contained activities from the page revision content model.
+    all_activities = Activities.list_activity_registrations()
+    Enum.map(all_activities, fn a -> a.delivery_script end)
   end
 
   defp get_attempt_content(page_context) do
