@@ -4,7 +4,7 @@ defmodule OliWeb.LiveSessionPlugs.InitPage do
   import Phoenix.Component, only: [assign: 2]
 
   alias Oli.Delivery.Attempts.Core
-  alias Oli.Delivery.{PreviousNextIndex, Sections, Settings}
+  alias Oli.Delivery.{PreviousNextIndex, Settings}
   alias Oli.Delivery.Page.PageContext
 
   def on_mount(
@@ -77,7 +77,7 @@ defmodule OliWeb.LiveSessionPlugs.InitPage do
             socket.assigns.current_user.id
           )
           |> elem(1)
-          |> Enum.filter(&(&1.revision.graded and &1.score != nil))
+          |> Enum.filter(& &1.revision.graded)
       end
 
     attempts_taken = length(resource_attempts)
@@ -121,7 +121,7 @@ defmodule OliWeb.LiveSessionPlugs.InitPage do
 
     assign(socket, %{
       view: :graded_page,
-      page_context: %PageContext{page_context | resource_attempts: resource_attempts},
+      page_context: %PageContext{page_context | historical_attempts: resource_attempts},
       allow_attempt?: new_attempt_allowed == {:allowed},
       attempt_message: attempt_message
     })

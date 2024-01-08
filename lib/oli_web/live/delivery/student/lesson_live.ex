@@ -183,7 +183,9 @@ defmodule OliWeb.Delivery.Student.LessonLive do
         <.attempt_summary
           :for={
             {attempt, index} <-
-              Enum.filter(@page_context.resource_attempts, fn a -> a.revision.graded == true end)
+              Enum.filter(@page_context.historical_attempts, fn a ->
+                a.revision.graded == true and a.score != nil
+              end)
               |> Enum.with_index(1)
           }
           index={index}
@@ -553,7 +555,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
   defp get_max_attempts(%{effective_settings: %{max_attempts: max_attempts}} = _page_context),
     do: max_attempts
 
-  defp get_attempts_count(%{resource_attempts: resource_attempts} = _page_context) do
+  defp get_attempts_count(%{historical_attempts: resource_attempts} = _page_context) do
     Enum.count(resource_attempts, fn a -> a.revision.graded == true end)
   end
 
