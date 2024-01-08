@@ -345,7 +345,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
               </div>
             </div>
             <div
-              :if={@page_context.activities != %{}}
+              :if={@page_context.page.graded}
               class="px-2 py-1 bg-black bg-opacity-10 dark:bg-white dark:bg-opacity-10 rounded-xl shadow justify-start items-center gap-1 flex"
               role="assignment marker"
             >
