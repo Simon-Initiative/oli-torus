@@ -1,55 +1,50 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { createButtonCommandDesc } from 'components/editing/elements/commands/commandFactories';
 import { Toolbar } from 'components/editing/toolbar/Toolbar';
-import { DropdownButton } from 'components/editing/toolbar/buttons/DropdownButton';
-import { Icon } from 'components/misc/Icon';
 import { TextDirection } from 'data/content/model/elements/types';
-import { classNames } from 'utils/classNames';
-import styles from '../Toolbar.modules.scss';
-
-export const editorSettingsDropdown = createButtonCommandDesc({
-  icon: <Icon icon="gear" />,
-  description: 'Editor Settings',
-  execute: () => {},
-  active: (_e) => false,
-});
+import { CommandButton } from '../buttons/CommandButton';
 
 interface Props {
   onSwitchToMarkdown?: () => void;
   textDirection?: TextDirection;
   onChangeTextDirection?: (textDirection: TextDirection) => void;
 }
+
 export const EditorSettingsMenu = ({
   onSwitchToMarkdown,
   textDirection,
   onChangeTextDirection,
 }: Props) => {
+  const markdownDesc = useMemo(
+    () =>
+      createButtonCommandDesc({
+        icon: <i className="fa-brands fa-markdown"></i>,
+        description: 'Switch to Markdown editor',
+        execute: (_context, editor, src: string) => {
+          onSwitchToMarkdown && onSwitchToMarkdown();
+        },
+      }),
+    [onSwitchToMarkdown],
+  );
+
+  const textDirectionDesc = useMemo(
+    () =>
+      createButtonCommandDesc({
+        icon: <i className={textDirection === 'rtl' ? 'fa fa-right-long' : 'fa fa-left-long'}></i>,
+        description: `Change To ${
+          textDirection === 'ltr' ? ' Right-to-Left ' : ' Left-to-Right '
+        } text direction`,
+        execute: (_context, editor, src: string) => {
+          onChangeTextDirection && onChangeTextDirection(textDirection === 'ltr' ? 'rtl' : 'ltr');
+        },
+      }),
+    [textDirection, onChangeTextDirection],
+  );
+
   return (
     <Toolbar.Group>
-      <DropdownButton description={editorSettingsDropdown} showDropdownArrow={false}>
-        {onSwitchToMarkdown && (
-          <button
-            onClick={onSwitchToMarkdown}
-            className={classNames(styles.toolbarButton, styles.descriptive)}
-          >
-            <Icon iconStyle="fa-brands" icon="markdown" />
-            <span className={styles.description}>Switch to Markdown editor</span>
-          </button>
-        )}
-        {onChangeTextDirection && (
-          <button
-            onClick={() => onChangeTextDirection(textDirection === 'ltr' ? 'rtl' : 'ltr')}
-            className={classNames(styles.toolbarButton, styles.descriptive)}
-          >
-            <Icon icon={textDirection === 'rtl' ? 'right-long' : 'left-long'} />
-            <span className={styles.description}>
-              Change To
-              {textDirection === 'ltr' ? ' Right-to-Left ' : ' Left-to-Right '}
-              text direction
-            </span>
-          </button>
-        )}
-      </DropdownButton>
+      {onSwitchToMarkdown && <CommandButton description={markdownDesc} />}
+      {onChangeTextDirection && <CommandButton description={textDirectionDesc} />}
     </Toolbar.Group>
   );
 };
