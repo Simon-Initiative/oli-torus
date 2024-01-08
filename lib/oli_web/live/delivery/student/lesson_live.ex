@@ -5,6 +5,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
   on_mount {OliWeb.LiveSessionPlugs.InitPage, :previous_next_index}
 
   alias Oli.Activities
+  alias Oli.Delivery.Attempts.Core.ResourceAttempt
   alias Oli.Delivery.Attempts.PageLifecycle
   alias Oli.Delivery.Page.PageContext
   alias Oli.Delivery.{Sections, Settings}
@@ -185,9 +186,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
         <.attempt_summary
           :for={
             {attempt, index} <-
-              Enum.filter(@page_context.historical_attempts, fn a ->
-                a.revision.graded == true and a.score != nil
-              end)
+              Enum.filter(@page_context.historical_attempts, fn a -> a.revision.graded == true end)
               |> Enum.with_index(1)
           }
           index={index}
@@ -230,15 +229,37 @@ defmodule OliWeb.Delivery.Student.LessonLive do
         if(!@allow_attempt?, do: "opacity-50 dark:opacity-20 disabled !cursor-not-allowed")
       ]}
     >
-      Continue <%= get_ordinal_attempt(@page_context) %> Attempt
+      Continue Attempt
     </button>
     """
   end
 
   attr :index, :integer
-  attr :attempt, Oli.Delivery.Attempts.Core.ResourceAttempt
+  attr :attempt, ResourceAttempt
   attr :ctx, OliWeb.Common.SessionContext
   attr :allow_review_submission?, :boolean
+
+  defp attempt_summary(%{attempt: %ResourceAttempt{lifecycle_state: :active}} = assigns) do
+    ~H"""
+    <div class="self-stretch h-8 py-1 bg-black bg-opacity-2x0 dark:bg-white dark:bg-opacity-5 justify-between items-center inline-flex">
+      <div class="justify-start items-center flex">
+        <div class="w-[92px] opacity-40 dark:text-white text-xs font-bold font-['Open Sans'] uppercase leading-normal tracking-wide">
+          Attempt <%= @index %>:
+        </div>
+      </div>
+      <div class="flex-col justify-start items-end inline-flex">
+        <div class="py-1 justify-start items-start gap-1 inline-flex">
+          <div class="opacity-50 dark:text-white text-xs font-normal font-['Open Sans']">
+            Time Remaining:
+          </div>
+          <div class="dark:text-white text-xs font-normal font-['Open Sans']">
+            00:40:12
+          </div>
+        </div>
+      </div>
+    </div>
+    """
+  end
 
   defp attempt_summary(assigns) do
     # TODO: add link to review page
@@ -563,17 +584,8 @@ defmodule OliWeb.Delivery.Student.LessonLive do
   defp get_max_attempts(%{effective_settings: %{max_attempts: max_attempts}} = _page_context),
     do: max_attempts
 
-  defp get_attempts_count(
-         %{historical_attempts: resource_attempts, progress_state: progress_state} = _page_context
-       ) do
-    case progress_state do
-      :not_started ->
-        Enum.count(resource_attempts, fn a -> a.revision.graded == true end)
-
-      :in_progress ->
-        # do not count current attempt (not yet submitted)
-        Enum.count(resource_attempts, fn a -> a.revision.graded == true end) - 1
-    end
+  defp get_attempts_count(%{historical_attempts: resource_attempts} = _page_context) do
+    Enum.count(resource_attempts, fn a -> a.revision.graded == true end)
   end
 
   defp get_ordinal_attempt(page_context) do
