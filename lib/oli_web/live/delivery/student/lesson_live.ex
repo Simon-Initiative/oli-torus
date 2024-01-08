@@ -555,8 +555,17 @@ defmodule OliWeb.Delivery.Student.LessonLive do
   defp get_max_attempts(%{effective_settings: %{max_attempts: max_attempts}} = _page_context),
     do: max_attempts
 
-  defp get_attempts_count(%{historical_attempts: resource_attempts} = _page_context) do
-    Enum.count(resource_attempts, fn a -> a.revision.graded == true end)
+  defp get_attempts_count(
+         %{historical_attempts: resource_attempts, progress_state: progress_state} = _page_context
+       ) do
+    case progress_state do
+      :not_started ->
+        Enum.count(resource_attempts, fn a -> a.revision.graded == true end)
+
+      :in_progress ->
+        # do not count current attempt (not yet submitted)
+        Enum.count(resource_attempts, fn a -> a.revision.graded == true end) - 1
+    end
   end
 
   defp get_ordinal_attempt(page_context) do
