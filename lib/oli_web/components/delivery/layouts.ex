@@ -289,14 +289,14 @@ defmodule OliWeb.Components.Delivery.Layouts do
     # <.links /> were changed from "navigate" to "href" to force a page reload
     # to fix a bug where the page content would render incorrectly some components
     # (for instance, the popup or the formula component from Oli.Rendering.Content.Html)
-    # and the page would not react to interactions after navigatint to other page
+    # and the page would not react to interactions after navigation to another page
     # ("working" loader kept spinning after interacting with an activity)
     ~H"""
     <div
       :if={!is_nil(@current_page)}
-      class="fixed bottom-0 left-1/2 -translate-x-1/2 h-[74px] py-4 shadow-lg bg-white dark:bg-black rounded-tl-[40px] rounded-tr-[40px] flex items-center gap-3 md:w-[720px] w-full"
+      class="fixed bottom-0 left-1/2 -translate-x-1/2 h-[74px] py-4 shadow-lg bg-white dark:bg-black lg:rounded-tl-[40px] lg:rounded-tr-[40px] flex items-center gap-3 lg:w-[720px] w-full"
     >
-      <div class="hidden md:block absolute -left-[114px] z-0">
+      <div class="hidden lg:block absolute -left-[114px] z-0">
         <svg
           xmlns="http://www.w3.org/2000/svg"
           width="170"
@@ -313,39 +313,39 @@ defmodule OliWeb.Components.Delivery.Layouts do
 
       <div
         :if={!is_nil(@previous_page)}
-        class="grow shrink basis-0 h-10 justify-start items-center gap-6 flex z-10"
+        class="grow shrink basis-0 h-10 justify-start items-center lg:gap-6 flex z-10 overflow-hidden whitespace-nowrap"
         role="prev_page"
       >
-        <div class="px-6 py-2 rounded justify-end items-center gap-2 flex">
+        <div class="px-2 lg:px-6 rounded justify-end items-center gap-2 flex">
           <.link href={resource_navigation_url(@previous_page, @section_slug)}>
-            <div class="w-[72px] h-10 opacity-30 hover:opacity-40 bg-blue-600 flex items-center justify-center">
+            <div class="w-[72px] h-10 opacity-30 hover:opacity-40 bg-blue-600 flex items-center justify-center cursor-pointer">
               <.left_arrow />
             </div>
           </.link>
         </div>
-        <div class="grow shrink basis-0 dark:text-white text-xs font-normal">
+        <div class="grow shrink basis-0 dark:text-white text-xs font-normal overflow-hidden text-ellipsis">
           <%= @previous_page["title"] %>
         </div>
       </div>
 
       <div
         :if={!is_nil(@next_page)}
-        class="grow shrink basis-0 h-10 justify-end items-center gap-6 flex z-10"
+        class="grow shrink basis-0 h-10 justify-end items-center lg:gap-6 flex z-10 overflow-hidden whitespace-nowrap mr-[80px] lg:mr-0"
         role="next_page"
       >
-        <div class="grow shrink basis-0 text-right dark:text-white text-xs font-normal">
+        <div class="grow shrink basis-0 text-right dark:text-white text-xs font-normal overflow-hidden text-ellipsis">
           <%= @next_page["title"] %>
         </div>
-        <div class="px-6 py-2 rounded justify-end items-center gap-2 flex">
+        <div class="px-2 lg:px-6 py-2 rounded justify-end items-center gap-2 flex">
           <.link href={resource_navigation_url(@next_page, @section_slug)}>
-            <div class="w-[72px] h-10 opacity-90 hover:opacity-100 bg-blue-600 flex items-center justify-center">
+            <div class="w-[72px] h-10 opacity-90 hover:opacity-100 bg-blue-600 flex items-center justify-center cursor-pointer">
               <.right_arrow />
             </div>
           </.link>
         </div>
       </div>
 
-      <div class="hidden md:block absolute -right-[114px] z-0">
+      <div class="hidden lg:block absolute -right-[114px] z-0">
         <svg
           xmlns="http://www.w3.org/2000/svg"
           width="170"
@@ -375,15 +375,15 @@ defmodule OliWeb.Components.Delivery.Layouts do
 
   def back_arrow(assigns) do
     ~H"""
-    <div class="flex justify-center items-center absolute top-10 left-12 z-50 p-4" role="back_link">
-      <.link navigate={@to} class="hover:no-underline">
+    <div class="flex justify-center items-center absolute top-2 lg:top-10 left-2 lg:left-12 z-40 p-4" role="back_link">
+      <.link navigate={@to} class="hover:no-underline hover:scale-105 cursor-pointer">
         <svg
           width="34"
           height="33"
           viewBox="0 0 34 33"
           fill="none"
           xmlns="http://www.w3.org/2000/svg"
-          class="hover:opacity-90 hover:cursor-pointer"
+          class="hover:opacity-100 hover:scale-105"
         >
           <path
             d="M17.0459 32.5278C8.19971 32.5278 0.884277 25.2124 0.884277 16.3662C0.884277 7.50391 8.18359 0.20459 17.0298 0.20459C25.8921 0.20459 33.2075 7.50391 33.2075 16.3662C33.2075 25.2124 25.8921 32.5278 17.0459 32.5278ZM17.0459 30.4331C24.8447 30.4331 31.1289 24.1489 31.1289 16.3662C31.1289 8.56738 24.8286 2.2832 17.0298 2.2832C9.24707 2.2832 2.979 8.56738 2.979 16.3662C2.979 24.1489 9.24707 30.4331 17.0459 30.4331ZM20.1235 24.2778C19.7852 24.6162 19.1567 24.6001 18.7861 24.2456L11.8252 17.5747C11.1162 16.9141 11.1001 15.8184 11.8252 15.1416L18.7861 8.4707C19.189 8.1001 19.7529 8.1001 20.1235 8.43848C20.5103 8.79297 20.5103 9.42139 20.1235 9.79199L13.2593 16.3501L20.1235 22.9404C20.5103 23.2949 20.5103 23.8911 20.1235 24.2778Z"

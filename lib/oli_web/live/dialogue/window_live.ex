@@ -127,7 +127,7 @@ defmodule OliWeb.Dialogue.WindowLive do
 
   def collapsed_bot(assigns) do
     ~H"""
-    <div id="ai_bot_collapsed" class="w-[170px] h-[74px] relative ml-auto">
+    <div id="ai_bot_collapsed" class="w-[80px] lg:w-[170px] h-[74px] relative ml-auto">
       <button
         phx-click={
           JS.hide(to: "#ai_bot_collapsed")
@@ -286,7 +286,7 @@ defmodule OliWeb.Dialogue.WindowLive do
   def left_to_right_fade_in_icon(assigns) do
     ~H"""
     <svg
-      class="fill-black dark:opacity-100"
+      class="hidden lg:block fill-black dark:opacity-100"
       width="170"
       height="74"
       viewBox="0 0 170 74"
