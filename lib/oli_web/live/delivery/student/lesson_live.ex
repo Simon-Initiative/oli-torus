@@ -193,6 +193,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
           index={index}
           attempt={attempt}
           ctx={@ctx}
+          allow_review_submission?={@page_context.effective_settings.review_submission == :allow}
         />
       </div>
     </div>
@@ -237,6 +238,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
   attr :index, :integer
   attr :attempt, Oli.Delivery.Attempts.Core.ResourceAttempt
   attr :ctx, OliWeb.Common.SessionContext
+  attr :allow_review_submission?, :boolean
 
   defp attempt_summary(assigns) do
     # TODO: add link to review page
@@ -274,7 +276,10 @@ defmodule OliWeb.Delivery.Student.LessonLive do
             ) %>
           </div>
         </div>
-        <div class="w-[124px] py-1 justify-end items-center gap-2.5 inline-flex">
+        <div
+          :if={@allow_review_submission?}
+          class="w-[124px] py-1 justify-end items-center gap-2.5 inline-flex"
+        >
           <div class="cursor-pointer hover:opacity-40 text-blue-500 text-xs font-semibold font-['Open Sans'] uppercase tracking-wide">
             Review
           </div>
