@@ -138,7 +138,6 @@ defmodule OliWeb.Dialogue.WindowLive do
                "translate-x-0 translate-y-0"}
           )
           |> JS.focus(to: "#ai_bot_input")
-          |> JS.add_class("overflow-hidden", to: "body")
         }
         class="absolute right-[1px] cursor-pointer hover:scale-105"
       >
@@ -200,7 +199,6 @@ defmodule OliWeb.Dialogue.WindowLive do
                   {"ease-out duration-700 delay-1000", "translate-x-full translate-y-full",
                    "translate-x-3/4 translate-y-0"}
               )
-              |> JS.remove_class("overflow-hidden", to: "body")
             }
             class="flex items-center justify-center ml-auto cursor-pointer opacity-80 dark:opacity-100 dark:hover:opacity-80 hover:opacity-100 hover:scale-105"
           >
