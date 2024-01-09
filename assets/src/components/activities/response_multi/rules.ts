@@ -1,4 +1,4 @@
-import { andRules, orRules } from 'data/activities/model/rules';
+import { andRules, orRules, unescapeInput } from 'data/activities/model/rules';
 import { MatchStyle } from '../types';
 
 // In response_multi context, we use following terms:
@@ -8,8 +8,8 @@ import { MatchStyle } from '../types';
 //         (!(input_ref_inputID op {value}))
 //
 // A response_multi response rule in general, variable r, consists logically
-// of a set of one or more input rules plus a match style.
-// We represent both in their torus rule string form, parsing out constitutents as needed.
+// of a set of one or more input rules plus a match style. We represent both in
+// their torus rule string form, parsing out constitutents as needed.
 //
 // For response rules with a disjunctive match style (any or none), we allow
 // multiple input rules for dropdown inputs to represent different possible values.
@@ -22,31 +22,46 @@ export const toInputRule = (inputId: string, rule: string) =>
 export const inputRuleInput = (ir: string): string | undefined =>
   ir.match(/(?<=input_ref_)[^ ]+/)?.[0];
 
-export const inputRuleValue = (ir: string): string => {
-  const match = ir.match(/input_ref_[^ ]+ \w+ {([^}]|\\})*}/);
-  if (!match) {
-    console.error('inputRuleValue: not single input rule ' + ir);
-  }
-  return match ? match[1] : '';
-};
+export const inputRuleValue = (ir: string): string =>
+  unescapeInput(ir.substring(ir.indexOf('{') + 1, ir.lastIndexOf('}')));
 
+// Torus rule grammar doesn't allow r1 && r2 && r3, so use
+// compounding utilties which generate following legal forms:
+//  all:  rule1 && (rule2 && (rule3 && (rule4 ... )))
+//  any:  rule1 || (rule2 || (rule3 || (reul4 ... )))
+// We generate the following for none rule:
+//  none : none: !(...)
+// with no containing paren before negation, so this
+// differs from not-contains input rule which is parenthesized
+//
 export const combineRules = (matchStyle: MatchStyle, inputRules: string[]) => {
   const joined = matchStyle === 'all' ? andRules(...inputRules) : orRules(...inputRules);
   return matchStyle === 'none' ? `!(${joined})` : joined;
 };
 
 // Extract component single input rules from possibly compound response_multi rule
-// Assumes rule string combines input rules according to one of our matchStyles
-// Strictly correct parsing complicated to allow
-//   (1) && or || could occur inside {...} so can't just split on them
+// Matching component rules w/regex complicated because
+//   (1) any string could occur inside {...} so can't just split on separator
 //   (2) right-brace can appear inside {...} if escaped as \}
-//   (3) does-not-contain rule has form (!(input_ref_foo like {..}))
-//   (4) brackets may be empty on some uninitialized text rules
+//   (3) but \\ inside {...} escapes backslash
+//   (4) does-not-contain rule has form (!(input_ref_foo like {...}))
 export const ruleInputRules = (r: string): string[] => {
-  // inside brackets allow either non-} OR escaped \}
-  const rules = r.match(/(?:!\()?input_ref_[^ ]+ [^ ]+ {(?:[^}]|\\})*}\)?/g);
-  console.log('split rules: ' + rules);
-  return rules === null ? [] : rules;
+  // String.raw literal avoids need to escape backslashes for javascript,
+  // but we still need to escape backslash metachar within the regexp
+  // So ESC1 is string consisting of 4 backslashes used in re to match \\
+  const ESC1 = String.raw`\\\\`;
+  const ESC2 = String.raw`\\}`;
+  const NRBR = String.raw`[^}]`;
+  // inside brackets match escapes \\ or \} or non-} in that order
+  const VEXP = String.raw`(?:${ESC1}|${ESC2}|${NRBR})`;
+  // braces may be empty, occurs on new text rules
+  const RULE1 = String.raw`input_ref_[^ ]+ [^ ]+ {${VEXP}*}`;
+  const NOTRULE1 = String.raw`\(!\(${RULE1}\)\)`;
+  const RULE = String.raw`${NOTRULE1}|${RULE1}`;
+  const RE_RULE = new RegExp(RULE, 'g');
+
+  const matches = r.match(RE_RULE);
+  return matches ? matches : [];
 };
 
 export const ruleMatchStyle = (r: string): MatchStyle =>
@@ -66,7 +81,7 @@ export const getInputValues = (r: string, id: string): string[] =>
   getRulesForInput(r, id).map(inputRuleValue);
 
 // generic type guard enabling TypeScript to narrow filtered types to non-undefined
-function isDefined<T>(value: T | undefined): value is T {
+export function isDefined<T>(value: T | undefined): value is T {
   return value !== undefined;
 }
 
@@ -91,7 +106,8 @@ export const updateRule = (
 ): string => {
   const inputRules: Map<string, string> = parseResponseMultiInputRule(rule);
 
-  const matchStyle: MatchStyle = style ? style : 'all';
+  // style to use when joining subrules. Negation for none gets applied at end
+  const subStyle = style === 'none' || style === 'any' ? 'any' : 'all';
 
   const editedRule: string = toInputRule(inputId, newRule);
 
@@ -102,23 +118,24 @@ export const updateRule = (
       alreadyIncluded = true;
       if (!exclude) {
         updatedRule =
-          updatedRule === '' ? editedRule : combineRules(matchStyle, [updatedRule, editedRule]);
+          updatedRule === '' ? editedRule : combineRules(subStyle, [updatedRule, editedRule]);
       }
     } else {
       updatedRule =
         updatedRule === ''
           ? '' + inputRules.get(k)
-          : combineRules(matchStyle, [updatedRule, inputRules.get(k)!]);
+          : combineRules(subStyle, [updatedRule, inputRules.get(k)!]);
     }
   });
 
   if (append && !alreadyIncluded) {
     updatedRule =
-      updatedRule === '' ? '' + editedRule : combineRules(matchStyle, [updatedRule, editedRule]);
+      updatedRule === '' ? '' + editedRule : combineRules(subStyle, [updatedRule, editedRule]);
   }
   if (style === 'none' && updatedRule !== '') {
     updatedRule = '!(' + updatedRule + ')';
   }
+
   return updatedRule;
 };
 

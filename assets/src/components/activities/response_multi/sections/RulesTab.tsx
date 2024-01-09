@@ -31,7 +31,6 @@ export const RulesTab: React.FC<Props> = (props) => {
     );
     // Rule may combine many input rules, and have multiple matches for this input
     const values = getInputValues(props.response.rule, props.input.id);
-    if (values.length > 1) console.log(`input ${props.input.id} w/multiple values: ` + values);
 
     // questionable what to do with wildcard. Here select all choices
     const selectedValues = values[0] === '.*' ? choices.map((c) => c.id) : values;

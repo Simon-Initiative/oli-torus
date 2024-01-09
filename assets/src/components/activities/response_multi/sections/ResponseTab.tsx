@@ -45,7 +45,6 @@ export const ResponseTab: React.FC<Props> = (props) => {
   });
 
   const toggleCorrectness = (id: string, partId: string, inputId: string) => {
-    console.log(`toggleCorrectness dropdown Id:${inputId} choiceId:${id}`);
     const inputRule = toInputRule(inputId, matchRule(id));
 
     if (response.matchStyle !== 'all') {
@@ -60,16 +59,13 @@ export const ResponseTab: React.FC<Props> = (props) => {
     }
     // else this indicates unique value selection, not toggling in or out
     const newRule = updateRule(response.rule, response.matchStyle, inputId, inputRule, false);
-    console.log(` constructRule => ${newRule}`);
     dispatch(
       ResponseMultiInputActions.editResponseResponseMultiRule(response.id, inputId, newRule),
     );
   };
 
   const editRule = (id: ResponseId, inputId: string, rule: string) => {
-    console.log(`editRule inputId:${inputId} rule:  ${rule}`);
     const newRule = updateRule(response.rule, response.matchStyle, inputId, rule, false);
-    console.log(` constructRule => ${newRule}`);
     dispatch(
       ResponseMultiInputActions.editResponseResponseMultiRule(
         id,
