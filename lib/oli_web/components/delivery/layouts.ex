@@ -375,7 +375,10 @@ defmodule OliWeb.Components.Delivery.Layouts do
 
   def back_arrow(assigns) do
     ~H"""
-    <div class="flex justify-center items-center absolute top-2 lg:top-10 left-2 lg:left-12 z-40 p-4" role="back_link">
+    <div
+      class="flex justify-center items-center absolute top-2 lg:top-10 left-2 lg:left-12 z-40 p-4"
+      role="back_link"
+    >
       <.link navigate={@to} class="hover:no-underline hover:scale-105 cursor-pointer">
         <svg
           width="34"

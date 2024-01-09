@@ -192,7 +192,8 @@ defmodule OliWeb.Dialogue.WindowLive do
               |> JS.show(
                 to: "#ai_bot_collapsed",
                 transition:
-                  {"ease-out duration-700 delay-1000", "translate-x-full translate-y-full opacity-100",
+                  {"ease-out duration-700 delay-1000",
+                   "translate-x-full translate-y-full opacity-100",
                    "translate-x-3/4 translate-y-0 opacity-0"}
               )
               |> JS.remove_class("overflow-hidden", to: "body")
@@ -264,14 +265,14 @@ defmodule OliWeb.Dialogue.WindowLive do
 
   def dot_icon(assigns) do
     ~H"""
-      <div class={"#{dot_size_class(@size)} relative"}>
-        <img
-          class="animate-[spin_40s_cubic-bezier(0.4,0,0.6,1)_infinite]"
-          src={~p"/images/assistant/footer_dot_ai.png"}
-        />
-        <div class={"#{orb_size_class(@size)} absolute bottom-0 right-0 bg-zinc-300 rounded-full blur-[30px] animate-[pulse_6s_cubic-bezier(0.4,0,0.6,1)_infinite]"}>
-        </div>
+    <div class={"#{dot_size_class(@size)} relative"}>
+      <img
+        class="animate-[spin_40s_cubic-bezier(0.4,0,0.6,1)_infinite]"
+        src={~p"/images/assistant/footer_dot_ai.png"}
+      />
+      <div class={"#{orb_size_class(@size)} absolute bottom-0 right-0 bg-zinc-300 rounded-full blur-[30px] animate-[pulse_6s_cubic-bezier(0.4,0,0.6,1)_infinite]"}>
       </div>
+    </div>
     """
   end
 
