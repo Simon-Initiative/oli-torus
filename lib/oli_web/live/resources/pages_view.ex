@@ -554,7 +554,7 @@ defmodule OliWeb.Resources.PagesView do
     {:ok, _} = ContainerEditor.move_to(revision, from_container, to_container, author, project)
 
     hide_modal(socket, modal_assigns: nil)
-    |>patch_with(%{})
+    |> patch_with(%{})
   end
 
   def handle_event("MoveModal.remove", %{"from_uuid" => from_uuid}, socket) do
