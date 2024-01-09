@@ -29,6 +29,10 @@ defmodule OliWeb.Resources.PagesTableModel do
         render_fn: &OliWeb.Common.Table.Common.render_date/3
       },
       %ColumnSpec{
+        name: :in_curriculum,
+        label: "Curriculum"
+      },
+      %ColumnSpec{
         name: :actions,
         label: "Actions",
         render_fn: &__MODULE__.render_actions_column/3,
