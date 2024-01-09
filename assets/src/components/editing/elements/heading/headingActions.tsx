@@ -33,13 +33,13 @@ const selectedType = (editor: Editor) =>
 export const headingTypeDescs = [
   createButtonCommandDesc({
     category: 'Formatting',
-    description: 'H1',
+    description: 'Heading 1',
     active: (editor) => isActive(editor, ['h1']),
     execute: (_ctx, editor) => switchType(editor, 'h1'),
   }),
   createButtonCommandDesc({
     category: 'Formatting',
-    description: 'H2',
+    description: 'Heading 2',
     active: (editor) => isActive(editor, ['h2']),
     execute: (_ctx, editor) => switchType(editor, 'h2'),
   }),
@@ -48,7 +48,8 @@ export const headingTypeDescs = [
 export const headingLevelDesc = (editor: Editor) =>
   createButtonCommandDesc({
     category: 'Formatting',
-    description: isActive(editor, 'h1') ? 'H1' : 'H2',
+    tooltip: 'Heading Level',
+    description: isActive(editor, 'h1') ? 'Heading 1' : 'Heading 2',
     active: (editor) => isActive(editor, ['h1', 'h2']),
     execute: () => {},
   });

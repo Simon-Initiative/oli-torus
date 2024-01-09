@@ -10,7 +10,7 @@ import { isActive } from 'components/editing/slateUtils';
 export const toggleParagraph = createButtonCommandDesc({
   icon: <i className="fa-solid fa-paragraph"></i>,
   category: 'Formatting',
-  description: 'Paragraph',
+  description: 'Format',
   active: (editor) =>
     isActive(editor, 'p') &&
     [toggleHeading, toggleUnorderedList, toggleBlockquote, toggleCodeblock].every(
