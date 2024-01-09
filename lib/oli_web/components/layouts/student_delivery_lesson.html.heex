@@ -1,3 +1,43 @@
+<div id="live_flash_container" class="fixed top-14 w-full mx-auto z-50">
+  <%= if live_flash(@flash, :info) do %>
+    <div class="alert alert-info flex flex-row" role="alert">
+      <div class="flex-1">
+        <%= live_flash(@flash, :info) %>
+      </div>
+
+      <button
+        type="button"
+        class="close"
+        data-bs-dismiss="alert"
+        aria-label="Close"
+        phx-click="lv:clear-flash"
+        phx-value-key="info"
+      >
+        <i class="fa-solid fa-xmark fa-lg"></i>
+      </button>
+    </div>
+  <% end %>
+
+  <%= if live_flash(@flash, :error) do %>
+    <div class="alert alert-danger flex flex-row" role="alert">
+      <div class="flex-1">
+        <%= live_flash(@flash, :error) %>
+      </div>
+
+      <button
+        type="button"
+        class="close"
+        data-bs-dismiss="alert"
+        aria-label="Close"
+        phx-click="lv:clear-flash"
+        phx-value-key="error"
+      >
+        <i class="fa-solid fa-xmark fa-lg"></i>
+      </button>
+    </div>
+  <% end %>
+</div>
+
 <div class="h-screen flex flex-col overscroll-none">
   <Components.Delivery.Layouts.header
     ctx={@ctx}
@@ -6,46 +46,6 @@
     brand={@brand}
     preview_mode={@preview_mode}
   />
-
-  <div id="live_flash_container" class="flash container mx-auto px-0 mt-[56px]">
-    <%= if live_flash(@flash, :info) do %>
-      <div class="alert alert-info flex flex-row" role="alert">
-        <div class="flex-1">
-          <%= live_flash(@flash, :info) %>
-        </div>
-
-        <button
-          type="button"
-          class="close"
-          data-bs-dismiss="alert"
-          aria-label="Close"
-          phx-click="lv:clear-flash"
-          phx-value-key="info"
-        >
-          <i class="fa-solid fa-xmark fa-lg"></i>
-        </button>
-      </div>
-    <% end %>
-
-    <%= if live_flash(@flash, :error) do %>
-      <div class="alert alert-danger flex flex-row" role="alert">
-        <div class="flex-1">
-          <%= live_flash(@flash, :error) %>
-        </div>
-
-        <button
-          type="button"
-          class="close"
-          data-bs-dismiss="alert"
-          aria-label="Close"
-          phx-click="lv:clear-flash"
-          phx-value-key="error"
-        >
-          <i class="fa-solid fa-xmark fa-lg"></i>
-        </button>
-      </div>
-    <% end %>
-  </div>
 
   <div class="flex-1 flex flex-col mt-14">
     <div :if={@section} id="page-content" class="relative justify-center items-start inline-flex">
