@@ -815,7 +815,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         </div>
         """
 
-      {false, "page", true, _} ->
+      {_, "page", true, _} ->
         # not completed graded page
         ~H"""
         <div role="orange flag icon" class="flex justify-center items-center h-7 w-7 shrink-0">
