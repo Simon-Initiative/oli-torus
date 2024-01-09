@@ -330,7 +330,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
 
       <div
         :if={!is_nil(@next_page)}
-        class="grow shrink basis-0 h-10 justify-end items-center lg:gap-6 flex z-10 overflow-hidden whitespace-nowrap mr-[80px] lg:mr-0"
+        class="grow shrink basis-0 h-10 justify-end items-center lg:gap-6 flex z-10 overflow-hidden whitespace-nowrap"
         role="next_page"
       >
         <div class="grow shrink basis-0 text-right dark:text-white text-xs font-normal overflow-hidden text-ellipsis">
