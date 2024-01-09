@@ -64,6 +64,7 @@ const AdaptiveRuleContextMenu = (props: any) => {
 
   const handleCopyRule = async (rule: IAdaptiveRule | 'initState') => {
     const copiedRule = clone(rule);
+
     if (rule !== 'initState') {
       copiedRule.default = false;
     }
