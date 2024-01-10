@@ -110,7 +110,10 @@ defmodule OliWeb.Dialogue.WindowLive do
 
   def render(assigns) do
     ~H"""
-    <div class={["fixed z-[10000] lg:bottom-0 right-0 ml-auto", (if @is_page, do: "bottom-20", else: "bottom-0")]}>
+    <div class={[
+      "fixed z-[10000] lg:bottom-0 right-0 ml-auto",
+      if(@is_page, do: "bottom-20", else: "bottom-0")
+    ]}>
       <.conversation
         current_user={@current_user}
         form={@form}
@@ -130,7 +133,10 @@ defmodule OliWeb.Dialogue.WindowLive do
 
   def collapsed_bot(assigns) do
     ~H"""
-    <div id="ai_bot_collapsed" class={["lg:w-[170px] h-[74px] relative ml-auto", (if @is_page, do: "w-[80px]", else: "" )]}>
+    <div
+      id="ai_bot_collapsed"
+      class={["lg:w-[170px] h-[74px] relative ml-auto", if(@is_page, do: "w-[80px]", else: "")]}
+    >
       <button
         phx-click={
           JS.hide(to: "#ai_bot_collapsed")
@@ -310,7 +316,7 @@ defmodule OliWeb.Dialogue.WindowLive do
   def left_to_right_fade_in_icon(assigns) do
     ~H"""
     <svg
-      class={["lg:block fill-black dark:opacity-100", (if @is_page, do: "hidden", else: "block")]}
+      class={["lg:block fill-black dark:opacity-100", if(@is_page, do: "hidden", else: "block")]}
       width="170"
       height="74"
       viewBox="0 0 170 74"
