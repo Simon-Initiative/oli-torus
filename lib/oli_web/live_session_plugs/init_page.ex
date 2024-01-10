@@ -38,7 +38,6 @@ defmodule OliWeb.LiveSessionPlugs.InitPage do
         assigns.datashop_session_id
       )
       |> init_context_state(socket)
-      |> assign(continue_checked: false)
 
     {:cont, socket}
   end
@@ -58,27 +57,12 @@ defmodule OliWeb.LiveSessionPlugs.InitPage do
 
   # Display the prologue view for graded pages
   defp init_context_state(
-         %PageContext{
-           page: %{graded: true} = page,
-           progress_state: progress_state
-         } = page_context,
+         %PageContext{page: %{graded: true}} = page_context,
          socket
        ) do
     # Only consider graded attempts
     resource_attempts =
-      case progress_state do
-        :not_started ->
-          Enum.filter(page_context.resource_attempts, fn a -> a.revision.graded end)
-
-        :in_progress ->
-          Core.get_resource_attempt_history(
-            page.resource_id,
-            socket.assigns.section.slug,
-            socket.assigns.current_user.id
-          )
-          |> elem(1)
-          |> Enum.filter(& &1.revision.graded)
-      end
+      Enum.filter(page_context.resource_attempts, fn a -> a.revision.graded end)
 
     attempts_taken = length(resource_attempts)
 

@@ -13,16 +13,31 @@ defmodule OliWeb.Delivery.Student.LessonLive do
   alias Oli.Rendering.{Context, Page}
   alias Oli.Resources
   alias OliWeb.Common.FormatDateTime
+  alias OliWeb.Components.Delivery.Layouts
   alias OliWeb.Components.Modal
 
   def mount(_params, _session, %{assigns: %{view: :practice_page}} = socket) do
     {:ok, assign_html_and_scripts(socket)}
   end
 
+  def mount(
+        _params,
+        _session,
+        %{assigns: %{view: :graded_page, page_context: %{progress_state: :in_progress}}} = socket
+      ) do
+    {:ok, assign_html_and_scripts(socket) |> assign(begin_attempt?: false)}
+  end
+
   def mount(_params, _session, %{assigns: %{view: :graded_page}} = socket) do
-    # for graded pages, we first show the prologue and when the student click "Begin/Continue Attempt"
-    # we load the html. Scripts need to be loaded in advance.
-    {:ok, assign_scripts(socket)}
+    # for graded pages with no attempt in course, we first show the prologue view (we use begin_attempt? flag to distinguish this).
+    # When the student clicks "Begin" we load the needed page scripts via the "LoadSurveyScripts" hook and assign the html to the socket.
+    # When the scripts end loading, we recieve a "survey_scripts_loaded" confirmation event from the client
+    # so we then hide the spinner and show the page content.
+
+    {:ok,
+     socket
+     |> assign_scripts()
+     |> assign(begin_attempt?: false)}
   end
 
   def handle_event(event, %{"password" => password}, socket)
@@ -53,24 +68,19 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     end
   end
 
-  def handle_event("continue_attempt", _params, socket) do
-    {:noreply,
-     socket
-     |> assign(continue_checked: true)
-     |> clear_flash()
-     |> assign_html()}
+  def handle_event("survey_scripts_loaded", %{"error" => _}, socket) do
+    {:noreply, put_flash(socket, :error, "We couldn't load the page. Please try again.")}
   end
 
-  def render(%{view: view, continue_checked: continue_checked} = assigns)
-      when view == :practice_page or (view == :graded_page and continue_checked) do
-    # TODO after submitting answers, user should be redirected to the new NG23 review page.
-    # (now it is being redirected to old version of review page)
-    # We should replace the onClick with its equivalent function in Elixir: Oli.Delivery.Attempts.PageLifecycle.finalize
-    # and then redirect to the new review page.
+  def handle_event("survey_scripts_loaded", _params, socket) do
+    {:noreply, assign(socket, show_loader?: false)}
+  end
+
+  def render(%{view: :practice_page} = assigns) do
+    # For practice page the activity scripts and activity_bridge script are needed as soon as the page loads.
     ~H"""
     <div class="flex pb-20 flex-col items-center gap-15 flex-1">
       <div class="flex flex-col items-center w-full">
-        <.scored_page_banner :if={@view == :graded_page} />
         <div class="w-[720px] pt-20 pb-10 flex-col justify-start items-center gap-10 inline-flex">
           <.page_header
             page_context={@page_context}
@@ -78,17 +88,107 @@ defmodule OliWeb.Delivery.Student.LessonLive do
             index={@current_page["index"]}
             container_label={get_container_label(@current_page["id"], @section)}
           />
-          <div phx-update="ignore" id="eventIntercept" class="content" role="page_content">
+          <div id="eventIntercept" class="content" phx-update="ignore">
             <%= raw(@html) %>
           </div>
-          <button
-            :if={@view == :graded_page}
-            id="submit_answers"
-            onClick={"window.OLI.finalize('#{@section.slug}', '#{@page_context.page.slug}', '#{hd(@page_context.resource_attempts).attempt_guid || nil}', #{@page_context.page.graded}, 'submit_answers')"}
-            class="cursor-pointer px-5 py-2.5 hover:bg-opacity-40 bg-blue-600 rounded-[3px] shadow justify-center items-center gap-2.5 inline-flex text-white text-sm font-normal font-['Open Sans'] leading-tight"
-          >
-            Submit Answers
-          </button>
+        </div>
+      </div>
+    </div>
+
+    <.scripts scripts={@scripts} user_token={@user_token} />
+    """
+  end
+
+  def render(
+        %{
+          view: :graded_page,
+          page_context: %{progress_state: :in_progress},
+          begin_attempt?: false
+        } = assigns
+      ) do
+    # For graded page with attempt in progrress the activity scripts and activity_bridge script are needed as soon as the page loads.
+
+    # TODO after submitting answers, user should be redirected to the new NG23 review page.
+    # (now it is being redirected to old version of review page)
+    # We should replace the onClick with its equivalent function in Elixir: Oli.Delivery.Attempts.PageLifecycle.finalize
+    # and then redirect to the new review page.
+    ~H"""
+    <div class="flex pb-20 flex-col items-center gap-15 flex-1">
+      <div class="flex flex-col items-center w-full">
+        <.scored_page_banner />
+        <div class="w-[720px] pt-20 pb-10 flex-col justify-start items-center gap-10 inline-flex">
+          <.page_header
+            page_context={@page_context}
+            ctx={@ctx}
+            index={@current_page["index"]}
+            container_label={get_container_label(@current_page["id"], @section)}
+          />
+          <div id="eventIntercept" class="content" phx-update="ignore">
+            <%= raw(@html) %>
+            <div class="flex w-full justify-center">
+              <button
+                id="submit_answers"
+                onClick={"window.OLI.finalize('#{@section.slug}', '#{@page_context.page.slug}', '#{hd(@page_context.resource_attempts).attempt_guid || nil}', #{@page_context.page.graded}, 'submit_answers')"}
+                class="cursor-pointer px-5 py-2.5 hover:bg-opacity-40 bg-blue-600 rounded-[3px] shadow justify-center items-center gap-2.5 inline-flex text-white text-sm font-normal font-['Open Sans'] leading-tight"
+              >
+                Submit Answers
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <.scripts scripts={@scripts} user_token={@user_token} />
+    """
+  end
+
+  def render(%{view: :graded_page, begin_attempt?: true} = assigns) do
+    # For graded page with no started attempts, the js scripts are needed after the user clicks "Begin",
+    # so we load them with the hook "load_survey_scripts" in the click handle_event functions.
+
+    # TODO after submitting answers, user should be redirected to the new NG23 review page.
+    # (now it is being redirected to old version of review page)
+    # We should replace the onClick with its equivalent function in Elixir: Oli.Delivery.Attempts.PageLifecycle.finalize
+    # and then redirect to the new review page.
+
+    ~H"""
+    <div class="flex pb-20 flex-col items-center gap-15 flex-1">
+      <div class="flex flex-col items-center w-full">
+        <.scored_page_banner />
+        <div class="w-[720px] pt-20 pb-10 flex-col justify-start items-center gap-10 inline-flex">
+          <.page_header
+            page_context={@page_context}
+            ctx={@ctx}
+            index={@current_page["index"]}
+            container_label={get_container_label(@current_page["id"], @section)}
+          />
+          <div id="page_content" phx-hook="LoadSurveyScripts">
+            <div
+              :if={@show_loader?}
+              phx-remove={
+                JS.remove_class("opacity-0",
+                  to: "#raw_html",
+                  transition: {"ease-out duration-1000", "opacity-0", "opacity-100"}
+                )
+              }
+              class="w-full flex justify-center items-center"
+            >
+              <Layouts.spinner />
+            </div>
+            <div :if={!@show_loader?} id="raw_html" class="content opacity-0" phx-update="ignore">
+              <%= raw(@html) %>
+              <div class="flex w-full justify-center">
+                <button
+                  id="submit_answers"
+                  onClick={"window.OLI.finalize('#{@section.slug}', '#{@page_context.page.slug}', '#{hd(@page_context.resource_attempts).attempt_guid || nil}', #{@page_context.page.graded}, 'submit_answers')"}
+                  class="cursor-pointer px-5 py-2.5 hover:bg-opacity-40 bg-blue-600 rounded-[3px] shadow justify-center items-center gap-2.5 inline-flex text-white text-sm font-normal font-['Open Sans'] leading-tight"
+                >
+                  Submit Answers
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -96,16 +196,11 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     <script>
       window.userToken = "<%= @user_token %>";
     </script>
-    <script>
-      OLI.initActivityBridge('eventIntercept');
-    </script>
-    <script :for={script <- @scripts} type="text/javascript" src={"/js/#{script}"}>
-    </script>
     """
   end
 
-  # this render corresponds to the prologue view
-  def render(%{view: :graded_page, continue_checked: false} = assigns) do
+  # this render corresponds to the prologue view for graded pages (when there is no attempt in course)
+  def render(%{view: :graded_page, begin_attempt?: false} = assigns) do
     ~H"""
     <Modal.modal id="password_attempt_modal" class="w-1/2">
       <:title>Provide Assessment Password</:title>
@@ -146,7 +241,14 @@ defmodule OliWeb.Delivery.Student.LessonLive do
         />
       </div>
     </div>
+    """
+  end
 
+  attr :scripts, :list
+  attr :user_token, :string
+
+  def scripts(assigns) do
+    ~H"""
     <script>
       window.userToken = "<%= @user_token %>";
     </script>
@@ -238,28 +340,6 @@ defmodule OliWeb.Delivery.Student.LessonLive do
   attr :attempt, ResourceAttempt
   attr :ctx, OliWeb.Common.SessionContext
   attr :allow_review_submission?, :boolean
-
-  defp attempt_summary(%{attempt: %ResourceAttempt{lifecycle_state: :active}} = assigns) do
-    ~H"""
-    <div class="self-stretch h-8 py-1 bg-black bg-opacity-2x0 dark:bg-white dark:bg-opacity-5 justify-between items-center inline-flex">
-      <div class="justify-start items-center flex">
-        <div class="w-[92px] opacity-40 dark:text-white text-xs font-bold font-['Open Sans'] uppercase leading-normal tracking-wide">
-          Attempt <%= @index %>:
-        </div>
-      </div>
-      <div class="flex-col justify-start items-end inline-flex">
-        <div class="py-1 justify-start items-start gap-1 inline-flex">
-          <div class="opacity-50 dark:text-white text-xs font-normal font-['Open Sans']">
-            Time Remaining:
-          </div>
-          <div class="dark:text-white text-xs font-normal font-['Open Sans']">
-            00:40:12
-          </div>
-        </div>
-      </div>
-    </div>
-    """
-  end
 
   defp attempt_summary(assigns) do
     # TODO: add link to review page
@@ -534,14 +614,13 @@ defmodule OliWeb.Delivery.Student.LessonLive do
                 socket.assigns.datashop_session_id
               )
 
-            # we mark the continue_checked=true to avoid showing the prologue with the "Continue" button again
-            # since the user has just clicked the "Begin" button in that same prologue.
             {:noreply,
              socket
              |> assign(page_context: page_context)
-             |> assign(continue_checked: true)
+             |> assign(begin_attempt?: true, show_loader?: true)
              |> clear_flash()
-             |> assign_html()}
+             |> assign_html()
+             |> load_scripts_on_client_side()}
 
           {:error, {:end_date_passed}} ->
             {:noreply, put_flash(socket, :error, "This assessment's end date passed.")}
@@ -612,6 +691,12 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     assign(socket,
       scripts: get_required_activity_scripts(socket.assigns.page_context)
     )
+  end
+
+  defp load_scripts_on_client_side(socket) do
+    push_event(socket, "load_survey_scripts", %{
+      script_sources: Enum.map(socket.assigns.scripts, fn script -> "/js/#{script}" end)
+    })
   end
 
   defp assign_html(socket) do
