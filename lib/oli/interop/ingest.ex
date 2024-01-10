@@ -103,7 +103,7 @@ defmodule Oli.Interop.Ingest do
            media_details <- Map.get(resource_map, @media_key),
            hierarchy_details <- Map.get(resource_map, @hierarchy_key),
            {:ok, %{project: project, resource_revision: root_revision}} <-
-             create_project(project_details, as_author),
+             create_project(project_details, as_author, hierarchy_details),
            {:ok, tag_map} <- create_tags(project, resource_map, as_author),
            {:ok, objective_map} <- create_objectives(project, resource_map, tag_map, as_author),
            {:ok, bib_map} <- create_bibentries(project, resource_map, as_author),
@@ -318,7 +318,7 @@ defmodule Oli.Interop.Ingest do
   end
 
   # Process the _project file to create the project structure
-  defp create_project(project_details, as_author) do
+  defp create_project(project_details, as_author, hierarchy) do
     case Map.get(project_details, "title") do
       nil ->
         {:error, :missing_project_title}
@@ -327,10 +327,27 @@ defmodule Oli.Interop.Ingest do
         {:error, :empty_project_title}
 
       title ->
+        labels =
+          Map.get(hierarchy, "children")
+          |> Enum.filter(fn c -> c["type"] == "labels" end)
+          |> Enum.reduce(%{}, fn item, acc ->
+            Map.merge(acc, %{
+              unit: Map.get(item, "unit"),
+              module: Map.get(item, "module"),
+              section: Map.get(item, "section")
+            })
+          end)
+
+        custom_labels =
+          case Map.equal?(labels, %{}) do
+            true -> nil
+            _ -> labels
+          end
+
         Oli.Authoring.Course.create_project(title, as_author, %{
           description: Map.get(project_details, "description"),
           legacy_svn_root: Map.get(project_details, "svnRoot"),
-          customizations: Map.get(project_details, "customizations"),
+          customizations: custom_labels,
           attributes: Map.get(project_details, "attributes")
         })
     end

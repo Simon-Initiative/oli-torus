@@ -19,7 +19,7 @@ defmodule Oli.Interop.Export do
     ([
        create_project_file(project),
        create_media_manifest_file(project),
-       create_hierarchy_file(resources, publication)
+       create_hierarchy_file(resources, publication, project)
      ] ++
        tags(resources) ++
        objectives(resources) ++
@@ -356,8 +356,7 @@ defmodule Oli.Interop.Export do
       description: project.description,
       type: "Manifest",
       required_student_survey: required_survey_resource_id,
-      attributes: Map.get(project, :attributes),
-      customizations: Map.get(project, :customizations)
+      attributes: Map.get(project, :attributes)
     }
     |> entry("_project.json")
   end
@@ -387,9 +386,10 @@ defmodule Oli.Interop.Export do
   end
 
   # create the singular hierarchy file
-  defp create_hierarchy_file(resources, publication) do
+  defp create_hierarchy_file(resources, publication, project) do
     revisions_by_id = Enum.reduce(resources, %{}, fn r, m -> Map.put(m, r.resource_id, r) end)
     root = Map.get(revisions_by_id, publication.root_resource_id)
+    customizations = Map.get(project, :customizations)
 
     %{
       type: "Hierarchy",
@@ -397,7 +397,19 @@ defmodule Oli.Interop.Export do
       originalFile: "",
       title: "",
       tags: transform_tags(root),
-      children: Enum.map(root.children, fn id -> full_hierarchy(revisions_by_id, id) end)
+      children:
+        Enum.map(root.children, fn id -> full_hierarchy(revisions_by_id, id) end) ++
+          unless(is_nil(customizations),
+            do: [
+              Map.merge(
+                %{
+                  type: "labels"
+                },
+                Map.from_struct(customizations)
+              )
+            ],
+            else: []
+          )
     }
     |> entry("_hierarchy.json")
   end
