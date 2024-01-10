@@ -19,7 +19,7 @@ defmodule Oli.Interop.ExportTest do
                Integer.to_string(project.required_survey_resource_id)
     end
 
-    test "project export preserves attributes and customizations", %{project: project} do
+    test "project export preserves attributes", %{project: project} do
       export =
         Export.export(project)
         |> unzip_to_memory()
@@ -30,16 +30,25 @@ defmodule Oli.Interop.ExportTest do
       # Check that learning language in the project attributes is preserved
       assert project_json["attributes"]["learning_language"] ==
                project.attributes.learning_language
+    end
 
-      assert project_json |> get_in(["attributes"]) |> Access.get("learning_language") ==
-               project.attributes.learning_language
+    test "project export preserves customizations", %{project: project} do
+      export =
+        Export.export(project)
+        |> unzip_to_memory()
+        |> Enum.reduce(%{}, fn {f, c}, m -> Map.put(m, f, c) end)
 
-      # Check that labels in the project customizations are preserved
-      %{unit: unit, module: module, section: section} = project.customizations
-      customizations = project_json["customizations"]
-      assert customizations["unit"] == unit
-      assert customizations["module"] == module
-      assert customizations["section"] == section
+      {:ok, hierarchy_json} = Jason.decode(Map.get(export, ~c"_hierarchy.json"))
+
+      [type_labels] =
+        hierarchy_json["children"] |> Enum.filter(&(&1["type"] == "labels"))
+
+      # Check that customizations in the project are preserved
+      assert type_labels["unit"] == project.customizations.unit
+
+      assert type_labels["module"] == project.customizations.module
+
+      assert type_labels["section"] == project.customizations.section
     end
   end
 

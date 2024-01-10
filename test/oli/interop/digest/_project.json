@@ -4,10 +4,5 @@
   "type": "Manifest",
   "attributes": {
     "learning_language": "es"
-  },
-  "customizations": {
-    "module": "Module_New",
-    "unit": "Unit_New",
-    "section": "Section_New"
   }
 }
