@@ -10,7 +10,9 @@ defmodule OliWeb.Components.Delivery.Schedule do
   def week(assigns) do
     ~H"""
     <div class="flex flex-row">
-      <div class="mr-8 uppercase font-bold text-gray-500">Week <%= @week_number %>:</div>
+      <div class="mr-8 uppercase font-bold text-gray-500 whitespace-nowrap">
+        Week <%= @week_number %>:
+      </div>
 
       <div class="flex-1 flex flex-col">
         <%= for {date_range, container_groups} <- @schedule_ranges do %>

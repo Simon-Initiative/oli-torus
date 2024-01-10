@@ -1,3 +1,5 @@
+const clamp = (value: number, min: number, max: number) => Math.min(Math.max(value, min), max);
+
 export const ResizeListener = {
   mounted() {
     const resizableDiv = this.el;
@@ -12,19 +14,27 @@ export const ResizeListener = {
       isResizing = true;
     });
 
-    document.addEventListener('mousemove', function (e) {
+    document.addEventListener('mousemove', function (e: any) {
       if (isResizing) {
         const dx = e.movementX;
         const dy = e.movementY;
-        const newWidth = resizableDiv.offsetWidth - dx;
-        const newHeight = resizableDiv.offsetHeight - dy;
+        const newWidth = clamp(
+          resizableDiv.offsetWidth - dx,
+          300,
+          document.documentElement.clientWidth - 10,
+        );
+        const newHeight = clamp(
+          resizableDiv.offsetHeight - dy,
+          400,
+          document.documentElement.clientHeight - 150,
+        );
 
         resizableDiv.style.width = `${newWidth}px`;
         resizableDiv.style.height = `${newHeight}px`;
       }
-    });
+    } as any);
 
-    document.addEventListener('mouseup', () => {
+    document.addEventListener('mouseup', (e) => {
       if (isResizing) {
         isResizing = false;
         const newWidth = resizableDiv.offsetWidth;

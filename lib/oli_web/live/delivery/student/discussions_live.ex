@@ -404,16 +404,11 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
         </.form>
       </Modal.modal>
     </div>
-    <div
-      id="discussions_header"
-      class="relative flex items-center h-[184px] w-full bg-gray-100 dark:bg-[#0B0C11]"
-    >
-      <div class="absolute w-full h-full top-0 left-0 bg-[linear-gradient(90deg,#D9D9D9_0%,rgba(217,217,217,0.00)_100%)]" />
-      <h1 class="pl-[100px] text-[64px] tracking-[0.02px] leading-[87px] dark:text-white z-10">
-        Discussions
-      </h1>
-    </div>
-    <div id="disussions_content" class="flex flex-col p-6 gap-6 items-start">
+
+    <.hero_banner class="bg-discussions">
+      <h1 class="text-6xl mb-8">Discussions</h1>
+    </.hero_banner>
+    <div id="discussions_content" class="flex flex-col py-6 px-16 gap-6 items-start">
       <.posts_section
         posts={@posts}
         ctx={@ctx}
@@ -441,7 +436,7 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
 
   defp posts_section(assigns) do
     ~H"""
-    <section id="posts" class="flex flex-col items-start px-40 w-full gap-6">
+    <section id="posts" class="container mx-auto flex flex-col items-start w-full gap-6">
       <div role="posts header" class="flex justify-between items-center w-full self-stretch">
         <h3 class="text-2xl tracking-[0.02px] font-semibold dark:text-white">
           Posts
