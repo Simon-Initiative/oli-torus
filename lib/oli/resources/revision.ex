@@ -66,7 +66,6 @@ defmodule Oli.Resources.Revision do
     field(:total_count, :integer, virtual: true)
     field(:page_type, :string, virtual: true)
     field(:parent_slug, :string, virtual: true)
-    field(:in_curriculum, :string, virtual: true)
 
     field :purpose, Ecto.Enum,
       values: [:foundation, :application, :deliberate_practice],

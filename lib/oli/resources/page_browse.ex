@@ -5,7 +5,6 @@ defmodule Oli.Resources.PageBrowse do
   alias Oli.Repo
   alias Oli.Authoring.Course.Project
   alias Oli.Resources.Revision
-  alias Oli.Publishing.AuthoringResolver
   alias Oli.Repo.{Paging, Sorting}
 
   @chars_to_replace_on_search [" ", "&", ":", ";", "(", ")", "|", "!", "'", "<", ">"]
@@ -15,7 +14,7 @@ defmodule Oli.Resources.PageBrowse do
     the base product or project and counts the number of enrollments.
   """
   def browse_pages(
-        %Project{id: project_id, slug: slug},
+        %Project{id: project_id},
         %Paging{limit: limit, offset: offset},
         %Sorting{direction: direction, field: field},
         %PageBrowseOptions{} = options
@@ -80,13 +79,6 @@ defmodule Oli.Resources.PageBrowse do
 
     page_type_id = Oli.Resources.ResourceType.get_id_by_type("page")
 
-    container_id = Oli.Resources.ResourceType.get_id_by_type("container")
-    containers = AuthoringResolver.revisions_of_type(slug, container_id)
-
-    children_ids =
-      Enum.reduce(containers, MapSet.new(), fn c, m -> MapSet.union(m, MapSet.new(c.children)) end)
-      |> MapSet.to_list()
-
     query =
       Revision
       |> join(:left, [rev], pr in Oli.Publishing.PublishedResource, on: pr.revision_id == rev.id)
@@ -112,12 +104,6 @@ defmodule Oli.Resources.PageBrowse do
           fragment(
             "case when ?->>'advancedDelivery' = 'true' then 'Adaptive' else 'Regular' end",
             rev.content
-          ),
-        in_curriculum:
-          fragment(
-            "case when ? = ANY (?) then 'Included' else 'Excluded' end",
-            rev.resource_id,
-            ^children_ids
           )
       })
 
@@ -132,18 +118,6 @@ defmodule Oli.Resources.PageBrowse do
              fragment(
                "case when ?->>'advancedDelivery' = 'true' then 'Adaptive' else 'Regular' end",
                rev.content
-             )}
-          )
-
-        :in_curriculum ->
-          order_by(
-            query,
-            [rev, _, _, _],
-            {^direction,
-             fragment(
-               "case when ? = ANY (?) then 'Included' else 'Excluded' end",
-               rev.resource_id,
-               ^children_ids
              )}
           )
 

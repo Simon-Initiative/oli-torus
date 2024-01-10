@@ -71,7 +71,16 @@ defmodule OliWeb.Resources.PagesView do
           )
 
         total_count = determine_total(pages)
-        {:ok, table_model} = PagesTableModel.new(pages, project, ctx)
+
+        container_id = Oli.Resources.ResourceType.get_id_by_type("container")
+        containers = AuthoringResolver.revisions_of_type(project_slug, container_id)
+
+        child_to_parent =
+          Enum.reduce(containers, %{}, fn c, m ->
+            Enum.reduce(c.children, m, fn r, a -> Map.put(a, r, c) end)
+          end)
+
+        {:ok, table_model} = PagesTableModel.new(pages, project, ctx, child_to_parent)
 
         project_hierarchy =
           AuthoringResolver.full_hierarchy(project_slug) |> HierarchyNode.simplify()
@@ -84,7 +93,8 @@ defmodule OliWeb.Resources.PagesView do
           author: author,
           total_count: total_count,
           table_model: table_model,
-          options: @default_options
+          options: @default_options,
+          child_to_parent: child_to_parent
         )
       else
         _ ->
