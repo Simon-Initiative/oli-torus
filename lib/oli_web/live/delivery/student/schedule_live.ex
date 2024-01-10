@@ -42,7 +42,9 @@ defmodule OliWeb.Delivery.Student.ScheduleLive do
       <div class="flex flex-col">
         <%= for {{month, _year}, weekly_schedule} <- @schedule do %>
           <div class="flex flex-col md:flex-row">
-            <div class="w-full md:w-32 uppercase font-bold text-gray-500 p-1 mb-3 border-b md:border-b-none border-gray-300"><%= month_name(month) %></div>
+            <div class="w-full md:w-32 uppercase font-bold text-gray-500 p-1 mb-3 border-b md:border-b-none border-gray-300">
+              <%= month_name(month) %>
+            </div>
 
             <div class="flex-1 flex flex-col">
               <%= for {week, schedule_ranges} <- weekly_schedule do %>

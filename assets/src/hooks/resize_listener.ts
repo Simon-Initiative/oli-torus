@@ -1,5 +1,4 @@
-const clamp = (value: number, min: number, max: number) =>
-  Math.min(Math.max(value, min), max);
+const clamp = (value: number, min: number, max: number) => Math.min(Math.max(value, min), max);
 
 export const ResizeListener = {
   mounted() {
@@ -19,8 +18,16 @@ export const ResizeListener = {
       if (isResizing) {
         const dx = e.movementX;
         const dy = e.movementY;
-        const newWidth = clamp(resizableDiv.offsetWidth - dx, 300, document.documentElement.clientWidth - 10);
-        const newHeight = clamp(resizableDiv.offsetHeight - dy, 400, document.documentElement.clientHeight - 150);
+        const newWidth = clamp(
+          resizableDiv.offsetWidth - dx,
+          300,
+          document.documentElement.clientWidth - 10,
+        );
+        const newHeight = clamp(
+          resizableDiv.offsetHeight - dy,
+          400,
+          document.documentElement.clientHeight - 150,
+        );
 
         resizableDiv.style.width = `${newWidth}px`;
         resizableDiv.style.height = `${newHeight}px`;
