@@ -646,15 +646,17 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
         assigns.section_slug
       )
 
-    current_user_id = case assigns.ctx.user do
-      %Oli.Accounts.User{id: id} -> id
-      _ -> nil
-    end
+    current_user_id =
+      case assigns.ctx.user do
+        %Oli.Accounts.User{id: id} -> id
+        _ -> nil
+      end
 
-    current_author_id = case assigns.ctx.author do
-      %Oli.Accounts.Author{id: id} -> id
-      _ -> nil
-    end
+    current_author_id =
+      case assigns.ctx.author do
+        %Oli.Accounts.Author{id: id} -> id
+        _ -> nil
+      end
 
     assigns =
       Map.merge(
