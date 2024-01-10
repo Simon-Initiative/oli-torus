@@ -228,7 +228,7 @@ defmodule Oli.Analytics.Datashop do
 
   def count(section_ids) do
     from(snapshot in Snapshot,
-      where: snapshot.section_id in ^section_ids and not is_nil(snapshot.objective_revision_id),
+      where: snapshot.section_id in ^section_ids,
       select: count(snapshot.id)
     )
     |> Repo.one()

@@ -101,7 +101,7 @@ export const insertImage = (onReqMedia: any) =>
   createButtonCommandDesc({
     icon: <i className="fa-solid fa-image"></i>,
     category: 'Media',
-    description: 'Image',
+    description: 'Insert Image',
     execute: execute(onReqMedia),
   });
 

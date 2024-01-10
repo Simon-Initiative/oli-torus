@@ -19,7 +19,7 @@ export const ListStyleToggle = ({ listStyleOptions }: ListStyleProps) => {
     <DropdownButton
       description={createButtonCommandDesc({
         icon: <i className="fa-regular fa-rectangle-list"></i>,
-        description: 'List Style',
+        description: 'Bullet Style',
         active: (_editor) => false,
         execute: (_ctx, _editor) => null,
       })}

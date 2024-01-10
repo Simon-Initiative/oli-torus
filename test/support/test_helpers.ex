@@ -520,6 +520,24 @@ defmodule Oli.TestHelpers do
     # Associate nested page to the project
     insert(:project_resource, %{project_id: project.id, resource_id: nested_page_resource.id})
 
+    nested_page_resource_2 = insert(:resource)
+
+    nested_page_revision_2 =
+      insert(:revision, %{
+        objectives: %{"attached" => []},
+        scoring_strategy_id: Oli.Resources.ScoringStrategy.get_id_by_type("average"),
+        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("page"),
+        children: [],
+        content: %{"model" => []},
+        deleted: false,
+        title: "Nested page 2",
+        resource: nested_page_resource_2,
+        graded: true
+      })
+
+    # Associate nested page to the project
+    insert(:project_resource, %{project_id: project.id, resource_id: nested_page_resource_2.id})
+
     unit_one_resource = insert(:resource)
 
     # Associate unit to the project
@@ -532,7 +550,7 @@ defmodule Oli.TestHelpers do
       insert(:revision, %{
         objectives: %{},
         resource_type_id: Oli.Resources.ResourceType.get_id_by_type("container"),
-        children: [nested_page_resource.id],
+        children: [nested_page_resource.id, nested_page_resource_2.id],
         content: %{"model" => []},
         deleted: false,
         title: "The first unit",
@@ -580,6 +598,13 @@ defmodule Oli.TestHelpers do
       revision: nested_page_revision
     })
 
+    # Publish nested page resource 2
+    insert(:published_resource, %{
+      publication: publication,
+      resource: nested_page_resource_2,
+      revision: nested_page_revision_2
+    })
+
     # Publish unit one resource
     insert(
       :published_resource,
@@ -590,7 +615,13 @@ defmodule Oli.TestHelpers do
       }
     )
 
-    %{publication: publication, project: project, unit_one_revision: unit_one_revision}
+    %{
+      publication: publication,
+      project: project,
+      unit_one_revision: unit_one_revision,
+      nested_page_revision: nested_page_revision,
+      nested_page_revision_2: nested_page_revision_2
+    }
   end
 
   def section_with_assessment(_context, deployment \\ nil) do
@@ -3103,7 +3134,8 @@ defmodule Oli.TestHelpers do
     insert(:published_resource, %{
       publication: publication,
       resource: page_revision.resource,
-      revision: page_revision
+      revision: page_revision,
+      author: insert(:author, email: "some_email@email.com")
     })
 
     section =
@@ -3297,4 +3329,22 @@ defmodule Oli.TestHelpers do
         activity_provider
       )
   end
+
+  ### Begins helper that waits for Tasks to complete ###
+
+  def wait_for_completion() do
+    pids = Task.Supervisor.children(Oli.TaskSupervisor)
+    Enum.each(pids, &Process.monitor/1)
+    wait_for_pids(pids)
+  end
+
+  defp wait_for_pids([]), do: nil
+
+  defp wait_for_pids(pids) do
+    receive do
+      {:DOWN, _ref, :process, pid, _reason} -> wait_for_pids(List.delete(pids, pid))
+    end
+  end
+
+  ### Ends helper that waits for Tasks to complete ###
 end

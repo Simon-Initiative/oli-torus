@@ -428,6 +428,36 @@ defmodule OliWeb.Delivery.StudentDashboard.CourseContentLiveTest do
         )
       )
     end
+
+    test "units and modules correctly display and hide item numbering", %{
+      conn: conn,
+      user: user,
+      section: section
+    } do
+      {:ok, view, _html} = isolated_live_view_course_content(conn, section.slug, user.id, true)
+
+      # Checks that the resource are rendered correctly with item numbering
+
+      navigate_to_unit_1(view)
+      assert has_element?(view, "#course_browser_node_title", "Unit 1: Unit 1")
+      assert has_element?(view, "h4", "1.1 Module 1")
+      assert has_element?(view, "h4", "1.2 Module 2")
+
+      # Updates section to not display item numbering
+
+      Sections.update_section(section, %{
+        display_curriculum_item_numbering: false
+      })
+
+      {:ok, view, _html} = isolated_live_view_course_content(conn, section.slug, user.id, true)
+
+      # Checks that the resource are rendered correctly without item numbering
+
+      navigate_to_unit_1(view)
+      assert has_element?(view, "#course_browser_node_title", "Unit: Unit 1")
+      assert has_element?(view, "h4", "Module 1")
+      assert has_element?(view, "h4", "Module 2")
+    end
   end
 
   defp breadcrumbs_length(view) do

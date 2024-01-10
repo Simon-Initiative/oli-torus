@@ -117,7 +117,7 @@ defmodule OliWeb.Components.Delivery.CourseContent do
               phx-value-selected_resource_index={index}
               phx-value-resource_type={resource["type"]}
             >
-              <%= if resource["type"] == "container",
+              <%= if resource["type"] == "container" and @section.display_curriculum_item_numbering,
                 do:
                   "#{get_current_node(@current_level_nodes, @current_position)["index"]}.#{resource["index"]} #{resource["title"]}",
                 else: resource["title"] %>
