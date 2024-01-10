@@ -93,8 +93,7 @@ defmodule OliWeb.Resources.PagesView do
           author: author,
           total_count: total_count,
           table_model: table_model,
-          options: @default_options,
-          child_to_parent: child_to_parent
+          options: @default_options
         )
       else
         _ ->
