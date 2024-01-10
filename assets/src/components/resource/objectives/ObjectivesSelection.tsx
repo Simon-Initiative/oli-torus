@@ -87,7 +87,7 @@ export const ObjectivesSelection = (props: ObjectivesProps) => {
   // The current 'selected' state of Typeahead must be the same shape as
   // the options objects. So we look up from our list of slugs those objects.
   const map = Immutable.Map<ResourceId, Objective>(objectives.map((o) => [o.id, o]));
-  const asObjectives = selected.map((s) => map.get(s) as Objective);
+  const asObjectives = selected.map((s) => map.get(s) as Objective).filter((o) => !!o);
 
   const allowNewObjective = !!onRegisterNewObjective;
   const hasObjectives = objectives.length > 0;
