@@ -103,13 +103,14 @@ defmodule OliWeb.Dialogue.WindowLive do
        title: "Dot",
        current_user: Oli.Accounts.get_user!(current_user_id),
        height: 500,
-       width: 400
+       width: 400,
+       is_page: session["is_page"] == true || false
      )}
   end
 
   def render(assigns) do
     ~H"""
-    <div class="fixed z-[10000] bottom-20 lg:bottom-0 right-0 ml-auto">
+    <div class={["fixed z-[10000] lg:bottom-0 right-0 ml-auto", (if @is_page, do: "bottom-20", else: "bottom-0")]}>
       <.conversation
         current_user={@current_user}
         form={@form}
@@ -120,14 +121,16 @@ defmodule OliWeb.Dialogue.WindowLive do
         height={@height}
         width={@width}
       />
-      <.collapsed_bot />
+      <.collapsed_bot is_page={@is_page} />
     </div>
     """
   end
 
+  attr :is_page, :boolean, default: false
+
   def collapsed_bot(assigns) do
     ~H"""
-    <div id="ai_bot_collapsed" class="w-[80px] lg:w-[170px] h-[74px] relative ml-auto">
+    <div id="ai_bot_collapsed" class={["lg:w-[170px] h-[74px] relative ml-auto", (if @is_page, do: "w-[80px]", else: "" )]}>
       <button
         phx-click={
           JS.hide(to: "#ai_bot_collapsed")
@@ -144,7 +147,7 @@ defmodule OliWeb.Dialogue.WindowLive do
       >
         <.dot_icon size={:large} />
       </button>
-      <.left_to_right_fade_in_icon />
+      <.left_to_right_fade_in_icon is_page={@is_page} />
     </div>
     """
   end
@@ -302,10 +305,12 @@ defmodule OliWeb.Dialogue.WindowLive do
     """
   end
 
+  attr :is_page, :boolean, default: false
+
   def left_to_right_fade_in_icon(assigns) do
     ~H"""
     <svg
-      class="hidden lg:block fill-black dark:opacity-100"
+      class={["lg:block fill-black dark:opacity-100", (if @is_page, do: "hidden", else: "block")]}
       width="170"
       height="74"
       viewBox="0 0 170 74"
@@ -455,8 +460,7 @@ defmodule OliWeb.Dialogue.WindowLive do
       <div class="px-3 py-1.5 rounded-xl border border-black dark:border-white border-opacity-40 flex justify-start items-center w-full">
         <div class="rounded-xl justify-center items-center gap-3 flex">
           <div class="px-1.5 py-[3px] justify-center items-center flex">
-            <!-- <.mic_icon /> -->
-            <.dot_icon size={:small} />
+            <.mic_icon />
           </div>
         </div>
         <div class="grow shrink basis-0 justify-start items-center gap-2 flex w-full">

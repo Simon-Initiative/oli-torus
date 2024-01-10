@@ -123,7 +123,7 @@
   <% end %>
 
   <%= live_render(@conn, OliWeb.Dialogue.WindowLive,
-    session: %{"section_slug" => @section_slug, "revision_id" => @page.id}
+    session: %{"section_slug" => @section_slug, "revision_id" => @page.id, "is_page" => true}
   ) %>
   <%= if @review_mode == true do %>
     <div class="d-flex align-items-center justify-content-center">
