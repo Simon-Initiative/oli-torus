@@ -50,7 +50,12 @@
                   "is_instructor" => @is_instructor,
                   "is_student" => @is_student,
                   "title" => "Page Discussion",
-                  "current_user_id" => if !is_nil(@user) do @user.id else nil end
+                  "current_user_id" =>
+                    if !is_nil(@user) do
+                      @user.id
+                    else
+                      nil
+                    end
                 }
               ) %>
             </div>

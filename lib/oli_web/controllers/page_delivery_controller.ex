@@ -1101,7 +1101,12 @@ defmodule OliWeb.PageDeliveryController do
     |> render(
       "instructor_page_preview.html",
       %{
-        user: if is_nil(conn.assigns.current_user) do nil else conn.assigns.current_user end,
+        user:
+          if is_nil(conn.assigns.current_user) do
+            nil
+          else
+            conn.assigns.current_user
+          end,
         summary: %{title: section.title},
         section_slug: section_slug,
         scripts: Enum.map(all_activities, fn a -> a.authoring_script end),
