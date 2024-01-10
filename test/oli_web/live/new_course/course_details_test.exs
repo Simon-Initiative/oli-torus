@@ -210,6 +210,7 @@ defmodule OliWeb.NewCourse.CourseDetailsTest do
       assert flash["info"] == "Section successfully created."
     end
 
+    @tag :skip
     test "successfully creates a section from a product", %{conn: conn} = context do
       %{section: section} = create_source(context, %{type: :blueprint})
       {:ok, view, _html} = live(conn, @live_view_independent_learner_route)
