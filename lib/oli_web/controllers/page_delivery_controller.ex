@@ -629,6 +629,7 @@ defmodule OliWeb.PageDeliveryController do
       conn,
       "page.html",
       %{
+        user: user,
         adaptive: adaptive,
         context: context,
         page: context.page,
