@@ -215,6 +215,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
         phx-submit={JS.push("begin_attempt") |> Modal.hide_modal("password_attempt_modal")}
         for={%{}}
         class="flex flex-col gap-6"
+        id="password_attempt_form"
       >
         <input id="password_attempt_input" type="password" name="password" field={:password} value="" />
         <.button type="submit" class="mx-auto btn btn-primary">Begin</.button>
@@ -271,7 +272,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
 
   defp attempts_summary(assigns) do
     ~H"""
-    <div class="w-full flex-col justify-start items-start gap-3 flex">
+    <div class="w-full flex-col justify-start items-start gap-3 flex" id="attempts_summary">
       <div class="self-stretch justify-start items-start gap-6 inline-flex relative">
         <div
           id="attempts_summary_with_tooltip"
@@ -330,7 +331,10 @@ defmodule OliWeb.Delivery.Student.LessonLive do
   defp attempt_summary(assigns) do
     # TODO: add link to review page
     ~H"""
-    <div class="self-stretch py-1 justify-between items-start inline-flex">
+    <div
+      id={"attempt_#{@index}_summary"}
+      class="self-stretch py-1 justify-between items-start inline-flex"
+    >
       <div class="justify-start items-center flex">
         <div class="w-[92px] opacity-40 dark:text-white text-xs font-bold font-['Open Sans'] uppercase leading-normal tracking-wide">
           Attempt <%= @index %>:
@@ -338,19 +342,25 @@ defmodule OliWeb.Delivery.Student.LessonLive do
         <div class="py-1 justify-end items-center gap-1.5 flex">
           <div class="w-4 h-4 relative"><.star_icon /></div>
           <div class="justify-end items-center gap-1 flex">
-            <div class="text-emerald-600 text-xs font-semibold font-['Open Sans'] tracking-tight">
+            <div
+              role="attempt score"
+              class="text-emerald-600 text-xs font-semibold font-['Open Sans'] tracking-tight"
+            >
               <%= Float.round(@attempt.score, 2) %>
             </div>
             <div class="text-emerald-600 text-xs font-semibold font-['Open Sans'] tracking-[4px]">
               /
             </div>
-            <div class="text-emerald-600 text-xs font-semibold font-['Open Sans'] tracking-tight">
+            <div
+              role="attempt out of"
+              lass="text-emerald-600 text-xs font-semibold font-['Open Sans'] tracking-tight"
+            >
               <%= Float.round(@attempt.out_of, 2) %>
             </div>
           </div>
         </div>
       </div>
-      <div class="flex-col justify-start items-end inline-flex">
+      <div class="flex-col justify-start items-end inline-flex" role="attempt submission">
         <div class="py-1 justify-start items-start gap-1 inline-flex">
           <div class="opacity-50 dark:text-white text-xs font-normal font-['Open Sans']">
             Submitted:
@@ -757,7 +767,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
 
   defp get_required_activity_scripts(_page_context) do
     # TODO Optimization: get only activity scripts of activities contained in the page.
-    # We could infer the contained activities from the page revision content model.
+    # Could we infer the contained activities from the page revision content model?
     all_activities = Activities.list_activity_registrations()
     Enum.map(all_activities, fn a -> a.delivery_script end)
   end
