@@ -140,6 +140,7 @@ defmodule OliWeb.Dialogue.WindowLive do
           |> JS.focus(to: "#ai_bot_input")
         }
         class="absolute right-[1px] cursor-pointer hover:scale-105"
+        id="ai_bot_collapsed_button"
       >
         <img
           class="animate-[spin_40s_cubic-bezier(0.4,0,0.6,1)_infinite]"
