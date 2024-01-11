@@ -71,7 +71,16 @@ defmodule OliWeb.Resources.PagesView do
           )
 
         total_count = determine_total(pages)
-        {:ok, table_model} = PagesTableModel.new(pages, project, ctx)
+
+        container_id = Oli.Resources.ResourceType.get_id_by_type("container")
+        containers = AuthoringResolver.revisions_of_type(project_slug, container_id)
+
+        child_to_parent =
+          Enum.reduce(containers, %{}, fn c, m ->
+            Enum.reduce(c.children, m, fn r, a -> Map.put(a, r, c) end)
+          end)
+
+        {:ok, table_model} = PagesTableModel.new(pages, project, ctx, child_to_parent)
 
         project_hierarchy =
           AuthoringResolver.full_hierarchy(project_slug) |> HierarchyNode.simplify()
@@ -553,7 +562,8 @@ defmodule OliWeb.Resources.PagesView do
 
     {:ok, _} = ContainerEditor.move_to(revision, from_container, to_container, author, project)
 
-    {:noreply, hide_modal(socket, modal_assigns: nil)}
+    hide_modal(socket, modal_assigns: nil)
+    |> patch_with(%{})
   end
 
   def handle_event("MoveModal.remove", %{"from_uuid" => from_uuid}, socket) do
