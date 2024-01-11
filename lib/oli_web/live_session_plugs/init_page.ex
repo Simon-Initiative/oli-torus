@@ -3,7 +3,6 @@ defmodule OliWeb.LiveSessionPlugs.InitPage do
 
   import Phoenix.Component, only: [assign: 2]
 
-  alias Oli.Delivery.Attempts.Core
   alias Oli.Delivery.{PreviousNextIndex, Settings}
   alias Oli.Delivery.Page.PageContext
 

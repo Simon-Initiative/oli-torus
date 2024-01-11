@@ -244,6 +244,13 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     """
   end
 
+  # As we implement more scenarios we can add more clauses to this function depending on the :view key.
+  def render(assigns) do
+    ~H"""
+    <div>hi, this is still in dev</div>
+    """
+  end
+
   attr :scripts, :list
   attr :user_token, :string
 
@@ -387,13 +394,6 @@ defmodule OliWeb.Delivery.Student.LessonLive do
         </div>
       </div>
     </div>
-    """
-  end
-
-  # As we implement more scenarios we can add more clauses to this function depending on the :view key.
-  def render(assigns) do
-    ~H"""
-    <div>hi, this is still in dev</div>
     """
   end
 
