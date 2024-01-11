@@ -153,6 +153,7 @@ defmodule Oli.Delivery do
         )
 
       {:ok, %Section{} = section} = Sections.create_section_resources(section, publication)
+      section = Sections.maybe_update_contains_discusssions(section)
       {:ok, _} = Sections.rebuild_contained_pages(section)
       {:ok, _} = Sections.rebuild_contained_objectives(section)
 

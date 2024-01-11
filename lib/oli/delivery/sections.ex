@@ -975,9 +975,11 @@ defmodule Oli.Delivery.Sections do
       {:error, %Ecto.Changeset{}}
   """
   def update_section(%Section{} = section, attrs) do
-    section
-    |> Section.changeset(attrs)
-    |> Repo.update()
+    section |> Section.changeset(attrs) |> Repo.update()
+  end
+
+  def update_section!(%Section{} = section, attrs) do
+    section |> Section.changeset(attrs) |> Repo.update!()
   end
 
   @doc """
@@ -1468,6 +1470,21 @@ defmodule Oli.Delivery.Sections do
     end)
   end
 
+  @spec maybe_update_contains_discusssions(Section.t()) :: Section.t()
+  def maybe_update_contains_discusssions(section) do
+    from(s in Section,
+      join: sr in assoc(s, :section_resources),
+      where: s.id == ^section.id,
+      where: fragment("?->>'status' = ?", sr.collab_space_config, "enabled"),
+      select: sr.id
+    )
+    |> Oli.Repo.all()
+    |> case do
+      [] -> update_section!(section, %{contains_discussions: false})
+      _non_empty_list -> update_section!(section, %{contains_discussions: true})
+    end
+  end
+
   # The following function receives a hierarchy and recursively builds a list with the
   # SectionResource maps that will be inserted in the database.
   defp build_section_resource_insertion(%{
@@ -1755,8 +1772,9 @@ defmodule Oli.Delivery.Sections do
         rebuild_section_resources(section, section_resources, project_publications)
       end)
       |> Multi.run(
-        :maybe_update_exploration_pages,
+        :side_effects,
         fn _repo, _ ->
+          maybe_update_contains_discusssions(section)
           # updates contains_explorations field in sections
           Delivery.maybe_update_section_contains_explorations(section)
           Delivery.maybe_update_section_contains_deliberate_practice(section)
