@@ -28,7 +28,7 @@ defmodule Oli.Interop.IngestTest do
       Map.get(m, ~c"_hierarchy.json")
       |> Jason.decode!()
 
-    assert length(Map.get(hierarchy, "children")) == 1
+    assert length(Map.get(hierarchy, "children")) == 2
     unit = Map.get(hierarchy, "children") |> hd
     assert Map.get(unit, "title") == "Unit 1"
     assert length(Map.get(unit, "children")) == 6
@@ -74,6 +74,8 @@ defmodule Oli.Interop.IngestTest do
       project = Repo.get(Oli.Authoring.Course.Project, p.id)
       assert project.title == "The Cuisine of Northern Spain"
       assert p.title == project.title
+      assert p.attributes == project.attributes
+      assert p.customizations == project.customizations
 
       # verify project access for author
       access =

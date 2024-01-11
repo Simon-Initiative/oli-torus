@@ -347,7 +347,8 @@ defmodule Oli.Interop.Ingest do
         Oli.Authoring.Course.create_project(title, as_author, %{
           description: Map.get(project_details, "description"),
           legacy_svn_root: Map.get(project_details, "svnRoot"),
-          customizations: custom_labels
+          customizations: custom_labels,
+          attributes: Map.get(project_details, "attributes")
         })
     end
   end
