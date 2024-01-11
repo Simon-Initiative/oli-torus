@@ -43,6 +43,16 @@ function createMapById(objectives: Objective[]) {
   }, {});
 }
 
+const getPlaceholderLabel = (hasObjectives: boolean, editMode: boolean) => {
+  if (editMode) {
+    return hasObjectives
+      ? 'Select or Create learning objectives...'
+      : 'Create a new learning objective';
+  } else {
+    return 'Select a learning objective';
+  }
+};
+
 export const ObjectivesSelection = (props: ObjectivesProps) => {
   const { objectives, editMode, selected, onEdit, onRegisterNewObjective } = props;
 
@@ -77,9 +87,11 @@ export const ObjectivesSelection = (props: ObjectivesProps) => {
   // The current 'selected' state of Typeahead must be the same shape as
   // the options objects. So we look up from our list of slugs those objects.
   const map = Immutable.Map<ResourceId, Objective>(objectives.map((o) => [o.id, o]));
-  const asObjectives = selected.map((s) => map.get(s) as Objective);
+  const asObjectives = selected.map((s) => map.get(s) as Objective).filter((o) => !!o);
 
   const allowNewObjective = !!onRegisterNewObjective;
+  const hasObjectives = objectives.length > 0;
+  const placeholder = getPlaceholderLabel(hasObjectives, editMode && !!onRegisterNewObjective);
 
   return (
     <div className={classNames(styles.objectivesSelection, 'flex-grow-1')}>
@@ -144,7 +156,7 @@ export const ObjectivesSelection = (props: ObjectivesProps) => {
         newSelectionPrefix="Create new objective: "
         labelKey="title"
         selected={asObjectives}
-        placeholder="Select learning objectives..."
+        placeholder={placeholder}
       />
     </div>
   );

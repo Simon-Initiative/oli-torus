@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { OverlayTrigger, Popover } from 'react-bootstrap';
+import { Tooltip } from 'components/common/Tooltip';
 import { ActivityEditContext } from 'data/content/activity';
 import { ResourceContent } from 'data/content/resource';
 import { classNames } from 'utils/classNames';
@@ -46,14 +47,17 @@ export const AddResourceContent: React.FC<AddResourceContentProps> = ({
             styles.addResourceContent,
             !editMode && styles.disabled,
             isPopoverOpen && styles.active,
+            isLast && styles.last,
           )}
         >
           {editMode && (
             <>
               <div className={styles.insertButtonContainer}>
-                <div className={styles.insertButton}>
-                  <i className="fa fa-plus"></i>
-                </div>
+                <Tooltip placement="bottom" title="Insert Content">
+                  <div className={styles.insertButton}>
+                    <i className="fa fa-plus"></i>
+                  </div>
+                </Tooltip>
               </div>
               <div className={styles.insertAdornment}></div>
             </>
