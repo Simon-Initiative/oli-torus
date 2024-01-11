@@ -42,9 +42,8 @@ defmodule OliWeb.Delivery.Student.LessonLive do
      |> assign(begin_attempt?: false)}
   end
 
-  def handle_event(event, %{"password" => password}, socket)
-      when event in ["begin_attempt", "continue_attempt"] and
-             password != socket.assigns.page_context.effective_settings.password do
+  def handle_event("begin_attempt", %{"password" => password}, socket)
+      when password != socket.assigns.page_context.effective_settings.password do
     {:noreply, put_flash(socket, :error, "Incorrect password")}
   end
 
@@ -90,7 +89,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
             index={@current_page["index"]}
             container_label={get_container_label(@current_page["id"], @section)}
           />
-          <div id="eventIntercept" class="content" phx-update="ignore">
+          <div id="eventIntercept" class="content" phx-update="ignore" role="page content">
             <%= raw(@html) %>
           </div>
         </div>
@@ -125,7 +124,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
             index={@current_page["index"]}
             container_label={get_container_label(@current_page["id"], @section)}
           />
-          <div id="eventIntercept" class="content" phx-update="ignore">
+          <div id="eventIntercept" class="content" phx-update="ignore" role="page content">
             <%= raw(@html) %>
             <div class="flex w-full justify-center">
               <button
@@ -178,7 +177,13 @@ defmodule OliWeb.Delivery.Student.LessonLive do
             >
               <Layouts.spinner />
             </div>
-            <div :if={!@show_loader?} id="raw_html" class="content opacity-0" phx-update="ignore">
+            <div
+              :if={!@show_loader?}
+              id="raw_html"
+              class="content opacity-0"
+              phx-update="ignore"
+              role="page content"
+            >
               <%= raw(@html) %>
               <div class="flex w-full justify-center">
                 <button
@@ -207,22 +212,12 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     <Modal.modal id="password_attempt_modal" class="w-1/2">
       <:title>Provide Assessment Password</:title>
       <.form
-        phx-submit={
-          JS.push(
-            if(@page_context.progress_state == :in_progress,
-              do: "continue_attempt",
-              else: "begin_attempt"
-            )
-          )
-          |> Modal.hide_modal("password_attempt_modal")
-        }
+        phx-submit={JS.push("begin_attempt") |> Modal.hide_modal("password_attempt_modal")}
         for={%{}}
         class="flex flex-col gap-6"
       >
         <input id="password_attempt_input" type="password" name="password" field={:password} value="" />
-        <.button type="submit" class="mx-auto btn btn-primary">
-          <%= if(@page_context.progress_state == :in_progress, do: "Continue", else: "Begin") %>
-        </.button>
+        <.button type="submit" class="mx-auto btn btn-primary">Begin</.button>
       </.form>
     </Modal.modal>
     <div class="flex pb-20 flex-col items-center gap-15 flex-1">
@@ -323,24 +318,6 @@ defmodule OliWeb.Delivery.Student.LessonLive do
       ]}
     >
       Begin <%= get_ordinal_attempt(@page_context) %> Attempt
-    </button>
-
-    <button
-      :if={@page_context.progress_state == :in_progress}
-      id="continue_attempt_button"
-      disabled={!@allow_attempt?}
-      phx-click={
-        if(@page_context.effective_settings.password not in [nil, ""],
-          do: Modal.show_modal("password_attempt_modal") |> JS.focus(to: "#password_attempt_input"),
-          else: "continue_attempt"
-        )
-      }
-      class={[
-        "cursor-pointer px-5 py-2.5 hover:bg-opacity-40 bg-blue-600 rounded-[3px] shadow justify-center items-center gap-2.5 inline-flex text-white text-sm font-normal font-['Open Sans'] leading-tight",
-        if(!@allow_attempt?, do: "opacity-50 dark:opacity-20 disabled !cursor-not-allowed")
-      ]}
-    >
-      Continue Attempt
     </button>
     """
   end
