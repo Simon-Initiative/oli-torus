@@ -103,6 +103,14 @@ body {
   background-image: url('/images/gradients/practice-bg-dark.png');
 }
 
+.bg-discussions {
+  background-image: url('/images/gradients/discussions-bg.png');
+}
+
+.dark .bg-discussions {
+  background-image: url('/images/gradients/discussions-bg-dark.png');
+}
+
 /*
 The following classes are used to style the html rendered with Oli.Rendering.Content.render/3
 We should try to avoid defining classes in this way.

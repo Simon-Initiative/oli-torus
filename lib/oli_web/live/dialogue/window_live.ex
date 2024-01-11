@@ -102,14 +102,18 @@ defmodule OliWeb.Dialogue.WindowLive do
        function_call: nil,
        title: "Dot",
        current_user: Oli.Accounts.get_user!(current_user_id),
-       height: 634,
-       width: 556
+       height: 500,
+       width: 400,
+       is_page: session["is_page"] == true || false
      )}
   end
 
   def render(assigns) do
     ~H"""
-    <div class="fixed z-[10000] bottom-0 right-0 ml-auto">
+    <div class={[
+      "fixed z-[10000] lg:bottom-0 right-0 ml-auto",
+      if(@is_page, do: "bottom-20", else: "bottom-0")
+    ]}>
       <.conversation
         current_user={@current_user}
         form={@form}
@@ -120,36 +124,36 @@ defmodule OliWeb.Dialogue.WindowLive do
         height={@height}
         width={@width}
       />
-      <.collapsed_bot />
+      <.collapsed_bot is_page={@is_page} />
     </div>
     """
   end
 
+  attr :is_page, :boolean, default: false
+
   def collapsed_bot(assigns) do
     ~H"""
-    <div id="ai_bot_collapsed" class="w-[170px] h-[74px] relative ml-auto">
+    <div
+      id="ai_bot_collapsed"
+      class={["lg:w-[170px] h-[74px] relative ml-auto", if(@is_page, do: "w-[80px]", else: "")]}
+    >
       <button
         phx-click={
           JS.hide(to: "#ai_bot_collapsed")
           |> JS.show(
             to: "#ai_bot_conversation",
             transition:
-              {"ease-out duration-1000", "translate-x-full translate-y-full",
-               "translate-x-0 translate-y-0"}
+              {"ease-out duration-200", "translate-x-full translate-y-full opacity-0",
+               "translate-x-0 translate-y-0 opacity-100"}
           )
           |> JS.focus(to: "#ai_bot_input")
         }
         class="absolute right-[1px] cursor-pointer hover:scale-105"
         id="ai_bot_collapsed_button"
       >
-        <img
-          class="animate-[spin_40s_cubic-bezier(0.4,0,0.6,1)_infinite]"
-          src={~p"/images/ng23/footer_dot_ai.png"}
-        />
-        <div class="w-[39.90px] h-[39.90px] absolute bottom-4 right-4 bg-zinc-300 rounded-full blur-[30px] animate-[pulse_3s_cubic-bezier(0.4,0,0.6,1)_infinite]">
-        </div>
+        <.dot_icon size={:large} />
       </button>
-      <.left_to_right_fade_in_icon />
+      <.left_to_right_fade_in_icon is_page={@is_page} />
     </div>
     """
   end
@@ -178,10 +182,10 @@ defmodule OliWeb.Dialogue.WindowLive do
         style={"height: #{@height}px; width: #{@width}px;"}
         class="pb-6 shadow-lg bg-white dark:bg-[#0A0A17] rounded-3xl flex flex-col justify-between"
       >
-        <div class="h-7 shrink-0 px-3 rounded-t-3xl bg-slate-400 dark:bg-black flex items-center">
+        <div class="h-7 shrink-0 py-6 px-3 rounded-t-3xl flex items-center">
           <button
             id="resize_handle"
-            class="w-6 flex items-center justify-center cursor-nw-resize rotate-90 opacity-60 dark:opacity-80 dark:hover:opacity-50 hover:opacity-100 hover:scale-105"
+            class="flex items-center justify-center cursor-nw-resize rotate-90 opacity-60 dark:opacity-80 dark:hover:opacity-50 hover:opacity-100 hover:scale-105"
           >
             <.resize_icon />
           </button>
@@ -191,14 +195,15 @@ defmodule OliWeb.Dialogue.WindowLive do
               JS.hide(
                 to: "#ai_bot_conversation",
                 transition:
-                  {"ease-out duration-700", "translate-x-1/4 translate-y-1/4",
-                   "translate-x-full translate-y-full"}
+                  {"ease-out duration-700", "translate-x-1/4 translate-y-1/4 opacity-100",
+                   "translate-x-full translate-y-full opacity-0"}
               )
               |> JS.show(
                 to: "#ai_bot_collapsed",
                 transition:
-                  {"ease-out duration-700 delay-1000", "translate-x-full translate-y-full",
-                   "translate-x-3/4 translate-y-0"}
+                  {"ease-out duration-700 delay-1000",
+                   "translate-x-full translate-y-full opacity-100",
+                   "translate-x-3/4 translate-y-0 opacity-0"}
               )
             }
             class="flex items-center justify-center ml-auto cursor-pointer opacity-80 dark:opacity-100 dark:hover:opacity-80 hover:opacity-100 hover:scale-105"
@@ -220,7 +225,7 @@ defmodule OliWeb.Dialogue.WindowLive do
 
   def resize_icon(assigns) do
     ~H"""
-    <svg xmlns="http://www.w3.org/2000/svg" height="12" width="12" viewBox="0 0 512 512">
+    <svg xmlns="http://www.w3.org/2000/svg" height="16" width="16" viewBox="0 0 512 512">
       <path
         class="fill-black dark:fill-white"
         d="M344 0H488c13.3 0 24 10.7 24 24V168c0 9.7-5.8 18.5-14.8 22.2s-19.3 1.7-26.2-5.2l-39-39-87 87c-9.4 9.4-24.6 9.4-33.9 0l-32-32c-9.4-9.4-9.4-24.6 0-33.9l87-87L327 41c-6.9-6.9-8.9-17.2-5.2-26.2S334.3 0 344 0zM168 512H24c-13.3 0-24-10.7-24-24V344c0-9.7 5.8-18.5 14.8-22.2s19.3-1.7 26.2 5.2l39 39 87-87c9.4-9.4 24.6-9.4 33.9 0l32 32c9.4 9.4 9.4 24.6 0 33.9l-87 87 39 39c6.9 6.9 8.9 17.2 5.2 26.2s-12.5 14.8-22.2 14.8z"
@@ -264,6 +269,29 @@ defmodule OliWeb.Dialogue.WindowLive do
     """
   end
 
+  attr :size, :atom, values: [:small, :medium, :large], default: :medium
+
+  def dot_icon(assigns) do
+    ~H"""
+    <div class={"#{dot_size_class(@size)} relative"}>
+      <img
+        class="animate-[spin_40s_cubic-bezier(0.4,0,0.6,1)_infinite]"
+        src={~p"/images/assistant/footer_dot_ai.png"}
+      />
+      <div class={"#{orb_size_class(@size)} absolute bottom-0 right-0 bg-zinc-300 rounded-full blur-[30px] animate-[pulse_6s_cubic-bezier(0.4,0,0.6,1)_infinite]"}>
+      </div>
+    </div>
+    """
+  end
+
+  defp dot_size_class(:small), do: "w-[32px] h-[32px]"
+  defp dot_size_class(:medium), do: "w-[56px] h-[56px]"
+  defp dot_size_class(:large), do: "w-[72px] h-[72px]"
+
+  defp orb_size_class(:small), do: "w-[24px] h-[24px]"
+  defp orb_size_class(:medium), do: "w-[48px] h-[48px]"
+  defp orb_size_class(:large), do: "w-[64px] h-[64px]"
+
   def submit_icon(assigns) do
     ~H"""
     <svg
@@ -282,10 +310,12 @@ defmodule OliWeb.Dialogue.WindowLive do
     """
   end
 
+  attr :is_page, :boolean, default: false
+
   def left_to_right_fade_in_icon(assigns) do
     ~H"""
     <svg
-      class="fill-black dark:opacity-100"
+      class={["lg:block fill-black dark:opacity-100", if(@is_page, do: "hidden", else: "block")]}
       width="170"
       height="74"
       viewBox="0 0 170 74"
@@ -312,7 +342,8 @@ defmodule OliWeb.Dialogue.WindowLive do
           :if={@user_initials == "BOT AI"}
           class="-mt-1.5 w-11 h-11 rounded-full justify-center items-center flex"
         >
-          <div class="w-12 h-12 bg-[url('/images/ng23/footer_dot_ai.png')] bg-cover bg-center"></div>
+          <div class="w-12 h-12 bg-[url('/images/assistant/footer_dot_ai.png')] bg-cover bg-center">
+          </div>
         </div>
         <div
           :if={@user_initials != "BOT AI"}
@@ -433,13 +464,13 @@ defmodule OliWeb.Dialogue.WindowLive do
       phx-window-keydown={JS.dispatch("click", to: "#bot_submit_button")}
       phx-key="enter"
     >
-      <div class="px-3 py-1.5 rounded-xl border border-black dark:border-white border-opacity-40 flex justify-start items-center gap-2 w-full">
+      <div class="px-3 py-1.5 rounded-xl border border-black dark:border-white border-opacity-40 flex justify-start items-center w-full">
         <div class="rounded-xl justify-center items-center gap-3 flex">
           <div class="px-1.5 py-[3px] justify-center items-center flex">
             <.mic_icon />
           </div>
         </div>
-        <div class="grow shrink basis-0 justif-start items-center gap-2 flex w-full">
+        <div class="grow shrink basis-0 justify-start items-center gap-2 flex w-full">
           <.input
             type="textarea"
             field={@form[:content]}
@@ -454,9 +485,9 @@ defmodule OliWeb.Dialogue.WindowLive do
           />
         </div>
         <button
-          disabled={!@allow_submission?}
           id="bot_submit_button"
-          class="w-[38px] h-[38px] px-6 py-2 opacity-60 bg-blue-800 rounded-lg justify-center items-center gap-3 flex cursor-pointer hover:opacity-50"
+          disabled={!@allow_submission?}
+          class="w-[38px] h-[38px] ml-2 px-6 py-2 opacity-90 bg-blue-500 rounded-lg justify-center items-center gap-3 flex cursor-pointer hover:opacity-100 active:bg-blue-600"
         >
           <div class="w-[25px] h-[25px] pl-[3.12px] pr-[2.08px] py-[4.17px] justify-center items-center flex">
             <.submit_icon />

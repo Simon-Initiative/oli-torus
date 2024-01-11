@@ -7,7 +7,7 @@
     preview_mode={@preview_mode}
   />
 
-  <main role="main" class="flex-1 flex flex-col relative md:flex-row overscroll-contain">
+  <main role="main" class="flex-1 flex flex-col md:flex-row overscroll-contain">
     <Components.Delivery.Layouts.sidebar_nav
       ctx={@ctx}
       is_system_admin={assigns[:is_system_admin] || false}
@@ -15,8 +15,8 @@
       active_tab={assigns[:active_tab]}
       preview_mode={@preview_mode}
     />
-    <div class="md:w-[calc(100%-192px)] flex-1 flex flex-col md:ml-48 mt-14">
-      <div class="container mx-auto sticky top-4">
+    <div class="md:w-[calc(100%-192px)] flex-1 flex flex-col md:ml-48 mt-14 relative">
+      <div class="container mx-auto sticky top-[60px] z-50">
         <.flash_group flash={@flash} />
       </div>
 
