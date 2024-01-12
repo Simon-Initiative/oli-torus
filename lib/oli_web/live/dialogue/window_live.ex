@@ -147,9 +147,9 @@ defmodule OliWeb.Dialogue.WindowLive do
                "translate-x-0 translate-y-0 opacity-100"}
           )
           |> JS.focus(to: "#ai_bot_input")
-          |> JS.add_class("overflow-hidden", to: "body")
         }
         class="absolute right-[1px] cursor-pointer hover:scale-105"
+        id="ai_bot_collapsed_button"
       >
         <.dot_icon size={:large} />
       </button>
@@ -205,7 +205,6 @@ defmodule OliWeb.Dialogue.WindowLive do
                    "translate-x-full translate-y-full opacity-100",
                    "translate-x-3/4 translate-y-0 opacity-0"}
               )
-              |> JS.remove_class("overflow-hidden", to: "body")
             }
             class="flex items-center justify-center ml-auto cursor-pointer opacity-80 dark:opacity-100 dark:hover:opacity-80 hover:opacity-100 hover:scale-105"
           >
@@ -356,10 +355,10 @@ defmodule OliWeb.Dialogue.WindowLive do
         </div>
       </div>
       <div class={[
-        "grow shrink basis-0 p-3 rounded-xl shadow justify-start items-start gap-6 flex bg-opacity-10 dark:bg-opacity-100",
+        "grow shrink basis-0 p-3 rounded-xl shadow justify-start items-start gap-6 flex bg-opacity-30 dark:bg-opacity-100",
         if(@user_initials == "BOT AI",
-          do: "bg-gray-500 dark:bg-gray-600",
-          else: "bg-gray-900 dark:bg-gray-800"
+          do: "bg-gray-300 dark:bg-gray-600",
+          else: "bg-gray-800 dark:bg-gray-800"
         )
       ]}>
         <div class="grow shrink basis-0 p-2 flex-col justify-start items-start gap-6 inline-flex">
@@ -462,6 +461,8 @@ defmodule OliWeb.Dialogue.WindowLive do
       id="ai_user_input_form"
       class="w-full mt-5 px-6"
       phx-hook="TextareaListener"
+      phx-window-keydown={JS.dispatch("click", to: "#bot_submit_button")}
+      phx-key="enter"
     >
       <div class="px-3 py-1.5 rounded-xl border border-black dark:border-white border-opacity-40 flex justify-start items-center w-full">
         <div class="rounded-xl justify-center items-center gap-3 flex">
@@ -484,6 +485,7 @@ defmodule OliWeb.Dialogue.WindowLive do
           />
         </div>
         <button
+          id="bot_submit_button"
           disabled={!@allow_submission?}
           class="w-[38px] h-[38px] ml-2 px-6 py-2 opacity-90 bg-blue-500 rounded-lg justify-center items-center gap-3 flex cursor-pointer hover:opacity-100 active:bg-blue-600"
         >

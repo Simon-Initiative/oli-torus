@@ -1,4 +1,44 @@
-<div class="h-screen flex flex-col">
+<div id="live_flash_container" class="fixed top-14 w-full mx-auto z-50">
+  <%= if live_flash(@flash, :info) do %>
+    <div class="alert alert-info flex flex-row" role="alert">
+      <div class="flex-1">
+        <%= live_flash(@flash, :info) %>
+      </div>
+
+      <button
+        type="button"
+        class="close"
+        data-bs-dismiss="alert"
+        aria-label="Close"
+        phx-click="lv:clear-flash"
+        phx-value-key="info"
+      >
+        <i class="fa-solid fa-xmark fa-lg"></i>
+      </button>
+    </div>
+  <% end %>
+
+  <%= if live_flash(@flash, :error) do %>
+    <div class="alert alert-danger flex flex-row" role="alert">
+      <div class="flex-1">
+        <%= live_flash(@flash, :error) %>
+      </div>
+
+      <button
+        type="button"
+        class="close"
+        data-bs-dismiss="alert"
+        aria-label="Close"
+        phx-click="lv:clear-flash"
+        phx-value-key="error"
+      >
+        <i class="fa-solid fa-xmark fa-lg"></i>
+      </button>
+    </div>
+  <% end %>
+</div>
+
+<div class="h-screen flex flex-col overscroll-none">
   <Components.Delivery.Layouts.header
     ctx={@ctx}
     is_system_admin={assigns[:is_system_admin] || false}
@@ -32,7 +72,7 @@
     <%= live_render(@socket, OliWeb.Dialogue.WindowLive,
       session: %{
         "section_slug" => @section.slug,
-        "revision_id" => @revision.id,
+        "revision_id" => @page_context.page.id,
         "is_page" => true
       },
       id: "dialogue-window"

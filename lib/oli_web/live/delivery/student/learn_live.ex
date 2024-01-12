@@ -195,11 +195,6 @@ defmodule OliWeb.Delivery.Student.LearnLive do
      |> push_event("play_video", %{"video_url" => video_url})}
   end
 
-  def handle_event("open_dot_bot", _, socket) do
-    # TODO: this button should open DOT bot when implemented here.
-    {:noreply, socket}
-  end
-
   def handle_event(
         "select_module",
         %{"unit_resource_id" => unit_resource_id, "module_resource_id" => module_resource_id},
@@ -519,7 +514,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
             ) %>
           </div>
           <button
-            phx-click="open_dot_bot"
+            phx-click={JS.dispatch("click", to: "#ai_bot_collapsed_button")}
             class="rounded-[4px] p-[10px] flex justify-center items-center ml-auto mt-[42px] text-[14px] leading-[19px] tracking-[0.024px] font-normal text-white bg-blue-500 hover:bg-blue-600 dark:text-white dark:bg-[rgba(255,255,255,0.10);] dark:hover:bg-gray-800"
           >
             Let's discuss?
@@ -824,7 +819,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         </div>
         """
 
-      {false, "page", true, _} ->
+      {_, "page", true, _} ->
         # not completed graded page
         ~H"""
         <div role="orange flag icon" class="flex justify-center items-center h-7 w-7 shrink-0">
