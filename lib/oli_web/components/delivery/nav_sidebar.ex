@@ -1,5 +1,6 @@
 defmodule OliWeb.Components.Delivery.NavSidebar do
   use Phoenix.Component
+  use OliWeb, :verified_routes
 
   import OliWeb.Components.Delivery.Utils
   import Oli.Utils, only: [value_or: 2]
@@ -10,12 +11,13 @@ defmodule OliWeb.Components.Delivery.NavSidebar do
   alias Oli.Resources.ResourceType
   alias Oli.Resources.Revision
   alias Oli.Publishing.AuthoringResolver
-  alias OliWeb.Router.Helpers, as: Routes
   alias Oli.Branding.Brand
   alias OliWeb.Components.Delivery.UserAccountMenu
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.Section
   alias OliWeb.Common.SessionContext
+
+  @container_type_id ResourceType.get_id_by_type("container")
 
   slot(:inner_block, required: true)
 
@@ -35,20 +37,15 @@ defmodule OliWeb.Components.Delivery.NavSidebar do
   attr(:path_info, :list)
 
   def navbar(assigns) do
+    links =
+      if is_preview_mode?(assigns),
+        do: get_preview_links(assigns),
+        else: get_links(assigns, assigns.path_info)
+
     assigns =
       assigns
-      |> assign(
-        :logo,
-        logo_details(assigns)
-      )
-      |> assign(
-        :links,
-        if is_preview_mode?(assigns) do
-          get_preview_links(assigns)
-        else
-          get_links(assigns, assigns.path_info)
-        end
-      )
+      |> assign(:logo, logo_details(assigns))
+      |> assign(:links, links)
       |> UserAccountMenu.user_account_menu_assigns()
 
     ~H"""
@@ -68,86 +65,64 @@ defmodule OliWeb.Components.Delivery.NavSidebar do
   end
 
   defp get_preview_links(%{section: %Section{} = section} = assigns) do
-    hierarchy =
-      section
-      |> Oli.Repo.preload([:root_section_resource])
-      |> Sections.build_hierarchy()
+    hierarchy = Sections.build_hierarchy(Oli.Repo.preload(section, [:root_section_resource]))
 
-    [
-      %{
-        name: "Home",
-        href: home_url(assigns),
-        active: is_active(assigns.path_info, :overview)
-      },
-      %{
-        name: "Course Content",
-        popout: %{
-          component: "Components.CourseContentOutline",
-          props: %{
-            hierarchy: hierarchy,
-            sectionSlug: section.slug,
-            isPreview: true,
-            displayItemNumbering: section.display_curriculum_item_numbering
-          }
-        },
-        active: is_active(assigns.path_info, :content)
-      },
-      %{
-        name: "Discussion",
-        href: discussion_url(assigns),
-        active: is_active(assigns.path_info, :discussion)
-      },
-      %{
-        name: "Assignments",
-        href: assignments_url(assigns),
-        active: is_active(assigns.path_info, :assignments)
-      }
-    ]
-    |> then(fn links ->
-      case section do
-        %Section{contains_explorations: true} ->
-          links ++
-            [
-              %{
-                name: "Exploration",
-                href: exploration_url(assigns),
-                active: is_active(assigns.path_info, :exploration)
-              }
-            ]
+    home_map = %{
+      name: "Home",
+      href: ~p"/sections/#{section.slug}/preview/overview",
+      active: is_active(assigns.path_info, :overview)
+    }
 
-        _ ->
-          links
-      end
-    end)
-    |> then(fn links ->
-      case section do
-        %Section{contains_deliberate_practice: true} ->
-          links ++
-            [
-              %{
-                name: "Practice",
-                href: deliberate_practice_url(assigns),
-                active: is_active(assigns.path_info, :deliberate_practice)
-              }
-            ]
+    course_content_map = %{
+      name: "Course Content",
+      popout: %{
+        component: "Components.CourseContentOutline",
+        props: %{
+          hierarchy: hierarchy,
+          sectionSlug: section.slug,
+          isPreview: true,
+          displayItemNumbering: section.display_curriculum_item_numbering
+        }
+      },
+      active: is_active(assigns.path_info, :content)
+    }
 
-        _ ->
-          links
-      end
-    end)
+    discussion_map = %{
+      name: "Discussion",
+      href: ~p"/sections/#{section.slug}/preview/discussion",
+      active: is_active(assigns.path_info, :discussion)
+    }
+
+    assignments_map = %{
+      name: "Assignments",
+      href: ~p"/sections/#{section.slug}/preview/my_assignments",
+      active: is_active(assigns.path_info, :assignments)
+    }
+
+    exploration_map = %{
+      name: "Exploration",
+      href: ~p"/sections/#{section.slug}/preview/exploration",
+      active: is_active(assigns.path_info, :exploration)
+    }
+
+    practice_map = %{
+      name: "Practice",
+      href: ~p"/sections/#{section.slug}/preview/practice",
+      active: is_active(assigns.path_info, :deliberate_practice)
+    }
+
+    [home_map, course_content_map] ++
+      add_if(section.contains_discussions, discussion_map) ++
+      [assignments_map] ++
+      add_if(section.contains_explorations, exploration_map) ++
+      add_if(section.contains_deliberate_practice, practice_map)
   end
 
   defp get_preview_links(%{project: %Project{} = project}) do
-    hierarchy =
-      AuthoringResolver.full_hierarchy(project.slug)
-      |> translate_to_outline()
+    hierarchy = translate_to_outline(AuthoringResolver.full_hierarchy(project.slug))
 
     [
-      %{
-        name: "Home",
-        href: "#",
-        active: false
-      },
+      %{name: "Home", href: "#", active: false},
       %{
         name: "Course Content",
         popout: %{
@@ -166,79 +141,68 @@ defmodule OliWeb.Components.Delivery.NavSidebar do
     ]
   end
 
-  defp get_links(assigns, path_info) do
-    hierarchy =
-      assigns[:section]
-      |> Oli.Repo.preload([:root_section_resource])
-      |> Sections.build_hierarchy()
+  defp get_links(%{section: section} = assigns, path_info) do
+    hierarchy = Sections.build_hierarchy(Oli.Repo.preload(section, [:root_section_resource]))
 
-    all = [
-      %{
-        name: "Home",
-        href: home_url(assigns),
-        active: is_active(path_info, :overview)
-      },
-      %{
-        name: "Course Content",
-        popout: %{
-          component: "Components.CourseContentOutline",
-          props: %{
-            hierarchy: hierarchy,
-            sectionSlug: assigns[:section].slug,
-            displayItemNumbering: assigns[:section].display_curriculum_item_numbering
-          }
-        },
-        active: is_active(path_info, :content)
-      },
-      %{
-        name: "Discussion",
-        href: discussion_url(assigns),
-        active: is_active(path_info, :discussion)
-      },
-      %{
-        name: "Assignments",
-        href: assignments_url(assigns),
-        active: is_active(path_info, :assignments)
-      }
-    ]
+    home_map = %{
+      name: "Home",
+      href: ~p"/sections/#{section.slug}/overview",
+      active: is_active(path_info, :overview)
+    }
 
-    all =
-      if assigns.section.contains_explorations do
-        all ++
-          [
-            %{
-              name: "Exploration",
-              href: exploration_url(assigns),
-              active: is_active(path_info, :exploration)
-            }
-          ]
-      else
-        all
-      end
+    course_content_map = %{
+      name: "Course Content",
+      popout: %{
+        component: "Components.CourseContentOutline",
+        props: %{
+          hierarchy: hierarchy,
+          sectionSlug: section.slug,
+          displayItemNumbering: section.display_curriculum_item_numbering
+        }
+      },
+      active: is_active(path_info, :content)
+    }
 
-    if assigns.section.contains_deliberate_practice do
-      all ++
-        [
-          %{
-            name: "Practice",
-            href: deliberate_practice_url(assigns),
-            active: is_active(path_info, :deliberate_practice)
-          }
-        ]
-    else
-      all
-    end
+    discussion_map = %{
+      name: "Discussion",
+      href: ~p"/sections/#{section.slug}/discussion",
+      active: is_active(path_info, :discussion)
+    }
+
+    assignments_map = %{
+      name: "Assignments",
+      href: ~p"/sections/#{section.slug}/my_assignments",
+      active: is_active(path_info, :assignments)
+    }
+
+    exploration_map = %{
+      name: "Exploration",
+      href: ~p"/sections/#{section.slug}/exploration",
+      active: is_active(path_info, :exploration)
+    }
+
+    practice_map = %{
+      name: "Practice",
+      href: ~p"/sections/#{section.slug}/practice",
+      active: is_active(path_info, :deliberate_practice)
+    }
+
+    [home_map, course_content_map] ++
+      add_if(assigns.section.contains_discussions, discussion_map) ++
+      [assignments_map] ++
+      add_if(assigns.section.contains_explorations, exploration_map) ++
+      add_if(assigns.section.contains_deliberate_practice, practice_map)
   end
+
+  defp add_if(true, element), do: [element]
+  defp add_if(_nil_false, _element), do: []
 
   defp logo_details(assigns) do
     %{
       href:
         case assigns[:logo_link] do
-          nil ->
-            logo_link_path(assigns)
-
-          logo_link ->
-            logo_link
+          nil -> logo_link_path(assigns)
+          logo_link -> logo_link
         end,
       src:
         case assigns do
@@ -270,67 +234,17 @@ defmodule OliWeb.Components.Delivery.NavSidebar do
     end
   end
 
-  defp home_url(assigns) do
-    if assigns[:preview_mode] do
-      Routes.page_delivery_path(OliWeb.Endpoint, :index_preview, assigns[:section_slug])
-    else
-      Routes.page_delivery_path(OliWeb.Endpoint, :index, assigns[:section_slug])
-    end
-  end
-
-  defp exploration_url(assigns) do
-    if assigns[:preview_mode] do
-      Routes.page_delivery_path(OliWeb.Endpoint, :exploration_preview, assigns[:section_slug])
-    else
-      Routes.page_delivery_path(OliWeb.Endpoint, :exploration, assigns[:section_slug])
-    end
-  end
-
-  defp deliberate_practice_url(assigns) do
-    if assigns[:preview_mode] do
-      Routes.page_delivery_path(
-        OliWeb.Endpoint,
-        :deliberate_practice_preview,
-        assigns[:section_slug]
-      )
-    else
-      Routes.page_delivery_path(OliWeb.Endpoint, :deliberate_practice, assigns[:section_slug])
-    end
-  end
-
-  defp discussion_url(assigns) do
-    if assigns[:preview_mode] do
-      Routes.page_delivery_path(OliWeb.Endpoint, :discussion_preview, assigns[:section_slug])
-    else
-      Routes.page_delivery_path(OliWeb.Endpoint, :discussion, assigns[:section_slug])
-    end
-  end
-
-  defp assignments_url(assigns) do
-    if assigns[:preview_mode] do
-      Routes.page_delivery_path(OliWeb.Endpoint, :assignments_preview, assigns[:section_slug])
-    else
-      Routes.page_delivery_path(OliWeb.Endpoint, :assignments, assigns[:section_slug])
-    end
-  end
-
   defp translate_to_outline(%HierarchyNode{} = node) do
-    container_id = ResourceType.get_id_by_type("container")
-
     case node do
       %{
         uuid: id,
         children: children,
-        revision: %Revision{
-          resource_type_id: ^container_id,
-          title: title,
-          slug: slug
-        }
+        revision: %Revision{resource_type_id: @container_type_id, title: title, slug: slug}
       } ->
         # container
         %{
           type: "container",
-          children: Enum.map(children, fn c -> translate_to_outline(c) end),
+          children: Enum.map(children, &translate_to_outline/1),
           title: title,
           id: id,
           slug: slug
@@ -338,18 +252,10 @@ defmodule OliWeb.Components.Delivery.NavSidebar do
 
       %{
         uuid: id,
-        revision: %Revision{
-          title: title,
-          slug: slug
-        }
+        revision: %Revision{title: title, slug: slug}
       } ->
         # page
-        %{
-          type: "page",
-          title: title,
-          id: id,
-          slug: slug
-        }
+        %{type: "page", title: title, id: id, slug: slug}
     end
   end
 end
