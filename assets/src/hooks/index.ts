@@ -27,7 +27,7 @@ import { SystemMessage } from './system_message';
 import { TextInputListener } from './text_input_listener';
 import { TextareaListener } from './textarea_listener';
 import { ThemeToggle } from './theme_toggle';
-import { TooltipInit } from './tooltip';
+import { TooltipInit, TooltipWithTarget } from './tooltip';
 import { VideoPlayer } from './video_player';
 
 export const Hooks = {
@@ -46,6 +46,7 @@ export const Hooks = {
   SystemMessage,
   MonacoEditor,
   TooltipInit,
+  TooltipWithTarget,
   BeforeUnloadListener,
   ThemeToggle,
   LtiConnectInstructions,
