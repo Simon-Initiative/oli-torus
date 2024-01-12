@@ -171,7 +171,7 @@ defmodule Oli.Delivery.Attempts.AutoSubmit.Worker do
       else
         # we schedule the auto submit job 1 minute past the actual deadline to allow for a client side
         # auto submit to take place and cancel this job.
-        deadline_with_slack = DateTime.add(deadline, 1, :minute)
+        deadline_with_slack = add_slack(deadline)
 
         {:ok, job} =
           %{
@@ -187,6 +187,10 @@ defmodule Oli.Delivery.Attempts.AutoSubmit.Worker do
     else
       {:ok, :not_scheduled}
     end
+  end
+
+  def add_slack(deadline) do
+    DateTime.add(deadline, 1, :minute)
   end
 
   def cancel_auto_submit(%ResourceAttempt{auto_submit_job_id: id}), do: Oban.cancel_job(id)
