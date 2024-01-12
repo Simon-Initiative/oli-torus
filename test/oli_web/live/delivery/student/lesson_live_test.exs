@@ -19,6 +19,10 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
     ~p"/sections/#{section_slug}/lesson/#{revision_slug}"
   end
 
+  defp live_view_review_live_route(section_slug, revision_slug, attempt_guid) do
+    ~p"/sections/#{section_slug}/lesson/#{revision_slug}/attempt/#{attempt_guid}/review"
+  end
+
   defp create_attempt(student, section, revision, resource_attempt_data \\ %{}) do
     resource_access = get_or_insert_resource_access(student, section, revision)
 
@@ -465,6 +469,29 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
                "div[id='attempt_2_summary'] div[role='attempt submission']",
                "Wed Nov 15, 2023"
              )
+    end
+
+    test "Review link redirects to the lesson review page", %{
+      conn: conn,
+      user: user,
+      section: section,
+      page_3: page_3
+    } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+
+      attempt = create_attempt(user, section, page_3)
+
+      {:ok, view, _html} = live(conn, live_view_lesson_live_route(section.slug, page_3.slug))
+
+      view
+      |> element(~s{a[role="review_attempt_link"]})
+      |> render_click
+
+      assert_redirected(
+        view,
+        live_view_review_live_route(section.slug, page_3.slug, attempt.attempt_guid)
+      )
     end
 
     test "does not render 'Review' link on attempt summary if instructor does not allow it", %{

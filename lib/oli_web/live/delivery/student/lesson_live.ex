@@ -19,18 +19,6 @@ defmodule OliWeb.Delivery.Student.LessonLive do
   on_mount {OliWeb.LiveSessionPlugs.InitPage, :page_context}
   on_mount {OliWeb.LiveSessionPlugs.InitPage, :previous_next_index}
 
-  alias Oli.Activities
-  alias Oli.Delivery.Attempts.Core.ResourceAttempt
-  alias Oli.Delivery.Attempts.PageLifecycle
-  alias Oli.Delivery.Page.PageContext
-  alias Oli.Delivery.{Sections, Settings}
-  alias Oli.Publishing.DeliveryResolver, as: Resolver
-  alias Oli.Rendering.{Context, Page}
-  alias Oli.Resources
-  alias OliWeb.Common.FormatDateTime
-  alias OliWeb.Components.Delivery.Layouts
-  alias OliWeb.Components.Modal
-
   def mount(_params, _session, %{assigns: %{view: :practice_page}} = socket) do
     {:ok, assign_html_and_scripts(socket)}
   end
@@ -416,9 +404,12 @@ defmodule OliWeb.Delivery.Student.LessonLive do
           :if={@allow_review_submission?}
           class="w-[124px] py-1 justify-end items-center gap-2.5 inline-flex"
         >
-          <.link href={
-            ~p"/sections/#{@section_slug}/lesson/#{@page_revision_slug}/attempt/#{@attempt.attempt_guid}/review"
-          }>
+          <.link
+            href={
+              ~p"/sections/#{@section_slug}/lesson/#{@page_revision_slug}/attempt/#{@attempt.attempt_guid}/review"
+            }
+            role="review_attempt_link"
+          >
             <div class="cursor-pointer hover:opacity-40 text-blue-500 text-xs font-semibold font-['Open Sans'] uppercase tracking-wide">
               Review
             </div>

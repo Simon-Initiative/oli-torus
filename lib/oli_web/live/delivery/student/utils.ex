@@ -205,7 +205,7 @@ defmodule OliWeb.Delivery.Student.Utils do
     """
   end
 
-  defp get_container_label(page_id, section) do
+  def get_container_label(page_id, section) do
     section_id = section.id
 
     # Query to find the parent section_resource which contains as a child

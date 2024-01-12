@@ -64,7 +64,10 @@ defmodule OliWeb.Delivery.Student.ReviewLive do
           <div id="eventIntercept" phx-update="ignore" class="content" role="page_content">
             <%= raw(@html) %>
           </div>
-          <.link href={~p"/sections/#{@section.slug}/lesson/#{@page_revision.slug}"}>
+          <.link
+            href={~p"/sections/#{@section.slug}/lesson/#{@page_revision.slug}"}
+            role="back_to_summary_link"
+          >
             <div class="h-10 px-5 py-2.5 hover:bg-opacity-40 bg-blue-600 rounded shadow justify-center items-center gap-2.5 inline-flex">
               <div class="text-white text-sm font-normal leading-tight">
                 Back to Summary Screen
