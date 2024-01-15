@@ -584,8 +584,8 @@ defmodule OliWeb.Components.Delivery.Surveys do
     multiple_choice_type_id =
       Enum.find_value(activity_types_map, fn {k, v} -> if v.title == "Multiple Choice", do: k end)
 
-    # single_response_type_id =
-    #   Enum.find_value(activity_types_map, fn {k, v} -> if v.title == "Single Response", do: k end)
+    single_response_type_id =
+      Enum.find_value(activity_types_map, fn {k, v} -> if v.title == "Single Response", do: k end)
 
     # multi_input_type_id =
     #   Enum.find_value(activity_types_map, fn {k, v} ->
@@ -650,8 +650,8 @@ defmodule OliWeb.Components.Delivery.Surveys do
           ^multiple_choice_type_id ->
             add_choices_frequencies(activity_attempt, response_summaries)
 
-          # single_response_type_id ->
-          #   add_single_response_details(activity_attempt, section)
+          ^single_response_type_id ->
+            add_single_response_details(activity_attempt, response_summaries)
 
           # multi_input_type_id ->
           #   add_multi_input_details(activity_attempt, section)
@@ -671,29 +671,20 @@ defmodule OliWeb.Components.Delivery.Surveys do
     end
   end
 
-  defp add_single_response_details(activity_attempt, %Section{analytics_version: :v1}),
-    do: activity_attempt
-
-  defp add_single_response_details(activity_attempt, section) do
+  defp add_single_response_details(activity_attempt, response_summaries) do
     responses =
-      from(rs in ResponseSummary,
-        where:
-          rs.section_id == ^section.id and rs.activity_id == ^activity_attempt.resource_id and
-            rs.page_id == ^activity_attempt.page_id and
-            rs.publication_id == -1 and rs.project_id == -1,
-        join: rpp in ResourcePartResponse,
-        on: rs.resource_part_response_id == rpp.id,
-        join: sr in StudentResponse,
-        on:
-          rs.section_id == sr.section_id and rs.page_id == sr.page_id and
-            rs.resource_part_response_id == sr.resource_part_response_id,
-        join: u in User,
-        on: sr.user_id == u.id,
-        select: %{text: rpp.response, user: u}
-      )
-      |> Repo.all()
-      |> Enum.map(fn response ->
-        %{text: response.text, user_name: OliWeb.Common.Utils.name(response.user)}
+      Enum.reduce(response_summaries, [], fn response_summary, acc ->
+        if response_summary.activity_id == activity_attempt.resource_id do
+          [
+            %{
+              text: response_summary.response,
+              user_name: OliWeb.Common.Utils.name(response_summary.user)
+            }
+            | acc
+          ]
+        else
+          acc
+        end
       end)
 
     update_in(
@@ -781,10 +772,7 @@ defmodule OliWeb.Components.Delivery.Surveys do
                   "type" => "p"
                 }
               ],
-              # "editor" => "slate",
               "frequency" => blank_reponses.count
-              # "id" => "0",
-              # "textDirection" => "ltr"
             }
             | choices
           ]
