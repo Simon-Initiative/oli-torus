@@ -1,8 +1,9 @@
 defmodule Oli.Delivery do
   alias Lti_1p3.Tool.ContextRoles
   alias Lti_1p3.Tool.Services.{AGS, NRPS}
-  alias Oli.Delivery.Settings.StudentException
   alias Oli.Delivery.Sections
+  alias Oli.Delivery.Sections.PostProcessing
+  alias Oli.Delivery.Settings.StudentException
   alias Oli.Delivery.Sections.{Section, SectionsProjectsPublications}
   alias Oli.Institutions
   alias Oli.Lti.LtiParams
@@ -153,7 +154,7 @@ defmodule Oli.Delivery do
         )
 
       {:ok, %Section{} = section} = Sections.create_section_resources(section, publication)
-      section = Sections.maybe_update_contains_discusssions(section)
+      section = PostProcessing.apply(section, [:discussions])
       {:ok, _} = Sections.rebuild_contained_pages(section)
       {:ok, _} = Sections.rebuild_contained_objectives(section)
 
