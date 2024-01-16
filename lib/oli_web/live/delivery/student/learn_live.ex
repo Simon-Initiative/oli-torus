@@ -195,11 +195,6 @@ defmodule OliWeb.Delivery.Student.LearnLive do
      |> push_event("play_video", %{"video_url" => video_url})}
   end
 
-  def handle_event("open_dot_bot", _, socket) do
-    # TODO: this button should open DOT bot when implemented here.
-    {:noreply, socket}
-  end
-
   def handle_event(
         "select_module",
         %{"unit_resource_id" => unit_resource_id, "module_resource_id" => module_resource_id},
@@ -440,6 +435,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
             video_url={@unit["intro_video"]}
             card_resource_id={@unit["resource_id"]}
             resource_id={@unit["resource_id"]}
+            intro_video_viewed={@unit["resource_id"] in @viewed_intro_video_resource_ids}
           />
           <.module_card
             :for={{module, module_index} <- Enum.with_index(@unit["children"], 1)}
@@ -518,7 +514,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
             ) %>
           </div>
           <button
-            phx-click="open_dot_bot"
+            phx-click={JS.dispatch("click", to: "#ai_bot_collapsed_button")}
             class="rounded-[4px] p-[10px] flex justify-center items-center ml-auto mt-[42px] text-[14px] leading-[19px] tracking-[0.024px] font-normal text-white bg-blue-500 hover:bg-blue-600 dark:text-white dark:bg-[rgba(255,255,255,0.10);] dark:hover:bg-gray-800"
           >
             Let's discuss?
@@ -823,7 +819,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         </div>
         """
 
-      {false, "page", true, _} ->
+      {_, "page", true, _} ->
         # not completed graded page
         ~H"""
         <div role="orange flag icon" class="flex justify-center items-center h-7 w-7 shrink-0">
@@ -867,13 +863,25 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   attr :bg_image_url, :string, doc: "the background image url for the card"
   attr :card_resource_id, :string
   attr :resource_id, :string
+  attr :intro_video_viewed, :boolean, default: false
 
   def intro_card(assigns) do
     ~H"""
     <div class="relative slider-card hover:scale-[1.01]" role="intro_card">
-      <div class="rounded-lg absolute -top-[0.7px] -left-[0.7px] h-[163px] w-[289.5px] cursor-pointer bg-[linear-gradient(180deg,#D9D9D9_0%,rgba(217,217,217,0.00)_100%)] dark:bg-[linear-gradient(180deg,#223_0%,rgba(34,34,51,0.72)_52.6%,rgba(34,34,51,0.00)_100%)]" />
+      <div class="z-10 rounded-xl overflow-hidden absolute w-[288px] h-10">
+        <.progress_bar
+          percent={if @intro_video_viewed, do: 100, else: 0}
+          width="100%"
+          height="h-[4px]"
+          show_percent={false}
+          on_going_colour="bg-[#0F6CF5]"
+          completed_colour="bg-[#0CAF61]"
+          role="intro card progress"
+        />
+      </div>
+      <div class="rounded-xl absolute -top-[0.7px] -left-[0.7px] h-[163px] w-[289.5px] cursor-pointer bg-[linear-gradient(180deg,#D9D9D9_0%,rgba(217,217,217,0.00)_100%)] dark:bg-[linear-gradient(180deg,#223_0%,rgba(34,34,51,0.72)_52.6%,rgba(34,34,51,0.00)_100%)]" />
       <div class={[
-        "flex flex-col items-center rounded-lg h-[162px] w-[288px] bg-gray-200/50 shrink-0 px-5 pt-[15px]",
+        "flex flex-col items-center rounded-xl h-[162px] w-[288px] bg-gray-200/50 shrink-0 px-5 pt-[15px]",
         if(@bg_image_url in ["", nil],
           do: "bg-[url('/images/course_default.jpg')]",
           else: "bg-[url('#{@bg_image_url}')]"
@@ -947,9 +955,8 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       ]}
       role={"card_#{@module_index}"}
     >
-      <div class="rounded-xl overflow-hidden absolute h-[163px] w-[288px] cursor-pointer bg-[linear-gradient(180deg,#D9D9D9_0%,rgba(217,217,217,0.00)_100%)] dark:bg-[linear-gradient(180deg,#223_0%,rgba(34,34,51,0.72)_52.6%,rgba(34,34,51,0.00)_100%)]">
+      <div class="z-10 rounded-xl overflow-hidden absolute h-[163px] w-[288px] cursor-pointer">
         <.progress_bar
-          :if={!is_page(@module)}
           percent={
             parse_student_progress_for_resource(
               @student_progress_per_resource_id,
@@ -963,6 +970,8 @@ defmodule OliWeb.Delivery.Student.LearnLive do
           completed_colour="bg-[#0CAF61]"
           role={"card_#{@module_index}_progress"}
         />
+      </div>
+      <div class="rounded-xl absolute h-[163px] w-[288px] cursor-pointer bg-[linear-gradient(180deg,#D9D9D9_0%,rgba(217,217,217,0.00)_100%)] dark:bg-[linear-gradient(180deg,#223_0%,rgba(34,34,51,0.72)_52.6%,rgba(34,34,51,0.00)_100%)]">
       </div>
       <.page_icon :if={is_page(@module)} graded={@module["graded"]} />
 

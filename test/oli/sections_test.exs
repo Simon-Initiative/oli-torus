@@ -2137,10 +2137,4 @@ defmodule Oli.SectionsTest do
       refute Sections.get_latest_visited_page(section.slug, student.id)
     end
   end
-
-  defp ignore_uuids(map) do
-    Map.from_struct(map)
-    |> Map.drop([:uuid])
-    |> update_in([:children], &Enum.map(&1, fn child -> Map.drop(child, [:uuid]) end))
-  end
 end

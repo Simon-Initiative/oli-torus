@@ -7,6 +7,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
   import Ecto.Query, warn: false
 
   alias Lti_1p3.Tool.ContextRoles
+  alias Oli.Delivery.Attempts.Core.ResourceAccess
   alias Oli.Delivery.Sections
   alias Oli.Resources.ResourceType
 
@@ -16,6 +17,48 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
 
   defp live_view_lesson_live_route(section_slug, revision_slug) do
     ~p"/sections/#{section_slug}/lesson/#{revision_slug}"
+  end
+
+  defp live_view_review_live_route(section_slug, revision_slug, attempt_guid) do
+    ~p"/sections/#{section_slug}/lesson/#{revision_slug}/attempt/#{attempt_guid}/review"
+  end
+
+  defp create_attempt(student, section, revision, resource_attempt_data \\ %{}) do
+    resource_access = get_or_insert_resource_access(student, section, revision)
+
+    resource_attempt =
+      insert(:resource_attempt, %{
+        resource_access: resource_access,
+        revision: revision,
+        date_submitted: resource_attempt_data[:date_submitted] || ~U[2023-11-14 20:00:00Z],
+        date_evaluated: resource_attempt_data[:date_evaluated] || ~U[2023-11-14 20:30:00Z],
+        score: resource_attempt_data[:score] || 5,
+        out_of: resource_attempt_data[:out_of] || 10,
+        lifecycle_state: resource_attempt_data[:lifecycle_state] || :submitted,
+        content: resource_attempt_data[:content] || %{model: []}
+      })
+
+    resource_attempt
+  end
+
+  defp get_or_insert_resource_access(student, section, revision) do
+    Oli.Repo.get_by(
+      ResourceAccess,
+      resource_id: revision.resource_id,
+      section_id: section.id,
+      user_id: student.id
+    )
+    |> case do
+      nil ->
+        insert(:resource_access, %{
+          user: student,
+          section: section,
+          resource: revision.resource
+        })
+
+      resource_access ->
+        resource_access
+    end
   end
 
   defp create_elixir_project(_) do
@@ -52,7 +95,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
                 %{
                   id: "3371710400",
                   type: "p",
-                  children: [%{text: "Here's some test page content"}]
+                  children: [%{text: "Here's some practice page content"}]
                 }
               ]
             }
@@ -74,7 +117,24 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       insert(:revision,
         resource_type_id: ResourceType.get_id_by_type("page"),
         title: "Page 3",
-        duration_minutes: 5
+        duration_minutes: 5,
+        graded: true,
+        max_attempts: 5,
+        content: %{
+          model: [
+            %{
+              id: "158828742",
+              type: "content",
+              children: [
+                %{
+                  id: "3371710400",
+                  type: "p",
+                  children: [%{text: "Here's some graded page content"}]
+                }
+              ]
+            }
+          ]
+        }
       )
 
     ## modules...
@@ -274,7 +334,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
              )
     end
 
-    test "can see page content", %{
+    test "can see practice page content", %{
       conn: conn,
       user: user,
       section: section,
@@ -285,7 +345,245 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
 
       {:ok, view, _html} = live(conn, live_view_lesson_live_route(section.slug, page_1.slug))
 
-      assert has_element?(view, "div[role=page_content] p", "Here's some test page content")
+      assert has_element?(view, "div[role='page content'] p", "Here's some practice page content")
+    end
+
+    test "can see prologue on graded pages with no attempt in progress", %{
+      conn: conn,
+      user: user,
+      section: section,
+      page_3: page_3
+    } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+
+      {:ok, view, _html} = live(conn, live_view_lesson_live_route(section.slug, page_3.slug))
+
+      assert has_element?(view, "div[id='attempts_summary_with_tooltip']", "AttemptS 0/5")
+      assert has_element?(view, "button[id='begin_attempt_button']", "Begin 1st Attempt")
+    end
+
+    test "does not see prologue but graded page when an attempt is in progress", %{
+      conn: conn,
+      user: user,
+      section: section,
+      page_3: page_3
+    } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+
+      _first_attempt_in_progress =
+        create_attempt(user, section, page_3, %{lifecycle_state: :active})
+
+      {:ok, view, _html} = live(conn, live_view_lesson_live_route(section.slug, page_3.slug))
+
+      refute has_element?(view, "div[id='attempts_summary_with_tooltip']", "AttemptS 0/5")
+      refute has_element?(view, "button[id='begin_attempt_button']", "Begin 1st Attempt")
+      assert has_element?(view, "div[role='page content']")
+      assert has_element?(view, "button[id=submit_answers]", "Submit Answers")
+    end
+
+    test "password (if set by instructor) is required to begin a new attempt", %{
+      conn: conn,
+      user: user,
+      section: section,
+      page_3: page_3
+    } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+      sr = Sections.get_section_resource(section.id, page_3.resource_id)
+      Sections.update_section_resource(sr, %{password: "correct_password"})
+
+      {:ok, view, _html} = live(conn, live_view_lesson_live_route(section.slug, page_3.slug))
+
+      # if we render_click() on the button to begin the attempt, a JS command shows the modal.
+      # But, since the phx-click does not have any push command, we get "no push command found within JS commands".
+      # The workaround is to directly submit the form in the modal (that it is actully in the DOM but hidden)
+      # https://elixirforum.com/t/testing-liveview-with-js-commands/44892/5
+
+      view
+      |> form("#password_attempt_form")
+      |> render_submit(%{password: "some incorrect password"})
+
+      assert has_element?(view, "div[id='live_flash_container']", "Incorrect password")
+      refute has_element?(view, "div[role='page content']")
+      refute has_element?(view, "button[id=submit_answers]", "Submit Answers")
+    end
+
+    test "can see attempt summary (number, score, submitted at and review link) on prologue", %{
+      conn: conn,
+      user: user,
+      section: section,
+      page_3: page_3
+    } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+
+      _first_attempt = create_attempt(user, section, page_3)
+
+      _second_attempt =
+        create_attempt(user, section, page_3, %{
+          date_submitted: ~U[2023-11-15 20:00:00Z],
+          date_evaluated: ~U[2023-11-15 20:10:00Z],
+          score: 10,
+          out_of: 10
+        })
+
+      {:ok, view, _html} = live(conn, live_view_lesson_live_route(section.slug, page_3.slug))
+
+      assert has_element?(view, "div[id='attempts_summary']", "AttemptS 2/5")
+      assert has_element?(view, "div[id='attempts_summary']", "Review")
+
+      assert has_element?(
+               view,
+               "div[id='attempt_1_summary'] div[role='attempt score']",
+               "5.0"
+             )
+
+      assert has_element?(
+               view,
+               "div[id='attempt_1_summary'] div[role='attempt out of']",
+               "10.0"
+             )
+
+      assert has_element?(
+               view,
+               "div[id='attempt_1_summary'] div[role='attempt submission']",
+               "Tue Nov 14, 2023"
+             )
+
+      assert has_element?(
+               view,
+               "div[id='attempt_2_summary'] div[role='attempt score']",
+               "10.0"
+             )
+
+      assert has_element?(
+               view,
+               "div[id='attempt_2_summary'] div[role='attempt out of']",
+               "10.0"
+             )
+
+      assert has_element?(
+               view,
+               "div[id='attempt_2_summary'] div[role='attempt submission']",
+               "Wed Nov 15, 2023"
+             )
+    end
+
+    test "Review link redirects to the lesson review page", %{
+      conn: conn,
+      user: user,
+      section: section,
+      page_3: page_3
+    } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+
+      attempt = create_attempt(user, section, page_3)
+
+      {:ok, view, _html} = live(conn, live_view_lesson_live_route(section.slug, page_3.slug))
+
+      view
+      |> element(~s{a[role="review_attempt_link"]})
+      |> render_click
+
+      assert_redirected(
+        view,
+        live_view_review_live_route(section.slug, page_3.slug, attempt.attempt_guid)
+      )
+    end
+
+    test "does not render 'Review' link on attempt summary if instructor does not allow it", %{
+      conn: conn,
+      user: user,
+      section: section,
+      page_3: page_3
+    } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+
+      _first_attempt = create_attempt(user, section, page_3)
+
+      sr = Sections.get_section_resource(section.id, page_3.resource_id)
+      Sections.update_section_resource(sr, %{review_submission: :disallow})
+
+      {:ok, view, _html} = live(conn, live_view_lesson_live_route(section.slug, page_3.slug))
+
+      assert has_element?(view, "div[id='attempts_summary']", "AttemptS 1/5")
+      refute has_element?(view, "div[id='attempts_summary']", "Review")
+    end
+
+    test "can see attempt message tooltip summary", %{
+      conn: conn,
+      user: user,
+      section: section,
+      page_3: page_3
+    } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+
+      _first_attempt = create_attempt(user, section, page_3)
+      _second_attempt = create_attempt(user, section, page_3)
+
+      {:ok, view, _html} = live(conn, live_view_lesson_live_route(section.slug, page_3.slug))
+
+      assert has_element?(
+               view,
+               "div[id='attempt_tooltip']",
+               "You have 3 attempts remaining out of 5 total attempts."
+             )
+    end
+
+    test "can not begin a new attempt if there are no more attempts available", %{
+      conn: conn,
+      user: user,
+      section: section,
+      page_3: page_3
+    } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+
+      sr = Sections.get_section_resource(section.id, page_3.resource_id)
+      Sections.update_section_resource(sr, %{max_attempts: 2})
+
+      _first_attempt = create_attempt(user, section, page_3)
+      _second_attempt = create_attempt(user, section, page_3)
+
+      {:ok, view, _html} = live(conn, live_view_lesson_live_route(section.slug, page_3.slug))
+
+      assert has_element?(
+               view,
+               "div[id='attempt_tooltip']",
+               "You have no attempts remaining out of 2 total attempts."
+             )
+
+      assert has_element?(view, "button[id='begin_attempt_button'][disabled='disabled']")
+    end
+
+    test "can begin a new attempt from prologue (and its ordinal numbering is correct)", %{
+      conn: conn,
+      user: user,
+      section: section,
+      page_3: page_3
+    } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+
+      sr = Sections.get_section_resource(section.id, page_3.resource_id)
+      Sections.update_section_resource(sr, %{max_attempts: 2})
+
+      _first_attempt = create_attempt(user, section, page_3)
+
+      {:ok, view, _html} = live(conn, live_view_lesson_live_route(section.slug, page_3.slug))
+
+      assert has_element?(
+               view,
+               "div[id='attempt_tooltip']",
+               "You have 1 attempt remaining out of 2 total attempts."
+             )
+
+      assert has_element?(view, "button[id='begin_attempt_button']", "Begin 2nd Attempt")
     end
 
     test "can see page info on header", %{

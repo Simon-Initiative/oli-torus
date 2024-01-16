@@ -1144,18 +1144,20 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
              |> render() =~ "Due:\n            </span>\n            not yet scheduled"
     end
 
-    test "can see units and modules progress", %{
+    test "can see units, modules and page (at module level) progresses", %{
       conn: conn,
       user: user,
       section: section,
       page_1: page_1,
-      page_2: page_2
+      page_2: page_2,
+      page_7: page_7
     } do
       Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
       Sections.mark_section_visited_for_student(section, user)
 
       set_progress(section.id, page_1.resource_id, user.id, 1.0, page_1)
       set_progress(section.id, page_2.resource_id, user.id, 0.5, page_2)
+      set_progress(section.id, page_7.resource_id, user.id, 1.0, page_7)
       {:ok, view, _html} = live(conn, live_view_learn_live_route(section.slug))
 
       # when the slider buttons are enabled we know the student async metrics were loaded
@@ -1174,6 +1176,11 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       assert view
              |> element(~s{div[role="unit_1"] div[role="card_1_progress"]})
              |> render() =~ "style=\"width: 75%\""
+
+      # unit 3, practice page 1 card at module level has progress 100%
+      assert view
+             |> element(~s{div[role="unit_3"] div[role="card_1_progress"]})
+             |> render() =~ "style=\"width: 100%\""
     end
 
     test "can see icon that identifies practice pages at level 2 of hierarchy (and can navigate to them)",
@@ -1223,7 +1230,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       assert_redirect(view, "/sections/#{section.slug}/lesson/#{page_8.slug}")
     end
 
-    test "can see card progress bar for modules at level 2 of hierarchy, but not for pages at level 2",
+    test "can see card progress bar for modules at level 2 of hierarchy, and even for pages at level 2",
          %{
            conn: conn,
            user: user,
@@ -1235,7 +1242,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       {:ok, view, _html} = live(conn, live_view_learn_live_route(section.slug))
 
       assert has_element?(view, ~s{div[role="unit_1"] div[role="card_1_progress"]})
-      refute has_element?(view, ~s{div[role="unit_3"] div[role="card_1_progress"]})
+      assert has_element?(view, ~s{div[role="unit_3"] div[role="card_1_progress"]})
     end
 
     test "can see card background image if provided (if not the default one is shown)",
