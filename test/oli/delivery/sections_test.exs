@@ -6,6 +6,7 @@ defmodule Oli.Delivery.SectionsTest do
   alias Oli.Utils.Seeder
   alias Oli.Factory
   alias Oli.Delivery.Sections
+  alias Oli.Delivery.Sections.PostProcessing
   alias Oli.Delivery.Sections.SectionResource
 
   describe "maybe_update_contains_discusssions/1" do
@@ -91,7 +92,7 @@ defmodule Oli.Delivery.SectionsTest do
       |> Ecto.Changeset.put_embed(:collab_space_config, archived_collab_space_config)
       |> Oli.Repo.update!()
 
-      Sections.maybe_update_contains_discusssions(section)
+      PostProcessing.apply(section, [:discussions])
 
       assert Oli.Repo.reload!(section).contains_discussions
     end
@@ -166,7 +167,7 @@ defmodule Oli.Delivery.SectionsTest do
       |> Ecto.Changeset.put_embed(:collab_space_config, archived_collab_space_config)
       |> Oli.Repo.update!()
 
-      Sections.maybe_update_contains_discusssions(section)
+      PostProcessing.apply(section, [:discussions])
 
       refute Oli.Repo.reload!(section).contains_discussions
     end

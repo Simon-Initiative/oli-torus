@@ -45,6 +45,7 @@ defmodule Oli.Delivery.Sections do
   alias Oli.Delivery.Attempts.Core.ResourceAccess
   alias Oli.Delivery.Metrics
   alias Oli.Delivery.Paywall
+  alias Oli.Delivery.Sections.PostProcessing
 
   require Logger
 
@@ -1470,22 +1471,6 @@ defmodule Oli.Delivery.Sections do
     end)
   end
 
-  @spec maybe_update_contains_discusssions(Section.t()) :: Section.t()
-  def maybe_update_contains_discusssions(section) do
-    from(s in Section,
-      join: sr in assoc(s, :section_resources),
-      where: s.id == ^section.id,
-      where: fragment("?->>'status' = ?", sr.collab_space_config, "enabled"),
-      limit: 1,
-      select: sr.id
-    )
-    |> Oli.Repo.all()
-    |> case do
-      [] -> update_section!(section, %{contains_discussions: false})
-      _non_empty_list -> update_section!(section, %{contains_discussions: true})
-    end
-  end
-
   # The following function receives a hierarchy and recursively builds a list with the
   # SectionResource maps that will be inserted in the database.
   defp build_section_resource_insertion(%{
@@ -1775,10 +1760,8 @@ defmodule Oli.Delivery.Sections do
       |> Multi.run(
         :side_effects,
         fn _repo, _ ->
-          maybe_update_contains_discusssions(section)
-          # updates contains_explorations field in sections
-          Delivery.maybe_update_section_contains_explorations(section)
-          Delivery.maybe_update_section_contains_deliberate_practice(section)
+          actions = [:discussions, :explorations, :deliberate_practice]
+          {:ok, PostProcessing.apply(section, actions)}
         end
       )
       |> Repo.transaction()
