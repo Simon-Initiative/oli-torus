@@ -1476,6 +1476,7 @@ defmodule Oli.Delivery.Sections do
       join: sr in assoc(s, :section_resources),
       where: s.id == ^section.id,
       where: fragment("?->>'status' = ?", sr.collab_space_config, "enabled"),
+      limit: 1,
       select: sr.id
     )
     |> Oli.Repo.all()
