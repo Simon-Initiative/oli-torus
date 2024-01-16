@@ -258,7 +258,8 @@ defmodule OliWeb.Components.Delivery.PracticeActivities do
       get_activities_details(
         activity_resource_ids,
         socket.assigns.section,
-        socket.assigns.activity_types_map
+        socket.assigns.activity_types_map,
+        current_assessment.resource_id
       )
 
     current_activities =
@@ -617,103 +618,115 @@ defmodule OliWeb.Components.Delivery.PracticeActivities do
     |> Repo.all()
   end
 
-  defp get_activities_details(activity_resource_ids, section, activity_types_map) do
+  defp get_activities_details(
+         activity_resource_ids,
+         section,
+         activity_types_map,
+         page_resource_id
+       ) do
     multiple_choice_type_id =
       Enum.find_value(activity_types_map, fn {k, v} -> if v.title == "Multiple Choice", do: k end)
 
     single_response_type_id =
       Enum.find_value(activity_types_map, fn {k, v} -> if v.title == "Single Response", do: k end)
 
-    multi_input_type_id =
-      Enum.find_value(activity_types_map, fn {k, v} ->
-        if v.title == "Multi Input",
-          do: k
-      end)
+    # multi_input_type_id =
+    #   Enum.find_value(activity_types_map, fn {k, v} ->
+    #     if v.title == "Multi Input",
+    #       do: k
+    #   end)
 
-    response_multi_type_id =
-      Enum.find(activity_types_map, fn {_k, v} -> v.title == "ResponseMulti Input" end)
-      |> elem(0)
+    # response_multi_type_id =
+    #   Enum.find(activity_types_map, fn {_k, v} -> v.title == "ResponseMulti Input" end)
+    #   |> elem(0)
 
-    likert_type_id =
-      Enum.find_value(activity_types_map, fn {k, v} -> if v.title == "Likert", do: k end)
+    # likert_type_id =
+    #   Enum.find_value(activity_types_map, fn {k, v} -> if v.title == "Likert", do: k end)
 
-    from(activity_attempt in ActivityAttempt,
-      left_join: resource_attempt in assoc(activity_attempt, :resource_attempt),
-      left_join: resource_access in assoc(resource_attempt, :resource_access),
-      left_join: user in assoc(resource_access, :user),
-      left_join: activity_revision in assoc(activity_attempt, :revision),
-      left_join: resource_revision in assoc(resource_attempt, :revision),
-      where:
-        resource_access.section_id == ^section.id and
-          activity_revision.resource_id in ^activity_resource_ids,
-      select: activity_attempt,
-      select_merge: %{
-        activity_type_id: activity_revision.activity_type_id,
-        activity_title: activity_revision.title,
-        page_title: resource_revision.title,
-        page_id: resource_revision.resource_id,
-        resource_attempt_number: resource_attempt.attempt_number,
-        graded: resource_revision.graded,
-        user: user,
-        revision: activity_revision,
-        resource_attempt_guid: resource_attempt.attempt_guid,
-        resource_access_id: resource_access.id
-      }
-    )
-    |> Repo.all()
-    |> Enum.map(fn
-      nil ->
-        nil
-
-      %{activity_type_id: activity_type_id} = activity_attempt
-      when activity_type_id == multiple_choice_type_id ->
-        add_choices_frequencies(activity_attempt, section)
-
-      %{activity_type_id: activity_type_id} = activity_attempt
-      when activity_type_id == single_response_type_id ->
-        add_single_response_details(activity_attempt, section)
-
-      %{activity_type_id: activity_type_id} = activity_attempt
-      when activity_type_id == multi_input_type_id ->
-        add_multi_input_details(activity_attempt, section)
-
-      %{activity_type_id: activity_type_id} = activity_attempt
-      when activity_type_id == response_multi_type_id ->
-        add_multi_input_details(activity_attempt, section)
-
-      %{activity_type_id: activity_type_id} = activity_attempt
-      when activity_type_id == likert_type_id ->
-        add_likert_details(activity_attempt, section)
-
-      activity_attempt ->
-        activity_attempt
-    end)
-  end
-
-  defp add_single_response_details(activity_attempt, %Section{analytics_version: :v1}),
-    do: activity_attempt
-
-  defp add_single_response_details(activity_attempt, section) do
-    responses =
-      from(rs in ResponseSummary,
+    activity_attempts =
+      from(activity_attempt in ActivityAttempt,
+        left_join: resource_attempt in assoc(activity_attempt, :resource_attempt),
+        left_join: resource_access in assoc(resource_attempt, :resource_access),
+        left_join: user in assoc(resource_access, :user),
+        left_join: activity_revision in assoc(activity_attempt, :revision),
+        left_join: resource_revision in assoc(resource_attempt, :revision),
         where:
-          rs.section_id == ^section.id and rs.activity_id == ^activity_attempt.resource_id and
-            rs.page_id == ^activity_attempt.page_id and
-            rs.publication_id == -1 and rs.project_id == -1,
-        join: rpp in ResourcePartResponse,
-        on: rs.resource_part_response_id == rpp.id,
-        join: sr in StudentResponse,
-        on:
-          rs.section_id == sr.section_id and rs.page_id == sr.page_id and
-            rs.resource_part_response_id == sr.resource_part_response_id,
-        join: u in User,
-        on: sr.user_id == u.id,
-        select: %{text: rpp.response, user: u}
+          resource_access.section_id == ^section.id and
+            activity_revision.resource_id in ^activity_resource_ids,
+        select: activity_attempt,
+        select_merge: %{
+          activity_type_id: activity_revision.activity_type_id,
+          activity_title: activity_revision.title,
+          page_title: resource_revision.title,
+          page_id: resource_revision.resource_id,
+          resource_attempt_number: resource_attempt.attempt_number,
+          graded: resource_revision.graded,
+          user: user,
+          revision: activity_revision,
+          resource_attempt_guid: resource_attempt.attempt_guid,
+          resource_access_id: resource_access.id
+        }
       )
       |> Repo.all()
-      |> Enum.map(fn response ->
-        %{text: response.text, user_name: OliWeb.Common.Utils.name(response.user)}
+
+    if section.analytics_version == :v2 do
+      response_summaries =
+        from(rs in ResponseSummary,
+          join: rpp in ResourcePartResponse,
+          on: rs.resource_part_response_id == rpp.id,
+          left_join: sr in StudentResponse,
+          on:
+            rs.section_id == sr.section_id and rs.page_id == sr.page_id and
+              rs.resource_part_response_id == sr.resource_part_response_id,
+          left_join: u in User,
+          on: sr.user_id == u.id,
+          where:
+            rs.section_id == ^section.id and rs.page_id == ^page_resource_id and
+              rs.publication_id == -1 and rs.project_id == -1 and
+              rs.activity_id in ^activity_resource_ids,
+          select: %{response: rpp.response, count: rs.count, user: u, activity_id: rs.activity_id}
+        )
+        |> Repo.all()
+
+      Enum.map(activity_attempts, fn activity_attempt ->
+        case activity_attempt.activity_type_id do
+          # ^multiple_choice_type_id ->
+          #   add_choices_frequencies(activity_attempt, response_summaries)
+
+          ^single_response_type_id ->
+            add_single_response_details(activity_attempt, response_summaries)
+
+          # ^multi_input_type_id ->
+          #   add_multi_input_details(activity_attempt, response_summaries)
+
+          # ^likert_type_id ->
+          #   add_likert_details(activity_attempt, response_summaries)
+
+          _ ->
+            activity_attempt
+        end
       end)
+    else
+      activity_attempts
+    end
+  end
+
+  defp add_single_response_details(activity_attempt, response_summaries) do
+    responses =
+      Enum.reduce(response_summaries, [], fn response_summary, acc ->
+        if response_summary.activity_id == activity_attempt.resource_id do
+          [
+            %{
+              text: response_summary.response,
+              user_name: OliWeb.Common.Utils.name(response_summary.user)
+            }
+            | acc
+          ]
+        else
+          acc
+        end
+      end)
+      |> Enum.reverse()
 
     update_in(
       activity_attempt,
