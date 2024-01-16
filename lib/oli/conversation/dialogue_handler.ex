@@ -40,14 +40,23 @@ defmodule Oli.Conversation.DialogueHandler do
       end
 
       def handle_info({:reply_finished}, socket) do
-        case socket.assigns.function_call do
+        %{
+          function_call: function_call,
+          dialogue: dialogue,
+          resource_id: resource_id,
+          current_user: current_user
+        } = socket.assigns
+
+        case function_call do
           nil ->
             message = Earmark.as_html!(socket.assigns.active_message)
 
             dialogue =
               Oli.Conversation.Dialogue.add_message(
                 socket.assigns.dialogue,
-                Oli.Conversation.Message.new(:assistant, message)
+                Oli.Conversation.Message.new(:assistant, message),
+                current_user.id,
+                resource_id
               )
 
             allow_submission? =
@@ -55,7 +64,9 @@ defmodule Oli.Conversation.DialogueHandler do
                 pid = self()
 
                 Task.async(fn ->
-                  dialogue = Oli.Conversation.Dialogue.summarize(dialogue)
+                  dialogue =
+                    Oli.Conversation.Dialogue.summarize(dialogue)
+
                   send(pid, {:summarization_finished, dialogue})
                 end)
 
@@ -78,7 +89,13 @@ defmodule Oli.Conversation.DialogueHandler do
             dialogue =
               Oli.Conversation.Dialogue.add_message(
                 socket.assigns.dialogue,
-                Oli.Conversation.Message.new(:function, result, fc["name"])
+                Oli.Conversation.Message.new(
+                  :function,
+                  result,
+                  fc["name"]
+                ),
+                current_user.id,
+                resource_id
               )
 
             pid = self()

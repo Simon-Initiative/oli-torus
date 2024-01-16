@@ -104,7 +104,8 @@ defmodule OliWeb.Dialogue.WindowLive do
        current_user: Oli.Accounts.get_user!(current_user_id),
        height: 500,
        width: 400,
-       is_page: session["is_page"] == true || false
+       resource_id: session["resource_id"],
+       is_page: (session["resource_id"] && true) || false
      )}
   end
 
@@ -534,7 +535,15 @@ defmodule OliWeb.Dialogue.WindowLive do
   end
 
   def handle_event("update", %{"user_input" => %{"content" => content}}, socket) do
-    dialogue = Dialogue.add_message(socket.assigns.dialogue, Message.new(:user, content))
+    %{current_user: current_user, resource_id: resource_id} = socket.assigns
+
+    dialogue =
+      Dialogue.add_message(
+        socket.assigns.dialogue,
+        Message.new(:user, content),
+        current_user.id,
+        resource_id
+      )
 
     pid = self()
 

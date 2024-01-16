@@ -32,8 +32,8 @@
     <%= live_render(@socket, OliWeb.Dialogue.WindowLive,
       session: %{
         "section_slug" => @section.slug,
-        "revision_id" => @revision.id,
-        "is_page" => true
+        "resource_id" => @current_page["id"],
+        "revision_id" => @revision.id
       },
       id: "dialogue-window"
     ) %>
