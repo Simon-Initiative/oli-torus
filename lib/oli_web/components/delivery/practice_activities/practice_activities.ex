@@ -616,32 +616,24 @@ defmodule OliWeb.Components.Delivery.PracticeActivities do
       select: map(rev, [:id, :resource_id, :title])
     )
     |> Repo.all()
+    |> IO.inspect(label: "practiceactivity")
   end
 
-  defp get_activities_details(
-         activity_resource_ids,
-         section,
-         activity_types_map,
-         page_resource_id
-       ) do
+  def get_activities_details(activity_resource_ids, section, activity_types_map, page_resource_id) do
     multiple_choice_type_id =
       Enum.find_value(activity_types_map, fn {k, v} -> if v.title == "Multiple Choice", do: k end)
 
     single_response_type_id =
       Enum.find_value(activity_types_map, fn {k, v} -> if v.title == "Single Response", do: k end)
 
-    # multi_input_type_id =
-    #   Enum.find_value(activity_types_map, fn {k, v} ->
-    #     if v.title == "Multi Input",
-    #       do: k
-    #   end)
+    multi_input_type_id =
+      Enum.find_value(activity_types_map, fn {k, v} ->
+        if v.title == "Multi Input",
+          do: k
+      end)
 
-    # response_multi_type_id =
-    #   Enum.find(activity_types_map, fn {_k, v} -> v.title == "ResponseMulti Input" end)
-    #   |> elem(0)
-
-    # likert_type_id =
-    #   Enum.find_value(activity_types_map, fn {k, v} -> if v.title == "Likert", do: k end)
+    likert_type_id =
+      Enum.find_value(activity_types_map, fn {k, v} -> if v.title == "Likert", do: k end)
 
     activity_attempts =
       from(activity_attempt in ActivityAttempt,
@@ -690,17 +682,17 @@ defmodule OliWeb.Components.Delivery.PracticeActivities do
 
       Enum.map(activity_attempts, fn activity_attempt ->
         case activity_attempt.activity_type_id do
-          # ^multiple_choice_type_id ->
-          #   add_choices_frequencies(activity_attempt, response_summaries)
+          ^multiple_choice_type_id ->
+            add_choices_frequencies(activity_attempt, response_summaries)
 
           ^single_response_type_id ->
             add_single_response_details(activity_attempt, response_summaries)
 
-          # ^multi_input_type_id ->
-          #   add_multi_input_details(activity_attempt, response_summaries)
+          ^multi_input_type_id ->
+            add_multi_input_details(activity_attempt, response_summaries)
 
-          # ^likert_type_id ->
-          #   add_likert_details(activity_attempt, response_summaries)
+          ^likert_type_id ->
+            add_likert_details(activity_attempt, response_summaries)
 
           _ ->
             activity_attempt
@@ -735,36 +727,24 @@ defmodule OliWeb.Components.Delivery.PracticeActivities do
     )
   end
 
-  defp add_choices_frequencies(activity_attempt, %Section{analytics_version: :v1}),
-    do: activity_attempt
-
-  defp add_choices_frequencies(activity_attempt, section) do
-    choice_frequency_mapper =
-      from(rs in ResponseSummary,
-        where:
-          rs.section_id == ^section.id and
-            rs.project_id == -1 and
-            rs.publication_id == -1 and
-            rs.page_id == ^activity_attempt.page_id and
-            rs.activity_id == ^activity_attempt.resource_id,
-        join: rpp in assoc(rs, :resource_part_response),
-        preload: [resource_part_response: rpp],
-        select: rs
-      )
-      |> Repo.all()
-      |> Enum.reduce(%{}, fn response_summary, acc ->
-        Map.put(acc, response_summary.resource_part_response.response, response_summary.count)
+  defp add_choices_frequencies(activity_attempt, response_summaries) do
+    responses =
+      Enum.filter(response_summaries, fn response_summary ->
+        response_summary.activity_id == activity_attempt.resource_id
       end)
 
     choices =
       activity_attempt.transformed_model["choices"]
-      |> Enum.map(fn choice ->
-        Map.merge(choice, %{
-          "frequency" => Map.get(choice_frequency_mapper, choice["id"]) || 0
+      |> Enum.map(
+        &Map.merge(&1, %{
+          "frequency" =>
+            Enum.find(responses, %{count: 0}, fn r -> r.response == &1["id"] end).count
         })
-      end)
-      |> Kernel.++(
-        if Map.has_key?(choice_frequency_mapper, "") do
+      )
+      |> then(fn choices ->
+        blank_reponses = Enum.find(responses, fn r -> r.response == "" end)
+
+        if blank_reponses[:response] do
           [
             %{
               "content" => [
@@ -778,13 +758,14 @@ defmodule OliWeb.Components.Delivery.PracticeActivities do
                   "type" => "p"
                 }
               ],
-              "frequency" => Map.get(choice_frequency_mapper, "")
+              "frequency" => blank_reponses.count
             }
+            | choices
           ]
         else
-          []
+          choices
         end
-      )
+      end)
 
     update_in(
       activity_attempt,
@@ -793,33 +774,24 @@ defmodule OliWeb.Components.Delivery.PracticeActivities do
     )
   end
 
-  defp add_multi_input_details(activity_attempt, %Section{analytics_version: :v1}),
-    do: activity_attempt
-
-  defp add_multi_input_details(activity_attempt, section) do
+  defp add_multi_input_details(activity_attempt, response_summaries) do
     input_type = Enum.at(activity_attempt.transformed_model["inputs"], 0)["inputType"]
 
     case input_type do
       response when response in ["numeric", "text"] ->
         responses =
-          from(rs in ResponseSummary,
-            where:
-              rs.section_id == ^section.id and rs.activity_id == ^activity_attempt.resource_id and
-                rs.page_id == ^activity_attempt.page_id and
-                rs.publication_id == -1 and rs.project_id == -1,
-            join: rpp in ResourcePartResponse,
-            on: rs.resource_part_response_id == rpp.id,
-            join: sr in StudentResponse,
-            on:
-              rs.section_id == sr.section_id and rs.page_id == sr.page_id and
-                rs.resource_part_response_id == sr.resource_part_response_id,
-            join: u in User,
-            on: sr.user_id == u.id,
-            select: %{text: rpp.response, user: u}
-          )
-          |> Repo.all()
-          |> Enum.map(fn response ->
-            %{text: response.text, user_name: OliWeb.Common.Utils.name(response.user)}
+          Enum.reduce(response_summaries, [], fn response_summary, acc ->
+            if response_summary.activity_id == activity_attempt.resource_id do
+              [
+                %{
+                  text: response_summary.response,
+                  user_name: OliWeb.Common.Utils.name(response_summary.user)
+                }
+                | acc
+              ]
+            else
+              acc
+            end
           end)
 
         update_in(
@@ -828,62 +800,8 @@ defmodule OliWeb.Components.Delivery.PracticeActivities do
           &Map.put(&1, "responses", responses)
         )
 
-      response when response == "dropdown" ->
-        choice_frequency_mapper =
-          from(rs in ResponseSummary,
-            where:
-              rs.section_id == ^section.id and
-                rs.project_id == -1 and
-                rs.publication_id == -1 and
-                rs.page_id == ^activity_attempt.page_id and
-                rs.activity_id == ^activity_attempt.resource_id,
-            join: rpp in assoc(rs, :resource_part_response),
-            preload: [resource_part_response: rpp],
-            select: rs
-          )
-          |> Repo.all()
-          |> Enum.reduce(%{}, fn response_summary, acc ->
-            Map.put(acc, response_summary.resource_part_response.response, response_summary.count)
-          end)
-
-        choices =
-          activity_attempt.transformed_model["choices"]
-          |> Enum.map(fn choice ->
-            Map.merge(choice, %{
-              "frequency" => Map.get(choice_frequency_mapper, choice["id"]) || 0
-            })
-          end)
-          |> Kernel.++(
-            if Map.has_key?(choice_frequency_mapper, "") do
-              [
-                %{
-                  "content" => [
-                    %{
-                      "children" => [
-                        %{
-                          "text" =>
-                            "Blank attempt (user submitted assessment without selecting any choice for this activity)"
-                        }
-                      ],
-                      "type" => "p"
-                    }
-                  ],
-                  "editor" => "slate",
-                  "frequency" => Map.get(choice_frequency_mapper, ""),
-                  "id" => "0",
-                  "textDirection" => "ltr"
-                }
-              ]
-            else
-              []
-            end
-          )
-
-        update_in(
-          activity_attempt,
-          [Access.key!(:transformed_model)],
-          &Map.put(&1, "choices", choices)
-        )
+      "dropdown" ->
+        add_choices_frequencies(activity_attempt, response_summaries)
         |> update_in(
           [
             Access.key!(:transformed_model),
@@ -896,36 +814,24 @@ defmodule OliWeb.Components.Delivery.PracticeActivities do
     end
   end
 
-  defp add_likert_details(activity_attempt, %Section{analytics_version: :v1}),
-    do: activity_attempt
-
-  defp add_likert_details(activity_attempt, section) do
-    choice_frequency_mapper =
-      from(rs in ResponseSummary,
-        where:
-          rs.section_id == ^section.id and
-            rs.project_id == -1 and
-            rs.publication_id == -1 and
-            rs.page_id == ^activity_attempt.page_id and
-            rs.activity_id == ^activity_attempt.resource_id,
-        join: rpp in assoc(rs, :resource_part_response),
-        preload: [resource_part_response: rpp],
-        select: rs
-      )
-      |> Repo.all()
-      |> Enum.reduce(%{}, fn response_summary, acc ->
-        Map.put(acc, response_summary.resource_part_response.response, response_summary.count)
+  defp add_likert_details(activity_attempt, response_summaries) do
+    responses =
+      Enum.filter(response_summaries, fn response_summary ->
+        response_summary.activity_id == activity_attempt.resource_id
       end)
 
     choices =
       activity_attempt.revision.content["choices"]
-      |> Enum.map(fn choice ->
-        Map.merge(choice, %{
-          "frequency" => Map.get(choice_frequency_mapper, choice["id"]) || 0
+      |> Enum.map(
+        &Map.merge(&1, %{
+          "frequency" =>
+            Enum.find(responses, %{count: 0}, fn r -> r.response == &1["id"] end).count
         })
-      end)
-      |> Kernel.++(
-        if Map.has_key?(choice_frequency_mapper, "") do
+      )
+      |> then(fn choices ->
+        blank_reponses = Enum.find(responses, fn r -> r.response == "" end)
+
+        if blank_reponses[:response] do
           [
             %{
               "content" => [
@@ -939,16 +845,14 @@ defmodule OliWeb.Components.Delivery.PracticeActivities do
                   "type" => "p"
                 }
               ],
-              "editor" => "slate",
-              "frequency" => Map.get(choice_frequency_mapper, ""),
-              "id" => "0",
-              "textDirection" => "ltr"
+              "frequency" => blank_reponses.count
             }
+            | choices
           ]
         else
-          []
+          choices
         end
-      )
+      end)
 
     update_in(
       activity_attempt,
