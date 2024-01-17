@@ -1258,11 +1258,11 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       assert view
              |> element(~s{div[role="unit_1"] div[role="card_1"]"})
-             |> render =~ "bg-[url(&#39;module_1_custom_image_url&#39;)]"
+             |> render =~ "style=\"background-image: url(&#39;module_1_custom_image_url&#39;)"
 
       assert view
              |> element(~s{div[role="unit_1"] div[role="card_2"]"})
-             |> render =~ "bg-[url(&#39;/images/course_default.jpg&#39;)]"
+             |> render =~ "style=\"background-image: url(&#39;/images/course_default.jpg&#39;)"
     end
 
     test "can navigate to a unit through url params",
