@@ -561,7 +561,7 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTable do
             socket.assigns.params.selected_assessment_id,
             user_id)
 
-          do_update(:late_submit, user_id, "allow", socket)
+          do_update(:late_submit, user_id, :allow, socket)
         end)
 
         case result do
