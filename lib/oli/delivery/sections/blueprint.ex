@@ -44,6 +44,13 @@ defmodule Oli.Delivery.Sections.Blueprint do
     end
   end
 
+  def get_blueprint_by_base_project(project) do
+    from(s in Section,
+      where: s.base_project_id == ^project.id and s.type == :blueprint
+    )
+    |> Repo.all()
+  end
+
   def is_author_of_blueprint?(section_slug, author_id) do
     query =
       from(

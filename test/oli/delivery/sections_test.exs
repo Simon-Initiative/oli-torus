@@ -7,6 +7,172 @@ defmodule Oli.Delivery.SectionsTest do
   alias Oli.Utils.Seeder
   alias Oli.Factory
   alias Oli.Delivery.Sections
+  alias Oli.Delivery.Sections.PostProcessing
+  alias Oli.Delivery.Sections.SectionResource
+
+  describe "maybe_update_contains_discusssions/1" do
+    alias Oli.Resources.ResourceType
+    alias Oli.Resources.Collaboration.CollabSpaceConfig
+    import Oli.Factory
+    import Oli.TestHelpers
+    @page_type_id ResourceType.get_id_by_type("page")
+    @container_type_id ResourceType.get_id_by_type("container")
+
+    test "sets contains_discussions to true when having active discussions" do
+      # Project and Author
+      %{authors: [author]} = project = create_project_with_assocs()
+
+      # Root container
+      %{resource: container_resource, revision: container_revision, publication: publication} =
+        create_bundle_for(@container_type_id, project, author, nil, nil, title: "Root container")
+
+      # Resources
+      pages =
+        for _x <- 1..3, do: create_bundle_for(@page_type_id, project, author, publication)
+
+      others =
+        for _x <- 1..2, do: create_bundle_for(@container_type_id, project, author, publication)
+
+      pages_resources = Enum.map(pages, & &1.resource)
+      others_resources = Enum.map(others, & &1.resource)
+      # Links container - page
+      assoc_resources(
+        pages_resources ++ others_resources,
+        container_revision,
+        container_resource,
+        publication
+      )
+
+      # Section and its section_resources
+      {:ok, section} =
+        insert(:section, base_project: project, open_and_free: true)
+        |> Sections.create_section_resources(publication)
+
+      refute section.contains_discussions
+
+      all_section_resources =
+        section |> Oli.Repo.preload(:section_resources) |> Map.get(:section_resources)
+
+      {pages_section_resources, _rest_section_resources} =
+        Enum.split_with(all_section_resources, fn sr ->
+          sr.resource_id in Enum.map(pages_resources, & &1.id)
+        end)
+
+      [id_sec_res_1, id_sec_res_2, id_sec_res_3] = Enum.map(pages_section_resources, & &1.id)
+
+      enabled_collab_space_config =
+        %CollabSpaceConfig{}
+        |> CollabSpaceConfig.changeset(%{status: :enabled})
+        |> Ecto.Changeset.apply_changes()
+
+      disabled_collab_space_config =
+        %CollabSpaceConfig{}
+        |> CollabSpaceConfig.changeset(%{status: :disabled})
+        |> Ecto.Changeset.apply_changes()
+
+      archived_collab_space_config =
+        %CollabSpaceConfig{}
+        |> CollabSpaceConfig.changeset(%{status: :archived})
+        |> Ecto.Changeset.apply_changes()
+
+      SectionResource
+      |> Oli.Repo.get!(id_sec_res_1)
+      |> SectionResource.changeset()
+      |> Ecto.Changeset.put_embed(:collab_space_config, enabled_collab_space_config)
+      |> Oli.Repo.update!()
+
+      SectionResource
+      |> Oli.Repo.get!(id_sec_res_2)
+      |> SectionResource.changeset()
+      |> Ecto.Changeset.put_embed(:collab_space_config, disabled_collab_space_config)
+      |> Oli.Repo.update!()
+
+      SectionResource
+      |> Oli.Repo.get!(id_sec_res_3)
+      |> SectionResource.changeset()
+      |> Ecto.Changeset.put_embed(:collab_space_config, archived_collab_space_config)
+      |> Oli.Repo.update!()
+
+      PostProcessing.apply(section, [:discussions])
+
+      assert Oli.Repo.reload!(section).contains_discussions
+    end
+
+    test "sets contains_discussions to false when NO having active discussions" do
+      # Project and Author
+      %{authors: [author]} = project = create_project_with_assocs()
+
+      # Root container
+      %{resource: container_resource, revision: container_revision, publication: publication} =
+        create_bundle_for(@container_type_id, project, author, nil, nil, title: "Root container")
+
+      # Resources
+      pages =
+        for _x <- 1..3, do: create_bundle_for(@page_type_id, project, author, publication)
+
+      others =
+        for _x <- 1..2, do: create_bundle_for(@container_type_id, project, author, publication)
+
+      pages_resources = Enum.map(pages, & &1.resource)
+      others_resources = Enum.map(others, & &1.resource)
+      # Links container - page
+      assoc_resources(
+        pages_resources ++ others_resources,
+        container_revision,
+        container_resource,
+        publication
+      )
+
+      # Section and its section_resources
+      {:ok, section} =
+        insert(:section, base_project: project, open_and_free: true)
+        |> Sections.create_section_resources(publication)
+
+      refute section.contains_discussions
+
+      all_section_resources =
+        section |> Oli.Repo.preload(:section_resources) |> Map.get(:section_resources)
+
+      {pages_section_resources, _rest_section_resources} =
+        Enum.split_with(all_section_resources, fn sr ->
+          sr.resource_id in Enum.map(pages_resources, & &1.id)
+        end)
+
+      [id_sec_res_1, id_sec_res_2, id_sec_res_3] = Enum.map(pages_section_resources, & &1.id)
+
+      disabled_collab_space_config =
+        %CollabSpaceConfig{}
+        |> CollabSpaceConfig.changeset(%{status: :disabled})
+        |> Ecto.Changeset.apply_changes()
+
+      archived_collab_space_config =
+        %CollabSpaceConfig{}
+        |> CollabSpaceConfig.changeset(%{status: :archived})
+        |> Ecto.Changeset.apply_changes()
+
+      SectionResource
+      |> Oli.Repo.get!(id_sec_res_1)
+      |> SectionResource.changeset()
+      |> Ecto.Changeset.put_embed(:collab_space_config, disabled_collab_space_config)
+      |> Oli.Repo.update!()
+
+      SectionResource
+      |> Oli.Repo.get!(id_sec_res_2)
+      |> SectionResource.changeset()
+      |> Ecto.Changeset.put_embed(:collab_space_config, disabled_collab_space_config)
+      |> Oli.Repo.update!()
+
+      SectionResource
+      |> Oli.Repo.get!(id_sec_res_3)
+      |> SectionResource.changeset()
+      |> Ecto.Changeset.put_embed(:collab_space_config, archived_collab_space_config)
+      |> Oli.Repo.update!()
+
+      PostProcessing.apply(section, [:discussions])
+
+      refute Oli.Repo.reload!(section).contains_discussions
+    end
+  end
 
   describe "sections" do
     setup(%{conn: conn}) do

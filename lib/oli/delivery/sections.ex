@@ -51,6 +51,7 @@ defmodule Oli.Delivery.Sections do
   alias Oli.Delivery.Attempts.Core.{ResourceAccess, ResourceAttempt}
   alias Oli.Delivery.Metrics
   alias Oli.Delivery.Paywall
+  alias Oli.Delivery.Sections.PostProcessing
   alias Oli.Branding.CustomLabels
   alias OliWeb.Delivery.RebuildFullHierarchyWorker
 
@@ -983,9 +984,11 @@ defmodule Oli.Delivery.Sections do
       {:error, %Ecto.Changeset{}}
   """
   def update_section(%Section{} = section, attrs) do
-    section
-    |> Section.changeset(attrs)
-    |> Repo.update()
+    section |> Section.changeset(attrs) |> Repo.update()
+  end
+
+  def update_section!(%Section{} = section, attrs) do
+    section |> Section.changeset(attrs) |> Repo.update!()
   end
 
   @doc """
@@ -2316,11 +2319,10 @@ defmodule Oli.Delivery.Sections do
         rebuild_section_resources(section, section_resources, project_publications)
       end)
       |> Multi.run(
-        :maybe_update_exploration_pages,
+        :side_effects,
         fn _repo, _ ->
-          # updates contains_explorations field in sections
-          Delivery.maybe_update_section_contains_explorations(section)
-          Delivery.maybe_update_section_contains_deliberate_practice(section)
+          actions = [:discussions, :explorations, :deliberate_practice]
+          {:ok, PostProcessing.apply(section, actions)}
         end
       )
       |> Repo.transaction()

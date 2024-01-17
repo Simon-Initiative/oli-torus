@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import * as Immutable from 'immutable';
 import isHotkey from 'is-hotkey';
 import { throttle } from 'lodash';
+import { Tooltip } from 'components/common/Tooltip';
 import { ActivityEditContext } from 'data/content/activity';
 import { ActivityEditorMap } from 'data/content/editors';
 import {
@@ -180,12 +181,14 @@ export const ContentOutline = ({
       ) : (
         <div className={styles.contentOutlineToggleSticky}>
           <div className={styles.contentOutlineToggle}>
-            <button
-              className={classNames(styles.contentOutlineToggleButton)}
-              onClick={() => setShowOutline(true)}
-            >
-              <i className="fa fa-angle-right"></i>
-            </button>
+            <Tooltip title="Open Sidebar" placement="right">
+              <button
+                className={classNames(styles.contentOutlineToggleButton)}
+                onClick={() => setShowOutline(true)}
+              >
+                <i className="fa fa-angle-right"></i>
+              </button>
+            </Tooltip>
           </div>
         </div>
       )}
