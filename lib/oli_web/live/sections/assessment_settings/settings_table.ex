@@ -771,13 +771,13 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
 
         {:noreply,
         socket
-        |> flash_to_liveview(:info, "Student Exception updated!.#{message}#{additional_message}")}
+        |> flash_to_liveview(:info, "Setting updated. #{message}#{additional_message}")}
 
     _ ->
 
         {:noreply,
         socket
-        |> flash_to_liveview(:error, "ERROR: Student Exception could not be updated")}
+        |> flash_to_liveview(:error, "ERROR: Setting could not be updated")}
 
     end
 
