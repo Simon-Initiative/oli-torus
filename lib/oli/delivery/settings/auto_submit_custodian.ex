@@ -48,6 +48,8 @@ defmodule Oli.Delivery.Settings.AutoSubmitCustodian do
           |> where([_, ra, _], ra.user_id not in ^except_students)
           |> Repo.all()
 
+
+
         # We are adjusting the auto_submit job from a specific student exception
         student_id ->
           active_auto_submits(section_id, assessment_id, student_id)
@@ -154,9 +156,21 @@ defmodule Oli.Delivery.Settings.AutoSubmitCustodian do
   # this to determine which students have a different end_date or a different
   # late_submit exception
   defp students_with_exception(section_id, assessment_id, key, value) do
+
+    by_field_value =
+      case key do
+        "late_submit" ->
+          dynamic([se], (se.late_submit == :disallow and not is_nil(se.end_date)) or se.late_submit == :allow)
+
+        "end_date" ->
+          value = DateTime.truncate(value, :second)
+
+          dynamic([se], se.end_date != ^value and not is_nil(se.end_date))
+      end
+
     StudentException
     |> where(section_id: ^section_id, resource_id: ^assessment_id)
-    |> where([se], field(se, ^String.to_existing_atom(key)) != ^value and not is_nil(field(se, ^String.to_existing_atom(key))))
+    |> where(^by_field_value)
     |> select([se], se.user_id)
     |> Repo.all()
   end
