@@ -1,8 +1,9 @@
 defmodule Oli.Delivery do
   alias Lti_1p3.Tool.ContextRoles
   alias Lti_1p3.Tool.Services.{AGS, NRPS}
-  alias Oli.Delivery.Settings.StudentException
   alias Oli.Delivery.Sections
+  alias Oli.Delivery.Sections.PostProcessing
+  alias Oli.Delivery.Settings.StudentException
   alias Oli.Delivery.Sections.{Section, SectionsProjectsPublications}
   alias Oli.Institutions
   alias Oli.Lti.LtiParams
@@ -30,33 +31,33 @@ defmodule Oli.Delivery do
   end
 
   def create_section(source_id, user, lti_params, attrs \\ %{}) do
-    # guard against creating a new section if one already exists
-    case Sections.get_section_from_lti_params(lti_params) do
-      nil ->
-        {institution, registration, deployment} =
-          Institutions.get_institution_registration_deployment(
-            lti_params["iss"],
-            LtiParams.peek_client_id(lti_params),
-            lti_params[@deployment_claims]
-          )
+    section = Sections.get_section_from_lti_params(lti_params)
 
-        # create section, section resources and enroll instructor
-        {create_fn, id} =
-          case source_id do
-            "publication:" <> publication_id ->
-              {&create_from_publication/7, String.to_integer(publication_id)}
-
-            "product:" <> product_id ->
-              {&create_from_product/7, String.to_integer(product_id)}
-          end
-
-        create_fn.(id, user, institution, lti_params, deployment, registration, attrs)
-
-      section ->
-        # a section already exists, redirect to index
-        {:ok, section}
-    end
+    do_create_section(section, source_id, user, lti_params, attrs)
   end
+
+  defp do_create_section(nil, source_id, user, lti_params, attrs) do
+    client_id = LtiParams.peek_client_id(lti_params)
+    deployment_claims = lti_params[@deployment_claims]
+    iss = lti_params["iss"]
+
+    {institution, registration, deployment} =
+      Institutions.get_institution_registration_deployment(iss, client_id, deployment_claims)
+
+    # create section, section resources and enroll instructor
+    {create_fn, id} =
+      case source_id do
+        "publication:" <> publication_id ->
+          {&create_from_publication/7, String.to_integer(publication_id)}
+
+        "product:" <> product_id ->
+          {&create_from_product/7, String.to_integer(product_id)}
+      end
+
+    create_fn.(id, user, institution, lti_params, deployment, registration, attrs)
+  end
+
+  defp do_create_section(section, _source_id, _user, _lti_params, _attrs), do: {:ok, section}
 
   defp create_from_product(
          product_id,
@@ -153,6 +154,7 @@ defmodule Oli.Delivery do
         )
 
       {:ok, %Section{} = section} = Sections.create_section_resources(section, publication)
+      section = PostProcessing.apply(section, [:discussions])
       {:ok, _} = Sections.rebuild_contained_pages(section)
       {:ok, _} = Sections.rebuild_contained_objectives(section)
 
