@@ -7,7 +7,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
 
   alias OliWeb.Common.{FormatDateTime, PagedTable, SearchInput, Params, Paging}
   alias OliWeb.Common.Utils, as: CommonUtils
-  alias OliWeb.Sections.AssessmentSettings.AutoSubmitCustodian
+  alias Oli.Delivery.Settings.AutoSubmitCustodian
   alias OliWeb.Sections.AssessmentSettings.SettingsTableModel
   alias Phoenix.LiveView.JS
   alias OliWeb.Router.Helpers, as: Routes

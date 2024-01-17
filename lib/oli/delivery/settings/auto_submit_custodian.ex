@@ -1,4 +1,4 @@
-defmodule OliWeb.Sections.AssessmentSettings.AutoSubmitCustodian do
+defmodule Oli.Delivery.Settings.AutoSubmitCustodian do
 
   @moduledoc """
   This module is responsible for managing the auto submit jobs when assessment
@@ -161,6 +161,8 @@ defmodule OliWeb.Sections.AssessmentSettings.AutoSubmitCustodian do
     |> Repo.all()
   end
 
+  # bulk change the auto_submit_job_id for a set of resource attempts from the
+  # old job id to the newly scheduled job id
   defp update_job_ids(entries, new_jobs) do
 
     {values, params, _} = Enum.zip(entries, new_jobs)
@@ -190,6 +192,7 @@ defmodule OliWeb.Sections.AssessmentSettings.AutoSubmitCustodian do
 
   end
 
+  # Clear the auto_submit_job_id for a set of resource attempts
   defp remove_job_ids(entries) do
     ids = Enum.map(entries, fn %{attempt_id: id} -> id end)
 

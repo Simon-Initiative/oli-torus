@@ -14,7 +14,7 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTable do
   alias OliWeb.Router.Helpers, as: Routes
   alias Oli.{Delivery, Repo, Utils}
   alias Oli.Delivery.Settings.StudentException
-  alias OliWeb.Sections.AssessmentSettings.AutoSubmitCustodian
+  alias Oli.Delivery.Settings.AutoSubmitCustodian
 
   @default_params %{
     offset: 0,
