@@ -1,5 +1,4 @@
 defmodule Oli.Delivery.Settings.AutoSubmitCustodian do
-
   @moduledoc """
   This module is responsible for managing the auto submit jobs when assessment
   settings are changed by an instructor in the assessment settings page.
@@ -29,42 +28,41 @@ defmodule Oli.Delivery.Settings.AutoSubmitCustodian do
   encounters a problem.
   """
   def adjust(section_id, assessment_id, old_date_time, new_date_time, student_id) do
-
     if is_nil(new_date_time) do
       cancel(section_id, assessment_id, student_id)
     else
-
       deadline_with_slack = Worker.add_slack(new_date_time)
 
-      active = case student_id do
-        # We are adjusting auto submit jobs for all students, driven from a change
-        # to the settings of the assessment.  But we must exclude all jobs that exist
-        # for a student with an exception on "end_date" that is different than the
-        # date we are adjusting from.
-        nil ->
-          except_students = students_with_exception(section_id, assessment_id, "end_date", old_date_time)
+      active =
+        case student_id do
+          # We are adjusting auto submit jobs for all students, driven from a change
+          # to the settings of the assessment.  But we must exclude all jobs that exist
+          # for a student with an exception on "end_date" that is different than the
+          # date we are adjusting from.
+          nil ->
+            except_students =
+              students_with_exception(section_id, assessment_id, "end_date", old_date_time)
 
-          active_auto_submits(section_id, assessment_id, nil)
-          |> where([_, ra, _], ra.user_id not in ^except_students)
-          |> Repo.all()
+            active_auto_submits(section_id, assessment_id, nil)
+            |> where([_, ra, _], ra.user_id not in ^except_students)
+            |> Repo.all()
 
-
-
-        # We are adjusting the auto_submit job from a specific student exception
-        student_id ->
-          active_auto_submits(section_id, assessment_id, student_id)
-          |> Repo.all()
-      end
+          # We are adjusting the auto_submit job from a specific student exception
+          student_id ->
+            active_auto_submits(section_id, assessment_id, student_id)
+            |> Repo.all()
+        end
 
       case Enum.map(active, fn %{auto_submit_job_id: id} -> id end)
-        |> cancel_jobs() do
-
+           |> cancel_jobs() do
         {:ok, count} ->
-
           # If Oban.insert_all fails, it raises an error, so no need to handle the
           # return value here
-          results = Enum.map(active, fn %{args: args} -> Worker.new(args, scheduled_at: deadline_with_slack) end)
-          |> Oban.insert_all()
+          results =
+            Enum.map(active, fn %{args: args} ->
+              Worker.new(args, scheduled_at: deadline_with_slack)
+            end)
+            |> Oban.insert_all()
 
           if count > 0 do
             update_job_ids(active, results)
@@ -74,11 +72,8 @@ defmodule Oli.Delivery.Settings.AutoSubmitCustodian do
 
         e ->
           e
-
       end
-
     end
-
   end
 
   @doc """
@@ -89,12 +84,12 @@ defmodule Oli.Delivery.Settings.AutoSubmitCustodian do
   when the intention is to allow the student to now keep working and submit late.
   """
   def cancel(section_id, assessment_id, nil) do
-
     except_students = students_with_exception(section_id, assessment_id, "late_submit", :disallow)
 
-    active = active_auto_submits(section_id, assessment_id, nil)
-    |> where([_, ra, _], ra.user_id not in ^except_students)
-    |> Repo.all()
+    active =
+      active_auto_submits(section_id, assessment_id, nil)
+      |> where([_, ra, _], ra.user_id not in ^except_students)
+      |> Repo.all()
 
     remove_job_ids(active)
 
@@ -103,8 +98,9 @@ defmodule Oli.Delivery.Settings.AutoSubmitCustodian do
   end
 
   def cancel(section_id, assessment_id, student_id) do
-    active = active_auto_submits(section_id, assessment_id, student_id)
-    |> Repo.all()
+    active =
+      active_auto_submits(section_id, assessment_id, student_id)
+      |> Repo.all()
 
     remove_job_ids(active)
 
@@ -148,7 +144,6 @@ defmodule Oli.Delivery.Settings.AutoSubmitCustodian do
       attempt_id: r.id,
       auto_submit_job_id: r.auto_submit_job_id
     })
-
   end
 
   # Find all student ids that have an existing exception for the same assessment,
@@ -156,11 +151,13 @@ defmodule Oli.Delivery.Settings.AutoSubmitCustodian do
   # this to determine which students have a different end_date or a different
   # late_submit exception
   defp students_with_exception(section_id, assessment_id, key, value) do
-
     by_field_value =
       case key do
         "late_submit" ->
-          dynamic([se], (se.late_submit == :disallow and not is_nil(se.end_date)) or se.late_submit == :allow)
+          dynamic(
+            [se],
+            (se.late_submit == :disallow and not is_nil(se.end_date)) or se.late_submit == :allow
+          )
 
         "end_date" ->
           value = DateTime.truncate(value, :second)
@@ -178,9 +175,10 @@ defmodule Oli.Delivery.Settings.AutoSubmitCustodian do
   # bulk change the auto_submit_job_id for a set of resource attempts from the
   # old job id to the newly scheduled job id
   defp update_job_ids(entries, new_jobs) do
-
-    {values, params, _} = Enum.zip(entries, new_jobs)
-    |> Enum.reduce({[], [], 0}, fn {%{attempt_id: attempt_id}, %{id: job_id}}, {values, params, i} ->
+    {values, params, _} =
+      Enum.zip(entries, new_jobs)
+      |> Enum.reduce({[], [], 0}, fn {%{attempt_id: attempt_id}, %{id: job_id}},
+                                     {values, params, i} ->
         {
           values ++ ["($#{i + 1}::bigint, $#{i + 2}::bigint)"],
           params ++ [attempt_id, job_id],
@@ -188,7 +186,7 @@ defmodule Oli.Delivery.Settings.AutoSubmitCustodian do
         }
       end)
 
-      values = Enum.join(values, ",")
+    values = Enum.join(values, ",")
 
     sql = """
       UPDATE resource_attempts
@@ -203,7 +201,6 @@ defmodule Oli.Delivery.Settings.AutoSubmitCustodian do
     """
 
     {:ok, _} = Ecto.Adapters.SQL.query(Oli.Repo, sql, params)
-
   end
 
   # Clear the auto_submit_job_id for a set of resource attempts
@@ -213,5 +210,4 @@ defmodule Oli.Delivery.Settings.AutoSubmitCustodian do
     query = from(r in ResourceAttempt, where: r.id in ^ids)
     Oli.Repo.update_all(query, set: [auto_submit_job_id: nil])
   end
-
 end
