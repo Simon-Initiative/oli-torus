@@ -92,7 +92,7 @@ defmodule Oli.Delivery.SectionsTest do
       |> Ecto.Changeset.put_embed(:collab_space_config, archived_collab_space_config)
       |> Oli.Repo.update!()
 
-      PostProcessing.apply(section, [:discussions])
+      PostProcessing.apply(section, :discussions)
 
       assert Oli.Repo.reload!(section).contains_discussions
     end
@@ -167,7 +167,7 @@ defmodule Oli.Delivery.SectionsTest do
       |> Ecto.Changeset.put_embed(:collab_space_config, archived_collab_space_config)
       |> Oli.Repo.update!()
 
-      PostProcessing.apply(section, [:discussions])
+      PostProcessing.apply(section, :discussions)
 
       refute Oli.Repo.reload!(section).contains_discussions
     end

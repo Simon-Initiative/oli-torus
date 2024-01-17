@@ -3,7 +3,8 @@ defmodule OliWeb.Delivery.NewCourse do
   alias Oli.Accounts
   alias Oli.Delivery
   alias Oli.Lti.LtiParams
-  alias Oli.Delivery.Sections.{Section}
+  alias Oli.Delivery.Sections.PostProcessing
+  alias Oli.Delivery.Sections.Section
   alias Oli.Delivery.Sections
   alias Oli.Repo
   alias OliWeb.Common.{Breadcrumb, Stepper}
@@ -366,12 +367,8 @@ defmodule OliWeb.Delivery.NewCourse do
            {:ok, section} <- Sections.create_section_resources(section, publication),
            {:ok, _} <- Sections.rebuild_contained_pages(section),
            {:ok, _} <- Sections.rebuild_contained_objectives(section),
-           {:ok, _enrollment} <- enroll(socket, section),
-           {:ok, section} <-
-             Oli.Delivery.maybe_update_section_contains_explorations(section),
-           {:ok, updated_section} <-
-             Oli.Delivery.maybe_update_section_contains_deliberate_practice(section) do
-        updated_section
+           {:ok, _enrollment} <- enroll(socket, section) do
+        PostProcessing.apply(section, :all)
       else
         {:error, changeset} ->
           Repo.rollback(changeset)
@@ -385,7 +382,7 @@ defmodule OliWeb.Delivery.NewCourse do
            {:ok, _} <- Sections.rebuild_contained_pages(section),
            {:ok, _} <- Sections.rebuild_contained_objectives(section),
            {:ok, _maybe_enrollment} <- enroll(socket, section) do
-        section
+        PostProcessing.apply(section, :discussions)
       else
         {:error, changeset} -> Repo.rollback(changeset)
       end

@@ -36,16 +36,15 @@ defmodule Oli.Delivery.Sections do
   alias Lti_1p3.Tool.PlatformRoles
   alias Oli.Delivery.Updates.Broadcaster
   alias Oli.Delivery.Sections.EnrollmentBrowseOptions
+  alias Oli.Delivery.Sections.PostProcessing
   alias Oli.Utils.Slug
   alias OliWeb.Common.FormatDateTime
   alias Oli.Delivery.PreviousNextIndex
-  alias Oli.Delivery
   alias Ecto.Multi
   alias Oli.Delivery.Gating.GatingCondition
   alias Oli.Delivery.Attempts.Core.ResourceAccess
   alias Oli.Delivery.Metrics
   alias Oli.Delivery.Paywall
-  alias Oli.Delivery.Sections.PostProcessing
 
   require Logger
 
@@ -1760,8 +1759,7 @@ defmodule Oli.Delivery.Sections do
       |> Multi.run(
         :side_effects,
         fn _repo, _ ->
-          actions = [:discussions, :explorations, :deliberate_practice]
-          {:ok, PostProcessing.apply(section, actions)}
+          {:ok, PostProcessing.apply(section, :all)}
         end
       )
       |> Repo.transaction()
@@ -2511,8 +2509,8 @@ defmodule Oli.Delivery.Sections do
       # resources and cleaning up any deleted ones
       pinned_project_publications = get_pinned_project_publications(section.id)
       rebuild_section_curriculum(section, new_hierarchy, pinned_project_publications)
-      Delivery.maybe_update_section_contains_explorations(section)
-      Delivery.maybe_update_section_contains_deliberate_practice(section)
+
+      PostProcessing.apply(section, :all)
 
       {:ok}
     end)
