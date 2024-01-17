@@ -131,3 +131,15 @@ export const inputTitle = (input: MultiInput, index: number) => (
     <span className="text-muted">{friendlyType(input.inputType)}</span>
   </div>
 );
+
+export const inputLabel = (id: string, model: ResponseMultiInputSchema, type: boolean = false) => {
+  const index = model.inputs.findIndex((inp) => inp.id === id);
+  if (index < 0) {
+    console.error('input not found: ' + id);
+    return 'Unknown Input';
+  }
+
+  const input = model.inputs[index];
+  const label = `Input ${index + 1}`;
+  return type ? label + `(${friendlyType(input.inputType)})` : label;
+};

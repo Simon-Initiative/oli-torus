@@ -1,28 +1,34 @@
 import { andRules, orRules, unescapeInput } from 'data/activities/model/rules';
+import { addOrRemove, remove } from '../common/utils';
 import { MatchStyle } from '../types';
 
 // In response_multi context, we use following terms:
-// An inputRule, variable ir, is a single input matching rule of form
+// An "InputRule", variable ir, is a single input matching rule normally of form
 //         input_ref_inputID op {value}
-// although it may be as follows for "does not contain" string match:
+// although it may also be as follows for "does not contain" string match:
 //         (!(input_ref_inputID op {value}))
 //
-// A response_multi response rule in general, variable r, consists logically
-// of a set of one or more input rules plus a match style. We represent both in
-// their torus rule string form, parsing out constitutents as needed.
+// A "MultiRule", variable r, is a general response_multi response rule consisting
+// logically of a set of one or more InputRules plus a match style.
 //
 // For response rules with a disjunctive match style (any or none), we allow
-// multiple input rules for dropdown inputs to represent different possible values.
-// Other inputs should have a single input rule per input
+// multiple InputRules for dropdown inputs to represent different possible values.
+// Other inputs should have a single InputRule per input, as should an "all" rule
 
-// convert regular torus match rule to inputRule
+// We represent both in their torus rule string form, parsing out constitutents as needed.
+// Type aliases for parameter documentation only, do not provide type checking:
+type InputRule = string & { __type: 'InputRule' };
+type MultiRule = string;
+
+// convert regular torus match rule to inputRule. no effect if already InputRule
 export const toInputRule = (inputId: string, rule: string) =>
-  rule.replace(/input /, `input_ref_${inputId} `);
+  // match initial (!(input or input if followed by a space
+  rule.replace(/^(?:\(!\()?input(?= )/, `$&_ref_${inputId}`) as InputRule;
 
-export const inputRuleInput = (ir: string): string | undefined =>
+export const inputRuleInput = (ir: InputRule): string | undefined =>
   ir.match(/(?<=input_ref_)[^ ]+/)?.[0];
 
-export const inputRuleValue = (ir: string): string =>
+export const inputRuleValue = (ir: InputRule): string =>
   unescapeInput(ir.substring(ir.indexOf('{') + 1, ir.lastIndexOf('}')));
 
 // Torus rule grammar doesn't allow r1 && r2 && r3, so use
@@ -33,10 +39,9 @@ export const inputRuleValue = (ir: string): string =>
 //  none : none: !(...)
 // with no containing paren before negation, so this
 // differs from not-contains input rule which is parenthesized
-//
-export const combineRules = (matchStyle: MatchStyle, inputRules: string[]) => {
+export const combineRules = (matchStyle: MatchStyle, inputRules: InputRule[]) => {
   const joined = matchStyle === 'all' ? andRules(...inputRules) : orRules(...inputRules);
-  return matchStyle === 'none' ? `!(${joined})` : joined;
+  return (matchStyle === 'none' ? `!(${joined})` : joined) as MultiRule;
 };
 
 // Extract component single input rules from possibly compound response_multi rule
@@ -45,7 +50,7 @@ export const combineRules = (matchStyle: MatchStyle, inputRules: string[]) => {
 //   (2) right-brace can appear inside {...} if escaped as \}
 //   (3) but \\ inside {...} escapes backslash
 //   (4) does-not-contain rule has form (!(input_ref_foo like {...}))
-export const ruleInputRules = (r: string): string[] => {
+export const ruleInputRules = (r: MultiRule): InputRule[] => {
   // String.raw literal avoids need to escape backslashes for javascript,
   // but we still need to escape backslash metachar within the regexp
   // So ESC1 is string consisting of 4 backslashes used in re to match \\
@@ -54,30 +59,32 @@ export const ruleInputRules = (r: string): string[] => {
   const NRBR = String.raw`[^}]`;
   // inside brackets match escapes \\ or \} or non-} in that order
   const VEXP = String.raw`(?:${ESC1}|${ESC2}|${NRBR})`;
-  // braces may be empty, occurs on new text rules
+  // braces may be empty (occurs on newly added text rules)
   const RULE1 = String.raw`input_ref_[^ ]+ [^ ]+ {${VEXP}*}`;
   const NOTRULE1 = String.raw`\(!\(${RULE1}\)\)`;
-  const RULE = String.raw`${NOTRULE1}|${RULE1}`;
-  const RE_RULE = new RegExp(RULE, 'g');
+  const INPUT_RULE = String.raw`${NOTRULE1}|${RULE1}`;
+  const RE_RULE = new RegExp(INPUT_RULE, 'g');
 
   const matches = r.match(RE_RULE);
-  return matches ? matches : [];
+  // console.log('ruleInputRules ' + r + ' =>\n   ' + matches);
+  if (matches === null) throw new Error('no input Rules');
+  return (matches ? matches : []) as InputRule[];
 };
 
-export const ruleMatchStyle = (r: string): MatchStyle =>
+export const ruleMatchStyle = (r: MultiRule): MatchStyle =>
   r.startsWith('!') ? 'none' : r.includes('||') ? 'any' : 'all';
 
-export const getRulesForInput = (r: string, id: string): string[] =>
-  ruleInputRules(r).filter((ir: string) => inputRuleInput(ir) === id);
+export const getRulesForInput = (r: MultiRule, id: string): InputRule[] =>
+  ruleInputRules(r).filter((ir: InputRule) => inputRuleInput(ir) === id);
 
-export const getUniqueRuleForInput = (r: string, id: string): string => {
-  const inputRules = ruleInputRules(r).filter((ir: string) => inputRuleInput(ir) === id);
+export const getUniqueRuleForInput = (r: MultiRule, id: string): InputRule => {
+  const inputRules = getRulesForInput(r, id);
   if (inputRules.length > 1) console.error('unexpected multiple rules for input ' + id);
   return inputRules[0];
 };
 
-// get all values for this input id in compound rule, mainly for dropdowns
-export const getInputValues = (r: string, id: string): string[] =>
+// get all values for this input id in compound rule. Mainly for dropdowns
+export const getInputValues = (r: MultiRule, id: string): string[] =>
   getRulesForInput(r, id).map(inputRuleValue);
 
 // generic type guard enabling TypeScript to narrow filtered types to non-undefined
@@ -86,61 +93,49 @@ export function isDefined<T>(value: T | undefined): value is T {
 }
 
 // get list of unique inputRefs used in compound rule
-export const ruleInputRefs = (r: string): string[] => [
+export const ruleInputRefs = (r: MultiRule): string[] => [
   ...new Set(ruleInputRules(r).map(inputRuleInput).filter(isDefined)),
 ];
 
-// update given rule by modifying/adding/removing a single input rule
+export const isCatchAll = (r: MultiRule): boolean =>
+  ruleInputRules(r).every((ir: InputRule) => inputRuleValue(ir) === '.*');
+
+// update given rule by adding/removing/modifying a single input rule
 //
-// append=false: replace existing rule for inputId with given rule
-//       should only be used for inputs w/unique rule for each input
-// append=true  => add rule for inputId if not already present
-// exclude=true => remove rule for inputId
+// remove op removes any rule for specified input
+// remove/modify ops should only be used in cases with unique rule for given input
 export const updateRule = (
-  rule: string,
+  rule: MultiRule,
   style: MatchStyle | undefined,
   inputId: string,
   newRule: string,
-  append: boolean,
-  exclude?: boolean,
+  op: 'add' | 'remove' | 'toggle' | 'modify' | 'setStyle',
 ): string => {
-  const inputRules: Map<string, string> = parseResponseMultiInputRule(rule);
+  const matchStyle = style ? style : 'all';
+  const argRule = toInputRule(inputId, newRule);
+  const inputRules = ruleInputRules(rule);
 
-  // style to use when joining subrules. Negation for none gets applied at end
-  const subStyle = style === 'none' || style === 'any' ? 'any' : 'all';
-
-  const editedRule: string = toInputRule(inputId, newRule);
-
-  let updatedRule = '';
-  let alreadyIncluded = false;
-  Array.from(inputRules.keys()).forEach((k) => {
-    if (k === inputId) {
-      alreadyIncluded = true;
-      if (!exclude) {
-        updatedRule =
-          updatedRule === '' ? editedRule : combineRules(subStyle, [updatedRule, editedRule]);
-      }
-    } else {
-      updatedRule =
-        updatedRule === ''
-          ? '' + inputRules.get(k)
-          : combineRules(subStyle, [updatedRule, inputRules.get(k)!]);
-    }
-  });
-
-  if (append && !alreadyIncluded) {
-    updatedRule =
-      updatedRule === '' ? '' + editedRule : combineRules(subStyle, [updatedRule, editedRule]);
-  }
-  if (style === 'none' && updatedRule !== '') {
-    updatedRule = '!(' + updatedRule + ')';
+  if (op === 'add') {
+    inputRules.push(argRule);
+  } else if (op === 'remove') {
+    remove(getUniqueRuleForInput(rule, inputId), inputRules);
+  } else if (op === 'toggle') {
+    addOrRemove(argRule, inputRules);
+  } else if (op === 'modify') {
+    remove(getUniqueRuleForInput(rule, inputId), inputRules);
+    inputRules.push(argRule);
+  } else if (op === 'setStyle') {
+    // if changing to all style, flatten possibly multiple dropdown rules to single rule
+    if (matchStyle === 'all')
+      return combineRules(matchStyle, indexResponseMultiRule(rule).values());
   }
 
-  return updatedRule;
+  // Can have empty ruleset after remove. Caller should handle
+  return inputRules.length === 0 ? '' : combineRules(matchStyle, inputRules);
 };
 
-// builds map from input ids to rules. Will reduce multiple input rules for dropdown to single one
-export const parseResponseMultiInputRule = (rule: string): any => {
+// builds map from input ids to rules. reduces multiple input rules for dropdown to single one
+export const indexResponseMultiRule = (rule: MultiRule): any => {
   return ruleInputRules(rule).reduce((entries, ir) => {
     const input = inputRuleInput(ir);
     if (input) entries.set(input, ir);

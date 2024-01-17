@@ -32,7 +32,7 @@ import { getByUnsafe, getPartById, getParts } from 'data/activities/model/utils'
 import { InputRef } from 'data/content/model/elements/types';
 import { clone } from 'utils/common';
 import { Operations } from 'utils/pathOperations';
-import { parseResponseMultiInputRule, ruleInputRefs, toInputRule, updateRule } from './rules';
+import { indexResponseMultiRule, ruleInputRefs, toInputRule, updateRule } from './rules';
 import { ResponseMultiInputSchema } from './schema';
 import { ResponseMultiInputResponses } from './utils';
 
@@ -128,11 +128,10 @@ export const ResponseMultiInputActions = {
       partTo.targets ? partTo.targets.push(input.id) : (partTo.targets = [input.id]);
       input.partId = partTo.id;
 
-      const fromRules = parseResponseMultiInputRule(partFrom.responses[0].rule);
-      const fromRule = fromRules.get(input.id);
-      if (fromRule === undefined) {
-        console.log('no from rule for input ' + input.id + ' in ' + partFrom.responses[0].rule);
-      }
+      // many response rules in from part may involve this id. This picks the first one.
+      // Perhaps trying to move correct answer for this input?
+      // !!! Try to find the correct one
+      const fromRules = indexResponseMultiRule(partFrom.responses[0].rule);
 
       // merge the rules
       const updatedRule: string = updateRule(
@@ -140,19 +139,20 @@ export const ResponseMultiInputActions = {
         partTo.responses[0].matchStyle,
         inputId,
         fromRules.get(input.id),
-        true,
+        'add',
       );
       partTo.responses[0].rule = updatedRule;
 
+      // removing rule can result in empty rule, which should cause response to be removed
       partFrom.responses.forEach((r) => {
-        const changed: string = updateRule(r.rule, r.matchStyle, inputId, '', false, true);
-        r.rule = changed;
+        r.rule = updateRule(r.rule, r.matchStyle, inputId, '', 'remove');
       });
+      partFrom.responses = partFrom.responses.filter((r) => r.rule !== '');
 
       // if dest has a catchall response, append wildcard clause for new input
       const response = partTo.responses.find((r) => r.catchAll);
       if (response) {
-        response.rule = updateRule(response.rule, 'all', input.id, matchRule('.*'), true);
+        response.rule = updateRule(response.rule, 'all', input.id, matchRule('.*'), 'add');
       }
 
       post(undoables);
@@ -300,7 +300,7 @@ export const ResponseMultiInputActions = {
             r.matchStyle,
             input.id,
             switchedReponses[0].rule,
-            false,
+            'modify',
           );
 
           r.rule = updatedRule;
@@ -378,9 +378,8 @@ export const ResponseMultiInputActions = {
       }
 
       part.responses.forEach((r) => {
-        r.rule = updateRule(r.rule, r.matchStyle, inputId, containsRule(''), false, true);
+        r.rule = updateRule(r.rule, r.matchStyle, inputId, containsRule(''), 'remove');
       });
-
       part.responses = part.responses.filter((r) => r.rule !== '');
 
       if (input.inputType === 'dropdown') {
@@ -417,8 +416,7 @@ export const ResponseMultiInputActions = {
         response.matchStyle,
         inputId,
         containsRule(''),
-        false,
-        true,
+        'remove',
       );
     };
   },

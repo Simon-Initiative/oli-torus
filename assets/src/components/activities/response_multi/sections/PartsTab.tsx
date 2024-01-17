@@ -10,7 +10,6 @@ import { ResponseMultiInputSchema } from 'components/activities/response_multi/s
 import { ResponseTab } from 'components/activities/response_multi/sections/ResponseTab';
 import { Part, Response, makeResponse } from 'components/activities/types';
 import { Card } from 'components/misc/Card';
-import { hasCustomScoring } from 'data/activities/model/responses';
 import { containsRule, eqRule, equalsRule, matchRule } from 'data/activities/model/rules';
 import { getPartById } from 'data/activities/model/utils';
 import { ResponseMultiInputScoringMethod } from '../ResponseMultiInputScoringMethod';
@@ -52,6 +51,7 @@ interface Props {
 
 export const PartsTab: React.FC<Props> = (props) => {
   const { model, dispatch } = useAuthoringElementContext<ResponseMultiInputSchema>();
+  const part = getPartById(model, props.input.partId);
 
   const getResponsesBody = (part: Part) => {
     return part.responses.map((response) =>
@@ -59,8 +59,8 @@ export const PartsTab: React.FC<Props> = (props) => {
         <ResponseTab
           key={response.id}
           response={response}
-          partId={props.input.partId}
-          customScoring={hasCustomScoring(model, props.input.partId)}
+          partId={part.id}
+          customScoring={model.customScoring}
           removeResponse={(id) => dispatch(ResponseActions.removeResponse(id))}
           updateScore={(_id, score) =>
             dispatch(ResponseActions.editResponseScore(response.id, score))
@@ -88,18 +88,16 @@ export const PartsTab: React.FC<Props> = (props) => {
       <Card.Title></Card.Title>
       <Card.Content>
         <ResponseMultiInputScoringMethod />
-        {model.customScoring && (
-          <ActivityScoring partId={props.input.partId} promptForDefault={false} />
-        )}
-        {getResponsesBody(getPartById(model, props.input.partId))}
-        {getPartById(model, props.input.partId)
-          .responses.filter((r) => r.targeted)
+        {model.customScoring && <ActivityScoring partId={part.id} promptForDefault={false} />}
+        {getResponsesBody(part)}
+        {part.responses
+          .filter((r) => r.targeted)
           .map((response: Response) => (
             <ResponseTab
               key={response.id}
               response={response}
-              partId={props.input.partId}
-              customScoring={hasCustomScoring(model, props.input.partId)}
+              partId={part.id}
+              customScoring={model.customScoring}
               removeResponse={(id) => dispatch(ResponseActions.removeResponse(id))}
               updateScore={(_id, score) =>
                 dispatch(ResponseActions.editResponseScore(response.id, score))

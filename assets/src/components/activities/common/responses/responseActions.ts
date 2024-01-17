@@ -59,11 +59,9 @@ export const ResponseActions = {
     return (model: HasParts) => {
       const r = getResponseBy(model, (r) => r.id === responseId);
       r.matchStyle = matchStyle;
-
       // force regeneration of existing rule with new match style, no additions/modifications
       // On change to 'all' type will ensure dropdown inputs have only one selected choice
-      r.rule = updateRule(r.rule, matchStyle, '', '', false);
-      // console.log('editMatchStyle: ' + r.rule);
+      r.rule = updateRule(r.rule, matchStyle, '', '', 'setStyle');
     };
   },
 

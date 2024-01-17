@@ -14,6 +14,7 @@ import { getInputValues, getUniqueRuleForInput } from '../rules';
 
 interface Props {
   input: MultiInput;
+  label?: string;
   response: Response;
   toggleCorrectness: (id: string, partId: string, inputId: string) => void;
   editRule: (id: ResponseId, inputId: string, rule: string) => void;
@@ -39,6 +40,7 @@ export const RulesTab: React.FC<Props> = (props) => {
     const orRule = props.response.matchStyle === 'any' || props.response.matchStyle === 'none';
     return (
       <div className="d-flex flex-row">
+        {props.label}&nbsp;
         <ChoicesDelivery
           unselectedIcon={orRule ? <Checkbox.Unchecked /> : <Radio.Unchecked />}
           selectedIcon={orRule ? <Checkbox.Checked /> : <Radio.Checked />}
@@ -59,14 +61,15 @@ export const RulesTab: React.FC<Props> = (props) => {
   const inputRule = getUniqueRuleForInput(props.response.rule, props.input.id);
   return (
     <div className="d-flex flex-row mb-2">
+      {props.label}&nbsp;
       <div className="flex-grow-1">
         <InputEntry
           key={props.response.id}
           inputType={props.input.inputType}
-          // InputEntry edits a response's rule (operation and matching text/number/regexp).
+          // InputEntry takes a response to edit its rule (op and matching text/number/regexp).
           // Our response may have compound rule, so pass a dummy response object with just
           // the single input rule to be edited. editRule will apply edits to real response
-          response={{ id: props.response.id, rule: inputRule } as Response}
+          response={{ id: props.response.id, rule: inputRule as string } as Response}
           onEditResponseRule={(id, rule) => props.editRule(id, props.input.id, rule)}
         />
       </div>

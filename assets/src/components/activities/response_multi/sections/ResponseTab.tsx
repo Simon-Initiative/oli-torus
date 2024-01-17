@@ -18,8 +18,8 @@ import { TextDirection } from 'data/content/model/elements/types';
 import { ID } from 'data/content/model/other';
 import { EditorType } from 'data/content/resource';
 import { ResponseMultiInputActions } from '../actions';
-import { combineRules, ruleInputRefs, ruleInputRules, toInputRule, updateRule } from '../rules';
-import { defaultRuleForInputType, friendlyType } from '../utils';
+import { getRulesForInput, ruleInputRefs, updateRule } from '../rules';
+import { defaultRuleForInputType, inputLabel } from '../utils';
 
 interface Props {
   response: Response;
@@ -37,42 +37,52 @@ export const ResponseTab: React.FC<Props> = (props) => {
     response.matchStyle ? response.matchStyle : 'all',
   );
 
-  const inputs: MultiInput[] = model.inputs.filter((input) => {
-    if (ruleInputRefs(response.rule).includes(input.id)) {
-      return true;
-    }
-    return false;
-  });
+  const inputs: MultiInput[] = model.inputs.filter((input) =>
+    ruleInputRefs(response.rule).includes(input.id),
+  );
 
+  // update method used on dropdown choice click
   const toggleCorrectness = (id: string, partId: string, inputId: string) => {
-    const inputRule = toInputRule(inputId, matchRule(id));
-
-    if (response.matchStyle !== 'all') {
-      // disjunctive rule: really a toggle, remove if present, add if not
-      const ruleSet = ruleInputRules(response.rule);
-      addOrRemove(inputRule, ruleSet);
-      const newRule = combineRules(response.matchStyle!, ruleSet);
-      dispatch(
-        ResponseMultiInputActions.editResponseResponseMultiRule(response.id, inputId, newRule),
+    if (response.matchStyle === 'any' || response.matchStyle === 'none') {
+      console.log(`toggling choice ${id} for input ${inputId}`);
+      // disjunctive rule allows multiple correct options.
+      // Treat as CATA checkbox: toggle clicked choice in/out of correct set
+      const newRule = updateRule(
+        response.rule,
+        response.matchStyle,
+        inputId,
+        matchRule(id),
+        'toggle',
       );
+      console.log('new rule after toggle: |' + newRule + '|');
+      // prevent change to totally empty rule or one w/no inputRules for this input:
+      if (newRule !== '' && getRulesForInput(newRule, inputId).length > 0) {
+        console.log('dispatching update');
+        dispatch(
+          ResponseMultiInputActions.editResponseResponseMultiRule(response.id, inputId, newRule),
+        );
+      } else console.log('ignoring update');
       return;
     }
-    // else this indicates unique value selection, not toggling in or out
-    const newRule = updateRule(response.rule, response.matchStyle, inputId, inputRule, false);
+
+    // else treat as change in unique correct value selection, not toggling in or out
+    const newRule = updateRule(
+      response.rule,
+      response.matchStyle,
+      inputId,
+      matchRule(id),
+      'modify',
+    );
+
     dispatch(
       ResponseMultiInputActions.editResponseResponseMultiRule(response.id, inputId, newRule),
     );
   };
 
+  // update method used for text and numeric choices, which can only have one rule
   const editRule = (id: ResponseId, inputId: string, rule: string) => {
-    const newRule = updateRule(response.rule, response.matchStyle, inputId, rule, false);
-    dispatch(
-      ResponseMultiInputActions.editResponseResponseMultiRule(
-        id,
-        inputId,
-        updateRule(response.rule, response.matchStyle, inputId, rule, false),
-      ),
-    );
+    const newRule = updateRule(response.rule, response.matchStyle, inputId, rule, 'modify');
+    dispatch(ResponseMultiInputActions.editResponseResponseMultiRule(id, inputId, newRule));
   };
 
   const onScoreChange = (score: number) => {
@@ -85,6 +95,7 @@ export const ResponseTab: React.FC<Props> = (props) => {
           <RulesTab
             key={i.id}
             input={i}
+            label={inputLabel(i.id, model, false)}
             response={response}
             toggleCorrectness={toggleCorrectness}
             editRule={editRule}
@@ -256,7 +267,7 @@ const AddRule: React.FC<AddRuleProps> = ({ inputs, response }) => {
             response.matchStyle,
             inputId,
             defaultRuleForInputType(input.inputType, choiceId),
-            true,
+            'add',
           ),
         ),
       );
@@ -278,9 +289,7 @@ const AddRule: React.FC<AddRuleProps> = ({ inputs, response }) => {
         </option>
         {inputs.map((input, index: number) => (
           <option key={input.id} value={input.id}>
-            {`Input ${model.inputs.findIndex((inp) => inp.id === input.id) + 1} (${friendlyType(
-              input.inputType,
-            )})`}
+            {inputLabel(input.id, model, false)}
           </option>
         ))}
       </select>
