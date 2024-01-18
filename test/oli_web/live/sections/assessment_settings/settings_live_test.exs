@@ -1229,7 +1229,6 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
       assert page_1_assessment_settings.feedback_scheduled_date == nil
     end
 
-    @tag :skip
     test "available date can be changed by clicking the available date in the table",
          %{
            conn: conn,
@@ -1264,7 +1263,6 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
       assert has_element?(view, "button", "October 10, 2023")
     end
 
-    @tag :skip
     test "preserves distance when setting available date after due date",
          %{
            conn: conn,
@@ -1367,7 +1365,6 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
       assert assessment_2.available_date =~ "Always available"
     end
 
-    @tag :skip
     test "due date date can be changed by clicking the due date in the table",
          %{
            conn: conn,
@@ -1402,7 +1399,6 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
       assert has_element?(view, "button", "October 10, 2023")
     end
 
-    @tag :skip
     test "preserves distance when setting due date before available date",
          %{
            conn: conn,

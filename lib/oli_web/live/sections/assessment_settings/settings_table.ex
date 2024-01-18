@@ -751,19 +751,17 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
 
     case perform_edits(assessment, date_field, new_start_date, new_end_date, socket) do
       {:ok, {section_resource, additional_message}} ->
-        socket
-        |> update_assessments(
-          assessment.resource_id,
-          [
-            {:start_date, new_start_date},
-            {:end_date, new_end_date}
-            | maybe_add_scheduling_type(date_field, section_resource)
-          ],
-          false
-        )
-
         {:noreply,
          socket
+         |> update_assessments(
+           assessment.resource_id,
+           [
+             {:start_date, new_start_date},
+             {:end_date, new_end_date}
+             | maybe_add_scheduling_type(date_field, section_resource)
+           ],
+           false
+         )
          |> flash_to_liveview(:info, "Setting updated. #{message}#{additional_message}")}
 
       _ ->
