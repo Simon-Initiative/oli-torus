@@ -289,7 +289,6 @@ defmodule OliWeb.OpenAndFreeController do
            {:ok, section} <- Sections.create_section_resources(section, publication),
            {:ok, _} <- Sections.rebuild_contained_pages(section),
            {:ok, _} <- Sections.rebuild_contained_objectives(section),
-           {:ok, _} <- Sections.rebuild_full_hierarchy(section),
            {:ok, _enrollment} <- enroll(conn, section),
            {:ok, section} <- Delivery.maybe_update_section_contains_explorations(section),
            {:ok, updated_section} <-

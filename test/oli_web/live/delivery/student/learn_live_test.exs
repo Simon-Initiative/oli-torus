@@ -318,8 +318,6 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       end_date: ~U[2023-11-03 20:00:00Z]
     })
 
-    {:ok, _} = Sections.rebuild_full_hierarchy(section)
-
     %{
       section: section,
       project: project,
