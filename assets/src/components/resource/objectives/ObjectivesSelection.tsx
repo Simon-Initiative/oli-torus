@@ -25,12 +25,14 @@ export type ObjectivesProps = {
 // Custom filterBy function for the Typeahead. This allows searches to
 // pick up child objectives for text that matches the parent
 function filterBy(byId: any, option: Objective, props: AllTypeaheadOwnAndInjectedProps<Objective>) {
-  if (option.title.indexOf(props.text) > -1) {
+  if (option.title.toLocaleLowerCase().indexOf(props.text.toLocaleLowerCase()) > -1) {
     return true;
   }
 
   if (option.parentId !== null) {
-    return byId[option.parentId].title.indexOf(props.text) > -1;
+    return (
+      byId[option.parentId].title.toLocaleLowerCase().indexOf(props.text.toLocaleLowerCase()) > -1
+    );
   }
 
   return false;
