@@ -13,8 +13,8 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTable do
   alias Phoenix.LiveView.JS
   alias OliWeb.Router.Helpers, as: Routes
   alias Oli.{Delivery, Repo, Utils}
-  alias Oli.Delivery.Settings.StudentException
-  alias Oli.Delivery.Settings.AutoSubmitCustodian
+  alias Oli.Delivery.Settings
+  alias Oli.Delivery.Settings.{AutoSubmitCustodian, StudentException}
 
   @default_params %{
     offset: 0,
@@ -680,12 +680,13 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTable do
       )
 
     socket.assigns.modal_assigns.student_exception
-    |> StudentException.changeset(%{
-      feedback_scheduled_date: utc_datetime,
-      feedback_mode: :scheduled
-    })
-    |> Ecto.Changeset.validate_required(:feedback_scheduled_date)
-    |> Repo.update()
+    |> Settings.update_student_exception(
+      %{
+        feedback_scheduled_date: utc_datetime,
+        feedback_mode: :scheduled
+      },
+      [:feedback_scheduled_date]
+    )
     |> case do
       {:error, changeset} ->
         {:noreply,

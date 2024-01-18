@@ -796,8 +796,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
       socket.assigns.section.id,
       assessment_setting_id
     )
-    |> SectionResource.changeset(Map.new([{key, new_value}]))
-    |> Repo.update()
+    |> Sections.update_section_resource(Map.new([{key, new_value}]))
     |> case do
       {:error, _changeset} ->
         {:noreply,
