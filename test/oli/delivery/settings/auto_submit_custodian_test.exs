@@ -22,21 +22,25 @@ defmodule Oli.Delivery.Settings.AutoSubmitCustodianTeset do
   end
 
   def schedule_job(map, attempt_key, user_key) do
-
     attempt = map[attempt_key]
     section = map[:section]
     _user = map[user_key]
 
     tomorrow = DateTime.utc_now() |> DateTime.add(1, :day)
 
-    {:ok, %{id: job_id}} = Oli.Delivery.Attempts.AutoSubmit.Worker.new(%{
-      "attempt_guid" => attempt.attempt_guid,
-      "section_slug" => section.slug,
-      "datashop_session_id" => "this_does_not_matter"
-    }, scheduled_at: tomorrow)
-    |> Oban.insert()
+    {:ok, %{id: job_id}} =
+      Oli.Delivery.Attempts.AutoSubmit.Worker.new(
+        %{
+          "attempt_guid" => attempt.attempt_guid,
+          "section_slug" => section.slug,
+          "datashop_session_id" => "this_does_not_matter"
+        },
+        scheduled_at: tomorrow
+      )
+      |> Oban.insert()
 
-    {:ok, attempt} = Oli.Delivery.Attempts.Core.update_resource_attempt(attempt, %{auto_submit_job_id: job_id})
+    {:ok, attempt} =
+      Oli.Delivery.Attempts.Core.update_resource_attempt(attempt, %{auto_submit_job_id: job_id})
 
     Map.put(map, attempt_key, attempt)
   end
@@ -55,7 +59,6 @@ defmodule Oli.Delivery.Settings.AutoSubmitCustodianTeset do
         :attempt1
       )
       |> schedule_job(:attempt1, :user1)
-
     end
 
     test "cancelling cancels the job and clears the job_id", %{
@@ -70,9 +73,10 @@ defmodule Oli.Delivery.Settings.AutoSubmitCustodianTeset do
       job = Repo.get!(Oban.Job, attempt1.auto_submit_job_id)
       assert job.state == "cancelled"
 
-      attempt = Oli.Delivery.Attempts.Core.get_resource_attempt_by(attempt_guid: attempt1.attempt_guid)
-      assert is_nil(attempt.auto_submit_job_id)
+      attempt =
+        Oli.Delivery.Attempts.Core.get_resource_attempt_by(attempt_guid: attempt1.attempt_guid)
 
+      assert is_nil(attempt.auto_submit_job_id)
     end
 
     test "adjust creates a new job, cancels the old and updates the job_id", %{
@@ -90,13 +94,14 @@ defmodule Oli.Delivery.Settings.AutoSubmitCustodianTeset do
       job = Repo.get!(Oban.Job, attempt1.auto_submit_job_id)
       assert job.state == "cancelled"
 
-      attempt = Oli.Delivery.Attempts.Core.get_resource_attempt_by(attempt_guid: attempt1.attempt_guid)
+      attempt =
+        Oli.Delivery.Attempts.Core.get_resource_attempt_by(attempt_guid: attempt1.attempt_guid)
+
       refute is_nil(attempt.auto_submit_job_id)
       refute job.id == attempt.auto_submit_job_id
 
       job = Repo.get!(Oban.Job, attempt.auto_submit_job_id)
       assert job.state == "scheduled"
-
     end
 
     test "adjusting to clear the end date simply cancels", %{
@@ -113,9 +118,10 @@ defmodule Oli.Delivery.Settings.AutoSubmitCustodianTeset do
       job = Repo.get!(Oban.Job, attempt1.auto_submit_job_id)
       assert job.state == "cancelled"
 
-      attempt = Oli.Delivery.Attempts.Core.get_resource_attempt_by(attempt_guid: attempt1.attempt_guid)
-      assert is_nil(attempt.auto_submit_job_id)
+      attempt =
+        Oli.Delivery.Attempts.Core.get_resource_attempt_by(attempt_guid: attempt1.attempt_guid)
 
+      assert is_nil(attempt.auto_submit_job_id)
     end
   end
 
@@ -156,9 +162,10 @@ defmodule Oli.Delivery.Settings.AutoSubmitCustodianTeset do
       job = Repo.get!(Oban.Job, attempt1.auto_submit_job_id)
       assert job.state == "cancelled"
 
-      attempt = Oli.Delivery.Attempts.Core.get_resource_attempt_by(attempt_guid: attempt1.attempt_guid)
-      assert is_nil(attempt.auto_submit_job_id)
+      attempt =
+        Oli.Delivery.Attempts.Core.get_resource_attempt_by(attempt_guid: attempt1.attempt_guid)
 
+      assert is_nil(attempt.auto_submit_job_id)
     end
 
     test "adjust creates a new job, cancels the old and updates the job_id", %{
@@ -176,13 +183,14 @@ defmodule Oli.Delivery.Settings.AutoSubmitCustodianTeset do
       job = Repo.get!(Oban.Job, attempt1.auto_submit_job_id)
       assert job.state == "cancelled"
 
-      attempt = Oli.Delivery.Attempts.Core.get_resource_attempt_by(attempt_guid: attempt1.attempt_guid)
+      attempt =
+        Oli.Delivery.Attempts.Core.get_resource_attempt_by(attempt_guid: attempt1.attempt_guid)
+
       refute is_nil(attempt.auto_submit_job_id)
       refute job.id == attempt.auto_submit_job_id
 
       job = Repo.get!(Oban.Job, attempt.auto_submit_job_id)
       assert job.state == "scheduled"
-
     end
 
     test "adjusting to clear the end date simply cancels", %{
@@ -199,10 +207,10 @@ defmodule Oli.Delivery.Settings.AutoSubmitCustodianTeset do
       job = Repo.get!(Oban.Job, attempt1.auto_submit_job_id)
       assert job.state == "cancelled"
 
-      attempt = Oli.Delivery.Attempts.Core.get_resource_attempt_by(attempt_guid: attempt1.attempt_guid)
-      assert is_nil(attempt.auto_submit_job_id)
+      attempt =
+        Oli.Delivery.Attempts.Core.get_resource_attempt_by(attempt_guid: attempt1.attempt_guid)
 
+      assert is_nil(attempt.auto_submit_job_id)
     end
   end
-
 end

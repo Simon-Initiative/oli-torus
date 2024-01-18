@@ -574,27 +574,27 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
         do_update(:password, assessment_setting_id, new_value, socket)
 
       {:late_submit, assessment_setting_id, :allow} ->
+        result =
+          Repo.transaction(fn ->
+            AutoSubmitCustodian.cancel(
+              socket.assigns.section.id,
+              assessment_setting_id,
+              nil
+            )
 
-        result = Repo.transaction(fn ->
-
-          AutoSubmitCustodian.cancel(
-            socket.assigns.section.id,
-            assessment_setting_id,
-            nil)
-
-          do_update(:late_submit, assessment_setting_id, :allow, socket)
-        end)
+            do_update(:late_submit, assessment_setting_id, :allow, socket)
+          end)
 
         case result do
           {:ok, return} ->
             return
+
           {:error, _} ->
             {:noreply,
-              socket
-              |> flash_to_liveview(:error, "ERROR: Student Exception could not be updated")
-              |> assign(modal_assigns: %{show: false})}
+             socket
+             |> flash_to_liveview(:error, "ERROR: Student Exception could not be updated")
+             |> assign(modal_assigns: %{show: false})}
         end
-
 
       {key, assessment_setting_id, new_value} when new_value != "" ->
         do_update(key, assessment_setting_id, new_value, socket)
@@ -701,13 +701,10 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
       end
 
     {new_start_date, new_end_date, message}
-
   end
 
   defp perform_edits(assessment, date_field, new_start_date, new_end_date, socket) do
-
     Repo.transaction(fn ->
-
       Sections.get_section_resource(
         socket.assigns.section.id,
         assessment.resource_id
@@ -718,18 +715,15 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
         {:error, e} ->
           Repo.rollback(e)
 
-
         {:ok, section_resource} ->
-
           if assessment.late_submit == :disallow and not is_nil(assessment.end_date) do
-
             case AutoSubmitCustodian.adjust(
-              socket.assigns.section.id,
-              assessment.resource_id,
-              assessment.end_date,
-              new_end_date,
-              nil
-            ) do
+                   socket.assigns.section.id,
+                   assessment.resource_id,
+                   assessment.end_date,
+                   new_end_date,
+                   nil
+                 ) do
               {:ok, 0} ->
                 {section_resource, ""}
 
@@ -738,49 +732,45 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
                   section_resource,
                   " Adjusted the deadline for #{count} active student #{Gettext.ngettext(OliWeb.Gettext, "attempt", "attempts", count)}."
                 }
+
               e ->
                 Repo.rollback(e)
             end
           else
             {section_resource, ""}
           end
-        end
+      end
     end)
   end
 
   defp on_edit_date(date_field, new_date, socket) do
-
     assessment = socket.assigns.selected_assessment
 
-    {new_start_date, new_end_date, message} = maybe_adjust_dates(date_field, new_date, assessment, socket.assigns.ctx)
+    {new_start_date, new_end_date, message} =
+      maybe_adjust_dates(date_field, new_date, assessment, socket.assigns.ctx)
 
     case perform_edits(assessment, date_field, new_start_date, new_end_date, socket) do
-
       {:ok, {section_resource, additional_message}} ->
-
         socket
-         |> update_assessments(
-           assessment.resource_id,
-           [
-             {:start_date, new_start_date},
-             {:end_date, new_end_date}
-             | maybe_add_scheduling_type(date_field, section_resource)
-           ],
-           false
-         )
+        |> update_assessments(
+          assessment.resource_id,
+          [
+            {:start_date, new_start_date},
+            {:end_date, new_end_date}
+            | maybe_add_scheduling_type(date_field, section_resource)
+          ],
+          false
+        )
 
         {:noreply,
-        socket
-        |> flash_to_liveview(:info, "Setting updated. #{message}#{additional_message}")}
+         socket
+         |> flash_to_liveview(:info, "Setting updated. #{message}#{additional_message}")}
 
-    _ ->
-
+      _ ->
         {:noreply,
-        socket
-        |> flash_to_liveview(:error, "ERROR: Setting could not be updated")}
-
+         socket
+         |> flash_to_liveview(:error, "ERROR: Setting could not be updated")}
     end
-
   end
 
   defp change_section_resource(section_resource, :start_date, start_date, end_date) do
