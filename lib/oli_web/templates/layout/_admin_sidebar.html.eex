@@ -1,4 +1,4 @@
-<a class="sidebar-item btn my-1" href="<%= Routes.live_path(OliWeb.Endpoint, OliWeb.Admin.AdminView) %>">
-  <img src="/images/icons/icon-admin-light.svg" height="36px" width="32px"/>
-  <div class="label mt-1">Admin</div>
+<a tabindex="0" aria-label="Admin" class="sidebar-item btn my-1" href="<%= Routes.live_path(OliWeb.Endpoint, OliWeb.Admin.AdminView) %>">
+  <img aria-hidden="true" src="/images/icons/icon-admin-light.svg" height="36px" width="32px"/>
+  <div aria-hidden="true" class="label mt-1">Admin</div>
 </a>
