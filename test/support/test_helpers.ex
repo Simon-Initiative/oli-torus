@@ -3377,4 +3377,22 @@ defmodule Oli.TestHelpers do
   defp slug_for(resource_id), do: "slug_for_resource_id_#{resource_id}"
 
   ### Ends helpers to create resources ###
+
+  ### Begins helper that waits for Tasks to complete ###
+
+  def wait_for_completion() do
+    pids = Task.Supervisor.children(Oli.TaskSupervisor)
+    Enum.each(pids, &Process.monitor/1)
+    wait_for_pids(pids)
+  end
+
+  defp wait_for_pids([]), do: nil
+
+  defp wait_for_pids(pids) do
+    receive do
+      {:DOWN, _ref, :process, pid, _reason} -> wait_for_pids(List.delete(pids, pid))
+    end
+  end
+
+  ### Ends helper that waits for Tasks to complete ###
 end

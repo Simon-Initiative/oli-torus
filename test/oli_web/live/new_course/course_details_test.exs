@@ -107,6 +107,8 @@ defmodule OliWeb.NewCourse.CourseDetailsTest do
         "current_step" => 3
       })
 
+      wait_for_completion()
+
       flash =
         assert_redirect(
           view,
@@ -134,6 +136,8 @@ defmodule OliWeb.NewCourse.CourseDetailsTest do
         },
         "current_step" => 3
       })
+
+      wait_for_completion()
 
       flash =
         assert_redirect(
@@ -201,6 +205,8 @@ defmodule OliWeb.NewCourse.CourseDetailsTest do
         "current_step" => 3
       })
 
+      wait_for_completion()
+
       flash =
         assert_redirect(
           view,
@@ -228,6 +234,8 @@ defmodule OliWeb.NewCourse.CourseDetailsTest do
         },
         "current_step" => 3
       })
+
+      wait_for_completion()
 
       flash =
         assert_redirect(
@@ -294,6 +302,8 @@ defmodule OliWeb.NewCourse.CourseDetailsTest do
         "current_step" => 3
       })
 
+      wait_for_completion()
+
       flash = assert_redirect(view, Routes.delivery_path(OliWeb.Endpoint, :index))
       assert flash["info"] == "Section successfully created."
     end
@@ -325,6 +335,8 @@ defmodule OliWeb.NewCourse.CourseDetailsTest do
         |> Oli.Repo.one()
 
       assert blueprint_section.contains_explorations == true
+
+      wait_for_completion()
 
       flash = assert_redirect(view, Routes.delivery_path(OliWeb.Endpoint, :index))
 
