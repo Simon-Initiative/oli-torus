@@ -44,7 +44,7 @@ defmodule Oli.Delivery.Sections.SectionCache do
     case get(cache_id) do
       {:ok, nil} ->
         Logger.info(
-          "Section #{section_slug} has no cached entry for #{section_slug}_#{key}. One will be computed now and cached."
+          "Section #{section_slug} has no cached entry for #{cache_id}. One will be computed now and cached."
         )
 
         value = fun.()
