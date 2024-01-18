@@ -1013,7 +1013,6 @@ defmodule Oli.Delivery.SectionsTest do
       {:ok, section} = Sections.create_section_resources(section, publication)
       {:ok, _} = Sections.rebuild_contained_pages(section)
       {:ok, _} = Sections.rebuild_contained_objectives(section)
-      {:ok, _} = Sections.rebuild_full_hierarchy(section)
 
       %{
         section: section,

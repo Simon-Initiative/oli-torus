@@ -163,9 +163,6 @@ defmodule OliWeb.Api.SchedulingController do
     if can_access_section?(conn, section) do
       case Scheduling.update(section, updates, ctx.local_tz) do
         {:ok, count} ->
-          # a worker is scheduled to update section full_hierarchy
-          # since this may take some time...
-          Sections.rebuild_full_hierarchy(section, true)
           json(conn, %{"result" => "success", "count" => count})
 
         {:error, :missing_update_parameters} ->

@@ -384,7 +384,6 @@ defmodule OliWeb.Delivery.NewCourse do
            {:ok, section} <- Sections.create_section_resources(section, publication),
            {:ok, _} <- Sections.rebuild_contained_pages(section),
            {:ok, _} <- Sections.rebuild_contained_objectives(section),
-           {:ok, _} <- Sections.rebuild_full_hierarchy(section),
            {:ok, _enrollment} <- enroll(socket, section),
            {:ok, section} <-
              Oli.Delivery.maybe_update_section_contains_explorations(section),
@@ -403,7 +402,6 @@ defmodule OliWeb.Delivery.NewCourse do
       with {:ok, section} <- Oli.Delivery.Sections.Blueprint.duplicate(blueprint, section_params),
            {:ok, _} <- Sections.rebuild_contained_pages(section),
            {:ok, _} <- Sections.rebuild_contained_objectives(section),
-           {:ok, _} <- Sections.rebuild_full_hierarchy(section),
            {:ok, _maybe_enrollment} <- enroll(socket, section) do
         section
       else
