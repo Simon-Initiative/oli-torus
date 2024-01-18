@@ -6,6 +6,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   alias Oli.Delivery.{Metrics, Sections}
   alias Phoenix.LiveView.JS
   alias Oli.Authoring.Course.Project
+  alias Oli.Delivery.Sections.SectionCache
 
   import Ecto.Query, warn: false
 
@@ -20,7 +21,12 @@ defmodule OliWeb.Delivery.Student.LearnLive do
           socket.assigns[:current_user]
         )
 
-    root_node = full_hierarchy(socket.assigns.section)
+    section = socket.assigns.section
+
+    root_node =
+      SectionCache.get_or_compute(section.slug, :full_hierarchy, fn ->
+        full_hierarchy(section)
+      end)
 
     socket =
       assign(socket,

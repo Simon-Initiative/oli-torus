@@ -12,11 +12,16 @@ defmodule Oli.Delivery.Sections.SectionCache do
 
   require Logger
 
+  alias Phoenix.PubSub
+
   @cache_name :cache_section
 
   @cache_keys [
-    :ordered_container_labels
+    :ordered_container_labels,
+    :full_hierarchy
   ]
+
+  @ttl :timer.hours(24 * 365)
 
   # ----------------
   # Client
@@ -34,7 +39,9 @@ defmodule Oli.Delivery.Sections.SectionCache do
     do: GenServer.call(__MODULE__, {:put, key, value})
 
   def get_or_compute(section_slug, key, fun) do
-    case get("#{section_slug}_#{key}") do
+    cache_id = cache_id(section_slug, key)
+
+    case get(cache_id) do
       {:ok, nil} ->
         Logger.info(
           "Section #{section_slug} has no cached entry for #{section_slug}_#{key}. One will be computed now and cached."
@@ -42,7 +49,9 @@ defmodule Oli.Delivery.Sections.SectionCache do
 
         value = fun.()
 
-        put(key, value)
+        put(cache_id, value)
+
+        maybe_broadcast({:put, key, value}, section_slug)
 
         value
 
@@ -53,7 +62,11 @@ defmodule Oli.Delivery.Sections.SectionCache do
 
   def clear(section_slug) do
     for key <- @cache_keys do
-      delete("#{section_slug}_#{key}")
+      Logger.info("Clearing #{key} from cache for section #{section_slug}.")
+
+      delete(cache_id(section_slug, key))
+
+      maybe_broadcast({:delete, key}, section_slug)
     end
   end
 
@@ -62,6 +75,7 @@ defmodule Oli.Delivery.Sections.SectionCache do
 
   def init(_) do
     {:ok, _pid} = Cachex.start_link(@cache_name, stats: true)
+    PubSub.subscribe(Oli.PubSub, cache_topic())
 
     {:ok, []}
   end
@@ -81,9 +95,7 @@ defmodule Oli.Delivery.Sections.SectionCache do
   end
 
   def handle_call({:put, key, value}, _from, state) do
-    ttl = :timer.hours(24 * 365)
-
-    case Cachex.put(@cache_name, key, value, ttl: ttl) do
+    case Cachex.put(@cache_name, key, value, ttl: @ttl) do
       {:ok, true} ->
         {:reply, :ok, state}
 
@@ -91,4 +103,44 @@ defmodule Oli.Delivery.Sections.SectionCache do
         {:reply, :error, state}
     end
   end
+
+  # ----------------
+  # PubSub/Messages callbacks
+
+  def handle_info({:delete, key}, state) do
+    Cachex.del(@cache_name, key)
+
+    {:noreply, state}
+  end
+
+  def handle_info({:put, key, value}, state) do
+    Cachex.put(@cache_name, key, value, ttl: @ttl)
+
+    {:noreply, state}
+  end
+
+  # ----------------
+  # Private
+
+  defp cache_id(section_slug, key), do: "#{section_slug}_#{key}"
+
+  defp cache_topic,
+    do: Atom.to_string(@cache_name)
+
+  defp maybe_broadcast({:put, :full_hierarchy = key, hierarchy}, section_slug),
+    do: broadcast_message({:put, cache_id(section_slug, key), hierarchy})
+
+  defp maybe_broadcast({:delete, :full_hierarchy = key}, section_slug),
+    do: broadcast_message({:delete, cache_id(section_slug, key)})
+
+  defp maybe_broadcast(_, _), do: nil
+
+  defp broadcast_message(message),
+    do:
+      PubSub.broadcast_from(
+        Oli.PubSub,
+        self(),
+        cache_topic(),
+        message
+      )
 end
