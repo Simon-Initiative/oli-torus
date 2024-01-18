@@ -27,29 +27,33 @@ export const RulesTab: React.FC<Props> = (props) => {
   };
 
   if (props.input.inputType === 'dropdown') {
+    // get choice set for this input
     const choices = model.choices.filter((choice) =>
       (props.input as Dropdown).choiceIds.includes(choice.id),
     );
-    // Rule may combine many input rules, and have multiple matches for this input
+    // Rule may combine many input rules to have multiple matches for this input
     const values = getInputValues(props.response.rule, props.input.id);
-
-    // questionable what to do with wildcard. Here select all choices
-    const selectedValues = values[0] === '.*' ? choices.map((c) => c.id) : values;
 
     // disjunctive rules allow multiple checked choices for dropdowns, so show as Checkbox
     const orRule = props.response.matchStyle === 'any' || props.response.matchStyle === 'none';
     return (
       <div className="d-flex flex-row">
         {props.label}&nbsp;
-        <ChoicesDelivery
-          unselectedIcon={orRule ? <Checkbox.Unchecked /> : <Radio.Unchecked />}
-          selectedIcon={orRule ? <Checkbox.Checked /> : <Radio.Checked />}
-          choices={choices}
-          selected={selectedValues}
-          onSelect={(id) => props.toggleCorrectness(id, props.input.partId, props.input.id)}
-          isEvaluated={false}
-          context={defaultWriterContext({ projectSlug: projectSlug })}
-        />
+        {values[0] === '.*' ? (
+          // Wildcard dropdown rule unnecessary outside of catchall, but could occur
+          // This odd case display changeable by deleting & adding back rule for input
+          <span>[ Any ]</span>
+        ) : (
+          <ChoicesDelivery
+            unselectedIcon={orRule ? <Checkbox.Unchecked /> : <Radio.Unchecked />}
+            selectedIcon={orRule ? <Checkbox.Checked /> : <Radio.Checked />}
+            choices={choices}
+            selected={values}
+            onSelect={(id) => props.toggleCorrectness(id, props.input.partId, props.input.id)}
+            isEvaluated={false}
+            context={defaultWriterContext({ projectSlug: projectSlug })}
+          />
+        )}
         <div className="choicesAuthoring__removeButtonContainer">
           {<RemoveButtonConnected onClick={removeInputFromResponse} />}
         </div>

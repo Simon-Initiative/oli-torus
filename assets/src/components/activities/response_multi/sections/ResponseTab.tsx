@@ -6,7 +6,6 @@ import { FeedbackCard } from 'components/activities/common/responses/FeedbackCar
 import { ScoreInput } from 'components/activities/common/responses/ScoreInput';
 import { ShowPage } from 'components/activities/common/responses/ShowPage';
 import { ResponseActions } from 'components/activities/common/responses/responseActions';
-import { addOrRemove } from 'components/activities/common/utils';
 import { Dropdown, MultiInput } from 'components/activities/multi_input/schema';
 import { ResponseMultiInputSchema } from 'components/activities/response_multi/schema';
 import { RulesTab } from 'components/activities/response_multi/sections/RulesTab';
@@ -22,6 +21,7 @@ import { getRulesForInput, ruleInputRefs, updateRule } from '../rules';
 import { defaultRuleForInputType, inputLabel } from '../utils';
 
 interface Props {
+  title: string;
   response: Response;
   partId: string;
   customScoring?: boolean;
@@ -181,12 +181,32 @@ export const ResponseTab: React.FC<Props> = (props) => {
     </div>
   );
 
+  // if showing catchall incorrect response, just show feedback card
+  if (props.title.toLowerCase().includes('incorrect'))
+    return (
+      <FeedbackCard
+        key={`feedb-${response.id}`}
+        title={props.title}
+        feedback={response.feedback}
+        updateTextDirection={(textDirection) => updateTextDirection(response.id, textDirection)}
+        update={(_id, content) => updateFeedback(response.id, content as RichText)}
+        updateEditor={(editor) => updateFeedbackEditor(response.id, editor)}
+        placeholder="Encourage students or explain why the answer is correct"
+      >
+        {authoringContext.contentBreaksExist ? (
+          <ShowPage
+            editMode={editMode}
+            index={response.showPage}
+            onChange={(v) => updateShowPage(response.id, v)}
+          />
+        ) : null}
+      </FeedbackCard>
+    );
+
   return (
     <Card.Card key={response.id}>
       <Card.Title>
-        <div className="d-flex justify-content-between w-100">
-          {response.targeted ? 'Targeted Feedback' : 'Feedback'}
-        </div>
+        <div className="d-flex justify-content-between w-100">{props.title}</div>
 
         <div className="flex-grow-1"></div>
         {!props.customScoring ? (

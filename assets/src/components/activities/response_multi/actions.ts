@@ -32,7 +32,13 @@ import { getByUnsafe, getPartById, getParts } from 'data/activities/model/utils'
 import { InputRef } from 'data/content/model/elements/types';
 import { clone } from 'utils/common';
 import { Operations } from 'utils/pathOperations';
-import { indexResponseMultiRule, ruleInputRefs, toInputRule, updateRule } from './rules';
+import {
+  indexResponseMultiRule,
+  ruleInputRefs,
+  ruleIsCatchAll,
+  toInputRule,
+  updateRule,
+} from './rules';
 import { ResponseMultiInputSchema } from './schema';
 import { ResponseMultiInputResponses } from './utils';
 
@@ -150,7 +156,7 @@ export const ResponseMultiInputActions = {
       partFrom.responses = partFrom.responses.filter((r) => r.rule !== '');
 
       // if dest has a catchall response, append wildcard clause for new input
-      const response = partTo.responses.find((r) => r.catchAll);
+      const response = partTo.responses.find((r) => ruleIsCatchAll(r.rule));
       if (response) {
         response.rule = updateRule(response.rule, 'all', input.id, matchRule('.*'), 'add');
       }
@@ -294,7 +300,7 @@ export const ResponseMultiInputActions = {
 
       if (existingResponses.length > 0) {
         existingResponses.forEach((r) => {
-          if (r.catchAll) return;
+          if (ruleIsCatchAll(r.rule)) return;
           const updatedRule: string = updateRule(
             r.rule,
             r.matchStyle,

@@ -97,7 +97,7 @@ export const ruleInputRefs = (r: MultiRule): string[] => [
   ...new Set(ruleInputRules(r).map(inputRuleInput).filter(isDefined)),
 ];
 
-export const isCatchAll = (r: MultiRule): boolean =>
+export const ruleIsCatchAll = (r: MultiRule): boolean =>
   ruleInputRules(r).every((ir: InputRule) => inputRuleValue(ir) === '.*');
 
 // update given rule by adding/removing/modifying a single input rule

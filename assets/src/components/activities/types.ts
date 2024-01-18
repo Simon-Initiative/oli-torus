@@ -491,11 +491,10 @@ export interface Response extends Identifiable {
    */
   showPage?: number;
 
+  /*
+   * For Response_multi: matching style to apply to rule
+   */
   matchStyle?: MatchStyle;
-
-  catchAll?: boolean;
-
-  targeted?: boolean;
 }
 
 /**
