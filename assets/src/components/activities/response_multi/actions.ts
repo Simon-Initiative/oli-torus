@@ -134,9 +134,8 @@ export const ResponseMultiInputActions = {
       partTo.targets ? partTo.targets.push(input.id) : (partTo.targets = [input.id]);
       input.partId = partTo.id;
 
-      // many response rules in from part may involve this id. This picks the first one.
-      // Perhaps trying to move correct answer for this input?
-      // !!! Try to find the correct one
+      // Copy input rule for this id  from first response in old part to first
+      // response in new, on assumption that first response is correct one
       const fromRules = indexResponseMultiRule(partFrom.responses[0].rule);
 
       // merge the rules
