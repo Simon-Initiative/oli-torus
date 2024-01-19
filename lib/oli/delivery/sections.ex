@@ -390,37 +390,41 @@ defmodule Oli.Delivery.Sections do
   end
 
   @doc """
-  Unenrolls a user from a section by removing the provided context roles. If no context roles are provided, no change is made. If all context roles are removed from the user, the enrollment is marked as suspended.
+  Unenrolls a user from a section by removing the provided context roles.
+  If no context roles are provided, no change is made. If all context roles
+  are removed from the user, the enrollment is marked as suspended.
 
   To unenroll a student, use unenroll_learner/2
   """
   def unenroll(user_id, section_id, context_roles) do
-    context_roles = EctoProvider.Marshaler.to(context_roles)
-
-    case Repo.one(
-           from(e in Enrollment,
-             preload: [:context_roles],
-             where: e.user_id == ^user_id and e.section_id == ^section_id,
-             select: e
-           )
-         ) do
+    from(e in Enrollment,
+      preload: [:context_roles],
+      where: e.user_id == ^user_id,
+      where: e.section_id == ^section_id,
+      select: e
+    )
+    |> Repo.one()
+    |> case do
       nil ->
         # Enrollment not found
         {:error, nil}
 
       enrollment ->
-        other_context_roles =
-          Enum.filter(enrollment.context_roles, &(!Enum.member?(context_roles, &1)))
+        context_roles = EctoProvider.Marshaler.to(context_roles)
 
-        if Enum.count(other_context_roles) == 0 do
-          enrollment
-          |> Enrollment.changeset(%{status: :suspended})
-          |> Repo.update()
-        else
-          enrollment
-          |> Enrollment.changeset(%{section_id: section_id})
-          |> Ecto.Changeset.put_assoc(:context_roles, other_context_roles)
-          |> Repo.update()
+        MapSet.difference(MapSet.new(enrollment.context_roles), MapSet.new(context_roles))
+        |> MapSet.to_list()
+        |> case do
+          [] ->
+            enrollment
+            |> Enrollment.changeset(%{status: :suspended})
+            |> Repo.update()
+
+          other_context_roles ->
+            enrollment
+            |> Enrollment.changeset(%{section_id: section_id})
+            |> Ecto.Changeset.put_assoc(:context_roles, other_context_roles)
+            |> Repo.update()
         end
     end
   end
