@@ -16,8 +16,9 @@ import { MatchStyle } from '../types';
 // Other inputs should have a single InputRule per input, as should an "all" rule
 
 // We represent both in their torus rule string form, parsing out constitutents as needed.
-// Type aliases for parameter documentation only, do not provide type checking:
+// Following trick defines distinct nominal type for static type checking:
 type InputRule = string & { __type: 'InputRule' };
+// Type alias for parameter documentation only, no type checking:
 type MultiRule = string;
 
 // convert regular torus match rule to inputRule. no effect if already InputRule
