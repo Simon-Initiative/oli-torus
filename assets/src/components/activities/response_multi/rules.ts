@@ -66,7 +66,6 @@ export const ruleInputRules = (r: MultiRule): InputRule[] => {
   const RE_RULE = new RegExp(INPUT_RULE, 'g');
 
   const matches = r.match(RE_RULE);
-  // console.log('ruleInputRules ' + r + ' =>\n   ' + matches);
   if (matches === null) throw new Error('no input Rules');
   return (matches ? matches : []) as InputRule[];
 };
@@ -79,7 +78,7 @@ export const getRulesForInput = (r: MultiRule, id: string): InputRule[] =>
 
 export const getUniqueRuleForInput = (r: MultiRule, id: string): InputRule => {
   const inputRules = getRulesForInput(r, id);
-  if (inputRules.length > 1) console.error('unexpected multiple rules for input ' + id);
+  if (inputRules.length > 1) console.trace('unexpected multiple rules for input ' + id);
   return inputRules[0];
 };
 
@@ -104,6 +103,7 @@ export const ruleIsCatchAll = (r: MultiRule): boolean =>
 //
 // remove op removes any rule for specified input
 // remove/modify ops should only be used in cases with unique rule for given input
+// Returns '' if ruleset empty after remove or toggle. Caller should check and handle
 export const updateRule = (
   rule: MultiRule,
   style: MatchStyle | undefined,
@@ -130,7 +130,6 @@ export const updateRule = (
       return combineRules(matchStyle, indexResponseMultiRule(rule).values());
   }
 
-  // Can have empty ruleset after remove. Caller should handle
   return inputRules.length === 0 ? '' : combineRules(matchStyle, inputRules);
 };
 

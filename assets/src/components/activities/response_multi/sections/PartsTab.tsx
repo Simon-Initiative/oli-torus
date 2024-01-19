@@ -24,7 +24,7 @@ const defaultRuleForInputType = (inputType: string | undefined) => {
       return equalsRule('');
     case 'text':
     default:
-      return containsRule('');
+      return containsRule('answer');
   }
 };
 
@@ -90,8 +90,6 @@ export const PartsTab: React.FC<Props> = (props) => {
     <Card.Card key={props.input.id}>
       <Card.Title></Card.Title>
       <Card.Content>
-        <ResponseMultiInputScoringMethod />
-        {model.customScoring && <ActivityScoring partId={part.id} promptForDefault={false} />}
         {getResponse(correct, part, 'Correct Answer')}
         {catchAll && getResponse(catchAll, part, 'Feedback for Incorrect Answers')}
         {targeted.map((response: Response) => getResponse(response, part, 'Targeted Feedback'))}
@@ -102,6 +100,8 @@ export const PartsTab: React.FC<Props> = (props) => {
         >
           Add targeted feedback
         </AuthoringButtonConnected>
+        <ResponseMultiInputScoringMethod />
+        {model.customScoring && <ActivityScoring partId={part.id} promptForDefault={false} />}
       </Card.Content>
     </Card.Card>
   );

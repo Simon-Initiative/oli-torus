@@ -51,7 +51,6 @@ export const defaultRuleForInputType = (inputType: string | undefined, choiceId?
 export const ResponseMultiInputResponses = {
   catchAll: (inputId: string, text = 'Incorrect') => {
     const catchAllRespose = makeResponse(toInputRule(inputId, matchRule('.*')), 0, text);
-    catchAllRespose.catchAll = true;
     return catchAllRespose;
   },
   forTextInput: (inputId: string, correctText = 'Correct', incorrectText = 'Incorrect') => [
