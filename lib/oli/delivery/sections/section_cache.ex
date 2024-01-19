@@ -14,10 +14,15 @@ defmodule Oli.Delivery.Sections.SectionCache do
 
   alias Phoenix.PubSub
 
+  @dispatcher Application.compile_env(:oli, [:section_cache, :dispatcher], Phoenix.PubSub)
   @cache_name :cache_section
 
   @cache_keys [
     :ordered_container_labels,
+    :full_hierarchy
+  ]
+
+  @broadcastable_cache_keys [
     :full_hierarchy
   ]
 
@@ -69,6 +74,12 @@ defmodule Oli.Delivery.Sections.SectionCache do
       maybe_broadcast({:delete, key}, section_slug)
     end
   end
+
+  def cache_topic, do: Atom.to_string(@cache_name)
+
+  def cache_keys, do: @cache_keys
+
+  def broadcastable_cache_keys, do: @broadcastable_cache_keys
 
   # ----------------
   # Server callbacks
@@ -124,23 +135,22 @@ defmodule Oli.Delivery.Sections.SectionCache do
 
   defp cache_id(section_slug, key), do: "#{section_slug}_#{key}"
 
-  defp cache_topic,
-    do: Atom.to_string(@cache_name)
+  defp maybe_broadcast({:put, key, hierarchy}, section_slug)
+       when key in @broadcastable_cache_keys,
+       do: broadcast_message({:put, cache_id(section_slug, key), hierarchy})
 
-  defp maybe_broadcast({:put, :full_hierarchy = key, hierarchy}, section_slug),
-    do: broadcast_message({:put, cache_id(section_slug, key), hierarchy})
-
-  defp maybe_broadcast({:delete, :full_hierarchy = key}, section_slug),
+  defp maybe_broadcast({:delete, key}, section_slug) when key in @broadcastable_cache_keys,
     do: broadcast_message({:delete, cache_id(section_slug, key)})
 
   defp maybe_broadcast(_, _), do: nil
 
-  defp broadcast_message(message),
-    do:
-      PubSub.broadcast_from(
-        Oli.PubSub,
-        self(),
-        cache_topic(),
-        message
-      )
+  defp broadcast_message(message) do
+    PubSub.broadcast_from(
+      Oli.PubSub,
+      self(),
+      cache_topic(),
+      message,
+      @dispatcher
+    )
+  end
 end

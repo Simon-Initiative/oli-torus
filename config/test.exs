@@ -98,3 +98,5 @@ config :oli, :auth_providers,
     System.get_env("AUTHOR_GITHUB_CLIENT_SECRET", "author_client_secret"),
   user_github_client_id: System.get_env("USER_GITHUB_CLIENT_ID", "user_client_id"),
   user_github_client_secret: System.get_env("USER_GITHUB_CLIENT_SECRET", "user_client_secret")
+
+config :oli, :section_cache, dispatcher: Oli.TestHelpers.CustomDispatcher

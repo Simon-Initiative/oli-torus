@@ -25,6 +25,25 @@ defmodule Oli.TestHelpers do
   Mox.defmock(Oli.Test.MockHTTP, for: HTTPoison.Base)
   Mox.defmock(Oli.Test.MockAws, for: ExAws.Behaviour)
 
+  defmodule CustomDispatcher do
+    @moduledoc """
+    Custom dispatcher for testing PubSub messages emitted by broadcast_from/5.
+    """
+
+    @doc """
+    Dispatches messages to the given list of pids.
+    When used as a custom dispatcher in the broadcast_from/5 function, it converts it into broadcast/3 calls,
+    meaning that all the nodes (including the current process) receive the message.
+    """
+    def dispatch(entries, _from, message) do
+      for {pid, _metadata} <- entries do
+        send(pid, message)
+      end
+
+      :ok
+    end
+  end
+
   def yesterday() do
     {:ok, datetime} = DateTime.now("Etc/UTC")
     DateTime.add(datetime, -(60 * 60 * 24), :second)
