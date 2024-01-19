@@ -81,14 +81,16 @@
         <%!-- <DropTarget id="last" index={length(@children)} /> --%>
       </div>
       <div class="mt-5">
-        <span class="text-secondary mr-2">Create:</span>
+        <div class="text-secondary mr-2">Create a page:</div>
+        <div class="flex">
+        <span>Basic</span>
         <button
           phx-click="add"
           phx-value-type="Unscored"
           class="btn btn-xs btn-outline-primary mr-0.5"
           type="button"
         >
-          Practice Page
+          Practice
         </button>
         <button
           phx-click="add"
@@ -96,17 +98,21 @@
           class="btn btn-xs btn-outline-primary mr-0.5"
           type="button"
         >
-          Graded Assessment
+          Graded
         </button>
+        </div>
         <%= if @adaptivity_flag do %>
+          <div class="flex">
+          <span>Adaptive</span>
           <button
             phx-click="add"
             phx-value-type="Adaptive"
             class="btn btn-xs btn-outline-primary mr-0.5"
             type="button"
           >
-            Adaptive Page
+            Practice
           </button>
+          </div>
         <% end %>
         <button
           phx-click="add"
