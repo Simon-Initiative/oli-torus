@@ -82,6 +82,12 @@ export const getIncorrectResponse = (model: HasParts, partId: string) => {
   ).valueOrThrow(new Error('Could not find incorrect response'));
 };
 
+export const getMaxScoreResponse = (model: HasParts, partId: string) => {
+  return getResponsesByPartId(model, partId).reduce((prev, current) =>
+    prev && current.score > prev.score ? current : prev,
+  );
+};
+
 export interface ResponseMapping {
   response: Response;
   choiceIds: ChoiceId[];
