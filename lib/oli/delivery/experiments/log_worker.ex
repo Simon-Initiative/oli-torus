@@ -25,7 +25,6 @@ defmodule Oli.Delivery.Experiments.LogWorker do
   end
 
   def perform_now(attempt_guid) do
-
     {score, out_of, enrollment_id} =
       from(aa in ActivityAttempt,
         join: ra in ResourceAttempt,
@@ -52,7 +51,6 @@ defmodule Oli.Delivery.Experiments.LogWorker do
       end
 
     Oli.Delivery.Experiments.log(enrollment_id, correctness)
-
   end
 
   @doc """
@@ -62,17 +60,18 @@ defmodule Oli.Delivery.Experiments.LogWorker do
   def maybe_schedule(result, activity_attempt_guid, section_slug) do
     case Oli.Delivery.Experiments.experiments_enabled?() do
       true ->
-
-        case from(s in Oli.Delivery.Sections.Section, where: s.slug == ^section_slug, select: s.has_experiments)
-        |> Repo.one() do
-
+        case from(s in Oli.Delivery.Sections.Section,
+               where: s.slug == ^section_slug,
+               select: s.has_experiments
+             )
+             |> Repo.one() do
           true ->
             %{activity_attempt_guid: activity_attempt_guid}
             |> Oli.Delivery.Experiments.LogWorker.new()
             |> Oban.insert()
+
           _ ->
             true
-
         end
 
       _ ->

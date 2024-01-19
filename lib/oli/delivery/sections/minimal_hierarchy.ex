@@ -1,5 +1,4 @@
 defmodule Oli.Delivery.Sections.MinimalHierarchy do
-
   import Ecto.Query, warn: false
 
   alias Oli.Delivery.Sections
@@ -19,7 +18,9 @@ defmodule Oli.Delivery.Sections.MinimalHierarchy do
   def published_resources_map(publication_ids) when is_list(publication_ids) do
     PublishedResource
     |> join(:left, [pr], r in Oli.Resources.Revision, on: pr.revision_id == r.id)
-    |> join(:left, [pr, _], p in Oli.Publishing.Publications.Publication, on: pr.publication_id == p.id)
+    |> join(:left, [pr, _], p in Oli.Publishing.Publications.Publication,
+      on: pr.publication_id == p.id
+    )
     |> where([pr, _r], pr.publication_id in ^publication_ids)
     |> select([pr, r, p], %{
       resource_id: pr.resource_id,
@@ -38,11 +39,12 @@ defmodule Oli.Delivery.Sections.MinimalHierarchy do
   end
 
   def published_resources_map(publication_id) do
-
-    project_id = from(
-      p in Oli.Publishing.Publications.Publication,
-      where: p.id == ^publication_id,
-      select: p.project_id)
+    project_id =
+      from(
+        p in Oli.Publishing.Publications.Publication,
+        where: p.id == ^publication_id,
+        select: p.project_id
+      )
       |> Repo.one()
 
     PublishedResource
@@ -65,7 +67,6 @@ defmodule Oli.Delivery.Sections.MinimalHierarchy do
   end
 
   def full_hierarchy(section_slug) do
-
     mark = Oli.Timing.mark()
 
     {hierarchy_nodes, root_hierarchy_node} = hierarchy_nodes_by_sr_id(section_slug)
@@ -77,9 +78,9 @@ defmodule Oli.Delivery.Sections.MinimalHierarchy do
   end
 
   defp hierarchy_node_with_children(
-        %HierarchyNode{children: children_ids} = node,
-        nodes_by_sr_id
-      ) do
+         %HierarchyNode{children: children_ids} = node,
+         nodes_by_sr_id
+       ) do
     Map.put(
       node,
       :children,
@@ -104,25 +105,27 @@ defmodule Oli.Delivery.Sections.MinimalHierarchy do
       end
 
     from(
-      [sr: sr, rev: rev, spp: spp] in Oli.Publishing.DeliveryResolver.section_resource_revisions(section_slug),
+      [sr: sr, rev: rev, spp: spp] in Oli.Publishing.DeliveryResolver.section_resource_revisions(
+        section_slug
+      ),
       join: p in Oli.Authoring.Course.Project,
       on: p.id == spp.project_id,
       where:
         rev.resource_type_id == ^page_id or
           rev.resource_type_id == ^container_id,
       select:
-        {sr, %{
-          id: rev.id,
-          resource_id: rev.resource_id,
-          resource_type_id: rev.resource_type_id,
-          slug: rev.slug,
-          title: rev.title,
-          graded: rev.graded
-        }, p.slug}
+        {sr,
+         %{
+           id: rev.id,
+           resource_id: rev.resource_id,
+           resource_type_id: rev.resource_type_id,
+           slug: rev.slug,
+           title: rev.title,
+           graded: rev.graded
+         }, p.slug}
     )
     |> Repo.all()
     |> Enum.reduce({%{}, nil}, fn {sr, rev, proj_slug}, {nodes, root} ->
-
       is_root? = section.root_section_resource_id == sr.id
 
       node = %HierarchyNode{
@@ -149,7 +152,5 @@ defmodule Oli.Delivery.Sections.MinimalHierarchy do
         if(is_root?, do: node, else: root)
       }
     end)
-
   end
-
 end
