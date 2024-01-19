@@ -8,9 +8,61 @@ defmodule Oli.Delivery.Sections.MinimalHierarchy do
   alias Oli.Branding.CustomLabels
   alias Oli.Repo
 
+  alias Oli.Publishing.{
+    PublishedResource
+  }
+
   import Oli.Utils
 
   require Logger
+
+  def published_resources_map(publication_ids) when is_list(publication_ids) do
+    PublishedResource
+    |> join(:left, [pr], r in Oli.Resources.Revision, on: pr.revision_id == r.id)
+    |> join(:left, [pr, _], p in Oli.Publishing.Publications.Publication, on: pr.publication_id == p.id)
+    |> where([pr, _r], pr.publication_id in ^publication_ids)
+    |> select([pr, r, p], %{
+      resource_id: pr.resource_id,
+      children: r.children,
+      revision_id: pr.revision_id,
+      resource_type_id: r.resource_type_id,
+      title: r.title,
+      scoring_strategy_id: r.scoring_strategy_id,
+      collab_space_config: r.collab_space_config,
+      max_attempts: r.max_attempts,
+      retake_mode: r.retake_mode,
+      project_id: p.project_id
+    })
+    |> Repo.all()
+    |> Enum.reduce(%{}, fn r, m -> Map.put(m, r.resource_id, r) end)
+  end
+
+  def published_resources_map(publication_id) do
+
+    project_id = from(
+      p in Oli.Publishing.Publications.Publication,
+      where: p.id == ^publication_id,
+      select: p.project_id)
+      |> Repo.one()
+
+    PublishedResource
+    |> join(:left, [pr], r in Oli.Resources.Revision, on: pr.revision_id == r.id)
+    |> where([pr, _r], pr.publication_id == ^publication_id)
+    |> select([pr, r], %{
+      resource_id: pr.resource_id,
+      children: r.children,
+      revision_id: pr.revision_id,
+      resource_type_id: r.resource_type_id,
+      title: r.title,
+      scoring_strategy_id: r.scoring_strategy_id,
+      collab_space_config: r.collab_space_config,
+      max_attempts: r.max_attempts,
+      retake_mode: r.retake_mode
+    })
+    |> Repo.all()
+    |> Enum.map(fn pr -> Map.put(pr, :project_id, project_id) end)
+    |> Enum.reduce(%{}, fn r, m -> Map.put(m, r.resource_id, r) end)
+  end
 
   def full_hierarchy(section_slug) do
 

@@ -182,9 +182,11 @@ defmodule OliWeb.Delivery.ManageSourceMaterials do
       updates_in_progress: updates_in_progress
     } = socket.assigns
 
-    %{"section_slug" => section.slug, "publication_id" => publication_id}
-    |> Worker.new()
-    |> Oban.insert!()
+   # %{"section_slug" => section.slug, "publication_id" => publication_id}
+   # |> Worker.new()
+   # |> Oban.insert!()
+
+    Worker.perform_now(section.slug, publication_id)
 
     updates_in_progress = Map.put_new(updates_in_progress, publication_id, true)
 
