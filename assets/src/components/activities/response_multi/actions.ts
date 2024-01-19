@@ -27,7 +27,7 @@ import { elementsAdded, elementsOfType, elementsRemoved } from 'components/editi
 import { Choices } from 'data/activities/model/choices';
 import { List } from 'data/activities/model/list';
 import { getCorrectResponse, getResponseBy } from 'data/activities/model/responses';
-import { andRules, containsRule, matchRule } from 'data/activities/model/rules';
+import { containsRule, matchRule } from 'data/activities/model/rules';
 import { getByUnsafe, getPartById, getParts } from 'data/activities/model/utils';
 import { InputRef } from 'data/content/model/elements/types';
 import { clone } from 'utils/common';

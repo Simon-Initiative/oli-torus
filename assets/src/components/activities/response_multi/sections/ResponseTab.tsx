@@ -44,7 +44,6 @@ export const ResponseTab: React.FC<Props> = (props) => {
   // update method used on dropdown choice click
   const toggleCorrectness = (id: string, partId: string, inputId: string) => {
     if (response.matchStyle === 'any' || response.matchStyle === 'none') {
-      console.log(`toggling choice ${id} for input ${inputId}`);
       // disjunctive rule allows multiple correct options.
       // Treat as CATA checkbox: toggle clicked choice in/out of correct set
       const newRule = updateRule(
@@ -54,14 +53,12 @@ export const ResponseTab: React.FC<Props> = (props) => {
         matchRule(id),
         'toggle',
       );
-      console.log('new rule after toggle: |' + newRule + '|');
       // prevent change to totally empty rule or one w/no inputRules for this input:
       if (newRule !== '' && getRulesForInput(newRule, inputId).length > 0) {
-        console.log('dispatching update');
         dispatch(
           ResponseMultiInputActions.editResponseResponseMultiRule(response.id, inputId, newRule),
         );
-      } else console.log('ignoring update');
+      }
       return;
     }
 
