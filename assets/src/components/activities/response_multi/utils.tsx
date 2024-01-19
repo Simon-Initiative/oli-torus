@@ -131,7 +131,7 @@ export const inputTitle = (input: MultiInput, index: number) => (
   </div>
 );
 
-export const inputLabel = (id: string, model: ResponseMultiInputSchema, type: boolean = false) => {
+export const inputLabel = (id: string, model: ResponseMultiInputSchema, type = false) => {
   const index = model.inputs.findIndex((inp) => inp.id === id);
   if (index < 0) {
     console.error('input not found: ' + id);
