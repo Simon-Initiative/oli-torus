@@ -348,6 +348,49 @@ defmodule OliWeb.PublishLiveTest do
              |> render() =~ last_revision.title
     end
 
+    test "renders creator and instructors content in the table", %{
+      conn: conn,
+      project: project,
+      section1: section1,
+      section2: section2
+    } do
+      instructor_1 = insert(:user, name: nil, given_name: nil, family_name: "instructor_1")
+      instructor_2 = insert(:user, name: nil, given_name: nil, family_name: "instructor_2")
+
+      insert(:enrollment, section: section1, user: instructor_1)
+      insert(:enrollment, section: section1, user: instructor_2)
+      insert(:enrollment, section: section2, user: instructor_2)
+
+      {:ok, _view, html} = live(conn, live_view_publish_route(project.slug))
+
+      assert [
+               "Title",
+               "Current Publication",
+               "Creator",
+               "Instructors",
+               "Relationship Type",
+               "Start Date",
+               "End Date"
+             ] ==
+               html
+               |> Floki.find("#active-course-sections-table thead tr > th")
+               |> Enum.map(&String.trim(Floki.text(&1)))
+
+      [row_1, row_2] = Floki.find(html, "#active-course-sections-table tbody > tr ")
+
+      [_, _, row_1_creator, row_1_instructors | _rest] = Floki.find(row_1, "td > div")
+
+      assert String.trim(Floki.text(row_1_creator)) =~ instructor_1.family_name
+
+      assert String.trim(Floki.text(row_1_instructors)) =~
+               "#{instructor_1.family_name}; #{instructor_2.family_name}"
+
+      [_, _, row_2_creator, row_2_instructors | _rest] = Floki.find(row_2, "td > div")
+
+      assert String.trim(Floki.text(row_2_creator)) =~ instructor_2.family_name
+      assert String.trim(Floki.text(row_2_instructors)) =~ instructor_2.family_name
+    end
+
     test "shows a message when the project has not been published yet", %{
       conn: conn,
       project: project

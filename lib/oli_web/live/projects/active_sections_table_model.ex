@@ -4,6 +4,7 @@ defmodule OliWeb.Projects.ActiveSectionsTableModel do
   alias OliWeb.Common.SessionContext
   alias OliWeb.Common.Table.{ColumnSpec, SortableTableModel}
   alias OliWeb.Common.Utils
+  alias Oli.Authoring.Publishing
 
   def new(%SessionContext{} = ctx, sections, project) do
     column_specs = [
@@ -14,6 +15,16 @@ defmodule OliWeb.Projects.ActiveSectionsTableModel do
       %ColumnSpec{
         name: :section_project_publications,
         label: "Current Publication",
+        render_fn: &__MODULE__.custom_render/3
+      },
+      %ColumnSpec{
+        name: :creator,
+        label: "Creator",
+        render_fn: &__MODULE__.custom_render/3
+      },
+      %ColumnSpec{
+        name: :instructors,
+        label: "Instructors",
         render_fn: &__MODULE__.custom_render/3
       },
       %ColumnSpec{
@@ -63,6 +74,20 @@ defmodule OliWeb.Projects.ActiveSectionsTableModel do
 
   def custom_render(assigns, section, %ColumnSpec{name: :base_project_id}),
     do: if(section.base_project_id == assigns.project.id, do: "Base Project", else: "Remixed")
+
+  def custom_render(_assigns, section, %ColumnSpec{name: :creator}) do
+    case Publishing.find_oldest_enrolled_instructor(section) do
+      nil -> "Creator not found"
+      user -> Utils.name(user)
+    end
+  end
+
+  def custom_render(_assigns, section, %ColumnSpec{name: :instructors}) do
+    case Publishing.find_instructors_enrolled_in(section) do
+      [] -> "Instructors not found"
+      instructors -> Enum.map(instructors, &Utils.name/1) |> Enum.join("; ")
+    end
+  end
 
   def render(assigns) do
     ~H"""
