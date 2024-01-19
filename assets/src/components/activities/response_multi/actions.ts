@@ -170,12 +170,6 @@ export const ResponseMultiInputActions = {
     };
   },
 
-  toggleChoiceCorrectness(id: string, partId: string, inputId: string) {
-    return (model: HasParts, _post: PostUndoable) => {
-      getCorrectResponse(model, partId).rule = toInputRule(inputId, matchRule(id));
-    };
-  },
-
   editResponseResponseMultiRule(id: ResponseId, inputId: string, rule: string) {
     return (draftState: HasParts) => {
       const response: Response = getResponseBy(draftState, (r) => r.id === id);
