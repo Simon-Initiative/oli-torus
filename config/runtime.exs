@@ -338,4 +338,20 @@ if config_env() == :prod do
 
   config :oli, :datashop,
     cache_limit: String.to_integer(System.get_env("DATASHOP_CACHE_LIMIT", "200"))
+
+  config :oli, Oban,
+  repo: Oli.Repo,
+  plugins: [Oban.Plugins.Pruner],
+  queues: [
+    default: String.to_integer(System.get_env("OBAN_QUEUE_SIZE_DEFAULT", "10")),
+    snapshots: String.to_integer(System.get_env("OBAN_QUEUE_SIZE_SNAPSHOTS", "20")),
+    s3_uploader: String.to_integer(System.get_env("OBAN_QUEUE_SIZE_S3UPLOADER", "20")),
+    selections: String.to_integer(System.get_env("OBAN_QUEUE_SIZE_SELECTIONS", "20")),
+    updates: String.to_integer(System.get_env("OBAN_QUEUE_SIZE_UPDATES", "2")),
+    grades: String.to_integer(System.get_env("OBAN_QUEUE_SIZE_GRADES", "30")),
+    auto_submit: String.to_integer(System.get_env("OBAN_QUEUE_SIZE_AUTOSUBMIT", "3")),
+    analytics_export: String.to_integer(System.get_env("OBAN_QUEUE_SIZE_ANALYTICS", "1")),
+    datashop_export: String.to_integer(System.get_env("OBAN_QUEUE_SIZE_DATASHOP", "1")),
+    objectives: String.to_integer(System.get_env("OBAN_QUEUE_SIZE_OBJECTIVES", "3"))
+  ]
 end
