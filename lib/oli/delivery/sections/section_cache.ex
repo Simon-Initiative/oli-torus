@@ -12,8 +12,6 @@ defmodule Oli.Delivery.Sections.SectionCache do
 
   require Logger
 
-  alias Phoenix.PubSub
-
   @dispatcher Application.compile_env(:oli, [:section_cache, :dispatcher], Phoenix.PubSub)
   @cache_name :cache_section
 
@@ -43,6 +41,17 @@ defmodule Oli.Delivery.Sections.SectionCache do
   def put(key, value),
     do: GenServer.call(__MODULE__, {:put, key, value})
 
+  @doc """
+    Retrieves a cached value for a specific section and key combination. If the value is not already cached,
+    it computes the value using the provided function, caches it, and then returns it. This function also
+    checks if the key is broadcastable and, if so, broadcasts the cache update.
+
+    ## Examples
+
+        iex> Oli.Delivery.Sections.SectionCache.get_or_compute("my_section", "my_key", fn -> "computed_value" end)
+        "computed_value"
+
+  """
   def get_or_compute(section_slug, key, fun) do
     cache_id = cache_id(section_slug, key)
 
@@ -65,6 +74,18 @@ defmodule Oli.Delivery.Sections.SectionCache do
     end
   end
 
+  @doc """
+    Clears all cached data related to a specific section. This function iterates over a predefined
+    list of cache keys, clears each one associated with the given section slug, and broadcasts
+    the deletion if the key is broadcastable. It is useful for ensuring the cache does not hold
+    outdated data for a section.
+
+    ## Examples
+
+        iex> Oli.Delivery.Sections.SectionCache.clear("my_section")
+        :ok
+
+  """
   def clear(section_slug) do
     for key <- @cache_keys do
       Logger.info("Clearing #{key} from cache for section #{section_slug}.")
@@ -86,7 +107,7 @@ defmodule Oli.Delivery.Sections.SectionCache do
 
   def init(_) do
     {:ok, _pid} = Cachex.start_link(@cache_name, stats: true)
-    PubSub.subscribe(Oli.PubSub, cache_topic())
+    Phoenix.PubSub.subscribe(Oli.PubSub, cache_topic())
 
     {:ok, []}
   end
@@ -145,7 +166,7 @@ defmodule Oli.Delivery.Sections.SectionCache do
   defp maybe_broadcast(_, _), do: nil
 
   defp broadcast_message(message) do
-    PubSub.broadcast_from(
+    Phoenix.PubSub.broadcast_from(
       Oli.PubSub,
       self(),
       cache_topic(),
