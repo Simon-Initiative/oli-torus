@@ -2,7 +2,8 @@ defmodule Oli.Accounts.User do
   use Ecto.Schema
 
   use Pow.Ecto.Schema,
-    password_hash_methods: {&Bcrypt.hash_pwd_salt/1, &Bcrypt.verify_pass/2}
+    password_hash_methods: {&Bcrypt.hash_pwd_salt/1, &Bcrypt.verify_pass/2},
+    email_validator: &Pow.Ecto.Schema.Changeset.validate_email/1
 
   use PowAssent.Ecto.Schema
 
@@ -168,6 +169,11 @@ defmodule Oli.Accounts.User do
     |> maybe_create_unique_sub()
     |> lowercase_email()
     |> maybe_name_from_given_and_family()
+  end
+
+  def update_changeset_for_admin(user, attrs \\ %{}) do
+    noauth_changeset(user, attrs)
+    |> pow_user_id_field_changeset(attrs)
   end
 
   @doc """

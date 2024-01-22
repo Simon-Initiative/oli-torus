@@ -357,12 +357,14 @@ defmodule OliWeb.Users.UsersDetailView do
   end
 
   def handle_event("submit", %{"user" => params}, socket) do
-    case Accounts.update_user(socket.assigns.user, cast_params(params)) do
-      {:ok, user} ->
-        {:noreply,
-         socket
-         |> put_flash(:info, "User successfully updated.")
-         |> assign(user: user, changeset: user_changeset(user, params), disabled_edit: true)}
+    with {:ok, user} <- Accounts.update_user_from_admin(socket.assigns.user, cast_params(params)) do
+      {:noreply,
+       socket
+       |> put_flash(:info, "User successfully updated.")
+       |> assign(user: user, changeset: user_changeset(user, params), disabled_edit: true)}
+    else
+      {:error, :email_already_exists, message} ->
+        {:noreply, put_flash(socket, :error, message)}
 
       {:error, _error} ->
         {:noreply, put_flash(socket, :error, "User couldn't be updated.")}
