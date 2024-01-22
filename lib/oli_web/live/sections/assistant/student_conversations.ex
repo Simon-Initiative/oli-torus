@@ -1,12 +1,14 @@
 defmodule OliWeb.Sections.Assistant.StudentConversationsLive do
   use OliWeb, :live_view
 
+  alias Oli.Accounts
   alias Oli.Delivery.Sections
   alias Oli.Conversation
   alias OliWeb.Common.Table.SortableTableModel
-  alias OliWeb.Sections.StudentConversationsTableModel
+  alias OliWeb.Sections.Assistant.StudentConversationsTableModel
   alias OliWeb.Common.Params
   alias OliWeb.Common.{PagedTable, SearchInput}
+  alias OliWeb.Components.Delivery.Dialogue
 
   @default_params %{
     offset: 0,
@@ -17,7 +19,7 @@ defmodule OliWeb.Sections.Assistant.StudentConversationsLive do
   }
 
   def mount(_params, _session, socket) do
-    {:ok, assign(socket, table_model: nil)}
+    {:ok, assign(socket, table_model: nil, conversation_messages: nil, selected_user: nil)}
   end
 
   def handle_params(
@@ -31,7 +33,10 @@ defmodule OliWeb.Sections.Assistant.StudentConversationsLive do
       socket
       |> assign(params: params)
       |> assign_new(:students, fn ->
-        Conversation.get_students_with_conversation_count(socket.assigns.section.slug)
+        Conversation.get_students_with_conversation_count(socket.assigns.section.id)
+        |> Enum.map(fn row ->
+          Map.put(row, :student_resource_id, "#{row.user.id}-#{row.resource_id}")
+        end)
       end)
       |> assign_new(:resource_titles, fn ->
         Sections.section_resource_titles(socket.assigns.section.slug)
@@ -50,63 +55,152 @@ defmodule OliWeb.Sections.Assistant.StudentConversationsLive do
       })
       |> SortableTableModel.update_sort_params(params.sort_by)
 
-    {:noreply,
-     assign(socket,
-       table_model: table_model,
-       total_count: total_count
-     )}
+    case params do
+      %{selected_user_id: selected_user_id, selected_resource_id: selected_resource_id}
+      when not is_nil(selected_user_id) ->
+        conversation_messages =
+          Conversation.get_student_resource_conversation_messages(
+            socket.assigns.section.id,
+            selected_user_id,
+            selected_resource_id
+          )
+
+        dbg(conversation_messages)
+
+        selected_user = Accounts.get_user!(selected_user_id)
+
+        {:noreply,
+         assign(socket,
+           table_model: table_model,
+           total_count: total_count,
+           conversation_messages: conversation_messages,
+           selected_user: selected_user,
+           selected_resource_id: selected_resource_id
+         )}
+
+      _ ->
+        {:noreply,
+         assign(socket,
+           table_model: table_model,
+           total_count: total_count,
+           conversation_messages: nil,
+           selected_user: nil,
+           selected_resource_id: nil
+         )}
+    end
   end
 
-  defp apply_filters(students, resource_titles, params) do
-    students =
-      students
+  defp apply_filters(rows, resource_titles, params) do
+    rows =
+      rows
       |> maybe_filter_by_text(params.text_search, resource_titles)
       |> sort_by(params.sort_by, params.sort_order, resource_titles)
 
-    {length(students), students |> Enum.drop(params.offset) |> Enum.take(params.limit)}
+    {length(rows), rows |> Enum.drop(params.offset) |> Enum.take(params.limit)}
   end
 
   def render(assigns) do
     ~H"""
     <div class="container mx-auto mb-10">
       <.loader if={!@table_model} />
-      <div :if={@table_model} class="bg-white shadow-sm dark:bg-gray-800 dark:text-white">
-        <div class="flex flex-col space-y-4 lg:space-y-0 lg:flex-row lg:justify-between px-9">
-          <h4 class="torus-h4 whitespace-nowrap">Student AI Conversations</h4>
 
-          <div class="flex flex-col">
-            <form for="search" phx-change="search_students" class="pb-6 lg:ml-auto lg:pt-7">
-              <SearchInput.render
-                id="students_search_input"
-                name="student_name"
-                text={@params.text_search}
-              />
-            </form>
-            <div></div>
+      <div :if={@table_model} class="flex flex-col-reverse md:flex-row">
+        <div class={if @conversation_messages, do: "md:w-8/12", else: "flex-1"}>
+          <div class="bg-white shadow-sm dark:bg-gray-800 dark:text-white">
+            <div class="flex flex-col space-y-4 lg:space-y-0 lg:flex-row lg:justify-between px-9">
+              <h4 class="torus-h4 whitespace-nowrap">Assistant Conversations</h4>
+
+              <div class="flex flex-col">
+                <form for="search" phx-change="search" class="pb-6 lg:ml-auto lg:pt-7">
+                  <SearchInput.render id="search_input" name="text_search" text={@params.text_search} />
+                </form>
+                <div></div>
+              </div>
+            </div>
+
+            <PagedTable.render
+              table_model={@table_model}
+              total_count={@total_count}
+              offset={@params.offset}
+              limit={@params.limit}
+              page_change={JS.push("paged_table_page_change")}
+              allow_selection={true}
+              selection_change={JS.push("paged_table_selection_change")}
+              sort={JS.push("paged_table_sort")}
+              additional_table_class="instructor_dashboard_table"
+              show_bottom_paging={false}
+              limit_change={JS.push("paged_table_limit_change")}
+              show_limit_change={true}
+            />
           </div>
         </div>
 
-        <PagedTable.render
-          table_model={@table_model}
-          total_count={@total_count}
-          offset={@params.offset}
-          limit={@params.limit}
-          page_change={JS.push("paged_table_page_change")}
-          sort={JS.push("paged_table_sort")}
-          additional_table_class="instructor_dashboard_table"
-          allow_selection={false}
-          show_bottom_paging={false}
-          limit_change={JS.push("paged_table_limit_change")}
-          show_limit_change={true}
-        />
+        <div :if={@conversation_messages} class="md:w-4/12 flex flex-col">
+          <div class="flex-1 bg-white shadow-sm dark:bg-gray-800 dark:text-white mb-4 md:mb-0 md:ml-4">
+            <div class="flex flex-row justify-between">
+              <div class="whitespace-nowrap px-6 py-3">
+                <h4 class="font-bold">
+                  <%= user_or_guest_name(@selected_user) %>
+                </h4>
+                <div :if={@selected_resource_id} class="text-sm text-gray-500 mt-1">
+                  <%= @resource_titles[@selected_resource_id] %>
+                </div>
+              </div>
+              <button class="px-6 py-3 text-2xl" phx-click="clear_selection">
+                <i class="fa-solid fa-xmark"></i>
+              </button>
+            </div>
+
+            <.messages conversation_messages={@conversation_messages} user={@selected_user} />
+          </div>
+        </div>
+      </div>
+    </div>
+    """
+  end
+
+  attr :conversation_messages, :list
+  attr :user, Oli.Accounts.User
+
+  def messages(assigns) do
+    ~H"""
+    <div role="message container" id="message-container" class="max-h-screen overflow-y-auto pt-5">
+      <div class="flex flex-col justify-end items-center px-6 py-6 gap-1.5 min-h-full">
+        <%= for {message, index} <- Enum.with_index(@conversation_messages, 1), message.role not in [:system, :function] do %>
+          <Dialogue.chat_message
+            index={index}
+            content={message.content}
+            user={if message.role == :assistant, do: :assistant, else: @user}
+          />
+        <% end %>
       </div>
     </div>
     """
   end
 
   def handle_event(
-        "search_students",
-        %{"student_name" => student_name},
+        "paged_table_selection_change",
+        %{"id" => selection_ids},
+        socket
+      ) do
+    {selected_user_id, selected_resource_id} = parse_selection_ids(selection_ids)
+
+    {:noreply,
+     push_patch(socket,
+       to:
+         route_to(
+           socket,
+           update_params(socket.assigns.params, %{
+             selected_user_id: selected_user_id,
+             selected_resource_id: selected_resource_id
+           })
+         )
+     )}
+  end
+
+  def handle_event(
+        "clear_selection",
+        _params,
         socket
       ) do
     {:noreply,
@@ -115,7 +209,25 @@ defmodule OliWeb.Sections.Assistant.StudentConversationsLive do
          route_to(
            socket,
            update_params(socket.assigns.params, %{
-             text_search: student_name,
+             selected_user_id: nil,
+             selected_resource_id: nil
+           })
+         )
+     )}
+  end
+
+  def handle_event(
+        "search",
+        %{"text_search" => text_search},
+        socket
+      ) do
+    {:noreply,
+     push_patch(socket,
+       to:
+         route_to(
+           socket,
+           update_params(socket.assigns.params, %{
+             text_search: text_search,
              offset: 0
            })
          )
@@ -178,6 +290,19 @@ defmodule OliWeb.Sections.Assistant.StudentConversationsLive do
      )}
   end
 
+  defp parse_selection_ids(selection_ids) do
+    case String.split(selection_ids, "-") do
+      [] ->
+        {nil, nil}
+
+      [user_id] ->
+        {String.to_integer(user_id), nil}
+
+      [user_id, resource_id] ->
+        {String.to_integer(user_id), String.to_integer(resource_id)}
+    end
+  end
+
   defp decode_params(params) do
     %{
       offset: Params.get_int_param(params, "offset", @default_params.offset),
@@ -200,7 +325,9 @@ defmodule OliWeb.Sections.Assistant.StudentConversationsLive do
           ],
           @default_params.sort_by
         ),
-      text_search: Params.get_param(params, "text_search", @default_params.text_search)
+      text_search: Params.get_param(params, "text_search", @default_params.text_search),
+      selected_user_id: Params.get_int_param(params, "selected_user_id", nil),
+      selected_resource_id: Params.get_int_param(params, "selected_resource_id", nil)
     }
   end
 
@@ -234,7 +361,7 @@ defmodule OliWeb.Sections.Assistant.StudentConversationsLive do
   defp maybe_filter_by_text(rows, text_search, resource_titles) do
     Enum.filter(rows, fn row ->
       maybe_contains?(
-        maybe_downcase(username_or_guest(row.user)),
+        maybe_downcase(user_or_guest_name(row.user)),
         maybe_downcase(text_search)
       ) ||
         maybe_contains?(
@@ -249,7 +376,7 @@ defmodule OliWeb.Sections.Assistant.StudentConversationsLive do
       :student ->
         Enum.sort_by(
           rows,
-          fn a -> maybe_byte_size(a.user.name) end,
+          fn a -> maybe_downcase(a.user.name) end,
           sort_order
         )
 
@@ -265,9 +392,6 @@ defmodule OliWeb.Sections.Assistant.StudentConversationsLive do
     end
   end
 
-  defp maybe_byte_size(nil), do: 0
-  defp maybe_byte_size(string), do: byte_size(string)
-
   defp maybe_downcase(nil), do: nil
   defp maybe_downcase(string), do: String.downcase(string)
 
@@ -275,7 +399,7 @@ defmodule OliWeb.Sections.Assistant.StudentConversationsLive do
   defp maybe_contains?(_, nil), do: false
   defp maybe_contains?(string, substring), do: String.contains?(string, substring)
 
-  defp username_or_guest(user) do
+  defp user_or_guest_name(user) do
     case user do
       %{name: nil} -> "Guest"
       %{name: name} -> name

@@ -1,4 +1,4 @@
-defmodule OliWeb.Sections.StudentConversationsTableModel do
+defmodule OliWeb.Sections.Assistant.StudentConversationsTableModel do
   use OliWeb, :html
 
   alias OliWeb.Common.Table.{ColumnSpec, SortableTableModel}
@@ -26,7 +26,7 @@ defmodule OliWeb.Sections.StudentConversationsTableModel do
       rows: students,
       column_specs: column_specs,
       event_suffix: "",
-      id_field: [:resource_id],
+      id_field: [:student_resource_id],
       data: %{
         resource_titles: resource_titles
       }
@@ -55,9 +55,16 @@ defmodule OliWeb.Sections.StudentConversationsTableModel do
 
     ~H"""
     <div>
-      <%= @resource_titles[@resource_id] %>
+      <%= resource_title(@resource_id, @resource_titles) %>
     </div>
     """
+  end
+
+  defp resource_title(resource_id, resource_titles) do
+    case resource_titles[resource_id] do
+      nil -> nil
+      title -> title
+    end
   end
 
   def render_num_messages(assigns, row, _) do
