@@ -20,7 +20,7 @@ import {
   expandCellRight,
   splitCell,
 } from './table-cell-merge-operations';
-import { getColspan, getRowColumnIndex, getVisualGrid } from './table-util';
+import { getColspan, getRowColumnIndex, getRowspan, getVisualGrid } from './table-util';
 
 // Dropdown menu that appears in each table cell.
 interface Props {
@@ -66,9 +66,37 @@ export const DropdownMenu: React.FC<Props> = ({ editor, model, mode = 'table' })
   const undefinedOrOne = (value: number | undefined) => value === undefined || value === 1;
 
   const onDeleteRow = () => {
-    const path = ReactEditor.findPath(editor, model);
-    Transforms.deselect(editor);
-    Transforms.removeNodes(editor, { at: Path.parent(path) });
+    Editor.withoutNormalizing(editor, () => {
+      const path = ReactEditor.findPath(editor, model);
+      const [, parentPath] = Editor.parent(editor, path);
+      const [table] = Editor.parent(editor, parentPath);
+      // When we delete a row, we have to delete the row, and any cells that have a rowspan > 1 in that row should
+      // have their rowspan reduced by 1.
+      Transforms.deselect(editor);
+      Transforms.removeNodes(editor, { at: Path.parent(path) });
+
+      const visualGrid = getVisualGrid(table as Table);
+      const targetCellId = model.id;
+      const coords = getRowColumnIndex(visualGrid, targetCellId);
+      if (!coords) return; // This should never happen, but just in case
+      const { rowIndex } = coords;
+      const visualRow = visualGrid[rowIndex];
+      const alreadyModified: TableCell[] = [];
+
+      // Go through each cell in the row and reduce the rowspan of any cells that have a rowspan > 1.
+      for (let columnIndex = 0; columnIndex < visualRow.length; columnIndex++) {
+        const cell = visualRow[columnIndex];
+        const cellPath = ReactEditor.findPath(editor, cell);
+
+        if (alreadyModified.includes(cell)) continue; // A cell with a bigger rowspan only needs to be deleted/shrunk once
+        alreadyModified.push(cell);
+
+        if (getRowspan(cell) > 1) {
+          Transforms.setNodes(editor, { rowspan: getRowspan(cell) - 1 }, { at: cellPath });
+          // Shrinking cell's rowspan
+        }
+      }
+    });
   };
 
   const onDeleteColumn = () => {
@@ -84,8 +112,6 @@ export const DropdownMenu: React.FC<Props> = ({ editor, model, mode = 'table' })
       if (!coords) return; // This should never happen, but just in case
       const { columnIndex } = coords;
 
-      console.info(visualGrid);
-
       const alreadyModified: TableCell[] = [];
 
       // Go through each row and delete the cell at the target column index.
@@ -96,15 +122,15 @@ export const DropdownMenu: React.FC<Props> = ({ editor, model, mode = 'table' })
         const cell = row[columnIndex];
         const cellPath = ReactEditor.findPath(editor, cell);
 
-        if (alreadyModified.includes(cell)) continue; // A cell with a bigger rowspan only needs to be delteed/shrunk once
+        if (alreadyModified.includes(cell)) continue; // A cell with a bigger rowspan only needs to be deleted/shrunk once
         alreadyModified.push(cell);
 
         if (getColspan(cell) > 1) {
           Transforms.setNodes(editor, { colspan: getColspan(cell) - 1 }, { at: cellPath });
-          console.info("Shrinking cell's colspan", rowIndex, columnIndex);
+          // Shrinking cell's colspan
         } else {
           Transforms.removeNodes(editor, { at: cellPath });
-          console.info('Deleting cell', rowIndex, columnIndex);
+          // Deleting cell
         }
       }
     });
