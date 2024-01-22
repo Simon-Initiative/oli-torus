@@ -29,6 +29,18 @@ interface Props {
   mode?: 'table' | 'conjugation'; // The conjugation element has a special kind of table that uses most, but not all, of this functionality
 }
 
+const Columns = ({ children }: { children: React.ReactNode }) => (
+  <div className="d-flex flex-row">{children}</div>
+);
+
+const LeftColumn = ({ children }: { children: React.ReactNode }) => (
+  <div className="d-flex flex-column border-r-2">{children}</div>
+);
+
+const RightColumn = ({ children }: { children: React.ReactNode }) => (
+  <div className="d-flex flex-column">{children}</div>
+);
+
 export const DropdownMenu: React.FC<Props> = ({ editor, model, mode = 'table' }) => {
   const onToggleHeader = () => {
     const path = ReactEditor.findPath(editor, model);
@@ -152,37 +164,47 @@ export const DropdownMenu: React.FC<Props> = ({ editor, model, mode = 'table' })
         <i className="fa-solid fa-ellipsis-vertical"></i>
       </Dropdown.Toggle>
       <Dropdown.Menu>
-        <Dropdown.Item onClick={onToggleHeader}>Toggle Header</Dropdown.Item>
-        <Dropdown.Divider />
+        <Columns>
+          <LeftColumn>
+            {mode == 'table' && <AlignmentOptions editor={editor} />}
 
-        <Dropdown.Header>Border</Dropdown.Header>
+            <Dropdown.Header>Header</Dropdown.Header>
+            <Dropdown.Item onClick={onToggleHeader}>Toggle Header</Dropdown.Item>
+            <Dropdown.Divider />
 
-        <Dropdown.Item onClick={onBorderStyle('solid')}>Solid</Dropdown.Item>
+            <Dropdown.Header>Border</Dropdown.Header>
 
-        <Dropdown.Item onClick={onBorderStyle('hidden')}>Hidden</Dropdown.Item>
+            <Dropdown.Item onClick={onBorderStyle('solid')}>Solid</Dropdown.Item>
 
-        <Dropdown.Divider />
+            <Dropdown.Item onClick={onBorderStyle('hidden')}>Hidden</Dropdown.Item>
 
-        <Dropdown.Header>Row Style</Dropdown.Header>
+            {mode == 'table' && <AddOptions editor={editor} model={model} />}
+          </LeftColumn>
+          <RightColumn>
+            <Dropdown.Header>Row Style</Dropdown.Header>
 
-        <Dropdown.Item onClick={onRowStyle('plain')}>Plain</Dropdown.Item>
+            <Dropdown.Item onClick={onRowStyle('plain')}>Plain</Dropdown.Item>
 
-        <Dropdown.Item onClick={onRowStyle('alternating')}>Alternating Stripes</Dropdown.Item>
+            <Dropdown.Item onClick={onRowStyle('alternating')}>Alternating Stripes</Dropdown.Item>
 
-        {mode == 'table' && <SplitOptions editor={editor} />}
-        {mode == 'table' && <AlignmentOptions editor={editor} />}
-        {mode == 'table' && <AddOptions editor={editor} model={model} />}
+            <Dropdown.Divider />
 
-        <Dropdown.Divider />
+            {mode == 'table' && <SplitOptions editor={editor} />}
 
-        <Dropdown.Header>Delete</Dropdown.Header>
-        {undefinedOrOne(model.rowspan) && <Dropdown.Item onClick={onDeleteRow}>Row</Dropdown.Item>}
-        {undefinedOrOne(model.colspan) && (
-          /* Do not allow us to delete rows or columns if starting from a merged cell */
-          <Dropdown.Item onClick={onDeleteColumn}>Column</Dropdown.Item>
-        )}
+            <Dropdown.Divider />
 
-        <Dropdown.Item onClick={onDeleteTable}>Table</Dropdown.Item>
+            <Dropdown.Header>Delete</Dropdown.Header>
+            {undefinedOrOne(model.rowspan) && (
+              <Dropdown.Item onClick={onDeleteRow}>Row</Dropdown.Item>
+            )}
+            {undefinedOrOne(model.colspan) && (
+              /* Do not allow us to delete rows or columns if starting from a merged cell */
+              <Dropdown.Item onClick={onDeleteColumn}>Column</Dropdown.Item>
+            )}
+
+            <Dropdown.Item onClick={onDeleteTable}>Table</Dropdown.Item>
+          </RightColumn>
+        </Columns>
       </Dropdown.Menu>
     </Dropdown>
   );
@@ -272,7 +294,6 @@ const AlignmentOptions: React.FC<{ editor: Editor }> = ({ editor }) => {
   );
   return (
     <>
-      <Dropdown.Divider />
 
       <Dropdown.Header>Alignment</Dropdown.Header>
 
@@ -287,6 +308,8 @@ const AlignmentOptions: React.FC<{ editor: Editor }> = ({ editor }) => {
           <i className="fa-solid fa-align-right"></i>
         </button>
       </div>
+
+      <Dropdown.Divider />
     </>
   );
 };
@@ -298,8 +321,6 @@ const SplitOptions: React.FC<{ editor: Editor }> = ({ editor }) => {
 
   return (
     <>
-      <Dropdown.Divider />
-
       <Dropdown.Header>Split / Merge</Dropdown.Header>
 
       <Dropdown.Item disabled={!canMergeRight} onClick={() => expandCellRight(editor)}>
