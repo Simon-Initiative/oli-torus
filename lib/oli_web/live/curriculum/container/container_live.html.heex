@@ -82,74 +82,74 @@
       </div>
       <div class="mt-5">
         <div class="flex mb-3">
-        <div class="border rounded shadow-md p-2">
-          <div class="text-secondary mb-3">Create a page:</div>
-          <div class="flex mb-2">
-            <div class="grid grid-cols-3 gap-x-4">
-              <%= if @adaptivity_flag do %>
-                <div class="flex flex-col">
-                  <div
-                    class="mb-2"
-                    title="Contains basic elements such as paragraphs, images, and activities"
-                  >
-                    Basic
-                  </div>
-                  <div title="Contains rich content, images, styles and layouts and can be used to create adaptive learning experiences based on rules defined for a lesson">
-                    Adaptive
-                  </div>
-                </div>
-              <% end %>
-              <div class="flex flex-col">
-                <button
-                  phx-click="add"
-                  phx-value-type="Basic"
-                  phx-value-scored="Unscored"
-                  title="Questions on the page will not be graded"
-                  class="btn btn-xs btn-outline-primary mb-2"
-                  type="button"
-                >
-                  Practice
-                </button>
+          <div class="border rounded shadow-md p-2">
+            <div class="text-secondary mb-3">Create a page:</div>
+            <div class="flex mb-2">
+              <div class="grid grid-cols-3 gap-x-4">
                 <%= if @adaptivity_flag do %>
+                  <div class="flex flex-col">
+                    <div
+                      class="mb-2"
+                      title="Contains basic elements such as paragraphs, images, and activities"
+                    >
+                      Basic
+                    </div>
+                    <div title="Contains rich content, images, styles and layouts and can be used to create adaptive learning experiences based on rules defined for a lesson">
+                      Adaptive
+                    </div>
+                  </div>
+                <% end %>
+                <div class="flex flex-col">
                   <button
                     phx-click="add"
-                    phx-value-type="Adaptive"
+                    phx-value-type="Basic"
                     phx-value-scored="Unscored"
                     title="Questions on the page will not be graded"
-                    class="btn btn-xs btn-outline-primary"
+                    class="btn btn-xs btn-outline-primary mb-2"
                     type="button"
                   >
                     Practice
                   </button>
-                <% end %>
-              </div>
-              <div class="flex flex-col">
-                <button
-                  phx-click="add"
-                  phx-value-type="Basic"
-                  phx-value-scored="Scored"
-                  title="Questions on the page will be graded"
-                  class="btn btn-xs btn-outline-primary mb-2"
-                  type="button"
-                >
-                  Graded
-                </button>
-                <%= if @adaptivity_flag do %>
+                  <%= if @adaptivity_flag do %>
+                    <button
+                      phx-click="add"
+                      phx-value-type="Adaptive"
+                      phx-value-scored="Unscored"
+                      title="Questions on the page will not be graded"
+                      class="btn btn-xs btn-outline-primary"
+                      type="button"
+                    >
+                      Practice
+                    </button>
+                  <% end %>
+                </div>
+                <div class="flex flex-col">
                   <button
                     phx-click="add"
-                    phx-value-type="Adaptive"
+                    phx-value-type="Basic"
                     phx-value-scored="Scored"
                     title="Questions on the page will be graded"
-                    class="btn btn-xs btn-outline-primary"
+                    class="btn btn-xs btn-outline-primary mb-2"
                     type="button"
                   >
                     Graded
                   </button>
-                <% end %>
+                  <%= if @adaptivity_flag do %>
+                    <button
+                      phx-click="add"
+                      phx-value-type="Adaptive"
+                      phx-value-scored="Scored"
+                      title="Questions on the page will be graded"
+                      class="btn btn-xs btn-outline-primary"
+                      type="button"
+                    >
+                      Graded
+                    </button>
+                  <% end %>
+                </div>
               </div>
             </div>
           </div>
-        </div>
         </div>
         <button
           phx-click="add"
