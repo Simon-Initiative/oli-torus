@@ -143,7 +143,10 @@ defmodule Oli.Authoring.Editing.ContainerEditor do
       title:
         case type do
           "Adaptive" ->
-            "New Adaptive Page"
+            case scored do
+              "Scored" -> "New Adaptive Assessment"
+              "Unscored" -> "New Adaptive Page"
+            end
 
           "Basic" ->
             case scored do
