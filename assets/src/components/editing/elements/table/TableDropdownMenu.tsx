@@ -20,6 +20,7 @@ import {
   expandCellRight,
   splitCell,
 } from './table-cell-merge-operations';
+import { getColspan, getRowColumnIndex, getVisualGrid } from './table-util';
 
 // Dropdown menu that appears in each table cell.
 interface Props {
@@ -62,6 +63,8 @@ export const DropdownMenu: React.FC<Props> = ({ editor, model, mode = 'table' })
     [editor],
   );
 
+  const undefinedOrOne = (value: number | undefined) => value === undefined || value === 1;
+
   const onDeleteRow = () => {
     const path = ReactEditor.findPath(editor, model);
     Transforms.deselect(editor);
@@ -73,11 +76,36 @@ export const DropdownMenu: React.FC<Props> = ({ editor, model, mode = 'table' })
       const path = ReactEditor.findPath(editor, model);
       const [, parentPath] = Editor.parent(editor, path);
       const [table] = Editor.parent(editor, parentPath);
+      const visualGrid = getVisualGrid(table as Table);
+      const targetCellId = model.id;
 
-      const rows = table.children.length;
-      for (let i = 0; i < rows; i += 1) {
-        path[path.length - 2] = i;
-        Transforms.removeNodes(editor, { at: path });
+      // Figure out what visual column we want to delete.
+      const coords = getRowColumnIndex(visualGrid, targetCellId);
+      if (!coords) return; // This should never happen, but just in case
+      const { columnIndex } = coords;
+
+      console.info(visualGrid);
+
+      const alreadyModified: TableCell[] = [];
+
+      // Go through each row and delete the cell at the target column index.
+      // If the cell is a merged cell, we need to just remove one from it's colspan
+      // and not delete the cell.
+      for (let rowIndex = 0; rowIndex < visualGrid.length; rowIndex++) {
+        const row = visualGrid[rowIndex];
+        const cell = row[columnIndex];
+        const cellPath = ReactEditor.findPath(editor, cell);
+
+        if (alreadyModified.includes(cell)) continue; // A cell with a bigger rowspan only needs to be delteed/shrunk once
+        alreadyModified.push(cell);
+
+        if (getColspan(cell) > 1) {
+          Transforms.setNodes(editor, { colspan: getColspan(cell) - 1 }, { at: cellPath });
+          console.info("Shrinking cell's colspan", rowIndex, columnIndex);
+        } else {
+          Transforms.removeNodes(editor, { at: cellPath });
+          console.info('Deleting cell', rowIndex, columnIndex);
+        }
       }
     });
   };
@@ -122,8 +150,11 @@ export const DropdownMenu: React.FC<Props> = ({ editor, model, mode = 'table' })
         <Dropdown.Divider />
 
         <Dropdown.Header>Delete</Dropdown.Header>
-        <Dropdown.Item onClick={onDeleteRow}>Row</Dropdown.Item>
-        <Dropdown.Item onClick={onDeleteColumn}>Column</Dropdown.Item>
+        {undefinedOrOne(model.rowspan) && <Dropdown.Item onClick={onDeleteRow}>Row</Dropdown.Item>}
+        {undefinedOrOne(model.colspan) && (
+          /* Do not allow us to delete rows or columns if starting from a merged cell */
+          <Dropdown.Item onClick={onDeleteColumn}>Column</Dropdown.Item>
+        )}
 
         <Dropdown.Item onClick={onDeleteTable}>Table</Dropdown.Item>
       </Dropdown.Menu>
