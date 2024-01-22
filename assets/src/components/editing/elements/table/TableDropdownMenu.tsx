@@ -294,7 +294,6 @@ const AlignmentOptions: React.FC<{ editor: Editor }> = ({ editor }) => {
   );
   return (
     <>
-
       <Dropdown.Header>Alignment</Dropdown.Header>
 
       <div className="ml-3 btn-group btn-group-toggle">
