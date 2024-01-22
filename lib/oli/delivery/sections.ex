@@ -4399,4 +4399,15 @@ defmodule Oli.Delivery.Sections do
 
   defp maybe_select_section_fields(query, select_fields),
     do: select(query, [s], struct(s, ^select_fields))
+
+  @doc """
+  Returns a map from resource_id to the current revision title for all resources
+  """
+  def section_resource_titles(section_slug) do
+    from([s: s, sr: sr, rev: rev] in DeliveryResolver.section_resource_revisions(section_slug),
+      select: {rev.resource_id, rev.title}
+    )
+    |> Repo.all()
+    |> Enum.into(%{})
+  end
 end

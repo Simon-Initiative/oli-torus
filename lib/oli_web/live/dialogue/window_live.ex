@@ -21,20 +21,13 @@ defmodule OliWeb.Dialogue.WindowLive do
 
   # Gets the page prompt template and gathers all pieces of information necessary
   # to realize that template into the completed page prompt
-  defp build_page_prompt(
-         %{
-           "current_user_id" => current_user_id,
-           "section_slug" => section_slug,
-           "revision_id" => revision_id
-         } = _session
-       ) do
-    section = Oli.Delivery.Sections.get_section_by_slug(section_slug)
+  defp build_page_prompt(section, revision_id, user_id) do
     project = Oli.Authoring.Course.get_project!(section.base_project_id)
 
     {:ok, page_content} = Oli.Converstation.PageContentCache.get(revision_id)
 
     bindings = %{
-      current_user_id: current_user_id,
+      current_user_id: user_id,
       section_id: section.id,
       page_content: page_content,
       course_title: project.title,
@@ -49,18 +42,12 @@ defmodule OliWeb.Dialogue.WindowLive do
   # TODO for other types of pages (Home, Learn, Discussions, etc) we should build a new template.
   # For now we just use the page prompt template to be able to render
   # the bot in those pages.
-  defp build_course_prompt(
-         %{
-           "current_user_id" => current_user_id,
-           "section_slug" => section_slug
-         } = _session
-       ) do
-    section = Oli.Delivery.Sections.get_section_by_slug(section_slug)
+  defp build_course_prompt(section, user_id) do
     project = Oli.Authoring.Course.get_project!(section.base_project_id)
 
     # TODO: use a different prompt template (and probably other bindings) for the course prompt
     bindings = %{
-      current_user_id: current_user_id,
+      current_user_id: user_id,
       section_id: section.id,
       course_title: project.title,
       page_content: "a page content",
@@ -72,11 +59,11 @@ defmodule OliWeb.Dialogue.WindowLive do
     realize_prompt_template(section.page_prompt_template, bindings)
   end
 
-  defp build_dialogue(session, pid) do
-    if session["revision_id"] do
-      build_page_prompt(session)
+  defp build_dialogue(section, revision_id, user_id, pid) do
+    if revision_id do
+      build_page_prompt(section, revision_id, user_id)
     else
-      build_course_prompt(session)
+      build_course_prompt(section, user_id)
     end
     |> Dialogue.new(
       fn _d, type, chunk ->
@@ -91,10 +78,12 @@ defmodule OliWeb.Dialogue.WindowLive do
         %{"current_user_id" => current_user_id} = session,
         socket
       ) do
+    section = Oli.Delivery.Sections.get_section_by_slug(session["section_slug"])
+
     {:ok,
      assign(socket,
        minimized: true,
-       dialogue: build_dialogue(session, self()),
+       dialogue: build_dialogue(section, session["revision_id"], current_user_id, self()),
        form: to_form(UserInput.changeset(%UserInput{}, %{content: ""})),
        streaming: false,
        allow_submission?: true,
@@ -104,6 +93,7 @@ defmodule OliWeb.Dialogue.WindowLive do
        current_user: Oli.Accounts.get_user!(current_user_id),
        height: 500,
        width: 400,
+       section: section,
        resource_id: session["resource_id"],
        is_page: (session["resource_id"] && true) || false
      )}
@@ -537,14 +527,15 @@ defmodule OliWeb.Dialogue.WindowLive do
   end
 
   def handle_event("update", %{"user_input" => %{"content" => content}}, socket) do
-    %{current_user: current_user, resource_id: resource_id} = socket.assigns
+    %{current_user: current_user, resource_id: resource_id, section: section} = socket.assigns
 
     dialogue =
       Dialogue.add_message(
         socket.assigns.dialogue,
         Message.new(:user, content),
         current_user.id,
-        resource_id
+        resource_id,
+        section.id
       )
 
     pid = self()

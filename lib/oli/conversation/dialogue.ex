@@ -91,10 +91,11 @@ defmodule Oli.Conversation.Dialogue do
         %__MODULE__{messages: messages, rendered_messages: rendered_messages} = dialog,
         message,
         user_id,
-        resource_id
+        resource_id,
+        section_id
       ) do
     # persist message to database for reviewing conversation history
-    create_conversation_message(message, user_id, resource_id)
+    create_conversation_message(message, user_id, resource_id, section_id)
 
     dialog = %{dialog | rendered_messages: rendered_messages ++ [message]}
 
@@ -149,11 +150,11 @@ defmodule Oli.Conversation.Dialogue do
     end
   end
 
-  defp create_conversation_message(message, user_id, resource_id) do
+  defp create_conversation_message(message, user_id, resource_id, section_id) do
     attrs =
       message
       |> Map.from_struct()
-      |> Map.merge(%{user_id: user_id, resource_id: resource_id})
+      |> Map.merge(%{user_id: user_id, resource_id: resource_id, section_id: section_id})
 
     %ConversationMessage{}
     |> ConversationMessage.changeset(attrs)

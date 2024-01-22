@@ -44,7 +44,8 @@ defmodule Oli.Conversation.DialogueHandler do
           function_call: function_call,
           dialogue: dialogue,
           resource_id: resource_id,
-          current_user: current_user
+          current_user: current_user,
+          section: section
         } = socket.assigns
 
         case function_call do
@@ -56,7 +57,8 @@ defmodule Oli.Conversation.DialogueHandler do
                 socket.assigns.dialogue,
                 Oli.Conversation.Message.new(:assistant, message),
                 current_user.id,
-                resource_id
+                resource_id,
+                section.id
               )
 
             allow_submission? =
@@ -95,7 +97,8 @@ defmodule Oli.Conversation.DialogueHandler do
                   fc["name"]
                 ),
                 current_user.id,
-                resource_id
+                resource_id,
+                section.id
               )
 
             pid = self()

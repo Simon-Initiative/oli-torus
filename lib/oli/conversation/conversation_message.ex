@@ -5,7 +5,7 @@ defmodule Oli.Conversation.ConversationMessage do
   import Oli.Conversation.Common
 
   @derive {Jason.Encoder, only: [:role, :content, :token_length, :user_id, :resource_id]}
-  schema "conversation_messages" do
+  schema "assistant_conversation_messages" do
     field :role, Ecto.Enum, values: [:system, :user, :assistant, :function]
 
     # content of the message
@@ -17,8 +17,9 @@ defmodule Oli.Conversation.ConversationMessage do
     # estimated token length of the message
     field :token_length, :integer
 
-    field :user_id, :id
-    field :resource_id, :id
+    belongs_to :user, Oli.Accounts.User
+    belongs_to :resource, Oli.Delivery.Resources.Resource
+    belongs_to :section, Oli.Delivery.Sections.Section
 
     timestamps(type: :utc_datetime)
   end
@@ -26,8 +27,8 @@ defmodule Oli.Conversation.ConversationMessage do
   @doc false
   def changeset(message, attrs) do
     message
-    |> cast(attrs, [:role, :content, :name, :user_id, :resource_id])
-    |> validate_required([:role, :content, :user_id])
+    |> cast(attrs, [:role, :content, :name, :user_id, :resource_id, :section_id])
+    |> validate_required([:role, :content, :user_id, :section_id])
     |> set_token_length()
   end
 

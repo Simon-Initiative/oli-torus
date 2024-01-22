@@ -1138,6 +1138,11 @@ defmodule OliWeb.Router do
         "/assessment_settings/:active_tab/:assessment_id",
         Sections.AssessmentSettings.SettingsLive
       )
+
+      live(
+        "/assistant/conversations",
+        Sections.Assistant.StudentConversationsLive
+      )
     end
 
     live_session :enrolled_students,
