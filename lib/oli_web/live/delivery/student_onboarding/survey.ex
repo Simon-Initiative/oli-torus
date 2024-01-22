@@ -110,7 +110,7 @@ defmodule OliWeb.Delivery.StudentOnboarding.Survey do
           Something went wrong when loading the survey
         </div>
       <% else %>
-        <div class="flex pt-12 pb-6 px-[84px] gap-3">
+        <div class="flex py-6 px-[20px] hvsm:px-[70px] hvxl:px-[84px] gap-3">
           <div class="flex relative">
             <img
               src={~p"/images/assistant/dot_ai_icon.png"}
@@ -119,7 +119,7 @@ defmodule OliWeb.Delivery.StudentOnboarding.Survey do
             />
             <div class="w-14 shrink-0 mr-5" />
             <div class="flex flex-col gap-3">
-              <h2 class="text-[40px] leading-[54px] tracking-[0.02px] dark:text-white">
+              <h2 class="text-[18xl] leading-[24px] hvsm:text-[30px] hvsm:leading-[40px] hvxl:text-[40px] hvxl:leading-[54px] tracking-[0.02px] dark:text-white">
                 <%= @title %>
               </h2>
               <span class="text-[14px] leading-[20px] tracking-[0.02px] dark:text-white">
@@ -129,7 +129,7 @@ defmodule OliWeb.Delivery.StudentOnboarding.Survey do
           </div>
         </div>
         <%= if @loaded do %>
-          <div class="px-[84px] py-9 my-10 h-[334px]">
+          <div class="px-[20px] hvsm:px-[70px] hvxl:px-[84px] py-9 h-[334px]">
             <%= Phoenix.HTML.raw(@html) %>
           </div>
         <% else %>
