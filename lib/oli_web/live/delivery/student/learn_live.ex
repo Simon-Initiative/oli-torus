@@ -880,13 +880,10 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         />
       </div>
       <div class="rounded-xl absolute -top-[0.7px] -left-[0.7px] h-[163px] w-[289.5px] cursor-pointer bg-[linear-gradient(180deg,#D9D9D9_0%,rgba(217,217,217,0.00)_100%)] dark:bg-[linear-gradient(180deg,#223_0%,rgba(34,34,51,0.72)_52.6%,rgba(34,34,51,0.00)_100%)]" />
-      <div class={[
-        "flex flex-col items-center rounded-xl h-[162px] w-[288px] bg-gray-200/50 shrink-0 px-5 pt-[15px]",
-        if(@bg_image_url in ["", nil],
-          do: "bg-[url('/images/course_default.jpg')]",
-          else: "bg-[url('#{@bg_image_url}')]"
-        )
-      ]}>
+      <div
+        class="flex flex-col items-center rounded-xl h-[162px] w-[288px] bg-gray-200/50 shrink-0 px-5 pt-[15px]"
+        style={"background-image: url('#{if(@bg_image_url in ["", nil], do: "/images/course_default.jpg", else: @bg_image_url)}');"}
+      >
         <h5 class="text-[13px] leading-[18px] font-bold opacity-60 text-gray-500 dark:text-white dark:text-opacity-50 self-start">
           <%= @title %>
         </h5>
@@ -976,16 +973,15 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       <.page_icon :if={is_page(@module)} graded={@module["graded"]} />
 
       <div class="h-[170px] w-[288px]">
-        <div class={[
-          "flex flex-col gap-[5px] cursor-pointer rounded-xl h-[162px] w-[288px] shrink-0 mb-1 px-5 pt-[15px] bg-gray-200 z-10",
-          if(@selected,
-            do: "bg-gray-400 outline outline-2 outline-gray-800 dark:outline-white"
-          ),
-          if(@bg_image_url in ["", nil],
-            do: "bg-[url('/images/course_default.jpg')]",
-            else: "bg-[url('#{@bg_image_url}')]"
-          )
-        ]}>
+        <div
+          class={[
+            "flex flex-col gap-[5px] cursor-pointer rounded-xl h-[162px] w-[288px] shrink-0 mb-1 px-5 pt-[15px] bg-gray-200 z-10",
+            if(@selected,
+              do: "bg-gray-400 outline outline-2 outline-gray-800 dark:outline-white"
+            )
+          ]}
+          style={"background-image: url('#{if(@bg_image_url in ["", nil], do: "/images/course_default.jpg", else: @bg_image_url)}');"}
+        >
           <span class="text-[12px] leading-[16px] font-bold opacity-60 text-gray-500 dark:text-white dark:text-opacity-50">
             <%= "#{@unit_numbering_index}.#{@module_index}" %>
           </span>
