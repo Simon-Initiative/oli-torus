@@ -230,8 +230,6 @@ defmodule OliWeb.Delivery.Student.ReviewLiveTest do
       end_date: ~U[2023-11-14 20:00:00Z]
     })
 
-    {:ok, _} = Sections.rebuild_full_hierarchy(section)
-
     %{
       section: section,
       page_1: page_1_revision,
