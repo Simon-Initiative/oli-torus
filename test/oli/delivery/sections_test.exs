@@ -202,6 +202,7 @@ defmodule Oli.Delivery.SectionsTest do
       )
     end
 
+    @tag capture_log: true
     test "opens section overview when there is a scheduled gating condition and end_datetime is nil",
          seeds do
       start_date = yesterday()
@@ -553,7 +554,7 @@ defmodule Oli.Delivery.SectionsTest do
         ref(:proj),
         ref(:pub),
         nil,
-        %{},
+        %{slug: "section_#{UUID.uuid4()}"},
         section_tag: :section
       )
     end
@@ -639,6 +640,7 @@ defmodule Oli.Delivery.SectionsTest do
         ref(:pub),
         nil,
         %{
+          slug: "section_#{UUID.uuid4()}",
           start_date: ~U[2023-01-27 23:59:59Z]
         },
         section_tag: :section
@@ -697,6 +699,7 @@ defmodule Oli.Delivery.SectionsTest do
       )
     end
 
+    @tag capture_log: true
     test "get_ordered_schedule", %{
       section: section,
       page3: page3,
@@ -1179,7 +1182,6 @@ defmodule Oli.Delivery.SectionsTest do
       {:ok, section} = Sections.create_section_resources(section, publication)
       {:ok, _} = Sections.rebuild_contained_pages(section)
       {:ok, _} = Sections.rebuild_contained_objectives(section)
-      {:ok, _} = Sections.rebuild_full_hierarchy(section)
 
       %{
         section: section,

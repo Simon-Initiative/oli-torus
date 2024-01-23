@@ -107,7 +107,6 @@ defmodule Oli.Delivery do
 
       {:ok, _} = Sections.rebuild_contained_pages(section)
       {:ok, _} = Sections.rebuild_contained_objectives(section)
-      {:ok, _} = Sections.rebuild_full_hierarchy(section)
 
       enroll(user.id, section.id, lti_params)
 
@@ -158,7 +157,6 @@ defmodule Oli.Delivery do
       section = PostProcessing.apply(section, [:discussions])
       {:ok, _} = Sections.rebuild_contained_pages(section)
       {:ok, _} = Sections.rebuild_contained_objectives(section)
-      {:ok, _} = Sections.rebuild_full_hierarchy(section)
 
       enroll(user.id, section.id, lti_params)
 
