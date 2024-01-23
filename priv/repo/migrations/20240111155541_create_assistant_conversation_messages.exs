@@ -9,7 +9,7 @@ defmodule Oli.Repo.Migrations.CreateConversationMessages do
       add :token_length, :integer
       add :user_id, references(:users, on_delete: :nothing)
       add :resource_id, references(:resources, on_delete: :nothing)
-      add :section_id, references(:resources, on_delete: :nothing)
+      add :section_id, references(:sections, on_delete: :nothing)
 
       timestamps(type: :timestamptz)
     end
