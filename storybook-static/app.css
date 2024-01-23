@@ -5455,6 +5455,10 @@ table.table-striped tbody tr:nth-child(even) {
   border-right-width: 0px;
 }
 
+.border-r-2 {
+  border-right-width: 2px;
+}
+
 .border-t {
   border-top-width: 1px;
 }
