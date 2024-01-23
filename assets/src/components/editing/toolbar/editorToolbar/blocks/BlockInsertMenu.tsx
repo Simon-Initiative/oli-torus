@@ -9,7 +9,7 @@ import { CommandButton } from '../../buttons/CommandButton';
 
 export const insertItemDropdown = createButtonCommandDesc({
   icon: <i className="fa-solid fa-plus"></i>,
-  description: 'Add item',
+  description: 'Insert...',
   execute: () => {},
   active: (_e) => false,
 });

@@ -24,7 +24,7 @@ const toLink = (src = '') => 'https://www.youtube.com/embed/' + (src === '' ? CU
 
 export const ytCmdDesc = createButtonCommandDesc({
   icon: <i className="fa-brands fa-youtube"></i>,
-  description: 'YouTube',
+  description: 'Insert YouTube',
   execute: (_context, editor, src: string) => {
     const at = editor.selection;
     if (!at) return;
