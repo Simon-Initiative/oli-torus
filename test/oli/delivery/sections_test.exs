@@ -9,7 +9,7 @@ defmodule Oli.Delivery.SectionsTest do
   alias Oli.Delivery.Sections.PostProcessing
   alias Oli.Delivery.Sections.SectionResource
 
-  describe "maybe_update_contains_discusssions/1" do
+  describe "PostProcessing.apply/2 case :discussions" do
     alias Oli.Resources.ResourceType
     alias Oli.Resources.Collaboration.CollabSpaceConfig
     import Oli.Factory
@@ -59,40 +59,15 @@ defmodule Oli.Delivery.SectionsTest do
 
       [id_sec_res_1, id_sec_res_2, id_sec_res_3] = Enum.map(pages_section_resources, & &1.id)
 
-      enabled_collab_space_config =
-        %CollabSpaceConfig{}
-        |> CollabSpaceConfig.changeset(%{status: :enabled})
-        |> Ecto.Changeset.apply_changes()
+      enabled_collab_space_config = set_collab_space_config_status(:enabled)
+      disabled_collab_space_config = set_collab_space_config_status(:disabled)
+      archived_collab_space_config = set_collab_space_config_status(:archived)
 
-      disabled_collab_space_config =
-        %CollabSpaceConfig{}
-        |> CollabSpaceConfig.changeset(%{status: :disabled})
-        |> Ecto.Changeset.apply_changes()
+      add_collab_space_config_to_section_resource(id_sec_res_1, enabled_collab_space_config)
+      add_collab_space_config_to_section_resource(id_sec_res_2, disabled_collab_space_config)
+      add_collab_space_config_to_section_resource(id_sec_res_3, archived_collab_space_config)
 
-      archived_collab_space_config =
-        %CollabSpaceConfig{}
-        |> CollabSpaceConfig.changeset(%{status: :archived})
-        |> Ecto.Changeset.apply_changes()
-
-      SectionResource
-      |> Oli.Repo.get!(id_sec_res_1)
-      |> SectionResource.changeset()
-      |> Ecto.Changeset.put_embed(:collab_space_config, enabled_collab_space_config)
-      |> Oli.Repo.update!()
-
-      SectionResource
-      |> Oli.Repo.get!(id_sec_res_2)
-      |> SectionResource.changeset()
-      |> Ecto.Changeset.put_embed(:collab_space_config, disabled_collab_space_config)
-      |> Oli.Repo.update!()
-
-      SectionResource
-      |> Oli.Repo.get!(id_sec_res_3)
-      |> SectionResource.changeset()
-      |> Ecto.Changeset.put_embed(:collab_space_config, archived_collab_space_config)
-      |> Oli.Repo.update!()
-
-      PostProcessing.apply(section, [:discussions])
+      PostProcessing.apply(section, :discussions)
 
       assert Oli.Repo.reload!(section).contains_discussions
     end
@@ -139,37 +114,30 @@ defmodule Oli.Delivery.SectionsTest do
 
       [id_sec_res_1, id_sec_res_2, id_sec_res_3] = Enum.map(pages_section_resources, & &1.id)
 
-      disabled_collab_space_config =
-        %CollabSpaceConfig{}
-        |> CollabSpaceConfig.changeset(%{status: :disabled})
-        |> Ecto.Changeset.apply_changes()
+      disabled_collab_space_config = set_collab_space_config_status(:disabled)
+      archived_collab_space_config = set_collab_space_config_status(:archived)
 
-      archived_collab_space_config =
-        %CollabSpaceConfig{}
-        |> CollabSpaceConfig.changeset(%{status: :archived})
-        |> Ecto.Changeset.apply_changes()
+      add_collab_space_config_to_section_resource(id_sec_res_1, disabled_collab_space_config)
+      add_collab_space_config_to_section_resource(id_sec_res_2, disabled_collab_space_config)
+      add_collab_space_config_to_section_resource(id_sec_res_3, archived_collab_space_config)
 
-      SectionResource
-      |> Oli.Repo.get!(id_sec_res_1)
-      |> SectionResource.changeset()
-      |> Ecto.Changeset.put_embed(:collab_space_config, disabled_collab_space_config)
-      |> Oli.Repo.update!()
-
-      SectionResource
-      |> Oli.Repo.get!(id_sec_res_2)
-      |> SectionResource.changeset()
-      |> Ecto.Changeset.put_embed(:collab_space_config, disabled_collab_space_config)
-      |> Oli.Repo.update!()
-
-      SectionResource
-      |> Oli.Repo.get!(id_sec_res_3)
-      |> SectionResource.changeset()
-      |> Ecto.Changeset.put_embed(:collab_space_config, archived_collab_space_config)
-      |> Oli.Repo.update!()
-
-      PostProcessing.apply(section, [:discussions])
+      PostProcessing.apply(section, :discussions)
 
       refute Oli.Repo.reload!(section).contains_discussions
+    end
+
+    defp set_collab_space_config_status(status) do
+      %CollabSpaceConfig{}
+      |> CollabSpaceConfig.changeset(%{status: status})
+      |> Ecto.Changeset.apply_changes()
+    end
+
+    defp add_collab_space_config_to_section_resource(section_resource_id, collab_space_config) do
+      SectionResource
+      |> Oli.Repo.get!(section_resource_id)
+      |> SectionResource.changeset()
+      |> Ecto.Changeset.put_embed(:collab_space_config, collab_space_config)
+      |> Oli.Repo.update!()
     end
   end
 

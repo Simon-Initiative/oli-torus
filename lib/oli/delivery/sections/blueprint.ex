@@ -5,9 +5,9 @@ defmodule Oli.Delivery.Sections.Blueprint do
   alias Oli.Authoring.Course.Project
   alias Oli.Authoring.Course.ProjectVisibility
   alias Oli.Publishing.Publications.Publication
-  alias Oli.Delivery
-  alias Oli.Delivery.Sections.Section
   alias Oli.Delivery.Sections
+  alias Oli.Delivery.Sections.PostProcessing
+  alias Oli.Delivery.Sections.Section
   alias Oli.Delivery.Sections.BlueprintBrowseOptions
   alias Oli.Groups.CommunityVisibility
   alias Oli.Institutions.Institution
@@ -169,16 +169,8 @@ defmodule Oli.Delivery.Sections.Blueprint do
                 Oli.Publishing.get_latest_published_publication_by_slug(base_project_slug)
 
               case Sections.create_section_resources(blueprint, publication, hierarchy_definition) do
-                {:ok, section} ->
-                  {:ok, section} = Delivery.maybe_update_section_contains_explorations(section)
-
-                  {:ok, section} =
-                    Delivery.maybe_update_section_contains_deliberate_practice(section)
-
-                  section
-
-                {:error, e} ->
-                  Repo.rollback(e)
+                {:ok, section} -> PostProcessing.apply(section, :all)
+                {:error, e} -> Repo.rollback(e)
               end
 
             {:error, e} ->

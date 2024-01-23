@@ -32,14 +32,15 @@ import { getByUnsafe, getPartById, getParts } from 'data/activities/model/utils'
 import { InputRef } from 'data/content/model/elements/types';
 import { clone } from 'utils/common';
 import { Operations } from 'utils/pathOperations';
-import { ResponseMultiInputSchema } from './schema';
 import {
-  ResponseMultiInputResponses,
-  addRef,
-  constructRule,
-  purseResponseMultiInputRule,
-  replaceWithInputRef,
-} from './utils';
+  indexResponseMultiRule,
+  ruleInputRefs,
+  ruleIsCatchAll,
+  toInputRule,
+  updateRule,
+} from './rules';
+import { ResponseMultiInputSchema } from './schema';
+import { ResponseMultiInputResponses } from './utils';
 
 export const ResponseMultiInputActions = {
   editStemAndPreviewText(content: Descendant[], editor: Editor, operations: Operation[]) {
@@ -121,45 +122,42 @@ export const ResponseMultiInputActions = {
       const partFrom = getPartById(model, input.partId);
       const partTo = getPartById(model, partId);
 
+      // remove input from partFrom targets
       const targets = partFrom.targets?.filter((value) => value !== input.id);
+      // if no targets left, remove partFrom
       if (!targets || targets.length < 1) {
         Operations.applyAll(model, [Operations.filter('$..parts', `[?(@.id!=${partFrom.id})]`)]);
       } else {
         partFrom.targets = targets;
-        partFrom.responses.forEach((r) => {
-          if (r.inputRefs) r.inputRefs = r.inputRefs.filter((rf) => rf !== inputId);
-        });
       }
 
       partTo.targets ? partTo.targets.push(input.id) : (partTo.targets = [input.id]);
       input.partId = partTo.id;
 
-      const fromRules = purseResponseMultiInputRule(partFrom.responses[0].rule);
+      // Copy input rule for this id  from first response in old part to first
+      // response in new, on assumption that first response is correct one
+      const fromRules = indexResponseMultiRule(partFrom.responses[0].rule);
 
       // merge the rules
-      const updatedRule: string = constructRule(
+      const updatedRule: string = updateRule(
         partTo.responses[0].rule,
         partTo.responses[0].matchStyle,
         inputId,
         fromRules.get(input.id),
-        true,
+        'add',
       );
       partTo.responses[0].rule = updatedRule;
 
+      // removing rule can result in empty rule, which should cause response to be removed
       partFrom.responses.forEach((r) => {
-        const changed: string = constructRule(r.rule, r.matchStyle, inputId, '', false, true);
-        r.rule = changed;
+        r.rule = updateRule(r.rule, r.matchStyle, inputId, '', 'remove');
       });
+      partFrom.responses = partFrom.responses.filter((r) => r.rule !== '');
 
-      if (!partTo.responses[0].inputRefs) partTo.responses[0].inputRefs = [];
-      if (!partTo.responses[0].inputRefs.includes(inputId))
-        partTo.responses[0].inputRefs.push(inputId);
-
-      const response = partTo.responses.find((r) => r.catchAll);
+      // if dest has a catchall response, append wildcard clause for new input
+      const response = partTo.responses.find((r) => ruleIsCatchAll(r.rule));
       if (response) {
-        response.rule = response.rule + ' && input_ref_' + input.id + ' like {.*}';
-        if (!response.inputRefs) response.inputRefs = [];
-        if (!response.inputRefs.includes(inputId)) response.inputRefs.push(inputId);
+        response.rule = updateRule(response.rule, 'all', input.id, matchRule('.*'), 'add');
       }
 
       post(undoables);
@@ -168,13 +166,7 @@ export const ResponseMultiInputActions = {
 
   editRule(id: ResponseId, inputId: string, rule: string) {
     return (draftState: HasParts) => {
-      getResponseBy(draftState, (r) => r.id === id).rule = replaceWithInputRef(inputId, rule);
-    };
-  },
-
-  toggleChoiceCorrectness(id: string, partId: string, inputId: string) {
-    return (model: HasParts, _post: PostUndoable) => {
-      getCorrectResponse(model, partId).rule = replaceWithInputRef(inputId, matchRule(id));
+      getResponseBy(draftState, (r) => r.id === id).rule = toInputRule(inputId, rule);
     };
   },
 
@@ -182,7 +174,6 @@ export const ResponseMultiInputActions = {
     return (draftState: HasParts) => {
       const response: Response = getResponseBy(draftState, (r) => r.id === id);
       response.rule = rule;
-      addRef(inputId, response);
     };
   },
 
@@ -247,8 +238,7 @@ export const ResponseMultiInputActions = {
       // must be set
       const authoringClone = clone(model.authoring);
       if (
-        getCorrectResponse(model, input.partId).rule ===
-        replaceWithInputRef(inputId, matchRule(choiceId))
+        getCorrectResponse(model, input.partId).rule === toInputRule(inputId, matchRule(choiceId))
       ) {
         MCActions.toggleChoiceCorrectness(input.choiceIds[0], input.partId)(model, post);
       }
@@ -290,7 +280,7 @@ export const ResponseMultiInputActions = {
       }
 
       const existingResponses: Response[] = part.responses.filter((r) => {
-        const f = r.inputRefs?.find((i) => i === id);
+        const f = ruleInputRefs(r.rule).find((i) => i === id);
         return f ? true : false;
       });
 
@@ -303,13 +293,13 @@ export const ResponseMultiInputActions = {
 
       if (existingResponses.length > 0) {
         existingResponses.forEach((r) => {
-          if (r.catchAll) return;
-          const updatedRule: string = constructRule(
+          if (ruleIsCatchAll(r.rule)) return;
+          const updatedRule: string = updateRule(
             r.rule,
             r.matchStyle,
             input.id,
             switchedReponses[0].rule,
-            false,
+            'modify',
           );
 
           r.rule = updatedRule;
@@ -387,12 +377,8 @@ export const ResponseMultiInputActions = {
       }
 
       part.responses.forEach((r) => {
-        if (r.inputRefs) {
-          r.inputRefs = r.inputRefs.filter((i) => i !== inputId);
-        }
-        r.rule = constructRule(r.rule, r.matchStyle, inputId, containsRule(''), false, true);
+        r.rule = updateRule(r.rule, r.matchStyle, inputId, containsRule(''), 'remove');
       });
-
       part.responses = part.responses.filter((r) => r.rule !== '');
 
       if (input.inputType === 'dropdown') {
@@ -420,20 +406,16 @@ export const ResponseMultiInputActions = {
       const part = getPartById(model, input.partId);
       const response = part.responses.find((r) => r.id === responseId);
 
-      if (!response || !response.inputRefs || response.inputRefs.length < 2) {
+      if (!response || ruleInputRefs(response.rule).length < 2) {
         return;
       }
 
-      if (response.inputRefs) {
-        response.inputRefs = response.inputRefs.filter((i) => i !== inputId);
-      }
-      response.rule = constructRule(
+      response.rule = updateRule(
         response.rule,
         response.matchStyle,
         inputId,
         containsRule(''),
-        false,
-        true,
+        'remove',
       );
     };
   },
