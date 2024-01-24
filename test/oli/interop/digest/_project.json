@@ -1,5 +1,8 @@
 {
   "description": "An introduction to the food and drink of the Northern Spanish regions of Galicia and Asturias",
   "title": "The Cuisine of Northern Spain",
-  "type": "Manifest"
+  "type": "Manifest",
+  "attributes": {
+    "learning_language": "es"
+  }
 }

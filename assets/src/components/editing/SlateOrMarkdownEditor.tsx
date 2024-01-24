@@ -60,8 +60,6 @@ export class SlateOrMarkdownEditor extends React.Component<
   onEdit = (content: ModelElement[]) => {
     this.props.onEdit(content);
 
-    console.info(this.props.content);
-
     this.setState((state) => {
       // Maintain a stack of previous content, but limit it to 25 old revisions.
       const newHistory = [...state.contentHistory, content];

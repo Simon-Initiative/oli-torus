@@ -372,13 +372,14 @@ defmodule OliWeb.CollaborationLive.CollabSpaceConfigView do
   # update the revision or the section_resource configuration
   defp upsert_collab_space(true, action, attrs, socket) do
     socket = clear_flash(socket)
+    section = socket.assigns.parent_entity
+    page_resource_id = socket.assigns.page_resource.id
 
-    case Oli.Delivery.Sections.get_section_resource(
-           socket.assigns.parent_entity.id,
-           socket.assigns.page_resource.id
-         )
+    case Oli.Delivery.Sections.get_section_resource(section.id, page_resource_id)
          |> Oli.Delivery.Sections.update_section_resource(%{collab_space_config: attrs}) do
       {:ok, section_resource} ->
+        set_contains_discussions(section, section_resource)
+
         socket = put_flash(socket, :info, "Collaborative space successfully #{action}.")
         collab_space_config = section_resource.collab_space_config
 
@@ -392,7 +393,8 @@ defmodule OliWeb.CollaborationLive.CollabSpaceConfigView do
          assign(socket,
            form: to_form(SectionResource.changeset(section_resource, %{})),
            collab_space_status: get_status(collab_space_config),
-           collab_space_config: collab_space_config
+           collab_space_config: collab_space_config,
+           parent_entity: Oli.Repo.reload(section)
          )}
 
       {:error, _} ->
@@ -433,6 +435,14 @@ defmodule OliWeb.CollaborationLive.CollabSpaceConfigView do
         {:noreply, socket}
     end
   end
+
+  defp set_contains_discussions(section, %{collab_space_config: %{status: :enabled}}),
+    do: Oli.Delivery.Sections.update_section(section, %{contains_discussions: true})
+
+  defp set_contains_discussions(section, %{collab_space_config: %{status: :disabled}}),
+    do: Oli.Delivery.Sections.update_section(section, %{contains_discussions: false})
+
+  defp set_contains_discussions(_section, %{collab_space_config: %{status: _}}), do: nil
 
   defp get_status(nil), do: :disabled
   defp get_status(%CollabSpaceConfig{status: status}), do: status

@@ -288,5 +288,32 @@ module.exports = {
         'slide-in-right': 'slide-in-right 0.5s ease-out',
       },
     },
+    screens: {
+      // horizontal breakpoints
+      sm: '640px',
+      // => @media (min-width: 640px) { ... }
+      md: '768px',
+      // => @media (min-width: 768px) { ... }
+      lg: '1024px',
+      // => @media (min-width: 1024px) { ... }
+      xl: '1280px',
+      // => @media (min-width: 1280px) { ... }
+      '2xl': '1536px',
+      // => @media (min-width: 1536px) { ... }
+
+      // vertical breakpoints
+      vsm: { raw: '(min-height: 350px)' },
+      vmd: { raw: '(min-height: 500px)' },
+      vlg: { raw: '(min-height: 650px)' },
+      vxl: { raw: '(min-height: 800px)' },
+      v2xl: { raw: '(min-height: 950px)' },
+
+      // horizontal-vertical breakpoints (triggered when the horizontal or vertical conditions are met)
+      hvsm: { raw: '(min-width: 640px) and (min-height: 350px)' },
+      hvmd: { raw: '(min-width: 768px) and (min-height: 500px)' },
+      hvlg: { raw: '(min-width: 1024px) and (min-height: 650px)' },
+      hvxl: { raw: '(min-width: 1280px) and (min-height: 800px)' },
+      hv2xl: { raw: '(min-width: 1536px) and (min-height: 950px)' },
+    },
   },
 };
