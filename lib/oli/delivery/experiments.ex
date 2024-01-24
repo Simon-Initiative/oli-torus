@@ -85,6 +85,7 @@ defmodule Oli.Delivery.Experiments do
     case http().post(url("/api/init"), encode_body(body), headers()) do
       {:ok, %{status_code: 200, body: result}} ->
         Poison.decode(result)
+
       e ->
         e
     end
@@ -132,7 +133,6 @@ defmodule Oli.Delivery.Experiments do
   Posts a metrics result to Upgrade.
   """
   def log(enrollment_id, correctness, slug) do
-
     # format right now DateTime.utc_now() as
     # "2020-03-20 14:00:59"
     now = DateTime.utc_now()

@@ -40,7 +40,8 @@ defmodule Oli.Delivery.Experiments.LogWorker do
 
     project_slug =
       from(s in Oli.Delivery.Sections.Section,
-        join: p in Oli.Authoring.Course.Project, on: s.base_project_id == p.id,
+        join: p in Oli.Authoring.Course.Project,
+        on: s.base_project_id == p.id,
         where: s.id == ^section_id,
         select: p.slug
       )
