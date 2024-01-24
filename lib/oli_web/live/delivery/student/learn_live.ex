@@ -192,10 +192,25 @@ defmodule OliWeb.Delivery.Student.LearnLive do
 
   def handle_event(
         "play_video",
-        %{"video_url" => video_url, "module_resource_id" => resource_id},
+        %{
+          "video_url" => video_url,
+          "module_resource_id" => resource_id,
+          "is_intro_video" => is_intro_video
+        },
         socket
       ) do
     resource_id = String.to_integer(resource_id)
+    full_hierarchy = get_or_compute_full_hierarchy(socket.assigns.section)
+
+    selected_unit =
+      if String.to_existing_atom(is_intro_video) do
+        Enum.find(full_hierarchy["children"], fn unit -> unit["resource_id"] == resource_id end)
+      else
+        Oli.Delivery.Hierarchy.find_parent_in_hierarchy(
+          full_hierarchy,
+          fn node -> node["resource_id"] == resource_id end
+        )
+      end
 
     updated_viewed_videos =
       if resource_id in socket.assigns.viewed_intro_video_resource_ids do
@@ -210,9 +225,12 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         [resource_id | socket.assigns.viewed_intro_video_resource_ids]
       end
 
+    send(self(), :gc)
+
     {:noreply,
      socket
      |> assign(viewed_intro_video_resource_ids: updated_viewed_videos)
+     |> update(:units, fn units -> [selected_unit | units] end)
      |> push_event("play_video", %{"video_url" => video_url})}
   end
 
@@ -776,6 +794,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         phx-value-slug={@revision_slug}
         phx-value-module_resource_id={@module_resource_id}
         phx-value-video_url={@video_url}
+        phx-value-is_intro_video="false"
         class="flex shrink items-center gap-3 w-full px-2 dark:text-white cursor-pointer hover:bg-gray-200/70 dark:hover:bg-gray-800"
       >
         <span class="text-[12px] leading-[16px] font-bold w-[30px] shrink-0 opacity-40 dark:text-white">
@@ -943,6 +962,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
             phx-click="play_video"
             phx-value-video_url={@video_url}
             phx-value-module_resource_id={@resource_id}
+            phx-value-is_intro_video="true"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
