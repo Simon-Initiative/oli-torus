@@ -134,7 +134,7 @@ defmodule Oli.Delivery.Experiments do
   def log(enrollment_id, correctness, slug) do
 
     # format right now DateTime.utc_now() as
-    # "2020-03-20T14:00:59"
+    # "2020-03-20 14:00:59"
     now = DateTime.utc_now()
     date = "#{now.year()}-#{now.month()}-#{now.day()}"
     time = "#{now.hour()}:#{now.minute()}:#{now.second()}"
