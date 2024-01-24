@@ -34,8 +34,8 @@ export const VideoPlayer = {
       YouTube video IDs typically have a length of exactly 11 characters. This standardization is a part of YouTube's design.
       The check match[2].length == 11 is employed to ensure that the extracted string is indeed a valid YouTube video ID.
   */
-    this.convertToEmbedURL = (url) => {
-      const regExp = /^.*(youtu\.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+    this.convertToEmbedURL = (url: string) => {
+      const regExp = /^.*(youtu\.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
       const match = url.match(regExp);
       const videoId = match && match[2].length == 11 ? match[2] : null;
       if (videoId) {
