@@ -377,9 +377,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   def render(assigns) do
     ~H"""
     <div id="student_learn" class="lg:container lg:mx-auto p-[25px]" phx-hook="Scroller">
-      <video phx-hook="VideoPlayer" id="student_learn_video" class="hidden" controls>
-        <source src="" type="video/mp4" /> Your browser does not support the video tag.
-      </video>
+      <.video_player />
       <div id="all_units" phx-update="append">
         <.unit
           :for={unit <- @units}
@@ -1124,6 +1122,17 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       <span class="text-[12px] leading-[16px] tracking-[0.02px] text-[#0CAF61] font-semibold whitespace-nowrap">
         <%= format_float(@raw_avg_score[:score]) %> / <%= format_float(@raw_avg_score[:out_of]) %>
       </span>
+    </div>
+    """
+  end
+
+  def video_player(assigns) do
+    ~H"""
+    <div id="student_video_wrapper" phx-hook="VideoPlayer" class="hidden">
+      <iframe id="youtube_video" frameborder="0" allowfullscreen></iframe>
+      <video id="cloud_video" controls>
+        <source src="" type="video/mp4" /> Your browser does not support the video tag.
+      </video>
     </div>
     """
   end
