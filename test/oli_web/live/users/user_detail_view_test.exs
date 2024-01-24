@@ -90,6 +90,45 @@ defmodule OliWeb.Users.UsersDetailViewTest do
       assert html =~ "LTI users are managed by the LMS" == false
     end
 
+    test "admin fails to update with an invalid email", ctx do
+      {:ok, view, _html} =
+        Plug.Test.init_test_session(ctx.conn, [])
+        |> Pow.Plug.assign_current_user(ctx.admin, OliWeb.Pow.PowHelpers.get_pow_config(:author))
+        |> live(~p"/admin/users/#{ctx.independent_student.id}")
+
+      view
+      |> element("button[phx-click=\"start_edit\"]", "Edit")
+      |> render_click()
+
+      # Email cannot be blank
+      params = %{"email" => ""}
+      assert submit_and_get_flash_msg(view, params) == "Email can't be blank"
+
+      # Email with invalid format
+      params = %{"email" => "@bad_email"}
+
+      assert submit_and_get_flash_msg(view, params) ==
+               "Email #{params["email"]} has invalid format"
+
+      # Email hits users_email_independent_learner_index db constraint
+      params = %{"email" => ctx.instructor.email}
+
+      assert submit_and_get_flash_msg(view, params) ==
+               "Email #{ctx.instructor.email} has already been taken"
+    end
+
+    defp submit_and_get_flash_msg(view, params) do
+      view
+      |> element("form[phx-submit=\"submit\"")
+      |> render_submit(%{"user" => params})
+
+      view
+      |> element("#live_flash_container")
+      |> render()
+      |> Floki.text()
+      |> String.trim()
+    end
+
     test "edit author details", %{
       conn: conn,
       admin: admin,
@@ -535,6 +574,10 @@ defmodule OliWeb.Users.UsersDetailViewTest do
       |> Pow.Plug.assign_current_user(instructor, OliWeb.Pow.PowHelpers.get_pow_config(:user))
 
     {:ok,
-     conn: conn, admin: admin, independent_student: independent_student, lms_student: lms_student}
+     conn: conn,
+     admin: admin,
+     independent_student: independent_student,
+     lms_student: lms_student,
+     instructor: instructor}
   end
 end

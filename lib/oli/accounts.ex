@@ -309,10 +309,23 @@ defmodule Oli.Accounts do
     end
   end
 
+  defp handle_user_changeset_errors(
+         {:error, %Ecto.Changeset{changes: %{independent_learner: true}} = _changeset} = _error
+       ) do
+    {:error, :email_already_been_taken_by_independent_learner,
+     "Email has already been taken by another independent learner"}
+  end
+
   defp handle_user_changeset_errors({:error, %Ecto.Changeset{errors: errors} = changeset} = error) do
     case Keyword.get(errors, :email) do
       {"has already been taken" = message, _constraint} ->
-        {:error, :email_already_exists, "Email #{changeset.changes.email} #{message}"}
+        {:error, :email_already_been_taken, "Email #{changeset.changes.email} #{message}"}
+
+      {"can't be blank" = message, _constraint} ->
+        {:error, :email_cannot_be_blank, "Email #{message}"}
+
+      {"has invalid format" = message, _constraint} ->
+        {:error, :email_invalid_format, "Email #{changeset.changes.email} #{message}"}
 
       _other_constraints ->
         error

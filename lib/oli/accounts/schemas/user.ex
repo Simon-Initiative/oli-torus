@@ -172,8 +172,10 @@ defmodule Oli.Accounts.User do
   end
 
   def update_changeset_for_admin(user, attrs \\ %{}) do
-    noauth_changeset(user, attrs)
+    user
+    |> noauth_changeset(attrs)
     |> pow_user_id_field_changeset(attrs)
+    |> unique_constraint(:email, name: :users_email_independent_learner_index)
   end
 
   @doc """
