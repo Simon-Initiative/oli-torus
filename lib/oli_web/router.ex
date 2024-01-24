@@ -1292,14 +1292,14 @@ defmodule OliWeb.Router do
       :authoring_protected,
       :workspace,
       :authorize_project,
-      :admin
     ])
 
-    live("/:project_id/history/slug/:slug", RevisionHistory)
+    scope "/:project_id/history" do
+      pipe_through([:admin])
 
-    live("/:project_id/history/resource_id/:resource_id", RevisionHistory,
-      as: :history_by_resource_id
-    )
+      live("/slug/:slug", RevisionHistory)
+      live("/resource_id/:resource_id", RevisionHistory, as: :history_by_resource_id)
+    end
 
     live("/:project_id/datashop", Datashop.AnalyticsLive)
   end

@@ -313,7 +313,7 @@ defmodule OliWeb.Projects.OverviewLive do
           <span>Download this project and its contents.</span>
         </div>
 
-        <div :if={@is_admin} class="d-flex align-items-center">
+        <div class="d-flex align-items-center">
           <%= case @latest_publication do %>
             <% nil -> %>
               <.button_link disabled>Datashop Analytics</.button_link>
