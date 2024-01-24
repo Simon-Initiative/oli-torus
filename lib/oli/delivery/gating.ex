@@ -28,7 +28,7 @@ defmodule Oli.Delivery.Gating do
         true
       else
         dynamic(
-          [_gc, u, rev],
+          [_sr, _, _, _, rev, _gc, u],
           ilike(rev.title, ^"%#{text_search}%") or
             ilike(u.name, ^"%#{text_search}%") or
             ilike(u.email, ^"%#{text_search}%") or
@@ -40,46 +40,51 @@ defmodule Oli.Delivery.Gating do
     filter_by_parent_gate_id =
       if is_nil(parent_gate_id) do
         dynamic(
-          [gc, _, _],
+          [_sr, _, _, _, _rev, gc, _u],
           is_nil(gc.parent_id)
         )
       else
         dynamic(
-          [gc, _, _],
+          [_sr, _, _, _, _rev, gc, _u],
           gc.parent_id == ^parent_gate_id
         )
       end
 
     query =
-      GatingCondition
-      |> join(:left, [gc], u in User, on: u.id == gc.user_id)
-      |> join(
-        :inner,
-        [gc, _],
-        rev in subquery(
-          from([pr: pr, rev: rev] in DeliveryResolver.section_resource_revisions(section_slug),
-            select: rev
-          )
-        ),
-        on: rev.resource_id == gc.resource_id
+      from(
+        [sr, _, _, _, rev] in DeliveryResolver.section_resource_revisions(section_slug),
+        join: gc in GatingCondition,
+        on: gc.resource_id == rev.resource_id,
+        left_join: u in User,
+        on: u.id == gc.user_id,
+        where: ^filter_by_text,
+        where: ^filter_by_parent_gate_id,
+        where: gc.section_id == ^section_id,
+        limit: ^limit,
+        offset: ^offset,
+        select: gc,
+        select_merge: %{
+          total_count: fragment("count(*) OVER()"),
+          revision: rev
+        }
       )
-      |> where(^filter_by_text)
-      |> where(^filter_by_parent_gate_id)
-      |> where([gc, _, _], gc.section_id == ^section_id)
-      |> limit(^limit)
-      |> offset(^offset)
-      |> preload([gc, _, _], [:user])
-      |> select_merge([gc, _, rev], %{
-        total_count: fragment("count(*) OVER()"),
-        revision: rev
-      })
 
     query =
       case field do
-        :title -> order_by(query, [_gc, _u, rev, _], {^direction, rev.title})
-        :user -> order_by(query, [gc_, u, _rev, _], {^direction, u.name})
-        :details -> query
-        _ -> order_by(query, [gc, _u, _rev, _], {^direction, field(gc, ^field)})
+        :title ->
+          order_by(query, [_sr, _, _, _, rev, _gc, _u], {^direction, rev.title})
+
+        :user ->
+          order_by(query, [_sr, _, _, _, _rev, _gc, u], {^direction, u.name})
+
+        :details ->
+          query
+
+        :numbering_index ->
+          order_by(query, [sr, _, _, _, _rev, _gc, _u], {^direction, sr.numbering_index})
+
+        _ ->
+          order_by(query, [_sr, _, _, _, _rev, gc, _u], {^direction, field(gc, ^field)})
       end
 
     Repo.all(query)
