@@ -274,6 +274,8 @@ defmodule OliWeb.Delivery.Student.LearnLive do
           end
       end
 
+    send(self(), :gc)
+
     {
       :noreply,
       socket
@@ -299,10 +301,18 @@ defmodule OliWeb.Delivery.Student.LearnLive do
      push_redirect(socket, to: resource_url(resource_slug, socket.assigns.section.slug))}
   end
 
+  def handle_info(:gc, socket) do
+    :erlang.garbage_collect(socket.transport_pid)
+    :erlang.garbage_collect(self())
+    {:noreply, socket}
+  end
+
   def handle_info(
         {:student_metrics_and_enable_slider_buttons, nil},
         socket
       ) do
+    send(self(), :gc)
+
     {:noreply, socket}
   end
 
@@ -313,6 +323,8 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         socket
       ) do
     full_hierarchy = get_or_compute_full_hierarchy(socket.assigns.section)
+
+    send(self(), :gc)
 
     {:noreply,
      assign(socket,
