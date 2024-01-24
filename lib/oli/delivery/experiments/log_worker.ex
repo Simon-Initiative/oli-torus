@@ -25,7 +25,7 @@ defmodule Oli.Delivery.Experiments.LogWorker do
   end
 
   def perform_now(attempt_guid) do
-    {score, out_of, enrollment_id} =
+    {score, out_of, enrollment_id, section_id} =
       from(aa in ActivityAttempt,
         join: ra in ResourceAttempt,
         on: aa.resource_attempt_id == ra.id,
@@ -34,7 +34,15 @@ defmodule Oli.Delivery.Experiments.LogWorker do
         join: e in Enrollment,
         on: a.section_id == e.section_id and a.user_id == e.user_id,
         where: aa.attempt_guid == ^attempt_guid,
-        select: {aa.score, aa.out_of, e.id}
+        select: {aa.score, aa.out_of, e.id, e.section_id}
+      )
+      |> Repo.one()
+
+    project_slug =
+      from(s in Oli.Delivery.Sections.Section,
+        join: p in Oli.Authoring.Course.Project, on: s.base_project_id == p.id,
+        where: s.id == ^section_id,
+        select: p.slug
       )
       |> Repo.one()
 
@@ -50,7 +58,7 @@ defmodule Oli.Delivery.Experiments.LogWorker do
           end
       end
 
-    Oli.Delivery.Experiments.log(enrollment_id, correctness)
+    Oli.Delivery.Experiments.log(enrollment_id, correctness, project_slug)
   end
 
   @doc """
