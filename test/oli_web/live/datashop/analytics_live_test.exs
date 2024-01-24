@@ -21,19 +21,37 @@ defmodule OliWeb.Datashop.AnalyticsLiveTest do
     end
   end
 
-  describe "user cannot access when is logged in as an author but is not a system admin" do
+  describe "user can access when is logged in as an author but is not a system admin" do
     setup [:author_conn, :create_project]
 
-    test "redirects to new session when accessing the datashop analytics view", %{
+    test "loads correctly", %{
       conn: conn,
       author: author,
       project: project
     } do
       make_project_author(project, author)
+      {:ok, _view, html} = live(conn, live_view_analytics_route(project.slug))
 
       assert conn
              |> get(live_view_analytics_route(project.slug))
-             |> response(403)
+             |> response(200)
+
+      assert html =~ "Datashop Analytics"
+      assert html =~ "Generate Datashop Export"
+    end
+  end
+
+  describe "user cannot access when is logged in as a student" do
+    setup [:user_conn, :create_project]
+
+    test "redirects to new session when accessing the analytics view as student", %{
+      conn: conn,
+      project: project
+    } do
+      assert conn
+             |> get(live_view_analytics_route(project.slug))
+             |> html_response(302) =~
+               "You are being <a href=\"/authoring/session/new?request_path=%2Fproject%2F#{project.slug}%2Fdatashop\">redirected</a>"
     end
   end
 
