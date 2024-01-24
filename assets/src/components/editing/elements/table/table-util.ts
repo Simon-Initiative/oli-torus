@@ -24,6 +24,8 @@ const getRowColspan = (row: ContentModel.TableRow): number => {
   return row.children.reduce((sum, cell) => sum + getColspan(cell), 0);
 };
 
+type VisualGrid = ContentModel.TableCell[][];
+
 /**
  * Given a Table, with cells that may have colspan / rowspan attributes,
  * return a 2 dimensional array that represents what cells would be in which position.
@@ -43,7 +45,7 @@ const getRowColspan = (row: ContentModel.TableRow): number => {
  *  returned value)
  *
  */
-export const getVisualGrid = (table: ContentModel.Table): ContentModel.TableCell[][] => {
+export const getVisualGrid = (table: ContentModel.Table): VisualGrid => {
   const maxColumns = table.children.reduce((max, row) => Math.max(max, getRowColspan(row)), 0);
 
   const grid: ContentModel.TableCell[][] = Array(table.children.length)
@@ -77,4 +79,20 @@ export const getVisualGrid = (table: ContentModel.Table): ContentModel.TableCell
   const gridWithoutNulls = grid.map((row) => row.filter((cell) => cell !== null));
 
   return gridWithoutNulls;
+};
+
+export const getRowColumnIndex = (
+  grid: VisualGrid,
+  cellId: string,
+): { rowIndex: number; columnIndex: number } | null => {
+  for (let rowIndex = 0; rowIndex < grid.length; rowIndex++) {
+    const row = grid[rowIndex];
+    for (let columnIndex = 0; columnIndex < row.length; columnIndex++) {
+      const cell = row[columnIndex];
+      if (cell.id === cellId) {
+        return { rowIndex, columnIndex };
+      }
+    }
+  }
+  return null;
 };

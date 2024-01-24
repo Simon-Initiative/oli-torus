@@ -570,10 +570,11 @@ defmodule OliWeb.Curriculum.ContainerLive do
   end
 
   # handle clicking of the "Add Graded Assessment" or "Add Practice Page" buttons
-  def handle_event("add", %{"type" => type}, socket) do
+  def handle_event("add", %{"type" => type, "scored" => scored}, socket) do
     case ContainerEditor.add_new(
            socket.assigns.container,
            type,
+           scored,
            socket.assigns.author,
            socket.assigns.project,
            socket.assigns.numberings
