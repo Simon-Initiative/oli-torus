@@ -10,6 +10,12 @@ defmodule OliWeb.Delivery.Student.LearnLive do
 
   import Ecto.Query, warn: false, only: [from: 2]
 
+  # this is an optimization to reduce the memory footprint of the liveview process
+  @required_keys_per_assign %{
+    section: {[:id, :analytics_version, :slug, :customizations, :title], %Sections.Section{}},
+    current_user: {[:id, :name, :email], %User{}}
+  }
+
   def mount(_params, _session, socket) do
     # when updating to Liveview 0.20 we should replace this with assign_async/3
     # https://hexdocs.pm/phoenix_live_view/Phoenix.LiveView.html#assign_async/3
@@ -36,8 +42,23 @@ defmodule OliWeb.Delivery.Student.LearnLive do
             socket.assigns.current_user.id
           )
       )
+      |> slim_assigns()
 
     {:ok, socket, temporary_assigns: [units: [], unit_resource_ids: []]}
+  end
+
+  defp slim_assigns(socket) do
+    Enum.reduce(@required_keys_per_assign, socket, fn {assign_name, {required_keys, struct}},
+                                                      socket ->
+      assign(
+        socket,
+        assign_name,
+        Map.merge(
+          struct,
+          Map.filter(socket.assigns[assign_name], fn {k, _v} -> k in required_keys end)
+        )
+      )
+    end)
   end
 
   def handle_params(%{"target_resource_id" => resource_id}, _uri, socket) do
@@ -1121,7 +1142,9 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     raw_avg_score_per_container_id =
       Metrics.raw_avg_score_across_for_containers(section, container_ids, [current_user_id])
 
-    progress_per_resource_id = Map.merge(progress_per_page_id, progress_per_container_id)
+    progress_per_resource_id =
+      Map.merge(progress_per_page_id, progress_per_container_id)
+      |> Map.filter(fn {_, progress} -> progress not in [nil, 0.0] end)
 
     {visited_pages_map, progress_per_resource_id, raw_avg_score_per_page_id,
      raw_avg_score_per_container_id}
