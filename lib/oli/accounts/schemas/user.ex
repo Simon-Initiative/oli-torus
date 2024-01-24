@@ -2,8 +2,7 @@ defmodule Oli.Accounts.User do
   use Ecto.Schema
 
   use Pow.Ecto.Schema,
-    password_hash_methods: {&Bcrypt.hash_pwd_salt/1, &Bcrypt.verify_pass/2},
-    email_validator: &Pow.Ecto.Schema.Changeset.validate_email/1
+    password_hash_methods: {&Bcrypt.hash_pwd_salt/1, &Bcrypt.verify_pass/2}
 
   use PowAssent.Ecto.Schema
 
