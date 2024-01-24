@@ -1291,7 +1291,7 @@ defmodule OliWeb.Router do
       :browser,
       :authoring_protected,
       :workspace,
-      :authorize_project,
+      :authorize_project
     ])
 
     scope "/:project_id/history" do
