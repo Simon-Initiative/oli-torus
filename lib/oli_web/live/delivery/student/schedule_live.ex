@@ -13,7 +13,8 @@ defmodule OliWeb.Delivery.Student.ScheduleLive do
     {:ok,
      assign(socket,
        active_tab: :schedule,
-       schedule: schedule
+       schedule: schedule,
+       section_slug: section.slug
      )}
   end
 
@@ -24,13 +25,14 @@ defmodule OliWeb.Delivery.Student.ScheduleLive do
     </.hero_banner>
 
     <div class="container mx-auto">
-      <.schedule ctx={@ctx} schedule={@schedule} />
+      <.schedule ctx={@ctx} schedule={@schedule} section_slug={@section_slug} />
     </div>
     """
   end
 
   attr :ctx, SessionContext, required: true
   attr :schedule, :any, required: true
+  attr :section_slug, :string, required: true
 
   def schedule(assigns) do
     ~H"""
@@ -49,7 +51,12 @@ defmodule OliWeb.Delivery.Student.ScheduleLive do
             <div class="flex-1 flex flex-col">
               <%= for {week, schedule_ranges} <- weekly_schedule do %>
                 <div class="flex flex-row md:border-l md:border-gray-300 dark:border-gray-700 md:px-4">
-                  <Schedule.week ctx={@ctx} week_number={week} schedule_ranges={schedule_ranges} />
+                  <Schedule.week
+                    ctx={@ctx}
+                    week_number={week}
+                    schedule_ranges={schedule_ranges}
+                    section_slug={@section_slug}
+                  />
                 </div>
               <% end %>
             </div>
