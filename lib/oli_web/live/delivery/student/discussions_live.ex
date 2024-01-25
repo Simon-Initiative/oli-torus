@@ -974,6 +974,10 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
        when current_user_id != user_id,
        do: "?"
 
+  defp to_initials(%{user_name: nil}, _current_user_id) do
+    "NA"
+  end
+
   defp to_initials(%{user_name: user_name}, _current_user_id) do
     user_name
     |> String.split(" ")
