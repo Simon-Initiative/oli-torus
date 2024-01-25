@@ -32,6 +32,7 @@ import { DeliveryElementProvider, useDeliveryElementContext } from '../DeliveryE
 import { MathInput } from '../common/delivery/inputs/MathInput';
 import { initializePersistence } from '../common/delivery/persistence';
 import { castPartId } from '../common/utils';
+import { SubmitReset } from '../common/delivery/SubmitReset';
 
 type InputProps = {
   input: string;
@@ -150,8 +151,9 @@ export const ShortAnswerComponent: React.FC = () => {
           onBlur={() => deferredSave.current.flushPendingChanges(false)}
         />
 
-        <ResetButtonConnected onReset={() => dispatch(resetAction(onResetActivity, resetParts))} />
-        <SubmitButtonConnected />
+        <SubmitReset onReset={() => dispatch(resetAction(onResetActivity, resetParts))} />
+        {/* <ResetButtonConnected onReset={() => dispatch(resetAction(onResetActivity, resetParts))} />
+        <SubmitButtonConnected /> */}
         <HintsDeliveryConnected
           partId={castPartId(activityState.parts[0].partId)}
           resetPartInputs={resetParts}
