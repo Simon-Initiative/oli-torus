@@ -53,7 +53,8 @@ defmodule Oli.Delivery.Sections.Scheduling do
       |> select_merge([_sr, _s, _spp, _pr, rev], %{
         title: rev.title,
         resource_type_id: rev.resource_type_id,
-        graded: rev.graded
+        graded: rev.graded,
+        revision_slug: rev.slug
       })
 
     Repo.all(query)
