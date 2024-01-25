@@ -390,7 +390,7 @@ defmodule OliWeb.AdminLiveTest do
       assert view
              |> element("div.alert.alert-danger")
              |> render() =~
-               "User couldn&#39;t be updated."
+               "Email can&#39;t be blank"
 
       refute Accounts.get_user!(id).name == ""
     end
