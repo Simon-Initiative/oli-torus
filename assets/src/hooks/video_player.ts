@@ -29,7 +29,7 @@ export const VideoPlayer = {
 
       The expression consists of two main parts:
       - The first part (youtu\.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=) captures the various URL structures preceding the video ID.
-      = The second part ([^#\&\?]*).*, which corresponds to match[2], captures the actual video ID.
+      - The second part ([^#\&\?]*).*, which corresponds to match[2], captures the actual video ID.
 
       YouTube video IDs typically have a length of exactly 11 characters. This standardization is a part of YouTube's design.
       The check match[2].length == 11 is employed to ensure that the extracted string is indeed a valid YouTube video ID.
