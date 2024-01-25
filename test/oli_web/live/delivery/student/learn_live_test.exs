@@ -1134,12 +1134,13 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       # unit 1 has been scheduled by instructor, so there must be schedule details data
       assert view
              |> element(~s{div[role="unit_1"] div[role="schedule_details"]})
-             |> render() =~ "Due:\n            </span>\n            Sun, Dec 31, 2023 (8:00pm)"
+             |> render() =~
+               "Due:\n              </span>\n              Sun, Dec 31, 2023 (8:00pm)"
 
       # unit 2 has not been scheduled by instructor, so there must not be a schedule details data
       assert view
              |> element(~s{div[role="unit_2"] div[role="schedule_details"]})
-             |> render() =~ "Due:\n            </span>\n            not yet scheduled"
+             |> render() =~ "Due:\n              </span>\n              not yet scheduled"
     end
 
     test "can see units, modules and page (at module level) progresses", %{
