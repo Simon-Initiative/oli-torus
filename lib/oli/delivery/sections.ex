@@ -1419,7 +1419,7 @@ defmodule Oli.Delivery.Sections do
 
     container_ids = Enum.map(all_containers, fn c -> c.resource_id end)
 
-    # get all explorations in the section and group them by their container title
+    # build a map of all pages to their first hierarchical container resource id
     all_pages
     |> Enum.reduce(%{}, fn page, acc ->
       {container_id, _seen} =
@@ -1462,8 +1462,8 @@ defmodule Oli.Delivery.Sections do
          seen
        ) do
     if MapSet.member?(seen, resource_id) do
-      # we've already seen this page, so we've reached a cycle in the recursion and it is not linked
-      # from any page in the hierarchy
+      # we've already seen this page, so we've reached a cycle in the recursion so we should
+      # treat it as not linked from any page in this part of the hierarchy
       {nil, seen}
     else
       if MapSet.member?(container_ids, resource_id) do
@@ -1647,7 +1647,7 @@ defmodule Oli.Delivery.Sections do
     end
 
     ordered_containers =
-      SectionCache.get_or_compute(section_slug, :ordered_containers, fn ->
+      SectionCache.get_or_compute(section_slug, :ordered_container_labels, fn ->
         fetch_ordered_containers(section_slug)
       end)
 
@@ -4094,6 +4094,7 @@ defmodule Oli.Delivery.Sections do
          customizations
        ) do
     case numbering_level do
+      0 -> "Curriculum"
       1 -> Map.get(customizations, :unit)
       2 -> Map.get(customizations, :module)
       _ -> Map.get(customizations, :section)

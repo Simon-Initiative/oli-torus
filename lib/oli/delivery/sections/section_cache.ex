@@ -52,7 +52,7 @@ defmodule Oli.Delivery.Sections.SectionCache do
         "computed_value"
 
   """
-  def get_or_compute(section_slug, key, fun) do
+  def get_or_compute(section_slug, key, fun) when key in @cache_keys do
     cache_id = cache_id(section_slug, key)
 
     case get(cache_id) do
