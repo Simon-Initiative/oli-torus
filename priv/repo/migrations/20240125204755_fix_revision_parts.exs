@@ -2,7 +2,6 @@ defmodule Oli.Repo.Migrations.FixRevisionParts do
   use Ecto.Migration
 
   def change do
-
     execute """
     CREATE TABLE temp_revision_parts AS
     SELECT DISTINCT ON (revision_id, grading_approach, part_id) *
@@ -30,5 +29,4 @@ defmodule Oli.Repo.Migrations.FixRevisionParts do
     create unique_index(:revision_parts, [:revision_id, :part_id, :grading_approach])
     create index(:revision_parts, [:revision_id])
   end
-
 end
