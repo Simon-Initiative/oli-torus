@@ -150,7 +150,6 @@ defmodule OliWeb.Delivery.Student.DiscussionsLiveTest do
 
     {:ok, section} = Sections.create_section_resources(section, publication)
     {:ok, _} = Sections.rebuild_contained_pages(section)
-    {:ok, _} = Sections.update_page_to_container_map(section)
 
     # enable course collab space
     root_container_sr =

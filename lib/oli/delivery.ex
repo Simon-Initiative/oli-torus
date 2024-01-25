@@ -161,7 +161,6 @@ defmodule Oli.Delivery do
       enroll(user.id, section.id, lti_params)
 
       {:ok, updated_section} = maybe_update_section_contains_explorations(section)
-      {:ok, _} = Sections.update_page_to_container_map(section)
 
       updated_section
     end)

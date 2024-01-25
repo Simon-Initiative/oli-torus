@@ -1363,10 +1363,10 @@ defmodule Oli.Delivery.Sections do
   @doc """
   Returns the resource_to_container map for the given section,
   that maps all resources ids to their parent container id.
-  If the section does not have a precomputed resource_to_container_map, one will be generated.
+  If the section does not have a precomputed page_to_container_map, one will be generated.
 
   ## Examples
-      iex> get_page_to_container_map(section)
+      iex> get_page_to_container_map(section_slug)
       %{
         "21" => 39,
         "22" => 40,
@@ -1378,30 +1378,10 @@ defmodule Oli.Delivery.Sections do
         "28" => 43,
       }
   """
-  def get_page_to_container_map(section) do
-    # TODO: Replace with SectionCache cachex-based implementation, remove resource_to_container_map
-    # from section
-    case section do
-      %Section{resource_to_container_map: nil} ->
-        Logger.warning(
-          "Section #{section.slug} has no precomputed resource_to_container_map. One will be generated now."
-        )
-
-        {:ok, section} = update_page_to_container_map(section)
-        section.resource_to_container_map
-
-      %Section{resource_to_container_map: resource_to_container_map} ->
-        resource_to_container_map
-    end
-  end
-
-  @doc """
-  Builds a section's resource_to_container_map and updates the section with it.
-  """
-  def update_page_to_container_map(section) do
-    update_section(section, %{
-      resource_to_container_map: build_page_to_container_map(section.slug)
-    })
+  def get_page_to_container_map(section_slug) do
+    SectionCache.get_or_compute(section_slug, :page_to_container_map, fn ->
+      build_page_to_container_map(section_slug)
+    end)
   end
 
   defp build_page_to_container_map(section_slug) do
@@ -1520,7 +1500,7 @@ defmodule Oli.Delivery.Sections do
       }
   """
   def get_explorations_by_containers(section, user) do
-    page_to_container_map = get_page_to_container_map(section)
+    page_to_container_map = get_page_to_container_map(section.slug)
 
     # get all explorations in the section and group them by their container title
     DeliveryResolver.get_by_purpose(section.slug, :application)
@@ -1595,7 +1575,7 @@ defmodule Oli.Delivery.Sections do
   end
 
   def get_practice_pages_by_containers(section) do
-    page_to_container_map = get_page_to_container_map(section)
+    page_to_container_map = get_page_to_container_map(section.slug)
 
     # get all practice pages in the section and group them by their container title
     DeliveryResolver.get_by_purpose(section.slug, :deliberate_practice)
@@ -1680,7 +1660,7 @@ defmodule Oli.Delivery.Sections do
       |> Enum.reduce(%{}, fn {container_id, label}, acc -> Map.put(acc, container_id, label) end)
 
     page_to_container_map =
-      get_page_to_container_map(section)
+      get_page_to_container_map(section.slug)
 
     scheduled_section_resources =
       Scheduling.retrieve(section, :pages)
