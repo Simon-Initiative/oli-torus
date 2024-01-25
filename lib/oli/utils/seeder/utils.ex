@@ -51,7 +51,7 @@ defmodule Oli.Utils.Seeder.Utils do
     case(Map.get(seeds, tag)) do
       nil ->
         throw(
-          "Failed to load #{to_string(tag)} from seeds. Please make sure the tag is correct and the value has previously been created."
+          "Failed to load :#{to_string(tag)} from seeds. Please make sure the tag is correct and the value has previously been created."
         )
 
       value ->
@@ -66,7 +66,7 @@ defmodule Oli.Utils.Seeder.Utils do
         case(Map.get(seeds, tag)) do
           nil ->
             throw(
-              "Failed to load #{to_string(tag)} from seeds. Please make sure the tag is correct and the value has previously been created."
+              "Failed to load :#{to_string(tag)} from seeds. Please make sure the tag is correct and the value has previously been created."
             )
 
           value ->

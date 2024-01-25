@@ -254,7 +254,7 @@ defmodule Oli.Utils.Seeder.Project do
         title: "Page 4",
         graded: false
       },
-      revision_tag: :unit1_module1_page4,
+      revision_tag: :unit1_module1_section_1_page4,
       container_revision_tag: :unit1_module1_section1
     )
     |> Seeder.Project.create_page(
@@ -374,6 +374,28 @@ defmodule Oli.Utils.Seeder.Project do
       },
       revision_tag: :unit2_module3_page12,
       container_revision_tag: :unit2_module3
+    )
+    |> Seeder.Project.create_page(
+      ref(:author),
+      ref(:project),
+      ref(:unit2),
+      %{
+        title: "Unit 2 Exploration Page 13",
+        purpose: :application
+      },
+      revision_tag: :unit2_exploration_page13,
+      container_revision_tag: :unit2
+    )
+    |> Seeder.Project.create_page(
+      author,
+      ref(:project),
+      ref(:unit2),
+      %{
+        title: "Final Exam Page 14",
+        graded: false
+      },
+      revision_tag: :unit2_scored_page14,
+      container_revision_tag: :unit2
     )
   end
 
