@@ -1025,12 +1025,20 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
               "Page #{post.resource_numbering_index}"
 
             container_resource_id ->
-              container_with_numbering_index =
-                Map.get(ordered_containers_map, container_resource_id)
-                |> String.split(":")
-                |> hd()
+              case Map.get(ordered_containers_map, container_resource_id) do
+                nil ->
+                  # if the container is not in the ordered_containers_map, it means it is a
+                  # container in the curriculum root level
+                  "Page #{post.resource_numbering_index}"
 
-              "#{container_with_numbering_index}: Page #{post.resource_numbering_index}"
+                container_with_numbering_index ->
+                  container_with_numbering_index =
+                    container_with_numbering_index
+                    |> String.split(":")
+                    |> hd()
+
+                  "#{container_with_numbering_index}: Page #{post.resource_numbering_index}"
+              end
           end
 
         post
