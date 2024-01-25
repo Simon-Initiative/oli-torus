@@ -342,7 +342,10 @@ defmodule OliWeb.Dialogue.WindowLive do
           :if={@user_initials == "BOT AI"}
           class="-mt-1.5 w-11 h-11 rounded-full justify-center items-center flex"
         >
-          <div class="w-12 h-12 bg-[url('/images/assistant/footer_dot_ai.png')] bg-cover bg-center">
+          <div
+            class="w-12 h-12 bg-cover bg-center"
+            style="background-image: url('/images/assistant/footer_dot_ai.png');"
+          >
           </div>
         </div>
         <div
