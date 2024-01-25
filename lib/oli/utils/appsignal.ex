@@ -21,6 +21,8 @@ defmodule Oli.Utils.Appsignal do
       raise e
     catch
       kind, reason ->
+        metadata = unless is_nil(metadata), do: inspect(metadata)
+
         case metadata do
           nil ->
             Appsignal.send_error(kind, reason, __STACKTRACE__)

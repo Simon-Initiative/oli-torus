@@ -292,6 +292,7 @@ defmodule OliWeb.PageDeliveryController do
           numbered_revisions = Sections.get_revision_indexes(section.slug)
 
           render(conn, "container.html",
+            user: user,
             scripts: [],
             section: section,
             title: title,
@@ -459,6 +460,7 @@ defmodule OliWeb.PageDeliveryController do
     numbered_revisions = Sections.get_revision_indexes(section.slug)
 
     render(conn, "prologue.html", %{
+      user: user,
       resource_access: resource_access,
       section_slug: section_slug,
       scripts: Activities.get_activity_scripts(),
@@ -957,6 +959,7 @@ defmodule OliWeb.PageDeliveryController do
             |> render(
               "instructor_page_preview.html",
               %{
+                user: nil,
                 summary: %{title: section.title},
                 section_slug: section_slug,
                 scripts: [],
@@ -994,6 +997,7 @@ defmodule OliWeb.PageDeliveryController do
             |> put_root_layout({OliWeb.LayoutView, "chromeless.html"})
             |> put_view(OliWeb.ResourceView)
             |> render("advanced_page_preview.html",
+              user: user,
               additional_stylesheets: Map.get(revision.content, "additionalStylesheets", []),
               activity_types: activity_types,
               scripts: Activities.get_activity_scripts(:delivery_script),
@@ -1120,6 +1124,12 @@ defmodule OliWeb.PageDeliveryController do
     |> render(
       "instructor_page_preview.html",
       %{
+        user:
+          if is_nil(conn.assigns.current_user) do
+            nil
+          else
+            conn.assigns.current_user
+          end,
         summary: %{title: section.title},
         section_slug: section_slug,
         scripts: Enum.map(all_activities, fn a -> a.authoring_script end),
