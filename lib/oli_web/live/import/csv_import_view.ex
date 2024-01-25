@@ -32,6 +32,7 @@ defmodule OliWeb.Import.CSVImportView do
         socket
       ) do
     author = Repo.get(Author, author_id)
+    project = Oli.Authoring.Course.get_project_by_slug(project_slug)
     ingest_file = ingest_file(author)
 
     if File.exists?(ingest_file) do
@@ -46,6 +47,7 @@ defmodule OliWeb.Import.CSVImportView do
        assign(socket,
          breadcrumbs: set_breadcrumbs(),
          author: author,
+         project: project,
          finished: false,
          results: []
        )}
@@ -173,6 +175,10 @@ defmodule OliWeb.Import.CSVImportView do
   end
 
   def handle_info({:finished}, socket) do
+    socket.assigns.project
+    |> Oli.Delivery.Sections.get_sections_by_base_project()
+    |> Enum.each(&Oli.Delivery.Sections.SectionCache.clear(&1.slug))
+
     {:noreply,
      assign(socket,
        finished: true
