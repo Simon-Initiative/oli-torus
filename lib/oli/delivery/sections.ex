@@ -49,6 +49,8 @@ defmodule Oli.Delivery.Sections do
 
   require Logger
 
+  @instructor_context_role_id ContextRoles.get_role(:context_instructor).id
+
   def enrolled_students(section_slug) do
     section = get_section_by_slug(section_slug)
 
@@ -821,18 +823,38 @@ defmodule Oli.Delivery.Sections do
   def get_active_sections_by_project(project_id) do
     today = DateTime.utc_now()
 
-    Repo.all(
-      from(
-        section in Section,
-        join: spp in SectionsProjectsPublications,
-        on: spp.section_id == section.id,
-        where:
-          spp.project_id == ^project_id and
-            (not is_nil(section.end_date) and section.end_date >= ^today),
-        select: section,
-        preload: [section_project_publications: [:publication]]
+    first_enrollment =
+      from(u in User,
+        join: e in assoc(u, :enrollments),
+        where: e.section_id == parent_as(:section).id,
+        order_by: [asc: e.inserted_at],
+        limit: 1,
+        select: fragment("concat(?, '|', ?, '|', ?)", u.name, u.given_name, u.family_name)
       )
+
+    instructors =
+      from(u in User,
+        join: e in assoc(u, :enrollments),
+        join: ecr in EnrollmentContextRole,
+        on: ecr.enrollment_id == e.id,
+        where: e.section_id == parent_as(:section).id,
+        where: ecr.context_role_id == ^@instructor_context_role_id,
+        group_by: e.section_id,
+        select:
+          fragment("array_agg(concat(?, '|', ?, '|', ?))", u.name, u.given_name, u.family_name)
+      )
+
+    from(
+      s in Section,
+      as: :section,
+      join: spp in assoc(s, :section_project_publications),
+      where: spp.project_id == ^project_id,
+      where: not is_nil(s.end_date),
+      where: s.end_date >= ^today,
+      preload: [section_project_publications: [:publication]],
+      select: %{s | creator: subquery(first_enrollment), instructors: subquery(instructors)}
     )
+    |> Repo.all()
   end
 
   @doc """
