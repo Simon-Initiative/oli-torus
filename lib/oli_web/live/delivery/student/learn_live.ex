@@ -318,9 +318,13 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     }
   end
 
-  def handle_event("navigate_to_resource", %{"slug" => resource_slug}, socket) do
+  def handle_event(
+        "navigate_to_resource",
+        %{"slug" => resource_slug, "purpose" => purpose},
+        socket
+      ) do
     {:noreply,
-     push_redirect(socket, to: resource_url(resource_slug, socket.assigns.section.slug))}
+     push_redirect(socket, to: resource_url(resource_slug, socket.assigns.section.slug, purpose))}
   end
 
   def handle_info(:gc, socket) do
@@ -512,6 +516,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
                 @selected_module_per_unit_resource_id[@unit["resource_id"]]["resource_id"] ==
                   module["resource_id"]
               }
+              purpose={module["purpose"]}
             />
           </div>
         </div>
@@ -723,6 +728,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         video_url={@module["intro_video"]}
         intro_video_viewed={@intro_video_viewed}
         progress={0.0}
+        purpose="intro"
       />
 
       <.index_item
@@ -755,6 +761,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         intro_video_viewed={@intro_video_viewed}
         video_url={@module["intro_video"]}
         progress={Map.get(@student_progress_per_resource_id, page["resource_id"])}
+        purpose={page["purpose"]}
       />
     </div>
     """
@@ -774,6 +781,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   attr :intro_video_viewed, :boolean
   attr :video_url, :string
   attr :progress, :float
+  attr :purpose, :string
 
   def index_item(assigns) do
     ~H"""
@@ -797,6 +805,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         phx-value-module_resource_id={@module_resource_id}
         phx-value-video_url={@video_url}
         phx-value-is_intro_video="false"
+        phx-value-purpose={@purpose}
         class="flex shrink items-center gap-3 w-full px-2 dark:text-white cursor-pointer hover:bg-gray-200/70 dark:hover:bg-gray-800"
       >
         <span class="text-[12px] leading-[16px] font-bold w-[30px] shrink-0 opacity-40 dark:text-white">
@@ -990,6 +999,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   attr :selected, :boolean, default: false
   attr :bg_image_url, :string, doc: "the background image url for the card"
   attr :student_progress_per_resource_id, :map
+  attr :purpose, :string
   attr :default_image, :string, default: @default_image
 
   def module_card(assigns) do
@@ -1013,6 +1023,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       phx-value-unit_resource_id={@unit_resource_id}
       phx-value-module_resource_id={@module["resource_id"]}
       phx-value-slug={@module["slug"]}
+      phx-value-purpose={@purpose}
       class={[
         "relative hover:scale-[1.01] transition-transform duration-150",
         if(!is_page(@module), do: "slider-card")
@@ -1161,9 +1172,15 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     end)
   end
 
-  # TODO: for other courses with other hierarchy, the url might be a container url:
-  # ~p"/sections/#{section_slug}/container/:revision_slug
-  defp resource_url(resource_slug, section_slug) do
+  # TODO: Exploration pages are redirected to v26 pages (handled by the page_delivery_controller).
+  # This implies that the v26 prologue page will be shown when there is no attempt in course.
+  # We need to extend the NG23 prologue to support adaptive pages.
+
+  defp resource_url(resource_slug, section_slug, "application") do
+    ~p"/sections/#{section_slug}/page/#{resource_slug}"
+  end
+
+  defp resource_url(resource_slug, section_slug, _purpose) do
     ~p"/sections/#{section_slug}/lesson/#{resource_slug}"
   end
 
@@ -1411,6 +1428,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         "intro_content" => rev.intro_content,
         "duration_minutes" => rev.duration_minutes,
         "resource_type_id" => rev.resource_type_id,
+        "purpose" => rev.purpose,
         "section_resource" => sr,
         "is_root?" =>
           fragment(

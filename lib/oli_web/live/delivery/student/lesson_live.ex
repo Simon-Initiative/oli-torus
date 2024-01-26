@@ -251,6 +251,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
   end
 
   # this render corresponds to the prologue view for graded pages (when there is no attempt in course)
+  # TODO: extend the prologue page to support adaptive pages
   def render(%{view: :graded_page, begin_attempt?: false} = assigns) do
     ~H"""
     <Modal.modal id="password_attempt_modal" class="w-1/2">
