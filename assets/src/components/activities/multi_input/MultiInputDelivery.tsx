@@ -303,7 +303,6 @@ export const MultiInputComponent: React.FC = () => {
   });
 
   const submitPerPart = (uiState.model as MultiInputSchema).submitPerPart;
-
   return (
     <div className="activity multi-input-activity">
       <div className="activity-content">

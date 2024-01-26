@@ -27,6 +27,7 @@ import { safelySelectStringInputs } from 'data/activities/utils';
 import { defaultWriterContext } from 'data/content/writers/context';
 import { configureStore } from 'state/store';
 import { DeliveryElementProvider, useDeliveryElementContext } from '../DeliveryElementProvider';
+import { SubmitResetConnected } from '../common/delivery/SubmitReset';
 
 export const VlabComponent: React.FC = () => {
   const {
@@ -245,10 +246,15 @@ export const VlabComponent: React.FC = () => {
           context={writerContext}
         />
         <GradedPointsConnected />
-        <ResetButtonConnected
+
+
+        <SubmitResetConnected
           onReset={() => dispatch(resetAction(onResetActivity, emptyPartInputs))}
+          submitDisabled={false}
         />
-        <SubmitButtonConnected disabled={false} />
+
+
+
         {hintsShown.map((partId) => (
           <HintsDeliveryConnected
             key={partId}

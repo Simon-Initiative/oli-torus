@@ -40,6 +40,7 @@ import { uploadActivityFile } from 'data/persistence/state/intrinsic';
 import { configureStore } from 'state/store';
 import { DeliveryElementProvider, useDeliveryElementContext } from '../DeliveryElementProvider';
 import { RemoveButton } from '../common/authoring/RemoveButton';
+import { SubmitResetLayout } from '../common/delivery/SubmitReset';
 import { castPartId } from '../common/utils';
 import { fileName, getReadableFileSizeString } from './utils';
 import { defaultMaxFileSize } from './utils';
@@ -298,14 +299,22 @@ export const FileUploadComponent: React.FC = () => {
           }
         />
 
-        <ResetButtonConnected onReset={() => dispatch(resetAction(onResetActivity, resetParts))} />
-        <SubmitButton
-          shouldShow={
-            !isSubmitted(uiState) && !graded && (surveyId === undefined || surveyId === null)
+        <SubmitResetLayout
+          resetButton={
+            <ResetButtonConnected
+              hideBeforeSubmit={false}
+              onReset={() => dispatch(resetAction(onResetActivity, resetParts))}
+            />
           }
-          disabled={getFilesFromState(uiState).length === 0}
-          onClick={() => dispatch(submitFiles(onSubmitActivity, getFilesFromState))}
+          submitButton={
+            <SubmitButton
+              shouldShow={!graded && (surveyId === undefined || surveyId === null)}
+              disabled={ isSubmitted(uiState) || getFilesFromState(uiState).length === 0}
+              onClick={() => dispatch(submitFiles(onSubmitActivity, getFilesFromState))}
+            />
+          }
         />
+
         <HintsDeliveryConnected
           partId={castPartId(state.parts[0].partId)}
           resetPartInputs={resetParts}
