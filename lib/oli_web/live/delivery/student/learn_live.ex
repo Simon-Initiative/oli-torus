@@ -7,9 +7,11 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   alias Phoenix.LiveView.JS
   alias Oli.Authoring.Course.Project
   alias Oli.Delivery.Sections.SectionCache
+  alias OliWeb.Common.Utils, as: WebUtils
 
   import Ecto.Query, warn: false, only: [from: 2]
 
+  @default_image "/images/course_default.jpg"
   # this is an optimization to reduce the memory footprint of the liveview process
   @required_keys_per_assign %{
     section:
@@ -953,8 +955,8 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       </div>
       <div class="rounded-xl absolute -top-[0.7px] -left-[0.7px] h-[163px] w-[289.5px] cursor-pointer bg-[linear-gradient(180deg,#D9D9D9_0%,rgba(217,217,217,0.00)_100%)] dark:bg-[linear-gradient(180deg,#223_0%,rgba(34,34,51,0.72)_52.6%,rgba(34,34,51,0.00)_100%)]" />
       <div
-        class="flex flex-col items-center rounded-xl h-[162px] w-[288px] bg-gray-200/50 shrink-0 px-5 pt-[15px]"
-        style={"background-image: url('#{if(@bg_image_url in ["", nil], do: "/images/course_default.jpg", else: @bg_image_url)}');"}
+        class="flex flex-col items-center rounded-xl h-[162px] w-[288px] bg-gray-200/50 shrink-0 px-5 pt-[15px] bg-cover bg-center"
+        style={"background-image: url('#{build_image_url(@bg_image_url, @video_url)}');"}
       >
         <h5 class="text-[13px] leading-[18px] font-bold opacity-60 text-gray-500 dark:text-white dark:text-opacity-50 self-start">
           <%= @title %>
@@ -998,6 +1000,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   attr :bg_image_url, :string, doc: "the background image url for the card"
   attr :student_progress_per_resource_id, :map
   attr :purpose, :string
+  attr :default_image, :string, default: @default_image
 
   def module_card(assigns) do
     ~H"""
@@ -1050,12 +1053,12 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       <div class="h-[170px] w-[288px]">
         <div
           class={[
-            "flex flex-col gap-[5px] cursor-pointer rounded-xl h-[162px] w-[288px] shrink-0 mb-1 px-5 pt-[15px] bg-gray-200 z-10",
+            "flex flex-col gap-[5px] cursor-pointer rounded-xl h-[162px] w-[288px] shrink-0 mb-1 px-5 pt-[15px] bg-gray-200 z-10 bg-cover bg-center",
             if(@selected,
               do: "bg-gray-400 outline outline-2 outline-gray-800 dark:outline-white"
             )
           ]}
-          style={"background-image: url('#{if(@bg_image_url in ["", nil], do: "/images/course_default.jpg", else: @bg_image_url)}');"}
+          style={"background-image: url('#{if(@bg_image_url in ["", nil], do: @default_image, else: @bg_image_url)}');"}
         >
           <span class="text-[12px] leading-[16px] font-bold opacity-60 text-gray-500 dark:text-white dark:text-opacity-50">
             <%= "#{@unit_numbering_index}.#{@module_index}" %>
@@ -1452,5 +1455,18 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         if(item["is_root?"], do: item, else: root)
       }
     end)
+  end
+
+  defp build_image_url(bg_image_url, video_url) when video_url not in ["", nil],
+    do: maybe_convert_to_image(video_url) || build_image_url(bg_image_url, nil)
+
+  defp build_image_url(bg_image_url, _) when bg_image_url not in ["", nil], do: bg_image_url
+
+  defp build_image_url(_, _), do: @default_image
+
+  defp maybe_convert_to_image(video_url) do
+    if WebUtils.is_youtube_video?(video_url) do
+      WebUtils.convert_to_youtube_image_url(video_url)
+    end
   end
 end

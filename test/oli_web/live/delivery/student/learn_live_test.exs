@@ -165,6 +165,20 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
         graded: true
       )
 
+    page_9_revision =
+      insert(:revision,
+        resource_type_id: ResourceType.get_id_by_type("page"),
+        title: "Page 9",
+        graded: true
+      )
+
+    page_10_revision =
+      insert(:revision,
+        resource_type_id: ResourceType.get_id_by_type("page"),
+        title: "Page 10",
+        graded: true
+      )
+
     ## modules...
     module_1_revision =
       insert(:revision, %{
@@ -208,7 +222,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
         children: [module_1_revision.resource_id, module_2_revision.resource_id],
         title: "Introduction",
         poster_image: "some_image_url",
-        intro_video: "some_video_url"
+        intro_video: "youtube.com/watch?v=123456789ab"
       })
 
     unit_2_revision =
@@ -226,6 +240,23 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
         title: "Implementing LiveView"
       })
 
+    unit_4_revision =
+      insert(:revision, %{
+        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("container"),
+        children: [page_9_revision.resource_id],
+        title: "Learning OTP",
+        poster_image: "some_other_image_url",
+        intro_video: "s3_video_url"
+      })
+
+    unit_5_revision =
+      insert(:revision, %{
+        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("container"),
+        children: [page_10_revision.resource_id],
+        title: "Learning Macros",
+        intro_video: "another_video"
+      })
+
     ## root container...
     container_revision =
       insert(:revision, %{
@@ -233,7 +264,9 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
         children: [
           unit_1_revision.resource_id,
           unit_2_revision.resource_id,
-          unit_3_revision.resource_id
+          unit_3_revision.resource_id,
+          unit_4_revision.resource_id,
+          unit_5_revision.resource_id
         ],
         title: "Root Container"
       })
@@ -253,12 +286,16 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
         page_6_revision,
         page_7_revision,
         page_8_revision,
+        page_9_revision,
+        page_10_revision,
         module_1_revision,
         module_2_revision,
         module_3_revision,
         unit_1_revision,
         unit_2_revision,
         unit_3_revision,
+        unit_4_revision,
+        unit_5_revision,
         container_revision
       ]
 
@@ -331,12 +368,16 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       page_6: page_6_revision,
       page_7: page_7_revision,
       page_8: page_8_revision,
+      page_9: page_9_revision,
+      page_10: page_10_revision,
       module_1: module_1_revision,
       module_2: module_2_revision,
       module_3: module_3_revision,
       unit_1: unit_1_revision,
       unit_2: unit_2_revision,
-      unit_3: unit_3_revision
+      unit_3: unit_3_revision,
+      unit_4: unit_4_revision,
+      unit_5: unit_5_revision
     }
   end
 
@@ -1261,6 +1302,33 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       assert view
              |> element(~s{div[role="unit_1"] div[role="card_2"]"})
+             |> render =~ "style=\"background-image: url(&#39;/images/course_default.jpg&#39;)"
+    end
+
+    test "can see Youtube video poster image (if not the default one is shown)",
+         %{
+           conn: conn,
+           user: user,
+           section: section
+         } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+
+      {:ok, view, _html} = live(conn, live_view_learn_live_route(section.slug))
+
+      assert view
+             |> element(~s{div[role="unit_1"] div[role="intro_card"]"})
+             |> render =~
+               "style=\"background-image: url(&#39;https://img.youtube.com/vi/123456789ab/hqdefault.jpg&#39;)"
+
+      # S3 video, uses provided poster image
+      assert view
+             |> element(~s{div[role="unit_4"] div[role="intro_card"]"})
+             |> render =~ "style=\"background-image: url(&#39;some_other_image_url&#39;)"
+
+      # S3 video without poster image, uses default one
+      assert view
+             |> element(~s{div[role="unit_5"] div[role="intro_card"]"})
              |> render =~ "style=\"background-image: url(&#39;/images/course_default.jpg&#39;)"
     end
 
