@@ -25,6 +25,10 @@ defmodule Oli.Repo.Migrations.FixRevisionParts do
     ALTER TABLE temp_revision_parts RENAME TO revision_parts;
     """
 
+    execute """
+    UPDATE revision_parts SET grading_approach = 'automatic' WHERE grading_approach IS NULL;
+    """
+
     flush()
 
     create unique_index(:revision_parts, [:revision_id, :part_id, :grading_approach])
