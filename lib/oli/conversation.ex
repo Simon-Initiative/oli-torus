@@ -22,7 +22,7 @@ defmodule Oli.Conversation do
       join: cm in assoc(u, :assistant_conversation_messages),
       where:
         cm.section_id == ^section_id and
-          cm.role in ^["user", "assistant"] and
+          cm.role in ^["user", "assistant", "function"] and
           ecr.id == ^learner_context_role_id,
       order_by: [asc: u.name],
       group_by: [u.id, cm.section_id, cm.resource_id, cm.user_id],
@@ -42,7 +42,7 @@ defmodule Oli.Conversation do
     from(cm in ConversationMessage,
       where:
         cm.section_id == ^section_id and
-          cm.role in ^["user", "assistant"] and
+          cm.role in ^["user", "assistant", "function"] and
           cm.user_id == ^user_id and
           is_nil(cm.resource_id),
       order_by: [asc: cm.inserted_at],
@@ -55,7 +55,7 @@ defmodule Oli.Conversation do
     from(cm in ConversationMessage,
       where:
         cm.section_id == ^section_id and
-          cm.role in ^["user", "assistant"] and
+          cm.role in ^["user", "assistant", "function"] and
           cm.user_id == ^user_id and
           cm.resource_id == ^resource_id,
       order_by: [asc: cm.inserted_at],

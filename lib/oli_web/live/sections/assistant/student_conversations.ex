@@ -65,8 +65,6 @@ defmodule OliWeb.Sections.Assistant.StudentConversationsLive do
             selected_resource_id
           )
 
-        dbg(conversation_messages)
-
         selected_user = Accounts.get_user!(selected_user_id)
 
         {:noreply,
@@ -166,12 +164,17 @@ defmodule OliWeb.Sections.Assistant.StudentConversationsLive do
     ~H"""
     <div role="message container" id="message-container" class="max-h-screen overflow-y-auto pt-5">
       <div class="flex flex-col justify-end items-center px-6 py-6 gap-1.5 min-h-full">
-        <%= for {message, index} <- Enum.with_index(@conversation_messages, 1), message.role not in [:system, :function] do %>
-          <Dialogue.chat_message
-            index={index}
-            content={message.content}
-            user={if message.role == :assistant, do: :assistant, else: @user}
-          />
+        <%= for {message, index} <- Enum.with_index(@conversation_messages, 1), message.role in [:user, :assistant, :function] do %>
+          <%= case message.role do %>
+            <% :function -> %>
+              <Dialogue.function index={index} content={message.content} name={message.name} />
+            <% _ -> %>
+              <Dialogue.chat_message
+                index={index}
+                content={message.content}
+                user={if message.role == :assistant, do: :assistant, else: @user}
+              />
+          <% end %>
         <% end %>
       </div>
     </div>
