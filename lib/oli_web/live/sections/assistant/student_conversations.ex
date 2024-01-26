@@ -1,4 +1,7 @@
 defmodule OliWeb.Sections.Assistant.StudentConversationsLive do
+  @moduledoc """
+  LiveView for browsing a section's student assistant conversations
+  """
   use OliWeb, :live_view
 
   alias Oli.Accounts
@@ -9,6 +12,9 @@ defmodule OliWeb.Sections.Assistant.StudentConversationsLive do
   alias OliWeb.Common.Params
   alias OliWeb.Common.{PagedTable, SearchInput}
   alias OliWeb.Components.Delivery.Dialogue
+  alias OliWeb.Router.Helpers, as: Routes
+  alias OliWeb.Sections.Mount
+  alias OliWeb.Common.{Breadcrumb}
 
   @default_params %{
     offset: 0,
@@ -18,8 +24,39 @@ defmodule OliWeb.Sections.Assistant.StudentConversationsLive do
     text_search: nil
   }
 
-  def mount(_params, _session, socket) do
-    {:ok, assign(socket, table_model: nil, conversation_messages: nil, selected_user: nil)}
+  defp set_breadcrumbs(type, section) do
+    OliWeb.Sections.OverviewView.set_breadcrumbs(type, section)
+    |> breadcrumb(section)
+  end
+
+  def breadcrumb(previous, section) do
+    previous ++
+      [
+        Breadcrumb.new(%{
+          full_title: "Assistant Conversations",
+          link: Routes.live_path(OliWeb.Endpoint, __MODULE__, section.slug)
+        })
+      ]
+  end
+
+  def mount(%{"section_slug" => section_slug}, session, socket) do
+    # only allow admins to access this page for now
+    case Mount.for(section_slug, session) do
+      {:error, e} ->
+        Mount.handle_error(socket, {:error, e})
+
+      {:admin = type, _current_user, section} ->
+        {:ok,
+         assign(socket,
+           breadcrumbs: set_breadcrumbs(type, section),
+           table_model: nil,
+           conversation_messages: nil,
+           selected_user: nil
+         )}
+
+      {_, _current_user, _section} ->
+        Mount.handle_error(socket, {:error, :unauthorized})
+    end
   end
 
   def handle_params(
