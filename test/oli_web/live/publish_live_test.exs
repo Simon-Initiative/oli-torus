@@ -9,8 +9,10 @@ defmodule OliWeb.PublishLiveTest do
   alias Oli.Resources.ResourceType
   alias OliWeb.Common.Utils
 
+  @instructor_context_role_id Lti_1p3.Tool.ContextRoles.get_role(:context_instructor).id
+
   defp live_view_publish_route(project_slug),
-    do: Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.PublishView, project_slug)
+    do: ~p"/authoring/project/#{project_slug}/publish"
 
   defp create_project_and_section(_conn) do
     author = insert(:author)
@@ -348,21 +350,37 @@ defmodule OliWeb.PublishLiveTest do
              |> render() =~ last_revision.title
     end
 
-    test "renders creator and instructors content in the table", %{
-      conn: conn,
-      project: project,
-      section1: section1,
-      section2: section2
-    } do
-      instructor_1 = insert(:user, name: nil, given_name: nil, family_name: "instructor_1")
-      instructor_2 = insert(:user, name: nil, given_name: nil, family_name: "instructor_2")
+    test "renders creator and instructors content in the table", ctx do
+      # Instructors
+      instructor_1 =
+        insert(:user, name: "Mr John Hugo Doe", given_name: "John", family_name: "Doe")
 
-      insert(:enrollment, section: section1, user: instructor_1)
-      insert(:enrollment, section: section1, user: instructor_2)
-      insert(:enrollment, section: section2, user: instructor_2)
+      instructor_2 =
+        insert(:user, name: "Ms Jane Marie Doe", given_name: "Jane", family_name: "Doe")
 
-      {:ok, _view, html} = live(conn, live_view_publish_route(project.slug))
+      # Enrollments
+      now = DateTime.utc_now()
+      min_after = DateTime.add(now, 1, :minute)
 
+      enrollment_1 =
+        insert(:enrollment, section: ctx.section1, user: instructor_1, inserted_at: now)
+
+      enrollment_2 =
+        insert(:enrollment, section: ctx.section1, user: instructor_2, inserted_at: min_after)
+
+      enrollment_3 =
+        insert(:enrollment, section: ctx.section2, user: instructor_2, inserted_at: now)
+
+      Oli.Repo.insert_all("enrollments_context_roles", [
+        [enrollment_id: enrollment_1.id, context_role_id: @instructor_context_role_id],
+        [enrollment_id: enrollment_2.id, context_role_id: @instructor_context_role_id],
+        [enrollment_id: enrollment_3.id, context_role_id: @instructor_context_role_id]
+      ])
+
+      # Calling endpoint
+      {:ok, _view, html} = live(ctx.conn, live_view_publish_route(ctx.project.slug))
+
+      # Checking header titles
       assert [
                "Title",
                "Current Publication",
@@ -374,22 +392,25 @@ defmodule OliWeb.PublishLiveTest do
              ] ==
                html
                |> Floki.find("#active-course-sections-table thead tr > th")
-               |> Enum.map(&String.trim(Floki.text(&1)))
+               |> Enum.map(&text/1)
 
       [row_1, row_2] = Floki.find(html, "#active-course-sections-table tbody > tr ")
-
       [_, _, row_1_creator, row_1_instructors | _rest] = Floki.find(row_1, "td > div")
 
-      assert String.trim(Floki.text(row_1_creator)) =~ instructor_1.family_name
+      # Checking creator and instructors for section 1
+      assert text(row_1_creator) =~ Utils.name(instructor_1)
+      # There are 2 instructors enrolled in section 1 -the creator plus another instructor
+      assert text(row_1_instructors) =~ "#{Utils.name(instructor_1)}; #{Utils.name(instructor_2)}"
 
-      assert String.trim(Floki.text(row_1_instructors)) =~
-               "#{instructor_1.family_name}; #{instructor_2.family_name}"
-
+      # Checking creator and instructors for section 2
       [_, _, row_2_creator, row_2_instructors | _rest] = Floki.find(row_2, "td > div")
 
-      assert String.trim(Floki.text(row_2_creator)) =~ instructor_2.family_name
-      assert String.trim(Floki.text(row_2_instructors)) =~ instructor_2.family_name
+      assert text(row_2_creator) =~ Utils.name(instructor_2)
+      # There is only one instructor enrolled in section 1 --the creator
+      assert text(row_2_instructors) =~ Utils.name(instructor_2)
     end
+
+    defp text(html), do: String.trim(Floki.text(html))
 
     test "shows a message when the project has not been published yet", %{
       conn: conn,
