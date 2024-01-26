@@ -3,8 +3,6 @@ import ReactDOM from 'react-dom';
 import { Provider, useDispatch, useSelector } from 'react-redux';
 import { EvaluationConnected } from 'components/activities/common/delivery/evaluation/EvaluationConnected';
 import { GradedPointsConnected } from 'components/activities/common/delivery/graded_points/GradedPointsConnected';
-import { ResetButtonConnected } from 'components/activities/common/delivery/reset_button/ResetButtonConnected';
-import { SubmitButtonConnected } from 'components/activities/common/delivery/submit_button/SubmitButtonConnected';
 import { HintsDeliveryConnected } from 'components/activities/common/hints/delivery/HintsDeliveryConnected';
 import { StemDeliveryConnected } from 'components/activities/common/stem/delivery/StemDelivery';
 import { ResponseChoices } from 'components/activities/ordering/sections/ResponseChoices';
@@ -25,10 +23,10 @@ import { elementsOfType } from 'data/content/utils';
 import { configureStore } from 'state/store';
 import { DeliveryElement, DeliveryElementProps } from '../DeliveryElement';
 import { DeliveryElementProvider, useDeliveryElementContext } from '../DeliveryElementProvider';
+import { SubmitResetConnected } from '../common/delivery/SubmitReset';
 import { castPartId } from '../common/utils';
 import * as ActivityTypes from '../types';
 import { OrderingSchema } from './schema';
-import { SubmitResetConnected } from '../common/delivery/SubmitReset';
 
 export const OrderingComponent: React.FC = () => {
   const {
@@ -162,7 +160,9 @@ export const OrderingComponent: React.FC = () => {
           </div>
         )}
 
-        <SubmitResetConnected onReset={() => dispatch(resetAction(onResetActivity, defaultPartInputs))} />
+        <SubmitResetConnected
+          onReset={() => dispatch(resetAction(onResetActivity, defaultPartInputs))}
+        />
 
         <HintsDeliveryConnected
           partId={castPartId(activityState.parts[0].partId)}

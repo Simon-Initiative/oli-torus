@@ -158,7 +158,9 @@ const ImageHotspotComponent: React.FC = () => {
 
         <GradedPointsConnected />
 
-        <SubmitResetConnected onReset={() => dispatch(resetAction(onResetActivity, { [partId]: [] }))} />
+        <SubmitResetConnected
+          onReset={() => dispatch(resetAction(onResetActivity, { [partId]: [] }))}
+        />
 
         <HintsDeliveryConnected partId={castPartId(activityState.parts[0].partId)} />
         <EvaluationConnected />

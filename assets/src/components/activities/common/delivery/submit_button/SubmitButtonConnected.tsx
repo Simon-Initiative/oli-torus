@@ -22,7 +22,7 @@ export const SubmitButtonConnected: React.FC<SubmitButtonConnectedProps> = (prop
       : props.disabled;
 
   const notGradedOrSurvey = !graded && surveyId === null;
-  const shouldShowFlag = !isSubmitted(uiState) && notGradedOrSurvey
+  const shouldShowFlag = !isSubmitted(uiState) && notGradedOrSurvey;
 
   // If the activity is graded or a survey, then we should never show the submit button.
   // If the hideOnSubmitted flag is set, then we should only show the submit button if the activity has not been submitted.
@@ -38,7 +38,6 @@ export const SubmitButtonConnected: React.FC<SubmitButtonConnectedProps> = (prop
     />
   );
 };
-
 
 SubmitButtonConnected.defaultProps = {
   hideOnSubmitted: true,

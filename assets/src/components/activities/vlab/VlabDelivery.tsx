@@ -4,8 +4,6 @@ import { Provider, useDispatch, useSelector } from 'react-redux';
 import { DeliveryElement, DeliveryElementProps } from 'components/activities/DeliveryElement';
 import { EvaluationConnected } from 'components/activities/common/delivery/evaluation/EvaluationConnected';
 import { GradedPointsConnected } from 'components/activities/common/delivery/graded_points/GradedPointsConnected';
-import { ResetButtonConnected } from 'components/activities/common/delivery/reset_button/ResetButtonConnected';
-import { SubmitButtonConnected } from 'components/activities/common/delivery/submit_button/SubmitButtonConnected';
 import { HintsDeliveryConnected } from 'components/activities/common/hints/delivery/HintsDeliveryConnected';
 import { StemDelivery } from 'components/activities/common/stem/delivery/StemDelivery';
 import { Manifest, PartId } from 'components/activities/types';
@@ -247,13 +245,10 @@ export const VlabComponent: React.FC = () => {
         />
         <GradedPointsConnected />
 
-
         <SubmitResetConnected
           onReset={() => dispatch(resetAction(onResetActivity, emptyPartInputs))}
           submitDisabled={false}
         />
-
-
 
         {hintsShown.map((partId) => (
           <HintsDeliveryConnected

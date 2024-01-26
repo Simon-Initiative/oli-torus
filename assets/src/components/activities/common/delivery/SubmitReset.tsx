@@ -1,9 +1,6 @@
 import React, { ReactNode } from 'react';
 import { ResetButtonConnected } from './reset_button/ResetButtonConnected';
-import {
-  SubmitButtonConnected,
-  SubmitButtonConnectedProps,
-} from './submit_button/SubmitButtonConnected';
+import { SubmitButtonConnected } from './submit_button/SubmitButtonConnected';
 
 interface Props {
   onReset: () => void;

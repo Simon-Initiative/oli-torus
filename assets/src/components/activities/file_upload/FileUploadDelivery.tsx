@@ -309,7 +309,7 @@ export const FileUploadComponent: React.FC = () => {
           submitButton={
             <SubmitButton
               shouldShow={!graded && (surveyId === undefined || surveyId === null)}
-              disabled={ isSubmitted(uiState) || getFilesFromState(uiState).length === 0}
+              disabled={isSubmitted(uiState) || getFilesFromState(uiState).length === 0}
               onClick={() => dispatch(submitFiles(onSubmitActivity, getFilesFromState))}
             />
           }

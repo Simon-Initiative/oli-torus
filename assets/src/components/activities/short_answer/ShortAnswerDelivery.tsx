@@ -8,8 +8,6 @@ import { GradedPointsConnected } from 'components/activities/common/delivery/gra
 import { NumericInput } from 'components/activities/common/delivery/inputs/NumericInput';
 import { TextInput } from 'components/activities/common/delivery/inputs/TextInput';
 import { TextareaInput } from 'components/activities/common/delivery/inputs/TextareaInput';
-import { ResetButtonConnected } from 'components/activities/common/delivery/reset_button/ResetButtonConnected';
-import { SubmitButtonConnected } from 'components/activities/common/delivery/submit_button/SubmitButtonConnected';
 import { HintsDeliveryConnected } from 'components/activities/common/hints/delivery/HintsDeliveryConnected';
 import { StemDeliveryConnected } from 'components/activities/common/stem/delivery/StemDelivery';
 import { InputType, ShortAnswerModelSchema } from 'components/activities/short_answer/schema';
@@ -29,10 +27,10 @@ import { safelySelectStringInputs } from 'data/activities/utils';
 import { configureStore } from 'state/store';
 import { assertNever, valueOr } from 'utils/common';
 import { DeliveryElementProvider, useDeliveryElementContext } from '../DeliveryElementProvider';
+import { SubmitResetConnected } from '../common/delivery/SubmitReset';
 import { MathInput } from '../common/delivery/inputs/MathInput';
 import { initializePersistence } from '../common/delivery/persistence';
 import { castPartId } from '../common/utils';
-import { SubmitResetConnected } from '../common/delivery/SubmitReset';
 
 type InputProps = {
   input: string;

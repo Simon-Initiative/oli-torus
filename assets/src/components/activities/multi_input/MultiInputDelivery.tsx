@@ -6,7 +6,6 @@ import { Evaluation } from 'components/activities/common/delivery/evaluation/Eva
 import { Submission } from 'components/activities/common/delivery/evaluation/Submission';
 import { GradedPointsConnected } from 'components/activities/common/delivery/graded_points/GradedPointsConnected';
 import { ResetButtonConnected } from 'components/activities/common/delivery/reset_button/ResetButtonConnected';
-import { SubmitButtonConnected } from 'components/activities/common/delivery/submit_button/SubmitButtonConnected';
 import { HintsDeliveryConnected } from 'components/activities/common/hints/delivery/HintsDeliveryConnected';
 import { StemDelivery } from 'components/activities/common/stem/delivery/StemDelivery';
 import { MultiInput, MultiInputSchema } from 'components/activities/multi_input/schema';
