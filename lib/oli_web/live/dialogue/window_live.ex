@@ -407,16 +407,6 @@ defmodule OliWeb.Dialogue.WindowLive do
     """
   end
 
-  defp to_initials(%{name: nil}), do: "?"
-
-  defp to_initials(%{name: name}) do
-    name
-    |> String.split(" ")
-    |> Enum.take(2)
-    |> Enum.map(&String.slice(&1, 0..0))
-    |> Enum.join()
-  end
-
   attr :dialogue, :list
   attr :active_message, :any
   attr :streaming, :boolean
@@ -448,7 +438,6 @@ defmodule OliWeb.Dialogue.WindowLive do
   attr :allow_submission?, :boolean
   attr :streaming, :boolean
 
-  @spec message_input(map()) :: Phoenix.LiveView.Rendered.t()
   def message_input(assigns) do
     ~H"""
     <.form
