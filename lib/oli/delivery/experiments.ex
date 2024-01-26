@@ -132,7 +132,7 @@ defmodule Oli.Delivery.Experiments do
   @doc """
   Posts a metrics result to Upgrade.
   """
-  def log(enrollment_id, correctness, slug) do
+  def log(enrollment_id, correctness, _slug) do
     # format right now DateTime.utc_now() as
     # "2020-03-20 14:00:59"
     now = DateTime.utc_now()
@@ -151,7 +151,7 @@ defmodule Oli.Delivery.Experiments do
             "metrics" => %{
               "groupedMetrics" => [
                 %{
-                  "groupUniquifier" => slug <> "_" <> Integer.to_string(enrollment_id),
+                  "groupUniquifier" => timestamp,
                   "groupClass" => "mastery",
                   "groupKey" => "activities",
                   "attributes" => %{
