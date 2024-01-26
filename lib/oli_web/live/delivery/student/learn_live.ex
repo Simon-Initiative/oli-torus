@@ -1021,7 +1021,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     >
       <div class="z-10 rounded-xl overflow-hidden absolute h-[163px] w-[288px] cursor-pointer">
         <.progress_bar
-          :if={Map.get(@student_progress_per_resource_id, @module["resource_id"], 0.0) > 0.0}
+          :if={progress_started(@student_progress_per_resource_id, @module["resource_id"])}
           percent={
             parse_student_progress_for_resource(
               @student_progress_per_resource_id,
@@ -1205,6 +1205,10 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         Map.put(page, "visited", Map.get(visited_pages, page["id"], false))
       end)
     )
+  end
+
+  defp progress_started(student_progress_per_resource_id, resource_id) do
+    Map.get(student_progress_per_resource_id, resource_id, 0.0) > 0.0
   end
 
   defp parse_student_progress_for_resource(student_progress_per_resource_id, resource_id) do
