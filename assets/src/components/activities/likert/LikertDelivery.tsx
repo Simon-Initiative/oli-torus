@@ -27,6 +27,7 @@ import { castPartId } from '../common/utils';
 import * as ActivityTypes from '../types';
 import { LikertTable } from './Sections/LikertTable';
 import { LikertModelSchema } from './schema';
+import { SubmitResetConnected } from '../common/delivery/SubmitReset';
 
 const LikertComponent: React.FC = () => {
   const {
@@ -81,10 +82,11 @@ const LikertComponent: React.FC = () => {
           context={writerContext}
         />
         <GradedPointsConnected />
-        <ResetButtonConnected
+
+        <SubmitResetConnected
           onReset={() => dispatch(resetAction(onResetActivity, emptySelectionMap))}
         />
-        <SubmitButtonConnected />
+
         <HintsDeliveryConnected
           partId={castPartId(activityState.parts[0].partId)}
           resetPartInputs={emptySelectionMap}

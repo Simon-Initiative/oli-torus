@@ -28,6 +28,7 @@ import { DeliveryElementProvider, useDeliveryElementContext } from '../DeliveryE
 import { castPartId } from '../common/utils';
 import * as ActivityTypes from '../types';
 import { OrderingSchema } from './schema';
+import { SubmitResetConnected } from '../common/delivery/SubmitReset';
 
 export const OrderingComponent: React.FC = () => {
   const {
@@ -160,10 +161,9 @@ export const OrderingComponent: React.FC = () => {
             <audio ref={player} />
           </div>
         )}
-        <ResetButtonConnected
-          onReset={() => dispatch(resetAction(onResetActivity, defaultPartInputs))}
-        />
-        <SubmitButtonConnected />
+
+        <SubmitResetConnected onReset={() => dispatch(resetAction(onResetActivity, defaultPartInputs))} />
+
         <HintsDeliveryConnected
           partId={castPartId(activityState.parts[0].partId)}
           resetPartInputs={defaultPartInputs}

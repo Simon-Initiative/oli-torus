@@ -4,11 +4,11 @@ import { useDeliveryElementContext } from 'components/activities/DeliveryElement
 import { SubmitButton } from 'components/activities/common/delivery/submit_button/SubmitButton';
 import { ActivityDeliveryState, isSubmitted, submit } from 'data/activities/DeliveryState';
 
-interface Props {
+export interface SubmitButtonConnectedProps {
   disabled?: boolean;
   hideOnSubmitted?: boolean;
 }
-export const SubmitButtonConnected: React.FC<Props> = (props) => {
+export const SubmitButtonConnected: React.FC<SubmitButtonConnectedProps> = (props) => {
   const { context, onSubmitActivity } = useDeliveryElementContext();
   const { graded, surveyId } = context;
   const uiState = useSelector((state: ActivityDeliveryState) => state);

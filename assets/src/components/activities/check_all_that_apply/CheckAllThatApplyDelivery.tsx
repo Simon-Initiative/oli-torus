@@ -27,7 +27,7 @@ import { configureStore } from 'state/store';
 import { DeliveryElement, DeliveryElementProps } from '../DeliveryElement';
 import { DeliveryElementProvider, useDeliveryElementContext } from '../DeliveryElementProvider';
 import { castPartId } from '../common/utils';
-import { SubmitReset } from '../common/delivery/SubmitReset';
+import { SubmitResetConnected } from '../common/delivery/SubmitReset';
 
 export const CheckAllThatApplyComponent: React.FC = () => {
   const {
@@ -92,9 +92,7 @@ export const CheckAllThatApplyComponent: React.FC = () => {
           }
         />
 
-        <SubmitReset onReset={() => dispatch(resetAction(onResetActivity, resetInputs))} />
-        {/* <ResetButtonConnected onReset={() => dispatch(resetAction(onResetActivity, resetInputs))} />
-        <SubmitButtonConnected /> */}
+        <SubmitResetConnected onReset={() => dispatch(resetAction(onResetActivity, resetInputs))} />
         <HintsDeliveryConnected
           partId={castPartId(activityState.parts[0].partId)}
           resetPartInputs={resetInputs}
