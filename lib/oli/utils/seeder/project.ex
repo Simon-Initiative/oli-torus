@@ -172,8 +172,235 @@ defmodule Oli.Utils.Seeder.Project do
     |> tag(:scored_page2_tag, scored_page2_tag)
   end
 
+  def create_large_sample_project(seeds, author) do
+    [author] = unpack(seeds, [author])
+
+    seeds
+    |> Seeder.Project.create_project(
+      author,
+      %{},
+      project_tag: :project,
+      publication_tag: :publication,
+      curriculum_revision_tag: :curriculum
+    )
+    |> Seeder.Project.create_container(
+      author,
+      ref(:project),
+      ref(:curriculum),
+      %{
+        title: "Unit 1"
+      },
+      revision_tag: :unit1,
+      container_revision_tag: :curriculum
+    )
+    |> Seeder.Project.create_page(
+      author,
+      ref(:project),
+      ref(:unit1),
+      %{
+        title: "Course Introduction Page 1",
+        graded: false
+      },
+      revision_tag: :unit1_page1,
+      container_revision_tag: :unit1
+    )
+    |> Seeder.Project.create_container(
+      ref(:author),
+      ref(:project),
+      ref(:unit1),
+      %{
+        title: "Unit 1 Module 1"
+      },
+      revision_tag: :unit1_module1,
+      container_revision_tag: :unit1
+    )
+    |> Seeder.Project.create_page(
+      author,
+      ref(:project),
+      ref(:unit1_module1),
+      %{
+        title: "Page 2",
+        graded: false
+      },
+      revision_tag: :unit1_module1_page2,
+      container_revision_tag: :unit1_module1
+    )
+    |> Seeder.Project.create_page(
+      author,
+      ref(:project),
+      ref(:unit1_module1),
+      %{
+        title: "Page 3",
+        graded: false
+      },
+      revision_tag: :unit1_module1_page2,
+      container_revision_tag: :unit1_module1
+    )
+    |> Seeder.Project.create_container(
+      ref(:author),
+      ref(:project),
+      ref(:unit1_module1),
+      %{
+        title: "Unit 1 Module 1 Section 1"
+      },
+      revision_tag: :unit1_module1_section1,
+      container_revision_tag: :unit1_module1
+    )
+    |> Seeder.Project.create_page(
+      author,
+      ref(:project),
+      ref(:unit1_module1_section1),
+      %{
+        title: "Page 4",
+        graded: false
+      },
+      revision_tag: :unit1_module1_section_1_page4,
+      container_revision_tag: :unit1_module1_section1
+    )
+    |> Seeder.Project.create_page(
+      author,
+      ref(:project),
+      ref(:unit1_module1_section1),
+      %{
+        title: "Page 5",
+        graded: false
+      },
+      revision_tag: :unit1_module1_section1_page5,
+      container_revision_tag: :unit1_module1_section1
+    )
+    |> Seeder.Project.create_page(
+      ref(:author),
+      ref(:project),
+      ref(:unit1_module1),
+      %{
+        title: "Unit 1 Module 1 Exploration Page 6",
+        purpose: :application
+      },
+      revision_tag: :unit1_module1_exploration_page6,
+      container_revision_tag: :unit1_module1
+    )
+    |> Seeder.Project.create_page(
+      author,
+      ref(:project),
+      ref(:unit1_module1),
+      %{
+        title: "Unit 1 Module 1 Scored Page 7",
+        graded: true
+      },
+      revision_tag: :unit1_module1_scored_page7,
+      container_revision_tag: :unit1_module1
+    )
+    |> Seeder.Project.create_container(
+      ref(:author),
+      ref(:project),
+      ref(:unit1),
+      %{
+        title: "Unit 1 Module 2"
+      },
+      revision_tag: :unit1_module2,
+      container_revision_tag: :unit1
+    )
+    |> Seeder.Project.create_page(
+      author,
+      ref(:project),
+      ref(:unit1_module2),
+      %{
+        title: "Page 8",
+        graded: false
+      },
+      revision_tag: :unit1_module2_page8,
+      container_revision_tag: :unit1_module2
+    )
+    |> Seeder.Project.create_page(
+      ref(:author),
+      ref(:project),
+      ref(:unit1),
+      %{
+        title: "Unit 1 Exploration Page 9",
+        purpose: :application
+      },
+      revision_tag: :unit1_exploration_page9,
+      container_revision_tag: :unit1
+    )
+    |> Seeder.Project.create_page(
+      author,
+      ref(:project),
+      ref(:unit1),
+      %{
+        title: "Unit 1 Scored Page 10",
+        graded: true
+      },
+      revision_tag: :unit1_scored_page10,
+      container_revision_tag: :unit1
+    )
+    |> Seeder.Project.create_container(
+      author,
+      ref(:project),
+      ref(:curriculum),
+      %{
+        title: "Unit 2"
+      },
+      revision_tag: :unit2,
+      container_revision_tag: :curriculum
+    )
+    |> Seeder.Project.create_page(
+      author,
+      ref(:project),
+      ref(:unit2),
+      %{
+        title: "Page 11",
+        graded: false
+      },
+      revision_tag: :unit2_page11,
+      container_revision_tag: :unit2
+    )
+    |> Seeder.Project.create_container(
+      ref(:author),
+      ref(:project),
+      ref(:unit2),
+      %{
+        title: "Unit 2 Module 3"
+      },
+      revision_tag: :unit2_module3,
+      container_revision_tag: :unit2
+    )
+    |> Seeder.Project.create_page(
+      author,
+      ref(:project),
+      ref(:unit2_module3),
+      %{
+        title: "Page 12",
+        graded: false
+      },
+      revision_tag: :unit2_module3_page12,
+      container_revision_tag: :unit2_module3
+    )
+    |> Seeder.Project.create_page(
+      ref(:author),
+      ref(:project),
+      ref(:unit2),
+      %{
+        title: "Unit 2 Exploration Page 13",
+        purpose: :application
+      },
+      revision_tag: :unit2_exploration_page13,
+      container_revision_tag: :unit2
+    )
+    |> Seeder.Project.create_page(
+      author,
+      ref(:project),
+      ref(:unit2),
+      %{
+        title: "Final Exam Page 14",
+        graded: false
+      },
+      revision_tag: :unit2_scored_page14,
+      container_revision_tag: :unit2
+    )
+  end
+
   @doc """
-  Creates a sample project
+  Creates a product from a project
   """
   def create_product(seeds, title, project, tags \\ []) do
     [project] = unpack(seeds, [project])

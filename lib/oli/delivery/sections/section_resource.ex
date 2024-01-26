@@ -70,12 +70,13 @@ defmodule Oli.Delivery.Sections.SectionResource do
     field(:title, :string, virtual: true)
     field(:graded, :boolean, virtual: true)
     field(:resource_type_id, :integer, virtual: true)
+    field(:revision_slug, :string, virtual: true)
 
     timestamps(type: :utc_datetime)
   end
 
   @doc false
-  def changeset(section_resource, attrs) do
+  def changeset(section_resource, attrs \\ %{}) do
     section_resource
     |> cast(attrs, [
       :numbering_index,

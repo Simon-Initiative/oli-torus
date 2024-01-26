@@ -128,6 +128,10 @@ defmodule Oli.Resources.PageBrowse do
     Repo.all(query)
   end
 
+  @spec find_parent_container(
+          atom() | %{:id => any(), optional(any()) => any()},
+          atom() | %{:resource_id => any(), optional(any()) => any()}
+        ) :: any()
   def find_parent_container(project, page_revision) do
     container_type_id = Oli.Resources.ResourceType.get_id_by_type("container")
 

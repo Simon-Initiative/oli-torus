@@ -24,6 +24,7 @@ export type CommandDescription = {
   description: (editor: Editor) => string;
   // active: is the item in the cursor's selection
   active?: (editor: Editor) => boolean;
+  tooltip?: string;
 };
 
 export interface CommandContext {

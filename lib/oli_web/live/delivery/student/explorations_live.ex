@@ -53,26 +53,6 @@ defmodule OliWeb.Delivery.Student.ExplorationsLive do
   attr :preview_mode, :boolean, default: false
 
   defp exploration_card(assigns) do
-    assigns =
-      assign(
-        assigns,
-        :description,
-        case assigns.exploration.intro_content do
-          nil ->
-            nil
-
-          %{} ->
-            nil
-
-          intro_content ->
-            Content.render(
-              %Oli.Rendering.Context{render_opts: %{render_errors: true}},
-              intro_content,
-              Content.Html
-            )
-        end
-      )
-
     ~H"""
     <div class="flex flex-col lg:flex-row-reverse items-center rounded-lg bg-black/5 dark:bg-white/5 mb-4">
       <img
@@ -84,7 +64,7 @@ defmodule OliWeb.Delivery.Student.ExplorationsLive do
           <%= @exploration.title %>
         </h5>
         <div class="text-sm mb-3">
-          <%= raw(@description) %>
+          <%= intro_content(@exploration) %>
         </div>
         <div class="flex flex-row justify-end items-center space-x-6">
           <.button
@@ -114,6 +94,25 @@ defmodule OliWeb.Delivery.Student.ExplorationsLive do
 
       image ->
         image
+    end
+  end
+
+  defp intro_content(exploration) do
+    case exploration.intro_content do
+      nil ->
+        nil
+
+      intro_content ->
+        if Enum.empty?(intro_content) do
+          nil
+        else
+          Content.render(
+            %Oli.Rendering.Context{render_opts: %{render_errors: true}},
+            intro_content,
+            Content.Html
+          )
+          |> raw()
+        end
     end
   end
 

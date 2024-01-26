@@ -15,6 +15,7 @@ import { BlockToggle } from 'components/editing/toolbar/editorToolbar/blocks/Blo
 import { TextDirection } from 'data/content/model/elements/types';
 import { useDefaultTextDirection } from 'utils/useDefaultTextDirection';
 import { EditorSettingsMenu } from './EditorSettingsMenu';
+import { UndoRedoToolbar } from './UndoRedoToolbar';
 
 interface Props {
   context: CommandContext;
@@ -50,6 +51,7 @@ export const EditorToolbar = (props: Props) => {
           onChangeTextDirection={onTextDirectionChange}
         />
       )}
+      <UndoRedoToolbar />
     </Toolbar>
   );
 

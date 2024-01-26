@@ -165,6 +165,20 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
         graded: true
       )
 
+    page_9_revision =
+      insert(:revision,
+        resource_type_id: ResourceType.get_id_by_type("page"),
+        title: "Page 9",
+        graded: true
+      )
+
+    page_10_revision =
+      insert(:revision,
+        resource_type_id: ResourceType.get_id_by_type("page"),
+        title: "Page 10",
+        graded: true
+      )
+
     ## modules...
     module_1_revision =
       insert(:revision, %{
@@ -208,7 +222,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
         children: [module_1_revision.resource_id, module_2_revision.resource_id],
         title: "Introduction",
         poster_image: "some_image_url",
-        intro_video: "some_video_url"
+        intro_video: "youtube.com/watch?v=123456789ab"
       })
 
     unit_2_revision =
@@ -226,6 +240,23 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
         title: "Implementing LiveView"
       })
 
+    unit_4_revision =
+      insert(:revision, %{
+        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("container"),
+        children: [page_9_revision.resource_id],
+        title: "Learning OTP",
+        poster_image: "some_other_image_url",
+        intro_video: "s3_video_url"
+      })
+
+    unit_5_revision =
+      insert(:revision, %{
+        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("container"),
+        children: [page_10_revision.resource_id],
+        title: "Learning Macros",
+        intro_video: "another_video"
+      })
+
     ## root container...
     container_revision =
       insert(:revision, %{
@@ -233,7 +264,9 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
         children: [
           unit_1_revision.resource_id,
           unit_2_revision.resource_id,
-          unit_3_revision.resource_id
+          unit_3_revision.resource_id,
+          unit_4_revision.resource_id,
+          unit_5_revision.resource_id
         ],
         title: "Root Container"
       })
@@ -253,12 +286,16 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
         page_6_revision,
         page_7_revision,
         page_8_revision,
+        page_9_revision,
+        page_10_revision,
         module_1_revision,
         module_2_revision,
         module_3_revision,
         unit_1_revision,
         unit_2_revision,
         unit_3_revision,
+        unit_4_revision,
+        unit_5_revision,
         container_revision
       ]
 
@@ -331,12 +368,16 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       page_6: page_6_revision,
       page_7: page_7_revision,
       page_8: page_8_revision,
+      page_9: page_9_revision,
+      page_10: page_10_revision,
       module_1: module_1_revision,
       module_2: module_2_revision,
       module_3: module_3_revision,
       unit_1: unit_1_revision,
       unit_2: unit_2_revision,
-      unit_3: unit_3_revision
+      unit_3: unit_3_revision,
+      unit_4: unit_4_revision,
+      unit_5: unit_5_revision
     }
   end
 
@@ -1134,12 +1175,13 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       # unit 1 has been scheduled by instructor, so there must be schedule details data
       assert view
              |> element(~s{div[role="unit_1"] div[role="schedule_details"]})
-             |> render() =~ "Due:\n            </span>\n            Sun, Dec 31, 2023 (8:00pm)"
+             |> render() =~
+               "Due:\n              </span>\n              Sun, Dec 31, 2023 (8:00pm)"
 
       # unit 2 has not been scheduled by instructor, so there must not be a schedule details data
       assert view
              |> element(~s{div[role="unit_2"] div[role="schedule_details"]})
-             |> render() =~ "Due:\n            </span>\n            not yet scheduled"
+             |> render() =~ "Due:\n              </span>\n              not yet scheduled"
     end
 
     test "can see units, modules and page (at module level) progresses", %{
@@ -1228,7 +1270,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       assert_redirect(view, "/sections/#{section.slug}/lesson/#{page_8.slug}")
     end
 
-    test "can see card progress bar for modules at level 2 of hierarchy, and even for pages at level 2",
+    test "progress bar is not rendered when there is no progress",
          %{
            conn: conn,
            user: user,
@@ -1236,6 +1278,27 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
          } do
       Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
       Sections.mark_section_visited_for_student(section, user)
+
+      {:ok, view, _html} = live(conn, live_view_learn_live_route(section.slug))
+
+      # no progress yet, so progress bar is not rendered
+      refute has_element?(view, ~s{div[role="unit_1"] div[role="card_1_progress"]})
+      refute has_element?(view, ~s{div[role="unit_3"] div[role="card_1_progress"]})
+    end
+
+    test "can see card progress bar for modules at level 2 of hierarchy, and even for pages at level 2",
+         %{
+           conn: conn,
+           user: user,
+           section: section,
+           page_2: page_2,
+           page_7: page_7
+         } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+
+      set_progress(section.id, page_2.resource_id, user.id, 0.5, page_2)
+      set_progress(section.id, page_7.resource_id, user.id, 1.0, page_7)
 
       {:ok, view, _html} = live(conn, live_view_learn_live_route(section.slug))
 
@@ -1260,6 +1323,33 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       assert view
              |> element(~s{div[role="unit_1"] div[role="card_2"]"})
+             |> render =~ "style=\"background-image: url(&#39;/images/course_default.jpg&#39;)"
+    end
+
+    test "can see Youtube video poster image (if not the default one is shown)",
+         %{
+           conn: conn,
+           user: user,
+           section: section
+         } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+
+      {:ok, view, _html} = live(conn, live_view_learn_live_route(section.slug))
+
+      assert view
+             |> element(~s{div[role="unit_1"] div[role="intro_card"]"})
+             |> render =~
+               "style=\"background-image: url(&#39;https://img.youtube.com/vi/123456789ab/hqdefault.jpg&#39;)"
+
+      # S3 video, uses provided poster image
+      assert view
+             |> element(~s{div[role="unit_4"] div[role="intro_card"]"})
+             |> render =~ "style=\"background-image: url(&#39;some_other_image_url&#39;)"
+
+      # S3 video without poster image, uses default one
+      assert view
+             |> element(~s{div[role="unit_5"] div[role="intro_card"]"})
              |> render =~ "style=\"background-image: url(&#39;/images/course_default.jpg&#39;)"
     end
 

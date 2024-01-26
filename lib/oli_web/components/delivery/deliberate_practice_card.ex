@@ -9,26 +9,6 @@ defmodule OliWeb.Components.Delivery.DeliberatePractice do
   attr :preview_mode, :boolean, default: false
 
   def practice_card(assigns) do
-    assigns =
-      assign(
-        assigns,
-        :description,
-        case assigns.practice.intro_content do
-          nil ->
-            nil
-
-          %{} ->
-            nil
-
-          intro_content ->
-            Content.render(
-              %Oli.Rendering.Context{render_opts: %{render_errors: true}},
-              intro_content,
-              Content.Html
-            )
-        end
-      )
-
     ~H"""
     <div class="flex flex-col lg:flex-row-reverse items-center rounded-lg bg-black/5 dark:bg-white/5 mb-4">
       <img
@@ -40,7 +20,7 @@ defmodule OliWeb.Components.Delivery.DeliberatePractice do
           <%= @practice.title %>
         </h5>
         <div class="text-sm mb-3">
-          <%= raw(@description) %>
+          <%= intro_content(@practice) %>
         </div>
         <div class="flex flex-row justify-end items-center space-x-6">
           <.button variant={:primary} href={practice_link(@section_slug, @practice, @preview_mode)}>
@@ -57,6 +37,25 @@ defmodule OliWeb.Components.Delivery.DeliberatePractice do
       ~p"/sections/#{section_slug}/preview/page/#{practice.slug}"
     else
       ~p"/sections/#{section_slug}/page/#{practice.slug}"
+    end
+  end
+
+  defp intro_content(practice) do
+    case practice.intro_content do
+      nil ->
+        nil
+
+      intro_content ->
+        if Enum.empty?(intro_content) do
+          nil
+        else
+          Content.render(
+            %Oli.Rendering.Context{render_opts: %{render_errors: true}},
+            intro_content,
+            Content.Html
+          )
+          |> raw()
+        end
     end
   end
 

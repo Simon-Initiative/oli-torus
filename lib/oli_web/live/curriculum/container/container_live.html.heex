@@ -1,16 +1,21 @@
 <%= render_modal(assigns) %>
 
 <div id="curriculum-container" class="container mx-auto curriculum-editor">
-  <div class="flex justify-between">
-    <p class="mb-3">
+  <div class="flex justify-between items-center mb-3">
+    <p>
       Create and arrange your learning materials below.
     </p>
-    <.link
-      :if={@has_show_links_uri_hash and Accounts.is_admin?(@author)}
-      navigate={~p[/project/#{@project.slug}/history/slug/#{@container.slug}]}
-    >
-      <i class="fas fa-history"></i> View revision history
-    </.link>
+    <div class="flex items-center gap-x-4">
+      <.link
+        :if={@has_show_links_uri_hash and Accounts.is_admin?(@author)}
+        navigate={~p[/project/#{@project.slug}/history/slug/#{@container.slug}]}
+      >
+        <i class="fas fa-history"></i> View revision history
+      </.link>
+      <.link href={~p"/authoring/project/#{@project.slug}/pages"} role="go_to_all_pages">
+        All Pages
+      </.link>
+    </div>
   </div>
   <div class="grid grid-cols-12">
     <div class="col-span-12">

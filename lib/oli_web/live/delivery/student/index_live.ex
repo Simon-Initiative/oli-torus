@@ -14,7 +14,8 @@ defmodule OliWeb.Delivery.Student.IndexLive do
     {:ok,
      assign(socket,
        active_tab: :index,
-       schedule_for_current_week: schedule_for_current_week
+       schedule_for_current_week: schedule_for_current_week,
+       section_slug: section.slug
      )}
   end
 
@@ -30,7 +31,12 @@ defmodule OliWeb.Delivery.Student.IndexLive do
 
         <%= case @schedule_for_current_week do %>
           <% {week, schedule_ranges} -> %>
-            <Schedule.week ctx={@ctx} week_number={week} schedule_ranges={schedule_ranges} />
+            <Schedule.week
+              ctx={@ctx}
+              week_number={week}
+              schedule_ranges={schedule_ranges}
+              section_slug={@section_slug}
+            />
           <% _ -> %>
             <div class="text-xl">No schedule for this week.</div>
         <% end %>

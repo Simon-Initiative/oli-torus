@@ -279,7 +279,6 @@ defmodule Oli.Publishing.DeliveryResolver do
   end
 
   @impl Resolver
-  @spec full_hierarchy(String.t()) :: %HierarchyNode{}
   def full_hierarchy(section_slug) do
     {hierarchy_nodes, root_hierarchy_node} = hierarchy_nodes_by_sr_id(section_slug)
 
