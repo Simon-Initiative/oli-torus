@@ -2,7 +2,6 @@ defmodule Oli.Repo.Migrations.FixRevisionParts do
   use Ecto.Migration
 
   def change do
-
     # Extract the unique entries in a new table.  This will take records
     # like this:
     #
