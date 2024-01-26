@@ -1270,7 +1270,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       assert_redirect(view, "/sections/#{section.slug}/lesson/#{page_8.slug}")
     end
 
-    test "can see card progress bar for modules at level 2 of hierarchy, and even for pages at level 2",
+    test "progress bar is not rendered when there is no progress",
          %{
            conn: conn,
            user: user,
@@ -1278,6 +1278,27 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
          } do
       Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
       Sections.mark_section_visited_for_student(section, user)
+
+      {:ok, view, _html} = live(conn, live_view_learn_live_route(section.slug))
+
+      # no progress yet, so progress bar is not rendered
+      refute has_element?(view, ~s{div[role="unit_1"] div[role="card_1_progress"]})
+      refute has_element?(view, ~s{div[role="unit_3"] div[role="card_1_progress"]})
+    end
+
+    test "can see card progress bar for modules at level 2 of hierarchy, and even for pages at level 2",
+         %{
+           conn: conn,
+           user: user,
+           section: section,
+           page_2: page_2,
+           page_7: page_7
+         } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+
+      set_progress(section.id, page_2.resource_id, user.id, 0.5, page_2)
+      set_progress(section.id, page_7.resource_id, user.id, 1.0, page_7)
 
       {:ok, view, _html} = live(conn, live_view_learn_live_route(section.slug))
 
