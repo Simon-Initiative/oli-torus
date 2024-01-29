@@ -14,7 +14,6 @@ defmodule OliWeb.Sections.OverviewView do
   alias OliWeb.Projects.RequiredSurvey
   alias OliWeb.Common.MonacoEditor
   alias Oli.Repo
-  alias OliWeb.Components.Common
 
   def set_breadcrumbs(:admin, section) do
     OliWeb.Sections.SectionsView.set_breadcrumbs()
