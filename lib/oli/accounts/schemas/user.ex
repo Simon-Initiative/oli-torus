@@ -170,11 +170,18 @@ defmodule Oli.Accounts.User do
     |> maybe_name_from_given_and_family()
   end
 
-  def update_changeset_for_admin(user, attrs \\ %{}) do
+  def update_changeset_for_admin(%__MODULE__{} = user, attrs \\ %{}) do
     user
-    |> noauth_changeset(attrs)
+    |> cast(attrs, [:given_name, :family_name])
+    |> validate_required([:given_name, :family_name])
+    |> maybe_name_from_given_and_family()
+    |> validate_required_if([:email], &is_independent_learner_not_guest/1)
+    |> lowercase_email()
     |> pow_user_id_field_changeset(attrs)
-    |> unique_constraint(:email, name: :users_email_independent_learner_index)
+    |> unique_constraint(:email,
+      name: :users_email_independent_learner_index,
+      message: "Email has already been taken by another independent learner"
+    )
   end
 
   @doc """
