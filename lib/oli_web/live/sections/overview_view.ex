@@ -6,7 +6,7 @@ defmodule OliWeb.Sections.OverviewView do
   alias OliWeb.Common.{Breadcrumb, DeleteModalNoConfirmation}
   alias OliWeb.Common.Properties.{Groups, Group, ReadOnly}
   alias Oli.Delivery.Sections
-  alias Oli.Delivery.Sections.EnrollmentBrowseOptions
+  alias Oli.Delivery.Sections.{Section, EnrollmentBrowseOptions}
   alias OliWeb.Router.Helpers, as: Routes
   alias OliWeb.Sections.{Instructors, Mount, UnlinkSection}
   alias Oli.Publishing.DeliveryResolver
@@ -14,6 +14,7 @@ defmodule OliWeb.Sections.OverviewView do
   alias OliWeb.Projects.RequiredSurvey
   alias OliWeb.Common.MonacoEditor
   alias Oli.Repo
+  alias OliWeb.Components.Common
 
   def set_breadcrumbs(:admin, section) do
     OliWeb.Sections.SectionsView.set_breadcrumbs()
@@ -414,36 +415,41 @@ defmodule OliWeb.Sections.OverviewView do
           description="Edit the GenAI prompt templates"
           is_last={true}
         >
-          <MonacoEditor.render
-            id="attribute-monaco-editor"
-            height="200px"
-            language="text"
-            on_change="monaco_editor_on_change"
-            set_options="monaco_editor_set_options"
-            set_value="monaco_editor_set_value"
-            get_value="monaco_editor_get_value"
-            validate_schema_uri=""
-            default_value={
-              if is_nil(@section.page_prompt_template) do
-                ""
-              else
-                @section.page_prompt_template
-              end
-            }
-            default_options={
-              %{
-                "readOnly" => false,
-                "selectOnLineNumbers" => true,
-                "minimap" => %{"enabled" => false},
-                "scrollBeyondLastLine" => false,
-                "tabSize" => 2
+          <div :if={assistant_enabled?(@section)}>
+            <MonacoEditor.render
+              id="attribute-monaco-editor"
+              height="200px"
+              language="text"
+              on_change="monaco_editor_on_change"
+              set_options="monaco_editor_set_options"
+              set_value="monaco_editor_set_value"
+              get_value="monaco_editor_get_value"
+              validate_schema_uri=""
+              default_value={
+                if is_nil(@section.page_prompt_template) do
+                  ""
+                else
+                  @section.page_prompt_template
+                end
               }
-            }
-            use_code_lenses={[]}
-          />
-          <button type="button" class="btn btn-primary action-button mt-4" phx-click="save_prompt">
-            Save
-          </button>
+              default_options={
+                %{
+                  "readOnly" => false,
+                  "selectOnLineNumbers" => true,
+                  "minimap" => %{"enabled" => false},
+                  "scrollBeyondLastLine" => false,
+                  "tabSize" => 2
+                }
+              }
+              use_code_lenses={[]}
+            />
+            <button type="button" class="btn btn-primary action-button mt-4" phx-click="save_prompt">
+              Save
+            </button>
+          </div>
+          <div class="my-2">
+            <.assistant_toggle_button section={@section} />
+          </div>
         </Group.render>
       </div>
     </Groups.render>
@@ -565,5 +571,39 @@ defmodule OliWeb.Sections.OverviewView do
       end
 
     {:noreply, socket |> hide_modal(modal_assigns: nil, section_has_student_data: nil)}
+  end
+
+  def handle_event("toggle_assistant", _, socket) do
+    section = socket.assigns.section
+    assistant_enabled = section.assistant_enabled
+
+    {:ok, section} =
+      Oli.Delivery.Sections.update_section(section, %{assistant_enabled: !assistant_enabled})
+
+    socket =
+      socket
+      |> put_flash(:info, "Assistant settings updated successfully")
+
+    {:noreply, assign(socket, section: section)}
+  end
+
+  attr :section, Section
+
+  def assistant_toggle_button(assigns) do
+    ~H"""
+    <%= if assistant_enabled?(@section) do %>
+      <.button variant={:warning} phx-click="toggle_assistant">
+        Disable Assistant
+      </.button>
+    <% else %>
+      <.button variant={:primary} phx-click="toggle_assistant">
+        Enable Assistant
+      </.button>
+    <% end %>
+    """
+  end
+
+  defp assistant_enabled?(section) do
+    section.assistant_enabled
   end
 end
