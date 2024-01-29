@@ -415,7 +415,7 @@ defmodule OliWeb.Sections.OverviewView do
           description="Edit the GenAI prompt templates"
           is_last={true}
         >
-          <div :if={assistant_enabled?(@section)}>
+          <div :if={Sections.assistant_enabled?(@section)}>
             <MonacoEditor.render
               id="attribute-monaco-editor"
               height="200px"
@@ -591,7 +591,7 @@ defmodule OliWeb.Sections.OverviewView do
 
   def assistant_toggle_button(assigns) do
     ~H"""
-    <%= if assistant_enabled?(@section) do %>
+    <%= if Sections.assistant_enabled?(@section) do %>
       <.button variant={:warning} phx-click="toggle_assistant">
         Disable Assistant
       </.button>
@@ -601,9 +601,5 @@ defmodule OliWeb.Sections.OverviewView do
       </.button>
     <% end %>
     """
-  end
-
-  defp assistant_enabled?(section) do
-    section.assistant_enabled
   end
 end

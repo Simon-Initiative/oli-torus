@@ -4333,4 +4333,15 @@ defmodule Oli.Delivery.Sections do
 
   defp maybe_select_section_fields(query, select_fields),
     do: select(query, [s], struct(s, ^select_fields))
+
+  @doc """
+  Returns true if the section has the ai assistant feature enabled.
+  """
+  def assistant_enabled?(%Section{} = section) do
+    section.assistant_enabled
+  end
+
+  def assistant_enabled?(section_slug) when is_binary(section_slug) do
+    from([s] in Section, where: s.slug == ^section_slug, select: s.assistant_enabled)
+  end
 end
