@@ -23,6 +23,13 @@ defmodule OliWeb.Users.UsersDetailView do
   alias OliWeb.Router.Helpers, as: Routes
   alias OliWeb.Users.Actions
 
+  @email_changeset_errors [
+    :email_already_been_taken,
+    :email_cannot_be_blank,
+    :email_invalid_format,
+    :email_already_been_taken_by_independent_learner
+  ]
+
   defp set_breadcrumbs(user) do
     OliWeb.Admin.AdminView.breadcrumb()
     |> OliWeb.Users.UsersView.breadcrumb()
@@ -91,7 +98,7 @@ defmodule OliWeb.Users.UsersDetailView do
             <div class="form-group">
               <label for="given_name">Given Name</label>
               <input
-                value={@changeset.data.given_name}
+                value={Map.merge(@changeset.data, @changeset.changes).given_name}
                 id="given_name"
                 name="user[given_name]"
                 class="form-control"
@@ -101,7 +108,7 @@ defmodule OliWeb.Users.UsersDetailView do
             <div class="form-group">
               <label for="family_name">Last Name</label>
               <input
-                value={@changeset.data.family_name}
+                value={Map.merge(@changeset.data, @changeset.changes).family_name}
                 id="family_name"
                 name="user[family_name]"
                 class="form-control"
@@ -111,7 +118,7 @@ defmodule OliWeb.Users.UsersDetailView do
             <div class="form-group">
               <label for="email">Email</label>
               <input
-                value={@changeset.data.email}
+                value={Map.merge(@changeset.data, @changeset.changes).email}
                 id="email"
                 name="user[email]"
                 class="form-control"
@@ -357,12 +364,15 @@ defmodule OliWeb.Users.UsersDetailView do
   end
 
   def handle_event("submit", %{"user" => params}, socket) do
-    case Accounts.update_user(socket.assigns.user, cast_params(params)) do
-      {:ok, user} ->
-        {:noreply,
-         socket
-         |> put_flash(:info, "User successfully updated.")
-         |> assign(user: user, changeset: user_changeset(user, params), disabled_edit: true)}
+    with {:ok, user} <- Accounts.update_user_from_admin(socket.assigns.user, cast_params(params)) do
+      {:noreply,
+       socket
+       |> put_flash(:info, "User successfully updated.")
+       |> assign(user: user, changeset: user_changeset(user, params), disabled_edit: true)}
+    else
+      {:error, errors, message}
+      when errors in @email_changeset_errors ->
+        {:noreply, put_flash(socket, :error, message)}
 
       {:error, _error} ->
         {:noreply, put_flash(socket, :error, "User couldn't be updated.")}

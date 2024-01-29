@@ -408,7 +408,7 @@ defmodule Oli.Publishing.DeliveryResolver do
           rev.purpose == ^purpose and rev.deleted == false and
             rev.resource_type_id == ^page_id,
         select: rev,
-        order_by: [asc: :resource_id]
+        order_by: [asc: sr.numbering_index]
       )
     )
   end

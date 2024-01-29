@@ -170,6 +170,13 @@ defmodule Oli.Accounts.User do
     |> maybe_name_from_given_and_family()
   end
 
+  def update_changeset_for_admin(user, attrs \\ %{}) do
+    user
+    |> noauth_changeset(attrs)
+    |> pow_user_id_field_changeset(attrs)
+    |> unique_constraint(:email, name: :users_email_independent_learner_index)
+  end
+
   @doc """
   Creates a changeset that is used to update a user's profile
   """
