@@ -11,6 +11,8 @@ defmodule Oli.Resources.ResourceType do
     def get_type_by_id(unquote(id)) when unquote(id) in 1..@resource_types_count,
       do: unquote(resource_type)
 
+    def unquote(String.to_atom("id_for_#{resource_type}"))(), do: unquote(id)
+
     def unquote(String.to_atom("is_#{resource_type}"))(revision),
       do: get_type_by_id(revision.resource_type_id) == unquote(resource_type)
   end
