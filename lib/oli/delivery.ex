@@ -282,7 +282,7 @@ defmodule Oli.Delivery do
   end
 
   defp contains_explorations(section_slug) do
-    page_id = Oli.Resources.ResourceType.get_id_by_type("page")
+    page_id = Oli.Resources.ResourceType.id_for_page()
 
     Repo.one(
       from([sr: sr, rev: rev] in DeliveryResolver.section_resource_revisions(section_slug),

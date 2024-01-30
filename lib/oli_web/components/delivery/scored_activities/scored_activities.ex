@@ -588,7 +588,7 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
          %Section{analytics_version: :v2, id: section_id},
          student_ids
        ) do
-    page_type_id = Oli.Resources.ResourceType.get_id_by_type("page")
+    page_type_id = Oli.Resources.ResourceType.id_for_page()
 
     from(rs in ResourceSummary,
       where:

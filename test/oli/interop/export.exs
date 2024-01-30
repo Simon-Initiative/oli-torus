@@ -56,7 +56,7 @@ defmodule Oli.Interop.ExportTest do
     author = insert(:author)
 
     survey_revision =
-      insert(:revision, resource_type_id: Oli.Resources.ResourceType.get_id_by_type("page"))
+      insert(:revision, resource_type_id: Oli.Resources.ResourceType.id_for_page())
 
     project =
       insert(:project,
@@ -73,7 +73,7 @@ defmodule Oli.Interop.ExportTest do
 
     container_revision =
       insert(:revision, %{
-        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("container")
+        resource_type_id: Oli.Resources.ResourceType.id_for_container()
       })
 
     publication =

@@ -18,8 +18,8 @@ defmodule Oli.Delivery.Sections.Scheduling do
   section resources (that is, all containers and pages).
   """
   def retrieve(%Section{id: section_id}) do
-    page_type_id = Oli.Resources.ResourceType.get_id_by_type("page")
-    container_type_id = Oli.Resources.ResourceType.get_id_by_type("container")
+    page_type_id = Oli.Resources.ResourceType.id_for_page()
+    container_type_id = Oli.Resources.ResourceType.id_for_container()
 
     query =
       SectionResource

@@ -385,7 +385,7 @@ defmodule Oli.Resources do
   def alternatives_groups(project_or_section_slug, resolver) do
     case resolver.revisions_of_type(
            project_or_section_slug,
-           ResourceType.get_id_by_type("alternatives")
+           ResourceType.id_for_alternatives()
          ) do
       alternatives when is_list(alternatives) ->
         {:ok,

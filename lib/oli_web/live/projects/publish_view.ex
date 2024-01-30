@@ -69,7 +69,7 @@ defmodule OliWeb.Projects.PublishView do
                 Map.values(changes)
                 |> Enum.map(fn {_, %{revision: revision}} -> revision end)
                 |> Enum.filter(fn r ->
-                  r.resource_type_id == Oli.Resources.ResourceType.get_id_by_type("activity")
+                  r.resource_type_id == Oli.Resources.ResourceType.id_for_activity()
                 end)
                 |> Enum.map(fn r -> r.resource_id end)
                 |> Oli.Publishing.determine_parent_pages(

@@ -1135,7 +1135,7 @@ defmodule Oli.Delivery.Sections do
       [sr, s, _, _, rev],
       s.slug == ^section_slug and
         rev.deleted == false and
-        rev.resource_type_id == ^ResourceType.get_id_by_type("page")
+        rev.resource_type_id == ^ResourceType.id_for_page()
     )
     |> where(^maybe_filter_by_graded)
     |> order_by([_, _, _, _, rev], asc: rev.resource_id)
@@ -1301,7 +1301,7 @@ defmodule Oli.Delivery.Sections do
   # representing the relates_to relationship between pages.
   defp get_relates_to(publication_ids) do
     joined_publication_ids = Enum.join(publication_ids, ",")
-    page_type_id = Oli.Resources.ResourceType.get_id_by_type("page")
+    page_type_id = Oli.Resources.ResourceType.id_for_page()
 
     sql = """
     select
@@ -1982,7 +1982,7 @@ defmodule Oli.Delivery.Sections do
     |> Repo.delete_all()
 
     # We will need the set of resource ids for all containers in the hierarchy.
-    container_type_id = Oli.Resources.ResourceType.get_id_by_type("container")
+    container_type_id = Oli.Resources.ResourceType.id_for_container()
 
     container_ids =
       from([rev: rev] in Oli.Publishing.DeliveryResolver.section_resource_revisions(slug),
@@ -2130,8 +2130,8 @@ defmodule Oli.Delivery.Sections do
   end
 
   def build_contained_objectives(repo, _changes, section_slug) do
-    page_type_id = ResourceType.get_id_by_type("page")
-    activity_type_id = ResourceType.get_id_by_type("activity")
+    page_type_id = ResourceType.id_for_page()
+    activity_type_id = ResourceType.id_for_activity()
 
     section_id = repo.one(from(s in Section, where: s.slug == ^section_slug, select: s.id))
 
@@ -2344,7 +2344,7 @@ defmodule Oli.Delivery.Sections do
   # for major update, update the spp record and use the diff and the AIRRO approach
   defp perform_update(:major, section, project_id, prev_publication, new_publication) do
     Repo.transaction(fn ->
-      container = ResourceType.get_id_by_type("container")
+      container = ResourceType.id_for_container()
       prev_published_resources_map = published_resources_map(prev_publication.id)
       new_published_resources_map = published_resources_map(new_publication.id)
 
@@ -2725,7 +2725,7 @@ defmodule Oli.Delivery.Sections do
   end
 
   def is_structural?(%Revision{resource_type_id: resource_type_id}) do
-    container = ResourceType.get_id_by_type("container")
+    container = ResourceType.id_for_container()
 
     resource_type_id == container
   end
@@ -2935,7 +2935,7 @@ defmodule Oli.Delivery.Sections do
     |> where(
       [sr, _, _, rev, _ra, ra2],
       sr.section_id == ^section_id and
-        rev.resource_type_id == ^ResourceType.get_id_by_type("page") and
+        rev.resource_type_id == ^ResourceType.id_for_page() and
         sr.resource_id in ^resource_ids
     )
     |> select([sr, _, _, rev, ra], %{
@@ -3088,7 +3088,7 @@ defmodule Oli.Delivery.Sections do
   end
 
   defp get_student_pages(section_slug, user_id) do
-    page_type_id = ResourceType.get_id_by_type("page")
+    page_type_id = ResourceType.id_for_page()
 
     SectionResource
     |> join(:inner, [sr], s in Section, on: sr.section_id == s.id)
@@ -3159,7 +3159,7 @@ defmodule Oli.Delivery.Sections do
         where:
           not is_nil(sp.end_date) and
             sp.end_date >= ^DateTime.utc_now() and
-            sp.resource_type_id == ^ResourceType.get_id_by_type("page"),
+            sp.resource_type_id == ^ResourceType.id_for_page(),
         limit: 2
       )
 
@@ -3206,7 +3206,7 @@ defmodule Oli.Delivery.Sections do
       |> Enum.uniq_by(& &1.id)
       |> Enum.split_with(fn page ->
         page.end_date != nil and page.graded == true and
-          page.resource_type_id == ResourceType.get_id_by_type("page")
+          page.resource_type_id == ResourceType.id_for_page()
       end)
 
     (graded_pages_with_date ++ get_graded_pages_without_date(other_resources))
@@ -3250,7 +3250,7 @@ defmodule Oli.Delivery.Sections do
         resource.numbering_level == 0 ->
           {resource, graded_pages}
 
-        resource.resource_type_id == ResourceType.get_id_by_type("page") and
+        resource.resource_type_id == ResourceType.id_for_page() and
             resource.graded == true ->
           {root_container, [resource | graded_pages]}
 
@@ -3309,7 +3309,7 @@ defmodule Oli.Delivery.Sections do
       end
 
     # get the minimal fields for all objectives from the database
-    objective_id = Oli.Resources.ResourceType.get_id_by_type("objective")
+    objective_id = Oli.Resources.ResourceType.id_for_objective()
 
     objectives =
       from([rev: rev, s: s] in DeliveryResolver.section_resource_revisions(section_slug))
@@ -3439,7 +3439,7 @@ defmodule Oli.Delivery.Sections do
   %{1: "Unit 1: Basics", 15: nil, 45: "Module 3: Enumerables"}
   """
   def map_resources_with_container_labels(section_slug, resource_ids) do
-    resource_type_id = Oli.Resources.ResourceType.get_id_by_type("container")
+    resource_type_id = Oli.Resources.ResourceType.id_for_container()
 
     containers =
       from([sr, s, spp, _pr, rev] in DeliveryResolver.section_resource_revisions(section_slug),

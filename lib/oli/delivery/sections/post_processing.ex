@@ -10,7 +10,7 @@ defmodule Oli.Delivery.Sections.PostProcessing do
   @type options :: [option]
   @type option :: :all | :discussions | :explorations | :deliberate_practice
 
-  @page_type_id ResourceType.get_id_by_type("page")
+  @page_type_id ResourceType.id_for_page()
   @all_actions [:discussions, :explorations, :deliberate_practice]
 
   @spec apply(Section.t(), options() | option()) :: Section.t()

@@ -90,7 +90,7 @@ defmodule OliWeb.Users.AuthorsDetailViewTest do
       # (its date should not be considered as most recent edit as there will be a more recent one)
       page_1_revision =
         insert(:revision,
-          resource_type_id: Oli.Resources.ResourceType.get_id_by_type("page"),
+          resource_type_id: Oli.Resources.ResourceType.id_for_page(),
           title: "Page 1",
           graded: true,
           author_id: author.id,
@@ -101,7 +101,7 @@ defmodule OliWeb.Users.AuthorsDetailViewTest do
         insert(:revision, %{
           resource: insert(:resource),
           objectives: %{},
-          resource_type_id: Oli.Resources.ResourceType.get_id_by_type("container"),
+          resource_type_id: Oli.Resources.ResourceType.id_for_container(),
           children: [page_1_revision.resource_id],
           content: %{},
           deleted: false,
@@ -144,7 +144,7 @@ defmodule OliWeb.Users.AuthorsDetailViewTest do
       # (this one should be considered as most recent edit value)
       page_1_revision_v2 =
         insert(:revision,
-          resource_type_id: Oli.Resources.ResourceType.get_id_by_type("page"),
+          resource_type_id: Oli.Resources.ResourceType.id_for_page(),
           title: "Page 1 (edited)",
           graded: true,
           resource: page_1_revision.resource,
@@ -156,7 +156,7 @@ defmodule OliWeb.Users.AuthorsDetailViewTest do
         insert(:revision, %{
           resource: container_revision.resource,
           objectives: %{},
-          resource_type_id: Oli.Resources.ResourceType.get_id_by_type("container"),
+          resource_type_id: Oli.Resources.ResourceType.id_for_container(),
           children: [page_1_revision.resource_id],
           content: %{},
           deleted: false,
@@ -191,7 +191,7 @@ defmodule OliWeb.Users.AuthorsDetailViewTest do
 
       page_1_revision_v2 =
         insert(:revision,
-          resource_type_id: Oli.Resources.ResourceType.get_id_by_type("page"),
+          resource_type_id: Oli.Resources.ResourceType.id_for_page(),
           title: "Page 1 (edited)",
           graded: true,
           resource: page_1_revision.resource,
@@ -203,7 +203,7 @@ defmodule OliWeb.Users.AuthorsDetailViewTest do
         insert(:revision, %{
           resource: container_revision.resource,
           objectives: %{},
-          resource_type_id: Oli.Resources.ResourceType.get_id_by_type("container"),
+          resource_type_id: Oli.Resources.ResourceType.id_for_container(),
           children: [page_1_revision.resource_id],
           content: %{},
           deleted: false,
