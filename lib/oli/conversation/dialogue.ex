@@ -1,8 +1,12 @@
 defmodule Oli.Conversation.Dialogue do
   require Logger
-  alias Oli.Conversation.Message
-  alias Oli.Conversation.Functions
+
   import Oli.Conversation.Common
+
+  alias Oli.Repo
+  alias Oli.Conversation.Message
+  alias Oli.Conversation.ConversationMessage
+  alias Oli.Conversation.Functions
   alias Oli.Conversation.Model
 
   defstruct [
@@ -57,7 +61,10 @@ defmodule Oli.Conversation.Dialogue do
     |> Enum.to_list()
   end
 
-  def engage(%__MODULE__{messages: messages, model: model} = dialogue, :sync) do
+  def engage(
+        %__MODULE__{messages: messages, model: model} = dialogue,
+        :sync
+      ) do
     result =
       OpenAI.chat_completion(
         [
@@ -82,16 +89,24 @@ defmodule Oli.Conversation.Dialogue do
 
   def add_message(
         %__MODULE__{messages: messages, rendered_messages: rendered_messages} = dialog,
-        message
+        message,
+        user_id,
+        resource_id,
+        section_id
       ) do
+    # persist message to database for reviewing conversation history
+    create_conversation_message(message, user_id, resource_id, section_id)
+
     dialog = %{dialog | rendered_messages: rendered_messages ++ [message]}
+
     %{dialog | messages: messages ++ [message]}
   end
 
   def summarize(%__MODULE__{messages: messages, model: model} = dialog) do
     summarize_messages =
       case messages do
-        [_system | rest] -> [Message.new(:system, summarize_prompt()) | rest]
+        [_system | rest] ->
+          [Message.new(:system, summarize_prompt()) | rest]
       end
 
     [system | _rest] = messages
@@ -133,6 +148,17 @@ defmodule Oli.Conversation.Dialogue do
       [%{"delta" => %{"content" => content}}] -> {:delta, :content, content}
       _ -> {:finished}
     end
+  end
+
+  defp create_conversation_message(message, user_id, resource_id, section_id) do
+    attrs =
+      message
+      |> Map.from_struct()
+      |> Map.merge(%{user_id: user_id, resource_id: resource_id, section_id: section_id})
+
+    %ConversationMessage{}
+    |> ConversationMessage.changeset(attrs)
+    |> Repo.insert()
   end
 
   def config(:sync) do
