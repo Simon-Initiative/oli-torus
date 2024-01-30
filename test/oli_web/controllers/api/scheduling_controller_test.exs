@@ -54,6 +54,70 @@ defmodule OliWeb.SchedulingControllerTest do
       Enum.each(resources, fn sr -> assert sr["end_date"] == "2024-01-02" end)
     end
 
+    test "can access and clear scheduled resources", %{
+      conn: conn,
+      map: map
+    } do
+      user = map.teacher
+
+      # Access the scheduling page for the first time
+      conn =
+        get(
+          conn,
+          Routes.scheduling_path(conn, :index, map.section.slug)
+        )
+
+      assert %{"result" => "success", "resources" => resources} = json_response(conn, 200)
+      assert length(resources) == 3
+
+      # Simulate setting the schedule for all 3 resources (change the start_date and end_date for all 3)
+      updates =
+        Enum.map(resources, fn sr ->
+          Map.merge(sr, %{"start_date" => "2024-01-01", "end_date" => "2024-01-31"})
+        end)
+
+      conn =
+        again(conn, user)
+        |> put(
+          Routes.scheduling_path(conn, :update, map.section.slug),
+          %{"updates" => updates}
+        )
+
+      assert %{"result" => "success", "count" => 3} = json_response(conn, 200)
+
+      # Check that start_date and end_date for all 3 resources are updated
+      [sr1, sr2, sr3] = updates
+      assert sr1["start_date"] == "2024-01-01"
+      assert sr1["end_date"] == "2024-01-31"
+      assert sr2["start_date"] == "2024-01-01"
+      assert sr2["end_date"] == "2024-01-31"
+      assert sr3["start_date"] == "2024-01-01"
+      assert sr3["end_date"] == "2024-01-31"
+
+      # Click the clear timelines button
+      conn =
+        again(conn, user)
+        |> delete(Routes.scheduling_path(conn, :clear, map.section.slug))
+
+      assert %{"result" => "success"} = json_response(conn, 200)
+
+      # Access the scheduling page for the second time
+      conn =
+        again(conn, user)
+        |> get(Routes.scheduling_path(conn, :index, map.section.slug))
+
+      assert %{"result" => "success", "resources" => resources} = json_response(conn, 200)
+
+      # Check that start_date and end_date for all 3 resources are nil (schedule is cleared)
+      [sr1, sr2, sr3] = resources
+      assert sr1["start_date"] == nil
+      assert sr1["end_date"] == nil
+      assert sr2["start_date"] == nil
+      assert sr2["end_date"] == nil
+      assert sr3["start_date"] == nil
+      assert sr3["end_date"] == nil
+    end
+
     test "can catch unauthorized user access", %{
       conn: conn,
       map: map

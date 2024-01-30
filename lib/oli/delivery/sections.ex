@@ -37,18 +37,19 @@ defmodule Oli.Delivery.Sections do
   alias Lti_1p3.Tool.PlatformRoles
   alias Oli.Delivery.Updates.Broadcaster
   alias Oli.Delivery.Sections.EnrollmentBrowseOptions
+  alias Oli.Delivery.Sections.PostProcessing
   alias Oli.Utils.Slug
   alias OliWeb.Common.FormatDateTime
   alias Oli.Delivery.PreviousNextIndex
-  alias Oli.Delivery
   alias Ecto.Multi
   alias Oli.Delivery.Gating.GatingCondition
   alias Oli.Delivery.Attempts.Core.ResourceAccess
   alias Oli.Delivery.Metrics
   alias Oli.Delivery.Paywall
-  alias Oli.Branding.CustomLabels
 
   require Logger
+
+  @instructor_context_role_id ContextRoles.get_role(:context_instructor).id
 
   def enrolled_students(section_slug) do
     section = get_section_by_slug(section_slug)
@@ -391,37 +392,41 @@ defmodule Oli.Delivery.Sections do
   end
 
   @doc """
-  Unenrolls a user from a section by removing the provided context roles. If no context roles are provided, no change is made. If all context roles are removed from the user, the enrollment is marked as suspended.
+  Unenrolls a user from a section by removing the provided context roles.
+  If no context roles are provided, no change is made. If all context roles
+  are removed from the user, the enrollment is marked as suspended.
 
   To unenroll a student, use unenroll_learner/2
   """
   def unenroll(user_id, section_id, context_roles) do
-    context_roles = EctoProvider.Marshaler.to(context_roles)
-
-    case Repo.one(
-           from(e in Enrollment,
-             preload: [:context_roles],
-             where: e.user_id == ^user_id and e.section_id == ^section_id,
-             select: e
-           )
-         ) do
+    from(e in Enrollment,
+      preload: [:context_roles],
+      where: e.user_id == ^user_id,
+      where: e.section_id == ^section_id,
+      select: e
+    )
+    |> Repo.one()
+    |> case do
       nil ->
         # Enrollment not found
         {:error, nil}
 
       enrollment ->
-        other_context_roles =
-          Enum.filter(enrollment.context_roles, &(!Enum.member?(context_roles, &1)))
+        context_roles = EctoProvider.Marshaler.to(context_roles)
 
-        if Enum.count(other_context_roles) == 0 do
-          enrollment
-          |> Enrollment.changeset(%{status: :suspended})
-          |> Repo.update()
-        else
-          enrollment
-          |> Enrollment.changeset(%{section_id: section_id})
-          |> Ecto.Changeset.put_assoc(:context_roles, other_context_roles)
-          |> Repo.update()
+        MapSet.difference(MapSet.new(enrollment.context_roles), MapSet.new(context_roles))
+        |> MapSet.to_list()
+        |> case do
+          [] ->
+            enrollment
+            |> Enrollment.changeset(%{status: :suspended})
+            |> Repo.update()
+
+          other_context_roles ->
+            enrollment
+            |> Enrollment.changeset(%{section_id: section_id})
+            |> Ecto.Changeset.put_assoc(:context_roles, other_context_roles)
+            |> Repo.update()
         end
     end
   end
@@ -818,18 +823,38 @@ defmodule Oli.Delivery.Sections do
   def get_active_sections_by_project(project_id) do
     today = DateTime.utc_now()
 
-    Repo.all(
-      from(
-        section in Section,
-        join: spp in SectionsProjectsPublications,
-        on: spp.section_id == section.id,
-        where:
-          spp.project_id == ^project_id and
-            (not is_nil(section.end_date) and section.end_date >= ^today),
-        select: section,
-        preload: [section_project_publications: [:publication]]
+    first_enrollment =
+      from(u in User,
+        join: e in assoc(u, :enrollments),
+        where: e.section_id == parent_as(:section).id,
+        order_by: [asc: e.inserted_at],
+        limit: 1,
+        select: fragment("concat(?, '|', ?, '|', ?)", u.name, u.given_name, u.family_name)
       )
+
+    instructors =
+      from(u in User,
+        join: e in assoc(u, :enrollments),
+        join: ecr in EnrollmentContextRole,
+        on: ecr.enrollment_id == e.id,
+        where: e.section_id == parent_as(:section).id,
+        where: ecr.context_role_id == ^@instructor_context_role_id,
+        group_by: e.section_id,
+        select:
+          fragment("array_agg(concat(?, '|', ?, '|', ?))", u.name, u.given_name, u.family_name)
+      )
+
+    from(
+      s in Section,
+      as: :section,
+      join: spp in assoc(s, :section_project_publications),
+      where: spp.project_id == ^project_id,
+      where: not is_nil(s.end_date),
+      where: s.end_date >= ^today,
+      preload: [section_project_publications: [:publication]],
+      select: %{s | creator: subquery(first_enrollment), instructors: subquery(instructors)}
     )
+    |> Repo.all()
   end
 
   @doc """
@@ -977,9 +1002,11 @@ defmodule Oli.Delivery.Sections do
       {:error, %Ecto.Changeset{}}
   """
   def update_section(%Section{} = section, attrs) do
-    section
-    |> Section.changeset(attrs)
-    |> Repo.update()
+    section |> Section.changeset(attrs) |> Repo.update()
+  end
+
+  def update_section!(%Section{} = section, attrs) do
+    section |> Section.changeset(attrs) |> Repo.update!()
   end
 
   @doc """
@@ -1757,11 +1784,9 @@ defmodule Oli.Delivery.Sections do
         rebuild_section_resources(section, section_resources, project_publications, hierarchy)
       end)
       |> Multi.run(
-        :maybe_update_exploration_pages,
+        :side_effects,
         fn _repo, _ ->
-          # updates contains_explorations field in sections
-          Delivery.maybe_update_section_contains_explorations(section)
-          Delivery.maybe_update_section_contains_deliberate_practice(section)
+          {:ok, PostProcessing.apply(section, :all)}
         end
       )
       |> Repo.transaction()
@@ -2531,8 +2556,10 @@ defmodule Oli.Delivery.Sections do
         pinned_project_publications = get_pinned_project_publications(section.id)
         rebuild_section_curriculum(section, new_hierarchy, pinned_project_publications)
 
-        Delivery.maybe_update_section_contains_explorations(section)
-        Delivery.maybe_update_section_contains_deliberate_practice(section)
+        PostProcessing.apply(section, :all)
+
+        Oli.Delivery.maybe_update_section_contains_explorations(section)
+        Oli.Delivery.maybe_update_section_contains_deliberate_practice(section)
 
         {:ok}
       end)
@@ -2886,10 +2913,10 @@ defmodule Oli.Delivery.Sections do
       |> Enum.map(fn {k, v} ->
         label =
           if Map.get(v, "type") === "container" do
-            get_container_label(
-              String.to_integer(Map.get(v, "level")),
-              section.customizations || Map.from_struct(CustomLabels.default())
-            )
+            Numbering.container_type_label(%Numbering{
+              level: Map.get(v, "level") |> String.to_integer(),
+              labels: section.customizations
+            })
           else
             ""
           end
@@ -3444,8 +3471,6 @@ defmodule Oli.Delivery.Sections do
 
     containers =
       from([sr, s, spp, _pr, rev] in DeliveryResolver.section_resource_revisions(section_slug),
-        join: p in Project,
-        on: p.id == spp.project_id,
         where: s.slug == ^section_slug and rev.resource_type_id == ^resource_type_id,
         select: %{
           id: rev.resource_id,
@@ -3453,7 +3478,7 @@ defmodule Oli.Delivery.Sections do
           numbering_level: sr.numbering_level,
           numbering_index: sr.numbering_index,
           children: rev.children,
-          customizations: p.customizations
+          customizations: s.customizations
         }
       )
       |> Repo.all()
@@ -3470,22 +3495,16 @@ defmodule Oli.Delivery.Sections do
            {nil, nil}
 
          c ->
-           {c.id,
-            ~s{#{get_container_label(c.numbering_level, c.customizations || Map.from_struct(CustomLabels.default()))} #{c.numbering_index}: #{c.title}}}
+           container_label =
+             Numbering.container_type_label(%Numbering{
+               level: c.numbering_level,
+               labels: c.customizations
+             })
+
+           {c.id, ~s{#{container_label} #{c.numbering_index}: #{c.title}}}
        end}
     end)
     |> Enum.into(%{})
-  end
-
-  defp get_container_label(
-         numbering_level,
-         customizations
-       ) do
-    case numbering_level do
-      1 -> Map.get(customizations, :unit)
-      2 -> Map.get(customizations, :module)
-      _ -> Map.get(customizations, :section)
-    end
   end
 
   def get_units_and_modules_from_a_section(section_slug) do

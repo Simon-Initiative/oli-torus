@@ -252,6 +252,23 @@ defmodule Oli.Accounts do
     |> Repo.insert()
   end
 
+  def update_user(
+        %User{} = user,
+        %{"current_password" => _, "password" => _, "password_confirmation" => _} = attrs
+      ) do
+    user
+    |> User.update_changeset(attrs)
+    |> Repo.update()
+    |> case do
+      {:ok, %User{id: user_id}} = result ->
+        AccountLookupCache.delete("user_#{user_id}")
+        result
+
+      error ->
+        error
+    end
+  end
+
   @doc """
   Updates a user.
   ## Examples
@@ -276,6 +293,46 @@ defmodule Oli.Accounts do
         error
     end
   end
+
+  def update_user_from_admin(%User{} = user, attrs) do
+    user
+    |> User.update_changeset_for_admin(attrs)
+    |> Repo.update()
+    |> case do
+      {:ok, %User{id: user_id}} = res ->
+        AccountLookupCache.delete("user_#{user_id}")
+
+        res
+
+      error ->
+        handle_user_changeset_errors(error)
+    end
+  end
+
+  defp handle_user_changeset_errors(
+         {:error, %Ecto.Changeset{changes: %{independent_learner: true}} = _changeset} = _error
+       ) do
+    {:error, :email_already_been_taken_by_independent_learner,
+     "Email has already been taken by another independent learner"}
+  end
+
+  defp handle_user_changeset_errors({:error, %Ecto.Changeset{errors: errors} = changeset} = error) do
+    case Keyword.get(errors, :email) do
+      {"has already been taken" = message, _constraint} ->
+        {:error, :email_already_been_taken, "Email #{changeset.changes.email} #{message}"}
+
+      {"can't be blank" = message, _constraint} ->
+        {:error, :email_cannot_be_blank, "Email #{message}"}
+
+      {"has invalid format" = message, _constraint} ->
+        {:error, :email_invalid_format, "Email #{changeset.changes.email} #{message}"}
+
+      _other_constraints ->
+        error
+    end
+  end
+
+  defp handle_user_changeset_errors(error), do: error
 
   @doc """
   Deletes a user.
@@ -438,6 +495,23 @@ defmodule Oli.Accounts do
         AccountLookupCache.delete("author_#{author_id}")
 
         res
+
+      error ->
+        error
+    end
+  end
+
+  def update_author(
+        %Author{} = author,
+        %{"current_password" => _, "password" => _, "password_confirmation" => _} = attrs
+      ) do
+    author
+    |> Author.update_changeset(attrs)
+    |> Repo.update()
+    |> case do
+      {:ok, %Author{id: author_id}} = result ->
+        AccountLookupCache.delete("author_#{author_id}")
+        result
 
       error ->
         error

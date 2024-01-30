@@ -7,7 +7,7 @@ import { Model } from 'data/content/model/elements/factories';
 export const insertTable = createButtonCommandDesc({
   icon: <i className="fa-solid fa-table-cells"></i>,
   category: 'Structure',
-  description: 'Table',
+  description: 'Insert Table',
   execute: (
     _context: any,
     editor: Editor,

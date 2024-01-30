@@ -7,7 +7,11 @@ import { ScheduleGrid } from './ScheduleGrid';
 import { ScheduleSaveBar } from './SchedulerSaveBar';
 import { WeekDayPicker } from './WeekdayPicker';
 import { StringDate, resetSchedule } from './scheduler-slice';
-import { scheduleAppFlushChanges, scheduleAppStartup } from './scheduling-thunk';
+import {
+  clearSectionSchedule,
+  scheduleAppFlushChanges,
+  scheduleAppStartup,
+} from './scheduling-thunk';
 
 export interface SchedulerProps {
   start_date: StringDate;
@@ -50,6 +54,10 @@ export const ScheduleEditor: React.FC<SchedulerProps> = ({
     dispatch(resetSchedule({ weekdays: validWeekdays }));
   };
 
+  const onClear = () => {
+    dispatch(clearSectionSchedule({ section_slug }));
+  };
+
   // Set up a way the page can call into us to save, useful for the wizard mode when we don't have a save bar to click.
   useEffect(() => {
     window.saveTorusSchedule = () => {
@@ -87,6 +95,13 @@ export const ScheduleEditor: React.FC<SchedulerProps> = ({
     onReset,
   );
 
+  const { Modal: clearModal, showModal: showClearModal } = usePromptModal(
+    <div>
+      <p>This will clear all timelines. Are you sure?</p>
+    </div>,
+    onClear,
+  );
+
   if (!start_date || !end_date) {
     return (
       <div className="container">
@@ -105,9 +120,15 @@ export const ScheduleEditor: React.FC<SchedulerProps> = ({
       <ErrorDisplay />
       {wizard_mode || <ScheduleSaveBar onSave={onModification} />}
       <div className="w-full flex justify-center flex-col">
-        <ScheduleGrid startDate={start_date} endDate={end_date} onReset={showModal} />
+        <ScheduleGrid
+          startDate={start_date}
+          endDate={end_date}
+          onReset={showModal}
+          onClear={showClearModal}
+        />
 
         {Modal}
+        {clearModal}
       </div>
     </>
   );

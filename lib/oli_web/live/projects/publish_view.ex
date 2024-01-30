@@ -34,7 +34,6 @@ defmodule OliWeb.Projects.PublishView do
       ) do
     ctx = SessionContext.init(socket, session)
     project = Course.get_project_by_slug(project_slug)
-    active_sections = Sections.get_active_sections_by_project(project.id)
 
     latest_published_publication =
       Publishing.get_latest_published_publication_by_slug(project_slug)
@@ -98,6 +97,8 @@ defmodule OliWeb.Projects.PublishView do
         {:no_changes, _} -> false
         _ -> true
       end
+
+    active_sections = Sections.get_active_sections_by_project(project.id)
 
     {:ok, table_model} = ActiveSectionsTableModel.new(ctx, active_sections, project)
 

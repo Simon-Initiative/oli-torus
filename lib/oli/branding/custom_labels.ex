@@ -22,4 +22,8 @@ defmodule Oli.Branding.CustomLabels do
       section: "Section"
     }
   end
+
+  def default_map() do
+    Map.from_struct(default())
+  end
 end

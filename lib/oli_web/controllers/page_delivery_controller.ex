@@ -293,8 +293,9 @@ defmodule OliWeb.PageDeliveryController do
             scripts: [],
             section: section,
             title: title,
-            children: simulate_children_nodes(current, previous_next_index),
-            container: simulate_node(current),
+            children:
+              simulate_children_nodes(current, previous_next_index, section.customizations),
+            container: simulate_node(current, section.customizations),
             section_slug: section_slug,
             previous_page: previous,
             next_page: next,
@@ -1415,20 +1416,24 @@ defmodule OliWeb.PageDeliveryController do
     end
   end
 
-  defp simulate_node(%{
-         "level" => level_str,
-         "index" => index_str,
-         "title" => title,
-         "id" => id_str,
-         "type" => type,
-         "graded" => graded,
-         "slug" => slug
-       }) do
+  defp simulate_node(
+         %{
+           "level" => level_str,
+           "index" => index_str,
+           "title" => title,
+           "id" => id_str,
+           "type" => type,
+           "graded" => graded,
+           "slug" => slug
+         },
+         customizations
+       ) do
     %Oli.Delivery.Hierarchy.HierarchyNode{
       uuid: UUID.uuid4(),
       numbering: %Oli.Resources.Numbering{
         level: String.to_integer(level_str),
-        index: String.to_integer(index_str)
+        index: String.to_integer(index_str),
+        labels: customizations
       },
       revision: %{
         slug: slug,
@@ -1446,14 +1451,14 @@ defmodule OliWeb.PageDeliveryController do
     }
   end
 
-  defp simulate_children_nodes(current, previous_next_index) do
+  defp simulate_children_nodes(current, previous_next_index, customizations) do
     Enum.map(current["children"], fn s ->
       {:ok, {_, _, child}, _} =
         PreviousNextIndex.retrieve(previous_next_index, String.to_integer(s))
 
       child
     end)
-    |> Enum.map(fn link_desc -> simulate_node(link_desc) end)
+    |> Enum.map(fn link_desc -> simulate_node(link_desc, customizations) end)
   end
 
   defp format_datetime_fn(conn) do

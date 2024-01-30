@@ -325,7 +325,7 @@ defmodule Oli.Publishing.DeliveryResolver do
       |> Enum.reduce({%{}, nil}, fn {s, sr, rev, is_root?, proj_slug}, {nodes, root} ->
         labels =
           case s.customizations do
-            nil -> Map.from_struct(CustomLabels.default())
+            nil -> CustomLabels.default_map()
             l -> Map.from_struct(l)
           end
 
@@ -408,7 +408,7 @@ defmodule Oli.Publishing.DeliveryResolver do
           rev.purpose == ^purpose and rev.deleted == false and
             rev.resource_type_id == ^page_id,
         select: rev,
-        order_by: [asc: :resource_id]
+        order_by: [asc: sr.numbering_index]
       )
     )
   end
