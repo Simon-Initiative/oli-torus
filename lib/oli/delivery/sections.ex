@@ -3003,6 +3003,7 @@ defmodule Oli.Delivery.Sections do
 
   @doc """
   Returns the resources scheduled dates for a given student.
+  A Student exception takes precedence over all other end dates.
   Hard sceduled dates for a specific student take precedence over "global" hard scheduled dates.
   Global hard scheduled dates take precedence over soft scheduled dates.
   """
@@ -3010,6 +3011,7 @@ defmodule Oli.Delivery.Sections do
     get_soft_scheduled_dates(section_slug)
     |> Map.merge(get_hard_scheduled_dates(section_slug))
     |> Map.merge(get_hard_scheduled_dates_for_student(section_slug, student_id))
+    |> Map.merge(get_student_exception_end_dates(section_slug, student_id))
   end
 
   def get_soft_scheduled_dates(section_slug) do
@@ -3070,6 +3072,23 @@ defmodule Oli.Delivery.Sections do
       )
 
     Repo.all(query)
+    |> Enum.into(%{})
+  end
+
+  def get_student_exception_end_dates(section_slug, student_id) do
+    from([sr, s, _spp, _pr, _rev] in DeliveryResolver.section_resource_revisions(section_slug),
+      join: se in Oli.Delivery.Settings.StudentException,
+      on: se.section_id == s.id and se.resource_id == sr.resource_id,
+      where: se.user_id == ^student_id and not is_nil(se.end_date),
+      select: {
+        sr.resource_id,
+        %{
+          end_date: se.end_date,
+          scheduled_type: sr.scheduling_type
+        }
+      }
+    )
+    |> Repo.all()
     |> Enum.into(%{})
   end
 
