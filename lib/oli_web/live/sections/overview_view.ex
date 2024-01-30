@@ -410,40 +410,57 @@ defmodule OliWeb.Sections.OverviewView do
 
       <div :if={@is_system_admin} class="border-t dark:border-gray-700">
         <Group.render
-          label="Prompt Templates"
-          description="Edit the GenAI prompt templates"
+          label="AI Assistant"
+          description="View and manage the AI Assistant details"
           is_last={true}
         >
-          <MonacoEditor.render
-            id="attribute-monaco-editor"
-            height="200px"
-            language="text"
-            on_change="monaco_editor_on_change"
-            set_options="monaco_editor_set_options"
-            set_value="monaco_editor_set_value"
-            get_value="monaco_editor_get_value"
-            validate_schema_uri=""
-            default_value={
-              if is_nil(@section.page_prompt_template) do
-                ""
-              else
-                @section.page_prompt_template
-              end
-            }
-            default_options={
-              %{
-                "readOnly" => false,
-                "selectOnLineNumbers" => true,
-                "minimap" => %{"enabled" => false},
-                "scrollBeyondLastLine" => false,
-                "tabSize" => 2
+          <section class="flex flex-col space-y-4">
+            <ul class="link-list">
+              <li>
+                <a href={~p"/sections/#{@section.slug}/assistant/conversations"} class="btn btn-link">
+                  Browse Student Conversations
+                </a>
+              </li>
+            </ul>
+          </section>
+
+          <section class="flex flex-col space-y-4 mt-8 pt-6 border-t border-gray-200">
+            <h5>Prompt Templates</h5>
+
+            <MonacoEditor.render
+              id="attribute-monaco-editor"
+              height="200px"
+              language="text"
+              on_change="monaco_editor_on_change"
+              set_options="monaco_editor_set_options"
+              set_value="monaco_editor_set_value"
+              get_value="monaco_editor_get_value"
+              validate_schema_uri=""
+              default_value={
+                if is_nil(@section.page_prompt_template) do
+                  ""
+                else
+                  @section.page_prompt_template
+                end
               }
-            }
-            use_code_lenses={[]}
-          />
-          <button type="button" class="btn btn-primary action-button mt-4" phx-click="save_prompt">
-            Save
-          </button>
+              default_options={
+                %{
+                  "readOnly" => false,
+                  "selectOnLineNumbers" => true,
+                  "minimap" => %{"enabled" => false},
+                  "scrollBeyondLastLine" => false,
+                  "tabSize" => 2
+                }
+              }
+              use_code_lenses={[]}
+            />
+
+            <div>
+              <button type="button" class="btn btn-primary action-button mt-4" phx-click="save_prompt">
+                Save
+              </button>
+            </div>
+          </section>
         </Group.render>
       </div>
     </Groups.render>
