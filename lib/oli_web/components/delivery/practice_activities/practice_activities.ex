@@ -616,7 +616,6 @@ defmodule OliWeb.Components.Delivery.PracticeActivities do
       select: map(rev, [:id, :resource_id, :title])
     )
     |> Repo.all()
-    |> IO.inspect(label: "practiceactivity")
   end
 
   def get_activities_details(activity_resource_ids, section, activity_types_map, page_resource_id) do
