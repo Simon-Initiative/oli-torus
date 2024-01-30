@@ -459,4 +459,30 @@ defmodule OliWeb.Sections.OverviewLiveTest do
   end
 
   defp section_with_disabled_survey(conn), do: section_with_survey(conn, survey_enabled: false)
+
+  describe "overview live shows assistant enable/disable" do
+    setup [:admin_conn, :section_with_assessment]
+
+    test "can enable and disable assistant", %{conn: conn, section: section} do
+      {:ok, view, _html} = live(conn, live_view_overview_route(section.slug))
+
+      assert has_element?(view, "button[phx-click=\"toggle_assistant\"]", "Disable Assistant")
+
+      element(view, "button[phx-click=\"toggle_assistant\"]")
+      |> render_click()
+
+      update_section = Oli.Delivery.Sections.get_section!(section.id)
+      assert update_section.assistant_enabled == false
+
+      refute has_element?(view, "button[phx-click=\"toggle_assistant\"]", "Disable Assistant")
+
+      element(view, "button[phx-click=\"toggle_assistant\"]")
+      |> render_click()
+
+      update_section = Oli.Delivery.Sections.get_section!(section.id)
+      assert update_section.assistant_enabled == true
+
+      refute has_element?(view, "button[phx-click=\"toggle_assistant\"]", "Enable Assistant")
+    end
+  end
 end
