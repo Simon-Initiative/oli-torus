@@ -66,6 +66,8 @@ defmodule Oli.Resources.Revision do
     field(:total_count, :integer, virtual: true)
     field(:page_type, :string, virtual: true)
     field(:parent_slug, :string, virtual: true)
+    field(:total_attempts, :integer, virtual: true)
+    field(:avg_score, :float, virtual: true)
 
     field :purpose, Ecto.Enum,
       values: [:foundation, :application, :deliberate_practice],

@@ -85,4 +85,16 @@ defmodule Oli.Delivery.PreviousNextIndex do
       {:error, e} -> e
     end
   end
+
+  def rebuild(%Section{} = section, hierarchy) do
+    case Repo.transaction(fn _ ->
+           Hierarchy.build_navigation_link_map(hierarchy)
+           |> then(fn previous_next_index ->
+             Sections.update_section(section, %{previous_next_index: previous_next_index})
+           end)
+         end) do
+      {:ok, result} -> result
+      {:error, e} -> e
+    end
+  end
 end
