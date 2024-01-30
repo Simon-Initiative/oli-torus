@@ -36,11 +36,12 @@ export const PageScheduleLine: React.FC<ScheduleLineProps> = ({ item, indent, da
       let targetStartDate: Date | DateWithoutTime | null = startDate;
 
       if (item.startDateTime && startDate) {
-        targetStartDate = new Date(2024, 1, 1);
-        // Important: Important to set these in order
-        targetStartDate.setFullYear(startDate.getFullYear());
-        targetStartDate.setMonth(startDate.getMonth());
-        targetStartDate.setDate(startDate.getDate());
+        targetStartDate = new Date();
+        targetStartDate.setFullYear(
+          startDate.getFullYear(),
+          startDate.getMonth(),
+          startDate.getDate(),
+        );
         targetStartDate.setHours(
           item.startDateTime.getHours(),
           item.startDateTime.getMinutes(),
