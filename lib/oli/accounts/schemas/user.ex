@@ -172,10 +172,9 @@ defmodule Oli.Accounts.User do
 
   def update_changeset_for_admin(%__MODULE__{} = user, attrs \\ %{}) do
     user
-    |> cast(attrs, [:given_name, :family_name, :independent_learner, :can_create_sections])
+    |> cast(attrs, [:given_name, :family_name, :independent_learner, :can_create_sections, :email])
     |> validate_required([:given_name, :family_name])
     |> maybe_name_from_given_and_family()
-    |> validate_required_if([:email], &is_independent_learner_not_guest/1)
     |> lowercase_email()
     |> pow_user_id_field_changeset(attrs)
     |> unique_constraint(:email,
@@ -283,6 +282,9 @@ defmodule Oli.Accounts.User do
 
         guest = Map.get(changes, :guest) || Map.get(data, :guest)
 
+        independent_learner |> IO.inspect(label: "independent_learner")
+        !guest |> IO.inspect(label: "!guest")
+        (independent_learner && !guest) |> IO.inspect(label: "TOTAL")
         independent_learner && !guest
 
       _ ->
