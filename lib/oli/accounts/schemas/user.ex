@@ -282,9 +282,6 @@ defmodule Oli.Accounts.User do
 
         guest = Map.get(changes, :guest) || Map.get(data, :guest)
 
-        independent_learner |> IO.inspect(label: "independent_learner")
-        !guest |> IO.inspect(label: "!guest")
-        (independent_learner && !guest) |> IO.inspect(label: "TOTAL")
         independent_learner && !guest
 
       _ ->
