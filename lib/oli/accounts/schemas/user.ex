@@ -172,7 +172,7 @@ defmodule Oli.Accounts.User do
 
   def update_changeset_for_admin(%__MODULE__{} = user, attrs \\ %{}) do
     user
-    |> cast(attrs, [:given_name, :family_name])
+    |> cast(attrs, [:given_name, :family_name, :independent_learner, :can_create_sections])
     |> validate_required([:given_name, :family_name])
     |> maybe_name_from_given_and_family()
     |> validate_required_if([:email], &is_independent_learner_not_guest/1)
