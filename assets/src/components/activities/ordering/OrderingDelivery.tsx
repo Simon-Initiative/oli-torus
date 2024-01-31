@@ -3,8 +3,6 @@ import ReactDOM from 'react-dom';
 import { Provider, useDispatch, useSelector } from 'react-redux';
 import { EvaluationConnected } from 'components/activities/common/delivery/evaluation/EvaluationConnected';
 import { GradedPointsConnected } from 'components/activities/common/delivery/graded_points/GradedPointsConnected';
-import { ResetButtonConnected } from 'components/activities/common/delivery/reset_button/ResetButtonConnected';
-import { SubmitButtonConnected } from 'components/activities/common/delivery/submit_button/SubmitButtonConnected';
 import { HintsDeliveryConnected } from 'components/activities/common/hints/delivery/HintsDeliveryConnected';
 import { StemDeliveryConnected } from 'components/activities/common/stem/delivery/StemDelivery';
 import { ResponseChoices } from 'components/activities/ordering/sections/ResponseChoices';
@@ -25,6 +23,7 @@ import { elementsOfType } from 'data/content/utils';
 import { configureStore } from 'state/store';
 import { DeliveryElement, DeliveryElementProps } from '../DeliveryElement';
 import { DeliveryElementProvider, useDeliveryElementContext } from '../DeliveryElementProvider';
+import { SubmitResetConnected } from '../common/delivery/SubmitReset';
 import { castPartId } from '../common/utils';
 import * as ActivityTypes from '../types';
 import { OrderingSchema } from './schema';
@@ -160,10 +159,11 @@ export const OrderingComponent: React.FC = () => {
             <audio ref={player} />
           </div>
         )}
-        <ResetButtonConnected
+
+        <SubmitResetConnected
           onReset={() => dispatch(resetAction(onResetActivity, defaultPartInputs))}
         />
-        <SubmitButtonConnected />
+
         <HintsDeliveryConnected
           partId={castPartId(activityState.parts[0].partId)}
           resetPartInputs={defaultPartInputs}

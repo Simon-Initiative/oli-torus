@@ -1,4 +1,10 @@
 defmodule OliWeb.LiveSessionPlugs.SetCtx do
+  @moduledoc """
+  This "live" plug is responsible for setting the session context in the socket assigns.
+  It is generally used after OliWeb.LiveSessionPlugs.SetCurrentUser to guarantee there is already
+  a current_user assigned to the socket.
+  """
+
   import Phoenix.Component, only: [assign: 2]
   alias OliWeb.Common.SessionContext
 
@@ -7,7 +13,7 @@ defmodule OliWeb.LiveSessionPlugs.SetCtx do
       assign(socket,
         ctx:
           SessionContext.init(socket, session,
-            user: socket.assigns.current_user,
+            user: socket.assigns[:current_user],
             is_liveview: true
           )
       )

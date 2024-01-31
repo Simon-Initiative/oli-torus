@@ -568,6 +568,15 @@ defmodule Oli.Factory do
     }
   end
 
+  def student_exception_factory() do
+    %StudentException{
+      user: anonymous_build(:user),
+      section: anonymous_build(:section),
+      resource: anonymous_build(:resource),
+      collab_space_config: build(:collab_space_config)
+    }
+  end
+
   # HELPERS
 
   defp anonymous_build(entity_name, attrs \\ %{}),

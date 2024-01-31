@@ -4,7 +4,7 @@ defmodule Oli.MixProject do
   def project do
     [
       app: :oli,
-      version: "0.26.0",
+      version: "0.26.2",
       elixir: "~> 1.15.5",
       elixirc_paths: elixirc_paths(Mix.env()),
       elixirc_options: elixirc_options(Mix.env()),
@@ -176,7 +176,7 @@ defmodule Oli.MixProject do
       {:mox, "~> 0.5", only: [:test, :hound]},
       {:nimble_parsec, "~> 1.2"},
       {:nodejs, "~> 2.0"},
-      {:oban, "~> 2.6.1"},
+      {:oban, "~> 2.17.2"},
       {:open_api_spex, "~> 3.9"},
       {:phoenix, "~> 1.7"},
       {:phoenix_ecto, "~> 4.4"},

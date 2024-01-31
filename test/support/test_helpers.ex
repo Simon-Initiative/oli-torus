@@ -3332,7 +3332,6 @@ defmodule Oli.TestHelpers do
   end
 
   ### Begins helpers to create resources ###
-
   def create_bundle_for(type_id, project, author, publication, resource \\ nil, opts \\ [])
 
   def create_bundle_for(type_id, project, author, nil, nil, opts) do

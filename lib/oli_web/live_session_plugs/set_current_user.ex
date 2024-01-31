@@ -1,5 +1,14 @@
 defmodule OliWeb.LiveSessionPlugs.SetCurrentUser do
+  @moduledoc """
+  This plug is responsible for setting the current user in the socket assigns, so it expects
+  to have a current_user_id in the session.
+  If there is no current_user_id  we redirect the user to the login.
+  """
+
+  use OliWeb, :verified_routes
+
   import Phoenix.Component, only: [assign: 2]
+  import Phoenix.LiveView, only: [redirect: 2]
 
   alias Oli.Accounts
   alias Oli.Accounts.User
@@ -16,7 +25,8 @@ defmodule OliWeb.LiveSessionPlugs.SetCurrentUser do
   end
 
   def on_mount(_, _params, _session, socket) do
-    {:cont, socket}
+    # when there is no current_user_id in the session we redirect the user to the login
+    {:halt, redirect(socket, to: ~p"/session/new")}
   end
 
   defp get_user(user_id) do
