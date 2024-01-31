@@ -211,9 +211,11 @@ const schedulerSlice = createSlice({
           mutableItem.startDate = action.payload.startDate;
 
           mutableItem.startDateTime = new Date();
-          mutableItem.startDateTime.setFullYear(action.payload.startDate.getFullYear());
-          mutableItem.startDateTime.setMonth(action.payload.startDate.getMonth());
-          mutableItem.startDateTime.setDate(action.payload.startDate.getDate());
+          mutableItem.startDateTime.setFullYear(
+            action.payload.startDate.getFullYear(),
+            action.payload.startDate.getMonth(),
+            action.payload.startDate.getDate(),
+          );
 
           mutableItem.startDateTime.setHours(
             state.preferredSchedulingTime.hour,
@@ -233,7 +235,7 @@ const schedulerSlice = createSlice({
           datesChanged =
             datesChanged || action.payload.endDate.getTime() !== mutableItem.endDateTime?.getTime();
 
-          mutableItem.endDate = new DateWithoutTime();
+          mutableItem.endDate = new DateWithoutTime(2020, 1, 1);
           mutableItem.endDate.setFullYear(action.payload.endDate.getFullYear());
           mutableItem.endDate.setMonth(action.payload.endDate.getMonth());
           mutableItem.endDate.setDate(action.payload.endDate.getDate());
@@ -252,9 +254,11 @@ const schedulerSlice = createSlice({
             // Need to be careful when converting from a timezone-less DateWithoutTime to a Date
             // Just doing a simple new Date(d.utcMidnightDateObj) will result in a date that may be off by a day
             mutableItem.endDateTime = new Date();
-            mutableItem.endDateTime.setFullYear(action.payload.endDate.getFullYear());
-            mutableItem.endDateTime.setMonth(action.payload.endDate.getMonth());
-            mutableItem.endDateTime.setDate(action.payload.endDate.getDate());
+            mutableItem.endDateTime.setFullYear(
+              action.payload.endDate.getFullYear(),
+              action.payload.endDate.getMonth(),
+              action.payload.endDate.getDate(),
+            );
             mutableItem.endDateTime.setHours(
               state.preferredSchedulingTime.hour,
               state.preferredSchedulingTime.minute,
