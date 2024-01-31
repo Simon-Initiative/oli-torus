@@ -10,7 +10,7 @@ import { SubmitButtonConnected } from 'components/activities/common/delivery/sub
 import { HintsDeliveryConnected } from 'components/activities/common/hints/delivery/HintsDeliveryConnected';
 import { StemDelivery } from 'components/activities/common/stem/delivery/StemDelivery';
 import { ResponseMultiInputSchema } from 'components/activities/response_multi/schema';
-import { Choice, Manifest, PartId } from 'components/activities/types';
+import { ActivityModelSchema, Choice, Manifest, PartId } from 'components/activities/types';
 import { toSimpleText } from 'components/editing/slateUtils';
 import {
   ActivityDeliveryState,
@@ -201,33 +201,39 @@ export const ResponseMultiInputComponent: React.FC = () => {
       (x) => x.id === id,
     );
 
+    // This is full part attempt state
     const part = uiState.attemptState.parts.find((p) => p.partId === input.partId);
-
-    if ((uiState.model as ResponseMultiInputSchema).multInputsPerPart) {
-      const partState = uiState.partState[input.partId];
-      const prevInput = partState.studentInput[0];
-      const oldInput = prevInput ? JSON.parse(prevInput) : {};
-      oldInput[input.id] = value;
-      value = JSON.stringify(oldInput);
+    if (part === undefined) {
+      console.log('part attempt state not found on change');
     }
 
-    const response = { input: value };
+    // this fragment of delivery state has studentInput = [] before first save
+    const partState = uiState.partState[input.partId];
+    const prevInput = partState.studentInput[0];
+    const values = prevInput ? JSON.parse(prevInput) : {};
+    values[input.id] = value;
+    const studentInput = JSON.stringify(values);
+
+    const response = { input: studentInput };
+
+    // auto submit if dropdown choice completes part. text changes auto submit on Blur
+    const autoSubmit =
+      (uiState.model as ResponseMultiInputSchema).submitPerPart &&
+      !context.graded &&
+      input.inputType === 'dropdown' &&
+      inputPartComplete(input, uiState.model);
 
     if (part !== undefined) {
       // Here we handle the case that the student is typing again into an input whose
-      // part attempt had  already been evaluated. So we must first reset to get a new
-      // part attempt, then either submit (if dropdown) or save the input to that part attempt
-      if (
-        part.dateEvaluated !== null &&
-        (uiState.model as ResponseMultiInputSchema).submitPerPart
-      ) {
-        if (input.inputType === 'dropdown') {
-          const payload = { input: value };
+      // part attempt had already been evaluated. So we must first reset to get a new
+      // part attempt, then either submit if appropriate or save to that part attempt
+      if (part.dateEvaluated !== null) {
+        if (autoSubmit) {
           dispatch(
             resetAndSubmitPart(
               uiState.attemptState.attemptGuid,
               part?.attemptGuid as string,
-              payload,
+              response,
               onResetPart,
               onSubmitPart,
             ),
@@ -246,30 +252,27 @@ export const ResponseMultiInputComponent: React.FC = () => {
         }
       } else {
         // Otherwise this is just a change to an existing active part attempt
-
         dispatch(
           activityDeliverySlice.actions.setStudentInputForPart({
             partId: input.partId,
-            studentInput: [value],
+            studentInput: [studentInput],
           }),
         );
 
-        const fn = () =>
+        const saveFn = () =>
           onSaveActivity(uiState.attemptState.attemptGuid, [
             {
               attemptGuid: part.attemptGuid,
-              response: { input: value },
+              response: { input: studentInput },
             },
           ]);
 
-        if (input.inputType === 'dropdown') {
-          if ((uiState.model as ResponseMultiInputSchema).submitPerPart && !context.graded) {
-            handlePerPartSubmission(input.partId, value);
-          } else {
-            fn();
-          }
+        if (autoSubmit) {
+          handlePerPartSubmission(input.partId, studentInput);
+        } else if (input.inputType === 'dropdown') {
+          saveFn();
         } else {
-          deferredSaves.current[id].save(fn);
+          deferredSaves.current[id].save(saveFn);
         }
       }
 
@@ -285,14 +288,24 @@ export const ResponseMultiInputComponent: React.FC = () => {
       (x) => x.id === id,
     );
     const studentInput: string = uiState.partState[input.partId].studentInput[0];
+    const values = studentInput ? JSON.parse(studentInput) : {};
 
-    return studentInput !== undefined && studentInput.trim() !== '';
+    return studentInput !== undefined && values[id] !== undefined && values[id].trim() !== '';
   };
+
+  // for submitPerPart: use when given input has value to test if
+  // all *other* part inputs have values so part is now complete
+  const inputPartComplete = (input: any, model: ActivityModelSchema) =>
+    (model as ResponseMultiInputSchema).inputs
+      .filter((inp) => inp.partId == input.partId)
+      .filter((inp) => inp.id !== input.id)
+      .map((inp) => inp.id)
+      .every(hasActualInput);
 
   // When inputs of type other than dropdown lose their focus:
   // 1. We flush pending changes, so we save their state if the student's next interaction is to navigate
   //    away to another page
-  // 2. If submitPerPart is active, we then submit the part
+  // 2. If submitPerPart is active, we then submit the part if it is complete
   const onBlur = (id: string) => {
     const input = getByUnsafe(
       (uiState.model as ResponseMultiInputSchema).inputs,
@@ -300,10 +313,12 @@ export const ResponseMultiInputComponent: React.FC = () => {
     );
     if (input.inputType !== 'dropdown' && hasActualInput(id)) {
       deferredSaves.current[id].flushPendingChanges(false);
+
       if (
         (uiState.model as ResponseMultiInputSchema).submitPerPart &&
         !context.graded &&
-        isInputDirty[id as any]
+        isInputDirty[id as any] &&
+        inputPartComplete(input, uiState.model)
       ) {
         handlePerPartSubmission(input.partId);
         setInputDirty(Object.assign({}, isInputDirty, { [id]: false }));
@@ -318,7 +333,11 @@ export const ResponseMultiInputComponent: React.FC = () => {
     );
     if (hasActualInput(id)) {
       deferredSaves.current[id].flushPendingChanges(false);
-      if ((uiState.model as ResponseMultiInputSchema).submitPerPart && !context.graded) {
+      if (
+        (uiState.model as ResponseMultiInputSchema).submitPerPart &&
+        !context.graded &&
+        inputPartComplete(input, uiState.model)
+      ) {
         handlePerPartSubmission(input.partId);
         setInputDirty(Object.assign({}, isInputDirty, { [id]: false }));
       }
