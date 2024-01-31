@@ -336,7 +336,7 @@ const DeckLayoutFooter: React.FC = () => {
 
     //when lesson 'variables' were getting update via mutate state, we were not sending the updated values to server
     // the previous savePartState code (line 326) was only sending the parts variable to the server which starts from 'stage.something.value' etc.
-    // we need to update the extrinsic Snapshot to server
+    // we need to update the extrinsic  Snapshot to server
     const latestSnapshot = getLocalizedStateSnapshot((currentActivityTree || []).map((a) => a.id));
     const extrinsicSnapshot = Object.keys(latestSnapshot).reduce(
       (acc: Record<string, any>, key) => {
