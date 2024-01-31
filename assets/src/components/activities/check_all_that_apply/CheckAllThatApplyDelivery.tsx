@@ -5,8 +5,6 @@ import { CATASchema } from 'components/activities/check_all_that_apply/schema';
 import { ChoicesDeliveryConnected } from 'components/activities/common/choices/delivery/ChoicesDeliveryConnected';
 import { EvaluationConnected } from 'components/activities/common/delivery/evaluation/EvaluationConnected';
 import { GradedPointsConnected } from 'components/activities/common/delivery/graded_points/GradedPointsConnected';
-import { ResetButtonConnected } from 'components/activities/common/delivery/reset_button/ResetButtonConnected';
-import { SubmitButtonConnected } from 'components/activities/common/delivery/submit_button/SubmitButtonConnected';
 import { HintsDeliveryConnected } from 'components/activities/common/hints/delivery/HintsDeliveryConnected';
 import { StemDeliveryConnected } from 'components/activities/common/stem/delivery/StemDelivery';
 import { Manifest } from 'components/activities/types';
@@ -26,6 +24,7 @@ import { initialPartInputs, isCorrect } from 'data/activities/utils';
 import { configureStore } from 'state/store';
 import { DeliveryElement, DeliveryElementProps } from '../DeliveryElement';
 import { DeliveryElementProvider, useDeliveryElementContext } from '../DeliveryElementProvider';
+import { SubmitResetConnected } from '../common/delivery/SubmitReset';
 import { castPartId } from '../common/utils';
 
 export const CheckAllThatApplyComponent: React.FC = () => {
@@ -90,8 +89,8 @@ export const CheckAllThatApplyComponent: React.FC = () => {
             )
           }
         />
-        <ResetButtonConnected onReset={() => dispatch(resetAction(onResetActivity, resetInputs))} />
-        <SubmitButtonConnected />
+
+        <SubmitResetConnected onReset={() => dispatch(resetAction(onResetActivity, resetInputs))} />
         <HintsDeliveryConnected
           partId={castPartId(activityState.parts[0].partId)}
           resetPartInputs={resetInputs}

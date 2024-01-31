@@ -1017,7 +1017,10 @@ defmodule Oli.Publishing do
   def insert_revision_part_records(publication_id) do
     query = """
       INSERT INTO revision_parts(part_id, grading_approach, revision_id)
-      SELECT DISTINCT t.parts->>'id' as part_id, t.parts->>'gradingApproach' as grading_approach, t.revision_id as revision_id FROM (
+      SELECT DISTINCT
+         t.parts->>'id' as part_id,
+         COALESCE(t.parts->>'gradingApproach', 'automatic') as grading_approach,
+         t.revision_id as revision_id FROM (
         SELECT jsonb_path_query(r.content, '$."authoring"."parts"[*]') as parts,
           r.id as revision_id
         FROM published_resources pr

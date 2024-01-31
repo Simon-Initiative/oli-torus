@@ -6,7 +6,6 @@ import { Evaluation } from 'components/activities/common/delivery/evaluation/Eva
 import { Submission } from 'components/activities/common/delivery/evaluation/Submission';
 import { GradedPointsConnected } from 'components/activities/common/delivery/graded_points/GradedPointsConnected';
 import { ResetButtonConnected } from 'components/activities/common/delivery/reset_button/ResetButtonConnected';
-import { SubmitButtonConnected } from 'components/activities/common/delivery/submit_button/SubmitButtonConnected';
 import { HintsDeliveryConnected } from 'components/activities/common/hints/delivery/HintsDeliveryConnected';
 import { StemDelivery } from 'components/activities/common/stem/delivery/StemDelivery';
 import { MultiInput, MultiInputSchema } from 'components/activities/multi_input/schema';
@@ -32,6 +31,7 @@ import { safelySelectStringInputs } from 'data/activities/utils';
 import { defaultWriterContext } from 'data/content/writers/context';
 import { configureStore } from 'state/store';
 import { DeliveryElementProvider, useDeliveryElementContext } from '../DeliveryElementProvider';
+import { SubmitResetConnected } from '../common/delivery/SubmitReset';
 import { initializePersistence } from '../common/delivery/persistence';
 
 export const MultiInputComponent: React.FC = () => {
@@ -301,6 +301,7 @@ export const MultiInputComponent: React.FC = () => {
     },
   });
 
+  const submitPerPart = (uiState.model as MultiInputSchema).submitPerPart;
   return (
     <div className="activity multi-input-activity">
       <div className="activity-content">
@@ -310,12 +311,22 @@ export const MultiInputComponent: React.FC = () => {
           context={writerContext}
         />
         <GradedPointsConnected />
-        <ResetButtonConnected
-          onReset={() => dispatch(resetAction(onResetActivity, emptyPartInputs))}
-        />
-        {(uiState.model as MultiInputSchema).submitPerPart ? null : (
-          <SubmitButtonConnected disabled={false} />
+        {/*
+          When submitPerPart is active, we don't show the submit button, only reset
+          When submitPerPart is not active, we show both
+         */}
+        {submitPerPart && (
+          <ResetButtonConnected
+            onReset={() => dispatch(resetAction(onResetActivity, emptyPartInputs))}
+          />
         )}
+        {submitPerPart || (
+          <SubmitResetConnected
+            onReset={() => dispatch(resetAction(onResetActivity, emptyPartInputs))}
+            submitDisabled={false}
+          />
+        )}
+
         {hintsShown.map((partId) => (
           <HintsDeliveryConnected
             key={partId}

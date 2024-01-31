@@ -516,7 +516,7 @@ defmodule Oli.Rendering.Content.Html do
     if String.match?(src, ~r/\\\\./) and
          not (String.starts_with?(src, "\\displaylines") or
                 String.starts_with?(src, "\\begin{array}")),
-       do: "\displaylines{#{src}}",
+       do: "\\displaylines{#{src}}",
        else: src
   end
 

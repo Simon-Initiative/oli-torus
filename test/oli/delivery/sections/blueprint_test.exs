@@ -9,6 +9,88 @@ defmodule Oli.Delivery.Sections.BlueprintTest do
   alias Oli.Delivery.Sections.Blueprint
   alias Oli.Publishing
   alias Oli.Repo.{Paging, Sorting}
+  alias Oli.Publishing.DeliveryResolver
+
+  alias Oli.Resources.ResourceType
+
+  describe "duplicate/2" do
+    @page_type_id ResourceType.get_id_by_type("page")
+    @container_type_id ResourceType.get_id_by_type("container")
+    @keys_to_take [:title, :blueprint_id, :required_survey_resource_id, :has_experiments]
+    @one_week_ago DateTime.utc_now() |> DateTime.add(-7, :day) |> DateTime.truncate(:second)
+    @a_day_later DateTime.utc_now() |> DateTime.add(-6, :day) |> DateTime.truncate(:second)
+
+    @updates %{
+      start_date: @one_week_ago,
+      end_date: @a_day_later,
+      max_attempts: 200,
+      retake_mode: :targeted,
+      late_submit: :disallow,
+      late_start: :disallow,
+      time_limit: 90,
+      grace_period: 100,
+      password: "12345",
+      scoring_strategy_id: 2,
+      review_submission: :disallow,
+      feedback_mode: :scheduled,
+      feedback_scheduled_date: @a_day_later
+    }
+
+    test "section's setting is inherited from a project" do
+      # Project and Author
+      %{authors: [author]} = project = create_project_with_assocs()
+
+      # Root container
+      %{resource: container_resource, revision: container_revision, publication: publication} =
+        create_bundle_for(@container_type_id, project, author, nil, nil, title: "Root container")
+
+      # Page resource
+      %{resource: page_resource} =
+        create_bundle_for(@page_type_id, project, author, publication, nil, graded: true)
+
+      # Link container - page
+      assoc_resources([page_resource], container_revision, container_resource, publication)
+
+      # Section and its section_resources
+      {:ok, blueprint} =
+        insert(:section, base_project: project, open_and_free: true, type: :blueprint)
+        |> Sections.create_section_resources(publication)
+
+      # Update page's section_resource
+      {:ok, sr_page_blueprint} =
+        get_section_resource_by_resource(page_resource)
+        |> Oli.Delivery.Sections.update_section_resource(@updates)
+
+      section_params =
+        Map.merge(Map.take(blueprint, @keys_to_take), %{type: :enrollable, open_and_free: true})
+
+      # Section from product action
+      {:ok, duplicate} = Blueprint.duplicate(blueprint, section_params)
+
+      # Grab graded pages and its section_resources (only 1 at this moment)
+      [{page_revision_duplicate, sr_page_duplicate}] =
+        DeliveryResolver.graded_pages_revisions_and_section_resources(duplicate.slug)
+
+      # Assert duplicate page is also graded
+      assert page_revision_duplicate.graded
+
+      # Assert duplicate data is inherited
+      assert sr_page_blueprint.end_date == sr_page_duplicate.end_date
+      assert sr_page_blueprint.max_attempts == sr_page_duplicate.max_attempts
+      assert sr_page_blueprint.retake_mode == sr_page_duplicate.retake_mode
+      assert sr_page_blueprint.late_submit == sr_page_duplicate.late_submit
+      assert sr_page_blueprint.late_start == sr_page_duplicate.late_start
+      assert sr_page_blueprint.time_limit == sr_page_duplicate.time_limit
+      assert sr_page_blueprint.grace_period == sr_page_duplicate.grace_period
+      assert sr_page_blueprint.password == sr_page_duplicate.password
+      assert sr_page_blueprint.scoring_strategy_id == sr_page_duplicate.scoring_strategy_id
+      assert sr_page_blueprint.review_submission == sr_page_duplicate.review_submission
+      assert sr_page_blueprint.feedback_mode == sr_page_duplicate.feedback_mode
+
+      assert sr_page_blueprint.feedback_scheduled_date ==
+               sr_page_duplicate.feedback_scheduled_date
+    end
+  end
 
   describe "basic blueprint operations" do
     setup do
