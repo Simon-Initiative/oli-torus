@@ -51,7 +51,6 @@ export const ResponseMultiInputComponent: React.FC = () => {
 
   const { surveyId, sectionSlug, bibParams } = context;
   const uiState = useSelector((state: ActivityDeliveryState) => state);
-  const submitPerPart = (uiState.model as ResponseMultiInputSchema).submitPerPart;
   const [hintsShown, setHintsShown] = React.useState<PartId[]>([]);
 
   const [isInputDirty, setInputDirty] = React.useState(
@@ -159,6 +158,8 @@ export const ResponseMultiInputComponent: React.FC = () => {
       },
     ]),
   );
+
+  const submitPerPart = (uiState.model as ResponseMultiInputSchema).submitPerPart;
 
   const handlePerPartSubmission = (partId: string, input: string | null = null) => {
     const partState = uiState.partState[partId];
