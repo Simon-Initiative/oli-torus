@@ -198,9 +198,9 @@ defmodule Oli.Authoring.Editing.ContainerEditor do
         end,
       resource_type_id:
         case type do
-          "Adaptive" -> Oli.Resources.ResourceType.get_id_by_type("page")
-          "Basic" -> Oli.Resources.ResourceType.get_id_by_type("page")
-          "Container" -> Oli.Resources.ResourceType.get_id_by_type("container")
+          "Adaptive" -> Oli.Resources.ResourceType.id_for_page()
+          "Basic" -> Oli.Resources.ResourceType.id_for_page()
+          "Container" -> Oli.Resources.ResourceType.id_for_container()
         end
     }
 

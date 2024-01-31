@@ -14,8 +14,8 @@ defmodule Oli.Delivery.SectionsTest do
     alias Oli.Resources.Collaboration.CollabSpaceConfig
     import Oli.Factory
     import Oli.TestHelpers
-    @page_type_id ResourceType.get_id_by_type("page")
-    @container_type_id ResourceType.get_id_by_type("container")
+    @page_type_id ResourceType.id_for_page()
+    @container_type_id ResourceType.id_for_container()
 
     test "sets contains_discussions to true when having active discussions" do
       # Project and Author

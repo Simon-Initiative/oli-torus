@@ -13,7 +13,7 @@ defmodule Oli.Resources.PageBrowseTest do
     65..(65 + (n - 1))
     |> Enum.map(fn value ->
       Course.create_and_attach_resource(project, %{
-        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("page"),
+        resource_type_id: Oli.Resources.ResourceType.id_for_page(),
         title: List.to_string([value]),
         author_id: author.id,
         content:

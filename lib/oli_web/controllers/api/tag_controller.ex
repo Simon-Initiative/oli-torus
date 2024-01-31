@@ -14,7 +14,7 @@ defmodule OliWeb.Api.TagController do
     case ResourceEditor.list(
            project_slug,
            author,
-           Oli.Resources.ResourceType.get_id_by_type("tag")
+           Oli.Resources.ResourceType.id_for_tag()
          ) do
       {:ok, revisions} ->
         json(conn, %{"result" => "success", "tags" => Enum.map(revisions, &serialize_revision/1)})
@@ -36,7 +36,7 @@ defmodule OliWeb.Api.TagController do
     case ResourceEditor.create(
            project_slug,
            author,
-           Oli.Resources.ResourceType.get_id_by_type("tag"),
+           Oli.Resources.ResourceType.id_for_tag(),
            %{"title" => title, "author_id" => author.id}
          ) do
       {:ok, revision} ->

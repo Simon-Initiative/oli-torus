@@ -30,7 +30,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.DiscussionsTabTest do
     page_revision_1 =
       insert(:revision,
         resource: page_resource_1,
-        resource_type_id: ResourceType.get_id_by_type("page"),
+        resource_type_id: ResourceType.id_for_page(),
         content: %{"model" => []},
         slug: "page_1",
         collab_space_config: collab_space_config_1,
@@ -43,7 +43,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.DiscussionsTabTest do
     page_revision_2 =
       insert(:revision,
         resource: page_resource_2,
-        resource_type_id: ResourceType.get_id_by_type("page"),
+        resource_type_id: ResourceType.id_for_page(),
         content: %{"model" => []},
         slug: "page_2",
         collab_space_config: collab_space_config_2,
@@ -56,7 +56,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.DiscussionsTabTest do
     page_revision_3 =
       insert(:revision,
         resource: page_resource_3,
-        resource_type_id: ResourceType.get_id_by_type("page"),
+        resource_type_id: ResourceType.id_for_page(),
         content: %{"model" => []},
         slug: "page_3",
         collab_space_config: collab_space_config_3,
@@ -72,7 +72,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.DiscussionsTabTest do
     container_revision =
       insert(:revision, %{
         resource: container_resource,
-        resource_type_id: ResourceType.get_id_by_type("container"),
+        resource_type_id: ResourceType.id_for_container(),
         children: [page_resource_1.id, page_resource_2.id, page_resource_3.id],
         content: %{},
         deleted: false,

@@ -68,7 +68,7 @@ defmodule Oli.Authoring.Editing.BibEntryEditor do
 
   defp paged_bib_entrys(project_slug, %Paging{limit: limit, offset: offset}) do
     publication_id = Oli.Publishing.project_working_publication(project_slug).id
-    resource_type_id = ResourceType.get_id_by_type("bibentry")
+    resource_type_id = ResourceType.id_for_bibentry()
 
     query =
       from rev in Revision,
@@ -153,7 +153,7 @@ defmodule Oli.Authoring.Editing.BibEntryEditor do
            {:ok, revision} <-
              Oli.Resources.create_new(
                attrs,
-               Oli.Resources.ResourceType.get_id_by_type("bibentry")
+               Oli.Resources.ResourceType.id_for_bibentry()
              ),
            {:ok, _} <-
              Course.create_project_resource(%{

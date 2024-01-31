@@ -67,7 +67,7 @@ defmodule Oli.Activities.Realizer.Query.Builder do
          publication_id: publication_id,
          blacklisted_activity_ids: blacklisted_activity_ids
        }) do
-    activity_type_id = ResourceType.get_id_by_type("activity")
+    activity_type_id = ResourceType.id_for_activity()
 
     blacklisted =
       case blacklisted_activity_ids do

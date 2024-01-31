@@ -6,7 +6,7 @@ defmodule Oli.Interop.Ingest.Processor.Tags do
     State.notify_step_start(state, :tags)
     |> create_revisions(
       :tags,
-      Oli.Resources.ResourceType.get_id_by_type("tag"),
+      Oli.Resources.ResourceType.id_for_tag(),
       &standard_mapper/3
     )
   end

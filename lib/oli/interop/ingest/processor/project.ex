@@ -46,7 +46,7 @@ defmodule Oli.Interop.Ingest.Processor.Project do
                 ResourceEditor.create(
                   project.slug,
                   author,
-                  ResourceType.get_id_by_type("alternatives"),
+                  ResourceType.id_for_alternatives(),
                   %{title: name, content: %{"options" => options}}
                 )
 
