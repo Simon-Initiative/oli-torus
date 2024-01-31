@@ -51,6 +51,7 @@ export const ResponseMultiInputComponent: React.FC = () => {
 
   const { surveyId, sectionSlug, bibParams } = context;
   const uiState = useSelector((state: ActivityDeliveryState) => state);
+  const submitPerPart = (uiState.model as ResponseMultiInputSchema).submitPerPart;
   const [hintsShown, setHintsShown] = React.useState<PartId[]>([]);
 
   const [isInputDirty, setInputDirty] = React.useState(
@@ -218,7 +219,7 @@ export const ResponseMultiInputComponent: React.FC = () => {
 
     // auto submit if dropdown choice completes part. text changes auto submit on Blur
     const autoSubmit =
-      (uiState.model as ResponseMultiInputSchema).submitPerPart &&
+      submitPerPart &&
       !context.graded &&
       input.inputType === 'dropdown' &&
       inputPartComplete(input, uiState.model);
@@ -315,7 +316,7 @@ export const ResponseMultiInputComponent: React.FC = () => {
       deferredSaves.current[id].flushPendingChanges(false);
 
       if (
-        (uiState.model as ResponseMultiInputSchema).submitPerPart &&
+        submitPerPart &&
         !context.graded &&
         isInputDirty[id as any] &&
         inputPartComplete(input, uiState.model)
@@ -333,11 +334,7 @@ export const ResponseMultiInputComponent: React.FC = () => {
     );
     if (hasActualInput(id)) {
       deferredSaves.current[id].flushPendingChanges(false);
-      if (
-        (uiState.model as ResponseMultiInputSchema).submitPerPart &&
-        !context.graded &&
-        inputPartComplete(input, uiState.model)
-      ) {
+      if (submitPerPart && !context.graded && inputPartComplete(input, uiState.model)) {
         handlePerPartSubmission(input.partId);
         setInputDirty(Object.assign({}, isInputDirty, { [id]: false }));
       }
@@ -362,8 +359,6 @@ export const ResponseMultiInputComponent: React.FC = () => {
     },
   });
 
-  const submitPerPart = (uiState.model as ResponseMultiInputSchema).submitPerPart;
-
   return (
     <div className="activity response-multi-input-activity">
       <div className="activity-content">
@@ -378,13 +373,11 @@ export const ResponseMultiInputComponent: React.FC = () => {
           When submitPerPart - only display reset button
           When not submitPerPart - display reset & submit buttons
         */}
-        {submitPerPart && (
+        {submitPerPart ? (
           <ResetButtonConnected
             onReset={() => dispatch(resetAction(onResetActivity, emptyPartInputs))}
           />
-        )}
-
-        {submitPerPart || (
+        ) : (
           <SubmitResetConnected
             onReset={() => dispatch(resetAction(onResetActivity, emptyPartInputs))}
             submitDisabled={false}
