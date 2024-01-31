@@ -85,7 +85,8 @@ defmodule OliWeb.Delivery.Student.LessonLive do
           assigns: %{
             section: section,
             page_context: page_context,
-            datashop_session_id: datashop_session_id
+            datashop_session_id: datashop_session_id,
+            request_path: request_path
           }
         } = socket
       ) do
@@ -108,16 +109,19 @@ defmodule OliWeb.Delivery.Student.LessonLive do
         redirect_to =
           case effective_settings.review_submission do
             :allow ->
-              ~p"/sections/#{section.slug}/lesson/#{revision_slug}/attempt/#{attempt_guid}/review"
+              Utils.review_live_path(section.slug, revision_slug, attempt_guid, request_path)
 
             _ ->
-              ~p"/sections/#{section.slug}/lesson/#{revision_slug}"
+              Utils.lesson_live_path(section.slug, revision_slug, request_path)
           end
 
         {:noreply, redirect(socket, to: redirect_to)}
 
       {:ok, %FinalizationSummary{graded: false}} ->
-        {:noreply, redirect(socket, to: ~p"/sections/#{section.slug}/lesson/#{revision_slug}")}
+        {:noreply,
+         redirect(socket,
+           to: Utils.lesson_live_path(section.slug, revision_slug, request_path)
+         )}
 
       {:error, {reason}}
       when reason in [:already_submitted, :active_attempt_present, :no_more_attempts] ->
@@ -282,17 +286,19 @@ defmodule OliWeb.Delivery.Student.LessonLive do
           ctx={@ctx}
           allow_attempt?={@allow_attempt?}
           section_slug={@section.slug}
+          request_path={@request_path}
         />
       </div>
     </div>
     """
   end
 
-  attr :attempt_message, :string
-  attr :page_context, Oli.Delivery.Page.PageContext
-  attr :ctx, OliWeb.Common.SessionContext
-  attr :allow_attempt?, :boolean
-  attr :section_slug, :string
+  attr(:attempt_message, :string)
+  attr(:page_context, Oli.Delivery.Page.PageContext)
+  attr(:ctx, OliWeb.Common.SessionContext)
+  attr(:allow_attempt?, :boolean)
+  attr(:section_slug, :string)
+  attr(:request_path, :string)
 
   defp attempts_summary(assigns) do
     ~H"""
@@ -326,6 +332,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
           attempt={attempt}
           ctx={@ctx}
           allow_review_submission?={@page_context.effective_settings.review_submission == :allow}
+          request_path={@request_path}
         />
       </div>
     </div>
@@ -349,15 +356,15 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     """
   end
 
-  attr :index, :integer
-  attr :attempt, ResourceAttempt
-  attr :ctx, OliWeb.Common.SessionContext
-  attr :allow_review_submission?, :boolean
-  attr :section_slug, :string
-  attr :page_revision_slug, :string
+  attr(:index, :integer)
+  attr(:attempt, ResourceAttempt)
+  attr(:ctx, OliWeb.Common.SessionContext)
+  attr(:allow_review_submission?, :boolean)
+  attr(:section_slug, :string)
+  attr(:page_revision_slug, :string)
+  attr(:request_path, :string)
 
   defp attempt_summary(assigns) do
-    # TODO: add link to review page
     ~H"""
     <div
       id={"attempt_#{@index}_summary"}
@@ -407,7 +414,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
         >
           <.link
             href={
-              ~p"/sections/#{@section_slug}/lesson/#{@page_revision_slug}/attempt/#{@attempt.attempt_guid}/review"
+              Utils.review_live_path(@section_slug, @page_revision_slug, @attempt.attempt_guid, @request_path)
             }
             role="review_attempt_link"
           >

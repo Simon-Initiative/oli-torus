@@ -34,7 +34,7 @@ defmodule OliWeb.Delivery.Student.ReviewLive do
       else
         socket
         |> put_flash(:error, "You are not allowed to review this attempt.")
-        |> redirect(to: ~p"/sections/#{section.slug}/learn")
+        |> redirect(to: Utils.learn_live_path(section.slug))
       end
 
     {:ok, socket}
@@ -65,7 +65,7 @@ defmodule OliWeb.Delivery.Student.ReviewLive do
             <%= raw(@html) %>
           </div>
           <.link
-            href={~p"/sections/#{@section.slug}/lesson/#{@page_revision.slug}"}
+            href={Utils.lesson_live_path(@section.slug, @page_revision.slug, @request_path)}
             role="back_to_summary_link"
           >
             <div class="h-10 px-5 py-2.5 hover:bg-opacity-40 bg-blue-600 rounded shadow justify-center items-center gap-2.5 inline-flex">

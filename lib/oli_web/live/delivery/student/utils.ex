@@ -205,6 +205,26 @@ defmodule OliWeb.Delivery.Student.Utils do
     """
   end
 
+  def learn_live_path(section_slug, target_resource_id \\ nil)
+
+  def learn_live_path(section_slug, nil), do: ~p"/sections/#{section_slug}/learn"
+
+  def learn_live_path(section_slug, target_resource_id),
+    do: ~p"/sections/#{section_slug}/learn?target_resource_id=#{target_resource_id}"
+
+  def lesson_live_path(section_slug, revision_slug, nil),
+    do: ~p"/sections/#{section_slug}/lesson/#{revision_slug}"
+
+  def lesson_live_path(section_slug, revision_slug, request_path),
+    do: ~p"/sections/#{section_slug}/lesson/#{revision_slug}?request_path=#{request_path}"
+
+  def review_live_path(section_slug, revision_slug, attempt_guid, nil),
+    do: ~p"/sections/#{section_slug}/lesson/#{revision_slug}/attempt/#{attempt_guid}/review"
+
+  def review_live_path(section_slug, revision_slug, attempt_guid, request_path),
+    do:
+      ~p"/sections/#{section_slug}/lesson/#{revision_slug}/attempt/#{attempt_guid}/review?request_path=#{request_path}"
+
   def get_container_label(page_id, section) do
     section_id = section.id
 

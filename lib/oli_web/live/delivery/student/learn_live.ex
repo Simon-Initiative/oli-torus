@@ -8,6 +8,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   alias Oli.Authoring.Course.Project
   alias Oli.Delivery.Sections.SectionCache
   alias OliWeb.Common.Utils, as: WebUtils
+  alias OliWeb.Delivery.Student.Utils
 
   import Ecto.Query, warn: false, only: [from: 2]
 
@@ -320,11 +321,16 @@ defmodule OliWeb.Delivery.Student.LearnLive do
 
   def handle_event(
         "navigate_to_resource",
-        %{"slug" => resource_slug, "purpose" => purpose},
+        %{"slug" => resource_slug} = values,
         socket
       ) do
+    section_slug = socket.assigns.section.slug
+    resource_id = values["resource_id"] || values["module_resource_id"]
+
     {:noreply,
-     push_redirect(socket, to: resource_url(resource_slug, socket.assigns.section.slug, purpose))}
+     push_redirect(socket,
+       to: resource_url(resource_slug, section_slug, resource_id, purpose)
+     )}
   end
 
   def handle_info(:gc, socket) do
@@ -802,6 +808,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         id={"index_item_#{@numbering_index}_#{@resource_id}"}
         phx-click={if @type != "intro", do: "navigate_to_resource", else: "play_video"}
         phx-value-slug={@revision_slug}
+        phx-value-resource_id={@resource_id}
         phx-value-module_resource_id={@module_resource_id}
         phx-value-video_url={@video_url}
         phx-value-is_intro_video="false"
@@ -1177,12 +1184,16 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   # This implies that the v26 prologue page will be shown when there is no attempt in course.
   # We need to extend the NG23 prologue to support adaptive pages.
 
-  defp resource_url(resource_slug, section_slug, "application") do
+  defp resource_url(resource_slug, section_slug, _, "application") do
     ~p"/sections/#{section_slug}/page/#{resource_slug}"
   end
 
-  defp resource_url(resource_slug, section_slug, _purpose) do
-    ~p"/sections/#{section_slug}/lesson/#{resource_slug}"
+  defp resource_url(resource_slug, section_slug, resource_id, _purpose) do
+    Utils.lesson_live_path(
+      section_slug,
+      resource_slug,
+      Utils.learn_live_path(section_slug, resource_id)
+    )
   end
 
   defp get_student_metrics(section, current_user_id) do

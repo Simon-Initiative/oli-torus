@@ -49,9 +49,7 @@
 
   <div class="flex-1 flex flex-col mt-14">
     <div :if={@section} id="page-content" class="relative justify-center items-start inline-flex">
-      <.back_arrow to={
-        ~p"/sections/#{@section.slug}/learn?target_resource_id=#{@current_page["id"]}"
-      } />
+      <.back_arrow to={@request_path} />
 
       <%!-- This feature will not be implemented in the first release. This is just a placeholder--%>
       <.annotations_dropdown />
@@ -65,6 +63,7 @@
       previous_page={@previous_page}
       next_page={@next_page}
       section_slug={@section.slug}
+      request_path={@request_path}
     />
   </div>
 

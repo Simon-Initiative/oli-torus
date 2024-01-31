@@ -2,11 +2,13 @@ defmodule OliWeb.Components.Delivery.Schedule do
   use OliWeb, :html
 
   alias OliWeb.Common.SessionContext
+  alias OliWeb.Delivery.Student.Utils
 
   attr(:ctx, SessionContext, required: true)
   attr(:week_number, :any, required: true)
   attr(:schedule_ranges, :any, required: true)
   attr(:section_slug, :string, required: true)
+  attr(:request_path, :string, required: false)
 
   def week(assigns) do
     ~H"""
@@ -35,7 +37,9 @@ defmodule OliWeb.Components.Delivery.Schedule do
                     <div class="flex flex-col mb-4">
                       <div>
                         <.link
-                          href={~p"/sections/#{@section_slug}/lesson/#{resource.revision_slug}"}
+                          href={
+                            Utils.lesson_live_path(@section_slug, resource.revision_slug, @request_path)
+                          }
                           class="hover:no-underline"
                         >
                           <%= resource.title %>
