@@ -756,6 +756,9 @@ defmodule OliWeb.AdminLiveTest do
 
       %Author{locked_at: date} = Accounts.get_author!(id)
       assert not is_nil(date)
+
+      {:ok, author} = Cachex.get(:cache_account_lookup, "author_#{id}")
+      assert author.locked_at
     end
 
     test "unlocks the author", %{
@@ -775,6 +778,9 @@ defmodule OliWeb.AdminLiveTest do
       |> render_click()
 
       assert %Author{locked_at: nil} = Accounts.get_author!(id)
+
+      {:ok, author} = Cachex.get(:cache_account_lookup, "author_#{id}")
+      refute author.locked_at
     end
 
     test "confirms author email", %{

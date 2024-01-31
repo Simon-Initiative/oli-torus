@@ -16,6 +16,7 @@ defmodule OliWeb.Pow.AuthorContext do
     user
     |> Author.lock_changeset()
     |> Repo.update()
+    |> update_cache()
   end
 
   @spec unlock(map()) :: {:ok, map()} | {:error, map()}
@@ -23,6 +24,18 @@ defmodule OliWeb.Pow.AuthorContext do
     user
     |> Author.noauth_changeset(%{locked_at: nil})
     |> Repo.update()
+    |> update_cache()
+  end
+
+  defp update_cache(db_resutl) do
+    case db_resutl do
+      {:ok, author} = result ->
+        Oli.AccountLookupCache.put("author_#{author.id}", author)
+        result
+
+      error ->
+        error
+    end
   end
 
   @impl true
