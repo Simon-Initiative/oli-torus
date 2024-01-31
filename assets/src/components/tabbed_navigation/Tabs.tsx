@@ -31,21 +31,20 @@ const TabsComponent: React.FC<TabsComponentProps> = ({ children }) => {
           if (React.isValidElement(child) && isValidChild(child, TabbedNavigation)) {
             return (
               <li key={'tab-' + index} className="nav-item" role="presentation">
-                <a
+                <button
                   onClick={(e) => {
                     e.preventDefault();
                     e.stopPropagation();
                     setActiveTab(index);
                   }}
-                  className={'nav-link' + (index === activeTab ? ' active' : '')}
+                  className={'text-primary nav-link' + (index === activeTab ? ' active' : '')}
                   data-bs-toggle="tab"
-                  href="#"
                   role="tab"
                   aria-controls={'tab-' + index}
                   aria-selected="true"
                 >
                   {child.props.label}
-                </a>
+                </button>
               </li>
             );
           }
