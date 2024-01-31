@@ -3802,6 +3802,10 @@ table td {
   border-color: rgb(82 82 82 / var(--tw-border-opacity));
 }
 
+table th {
+  padding: 0.5rem;
+}
+
 table.table-striped tbody tr:nth-child(even) {
   --tw-bg-opacity: 1;
   background-color: rgb(245 245 245 / var(--tw-bg-opacity));
