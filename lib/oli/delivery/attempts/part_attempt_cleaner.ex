@@ -1,14 +1,13 @@
-defmodule Oli.Delivery.Attempts.PartAttemptRemediator do
+defmodule Oli.Delivery.Attempts.PartAttemptCleaner do
   @moduledoc """
-    Long running process that deletes the unneeded part attempts for a given activity attempt,
+    Long running process that deletes the unneeded part attempts
     which had been created due to the part attempt bloat bug.
   """
 
   use GenServer
-  alias Oli.Delivery.Attempts.PartAttemptRemediator
+
   alias Phoenix.PubSub
-  alias Oli.Delivery.Attempts.Core.{ActivityAttempt, PartAttempt, ResourceAttempt, ResourceAccess}
-  alias Oli.Delivery.Sections.Section
+  alias Oli.Delivery.Attempts.Core.{ActivityAttempt, PartAttempt}
 
   import Ecto.Query, warn: false
   alias Oli.Repo
@@ -17,11 +16,10 @@ defmodule Oli.Delivery.Attempts.PartAttemptRemediator do
 
   @default_wait_time_in_ms 1000
 
-  # ----------------
-  # Client
 
-  def start_link(init_args),
-    do: GenServer.start_link(__MODULE__, init_args, name: __MODULE__)
+  def start_link(args) do
+    GenServer.start_link(__MODULE__, args, name: __MODULE__)
+  end
 
   def stop(),
     do: GenServer.cast(__MODULE__, {:stop})
@@ -53,28 +51,43 @@ defmodule Oli.Delivery.Attempts.PartAttemptRemediator do
   end
 
   def handle_call({:status}, _from, state) do
+
+    Logger.info("PartAttemptCleaner status: #{inspect(state)}")
+
     {:reply, state, state}
   end
 
   def handle_cast({:stop}, state) do
+
+    Logger.info("PartAttemptCleaner stopping")
+
     state = Map.put(state, :running, false)
-    {:reply, :ok, state}
+    {:noreply, state}
   end
 
   def handle_cast({:start}, state) do
     state = Map.put(state, :running, true)
 
+    Logger.info("PartAttemptCleaner starting")
+
     next(self())
 
-    {:reply, :ok, state}
+    {:noreply, state}
   end
 
   def handle_cast({:seed, project_ids}, state) do
+
+    Logger.info("PartAttemptCleaner seeding")
+
     do_seed(project_ids)
-    {:noreply, new_state}
+    PubSub.broadcast(OliWeb.PubSub, "part_attempt_cleaner", {:seed_complete})
+
+    {:noreply, state}
   end
 
   def handle_info({:batch_finished, details}, state) do
+
+    Logger.info("PartAttemptCleaner batch finished")
 
     if state.running do
       if state.wait_time > 0 do
@@ -88,10 +101,24 @@ defmodule Oli.Delivery.Attempts.PartAttemptRemediator do
     |> Map.put(:records_visited, state.records_visited + details.records_visited)
     |> Map.put(:records_deleted, state.records_deleted + details.records_deleted)
 
+    PubSub.broadcast(OliWeb.PubSub, "part_attempt_cleaner", {:batch_finished, state})
+
+    {:noreply, state}
+  end
+
+  def handle_info({:no_more_attempts}, state) do
+
+    Logger.info("PartAttemptCleaner no more attempts")
+
+    PubSub.broadcast(OliWeb.PubSub, "part_attempt_cleaner", {:no_more_attempts})
+
+    state = Map.put(state, :running, false)
     {:noreply, state}
   end
 
   def handle_info({:quiet_period_elapsed}, state) do
+
+    Logger.info("PartAttemptCleaner quiet period elapsed")
 
     if state.running do
       next(self())
@@ -100,19 +127,24 @@ defmodule Oli.Delivery.Attempts.PartAttemptRemediator do
     {:noreply, state}
   end
 
+  def handle_info(_, state) do
+    {:noreply, state}
+  end
 
   def next(pid) do
     Task.async(fn ->
       case do_next() do
         {:ok, {count, visited}} ->
-          Logger.info("PartAttemptRemediator deleted #{count} part attempts")
-          Process.send(pid, {:batch_finished, %{records_deleted: count, records_visited: visited}}
+          Logger.info("PartAttemptCleaner deleted #{count} part attempts")
+          Process.send(pid, {:batch_finished, %{records_deleted: count, records_visited: visited}}, [])
 
         {:error, :no_more_attempts} ->
-          Logger.warning("PartAttemptRemediator cannot find attempts to process")
+          Logger.warning("PartAttemptCleaner cannot find attempts to process")
+          Process.send(pid, {:no_more_attempts}, [])
+
 
         {:error, e} ->
-          Logger.error("PartAttemptRemediator encountered error [#{e}]")
+          Logger.error("PartAttemptCleaner encountered error [#{e}]")
 
       end
     end)
@@ -125,10 +157,13 @@ defmodule Oli.Delivery.Attempts.PartAttemptRemediator do
         {:ok, to_delete} <- determine_which_to_delete(part_attempts) do
 
         total = length(part_attempts)
-        count = issue_delete(to_delete, total)
+        count = issue_delete(to_delete)
 
         {count, total}
       else
+        {:error, :no_more_attempts} ->
+          Repo.rollback(:no_more_attempts)
+
         e ->
           Repo.rollback(e)
       end
@@ -144,11 +179,11 @@ defmodule Oli.Delivery.Attempts.PartAttemptRemediator do
     count
   end
 
-  defp determine_which_to_delete(part_attempts) do
+  def determine_which_to_delete(part_attempts) do
 
     # separate into groups by part_id
     to_delete = Enum.group_by(part_attempts, &(&1.part_id))
-    |> Enum.map(fn {part_id, attempts} ->
+    |> Enum.map(fn {_part_id, attempts} ->
 
       len = length(attempts)
 
@@ -167,10 +202,18 @@ defmodule Oli.Delivery.Attempts.PartAttemptRemediator do
     {:ok, to_delete}
   end
 
+  # Sorts a group of part records by lifecycle state and updated_at and then id.
+  # The sort order is a key aspect of the algorithm to determine which
+  # record to keep (and thus which to delete). This sort places the
+  # record to keep as the last item, so that we can Enum.take all but the last.
   def sort(part_attempts) do
     Enum.sort(part_attempts, fn a, b ->
       if a.lifecycle_state == b.lifecycle_state do
-        a.updated_at < b.updated_at
+        case DateTime.compare(a.updated_at, b.updated_at) do
+          :lt -> true
+          :gt -> false
+          :eq -> a.id > b.id
+        end
       else
         a.lifecycle_state < b.lifecycle_state
       end
@@ -180,7 +223,7 @@ defmodule Oli.Delivery.Attempts.PartAttemptRemediator do
   defp read_part_attempts(id) do
     results = Repo.all(
       from(p in PartAttempt,
-      where: p.activity_attempt_id = ^id and p.attempt_number == 1,
+      where: p.activity_attempt_id == ^id and p.attempt_number == 1,
       select: %{
         id: p.id,
         part_id: p.part_id,
@@ -225,13 +268,5 @@ defmodule Oli.Delivery.Attempts.PartAttemptRemediator do
     Repo.query!(query, [project_ids])
   end
 
-  # ----------------
-  # PubSub/Messages callbacks
-
-  def handle_info({:put, key, value, ttl}, state) do
-    Cachex.put(@cache_name, key, value, ttl: ttl)
-
-    {:noreply, state}
-  end
 
 end
