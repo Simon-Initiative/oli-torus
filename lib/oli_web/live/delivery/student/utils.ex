@@ -205,6 +205,17 @@ defmodule OliWeb.Delivery.Student.Utils do
     """
   end
 
+  @doc """
+  Generates a URL for the Learn view.
+
+  ## Parameters
+  - `section_slug`: The unique identifier for the section.
+  - `target_resource_id`: (Optional) The ID of the target resource. If omitted, a URL is generated without this parameter.
+
+  ## Examples
+  - `learn_live_path("math")` returns `"/sections/math/learn"`.
+  - `learn_live_path("math", "123")` returns `"/sections/math/learn?target_resource_id=123"`.
+  """
   def learn_live_path(section_slug, target_resource_id \\ nil)
 
   def learn_live_path(section_slug, nil), do: ~p"/sections/#{section_slug}/learn"
@@ -212,11 +223,40 @@ defmodule OliWeb.Delivery.Student.Utils do
   def learn_live_path(section_slug, target_resource_id),
     do: ~p"/sections/#{section_slug}/learn?target_resource_id=#{target_resource_id}"
 
+  @doc """
+  Generates a URL for a specific lesson.
+
+  ## Parameters
+    - `section_slug`: The unique identifier for the section.
+    - `revision_slug`: The unique identifier for the lesson revision.
+    - `request_path`: (Optional) The request path. If omitted, a URL is generated without this parameter.
+
+  ## Examples
+    - `lesson_live_path("math", "intro")` returns `"/sections/math/lesson/intro"`.
+    - `lesson_live_path("math", "intro", "some/previous/url")` returns `"/sections/math/lesson/intro?request_path=some/previous/url"`.
+  """
+  def lesson_live_path(section_slug, revision_slug, request_path \\ nil)
+
   def lesson_live_path(section_slug, revision_slug, nil),
     do: ~p"/sections/#{section_slug}/lesson/#{revision_slug}"
 
   def lesson_live_path(section_slug, revision_slug, request_path),
     do: ~p"/sections/#{section_slug}/lesson/#{revision_slug}?request_path=#{request_path}"
+
+  @doc """
+  Generates a URL for reviewing an attempt of a lesson.
+
+  ## Parameters
+    - `section_slug`: The unique identifier for the section.
+    - `revision_slug`: The unique identifier for the lesson revision.
+    - `attempt_guid`: The unique identifier for the attempt.
+    - `request_path`: (Optional) The request path. If omitted, a URL is generated without this parameter.
+
+  ## Examples
+    - `review_live_path("math", "intro", "abcd")` returns `"/sections/math/lesson/intro/attempt/abcd/review"`.
+    - `review_live_path("math", "intro", "abcd", "some/previous/url")` returns `"/sections/math/lesson/intro/attempt/abcd/review?request_path=some/previous/url"`.
+  """
+  def review_live_path(section_slug, revision_slug, attempt_guid, request_path \\ nil)
 
   def review_live_path(section_slug, revision_slug, attempt_guid, nil),
     do: ~p"/sections/#{section_slug}/lesson/#{revision_slug}/attempt/#{attempt_guid}/review"

@@ -14,6 +14,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
   alias Oli.Repo
   alias Oli.Analytics.Summary
   alias Oli.Analytics.Common.Pipeline
+  alias OliWeb.Delivery.Student.Utils
 
   alias Oli.Analytics.Summary.{
     Context,
@@ -1158,7 +1159,8 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       |> element(~s{div[phx-click="navigate_to_resource"][phx-value-slug="#{page_1.slug}"]})
       |> render_click()
 
-      assert_redirect(view, "/sections/#{section.slug}/lesson/#{page_1.slug}")
+      request_path = Utils.learn_live_path(section.slug, page_1.resource_id)
+      assert_redirect(view, Utils.lesson_live_path(section.slug, page_1.slug, request_path))
     end
 
     test "can see the unit schedule details considering if the instructor has already scheduled it",
@@ -1242,7 +1244,9 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       |> element(~s{div[role="unit_3"] div[role="card_1"]})
       |> render_click()
 
-      assert_redirect(view, "/sections/#{section.slug}/lesson/#{page_7.slug}")
+      request_path = Utils.learn_live_path(section.slug, page_7.resource_id)
+
+      assert_redirect(view, Utils.lesson_live_path(section.slug, page_7.slug, request_path))
     end
 
     test "can see icon that identifies graded pages at level 2 of hierarchy (and can navigate to them)",
@@ -1267,7 +1271,9 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       |> element(~s{div[role="unit_3"] div[role="card_2"]})
       |> render_click()
 
-      assert_redirect(view, "/sections/#{section.slug}/lesson/#{page_8.slug}")
+      request_path = Utils.learn_live_path(section.slug, page_8.resource_id)
+
+      assert_redirect(view, Utils.lesson_live_path(section.slug, page_8.slug, request_path))
     end
 
     test "progress bar is not rendered when there is no progress",
