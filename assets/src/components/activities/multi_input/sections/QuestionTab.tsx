@@ -48,16 +48,20 @@ export const QuestionTab: React.FC<Props> = (props) => {
           <div className="mt-5">
             <table>
               <tr>
-                <th>Student</th>
+                <th>Student {props.input.inputType}</th>
                 <th>Response</th>
               </tr>
               <tbody>
-                {model.authoring.responses?.map((response, index) => (
-                  <tr key={index}>
-                    <td className="whitespace-nowrap">{response.user_name}</td>
-                    <td>{response.text}</td>
-                  </tr>
-                ))}
+
+
+              {model.authoring.responses
+               ?.filter(response => response.type === props.input.inputType)
+               .map((response, index) => (
+                 <tr key={index}>
+                   <td className="whitespace-nowrap">{response.user_name}</td>
+                   <td>{response.text} {props.input.inputType}</td>
+                 </tr>
+               ))}
               </tbody>
             </table>
           </div>

@@ -659,6 +659,7 @@ defmodule OliWeb.Components.Delivery.PracticeActivities do
         }
       )
       |> Repo.all()
+      |> IO.inspect(label: "activityyyy")
 
     if section.analytics_version == :v2 do
       response_summaries =
@@ -675,9 +676,16 @@ defmodule OliWeb.Components.Delivery.PracticeActivities do
             rs.section_id == ^section.id and rs.page_id == ^page_resource_id and
               rs.publication_id == -1 and rs.project_id == -1 and
               rs.activity_id in ^activity_resource_ids,
-          select: %{response: rpp.response, count: rs.count, user: u, activity_id: rs.activity_id}
+          select: %{
+            part_id: rpp.part_id,
+            response: rpp.response,
+            count: rs.count,
+            user: u,
+            activity_id: rs.activity_id
+          }
         )
         |> Repo.all()
+        |> IO.inspect(label: "mas")
 
       Enum.map(activity_attempts, fn activity_attempt ->
         case activity_attempt.activity_type_id do
@@ -776,41 +784,53 @@ defmodule OliWeb.Components.Delivery.PracticeActivities do
   defp add_multi_input_details(activity_attempt, response_summaries) do
     input_type = Enum.at(activity_attempt.transformed_model["inputs"], 0)["inputType"]
 
-    case input_type do
-      response when response in ["numeric", "text"] ->
-        responses =
-          Enum.reduce(response_summaries, [], fn response_summary, acc ->
-            if response_summary.activity_id == activity_attempt.resource_id do
+    mapper =
+      Enum.into(activity_attempt.transformed_model["inputs"], %{}, fn input ->
+        {input["partId"], input["inputType"]}
+      end)
+
+    Enum.reduce(
+      activity_attempt.transformed_model["inputs"],
+      activity_attempt,
+      fn input, acc2 ->
+        case input["inputType"] do
+          response when response in ["numeric", "text"] ->
+            responses =
+              Enum.reduce(response_summaries, [], fn response_summary, acc ->
+                if response_summary.activity_id == activity_attempt.resource_id do
+                  [
+                    %{
+                      text: response_summary.response,
+                      user_name: OliWeb.Common.Utils.name(response_summary.user),
+                      type: mapper[response_summary.part_id]
+                    }
+                    | acc
+                  ]
+                else
+                  acc
+                end
+              end)
+
+            update_in(
+              activity_attempt,
+              [Access.key!(:transformed_model), Access.key!("authoring")],
+              &Map.put(&1, "responses", responses)
+            )
+
+          "dropdown" ->
+            add_choices_frequencies(activity_attempt, response_summaries)
+            |> update_in(
               [
-                %{
-                  text: response_summary.response,
-                  user_name: OliWeb.Common.Utils.name(response_summary.user)
-                }
-                | acc
-              ]
-            else
-              acc
-            end
-          end)
-
-        update_in(
-          activity_attempt,
-          [Access.key!(:transformed_model), Access.key!("authoring")],
-          &Map.put(&1, "responses", responses)
-        )
-
-      "dropdown" ->
-        add_choices_frequencies(activity_attempt, response_summaries)
-        |> update_in(
-          [
-            Access.key!(:transformed_model),
-            Access.key!("inputs"),
-            Access.at!(0),
-            Access.key!("choiceIds")
-          ],
-          &List.insert_at(&1, -1, "0")
-        )
-    end
+                Access.key!(:transformed_model),
+                Access.key!("inputs"),
+                Access.filter(&(&1["inputType"] == "dropdown")),
+                Access.key!("choiceIds")
+              ],
+              &List.insert_at(&1, -1, "0")
+            )
+        end
+      end
+    )
   end
 
   defp add_likert_details(activity_attempt, response_summaries) do
