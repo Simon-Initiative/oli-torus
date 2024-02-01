@@ -2439,7 +2439,7 @@ defmodule Oli.Delivery.Sections do
               new_published_resource = new_published_resources_map[resource_id]
               new_children = new_published_resource.children
 
-              case current_children do
+              updated_section_resource = case current_children do
                 nil ->
                   # this section resource was just created so it can assume the newly published value
                   %SectionResource{
@@ -2475,6 +2475,9 @@ defmodule Oli.Delivery.Sections do
                     section_resource
                   end
               end
+
+            clean_children(updated_section_resource, sr_id_to_resource_id, new_published_resources_map)
+
             else
               section_resource
             end
@@ -2542,6 +2545,25 @@ defmodule Oli.Delivery.Sections do
     )
 
     result
+  end
+
+  # For a given section resource, clean the children attribute to ensure that:
+  # 1. Any nil records are removed
+  # 2. All non-nil sr id references map to a non-deleted revision in the new pub
+  defp clean_children(section_resource, sr_id_to_resource_id, new_published_resources_map) do
+
+    updated_children =
+      section_resource.children
+      |> Enum.filter(fn child_id -> !is_nil(child_id) end)
+      |> Enum.filter(fn child_id ->
+        case Map.get(new_published_resources_map, sr_id_to_resource_id[child_id]) do
+          nil -> false
+          %{deleted: true} -> false
+          _ -> true
+        end
+      end)
+
+    %{section_resource | children: updated_children}
   end
 
   @doc """
