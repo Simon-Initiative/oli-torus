@@ -218,7 +218,7 @@ defmodule Oli.Grading do
   `[%GradebookScore{}, GradebookScore{}, ...]`
   """
   def get_scores_for_section_and_user(section_id, student_id) do
-    resource_type_id = Oli.Resources.ResourceType.get_id_by_type("page")
+    resource_type_id = Oli.Resources.ResourceType.id_for_page()
 
     Repo.all(
       from(

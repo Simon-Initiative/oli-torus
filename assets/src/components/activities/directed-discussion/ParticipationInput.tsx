@@ -16,7 +16,7 @@ export const ParticipationInput: React.FC<{
         disabled={!editMode}
         onChange={(e) => onChange(parseInt(e.target.value || '0'))}
         value={value}
-        step={0.1}
+        step={1}
       />
     </div>
   );

@@ -55,7 +55,7 @@ defmodule Oli.Resources.ActivityBrowse do
         dynamic([rev, _, _, _], rev.activity_type_id == ^options.activity_type_id)
       end
 
-    activity_resource_type_id = Oli.Resources.ResourceType.get_id_by_type("activity")
+    activity_resource_type_id = Oli.Resources.ResourceType.id_for_activity()
 
     query =
       Revision

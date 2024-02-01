@@ -537,7 +537,7 @@ defmodule OliWeb.Components.Delivery.Surveys do
          %Section{analytics_version: :v2, id: section_id},
          student_ids
        ) do
-    page_type_id = Oli.Resources.ResourceType.get_id_by_type("activity")
+    page_type_id = Oli.Resources.ResourceType.id_for_activity()
 
     from(rs in ResourceSummary,
       where:

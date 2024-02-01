@@ -6,7 +6,7 @@ defmodule Oli.Interop.Ingest.Processor.BibEntries do
     State.notify_step_start(state, :bib_entries)
     |> create_revisions(
       :bib_entries,
-      Oli.Resources.ResourceType.get_id_by_type("bibentry"),
+      Oli.Resources.ResourceType.id_for_bibentry(),
       &mapper/3
     )
   end

@@ -17,7 +17,7 @@ defmodule OliWeb.Components.Delivery.NavSidebar do
   alias Oli.Delivery.Sections.Section
   alias OliWeb.Common.SessionContext
 
-  @container_type_id ResourceType.get_id_by_type("container")
+  @container_type_id ResourceType.id_for_container()
 
   slot(:inner_block, required: true)
 

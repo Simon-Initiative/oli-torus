@@ -278,7 +278,7 @@ defmodule OliWeb.Delivery.StudentDashboard.StudentDashboardLive do
       |> Oli.Delivery.Hierarchy.flatten()
       |> Enum.filter(fn node ->
         node.revision.resource_type_id ==
-          Oli.Resources.ResourceType.get_id_by_type("page")
+          Oli.Resources.ResourceType.id_for_page()
       end)
 
     ordered_pages =
@@ -303,7 +303,7 @@ defmodule OliWeb.Delivery.StudentDashboard.StudentDashboardLive do
 
     ordered_pages_set = Enum.into(ordered_pages, MapSet.new(), fn page -> page.resource_id end)
 
-    page_id = Oli.Resources.ResourceType.get_id_by_type("page")
+    page_id = Oli.Resources.ResourceType.id_for_page()
 
     unordered =
       from(

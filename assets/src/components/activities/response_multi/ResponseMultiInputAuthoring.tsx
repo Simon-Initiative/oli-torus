@@ -4,7 +4,10 @@ import { Provider } from 'react-redux';
 import { Editor, Transforms } from 'slate';
 import { ReactEditor } from 'slate-react';
 import { ActivitySettings } from 'components/activities/common/authoring/settings/ActivitySettings';
-import { shuffleAnswerChoiceSetting } from 'components/activities/common/authoring/settings/activitySettingsActions';
+import {
+  changePerPartSubmission,
+  shuffleAnswerChoiceSetting,
+} from 'components/activities/common/authoring/settings/activitySettingsActions';
 import { ResponseMultiInputSchema } from 'components/activities/response_multi/schema';
 import { HintsTab } from 'components/activities/response_multi/sections/HintsTab';
 import { QuestionTab } from 'components/activities/response_multi/sections/QuestionTab';
@@ -77,7 +80,12 @@ export const ResponseMultiInputComponent = () => {
               onEdit={(t) => dispatch(VariableActions.onUpdateTransformations(t))}
             />
           </TabbedNavigation.Tab>
-          <ActivitySettings settings={[shuffleAnswerChoiceSetting(model, dispatch, input)]} />
+          <ActivitySettings
+            settings={[
+              shuffleAnswerChoiceSetting(model, dispatch, input),
+              changePerPartSubmission(model, dispatch),
+            ]}
+          />
         </TabbedNavigation.Tabs>
       ) : (
         'Select an input to edit it'

@@ -23,7 +23,7 @@ defmodule OliWeb.PublishLiveTest do
     page_revision =
       insert(:revision,
         resource: page_resource,
-        resource_type_id: ResourceType.get_id_by_type("page"),
+        resource_type_id: ResourceType.id_for_page(),
         content: %{"model" => []},
         title: "revision A"
       )
@@ -35,7 +35,7 @@ defmodule OliWeb.PublishLiveTest do
     container_revision =
       insert(:revision, %{
         resource: container_resource,
-        resource_type_id: ResourceType.get_id_by_type("container"),
+        resource_type_id: ResourceType.id_for_container(),
         children: [page_resource.id],
         content: %{},
         deleted: false,
@@ -109,7 +109,7 @@ defmodule OliWeb.PublishLiveTest do
     container_revision =
       insert(:revision, %{
         resource: container_resource,
-        resource_type_id: ResourceType.get_id_by_type("container"),
+        resource_type_id: ResourceType.id_for_container(),
         children: [],
         content: %{},
         deleted: false,
@@ -309,7 +309,7 @@ defmodule OliWeb.PublishLiveTest do
           page_revision =
             insert(:revision,
               resource: page_resource,
-              resource_type_id: ResourceType.get_id_by_type("page"),
+              resource_type_id: ResourceType.id_for_page(),
               content: %{"model" => []},
               title: "revision#{elem}"
             )

@@ -10,6 +10,9 @@ defmodule OliWeb.Users.UsersDetailViewTest do
   alias Lti_1p3.Tool.ContextRoles
   alias Oli.Delivery.Sections
 
+  @role_institution_instructor Lti_1p3.Tool.PlatformRoles.get_role(:institution_instructor)
+  @author_pow_config OliWeb.Pow.PowHelpers.get_pow_config(:author)
+
   describe "user details live test" do
     setup [:setup_session]
 
@@ -36,9 +39,7 @@ defmodule OliWeb.Users.UsersDetailViewTest do
 
       conn =
         recycle_author_session(conn, admin)
-        |> get(
-          Routes.live_path(OliWeb.Endpoint, OliWeb.Users.UsersDetailView, independent_student.id)
-        )
+        |> get(~p"/admin/users/#{independent_student.id}")
 
       {:ok, _view, html} = live(conn)
 
@@ -90,43 +91,76 @@ defmodule OliWeb.Users.UsersDetailViewTest do
       assert html =~ "LTI users are managed by the LMS" == false
     end
 
-    test "admin fails to update with an invalid email", ctx do
+    test "admin fails to update with an invalid user data", ctx do
       {:ok, view, _html} =
         Plug.Test.init_test_session(ctx.conn, [])
-        |> Pow.Plug.assign_current_user(ctx.admin, OliWeb.Pow.PowHelpers.get_pow_config(:author))
+        |> Pow.Plug.assign_current_user(ctx.admin, @author_pow_config)
         |> live(~p"/admin/users/#{ctx.independent_student.id}")
 
       view
       |> element("button[phx-click=\"start_edit\"]", "Edit")
       |> render_click()
 
-      # Email cannot be blank
-      params = %{"email" => ""}
-      assert submit_and_get_flash_msg(view, params) == "Email can't be blank"
+      # Params with invalid data to display errors
+      params = %{
+        "user" => %{
+          "can_create_sections" => "false",
+          "email" => "@test.com",
+          "family_name" => "",
+          "given_name" => "",
+          "independent_learner" => "false"
+        }
+      }
 
-      # Email with invalid format
-      params = %{"email" => "@bad_email"}
+      document =
+        view
+        |> element("form[phx-change=\"change\"")
+        |> render_change(params)
+        |> Floki.parse_document!()
 
-      assert submit_and_get_flash_msg(view, params) ==
-               "Email #{params["email"]} has invalid format"
+      assert document
+             |> Floki.find("[phx-feedback-for='user[family_name]'] > p")
+             |> Floki.text() =~
+               "can't be blank"
 
-      # Email hits users_email_independent_learner_index db constraint
-      params = %{"email" => ctx.instructor.email}
+      assert document
+             |> Floki.find("[phx-feedback-for='user[given_name]'] > p")
+             |> Floki.text() =~
+               "can't be blank"
 
-      assert submit_and_get_flash_msg(view, params) ==
-               "Email #{ctx.instructor.email} has already been taken"
-    end
+      assert document
+             |> Floki.find("[phx-feedback-for='user[email]'] > p")
+             |> Floki.text() =~
+               "has invalid format"
 
-    defp submit_and_get_flash_msg(view, params) do
-      view
-      |> element("form[phx-submit=\"submit\"")
-      |> render_submit(%{"user" => params})
+      assert has_element?(view, "[type='submit'][disabled]")
 
-      view
-      |> element("#live_flash_container")
-      |> render()
-      |> Floki.text()
-      |> String.trim()
+      {:ok, instructor_2} =
+        Accounts.update_user_platform_roles(
+          user_fixture(%{can_create_sections: true, independent_learner: true}),
+          [@role_institution_instructor]
+        )
+
+      # Params to hit the users_email_independent_learner_index DB constraint
+      params = %{
+        "user" => %{
+          "can_create_sections" => "false",
+          "email" => "#{instructor_2.email}",
+          "family_name" => "John",
+          "given_name" => "Doe",
+          "independent_learner" => "true"
+        }
+      }
+
+      assert view
+             |> element("form[phx-submit=\"submit\"")
+             |> render_submit(params)
+             |> Floki.parse_document!()
+             |> Floki.find("[phx-feedback-for='user[email]'] > p")
+             |> Floki.text() =~
+               "Email has already been taken by another independent learner"
+
+      assert has_element?(view, "[type='submit'][disabled]")
     end
 
     test "edit author details", %{

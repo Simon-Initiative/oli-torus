@@ -42,18 +42,18 @@ defmodule Oli.Delivery.Sections.SchedulingTest do
       assert Enum.count(scheduled_resources) == 3
 
       root = by_slug.(scheduled_resources, "root_container")
-      assert root.resource_type_id == Oli.Resources.ResourceType.get_id_by_type("container")
+      assert root.resource_type_id == Oli.Resources.ResourceType.id_for_container()
       assert root.title == "Root Container"
       assert root.scheduling_type == :read_by
 
       page_one = by_slug.(scheduled_resources, "page_one")
-      assert page_one.resource_type_id == Oli.Resources.ResourceType.get_id_by_type("page")
+      assert page_one.resource_type_id == Oli.Resources.ResourceType.id_for_page()
       assert page_one.title == "Page one"
       refute page_one.graded
       assert page_one.scheduling_type == :read_by
 
       page_two = by_slug.(scheduled_resources, "page_two")
-      assert page_two.resource_type_id == Oli.Resources.ResourceType.get_id_by_type("page")
+      assert page_two.resource_type_id == Oli.Resources.ResourceType.id_for_page()
       assert page_two.title == "Page two"
       refute page_two.graded
       assert page_two.scheduling_type == :read_by
@@ -85,7 +85,7 @@ defmodule Oli.Delivery.Sections.SchedulingTest do
       assert Enum.count(scheduled_resources) == 3
 
       root = by_slug.(scheduled_resources, "root_container")
-      assert root.resource_type_id == Oli.Resources.ResourceType.get_id_by_type("container")
+      assert root.resource_type_id == Oli.Resources.ResourceType.id_for_container()
       assert root.title == "Root Container"
       assert root.start_date == ~U[2023-02-03 23:59:59Z]
       assert root.end_date == ~U[2023-02-06 23:59:59Z]
@@ -94,7 +94,7 @@ defmodule Oli.Delivery.Sections.SchedulingTest do
       assert root.scheduling_type == :inclass_activity
 
       page_one = by_slug.(scheduled_resources, "page_one")
-      assert page_one.resource_type_id == Oli.Resources.ResourceType.get_id_by_type("page")
+      assert page_one.resource_type_id == Oli.Resources.ResourceType.id_for_page()
       assert page_one.title == "Page one"
       assert is_nil(page_one.start_date)
       assert page_one.end_date == ~U[2023-02-06 23:59:59Z]

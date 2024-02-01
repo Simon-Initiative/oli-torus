@@ -252,8 +252,8 @@ defmodule OliWeb.PageDeliveryController do
     section = conn.assigns.section
 
     if Accounts.is_admin?(author) or Sections.is_enrolled?(user.id, section_slug) do
-      container_type_id = Oli.Resources.ResourceType.get_id_by_type("container")
-      page_type_id = Oli.Resources.ResourceType.get_id_by_type("page")
+      container_type_id = Oli.Resources.ResourceType.id_for_container()
+      page_type_id = Oli.Resources.ResourceType.id_for_page()
 
       preview_mode = Map.get(conn.assigns, :preview_mode, false)
 
