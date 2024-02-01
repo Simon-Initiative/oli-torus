@@ -105,6 +105,7 @@ defmodule Oli.Delivery do
           )
         )
 
+      section = PostProcessing.apply(section, :discussions)
       {:ok, _} = Sections.rebuild_contained_pages(section)
       {:ok, _} = Sections.rebuild_contained_objectives(section)
 
@@ -154,7 +155,7 @@ defmodule Oli.Delivery do
         )
 
       {:ok, %Section{} = section} = Sections.create_section_resources(section, publication)
-      section = PostProcessing.apply(section, [:discussions])
+      section = PostProcessing.apply(section, :discussions)
       {:ok, _} = Sections.rebuild_contained_pages(section)
       {:ok, _} = Sections.rebuild_contained_objectives(section)
 
@@ -283,30 +284,12 @@ defmodule Oli.Delivery do
   end
 
   defp contains_explorations(section_slug) do
-    page_id = Oli.Resources.ResourceType.get_id_by_type("page")
+    page_id = Oli.Resources.ResourceType.id_for_page()
 
     Repo.one(
       from([sr: sr, rev: rev] in DeliveryResolver.section_resource_revisions(section_slug),
         where:
           rev.purpose == :application and rev.deleted == false and
-            rev.resource_type_id == ^page_id,
-        select: rev.id,
-        limit: 1
-      )
-    )
-    |> case do
-      nil -> false
-      _ -> true
-    end
-  end
-
-  defp contains_deliberate_practice(section_slug) do
-    page_id = Oli.Resources.ResourceType.get_id_by_type("page")
-
-    Repo.one(
-      from([sr: sr, rev: rev] in DeliveryResolver.section_resource_revisions(section_slug),
-        where:
-          rev.purpose == :deliberate_practice and rev.deleted == false and
             rev.resource_type_id == ^page_id,
         select: rev.id,
         limit: 1
@@ -339,6 +322,24 @@ defmodule Oli.Delivery do
 
       _ ->
         {:ok, section}
+    end
+  end
+
+  defp contains_deliberate_practice(section_slug) do
+    page_id = Oli.Resources.ResourceType.get_id_by_type("page")
+
+    Repo.one(
+      from([sr: sr, rev: rev] in DeliveryResolver.section_resource_revisions(section_slug),
+        where:
+          rev.purpose == :deliberate_practice and rev.deleted == false and
+            rev.resource_type_id == ^page_id,
+        select: rev.id,
+        limit: 1
+      )
+    )
+    |> case do
+      nil -> false
+      _ -> true
     end
   end
 

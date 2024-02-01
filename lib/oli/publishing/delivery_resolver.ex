@@ -187,7 +187,7 @@ defmodule Oli.Publishing.DeliveryResolver do
 
   @impl Resolver
   def all_pages(section_slug) do
-    page_id = Oli.Resources.ResourceType.get_id_by_type("page")
+    page_id = Oli.Resources.ResourceType.id_for_page()
 
     fn ->
       from([s: s, sr: sr, rev: rev] in section_resource_revisions(section_slug),
@@ -217,7 +217,7 @@ defmodule Oli.Publishing.DeliveryResolver do
   end
 
   def pages_with_attached_objectives(section_slug) do
-    page_id = Oli.Resources.ResourceType.get_id_by_type("page")
+    page_id = Oli.Resources.ResourceType.id_for_page()
 
     fn ->
       from([s: s, sr: sr, rev: rev] in section_resource_revisions(section_slug),
@@ -262,8 +262,8 @@ defmodule Oli.Publishing.DeliveryResolver do
 
   @impl Resolver
   def all_revisions_in_hierarchy(section_slug) do
-    page_id = Oli.Resources.ResourceType.get_id_by_type("page")
-    container_id = Oli.Resources.ResourceType.get_id_by_type("container")
+    page_id = Oli.Resources.ResourceType.id_for_page()
+    container_id = Oli.Resources.ResourceType.id_for_container()
 
     fn ->
       from([s: s, sr: sr, rev: rev] in section_resource_revisions(section_slug),
@@ -302,8 +302,8 @@ defmodule Oli.Publishing.DeliveryResolver do
 
   # Returns a map of resource ids to hierarchy nodes and the root hierarchy node
   defp hierarchy_nodes_by_sr_id(section_slug) do
-    page_id = Oli.Resources.ResourceType.get_id_by_type("page")
-    container_id = Oli.Resources.ResourceType.get_id_by_type("container")
+    page_id = Oli.Resources.ResourceType.id_for_page()
+    container_id = Oli.Resources.ResourceType.id_for_container()
 
     fn ->
       from(
@@ -399,7 +399,7 @@ defmodule Oli.Publishing.DeliveryResolver do
       []
   """
   def get_by_purpose(section_slug, purpose) do
-    page_id = Oli.Resources.ResourceType.get_id_by_type("page")
+    page_id = Oli.Resources.ResourceType.id_for_page()
 
     Repo.all(
       from([sr: sr, rev: rev] in section_resource_revisions(section_slug),
@@ -407,7 +407,7 @@ defmodule Oli.Publishing.DeliveryResolver do
           rev.purpose == ^purpose and rev.deleted == false and
             rev.resource_type_id == ^page_id,
         select: rev,
-        order_by: [asc: :resource_id]
+        order_by: [asc: sr.numbering_index]
       )
     )
   end
@@ -422,7 +422,7 @@ defmodule Oli.Publishing.DeliveryResolver do
       []
   """
   def targeted_via_related_to(section_slug, resource_id) do
-    page_id = Oli.Resources.ResourceType.get_id_by_type("page")
+    page_id = Oli.Resources.ResourceType.id_for_page()
 
     Repo.all(
       from([sr: sr, rev: rev] in section_resource_revisions(section_slug),

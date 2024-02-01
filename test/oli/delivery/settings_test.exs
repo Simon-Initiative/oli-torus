@@ -1,5 +1,8 @@
 defmodule Oli.Delivery.SettingsTest do
   use ExUnit.Case, async: true
+  use Oli.DataCase
+
+  import Oli.Factory
 
   alias Oli.Delivery.Sections.SectionResource
   alias Oli.Delivery.Settings
@@ -340,5 +343,25 @@ defmodule Oli.Delivery.SettingsTest do
   test "check_password/2 returns invalid password when the received password is different from the actual password" do
     assert Settings.check_password(%Combined{password: "password"}, "bad_password") ==
              {:invalid_password}
+  end
+
+  test "update_student_exception/3 updates the given exception" do
+    student_exception = insert(:student_exception, %{end_date: ~U[2024-01-10 00:00:00Z]})
+
+    {:ok, updated_student_exception} =
+      Settings.update_student_exception(student_exception, %{end_date: ~U[2024-01-09 00:00:00Z]})
+
+    assert updated_student_exception.end_date == ~U[2024-01-09 00:00:00Z]
+  end
+
+  test "update_student_exception/3 does not update the exception if a required field is not provided" do
+    student_exception = insert(:student_exception, %{end_date: nil})
+
+    assert {:error,
+            %Ecto.Changeset{
+              errors: [end_date: {"can't be blank", [validation: :required]}],
+              valid?: false
+            }} =
+             Settings.update_student_exception(student_exception, %{end_date: nil}, [:end_date])
   end
 end

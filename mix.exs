@@ -177,7 +177,7 @@ defmodule Oli.MixProject do
       {:mox, "~> 0.5", only: [:test, :hound]},
       {:nimble_parsec, "~> 1.2"},
       {:nodejs, "~> 2.0"},
-      {:oban, "~> 2.6.1"},
+      {:oban, "~> 2.17.2"},
       {:open_api_spex, "~> 3.9"},
       {:openai, "~> 0.5.4"},
       {:pgvector, "~> 0.2.0"},

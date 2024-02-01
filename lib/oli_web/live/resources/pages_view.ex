@@ -72,7 +72,7 @@ defmodule OliWeb.Resources.PagesView do
 
         total_count = determine_total(pages)
 
-        container_id = Oli.Resources.ResourceType.get_id_by_type("container")
+        container_id = Oli.Resources.ResourceType.id_for_container()
         containers = AuthoringResolver.revisions_of_type(project_slug, container_id)
 
         child_to_parent =

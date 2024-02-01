@@ -211,7 +211,7 @@ defmodule OliWeb.Datashop.AnalyticsLiveTest do
         insert(:revision, %{
           resource: container_resource,
           objectives: %{},
-          resource_type_id: Oli.Resources.ResourceType.get_id_by_type("container"),
+          resource_type_id: Oli.Resources.ResourceType.id_for_container(),
           children: [],
           content: %{},
           deleted: false,

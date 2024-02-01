@@ -303,7 +303,7 @@ defmodule OliWeb.ProgressLiveTest do
 
     revision =
       insert(:revision,
-        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("page"),
+        resource_type_id: Oli.Resources.ResourceType.id_for_page(),
         graded: true
       )
 

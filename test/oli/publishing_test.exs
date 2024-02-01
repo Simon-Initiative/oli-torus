@@ -169,7 +169,7 @@ defmodule Oli.PublishingTest do
           children: [],
           content: content,
           title: "resource 1",
-          resource_type_id: ResourceType.get_id_by_type("page"),
+          resource_type_id: ResourceType.id_for_page(),
           author_id: author.id
         })
 
@@ -181,7 +181,7 @@ defmodule Oli.PublishingTest do
           children: [],
           content: content,
           title: "resource 2",
-          resource_type_id: ResourceType.get_id_by_type("page"),
+          resource_type_id: ResourceType.id_for_page(),
           author_id: author.id
         })
 
@@ -217,7 +217,7 @@ defmodule Oli.PublishingTest do
             ]
           },
           title: "alternatives group 1",
-          resource_type_id: ResourceType.get_id_by_type("alternatives"),
+          resource_type_id: ResourceType.id_for_alternatives(),
           author_id: author.id
         })
 
@@ -235,7 +235,7 @@ defmodule Oli.PublishingTest do
             ]
           },
           title: "alternatives group 2",
-          resource_type_id: ResourceType.get_id_by_type("alternatives"),
+          resource_type_id: ResourceType.id_for_alternatives(),
           author_id: author.id
         })
 
@@ -328,7 +328,7 @@ defmodule Oli.PublishingTest do
           children: [],
           content: content,
           title: "resource 1",
-          resource_type_id: ResourceType.get_id_by_type("page"),
+          resource_type_id: ResourceType.id_for_page(),
           author_id: author.id
         })
 
@@ -340,7 +340,7 @@ defmodule Oli.PublishingTest do
           children: [],
           content: content,
           title: "resource 2",
-          resource_type_id: ResourceType.get_id_by_type("page"),
+          resource_type_id: ResourceType.id_for_page(),
           author_id: author.id
         })
 
@@ -566,13 +566,13 @@ defmodule Oli.PublishingTest do
 
       assert length(
                Enum.filter(results, fn res ->
-                 res.resource_type_id == ResourceType.get_id_by_type("page")
+                 res.resource_type_id == ResourceType.id_for_page()
                end)
              ) == 1
 
       assert length(
                Enum.filter(results, fn res ->
-                 res.resource_type_id == ResourceType.get_id_by_type("activity")
+                 res.resource_type_id == ResourceType.id_for_activity()
                end)
              ) == 7
     end
@@ -718,7 +718,7 @@ defmodule Oli.PublishingTest do
           children: [],
           content: %{},
           title: "resource 1",
-          resource_type_id: ResourceType.get_id_by_type("page"),
+          resource_type_id: ResourceType.id_for_page(),
           author_id: author.id
         })
 
@@ -728,7 +728,7 @@ defmodule Oli.PublishingTest do
           children: [],
           content: %{},
           title: "resource 2",
-          resource_type_id: ResourceType.get_id_by_type("page"),
+          resource_type_id: ResourceType.id_for_page(),
           author_id: author.id
         })
 
@@ -756,7 +756,7 @@ defmodule Oli.PublishingTest do
           children: [],
           content: %{},
           title: "resource 3",
-          resource_type_id: ResourceType.get_id_by_type("page"),
+          resource_type_id: ResourceType.id_for_page(),
           author_id: author.id
         })
 

@@ -75,7 +75,7 @@ defmodule Oli.Seeder do
       Oli.Resources.create_revision(%{
         author_id: author.id,
         objectives: %{},
-        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("container"),
+        resource_type_id: Oli.Resources.ResourceType.id_for_container(),
         children: [],
         content: %{},
         deleted: false,
@@ -178,7 +178,7 @@ defmodule Oli.Seeder do
       Oli.Resources.create_revision(%{
         author_id: author.id,
         objectives: %{},
-        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("container"),
+        resource_type_id: Oli.Resources.ResourceType.id_for_container(),
         children: [],
         content: %{},
         deleted: false,
@@ -301,7 +301,7 @@ defmodule Oli.Seeder do
       Oli.Resources.create_revision(%{
         author_id: author.id,
         objectives: %{},
-        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("container"),
+        resource_type_id: Oli.Resources.ResourceType.id_for_container(),
         children: [],
         content: %{},
         deleted: false,
@@ -452,7 +452,7 @@ defmodule Oli.Seeder do
       Oli.Resources.create_revision(%{
         author_id: author.id,
         objectives: %{},
-        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("container"),
+        resource_type_id: Oli.Resources.ResourceType.id_for_container(),
         children: [],
         content: %{},
         deleted: false,
@@ -956,7 +956,7 @@ defmodule Oli.Seeder do
       Oli.Resources.create_revision(%{
         author_id: author.id,
         objectives: %{},
-        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("container"),
+        resource_type_id: Oli.Resources.ResourceType.id_for_container(),
         children: [],
         content: %{},
         deleted: false,
@@ -1215,7 +1215,7 @@ defmodule Oli.Seeder do
         author_id: author.id,
         objectives: %{"attached" => []},
         scoring_strategy_id: Oli.Resources.ScoringStrategy.get_id_by_type("average"),
-        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("page"),
+        resource_type_id: Oli.Resources.ResourceType.id_for_page(),
         children: [],
         content: content,
         deleted: false,
@@ -1250,7 +1250,7 @@ defmodule Oli.Seeder do
       Oli.Resources.create_revision(%{
         author_id: author.id,
         objectives: %{},
-        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("container"),
+        resource_type_id: Oli.Resources.ResourceType.id_for_container(),
         children: children,
         content: %{},
         deleted: false,
@@ -1433,7 +1433,7 @@ defmodule Oli.Seeder do
     attrs = %{
       author_id: author.id,
       objectives: %{},
-      resource_type_id: Oli.Resources.ResourceType.get_id_by_type("container"),
+      resource_type_id: Oli.Resources.ResourceType.id_for_container(),
       children: children,
       content: %{},
       deleted: false,
@@ -1469,7 +1469,7 @@ defmodule Oli.Seeder do
           author_id: author.id,
           objectives: %{"attached" => []},
           scoring_strategy_id: Oli.Resources.ScoringStrategy.get_id_by_type("best"),
-          resource_type_id: Oli.Resources.ResourceType.get_id_by_type("page"),
+          resource_type_id: Oli.Resources.ResourceType.id_for_page(),
           children: [],
           content: %{"model" => []},
           deleted: false,
@@ -1506,7 +1506,7 @@ defmodule Oli.Seeder do
     attrs = %{
       author_id: Map.get(map, :author).id,
       title: title,
-      resource_type_id: Oli.Resources.ResourceType.get_id_by_type("tag"),
+      resource_type_id: Oli.Resources.ResourceType.id_for_tag(),
       resource_id: resource.id
     }
 
@@ -1532,7 +1532,7 @@ defmodule Oli.Seeder do
       author_id: Map.get(map, :author).id,
       title: title,
       content: content,
-      resource_type_id: Oli.Resources.ResourceType.get_id_by_type("bibentry"),
+      resource_type_id: Oli.Resources.ResourceType.id_for_bibentry(),
       resource_id: resource.id
     }
 
@@ -1561,7 +1561,7 @@ defmodule Oli.Seeder do
           author_id: author.id,
           objectives: %{"attached" => []},
           scoring_strategy_id: Oli.Resources.ScoringStrategy.get_id_by_type("best"),
-          resource_type_id: Oli.Resources.ResourceType.get_id_by_type("activity"),
+          resource_type_id: Oli.Resources.ResourceType.id_for_activity(),
           children: [],
           content: %{},
           deleted: false,
@@ -1600,7 +1600,7 @@ defmodule Oli.Seeder do
           author_id: author.id,
           objectives: %{},
           scoring_strategy_id: Oli.Resources.ScoringStrategy.get_id_by_type("best"),
-          resource_type_id: Oli.Resources.ResourceType.get_id_by_type("activity"),
+          resource_type_id: Oli.Resources.ResourceType.id_for_activity(),
           children: [],
           content: %{},
           deleted: false,
@@ -1662,7 +1662,7 @@ defmodule Oli.Seeder do
           author_id: author.id,
           objectives: %{"attached" => []},
           scoring_strategy_id: Oli.Resources.ScoringStrategy.get_id_by_type("best"),
-          resource_type_id: Oli.Resources.ResourceType.get_id_by_type("activity"),
+          resource_type_id: Oli.Resources.ResourceType.id_for_activity(),
           children: [],
           content: %{},
           deleted: false,
@@ -1752,7 +1752,7 @@ defmodule Oli.Seeder do
       Oli.Resources.create_revision(%{
         author_id: author.id,
         objectives: %{},
-        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("objective"),
+        resource_type_id: Oli.Resources.ResourceType.id_for_objective(),
         children: [],
         content: %{},
         deleted: false,
@@ -1790,7 +1790,7 @@ defmodule Oli.Seeder do
       Oli.Resources.create_revision(%{
         author_id: author.id,
         objectives: %{},
-        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("objective"),
+        resource_type_id: Oli.Resources.ResourceType.id_for_objective(),
         children: children,
         content: %{},
         deleted: false,

@@ -207,7 +207,7 @@ defmodule Oli.Authoring.Editing.PageEditor do
            Oli.Authoring.Editing.ResourceEditor.list(
              project_slug,
              author,
-             Oli.Resources.ResourceType.get_id_by_type("tag")
+             Oli.Resources.ResourceType.id_for_tag()
            ),
          {:ok, activities} <- create_activities_map(project_slug, publication.id, content) do
       # Create the resource editing context that we will supply to the client side editor

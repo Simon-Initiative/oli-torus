@@ -51,7 +51,7 @@
     "chroma-js": "^2.1.1",
     "dagre": "^0.8.5",
     "deep-object-diff": "^1.1.0",
-    "epoq": "^1.0.4",
+    "epoq": "npm:epoq-january-fix",
     "file-loader": "^6.2.0",
     "immer": "^9.0.5",
     "immutable": "^4.0.0-rc.12",

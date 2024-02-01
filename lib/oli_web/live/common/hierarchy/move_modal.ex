@@ -89,7 +89,7 @@ defmodule OliWeb.Common.Hierarchy.MoveModal do
 
   defp can_remove_page?(revision, from_container),
     do:
-      revision.resource_type_id == Oli.Resources.ResourceType.get_id_by_type("page") &&
+      revision.resource_type_id == Oli.Resources.ResourceType.id_for_page() &&
         from_container != nil
 
   defp can_move?(nil, _active), do: true

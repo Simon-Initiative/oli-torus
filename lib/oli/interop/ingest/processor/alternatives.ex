@@ -6,7 +6,7 @@ defmodule Oli.Interop.Ingest.Processor.Alternatives do
     State.notify_step_start(state, :alternatives)
     |> create_revisions(
       :alternatives,
-      Oli.Resources.ResourceType.get_id_by_type("alternatives"),
+      Oli.Resources.ResourceType.id_for_alternatives(),
       &mapper/3
     )
   end

@@ -35,7 +35,7 @@ defmodule OliWeb.CollaborationLiveTest do
     page_revision =
       insert(:revision,
         resource: page_resource,
-        resource_type_id: ResourceType.get_id_by_type("page"),
+        resource_type_id: ResourceType.id_for_page(),
         content: %{"model" => []},
         title: "Other revision A"
       )
@@ -48,7 +48,7 @@ defmodule OliWeb.CollaborationLiveTest do
     page_revision_cs =
       insert(:revision,
         resource: page_resource_cs,
-        resource_type_id: ResourceType.get_id_by_type("page"),
+        resource_type_id: ResourceType.id_for_page(),
         content: %{"model" => []},
         slug: "page_revision_cs",
         collab_space_config: collab_space_config,
@@ -62,7 +62,7 @@ defmodule OliWeb.CollaborationLiveTest do
     container_revision =
       insert(:revision, %{
         resource: container_resource,
-        resource_type_id: ResourceType.get_id_by_type("container"),
+        resource_type_id: ResourceType.id_for_container(),
         children: [page_resource.id, page_resource_cs.id],
         content: %{},
         deleted: false,
@@ -142,7 +142,7 @@ defmodule OliWeb.CollaborationLiveTest do
     page_revision_cs =
       insert(:revision,
         resource: page_resource_cs,
-        resource_type_id: ResourceType.get_id_by_type("page"),
+        resource_type_id: ResourceType.id_for_page(),
         content: %{"model" => []},
         collab_space_config: collab_space_config,
         title: title
