@@ -109,10 +109,12 @@ defmodule OliWeb.Delivery.Student.LessonLive do
         redirect_to =
           case effective_settings.review_submission do
             :allow ->
-              Utils.review_live_path(section.slug, revision_slug, attempt_guid, request_path)
+              Utils.review_live_path(section.slug, revision_slug, attempt_guid,
+                request_path: request_path
+              )
 
             _ ->
-              Utils.lesson_live_path(section.slug, revision_slug, request_path)
+              Utils.lesson_live_path(section.slug, revision_slug, request_path: request_path)
           end
 
         {:noreply, redirect(socket, to: redirect_to)}
@@ -120,7 +122,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
       {:ok, %FinalizationSummary{graded: false}} ->
         {:noreply,
          redirect(socket,
-           to: Utils.lesson_live_path(section.slug, revision_slug, request_path)
+           to: Utils.lesson_live_path(section.slug, revision_slug, request_path: request_path)
          )}
 
       {:error, {reason}}
@@ -414,7 +416,12 @@ defmodule OliWeb.Delivery.Student.LessonLive do
         >
           <.link
             href={
-              Utils.review_live_path(@section_slug, @page_revision_slug, @attempt.attempt_guid, @request_path)
+              Utils.review_live_path(
+                @section_slug,
+                @page_revision_slug,
+                @attempt.attempt_guid,
+                request_path: @request_path
+              )
             }
             role="review_attempt_link"
           >

@@ -372,16 +372,18 @@ defmodule OliWeb.Components.Delivery.Layouts do
        ) do
     # If the request_path is the Learn page and we navigate to a different lesson,
     # we need to update the request_path to include the new target resource.
-    if request_path && String.contains?(request_path, "/learn") do
-      request_path = Utils.learn_live_path(section_slug, resource_id)
-      Utils.lesson_live_path(section_slug, slug, request_path)
-    else
-      Utils.lesson_live_path(section_slug, slug, request_path)
-    end
+    request_path =
+      if request_path && String.contains?(request_path, "/learn") do
+        Utils.learn_live_path(section_slug, target_resource_id: resource_id)
+      else
+        request_path
+      end
+
+    Utils.lesson_live_path(section_slug, slug, request_path: request_path)
   end
 
   defp resource_navigation_url(%{"id" => container_id}, section_slug, _) do
-    Utils.learn_live_path(section_slug, container_id)
+    Utils.learn_live_path(section_slug, target_resource_id: container_id)
   end
 
   attr(:to, :string)

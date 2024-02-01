@@ -328,9 +328,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     resource_id = values["resource_id"] || values["module_resource_id"]
 
     {:noreply,
-     push_redirect(socket,
-       to: resource_url(resource_slug, section_slug, resource_id, purpose)
-     )}
+     push_redirect(socket, to: resource_url(resource_slug, section_slug, resource_id, purpose))}
   end
 
   def handle_info(:gc, socket) do
@@ -1192,7 +1190,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     Utils.lesson_live_path(
       section_slug,
       resource_slug,
-      Utils.learn_live_path(section_slug, resource_id)
+      request_path: Utils.learn_live_path(section_slug, target_resource_id: resource_id)
     )
   end
 

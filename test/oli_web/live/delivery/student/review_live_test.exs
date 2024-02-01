@@ -11,22 +11,6 @@ defmodule OliWeb.Delivery.Student.ReviewLiveTest do
   alias Oli.Resources.ResourceType
   alias OliWeb.Delivery.Student.Utils
 
-  defp live_view_review_live_route(section_slug, revision_slug, attempt_guid) do
-    ~p"/sections/#{section_slug}/lesson/#{revision_slug}/attempt/#{attempt_guid}/review"
-  end
-
-  defp live_view_lesson_live_route(section_slug, revision_slug) do
-    ~p"/sections/#{section_slug}/lesson/#{revision_slug}"
-  end
-
-  defp live_view_learn_live_route(section_slug) do
-    ~p"/sections/#{section_slug}/learn"
-  end
-
-  defp live_view_learn_live_route(section_slug, resource_id) do
-    ~p"/sections/#{section_slug}/learn?target_resource_id=#{resource_id}"
-  end
-
   defp create_attempt(student, section, revision) do
     resource_access =
       insert(:resource_access, %{
@@ -256,7 +240,7 @@ defmodule OliWeb.Delivery.Student.ReviewLiveTest do
       attempt = create_attempt(student, section, page_1)
 
       {:error, {:redirect, %{to: redirect_path}}} =
-        live(conn, live_view_review_live_route(section.slug, page_1.slug, attempt.attempt_guid))
+        live(conn, Utils.review_live_path(section.slug, page_1.slug, attempt.attempt_guid))
 
       assert redirect_path ==
                "/session/new?request_path=%2Fsections%2F#{section.slug}%2Flesson%2F#{page_1.slug}%2Fattempt%2F#{attempt.attempt_guid}%2Freview&section=#{section.slug}"
@@ -275,7 +259,7 @@ defmodule OliWeb.Delivery.Student.ReviewLiveTest do
       attempt = create_attempt(user, section, page_1)
 
       {:error, {:redirect, %{to: redirect_path, flash: _flash_msg}}} =
-        live(conn, live_view_review_live_route(section.slug, page_1.slug, attempt.attempt_guid))
+        live(conn, Utils.review_live_path(section.slug, page_1.slug, attempt.attempt_guid))
 
       assert redirect_path == "/unauthorized"
     end
@@ -300,10 +284,10 @@ defmodule OliWeb.Delivery.Student.ReviewLiveTest do
       attempt = create_attempt(user, section, page_1)
 
       {:error, {:redirect, %{to: redirect_path, flash: flash}}} =
-        live(conn, live_view_review_live_route(section.slug, page_1.slug, attempt.attempt_guid))
+        live(conn, Utils.review_live_path(section.slug, page_1.slug, attempt.attempt_guid))
 
       assert flash["error"] == "You are not allowed to review this attempt."
-      assert redirect_path == live_view_learn_live_route(section.slug)
+      assert redirect_path == Utils.learn_live_path(section.slug)
     end
 
     test "can not access when the current user did not originate the attempt", %{
@@ -325,7 +309,7 @@ defmodule OliWeb.Delivery.Student.ReviewLiveTest do
       {:error, {:redirect, %{to: redirect_path, flash: flash}}} =
         live(
           conn,
-          live_view_review_live_route(
+          Utils.review_live_path(
             section.slug,
             page_1.slug,
             another_student_attempt.attempt_guid
@@ -333,7 +317,7 @@ defmodule OliWeb.Delivery.Student.ReviewLiveTest do
         )
 
       assert flash["error"] == "You are not allowed to review this attempt."
-      assert redirect_path == live_view_learn_live_route(section.slug)
+      assert redirect_path == Utils.learn_live_path(section.slug)
     end
 
     test "can access when enrolled to course", %{
@@ -349,7 +333,7 @@ defmodule OliWeb.Delivery.Student.ReviewLiveTest do
       attempt = create_attempt(user, section, page_1)
 
       {:ok, view, _html} =
-        live(conn, live_view_review_live_route(section.slug, page_1.slug, attempt.attempt_guid))
+        live(conn, Utils.review_live_path(section.slug, page_1.slug, attempt.attempt_guid))
 
       assert has_element?(view, "span", "The best course ever!")
 
@@ -377,7 +361,7 @@ defmodule OliWeb.Delivery.Student.ReviewLiveTest do
       attempt = create_attempt(user, section, page_2)
 
       {:ok, view, _html} =
-        live(conn, live_view_review_live_route(section.slug, page_2.slug, attempt.attempt_guid))
+        live(conn, Utils.review_live_path(section.slug, page_2.slug, attempt.attempt_guid))
 
       assert has_element?(view, ~s{div[role="container label"]}, "Module 1")
       assert has_element?(view, ~s{div[role="page numbering index"]}, "2.")
@@ -398,12 +382,14 @@ defmodule OliWeb.Delivery.Student.ReviewLiveTest do
       Sections.mark_section_visited_for_student(section, user)
       attempt = create_attempt(user, section, page_1)
 
-      request_path = Utils.learn_live_path(section.slug, page_1.resource_id)
+      request_path = Utils.learn_live_path(section.slug, target_resource_id: page_1.resource_id)
 
       {:ok, view, _html} =
         live(
           conn,
-          Utils.review_live_path(section.slug, page_1.slug, attempt.attempt_guid, request_path)
+          Utils.review_live_path(section.slug, page_1.slug, attempt.attempt_guid,
+            request_path: request_path
+          )
         )
 
       view
@@ -412,7 +398,7 @@ defmodule OliWeb.Delivery.Student.ReviewLiveTest do
 
       assert_redirected(
         view,
-        Utils.lesson_live_path(section.slug, page_1.slug, request_path)
+        Utils.lesson_live_path(section.slug, page_1.slug, request_path: request_path)
       )
     end
 
@@ -435,11 +421,11 @@ defmodule OliWeb.Delivery.Student.ReviewLiveTest do
       |> render_click
 
       # It redirects to the next page, but still referencing the targeted Learn view in the URL with the next page resource
-      request_path = Utils.learn_live_path(section.slug, page_2.resource_id)
+      request_path = Utils.learn_live_path(section.slug, target_resource_id: page_2.resource_id)
 
       assert_redirected(
         view,
-        Utils.lesson_live_path(section.slug, page_2.slug, request_path)
+        Utils.lesson_live_path(section.slug, page_2.slug, request_path: request_path)
       )
     end
 
@@ -460,7 +446,9 @@ defmodule OliWeb.Delivery.Student.ReviewLiveTest do
       {:ok, view, _html} =
         live(
           conn,
-          Utils.review_live_path(section.slug, page_1.slug, attempt.attempt_guid, request_path)
+          Utils.review_live_path(section.slug, page_1.slug, attempt.attempt_guid,
+            request_path: request_path
+          )
         )
 
       view
@@ -469,7 +457,7 @@ defmodule OliWeb.Delivery.Student.ReviewLiveTest do
 
       assert_redirected(
         view,
-        Utils.lesson_live_path(section.slug, page_2.slug, request_path)
+        Utils.lesson_live_path(section.slug, page_2.slug, request_path: request_path)
       )
     end
 
@@ -488,7 +476,7 @@ defmodule OliWeb.Delivery.Student.ReviewLiveTest do
 
       # next page is a container
       {:ok, view, _html} =
-        live(conn, live_view_review_live_route(section.slug, page_2.slug, attempt.attempt_guid))
+        live(conn, Utils.review_live_path(section.slug, page_2.slug, attempt.attempt_guid))
 
       view
       |> element(~s{div[role="next_page"] a})
@@ -496,11 +484,11 @@ defmodule OliWeb.Delivery.Student.ReviewLiveTest do
 
       assert_redirected(
         view,
-        live_view_learn_live_route(section.slug, module_2.resource_id)
+        Utils.learn_live_path(section.slug, target_resource_id: module_2.resource_id)
       )
 
       # previous page is a container
-      {:ok, view, _html} = live(conn, live_view_lesson_live_route(section.slug, page_3.slug))
+      {:ok, view, _html} = live(conn, Utils.lesson_live_path(section.slug, page_3.slug))
 
       view
       |> element(~s{div[role="prev_page"] a})
@@ -508,7 +496,7 @@ defmodule OliWeb.Delivery.Student.ReviewLiveTest do
 
       assert_redirected(
         view,
-        live_view_learn_live_route(section.slug, module_2.resource_id)
+        Utils.learn_live_path(section.slug, target_resource_id: module_2.resource_id)
       )
     end
 
@@ -522,12 +510,14 @@ defmodule OliWeb.Delivery.Student.ReviewLiveTest do
       Sections.mark_section_visited_for_student(section, user)
       attempt = create_attempt(user, section, page_1)
 
-      request_path = Utils.learn_live_path(section.slug, page_1.resource_id)
+      request_path = Utils.learn_live_path(section.slug, target_resource_id: page_1.resource_id)
 
       {:ok, view, _html} =
         live(
           conn,
-          Utils.review_live_path(section.slug, page_1.slug, attempt.attempt_guid, request_path)
+          Utils.review_live_path(section.slug, page_1.slug, attempt.attempt_guid,
+            request_path: request_path
+          )
         )
 
       view

@@ -38,7 +38,9 @@ defmodule OliWeb.Components.Delivery.Schedule do
                       <div>
                         <.link
                           href={
-                            Utils.lesson_live_path(@section_slug, resource.revision_slug, @request_path)
+                            Utils.lesson_live_path(@section_slug, resource.revision_slug,
+                              request_path: @request_path
+                            )
                           }
                           class="hover:no-underline"
                         >

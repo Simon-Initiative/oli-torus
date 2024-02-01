@@ -469,10 +469,10 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
 
       attempt = create_attempt(user, section, page_3)
 
-      request_path = Utils.learn_live_path(section.slug, page_3.resource_id)
+      request_path = Utils.learn_live_path(section.slug, target_resource_id: page_3.resource_id)
 
       {:ok, view, _html} =
-        live(conn, Utils.lesson_live_path(section.slug, page_3.slug, request_path))
+        live(conn, Utils.lesson_live_path(section.slug, page_3.slug, request_path: request_path))
 
       view
       |> element(~s{a[role="review_attempt_link"]})
@@ -480,7 +480,9 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
 
       assert_redirected(
         view,
-        Utils.review_live_path(section.slug, page_3.slug, attempt.attempt_guid, request_path)
+        Utils.review_live_path(section.slug, page_3.slug, attempt.attempt_guid,
+          request_path: request_path
+        )
       )
     end
 
@@ -613,11 +615,11 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       |> render_click
 
       # It redirects to the next page, but still referencing the targeted Learn view in the URL with the next page resource
-      request_path = Utils.learn_live_path(section.slug, page_2.resource_id)
+      request_path = Utils.learn_live_path(section.slug, target_resource_id: page_2.resource_id)
 
       assert_redirected(
         view,
-        Utils.lesson_live_path(section.slug, page_2.slug, request_path)
+        Utils.lesson_live_path(section.slug, page_2.slug, request_path: request_path)
       )
     end
 
@@ -635,7 +637,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       request_path = ~p"/sections/#{section.slug}/assignments"
 
       {:ok, view, _html} =
-        live(conn, Utils.lesson_live_path(section.slug, page_1.slug, request_path))
+        live(conn, Utils.lesson_live_path(section.slug, page_1.slug, request_path: request_path))
 
       view
       |> element(~s{div[role="next_page"] a})
@@ -643,7 +645,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
 
       assert_redirected(
         view,
-        Utils.lesson_live_path(section.slug, page_2.slug, request_path)
+        Utils.lesson_live_path(section.slug, page_2.slug, request_path: request_path)
       )
     end
 
@@ -668,7 +670,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
 
       assert_redirected(
         view,
-        Utils.learn_live_path(section.slug, module_2.resource_id)
+        Utils.learn_live_path(section.slug, target_resource_id: module_2.resource_id)
       )
 
       # previous page is a container
@@ -680,7 +682,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
 
       assert_redirected(
         view,
-        Utils.learn_live_path(section.slug, module_2.resource_id)
+        Utils.learn_live_path(section.slug, target_resource_id: module_2.resource_id)
       )
     end
 
@@ -714,10 +716,10 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
       Sections.mark_section_visited_for_student(section, user)
 
-      request_path = Utils.learn_live_path(section.slug, page_1.resource_id)
+      request_path = Utils.learn_live_path(section.slug, target_resource_id: page_1.resource_id)
 
       {:ok, view, _html} =
-        live(conn, Utils.lesson_live_path(section.slug, page_1.slug, request_path))
+        live(conn, Utils.lesson_live_path(section.slug, page_1.slug, request_path: request_path))
 
       view
       |> element(~s{div[role="back_link"] a})
