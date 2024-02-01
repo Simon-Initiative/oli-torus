@@ -575,7 +575,7 @@ defmodule OliWeb.Components.Delivery.PracticeActivities do
          %Section{analytics_version: :v2, id: section_id},
          student_ids
        ) do
-    page_type_id = Oli.Resources.ResourceType.id_for_activity()
+    page_type_id = Oli.Resources.ResourceType.get_id_by_type("activity")
 
     from(rs in ResourceSummary,
       where:
@@ -659,7 +659,6 @@ defmodule OliWeb.Components.Delivery.PracticeActivities do
         }
       )
       |> Repo.all()
-      |> IO.inspect(label: "activityyyy")
 
     if section.analytics_version == :v2 do
       response_summaries =
@@ -685,7 +684,6 @@ defmodule OliWeb.Components.Delivery.PracticeActivities do
           }
         )
         |> Repo.all()
-        |> IO.inspect(label: "mas")
 
       Enum.map(activity_attempts, fn activity_attempt ->
         case activity_attempt.activity_type_id do
@@ -782,8 +780,6 @@ defmodule OliWeb.Components.Delivery.PracticeActivities do
   end
 
   defp add_multi_input_details(activity_attempt, response_summaries) do
-    input_type = Enum.at(activity_attempt.transformed_model["inputs"], 0)["inputType"]
-
     mapper =
       Enum.into(activity_attempt.transformed_model["inputs"], %{}, fn input ->
         {input["partId"], input["inputType"]}
@@ -797,7 +793,7 @@ defmodule OliWeb.Components.Delivery.PracticeActivities do
           response when response in ["numeric", "text"] ->
             responses =
               Enum.reduce(response_summaries, [], fn response_summary, acc ->
-                if response_summary.activity_id == activity_attempt.resource_id do
+                if response_summary.activity_id == acc2.resource_id do
                   [
                     %{
                       text: response_summary.response,
@@ -812,13 +808,13 @@ defmodule OliWeb.Components.Delivery.PracticeActivities do
               end)
 
             update_in(
-              activity_attempt,
+              acc2,
               [Access.key!(:transformed_model), Access.key!("authoring")],
               &Map.put(&1, "responses", responses)
             )
 
           "dropdown" ->
-            add_choices_frequencies(activity_attempt, response_summaries)
+            add_choices_frequencies(acc2, response_summaries)
             |> update_in(
               [
                 Access.key!(:transformed_model),

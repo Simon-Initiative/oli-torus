@@ -48,7 +48,7 @@ export const QuestionTab: React.FC<Props> = (props) => {
           <div className="mt-5">
             <table>
               <tr>
-                <th>Student {props.input.inputType}</th>
+                <th>Student </th>
                 <th>Response</th>
               </tr>
               <tbody>
@@ -59,7 +59,7 @@ export const QuestionTab: React.FC<Props> = (props) => {
                .map((response, index) => (
                  <tr key={index}>
                    <td className="whitespace-nowrap">{response.user_name}</td>
-                   <td>{response.text} {props.input.inputType}</td>
+                   <td>{response.text}</td>
                  </tr>
                ))}
               </tbody>
