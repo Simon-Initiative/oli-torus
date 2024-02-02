@@ -1,3 +1,20 @@
+export function formatTimerMessage(realDeadlineInMs: number, now: number) {
+
+  const distance = realDeadlineInMs - now;
+
+  // Calculate how many whole minutes are in distance milliseconds, allowing to
+  // go past 60 minutes.
+  const minutes = Math.floor(distance / (1000 * 60));
+  const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+  return 'Time remaining: ' + minutes + 'm ' + seconds + 's ';
+}
+
+export function hasExpired(realDeadlineInMs: number, now: number) {
+  const distance = realDeadlineInMs - now;
+  return distance < 0;
+}
+
 export function initCountdownTimer(
   timerId: string,
   submitButtonId: string,
@@ -10,18 +27,19 @@ export function initCountdownTimer(
 
   if (effectiveTimeInMs > now) {
     const timeOutInMs = timeOutInMins * 60 * 1000;
+    const now = new Date().getTime();
 
     const timeLeft = effectiveTimeInMs - now;
     const realDeadlineInMs = timeLeft < timeOutInMs ? now + timeLeft : timeOutInMs + startTimeInMs;
 
     const interval = setInterval(function () {
-      const now = new Date().getTime();
-      const distance = realDeadlineInMs - now;
-      const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
-      const seconds = Math.floor((distance % (1000 * 60)) / 1000);
-      update(timerId, 'Time remaining: ' + minutes + 'm ' + seconds + 's ');
 
-      if (distance < 0) {
+      const now = new Date().getTime();
+
+      const timerMessage = formatTimerMessage(realDeadlineInMs, now);
+      update(timerId, timerMessage);
+
+      if (hasExpired(realDeadlineInMs, now)) {
         clearInterval(interval);
         update(timerId, '');
 

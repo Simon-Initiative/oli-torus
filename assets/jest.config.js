@@ -3,6 +3,7 @@ module.exports = {
   moduleDirectories: ['node_modules', 'src'],
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx'],
   moduleNameMapper: {
+    '^phoenix/(.*)': '<rootDir>/src/phoenix/$1',
     '^components/(.*)': '<rootDir>/src/components/$1',
     '^state/(.*)': '<rootDir>/src/state/$1',
     '^editor/(.*)': '<rootDir>/src/editor/$1',
