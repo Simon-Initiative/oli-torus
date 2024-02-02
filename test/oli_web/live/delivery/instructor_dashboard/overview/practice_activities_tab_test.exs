@@ -1206,11 +1206,11 @@ defmodule OliWeb.Delivery.InstructorDashboard.PracticeActivitiesTabTest do
       [a0, a1, a2, a3, a4] = table_as_list_of_maps(view)
 
       assert has_element?(view, "h4", "Practice Activities")
-      assert a0.title == "Orphaned Page"
-      assert a1.title == "Module 1: IntroductionPage 1"
-      assert a2.title == "Module 1: IntroductionPage 2"
-      assert a3.title == "Module 2: BasicsPage 3"
-      assert a4.title == "Module 2: BasicsPage 4"
+      assert a0.title == "Module 1: IntroductionPage 1"
+      assert a1.title == "Module 1: IntroductionPage 2"
+      assert a2.title == "Module 2: BasicsPage 3"
+      assert a3.title == "Module 2: BasicsPage 4"
+      assert a4.title == "Orphaned Page"
     end
 
     @tag :skip
@@ -2000,11 +2000,11 @@ defmodule OliWeb.Delivery.InstructorDashboard.PracticeActivitiesTabTest do
 
       [a0, a1, a2, a3, a4] = table_as_list_of_maps(view)
 
-      assert a0.title == "Orphaned Page"
-      assert a1.title == "Module 1: IntroductionPage 1"
-      assert a2.title == "Module 1: IntroductionPage 2"
-      assert a3.title == "Module 2: BasicsPage 3"
-      assert a4.title == "Module 2: BasicsPage 4"
+      assert a0.title == "Module 1: IntroductionPage 1"
+      assert a1.title == "Module 1: IntroductionPage 2"
+      assert a2.title == "Module 2: BasicsPage 3"
+      assert a3.title == "Module 2: BasicsPage 4"
+      assert a4.title == "Orphaned Page"
 
       # It does not display pagination options
       refute has_element?(view, "nav[aria-label=\"Paging\"]")
@@ -2027,8 +2027,8 @@ defmodule OliWeb.Delivery.InstructorDashboard.PracticeActivitiesTabTest do
       [a0, a1] = table_as_list_of_maps(view)
 
       # Page 1
-      assert a0.title == "Orphaned Page"
-      assert a1.title == "Module 1: IntroductionPage 1"
+      assert a0.title == "Module 1: IntroductionPage 1"
+      assert a1.title == "Module 1: IntroductionPage 2"
     end
 
     test "keeps showing the same elements when changing the page size", %{
@@ -2046,9 +2046,9 @@ defmodule OliWeb.Delivery.InstructorDashboard.PracticeActivitiesTabTest do
 
       [a2, a3] = table_as_list_of_maps(view)
 
-      # Page 2
-      assert a2.title == "Module 1: IntroductionPage 2"
-      assert a3.title == "Module 2: BasicsPage 3"
+      # Pages 3 and 4
+      assert a2.title == "Module 2: BasicsPage 3"
+      assert a3.title == "Module 2: BasicsPage 4"
 
       # Change page size from 2 to 1
       view
@@ -2058,7 +2058,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.PracticeActivitiesTabTest do
       [a2] = table_as_list_of_maps(view)
 
       # Page 3. It keeps showing the same element.
-      assert a2.title == "Module 1: IntroductionPage 2"
+      assert a2.title == "Module 2: BasicsPage 3"
     end
   end
 end
