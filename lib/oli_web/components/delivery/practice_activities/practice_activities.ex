@@ -780,10 +780,7 @@ defmodule OliWeb.Components.Delivery.PracticeActivities do
   end
 
   defp add_multi_input_details(activity_attempt, response_summaries) do
-    mapper =
-      Enum.into(activity_attempt.transformed_model["inputs"], %{}, fn input ->
-        {input["partId"], input["inputType"]}
-      end)
+    mapper = build_input_mapper(activity_attempt.transformed_model["inputs"])
 
     Enum.reduce(
       activity_attempt.transformed_model["inputs"],
@@ -791,42 +788,64 @@ defmodule OliWeb.Components.Delivery.PracticeActivities do
       fn input, acc2 ->
         case input["inputType"] do
           response when response in ["numeric", "text"] ->
-            responses =
-              Enum.reduce(response_summaries, [], fn response_summary, acc ->
-                if response_summary.activity_id == acc2.resource_id do
-                  [
-                    %{
-                      text: response_summary.response,
-                      user_name: OliWeb.Common.Utils.name(response_summary.user),
-                      type: mapper[response_summary.part_id]
-                    }
-                    | acc
-                  ]
-                else
-                  acc
-                end
-              end)
-
-            update_in(
+            add_text_or_numeric_responses(
               acc2,
-              [Access.key!(:transformed_model), Access.key!("authoring")],
-              &Map.put(&1, "responses", responses)
+              response_summaries,
+              mapper
             )
 
           "dropdown" ->
-            add_choices_frequencies(acc2, response_summaries)
-            |> update_in(
-              [
-                Access.key!(:transformed_model),
-                Access.key!("inputs"),
-                Access.filter(&(&1["inputType"] == "dropdown")),
-                Access.key!("choiceIds")
-              ],
-              &List.insert_at(&1, -1, "0")
-            )
+            add_dropdown_choices(acc2, response_summaries)
         end
       end
     )
+  end
+
+  defp add_dropdown_choices(acc, response_summaries) do
+    add_choices_frequencies(acc, response_summaries)
+    |> update_in(
+      [
+        Access.key!(:transformed_model),
+        Access.key!("inputs"),
+        Access.filter(&(&1["inputType"] == "dropdown")),
+        Access.key!("choiceIds")
+      ],
+      &List.insert_at(&1, -1, "0")
+    )
+  end
+
+  defp add_text_or_numeric_responses(acumulator, response_summaries, mapper) do
+    responses =
+      relevant_responses(acumulator.resource_id, response_summaries, mapper)
+
+    update_in(
+      acumulator,
+      [Access.key!(:transformed_model), Access.key!("authoring")],
+      &Map.put(&1, "responses", responses)
+    )
+  end
+
+  defp relevant_responses(resource_id, response_summaries, mapper) do
+    Enum.reduce(response_summaries, [], fn response_summary, acc_responses ->
+      if response_summary.activity_id == resource_id do
+        [
+          %{
+            text: response_summary.response,
+            user_name: OliWeb.Common.Utils.name(response_summary.user),
+            type: mapper[response_summary.part_id]
+          }
+          | acc_responses
+        ]
+      else
+        acc_responses
+      end
+    end)
+  end
+
+  defp build_input_mapper(inputs) do
+    Enum.into(inputs, %{}, fn input ->
+      {input["partId"], input["inputType"]}
+    end)
   end
 
   defp add_likert_details(activity_attempt, response_summaries) do
