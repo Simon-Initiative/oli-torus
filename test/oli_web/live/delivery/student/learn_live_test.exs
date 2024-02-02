@@ -1312,7 +1312,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       set_progress(section.id, page_2.resource_id, user.id, 0.5, page_2)
       set_progress(section.id, page_7.resource_id, user.id, 1.0, page_7)
 
-      {:ok, view, _html} = live(conn, live_view_learn_live_route(section.slug))
+      {:ok, view, _html} = live(conn, Utils.learn_live_path(section.slug))
 
       assert has_element?(view, ~s{div[role="unit_1"] div[role="card_1_progress"]})
       assert has_element?(view, ~s{div[role="unit_3"] div[role="card_1_progress"]})

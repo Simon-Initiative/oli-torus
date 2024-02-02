@@ -321,7 +321,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
 
   def handle_event(
         "navigate_to_resource",
-        %{"slug" => resource_slug} = values,
+        %{"slug" => resource_slug, "purpose" => purpose} = values,
         socket
       ) do
     section_slug = socket.assigns.section.slug
