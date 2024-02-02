@@ -13,55 +13,86 @@ defmodule OliWeb.Admin.PartAttemptsView do
        title: "Part Attempts Cleaning",
        active: :cleaning,
        status: status,
-       messages: []
+       messages: ["test one two three", "more messages here", "and here too!"]
      )}
   end
 
   def render(assigns) do
     ~H"""
-    <div class="container">
-      <div class="grid grid-cols-12 mb-5">
-        <div class="col-span-12">
-          <h2 class="mb-5">
-            Part Attempts Cleaning
-          </h2>
-          <p>
-            <.button phx-click="start">
-              Start
-            </.button>
-            <.button phx-click="stop">
+    <div>
+      <div class="mt-5 p-3 bg-gray-900 text-gray-300 h-96 relative">
+        <code class="h-96">
+            <div class="mb-4 flex justify-between">
+              <%= if @status.running do %>
+                <div class="text-blue-500">Running</div>
+              <% else %>
+                <div class="text-yellow-500">Stopped</div>
+              <% end %>
+              <div class="text-green-500">
+                <span class="mr-5">Batches: <%= @status.batches_complete %></span>
+                <span class="mr-5">Records Visited: <%= @status.records_visited %></span>
+                <span>Records Deleted: <%= @status.records_deleted %></span>
+              </div>
+            </div>
+
+          <%= for message <- @messages do %>
+            <div><%= message %></div>
+          <% end %>
+
+          <div class="absolute bottom-3 left-3">
+            <button class="border-solid border-2 border-gray-400 hover:bg-gray-400 text-gray-300 hover:text-gray-800 font-bold py-1 px-2" phx-click="start">
               Stop
-            </.button>
-          </p>
-          <p>
-            <strong>Status:</strong> <%= @status %>
-          </p>
-        </div>
+            </button>
+            <button class="border-solid border-2 border-gray-400 hover:bg-gray-400 text-gray-300 hover:text-gray-800 font-bold py-1 px-2" phx-click="start">
+              Start
+            </button>
+          </div>
+          <div class="absolute bottom-3 right-3">
+            <select id="wait" phx-hook="SelectListener" phx-change="set_wait_time"
+              class="border-solid border-2 border-gray-400 hover:bg-gray-400 bg-gray-900 text-gray-300 hover:text-gray-800 font-bold py-1 px-2">
+              <option selected={@status.wait_time == 0} value="0">No wait in between batches</option>
+              <option selected={@status.wait_time == 100} value="100">100 milliseconds</option>
+              <option selected={@status.wait_time == 250} value="250">250 milliseconds</option>
+              <option selected={@status.wait_time == 500} value="500">500 milliseconds</option>
+              <option selected={@status.wait_time == 1000} value="1000">1 second</option>
+            </select>
+          </div>
+        </code>
+
+
       </div>
     </div>
     """
   end
 
-  defp add_message(message, socket) do
+  defp add_message(state, details, socket) do
 
-    messages = [message | socket.assigns.messages]
+    # Format a timestamp from right now
+    timestamp = DateTime.utc_now()
+    |> Timex.format!("{ISO:Extended}")
+
+    messages = ["#{timestamp}: #{details.records_deleted} deleted out of #{details.records_visited} visited" | socket.assigns.messages]
     |> Enum.take(10)
 
-    {:noreply, assign(socket, messages: messages)}
+    {:noreply, assign(socket, messages: messages, state: state)}
   end
 
   def handle_event("start", _, socket) do
-    PartAttemptCleaner.start()
-    {:noreply, assign(socket, status: PartAttemptCleaner.status())}
+    {:noreply, assign(socket, status: PartAttemptCleaner.start())}
   end
 
   def handle_event("stop", _, socket) do
-    PartAttemptCleaner.stop()
-    {:noreply, assign(socket, status: PartAttemptCleaner.status())}
+    {:noreply, assign(socket, status: PartAttemptCleaner.stop())}
   end
 
-  def handle_info({:seed_complete}, socket) do
-    add_message("Seed complete", socket)
+  def handle_event("set_wait_time", %{"value" => value}, socket) do
+
+    int_value = String.to_integer(value)
+    {:noreply, assign(socket, status: PartAttemptCleaner.set_wait_time(int_value))}
+  end
+
+  def handle_info({:batch_finished, state, details}, socket) do
+    add_message(state, details, socket)
   end
 
 end

@@ -16,23 +16,21 @@ defmodule Oli.Delivery.Attempts.PartAttemptCleaner do
 
   @default_wait_time_in_ms 1000
 
-
   def start_link(args) do
     GenServer.start_link(__MODULE__, args, name: __MODULE__)
   end
 
   def stop(),
-    do: GenServer.cast(__MODULE__, {:stop})
+    do: GenServer.call(__MODULE__, {:running, false})
 
   def start(),
-    do: GenServer.cast(__MODULE__, {:start})
+    do: GenServer.call(__MODULE__, {:running, true})
 
   def status(),
     do: GenServer.call(__MODULE__, {:status})
 
-  def seed(project_ids),
-    do: GenServer.cast(__MODULE__, {:seed, project_ids})
-
+  def set_wait_time(wait_time),
+    do: GenServer.call(__MODULE__, {:wait_time, wait_time})
 
   # ----------------
   # Server callbacks
@@ -57,32 +55,12 @@ defmodule Oli.Delivery.Attempts.PartAttemptCleaner do
     {:reply, state, state}
   end
 
-  def handle_cast({:stop}, state) do
+  def handle_call({attribute, value}, _from, state) do
 
-    Logger.info("PartAttemptCleaner stopping")
+    Logger.info("PartAttemptCleaner setting #{attribute} to #{value}")
 
-    state = Map.put(state, :running, false)
-    {:noreply, state}
-  end
-
-  def handle_cast({:start}, state) do
-    state = Map.put(state, :running, true)
-
-    Logger.info("PartAttemptCleaner starting")
-
-    next(self())
-
-    {:noreply, state}
-  end
-
-  def handle_cast({:seed, project_ids}, state) do
-
-    Logger.info("PartAttemptCleaner seeding")
-
-    do_seed(project_ids)
-    PubSub.broadcast(OliWeb.PubSub, "part_attempt_cleaner", {:seed_complete})
-
-    {:noreply, state}
+    state = Map.put(state, attribute, value)
+    {:reply, state, state}
   end
 
   def handle_info({:batch_finished, details}, state) do
@@ -101,7 +79,7 @@ defmodule Oli.Delivery.Attempts.PartAttemptCleaner do
     |> Map.put(:records_visited, state.records_visited + details.records_visited)
     |> Map.put(:records_deleted, state.records_deleted + details.records_deleted)
 
-    PubSub.broadcast(OliWeb.PubSub, "part_attempt_cleaner", {:batch_finished, state})
+    PubSub.broadcast(OliWeb.PubSub, "part_attempt_cleaner", {:batch_finished, state, details})
 
     {:noreply, state}
   end
@@ -159,6 +137,8 @@ defmodule Oli.Delivery.Attempts.PartAttemptCleaner do
         total = length(part_attempts)
         count = issue_delete(to_delete)
 
+        mark_as_done(id)
+
         {count, total}
       else
         {:error, :no_more_attempts} ->
@@ -177,6 +157,13 @@ defmodule Oli.Delivery.Attempts.PartAttemptCleaner do
       where: p.id in ^part_attempt_ids
     ))
     count
+  end
+
+  defp mark_as_done(id) do
+    Repo.update_all(
+      from(a in ActivityAttempt, where: a.id == ^id),
+      set: [cleanup: 1]
+    )
   end
 
   def determine_which_to_delete(part_attempts) do
@@ -236,9 +223,13 @@ defmodule Oli.Delivery.Attempts.PartAttemptCleaner do
   end
 
   defp get_next_attempt_id() do
+
+    # Any attempts newer than this do not have the bloat problem
+    marker_date = ~U[2024-02-28 00:00:00Z]
+
     case Repo.all(
       from(a in ActivityAttempt,
-      where: a.cleanup == 1,
+      where: a.cleanup == 0 and a.inserted_at < ^marker_date,
       order_by: [asc: a.inserted_at],
       select: a.id,
       limit: 1
@@ -250,23 +241,5 @@ defmodule Oli.Delivery.Attempts.PartAttemptCleaner do
 
     end
   end
-
-  def do_seed(project_ids) do
-    query = """
-    UPDATE activity_attempts
-    SET cleanup = 1
-    WHERE id IN (
-        SELECT a.id
-        FROM sections s
-        JOIN resource_accesses ra ON ra.section_id = s.id
-        JOIN resource_attempts r ON r.resource_access_id = ra.id
-        JOIN activity_attempts a ON a.resource_attempt_id = r.id
-        WHERE s.base_project_id IN $1 AND a.cleanup = 0
-    );
-    """
-
-    Repo.query!(query, [project_ids])
-  end
-
 
 end
