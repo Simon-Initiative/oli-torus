@@ -22,6 +22,12 @@ it('formats the message correctly', () => {
   message = formatTimerMessage(now + (1000 * 60 * 5) + 1000, now);
   expect(message).toEqual('Time remaining: 5m 1s ');
 
+  message = formatTimerMessage(now + (1000 * 60 * 5) + 59000, now);
+  expect(message).toEqual('Time remaining: 5m 59s ');
+
+  message = formatTimerMessage(now + (1000 * 60 * 5) + 60000, now);
+  expect(message).toEqual('Time remaining: 6m 0s ');
+
 });
 
 it('determines expiration correctly', () => {
