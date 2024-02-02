@@ -2475,7 +2475,6 @@ defmodule Oli.Delivery.Sections do
                     else
                       section_resource
                     end
-
                 end
 
               clean_children(

@@ -1,5 +1,4 @@
 export function formatTimerMessage(realDeadlineInMs: number, now: number) {
-
   const distance = realDeadlineInMs - now;
 
   // Calculate how many whole minutes are in distance milliseconds, allowing to
@@ -33,7 +32,6 @@ export function initCountdownTimer(
     const realDeadlineInMs = timeLeft < timeOutInMs ? now + timeLeft : timeOutInMs + startTimeInMs;
 
     const interval = setInterval(function () {
-
       const now = new Date().getTime();
 
       const timerMessage = formatTimerMessage(realDeadlineInMs, now);
