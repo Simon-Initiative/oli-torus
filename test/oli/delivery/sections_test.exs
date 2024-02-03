@@ -792,7 +792,7 @@ defmodule Oli.Delivery.SectionsTest do
         nil,
         %{
           slug: "section_#{UUID.uuid4()}",
-          start_date: ~U[2023-01-27 23:59:59Z]
+          start_date: ~U[2023-01-24 23:59:59Z]
         },
         section_tag: :section
       )
@@ -814,21 +814,21 @@ defmodule Oli.Delivery.SectionsTest do
                      %{
                        id: scheduled_resources[page3.resource_id].id,
                        scheduling_type: "due_by",
-                       start_date: "2023-02-03",
-                       end_date: "2023-02-06",
+                       start_date: "2023-01-25",
+                       end_date: "2023-01-27",
                        manually_scheduled: true
                      },
                      %{
                        id: scheduled_resources[page4.resource_id].id,
                        scheduling_type: "due_by",
-                       start_date: "2023-02-03",
-                       end_date: "2023-02-06",
+                       start_date: "2023-02-01",
+                       end_date: "2023-02-04",
                        manually_scheduled: true
                      },
                      %{
                        id: scheduled_resources[page5.resource_id].id,
                        scheduling_type: "due_by",
-                       start_date: "2023-02-05",
+                       start_date: "2023-02-06",
                        end_date: "2023-02-08",
                        manually_scheduled: true
                      }
@@ -863,50 +863,61 @@ defmodule Oli.Delivery.SectionsTest do
 
       assert [
                {
-                 {2, 2023},
+                 {1, 2023},
                  [
                    {1,
                     [
-                      {{~U[2023-02-03 23:59:59Z], ~U[2023-02-06 23:59:59Z]},
+                      {{~U[2023-01-25 23:59:59Z], ~U[2023-01-27 23:59:59Z]},
                        %{
                          {"Unit 1", true} => [
                            %Oli.Delivery.Sections.SectionResource{
                              scheduling_type: :due_by,
                              manually_scheduled: true,
-                             start_date: ~U[2023-02-03 23:59:59Z],
-                             end_date: ~U[2023-02-06 23:59:59Z],
+                             start_date: ~U[2023-01-25 23:59:59Z],
+                             end_date: ~U[2023-01-27 23:59:59Z],
                              resource_id: ^page3_resource_id,
                              title: "Assessment 3"
-                           },
-                           %Oli.Delivery.Sections.SectionResource{
-                             scheduling_type: :due_by,
-                             manually_scheduled: true,
-                             start_date: ~U[2023-02-03 23:59:59Z],
-                             end_date: ~U[2023-02-06 23:59:59Z],
-                             resource_id: ^page4_resource_id,
-                             title: "Assessment 4"
-                           }
-                         ]
-                       }}
-                    ]},
-                   {2,
-                    [
-                      {{~U[2023-02-05 23:59:59Z], ~U[2023-02-08 23:59:59Z]},
-                       %{
-                         {"Unit 1", true} => [
-                           %Oli.Delivery.Sections.SectionResource{
-                             scheduling_type: :due_by,
-                             manually_scheduled: true,
-                             start_date: ~U[2023-02-05 23:59:59Z],
-                             end_date: ~U[2023-02-08 23:59:59Z],
-                             resource_id: ^page5_resource_id,
-                             title: "Assessment 5"
                            }
                          ]
                        }}
                     ]}
                  ]
-               }
+               },
+               {{2, 2023},
+                [
+                  {2,
+                   [
+                     {{~U[2023-02-01 23:59:59Z], ~U[2023-02-04 23:59:59Z]},
+                      %{
+                        {"Unit 1", true} => [
+                          %Oli.Delivery.Sections.SectionResource{
+                            scheduling_type: :due_by,
+                            manually_scheduled: true,
+                            start_date: ~U[2023-02-01 23:59:59Z],
+                            end_date: ~U[2023-02-04 23:59:59Z],
+                            resource_id: ^page4_resource_id,
+                            title: "Assessment 4"
+                          }
+                        ]
+                      }}
+                   ]},
+                  {3,
+                   [
+                     {{~U[2023-02-06 23:59:59Z], ~U[2023-02-08 23:59:59Z]},
+                      %{
+                        {"Unit 1", true} => [
+                          %Oli.Delivery.Sections.SectionResource{
+                            scheduling_type: :due_by,
+                            manually_scheduled: true,
+                            start_date: ~U[2023-02-06 23:59:59Z],
+                            end_date: ~U[2023-02-08 23:59:59Z],
+                            resource_id: ^page5_resource_id,
+                            title: "Assessment 5"
+                          }
+                        ]
+                      }}
+                   ]}
+                ]}
              ] =
                Sections.get_ordered_schedule(section)
     end
