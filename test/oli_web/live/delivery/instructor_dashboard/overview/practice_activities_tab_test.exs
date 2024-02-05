@@ -1082,6 +1082,16 @@ defmodule OliWeb.Delivery.InstructorDashboard.PracticeActivitiesTabTest do
       ContextRoles.get_role(:context_instructor)
     ])
 
+    # Data to feed progress_across_for_pages/3
+    for student <- [student_1, student_2, student_3, student_4] do
+      insert(:resource_access,
+        user: student,
+        section: section,
+        resource: page_1_revision.resource,
+        progress: 0.25
+      )
+    end
+
     %{
       section: section,
       section_v1: section_v1,
@@ -1211,6 +1221,9 @@ defmodule OliWeb.Delivery.InstructorDashboard.PracticeActivitiesTabTest do
       assert a2.title == "Module 2: BasicsPage 3"
       assert a3.title == "Module 2: BasicsPage 4"
       assert a4.title == "Orphaned Page"
+
+      # Checks for displaying student progress with a value different from null
+      assert a0.total_attempts == "25%"
     end
 
     @tag :skip
