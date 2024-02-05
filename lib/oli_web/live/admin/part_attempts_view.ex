@@ -77,8 +77,6 @@ defmodule OliWeb.Admin.PartAttemptsView do
     messages = Enum.take(socket.assigns.messages, -9)
     new_message = "#{timestamp}: #{message}"
 
-    IO.inspect state
-
     {:noreply, assign(socket, messages: messages ++ [new_message], status: state)}
   end
 
