@@ -59,6 +59,10 @@ defmodule Oli.Delivery.Attempts.PartAttemptCleaner do
 
     Logger.info("PartAttemptCleaner setting #{attribute} to #{value}")
 
+    if attribute == :running and value do
+      next(self())
+    end
+
     state = Map.put(state, attribute, value)
     {:reply, state, state}
   end
@@ -69,7 +73,7 @@ defmodule Oli.Delivery.Attempts.PartAttemptCleaner do
 
     if state.running do
       if state.wait_time > 0 do
-        Process.send_after(self(), :quiet_period_elapsed, state.wait_time)
+        Process.send_after(self(), {:quiet_period_elapsed}, state.wait_time)
       else
         next(self())
       end
@@ -79,7 +83,7 @@ defmodule Oli.Delivery.Attempts.PartAttemptCleaner do
     |> Map.put(:records_visited, state.records_visited + details.records_visited)
     |> Map.put(:records_deleted, state.records_deleted + details.records_deleted)
 
-    PubSub.broadcast(OliWeb.PubSub, "part_attempt_cleaner", {:batch_finished, state, details})
+    PubSub.broadcast(Oli.PubSub, "part_attempt_cleaner", {:batch_finished, state, details})
 
     {:noreply, state}
   end
@@ -88,9 +92,10 @@ defmodule Oli.Delivery.Attempts.PartAttemptCleaner do
 
     Logger.info("PartAttemptCleaner no more attempts")
 
-    PubSub.broadcast(OliWeb.PubSub, "part_attempt_cleaner", {:no_more_attempts})
-
     state = Map.put(state, :running, false)
+
+    PubSub.broadcast(Oli.PubSub, "part_attempt_cleaner", {:no_more_attempts, state})
+
     {:noreply, state}
   end
 
@@ -112,9 +117,9 @@ defmodule Oli.Delivery.Attempts.PartAttemptCleaner do
   def next(pid) do
     Task.async(fn ->
       case do_next() do
-        {:ok, {count, visited}} ->
+        {:ok, {id, count, visited}} ->
           Logger.info("PartAttemptCleaner deleted #{count} part attempts")
-          Process.send(pid, {:batch_finished, %{records_deleted: count, records_visited: visited}}, [])
+          Process.send(pid, {:batch_finished, %{id: id, records_deleted: count, records_visited: visited}}, [])
 
         {:error, :no_more_attempts} ->
           Logger.warning("PartAttemptCleaner cannot find attempts to process")
@@ -139,7 +144,7 @@ defmodule Oli.Delivery.Attempts.PartAttemptCleaner do
 
         mark_as_done(id)
 
-        {count, total}
+        {id, count, total}
       else
         {:error, :no_more_attempts} ->
           Repo.rollback(:no_more_attempts)
@@ -166,6 +171,8 @@ defmodule Oli.Delivery.Attempts.PartAttemptCleaner do
     )
   end
 
+  # Given a list of part attempts details, determine which to delete
+  # and return a list of their ids.
   def determine_which_to_delete(part_attempts) do
 
     # separate into groups by part_id
@@ -174,11 +181,13 @@ defmodule Oli.Delivery.Attempts.PartAttemptCleaner do
 
       len = length(attempts)
 
+      # If a part has only one record, we obviously can't delete it
       if len == 1 do
         []
       else
-        # sort by lifecycle state and then updated_at, then
-        # take all but the last one
+        # Otherwise, sort the attempts so that the record
+        # to keep is the last one in the list, then
+        # take all but that last one
         sort(attempts)
         |> Enum.take(len - 1)
       end
@@ -192,7 +201,7 @@ defmodule Oli.Delivery.Attempts.PartAttemptCleaner do
   # Sorts a group of part records by lifecycle state and updated_at and then id.
   # The sort order is a key aspect of the algorithm to determine which
   # record to keep (and thus which to delete). This sort places the
-  # record to keep as the last item, so that we can Enum.take all but the last.
+  # record to keep as the last item.
   def sort(part_attempts) do
     Enum.sort(part_attempts, fn a, b ->
       if a.lifecycle_state == b.lifecycle_state do
@@ -207,6 +216,11 @@ defmodule Oli.Delivery.Attempts.PartAttemptCleaner do
     end)
   end
 
+  # Read the minimal amount of data from part attempt records
+  # in order to determine which to delete. We can never delete
+  # an attempt that is *not* the first attempt in a series, as that
+  # obviously would be a record that contained current state or
+  # history that we need to keep.
   defp read_part_attempts(id) do
     results = Repo.all(
       from(p in PartAttempt,
@@ -230,7 +244,7 @@ defmodule Oli.Delivery.Attempts.PartAttemptCleaner do
     case Repo.all(
       from(a in ActivityAttempt,
       where: a.cleanup == 0 and a.inserted_at < ^marker_date,
-      order_by: [asc: a.inserted_at],
+      order_by: [asc: a.id],
       select: a.id,
       limit: 1
     )) do

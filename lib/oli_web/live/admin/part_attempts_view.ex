@@ -3,17 +3,20 @@ defmodule OliWeb.Admin.PartAttemptsView do
   use OliWeb, :live_view
 
   alias Oli.Delivery.Attempts.PartAttemptCleaner
+  alias Phoenix.PubSub
 
   def mount(_, _, socket) do
 
     status = PartAttemptCleaner.status()
+
+    PubSub.subscribe(Oli.PubSub, "part_attempt_cleaner")
 
     {:ok,
      assign(socket,
        title: "Part Attempts Cleaning",
        active: :cleaning,
        status: status,
-       messages: ["test one two three", "more messages here", "and here too!"]
+       messages: []
      )}
   end
 
@@ -40,7 +43,7 @@ defmodule OliWeb.Admin.PartAttemptsView do
           <% end %>
 
           <div class="absolute bottom-3 left-3">
-            <button class="border-solid border-2 border-gray-400 hover:bg-gray-400 text-gray-300 hover:text-gray-800 font-bold py-1 px-2" phx-click="start">
+            <button class="border-solid border-2 border-gray-400 hover:bg-gray-400 text-gray-300 hover:text-gray-800 font-bold py-1 px-2" phx-click="stop">
               Stop
             </button>
             <button class="border-solid border-2 border-gray-400 hover:bg-gray-400 text-gray-300 hover:text-gray-800 font-bold py-1 px-2" phx-click="start">
@@ -65,16 +68,18 @@ defmodule OliWeb.Admin.PartAttemptsView do
     """
   end
 
-  defp add_message(state, details, socket) do
+  defp add_message(message, state, socket) do
 
     # Format a timestamp from right now
     timestamp = DateTime.utc_now()
     |> Timex.format!("{ISO:Extended}")
 
-    messages = ["#{timestamp}: #{details.records_deleted} deleted out of #{details.records_visited} visited" | socket.assigns.messages]
-    |> Enum.take(10)
+    messages = Enum.take(socket.assigns.messages, -9)
+    new_message = "#{timestamp}: #{message}"
 
-    {:noreply, assign(socket, messages: messages, state: state)}
+    IO.inspect state
+
+    {:noreply, assign(socket, messages: messages ++ [new_message], status: state)}
   end
 
   def handle_event("start", _, socket) do
@@ -92,7 +97,12 @@ defmodule OliWeb.Admin.PartAttemptsView do
   end
 
   def handle_info({:batch_finished, state, details}, socket) do
-    add_message(state, details, socket)
+    "[#{details.id}] #{details.records_deleted} deleted out of #{details.records_visited} visited"
+    |> add_message(state, socket)
+  end
+
+  def handle_info({:no_more_attempts, state}, socket) do
+    add_message("No more attempts to clean", state, socket)
   end
 
 end
