@@ -185,17 +185,40 @@ defmodule Oli.Delivery.Attempts.PartAttemptCleaner do
       if len == 1 do
         []
       else
-        # Otherwise, sort the attempts so that the record
-        # to keep is the last one in the list, then
-        # take all but that last one
-        sort(attempts)
-        |> Enum.take(len - 1)
+
+        non_active_count = num_non_active(part_attempts)
+
+        cond do
+          non_active_count > 1 ->
+            # If we happen to encounter a strage case where there are more than
+            # one submitted or evaluated attempts for this part, we will leave
+            # them in place and only delete the active ones.
+            Enum.filter(attempts, fn a -> a.lifecycle_state == :active end)
+
+          true ->
+            # Otherwise, sort the attempts so that the record
+            # to keep is the last one in the list, then
+            # take all but that last one
+            sort(attempts)
+            |> Enum.take(len - 1)
+        end
+
       end
     end)
     |> List.flatten()
     |> Enum.map(&(&1.id))
 
     {:ok, to_delete}
+  end
+
+  defp num_non_active(part_attempts) do
+    Enum.reduce(part_attempts, 0, fn attempt, acc ->
+      if attempt.lifecycle_state != :active do
+        acc + 1
+      else
+        acc
+      end
+    end)
   end
 
   # Sorts a group of part records by lifecycle state and updated_at and then id.

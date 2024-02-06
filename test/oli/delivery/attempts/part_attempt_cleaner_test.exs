@@ -109,4 +109,19 @@ defmodule Oli.Delivery.Attempts.PartAttemptCleanerTest do
 
   end
 
+  test "the determination selects all active when more than one non-active exists" do
+
+    part_attempts = [
+      %{id: 1, part_id: "1", lifecycle_state: :evaluated, updated_at: ~U[2021-01-01 00:00:00.000Z]},
+      %{id: 2, part_id: "1", lifecycle_state: :active, updated_at: ~U[2021-01-01 00:00:00.000Z]},
+      %{id: 4, part_id: "1", lifecycle_state: :active, updated_at: ~U[2021-01-01 00:00:00.000Z]},
+      %{id: 7, part_id: "1", lifecycle_state: :evaluated, updated_at: ~U[2021-01-01 00:00:00.000Z]},
+    ]
+
+    {:ok, ids} = PartAttemptCleaner.determine_which_to_delete(part_attempts)
+
+    assert [2, 4] = Enum.sort(ids)
+
+  end
+
 end
