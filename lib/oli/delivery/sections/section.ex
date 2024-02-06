@@ -63,7 +63,6 @@ defmodule Oli.Delivery.Sections.Section do
 
     field(:resource_gating_index, :map, default: %{})
     field(:previous_next_index, :map, default: nil)
-    field(:resource_to_container_map, :map, default: nil)
     field(:display_curriculum_item_numbering, :boolean, default: true)
     field(:contains_discussions, :boolean, default: false)
     field(:contains_explorations, :boolean, default: false)
@@ -146,6 +145,9 @@ defmodule Oli.Delivery.Sections.Section do
     # Allow major project publications to be applied to course sections created from this product
     field(:apply_major_updates, :boolean, default: false)
 
+    # enable/disable the ai chatbot assistant for this section
+    field(:assistant_enabled, :boolean, default: true)
+
     timestamps(type: :utc_datetime)
   end
 
@@ -182,7 +184,6 @@ defmodule Oli.Delivery.Sections.Section do
       :nrps_context_memberships_url,
       :resource_gating_index,
       :previous_next_index,
-      :resource_to_container_map,
       :lti_1p3_deployment_id,
       :institution_id,
       :base_project_id,
@@ -204,7 +205,8 @@ defmodule Oli.Delivery.Sections.Section do
       :preferred_scheduling_time,
       :v25_migration,
       :page_prompt_template,
-      :apply_major_updates
+      :apply_major_updates,
+      :assistant_enabled
     ])
     |> cast_embed(:customizations, required: false)
     |> validate_required([

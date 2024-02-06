@@ -78,7 +78,9 @@ defmodule OliWeb.Delivery.OpenAndFreeIndexTest do
 
       {:ok, view, _html} = live(conn, ~p"/sections")
 
-      assert render(view) =~ ~s|bg-[url(&#39;https://example.com/some-image-url.png&#39;)]|
+      assert render(view) =~
+               ~s|style=\"background-image: url(&#39;https://example.com/some-image-url.png&#39;);\"|
+
       assert has_element?(view, "h5", "The best course ever!")
       assert has_element?(view, ~s{a[href="/sections/#{section.slug}"]})
     end
@@ -130,7 +132,8 @@ defmodule OliWeb.Delivery.OpenAndFreeIndexTest do
 
       {:ok, view, _html} = live(conn, ~p"/sections")
 
-      assert render(view) =~ ~s|bg-[url(&#39;/images/course_default.jpg&#39;)]|
+      assert render(view) =~
+               ~s|style=\"background-image: url(&#39;/images/course_default.jpg&#39;);\"|
     end
 
     test "can search by course name", %{conn: conn, user: user} do

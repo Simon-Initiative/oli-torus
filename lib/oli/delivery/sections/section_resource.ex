@@ -72,6 +72,7 @@ defmodule Oli.Delivery.Sections.SectionResource do
     field(:title, :string, virtual: true)
     field(:graded, :boolean, virtual: true)
     field(:resource_type_id, :integer, virtual: true)
+    field(:revision_slug, :string, virtual: true)
 
     timestamps(type: :utc_datetime)
   end

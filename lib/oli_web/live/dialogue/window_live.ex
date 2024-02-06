@@ -7,6 +7,8 @@ defmodule OliWeb.Dialogue.WindowLive do
   import Phoenix.Component
   import OliWeb.Components.Common
 
+  alias Oli.Delivery.Sections
+  alias OliWeb.Components
   alias Oli.Conversation.Dialogue
   alias OliWeb.Dialogue.UserInput
   alias Oli.Conversation.Message
@@ -21,20 +23,11 @@ defmodule OliWeb.Dialogue.WindowLive do
 
   # Gets the page prompt template and gathers all pieces of information necessary
   # to realize that template into the completed page prompt
-  defp build_page_prompt(
-         %{
-           "current_user_id" => current_user_id,
-           "section_slug" => section_slug,
-           "revision_id" => revision_id
-         } = _session
-       ) do
-    section = Oli.Delivery.Sections.get_section_by_slug(section_slug)
-    project = Oli.Authoring.Course.get_project!(section.base_project_id)
-
+  defp build_page_prompt(section, project, revision_id, user_id) do
     {:ok, page_content} = Oli.Converstation.PageContentCache.get(revision_id)
 
     bindings = %{
-      current_user_id: current_user_id,
+      current_user_id: user_id,
       section_id: section.id,
       page_content: page_content,
       course_title: project.title,
@@ -49,18 +42,10 @@ defmodule OliWeb.Dialogue.WindowLive do
   # TODO for other types of pages (Home, Learn, Discussions, etc) we should build a new template.
   # For now we just use the page prompt template to be able to render
   # the bot in those pages.
-  defp build_course_prompt(
-         %{
-           "current_user_id" => current_user_id,
-           "section_slug" => section_slug
-         } = _session
-       ) do
-    section = Oli.Delivery.Sections.get_section_by_slug(section_slug)
-    project = Oli.Authoring.Course.get_project!(section.base_project_id)
-
+  defp build_course_prompt(section, project, user_id) do
     # TODO: use a different prompt template (and probably other bindings) for the course prompt
     bindings = %{
-      current_user_id: current_user_id,
+      current_user_id: user_id,
       section_id: section.id,
       course_title: project.title,
       page_content: "a page content",
@@ -72,11 +57,11 @@ defmodule OliWeb.Dialogue.WindowLive do
     realize_prompt_template(section.page_prompt_template, bindings)
   end
 
-  defp build_dialogue(session, pid) do
-    if session["revision_id"] do
-      build_page_prompt(session)
+  defp build_dialogue(section, project, revision_id, user_id, pid) do
+    if revision_id do
+      build_page_prompt(section, project, revision_id, user_id)
     else
-      build_course_prompt(session)
+      build_course_prompt(section, project, user_id)
     end
     |> Dialogue.new(
       fn _d, type, chunk ->
@@ -88,32 +73,47 @@ defmodule OliWeb.Dialogue.WindowLive do
 
   def mount(
         _params,
-        %{"current_user_id" => current_user_id} = session,
+        %{"current_user_id" => current_user_id, "section_slug" => section_slug} = session,
         socket
       ) do
-    {:ok,
-     assign(socket,
-       minimized: true,
-       dialogue: build_dialogue(session, self()),
-       form: to_form(UserInput.changeset(%UserInput{}, %{content: ""})),
-       streaming: false,
-       allow_submission?: true,
-       active_message: nil,
-       function_call: nil,
-       title: "Dot",
-       current_user: Oli.Accounts.get_user!(current_user_id),
-       height: 500,
-       width: 400,
-       is_page: session["is_page"] == true || false
-     )}
+    section = Oli.Delivery.Sections.get_section_by_slug(section_slug)
+
+    if Sections.assistant_enabled?(section) do
+      project = Oli.Authoring.Course.get_project!(section.base_project_id)
+
+      {:ok,
+       assign(socket,
+         enabled: true,
+         minimized: true,
+         dialogue:
+           build_dialogue(section, project, session["revision_id"], current_user_id, self()),
+         form: to_form(UserInput.changeset(%UserInput{}, %{content: ""})),
+         streaming: false,
+         allow_submission?: true,
+         active_message: nil,
+         function_call: nil,
+         title: "Dot",
+         current_user: Oli.Accounts.get_user!(current_user_id),
+         height: 500,
+         width: 400,
+         section: section,
+         resource_id: session["resource_id"],
+         is_page: session["is_page"] == true || false
+       )}
+    else
+      {:ok, assign(socket, enabled: false)}
+    end
   end
 
   def render(assigns) do
     ~H"""
-    <div class={[
-      "fixed z-[10000] lg:bottom-0 right-0 ml-auto",
-      if(@is_page, do: "bottom-20", else: "bottom-0")
-    ]}>
+    <div
+      :if={@enabled}
+      class={[
+        "fixed z-[10000] lg:bottom-0 right-0 ml-auto",
+        if(@is_page, do: "bottom-20", else: "bottom-0")
+      ]}
+    >
       <.conversation
         current_user={@current_user}
         form={@form}
@@ -215,7 +215,7 @@ defmodule OliWeb.Dialogue.WindowLive do
           dialogue={@dialogue}
           streaming={@streaming}
           active_message={@active_message}
-          user_initials={to_initials(@current_user)}
+          user={@current_user}
         />
         <.message_input form={@form} allow_submission?={@allow_submission?} streaming={@streaming} />
       </div>
@@ -342,7 +342,10 @@ defmodule OliWeb.Dialogue.WindowLive do
           :if={@user_initials == "BOT AI"}
           class="-mt-1.5 w-11 h-11 rounded-full justify-center items-center flex"
         >
-          <div class="w-12 h-12 bg-[url('/images/assistant/footer_dot_ai.png')] bg-cover bg-center">
+          <div
+            class="w-12 h-12 bg-cover bg-center"
+            style="background-image: url('/images/assistant/footer_dot_ai.png');"
+          >
           </div>
         </div>
         <div
@@ -412,20 +415,10 @@ defmodule OliWeb.Dialogue.WindowLive do
     """
   end
 
-  defp to_initials(%{name: nil}), do: "?"
-
-  defp to_initials(%{name: name}) do
-    name
-    |> String.split(" ")
-    |> Enum.take(2)
-    |> Enum.map(&String.slice(&1, 0..0))
-    |> Enum.join()
-  end
-
   attr :dialogue, :list
   attr :active_message, :any
   attr :streaming, :boolean
-  attr :user_initials, :string
+  attr :user, Oli.Accounts.User
 
   def messages(assigns) do
     ~H"""
@@ -437,10 +430,10 @@ defmodule OliWeb.Dialogue.WindowLive do
     >
       <div class="flex flex-col justify-end items-center px-6 gap-1.5 min-h-full">
         <%= for {message, index} <- Enum.with_index(@dialogue.rendered_messages, 1), message.role not in [:system, :function] do %>
-          <.chat_message
+          <Components.Delivery.Dialogue.chat_message
             index={index}
             content={message.content}
-            user_initials={if message.role == :assistant, do: "BOT AI", else: @user_initials}
+            user={if message.role == :assistant, do: :assistant, else: @user}
           />
         <% end %>
         <.live_response :if={@streaming} active_message={@active_message} />
@@ -522,7 +515,11 @@ defmodule OliWeb.Dialogue.WindowLive do
         />
       </svg>
     <% else %>
-      <.chat_message index={0} content={@active_message} user_initials="BOT AI" />
+      <Components.Delivery.Dialogue.chat_message
+        index={0}
+        content={@active_message}
+        user={:assistant}
+      />
     <% end %>
     """
   end
@@ -536,7 +533,16 @@ defmodule OliWeb.Dialogue.WindowLive do
   end
 
   def handle_event("update", %{"user_input" => %{"content" => content}}, socket) do
-    dialogue = Dialogue.add_message(socket.assigns.dialogue, Message.new(:user, content))
+    %{current_user: current_user, resource_id: resource_id, section: section} = socket.assigns
+
+    dialogue =
+      Dialogue.add_message(
+        socket.assigns.dialogue,
+        Message.new(:user, content),
+        current_user.id,
+        resource_id,
+        section.id
+      )
 
     pid = self()
 

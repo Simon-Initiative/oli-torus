@@ -11,6 +11,7 @@ defmodule Oli.Utils.Seeder.Section do
   alias Oli.Utils.DataGenerators.NameGenerator
   alias Oli.Utils.Slug
   alias Oli.Publishing.DeliveryResolver
+  alias Oli.Conversation
 
   @doc """
   Creates a section
@@ -200,5 +201,44 @@ defmodule Oli.Utils.Seeder.Section do
 
     seeds
     |> tag(tags[:gating_condition_tag], gating_condition)
+  end
+
+  def add_assistant_conversation_message(
+        seeds,
+        section,
+        user,
+        revision,
+        role,
+        message_content,
+        tags \\ []
+      ) do
+    [section, user, revision] = unpack(seeds, [section, user, revision])
+
+    attrs =
+      Conversation.Message.new(
+        role,
+        message_content
+      )
+      |> Map.from_struct()
+      |> Map.merge(%{
+        user_id: user.id,
+        resource_id: maybe_resource_id(revision),
+        section_id: section.id
+      })
+
+    {:ok, cm} =
+      %Conversation.ConversationMessage{}
+      |> Conversation.ConversationMessage.changeset(attrs)
+      |> Repo.insert()
+
+    seeds
+    |> tag(tags[:message_tag], cm)
+  end
+
+  defp maybe_resource_id(revision) do
+    case revision do
+      nil -> nil
+      _ -> revision.resource_id
+    end
   end
 end

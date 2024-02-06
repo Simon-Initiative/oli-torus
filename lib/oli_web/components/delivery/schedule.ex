@@ -6,6 +6,7 @@ defmodule OliWeb.Components.Delivery.Schedule do
   attr(:ctx, SessionContext, required: true)
   attr(:week_number, :any, required: true)
   attr(:schedule_ranges, :any, required: true)
+  attr(:section_slug, :string, required: true)
 
   def week(assigns) do
     ~H"""
@@ -32,7 +33,14 @@ defmodule OliWeb.Components.Delivery.Schedule do
                 <div class="flex-1 flex flex-col mr-4">
                   <%= for resource <- scheduled_resources do %>
                     <div class="flex flex-col mb-4">
-                      <div><%= resource.title %></div>
+                      <div>
+                        <.link
+                          href={~p"/sections/#{@section_slug}/lesson/#{resource.revision_slug}"}
+                          class="hover:no-underline"
+                        >
+                          <%= resource.title %>
+                        </.link>
+                      </div>
                       <div class="text-sm text-gray-500">
                         <%= resource_scheduling_label(resource.scheduling_type) %> <%= date(
                           resource.end_date,

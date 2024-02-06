@@ -8,6 +8,7 @@ defmodule Oli.Delivery.Sections.Scheduling do
   alias Ecto.Multi
   alias Oli.Publishing.PublishedResource
   alias Oli.Delivery.Sections.Section
+  alias Oli.Delivery.Sections.SectionCache
   alias Oli.Delivery.Sections.SectionResource
   alias Oli.Delivery.Sections.SectionsProjectsPublications
   alias Oli.Resources.Revision
@@ -53,7 +54,8 @@ defmodule Oli.Delivery.Sections.Scheduling do
       |> select_merge([_sr, _s, _spp, _pr, rev], %{
         title: rev.title,
         resource_type_id: rev.resource_type_id,
-        graded: rev.graded
+        graded: rev.graded,
+        revision_slug: rev.slug
       })
 
     Repo.all(query)
@@ -71,13 +73,19 @@ defmodule Oli.Delivery.Sections.Scheduling do
   updated - or a {:error, error} tuple.
   """
   def update(
-        %Section{id: section_id, preferred_scheduling_time: preferred_scheduling_time},
+        %Section{
+          id: section_id,
+          preferred_scheduling_time: preferred_scheduling_time,
+          slug: section_slug
+        },
         updates,
         timezone
       ) do
     if is_valid_update?(updates) do
       case build_values_params(updates, timezone, preferred_scheduling_time) do
         {[], []} ->
+          # we need to update the section cache to reflect the schedule changes
+          SectionCache.clear(section_slug)
           {:ok, 0}
 
         {values, params} ->
@@ -98,8 +106,13 @@ defmodule Oli.Delivery.Sections.Scheduling do
           """
 
           case Ecto.Adapters.SQL.query(Repo, sql, [section_id | params]) do
-            {:ok, %{num_rows: num_rows}} -> {:ok, num_rows}
-            e -> e
+            {:ok, %{num_rows: num_rows}} ->
+              # we need to update the section cache to reflect the schedule changes
+              SectionCache.clear(section_slug)
+              {:ok, num_rows}
+
+            e ->
+              e
           end
       end
     else
@@ -111,7 +124,7 @@ defmodule Oli.Delivery.Sections.Scheduling do
   Clear the scheduling for all section resources for a given course section.
   """
 
-  def clear(%Section{id: section_id}) do
+  def clear(%Section{id: section_id, slug: section_slug}) do
     res =
       Multi.new()
       |> Multi.run(:section_resources_count, fn repo, changes ->
@@ -138,6 +151,8 @@ defmodule Oli.Delivery.Sections.Scheduling do
          updated_resources: {updated_count, _}
        }}
       when resources_to_update_count == updated_count ->
+        # we need to update the section cache to reflect the schedule changes
+        SectionCache.clear(section_slug)
         {:ok, updated_count}
 
       {:ok, _} ->

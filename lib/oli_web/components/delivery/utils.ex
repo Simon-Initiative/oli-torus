@@ -296,16 +296,26 @@ defmodule OliWeb.Components.Delivery.Utils do
   end
 
   @doc """
-  Returns the course week number of a resource based on the section start date
+  Returns the course week number of a resource based on the section start date.
+  It considers that weeks start on Sunday, regardless of the section start date that could be any day of the week.
   """
-  def week_number(_section_start_date, nil), do: "not yet scheduled"
-  def week_number(nil, _), do: "not yet scheduled"
-  def week_number(_section_start_date, "not yet scheduled"), do: "not yet scheduled"
 
-  def week_number(section_start_datetime, resource_datetime) do
+  def week_number(section_start_datetime, resource_datetime, week_start_date \\ :sunday)
+  def week_number(_section_start_datetime, nil, _week_start_date), do: "not yet scheduled"
+  def week_number(nil, _, _week_start_date), do: "not yet scheduled"
+
+  def week_number(_section_start_datetime, "not yet scheduled", _week_start_date),
+    do: "not yet scheduled"
+
+  def week_number(section_start_datetime, resource_datetime, week_start_date) do
+    course_first_sunday =
+      section_start_datetime
+      |> DateTime.to_date()
+      |> Date.beginning_of_week(week_start_date)
+
     case Date.diff(
            DateTime.to_date(resource_datetime),
-           DateTime.to_date(section_start_datetime)
+           course_first_sunday
          ) do
       0 ->
         1

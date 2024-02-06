@@ -9,6 +9,7 @@ defmodule Oli.Delivery.SectionsTest do
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.PostProcessing
   alias Oli.Delivery.Sections.SectionResource
+  alias Oli.Publishing.DeliveryResolver
 
   describe "PostProcessing.apply/2 case :discussions" do
     alias Oli.Resources.ResourceType
@@ -319,35 +320,31 @@ defmodule Oli.Delivery.SectionsTest do
     setup(_) do
       %{}
       |> Seeder.Project.create_author(author_tag: :author)
-      |> Seeder.Project.create_sample_project(
+      |> Seeder.Project.create_large_sample_project(ref(:author))
+      |> Seeder.Project.create_page(
         ref(:author),
-        project_tag: :proj,
-        publication_tag: :pub,
-        curriculum_revision_tag: :curriculum,
-        unit1_tag: :unit1,
-        unscored_page1_tag: :unscored_page1,
-        unscored_page1_activity_tag: :unscored_page1_activity,
-        scored_page2_tag: :scored_page2,
-        scored_page2_activity_tag: :scored_page2_activity
+        ref(:project),
+        nil,
+        %{
+          title: "Non-Hierarchical Page 15",
+          graded: false
+        },
+        revision_tag: :non_hierarchical_page15
       )
       |> Seeder.Project.create_page(
         ref(:author),
-        ref(:proj),
+        ref(:project),
         nil,
-        %{},
-        revision_tag: :non_hierarchical_page3
-      )
-      |> Seeder.Project.create_page(
-        ref(:author),
-        ref(:proj),
-        nil,
-        %{},
-        revision_tag: :non_hierarchical_page5
+        %{
+          title: "Non-Hierarchical Exploration Page 16",
+          purpose: :application
+        },
+        revision_tag: :non_hierarchical_page16
       )
       |> Seeder.Project.edit_page(
-        ref(:proj),
-        ref(:scored_page2),
-        refs([:non_hierarchical_page3], fn [non_hierarchical_page3] ->
+        ref(:project),
+        ref(:unit1_module1_page2),
+        refs([:non_hierarchical_page15], fn [non_hierarchical_page15] ->
           %{
             content: %{
               "model" => [
@@ -356,7 +353,7 @@ defmodule Oli.Delivery.SectionsTest do
                   "children" => [
                     %{
                       "type" => "page_link",
-                      "idref" => non_hierarchical_page3.resource_id,
+                      "idref" => non_hierarchical_page15.resource_id,
                       "purpose" => "none",
                       "children" => [%{"text" => "Link to detached page"}]
                     }
@@ -366,12 +363,12 @@ defmodule Oli.Delivery.SectionsTest do
             }
           }
         end),
-        revision_tag: :scored_page2
+        revision_tag: :unit1_module1_page2
       )
       |> Seeder.Project.edit_page(
-        ref(:proj),
-        ref(:non_hierarchical_page3),
-        refs([:non_hierarchical_page5], fn [non_hierarchical_page5] ->
+        ref(:project),
+        ref(:unit1_module1_section1_page5),
+        refs([:non_hierarchical_page16], fn [non_hierarchical_page16] ->
           %{
             content: %{
               "model" => [
@@ -380,7 +377,7 @@ defmodule Oli.Delivery.SectionsTest do
                   "children" => [
                     %{
                       "type" => "page_link",
-                      "idref" => non_hierarchical_page5.resource_id,
+                      "idref" => non_hierarchical_page16.resource_id,
                       "purpose" => "none",
                       "children" => [%{"text" => "Link to detached page"}]
                     }
@@ -390,12 +387,12 @@ defmodule Oli.Delivery.SectionsTest do
             }
           }
         end),
-        revision_tag: :non_hierarchical_page3
+        revision_tag: :unit1_module1_section1_page5
       )
-      |> Seeder.Project.ensure_published(ref(:pub))
+      |> Seeder.Project.ensure_published(ref(:publication))
       |> Seeder.Section.create_section(
-        ref(:proj),
-        ref(:pub),
+        ref(:project),
+        ref(:publication),
         nil,
         %{},
         section_tag: :section
@@ -403,24 +400,132 @@ defmodule Oli.Delivery.SectionsTest do
     end
 
     test "returns a map with linked page resource ids", %{
-      pub: pub,
+      publication: publication,
       curriculum: curriculum,
       unit1: unit1,
-      unscored_page1: unscored_page1,
-      scored_page2: scored_page2,
-      non_hierarchical_page3: non_hierarchical_page3,
-      non_hierarchical_page5: non_hierarchical_page5
+      unit1_page1: unit1_page1,
+      unit1_module1: unit1_module1,
+      unit1_module1_page2: unit1_module1_page2,
+      unit1_module1_section1: unit1_module1_section1,
+      unit1_module1_section_1_page4: unit1_module1_section_1_page4,
+      unit1_module1_section1_page5: unit1_module1_section1_page5,
+      unit1_module1_exploration_page6: unit1_module1_exploration_page6,
+      unit1_module1_scored_page7: unit1_module1_scored_page7,
+      unit1_module2: unit1_module2,
+      unit1_module2_page8: unit1_module2_page8,
+      unit1_exploration_page9: unit1_exploration_page9,
+      unit1_scored_page10: unit1_scored_page10,
+      unit2: unit2,
+      unit2_page11: unit2_page11,
+      unit2_module3: unit2_module3,
+      unit2_module3_page12: unit2_module3_page12,
+      unit2_exploration_page13: unit2_exploration_page13,
+      unit2_scored_page14: unit2_scored_page14,
+      non_hierarchical_page15: non_hierarchical_page15,
+      non_hierarchical_page16: non_hierarchical_page16
     } do
-      page_link_map = Sections.build_resource_link_map([pub.id])
+      page_link_map = Sections.build_resource_link_map([publication.id])
 
       assert page_link_map[unit1.resource_id] == [curriculum.resource_id]
-      assert page_link_map[unscored_page1.resource_id] == [unit1.resource_id]
-      assert page_link_map[scored_page2.resource_id] == [unit1.resource_id]
-      assert page_link_map[non_hierarchical_page3.resource_id] == [scored_page2.resource_id]
+      assert page_link_map[unit1_page1.resource_id] == [unit1.resource_id]
+      assert page_link_map[unit1_module1.resource_id] == [unit1.resource_id]
+      assert page_link_map[unit1_module1_page2.resource_id] == [unit1_module1.resource_id]
+      assert page_link_map[unit1_module1_section1.resource_id] == [unit1_module1.resource_id]
 
-      assert page_link_map[non_hierarchical_page5.resource_id] == [
-               non_hierarchical_page3.resource_id
+      assert page_link_map[unit1_module1_section_1_page4.resource_id] == [
+               unit1_module1_section1.resource_id
              ]
+
+      assert page_link_map[unit1_module1_section1_page5.resource_id] == [
+               unit1_module1_section1.resource_id
+             ]
+
+      assert page_link_map[unit1_module1_exploration_page6.resource_id] == [
+               unit1_module1.resource_id
+             ]
+
+      assert page_link_map[unit1_module1_scored_page7.resource_id] == [
+               unit1_module1.resource_id
+             ]
+
+      assert page_link_map[unit1_module2.resource_id] == [
+               unit1.resource_id
+             ]
+
+      assert page_link_map[unit1_module2_page8.resource_id] == [
+               unit1_module2.resource_id
+             ]
+
+      assert page_link_map[unit1_exploration_page9.resource_id] == [unit1.resource_id]
+      assert page_link_map[unit1_scored_page10.resource_id] == [unit1.resource_id]
+      assert page_link_map[unit2.resource_id] == [curriculum.resource_id]
+      assert page_link_map[unit2_page11.resource_id] == [unit2.resource_id]
+      assert page_link_map[unit2_module3.resource_id] == [unit2.resource_id]
+      assert page_link_map[unit2_module3_page12.resource_id] == [unit2_module3.resource_id]
+      assert page_link_map[unit2_exploration_page13.resource_id] == [unit2.resource_id]
+      assert page_link_map[unit2_scored_page14.resource_id] == [unit2.resource_id]
+
+      assert page_link_map[non_hierarchical_page15.resource_id] == [
+               unit1_module1_page2.resource_id
+             ]
+
+      assert page_link_map[non_hierarchical_page15.resource_id] == [
+               unit1_module1_page2.resource_id
+             ]
+
+      assert page_link_map[non_hierarchical_page16.resource_id] == [
+               unit1_module1_section1_page5.resource_id
+             ]
+    end
+
+    test "find_parent_container/4", %{
+      section: section,
+      publication: publication,
+      unit1: unit1,
+      unit1_page1: unit1_page1,
+      unit1_module1: unit1_module1,
+      unit1_exploration_page9: unit1_exploration_page9,
+      non_hierarchical_page15: non_hierarchical_page15
+    } do
+      page_link_map = Sections.build_resource_link_map([publication.id])
+
+      all_containers =
+        DeliveryResolver.revisions_of_type(
+          section.slug,
+          Oli.Resources.ResourceType.get_id_by_type("container")
+        )
+
+      container_ids = Enum.map(all_containers, fn c -> c.resource_id end)
+
+      {parent_resource_id, _} =
+        Sections.find_parent_container(
+          unit1_exploration_page9.resource_id,
+          page_link_map,
+          MapSet.new(container_ids),
+          MapSet.new()
+        )
+
+      assert parent_resource_id == unit1.resource_id
+
+      {parent_resource_id, _} =
+        Sections.find_parent_container(
+          non_hierarchical_page15.resource_id,
+          page_link_map,
+          MapSet.new(container_ids),
+          MapSet.new()
+        )
+
+      assert parent_resource_id == unit1_module1.resource_id
+
+      {parent_resource_id, _} =
+        Sections.find_parent_container(
+          unit1_page1.resource_id,
+          page_link_map,
+          MapSet.new(container_ids),
+          MapSet.new()
+        )
+
+      assert parent_resource_id == unit1.resource_id
     end
   end
 
@@ -547,6 +652,52 @@ defmodule Oli.Delivery.SectionsTest do
     end
   end
 
+  describe "get_ordered_container_labels/1" do
+    setup(_) do
+      %{}
+      |> Seeder.Project.create_author(author_tag: :author)
+      |> Seeder.Project.create_large_sample_project(ref(:author))
+      |> Seeder.Project.ensure_published(ref(:publication))
+      |> Seeder.Section.create_section(
+        ref(:project),
+        ref(:publication),
+        nil,
+        %{},
+        section_tag: :section
+      )
+    end
+
+    test "returns the correct ordered container labels for a section", %{
+      section: section,
+      unit1: unit1,
+      unit1_module1: unit1_module1,
+      unit1_module1_section1: unit1_module1_section1,
+      unit1_module2: unit1_module2,
+      unit2: unit2,
+      unit2_module3: unit2_module3
+    } do
+      ordered_labels = Sections.fetch_ordered_container_labels(section.slug)
+
+      assert Enum.count(ordered_labels) == 6
+
+      assert Enum.at(ordered_labels, 0) == {unit1.resource_id, "Unit 1: Unit 1"}
+
+      assert Enum.at(ordered_labels, 1) ==
+               {unit1_module1.resource_id, "Module 1: Unit 1 Module 1"}
+
+      assert Enum.at(ordered_labels, 2) ==
+               {unit1_module1_section1.resource_id, "Section 1: Unit 1 Module 1 Section 1"}
+
+      assert Enum.at(ordered_labels, 3) ==
+               {unit1_module2.resource_id, "Module 2: Unit 1 Module 2"}
+
+      assert Enum.at(ordered_labels, 4) == {unit2.resource_id, "Unit 2: Unit 2"}
+
+      assert Enum.at(ordered_labels, 5) ==
+               {unit2_module3.resource_id, "Module 3: Unit 2 Module 3"}
+    end
+  end
+
   describe "get_ordered_schedule/1" do
     setup do
       %{}
@@ -609,7 +760,7 @@ defmodule Oli.Delivery.SectionsTest do
         nil,
         %{
           slug: "section_#{UUID.uuid4()}",
-          start_date: ~U[2023-01-27 23:59:59Z]
+          start_date: ~U[2023-01-24 23:59:59Z]
         },
         section_tag: :section
       )
@@ -631,21 +782,21 @@ defmodule Oli.Delivery.SectionsTest do
                      %{
                        id: scheduled_resources[page3.resource_id].id,
                        scheduling_type: "due_by",
-                       start_date: "2023-02-03",
-                       end_date: "2023-02-06",
+                       start_date: "2023-01-25",
+                       end_date: "2023-01-27",
                        manually_scheduled: true
                      },
                      %{
                        id: scheduled_resources[page4.resource_id].id,
                        scheduling_type: "due_by",
-                       start_date: "2023-02-03",
-                       end_date: "2023-02-06",
+                       start_date: "2023-02-01",
+                       end_date: "2023-02-04",
                        manually_scheduled: true
                      },
                      %{
                        id: scheduled_resources[page5.resource_id].id,
                        scheduling_type: "due_by",
-                       start_date: "2023-02-05",
+                       start_date: "2023-02-06",
                        end_date: "2023-02-08",
                        manually_scheduled: true
                      }
@@ -680,50 +831,61 @@ defmodule Oli.Delivery.SectionsTest do
 
       assert [
                {
-                 {2, 2023},
+                 {1, 2023},
                  [
                    {1,
                     [
-                      {{~U[2023-02-03 23:59:59Z], ~U[2023-02-06 23:59:59Z]},
+                      {{~U[2023-01-25 23:59:59Z], ~U[2023-01-27 23:59:59Z]},
                        %{
                          {"Unit 1", true} => [
                            %Oli.Delivery.Sections.SectionResource{
                              scheduling_type: :due_by,
                              manually_scheduled: true,
-                             start_date: ~U[2023-02-03 23:59:59Z],
-                             end_date: ~U[2023-02-06 23:59:59Z],
+                             start_date: ~U[2023-01-25 23:59:59Z],
+                             end_date: ~U[2023-01-27 23:59:59Z],
                              resource_id: ^page3_resource_id,
                              title: "Assessment 3"
-                           },
-                           %Oli.Delivery.Sections.SectionResource{
-                             scheduling_type: :due_by,
-                             manually_scheduled: true,
-                             start_date: ~U[2023-02-03 23:59:59Z],
-                             end_date: ~U[2023-02-06 23:59:59Z],
-                             resource_id: ^page4_resource_id,
-                             title: "Assessment 4"
-                           }
-                         ]
-                       }}
-                    ]},
-                   {2,
-                    [
-                      {{~U[2023-02-05 23:59:59Z], ~U[2023-02-08 23:59:59Z]},
-                       %{
-                         {"Unit 1", true} => [
-                           %Oli.Delivery.Sections.SectionResource{
-                             scheduling_type: :due_by,
-                             manually_scheduled: true,
-                             start_date: ~U[2023-02-05 23:59:59Z],
-                             end_date: ~U[2023-02-08 23:59:59Z],
-                             resource_id: ^page5_resource_id,
-                             title: "Assessment 5"
                            }
                          ]
                        }}
                     ]}
                  ]
-               }
+               },
+               {{2, 2023},
+                [
+                  {2,
+                   [
+                     {{~U[2023-02-01 23:59:59Z], ~U[2023-02-04 23:59:59Z]},
+                      %{
+                        {"Unit 1", true} => [
+                          %Oli.Delivery.Sections.SectionResource{
+                            scheduling_type: :due_by,
+                            manually_scheduled: true,
+                            start_date: ~U[2023-02-01 23:59:59Z],
+                            end_date: ~U[2023-02-04 23:59:59Z],
+                            resource_id: ^page4_resource_id,
+                            title: "Assessment 4"
+                          }
+                        ]
+                      }}
+                   ]},
+                  {3,
+                   [
+                     {{~U[2023-02-06 23:59:59Z], ~U[2023-02-08 23:59:59Z]},
+                      %{
+                        {"Unit 1", true} => [
+                          %Oli.Delivery.Sections.SectionResource{
+                            scheduling_type: :due_by,
+                            manually_scheduled: true,
+                            start_date: ~U[2023-02-06 23:59:59Z],
+                            end_date: ~U[2023-02-08 23:59:59Z],
+                            resource_id: ^page5_resource_id,
+                            title: "Assessment 5"
+                          }
+                        ]
+                      }}
+                   ]}
+                ]}
              ] =
                Sections.get_ordered_schedule(section)
     end
