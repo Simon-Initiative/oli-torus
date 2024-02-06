@@ -27,6 +27,7 @@ defmodule OliWeb.Components.Delivery.Surveys do
   alias Oli.Delivery.Attempts.Core
   alias OliWeb.ManualGrading.RenderedActivity
   alias Oli.Repo
+  alias Oli.Resources.ResourceType
 
   alias Oli.Delivery.Attempts.Core.{
     ResourceAccess,
@@ -537,7 +538,7 @@ defmodule OliWeb.Components.Delivery.Surveys do
          %Section{analytics_version: :v2, id: section_id},
          student_ids
        ) do
-    page_type_id = Oli.Resources.ResourceType.get_id_by_type("activity")
+    page_type_id = ResourceType.get_id_by_type("activity")
 
     from(rs in ResourceSummary,
       where:

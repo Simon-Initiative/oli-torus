@@ -25,6 +25,7 @@ defmodule OliWeb.Components.Delivery.PracticeActivities do
   alias Oli.Publishing.DeliveryResolver
   alias Oli.Repo
   alias Oli.Resources.Revision
+  alias Oli.Resources.ResourceType
   alias OliWeb.Common.{Params, PagedTable, SearchInput}
   alias OliWeb.Common.Table.SortableTableModel
   alias OliWeb.Delivery.PracticeActivities.PracticeAssessmentsTableModel
@@ -575,7 +576,7 @@ defmodule OliWeb.Components.Delivery.PracticeActivities do
          %Section{analytics_version: :v2, id: section_id},
          student_ids
        ) do
-    page_type_id = Oli.Resources.ResourceType.get_id_by_type("activity")
+    page_type_id = ResourceType.get_id_by_type("activity")
 
     from(rs in ResourceSummary,
       where:
