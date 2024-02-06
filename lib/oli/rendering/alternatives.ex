@@ -85,7 +85,6 @@ defmodule Oli.Rendering.Alternatives do
          writer,
          by_id
        ) do
-
     # IGNORE the strategy that is on the element in the page and
     # instead look up the strategy using the id from the alternatives resources
     case Map.get(by_id, element["alternatives_id"]).strategy do
@@ -96,5 +95,4 @@ defmodule Oli.Rendering.Alternatives do
         rendered
     end
   end
-
 end
