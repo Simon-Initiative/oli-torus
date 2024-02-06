@@ -86,15 +86,16 @@ defmodule Oli.Rendering.Alternatives do
          by_id
        ) do
 
+    # IGNORE the strategy that is on the element in the page and
+    # instead look up the strategy using the id from the alternatives resources
     case Map.get(by_id, element["alternatives_id"]).strategy do
       "user_section_preference" ->
         [writer.preference_selector(context, element) | rendered]
 
-      r ->
+      _ ->
         rendered
     end
 
   end
 
-  defp maybe_render_preference_selector(rendered, _, _, _writer), do: rendered
 end
