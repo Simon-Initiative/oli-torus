@@ -95,7 +95,6 @@ defmodule Oli.Rendering.Alternatives do
       _ ->
         rendered
     end
-
   end
 
 end
