@@ -4335,6 +4335,13 @@ defmodule Oli.Delivery.Sections do
     do: select(query, [s], struct(s, ^select_fields))
 
   @doc """
+  Returns true if the section has the ai assistant feature enabled.
+  """
+  def assistant_enabled?(%Section{} = section) do
+    section.assistant_enabled
+  end
+
+  @doc """
   Returns a map from resource_id to the current revision title for all resources
   """
   def section_resource_titles(section_slug) do

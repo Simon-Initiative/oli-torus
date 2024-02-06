@@ -143,6 +143,9 @@ defmodule Oli.Delivery.Sections.Section do
     # Allow major project publications to be applied to course sections created from this product
     field(:apply_major_updates, :boolean, default: false)
 
+    # enable/disable the ai chatbot assistant for this section
+    field(:assistant_enabled, :boolean, default: true)
+
     timestamps(type: :utc_datetime)
   end
 
@@ -200,7 +203,8 @@ defmodule Oli.Delivery.Sections.Section do
       :preferred_scheduling_time,
       :v25_migration,
       :page_prompt_template,
-      :apply_major_updates
+      :apply_major_updates,
+      :assistant_enabled
     ])
     |> cast_embed(:customizations, required: false)
     |> validate_required([

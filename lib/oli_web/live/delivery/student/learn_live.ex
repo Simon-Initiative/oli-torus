@@ -21,20 +21,22 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   }
 
   def mount(_params, _session, socket) do
+    section = socket.assigns.section
+
     # when updating to Liveview 0.20 we should replace this with assign_async/3
     # https://hexdocs.pm/phoenix_live_view/Phoenix.LiveView.html#assign_async/3
     if connected?(socket),
       do:
         async_calculate_student_metrics_and_enable_slider_buttons(
           self(),
-          socket.assigns.section,
+          section,
           socket.assigns[:current_user]
         )
 
     socket =
       assign(socket,
         active_tab: :learn,
-        units: get_or_compute_full_hierarchy(socket.assigns.section)["children"],
+        units: get_or_compute_full_hierarchy(section)["children"],
         selected_module_per_unit_resource_id: %{},
         student_visited_pages: %{},
         student_progress_per_resource_id: %{},
@@ -42,9 +44,10 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         student_raw_avg_score_per_container_id: %{},
         viewed_intro_video_resource_ids:
           get_viewed_intro_video_resource_ids(
-            socket.assigns.section.slug,
+            section.slug,
             socket.assigns.current_user.id
-          )
+          ),
+        assistant_enabled: Sections.assistant_enabled?(section)
       )
       |> slim_assigns()
 
@@ -407,6 +410,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
               %{}
             )
           }
+          assistant_enabled={@assistant_enabled}
         />
       </div>
     </div>
@@ -422,6 +426,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   attr :student_id, :integer
   attr :viewed_intro_video_resource_ids, :list
   attr :unit_raw_avg_score, :map
+  attr :assistant_enabled, :boolean, required: true
 
   def unit(assigns) do
     ~H"""
@@ -582,6 +587,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
               ) %>
             </div>
             <button
+              :if={@assistant_enabled}
               phx-click={JS.dispatch("click", to: "#ai_bot_collapsed_button")}
               class="rounded-[4px] p-[10px] flex justify-center items-center ml-auto mt-[42px] text-[14px] leading-[19px] tracking-[0.024px] font-normal text-white bg-blue-500 hover:bg-blue-600 dark:text-white dark:bg-[rgba(255,255,255,0.10);] dark:hover:bg-gray-800"
             >

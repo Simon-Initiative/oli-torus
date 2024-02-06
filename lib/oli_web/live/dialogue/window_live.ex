@@ -7,6 +7,7 @@ defmodule OliWeb.Dialogue.WindowLive do
   import Phoenix.Component
   import OliWeb.Components.Common
 
+  alias Oli.Delivery.Sections
   alias OliWeb.Components
   alias Oli.Conversation.Dialogue
   alias OliWeb.Dialogue.UserInput
@@ -22,9 +23,7 @@ defmodule OliWeb.Dialogue.WindowLive do
 
   # Gets the page prompt template and gathers all pieces of information necessary
   # to realize that template into the completed page prompt
-  defp build_page_prompt(section, revision_id, user_id) do
-    project = Oli.Authoring.Course.get_project!(section.base_project_id)
-
+  defp build_page_prompt(section, project, revision_id, user_id) do
     {:ok, page_content} = Oli.Converstation.PageContentCache.get(revision_id)
 
     bindings = %{
@@ -43,9 +42,7 @@ defmodule OliWeb.Dialogue.WindowLive do
   # TODO for other types of pages (Home, Learn, Discussions, etc) we should build a new template.
   # For now we just use the page prompt template to be able to render
   # the bot in those pages.
-  defp build_course_prompt(section, user_id) do
-    project = Oli.Authoring.Course.get_project!(section.base_project_id)
-
+  defp build_course_prompt(section, project, user_id) do
     # TODO: use a different prompt template (and probably other bindings) for the course prompt
     bindings = %{
       current_user_id: user_id,
@@ -60,11 +57,11 @@ defmodule OliWeb.Dialogue.WindowLive do
     realize_prompt_template(section.page_prompt_template, bindings)
   end
 
-  defp build_dialogue(section, revision_id, user_id, pid) do
+  defp build_dialogue(section, project, revision_id, user_id, pid) do
     if revision_id do
-      build_page_prompt(section, revision_id, user_id)
+      build_page_prompt(section, project, revision_id, user_id)
     else
-      build_course_prompt(section, user_id)
+      build_course_prompt(section, project, user_id)
     end
     |> Dialogue.new(
       fn _d, type, chunk ->
@@ -76,36 +73,47 @@ defmodule OliWeb.Dialogue.WindowLive do
 
   def mount(
         _params,
-        %{"current_user_id" => current_user_id} = session,
+        %{"current_user_id" => current_user_id, "section_slug" => section_slug} = session,
         socket
       ) do
-    section = Oli.Delivery.Sections.get_section_by_slug(session["section_slug"])
+    section = Oli.Delivery.Sections.get_section_by_slug(section_slug)
 
-    {:ok,
-     assign(socket,
-       minimized: true,
-       dialogue: build_dialogue(section, session["revision_id"], current_user_id, self()),
-       form: to_form(UserInput.changeset(%UserInput{}, %{content: ""})),
-       streaming: false,
-       allow_submission?: true,
-       active_message: nil,
-       function_call: nil,
-       title: "Dot",
-       current_user: Oli.Accounts.get_user!(current_user_id),
-       height: 500,
-       width: 400,
-       section: section,
-       resource_id: session["resource_id"],
-       is_page: (session["resource_id"] && true) || false
-     )}
+    if Sections.assistant_enabled?(section) do
+      project = Oli.Authoring.Course.get_project!(section.base_project_id)
+
+      {:ok,
+       assign(socket,
+         enabled: true,
+         minimized: true,
+         dialogue:
+           build_dialogue(section, project, session["revision_id"], current_user_id, self()),
+         form: to_form(UserInput.changeset(%UserInput{}, %{content: ""})),
+         streaming: false,
+         allow_submission?: true,
+         active_message: nil,
+         function_call: nil,
+         title: "Dot",
+         current_user: Oli.Accounts.get_user!(current_user_id),
+         height: 500,
+         width: 400,
+         section: section,
+         resource_id: session["resource_id"],
+         is_page: session["is_page"] == true || false
+       )}
+    else
+      {:ok, assign(socket, enabled: false)}
+    end
   end
 
   def render(assigns) do
     ~H"""
-    <div class={[
-      "fixed z-[10000] lg:bottom-0 right-0 ml-auto",
-      if(@is_page, do: "bottom-20", else: "bottom-0")
-    ]}>
+    <div
+      :if={@enabled}
+      class={[
+        "fixed z-[10000] lg:bottom-0 right-0 ml-auto",
+        if(@is_page, do: "bottom-20", else: "bottom-0")
+      ]}
+    >
       <.conversation
         current_user={@current_user}
         form={@form}
