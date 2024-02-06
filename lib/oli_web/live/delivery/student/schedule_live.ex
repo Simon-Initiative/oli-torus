@@ -7,8 +7,9 @@ defmodule OliWeb.Delivery.Student.ScheduleLive do
 
   def mount(_params, _session, socket) do
     section = socket.assigns[:section]
+    current_user_id = socket.assigns[:current_user].id
 
-    schedule = Sections.get_ordered_schedule(section)
+    schedule = Sections.get_ordered_schedule(section, current_user_id)
 
     current_datetime = DateTime.utc_now()
     current_week = Utils.week_number(section.start_date, current_datetime)
@@ -60,13 +61,13 @@ defmodule OliWeb.Delivery.Student.ScheduleLive do
         <%= for {{month, _year}, weekly_schedule} <- @schedule do %>
           <div class="flex flex-col md:flex-row">
             <div class={[
-              "w-full md:w-32 uppercase font-bold border-b md:border-b-0 border-gray-300",
+              "w-full md:w-32 uppercase font-bold border-b md:border-b-0 mb-3",
               if(month_active?(month, @current_month),
-                do: "text-gray-500",
-                else: "text-gray-300 dark:text-gray-700"
+                do: "text-gray-500 border-gray-500",
+                else: "text-gray-300 dark:text-gray-700 border-gray-300 dark:border-gray-700"
               )
             ]}>
-              <div class="my-[0.35rem]">
+              <div>
                 <%= month_name(month) %>
               </div>
             </div>

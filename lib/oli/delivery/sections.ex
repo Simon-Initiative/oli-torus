@@ -8,6 +8,8 @@ defmodule Oli.Delivery.Sections do
   alias Oli.Repo.{Paging, Sorting}
   alias Oli.Utils.Database
 
+  alias Oli.Delivery.Sections
+
   alias Oli.Delivery.Sections.{
     Section,
     SectionCache,
@@ -1654,13 +1656,29 @@ defmodule Oli.Delivery.Sections do
   Returns a structured schedule of all scheduled section resources for the given section, ordered by month,
   week, date range, and container module.
   """
-  def get_ordered_schedule(section) do
+  def get_ordered_schedule(section, current_user_id) do
     container_labels_map =
       get_ordered_container_labels(section.slug, short_label: true)
       |> Enum.reduce(%{}, fn {container_id, label}, acc -> Map.put(acc, container_id, label) end)
 
     page_to_container_map =
       get_page_to_container_map(section.slug)
+
+    %{"container" => container_ids, "page" => page_ids} =
+      Sections.get_resource_ids_group_by_resource_type(section.slug)
+
+    progress_per_container_id =
+      Metrics.progress_across(section.id, container_ids, current_user_id)
+      |> Enum.into(%{}, fn {container_id, progress} ->
+        {container_id, progress || 0.0}
+      end)
+
+    progress_per_page_id =
+      Metrics.progress_across_for_pages(section.id, page_ids, [current_user_id])
+
+    progress_per_resource_id =
+      Map.merge(progress_per_page_id, progress_per_container_id)
+      |> Map.filter(fn {_, progress} -> progress not in [nil, 0.0] end)
 
     scheduled_section_resources =
       Scheduling.retrieve(section, :pages)
@@ -1686,7 +1704,12 @@ defmodule Oli.Delivery.Sections do
             |> Enum.map(fn {date_range, section_resources} ->
               {date_range,
                section_resources
-               |> group_by_container_and_graded(container_labels_map, page_to_container_map)}
+               |> attach_section_resource_metadata(
+                 page_to_container_map,
+                 progress_per_resource_id
+               )
+               |> group_by_container_and_graded()
+               |> attach_container_metadata(container_labels_map, progress_per_resource_id)}
             end)}
          end)}
       end)
@@ -1754,24 +1777,53 @@ defmodule Oli.Delivery.Sections do
     end)
   end
 
-  defp group_by_container_and_graded(
+  defp attach_section_resource_metadata(
          section_resources,
-         container_labels_map,
-         page_to_container_map
+         page_to_container_map,
+         progress_per_resource_id
        ) do
     section_resources
-    |> Enum.group_by(fn sr ->
+    |> Enum.map(fn sr ->
       container_id = page_to_container_map[Integer.to_string(sr.resource_id)]
 
-      {container_labels_map[container_id], sr.graded}
+      {sr, container_id, sr.graded, progress_per_resource_id[sr.resource_id]}
     end)
   end
 
-  def get_schedule_for_current_week(section) do
+  defp group_by_container_and_graded(items) do
+    items
+    |> Enum.group_by(fn {_sr, container_id, graded, _progress} ->
+      {container_id, graded}
+    end)
+  end
+
+  defp attach_container_metadata(
+         container_groups,
+         container_labels_map,
+         progress_per_resource_id
+       ) do
+    container_groups
+    |> Enum.map(fn {{container_id, graded}, scheduled_resources} ->
+      {container_id, container_labels_map[container_id], graded,
+       progress_precentage(progress_per_resource_id[container_id]),
+       Enum.map(scheduled_resources, fn {sr, _container_id, _graded, page_progress} ->
+         {sr, progress_precentage(page_progress)}
+       end)}
+    end)
+  end
+
+  defp progress_precentage(progress) do
+    case progress do
+      nil -> nil
+      _ -> progress * 100
+    end
+  end
+
+  def get_schedule_for_current_week(section, current_user_id) do
     current_week_number =
       OliWeb.Components.Delivery.Utils.week_number(section.start_date, DateTime.utc_now())
 
-    get_ordered_schedule(section)
+    get_ordered_schedule(section, current_user_id)
     |> Enum.map(fn {{_month, _year}, weeks} ->
       Enum.find(weeks, fn {week_number, _} -> week_number == current_week_number end)
     end)

@@ -5,10 +5,10 @@ defmodule OliWeb.Components.Delivery.Schedule do
 
   attr(:ctx, SessionContext, required: true)
   attr(:week_number, :integer, required: true)
-  attr(:is_active, :boolean, required: true)
-  attr(:is_current_week, :boolean, required: true)
   attr(:schedule_ranges, :any, required: true)
   attr(:section_slug, :string, required: true)
+  attr(:is_active, :boolean, default: true)
+  attr(:is_current_week, :boolean, default: false)
 
   def week(assigns) do
     ~H"""
@@ -20,7 +20,7 @@ defmodule OliWeb.Components.Delivery.Schedule do
           else: "text-gray-300 dark:text-gray-700 md:border-gray-300 dark:border-gray-700"
         )
       ]}>
-        <div class="inline-flex items-center">
+        <div class="flex flex-row">
           <.maybe_current_week_indicator is_current_week={@is_current_week} />
           <div>Week <%= @week_number %>:</div>
         </div>
@@ -39,31 +39,40 @@ defmodule OliWeb.Components.Delivery.Schedule do
               <%= render_date_range(date_range, @ctx) %>
             </div>
 
-            <%= for {{resource_label, graded}, scheduled_resources} <- container_groups do %>
-              <div class="flex flex-row text-gray-600 dark:text-gray-300 group-[.past-start]:text-gray-300 dark:group-[.past-start]:text-gray-700">
+            <%= for {_container_id, container_label, graded, container_progress, scheduled_resources_with_progress} <- container_groups do %>
+              <div class="flex flex-row">
                 <div class="flex flex-col mr-4 md:w-64">
-                  <div><%= page_or_assessment_label(graded) %></div>
-                  <div>
-                    <%= resource_label %>
+                  <div class="flex flex-row">
+                    <.progress_icon progress={container_progress} />
+                    <div>
+                      <%= page_or_assessment_label(graded) %>
+                      <div class="uppercase font-bold text-sm text-gray-500 group-[.past-start]:text-gray-300 dark:group-[.past-start]:text-gray-700">
+                        <%= container_label %>
+                      </div>
+                    </div>
                   </div>
                 </div>
                 <div class="flex-1 flex flex-col mr-4">
-                  <%= for resource <- scheduled_resources do %>
+                  <%= for {resource, progress} <- scheduled_resources_with_progress do %>
                     <div class="flex flex-col mb-4">
-                      <div>
-                        <.link
-                          href={~p"/sections/#{@section_slug}/lesson/#{resource.revision_slug}"}
-                          class="hover:no-underline"
-                        >
-                          <%= resource.title %>
-                        </.link>
-                      </div>
-                      <div class="text-sm">
-                        <%= resource_scheduling_label(resource.scheduling_type) %> <%= date(
-                          resource.end_date,
-                          ctx: @ctx,
-                          precision: :date
-                        ) %>
+                      <div class="flex flex-row">
+                        <.progress_icon progress={progress} />
+                        <div>
+                          <.link
+                            href={~p"/sections/#{@section_slug}/lesson/#{resource.revision_slug}"}
+                            class="hover:no-underline"
+                          >
+                            <%= resource.title %>
+                          </.link>
+
+                          <div class="text-sm text-gray-500 group-[.past-start]:text-gray-300 dark:group-[.past-start]:text-gray-700">
+                            <%= resource_scheduling_label(resource.scheduling_type) %> <%= date(
+                              resource.end_date,
+                              ctx: @ctx,
+                              precision: :date
+                            ) %>
+                          </div>
+                        </div>
                       </div>
                     </div>
                   <% end %>
@@ -84,10 +93,49 @@ defmodule OliWeb.Components.Delivery.Schedule do
     ~H"""
     <div
       :if={@is_current_week}
-      class="w-0 h-0 border-[8px] border-solid border-transparent border-l-gray-600 dark:border-l-gray-300"
+      class="w-0 h-0 my-[4px] border-[8px] border-solid border-transparent border-l-gray-600 dark:border-l-gray-300"
     >
     </div>
-    <div :if={!@is_current_week} class="ml-[16px]"></div>
+    <div :if={!@is_current_week} class="w-0 h-0 ml-[16px]"></div>
+    """
+  end
+
+  attr(:progress, :integer, required: true)
+
+  defp progress_icon(assigns) do
+    ~H"""
+    <div class="w-[28px]">
+      <svg
+        :if={@progress == 100}
+        xmlns="http://www.w3.org/2000/svg"
+        width="25"
+        height="24"
+        viewBox="0 0 25 24"
+        fill="none"
+        role="completed check icon"
+      >
+        <path
+          d="M10.0496 17.9996L4.34961 12.2996L5.77461 10.8746L10.0496 15.1496L19.2246 5.97461L20.6496 7.39961L10.0496 17.9996Z"
+          fill="#0CAF61"
+        />
+      </svg>
+      <svg
+        :if={is_nil(@progress) || @progress < 100}
+        xmlns="http://www.w3.org/2000/svg"
+        class="m-2"
+        width="8"
+        height="8"
+        viewBox="0 0 8 8"
+        fill="none"
+      >
+        <circle
+          cx="4"
+          cy="4"
+          r="4"
+          class="fill-gray-700 dark:fill-white group-[.past-start]:fill-gray-300 dark:group-[.past-start]:fill-gray-700"
+        />
+      </svg>
+    </div>
     """
   end
 
@@ -117,8 +165,6 @@ defmodule OliWeb.Components.Delivery.Schedule do
 
   defp start_or_end_date_past?({start_date, end_date}) do
     today = DateTime.utc_now()
-
-    dbg({today, start_date, end_date, today > start_date, today > end_date})
 
     if is_nil(start_date) do
       DateTime.after?(today, end_date)

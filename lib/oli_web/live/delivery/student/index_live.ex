@@ -8,8 +8,10 @@ defmodule OliWeb.Delivery.Student.IndexLive do
 
   def mount(_params, _session, socket) do
     section = socket.assigns[:section]
+    current_user_id = socket.assigns[:current_user].id
 
-    schedule_for_current_week = Sections.get_schedule_for_current_week(section)
+    schedule_for_current_week =
+      Sections.get_schedule_for_current_week(section, current_user_id)
 
     {:ok,
      assign(socket,
