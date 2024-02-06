@@ -1786,13 +1786,13 @@ defmodule Oli.Delivery.Sections do
     |> Enum.map(fn sr ->
       container_id = page_to_container_map[Integer.to_string(sr.resource_id)]
 
-      {sr, container_id, sr.graded, progress_per_resource_id[sr.resource_id]}
+      {sr, container_id, sr.graded, sr.purpose, progress_per_resource_id[sr.resource_id]}
     end)
   end
 
   defp group_by_container_and_graded(items) do
     items
-    |> Enum.group_by(fn {_sr, container_id, graded, _progress} ->
+    |> Enum.group_by(fn {_sr, container_id, graded, _purpose, _progress} ->
       {container_id, graded}
     end)
   end
@@ -1806,8 +1806,8 @@ defmodule Oli.Delivery.Sections do
     |> Enum.map(fn {{container_id, graded}, scheduled_resources} ->
       {container_id, container_labels_map[container_id], graded,
        progress_precentage(progress_per_resource_id[container_id]),
-       Enum.map(scheduled_resources, fn {sr, _container_id, _graded, page_progress} ->
-         {sr, progress_precentage(page_progress)}
+       Enum.map(scheduled_resources, fn {sr, _container_id, _graded, purpose, page_progress} ->
+         {sr, purpose, progress_precentage(page_progress)}
        end)}
     end)
   end
