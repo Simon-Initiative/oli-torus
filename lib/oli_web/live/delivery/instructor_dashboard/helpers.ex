@@ -63,41 +63,21 @@ defmodule OliWeb.Delivery.InstructorDashboard.Helpers do
     graded_pages_and_section_resources =
       DeliveryResolver.graded_pages_revisions_and_section_resources(section.slug)
 
-    return_page(
-      graded_pages_and_section_resources,
-      section,
-      students
-    )
+    return_page(graded_pages_and_section_resources, section, students)
   end
 
-  defp return_page(
-         graded_pages_and_section_resources,
-         section,
-         students
-       ) do
+  defp return_page(graded_pages_and_section_resources, section, students) do
     student_ids = Enum.map(students, & &1.id)
     page_ids = Enum.map(graded_pages_and_section_resources, fn {rev, _} -> rev.resource_id end)
 
     progress_across_for_pages =
-      Metrics.progress_across_for_pages(
-        section.id,
-        page_ids,
-        student_ids
-      )
+      Metrics.progress_across_for_pages(section.id, page_ids, student_ids)
 
     avg_score_across_for_pages =
-      Metrics.avg_score_across_for_pages(
-        section,
-        page_ids,
-        student_ids
-      )
+      Metrics.avg_score_across_for_pages(section, page_ids, student_ids)
 
     attempts_across_for_pages =
-      Metrics.attempts_across_for_pages(
-        section,
-        page_ids,
-        student_ids
-      )
+      Metrics.attempts_across_for_pages(section, page_ids, student_ids)
 
     container_labels = Sections.map_resources_with_container_labels(section.slug, page_ids)
 
@@ -121,22 +101,14 @@ defmodule OliWeb.Delivery.InstructorDashboard.Helpers do
     ungraded_pages_and_section_resources =
       DeliveryResolver.ungraded_pages_revisions_and_section_resources(section.slug)
 
-    return_page(
-      ungraded_pages_and_section_resources,
-      section,
-      students
-    )
+    return_page(ungraded_pages_and_section_resources, section, students)
   end
 
   def get_assessments_with_surveys(section, students) do
     graded_pages_and_section_resources =
       DeliveryResolver.practice_pages_revisions_and_section_resources_with_surveys(section.slug)
 
-    return_page(
-      graded_pages_and_section_resources,
-      section,
-      students
-    )
+    return_page(graded_pages_and_section_resources, section, students)
   end
 
   def get_students(section, params \\ %{container_id: nil}) do
