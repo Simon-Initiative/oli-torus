@@ -85,7 +85,6 @@ defmodule Oli.Rendering.Alternatives do
          writer,
          by_id
        ) do
-
     case Map.get(by_id, element["alternatives_id"]).strategy do
       "user_section_preference" ->
         [writer.preference_selector(context, element) | rendered]
@@ -93,7 +92,6 @@ defmodule Oli.Rendering.Alternatives do
       r ->
         rendered
     end
-
   end
 
   defp maybe_render_preference_selector(rendered, _, _, _writer), do: rendered
