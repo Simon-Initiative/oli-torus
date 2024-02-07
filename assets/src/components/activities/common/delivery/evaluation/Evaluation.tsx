@@ -1,4 +1,5 @@
 import React from 'react';
+import { isDefined } from 'components/activities/response_multi/rules';
 import { ActivityState, PartState, makeContent, makeFeedback } from 'components/activities/types';
 import { WriterContext } from 'data/content/writers/context';
 import { HtmlContentModelRenderer } from 'data/content/writers/renderer';
@@ -7,6 +8,7 @@ interface Props {
   shouldShow?: boolean;
   attemptState: ActivityState;
   context: WriterContext;
+  partOrder?: string[];
 }
 
 export function renderPartFeedback(partState: PartState, context: WriterContext) {
@@ -60,7 +62,12 @@ export function renderPartFeedback(partState: PartState, context: WriterContext)
   );
 }
 
-export const Evaluation: React.FC<Props> = ({ shouldShow = true, attemptState, context }) => {
+export const Evaluation: React.FC<Props> = ({
+  shouldShow = true,
+  attemptState,
+  context,
+  partOrder,
+}) => {
   const { parts } = attemptState;
   if (!shouldShow) {
     return null;
@@ -70,7 +77,12 @@ export const Evaluation: React.FC<Props> = ({ shouldShow = true, attemptState, c
     return renderPartFeedback(parts[0], context);
   }
 
-  return <>{parts.map((partState) => renderPartFeedback(partState, context))}</>;
+  // allow migrated multi-input to show feedback in input order, different from part order
+  const orderedParts = partOrder
+    ? partOrder.map((id) => parts.find((ps) => ps.partId === id)).filter(isDefined)
+    : parts;
+
+  return <>{orderedParts.map((partState) => renderPartFeedback(partState, context))}</>;
 };
 
 interface ComponentProps {

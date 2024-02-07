@@ -33,6 +33,7 @@ import { configureStore } from 'state/store';
 import { DeliveryElementProvider, useDeliveryElementContext } from '../DeliveryElementProvider';
 import { SubmitResetConnected } from '../common/delivery/SubmitReset';
 import { initializePersistence } from '../common/delivery/persistence';
+import { orderedPartIds } from './utils';
 
 export const MultiInputComponent: React.FC = () => {
   const {
@@ -344,6 +345,7 @@ export const MultiInputComponent: React.FC = () => {
           }
           attemptState={uiState.attemptState}
           context={writerContext}
+          partOrder={orderedPartIds(model)}
         />
         <Submission attemptState={uiState.attemptState} surveyId={surveyId} />
       </div>
