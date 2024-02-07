@@ -77,7 +77,7 @@ export const Evaluation: React.FC<Props> = ({
     return renderPartFeedback(parts[0], context);
   }
 
-  // allow migrated multi-input to show feedback in input order, different from part order
+  // for migrated multi-inputs: allow caller to specify order different from part order
   const orderedParts = partOrder
     ? partOrder.map((id) => parts.find((ps) => ps.partId === id)).filter(isDefined)
     : parts;
