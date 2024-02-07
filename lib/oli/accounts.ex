@@ -295,6 +295,21 @@ defmodule Oli.Accounts do
   end
 
   @doc """
+  Updates a user from an admin.
+  """
+  def update_user_from_admin(changeset) do
+    case Repo.update(changeset) do
+      {:ok, %User{id: user_id}} = res ->
+        AccountLookupCache.delete("user_#{user_id}")
+
+        res
+
+      error ->
+        error
+    end
+  end
+
+  @doc """
   Deletes a user.
   ## Examples
       iex> delete_user(user)

@@ -101,7 +101,7 @@ defmodule Oli.Publishing.AuthoringResolver do
 
   @impl Resolver
   def all_pages(project_slug) do
-    page_id = Oli.Resources.ResourceType.get_id_by_type("page")
+    page_id = Oli.Resources.ResourceType.id_for_page()
 
     fn ->
       from(m in PublishedResource,
@@ -152,8 +152,8 @@ defmodule Oli.Publishing.AuthoringResolver do
 
   @impl Resolver
   def all_revisions_in_hierarchy(project_slug) do
-    page_id = Oli.Resources.ResourceType.get_id_by_type("page")
-    container_id = Oli.Resources.ResourceType.get_id_by_type("container")
+    page_id = Oli.Resources.ResourceType.id_for_page()
+    container_id = Oli.Resources.ResourceType.id_for_container()
 
     fn ->
       from(m in PublishedResource,
@@ -297,7 +297,7 @@ defmodule Oli.Publishing.AuthoringResolver do
   """
 
   def get_by_purpose(project_slug, purpose) do
-    page_id = Oli.Resources.ResourceType.get_id_by_type("page")
+    page_id = Oli.Resources.ResourceType.id_for_page()
 
     Repo.all(
       from(
@@ -325,7 +325,7 @@ defmodule Oli.Publishing.AuthoringResolver do
   """
 
   def targeted_via_related_to(project_slug, resource_id) do
-    page_id = Oli.Resources.ResourceType.get_id_by_type("page")
+    page_id = Oli.Resources.ResourceType.id_for_page()
 
     Repo.all(
       from(

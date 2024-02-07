@@ -341,7 +341,7 @@ defmodule Oli.Analytics.Summary do
     [
       pa.activity_revision.resource_id,
       "\'#{pa.part_id}\'",
-      Oli.Resources.ResourceType.get_id_by_type("activity")
+      Oli.Resources.ResourceType.id_for_activity()
     ]
   end
 
@@ -349,7 +349,7 @@ defmodule Oli.Analytics.Summary do
     [
       objective_id,
       "\'unknown\'",
-      Oli.Resources.ResourceType.get_id_by_type("objective")
+      Oli.Resources.ResourceType.id_for_objective()
     ]
   end
 
@@ -357,7 +357,7 @@ defmodule Oli.Analytics.Summary do
     [
       page_id,
       "\'unknown\'",
-      Oli.Resources.ResourceType.get_id_by_type("page")
+      Oli.Resources.ResourceType.id_for_page()
     ]
   end
 

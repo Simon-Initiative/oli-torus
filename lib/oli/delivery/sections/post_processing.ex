@@ -10,14 +10,19 @@ defmodule Oli.Delivery.Sections.PostProcessing do
   @type options :: [option]
   @type option :: :all | :discussions | :explorations | :deliberate_practice
 
-  @page_type_id ResourceType.get_id_by_type("page")
+  @page_type_id ResourceType.id_for_page()
+  @all_actions [:discussions, :explorations, :deliberate_practice]
 
-  @spec apply(Section.t(), options()) :: Section.t()
+  @spec apply(Section.t(), options() | option()) :: Section.t()
   def apply(section, actions \\ []) do
-    all = [:discussions, :explorations, :deliberate_practice]
-    actions = if actions == :all, do: all, else: actions
+    actions =
+      case actions do
+        :all -> @all_actions
+        action when action in @all_actions -> List.wrap(action)
+        actions -> actions
+      end
 
-    result =
+    changes =
       Enum.reduce(Enum.uniq(actions), %{}, fn action, acc ->
         case action do
           :discussions ->
@@ -34,7 +39,7 @@ defmodule Oli.Delivery.Sections.PostProcessing do
         end
       end)
 
-    Sections.update_section!(section, result)
+    Sections.update_section!(section, changes)
   end
 
   # Updates contains_discussions flag if an active discussion is present.

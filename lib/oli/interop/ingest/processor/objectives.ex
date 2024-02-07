@@ -6,7 +6,7 @@ defmodule Oli.Interop.Ingest.Processor.Objectives do
     without_children = fn {_, o} -> Map.get(o, "objectives", []) |> Enum.count() == 0 end
     with_children = fn {_, o} -> Map.get(o, "objectives", []) |> Enum.count() > 0 end
 
-    objective_type_id = Oli.Resources.ResourceType.get_id_by_type("objective")
+    objective_type_id = Oli.Resources.ResourceType.id_for_objective()
 
     State.notify_step_start(state, :objectives)
     |> create_revisions(:objectives, objective_type_id, &mapper/3, without_children)

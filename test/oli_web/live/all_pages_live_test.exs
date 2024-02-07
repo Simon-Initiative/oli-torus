@@ -21,7 +21,7 @@ defmodule OliWeb.AllPagesLiveTest do
         insert(:revision, %{
           objectives: %{"attached" => []},
           scoring_strategy_id: Oli.Resources.ScoringStrategy.get_id_by_type("average"),
-          resource_type_id: Oli.Resources.ResourceType.get_id_by_type("page"),
+          resource_type_id: Oli.Resources.ResourceType.id_for_page(),
           children: [],
           content: %{"model" => []},
           deleted: false,
@@ -49,7 +49,7 @@ defmodule OliWeb.AllPagesLiveTest do
       insert(:revision, %{
         resource: container_resource,
         objectives: %{},
-        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("container"),
+        resource_type_id: Oli.Resources.ResourceType.id_for_container(),
         children: [],
         content: %{},
         deleted: false,

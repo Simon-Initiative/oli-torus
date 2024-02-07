@@ -48,7 +48,7 @@ defmodule OliWeb.Qa.QaLive do
     parent_pages =
       Enum.map(warnings, fn w -> w.revision end)
       |> Enum.filter(fn r ->
-        r.resource_type_id == Oli.Resources.ResourceType.get_id_by_type("activity")
+        r.resource_type_id == Oli.Resources.ResourceType.id_for_activity()
       end)
       |> Enum.map(fn r -> r.resource_id end)
       |> Oli.Publishing.determine_parent_pages(

@@ -15,7 +15,7 @@ defmodule OliWeb.Sections.GatingAndScheduling do
   alias Oli.Delivery.Gating.GatingCondition
   alias OliWeb.Common.SessionContext
 
-  @limit 25
+  @default_params %{sort_by: "numbering_index", limit: 25}
 
   def set_breadcrumbs(section, parent_gate, user_type) do
     first =
@@ -114,13 +114,9 @@ defmodule OliWeb.Sections.GatingAndScheduling do
     rows =
       Gating.browse_gating_conditions(
         section,
-        %Paging{offset: 0, limit: @limit},
-        %Sorting{direction: :asc, field: :title},
-        if is_nil(parent_gate) do
-          nil
-        else
-          parent_gate.id
-        end
+        %Paging{offset: 0, limit: @default_params.limit},
+        %Sorting{direction: :asc, field: String.to_atom(@default_params.sort_by)},
+        if(is_nil(parent_gate), do: nil, else: parent_gate.id)
       )
 
     total_count = determine_total(rows)
@@ -138,7 +134,7 @@ defmodule OliWeb.Sections.GatingAndScheduling do
       parent_gate: parent_gate,
       text_search: "",
       offset: 0,
-      limit: @limit,
+      limit: @default_params.limit,
       gating_condition: nil
     )
   end
@@ -159,17 +155,15 @@ defmodule OliWeb.Sections.GatingAndScheduling do
 
     offset = get_int_param(params, "offset", 0)
     text_search = get_param(params, "text_search", "")
+    sort_by = get_param(params, "sort_by", @default_params.sort_by)
+    limit = get_int_param(params, "limit", @default_params.limit)
 
     rows =
       Gating.browse_gating_conditions(
         socket.assigns.section,
-        %Paging{offset: offset, limit: @limit},
-        %Sorting{direction: table_model.sort_order, field: table_model.sort_by_spec.name},
-        if is_nil(socket.assigns.parent_gate) do
-          nil
-        else
-          socket.assigns.parent_gate.id
-        end,
+        %Paging{offset: offset, limit: limit},
+        %Sorting{direction: table_model.sort_order, field: String.to_atom(sort_by)},
+        if(is_nil(socket.assigns.parent_gate), do: nil, else: socket.assigns.parent_gate.id),
         text_search
       )
 
@@ -179,6 +173,7 @@ defmodule OliWeb.Sections.GatingAndScheduling do
     {:noreply,
      assign(socket,
        offset: offset,
+       limit: limit,
        table_model: table_model,
        total_count: total_count,
        text_search: text_search
@@ -271,7 +266,8 @@ defmodule OliWeb.Sections.GatingAndScheduling do
           sort_by: socket.assigns.table_model.sort_by_spec.name,
           sort_order: socket.assigns.table_model.sort_order,
           offset: socket.assigns.offset,
-          text_search: socket.assigns.text_search
+          text_search: socket.assigns.text_search,
+          limit: socket.assigns.limit
         },
         changes
       )

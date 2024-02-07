@@ -30,7 +30,7 @@ defmodule Oli.Authoring.Editing.BankEditor do
            Oli.Authoring.Editing.ResourceEditor.list(
              project_slug,
              author,
-             Oli.Resources.ResourceType.get_id_by_type("tag")
+             Oli.Resources.ResourceType.id_for_tag()
            ),
          {:ok, %Result{totalCount: totalCount}} <-
            Query.execute(

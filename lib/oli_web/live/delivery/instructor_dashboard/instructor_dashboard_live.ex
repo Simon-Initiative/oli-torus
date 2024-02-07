@@ -14,7 +14,6 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
   @impl Phoenix.LiveView
   def mount(_params, session, socket) do
     ctx = SessionContext.init(socket, session)
-
     {:ok, assign(socket, ctx: ctx)}
   end
 
@@ -657,10 +656,27 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
         assigns.section_slug
       )
 
+    current_user_id =
+      case assigns.ctx.user do
+        %Oli.Accounts.User{id: id} -> id
+        _ -> nil
+      end
+
+    current_author_id =
+      case assigns.ctx.author do
+        %Oli.Accounts.Author{id: id} -> id
+        _ -> nil
+      end
+
     assigns =
       Map.merge(
         assigns,
-        %{revision_slug: revision_slug, collab_space_config: collab_space_config}
+        %{
+          current_user_id: current_user_id,
+          current_author_id: current_author_id,
+          revision_slug: revision_slug,
+          collab_space_config: collab_space_config
+        }
       )
 
     ~H"""
@@ -676,7 +692,9 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
               "section_slug" => @section_slug,
               "resource_slug" => @revision_slug,
               "is_instructor" => true,
-              "title" => "Course Discussion"
+              "title" => "Course Discussion",
+              "current_user_id" => @current_user_id,
+              "current_author_id" => @current_author_id
             }
           ) %>
         <% else %>

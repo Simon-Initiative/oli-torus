@@ -33,7 +33,7 @@ defmodule Oli.Interop.Export do
 
   defp tags(resources) do
     Enum.filter(resources, fn r ->
-      r.resource_type_id == ResourceType.get_id_by_type("tag")
+      r.resource_type_id == ResourceType.id_for_tag()
     end)
     |> Enum.map(fn r ->
       %{
@@ -54,7 +54,7 @@ defmodule Oli.Interop.Export do
   # create entries for all objectives
   defp objectives(resources) do
     Enum.filter(resources, fn r ->
-      r.resource_type_id == ResourceType.get_id_by_type("objective")
+      r.resource_type_id == ResourceType.id_for_objective()
     end)
     |> Enum.map(fn r ->
       %{
@@ -79,7 +79,7 @@ defmodule Oli.Interop.Export do
       |> Enum.reduce(%{}, fn r, m -> Map.put(m, r.id, r) end)
 
     Enum.filter(resources, fn r ->
-      r.resource_type_id == ResourceType.get_id_by_type("activity")
+      r.resource_type_id == ResourceType.id_for_activity()
     end)
     |> Enum.map(fn r ->
       %{
@@ -255,7 +255,7 @@ defmodule Oli.Interop.Export do
   # create entries for all pages
   defp pages(resources, project) do
     Enum.filter(resources, fn r ->
-      r.resource_type_id == ResourceType.get_id_by_type("page")
+      r.resource_type_id == ResourceType.id_for_page()
     end)
     |> Enum.map(fn r ->
       %{
@@ -278,7 +278,7 @@ defmodule Oli.Interop.Export do
 
   defp bib_entries(resources) do
     Enum.filter(resources, fn r ->
-      r.resource_type_id == ResourceType.get_id_by_type("bibentry")
+      r.resource_type_id == ResourceType.id_for_bibentry()
     end)
     |> Enum.map(fn r ->
       %{
@@ -297,7 +297,7 @@ defmodule Oli.Interop.Export do
 
   defp alternatives(resources) do
     Enum.filter(resources, fn r ->
-      r.resource_type_id == ResourceType.get_id_by_type("alternatives")
+      r.resource_type_id == ResourceType.id_for_alternatives()
     end)
     |> Enum.map(fn r ->
       %{

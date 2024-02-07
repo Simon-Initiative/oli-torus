@@ -203,7 +203,7 @@ defmodule Oli.Publishing.DeliveryResolverTest do
       revisions =
         DeliveryResolver.revisions_of_type(
           section.slug,
-          ResourceType.get_id_by_type("page")
+          ResourceType.id_for_page()
         )
 
       assert Enum.count(revisions) == 4
@@ -260,7 +260,7 @@ defmodule Oli.Publishing.DeliveryResolverTest do
 
       page_revision =
         insert(:revision,
-          resource_type_id: Oli.Resources.ResourceType.get_id_by_type("page"),
+          resource_type_id: Oli.Resources.ResourceType.id_for_page(),
           title: "Example test revision",
           graded: true,
           content: %{"advancedDelivery" => true}

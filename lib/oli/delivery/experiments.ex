@@ -73,7 +73,7 @@ defmodule Oli.Delivery.Experiments do
   """
   def init(enrollment_id, project_slug) do
     body = %{
-      "id" => enrollment_id,
+      "id" => Integer.to_string(enrollment_id),
       "group" => %{
         "add-group1" => [project_slug]
       },
@@ -83,8 +83,11 @@ defmodule Oli.Delivery.Experiments do
     }
 
     case http().post(url("/api/init"), encode_body(body), headers()) do
-      {:ok, %{status_code: 200, body: result}} -> Poison.decode(result)
-      e -> e
+      {:ok, %{status_code: 200, body: result}} ->
+        Poison.decode(result)
+
+      e ->
+        e
     end
   end
 
@@ -94,7 +97,7 @@ defmodule Oli.Delivery.Experiments do
   def assign(enrollment_id) do
     body =
       encode_body(%{
-        "userId" => enrollment_id,
+        "userId" => Integer.to_string(enrollment_id),
         "context" => "add"
       })
 
@@ -110,7 +113,7 @@ defmodule Oli.Delivery.Experiments do
   def mark(enrollment_id, %{decision_point: decision_point, target: target, condition: condition}) do
     body =
       encode_body(%{
-        "userId" => enrollment_id,
+        "userId" => Integer.to_string(enrollment_id),
         "site" => decision_point,
         "target" => target,
         "condition" => condition,
@@ -129,16 +132,26 @@ defmodule Oli.Delivery.Experiments do
   @doc """
   Posts a metrics result to Upgrade.
   """
-  def log(enrollment_id, correctness) do
+  def log(enrollment_id, correctness, _slug) do
+    # format right now DateTime.utc_now() as
+    # "2020-03-20 14:00:59"
+    now = DateTime.utc_now()
+    date = "#{now.year()}-#{now.month()}-#{now.day()}"
+    time = "#{now.hour()}:#{now.minute()}:#{now.second()}"
+    timestamp = "#{date} #{time}"
+
     body =
       encode_body(%{
-        "userId" => enrollment_id,
+        "userId" => Integer.to_string(enrollment_id),
+        "timestamp" => timestamp,
         "value" => [
           %{
-            "userId" => enrollment_id,
+            "timestamp" => timestamp,
+            "userId" => Integer.to_string(enrollment_id),
             "metrics" => %{
               "groupedMetrics" => [
                 %{
+                  "groupUniquifier" => timestamp,
                   "groupClass" => "mastery",
                   "groupKey" => "activities",
                   "attributes" => %{
@@ -151,7 +164,7 @@ defmodule Oli.Delivery.Experiments do
         ]
       })
 
-    case http().post(url("/api/v1/log"), body, headers()) do
+    case http().post(url("/api/log"), body, headers()) do
       {:ok, %{status_code: 200, body: body}} ->
         Logger.info("Logged experiment for [#{enrollment_id}]")
         Poison.decode(body)
