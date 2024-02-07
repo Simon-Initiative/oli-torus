@@ -21,6 +21,7 @@ defmodule Oli.Delivery.Attempts.Core.ActivityAttempt do
     field(:group_id, :string, default: nil)
     field(:survey_id, :string, default: nil)
     field(:selection_id, :string, default: nil)
+    field(:cleanup, :integer, default: 0)
 
     belongs_to(:resource, Oli.Resources.Resource)
     belongs_to(:revision, Oli.Resources.Revision)
@@ -55,6 +56,7 @@ defmodule Oli.Delivery.Attempts.Core.ActivityAttempt do
       :date_submitted,
       :scoreable,
       :transformed_model,
+      :cleanup,
       :resource_attempt_id,
       :resource_id,
       :revision_id,
