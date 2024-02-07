@@ -56,6 +56,7 @@ defmodule OliWeb.Delivery.Student.ScheduleLive do
                     week_number={week}
                     schedule_ranges={schedule_ranges}
                     section_slug={@section_slug}
+                    request_path={~p"/sections/#{@section_slug}/assignments"}
                   />
                 </div>
               <% end %>

@@ -971,7 +971,8 @@ defmodule OliWeb.Router do
             OliWeb.LiveSessionPlugs.SetSection,
             OliWeb.LiveSessionPlugs.SetBrand,
             OliWeb.LiveSessionPlugs.SetPreviewMode,
-            OliWeb.LiveSessionPlugs.RequireEnrollment
+            OliWeb.LiveSessionPlugs.RequireEnrollment,
+            OliWeb.LiveSessionPlugs.SetRequestPath
           ] do
           live("/", Delivery.Student.LessonLive)
           live("/attempt/:attempt_guid/review", Delivery.Student.ReviewLive)
