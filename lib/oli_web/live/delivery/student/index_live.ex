@@ -36,6 +36,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
               week_number={week}
               schedule_ranges={schedule_ranges}
               section_slug={@section_slug}
+              request_path={~p"/sections/#{@section_slug}"}
             />
           <% _ -> %>
             <div class="text-xl">No schedule for this week.</div>
