@@ -139,7 +139,7 @@ defmodule Oli.Delivery.Attempts.PartAttemptCleaner do
         total = length(part_attempts)
         count = issue_delete(to_delete)
 
-        mark_as_done(id)
+        mark_as_done(id, count)
 
         {id, count, total}
       else
@@ -165,10 +165,10 @@ defmodule Oli.Delivery.Attempts.PartAttemptCleaner do
     count
   end
 
-  defp mark_as_done(id) do
+  defp mark_as_done(id, count) do
     Repo.update_all(
       from(a in ActivityAttempt, where: a.id == ^id),
-      set: [cleanup: 1]
+      set: [cleanup: count]
     )
   end
 
@@ -265,7 +265,7 @@ defmodule Oli.Delivery.Attempts.PartAttemptCleaner do
 
     case Repo.all(
            from(a in ActivityAttempt,
-             where: a.cleanup == 0 and a.inserted_at < ^marker_date,
+             where: a.cleanup == -1 and a.inserted_at < ^marker_date,
              order_by: [asc: a.id],
              select: a.id,
              limit: 1
