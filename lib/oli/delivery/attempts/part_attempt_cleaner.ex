@@ -134,7 +134,6 @@ defmodule Oli.Delivery.Attempts.PartAttemptCleaner do
   end
 
   def next(pid, state) do
-
     case pop_attempt_id_from_queue(state) do
       {:ok, {activity_attempt_id, state}} ->
         Task.async(fn ->
@@ -184,7 +183,6 @@ defmodule Oli.Delivery.Attempts.PartAttemptCleaner do
   defp issue_delete([]), do: 0
 
   defp issue_delete(part_attempt_ids) do
-
     mark = Oli.Timing.mark()
 
     {count, _} =
@@ -202,7 +200,6 @@ defmodule Oli.Delivery.Attempts.PartAttemptCleaner do
   end
 
   defp mark_as_done(id, count) do
-
     mark = Oli.Timing.mark()
 
     Repo.update_all(
@@ -228,7 +225,6 @@ defmodule Oli.Delivery.Attempts.PartAttemptCleaner do
 
     to_delete =
       Enum.map(groups, fn {_part_id, attempts} ->
-
         len = length(attempts)
 
         # If a part has only one record, we obviously can't delete it
@@ -238,13 +234,17 @@ defmodule Oli.Delivery.Attempts.PartAttemptCleaner do
           # Otherwise, sort the attempts so that the record
           # to keep is the last one in the list, then
           # take all but that last one as the items to delete
-          to_delete = sort(attempts)
-          |> Enum.take(len - 1)
+          to_delete =
+            sort(attempts)
+            |> Enum.take(len - 1)
 
           # A safety measure step to ensure that we can NEVER delete all
           # of the part attempts for a part.
           if Enum.count(to_delete) != len - 1 do
-            Logger.error("PartAttemptCleaner determine_which_to_delete: part level count mismatch, deleting none")
+            Logger.error(
+              "PartAttemptCleaner determine_which_to_delete: part level count mismatch, deleting none"
+            )
+
             []
           else
             to_delete
@@ -256,12 +256,16 @@ defmodule Oli.Delivery.Attempts.PartAttemptCleaner do
 
     # A final safety measure to ensure that we can never delete so many records that
     # we leave behind no records for a part.
-    to_delete = if Enum.count(to_delete) > Enum.count(part_attempts) - num_parts do
-      Logger.error("PartAttemptCleaner determine_which_to_delete: activity level count mismatch, deleting none")
-      []
-    else
-      to_delete
-    end
+    to_delete =
+      if Enum.count(to_delete) > Enum.count(part_attempts) - num_parts do
+        Logger.error(
+          "PartAttemptCleaner determine_which_to_delete: activity level count mismatch, deleting none"
+        )
+
+        []
+      else
+        to_delete
+      end
 
     Logger.debug(
       "PartAttemptCleaner determine_which_to_delete in #{Oli.Timing.elapsed(mark) / 1000 / 1000}ms"
@@ -282,6 +286,7 @@ defmodule Oli.Delivery.Attempts.PartAttemptCleaner do
       case p.lifecycle_state do
         :submitted ->
           Map.put(p, :lifecycle_state, :b_submitted)
+
         _ ->
           p
       end
@@ -305,7 +310,6 @@ defmodule Oli.Delivery.Attempts.PartAttemptCleaner do
   # obviously would be a record that contained current state or
   # history that we need to keep.
   defp read_part_attempts(id) do
-
     mark = Oli.Timing.mark()
 
     results =

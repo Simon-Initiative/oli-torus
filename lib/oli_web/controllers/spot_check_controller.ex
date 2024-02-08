@@ -4,7 +4,6 @@ defmodule OliWeb.SpotCheckController do
   import Ecto.Query, warn: false
 
   def index(conn, %{"activity_attempt_id" => attempt_id}) do
-
     {section_slug, attempt_guid} =
       from(a in Oli.Delivery.Attempts.Core.ActivityAttempt,
         join: r in Oli.Delivery.Attempts.Core.ResourceAttempt,
@@ -23,5 +22,4 @@ defmodule OliWeb.SpotCheckController do
       to: Routes.instructor_review_path(conn, :review_attempt, section_slug, attempt_guid)
     )
   end
-
 end

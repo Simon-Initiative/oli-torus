@@ -56,7 +56,12 @@ defmodule Oli.Delivery.Attempts.PartAttemptCleanerTest do
         lifecycle_state: :submitted,
         updated_at: ~U[2021-01-04 00:00:00.000Z]
       },
-      %{id: 2, part_id: "1", lifecycle_state: :evaluated, updated_at: ~U[2021-01-03 00:00:00.000Z]},
+      %{
+        id: 2,
+        part_id: "1",
+        lifecycle_state: :evaluated,
+        updated_at: ~U[2021-01-03 00:00:00.000Z]
+      },
       %{id: 3, part_id: "1", lifecycle_state: :active, updated_at: ~U[2021-01-02 00:00:00.000Z]}
     ]
 
