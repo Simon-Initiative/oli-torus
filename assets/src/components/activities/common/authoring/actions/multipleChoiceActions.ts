@@ -17,16 +17,10 @@ import { Operations } from 'utils/pathOperations';
 
 export const MCActions = {
   removeChoice(id: string, partId: string) {
-    console.log(`Making removeChoice action: id='${id}'`);
     return (model: any & HasParts, post: PostUndoable) => {
       const choice = Choices.getOne(model, id);
       const index = Choices.getAll(model).findIndex((c) => c.id === id);
-      console.log('removeChoice model.choices: ' + JSON.stringify(model.choices, null, 2));
-      console.log(
-        `removing one choice id='${id}' index=${index}: ${JSON.stringify(choice, null, 2)}`,
-      );
       Choices.removeOne(id)(model);
-      console.log('model.choices now: ' + JSON.stringify(model.choices, null, 2));
 
       // if the choice being removed is the correct choice, a new correct choice
       // must be set
