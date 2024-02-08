@@ -215,36 +215,57 @@ defmodule Oli.Delivery.Attempts.PartAttemptCleaner do
   def determine_which_to_delete(part_attempts) do
     mark = Oli.Timing.mark()
 
-    # separate into groups by part_id
+    # separate into groups by part_id, this gives us a map of part_id to list of part attempts
+    groups = Enum.group_by(part_attempts, & &1.part_id)
+
+    # Count the number of parts.  This is going to be the key to ensuring that we do not
+    # delete all of the part attempts for a part, as we will check at the end of this that
+    # we are leaving behing *at least* this many records.
+    num_parts = Map.keys(groups) |> Enum.count()
+
     to_delete =
-      Enum.group_by(part_attempts, & &1.part_id)
-      |> Enum.map(fn {_part_id, attempts} ->
+      Enum.map(groups, fn {_part_id, attempts} ->
         len = length(attempts)
 
         # If a part has only one record, we obviously can't delete it
         if len == 1 do
           []
         else
-          non_active_count = num_non_active(part_attempts)
+          # Otherwise, sort the attempts so that the record
+          # to keep is the last one in the list, then
+          # take all but that last one as the items to delete
+          to_delete =
+            sort(attempts)
+            |> Enum.take(len - 1)
 
-          cond do
-            non_active_count > 1 ->
-              # If we happen to encounter a strage case where there are more than
-              # one submitted or evaluated attempts for this part, we will leave
-              # them in place and only delete the active ones.
-              Enum.filter(attempts, fn a -> a.lifecycle_state == :active end)
+          # A safety measure step to ensure that we can NEVER delete all
+          # of the part attempts for a part.
+          if Enum.count(to_delete) != len - 1 do
+            Logger.error(
+              "PartAttemptCleaner determine_which_to_delete: part level count mismatch, deleting none"
+            )
 
-            true ->
-              # Otherwise, sort the attempts so that the record
-              # to keep is the last one in the list, then
-              # take all but that last one
-              sort(attempts)
-              |> Enum.take(len - 1)
+            []
+          else
+            to_delete
           end
         end
       end)
       |> List.flatten()
       |> Enum.map(& &1.id)
+
+    # A final safety measure to ensure that we can never delete so many records that
+    # we leave behind no records for a part.
+    to_delete =
+      if Enum.count(to_delete) > Enum.count(part_attempts) - num_parts do
+        Logger.error(
+          "PartAttemptCleaner determine_which_to_delete: activity level count mismatch, deleting none"
+        )
+
+        []
+      else
+        to_delete
+      end
 
     Logger.debug(
       "PartAttemptCleaner determine_which_to_delete in #{Oli.Timing.elapsed(mark) / 1000 / 1000}ms"
@@ -253,27 +274,29 @@ defmodule Oli.Delivery.Attempts.PartAttemptCleaner do
     {:ok, to_delete}
   end
 
-  defp num_non_active(part_attempts) do
-    Enum.reduce(part_attempts, 0, fn attempt, acc ->
-      if attempt.lifecycle_state != :active do
-        acc + 1
-      else
-        acc
-      end
-    end)
-  end
-
   # Sorts a group of part records by lifecycle state and updated_at and then id.
   # The sort order is a key aspect of the algorithm to determine which
   # record to keep (and thus which to delete). This sort places the
   # record to keep as the last item.
   def sort(part_attempts) do
-    Enum.sort(part_attempts, fn a, b ->
+    # Rename ":submitted" to ":b_submitted" to allow downstream sorting
+    # to sort in order of :active, :b_submitted, :evaluated (the intent is to place
+    # all evaluated records last
+    Enum.map(part_attempts, fn p ->
+      case p.lifecycle_state do
+        :submitted ->
+          Map.put(p, :lifecycle_state, :b_submitted)
+
+        _ ->
+          p
+      end
+    end)
+    |> Enum.sort(fn a, b ->
       if a.lifecycle_state == b.lifecycle_state do
         case DateTime.compare(a.updated_at, b.updated_at) do
           :lt -> true
           :gt -> false
-          :eq -> a.id > b.id
+          :eq -> a.id < b.id
         end
       else
         a.lifecycle_state < b.lifecycle_state
