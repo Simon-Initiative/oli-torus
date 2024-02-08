@@ -57,14 +57,15 @@ defmodule Oli.Delivery.Attempts.PartAttemptCleaner do
   def handle_call({attribute, value}, _from, state) do
     Logger.info("PartAttemptCleaner setting #{attribute} to #{value}")
 
-    state = if attribute == :running and value do
-      case next(self(), state) do
-        {:ok, state} -> Map.put(state, :running, true)
-        {:error, :no_more_attempts} -> Map.put(state, :running, false)
+    state =
+      if attribute == :running and value do
+        case next(self(), state) do
+          {:ok, state} -> Map.put(state, :running, true)
+          {:error, :no_more_attempts} -> Map.put(state, :running, false)
+        end
+      else
+        Map.put(state, attribute, value)
       end
-    else
-      Map.put(state, attribute, value)
-    end
 
     {:reply, state, state}
   end
@@ -72,17 +73,18 @@ defmodule Oli.Delivery.Attempts.PartAttemptCleaner do
   def handle_info({:batch_finished, details}, state) do
     Logger.info("PartAttemptCleaner batch finished")
 
-    state = if state.running do
-      if state.wait_time > 0 do
-        Process.send_after(self(), {:quiet_period_elapsed}, state.wait_time)
-        state
-      else
-        case next(self(), state) do
-          {:ok, state} -> state
-          {:error, :no_more_attempts} -> Map.put(state, :running, false)
+    state =
+      if state.running do
+        if state.wait_time > 0 do
+          Process.send_after(self(), {:quiet_period_elapsed}, state.wait_time)
+          state
+        else
+          case next(self(), state) do
+            {:ok, state} -> state
+            {:error, :no_more_attempts} -> Map.put(state, :running, false)
+          end
         end
       end
-    end
 
     state =
       Map.put(state, :batches_complete, state.batches_complete + 1)
@@ -107,17 +109,22 @@ defmodule Oli.Delivery.Attempts.PartAttemptCleaner do
   def handle_info({:quiet_period_elapsed}, state) do
     Logger.info("PartAttemptCleaner quiet period elapsed")
 
-    state = case state.running do
-      true ->
-        case next(self(), state) do
-          {:ok, state} -> state
-          {:error, :no_more_attempts} ->
-            state = Map.put(state, :running, false)
-            PubSub.broadcast(Oli.PubSub, "part_attempt_cleaner", {:no_more_attempts, state})
-            state
-        end
-      false -> state
-    end
+    state =
+      case state.running do
+        true ->
+          case next(self(), state) do
+            {:ok, state} ->
+              state
+
+            {:error, :no_more_attempts} ->
+              state = Map.put(state, :running, false)
+              PubSub.broadcast(Oli.PubSub, "part_attempt_cleaner", {:no_more_attempts, state})
+              state
+          end
+
+        false ->
+          state
+      end
 
     {:noreply, state}
   end
@@ -127,9 +134,7 @@ defmodule Oli.Delivery.Attempts.PartAttemptCleaner do
   end
 
   def next(pid, state) do
-
     case pop_attempt_id_from_queue(state) do
-
       {:ok, {activity_attempt_id, state}} ->
         Task.async(fn ->
           case do_next(activity_attempt_id) do
@@ -156,7 +161,6 @@ defmodule Oli.Delivery.Attempts.PartAttemptCleaner do
       e ->
         e
     end
-
   end
 
   def do_next(activity_attempt_id) do
@@ -179,7 +183,6 @@ defmodule Oli.Delivery.Attempts.PartAttemptCleaner do
   defp issue_delete([]), do: 0
 
   defp issue_delete(part_attempt_ids) do
-
     mark = Oli.Timing.mark()
 
     {count, _} =
@@ -189,13 +192,14 @@ defmodule Oli.Delivery.Attempts.PartAttemptCleaner do
         )
       )
 
-    Logger.debug("PartAttemptCleaner deleted #{count} part attempts in #{Oli.Timing.elapsed(mark) / 1000 / 1000}ms")
+    Logger.debug(
+      "PartAttemptCleaner deleted #{count} part attempts in #{Oli.Timing.elapsed(mark) / 1000 / 1000}ms"
+    )
 
     count
   end
 
   defp mark_as_done(id, count) do
-
     mark = Oli.Timing.mark()
 
     Repo.update_all(
@@ -209,7 +213,6 @@ defmodule Oli.Delivery.Attempts.PartAttemptCleaner do
   # Given a list of part attempts details, determine which to delete
   # and return a list of their ids.
   def determine_which_to_delete(part_attempts) do
-
     mark = Oli.Timing.mark()
 
     # separate into groups by part_id
@@ -243,7 +246,9 @@ defmodule Oli.Delivery.Attempts.PartAttemptCleaner do
       |> List.flatten()
       |> Enum.map(& &1.id)
 
-    Logger.debug("PartAttemptCleaner determine_which_to_delete in #{Oli.Timing.elapsed(mark) / 1000 / 1000}ms")
+    Logger.debug(
+      "PartAttemptCleaner determine_which_to_delete in #{Oli.Timing.elapsed(mark) / 1000 / 1000}ms"
+    )
 
     {:ok, to_delete}
   end
@@ -282,7 +287,6 @@ defmodule Oli.Delivery.Attempts.PartAttemptCleaner do
   # obviously would be a record that contained current state or
   # history that we need to keep.
   defp read_part_attempts(id) do
-
     mark = Oli.Timing.mark()
 
     results =
@@ -298,7 +302,9 @@ defmodule Oli.Delivery.Attempts.PartAttemptCleaner do
         )
       )
 
-    Logger.debug("PartAttemptCleaner read_part_attempts in #{Oli.Timing.elapsed(mark) / 1000 / 1000}ms")
+    Logger.debug(
+      "PartAttemptCleaner read_part_attempts in #{Oli.Timing.elapsed(mark) / 1000 / 1000}ms"
+    )
 
     {:ok, results}
   end
@@ -309,19 +315,22 @@ defmodule Oli.Delivery.Attempts.PartAttemptCleaner do
 
     mark = Oli.Timing.mark()
 
-    result = case Repo.all(
-           from(a in ActivityAttempt,
-             where: a.cleanup == -1 and a.inserted_at < ^marker_date,
-             order_by: [asc: a.id],
-             select: a.id,
-             limit: 1000
-           )
-         ) do
-      [] -> {:error, :no_more_attempts}
-      ids -> {:ok, ids}
-    end
+    result =
+      case Repo.all(
+             from(a in ActivityAttempt,
+               where: a.cleanup == -1 and a.inserted_at < ^marker_date,
+               order_by: [asc: a.id],
+               select: a.id,
+               limit: 1000
+             )
+           ) do
+        [] -> {:error, :no_more_attempts}
+        ids -> {:ok, ids}
+      end
 
-    Logger.debug("PartAttemptCleaner get_next_attempt_id in #{Oli.Timing.elapsed(mark) / 1000 / 1000}ms")
+    Logger.debug(
+      "PartAttemptCleaner get_next_attempt_id in #{Oli.Timing.elapsed(mark) / 1000 / 1000}ms"
+    )
 
     result
   end
@@ -335,7 +344,9 @@ defmodule Oli.Delivery.Attempts.PartAttemptCleaner do
           {:error, :no_more_attempts} -> {:error, :no_more_attempts}
           {:ok, ids} -> {:ok, {Enum.at(ids, 0), Map.put(state, :id_queue, Enum.drop(ids, 1))}}
         end
-      [id | rest] -> {:ok, {id, Map.put(state, :id_queue, rest)}}
+
+      [id | rest] ->
+        {:ok, {id, Map.put(state, :id_queue, rest)}}
     end
   end
 end
