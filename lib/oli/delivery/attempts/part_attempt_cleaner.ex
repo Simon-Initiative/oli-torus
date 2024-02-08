@@ -37,6 +37,7 @@ defmodule Oli.Delivery.Attempts.PartAttemptCleaner do
 
   def init(_) do
     initial_state = %{
+      id_queue: [],
       running: false,
       batches_complete: 0,
       records_visited: 0,
@@ -56,22 +57,30 @@ defmodule Oli.Delivery.Attempts.PartAttemptCleaner do
   def handle_call({attribute, value}, _from, state) do
     Logger.info("PartAttemptCleaner setting #{attribute} to #{value}")
 
-    if attribute == :running and value do
-      next(self())
+    state = if attribute == :running and value do
+      case next(self(), state) do
+        {:ok, state} -> Map.put(state, :running, true)
+        {:error, :no_more_attempts} -> Map.put(state, :running, false)
+      end
+    else
+      Map.put(state, attribute, value)
     end
 
-    state = Map.put(state, attribute, value)
     {:reply, state, state}
   end
 
   def handle_info({:batch_finished, details}, state) do
     Logger.info("PartAttemptCleaner batch finished")
 
-    if state.running do
+    state = if state.running do
       if state.wait_time > 0 do
         Process.send_after(self(), {:quiet_period_elapsed}, state.wait_time)
+        state
       else
-        next(self())
+        case next(self(), state) do
+          {:ok, state} -> state
+          {:error, :no_more_attempts} -> Map.put(state, :running, false)
+        end
       end
     end
 
@@ -98,8 +107,16 @@ defmodule Oli.Delivery.Attempts.PartAttemptCleaner do
   def handle_info({:quiet_period_elapsed}, state) do
     Logger.info("PartAttemptCleaner quiet period elapsed")
 
-    if state.running do
-      next(self())
+    state = case state.running do
+      true ->
+        case next(self(), state) do
+          {:ok, state} -> state
+          {:error, :no_more_attempts} ->
+            state = Map.put(state, :running, false)
+            PubSub.broadcast(Oli.PubSub, "part_attempt_cleaner", {:no_more_attempts, state})
+            state
+        end
+      false -> state
     end
 
     {:noreply, state}
@@ -109,43 +126,50 @@ defmodule Oli.Delivery.Attempts.PartAttemptCleaner do
     {:noreply, state}
   end
 
-  def next(pid) do
-    Task.async(fn ->
-      case do_next() do
-        {:ok, {id, count, visited}} ->
-          Logger.info("PartAttemptCleaner deleted #{count} part attempts")
+  def next(pid, state) do
 
-          Process.send(
-            pid,
-            {:batch_finished, %{id: id, records_deleted: count, records_visited: visited}},
-            []
-          )
+    case pop_attempt_id_from_queue(state) do
 
-        {:error, :no_more_attempts} ->
-          Logger.warning("PartAttemptCleaner cannot find attempts to process")
-          Process.send(pid, {:no_more_attempts}, [])
+      {:ok, {activity_attempt_id, state}} ->
+        Task.async(fn ->
+          case do_next(activity_attempt_id) do
+            {:ok, {id, count, visited}} ->
+              Logger.info("PartAttemptCleaner deleted #{count} part attempts")
 
-        {:error, e} ->
-          Logger.error("PartAttemptCleaner encountered error [#{e}]")
-      end
-    end)
+              Process.send(
+                pid,
+                {:batch_finished, %{id: id, records_deleted: count, records_visited: visited}},
+                []
+              )
+
+            {:error, :no_more_attempts} ->
+              Logger.warning("PartAttemptCleaner cannot find attempts to process")
+              Process.send(pid, {:no_more_attempts}, [])
+
+            {:error, e} ->
+              Logger.error("PartAttemptCleaner encountered error [#{e}]")
+          end
+        end)
+
+        {:ok, state}
+
+      e ->
+        e
+    end
+
   end
 
-  def do_next() do
+  def do_next(activity_attempt_id) do
     Repo.transaction(fn ->
-      with {:ok, id} <- get_next_attempt_id(),
-           {:ok, part_attempts} <- read_part_attempts(id),
+      with {:ok, part_attempts} <- read_part_attempts(activity_attempt_id),
            {:ok, to_delete} <- determine_which_to_delete(part_attempts) do
         total = length(part_attempts)
         count = issue_delete(to_delete)
 
-        mark_as_done(id, count)
+        mark_as_done(activity_attempt_id, count)
 
-        {id, count, total}
+        {activity_attempt_id, count, total}
       else
-        {:error, :no_more_attempts} ->
-          Repo.rollback(:no_more_attempts)
-
         e ->
           Repo.rollback(e)
       end
@@ -279,7 +303,7 @@ defmodule Oli.Delivery.Attempts.PartAttemptCleaner do
     {:ok, results}
   end
 
-  defp get_next_attempt_id() do
+  defp get_attempt_id_batch() do
     # Any attempts newer than this do not have the bloat problem
     marker_date = ~U[2024-02-28 00:00:00Z]
 
@@ -290,15 +314,28 @@ defmodule Oli.Delivery.Attempts.PartAttemptCleaner do
              where: a.cleanup == -1 and a.inserted_at < ^marker_date,
              order_by: [asc: a.id],
              select: a.id,
-             limit: 1
+             limit: 1000
            )
          ) do
-      [id] -> {:ok, id}
       [] -> {:error, :no_more_attempts}
+      ids -> {:ok, ids}
     end
 
     Logger.debug("PartAttemptCleaner get_next_attempt_id in #{Oli.Timing.elapsed(mark) / 1000 / 1000}ms")
 
     result
+  end
+
+  # Attempts to pop an attempt_id from the queue, but when empty
+  # it will attempt to get a new batch of ids from the database to refill the queue
+  defp pop_attempt_id_from_queue(state) do
+    case state.id_queue do
+      [] ->
+        case get_attempt_id_batch() do
+          {:error, :no_more_attempts} -> {:error, :no_more_attempts}
+          {:ok, ids} -> {:ok, {Enum.at(ids, 0), Map.put(state, :id_queue, Enum.drop(ids, 1))}}
+        end
+      [id | rest] -> {:ok, {id, Map.put(state, :id_queue, rest)}}
+    end
   end
 end
