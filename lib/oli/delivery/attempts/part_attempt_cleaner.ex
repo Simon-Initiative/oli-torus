@@ -155,6 +155,9 @@ defmodule Oli.Delivery.Attempts.PartAttemptCleaner do
   defp issue_delete([]), do: 0
 
   defp issue_delete(part_attempt_ids) do
+
+    mark = Oli.Timing.mark()
+
     {count, _} =
       Repo.delete_all(
         from(p in PartAttempt,
@@ -162,19 +165,29 @@ defmodule Oli.Delivery.Attempts.PartAttemptCleaner do
         )
       )
 
+    Logger.debug("PartAttemptCleaner deleted #{count} part attempts in #{Oli.Timing.elapsed(mark) / 1000 / 1000}ms")
+
     count
   end
 
   defp mark_as_done(id, count) do
+
+    mark = Oli.Timing.mark()
+
     Repo.update_all(
       from(a in ActivityAttempt, where: a.id == ^id),
       set: [cleanup: count]
     )
+
+    Logger.debug("PartAttemptCleaner marked done in #{Oli.Timing.elapsed(mark) / 1000 / 1000}ms")
   end
 
   # Given a list of part attempts details, determine which to delete
   # and return a list of their ids.
   def determine_which_to_delete(part_attempts) do
+
+    mark = Oli.Timing.mark()
+
     # separate into groups by part_id
     to_delete =
       Enum.group_by(part_attempts, & &1.part_id)
@@ -205,6 +218,8 @@ defmodule Oli.Delivery.Attempts.PartAttemptCleaner do
       end)
       |> List.flatten()
       |> Enum.map(& &1.id)
+
+    Logger.debug("PartAttemptCleaner determine_which_to_delete in #{Oli.Timing.elapsed(mark) / 1000 / 1000}ms")
 
     {:ok, to_delete}
   end
@@ -243,6 +258,9 @@ defmodule Oli.Delivery.Attempts.PartAttemptCleaner do
   # obviously would be a record that contained current state or
   # history that we need to keep.
   defp read_part_attempts(id) do
+
+    mark = Oli.Timing.mark()
+
     results =
       Repo.all(
         from(p in PartAttempt,
@@ -256,6 +274,8 @@ defmodule Oli.Delivery.Attempts.PartAttemptCleaner do
         )
       )
 
+    Logger.debug("PartAttemptCleaner read_part_attempts in #{Oli.Timing.elapsed(mark) / 1000 / 1000}ms")
+
     {:ok, results}
   end
 
@@ -263,7 +283,9 @@ defmodule Oli.Delivery.Attempts.PartAttemptCleaner do
     # Any attempts newer than this do not have the bloat problem
     marker_date = ~U[2024-02-28 00:00:00Z]
 
-    case Repo.all(
+    mark = Oli.Timing.mark()
+
+    result = case Repo.all(
            from(a in ActivityAttempt,
              where: a.cleanup == -1 and a.inserted_at < ^marker_date,
              order_by: [asc: a.id],
@@ -274,5 +296,9 @@ defmodule Oli.Delivery.Attempts.PartAttemptCleaner do
       [id] -> {:ok, id}
       [] -> {:error, :no_more_attempts}
     end
+
+    Logger.debug("PartAttemptCleaner get_next_attempt_id in #{Oli.Timing.elapsed(mark) / 1000 / 1000}ms")
+
+    result
   end
 end
