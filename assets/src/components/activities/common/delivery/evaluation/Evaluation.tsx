@@ -1,8 +1,8 @@
 import React from 'react';
-import { isDefined } from 'components/activities/response_multi/rules';
 import { ActivityState, PartState, makeContent, makeFeedback } from 'components/activities/types';
 import { WriterContext } from 'data/content/writers/context';
 import { HtmlContentModelRenderer } from 'data/content/writers/renderer';
+import { isDefined } from 'utils/common';
 
 interface Props {
   shouldShow?: boolean;
@@ -77,10 +77,12 @@ export const Evaluation: React.FC<Props> = ({
     return renderPartFeedback(parts[0], context);
   }
 
-  // for migrated multi-inputs: allow caller to specify order different from part order
-  const orderedParts = partOrder
-    ? partOrder.map((id) => parts.find((ps) => ps.partId === id)).filter(isDefined)
-    : parts;
+  // part order for migrated multi-inputs may be random, so allow caller to specify appropriate one
+  let orderedParts = parts;
+  if (partOrder) {
+    const newOrder = partOrder.map((id) => parts.find((ps) => ps.partId === id)).filter(isDefined);
+    if (newOrder.length === parts.length) orderedParts = newOrder;
+  }
 
   return <>{orderedParts.map((partState) => renderPartFeedback(partState, context))}</>;
 };

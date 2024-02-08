@@ -301,3 +301,8 @@ export const padLeft = (inp: string | number, length: number, char = '0') => {
   const str = String(inp);
   return str.length >= length ? str : new Array(length - str.length + 1).join(char) + str;
 };
+
+// generic type guard enabling TypeScript to narrow filtered types to non-undefined
+export function isDefined<T>(value: T | undefined): value is T {
+  return value !== undefined;
+}

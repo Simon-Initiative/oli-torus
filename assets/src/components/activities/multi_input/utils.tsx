@@ -20,8 +20,8 @@ import { Model } from 'data/content/model/elements/factories';
 import { InputRef, Paragraph } from 'data/content/model/elements/types';
 import { elementsOfType } from 'data/content/utils';
 import { clone } from 'utils/common';
+import { isDefined } from 'utils/common';
 import guid from 'utils/guid';
-import { isDefined } from '../response_multi/rules';
 
 export const multiInputOptions: SelectOption<'text' | 'numeric'>[] = [
   { value: 'numeric', displayValue: 'Number' },
@@ -88,7 +88,7 @@ export const orderedPartIds = (model: MultiInputSchema) =>
     .filter(isDefined);
 
 const inputRefToPartId = (model: MultiInputSchema, inputRef: any) =>
-  model.inputs.find((input: any) => input.id === inputRef.input)?.partId;
+  model.inputs.find((input: any) => input.id === inputRef.id)?.partId;
 
 export function guaranteeMultiInputValidity(model: MultiInputSchema): MultiInputSchema {
   // Check whether model is valid first to save unnecessarily cloning the model
