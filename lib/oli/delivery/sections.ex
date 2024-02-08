@@ -1680,6 +1680,9 @@ defmodule Oli.Delivery.Sections do
       Map.merge(progress_per_page_id, progress_per_container_id)
       |> Map.filter(fn {_, progress} -> progress not in [nil, 0.0] end)
 
+    raw_avg_score_per_page_id =
+      Metrics.raw_avg_score_across_for_pages(section, page_ids, [current_user_id])
+
     scheduled_section_resources =
       Scheduling.retrieve(section, :pages)
       # filter out unscheduled resources
@@ -1706,7 +1709,8 @@ defmodule Oli.Delivery.Sections do
                section_resources
                |> attach_section_resource_metadata(
                  page_to_container_map,
-                 progress_per_resource_id
+                 progress_per_resource_id,
+                 raw_avg_score_per_page_id
                )
                |> group_by_container_and_graded()
                |> attach_container_metadata(container_labels_map, progress_per_resource_id)}
@@ -1780,19 +1784,21 @@ defmodule Oli.Delivery.Sections do
   defp attach_section_resource_metadata(
          section_resources,
          page_to_container_map,
-         progress_per_resource_id
+         progress_per_resource_id,
+         raw_avg_score_per_page_id
        ) do
     section_resources
     |> Enum.map(fn sr ->
       container_id = page_to_container_map[Integer.to_string(sr.resource_id)]
 
-      {sr, container_id, sr.graded, sr.purpose, progress_per_resource_id[sr.resource_id]}
+      {sr, container_id, sr.graded, sr.purpose, progress_per_resource_id[sr.resource_id],
+       raw_avg_score_per_page_id[sr.resource_id]}
     end)
   end
 
   defp group_by_container_and_graded(items) do
     items
-    |> Enum.group_by(fn {_sr, container_id, graded, _purpose, _progress} ->
+    |> Enum.group_by(fn {_sr, container_id, graded, _purpose, _progress, _raw_avg_score} ->
       {container_id, graded}
     end)
   end
@@ -1806,8 +1812,9 @@ defmodule Oli.Delivery.Sections do
     |> Enum.map(fn {{container_id, graded}, scheduled_resources} ->
       {container_id, container_labels_map[container_id], graded,
        progress_precentage(progress_per_resource_id[container_id]),
-       Enum.map(scheduled_resources, fn {sr, _container_id, _graded, purpose, page_progress} ->
-         {sr, purpose, progress_precentage(page_progress)}
+       Enum.map(scheduled_resources, fn {sr, _container_id, _graded, purpose, page_progress,
+                                         raw_avg_score} ->
+         {sr, purpose, progress_precentage(page_progress), raw_avg_score}
        end)}
     end)
   end
