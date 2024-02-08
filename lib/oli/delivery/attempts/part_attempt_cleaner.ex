@@ -218,8 +218,6 @@ defmodule Oli.Delivery.Attempts.PartAttemptCleaner do
   def determine_which_to_delete(part_attempts) do
     mark = Oli.Timing.mark()
 
-    num_part_attempts =
-
     # separate into groups by part_id, this gives us a map of part_id to list of part attempts
     groups = Enum.group_by(part_attempts, & &1.part_id)
 
@@ -260,7 +258,7 @@ defmodule Oli.Delivery.Attempts.PartAttemptCleaner do
     # we leave behind no records for a part.
     to_delete = if Enum.count(to_delete) > Enum.count(part_attempts) - num_parts do
       Logger.error("PartAttemptCleaner determine_which_to_delete: activity level count mismatch, deleting none")
-      to_delete = []
+      []
     else
       to_delete
     end
