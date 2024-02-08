@@ -218,11 +218,18 @@ defmodule Oli.Delivery.Attempts.PartAttemptCleaner do
   def determine_which_to_delete(part_attempts) do
     mark = Oli.Timing.mark()
 
-    # separate into groups by part_id
-    to_delete =
+    num_part_attempts =
 
-      Enum.group_by(part_attempts, & &1.part_id)
-      |> Enum.map(fn {_part_id, attempts} ->
+    # separate into groups by part_id, this gives us a map of part_id to list of part attempts
+    groups = Enum.group_by(part_attempts, & &1.part_id)
+
+    # Count the number of parts.  This is going to be the key to ensuring that we do not
+    # delete all of the part attempts for a part, as we will check at the end of this that
+    # we are leaving behing *at least* this many records.
+    num_parts = Map.keys(groups) |> Enum.count()
+
+    to_delete =
+      Enum.map(groups, fn {_part_id, attempts} ->
 
         len = length(attempts)
 
@@ -239,7 +246,7 @@ defmodule Oli.Delivery.Attempts.PartAttemptCleaner do
           # A safety measure step to ensure that we can NEVER delete all
           # of the part attempts for a part.
           if Enum.count(to_delete) != len - 1 do
-            Logger.error("PartAttemptCleaner determine_which_to_delete: to_delete count mismatch, deleting none")
+            Logger.error("PartAttemptCleaner determine_which_to_delete: part level count mismatch, deleting none")
             []
           else
             to_delete
@@ -248,6 +255,15 @@ defmodule Oli.Delivery.Attempts.PartAttemptCleaner do
       end)
       |> List.flatten()
       |> Enum.map(& &1.id)
+
+    # A final safety measure to ensure that we can never delete so many records that
+    # we leave behind no records for a part.
+    to_delete = if Enum.count(to_delete) > Enum.count(part_attempts) - num_parts do
+      Logger.error("PartAttemptCleaner determine_which_to_delete: activity level count mismatch, deleting none")
+      to_delete = []
+    else
+      to_delete
+    end
 
     Logger.debug(
       "PartAttemptCleaner determine_which_to_delete in #{Oli.Timing.elapsed(mark) / 1000 / 1000}ms"
