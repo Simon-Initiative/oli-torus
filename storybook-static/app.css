@@ -3955,6 +3955,10 @@ table.table-striped tbody tr:nth-child(even) {
   bottom: 0.25rem;
 }
 
+.bottom-3 {
+  bottom: 0.75rem;
+}
+
 .bottom-4 {
   bottom: 1rem;
 }
@@ -3969,6 +3973,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .left-20 {
   left: 5rem;
+}
+
+.left-3 {
+  left: 0.75rem;
 }
 
 .left-4 {
@@ -3993,6 +4001,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .right-2 {
   right: 0.5rem;
+}
+
+.right-3 {
+  right: 0.75rem;
 }
 
 .top-0 {
@@ -6545,6 +6557,11 @@ table.table-striped tbody tr:nth-child(even) {
 .text-gray-200 {
   --tw-text-opacity: 1;
   color: rgb(229 229 229 / var(--tw-text-opacity));
+}
+
+.text-gray-300 {
+  --tw-text-opacity: 1;
+  color: rgb(212 212 212 / var(--tw-text-opacity));
 }
 
 .text-gray-400 {
@@ -10098,6 +10115,11 @@ body {
   background-color: rgb(229 229 229 / var(--tw-bg-opacity));
 }
 
+.hover\:bg-gray-400:hover {
+  --tw-bg-opacity: 1;
+  background-color: rgb(163 163 163 / var(--tw-bg-opacity));
+}
+
 .hover\:bg-gray-600:hover {
   --tw-bg-opacity: 1;
   background-color: rgb(82 82 82 / var(--tw-bg-opacity));
@@ -10194,6 +10216,11 @@ body {
 .hover\:text-gray-600:hover {
   --tw-text-opacity: 1;
   color: rgb(82 82 82 / var(--tw-text-opacity));
+}
+
+.hover\:text-gray-800:hover {
+  --tw-text-opacity: 1;
+  color: rgb(38 38 38 / var(--tw-text-opacity));
 }
 
 .hover\:text-gray-900:hover {
