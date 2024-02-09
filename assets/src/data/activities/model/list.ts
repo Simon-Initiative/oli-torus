@@ -43,7 +43,7 @@ export const List: <T>(path: string) => List<T> = (path) => ({
 
   removeOne(id: string) {
     return (model: any) => {
-      Operations.apply(model, Operations.filter(path, `[?(@.id!=${id})]`));
+      Operations.apply(model, Operations.filter(path, ID_PATH(id)));
     };
   },
 });
