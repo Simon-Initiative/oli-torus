@@ -82,7 +82,7 @@ export const partTitle = (input: MultiInput, index: number) => (
 );
 
 // return part ids in order of input occurrence in stem
-export const orderedPartIds = (model: MultiInputSchema) =>
+export const getOrderedPartIds = (model: MultiInputSchema) =>
   elementsOfType(model.stem.content, 'input_ref')
     .map((iref) => inputRefToPartId(model, iref))
     .filter(isDefined);
