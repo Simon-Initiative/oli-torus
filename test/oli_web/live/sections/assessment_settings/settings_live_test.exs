@@ -44,32 +44,32 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
     ## objectives
     objective_1_revision =
       insert(:revision,
-        resource_type_id: ResourceType.get_id_by_type("objective"),
+        resource_type_id: ResourceType.id_for_objective(),
         title: "Objective 1"
       )
 
     objective_2_revision =
       insert(:revision,
-        resource_type_id: ResourceType.get_id_by_type("objective"),
+        resource_type_id: ResourceType.id_for_objective(),
         title: "Objective 2"
       )
 
     objective_3_revision =
       insert(:revision,
-        resource_type_id: ResourceType.get_id_by_type("objective"),
+        resource_type_id: ResourceType.id_for_objective(),
         title: "Objective 3"
       )
 
     objective_4_revision =
       insert(:revision,
-        resource_type_id: ResourceType.get_id_by_type("objective"),
+        resource_type_id: ResourceType.id_for_objective(),
         title: "Objective 4"
       )
 
     ## graded pages (assessments)...
     page_1_revision =
       insert(:revision,
-        resource_type_id: ResourceType.get_id_by_type("page"),
+        resource_type_id: ResourceType.id_for_page(),
         objectives: %{"attached" => [objective_1_revision.resource_id]},
         title: "Page 1",
         graded: true
@@ -77,7 +77,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
 
     page_2_revision =
       insert(:revision,
-        resource_type_id: ResourceType.get_id_by_type("page"),
+        resource_type_id: ResourceType.id_for_page(),
         objectives: %{"attached" => [objective_2_revision.resource_id]},
         title: "Page 2",
         graded: true
@@ -85,7 +85,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
 
     page_3_revision =
       insert(:revision,
-        resource_type_id: ResourceType.get_id_by_type("page"),
+        resource_type_id: ResourceType.id_for_page(),
         objectives: %{"attached" => [objective_3_revision.resource_id]},
         title: "Page 3",
         graded: true
@@ -93,7 +93,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
 
     page_4_revision =
       insert(:revision,
-        resource_type_id: ResourceType.get_id_by_type("page"),
+        resource_type_id: ResourceType.id_for_page(),
         objectives: %{"attached" => [objective_4_revision.resource_id]},
         title: "Page 4",
         graded: true
@@ -104,7 +104,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
       insert(:revision, %{
         resource: insert(:resource),
         objectives: %{},
-        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("container"),
+        resource_type_id: Oli.Resources.ResourceType.id_for_container(),
         children: [page_1_revision.resource_id, page_2_revision.resource_id],
         content: %{},
         deleted: false,
@@ -115,7 +115,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
       insert(:revision, %{
         resource: insert(:resource),
         objectives: %{},
-        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("container"),
+        resource_type_id: Oli.Resources.ResourceType.id_for_container(),
         children: [page_3_revision.resource_id, page_4_revision.resource_id],
         content: %{},
         deleted: false,
@@ -127,7 +127,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
       insert(:revision, %{
         resource: insert(:resource),
         objectives: %{},
-        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("container"),
+        resource_type_id: Oli.Resources.ResourceType.id_for_container(),
         children: [module_1_revision.resource_id],
         content: %{},
         deleted: false,
@@ -138,7 +138,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
       insert(:revision, %{
         resource: insert(:resource),
         objectives: %{},
-        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("container"),
+        resource_type_id: Oli.Resources.ResourceType.id_for_container(),
         children: [module_2_revision.resource_id],
         content: %{},
         deleted: false,
@@ -150,7 +150,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
       insert(:revision, %{
         resource: insert(:resource),
         objectives: %{},
-        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("container"),
+        resource_type_id: Oli.Resources.ResourceType.id_for_container(),
         children: [unit_1_revision.resource_id, unit_2_revision.resource_id],
         content: %{},
         deleted: false,

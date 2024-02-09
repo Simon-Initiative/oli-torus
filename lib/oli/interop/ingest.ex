@@ -271,7 +271,7 @@ defmodule Oli.Interop.Ingest do
                 children: [],
                 author_id: as_author.id,
                 content: %{"model" => []},
-                resource_type_id: Oli.Resources.ResourceType.get_id_by_type("container")
+                resource_type_id: Oli.Resources.ResourceType.id_for_container()
               }
 
               {:ok, %{revision: revision}} =
@@ -347,7 +347,8 @@ defmodule Oli.Interop.Ingest do
         Oli.Authoring.Course.create_project(title, as_author, %{
           description: Map.get(project_details, "description"),
           legacy_svn_root: Map.get(project_details, "svnRoot"),
-          customizations: custom_labels
+          customizations: custom_labels,
+          attributes: Map.get(project_details, "attributes")
         })
     end
   end
@@ -659,7 +660,7 @@ defmodule Oli.Interop.Ingest do
             end)
             |> Enum.filter(fn f -> !is_nil(f) end)
         },
-        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("page"),
+        resource_type_id: Oli.Resources.ResourceType.id_for_page(),
         scoring_strategy_id: Oli.Resources.ScoringStrategy.get_id_by_type("average"),
         graded: graded,
         max_attempts:
@@ -708,7 +709,7 @@ defmodule Oli.Interop.Ingest do
         content: content,
         author_id: as_author.id,
         objectives: process_activity_objectives(activity, objective_map),
-        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("activity"),
+        resource_type_id: Oli.Resources.ResourceType.id_for_activity(),
         activity_type_id: Map.get(registration_by_subtype, Map.get(activity, "subType")),
         scoring_strategy_id: Oli.Resources.ScoringStrategy.get_id_by_type("average")
       }
@@ -742,7 +743,7 @@ defmodule Oli.Interop.Ingest do
       content: %{},
       author_id: as_author.id,
       objectives: %{},
-      resource_type_id: Oli.Resources.ResourceType.get_id_by_type("tag")
+      resource_type_id: Oli.Resources.ResourceType.id_for_tag()
     }
     |> create_resource(project)
   end
@@ -754,7 +755,7 @@ defmodule Oli.Interop.Ingest do
       content: Map.get(bibentry, "content", %{}),
       author_id: as_author.id,
       objectives: %{},
-      resource_type_id: Oli.Resources.ResourceType.get_id_by_type("bibentry")
+      resource_type_id: Oli.Resources.ResourceType.id_for_bibentry()
     }
     |> create_resource(project)
   end
@@ -782,7 +783,7 @@ defmodule Oli.Interop.Ingest do
       children:
         Map.get(objective, "objectives", [])
         |> Enum.map(fn id -> Map.get(objective_map, id).resource_id end),
-      resource_type_id: Oli.Resources.ResourceType.get_id_by_type("objective")
+      resource_type_id: Oli.Resources.ResourceType.id_for_objective()
     }
     |> create_resource(project)
   end
@@ -871,7 +872,7 @@ defmodule Oli.Interop.Ingest do
       children: children_ids,
       author_id: as_author.id,
       content: %{"model" => []},
-      resource_type_id: Oli.Resources.ResourceType.get_id_by_type("container")
+      resource_type_id: Oli.Resources.ResourceType.id_for_container()
     }
 
     {:ok, %{revision: revision}} = Oli.Authoring.Course.create_and_attach_resource(project, attrs)

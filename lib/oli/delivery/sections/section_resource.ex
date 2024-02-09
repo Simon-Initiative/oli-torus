@@ -69,7 +69,7 @@ defmodule Oli.Delivery.Sections.SectionResource do
   end
 
   @doc false
-  def changeset(section_resource, attrs) do
+  def changeset(section_resource, attrs \\ %{}) do
     section_resource
     |> cast(attrs, [
       :numbering_index,

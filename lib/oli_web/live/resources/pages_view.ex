@@ -71,7 +71,16 @@ defmodule OliWeb.Resources.PagesView do
           )
 
         total_count = determine_total(pages)
-        {:ok, table_model} = PagesTableModel.new(pages, project, ctx)
+
+        container_id = Oli.Resources.ResourceType.id_for_container()
+        containers = AuthoringResolver.revisions_of_type(project_slug, container_id)
+
+        child_to_parent =
+          Enum.reduce(containers, %{}, fn c, m ->
+            Enum.reduce(c.children, m, fn r, a -> Map.put(a, r, c) end)
+          end)
+
+        {:ok, table_model} = PagesTableModel.new(pages, project, ctx, child_to_parent)
 
         project_hierarchy =
           AuthoringResolver.full_hierarchy(project_slug) |> HierarchyNode.simplify()
@@ -149,104 +158,103 @@ defmodule OliWeb.Resources.PagesView do
     ~H"""
     <%= render_modal(assigns) %>
     <div class="container mx-auto">
-      <FilterBox.render
-        card_header_text="Browse All Pages"
-        card_body_text=""
-        table_model={@table_model}
-        show_sort={false}
-        show_more_opts={true}
-      >
-        <TextSearch.render
-          id="text-search"
-          text={@options.text_search}
-          event_target="#text-search-input"
-        />
+      <div class="flex flex-row justify-between">
+        <FilterBox.render
+          card_header_text="Browse All Pages"
+          card_body_text=""
+          table_model={@table_model}
+          show_sort={false}
+          show_more_opts={true}
+        >
+          <TextSearch.render
+            id="text-search"
+            text={@options.text_search}
+            event_target="#text-search-input"
+          />
 
-        <:extra_opts>
-          <form phx-change="change_graded" class="d-flex">
-            <select
-              name="graded"
-              id="select_graded"
-              class="custom-select custom-select mr-2"
-              style="width: 170px;"
-            >
-              <option value="" selected>Grading Type</option>
-              <option
-                :for={
-                  {value, str} <-
-                    graded_opts()
-                }
-                value={Kernel.to_string(value)}
-                selected={@options.graded == value}
+          <:extra_opts>
+            <form phx-change="change_graded" class="d-flex">
+              <select
+                name="graded"
+                id="select_graded"
+                class="custom-select custom-select mr-2"
+                style="width: 170px;"
               >
-                <%= str %>
-              </option>
-            </select>
-          </form>
+                <option value="" selected>Grading Type</option>
+                <option
+                  :for={
+                    {value, str} <-
+                      graded_opts()
+                  }
+                  value={Kernel.to_string(value)}
+                  selected={@options.graded == value}
+                >
+                  <%= str %>
+                </option>
+              </select>
+            </form>
 
-          <form phx-change="change_type" class="d-flex">
-            <select
-              name="type"
-              id="select_type"
-              class="custom-select custom-select mr-2"
-              style="width: 170px;"
-            >
-              <option value="" selected>Page Type</option>
-              <option
-                :for={
-                  {value, str} <-
-                    type_opts()
-                }
-                value={Kernel.to_string(value)}
-                selected={@options.basic == value}
+            <form phx-change="change_type" class="d-flex">
+              <select
+                name="type"
+                id="select_type"
+                class="custom-select custom-select mr-2"
+                style="width: 170px;"
               >
-                <%= str %>
-              </option>
-            </select>
-          </form>
-        </:extra_opts>
-      </FilterBox.render>
+                <option value="" selected>Page Type</option>
+                <option
+                  :for={
+                    {value, str} <-
+                      type_opts()
+                  }
+                  value={Kernel.to_string(value)}
+                  selected={@options.basic == value}
+                >
+                  <%= str %>
+                </option>
+              </select>
+            </form>
+          </:extra_opts>
+        </FilterBox.render>
+        <div>
+          <.link href={~p"/authoring/project/#{@project.slug}/curriculum"} role="go_to_curriculum">
+            Curriculum
+          </.link>
+        </div>
+      </div>
 
-      <div class="my-3 d-flex flex-row">
-        <div class="flex-grow-1" />
-        <div class="dropdown btn-group">
+      <div class="dropdown btn-group flex justify-end">
+        <button
+          type="button"
+          class="btn btn-primary dropdown-toggle"
+          data-bs-toggle="dropdown"
+          aria-haspopup="true"
+          aria-expanded="false"
+        >
+          Create <i class="fa-solid fa-caret-down ml-2"></i>
+        </button>
+        <div class="dropdown-menu dropdown-menu-right">
           <button
             type="button"
-            class="btn btn-primary dropdown-toggle"
-            data-bs-toggle="dropdown"
-            aria-haspopup="true"
-            aria-expanded="false"
+            class="dropdown-item"
+            phx-click="create_page"
+            phx-value-type="Unscored"
           >
-            Create <i class="fa-solid fa-caret-down ml-2"></i>
+            Practice Page
           </button>
-          <div class="dropdown-menu dropdown-menu-right">
+          <button type="button" class="dropdown-item" phx-click="create_page" phx-value-type="Scored">
+            Graded Assessment
+          </button>
+          <%= if Oli.Features.enabled?("adaptivity") do %>
             <button
               type="button"
               class="dropdown-item"
               phx-click="create_page"
-              phx-value-type="Unscored"
+              phx-value-type="Adaptive"
             >
-              Practice Page
+              Adaptive Page
             </button>
-            <button
-              type="button"
-              class="dropdown-item"
-              phx-click="create_page"
-              phx-value-type="Scored"
-            >
-              Graded Assessment
-            </button>
-            <%= if Oli.Features.enabled?("adaptivity") do %>
-              <button
-                type="button"
-                class="dropdown-item"
-                phx-click="create_page"
-                phx-value-type="Adaptive"
-              >
-                Adaptive Page
-              </button>
-            <% end %>
-          </div>
+          <% end %>
         </div>
       </div>
 
@@ -257,6 +265,7 @@ defmodule OliWeb.Resources.PagesView do
         offset={@offset}
         limit={limit()}
         scrollable={false}
+        no_records_message="There are no pages in this project"
       />
     </div>
     """
@@ -553,7 +562,8 @@ defmodule OliWeb.Resources.PagesView do
 
     {:ok, _} = ContainerEditor.move_to(revision, from_container, to_container, author, project)
 
-    {:noreply, hide_modal(socket, modal_assigns: nil)}
+    hide_modal(socket, modal_assigns: nil)
+    |> patch_with(%{})
   end
 
   def handle_event("MoveModal.remove", %{"from_uuid" => from_uuid}, socket) do

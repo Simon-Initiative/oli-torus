@@ -17,6 +17,16 @@ defmodule OliWeb.Projects.ActiveSectionsTableModel do
         render_fn: &__MODULE__.custom_render/3
       },
       %ColumnSpec{
+        name: :creator,
+        label: "Creator",
+        render_fn: &__MODULE__.custom_render/3
+      },
+      %ColumnSpec{
+        name: :instructors,
+        label: "Instructors",
+        render_fn: &__MODULE__.custom_render/3
+      },
+      %ColumnSpec{
         name: :base_project_id,
         label: "Relationship Type",
         render_fn: &__MODULE__.custom_render/3
@@ -40,10 +50,7 @@ defmodule OliWeb.Projects.ActiveSectionsTableModel do
       column_specs: column_specs,
       event_suffix: "",
       id_field: [:id],
-      data: %{
-        ctx: ctx,
-        project: project
-      }
+      data: %{ctx: ctx, project: project}
     )
   end
 
@@ -64,9 +71,30 @@ defmodule OliWeb.Projects.ActiveSectionsTableModel do
   def custom_render(assigns, section, %ColumnSpec{name: :base_project_id}),
     do: if(section.base_project_id == assigns.project.id, do: "Base Project", else: "Remixed")
 
+  def custom_render(_assigns, section, %ColumnSpec{name: :creator}) do
+    case section.creator do
+      nil -> "Creator not found"
+      creator -> process_name(creator)
+    end
+  end
+
+  def custom_render(_assigns, section, %ColumnSpec{name: :instructors}) do
+    case section.instructors do
+      instructors when is_list(instructors) and length(instructors) > 0 ->
+        instructors |> Enum.map(&process_name/1) |> Enum.join("; ")
+
+      _ ->
+        "Instructors not found"
+    end
+  end
+
   def render(assigns) do
     ~H"""
     <div>nothing</div>
     """
+  end
+
+  defp process_name(user_name) do
+    apply(Utils, :name, String.split(user_name, "|"))
   end
 end

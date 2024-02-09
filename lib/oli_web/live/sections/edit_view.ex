@@ -51,7 +51,7 @@ defmodule OliWeb.Sections.EditView do
 
         labels =
           case section.customizations do
-            nil -> Map.from_struct(CustomLabels.default())
+            nil -> CustomLabels.default_map()
             val -> Map.from_struct(val)
           end
 
@@ -75,7 +75,7 @@ defmodule OliWeb.Sections.EditView do
   attr(:changeset, :any)
   attr(:is_admin, :boolean)
   attr(:brands, :list)
-  attr(:labels, :map, default: Map.from_struct(CustomLabels.default()))
+  attr(:labels, :map, default: CustomLabels.default_map())
 
   def render(assigns) do
     assigns = assign(assigns, changeset: to_form(assigns.changeset))

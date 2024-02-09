@@ -184,7 +184,7 @@ defmodule Oli.Publishing.AuthoringResolverTest do
         ResourceEditor.create(
           project.slug,
           author,
-          ResourceType.get_id_by_type("alternatives"),
+          ResourceType.id_for_alternatives(),
           %{title: "Alt 1", content: %{"options" => []}}
         )
 
@@ -192,7 +192,7 @@ defmodule Oli.Publishing.AuthoringResolverTest do
         ResourceEditor.create(
           project.slug,
           author,
-          ResourceType.get_id_by_type("alternatives"),
+          ResourceType.id_for_alternatives(),
           %{title: "Alt 2", content: %{"options" => []}}
         )
 
@@ -200,14 +200,14 @@ defmodule Oli.Publishing.AuthoringResolverTest do
         ResourceEditor.create(
           project.slug,
           author,
-          ResourceType.get_id_by_type("alternatives"),
+          ResourceType.id_for_alternatives(),
           %{title: "Alt 3", content: %{"options" => []}}
         )
 
       revisions =
         AuthoringResolver.revisions_of_type(
           project.slug,
-          ResourceType.get_id_by_type("alternatives")
+          ResourceType.id_for_alternatives()
         )
 
       assert Enum.count(revisions) == 3
@@ -218,7 +218,7 @@ defmodule Oli.Publishing.AuthoringResolverTest do
       revisions =
         AuthoringResolver.revisions_of_type(
           project.slug,
-          ResourceType.get_id_by_type("alternatives")
+          ResourceType.id_for_alternatives()
         )
 
       assert Enum.count(revisions) == 2
@@ -269,7 +269,7 @@ defmodule Oli.Publishing.AuthoringResolverTest do
 
       page_revision =
         insert(:revision,
-          resource_type_id: Oli.Resources.ResourceType.get_id_by_type("page"),
+          resource_type_id: Oli.Resources.ResourceType.id_for_page(),
           title: "Example test revision",
           graded: true,
           content: %{"advancedDelivery" => true}

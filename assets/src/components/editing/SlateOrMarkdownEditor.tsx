@@ -1,5 +1,6 @@
-import React, { useMemo } from 'react';
-import { ErrorBoundary } from 'components/common/ErrorBoundary';
+import React, { ErrorInfo, useMemo } from 'react';
+import { Button } from 'components/common/Buttons';
+import { ErrorMessage } from 'components/common/ErrorBoundary';
 import { Editor } from 'components/editing/editor/Editor';
 import { SwitchToMarkdownModal } from 'components/editing/editor/SwitchToMarkdownModal';
 import { CommandDescription } from 'components/editing/elements/commands/interfaces';
@@ -28,6 +29,96 @@ type SlateOrMarkdownEditorProps = {
   onChangeTextDirection?: (textDirection: TextDirection) => void;
 };
 
+interface ErrorBoundaryState {
+  error?: Error;
+  errorInfo?: ErrorInfo;
+  hadEdit: boolean;
+
+  content: ModelElement[];
+  contentHistory: ModelElement[][];
+}
+/**
+ * SlateOrMarkdownEditor is a wrapper around the real editor in InternalSlateOrMarkdownEditor
+ * This only deals with error handling and rollbacks. This is a little tricky because the slate
+ * editor is not a controlled component that we can just set the current content value to.
+ *
+ */
+export class SlateOrMarkdownEditor extends React.Component<
+  SlateOrMarkdownEditorProps,
+  ErrorBoundaryState
+> {
+  static defaultProps = {
+    allowBlockElements: true,
+    textDirection: 'ltr',
+  };
+
+  constructor(props: Readonly<SlateOrMarkdownEditorProps>) {
+    super(props);
+    this.state = { contentHistory: [props.content], content: props.content, hadEdit: false };
+  }
+
+  onEdit = (content: ModelElement[]) => {
+    this.props.onEdit(content);
+
+    this.setState((state) => {
+      // Maintain a stack of previous content, but limit it to 25 old revisions.
+      const newHistory = [...state.contentHistory, content];
+
+      if (newHistory.length > 25) {
+        newHistory.shift();
+      }
+
+      return { contentHistory: newHistory, hadEdit: true };
+    });
+  };
+
+  revert = () => {
+    this.setState((state) => {
+      const newHistory = [...state.contentHistory];
+      newHistory.pop(); // The breaking change
+      const previousContent = newHistory.pop() || []; // The previous content before the breaking change
+      console.info('Reverting editor to', previousContent);
+      this.props.onEdit(previousContent);
+      return { contentHistory: newHistory, error: undefined, content: previousContent };
+    });
+  };
+
+  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+    this.setState({ error, errorInfo });
+  }
+
+  render() {
+    const { error, errorInfo } = this.state;
+
+    if (error) {
+      return (
+        <ErrorMessage
+          errorMessage={'Fatal error in editor: ' + error?.message || ''}
+          error={error}
+          info={errorInfo}
+        >
+          {this.state.hadEdit && this.state.contentHistory.length > 0 && (
+            <p>
+              You can try recovering from this error by reverting your last change:
+              <Button variant="warning" size="md" onClick={this.revert}>
+                Revert Last Change
+              </Button>
+            </p>
+          )}
+        </ErrorMessage>
+      );
+    } else {
+      return (
+        <InternalSlateOrMarkdownEditor
+          {...this.props}
+          onEdit={this.onEdit}
+          content={this.state.content}
+        />
+      );
+    }
+  }
+}
+
 /*
   This component:
     1. Handles displaying a slate or a markdown editor
@@ -38,7 +129,7 @@ type SlateOrMarkdownEditorProps = {
 */
 
 // The resource editor for content
-export const SlateOrMarkdownEditor: React.FC<SlateOrMarkdownEditorProps> = ({
+const InternalSlateOrMarkdownEditor: React.FC<SlateOrMarkdownEditorProps> = ({
   editMode,
   projectSlug,
   resourceSlug,
@@ -88,7 +179,7 @@ export const SlateOrMarkdownEditor: React.FC<SlateOrMarkdownEditorProps> = ({
 
   if (editorType === 'markdown') {
     return (
-      <ErrorBoundary>
+      <>
         <MarkdownEditor
           className={className}
           commandContext={{ projectSlug: projectSlug, resourceSlug: resourceSlug }}
@@ -106,11 +197,11 @@ export const SlateOrMarkdownEditor: React.FC<SlateOrMarkdownEditorProps> = ({
             onConfirm={changeEditor('slate')}
           />
         )}
-      </ErrorBoundary>
+      </>
     );
   } else {
     return (
-      <ErrorBoundary>
+      <>
         <Editor
           className={`structured-content p-1 ${className}`}
           commandContext={{ projectSlug: projectSlug, resourceSlug: resourceSlug }}
@@ -131,12 +222,7 @@ export const SlateOrMarkdownEditor: React.FC<SlateOrMarkdownEditorProps> = ({
             onConfirm={changeEditor('markdown')}
           />
         )}
-      </ErrorBoundary>
+      </>
     );
   }
-};
-
-SlateOrMarkdownEditor.defaultProps = {
-  allowBlockElements: true,
-  textDirection: 'ltr',
 };

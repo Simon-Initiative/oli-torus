@@ -63,21 +63,24 @@ defmodule OliWeb.Users.UsersDetailView do
            breadcrumbs: set_breadcrumbs(user),
            user: user,
            csrf_token: csrf_token,
-           changeset: user_changeset(user),
+           form: user_form(user),
            user_lti_params: LtiParams.all_user_lti_params(user.id),
            enrolled_sections: enrolled_sections,
-           disabled_edit: true
+           disabled_edit: true,
+           user_name: user.name
          )}
     end
   end
 
   attr(:breadcrumbs, :any)
-  attr(:changeset, :map)
+  attr(:form, :map)
   attr(:csrf_token, :any)
   attr(:modal, :any, default: nil)
   attr(:title, :string, default: "User Details")
   attr(:user, :map, default: nil)
   attr(:disabled_edit, :boolean, default: true)
+  attr(:disabled_submit, :boolean, default: false)
+  attr(:user_name, :string)
 
   def render(assigns) do
     ~H"""
@@ -85,37 +88,34 @@ defmodule OliWeb.Users.UsersDetailView do
       <%= render_modal(assigns) %>
       <Groups.render>
         <Group.render label="Details" description="User details">
-          <.form for={@changeset} phx-change="change" phx-submit="submit" autocomplete="off">
+          <.form for={@form} phx-change="change" phx-submit="submit" autocomplete="off">
             <ReadOnly.render label="Sub" value={@user.sub} />
-            <ReadOnly.render label="Name" value={@user.name} />
+            <ReadOnly.render label="Name" value={@user_name} />
             <div class="form-group">
-              <label for="given_name">Given Name</label>
-              <input
-                value={@changeset.data.given_name}
-                id="given_name"
-                name="user[given_name]"
+              <.input
+                field={@form[:given_name]}
+                label="Given Name"
                 class="form-control"
                 disabled={@disabled_edit}
+                error_position={:top}
               />
             </div>
             <div class="form-group">
-              <label for="family_name">Last Name</label>
-              <input
-                value={@changeset.data.family_name}
-                id="family_name"
-                name="user[family_name]"
+              <.input
+                field={@form[:family_name]}
+                label="Last Name"
                 class="form-control"
                 disabled={@disabled_edit}
+                error_position={:top}
               />
             </div>
             <div class="form-group">
-              <label for="email">Email</label>
-              <input
-                value={@changeset.data.email}
-                id="email"
-                name="user[email]"
+              <.input
+                field={@form[:email]}
+                label="Email"
                 class="form-control"
                 disabled={@disabled_edit}
+                error_position={:top}
               />
             </div>
             <ReadOnly.render label="Guest" value={boolean(@user.guest)} />
@@ -126,17 +126,13 @@ defmodule OliWeb.Users.UsersDetailView do
               />
             <% end %>
             <div class="form-control mb-3">
-              <input
-                id="independent_learner"
-                name="user[independent_learner]"
+              <.input
+                field={@form[:independent_learner]}
                 type="checkbox"
+                label="Independent Learner"
                 class="form-check-input"
-                checked={fetch_field(@changeset, :independent_learner)}
                 disabled={@disabled_edit}
               />
-              <label for="independent_learner" class="form-check-label mr-2">
-                Independent Learner
-              </label>
             </div>
             <section class="mb-2">
               <heading>
@@ -146,17 +142,13 @@ defmodule OliWeb.Users.UsersDetailView do
                 </small>
               </heading>
               <div class="form-control">
-                <input
-                  id="can_create_sections"
-                  name="user[can_create_sections]"
+                <.input
+                  field={@form[:can_create_sections]}
                   type="checkbox"
+                  label="Can Create Sections"
                   class="form-check-input"
-                  checked={fetch_field(@changeset, :can_create_sections)}
                   disabled={@disabled_edit}
                 />
-                <label for="can_create_sections" class="form-check-label mr-2">
-                  Can Create Sections
-                </label>
               </div>
             </section>
             <ReadOnly.render label="Research Opt Out" value={boolean(@user.research_opt_out)} />
@@ -167,7 +159,13 @@ defmodule OliWeb.Users.UsersDetailView do
             <ReadOnly.render label="Created" value={render_date(@user, :inserted_at, @ctx)} />
             <ReadOnly.render label="Last Updated" value={render_date(@user, :updated_at, @ctx)} />
             <%= unless @disabled_edit do %>
-              <button type="submit" class="float-right btn btn-md btn-primary mt-2">Save</button>
+              <button
+                type="submit"
+                class="float-right btn btn-md btn-primary mt-2"
+                disabled={@disabled_submit}
+              >
+                Save
+              </button>
             <% end %>
           </.form>
           <%= if @disabled_edit do %>
@@ -241,11 +239,7 @@ defmodule OliWeb.Users.UsersDetailView do
     {:noreply, show_modal(socket, modal, modal_assigns: modal_assigns)}
   end
 
-  def handle_event(
-        "confirm_email",
-        _,
-        socket
-      ) do
+  def handle_event("confirm_email", _, socket) do
     email_confirmed_at = DateTime.truncate(DateTime.utc_now(), :second)
 
     case Accounts.update_user(socket.assigns.user, %{email_confirmed_at: email_confirmed_at}) do
@@ -261,9 +255,7 @@ defmodule OliWeb.Users.UsersDetailView do
   end
 
   def handle_event("show_lock_account_modal", _, socket) do
-    modal_assigns = %{
-      user: socket.assigns.user
-    }
+    modal_assigns = %{user: socket.assigns.user}
 
     modal = fn assigns ->
       ~H"""
@@ -274,11 +266,7 @@ defmodule OliWeb.Users.UsersDetailView do
     {:noreply, show_modal(socket, modal, modal_assigns: modal_assigns)}
   end
 
-  def handle_event(
-        "lock_account",
-        %{"id" => id},
-        socket
-      ) do
+  def handle_event("lock_account", %{"id" => id}, socket) do
     user = user_with_platform_roles(id)
     UserContext.lock(user)
 
@@ -303,11 +291,7 @@ defmodule OliWeb.Users.UsersDetailView do
     {:noreply, show_modal(socket, modal, modal_assigns: modal_assigns)}
   end
 
-  def handle_event(
-        "unlock_account",
-        %{"id" => id},
-        socket
-      ) do
+  def handle_event("unlock_account", %{"id" => id}, socket) do
     user = user_with_platform_roles(id)
     UserContext.unlock(user)
 
@@ -332,11 +316,7 @@ defmodule OliWeb.Users.UsersDetailView do
     {:noreply, show_modal(socket, modal, modal_assigns: modal_assigns)}
   end
 
-  def handle_event(
-        "delete_account",
-        %{"id" => id},
-        socket
-      ) do
+  def handle_event("delete_account", %{"id" => id}, socket) do
     user = user_with_platform_roles(id)
 
     case Accounts.delete_user(user) do
@@ -352,20 +332,35 @@ defmodule OliWeb.Users.UsersDetailView do
   end
 
   def handle_event("change", %{"user" => params}, socket) do
-    {:noreply,
-     assign(socket, changeset: user_changeset(socket.assigns.user, cast_params(params)))}
+    form = user_form(socket.assigns.user, params)
+
+    socket =
+      socket
+      |> assign(form: form)
+      |> assign(disabled_submit: !Enum.empty?(form.errors))
+      |> assign(user_name: "#{params["given_name"]} #{params["family_name"]}")
+
+    {:noreply, socket}
   end
 
   def handle_event("submit", %{"user" => params}, socket) do
-    case Accounts.update_user(socket.assigns.user, cast_params(params)) do
+    case Accounts.update_user_from_admin(user_form(socket.assigns.user, params).source) do
       {:ok, user} ->
         {:noreply,
          socket
          |> put_flash(:info, "User successfully updated.")
-         |> assign(user: user, changeset: user_changeset(user, params), disabled_edit: true)}
+         |> assign(user: user)
+         |> assign(form: user_form(user, params))
+         |> assign(disabled_edit: true)
+         |> assign(user_name: "#{params["given_name"]} #{params["family_name"]}")}
 
-      {:error, _error} ->
-        {:noreply, put_flash(socket, :error, "User couldn't be updated.")}
+      {:error, error} ->
+        form = to_form(error)
+
+        {:noreply,
+         socket
+         |> assign(form: form)
+         |> assign(disabled_submit: !Enum.empty?(form.errors))}
     end
   end
 
@@ -373,19 +368,15 @@ defmodule OliWeb.Users.UsersDetailView do
     {:noreply, socket |> assign(disabled_edit: false)}
   end
 
-  defp cast_params(params) do
-    params
-    |> Map.put("independent_learner", if(params["independent_learner"], do: true, else: false))
-    |> Map.put("can_create_sections", if(params["can_create_sections"], do: true, else: false))
-  end
-
   defp user_with_platform_roles(id) do
     Accounts.get_user(id, preload: [:platform_roles])
   end
 
-  defp user_changeset(user, attrs \\ %{}) do
-    User.noauth_changeset(user, attrs)
+  defp user_form(user, attrs \\ %{}) do
+    user
+    |> User.update_changeset_for_admin(attrs)
     |> Map.put(:action, :update)
+    |> to_form()
   end
 
   defp add_necessary_information(sections, user) do

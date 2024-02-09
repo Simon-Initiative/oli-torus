@@ -114,7 +114,7 @@ export function rangeOperator(s: string): RangeOperator {
 }
 
 const escapeInput = (s: string) => s.replace(/[\\{}]/g, (i) => `\\${i}`);
-const unescapeInput = (s: string) => s.replace(/\\[\\{}]/g, (i) => i.substring(1));
+export const unescapeInput = (s: string) => s.replace(/\\[\\{}]/g, (i) => i.substring(1));
 
 const valueWithPrecision = (value: numberOrVar, precision?: number) =>
   precision !== undefined ? `${value}#${precision}` : `${value}`;

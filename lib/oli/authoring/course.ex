@@ -266,7 +266,7 @@ defmodule Oli.Authoring.Course do
     attrs = %{
       title: "Curriculum",
       author_id: author.id,
-      resource_type_id: Oli.Resources.ResourceType.get_id_by_type("container")
+      resource_type_id: Oli.Resources.ResourceType.id_for_container()
     }
 
     create_and_attach_resource(project, attrs)
@@ -415,7 +415,7 @@ defmodule Oli.Authoring.Course do
         author_id: author_id,
         max_attempts: 1,
         scoring_strategy_id: ScoringStrategy.get_id_by_type("most_recent"),
-        resource_type_id: ResourceType.get_id_by_type("page"),
+        resource_type_id: ResourceType.id_for_page(),
         content: %{
           "version" => "0.1.0",
           "model" => []

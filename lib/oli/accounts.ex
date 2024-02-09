@@ -252,6 +252,23 @@ defmodule Oli.Accounts do
     |> Repo.insert()
   end
 
+  def update_user(
+        %User{} = user,
+        %{"current_password" => _, "password" => _, "password_confirmation" => _} = attrs
+      ) do
+    user
+    |> User.update_changeset(attrs)
+    |> Repo.update()
+    |> case do
+      {:ok, %User{id: user_id}} = result ->
+        AccountLookupCache.delete("user_#{user_id}")
+        result
+
+      error ->
+        error
+    end
+  end
+
   @doc """
   Updates a user.
   ## Examples
@@ -268,6 +285,21 @@ defmodule Oli.Accounts do
 
     case res do
       {:ok, %User{id: user_id}} ->
+        AccountLookupCache.delete("user_#{user_id}")
+
+        res
+
+      error ->
+        error
+    end
+  end
+
+  @doc """
+  Updates a user from an admin.
+  """
+  def update_user_from_admin(changeset) do
+    case Repo.update(changeset) do
+      {:ok, %User{id: user_id}} = res ->
         AccountLookupCache.delete("user_#{user_id}")
 
         res
@@ -438,6 +470,23 @@ defmodule Oli.Accounts do
         AccountLookupCache.delete("author_#{author_id}")
 
         res
+
+      error ->
+        error
+    end
+  end
+
+  def update_author(
+        %Author{} = author,
+        %{"current_password" => _, "password" => _, "password_confirmation" => _} = attrs
+      ) do
+    author
+    |> Author.update_changeset(attrs)
+    |> Repo.update()
+    |> case do
+      {:ok, %Author{id: author_id}} = result ->
+        AccountLookupCache.delete("author_#{author_id}")
+        result
 
       error ->
         error

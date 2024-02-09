@@ -16,7 +16,7 @@ defmodule OliWeb.Resources.AlternativesEditor do
   alias OliWeb.Common.Modal.{FormModal, DeleteModal}
   alias OliWeb.Resources.AlternativesEditor.PreventDeletionModal
 
-  @alternatives_type_id ResourceType.get_id_by_type("alternatives")
+  @alternatives_type_id ResourceType.id_for_alternatives()
 
   @impl Phoenix.LiveView
   def mount(%{"project_id" => project_slug}, session, socket) do

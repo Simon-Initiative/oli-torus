@@ -498,8 +498,8 @@ defmodule OliWeb.ObjectivesLive.Objectives do
   end
 
   def handle_info({:finish_attachments, {objectives_attachments, flash_fn}}, socket) do
-    page_id = ResourceType.get_id_by_type("page")
-    activity_id = ResourceType.get_id_by_type("activity")
+    page_id = ResourceType.id_for_page()
+    activity_id = ResourceType.id_for_activity()
 
     objectives =
       Enum.reduce(socket.assigns.objectives, [], fn rev, acc ->
