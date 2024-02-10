@@ -296,8 +296,8 @@ export const VlabActions = {
       }
 
       Operations.applyAll(model, [
-        Operations.filter('$..parts', `[?(@.id!=$'{part.id}')]`),
-        Operations.filter('$.inputs', `[?(@.id!=$'{inputId}')]`),
+        Operations.filter('$..parts', `[?(@.id!='${part.id}')]`),
+        Operations.filter('$.inputs', `[?(@.id!='${inputId}')]`),
       ]);
 
       post(undoables);
