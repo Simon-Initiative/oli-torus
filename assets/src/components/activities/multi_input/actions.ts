@@ -152,7 +152,7 @@ export const MultiInputActions = {
       post(
         makeUndoable('Removed a choice', [
           Operations.replace('$.authoring', authoringClone),
-          Operations.insert(`$.inputs[?(@.id==${input.id})].choiceIds`, choiceId, inputIndex),
+          Operations.insert(`$.inputs[?(@.id=='${input.id}')].choiceIds`, choiceId, inputIndex),
           Operations.insert(Choices.path, clone(choice), choiceIndex),
         ]),
       );
@@ -261,8 +261,8 @@ export const MultiInputActions = {
       }
 
       Operations.applyAll(model, [
-        Operations.filter('$..parts', `[?(@.id!=${part.id})]`),
-        Operations.filter('$.inputs', `[?(@.id!=${inputId})]`),
+        Operations.filter('$..parts', `[?(@.id!='${part.id}')]`),
+        Operations.filter('$.inputs', `[?(@.id!='${inputId}')]`),
       ]);
 
       post(undoables);
