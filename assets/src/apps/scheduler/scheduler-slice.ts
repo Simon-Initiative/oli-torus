@@ -110,10 +110,24 @@ const buildHierarchyItems = (
   items: HierarchyItemSrc[],
   preferredSchedulingTime: TimeParts,
 ): HierarchyItem[] => {
+
+
+  const parseDate = (str: string, scheduleType: string) => {
+    if (!str) return null;
+
+    if (scheduleType === 'due_by' && str.length > 10) {
+      // For due-by items, we need to take the time into account to get the correct date
+      const tempDate = new Date(str);
+      return new DateWithoutTime(tempDate.getFullYear(), tempDate.getMonth(), tempDate.getDate());
+    }
+
+    return str ? new DateWithoutTime(str) : null;
+  };
+
   return items.map((item) => ({
     ...item,
-    startDate: item.start_date ? new DateWithoutTime(item.start_date) : null,
-    endDate: item.end_date ? new DateWithoutTime(item.end_date) : null,
+    startDate: parseDate(item.start_date, item.scheduling_type),
+    endDate: parseDate(item.end_date, item.scheduling_type),
     endDateTime: toDateTime(item.end_date, preferredSchedulingTime),
     startDateTime: toDateTime(item.start_date, preferredSchedulingTime),
   }));
