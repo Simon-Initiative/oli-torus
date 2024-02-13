@@ -1,4 +1,5 @@
 import { andRules, orRules, unescapeInput } from 'data/activities/model/rules';
+import { isDefined } from 'utils/common';
 import { addOrRemove, remove } from '../common/utils';
 import { MatchStyle } from '../types';
 
@@ -86,11 +87,6 @@ export const getUniqueRuleForInput = (r: MultiRule, id: string): InputRule => {
 // get all values for this input id in compound rule. Mainly for dropdowns
 export const getInputValues = (r: MultiRule, id: string): string[] =>
   getRulesForInput(r, id).map(inputRuleValue);
-
-// generic type guard enabling TypeScript to narrow filtered types to non-undefined
-export function isDefined<T>(value: T | undefined): value is T {
-  return value !== undefined;
-}
 
 // get list of unique inputRefs used in compound rule
 export const ruleInputRefs = (r: MultiRule): string[] => [
