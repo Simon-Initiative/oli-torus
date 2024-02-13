@@ -641,7 +641,8 @@ defmodule OliWeb.Api.AttemptController do
         conn,
         %{
           "section_slug" => section_slug,
-          "activity_attempt_guid" => activity_attempt_guid
+          "activity_attempt_guid" => activity_attempt_guid,
+          "survey_id" => survey_id
         } = params
       ) do
     seed_state_from_previous = Map.get(params, "seedResponsesWithPrevious", false)
@@ -651,7 +652,8 @@ defmodule OliWeb.Api.AttemptController do
            section_slug,
            activity_attempt_guid,
            datashop_session_id,
-           seed_state_from_previous
+           seed_state_from_previous,
+           survey_id
          ) do
       {:ok, {attempt_state, model}} ->
         json(conn, %{"type" => "success", "attemptState" => attempt_state, "model" => model})

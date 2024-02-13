@@ -3,6 +3,7 @@ defmodule OliWeb.AttemptControllerTest do
 
   alias Oli.Seeder
   alias Oli.Activities.Model.Part
+  alias Oli.Delivery.Attempts.Core
 
   describe "bulk activity attempt request" do
     setup [:setup_session]
@@ -43,6 +44,36 @@ defmodule OliWeb.AttemptControllerTest do
 
       part3_attempt = Enum.find(part_attempts, fn p -> p["partId"] == "3" end)
       assert part3_attempt["attemptNumber"] == 2
+    end
+  end
+
+  describe "reset activity attempt" do
+    setup [:setup_session]
+
+    test "use reset button sets survey_id field correctly", %{
+      conn: conn,
+      map: map
+    } do
+      # Simulate the user clicking the reset button
+      conn =
+        post(
+          conn,
+          Routes.attempt_path(
+            conn,
+            :new_activity,
+            map.section.slug,
+            map.activity_attempt1.attempt_guid
+          ),
+          %{survey_id: "1010"}
+        )
+
+      # Verify that the response is successful
+      assert %{"type" => "success", "attemptState" => attempt_state, "model" => _model} =
+               json_response(conn, 200)
+
+      # Verify that the survey_id was set correctly
+      assert Core.get_activity_attempt_by(attempt_guid: attempt_state["attemptGuid"]).survey_id ==
+               "1010"
     end
   end
 

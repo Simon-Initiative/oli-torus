@@ -2464,42 +2464,49 @@ defmodule Oli.Delivery.Sections do
               new_published_resource = new_published_resources_map[resource_id]
               new_children = new_published_resource.children
 
-              case current_children do
-                nil ->
-                  # this section resource was just created so it can assume the newly published value
-                  %SectionResource{
-                    section_resource
-                    | children: Enum.map(new_children, &resource_id_to_sr_id[&1])
-                  }
+              updated_section_resource =
+                case current_children do
+                  nil ->
+                    # this section resource was just created so it can assume the newly published value
+                    %SectionResource{
+                      section_resource
+                      | children: Enum.map(new_children, &resource_id_to_sr_id[&1])
+                    }
 
-                current_children ->
-                  # ensure we are comparing resource_ids to resource_ids (and not section_resource_ids)
-                  # by translating the current section_resource children ids to resource_ids
-                  current_children_resource_ids =
-                    Enum.map(current_children, &sr_id_to_resource_id[&1])
+                  current_children ->
+                    # ensure we are comparing resource_ids to resource_ids (and not section_resource_ids)
+                    # by translating the current section_resource children ids to resource_ids
+                    current_children_resource_ids =
+                      Enum.map(current_children, &sr_id_to_resource_id[&1])
 
-                  # check if the children resource_ids have diverged from the new value
-                  if current_children_resource_ids != new_children do
-                    # There is a merge conflict between the current section resource and the new published resource.
-                    # Use the AIRRO three way merge algorithm to resolve
-                    base = prev_published_resource.children
-                    source = new_published_resource.children
-                    target = current_children_resource_ids
+                    # check if the children resource_ids have diverged from the new value
+                    if current_children_resource_ids != new_children do
+                      # There is a merge conflict between the current section resource and the new published resource.
+                      # Use the AIRRO three way merge algorithm to resolve
+                      base = prev_published_resource.children
+                      source = new_published_resource.children
+                      target = current_children_resource_ids
 
-                    case Oli.Publishing.Updating.Merge.merge(base, source, target) do
-                      {:ok, merged} ->
-                        %SectionResource{
+                      case Oli.Publishing.Updating.Merge.merge(base, source, target) do
+                        {:ok, merged} ->
+                          %SectionResource{
+                            section_resource
+                            | children: Enum.map(merged, &resource_id_to_sr_id[&1])
+                          }
+
+                        {:no_change} ->
                           section_resource
-                          | children: Enum.map(merged, &resource_id_to_sr_id[&1])
-                        }
-
-                      {:no_change} ->
-                        section_resource
+                      end
+                    else
+                      section_resource
                     end
-                  else
-                    section_resource
-                  end
-              end
+                end
+
+              clean_children(
+                updated_section_resource,
+                sr_id_to_resource_id,
+                new_published_resources_map
+              )
             else
               section_resource
             end
@@ -2569,6 +2576,24 @@ defmodule Oli.Delivery.Sections do
     )
 
     result
+  end
+
+  # For a given section resource, clean the children attribute to ensure that:
+  # 1. Any nil records are removed
+  # 2. All non-nil sr id references map to a non-deleted revision in the new pub
+  defp clean_children(section_resource, sr_id_to_resource_id, new_published_resources_map) do
+    updated_children =
+      section_resource.children
+      |> Enum.filter(fn child_id -> !is_nil(child_id) end)
+      |> Enum.filter(fn child_id ->
+        case Map.get(new_published_resources_map, sr_id_to_resource_id[child_id]) do
+          nil -> false
+          %{deleted: true} -> false
+          _ -> true
+        end
+      end)
+
+    %{section_resource | children: updated_children}
   end
 
   @doc """

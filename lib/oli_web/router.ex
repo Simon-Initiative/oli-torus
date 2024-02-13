@@ -1171,6 +1171,8 @@ defmodule OliWeb.Router do
     # General
     live("/", Admin.AdminView)
     live("/features", Features.FeaturesLive)
+    live("/part_attempts", Admin.PartAttemptsView)
+    get("/spot_check/:activity_attempt_id", SpotCheckController, :index)
     live("/api_keys", ApiKeys.ApiKeysLive)
     live("/products", Products.ProductsView)
     live("/products/:product_id/discounts", Products.Payments.Discounts.ProductsIndexView)
