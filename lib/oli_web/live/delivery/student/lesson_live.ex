@@ -304,7 +304,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
           data-tooltip-target-id="attempt_tooltip"
           class="opacity-80 cursor-help dark:text-white text-sm font-bold font-['Open Sans'] uppercase tracking-wider"
         >
-          AttemptS <%= get_attempts_count(@page_context) %>/<%= get_max_attempts(@page_context) %>
+          Attempts <%= get_attempts_count(@page_context) %>/<%= get_max_attempts(@page_context) %>
         </div>
         <div
           id="attempt_tooltip"

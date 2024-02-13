@@ -1,9 +1,12 @@
 defmodule Oli.Delivery.Attempts do
-  alias Oli.Delivery.Attempts.Core.{ResourceAttempt, ActivityAttempt, ResourceAccess, PartAttempt}
-  alias Oli.Resources.Revision
+  import Ecto.Query, warn: false
 
   alias Oli.Repo
-  import Ecto.Query, warn: false
+  alias Oli.Publishing.DeliveryResolver
+  alias Oli.Delivery.Attempts.Core
+  alias Oli.Delivery.Attempts.Core.{ResourceAttempt, ActivityAttempt, ResourceAccess, PartAttempt}
+  alias Oli.Resources.Revision
+  alias Oli.Delivery.Settings
 
   def summarize_survey(survey_resource_id, user_id) do
     mcq_reg = Oli.Activities.get_registration_by_slug("oli_multiple_choice")
@@ -61,5 +64,34 @@ defmodule Oli.Delivery.Attempts do
           end
       }
     end)
+  end
+
+  defmodule HistoricalGradedAttemptSummary do
+    defstruct [
+      :page_revision_slug,
+      :historical_attempts
+    ]
+  end
+
+  def get_historical_graded_attempt_summary(section, page_revision_slug, user_id) do
+    page_revision = DeliveryResolver.from_revision_slug(section.slug, page_revision_slug)
+
+    case Core.get_resource_attempt_history(page_revision.resource_id, section.slug, user_id) do
+      nil ->
+        %HistoricalGradedAttemptSummary{
+          page_revision_slug: page_revision_slug,
+          historical_attempts: []
+        }
+
+      {_access, attempts} ->
+        historical_graded_attempts =
+          attempts
+          |> Enum.filter(fn a -> a.revision.graded == true end)
+
+        %HistoricalGradedAttemptSummary{
+          page_revision_slug: page_revision_slug,
+          historical_attempts: historical_graded_attempts
+        }
+    end
   end
 end

@@ -1,10 +1,12 @@
 defmodule Oli.Delivery.Settings do
   import Ecto.Query, warn: false
+
   alias Oli.Repo
   alias Oli.Resources.Revision
   alias Oli.Delivery.Settings.Combined
   alias Oli.Delivery.Settings.StudentException
   alias Oli.Delivery.Attempts.Core.ResourceAttempt
+  alias Oli.Publishing.DeliveryResolver
 
   @doc """
   For a resolved delivery revision of a page and a course section id and user id, return
@@ -27,6 +29,27 @@ defmodule Oli.Delivery.Settings do
       Oli.Delivery.Sections.get_section_resource(section_id, resolved_revision.resource_id)
 
     combine(resolved_revision, section_resource, nil)
+  end
+
+  def get_combined_settings_for_all_resources(section_id, user_id) do
+    section = Oli.Delivery.Sections.get_section!(section_id)
+
+    all_pages = DeliveryResolver.all_pages(section.slug)
+
+    section_resources_map =
+      Oli.Delivery.Sections.get_section_resources(section.id)
+      |> Enum.reduce(%{}, fn sr, acc -> Map.put(acc, sr.resource_id, sr) end)
+
+    student_exceptions_map =
+      get_all_student_exceptions(section_id, user_id)
+      |> Enum.reduce(%{}, fn se, acc -> Map.put(acc, se.resource_id, se) end)
+
+    Enum.reduce(all_pages, %{}, fn page, acc ->
+      section_resource = section_resources_map[page.resource_id]
+      student_exception = student_exceptions_map[page.resource_id]
+
+      Map.put(acc, page.resource_id, combine(page, section_resource, student_exception))
+    end)
   end
 
   def combine(resolved_revision, section_resource, student_exception) do
@@ -92,6 +115,13 @@ defmodule Oli.Delivery.Settings do
     |> where(section_id: ^section_id)
     |> where(user_id: ^user_id)
     |> Repo.one()
+  end
+
+  def get_all_student_exceptions(section_id, user_id) do
+    StudentException
+    |> where(section_id: ^section_id)
+    |> where(user_id: ^user_id)
+    |> Repo.all()
   end
 
   def was_late?(_, %Combined{late_submit: :disallow}, _now), do: false

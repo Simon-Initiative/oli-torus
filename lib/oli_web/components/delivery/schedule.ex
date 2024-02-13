@@ -3,6 +3,7 @@ defmodule OliWeb.Components.Delivery.Schedule do
 
   alias OliWeb.Common.SessionContext
   alias OliWeb.Components.Delivery.Student
+  alias Oli.Delivery.Attempts.HistoricalGradedAttemptSummary
 
   attr(:ctx, SessionContext, required: true)
   attr(:week_number, :integer, required: true)
@@ -10,6 +11,7 @@ defmodule OliWeb.Components.Delivery.Schedule do
   attr(:section_slug, :string, required: true)
   attr(:is_active, :boolean, default: true)
   attr(:is_current_week, :boolean, default: false)
+  attr(:historical_graded_attempt_summary, HistoricalGradedAttemptSummary)
 
   def week(assigns) do
     ~H"""
@@ -54,32 +56,38 @@ defmodule OliWeb.Components.Delivery.Schedule do
                   </div>
                 </div>
                 <div class="flex-1 flex flex-col mr-4">
-                  <%= for {resource, purpose, progress, raw_avg_score} <- scheduled_resources_with_progress do %>
-                    <div class="flex flex-col mb-4">
-                      <div class="flex flex-row">
-                        <.page_icon progress={progress} graded={graded} purpose={purpose} />
-                        <div>
-                          <.link
-                            href={~p"/sections/#{@section_slug}/lesson/#{resource.revision_slug}"}
-                            class="hover:no-underline"
-                          >
-                            <%= resource.title %>
-                          </.link>
+                  <%= for {resource, purpose, progress, raw_avg_score, resource_attempt_count, effective_settings} <- scheduled_resources_with_progress do %>
+                    <div class="flex flex-row gap-4 mb-3">
+                      <.page_icon progress={progress} graded={graded} purpose={purpose} />
+                      <div class="flex-1">
+                        <.link
+                          href={~p"/sections/#{@section_slug}/lesson/#{resource.revision_slug}"}
+                          class="hover:no-underline"
+                        >
+                          <%= resource.title %>
+                        </.link>
 
-                          <div class="text-sm text-gray-500 group-[.past-start]:text-gray-300 dark:group-[.past-start]:text-gray-700">
-                            <%= resource_scheduling_label(resource.scheduling_type) %> <%= date(
-                              resource.end_date,
-                              ctx: @ctx,
-                              precision: :date
-                            ) %>
-                          </div>
+                        <div class="text-sm text-gray-500 group-[.past-start]:text-gray-300 dark:group-[.past-start]:text-gray-700">
+                          <%= resource_scheduling_label(resource.scheduling_type) %> <%= date(
+                            resource.end_date,
+                            ctx: @ctx,
+                            precision: :date
+                          ) %>
                         </div>
                       </div>
-                      <Student.score_summary :if={graded} raw_avg_score={raw_avg_score} />
+                      <div :if={graded} class="flex flex-col">
+                        <Student.attempts_dropdown
+                          ctx={@ctx}
+                          section_slug={@section_slug}
+                          page_revision_slug={resource.revision_slug}
+                          attempt_summary={@historical_graded_attempt_summary}
+                          attempts_count={resource_attempt_count}
+                          effective_settings={effective_settings} />
+                        <Student.score_summary raw_avg_score={raw_avg_score} />
+                      </div>
                     </div>
                   <% end %>
                 </div>
-                <div class="flex flex-col"></div>
               </div>
             <% end %>
           </div>
@@ -89,7 +97,7 @@ defmodule OliWeb.Components.Delivery.Schedule do
     """
   end
 
-  attr :is_current_week, :boolean, default: false
+  attr(:is_current_week, :boolean, default: false)
 
   defp maybe_current_week_indicator(assigns) do
     ~H"""

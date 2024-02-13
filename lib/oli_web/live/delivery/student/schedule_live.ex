@@ -4,6 +4,8 @@ defmodule OliWeb.Delivery.Student.ScheduleLive do
   alias OliWeb.Common.SessionContext
   alias Oli.Delivery.Sections
   alias OliWeb.Components.Delivery.{Schedule, Utils}
+  alias Oli.Delivery.Attempts
+  alias Oli.Delivery.Attempts.{HistoricalGradedAttemptSummary}
 
   def mount(_params, _session, socket) do
     section = socket.assigns[:section]
@@ -21,7 +23,8 @@ defmodule OliWeb.Delivery.Student.ScheduleLive do
        schedule: schedule,
        section_slug: section.slug,
        current_week: current_week,
-       current_month: current_month
+       current_month: current_month,
+       historical_graded_attempt_summary: nil
      )}
   end
 
@@ -38,16 +41,18 @@ defmodule OliWeb.Delivery.Student.ScheduleLive do
         section_slug={@section_slug}
         current_week={@current_week}
         current_month={@current_month}
+        historical_graded_attempt_summary={@historical_graded_attempt_summary}
       />
     </div>
     """
   end
 
-  attr :ctx, SessionContext, required: true
-  attr :schedule, :any, required: true
-  attr :section_slug, :string, required: true
-  attr :current_week, :integer, required: true
-  attr :current_month, :integer, required: true
+  attr(:ctx, SessionContext, required: true)
+  attr(:schedule, :any, required: true)
+  attr(:section_slug, :string, required: true)
+  attr(:current_week, :integer, required: true)
+  attr(:current_month, :integer, required: true)
+  attr(:historical_graded_attempt_summary, HistoricalGradedAttemptSummary)
 
   def schedule(assigns) do
     ~H"""
@@ -71,25 +76,23 @@ defmodule OliWeb.Delivery.Student.ScheduleLive do
                 <%= month_name(month) %>
               </div>
             </div>
-
             <div class="flex-1 flex flex-col">
               <%= for {week, schedule_ranges} <- weekly_schedule do %>
-                <div class="flex flex-row">
-                  <Schedule.week
-                    ctx={@ctx}
-                    week_number={week}
-                    is_active={
-                      week_active?(week, @current_week) &&
-                        month_active?(month, @current_month)
-                    }
-                    is_current_week={
-                      is_current_week?(week, @current_week) &&
-                        is_current_month?(month, @current_month)
-                    }
-                    schedule_ranges={schedule_ranges}
-                    section_slug={@section_slug}
-                  />
-                </div>
+                <Schedule.week
+                  ctx={@ctx}
+                  week_number={week}
+                  is_active={
+                    week_active?(week, @current_week) &&
+                      month_active?(month, @current_month)
+                  }
+                  is_current_week={
+                    is_current_week?(week, @current_week) &&
+                      is_current_month?(month, @current_month)
+                  }
+                  schedule_ranges={schedule_ranges}
+                  section_slug={@section_slug}
+                  historical_graded_attempt_summary={@historical_graded_attempt_summary}
+                />
               <% end %>
             </div>
           </div>
@@ -119,5 +122,23 @@ defmodule OliWeb.Delivery.Student.ScheduleLive do
 
   defp is_current_month?(month, current_month) do
     month == current_month
+  end
+
+  def handle_event(
+        "load_historical_graded_attempt_summary",
+        %{"page_revision_slug" => page_revision_slug},
+        socket
+      ) do
+    %{section: section, current_user: current_user} = socket.assigns
+
+    historical_graded_attempt_summary =
+      Attempts.get_historical_graded_attempt_summary(section, page_revision_slug, current_user.id)
+
+    {:noreply,
+     assign(socket, historical_graded_attempt_summary: historical_graded_attempt_summary)}
+  end
+
+  def handle_event("clear_historical_graded_attempt_summary", _params, socket) do
+    {:noreply, assign(socket, historical_graded_attempt_summary: nil)}
   end
 end
