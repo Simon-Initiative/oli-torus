@@ -11,13 +11,15 @@ defmodule OliWeb.Components.Delivery.Schedule do
   attr(:section_slug, :string, required: true)
   attr(:is_active, :boolean, default: true)
   attr(:is_current_week, :boolean, default: false)
+  attr(:show_border, :boolean, default: true)
   attr(:historical_graded_attempt_summary, HistoricalGradedAttemptSummary)
 
   def week(assigns) do
     ~H"""
     <div class="flex flex-row">
       <div class={[
-        "uppercase font-bold whitespace-nowrap mr-4 md:w-32 md:border-l",
+        "uppercase font-bold whitespace-nowrap mr-4 md:w-32",
+        if(@show_border, do: "md:border-l"),
         if(@is_active,
           do: "text-gray-600 dark:text-gray-300 md:border-gray-600 md:dark:border-gray-300",
           else: "text-gray-300 dark:text-gray-700 md:border-gray-300 dark:border-gray-700"

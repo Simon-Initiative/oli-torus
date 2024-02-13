@@ -38,6 +38,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
             <Schedule.week
               ctx={@ctx}
               week_number={week}
+              show_border={false}
               schedule_ranges={schedule_ranges}
               section_slug={@section_slug}
               historical_graded_attempt_summary={@historical_graded_attempt_summary}
