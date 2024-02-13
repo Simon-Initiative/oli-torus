@@ -17,6 +17,9 @@ defmodule OliWeb.Delivery.Student.ScheduleLive do
     current_week = Utils.week_number(section.start_date, current_datetime)
     current_month = current_datetime.month
 
+    if connected?(socket),
+      do: async_scroll_to_current_week(self())
+
     {:ok,
      assign(socket,
        active_tab: :schedule,
@@ -34,7 +37,7 @@ defmodule OliWeb.Delivery.Student.ScheduleLive do
       <h1 class="text-6xl mb-8">Course Schedule</h1>
     </.hero_banner>
 
-    <div class="container mx-auto">
+    <div id="schedule-view" class="container mx-auto" phx-hook="Scroller">
       <.schedule
         ctx={@ctx}
         schedule={@schedule}
@@ -123,6 +126,23 @@ defmodule OliWeb.Delivery.Student.ScheduleLive do
   defp is_current_month?(month, current_month) do
     month == current_month
   end
+
+  defp async_scroll_to_current_week(liveview_pid) do
+    Task.Supervisor.start_child(Oli.TaskSupervisor, fn ->
+      Process.sleep(500)
+      send(liveview_pid, {:scroll_to_current_week})
+    end)
+  end
+
+  def handle_info(
+        {:scroll_to_current_week},
+        socket
+      ) do
+    {:noreply,
+         socket
+         |> push_event("scroll-y-to-target", %{id: "current-week-indicator", offset: 80})}
+  end
+
 
   def handle_event(
         "load_historical_graded_attempt_summary",

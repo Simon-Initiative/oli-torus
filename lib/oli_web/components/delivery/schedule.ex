@@ -105,6 +105,7 @@ defmodule OliWeb.Components.Delivery.Schedule do
     ~H"""
     <div
       :if={@is_current_week}
+      id="current-week-indicator"
       class="w-0 h-0 my-[4px] border-[8px] border-solid border-transparent border-l-gray-600 dark:border-l-gray-300"
     >
     </div>

@@ -67,7 +67,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   end
 
   def handle_params(%{"target_resource_id" => resource_id}, _uri, socket) do
-    # the goal of this callbak is to scroll to the target resource.
+    # the goal of this callback is to scroll to the target resource.
     # the target can be a unit, a module, a page contained at a module level, or a page contained in a module
 
     container_resource_type_id = Oli.Resources.ResourceType.get_id_by_type("container")
