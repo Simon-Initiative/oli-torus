@@ -110,8 +110,6 @@ const buildHierarchyItems = (
   items: HierarchyItemSrc[],
   preferredSchedulingTime: TimeParts,
 ): HierarchyItem[] => {
-
-
   const parseDate = (str: string, scheduleType: string) => {
     if (!str) return null;
 
