@@ -5,7 +5,7 @@ defmodule Oli.MixProject do
     [
       app: :oli,
       version: "0.26.4",
-      elixir: "~> 1.15.5",
+      elixir: "~> 1.15.4",
       elixirc_paths: elixirc_paths(Mix.env()),
       elixirc_options: elixirc_options(Mix.env()),
       compilers: Mix.compilers(),
