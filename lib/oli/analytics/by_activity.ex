@@ -21,4 +21,25 @@ defmodule Oli.Analytics.ByActivity do
            preload: [:resource_type]
     )
   end
+
+  def query_against_project_slug(project_slug, filtered_sections) do
+    Repo.all(
+      from activity in subquery(
+             Publishing.query_unpublished_revisions_by_type(project_slug, "activity")
+           ),
+           join: resource in assoc(activity, :resource_id),
+           left_join: resource_summary in assoc(resource, :id),
+           join: section in assoc(resource_summary, :section_id),
+           left_join: analytics in subquery(Common.analytics_by_activity(project_slug)),
+           on: activity.resource_id == analytics.activity_id and section.id in ^filtered_sections,
+           select: %{
+             slice: activity,
+             eventually_correct: analytics.eventually_correct,
+             first_try_correct: analytics.first_try_correct,
+             number_of_attempts: analytics.number_of_attempts,
+             relative_difficulty: analytics.relative_difficulty
+           },
+           preload: [:resource_type]
+    )
+  end
 end

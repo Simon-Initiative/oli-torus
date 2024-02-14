@@ -1,10 +1,12 @@
 defmodule OliWeb.Insights do
+  alias Oli.Delivery.Sections
   use OliWeb, :live_view
 
   alias Oli.Publishing
   alias OliWeb.Insights.{TableHeader, TableRow}
   alias Oli.Authoring.Course
   alias OliWeb.Components.Project.AsyncExporter
+  alias Oli.Delivery.Sections.Blueprint
   alias Oli.Authoring.Broadcaster
   alias Oli.Authoring.Broadcaster.Subscriber
   alias OliWeb.Common.SessionContext
@@ -14,6 +16,9 @@ defmodule OliWeb.Insights do
 
     by_activity_rows = Oli.Analytics.ByActivity.query_against_project_slug(project_slug)
     project = Course.get_project_by_slug(project_slug)
+    sections = Sections.get_sections_by_base_project(project)
+
+    blueprint = Blueprint.get_blueprint_by_base_project(project)
 
     parent_pages =
       Enum.map(by_activity_rows, fn r -> r.slice.resource_id end)
@@ -49,7 +54,12 @@ defmodule OliWeb.Insights do
        latest_publication: latest_publication,
        analytics_export_status: analytics_export_status,
        analytics_export_url: analytics_export_url,
-       analytics_export_timestamp: analytics_export_timestamp
+       analytics_export_timestamp: analytics_export_timestamp,
+       blueprints: Blueprint.get_blueprint_by_base_project(project),
+       sections: sections,
+       filtered_sections: sections,
+       filtered_blueprint: blueprint,
+       selected_filter: nil
      )}
   end
 
@@ -116,6 +126,7 @@ defmodule OliWeb.Insights do
           By Page
         </button>
       </li>
+
       <li class="nav-item my-2 mr-2">
         <button
           {is_disabled(@selected, :by_objective)}
@@ -128,7 +139,29 @@ defmodule OliWeb.Insights do
           By Objective
         </button>
       </li>
+
+      <%= if @sections != [] do %>
+        <form phx-change="suggest_section" phx-submit="search">
+          <input type="text" name="q" value="" list="sections_filter" placeholder="Search..." />
+          <datalist id="sections_filter">
+            <%= for section <- @sections do %>
+              <option value={section.slug}><%= section.title %></option>
+            <% end %>
+          </datalist>
+        </form>
+      <% end %>
+      <%= if @blueprints != [] do %>
+        <form phx-change="suggest_blueprint" phx-submit="search">
+          <input type="text" name="q" value="" list="sections_filter" placeholder="Search..." />
+          <datalist id="sections_filter">
+            <%= for blueprint <- @blueprints do %>
+              <option value={blueprint.slug}><%= blueprint.title %></option>
+            <% end %>
+          </datalist>
+        </form>
+      <% end %>
     </ul>
+
     <div class="card">
       <div class="card-header">
         <form phx-change="search">
@@ -343,6 +376,56 @@ defmodule OliWeb.Insights do
     end
   end
 
+  def handle_event("suggest_section", params, socket) do
+    IO.inspect(params, label: "paramss")
+
+    results =
+      Enum.filter(socket.assigns.sections, fn section ->
+        String.contains?(section.title, params["q"])
+      end)
+      |> Enum.map(& &1.id)
+      |> IO.inspect(label: "filtered_sectionsss")
+
+    # assign(socket, filtered_sections: results, selected_filter: "sections")
+
+    by_page_rows =
+      Oli.Analytics.ByPage.query_against_project_slug(
+        socket.assigns.project.slug,
+        results
+      )
+
+    active_rows =
+      apply_filter_sort(
+        :by_page,
+        by_page_rows,
+        socket.assigns.query,
+        socket.assigns.sort_by,
+        socket.assigns.sort_order
+      )
+
+    {:noreply, assign(socket, by_page_rows: by_page_rows, active_rows: active_rows)}
+  end
+
+  def handle_event("suggest_blueprint", params, socket) do
+    IO.inspect(params, label: "paramss")
+
+    results =
+      Enum.filter(socket.assigns.blueprints, fn blueprint ->
+        String.contains?(blueprint.title, params["q"])
+      end)
+      |> Enum.map(& &1.id)
+
+    assign(socket, filtered_sections: results, selected_filter: "blueprint")
+    send(self(), :init_by_filter)
+    {:noreply, socket}
+  end
+
+  # def handle_event("search", params, socket) do
+  #   IO.inspect(params, label: "paramssss")
+
+  #   {:noreply, socket}
+  # end
+
   def handle_info(
         {:analytics_export_status,
          {:available, analytics_export_url, analytics_export_timestamp}},
@@ -400,6 +483,29 @@ defmodule OliWeb.Insights do
       )
 
     {:noreply, assign(socket, by_objective_rows: by_objective_rows, active_rows: active_rows)}
+  end
+
+  def handle_info(:init_by_filter, socket) do
+    IO.inspect(socket.assigns.selected_filter, label: "byyyy")
+
+    if socket.assigns.selected == :by_page and socket.assigns.selected_filter == "section" do
+      by_page_rows =
+        Oli.Analytics.ByPage.query_against_project_slug(
+          socket.assigns.project.slug,
+          socket.assigns.filtered_sections
+        )
+
+      active_rows =
+        apply_filter_sort(
+          :by_page,
+          by_page_rows,
+          socket.assigns.query,
+          socket.assigns.sort_by,
+          socket.assigns.sort_order
+        )
+
+      {:noreply, assign(socket, by_page_rows: by_page_rows, active_rows: active_rows)}
+    end
   end
 
   defp click_or_enter_key?(event) do

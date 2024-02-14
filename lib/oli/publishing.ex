@@ -108,7 +108,27 @@ defmodule Oli.Publishing do
   end
 
   def query_unpublished_revisions_by_type(project_slug, type) do
-    publication_id = project_working_publication(project_slug).id
+    publication_id =
+      project_working_publication(project_slug).id
+      |> IO.inspect(label: "publicationnn_idd")
+
+    resource_type_id = ResourceType.get_id_by_type(type)
+
+    from rev in Revision,
+      join: mapping in PublishedResource,
+      on: mapping.revision_id == rev.id,
+      distinct: rev.resource_id,
+      where:
+        mapping.publication_id == ^publication_id and
+          rev.resource_type_id == ^resource_type_id and
+          rev.deleted == false,
+      select: rev
+  end
+
+  def query_unpublished_revisions_by_type_and_section(project_slug, type, list_section_ids) do
+    publication_id =
+      project_working_publication_by_setion_list(project_slug, list_section_ids).id
+
     resource_type_id = ResourceType.get_id_by_type(type)
 
     from rev in Revision,
@@ -497,6 +517,19 @@ defmodule Oli.Publishing do
         join: proj in Project,
         on: pub.project_id == proj.id,
         where: proj.slug == ^project_slug and is_nil(pub.published),
+        select: pub
+    )
+  end
+
+  def project_working_publication_by_setion_list(project_slug, list_section_ids) do
+    Repo.one(
+      from pub in Publication,
+        join: proj in Project,
+        on: pub.project_id == proj.id,
+        join: section in Section,
+        on: section.base_project_id == proj.id,
+        where:
+          proj.slug == ^project_slug and section.id in ^list_section_ids and is_nil(pub.published),
         select: pub
     )
   end
