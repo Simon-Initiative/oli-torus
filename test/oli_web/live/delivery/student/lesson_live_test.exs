@@ -357,7 +357,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
 
       {:ok, view, _html} = live(conn, live_view_lesson_live_route(section.slug, page_3.slug))
 
-      assert has_element?(view, "div[id='attempts_summary_with_tooltip']", "AttemptS 0/5")
+      assert has_element?(view, "div[id='attempts_summary_with_tooltip']", "Attempts 0/5")
       assert has_element?(view, "button[id='begin_attempt_button']", "Begin 1st Attempt")
     end
 
@@ -375,7 +375,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
 
       {:ok, view, _html} = live(conn, live_view_lesson_live_route(section.slug, page_3.slug))
 
-      refute has_element?(view, "div[id='attempts_summary_with_tooltip']", "AttemptS 0/5")
+      refute has_element?(view, "div[id='attempts_summary_with_tooltip']", "Attempts 0/5")
       refute has_element?(view, "button[id='begin_attempt_button']", "Begin 1st Attempt")
       assert has_element?(view, "div[role='page content']")
       assert has_element?(view, "button[id=submit_answers]", "Submit Answers")
@@ -429,7 +429,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
 
       {:ok, view, _html} = live(conn, live_view_lesson_live_route(section.slug, page_3.slug))
 
-      assert has_element?(view, "div[id='attempts_summary']", "AttemptS 2/5")
+      assert has_element?(view, "div[id='attempts_summary']", "Attempts 2/5")
       assert has_element?(view, "div[id='attempts_summary']", "Review")
 
       assert has_element?(
@@ -508,7 +508,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
 
       {:ok, view, _html} = live(conn, live_view_lesson_live_route(section.slug, page_3.slug))
 
-      assert has_element?(view, "div[id='attempts_summary']", "AttemptS 1/5")
+      assert has_element?(view, "div[id='attempts_summary']", "Attempts 1/5")
       refute has_element?(view, "div[id='attempts_summary']", "Review")
     end
 

@@ -6,7 +6,6 @@ defmodule Oli.Delivery.Attempts do
   alias Oli.Delivery.Attempts.Core
   alias Oli.Delivery.Attempts.Core.{ResourceAttempt, ActivityAttempt, ResourceAccess, PartAttempt}
   alias Oli.Resources.Revision
-  alias Oli.Delivery.Settings
 
   def summarize_survey(survey_resource_id, user_id) do
     mcq_reg = Oli.Activities.get_registration_by_slug("oli_multiple_choice")
