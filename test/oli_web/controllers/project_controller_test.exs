@@ -151,7 +151,7 @@ defmodule OliWeb.ProjectControllerTest do
     page_revision_3 =
       insert(:revision, %{
         objectives: %{},
-        resource_type_id: ResourceType.get_id_by_type("page"),
+        resource_type_id: ResourceType.id_for_page(),
         children: [],
         content: %{"model" => []},
         deleted: false,
@@ -170,7 +170,7 @@ defmodule OliWeb.ProjectControllerTest do
       insert(:revision, %{
         resource: container_resource_2,
         objectives: %{},
-        resource_type_id: ResourceType.get_id_by_type("container"),
+        resource_type_id: ResourceType.id_for_container(),
         children: [page_resource_3.id],
         content: %{},
         deleted: false,

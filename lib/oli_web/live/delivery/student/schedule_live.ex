@@ -95,6 +95,7 @@ defmodule OliWeb.Delivery.Student.ScheduleLive do
                   schedule_ranges={schedule_ranges}
                   section_slug={@section_slug}
                   historical_graded_attempt_summary={@historical_graded_attempt_summary}
+                  request_path={~p"/sections/#{@section_slug}/assignments"}
                 />
               <% end %>
             </div>
@@ -139,10 +140,9 @@ defmodule OliWeb.Delivery.Student.ScheduleLive do
         socket
       ) do
     {:noreply,
-         socket
-         |> push_event("scroll-y-to-target", %{id: "current-week-indicator", offset: 80})}
+     socket
+     |> push_event("scroll-y-to-target", %{id: "current-week-indicator", offset: 80})}
   end
-
 
   def handle_event(
         "load_historical_graded_attempt_summary",

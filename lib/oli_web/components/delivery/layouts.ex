@@ -16,6 +16,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
   alias Oli.Branding.Brand
   alias OliWeb.Components.Delivery.UserAccount
   alias Oli.Resources.Collaboration.CollabSpaceConfig
+  alias OliWeb.Delivery.Student.Utils
 
   attr(:ctx, SessionContext)
   attr(:is_system_admin, :boolean, required: true)
@@ -284,6 +285,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
   attr(:previous_page, :map)
   attr(:next_page, :map)
   attr(:section_slug, :string)
+  attr(:request_path, :string)
 
   def previous_next_nav(assigns) do
     # <.links /> were changed from "navigate" to "href" to force a page reload
@@ -317,7 +319,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
         role="prev_page"
       >
         <div class="px-2 lg:px-6 rounded justify-end items-center gap-2 flex">
-          <.link href={resource_navigation_url(@previous_page, @section_slug)}>
+          <.link href={resource_navigation_url(@previous_page, @section_slug, @request_path)}>
             <div class="w-[72px] h-10 opacity-30 hover:opacity-40 bg-blue-600 flex items-center justify-center cursor-pointer">
               <.left_arrow />
             </div>
@@ -337,7 +339,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
           <%= @next_page["title"] %>
         </div>
         <div class="px-2 lg:px-6 py-2 rounded justify-end items-center gap-2 flex">
-          <.link href={resource_navigation_url(@next_page, @section_slug)}>
+          <.link href={resource_navigation_url(@next_page, @section_slug, @request_path)}>
             <div class="w-[72px] h-10 opacity-90 hover:opacity-100 bg-blue-600 flex items-center justify-center cursor-pointer">
               <.right_arrow />
             </div>
@@ -363,12 +365,25 @@ defmodule OliWeb.Components.Delivery.Layouts do
     """
   end
 
-  defp resource_navigation_url(%{"slug" => slug, "type" => "page"}, section_slug) do
-    ~p"/sections/#{section_slug}/lesson/#{slug}"
+  defp resource_navigation_url(
+         %{"slug" => slug, "type" => "page", "id" => resource_id},
+         section_slug,
+         request_path
+       ) do
+    # If the request_path is the Learn page and we navigate to a different lesson,
+    # we need to update the request_path to include the new target resource.
+    request_path =
+      if request_path && String.contains?(request_path, "/learn") do
+        Utils.learn_live_path(section_slug, target_resource_id: resource_id)
+      else
+        request_path
+      end
+
+    Utils.lesson_live_path(section_slug, slug, request_path: request_path)
   end
 
-  defp resource_navigation_url(%{"id" => container_id}, section_slug) do
-    ~p"/sections/#{section_slug}/learn?target_resource_id=#{container_id}"
+  defp resource_navigation_url(%{"id" => container_id}, section_slug, _) do
+    Utils.learn_live_path(section_slug, target_resource_id: container_id)
   end
 
   attr(:to, :string)

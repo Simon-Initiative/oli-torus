@@ -42,6 +42,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
               schedule_ranges={schedule_ranges}
               section_slug={@section_slug}
               historical_graded_attempt_summary={@historical_graded_attempt_summary}
+              request_path={~p"/sections/#{@section_slug}"}
             />
           <% _ -> %>
             <div class="text-xl">No schedule for this week.</div>

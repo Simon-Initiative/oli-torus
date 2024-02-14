@@ -111,7 +111,14 @@ defmodule Oli.Authoring.Editing.ContainerEditor do
     result
   end
 
-  def add_new(container, type, %Author{} = author, %Project{} = project, numberings \\ nil)
+  def add_new(
+        container,
+        type,
+        scored,
+        %Author{} = author,
+        %Project{} = project,
+        numberings \\ nil
+      )
       when is_binary(type) do
     attrs = %{
       tags: [],
@@ -135,45 +142,65 @@ defmodule Oli.Authoring.Editing.ContainerEditor do
         end,
       title:
         case type do
-          "Adaptive" -> "New Adaptive Page"
-          "Scored" -> "New Assessment"
-          "Unscored" -> "New Page"
-          "Container" -> new_container_name(numberings, container)
+          "Adaptive" ->
+            case scored do
+              "Scored" -> "New Adaptive Assessment"
+              "Unscored" -> "New Adaptive Page"
+            end
+
+          "Basic" ->
+            case scored do
+              "Scored" -> "New Assessment"
+              "Unscored" -> "New Page"
+            end
+
+          "Container" ->
+            new_container_name(numberings, container)
         end,
       graded:
         case type do
-          "Adaptive" -> false
-          "Scored" -> true
-          "Unscored" -> false
-          "Container" -> false
+          "Container" ->
+            false
+
+          _ ->
+            case scored do
+              "Scored" -> true
+              "Unscored" -> false
+            end
         end,
       max_attempts:
         case type do
-          "Adaptive" -> 0
-          "Scored" -> 5
-          "Unscored" -> 0
-          "Container" -> nil
+          "Container" ->
+            nil
+
+          _ ->
+            case scored do
+              "Scored" -> 5
+              "Unscored" -> 0
+            end
         end,
       recommended_attempts:
         case type do
-          "Adaptive" -> 0
-          "Scored" -> 5
-          "Unscored" -> 0
-          "Container" -> nil
+          "Container" ->
+            nil
+
+          _ ->
+            case scored do
+              "Scored" -> 5
+              "Unscored" -> 0
+            end
         end,
       scoring_strategy_id:
         case type do
           "Adaptive" -> ScoringStrategy.get_id_by_type("best")
-          "Scored" -> ScoringStrategy.get_id_by_type("best")
-          "Unscored" -> ScoringStrategy.get_id_by_type("best")
+          "Basic" -> ScoringStrategy.get_id_by_type("best")
           "Container" -> nil
         end,
       resource_type_id:
         case type do
-          "Adaptive" -> Oli.Resources.ResourceType.get_id_by_type("page")
-          "Scored" -> Oli.Resources.ResourceType.get_id_by_type("page")
-          "Unscored" -> Oli.Resources.ResourceType.get_id_by_type("page")
-          "Container" -> Oli.Resources.ResourceType.get_id_by_type("container")
+          "Adaptive" -> Oli.Resources.ResourceType.id_for_page()
+          "Basic" -> Oli.Resources.ResourceType.id_for_page()
+          "Container" -> Oli.Resources.ResourceType.id_for_container()
         end
     }
 

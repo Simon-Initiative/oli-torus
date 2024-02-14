@@ -547,25 +547,25 @@ defmodule OliWeb.Delivery.InstructorDashboard.SurveysTabTest do
     ## objectives
     objective_1_revision =
       insert(:revision,
-        resource_type_id: ResourceType.get_id_by_type("objective"),
+        resource_type_id: ResourceType.id_for_objective(),
         title: "Objective 1"
       )
 
     objective_2_revision =
       insert(:revision,
-        resource_type_id: ResourceType.get_id_by_type("objective"),
+        resource_type_id: ResourceType.id_for_objective(),
         title: "Objective 2"
       )
 
     objective_3_revision =
       insert(:revision,
-        resource_type_id: ResourceType.get_id_by_type("objective"),
+        resource_type_id: ResourceType.id_for_objective(),
         title: "Objective 3"
       )
 
     objective_4_revision =
       insert(:revision,
-        resource_type_id: ResourceType.get_id_by_type("objective"),
+        resource_type_id: ResourceType.id_for_objective(),
         title: "Objective 4"
       )
 
@@ -577,7 +577,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.SurveysTabTest do
 
     mcq_activity_1_revision =
       insert(:revision,
-        resource_type_id: ResourceType.get_id_by_type("activity"),
+        resource_type_id: ResourceType.id_for_activity(),
         objectives: %{
           "1" => [
             objective_1_revision.resource_id
@@ -590,7 +590,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.SurveysTabTest do
 
     mcq_activity_2_revision =
       insert(:revision,
-        resource_type_id: ResourceType.get_id_by_type("activity"),
+        resource_type_id: ResourceType.id_for_activity(),
         objectives: %{
           "1" => []
         },
@@ -601,7 +601,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.SurveysTabTest do
 
     single_response_activity_revision =
       insert(:revision,
-        resource_type_id: ResourceType.get_id_by_type("activity"),
+        resource_type_id: ResourceType.id_for_activity(),
         objectives: %{
           "1" => [
             objective_1_revision.resource_id,
@@ -615,7 +615,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.SurveysTabTest do
 
     multi_input_activity_revision =
       insert(:revision,
-        resource_type_id: ResourceType.get_id_by_type("activity"),
+        resource_type_id: ResourceType.id_for_activity(),
         objectives: %{
           "1" => []
         },
@@ -626,7 +626,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.SurveysTabTest do
 
     likert_activity_revision =
       insert(:revision,
-        resource_type_id: ResourceType.get_id_by_type("activity"),
+        resource_type_id: ResourceType.id_for_activity(),
         objectives: %{
           "1" => []
         },
@@ -638,7 +638,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.SurveysTabTest do
     ## graded pages (assessments)...
     page_1_revision =
       insert(:revision,
-        resource_type_id: ResourceType.get_id_by_type("page"),
+        resource_type_id: ResourceType.id_for_page(),
         objectives: %{"attached" => [objective_1_revision.resource_id]},
         title: "Page 1",
         graded: false,
@@ -694,7 +694,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.SurveysTabTest do
 
     page_2_revision =
       insert(:revision,
-        resource_type_id: ResourceType.get_id_by_type("page"),
+        resource_type_id: ResourceType.id_for_page(),
         objectives: %{"attached" => [objective_2_revision.resource_id]},
         title: "Page 2",
         graded: false,
@@ -713,7 +713,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.SurveysTabTest do
 
     page_3_revision =
       insert(:revision,
-        resource_type_id: ResourceType.get_id_by_type("page"),
+        resource_type_id: ResourceType.id_for_page(),
         objectives: %{"attached" => [objective_3_revision.resource_id]},
         title: "Page 3",
         graded: false,
@@ -732,7 +732,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.SurveysTabTest do
 
     page_4_revision =
       insert(:revision,
-        resource_type_id: ResourceType.get_id_by_type("page"),
+        resource_type_id: ResourceType.id_for_page(),
         objectives: %{"attached" => [objective_4_revision.resource_id]},
         title: "Page 4",
         graded: false,
@@ -751,7 +751,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.SurveysTabTest do
 
     page_5_revision =
       insert(:revision,
-        resource_type_id: ResourceType.get_id_by_type("page"),
+        resource_type_id: ResourceType.id_for_page(),
         objectives: %{"attached" => [objective_4_revision.resource_id]},
         title: "Orphaned Page",
         graded: false,
@@ -773,7 +773,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.SurveysTabTest do
       insert(:revision, %{
         resource: insert(:resource),
         objectives: %{},
-        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("container"),
+        resource_type_id: Oli.Resources.ResourceType.id_for_container(),
         children: [page_1_revision.resource_id, page_2_revision.resource_id],
         content: %{},
         deleted: false,
@@ -784,7 +784,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.SurveysTabTest do
       insert(:revision, %{
         resource: insert(:resource),
         objectives: %{},
-        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("container"),
+        resource_type_id: Oli.Resources.ResourceType.id_for_container(),
         children: [page_3_revision.resource_id, page_4_revision.resource_id],
         content: %{},
         deleted: false,
@@ -796,7 +796,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.SurveysTabTest do
       insert(:revision, %{
         resource: insert(:resource),
         objectives: %{},
-        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("container"),
+        resource_type_id: Oli.Resources.ResourceType.id_for_container(),
         children: [module_1_revision.resource_id],
         content: %{},
         deleted: false,
@@ -807,7 +807,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.SurveysTabTest do
       insert(:revision, %{
         resource: insert(:resource),
         objectives: %{},
-        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("container"),
+        resource_type_id: Oli.Resources.ResourceType.id_for_container(),
         children: [module_2_revision.resource_id],
         content: %{},
         deleted: false,
@@ -819,7 +819,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.SurveysTabTest do
       insert(:revision, %{
         resource: insert(:resource),
         objectives: %{},
-        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("container"),
+        resource_type_id: Oli.Resources.ResourceType.id_for_container(),
         children: [
           unit_1_revision.resource_id,
           unit_2_revision.resource_id,

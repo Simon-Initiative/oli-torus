@@ -2029,7 +2029,7 @@ defmodule Oli.SectionsTest do
     test "returns the upcoming activities in a section for a given student" do
       page_revision =
         insert(:revision,
-          resource_type_id: ResourceType.get_id_by_type("page"),
+          resource_type_id: ResourceType.id_for_page(),
           title: "Upcoming assessment",
           graded: true,
           content: %{"advancedDelivery" => true}
@@ -2037,7 +2037,7 @@ defmodule Oli.SectionsTest do
 
       container_revision =
         insert(:revision,
-          resource_type_id: ResourceType.get_id_by_type("container"),
+          resource_type_id: ResourceType.id_for_container(),
           title: "A graded container?",
           graded: true,
           content: %{"advancedDelivery" => true}
@@ -2082,13 +2082,13 @@ defmodule Oli.SectionsTest do
     test "returns the latest page revision visited by a user in a section" do
       page_1_revision =
         insert(:revision,
-          resource_type_id: ResourceType.get_id_by_type("page"),
+          resource_type_id: ResourceType.id_for_page(),
           title: "Learning Elixir"
         )
 
       page_2_revision =
         insert(:revision,
-          resource_type_id: ResourceType.get_id_by_type("page"),
+          resource_type_id: ResourceType.id_for_page(),
           title: "Enum.map"
         )
 
@@ -2115,13 +2115,13 @@ defmodule Oli.SectionsTest do
     test "returns nil if the user has not visited any page in the section" do
       page_1_revision =
         insert(:revision,
-          resource_type_id: ResourceType.get_id_by_type("page"),
+          resource_type_id: ResourceType.id_for_page(),
           title: "Learning Elixir"
         )
 
       page_2_revision =
         insert(:revision,
-          resource_type_id: ResourceType.get_id_by_type("page"),
+          resource_type_id: ResourceType.id_for_page(),
           title: "Enum.map"
         )
 

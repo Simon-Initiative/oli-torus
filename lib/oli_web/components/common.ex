@@ -292,6 +292,8 @@ defmodule OliWeb.Components.Common do
                 multiple pattern placeholder readonly required rows size step)
   )
 
+  attr(:error_position, :atom, default: :bottom, values: [:top, :bottom])
+
   slot(:inner_block)
 
   def input(%{field: %Phoenix.HTML.FormField{} = field} = assigns) do
@@ -470,6 +472,7 @@ defmodule OliWeb.Components.Common do
 
     ~H"""
     <div class={@group_class} phx-feedback-for={@name}>
+      <.error :for={msg <- @errors} :if={@error_position == :top}><%= msg %></.error>
       <input
         type={@type}
         name={@name}
@@ -480,7 +483,7 @@ defmodule OliWeb.Components.Common do
         {@rest}
       />
       <.label :if={@label} class={@label_class} for={@id}><%= @label %></.label>
-      <.error :for={msg <- @errors}><%= msg %></.error>
+      <.error :for={msg <- @errors} :if={@error_position == :bottom}><%= msg %></.error>
     </div>
     """
   end

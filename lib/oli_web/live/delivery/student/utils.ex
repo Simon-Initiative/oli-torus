@@ -205,6 +205,66 @@ defmodule OliWeb.Delivery.Student.Utils do
     """
   end
 
+  @doc """
+  Generates a URL for the Learn view.
+
+  ## Parameters
+    - `section_slug`: The unique identifier for the section.
+    - `params`: (Optional) Additional query parameters in a list or map format. If omitted, a URL is generated without additional parameters.
+
+  ## Examples
+    - `learn_live_path("math")` returns `"/sections/math/learn"`.
+    - `learn_live_path("math", target_resource_id: "123")` returns `"/sections/math/learn?target_resource_id=123"`.
+  """
+  def learn_live_path(section_slug, params \\ [])
+
+  def learn_live_path(section_slug, []), do: ~p"/sections/#{section_slug}/learn"
+
+  def learn_live_path(section_slug, params),
+    do: ~p"/sections/#{section_slug}/learn?#{params}"
+
+  @doc """
+  Generates a URL for a specific lesson.
+
+  ## Parameters
+    - `section_slug`: The unique identifier for the section.
+    - `revision_slug`: The unique identifier for the lesson revision.
+    - `params`: (Optional) Additional query parameters in a list or map format. If omitted, a URL is generated without additional parameters.
+
+  ## Examples
+    - `lesson_live_path("math", "intro")` returns `"/sections/math/lesson/intro"`.
+    - `lesson_live_path("math", "intro", request_path: "some/previous/url")` returns `"/sections/math/lesson/intro?request_path=some/previous/url"`.
+  """
+  def lesson_live_path(section_slug, revision_slug, params \\ [])
+
+  def lesson_live_path(section_slug, revision_slug, []),
+    do: ~p"/sections/#{section_slug}/lesson/#{revision_slug}"
+
+  def lesson_live_path(section_slug, revision_slug, params),
+    do: ~p"/sections/#{section_slug}/lesson/#{revision_slug}?#{params}"
+
+  @doc """
+  Generates a URL for reviewing an attempt of a lesson.
+
+  ## Parameters
+    - `section_slug`: The unique identifier for the section.
+    - `revision_slug`: The unique identifier for the lesson revision.
+    - `attempt_guid`: The unique identifier for the attempt.
+    - `params`: (Optional) Additional query parameters in a list or map format. If omitted, a URL is generated without additional parameters.
+
+  ## Examples
+    - `review_live_path("math", "intro", "abcd")` returns `"/sections/math/lesson/intro/attempt/abcd/review"`.
+    - `review_live_path("math", "intro", "abcd", request_path: "some/previous/url")` returns `"/sections/math/lesson/intro/attempt/abcd/review?request_path=some/previous/url"`.
+  """
+  def review_live_path(section_slug, revision_slug, attempt_guid, params \\ [])
+
+  def review_live_path(section_slug, revision_slug, attempt_guid, []),
+    do: ~p"/sections/#{section_slug}/lesson/#{revision_slug}/attempt/#{attempt_guid}/review"
+
+  def review_live_path(section_slug, revision_slug, attempt_guid, params),
+    do:
+      ~p"/sections/#{section_slug}/lesson/#{revision_slug}/attempt/#{attempt_guid}/review?#{params}"
+
   def get_container_label(page_id, section) do
     section_id = section.id
 

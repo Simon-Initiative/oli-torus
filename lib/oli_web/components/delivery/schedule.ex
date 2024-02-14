@@ -5,6 +5,7 @@ defmodule OliWeb.Components.Delivery.Schedule do
   alias OliWeb.Components.Delivery.Student
   alias Oli.Delivery.Attempts.HistoricalGradedAttemptSummary
   alias Oli.Delivery.Sections.{ScheduledContainerGroup, ScheduledSectionResource}
+  alias OliWeb.Delivery.Student.Utils
 
   attr(:ctx, SessionContext, required: true)
   attr(:week_number, :integer, required: true)
@@ -14,6 +15,7 @@ defmodule OliWeb.Components.Delivery.Schedule do
   attr(:is_current_week, :boolean, default: false)
   attr(:show_border, :boolean, default: true)
   attr(:historical_graded_attempt_summary, HistoricalGradedAttemptSummary)
+  attr(:request_path, :string, required: false)
 
   def week(assigns) do
     ~H"""
@@ -71,7 +73,11 @@ defmodule OliWeb.Components.Delivery.Schedule do
                       <.page_icon progress={progress} graded={graded} purpose={purpose} />
                       <div class="flex-1">
                         <.link
-                          href={~p"/sections/#{@section_slug}/lesson/#{resource.revision_slug}"}
+                          href={
+                            Utils.lesson_live_path(@section_slug, resource.revision_slug,
+                              request_path: @request_path
+                            )
+                          }
                           class="hover:no-underline"
                         >
                           <%= resource.title %>

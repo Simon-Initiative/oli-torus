@@ -178,7 +178,7 @@ defmodule Oli.Resources.Numbering do
          %HierarchyNode{} = node,
          {:not_found, path}
        ) do
-    container = ResourceType.get_id_by_type("container")
+    container = ResourceType.id_for_container()
     path = [current_node | path]
 
     if current_node.uuid == node.uuid do
@@ -226,8 +226,8 @@ defmodule Oli.Resources.Numbering do
     # for all revisions, map them by their ids
     by_id =
       Enum.filter(revisions, fn r ->
-        r.resource_type_id == ResourceType.get_id_by_type("page") or
-          r.resource_type_id == ResourceType.get_id_by_type("container")
+        r.resource_type_id == ResourceType.id_for_page() or
+          r.resource_type_id == ResourceType.id_for_container()
       end)
       |> Enum.reduce(%{}, fn e, m -> Map.put(m, e.resource_id, e) end)
 
@@ -260,8 +260,8 @@ defmodule Oli.Resources.Numbering do
   end
 
   def next_index(numbering_tracker, level, revision) do
-    page = ResourceType.get_id_by_type("page")
-    container = ResourceType.get_id_by_type("container")
+    page = ResourceType.id_for_page()
+    container = ResourceType.id_for_container()
 
     case revision.resource_type_id do
       ^page ->

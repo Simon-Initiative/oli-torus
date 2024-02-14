@@ -1191,7 +1191,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
     } do
       page_revision =
         insert(:revision,
-          resource_type_id: Oli.Resources.ResourceType.get_id_by_type("page"),
+          resource_type_id: Oli.Resources.ResourceType.id_for_page(),
           title: "Upcoming assessment",
           graded: true,
           content: %{"advancedDelivery" => true}
@@ -1199,7 +1199,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
 
       container_revision =
         insert(:revision,
-          resource_type_id: Oli.Resources.ResourceType.get_id_by_type("container"),
+          resource_type_id: Oli.Resources.ResourceType.id_for_container(),
           title: "A graded container?",
           graded: true,
           content: %{"advancedDelivery" => true}

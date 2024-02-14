@@ -34,7 +34,7 @@ defmodule Oli.Publishing do
       on: pr.revision_id == rev.id,
       where:
         pr.publication_id in ^publication_ids and
-          rev.resource_type_id == ^ResourceType.get_id_by_type("page"),
+          rev.resource_type_id == ^ResourceType.id_for_page(),
       select: {rev.resource_id, rev.slug},
       distinct: true
     )
@@ -47,7 +47,7 @@ defmodule Oli.Publishing do
       on: pr.revision_id == rev.id,
       where:
         pr.publication_id in ^publication_ids and
-          rev.resource_type_id == ^ResourceType.get_id_by_type("page"),
+          rev.resource_type_id == ^ResourceType.id_for_page(),
       select: rev.resource_id,
       distinct: true
     )
@@ -134,7 +134,7 @@ defmodule Oli.Publishing do
   that pertain to a given publication.
   """
   def get_published_activity_revisions(publication_id, activity_ids) do
-    activity = ResourceType.get_id_by_type("activity")
+    activity = ResourceType.id_for_activity()
 
     Repo.all(
       from mapping in PublishedResource,
@@ -617,7 +617,7 @@ defmodule Oli.Publishing do
   end
 
   def get_published_objective_details(publication_id) do
-    objective = ResourceType.get_id_by_type("objective")
+    objective = ResourceType.id_for_objective()
 
     Repo.all(
       from mapping in PublishedResource,
@@ -789,7 +789,7 @@ defmodule Oli.Publishing do
   end
 
   def get_objective_mappings_by_publication(publication_id) do
-    objective = ResourceType.get_id_by_type("objective")
+    objective = ResourceType.id_for_objective()
 
     Repo.all(
       from mapping in PublishedResource,
@@ -1017,7 +1017,10 @@ defmodule Oli.Publishing do
   def insert_revision_part_records(publication_id) do
     query = """
       INSERT INTO revision_parts(part_id, grading_approach, revision_id)
-      SELECT DISTINCT t.parts->>'id' as part_id, t.parts->>'gradingApproach' as grading_approach, t.revision_id as revision_id FROM (
+      SELECT DISTINCT
+         t.parts->>'id' as part_id,
+         COALESCE(t.parts->>'gradingApproach', 'automatic') as grading_approach,
+         t.revision_id as revision_id FROM (
         SELECT jsonb_path_query(r.content, '$."authoring"."parts"[*]') as parts,
           r.id as revision_id
         FROM published_resources pr
@@ -1031,7 +1034,7 @@ defmodule Oli.Publishing do
     # or a failure in a {:error, failure} tuple
     case Repo.query!(query, [
            publication_id,
-           Oli.Resources.ResourceType.get_id_by_type("activity")
+           Oli.Resources.ResourceType.id_for_activity()
          ]) do
       %Postgrex.Result{num_rows: num_rows} = result ->
         Logger.info("Publication resulted in #{num_rows} new revision_parts records")
@@ -1307,8 +1310,8 @@ defmodule Oli.Publishing do
   }
   """
   def find_objective_attachments(resource_id, publication_id) do
-    page_id = ResourceType.get_id_by_type("page")
-    activity_id = ResourceType.get_id_by_type("activity")
+    page_id = ResourceType.id_for_page()
+    activity_id = ResourceType.id_for_activity()
 
     sql = """
     select
@@ -1355,8 +1358,8 @@ defmodule Oli.Publishing do
     The same revision will appear as many times as attached objectives it has.
   """
   def find_attached_objectives(publication_id) do
-    page_id = ResourceType.get_id_by_type("page")
-    activity_id = ResourceType.get_id_by_type("activity")
+    page_id = ResourceType.id_for_page()
+    activity_id = ResourceType.id_for_activity()
 
     sql = """
       SELECT
@@ -1415,7 +1418,7 @@ defmodule Oli.Publishing do
   page that encloses it
   """
   def determine_parent_pages(activity_resource_ids, publication_id) do
-    page_id = ResourceType.get_id_by_type("page")
+    page_id = ResourceType.id_for_page()
 
     activities = MapSet.new(activity_resource_ids)
 
@@ -1443,7 +1446,7 @@ defmodule Oli.Publishing do
   end
 
   def determine_parent_pages(publication_id) do
-    page_id = ResourceType.get_id_by_type("page")
+    page_id = ResourceType.id_for_page()
 
     sql = """
     select
@@ -1502,7 +1505,7 @@ defmodule Oli.Publishing do
   end
 
   def find_objective_in_selections(objective_id, publication_id) do
-    page_id = ResourceType.get_id_by_type("page")
+    page_id = ResourceType.id_for_page()
 
     sql = """
     select rev.slug, rev.title
@@ -1521,7 +1524,7 @@ defmodule Oli.Publishing do
   end
 
   def find_alternatives_group_references_in_pages(alternatives_resource_id, publication_id) do
-    page_id = ResourceType.get_id_by_type("page")
+    page_id = ResourceType.id_for_page()
 
     sql = """
     select rev.slug, rev.title

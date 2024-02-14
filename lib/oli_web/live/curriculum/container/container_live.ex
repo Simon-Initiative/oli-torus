@@ -206,7 +206,7 @@ defmodule OliWeb.Curriculum.ContainerLive do
     end)
 
     Subscriber.subscribe_to_new_resources_of_type(
-      Oli.Resources.ResourceType.get_id_by_type("objective"),
+      Oli.Resources.ResourceType.id_for_objective(),
       project_slug
     )
 
@@ -216,7 +216,7 @@ defmodule OliWeb.Curriculum.ContainerLive do
   # release a collection of subscriptions
   defp unsubscribe(ids, children, project_slug) do
     Subscriber.unsubscribe_to_new_resources_of_type(
-      Oli.Resources.ResourceType.get_id_by_type("objective"),
+      Oli.Resources.ResourceType.id_for_objective(),
       project_slug
     )
 
@@ -570,10 +570,11 @@ defmodule OliWeb.Curriculum.ContainerLive do
   end
 
   # handle clicking of the "Add Graded Assessment" or "Add Practice Page" buttons
-  def handle_event("add", %{"type" => type}, socket) do
+  def handle_event("add", %{"type" => type, "scored" => scored}, socket) do
     case ContainerEditor.add_new(
            socket.assigns.container,
            type,
+           scored,
            socket.assigns.author,
            socket.assigns.project,
            socket.assigns.numberings

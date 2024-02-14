@@ -31,8 +31,8 @@ defmodule Oli.Analytics.Summary.MetricsV2Test do
       page1: page1,
       project: project
     } do
-      objective_type_id = Oli.Resources.ResourceType.get_id_by_type("objective")
-      page_type_id = Oli.Resources.ResourceType.get_id_by_type("page")
+      objective_type_id = Oli.Resources.ResourceType.id_for_objective()
+      page_type_id = Oli.Resources.ResourceType.id_for_page()
       {:ok, section} = Oli.Delivery.Sections.update_section(section, %{analytics_version: :v2})
 
       id = o1.resource.id
@@ -72,8 +72,8 @@ defmodule Oli.Analytics.Summary.MetricsV2Test do
       page2: page2,
       project: project
     } do
-      objective_type_id = Oli.Resources.ResourceType.get_id_by_type("objective")
-      page_type_id = Oli.Resources.ResourceType.get_id_by_type("page")
+      objective_type_id = Oli.Resources.ResourceType.id_for_objective()
+      page_type_id = Oli.Resources.ResourceType.id_for_page()
       {:ok, section} = Oli.Delivery.Sections.update_section(section, %{analytics_version: :v2})
 
       id = o1.resource.id

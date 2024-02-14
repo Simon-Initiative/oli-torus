@@ -9,6 +9,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   alias Oli.Delivery.Sections.SectionCache
   alias OliWeb.Common.Utils, as: WebUtils
   alias OliWeb.Components.Delivery.Student
+  alias OliWeb.Delivery.Student.Utils
 
   import Ecto.Query, warn: false, only: [from: 2]
 
@@ -22,20 +23,22 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   }
 
   def mount(_params, _session, socket) do
+    section = socket.assigns.section
+
     # when updating to Liveview 0.20 we should replace this with assign_async/3
     # https://hexdocs.pm/phoenix_live_view/Phoenix.LiveView.html#assign_async/3
     if connected?(socket),
       do:
         async_calculate_student_metrics_and_enable_slider_buttons(
           self(),
-          socket.assigns.section,
+          section,
           socket.assigns[:current_user]
         )
 
     socket =
       assign(socket,
         active_tab: :learn,
-        units: get_or_compute_full_hierarchy(socket.assigns.section)["children"],
+        units: get_or_compute_full_hierarchy(section)["children"],
         selected_module_per_unit_resource_id: %{},
         student_visited_pages: %{},
         student_progress_per_resource_id: %{},
@@ -43,9 +46,10 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         student_raw_avg_score_per_container_id: %{},
         viewed_intro_video_resource_ids:
           get_viewed_intro_video_resource_ids(
-            socket.assigns.section.slug,
+            section.slug,
             socket.assigns.current_user.id
-          )
+          ),
+        assistant_enabled: Sections.assistant_enabled?(section)
       )
       |> slim_assigns()
 
@@ -321,11 +325,14 @@ defmodule OliWeb.Delivery.Student.LearnLive do
 
   def handle_event(
         "navigate_to_resource",
-        %{"slug" => resource_slug, "purpose" => purpose},
+        %{"slug" => resource_slug, "purpose" => purpose} = values,
         socket
       ) do
+    section_slug = socket.assigns.section.slug
+    resource_id = values["resource_id"] || values["module_resource_id"]
+
     {:noreply,
-     push_redirect(socket, to: resource_url(resource_slug, socket.assigns.section.slug, purpose))}
+     push_redirect(socket, to: resource_url(resource_slug, section_slug, resource_id, purpose))}
   end
 
   def handle_info(:gc, socket) do
@@ -408,6 +415,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
               %{}
             )
           }
+          assistant_enabled={@assistant_enabled}
         />
       </div>
     </div>
@@ -423,6 +431,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   attr :student_id, :integer
   attr :viewed_intro_video_resource_ids, :list
   attr :unit_raw_avg_score, :map
+  attr :assistant_enabled, :boolean, required: true
 
   def unit(assigns) do
     ~H"""
@@ -583,6 +592,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
               ) %>
             </div>
             <button
+              :if={@assistant_enabled}
               phx-click={JS.dispatch("click", to: "#ai_bot_collapsed_button")}
               class="rounded-[4px] p-[10px] flex justify-center items-center ml-auto mt-[42px] text-[14px] leading-[19px] tracking-[0.024px] font-normal text-white bg-blue-500 hover:bg-blue-600 dark:text-white dark:bg-[rgba(255,255,255,0.10);] dark:hover:bg-gray-800"
             >
@@ -803,6 +813,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         id={"index_item_#{@numbering_index}_#{@resource_id}"}
         phx-click={if @type != "intro", do: "navigate_to_resource", else: "play_video"}
         phx-value-slug={@revision_slug}
+        phx-value-resource_id={@resource_id}
         phx-value-module_resource_id={@module_resource_id}
         phx-value-video_url={@video_url}
         phx-value-is_intro_video="false"
@@ -1160,12 +1171,16 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   # This implies that the v26 prologue page will be shown when there is no attempt in course.
   # We need to extend the NG23 prologue to support adaptive pages.
 
-  defp resource_url(resource_slug, section_slug, "application") do
+  defp resource_url(resource_slug, section_slug, _, "application") do
     ~p"/sections/#{section_slug}/page/#{resource_slug}"
   end
 
-  defp resource_url(resource_slug, section_slug, _purpose) do
-    ~p"/sections/#{section_slug}/lesson/#{resource_slug}"
+  defp resource_url(resource_slug, section_slug, resource_id, _purpose) do
+    Utils.lesson_live_path(
+      section_slug,
+      resource_slug,
+      request_path: Utils.learn_live_path(section_slug, target_resource_id: resource_id)
+    )
   end
 
   defp get_student_metrics(section, current_user_id) do

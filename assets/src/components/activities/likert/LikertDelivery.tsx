@@ -17,10 +17,9 @@ import { initialPartInputs } from 'data/activities/utils';
 import { configureStore } from 'state/store';
 import { DeliveryElement, DeliveryElementProps } from '../DeliveryElement';
 import { DeliveryElementProvider, useDeliveryElementContext } from '../DeliveryElementProvider';
+import { SubmitResetConnected } from '../common/delivery/SubmitReset';
 import { EvaluationConnected } from '../common/delivery/evaluation/EvaluationConnected';
 import { GradedPointsConnected } from '../common/delivery/graded_points/GradedPointsConnected';
-import { ResetButtonConnected } from '../common/delivery/reset_button/ResetButtonConnected';
-import { SubmitButtonConnected } from '../common/delivery/submit_button/SubmitButtonConnected';
 import { HintsDeliveryConnected } from '../common/hints/delivery/HintsDeliveryConnected';
 import { StemDelivery } from '../common/stem/delivery/StemDelivery';
 import { castPartId } from '../common/utils';
@@ -81,10 +80,11 @@ const LikertComponent: React.FC = () => {
           context={writerContext}
         />
         <GradedPointsConnected />
-        <ResetButtonConnected
+
+        <SubmitResetConnected
           onReset={() => dispatch(resetAction(onResetActivity, emptySelectionMap))}
         />
-        <SubmitButtonConnected />
+
         <HintsDeliveryConnected
           partId={castPartId(activityState.parts[0].partId)}
           resetPartInputs={emptySelectionMap}

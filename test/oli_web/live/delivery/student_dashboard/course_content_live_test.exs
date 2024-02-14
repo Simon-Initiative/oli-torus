@@ -254,6 +254,62 @@ defmodule OliWeb.Delivery.StudentDashboard.CourseContentLiveTest do
              )
     end
 
+    test "scheduled dates considers student exceptions", %{
+      conn: conn,
+      user: user,
+      section: section,
+      mod1_pages: mod1_pages
+    } do
+      [p1, p2, _p3] = mod1_pages
+
+      read_by_end_date = ~U[2023-10-15 12:00:00Z]
+      inclass_end_date = ~U[2023-10-01 12:00:00Z]
+
+      update_section_resource(section.id, p1.published_resource.resource_id, %{
+        end_date: read_by_end_date,
+        scheduling_type: :read_by
+      })
+
+      update_section_resource(section.id, p2.published_resource.resource_id, %{
+        end_date: inclass_end_date,
+        scheduling_type: :inclass_activity
+      })
+
+      ## set a student exception
+      student_exception_end_date = ~U[2023-10-29 12:00:00Z]
+
+      Oli.Delivery.create_delivery_setting(%{
+        resource_id: p2.published_resource.resource_id,
+        section_id: section.id,
+        user_id: user.id,
+        end_date: student_exception_end_date
+      })
+
+      {:ok, view, _html} = isolated_live_view_course_content(conn, section.slug, user.id)
+
+      view
+      |> navigate_to_unit_1()
+      |> drill_down_to_module_1()
+
+      assert has_element?(
+               view,
+               ~s{section:has(h4[phx-click="go_down"]) span},
+               "Read by #{FormatDateTime.date(read_by_end_date)}"
+             )
+
+      assert has_element?(
+               view,
+               ~s{section:has(h4[phx-click="go_down"]) span},
+               "In class on #{FormatDateTime.date(student_exception_end_date)}"
+             )
+
+      assert has_element?(
+               view,
+               ~s{section:has(h4[phx-click="go_down"]) span},
+               "No due date"
+             )
+    end
+
     test "hard scheduled dates and student-specific hard scheduled dates are rendered correctly",
          %{
            conn: conn,

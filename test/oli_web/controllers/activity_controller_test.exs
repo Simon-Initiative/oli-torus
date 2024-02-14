@@ -134,7 +134,7 @@ defmodule OliWeb.ActivityControllerTest do
       assert r.title == "A title"
       assert r.content["1"] == "2"
       assert r.deleted == false
-      assert r.resource_type_id == Oli.Resources.ResourceType.get_id_by_type("secondary")
+      assert r.resource_type_id == Oli.Resources.ResourceType.id_for_secondary()
 
       conn =
         delete(

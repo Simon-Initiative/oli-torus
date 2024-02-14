@@ -23,27 +23,27 @@ defmodule Oli.Delivery.Metrics.LastInteractionTest do
     project = insert(:project, %{authors: [author]})
 
     # revisions...
-    page_1_revision = insert(:revision, %{resource_type_id: ResourceType.get_id_by_type("page")})
+    page_1_revision = insert(:revision, %{resource_type_id: ResourceType.id_for_page()})
 
-    page_2_revision = insert(:revision, %{resource_type_id: ResourceType.get_id_by_type("page")})
+    page_2_revision = insert(:revision, %{resource_type_id: ResourceType.id_for_page()})
 
     unit_1_revision =
       insert(:revision, %{
-        resource_type_id: ResourceType.get_id_by_type("container"),
+        resource_type_id: ResourceType.id_for_container(),
         children: [page_1_revision.resource_id],
         title: "Unit 1"
       })
 
     unit_2_revision =
       insert(:revision, %{
-        resource_type_id: ResourceType.get_id_by_type("container"),
+        resource_type_id: ResourceType.id_for_container(),
         children: [page_2_revision.resource_id],
         title: "Unit 2"
       })
 
     container_revision =
       insert(:revision, %{
-        resource_type_id: ResourceType.get_id_by_type("container"),
+        resource_type_id: ResourceType.id_for_container(),
         children: [unit_1_revision.resource_id, unit_2_revision.resource_id],
         title: "Root Container"
       })

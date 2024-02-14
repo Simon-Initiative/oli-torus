@@ -23,7 +23,8 @@ defmodule OliWeb.LiveSessionPlugs.SetUser do
      |> update_ctx(session)}
   end
 
-  def set_author(socket, %{"current_author_id" => current_author_id}) do
+  def set_author(socket, %{"current_author_id" => current_author_id})
+      when not is_nil(current_author_id) do
     case AccountLookupCache.get_author(current_author_id) do
       {:ok, current_author} ->
         case current_author do
@@ -47,7 +48,8 @@ defmodule OliWeb.LiveSessionPlugs.SetUser do
 
   def set_user(socket, session, opts \\ [])
 
-  def set_user(socket, %{"current_user_id" => current_user_id} = session, opts) do
+  def set_user(socket, %{"current_user_id" => current_user_id} = session, opts)
+      when not is_nil(current_user_id) do
     {:ok, current_user} =
       case opts[:preload] do
         nil ->

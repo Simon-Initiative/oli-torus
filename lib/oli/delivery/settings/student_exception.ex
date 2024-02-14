@@ -31,7 +31,7 @@ defmodule Oli.Delivery.Settings.StudentException do
     timestamps(type: :utc_datetime)
   end
 
-  def changeset(post, attrs \\ %{}) do
+  def changeset(post, attrs \\ %{}, required_fields \\ []) do
     post
     |> cast(attrs, [
       :user_id,
@@ -53,5 +53,6 @@ defmodule Oli.Delivery.Settings.StudentException do
     ])
     |> cast_embed(:explanation_strategy)
     |> cast_embed(:collab_space_config)
+    |> validate_required(required_fields)
   end
 end

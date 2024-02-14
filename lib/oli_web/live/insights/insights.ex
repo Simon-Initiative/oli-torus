@@ -34,6 +34,7 @@ defmodule OliWeb.Insights do
     {:ok,
      assign(socket,
        ctx: ctx,
+       is_admin?: Oli.Accounts.is_admin?(ctx.author),
        project: project,
        by_page_rows: nil,
        by_activity_rows: by_activity_rows,
@@ -89,15 +90,17 @@ defmodule OliWeb.Insights do
         Insights can help you improve your course by providing a statistical analysis of
         the skills covered by each question to find areas where students are struggling.
       </p>
-      <div class="d-flex align-items-center my-3">
-        <AsyncExporter.raw_analytics
-          ctx={@ctx}
-          latest_publication={@latest_publication}
-          analytics_export_status={@analytics_export_status}
-          analytics_export_url={@analytics_export_url}
-          analytics_export_timestamp={@analytics_export_timestamp}
-        />
-      </div>
+      <%= if @is_admin? do %>
+        <div class="d-flex align-items-center my-3">
+          <AsyncExporter.raw_analytics
+            ctx={@ctx}
+            latest_publication={@latest_publication}
+            analytics_export_status={@analytics_export_status}
+            analytics_export_url={@analytics_export_url}
+            analytics_export_timestamp={@analytics_export_timestamp}
+          />
+        </div>
+      <% end %>
     </div>
     <ul class="nav nav-pills">
       <li class="nav-item my-2 mr-2">

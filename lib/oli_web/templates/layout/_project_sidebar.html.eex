@@ -1,13 +1,13 @@
 <div class="workspace-sidebar pt-2">
-  <a class="sidebar-item btn my-1" href="<%= Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.ProjectsLive) %>">
-    <img src="/images/icons/icon-projects-light.svg" height="30px" width="32px"/>
-    <div class="label mt-1">Projects</div>
+  <a tabindex="0" tab aria-label="Projects Link" class="sidebar-item btn my-1" href="<%= Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.ProjectsLive) %>">
+    <img aria-hidden="true" src="/images/icons/icon-projects-light.svg" height="30px" width="32px"/>
+    <div aria-hidden="true" class="label mt-1">Projects</div>
   </a>
 
   <div class="btn-group dropend relative hoverdriven my-1">
-    <button type="button" class="sidebar-item btn" data-bs-toggle="dropdown" data-bs-offset="0,-1" aria-haspopup="true" aria-expanded="false">
-      <img src="/images/icons/icon-create-light.svg" height="35px" width="32px"/>
-      <div class="label mt-1">Create</div>
+    <button aria-label="Create" tabindex="0" type="button" class="sidebar-item btn" data-bs-toggle="dropdown" data-bs-offset="0,-1" aria-haspopup="true" aria-expanded="false">
+      <img aria-hidden="true" src="/images/icons/icon-create-light.svg" height="35px" width="32px"/>
+      <div aria-hidden="true" class="label mt-1">Create</div>
     </button>
     <ul class="dropdown-menu">
       <li><a class="dropdown-item btn btn-lg" href="<%= Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.OverviewLive, @project.slug) %>">Overview</a></li>
@@ -27,9 +27,9 @@
   </div>
 
   <div class="btn-group dropend relative hoverdriven my-1">
-    <button type="button" class="sidebar-item btn" data-bs-toggle="dropdown" data-bs-offset="0,-1" aria-haspopup="true" aria-expanded="false">
-      <img src="/images/icons/icon-publish-light.svg" height="32px" width="32px"/>
-      <div class="label mt-1">Publish</div>
+    <button tabindex="0" aria-label="Publish" type="button" class="sidebar-item btn" data-bs-toggle="dropdown" data-bs-offset="0,-1" aria-haspopup="true" aria-expanded="false">
+      <img aria-hidden="true" src="/images/icons/icon-publish-light.svg" height="32px" width="32px"/>
+      <div aria-hidden="true" class="label mt-1">Publish</div>
     </button>
     <div class="dropdown-menu">
       <a class="dropdown-item btn btn-lg" href="<%= Routes.live_path(OliWeb.Endpoint, OliWeb.Qa.QaLive, @project.slug) %>">Review</a>
@@ -39,9 +39,9 @@
   </div>
 
   <div class="btn-group dropend relative hoverdriven my-1">
-    <button type="button" class="sidebar-item btn" data-bs-toggle="dropdown" data-bs-offset="0,-1" aria-haspopup="true" aria-expanded="false">
-      <img src="/images/icons/icon-improve-light.svg" height="35px" width="32px"/>
-      <div class="label mt-1">Improve</div>
+    <button tabindex="0" aria-label="Improve" type="button" class="sidebar-item btn" data-bs-toggle="dropdown" data-bs-offset="0,-1" aria-haspopup="true" aria-expanded="false">
+      <img aria-hidden="true" src="/images/icons/icon-improve-light.svg" height="35px" width="32px"/>
+      <div aria-hidden="true" class="label mt-1">Improve</div>
     </button>
     <div class="dropdown-menu">
       <li><a class="dropdown-item btn btn-lg" href="<%= Routes.project_path(@conn, :insights, @project) %>">Insights</a></li>

@@ -124,6 +124,15 @@ defmodule Oli.Delivery.Settings do
     |> Repo.all()
   end
 
+  def update_student_exception(
+        %StudentException{} = student_exception,
+        attrs,
+        required_fields \\ []
+      ) do
+    StudentException.changeset(student_exception, attrs, required_fields)
+    |> Repo.update()
+  end
+
   def was_late?(_, %Combined{late_submit: :disallow}, _now), do: false
 
   def was_late?(
