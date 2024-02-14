@@ -44,28 +44,31 @@ defmodule OliWeb.Components.Delivery.Student do
     assigns = assign(assigns, :id, "#{assigns[:page_revision_slug]}-attempts")
 
     ~H"""
-      <div class="self-stretch justify-start items-start gap-6 inline-flex relative mb-1">
-        <button
-          id={"#{@id}-dropdown-button"}
-          class="opacity-80 dark:text-white text-sm font-bold font-['Open Sans'] uppercase no-wrap tracking-wider"
-          phx-click={show_attempts_dropdown("##{@id}-dropdown", @page_revision_slug)}
-          phx-click-away={hide_attempts_dropdown("##{@id}-dropdown")}
-          phx-value-hide-target={"##{@id}-dropdown"}
-        >
-          Attempts <%= @attempts_count %>/<%= max_attempts(@effective_settings) %>
-          <span><i class="fa-solid fa-caret-down"></i></span>
-        </button>
-        <.dropdown_menu id={"#{@id}-dropdown"}>
-          <Common.loading_spinner :if={!@attempt_summary || @attempt_summary.page_revision_slug != @page_revision_slug} />
-          <.attempts_summary
-            :if={@attempt_summary && @attempt_summary.page_revision_slug == @page_revision_slug}
-            ctx={@ctx}
-            attempt_summary={@attempt_summary}
-            section_slug={@section_slug}
-            effective_settings={@effective_settings}
-            page_revision_slug={@page_revision_slug} />
-        </.dropdown_menu>
-      </div>
+    <div class="self-stretch justify-start items-start gap-6 inline-flex relative mb-1">
+      <button
+        id={"#{@id}-dropdown-button"}
+        class="opacity-80 dark:text-white text-sm font-bold font-['Open Sans'] uppercase no-wrap tracking-wider"
+        phx-click={show_attempts_dropdown("##{@id}-dropdown", @page_revision_slug)}
+        phx-click-away={hide_attempts_dropdown("##{@id}-dropdown")}
+        phx-value-hide-target={"##{@id}-dropdown"}
+      >
+        Attempts <%= @attempts_count %>/<%= max_attempts(@effective_settings) %>
+        <span><i class="fa-solid fa-caret-down"></i></span>
+      </button>
+      <.dropdown_menu id={"#{@id}-dropdown"}>
+        <Common.loading_spinner :if={
+          !@attempt_summary || @attempt_summary.page_revision_slug != @page_revision_slug
+        } />
+        <.attempts_summary
+          :if={@attempt_summary && @attempt_summary.page_revision_slug == @page_revision_slug}
+          ctx={@ctx}
+          attempt_summary={@attempt_summary}
+          section_slug={@section_slug}
+          effective_settings={@effective_settings}
+          page_revision_slug={@page_revision_slug}
+        />
+      </.dropdown_menu>
+    </div>
     """
   end
 
@@ -167,17 +170,15 @@ defmodule OliWeb.Components.Delivery.Student do
 
   defp attempt_summary(assigns) do
     ~H"""
-    <div
-      id={"attempt_#{@index}_summary"}
-      class="py-1"
-    >
+    <div id={"attempt_#{@index}_summary"} class="py-1">
       <.attempt_details
         ctx={@ctx}
         index={@index}
         attempt={@attempt}
         section_slug={@section_slug}
         page_revision_slug={@page_revision_slug}
-        effective_settings={@effective_settings} />
+        effective_settings={@effective_settings}
+      />
     </div>
     """
   end
@@ -196,12 +197,10 @@ defmodule OliWeb.Components.Delivery.Student do
         <div class="flex flex-row gap-1 text-xs font-semibold">
           <div class="font-semibold uppercase text-gray-500 mr-1">Attempt <%= @index %>:</div>
         </div>
-        <div :if={has_end_date?(@effective_settings)}>
-          <span class="text-xs text-gray-500 mr-1">
-            Time Remaining:
-          </span>
-          <%= time_remaining(@effective_settings) %>
-        </div>
+        <.time_remaining
+          :if={has_end_date?(@effective_settings)}
+          effective_settings={@effective_settings}
+        />
       </div>
       <div class="flex flex-row justify-end">
         <div
@@ -209,9 +208,7 @@ defmodule OliWeb.Components.Delivery.Student do
           class="w-[124px] py-1 justify-end items-center gap-2.5 inline-flex"
         >
           <.link
-            href={
-              ~p"/sections/#{@section_slug}/lesson/#{@page_revision_slug}"
-            }
+            href={~p"/sections/#{@section_slug}/lesson/#{@page_revision_slug}"}
             role="review_attempt_link"
           >
             <div class="cursor-pointer hover:opacity-40 text-blue-500 text-xs font-semibold font-['Open Sans'] uppercase tracking-wide">
@@ -232,28 +229,22 @@ defmodule OliWeb.Components.Delivery.Student do
           <div class="font-semibold uppercase text-gray-500 mr-1">Attempt <%= @index %>:</div>
           <div class="w-4 h-4 relative"><.star_icon /></div>
 
-          <div
-            role="attempt score"
-            class="text-emerald-600 tracking-tight"
-          >
+          <div role="attempt score" class="text-emerald-600 tracking-tight">
             <%= Float.round(@attempt.score, 2) %>
           </div>
           <div class="text-emerald-600">
             /
           </div>
-          <div
-            role="attempt out of"
-            class="text-emerald-600 tracking-tight"
-          >
+          <div role="attempt out of" class="text-emerald-600 tracking-tight">
             <%= Float.round(@attempt.out_of, 2) %>
           </div>
         </div>
         <div>
           <%= FormatDateTime.to_formatted_datetime(
-              @attempt.date_submitted,
-              @ctx,
-              "{WDshort} {Mshort} {D}, {YYYY}"
-            ) %>
+            @attempt.date_submitted,
+            @ctx,
+            "{WDshort} {Mshort} {D}, {YYYY}"
+          ) %>
         </div>
       </div>
       <div class="flex flex-row justify-end">
@@ -289,35 +280,48 @@ defmodule OliWeb.Components.Delivery.Student do
     end
   end
 
-  defp time_remaining(effective_settings) do
-    case effective_settings.end_date do
-      nil ->
-        nil
+  defp time_remaining(%{effective_settings: %{end_date: nil}} = assigns) do
+    ~H"""
 
-      end_date ->
-        # Get the current time
-        current_time = Timex.now()
+    """
+  end
 
-        # Calculate the difference in seconds
-        diff_seconds = Timex.diff(end_date, current_time, :seconds)
+  defp time_remaining(assigns) do
+    ~H"""
+    <div>
+      <span class="text-xs text-gray-500 mr-1">
+        Time Remaining:
+      </span>
+      <%= format_time_remaining(@effective_settings) %>
+    </div>
+    """
+  end
 
-        # Calculate hours, minutes and seconds
-        hours = div(diff_seconds, 3600)
-        minutes = div(rem(diff_seconds, 3600), 60)
-        seconds = rem(diff_seconds, 60)
+  defp format_time_remaining(effective_settings) do
+    # Get the current time
+    current_time = Timex.now()
 
-        # format duration as HH:MM:SS
-        (hours
-         |> Integer.to_string()
-         |> String.pad_leading(2, "0")) <>
-          ":" <>
-          (minutes
-           |> Integer.to_string()
-           |> String.pad_leading(2, "0")) <>
-          ":" <>
-          (seconds
-           |> Integer.to_string()
-           |> String.pad_leading(2, "0"))
-    end
+    # Calculate the difference in seconds, clamp negative values to 0
+    diff_seconds =
+      Timex.diff(effective_settings.end_date, current_time, :seconds)
+      |> max(0)
+
+    # Calculate hours, minutes and seconds
+    hours = div(diff_seconds, 3600)
+    minutes = div(rem(diff_seconds, 3600), 60)
+    seconds = rem(diff_seconds, 60)
+
+    # format duration as HH:MM:SS
+    (hours
+     |> Integer.to_string()
+     |> String.pad_leading(2, "0")) <>
+      ":" <>
+      (minutes
+       |> Integer.to_string()
+       |> String.pad_leading(2, "0")) <>
+      ":" <>
+      (seconds
+       |> Integer.to_string()
+       |> String.pad_leading(2, "0"))
   end
 end

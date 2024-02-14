@@ -7,8 +7,7 @@ defmodule Oli.Delivery.SectionsTest do
   alias Oli.Utils.Seeder
   alias Oli.Factory
   alias Oli.Delivery.Sections
-  alias Oli.Delivery.Sections.PostProcessing
-  alias Oli.Delivery.Sections.SectionResource
+  alias Oli.Delivery.Sections.{PostProcessing, SectionResource, ScheduledContainerGroup}
   alias Oli.Publishing.DeliveryResolver
 
   describe "maybe_update_contains_discusssions/1" do
@@ -871,21 +870,31 @@ defmodule Oli.Delivery.SectionsTest do
                    {1,
                     [
                       {{~U[2023-01-25 23:59:59Z], ~U[2023-01-27 23:59:59Z]},
-                      [{
-                        ^unit1_resource_id, "Unit 1", true, nil, [
-                            {
-                              %Oli.Delivery.Sections.SectionResource{
-                                scheduling_type: :due_by,
-                                manually_scheduled: true,
-                                start_date: ~U[2023-01-25 23:59:59Z],
-                                end_date: ~U[2023-01-27 23:59:59Z],
-                                resource_id: ^page3_resource_id,
-                                title: "Assessment 3"
-                              },
-                              :foundation, nil, nil, 0, %Oli.Delivery.Settings.Combined{resource_id: ^page3_resource_id}
-                            }
-                         ]
-                      }]}
+                       [
+                         %ScheduledContainerGroup{
+                           container_id: ^unit1_resource_id,
+                           container_label: "Unit 1",
+                           graded: true,
+                           progress: nil,
+                           resources: [
+                             {
+                               %Oli.Delivery.Sections.SectionResource{
+                                 scheduling_type: :due_by,
+                                 manually_scheduled: true,
+                                 start_date: ~U[2023-01-25 23:59:59Z],
+                                 end_date: ~U[2023-01-27 23:59:59Z],
+                                 resource_id: ^page3_resource_id,
+                                 title: "Assessment 3"
+                               },
+                               :foundation,
+                               nil,
+                               nil,
+                               0,
+                               %Oli.Delivery.Settings.Combined{resource_id: ^page3_resource_id}
+                             }
+                           ]
+                         }
+                       ]}
                     ]}
                  ]
                },
@@ -894,27 +903,42 @@ defmodule Oli.Delivery.SectionsTest do
                   {2,
                    [
                      {{~U[2023-02-01 23:59:59Z], ~U[2023-02-04 23:59:59Z]},
-                      [{
-                        ^unit1_resource_id, "Unit 1", true, nil, [
-                          {
-                            %Oli.Delivery.Sections.SectionResource{
-                              scheduling_type: :due_by,
-                              manually_scheduled: true,
-                              start_date: ~U[2023-02-01 23:59:59Z],
-                              end_date: ~U[2023-02-04 23:59:59Z],
-                              resource_id: ^page4_resource_id,
-                              title: "Assessment 4"
-                            },
-                            :foundation, nil, nil, 0, %Oli.Delivery.Settings.Combined{resource_id: ^page4_resource_id}
-                          }
-                         ]
-                      }]}
+                      [
+                        %ScheduledContainerGroup{
+                          container_id: ^unit1_resource_id,
+                          container_label: "Unit 1",
+                          graded: true,
+                          progress: nil,
+                          resources: [
+                            {
+                              %Oli.Delivery.Sections.SectionResource{
+                                scheduling_type: :due_by,
+                                manually_scheduled: true,
+                                start_date: ~U[2023-02-01 23:59:59Z],
+                                end_date: ~U[2023-02-04 23:59:59Z],
+                                resource_id: ^page4_resource_id,
+                                title: "Assessment 4"
+                              },
+                              :foundation,
+                              nil,
+                              nil,
+                              0,
+                              %Oli.Delivery.Settings.Combined{resource_id: ^page4_resource_id}
+                            }
+                          ]
+                        }
+                      ]}
                    ]},
                   {3,
                    [
                      {{~U[2023-02-06 23:59:59Z], ~U[2023-02-08 23:59:59Z]},
-                      [{
-                        ^unit1_resource_id, "Unit 1", true, nil, [
+                      [
+                        %ScheduledContainerGroup{
+                          container_id: ^unit1_resource_id,
+                          container_label: "Unit 1",
+                          graded: true,
+                          progress: nil,
+                          resources: [
                             {
                               %Oli.Delivery.Sections.SectionResource{
                                 scheduling_type: :due_by,
@@ -924,10 +948,15 @@ defmodule Oli.Delivery.SectionsTest do
                                 resource_id: ^page5_resource_id,
                                 title: "Assessment 5"
                               },
-                              :foundation, nil, nil, 0, %Oli.Delivery.Settings.Combined{resource_id: ^page5_resource_id}
+                              :foundation,
+                              nil,
+                              nil,
+                              0,
+                              %Oli.Delivery.Settings.Combined{resource_id: ^page5_resource_id}
                             }
-                         ]
-                      }]}
+                          ]
+                        }
+                      ]}
                    ]}
                 ]}
              ] =

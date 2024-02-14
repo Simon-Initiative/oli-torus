@@ -1817,6 +1817,11 @@ defmodule Oli.Delivery.Sections do
     end)
   end
 
+  defmodule ScheduledContainerGroup do
+    @enforce_keys [:container_id, :container_label, :graded, :progress, :resources]
+    defstruct [:container_id, :container_label, :graded, :progress, :resources]
+  end
+
   defp attach_container_metadata(
          container_groups,
          container_labels_map,
@@ -1824,14 +1829,19 @@ defmodule Oli.Delivery.Sections do
        ) do
     container_groups
     |> Enum.map(fn {{container_id, graded}, scheduled_resources} ->
-      {container_id, container_labels_map[container_id], graded,
-       progress_precentage(progress_per_resource_id[container_id]),
-       Enum.map(scheduled_resources, fn {sr, _container_id, _graded, purpose, page_progress,
-                                         raw_avg_score, resource_attempt_count,
-                                         combined_settings} ->
-         {sr, purpose, progress_precentage(page_progress), raw_avg_score, resource_attempt_count,
-          combined_settings}
-       end)}
+      %ScheduledContainerGroup{
+        container_id: container_id,
+        container_label: container_labels_map[container_id],
+        graded: graded,
+        progress: progress_precentage(progress_per_resource_id[container_id]),
+        resources:
+          Enum.map(scheduled_resources, fn {sr, _container_id, _graded, purpose, page_progress,
+                                            raw_avg_score, resource_attempt_count,
+                                            combined_settings} ->
+            {sr, purpose, progress_precentage(page_progress), raw_avg_score,
+             resource_attempt_count, combined_settings}
+          end)
+      }
     end)
   end
 
