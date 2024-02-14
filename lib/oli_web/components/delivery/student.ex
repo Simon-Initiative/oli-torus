@@ -49,7 +49,6 @@ defmodule OliWeb.Components.Delivery.Student do
         id={"#{@id}-dropdown-button"}
         class="opacity-80 dark:text-white text-sm font-bold font-['Open Sans'] uppercase no-wrap tracking-wider"
         phx-click={show_attempts_dropdown("##{@id}-dropdown", @page_revision_slug)}
-        phx-click-away={hide_attempts_dropdown("##{@id}-dropdown")}
         phx-value-hide-target={"##{@id}-dropdown"}
       >
         Attempts <%= @attempts_count %>/<%= max_attempts(@effective_settings) %>
@@ -123,9 +122,13 @@ defmodule OliWeb.Components.Delivery.Student do
          %{attempt_summary: %HistoricalGradedAttemptSummary{historical_attempts: []}} = assigns
        ) do
     ~H"""
-    <div class="w-full flex-col justify-start items-start gap-3 flex" id="attempts_summary">
+    <div
+      id="attempts_summary"
+      class="w-full flex-col justify-start items-start gap-3 flex"
+      phx-click-away={hide_attempts_dropdown("##{@page_revision_slug}-attempts-dropdown")}
+    >
       <div class="self-stretch flex-col justify-start items-start flex p-3">
-        There are no attempts for this assessment
+        There are no attempts for this page.
       </div>
     </div>
     """
@@ -133,7 +136,11 @@ defmodule OliWeb.Components.Delivery.Student do
 
   defp attempts_summary(assigns) do
     ~H"""
-    <div class="flex flex-col gap-3" id="attempts_summary">
+    <div
+      id="attempts_summary"
+      class="flex flex-col gap-3"
+      phx-click-away={hide_attempts_dropdown("##{@page_revision_slug}-attempts-dropdown")}
+    >
       <div class="flex flex-row justify-between p-2">
         <div class="text-sm uppercase">
           Score Information

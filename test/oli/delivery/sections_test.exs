@@ -7,7 +7,14 @@ defmodule Oli.Delivery.SectionsTest do
   alias Oli.Utils.Seeder
   alias Oli.Factory
   alias Oli.Delivery.Sections
-  alias Oli.Delivery.Sections.{PostProcessing, SectionResource, ScheduledContainerGroup}
+
+  alias Oli.Delivery.Sections.{
+    PostProcessing,
+    SectionResource,
+    ScheduledContainerGroup,
+    ScheduledSectionResource
+  }
+
   alias Oli.Publishing.DeliveryResolver
 
   describe "maybe_update_contains_discusssions/1" do
@@ -877,8 +884,8 @@ defmodule Oli.Delivery.SectionsTest do
                            graded: true,
                            progress: nil,
                            resources: [
-                             {
-                               %Oli.Delivery.Sections.SectionResource{
+                             %ScheduledSectionResource{
+                               resource: %Oli.Delivery.Sections.SectionResource{
                                  scheduling_type: :due_by,
                                  manually_scheduled: true,
                                  start_date: ~U[2023-01-25 23:59:59Z],
@@ -886,11 +893,13 @@ defmodule Oli.Delivery.SectionsTest do
                                  resource_id: ^page3_resource_id,
                                  title: "Assessment 3"
                                },
-                               :foundation,
-                               nil,
-                               nil,
-                               0,
-                               %Oli.Delivery.Settings.Combined{resource_id: ^page3_resource_id}
+                               purpose: :foundation,
+                               progress: nil,
+                               raw_avg_score: nil,
+                               resource_attempt_count: 0,
+                               effective_settings: %Oli.Delivery.Settings.Combined{
+                                 resource_id: ^page3_resource_id
+                               }
                              }
                            ]
                          }
@@ -910,8 +919,8 @@ defmodule Oli.Delivery.SectionsTest do
                           graded: true,
                           progress: nil,
                           resources: [
-                            {
-                              %Oli.Delivery.Sections.SectionResource{
+                            %ScheduledSectionResource{
+                              resource: %Oli.Delivery.Sections.SectionResource{
                                 scheduling_type: :due_by,
                                 manually_scheduled: true,
                                 start_date: ~U[2023-02-01 23:59:59Z],
@@ -919,11 +928,13 @@ defmodule Oli.Delivery.SectionsTest do
                                 resource_id: ^page4_resource_id,
                                 title: "Assessment 4"
                               },
-                              :foundation,
-                              nil,
-                              nil,
-                              0,
-                              %Oli.Delivery.Settings.Combined{resource_id: ^page4_resource_id}
+                              purpose: :foundation,
+                              progress: nil,
+                              raw_avg_score: nil,
+                              resource_attempt_count: 0,
+                              effective_settings: %Oli.Delivery.Settings.Combined{
+                                resource_id: ^page4_resource_id
+                              }
                             }
                           ]
                         }
@@ -939,8 +950,8 @@ defmodule Oli.Delivery.SectionsTest do
                           graded: true,
                           progress: nil,
                           resources: [
-                            {
-                              %Oli.Delivery.Sections.SectionResource{
+                            %ScheduledSectionResource{
+                              resource: %Oli.Delivery.Sections.SectionResource{
                                 scheduling_type: :due_by,
                                 manually_scheduled: true,
                                 start_date: ~U[2023-02-06 23:59:59Z],
@@ -948,11 +959,13 @@ defmodule Oli.Delivery.SectionsTest do
                                 resource_id: ^page5_resource_id,
                                 title: "Assessment 5"
                               },
-                              :foundation,
-                              nil,
-                              nil,
-                              0,
-                              %Oli.Delivery.Settings.Combined{resource_id: ^page5_resource_id}
+                              purpose: :foundation,
+                              progress: nil,
+                              raw_avg_score: nil,
+                              resource_attempt_count: 0,
+                              effective_settings: %Oli.Delivery.Settings.Combined{
+                                resource_id: ^page5_resource_id
+                              }
                             }
                           ]
                         }

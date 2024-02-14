@@ -4,7 +4,7 @@ defmodule OliWeb.Components.Delivery.Schedule do
   alias OliWeb.Common.SessionContext
   alias OliWeb.Components.Delivery.Student
   alias Oli.Delivery.Attempts.HistoricalGradedAttemptSummary
-  alias Oli.Delivery.Sections.{ScheduledContainerGroup}
+  alias Oli.Delivery.Sections.{ScheduledContainerGroup, ScheduledSectionResource}
 
   attr(:ctx, SessionContext, required: true)
   attr(:week_number, :integer, required: true)
@@ -59,7 +59,14 @@ defmodule OliWeb.Components.Delivery.Schedule do
                   </div>
                 </div>
                 <div class="flex-1 flex flex-col mr-4">
-                  <%= for {resource, purpose, progress, raw_avg_score, resource_attempt_count, effective_settings} <- scheduled_resources do %>
+                  <%= for %ScheduledSectionResource{
+                      resource: resource,
+                      purpose: purpose,
+                      progress: progress,
+                      raw_avg_score: raw_avg_score,
+                      resource_attempt_count: resource_attempt_count,
+                      effective_settings: effective_settings
+                    } <- scheduled_resources do %>
                     <div class="flex flex-row gap-4 mb-3">
                       <.page_icon progress={progress} graded={graded} purpose={purpose} />
                       <div class="flex-1">

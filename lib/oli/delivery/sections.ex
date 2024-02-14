@@ -1790,6 +1790,29 @@ defmodule Oli.Delivery.Sections do
     end)
   end
 
+  defmodule ScheduledSectionResource do
+    @enforce_keys [
+      :resource,
+      :container_id,
+      :graded,
+      :purpose,
+      :progress,
+      :raw_avg_score,
+      :resource_attempt_count,
+      :effective_settings
+    ]
+    defstruct [
+      :resource,
+      :container_id,
+      :graded,
+      :purpose,
+      :progress,
+      :raw_avg_score,
+      :resource_attempt_count,
+      :effective_settings
+    ]
+  end
+
   defp attach_section_resource_metadata(
          section_resources,
          page_to_container_map,
@@ -1802,17 +1825,22 @@ defmodule Oli.Delivery.Sections do
     |> Enum.map(fn sr ->
       container_id = page_to_container_map[Integer.to_string(sr.resource_id)]
 
-      {sr, container_id, sr.graded, sr.purpose, progress_per_resource_id[sr.resource_id],
-       raw_avg_score_per_page_id[sr.resource_id],
-       user_resource_attempt_counts[sr.resource_id] || 0,
-       combined_settings_for_all_resources[sr.resource_id]}
+      %ScheduledSectionResource{
+        resource: sr,
+        container_id: container_id,
+        graded: sr.graded,
+        purpose: sr.purpose,
+        progress: progress_percentage(progress_per_resource_id[sr.resource_id]),
+        raw_avg_score: raw_avg_score_per_page_id[sr.resource_id],
+        resource_attempt_count: user_resource_attempt_counts[sr.resource_id] || 0,
+        effective_settings: combined_settings_for_all_resources[sr.resource_id]
+      }
     end)
   end
 
   defp group_by_container_and_graded(items) do
     items
-    |> Enum.group_by(fn {_sr, container_id, graded, _purpose, _progress, _raw_avg_score,
-                         _resource_attempt_count, _combined_settings} ->
+    |> Enum.group_by(fn %ScheduledSectionResource{container_id: container_id, graded: graded} ->
       {container_id, graded}
     end)
   end
@@ -1833,19 +1861,13 @@ defmodule Oli.Delivery.Sections do
         container_id: container_id,
         container_label: container_labels_map[container_id],
         graded: graded,
-        progress: progress_precentage(progress_per_resource_id[container_id]),
-        resources:
-          Enum.map(scheduled_resources, fn {sr, _container_id, _graded, purpose, page_progress,
-                                            raw_avg_score, resource_attempt_count,
-                                            combined_settings} ->
-            {sr, purpose, progress_precentage(page_progress), raw_avg_score,
-             resource_attempt_count, combined_settings}
-          end)
+        progress: progress_percentage(progress_per_resource_id[container_id]),
+        resources: scheduled_resources
       }
     end)
   end
 
-  defp progress_precentage(progress) do
+  defp progress_percentage(progress) do
     case progress do
       nil -> nil
       _ -> progress * 100
