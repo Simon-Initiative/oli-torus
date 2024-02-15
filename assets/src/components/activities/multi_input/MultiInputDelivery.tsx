@@ -33,6 +33,7 @@ import { configureStore } from 'state/store';
 import { DeliveryElementProvider, useDeliveryElementContext } from '../DeliveryElementProvider';
 import { SubmitResetConnected } from '../common/delivery/SubmitReset';
 import { initializePersistence } from '../common/delivery/persistence';
+import { getOrderedPartIds } from './utils';
 
 export const MultiInputComponent: React.FC = () => {
   const {
@@ -51,6 +52,8 @@ export const MultiInputComponent: React.FC = () => {
   const { surveyId, sectionSlug, bibParams } = context;
   const uiState = useSelector((state: ActivityDeliveryState) => state);
   const [hintsShown, setHintsShown] = React.useState<PartId[]>([]);
+
+  const [orderedPartIds] = React.useState(getOrderedPartIds(model));
 
   const [isInputDirty, setInputDirty] = React.useState(
     activityState.parts.reduce((acc: any, part) => {
@@ -344,6 +347,7 @@ export const MultiInputComponent: React.FC = () => {
           }
           attemptState={uiState.attemptState}
           context={writerContext}
+          partOrder={orderedPartIds}
         />
         <Submission attemptState={uiState.attemptState} surveyId={surveyId} />
       </div>

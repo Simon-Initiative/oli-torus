@@ -1,6 +1,7 @@
 import { Operations } from 'utils/pathOperations';
 
 const ID_PATH = (id: string) => `[?(@.id=='${id}')]`;
+const NOT_ID_PATH = (id: string) => `[?(@.id!='${id}')]`;
 
 type Predicate<T> = (x: T) => boolean;
 export interface List<T> {
@@ -43,7 +44,7 @@ export const List: <T>(path: string) => List<T> = (path) => ({
 
   removeOne(id: string) {
     return (model: any) => {
-      Operations.apply(model, Operations.filter(path, `[?(@.id!=${id})]`));
+      Operations.apply(model, Operations.filter(path, NOT_ID_PATH(id)));
     };
   },
 });
