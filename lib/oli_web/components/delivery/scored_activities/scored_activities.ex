@@ -496,7 +496,7 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
         Enum.sort_by(
           assessments,
           fn a ->
-            if a.scheduling_type != :due_by, do: 0, else: Map.get(a, :due_date)
+            if a.scheduling_type != :due_by, do: 0, else: Map.get(a, :end_date)
           end,
           sort_order
         )
