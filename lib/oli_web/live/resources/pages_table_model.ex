@@ -11,7 +11,7 @@ defmodule OliWeb.Resources.PagesTableModel do
     """
   end
 
-  def new(pages, project, ctx) do
+  def new(pages, project, ctx, child_to_parent) do
     column_specs = [
       %ColumnSpec{name: :title, label: "Title", render_fn: &__MODULE__.render_title_column/3},
       %ColumnSpec{
@@ -27,6 +27,12 @@ defmodule OliWeb.Resources.PagesTableModel do
         name: :updated_at,
         label: "Last Updated",
         render_fn: &OliWeb.Common.Table.Common.render_date/3
+      },
+      %ColumnSpec{
+        name: :curriculum,
+        label: "Curriculum",
+        render_fn: &__MODULE__.render_curriculum_column/3,
+        sortable: false
       },
       %ColumnSpec{
         name: :actions,
@@ -45,7 +51,8 @@ defmodule OliWeb.Resources.PagesTableModel do
       id_field: [:id],
       data: %{
         ctx: ctx,
-        project_slug: project.slug
+        project_slug: project.slug,
+        child_to_parent: child_to_parent
       }
     )
   end
@@ -64,6 +71,25 @@ defmodule OliWeb.Resources.PagesTableModel do
     <a href={Routes.resource_path(OliWeb.Endpoint, :edit, @project_slug, @slug)}>
       <%= @title %>
     </a>
+    """
+  end
+
+  def render_curriculum_column(
+        assigns,
+        %Revision{
+          resource_id: resource_id
+        },
+        _
+      ) do
+    parent = Map.get(assigns.child_to_parent, resource_id)
+    assigns = Map.merge(assigns, %{parent: parent})
+
+    ~H"""
+    <%= if @parent !== nil do %>
+      <a href={Routes.container_path(OliWeb.Endpoint, :index, @project_slug, @parent.slug)}>
+        <%= @parent.title %>
+      </a>
+    <% end %>
     """
   end
 

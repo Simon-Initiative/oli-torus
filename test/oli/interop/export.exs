@@ -18,24 +18,62 @@ defmodule Oli.Interop.ExportTest do
       assert project_json["required_student_survey"] ==
                Integer.to_string(project.required_survey_resource_id)
     end
+
+    test "project export preserves attributes", %{project: project} do
+      export =
+        Export.export(project)
+        |> unzip_to_memory()
+        |> Enum.reduce(%{}, fn {f, c}, m -> Map.put(m, f, c) end)
+
+      {:ok, project_json} = Jason.decode(Map.get(export, ~c"_project.json"))
+
+      # Check that learning language in the project attributes is preserved
+      assert project_json["attributes"]["learning_language"] ==
+               project.attributes.learning_language
+    end
+
+    test "project export preserves customizations", %{project: project} do
+      export =
+        Export.export(project)
+        |> unzip_to_memory()
+        |> Enum.reduce(%{}, fn {f, c}, m -> Map.put(m, f, c) end)
+
+      {:ok, hierarchy_json} = Jason.decode(Map.get(export, ~c"_hierarchy.json"))
+
+      [type_labels] =
+        hierarchy_json["children"] |> Enum.filter(&(&1["type"] == "labels"))
+
+      # Check that customizations in the project are preserved
+      assert type_labels["unit"] == project.customizations.unit
+
+      assert type_labels["module"] == project.customizations.module
+
+      assert type_labels["section"] == project.customizations.section
+    end
   end
 
   def setup_project_with_survey(_) do
     author = insert(:author)
 
     survey_revision =
-      insert(:revision, resource_type_id: Oli.Resources.ResourceType.get_id_by_type("page"))
+      insert(:revision, resource_type_id: Oli.Resources.ResourceType.id_for_page())
 
     project =
       insert(:project,
         slug: "project_with_survey",
         required_survey_resource_id: survey_revision.resource.id,
-        authors: [author]
+        authors: [author],
+        attributes: %{learning_language: "es"},
+        customizations: %{
+          unit: "Unit_Example",
+          module: "Module_Example",
+          section: "Section_Example"
+        }
       )
 
     container_revision =
       insert(:revision, %{
-        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("container")
+        resource_type_id: Oli.Resources.ResourceType.id_for_container()
       })
 
     publication =

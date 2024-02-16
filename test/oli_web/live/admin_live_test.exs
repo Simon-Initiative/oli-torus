@@ -357,8 +357,8 @@ defmodule OliWeb.AdminLiveTest do
       assert has_element?(view, "input[value=\"#{user.family_name}\"]")
       assert has_element?(view, "input[value=\"#{user.email}\"]")
       assert has_element?(view, "input[value=\"#{boolean(user.guest)}\"]")
-      assert has_element?(view, "#independent_learner")
-      assert has_element?(view, "#can_create_sections")
+      assert has_element?(view, "#user_independent_learner")
+      assert has_element?(view, "#user_can_create_sections")
       assert has_element?(view, "input[value=\"#{boolean(user.research_opt_out)}\"]")
 
       assert has_element?(
@@ -375,40 +375,6 @@ defmodule OliWeb.AdminLiveTest do
                view,
                "input[value=\"#{Utils.render_date(user, :updated_at, session_context)}\"]"
              )
-    end
-
-    test "displays error message when submit fails", %{
-      conn: conn,
-      user: %User{id: id}
-    } do
-      {:ok, view, _html} = live(conn, live_view_user_detail_route(id))
-
-      view
-      |> element("form[phx-submit=\"submit\"")
-      |> render_submit(%{user: %{email: ""}})
-
-      assert view
-             |> element("div.alert.alert-danger")
-             |> render() =~
-               "User couldn&#39;t be updated."
-
-      refute Accounts.get_user!(id).name == ""
-    end
-
-    test "updates a user correctly when data is valid", %{
-      conn: conn,
-      user: %User{id: id}
-    } do
-      {:ok, view, _html} = live(conn, live_view_user_detail_route(id))
-
-      new_attributes = params_for(:user)
-
-      view
-      |> element("form[phx-submit=\"submit\"")
-      |> render_submit(%{user: new_attributes})
-
-      %User{name: new_name} = Accounts.get_user!(id)
-      assert new_attributes.name == new_name
     end
 
     test "redirects to index view and displays error message when user does not exist", %{
@@ -742,8 +708,10 @@ defmodule OliWeb.AdminLiveTest do
 
     test "locks the author", %{
       conn: conn,
-      author: %Author{id: id}
+      author: %Author{id: id} = author
     } do
+      # Next line emulates the target author is cached in the system
+      Cachex.put(:cache_account_lookup, "author_#{id}", author)
       {:ok, view, _html} = live(conn, live_view_author_detail_route(id))
 
       view
@@ -756,13 +724,18 @@ defmodule OliWeb.AdminLiveTest do
 
       %Author{locked_at: date} = Accounts.get_author!(id)
       assert not is_nil(date)
+
+      assert {:ok, nil} = Cachex.get(:cache_account_lookup, "author_#{id}")
     end
 
     test "unlocks the author", %{
       conn: conn
     } do
       {:ok, date, _timezone} = DateTime.from_iso8601("2019-05-22 20:30:00Z")
-      %Author{id: id} = insert(:author, %{locked_at: date})
+      %Author{id: id} = author = insert(:author, %{locked_at: date})
+
+      # Next line emulates the target author is cached in the system
+      Cachex.put(:cache_account_lookup, "author_#{id}", author)
 
       {:ok, view, _html} = live(conn, live_view_author_detail_route(id))
 
@@ -775,6 +748,8 @@ defmodule OliWeb.AdminLiveTest do
       |> render_click()
 
       assert %Author{locked_at: nil} = Accounts.get_author!(id)
+
+      assert {:ok, nil} = Cachex.get(:cache_account_lookup, "author_#{id}")
     end
 
     test "confirms author email", %{

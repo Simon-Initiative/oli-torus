@@ -179,7 +179,10 @@ defmodule Oli.Utils do
   end
 
   def lowercase_email(changeset) do
-    Ecto.Changeset.update_change(changeset, :email, &String.downcase/1)
+    case changeset.changes[:email] do
+      nil -> changeset
+      _ -> Ecto.Changeset.update_change(changeset, :email, &String.downcase/1)
+    end
   end
 
   def validate_required_if(changeset, fields, condition) do

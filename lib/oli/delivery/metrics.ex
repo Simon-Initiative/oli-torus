@@ -262,18 +262,11 @@ defmodule Oli.Delivery.Metrics do
   """
   def progress_across_for_pages(section_id, pages_ids, user_ids) when is_list(user_ids) do
     from(ra in ResourceAccess,
-      where:
-        ra.resource_id in ^pages_ids and ra.section_id == ^section_id and
-          ra.user_id in ^user_ids,
+      where: ra.resource_id in ^pages_ids,
+      where: ra.section_id == ^section_id,
+      where: ra.user_id in ^user_ids,
       group_by: ra.resource_id,
-      select: {
-        ra.resource_id,
-        fragment(
-          "SUM(?) / (?)",
-          ra.progress,
-          ^Enum.count(user_ids)
-        )
-      }
+      select: {ra.resource_id, fragment("SUM(?) / (?)", ra.progress, ^Enum.count(user_ids))}
     )
     |> Repo.all()
     |> Enum.into(%{})
@@ -359,7 +352,7 @@ defmodule Oli.Delivery.Metrics do
         pages_ids,
         user_ids
       ) do
-    page_type_id = Oli.Resources.ResourceType.get_id_by_type("page")
+    page_type_id = Oli.Resources.ResourceType.id_for_page()
 
     from(rs in ResourceSummary,
       where:
@@ -566,7 +559,7 @@ defmodule Oli.Delivery.Metrics do
   end
 
   def raw_proficiency_per_learning_objective(%Section{analytics_version: :v2, id: section_id}) do
-    objective_type_id = Oli.Resources.ResourceType.get_id_by_type("objective")
+    objective_type_id = Oli.Resources.ResourceType.id_for_objective()
 
     query =
       from(summary in Oli.Analytics.Summary.ResourceSummary,
@@ -617,7 +610,7 @@ defmodule Oli.Delivery.Metrics do
         %Section{analytics_version: :v2, id: section_id},
         student_id
       ) do
-    objective_type_id = Oli.Resources.ResourceType.get_id_by_type("objective")
+    objective_type_id = Oli.Resources.ResourceType.id_for_objective()
 
     query =
       from(summary in Oli.Analytics.Summary.ResourceSummary,
@@ -668,7 +661,7 @@ defmodule Oli.Delivery.Metrics do
   end
 
   def proficiency_per_container(%Section{id: section_id, analytics_version: :v2}, contained_pages) do
-    page_type_id = Oli.Resources.ResourceType.get_id_by_type("page")
+    page_type_id = Oli.Resources.ResourceType.id_for_page()
 
     query =
       from(summary in Oli.Analytics.Summary.ResourceSummary,
@@ -761,7 +754,7 @@ defmodule Oli.Delivery.Metrics do
           dynamic([sn], sn.resource_id in ^pages_for_container)
       end
 
-    page_type_id = Oli.Resources.ResourceType.get_id_by_type("page")
+    page_type_id = Oli.Resources.ResourceType.id_for_page()
 
     query =
       from(summary in Oli.Analytics.Summary.ResourceSummary,
@@ -826,7 +819,7 @@ defmodule Oli.Delivery.Metrics do
         student_id,
         contained_pages
       ) do
-    page_type_id = Oli.Resources.ResourceType.get_id_by_type("page")
+    page_type_id = Oli.Resources.ResourceType.id_for_page()
 
     query =
       from(summary in Oli.Analytics.Summary.ResourceSummary,
@@ -888,7 +881,7 @@ defmodule Oli.Delivery.Metrics do
         %Section{id: section_id, analytics_version: :v2},
         student_id
       ) do
-    page_type_id = Oli.Resources.ResourceType.get_id_by_type("page")
+    page_type_id = Oli.Resources.ResourceType.id_for_page()
 
     query =
       from(summary in Oli.Analytics.Summary.ResourceSummary,
@@ -952,7 +945,7 @@ defmodule Oli.Delivery.Metrics do
   end
 
   def proficiency_per_student_for_page(%Section{id: section_id, analytics_version: :v2}, page_id) do
-    page_type_id = Oli.Resources.ResourceType.get_id_by_type("page")
+    page_type_id = Oli.Resources.ResourceType.id_for_page()
 
     query =
       from(summary in Oli.Analytics.Summary.ResourceSummary,
@@ -1013,7 +1006,7 @@ defmodule Oli.Delivery.Metrics do
   end
 
   def proficiency_per_page(%Section{id: section_id, analytics_version: :v2}, page_ids) do
-    page_type_id = Oli.Resources.ResourceType.get_id_by_type("page")
+    page_type_id = Oli.Resources.ResourceType.id_for_page()
 
     query =
       from(summary in Oli.Analytics.Summary.ResourceSummary,

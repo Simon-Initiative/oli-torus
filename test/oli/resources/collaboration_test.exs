@@ -11,23 +11,23 @@ defmodule Oli.Resources.CollaborationTest do
   defp build_project_with_one_collab_space(published \\ nil) do
     page_revision_1 =
       insert(:revision,
-        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("page"),
+        resource_type_id: Oli.Resources.ResourceType.id_for_page(),
         collab_space_config: %CollabSpaceConfig{status: :enabled}
       )
 
     page_revision_2 =
       insert(:revision,
-        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("page")
+        resource_type_id: Oli.Resources.ResourceType.id_for_page()
       )
 
     page_revision_3 =
       insert(:revision,
-        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("page")
+        resource_type_id: Oli.Resources.ResourceType.id_for_page()
       )
 
     container_revision =
       insert(:revision, %{
-        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("container"),
+        resource_type_id: Oli.Resources.ResourceType.id_for_container(),
         children: [
           page_revision_1.resource_id,
           page_revision_2.resource_id,

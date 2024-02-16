@@ -64,6 +64,7 @@ defmodule Oli.Delivery.Sections.Section do
     field(:resource_gating_index, :map, default: %{})
     field(:previous_next_index, :map, default: nil)
     field(:display_curriculum_item_numbering, :boolean, default: true)
+    field(:contains_discussions, :boolean, default: false)
     field(:contains_explorations, :boolean, default: false)
     field(:contains_deliberate_practice, :boolean, default: false)
 
@@ -110,6 +111,8 @@ defmodule Oli.Delivery.Sections.Section do
     field(:total_count, :integer, virtual: true)
     field(:institution_name, :string, virtual: true)
     field(:instructor_name, :string, virtual: true)
+    field(:creator, :string, virtual: true)
+    field(:instructors, {:array, {:array, :string}}, virtual: true)
 
     many_to_many(:communities, Oli.Groups.Community, join_through: Oli.Groups.CommunityVisibility)
 
@@ -185,6 +188,7 @@ defmodule Oli.Delivery.Sections.Section do
       :skip_email_verification,
       :publisher_id,
       :display_curriculum_item_numbering,
+      :contains_discussions,
       :contains_explorations,
       :contains_deliberate_practice,
       :required_survey_resource_id,

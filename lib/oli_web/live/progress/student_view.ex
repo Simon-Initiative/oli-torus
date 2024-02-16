@@ -66,7 +66,7 @@ defmodule OliWeb.Progress.StudentView do
               |> Oli.Delivery.Hierarchy.flatten()
               |> Enum.filter(fn node ->
                 node.revision.resource_type_id ==
-                  Oli.Resources.ResourceType.get_id_by_type("page")
+                  Oli.Resources.ResourceType.id_for_page()
               end)
 
             {:ok, table_model} =

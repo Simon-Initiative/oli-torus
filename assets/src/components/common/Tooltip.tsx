@@ -16,13 +16,15 @@ export const Tooltip = ({
 
   useEffect(() => {
     const el = ref.current !== null && ($(ref.current) as any);
-    const tooltip = new (window as any).Tooltip(el);
+    const tooltip = new (window as any).Tooltip(el, {
+      placement: placement ?? 'top',
+    });
 
     return () => {
       // make sure the tooltip is properly disposed of
       tooltip.dispose();
     };
-  }, [ref]);
+  }, [ref, placement]);
 
   return (
     <span

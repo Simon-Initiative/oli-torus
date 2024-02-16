@@ -57,6 +57,12 @@ defmodule OliWeb.Datashop.SectionsTableModel do
           render_fn: &__MODULE__.custom_render/3
         },
         %ColumnSpec{
+          name: :blueprint,
+          label: "Product",
+          render_fn: &__MODULE__.custom_render/3,
+          sortable: false
+        },
+        %ColumnSpec{
           name: :select,
           label: "Select",
           td_class: "hover:cursor-auto",
@@ -115,6 +121,19 @@ defmodule OliWeb.Datashop.SectionsTableModel do
 
   def custom_render(_assigns, section, %ColumnSpec{name: :type}),
     do: if(section.open_and_free, do: "Open", else: "LMS")
+
+  def custom_render(assigns, section, %ColumnSpec{name: :blueprint}) do
+    product = if section.blueprint, do: section.blueprint.title, else: ""
+    assigns = Map.merge(assigns, %{product: product})
+
+    ~H"""
+    <div class="flex space-x-2 items-center">
+      <div>
+        <%= @product %>
+      </div>
+    </div>
+    """
+  end
 
   def custom_render(_assigns, section, %ColumnSpec{name: :requires_payment}) do
     if section.requires_payment do

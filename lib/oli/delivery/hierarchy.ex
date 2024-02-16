@@ -110,7 +110,7 @@ defmodule Oli.Delivery.Hierarchy do
 
     labels =
       case pub.project.customizations do
-        nil -> Map.from_struct(CustomLabels.default())
+        nil -> CustomLabels.default_map()
         l -> Map.from_struct(l)
       end
 

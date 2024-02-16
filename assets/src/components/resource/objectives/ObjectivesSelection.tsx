@@ -25,12 +25,14 @@ export type ObjectivesProps = {
 // Custom filterBy function for the Typeahead. This allows searches to
 // pick up child objectives for text that matches the parent
 function filterBy(byId: any, option: Objective, props: AllTypeaheadOwnAndInjectedProps<Objective>) {
-  if (option.title.indexOf(props.text) > -1) {
+  if (option.title.toLocaleLowerCase().indexOf(props.text.toLocaleLowerCase()) > -1) {
     return true;
   }
 
   if (option.parentId !== null) {
-    return byId[option.parentId].title.indexOf(props.text) > -1;
+    return (
+      byId[option.parentId].title.toLocaleLowerCase().indexOf(props.text.toLocaleLowerCase()) > -1
+    );
   }
 
   return false;
@@ -42,6 +44,16 @@ function createMapById(objectives: Objective[]) {
     return m;
   }, {});
 }
+
+const getPlaceholderLabel = (hasObjectives: boolean, editMode: boolean) => {
+  if (editMode) {
+    return hasObjectives
+      ? 'Select or Create learning objectives...'
+      : 'Create a new learning objective';
+  } else {
+    return 'Select a learning objective';
+  }
+};
 
 export const ObjectivesSelection = (props: ObjectivesProps) => {
   const { objectives, editMode, selected, onEdit, onRegisterNewObjective } = props;
@@ -77,9 +89,11 @@ export const ObjectivesSelection = (props: ObjectivesProps) => {
   // The current 'selected' state of Typeahead must be the same shape as
   // the options objects. So we look up from our list of slugs those objects.
   const map = Immutable.Map<ResourceId, Objective>(objectives.map((o) => [o.id, o]));
-  const asObjectives = selected.map((s) => map.get(s) as Objective);
+  const asObjectives = selected.map((s) => map.get(s) as Objective).filter((o) => !!o);
 
   const allowNewObjective = !!onRegisterNewObjective;
+  const hasObjectives = objectives.length > 0;
+  const placeholder = getPlaceholderLabel(hasObjectives, editMode && !!onRegisterNewObjective);
 
   return (
     <div className={classNames(styles.objectivesSelection, 'flex-grow-1')}>
@@ -144,7 +158,7 @@ export const ObjectivesSelection = (props: ObjectivesProps) => {
         newSelectionPrefix="Create new objective: "
         labelKey="title"
         selected={asObjectives}
-        placeholder="Select learning objectives..."
+        placeholder={placeholder}
       />
     </div>
   );

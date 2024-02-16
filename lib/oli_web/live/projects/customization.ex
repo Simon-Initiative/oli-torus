@@ -15,7 +15,7 @@ defmodule OliWeb.Projects.CustomizationLive do
 
     labels =
       case project.customizations do
-        nil -> Map.from_struct(CustomLabels.default())
+        nil -> CustomLabels.default_map()
         val -> Map.from_struct(val)
       end
 

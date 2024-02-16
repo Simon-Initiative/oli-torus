@@ -178,10 +178,10 @@ defmodule OliWeb.Delivery.Sections.GatingAndScheduling.GatingConditionStore do
               items,
               &((&1.uuid != root.uuid and
                    (&1.revision.resource_type_id ==
-                      Oli.Resources.ResourceType.get_id_by_type("page") and
+                      Oli.Resources.ResourceType.id_for_page() and
                       &1.revision.graded)) or
                   &1.revision.resource_type_id ==
-                    Oli.Resources.ResourceType.get_id_by_type("container"))
+                    Oli.Resources.ResourceType.id_for_container())
             )
           end
 
@@ -192,10 +192,10 @@ defmodule OliWeb.Delivery.Sections.GatingAndScheduling.GatingConditionStore do
               &((&1.uuid != root.uuid and
                    &1.revision.resource_id != resource_id and
                    (&1.revision.resource_type_id ==
-                      Oli.Resources.ResourceType.get_id_by_type("page") and
+                      Oli.Resources.ResourceType.id_for_page() and
                       &1.revision.graded)) or
                   &1.revision.resource_type_id ==
-                    Oli.Resources.ResourceType.get_id_by_type("container"))
+                    Oli.Resources.ResourceType.id_for_container())
             )
           end
       end
@@ -398,7 +398,7 @@ defmodule OliWeb.Delivery.Sections.GatingAndScheduling.GatingConditionStore do
       revision: %Revision{title: title, resource_type_id: resource_type_id}
     } = Hierarchy.find_in_hierarchy(hierarchy, selection)
 
-    container_type_id = Oli.Resources.ResourceType.get_id_by_type("container")
+    container_type_id = Oli.Resources.ResourceType.id_for_container()
 
     case {resource_type_id, gating_condition.type} do
       {^container_type_id, type} when type in [:finished, :started] ->

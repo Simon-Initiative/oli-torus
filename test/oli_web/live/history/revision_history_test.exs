@@ -18,31 +18,31 @@ defmodule OliWeb.History.RevisionHistoryTest do
     # revisions...
     objective_1_revision =
       insert(:revision,
-        resource_type_id: ResourceType.get_id_by_type("objective"),
+        resource_type_id: ResourceType.id_for_objective(),
         title: "Objective 1"
       )
 
     objective_2_revision =
       insert(:revision,
-        resource_type_id: ResourceType.get_id_by_type("objective"),
+        resource_type_id: ResourceType.id_for_objective(),
         title: "Objective 2"
       )
 
     page_1_revision =
       insert(:revision, %{
-        resource_type_id: ResourceType.get_id_by_type("page"),
+        resource_type_id: ResourceType.id_for_page(),
         author_id: author.id
       })
 
     page_2_revision =
       insert(:revision, %{
-        resource_type_id: ResourceType.get_id_by_type("page"),
+        resource_type_id: ResourceType.id_for_page(),
         author_id: author.id
       })
 
     unit_1_revision =
       insert(:revision, %{
-        resource_type_id: ResourceType.get_id_by_type("container"),
+        resource_type_id: ResourceType.id_for_container(),
         children: [page_1_revision.resource_id],
         objectives: %{
           attached: [objective_1_revision.resource_id, objective_2_revision.resource_id]
@@ -53,7 +53,7 @@ defmodule OliWeb.History.RevisionHistoryTest do
 
     unit_2_revision =
       insert(:revision, %{
-        resource_type_id: ResourceType.get_id_by_type("container"),
+        resource_type_id: ResourceType.id_for_container(),
         children: [page_2_revision.resource_id],
         title: "Unit 2",
         author_id: author.id
@@ -61,7 +61,7 @@ defmodule OliWeb.History.RevisionHistoryTest do
 
     container_revision =
       insert(:revision, %{
-        resource_type_id: ResourceType.get_id_by_type("container"),
+        resource_type_id: ResourceType.id_for_container(),
         children: [unit_1_revision.resource_id, unit_2_revision.resource_id],
         slug: "root_container",
         title: "Root Container",

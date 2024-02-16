@@ -19,7 +19,7 @@ defmodule Oli.Interop.Export do
     ([
        create_project_file(project),
        create_media_manifest_file(project),
-       create_hierarchy_file(resources, publication)
+       create_hierarchy_file(resources, publication, project)
      ] ++
        tags(resources) ++
        objectives(resources) ++
@@ -33,7 +33,7 @@ defmodule Oli.Interop.Export do
 
   defp tags(resources) do
     Enum.filter(resources, fn r ->
-      r.resource_type_id == ResourceType.get_id_by_type("tag")
+      r.resource_type_id == ResourceType.id_for_tag()
     end)
     |> Enum.map(fn r ->
       %{
@@ -54,7 +54,7 @@ defmodule Oli.Interop.Export do
   # create entries for all objectives
   defp objectives(resources) do
     Enum.filter(resources, fn r ->
-      r.resource_type_id == ResourceType.get_id_by_type("objective")
+      r.resource_type_id == ResourceType.id_for_objective()
     end)
     |> Enum.map(fn r ->
       %{
@@ -79,7 +79,7 @@ defmodule Oli.Interop.Export do
       |> Enum.reduce(%{}, fn r, m -> Map.put(m, r.id, r) end)
 
     Enum.filter(resources, fn r ->
-      r.resource_type_id == ResourceType.get_id_by_type("activity")
+      r.resource_type_id == ResourceType.id_for_activity()
     end)
     |> Enum.map(fn r ->
       %{
@@ -255,7 +255,7 @@ defmodule Oli.Interop.Export do
   # create entries for all pages
   defp pages(resources, project) do
     Enum.filter(resources, fn r ->
-      r.resource_type_id == ResourceType.get_id_by_type("page")
+      r.resource_type_id == ResourceType.id_for_page()
     end)
     |> Enum.map(fn r ->
       %{
@@ -278,7 +278,7 @@ defmodule Oli.Interop.Export do
 
   defp bib_entries(resources) do
     Enum.filter(resources, fn r ->
-      r.resource_type_id == ResourceType.get_id_by_type("bibentry")
+      r.resource_type_id == ResourceType.id_for_bibentry()
     end)
     |> Enum.map(fn r ->
       %{
@@ -297,7 +297,7 @@ defmodule Oli.Interop.Export do
 
   defp alternatives(resources) do
     Enum.filter(resources, fn r ->
-      r.resource_type_id == ResourceType.get_id_by_type("alternatives")
+      r.resource_type_id == ResourceType.id_for_alternatives()
     end)
     |> Enum.map(fn r ->
       %{
@@ -355,7 +355,8 @@ defmodule Oli.Interop.Export do
       title: project.title,
       description: project.description,
       type: "Manifest",
-      required_student_survey: required_survey_resource_id
+      required_student_survey: required_survey_resource_id,
+      attributes: Map.get(project, :attributes)
     }
     |> entry("_project.json")
   end
@@ -385,9 +386,10 @@ defmodule Oli.Interop.Export do
   end
 
   # create the singular hierarchy file
-  defp create_hierarchy_file(resources, publication) do
+  defp create_hierarchy_file(resources, publication, project) do
     revisions_by_id = Enum.reduce(resources, %{}, fn r, m -> Map.put(m, r.resource_id, r) end)
     root = Map.get(revisions_by_id, publication.root_resource_id)
+    customizations = Map.get(project, :customizations)
 
     %{
       type: "Hierarchy",
@@ -395,7 +397,19 @@ defmodule Oli.Interop.Export do
       originalFile: "",
       title: "",
       tags: transform_tags(root),
-      children: Enum.map(root.children, fn id -> full_hierarchy(revisions_by_id, id) end)
+      children:
+        Enum.map(root.children, fn id -> full_hierarchy(revisions_by_id, id) end) ++
+          unless(is_nil(customizations),
+            do: [
+              Map.merge(
+                %{
+                  type: "labels"
+                },
+                Map.from_struct(customizations)
+              )
+            ],
+            else: []
+          )
     }
     |> entry("_hierarchy.json")
   end

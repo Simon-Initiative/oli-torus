@@ -34,7 +34,7 @@ defmodule Oli.Authoring.Editing.ContainerEditorTest do
         content: %{"model" => []},
         title: "New Page",
         graded: true,
-        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("page")
+        resource_type_id: Oli.Resources.ResourceType.id_for_page()
       }
 
       container = AuthoringResolver.root_container(project.slug)
@@ -108,7 +108,7 @@ defmodule Oli.Authoring.Editing.ContainerEditorTest do
         content: %{"model" => []},
         title: "New Page",
         graded: true,
-        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("page")
+        resource_type_id: Oli.Resources.ResourceType.id_for_page()
       }
 
       container = AuthoringResolver.root_container(project.slug)
@@ -241,7 +241,7 @@ defmodule Oli.Authoring.Editing.ContainerEditorTest do
         },
         title: "New Page",
         graded: true,
-        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("page")
+        resource_type_id: Oli.Resources.ResourceType.id_for_page()
       }
 
       root_container = AuthoringResolver.root_container(project.slug)

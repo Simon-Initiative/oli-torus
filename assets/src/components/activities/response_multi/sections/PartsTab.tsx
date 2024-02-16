@@ -10,11 +10,11 @@ import { ResponseMultiInputSchema } from 'components/activities/response_multi/s
 import { ResponseTab } from 'components/activities/response_multi/sections/ResponseTab';
 import { Part, Response, makeResponse } from 'components/activities/types';
 import { Card } from 'components/misc/Card';
-import { hasCustomScoring } from 'data/activities/model/responses';
+import { getMaxScoreResponse } from 'data/activities/model/responses';
 import { containsRule, eqRule, equalsRule, matchRule } from 'data/activities/model/rules';
 import { getPartById } from 'data/activities/model/utils';
 import { ResponseMultiInputScoringMethod } from '../ResponseMultiInputScoringMethod';
-import { addRef, replaceWithInputRef } from '../utils';
+import { ruleIsCatchAll, toInputRule } from '../rules';
 
 const defaultRuleForInputType = (inputType: string | undefined) => {
   switch (inputType) {
@@ -24,25 +24,21 @@ const defaultRuleForInputType = (inputType: string | undefined) => {
       return equalsRule('');
     case 'text':
     default:
-      return containsRule('');
+      return containsRule('answer');
   }
 };
 
 export const addResponseMultiTargetedFeedbackFillInTheBlank = (input: FillInTheBlank) => {
-  const response: Response = addRef(
-    input.id,
-    makeResponse(replaceWithInputRef(input.id, defaultRuleForInputType(input.inputType)), 0, ''),
+  const response: Response = makeResponse(
+    toInputRule(input.id, defaultRuleForInputType(input.inputType)),
+    0,
+    '',
   );
-  response.targeted = true;
   return ResponseActions.addResponse(response, input.partId);
 };
 
 export const addResponseMultiTargetedDropdown = (input: Dropdown, choiceId: string) => {
-  const response: Response = addRef(
-    input.id,
-    makeResponse(replaceWithInputRef(input.id, matchRule(choiceId)), 0, ''),
-  );
-  response.targeted = true;
+  const response: Response = makeResponse(toInputRule(input.id, matchRule(choiceId)), 0, '');
   return ResponseActions.addResponse(response, input.partId);
 };
 
@@ -54,24 +50,29 @@ interface Props {
 
 export const PartsTab: React.FC<Props> = (props) => {
   const { model, dispatch } = useAuthoringElementContext<ResponseMultiInputSchema>();
+  const part = getPartById(model, props.input.partId);
 
-  const getResponsesBody = (part: Part) => {
-    return part.responses.map((response) =>
-      response.catchAll || response.targeted ? null : (
-        <ResponseTab
-          key={response.id}
-          response={response}
-          partId={props.input.partId}
-          customScoring={hasCustomScoring(model, props.input.partId)}
-          removeResponse={(id) => dispatch(ResponseActions.removeResponse(id))}
-          updateScore={(_id, score) =>
-            dispatch(ResponseActions.editResponseScore(response.id, score))
-          }
-          updateCorrectness={(_id, correct) =>
-            dispatch(ResponseActions.editResponseCorrectness(response.id, correct))
-          }
-        />
-      ),
+  // partition responses into Correct, CatchAll and targeted (everything else)
+  const correct = getMaxScoreResponse(model, part.id);
+  const catchAll = part.responses.find((r) => ruleIsCatchAll(r.rule));
+  const targeted = part.responses.filter((r) => r !== correct && r !== catchAll);
+
+  const getResponse = (response: Response, part: Part, title: string) => {
+    return (
+      <ResponseTab
+        key={response.id}
+        title={title}
+        response={response}
+        partId={part.id}
+        customScoring={model.customScoring}
+        removeResponse={(id) => dispatch(ResponseActions.removeResponse(id))}
+        updateScore={(_id, score) =>
+          dispatch(ResponseActions.editResponseScore(response.id, score))
+        }
+        updateCorrectness={(_id, correct) =>
+          dispatch(ResponseActions.editResponseCorrectness(response.id, correct))
+        }
+      />
     );
   };
 
@@ -89,28 +90,9 @@ export const PartsTab: React.FC<Props> = (props) => {
     <Card.Card key={props.input.id}>
       <Card.Title></Card.Title>
       <Card.Content>
-        <ResponseMultiInputScoringMethod />
-        {model.customScoring && (
-          <ActivityScoring partId={props.input.partId} promptForDefault={false} />
-        )}
-        {getResponsesBody(getPartById(model, props.input.partId))}
-        {getPartById(model, props.input.partId)
-          .responses.filter((r) => r.targeted)
-          .map((response: Response) => (
-            <ResponseTab
-              key={response.id}
-              response={response}
-              partId={props.input.partId}
-              customScoring={hasCustomScoring(model, props.input.partId)}
-              removeResponse={(id) => dispatch(ResponseActions.removeResponse(id))}
-              updateScore={(_id, score) =>
-                dispatch(ResponseActions.editResponseScore(response.id, score))
-              }
-              updateCorrectness={(_id, correct) =>
-                dispatch(ResponseActions.editResponseCorrectness(response.id, correct))
-              }
-            />
-          ))}
+        {getResponse(correct, part, 'Correct Answer')}
+        {catchAll && getResponse(catchAll, part, 'Feedback for Incorrect Answers')}
+        {targeted.map((response: Response) => getResponse(response, part, 'Targeted Feedback'))}
         <AuthoringButtonConnected
           ariaLabel="Add targeted feedback"
           className="self-start btn btn-link"
@@ -118,6 +100,8 @@ export const PartsTab: React.FC<Props> = (props) => {
         >
           Add targeted feedback
         </AuthoringButtonConnected>
+        <ResponseMultiInputScoringMethod />
+        {model.customScoring && <ActivityScoring partId={part.id} promptForDefault={false} />}
       </Card.Content>
     </Card.Card>
   );

@@ -100,7 +100,7 @@ defmodule Oli.Interop.Ingest.Processor.Hierarchy do
       children: children_ids,
       author_id: as_author.id,
       content: %{"model" => []},
-      resource_type_id: Oli.Resources.ResourceType.get_id_by_type("container")
+      resource_type_id: Oli.Resources.ResourceType.id_for_container()
     }
 
     {:ok, %{revision: revision}} = Oli.Authoring.Course.create_and_attach_resource(project, attrs)

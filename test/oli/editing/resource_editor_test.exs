@@ -17,7 +17,7 @@ defmodule Oli.Editing.ResourceEditorTest do
         ResourceEditor.list(
           project.slug,
           author,
-          Oli.Resources.ResourceType.get_id_by_type("tag")
+          Oli.Resources.ResourceType.id_for_tag()
         )
 
       assert length(revisions) == 2
@@ -32,7 +32,7 @@ defmodule Oli.Editing.ResourceEditorTest do
                ResourceEditor.list(
                  "does_not_exist",
                  author,
-                 Oli.Resources.ResourceType.get_id_by_type("tag")
+                 Oli.Resources.ResourceType.id_for_tag()
                )
     end
 
@@ -53,7 +53,7 @@ defmodule Oli.Editing.ResourceEditorTest do
                ResourceEditor.list(
                  project.slug,
                  author,
-                 Oli.Resources.ResourceType.get_id_by_type("tag")
+                 Oli.Resources.ResourceType.id_for_tag()
                )
     end
 
@@ -113,7 +113,7 @@ defmodule Oli.Editing.ResourceEditorTest do
         ResourceEditor.list(
           project.slug,
           author,
-          Oli.Resources.ResourceType.get_id_by_type("tag")
+          Oli.Resources.ResourceType.id_for_tag()
         )
 
       assert length(revisions) == 2
@@ -141,7 +141,7 @@ defmodule Oli.Editing.ResourceEditorTest do
         ResourceEditor.list(
           project.slug,
           author,
-          Oli.Resources.ResourceType.get_id_by_type("tag")
+          Oli.Resources.ResourceType.id_for_tag()
         )
 
       assert length(revisions) == 1

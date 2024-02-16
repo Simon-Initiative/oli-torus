@@ -8,7 +8,7 @@ defmodule Oli.Interop.Ingest.Processor.Pages do
     State.notify_step_start(state, :pages)
     |> create_revisions(
       :pages,
-      Oli.Resources.ResourceType.get_id_by_type("page"),
+      Oli.Resources.ResourceType.id_for_page(),
       &mapper/3
     )
   end

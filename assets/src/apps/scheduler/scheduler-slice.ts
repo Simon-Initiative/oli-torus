@@ -2,8 +2,12 @@ import { createSlice } from '@reduxjs/toolkit';
 import type { PayloadAction } from '@reduxjs/toolkit';
 import { DateWithoutTime } from 'epoq';
 import { toDateWithoutTime } from './date-utils';
-import { resetScheduleItem } from './schedule-reset';
-import { scheduleAppFlushChanges, scheduleAppStartup } from './scheduling-thunk';
+import { clearScheduleItem, resetScheduleItem } from './schedule-reset';
+import {
+  clearSectionSchedule,
+  scheduleAppFlushChanges,
+  scheduleAppStartup,
+} from './scheduling-thunk';
 
 export enum ScheduleItemType {
   Page = 1,
@@ -106,10 +110,22 @@ const buildHierarchyItems = (
   items: HierarchyItemSrc[],
   preferredSchedulingTime: TimeParts,
 ): HierarchyItem[] => {
+  const parseDate = (str: string, scheduleType: string) => {
+    if (!str) return null;
+
+    if (scheduleType === 'due_by' && str.length > 10) {
+      // For due-by items, we need to take the time into account to get the correct date
+      const tempDate = new Date(str);
+      return new DateWithoutTime(tempDate.getFullYear(), tempDate.getMonth(), tempDate.getDate());
+    }
+
+    return str ? new DateWithoutTime(str) : null;
+  };
+
   return items.map((item) => ({
     ...item,
-    startDate: item.start_date ? new DateWithoutTime(item.start_date) : null,
-    endDate: item.end_date ? new DateWithoutTime(item.end_date) : null,
+    startDate: parseDate(item.start_date, item.scheduling_type),
+    endDate: parseDate(item.end_date, item.scheduling_type),
     endDateTime: toDateTime(item.end_date, preferredSchedulingTime),
     startDateTime: toDateTime(item.start_date, preferredSchedulingTime),
   }));
@@ -319,6 +335,17 @@ const schedulerSlice = createSlice({
     },
   },
   extraReducers: (builder) => {
+    builder.addCase(clearSectionSchedule.pending, (state, action) => {
+      state.saving = true;
+    });
+
+    builder.addCase(clearSectionSchedule.fulfilled, (state, action) => {
+      const root = getScheduleRoot(state.schedule);
+      root && clearScheduleItem(root, state.schedule);
+      state.dirty = [];
+      state.saving = false;
+    });
+
     builder.addCase(scheduleAppStartup.pending, (state, action) => {
       state.appLoading = true;
     });

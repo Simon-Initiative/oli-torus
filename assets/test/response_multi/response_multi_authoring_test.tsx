@@ -126,7 +126,7 @@ describe('multi input question - default (with text input)', () => {
     }
     const responses = model.authoring.parts[0].responses;
     expect(responses).toHaveLength(3);
-    expect(responses[1]).toHaveProperty('rule', 'input_ref_' + t + ' contains {}');
+    expect(responses[1]).toHaveProperty('rule', 'input_ref_' + t + ' contains {answer}');
     expect(responses[1]).toHaveProperty('score', 0);
   });
 
