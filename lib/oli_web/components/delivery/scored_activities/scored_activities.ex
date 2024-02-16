@@ -499,11 +499,7 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
         Enum.sort_by(assessments, fn a -> Map.get(a, sb) || -1 end, sort_order)
 
       :title ->
-        Enum.sort_by(
-          assessments,
-          fn a -> Map.get(a, :title) |> String.downcase() end,
-          sort_order
-        )
+        Enum.sort_by(assessments, &String.downcase(&1.title), sort_order)
     end
   end
 
