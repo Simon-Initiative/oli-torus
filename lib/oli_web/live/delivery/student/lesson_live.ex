@@ -13,6 +13,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
   alias OliWeb.Components.Delivery.Layouts
   alias OliWeb.Components.Modal
   alias OliWeb.Delivery.Student.Utils
+  alias OliWeb.Delivery.Student.Lesson.Notes
 
   require Logger
 
@@ -20,7 +21,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
   on_mount {OliWeb.LiveSessionPlugs.InitPage, :previous_next_index}
 
   def mount(_params, _session, %{assigns: %{view: :practice_page}} = socket) do
-    {:ok, assign_html_and_scripts(socket)}
+    {:ok, socket |> assign_html_and_scripts() |> assign(show_sidebar: true)}
   end
 
   def mount(
@@ -28,7 +29,8 @@ defmodule OliWeb.Delivery.Student.LessonLive do
         _session,
         %{assigns: %{view: :graded_page, page_context: %{progress_state: :in_progress}}} = socket
       ) do
-    {:ok, assign_html_and_scripts(socket) |> assign(begin_attempt?: false)}
+    {:ok,
+     socket |> assign_html_and_scripts() |> assign(begin_attempt?: false, show_sidebar: true)}
   end
 
   def mount(_params, _session, %{assigns: %{view: :graded_page}} = socket) do
@@ -40,7 +42,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     {:ok,
      socket
      |> assign_scripts()
-     |> assign(begin_attempt?: false)}
+     |> assign(begin_attempt?: false, show_sidebar: true)}
   end
 
   def handle_event("begin_attempt", %{"password" => password}, socket)
@@ -138,24 +140,33 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     end
   end
 
+  def handle_event("toggle_sidebar", _params, socket) do
+    %{show_sidebar: show_sidebar} = socket.assigns
+
+    {:noreply, assign(socket, show_sidebar: !show_sidebar)}
+  end
+
   def render(%{view: :practice_page} = assigns) do
     # For practice page the activity scripts and activity_bridge script are needed as soon as the page loads.
     ~H"""
-    <div class="flex pb-20 flex-col items-center gap-15 flex-1">
-      <div class="flex flex-col items-center w-full">
-        <div class="flex-1 max-w-[720px] pt-20 pb-10 mx-6 flex-col justify-start items-center gap-10 inline-flex">
-          <.page_header
-            page_context={@page_context}
-            ctx={@ctx}
-            index={@current_page["index"]}
-            container_label={Utils.get_container_label(@current_page["id"], @section)}
-          />
-          <div id="eventIntercept" class="content" phx-update="ignore" role="page content">
-            <%= raw(@html) %>
-          </div>
-        </div>
+    <.page_content_layout show_sidebar={@show_sidebar}>
+      <:header>
+        <.page_header
+          page_context={@page_context}
+          ctx={@ctx}
+          index={@current_page["index"]}
+          container_label={Utils.get_container_label(@current_page["id"], @section)}
+        />
+      </:header>
+
+      <div id="eventIntercept" class="content" phx-update="ignore" role="page content">
+        <%= raw(@html) %>
       </div>
-    </div>
+
+      <:sidebar>
+        <Notes.panel show_sidebar={@show_sidebar} />
+      </:sidebar>
+    </.page_content_layout>
 
     <.scripts scripts={@scripts} user_token={@user_token} />
     """
@@ -170,7 +181,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
       ) do
     # For graded page with attempt in progress the activity scripts and activity_bridge script are needed as soon as the page loads.
     ~H"""
-    <div class="flex pb-20 flex-col items-center gap-15 flex-1">
+    <div class="flex pb-20 flex-col w-full items-center gap-15 flex-1 overflow-auto">
       <div class="flex flex-col items-center w-full">
         <.scored_page_banner />
         <div class="flex-1 max-w-[720px] pt-20 pb-10 mx-6 flex-col justify-start items-center gap-10 inline-flex">
@@ -204,7 +215,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     # For graded page with no started attempts, the js scripts are needed after the user clicks "Begin",
     # so we load them with the hook "load_survey_scripts" in the click handle_event functions.
     ~H"""
-    <div class="flex pb-20 flex-col items-center gap-15 flex-1">
+    <div class="flex pb-20 flex-col w-full items-center gap-15 flex-1 overflow-auto">
       <div class="flex flex-col items-center w-full">
         <.scored_page_banner />
         <div class="flex-1 max-w-[720px] pt-20 pb-10 mx-6 flex-col justify-start items-center gap-10 inline-flex">
@@ -272,7 +283,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
         <.button type="submit" class="mx-auto btn btn-primary">Begin</.button>
       </.form>
     </Modal.modal>
-    <div class="flex pb-20 flex-col items-center gap-15 flex-1">
+    <div class="flex pb-20 flex-col w-full items-center gap-15 flex-1 overflow-auto">
       <div class="flex-1 max-w-[720px] pt-20 pb-10 mx-6 flex-col justify-start items-center gap-10 inline-flex">
         <.page_header
           page_context={@page_context}
@@ -291,6 +302,40 @@ defmodule OliWeb.Delivery.Student.LessonLive do
           request_path={@request_path}
         />
       </div>
+    </div>
+    """
+  end
+
+  attr :show_sidebar, :boolean, default: false
+  slot :header, required: true
+  slot :inner_block, required: true
+  slot :sidebar, default: nil
+
+  defp page_content_layout(assigns) do
+    ~H"""
+    <div class={[
+      "flex-1 flex flex-col w-full overflow-hidden pb-20"
+    ]}>
+      <div class={["flex-1 flex flex-col overflow-auto", if(@show_sidebar, do: "mr-[520px]")]}>
+        <div class={["flex-1 mt-20", if(@show_sidebar, do: "border-r border-gray-300 mr-[80px]")]}>
+          <div class="container mx-auto max-w-[720px]">
+            <%= render_slot(@header) %>
+
+            <%= render_slot(@inner_block) %>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div
+      :if={@sidebar && @show_sidebar}
+      class="flex flex-col w-[600px] absolute top-20 right-0 bottom-0"
+    >
+      <%= render_slot(@sidebar) %>
+    </div>
+    <div :if={@sidebar && !@show_sidebar} class="absolute top-20 right-0">
+      <Notes.toggle_notes_button>
+        <Notes.chat_icon />
+      </Notes.toggle_notes_button>
     </div>
     """
   end
