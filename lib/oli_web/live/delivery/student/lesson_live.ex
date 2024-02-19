@@ -38,7 +38,24 @@ defmodule OliWeb.Delivery.Student.LessonLive do
      |> assign(begin_attempt?: false)}
   end
 
-  def mount(_params, _session, %{assigns: %{view: :graded_page}} = socket) do
+  def mount(
+        _params,
+        _session,
+        %{assigns: %{view: :adaptive_chromeless, page_context: %{progress_state: :in_progress}}} =
+          socket
+      ) do
+    {:ok,
+     socket
+     |> assign_scripts()
+     |> assign(begin_attempt?: false), layout: false}
+  end
+
+  def mount(
+        _params,
+        _session,
+        %{assigns: %{view: view}} = socket
+      )
+      when view in [:graded_page, :adaptive_chromeless] do
     # for graded pages with no attempt in course, we first show the prologue view (we use begin_attempt? flag to distinguish this).
     # When the student clicks "Begin" we load the needed page scripts via the "LoadSurveyScripts" hook and assign the html to the socket.
     # When the scripts end loading, we receive a "survey_scripts_loaded" confirmation event from the client
@@ -269,6 +286,40 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     """
   end
 
+  def render(
+        %{view: :adaptive_chromeless, page_context: %{progress_state: :in_progress}} = assigns
+      ) do
+    ~H"""
+    <!-- ACTIVITIES -->
+    <%= for %{slug: slug, authoring_script: script} <- @activity_types do %>
+      <script
+        :if={slug == "oli_adaptive"}
+        type="text/javascript"
+        src={Routes.static_path(OliWeb.Endpoint, "/js/" <> script)}
+      >
+      </script>
+    <% end %>
+    <!-- PARTS -->
+    <script
+      :for={script <- @part_scripts}
+      type="text/javascript"
+      src={Routes.static_path(OliWeb.Endpoint, "/js/" <> script)}
+    >
+    </script>
+
+    <script type="text/javascript" src={Routes.static_path(OliWeb.Endpoint, "/js/delivery.js")}>
+    </script>
+
+    <div id="delivery_container" phx-update="ignore">
+      <%= react_component("Components.Delivery", @app_params) %>
+    </div>
+
+    <script>
+      window.userToken = "<%= @user_token %>";
+    </script>
+    """
+  end
+
   def render(%{view: :graded_page, begin_attempt?: true} = assigns) do
     # For graded page with no started attempts, the js scripts are needed after the user clicks "Begin",
     # so we load them with the hook "load_survey_scripts" in the click handle_event functions.
@@ -327,7 +378,8 @@ defmodule OliWeb.Delivery.Student.LessonLive do
 
   # this render corresponds to the prologue view for graded pages (when there is no attempt in course)
   # TODO: extend the prologue page to support adaptive pages
-  def render(%{view: :graded_page, begin_attempt?: false} = assigns) do
+  def render(%{view: view, begin_attempt?: false} = assigns)
+      when view in [:graded_page, :adaptive_chromeless] do
     ~H"""
     <Modal.modal id="password_attempt_modal" class="w-1/2">
       <:title>Provide Assessment Password</:title>

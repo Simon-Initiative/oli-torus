@@ -979,6 +979,21 @@ defmodule OliWeb.Router do
           live("/attempt/:attempt_guid/review", Delivery.Student.ReviewLive)
         end
       end
+
+      scope "/adaptive_lesson/:revision_slug" do
+        live_session :delivery_adaptive_lesson,
+          root_layout: {OliWeb.LayoutView, :chromeless},
+          layout: {OliWeb.Layouts, :student_delivery_lesson},
+          on_mount: [
+            OliWeb.LiveSessionPlugs.SetUser,
+            OliWeb.LiveSessionPlugs.SetSection,
+            OliWeb.LiveSessionPlugs.SetBrand,
+            OliWeb.LiveSessionPlugs.SetPreviewMode,
+            OliWeb.LiveSessionPlugs.RequireEnrollment
+          ] do
+          live("/", Delivery.Student.LessonLive, metadata: %{route_name: :adaptive_lesson})
+        end
+      end
     end
 
     # TODO: Ensure that all these liveviews actually respect preview mode flag
