@@ -542,6 +542,7 @@ defmodule OliWeb.Router do
     pipe_through([:api, :authoring_protected])
 
     post("/", Api.MediaController, :create)
+    post("/delete", Api.MediaController, :delete)
     get("/", Api.MediaController, :index)
   end
 
