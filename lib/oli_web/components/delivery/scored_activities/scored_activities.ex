@@ -427,6 +427,15 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
       :due_date ->
         Enum.sort_by(assessments, & &1.end_date, sort_order)
 
+        Enum.sort_by(
+          assessments,
+          fn
+            %{scheduling_type: :due_by} = assessment -> assessment.end_date
+            _ -> nil
+          end,
+          sort_order
+        )
+
       sb when sb in [:avg_score, :students_completion, :total_attempts] ->
         Enum.sort_by(assessments, fn a -> Map.get(a, sb) || -1 end, sort_order)
 

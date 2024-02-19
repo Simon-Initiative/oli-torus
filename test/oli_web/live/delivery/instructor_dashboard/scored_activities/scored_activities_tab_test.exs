@@ -1241,6 +1241,64 @@ defmodule OliWeb.Delivery.InstructorDashboard.ScoredActivitiesTabTest do
       assert a4.title == "Module 2: BasicsPage 4"
     end
 
+    test "sorting by Due Date", %{
+      conn: conn,
+      section: section,
+      page_1: page_1,
+      page_2: page_2,
+      page_3: page_3
+    } do
+      base_time = ~U[2000-01-20 12:00:00.000000Z]
+      end_date_1 = base_time |> DateTime.add(1, :day) |> DateTime.truncate(:second)
+      end_date_2 = base_time |> DateTime.add(2, :day) |> DateTime.truncate(:second)
+      end_date_3 = base_time |> DateTime.add(3, :day) |> DateTime.truncate(:second)
+
+      Sections.get_section_resource(section.id, page_1.resource_id)
+      |> Sections.update_section_resource(%{end_date: end_date_1, scheduling_type: :due_by})
+
+      # Only section resources of scheduling_type = due_by are considered when sorting by Due Date
+      # The next SectionResource has scheduling_type: :read_by and it shouldn't be considered
+      Sections.get_section_resource(section.id, page_2.resource_id)
+      |> Sections.update_section_resource(%{end_date: end_date_2})
+
+      Sections.get_section_resource(section.id, page_3.resource_id)
+      |> Sections.update_section_resource(%{end_date: end_date_3, scheduling_type: :due_by})
+
+      {:ok, view, _html} = live(conn, live_view_scored_activities_route(section.slug))
+
+      assert [
+               "No due date",
+               "Jan. 21, 2000 - 7:00 AM",
+               "No due date",
+               "Jan. 23, 2000 - 7:00 AM",
+               "No due date"
+             ] = table_as_list_of_maps(view, :assessments) |> Enum.map(& &1.due_date)
+
+      view
+      |> element("th[phx-value-sort_by=due_date]")
+      |> render_click()
+
+      assert [
+               "No due date",
+               "No due date",
+               "No due date",
+               "Jan. 21, 2000 - 7:00 AM",
+               "Jan. 23, 2000 - 7:00 AM"
+             ] = table_as_list_of_maps(view, :assessments) |> Enum.map(& &1.due_date)
+
+      view
+      |> element("th[phx-value-sort_by=due_date]")
+      |> render_click()
+
+      assert [
+               "Jan. 23, 2000 - 7:00 AM",
+               "Jan. 21, 2000 - 7:00 AM",
+               "No due date",
+               "No due date",
+               "No due date"
+             ] = table_as_list_of_maps(view, :assessments) |> Enum.map(& &1.due_date)
+    end
+
     test "displays custom labels", %{
       conn: conn,
       section: section
