@@ -162,8 +162,7 @@ config :oli, Oban,
     analytics_export: 3,
     datashop_export: 3,
     objectives: 3
-  ],
-  testing: :manual
+  ]
 
 config :ex_money,
   auto_start_exchange_rate_service: false,
