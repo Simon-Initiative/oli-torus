@@ -638,8 +638,9 @@ export class MediaManager extends React.PureComponent<MediaManagerProps, MediaMa
             {showConfirmDelete && (
               <ConfirmDelete
                 show={showConfirmDelete}
+                title="Archive Media"
                 elementType="Media"
-                elementName="file"
+                explanation="Are you sure you want to archive the file(s)? Note that archived media items are no longer available in the media library and the archiving process is not reversible"
                 deleteHandler={() => {
                   this.onDelete();
                   this.setShowConfirmDelete(false);
