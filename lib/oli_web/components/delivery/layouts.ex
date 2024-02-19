@@ -369,6 +369,13 @@ defmodule OliWeb.Components.Delivery.Layouts do
   end
 
   defp resource_navigation_url(
+         %{"slug" => slug, "type" => "page", "is_adaptive?" => true, "is_chromeless?" => false},
+         section_slug
+       ) do
+    ~p"/sections/#{section_slug}/adaptive_lesson/#{slug}"
+  end
+
+  defp resource_navigation_url(
          %{"slug" => slug, "type" => "page", "id" => resource_id},
          section_slug,
          request_path
