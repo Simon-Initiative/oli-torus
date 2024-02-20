@@ -34,22 +34,35 @@ defmodule Oli.Delivery.Settings do
   def get_combined_settings_for_all_resources(section_id, user_id) do
     section = Oli.Delivery.Sections.get_section!(section_id)
 
-    all_pages = DeliveryResolver.all_pages(section.slug)
-
-    section_resources_map =
-      Oli.Delivery.Sections.get_section_resources(section.id)
-      |> Enum.reduce(%{}, fn sr, acc -> Map.put(acc, sr.resource_id, sr) end)
-
     student_exceptions_map =
       get_all_student_exceptions(section_id, user_id)
       |> Enum.reduce(%{}, fn se, acc -> Map.put(acc, se.resource_id, se) end)
 
-    Enum.reduce(all_pages, %{}, fn page, acc ->
-      section_resource = section_resources_map[page.resource_id]
-      student_exception = student_exceptions_map[page.resource_id]
+    get_page_resources_with_settings(section.slug)
+    |> Enum.reduce(%{}, fn {resource_id, section_resource, page_settings}, acc ->
+      student_exception = student_exceptions_map[resource_id]
 
-      Map.put(acc, page.resource_id, combine(page, section_resource, student_exception))
+      Map.put(acc, resource_id, combine(page_settings, section_resource, student_exception))
     end)
+  end
+
+  defp get_page_resources_with_settings(section_slug) do
+    page_id = Oli.Resources.ResourceType.id_for_page()
+
+    from([s: s, sr: sr, rev: rev] in DeliveryResolver.section_resource_revisions(section_slug),
+      where: rev.resource_type_id == ^page_id,
+      select: {
+        rev.resource_id,
+        sr,
+        %{
+          resource_id: rev.resource_id,
+          max_attempts: rev.max_attempts,
+          explanation_strategy: rev.explanation_strategy,
+          collab_space_config: rev.collab_space_config
+        }
+      }
+    )
+    |> Repo.all()
   end
 
   def combine(resolved_revision, section_resource, student_exception) do
