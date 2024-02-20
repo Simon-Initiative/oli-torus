@@ -24,6 +24,7 @@ const LogicLab: React.FC<LogicLabDeliveryProps> = () => {
     onSubmitEvaluations,
     onSaveActivity,
     onResetActivity,
+    onResetPart,
     model,
     mode
   } = useDeliveryElementContext<LogicLabModelSchema>();
@@ -42,29 +43,42 @@ const LogicLab: React.FC<LogicLabDeliveryProps> = () => {
     setActivity(model.activity);
 
     const onMessage = async (e: MessageEvent) => {
-      const msg = e as MessageEvent;
       const lab = new URL(model.src);
-      const origin = new URL(msg.origin);
+      const origin = new URL(e.origin);
       // filter so we do not process torus events.
       if (origin.host === lab.host) {
-        // console.log('message event', e);
         const msg = e.data;
-        if (isLabMessage(msg)) {
+        // only lab messages from this activity for eventual support of multiple problems on a page.
+        if (isLabMessage(msg) && msg.attemptGuid === activityState.attemptGuid) {
           const attemptGuid = activityState.attemptGuid;
-          const partGuid = activityState.parts[0].attemptGuid;
+          let partGuid = activityState.parts[0].attemptGuid;
           switch (msg.messageType) {
             // respond to lab score request.
             case 'score':
               if (mode === 'delivery') { // only when in delivery
-                console.log('scoring...');
                 try {
+                  if (activityState.parts[0].dateEvaluated) {
+                    // if the part has already been evaluated, then
+                    // it is necessary to reset the part to get a new
+                    // partGuid as there can only ever be one evaluation
+                    // per partGuid.
+                    const partResponse = await onResetPart(attemptGuid, partGuid);
+                    partGuid = partResponse.attemptState.attemptGuid;
+                    // import state to new part, luckily the current state
+                    // is already included in the score message so no need
+                    // to maintain it in state.
+                    await onSaveActivity(attemptGuid, [{
+                      attemptGuid: partGuid,
+                      response: { input: msg.score.input }
+                    }]);
+                  }
                   onSubmitEvaluations(attemptGuid, [{
                     score: msg.score.score,
                     outOf: msg.score.outOf,
                     feedback: model.feedback[Number(msg.score.complete)],
-                    response: msg.score.response,
+                    response: { input: msg.score.input },
                     attemptGuid: partGuid,
-                  }]); // FIXME
+                  }]);
                 } catch (err) {
                   console.error(err);
                 }
@@ -89,8 +103,6 @@ const LogicLab: React.FC<LogicLabDeliveryProps> = () => {
             case 'load':
               if (mode !== 'preview') {
                 const saved = activityState?.parts[0].response?.input;
-                console.log(activityState.score, activityState.outOf);
-                console.log(saved);
                 if (saved && e.source) {
                   // post saved state back to lab.
                   e.source.postMessage(saved, { targetOrigin: model.src });
@@ -100,7 +112,7 @@ const LogicLab: React.FC<LogicLabDeliveryProps> = () => {
               break;
             case 'log':
               // Currenly logging to console, TODO link into torus/oli logging
-              // console.log(msg.content);
+              console.log(msg.content);
               break;
             default:
               console.warn('Unknown message type, skipped...', e);
@@ -111,11 +123,16 @@ const LogicLab: React.FC<LogicLabDeliveryProps> = () => {
     window.addEventListener('message', onMessage);
 
     return () => window.removeEventListener('message', onMessage);
-  }, [activityState, model]);
+  }, [activityState, model, context]);
 
+  // const url = new URL(activity, model.src);
+  const url = new URL('http://localhost:5173');
+  url.searchParams.append('activity', activity); // FIXME for servlet use first url
+  url.searchParams.append('mode', mode);
+  url.searchParams.append('attemptGuid', activityState.attemptGuid)
   return (
     <iframe
-      src={`${model.src}${activity};mode=${mode}`}
+      src={url.toString()}
       allowFullScreen={true}
       height="800"
       width="100%"
@@ -124,7 +141,8 @@ const LogicLab: React.FC<LogicLabDeliveryProps> = () => {
   )
 }
 
-/** Torus Delivery component for the LogicLab
+/**
+ * Torus Delivery component for LogicLab activities.
  * @component
  */
 export class LogicLabDelivery extends DeliveryElement<LogicLabModelSchema> {
@@ -135,7 +153,7 @@ export class LogicLabDelivery extends DeliveryElement<LogicLabModelSchema> {
     ReactDOM.render(
       <Provider store={store}>
         <DeliveryElementProvider {...props}>
-          <LogicLab {...props}/>
+          <LogicLab {...props} />
         </DeliveryElementProvider>
       </Provider>,
       mountPoint,

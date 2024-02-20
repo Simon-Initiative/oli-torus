@@ -14,8 +14,6 @@ const Authoring: React.FC<LogicLabAuthoringProps> = (props: LogicLabAuthoringPro
   const { dispatch, model } = useAuthoringElementContext<LogicLabModelSchema>();
   const [activityId, setActivityId] = useState<string>(props.model.activity);
   useEffect(() => {
-    // const targets = model.authoring.parts[0].targets; // update build target so .at(0) can be used.
-    // const activity = targets ? targets[0] : '';
     setActivityId(props.model.activity);
   }, [model]);
 
@@ -42,10 +40,6 @@ const Authoring: React.FC<LogicLabAuthoringProps> = (props: LogicLabAuthoringPro
         <select id={id} value={activityId} onChange={(e) => {
           dispatch((draft, _post) => {
             draft.activity = e.target.value;
-            // draft.authoring.parts[0] = {
-            //   ...draft.authoring.parts[0],
-            //   targets: [e.target.value]
-            // };
           });
         }}>
           <option>---</option>
@@ -61,6 +55,10 @@ const Authoring: React.FC<LogicLabAuthoringProps> = (props: LogicLabAuthoringPro
   )
 }
 
+/**
+ * Torus authoring component for LogicLab activities.
+ * @component
+ */
 export class LogicLabAuthoring extends AuthoringElement<LogicLabModelSchema> {
   render(mountPoint: HTMLDivElement, props: AuthoringElementProps<LogicLabModelSchema>): void {
     ReactDOM.render(
