@@ -41,7 +41,7 @@ defmodule OliWeb.Components.Delivery.Student do
   attr(:effective_settings, :map)
 
   def attempts_dropdown(assigns) do
-    assigns = assign(assigns, :id, "#{assigns[:page_revision_slug]}-attempts")
+    assigns = assign(assigns, :id, "page-#{assigns[:page_revision_slug]}-attempts")
 
     ~H"""
     <div class="self-stretch justify-start items-start gap-6 inline-flex relative mb-1">
@@ -125,7 +125,7 @@ defmodule OliWeb.Components.Delivery.Student do
     <div
       id="attempts_summary"
       class="w-full flex-col justify-start items-start gap-3 flex"
-      phx-click-away={hide_attempts_dropdown("##{@page_revision_slug}-attempts-dropdown")}
+      phx-click-away={hide_attempts_dropdown("#page-#{@page_revision_slug}-attempts-dropdown")}
     >
       <div class="self-stretch flex-col justify-start items-start flex p-3">
         There are no attempts for this page.
@@ -139,13 +139,13 @@ defmodule OliWeb.Components.Delivery.Student do
     <div
       id="attempts_summary"
       class="flex flex-col gap-3"
-      phx-click-away={hide_attempts_dropdown("##{@page_revision_slug}-attempts-dropdown")}
+      phx-click-away={hide_attempts_dropdown("#page-#{@page_revision_slug}-attempts-dropdown")}
     >
       <div class="flex flex-row justify-between p-2">
         <div class="text-sm uppercase">
           Score Information
         </div>
-        <button phx-click={hide_attempts_dropdown("##{@page_revision_slug}-attempts-dropdown")}>
+        <button phx-click={hide_attempts_dropdown("#page-#{@page_revision_slug}-attempts-dropdown")}>
           <i class="fa-solid fa-xmark"></i>
         </button>
       </div>
