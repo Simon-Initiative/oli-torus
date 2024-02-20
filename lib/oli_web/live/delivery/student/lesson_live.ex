@@ -314,11 +314,17 @@ defmodule OliWeb.Delivery.Student.LessonLive do
   defp page_content_layout(assigns) do
     ~H"""
     <div class={[
-      "flex-1 flex flex-col w-full overflow-hidden pb-20"
+      "flex-1 flex flex-col w-full overflow-hidden"
     ]}>
-      <div class={["flex-1 flex flex-col overflow-auto", if(@show_sidebar, do: "mr-[520px]")]}>
-        <div class={["flex-1 mt-20", if(@show_sidebar, do: "border-r border-gray-300 mr-[80px]")]}>
-          <div class="container mx-auto max-w-[720px]">
+      <div class={[
+        "flex-1 flex flex-col overflow-auto",
+        if(@show_sidebar, do: "xl:mr-[520px]")
+      ]}>
+        <div class={[
+          "flex-1 mt-20 px-[80px]",
+          if(@show_sidebar, do: "border-r border-gray-300 xl:mr-[80px]")
+        ]}>
+          <div class="container mx-auto max-w-[880px] pb-20">
             <%= render_slot(@header) %>
 
             <%= render_slot(@inner_block) %>
