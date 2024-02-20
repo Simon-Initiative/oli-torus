@@ -1248,21 +1248,16 @@ defmodule OliWeb.Delivery.InstructorDashboard.ScoredActivitiesTabTest do
       page_2: page_2,
       page_3: page_3
     } do
-      base_time = ~U[2000-01-20 12:00:00.000000Z]
-      end_date_1 = base_time |> DateTime.add(1, :day) |> DateTime.truncate(:second)
-      end_date_2 = base_time |> DateTime.add(2, :day) |> DateTime.truncate(:second)
-      end_date_3 = base_time |> DateTime.add(3, :day) |> DateTime.truncate(:second)
-
-      Sections.get_section_resource(section.id, page_1.resource_id)
-      |> Sections.update_section_resource(%{end_date: end_date_1, scheduling_type: :due_by})
-
       # Only section resources of scheduling_type = due_by are considered when sorting by Due Date
-      # The next SectionResource has scheduling_type: :read_by and it shouldn't be considered
-      Sections.get_section_resource(section.id, page_2.resource_id)
-      |> Sections.update_section_resource(%{end_date: end_date_2})
-
-      Sections.get_section_resource(section.id, page_3.resource_id)
-      |> Sections.update_section_resource(%{end_date: end_date_3, scheduling_type: :due_by})
+      [
+        {page_1, %{end_date: ~U[2000-01-21 12:00:00.00Z], scheduling_type: :due_by}},
+        {page_2, %{end_date: ~U[2000-01-22 12:00:00.00Z], scheduling_type: :read_by}},
+        {page_3, %{end_date: ~U[2000-01-23 12:00:00.00Z], scheduling_type: :due_by}}
+      ]
+      |> Enum.each(fn {page, params} ->
+        Sections.get_section_resource(section.id, page.resource_id)
+        |> Sections.update_section_resource(params)
+      end)
 
       {:ok, view, _html} = live(conn, live_view_scored_activities_route(section.slug))
 
