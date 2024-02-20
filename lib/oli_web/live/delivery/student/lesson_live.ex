@@ -21,7 +21,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
   on_mount {OliWeb.LiveSessionPlugs.InitPage, :previous_next_index}
 
   def mount(_params, _session, %{assigns: %{view: :practice_page}} = socket) do
-    {:ok, socket |> assign_html_and_scripts() |> assign(show_sidebar: true)}
+    {:ok, socket |> assign_html_and_scripts() |> assign(show_sidebar: false)}
   end
 
   def mount(
@@ -30,7 +30,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
         %{assigns: %{view: :graded_page, page_context: %{progress_state: :in_progress}}} = socket
       ) do
     {:ok,
-     socket |> assign_html_and_scripts() |> assign(begin_attempt?: false, show_sidebar: true)}
+     socket |> assign_html_and_scripts() |> assign(begin_attempt?: false, show_sidebar: false)}
   end
 
   def mount(_params, _session, %{assigns: %{view: :graded_page}} = socket) do
@@ -42,7 +42,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     {:ok,
      socket
      |> assign_scripts()
-     |> assign(begin_attempt?: false, show_sidebar: true)}
+     |> assign(begin_attempt?: false, show_sidebar: false)}
   end
 
   def handle_event("begin_attempt", %{"password" => password}, socket)
