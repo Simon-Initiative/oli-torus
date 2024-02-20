@@ -3,7 +3,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Notes do
 
   def panel(assigns) do
     ~H"""
-    <div class="flex-1 flex flex-row ml-24">
+    <div class="flex-1 flex flex-row">
       <div class="justify-start">
         <.toggle_notes_button>
           <i class="fa-solid fa-xmark group-hover:scale-110"></i>

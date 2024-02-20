@@ -328,7 +328,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     </div>
     <div
       :if={@sidebar && @show_sidebar}
-      class="flex flex-col w-[600px] absolute top-20 right-0 bottom-0"
+      class="flex flex-col w-[520px] absolute top-20 right-0 bottom-0"
     >
       <%= render_slot(@sidebar) %>
     </div>
