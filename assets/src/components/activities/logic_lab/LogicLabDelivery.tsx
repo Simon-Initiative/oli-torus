@@ -1,5 +1,5 @@
 import { activityDeliverySlice, listenForParentSurveyReset, listenForParentSurveySubmit, listenForReviewAttemptChange } from "data/activities/DeliveryState";
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import ReactDOM from "react-dom";
 import { Provider, useDispatch } from "react-redux";
 import { configureStore } from "state/store";
@@ -8,13 +8,15 @@ import { DeliveryElementProvider, useDeliveryElementContext } from "../DeliveryE
 import { Manifest } from "../types";
 import { LogicLabModelSchema, isLabMessage } from "./LogicLabModelSchema";
 
+type LogicLabDeliveryProps = DeliveryElementProps<LogicLabModelSchema>;
+
 /**
  * LogicLab delivery component shell.
  * Sets up the iframe and message event handler to deal with
  * message events from the lab activity.
  * @component
  */
-const LogicLab: React.FC = () => {
+const LogicLab: React.FC<LogicLabDeliveryProps> = () => {
   const {
     state: activityState,
     context,
@@ -26,15 +28,18 @@ const LogicLab: React.FC = () => {
     mode
   } = useDeliveryElementContext<LogicLabModelSchema>();
   const dispatch = useDispatch();
-  const activity = activityState.parts[0].partId;
+  // const part = activityState.parts[0].partId;
+  // const targets = model.authoring?.parts?.find(p => p.id === part)?.targets;
+  // const targets = model.authoring?.parts[0].targets;
+  const [activity, setActivity] = useState<string>(model.activity)
 
   useEffect(() => {
     // This looks like boilerplate code for dealing with embedded activities.
     listenForParentSurveySubmit(context.surveyId, dispatch, onSubmitActivity);
-    listenForParentSurveyReset(context.surveyId, dispatch, onResetActivity, {
-      [activityState.parts[0].partId]: [],
-    });
+    listenForParentSurveyReset(context.surveyId, dispatch, onResetActivity);
     listenForReviewAttemptChange(model, activityState.activityId as number, dispatch, context);
+
+    setActivity(model.activity);
 
     const onMessage = async (e: MessageEvent) => {
       const msg = e as MessageEvent;
@@ -56,7 +61,7 @@ const LogicLab: React.FC = () => {
                   onSubmitEvaluations(attemptGuid, [{
                     score: msg.score.score,
                     outOf: msg.score.outOf,
-                    feedback: null,
+                    feedback: model.feedback[Number(msg.score.complete)],
                     response: msg.score.response,
                     attemptGuid: partGuid,
                   }]); // FIXME
@@ -84,6 +89,8 @@ const LogicLab: React.FC = () => {
             case 'load':
               if (mode !== 'preview') {
                 const saved = activityState?.parts[0].response?.input;
+                console.log(activityState.score, activityState.outOf);
+                console.log(saved);
                 if (saved && e.source) {
                   // post saved state back to lab.
                   e.source.postMessage(saved, { targetOrigin: model.src });
@@ -128,7 +135,7 @@ export class LogicLabDelivery extends DeliveryElement<LogicLabModelSchema> {
     ReactDOM.render(
       <Provider store={store}>
         <DeliveryElementProvider {...props}>
-          <LogicLab />
+          <LogicLab {...props}/>
         </DeliveryElementProvider>
       </Provider>,
       mountPoint,

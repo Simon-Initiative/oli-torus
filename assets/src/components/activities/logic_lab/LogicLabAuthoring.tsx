@@ -4,7 +4,7 @@ import { Provider } from "react-redux";
 import { configureStore } from "state/store";
 import { AuthoringElement, AuthoringElementProps } from "../AuthoringElement";
 import { AuthoringElementProvider, useAuthoringElementContext } from "../AuthoringElementProvider";
-import { Manifest, makePart } from "../types";
+import { Manifest } from "../types";
 import { LabActivity, LogicLabModelSchema } from "./LogicLabModelSchema";
 
 const STORE = configureStore();
@@ -12,10 +12,11 @@ const STORE = configureStore();
 type LogicLabAuthoringProps = AuthoringElementProps<LogicLabModelSchema>;
 const Authoring: React.FC<LogicLabAuthoringProps> = (props: LogicLabAuthoringProps) => {
   const { dispatch, model } = useAuthoringElementContext<LogicLabModelSchema>();
-  const [activityId, setActivityId] = useState<string>(props.model.authoring.parts[0].id);
+  const [activityId, setActivityId] = useState<string>(props.model.activity);
   useEffect(() => {
-    const activity = model.authoring.parts[0].id;
-    setActivityId(activity);
+    // const targets = model.authoring.parts[0].targets; // update build target so .at(0) can be used.
+    // const activity = targets ? targets[0] : '';
+    setActivityId(props.model.activity);
   }, [model]);
 
   //const guid = useId(); // Needs react ^18
@@ -40,7 +41,11 @@ const Authoring: React.FC<LogicLabAuthoringProps> = (props: LogicLabAuthoringPro
         <label htmlFor={id}>Select activity</label>
         <select id={id} value={activityId} onChange={(e) => {
           dispatch((draft, _post) => {
-            draft.authoring.parts[0] = makePart([], undefined, e.target.value);
+            draft.activity = e.target.value;
+            // draft.authoring.parts[0] = {
+            //   ...draft.authoring.parts[0],
+            //   targets: [e.target.value]
+            // };
           });
         }}>
           <option>---</option>

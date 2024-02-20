@@ -2,6 +2,7 @@ import { ActivityModelSchema, Feedback, Part, Transformation } from "../types";
 
 export interface LogicLabModelSchema extends ActivityModelSchema {
   src: string;
+  activity: string;
   authoring: {
     version: 1;
     parts: Part[]; // required in use
@@ -18,6 +19,8 @@ export interface Score {
   complete: boolean;
 }
 export interface LabMessageBase {
+  // activityGuid: string; // TODO likely needed for proper message filtering
+  // activity: string;
   messageType: string;
 }
 export function isLabMessage(msg: LabMessageBase | unknown): msg is LabMessage {
