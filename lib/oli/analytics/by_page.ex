@@ -3,7 +3,6 @@ defmodule Oli.Analytics.ByPage do
   alias Oli.Delivery.Sections.SectionResource
   alias Oli.Delivery.Snapshots.Snapshot
   alias Oli.Repo
-  alias Oli.Delivery.Sections.Section
   alias Oli.Analytics.Common
   alias Oli.Publishing
   alias Oli.Authoring.Course.Project
@@ -36,7 +35,6 @@ defmodule Oli.Analytics.ByPage do
   end
 
   def query_against_project_slug(project_slug, filtered_sections) do
-    IO.inspect("hellow world")
     activity_pages = get_activity_pages(project_slug)
 
     Repo.all(
