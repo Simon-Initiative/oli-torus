@@ -296,7 +296,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
     ~H"""
     <div
       :if={!is_nil(@current_page)}
-      class="fixed bottom-0 left-1/2 -translate-x-1/2 h-[74px] py-4 shadow-lg bg-white dark:bg-black lg:rounded-tl-[40px] lg:rounded-tr-[40px] flex items-center gap-3 lg:w-[720px] w-full"
+      class="fixed bottom-0 left-1/2 -translate-x-1/2 h-[74px] lg:py-4 shadow-lg bg-white dark:bg-black lg:rounded-tl-[40px] lg:rounded-tr-[40px] flex items-center gap-3 lg:w-[720px] w-full"
     >
       <div class="hidden lg:block absolute -left-[114px] z-0">
         <svg
@@ -387,11 +387,15 @@ defmodule OliWeb.Components.Delivery.Layouts do
   end
 
   attr(:to, :string)
+  attr(:show_sidebar, :boolean, default: false)
 
   def back_arrow(assigns) do
     ~H"""
     <div
-      class="flex justify-center items-center absolute top-2 lg:top-10 left-2 lg:left-12 p-4"
+      class={[
+        "flex justify-center items-center absolute top-2 left-2 p-4",
+        if(!@show_sidebar, do: "xl:top-10 xl:left-12")
+      ]}
       role="back_link"
     >
       <.link navigate={@to} class="hover:no-underline hover:scale-105 cursor-pointer">
