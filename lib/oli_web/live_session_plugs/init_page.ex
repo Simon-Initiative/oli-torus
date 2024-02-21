@@ -13,8 +13,11 @@ defmodule OliWeb.LiveSessionPlugs.InitPage do
         _session,
         %{assigns: assigns} = socket
       ) do
-    {:ok, {previous, next, current}, _} =
-      PreviousNextIndex.retrieve(assigns.section, assigns.page_context.page.resource_id)
+    resource_id = assigns.page_context.page.resource_id
+
+    {previous, next, current} =
+      PreviousNextIndex.retrieve(assigns.section, resource_id)
+      |> maybe_rebuild_previous_next_index(assigns.section, resource_id)
 
     socket =
       case assigns.view do
@@ -233,5 +236,24 @@ defmodule OliWeb.LiveSessionPlugs.InitPage do
       allow_attempt?: new_attempt_allowed == {:allowed},
       attempt_message: attempt_message
     )
+  end
+
+  defp maybe_rebuild_previous_next_index({:ok, prev_next_current, _}, section, resource_id) do
+    # Rebuild the previous next index if it is missing is_adaptive? or is_chromeless? keys
+
+    prev_next_current
+    |> Tuple.to_list()
+    |> Enum.reject(&is_nil/1)
+    |> Enum.any?(
+      &(not Map.has_key?(&1, "is_adaptive?") or not Map.has_key?(&1, "is_chromeless?"))
+    )
+    |> if do
+      section
+      |> PreviousNextIndex.rebuild()
+      |> PreviousNextIndex.retrieve(resource_id)
+      |> then(fn {:ok, prev_next_current, _} -> prev_next_current end)
+    else
+      prev_next_current
+    end
   end
 end
