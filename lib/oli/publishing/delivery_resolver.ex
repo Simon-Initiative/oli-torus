@@ -59,7 +59,7 @@ defmodule Oli.Publishing.DeliveryResolver do
         map(rev, [:id, :resource_id, :title]),
         map(sr, [:scheduling_type, :end_date])
       },
-      order_by: [asc: sr.numbering_level, asc: sr.numbering_index]
+      order_by: [asc: sr.numbering_index, asc: sr.numbering_level]
     )
     |> Repo.all()
   end
