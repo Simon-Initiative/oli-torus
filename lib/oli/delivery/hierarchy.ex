@@ -441,8 +441,10 @@ defmodule Oli.Delivery.Hierarchy do
           "graded" => "#{node.revision.graded}",
           "children" =>
             Enum.map(node.children, fn hn -> Integer.to_string(hn.revision.resource_id) end),
-          "is_adaptive?" => node.revision.content["advancedDelivery"] || false,
-          "is_chromeless?" => node.revision.content["displayApplicationChrome"] || false
+          "is_adaptive?" =>
+            get_in(node.revision, [Access.key(:content), "advancedDelivery"]) || false,
+          "is_chromeless?" =>
+            get_in(node.revision, [Access.key(:content), "displayApplicationChrome"]) || false
         }
 
         map =

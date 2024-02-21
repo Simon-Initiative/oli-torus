@@ -1281,7 +1281,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
       Sections.mark_section_visited_for_student(section, user)
 
-      {:ok, view, _html} = live(conn, live_view_learn_live_route(section.slug))
+      {:ok, view, _html} = live(conn, Utils.learn_live_path(section.slug))
 
       # click on exploration 1 to navigate to that page
       view
