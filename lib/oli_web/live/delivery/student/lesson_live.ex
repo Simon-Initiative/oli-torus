@@ -410,6 +410,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
           allow_attempt?={@allow_attempt?}
           section_slug={@section.slug}
           request_path={@request_path}
+          adaptive_chromeless?={@view == :adaptive_chromeless}
         />
       </div>
     </div>
@@ -456,12 +457,13 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     """
   end
 
-  attr(:attempt_message, :string)
-  attr(:page_context, Oli.Delivery.Page.PageContext)
-  attr(:ctx, OliWeb.Common.SessionContext)
-  attr(:allow_attempt?, :boolean)
-  attr(:section_slug, :string)
-  attr(:request_path, :string)
+  attr :attempt_message, :string
+  attr :page_context, Oli.Delivery.Page.PageContext
+  attr :ctx, OliWeb.Common.SessionContext
+  attr :allow_attempt?, :boolean
+  attr :adaptive_chromeless?, :boolean
+  attr :section_slug, :string
+  attr :request_path, :string
 
   defp attempts_summary(assigns) do
     ~H"""
@@ -496,6 +498,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
           ctx={@ctx}
           allow_review_submission?={@page_context.effective_settings.review_submission == :allow}
           request_path={@request_path}
+          adaptive_chromeless?={@adaptive_chromeless?}
         />
       </div>
     </div>
@@ -519,13 +522,14 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     """
   end
 
-  attr(:index, :integer)
-  attr(:attempt, ResourceAttempt)
-  attr(:ctx, OliWeb.Common.SessionContext)
-  attr(:allow_review_submission?, :boolean)
-  attr(:section_slug, :string)
-  attr(:page_revision_slug, :string)
-  attr(:request_path, :string)
+  attr :index, :integer
+  attr :attempt, ResourceAttempt
+  attr :ctx, OliWeb.Common.SessionContext
+  attr :allow_review_submission?, :boolean
+  attr :section_slug, :string
+  attr :page_revision_slug, :string
+  attr :adaptive_chromeless?, :boolean
+  attr :request_path, :string
 
   defp attempt_summary(assigns) do
     ~H"""
@@ -572,7 +576,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
           </div>
         </div>
         <div
-          :if={@allow_review_submission?}
+          :if={@allow_review_submission? and not @adaptive_chromeless?}
           class="w-[124px] py-1 justify-end items-center gap-2.5 inline-flex"
         >
           <.link
