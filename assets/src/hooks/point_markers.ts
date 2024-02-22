@@ -14,6 +14,10 @@ export const PointMarkers = {
         this.pushEvent('update_point_markers', { ['point_markers']: get_point_markers(el) });
       }, RESIZE_UPDATE_INTERVAL);
     });
+
+    this.handleEvent('request_point_markers', () => {
+      this.pushEvent('update_point_markers', { ['point_markers']: get_point_markers(el) });
+    });
   },
 };
 

@@ -151,7 +151,10 @@ defmodule OliWeb.Delivery.Student.LessonLive do
   def handle_event("toggle_sidebar", _params, socket) do
     %{show_sidebar: show_sidebar} = socket.assigns
 
-    {:noreply, assign(socket, show_sidebar: !show_sidebar)}
+    {:noreply,
+     socket
+     |> assign(show_sidebar: !show_sidebar)
+     |> push_event("request_point_markers", %{})}
   end
 
   def render(%{view: :practice_page} = assigns) do
