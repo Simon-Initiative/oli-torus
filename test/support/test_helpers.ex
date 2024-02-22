@@ -639,8 +639,17 @@ defmodule Oli.TestHelpers do
         content: %{"advancedDelivery" => true}
       )
 
+    page_2_revision =
+      insert(:revision,
+        resource_type_id: Oli.Resources.ResourceType.id_for_page(),
+        title: "Other test revision",
+        graded: true,
+        content: %{"advancedDelivery" => true}
+      )
+
     # Associate nested graded page to the project
     insert(:project_resource, %{project_id: project.id, resource_id: page_revision.resource.id})
+    insert(:project_resource, %{project_id: project.id, resource_id: page_2_revision.resource.id})
 
     unit_one_resource = insert(:resource)
 
@@ -673,7 +682,7 @@ defmodule Oli.TestHelpers do
         resource: container_resource,
         objectives: %{},
         resource_type_id: Oli.Resources.ResourceType.id_for_container(),
-        children: [unit_one_resource.id, page_revision.resource.id],
+        children: [unit_one_resource.id, page_revision.resource.id, page_2_revision.resource.id],
         content: %{},
         deleted: false,
         title: "Root Container"
@@ -704,6 +713,13 @@ defmodule Oli.TestHelpers do
       publication: publication,
       resource: page_revision.resource,
       revision: page_revision,
+      author: author
+    })
+
+    insert(:published_resource, %{
+      publication: publication,
+      resource: page_2_revision.resource,
+      revision: page_2_revision,
       author: author
     })
 
@@ -757,7 +773,18 @@ defmodule Oli.TestHelpers do
       author: author
     })
 
-    {:ok, section: section, unit_one_revision: unit_one_revision, page_revision: page_revision}
+    insert(:published_resource, %{
+      publication: new_publication,
+      resource: page_2_revision.resource,
+      revision: page_2_revision,
+      author: author
+    })
+
+    {:ok,
+     section: section,
+     unit_one_revision: unit_one_revision,
+     page_revision: page_revision,
+     page_2_revision: page_2_revision}
   end
 
   def create_project_with_products(_conn) do

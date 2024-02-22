@@ -28,10 +28,14 @@ defmodule OliWeb.GradesLiveTest do
 
     deployment = insert(:lti_deployment, %{registration: registration})
 
-    {:ok, section: section, unit_one_revision: _unit_one_revision, page_revision: page_revision} =
+    {:ok,
+     section: section,
+     unit_one_revision: _unit_one_revision,
+     page_revision: page_revision,
+     page_2_revision: page_2_revision} =
       section_with_assessment(%{}, deployment)
 
-    [section: section, page_revision: page_revision]
+    [section: section, page_revision: page_revision, page_2_revision: page_2_revision]
   end
 
   defp create_section_with_invalid_registration(_conn) do
@@ -292,6 +296,62 @@ defmodule OliWeb.GradesLiveTest do
         "a[phx-click=\"send_grades\"]",
         "Synchronize Grades"
       )
+      |> render_click()
+
+      assert has_element?(view, "p", "Pending grade updates: 1")
+    end
+
+    test "sync grades - select other resource", %{
+      conn: conn,
+      section: section,
+      page_revision: page_revision,
+      page_2_revision: page_2_revision
+    } do
+      [user_1, user_2, user_3] = user_list = insert_list(3, :user)
+      for user <- user_list, do: enroll_user_to_section(user, section, :context_learner)
+
+      [resource_access_1, resource_access_2] =
+        for user <- [user_1, user_2],
+            do:
+              insert(:resource_access,
+                user: user,
+                section: section,
+                resource: page_revision.resource,
+                score: 99
+              )
+
+      resource_access_3 =
+        insert(:resource_access,
+          user: user_3,
+          section: section,
+          resource: page_2_revision.resource,
+          score: 120
+        )
+
+      for res_acc <- [resource_access_1, resource_access_2, resource_access_3],
+          do: insert(:resource_attempt, resource_access: res_acc)
+
+      {:ok, view, _html} = live(conn, live_view_grades_route(section.slug))
+
+      # Renders both resources
+      assert view |> element("option[value=#{page_revision.resource_id}]")
+      assert view |> element("option[value=#{page_2_revision.resource_id}]")
+
+      # Synchronize for first page
+      view
+      |> element("a[phx-click=\"send_grades\"]", "Synchronize Grades")
+      |> render_click()
+
+      assert has_element?(view, "p", "Pending grade updates: 2")
+
+      # Change page
+      view
+      |> element("select[phx-change=select_page]")
+      |> render_change(%{"resource_id" => page_2_revision.resource_id})
+
+      # Synchronize for second page
+      view
+      |> element("a[phx-click=\"send_grades\"]", "Synchronize Grades")
       |> render_click()
 
       assert has_element?(view, "p", "Pending grade updates: 1")
