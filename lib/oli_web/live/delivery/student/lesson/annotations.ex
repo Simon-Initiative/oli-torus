@@ -1,4 +1,4 @@
-defmodule OliWeb.Delivery.Student.Lesson.Notes do
+defmodule OliWeb.Delivery.Student.Lesson.Annotations do
   use OliWeb, :html
 
   def panel(assigns) do
@@ -38,7 +38,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Notes do
     """
   end
 
-  def chat_icon(assigns) do
+  def annotations_icon(assigns) do
     ~H"""
     <svg
       width="24"
@@ -197,6 +197,44 @@ defmodule OliWeb.Delivery.Student.Lesson.Notes do
         Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nulla nec dui in odio.
       </p>
     </div>
+    """
+  end
+
+  attr :point_marker, :map
+
+  def annotation_bubble(assigns) do
+    ~H"""
+    <button class="absolute right-[-15px] cursor-pointer group" style={"top: #{@point_marker.top}px"}>
+      <.chat_bubble>
+        +
+      </.chat_bubble>
+    </button>
+    """
+  end
+
+  slot :inner_block
+
+  def chat_bubble(assigns) do
+    ~H"""
+    <svg
+      width="31"
+      height="31"
+      viewBox="0 0 31 31"
+      fill="none"
+      class="group-hover:scale-110 group-active:scale-100"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <path
+        d="M30 14.6945C30.0055 16.8209 29.5087 18.9186 28.55 20.8167C27.4132 23.0912 25.6657 25.0042 23.5031 26.3416C21.3405 27.679 18.8483 28.3879 16.3055 28.3889C14.1791 28.3944 12.0814 27.8976 10.1833 26.9389L1 30L4.06111 20.8167C3.10239 18.9186 2.60556 16.8209 2.61111 14.6945C2.61209 12.1517 3.32098 9.65951 4.65837 7.49692C5.99577 5.33433 7.90884 3.58679 10.1833 2.45004C12.0814 1.49132 14.1791 0.994502 16.3055 1.00005H17.1111C20.4692 1.18531 23.641 2.60271 26.0191 4.98087C28.3973 7.35902 29.8147 10.5308 30 13.8889V14.6945Z"
+        class="fill-white stroke-gray-300"
+        stroke-width="1.61111"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      />
+      <text x="11" y="22" class="text-xl fill-gray-500">
+        <%= render_slot(@inner_block) %>
+      </text>
+    </svg>
     """
   end
 end

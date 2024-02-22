@@ -7,6 +7,8 @@ defmodule Oli.Rendering.Content.Html do
   import Oli.Utils
   import Oli.Rendering.Utils
 
+  require Logger
+
   alias Oli.Rendering.Context
   alias Phoenix.HTML
   alias Oli.Rendering.Content.MathMLSanitizer
@@ -24,8 +26,8 @@ defmodule Oli.Rendering.Content.Html do
     ["<span class=\"callout-inline\">", next.(), "</span>\n"]
   end
 
-  def p(%Context{} = _context, next, _) do
-    ["<p>", next.(), "</p>\n"]
+  def p(%Context{} = context, next, attrs) do
+    ["<p", maybe_point_marker_attr(context, attrs), ">", next.(), "</p>\n"]
   end
 
   def h1(%Context{} = _context, next, _) do
@@ -954,4 +956,24 @@ defmodule Oli.Rendering.Content.Html do
       _ -> ""
     end
   end
+
+  defp maybe_point_marker_attr(%Context{is_block_level: true} = context, %{"id" => id}) do
+    if context.render_opts.render_point_markers do
+      " data-point-marker=\"#{id}\""
+    else
+      ""
+    end
+  end
+
+  defp maybe_point_marker_attr(%Context{is_block_level: true} = context, _attrs) do
+    if context.render_opts.render_point_markers,
+      do:
+        Logger.warning(
+          "Content element missing id attribute which is required for point marker. Point marker will not be rendered."
+        )
+
+    ""
+  end
+
+  defp maybe_point_marker_attr(_context, _attrs), do: ""
 end

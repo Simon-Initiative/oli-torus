@@ -13,7 +13,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
   alias OliWeb.Components.Delivery.Layouts
   alias OliWeb.Components.Modal
   alias OliWeb.Delivery.Student.Utils
-  alias OliWeb.Delivery.Student.Lesson.Notes
+  alias OliWeb.Delivery.Student.Lesson.Annotations
 
   require Logger
 
@@ -21,7 +21,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
   on_mount {OliWeb.LiveSessionPlugs.InitPage, :previous_next_index}
 
   def mount(_params, _session, %{assigns: %{view: :practice_page}} = socket) do
-    {:ok, socket |> assign_html_and_scripts() |> assign(show_sidebar: false)}
+    {:ok, socket |> assign_html_and_scripts() |> assign(show_sidebar: false, point_markers: nil)}
   end
 
   def mount(
@@ -30,19 +30,21 @@ defmodule OliWeb.Delivery.Student.LessonLive do
         %{assigns: %{view: :graded_page, page_context: %{progress_state: :in_progress}}} = socket
       ) do
     {:ok,
-     socket |> assign_html_and_scripts() |> assign(begin_attempt?: false, show_sidebar: false)}
+     socket
+     |> assign_html_and_scripts()
+     |> assign(begin_attempt?: false, show_sidebar: false, point_markers: nil)}
   end
 
   def mount(_params, _session, %{assigns: %{view: :graded_page}} = socket) do
     # for graded pages with no attempt in course, we first show the prologue view (we use begin_attempt? flag to distinguish this).
     # When the student clicks "Begin" we load the needed page scripts via the "LoadSurveyScripts" hook and assign the html to the socket.
-    # When the scripts end loading, we recieve a "survey_scripts_loaded" confirmation event from the client
+    # When the scripts end loading, we receive a "survey_scripts_loaded" confirmation event from the client
     # so we then hide the spinner and show the page content.
 
     {:ok,
      socket
      |> assign_scripts()
-     |> assign(begin_attempt?: false, show_sidebar: false)}
+     |> assign(begin_attempt?: false, show_sidebar: false, point_markers: nil)}
   end
 
   def handle_event("begin_attempt", %{"password" => password}, socket)
@@ -140,6 +142,12 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     end
   end
 
+  def handle_event("update_point_markers", %{"point_markers" => point_markers}, socket) do
+    markers = Enum.map(point_markers, fn pm -> %{id: pm["id"], top: pm["top"]} end)
+
+    {:noreply, assign(socket, point_markers: markers)}
+  end
+
   def handle_event("toggle_sidebar", _params, socket) do
     %{show_sidebar: show_sidebar} = socket.assigns
 
@@ -149,7 +157,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
   def render(%{view: :practice_page} = assigns) do
     # For practice page the activity scripts and activity_bridge script are needed as soon as the page loads.
     ~H"""
-    <.page_content_layout show_sidebar={@show_sidebar}>
+    <.page_content_with_sidebar_layout show_sidebar={@show_sidebar}>
       <:header>
         <.page_header
           page_context={@page_context}
@@ -159,14 +167,34 @@ defmodule OliWeb.Delivery.Student.LessonLive do
         />
       </:header>
 
-      <div id="eventIntercept" class="content" phx-update="ignore" role="page content">
+      <div
+        id="eventIntercept"
+        class="content"
+        phx-update="ignore"
+        role="page content"
+        phx-hook="PointMarkers"
+      >
         <%= raw(@html) %>
       </div>
 
+      <:point_markers :if={@show_sidebar && @point_markers}>
+        <Annotations.annotation_bubble point_marker={%{id: "page-marker", top: 0}} />
+        <Annotations.annotation_bubble
+          :for={point_marker <- @point_markers}
+          point_marker={point_marker}
+        />
+      </:point_markers>
+
+      <:sidebar_toggle>
+        <Annotations.toggle_notes_button>
+          <Annotations.annotations_icon />
+        </Annotations.toggle_notes_button>
+      </:sidebar_toggle>
+
       <:sidebar>
-        <Notes.panel show_sidebar={@show_sidebar} />
+        <Annotations.panel show_sidebar={@show_sidebar} />
       </:sidebar>
-    </.page_content_layout>
+    </.page_content_with_sidebar_layout>
 
     <.scripts scripts={@scripts} user_token={@user_token} />
     """
@@ -310,8 +338,10 @@ defmodule OliWeb.Delivery.Student.LessonLive do
   slot :header, required: true
   slot :inner_block, required: true
   slot :sidebar, default: nil
+  slot :sidebar_toggle, default: nil
+  slot :point_markers, default: nil
 
-  defp page_content_layout(assigns) do
+  defp page_content_with_sidebar_layout(assigns) do
     ~H"""
     <div class={[
       "flex-1 flex flex-col w-full overflow-hidden"
@@ -321,7 +351,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
         if(@show_sidebar, do: "xl:mr-[520px]")
       ]}>
         <div class={[
-          "flex-1 mt-20 px-[80px]",
+          "flex-1 mt-20 px-[80px] relative",
           if(@show_sidebar, do: "border-r border-gray-300 xl:mr-[80px]")
         ]}>
           <div class="container mx-auto max-w-[880px] pb-20">
@@ -329,6 +359,8 @@ defmodule OliWeb.Delivery.Student.LessonLive do
 
             <%= render_slot(@inner_block) %>
           </div>
+
+          <%= render_slot(@point_markers) %>
         </div>
       </div>
     </div>
@@ -339,9 +371,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
       <%= render_slot(@sidebar) %>
     </div>
     <div :if={@sidebar && !@show_sidebar} class="absolute top-20 right-0">
-      <Notes.toggle_notes_button>
-        <Notes.chat_icon />
-      </Notes.toggle_notes_button>
+      <%= render_slot(@sidebar_toggle) %>
     </div>
     """
   end

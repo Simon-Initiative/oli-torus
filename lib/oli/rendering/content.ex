@@ -276,11 +276,16 @@ defmodule Oli.Rendering.Content do
         %{"type" => type, "children" => children} = element,
         writer
       ) do
-    next = fn -> render(context, children, writer) end
+    next = fn -> render(%Context{context | is_block_level: false}, children, writer) end
 
     case type do
       "p" ->
-        writer.p(context, next, element)
+        # check if the paragraph is empty and if so, don't render it
+        if is_empty_paragraph?(element) do
+          []
+        else
+          writer.p(context, next, element)
+        end
 
       "h1" ->
         writer.h1(context, next, element)
@@ -425,4 +430,12 @@ defmodule Oli.Rendering.Content do
       []
     end
   end
+
+  defp is_empty_paragraph?(%{"type" => "p", "children" => children}) do
+    Enum.all?(children, fn child ->
+      child["text"] && String.trim(child["text"]) == ""
+    end)
+  end
+
+  defp is_empty_paragraph?(_), do: false
 end
