@@ -1,5 +1,12 @@
 import { registerCreationFunc } from '../creation';
-import { CreationContext, GradingApproach, Manifest, ScoringStrategy, makeFeedback, makeHint } from '../types';
+import {
+  CreationContext,
+  GradingApproach,
+  Manifest,
+  ScoringStrategy,
+  makeFeedback,
+  makeHint,
+} from '../types';
 import { LogicLabModelSchema } from './LogicLabModelSchema';
 
 export { LogicLabAuthoring } from './LogicLabAuthoring';
@@ -16,21 +23,20 @@ registerCreationFunc(manifest, async (content: CreationContext): Promise<LogicLa
     activity: '',
     authoring: {
       version: 1,
-      parts: [{
-        id: '1',
-        gradingApproach: GradingApproach.automatic,
-        outOf: null,
-        scoringStrategy: ScoringStrategy.best,
-        responses: [],
-        hints: [makeHint(''), makeHint(''), makeHint('')],
-        targets: [],
-      }],
+      parts: [
+        {
+          id: '1',
+          gradingApproach: GradingApproach.automatic,
+          outOf: null,
+          scoringStrategy: ScoringStrategy.best,
+          responses: [],
+          hints: [makeHint(''), makeHint(''), makeHint('')],
+          targets: [],
+        },
+      ],
       transformations: [],
       previewText: '',
     },
-    feedback: [
-      makeFeedback('incomplete'),
-      makeFeedback('complete'),
-    ]
-  }
+    feedback: [makeFeedback('incomplete'), makeFeedback('complete')],
+  };
 });

@@ -1,12 +1,17 @@
-import { activityDeliverySlice, listenForParentSurveyReset, listenForParentSurveySubmit, listenForReviewAttemptChange } from "data/activities/DeliveryState";
-import React, { useEffect, useState } from "react";
-import ReactDOM from "react-dom";
-import { Provider, useDispatch } from "react-redux";
-import { configureStore } from "state/store";
-import { DeliveryElement, DeliveryElementProps } from "../DeliveryElement";
-import { DeliveryElementProvider, useDeliveryElementContext } from "../DeliveryElementProvider";
-import { Manifest } from "../types";
-import { LogicLabModelSchema, isLabMessage } from "./LogicLabModelSchema";
+import React, { useEffect, useState } from 'react';
+import ReactDOM from 'react-dom';
+import { Provider, useDispatch } from 'react-redux';
+import {
+  activityDeliverySlice,
+  listenForParentSurveyReset,
+  listenForParentSurveySubmit,
+  listenForReviewAttemptChange,
+} from 'data/activities/DeliveryState';
+import { configureStore } from 'state/store';
+import { DeliveryElement, DeliveryElementProps } from '../DeliveryElement';
+import { DeliveryElementProvider, useDeliveryElementContext } from '../DeliveryElementProvider';
+import { Manifest } from '../types';
+import { LogicLabModelSchema, isLabMessage } from './LogicLabModelSchema';
 
 type LogicLabDeliveryProps = DeliveryElementProps<LogicLabModelSchema>;
 
@@ -26,13 +31,13 @@ const LogicLab: React.FC<LogicLabDeliveryProps> = () => {
     onResetActivity,
     onResetPart,
     model,
-    mode
+    mode,
   } = useDeliveryElementContext<LogicLabModelSchema>();
   const dispatch = useDispatch();
   // const part = activityState.parts[0].partId;
   // const targets = model.authoring?.parts?.find(p => p.id === part)?.targets;
   // const targets = model.authoring?.parts[0].targets;
-  const [activity, setActivity] = useState<string>(model.activity)
+  const [activity, setActivity] = useState<string>(model.activity);
 
   useEffect(() => {
     // This looks like boilerplate code for dealing with embedded activities.
@@ -55,30 +60,38 @@ const LogicLab: React.FC<LogicLabDeliveryProps> = () => {
           switch (msg.messageType) {
             // respond to lab score request.
             case 'score':
-              if (mode === 'delivery') { // only when in delivery
+              if (mode === 'delivery') {
+                // only when in delivery
                 try {
-                  if (activityState.parts[0].dateEvaluated) {
-                    // if the part has already been evaluated, then
-                    // it is necessary to reset the part to get a new
-                    // partGuid as there can only ever be one evaluation
-                    // per partGuid.
-                    const partResponse = await onResetPart(attemptGuid, partGuid);
-                    partGuid = partResponse.attemptState.attemptGuid;
-                    // import state to new part, luckily the current state
-                    // is already included in the score message so no need
-                    // to maintain it in state.
-                    await onSaveActivity(attemptGuid, [{
+                  // .dateEvaluated seems to not work as a check to see if part is evaluatable
+                  // Always resetting and saving seems to fix the issue with a second attempt
+                  // not registering grading.
+                  // if (activityState.parts[0].dateEvaluated) {
+                  // if the part has already been evaluated, then
+                  // it is necessary to reset the part to get a new
+                  // partGuid as there can only ever be one evaluation
+                  // per partGuid.
+                  const partResponse = await onResetPart(attemptGuid, partGuid);
+                  partGuid = partResponse.attemptState.attemptGuid;
+                  // import state to new part, luckily the current state
+                  // is already included in the score message so no need
+                  // to maintain it in state.
+                  await onSaveActivity(attemptGuid, [
+                    {
                       attemptGuid: partGuid,
-                      response: { input: msg.score.input }
-                    }]);
-                  }
-                  onSubmitEvaluations(attemptGuid, [{
-                    score: msg.score.score,
-                    outOf: msg.score.outOf,
-                    feedback: model.feedback[Number(msg.score.complete)],
-                    response: { input: msg.score.input },
-                    attemptGuid: partGuid,
-                  }]);
+                      response: { input: msg.score.input },
+                    },
+                  ]);
+                  // }
+                  onSubmitEvaluations(attemptGuid, [
+                    {
+                      score: msg.score.score,
+                      outOf: msg.score.outOf,
+                      feedback: model.feedback[Number(msg.score.complete)],
+                      response: { input: msg.score.input },
+                      attemptGuid: partGuid,
+                    },
+                  ]);
                 } catch (err) {
                   console.error(err);
                 }
@@ -86,14 +99,17 @@ const LogicLab: React.FC<LogicLabDeliveryProps> = () => {
               break;
             // respond to lab request to save state.
             case 'save':
-              if (mode === 'delivery') { // only update in delivery mode.
+              if (mode === 'delivery') {
+                // only update in delivery mode.
                 try {
-                  await onSaveActivity(attemptGuid, [{
-                    attemptGuid: partGuid,
-                    response: {
-                      input: msg.state,
-                    }
-                  }]);
+                  await onSaveActivity(attemptGuid, [
+                    {
+                      attemptGuid: partGuid,
+                      response: {
+                        input: msg.state,
+                      },
+                    },
+                  ]);
                 } catch (err) {
                   console.error(err);
                 }
@@ -119,7 +135,7 @@ const LogicLab: React.FC<LogicLabDeliveryProps> = () => {
           }
         }
       }
-    }
+    };
     window.addEventListener('message', onMessage);
 
     return () => window.removeEventListener('message', onMessage);
@@ -129,7 +145,7 @@ const LogicLab: React.FC<LogicLabDeliveryProps> = () => {
   const url = new URL('http://localhost:5173');
   url.searchParams.append('activity', activity); // FIXME for servlet use first url
   url.searchParams.append('mode', mode);
-  url.searchParams.append('attemptGuid', activityState.attemptGuid)
+  url.searchParams.append('attemptGuid', activityState.attemptGuid);
   return (
     <iframe
       src={url.toString()}
@@ -138,8 +154,8 @@ const LogicLab: React.FC<LogicLabDeliveryProps> = () => {
       width="100%"
       data-activity-mode={mode}
     ></iframe>
-  )
-}
+  );
+};
 
 /**
  * Torus Delivery component for LogicLab activities.
@@ -157,7 +173,7 @@ export class LogicLabDelivery extends DeliveryElement<LogicLabModelSchema> {
         </DeliveryElementProvider>
       </Provider>,
       mountPoint,
-    )
+    );
   }
 }
 

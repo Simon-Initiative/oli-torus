@@ -1,4 +1,4 @@
-import { ActivityModelSchema, Feedback, Part, Transformation } from "../types";
+import { ActivityModelSchema, Feedback, Part, Transformation } from '../types';
 
 export interface LogicLabModelSchema extends ActivityModelSchema {
   src: string;
@@ -23,7 +23,7 @@ export interface LabMessageBase {
   messageType: string;
 }
 export function isLabMessage(msg: LabMessageBase | unknown): msg is LabMessage {
-  return !!msg && typeof(msg) == 'object' && 'messageType' in msg;
+  return !!msg && typeof msg == 'object' && 'messageType' in msg;
 }
 export interface ScoreMessage extends LabMessageBase {
   messageType: 'score';
@@ -58,7 +58,7 @@ export type LabActivity = {
     score: string;
     // TODO objectives
     // TODO activity specific specs
-  }
+  };
   comment?: string;
   keywords: string[];
-}
+};

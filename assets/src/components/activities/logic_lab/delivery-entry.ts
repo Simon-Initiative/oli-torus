@@ -1,1 +1,1 @@
-export { LogicLabDelivery} from './LogicLabDelivery';
+export { LogicLabDelivery } from './LogicLabDelivery';
