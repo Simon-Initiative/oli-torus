@@ -512,7 +512,11 @@ defmodule Oli.Delivery.AttemptsTest do
     test "get graded resource accesses where the last lms sync failed - returns empty when no failed sync exists" do
       user = insert(:user)
 
-      {:ok, section: section, unit_one_revision: _unit_one_revision, page_revision: page_revision} =
+      {:ok,
+       section: section,
+       unit_one_revision: _unit_one_revision,
+       page_revision: page_revision,
+       page_2_revision: _page_2_revision} =
         section_with_assessment(%{})
 
       last_grade_update = insert(:lms_grade_update)
@@ -532,7 +536,11 @@ defmodule Oli.Delivery.AttemptsTest do
       user1 = insert(:user)
       user2 = insert(:user)
 
-      {:ok, section: section, unit_one_revision: _unit_one_revision, page_revision: page_revision} =
+      {:ok,
+       section: section,
+       unit_one_revision: _unit_one_revision,
+       page_revision: page_revision,
+       page_2_revision: _page_2_revision} =
         section_with_assessment(%{})
 
       last_successful_grade_update = insert(:lms_grade_update)

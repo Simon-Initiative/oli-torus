@@ -46,7 +46,11 @@ defmodule OliWeb.GradesLiveTest do
 
     deployment = insert(:lti_deployment, %{registration: registration})
 
-    {:ok, section: section, unit_one_revision: _unit_one_revision, page_revision: _page_revision} =
+    {:ok,
+     section: section,
+     unit_one_revision: _unit_one_revision,
+     page_revision: _page_revision,
+     page_2_revision: _page_2_revision} =
       section_with_assessment(%{}, deployment)
 
     [section: section]
@@ -164,7 +168,8 @@ defmodule OliWeb.GradesLiveTest do
     test "update line items - shows an info message when line items are already up to date", %{
       conn: conn,
       section: section,
-      page_revision: page_revision
+      page_revision: page_revision,
+      page_2_revision: page_2_revision
     } do
       url_line_items = section.line_items_service_url <> "?limit=1000"
 
@@ -172,8 +177,10 @@ defmodule OliWeb.GradesLiveTest do
         {:ok,
          %HTTPoison.Response{
            status_code: 200,
-           body:
-             "[{\"id\": \"1\", \"label\":\"#{page_revision.title}\", \"resourceId\":\"oli-torus-#{page_revision.resource_id}\", \"scoreMaximum\":1.0}]"
+           body: "[
+              {\"id\": \"1\", \"label\":\"#{page_revision.title}\", \"resourceId\":\"oli-torus-#{page_revision.resource_id}\", \"scoreMaximum\":1.0},
+              {\"id\": \"2\", \"label\":\"#{page_2_revision.title}\", \"resourceId\":\"oli-torus-#{page_2_revision.resource_id}\", \"scoreMaximum\":1.0}
+              ]"
          }}
       end)
 
@@ -200,17 +207,18 @@ defmodule OliWeb.GradesLiveTest do
         {:ok,
          %HTTPoison.Response{
            status_code: 200,
-           body:
-             "[{ \"id\": \"id\", \"scoreMaximum\": \"scoreMaximum\", \"resourceId\": \"resourceId\", \"label\": \"label\" }]"
+           body: "[
+            { \"id\": \"id1\", \"scoreMaximum1\": \"scoreMaximum\", \"resourceId\": \"resourceId1\", \"label\": \"label1\" },
+            { \"id\": \"id2\", \"scoreMaximum2\": \"scoreMaximum\", \"resourceId\": \"resourceId2\", \"label\": \"label2\" }
+            ]"
          }}
       end)
-
-      expect(MockHTTP, :post, fn ^line_items_service_url, _body, _headers ->
+      |> expect(:post, 2, fn ^line_items_service_url, _body, _headers ->
         {:ok,
          %HTTPoison.Response{
            status_code: 200,
            body:
-             "{\"id\": \"1\", \"label\":\"Progress test revision\", \"resourceId\":\"oli-torus-1744\", \"scoreMaximum\":1.0}"
+             "{\"id\": \"1\", \"label\":\"Revision(s)\", \"resourceId\":\"oli-torus-1744\", \"scoreMaximum\":1.0}"
          }}
       end)
 
@@ -222,6 +230,10 @@ defmodule OliWeb.GradesLiveTest do
         "Update LMS Line Items"
       )
       |> render_click()
+
+      # Wait to complete processing all :pop_task_queue messages
+      # https://elixirforum.com/t/testing-liveviews-that-rely-on-pubsub-for-updates/40938/5
+      _ = :sys.get_state(view.pid)
 
       assert has_element?(view, "div.alert.alert-info", "LMS up to date")
     end
@@ -400,8 +412,16 @@ defmodule OliWeb.GradesLiveTest do
           Routes.page_delivery_path(OliWeb.Endpoint, :export_gradebook, section.slug)
         )
 
+      user_1_name = Utils.name(user_1.name, user_1.given_name, user_1.family_name)
+      user_2_name = Utils.name(user_2.name, user_2.given_name, user_2.family_name)
+
       assert response(conn, 200) =~
-               ~s{Student,Progress test revision\r\n    Points Possible,#{@out_of}\r\n"#{Utils.name(user_1.name, user_1.given_name, user_1.family_name)} (#{user_1.email})",#{resource_access_1.score}\r\n"#{Utils.name(user_2.name, user_2.given_name, user_2.family_name)} (#{user_2.email})",#{resource_access_2.score}\r\n}
+               """
+               Student,Progress test revision,Other test revision\r
+                   Points Possible,#{@out_of},\r
+               \"#{user_1_name} (#{user_1.email})\",#{resource_access_1.score},\r
+               \"#{user_2_name} (#{user_2.email})\",#{resource_access_2.score},\r
+               """
     end
 
     test "download gradebook - download file without grades succesfully", %{
@@ -428,8 +448,16 @@ defmodule OliWeb.GradesLiveTest do
           Routes.page_delivery_path(OliWeb.Endpoint, :export_gradebook, section.slug)
         )
 
+      user_1_name = Utils.name(user_1.name, user_1.given_name, user_1.family_name)
+      user_2_name = Utils.name(user_2.name, user_2.given_name, user_2.family_name)
+
       assert response(conn, 200) =~
-               ~s{Student,Progress test revision\r\n    Points Possible,\r\n"#{Utils.name(user_1.name, user_1.given_name, user_1.family_name)} (#{user_1.email})",\r\n"#{Utils.name(user_2.name, user_2.given_name, user_2.family_name)} (#{user_2.email})",\r\n}
+               """
+               Student,Progress test revision,Other test revision\r
+                   Points Possible,,\r
+               \"#{user_1_name} (#{user_1.email})\",#{},\r
+               \"#{user_2_name} (#{user_2.email})\",#{},\r
+               """
     end
   end
 
