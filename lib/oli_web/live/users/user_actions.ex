@@ -52,7 +52,7 @@ defmodule OliWeb.Users.Actions do
       <% end %>
 
       <%= if @for_author do %>
-        <%= if @user.system_role_id == SystemRole.role_id().admin do %>
+        <%= if @user.system_role_id == SystemRole.role_id().system_admin do %>
           <button class="btn btn-warning" phx-click="show_revoke_admin_modal" phx-value-id={@user.id}>
             Revoke admin
           </button>

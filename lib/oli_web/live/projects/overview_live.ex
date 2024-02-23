@@ -22,7 +22,7 @@ defmodule OliWeb.Projects.OverviewLive do
     project = socket.assigns.project
 
     author = socket.assigns[:current_author]
-    is_admin? = Accounts.is_admin?(author)
+    is_admin? = Accounts.has_admin_role?(author)
 
     latest_published_publication =
       Publishing.get_latest_published_publication_by_slug(project.slug)

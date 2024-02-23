@@ -2,6 +2,7 @@ defmodule OliWeb.Api.ActivityController do
   use OliWeb, :controller
   use OpenApiSpex.Controller
 
+  alias Oli.Accounts
   alias Oli.Authoring.Editing.ActivityEditor
   alias Oli.Delivery.Attempts.ActivityLifecycle.Evaluate, as: ActivityEvaluation
   alias Oli.Delivery.Attempts.ActivityLifecycle
@@ -430,12 +431,12 @@ defmodule OliWeb.Api.ActivityController do
   defp is_preview_mode?(_), do: false
 
   defp has_access?(conn, user, section_slug, is_preview_mode) do
-    if is_preview_mode do
-      is_admin? = Oli.Accounts.is_admin?(conn.assigns[:current_author])
-      Sections.is_instructor?(user, section_slug) or is_admin?
-    else
-      Sections.is_enrolled?(user.id, section_slug)
-    end
+    current_author = conn.assigns[:current_author]
+
+    if is_preview_mode,
+      do:
+        Sections.is_instructor?(user, section_slug) or Accounts.is_system_admin?(current_author),
+      else: Sections.is_enrolled?(user.id, section_slug)
   end
 
   # --------- END DELIVERY PREVIEW ---------

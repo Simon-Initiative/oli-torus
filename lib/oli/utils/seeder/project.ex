@@ -61,7 +61,7 @@ defmodule Oli.Utils.Seeder.Project do
       Author.noauth_changeset(%Author{}, %{
         email: "#{Slug.slugify(name)}@test.com",
         given_name: name,
-        system_role_id: SystemRole.role_id().admin
+        system_role_id: SystemRole.role_id().system_admin
       })
       |> Repo.insert()
 
