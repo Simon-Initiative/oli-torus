@@ -1,22 +1,37 @@
 defmodule Oli.Plugs.EnsureAdmin do
   import Plug.Conn
-  alias Oli.Accounts.SystemRole
-
-  @admin_role_id SystemRole.role_id() |> Map.get(:admin)
+  alias Oli.Accounts
 
   def init(opts), do: opts
 
   def call(conn, _opts) do
-    %{system_role_id: system_role_id} = conn.assigns[:current_author]
+    if Accounts.has_admin_role?(conn.assigns[:current_author]) do
+      conn
+    else
+      conn
+      |> resp(403, "Forbidden")
+      |> halt()
+    end
+  end
 
-    case system_role_id do
-      @admin_role_id ->
-        conn
+  def reject_content_admin(conn, _opts) do
+    if Accounts.is_content_admin?(conn.assigns[:current_author]) do
+      conn
+      |> resp(403, "Forbidden")
+      |> halt()
+    else
+      conn
+    end
+  end
 
-      _ ->
-        conn
-        |> resp(403, "Forbidden")
-        |> halt()
+  def reject_content_or_account_admin(conn, _opts) do
+    if Accounts.is_content_admin?(conn.assigns[:current_author]) ||
+         Accounts.is_account_admin?(conn.assigns[:current_author]) do
+      conn
+      |> resp(403, "Forbidden")
+      |> halt()
+    else
+      conn
     end
   end
 end
