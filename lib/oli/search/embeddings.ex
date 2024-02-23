@@ -88,7 +88,7 @@ defmodule Oli.Search.Embeddings do
   end
 
   def embedding_for_input(input) do
-    case OpenAI.embeddings(
+    case Oli.OpenAIClient.embeddings(
            [model: "text-embedding-ada-002", input: input],
            Oli.Conversation.Dialogue.config(:sync)
          ) do
