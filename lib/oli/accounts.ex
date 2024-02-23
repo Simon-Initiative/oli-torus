@@ -441,13 +441,45 @@ defmodule Oli.Accounts do
   end
 
   @doc """
-  Returns true if an author is an administrator.
+  Returns true if an author is a content admin.
   """
-  def is_admin?(%Author{system_role_id: system_role_id}) do
-    SystemRole.role_id().admin == system_role_id
+  def is_content_admin?(%Author{system_role_id: system_role_id}) do
+    SystemRole.role_id().content_admin == system_role_id
   end
 
-  def is_admin?(_), do: false
+  def is_content_admin?(_), do: false
+
+  @doc """
+  Returns true if an author is an account admin.
+  """
+  def is_account_admin?(%Author{system_role_id: system_role_id}) do
+    SystemRole.role_id().account_admin == system_role_id
+  end
+
+  def is_account_admin?(_), do: false
+
+  @doc """
+  Returns true if an author is a system admin.
+  """
+  def is_system_admin?(%Author{system_role_id: system_role_id}) do
+    SystemRole.role_id().system_admin == system_role_id
+  end
+
+  def is_system_admin?(_), do: false
+
+  @doc """
+  Returns true if an author has some role admin.
+  """
+
+  def has_admin_role?(%Author{system_role_id: system_role_id}) do
+    system_role_id in [
+      SystemRole.role_id().system_admin,
+      SystemRole.role_id().account_admin,
+      SystemRole.role_id().content_admin
+    ]
+  end
+
+  def has_admin_role?(_), do: false
 
   @doc """
   Returns an author if one matches given email, or creates and returns a new author
@@ -721,48 +753,40 @@ defmodule Oli.Accounts do
   end
 
   def can_access?(author, project) do
-    admin_role_id = SystemRole.role_id().admin
-
-    case author do
+    if has_admin_role?(author) do
       # Admin authors have access to every project
-      %{system_role_id: ^admin_role_id} ->
-        true
-
+      true
+    else
       # querying join table rather than author's project associations list
       # in case the author has many projects
-      _ ->
-        Repo.one(
-          from(assoc in "authors_projects",
-            where:
-              assoc.author_id == ^author.id and
-                assoc.project_id == ^project.id,
-            select: count(assoc)
-          )
-        ) != 0
+      Repo.one(
+        from(assoc in "authors_projects",
+          where:
+            assoc.author_id == ^author.id and
+              assoc.project_id == ^project.id,
+          select: count(assoc)
+        )
+      ) != 0
     end
   end
 
   def can_access_via_slug?(author, project_slug) do
-    admin_role_id = SystemRole.role_id().admin
-
-    case author do
+    if has_admin_role?(author) do
       # Admin authors have access to every project
-      %{system_role_id: ^admin_role_id} ->
-        true
-
+      true
+    else
       # querying join table rather than author's project associations list
       # in case the author has many projects
-      _ ->
-        Repo.one(
-          from(assoc in "authors_projects",
-            join: p in "projects",
-            on: assoc.project_id == p.id,
-            where:
-              assoc.author_id == ^author.id and
-                p.slug == ^project_slug,
-            select: count(assoc)
-          )
-        ) != 0
+      Repo.one(
+        from(assoc in "authors_projects",
+          join: p in "projects",
+          on: assoc.project_id == p.id,
+          where:
+            assoc.author_id == ^author.id and
+              p.slug == ^project_slug,
+          select: count(assoc)
+        )
+      ) != 0
     end
   end
 
