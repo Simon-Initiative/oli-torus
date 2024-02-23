@@ -8,7 +8,9 @@ defmodule Oli.Accounts.SystemRole do
   def role_id,
     do: %{
       author: 1,
-      admin: 2
+      system_admin: 2,
+      account_admin: 3,
+      content_admin: 4
     }
 
   schema "system_roles" do
