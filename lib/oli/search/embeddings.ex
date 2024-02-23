@@ -100,7 +100,28 @@ defmodule Oli.Search.Embeddings do
     end
   end
 
-  def update_all(publication_id, sync \\ false) do
+  @doc """
+  Updates the embeddings for a list of revision ids.
+  The publication_id is used to broadcast "revision_embedding_complete" events (see OliWeb.Search.EmbeddingsLive).
+  The third optional argument, sync, is used to determine if the embeddings should be calculated synchronously
+  or asynchronously (by bulk inserting Oban jobs that will calculate them).
+  """
+
+  @spec update_by_revision_ids([integer], integer, boolean) :: any
+  def update_by_revision_ids(revision_ids, publication_id, sync \\ false)
+
+  def update_by_revision_ids(revision_ids, publication_id, true) do
+    Enum.each(revision_ids, fn revision_id ->
+      EmbeddingWorker.perform_now(revision_id, publication_id)
+    end)
+  end
+
+  def update_by_revision_ids(revision_ids, publication_id, false) do
+    Enum.map(revision_ids, fn revision_id ->
+      EmbeddingWorker.new(%{revision_id: revision_id, publication_id: publication_id})
+    end)
+    |> Oban.insert_all()
+  end
 
   @doc """
   Calculates the embeddings for all revisions in a publication that do not yet have embeddings.
@@ -180,5 +201,25 @@ defmodule Oli.Search.Embeddings do
       [p, r, re],
       p.publication_id == ^publication_id and r.resource_type_id == ^page_type_id
     )
+  end
+
+  @doc """
+  Returns a list of page revision ids that are published and have no embeddings
+  """
+
+  @spec page_revisions_without_embedding_for_publication(publication_id :: integer) :: [integer]
+  def page_revisions_without_embedding_for_publication(publication_id) do
+    page_type_id = Oli.Resources.ResourceType.get_id_by_type("page")
+
+    from(pr in PublishedResource,
+      join: r in Revision,
+      on: r.id == pr.revision_id,
+      where: pr.publication_id == ^publication_id and r.resource_type_id == ^page_type_id,
+      left_join: re in RevisionEmbedding,
+      on: re.revision_id == r.id,
+      where: is_nil(re.revision_id),
+      select: r.id
+    )
+    |> Repo.all()
   end
 end
