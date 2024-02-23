@@ -146,7 +146,7 @@ defmodule Oli.Delivery.Sections.Section do
     field(:apply_major_updates, :boolean, default: false)
 
     # enable/disable the ai chatbot assistant for this section
-    field(:assistant_enabled, :boolean, default: true)
+    field(:assistant_enabled, :boolean, default: false)
 
     timestamps(type: :utc_datetime)
   end
