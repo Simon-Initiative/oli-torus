@@ -76,6 +76,8 @@ import { TableConjugation } from '../../../components/common/TableConjugation';
 import { Popup } from '../../../components/content/Popup';
 import { cellAttributes } from '../../../components/editing/elements/table/table-util';
 import { VideoPlayer } from '../../../components/video_player/VideoPlayer';
+import { schema } from '../model/schema';
+import { PointMarkerContext, maybePointMarkerAttr } from '../utils';
 import { WriterContext } from './context';
 import { ContentWriter, Next, WriterImpl } from './writer';
 
@@ -139,7 +141,7 @@ export class HtmlParser implements WriterImpl {
   }
 
   p(context: WriterContext, next: Next, x: Paragraph) {
-    return <p {...maybe_point_marker_attr(context, x)}>{next()}</p>;
+    return <p {...maybePointMarkerAttr(x, pointMarkerContextFrom(context, x))}>{next()}</p>;
   }
   h1(context: WriterContext, next: Next, _x: HeadingOne) {
     return <h1>{next()}</h1>;
@@ -285,7 +287,7 @@ export class HtmlParser implements WriterImpl {
         alt={attrs.alt ? this.escapeXml(attrs.alt) : ''}
         width={attrs.width ? this.escapeXml(String(attrs.width)) : undefined}
         src={this.escapeXml(attrs.src)}
-        {...maybe_point_marker_attr(context, attrs)}
+        {...maybePointMarkerAttr(attrs, pointMarkerContextFrom(context, attrs))}
       />,
     );
   }
@@ -303,7 +305,9 @@ export class HtmlParser implements WriterImpl {
   }
 
   video(context: WriterContext, next: Next, attrs: Video) {
-    return <VideoPlayer video={attrs} />;
+    return (
+      <VideoPlayer video={attrs} pointMarkerContext={pointMarkerContextFrom(context, attrs)} />
+    );
   }
 
   ecl(context: WriterContext, next: Next, attrs: ECLRepl) {
@@ -585,20 +589,9 @@ export class HtmlParser implements WriterImpl {
   }
 }
 
-function maybe_point_marker_attr(context: WriterContext, x: ModelElement) {
-  if (!context.renderPointMarkers || !context.isBlockLevel) {
-    return {};
-  }
-
-  if (x['id'] === undefined) {
-    console.warn(
-      'Content element missing id attribute which is required for point marker. Point marker will not be rendered.',
-      x,
-    );
-    return {};
-  }
-
+function pointMarkerContextFrom(context: WriterContext, x: ModelElement): PointMarkerContext {
   return {
-    ['data-point-marker']: x.id,
+    renderPointMarkers: !!context.renderPointMarkers,
+    isTopLevelBlock: schema[x.type].isBlock && schema[x.type].isTopLevel,
   };
 }

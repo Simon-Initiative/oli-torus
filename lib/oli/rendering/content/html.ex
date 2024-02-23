@@ -59,7 +59,7 @@ defmodule Oli.Rendering.Content.Html do
       context,
       attrs,
       [
-        ~s|<img class="figure-img img-fluid"#{maybeAlt(attrs)}#{maybeWidth(attrs)} src="#{escape_xml!(src)}"|,
+        ~s|<img class="figure-img img-fluid"#{maybe_alt(attrs)}#{maybe_width(attrs)} src="#{escape_xml!(src)}"|,
         maybe_point_marker_attr(context, attrs),
         ~s| />\n|
       ],
@@ -71,7 +71,7 @@ defmodule Oli.Rendering.Content.Html do
 
   def img_inline(%Context{} = _context, _, %{"src" => src} = attrs) do
     [
-      ~s|<img class="img-fluid"#{maybeAlt(attrs)}#{maybeWidth(attrs)} src="#{escape_xml!(src)}"/>\n|
+      ~s|<img class="img-fluid"#{maybe_alt(attrs)}#{maybe_width(attrs)} src="#{escape_xml!(src)}"/>\n|
     ]
   end
 
@@ -79,7 +79,13 @@ defmodule Oli.Rendering.Content.Html do
 
   def video(%Context{} = context, _, attrs) do
     {:safe, video_player} =
-      OliWeb.Common.React.component(context, "Components.VideoPlayer", %{"video" => attrs})
+      OliWeb.Common.React.component(context, "Components.VideoPlayer", %{
+        "video" => attrs,
+        "pointMarkerContext" => %{
+          renderPointMarkers: context.render_opts.render_point_markers,
+          isTopLevelBlock: context.is_block_level
+        }
+      })
 
     video_player
   end
@@ -152,7 +158,7 @@ defmodule Oli.Rendering.Content.Html do
       """
       <div class="#{container_class}">
         <div class="embed-wrapper">
-          <iframe#{maybeAlt(attrs)} class="#{iframe_class}" #{dimensions} allowfullscreen src="#{escape_xml!(src)}"></iframe>
+          <iframe#{maybe_alt(attrs)} class="#{iframe_class}" #{dimensions} allowfullscreen src="#{escape_xml!(src)}"></iframe>
         </div>
       </div>
       """
@@ -799,7 +805,7 @@ defmodule Oli.Rendering.Content.Html do
 
   def example(%Context{} = _context, next, element) do
     [
-      ~s|<div class="content-purpose example"><div class="content-purpose-label">Example</div><div #{directionAttr(element)} class="content-purpose-content">|,
+      ~s|<div class="content-purpose example"><div class="content-purpose-label">Example</div><div #{direction_attr(element)} class="content-purpose-content">|,
       next.(),
       "</div></div>\n"
     ]
@@ -807,7 +813,7 @@ defmodule Oli.Rendering.Content.Html do
 
   def learn_more(%Context{} = _context, next, element) do
     [
-      ~s|<div class="content-purpose learnmore"><div class="content-purpose-label">Learn more</div><div #{directionAttr(element)} class="content-purpose-content">|,
+      ~s|<div class="content-purpose learnmore"><div class="content-purpose-label">Learn more</div><div #{direction_attr(element)} class="content-purpose-content">|,
       next.(),
       "</div></div>\n"
     ]
@@ -815,7 +821,7 @@ defmodule Oli.Rendering.Content.Html do
 
   def manystudentswonder(%Context{} = _context, next, element) do
     [
-      ~s|<div class="content-purpose manystudentswonder"><div class="content-purpose-label">Many Students Wonder</div><div #{directionAttr(element)} class="content-purpose-content">|,
+      ~s|<div class="content-purpose manystudentswonder"><div class="content-purpose-label">Many Students Wonder</div><div #{direction_attr(element)} class="content-purpose-content">|,
       next.(),
       "</div></div>\n"
     ]
@@ -823,13 +829,13 @@ defmodule Oli.Rendering.Content.Html do
 
   def content(%Context{} = _context, next, element) do
     [
-      ~s|<div class="content" #{directionAttr(element)}>|,
+      ~s|<div class="content" #{direction_attr(element)}>|,
       next.(),
       "</div>"
     ]
   end
 
-  defp directionAttr(element) do
+  defp direction_attr(element) do
     case Map.get(element, "textDirection", "ltr") do
       "ltr" -> ""
       "rtl" -> " dir=\"rtl\""
@@ -945,14 +951,14 @@ defmodule Oli.Rendering.Content.Html do
     end
   end
 
-  defp maybeAlt(attrs) do
+  defp maybe_alt(attrs) do
     case attrs do
       %{"alt" => alt} -> " alt=\"#{escape_xml!(alt)}\""
       _ -> ""
     end
   end
 
-  defp maybeWidth(attrs) do
+  defp maybe_width(attrs) do
     case attrs do
       %{"width" => width} -> " width=\"#{escape_xml!(width)}\""
       _ -> ""
