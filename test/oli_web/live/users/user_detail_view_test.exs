@@ -601,7 +601,7 @@ defmodule OliWeb.Users.UsersDetailViewTest do
         lms_student.id
       )
 
-    admin = author_fixture(%{system_role_id: Oli.Accounts.SystemRole.role_id().admin})
+    admin = author_fixture(%{system_role_id: Oli.Accounts.SystemRole.role_id().system_admin})
 
     conn =
       Plug.Test.init_test_session(conn, lti_session: nil, section_slug: map.section_1.slug)

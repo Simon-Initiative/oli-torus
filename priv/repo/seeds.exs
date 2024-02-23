@@ -46,7 +46,7 @@ if !Oli.Repo.get_by(Oli.Accounts.Author,
            family_name: "",
            password: System.get_env("ADMIN_PASSWORD", "changeme"),
            password_confirmation: System.get_env("ADMIN_PASSWORD", "changeme"),
-           system_role_id: Oli.Accounts.SystemRole.role_id().admin
+           system_role_id: Oli.Accounts.SystemRole.role_id().system_admin
          },
          pow_config
        ) do

@@ -6,6 +6,7 @@ defmodule OliWeb.Users.AuthorsDetailViewTest do
   import Oli.Factory
 
   alias Oli.Authoring.Authors.ProjectRole
+  alias Oli.Accounts.SystemRole
 
   defp authors_detail_view(author_id) do
     Routes.live_path(OliWeb.Endpoint, OliWeb.Users.AuthorsDetailView, author_id)
@@ -338,6 +339,54 @@ defmodule OliWeb.Users.AuthorsDetailViewTest do
              |> element("#author_projects table tr[id='#{project.id}']")
              |> render() =~
                Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.OverviewLive, project.slug)
+    end
+
+    test "system admin can edit author role", %{conn: conn} do
+      author = insert(:author)
+
+      {:ok, view, _html} = live(conn, authors_detail_view(author.id))
+
+      # Start edit author
+      view
+      |> element("button[phx-click=\"start_edit\"]")
+      |> render_click()
+
+      # Assert that the author has author role
+      assert view
+             |> element("select option[value='#{author.system_role_id}']")
+             |> render() =~
+               "Author"
+
+      # Change author role to account admin
+      view
+      |> element("#edit_author[phx-submit=\"submit\"")
+      |> render_submit(%{"author" => %{"system_role_id" => "3"}})
+
+      # Assert that the author has account admin role
+      assert view
+             |> element("select option[value='#{SystemRole.role_id().account_admin}']")
+             |> render() =~
+               "Account Admin"
+
+      assert has_element?(view, "div.alert-info", "Author successfully updated.")
+    end
+  end
+
+  describe "author details - edit author" do
+    setup [:account_admin_conn]
+
+    test "non system admin cannot edit author role", %{conn: conn} do
+      author = insert(:author)
+
+      {:ok, view, _html} = live(conn, authors_detail_view(author.id))
+
+      # Start edit author
+      view
+      |> element("button[phx-click=\"start_edit\"]")
+      |> render_click()
+
+      # Assert that the author role select is disabled
+      assert has_element?(view, "select[name=\"author[system_role_id]\"][disabled=\"disabled\"]")
     end
   end
 

@@ -340,7 +340,7 @@ defmodule Oli.TestHelpers do
   def admin_conn(%{conn: conn}) do
     admin =
       author_fixture(%{
-        system_role_id: Accounts.SystemRole.role_id().admin,
+        system_role_id: Accounts.SystemRole.role_id().system_admin,
         preferences: %AuthorPreferences{show_relative_dates: false} |> Map.from_struct()
       })
 
@@ -348,6 +348,40 @@ defmodule Oli.TestHelpers do
       Pow.Plug.assign_current_user(conn, admin, OliWeb.Pow.PowHelpers.get_pow_config(:author))
 
     {:ok, conn: conn, admin: admin}
+  end
+
+  def account_admin_conn(%{conn: conn}) do
+    account_admin =
+      author_fixture(%{
+        system_role_id: Accounts.SystemRole.role_id().account_admin,
+        preferences: %AuthorPreferences{show_relative_dates: false} |> Map.from_struct()
+      })
+
+    conn =
+      Pow.Plug.assign_current_user(
+        conn,
+        account_admin,
+        OliWeb.Pow.PowHelpers.get_pow_config(:author)
+      )
+
+    {:ok, conn: conn, account_admin: account_admin}
+  end
+
+  def content_admin_conn(%{conn: conn}) do
+    content_admin =
+      author_fixture(%{
+        system_role_id: Accounts.SystemRole.role_id().content_admin,
+        preferences: %AuthorPreferences{show_relative_dates: false} |> Map.from_struct()
+      })
+
+    conn =
+      Pow.Plug.assign_current_user(
+        conn,
+        content_admin,
+        OliWeb.Pow.PowHelpers.get_pow_config(:author)
+      )
+
+    {:ok, conn: conn, content_admin: content_admin}
   end
 
   def recycle_author_session(conn, author) do
