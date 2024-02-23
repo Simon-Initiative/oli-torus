@@ -46,6 +46,7 @@ const LogicLab: React.FC<LogicLabDeliveryProps> = () => {
     listenForReviewAttemptChange(model, activityState.activityId as number, dispatch, context);
 
     setActivity(model.activity);
+    let partGuid = activityState.parts[0].attemptGuid; // Moving to higher scope which gets state saving working again.
 
     const onMessage = async (e: MessageEvent) => {
       const lab = new URL(model.src);
@@ -56,7 +57,6 @@ const LogicLab: React.FC<LogicLabDeliveryProps> = () => {
         // only lab messages from this activity for eventual support of multiple problems on a page.
         if (isLabMessage(msg) && msg.attemptGuid === activityState.attemptGuid) {
           const attemptGuid = activityState.attemptGuid;
-          let partGuid = activityState.parts[0].attemptGuid;
           switch (msg.messageType) {
             // respond to lab score request.
             case 'score':
@@ -99,6 +99,7 @@ const LogicLab: React.FC<LogicLabDeliveryProps> = () => {
               break;
             // respond to lab request to save state.
             case 'save':
+              // it seems to only save/restore properly with score
               if (mode === 'delivery') {
                 // only update in delivery mode.
                 try {
@@ -148,6 +149,7 @@ const LogicLab: React.FC<LogicLabDeliveryProps> = () => {
   url.searchParams.append('attemptGuid', activityState.attemptGuid);
   return (
     <iframe
+      title="LogicLab Activity"
       src={url.toString()}
       allowFullScreen={true}
       height="800"
