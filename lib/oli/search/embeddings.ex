@@ -101,15 +101,27 @@ defmodule Oli.Search.Embeddings do
   end
 
   def update_all(publication_id, sync \\ false) do
+
+  @doc """
+  Calculates the embeddings for all revisions in a publication that do not yet have embeddings.
+  The second optional argument, sync, is used to determine if the embeddings should be calculated synchronously
+  or asynchronously (by bulk inserting Oban jobs).
+  """
+
+  @spec update_all(integer, boolean) :: any
+  def update_all(publication_id, sync \\ false)
+
+  def update_all(publication_id, true) do
     revisions_to_embed(publication_id)
-    |> Enum.each(fn revision_id ->
-      if sync do
-        EmbeddingWorker.perform_now(revision_id, publication_id)
-      else
-        EmbeddingWorker.new(%{revision_id: revision_id, publication_id: publication_id})
-        |> Oban.insert()
-      end
+    |> Enum.each(fn revision_id -> EmbeddingWorker.perform_now(revision_id, publication_id) end)
+  end
+
+  def update_all(publication_id, false) do
+    revisions_to_embed(publication_id)
+    |> Enum.map(fn revision_id ->
+      EmbeddingWorker.new(%{revision_id: revision_id, publication_id: publication_id})
     end)
+    |> Oban.insert_all()
   end
 
   defp revisions_to_embed(publication_id) do
