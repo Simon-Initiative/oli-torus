@@ -120,7 +120,11 @@ export class HtmlParser implements WriterImpl {
       attrs.caption &&
       (typeof attrs.caption === 'string'
         ? this.escapeXml(attrs.caption)
-        : new ContentWriter().render(context, attrs.caption, new HtmlParser()));
+        : new ContentWriter().render(
+            { ...context, isBlockLevel: false },
+            attrs.caption,
+            new HtmlParser(),
+          ));
 
     const width = attrs.width ? { width: this.escapeXml(String(attrs.width)) + 'px' } : {};
 
@@ -134,8 +138,8 @@ export class HtmlParser implements WriterImpl {
     );
   }
 
-  p(context: WriterContext, next: Next, _x: Paragraph) {
-    return <p>{next()}</p>;
+  p(context: WriterContext, next: Next, x: Paragraph) {
+    return <p {...maybe_point_marker_attr(context, x)}>{next()}</p>;
   }
   h1(context: WriterContext, next: Next, _x: HeadingOne) {
     return <h1>{next()}</h1>;
@@ -281,6 +285,7 @@ export class HtmlParser implements WriterImpl {
         alt={attrs.alt ? this.escapeXml(attrs.alt) : ''}
         width={attrs.width ? this.escapeXml(String(attrs.width)) : undefined}
         src={this.escapeXml(attrs.src)}
+        {...maybe_point_marker_attr(context, attrs)}
       />,
     );
   }
@@ -361,7 +366,11 @@ export class HtmlParser implements WriterImpl {
       attrs.caption &&
       (typeof attrs.caption === 'string'
         ? this.escapeXml(attrs.caption)
-        : new ContentWriter().render(context, attrs.caption, new HtmlParser()));
+        : new ContentWriter().render(
+            { ...context, isBlockLevel: false },
+            attrs.caption,
+            new HtmlParser(),
+          ));
 
     return (
       <ContentTable model={attrs}>
@@ -574,4 +583,22 @@ export class HtmlParser implements WriterImpl {
     console.error('Content element ' + JSON.stringify(x) + ' is invalid and could not display.');
     return <div className="content invalid">Content element is invalid</div>;
   }
+}
+
+function maybe_point_marker_attr(context: WriterContext, x: ModelElement) {
+  if (!context.renderPointMarkers || !context.isBlockLevel) {
+    return {};
+  }
+
+  if (x['id'] === undefined) {
+    console.warn(
+      'Content element missing id attribute which is required for point marker. Point marker will not be rendered.',
+      x,
+    );
+    return {};
+  }
+
+  return {
+    ['data-point-marker']: x.id,
+  };
 }

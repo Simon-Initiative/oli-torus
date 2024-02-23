@@ -34,6 +34,8 @@ export interface AlternativesPreferenceSelection {
   value: string;
 }
 
+export interface PageContentChange {}
+
 export interface TorusEventMap {
   'oli-survey-submit': CustomEvent<SurveyDetails>;
   'oli-survey-reset': CustomEvent<SurveyDetails>;
@@ -42,6 +44,7 @@ export interface TorusEventMap {
   'oli-command-button-click': CustomEvent<CommandButtonClick>;
   'oli-command-inventory': CustomEvent<CommandInventory>;
   'oli-alternatives-preference-selection': CustomEvent<AlternativesPreferenceSelection>;
+  'oli-page-content-change': CustomEvent<PageContentChange>;
 }
 
 export enum Registry {
@@ -52,6 +55,7 @@ export enum Registry {
   CommandButtonClick = 'oli-command-button-click',
   CommandInventory = 'oli-command-inventory',
   AlternativesPreferenceSelection = 'oli-alternatives-preference-selection',
+  PageContentChange = 'oli-page-content-change',
 }
 
 export function makeCommandInventoryEvent(detail: CommandInventory) {
@@ -80,6 +84,10 @@ export function makeReviewModeAttemptChange(detail: ReviewModeAttemptChange) {
 
 export function makeAlternativesPreferenceSelectionEvent(detail: AlternativesPreferenceSelection) {
   return new CustomEvent(Registry.AlternativesPreferenceSelection, { detail });
+}
+
+export function makePageContentChangeEvent(detail: PageContentChange) {
+  return new CustomEvent(Registry.PageContentChange, { detail });
 }
 
 declare global {

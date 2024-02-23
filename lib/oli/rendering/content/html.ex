@@ -59,7 +59,9 @@ defmodule Oli.Rendering.Content.Html do
       context,
       attrs,
       [
-        ~s|<img class="figure-img img-fluid"#{maybeAlt(attrs)}#{maybeWidth(attrs)} src="#{escape_xml!(src)}"/>\n|
+        ~s|<img class="figure-img img-fluid"#{maybeAlt(attrs)}#{maybeWidth(attrs)} src="#{escape_xml!(src)}"|,
+        maybe_point_marker_attr(context, attrs),
+        ~s| />\n|
       ],
       "image"
     )

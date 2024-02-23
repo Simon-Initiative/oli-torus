@@ -26,6 +26,8 @@ export interface WriterContext {
     >;
     disabled: boolean;
   };
+  renderPointMarkers?: boolean;
+  isBlockLevel?: boolean;
 }
 
 export const defaultWriterContext = (params: Partial<WriterContext> = {}): WriterContext =>

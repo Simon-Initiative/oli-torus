@@ -21,7 +21,10 @@ defmodule OliWeb.Delivery.Student.LessonLive do
   on_mount {OliWeb.LiveSessionPlugs.InitPage, :previous_next_index}
 
   def mount(_params, _session, %{assigns: %{view: :practice_page}} = socket) do
-    {:ok, socket |> assign_html_and_scripts() |> assign(show_sidebar: false, point_markers: nil)}
+    {:ok,
+     socket
+     |> assign_html_and_scripts()
+     |> assign(annotations_enabled: true, show_sidebar: false, point_markers: nil)}
   end
 
   def mount(
@@ -32,7 +35,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     {:ok,
      socket
      |> assign_html_and_scripts()
-     |> assign(begin_attempt?: false, show_sidebar: false, point_markers: nil)}
+     |> assign(begin_attempt?: false)}
   end
 
   def mount(_params, _session, %{assigns: %{view: :graded_page}} = socket) do
@@ -44,7 +47,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     {:ok,
      socket
      |> assign_scripts()
-     |> assign(begin_attempt?: false, show_sidebar: false, point_markers: nil)}
+     |> assign(begin_attempt?: false)}
   end
 
   def handle_event("begin_attempt", %{"password" => password}, socket)
@@ -157,7 +160,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
      |> push_event("request_point_markers", %{})}
   end
 
-  def render(%{view: :practice_page} = assigns) do
+  def render(%{view: :practice_page, annotations_enabled: true} = assigns) do
     # For practice page the activity scripts and activity_bridge script are needed as soon as the page loads.
     ~H"""
     <.page_content_with_sidebar_layout show_sidebar={@show_sidebar}>
@@ -198,6 +201,30 @@ defmodule OliWeb.Delivery.Student.LessonLive do
         <Annotations.panel show_sidebar={@show_sidebar} />
       </:sidebar>
     </.page_content_with_sidebar_layout>
+
+    <.scripts scripts={@scripts} user_token={@user_token} />
+    """
+  end
+
+  def render(%{view: :practice_page} = assigns) do
+    # For practice page the activity scripts and activity_bridge script are needed as soon as the page loads.
+    ~H"""
+    <div class="flex-1 flex flex-col w-full overflow-auto">
+      <div class="flex-1 mt-20 px-[80px] relative">
+        <div class="container mx-auto max-w-[880px] pb-20">
+          <.page_header
+            page_context={@page_context}
+            ctx={@ctx}
+            index={@current_page["index"]}
+            container_label={Utils.get_container_label(@current_page["id"], @section)}
+          />
+
+          <div id="eventIntercept" class="content" phx-update="ignore" role="page content">
+            <%= raw(@html) %>
+          </div>
+        </div>
+      </div>
+    </div>
 
     <.scripts scripts={@scripts} user_token={@user_token} />
     """
@@ -346,9 +373,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
 
   defp page_content_with_sidebar_layout(assigns) do
     ~H"""
-    <div class={[
-      "flex-1 flex flex-col w-full overflow-hidden"
-    ]}>
+    <div class="flex-1 flex flex-col w-full overflow-hidden">
       <div class={[
         "flex-1 flex flex-col overflow-auto",
         if(@show_sidebar, do: "xl:mr-[520px]")
