@@ -32,6 +32,21 @@ defmodule Oli.Search.Embeddings do
     end
   end
 
+  @doc """
+  Returns the embeddings for a revision id.
+  ## Examples
+      iex> Oli.Search.Embeddings.by_revision_id(1)
+      [%Oli.Search.RevisionEmbedding{...}, ...]
+  """
+  @spec by_revision_id(integer) :: %Oli.Search.RevisionEmbedding{} | term() | nil
+  def by_revision_id(revision_id) do
+    from(re in RevisionEmbedding,
+      where: re.revision_id == ^revision_id,
+      select: re
+    )
+    |> Repo.all()
+  end
+
   def most_relevant_pages(input, section_id) do
     case embedding_for_input(input) do
       {:ok, embedding} ->

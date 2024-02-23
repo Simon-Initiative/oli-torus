@@ -25,6 +25,7 @@ defmodule Oli.TestHelpers do
 
   Mox.defmock(Oli.Test.MockHTTP, for: HTTPoison.Base)
   Mox.defmock(Oli.Test.MockAws, for: ExAws.Behaviour)
+  Mox.defmock(Oli.Test.MockOpenAIClient, for: Oli.OpenAIClient)
 
   defmodule CustomDispatcher do
     @moduledoc """
