@@ -7,6 +7,11 @@ export type MediaItemCreated = {
   url: string;
 };
 
+export type MediaItemsDeleted = {
+  type: 'success';
+  count: number;
+};
+
 export function getFileName(file: File) {
   const fileNameWithDot = file.name.slice(
     0,
@@ -63,6 +68,19 @@ export function createMedia(
 
     return makeRequest<MediaItemCreated>(params);
   });
+}
+
+export function deleteMedia(
+  project: ProjectSlug,
+  mediaIds: string[],
+): Promise<MediaItemsDeleted | ServerError> {
+  const params = {
+    method: 'POST',
+    url: `/media/project/${project}/delete`,
+    body: JSON.stringify({ mediaItemIds: mediaIds }),
+  };
+
+  return makeRequest<MediaItemsDeleted>(params);
 }
 
 export function fetchMedia(
