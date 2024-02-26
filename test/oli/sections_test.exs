@@ -1051,7 +1051,7 @@ defmodule Oli.SectionsTest do
       publication: publication,
     } do
 
-      {:ok, pr} = Publishing.publish_project(project, "some changes")
+      {:ok, _pr} = Publishing.publish_project(project, "some changes")
 
       %{product: product, section: section} =
         %{}

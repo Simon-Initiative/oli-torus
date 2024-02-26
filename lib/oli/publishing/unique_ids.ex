@@ -276,6 +276,10 @@ defmodule Oli.Publishing.UniqueIds do
 
   end
 
+  # An unfortunate, but necessary, duplication of the map_reduce function
+  # from the PageContent module. We needed to add "stop_at_types" and "ignore_types"
+  # to the traversal context, and it was safer to just copy the function and add
+  # this support here, as opposed to risking breaking the existing functionality
   def map_reduce(content, acc, map_fn, tr_context \\ %TraversalContext{})
 
   def map_reduce(%{"model" => model} = content, acc, map_fn, tr_context) do
