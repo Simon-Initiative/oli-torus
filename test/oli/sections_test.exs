@@ -1049,7 +1049,6 @@ defmodule Oli.SectionsTest do
       page2: page2,
       revision2: revision2
     } do
-
       {:ok, _pr} = Publishing.publish_project(project, "some changes")
 
       %{product: product, section: section} =

@@ -970,7 +970,7 @@ defmodule Oli.Publishing do
            # If the active publication has not had its "ids_added" flag set, then
            # update all page and activity resources to ensure that unique ids exist.
            # This is a one-time operation for the active publication.
-          {:ok, _} <- Oli.Publishing.UniqueIds.add_unique_ids(active_publication),
+           {:ok, _} <- Oli.Publishing.UniqueIds.add_unique_ids(active_publication),
 
            # diff publications to determine the new version number
            %PublicationDiff{edition: edition, major: major, minor: minor} <-
@@ -987,7 +987,6 @@ defmodule Oli.Publishing do
            # clone mappings for resources, activities, and objectives. This removes
            # all active locks, forcing the user to refresh the page to re-acquire the lock.
            _ <- Clone.clone_all_published_resources(active_publication.id, new_publication.id),
-
            {:ok, _} <- insert_revision_part_records(active_publication.id),
 
            # set the active publication to published
