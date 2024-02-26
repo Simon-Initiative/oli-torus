@@ -84,21 +84,6 @@ defmodule Oli.Delivery.Analytics.AnalyticsTest do
       assert activity2_results.number_of_attempts == 2
     end
 
-    test "with attempts from 1 user", %{
-      activity_with_sections_query: activity_with_sections_query,
-      seeds: seeds
-    } do
-      # test a couple activities with different users attempting them
-      activity_user1 = seeds.activity_user1.revision
-      activity1_results = Enum.find(activity_query, &(&1.slice.id == activity_user1.id))
-
-      activity_user2 = seeds.activity_user2.revision
-      activity2_results = Enum.find(activity_query, &(&1.slice.id == activity_user2.id))
-
-      assert activity1_results.number_of_attempts == 3
-      assert activity2_results.number_of_attempts == 2
-    end
-
     test "with attempts from multiple users", %{activity_query: activity_query, seeds: seeds} do
       # test an activity with multiple users attempting it
       activity_user1_user2 = seeds.activity_user1_user2.revision
