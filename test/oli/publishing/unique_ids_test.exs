@@ -1,5 +1,4 @@
 defmodule Oli.Publishing.UniqueIdsTest do
-
   use ExUnit.Case, async: true
   alias Oli.Publishing.UniqueIds
   alias Oli.TestHelpers
@@ -10,9 +9,15 @@ defmodule Oli.Publishing.UniqueIdsTest do
   end
 
   defp extract_ids(content) do
-    {_, ids} = UniqueIds.map_reduce(content, [], fn e, ids, _tr_context ->
-      {e, [Map.get(e, "id") | ids]}
-    end, UniqueIds.traversal_context())
+    {_, ids} =
+      UniqueIds.map_reduce(
+        content,
+        [],
+        fn e, ids, _tr_context ->
+          {e, [Map.get(e, "id") | ids]}
+        end,
+        UniqueIds.traversal_context()
+      )
 
     ids
   end
@@ -28,8 +33,9 @@ defmodule Oli.Publishing.UniqueIdsTest do
 
     # Extract all of the "id" attributes from the content
     # and count how many times each one appears.
-    counts_before = extract_ids(content)
-    |> Enum.frequencies()
+    counts_before =
+      extract_ids(content)
+      |> Enum.frequencies()
 
     assert Map.get(counts_before, nil) == 7
     assert Map.get(counts_before, "1") == 7
@@ -39,8 +45,9 @@ defmodule Oli.Publishing.UniqueIdsTest do
     # Now uniqueify the ids in the content and count the "id" attributes again.
     updated = UniqueIds.uniqueify(content, Oli.Resources.ResourceType.get_id_by_type("page"), 1)
 
-    counts_after = extract_ids(updated)
-    |> Enum.frequencies()
+    counts_after =
+      extract_ids(updated)
+      |> Enum.frequencies()
 
     refute Map.has_key?(counts_after, nil)
     assert Map.get(counts_after, "1") == 1
@@ -54,18 +61,21 @@ defmodule Oli.Publishing.UniqueIdsTest do
   end
 
   test "uniqueify/3 handles activity content correctly" do
-
     {:ok, content} = TestHelpers.read_json_file("./test/oli/publishing/activity.json")
-    updated = UniqueIds.uniqueify(content, Oli.Resources.ResourceType.get_id_by_type("activity"), 1)
 
-    {original_ids, updated_ids} = extract_ids_from(content, updated, fn content -> content["stem"]["content"] end)
+    updated =
+      UniqueIds.uniqueify(content, Oli.Resources.ResourceType.get_id_by_type("activity"), 1)
+
+    {original_ids, updated_ids} =
+      extract_ids_from(content, updated, fn content -> content["stem"]["content"] end)
+
     assert original_ids["1"] == 3
     assert updated_ids["1"] == 2
     assert Map.keys(updated_ids) |> Enum.count() == 2
 
     assert Jason.encode!(updated)
-    |> String.split("\"id\":\"1\"")
-    |> Enum.count() == 3
+           |> String.split("\"id\":\"1\"")
+           |> Enum.count() == 3
 
     # verify that the "id" of the part remains unchanged
     part = updated["authoring"]["parts"] |> Enum.at(0)
@@ -75,5 +85,4 @@ defmodule Oli.Publishing.UniqueIdsTest do
     input_ref = updated["stem"]["content"] |> Enum.at(2)
     assert input_ref["id"] == "1"
   end
-
 end
