@@ -249,9 +249,7 @@ defmodule OliWeb.PublishLiveTest do
 
     test "shows publication details", %{
       conn: conn,
-      project: project,
-      page_revision: page_revision,
-      container_revision: container_revision
+      project: project
     } do
       insert(:publication, project: project, published: yesterday())
       {:ok, view, _html} = live(conn, live_view_publish_route(project.slug))
@@ -260,11 +258,11 @@ defmodule OliWeb.PublishLiveTest do
 
       assert view
              |> element(".publish_changes_table tr:first-child > td:first-child")
-             |> render() =~ container_revision.title
+             |> render() =~ "Objective 1"
 
       assert view
              |> element(".publish_changes_table tr:last-child > td:first-child")
-             |> render() =~ page_revision.title
+             |> render() =~ "revision B"
 
       assert view
              |> element(
@@ -280,7 +278,7 @@ defmodule OliWeb.PublishLiveTest do
 
       assert view
              |> element(".publish_changes_table tr:first-child > td:nth-child(3)")
-             |> render() =~ "Major"
+             |> render() =~ "Minor"
 
       assert view
              |> element(".publish_changes_table tr:last-child > td:nth-child(3)")
@@ -289,20 +287,18 @@ defmodule OliWeb.PublishLiveTest do
 
     test "applies sorting to publication details table", %{
       conn: conn,
-      project: project,
-      page_revision: page_revision,
-      container_revision: container_revision
+      project: project
     } do
       insert(:publication, project: project, published: yesterday())
       {:ok, view, _html} = live(conn, live_view_publish_route(project.slug))
 
       assert view
              |> element(".publish_changes_table tr:first-child > td:first-child")
-             |> render() =~ container_revision.title
+             |> render() =~ "Objective 1"
 
       assert view
              |> element(".publish_changes_table tr:last-child > td:first-child")
-             |> render() =~ page_revision.title
+             |> render() =~ "revision B"
 
       view
       |> element(".publish_changes_table th[phx-value-sort_by=\"title\"]", "Title")
@@ -310,11 +306,11 @@ defmodule OliWeb.PublishLiveTest do
 
       assert view
              |> element(".publish_changes_table tr:first-child > td:first-child")
-             |> render() =~ page_revision.title
+             |> render() =~ "revision B"
 
       assert view
              |> element(".publish_changes_table tr:last-child > td:first-child")
-             |> render() =~ container_revision.title
+             |> render() =~ "Objective 1"
     end
 
     test "applies paging to publication details table", %{
@@ -354,7 +350,7 @@ defmodule OliWeb.PublishLiveTest do
 
       assert view
              |> element(".publish_changes_table tr:first-child > td:first-child")
-             |> render() =~ container_revision.title
+             |> render() =~ "Objective 1"
 
       refute view
              |> element(".publish_changes_table tr:last-child > td:first-child")
