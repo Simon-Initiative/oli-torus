@@ -8,6 +8,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   alias Oli.Authoring.Course.Project
   alias Oli.Delivery.Sections.SectionCache
   alias OliWeb.Common.Utils, as: WebUtils
+  alias OliWeb.Components.Delivery.Student
   alias OliWeb.Delivery.Student.Utils
 
   import Ecto.Query, warn: false, only: [from: 2]
@@ -70,7 +71,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   end
 
   def handle_params(%{"target_resource_id" => resource_id}, _uri, socket) do
-    # the goal of this callbak is to scroll to the target resource.
+    # the goal of this callback is to scroll to the target resource.
     # the target can be a unit, a module, a page contained at a module level, or a page contained in a module
 
     container_resource_type_id = Oli.Resources.ResourceType.get_id_by_type("container")
@@ -458,7 +459,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
                 </div>
               </div>
               <div class="ml-auto flex items-center gap-6">
-                <.score_summary :if={@progress == 100} raw_avg_score={@unit_raw_avg_score} />
+                <Student.score_summary :if={@progress == 100} raw_avg_score={@unit_raw_avg_score} />
                 <.progress_bar
                   percent={@progress}
                   width="100px"
@@ -844,7 +845,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
             <span class="text-[12px] leading-[16px] opacity-50 dark:text-white">
               Due: <%= @due_date %>
             </span>
-            <.score_summary raw_avg_score={@raw_avg_score} />
+            <Student.score_summary raw_avg_score={@raw_avg_score} />
           </div>
         </div>
       </div>
@@ -1132,24 +1133,6 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       </div>
       """
     end
-  end
-
-  attr :raw_avg_score, :map
-
-  def score_summary(assigns) do
-    ~H"""
-    <div :if={@raw_avg_score[:score]} role="score summary" class="flex items-center gap-[6px] ml-auto">
-      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="none">
-        <path
-          d="M3.88301 14.0007L4.96634 9.31732L1.33301 6.16732L6.13301 5.75065L7.99967 1.33398L9.86634 5.75065L14.6663 6.16732L11.033 9.31732L12.1163 14.0007L7.99967 11.5173L3.88301 14.0007Z"
-          fill="#0CAF61"
-        />
-      </svg>
-      <span class="text-[12px] leading-[16px] tracking-[0.02px] text-[#0CAF61] font-semibold whitespace-nowrap">
-        <%= format_float(@raw_avg_score[:score]) %> / <%= format_float(@raw_avg_score[:out_of]) %>
-      </span>
-    </div>
-    """
   end
 
   def video_player(assigns) do

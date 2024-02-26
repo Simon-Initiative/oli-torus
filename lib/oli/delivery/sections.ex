@@ -10,6 +10,8 @@ defmodule Oli.Delivery.Sections do
   alias Oli.Repo.{Paging, Sorting}
   alias Oli.Utils.Database
 
+  alias Oli.Delivery.Sections
+
   alias Oli.Delivery.Sections.{
     Section,
     SectionCache,
@@ -56,6 +58,7 @@ defmodule Oli.Delivery.Sections do
   alias Oli.Delivery.Paywall
   alias Oli.Delivery.Sections.PostProcessing
   alias Oli.Branding.CustomLabels
+  alias Oli.Delivery.Settings
 
   require Logger
 
@@ -1683,13 +1686,38 @@ defmodule Oli.Delivery.Sections do
   Returns a structured schedule of all scheduled section resources for the given section, ordered by month,
   week, date range, and container module.
   """
-  def get_ordered_schedule(section) do
+  def get_ordered_schedule(section, current_user_id) do
     container_labels_map =
       get_ordered_container_labels(section.slug, short_label: true)
       |> Enum.reduce(%{}, fn {container_id, label}, acc -> Map.put(acc, container_id, label) end)
 
     page_to_container_map =
       get_page_to_container_map(section.slug)
+
+    %{"container" => container_ids, "page" => page_ids} =
+      Sections.get_resource_ids_group_by_resource_type(section.slug)
+
+    progress_per_container_id =
+      Metrics.progress_across(section.id, container_ids, current_user_id)
+      |> Enum.into(%{}, fn {container_id, progress} ->
+        {container_id, progress || 0.0}
+      end)
+
+    progress_per_page_id =
+      Metrics.progress_across_for_pages(section.id, page_ids, [current_user_id])
+
+    progress_per_resource_id =
+      Map.merge(progress_per_page_id, progress_per_container_id)
+      |> Map.filter(fn {_, progress} -> progress not in [nil, 0.0] end)
+
+    raw_avg_score_per_page_id =
+      Metrics.raw_avg_score_across_for_pages(section, page_ids, [current_user_id])
+
+    user_resource_attempt_counts =
+      Metrics.get_all_user_resource_attempt_counts(section, current_user_id)
+
+    combined_settings_for_all_resources =
+      Settings.get_combined_settings_for_all_resources(section.id, current_user_id)
 
     scheduled_section_resources =
       Scheduling.retrieve(section, :pages)
@@ -1715,7 +1743,15 @@ defmodule Oli.Delivery.Sections do
             |> Enum.map(fn {date_range, section_resources} ->
               {date_range,
                section_resources
-               |> group_by_container_and_graded(container_labels_map, page_to_container_map)}
+               |> attach_section_resource_metadata(
+                 page_to_container_map,
+                 progress_per_resource_id,
+                 raw_avg_score_per_page_id,
+                 user_resource_attempt_counts,
+                 combined_settings_for_all_resources
+               )
+               |> group_by_container_and_graded()
+               |> attach_container_metadata(container_labels_map, progress_per_resource_id)}
             end)}
          end)}
       end)
@@ -1783,24 +1819,95 @@ defmodule Oli.Delivery.Sections do
     end)
   end
 
-  defp group_by_container_and_graded(
+  defmodule ScheduledSectionResource do
+    @enforce_keys [
+      :resource,
+      :container_id,
+      :graded,
+      :purpose,
+      :progress,
+      :raw_avg_score,
+      :resource_attempt_count,
+      :effective_settings
+    ]
+    defstruct [
+      :resource,
+      :container_id,
+      :graded,
+      :purpose,
+      :progress,
+      :raw_avg_score,
+      :resource_attempt_count,
+      :effective_settings
+    ]
+  end
+
+  defp attach_section_resource_metadata(
          section_resources,
-         container_labels_map,
-         page_to_container_map
+         page_to_container_map,
+         progress_per_resource_id,
+         raw_avg_score_per_page_id,
+         user_resource_attempt_counts,
+         combined_settings_for_all_resources
        ) do
     section_resources
-    |> Enum.group_by(fn sr ->
+    |> Enum.map(fn sr ->
       container_id = page_to_container_map[Integer.to_string(sr.resource_id)]
 
-      {container_labels_map[container_id], sr.graded}
+      %ScheduledSectionResource{
+        resource: sr,
+        container_id: container_id,
+        graded: sr.graded,
+        purpose: sr.purpose,
+        progress: progress_percentage(progress_per_resource_id[sr.resource_id]),
+        raw_avg_score: raw_avg_score_per_page_id[sr.resource_id],
+        resource_attempt_count: user_resource_attempt_counts[sr.resource_id] || 0,
+        effective_settings: combined_settings_for_all_resources[sr.resource_id]
+      }
     end)
   end
 
-  def get_schedule_for_current_week(section) do
+  defp group_by_container_and_graded(items) do
+    items
+    |> Enum.group_by(fn %ScheduledSectionResource{container_id: container_id, graded: graded} ->
+      {container_id, graded}
+    end)
+  end
+
+  defmodule ScheduledContainerGroup do
+    @enforce_keys [:container_id, :container_label, :graded, :progress, :resources]
+    defstruct [:container_id, :container_label, :graded, :progress, :resources]
+  end
+
+  defp attach_container_metadata(
+         container_groups,
+         container_labels_map,
+         progress_per_resource_id
+       ) do
+    container_groups
+    |> Enum.map(fn {{container_id, graded}, scheduled_resources} ->
+      %ScheduledContainerGroup{
+        container_id: container_id,
+        container_label: container_labels_map[container_id],
+        graded: graded,
+        progress: progress_percentage(progress_per_resource_id[container_id]),
+        resources: scheduled_resources
+      }
+    end)
+  end
+
+  defp progress_percentage(progress) do
+    case progress do
+      nil -> nil
+      _ -> progress * 100
+    end
+  end
+
+  def get_schedule_for_current_week(section, current_user_id) do
     current_week_number =
       OliWeb.Components.Delivery.Utils.week_number(section.start_date, DateTime.utc_now())
 
-    get_ordered_schedule(section)
+    get_ordered_schedule(section, current_user_id)
     |> Enum.map(fn {{_month, _year}, weeks} ->
       Enum.find(weeks, fn {week_number, _} -> week_number == current_week_number end)
     end)
@@ -2126,9 +2233,10 @@ defmodule Oli.Delivery.Sections do
         %Section{root_section_resource_id: root_section_resource_id} = _section
       ) do
     Repo.one(
-      from sr in SectionResource,
+      from(sr in SectionResource,
         where: sr.id == ^root_section_resource_id,
         select: sr.resource_id
+      )
     )
   end
 

@@ -55,6 +55,7 @@ defmodule Oli.Delivery.Sections.Scheduling do
         title: rev.title,
         resource_type_id: rev.resource_type_id,
         graded: rev.graded,
+        purpose: rev.purpose,
         revision_slug: rev.slug
       })
 

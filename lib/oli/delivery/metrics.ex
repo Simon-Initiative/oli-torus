@@ -1336,4 +1336,19 @@ defmodule Oli.Delivery.Metrics do
       {container_id, proficiency_range(proficiency)}
     end)
   end
+
+  def get_all_user_resource_attempt_counts(section, user_id) do
+    from(
+      a in ResourceAttempt,
+      join: ra in ResourceAccess,
+      on: a.resource_access_id == ra.id,
+      join: rev in Revision,
+      on: a.revision_id == rev.id,
+      where: ra.section_id == ^section.id and ra.user_id == ^user_id and rev.graded,
+      group_by: [ra.resource_id],
+      select: {ra.resource_id, count(a.id)}
+    )
+    |> Repo.all()
+    |> Enum.into(%{})
+  end
 end
