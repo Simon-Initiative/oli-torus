@@ -7,11 +7,12 @@ defmodule Oli.Analytics.ByPage do
   alias Oli.Publishing
   alias Oli.Authoring.Course.Project
 
-  def query_against_project_slug(project_slug) do
+  def query_against_project_slug(project_slug, []) do
     activity_pages = get_activity_pages(project_slug)
 
     Repo.all(
-      from(page in subquery(Publishing.query_unpublished_revisions_by_type(project_slug, "page")),
+      from(
+        page in subquery(Publishing.query_unpublished_revisions_by_type(project_slug, "page")),
         left_join: pairing in subquery(activity_pages),
         on: page.resource_id == pairing.page_id,
         left_join:
