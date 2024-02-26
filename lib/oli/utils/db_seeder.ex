@@ -87,7 +87,8 @@ defmodule Oli.Seeder do
     {:ok, publication} =
       Publication.changeset(%Publication{}, %{
         root_resource_id: container_resource.id,
-        project_id: project.id
+        project_id: project.id,
+        ids_added: true
       })
       |> Repo.insert()
 
@@ -190,7 +191,8 @@ defmodule Oli.Seeder do
     {:ok, publication} =
       Publication.changeset(%Publication{}, %{
         root_resource_id: container_resource.id,
-        project_id: project.id
+        project_id: project.id,
+        ids_added: true
       })
       |> Repo.insert()
 
@@ -313,7 +315,8 @@ defmodule Oli.Seeder do
     {:ok, publication} =
       Publication.changeset(%Publication{}, %{
         root_resource_id: container_resource.id,
-        project_id: project.id
+        project_id: project.id,
+        ids_added: true
       })
       |> Repo.insert()
 
@@ -464,7 +467,8 @@ defmodule Oli.Seeder do
     {:ok, publication} =
       Publication.changeset(%Publication{}, %{
         root_resource_id: container_resource.id,
-        project_id: project.id
+        project_id: project.id,
+        ids_added: true
       })
       |> Repo.insert()
 

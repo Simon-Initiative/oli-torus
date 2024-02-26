@@ -464,7 +464,8 @@ defmodule Oli.Publishing do
       with {:ok, publication} <-
              create_publication(%{
                project_id: project.id,
-               root_resource_id: resource.id
+               root_resource_id: resource.id,
+               ids_added: true
              }),
            {:ok, published_resource} <-
              create_published_resource(%{
@@ -961,6 +962,16 @@ defmodule Oli.Publishing do
              Publishing.get_latest_published_publication_by_slug(project.slug),
            now <- DateTime.utc_now(),
 
+           # Locks must be released so that users who have acquired a resource lock
+           # will be forced to re-acquire the lock with the new publication and
+           # create a new revision under that publication
+           _ <- Locks.release_all(active_publication.id),
+
+           # If the active publication has not had its "ids_added" flag set, then
+           # update all page and activity resources to ensure that unique ids exist.
+           # This is a one-time operation for the active publication.
+          {:ok, _} <- Oli.Publishing.UniqueIds.add_unique_ids(active_publication),
+
            # diff publications to determine the new version number
            %PublicationDiff{edition: edition, major: major, minor: minor} <-
              diff_publications(latest_published_publication, active_publication),
@@ -969,17 +980,14 @@ defmodule Oli.Publishing do
            {:ok, new_publication} <-
              create_publication(%{
                root_resource_id: active_publication.root_resource_id,
-               project_id: active_publication.project_id
+               project_id: active_publication.project_id,
+               ids_added: true
              }),
-
-           # Locks must be released so that users who have acquired a resource lock
-           # will be forced to re-acquire the lock with the new publication and
-           # create a new revision under that publication
-           _ <- Locks.release_all(active_publication.id),
 
            # clone mappings for resources, activities, and objectives. This removes
            # all active locks, forcing the user to refresh the page to re-acquire the lock.
            _ <- Clone.clone_all_published_resources(active_publication.id, new_publication.id),
+
            {:ok, _} <- insert_revision_part_records(active_publication.id),
 
            # set the active publication to published
@@ -991,7 +999,8 @@ defmodule Oli.Publishing do
                  description: description,
                  edition: edition,
                  major: major,
-                 minor: minor
+                 minor: minor,
+                 ids_added: true
                }
              ) do
         Oli.Authoring.Broadcaster.broadcast_publication(publication, project.slug)

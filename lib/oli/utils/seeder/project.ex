@@ -502,7 +502,8 @@ defmodule Oli.Utils.Seeder.Project do
     {:ok, publication} =
       Publication.changeset(%Publication{}, %{
         root_resource_id: curriculum_resource.id,
-        project_id: project.id
+        project_id: project.id,
+        ids_added: true
       })
       |> Repo.insert()
 
