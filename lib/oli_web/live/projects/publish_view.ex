@@ -314,7 +314,7 @@ defmodule OliWeb.Projects.PublishView do
       end)
 
     page_revision_ids_without_embeddings =
-      Embeddings.page_revisions_without_embedding_for_publication(publication_id)
+      Embeddings.revisions_to_embed(publication_id)
 
     (changed_page_revision_ids ++ page_revision_ids_without_embeddings)
     |> Enum.uniq()

@@ -121,7 +121,6 @@ defmodule Oli.Search.Embeddings do
   The third optional argument, sync, is used to determine if the embeddings should be calculated synchronously
   or asynchronously (by bulk inserting Oban jobs that will calculate them).
   """
-
   @spec update_by_revision_ids([integer], integer, boolean) :: any
   def update_by_revision_ids(revision_ids, publication_id, sync \\ false)
 
@@ -143,7 +142,6 @@ defmodule Oli.Search.Embeddings do
   The second optional argument, sync, is used to determine if the embeddings should be calculated synchronously
   or asynchronously (by bulk inserting Oban jobs).
   """
-
   @spec update_all(integer, boolean) :: any
   def update_all(publication_id, sync \\ false)
 
@@ -160,15 +158,20 @@ defmodule Oli.Search.Embeddings do
     |> Oban.insert_all()
   end
 
-  defp revisions_to_embed(publication_id) do
+  @doc """
+  Returns a list of page revision ids that are published and have no embeddings
+  """
+  @spec revisions_to_embed(publication_id :: integer) :: [integer]
+
+  def revisions_to_embed(publication_id) do
     to_embed_query(publication_id)
-    |> select([_p, r], r.id)
+    |> select([_p, r, _re], r.id)
     |> Repo.all()
   end
 
-  def count_revision_to_embed(publication_id) do
+  defp count_revision_to_embed(publication_id) do
     to_embed_query(publication_id)
-    |> select([_p, r], count(r.id))
+    |> select([_p, r, _re], count(r.id))
     |> Repo.one()
   end
 
@@ -216,25 +219,5 @@ defmodule Oli.Search.Embeddings do
       [p, r, re],
       p.publication_id == ^publication_id and r.resource_type_id == ^page_type_id
     )
-  end
-
-  @doc """
-  Returns a list of page revision ids that are published and have no embeddings
-  """
-
-  @spec page_revisions_without_embedding_for_publication(publication_id :: integer) :: [integer]
-  def page_revisions_without_embedding_for_publication(publication_id) do
-    page_type_id = Oli.Resources.ResourceType.get_id_by_type("page")
-
-    from(pr in PublishedResource,
-      join: r in Revision,
-      on: r.id == pr.revision_id,
-      where: pr.publication_id == ^publication_id and r.resource_type_id == ^page_type_id,
-      left_join: re in RevisionEmbedding,
-      on: re.revision_id == r.id,
-      where: is_nil(re.revision_id),
-      select: r.id
-    )
-    |> Repo.all()
   end
 end
