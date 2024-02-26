@@ -32,7 +32,8 @@ defmodule Oli.Delivery.Sections.MinimalHierarchy do
       collab_space_config: r.collab_space_config,
       max_attempts: r.max_attempts,
       retake_mode: r.retake_mode,
-      project_id: p.project_id
+      project_id: p.project_id,
+      deleted: r.deleted
     })
     |> Repo.all()
     |> Enum.reduce(%{}, fn r, m -> Map.put(m, r.resource_id, r) end)
@@ -59,7 +60,8 @@ defmodule Oli.Delivery.Sections.MinimalHierarchy do
       scoring_strategy_id: r.scoring_strategy_id,
       collab_space_config: r.collab_space_config,
       max_attempts: r.max_attempts,
-      retake_mode: r.retake_mode
+      retake_mode: r.retake_mode,
+      deleted: r.deleted
     })
     |> Repo.all()
     |> Enum.map(fn pr -> Map.put(pr, :project_id, project_id) end)
@@ -84,7 +86,8 @@ defmodule Oli.Delivery.Sections.MinimalHierarchy do
     Map.put(
       node,
       :children,
-      Enum.map(children_ids, fn sr_id ->
+      Enum.filter(children_ids, fn sr_id -> !is_nil(Map.get(nodes_by_sr_id, sr_id)) end)
+      |> Enum.map(fn sr_id ->
         Map.get(nodes_by_sr_id, sr_id)
         |> hierarchy_node_with_children(nodes_by_sr_id)
       end)

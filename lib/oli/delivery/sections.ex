@@ -42,7 +42,6 @@ defmodule Oli.Delivery.Sections do
   alias OliWeb.Common.FormatDateTime
   alias Oli.Delivery.PreviousNextIndex
   alias Ecto.Multi
-  alias Oli.Delivery.Gating.GatingCondition
   alias Oli.Delivery.Attempts.Core.ResourceAccess
   alias Oli.Delivery.Metrics
   alias Oli.Delivery.Paywall
@@ -2464,42 +2463,49 @@ defmodule Oli.Delivery.Sections do
               new_published_resource = new_published_resources_map[resource_id]
               new_children = new_published_resource.children
 
-              case current_children do
-                nil ->
-                  # this section resource was just created so it can assume the newly published value
-                  %SectionResource{
-                    section_resource
-                    | children: Enum.map(new_children, &resource_id_to_sr_id[&1])
-                  }
+              updated_section_resource =
+                case current_children do
+                  nil ->
+                    # this section resource was just created so it can assume the newly published value
+                    %SectionResource{
+                      section_resource
+                      | children: Enum.map(new_children, &resource_id_to_sr_id[&1])
+                    }
 
-                current_children ->
-                  # ensure we are comparing resource_ids to resource_ids (and not section_resource_ids)
-                  # by translating the current section_resource children ids to resource_ids
-                  current_children_resource_ids =
-                    Enum.map(current_children, &sr_id_to_resource_id[&1])
+                  current_children ->
+                    # ensure we are comparing resource_ids to resource_ids (and not section_resource_ids)
+                    # by translating the current section_resource children ids to resource_ids
+                    current_children_resource_ids =
+                      Enum.map(current_children, &sr_id_to_resource_id[&1])
 
-                  # check if the children resource_ids have diverged from the new value
-                  if current_children_resource_ids != new_children do
-                    # There is a merge conflict between the current section resource and the new published resource.
-                    # Use the AIRRO three way merge algorithm to resolve
-                    base = prev_published_resource.children
-                    source = new_published_resource.children
-                    target = current_children_resource_ids
+                    # check if the children resource_ids have diverged from the new value
+                    if current_children_resource_ids != new_children do
+                      # There is a merge conflict between the current section resource and the new published resource.
+                      # Use the AIRRO three way merge algorithm to resolve
+                      base = prev_published_resource.children
+                      source = new_published_resource.children
+                      target = current_children_resource_ids
 
-                    case Oli.Publishing.Updating.Merge.merge(base, source, target) do
-                      {:ok, merged} ->
-                        %SectionResource{
+                      case Oli.Publishing.Updating.Merge.merge(base, source, target) do
+                        {:ok, merged} ->
+                          %SectionResource{
+                            section_resource
+                            | children: Enum.map(merged, &resource_id_to_sr_id[&1])
+                          }
+
+                        {:no_change} ->
                           section_resource
-                          | children: Enum.map(merged, &resource_id_to_sr_id[&1])
-                        }
-
-                      {:no_change} ->
-                        section_resource
+                      end
+                    else
+                      section_resource
                     end
-                  else
-                    section_resource
-                  end
-              end
+                end
+
+              clean_children(
+                updated_section_resource,
+                sr_id_to_resource_id,
+                new_published_resources_map
+              )
             else
               section_resource
             end
@@ -2569,6 +2575,24 @@ defmodule Oli.Delivery.Sections do
     )
 
     result
+  end
+
+  # For a given section resource, clean the children attribute to ensure that:
+  # 1. Any nil records are removed
+  # 2. All non-nil sr id references map to a non-deleted revision in the new pub
+  defp clean_children(section_resource, sr_id_to_resource_id, new_published_resources_map) do
+    updated_children =
+      section_resource.children
+      |> Enum.filter(fn child_id -> !is_nil(child_id) end)
+      |> Enum.filter(fn child_id ->
+        case Map.get(new_published_resources_map, sr_id_to_resource_id[child_id]) do
+          nil -> false
+          %{deleted: true} -> false
+          _ -> true
+        end
+      end)
+
+    %{section_resource | children: updated_children}
   end
 
   @doc """
@@ -3029,95 +3053,94 @@ defmodule Oli.Delivery.Sections do
     end
   end
 
+  @scheduling_types Ecto.ParameterizedType.init(Ecto.Enum,
+                      values: [:due_by, :read_by, :inclass_activity, :schedule]
+                    )
   @doc """
   Returns the resources scheduled dates for a given student.
   A Student exception takes precedence over all other end dates.
   Hard sceduled dates for a specific student take precedence over "global" hard scheduled dates.
   Global hard scheduled dates take precedence over soft scheduled dates.
   """
+  @spec get_resources_scheduled_dates_for_student(String.t(), integer()) ::
+          list(%{
+            integer => %{
+              end_date: DateTime.t() | nil,
+              scheduled_type: :due_by | :read_by | :inclass_activity | :schedule
+            }
+          })
   def get_resources_scheduled_dates_for_student(section_slug, student_id) do
-    get_soft_scheduled_dates(section_slug)
-    |> Map.merge(get_hard_scheduled_dates(section_slug))
-    |> Map.merge(get_hard_scheduled_dates_for_student(section_slug, student_id))
-    |> Map.merge(get_student_exception_end_dates(section_slug, student_id))
-  end
-
-  def get_soft_scheduled_dates(section_slug) do
-    query =
-      from([sr, _s, _spp, _pr, _rev] in DeliveryResolver.section_resource_revisions(section_slug),
-        select: {
-          sr.resource_id,
-          %{end_date: sr.end_date, scheduled_type: sr.scheduling_type}
-        }
-      )
-
-    Repo.all(query)
-    |> Enum.into(%{})
-  end
-
-  def get_hard_scheduled_dates(section_slug) do
-    query =
-      from([_sr, s, _spp, _pr, _rev] in DeliveryResolver.section_resource_revisions(section_slug),
-        join: gc in GatingCondition,
-        on: gc.section_id == s.id,
-        where: gc.type == :schedule and is_nil(gc.user_id),
-        select: {
-          gc.resource_id,
-          %{
-            end_date:
-              fragment(
-                "CASE WHEN ? = 'null' THEN NULL ELSE cast(cast(? as text) as date) END",
-                gc.data["end_datetime"],
-                gc.data["end_datetime"]
-              ),
-            scheduled_type: gc.type
-          }
-        }
-      )
-
-    Repo.all(query)
-    |> Enum.into(%{})
-  end
-
-  def get_hard_scheduled_dates_for_student(section_slug, student_id) do
-    query =
-      from([_sr, s, _spp, _pr, _rev] in DeliveryResolver.section_resource_revisions(section_slug),
-        join: gc in GatingCondition,
-        on: gc.section_id == s.id,
-        where: gc.type == :schedule and gc.user_id == ^student_id,
-        select: {
-          gc.resource_id,
-          %{
-            end_date:
-              fragment(
-                "CASE WHEN ? = 'null' THEN NULL ELSE cast(cast(? as text) as date) END",
-                gc.data["end_datetime"],
-                gc.data["end_datetime"]
-              ),
-            scheduled_type: gc.type
-          }
-        }
-      )
-
-    Repo.all(query)
-    |> Enum.into(%{})
-  end
-
-  def get_student_exception_end_dates(section_slug, student_id) do
-    from([sr, s, _spp, _pr, _rev] in DeliveryResolver.section_resource_revisions(section_slug),
-      join: se in Oli.Delivery.Settings.StudentException,
-      on: se.section_id == s.id and se.resource_id == sr.resource_id,
-      where: se.user_id == ^student_id and not is_nil(se.end_date),
-      select: {
-        sr.resource_id,
-        %{
-          end_date: se.end_date,
-          scheduled_type: sr.scheduling_type
-        }
+    from(sr in Oli.Delivery.Sections.SectionResource,
+      join: s in Oli.Delivery.Sections.Section,
+      on: sr.section_id == s.id and s.slug == ^section_slug,
+      left_join: se in Oli.Delivery.Settings.StudentException,
+      on:
+        se.section_id == sr.section_id and se.resource_id == sr.resource_id and
+          se.user_id == ^student_id and not is_nil(se.end_date),
+      left_join: gc1 in Oli.Delivery.Gating.GatingCondition,
+      on:
+        gc1.section_id == sr.section_id and gc1.resource_id == sr.resource_id and
+          gc1.type == :schedule and gc1.user_id == ^student_id,
+      left_join: gc2 in Oli.Delivery.Gating.GatingCondition,
+      on:
+        gc2.section_id == sr.section_id and gc2.resource_id == sr.resource_id and
+          gc2.type == :schedule and is_nil(gc2.user_id),
+      select: %{
+        resource_id:
+          fragment(
+            "coalesce(?, ?, ?, ?)",
+            se.resource_id,
+            gc1.resource_id,
+            gc2.resource_id,
+            sr.resource_id
+          ),
+        end_date:
+          fragment(
+            """
+            COALESCE(
+                ?,
+                CASE WHEN ? = 'null' THEN NULL ELSE CAST(CAST(? AS text) AS timestamp) END,
+                CASE WHEN ? = 'null' THEN NULL ELSE CAST(CAST(? AS text) AS timestamp) END,
+                ?
+            )
+            """,
+            se.end_date,
+            gc1.data["end_datetime"],
+            gc1.data["end_datetime"],
+            gc2.data["end_datetime"],
+            gc2.data["end_datetime"],
+            sr.end_date
+          )
+          |> type(:utc_datetime),
+        scheduled_type:
+          fragment(
+            """
+            CASE WHEN ? IS NULL THEN
+              CASE WHEN ? IS NULL THEN
+                CASE WHEN ? IS NULL THEN ? ELSE ? END
+              ELSE ? END
+            ELSE ? END
+            """,
+            se.resource_id,
+            gc1.resource_id,
+            gc2.resource_id,
+            sr.scheduling_type,
+            gc2.type,
+            gc1.type,
+            sr.scheduling_type
+          )
+          |> type(^@scheduling_types)
       }
     )
     |> Repo.all()
-    |> Enum.into(%{})
+    |> Enum.reduce(%{}, fn %{
+                             end_date: end_date,
+                             resource_id: resource_id,
+                             scheduled_type: scheduled_type
+                           },
+                           acc ->
+      Map.put(acc, resource_id, %{end_date: end_date, scheduled_type: scheduled_type})
+    end)
   end
 
   defp get_pages(section_slug) do

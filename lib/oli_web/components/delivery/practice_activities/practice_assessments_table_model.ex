@@ -109,13 +109,9 @@ defmodule OliWeb.Delivery.PracticeActivities.PracticeAssessmentsTableModel do
       })
 
     ~H"""
-    <%= if @avg_score != nil do %>
-      <div class={if @students_completion < 0.40, do: "text-red-600 font-bold"}>
-        <%= format_value(@students_completion) %>
-      </div>
-    <% else %>
-      -
-    <% end %>
+    <div class={if @students_completion < 0.40, do: "text-red-600 font-bold"}>
+      <%= format_value(@students_completion) %>
+    </div>
     """
   end
 

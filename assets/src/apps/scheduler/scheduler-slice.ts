@@ -110,10 +110,22 @@ const buildHierarchyItems = (
   items: HierarchyItemSrc[],
   preferredSchedulingTime: TimeParts,
 ): HierarchyItem[] => {
+  const parseDate = (str: string, scheduleType: string) => {
+    if (!str) return null;
+
+    if (scheduleType === 'due_by' && str.length > 10) {
+      // For due-by items, we need to take the time into account to get the correct date
+      const tempDate = new Date(str);
+      return new DateWithoutTime(tempDate.getFullYear(), tempDate.getMonth(), tempDate.getDate());
+    }
+
+    return str ? new DateWithoutTime(str) : null;
+  };
+
   return items.map((item) => ({
     ...item,
-    startDate: item.start_date ? new DateWithoutTime(item.start_date) : null,
-    endDate: item.end_date ? new DateWithoutTime(item.end_date) : null,
+    startDate: parseDate(item.start_date, item.scheduling_type),
+    endDate: parseDate(item.end_date, item.scheduling_type),
     endDateTime: toDateTime(item.end_date, preferredSchedulingTime),
     startDateTime: toDateTime(item.start_date, preferredSchedulingTime),
   }));
@@ -215,9 +227,11 @@ const schedulerSlice = createSlice({
           mutableItem.startDate = action.payload.startDate;
 
           mutableItem.startDateTime = new Date();
-          mutableItem.startDateTime.setFullYear(action.payload.startDate.getFullYear());
-          mutableItem.startDateTime.setMonth(action.payload.startDate.getMonth());
-          mutableItem.startDateTime.setDate(action.payload.startDate.getDate());
+          mutableItem.startDateTime.setFullYear(
+            action.payload.startDate.getFullYear(),
+            action.payload.startDate.getMonth(),
+            action.payload.startDate.getDate(),
+          );
 
           mutableItem.startDateTime.setHours(
             state.preferredSchedulingTime.hour,
@@ -237,7 +251,7 @@ const schedulerSlice = createSlice({
           datesChanged =
             datesChanged || action.payload.endDate.getTime() !== mutableItem.endDateTime?.getTime();
 
-          mutableItem.endDate = new DateWithoutTime();
+          mutableItem.endDate = new DateWithoutTime(2020, 1, 1);
           mutableItem.endDate.setFullYear(action.payload.endDate.getFullYear());
           mutableItem.endDate.setMonth(action.payload.endDate.getMonth());
           mutableItem.endDate.setDate(action.payload.endDate.getDate());
@@ -256,9 +270,11 @@ const schedulerSlice = createSlice({
             // Need to be careful when converting from a timezone-less DateWithoutTime to a Date
             // Just doing a simple new Date(d.utcMidnightDateObj) will result in a date that may be off by a day
             mutableItem.endDateTime = new Date();
-            mutableItem.endDateTime.setFullYear(action.payload.endDate.getFullYear());
-            mutableItem.endDateTime.setMonth(action.payload.endDate.getMonth());
-            mutableItem.endDateTime.setDate(action.payload.endDate.getDate());
+            mutableItem.endDateTime.setFullYear(
+              action.payload.endDate.getFullYear(),
+              action.payload.endDate.getMonth(),
+              action.payload.endDate.getDate(),
+            );
             mutableItem.endDateTime.setHours(
               state.preferredSchedulingTime.hour,
               state.preferredSchedulingTime.minute,

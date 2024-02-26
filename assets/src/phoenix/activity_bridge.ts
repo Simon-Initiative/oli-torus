@@ -74,7 +74,7 @@ export const initActivityBridge = (elementId: string) => {
       makeRequest(
         `/api/v1/state/course/${e.detail.sectionSlug}/activity_attempt/${e.detail.attemptGuid}`,
         'POST',
-        {},
+        { survey_id: e.detail.props.context.surveyId },
         e.detail.continuation,
       );
     },

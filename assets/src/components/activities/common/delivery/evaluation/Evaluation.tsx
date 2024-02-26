@@ -2,11 +2,13 @@ import React from 'react';
 import { ActivityState, PartState, makeContent, makeFeedback } from 'components/activities/types';
 import { WriterContext } from 'data/content/writers/context';
 import { HtmlContentModelRenderer } from 'data/content/writers/renderer';
+import { isDefined } from 'utils/common';
 
 interface Props {
   shouldShow?: boolean;
   attemptState: ActivityState;
   context: WriterContext;
+  partOrder?: string[];
 }
 
 export function renderPartFeedback(partState: PartState, context: WriterContext) {
@@ -60,7 +62,12 @@ export function renderPartFeedback(partState: PartState, context: WriterContext)
   );
 }
 
-export const Evaluation: React.FC<Props> = ({ shouldShow = true, attemptState, context }) => {
+export const Evaluation: React.FC<Props> = ({
+  shouldShow = true,
+  attemptState,
+  context,
+  partOrder,
+}) => {
   const { parts } = attemptState;
   if (!shouldShow) {
     return null;
@@ -70,7 +77,14 @@ export const Evaluation: React.FC<Props> = ({ shouldShow = true, attemptState, c
     return renderPartFeedback(parts[0], context);
   }
 
-  return <>{parts.map((partState) => renderPartFeedback(partState, context))}</>;
+  // part order for migrated multi-inputs may be random, so allow caller to specify appropriate one
+  let orderedParts = parts;
+  if (partOrder) {
+    const newOrder = partOrder.map((id) => parts.find((ps) => ps.partId === id)).filter(isDefined);
+    if (newOrder.length === parts.length) orderedParts = newOrder;
+  }
+
+  return <>{orderedParts.map((partState) => renderPartFeedback(partState, context))}</>;
 };
 
 interface ComponentProps {
