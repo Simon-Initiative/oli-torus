@@ -10,7 +10,7 @@ defmodule Oli.Publishing.UniqueIdsTest do
   end
 
   defp extract_ids(content) do
-    {_, ids} = Oli.Resources.PageContent.map_reduce(content, [], fn e, ids, _tr_context ->
+    {_, ids} = UniqueIds.map_reduce(content, [], fn e, ids, _tr_context ->
       {e, [Map.get(e, "id") | ids]}
     end, UniqueIds.traversal_context())
 
