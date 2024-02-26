@@ -64,7 +64,8 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     {:ok,
      socket
      |> assign_scripts()
-     |> assign(begin_attempt?: false)}
+     |> assign(begin_attempt?: false)
+     |> assign_new(:request_path, fn -> nil end)}
   end
 
   def handle_event("begin_attempt", %{"password" => password}, socket)
@@ -622,53 +623,55 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     # We must check gating conditions here to account for gates that activated after
     # the prologue page was rendered, and for malicious/deliberate attempts to start an attempt via
     # hitting this endpoint.
-    case Oli.Delivery.Gating.blocked_by(section, user, revision.resource_id) do
-      [] ->
-        case PageLifecycle.start(
-               revision.slug,
-               section.slug,
-               datashop_session_id,
-               user,
-               effective_settings,
-               activity_provider
-             ) do
-          {:ok, _attempt_state} ->
-            page_context =
-              PageContext.create_for_visit(
-                socket.assigns.section,
-                socket.assigns.page_context.page.slug,
-                socket.assigns.current_user,
-                socket.assigns.datashop_session_id
-              )
+    with :ok <- check_gating_conditions(section, user, revision.resource_id),
+         {:ok, _attempt_state} <-
+           PageLifecycle.start(
+             revision.slug,
+             section.slug,
+             datashop_session_id,
+             user,
+             effective_settings,
+             activity_provider
+           ),
+         :ok <- maybe_redirect_adaptive(socket.assigns.view, section.slug, revision.slug) do
+      page_context =
+        PageContext.create_for_visit(
+          section,
+          socket.assigns.page_context.page.slug,
+          socket.assigns.current_user,
+          socket.assigns.datashop_session_id
+        )
 
-            {:noreply,
-             socket
-             |> assign(page_context: page_context)
-             |> assign(begin_attempt?: true, show_loader?: true)
-             |> clear_flash()
-             |> assign_html()
-             |> load_scripts_on_client_side()}
+      {:noreply,
+       socket
+       |> assign(page_context: page_context)
+       |> assign(begin_attempt?: true, show_loader?: true)
+       |> clear_flash()
+       |> assign_html()
+       |> load_scripts_on_client_side()}
+    else
+      {:redirect, to} ->
+        {:noreply, redirect(socket, to: to)}
 
-          {:error, {:end_date_passed}} ->
-            {:noreply, put_flash(socket, :error, "This assessment's end date passed.")}
-
-          {:error, {:active_attempt_present}} ->
-            {:noreply, put_flash(socket, :error, "You already have an active attempt.")}
-
-          {:error, {:no_more_attempts}} ->
-            {:noreply, put_flash(socket, :error, "You have no attempts remaining.")}
-
-          _ ->
-            {:noreply, put_flash(socket, :error, "Failed to start new attempt")}
-        end
-
-      _ ->
+      {:error, {:gates, _}} ->
         # In the case where a gate exists we want to redirect to this page display, which will
         # then pick up the gate and show that feedback to the user
         {:noreply,
          redirect(socket,
            to: Routes.page_delivery_path(socket, :page, section.slug, revision.slug)
          )}
+
+      {:error, {:end_date_passed}} ->
+        {:noreply, put_flash(socket, :error, "This assessment's end date passed.")}
+
+      {:error, {:active_attempt_present}} ->
+        {:noreply, put_flash(socket, :error, "You already have an active attempt.")}
+
+      {:error, {:no_more_attempts}} ->
+        {:noreply, put_flash(socket, :error, "You have no attempts remaining.")}
+
+      _ ->
+        {:noreply, put_flash(socket, :error, "Failed to start new attempt")}
     end
   end
 
@@ -719,4 +722,16 @@ defmodule OliWeb.Delivery.Student.LessonLive do
       script_sources: Enum.map(socket.assigns.scripts, fn script -> "/js/#{script}" end)
     })
   end
+
+  defp check_gating_conditions(section, user, resource_id) do
+    case Oli.Delivery.Gating.blocked_by(section, user, resource_id) do
+      [] -> :ok
+      gates -> {:error, {:gates, gates}}
+    end
+  end
+
+  defp maybe_redirect_adaptive(:adaptive_chromeless, section_slug, revision_slug),
+    do: {:redirect, ~p"/sections/#{section_slug}/adaptive_lesson/#{revision_slug}"}
+
+  defp maybe_redirect_adaptive(_, _, _), do: :ok
 end
