@@ -175,14 +175,14 @@ defmodule Oli.Rendering.Content do
     render_table = fn ->
       case element["table"] do
         nil -> []
-        table -> render(context, table, writer)
+        table -> render(%Context{context | is_block_level: false}, table, writer)
       end
     end
 
     render_pronunciation = fn ->
       case element["pronunciation"] do
         nil -> []
-        pronunciation -> render(context, pronunciation, writer)
+        pronunciation -> render(%Context{context | is_block_level: false}, pronunciation, writer)
       end
     end
 

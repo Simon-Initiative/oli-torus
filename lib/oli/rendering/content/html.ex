@@ -105,7 +105,11 @@ defmodule Oli.Rendering.Content.Html do
           "code" => attrs["code"],
           "id" => attrs["id"],
           "slug" => context.section_slug,
-          "attemptGuid" => attempt_guid
+          "attemptGuid" => attempt_guid,
+          "pointMarkerContext" => %{
+            renderPointMarkers: context.render_opts.render_point_markers,
+            isTopLevelBlock: context.is_block_level
+          }
         }
       )
 
@@ -114,7 +118,13 @@ defmodule Oli.Rendering.Content.Html do
 
   def youtube(%Context{} = context, _, %{"src" => _} = attrs) do
     {:safe, video_player} =
-      OliWeb.Common.React.component(context, "Components.YoutubePlayer", %{"video" => attrs})
+      OliWeb.Common.React.component(context, "Components.YoutubePlayer", %{
+        "video" => attrs,
+        "pointMarkerContext" => %{
+          renderPointMarkers: context.render_opts.render_point_markers,
+          isTopLevelBlock: context.is_block_level
+        }
+      })
 
     video_player
   end
@@ -158,7 +168,7 @@ defmodule Oli.Rendering.Content.Html do
       """
       <div class="#{container_class}">
         <div class="embed-wrapper">
-          <iframe#{maybe_alt(attrs)} class="#{iframe_class}" #{dimensions} allowfullscreen src="#{escape_xml!(src)}"></iframe>
+          <iframe#{maybe_alt(attrs)} class="#{iframe_class}" #{dimensions} allowfullscreen src="#{escape_xml!(src)}"#{maybe_point_marker_attr(context, attrs)}></iframe>
         </div>
       </div>
       """
@@ -171,7 +181,7 @@ defmodule Oli.Rendering.Content.Html do
 
   def audio(%Context{} = context, _, %{"src" => src} = attrs) do
     captioned_content(context, attrs, [
-      ~s|<audio aria-label="#{attrs["alt"]}" controls src="#{escape_xml!(src)}">
+      ~s|<audio aria-label="#{attrs["alt"]}" controls src="#{escape_xml!(src)}"#{maybe_point_marker_attr(context, attrs)}>
       Your browser does not support the <code>audio</code> element.
     </audio>\n|
     ])
@@ -205,7 +215,7 @@ defmodule Oli.Rendering.Content.Html do
       end
 
     wrapping_fn.(context, attrs, [
-      "<table class='#{tableBorderClass(attrs)} #{tableRowClass(attrs)}'>",
+      "<table class='#{tableBorderClass(attrs)} #{tableRowClass(attrs)}'#{maybe_point_marker_attr(context, attrs)}>",
       next.(),
       "</table>\n"
     ])
@@ -308,11 +318,11 @@ defmodule Oli.Rendering.Content.Html do
     ["<ul class=\"list-inside pl-2\">", next.(), "</ul>\n"]
   end
 
-  def li(%Context{} = _context, next, _) do
-    ["<li>", next.(), "</li>\n"]
+  def li(%Context{} = context, next, attrs) do
+    ["<li#{maybe_point_marker_attr(context, attrs)}>", next.(), "</li>\n"]
   end
 
-  def conjugation(%Oli.Rendering.Context{}, render_table, render_pronunciation, attrs) do
+  def conjugation(%Context{} = context, render_table, render_pronunciation, attrs) do
     title =
       case attrs["title"] do
         nil -> ""
@@ -326,7 +336,9 @@ defmodule Oli.Rendering.Content.Html do
       end
 
     [
-      "<div class=\"conjugation\">",
+      "<div class=\"conjugation\"",
+      maybe_point_marker_attr(context, attrs),
+      ">",
       "<div class=\"title\">",
       title,
       "</div>",
@@ -339,12 +351,20 @@ defmodule Oli.Rendering.Content.Html do
     ]
   end
 
-  def dialog(%Context{}, next, %{"title" => title}) do
-    ["<div class=\"dialog\"><h1>", title, "</h1>", next.(), "</div>"]
+  def dialog(%Context{} = context, next, %{"title" => title} = attrs) do
+    [
+      "<div class=\"dialog\"",
+      maybe_point_marker_attr(context, attrs),
+      "><h1>",
+      title,
+      "</h1>",
+      next.(),
+      "</div>"
+    ]
   end
 
-  def dialog(%Context{}, next, _) do
-    ["<div class=\"dialog\">", next.(), "</div>"]
+  def dialog(%Context{} = context, next, attrs) do
+    ["<div class=\"dialog\"", maybe_point_marker_attr(context, attrs), ">", next.(), "</div>"]
   end
 
   def dialog_speaker_portrait(image) do
@@ -449,14 +469,16 @@ defmodule Oli.Rendering.Content.Html do
   end
 
   def definition(
-        %Context{} = _context,
+        %Context{} = context,
         render_translation,
         render_pronunciation,
         render_meaning,
         %{"term" => term, "meanings" => meanings} = element
       ) do
     [
-      "<div class='definition'><div class='term'>",
+      "<div class='definition'",
+      maybe_point_marker_attr(context, element),
+      "><div class='term'>",
       term,
       "</div><i>(definition)</i> <span class='definition-header'>",
       maybePronunciationHeader(element),
@@ -571,7 +593,7 @@ defmodule Oli.Rendering.Content.Html do
       end
 
     captioned_content(context, attrs, [
-      ~s|<pre><code class="torus-code language-#{language}">#{escape_xml!(code)}</code></pre>\n|
+      ~s|<pre><code class="torus-code language-#{language}"#{maybe_point_marker_attr(context, attrs)}>#{escape_xml!(code)}</code></pre>\n|
     ])
   end
 
@@ -593,7 +615,7 @@ defmodule Oli.Rendering.Content.Html do
       end
 
     captioned_content(context, attrs, [
-      ~s|<pre><code class="torus-code language-#{language}">|,
+      ~s|<pre><code class="torus-code language-#{language}"#{maybe_point_marker_attr(context, attrs)}>|,
       next.(),
       "</code></pre>\n"
     ])
@@ -651,8 +673,8 @@ defmodule Oli.Rendering.Content.Html do
     [next.()]
   end
 
-  def blockquote(%Context{} = _context, next, _) do
-    ["<blockquote>", next.(), "</blockquote>\n"]
+  def blockquote(%Context{} = context, next, attrs) do
+    ["<blockquote", maybe_point_marker_attr(context, attrs), ">", next.(), "</blockquote>\n"]
   end
 
   def a(%Context{} = context, next, %{"href" => href}) do
@@ -715,15 +737,19 @@ defmodule Oli.Rendering.Content.Html do
     ]
   end
 
-  def page_link(%Context{resource_summary_fn: resource_summary_fn} = context, _next, %{
-        "idref" => idref,
-        "purpose" => purpose
-      }) do
+  def page_link(
+        %Context{resource_summary_fn: resource_summary_fn} = context,
+        _next,
+        %{
+          "idref" => idref,
+          "purpose" => purpose
+        } = attrs
+      ) do
     %ResourceSummary{title: title, slug: slug} = resource_summary_fn.(idref)
     href = "/course/link/#{slug}"
 
     [
-      ~s|<div class="content-page-link content-purpose #{purpose}"><div class="content-purpose-label">#{Purposes.label_for(purpose)}</div>|,
+      ~s|<div class="content-page-link content-purpose #{purpose}"#{maybe_point_marker_attr(context, attrs)}><div class="content-purpose-label">#{Purposes.label_for(purpose)}</div>|,
       internal_link(
         context,
         fn ->
