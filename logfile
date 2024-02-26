@@ -1,0 +1,1379 @@
+2024-02-23 10:52:18.651 -03 [4610] LOG:  starting PostgreSQL 13.4 on arm-apple-darwin22.6.0, compiled by Apple clang version 15.0.0 (clang-1500.0.40.1), 64-bit
+2024-02-23 10:52:18.653 -03 [4610] LOG:  listening on IPv6 address "::1", port 5432
+2024-02-23 10:52:18.653 -03 [4610] LOG:  listening on IPv4 address "127.0.0.1", port 5432
+2024-02-23 10:52:18.654 -03 [4610] LOG:  listening on Unix socket "/tmp/.s.PGSQL.5432"
+2024-02-23 10:52:18.664 -03 [4611] LOG:  database system was shut down at 2024-02-23 10:47:46 -03
+2024-02-23 10:52:18.670 -03 [4610] LOG:  database system is ready to accept connections
+2024-02-23 10:56:11.797 -03 [7698] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 10:56:11.797 -03 [7698] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 10:56:41.785 -03 [7688] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 10:56:41.785 -03 [7688] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 10:57:08.861 -03 [7699] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 10:57:08.861 -03 [7699] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 10:57:36.654 -03 [7698] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 10:57:36.654 -03 [7698] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 10:58:03.839 -03 [7690] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 10:58:03.839 -03 [7690] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 10:58:33.644 -03 [7691] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 10:58:33.644 -03 [7691] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 10:59:03.540 -03 [7691] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 10:59:03.540 -03 [7691] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 10:59:31.491 -03 [7691] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 10:59:31.491 -03 [7691] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 11:00:01.484 -03 [7690] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 11:00:01.484 -03 [7690] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 11:00:29.422 -03 [7696] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 11:00:29.422 -03 [7696] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 11:00:58.964 -03 [7698] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 11:00:58.964 -03 [7698] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 11:01:26.308 -03 [7688] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 11:01:26.308 -03 [7688] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 11:01:54.646 -03 [7698] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 11:01:54.646 -03 [7698] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 11:02:23.802 -03 [7687] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 11:02:23.802 -03 [7687] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 11:02:53.430 -03 [7694] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 11:02:53.430 -03 [7694] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 11:03:21.686 -03 [7696] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 11:03:21.686 -03 [7696] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 11:03:50.743 -03 [7696] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 11:03:50.743 -03 [7696] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 11:04:20.137 -03 [7690] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 11:04:20.137 -03 [7690] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 11:04:47.240 -03 [7693] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 11:04:47.240 -03 [7693] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 11:05:16.086 -03 [7691] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 11:05:16.086 -03 [7691] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 11:05:45.651 -03 [7689] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 11:05:45.651 -03 [7689] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 11:06:15.277 -03 [7689] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 11:06:15.277 -03 [7689] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 11:06:44.764 -03 [7698] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 11:06:44.764 -03 [7698] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 11:07:11.788 -03 [7691] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 11:07:11.788 -03 [7691] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 11:07:39.655 -03 [7688] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 11:07:39.655 -03 [7688] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 11:08:09.262 -03 [7688] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 11:08:09.262 -03 [7688] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 11:08:39.037 -03 [7689] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 11:08:39.037 -03 [7689] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 11:09:08.771 -03 [7699] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 11:09:08.771 -03 [7699] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 11:09:36.102 -03 [7693] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 11:09:36.102 -03 [7693] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 11:10:05.329 -03 [7689] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 11:10:05.329 -03 [7689] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 11:49:08.013 -03 [45504] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 11:49:08.013 -03 [45504] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 11:49:35.754 -03 [45504] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 11:49:35.754 -03 [45504] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 11:50:03.547 -03 [45502] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 11:50:03.547 -03 [45502] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 11:50:31.281 -03 [45502] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 11:50:31.281 -03 [45502] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 11:51:00.619 -03 [45510] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 11:51:00.619 -03 [45510] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 11:51:28.022 -03 [45508] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 11:51:28.022 -03 [45508] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 11:51:57.616 -03 [45509] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 11:51:57.616 -03 [45509] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 11:52:26.302 -03 [45504] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 11:52:26.302 -03 [45504] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 11:52:56.032 -03 [45504] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 11:52:56.032 -03 [45504] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 11:53:26.011 -03 [45510] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 11:53:26.011 -03 [45510] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 11:53:54.251 -03 [45504] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 11:53:54.251 -03 [45504] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 11:54:23.734 -03 [45510] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 11:54:23.734 -03 [45510] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 11:54:52.976 -03 [45502] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 11:54:52.976 -03 [45502] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 11:55:20.053 -03 [45505] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 11:55:20.053 -03 [45505] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 11:55:49.976 -03 [45508] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 11:55:49.976 -03 [45508] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 11:56:18.605 -03 [45506] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 11:56:18.605 -03 [45506] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 11:56:47.980 -03 [45510] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 11:56:47.980 -03 [45510] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 11:57:16.131 -03 [45507] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 11:57:16.131 -03 [45507] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 11:57:44.476 -03 [45505] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 11:57:44.476 -03 [45505] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 11:58:11.687 -03 [45509] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 11:58:11.687 -03 [45509] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 11:58:39.947 -03 [45507] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 11:58:39.947 -03 [45507] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 11:59:08.864 -03 [45509] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 11:59:08.864 -03 [45509] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 11:59:37.122 -03 [45508] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 11:59:37.122 -03 [45508] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 12:00:05.645 -03 [45505] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 12:00:05.645 -03 [45505] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 12:00:32.791 -03 [45507] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 12:00:32.791 -03 [45507] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 12:01:01.432 -03 [45511] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 12:01:01.432 -03 [45511] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 12:01:29.280 -03 [45503] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 12:01:29.280 -03 [45503] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 12:01:58.648 -03 [45509] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 12:01:58.648 -03 [45509] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 12:02:27.386 -03 [45508] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 12:02:27.386 -03 [45508] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 12:02:54.687 -03 [45506] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 12:02:54.687 -03 [45506] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 12:03:23.185 -03 [45508] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 12:03:23.185 -03 [45508] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 12:03:50.346 -03 [45507] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 12:03:50.346 -03 [45507] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 12:04:18.035 -03 [45506] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 12:04:18.035 -03 [45506] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 12:04:45.845 -03 [45505] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 12:04:45.845 -03 [45505] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 12:05:14.344 -03 [45504] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 12:05:14.344 -03 [45504] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 12:05:43.756 -03 [45504] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 12:05:43.756 -03 [45504] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 12:06:10.902 -03 [45510] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 12:06:10.902 -03 [45510] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 12:06:40.021 -03 [45509] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 12:06:40.021 -03 [45509] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 12:07:10.001 -03 [45503] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 12:07:10.001 -03 [45503] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 12:07:38.349 -03 [45505] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 12:07:38.349 -03 [45505] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 12:08:08.253 -03 [45505] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 12:08:08.253 -03 [45505] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 12:08:36.081 -03 [45508] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 12:08:36.081 -03 [45508] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 12:09:04.597 -03 [45505] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 12:09:04.597 -03 [45505] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 12:09:32.507 -03 [45506] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 12:09:32.507 -03 [45506] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 12:10:02.509 -03 [45504] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 12:10:02.509 -03 [45504] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 12:10:31.779 -03 [45505] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 12:10:31.779 -03 [45505] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 12:10:59.770 -03 [45505] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 12:10:59.770 -03 [45505] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 12:11:29.747 -03 [45511] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 12:11:29.747 -03 [45511] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 12:11:57.664 -03 [45510] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 12:11:57.664 -03 [45510] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 12:12:27.380 -03 [45510] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 12:12:27.380 -03 [45510] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 12:12:56.676 -03 [45509] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 12:12:56.676 -03 [45509] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 12:13:26.059 -03 [45503] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 12:13:26.059 -03 [45503] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 12:13:55.362 -03 [45504] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 12:13:55.362 -03 [45504] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 12:14:22.373 -03 [45508] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 12:14:22.373 -03 [45508] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 12:14:50.301 -03 [45506] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 12:14:50.301 -03 [45506] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 12:15:17.691 -03 [45505] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 12:15:17.691 -03 [45505] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 12:15:46.348 -03 [45506] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 12:15:46.348 -03 [45506] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 12:16:14.521 -03 [45504] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 12:16:14.521 -03 [45504] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 12:16:43.623 -03 [45503] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 12:16:43.623 -03 [45503] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 12:17:12.302 -03 [45506] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 12:17:12.302 -03 [45506] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 12:17:41.242 -03 [45511] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 12:17:41.242 -03 [45511] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 12:18:09.388 -03 [45506] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 12:18:09.388 -03 [45506] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 12:18:38.197 -03 [45510] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 12:18:38.197 -03 [45510] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 12:19:05.927 -03 [45505] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 12:19:05.927 -03 [45505] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 12:19:34.305 -03 [45502] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 12:19:34.305 -03 [45502] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 12:20:03.065 -03 [45503] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 12:20:03.065 -03 [45503] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 12:20:31.661 -03 [45503] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 12:20:31.661 -03 [45503] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 12:21:01.008 -03 [45507] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 12:21:01.008 -03 [45507] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 12:21:29.383 -03 [45506] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 12:21:29.383 -03 [45506] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 12:21:59.009 -03 [45504] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 12:21:59.009 -03 [45504] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 12:22:27.673 -03 [45506] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 12:22:27.673 -03 [45506] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 12:22:55.125 -03 [45503] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 12:22:55.125 -03 [45503] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 12:23:22.230 -03 [45506] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 12:23:22.230 -03 [45506] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 12:23:51.909 -03 [45511] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 12:23:51.909 -03 [45511] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 12:24:21.233 -03 [45505] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 12:24:21.233 -03 [45505] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 12:24:48.971 -03 [45511] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 12:24:48.971 -03 [45511] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 12:25:18.849 -03 [45505] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 12:25:18.849 -03 [45505] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 12:25:48.441 -03 [45502] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 12:25:48.441 -03 [45502] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 12:26:16.238 -03 [45503] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 12:26:16.238 -03 [45503] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 12:26:43.761 -03 [45505] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 12:26:43.761 -03 [45505] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 12:27:11.440 -03 [45503] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 12:27:11.440 -03 [45503] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 12:31:47.150 -03 [45503] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 12:31:47.150 -03 [45503] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 12:32:16.070 -03 [45507] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 12:32:16.070 -03 [45507] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 12:32:44.061 -03 [45507] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 12:32:44.061 -03 [45507] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 12:33:12.623 -03 [45507] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 12:33:12.623 -03 [45507] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 12:33:42.225 -03 [45505] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 12:33:42.225 -03 [45505] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 12:34:11.815 -03 [45505] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 12:34:11.815 -03 [45505] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 12:34:41.436 -03 [45503] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 12:34:41.436 -03 [45503] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 12:35:08.619 -03 [45504] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 12:35:08.619 -03 [45504] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 12:35:36.810 -03 [45505] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 12:35:36.810 -03 [45505] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 12:36:06.748 -03 [45511] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 12:36:06.748 -03 [45511] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 12:36:33.796 -03 [45509] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 12:36:33.796 -03 [45509] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 12:37:03.006 -03 [45508] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 12:37:03.006 -03 [45508] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 12:37:32.145 -03 [45509] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 12:37:32.145 -03 [45509] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 12:38:01.874 -03 [45510] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 12:38:01.874 -03 [45510] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 12:38:28.883 -03 [45503] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 12:38:28.883 -03 [45503] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 12:38:56.283 -03 [45502] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 12:38:56.283 -03 [45502] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 12:39:25.392 -03 [45507] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 12:39:25.392 -03 [45507] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 12:39:55.165 -03 [45510] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 12:39:55.165 -03 [45510] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 12:40:22.829 -03 [45509] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 12:40:22.829 -03 [45509] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 12:40:50.663 -03 [45510] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 12:40:50.663 -03 [45510] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 12:41:18.060 -03 [45509] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 12:41:18.060 -03 [45509] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 12:41:45.238 -03 [45502] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 12:41:45.238 -03 [45502] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 12:42:12.562 -03 [45509] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 12:42:12.562 -03 [45509] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 12:42:39.667 -03 [45508] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 12:42:39.667 -03 [45508] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 12:43:08.936 -03 [45507] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 12:43:08.936 -03 [45507] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 12:43:36.639 -03 [45504] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 12:43:36.639 -03 [45504] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 12:44:05.259 -03 [45506] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 12:44:05.259 -03 [45506] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 12:44:34.790 -03 [45510] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 12:44:34.790 -03 [45510] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 12:45:03.669 -03 [45508] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 12:45:03.669 -03 [45508] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 12:45:32.584 -03 [45509] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 12:45:32.584 -03 [45509] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 12:46:01.096 -03 [45504] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 12:46:01.096 -03 [45504] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 12:46:29.292 -03 [45510] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 12:46:29.292 -03 [45510] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 12:46:57.865 -03 [45508] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 12:46:57.865 -03 [45508] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 12:47:24.931 -03 [45507] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 12:47:24.931 -03 [45507] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 12:47:54.604 -03 [45504] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 12:47:54.604 -03 [45504] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 12:48:23.645 -03 [45511] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 12:48:23.645 -03 [45511] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 12:48:52.008 -03 [45509] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 12:48:52.008 -03 [45509] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 12:49:19.142 -03 [45503] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 12:49:19.142 -03 [45503] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 12:49:46.225 -03 [45506] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 12:49:46.225 -03 [45506] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 12:50:15.003 -03 [45508] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 12:50:15.003 -03 [45508] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 12:50:44.375 -03 [45510] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 12:50:44.375 -03 [45510] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 12:51:13.554 -03 [45507] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 12:51:13.554 -03 [45507] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 12:51:40.848 -03 [45509] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 12:51:40.848 -03 [45509] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 12:52:10.425 -03 [45508] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 12:52:10.425 -03 [45508] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 12:52:40.025 -03 [45508] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 12:52:40.025 -03 [45508] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 12:53:08.405 -03 [45509] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 12:53:08.405 -03 [45509] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 12:53:37.637 -03 [45507] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 12:53:37.637 -03 [45507] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 12:54:06.065 -03 [45510] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 12:54:06.065 -03 [45510] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 12:54:35.142 -03 [45510] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 12:54:35.142 -03 [45510] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 12:55:02.683 -03 [45511] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 12:55:02.683 -03 [45511] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 12:55:31.330 -03 [45503] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 12:55:31.330 -03 [45503] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 12:56:00.927 -03 [45506] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 12:56:00.927 -03 [45506] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 12:56:30.881 -03 [45506] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 12:56:30.881 -03 [45506] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 12:56:59.345 -03 [45510] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 12:56:59.345 -03 [45510] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 12:57:28.523 -03 [45509] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 12:57:28.523 -03 [45509] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 12:57:56.794 -03 [45503] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 12:57:56.794 -03 [45503] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 12:58:24.567 -03 [45509] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 12:58:24.567 -03 [45509] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 12:58:54.462 -03 [45503] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 12:58:54.462 -03 [45503] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 12:59:23.194 -03 [45509] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 12:59:23.194 -03 [45509] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 12:59:51.453 -03 [45505] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 12:59:51.453 -03 [45505] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 13:00:18.772 -03 [45508] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 13:00:18.772 -03 [45508] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 13:00:47.623 -03 [45505] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 13:00:47.623 -03 [45505] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 13:01:16.539 -03 [45509] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 13:01:16.539 -03 [45509] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 13:01:44.272 -03 [45502] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 13:01:44.272 -03 [45502] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 13:02:12.428 -03 [45507] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 13:02:12.428 -03 [45507] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 13:02:42.004 -03 [45511] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 13:02:42.004 -03 [45511] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 13:03:11.719 -03 [45507] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 13:03:11.719 -03 [45507] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 13:03:39.511 -03 [45505] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 13:03:39.511 -03 [45505] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 13:04:07.693 -03 [45503] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 13:04:07.693 -03 [45503] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 13:04:35.040 -03 [45508] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 13:04:35.040 -03 [45508] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 13:05:03.490 -03 [45507] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 13:05:03.490 -03 [45507] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 13:05:33.178 -03 [45503] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 13:05:33.178 -03 [45503] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 13:06:00.829 -03 [45503] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 13:06:00.829 -03 [45503] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 13:06:30.153 -03 [45509] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 13:06:30.153 -03 [45509] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 13:06:57.457 -03 [45505] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 13:06:57.457 -03 [45505] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 13:07:25.544 -03 [45508] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 13:07:25.544 -03 [45508] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 13:07:53.713 -03 [45508] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 13:07:53.713 -03 [45508] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 13:08:22.115 -03 [45504] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 13:08:22.115 -03 [45504] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 13:08:51.672 -03 [45511] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 13:08:51.672 -03 [45511] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 13:09:21.528 -03 [45509] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 13:09:21.528 -03 [45509] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 13:09:51.358 -03 [45505] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 13:09:51.358 -03 [45505] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 13:10:20.681 -03 [45510] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 13:10:20.681 -03 [45510] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 13:10:49.932 -03 [45502] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 13:10:49.932 -03 [45502] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 13:11:18.698 -03 [45511] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 13:11:18.698 -03 [45511] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 13:11:48.511 -03 [45504] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 13:11:48.511 -03 [45504] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 13:12:17.516 -03 [45510] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 13:12:17.516 -03 [45510] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 13:12:47.010 -03 [45502] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 13:12:47.010 -03 [45502] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 13:13:14.790 -03 [45503] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 13:13:14.790 -03 [45503] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 13:13:44.227 -03 [45510] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 13:13:44.227 -03 [45510] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 13:14:11.796 -03 [45502] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 13:14:11.796 -03 [45502] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 13:14:39.064 -03 [45511] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 13:14:39.064 -03 [45511] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 13:15:08.332 -03 [45505] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 13:15:08.332 -03 [45505] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 13:15:37.222 -03 [45503] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 13:15:37.222 -03 [45503] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 13:16:05.844 -03 [45505] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 13:16:05.844 -03 [45505] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 13:16:35.218 -03 [45502] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 13:16:35.218 -03 [45502] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 13:17:05.179 -03 [45508] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 13:17:05.179 -03 [45508] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 13:17:32.180 -03 [45507] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 13:17:32.180 -03 [45507] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 13:17:59.255 -03 [45509] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 13:17:59.255 -03 [45509] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 13:18:27.446 -03 [45507] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 13:18:27.446 -03 [45507] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 13:18:55.533 -03 [45503] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 13:18:55.533 -03 [45503] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 13:19:24.958 -03 [45507] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 13:19:24.958 -03 [45507] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 13:19:53.615 -03 [45503] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 13:19:53.615 -03 [45503] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 13:20:21.727 -03 [45503] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 13:20:21.727 -03 [45503] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 13:20:49.250 -03 [45508] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 13:20:49.250 -03 [45508] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 13:21:17.914 -03 [45503] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 13:21:17.914 -03 [45503] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 13:21:47.813 -03 [45506] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 13:21:47.813 -03 [45506] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 13:22:16.030 -03 [45505] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 13:22:16.030 -03 [45505] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 13:22:43.323 -03 [45504] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 13:22:43.323 -03 [45504] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 13:23:12.359 -03 [45502] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 13:23:12.359 -03 [45502] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 13:34:06.429 -03 [45506] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 13:34:06.429 -03 [45506] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 13:34:35.815 -03 [45510] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 13:34:35.815 -03 [45510] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 13:35:04.219 -03 [45504] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 13:35:04.219 -03 [45504] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 13:35:33.197 -03 [45508] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 13:35:33.197 -03 [45508] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 13:36:00.263 -03 [45505] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 13:36:00.263 -03 [45505] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 13:36:29.124 -03 [45505] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 13:36:29.124 -03 [45505] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 13:36:56.540 -03 [45510] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 13:36:56.540 -03 [45510] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 13:37:23.856 -03 [45507] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 13:37:23.856 -03 [45507] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 13:37:53.723 -03 [45504] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 13:37:53.723 -03 [45504] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 13:38:23.471 -03 [45503] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 13:38:23.471 -03 [45503] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 13:38:50.838 -03 [45502] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 13:38:50.838 -03 [45502] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 13:39:19.043 -03 [45505] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 13:39:19.043 -03 [45505] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 13:39:46.539 -03 [45505] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 13:39:46.539 -03 [45505] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 13:40:15.450 -03 [45504] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 13:40:15.450 -03 [45504] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 13:40:44.100 -03 [45503] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 13:40:44.100 -03 [45503] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 13:41:12.423 -03 [45504] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 13:41:12.423 -03 [45504] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 13:41:41.637 -03 [45506] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 13:41:41.637 -03 [45506] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 13:42:09.869 -03 [45509] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 13:42:09.869 -03 [45509] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 13:44:46.379 -03 [45511] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 13:44:46.379 -03 [45511] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 13:45:16.181 -03 [45507] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 13:45:16.181 -03 [45507] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 13:45:43.424 -03 [45507] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 13:45:43.424 -03 [45507] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 13:46:11.730 -03 [45504] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 13:46:11.730 -03 [45504] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 13:46:41.325 -03 [45502] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 13:46:41.325 -03 [45502] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 13:47:10.910 -03 [45507] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 13:47:10.910 -03 [45507] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 13:47:40.687 -03 [45509] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 13:47:40.687 -03 [45509] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 13:48:08.759 -03 [45502] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 13:48:08.759 -03 [45502] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 13:48:37.151 -03 [45507] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 13:48:37.151 -03 [45507] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 13:49:05.628 -03 [45510] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 13:49:05.628 -03 [45510] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 13:49:34.766 -03 [45502] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 13:49:34.766 -03 [45502] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 13:50:03.056 -03 [45505] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 13:50:03.056 -03 [45505] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 13:50:31.676 -03 [45504] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 13:50:31.676 -03 [45504] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 13:50:59.212 -03 [45509] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 13:50:59.212 -03 [45509] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 13:54:56.559 -03 [45506] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 13:54:56.559 -03 [45506] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 13:55:23.708 -03 [45506] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 13:55:23.708 -03 [45506] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 13:55:53.225 -03 [45502] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 13:55:53.225 -03 [45502] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 13:56:20.811 -03 [45503] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 13:56:20.811 -03 [45503] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 13:56:50.319 -03 [45504] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 13:56:50.319 -03 [45504] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 13:57:19.182 -03 [45503] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 13:57:19.182 -03 [45503] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 13:57:47.869 -03 [45510] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 13:57:47.869 -03 [45510] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 13:58:16.530 -03 [45506] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 13:58:16.530 -03 [45506] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 13:58:44.107 -03 [45503] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 13:58:44.107 -03 [45503] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 15:05:08.255 -03 [45507] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 15:05:08.255 -03 [45507] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 15:05:38.145 -03 [45507] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 15:05:38.145 -03 [45507] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 15:06:06.233 -03 [45502] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 15:06:06.233 -03 [45502] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 15:06:34.204 -03 [45506] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 15:06:34.204 -03 [45506] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 15:07:03.750 -03 [45508] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 15:07:03.750 -03 [45508] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 15:07:31.583 -03 [45509] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 15:07:31.583 -03 [45509] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 15:08:00.041 -03 [45509] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 15:08:00.041 -03 [45509] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 15:08:28.853 -03 [45504] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 15:08:28.853 -03 [45504] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 15:08:57.951 -03 [45505] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 15:08:57.951 -03 [45505] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 15:09:26.595 -03 [45508] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 15:09:26.595 -03 [45508] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 15:09:55.444 -03 [45505] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 15:09:55.444 -03 [45505] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 15:10:23.847 -03 [45509] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 15:10:23.847 -03 [45509] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 15:10:51.266 -03 [45509] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 15:10:51.266 -03 [45509] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 15:11:18.496 -03 [45504] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 15:11:18.496 -03 [45504] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 15:11:46.279 -03 [45504] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 15:11:46.279 -03 [45504] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 15:12:15.228 -03 [45504] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 15:12:15.228 -03 [45504] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 15:12:43.650 -03 [45508] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 15:12:43.650 -03 [45508] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 15:13:12.509 -03 [45503] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 15:13:12.509 -03 [45503] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 15:13:40.974 -03 [45507] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 15:13:40.974 -03 [45507] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 15:14:08.620 -03 [45508] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 15:14:08.620 -03 [45508] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 15:14:38.514 -03 [45508] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 15:14:38.514 -03 [45508] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 15:15:05.776 -03 [45508] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 15:15:05.776 -03 [45508] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 15:15:34.719 -03 [45510] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 15:15:34.719 -03 [45510] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 15:16:02.062 -03 [45510] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 15:16:02.062 -03 [45510] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 15:16:30.694 -03 [45510] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 15:16:30.694 -03 [45510] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 15:17:00.296 -03 [45510] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 15:17:00.296 -03 [45510] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 15:17:30.080 -03 [45502] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 15:17:30.080 -03 [45502] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 15:17:57.251 -03 [45506] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 15:17:57.251 -03 [45506] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 15:18:25.326 -03 [45505] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 15:18:25.326 -03 [45505] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 15:18:53.182 -03 [45508] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 15:18:53.182 -03 [45508] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 15:19:21.986 -03 [45508] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 15:19:21.986 -03 [45508] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 15:19:51.076 -03 [45510] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 15:19:51.076 -03 [45510] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 15:20:18.381 -03 [45502] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 15:20:18.381 -03 [45502] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 15:20:46.020 -03 [45509] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 15:20:46.020 -03 [45509] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 15:21:13.160 -03 [45507] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 15:21:13.160 -03 [45507] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 15:21:42.197 -03 [45503] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 15:21:42.197 -03 [45503] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 15:22:10.691 -03 [45511] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 15:22:10.691 -03 [45511] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 15:22:38.781 -03 [45504] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 15:22:38.781 -03 [45504] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 15:23:06.310 -03 [45506] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 15:23:06.310 -03 [45506] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 15:23:34.803 -03 [45502] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 15:23:34.803 -03 [45502] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 15:24:04.052 -03 [45506] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 15:24:04.052 -03 [45506] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 15:24:33.207 -03 [45511] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 15:24:33.207 -03 [45511] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 15:25:00.331 -03 [45502] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 15:25:00.331 -03 [45502] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 15:25:28.842 -03 [45510] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 15:25:28.842 -03 [45510] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 15:25:56.106 -03 [45504] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 15:25:56.106 -03 [45504] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 15:26:23.501 -03 [45503] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 15:26:23.501 -03 [45503] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 15:26:50.798 -03 [45506] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 15:26:50.798 -03 [45506] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 15:27:20.680 -03 [45510] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 15:27:20.680 -03 [45510] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 15:27:49.914 -03 [45504] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 15:27:49.914 -03 [45504] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 15:28:18.510 -03 [45504] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 15:28:18.510 -03 [45504] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 15:28:47.483 -03 [45506] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 15:28:47.483 -03 [45506] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 15:29:15.135 -03 [45507] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 15:29:15.135 -03 [45507] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 15:29:45.115 -03 [45508] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 15:29:45.115 -03 [45508] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 15:30:12.208 -03 [45511] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 15:30:12.208 -03 [45511] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 15:30:39.256 -03 [45511] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 15:30:39.256 -03 [45511] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 15:31:07.923 -03 [45504] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 15:31:07.923 -03 [45504] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 15:31:36.687 -03 [45511] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 15:31:36.687 -03 [45511] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 15:32:06.407 -03 [45505] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 15:32:06.407 -03 [45505] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 15:32:33.867 -03 [45510] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 15:32:33.867 -03 [45510] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 15:33:03.844 -03 [45508] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 15:33:03.844 -03 [45508] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 15:33:31.373 -03 [45511] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 15:33:31.373 -03 [45511] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 15:34:01.340 -03 [45508] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 15:34:01.340 -03 [45508] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 15:34:28.691 -03 [45504] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 15:34:28.691 -03 [45504] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 15:34:57.835 -03 [45511] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 15:34:57.835 -03 [45511] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 15:35:25.296 -03 [45505] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 15:35:25.296 -03 [45505] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 15:35:52.995 -03 [45510] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 15:35:52.995 -03 [45510] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 15:36:22.592 -03 [45502] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 15:36:22.592 -03 [45502] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 15:36:52.011 -03 [45505] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 15:36:52.011 -03 [45505] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 15:37:19.820 -03 [45511] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 15:37:19.820 -03 [45511] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 15:37:48.811 -03 [45505] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 15:37:48.811 -03 [45505] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 15:38:15.878 -03 [45504] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 15:38:15.878 -03 [45504] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 15:38:45.127 -03 [45508] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 15:38:45.127 -03 [45508] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 15:39:12.342 -03 [45508] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 15:39:12.342 -03 [45508] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 15:39:40.439 -03 [45505] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 15:39:40.439 -03 [45505] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 15:40:10.298 -03 [45509] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 15:40:10.298 -03 [45509] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 15:40:40.244 -03 [45503] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 15:40:40.244 -03 [45503] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 15:41:09.265 -03 [45507] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 15:41:09.265 -03 [45507] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 15:41:36.887 -03 [45510] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 15:41:36.887 -03 [45510] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 15:42:04.130 -03 [45502] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 15:42:04.130 -03 [45502] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 15:42:33.812 -03 [45511] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 15:42:33.812 -03 [45511] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 15:43:01.781 -03 [45509] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 15:43:01.781 -03 [45509] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 15:43:30.232 -03 [45509] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 15:43:30.232 -03 [45509] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 15:43:58.868 -03 [45506] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 15:43:58.868 -03 [45506] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 15:44:27.074 -03 [45506] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 15:44:27.074 -03 [45506] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 15:44:56.343 -03 [45504] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 15:44:56.343 -03 [45504] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 15:45:25.080 -03 [45511] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 15:45:25.080 -03 [45511] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 15:45:53.933 -03 [45505] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 15:45:53.933 -03 [45505] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 15:46:21.203 -03 [45509] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 15:46:21.203 -03 [45509] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 15:46:49.362 -03 [45509] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 15:46:49.362 -03 [45509] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 15:47:19.276 -03 [45503] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 15:47:19.276 -03 [45503] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 15:47:48.661 -03 [45507] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 15:47:48.661 -03 [45507] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 15:48:17.884 -03 [45508] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 15:48:17.884 -03 [45508] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 15:48:45.454 -03 [45505] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 15:48:45.454 -03 [45505] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 15:49:14.467 -03 [45505] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 15:49:14.467 -03 [45505] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 15:49:42.610 -03 [45510] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 15:49:42.610 -03 [45510] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 15:50:09.672 -03 [45506] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 15:50:09.672 -03 [45506] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 15:50:38.663 -03 [45509] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 15:50:38.663 -03 [45509] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 15:51:06.609 -03 [45504] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 15:51:06.609 -03 [45504] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 15:51:34.868 -03 [45503] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 15:51:34.868 -03 [45503] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 15:52:04.633 -03 [45510] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 15:52:04.633 -03 [45510] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 15:52:34.577 -03 [45507] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 15:52:34.577 -03 [45507] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 15:53:01.721 -03 [45510] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 15:53:01.721 -03 [45510] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 15:53:30.997 -03 [45502] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 15:53:30.997 -03 [45502] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 15:53:59.637 -03 [45502] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 15:53:59.637 -03 [45502] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 15:54:26.680 -03 [45508] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 15:54:26.680 -03 [45508] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 15:54:54.966 -03 [45502] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 15:54:54.966 -03 [45502] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 15:55:23.814 -03 [45509] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 15:55:23.814 -03 [45509] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 15:55:53.731 -03 [45506] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 15:55:53.731 -03 [45506] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 15:56:23.687 -03 [45503] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 15:56:23.687 -03 [45503] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 16:30:57.571 -03 [45509] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 16:30:57.571 -03 [45509] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 16:58:31.638 -03 [45506] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 16:58:31.638 -03 [45506] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 16:58:59.546 -03 [45505] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 16:58:59.546 -03 [45505] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 16:59:28.810 -03 [45502] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 16:59:28.810 -03 [45502] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 16:59:57.908 -03 [45503] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 16:59:57.908 -03 [45503] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 17:00:25.122 -03 [45506] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 17:00:25.122 -03 [45506] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 17:00:53.357 -03 [45506] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 17:00:53.357 -03 [45506] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 17:01:22.021 -03 [45503] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 17:01:22.021 -03 [45503] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 17:01:50.149 -03 [45504] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 17:01:50.149 -03 [45504] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 17:02:19.809 -03 [45511] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 17:02:19.809 -03 [45511] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 17:02:48.631 -03 [45506] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 17:02:48.631 -03 [45506] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 17:03:15.642 -03 [45505] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 17:03:15.642 -03 [45505] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 17:03:44.469 -03 [45503] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 17:03:44.469 -03 [45503] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 17:04:13.194 -03 [45508] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 17:04:13.194 -03 [45508] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 17:04:42.715 -03 [45502] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 17:04:42.715 -03 [45502] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 17:05:10.567 -03 [45507] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 17:05:10.567 -03 [45507] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 17:05:39.239 -03 [45509] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 17:05:39.239 -03 [45509] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 17:06:06.801 -03 [45510] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 17:06:06.801 -03 [45510] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 17:06:35.805 -03 [45504] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 17:06:35.805 -03 [45504] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 17:07:04.464 -03 [45504] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 17:07:04.464 -03 [45504] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 17:07:32.734 -03 [45506] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 17:07:32.734 -03 [45506] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 17:08:00.456 -03 [45511] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 17:08:00.456 -03 [45511] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 17:08:28.722 -03 [45505] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 17:08:28.722 -03 [45505] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 17:08:57.600 -03 [45504] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 17:08:57.600 -03 [45504] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 17:09:26.934 -03 [45507] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 17:09:26.934 -03 [45507] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 17:09:55.396 -03 [45504] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 17:09:55.396 -03 [45504] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 17:10:22.614 -03 [45509] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 17:10:22.614 -03 [45509] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 17:10:50.379 -03 [45510] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 17:10:50.379 -03 [45510] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 17:11:19.111 -03 [45509] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 17:11:19.111 -03 [45509] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 17:11:46.669 -03 [45507] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 17:11:46.669 -03 [45507] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 17:12:14.520 -03 [45502] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 17:12:14.520 -03 [45502] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 17:12:41.976 -03 [45511] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 17:12:41.976 -03 [45511] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 17:13:11.703 -03 [45508] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 17:13:11.703 -03 [45508] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 17:13:39.612 -03 [45503] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 17:13:39.612 -03 [45503] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 17:14:08.057 -03 [45506] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 17:14:08.057 -03 [45506] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 17:14:37.555 -03 [45503] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 17:14:37.555 -03 [45503] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 17:15:04.696 -03 [45510] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 17:15:04.696 -03 [45510] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 17:15:32.446 -03 [45503] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 17:15:32.446 -03 [45503] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 17:16:01.143 -03 [45509] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 17:16:01.143 -03 [45509] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 17:16:28.413 -03 [45504] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 17:16:28.413 -03 [45504] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 17:16:56.006 -03 [45505] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 17:16:56.006 -03 [45505] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 17:17:25.122 -03 [45511] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 17:17:25.122 -03 [45511] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 17:17:54.220 -03 [45506] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 17:17:54.220 -03 [45506] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 17:18:22.661 -03 [45507] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 17:18:22.661 -03 [45507] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 17:25:50.542 -03 [45508] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 17:25:50.542 -03 [45508] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 17:26:20.393 -03 [45508] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 17:26:20.393 -03 [45508] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 17:26:50.064 -03 [45511] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 17:26:50.064 -03 [45511] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 17:27:17.297 -03 [45511] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 17:27:17.297 -03 [45511] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 17:29:48.758 -03 [45509] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 17:29:48.758 -03 [45509] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 17:31:44.059 -03 [45505] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 17:31:44.059 -03 [45505] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 17:32:12.354 -03 [45510] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 17:32:12.354 -03 [45510] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 17:32:41.997 -03 [45511] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 17:32:41.997 -03 [45511] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 17:33:11.232 -03 [45503] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 17:33:11.232 -03 [45503] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 17:33:39.157 -03 [45502] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 17:33:39.157 -03 [45502] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 17:34:07.419 -03 [45511] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 17:34:07.419 -03 [45511] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 17:34:35.984 -03 [45508] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 17:34:35.984 -03 [45508] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 17:35:03.043 -03 [45508] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 17:35:03.043 -03 [45508] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 17:58:36.837 -03 [45502] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 17:58:36.837 -03 [45502] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 19:01:17.327 -03 [45506] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 19:01:17.327 -03 [45506] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 19:25:27.051 -03 [45506] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 19:25:27.051 -03 [45506] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 19:25:55.242 -03 [45510] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 19:25:55.242 -03 [45510] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 19:26:23.197 -03 [45505] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 19:26:23.197 -03 [45505] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 19:26:52.981 -03 [45503] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 19:26:52.981 -03 [45503] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 19:27:21.963 -03 [45509] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 19:27:21.963 -03 [45509] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 19:27:50.274 -03 [45506] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 19:27:50.274 -03 [45506] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 20:03:09.721 -03 [85151] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 20:03:09.721 -03 [85151] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 20:03:38.802 -03 [85149] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 20:03:38.802 -03 [85149] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 20:04:07.612 -03 [85150] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 20:04:07.612 -03 [85150] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 20:04:35.310 -03 [85155] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 20:04:35.310 -03 [85155] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 20:05:04.605 -03 [85152] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 20:05:04.605 -03 [85152] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 20:05:33.657 -03 [85154] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 20:05:33.657 -03 [85154] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 20:06:03.506 -03 [85150] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 20:06:03.506 -03 [85150] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 20:06:31.634 -03 [85152] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 20:06:31.634 -03 [85152] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 20:07:01.279 -03 [85158] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 20:07:01.279 -03 [85158] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 20:07:28.788 -03 [85150] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 20:07:28.788 -03 [85150] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 20:07:56.123 -03 [85156] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 20:07:56.123 -03 [85156] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 20:08:24.768 -03 [85158] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 20:08:24.768 -03 [85158] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 20:08:54.253 -03 [85155] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 20:08:54.253 -03 [85155] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 20:09:24.029 -03 [85154] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 20:09:24.029 -03 [85154] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 20:09:51.718 -03 [85158] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 20:09:51.718 -03 [85158] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 20:10:19.184 -03 [85155] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 20:10:19.184 -03 [85155] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 20:10:46.936 -03 [85153] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 20:10:46.936 -03 [85153] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 20:11:14.031 -03 [85150] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 20:11:14.031 -03 [85150] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 20:11:43.400 -03 [85153] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 20:11:43.400 -03 [85153] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 20:12:11.436 -03 [85156] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 20:12:11.436 -03 [85156] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 20:12:39.200 -03 [85153] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 20:12:39.200 -03 [85153] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 20:13:07.149 -03 [85157] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 20:13:07.149 -03 [85157] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 20:13:35.029 -03 [85156] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 20:13:35.029 -03 [85156] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 20:14:04.663 -03 [85153] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 20:14:04.663 -03 [85153] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 20:14:31.721 -03 [85149] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 20:14:31.721 -03 [85149] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 20:14:59.597 -03 [85155] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 20:14:59.597 -03 [85155] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 20:15:29.236 -03 [85151] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 20:15:29.236 -03 [85151] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 20:15:58.895 -03 [85150] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 20:15:58.895 -03 [85150] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 20:16:25.927 -03 [85154] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 20:16:25.927 -03 [85154] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 20:16:53.203 -03 [85151] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 20:16:53.203 -03 [85151] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 20:17:20.732 -03 [85150] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 20:17:20.732 -03 [85150] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 20:17:48.110 -03 [85158] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 20:17:48.110 -03 [85158] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 20:18:17.063 -03 [85152] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 20:18:17.063 -03 [85152] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 20:18:57.535 -03 [85156] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 20:18:57.535 -03 [85156] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 20:19:25.057 -03 [85152] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 20:19:25.057 -03 [85152] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 20:19:52.533 -03 [85156] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 20:19:52.533 -03 [85156] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 20:20:20.181 -03 [85151] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 20:20:20.181 -03 [85151] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 20:20:47.276 -03 [85150] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 20:20:47.276 -03 [85150] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 20:21:17.086 -03 [85152] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 20:21:17.086 -03 [85152] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 20:21:46.881 -03 [85152] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 20:21:46.881 -03 [85152] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 20:22:13.967 -03 [85155] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 20:22:13.967 -03 [85155] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 20:22:42.195 -03 [85155] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 20:22:42.195 -03 [85155] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 20:23:09.569 -03 [85157] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 20:23:09.569 -03 [85157] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 20:23:37.594 -03 [85156] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 20:23:37.594 -03 [85156] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 20:24:04.835 -03 [85158] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 20:24:04.835 -03 [85158] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 20:24:31.898 -03 [85152] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 20:24:31.898 -03 [85152] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 20:25:01.660 -03 [85154] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 20:25:01.660 -03 [85154] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 20:25:31.080 -03 [85156] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 20:25:31.080 -03 [85156] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 20:25:58.330 -03 [85157] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 20:25:58.330 -03 [85157] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 20:26:27.624 -03 [85154] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 20:26:27.624 -03 [85154] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 20:26:56.630 -03 [85154] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 20:26:56.630 -03 [85154] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 20:27:24.292 -03 [85155] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 20:27:24.292 -03 [85155] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 20:27:53.374 -03 [85158] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 20:27:53.374 -03 [85158] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 20:28:22.202 -03 [85149] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 20:28:22.202 -03 [85149] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 20:28:50.032 -03 [85152] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 20:28:50.032 -03 [85152] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 20:29:19.370 -03 [85157] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 20:29:19.370 -03 [85157] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 20:29:48.576 -03 [85151] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 20:29:48.576 -03 [85151] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 20:30:16.416 -03 [85151] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 20:30:16.416 -03 [85151] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 20:30:45.874 -03 [85152] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 20:30:45.874 -03 [85152] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 20:31:14.130 -03 [85152] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 20:31:14.130 -03 [85152] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 20:31:42.048 -03 [85158] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 20:31:42.048 -03 [85158] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 20:32:10.262 -03 [85152] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 20:32:10.262 -03 [85152] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 20:32:38.132 -03 [85155] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 20:32:38.132 -03 [85155] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 20:33:06.064 -03 [85150] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 20:33:06.064 -03 [85150] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 20:33:33.216 -03 [85152] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 20:33:33.216 -03 [85152] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 20:34:01.223 -03 [85150] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 20:34:01.223 -03 [85150] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 20:34:30.644 -03 [85157] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 20:34:30.644 -03 [85157] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 20:34:58.956 -03 [85158] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 20:34:58.956 -03 [85158] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 20:35:28.015 -03 [85152] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 20:35:28.015 -03 [85152] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 20:35:56.411 -03 [85153] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 20:35:56.411 -03 [85153] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 20:36:25.260 -03 [85149] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 20:36:25.260 -03 [85149] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 20:36:52.425 -03 [85157] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 20:36:52.425 -03 [85157] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 21:10:39.228 -03 [85150] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 21:10:39.228 -03 [85150] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 21:50:23.914 -03 [85152] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 21:50:23.914 -03 [85152] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-23 23:13:42.008 -03 [85153] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-23 23:13:42.008 -03 [85153] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-24 00:36:00.752 -03 [85151] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-24 00:36:00.752 -03 [85151] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-24 02:16:09.259 -03 [85149] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-24 02:16:09.259 -03 [85149] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-24 03:29:52.924 -03 [85149] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-24 03:29:52.924 -03 [85149] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-24 04:53:08.474 -03 [85158] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-24 04:53:08.474 -03 [85158] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-24 06:36:03.414 -03 [85158] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-24 06:36:03.414 -03 [85158] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-24 07:57:35.815 -03 [85151] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-24 07:57:35.815 -03 [85151] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-24 09:35:03.159 -03 [85149] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-24 09:35:03.159 -03 [85149] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-24 10:47:49.077 -03 [85156] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-24 10:47:49.077 -03 [85156] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-24 11:47:52.858 -03 [85157] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-24 11:47:52.858 -03 [85157] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-24 11:48:20.961 -03 [85151] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-24 11:48:20.961 -03 [85151] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-24 11:48:50.748 -03 [85150] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-24 11:48:50.748 -03 [85150] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-24 11:49:19.966 -03 [85157] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-24 11:49:19.966 -03 [85157] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-24 11:49:47.991 -03 [85156] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-24 11:49:47.991 -03 [85156] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-24 11:50:17.662 -03 [85152] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-24 11:50:17.662 -03 [85152] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-24 11:50:47.193 -03 [85156] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-24 11:50:47.193 -03 [85156] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-24 11:51:14.426 -03 [85154] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-24 11:51:14.426 -03 [85154] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-24 11:51:41.697 -03 [85154] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-24 11:51:41.697 -03 [85154] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-24 11:52:09.688 -03 [85153] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-24 11:52:09.688 -03 [85153] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-24 11:52:38.131 -03 [85153] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-24 11:52:38.131 -03 [85153] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-24 11:53:07.350 -03 [85150] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-24 11:53:07.350 -03 [85150] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-24 11:53:35.952 -03 [85150] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-24 11:53:35.952 -03 [85150] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-24 11:54:05.836 -03 [85149] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-24 11:54:05.836 -03 [85149] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-24 11:54:33.395 -03 [85155] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-24 11:54:33.395 -03 [85155] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-24 11:55:03.385 -03 [85154] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-24 11:55:03.385 -03 [85154] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-24 11:55:32.555 -03 [85153] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-24 11:55:32.555 -03 [85153] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-24 11:56:00.926 -03 [85152] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-24 11:56:00.926 -03 [85152] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-24 11:56:28.480 -03 [85157] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-24 11:56:28.480 -03 [85157] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-24 11:56:56.642 -03 [85150] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-24 11:56:56.642 -03 [85150] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-24 11:57:25.148 -03 [85149] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-24 11:57:25.148 -03 [85149] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-24 11:57:52.280 -03 [85149] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-24 11:57:52.280 -03 [85149] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-24 11:58:21.462 -03 [85149] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-24 11:58:21.462 -03 [85149] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-24 11:58:51.012 -03 [85152] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-24 11:58:51.012 -03 [85152] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-24 11:59:20.464 -03 [85153] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-24 11:59:20.464 -03 [85153] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-24 11:59:49.570 -03 [85155] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-24 11:59:49.570 -03 [85155] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-24 12:00:18.633 -03 [85158] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-24 12:00:18.633 -03 [85158] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-24 12:03:12.303 -03 [21423] LOG:  unexpected EOF on client connection with an open transaction
+2024-02-25 17:34:37.329 -03 [1767] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-25 17:34:37.329 -03 [1767] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-25 17:35:06.896 -03 [1761] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-25 17:35:06.896 -03 [1761] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-25 17:35:34.107 -03 [1762] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-25 17:35:34.107 -03 [1762] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-25 17:36:03.499 -03 [1765] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-25 17:36:03.499 -03 [1765] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-25 17:36:30.744 -03 [1759] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-25 17:36:30.744 -03 [1759] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-25 17:38:07.877 -03 [5626] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-25 17:38:07.877 -03 [5626] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-25 17:38:37.458 -03 [5630] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-25 17:38:37.458 -03 [5630] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-25 17:39:04.996 -03 [5623] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-25 17:39:04.996 -03 [5623] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-25 17:39:32.651 -03 [5631] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-25 17:39:32.651 -03 [5631] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-25 17:40:00.528 -03 [5625] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-25 17:40:00.528 -03 [5625] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-25 17:40:27.752 -03 [5625] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-25 17:40:27.752 -03 [5625] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-25 17:43:22.700 -03 [10043] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-25 17:43:22.700 -03 [10043] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-25 17:43:50.587 -03 [10049] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-25 17:43:50.587 -03 [10049] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-25 17:44:14.440 -03 [11388] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-25 17:44:14.440 -03 [11388] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-25 17:44:42.510 -03 [11391] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-25 17:44:42.510 -03 [11391] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-25 17:45:12.474 -03 [11394] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-25 17:45:12.474 -03 [11394] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-25 17:45:40.283 -03 [11389] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-25 17:45:40.283 -03 [11389] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-25 17:46:07.870 -03 [11392] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-25 17:46:07.870 -03 [11392] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-25 17:46:36.154 -03 [11393] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-25 17:46:36.154 -03 [11393] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-25 17:47:04.467 -03 [11393] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-25 17:47:04.467 -03 [11393] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-25 17:47:32.565 -03 [11386] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-25 17:47:32.565 -03 [11386] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-25 17:48:00.495 -03 [11395] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-25 17:48:00.495 -03 [11395] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-25 17:48:30.336 -03 [11390] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-25 17:48:30.336 -03 [11390] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-25 17:48:57.493 -03 [11386] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-25 17:48:57.493 -03 [11386] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-25 17:49:25.038 -03 [11392] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-25 17:49:25.038 -03 [11392] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-25 17:49:54.338 -03 [11392] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-25 17:49:54.338 -03 [11392] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-25 17:50:23.842 -03 [11389] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-25 17:50:23.842 -03 [11389] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-25 17:50:52.875 -03 [11386] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-25 17:50:52.875 -03 [11386] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-25 18:40:04.462 -03 [11389] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-25 18:40:04.462 -03 [11389] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-25 18:40:34.265 -03 [11394] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-25 18:40:34.265 -03 [11394] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-25 18:41:02.959 -03 [11392] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-25 18:41:02.959 -03 [11392] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-25 18:41:32.765 -03 [11394] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-25 18:41:32.765 -03 [11394] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-25 18:42:01.368 -03 [11395] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-25 18:42:01.368 -03 [11395] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-25 18:42:30.048 -03 [11387] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-25 18:42:30.048 -03 [11387] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-25 18:42:57.409 -03 [11387] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-25 18:42:57.409 -03 [11387] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-25 18:43:25.935 -03 [11389] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-25 18:43:25.935 -03 [11389] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-25 18:43:53.247 -03 [11390] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-25 18:43:53.247 -03 [11390] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-25 18:44:21.964 -03 [11391] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-25 18:44:21.964 -03 [11391] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-25 18:44:50.780 -03 [11390] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-25 18:44:50.780 -03 [11390] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-25 18:45:20.053 -03 [11386] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-25 18:45:20.053 -03 [11386] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-25 18:45:48.462 -03 [11391] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-25 18:45:48.462 -03 [11391] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-25 18:46:16.262 -03 [11392] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-25 18:46:16.262 -03 [11392] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-25 18:46:45.504 -03 [11389] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-25 18:46:45.504 -03 [11389] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-25 18:47:13.722 -03 [11395] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-25 18:47:13.722 -03 [11395] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-25 18:47:41.102 -03 [11395] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-25 18:47:41.102 -03 [11395] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-25 18:48:10.651 -03 [11390] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-25 18:48:10.651 -03 [11390] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-25 18:48:40.147 -03 [11389] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-25 18:48:40.147 -03 [11389] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-25 18:49:08.840 -03 [11394] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-25 18:49:08.840 -03 [11394] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-25 19:36:05.949 -03 [11392] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-25 19:36:05.949 -03 [11392] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-25 19:36:33.776 -03 [11393] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-25 19:36:33.776 -03 [11393] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-25 19:37:01.613 -03 [11392] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-25 19:37:01.613 -03 [11392] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-25 19:37:29.293 -03 [11395] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-25 19:37:29.293 -03 [11395] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-25 19:37:57.345 -03 [11389] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-25 19:37:57.345 -03 [11389] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-25 19:38:27.133 -03 [11394] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-25 19:38:27.133 -03 [11394] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-25 19:38:54.620 -03 [11390] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-25 19:38:54.620 -03 [11390] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-25 19:39:22.843 -03 [11387] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-25 19:39:22.843 -03 [11387] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-25 19:39:51.530 -03 [11394] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-25 19:39:51.530 -03 [11394] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-25 19:40:19.064 -03 [11390] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-25 19:40:19.064 -03 [11390] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-25 19:40:48.233 -03 [11395] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-25 19:40:48.233 -03 [11395] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-25 19:41:17.346 -03 [11393] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-25 19:41:17.346 -03 [11393] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-25 19:41:46.422 -03 [11390] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-25 19:41:46.422 -03 [11390] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-25 19:42:16.020 -03 [11387] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-25 19:42:16.020 -03 [11387] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-25 19:42:43.990 -03 [11390] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-25 19:42:43.990 -03 [11390] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-25 19:43:12.293 -03 [11392] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-25 19:43:12.293 -03 [11392] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-25 19:43:39.380 -03 [11390] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-25 19:43:39.380 -03 [11390] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-25 19:44:08.669 -03 [11390] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-25 19:44:08.669 -03 [11390] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-25 19:44:37.420 -03 [11393] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-25 19:44:37.420 -03 [11393] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-25 19:45:05.821 -03 [11388] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-25 19:45:05.821 -03 [11388] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-25 19:45:35.259 -03 [11395] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-25 19:45:35.259 -03 [11395] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-25 19:46:03.145 -03 [11391] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-25 19:46:03.145 -03 [11391] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-25 19:46:31.422 -03 [11386] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-25 19:46:31.422 -03 [11386] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-25 19:46:59.516 -03 [11394] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-25 19:46:59.516 -03 [11394] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-25 19:47:28.553 -03 [11391] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-25 19:47:28.553 -03 [11391] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-25 19:47:56.697 -03 [11390] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-25 19:47:56.697 -03 [11390] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-25 19:48:26.177 -03 [11386] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-25 19:48:26.177 -03 [11386] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-25 19:48:55.319 -03 [11395] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-25 19:48:55.319 -03 [11395] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-25 19:49:23.671 -03 [11391] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-25 19:49:23.671 -03 [11391] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-25 19:49:52.133 -03 [11390] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-25 19:49:52.133 -03 [11390] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-25 19:50:21.310 -03 [11392] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-25 19:50:21.310 -03 [11392] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-25 19:50:48.402 -03 [11389] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-25 19:50:48.402 -03 [11389] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-25 19:51:17.292 -03 [11386] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-25 19:51:17.292 -03 [11386] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-25 19:51:44.756 -03 [11390] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-25 19:51:44.756 -03 [11390] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-25 19:52:12.043 -03 [11391] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-25 19:52:12.043 -03 [11391] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-25 19:52:41.573 -03 [11392] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-25 19:52:41.573 -03 [11392] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-25 19:53:11.360 -03 [11389] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-25 19:53:11.360 -03 [11389] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-25 19:53:40.774 -03 [11393] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-25 19:53:40.774 -03 [11393] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-25 19:54:10.492 -03 [11395] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-25 19:54:10.492 -03 [11395] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-25 19:54:38.395 -03 [11391] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-25 19:54:38.395 -03 [11391] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-25 19:55:50.278 -03 [11388] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-25 19:55:50.278 -03 [11388] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-25 19:56:18.098 -03 [11388] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-25 19:56:18.098 -03 [11388] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-25 19:56:46.414 -03 [11387] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-25 19:56:46.414 -03 [11387] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-25 19:57:13.813 -03 [11395] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-25 19:57:13.813 -03 [11395] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-25 19:57:42.052 -03 [11388] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-25 19:57:42.052 -03 [11388] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-25 20:07:10.703 -03 [11387] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-25 20:07:10.703 -03 [11387] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-25 20:07:39.579 -03 [11386] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-25 20:07:39.579 -03 [11386] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-25 20:52:56.691 -03 [11392] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-25 20:52:56.691 -03 [11392] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-25 21:42:10.992 -03 [11387] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-25 21:42:10.992 -03 [11387] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-25 21:43:27.301 -03 [39857] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-25 21:43:27.301 -03 [39857] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-25 21:43:54.852 -03 [39853] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-25 21:43:54.852 -03 [39853] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-25 21:44:24.741 -03 [39858] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-25 21:44:24.741 -03 [39858] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-25 21:44:53.207 -03 [39860] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-25 21:44:53.207 -03 [39860] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-25 21:56:32.287 -03 [47646] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-25 21:56:32.287 -03 [47646] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-25 21:57:00.468 -03 [47644] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-25 21:57:00.468 -03 [47644] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-25 21:57:27.789 -03 [47644] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-25 21:57:27.789 -03 [47644] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-25 21:57:56.190 -03 [47644] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-25 21:57:56.190 -03 [47644] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-25 21:58:24.860 -03 [47641] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-25 21:58:24.860 -03 [47641] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-25 21:58:52.427 -03 [47644] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-25 21:58:52.427 -03 [47644] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-25 22:17:43.219 -03 [47640] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-25 22:17:43.219 -03 [47640] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-25 22:18:19.377 -03 [50581] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-25 22:18:19.377 -03 [50581] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-25 22:18:47.691 -03 [50579] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-25 22:18:47.691 -03 [50579] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-25 22:19:15.432 -03 [50583] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-25 22:19:15.432 -03 [50583] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-25 22:19:43.565 -03 [50586] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-25 22:19:43.565 -03 [50586] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-25 22:20:12.615 -03 [50582] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-25 22:20:12.615 -03 [50582] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-26 00:39:57.561 -03 [53961] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-26 00:39:57.561 -03 [53961] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-26 00:40:27.345 -03 [53960] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-26 00:40:27.345 -03 [53960] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-26 00:40:55.212 -03 [53957] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-26 00:40:55.212 -03 [53957] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-26 00:41:24.135 -03 [55731] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-26 00:41:24.135 -03 [55731] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-26 00:41:52.245 -03 [55738] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-26 00:41:52.245 -03 [55738] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-26 00:42:21.126 -03 [55740] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-26 00:42:21.126 -03 [55740] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-26 00:43:49.066 -03 [58108] ERROR:  column "cleanup" of relation "activity_attempts" does not exist at character 34
+2024-02-26 00:43:49.066 -03 [58108] STATEMENT:  INSERT INTO "activity_attempts" ("cleanup","lifecycle_state","attempt_number","resource_id","attempt_guid","transformed_model","revision_id","resource_attempt_id","scoreable","inserted_at","updated_at") VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) RETURNING "id"
+2024-02-26 00:43:49.088 -03 [58120] ERROR:  column "cleanup" of relation "activity_attempts" does not exist at character 34
+2024-02-26 00:43:49.088 -03 [58120] STATEMENT:  INSERT INTO "activity_attempts" ("cleanup","lifecycle_state","attempt_number","resource_id","attempt_guid","transformed_model","revision_id","resource_attempt_id","scoreable","inserted_at","updated_at") VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) RETURNING "id"
+2024-02-26 00:43:49.109 -03 [58116] ERROR:  column "cleanup" of relation "activity_attempts" does not exist at character 34
+2024-02-26 00:43:49.109 -03 [58116] STATEMENT:  INSERT INTO "activity_attempts" ("cleanup","lifecycle_state","attempt_number","resource_id","attempt_guid","transformed_model","revision_id","resource_attempt_id","scoreable","inserted_at","updated_at") VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) RETURNING "id"
+2024-02-26 00:43:49.130 -03 [58107] ERROR:  column "cleanup" of relation "activity_attempts" does not exist at character 34
+2024-02-26 00:43:49.130 -03 [58107] STATEMENT:  INSERT INTO "activity_attempts" ("cleanup","lifecycle_state","attempt_number","resource_id","attempt_guid","transformed_model","revision_id","resource_attempt_id","scoreable","inserted_at","updated_at") VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) RETURNING "id"
+2024-02-26 00:43:49.150 -03 [58103] ERROR:  column "cleanup" of relation "activity_attempts" does not exist at character 34
+2024-02-26 00:43:49.150 -03 [58103] STATEMENT:  INSERT INTO "activity_attempts" ("cleanup","lifecycle_state","attempt_number","resource_id","attempt_guid","transformed_model","revision_id","resource_attempt_id","scoreable","inserted_at","updated_at") VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) RETURNING "id"
+2024-02-26 00:43:49.170 -03 [58113] ERROR:  column "cleanup" of relation "activity_attempts" does not exist at character 34
+2024-02-26 00:43:49.170 -03 [58113] STATEMENT:  INSERT INTO "activity_attempts" ("cleanup","lifecycle_state","attempt_number","resource_id","attempt_guid","transformed_model","revision_id","resource_attempt_id","scoreable","inserted_at","updated_at") VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) RETURNING "id"
+2024-02-26 00:43:49.190 -03 [58124] ERROR:  column "cleanup" of relation "activity_attempts" does not exist at character 34
+2024-02-26 00:43:49.190 -03 [58124] STATEMENT:  INSERT INTO "activity_attempts" ("cleanup","lifecycle_state","attempt_number","resource_id","attempt_guid","transformed_model","revision_id","resource_attempt_id","scoreable","inserted_at","updated_at") VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) RETURNING "id"
+2024-02-26 00:43:49.216 -03 [58122] ERROR:  column "cleanup" of relation "activity_attempts" does not exist at character 34
+2024-02-26 00:43:49.216 -03 [58122] STATEMENT:  INSERT INTO "activity_attempts" ("cleanup","lifecycle_state","attempt_number","resource_id","attempt_guid","transformed_model","revision_id","resource_attempt_id","scoreable","inserted_at","updated_at") VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) RETURNING "id"
+2024-02-26 00:43:49.242 -03 [58132] ERROR:  column "cleanup" of relation "activity_attempts" does not exist at character 34
+2024-02-26 00:43:49.242 -03 [58132] STATEMENT:  INSERT INTO "activity_attempts" ("cleanup","lifecycle_state","attempt_number","resource_id","attempt_guid","transformed_model","revision_id","resource_attempt_id","scoreable","inserted_at","updated_at") VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) RETURNING "id"
+2024-02-26 00:43:49.264 -03 [58121] ERROR:  column "cleanup" of relation "activity_attempts" does not exist at character 34
+2024-02-26 00:43:49.264 -03 [58121] STATEMENT:  INSERT INTO "activity_attempts" ("cleanup","lifecycle_state","attempt_number","resource_id","attempt_guid","transformed_model","revision_id","resource_attempt_id","scoreable","inserted_at","updated_at") VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) RETURNING "id"
+2024-02-26 00:43:49.285 -03 [58112] ERROR:  column "cleanup" of relation "activity_attempts" does not exist at character 34
+2024-02-26 00:43:49.285 -03 [58112] STATEMENT:  INSERT INTO "activity_attempts" ("cleanup","lifecycle_state","attempt_number","resource_id","attempt_guid","transformed_model","revision_id","resource_attempt_id","scoreable","inserted_at","updated_at") VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) RETURNING "id"
+2024-02-26 00:43:49.304 -03 [58105] ERROR:  column "cleanup" of relation "activity_attempts" does not exist at character 34
+2024-02-26 00:43:49.304 -03 [58105] STATEMENT:  INSERT INTO "activity_attempts" ("cleanup","lifecycle_state","attempt_number","resource_id","attempt_guid","transformed_model","revision_id","resource_attempt_id","scoreable","inserted_at","updated_at") VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) RETURNING "id"
+2024-02-26 00:43:49.322 -03 [58126] ERROR:  column "cleanup" of relation "activity_attempts" does not exist at character 34
+2024-02-26 00:43:49.322 -03 [58126] STATEMENT:  INSERT INTO "activity_attempts" ("cleanup","lifecycle_state","attempt_number","resource_id","attempt_guid","transformed_model","revision_id","resource_attempt_id","scoreable","inserted_at","updated_at") VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) RETURNING "id"
+2024-02-26 00:43:49.340 -03 [58111] ERROR:  column "cleanup" of relation "activity_attempts" does not exist at character 34
+2024-02-26 00:43:49.340 -03 [58111] STATEMENT:  INSERT INTO "activity_attempts" ("cleanup","lifecycle_state","attempt_number","resource_id","attempt_guid","transformed_model","revision_id","resource_attempt_id","scoreable","inserted_at","updated_at") VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) RETURNING "id"
+2024-02-26 00:43:49.362 -03 [58109] ERROR:  column "cleanup" of relation "activity_attempts" does not exist at character 34
+2024-02-26 00:43:49.362 -03 [58109] STATEMENT:  INSERT INTO "activity_attempts" ("cleanup","lifecycle_state","attempt_number","resource_id","attempt_guid","transformed_model","revision_id","resource_attempt_id","scoreable","inserted_at","updated_at") VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) RETURNING "id"
+2024-02-26 00:43:49.381 -03 [58131] ERROR:  column "cleanup" of relation "activity_attempts" does not exist at character 34
+2024-02-26 00:43:49.381 -03 [58131] STATEMENT:  INSERT INTO "activity_attempts" ("cleanup","lifecycle_state","attempt_number","resource_id","attempt_guid","transformed_model","revision_id","resource_attempt_id","scoreable","inserted_at","updated_at") VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) RETURNING "id"
+2024-02-26 00:43:49.399 -03 [58114] ERROR:  column "cleanup" of relation "activity_attempts" does not exist at character 34
+2024-02-26 00:43:49.399 -03 [58114] STATEMENT:  INSERT INTO "activity_attempts" ("cleanup","lifecycle_state","attempt_number","resource_id","attempt_guid","transformed_model","revision_id","resource_attempt_id","scoreable","inserted_at","updated_at") VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) RETURNING "id"
+2024-02-26 00:43:49.421 -03 [58129] ERROR:  column "cleanup" of relation "activity_attempts" does not exist at character 34
+2024-02-26 00:43:49.421 -03 [58129] STATEMENT:  INSERT INTO "activity_attempts" ("cleanup","lifecycle_state","attempt_number","resource_id","attempt_guid","transformed_model","revision_id","resource_attempt_id","scoreable","inserted_at","updated_at") VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) RETURNING "id"
+2024-02-26 00:43:49.439 -03 [58117] ERROR:  column "cleanup" of relation "activity_attempts" does not exist at character 34
+2024-02-26 00:43:49.439 -03 [58117] STATEMENT:  INSERT INTO "activity_attempts" ("cleanup","lifecycle_state","attempt_number","resource_id","attempt_guid","transformed_model","revision_id","resource_attempt_id","scoreable","inserted_at","updated_at") VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) RETURNING "id"
+2024-02-26 00:52:44.056 -03 [65347] ERROR:  relation "public.oban_peers" does not exist at character 13
+2024-02-26 00:52:44.056 -03 [65347] STATEMENT:  DELETE FROM "public"."oban_peers" AS o0 WHERE (o0."name" = $1) AND (o0."expires_at" < $2)
+2024-02-26 01:17:27.510 -03 [4610] LOG:  received smart shutdown request
+2024-02-26 01:17:27.515 -03 [4610] LOG:  background worker "logical replication launcher" (PID 4617) exited with exit code 1
+2024-02-26 01:17:27.519 -03 [4612] LOG:  shutting down
+2024-02-26 01:17:27.543 -03 [4610] LOG:  database system is shut down

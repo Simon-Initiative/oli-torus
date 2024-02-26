@@ -1,7 +1,9 @@
 defmodule OliWeb.Insights do
+  alias OliWeb.Common.MultiSelectOptions
   alias Oli.Delivery.Sections
   use OliWeb, :live_view
-
+  alias OliWeb.Common.MultiSelect
+  alias OliWeb.Common.MultiSelectOptions.SelectOption
   alias Oli.Publishing
   alias OliWeb.Insights.{TableHeader, TableRow}
   alias Oli.Authoring.Course
@@ -13,26 +15,33 @@ defmodule OliWeb.Insights do
   def mount(_params, %{"project_slug" => project_slug} = session, socket) do
     ctx = SessionContext.init(socket, session)
 
-    by_activity_rows = Oli.Analytics.ByActivity.query_against_project_slug(project_slug)
+    by_activity_rows = Oli.Analytics.ByActivity.query_against_project_slug(project_slug, [])
     project = Course.get_project_by_slug(project_slug)
-
-    # sections =
-    #   Sections.get_sections_by_base_project(project)
-    #   |> IO.inspect(label: "listasections")
 
     {sections, products} =
       Sections.get_sections_by_base_project(project)
       |> Enum.reduce({[], []}, fn section, {sections, products} ->
         if section.type == :blueprint do
-          {sections, products ++ [section]}
+          {sections,
+           products ++
+             [
+               %SelectOption{
+                 id: section.id,
+                 label: section.title,
+                 selected: false
+               }
+             ]}
         else
-          {sections ++ [section], products}
+          {sections ++
+             [
+               %SelectOption{
+                 id: section.id,
+                 label: section.title,
+                 selected: false
+               }
+             ], products}
         end
       end)
-
-    IO.inspect(products, label: "blueeepr")
-
-    # blueprint = Blueprint.get_blueprint_by_base_project(project)
 
     parent_pages =
       Enum.map(by_activity_rows, fn r -> r.slice.resource_id end)
@@ -73,7 +82,15 @@ defmodule OliWeb.Insights do
        sections: sections,
        filtered_sections: sections,
        filtered_blueprint: products,
-       selected_filter: nil
+       selected_filter: nil,
+       form_sections:
+         MultiSelectOptions.build_changeset(sections)
+         |> to_form(),
+       form_products:
+         MultiSelectOptions.build_changeset(products)
+         |> to_form(),
+       section_ids: [],
+       product_ids: []
      )}
   end
 
@@ -155,38 +172,25 @@ defmodule OliWeb.Insights do
       </li>
 
       <li class="nav-item my-2 mr-2 ">
-        <%= if @sections != [] do %>
-          <form phx-change="suggest_section" phx-value-type="section" phx-submit="search">
-            <input
-              type="text"
-              name="q"
-              value=""
-              list="sections_filter"
-              placeholder="Search Section..."
+        <div class="flex gap-10">
+          <.form for={@form_sections} id="multiselect-form-section" phx-change="section-change">
+            <.live_component
+              id="multi_sections"
+              module={MultiSelect}
+              options={@sections}
+              form={@form_sections}
             />
-            <datalist id="sections_filter">
-              <%= for section <- @sections do %>
-                <option value={section.slug}><%= section.title %></option>
-              <% end %>
-            </datalist>
-          </form>
-        <% end %>
-        <%= if @products != [] do %>
-          <form phx-change="suggest_section" phx-value-type="blueprint" phx-submit="search">
-            <input
-              type="text"
-              name="q"
-              value=""
-              list="sections_filter"
-              placeholder="Search Product..."
+          </.form>
+
+          <.form for={@form_products} id="multiselect-form" phx-change="product-change">
+            <.live_component
+              id="multi_products"
+              module={MultiSelect}
+              options={@products}
+              form={@form_products}
             />
-            <datalist id="sections_filter">
-              <%= for blueprint <- @products do %>
-                <option value={blueprint.slug}><%= blueprint.title %></option>
-              <% end %>
-            </datalist>
-          </form>
-        <% end %>
+          </.form>
+        </div>
       </li>
     </ul>
 
@@ -404,56 +408,23 @@ defmodule OliWeb.Insights do
     end
   end
 
-  def handle_event("suggest_section", params, socket) do
-    IO.inspect(params, label: "paramss")
+  def handle_event("section-change", params, socket) do
+    target_value =
+      hd(params["_target"])
 
-    # assign(socket, filtered_sections: results, selected_filter: "sections")
-    results = get_results(params, socket.assigns)
+    value =
+      params[target_value]
 
-    if results != [] do
-      by_page_rows =
-        Oli.Analytics.ByPage.query_against_project_slug(
-          socket.assigns.project.slug,
-          results
-        )
-
-      active_rows =
-        apply_filter_sort(
-          :by_page,
-          by_page_rows,
-          socket.assigns.query,
-          socket.assigns.sort_by,
-          socket.assigns.sort_order
-        )
-
-      {:noreply,
-       assign(socket,
-         by_page_rows: by_page_rows,
-         active_rows: active_rows,
-         filtered_sections: results
-       )}
-    else
-      IO.inspect("llego")
-
-      {:noreply,
-       assign(socket,
-         by_page_rows: nil
-       )}
-    end
+    update_section_by_value(value, socket, target_value)
   end
 
-  defp get_results(%{"type" => "section"} = params, %{sections: sections}) do
-    Enum.filter(sections, fn section ->
-      String.contains?(section.title, params["q"])
-    end)
-    |> Enum.map(& &1.id)
-  end
+  def handle_event("product-change", params, socket) do
+    target_value = hd(params["_target"])
 
-  defp get_results(%{"type" => "blueprint"} = params, %{products: products}) do
-    Enum.filter(products, fn product ->
-      String.contains?(product.title, params["q"])
-    end)
-    |> Enum.map(& &1.id)
+    value =
+      params[target_value]
+
+    update_product_by_value(value, socket, target_value)
   end
 
   def handle_info(
@@ -484,7 +455,11 @@ defmodule OliWeb.Insights do
   end
 
   def handle_info(:init_by_page, socket) do
-    by_page_rows = Oli.Analytics.ByPage.query_against_project_slug(socket.assigns.project.slug)
+    by_page_rows =
+      Oli.Analytics.ByPage.query_against_project_slug(
+        socket.assigns.project.slug,
+        socket.assigns.section_ids
+      )
 
     active_rows =
       apply_filter_sort(
@@ -515,27 +490,126 @@ defmodule OliWeb.Insights do
     {:noreply, assign(socket, by_objective_rows: by_objective_rows, active_rows: active_rows)}
   end
 
-  def handle_info(:init_by_filter, socket) do
-    IO.inspect(socket.assigns.selected_filter, label: "byyyy")
+  def handle_info(:init_by_activity, socket) do
+    by_activity_rows =
+      Oli.Analytics.ByActivity.query_against_project_slug(
+        socket.assigns.project.slug,
+        socket.assigns.section_ids
+      )
 
-    if socket.assigns.selected == :by_page and socket.assigns.selected_filter == "section" do
-      by_page_rows =
-        Oli.Analytics.ByPage.query_against_project_slug(
-          socket.assigns.project.slug,
-          socket.assigns.filtered_sections
-        )
+    active_rows =
+      apply_filter_sort(
+        :by_activity,
+        by_activity_rows,
+        socket.assigns.query,
+        socket.assigns.sort_by,
+        socket.assigns.sort_order
+      )
 
-      active_rows =
-        apply_filter_sort(
-          :by_page,
-          by_page_rows,
-          socket.assigns.query,
-          socket.assigns.sort_by,
-          socket.assigns.sort_order
-        )
+    {:noreply, assign(socket, by_activity_rows: by_activity_rows, active_rows: active_rows)}
+  end
 
-      {:noreply, assign(socket, by_page_rows: by_page_rows, active_rows: active_rows)}
+  defp update_section_by_value(value, socket, target_value) do
+    case value do
+      "true" ->
+        section_ids_updated =
+          update_section_ids(
+            :add,
+            socket.assigns.sections,
+            target_value,
+            socket.assigns.section_ids
+          )
+
+        socket = assign(socket, section_ids: section_ids_updated)
+        filter_type(socket.assigns.selected)
+        {:noreply, socket}
+
+      "false" ->
+        section_ids_updated =
+          update_section_ids(
+            :delete,
+            socket.assigns.sections,
+            target_value,
+            socket.assigns.section_ids
+          )
+
+        socket = assign(socket, section_ids: section_ids_updated)
+        filter_type(socket.assigns.selected)
+        {:noreply, socket}
+
+      _ ->
+        {:noreply, socket}
     end
+  end
+
+  defp update_product_by_value(value, socket, target_value) do
+    case value do
+      "true" ->
+        product_ids_updated =
+          update_section_ids(
+            :add,
+            socket.assigns.products,
+            target_value,
+            socket.assigns.product_ids
+          )
+
+        case socket.selected do
+          :init_by_page ->
+            send(self(), :init_by_page)
+            {:noreply, socket}
+        end
+
+        socket = assign(socket, product_ids: product_ids_updated)
+        filter_type(socket.assigns.selected)
+        {:noreply, socket}
+
+      "false" ->
+        product_ids_updated =
+          update_section_ids(
+            :delete,
+            socket.assigns.products,
+            target_value,
+            socket.assigns.product_ids
+          )
+
+        socket = assign(socket, product_ids: product_ids_updated)
+        send(self(), :fliter_by_section_ids)
+        {:noreply, socket}
+
+      _ ->
+        {:noreply, socket}
+    end
+  end
+
+  defp filter_type(selected) do
+    case selected do
+      :by_page ->
+        send(self(), :init_by_page)
+
+      :by_activity ->
+        send(self(), :init_by_activity)
+
+      :by_objective ->
+        send(self(), :init_by_objective)
+    end
+  end
+
+  defp update_section_ids(action, sections, target, section_ids) do
+    case action do
+      :add ->
+        [fliter_section_by_target_value(sections, target) | section_ids]
+
+      :delete ->
+        List.delete(section_ids, fliter_section_by_target_value(sections, target))
+    end
+  end
+
+  defp fliter_section_by_target_value(sections, target) do
+    hd(
+      Enum.filter(sections, fn section ->
+        section.label == target
+      end)
+    ).id
   end
 
   defp click_or_enter_key?(event) do

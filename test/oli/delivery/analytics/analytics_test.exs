@@ -23,9 +23,23 @@ defmodule Oli.Delivery.Analytics.AnalyticsTest do
     {:ok,
      %{
        seeds: seeds,
-       activity_query: ByActivity.query_against_project_slug(seeds.project.slug),
+       activity_query: ByActivity.query_against_project_slug(seeds.project.slug, []),
        objective_query: ByObjective.query_against_project_slug(seeds.project.slug),
-       page_query: ByPage.query_against_project_slug(seeds.project.slug)
+       page_query:
+         ByPage.query_against_project_slug(
+           seeds.project.slug,
+           []
+         ),
+       page_with_sections_query:
+         ByPage.query_against_project_slug(
+           seeds.project.slug,
+           [seeds[:section].id]
+         ),
+       activity_with_sections_query:
+         ByPage.query_against_project_slug(
+           seeds.project.slug,
+           [seeds[:section].id]
+         )
      }}
   end
 
@@ -59,6 +73,21 @@ defmodule Oli.Delivery.Analytics.AnalyticsTest do
     end
 
     test "with attempts from 1 user", %{activity_query: activity_query, seeds: seeds} do
+      # test a couple activities with different users attempting them
+      activity_user1 = seeds.activity_user1.revision
+      activity1_results = Enum.find(activity_query, &(&1.slice.id == activity_user1.id))
+
+      activity_user2 = seeds.activity_user2.revision
+      activity2_results = Enum.find(activity_query, &(&1.slice.id == activity_user2.id))
+
+      assert activity1_results.number_of_attempts == 3
+      assert activity2_results.number_of_attempts == 2
+    end
+
+    test "with attempts from 1 user", %{
+      activity_with_sections_query: activity_with_sections_query,
+      seeds: seeds
+    } do
       # test a couple activities with different users attempting them
       activity_user1 = seeds.activity_user1.revision
       activity1_results = Enum.find(activity_query, &(&1.slice.id == activity_user1.id))
@@ -317,7 +346,7 @@ defmodule Oli.Delivery.Analytics.AnalyticsTest do
              end)
 
       # 4 activities with no analytics
-      activity_insights = ByActivity.query_against_project_slug(duplicated.slug)
+      activity_insights = ByActivity.query_against_project_slug(duplicated.slug, [])
       assert Enum.count(activity_insights) == 4
 
       assert Enum.all?(activity_insights, fn obj ->
@@ -325,7 +354,7 @@ defmodule Oli.Delivery.Analytics.AnalyticsTest do
              end)
 
       # 3 pages with no analytics
-      page_insights = ByPage.query_against_project_slug(duplicated.slug)
+      page_insights = ByPage.query_against_project_slug(duplicated.slug, [])
       assert Enum.count(page_insights) == 3
 
       assert Enum.all?(page_insights, fn obj ->
