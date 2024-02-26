@@ -38,7 +38,7 @@
   <% end %>
 </div>
 
-<div class="h-screen flex flex-col overscroll-none">
+<div class="h-screen flex flex-col overscroll-none overflow-hidden">
   <Components.Delivery.Layouts.header
     ctx={@ctx}
     is_system_admin={assigns[:is_system_admin] || false}
@@ -47,9 +47,13 @@
     preview_mode={@preview_mode}
   />
 
-  <div class="flex-1 flex flex-col mt-14">
-    <div :if={@section} id="page-content" class="relative justify-center items-start inline-flex">
-      <.back_arrow to={@request_path} />
+  <div class="flex-1 flex flex-col mt-14 overflow-hidden">
+    <div
+      :if={@section}
+      id="page-content"
+      class="flex-1 flex flex-col relative justify-center items-start overflow-hidden"
+    >
+      <.back_arrow to={@request_path} show_sidebar={assigns[:show_sidebar]} />
 
       <%!-- This feature will not be implemented in the first release. This is just a placeholder--%>
       <.annotations_dropdown />
@@ -72,7 +76,8 @@
       session: %{
         "section_slug" => @section.slug,
         "resource_id" => @current_page["id"],
-        "revision_id" => @page_context.page.id
+        "revision_id" => @page_context.page.id,
+        "is_page" => true
       },
       id: "dialogue-window"
     ) %>

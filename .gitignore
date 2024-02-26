@@ -96,3 +96,4 @@ _imports
 # the directory for AWS S3 uploads (for dev)
 /data
 MnesiaCore.nonode@nohost_1698_943806_800396
+.envrc

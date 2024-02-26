@@ -315,7 +315,7 @@ defmodule OliWeb.Dialogue.WindowLive do
   def left_to_right_fade_in_icon(assigns) do
     ~H"""
     <svg
-      class={["lg:block fill-black dark:opacity-100", if(@is_page, do: "hidden", else: "block")]}
+      class={["fill-black dark:opacity-100", if(@is_page, do: "hidden lg:block", else: "block")]}
       width="170"
       height="74"
       viewBox="0 0 170 74"
