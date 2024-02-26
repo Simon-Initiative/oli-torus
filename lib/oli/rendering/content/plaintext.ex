@@ -35,6 +35,10 @@ defmodule Oli.Rendering.Content.Plaintext do
     [next.(), " "]
   end
 
+  def input_ref(%Context{} = _context, _next, _) do
+    ["[user input]"]
+  end
+
   def h1(%Context{} = _context, next, _) do
     [next.(), " "]
   end
