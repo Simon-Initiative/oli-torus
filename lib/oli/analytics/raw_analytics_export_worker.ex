@@ -131,7 +131,7 @@ defmodule Oli.Analytics.RawAnalyticsExportWorker do
     [
       {"by_page.tsv", Oli.Analytics.ByPage.query_against_project_slug(project_slug, [])},
       {"by_activity.tsv", Oli.Analytics.ByActivity.query_against_project_slug(project_slug, [])},
-      {"by_objective.tsv", Oli.Analytics.ByObjective.query_against_project_slug(project_slug, [])}
+      {"by_objective.tsv", Oli.Analytics.ByObjective.query_against_project_slug(project_slug)}
     ]
     |> Enum.map(fn {name, data} -> {name, [analytics_title_row | extract_analytics(data)]} end)
     |> Enum.map(fn {name, data} ->
