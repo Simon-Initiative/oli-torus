@@ -15,7 +15,7 @@ defmodule OliWeb.LayoutViewTest do
     end
 
     test "renders admin info" do
-      author = insert(:author, system_role_id: Oli.Accounts.SystemRole.role_id().admin)
+      author = insert(:author, system_role_id: Oli.Accounts.SystemRole.role_id().system_admin)
 
       assert AuthoringView.author_role_text(author) == "Admin"
       assert AuthoringView.author_role_color(author) == "admin-color"

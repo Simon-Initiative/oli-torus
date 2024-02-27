@@ -61,7 +61,8 @@ defmodule OliWeb.Users.AuthorsDetailView do
            csrf_token: csrf_token,
            changeset: author_changeset(user),
            disabled_edit: true,
-           ctx: SessionContext.init(socket, session)
+           ctx: SessionContext.init(socket, session),
+           authors: SystemRole.role_id()
          )}
     end
   end
@@ -74,6 +75,7 @@ defmodule OliWeb.Users.AuthorsDetailView do
   attr(:csrf_token, :any)
   attr(:changeset, :map)
   attr(:disabled_edit, :boolean, default: true)
+  attr(:authors, :map, default: %{})
 
   def render(assigns) do
     ~H"""
@@ -82,7 +84,13 @@ defmodule OliWeb.Users.AuthorsDetailView do
 
       <Groups.render>
         <Group.render label="Details" description="User details">
-          <.form for={@changeset} phx-change="change" phx-submit="submit" autocomplete="off">
+          <.form
+            id="edit_author"
+            for={@changeset}
+            phx-change="change"
+            phx-submit="submit"
+            autocomplete="off"
+          >
             <ReadOnly.render label="Name" value={@user.name} />
             <div class="form-group">
               <label for="given_name">First Name</label>
@@ -114,7 +122,19 @@ defmodule OliWeb.Users.AuthorsDetailView do
                 disabled={@disabled_edit}
               />
             </div>
-            <ReadOnly.render label="Role" value={role(@user.system_role_id)} />
+            <div class="form-group">
+              <label for="role">Role</label>
+              <select
+                id="role"
+                class="form-control"
+                name="author[system_role_id]"
+                disabled={@disabled_edit or not Accounts.is_system_admin?(@author)}
+              >
+                <%= for {_type, id} <- @authors do %>
+                  <option value={id} selected={@user.system_role_id == id}><%= role(id) %></option>
+                <% end %>
+              </select>
+            </div>
             <%= unless @disabled_edit do %>
               <button type="submit" class="float-right btn btn-md btn-primary mt-2">Save</button>
             <% end %>
@@ -283,7 +303,7 @@ defmodule OliWeb.Users.AuthorsDetailView do
   end
 
   def handle_event("grant_admin", %{"id" => id}, socket) do
-    admin_role_id = SystemRole.role_id().admin
+    admin_role_id = SystemRole.role_id().system_admin
     author = Accounts.get_author!(id)
 
     {:noreply,
@@ -353,11 +373,19 @@ defmodule OliWeb.Users.AuthorsDetailView do
   end
 
   defp role(system_role_id) do
-    admin_role_id = SystemRole.role_id().admin
+    admin_role_id = SystemRole.role_id().system_admin
+    account_role_id = SystemRole.role_id().account_admin
+    content_role_id = SystemRole.role_id().content_admin
 
     case system_role_id do
       ^admin_role_id ->
-        "Administrator"
+        "System Admin"
+
+      ^account_role_id ->
+        "Account Admin"
+
+      ^content_role_id ->
+        "Content Admin"
 
       _ ->
         "Author"

@@ -2,15 +2,13 @@ defmodule Oli.Plugs.AuthorizeSection do
   import Plug.Conn
   import Phoenix.Controller
 
-  alias Oli.Accounts.SystemRole
+  alias Oli.Accounts
   alias Oli.Delivery.Sections
-
-  @admin_role_id SystemRole.role_id() |> Map.get(:admin)
 
   def init(opts), do: opts
 
   def call(conn, _opts) do
-    if is_admin?(conn) or is_instructor?(conn) do
+    if Accounts.has_admin_role?(conn.assigns[:current_author]) or is_instructor?(conn) do
       conn
     else
       conn
@@ -18,13 +16,6 @@ defmodule Oli.Plugs.AuthorizeSection do
       |> put_status(403)
       |> render("not_authorized.html")
       |> halt()
-    end
-  end
-
-  defp is_admin?(conn) do
-    case conn.assigns[:current_author] do
-      %{system_role_id: system_role_id} -> system_role_id == @admin_role_id
-      _ -> false
     end
   end
 

@@ -10,6 +10,12 @@ defmodule OliWeb.Components.Delivery.UserAccountMenu do
   alias OliWeb.Common.SessionContext
   alias OliWeb.Common.React
 
+  @system_admin_role_ids [
+    SystemRole.role_id().system_admin,
+    SystemRole.role_id().account_admin,
+    SystemRole.role_id().content_admin
+  ]
+
   attr(:ctx, SessionContext)
   attr(:section, Section)
   attr(:is_liveview, :boolean, default: false)
@@ -131,10 +137,8 @@ defmodule OliWeb.Components.Delivery.UserAccountMenu do
   end
 
   defp signout_path(%SessionContext{user: user_or_admin}) do
-    admin_role_id = SystemRole.role_id().admin
-
     case user_or_admin do
-      %Author{system_role_id: ^admin_role_id} ->
+      %Author{system_role_id: system_role_id} when system_role_id in @system_admin_role_ids ->
         Routes.authoring_session_path(OliWeb.Endpoint, :signout, type: :author)
 
       _ ->

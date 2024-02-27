@@ -21,14 +21,12 @@ defmodule OliWeb.Projects.ProjectsLive do
 
   def mount(_, %{"current_author_id" => _} = session, socket) do
     %SessionContext{author: author} = ctx = SessionContext.init(socket, session)
-    is_admin = Accounts.is_admin?(author)
+    is_admin = Accounts.has_admin_role?(author)
 
     show_all =
-      if is_admin do
-        Accounts.get_author_preference(author, :admin_show_all_projects, true)
-      else
-        true
-      end
+      if is_admin,
+        do: Accounts.get_author_preference(author, :admin_show_all_projects, true),
+        else: true
 
     show_deleted = Accounts.get_author_preference(author, :admin_show_deleted_projects, false)
 

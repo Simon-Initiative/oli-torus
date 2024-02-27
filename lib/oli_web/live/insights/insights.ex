@@ -1,7 +1,7 @@
 defmodule OliWeb.Insights do
   use OliWeb, :live_view
 
-  alias Oli.Publishing
+  alias Oli.{Accounts, Publishing}
   alias OliWeb.Insights.{TableHeader, TableRow}
   alias Oli.Authoring.Course
   alias OliWeb.Components.Project.AsyncExporter
@@ -34,7 +34,7 @@ defmodule OliWeb.Insights do
     {:ok,
      assign(socket,
        ctx: ctx,
-       is_admin?: Oli.Accounts.is_admin?(ctx.author),
+       is_admin?: Accounts.is_system_admin?(ctx.author),
        project: project,
        by_page_rows: nil,
        by_activity_rows: by_activity_rows,
