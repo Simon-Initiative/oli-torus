@@ -18,6 +18,13 @@ defmodule Oli.Delivery.Sections.Section do
     Section
   }
 
+  @required_fields [
+    :type,
+    :title,
+    :registration_open,
+    :base_project_id
+  ]
+
   schema "sections" do
     field(:type, Ecto.Enum, values: [:enrollable, :blueprint], default: :enrollable)
 
@@ -209,12 +216,7 @@ defmodule Oli.Delivery.Sections.Section do
       :assistant_enabled
     ])
     |> cast_embed(:customizations, required: false)
-    |> validate_required([
-      :type,
-      :title,
-      :registration_open,
-      :base_project_id
-    ])
+    |> validate_required(@required_fields)
     |> validate_required_if([:amount], &requires_payment?/1)
     |> validate_required_if([:grace_period_days], &has_grace_period?/1)
     |> validate_required_if([:publisher_id, :apply_major_updates], &is_product?/1)
@@ -239,6 +241,12 @@ defmodule Oli.Delivery.Sections.Section do
       end
     end)
   end
+
+  @doc """
+  Returns the required fields for a section.
+  """
+  @spec required_fields() :: [atom()]
+  def required_fields, do: @required_fields
 
   defp requires_payment?(changeset) do
     case changeset do
