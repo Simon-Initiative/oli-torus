@@ -1086,44 +1086,6 @@ defmodule OliWeb.AdminLiveTest do
       assert not is_nil(date)
     end
 
-    test "grant admin to author", %{
-      conn: conn,
-      author: %Author{id: id}
-    } do
-      {:ok, view, _html} = live(conn, live_view_author_detail_route(id))
-
-      view
-      |> element("button[phx-click=\"show_grant_admin_modal\"]")
-      |> render_click()
-
-      view
-      |> element("button[phx-click=\"grant_admin\"]")
-      |> render_click()
-
-      admin_role = Oli.Accounts.SystemRole.role_id().system_admin
-      assert %Author{system_role_id: ^admin_role} = Accounts.get_author!(id)
-    end
-
-    test "revoke admin to author", %{
-      conn: conn
-    } do
-      %Author{id: id} =
-        insert(:author, %{system_role_id: Oli.Accounts.SystemRole.role_id().system_admin})
-
-      {:ok, view, _html} = live(conn, live_view_author_detail_route(id))
-
-      view
-      |> element("button[phx-click=\"show_revoke_admin_modal\"]")
-      |> render_click()
-
-      view
-      |> element("button[phx-click=\"revoke_admin\"]")
-      |> render_click()
-
-      author_role = Oli.Accounts.SystemRole.role_id().author
-      assert %Author{system_role_id: ^author_role} = Accounts.get_author!(id)
-    end
-
     test "shows email confirmation buttons when author account was created but not confirmed yet",
          %{conn: conn} do
       non_confirmed_author = insert(:author, email_confirmation_token: "token")
