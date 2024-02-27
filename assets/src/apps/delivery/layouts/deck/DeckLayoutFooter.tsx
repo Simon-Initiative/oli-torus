@@ -613,7 +613,7 @@ const DeckLayoutFooter: React.FC = () => {
         if (activityHistoryTimeStamp === 0) {
           updateActivityHistoryTimeStamp();
         }
-        //** there are cases when wrong trap state gets trigger but user is still allowed to jump to another activity */
+        //** there are cases when wrong trap state gets trigger but user is still allowed to jump to another activity  */
         //** if we don't do this then, every time Next button will trigger a check events instead of navigating user to respective activity */
         dispatch(
           nextActivityId === 'next' ? navigateToNextActivity() : navigateToActivity(nextActivityId),
