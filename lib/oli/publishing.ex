@@ -1031,7 +1031,7 @@ defmodule Oli.Publishing do
 
     case result do
       {:error, :interupted_by_another_user} ->
-        Locks.release_all(active_publication.id)
+        Locks.release_all(id)
 
         {:error, "Another user has modified the active publication. Please try again."}
 
