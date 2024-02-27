@@ -423,7 +423,7 @@ defmodule Oli.Utils.Seeder.Project do
       case publication do
         %Publication{published: nil} ->
           project = Oli.Authoring.Course.get_project!(publication.project_id)
-          {:ok, published} = Oli.Publishing.publish_project(project, "ensure published")
+          {:ok, published} = Oli.Publishing.publish_project(project, "ensure published", 1)
 
           published
 

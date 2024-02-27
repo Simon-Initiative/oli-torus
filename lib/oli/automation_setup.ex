@@ -33,7 +33,7 @@ defmodule Oli.AutomationSetup do
       |> Multi.run(:educator, fn _repo, %{author: {author, _}} ->
         create_educator(create_educator? or create_section?, author)
       end)
-      |> Multi.run(:publication, fn _repo, %{project: project} -> publish_project(project) end)
+      |> Multi.run(:publication, fn _repo, %{project: project, author: {author, _}} -> publish_project(project, author.id) end)
       |> Multi.run(:section, fn _repo,
                                 %{
                                   project: project,
@@ -158,14 +158,15 @@ defmodule Oli.AutomationSetup do
     teardown_user(email, password, :author, "Test Author")
   end
 
-  defp publish_project(nil) do
+  defp publish_project(nil, _) do
     {:ok, nil}
   end
 
-  defp publish_project(project) do
+  defp publish_project(project, author_id) do
     Oli.Publishing.publish_project(
       project,
-      "Automated test setup"
+      "Automated test setup",
+      author_id
     )
   end
 

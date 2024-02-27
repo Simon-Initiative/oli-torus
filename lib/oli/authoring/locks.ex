@@ -193,6 +193,24 @@ defmodule Oli.Authoring.Locks do
     |> Repo.update_all(set: [locked_by_id: nil, lock_updated_at: nil])
   end
 
+  @doc """
+  Acquires all locks for revisions in the supplied publication for the given user.
+
+  Returns:
+  .`{number, nil | returned data}` where number is the number of rows updated
+  """
+  @spec release_all(binary) :: {number, nil | term()}
+  def acquire_all(publication_id, user_id) do
+
+    now = now()
+
+    from(pr in PublishedResource,
+      where: pr.publication_id == ^publication_id,
+      select: pr
+    )
+    |> Repo.update_all(set: [locked_by_id: user_id, lock_updated_at: now])
+  end
+
   defp now() do
     {:ok, datetime} = DateTime.now("Etc/UTC")
     datetime

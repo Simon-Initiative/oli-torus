@@ -596,7 +596,7 @@ defmodule Oli.SectionsTest do
       container: %{resource: container_resource, revision: container_revision},
       institution: institution
     } do
-      {:ok, initial_pub} = Publishing.publish_project(project, "some changes")
+      {:ok, initial_pub} = Publishing.publish_project(project, "some changes", author.id)
 
       # Create a course section using the initial publication
       {:ok, section} =
@@ -631,7 +631,7 @@ defmodule Oli.SectionsTest do
           working_pub
         )
 
-      {:ok, latest_publication} = Publishing.publish_project(project, "some changes")
+      {:ok, latest_publication} = Publishing.publish_project(project, "some changes", author.id)
 
       # verify project published changes show up in list of updates
       available_updates = Sections.check_for_available_publication_updates(section)
@@ -650,7 +650,7 @@ defmodule Oli.SectionsTest do
       revision2: revision2,
       institution: institution
     } do
-      {:ok, initial_pub} = Publishing.publish_project(project, "some changes")
+      {:ok, initial_pub} = Publishing.publish_project(project, "some changes", author.id)
 
       # Create a course section using the initial publication
       {:ok, section} =
@@ -741,7 +741,7 @@ defmodule Oli.SectionsTest do
         Seeder.delete_page(page2, revision2, container_resource, container_revision, working_pub)
 
       # publish changes
-      {:ok, latest_publication} = Publishing.publish_project(project, "some changes")
+      {:ok, latest_publication} = Publishing.publish_project(project, "some changes", author.id)
 
       # queue the publication update and immediately check for updates in progress
       %{"section_slug" => section.slug, "publication_id" => latest_publication.id}
@@ -765,7 +765,7 @@ defmodule Oli.SectionsTest do
       revision2: revision2,
       institution: institution
     } do
-      {:ok, initial_pub} = Publishing.publish_project(project, "some changes")
+      {:ok, initial_pub} = Publishing.publish_project(project, "some changes", author.id)
 
       # Create a course section using the initial publication
       {:ok, section} =
@@ -856,7 +856,7 @@ defmodule Oli.SectionsTest do
         Seeder.delete_page(page2, revision2, container_resource, container_revision, working_pub)
 
       # publish changes
-      {:ok, latest_publication} = Publishing.publish_project(project, "some changes")
+      {:ok, latest_publication} = Publishing.publish_project(project, "some changes", author.id)
 
       # apply the new publication update to the section
       Sections.apply_publication_update(section, latest_publication.id)
@@ -913,7 +913,7 @@ defmodule Oli.SectionsTest do
            page2: page2,
            institution: institution
          } = map do
-      {:ok, initial_pub} = Publishing.publish_project(project, "some changes")
+      {:ok, initial_pub} = Publishing.publish_project(project, "some changes", map.author.id)
 
       # create a course section using the initial publication
       {:ok, section} =
@@ -1001,7 +1001,7 @@ defmodule Oli.SectionsTest do
       Seeder.revise_page(page1_changes, page1, revision1, working_pub)
 
       # publish changes
-      {:ok, latest_publication} = Publishing.publish_project(project, "some changes")
+      {:ok, latest_publication} = Publishing.publish_project(project, "some changes", map.author.id)
 
       # verify the publication is a minor update
       assert latest_publication.edition == 0
@@ -1049,7 +1049,7 @@ defmodule Oli.SectionsTest do
       page2: page2,
       revision2: revision2
     } do
-      {:ok, _pr} = Publishing.publish_project(project, "some changes")
+      {:ok, _pr} = Publishing.publish_project(project, "some changes", author.id)
 
       %{product: product, section: section} =
         %{}
@@ -1175,7 +1175,7 @@ defmodule Oli.SectionsTest do
         Seeder.delete_page(page2, revision2, container_resource, container_revision, working_pub)
 
       # publish changes
-      {:ok, latest_publication} = Publishing.publish_project(project, "some changes")
+      {:ok, latest_publication} = Publishing.publish_project(project, "some changes", author.id)
 
       # apply the new publication update to the product
       Sections.apply_publication_update(product, latest_publication.id)
@@ -1287,7 +1287,7 @@ defmodule Oli.SectionsTest do
            page2: page2,
            revision2: revision2
          } do
-      {:ok, _initial_pub} = Publishing.publish_project(project, "some changes")
+      {:ok, _initial_pub} = Publishing.publish_project(project, "some changes", author.id)
 
       seeds =
         %{product: product} =
@@ -1423,7 +1423,7 @@ defmodule Oli.SectionsTest do
         Seeder.delete_page(page2, revision2, container_resource, container_revision, working_pub)
 
       # publish changes
-      {:ok, latest_publication} = Publishing.publish_project(project, "some changes")
+      {:ok, latest_publication} = Publishing.publish_project(project, "some changes", author.id)
 
       # apply the new publication update to the section
       Sections.apply_publication_update(section, latest_publication.id)
@@ -1508,7 +1508,7 @@ defmodule Oli.SectionsTest do
            page2: page2,
            revision2: revision2
          } do
-      {:ok, _initial_pub} = Publishing.publish_project(project, "some changes")
+      {:ok, _initial_pub} = Publishing.publish_project(project, "some changes", author.id)
 
       seeds =
         %{product: product} =
@@ -1643,7 +1643,7 @@ defmodule Oli.SectionsTest do
         Seeder.delete_page(page2, revision2, container_resource, container_revision, working_pub)
 
       # publish changes
-      {:ok, latest_publication} = Publishing.publish_project(project, "some changes")
+      {:ok, latest_publication} = Publishing.publish_project(project, "some changes", author.id)
 
       # apply the new publication update to the section
       Sections.apply_publication_update(section, latest_publication.id)
