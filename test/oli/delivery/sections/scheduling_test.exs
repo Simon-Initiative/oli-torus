@@ -14,9 +14,10 @@ defmodule Oli.Delivery.Sections.SchedulingTest do
 
     test "retrieve/1 fetches and update/2 edits", %{
       project: project,
-      institution: institution
+      institution: institution,
+      author: author
     } do
-      {:ok, initial_pub} = Publishing.publish_project(project, "some changes")
+      {:ok, initial_pub} = Publishing.publish_project(project, "some changes", author.id)
 
       # Create a course section using the initial publication
       {:ok, section} =
@@ -105,9 +106,10 @@ defmodule Oli.Delivery.Sections.SchedulingTest do
 
     test "cannot edit section resources of a different section", %{
       project: project,
-      institution: institution
+      institution: institution,
+      author: author
     } do
-      {:ok, initial_pub} = Publishing.publish_project(project, "some changes")
+      {:ok, initial_pub} = Publishing.publish_project(project, "some changes", author.id)
 
       # Create a course section using the initial publication
       {:ok, section1} =
