@@ -100,30 +100,32 @@ defmodule OliWeb.Projects.OverviewLive do
               required: true
             ) %>
           </div>
-          <%= if @can_enable_experiments do %>
-            <div class="form-label-group mb-3">
-              <div class="form-label-group mb-3 form-check">
-                <%= checkbox(f, :has_experiments, required: false) %>
-                <%= label(f, :has_experiments, "Enable Upgrade-based Experiments") %>
-              </div>
 
-              <%= if @project.has_experiments do %>
-                <a
-                  type="button"
-                  class="btn btn-link pl-0"
-                  href={
-                    Routes.live_path(
-                      OliWeb.Endpoint,
-                      OliWeb.Experiments.ExperimentsView,
-                      @project.slug
-                    )
-                  }
-                >
-                  Manage Experiments
-                </a>
-              <% end %>
+          <div class="form-label-group mb-3">
+            <%= if @can_enable_experiments do %>
+            <div class="form-label-group mb-3 form-check">
+              <%= checkbox(f, :has_experiments, required: false) %>
+              <%= label(f, :has_experiments, "Enable Upgrade-based Experiments") %>
             </div>
-          <% end %>
+            <% end %>
+
+            <%= if @project.has_experiments do %>
+              <a
+                type="button"
+                class="btn btn-link pl-0"
+                href={
+                  Routes.live_path(
+                    OliWeb.Endpoint,
+                    OliWeb.Experiments.ExperimentsView,
+                    @project.slug
+                  )
+                }
+              >
+                Manage Experiments
+              </a>
+            <% end %>
+          </div>
+
           <%= submit("Save", class: "btn btn-md btn-primary mt-2") %>
         </Overview.section>
         <Overview.section
