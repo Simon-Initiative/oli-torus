@@ -441,16 +441,16 @@ defmodule Oli.Accounts do
   end
 
   def at_least_content_admin?(%Author{system_role_id: system_role_id}) do
-    SystemRole.role_id().content_admin == system_role_id
-    or SystemRole.role_id().account_admin == system_role_id
-    or SystemRole.role_id().system_admin == system_role_id
+    SystemRole.role_id().content_admin == system_role_id or
+      SystemRole.role_id().account_admin == system_role_id or
+      SystemRole.role_id().system_admin == system_role_id
   end
 
   def at_least_content_admin?(_), do: false
 
   def at_least_account_admin?(%Author{system_role_id: system_role_id}) do
-    SystemRole.role_id().account_admin == system_role_id
-    or SystemRole.role_id().system_admin == system_role_id
+    SystemRole.role_id().account_admin == system_role_id or
+      SystemRole.role_id().system_admin == system_role_id
   end
 
   def at_least_account_admin?(_), do: false
