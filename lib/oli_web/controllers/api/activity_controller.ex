@@ -435,7 +435,8 @@ defmodule OliWeb.Api.ActivityController do
 
     if is_preview_mode,
       do:
-        Sections.is_instructor?(user, section_slug) or Accounts.at_least_content_admin?(current_author),
+        Sections.is_instructor?(user, section_slug) or
+          Accounts.at_least_content_admin?(current_author),
       else: Sections.is_enrolled?(user.id, section_slug)
   end
 

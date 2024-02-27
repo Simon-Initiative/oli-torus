@@ -103,10 +103,10 @@ defmodule OliWeb.Projects.OverviewLive do
 
           <div class="form-label-group mb-3">
             <%= if @can_enable_experiments do %>
-            <div class="form-label-group mb-3 form-check">
-              <%= checkbox(f, :has_experiments, required: false) %>
-              <%= label(f, :has_experiments, "Enable Upgrade-based Experiments") %>
-            </div>
+              <div class="form-label-group mb-3 form-check">
+                <%= checkbox(f, :has_experiments, required: false) %>
+                <%= label(f, :has_experiments, "Enable Upgrade-based Experiments") %>
+              </div>
             <% end %>
 
             <%= if @project.has_experiments do %>
