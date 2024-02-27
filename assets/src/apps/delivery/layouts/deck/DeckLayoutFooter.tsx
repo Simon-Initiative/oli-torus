@@ -43,7 +43,6 @@ import {
   selectCurrentActivityTreeAttemptState,
 } from '../../store/features/groups/selectors/deck';
 import {
-  selectEnableHistory,
   selectIsLegacyTheme,
   selectPageContent,
   selectPreviewMode,
@@ -229,7 +228,6 @@ const DeckLayoutFooter: React.FC = () => {
   const isGoodFeedback = useSelector(selectIsGoodFeedback);
   const currentFeedbacks = useSelector(selectCurrentFeedbacks);
   const nextActivityId: string = useSelector(selectNextActivityId);
-  const enableHistory = useSelector(selectEnableHistory);
   const lastCheckTimestamp = useSelector(selectLastCheckTriggered);
   const lastCheckResults = useSelector(selectLastCheckResults);
   const initPhaseComplete = useSelector(selectInitPhaseComplete);
