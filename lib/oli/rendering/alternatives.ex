@@ -53,7 +53,7 @@ defmodule Oli.Rendering.Alternatives do
       element
     )
     |> render_selected_alternatives(context, writer)
-    |> maybe_render_preference_selector(context, element, writer)
+    |> maybe_render_preference_selector(context, element, writer, by_id)
   end
 
   # Renders an error message if none of the signatures above match. Logging and rendering of errors
@@ -81,11 +81,18 @@ defmodule Oli.Rendering.Alternatives do
   defp maybe_render_preference_selector(
          rendered,
          context,
-         %{"strategy" => "user_section_preference"} = element,
-         writer
+         element,
+         writer,
+         by_id
        ) do
-    [writer.preference_selector(context, element) | rendered]
-  end
+    # IGNORE the strategy that is on the element in the page and
+    # instead look up the strategy using the id from the alternatives resources
+    case Map.get(by_id, element["alternatives_id"]).strategy do
+      "user_section_preference" ->
+        [writer.preference_selector(context, element) | rendered]
 
-  defp maybe_render_preference_selector(rendered, _, _, _writer), do: rendered
+      _ ->
+        rendered
+    end
+  end
 end

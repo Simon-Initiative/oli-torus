@@ -20,6 +20,7 @@ import { Model } from 'data/content/model/elements/factories';
 import { InputRef, Paragraph } from 'data/content/model/elements/types';
 import { elementsOfType } from 'data/content/utils';
 import { clone } from 'utils/common';
+import { isDefined } from 'utils/common';
 import guid from 'utils/guid';
 
 export const multiInputOptions: SelectOption<'text' | 'numeric'>[] = [
@@ -79,6 +80,15 @@ export const partTitle = (input: MultiInput, index: number) => (
     <span className="text-muted">{friendlyType(input.inputType)}</span>
   </div>
 );
+
+// return part ids in order of input occurrence in stem
+export const getOrderedPartIds = (model: MultiInputSchema) =>
+  elementsOfType(model.stem.content, 'input_ref')
+    .map((iref) => inputRefToPartId(model, iref))
+    .filter(isDefined);
+
+const inputRefToPartId = (model: MultiInputSchema, inputRef: any) =>
+  model.inputs.find((input: any) => input.id === inputRef.id)?.partId;
 
 export function guaranteeMultiInputValidity(model: MultiInputSchema): MultiInputSchema {
   // Check whether model is valid first to save unnecessarily cloning the model

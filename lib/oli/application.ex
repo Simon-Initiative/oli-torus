@@ -54,6 +54,7 @@ defmodule Oli.Application do
 
         # Starts the publication diff agent store
         Oli.Publishing.Publications.DiffAgent,
+        Oli.Delivery.Attempts.PartAttemptCleaner,
 
         # Starts Cachex to store user/author info across requests
         Oli.AccountLookupCache,

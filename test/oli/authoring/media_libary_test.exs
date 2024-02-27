@@ -63,6 +63,22 @@ defmodule Oli.Authoring.MediaLibraryTest do
       assert item.file_name == "9"
     end
 
+    test "delete/2 delete media items", %{project1: project1} do
+      {:ok, {[item1 | _tail1], 1}} =
+        MediaLibrary.items(project1.slug, %ItemOptions{
+          url_filter: "2"
+        })
+
+      {:ok, {[item2 | _tail2], 1}} =
+        MediaLibrary.items(project1.slug, %ItemOptions{
+          url_filter: "3"
+        })
+
+      {:ok, changes_count} = MediaLibrary.delete_media_items(project1.slug, [item1.id, item2.id])
+      assert changes_count == 2
+      assert {:ok, 7} == MediaLibrary.size(project1.slug)
+    end
+
     test "items/2 limits and offsets correctly", %{project1: project1} do
       {:ok, {items, 9}} =
         MediaLibrary.items(project1.slug, %ItemOptions{

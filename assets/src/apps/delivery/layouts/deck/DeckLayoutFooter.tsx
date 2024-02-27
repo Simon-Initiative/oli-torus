@@ -3,6 +3,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { applyState, templatizeText } from 'adaptivity/scripting';
 import { savePartState } from 'apps/delivery/store/features/attempt/actions/savePart';
 import { updateGlobalUserState } from 'data/persistence/extrinsic';
+import { writePageAttemptState } from 'data/persistence/state/intrinsic';
 import {
   ApplyStateOperation,
   bulkApplyState,
@@ -46,7 +47,9 @@ import {
   selectIsLegacyTheme,
   selectPageContent,
   selectPreviewMode,
+  selectResourceAttemptGuid,
   selectReviewMode,
+  selectSectionSlug,
   setScore,
   setScreenIdleExpirationTime,
 } from '../../store/features/page/slice';
@@ -241,6 +244,8 @@ const DeckLayoutFooter: React.FC = () => {
   const [nextCheckButtonText, setNextCheckButtonText] = useState('Next');
   const [solutionButtonText, setSolutionButtonText] = useState('Show Solution');
   const [displaySolutionButton, setDisplaySolutionButton] = useState(false);
+  const sectionSlug = useSelector(selectSectionSlug);
+  const resourceAttemptGuid = useSelector(selectResourceAttemptGuid);
 
   useEffect(() => {
     if (!lastCheckTimestamp) {
@@ -328,6 +333,24 @@ const DeckLayoutFooter: React.FC = () => {
         }
       }
     });
+
+    //when lesson 'variables' were getting update via mutate state, we were not sending the updated values to server
+    // the previous savePartState code (line 326) was only sending the parts variable to the server which starts from 'stage.something.value' etc.
+    // we need to update the extrinsic  Snapshot to server
+    const latestSnapshot = getLocalizedStateSnapshot((currentActivityTree || []).map((a) => a.id));
+    const extrinsicSnapshot = Object.keys(latestSnapshot).reduce(
+      (acc: Record<string, any>, key) => {
+        const isSessionVariable = key.startsWith('session.');
+        const isVarVariable = key.startsWith('variables.');
+        const isEverAppVariable = key.startsWith('app.');
+        if (isSessionVariable || isVarVariable || isEverAppVariable) {
+          acc[key] = latestSnapshot[key];
+        }
+        return acc;
+      },
+      {},
+    );
+    writePageAttemptState(sectionSlug, resourceAttemptGuid, extrinsicSnapshot);
   };
 
   useEffect(() => {
