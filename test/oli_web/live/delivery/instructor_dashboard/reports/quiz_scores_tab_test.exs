@@ -83,7 +83,10 @@ defmodule OliWeb.Delivery.InstructorDashboard.QuizScoreTabTest do
       instructor: instructor
     } do
       {:ok,
-       section: section, unit_one_revision: _unit_one_revision, page_revision: _page_revision} =
+       section: section,
+       unit_one_revision: _unit_one_revision,
+       page_revision: _page_revision,
+       page_2_revision: _page_2_revision} =
         section_with_assessment(nil)
 
       Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
