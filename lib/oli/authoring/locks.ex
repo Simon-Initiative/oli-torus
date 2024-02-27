@@ -199,7 +199,7 @@ defmodule Oli.Authoring.Locks do
   Returns:
   .`{number, nil | returned data}` where number is the number of rows updated
   """
-  @spec release_all(binary) :: {number, nil | term()}
+  @spec acquire_all(number, number) :: {number, nil | term()}
   def acquire_all(publication_id, user_id) do
 
     now = now()

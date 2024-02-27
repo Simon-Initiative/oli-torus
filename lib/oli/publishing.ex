@@ -968,14 +968,14 @@ defmodule Oli.Publishing do
       active_publication.id
     end)
 
-    Repo.transaction(fn ->
+    result = Repo.transaction(fn ->
 
       # Make sure that the active publication has not been modified by another user
       # since we acquired the locks. This could happen if another user hit "publish"
       # right in between these two transactions.
       active_publication = project_working_publication(project.slug)
       if active_publication.id != id do
-        Repo.rollback("The active publication has been modified by another user. Please refresh the page and try again.")
+        Repo.rollback(:interupted_by_another_user)
       else
 
         with latest_published_publication <-
@@ -1028,6 +1028,16 @@ defmodule Oli.Publishing do
         end
       end
     end)
+
+    case result do
+      {:error, :interupted_by_another_user} ->
+        Locks.release_all(active_publication.id)
+
+        {:error, "Another user has modified the active publication. Please try again."}
+
+      other -> other
+    end
+
   end
 
   # For a given publication, gather all of the part ids and their grading approach
