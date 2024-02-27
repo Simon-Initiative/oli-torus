@@ -619,7 +619,7 @@ const DeckLayoutFooter: React.FC = () => {
           nextActivityId === 'next' ? navigateToNextActivity() : navigateToActivity(nextActivityId),
         );
         dispatch(setNextActivityId({ nextActivityId: '' }));
-      } else if (!enableHistory) {
+      } else if (!currentActivity?.custom?.showCheckBtn) {
         dispatch(triggerCheck({ activityId: currentActivity?.id }));
       } else {
         dispatch(setIsGoodFeedback({ isGoodFeedback: false }));
