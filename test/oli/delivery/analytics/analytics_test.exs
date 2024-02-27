@@ -24,7 +24,7 @@ defmodule Oli.Delivery.Analytics.AnalyticsTest do
      %{
        seeds: seeds,
        activity_query: ByActivity.query_against_project_slug(seeds.project.slug, []),
-       objective_query: ByObjective.query_against_project_slug(seeds.project.slug),
+       objective_query: ByObjective.query_against_project_slug(seeds.project.slug, []),
        page_query:
          ByPage.query_against_project_slug(
            seeds.project.slug,
@@ -323,7 +323,7 @@ defmodule Oli.Delivery.Analytics.AnalyticsTest do
       end
 
       # 2 objectives with no analytics
-      obj_insights = ByObjective.query_against_project_slug(duplicated.slug)
+      obj_insights = ByObjective.query_against_project_slug(duplicated.slug, [])
       assert Enum.count(obj_insights) == 2
 
       assert Enum.all?(obj_insights, fn obj ->

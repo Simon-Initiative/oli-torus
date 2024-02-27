@@ -15,7 +15,9 @@ defmodule OliWeb.Insights do
   def mount(_params, %{"project_slug" => project_slug} = session, socket) do
     ctx = SessionContext.init(socket, session)
 
-    by_activity_rows = Oli.Analytics.ByActivity.query_against_project_slug(project_slug, [])
+    by_activity_rows =
+      Oli.Analytics.ByActivity.query_against_project_slug(project_slug, [])
+
     project = Course.get_project_by_slug(project_slug)
 
     {sections, products} =
@@ -419,6 +421,9 @@ defmodule OliWeb.Insights do
   end
 
   def handle_event("product-change", params, socket) do
+    socket
+    |> assign(is_blueprint: true)
+
     target_value = hd(params["_target"])
 
     value =
@@ -475,7 +480,10 @@ defmodule OliWeb.Insights do
 
   def handle_info(:init_by_objective, socket) do
     by_objective_rows =
-      Oli.Analytics.ByObjective.query_against_project_slug(socket.assigns.project.slug)
+      Oli.Analytics.ByObjective.query_against_project_slug(
+        socket.assigns.project.slug,
+        socket.assigns.section_ids
+      )
       |> arrange_rows_into_objective_hierarchy()
 
     active_rows =
