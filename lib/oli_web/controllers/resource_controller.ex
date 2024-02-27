@@ -19,7 +19,7 @@ defmodule OliWeb.ResourceController do
 
   def edit(conn, %{"project_id" => project_slug, "revision_slug" => revision_slug}) do
     author = conn.assigns[:current_author]
-    is_admin? = Accounts.is_system_admin?(author)
+    is_admin? = Accounts.at_least_content_admin?(author)
 
     case PageEditor.create_context(project_slug, revision_slug, conn.assigns[:current_author]) do
       {:ok, context} ->

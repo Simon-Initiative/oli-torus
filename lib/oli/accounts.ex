@@ -440,6 +440,21 @@ defmodule Oli.Accounts do
     Repo.exists?(query)
   end
 
+  def at_least_content_admin?(%Author{system_role_id: system_role_id}) do
+    SystemRole.role_id().content_admin == system_role_id
+    or SystemRole.role_id().account_admin == system_role_id
+    or SystemRole.role_id().system_admin == system_role_id
+  end
+
+  def at_least_content_admin?(_), do: false
+
+  def at_least_account_admin?(%Author{system_role_id: system_role_id}) do
+    SystemRole.role_id().account_admin == system_role_id
+    or SystemRole.role_id().system_admin == system_role_id
+  end
+
+  def at_least_account_admin?(_), do: false
+
   @doc """
   Returns true if an author is a content admin.
   """

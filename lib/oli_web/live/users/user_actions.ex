@@ -2,7 +2,6 @@ defmodule OliWeb.Users.Actions do
   use OliWeb, :html
 
   alias Oli.Accounts
-  alias Oli.Accounts.SystemRole
   alias OliWeb.Router.Helpers, as: Routes
 
   attr(:for_author, :boolean, default: false)
@@ -48,19 +47,6 @@ defmodule OliWeb.Users.Actions do
           Confirm email
         </button>
 
-        <div class="dropdown-divider"></div>
-      <% end %>
-
-      <%= if @for_author do %>
-        <%= if @user.system_role_id == SystemRole.role_id().system_admin do %>
-          <button class="btn btn-warning" phx-click="show_revoke_admin_modal" phx-value-id={@user.id}>
-            Revoke admin
-          </button>
-        <% else %>
-          <button class="btn btn-warning" phx-click="show_grant_admin_modal" phx-value-id={@user.id}>
-            Grant admin
-          </button>
-        <% end %>
         <div class="dropdown-divider"></div>
       <% end %>
 

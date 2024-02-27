@@ -251,7 +251,7 @@ defmodule OliWeb.PageDeliveryController do
     author = conn.assigns.current_author
     section = conn.assigns.section
 
-    if Accounts.is_system_admin?(author) or Sections.is_enrolled?(user.id, section_slug) do
+    if Accounts.at_least_content_admin?(author) or Sections.is_enrolled?(user.id, section_slug) do
       container_type_id = Oli.Resources.ResourceType.id_for_container()
       page_type_id = Oli.Resources.ResourceType.id_for_page()
 
@@ -1246,7 +1246,7 @@ defmodule OliWeb.PageDeliveryController do
 
     section = conn.assigns.section
 
-    is_admin? = Accounts.is_system_admin?(author)
+    is_admin? = Accounts.at_least_content_admin?(author)
 
     if is_admin? or
          PageLifecycle.can_access_attempt?(attempt_guid, user, section) do

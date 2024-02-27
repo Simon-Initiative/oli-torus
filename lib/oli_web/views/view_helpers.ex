@@ -62,7 +62,7 @@ defmodule OliWeb.ViewHelpers do
   def is_section_instructor_or_admin?(section_slug, user_or_author) do
     Sections.is_instructor?(user_or_author, section_slug) ||
       Sections.is_admin?(user_or_author, section_slug) ||
-      Accounts.is_system_admin?(user_or_author)
+      Accounts.at_least_content_admin?(user_or_author)
   end
 
   def is_section_instructor?(section_slug, user) do

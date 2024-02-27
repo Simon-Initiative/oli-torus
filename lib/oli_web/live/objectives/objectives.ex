@@ -186,7 +186,7 @@ defmodule OliWeb.ObjectivesLive.Objectives do
           with_body={true}
         >
           <Listing.render
-            revision_history_link={@has_show_links_uri_hash and Accounts.is_system_admin?(@author)}
+            revision_history_link={@has_show_links_uri_hash and Accounts.at_least_content_admin?(@author)}
             rows={@table_model.rows}
             selected={@selected}
             project_slug={@project.slug}
