@@ -201,7 +201,6 @@ defmodule Oli.Authoring.Locks do
   """
   @spec acquire_all(number, number) :: {number, nil | term()}
   def acquire_all(publication_id, user_id) do
-
     now = now()
 
     from(pr in PublishedResource,

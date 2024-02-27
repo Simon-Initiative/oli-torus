@@ -33,7 +33,9 @@ defmodule Oli.AutomationSetup do
       |> Multi.run(:educator, fn _repo, %{author: {author, _}} ->
         create_educator(create_educator? or create_section?, author)
       end)
-      |> Multi.run(:publication, fn _repo, %{project: project, author: {author, _}} -> publish_project(project, author.id) end)
+      |> Multi.run(:publication, fn _repo, %{project: project, author: {author, _}} ->
+        publish_project(project, author.id)
+      end)
       |> Multi.run(:section, fn _repo,
                                 %{
                                   project: project,

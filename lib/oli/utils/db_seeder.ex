@@ -1175,7 +1175,8 @@ defmodule Oli.Seeder do
         description \\ "some changes made",
         tag \\ nil
       ) do
-    {:ok, published_publication} = Publishing.publish_project(map[project_tag], description, map.author.id)
+    {:ok, published_publication} =
+      Publishing.publish_project(map[project_tag], description, map.author.id)
 
     case tag do
       nil -> map

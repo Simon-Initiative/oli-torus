@@ -1001,7 +1001,8 @@ defmodule Oli.SectionsTest do
       Seeder.revise_page(page1_changes, page1, revision1, working_pub)
 
       # publish changes
-      {:ok, latest_publication} = Publishing.publish_project(project, "some changes", map.author.id)
+      {:ok, latest_publication} =
+        Publishing.publish_project(project, "some changes", map.author.id)
 
       # verify the publication is a minor update
       assert latest_publication.edition == 0

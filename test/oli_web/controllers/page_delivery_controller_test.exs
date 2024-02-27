@@ -1054,7 +1054,9 @@ defmodule OliWeb.PageDeliveryControllerTest do
         map.author.email
       )
 
-      {:ok, pub} = Oli.Publishing.publish_project(project, "add some content breaks", map.author.id)
+      {:ok, pub} =
+        Oli.Publishing.publish_project(project, "add some content breaks", map.author.id)
+
       Sections.update_section_project_publication(section, project.id, pub.id)
       Oli.Delivery.Sections.rebuild_section_resources(section: section, publication: pub)
 
@@ -2955,7 +2957,8 @@ defmodule OliWeb.PageDeliveryControllerTest do
     map = Seeder.add_page(map, exploration_page_1, :container, :exploration_page_1)
     map = Seeder.add_page(map, exploration_page_2, :container, :exploration_page_2)
 
-    {:ok, publication} = Oli.Publishing.publish_project(map.project, "some changes", map.author.id)
+    {:ok, publication} =
+      Oli.Publishing.publish_project(map.project, "some changes", map.author.id)
 
     map = Map.merge(map, %{publication: publication, contains_explorations: true})
 
