@@ -262,18 +262,11 @@ defmodule Oli.Delivery.Metrics do
   """
   def progress_across_for_pages(section_id, pages_ids, user_ids) when is_list(user_ids) do
     from(ra in ResourceAccess,
-      where:
-        ra.resource_id in ^pages_ids and ra.section_id == ^section_id and
-          ra.user_id in ^user_ids,
+      where: ra.resource_id in ^pages_ids,
+      where: ra.section_id == ^section_id,
+      where: ra.user_id in ^user_ids,
       group_by: ra.resource_id,
-      select: {
-        ra.resource_id,
-        fragment(
-          "SUM(?) / (?)",
-          ra.progress,
-          ^Enum.count(user_ids)
-        )
-      }
+      select: {ra.resource_id, fragment("SUM(?) / (?)", ra.progress, ^Enum.count(user_ids))}
     )
     |> Repo.all()
     |> Enum.into(%{})

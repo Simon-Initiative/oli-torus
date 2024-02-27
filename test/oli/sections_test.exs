@@ -17,6 +17,83 @@ defmodule Oli.SectionsTest do
   alias Oli.Delivery.Snapshots
   alias Oli.Delivery.Transfer
   alias Oli.Resources.ResourceType
+  alias Oli.Publishing.DeliveryResolver
+
+  describe "get_resources_scheduled_dates_for_student/2" do
+    # SE: Student exception
+    # GCwS: Hard scheduled dates for student
+    # GCnS: Hard scheduled dates
+    # SR: Soft scheduled_dates
+    # Arrow pointing down indicates the dominant datetime per resource
+    #      res_1 res_2 res_3 res_4 res_5 res_6 res_7
+    #                          ↓                 ↓
+    # SE                 ↓   04/08         ↓   04/21
+    # GCwS         ↓   03/17 03/18   ↓   03/20
+    # GCnS   ↓   02/16 02/17 03/18 02/19
+    # SR   01/15 01/16 01/17 01/18 01/19 01/20 01/21
+    test "returns correct datetime/type order" do
+      sec = insert(:section, slug: "section_slug")
+
+      %{project: proj} =
+        insert(:publication, project: insert(:project, authors: [insert(:author)]))
+
+      [res_1, res_2, res_3, res_4, res_5, res_6, res_7] = res_list = insert_list(7, :resource)
+
+      res_ids_end_dates = [
+        {res_1.id, ~U[2000-01-15 12:00:00Z]},
+        {res_2.id, ~U[2000-01-16 12:00:00Z]},
+        {res_3.id, ~U[2000-01-17 12:00:00Z]},
+        {res_4.id, ~U[2000-01-18 12:00:00Z]},
+        {res_5.id, ~U[2000-01-19 12:00:00Z]},
+        {res_6.id, ~U[2000-01-20 12:00:00Z]},
+        {res_7.id, ~U[2000-01-21 12:00:00Z]}
+      ]
+
+      Enum.each(res_ids_end_dates, fn {res_id, dt} ->
+        insert(:section_resource, section: sec, resource_id: res_id, project: proj, end_date: dt)
+      end)
+
+      dt = %{start_datetime: ~U[2000-01-01 12:00:00Z], end_datetime: ~U[2000-01-01 12:00:00Z]}
+      data = Map.put(dt, :end_datetime, ~U[2000-02-16 12:00:00Z])
+      _gc = insert(:gating_condition, user: nil, section: sec, resource: res_2, data: data)
+      data = Map.put(dt, :end_datetime, ~U[2000-02-17 12:00:00Z])
+      _gc = insert(:gating_condition, user: nil, section: sec, resource: res_3, data: data)
+      data = Map.put(dt, :end_datetime, ~U[2000-02-18 12:00:00Z])
+      _gc = insert(:gating_condition, user: nil, section: sec, resource: res_4, data: data)
+
+      user = insert(:user)
+      data = Map.put(dt, :end_datetime, ~U[2000-03-17 12:00:00Z])
+      _gc = insert(:gating_condition, user: user, section: sec, resource: res_3, data: data)
+      data = Map.put(dt, :end_datetime, ~U[2000-03-18 12:00:00Z])
+      _gc = insert(:gating_condition, user: user, section: sec, resource: res_4, data: data)
+
+      se_dt = ~U[2000-04-18 12:00:00Z]
+      _se = insert(:student_exception, user: user, section: sec, resource: res_4, end_date: se_dt)
+
+      data = Map.put(dt, :end_datetime, ~U[2000-02-19 12:00:00Z])
+      _gc = insert(:gating_condition, user: nil, section: sec, resource: res_5, data: data)
+      data = Map.put(dt, :end_datetime, ~U[2000-03-20 12:00:00Z])
+      _gc = insert(:gating_condition, user: user, section: sec, resource: res_6, data: data)
+      se_dt = ~U[2000-04-21 12:00:00Z]
+
+      _se =
+        insert(:student_exception, user: user, section: sec, resource: res_7, end_date: se_dt)
+
+      [res_1_id, res_2_id, res_3_id, res_4_id, res_5_id, res_6_id, res_7_id] =
+        Enum.map(res_list, & &1.id)
+
+      assert %{
+               ^res_1_id => %{end_date: ~U[2000-01-15 12:00:00Z], scheduled_type: :read_by},
+               ^res_2_id => %{end_date: ~U[2000-02-16 12:00:00Z], scheduled_type: :schedule},
+               ^res_3_id => %{end_date: ~U[2000-03-17 12:00:00Z], scheduled_type: :schedule},
+               ^res_4_id => %{end_date: ~U[2000-04-18 12:00:00Z], scheduled_type: :read_by},
+               ^res_5_id => %{end_date: ~U[2000-02-19 12:00:00Z], scheduled_type: :schedule},
+               ^res_6_id => %{end_date: ~U[2000-03-20 12:00:00Z], scheduled_type: :schedule},
+               ^res_7_id => %{end_date: ~U[2000-04-21 12:00:00Z], scheduled_type: :read_by}
+             } =
+               Sections.get_resources_scheduled_dates_for_student(sec.slug, user.id)
+    end
+  end
 
   describe "enrollments" do
     @valid_attrs %{

@@ -29,7 +29,7 @@ defmodule Oli.Rendering.Alternatives.HtmlTest do
       }
 
       element = %{
-        "alternatives_id" => 4,
+        "alternatives_id" => 1,
         "children" => [
           %{
             "children" => [
@@ -115,6 +115,7 @@ defmodule Oli.Rendering.Alternatives.HtmlTest do
            %{
              id: 1,
              title: "Stats Package",
+             strategy: "select_all",
              options: [
                %{
                  "id" => "bdaqYkKs8RFE4LWLmPCLnf",
