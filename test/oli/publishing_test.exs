@@ -585,7 +585,8 @@ defmodule Oli.PublishingTest do
 
     test "publish_project/1 publishes the active unpublished publication and creates a new working unpublished publication for a project",
          %{publication: publication, project: project, author: author} do
-      {:ok, %Publication{} = published} = Publishing.publish_project(project, "some changes", author.id)
+      {:ok, %Publication{} = published} =
+        Publishing.publish_project(project, "some changes", author.id)
 
       # original publication should now be published
       assert published.id == publication.id
@@ -701,7 +702,10 @@ defmodule Oli.PublishingTest do
              ) == ["manual"]
     end
 
-    test "broadcasting the new publication works when publishing", %{project: project, author: author} do
+    test "broadcasting the new publication works when publishing", %{
+      project: project,
+      author: author
+    } do
       Oli.Authoring.Broadcaster.Subscriber.subscribe_to_new_publications(project.slug)
       {:ok, publication} = Publishing.publish_project(project, "some changes", author.id)
       {:messages, [{:new_publication, pub, project_slug}]} = Process.info(self(), :messages)
