@@ -12,12 +12,6 @@ defmodule OliWeb.Common.MultiSelect do
       |> assign(:section_ids, nil)
       |> assign(:product_ids, nil)
 
-    Enum.each(options, fn option ->
-      if option.selected do
-        IO.inspect("Hola")
-      end
-    end)
-
     {:ok, socket}
   end
 
@@ -26,6 +20,8 @@ defmodule OliWeb.Common.MultiSelect do
     <div class="multiselect">
       <div class="fake_select_tag" id={"#{@id}-selected-options-container"}>
         <div class="icon">
+          <!-- remove the space between arrow and multiselect  -->
+        <!-- arrow to hide multiselect content  -->
           <svg
             id={"#{@id}-down-icon"}
             phx-click={
@@ -39,7 +35,9 @@ defmodule OliWeb.Common.MultiSelect do
               d="M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708"
             />
           </svg>
+          <!-- arrow to show multiselect content this has to contain an atribute hidden or something similar  -->
           <svg
+            class="hidden"
             id={"#{@id}-up-icon" }
             phx-click={
               Phoenix.LiveView.JS.toggle()
