@@ -195,7 +195,9 @@ export const notRangeRule = (
 
 export const makeRule = (input: Input): string => {
   if (input.kind === InputKind.Text) {
-    const trimmedValue = input.value.trim();
+
+    const trimmedValue = input.value.trim().replace(/\s+/g, ' ');
+
     switch (input.operator) {
       case 'contains':
         return containsRule(trimmedValue);
