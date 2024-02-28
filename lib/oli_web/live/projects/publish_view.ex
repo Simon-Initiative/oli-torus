@@ -219,13 +219,15 @@ defmodule OliWeb.Projects.PublishView do
   def handle_event("publish_active", %{"publication" => publication}, socket) do
     project = socket.assigns.project
 
+    user_id = socket.assigns.ctx.author.id
+
     with {:ok, description} <- Map.get(publication, "description") |> trap_nil(),
          {active_publication_id, ""} <-
            Map.get(publication, "active_publication_id") |> Integer.parse(),
          {:ok} <- check_active_publication_id(project.slug, active_publication_id),
          previous_publication <-
            Publishing.get_latest_published_publication_by_slug(project.slug),
-         {:ok, new_publication} <- Publishing.publish_project(project, description) do
+         {:ok, new_publication} <- Publishing.publish_project(project, description, user_id) do
       if Map.get(publication, "auto_push_update") == "true" do
         Publishing.push_publication_update_to_sections(
           project,

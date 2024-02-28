@@ -76,7 +76,6 @@ defmodule OliWeb.Components.Delivery.UserAccount do
   def toggle_menu(id, js \\ %JS{}) do
     js
     |> JS.toggle(
-      # display: "flex",
       to: id,
       in: {"ease-out duration-300", "opacity-0 top-[40px]", "opacity-100"},
       out: {"ease-out duration-300", "opacity-100", "opacity-0 top-[40px]"}
@@ -147,7 +146,7 @@ defmodule OliWeb.Components.Delivery.UserAccount do
 
   attr(:id, :string, required: true)
   attr(:class, :string, default: "")
-  slot :inner_block, required: true
+  slot(:inner_block, required: true)
 
   def dropdown_menu(assigns) do
     ~H"""
@@ -162,7 +161,7 @@ defmodule OliWeb.Components.Delivery.UserAccount do
     """
   end
 
-  slot :inner_block, required: true
+  slot(:inner_block, required: true)
 
   def menu_item(assigns) do
     ~H"""
@@ -180,10 +179,10 @@ defmodule OliWeb.Components.Delivery.UserAccount do
     """
   end
 
-  attr :href, :string, required: true
-  attr :method, :atom, default: nil
-  attr :target, :string, default: nil
-  slot :inner_block, required: true
+  attr(:href, :string, required: true)
+  attr(:method, :atom, default: nil)
+  attr(:target, :string, default: nil)
+  slot(:inner_block, required: true)
 
   def menu_item_link(assigns) do
     case assigns[:method] do
@@ -211,7 +210,7 @@ defmodule OliWeb.Components.Delivery.UserAccount do
     """
   end
 
-  attr :user, User, required: true
+  attr(:user, User, required: true)
 
   def menu_item_maybe_linked_account(assigns) do
     ~H"""
@@ -242,7 +241,7 @@ defmodule OliWeb.Components.Delivery.UserAccount do
     """
   end
 
-  attr :user, User, required: true
+  attr(:user, User, required: true)
 
   def maybe_menu_item_edit_user_account(assigns) do
     ~H"""
@@ -257,7 +256,7 @@ defmodule OliWeb.Components.Delivery.UserAccount do
     """
   end
 
-  attr :author, Author, required: true
+  attr(:author, Author, required: true)
 
   def menu_item_edit_author_account(assigns) do
     ~H"""
@@ -304,7 +303,7 @@ defmodule OliWeb.Components.Delivery.UserAccount do
     """
   end
 
-  attr :is_system_admin, :boolean, required: true
+  attr(:is_system_admin, :boolean, required: true)
 
   @spec maybe_menu_item_open_admin_panel(map()) :: Phoenix.LiveView.Rendered.t()
   def maybe_menu_item_open_admin_panel(assigns) do
@@ -333,7 +332,7 @@ defmodule OliWeb.Components.Delivery.UserAccount do
     """
   end
 
-  attr :picture, :string, default: nil
+  attr(:picture, :string, default: nil)
 
   def user_picture_icon(assigns) do
     ~H"""

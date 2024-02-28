@@ -93,7 +93,8 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle do
         section_slug,
         activity_attempt_guid,
         datashop_session_id,
-        seed_state_from_previous \\ false
+        seed_state_from_previous \\ false,
+        survey_id \\ nil
       ) do
     activity_attempt = get_activity_attempt_by(attempt_guid: activity_attempt_guid)
     resource_attempt = get_resource_attempt_and_revision(activity_attempt.resource_attempt_id)
@@ -139,7 +140,8 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle do
                      resource_id: activity_attempt.resource_id,
                      group_id: activity_attempt.group_id,
                      revision_id: revision.id,
-                     resource_attempt_id: activity_attempt.resource_attempt_id
+                     resource_attempt_id: activity_attempt.resource_attempt_id,
+                     survey_id: survey_id
                    }) do
               # simulate preloading of the revision
               new_activity_attempt = Map.put(new_activity_attempt, :revision, revision)

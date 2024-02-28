@@ -434,7 +434,7 @@ export class PageEditor extends React.Component<PageEditorProps, PageEditorState
   // of content to be saved.  In this manner, we allow the user interface to display invalid, intermediate
   // states (as the user is creating a selection, for instance) that will always be saved
   // as valid states.
-  adjustContentForConstraints(content: PageEditorContent): PageEditorContent {
+  static adjustContentForConstraints(content: PageEditorContent): PageEditorContent {
     return content.updateAll((c: ResourceContent) => {
       if (c.type === 'selection') {
         return Object.assign({}, c, { logic: guaranteeValididty(c.logic) });
@@ -456,7 +456,7 @@ export class PageEditor extends React.Component<PageEditorProps, PageEditorState
   save() {
     const { projectSlug, resourceSlug } = this.props;
 
-    const adjusted = this.adjustContentForConstraints(this.state.content);
+    const adjusted = PageEditor.adjustContentForConstraints(this.state.content);
 
     const toSave: Persistence.ResourceUpdate = {
       objectives: { attached: this.state.objectives.toArray() },

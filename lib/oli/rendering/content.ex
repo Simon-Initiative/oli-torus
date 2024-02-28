@@ -12,6 +12,7 @@ defmodule Oli.Rendering.Content do
   @type children :: [%{}]
 
   @callback text(%Context{}, %{}) :: [any()]
+  @callback input_ref(%Context{}, next, %{}) :: [any()]
   @callback p(%Context{}, next, %{}) :: [any()]
   @callback h1(%Context{}, next, %{}) :: [any()]
   @callback h2(%Context{}, next, %{}) :: [any()]
@@ -279,6 +280,9 @@ defmodule Oli.Rendering.Content do
     next = fn -> render(context, children, writer) end
 
     case type do
+      "input_ref" ->
+        writer.input_ref(context, next, element)
+
       "p" ->
         writer.p(context, next, element)
 

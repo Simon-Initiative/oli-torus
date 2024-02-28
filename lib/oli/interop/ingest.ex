@@ -160,7 +160,7 @@ defmodule Oli.Interop.Ingest do
 
       _ ->
         # Products can only be created with the project published, so do that first
-        Oli.Publishing.publish_project(project, "Initial publication")
+        Oli.Publishing.publish_project(project, "Initial publication", as_author.id)
 
         # Create each product, all the while tracking any newly created containers in the container map
         Enum.reduce_while(products, {:ok, container_map}, fn {_, product}, {:ok, container_map} ->
@@ -200,7 +200,7 @@ defmodule Oli.Interop.Ingest do
     # If any new containers were created, we have to publish again so that the product can pin
     # a published version of this new container as a section resource
     if Map.keys(container_map) |> Enum.count() != original_container_count do
-      Oli.Publishing.publish_project(project, "New containers for product")
+      Oli.Publishing.publish_project(project, "New containers for product", as_author.id)
     end
 
     labels =
