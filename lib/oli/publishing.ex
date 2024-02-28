@@ -392,39 +392,43 @@ defmodule Oli.Publishing do
       []
   """
   def retrieve_visible_sources(user, institution) do
-    sources =
-      Groups.list_community_associated_publications_and_products(user.id, institution) ++
-        list_available_publications_and_products(
-          user.author,
-          institution,
-          can_access_global_content(user, institution)
-        )
+    case user do
+      nil -> []
+      _ ->
+        sources =
+          Groups.list_community_associated_publications_and_products(user.id, institution) ++
+            list_available_publications_and_products(
+              user.author,
+              institution,
+              can_access_global_content(user, institution)
+            )
 
-    {publication_list, section_list} =
-      Enum.reduce(
-        sources,
-        {[], []},
-        fn
-          {publication, nil}, {publication_list, section_list} ->
-            {[publication | publication_list], section_list}
+        {publication_list, section_list} =
+          Enum.reduce(
+            sources,
+            {[], []},
+            fn
+              {publication, nil}, {publication_list, section_list} ->
+                {[publication | publication_list], section_list}
 
-          {%Publication{project: nil}, section}, {publication_list, section_list} ->
-            {publication_list, [section | section_list]}
+              {%Publication{project: nil}, section}, {publication_list, section_list} ->
+                {publication_list, [section | section_list]}
 
-          {publication, section}, {publication_list, section_list} ->
-            {[publication | publication_list], [section | section_list]}
-        end
-      )
+              {publication, section}, {publication_list, section_list} ->
+                {[publication | publication_list], [section | section_list]}
+            end
+          )
 
-    filtered_publications =
-      Blueprint.filter_for_free_projects(
-        section_list,
-        publication_list
-      )
+        filtered_publications =
+          Blueprint.filter_for_free_projects(
+            section_list,
+            publication_list
+          )
 
-    (filtered_publications ++ section_list)
-    |> Enum.uniq()
-    |> Enum.sort_by(fn r -> get_title(r) end, :asc)
+        (filtered_publications ++ section_list)
+        |> Enum.uniq()
+        |> Enum.sort_by(fn r -> get_title(r) end, :asc)
+    end
   end
 
   defp can_access_global_content(user, institution) do
