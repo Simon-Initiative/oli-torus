@@ -393,7 +393,9 @@ defmodule Oli.Publishing do
   """
   def retrieve_visible_sources(user, institution) do
     case user do
-      nil -> []
+      nil ->
+        []
+
       _ ->
         sources =
           Groups.list_community_associated_publications_and_products(user.id, institution) ++
