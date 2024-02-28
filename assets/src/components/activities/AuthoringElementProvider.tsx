@@ -2,9 +2,9 @@ import React, { useContext, useRef } from 'react';
 import produce from 'immer';
 import { Maybe } from 'tsmonad';
 import { ErrorBoundary } from 'components/common/ErrorBoundary';
+import { ModalDisplay } from 'components/modal/ModalDisplay';
 import { AuthoringElementProps } from './AuthoringElement';
 import { ActivityModelSchema, MediaItemRequest, PostUndoable } from './types';
-import { ModalDisplay } from 'components/modal/ModalDisplay';
 
 export interface AuthoringElementState<T> {
   projectSlug: string;
