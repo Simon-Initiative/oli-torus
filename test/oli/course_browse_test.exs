@@ -34,7 +34,7 @@ defmodule Oli.CourseBrowseTest do
           given_name: "First",
           family_name: "Last",
           provider: "foo",
-          system_role_id: SystemRole.role_id().admin
+          system_role_id: SystemRole.role_id().system_admin
         })
         |> Repo.insert()
 

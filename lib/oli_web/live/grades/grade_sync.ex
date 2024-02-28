@@ -41,13 +41,15 @@ defmodule OliWeb.Grades.GradeSync do
         </div>
 
         <select
+          phx-change="select_page"
           id="assignment_grade_sync_select"
+          name="resource_id"
           class="custom-select custom-select-lg mb-2"
-          phx-hook="SelectListener"
-          phx-value-change="select_page"
         >
           <%= for page <- @graded_pages do %>
-            <option value={page.resource_id}><%= page.title %></option>
+            <option value={page.resource_id} selected={@selected_page == page.resource_id}>
+              <%= page.title %>
+            </option>
           <% end %>
         </select>
 

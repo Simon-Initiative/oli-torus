@@ -1241,6 +1241,59 @@ defmodule OliWeb.Delivery.InstructorDashboard.ScoredActivitiesTabTest do
       assert a4.title == "Module 2: BasicsPage 4"
     end
 
+    test "sorting by Due Date", %{
+      conn: conn,
+      section: section,
+      page_1: page_1,
+      page_2: page_2,
+      page_3: page_3
+    } do
+      # Only section resources of scheduling_type = due_by are considered when sorting by Due Date
+      [
+        {page_1, %{end_date: ~U[2000-01-21 12:00:00.00Z], scheduling_type: :due_by}},
+        {page_2, %{end_date: ~U[2000-01-22 12:00:00.00Z], scheduling_type: :read_by}},
+        {page_3, %{end_date: ~U[2000-01-23 12:00:00.00Z], scheduling_type: :due_by}}
+      ]
+      |> Enum.each(fn {page, params} ->
+        Sections.get_section_resource(section.id, page.resource_id)
+        |> Sections.update_section_resource(params)
+      end)
+
+      {:ok, view, _html} = live(conn, live_view_scored_activities_route(section.slug))
+
+      assert [
+               "No due date",
+               "Jan. 21, 2000 - 7:00 AM",
+               "No due date",
+               "Jan. 23, 2000 - 7:00 AM",
+               "No due date"
+             ] = table_as_list_of_maps(view, :assessments) |> Enum.map(& &1.due_date)
+
+      view
+      |> element("th[phx-value-sort_by=due_date]")
+      |> render_click()
+
+      assert [
+               "No due date",
+               "No due date",
+               "No due date",
+               "Jan. 21, 2000 - 7:00 AM",
+               "Jan. 23, 2000 - 7:00 AM"
+             ] = table_as_list_of_maps(view, :assessments) |> Enum.map(& &1.due_date)
+
+      view
+      |> element("th[phx-value-sort_by=due_date]")
+      |> render_click()
+
+      assert [
+               "Jan. 23, 2000 - 7:00 AM",
+               "Jan. 21, 2000 - 7:00 AM",
+               "No due date",
+               "No due date",
+               "No due date"
+             ] = table_as_list_of_maps(view, :assessments) |> Enum.map(& &1.due_date)
+    end
+
     test "displays custom labels", %{
       conn: conn,
       section: section
