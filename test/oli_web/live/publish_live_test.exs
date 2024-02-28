@@ -1,5 +1,5 @@
 defmodule OliWeb.PublishLiveTest do
-  use ExUnit.Case, async: true
+  use ExUnit.Case, async: false
   use OliWeb.ConnCase
   use Oban.Testing, repo: Oli.Repo
 
