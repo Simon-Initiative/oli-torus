@@ -9,7 +9,7 @@ defmodule Oli.Plugs.AuthorizeCommunity do
   def call(conn, _opts) do
     author = conn.assigns.current_author
 
-    unless Accounts.is_admin?(author) do
+    unless Accounts.has_admin_role?(author) do
       case Groups.get_community_account_by!(%{
              author_id: author.id,
              community_id: conn.params["community_id"]

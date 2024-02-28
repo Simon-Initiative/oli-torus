@@ -55,7 +55,7 @@ defmodule OliWeb.Api.ActivityBankControllerTest do
       assert html_response(conn, 200) =~ ~s[&quot;revisionHistoryLink&quot;:false]
 
       # as an admin we should see the revision history link
-      admin = author_fixture(%{system_role_id: SystemRole.role_id().admin})
+      admin = author_fixture(%{system_role_id: SystemRole.role_id().system_admin})
 
       conn =
         conn

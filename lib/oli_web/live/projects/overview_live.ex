@@ -22,7 +22,7 @@ defmodule OliWeb.Projects.OverviewLive do
     project = socket.assigns.project
 
     author = socket.assigns[:current_author]
-    is_admin? = Accounts.is_admin?(author)
+    is_admin? = Accounts.has_admin_role?(author)
 
     latest_published_publication =
       Publishing.get_latest_published_publication_by_slug(project.slug)
@@ -100,30 +100,32 @@ defmodule OliWeb.Projects.OverviewLive do
               required: true
             ) %>
           </div>
-          <%= if @can_enable_experiments do %>
-            <div class="form-label-group mb-3">
+
+          <div class="form-label-group mb-3">
+            <%= if @can_enable_experiments do %>
               <div class="form-label-group mb-3 form-check">
                 <%= checkbox(f, :has_experiments, required: false) %>
                 <%= label(f, :has_experiments, "Enable Upgrade-based Experiments") %>
               </div>
+            <% end %>
 
-              <%= if @project.has_experiments do %>
-                <a
-                  type="button"
-                  class="btn btn-link pl-0"
-                  href={
-                    Routes.live_path(
-                      OliWeb.Endpoint,
-                      OliWeb.Experiments.ExperimentsView,
-                      @project.slug
-                    )
-                  }
-                >
-                  Manage Experiments
-                </a>
-              <% end %>
-            </div>
-          <% end %>
+            <%= if @project.has_experiments do %>
+              <a
+                type="button"
+                class="btn btn-link pl-0"
+                href={
+                  Routes.live_path(
+                    OliWeb.Endpoint,
+                    OliWeb.Experiments.ExperimentsView,
+                    @project.slug
+                  )
+                }
+              >
+                Manage Experiments
+              </a>
+            <% end %>
+          </div>
+
           <%= submit("Save", class: "btn btn-md btn-primary mt-2") %>
         </Overview.section>
         <Overview.section

@@ -340,7 +340,7 @@ defmodule Oli.TestHelpers do
   def admin_conn(%{conn: conn}) do
     admin =
       author_fixture(%{
-        system_role_id: Accounts.SystemRole.role_id().admin,
+        system_role_id: Accounts.SystemRole.role_id().system_admin,
         preferences: %AuthorPreferences{show_relative_dates: false} |> Map.from_struct()
       })
 
@@ -348,6 +348,40 @@ defmodule Oli.TestHelpers do
       Pow.Plug.assign_current_user(conn, admin, OliWeb.Pow.PowHelpers.get_pow_config(:author))
 
     {:ok, conn: conn, admin: admin}
+  end
+
+  def account_admin_conn(%{conn: conn}) do
+    account_admin =
+      author_fixture(%{
+        system_role_id: Accounts.SystemRole.role_id().account_admin,
+        preferences: %AuthorPreferences{show_relative_dates: false} |> Map.from_struct()
+      })
+
+    conn =
+      Pow.Plug.assign_current_user(
+        conn,
+        account_admin,
+        OliWeb.Pow.PowHelpers.get_pow_config(:author)
+      )
+
+    {:ok, conn: conn, account_admin: account_admin}
+  end
+
+  def content_admin_conn(%{conn: conn}) do
+    content_admin =
+      author_fixture(%{
+        system_role_id: Accounts.SystemRole.role_id().content_admin,
+        preferences: %AuthorPreferences{show_relative_dates: false} |> Map.from_struct()
+      })
+
+    conn =
+      Pow.Plug.assign_current_user(
+        conn,
+        content_admin,
+        OliWeb.Pow.PowHelpers.get_pow_config(:author)
+      )
+
+    {:ok, conn: conn, content_admin: content_admin}
   end
 
   def recycle_author_session(conn, author) do
@@ -639,8 +673,17 @@ defmodule Oli.TestHelpers do
         content: %{"advancedDelivery" => true}
       )
 
+    page_2_revision =
+      insert(:revision,
+        resource_type_id: Oli.Resources.ResourceType.id_for_page(),
+        title: "Other test revision",
+        graded: true,
+        content: %{"advancedDelivery" => true}
+      )
+
     # Associate nested graded page to the project
     insert(:project_resource, %{project_id: project.id, resource_id: page_revision.resource.id})
+    insert(:project_resource, %{project_id: project.id, resource_id: page_2_revision.resource.id})
 
     unit_one_resource = insert(:resource)
 
@@ -673,7 +716,7 @@ defmodule Oli.TestHelpers do
         resource: container_resource,
         objectives: %{},
         resource_type_id: Oli.Resources.ResourceType.id_for_container(),
-        children: [unit_one_resource.id, page_revision.resource.id],
+        children: [unit_one_resource.id, page_revision.resource.id, page_2_revision.resource.id],
         content: %{},
         deleted: false,
         title: "Root Container"
@@ -704,6 +747,13 @@ defmodule Oli.TestHelpers do
       publication: publication,
       resource: page_revision.resource,
       revision: page_revision,
+      author: author
+    })
+
+    insert(:published_resource, %{
+      publication: publication,
+      resource: page_2_revision.resource,
+      revision: page_2_revision,
       author: author
     })
 
@@ -757,7 +807,18 @@ defmodule Oli.TestHelpers do
       author: author
     })
 
-    {:ok, section: section, unit_one_revision: unit_one_revision, page_revision: page_revision}
+    insert(:published_resource, %{
+      publication: new_publication,
+      resource: page_2_revision.resource,
+      revision: page_2_revision,
+      author: author
+    })
+
+    {:ok,
+     section: section,
+     unit_one_revision: unit_one_revision,
+     page_revision: page_revision,
+     page_2_revision: page_2_revision}
   end
 
   def create_project_with_products(_conn) do
