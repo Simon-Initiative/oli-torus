@@ -626,10 +626,10 @@ defmodule OliWeb.Components.Common do
     """
   end
 
-  attr :role, :string
-  attr :id, :string
-  attr :button_class, :string
-  attr :options, :list
+  attr(:role, :string)
+  attr(:id, :string)
+  attr(:button_class, :string)
+  attr(:options, :list)
   slot(:inner_block)
 
   def dropdown(assigns) do
@@ -682,8 +682,8 @@ defmodule OliWeb.Components.Common do
       <.icon name="fa-solid fa-xmark" />
       <.icon name="fa-solid fa-xmark" class="ml-1 w-3 h-3 animate-spin" />
   """
-  attr :name, :string, required: true
-  attr :class, :string, default: nil
+  attr(:name, :string, required: true)
+  attr(:class, :string, default: nil)
 
   def icon(assigns) do
     ~H"""
@@ -699,13 +699,13 @@ defmodule OliWeb.Components.Common do
       <.flash kind={:info} flash={@flash} />
       <.flash kind={:info} phx-mounted={show("#flash")}>Welcome Back!</.flash>
   """
-  attr :id, :string, default: "flash", doc: "the optional id of flash container"
-  attr :flash, :map, default: %{}, doc: "the map of flash messages to display"
-  attr :title, :string, default: nil
-  attr :kind, :atom, values: [:info, :error], doc: "used for styling and flash lookup"
-  attr :rest, :global, doc: "the arbitrary HTML attributes to add to the flash container"
+  attr(:id, :string, default: "flash", doc: "the optional id of flash container")
+  attr(:flash, :map, default: %{}, doc: "the map of flash messages to display")
+  attr(:title, :string, default: nil)
+  attr(:kind, :atom, values: [:info, :error], doc: "used for styling and flash lookup")
+  attr(:rest, :global, doc: "the arbitrary HTML attributes to add to the flash container")
 
-  slot :inner_block, doc: "the optional inner block that renders the flash message"
+  slot(:inner_block, doc: "the optional inner block that renders the flash message")
 
   def flash(assigns) do
     ~H"""
@@ -751,7 +751,7 @@ defmodule OliWeb.Components.Common do
 
       <.flash_group flash={@flash} />
   """
-  attr :flash, :map, required: true, doc: "the map of flash messages"
+  attr(:flash, :map, required: true, doc: "the map of flash messages")
 
   def flash_group(assigns) do
     ~H"""
@@ -846,6 +846,169 @@ defmodule OliWeb.Components.Common do
         <%= render_slot(@inner_block) %>
       </div>
     </div>
+    """
+  end
+
+  @doc """
+  Renders a loading spinner.
+  """
+  attr(:size_px, :integer, default: 64)
+
+  def loading_spinner(assigns) do
+    ~H"""
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      xmlns:xlink="http://www.w3.org/1999/xlink"
+      style="margin: auto; background: none; display: block; shape-rendering: auto;"
+      width={"#{@size_px}px"}
+      height={"#{@size_px}px"}
+      viewBox={"#{Kernel.div(@size_px, 4)} #{Kernel.div(@size_px, 4)} #{@size_px} #{@size_px}"}
+      preserveAspectRatio="xMidYMid"
+    >
+      <g transform="rotate(0 50 50)">
+        <rect x="48.5" y="34" rx="1.28" ry="1.28" width="3" height="8" fill="#757575">
+          <animate
+            attributeName="opacity"
+            values="1;0"
+            keyTimes="0;1"
+            dur="1s"
+            begin="-0.9090909090909091s"
+            repeatCount="indefinite"
+          >
+          </animate>
+        </rect>
+      </g>
+      <g transform="rotate(32.72727272727273 50 50)">
+        <rect x="48.5" y="34" rx="1.28" ry="1.28" width="3" height="8" fill="#757575">
+          <animate
+            attributeName="opacity"
+            values="1;0"
+            keyTimes="0;1"
+            dur="1s"
+            begin="-0.8181818181818182s"
+            repeatCount="indefinite"
+          >
+          </animate>
+        </rect>
+      </g>
+      <g transform="rotate(65.45454545454545 50 50)">
+        <rect x="48.5" y="34" rx="1.28" ry="1.28" width="3" height="8" fill="#757575">
+          <animate
+            attributeName="opacity"
+            values="1;0"
+            keyTimes="0;1"
+            dur="1s"
+            begin="-0.7272727272727273s"
+            repeatCount="indefinite"
+          >
+          </animate>
+        </rect>
+      </g>
+      <g transform="rotate(98.18181818181819 50 50)">
+        <rect x="48.5" y="34" rx="1.28" ry="1.28" width="3" height="8" fill="#757575">
+          <animate
+            attributeName="opacity"
+            values="1;0"
+            keyTimes="0;1"
+            dur="1s"
+            begin="-0.6363636363636364s"
+            repeatCount="indefinite"
+          >
+          </animate>
+        </rect>
+      </g>
+      <g transform="rotate(130.9090909090909 50 50)">
+        <rect x="48.5" y="34" rx="1.28" ry="1.28" width="3" height="8" fill="#757575">
+          <animate
+            attributeName="opacity"
+            values="1;0"
+            keyTimes="0;1"
+            dur="1s"
+            begin="-0.5454545454545454s"
+            repeatCount="indefinite"
+          >
+          </animate>
+        </rect>
+      </g>
+      <g transform="rotate(163.63636363636363 50 50)">
+        <rect x="48.5" y="34" rx="1.28" ry="1.28" width="3" height="8" fill="#757575">
+          <animate
+            attributeName="opacity"
+            values="1;0"
+            keyTimes="0;1"
+            dur="1s"
+            begin="-0.45454545454545453s"
+            repeatCount="indefinite"
+          >
+          </animate>
+        </rect>
+      </g>
+      <g transform="rotate(196.36363636363637 50 50)">
+        <rect x="48.5" y="34" rx="1.28" ry="1.28" width="3" height="8" fill="#757575">
+          <animate
+            attributeName="opacity"
+            values="1;0"
+            keyTimes="0;1"
+            dur="1s"
+            begin="-0.36363636363636365s"
+            repeatCount="indefinite"
+          >
+          </animate>
+        </rect>
+      </g>
+      <g transform="rotate(229.0909090909091 50 50)">
+        <rect x="48.5" y="34" rx="1.28" ry="1.28" width="3" height="8" fill="#757575">
+          <animate
+            attributeName="opacity"
+            values="1;0"
+            keyTimes="0;1"
+            dur="1s"
+            begin="-0.2727272727272727s"
+            repeatCount="indefinite"
+          >
+          </animate>
+        </rect>
+      </g>
+      <g transform="rotate(261.8181818181818 50 50)">
+        <rect x="48.5" y="34" rx="1.28" ry="1.28" width="3" height="8" fill="#757575">
+          <animate
+            attributeName="opacity"
+            values="1;0"
+            keyTimes="0;1"
+            dur="1s"
+            begin="-0.18181818181818182s"
+            repeatCount="indefinite"
+          >
+          </animate>
+        </rect>
+      </g>
+      <g transform="rotate(294.54545454545456 50 50)">
+        <rect x="48.5" y="34" rx="1.28" ry="1.28" width="3" height="8" fill="#757575">
+          <animate
+            attributeName="opacity"
+            values="1;0"
+            keyTimes="0;1"
+            dur="1s"
+            begin="-0.09090909090909091s"
+            repeatCount="indefinite"
+          >
+          </animate>
+        </rect>
+      </g>
+      <g transform="rotate(327.27272727272725 50 50)">
+        <rect x="48.5" y="34" rx="1.28" ry="1.28" width="3" height="8" fill="#757575">
+          <animate
+            attributeName="opacity"
+            values="1;0"
+            keyTimes="0;1"
+            dur="1s"
+            begin="0s"
+            repeatCount="indefinite"
+          >
+          </animate>
+        </rect>
+      </g>
+    </svg>
     """
   end
 end

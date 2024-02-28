@@ -16,6 +16,7 @@ defmodule OliWeb.Pow.AuthorContext do
     user
     |> Author.lock_changeset()
     |> Repo.update()
+    |> maybe_delete_author_cached()
   end
 
   @spec unlock(map()) :: {:ok, map()} | {:error, map()}
@@ -23,6 +24,18 @@ defmodule OliWeb.Pow.AuthorContext do
     user
     |> Author.noauth_changeset(%{locked_at: nil})
     |> Repo.update()
+    |> maybe_delete_author_cached()
+  end
+
+  defp maybe_delete_author_cached(db_result) do
+    case db_result do
+      {:ok, author} = result ->
+        Oli.AccountLookupCache.delete("author_#{author.id}")
+        result
+
+      error ->
+        error
+    end
   end
 
   @impl true

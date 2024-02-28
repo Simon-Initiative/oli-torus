@@ -1,10 +1,12 @@
 defmodule Oli.Delivery.Settings do
   import Ecto.Query, warn: false
+
   alias Oli.Repo
   alias Oli.Resources.Revision
   alias Oli.Delivery.Settings.Combined
   alias Oli.Delivery.Settings.StudentException
   alias Oli.Delivery.Attempts.Core.ResourceAttempt
+  alias Oli.Publishing.DeliveryResolver
 
   @doc """
   For a resolved delivery revision of a page and a course section id and user id, return
@@ -27,6 +29,40 @@ defmodule Oli.Delivery.Settings do
       Oli.Delivery.Sections.get_section_resource(section_id, resolved_revision.resource_id)
 
     combine(resolved_revision, section_resource, nil)
+  end
+
+  def get_combined_settings_for_all_resources(section_id, user_id) do
+    section = Oli.Delivery.Sections.get_section!(section_id)
+
+    student_exceptions_map =
+      get_all_student_exceptions(section_id, user_id)
+      |> Enum.reduce(%{}, fn se, acc -> Map.put(acc, se.resource_id, se) end)
+
+    get_page_resources_with_settings(section.slug)
+    |> Enum.reduce(%{}, fn {resource_id, section_resource, page_settings}, acc ->
+      student_exception = student_exceptions_map[resource_id]
+
+      Map.put(acc, resource_id, combine(page_settings, section_resource, student_exception))
+    end)
+  end
+
+  defp get_page_resources_with_settings(section_slug) do
+    page_id = Oli.Resources.ResourceType.id_for_page()
+
+    from([s: s, sr: sr, rev: rev] in DeliveryResolver.section_resource_revisions(section_slug),
+      where: rev.resource_type_id == ^page_id,
+      select: {
+        rev.resource_id,
+        sr,
+        %{
+          resource_id: rev.resource_id,
+          max_attempts: rev.max_attempts,
+          explanation_strategy: rev.explanation_strategy,
+          collab_space_config: rev.collab_space_config
+        }
+      }
+    )
+    |> Repo.all()
   end
 
   def combine(resolved_revision, section_resource, student_exception) do
@@ -92,6 +128,13 @@ defmodule Oli.Delivery.Settings do
     |> where(section_id: ^section_id)
     |> where(user_id: ^user_id)
     |> Repo.one()
+  end
+
+  def get_all_student_exceptions(section_id, user_id) do
+    StudentException
+    |> where(section_id: ^section_id)
+    |> where(user_id: ^user_id)
+    |> Repo.all()
   end
 
   def update_student_exception(

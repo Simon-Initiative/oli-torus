@@ -126,7 +126,7 @@ export const ResponseMultiInputActions = {
       const targets = partFrom.targets?.filter((value) => value !== input.id);
       // if no targets left, remove partFrom
       if (!targets || targets.length < 1) {
-        Operations.applyAll(model, [Operations.filter('$..parts', `[?(@.id!=${partFrom.id})]`)]);
+        Operations.applyAll(model, [Operations.filter('$..parts', `[?(@.id!='${partFrom.id}')]`)]);
       } else {
         partFrom.targets = targets;
       }
@@ -246,7 +246,7 @@ export const ResponseMultiInputActions = {
       post(
         makeUndoable('Removed a choice', [
           Operations.replace('$.authoring', authoringClone),
-          Operations.insert(`$.inputs[?(@.id==${input.id})].choiceIds`, choiceId, inputIndex),
+          Operations.insert(`$.inputs[?(@.id=='${input.id}')].choiceIds`, choiceId, inputIndex),
           Operations.insert(Choices.path, clone(choice), choiceIndex),
         ]),
       );
@@ -389,11 +389,11 @@ export const ResponseMultiInputActions = {
       const targets = part.targets?.filter((v) => v != input.id);
       if (!targets || targets.length < 1) {
         Operations.applyAll(model, [
-          Operations.filter('$..parts', `[?(@.id!=${part.id})]`),
-          Operations.filter('$.inputs', `[?(@.id!=${inputId})]`),
+          Operations.filter('$..parts', `[?(@.id!='${part.id}')]`),
+          Operations.filter('$.inputs', `[?(@.id!='${inputId}')]`),
         ]);
       } else {
-        Operations.applyAll(model, [Operations.filter('$.inputs', `[?(@.id!=${inputId})]`)]);
+        Operations.applyAll(model, [Operations.filter('$.inputs', `[?(@.id!='${inputId}')]`)]);
       }
 
       post(undoables);

@@ -30,7 +30,8 @@ config :oli, Oli.Repo,
 
 config :oli, Oban,
   plugins: false,
-  queues: false
+  queues: false,
+  testing: :manual
 
 # Configure reCAPTCHA
 config :oli, :recaptcha,

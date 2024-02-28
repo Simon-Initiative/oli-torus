@@ -1082,6 +1082,16 @@ defmodule OliWeb.Delivery.InstructorDashboard.PracticeActivitiesTabTest do
       ContextRoles.get_role(:context_instructor)
     ])
 
+    # Data to feed progress_across_for_pages/3
+    for student <- [student_1, student_2, student_3, student_4] do
+      insert(:resource_access,
+        user: student,
+        section: section,
+        resource: page_1_revision.resource,
+        progress: 0.25
+      )
+    end
+
     %{
       section: section,
       section_v1: section_v1,
@@ -1206,11 +1216,14 @@ defmodule OliWeb.Delivery.InstructorDashboard.PracticeActivitiesTabTest do
       [a0, a1, a2, a3, a4] = table_as_list_of_maps(view)
 
       assert has_element?(view, "h4", "Practice Activities")
-      assert a0.title == "Orphaned Page"
-      assert a1.title == "Module 1: IntroductionPage 1"
-      assert a2.title == "Module 1: IntroductionPage 2"
-      assert a3.title == "Module 2: BasicsPage 3"
-      assert a4.title == "Module 2: BasicsPage 4"
+      assert a0.title == "Module 1: IntroductionPage 1"
+      assert a1.title == "Module 1: IntroductionPage 2"
+      assert a2.title == "Module 2: BasicsPage 3"
+      assert a3.title == "Module 2: BasicsPage 4"
+      assert a4.title == "Orphaned Page"
+
+      # Checks for displaying student progress with a value different from null
+      assert a0.total_attempts == "25%"
     end
 
     @tag :skip
@@ -2000,11 +2013,11 @@ defmodule OliWeb.Delivery.InstructorDashboard.PracticeActivitiesTabTest do
 
       [a0, a1, a2, a3, a4] = table_as_list_of_maps(view)
 
-      assert a0.title == "Orphaned Page"
-      assert a1.title == "Module 1: IntroductionPage 1"
-      assert a2.title == "Module 1: IntroductionPage 2"
-      assert a3.title == "Module 2: BasicsPage 3"
-      assert a4.title == "Module 2: BasicsPage 4"
+      assert a0.title == "Module 1: IntroductionPage 1"
+      assert a1.title == "Module 1: IntroductionPage 2"
+      assert a2.title == "Module 2: BasicsPage 3"
+      assert a3.title == "Module 2: BasicsPage 4"
+      assert a4.title == "Orphaned Page"
 
       # It does not display pagination options
       refute has_element?(view, "nav[aria-label=\"Paging\"]")
@@ -2027,8 +2040,8 @@ defmodule OliWeb.Delivery.InstructorDashboard.PracticeActivitiesTabTest do
       [a0, a1] = table_as_list_of_maps(view)
 
       # Page 1
-      assert a0.title == "Orphaned Page"
-      assert a1.title == "Module 1: IntroductionPage 1"
+      assert a0.title == "Module 1: IntroductionPage 1"
+      assert a1.title == "Module 1: IntroductionPage 2"
     end
 
     test "keeps showing the same elements when changing the page size", %{
@@ -2046,9 +2059,9 @@ defmodule OliWeb.Delivery.InstructorDashboard.PracticeActivitiesTabTest do
 
       [a2, a3] = table_as_list_of_maps(view)
 
-      # Page 2
-      assert a2.title == "Module 1: IntroductionPage 2"
-      assert a3.title == "Module 2: BasicsPage 3"
+      # Pages 3 and 4
+      assert a2.title == "Module 2: BasicsPage 3"
+      assert a3.title == "Module 2: BasicsPage 4"
 
       # Change page size from 2 to 1
       view
@@ -2058,7 +2071,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.PracticeActivitiesTabTest do
       [a2] = table_as_list_of_maps(view)
 
       # Page 3. It keeps showing the same element.
-      assert a2.title == "Module 1: IntroductionPage 2"
+      assert a2.title == "Module 2: BasicsPage 3"
     end
   end
 end

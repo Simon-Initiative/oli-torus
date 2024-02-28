@@ -169,7 +169,7 @@ export class PageEditorContent extends Immutable.Record(defaultParams()) {
  * @param content
  * @returns
  */
-function withDefaultContent(
+export function withDefaultContent(
   content: Immutable.List<ResourceContent>,
 ): Immutable.List<ResourceContent> {
   if (content.size > 0) {
@@ -301,7 +301,11 @@ function updateAll(
 ): Immutable.List<ResourceContent> {
   return items.map((i) => {
     if (isResourceGroup(i)) {
-      (i as ResourceGroup).children = updateAll((i as ResourceGroup).children, fn);
+      const itemWithChildren = {
+        ...i,
+        children: updateAll((i as ResourceGroup).children, fn),
+      } as ResourceGroup;
+      return fn(itemWithChildren);
     }
 
     return fn(i);

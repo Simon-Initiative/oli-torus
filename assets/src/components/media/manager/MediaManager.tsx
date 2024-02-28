@@ -4,6 +4,7 @@ import * as Immutable from 'immutable';
 import { Maybe } from 'tsmonad';
 import { formatDate } from 'components/activities/common/utils';
 import { LoadingSpinner, LoadingSpinnerSize } from 'components/common/LoadingSpinner';
+import ConfirmDelete from 'apps/authoring/components/Modal/DeleteConfirmationModal';
 import { MediaItem } from 'types/media';
 import { classNames } from 'utils/classNames';
 import { relativeToNow } from 'utils/date';
@@ -13,6 +14,7 @@ import { OrderedMediaLibrary } from '../OrderedMediaLibrary';
 import { MediaIcon } from './MediaIcon';
 import './MediaManager.scss';
 import { VideoUploadWarning } from './VideoUploadWarning';
+import { deleteFiles } from './delete';
 import { uploadFiles } from './upload';
 
 const PAGELOAD_TRIGGER_MARGIN_PX = 100;
@@ -126,6 +128,7 @@ export interface MediaManagerState {
   filteredMimeTypes: string[] | undefined;
   uploading: boolean;
   duplicateWarning: string[];
+  showConfirmDelete: boolean;
 }
 
 const setMediaManagerLayoutSetting = (layout: LAYOUTS) => {
@@ -164,6 +167,7 @@ export class MediaManager extends React.PureComponent<MediaManagerProps, MediaMa
       filteredMimeTypes: props.mimeFilter,
       uploading: false,
       duplicateWarning: [],
+      showConfirmDelete: false,
     };
 
     this.onScroll = this.onScroll.bind(this);
@@ -227,6 +231,35 @@ export class MediaManager extends React.PureComponent<MediaManagerProps, MediaMa
 
   onUploadClick(id: string) {
     (window as any).$('#' + id).trigger('click');
+  }
+
+  onDelete() {
+    const { mimeFilter, onLoadCourseMediaNextPage, onResetMedia } = this.props;
+    const { searchText, orderBy, order, selection } = this.state;
+
+    deleteFiles(this.props.projectSlug, selection.toArray())
+      .then((result: any) => {
+        onResetMedia();
+        onLoadCourseMediaNextPage(
+          this.props.projectSlug,
+          mimeFilter as string[],
+          searchText as string,
+          orderBy,
+          order,
+        );
+        this.setState({ selection: Immutable.List<string>() });
+      })
+      .catch((e: Error | string) => {
+        if (typeof e === 'string') {
+          this.setState({ error: Maybe.just(e) });
+        } else {
+          this.setState({ error: Maybe.just(e.message) });
+        }
+      });
+  }
+
+  setShowConfirmDelete(showConfirmDelete: boolean) {
+    this.setState({ showConfirmDelete });
   }
 
   setupScrollListener(scrollView: HTMLElement) {
@@ -530,7 +563,7 @@ export class MediaManager extends React.PureComponent<MediaManagerProps, MediaMa
 
   renderMediaSelectionDetails(disabled: boolean) {
     const { media } = this.props;
-    const { selection, showDetails } = this.state;
+    const { selection, showDetails, showConfirmDelete } = this.state;
 
     const selectedMediaItems = selection
       .map((guid) => media.data.get(guid))
@@ -538,8 +571,19 @@ export class MediaManager extends React.PureComponent<MediaManagerProps, MediaMa
 
     if (selectedMediaItems.size > 1) {
       return (
-        <div className="media-selection-details">
-          <div className="details-title">Multiple Items Selected</div>
+        <div className="flex">
+          <div className="media-selection-details flex-grow-1">
+            <div className="details-title">Multiple Items Selected</div>
+          </div>
+          <div>
+            <button
+              className="btn p-0 ml-1"
+              onClick={() => this.setShowConfirmDelete(true)}
+              title="Archive Media"
+            >
+              <i className="fa fa-trash" />
+            </button>
+          </div>
         </div>
       );
     }
@@ -550,46 +594,72 @@ export class MediaManager extends React.PureComponent<MediaManagerProps, MediaMa
       const selectedItem = selectedMediaItems.first() as MediaItem;
 
       return (
-        <div className="media-selection-details">
-          <div className="details-title">
-            <span>
-              Selected:{' '}
-              <a
-                href={selectedItem.url}
-                rel="noreferrer"
-                target="_blank"
-                onClick={(e) => {
-                  if (!disabled) {
-                    popOpenImage(e);
-                  }
-                }}
-              >
-                {stringFormat.ellipsize(selectedItem.fileName, 65, 5)}
-              </a>
-            </span>
-            {showDetails ? (
-              <i className="fa-solid fa-angle-down"></i>
-            ) : (
-              <i className="fa-solid fa-angle-up"></i>
-            )}
-          </div>
-          {showDetails && (
-            <div className="details-content">
-              <MediaIcon
-                filename={selectedItem.fileName}
-                mimeType={selectedItem.mimeType}
-                url={selectedItem.url}
-              />
-              <div className="details-info">
-                <div className="detail-row date-created">
-                  <b>Uploaded:</b> {relativeToNow(new Date(selectedItem.dateCreated))}
-                </div>
-                <div className="detail-row file-size">
-                  <b>Size:</b> {convert.toByteNotation(selectedItem.fileSize)}
+        <div className="flex">
+          <div className="media-selection-details flex-grow-1">
+            <div className="details-title">
+              <span>
+                Selected:{' '}
+                <a
+                  href={selectedItem.url}
+                  rel="noreferrer"
+                  target="_blank"
+                  onClick={(e) => {
+                    if (!disabled) {
+                      popOpenImage(e);
+                    }
+                  }}
+                >
+                  {stringFormat.ellipsize(selectedItem.fileName, 65, 5)}
+                </a>
+              </span>
+              {showDetails ? (
+                <i className="fa-solid fa-angle-down"></i>
+              ) : (
+                <i className="fa-solid fa-angle-up"></i>
+              )}
+            </div>
+            {showDetails && (
+              <div className="details-content">
+                <MediaIcon
+                  filename={selectedItem.fileName}
+                  mimeType={selectedItem.mimeType}
+                  url={selectedItem.url}
+                />
+                <div className="details-info">
+                  <div className="detail-row date-created">
+                    <b>Uploaded:</b> {relativeToNow(new Date(selectedItem.dateCreated))}
+                  </div>
+                  <div className="detail-row file-size">
+                    <b>Size:</b> {convert.toByteNotation(selectedItem.fileSize)}
+                  </div>
                 </div>
               </div>
-            </div>
-          )}
+            )}
+            {showConfirmDelete && (
+              <ConfirmDelete
+                show={showConfirmDelete}
+                title="Archive Media"
+                elementType="Media"
+                explanation="Are you sure you want to archive the file(s)? Note that archived media items are no longer available in the media library and the archiving process is not reversible"
+                deleteHandler={() => {
+                  this.onDelete();
+                  this.setShowConfirmDelete(false);
+                }}
+                cancelHandler={() => {
+                  this.setShowConfirmDelete(false);
+                }}
+              />
+            )}
+          </div>
+          <div>
+            <button
+              className="btn p-0 ml-1"
+              onClick={() => this.setShowConfirmDelete(true)}
+              title="Archive Media"
+            >
+              <i className="fa fa-trash" />
+            </button>
+          </div>
         </div>
       );
     }

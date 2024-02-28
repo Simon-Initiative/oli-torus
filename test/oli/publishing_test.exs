@@ -584,8 +584,9 @@ defmodule Oli.PublishingTest do
     end
 
     test "publish_project/1 publishes the active unpublished publication and creates a new working unpublished publication for a project",
-         %{publication: publication, project: project} do
-      {:ok, %Publication{} = published} = Publishing.publish_project(project, "some changes")
+         %{publication: publication, project: project, author: author} do
+      {:ok, %Publication{} = published} =
+        Publishing.publish_project(project, "some changes", author.id)
 
       # original publication should now be published
       assert published.id == publication.id
@@ -593,9 +594,9 @@ defmodule Oli.PublishingTest do
     end
 
     test "publish_project/1 creates a new working unpublished publication for a project",
-         %{publication: unpublished_publication, project: project} do
+         %{publication: unpublished_publication, project: project, author: author} do
       {:ok, %Publication{} = published_publication} =
-        Publishing.publish_project(project, "some changes")
+        Publishing.publish_project(project, "some changes", author.id)
 
       # The published publication should match the original unpublished publication
       assert unpublished_publication.id == published_publication.id
@@ -647,7 +648,7 @@ defmodule Oli.PublishingTest do
 
       # Publish the project
       {:ok, %Publication{} = published_publication} =
-        Publishing.publish_project(project, "some changes")
+        Publishing.publish_project(project, "some changes", author.id)
 
       # publication should succeed even if a resource is "locked"
       new_unpublished_publication = Publishing.project_working_publication(project.slug)
@@ -689,10 +690,10 @@ defmodule Oli.PublishingTest do
       assert published_revision.content == revision_with_activity.content
     end
 
-    test "publish_project/1 updates revision_part with published information" do
+    test "publish_project/1 updates revision_part with published information", %{author: author} do
       %{activity: %{revision: revision}, project: project} = project_with_activity()
 
-      Publishing.publish_project(project, "Some description")
+      Publishing.publish_project(project, "Some description", author.id)
 
       assert Repo.all(
                from pm in "revision_parts",
@@ -701,9 +702,12 @@ defmodule Oli.PublishingTest do
              ) == ["manual"]
     end
 
-    test "broadcasting the new publication works when publishing", %{project: project} do
+    test "broadcasting the new publication works when publishing", %{
+      project: project,
+      author: author
+    } do
       Oli.Authoring.Broadcaster.Subscriber.subscribe_to_new_publications(project.slug)
-      {:ok, publication} = Publishing.publish_project(project, "some changes")
+      {:ok, publication} = Publishing.publish_project(project, "some changes", author.id)
       {:messages, [{:new_publication, pub, project_slug}]} = Process.info(self(), :messages)
       assert pub.id == publication.id
       assert project.slug == project_slug
@@ -736,7 +740,7 @@ defmodule Oli.PublishingTest do
       Publishing.upsert_published_resource(publication, r3_revision)
 
       # create first publication
-      {:ok, %Publication{} = p1} = Publishing.publish_project(project, "some changes")
+      {:ok, %Publication{} = p1} = Publishing.publish_project(project, "some changes", author.id)
 
       # make some edits
       content = %{
@@ -803,11 +807,11 @@ defmodule Oli.PublishingTest do
         |> Repo.insert()
 
       # create first publication
-      {:ok, _} = Publishing.publish_project(project, "some changes")
+      {:ok, _} = Publishing.publish_project(project, "some changes", author2.id)
 
       second = Oli.Seeder.another_project(author2, institution, "second one")
-      {:ok, _} = Publishing.publish_project(second.project, "some changes")
-      {:ok, _} = Publishing.publish_project(second.project, "some changes")
+      {:ok, _} = Publishing.publish_project(second.project, "some changes", author2.id)
+      {:ok, _} = Publishing.publish_project(second.project, "some changes", author2.id)
 
       # by default, these projects are set to "private"
       assert Publishing.available_publications(nil, nil) |> length == 0

@@ -186,6 +186,10 @@
   }
 }
 
+.resource-editor .content-purpose {
+  overflow: visible; // During authoring, let content overflow
+}
+
 .content-page-link {
   $color: #3d81f6;
   $bg: rgba(#64748b, 0.2);
