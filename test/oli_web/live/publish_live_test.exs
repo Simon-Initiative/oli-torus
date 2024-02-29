@@ -1,5 +1,5 @@
 defmodule OliWeb.PublishLiveTest do
-  use ExUnit.Case, async: false
+  use ExUnit.Case, async: true
   use OliWeb.ConnCase
   use Oban.Testing, repo: Oli.Repo
 
@@ -75,7 +75,8 @@ defmodule OliWeb.PublishLiveTest do
       insert(:publication, %{
         project: project,
         root_resource_id: container_revision.resource_id,
-        published: nil
+        published: nil,
+        ids_added: true
       })
 
     # publish resources
