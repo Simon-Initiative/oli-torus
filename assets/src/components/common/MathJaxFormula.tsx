@@ -99,17 +99,25 @@ const fixNL = (s: string) =>
     : s;
 
 export const MathJaxLatexFormula: React.FC<MathJaxFormulaProps> = ({
+  id,
   src,
   inline,
   style,
   onClick,
+  pointMarkerContext,
 }) => {
   const ref = useMathJax(src);
   const fixed = fixNL(src);
   const wrapped = inline ? `\\(${fixed}\\)` : `\\[${fixed}\\]`;
 
   return (
-    <span onClick={onClick} style={style} className={cssClass(inline)} ref={ref}>
+    <span
+      onClick={onClick}
+      style={style}
+      className={cssClass(inline)}
+      ref={ref}
+      {...maybePointMarkerAttr({ id: id } as ContentModel.FormulaBlock, pointMarkerContext)}
+    >
       {wrapped}
     </span>
   );
