@@ -24,6 +24,8 @@
 
   & > .content-purpose-content {
     padding: 32px;
+    /* MER-2961 - Some wide content (specifically formulas) were getting cut off in groups, adding a scrollbar */
+    overflow-x: auto;
   }
 
   &.none {
