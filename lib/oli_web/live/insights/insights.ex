@@ -30,7 +30,8 @@ defmodule OliWeb.Insights do
                %SelectOption{
                  id: section.id,
                  label: section.title,
-                 selected: false
+                 selected: false,
+                 is_product: true
                }
              ]}
         else
@@ -39,7 +40,8 @@ defmodule OliWeb.Insights do
                %SelectOption{
                  id: section.id,
                  label: section.title,
-                 selected: false
+                 selected: false,
+                 is_product: false
                }
              ], products}
         end
@@ -84,7 +86,7 @@ defmodule OliWeb.Insights do
        sections: sections,
        filtered_sections: sections,
        filtered_blueprint: products,
-       selected_filter: nil,
+       is_product: false,
        form_sections:
          MultiSelectOptions.build_changeset(sections)
          |> to_form(),
@@ -126,6 +128,7 @@ defmodule OliWeb.Insights do
     end
   end
 
+  @spec render(any()) :: Phoenix.LiveView.Rendered.t()
   def render(assigns) do
     ~H"""
     <div class="mb-3">
@@ -181,6 +184,7 @@ defmodule OliWeb.Insights do
               module={MultiSelect}
               options={@sections}
               form={@form_sections}
+              label="Select a section..."
             />
           </.form>
 
@@ -190,6 +194,7 @@ defmodule OliWeb.Insights do
               module={MultiSelect}
               options={@products}
               form={@form_products}
+              label="Select a product..."
             />
           </.form>
         </div>
@@ -411,6 +416,10 @@ defmodule OliWeb.Insights do
   end
 
   def handle_event("section-change", params, socket) do
+    IO.inspect(socket.assigns.products, label: "dfef.")
+
+    IO.inspect(params, label: "fdfrfr.")
+
     target_value =
       hd(params["_target"])
 
@@ -432,6 +441,13 @@ defmodule OliWeb.Insights do
     update_product_by_value(value, socket, target_value)
   end
 
+  @spec handle_info(
+          :init_by_activity
+          | :init_by_objective
+          | :init_by_page
+          | {:analytics_export_status, {any()} | {:error, any()} | {:available, any(), any()}},
+          any()
+        ) :: {:noreply, any()}
   def handle_info(
         {:analytics_export_status,
          {:available, analytics_export_url, analytics_export_timestamp}},
@@ -461,10 +477,7 @@ defmodule OliWeb.Insights do
 
   def handle_info(:init_by_page, socket) do
     by_page_rows =
-      Oli.Analytics.ByPage.query_against_project_slug(
-        socket.assigns.project.slug,
-        socket.assigns.section_ids
-      )
+      get_by_page_row(socket)
 
     active_rows =
       apply_filter_sort(
@@ -500,10 +513,7 @@ defmodule OliWeb.Insights do
 
   def handle_info(:init_by_activity, socket) do
     by_activity_rows =
-      Oli.Analytics.ByActivity.query_against_project_slug(
-        socket.assigns.project.slug,
-        socket.assigns.section_ids
-      )
+      get_by_page_row(socket)
 
     active_rows =
       apply_filter_sort(
@@ -517,6 +527,20 @@ defmodule OliWeb.Insights do
     {:noreply, assign(socket, by_activity_rows: by_activity_rows, active_rows: active_rows)}
   end
 
+  defp get_by_page_row(socket) do
+    if socket.assigns.is_product do
+      Oli.Analytics.ByActivity.query_against_project_slug(
+        socket.assigns.project.slug,
+        socket.assigns.product_ids
+      )
+    else
+      Oli.Analytics.ByActivity.query_against_project_slug(
+        socket.assigns.project.slug,
+        socket.assigns.section_ids
+      )
+    end
+  end
+
   defp update_section_by_value(value, socket, target_value) do
     case value do
       "true" ->
@@ -528,7 +552,7 @@ defmodule OliWeb.Insights do
             socket.assigns.section_ids
           )
 
-        socket = assign(socket, section_ids: section_ids_updated)
+        socket = assign(socket, is_product: false, section_ids: section_ids_updated)
         filter_type(socket.assigns.selected)
         {:noreply, socket}
 
@@ -541,7 +565,7 @@ defmodule OliWeb.Insights do
             socket.assigns.section_ids
           )
 
-        socket = assign(socket, section_ids: section_ids_updated)
+        socket = assign(socket, is_product: false, section_ids: section_ids_updated)
         filter_type(socket.assigns.selected)
         {:noreply, socket}
 
@@ -561,13 +585,7 @@ defmodule OliWeb.Insights do
             socket.assigns.product_ids
           )
 
-        case socket.selected do
-          :init_by_page ->
-            send(self(), :init_by_page)
-            {:noreply, socket}
-        end
-
-        socket = assign(socket, product_ids: product_ids_updated)
+        socket = assign(socket, is_product: true, product_ids: product_ids_updated)
         filter_type(socket.assigns.selected)
         {:noreply, socket}
 
@@ -580,8 +598,8 @@ defmodule OliWeb.Insights do
             socket.assigns.product_ids
           )
 
-        socket = assign(socket, product_ids: product_ids_updated)
-        send(self(), :fliter_by_section_ids)
+        socket = assign(socket, is_product: true, product_ids: product_ids_updated)
+        filter_type(socket.assigns.selected)
         {:noreply, socket}
 
       _ ->
