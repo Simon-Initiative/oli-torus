@@ -8,6 +8,7 @@ config :oli,
   media_url: System.get_env("TEST_MEDIA_URL"),
   http_client: Oli.Test.MockHTTP,
   aws_client: Oli.Test.MockAws,
+  openai_client: Oli.Test.MockOpenAIClient,
   slack_webhook_url: nil,
   branding: [
     name: "OLI Torus Test",
@@ -29,7 +30,8 @@ config :oli, Oli.Repo,
 
 config :oli, Oban,
   plugins: false,
-  queues: false
+  queues: false,
+  testing: :manual
 
 # Configure reCAPTCHA
 config :oli, :recaptcha,

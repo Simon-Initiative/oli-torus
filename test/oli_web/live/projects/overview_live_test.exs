@@ -134,7 +134,8 @@ defmodule OliWeb.Projects.OverviewLiveTest do
 
       Oli.Publishing.publish_project(
         project,
-        "Datashop test"
+        "Datashop test",
+        admin.id
       )
 
       {:ok, view, _html} = live(conn, Routes.live_path(Endpoint, OverviewLive, project.slug))

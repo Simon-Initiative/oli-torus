@@ -131,7 +131,7 @@ defmodule OliWeb.DeliveryControllerTest do
       author: author,
       institution: institution
     } do
-      Publishing.publish_project(project, "some changes")
+      Publishing.publish_project(project, "some changes", author.id)
 
       Oli.Authoring.Course.update_project(project, %{status: :deleted})
 

@@ -5,17 +5,21 @@ defmodule OliWeb.Delivery.Student.IndexLive do
 
   alias Oli.Delivery.Sections
   alias OliWeb.Components.Delivery.Schedule
+  alias Oli.Delivery.Attempts
 
   def mount(_params, _session, socket) do
     section = socket.assigns[:section]
+    current_user_id = socket.assigns[:current_user].id
 
-    schedule_for_current_week = Sections.get_schedule_for_current_week(section)
+    schedule_for_current_week =
+      Sections.get_schedule_for_current_week(section, current_user_id)
 
     {:ok,
      assign(socket,
        active_tab: :index,
        schedule_for_current_week: schedule_for_current_week,
-       section_slug: section.slug
+       section_slug: section.slug,
+       historical_graded_attempt_summary: nil
      )}
   end
 
@@ -34,8 +38,10 @@ defmodule OliWeb.Delivery.Student.IndexLive do
             <Schedule.week
               ctx={@ctx}
               week_number={week}
+              show_border={false}
               schedule_ranges={schedule_ranges}
               section_slug={@section_slug}
+              historical_graded_attempt_summary={@historical_graded_attempt_summary}
               request_path={~p"/sections/#{@section_slug}"}
             />
           <% _ -> %>
@@ -44,5 +50,23 @@ defmodule OliWeb.Delivery.Student.IndexLive do
       </div>
     </div>
     """
+  end
+
+  def handle_event(
+        "load_historical_graded_attempt_summary",
+        %{"page_revision_slug" => page_revision_slug},
+        socket
+      ) do
+    %{section: section, current_user: current_user} = socket.assigns
+
+    historical_graded_attempt_summary =
+      Attempts.get_historical_graded_attempt_summary(section, page_revision_slug, current_user.id)
+
+    {:noreply,
+     assign(socket, historical_graded_attempt_summary: historical_graded_attempt_summary)}
+  end
+
+  def handle_event("clear_historical_graded_attempt_summary", _params, socket) do
+    {:noreply, assign(socket, historical_graded_attempt_summary: nil)}
   end
 end

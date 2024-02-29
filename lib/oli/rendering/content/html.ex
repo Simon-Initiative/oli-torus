@@ -30,6 +30,10 @@ defmodule Oli.Rendering.Content.Html do
     ["<p", maybe_point_marker_attr(context, attrs), ">", next.(), "</p>\n"]
   end
 
+  def input_ref(%Context{} = _context, next, _) do
+    ["<span>", next.(), "</span>\n"]
+  end
+
   def h1(%Context{} = _context, next, _) do
     ["<h1>", next.(), "</h1>\n"]
   end

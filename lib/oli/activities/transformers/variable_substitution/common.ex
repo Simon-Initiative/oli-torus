@@ -9,7 +9,7 @@ defmodule Oli.Activities.Transformers.VariableSubstitution.Common do
     Enum.reduce(evaluation_digest, encoded, fn %{"variable" => v} = e, s ->
       r =
         case Map.get(e, "result", "") do
-          s when is_binary(s) -> s
+          s when is_binary(s) -> String.trim(s)
           list when is_list(list) -> Kernel.inspect(list)
           number -> Kernel.to_string(number)
         end

@@ -42,6 +42,12 @@ defmodule Oli.Rendering.Content.Markdown do
     ]
   end
 
+  def input_ref(%Context{} = _context, _next, _) do
+    [
+      "[user input]"
+    ]
+  end
+
   def h1(%Context{} = _context, next, _) do
     [
       "# ",

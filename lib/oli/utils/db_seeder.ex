@@ -87,7 +87,8 @@ defmodule Oli.Seeder do
     {:ok, publication} =
       Publication.changeset(%Publication{}, %{
         root_resource_id: container_resource.id,
-        project_id: project.id
+        project_id: project.id,
+        ids_added: true
       })
       |> Repo.insert()
 
@@ -190,7 +191,8 @@ defmodule Oli.Seeder do
     {:ok, publication} =
       Publication.changeset(%Publication{}, %{
         root_resource_id: container_resource.id,
-        project_id: project.id
+        project_id: project.id,
+        ids_added: true
       })
       |> Repo.insert()
 
@@ -205,7 +207,7 @@ defmodule Oli.Seeder do
     container_revision =
       attach_pages_to([page1, page2], container_resource, container_revision, publication)
 
-    {:ok, pub1} = Publishing.publish_project(project, "some changes")
+    {:ok, pub1} = Publishing.publish_project(project, "some changes", author.id)
 
     {:ok, section} =
       Sections.create_section(%{
@@ -313,7 +315,8 @@ defmodule Oli.Seeder do
     {:ok, publication} =
       Publication.changeset(%Publication{}, %{
         root_resource_id: container_resource.id,
-        project_id: project.id
+        project_id: project.id,
+        ids_added: true
       })
       |> Repo.insert()
 
@@ -344,7 +347,7 @@ defmodule Oli.Seeder do
         publication
       )
 
-    {:ok, pub1} = Publishing.publish_project(project, "some changes")
+    {:ok, pub1} = Publishing.publish_project(project, "some changes", author.id)
 
     {:ok, section} =
       Sections.create_section(%{
@@ -464,7 +467,8 @@ defmodule Oli.Seeder do
     {:ok, publication} =
       Publication.changeset(%Publication{}, %{
         root_resource_id: container_resource.id,
-        project_id: project.id
+        project_id: project.id,
+        ids_added: true
       })
       |> Repo.insert()
 
@@ -688,7 +692,7 @@ defmodule Oli.Seeder do
         publication
       )
 
-    {:ok, pub1} = Publishing.publish_project(project, "some changes")
+    {:ok, pub1} = Publishing.publish_project(project, "some changes", mappings.author.id)
 
     {:ok, section} =
       Sections.create_section(%{
@@ -731,7 +735,7 @@ defmodule Oli.Seeder do
     project2_map = another_project(map.author, map.institution)
 
     # Publish the current state of our test project:
-    {:ok, pub1} = Publishing.publish_project(map.project, "some changes")
+    {:ok, pub1} = Publishing.publish_project(map.project, "some changes", map.author.id)
 
     # Track a series of changes for both resources:
     pub = Publishing.project_working_publication(map.project.slug)
@@ -762,7 +766,7 @@ defmodule Oli.Seeder do
       )
 
     # Publish again
-    {:ok, pub2} = Publishing.publish_project(map.project, "some changes")
+    {:ok, pub2} = Publishing.publish_project(map.project, "some changes", map.author.id)
 
     # Create a fourth page that is completely unpublished
     pub = Publishing.project_working_publication(map.project.slug)
@@ -1171,7 +1175,8 @@ defmodule Oli.Seeder do
         description \\ "some changes made",
         tag \\ nil
       ) do
-    {:ok, published_publication} = Publishing.publish_project(map[project_tag], description)
+    {:ok, published_publication} =
+      Publishing.publish_project(map[project_tag], description, map.author.id)
 
     case tag do
       nil -> map

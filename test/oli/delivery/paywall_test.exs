@@ -24,7 +24,7 @@ defmodule Oli.Delivery.PaywallTest do
     setup do
       map = Seeder.base_project_with_resource2()
 
-      {:ok, _} = Publishing.publish_project(map.project, "some changes")
+      {:ok, _} = Publishing.publish_project(map.project, "some changes", map.author.id)
 
       # Create a product using the initial publication
       {:ok, product} =
@@ -182,7 +182,7 @@ defmodule Oli.Delivery.PaywallTest do
     setup do
       map = Seeder.base_project_with_resource2()
 
-      {:ok, _} = Publishing.publish_project(map.project, "some changes")
+      {:ok, _} = Publishing.publish_project(map.project, "some changes", map.author.id)
 
       # Create a product using the initial publication
       {:ok, product} =
@@ -342,7 +342,7 @@ defmodule Oli.Delivery.PaywallTest do
     setup do
       map = Seeder.base_project_with_resource2()
 
-      {:ok, _} = Publishing.publish_project(map.project, "some changes")
+      {:ok, _} = Publishing.publish_project(map.project, "some changes", map.author.id)
 
       # Create a product using the initial publication
       {:ok, paid} =

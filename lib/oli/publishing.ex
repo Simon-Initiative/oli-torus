@@ -464,7 +464,8 @@ defmodule Oli.Publishing do
       with {:ok, publication} <-
              create_publication(%{
                project_id: project.id,
-               root_resource_id: resource.id
+               root_resource_id: resource.id,
+               ids_added: true
              }),
            {:ok, published_resource} <-
              create_published_resource(%{
@@ -952,55 +953,92 @@ defmodule Oli.Publishing do
       iex> publish_project(project)
       {:ok, %Publication{}}
   """
-  @spec publish_project(%Project{}, String.t()) ::
+  @spec publish_project(%Project{}, String.t(), integer()) ::
           {:error, String.t()} | {:ok, %Publication{}}
-  def publish_project(project, description) do
-    Repo.transaction(fn ->
-      with active_publication <- project_working_publication(project.slug),
-           latest_published_publication <-
-             Publishing.get_latest_published_publication_by_slug(project.slug),
-           now <- DateTime.utc_now(),
+  def publish_project(project, description, user_id) do
+    # Force acquire all locks for the active publication, so that no other
+    # user can edit the active publication while we are publishing it. Do
+    # this in an upfront, separate transaction so that these locks are
+    # immediately visible to other users.
+    {:ok, id} =
+      Repo.transaction(fn ->
+        active_publication = project_working_publication(project.slug)
+        Locks.acquire_all(active_publication.id, user_id)
 
-           # diff publications to determine the new version number
-           %PublicationDiff{edition: edition, major: major, minor: minor} <-
-             diff_publications(latest_published_publication, active_publication),
+        active_publication.id
+      end)
 
-           # create a new publication to capture all further edits
-           {:ok, new_publication} <-
-             create_publication(%{
-               root_resource_id: active_publication.root_resource_id,
-               project_id: active_publication.project_id
-             }),
+    result =
+      Repo.transaction(fn ->
+        # Make sure that the active publication has not been modified by another user
+        # since we acquired the locks. This could happen if another user hit "publish"
+        # right in between these two transactions.
+        active_publication = project_working_publication(project.slug)
 
-           # Locks must be released so that users who have acquired a resource lock
-           # will be forced to re-acquire the lock with the new publication and
-           # create a new revision under that publication
-           _ <- Locks.release_all(active_publication.id),
+        if active_publication.id != id do
+          Repo.rollback(:interupted_by_another_user)
+        else
+          with latest_published_publication <-
+                 Publishing.get_latest_published_publication_by_slug(project.slug),
+               now <- DateTime.utc_now(),
 
-           # clone mappings for resources, activities, and objectives. This removes
-           # all active locks, forcing the user to refresh the page to re-acquire the lock.
-           _ <- Clone.clone_all_published_resources(active_publication.id, new_publication.id),
-           {:ok, _} <- insert_revision_part_records(active_publication.id),
+               # If the active publication has not had its "ids_added" flag set, then
+               # update all page and activity resources to ensure that unique ids exist.
+               # This is a one-time operation for the active publication.
+               {:ok, _} <- Oli.Publishing.UniqueIds.add_unique_ids(active_publication),
 
-           # set the active publication to published
-           {:ok, publication} <-
-             update_publication(
-               active_publication,
-               %{
-                 published: now,
-                 description: description,
-                 edition: edition,
-                 major: major,
-                 minor: minor
-               }
-             ) do
-        Oli.Authoring.Broadcaster.broadcast_publication(publication, project.slug)
+               # diff publications to determine the new version number
+               %PublicationDiff{edition: edition, major: major, minor: minor} <-
+                 diff_publications(latest_published_publication, active_publication),
 
-        publication
-      else
-        error -> Repo.rollback(error)
-      end
-    end)
+               # create a new publication to capture all further edits
+               {:ok, new_publication} <-
+                 create_publication(%{
+                   root_resource_id: active_publication.root_resource_id,
+                   project_id: active_publication.project_id,
+                   ids_added: true
+                 }),
+
+               # Release all locks
+               _ <- Locks.release_all(active_publication.id),
+
+               # clone mappings for resources, activities, and objectives. This removes
+               # all active locks, forcing the user to refresh the page to re-acquire the lock.
+               _ <-
+                 Clone.clone_all_published_resources(active_publication.id, new_publication.id),
+               {:ok, _} <- insert_revision_part_records(active_publication.id),
+
+               # set the active publication to published
+               {:ok, publication} <-
+                 update_publication(
+                   active_publication,
+                   %{
+                     published: now,
+                     description: description,
+                     edition: edition,
+                     major: major,
+                     minor: minor,
+                     ids_added: true
+                   }
+                 ) do
+            Oli.Authoring.Broadcaster.broadcast_publication(publication, project.slug)
+
+            publication
+          else
+            error -> Repo.rollback(error)
+          end
+        end
+      end)
+
+    case result do
+      {:error, :interupted_by_another_user} ->
+        Locks.release_all(id)
+
+        {:error, "Another user has modified the active publication. Please try again."}
+
+      other ->
+        other
+    end
   end
 
   # For a given publication, gather all of the part ids and their grading approach
