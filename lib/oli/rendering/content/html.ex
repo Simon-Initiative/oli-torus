@@ -560,10 +560,10 @@ defmodule Oli.Rendering.Content.Html do
        else: src
   end
 
-  def figure(%Context{} = _context, render_children, render_title, el) do
+  def figure(%Context{} = context, render_children, render_title, el) do
     [
       "<div class='figure'",
-      maybe_point_marker_attr(_context, el),
+      maybe_point_marker_attr(context, el),
       "><figure><figcaption>",
       render_title.(),
       "</figcaption><div class='figure-content'>",
