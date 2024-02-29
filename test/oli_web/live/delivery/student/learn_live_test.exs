@@ -186,10 +186,11 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
         intro_content: %{
           children: [
             %{
+              id: "2905665054",
               type: "p",
               children: [
                 %{
-                  text: "Thoughout this unit you will learn how to use this course."
+                  text: "Throughout this unit you will learn how to use this course."
                 }
               ]
             }
@@ -724,7 +725,11 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       assert render(page_2_element) =~ "min"
 
       # intro content is shown
-      assert has_element?(view, "p", "Thoughout this unit you will learn how to use this course.")
+      assert has_element?(
+               view,
+               "p",
+               "Throughout this unit you will learn how to use this course."
+             )
 
       # header is shown with title and due date
       assert has_element?(

@@ -1009,12 +1009,13 @@ defmodule Oli.Rendering.Content.Html do
     end
   end
 
-  defp maybe_point_marker_attr(%Context{is_annotation_level: true} = context, _attrs) do
-    if context.render_opts.render_point_markers,
-      do:
-        Logger.warning(
-          "Content element missing id attribute which is required for point marker. Point marker will not be rendered."
-        )
+  defp maybe_point_marker_attr(%Context{is_annotation_level: true} = context, attrs) do
+    if context.render_opts.render_point_markers do
+      Logger.warning(
+        "Content element missing id attribute which is required for point marker. Point marker will not be rendered.\n" <>
+          Jason.encode!(attrs)
+      )
+    end
 
     ""
   end
