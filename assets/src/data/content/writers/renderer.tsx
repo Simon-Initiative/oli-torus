@@ -17,9 +17,10 @@ export const HtmlContentModelRenderer: React.FC<Props> = (props) => {
   const content = (props.content as any).model ? (props.content as any).model : props.content;
   const className = props.inline ? 'inline' : '';
 
-  const dispatchPageContentChange = useCallback(() => {
-    Events.dispatch(Events.Registry.PageContentChange, Events.makePageContentChangeEvent({}));
-  }, []);
+  const dispatchPageContentChange = useCallback(
+    () => Events.dispatch(Events.Registry.PageContentChange, Events.makePageContentChangeEvent({})),
+    [],
+  );
 
   // notify when page content has changed
   useEffect(() => {
@@ -31,6 +32,7 @@ export const HtmlContentModelRenderer: React.FC<Props> = (props) => {
   }, [content]);
 
   const rendered = new ContentWriter().render(props.context, content, new HtmlParser());
+
   return (
     <div dir={props.direction} className={className}>
       {rendered}

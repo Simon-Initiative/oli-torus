@@ -76,7 +76,6 @@ import { TableConjugation } from '../../../components/common/TableConjugation';
 import { Popup } from '../../../components/content/Popup';
 import { cellAttributes } from '../../../components/editing/elements/table/table-util';
 import { VideoPlayer } from '../../../components/video_player/VideoPlayer';
-import { schema } from '../model/schema';
 import { PointMarkerContext, maybePointMarkerAttr } from '../utils';
 import { WriterContext } from './context';
 import { ContentWriter, Next, WriterImpl } from './writer';
@@ -123,7 +122,7 @@ export class HtmlParser implements WriterImpl {
       (typeof attrs.caption === 'string'
         ? this.escapeXml(attrs.caption)
         : new ContentWriter().render(
-            { ...context, isBlockLevel: false },
+            { ...context, isAnnotationLevel: false },
             attrs.caption,
             new HtmlParser(),
           ));
@@ -140,8 +139,8 @@ export class HtmlParser implements WriterImpl {
     );
   }
 
-  p(context: WriterContext, next: Next, x: Paragraph) {
-    return <p {...maybePointMarkerAttr(x, pointMarkerContextFrom(context, x))}>{next()}</p>;
+  p(context: WriterContext, next: Next, p: Paragraph) {
+    return <p {...maybePointMarkerAttr(p, pointMarkerContextFrom(context, p))}>{next()}</p>;
   }
   h1(context: WriterContext, next: Next, _x: HeadingOne) {
     return <h1>{next()}</h1>;
@@ -190,11 +189,25 @@ export class HtmlParser implements WriterImpl {
     const writer = new ContentWriter();
 
     const pronunciation =
-      element.pronunciation && writer.render(context, element.pronunciation, new HtmlParser());
+      element.pronunciation &&
+      writer.render(
+        { ...context, isAnnotationLevel: false },
+        element.pronunciation,
+        new HtmlParser(),
+      );
 
-    const table = element.table && writer.render(context, element.table, new HtmlParser());
+    const table =
+      element.table &&
+      writer.render({ ...context, isAnnotationLevel: false }, element.table, new HtmlParser());
 
-    return <Conjugation conjugation={element} pronunciation={pronunciation} table={table} />;
+    return (
+      <Conjugation
+        conjugation={element}
+        pronunciation={pronunciation}
+        table={table}
+        pointMarkerContext={pointMarkerContextFrom(context, element)}
+      />
+    );
   }
 
   definitionMeaning(context: WriterContext, next: Next, _: any) {
@@ -218,14 +231,28 @@ export class HtmlParser implements WriterImpl {
 
     // Need to use a ContentWriter to recursively render the parts of the definition
     const meanings =
-      definition.meanings && writer.render(context, definition.meanings, new HtmlParser());
+      definition.meanings &&
+      writer.render(
+        { ...context, isAnnotationLevel: false },
+        definition.meanings,
+        new HtmlParser(),
+      );
 
     const pronunciation =
       definition.pronunciation &&
-      writer.render(context, definition.pronunciation, new HtmlParser());
+      writer.render(
+        { ...context, isAnnotationLevel: false },
+        definition.pronunciation,
+        new HtmlParser(),
+      );
 
     const translations =
-      definition.translations && writer.render(context, definition.translations, new HtmlParser());
+      definition.translations &&
+      writer.render(
+        { ...context, isAnnotationLevel: false },
+        definition.translations,
+        new HtmlParser(),
+      );
 
     return (
       <Definition
@@ -238,33 +265,43 @@ export class HtmlParser implements WriterImpl {
   }
 
   dialog(context: WriterContext, next: Next, dialog: DialogModel) {
-    return <Dialog dialog={dialog} context={context} />;
+    return (
+      <Dialog
+        dialog={dialog}
+        context={context}
+        pointMarkerContext={pointMarkerContextFrom(context, dialog)}
+      />
+    );
   }
 
-  foreign(ctx: WriterContext, next: Next, element: Foreign) {
+  foreign(context: WriterContext, next: Next, element: Foreign) {
     return (
-      <span className="foreign" lang={element.lang || ctx.learningLanguage}>
+      <span className="foreign" lang={element.lang || context.learningLanguage}>
         {next()}
       </span>
     );
   }
 
-  formula(ctx: WriterContext, next: Next, element: FormulaBlock | FormulaInline) {
+  formula(context: WriterContext, next: Next, element: FormulaBlock | FormulaInline) {
     const forceBlockRendering =
       element.legacyBlockRendered !== undefined && element.legacyBlockRendered;
     switch (element.subtype) {
       case 'latex':
         return (
           <MathJaxLatexFormula
+            id={element.id}
             src={element.src}
             inline={element.type === 'formula_inline' && !forceBlockRendering}
+            pointMarkerContext={pointMarkerContextFrom(context, element)}
           />
         );
       case 'mathml':
         return (
           <MathJaxMathMLFormula
+            id={element.id}
             src={element.src}
             inline={element.type === 'formula_inline' && !forceBlockRendering}
+            pointMarkerContext={pointMarkerContextFrom(context, element)}
           />
         );
       default:
@@ -304,10 +341,8 @@ export class HtmlParser implements WriterImpl {
     );
   }
 
-  video(context: WriterContext, next: Next, attrs: Video) {
-    return (
-      <VideoPlayer video={attrs} pointMarkerContext={pointMarkerContextFrom(context, attrs)} />
-    );
+  video(context: WriterContext, next: Next, v: Video) {
+    return <VideoPlayer video={v} pointMarkerContext={pointMarkerContextFrom(context, v)} />;
   }
 
   ecl(context: WriterContext, next: Next, attrs: ECLRepl) {
@@ -317,13 +352,21 @@ export class HtmlParser implements WriterImpl {
         id={attrs.id}
         slug={context.sectionSlug as string}
         attemptGuid={context.resourceAttemptGuid as string}
+        pointMarkerContext={pointMarkerContextFrom(context, attrs)}
       />
     );
   }
 
   youtube(context: WriterContext, next: Next, attrs: YouTube) {
     if (!attrs.src) return <></>;
-    return <YoutubePlayer video={attrs} authorMode={false} context={context} />;
+    return (
+      <YoutubePlayer
+        video={attrs}
+        authorMode={false}
+        context={context}
+        pointMarkerContext={pointMarkerContextFrom(context, attrs)}
+      />
+    );
   }
   iframe(context: WriterContext, next: Next, attrs: Webpage | YouTube) {
     if (!attrs.src) return <></>;
@@ -344,7 +387,10 @@ export class HtmlParser implements WriterImpl {
     return this.captioned_content(
       context,
       attrs,
-      <div className={containerClass}>
+      <div
+        className={containerClass}
+        {...maybePointMarkerAttr(attrs, pointMarkerContextFrom(context, attrs))}
+      >
         <iframe
           className={iframeClass}
           {...dimensions}
@@ -360,7 +406,12 @@ export class HtmlParser implements WriterImpl {
     return this.captioned_content(
       context,
       attrs,
-      <audio aria-label={attrs.alt || ''} controls src={this.escapeXml(attrs.src)}>
+      <audio
+        aria-label={attrs.alt || ''}
+        controls
+        src={this.escapeXml(attrs.src)}
+        {...maybePointMarkerAttr(attrs, pointMarkerContextFrom(context, attrs))}
+      >
         Your browser does not support the <code>audio</code> element.
       </audio>,
     );
@@ -371,13 +422,13 @@ export class HtmlParser implements WriterImpl {
       (typeof attrs.caption === 'string'
         ? this.escapeXml(attrs.caption)
         : new ContentWriter().render(
-            { ...context, isBlockLevel: false },
+            { ...context, isAnnotationLevel: false },
             attrs.caption,
             new HtmlParser(),
           ));
 
     return (
-      <ContentTable model={attrs}>
+      <ContentTable model={attrs} pointMarkerContext={pointMarkerContextFrom(context, attrs)}>
         {attrs.caption ? <caption>{caption}</caption> : undefined}
         {next()}
       </ContentTable>
@@ -430,7 +481,12 @@ export class HtmlParser implements WriterImpl {
       context,
       attrs,
       <pre>
-        <code className={`torus-code language-${className}`}>{next()}</code>
+        <code
+          className={`torus-code language-${className}`}
+          {...maybePointMarkerAttr(attrs, pointMarkerContextFrom(context, attrs))}
+        >
+          {next()}
+        </code>
       </pre>,
     );
   }
@@ -439,7 +495,12 @@ export class HtmlParser implements WriterImpl {
       context,
       attrs,
       <pre>
-        <code className={`torus-code language-${className}`}>{this.escapeXml(attrs.code)}</code>
+        <code
+          className={`torus-code language-${className}`}
+          {...maybePointMarkerAttr(attrs, pointMarkerContextFrom(context, attrs))}
+        >
+          {this.escapeXml(attrs.code)}
+        </code>
       </pre>,
     );
   }
@@ -451,8 +512,12 @@ export class HtmlParser implements WriterImpl {
       </>
     );
   }
-  blockquote(context: WriterContext, next: Next, _x: Blockquote) {
-    return <blockquote>{next()}</blockquote>;
+  blockquote(context: WriterContext, next: Next, b: Blockquote) {
+    return (
+      <blockquote {...maybePointMarkerAttr(b, pointMarkerContextFrom(context, b))}>
+        {next()}
+      </blockquote>
+    );
   }
   a(context: WriterContext, next: Next, { href }: Hyperlink) {
     if (href.startsWith('/course/link/')) {
@@ -591,7 +656,7 @@ export class HtmlParser implements WriterImpl {
 
 function pointMarkerContextFrom(context: WriterContext, x: ModelElement): PointMarkerContext {
   return {
-    renderPointMarkers: !!context.renderPointMarkers,
-    isTopLevelBlock: schema[x.type].isBlock && schema[x.type].isTopLevel,
+    renderPointMarkers: context.renderPointMarkers,
+    isAnnotationLevel: context.isAnnotationLevel,
   };
 }

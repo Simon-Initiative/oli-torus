@@ -140,7 +140,11 @@ defmodule Oli.Rendering.Content do
         %{"type" => "formula", "children" => children} = element,
         writer
       ) do
-    writer.formula(context, fn -> render(context, children, writer) end, element)
+    writer.formula(
+      context,
+      fn -> render(%Context{context | is_annotation_level: false}, children, writer) end,
+      element
+    )
   end
 
   def render(
@@ -175,14 +179,17 @@ defmodule Oli.Rendering.Content do
     render_table = fn ->
       case element["table"] do
         nil -> []
-        table -> render(%Context{context | is_block_level: false}, table, writer)
+        table -> render(%Context{context | is_annotation_level: false}, table, writer)
       end
     end
 
     render_pronunciation = fn ->
       case element["pronunciation"] do
-        nil -> []
-        pronunciation -> render(%Context{context | is_block_level: false}, pronunciation, writer)
+        nil ->
+          []
+
+        pronunciation ->
+          render(%Context{context | is_annotation_level: false}, pronunciation, writer)
       end
     end
 
@@ -196,22 +203,35 @@ defmodule Oli.Rendering.Content do
       ) do
     render_translation = fn ->
       case element["translations"] do
-        nil -> []
-        translations -> Enum.map(translations, fn child -> render(context, child, writer) end)
+        nil ->
+          []
+
+        translations ->
+          Enum.map(translations, fn child ->
+            render(%Context{context | is_annotation_level: false}, child, writer)
+          end)
       end
     end
 
     render_pronunciation = fn ->
       case element["pronunciation"] do
-        nil -> []
-        pronunciation -> render(context, pronunciation, writer)
+        nil ->
+          []
+
+        pronunciation ->
+          render(%Context{context | is_annotation_level: false}, pronunciation, writer)
       end
     end
 
     render_meaning = fn ->
       case element["meanings"] do
-        nil -> []
-        meanings -> Enum.map(meanings, fn child -> render(context, child, writer) end)
+        nil ->
+          []
+
+        meanings ->
+          Enum.map(meanings, fn child ->
+            render(%Context{context | is_annotation_level: false}, child, writer)
+          end)
       end
     end
 
@@ -223,8 +243,11 @@ defmodule Oli.Rendering.Content do
         %{"type" => "figure", "children" => children, "title" => title} = element,
         writer
       ) do
-    render_children = fn -> render(context, children, writer) end
-    render_title = fn -> render(context, title, writer) end
+    render_children = fn ->
+      render(%Context{context | is_annotation_level: false}, children, writer)
+    end
+
+    render_title = fn -> render(%Context{context | is_annotation_level: false}, title, writer) end
     writer.figure(context, render_children, render_title, element)
   end
 
@@ -233,8 +256,8 @@ defmodule Oli.Rendering.Content do
         %{"type" => "dl", "items" => items, "title" => title} = element,
         writer
       ) do
-    render_items = fn -> render(context, items, writer) end
-    render_title = fn -> render(context, title, writer) end
+    render_items = fn -> render(%Context{context | is_annotation_level: false}, items, writer) end
+    render_title = fn -> render(%Context{context | is_annotation_level: false}, title, writer) end
     writer.dl(context, render_items, render_title, element)
   end
 
@@ -243,7 +266,7 @@ defmodule Oli.Rendering.Content do
         %{"type" => "dl", "items" => items} = element,
         writer
       ) do
-    render_items = fn -> render(context, items, writer) end
+    render_items = fn -> render(%Context{context | is_annotation_level: false}, items, writer) end
     render_title = fn -> [] end
     writer.dl(context, render_items, render_title, element)
   end
@@ -260,8 +283,16 @@ defmodule Oli.Rendering.Content do
 
         lines ->
           Enum.map(lines, fn child ->
-            render_line_content = fn -> render(context, child["children"], writer) end
-            writer.dialog_line(context, render_line_content, child, element)
+            render_line_content = fn ->
+              render(%Context{context | is_annotation_level: false}, child["children"], writer)
+            end
+
+            writer.dialog_line(
+              %Context{context | is_annotation_level: false},
+              render_line_content,
+              child,
+              element
+            )
           end)
       end
     end
@@ -276,7 +307,7 @@ defmodule Oli.Rendering.Content do
         %{"type" => type, "children" => children} = element,
         writer
       ) do
-    next = fn -> render(%Context{context | is_block_level: false}, children, writer) end
+    next = fn -> render(%Context{context | is_annotation_level: false}, children, writer) end
 
     case type do
       "p" ->
@@ -342,9 +373,15 @@ defmodule Oli.Rendering.Content do
         writer.tc(context, next, element)
 
       "ol" ->
+        # allow annotation bubbles to be rendered on list items
+        next = fn -> render(context, children, writer) end
+
         writer.ol(context, next, element)
 
       "ul" ->
+        # allow annotation bubbles to be rendered on list items
+        next = fn -> render(context, children, writer) end
+
         writer.ul(context, next, element)
 
       "li" ->

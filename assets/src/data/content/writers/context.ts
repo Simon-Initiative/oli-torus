@@ -26,9 +26,9 @@ export interface WriterContext {
     >;
     disabled: boolean;
   };
-  renderPointMarkers?: boolean;
-  isBlockLevel?: boolean;
+  renderPointMarkers: boolean;
+  isAnnotationLevel: boolean;
 }
 
 export const defaultWriterContext = (params: Partial<WriterContext> = {}): WriterContext =>
-  Object.assign({}, params);
+  Object.assign({ renderPointMarkers: true, isAnnotationLevel: false }, params);

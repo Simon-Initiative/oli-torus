@@ -22,7 +22,7 @@ defmodule Oli.Rendering.Survey do
       ) do
     next = fn ->
       writer.elements(
-        %Context{context | survey_id: id, pagination_mode: "normal", is_block_level: true},
+        %Context{context | survey_id: id, pagination_mode: "normal", is_annotation_level: true},
         children
       )
     end

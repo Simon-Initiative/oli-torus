@@ -83,7 +83,7 @@ defmodule Oli.Rendering.Content.Html do
         "video" => attrs,
         "pointMarkerContext" => %{
           renderPointMarkers: context.render_opts.render_point_markers,
-          isTopLevelBlock: context.is_block_level
+          isAnnotationLevel: context.is_annotation_level
         }
       })
 
@@ -108,7 +108,7 @@ defmodule Oli.Rendering.Content.Html do
           "attemptGuid" => attempt_guid,
           "pointMarkerContext" => %{
             renderPointMarkers: context.render_opts.render_point_markers,
-            isTopLevelBlock: context.is_block_level
+            isAnnotationLevel: context.is_annotation_level
           }
         }
       )
@@ -122,7 +122,7 @@ defmodule Oli.Rendering.Content.Html do
         "video" => attrs,
         "pointMarkerContext" => %{
           renderPointMarkers: context.render_opts.render_point_markers,
-          isTopLevelBlock: context.is_block_level
+          isAnnotationLevel: context.is_annotation_level
         }
       })
 
@@ -522,12 +522,16 @@ defmodule Oli.Rendering.Content.Html do
   end
 
   def formula(
-        %Oli.Rendering.Context{} = _context,
+        %Oli.Rendering.Context{} = context,
         _next,
-        %{"subtype" => "latex", "src" => src},
+        %{"subtype" => "latex", "src" => src} = attrs,
         false
       ) do
-    ["<span class=\"#{formula_class(false)}\">\\[", escape_xml!(fix_nl(src)), "\\]</span>\n"]
+    [
+      "<span class=\"#{formula_class(false)}\"#{maybe_point_marker_attr(context, attrs)}>\\[",
+      escape_xml!(fix_nl(src)),
+      "\\]</span>\n"
+    ]
   end
 
   def formula(
@@ -552,9 +556,11 @@ defmodule Oli.Rendering.Content.Html do
        else: src
   end
 
-  def figure(%Context{} = _context, render_children, render_title, _) do
+  def figure(%Context{} = _context, render_children, render_title, el) do
     [
-      "<div class='figure'><figure><figcaption>",
+      "<div class='figure'",
+      maybe_point_marker_attr(_context, el),
+      "><figure><figcaption>",
       render_title.(),
       "</figcaption><div class='figure-content'>",
       render_children.(),
@@ -991,7 +997,7 @@ defmodule Oli.Rendering.Content.Html do
     end
   end
 
-  defp maybe_point_marker_attr(%Context{is_block_level: true} = context, %{"id" => id}) do
+  defp maybe_point_marker_attr(%Context{is_annotation_level: true} = context, %{"id" => id}) do
     if context.render_opts.render_point_markers do
       " data-point-marker=\"#{id}\""
     else
@@ -999,7 +1005,7 @@ defmodule Oli.Rendering.Content.Html do
     end
   end
 
-  defp maybe_point_marker_attr(%Context{is_block_level: true} = context, _attrs) do
+  defp maybe_point_marker_attr(%Context{is_annotation_level: true} = context, _attrs) do
     if context.render_opts.render_point_markers,
       do:
         Logger.warning(

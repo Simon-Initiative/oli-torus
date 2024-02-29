@@ -62,7 +62,7 @@ export interface ActivityContext {
   showFeedback: boolean | null;
   resourceId?: number;
   renderPointMarkers: boolean;
-  isBlockLevel: boolean;
+  isAnnotationLevel: boolean;
 }
 
 /**

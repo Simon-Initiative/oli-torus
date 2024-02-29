@@ -119,7 +119,7 @@ export class ContentWriter {
 
     const next = () =>
       this.render(
-        { ...context, isBlockLevel: false },
+        { ...context, isAnnotationLevel: false },
         content.children as AllModelElements[],
         impl,
       );

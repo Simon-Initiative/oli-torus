@@ -184,7 +184,7 @@ defmodule Oli.Rendering.Activity.Html do
             resource_attempt.state
           end,
         renderPointMarkers: render_opts.render_point_markers,
-        isBlockLevel: true
+        isAnnotationLevel: true
       }
       |> Poison.encode!()
       |> HtmlEntities.encode()

@@ -188,23 +188,32 @@ export const isEmptyContent = (content: (AllModelElements | Text)[]): boolean =>
 
 export interface PointMarkerContext {
   renderPointMarkers: boolean;
-  isTopLevelBlock: boolean;
+  isAnnotationLevel: boolean;
 }
 
-export function maybePointMarkerAttr(x: ModelElement, context?: PointMarkerContext) {
-  if (!context || !context.renderPointMarkers || !context.isTopLevelBlock) {
+export function maybePointMarkerAttr(el: ModelElement, context?: PointMarkerContext) {
+  if (
+    !context ||
+    !context.renderPointMarkers ||
+    !context.isAnnotationLevel ||
+    isEmptyParagraph(el)
+  ) {
     return {};
   }
 
-  if (x['id'] === undefined) {
+  if (el['id'] === undefined) {
     console.warn(
       'Content element missing id attribute which is required for point marker. Point marker will not be rendered.',
-      x,
+      el,
     );
     return {};
   }
 
   return {
-    ['data-point-marker']: x.id,
+    ['data-point-marker']: el.id,
   };
+}
+
+function isEmptyParagraph(el: ModelElement) {
+  return el.type === 'p' && el.children.every((c) => Text.isText(c) && c.text.trim() === '');
 }
