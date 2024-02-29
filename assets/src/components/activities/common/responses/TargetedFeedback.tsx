@@ -4,7 +4,6 @@ import { AuthoringButtonConnected } from 'components/activities/common/authoring
 import { ChoicesDelivery } from 'components/activities/common/choices/delivery/ChoicesDelivery';
 import { ResponseCard } from 'components/activities/common/responses/ResponseCard';
 import { ResponseActions } from 'components/activities/common/responses/responseActions';
-import { getCorrectChoiceId } from 'components/activities/multiple_choice/utils';
 import {
   Choice,
   ChoiceId,
