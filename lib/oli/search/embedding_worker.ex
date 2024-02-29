@@ -86,7 +86,7 @@ defmodule Oli.Search.EmbeddingWorker do
       have_nots ->
         inputs = Enum.map(have_nots, fn re -> re.content end)
 
-        case OpenAI.embeddings(
+        case Oli.OpenAIClient.embeddings(
                [model: "text-embedding-ada-002", input: inputs],
                Oli.Conversation.Dialogue.config(:sync)
              ) do

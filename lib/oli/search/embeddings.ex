@@ -32,6 +32,21 @@ defmodule Oli.Search.Embeddings do
     end
   end
 
+  @doc """
+  Returns the embeddings for a revision id.
+  ## Examples
+      iex> Oli.Search.Embeddings.by_revision_id(1)
+      [%Oli.Search.RevisionEmbedding{...}, ...]
+  """
+  @spec by_revision_id(integer) :: %Oli.Search.RevisionEmbedding{} | term() | nil
+  def by_revision_id(revision_id) do
+    from(re in RevisionEmbedding,
+      where: re.revision_id == ^revision_id,
+      select: re
+    )
+    |> Repo.all()
+  end
+
   def most_relevant_pages(input, section_id) do
     case embedding_for_input(input) do
       {:ok, embedding} ->
@@ -88,7 +103,7 @@ defmodule Oli.Search.Embeddings do
   end
 
   def embedding_for_input(input) do
-    case OpenAI.embeddings(
+    case Oli.OpenAIClient.embeddings(
            [model: "text-embedding-ada-002", input: input],
            Oli.Conversation.Dialogue.config(:sync)
          ) do
@@ -100,27 +115,63 @@ defmodule Oli.Search.Embeddings do
     end
   end
 
-  def update_all(publication_id, sync \\ false) do
-    revisions_to_embed(publication_id)
-    |> Enum.each(fn revision_id ->
-      if sync do
-        EmbeddingWorker.perform_now(revision_id, publication_id)
-      else
-        EmbeddingWorker.new(%{revision_id: revision_id, publication_id: publication_id})
-        |> Oban.insert()
-      end
+  @doc """
+  Updates the embeddings for a list of revision ids.
+  The publication_id is used to broadcast "revision_embedding_complete" events (see OliWeb.Search.EmbeddingsLive).
+  The third optional argument, sync, is used to determine if the embeddings should be calculated synchronously
+  or asynchronously (by bulk inserting Oban jobs that will calculate them).
+  """
+  @spec update_by_revision_ids([integer], integer, boolean) :: any
+  def update_by_revision_ids(revision_ids, publication_id, sync \\ false)
+
+  def update_by_revision_ids(revision_ids, publication_id, true) do
+    Enum.each(revision_ids, fn revision_id ->
+      EmbeddingWorker.perform_now(revision_id, publication_id)
     end)
   end
 
-  defp revisions_to_embed(publication_id) do
+  def update_by_revision_ids(revision_ids, publication_id, false) do
+    Enum.map(revision_ids, fn revision_id ->
+      EmbeddingWorker.new(%{revision_id: revision_id, publication_id: publication_id})
+    end)
+    |> Oban.insert_all()
+  end
+
+  @doc """
+  Calculates the embeddings for all revisions in a publication that do not yet have embeddings.
+  The second optional argument, sync, is used to determine if the embeddings should be calculated synchronously
+  or asynchronously (by bulk inserting Oban jobs).
+  """
+  @spec update_all(integer, boolean) :: any
+  def update_all(publication_id, sync \\ false)
+
+  def update_all(publication_id, true) do
+    revisions_to_embed(publication_id)
+    |> Enum.each(fn revision_id -> EmbeddingWorker.perform_now(revision_id, publication_id) end)
+  end
+
+  def update_all(publication_id, false) do
+    revisions_to_embed(publication_id)
+    |> Enum.map(fn revision_id ->
+      EmbeddingWorker.new(%{revision_id: revision_id, publication_id: publication_id})
+    end)
+    |> Oban.insert_all()
+  end
+
+  @doc """
+  Returns a list of page revision ids that are published and have no embeddings
+  """
+  @spec revisions_to_embed(publication_id :: integer) :: [integer]
+
+  def revisions_to_embed(publication_id) do
     to_embed_query(publication_id)
-    |> select([_p, r], r.id)
+    |> select([_p, r, _re], r.id)
     |> Repo.all()
   end
 
-  def count_revision_to_embed(publication_id) do
+  defp count_revision_to_embed(publication_id) do
     to_embed_query(publication_id)
-    |> select([_p, r], count(r.id))
+    |> select([_p, r, _re], count(r.id))
     |> Repo.one()
   end
 

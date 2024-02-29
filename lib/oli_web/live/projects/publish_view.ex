@@ -1,4 +1,5 @@
 defmodule OliWeb.Projects.PublishView do
+  alias Oli.Search.Embeddings
   use OliWeb, :live_view
   use OliWeb.Common.Modal
   use OliWeb.Common.SortableTable.TableHandlers
@@ -235,6 +236,8 @@ defmodule OliWeb.Projects.PublishView do
         )
       end
 
+      upsert_page_embeddings(socket.assigns.active_publication_changes, new_publication.id)
+
       {:noreply,
        socket
        |> put_flash(:info, "Publish Successful!")
@@ -286,4 +289,37 @@ defmodule OliWeb.Projects.PublishView do
 
   defp string_to_bool("true"), do: true
   defp string_to_bool(_), do: false
+
+  _docp = """
+  Upsert page embeddings for the given changes and for the pages that not yet have embeddings calculated.
+  """
+
+  defp upsert_page_embeddings(changes, publication_id) do
+    page_resource_type_id = Oli.Resources.ResourceType.get_id_by_type("page")
+
+    changed_page_revision_ids =
+      Enum.reduce(changes || [], [], fn {
+                                          _resource_id,
+                                          {_status,
+                                           %{
+                                             resource: _resource,
+                                             revision: %{
+                                               id: revision_id,
+                                               resource_type_id: resource_type_id
+                                             }
+                                           }}
+                                        },
+                                        acc_revision_ids ->
+        if resource_type_id == page_resource_type_id,
+          do: [revision_id | acc_revision_ids],
+          else: acc_revision_ids
+      end)
+
+    page_revision_ids_without_embeddings =
+      Embeddings.revisions_to_embed(publication_id)
+
+    (changed_page_revision_ids ++ page_revision_ids_without_embeddings)
+    |> Enum.uniq()
+    |> Embeddings.update_by_revision_ids(publication_id)
+  end
 end
