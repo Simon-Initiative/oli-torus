@@ -656,7 +656,7 @@ export class HtmlParser implements WriterImpl {
 
 function pointMarkerContextFrom(context: WriterContext, x: ModelElement): PointMarkerContext {
   return {
-    renderPointMarkers: context.renderPointMarkers,
-    isAnnotationLevel: context.isAnnotationLevel,
+    renderPointMarkers: !!context.renderPointMarkers,
+    isAnnotationLevel: !!context.isAnnotationLevel,
   };
 }

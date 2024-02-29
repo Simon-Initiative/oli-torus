@@ -26,6 +26,7 @@ describe('MathJaxFormula', () => {
     test('renders a mathml block expression', () => {
       const { container } = render(
         <MathJaxMathMLFormula
+          id="1"
           src="<math><mfrac><mi>x</mi><mi>y</mi></mfrac></math>"
           inline={false}
         />,
@@ -39,6 +40,7 @@ describe('MathJaxFormula', () => {
     test('renders a mathml inline expression', () => {
       const { container } = render(
         <MathJaxMathMLFormula
+          id="1"
           src="<math><mfrac><mi>x</mi><mi>y</mi></mfrac></math>"
           inline={true}
         />,
@@ -52,6 +54,7 @@ describe('MathJaxFormula', () => {
     test('does not expose an xss vulnerability', () => {
       const { container } = render(
         <MathJaxMathMLFormula
+          id="1"
           src="<math><script>alert('breaking the law');</script></math>"
           inline={true}
         />,
@@ -65,7 +68,9 @@ describe('MathJaxFormula', () => {
 
   describe('MathJaxLatexFormula', () => {
     test('renders a latex block expression', () => {
-      const { container } = render(<MathJaxLatexFormula src="x^2 + y^2 = z^2" inline={false} />);
+      const { container } = render(
+        <MathJaxLatexFormula id="1" src="x^2 + y^2 = z^2" inline={false} />,
+      );
 
       const e = container.querySelector('span');
       expect(e).toBeTruthy();
@@ -74,7 +79,9 @@ describe('MathJaxFormula', () => {
     });
 
     test('renders a latex inline expression', () => {
-      const { container } = render(<MathJaxLatexFormula src="x^2 + y^2 = z^2" inline={true} />);
+      const { container } = render(
+        <MathJaxLatexFormula id="1" src="x^2 + y^2 = z^2" inline={true} />,
+      );
 
       const e = container.querySelector('span');
       expect(e).toBeTruthy();
@@ -84,7 +91,11 @@ describe('MathJaxFormula', () => {
 
     test('does not expose an xss vulnerability', () => {
       const { container } = render(
-        <MathJaxLatexFormula src="<script>alert('Breaking the law');</script>" inline={true} />,
+        <MathJaxLatexFormula
+          id="1"
+          src="<script>alert('Breaking the law');</script>"
+          inline={true}
+        />,
       );
 
       const e = container.querySelector('span');
