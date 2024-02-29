@@ -743,13 +743,10 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       />
 
       <.index_item
-        :for={
-          {page, page_index} <-
-            Enum.with_index(@module["children"], if(module_has_intro_video(@module), do: 2, else: 1))
-        }
+        :for={page <- @module["children"]}
         title={page["title"]}
         type="page"
-        numbering_index={page_index}
+        numbering_index={page["numbering"]["index"]}
         was_visited={page["visited"]}
         duration_minutes={page["duration_minutes"]}
         graded={page["graded"]}
@@ -821,7 +818,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         class="flex shrink items-center gap-3 w-full px-2 dark:text-white cursor-pointer hover:bg-gray-200/70 dark:hover:bg-gray-800"
       >
         <span class="text-[12px] leading-[16px] font-bold w-[30px] shrink-0 opacity-40 dark:text-white">
-          <%= "#{@numbering_index}" %>
+          <%= if @type != "intro", do: "#{@numbering_index}", else: " " %>
         </span>
         <div class="flex flex-col gap-1 w-full">
           <div class="flex">
