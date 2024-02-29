@@ -391,6 +391,8 @@ defmodule Oli.Publishing do
       iex> retrieve_visible_sources(%User{}, %Institution{})
       []
   """
+  def retrieve_visible_sources(nil, _), do: []
+
   def retrieve_visible_sources(user, institution) do
     sources =
       Groups.list_community_associated_publications_and_products(user.id, institution) ++
@@ -426,8 +428,6 @@ defmodule Oli.Publishing do
     |> Enum.uniq()
     |> Enum.sort_by(fn r -> get_title(r) end, :asc)
   end
-
-  def retrieve_visible_sources(nil, _), do: []
 
   defp can_access_global_content(user, institution) do
     associated_communities = Groups.list_associated_communities(user.id, institution)
