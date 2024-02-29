@@ -4,6 +4,7 @@ import { AuthoringButtonConnected } from 'components/activities/common/authoring
 import { ChoicesDelivery } from 'components/activities/common/choices/delivery/ChoicesDelivery';
 import { ResponseCard } from 'components/activities/common/responses/ResponseCard';
 import { ResponseActions } from 'components/activities/common/responses/responseActions';
+import { getCorrectChoiceId } from 'components/activities/multiple_choice/utils';
 import {
   Choice,
   ChoiceId,
@@ -14,6 +15,7 @@ import {
 } from 'components/activities/types';
 import {
   ResponseMapping,
+  getCorrectResponse,
   getTargetedResponseMappings,
   hasCustomScoring,
 } from 'data/activities/model/responses';
@@ -81,11 +83,15 @@ export const TargetedFeedback: React.FC<Props> = (props) => {
 
   // only show feedbacks for relevant choice set, presumably current part's on multipart
   const partMappings = getFeedbackForChoices(props.choices || model.choices, hook.targetedMappings);
+  // some migrated qs erroneously included correct answer in targeted feedback map: ignore
+  const firstCorrect = partMappings.find((m) => m.response.score > 0);
+  const mappings = partMappings.filter((m) => m !== firstCorrect);
+
   const customScoring = hasCustomScoring(model);
 
   return (
     <>
-      {partMappings.map((mapping) => (
+      {mappings.map((mapping) => (
         <ResponseCard
           key={mapping.response.id}
           title="Targeted feedback"
