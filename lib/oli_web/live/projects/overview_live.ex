@@ -144,23 +144,23 @@ defmodule OliWeb.Projects.OverviewLive do
                   prompt: "What language is being taught in this project?"
                 ) %>
               </div>
+              <%= inputs_for fp, :license, fn fpp -> %>
+                <%= label(fpp, :license_type, "License (optional)", class: "control-label") %>
+                <%= select(fpp, :license_type, @license_opts,
+                  phx_change: "on_selected",
+                  class: "form-control",
+                  required: false
+                ) %>
+                <div :if={open_custom_type?(@changeset)} class="form-label-group mb-3">
+                  <%= label(fpp, :custom_license_details, "Custom license", class: "control-label") %>
+                  <%= text_input(fpp, :custom_license_details,
+                    class: "form-control",
+                    placeholder: "The custom license of your project...",
+                    required: false
+                  ) %>
+                </div>
+              <% end %>
             <% end %>
-            <div class="form-label-group mb-3">
-              <%= label(f, :license, "License", class: "control-label") %>
-              <%= select(f, :license, @license_opts,
-                phx_change: "on_selected",
-                class: "form-control",
-                required: false
-              ) %>
-            </div>
-            <div :if={get_field(@changeset, :license) == :custom} class="form-label-group mb-3">
-              <%= label(f, :custom_license_details, "Custom license", class: "control-label") %>
-              <%= text_input(f, :custom_license_details,
-                class: "form-control",
-                placeholder: "The custom license of your project...",
-                required: false
-              ) %>
-            </div>
           </div>
           <div>
             <%= submit("Save", class: "btn btn-md btn-primary mt-2") %>
@@ -415,6 +415,16 @@ defmodule OliWeb.Projects.OverviewLive do
       OLI.onReady(() => OLI.enableSubmitWhenTitleMatches('#delete-confirm-title', '#delete-modal-submit', '<%= Base.encode64(@project.title) %>'));
     </script>
     """
+  end
+
+  defp open_custom_type?(changeset) do
+    with %Ecto.Changeset{} = changeset <- Ecto.Changeset.get_embed(changeset, :attributes),
+         %Ecto.Changeset{} = changeset <- Ecto.Changeset.get_embed(changeset, :license),
+         :custom <- Ecto.Changeset.get_field(changeset, :license_type) do
+      true
+    else
+      _ -> false
+    end
   end
 
   defp get_collab_space_config_and_revision(project_slug) do
