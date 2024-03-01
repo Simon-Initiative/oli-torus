@@ -448,6 +448,7 @@ defmodule OliWeb.PageDeliveryController do
     numbered_revisions = Sections.get_revision_indexes(section.slug)
 
     render(conn, "prologue.html", %{
+      license: context.license,
       user: user,
       resource_access: resource_access,
       section_slug: section_slug,
@@ -632,6 +633,7 @@ defmodule OliWeb.PageDeliveryController do
       conn,
       "page.html",
       %{
+        license: context.license,
         user: user,
         adaptive: adaptive,
         context: context,

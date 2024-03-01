@@ -11,6 +11,7 @@ defmodule OliWeb.LayoutView do
   import Oli.Branding
 
   alias Oli.Accounts
+  alias Oli.Authoring.Course.CreativeCommons
   alias Oli.Publishing.AuthoringResolver
   alias OliWeb.Breadcrumb.BreadcrumbTrailLive
   alias Oli.Delivery.Paywall.AccessSummary
@@ -131,4 +132,50 @@ defmodule OliWeb.LayoutView do
   defp show_collab_space?(nil), do: false
   defp show_collab_space?(%CollabSpaceConfig{status: :disabled}), do: false
   defp show_collab_space?(_), do: true
+
+  def render_license(
+        %{license: %{license: :custom, custom_license_details: custom_license_details}} = assigns
+      ) do
+    assigns = Map.put(assigns, :custom_license_details, custom_license_details)
+
+    ~H"""
+    <p>License: <%= @custom_license_details %></p>
+    """
+  end
+
+  def render_license(%{license: %{license: cc_license, custom_license_details: _c_l_d}} = assigns) do
+    cc_data =
+      Enum.find(CreativeCommons.cc_options(), fn cc_option -> cc_option.id == cc_license end)
+
+    logo_name =
+      cc_data.id |> Atom.to_string() |> String.replace("cc_", "") |> String.replace("_", "-")
+
+    cc_text = cc_data |> Map.get(:text) |> String.split(":") |> Enum.at(1)
+
+    assigns =
+      assigns
+      |> Map.put(:cc_data, cc_data)
+      |> Map.put(:logo_name, logo_name)
+      |> Map.put(:cc_text, cc_text)
+      |> Map.put(:cc_url, cc_data.url)
+
+    ~H"""
+    <div class="flex gap-2 items-center">
+      <a href={@cc_url} , target="_blank">
+        <img
+          class="w-[100px]"
+          src={"#{Routes.static_path(OliWeb.Endpoint, "/images/cc_logos/#{@logo_name}.svg")}"}
+          alt="Common Creative Logo"
+        />
+      </a>
+    </div>
+    <p>
+      Unless otherwise noted this work is licensed under a Creative Commons <%= @cc_text %> 4.0 Unported License
+    </p>
+    """
+  end
+
+  def render_license(_assigns) do
+    nil
+  end
 end

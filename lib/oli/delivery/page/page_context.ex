@@ -33,7 +33,8 @@ defmodule Oli.Delivery.Page.PageContext do
     :collab_space_config,
     :is_instructor,
     :is_student,
-    :effective_settings
+    :effective_settings,
+    :license
   ]
 
   alias Oli.Delivery.Attempts.PageLifecycle
@@ -231,7 +232,10 @@ defmodule Oli.Delivery.Page.PageContext do
 
     user_roles = Sections.get_user_roles(user, section_slug)
 
+    license = Oli.Authoring.Course.get_project_license(page_revision.id)
+
     %PageContext{
+      license: license,
       user: user,
       review_mode: false,
       page: page_revision,

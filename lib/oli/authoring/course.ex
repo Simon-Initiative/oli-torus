@@ -13,6 +13,8 @@ defmodule Oli.Authoring.Course do
   alias Oli.Repo
   alias Oli.Repo.{Paging, Sorting}
   alias Oli.Resources.{ResourceType, Revision, ScoringStrategy}
+  alias Oli.Delivery.Sections.SectionsProjectsPublications
+  alias Oli.Publishing.PublishedResource
 
   def create_project_resource(attrs) do
     %ProjectResource{}
@@ -575,5 +577,18 @@ defmodule Oli.Authoring.Course do
     %{project_slug: project.slug, section_ids: section_ids}
     |> Oli.Analytics.DatashopExportWorker.new()
     |> Oban.insert()
+  end
+
+  @spec get_project_license(integer()) :: any()
+  def get_project_license(revision_id) do
+    from(pr in PublishedResource,
+      join: spp in SectionsProjectsPublications,
+      on: pr.publication_id == spp.publication_id,
+      join: p in assoc(spp, :project),
+      where: pr.revision_id == ^revision_id,
+      distinct: true,
+      select: %{license: p.license, custom_license_details: p.custom_license_details}
+    )
+    |> Repo.one()
   end
 end

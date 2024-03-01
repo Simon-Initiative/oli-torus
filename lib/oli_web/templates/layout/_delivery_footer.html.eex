@@ -5,8 +5,9 @@
 
 <footer class="flex flex-row h-[60px] overflow-hidden absolute bottom-0 left-0 right-0 bg-delivery-footer dark:bg-delivery-footer-dark">
   <div class="container mx-auto flex flex-row px-10 items-center text-sm">
-    <div class="text-left">
+    <div class="text-left flex gap-2">
       <a href='javascript:;' onclick="OLI.selectCookiePreferences({privacyPoliciesUrl: '<%= privacy_policies_url %>'})">Cookie Preferences</a>
+      <%= render_license(assigns) %>
     </div>
     <div class="text-center">
       <%= footer[:text] %><a href="<%= footer[:link_1_location] %>" target="_blank"><%= footer[:link_1_text] %></a>
