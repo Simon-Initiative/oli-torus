@@ -133,17 +133,15 @@ defmodule OliWeb.LayoutView do
   defp show_collab_space?(%CollabSpaceConfig{status: :disabled}), do: false
   defp show_collab_space?(_), do: true
 
-  def render_license(
-        %{license: %{license: :custom, custom_license_details: custom_license_details}} = assigns
-      ) do
-    assigns = Map.put(assigns, :custom_license_details, custom_license_details)
+  def render_license(%{license: %{license_type: :custom} = license} = assigns) do
+    assigns = Map.put(assigns, :custom_license_details, license.custom_license_details)
 
     ~H"""
     <p>License: <%= @custom_license_details %></p>
     """
   end
 
-  def render_license(%{license: %{license: cc_license, custom_license_details: _c_l_d}} = assigns) do
+  def render_license(%{license: %{license_type: cc_license}} = assigns) do
     cc_data =
       Enum.find(CreativeCommons.cc_options(), fn cc_option -> cc_option.id == cc_license end)
 

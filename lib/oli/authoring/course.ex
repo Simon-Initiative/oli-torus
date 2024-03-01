@@ -579,6 +579,8 @@ defmodule Oli.Authoring.Course do
     |> Oban.insert()
   end
 
+  @cc_options Oli.Authoring.Course.CreativeCommons.cc_options() |> Enum.map(& &1.id)
+
   @spec get_project_license(integer()) :: any()
   def get_project_license(revision_id) do
     from(pr in PublishedResource,
@@ -587,8 +589,18 @@ defmodule Oli.Authoring.Course do
       join: p in assoc(spp, :project),
       where: pr.revision_id == ^revision_id,
       distinct: true,
-      select: %{license: p.license, custom_license_details: p.custom_license_details}
+      select: p.attributes
     )
     |> Repo.one()
+    |> case do
+      %{license: %{license_type: :custom} = license} ->
+        Map.from_struct(license)
+
+      %{license: %{license_type: license_type} = license} when license_type in @cc_options ->
+        Map.from_struct(license)
+
+      nil ->
+        nil
+    end
   end
 end
