@@ -353,6 +353,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
     })
 
     %{
+      author: author,
       section: section,
       project: project,
       publication: publication,
@@ -1503,6 +1504,84 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       # The module that contains Page 6 must be expanded so we can see that page
       assert has_element?(view, ~s{div[id="index_item_2_#{page_6.resource_id}"]}, "Page 6")
+    end
+  end
+
+  describe "sidebar menu" do
+    setup [:user_conn, :create_elixir_project]
+
+    test "does not render Explorations, Practice and Collaboration links if those features are not enabled",
+         %{conn: conn, user: user, section: section} do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+      {:ok, view, _html} = live(conn, Utils.learn_live_path(section.slug))
+
+      refute has_element?(
+               view,
+               ~s{a[href="/sections/#{section.slug}/explorations"]},
+               "Explorations"
+             )
+
+      refute has_element?(view, ~s{a[href="/sections/#{section.slug}/practice"]}, "Practice")
+
+      refute has_element?(
+               view,
+               ~s{a[href="/sections/#{section.slug}/discussions"]},
+               "Discussions"
+             )
+    end
+
+    test "renders Explorations, Practice and Collaboration links if those features are enabled",
+         %{
+           conn: conn,
+           user: user,
+           section: section,
+           page_1: page_1,
+           page_2: page_2,
+           page_3: page_3,
+           author: author
+         } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+
+      # change the purpose of the pages to have an exploration page and a deliberate practice page
+      Oli.Resources.update_revision(page_1, %{purpose: :application, author_id: author.id})
+
+      Oli.Resources.update_revision(page_2, %{purpose: :deliberate_practice, author_id: author.id})
+
+      # enable collab space on page 3
+      page_3_sr =
+        Oli.Delivery.Sections.get_section_resource(section.id, page_3.resource_id)
+
+      {:ok, _} =
+        Oli.Delivery.Sections.update_section_resource(page_3_sr, %{
+          collab_space_config: %Oli.Resources.Collaboration.CollabSpaceConfig{
+            status: :enabled
+          }
+        })
+
+      # process changes in section
+      Oli.Delivery.Sections.PostProcessing.apply(section, [
+        :discussions,
+        :explorations,
+        :deliberate_practice
+      ])
+
+      {:ok, view, _html} = live(conn, Utils.learn_live_path(section.slug))
+
+      assert has_element?(
+               view,
+               ~s{a[href="/sections/#{section.slug}/explorations"]},
+               "Explorations"
+             )
+
+      assert has_element?(view, ~s{a[href="/sections/#{section.slug}/practice"]}, "Practice")
+
+      assert has_element?(
+               view,
+               ~s{a[href="/sections/#{section.slug}/discussions"]},
+               "Discussions"
+             )
     end
   end
 end
