@@ -2,12 +2,9 @@ defmodule Oli.Authoring.Course.Project do
   use Ecto.Schema
   import Ecto.Changeset
 
-  alias Oli.Authoring.Course.CreativeCommons
   alias Oli.Authoring.Course.ProjectAttributes
   alias Oli.Branding.CustomLabels
   alias Oli.Utils.Slug
-
-  @license_opts CreativeCommons.cc_options() |> Enum.map(& &1.id)
 
   @derive {Phoenix.Param, key: :slug}
   schema "projects" do
@@ -26,8 +23,6 @@ defmodule Oli.Authoring.Course.Project do
     field(:latest_datashop_snapshot_url, :string)
     field(:latest_datashop_snapshot_timestamp, :utc_datetime)
     field(:analytics_version, Ecto.Enum, values: [:v1, :v2], default: :v1)
-    field(:license, Ecto.Enum, values: @license_opts, default: :none)
-    field(:custom_license_details, :string, default: "")
 
     embeds_one(:customizations, CustomLabels, on_replace: :delete)
     embeds_one(:attributes, ProjectAttributes, on_replace: :delete)
@@ -86,9 +81,7 @@ defmodule Oli.Authoring.Course.Project do
       :latest_analytics_snapshot_url,
       :latest_analytics_snapshot_timestamp,
       :latest_datashop_snapshot_url,
-      :latest_datashop_snapshot_timestamp,
-      :license,
-      :custom_license_details
+      :latest_datashop_snapshot_timestamp
     ])
     |> cast_embed(:attributes, required: false)
     |> cast_embed(:customizations, required: false)
@@ -112,9 +105,7 @@ defmodule Oli.Authoring.Course.Project do
       :has_experiments,
       :legacy_svn_root,
       :allow_ecl_content_type,
-      :publisher_id,
-      :license,
-      :custom_license_details
+      :publisher_id
     ])
     |> validate_required([:title, :version, :family_id, :publisher_id])
     |> foreign_key_constraint(:publisher_id)
