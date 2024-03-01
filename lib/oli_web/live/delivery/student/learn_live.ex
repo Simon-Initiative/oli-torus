@@ -515,9 +515,9 @@ defmodule OliWeb.Delivery.Student.LearnLive do
               intro_video_viewed={@unit["resource_id"] in @viewed_intro_video_resource_ids}
             />
             <.module_card
-              :for={{module, module_index} <- Enum.with_index(@unit["children"], 1)}
+              :for={module <- @unit["children"]}
               module={module}
-              module_index={module_index}
+              module_index={module["numbering"]["index"]}
               unit_resource_id={@unit["resource_id"]}
               unit_numbering_index={@unit["numbering"]["index"]}
               bg_image_url={module["poster_image"]}
@@ -1071,7 +1071,9 @@ defmodule OliWeb.Delivery.Student.LearnLive do
           style={"background-image: url('#{if(@bg_image_url in ["", nil], do: @default_image, else: @bg_image_url)}');"}
         >
           <span class="text-[12px] leading-[16px] font-bold opacity-60 text-white dark:text-opacity-50">
-            <%= "#{@unit_numbering_index}.#{@module_index}" %>
+            <%= if is_page(@module),
+              do: Phoenix.HTML.raw("&nbsp;"),
+              else: "#{@unit_numbering_index}.#{@module_index}" %>
           </span>
           <h5 class="text-[18px] leading-[25px] font-bold text-white z-10">
             <%= @module["title"] %>
