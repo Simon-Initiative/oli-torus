@@ -2,11 +2,12 @@ defmodule Oli.Authoring.Course.Project do
   use Ecto.Schema
   import Ecto.Changeset
 
+  alias Oli.Authoring.Course.CreativeCommons
   alias Oli.Authoring.Course.ProjectAttributes
   alias Oli.Branding.CustomLabels
   alias Oli.Utils.Slug
 
-  @license_opts ~w(none custom cc_by cc_by_sa cc_by_nc cc_by_nc_sa cc_by_nd cc_by_nc_nd)a
+  @license_opts CreativeCommons.cc_options() |> Enum.map(& &1.id)
 
   @derive {Phoenix.Param, key: :slug}
   schema "projects" do
