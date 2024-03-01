@@ -30,6 +30,7 @@ defmodule OliWeb.Projects.OverviewLive do
     {collab_space_config, revision_slug} = get_collab_space_config_and_revision(project.slug)
 
     latest_publication = Publishing.get_latest_published_publication_by_slug(project.slug)
+    cc_options = Oli.Authoring.Course.CreativeCommons.cc_options() |> Enum.map(&{&1.text, &1.id})
 
     socket =
       assign(socket,
@@ -46,6 +47,7 @@ defmodule OliWeb.Projects.OverviewLive do
         title: "Overview | " <> project.title,
         attributes: project.attributes,
         language_codes: Oli.LanguageCodesIso639.codes(),
+        license_opts: cc_options,
         collab_space_config: collab_space_config,
         revision_slug: revision_slug,
         latest_publication: latest_publication
@@ -143,6 +145,22 @@ defmodule OliWeb.Projects.OverviewLive do
                 ) %>
               </div>
             <% end %>
+            <div class="form-label-group mb-3">
+              <%= label(f, :license, "License", class: "control-label") %>
+              <%= select(f, :license, @license_opts,
+                phx_change: "on_selected",
+                class: "form-control",
+                required: false
+              ) %>
+            </div>
+            <div :if={get_field(@changeset, :license) == :custom} class="form-label-group mb-3">
+              <%= label(f, :custom_license_details, "Custom license", class: "control-label") %>
+              <%= text_input(f, :custom_license_details,
+                class: "form-control",
+                placeholder: "The custom license of your project...",
+                required: false
+              ) %>
+            </div>
           </div>
           <div>
             <%= submit("Save", class: "btn btn-md btn-primary mt-2") %>
@@ -411,13 +429,25 @@ defmodule OliWeb.Projects.OverviewLive do
     {collab_space_config, revision_slug}
   end
 
+  def handle_event("on_selected", %{"project" => project_attrs}, socket) do
+    project = socket.assigns.project
+    changeset = Project.changeset(project, project_attrs)
+    {:noreply, assign(socket, changeset: changeset)}
+  end
+
   def handle_event("update", %{"project" => project_params}, socket) do
+    project_params =
+      if project_params["license"] == "custom",
+        do: project_params,
+        else: Map.put(project_params, "custom_license_details", nil)
+
     project = socket.assigns.project
 
     socket =
       case Course.update_project(project, project_params) do
         {:ok, project} ->
           socket
+          |> assign(:project, project)
           |> assign(:changeset, Project.changeset(project))
           |> put_flash(:info, "Project updated successfully.")
 

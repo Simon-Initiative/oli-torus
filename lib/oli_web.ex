@@ -68,6 +68,7 @@ defmodule OliWeb do
       use Phoenix.LiveView,
         layout: {OliWeb.LayoutView, :live}
 
+      import Ecto.Changeset, only: [get_field: 2]
       unquote(html_helpers())
     end
   end
