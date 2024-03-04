@@ -433,6 +433,80 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   attr :unit_raw_avg_score, :map
   attr :assistant_enabled, :boolean, required: true
 
+  # top level page as a card with title and header
+  def unit(%{unit: %{"resource_type_id" => 1}} = assigns) do
+    ~H"""
+    <div id={"top_level_page_#{@unit["resource_id"]}"}>
+      <div class="md:p-[25px] md:pl-[50px]" role={"unit_#{@unit["numbering"]["index"]}"}>
+        <div class="flex flex-col md:flex-row md:gap-[30px]">
+          <div class="text-[14px] leading-[19px] tracking-[1.4px] uppercase mt-[7px] mb-1 whitespace-nowrap opacity-60">
+            <%= "PAGE #{@unit["numbering"]["index"]}" %>
+          </div>
+          <div class="mb-6 flex flex-col items-start gap-[6px] w-full">
+            <h3 class="text-[26px] leading-[32px] tracking-[0.02px] font-normal dark:text-[#DDD]">
+              <%= @unit["title"] %>
+            </h3>
+            <div class="flex items-center w-full gap-3">
+              <div class="flex items-center gap-3" role="schedule_details">
+                <div class="text-[14px] leading-[32px] tracking-[0.02px] font-semibold">
+                  <span class="text-gray-400 opacity-80 dark:text-[#696974] dark:opacity-100 mr-1">
+                    Due:
+                  </span>
+                  <%= FormatDateTime.to_formatted_datetime(
+                    @unit["section_resource"].end_date,
+                    @ctx,
+                    "{WDshort}, {Mshort} {D}, {YYYY} ({h12}:{m}{am})"
+                  ) %>
+                </div>
+              </div>
+              <div class="ml-auto flex items-center gap-6">
+                <Student.score_summary :if={@progress == 100} raw_avg_score={@unit_raw_avg_score} />
+                <.progress_bar
+                  percent={@progress}
+                  width="100px"
+                  on_going_colour="bg-[#0F6CF5]"
+                  completed_colour="bg-[#0CAF61]"
+                  role={"unit_#{@unit["numbering"]["index"]}_progress"}
+                  show_percent={@progress != 100}
+                />
+                <svg
+                  :if={@progress == 100}
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="25"
+                  height="24"
+                  viewBox="0 0 25 24"
+                  fill="none"
+                  role="unit completed check icon"
+                >
+                  <path
+                    d="M10.0496 17.9996L4.34961 12.2996L5.77461 10.8746L10.0496 15.1496L19.2246 5.97461L20.6496 7.39961L10.0496 17.9996Z"
+                    fill="#0CAF61"
+                  />
+                </svg>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="w-[288px]">
+          <.module_card
+            module={@unit}
+            module_index={1}
+            unit_resource_id={@unit["resource_id"]}
+            unit_numbering_index={@unit["numbering"]["index"]}
+            bg_image_url={@unit["poster_image"]}
+            student_progress_per_resource_id={@student_progress_per_resource_id}
+            selected={
+              @selected_module_per_unit_resource_id[@unit["resource_id"]]["resource_id"] ==
+                @unit["resource_id"]
+            }
+            purpose={@unit["purpose"]}
+          />
+        </div>
+      </div>
+    </div>
+    """
+  end
+
   def unit(assigns) do
     ~H"""
     <div id={"unit_#{@unit["resource_id"]}"}>
