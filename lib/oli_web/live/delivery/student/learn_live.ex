@@ -72,13 +72,16 @@ defmodule OliWeb.Delivery.Student.LearnLive do
 
   def handle_params(%{"target_resource_id" => resource_id}, _uri, socket) do
     # the goal of this callback is to scroll to the target resource.
-    # the target can be a unit, a module, a page contained at a module level, or a page contained in a module
+    # the target can be a unit, a module, a page contained at a unit level, at a module level, or a page contained in a module
 
     container_resource_type_id = Oli.Resources.ResourceType.get_id_by_type("container")
     page_resource_type_id = Oli.Resources.ResourceType.get_id_by_type("page")
     full_hierarchy = get_or_compute_full_hierarchy(socket.assigns.section)
 
-    case Sections.get_section_resource_with_resource_type(socket.assigns.section.id, resource_id) do
+    case Sections.get_section_resource_with_resource_type(
+           socket.assigns.section.slug,
+           resource_id
+         ) do
       %{resource_type_id: resource_type_id, numbering_level: 1}
       when resource_type_id == container_resource_type_id ->
         # the target is a unit, so we sroll in the Y direction to it
@@ -122,6 +125,17 @@ defmodule OliWeb.Delivery.Student.LearnLive do
            scroll_delay: 300,
            unit_resource_id: unit_resource_id,
            pulse_target_id: "module_#{resource_id}",
+           pulse_delay: 500
+         })}
+
+      %{resource_type_id: resource_type_id, numbering_level: 1}
+      when resource_type_id == page_resource_type_id ->
+        # the target is a page at the highest level (unit level), so we scroll in the Y direction to that page and pulse it
+        {:noreply,
+         push_event(socket, "scroll-y-to-target", %{
+           id: "top_level_page_#{resource_id}",
+           offset: 80,
+           pulse: true,
            pulse_delay: 500
          })}
 
