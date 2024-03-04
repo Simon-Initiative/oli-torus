@@ -8,7 +8,7 @@ defmodule Oli.Analytics.ByPage do
   alias Oli.Authoring.Course.Project
 
   def query_against_project_slug(project_slug, filtered_sections) do
-    base_query = get_base_query(project_slug, get_activity_pages(project_slug))
+    base_query = get_base_query(project_slug, get_activity_pages(project_slug), filtered_sections)
 
     case filtered_sections do
       [] -> base_query
@@ -25,15 +25,40 @@ defmodule Oli.Analytics.ByPage do
       where: section_resource.section_id in ^filter_list
   end
 
-  defp get_base_query(project_slug, activity_pages) do
+  defp get_base_query(project_slug, activity_pages, filtered_sections) do
+    subquery =
+      if filtered_sections != [] do
+        Publishing.query_unpublished_revisions_by_type_and_section(
+          project_slug,
+          "page",
+          filtered_sections
+        )
+      else
+        Publishing.query_unpublished_revisions_by_type(
+          project_slug,
+          "page"
+        )
+      end
+
+    subquery_activity =
+      if filtered_sections != [] do
+        Publishing.query_unpublished_revisions_by_type_and_section(
+          project_slug,
+          "activity",
+          filtered_sections
+        )
+      else
+        Publishing.query_unpublished_revisions_by_type(
+          project_slug,
+          "activity"
+        )
+      end
+
     from(
-      page in subquery(Publishing.query_unpublished_revisions_by_type(project_slug, "page")),
+      page in subquery(subquery),
       left_join: pairing in subquery(activity_pages),
       on: page.resource_id == pairing.page_id,
-      left_join:
-        activity in subquery(
-          Publishing.query_unpublished_revisions_by_type(project_slug, "activity")
-        ),
+      left_join: activity in subquery(subquery_activity),
       on: pairing.activity_id == activity.resource_id,
       left_join: analytics in subquery(Common.analytics_by_activity(project_slug)),
       on: pairing.activity_id == analytics.activity_id,

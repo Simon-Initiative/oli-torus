@@ -9,7 +9,8 @@ defmodule Oli.Analytics.ByObjective do
   alias Oli.Authoring.Course.Project
 
   def query_against_project_slug(project_slug, filtered_sections) do
-    base_query = get_base_query(project_slug, get_activity_objectives(project_slug))
+    base_query =
+      get_base_query(project_slug, get_activity_objectives(project_slug), filtered_sections)
 
     case filtered_sections do
       [] -> base_query
@@ -18,11 +19,23 @@ defmodule Oli.Analytics.ByObjective do
     |> Repo.all()
   end
 
-  defp get_base_query(project_slug, activity_objectives) do
+  defp get_base_query(project_slug, activity_objectives, filtered_sections) do
+    subquery =
+      if filtered_sections != [] do
+        Publishing.query_unpublished_revisions_by_type_and_section(
+          project_slug,
+          "objective",
+          filtered_sections
+        )
+      else
+        Publishing.query_unpublished_revisions_by_type(
+          project_slug,
+          "objective"
+        )
+      end
+
     from(
-      objective in subquery(
-        Publishing.query_unpublished_revisions_by_type(project_slug, "objective")
-      ),
+      objective in subquery(subquery),
       left_join: pairing in subquery(activity_objectives),
       on: objective.resource_id == pairing.objective_id,
       left_join: analytics in subquery(Common.analytics_by_objective(project_slug)),
