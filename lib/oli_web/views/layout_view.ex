@@ -137,7 +137,12 @@ defmodule OliWeb.LayoutView do
     assigns = Map.put(assigns, :custom_license_details, license.custom_license_details)
 
     ~H"""
-    <p class="h-full">License: <%= @custom_license_details %></p>
+    <div
+      id="license"
+      class="container mx-auto flex flex-row px-10 items-center overflow-y-auto h-[40px] max-h-[40px] relative top-0"
+    >
+      <p class="h-full">License: <%= @custom_license_details %></p>
+    </div>
     """
   end
 
@@ -158,17 +163,22 @@ defmodule OliWeb.LayoutView do
       |> Map.put(:cc_url, cc_data.url)
 
     ~H"""
-    <div class="flex gap-2 items-center">
-      <a href={@cc_url} , target="_blank">
-        <img
-          class="w-[100px]"
-          src={"#{Routes.static_path(OliWeb.Endpoint, "/images/cc_logos/#{@logo_name}.svg")}"}
-          alt="Common Creative Logo"
-        />
-      </a>
-      <p>
-        Unless otherwise noted this work is licensed under a Creative Commons <%= @cc_text %> 4.0 Unported License
-      </p>
+    <div
+      id="license"
+      class="container mx-auto flex flex-row px-10 items-center overflow-y-auto h-[40px] max-h-[40px] relative top-0"
+    >
+      <div class="flex gap-2 items-center">
+        <a href={@cc_url} , target="_blank">
+          <img
+            class="w-[100px]"
+            src={"#{Routes.static_path(OliWeb.Endpoint, "/images/cc_logos/#{@logo_name}.svg")}"}
+            alt="Common Creative Logo"
+          />
+        </a>
+        <p>
+          Unless otherwise noted this work is licensed under a Creative Commons<%= @cc_text %> 4.0 Unported License.
+        </p>
+      </div>
     </div>
     """
   end

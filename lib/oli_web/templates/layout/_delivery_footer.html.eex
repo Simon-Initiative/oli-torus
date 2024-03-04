@@ -18,9 +18,7 @@
     <div class="text-right">
     </div>
   </div>
-  <div class="container mx-auto flex flex-row px-10 items-center overflow-y-auto h-[40px] max-h-[40px] relative top-0">
     <%= render_license(assigns) %>
-  </div>
   <script>
     OLI.onReady(() => OLI.retrieveCookies('<%= Routes.cookie_consent_path(OliWeb.Endpoint, :retrieve) %>', {privacyPoliciesUrl: '<%= privacy_policies_url %>'}));
   </script>
