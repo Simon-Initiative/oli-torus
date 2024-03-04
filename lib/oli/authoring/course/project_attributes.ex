@@ -40,12 +40,6 @@ defmodule Oli.Authoring.Course.ProjectAttributes.License do
   end
 
   defp is_custom?(changeset) do
-    case changeset do
-      %Ecto.Changeset{valid?: true} = changeset ->
-        get_field(changeset, :license_type) == :custom
-
-      _ ->
-        false
-    end
+    get_field(changeset, :license_type) == :custom
   end
 end
