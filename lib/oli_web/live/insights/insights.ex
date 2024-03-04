@@ -2,14 +2,9 @@ defmodule OliWeb.Insights do
   alias OliWeb.Common.MultiSelectOptions
   alias Oli.Delivery.Sections
   use OliWeb, :live_view
-<<<<<<< HEAD
   alias OliWeb.Common.MultiSelect
   alias OliWeb.Common.MultiSelectOptions.SelectOption
-  alias Oli.Publishing
-=======
-
   alias Oli.{Accounts, Publishing}
->>>>>>> master
   alias OliWeb.Insights.{TableHeader, TableRow}
   alias Oli.Authoring.Course
   alias OliWeb.Components.Project.AsyncExporter
