@@ -137,7 +137,7 @@ defmodule OliWeb.LayoutView do
     assigns = Map.put(assigns, :custom_license_details, license.custom_license_details)
 
     ~H"""
-    <p>License: <%= @custom_license_details %></p>
+    <p class="h-full">License: <%= @custom_license_details %></p>
     """
   end
 
@@ -166,10 +166,10 @@ defmodule OliWeb.LayoutView do
           alt="Common Creative Logo"
         />
       </a>
+      <p>
+        Unless otherwise noted this work is licensed under a Creative Commons <%= @cc_text %> 4.0 Unported License
+      </p>
     </div>
-    <p>
-      Unless otherwise noted this work is licensed under a Creative Commons <%= @cc_text %> 4.0 Unported License
-    </p>
     """
   end
 
