@@ -1,7 +1,7 @@
 defmodule Oli.Authoring.Course do
   import Ecto.Query, warn: false
 
-  alias Oli.Accounts.{SystemRole, Author}
+  alias Oli.Accounts.Author
   alias Oli.Authoring.Authors.AuthorProject
   alias Oli.Authoring.{Collaborators, ProjectSearch}
   alias Oli.Authoring.Course.{Project, Family, ProjectResource, ProjectAttributes}
@@ -10,7 +10,7 @@ defmodule Oli.Authoring.Course do
   alias Oli.Publishing
   alias Oli.Publishing.Publications.Publication
   alias Oli.Publishing.PublishedResource
-  alias Oli.Repo
+  alias Oli.{Accounts, Repo}
   alias Oli.Repo.{Paging, Sorting}
   alias Oli.Resources.{ResourceType, Revision, ScoringStrategy}
 
@@ -76,13 +76,9 @@ defmodule Oli.Authoring.Course do
   end
 
   def get_projects_for_author(author) do
-    admin_role_id = SystemRole.role_id().admin
-
-    case author do
-      # Admin authors have access to every project
-      %{system_role_id: ^admin_role_id} -> Repo.all(Project)
-      _ -> Repo.preload(author, [:projects]).projects
-    end
+    if Accounts.has_admin_role?(author),
+      do: Repo.all(Project),
+      else: Repo.preload(author, [:projects]).projects
   end
 
   def browse_projects(
@@ -91,19 +87,13 @@ defmodule Oli.Authoring.Course do
         %Sorting{} = sorting,
         opts \\ []
       ) do
-    admin_role_id = SystemRole.role_id().admin
     include_deleted = Keyword.get(opts, :include_deleted, false)
     admin_show_all = Keyword.get(opts, :admin_show_all, true)
     text_search = Keyword.get(opts, :text_search, "")
 
-    case author do
-      # Admin authors have access to every project
-      %{system_role_id: ^admin_role_id} when admin_show_all ->
-        browse_projects_as_admin(paging, sorting, include_deleted, text_search)
-
-      _ ->
-        browse_projects_as_author(author, paging, sorting, include_deleted, text_search)
-    end
+    if Accounts.has_admin_role?(author) and admin_show_all,
+      do: browse_projects_as_admin(paging, sorting, include_deleted, text_search),
+      else: browse_projects_as_author(author, paging, sorting, include_deleted, text_search)
   end
 
   defp browse_projects_as_admin(

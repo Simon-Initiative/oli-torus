@@ -267,7 +267,7 @@ defmodule OliWeb.Api.MediaController do
   end
 
   @doc """
-  Create a new media library entry by uploading the encoded media file to an Amazon S3 storage bucket.
+  Mark a list of media items as deleted.
   """
   @doc parameters: [
          project: [

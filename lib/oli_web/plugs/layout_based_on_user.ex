@@ -6,7 +6,7 @@ defmodule Oli.Plugs.LayoutBasedOnUser do
   end
 
   def call(conn, _params) do
-    admin_role_id = SystemRole.role_id().admin
+    admin_role_id = SystemRole.role_id().system_admin
 
     # If someone is logged in as a system admin, prioritize that (although they
     # might be logged in as instructor) and set the root layout to be workspace.

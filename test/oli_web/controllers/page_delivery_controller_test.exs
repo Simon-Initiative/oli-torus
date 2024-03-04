@@ -2084,7 +2084,11 @@ defmodule OliWeb.PageDeliveryControllerTest do
       conn: conn,
       user: user
     } do
-      {:ok, section: section, unit_one_revision: unit_one_revision, page_revision: _page_revision} =
+      {:ok,
+       section: section,
+       unit_one_revision: unit_one_revision,
+       page_revision: _page_revision,
+       page_2_revision: _page_2_revision} =
         section_with_assessment(%{})
 
       enroll_as_instructor(%{user: user, section: section})
@@ -2273,7 +2277,10 @@ defmodule OliWeb.PageDeliveryControllerTest do
       conn: conn
     } do
       {:ok,
-       section: section, unit_one_revision: _unit_one_revision, page_revision: _page_revision} =
+       section: section,
+       unit_one_revision: _unit_one_revision,
+       page_revision: _page_revision,
+       page_2_revision: _page_2_revision} =
         section_with_assessment(%{})
 
       user = insert(:user)
@@ -2290,7 +2297,10 @@ defmodule OliWeb.PageDeliveryControllerTest do
     test "do not show the 'exploration' access in the left navbar when the section has no explorations to show",
          %{conn: conn} do
       {:ok,
-       section: section, unit_one_revision: _unit_one_revision, page_revision: _page_revision} =
+       section: section,
+       unit_one_revision: _unit_one_revision,
+       page_revision: _page_revision,
+       page_2_revision: _page_2_revision} =
         section_with_assessment(%{})
 
       user = insert(:user)
@@ -2308,7 +2318,10 @@ defmodule OliWeb.PageDeliveryControllerTest do
     test "do not show the 'exploration' access in the Windowshade when the section does not have explorations to show",
          %{conn: conn} do
       {:ok,
-       section: section, unit_one_revision: _unit_one_revision, page_revision: _page_revision} =
+       section: section,
+       unit_one_revision: _unit_one_revision,
+       page_revision: _page_revision,
+       page_2_revision: _page_2_revision} =
         section_with_assessment(%{})
 
       user = insert(:user)
@@ -2410,7 +2423,10 @@ defmodule OliWeb.PageDeliveryControllerTest do
       conn: conn
     } do
       {:ok,
-       section: section, unit_one_revision: _unit_one_revision, page_revision: _page_revision} =
+       section: section,
+       unit_one_revision: _unit_one_revision,
+       page_revision: _page_revision,
+       page_2_revision: _page_2_revision} =
         section_with_assessment(%{})
 
       user = insert(:user)

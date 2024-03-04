@@ -2,40 +2,36 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
   use OliWeb, :live_component
 
   import Ecto.Query
+
   alias Oli.Accounts.User
-
-  alias Oli.Analytics.Summary.{
-    ResourcePartResponse,
-    ResourceSummary,
-    ResponseSummary,
-    StudentResponse
-  }
-
+  alias Oli.Analytics.Summary.ResourcePartResponse
+  alias Oli.Analytics.Summary.ResourceSummary
+  alias Oli.Analytics.Summary.ResponseSummary
+  alias Oli.Analytics.Summary.StudentResponse
+  alias Oli.Delivery.Attempts.Core
+  alias Oli.Delivery.Attempts.Core.ActivityAttempt
+  alias Oli.Delivery.Attempts.Core.ResourceAccess
+  alias Oli.Delivery.Attempts.Core.ResourceAttempt
+  alias Oli.Delivery.Sections.Section
+  alias Oli.Delivery.Sections.SectionsProjectsPublications
+  alias Oli.Publishing.DeliveryResolver
+  alias Oli.Publishing.PublishedResource
   alias Oli.Repo
+  alias Oli.Resources.ResourceType
+  alias Oli.Resources.Revision
 
-  alias Oli.Publishing.{DeliveryResolver, PublishedResource}
-
-  alias OliWeb.Delivery.ScoredActivities.{
-    ActivitiesTableModel,
-    AssessmentsTableModel
-  }
+  alias OliWeb.Common.PagedTable
+  alias OliWeb.Common.PagingParams
+  alias OliWeb.Common.Params
+  alias OliWeb.Common.SearchInput
+  alias OliWeb.Common.Table.SortableTableModel
+  alias OliWeb.Delivery.ScoredActivities.ActivitiesTableModel
+  alias OliWeb.Delivery.ScoredActivities.AssessmentsTableModel
+  alias OliWeb.ManualGrading.Rendering
+  alias OliWeb.ManualGrading.RenderedActivity
+  alias OliWeb.Router.Helpers, as: Routes
 
   alias Phoenix.LiveView.JS
-  alias OliWeb.Common.{PagedTable, Params, SearchInput}
-  alias OliWeb.Router.Helpers, as: Routes
-  alias OliWeb.Common.Table.SortableTableModel
-  alias Oli.Delivery.Attempts.Core
-  alias OliWeb.ManualGrading.RenderedActivity
-
-  alias Oli.Delivery.Attempts.Core.{
-    ResourceAccess,
-    ResourceAttempt,
-    ActivityAttempt
-  }
-
-  alias Oli.Delivery.Sections.{Section, SectionsProjectsPublications}
-
-  alias Oli.Resources.{ResourceType, Revision}
 
   @default_params %{
     offset: 0,
@@ -55,7 +51,6 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
     socket =
       assign(socket,
         params: params,
-        params: params,
         section: assigns.section,
         view: assigns.view,
         ctx: assigns.ctx,
@@ -73,10 +68,7 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
         {:ok, table_model} = AssessmentsTableModel.new(rows, assigns.ctx, socket.assigns.myself)
 
         table_model =
-          Map.merge(table_model, %{
-            rows: rows,
-            sort_order: params.sort_order
-          })
+          Map.merge(table_model, %{rows: rows, sort_order: params.sort_order})
           |> SortableTableModel.update_sort_params(params.sort_by)
 
         {:ok,
@@ -87,9 +79,7 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
          )}
 
       assessment_id ->
-        case Enum.find(assigns.assessments, fn a ->
-               a.id == assessment_id
-             end) do
+        case Enum.find(assigns.assessments, fn a -> a.id == assessment_id end) do
           nil ->
             send(self(), {:redirect_with_warning, "The assessment doesn't exist"})
             {:ok, socket}
@@ -108,11 +98,7 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
 
             student_emails_without_attempts =
               Enum.reduce(assigns.students, [], fn s, acc ->
-                if s.id in students_with_attempts do
-                  acc
-                else
-                  [s.email | acc]
-                end
+                if s.id in students_with_attempts, do: acc, else: [s.email | acc]
               end)
 
             {total_count, rows} = apply_filters(activities, params)
@@ -121,10 +107,7 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
 
             table_model =
               table_model
-              |> Map.merge(%{
-                rows: rows,
-                sort_order: params.sort_order
-              })
+              |> Map.merge(%{rows: rows, sort_order: params.sort_order})
               |> SortableTableModel.update_sort_params(params.sort_by)
 
             selected_activity =
@@ -283,11 +266,7 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
      )}
   end
 
-  def handle_event(
-        "paged_table_selection_change",
-        %{"id" => activity_resource_id},
-        socket
-      )
+  def handle_event("paged_table_selection_change", %{"id" => activity_resource_id}, socket)
       when not is_nil(socket.assigns.current_assessment) do
     {:noreply,
      push_patch(socket,
@@ -301,11 +280,7 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
      )}
   end
 
-  def handle_event(
-        "paged_table_selection_change",
-        %{"id" => selected_assessment_id},
-        socket
-      ) do
+  def handle_event("paged_table_selection_change", %{"id" => selected_assessment_id}, socket) do
     assessment_table_params = socket.assigns.params
 
     socket =
@@ -324,11 +299,7 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
      )}
   end
 
-  def handle_event(
-        "search_assessment",
-        %{"assessment_name" => assessment_name},
-        socket
-      ) do
+  def handle_event("search_assessment", %{"assessment_name" => assessment_name}, socket) do
     {:noreply,
      push_patch(socket,
        to:
@@ -342,11 +313,7 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
      )}
   end
 
-  def handle_event(
-        "paged_table_page_change",
-        %{"limit" => limit, "offset" => offset},
-        socket
-      ) do
+  def handle_event("paged_table_page_change", %{"limit" => limit, "offset" => offset}, socket) do
     {:noreply,
      push_patch(socket,
        to:
@@ -357,28 +324,14 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
      )}
   end
 
-  def handle_event(
-        "paged_table_limit_change",
-        params,
-        %{assigns: %{params: current_params}} = socket
-      ) do
+  def handle_event("paged_table_limit_change", params, socket) do
     new_limit = Params.get_int_param(params, "limit", 20)
+    total_count = socket.assigns.total_count
+    current_offset = socket.assigns.params.offset
+    new_offset = PagingParams.calculate_new_offset(current_offset, new_limit, total_count)
+    updated_params = update_params(socket.assigns.params, %{limit: new_limit, offset: new_offset})
 
-    new_offset =
-      OliWeb.Common.PagingParams.calculate_new_offset(
-        current_params.offset,
-        new_limit,
-        socket.assigns.total_count
-      )
-
-    {:noreply,
-     push_patch(socket,
-       to:
-         route_to(
-           socket,
-           update_params(socket.assigns.params, %{limit: new_limit, offset: new_offset})
-         )
-     )}
+    {:noreply, push_patch(socket, to: route_to(socket, updated_params))}
   end
 
   def handle_event("survey_scripts_loaded", %{"error" => _}, socket) do
@@ -389,21 +342,13 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
     {:noreply, assign(socket, scripts_loaded: true)}
   end
 
-  def handle_event(
-        "paged_table_sort",
-        %{"sort_by" => sort_by} = _params,
-        socket
-      ) do
-    {:noreply,
-     push_patch(socket,
-       to:
-         route_to(
-           socket,
-           update_params(socket.assigns.params, %{
-             sort_by: String.to_existing_atom(sort_by)
-           })
-         )
-     )}
+  def handle_event("paged_table_sort", %{"sort_by" => sort_by} = _params, socket) do
+    updated_params =
+      update_params(socket.assigns.params, %{
+        sort_by: String.to_existing_atom(sort_by)
+      })
+
+    {:noreply, push_patch(socket, to: route_to(socket, updated_params))}
   end
 
   defp assign_selected_activity(socket, selected_activity_id)
@@ -419,41 +364,31 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
 
   defp assign_selected_activity(socket, selected_activity_id) do
     selected_activity =
-      Enum.find(socket.assigns.activities, fn a ->
-        a.resource_id == selected_activity_id
-      end)
+      Enum.find(socket.assigns.activities, fn a -> a.resource_id == selected_activity_id end)
 
     table_model =
-      Map.merge(socket.assigns.table_model, %{
-        selected: "#{selected_activity_id}"
-      })
+      Map.merge(socket.assigns.table_model, %{selected: "#{selected_activity_id}"})
 
-    case get_activity_details(
-           selected_activity,
-           socket.assigns.section,
-           socket.assigns.activity_types_map
-         ) do
+    section = socket.assigns.section
+    activity_types_map = socket.assigns.activity_types_map
+
+    case get_activity_details(selected_activity, section, activity_types_map) do
       nil ->
-        socket
-        |> assign(table_model: table_model)
+        assign(socket, table_model: table_model)
 
       activity_attempt ->
         part_attempts = Core.get_latest_part_attempts(activity_attempt.attempt_guid)
 
         rendering_context =
-          OliWeb.ManualGrading.Rendering.create_rendering_context(
+          Rendering.create_rendering_context(
             activity_attempt,
             part_attempts,
-            socket.assigns.activity_types_map,
-            socket.assigns.section
+            activity_types_map,
+            section
           )
           |> Map.merge(%{is_liveview: true})
 
-        preview_rendered =
-          OliWeb.ManualGrading.Rendering.render(
-            rendering_context,
-            :instructor_preview
-          )
+        preview_rendered = Rendering.render(rendering_context, :instructor_preview)
 
         socket
         |> assign(table_model: table_model, preview_rendered: preview_rendered)
@@ -483,20 +418,20 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
 
   defp maybe_filter_by_text(assessments, text_search) do
     Enum.filter(assessments, fn assessment ->
-      String.contains?(
-        String.downcase(assessment.title),
-        String.downcase(text_search)
-      )
+      String.contains?(String.downcase(assessment.title), String.downcase(text_search))
     end)
   end
 
   defp sort_by(assessments, sort_by, sort_order) do
     case sort_by do
       :due_date ->
+        Enum.sort_by(assessments, & &1.end_date, sort_order)
+
         Enum.sort_by(
           assessments,
-          fn a ->
-            if a.scheduling_type != :due_by, do: 0, else: Map.get(a, :due_date)
+          fn
+            %{scheduling_type: :due_by} = assessment -> assessment.end_date
+            _ -> nil
           end,
           sort_order
         )
@@ -505,38 +440,19 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
         Enum.sort_by(assessments, fn a -> Map.get(a, sb) || -1 end, sort_order)
 
       :title ->
-        Enum.sort_by(
-          assessments,
-          fn a -> Map.get(a, :title) |> String.downcase() end,
-          sort_order
-        )
+        Enum.sort_by(assessments, &String.downcase(&1.title), sort_order)
     end
   end
 
   defp decode_params(params) do
+    sort_options = [:title, :due_date, :avg_score, :total_attempts, :students_completion]
+
     %{
       offset: Params.get_int_param(params, "offset", @default_params.offset),
       limit: Params.get_int_param(params, "limit", @default_params.limit),
       sort_order:
-        Params.get_atom_param(
-          params,
-          "sort_order",
-          [:asc, :desc],
-          @default_params.sort_order
-        ),
-      sort_by:
-        Params.get_atom_param(
-          params,
-          "sort_by",
-          [
-            :title,
-            :due_date,
-            :avg_score,
-            :total_attempts,
-            :students_completion
-          ],
-          @default_params.sort_by
-        ),
+        Params.get_atom_param(params, "sort_order", [:asc, :desc], @default_params.sort_order),
+      sort_by: Params.get_atom_param(params, "sort_by", sort_options, @default_params.sort_by),
       text_search: Params.get_param(params, "text_search", @default_params.text_search),
       assessment_id: Params.get_int_param(params, "assessment_id", nil),
       assessment_table_params: params["assessment_table_params"],
@@ -544,20 +460,12 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
     }
   end
 
-  defp update_params(
-         %{sort_by: current_sort_by, sort_order: current_sort_order} = params,
-         %{
-           sort_by: new_sort_by
-         }
-       )
-       when current_sort_by == new_sort_by do
-    toggled_sort_order = if current_sort_order == :asc, do: :desc, else: :asc
+  defp update_params(%{sort_by: sort_by} = params, %{sort_by: sort_by}) do
+    toggled_sort_order = if params.sort_order == :asc, do: :desc, else: :asc
     update_params(params, %{sort_order: toggled_sort_order})
   end
 
-  defp update_params(params, new_param) do
-    Map.merge(params, new_param)
-  end
+  defp update_params(params, new_param), do: Map.merge(params, new_param)
 
   defp route_to(socket, params)
        when not is_nil(socket.assigns.params.assessment_id) do

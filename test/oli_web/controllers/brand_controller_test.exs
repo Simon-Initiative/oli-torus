@@ -159,7 +159,7 @@ defmodule OliWeb.BrandControllerTest do
   end
 
   defp create_and_signin_admin(%{conn: conn}) do
-    admin = author_fixture(%{system_role_id: Oli.Accounts.SystemRole.role_id().admin})
+    admin = author_fixture(%{system_role_id: Oli.Accounts.SystemRole.role_id().system_admin})
 
     conn =
       conn

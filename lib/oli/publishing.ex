@@ -410,6 +410,8 @@ defmodule Oli.Publishing do
       iex> retrieve_visible_sources(%User{}, %Institution{})
       []
   """
+  def retrieve_visible_sources(nil, _), do: []
+
   def retrieve_visible_sources(user, institution) do
     sources =
       Groups.list_community_associated_publications_and_products(user.id, institution) ++

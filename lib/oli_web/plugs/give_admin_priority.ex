@@ -16,7 +16,7 @@ defmodule Oli.Plugs.GiveAdminPriority do
     if author = Pow.Plug.current_user(conn, pow_config) do
       author = Repo.get(Author, author.id)
 
-      case Oli.Accounts.is_admin?(author) do
+      case Oli.Accounts.has_admin_role?(author) do
         true -> OliWeb.Pow.PowHelpers.use_pow_config(conn, :author)
         _ -> OliWeb.Pow.PowHelpers.use_pow_config(conn, :user)
       end

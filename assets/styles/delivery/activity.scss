@@ -22,6 +22,7 @@
     padding: 12px 16px;
     border-style: none;
     border-radius: 4px;
+    overflow-x: auto;
 
     &.correct {
       background-color: var(--color-feedback-correct-bg);
@@ -158,6 +159,11 @@
     background-color: var(--color-delivery-hints-bg);
     border: 2px solid var(--color-delivery-hints-border);
     border-radius: 0;
+    /* MER-2961 - Some wide content (specifically formulas) were getting cut off in hints, making it scrollable
+    */
+    overflow-x: auto;
+
+
   }
 
   p:last-of-type {
