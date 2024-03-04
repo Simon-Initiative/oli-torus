@@ -581,7 +581,12 @@ defmodule Oli.Authoring.Course do
 
   @cc_options Oli.Authoring.Course.CreativeCommons.cc_options() |> Enum.map(& &1.id)
 
-  @spec get_project_license(integer()) :: any()
+  @type license_types ::
+          :none | :cc_by | :cc_by_sa | :cc_by_nd | :cc_by_nc | :cc_by_nc_sa | :cc_by_nc_nd
+  @spec get_project_license(integer()) ::
+          %{license_type: :custom, custom_license_details: String.t()}
+          | %{license_type: license_types, custom_license_details: <<>>}
+          | nil
   def get_project_license(revision_id) do
     from(pr in PublishedResource,
       join: spp in SectionsProjectsPublications,
