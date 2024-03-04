@@ -11,6 +11,7 @@ defmodule OliWeb.Common.MultiSelectOptions do
     embedded_schema do
       field :selected, :boolean, default: false
       field :label, :string
+      field :is_product, :boolean
     end
   end
 
