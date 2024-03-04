@@ -2208,14 +2208,18 @@ defmodule Oli.Delivery.Sections do
   end
 
   @doc """
-  Returns the section resource for the given section and resource id, with the resource type id
+  Returns the section resource for the given section slug and resource id, with the resource type id
   """
-  def get_section_resource_with_resource_type(section_id, resource_id) do
+  @spec get_section_resource_with_resource_type(
+          section_slug :: String.t(),
+          resource_id :: integer()
+        ) ::
+          %SectionResource{} | nil
+  def get_section_resource_with_resource_type(section_slug, resource_id) do
     Repo.one(
-      from(sr in SectionResource,
-        join: rev in Revision,
-        on: sr.resource_id == rev.resource_id,
-        where: sr.section_id == ^section_id and sr.resource_id == ^resource_id,
+      from(
+        [sr, _s, _spp, _pr, rev] in DeliveryResolver.section_resource_revisions(section_slug),
+        where: sr.resource_id == ^resource_id,
         select: %{sr | resource_type_id: rev.resource_type_id}
       )
     )
