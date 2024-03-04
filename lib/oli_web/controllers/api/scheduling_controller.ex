@@ -9,6 +9,7 @@ defmodule OliWeb.Api.SchedulingController do
   alias Oli.Delivery.Sections.Scheduling
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.SectionResource
+  alias Oli.Accounts
 
   import OliWeb.Api.Helpers
 
@@ -191,7 +192,7 @@ defmodule OliWeb.Api.SchedulingController do
   # (authoring) admins
   defp can_access_section?(conn, section) do
     Sections.is_instructor?(conn.assigns.current_user, section.slug) or
-      Oli.Accounts.is_admin?(conn.assigns.current_author) or
+      Accounts.at_least_content_admin?(conn.assigns.current_author) or
       Sections.is_admin?(conn.assigns.current_user, section.slug)
   end
 

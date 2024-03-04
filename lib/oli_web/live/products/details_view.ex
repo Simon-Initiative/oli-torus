@@ -1,14 +1,11 @@
 defmodule OliWeb.Products.DetailsView do
   use OliWeb, :live_view
 
-  alias Oli.Repo
+  alias Oli.{Accounts, Branding, Inventories, Repo}
   alias OliWeb.Common.Breadcrumb
   alias Oli.Accounts.Author
-  alias Oli.Delivery.Sections.Section
   alias Oli.Delivery.Sections
-  alias Oli.Delivery.Sections.Blueprint
-  alias Oli.Branding
-  alias Oli.Inventories
+  alias Oli.Delivery.Sections.{Blueprint, Section}
   alias OliWeb.Router.Helpers, as: Routes
   alias OliWeb.Common.Confirm
   alias OliWeb.Sections.Mount
@@ -50,7 +47,7 @@ defmodule OliWeb.Products.DetailsView do
            updates: Sections.check_for_available_publication_updates(product),
            author: author,
            product: product,
-           is_admin: Oli.Accounts.is_admin?(author),
+           is_admin: Accounts.has_admin_role?(author),
            changeset: Section.changeset(product, %{}),
            title: "Edit Product",
            show_confirm: false,

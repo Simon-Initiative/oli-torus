@@ -776,7 +776,7 @@ defmodule OliWeb.RemixSectionLiveTest do
   defp setup_admin_session(%{conn: conn}) do
     map = Seeder.base_project_with_resource4()
 
-    admin = author_fixture(%{system_role_id: Oli.Accounts.SystemRole.role_id().admin})
+    admin = author_fixture(%{system_role_id: Oli.Accounts.SystemRole.role_id().system_admin})
 
     conn =
       Plug.Test.init_test_session(conn, %{})
