@@ -451,8 +451,8 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   def unit(%{unit: %{"resource_type_id" => 1}} = assigns) do
     ~H"""
     <div id={"top_level_page_#{@unit["resource_id"]}"}>
-      <div class="md:p-[25px] md:pl-[50px]" role={"unit_#{@unit["numbering"]["index"]}"}>
-        <div class="flex flex-col md:flex-row md:gap-[30px]">
+      <div class="md:p-[25px] md:pl-[50px]" role={"top_level_page_#{@unit["numbering"]["index"]}"}>
+        <div role="header" class="flex flex-col md:flex-row md:gap-[30px]">
           <div class="text-[14px] leading-[19px] tracking-[1.4px] uppercase mt-[7px] mb-1 whitespace-nowrap opacity-60">
             <%= "PAGE #{@unit["numbering"]["index"]}" %>
           </div>
