@@ -18,7 +18,7 @@
     <div class="text-right">
     </div>
   </div>
-    <%= render_license(assigns) %>
+    <%= render_license(assigns[:license]) %>
   <script>
     OLI.onReady(() => OLI.retrieveCookies('<%= Routes.cookie_consent_path(OliWeb.Endpoint, :retrieve) %>', {privacyPoliciesUrl: '<%= privacy_policies_url %>'}));
   </script>

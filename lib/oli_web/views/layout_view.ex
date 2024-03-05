@@ -133,9 +133,7 @@ defmodule OliWeb.LayoutView do
   defp show_collab_space?(%CollabSpaceConfig{status: :disabled}), do: false
   defp show_collab_space?(_), do: true
 
-  def render_license(%{license: %{license_type: :custom} = license} = assigns) do
-    assigns = Map.put(assigns, :custom_license_details, license.custom_license_details)
-
+  def render_license(%{license_type: :custom} = assigns) do
     ~H"""
     <div
       id="license"
@@ -146,7 +144,7 @@ defmodule OliWeb.LayoutView do
     """
   end
 
-  def render_license(%{license: %{license_type: cc_license}} = assigns) do
+  def render_license(%{license_type: cc_license} = assigns) do
     cc_data =
       Enum.find(CreativeCommons.cc_options(), fn cc_option -> cc_option.id == cc_license end)
 
@@ -157,7 +155,6 @@ defmodule OliWeb.LayoutView do
 
     assigns =
       assigns
-      |> Map.put(:cc_data, cc_data)
       |> Map.put(:logo_name, logo_name)
       |> Map.put(:cc_text, cc_text)
       |> Map.put(:cc_url, cc_data.url)
@@ -171,7 +168,7 @@ defmodule OliWeb.LayoutView do
         <a href={@cc_url} , target="_blank">
           <img
             class="w-[100px]"
-            src={"#{Routes.static_path(OliWeb.Endpoint, "/images/cc_logos/#{@logo_name}.svg")}"}
+            src={~p"/images/cc_logos/#{@logo_name <> ".svg"}"}
             alt="Common Creative Logo"
           />
         </a>
@@ -183,7 +180,7 @@ defmodule OliWeb.LayoutView do
     """
   end
 
-  def render_license(_assigns) do
+  def render_license(_license) do
     nil
   end
 end
