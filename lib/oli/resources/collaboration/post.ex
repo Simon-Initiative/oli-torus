@@ -18,6 +18,18 @@ defmodule Oli.Resources.Collaboration.Post do
     belongs_to :parent_post, Oli.Resources.Collaboration.Post
     belongs_to :thread_root, Oli.Resources.Collaboration.Post
 
+    belongs_to :annotated_resource_id, Oli.Resources.Resource
+
+    field :annotated_block_id, :string
+
+    field :annotation_type, Ecto.Enum,
+      values: [:none, :point, :range],
+      default: :none
+
+    field :visibility, Ecto.Enum,
+      values: [:private, :public],
+      default: :private
+
     field :replies_count, :integer, virtual: true
     field :read_replies_count, :integer, virtual: true
     field :is_read, :boolean, virtual: true
@@ -36,6 +48,9 @@ defmodule Oli.Resources.Collaboration.Post do
       :resource_id,
       :parent_post_id,
       :thread_root_id,
+      :annotated_resource_id,
+      :annotated_block_id,
+      :annotation_type,
       :replies_count,
       :anonymous
     ])

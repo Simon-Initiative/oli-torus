@@ -24,7 +24,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     {:ok,
      socket
      |> assign_html_and_scripts()
-     |> assign(annotations_enabled: true, show_sidebar: false, point_markers: nil)}
+     |> assign_annotations()}
   end
 
   def mount(
@@ -160,6 +160,10 @@ defmodule OliWeb.Delivery.Student.LessonLive do
      |> push_event("request_point_markers", %{})}
   end
 
+  def handle_event("select_annotation_point", %{"point-marker-id" => point_marker_id}, socket) do
+    {:noreply, assign(socket, selected_point: point_marker_id)}
+  end
+
   def render(%{view: :practice_page, annotations_enabled: true} = assigns) do
     # For practice page the activity scripts and activity_bridge script are needed as soon as the page loads.
     ~H"""
@@ -184,10 +188,14 @@ defmodule OliWeb.Delivery.Student.LessonLive do
       </div>
 
       <:point_markers :if={@show_sidebar && @point_markers}>
-        <Annotations.annotation_bubble point_marker={%{id: "page-marker", top: 0}} />
+        <Annotations.annotation_bubble
+          point_marker={%{id: "page-marker", top: 0}}
+          selected={@selected_point == "page-marker"}
+        />
         <Annotations.annotation_bubble
           :for={point_marker <- @point_markers}
           point_marker={point_marker}
+          selected={@selected_point == point_marker.id}
         />
       </:point_markers>
 
@@ -631,6 +639,15 @@ defmodule OliWeb.Delivery.Student.LessonLive do
   defp assign_html(socket) do
     assign(socket,
       html: Utils.build_html(socket.assigns, :delivery)
+    )
+  end
+
+  defp assign_annotations(socket) do
+    assign(socket,
+      annotations_enabled: true,
+      show_sidebar: false,
+      point_markers: nil,
+      selected_point: nil
     )
   end
 
