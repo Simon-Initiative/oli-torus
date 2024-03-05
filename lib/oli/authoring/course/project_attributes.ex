@@ -11,8 +11,10 @@ defmodule Oli.Authoring.Course.ProjectAttributes do
     embeds_one :license, ProjectAttributes.License
   end
 
-  def changeset(%ProjectAttributes{} = attributes, attrs \\ %{}) do
-    attributes
+  @type module_struct_or_changeset_type :: %ProjectAttributes{} | %Ecto.Changeset{}
+  @spec changeset(module_struct_or_changeset_type, map) :: %Ecto.Changeset{}
+  def changeset(item, attrs \\ %{}) do
+    item
     |> cast(attrs, [:learning_language])
     |> cast_embed(:license, required: false)
   end
@@ -20,9 +22,9 @@ end
 
 defmodule Oli.Authoring.Course.ProjectAttributes.License do
   use Ecto.Schema
-  alias Oli.Authoring.Course.CreativeCommons
   import Ecto.Changeset
   import Oli.Utils
+  alias Oli.Authoring.Course.CreativeCommons
   alias __MODULE__
 
   @license_opts CreativeCommons.cc_options() |> Enum.map(& &1.id)
@@ -33,8 +35,10 @@ defmodule Oli.Authoring.Course.ProjectAttributes.License do
     field(:custom_license_details, :string, default: "")
   end
 
-  def changeset(%License{} = license, attrs \\ %{}) do
-    license
+  @type module_struct_or_changeset_type :: %License{} | %Ecto.Changeset{}
+  @spec changeset(module_struct_or_changeset_type, map) :: %Ecto.Changeset{}
+  def changeset(item, attrs \\ %{}) do
+    item
     |> cast(attrs, [:license_type, :custom_license_details])
     |> validate_required_if([:custom_license_details], &is_custom?/1)
   end
