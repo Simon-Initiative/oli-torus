@@ -637,7 +637,53 @@ defmodule OliWeb.PageDeliveryControllerTest do
       assert html_response(conn, 200) =~ "Submit Answers"
     end
 
-    test "renders custom license in footer", %{
+    # test "handles student page access by an enrolled student", %{
+    #   conn: conn,
+    #   revision: revision,
+    #   user: user,
+    #   section: section
+    # } do
+    #   enroll_as_student(%{section: section, user: user})
+
+    #   conn =
+    #     conn
+    #     |> get(Routes.page_delivery_path(conn, :page, section.slug, revision.slug))
+
+    #   assert html_response(conn, 200) =~ "Page one"
+    #   assert html_response(conn, 200) =~ section.title
+    # end
+
+    test "renders custom license in footer for started page", %{
+      conn: conn,
+      user: user,
+      section: section,
+      revision: revision,
+      project: project
+    } do
+      {:ok, _project_with_license} =
+        Course.update_project(project, %{
+          attributes: %{
+            license: %{license_type: :custom, custom_license_details: "This is a custom license"}
+          }
+        })
+
+      enroll_as_student(%{section: section, user: user})
+
+      html_response =
+        get(conn, ~p"/sections/#{section.slug}/page/#{revision.slug}") |> html_response(200)
+
+      # Verify License legend
+      license =
+        html_response
+        |> Floki.parse_document!()
+        |> Floki.find("footer")
+        |> Floki.find("#license")
+
+      assert Floki.text(license) =~
+               "License: This is a custom license"
+    end
+
+    test "renders custom license in footer for a not_started page -- prologue", %{
       conn: conn,
       user: user,
       section: section,
@@ -654,8 +700,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
       enroll_as_student(%{section: section, user: user})
 
       html_response =
-        get(conn, Routes.page_delivery_path(conn, :page, section.slug, page_revision.slug))
-        |> html_response(200)
+        get(conn, ~p"/sections/#{section.slug}/page/#{page_revision.slug}") |> html_response(200)
 
       # Verify License legend
       license =
@@ -668,7 +713,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
                "License: This is a custom license"
     end
 
-    test "renders creative commons license in footer", %{
+    test "renders creative commons license in footer for a not_started page -- prologue", %{
       conn: conn,
       user: user,
       section: section,
@@ -681,8 +726,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
       enroll_as_student(%{section: section, user: user})
 
       html_response =
-        get(conn, Routes.page_delivery_path(conn, :page, section.slug, page_revision.slug))
-        |> html_response(200)
+        get(conn, ~p"/sections/#{section.slug}/page/#{page_revision.slug}") |> html_response(200)
 
       # Verify License legend
       license =
