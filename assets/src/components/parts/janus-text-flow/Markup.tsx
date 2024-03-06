@@ -134,7 +134,7 @@ const Markup: React.FC<any> = ({
           key={key}
           className={customCssClass}
           href={href}
-          target={target || "_blank"}
+          target={target || '_blank'}
           style={{ ...renderStyles, display: 'inline' }}
         >
           {processedText}
