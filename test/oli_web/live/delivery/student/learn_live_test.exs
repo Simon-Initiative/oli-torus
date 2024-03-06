@@ -836,15 +836,14 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       |> element(~s{div[role="unit_1"] div[role="card_2"]})
       |> render_click()
 
-      # page number 2 in the module index is the graded page with title "Page 4" in the hierarchy
       assert has_element?(
                view,
-               ~s{div[role="page 2 details"] div[role="orange flag icon"]}
+               ~s{div[role="page 4 details"] div[role="orange flag icon"]}
              )
 
       assert has_element?(
                view,
-               ~s{div[role="page 2 details"] div[role="due date and score"]},
+               ~s{div[role="page 4 details"] div[role="due date and score"]},
                "Due: Fri Nov 3, 2023"
              )
     end
@@ -894,24 +893,23 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       |> element(~s{div[role="unit_1"] div[role="card_2"]})
       |> render_click()
 
-      # page number 2 in the module index is the graded page with title "Page 4" in the hierarchy
-      # has the correct icon
+      # graded page with title "Page 4" in the hierarchy has the correct icon
       assert has_element?(
                view,
-               ~s{div[role="page 2 details"] div[role="square check icon"]}
+               ~s{div[role="page 4 details"] div[role="square check icon"]}
              )
 
       # correct due date
       assert has_element?(
                view,
-               ~s{div[role="page 2 details"] div[role="due date and score"]},
+               ~s{div[role="page 4 details"] div[role="due date and score"]},
                "Due: Fri Nov 3, 2023"
              )
 
       # and correct score summary
       assert has_element?(
                view,
-               ~s{div[role="page 2 details"] div[role="due date and score"]},
+               ~s{div[role="page 4 details"] div[role="due date and score"]},
                "1 / 2"
              )
     end
@@ -1063,7 +1061,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       # expand unit 2/module 3 details
       view
-      |> element(~s{div[role="unit_2"] div[role="card_1"]})
+      |> element(~s{div[role="unit_2"] div[role="card_3"]})
       |> render_click()
 
       assert has_element?(
@@ -1110,10 +1108,9 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       |> element(~s{div[role="unit_1"] div[role="card_1"]})
       |> render_click()
 
-      # pages are numbered starting from 2 since there is an intro video for this module
-      assert has_element?(view, ~s{div[role="page 2 details"] div[role="check icon"]})
-      assert has_element?(view, ~s{div[role="page 3 details"]})
-      refute has_element?(view, ~s{div[role="page 3 details"] div[role="check icon"]})
+      assert has_element?(view, ~s{div[role="page 1 details"] div[role="check icon"]})
+      assert has_element?(view, ~s{div[role="page 2 details"]})
+      refute has_element?(view, ~s{div[role="page 2 details"] div[role="check icon"]})
     end
 
     test "does not see a check icon on visited pages that are not fully completed", %{
@@ -1221,7 +1218,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       # unit 3, practice page 1 card at module level has progress 100%
       assert view
-             |> element(~s{div[role="unit_3"] div[role="card_1_progress"]})
+             |> element(~s{div[role="unit_3"] div[role="card_7_progress"]})
              |> render() =~ "style=\"width: 100%\""
     end
 
@@ -1237,11 +1234,11 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       {:ok, view, _html} = live(conn, Utils.learn_live_path(section.slug))
 
-      assert has_element?(view, ~s{div[role="unit_3"] div[role="card_1"] div[role="page icon"]})
+      assert has_element?(view, ~s{div[role="unit_3"] div[role="card_7"] div[role="page icon"]})
 
       # click on page 7 card to navigate to that page
       view
-      |> element(~s{div[role="unit_3"] div[role="card_1"]})
+      |> element(~s{div[role="unit_3"] div[role="card_7"]})
       |> render_click()
 
       request_path = Utils.learn_live_path(section.slug, target_resource_id: page_7.resource_id)
@@ -1266,12 +1263,12 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       assert has_element?(
                view,
-               ~s{div[role="unit_3"] div[role="card_2"] div[role="graded page icon"]}
+               ~s{div[role="unit_3"] div[role="card_8"] div[role="graded page icon"]}
              )
 
       # click on page 8 card to navigate to that page
       view
-      |> element(~s{div[role="unit_3"] div[role="card_2"]})
+      |> element(~s{div[role="unit_3"] div[role="card_8"]})
       |> render_click()
 
       request_path = Utils.learn_live_path(section.slug, target_resource_id: page_8.resource_id)
@@ -1314,8 +1311,11 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       {:ok, view, _html} = live(conn, Utils.learn_live_path(section.slug))
 
+      # Progress in module 1 (which has page 2)
       assert has_element?(view, ~s{div[role="unit_1"] div[role="card_1_progress"]})
-      assert has_element?(view, ~s{div[role="unit_3"] div[role="card_1_progress"]})
+
+      # Progress in page 7
+      assert has_element?(view, ~s{div[role="unit_3"] div[role="card_7_progress"]})
     end
 
     test "can see card background image if provided (if not the default one is shown)",
@@ -1502,7 +1502,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       )
 
       # The module that contains Page 6 must be expanded so we can see that page
-      assert has_element?(view, ~s{div[id="index_item_2_#{page_6.resource_id}"]}, "Page 6")
+      assert has_element?(view, ~s{div[id="index_item_6_#{page_6.resource_id}"]}, "Page 6")
     end
   end
 end
