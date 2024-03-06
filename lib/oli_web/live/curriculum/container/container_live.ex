@@ -18,7 +18,7 @@ defmodule OliWeb.Curriculum.ContainerLive do
     ActivityDelta,
     DropTarget,
     Entry,
-    OptionsModal,
+    OptionsModalContent,
     DeleteModal,
     NotEmptyModal
   }
@@ -39,6 +39,7 @@ defmodule OliWeb.Curriculum.ContainerLive do
   alias OliWeb.Common.SessionContext
   alias Oli.Resources
   alias Oli.Delivery.Hierarchy.HierarchyNode
+  alias OliWeb.Components.Modal
 
   def mount(
         %{"project_id" => project_slug} = params,
@@ -111,14 +112,21 @@ defmodule OliWeb.Curriculum.ContainerLive do
                project.customizations
              ),
            dragging: nil,
-           page_title: "Curriculum | " <> project.title
+           page_title: "Curriculum | " <> project.title,
+           options_modal_assigns: nil
          )
          |> attach_hook(:has_show_links_uri_hash, :handle_params, fn _params, uri, socket ->
            {:cont,
             assign_new(socket, :has_show_links_uri_hash, fn ->
               String.contains?(uri, "#show_links")
             end)}
-         end)}
+         end)
+         |> allow_upload(:poster_image,
+           accept: ~w(.jpg .jpeg .png),
+           max_entries: 1,
+           auto_upload: true,
+           max_file_size: 5_000_000
+         )}
     end
   end
 
@@ -234,7 +242,7 @@ defmodule OliWeb.Curriculum.ContainerLive do
 
     revision = Enum.find(socket.assigns.children, fn r -> r.slug == slug end)
 
-    modal_assigns = %{
+    options_modal_assigns = %{
       id: "options_#{slug}",
       redirect_url: Routes.container_path(socket, :index, project.slug, container.slug),
       revision: revision,
@@ -242,36 +250,31 @@ defmodule OliWeb.Curriculum.ContainerLive do
       project: project,
       project_hierarchy: project_hierarchy,
       validate: "validate-options",
-      submit: "save-options"
+      submit: "save-options",
+      cancel: Modal.hide_modal("options_modal")
     }
 
-    modal = fn assigns ->
-      ~H"""
-      <OptionsModal.render {@modal_assigns} />
-      """
-    end
-
     {:noreply,
-     show_modal(
-       socket,
-       modal,
-       modal_assigns: modal_assigns
-     )}
+     assign(socket, options_modal_assigns: options_modal_assigns)
+     |> push_event("js-exec", %{
+       to: "#options-modal-assigns-trigger",
+       attr: "data-show_modal"
+     })}
   end
 
   def handle_event("validate-options", %{"revision" => revision_params}, socket) do
-    %{modal_assigns: %{revision: revision} = modal_assigns} = socket.assigns
+    %{options_modal_assigns: %{revision: revision} = modal_assigns} = socket.assigns
 
     changeset =
       revision
       |> Resources.change_revision(revision_params)
       |> Map.put(:action, :validate)
 
-    {:noreply, assign(socket, modal_assigns: %{modal_assigns | changeset: changeset})}
+    {:noreply, assign(socket, options_modal_assigns: %{modal_assigns | changeset: changeset})}
   end
 
   def handle_event("save-options", %{"revision" => revision_params}, socket) do
-    %{modal_assigns: %{redirect_url: redirect_url, project: project, revision: revision}} =
+    %{options_modal_assigns: %{redirect_url: redirect_url, project: project, revision: revision}} =
       socket.assigns
 
     revision_params =
@@ -607,6 +610,29 @@ defmodule OliWeb.Curriculum.ContainerLive do
            %{view: view}
          )
      )}
+  end
+
+  @impl Phoenix.LiveView
+  def handle_event("validate-upload", _params, socket) do
+    {:noreply, socket}
+  end
+
+  @impl Phoenix.LiveView
+  def handle_event("cancel-upload", %{"ref" => ref}, socket) do
+    {:noreply, cancel_upload(socket, :poster_image, ref)}
+  end
+
+  @impl Phoenix.LiveView
+  def handle_event("save-upload", _params, socket) do
+    uploaded_files =
+      consume_uploaded_entries(socket, :poster_image, fn %{path: path}, _entry ->
+        dest = Path.join([:code.priv_dir(:oli), "static", "uploads", Path.basename(path)])
+        IO.inspect(dest, label: "el dest!!")
+        File.cp!(path, dest)
+        {:ok, ~p"/uploads/#{Path.basename(dest)}"}
+      end)
+
+    {:noreply, update(socket, :uploaded_files, &(&1 ++ uploaded_files))}
   end
 
   defp proceed_with_deletion_warning(socket, container, project, author, item) do

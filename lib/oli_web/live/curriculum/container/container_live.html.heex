@@ -1,5 +1,18 @@
 <%= render_modal(assigns) %>
 
+<Modal.modal id="options_modal" class="w-auto min-w-[50%]">
+  <:title>
+    Options (this title should consider both scenarios)
+  </:title>
+  <OptionsModalContent.render
+    :if={@options_modal_assigns}
+    {@options_modal_assigns}
+    uploads={@uploads}
+  />
+  <div id="options-modal-assigns-trigger" data-show_modal={Modal.show_modal("options_modal")}>
+  </div>
+</Modal.modal>
+
 <div id="curriculum-container" class="container mx-auto curriculum-editor">
   <div class="flex justify-between items-center mb-3">
     <p>

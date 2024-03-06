@@ -26,7 +26,8 @@ defmodule OliWeb.Resources.PagesView do
   alias Oli.Delivery.Hierarchy
   alias Oli.Delivery.Hierarchy.HierarchyNode
   alias Oli.Authoring.Course.Project
-  alias OliWeb.Curriculum.OptionsModal
+  alias OliWeb.Curriculum.OptionsModalContent
+  alias OliWeb.Components.Modal
 
   @limit 25
 
@@ -93,7 +94,14 @@ defmodule OliWeb.Resources.PagesView do
           author: author,
           total_count: total_count,
           table_model: table_model,
-          options: @default_options
+          options: @default_options,
+          options_modal_assigns: nil
+        )
+        |> allow_upload(:poster_image,
+          accept: ~w(.jpg .jpeg .png),
+          max_entries: 1,
+          auto_upload: true,
+          max_file_size: 5_000_000
         )
       else
         _ ->
@@ -157,6 +165,20 @@ defmodule OliWeb.Resources.PagesView do
   def render(assigns) do
     ~H"""
     <%= render_modal(assigns) %>
+
+    <Modal.modal id="options_modal" class="w-auto min-w-[50%]">
+      <:title>
+        Options (this title should consider both scenarios)
+      </:title>
+      <OptionsModalContent.render
+        :if={@options_modal_assigns}
+        {@options_modal_assigns}
+        uploads={@uploads}
+      />
+      <div id="options-modal-assigns-trigger" data-show_modal={Modal.show_modal("options_modal")}>
+      </div>
+    </Modal.modal>
+
     <div class="container mx-auto">
       <div class="flex flex-row justify-between">
         <FilterBox.render
@@ -419,7 +441,7 @@ defmodule OliWeb.Resources.PagesView do
 
     revision = Enum.find(socket.assigns.table_model.rows, fn r -> r.slug == slug end)
 
-    modal_assigns = %{
+    options_modal_assigns = %{
       id: "options_#{slug}",
       redirect_url:
         Routes.live_path(
@@ -438,36 +460,31 @@ defmodule OliWeb.Resources.PagesView do
       project: project,
       project_hierarchy: project_hierarchy,
       validate: "validate-options",
-      submit: "save-options"
+      submit: "save-options",
+      cancel: Modal.hide_modal("options_modal")
     }
 
-    modal = fn assigns ->
-      ~H"""
-      <OptionsModal.render {@modal_assigns} />
-      """
-    end
-
     {:noreply,
-     show_modal(
-       socket,
-       modal,
-       modal_assigns: modal_assigns
-     )}
+     assign(socket, options_modal_assigns: options_modal_assigns)
+     |> push_event("js-exec", %{
+       to: "#options-modal-assigns-trigger",
+       attr: "data-show_modal"
+     })}
   end
 
   def handle_event("validate-options", %{"revision" => revision_params}, socket) do
-    %{modal_assigns: %{revision: revision} = modal_assigns} = socket.assigns
+    %{options_modal_assigns: %{revision: revision} = modal_assigns} = socket.assigns
 
     changeset =
       revision
       |> Resources.change_revision(revision_params)
       |> Map.put(:action, :validate)
 
-    {:noreply, assign(socket, modal_assigns: %{modal_assigns | changeset: changeset})}
+    {:noreply, assign(socket, options_modal_assigns: %{modal_assigns | changeset: changeset})}
   end
 
   def handle_event("save-options", %{"revision" => revision_params}, socket) do
-    %{modal_assigns: %{redirect_url: redirect_url, project: project, revision: revision}} =
+    %{options_modal_assigns: %{redirect_url: redirect_url, project: project, revision: revision}} =
       socket.assigns
 
     revision_params =
@@ -492,6 +509,29 @@ defmodule OliWeb.Resources.PagesView do
       {:error, %Ecto.Changeset{} = changeset} ->
         {:noreply, assign(socket, :changeset, changeset)}
     end
+  end
+
+  @impl Phoenix.LiveView
+  def handle_event("validate-upload", _params, socket) do
+    {:noreply, socket}
+  end
+
+  @impl Phoenix.LiveView
+  def handle_event("cancel-upload", %{"ref" => ref}, socket) do
+    {:noreply, cancel_upload(socket, :poster_image, ref)}
+  end
+
+  @impl Phoenix.LiveView
+  def handle_event("save-upload", _params, socket) do
+    uploaded_files =
+      consume_uploaded_entries(socket, :poster_image, fn %{path: path}, _entry ->
+        dest = Path.join([:code.priv_dir(:oli), "static", "uploads", Path.basename(path)])
+        IO.inspect(dest, label: "el dest!!")
+        File.cp!(path, dest)
+        {:ok, ~p"/uploads/#{Path.basename(dest)}"}
+      end)
+
+    {:noreply, update(socket, :uploaded_files, &(&1 ++ uploaded_files))}
   end
 
   def handle_event("show_move_modal", %{"slug" => slug}, socket) do
