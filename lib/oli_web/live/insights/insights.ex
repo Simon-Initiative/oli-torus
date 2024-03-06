@@ -25,25 +25,25 @@ defmodule OliWeb.Insights do
       |> Enum.reduce({[], []}, fn section, {sections, products} ->
         if section.type == :blueprint do
           {sections,
-           products ++
-             [
-               %SelectOption{
-                 id: section.id,
-                 label: section.title,
-                 selected: false,
-                 is_product: true
-               }
-             ]}
+           [
+             %SelectOption{
+               id: section.id,
+               label: section.title,
+               selected: false,
+               is_product: true
+             }
+             | products
+           ]}
         else
-          {sections ++
-             [
-               %SelectOption{
-                 id: section.id,
-                 label: section.title,
-                 selected: false,
-                 is_product: false
-               }
-             ], products}
+          {[
+             %SelectOption{
+               id: section.id,
+               label: section.title,
+               selected: false,
+               is_product: false
+             }
+             | sections
+           ], products}
         end
       end)
 
@@ -65,8 +65,12 @@ defmodule OliWeb.Insights do
 
     {:ok,
      assign(socket,
-       initial_section_options: sections,
-       initial_product_options: products,
+       initial_section_options:
+         MultiSelectOptions.build_changeset(sections)
+         |> to_form(),
+       initial_product_options:
+         MultiSelectOptions.build_changeset(products)
+         |> to_form(),
        ctx: ctx,
        is_admin?: Accounts.is_system_admin?(ctx.author),
        project: project,
@@ -86,8 +90,6 @@ defmodule OliWeb.Insights do
        analytics_export_timestamp: analytics_export_timestamp,
        products: products,
        sections: sections,
-       filtered_sections: sections,
-       filtered_blueprint: products,
        is_product: false,
        form_sections:
          MultiSelectOptions.build_changeset(sections)
@@ -131,7 +133,6 @@ defmodule OliWeb.Insights do
     end
   end
 
-  @spec render(any()) :: Phoenix.LiveView.Rendered.t()
   def render(assigns) do
     ~H"""
     <div class="mb-3">
@@ -534,6 +535,11 @@ defmodule OliWeb.Insights do
     end
   end
 
+  defp generate_uuid do
+    :crypto.strong_rand_bytes(16)
+    |> Base.encode16()
+  end
+
   defp update_section_by_value(value, socket, target_value) do
     case value do
       "true" ->
@@ -545,22 +551,28 @@ defmodule OliWeb.Insights do
             socket.assigns.section_ids
           )
 
-        treget =
-          if socket.assigns.product_ids != [] do
-            Integer.to_string(:rand.uniform(100))
-          else
-            socket.assigns.form_uid
-          end
+        if socket.assigns.section_ids != [] do
+          socket =
+            assign(socket,
+              is_product: false,
+              section_ids: section_ids_updated,
+              form_uid: generate_uuid(),
+              product_ids: [],
+              form_products: socket.assigns.initial_product_options
+            )
 
-        socket =
-          assign(socket,
-            is_product: false,
-            section_ids: section_ids_updated,
-            form_uid: treget
-          )
+          filter_type(socket.assigns.selected)
+          {:noreply, socket}
+        else
+          socket =
+            assign(socket,
+              is_product: false,
+              section_ids: section_ids_updated
+            )
 
-        filter_type(socket.assigns.selected)
-        {:noreply, socket}
+          filter_type(socket.assigns.selected)
+          {:noreply, socket}
+        end
 
       "false" ->
         section_ids_updated =
@@ -571,18 +583,10 @@ defmodule OliWeb.Insights do
             socket.assigns.section_ids
           )
 
-        treget =
-          if socket.assigns.product_ids != [] do
-            Integer.to_string(:rand.uniform(100))
-          else
-            socket.assigns.form_uid
-          end
-
         socket =
           assign(socket,
             is_product: false,
-            section_ids: section_ids_updated,
-            form_uid: treget
+            section_ids: section_ids_updated
           )
 
         filter_type(socket.assigns.selected)
@@ -604,22 +608,28 @@ defmodule OliWeb.Insights do
             socket.assigns.product_ids
           )
 
-        treget =
-          if socket.assigns.section_ids != [] do
-            Integer.to_string(:rand.uniform(100))
-          else
-            socket.assigns.form_uid
-          end
+        if socket.assigns.section_ids != [] do
+          socket =
+            assign(socket,
+              is_product: false,
+              product_ids: product_ids_updated,
+              form_uid: generate_uuid(),
+              section_ids: [],
+              form_sections: socket.assigns.initial_section_options
+            )
 
-        socket =
-          assign(socket,
-            is_product: false,
-            product_ids: product_ids_updated,
-            form_uid: treget
-          )
+          filter_type(socket.assigns.selected)
+          {:noreply, socket}
+        else
+          socket =
+            assign(socket,
+              is_product: false,
+              product_ids: product_ids_updated
+            )
 
-        filter_type(socket.assigns.selected)
-        {:noreply, socket}
+          filter_type(socket.assigns.selected)
+          {:noreply, socket}
+        end
 
       "false" ->
         product_ids_updated =
@@ -630,18 +640,10 @@ defmodule OliWeb.Insights do
             socket.assigns.product_ids
           )
 
-        treget =
-          if socket.assigns.section_ids != [] do
-            Integer.to_string(:rand.uniform(100))
-          else
-            socket.assigns.form_uid
-          end
-
         socket =
           assign(socket,
             is_product: false,
-            product_ids: product_ids_updated,
-            form_uid: treget
+            product_ids: product_ids_updated
           )
 
         filter_type(socket.assigns.selected)
