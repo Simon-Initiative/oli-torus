@@ -5,16 +5,13 @@ defmodule Oli.Analytics.ByActivity do
   alias Oli.Analytics.Common
   alias Oli.Publishing
 
+  def query_against_project_slug(project_slug, []),
+    do: get_base_query(project_slug, []) |> Repo.all()
+
   def query_against_project_slug(project_slug, filtered_sections) do
-    base_query = get_base_query(project_slug, filtered_sections)
-
-    case filtered_sections do
-      [] ->
-        base_query
-
-      _filtered_sections ->
-        get_query_with_join_filter(base_query, filtered_sections)
-    end
+    project_slug
+    |> get_base_query(filtered_sections)
+    |> get_query_with_join_filter(filtered_sections)
     |> Repo.all()
   end
 

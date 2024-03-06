@@ -7,13 +7,15 @@ defmodule Oli.Analytics.ByPage do
   alias Oli.Publishing
   alias Oli.Authoring.Course.Project
 
-  def query_against_project_slug(project_slug, filtered_sections) do
-    base_query = get_base_query(project_slug, get_activity_pages(project_slug), filtered_sections)
+  def query_against_project_slug(project_slug, []),
+    do:
+      get_base_query(project_slug, get_activity_pages(project_slug), [])
+      |> Repo.all()
 
-    case filtered_sections do
-      [] -> base_query
-      _filtered_sections -> get_query_with_join_filter(base_query, filtered_sections)
-    end
+  def query_against_project_slug(project_slug, filtered_sections) do
+    project_slug
+    |> get_base_query(get_activity_pages(project_slug), filtered_sections)
+    |> get_query_with_join_filter(filtered_sections)
     |> Repo.all()
   end
 
