@@ -10,11 +10,19 @@ import { LabActivity, LogicLabModelSchema } from './LogicLabModelSchema';
 const STORE = configureStore();
 
 type LogicLabAuthoringProps = AuthoringElementProps<LogicLabModelSchema>;
+/**
+ * Authoring interface for LogicLab activities.
+ * @component
+ * @param props
+ * @returns
+ */
 const Authoring: React.FC<LogicLabAuthoringProps> = (props: LogicLabAuthoringProps) => {
   const { dispatch, model } = useAuthoringElementContext<LogicLabModelSchema>();
   const [activityId, setActivityId] = useState<string>(props.model.activity);
+  const [servlet, setServlet] = useState<string>(props.model.src);
   useEffect(() => {
-    setActivityId(props.model.activity);
+    setActivityId(model.activity);
+    setServlet(model.src);
   }, [model]);
 
   //const guid = useId(); // Needs react ^18
@@ -31,6 +39,7 @@ const Authoring: React.FC<LogicLabAuthoringProps> = (props: LogicLabAuthoringPro
 
   useEffect(() => {
     const getActivities = async () => {
+      // url should be relative to model.src, but is static for development.
       const response = await fetch('http://localhost:8080/api/v1/activities');
       if (!response.ok) throw new Error(response.statusText);
       const problems = (await response.json()) as LabActivity[];
@@ -46,6 +55,10 @@ const Authoring: React.FC<LogicLabAuthoringProps> = (props: LogicLabAuthoringPro
     <form>
       <h3>LogicLab Activity Selection</h3>
       <div className="form-group">
+        <label>{/* Needed for development, to be removed when servlet is publicly hosted somewhere. */}
+          AProS Servlet url:
+        <input type="text" value={servlet} onChange={(e) => setServlet(e.target.value)} />
+        </label>
         <div className="flex items-baseline gap-2">
           <span>Activity&nbsp;Types:</span>
           <div className="flex items-center">

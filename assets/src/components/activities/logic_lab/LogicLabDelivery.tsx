@@ -151,7 +151,7 @@ const LogicLab: React.FC<LogicLabDeliveryProps> = () => {
     <iframe
       title="LogicLab Activity"
       src={url.toString()}
-      allowFullScreen={true}
+      allow="fullscreen"
       height="800"
       width="100%"
       data-activity-mode={mode}

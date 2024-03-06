@@ -1,8 +1,8 @@
 import { ActivityModelSchema, Feedback, Part, Transformation } from '../types';
 
 export interface LogicLabModelSchema extends ActivityModelSchema {
-  src: string;
-  activity: string; // Have to set at higher level as not all information in authoring.parts (eg) targets, are available in all contexts // TODO extend to string[] to handle multiple activities.
+  src: string; // URL of servlet
+  activity: string; // Have to set at higher level as not all information in authoring.parts (eg) targets, are available in all contexts
   authoring: {
     version: 1;
     parts: Part[]; // required in use
