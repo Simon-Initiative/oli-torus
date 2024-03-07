@@ -30,6 +30,22 @@ defmodule Oli.Utils.S3Storage do
     end
   end
 
+  def list_file_urls(path) do
+    media_url = Application.fetch_env!(:oli, :media_url)
+    bucket_name = Application.fetch_env!(:oli, :s3_media_bucket_name)
+    scheme = Application.fetch_env!(:oli, OliWeb.Endpoint)[:url][:scheme]
+
+    S3.list_objects(bucket_name, prefix: path)
+    |> HTTP.aws().request()
+    |> case do
+      {:ok, %{status_code: 200, body: %{contents: contents}}} ->
+        {:ok, Enum.map(contents, fn obj -> "#{scheme}://#{media_url}/#{obj.key}" end)}
+
+      {_, payload} ->
+        {:error, payload}
+    end
+  end
+
   @doc """
     Uploads a file to S3 given a bucket name, upload path, and current file path
   """

@@ -5,6 +5,7 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
 
   alias Oli.Resources.ScoringStrategy
   alias Oli.Resources.ExplanationStrategy
+  alias Oli.Utils.S3Storage
   alias OliWeb.Components.HierarchySelector
 
   @attempt_options [
@@ -37,6 +38,15 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
      )}
   end
 
+  def update(assigns, socket) do
+    %{revision: %{poster_image: poster_image}} = assigns
+
+    {:ok,
+     socket
+     |> assign(assigns)
+     |> assign(selected_poster_image: poster_image)}
+  end
+
   attr(:redirect_url, :string, required: true)
   attr(:revision, :map, required: true)
   attr(:changeset, :map, required: true)
@@ -52,6 +62,20 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
   def render(%{step: :poster_image_selection} = assigns) do
     ~H"""
     <div>
+      <div id="s3_uploaded_images" class="flex gap-4 flex-wrap">
+        <img
+          :for={url <- @poster_image_urls}
+          src={url}
+          phx-click="select-poster-image"
+          phx-value-url={url}
+          phx-target={@myself}
+          class={[
+            "object-cover h-56 mx-auto rounded-lg cursor-pointer",
+            if(url == @selected_poster_image, do: "border-8 border-blue-400")
+          ]}
+        />
+      </div>
+
       <form
         id="upload-form"
         action="#"
@@ -105,11 +129,23 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
           class="btn btn-secondary"
           phx-click="change_step"
           phx-value-step="general"
+          phx-value-action="cancel"
           phx-target={@myself}
         >
-          Back/Cancel
+          Cancel
         </button>
-        <button type="button" phx-disable-with="Selecting..." class="btn btn-primary">Select</button>
+        <button
+          type="button"
+          phx-disable-with="Selecting..."
+          class="btn btn-primary"
+          phx-click="change_step"
+          phx-value-step="general"
+          phx-value-action="save"
+          phx-target={@myself}
+          disabled={is_nil(@selected_poster_image)}
+        >
+          Select
+        </button>
       </div>
     </div>
     """
@@ -310,10 +346,15 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
 
         <div class="form-group flex flex-col gap-2">
           <label>Poster image</label>
+          <.input
+            type="hidden"
+            name="revision[poster_image]"
+            value={@selected_poster_image || @revision.poster_image}
+          />
           <img
-            :if={@revision.poster_image}
-            src={@revision.poster_image}
-            class="object-cover h-56 mx-auto"
+            :if={@selected_poster_image || @revision.poster_image}
+            src={@selected_poster_image || @revision.poster_image}
+            class="object-cover h-56 mx-auto rounded-lg"
           />
           <button
             type="button"
@@ -335,13 +376,28 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
     """
   end
 
-  # TODO si no hay que hacer algo especial en poster, como generar el uploads, unificar estos dos
   def handle_event("change_step", %{"step" => "poster_image_selection"}, socket) do
-    {:noreply, assign(socket, step: :poster_image_selection)}
+    {:ok, poster_image_urls} = list_poster_image_urls(socket.assigns.project.slug)
+
+    {:noreply,
+     assign(socket, step: :poster_image_selection, poster_image_urls: poster_image_urls)}
   end
 
-  def handle_event("change_step", %{"step" => "general"}, socket) do
+  def handle_event("change_step", %{"step" => "general", "action" => "cancel"}, socket) do
+    {:noreply, assign(socket, step: :general, selected_poster_image: nil)}
+  end
+
+  def handle_event("change_step", %{"step" => "general", "action" => "save"}, socket)
+      when is_nil(socket.assigns.selected_poster_image) do
+    {:noreply, socket}
+  end
+
+  def handle_event("change_step", %{"step" => "general", "action" => "save"}, socket) do
     {:noreply, assign(socket, step: :general)}
+  end
+
+  def handle_event("select-poster-image", %{"url" => url}, socket) do
+    {:noreply, assign(socket, selected_poster_image: url)}
   end
 
   def handle_event("validate-upload", _params, socket) do
@@ -402,4 +458,11 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
   defp error_to_string(:too_large), do: "Too large"
   defp error_to_string(:too_many_files), do: "You have selected too many files"
   defp error_to_string(:not_accepted), do: "You have selected an unacceptable file type"
+
+  defp list_poster_image_urls(project_slug) do
+    poster_images_path(project_slug)
+    |> S3Storage.list_file_urls()
+  end
+
+  defp poster_images_path(project_slug), do: Path.join(["poster_images", project_slug])
 end
