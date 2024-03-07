@@ -222,7 +222,7 @@ const SequenceEditor: React.FC<any> = (props: any) => {
           if (parent) {
             move(itemIndex, itemIndex + 1, parent.children);
           } else {
-            // if there is no parent, move within hierarchy
+            // if there is no parent , move within hierarchy
             move(itemIndex, itemIndex + 1, hierarchyCopy);
           }
         }
