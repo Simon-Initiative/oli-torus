@@ -170,11 +170,21 @@ defmodule OliWeb.Resources.PagesView do
       <:title>
         Options (this title should consider both scenarios)
       </:title>
-      <OptionsModalContent.render
-        :if={@options_modal_assigns}
-        {@options_modal_assigns}
-        uploads={@uploads}
-      />
+
+      <%= if @options_modal_assigns do %>
+        <.live_component
+          module={OptionsModalContent}
+          id="modal_content"
+          redirect_url={@options_modal_assigns.redirect_url}
+          revision={@options_modal_assigns.revision}
+          changeset={@options_modal_assigns.changeset}
+          project={@project}
+          project_hierarchy={@project_hierarchy}
+          validate={JS.push("validate-options")}
+          submit={JS.push("save-options")}
+          cancel={Modal.hide_modal("options_modal")}
+        />
+      <% end %>
       <div id="options-modal-assigns-trigger" data-show_modal={Modal.show_modal("options_modal")}>
       </div>
     </Modal.modal>
@@ -456,12 +466,7 @@ defmodule OliWeb.Resources.PagesView do
           }
         ),
       revision: revision,
-      changeset: Resources.change_revision(revision),
-      project: project,
-      project_hierarchy: project_hierarchy,
-      validate: "validate-options",
-      submit: "save-options",
-      cancel: Modal.hide_modal("options_modal")
+      changeset: Resources.change_revision(revision)
     }
 
     {:noreply,
@@ -484,7 +489,7 @@ defmodule OliWeb.Resources.PagesView do
   end
 
   def handle_event("save-options", %{"revision" => revision_params}, socket) do
-    %{options_modal_assigns: %{redirect_url: redirect_url, project: project, revision: revision}} =
+    %{options_modal_assigns: %{redirect_url: redirect_url, revision: revision}, project: project} =
       socket.assigns
 
     revision_params =

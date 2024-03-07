@@ -120,13 +120,7 @@ defmodule OliWeb.Curriculum.ContainerLive do
             assign_new(socket, :has_show_links_uri_hash, fn ->
               String.contains?(uri, "#show_links")
             end)}
-         end)
-         |> allow_upload(:poster_image,
-           accept: ~w(.jpg .jpeg .png),
-           max_entries: 1,
-           auto_upload: true,
-           max_file_size: 5_000_000
-         )}
+         end)}
     end
   end
 
@@ -246,12 +240,7 @@ defmodule OliWeb.Curriculum.ContainerLive do
       id: "options_#{slug}",
       redirect_url: Routes.container_path(socket, :index, project.slug, container.slug),
       revision: revision,
-      changeset: Resources.change_revision(revision),
-      project: project,
-      project_hierarchy: project_hierarchy,
-      validate: "validate-options",
-      submit: "save-options",
-      cancel: Modal.hide_modal("options_modal")
+      changeset: Resources.change_revision(revision)
     }
 
     {:noreply,
@@ -274,7 +263,7 @@ defmodule OliWeb.Curriculum.ContainerLive do
   end
 
   def handle_event("save-options", %{"revision" => revision_params}, socket) do
-    %{options_modal_assigns: %{redirect_url: redirect_url, project: project, revision: revision}} =
+    %{options_modal_assigns: %{redirect_url: redirect_url, revision: revision}, project: project} =
       socket.assigns
 
     revision_params =
@@ -610,29 +599,6 @@ defmodule OliWeb.Curriculum.ContainerLive do
            %{view: view}
          )
      )}
-  end
-
-  @impl Phoenix.LiveView
-  def handle_event("validate-upload", _params, socket) do
-    {:noreply, socket}
-  end
-
-  @impl Phoenix.LiveView
-  def handle_event("cancel-upload", %{"ref" => ref}, socket) do
-    {:noreply, cancel_upload(socket, :poster_image, ref)}
-  end
-
-  @impl Phoenix.LiveView
-  def handle_event("save-upload", _params, socket) do
-    uploaded_files =
-      consume_uploaded_entries(socket, :poster_image, fn %{path: path}, _entry ->
-        dest = Path.join([:code.priv_dir(:oli), "static", "uploads", Path.basename(path)])
-        IO.inspect(dest, label: "el dest!!")
-        File.cp!(path, dest)
-        {:ok, ~p"/uploads/#{Path.basename(dest)}"}
-      end)
-
-    {:noreply, update(socket, :uploaded_files, &(&1 ++ uploaded_files))}
   end
 
   defp proceed_with_deletion_warning(socket, container, project, author, item) do
