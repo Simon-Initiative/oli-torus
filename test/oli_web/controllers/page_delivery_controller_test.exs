@@ -637,22 +637,6 @@ defmodule OliWeb.PageDeliveryControllerTest do
       assert html_response(conn, 200) =~ "Submit Answers"
     end
 
-    # test "handles student page access by an enrolled student", %{
-    #   conn: conn,
-    #   revision: revision,
-    #   user: user,
-    #   section: section
-    # } do
-    #   enroll_as_student(%{section: section, user: user})
-
-    #   conn =
-    #     conn
-    #     |> get(Routes.page_delivery_path(conn, :page, section.slug, revision.slug))
-
-    #   assert html_response(conn, 200) =~ "Page one"
-    #   assert html_response(conn, 200) =~ section.title
-    # end
-
     test "renders custom license in footer for started page", %{
       conn: conn,
       user: user,
