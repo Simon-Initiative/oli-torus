@@ -318,12 +318,20 @@ $element-margin-bottom: 1.5em;
   .callout-inline,
   .formula-inline {
     display: inline-block;
-    padding: 2px 0.5em;
 
     mjx-container[display='true'] {
       pointer-events: none;
       margin: 0px !important;
     }
+  }
+
+  .formula-inline {
+    /* no padding on left and right, some use to mix symbols with surrounding punctuation */
+    padding: 2px 0em;
+  }
+
+  .callout-inline {
+    padding: 2px 0.5em;
   }
 
   .callout-inline,
