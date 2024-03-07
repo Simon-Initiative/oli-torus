@@ -231,7 +231,7 @@ defmodule OliWeb.Curriculum.ContainerLive do
   end
 
   def handle_event("show_options_modal", %{"slug" => slug}, socket) do
-    %{container: container, project: project, project_hierarchy: project_hierarchy} =
+    %{container: container, project: project} =
       socket.assigns
 
     revision = Enum.find(socket.assigns.children, fn r -> r.slug == slug end)
@@ -249,6 +249,10 @@ defmodule OliWeb.Curriculum.ContainerLive do
        to: "#options-modal-assigns-trigger",
        attr: "data-show_modal"
      })}
+  end
+
+  def handle_event("restart_options_modal", _, socket) do
+    {:noreply, assign(socket, options_modal_assigns: nil)}
   end
 
   def handle_event("validate-options", %{"revision" => revision_params}, socket) do

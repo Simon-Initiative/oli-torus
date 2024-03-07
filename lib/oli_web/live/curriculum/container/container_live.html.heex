@@ -1,6 +1,10 @@
 <%= render_modal(assigns) %>
 
-<Modal.modal id="options_modal" class="w-auto min-w-[50%]">
+<Modal.modal
+  id="options_modal"
+  class="w-auto min-w-[50%]"
+  on_cancel={JS.push("restart_options_modal")}
+>
   <:title>
     Options (this title should consider both scenarios)
   </:title>
@@ -16,7 +20,7 @@
       project_hierarchy={@project_hierarchy}
       validate={JS.push("validate-options")}
       submit={JS.push("save-options")}
-      cancel={Modal.hide_modal("options_modal")}
+      cancel={Modal.hide_modal("options_modal") |> JS.push("restart_options_modal")}
     />
   <% end %>
   <div id="options-modal-assigns-trigger" data-show_modal={Modal.show_modal("options_modal")}>

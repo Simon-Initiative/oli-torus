@@ -166,7 +166,11 @@ defmodule OliWeb.Resources.PagesView do
     ~H"""
     <%= render_modal(assigns) %>
 
-    <Modal.modal id="options_modal" class="w-auto min-w-[50%]">
+    <Modal.modal
+      id="options_modal"
+      class="w-auto min-w-[50%]"
+      on_cancel={JS.push("restart_options_modal")}
+    >
       <:title>
         Options (this title should consider both scenarios)
       </:title>
@@ -182,7 +186,7 @@ defmodule OliWeb.Resources.PagesView do
           project_hierarchy={@project_hierarchy}
           validate={JS.push("validate-options")}
           submit={JS.push("save-options")}
-          cancel={Modal.hide_modal("options_modal")}
+          cancel={Modal.hide_modal("options_modal") |> JS.push("restart_options_modal")}
         />
       <% end %>
       <div id="options-modal-assigns-trigger" data-show_modal={Modal.show_modal("options_modal")}>
@@ -447,8 +451,6 @@ defmodule OliWeb.Resources.PagesView do
   end
 
   def handle_event("show_options_modal", %{"slug" => slug}, socket) do
-    %{project: project, project_hierarchy: project_hierarchy} = socket.assigns
-
     revision = Enum.find(socket.assigns.table_model.rows, fn r -> r.slug == slug end)
 
     options_modal_assigns = %{
@@ -475,6 +477,10 @@ defmodule OliWeb.Resources.PagesView do
        to: "#options-modal-assigns-trigger",
        attr: "data-show_modal"
      })}
+  end
+
+  def handle_event("restart_options_modal", _, socket) do
+    {:noreply, assign(socket, options_modal_assigns: nil)}
   end
 
   def handle_event("validate-options", %{"revision" => revision_params}, socket) do
