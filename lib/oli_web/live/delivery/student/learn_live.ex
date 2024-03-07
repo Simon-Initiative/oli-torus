@@ -153,7 +153,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
 
       %{resource_type_id: resource_type_id, numbering_level: level}
       when resource_type_id == page_resource_type_id and level > 2 ->
-        # the target is a page contained in a module, so we scroll in the Y direction to the unit that is parent of that module,
+        # the target is a page contained in a module or a section, so we scroll in the Y direction to the unit that is parent of that module,
         # and then scroll X in the slider to that module and expand it
 
         module_resource_id =
@@ -354,14 +354,13 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       )
 
     closed_sections =
-      Map.get(socket.assigns.closed_sections_per_module_id, module_resource_id, [])
-
-    closed_sections =
-      if Enum.member?(closed_sections, resource_id) do
-        List.delete(closed_sections, resource_id)
-      else
-        [resource_id | closed_sections]
-      end
+      socket.assigns.closed_sections_per_module_id
+      |> Map.get(module_resource_id, [])
+      |> then(
+        &if Enum.member?(&1, resource_id),
+          do: List.delete(&1, resource_id),
+          else: [resource_id | &1]
+      )
 
     closed_sections_per_module_id =
       Map.put(
@@ -774,6 +773,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         title="Introduction"
         type="intro"
         numbering_index={1}
+        numbering_level={3}
         was_visited={false}
         graded={@module["graded"]}
         duration_minutes={@module["duration_minutes"]}
@@ -798,7 +798,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         numbering_index={child["numbering"]["index"]}
         numbering_level={child["numbering"]["level"]}
         children={child["children"]}
-        was_visited={child["visited"] || false}
+        was_visited={child["visited"]}
         duration_minutes={child["duration_minutes"]}
         graded={child["graded"]}
         revision_slug={child["slug"]}
@@ -902,7 +902,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         numbering_index={child["numbering"]["index"]}
         numbering_level={child["numbering"]["level"]}
         children={child["children"]}
-        was_visited={child["visited"] || false}
+        was_visited={child["visited"]}
         duration_minutes={child["duration_minutes"]}
         graded={child["graded"]}
         revision_slug={child["slug"]}
@@ -1352,12 +1352,19 @@ defmodule OliWeb.Delivery.Student.LearnLive do
      raw_avg_score_per_container_id}
   end
 
-  defp mark_visited_pages(module, visited_pages) do
+  defp mark_visited_pages(container, visited_pages) do
+    page_resource_type_id = Oli.Resources.ResourceType.get_id_by_type("page")
+    container_resource_type_id = Oli.Resources.ResourceType.get_id_by_type("container")
+
     update_in(
-      module,
+      container,
       ["children"],
-      &Enum.map(&1, fn page ->
-        Map.put(page, "visited", Map.get(visited_pages, page["id"], false))
+      &Enum.map(&1, fn
+        %{"resource_type_id" => ^page_resource_type_id} = page ->
+          Map.put(page, "visited", Map.get(visited_pages, page["id"], false))
+
+        %{"resource_type_id" => ^container_resource_type_id} = section ->
+          mark_visited_pages(section, visited_pages)
       end)
     )
   end
