@@ -187,9 +187,8 @@ defmodule OliWeb.Insights do
               id="multi_sections"
               module={MultiSelect}
               options={@sections}
-              initial_values={@initial_section_options}
               form={@form_sections}
-              label="Select a section..."
+              label="Select a section"
               uid={@form_uid}
             />
           </.form>
@@ -199,9 +198,8 @@ defmodule OliWeb.Insights do
               id="multi_products"
               module={MultiSelect}
               options={@products}
-              initial_values={@initial_product_options}
               form={@form_products}
-              label="Select a product..."
+              label="Select a product"
               uid={@form_uid}
             />
           </.form>
@@ -536,122 +534,121 @@ defmodule OliWeb.Insights do
   end
 
   defp generate_uuid do
+    #
     :crypto.strong_rand_bytes(16)
     |> Base.encode16()
   end
 
-  defp update_section_by_value(value, socket, target_value) do
-    case value do
-      "true" ->
-        section_ids_updated =
-          update_section_ids(
-            :add,
-            socket.assigns.sections,
-            target_value,
-            socket.assigns.section_ids
-          )
+  defp update_section_by_value("true", socket, target_value) do
+    section_ids_updated =
+      update_section_ids(
+        :add,
+        socket.assigns.sections,
+        target_value,
+        socket.assigns.section_ids
+      )
 
-        if socket.assigns.section_ids != [] do
-          socket =
-            assign(socket,
-              is_product: false,
-              section_ids: section_ids_updated,
-              form_uid: generate_uuid(),
-              product_ids: [],
-              form_products: socket.assigns.initial_product_options
-            )
-
-          filter_type(socket.assigns.selected)
-          {:noreply, socket}
-        else
-          socket =
-            assign(socket,
-              is_product: false,
-              section_ids: section_ids_updated
-            )
-
-          filter_type(socket.assigns.selected)
-          {:noreply, socket}
-        end
-
-      "false" ->
-        section_ids_updated =
-          update_section_ids(
-            :delete,
-            socket.assigns.sections,
-            target_value,
-            socket.assigns.section_ids
-          )
-
-        socket =
-          assign(socket,
-            is_product: false,
-            section_ids: section_ids_updated
-          )
-
-        filter_type(socket.assigns.selected)
-        {:noreply, socket}
-
-      _ ->
-        {:noreply, socket}
-    end
+    reset_form_section_values(socket.assigns.product_ids, section_ids_updated, socket)
   end
 
-  defp update_product_by_value(value, socket, target_value) do
-    case value do
-      "true" ->
-        product_ids_updated =
-          update_section_ids(
-            :add,
-            socket.assigns.products,
-            target_value,
-            socket.assigns.product_ids
-          )
+  defp update_section_by_value("false", socket, target_value) do
+    section_ids_updated =
+      update_section_ids(
+        :delete,
+        socket.assigns.sections,
+        target_value,
+        socket.assigns.section_ids
+      )
 
-        if socket.assigns.section_ids != [] do
-          socket =
-            assign(socket,
-              is_product: false,
-              product_ids: product_ids_updated,
-              form_uid: generate_uuid(),
-              section_ids: [],
-              form_sections: socket.assigns.initial_section_options
-            )
+    socket =
+      assign(socket,
+        is_product: false,
+        section_ids: section_ids_updated
+      )
 
-          filter_type(socket.assigns.selected)
-          {:noreply, socket}
-        else
-          socket =
-            assign(socket,
-              is_product: false,
-              product_ids: product_ids_updated
-            )
+    filter_type(socket.assigns.selected)
+    {:noreply, socket}
+  end
 
-          filter_type(socket.assigns.selected)
-          {:noreply, socket}
-        end
+  defp reset_form_section_values([], section_ids_updated, socket) do
+    socket =
+      assign(socket,
+        is_product: false,
+        section_ids: section_ids_updated
+      )
 
-      "false" ->
-        product_ids_updated =
-          update_section_ids(
-            :delete,
-            socket.assigns.products,
-            target_value,
-            socket.assigns.product_ids
-          )
+    filter_type(socket.assigns.selected)
+    {:noreply, socket}
+  end
 
-        socket =
-          assign(socket,
-            is_product: false,
-            product_ids: product_ids_updated
-          )
+  defp reset_form_section_values(_section_ids, section_ids_updated, socket) do
+    socket =
+      assign(socket,
+        is_product: false,
+        section_ids: section_ids_updated,
+        form_uid: generate_uuid(),
+        product_ids: [],
+        form_products: socket.assigns.initial_product_options
+      )
 
-        filter_type(socket.assigns.selected)
-        {:noreply, socket}
+    filter_type(socket.assigns.selected)
+    {:noreply, socket}
+  end
 
-      _ ->
-        {:noreply, socket}
-    end
+  defp update_product_by_value("true", socket, target_value) do
+    product_ids_updated =
+      update_section_ids(
+        :add,
+        socket.assigns.products,
+        target_value,
+        socket.assigns.product_ids
+      )
+
+    reset_form_products(socket.assigns.section_ids, product_ids_updated, socket)
+  end
+
+  defp update_product_by_value("false", socket, target_value) do
+    product_ids_updated =
+      update_section_ids(
+        :delete,
+        socket.assigns.products,
+        target_value,
+        socket.assigns.product_ids
+      )
+
+    socket =
+      assign(socket,
+        is_product: false,
+        product_ids: product_ids_updated
+      )
+
+    filter_type(socket.assigns.selected)
+    {:noreply, socket}
+  end
+
+  defp reset_form_products([], product_ids_updated, socket) do
+    socket =
+      assign(socket,
+        is_product: false,
+        product_ids: product_ids_updated
+      )
+
+    filter_type(socket.assigns.selected)
+    {:noreply, socket}
+  end
+
+  defp reset_form_products(_section_ids, product_ids_updated, socket) do
+    socket =
+      assign(socket,
+        is_product: false,
+        product_ids: product_ids_updated,
+        form_uid: generate_uuid(),
+        section_ids: [],
+        form_sections: socket.assigns.initial_section_options
+      )
+
+    filter_type(socket.assigns.selected)
+    {:noreply, socket}
   end
 
   defp filter_type(selected) do

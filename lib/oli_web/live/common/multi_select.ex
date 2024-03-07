@@ -6,7 +6,6 @@ defmodule OliWeb.Common.MultiSelect do
     %{
       options: options,
       uid: uid,
-      initial_values: initial_values,
       form: form,
       id: id,
       label: label
@@ -22,7 +21,6 @@ defmodule OliWeb.Common.MultiSelect do
       |> assign(:label, label)
       |> assign(:disabled, options == [])
       |> assign(:options, options)
-      |> assign(initial_values: initial_values)
       |> assign(uid: uid)
 
     {:ok, socket}
