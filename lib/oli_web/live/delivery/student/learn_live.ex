@@ -49,7 +49,8 @@ defmodule OliWeb.Delivery.Student.LearnLive do
             section.slug,
             socket.assigns.current_user.id
           ),
-        assistant_enabled: Sections.assistant_enabled?(section)
+        assistant_enabled: Sections.assistant_enabled?(section),
+        closed_sections_per_module_id: %{}
       )
       |> slim_assigns()
 
@@ -78,7 +79,10 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     page_resource_type_id = Oli.Resources.ResourceType.get_id_by_type("page")
     full_hierarchy = get_or_compute_full_hierarchy(socket.assigns.section)
 
-    case Sections.get_section_resource_with_resource_type(socket.assigns.section.id, resource_id) do
+    case Sections.get_section_resource_with_resource_type(
+           socket.assigns.section.slug,
+           resource_id
+         ) do
       %{resource_type_id: resource_type_id, numbering_level: 1}
       when resource_type_id == container_resource_type_id ->
         # the target is a unit, so we sroll in the Y direction to it
@@ -147,18 +151,17 @@ defmodule OliWeb.Delivery.Student.LearnLive do
            pulse_delay: 500
          })}
 
-      %{resource_type_id: resource_type_id, numbering_level: 3}
-      when resource_type_id == page_resource_type_id ->
+      %{resource_type_id: resource_type_id, numbering_level: level}
+      when resource_type_id == page_resource_type_id and level > 2 ->
         # the target is a page contained in a module, so we scroll in the Y direction to the unit that is parent of that module,
         # and then scroll X in the slider to that module and expand it
 
         module_resource_id =
-          Oli.Delivery.Hierarchy.find_parent_in_hierarchy(
+          find_module_ancestor(
             full_hierarchy,
-            fn node ->
-              node["resource_id"] == String.to_integer(resource_id)
-            end
-          )["resource_id"]
+            String.to_integer(resource_id),
+            container_resource_type_id
+          )
 
         unit_resource_id =
           Oli.Delivery.Hierarchy.find_parent_in_hierarchy(
@@ -335,6 +338,44 @@ defmodule OliWeb.Delivery.Student.LearnLive do
      push_redirect(socket, to: resource_url(resource_slug, section_slug, resource_id, purpose))}
   end
 
+  def handle_event(
+        "expand_section",
+        %{"resource_id" => resource_id, "module_resource_id" => module_resource_id},
+        socket
+      ) do
+    full_hierarchy = get_or_compute_full_hierarchy(socket.assigns.section)
+    resource_id = String.to_integer(resource_id)
+    module_resource_id = String.to_integer(module_resource_id)
+
+    selected_unit =
+      Oli.Delivery.Hierarchy.find_parent_in_hierarchy(
+        full_hierarchy,
+        &(&1["resource_id"] == module_resource_id)
+      )
+
+    closed_sections =
+      Map.get(socket.assigns.closed_sections_per_module_id, module_resource_id, [])
+
+    closed_sections =
+      if Enum.member?(closed_sections, resource_id) do
+        List.delete(closed_sections, resource_id)
+      else
+        [resource_id | closed_sections]
+      end
+
+    closed_sections_per_module_id =
+      Map.put(
+        socket.assigns.closed_sections_per_module_id,
+        module_resource_id,
+        closed_sections
+      )
+
+    {:noreply,
+     socket
+     |> assign(closed_sections_per_module_id: closed_sections_per_module_id)
+     |> update(:units, fn units -> [selected_unit | units] end)}
+  end
+
   def handle_info(:gc, socket) do
     :erlang.garbage_collect(socket.transport_pid)
     :erlang.garbage_collect(self())
@@ -416,6 +457,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
             )
           }
           assistant_enabled={@assistant_enabled}
+          closed_sections_per_module_id={@closed_sections_per_module_id}
         />
       </div>
     </div>
@@ -432,6 +474,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   attr :viewed_intro_video_resource_ids, :list
   attr :unit_raw_avg_score, :map
   attr :assistant_enabled, :boolean, required: true
+  attr :closed_sections_per_module_id, :map
 
   def unit(assigns) do
     ~H"""
@@ -609,6 +652,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
               intro_video_viewed={
                 Map.get(@selected_module_per_unit_resource_id, @unit["resource_id"])["resource_id"] in @viewed_intro_video_resource_ids
               }
+              closed_sections_per_module_id={@closed_sections_per_module_id}
             />
           </div>
         </div>
@@ -641,6 +685,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   attr :student_id, :integer
   attr :intro_video_viewed, :boolean
   attr :student_progress_per_resource_id, :map
+  attr :closed_sections_per_module_id, :map
 
   def module_index(assigns) do
     ~H"""
@@ -778,6 +823,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         progress={Map.get(@student_progress_per_resource_id, child["resource_id"])}
         student_progress_per_resource_id={@student_progress_per_resource_id}
         purpose={child["purpose"]}
+        closed_sections={Map.get(@closed_sections_per_module_id, @module["resource_id"], [])}
       />
     </div>
     """
@@ -802,8 +848,8 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   attr :video_url, :string, default: nil
   attr :progress, :float
   attr :purpose, :string
+  attr :closed_sections, :list, default: []
 
-  # ml-[#{left_indentation(@numbering_level)}px]
   def index_item(%{type: "section"} = assigns) do
     ~H"""
     <div
@@ -815,14 +861,20 @@ defmodule OliWeb.Delivery.Student.LearnLive do
 
       <div
         id={"index_item_#{@numbering_index}_#{@resource_id}"}
-        phx-click="expand_section"
-        phx-value-slug={@revision_slug}
+        phx-click={
+          JS.toggle(
+            to: "#section_group_#{@resource_id}",
+            out: {"fade-out duration-300", "opacity-100", "opacity-0"},
+            in: {"fade-in duration-300", "opacity-0", "opacity-100"},
+            display: "flex"
+          )
+          |> JS.push("expand_section")
+        }
         phx-value-resource_id={@resource_id}
+        phx-value-module_resource_id={@module_resource_id}
         class="flex shrink items-center gap-3 w-full px-2 dark:text-white cursor-pointer hover:bg-gray-200/70 dark:hover:bg-gray-800"
       >
-        <span class="text-[12px] leading-[16px] font-bold w-[30px] shrink-0 opacity-40 dark:text-white">
-          <%= " " %>
-        </span>
+        <span class="text-[12px] leading-[16px] font-bold w-[30px] shrink-0 opacity-40 dark:text-white" />
         <div class="flex flex-col gap-1 w-full">
           <div class={["flex", left_indentation(@numbering_level)]}>
             <span class="text-[16px] leading-[22px] pr-2 font-bold dark:text-white">
@@ -832,7 +884,13 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         </div>
       </div>
     </div>
-    <div class="flex relative flex-col items-center gap-3 w-full">
+    <div
+      id={"section_group_#{@resource_id}"}
+      class={[
+        "flex relative flex-col items-center gap-3 w-full",
+        maybe_hidden_section(@closed_sections, @resource_id)
+      ]}
+    >
       <.index_item
         :for={child <- @children}
         title={child["title"]}
@@ -868,6 +926,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         progress={Map.get(@student_progress_per_resource_id, child["resource_id"])}
         student_progress_per_resource_id={@student_progress_per_resource_id}
         purpose={child["purpose"]}
+        closed_sections={@closed_sections}
       />
     </div>
     """
@@ -1565,8 +1624,28 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       5 -> "ml-[60px]"
       6 -> "ml-[90px]"
       7 -> "ml-[120px]"
-      8 -> "ml-[150px]"
+      level when level >= 8 -> "ml-[150px]"
       _ -> "ml-0"
     end
+  end
+
+  defp find_module_ancestor(_, nil, _), do: nil
+
+  defp find_module_ancestor(hierarchy, resource_id, container_resource_type_id) do
+    case Oli.Delivery.Hierarchy.find_parent_in_hierarchy(
+           hierarchy,
+           &(&1["resource_id"] == resource_id)
+         ) do
+      %{"resource_type_id" => ^container_resource_type_id, "numbering" => %{"level" => 2}} =
+          module ->
+        module["resource_id"]
+
+      parent ->
+        find_module_ancestor(hierarchy, parent["resource_id"], container_resource_type_id)
+    end
+  end
+
+  defp maybe_hidden_section(closed_sections, resource_id) do
+    if Enum.member?(closed_sections, resource_id), do: "hidden", else: ""
   end
 end
