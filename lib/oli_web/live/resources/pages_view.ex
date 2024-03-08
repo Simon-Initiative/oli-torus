@@ -97,12 +97,6 @@ defmodule OliWeb.Resources.PagesView do
           options: @default_options,
           options_modal_assigns: nil
         )
-        |> allow_upload(:poster_image,
-          accept: ~w(.jpg .jpeg .png),
-          max_entries: 1,
-          auto_upload: true,
-          max_file_size: 5_000_000
-        )
       else
         _ ->
           socket
@@ -521,29 +515,6 @@ defmodule OliWeb.Resources.PagesView do
       {:error, %Ecto.Changeset{} = changeset} ->
         {:noreply, assign(socket, :changeset, changeset)}
     end
-  end
-
-  @impl Phoenix.LiveView
-  def handle_event("validate-upload", _params, socket) do
-    {:noreply, socket}
-  end
-
-  @impl Phoenix.LiveView
-  def handle_event("cancel-upload", %{"ref" => ref}, socket) do
-    {:noreply, cancel_upload(socket, :poster_image, ref)}
-  end
-
-  @impl Phoenix.LiveView
-  def handle_event("save-upload", _params, socket) do
-    uploaded_files =
-      consume_uploaded_entries(socket, :poster_image, fn %{path: path}, _entry ->
-        dest = Path.join([:code.priv_dir(:oli), "static", "uploads", Path.basename(path)])
-        IO.inspect(dest, label: "el dest!!")
-        File.cp!(path, dest)
-        {:ok, ~p"/uploads/#{Path.basename(dest)}"}
-      end)
-
-    {:noreply, update(socket, :uploaded_files, &(&1 ++ uploaded_files))}
   end
 
   def handle_event("show_move_modal", %{"slug" => slug}, socket) do
