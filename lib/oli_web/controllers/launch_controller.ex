@@ -17,10 +17,7 @@ defmodule OliWeb.LaunchController do
 
     case section do
       %Section{open_and_free: true, requires_enrollment: false} ->
-        params = %{
-          auto_enroll_as_guest:
-            if(is_nil(current_user) || current_user.guest, do: true, else: false)
-        }
+        params = %{auto_enroll_as_guest: is_nil(current_user) || current_user.guest}
 
         conn
         |> redirect(to: ~p"/sections/#{section_slug}/enroll?#{params}")
