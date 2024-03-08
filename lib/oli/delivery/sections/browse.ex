@@ -98,9 +98,19 @@ defmodule Oli.Delivery.Sections.Browse do
         },
         group_by: [e.section_id]
 
+    student_enrollments =
+      from e in Enrollment,
+        join: u in User,
+        on: e.user_id == u.id,
+        where: u.can_create_sections == false,
+        select: %{
+          id: e.id,
+          section_id: e.section_id
+        }
+
     query =
       Section
-      |> join(:left, [s], e in Enrollment, on: s.id == e.section_id)
+      |> join(:left, [s], e in subquery(student_enrollments), on: s.id == e.section_id)
       |> join(:left, [s, _], i in Oli.Institutions.Institution, on: s.institution_id == i.id)
       |> join(:left, [s, _], proj in Oli.Authoring.Course.Project,
         on: s.base_project_id == proj.id
