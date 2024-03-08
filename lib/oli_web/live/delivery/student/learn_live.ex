@@ -857,7 +857,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       class="flex items-center gap-[14px] pr-[10px] w-full"
       id={"index_item_#{@resource_id}"}
     >
-      <div role="no icon" class="flex justify-center items-center h-7 w-7 shrink-0"></div>
+      <.no_icon />
 
       <div
         id={"index_item_#{@numbering_index}_#{@resource_id}"}
@@ -874,7 +874,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         phx-value-module_resource_id={@module_resource_id}
         class="flex shrink items-center gap-3 w-full px-2 dark:text-white cursor-pointer hover:bg-gray-200/70 dark:hover:bg-gray-800"
       >
-        <span class="text-[12px] leading-[16px] font-bold w-[30px] shrink-0 opacity-40 dark:text-white" />
+        <.numbering_index type={@type} index={@numbering_index} />
         <div class="flex flex-col gap-1 w-full">
           <div class={["flex", left_indentation(@numbering_level)]}>
             <span class="text-[16px] leading-[22px] pr-2 font-bold dark:text-white">
@@ -958,9 +958,8 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         phx-value-purpose={@purpose}
         class="flex shrink items-center gap-3 w-full px-2 dark:text-white cursor-pointer hover:bg-gray-200/70 dark:hover:bg-gray-800"
       >
-        <span class="text-[12px] leading-[16px] font-bold w-[30px] shrink-0 opacity-40 dark:text-white">
-          <%= if @type != "intro", do: "#{@numbering_index}", else: " " %>
-        </span>
+        <.numbering_index type={@type} index={@numbering_index} />
+
         <div class="flex flex-col gap-1 w-full">
           <div class={["flex", left_indentation(@numbering_level)]}>
             <span class={[
@@ -1023,7 +1022,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       {false, "page", false, _} ->
         # not visited practice page
         ~H"""
-        <div role="no icon" class="flex justify-center items-center h-7 w-7 shrink-0"></div>
+        <.no_icon />
         """
 
       {true, "page", true, raw_avg_score} when not is_nil(raw_avg_score) ->
@@ -1283,6 +1282,23 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         <source src="" type="video/mp4" /> Your browser does not support the video tag.
       </video>
     </div>
+    """
+  end
+
+  attr :type, :string
+  attr :index, :string
+
+  defp numbering_index(assigns) do
+    ~H"""
+    <span class="text-[12px] leading-[16px] font-bold w-[30px] shrink-0 opacity-40 dark:text-white">
+      <%= if @type == "page", do: "#{@index}", else: " " %>
+    </span>
+    """
+  end
+
+  defp no_icon(assigns) do
+    ~H"""
+    <div role="no icon" class="flex justify-center items-center h-7 w-7 shrink-0"></div>
     """
   end
 
