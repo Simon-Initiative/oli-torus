@@ -203,6 +203,7 @@ defmodule Oli.Publishing.DeliveryResolver do
   @doc """
   Returns the first page slug for a given section
   """
+  @spec get_first_page_slug(String.t()) :: String.t()
   def get_first_page_slug(section_slug) do
     page_id = Oli.Resources.ResourceType.id_for_page()
 
