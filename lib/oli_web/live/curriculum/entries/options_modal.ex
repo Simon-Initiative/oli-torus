@@ -26,15 +26,18 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
     Unlimited: 0
   ]
 
+  @max_file_size 5_000_000
+
   def mount(socket) do
     {:ok,
      socket
      |> assign(step: :general)
+     |> assign(max_size: trunc(@max_file_size / 1_000_000))
      |> allow_upload(:poster_image,
        accept: ~w(.jpg .jpeg .png),
        max_entries: 1,
        auto_upload: true,
-       max_file_size: 5_000_000
+       max_file_size: @max_file_size
      )}
   end
 
@@ -62,7 +65,47 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
   def render(%{step: :poster_image_selection} = assigns) do
     ~H"""
     <div>
-      <div id="s3_uploaded_images" class="flex gap-4 flex-wrap">
+      <h2 class="text-lg mb-6">
+        Select a poster image or
+        <a href="#" phx-click={JS.dispatch("click", to: "##{@uploads.poster_image.ref}")}>
+          upload a new one
+        </a>
+        <span class="text-xs text-gray-500">(max size: <%= @max_size %> MB)</span>
+      </h2>
+      <div
+        id="s3_uploaded_images"
+        class="grid grid-cols-4 gap-4 gap-y-10 p-6 max-h-[75vh] overflow-y-scroll"
+        phx-drop-target={@uploads.poster_image.ref}
+      >
+        <article
+          :for={entry <- @uploads.poster_image.entries}
+          :if={entry.valid?}
+          class="relative hover:scale-[1.02]"
+        >
+          <figure>
+            <.live_img_preview
+              entry={entry}
+              class={[
+                "object-cover w-56 mx-auto rounded-lg cursor-pointer outline outline-1 outline-gray-200 shadow-lg",
+                if(@selected_poster_image == "uploaded_one", do: "!outline-[7px] outline-blue-400")
+              ]}
+              phx-click="select-poster-image"
+              phx-value-url="uploaded_one"
+              phx-target={@myself}
+            />
+          </figure>
+
+          <button
+            type="button"
+            phx-click="cancel-upload"
+            phx-value-ref={entry.ref}
+            aria-label="cancel"
+            class="absolute flex justify-center items-center h-6 w-6 -top-3 -left-3 p-2 bg-gray-300 rounded-full shadow-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-opacity-50"
+            phx-target={@myself}
+          >
+            <span>&times;</span>
+          </button>
+        </article>
         <img
           :for={url <- @poster_image_urls}
           src={url}
@@ -70,60 +113,34 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
           phx-value-url={url}
           phx-target={@myself}
           class={[
-            "object-cover h-56 mx-auto rounded-lg cursor-pointer",
-            if(url == @selected_poster_image, do: "border-8 border-blue-400")
+            "object-cover w-56 mx-auto rounded-lg cursor-pointer outline outline-1 outline-gray-200 shadow-lg hover:scale-[1.02]",
+            if(url == @selected_poster_image, do: "!outline-[7px] outline-blue-400")
           ]}
         />
       </div>
 
-      <form
-        id="upload-form"
-        action="#"
-        phx-submit="save-upload"
-        phx-change="validate-upload"
-        phx-target={@myself}
-      >
-        <.live_file_input upload={@uploads.poster_image} />
-        <%!-- use phx-drop-target with the upload ref to enable file drag and drop --%>
-        <section phx-drop-target={@uploads.poster_image.ref}>
-          <%!-- render each poster_image entry --%>
-          <%= for entry <- @uploads.poster_image.entries do %>
-            <article class="upload-entry">
-              <figure>
-                <.live_img_preview entry={entry} />
-                <figcaption><%= entry.client_name %></figcaption>
-              </figure>
-
-              <%!-- entry.progress will update automatically for in-flight entries --%>
-              <progress value={entry.progress} max="100"><%= entry.progress %>%</progress>
-
-              <%!-- a regular click event whose handler will invoke Phoenix.LiveView.cancel_upload/3 --%>
-              <button
-                type="button"
-                phx-click="cancel-upload"
-                phx-value-ref={entry.ref}
-                aria-label="cancel"
-                phx-target={@myself}
-              >
-                &times;
-              </button>
-
-              <%!-- Phoenix.Component.upload_errors/2 returns a list of error atoms --%>
+      <div class="modal-footer">
+        <form
+          id="upload-form"
+          action="#"
+          phx-submit="save-upload"
+          phx-change="validate-upload"
+          phx-target={@myself}
+        >
+          <div class="hidden">
+            <.live_file_input upload={@uploads.poster_image} />
+          </div>
+          <div :if={@selected_poster_image == "uploaded_one"}>
+            <%= for entry <- @uploads.poster_image.entries do %>
+              <progress :if={entry.valid? and entry.progress != 100} value={entry.progress} max="100">
+                <%= entry.progress %>%
+              </progress>
               <%= for err <- upload_errors(@uploads.poster_image, entry) do %>
                 <p class="alert alert-danger"><%= error_to_string(err) %></p>
               <% end %>
-            </article>
-          <% end %>
-
-          <%!-- Phoenix.Component.upload_errors/1 returns a list of error atoms --%>
-          <%= for err <- upload_errors(@uploads.poster_image) do %>
-            <p class="alert alert-danger"><%= error_to_string(err) %></p>
-          <% end %>
-        </section>
-        <button type="submit">Upload</button>
-      </form>
-
-      <div class="modal-footer">
+            <% end %>
+          </div>
+        </form>
         <button
           type="button"
           class="btn btn-secondary"
@@ -142,7 +159,9 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
           phx-value-step="general"
           phx-value-action="save"
           phx-target={@myself}
-          disabled={is_nil(@selected_poster_image)}
+          disabled={
+            !can_submit_poster_selection?(@selected_poster_image, @uploads.poster_image.entries)
+          }
         >
           Select
         </button>
@@ -401,11 +420,11 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
   end
 
   def handle_event("validate-upload", _params, socket) do
-    {:noreply, socket}
+    {:noreply, assign(socket, selected_poster_image: "uploaded_one")}
   end
 
   def handle_event("cancel-upload", %{"ref" => ref}, socket) do
-    {:noreply, cancel_upload(socket, :poster_image, ref)}
+    {:noreply, cancel_upload(socket, :poster_image, ref) |> assign(selected_poster_image: nil)}
   end
 
   def handle_event("save-upload", _params, socket) do
@@ -455,7 +474,25 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
     |> Enum.concat([{name, id}])
   end
 
-  defp error_to_string(:too_large), do: "Too large"
+  defp can_submit_poster_selection?(nil, _uploaded_entries), do: false
+
+  defp can_submit_poster_selection?(selected_poster_image, _uploaded_entries)
+       when selected_poster_image != "uploaded_one",
+       do: true
+
+  defp can_submit_poster_selection?(
+         "uploaded_one",
+         [%{progress: 100, valid?: true} | _other_entries] = _uploaded_entries
+       ),
+       do: true
+
+  defp can_submit_poster_selection?(
+         "uploaded_one",
+         _uploaded_entries
+       ),
+       do: false
+
+  defp error_to_string(:too_large), do: "The uploaded image is too large"
   defp error_to_string(:too_many_files), do: "You have selected too many files"
   defp error_to_string(:not_accepted), do: "You have selected an unacceptable file type"
 

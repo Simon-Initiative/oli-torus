@@ -169,6 +169,7 @@ defmodule OliWeb.Resources.PagesView do
     <Modal.modal
       id="options_modal"
       class="w-auto min-w-[50%]"
+      body_class="px-6"
       on_cancel={JS.push("restart_options_modal")}
     >
       <:title>
