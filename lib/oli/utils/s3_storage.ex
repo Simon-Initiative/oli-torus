@@ -56,8 +56,9 @@ defmodule Oli.Utils.S3Storage do
 
   def upload_file(bucket_name, upload_path, file_path) do
     media_url = Application.fetch_env!(:oli, :media_url)
+    scheme = Application.fetch_env!(:oli, OliWeb.Endpoint)[:url][:scheme]
 
-    full_upload_path = "https://#{media_url}/#{upload_path}"
+    full_upload_path = "#{scheme}://#{media_url}/#{upload_path}"
 
     contents = File.read!(file_path)
 
