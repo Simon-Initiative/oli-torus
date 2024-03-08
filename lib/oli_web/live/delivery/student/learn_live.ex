@@ -407,7 +407,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     <div id="student_learn" class="lg:container lg:mx-auto p-[25px]" phx-hook="Scroller">
       <.video_player />
       <div id="all_units" phx-update="append">
-        <.unit
+        <.row
           :for={unit <- @units}
           unit={unit}
           ctx={@ctx}
@@ -448,7 +448,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   attr :assistant_enabled, :boolean, required: true
 
   # top level page as a card with title and header
-  def unit(%{unit: %{"resource_type_id" => 1}} = assigns) do
+  def row(%{unit: %{"resource_type_id" => 1}} = assigns) do
     ~H"""
     <div id={"top_level_page_#{@unit["resource_id"]}"}>
       <div class="md:p-[25px] md:pl-[50px]" role={"top_level_page_#{@unit["numbering"]["index"]}"}>
@@ -502,7 +502,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
           </div>
         </div>
         <div class="w-[288px]">
-          <.module_card
+          <.card
             module={@unit}
             module_index={1}
             unit_resource_id={@unit["resource_id"]}
@@ -521,7 +521,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     """
   end
 
-  def unit(assigns) do
+  def row(assigns) do
     ~H"""
     <div id={"unit_#{@unit["resource_id"]}"}>
       <div class="md:p-[25px] md:pl-[50px]" role={"unit_#{@unit["numbering"]["index"]}"}>
@@ -602,7 +602,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
               resource_id={@unit["resource_id"]}
               intro_video_viewed={@unit["resource_id"] in @viewed_intro_video_resource_ids}
             />
-            <.module_card
+            <.card
               :for={{module, module_index} <- Enum.with_index(@unit["children"], 1)}
               module={module}
               module_index={module_index}
@@ -1102,7 +1102,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   attr :purpose, :string
   attr :default_image, :string, default: @default_image
 
-  def module_card(assigns) do
+  def card(assigns) do
     ~H"""
     <div
       id={
