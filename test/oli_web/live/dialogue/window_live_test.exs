@@ -84,7 +84,8 @@ defmodule OliWeb.Dialogue.WindowLiveTest do
     section =
       insert(:section,
         base_project: project,
-        analytics_version: :v2
+        analytics_version: :v2,
+        assistant_enabled: true
       )
 
     {:ok, section} = Sections.create_section_resources(section, publication)
