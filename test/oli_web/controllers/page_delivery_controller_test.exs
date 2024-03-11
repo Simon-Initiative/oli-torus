@@ -664,7 +664,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
              |> Floki.text() =~ "This is a custom license"
     end
 
-    test "renders none license in footer for started page", %{
+    test "renders :none license case in footer for started page", %{
       conn: conn,
       user: user,
       section: section,
