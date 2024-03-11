@@ -23,9 +23,23 @@ defmodule Oli.Delivery.Analytics.AnalyticsTest do
     {:ok,
      %{
        seeds: seeds,
-       activity_query: ByActivity.query_against_project_slug(seeds.project.slug),
-       objective_query: ByObjective.query_against_project_slug(seeds.project.slug),
-       page_query: ByPage.query_against_project_slug(seeds.project.slug)
+       activity_query: ByActivity.query_against_project_slug(seeds.project.slug, []),
+       objective_query: ByObjective.query_against_project_slug(seeds.project.slug, []),
+       page_query:
+         ByPage.query_against_project_slug(
+           seeds.project.slug,
+           []
+         ),
+       page_with_sections_query:
+         ByPage.query_against_project_slug(
+           seeds.project.slug,
+           [seeds[:section].id]
+         ),
+       activity_with_sections_query:
+         ByPage.query_against_project_slug(
+           seeds.project.slug,
+           [seeds[:section].id]
+         )
      }}
   end
 
@@ -309,7 +323,7 @@ defmodule Oli.Delivery.Analytics.AnalyticsTest do
       end
 
       # 2 objectives with no analytics
-      obj_insights = ByObjective.query_against_project_slug(duplicated.slug)
+      obj_insights = ByObjective.query_against_project_slug(duplicated.slug, [])
       assert Enum.count(obj_insights) == 2
 
       assert Enum.all?(obj_insights, fn obj ->
@@ -317,7 +331,7 @@ defmodule Oli.Delivery.Analytics.AnalyticsTest do
              end)
 
       # 4 activities with no analytics
-      activity_insights = ByActivity.query_against_project_slug(duplicated.slug)
+      activity_insights = ByActivity.query_against_project_slug(duplicated.slug, [])
       assert Enum.count(activity_insights) == 4
 
       assert Enum.all?(activity_insights, fn obj ->
@@ -325,7 +339,7 @@ defmodule Oli.Delivery.Analytics.AnalyticsTest do
              end)
 
       # 3 pages with no analytics
-      page_insights = ByPage.query_against_project_slug(duplicated.slug)
+      page_insights = ByPage.query_against_project_slug(duplicated.slug, [])
       assert Enum.count(page_insights) == 3
 
       assert Enum.all?(page_insights, fn obj ->

@@ -1,6 +1,9 @@
 defmodule OliWeb.Insights do
+  alias OliWeb.Common.MultiSelectOptions
+  alias Oli.Delivery.Sections
   use OliWeb, :live_view
-
+  alias OliWeb.Common.MultiSelect
+  alias OliWeb.Common.MultiSelectOptions.SelectOption
   alias Oli.{Accounts, Publishing}
   alias OliWeb.Insights.{TableHeader, TableRow}
   alias Oli.Authoring.Course
@@ -12,8 +15,37 @@ defmodule OliWeb.Insights do
   def mount(_params, %{"project_slug" => project_slug} = session, socket) do
     ctx = SessionContext.init(socket, session)
 
-    by_activity_rows = Oli.Analytics.ByActivity.query_against_project_slug(project_slug)
+    by_activity_rows =
+      Oli.Analytics.ByActivity.query_against_project_slug(project_slug, [])
+
     project = Course.get_project_by_slug(project_slug)
+
+    {sections, products} =
+      Sections.get_sections_by_base_project(project)
+      |> Enum.reduce({[], []}, fn section, {sections, products} ->
+        if section.type == :blueprint do
+          {sections,
+           [
+             %SelectOption{
+               id: section.id,
+               label: section.title,
+               selected: false,
+               is_product: true
+             }
+             | products
+           ]}
+        else
+          {[
+             %SelectOption{
+               id: section.id,
+               label: section.title,
+               selected: false,
+               is_product: false
+             }
+             | sections
+           ], products}
+        end
+      end)
 
     parent_pages =
       Enum.map(by_activity_rows, fn r -> r.slice.resource_id end)
@@ -33,6 +65,12 @@ defmodule OliWeb.Insights do
 
     {:ok,
      assign(socket,
+       initial_section_options:
+         MultiSelectOptions.build_changeset(sections)
+         |> to_form(),
+       initial_product_options:
+         MultiSelectOptions.build_changeset(products)
+         |> to_form(),
        ctx: ctx,
        is_admin?: Accounts.is_system_admin?(ctx.author),
        project: project,
@@ -49,7 +87,19 @@ defmodule OliWeb.Insights do
        latest_publication: latest_publication,
        analytics_export_status: analytics_export_status,
        analytics_export_url: analytics_export_url,
-       analytics_export_timestamp: analytics_export_timestamp
+       analytics_export_timestamp: analytics_export_timestamp,
+       products: products,
+       sections: sections,
+       is_product: false,
+       form_sections:
+         MultiSelectOptions.build_changeset(sections)
+         |> to_form(),
+       form_products:
+         MultiSelectOptions.build_changeset(products)
+         |> to_form(),
+       section_ids: [],
+       product_ids: [],
+       form_uid: ""
      )}
   end
 
@@ -116,6 +166,7 @@ defmodule OliWeb.Insights do
           By Page
         </button>
       </li>
+
       <li class="nav-item my-2 mr-2">
         <button
           {is_disabled(@selected, :by_objective)}
@@ -128,7 +179,34 @@ defmodule OliWeb.Insights do
           By Objective
         </button>
       </li>
+
+      <li class="nav-item my-2 mr-2 ">
+        <div class="flex gap-10">
+          <.form for={@form_sections} id="multiselect-form-section" phx-change="section-change">
+            <.live_component
+              id="multi_sections"
+              module={MultiSelect}
+              options={@sections}
+              form={@form_sections}
+              label="Select a section"
+              uid={@form_uid}
+            />
+          </.form>
+
+          <.form for={@form_products} id="multiselect-form" phx-change="product-change">
+            <.live_component
+              id="multi_products"
+              module={MultiSelect}
+              options={@products}
+              form={@form_products}
+              label="Select a product"
+              uid={@form_uid}
+            />
+          </.form>
+        </div>
+      </li>
     </ul>
+
     <div class="card">
       <div class="card-header">
         <form phx-change="search">
@@ -343,6 +421,25 @@ defmodule OliWeb.Insights do
     end
   end
 
+  def handle_event("section-change", params, socket) do
+    target_value =
+      hd(params["_target"])
+
+    value =
+      params[target_value]
+
+    update_section_by_value(value, socket, target_value)
+  end
+
+  def handle_event("product-change", params, socket) do
+    target_value = hd(params["_target"])
+
+    value =
+      params[target_value]
+
+    update_product_by_value(value, socket, target_value)
+  end
+
   def handle_info(
         {:analytics_export_status,
          {:available, analytics_export_url, analytics_export_timestamp}},
@@ -371,7 +468,8 @@ defmodule OliWeb.Insights do
   end
 
   def handle_info(:init_by_page, socket) do
-    by_page_rows = Oli.Analytics.ByPage.query_against_project_slug(socket.assigns.project.slug)
+    by_page_rows =
+      get_by_page_row(socket)
 
     active_rows =
       apply_filter_sort(
@@ -387,7 +485,10 @@ defmodule OliWeb.Insights do
 
   def handle_info(:init_by_objective, socket) do
     by_objective_rows =
-      Oli.Analytics.ByObjective.query_against_project_slug(socket.assigns.project.slug)
+      Oli.Analytics.ByObjective.query_against_project_slug(
+        socket.assigns.project.slug,
+        socket.assigns.section_ids
+      )
       |> arrange_rows_into_objective_hierarchy()
 
     active_rows =
@@ -400,6 +501,185 @@ defmodule OliWeb.Insights do
       )
 
     {:noreply, assign(socket, by_objective_rows: by_objective_rows, active_rows: active_rows)}
+  end
+
+  def handle_info(:init_by_activity, socket) do
+    by_activity_rows =
+      get_by_page_row(socket)
+
+    active_rows =
+      apply_filter_sort(
+        :by_activity,
+        by_activity_rows,
+        socket.assigns.query,
+        socket.assigns.sort_by,
+        socket.assigns.sort_order
+      )
+
+    {:noreply, assign(socket, by_activity_rows: by_activity_rows, active_rows: active_rows)}
+  end
+
+  defp get_by_page_row(socket) do
+    if socket.assigns.is_product do
+      Oli.Analytics.ByActivity.query_against_project_slug(
+        socket.assigns.project.slug,
+        socket.assigns.product_ids
+      )
+    else
+      Oli.Analytics.ByActivity.query_against_project_slug(
+        socket.assigns.project.slug,
+        socket.assigns.section_ids
+      )
+    end
+  end
+
+  defp generate_uuid do
+    #
+    :crypto.strong_rand_bytes(16)
+    |> Base.encode16()
+  end
+
+  defp update_section_by_value("true", socket, target_value) do
+    section_ids_updated =
+      update_section_ids(
+        :add,
+        socket.assigns.sections,
+        target_value,
+        socket.assigns.section_ids
+      )
+
+    reset_form_section_values(socket.assigns.product_ids, section_ids_updated, socket)
+  end
+
+  defp update_section_by_value("false", socket, target_value) do
+    section_ids_updated =
+      update_section_ids(
+        :delete,
+        socket.assigns.sections,
+        target_value,
+        socket.assigns.section_ids
+      )
+
+    socket =
+      assign(socket,
+        is_product: false,
+        section_ids: section_ids_updated
+      )
+
+    filter_type(socket.assigns.selected)
+    {:noreply, socket}
+  end
+
+  defp reset_form_section_values([], section_ids_updated, socket) do
+    socket =
+      assign(socket,
+        is_product: false,
+        section_ids: section_ids_updated
+      )
+
+    filter_type(socket.assigns.selected)
+    {:noreply, socket}
+  end
+
+  defp reset_form_section_values(_section_ids, section_ids_updated, socket) do
+    socket =
+      assign(socket,
+        is_product: false,
+        section_ids: section_ids_updated,
+        form_uid: generate_uuid(),
+        product_ids: [],
+        form_products: socket.assigns.initial_product_options
+      )
+
+    filter_type(socket.assigns.selected)
+    {:noreply, socket}
+  end
+
+  defp update_product_by_value("true", socket, target_value) do
+    product_ids_updated =
+      update_section_ids(
+        :add,
+        socket.assigns.products,
+        target_value,
+        socket.assigns.product_ids
+      )
+
+    reset_form_products(socket.assigns.section_ids, product_ids_updated, socket)
+  end
+
+  defp update_product_by_value("false", socket, target_value) do
+    product_ids_updated =
+      update_section_ids(
+        :delete,
+        socket.assigns.products,
+        target_value,
+        socket.assigns.product_ids
+      )
+
+    socket =
+      assign(socket,
+        is_product: false,
+        product_ids: product_ids_updated
+      )
+
+    filter_type(socket.assigns.selected)
+    {:noreply, socket}
+  end
+
+  defp reset_form_products([], product_ids_updated, socket) do
+    socket =
+      assign(socket,
+        is_product: false,
+        product_ids: product_ids_updated
+      )
+
+    filter_type(socket.assigns.selected)
+    {:noreply, socket}
+  end
+
+  defp reset_form_products(_section_ids, product_ids_updated, socket) do
+    socket =
+      assign(socket,
+        is_product: false,
+        product_ids: product_ids_updated,
+        form_uid: generate_uuid(),
+        section_ids: [],
+        form_sections: socket.assigns.initial_section_options
+      )
+
+    filter_type(socket.assigns.selected)
+    {:noreply, socket}
+  end
+
+  defp filter_type(selected) do
+    case selected do
+      :by_page ->
+        send(self(), :init_by_page)
+
+      :by_activity ->
+        send(self(), :init_by_activity)
+
+      :by_objective ->
+        send(self(), :init_by_objective)
+    end
+  end
+
+  defp update_section_ids(action, sections, target, section_ids) do
+    case action do
+      :add ->
+        [fliter_section_by_target_value(sections, target) | section_ids]
+
+      :delete ->
+        List.delete(section_ids, fliter_section_by_target_value(sections, target))
+    end
+  end
+
+  defp fliter_section_by_target_value(sections, target) do
+    hd(
+      Enum.filter(sections, fn section ->
+        section.label == target
+      end)
+    ).id
   end
 
   defp click_or_enter_key?(event) do
