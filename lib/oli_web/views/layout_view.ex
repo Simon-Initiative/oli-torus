@@ -144,6 +144,20 @@ defmodule OliWeb.LayoutView do
     """
   end
 
+  def render_license(%{license_type: :none} = assigns) do
+    text = Enum.find(CreativeCommons.cc_options(), &(&1.id == :none)).text
+    assigns = Map.put(assigns, :text, text)
+
+    ~H"""
+    <div
+      id="license"
+      class="container mx-auto flex flex-row px-10 items-center overflow-y-auto h-[40px] max-h-[40px] relative top-0"
+    >
+      <p class="h-full">License: <%= @text %></p>
+    </div>
+    """
+  end
+
   def render_license(%{license_type: cc_license} = assigns) do
     cc_data =
       Enum.find(CreativeCommons.cc_options(), fn cc_option -> cc_option.id == cc_license end)

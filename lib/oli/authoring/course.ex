@@ -598,9 +598,6 @@ defmodule Oli.Authoring.Course do
     )
     |> Repo.one()
     |> case do
-      %{license: %{license_type: :custom} = license} ->
-        Map.from_struct(license)
-
       %{license: %{license_type: license_type} = license} when license_type in @cc_options ->
         Map.from_struct(license)
 
