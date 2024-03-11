@@ -579,7 +579,8 @@ defmodule Oli.Authoring.Course do
     |> Oban.insert()
   end
 
-  @cc_options Oli.Authoring.Course.CreativeCommons.cc_options() |> Enum.map(& &1.id)
+  alias Oli.Authoring.Course.CreativeCommons
+  @cc_options Map.keys(CreativeCommons.cc_options())
 
   @type license_types ::
           :none | :cc_by | :cc_by_sa | :cc_by_nd | :cc_by_nc | :cc_by_nc_sa | :cc_by_nc_nd

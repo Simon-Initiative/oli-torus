@@ -143,7 +143,7 @@ defmodule OliWeb.LayoutView do
   end
 
   def render_license(%{license_type: :none} = assigns) do
-    text = Enum.find(CreativeCommons.cc_options(), &(&1.id == :none)).text
+    text = CreativeCommons.cc_options()[:none].text
     assigns = Map.put(assigns, :text, text)
 
     ~H"""
@@ -154,13 +154,12 @@ defmodule OliWeb.LayoutView do
   end
 
   def render_license(%{license_type: cc_license} = assigns) do
-    cc_data =
-      Enum.find(CreativeCommons.cc_options(), fn cc_option -> cc_option.id == cc_license end)
+    cc_data = CreativeCommons.cc_options()[cc_license]
 
     logo_name =
-      cc_data.id |> Atom.to_string() |> String.replace("cc_", "") |> String.replace("_", "-")
+      Atom.to_string(cc_license) |> String.replace("cc_", "") |> String.replace("_", "-")
 
-    cc_text = cc_data |> Map.get(:text) |> String.split(":") |> Enum.at(1)
+    cc_text = String.split(cc_data.text, ":") |> Enum.at(1)
 
     assigns =
       assigns

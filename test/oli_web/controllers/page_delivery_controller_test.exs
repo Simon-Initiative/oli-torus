@@ -664,6 +664,33 @@ defmodule OliWeb.PageDeliveryControllerTest do
              |> Floki.text() =~ "This is a custom license"
     end
 
+    test "renders none license in footer for started page", %{
+      conn: conn,
+      user: user,
+      section: section,
+      revision: revision,
+      project: project
+    } do
+      {:ok, _project_with_license} =
+        Course.update_project(project, %{
+          attributes: %{
+            license: %{license_type: :none, custom_license_details: ""}
+          }
+        })
+
+      enroll_as_student(%{section: section, user: user})
+
+      html_response =
+        get(conn, ~p"/sections/#{section.slug}/page/#{revision.slug}") |> html_response(200)
+
+      # Verify License legend
+      assert html_response
+             |> Floki.parse_document!()
+             |> Floki.find("footer")
+             |> Floki.find("#license")
+             |> Floki.text() =~ "Non-CC / Copyrighted / Other"
+    end
+
     test "renders custom license in footer for a not_started page -- prologue", %{
       conn: conn,
       user: user,

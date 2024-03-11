@@ -27,7 +27,7 @@ defmodule Oli.Authoring.Course.ProjectAttributes.License do
   alias Oli.Authoring.Course.CreativeCommons
   alias __MODULE__
 
-  @license_opts CreativeCommons.cc_options() |> Enum.map(& &1.id)
+  @license_opts Map.keys(CreativeCommons.cc_options())
 
   @primary_key false
   embedded_schema do
