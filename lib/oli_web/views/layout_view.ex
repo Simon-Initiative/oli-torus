@@ -1,5 +1,6 @@
 defmodule OliWeb.LayoutView do
   use OliWeb, :view
+  use Phoenix.Component
 
   import OliWeb.AuthoringView,
     only: [
@@ -135,12 +136,9 @@ defmodule OliWeb.LayoutView do
 
   def render_license(%{license_type: :custom} = assigns) do
     ~H"""
-    <div
-      id="license"
-      class="container mx-auto flex flex-row px-10 items-center overflow-y-auto h-[40px] max-h-[40px] relative top-0"
-    >
-      <p class="h-full">License: <%= @custom_license_details %></p>
-    </div>
+    <.license_wrapper>
+      <p class="h-full"><%= @custom_license_details %></p>
+    </.license_wrapper>
     """
   end
 
@@ -149,12 +147,9 @@ defmodule OliWeb.LayoutView do
     assigns = Map.put(assigns, :text, text)
 
     ~H"""
-    <div
-      id="license"
-      class="container mx-auto flex flex-row px-10 items-center overflow-y-auto h-[40px] max-h-[40px] relative top-0"
-    >
-      <p class="h-full">License: <%= @text %></p>
-    </div>
+    <.license_wrapper>
+      <%= @text %>
+    </.license_wrapper>
     """
   end
 
@@ -174,10 +169,7 @@ defmodule OliWeb.LayoutView do
       |> Map.put(:cc_url, cc_data.url)
 
     ~H"""
-    <div
-      id="license"
-      class="container mx-auto flex flex-row px-10 items-center overflow-y-auto h-[40px] max-h-[40px] relative top-0"
-    >
+    <.license_wrapper>
       <div class="flex gap-2 items-center">
         <a href={@cc_url} , target="_blank">
           <img
@@ -190,11 +182,22 @@ defmodule OliWeb.LayoutView do
           Unless otherwise noted this work is licensed under a Creative Commons<%= @cc_text %> 4.0 Unported License.
         </p>
       </div>
-    </div>
+    </.license_wrapper>
     """
   end
 
   def render_license(_license) do
     nil
+  end
+
+  def license_wrapper(assigns) do
+    ~H"""
+    <div
+      id="license"
+      class="container mx-auto flex px-10 items-center justify-start overflow-y-auto h-[40px] max-h-[40px] relative top-0"
+    >
+      <%= render_slot(@inner_block) %>
+    </div>
+    """
   end
 end
