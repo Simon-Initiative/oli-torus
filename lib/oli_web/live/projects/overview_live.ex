@@ -30,7 +30,11 @@ defmodule OliWeb.Projects.OverviewLive do
     {collab_space_config, revision_slug} = get_collab_space_config_and_revision(project.slug)
 
     latest_publication = Publishing.get_latest_published_publication_by_slug(project.slug)
-    cc_options = Oli.Authoring.Course.CreativeCommons.cc_options() |> Enum.map(&{&1.text, &1.id})
+
+    cc_options =
+      Oli.Authoring.Course.CreativeCommons.cc_options()
+      |> Enum.map(fn {k, v} -> {v.text, k} end)
+      |> Enum.sort(:desc)
 
     socket =
       assign(socket,

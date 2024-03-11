@@ -29,7 +29,7 @@ defmodule Oli.Authoring.Course.CreativeCommons do
       url: "https://creativecommons.org/licenses/by-nc-nd/4.0/"
     },
     custom: %{
-      text: "",
+      text: "Custom",
       url: ""
     }
   }
