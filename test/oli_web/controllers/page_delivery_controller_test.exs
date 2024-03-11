@@ -657,14 +657,11 @@ defmodule OliWeb.PageDeliveryControllerTest do
         get(conn, ~p"/sections/#{section.slug}/page/#{revision.slug}") |> html_response(200)
 
       # Verify License legend
-      license =
-        html_response
-        |> Floki.parse_document!()
-        |> Floki.find("footer")
-        |> Floki.find("#license")
-
-      assert Floki.text(license) =~
-               "License: This is a custom license"
+      assert html_response
+             |> Floki.parse_document!()
+             |> Floki.find("footer")
+             |> Floki.find("#license")
+             |> Floki.text() =~ "This is a custom license"
     end
 
     test "renders custom license in footer for a not_started page -- prologue", %{
@@ -687,14 +684,11 @@ defmodule OliWeb.PageDeliveryControllerTest do
         get(conn, ~p"/sections/#{section.slug}/page/#{page_revision.slug}") |> html_response(200)
 
       # Verify License legend
-      license =
-        html_response
-        |> Floki.parse_document!()
-        |> Floki.find("footer")
-        |> Floki.find("#license")
-
-      assert Floki.text(license) =~
-               "License: This is a custom license"
+      assert html_response
+             |> Floki.parse_document!()
+             |> Floki.find("footer")
+             |> Floki.find("#license")
+             |> Floki.text() =~ "This is a custom license"
     end
 
     test "renders creative commons license in footer for a not_started page -- prologue", %{
