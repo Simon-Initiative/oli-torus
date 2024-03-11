@@ -4671,6 +4671,10 @@ table.table-striped tbody tr:nth-child(even) {
   max-height: 13rem;
 }
 
+.max-h-56 {
+  max-height: 14rem;
+}
+
 .max-h-80 {
   max-height: 20rem;
 }
@@ -4997,6 +5001,11 @@ table.table-striped tbody tr:nth-child(even) {
   transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
 }
 
+.rotate-180 {
+  --tw-rotate: 180deg;
+  transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
+}
+
 .transform {
   transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
 }
@@ -5161,6 +5170,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .gap-1 {
   gap: 0.25rem;
+}
+
+.gap-10 {
+  gap: 2.5rem;
 }
 
 .gap-2 {
@@ -5793,6 +5806,11 @@ table.table-striped tbody tr:nth-child(even) {
 .bg-gray-200 {
   --tw-bg-opacity: 1;
   background-color: rgb(229 229 229 / var(--tw-bg-opacity));
+}
+
+.bg-gray-300 {
+  --tw-bg-opacity: 1;
+  background-color: rgb(212 212 212 / var(--tw-bg-opacity));
 }
 
 .bg-gray-500 {
@@ -10037,6 +10055,10 @@ body {
 
 .hover\:cursor-help:hover {
   cursor: help;
+}
+
+.hover\:cursor-not-allowed:hover {
+  cursor: not-allowed;
 }
 
 .hover\:cursor-pointer:hover {
