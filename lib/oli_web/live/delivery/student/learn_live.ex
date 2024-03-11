@@ -966,8 +966,8 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       >
         <.numbering_index type={@type} index={@numbering_index} />
 
-        <div class="flex flex-col gap-1 w-full">
-          <div class={["flex", left_indentation(@numbering_level)]}>
+        <div class={["flex flex-col gap-1 w-full", left_indentation(@numbering_level)]}>
+          <div class="flex">
             <span class={[
               "text-[16px] leading-[22px] pr-2 dark:text-white",
               if(@was_visited or (@intro_video_viewed and @type == "intro"), do: "opacity-50")
