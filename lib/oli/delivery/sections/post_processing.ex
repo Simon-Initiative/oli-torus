@@ -32,7 +32,7 @@ defmodule Oli.Delivery.Sections.PostProcessing do
             Map.put(acc, :contains_explorations, maybe_update_contains_explorations(section))
 
           :deliberate_practice ->
-            Map.put(acc, :deliberate_practice, contains_deliberate_practice(section))
+            Map.put(acc, :contains_deliberate_practice, contains_deliberate_practice(section))
 
           _ ->
             acc

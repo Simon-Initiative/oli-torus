@@ -9,6 +9,7 @@
 
   <main role="main" class="flex-1 flex flex-col md:flex-row overscroll-contain">
     <Components.Delivery.Layouts.sidebar_nav
+      :if={@section}
       ctx={@ctx}
       is_system_admin={assigns[:is_system_admin] || false}
       section={@section}
