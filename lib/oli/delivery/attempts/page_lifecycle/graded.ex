@@ -230,19 +230,19 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Graded do
     # It is necessary to refetch the resource attempt so that we have the latest view
     # of its state, and to separately fetch the list of most recent attempts for each
     # activity.
-    activity_attempts =
+    {activity_attempts, is_adaptive?} =
       case resource_attempt.revision do
         # For adaptive pages, since we are rolling up to the resource attempt, we must consider
         # both submitted and evaluated attempts
         %{content: %{"advancedDelivery" => true}} ->
-          get_latest_non_active_activity_attempts(resource_attempt.id)
+          {get_latest_non_active_activity_attempts(resource_attempt.id), true}
 
         _ ->
-          get_latest_activity_attempts(resource_attempt.id)
+          {get_latest_activity_attempts(resource_attempt.id), false}
       end
 
     if is_evaluated?(activity_attempts) do
-      apply_evaluation(resource_attempt, activity_attempts, effective_settings)
+      apply_evaluation(resource_attempt, activity_attempts, effective_settings, is_adaptive?)
     else
       if is_submitted?(activity_attempts) do
         apply_submission(resource_attempt, effective_settings)
@@ -252,10 +252,10 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Graded do
     end
   end
 
-  defp apply_evaluation(resource_attempt, activity_attempts, %Combined{} = effective_settings) do
+  defp apply_evaluation(resource_attempt, activity_attempts, %Combined{} = effective_settings, is_adaptive?) do
     {score, out_of} =
-      if Enum.empty?(activity_attempts) do
-        # For assessments with empty activities, grant a score or 1.0/1.0
+      if !is_adaptive? and Enum.empty?(activity_attempts)  do
+        # For basic page assessments with no activities, grant a score of 1.0/1.0
         {1.0, 1.0}
       else
         activity_attempts
