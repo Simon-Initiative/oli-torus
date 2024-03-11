@@ -240,7 +240,8 @@ defmodule OliWeb.Curriculum.ContainerLive do
       id: "options_#{slug}",
       redirect_url: Routes.container_path(socket, :index, project.slug, container.slug),
       revision: revision,
-      changeset: Resources.change_revision(revision)
+      changeset: Resources.change_revision(revision),
+      title: "#{resource_type_label(revision) |> String.capitalize()} Options"
     }
 
     {:noreply,

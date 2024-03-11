@@ -167,7 +167,7 @@ defmodule OliWeb.Resources.PagesView do
       on_cancel={JS.push("restart_options_modal")}
     >
       <:title>
-        Options (this title should consider both scenarios)
+        <%= @options_modal_assigns[:title] %>
       </:title>
 
       <%= if @options_modal_assigns do %>
@@ -463,7 +463,8 @@ defmodule OliWeb.Resources.PagesView do
           }
         ),
       revision: revision,
-      changeset: Resources.change_revision(revision)
+      changeset: Resources.change_revision(revision),
+      title: "#{resource_type_label(revision) |> String.capitalize()} Options"
     }
 
     {:noreply,
