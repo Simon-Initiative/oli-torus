@@ -1470,7 +1470,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
              |> element(
                ~s{div[id="top_level_page_#{top_level_page.resource_id}"] div[role="header"]}
              )
-             |> render() =~ "PAGE 11"
+             |> render() =~ "PAGE 13"
 
       assert view
              |> element(
