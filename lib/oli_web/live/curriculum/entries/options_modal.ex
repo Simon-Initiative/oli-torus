@@ -67,9 +67,9 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
     ~H"""
     <div>
       <h2 class="text-lg mb-6">
-        Select a poster image or
+        <span :if={@poster_image_urls != []}>Select a poster image or</span>
         <a href="#" phx-click={JS.dispatch("click", to: "##{@uploads.poster_image.ref}")}>
-          upload a new one
+          <%= if @poster_image_urls != [], do: "upload a new one", else: "Upload a poster image" %>
         </a>
         <span class="text-xs text-gray-500">(max size: <%= @max_size %> MB)</span>
       </h2>
