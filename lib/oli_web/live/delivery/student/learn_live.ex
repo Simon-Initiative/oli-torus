@@ -804,6 +804,8 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         revision_slug={child["slug"]}
         module_resource_id={@module["resource_id"]}
         resource_id={child["resource_id"]}
+        student_id={@student_id}
+        ctx={@ctx}
         due_date={
           if child["graded"],
             do:
@@ -839,6 +841,8 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   attr :revision_slug, :string
   attr :module_resource_id, :integer
   attr :resource_id, :string
+  attr :student_id, :integer
+  attr :ctx, :map
   attr :graded, :boolean
   attr :raw_avg_score, :map
   attr :student_raw_avg_score_per_page_id, :map
@@ -908,6 +912,8 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         revision_slug={child["slug"]}
         module_resource_id={@module_resource_id}
         resource_id={child["resource_id"]}
+        student_id={@student_id}
+        ctx={@ctx}
         due_date={
           if child["graded"],
             do:
