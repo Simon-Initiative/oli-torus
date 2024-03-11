@@ -17,8 +17,18 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   # this is an optimization to reduce the memory footprint of the liveview process
   @required_keys_per_assign %{
     section:
-      {[:id, :analytics_version, :slug, :customizations, :title, :brand, :lti_1p3_deployment],
-       %Sections.Section{}},
+      {[
+         :id,
+         :analytics_version,
+         :slug,
+         :customizations,
+         :title,
+         :brand,
+         :lti_1p3_deployment,
+         :contains_discussions,
+         :contains_explorations,
+         :contains_deliberate_practice
+       ], %Sections.Section{}},
     current_user: {[:id, :name, :email], %User{}}
   }
 
@@ -49,7 +59,8 @@ defmodule OliWeb.Delivery.Student.LearnLive do
             section.slug,
             socket.assigns.current_user.id
           ),
-        assistant_enabled: Sections.assistant_enabled?(section)
+        assistant_enabled: Sections.assistant_enabled?(section),
+        closed_sections_per_module_id: %{}
       )
       |> slim_assigns()
 
@@ -72,13 +83,16 @@ defmodule OliWeb.Delivery.Student.LearnLive do
 
   def handle_params(%{"target_resource_id" => resource_id}, _uri, socket) do
     # the goal of this callback is to scroll to the target resource.
-    # the target can be a unit, a module, a page contained at a module level, or a page contained in a module
+    # the target can be a unit, a module, a page contained at a unit level, at a module level, or a page contained in a module
 
     container_resource_type_id = Oli.Resources.ResourceType.get_id_by_type("container")
     page_resource_type_id = Oli.Resources.ResourceType.get_id_by_type("page")
     full_hierarchy = get_or_compute_full_hierarchy(socket.assigns.section)
 
-    case Sections.get_section_resource_with_resource_type(socket.assigns.section.id, resource_id) do
+    case Sections.get_section_resource_with_resource_type(
+           socket.assigns.section.slug,
+           resource_id
+         ) do
       %{resource_type_id: resource_type_id, numbering_level: 1}
       when resource_type_id == container_resource_type_id ->
         # the target is a unit, so we sroll in the Y direction to it
@@ -125,6 +139,17 @@ defmodule OliWeb.Delivery.Student.LearnLive do
            pulse_delay: 500
          })}
 
+      %{resource_type_id: resource_type_id, numbering_level: 1}
+      when resource_type_id == page_resource_type_id ->
+        # the target is a page at the highest level (unit level), so we scroll in the Y direction to that page and pulse it
+        {:noreply,
+         push_event(socket, "scroll-y-to-target", %{
+           id: "top_level_page_#{resource_id}",
+           offset: 80,
+           pulse: true,
+           pulse_delay: 500
+         })}
+
       %{resource_type_id: resource_type_id, numbering_level: 2}
       when resource_type_id == page_resource_type_id ->
         # the target is a page at a module level, so we scroll in the Y direction to the unit that is parent of that page,
@@ -147,18 +172,17 @@ defmodule OliWeb.Delivery.Student.LearnLive do
            pulse_delay: 500
          })}
 
-      %{resource_type_id: resource_type_id, numbering_level: 3}
-      when resource_type_id == page_resource_type_id ->
-        # the target is a page contained in a module, so we scroll in the Y direction to the unit that is parent of that module,
+      %{resource_type_id: resource_type_id, numbering_level: level}
+      when resource_type_id == page_resource_type_id and level > 2 ->
+        # the target is a page contained in a module or a section, so we scroll in the Y direction to the unit that is parent of that module,
         # and then scroll X in the slider to that module and expand it
 
         module_resource_id =
-          Oli.Delivery.Hierarchy.find_parent_in_hierarchy(
+          find_module_ancestor(
             full_hierarchy,
-            fn node ->
-              node["resource_id"] == String.to_integer(resource_id)
-            end
-          )["resource_id"]
+            String.to_integer(resource_id),
+            container_resource_type_id
+          )
 
         unit_resource_id =
           Oli.Delivery.Hierarchy.find_parent_in_hierarchy(
@@ -335,6 +359,43 @@ defmodule OliWeb.Delivery.Student.LearnLive do
      push_redirect(socket, to: resource_url(resource_slug, section_slug, resource_id, purpose))}
   end
 
+  def handle_event(
+        "expand_section",
+        %{"resource_id" => resource_id, "module_resource_id" => module_resource_id},
+        socket
+      ) do
+    full_hierarchy = get_or_compute_full_hierarchy(socket.assigns.section)
+    resource_id = String.to_integer(resource_id)
+    module_resource_id = String.to_integer(module_resource_id)
+
+    selected_unit =
+      Oli.Delivery.Hierarchy.find_parent_in_hierarchy(
+        full_hierarchy,
+        &(&1["resource_id"] == module_resource_id)
+      )
+
+    closed_sections =
+      socket.assigns.closed_sections_per_module_id
+      |> Map.get(module_resource_id, [])
+      |> then(
+        &if Enum.member?(&1, resource_id),
+          do: List.delete(&1, resource_id),
+          else: [resource_id | &1]
+      )
+
+    closed_sections_per_module_id =
+      Map.put(
+        socket.assigns.closed_sections_per_module_id,
+        module_resource_id,
+        closed_sections
+      )
+
+    {:noreply,
+     socket
+     |> assign(closed_sections_per_module_id: closed_sections_per_module_id)
+     |> update(:units, fn units -> [selected_unit | units] end)}
+  end
+
   def handle_info(:gc, socket) do
     :erlang.garbage_collect(socket.transport_pid)
     :erlang.garbage_collect(self())
@@ -393,7 +454,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     <div id="student_learn" class="lg:container lg:mx-auto p-[25px]" phx-hook="Scroller">
       <.video_player />
       <div id="all_units" phx-update="append">
-        <.unit
+        <.row
           :for={unit <- @units}
           unit={unit}
           ctx={@ctx}
@@ -416,6 +477,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
             )
           }
           assistant_enabled={@assistant_enabled}
+          closed_sections_per_module_id={@closed_sections_per_module_id}
         />
       </div>
     </div>
@@ -432,8 +494,83 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   attr :viewed_intro_video_resource_ids, :list
   attr :unit_raw_avg_score, :map
   attr :assistant_enabled, :boolean, required: true
+  attr :closed_sections_per_module_id, :map
 
-  def unit(assigns) do
+  # top level page as a card with title and header
+  def row(%{unit: %{"resource_type_id" => 1}} = assigns) do
+    ~H"""
+    <div id={"top_level_page_#{@unit["resource_id"]}"}>
+      <div class="md:p-[25px] md:pl-[50px]" role={"top_level_page_#{@unit["numbering"]["index"]}"}>
+        <div role="header" class="flex flex-col md:flex-row md:gap-[30px]">
+          <div class="text-[14px] leading-[19px] tracking-[1.4px] uppercase mt-[7px] mb-1 whitespace-nowrap opacity-60">
+            <%= "PAGE #{@unit["numbering"]["index"]}" %>
+          </div>
+          <div class="mb-6 flex flex-col items-start gap-[6px] w-full">
+            <h3 class="text-[26px] leading-[32px] tracking-[0.02px] font-normal dark:text-[#DDD]">
+              <%= @unit["title"] %>
+            </h3>
+            <div class="flex items-center w-full gap-3">
+              <div class="flex items-center gap-3" role="schedule_details">
+                <div class="text-[14px] leading-[32px] tracking-[0.02px] font-semibold">
+                  <span class="text-gray-400 opacity-80 dark:text-[#696974] dark:opacity-100 mr-1">
+                    Due:
+                  </span>
+                  <%= FormatDateTime.to_formatted_datetime(
+                    @unit["section_resource"].end_date,
+                    @ctx,
+                    "{WDshort}, {Mshort} {D}, {YYYY} ({h12}:{m}{am})"
+                  ) %>
+                </div>
+              </div>
+              <div class="ml-auto flex items-center gap-6">
+                <Student.score_summary :if={@progress == 100} raw_avg_score={@unit_raw_avg_score} />
+                <.progress_bar
+                  percent={@progress}
+                  width="100px"
+                  on_going_colour="bg-[#0F6CF5]"
+                  completed_colour="bg-[#0CAF61]"
+                  role={"unit_#{@unit["numbering"]["index"]}_progress"}
+                  show_percent={@progress != 100}
+                />
+                <svg
+                  :if={@progress == 100}
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="25"
+                  height="24"
+                  viewBox="0 0 25 24"
+                  fill="none"
+                  role="unit completed check icon"
+                >
+                  <path
+                    d="M10.0496 17.9996L4.34961 12.2996L5.77461 10.8746L10.0496 15.1496L19.2246 5.97461L20.6496 7.39961L10.0496 17.9996Z"
+                    fill="#0CAF61"
+                  />
+                </svg>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="w-[288px]">
+          <.card
+            module={@unit}
+            module_index={1}
+            unit_resource_id={@unit["resource_id"]}
+            unit_numbering_index={@unit["numbering"]["index"]}
+            bg_image_url={@unit["poster_image"]}
+            student_progress_per_resource_id={@student_progress_per_resource_id}
+            selected={
+              @selected_module_per_unit_resource_id[@unit["resource_id"]]["resource_id"] ==
+                @unit["resource_id"]
+            }
+            purpose={@unit["purpose"]}
+          />
+        </div>
+      </div>
+    </div>
+    """
+  end
+
+  def row(assigns) do
     ~H"""
     <div id={"unit_#{@unit["resource_id"]}"}>
       <div class="md:p-[25px] md:pl-[50px]" role={"unit_#{@unit["numbering"]["index"]}"}>
@@ -514,10 +651,10 @@ defmodule OliWeb.Delivery.Student.LearnLive do
               resource_id={@unit["resource_id"]}
               intro_video_viewed={@unit["resource_id"] in @viewed_intro_video_resource_ids}
             />
-            <.module_card
-              :for={{module, module_index} <- Enum.with_index(@unit["children"], 1)}
+            <.card
+              :for={module <- @unit["children"]}
               module={module}
-              module_index={module_index}
+              module_index={module["numbering"]["index"]}
               unit_resource_id={@unit["resource_id"]}
               unit_numbering_index={@unit["numbering"]["index"]}
               bg_image_url={module["poster_image"]}
@@ -609,6 +746,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
               intro_video_viewed={
                 Map.get(@selected_module_per_unit_resource_id, @unit["resource_id"])["resource_id"] in @viewed_intro_video_resource_ids
               }
+              closed_sections_per_module_id={@closed_sections_per_module_id}
             />
           </div>
         </div>
@@ -641,6 +779,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   attr :student_id, :integer
   attr :intro_video_viewed, :boolean
   attr :student_progress_per_resource_id, :map
+  attr :closed_sections_per_module_id, :map
 
   def module_index(assigns) do
     ~H"""
@@ -729,6 +868,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         title="Introduction"
         type="intro"
         numbering_index={1}
+        numbering_level={3}
         was_visited={false}
         graded={@module["graded"]}
         duration_minutes={@module["duration_minutes"]}
@@ -743,36 +883,44 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       />
 
       <.index_item
-        :for={
-          {page, page_index} <-
-            Enum.with_index(@module["children"], if(module_has_intro_video(@module), do: 2, else: 1))
+        :for={child <- @module["children"]}
+        title={child["title"]}
+        type={
+          if is_section?(child["resource_type_id"], child["numbering"]["level"]),
+            do: "section",
+            else: "page"
         }
-        title={page["title"]}
-        type="page"
-        numbering_index={page_index}
-        was_visited={page["visited"]}
-        duration_minutes={page["duration_minutes"]}
-        graded={page["graded"]}
-        revision_slug={page["slug"]}
+        numbering_index={child["numbering"]["index"]}
+        numbering_level={child["numbering"]["level"]}
+        children={child["children"]}
+        was_visited={child["visited"]}
+        duration_minutes={child["duration_minutes"]}
+        graded={child["graded"]}
+        revision_slug={child["slug"]}
         module_resource_id={@module["resource_id"]}
-        resource_id={page["resource_id"]}
+        resource_id={child["resource_id"]}
+        student_id={@student_id}
+        ctx={@ctx}
         due_date={
-          if page["graded"],
+          if child["graded"],
             do:
               get_due_date_for_student(
-                page["section_resource"].end_date,
-                page["resource_id"],
-                page["section_resource"].section_id,
+                child["section_resource"].end_date,
+                child["resource_id"],
+                child["section_resource"].section_id,
                 @student_id,
                 @ctx,
                 "{WDshort} {Mshort} {D}, {YYYY}"
               )
         }
-        raw_avg_score={Map.get(@student_raw_avg_score_per_page_id, page["resource_id"])}
+        student_raw_avg_score_per_page_id={@student_raw_avg_score_per_page_id}
+        raw_avg_score={Map.get(@student_raw_avg_score_per_page_id, child["resource_id"])}
         intro_video_viewed={@intro_video_viewed}
         video_url={@module["intro_video"]}
-        progress={Map.get(@student_progress_per_resource_id, page["resource_id"])}
-        purpose={page["purpose"]}
+        progress={Map.get(@student_progress_per_resource_id, child["resource_id"])}
+        student_progress_per_resource_id={@student_progress_per_resource_id}
+        purpose={child["purpose"]}
+        closed_sections={Map.get(@closed_sections_per_module_id, @module["resource_id"], [])}
       />
     </div>
     """
@@ -781,24 +929,115 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   attr :title, :string
   attr :type, :string
   attr :numbering_index, :integer
+  attr :numbering_level, :integer
+  attr :children, :list, default: []
   attr :was_visited, :boolean
   attr :duration_minutes, :integer
   attr :revision_slug, :string
   attr :module_resource_id, :integer
   attr :resource_id, :string
+  attr :student_id, :integer
+  attr :ctx, :map
   attr :graded, :boolean
   attr :raw_avg_score, :map
+  attr :student_raw_avg_score_per_page_id, :map
+  attr :student_progress_per_resource_id, :map
   attr :due_date, :string
   attr :intro_video_viewed, :boolean
-  attr :video_url, :string
+  attr :video_url, :string, default: nil
   attr :progress, :float
   attr :purpose, :string
+  attr :closed_sections, :list, default: []
+
+  def index_item(%{type: "section"} = assigns) do
+    ~H"""
+    <div
+      role={"#{@type} #{@numbering_index} details"}
+      class="flex items-center gap-[14px] pr-[10px] w-full"
+      id={"index_item_#{@resource_id}"}
+    >
+      <.no_icon />
+
+      <div
+        id={"index_item_#{@numbering_index}_#{@resource_id}"}
+        phx-click={
+          JS.toggle(
+            to: "#section_group_#{@resource_id}",
+            out: {"fade-out duration-300", "opacity-100", "opacity-0"},
+            in: {"fade-in duration-300", "opacity-0", "opacity-100"},
+            display: "flex"
+          )
+          |> JS.push("expand_section")
+        }
+        phx-value-resource_id={@resource_id}
+        phx-value-module_resource_id={@module_resource_id}
+        class="flex shrink items-center gap-3 w-full px-2 dark:text-white cursor-pointer hover:bg-gray-200/70 dark:hover:bg-gray-800"
+      >
+        <.numbering_index type={@type} index={@numbering_index} />
+        <div class="flex flex-col gap-1 w-full">
+          <div class={["flex", left_indentation(@numbering_level)]}>
+            <span class="text-[16px] leading-[22px] pr-2 font-bold dark:text-white">
+              <%= "#{@title}" %>
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div
+      id={"section_group_#{@resource_id}"}
+      class={[
+        "flex relative flex-col items-center gap-3 w-full",
+        maybe_hidden_section(@closed_sections, @resource_id)
+      ]}
+    >
+      <.index_item
+        :for={child <- @children}
+        title={child["title"]}
+        type={
+          if is_section?(child["resource_type_id"], child["numbering"]["level"]),
+            do: "section",
+            else: "page"
+        }
+        numbering_index={child["numbering"]["index"]}
+        numbering_level={child["numbering"]["level"]}
+        children={child["children"]}
+        was_visited={child["visited"]}
+        duration_minutes={child["duration_minutes"]}
+        graded={child["graded"]}
+        revision_slug={child["slug"]}
+        module_resource_id={@module_resource_id}
+        resource_id={child["resource_id"]}
+        student_id={@student_id}
+        ctx={@ctx}
+        due_date={
+          if child["graded"],
+            do:
+              get_due_date_for_student(
+                child["section_resource"].end_date,
+                child["resource_id"],
+                child["section_resource"].section_id,
+                @student_id,
+                @ctx,
+                "{WDshort} {Mshort} {D}, {YYYY}"
+              )
+        }
+        raw_avg_score={Map.get(@student_raw_avg_score_per_page_id, child["resource_id"])}
+        student_raw_avg_score_per_page_id={@student_raw_avg_score_per_page_id}
+        intro_video_viewed={@intro_video_viewed}
+        progress={Map.get(@student_progress_per_resource_id, child["resource_id"])}
+        student_progress_per_resource_id={@student_progress_per_resource_id}
+        purpose={child["purpose"]}
+        closed_sections={@closed_sections}
+      />
+    </div>
+    """
+  end
 
   def index_item(assigns) do
     ~H"""
     <div
       role={"#{@type} #{@numbering_index} details"}
-      class="flex items-center gap-[14px] px-[10px] w-full"
+      class="flex items-center gap-[14px] pr-[10px] w-full"
       id={"index_item_#{@resource_id}"}
     >
       <.index_item_icon
@@ -820,10 +1059,9 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         phx-value-purpose={@purpose}
         class="flex shrink items-center gap-3 w-full px-2 dark:text-white cursor-pointer hover:bg-gray-200/70 dark:hover:bg-gray-800"
       >
-        <span class="text-[12px] leading-[16px] font-bold w-[30px] shrink-0 opacity-40 dark:text-white">
-          <%= "#{@numbering_index}" %>
-        </span>
-        <div class="flex flex-col gap-1 w-full">
+        <.numbering_index type={@type} index={@numbering_index} />
+
+        <div class={["flex flex-col gap-1 w-full", left_indentation(@numbering_level)]}>
           <div class="flex">
             <span class={[
               "text-[16px] leading-[22px] pr-2 dark:text-white",
@@ -885,7 +1123,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       {false, "page", false, _} ->
         # not visited practice page
         ~H"""
-        <div role="no icon" class="flex justify-center items-center h-7 w-7 shrink-0"></div>
+        <.no_icon />
         """
 
       {true, "page", true, raw_avg_score} when not is_nil(raw_avg_score) ->
@@ -1014,7 +1252,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   attr :purpose, :string
   attr :default_image, :string, default: @default_image
 
-  def module_card(assigns) do
+  def card(assigns) do
     ~H"""
     <div
       id={
@@ -1074,7 +1312,9 @@ defmodule OliWeb.Delivery.Student.LearnLive do
           style={"background-image: url('#{if(@bg_image_url in ["", nil], do: @default_image, else: @bg_image_url)}');"}
         >
           <span class="text-[12px] leading-[16px] font-bold opacity-60 text-white dark:text-opacity-50">
-            <%= "#{@unit_numbering_index}.#{@module_index}" %>
+            <%= if is_page(@module),
+              do: Phoenix.HTML.raw("&nbsp;"),
+              else: "#{@unit_numbering_index}.#{@module_index}" %>
           </span>
           <h5 class="text-[18px] leading-[25px] font-bold text-white z-10">
             <%= @module["title"] %>
@@ -1146,6 +1386,23 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     """
   end
 
+  attr :type, :string
+  attr :index, :string
+
+  defp numbering_index(assigns) do
+    ~H"""
+    <span class="text-[12px] leading-[16px] font-bold w-[30px] shrink-0 opacity-40 dark:text-white">
+      <%= if @type == "page", do: "#{@index}", else: " " %>
+    </span>
+    """
+  end
+
+  defp no_icon(assigns) do
+    ~H"""
+    <div role="no icon" class="flex justify-center items-center h-7 w-7 shrink-0"></div>
+    """
+  end
+
   _docp = """
     Currently the intro_content for a revision does not support h1 tags. So,
     if there is no <h1> tag in the content then we need to add an additional margin
@@ -1212,12 +1469,19 @@ defmodule OliWeb.Delivery.Student.LearnLive do
      raw_avg_score_per_container_id}
   end
 
-  defp mark_visited_pages(module, visited_pages) do
+  defp mark_visited_pages(container, visited_pages) do
+    page_resource_type_id = Oli.Resources.ResourceType.get_id_by_type("page")
+    container_resource_type_id = Oli.Resources.ResourceType.get_id_by_type("container")
+
     update_in(
-      module,
+      container,
       ["children"],
-      &Enum.map(&1, fn page ->
-        Map.put(page, "visited", Map.get(visited_pages, page["id"], false))
+      &Enum.map(&1, fn
+        %{"resource_type_id" => ^page_resource_type_id} = page ->
+          Map.put(page, "visited", Map.get(visited_pages, page["id"], false))
+
+        %{"resource_type_id" => ^container_resource_type_id} = section ->
+          mark_visited_pages(section, visited_pages)
       end)
     )
   end
@@ -1471,5 +1735,41 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     if WebUtils.is_youtube_video?(video_url) do
       WebUtils.convert_to_youtube_image_url(video_url)
     end
+  end
+
+  defp is_section?(resource_type_id, numbering_level),
+    do:
+      Oli.Resources.ResourceType.get_type_by_id(resource_type_id) == "container" and
+        numbering_level > 2
+
+  defp left_indentation(numbering_level) do
+    case numbering_level do
+      4 -> "ml-[30px]"
+      5 -> "ml-[60px]"
+      6 -> "ml-[90px]"
+      7 -> "ml-[120px]"
+      level when level >= 8 -> "ml-[150px]"
+      _ -> "ml-0"
+    end
+  end
+
+  defp find_module_ancestor(_, nil, _), do: nil
+
+  defp find_module_ancestor(hierarchy, resource_id, container_resource_type_id) do
+    case Oli.Delivery.Hierarchy.find_parent_in_hierarchy(
+           hierarchy,
+           &(&1["resource_id"] == resource_id)
+         ) do
+      %{"resource_type_id" => ^container_resource_type_id, "numbering" => %{"level" => 2}} =
+          module ->
+        module["resource_id"]
+
+      parent ->
+        find_module_ancestor(hierarchy, parent["resource_id"], container_resource_type_id)
+    end
+  end
+
+  defp maybe_hidden_section(closed_sections, resource_id) do
+    if Enum.member?(closed_sections, resource_id), do: "hidden", else: ""
   end
 end

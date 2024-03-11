@@ -23,13 +23,13 @@ defmodule Oli.Content.Content.HtmlTest do
       assert rendered_html_string =~ "<h3>Introduction</h3>"
 
       assert rendered_html_string =~
-               ~r/<img.*src="https:\/\/upload.wikimedia.org\/wikipedia\/commons\/thumb\/f\/f9\/Declaration_of_Independence_%281819%29%2C_by_John_Trumbull.jpg\/480px-Declaration_of_Independence_%281819%29%2C_by_John_Trumbull.jpg"\/>/
+               ~r/<img.*src="https:\/\/upload.wikimedia.org\/wikipedia\/commons\/thumb\/f\/f9\/Declaration_of_Independence_%281819%29%2C_by_John_Trumbull.jpg\/480px-Declaration_of_Independence_%281819%29%2C_by_John_Trumbull.jpg" data-point-marker="1856577103" \/>/
 
       assert rendered_html_string =~
                ~r/<figcaption.*>John Trumbull&#39;s &lt;b&gt;Declaration of Independence&lt;\/b&gt;,/
 
       assert rendered_html_string =~
-               "<p>The American colonials proclaimed &quot;no taxation without representation"
+               "<p data-point-marker=\"2652513352\">The American colonials proclaimed &quot;no taxation without representation"
 
       assert rendered_html_string =~
                "<a class=\"internal-link\" href=\"/sections/some_section/page/page_two\">Page Two</a>"
@@ -40,26 +40,27 @@ defmodule Oli.Content.Content.HtmlTest do
       assert rendered_html_string =~ "<h3>1651–1748: Early seeds</h3>"
 
       assert rendered_html_string =~
-               "<ol class=\"list-inside pl-2\"><li>one</li>\n<li><em>two</em></li>\n<li><em><strong>three</strong></em></li>\n</ol>"
+               "<ol class=\"list-inside pl-2\"><li data-point-marker=\"1896247178\">one</li>\n<li data-point-marker=\"1896247178\"><em>two</em></li>\n<li data-point-marker=\"1896247178\"><em><strong>three</strong></em></li>\n</ol>"
 
       assert rendered_html_string =~
-               "<ul class=\"list-inside pl-2\"><li>alpha</li>\n<li>beta</li>\n<li>gamma</li>\n</ul>"
+               "<ul class=\"list-inside pl-2\"><li data-point-marker=\"18868465\">alpha</li>\n<li data-point-marker=\"18868465\">beta</li>\n<li data-point-marker=\"18868465\">gamma</li>\n</ul>"
 
       assert rendered_html_string =~
                ~r/<div data-react-class="Components.YoutubePlayer"/
 
       assert rendered_html_string =~
-               "<pre><code class=\"torus-code language-python\">import fresh-pots</code></pre>"
+               "<pre><code class=\"torus-code language-python\" data-point-marker=\"4076323894\">import fresh-pots</code></pre>"
 
       assert rendered_html_string =~
-               ~r/<iframe class=".*"  allowfullscreen src="https:\/\/www.wikipedia.org"><\/iframe>/
+               ~r/<iframe class=".*"  allowfullscreen src="https:\/\/www.wikipedia.org" data-point-marker="1713634991"><\/iframe>/
 
       assert rendered_html_string =~ "<span class=\"callout-block\">a richtext callout</span>"
 
       assert rendered_html_string =~
                "<span class=\"formula\"><mrow><mi>a</mi><mo>+</mo><mi>b</mi></mrow></span>"
 
-      assert rendered_html_string =~ "<span class=\"formula\">\\[x^2 + y^2 = z^2\\]</span>"
+      assert rendered_html_string =~
+               "<span class=\"formula\" data-point-marker=\"169365460\">\\[x^2 + y^2 = z^2\\]</span>"
 
       assert rendered_html_string =~
                "<span class=\"callout-inline\">a richtext inline callout</span>"
@@ -79,10 +80,10 @@ defmodule Oli.Content.Content.HtmlTest do
                "<div class=\"dialog-speaker\" ><img src=\"https://www.example.com/image.png\" class=\"img-fluid speaker-portrait\"/><div class=\"speaker-name\">Speaker 2</div></div>"
 
       assert rendered_html_string =~
-               "<div class='figure'><figure><figcaption><p>Figure Title</p>\n</figcaption><div class='figure-content'><p>Figure Content</p>\n</div></figure></div>"
+               "<div class='figure' data-point-marker=\"169365463\"><figure><figcaption><p>Figure Title</p>\n</figcaption><div class='figure-content'><p>Figure Content</p>\n</div></figure></div>"
 
       assert rendered_html_string =~
-               "<div class=\"conjugation\"><div class=\"title\">My Term</div><div class=\"term\">El Verbo<span class='pronunciation'><p>my pronunciation</p>\n</span>\n</div><figure class=\"figure embed-responsive\"><div class=\"figure-content\"><table class='table-bordered '><tr><th>form</th>\n<th>meaning</th>\n</tr>\n<tr><td>my form</td>\n<td>my meaning</td>\n</tr>\n</table>\n</div></figure></div>"
+               "<div class=\"conjugation\" data-point-marker=\"169365461\"><div class=\"title\">My Term</div><div class=\"term\">El Verbo<span class='pronunciation'><p>my pronunciation</p>\n</span>\n</div><figure class=\"figure embed-responsive\"><div class=\"figure-content\"><table class='table-bordered '><tr><th>form</th>\n<th>meaning</th>\n</tr>\n<tr><td>my form</td>\n<td>my meaning</td>\n</tr>\n</table>\n</div></figure></div>"
 
       assert rendered_html_string =~
                "<span class=\"btn btn-primary command-button\" data-action=\"command-button\" data-target=\"3603298117\" data-message=\"startcuepoint=5.0;endcuepoint=10.0\">Play Intro</span>"

@@ -30,6 +30,8 @@ describe('check all that apply delivery', () => {
         projectSlug: '',
         bibParams: [],
         showFeedback: true,
+        renderPointMarkers: false,
+        isAnnotationLevel: false,
       },
       preview: false,
     };

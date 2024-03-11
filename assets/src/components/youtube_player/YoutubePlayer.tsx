@@ -5,6 +5,7 @@ import { useCommandTarget } from 'components/editing/elements/command_button/use
 import { CUTE_OTTERS } from 'components/editing/elements/youtube/YoutubeElement';
 import { parseVideoPlayCommand } from 'components/video_player/VideoPlayer';
 import * as ContentModel from 'data/content/model/elements/types';
+import { PointMarkerContext, maybePointMarkerAttr } from 'data/content/utils';
 import { WriterContext, defaultWriterContext } from 'data/content/writers/context';
 import { HtmlContentModelRenderer } from 'data/content/writers/renderer';
 
@@ -21,7 +22,8 @@ export const YoutubePlayer: React.FC<{
   children?: React.ReactNode;
   context?: WriterContext;
   authorMode: boolean;
-}> = ({ video, children, authorMode, context }) => {
+  pointMarkerContext?: PointMarkerContext;
+}> = ({ video, children, authorMode, context, pointMarkerContext }) => {
   const stopInterval = useRef<number | undefined>();
   const [videoTarget, setVideoTarget] = useState<Player | null>(null);
   const pauseAtPosition = useRef(video.endTime || -1);
@@ -116,7 +118,11 @@ export const YoutubePlayer: React.FC<{
 
   return (
     <ErrorBoundary errorMessage={<YoutubeError videoId={videoId} />}>
-      <div className="embed-responsive embed-responsive-16by9" data-video-id={videoId}>
+      <div
+        className="embed-responsive embed-responsive-16by9"
+        data-video-id={videoId}
+        {...maybePointMarkerAttr(video, pointMarkerContext)}
+      >
         <YouTube
           className="embed-responsive-item"
           videoId={videoId}

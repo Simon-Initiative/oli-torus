@@ -112,6 +112,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
       </.nav_link>
 
       <.nav_link
+        :if={@section.contains_discussions}
         href={path_for(:discussions, @section, @preview_mode)}
         is_active={@active_tab == :discussions}
       >
@@ -124,12 +125,14 @@ defmodule OliWeb.Components.Delivery.Layouts do
         Schedule
       </.nav_link>
       <.nav_link
+        :if={@section.contains_explorations}
         href={path_for(:explorations, @section, @preview_mode)}
         is_active={@active_tab == :explorations}
       >
         Explorations
       </.nav_link>
       <.nav_link
+        :if={@section.contains_deliberate_practice}
         href={path_for(:practice, @section, @preview_mode)}
         is_active={@active_tab == :practice}
       >
