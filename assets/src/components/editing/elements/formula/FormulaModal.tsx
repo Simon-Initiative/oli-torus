@@ -62,7 +62,7 @@ export const FormulaModal = ({ onDone, onCancel, model }: ModalProps) => {
           </div>
           <div className="preview">
             <h4>Preview</h4>
-            <Formula src={src} subtype={subtype} />
+            <Formula id={model.id} src={src} subtype={subtype} />
           </div>
         </div>
       </div>

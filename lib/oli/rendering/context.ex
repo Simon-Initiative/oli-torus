@@ -7,7 +7,8 @@ defmodule Oli.Rendering.Context do
             user: nil,
             activity_map: %{},
             render_opts: %{
-              render_errors: true
+              render_errors: true,
+              render_point_markers: true
             },
             # Mode can be one of  [:delivery, :review, :author_preview, :instructor_preview]
             mode: :delivery,
@@ -29,5 +30,6 @@ defmodule Oli.Rendering.Context do
             extrinsic_read_section_fn: nil,
             learning_language: nil,
             effective_settings: nil,
-            is_liveview: false
+            is_liveview: false,
+            is_annotation_level: true
 end

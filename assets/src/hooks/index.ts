@@ -16,6 +16,7 @@ import { LoadSurveyScripts } from './load_survey_scripts';
 import { LtiConnectInstructions } from './lti_connect_instructions';
 import { ModalLaunch } from './modal';
 import { MonacoEditor } from './monaco_editor';
+import { PointMarkers } from './point_markers';
 import { ProjectsTypeahead } from './projects_typeahead';
 import { ResizeListener } from './resize_listener';
 import { ReviewActivity } from './review_activity';
@@ -64,4 +65,5 @@ export const Hooks = {
   KeepScrollAtBottom,
   SliderScroll,
   VideoPlayer,
+  PointMarkers,
 };

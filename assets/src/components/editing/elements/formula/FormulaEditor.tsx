@@ -42,6 +42,7 @@ export const FormulaEditor = (props: Props) => {
       {props.children}
 
       <Formula
+        id={props.model.id}
         onClick={onFormulaClick}
         style={{ cursor: 'pointer' }}
         type={props.model.legacyBlockRendered ? 'formula' : props.model.type}

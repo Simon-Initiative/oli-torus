@@ -491,7 +491,15 @@ defmodule Oli.EditingTest do
 
       assert html == [
                "<div class=\"content\" >",
-               [["<p>", [[[[], "Here" | "&#39;"] | "s some test content"]], "</p>\n"]],
+               [
+                 [
+                   "<p",
+                   " data-point-marker=\"3371710400\"",
+                   ">",
+                   [[[[], "Here" | "&#39;"] | "s some test content"]],
+                   "</p>\n"
+                 ]
+               ],
                "</div>"
              ]
     end
