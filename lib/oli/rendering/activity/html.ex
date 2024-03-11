@@ -150,7 +150,8 @@ defmodule Oli.Rendering.Activity.Html do
            group_id: group_id,
            survey_id: survey_id,
            learning_language: learning_language,
-           effective_settings: effective_settings
+           effective_settings: effective_settings,
+           render_opts: render_opts
          } = context,
          %ActivitySummary{
            state: state,
@@ -181,7 +182,9 @@ defmodule Oli.Rendering.Activity.Html do
             "{}"
           else
             resource_attempt.state
-          end
+          end,
+        renderPointMarkers: render_opts.render_point_markers,
+        isAnnotationLevel: true
       }
       |> Poison.encode!()
       |> HtmlEntities.encode()

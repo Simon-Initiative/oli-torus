@@ -603,9 +603,9 @@ defmodule OliWeb.Delivery.Student.LearnLive do
               intro_video_viewed={@unit["resource_id"] in @viewed_intro_video_resource_ids}
             />
             <.card
-              :for={{module, module_index} <- Enum.with_index(@unit["children"], 1)}
+              :for={module <- @unit["children"]}
               module={module}
-              module_index={module_index}
+              module_index={module["numbering"]["index"]}
               unit_resource_id={@unit["resource_id"]}
               unit_numbering_index={@unit["numbering"]["index"]}
               bg_image_url={module["poster_image"]}
@@ -831,13 +831,10 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       />
 
       <.index_item
-        :for={
-          {page, page_index} <-
-            Enum.with_index(@module["children"], if(module_has_intro_video(@module), do: 2, else: 1))
-        }
+        :for={page <- @module["children"]}
         title={page["title"]}
         type="page"
-        numbering_index={page_index}
+        numbering_index={page["numbering"]["index"]}
         was_visited={page["visited"]}
         duration_minutes={page["duration_minutes"]}
         graded={page["graded"]}
@@ -909,7 +906,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         class="flex shrink items-center gap-3 w-full px-2 dark:text-white cursor-pointer hover:bg-gray-200/70 dark:hover:bg-gray-800"
       >
         <span class="text-[12px] leading-[16px] font-bold w-[30px] shrink-0 opacity-40 dark:text-white">
-          <%= "#{@numbering_index}" %>
+          <%= if @type != "intro", do: "#{@numbering_index}", else: " " %>
         </span>
         <div class="flex flex-col gap-1 w-full">
           <div class="flex">
@@ -1162,7 +1159,9 @@ defmodule OliWeb.Delivery.Student.LearnLive do
           style={"background-image: url('#{if(@bg_image_url in ["", nil], do: @default_image, else: @bg_image_url)}');"}
         >
           <span class="text-[12px] leading-[16px] font-bold opacity-60 text-white dark:text-opacity-50">
-            <%= "#{@unit_numbering_index}.#{@module_index}" %>
+            <%= if is_page(@module),
+              do: Phoenix.HTML.raw("&nbsp;"),
+              else: "#{@unit_numbering_index}.#{@module_index}" %>
           </span>
           <h5 class="text-[18px] leading-[25px] font-bold text-white z-10">
             <%= @module["title"] %>
