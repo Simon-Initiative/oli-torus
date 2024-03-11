@@ -200,6 +200,22 @@ defmodule Oli.Publishing.DeliveryResolver do
     |> emit([:oli, :resolvers, :delivery], :duration)
   end
 
+  @doc """
+  Returns the first page slug for a given section
+  """
+  @spec get_first_page_slug(String.t()) :: String.t()
+  def get_first_page_slug(section_slug) do
+    page_id = Oli.Resources.ResourceType.id_for_page()
+
+    from([s: s, sr: sr, rev: rev] in section_resource_revisions(section_slug),
+      where: rev.resource_type_id == ^page_id,
+      select: rev.slug,
+      order_by: [asc: sr.numbering_index],
+      limit: 1
+    )
+    |> Repo.one()
+  end
+
   def practice_pages_revisions_and_section_resources_with_surveys(section_slug) do
     from([sr, s, _spp, _pr, rev] in section_resource_revisions(section_slug),
       join: content_elem in fragment("jsonb_array_elements(?->'model')", rev.content),

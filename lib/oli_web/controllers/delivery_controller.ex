@@ -351,7 +351,8 @@ defmodule OliWeb.DeliveryController do
 
             render(conn, "enroll.html",
               section: section,
-              from_invitation_link?: params["from_invitation_link?"] || false
+              from_invitation_link?: params["from_invitation_link?"] || false,
+              auto_enroll_as_guest: params["auto_enroll_as_guest"] || false
             )
         end
 
