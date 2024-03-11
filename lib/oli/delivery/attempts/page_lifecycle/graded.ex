@@ -252,9 +252,14 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Graded do
     end
   end
 
-  defp apply_evaluation(resource_attempt, activity_attempts, %Combined{} = effective_settings, is_adaptive?) do
+  defp apply_evaluation(
+         resource_attempt,
+         activity_attempts,
+         %Combined{} = effective_settings,
+         is_adaptive?
+       ) do
     {score, out_of} =
-      if !is_adaptive? and Enum.empty?(activity_attempts)  do
+      if !is_adaptive? and Enum.empty?(activity_attempts) do
         # For basic page assessments with no activities, grant a score of 1.0/1.0
         {1.0, 1.0}
       else
