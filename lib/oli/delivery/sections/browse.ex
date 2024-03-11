@@ -1,6 +1,7 @@
 defmodule Oli.Delivery.Sections.Browse do
   import Ecto.Query, warn: false
 
+  alias Oli.Delivery.Sections.EnrollmentContextRole
   alias Lti_1p3.Tool.ContextRoles
   alias Oli.Accounts.User
   alias Oli.Delivery.Sections.{Section, Enrollment, BrowseOptions}
@@ -98,11 +99,14 @@ defmodule Oli.Delivery.Sections.Browse do
         },
         group_by: [e.section_id]
 
+    student_role_id =
+      ContextRoles.get_role(:context_learner).id
+
     student_enrollments =
       from e in Enrollment,
-        join: u in User,
-        on: e.user_id == u.id,
-        where: u.can_create_sections == false,
+        join: ecr in EnrollmentContextRole,
+        on: ecr.enrollment_id == e.id,
+        where: ecr.context_role_id == ^student_role_id,
         select: %{
           id: e.id,
           section_id: e.section_id
