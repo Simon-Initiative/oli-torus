@@ -139,7 +139,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
               type: "p",
               children: [
                 %{
-                  text: "Thoughout this unit you will learn how to use this course."
+                  text: "Throughout this unit you will learn how to use this course."
                 }
               ]
             }

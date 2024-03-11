@@ -7,6 +7,8 @@ defmodule Oli.Rendering.Content.Html do
   import Oli.Utils
   import Oli.Rendering.Utils
 
+  require Logger
+
   alias Oli.Rendering.Context
   alias Phoenix.HTML
   alias Oli.Rendering.Content.MathMLSanitizer
@@ -24,8 +26,8 @@ defmodule Oli.Rendering.Content.Html do
     ["<span class=\"callout-inline\">", next.(), "</span>\n"]
   end
 
-  def p(%Context{} = _context, next, _) do
-    ["<p>", next.(), "</p>\n"]
+  def p(%Context{} = context, next, attrs) do
+    ["<p", maybe_point_marker_attr(context, attrs), ">", next.(), "</p>\n"]
   end
 
   def input_ref(%Context{} = _context, next, _) do
@@ -61,7 +63,9 @@ defmodule Oli.Rendering.Content.Html do
       context,
       attrs,
       [
-        ~s|<img class="figure-img img-fluid"#{maybeAlt(attrs)}#{maybeWidth(attrs)} src="#{escape_xml!(src)}"/>\n|
+        ~s|<img class="figure-img img-fluid"#{maybe_alt(attrs)}#{maybe_width(attrs)} src="#{escape_xml!(src)}"|,
+        maybe_point_marker_attr(context, attrs),
+        ~s| />\n|
       ],
       "image"
     )
@@ -71,7 +75,7 @@ defmodule Oli.Rendering.Content.Html do
 
   def img_inline(%Context{} = _context, _, %{"src" => src} = attrs) do
     [
-      ~s|<img class="img-fluid"#{maybeAlt(attrs)}#{maybeWidth(attrs)} src="#{escape_xml!(src)}"/>\n|
+      ~s|<img class="img-fluid"#{maybe_alt(attrs)}#{maybe_width(attrs)} src="#{escape_xml!(src)}"/>\n|
     ]
   end
 
@@ -79,7 +83,13 @@ defmodule Oli.Rendering.Content.Html do
 
   def video(%Context{} = context, _, attrs) do
     {:safe, video_player} =
-      OliWeb.Common.React.component(context, "Components.VideoPlayer", %{"video" => attrs})
+      OliWeb.Common.React.component(context, "Components.VideoPlayer", %{
+        "video" => attrs,
+        "pointMarkerContext" => %{
+          renderPointMarkers: context.render_opts.render_point_markers,
+          isAnnotationLevel: context.is_annotation_level
+        }
+      })
 
     video_player
   end
@@ -99,7 +109,11 @@ defmodule Oli.Rendering.Content.Html do
           "code" => attrs["code"],
           "id" => attrs["id"],
           "slug" => context.section_slug,
-          "attemptGuid" => attempt_guid
+          "attemptGuid" => attempt_guid,
+          "pointMarkerContext" => %{
+            renderPointMarkers: context.render_opts.render_point_markers,
+            isAnnotationLevel: context.is_annotation_level
+          }
         }
       )
 
@@ -108,7 +122,13 @@ defmodule Oli.Rendering.Content.Html do
 
   def youtube(%Context{} = context, _, %{"src" => _} = attrs) do
     {:safe, video_player} =
-      OliWeb.Common.React.component(context, "Components.YoutubePlayer", %{"video" => attrs})
+      OliWeb.Common.React.component(context, "Components.YoutubePlayer", %{
+        "video" => attrs,
+        "pointMarkerContext" => %{
+          renderPointMarkers: context.render_opts.render_point_markers,
+          isAnnotationLevel: context.is_annotation_level
+        }
+      })
 
     video_player
   end
@@ -152,7 +172,7 @@ defmodule Oli.Rendering.Content.Html do
       """
       <div class="#{container_class}">
         <div class="embed-wrapper">
-          <iframe#{maybeAlt(attrs)} class="#{iframe_class}" #{dimensions} allowfullscreen src="#{escape_xml!(src)}"></iframe>
+          <iframe#{maybe_alt(attrs)} class="#{iframe_class}" #{dimensions} allowfullscreen src="#{escape_xml!(src)}"#{maybe_point_marker_attr(context, attrs)}></iframe>
         </div>
       </div>
       """
@@ -165,7 +185,7 @@ defmodule Oli.Rendering.Content.Html do
 
   def audio(%Context{} = context, _, %{"src" => src} = attrs) do
     captioned_content(context, attrs, [
-      ~s|<audio aria-label="#{attrs["alt"]}" controls src="#{escape_xml!(src)}">
+      ~s|<audio aria-label="#{attrs["alt"]}" controls src="#{escape_xml!(src)}"#{maybe_point_marker_attr(context, attrs)}>
       Your browser does not support the <code>audio</code> element.
     </audio>\n|
     ])
@@ -199,7 +219,7 @@ defmodule Oli.Rendering.Content.Html do
       end
 
     wrapping_fn.(context, attrs, [
-      "<table class='#{tableBorderClass(attrs)} #{tableRowClass(attrs)}'>",
+      "<table class='#{tableBorderClass(attrs)} #{tableRowClass(attrs)}'#{maybe_point_marker_attr(context, attrs)}>",
       next.(),
       "</table>\n"
     ])
@@ -302,11 +322,11 @@ defmodule Oli.Rendering.Content.Html do
     ["<ul class=\"list-inside pl-2\">", next.(), "</ul>\n"]
   end
 
-  def li(%Context{} = _context, next, _) do
-    ["<li>", next.(), "</li>\n"]
+  def li(%Context{} = context, next, attrs) do
+    ["<li#{maybe_point_marker_attr(context, attrs)}>", next.(), "</li>\n"]
   end
 
-  def conjugation(%Oli.Rendering.Context{}, render_table, render_pronunciation, attrs) do
+  def conjugation(%Context{} = context, render_table, render_pronunciation, attrs) do
     title =
       case attrs["title"] do
         nil -> ""
@@ -320,7 +340,9 @@ defmodule Oli.Rendering.Content.Html do
       end
 
     [
-      "<div class=\"conjugation\">",
+      "<div class=\"conjugation\"",
+      maybe_point_marker_attr(context, attrs),
+      ">",
       "<div class=\"title\">",
       title,
       "</div>",
@@ -333,12 +355,20 @@ defmodule Oli.Rendering.Content.Html do
     ]
   end
 
-  def dialog(%Context{}, next, %{"title" => title}) do
-    ["<div class=\"dialog\"><h1>", title, "</h1>", next.(), "</div>"]
+  def dialog(%Context{} = context, next, %{"title" => title} = attrs) do
+    [
+      "<div class=\"dialog\"",
+      maybe_point_marker_attr(context, attrs),
+      "><h1>",
+      title,
+      "</h1>",
+      next.(),
+      "</div>"
+    ]
   end
 
-  def dialog(%Context{}, next, _) do
-    ["<div class=\"dialog\">", next.(), "</div>"]
+  def dialog(%Context{} = context, next, attrs) do
+    ["<div class=\"dialog\"", maybe_point_marker_attr(context, attrs), ">", next.(), "</div>"]
   end
 
   def dialog_speaker_portrait(image) do
@@ -443,14 +473,16 @@ defmodule Oli.Rendering.Content.Html do
   end
 
   def definition(
-        %Context{} = _context,
+        %Context{} = context,
         render_translation,
         render_pronunciation,
         render_meaning,
         %{"term" => term, "meanings" => meanings} = element
       ) do
     [
-      "<div class='definition'><div class='term'>",
+      "<div class='definition'",
+      maybe_point_marker_attr(context, element),
+      "><div class='term'>",
       term,
       "</div><i>(definition)</i> <span class='definition-header'>",
       maybePronunciationHeader(element),
@@ -494,12 +526,16 @@ defmodule Oli.Rendering.Content.Html do
   end
 
   def formula(
-        %Oli.Rendering.Context{} = _context,
+        %Oli.Rendering.Context{} = context,
         _next,
-        %{"subtype" => "latex", "src" => src},
+        %{"subtype" => "latex", "src" => src} = attrs,
         false
       ) do
-    ["<span class=\"#{formula_class(false)}\">\\[", escape_xml!(fix_nl(src)), "\\]</span>\n"]
+    [
+      "<span class=\"#{formula_class(false)}\"#{maybe_point_marker_attr(context, attrs)}>\\[",
+      escape_xml!(fix_nl(src)),
+      "\\]</span>\n"
+    ]
   end
 
   def formula(
@@ -524,9 +560,11 @@ defmodule Oli.Rendering.Content.Html do
        else: src
   end
 
-  def figure(%Context{} = _context, render_children, render_title, _) do
+  def figure(%Context{} = context, render_children, render_title, el) do
     [
-      "<div class='figure'><figure><figcaption>",
+      "<div class='figure'",
+      maybe_point_marker_attr(context, el),
+      "><figure><figcaption>",
       render_title.(),
       "</figcaption><div class='figure-content'>",
       render_children.(),
@@ -565,7 +603,7 @@ defmodule Oli.Rendering.Content.Html do
       end
 
     captioned_content(context, attrs, [
-      ~s|<pre><code class="torus-code language-#{language}">#{escape_xml!(code)}</code></pre>\n|
+      ~s|<pre><code class="torus-code language-#{language}"#{maybe_point_marker_attr(context, attrs)}>#{escape_xml!(code)}</code></pre>\n|
     ])
   end
 
@@ -587,7 +625,7 @@ defmodule Oli.Rendering.Content.Html do
       end
 
     captioned_content(context, attrs, [
-      ~s|<pre><code class="torus-code language-#{language}">|,
+      ~s|<pre><code class="torus-code language-#{language}"#{maybe_point_marker_attr(context, attrs)}>|,
       next.(),
       "</code></pre>\n"
     ])
@@ -645,8 +683,8 @@ defmodule Oli.Rendering.Content.Html do
     [next.()]
   end
 
-  def blockquote(%Context{} = _context, next, _) do
-    ["<blockquote>", next.(), "</blockquote>\n"]
+  def blockquote(%Context{} = context, next, attrs) do
+    ["<blockquote", maybe_point_marker_attr(context, attrs), ">", next.(), "</blockquote>\n"]
   end
 
   def a(%Context{} = context, next, %{"href" => href}) do
@@ -709,15 +747,19 @@ defmodule Oli.Rendering.Content.Html do
     ]
   end
 
-  def page_link(%Context{resource_summary_fn: resource_summary_fn} = context, _next, %{
-        "idref" => idref,
-        "purpose" => purpose
-      }) do
+  def page_link(
+        %Context{resource_summary_fn: resource_summary_fn} = context,
+        _next,
+        %{
+          "idref" => idref,
+          "purpose" => purpose
+        } = attrs
+      ) do
     %ResourceSummary{title: title, slug: slug} = resource_summary_fn.(idref)
     href = "/course/link/#{slug}"
 
     [
-      ~s|<div class="content-page-link content-purpose #{purpose}"><div class="content-purpose-label">#{Purposes.label_for(purpose)}</div>|,
+      ~s|<div class="content-page-link content-purpose #{purpose}"#{maybe_point_marker_attr(context, attrs)}><div class="content-purpose-label">#{Purposes.label_for(purpose)}</div>|,
       internal_link(
         context,
         fn ->
@@ -799,7 +841,7 @@ defmodule Oli.Rendering.Content.Html do
 
   def example(%Context{} = _context, next, element) do
     [
-      ~s|<div class="content-purpose example"><div class="content-purpose-label">Example</div><div #{directionAttr(element)} class="content-purpose-content">|,
+      ~s|<div class="content-purpose example"><div class="content-purpose-label">Example</div><div #{direction_attr(element)} class="content-purpose-content">|,
       next.(),
       "</div></div>\n"
     ]
@@ -807,7 +849,7 @@ defmodule Oli.Rendering.Content.Html do
 
   def learn_more(%Context{} = _context, next, element) do
     [
-      ~s|<div class="content-purpose learnmore"><div class="content-purpose-label">Learn more</div><div #{directionAttr(element)} class="content-purpose-content">|,
+      ~s|<div class="content-purpose learnmore"><div class="content-purpose-label">Learn more</div><div #{direction_attr(element)} class="content-purpose-content">|,
       next.(),
       "</div></div>\n"
     ]
@@ -815,7 +857,7 @@ defmodule Oli.Rendering.Content.Html do
 
   def manystudentswonder(%Context{} = _context, next, element) do
     [
-      ~s|<div class="content-purpose manystudentswonder"><div class="content-purpose-label">Many Students Wonder</div><div #{directionAttr(element)} class="content-purpose-content">|,
+      ~s|<div class="content-purpose manystudentswonder"><div class="content-purpose-label">Many Students Wonder</div><div #{direction_attr(element)} class="content-purpose-content">|,
       next.(),
       "</div></div>\n"
     ]
@@ -823,13 +865,13 @@ defmodule Oli.Rendering.Content.Html do
 
   def content(%Context{} = _context, next, element) do
     [
-      ~s|<div class="content" #{directionAttr(element)}>|,
+      ~s|<div class="content" #{direction_attr(element)}>|,
       next.(),
       "</div>"
     ]
   end
 
-  defp directionAttr(element) do
+  defp direction_attr(element) do
     case Map.get(element, "textDirection", "ltr") do
       "ltr" -> ""
       "rtl" -> " dir=\"rtl\""
@@ -945,17 +987,38 @@ defmodule Oli.Rendering.Content.Html do
     end
   end
 
-  defp maybeAlt(attrs) do
+  defp maybe_alt(attrs) do
     case attrs do
       %{"alt" => alt} -> " alt=\"#{escape_xml!(alt)}\""
       _ -> ""
     end
   end
 
-  defp maybeWidth(attrs) do
+  defp maybe_width(attrs) do
     case attrs do
       %{"width" => width} -> " width=\"#{escape_xml!(width)}\""
       _ -> ""
     end
   end
+
+  defp maybe_point_marker_attr(%Context{is_annotation_level: true} = context, %{"id" => id}) do
+    if context.render_opts.render_point_markers do
+      " data-point-marker=\"#{id}\""
+    else
+      ""
+    end
+  end
+
+  defp maybe_point_marker_attr(%Context{is_annotation_level: true} = context, attrs) do
+    if context.render_opts.render_point_markers do
+      Logger.warning(
+        "Content element missing id attribute which is required for point marker. Point marker will not be rendered.\n" <>
+          Jason.encode!(attrs)
+      )
+    end
+
+    ""
+  end
+
+  defp maybe_point_marker_attr(_context, _attrs), do: ""
 end
