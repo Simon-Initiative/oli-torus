@@ -27,6 +27,7 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
   ]
 
   @max_file_size 5_000_000
+  @default_poster_image "/images/course_default.jpg"
 
   def mount(socket) do
     {:ok,
@@ -34,6 +35,7 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
      |> assign(step: :general)
      |> assign(max_size: trunc(@max_file_size / 1_000_000))
      |> assign(uploaded_files: [])
+     |> assign(default_poster_image: @default_poster_image)
      |> allow_upload(:poster_image,
        accept: ~w(.jpg .jpeg .png),
        max_entries: 1,
@@ -254,29 +256,12 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
                 </small>
               </div>
             </div>
-
-            <div class="form-group flex flex-col gap-2">
-              <label>Poster image</label>
-              <.input
-                type="hidden"
-                name="revision[poster_image]"
-                value={@selected_poster_image || @revision.poster_image}
-              />
-              <img
-                :if={@selected_poster_image || @revision.poster_image}
-                src={@selected_poster_image || @revision.poster_image}
-                class="object-cover h-[162px] w-[288px] mx-auto rounded-lg outline outline-1 outline-gray-200 shadow-lg"
-              />
-              <button
-                type="button"
-                class="btn btn-primary mx-auto"
-                phx-click="change_step"
-                phx-value-target_step="poster_image_selection"
-                phx-target={@myself}
-              >
-                Select
-              </button>
-            </div>
+            <.poster_image_selection
+              target={@myself}
+              selected_poster_image={@selected_poster_image}
+              revision_poster_image={@revision.poster_image}
+              default_poster_image={@default_poster_image}
+            />
           </div>
 
           <div class="form-group">
@@ -401,28 +386,12 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
               The title is used to identify this <%= resource_type_label(@revision) %>.
             </small>
           </div>
-          <div class="form-group flex flex-col gap-2">
-            <label>Poster image</label>
-            <.input
-              type="hidden"
-              name="revision[poster_image]"
-              value={@selected_poster_image || @revision.poster_image}
-            />
-            <img
-              :if={@selected_poster_image || @revision.poster_image}
-              src={@selected_poster_image || @revision.poster_image}
-              class="object-cover h-[162px] w-[288px] mx-auto rounded-lg outline outline-1 outline-gray-200 shadow-lg"
-            />
-            <button
-              type="button"
-              class="btn btn-primary mx-auto"
-              phx-click="change_step"
-              phx-value-target_step="poster_image_selection"
-              phx-target={@myself}
-            >
-              Select
-            </button>
-          </div>
+          <.poster_image_selection
+            target={@myself}
+            selected_poster_image={@selected_poster_image}
+            revision_poster_image={@revision.poster_image}
+            default_poster_image={@default_poster_image}
+          />
         <% end %>
 
         <div class="modal-footer">
@@ -430,6 +399,37 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
           <button type="submit" phx-disable-with="Saving..." class="btn btn-primary">Save</button>
         </div>
       </.form>
+    </div>
+    """
+  end
+
+  attr :selected_poster_image, :string
+  attr :revision_poster_image, :string
+  attr :default_poster_image, :string
+  attr :target, :map
+
+  def poster_image_selection(assigns) do
+    ~H"""
+    <div class="form-group flex flex-col gap-2">
+      <label>Poster image</label>
+      <.input
+        type="hidden"
+        name="revision[poster_image]"
+        value={@selected_poster_image || @revision_poster_image}
+      />
+      <img
+        src={@selected_poster_image || @revision_poster_image || @default_poster_image}
+        class="object-cover h-[162px] w-[288px] mx-auto rounded-lg outline outline-1 outline-gray-200 shadow-lg"
+      />
+      <button
+        type="button"
+        class="btn btn-primary mx-auto mt-2"
+        phx-click="change_step"
+        phx-value-target_step="poster_image_selection"
+        phx-target={@target}
+      >
+        Select
+      </button>
     </div>
     """
   end
