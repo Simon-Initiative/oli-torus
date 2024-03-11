@@ -83,7 +83,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
 
   def handle_params(%{"target_resource_id" => resource_id}, _uri, socket) do
     # the goal of this callback is to scroll to the target resource.
-    # the target can be a unit, a module, a page contained at a module level, or a page contained in a module
+    # the target can be a unit, a module, a page contained at a unit level, at a module level, or a page contained in a module
 
     container_resource_type_id = Oli.Resources.ResourceType.get_id_by_type("container")
     page_resource_type_id = Oli.Resources.ResourceType.get_id_by_type("page")
@@ -136,6 +136,17 @@ defmodule OliWeb.Delivery.Student.LearnLive do
            scroll_delay: 300,
            unit_resource_id: unit_resource_id,
            pulse_target_id: "module_#{resource_id}",
+           pulse_delay: 500
+         })}
+
+      %{resource_type_id: resource_type_id, numbering_level: 1}
+      when resource_type_id == page_resource_type_id ->
+        # the target is a page at the highest level (unit level), so we scroll in the Y direction to that page and pulse it
+        {:noreply,
+         push_event(socket, "scroll-y-to-target", %{
+           id: "top_level_page_#{resource_id}",
+           offset: 80,
+           pulse: true,
            pulse_delay: 500
          })}
 
@@ -443,7 +454,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     <div id="student_learn" class="lg:container lg:mx-auto p-[25px]" phx-hook="Scroller">
       <.video_player />
       <div id="all_units" phx-update="append">
-        <.unit
+        <.row
           :for={unit <- @units}
           unit={unit}
           ctx={@ctx}
@@ -485,7 +496,81 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   attr :assistant_enabled, :boolean, required: true
   attr :closed_sections_per_module_id, :map
 
-  def unit(assigns) do
+  # top level page as a card with title and header
+  def row(%{unit: %{"resource_type_id" => 1}} = assigns) do
+    ~H"""
+    <div id={"top_level_page_#{@unit["resource_id"]}"}>
+      <div class="md:p-[25px] md:pl-[50px]" role={"top_level_page_#{@unit["numbering"]["index"]}"}>
+        <div role="header" class="flex flex-col md:flex-row md:gap-[30px]">
+          <div class="text-[14px] leading-[19px] tracking-[1.4px] uppercase mt-[7px] mb-1 whitespace-nowrap opacity-60">
+            <%= "PAGE #{@unit["numbering"]["index"]}" %>
+          </div>
+          <div class="mb-6 flex flex-col items-start gap-[6px] w-full">
+            <h3 class="text-[26px] leading-[32px] tracking-[0.02px] font-normal dark:text-[#DDD]">
+              <%= @unit["title"] %>
+            </h3>
+            <div class="flex items-center w-full gap-3">
+              <div class="flex items-center gap-3" role="schedule_details">
+                <div class="text-[14px] leading-[32px] tracking-[0.02px] font-semibold">
+                  <span class="text-gray-400 opacity-80 dark:text-[#696974] dark:opacity-100 mr-1">
+                    Due:
+                  </span>
+                  <%= FormatDateTime.to_formatted_datetime(
+                    @unit["section_resource"].end_date,
+                    @ctx,
+                    "{WDshort}, {Mshort} {D}, {YYYY} ({h12}:{m}{am})"
+                  ) %>
+                </div>
+              </div>
+              <div class="ml-auto flex items-center gap-6">
+                <Student.score_summary :if={@progress == 100} raw_avg_score={@unit_raw_avg_score} />
+                <.progress_bar
+                  percent={@progress}
+                  width="100px"
+                  on_going_colour="bg-[#0F6CF5]"
+                  completed_colour="bg-[#0CAF61]"
+                  role={"unit_#{@unit["numbering"]["index"]}_progress"}
+                  show_percent={@progress != 100}
+                />
+                <svg
+                  :if={@progress == 100}
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="25"
+                  height="24"
+                  viewBox="0 0 25 24"
+                  fill="none"
+                  role="unit completed check icon"
+                >
+                  <path
+                    d="M10.0496 17.9996L4.34961 12.2996L5.77461 10.8746L10.0496 15.1496L19.2246 5.97461L20.6496 7.39961L10.0496 17.9996Z"
+                    fill="#0CAF61"
+                  />
+                </svg>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="w-[288px]">
+          <.card
+            module={@unit}
+            module_index={1}
+            unit_resource_id={@unit["resource_id"]}
+            unit_numbering_index={@unit["numbering"]["index"]}
+            bg_image_url={@unit["poster_image"]}
+            student_progress_per_resource_id={@student_progress_per_resource_id}
+            selected={
+              @selected_module_per_unit_resource_id[@unit["resource_id"]]["resource_id"] ==
+                @unit["resource_id"]
+            }
+            purpose={@unit["purpose"]}
+          />
+        </div>
+      </div>
+    </div>
+    """
+  end
+
+  def row(assigns) do
     ~H"""
     <div id={"unit_#{@unit["resource_id"]}"}>
       <div class="md:p-[25px] md:pl-[50px]" role={"unit_#{@unit["numbering"]["index"]}"}>
@@ -566,7 +651,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
               resource_id={@unit["resource_id"]}
               intro_video_viewed={@unit["resource_id"] in @viewed_intro_video_resource_ids}
             />
-            <.module_card
+            <.card
               :for={module <- @unit["children"]}
               module={module}
               module_index={module["numbering"]["index"]}
@@ -1167,7 +1252,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   attr :purpose, :string
   attr :default_image, :string, default: @default_image
 
-  def module_card(assigns) do
+  def card(assigns) do
     ~H"""
     <div
       id={

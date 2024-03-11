@@ -176,6 +176,13 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
         graded: true
       )
 
+    top_level_page_revision =
+      insert(:revision,
+        resource_type_id: ResourceType.get_id_by_type("page"),
+        title: "Top Level Page",
+        graded: true
+      )
+
     page_11_revision =
       insert(:revision,
         resource_type_id: ResourceType.get_id_by_type("page"),
@@ -304,7 +311,8 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
           unit_2_revision.resource_id,
           unit_3_revision.resource_id,
           unit_4_revision.resource_id,
-          unit_5_revision.resource_id
+          unit_5_revision.resource_id,
+          top_level_page_revision.resource_id
         ],
         title: "Root Container"
       })
@@ -326,6 +334,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
         page_8_revision,
         page_9_revision,
         page_10_revision,
+        top_level_page_revision,
         page_11_revision,
         page_12_revision,
         section_1_revision,
@@ -414,6 +423,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       page_8: page_8_revision,
       page_9: page_9_revision,
       page_10: page_10_revision,
+      top_level_page: top_level_page_revision,
       page_11: page_11_revision,
       page_12: page_12_revision,
       section_1: section_1_revision,
@@ -1444,6 +1454,41 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
              |> render =~ "style=\"background-image: url(&#39;/images/course_default.jpg&#39;)"
     end
 
+    test "can see pages at the top level of the curriculum (at unit level) with it's header and corresponding card",
+         %{
+           conn: conn,
+           user: user,
+           section: section,
+           top_level_page: top_level_page
+         } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+
+      {:ok, view, _html} = live(conn, Utils.learn_live_path(section.slug))
+
+      assert view
+             |> element(
+               ~s{div[id="top_level_page_#{top_level_page.resource_id}"] div[role="header"]}
+             )
+             |> render() =~ "PAGE 13"
+
+      assert view
+             |> element(
+               ~s{div[id="top_level_page_#{top_level_page.resource_id}"] div[role="header"]}
+             )
+             |> render() =~ "Top Level Page"
+
+      assert view
+             |> element(
+               ~s{div[id="top_level_page_#{top_level_page.resource_id}"] div[role="schedule_details"]}
+             )
+             |> render() =~ "Due:\n              </span>\n              not yet scheduled"
+
+      assert view
+             |> element(~s{div[id="page_#{top_level_page.resource_id}"][role="card_1"]})
+             |> render() =~ "Top Level Page"
+    end
+
     test "can navigate to a unit through url params",
          %{
            conn: conn,
@@ -1509,6 +1554,32 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
              )
 
       assert has_element?(view, ~s{div[id="index_for_#{module_3.resource_id}"]}, "Page 5")
+    end
+
+    test "can navigate to a page at top level (at unit level) through url params",
+         %{
+           conn: conn,
+           user: user,
+           section: section,
+           top_level_page: top_level_page
+         } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+      top_level_page_id = "top_level_page_#{top_level_page.resource_id}"
+
+      {:ok, view, _html} =
+        live(
+          conn,
+          Utils.learn_live_path(section.slug, %{target_resource_id: top_level_page.resource_id})
+        )
+
+      # scrolling and pulse animation are triggered
+      assert_push_event(view, "scroll-y-to-target", %{
+        id: ^top_level_page_id,
+        offset: 80,
+        pulse: true,
+        pulse_delay: 500
+      })
     end
 
     test "can navigate to a page at module level through url params",

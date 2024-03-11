@@ -2208,7 +2208,7 @@ defmodule Oli.Delivery.Sections do
   end
 
   @doc """
-  Returns the section resource for the given section and resource id, with the resource type id
+  Returns the section resource for the given section slug and resource id, with the resource type id
   """
   @spec get_section_resource_with_resource_type(
           section_slug :: String.t(),
