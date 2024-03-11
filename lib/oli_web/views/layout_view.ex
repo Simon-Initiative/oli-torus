@@ -190,6 +190,8 @@ defmodule OliWeb.LayoutView do
     nil
   end
 
+  slot(:inner_block, required: true)
+
   def license_wrapper(assigns) do
     ~H"""
     <div
