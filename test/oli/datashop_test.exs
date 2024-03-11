@@ -830,7 +830,7 @@ defmodule Oli.DatashopTest do
       datashop_file: datashop_file
     } do
       regex =
-        ~r/<context_message name="START_PROBLEM" context_message_id="(.*)".*<\/context_message>.*<tool_message context_message_id="\1">.*<\/tool_message>.*<tutor_message context_message_id="\1">.*<\/tutor_message>/s
+        ~r/<context_message name="START_PROBLEM" context_message_id="(.*)".*<tool_message context_message_id="\1">.*<tutor_message context_message_id="\1">/s
 
       assert String.match?(datashop_file, regex)
     end

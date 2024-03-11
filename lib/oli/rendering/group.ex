@@ -25,12 +25,17 @@ defmodule Oli.Rendering.Group do
     if should_render?(mode, element) do
       next = fn ->
         writer.elements(
-          %Context{context | group_id: id, pagination_mode: pagination_mode},
+          %Context{
+            context
+            | group_id: id,
+              pagination_mode: pagination_mode,
+              is_annotation_level: true
+          },
           children
         )
       end
 
-      writer.group(context, next, element)
+      writer.group(%Context{context | is_annotation_level: true}, next, element)
     else
       []
     end

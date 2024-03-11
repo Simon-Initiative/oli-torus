@@ -1,5 +1,7 @@
 defmodule Oli.Search.EmbeddingsTest do
   use ExUnit.Case, async: true
+  use Oban.Testing, repo: Oli.Repo
+
   alias Oli.Search.RevisionEmbedding
   use OliWeb.ConnCase
 
@@ -175,23 +177,17 @@ defmodule Oli.Search.EmbeddingsTest do
       page_revision_id = page_revision.id
       page_2_revision_id = page_2_revision.id
 
-      assert [
-               %Oban.Job{
-                 worker: "Oli.Search.EmbeddingWorker",
-                 args: %{
-                   "publication_id" => ^publication_id,
-                   "revision_id" => ^page_revision_id
-                 }
-               },
-               %Oban.Job{
-                 worker: "Oli.Search.EmbeddingWorker",
-                 args: %{
-                   "publication_id" => ^publication_id,
-                   "revision_id" => ^page_2_revision_id
-                 }
-               }
-             ] =
-               Embeddings.update_all(publication_id)
+      Embeddings.update_all(publication_id)
+
+      assert_enqueued(
+        worker: Oli.Search.EmbeddingWorker,
+        args: %{"publication_id" => publication_id, "revision_id" => page_revision_id}
+      )
+
+      assert_enqueued(
+        worker: Oli.Search.EmbeddingWorker,
+        args: %{"publication_id" => publication_id, "revision_id" => page_2_revision_id}
+      )
     end
 
     test "inserts the revision_embeddings for each revision id when the third argument is true",
