@@ -179,78 +179,104 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
         phx-submit={@submit}
         action="#"
       >
-        <div class="form-group">
-          <label for="title">Title</label>
-          <.input
-            id="title"
-            name="revision[title]"
-            class="form-control"
-            aria-describedby="title_description"
-            placeholder="Title"
-            value={fetch_field(@changeset, :title)}
-          />
-          <small id="title_description" class="form-text text-muted">
-            The title is used to identify this <%= resource_type_label(@revision) %>.
-          </small>
-        </div>
-
         <%= if !is_container?(@revision) do %>
-          <div class="form-group">
-            <label for="grading_type">Grading Type</label>
-            <.input
-              type="select"
-              name="revision[graded]"
-              id="grading_type"
-              aria-describedby="grading_type_description"
-              placeholder="Grading Type"
-              class="form-control custom-select"
-              value={fetch_field(@changeset, :graded)}
-              options={[{"Graded Assessment", "true"}, {"Ungraded Practice Page", "false"}]}
-            />
-            <small id="grading_type_description" class="form-text text-muted">
-              Graded assessments report a grade to the grade book, while practice pages do not.
-            </small>
-          </div>
+          <div class="flex gap-10">
+            <div>
+              <div class="form-group">
+                <label for="title">Title</label>
+                <.input
+                  id="title"
+                  name="revision[title]"
+                  class="form-control"
+                  aria-describedby="title_description"
+                  placeholder="Title"
+                  value={fetch_field(@changeset, :title)}
+                />
+                <small id="title_description" class="form-text text-muted">
+                  The title is used to identify this <%= resource_type_label(@revision) %>.
+                </small>
+              </div>
+              <div class="form-group">
+                <label for="grading_type">Grading Type</label>
+                <.input
+                  type="select"
+                  name="revision[graded]"
+                  id="grading_type"
+                  aria-describedby="grading_type_description"
+                  placeholder="Grading Type"
+                  class="form-control custom-select"
+                  value={fetch_field(@changeset, :graded)}
+                  options={[{"Graded Assessment", "true"}, {"Ungraded Practice Page", "false"}]}
+                />
+                <small id="grading_type_description" class="form-text text-muted">
+                  Graded assessments report a grade to the grade book, while practice pages do not.
+                </small>
+              </div>
 
-          <div class="form-group">
-            <label>Explanation Strategy</label>
-            <div class="flex gap-2">
-              <.input
-                type="select"
-                name="revision[explanation_strategy][type]"
-                class="form-control custom-select w-full"
-                aria-describedby="explanation_strategy_description"
-                placeholder="Explanation Strategy"
-                value={Map.get(fetch_field(@changeset, :explanation_strategy) || %{}, :type)}
-                options={
-                  Enum.map(
-                    ExplanationStrategy.types(),
-                    &{Oli.Utils.snake_case_to_friendly(&1), &1}
-                  )
-                }
-              />
-              <%= case Map.get(fetch_field(@changeset, :explanation_strategy) || %{}, :type) do %>
-                <% :after_set_num_attempts -> %>
-                  <div class="ml-2">
-                    <.input
-                      name="revision[explanation_strategy][set_num_attempts]"
-                      type="number"
-                      class="form-control"
-                      placeholder="# of Attempts"
-                      value={
-                        Map.get(
-                          fetch_field(@changeset, :explanation_strategy),
-                          :set_num_attempts
-                        )
-                      }
-                    />
-                  </div>
-                <% _ -> %>
-              <% end %>
+              <div class="form-group">
+                <label>Explanation Strategy</label>
+                <div class="flex gap-2">
+                  <.input
+                    type="select"
+                    name="revision[explanation_strategy][type]"
+                    class="form-control custom-select w-full"
+                    aria-describedby="explanation_strategy_description"
+                    placeholder="Explanation Strategy"
+                    value={Map.get(fetch_field(@changeset, :explanation_strategy) || %{}, :type)}
+                    options={
+                      Enum.map(
+                        ExplanationStrategy.types(),
+                        &{Oli.Utils.snake_case_to_friendly(&1), &1}
+                      )
+                    }
+                  />
+                  <%= case Map.get(fetch_field(@changeset, :explanation_strategy) || %{}, :type) do %>
+                    <% :after_set_num_attempts -> %>
+                      <div class="ml-2">
+                        <.input
+                          name="revision[explanation_strategy][set_num_attempts]"
+                          type="number"
+                          class="form-control"
+                          placeholder="# of Attempts"
+                          value={
+                            Map.get(
+                              fetch_field(@changeset, :explanation_strategy),
+                              :set_num_attempts
+                            )
+                          }
+                        />
+                      </div>
+                    <% _ -> %>
+                  <% end %>
+                </div>
+                <small id="explanation_strategy_description" class="form-text text-muted">
+                  Explanation strategy determines how activity explanations will be shown to learners.
+                </small>
+              </div>
             </div>
-            <small id="explanation_strategy_description" class="form-text text-muted">
-              Explanation strategy determines how activity explanations will be shown to learners.
-            </small>
+
+            <div class="form-group flex flex-col gap-2">
+              <label>Poster image</label>
+              <.input
+                type="hidden"
+                name="revision[poster_image]"
+                value={@selected_poster_image || @revision.poster_image}
+              />
+              <img
+                :if={@selected_poster_image || @revision.poster_image}
+                src={@selected_poster_image || @revision.poster_image}
+                class="object-cover h-[162px] w-[288px] mx-auto rounded-lg outline outline-1 outline-gray-200 shadow-lg"
+              />
+              <button
+                type="button"
+                class="btn btn-primary mx-auto"
+                phx-click="change_step"
+                phx-value-target_step="poster_image_selection"
+                phx-target={@myself}
+              >
+                Select
+              </button>
+            </div>
           </div>
 
           <div class="form-group">
@@ -360,30 +386,44 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
               initial_values: get_selected_related_resources(@revision, @project_hierarchy)
             ) %>
           </div>
+        <% else %>
+          <div class="form-group">
+            <label for="title">Title</label>
+            <.input
+              id="title"
+              name="revision[title]"
+              class="form-control"
+              aria-describedby="title_description"
+              placeholder="Title"
+              value={fetch_field(@changeset, :title)}
+            />
+            <small id="title_description" class="form-text text-muted">
+              The title is used to identify this <%= resource_type_label(@revision) %>.
+            </small>
+          </div>
+          <div class="form-group flex flex-col gap-2">
+            <label>Poster image</label>
+            <.input
+              type="hidden"
+              name="revision[poster_image]"
+              value={@selected_poster_image || @revision.poster_image}
+            />
+            <img
+              :if={@selected_poster_image || @revision.poster_image}
+              src={@selected_poster_image || @revision.poster_image}
+              class="object-cover h-[162px] w-[288px] mx-auto rounded-lg outline outline-1 outline-gray-200 shadow-lg"
+            />
+            <button
+              type="button"
+              class="btn btn-primary mx-auto"
+              phx-click="change_step"
+              phx-value-target_step="poster_image_selection"
+              phx-target={@myself}
+            >
+              Select
+            </button>
+          </div>
         <% end %>
-
-        <div class="form-group flex flex-col gap-2">
-          <label>Poster image</label>
-          <.input
-            type="hidden"
-            name="revision[poster_image]"
-            value={@selected_poster_image || @revision.poster_image}
-          />
-          <img
-            :if={@selected_poster_image || @revision.poster_image}
-            src={@selected_poster_image || @revision.poster_image}
-            class="object-cover h-[162px] w-[288px] mx-auto rounded-lg outline outline-1 outline-gray-200 shadow-lg"
-          />
-          <button
-            type="button"
-            class="btn btn-primary mx-auto"
-            phx-click="change_step"
-            phx-value-target_step="poster_image_selection"
-            phx-target={@myself}
-          >
-            Select
-          </button>
-        </div>
 
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" phx-click={@cancel}>Cancel</button>
