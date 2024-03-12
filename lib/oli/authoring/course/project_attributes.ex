@@ -40,10 +40,6 @@ defmodule Oli.Authoring.Course.ProjectAttributes.License do
   def changeset(item, attrs \\ %{}) do
     item
     |> cast(attrs, [:license_type, :custom_license_details])
-    |> validate_required_if([:custom_license_details], &is_custom?/1)
   end
 
-  defp is_custom?(changeset) do
-    get_field(changeset, :license_type) == :custom
-  end
 end

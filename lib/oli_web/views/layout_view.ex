@@ -185,7 +185,7 @@ defmodule OliWeb.LayoutView do
     ~H"""
     <div
       id="license"
-      class="container mx-auto flex px-10 items-center justify-start overflow-y-auto h-[40px] max-h-[40px] relative top-0"
+      class="container mx-auto flex items-center justify-start overflow-y-hidden h-[40px] max-h-[40px] relative top-0"
     >
       <%= render_slot(@inner_block) %>
     </div>
