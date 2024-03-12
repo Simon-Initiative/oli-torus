@@ -1093,4 +1093,38 @@ defmodule Oli.Resources.Collaboration do
       )
     end)
   end
+
+  @doc """
+  Returns the list of posts that a user can see for a particular point content block id.
+
+  ## Examples
+
+      iex> list_posts_for_user_in_point_block(1, 1, 1))
+      [%Post{status: :archived}, ...]
+
+      iex> list_posts_for_user_in_point_block(2, 2, 2)
+      []
+  """
+  def list_posts_for_user_in_point_block(section_id, resource_id, user_id, point_block_id \\ nil) do
+    filter_by_point_block_id =
+      if is_nil(point_block_id) do
+        dynamic([p], is_nil(p.annotated_block_id))
+      else
+        dynamic([p], p.annotated_block_id == ^point_block_id)
+      end
+
+    Repo.all(
+      from(
+        post in Post,
+        where:
+          post.section_id == ^section_id and post.resource_id == ^resource_id and
+            (post.status in [:approved, :archived] or
+               (post.status == :submitted and post.user_id == ^user_id)),
+        where: ^filter_by_point_block_id,
+        select: post,
+        order_by: [desc: :inserted_at],
+        preload: [:user]
+      )
+    )
+  end
 end

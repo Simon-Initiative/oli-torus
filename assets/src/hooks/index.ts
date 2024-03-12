@@ -1,4 +1,5 @@
 import LiveReact from 'phoenix_live_react';
+import { AutoSelect } from './auto_select';
 import { BeforeUnloadListener } from './before_unload';
 import { CheckboxListener } from './checkbox_listener';
 import { ClickOutside } from './click_outside';
@@ -66,4 +67,5 @@ export const Hooks = {
   SliderScroll,
   VideoPlayer,
   PointMarkers,
+  AutoSelect,
 };

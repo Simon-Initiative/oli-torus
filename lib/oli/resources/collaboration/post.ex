@@ -18,7 +18,7 @@ defmodule Oli.Resources.Collaboration.Post do
     belongs_to :parent_post, Oli.Resources.Collaboration.Post
     belongs_to :thread_root, Oli.Resources.Collaboration.Post
 
-    belongs_to :annotated_resource_id, Oli.Resources.Resource
+    belongs_to :annotated_resource, Oli.Resources.Resource
 
     field :annotated_block_id, :string
 

@@ -1,9 +1,15 @@
 defmodule OliWeb.Delivery.Student.Lesson.Annotations do
   use OliWeb, :html
 
+  alias OliWeb.Components.Common
+
+  attr :create_new_annotation, :boolean, default: false
+  attr :annotations, :any, required: true
+  attr :current_user, Oli.Accounts.User, required: true
+
   def panel(assigns) do
     ~H"""
-    <div class="flex-1 flex flex-row">
+    <div class="flex-1 flex flex-row overflow-hidden">
       <div class="justify-start">
         <.toggle_notes_button>
           <i class="fa-solid fa-xmark group-hover:scale-110"></i>
@@ -16,9 +22,19 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
         </.tab_group>
         <.search_box class="mt-2" />
         <hr class="m-6 border-b border-b-gray-200" />
-        <div class="flex-1 flex flex-col gap-3">
-          <.note></.note>
-          <.note></.note>
+        <div class="flex-1 flex flex-col gap-3 overflow-y-auto pb-[80px]">
+          <.add_new_annotation_input class="my-2" active={@create_new_annotation} />
+
+          <%= case @annotations do %>
+            <% {:loading} -> %>
+              <Common.loading_spinner />
+            <% {:loaded, []} -> %>
+              <div class="text-center p-4 text-gray-500">There are no posts yet</div>
+            <% {:loaded, annotations} -> %>
+              <%= for annotation <- annotations do %>
+                <.note post={annotation} current_user={@current_user} />
+              <% end %>
+          <% end %>
         </div>
       </div>
     </div>
@@ -182,22 +198,98 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
     """
   end
 
+  attr :active, :boolean, default: false
+  attr :rest, :global, include: ~w(class)
+
+  defp add_new_annotation_input(%{active: true} = assigns) do
+    ~H"""
+    <div class={["flex flex-row p-2 border-2 border-gray-300 dark:border-gray-700 rounded-lg", @rest[:class]]}>
+      <form class="w-full" phx-submit="create_annotation">
+        <div class="flex-1 flex flex-col relative border-gray-400 rounded-lg p-3">
+          <div class="flex-1">
+            <textarea
+              id="annotation_input"
+              name="content"
+              phx-hook="AutoSelect"
+              rows="4"
+              class="w-full border border-gray-400 rounded-lg p-3"
+              placeholder="Add a new note..."
+            />
+          </div>
+          <div class="flex flex-row justify-start my-2">
+            <.input type="checkbox" name="private" value="true" label="Stay anonymous" />
+          </div>
+          <div class="flex flex-row-reverse justify-start gap-2 mt-3">
+            <Common.button variant={:primary}>
+              Save
+            </Common.button>
+            <Common.button
+              type="button"
+              variant={:secondary}
+              phx-click="cancel_create_annotation"
+            >
+              Cancel
+            </Common.button>
+          </div>
+        </div>
+      </form>
+    </div>
+    """
+  end
+
+  defp add_new_annotation_input(assigns) do
+    ~H"""
+    <div class={["flex flex-row", @rest[:class]]}>
+      <div class="flex-1 relative">
+        <input
+          type="text"
+          class="w-full border border-gray-400 rounded-lg p-3"
+          placeholder="Add a new note..."
+          phx-focus="begin_create_annotation"
+        />
+      </div>
+    </div>
+    """
+  end
+
+  attr :post, Oli.Resources.Collaboration.Post, required: true
+  attr :current_user, Oli.Accounts.User, required: true
+
   defp note(assigns) do
     ~H"""
     <div class="flex flex-col p-4 border-2 border-gray-200 rounded">
       <div class="flex flex-row justify-between mb-3">
         <div class="font-semibold">
-          Me
+          <%= post_creator(@post, @current_user) %>
         </div>
         <div class="text-sm text-gray-500">
-          1d
+          <%= days_ago(@post) %>
         </div>
       </div>
       <p>
-        Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nulla nec dui in odio.
+        <%= @post.content.message %>
       </p>
     </div>
     """
+  end
+
+  defp post_creator(post, current_user) do
+    if post.user_id == current_user.id do
+      "Me"
+    else
+      post.user.name
+    end
+  end
+
+  defp days_ago(post) do
+    ago = DateTime.utc_now()
+      |> DateTime.diff(post.inserted_at, :day)
+
+    case ago do
+      0 -> "Today"
+      1 -> "Yesterday"
+      _ -> "#{ago}d"
+    end
   end
 
   attr :point_marker, :map, required: true
