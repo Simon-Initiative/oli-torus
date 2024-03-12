@@ -290,6 +290,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
 
   attr :point_marker, :map, required: true
   attr :selected, :boolean, default: false
+  attr :count, :integer, default: nil
 
   def annotation_bubble(assigns) do
     ~H"""
@@ -299,15 +300,13 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
       phx-click="select_annotation_point"
       phx-value-point-marker-id={@point_marker.id}
     >
-      <.chat_bubble selected={@selected}>
-        +
-      </.chat_bubble>
+      <.chat_bubble selected={@selected} count={@count} />
     </button>
     """
   end
 
   attr :selected, :boolean, default: false
-  slot :inner_block
+  attr :count, :integer, default: nil
 
   def chat_bubble(assigns) do
     ~H"""
@@ -329,9 +328,14 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
         stroke-linecap="round"
         stroke-linejoin="round"
       />
-      <text x="11" y="22" class={["text-xl", if(@selected, do: "fill-white", else: "fill-gray-500")]}>
-        <%= render_slot(@inner_block) %>
-      </text>
+      <%= case @count do %>
+        <% nil -> %>
+          <text x="52%" y ="50%" dominant-baseline="middle" text-anchor="middle" class={["text-xl", if(@selected, do: "fill-white", else: "fill-gray-500")]}>+</text>
+        <% _ -> %>
+          <text x="52%" y ="50%" dominant-baseline="middle" text-anchor="middle" class={["text-sm", if(@selected, do: "fill-white", else: "fill-gray-500")]}>
+            <%= @count %>
+          </text>
+      <% end %>
     </svg>
     """
   end

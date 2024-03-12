@@ -25,8 +25,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
   def mount(_params, _session, %{assigns: %{view: :practice_page}} = socket) do
     # when updating to Liveview 0.20 we should replace this with assign_async/3
     # https://hexdocs.pm/phoenix_live_view/Phoenix.LiveView.html#assign_async/3
-    if connected?(socket),
-      do:
+    if connected?(socket) do
         async_load_annotations(
           self(),
           socket.assigns.section.id,
@@ -34,6 +33,13 @@ defmodule OliWeb.Delivery.Student.LessonLive do
           socket.assigns[:current_user],
           nil
         )
+        async_load_post_counts(
+          self(),
+          socket.assigns.section.id,
+          socket.assigns.page_context.page.resource_id,
+          socket.assigns[:current_user].id
+        )
+    end
 
     {:ok,
      socket
@@ -252,6 +258,13 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     {:noreply, assign(socket, annotations: {:loaded, annotations})}
   end
 
+  def handle_info(
+        {:load_post_counts, post_counts},
+        socket
+      ) do
+    {:noreply, assign(socket, post_counts: post_counts)}
+  end
+
   def render(%{view: :practice_page, annotations_enabled: true} = assigns) do
     # For practice page the activity scripts and activity_bridge script are needed as soon as the page loads.
     ~H"""
@@ -279,11 +292,13 @@ defmodule OliWeb.Delivery.Student.LessonLive do
         <Annotations.annotation_bubble
           point_marker={%{id: nil, top: 0}}
           selected={@selected_point == nil}
+          count={@post_counts && @post_counts[nil]}
         />
         <Annotations.annotation_bubble
           :for={point_marker <- @point_markers}
           point_marker={point_marker}
           selected={@selected_point == point_marker.id}
+          count={@post_counts && @post_counts[point_marker.id]}
         />
       </:point_markers>
 
@@ -741,7 +756,8 @@ defmodule OliWeb.Delivery.Student.LessonLive do
       point_markers: nil,
       selected_point: nil,
       create_new_annotation: false,
-      annotations: {:loading}
+      annotations: {:loading},
+      post_counts: nil
     )
   end
 
@@ -810,4 +826,17 @@ defmodule OliWeb.Delivery.Student.LessonLive do
       )
     end)
   end
+
+  defp async_load_post_counts(liveview_pid, section_id, resource_id, user_id) do
+    Task.Supervisor.start_child(Oli.TaskSupervisor, fn ->
+      send(
+        liveview_pid,
+        {:load_post_counts,
+         Collaboration.list_post_counts_for_user_in_section(
+          section_id, resource_id, user_id
+         )}
+      )
+    end)
+  end
+
 end

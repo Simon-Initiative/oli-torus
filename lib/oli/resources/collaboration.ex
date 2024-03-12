@@ -1099,10 +1099,10 @@ defmodule Oli.Resources.Collaboration do
 
   ## Examples
 
-      iex> list_posts_for_user_in_point_block(1, 1, 1))
+      iex> list_posts_for_user_in_point_block(1, 1, 1, "1"))
       [%Post{status: :archived}, ...]
 
-      iex> list_posts_for_user_in_point_block(2, 2, 2)
+      iex> list_posts_for_user_in_point_block(2, 2, 2, "2")
       []
   """
   def list_posts_for_user_in_point_block(section_id, resource_id, user_id, point_block_id \\ nil) do
@@ -1126,5 +1126,22 @@ defmodule Oli.Resources.Collaboration do
         preload: [:user]
       )
     )
+  end
+
+  @doc """
+  Returns the count of posts that a user can see for each annotated block id. For top-level
+  resource posts, the annotated block id is nil.
+  """
+  def list_post_counts_for_user_in_section(section_id, resource_id, user_id) do
+    from(
+      post in Post,
+      where: post.section_id == ^section_id and post.resource_id == ^resource_id and
+        (post.status in [:approved, :archived] or
+          (post.status == :submitted and post.user_id == ^user_id)),
+      group_by: post.annotated_block_id,
+      select: {post.annotated_block_id, count(post.id)}
+    )
+    |> Repo.all()
+    |> Enum.into(%{})
   end
 end
