@@ -18,6 +18,8 @@ defmodule OliWeb.LayoutView do
   alias Oli.Delivery.Paywall.AccessSummary
   alias Oli.Resources.Collaboration.CollabSpaceConfig
 
+  @non_empty_license_opts Map.keys(CreativeCommons.cc_options()) -- [:none]
+
   def show_pay_early(%AccessSummary{reason: :within_grace_period}), do: true
   def show_pay_early(_), do: false
 
@@ -142,18 +144,8 @@ defmodule OliWeb.LayoutView do
     """
   end
 
-  def render_license(%{license_type: :none} = assigns) do
-    text = CreativeCommons.cc_options()[:none].text
-    assigns = Map.put(assigns, :text, text)
-
-    ~H"""
-    <.license_wrapper>
-      <%= @text %>
-    </.license_wrapper>
-    """
-  end
-
-  def render_license(%{license_type: cc_license} = assigns) do
+  def render_license(%{license_type: cc_license} = assigns)
+      when cc_license in @non_empty_license_opts do
     cc_data = CreativeCommons.cc_options()[cc_license]
 
     logo_name =
@@ -185,8 +177,12 @@ defmodule OliWeb.LayoutView do
     """
   end
 
-  def render_license(_license) do
-    nil
+  def render_license(assigns) do
+    ~H"""
+    <.license_wrapper>
+      <%= CreativeCommons.cc_options()[:none].text %>
+    </.license_wrapper>
+    """
   end
 
   slot(:inner_block, required: true)
