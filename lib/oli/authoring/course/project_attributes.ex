@@ -41,5 +41,4 @@ defmodule Oli.Authoring.Course.ProjectAttributes.License do
     item
     |> cast(attrs, [:license_type, :custom_license_details])
   end
-
 end
