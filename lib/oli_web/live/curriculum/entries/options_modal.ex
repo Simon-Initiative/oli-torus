@@ -44,15 +44,6 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
      )}
   end
 
-  def update(assigns, socket) do
-    %{revision: %{poster_image: poster_image}} = assigns
-
-    {:ok,
-     socket
-     |> assign(assigns)
-     |> assign(selected_poster_image: poster_image)}
-  end
-
   attr(:redirect_url, :string, required: true)
   attr(:revision, :map, required: true)
   attr(:changeset, :map, required: true)
@@ -90,7 +81,9 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
               entry={entry}
               class={[
                 "object-cover h-[162px] w-[288px] mx-auto rounded-lg cursor-pointer outline outline-1 outline-gray-200 shadow-lg",
-                if(@selected_poster_image == "uploaded_one", do: "!outline-[7px] outline-blue-400")
+                if(fetch_field(@changeset, :poster_image) == "uploaded_one",
+                  do: "!outline-[7px] outline-blue-400"
+                )
               ]}
               phx-click="select-poster-image"
               phx-value-url="uploaded_one"
@@ -117,7 +110,7 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
           phx-target={@myself}
           class={[
             "object-cover h-[162px] w-[288px] mx-auto rounded-lg cursor-pointer outline outline-1 outline-gray-200 shadow-lg hover:scale-[1.02]",
-            if(url == @selected_poster_image, do: "!outline-[7px] outline-blue-400")
+            if(url == fetch_field(@changeset, :poster_image), do: "!outline-[7px] outline-blue-400")
           ]}
         />
       </div>
@@ -127,7 +120,7 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
           <div class="hidden">
             <.live_file_input upload={@uploads.poster_image} />
           </div>
-          <div :if={@selected_poster_image == "uploaded_one"}>
+          <div :if={fetch_field(@changeset, :poster_image) == "uploaded_one"}>
             <%= for entry <- @uploads.poster_image.entries do %>
               <progress :if={entry.valid? and entry.progress != 100} value={entry.progress} max="100">
                 <%= entry.progress %>%
@@ -153,7 +146,7 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
           phx-disable-with="Selecting..."
           class="btn btn-primary"
           phx-click={
-            if @selected_poster_image == "uploaded_one",
+            if fetch_field(@changeset, :poster_image) == "uploaded_one",
               do: JS.push("consume-uploaded") |> JS.push("change_step"),
               else: "change_step"
           }
@@ -161,7 +154,10 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
           phx-value-action="save"
           phx-target={@myself}
           disabled={
-            !can_submit_poster_selection?(@selected_poster_image, @uploads.poster_image.entries)
+            !can_submit_poster_selection?(
+              fetch_field(@changeset, :poster_image),
+              @uploads.poster_image.entries
+            )
           }
         >
           Select
@@ -258,9 +254,7 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
             </div>
             <.poster_image_selection
               target={@myself}
-              selected_poster_image={@selected_poster_image}
-              revision_poster_image={@revision.poster_image}
-              default_poster_image={@default_poster_image}
+              poster_image={fetch_field(@changeset, :poster_image) || @default_poster_image}
             />
           </div>
 
@@ -388,9 +382,7 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
           </div>
           <.poster_image_selection
             target={@myself}
-            selected_poster_image={@selected_poster_image}
-            revision_poster_image={@revision.poster_image}
-            default_poster_image={@default_poster_image}
+            poster_image={fetch_field(@changeset, :poster_image) || @default_poster_image}
           />
         <% end %>
 
@@ -403,22 +395,16 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
     """
   end
 
-  attr :selected_poster_image, :string
-  attr :revision_poster_image, :string
-  attr :default_poster_image, :string
+  attr :poster_image, :string
   attr :target, :map
 
   def poster_image_selection(assigns) do
     ~H"""
     <div class="form-group flex flex-col gap-2">
       <label>Poster image</label>
-      <.input
-        type="hidden"
-        name="revision[poster_image]"
-        value={@selected_poster_image || @revision_poster_image}
-      />
+      <.input type="hidden" name="revision[poster_image]" value={@poster_image} />
       <img
-        src={@selected_poster_image || @revision_poster_image || @default_poster_image}
+        src={@poster_image}
         class="object-cover h-[162px] w-[288px] mx-auto rounded-lg outline outline-1 outline-gray-200 shadow-lg"
       />
       <button
@@ -437,9 +423,7 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
   def handle_event("change_step", %{"target_step" => "poster_image_selection"}, socket) do
     {:ok, poster_image_urls} =
       list_poster_image_urls(socket.assigns.project.slug)
-      |> list_selected_image_first(
-        socket.assigns.selected_poster_image || socket.assigns.revision.poster_image
-      )
+      |> list_selected_image_first(fetch_field(socket.assigns.changeset, :poster_image))
 
     {
       :noreply,
@@ -447,39 +431,46 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
       |> maybe_cancel_not_consumed_uploads()
       |> assign(
         step: :poster_image_selection,
-        poster_image_urls: poster_image_urls,
-        selected_poster_image:
-          socket.assigns.selected_poster_image || socket.assigns.revision.poster_image
+        poster_image_urls: poster_image_urls
       )
     }
   end
 
   def handle_event("change_step", %{"target_step" => "general", "action" => "cancel"}, socket) do
+    changeset =
+      socket.assigns.changeset
+      |> Ecto.Changeset.delete_change(:poster_image)
+
     {:noreply,
      socket
      |> maybe_cancel_not_consumed_uploads()
-     |> assign(step: :general, selected_poster_image: nil)}
-  end
-
-  def handle_event("change_step", %{"target_step" => "general", "action" => "save"}, socket)
-      when is_nil(socket.assigns.selected_poster_image) do
-    {:noreply, socket}
+     |> assign(step: :general, changeset: changeset)}
   end
 
   def handle_event("change_step", %{"target_step" => "general", "action" => "save"}, socket) do
-    {:noreply, assign(socket, step: :general)}
+    if is_nil(Ecto.Changeset.get_change(socket.assigns.changeset, :poster_image)) do
+      {:noreply, socket}
+    else
+      {:noreply, assign(socket, step: :general)}
+    end
   end
 
   def handle_event("select-poster-image", %{"url" => url}, socket) do
-    {:noreply, assign(socket, selected_poster_image: url)}
+    changeset = Ecto.Changeset.put_change(socket.assigns.changeset, :poster_image, url)
+
+    {:noreply, assign(socket, changeset: changeset)}
   end
 
   def handle_event("validate-upload", _params, socket) do
-    {:noreply, assign(socket, selected_poster_image: "uploaded_one")}
+    changeset = Ecto.Changeset.put_change(socket.assigns.changeset, :poster_image, "uploaded_one")
+
+    {:noreply, assign(socket, changeset: changeset)}
   end
 
   def handle_event("cancel-upload", %{"ref" => ref}, socket) do
-    {:noreply, cancel_upload(socket, :poster_image, ref) |> assign(selected_poster_image: nil)}
+    changeset = Ecto.Changeset.delete_change(socket.assigns.changeset, :poster_image)
+
+    {:noreply, cancel_upload(socket, :poster_image, ref) |> assign(changeset: changeset)}
   end
 
   def handle_event("consume-uploaded", _params, socket) do
@@ -494,7 +485,10 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
         S3Storage.upload_file(bucket_name, upload_path, temp_file_path)
       end)
 
-    {:noreply, assign(socket, :selected_poster_image, hd(uploaded_files))}
+    changeset =
+      Ecto.Changeset.put_change(socket.assigns.changeset, :poster_image, hd(uploaded_files))
+
+    {:noreply, assign(socket, :changeset, changeset)}
   end
 
   defp is_foundation(changeset, revision) do
