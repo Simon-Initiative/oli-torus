@@ -210,7 +210,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     {:noreply, put_flash(socket, :error, "Note cannot be empty")}
   end
 
-  def handle_event("create_annotation", %{"content" => value, "private" => private}, socket) do
+  def handle_event("create_annotation", %{"content" => value, "anonymous" => anonymous}, socket) do
     %{
       current_user: current_user,
       section: section,
@@ -226,7 +226,8 @@ defmodule OliWeb.Delivery.Student.LessonLive do
       annotated_resource_id: page_context.page.resource_id,
       annotated_block_id: selected_point,
       annotation_type: :point,
-      visibility: if(private == "true", do: :private, else: :public),
+      anonymous: anonymous == "true",
+      visibility: :private,
       content: %Collaboration.PostContent{message: value}
     }
 

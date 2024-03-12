@@ -220,7 +220,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
             />
           </div>
           <div class="flex flex-row justify-start my-2">
-            <.input type="checkbox" name="private" value="true" label="Stay anonymous" />
+            <.input type="checkbox" name="anonymous" value="true" label="Stay anonymous" />
           </div>
           <div class="flex flex-row-reverse justify-start gap-2 mt-3">
             <Common.button variant={:primary}>
@@ -262,7 +262,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
           <%= post_creator(@post, @current_user) %>
         </div>
         <div class="text-sm text-gray-500">
-          <%= days_ago(@post) %>
+          <%= Timex.from_now(@post.inserted_at) %>
         </div>
       </div>
       <p>
@@ -272,23 +272,19 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
     """
   end
 
+  defp post_creator(%{anonymous: true} = post, current_user) do
+    if post.user_id == current_user.id do
+      "Anonymous (Me)"
+    else
+      "Anonymous"
+    end
+  end
+
   defp post_creator(post, current_user) do
     if post.user_id == current_user.id do
       "Me"
     else
       post.user.name
-    end
-  end
-
-  defp days_ago(post) do
-    ago =
-      DateTime.utc_now()
-      |> DateTime.diff(post.inserted_at, :day)
-
-    case ago do
-      0 -> "Today"
-      1 -> "Yesterday"
-      _ -> "#{ago}d"
     end
   end
 
