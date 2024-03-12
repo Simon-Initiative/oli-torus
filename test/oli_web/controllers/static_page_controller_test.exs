@@ -87,6 +87,9 @@ defmodule OliWeb.StaticPageControllerTest do
           }
         })
 
+      assert Phoenix.Flash.get(conn.assigns.flash, :info) ==
+               "Timezone updated successfully."
+
       assert Accounts.get_author_preference(author.id, :timezone) == new_timezone
       assert redirected_to(conn, 302) == redirect_to
     end
@@ -104,6 +107,9 @@ defmodule OliWeb.StaticPageControllerTest do
           }
         })
 
+      assert Phoenix.Flash.get(conn.assigns.flash, :info) ==
+               "Timezone updated successfully."
+
       assert Accounts.get_user_preference(user.id, :timezone) == new_timezone
       assert redirected_to(conn, 302) == redirect_to
     end
@@ -120,6 +126,9 @@ defmodule OliWeb.StaticPageControllerTest do
             redirect_to: "invalid_path"
           }
         })
+
+      assert Phoenix.Flash.get(conn.assigns.flash, :info) ==
+               "Timezone updated successfully."
 
       assert Accounts.get_user_preference(user.id, :timezone) == new_timezone
       assert redirected_to(conn, 302) == Routes.static_page_path(conn, :index)
