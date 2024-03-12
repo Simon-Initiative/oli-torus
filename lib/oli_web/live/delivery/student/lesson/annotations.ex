@@ -15,7 +15,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
           <i class="fa-solid fa-xmark group-hover:scale-110"></i>
         </.toggle_notes_button>
       </div>
-      <div class="flex-1 flex flex-col bg-white p-5">
+      <div class="flex-1 flex flex-col bg-white dark:bg-black p-5">
         <.tab_group class="py-3">
           <.tab selected={true}><.user_icon class="mr-2" /> My Notes</.tab>
           <.tab><.users_icon class="mr-2" /> Class Notes</.tab>
@@ -46,7 +46,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
   def toggle_notes_button(assigns) do
     ~H"""
     <button
-      class="flex flex-col items-center rounded-l-lg bg-white px-6 py-12 text-xl group"
+      class="flex flex-col items-center rounded-l-lg bg-white dark:bg-black px-6 py-12 text-xl group"
       phx-click="toggle_sidebar"
     >
       <%= render_slot(@inner_block) %>
@@ -101,7 +101,8 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
       "flex-1 inline-flex justify-center border-l border-t border-b first:rounded-l-lg last:rounded-r-lg last:border-r px-4 py-3 inline-flex items-center",
       if(@selected,
         do: "bg-primary border-primary text-white stroke-white font-semibold",
-        else: "stroke-[#383A44] border-gray-400 hover:bg-gray-100"
+        else:
+          "stroke-[#383A44] border-gray-400 hover:bg-gray-100 dark:border-gray-700 dark:hover:bg-gray-800"
       )
     ]}>
       <%= render_slot(@inner_block) %>
@@ -192,7 +193,10 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
       <div class="flex-1 relative">
         <i class="fa-solid fa-search absolute left-4 top-4 text-gray-400 pointer-events-none text-lg">
         </i>
-        <input type="text" class="w-full border border-gray-400 rounded-lg pl-12 pr-3 py-3" />
+        <input
+          type="text"
+          class="w-full border border-gray-400 dark:border-gray-700 rounded-lg pl-12 pr-3 py-3"
+        />
       </div>
     </div>
     """
@@ -208,14 +212,14 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
       @rest[:class]
     ]}>
       <form class="w-full" phx-submit="create_annotation">
-        <div class="flex-1 flex flex-col relative border-gray-400 rounded-lg p-3">
+        <div class="flex-1 flex flex-col relative border-gray-400 dark:border-gray-700 rounded-lg p-3">
           <div class="flex-1">
             <textarea
               id="annotation_input"
               name="content"
               phx-hook="AutoSelect"
               rows="4"
-              class="w-full border border-gray-400 rounded-lg p-3"
+              class="w-full border border-gray-400 dark:border-gray-700 dark:bg-black rounded-lg p-3"
               placeholder="Add a new note..."
             />
           </div>
@@ -242,7 +246,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
       <div class="flex-1 relative">
         <input
           type="text"
-          class="w-full border border-gray-400 rounded-lg p-3"
+          class="w-full border border-gray-400 dark:border-gray-700 rounded-lg p-3"
           placeholder="Add a new note..."
           phx-focus="begin_create_annotation"
         />
@@ -256,7 +260,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
 
   defp note(assigns) do
     ~H"""
-    <div class="flex flex-col p-4 border-2 border-gray-200 rounded">
+    <div class="flex flex-col p-4 border-2 border-gray-200 dark:border-gray-800 rounded">
       <div class="flex flex-row justify-between mb-3">
         <div class="font-semibold">
           <%= post_creator(@post, @current_user) %>
