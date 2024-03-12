@@ -173,12 +173,19 @@ defmodule OliWeb.Delivery.Student.LessonLive do
   end
 
   def handle_event("toggle_sidebar", _params, socket) do
-    %{show_sidebar: show_sidebar} = socket.assigns
+    %{show_sidebar: show_sidebar, selected_point: selected_point} = socket.assigns
 
     {:noreply,
      socket
      |> assign(show_sidebar: !show_sidebar)
-     |> push_event("request_point_markers", %{})}
+     |> push_event("request_point_markers", %{})
+     |> then(fn socket ->
+       if show_sidebar do
+         push_event(socket, "clear_highlighted_point_markers", %{})
+       else
+         push_event(socket, "highlight_point_marker", %{id: selected_point})
+       end
+     end)}
   end
 
   def handle_event("select_annotation_point", %{"point-marker-id" => point_marker_id}, socket) do
@@ -190,7 +197,10 @@ defmodule OliWeb.Delivery.Student.LessonLive do
       point_marker_id
     )
 
-    {:noreply, assign(socket, selected_point: point_marker_id, annotations: {:loading})}
+    {:noreply,
+     socket
+     |> assign(selected_point: point_marker_id, annotations: {:loading})
+     |> push_event("highlight_point_marker", %{id: point_marker_id})}
   end
 
   def handle_event("select_annotation_point", _params, socket) do
@@ -202,7 +212,10 @@ defmodule OliWeb.Delivery.Student.LessonLive do
       nil
     )
 
-    {:noreply, assign(socket, selected_point: nil, annotations: {:loading})}
+    {:noreply,
+     socket
+     |> assign(selected_point: nil, annotations: {:loading})
+     |> push_event("clear_highlighted_point_markers", %{})}
   end
 
   def handle_event("begin_create_annotation", _, socket) do
