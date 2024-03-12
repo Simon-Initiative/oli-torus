@@ -176,11 +176,51 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
         graded: true
       )
 
+    top_level_page_revision =
+      insert(:revision,
+        resource_type_id: ResourceType.get_id_by_type("page"),
+        title: "Top Level Page",
+        graded: true
+      )
+
+    page_11_revision =
+      insert(:revision,
+        resource_type_id: ResourceType.get_id_by_type("page"),
+        title: "Page 11",
+        duration_minutes: 10
+      )
+
+    page_12_revision =
+      insert(:revision,
+        resource_type_id: ResourceType.get_id_by_type("page"),
+        title: "Page 12",
+        duration_minutes: 15
+      )
+
+    # sections and sub-sections...
+
+    subsection_1_revision =
+      insert(:revision, %{
+        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("container"),
+        children: [page_11_revision.resource_id],
+        title: "Erlang as a motivation"
+      })
+
+    section_1_revision =
+      insert(:revision, %{
+        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("container"),
+        children: [subsection_1_revision.resource_id, page_12_revision.resource_id],
+        title: "Why Elixir?"
+      })
+
     ## modules...
     module_1_revision =
       insert(:revision, %{
         resource_type_id: Oli.Resources.ResourceType.get_id_by_type("container"),
-        children: [page_1_revision.resource_id, page_2_revision.resource_id],
+        children: [
+          page_1_revision.resource_id,
+          page_2_revision.resource_id
+        ],
         title: "How to use this course",
         poster_image: "module_1_custom_image_url",
         intro_content: %{
@@ -211,6 +251,13 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
         resource_type_id: Oli.Resources.ResourceType.get_id_by_type("container"),
         children: [page_5_revision.resource_id, page_6_revision.resource_id],
         title: "Installing Elixir, OTP and Phoenix"
+      })
+
+    module_4_revision =
+      insert(:revision, %{
+        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("container"),
+        children: [section_1_revision.resource_id],
+        title: "Final thoughts"
       })
 
     ## units...
@@ -250,7 +297,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
     unit_5_revision =
       insert(:revision, %{
         resource_type_id: Oli.Resources.ResourceType.get_id_by_type("container"),
-        children: [page_10_revision.resource_id],
+        children: [page_10_revision.resource_id, module_4_revision.resource_id],
         title: "Learning Macros",
         intro_video: "another_video"
       })
@@ -264,7 +311,8 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
           unit_2_revision.resource_id,
           unit_3_revision.resource_id,
           unit_4_revision.resource_id,
-          unit_5_revision.resource_id
+          unit_5_revision.resource_id,
+          top_level_page_revision.resource_id
         ],
         title: "Root Container"
       })
@@ -286,9 +334,15 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
         page_8_revision,
         page_9_revision,
         page_10_revision,
+        top_level_page_revision,
+        page_11_revision,
+        page_12_revision,
+        section_1_revision,
+        subsection_1_revision,
         module_1_revision,
         module_2_revision,
         module_3_revision,
+        module_4_revision,
         unit_1_revision,
         unit_2_revision,
         unit_3_revision,
@@ -354,6 +408,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
     })
 
     %{
+      author: author,
       section: section,
       project: project,
       publication: publication,
@@ -368,9 +423,15 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       page_8: page_8_revision,
       page_9: page_9_revision,
       page_10: page_10_revision,
+      top_level_page: top_level_page_revision,
+      page_11: page_11_revision,
+      page_12: page_12_revision,
+      section_1: section_1_revision,
+      subsection_1: subsection_1_revision,
       module_1: module_1_revision,
       module_2: module_2_revision,
       module_3: module_3_revision,
+      module_4: module_4_revision,
       unit_1: unit_1_revision,
       unit_2: unit_2_revision,
       unit_3: unit_3_revision,
@@ -841,15 +902,14 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       |> element(~s{div[role="unit_1"] div[role="card_2"]})
       |> render_click()
 
-      # page number 2 in the module index is the graded page with title "Page 4" in the hierarchy
       assert has_element?(
                view,
-               ~s{div[role="page 2 details"] div[role="orange flag icon"]}
+               ~s{div[role="page 4 details"] div[role="orange flag icon"]}
              )
 
       assert has_element?(
                view,
-               ~s{div[role="page 2 details"] div[role="due date and score"]},
+               ~s{div[role="page 4 details"] div[role="due date and score"]},
                "Due: Fri Nov 3, 2023"
              )
     end
@@ -899,24 +959,23 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       |> element(~s{div[role="unit_1"] div[role="card_2"]})
       |> render_click()
 
-      # page number 2 in the module index is the graded page with title "Page 4" in the hierarchy
-      # has the correct icon
+      # graded page with title "Page 4" in the hierarchy has the correct icon
       assert has_element?(
                view,
-               ~s{div[role="page 2 details"] div[role="square check icon"]}
+               ~s{div[role="page 4 details"] div[role="square check icon"]}
              )
 
       # correct due date
       assert has_element?(
                view,
-               ~s{div[role="page 2 details"] div[role="due date and score"]},
+               ~s{div[role="page 4 details"] div[role="due date and score"]},
                "Due: Fri Nov 3, 2023"
              )
 
       # and correct score summary
       assert has_element?(
                view,
-               ~s{div[role="page 2 details"] div[role="due date and score"]},
+               ~s{div[role="page 4 details"] div[role="due date and score"]},
                "1 / 2"
              )
     end
@@ -1068,7 +1127,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       # expand unit 2/module 3 details
       view
-      |> element(~s{div[role="unit_2"] div[role="card_1"]})
+      |> element(~s{div[role="unit_2"] div[role="card_3"]})
       |> render_click()
 
       assert has_element?(
@@ -1115,10 +1174,32 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       |> element(~s{div[role="unit_1"] div[role="card_1"]})
       |> render_click()
 
-      # pages are numbered starting from 2 since there is an intro video for this module
-      assert has_element?(view, ~s{div[role="page 2 details"] div[role="check icon"]})
-      assert has_element?(view, ~s{div[role="page 3 details"]})
-      refute has_element?(view, ~s{div[role="page 3 details"] div[role="check icon"]})
+      assert has_element?(view, ~s{div[role="page 1 details"] div[role="check icon"]})
+      assert has_element?(view, ~s{div[role="page 2 details"]})
+      refute has_element?(view, ~s{div[role="page 2 details"] div[role="check icon"]})
+    end
+
+    test "sees a check icon on visited and completed pages within a section", %{
+      conn: conn,
+      user: user,
+      section: section,
+      page_11: page_11
+    } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+
+      set_progress(section.id, page_11.resource_id, user.id, 1.0, page_11)
+      {:ok, view, _html} = live(conn, Utils.learn_live_path(section.slug))
+
+      # when the slider buttons are enabled we know the student async metrics were loaded
+      assert_receive({_ref, {:push_event, "enable-slider-buttons", _}}, 2_000)
+
+      # expand unit 5/module 3 details
+      view
+      |> element(~s{div[role="unit_5"] div[role="card_4"]})
+      |> render_click()
+
+      assert has_element?(view, ~s{div[role="page 11 details"] div[role="check icon"]})
     end
 
     test "does not see a check icon on visited pages that are not fully completed", %{
@@ -1226,7 +1307,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       # unit 3, practice page 1 card at module level has progress 100%
       assert view
-             |> element(~s{div[role="unit_3"] div[role="card_1_progress"]})
+             |> element(~s{div[role="unit_3"] div[role="card_7_progress"]})
              |> render() =~ "style=\"width: 100%\""
     end
 
@@ -1242,11 +1323,11 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       {:ok, view, _html} = live(conn, Utils.learn_live_path(section.slug))
 
-      assert has_element?(view, ~s{div[role="unit_3"] div[role="card_1"] div[role="page icon"]})
+      assert has_element?(view, ~s{div[role="unit_3"] div[role="card_7"] div[role="page icon"]})
 
       # click on page 7 card to navigate to that page
       view
-      |> element(~s{div[role="unit_3"] div[role="card_1"]})
+      |> element(~s{div[role="unit_3"] div[role="card_7"]})
       |> render_click()
 
       request_path = Utils.learn_live_path(section.slug, target_resource_id: page_7.resource_id)
@@ -1271,12 +1352,12 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       assert has_element?(
                view,
-               ~s{div[role="unit_3"] div[role="card_2"] div[role="graded page icon"]}
+               ~s{div[role="unit_3"] div[role="card_8"] div[role="graded page icon"]}
              )
 
       # click on page 8 card to navigate to that page
       view
-      |> element(~s{div[role="unit_3"] div[role="card_2"]})
+      |> element(~s{div[role="unit_3"] div[role="card_8"]})
       |> render_click()
 
       request_path = Utils.learn_live_path(section.slug, target_resource_id: page_8.resource_id)
@@ -1319,8 +1400,11 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       {:ok, view, _html} = live(conn, Utils.learn_live_path(section.slug))
 
+      # Progress in module 1 (which has page 2)
       assert has_element?(view, ~s{div[role="unit_1"] div[role="card_1_progress"]})
-      assert has_element?(view, ~s{div[role="unit_3"] div[role="card_1_progress"]})
+
+      # Progress in page 7
+      assert has_element?(view, ~s{div[role="unit_3"] div[role="card_7_progress"]})
     end
 
     test "can see card background image if provided (if not the default one is shown)",
@@ -1368,6 +1452,41 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       assert view
              |> element(~s{div[role="unit_5"] div[role="intro_card"]"})
              |> render =~ "style=\"background-image: url(&#39;/images/course_default.jpg&#39;)"
+    end
+
+    test "can see pages at the top level of the curriculum (at unit level) with it's header and corresponding card",
+         %{
+           conn: conn,
+           user: user,
+           section: section,
+           top_level_page: top_level_page
+         } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+
+      {:ok, view, _html} = live(conn, Utils.learn_live_path(section.slug))
+
+      assert view
+             |> element(
+               ~s{div[id="top_level_page_#{top_level_page.resource_id}"] div[role="header"]}
+             )
+             |> render() =~ "PAGE 13"
+
+      assert view
+             |> element(
+               ~s{div[id="top_level_page_#{top_level_page.resource_id}"] div[role="header"]}
+             )
+             |> render() =~ "Top Level Page"
+
+      assert view
+             |> element(
+               ~s{div[id="top_level_page_#{top_level_page.resource_id}"] div[role="schedule_details"]}
+             )
+             |> render() =~ "Due:\n              </span>\n              not yet scheduled"
+
+      assert view
+             |> element(~s{div[id="page_#{top_level_page.resource_id}"][role="card_1"]})
+             |> render() =~ "Top Level Page"
     end
 
     test "can navigate to a unit through url params",
@@ -1435,6 +1554,32 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
              )
 
       assert has_element?(view, ~s{div[id="index_for_#{module_3.resource_id}"]}, "Page 5")
+    end
+
+    test "can navigate to a page at top level (at unit level) through url params",
+         %{
+           conn: conn,
+           user: user,
+           section: section,
+           top_level_page: top_level_page
+         } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+      top_level_page_id = "top_level_page_#{top_level_page.resource_id}"
+
+      {:ok, view, _html} =
+        live(
+          conn,
+          Utils.learn_live_path(section.slug, %{target_resource_id: top_level_page.resource_id})
+        )
+
+      # scrolling and pulse animation are triggered
+      assert_push_event(view, "scroll-y-to-target", %{
+        id: ^top_level_page_id,
+        offset: 80,
+        pulse: true,
+        pulse_delay: 500
+      })
     end
 
     test "can navigate to a page at module level through url params",
@@ -1507,7 +1652,208 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       )
 
       # The module that contains Page 6 must be expanded so we can see that page
-      assert has_element?(view, ~s{div[id="index_item_2_#{page_6.resource_id}"]}, "Page 6")
+      assert has_element?(view, ~s{div[id="index_item_6_#{page_6.resource_id}"]}, "Page 6")
+    end
+
+    test "can navigate to a page at section level through url params",
+         %{
+           conn: conn,
+           user: user,
+           section: section,
+           unit_5: unit_5,
+           module_4: module_4,
+           page_11: page_11
+         } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+      unit_id = "unit_#{unit_5.resource_id}"
+      card_id = "module_#{module_4.resource_id}"
+      unit_resource_id = unit_5.resource_id
+      pulse_target_id = "index_item_#{page_11.resource_id}"
+
+      {:ok, view, _html} =
+        live(
+          conn,
+          Utils.learn_live_path(section.slug, %{target_resource_id: page_11.resource_id})
+        )
+
+      # scrolling and pulse animations are triggered
+      assert_push_event(view, "scroll-y-to-target", %{id: ^unit_id, offset: 80})
+
+      assert_push_event(view, "scroll-x-to-card-in-slider", %{
+        card_id: ^card_id,
+        scroll_delay: 300,
+        unit_resource_id: ^unit_resource_id,
+        pulse_target_id: ^pulse_target_id,
+        pulse_delay: 500
+      })
+    end
+
+    test "can see pages within sections and sub-sections",
+         %{
+           conn: conn,
+           user: user,
+           section: section,
+           section_1: section_1,
+           subsection_1: subsection_1,
+           page_11: page_11,
+           page_12: page_12
+         } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+
+      {:ok, view, _html} = live(conn, Utils.learn_live_path(section.slug))
+
+      refute has_element?(
+               view,
+               ~s{div[phx-click="navigate_to_resource"][phx-value-slug="#{page_11.slug}"]}
+             )
+
+      refute has_element?(
+               view,
+               ~s{div[phx-click="navigate_to_resource"][phx-value-slug="#{page_12.slug}"]}
+             )
+
+      view
+      |> element(~s{div[role="unit_5"] div[role="card_4"]})
+      |> render_click()
+
+      # page 11 and page 12 are displayed by default with their corresponding indentation
+      page_11_element =
+        element(
+          view,
+          ~s{div[phx-click="navigate_to_resource"][phx-value-slug="#{page_11.slug}"]}
+        )
+
+      assert render(page_11_element) =~ "Page 11"
+      assert render(page_11_element) =~ "ml-[60px]"
+
+      page_12_element =
+        element(
+          view,
+          ~s{div[phx-click="navigate_to_resource"][phx-value-slug="#{page_12.slug}"]}
+        )
+
+      assert render(page_12_element) =~ "Page 12"
+      assert render(page_12_element) =~ "ml-[30px]"
+
+      # Section and Sub-section are displayed with their corresponding indentation
+      section_1_element =
+        element(
+          view,
+          "#index_item_1_#{section_1.resource_id}"
+        )
+
+      subsection_1_element =
+        element(
+          view,
+          "#index_item_1_#{subsection_1.resource_id}"
+        )
+
+      assert render(section_1_element) =~ "Why Elixir?"
+      assert render(section_1_element) =~ "ml-0"
+
+      assert render(subsection_1_element) =~ "Erlang as a motivation"
+      assert render(subsection_1_element) =~ "ml-[30px]"
+
+      # Hides the sub-section content when it is clicked
+      render_click(subsection_1_element)
+
+      assert has_element?(
+               view,
+               ~s{div.hidden div[phx-click="navigate_to_resource"][phx-value-slug="#{page_11.slug}"]}
+             )
+
+      # Hides the section content when it is clicked
+      render_click(section_1_element)
+
+      assert has_element?(
+               view,
+               ~s{div.hidden div[phx-click="navigate_to_resource"][phx-value-slug="#{page_12.slug}"]}
+             )
+
+      assert has_element?(
+               view,
+               "div.hidden #index_item_1_#{subsection_1.resource_id}"
+             )
+    end
+  end
+
+  describe "sidebar menu" do
+    setup [:user_conn, :create_elixir_project]
+
+    test "does not render Explorations, Practice and Collaboration links if those features are not enabled",
+         %{conn: conn, user: user, section: section} do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+      {:ok, view, _html} = live(conn, Utils.learn_live_path(section.slug))
+
+      refute has_element?(
+               view,
+               ~s{a[href="/sections/#{section.slug}/explorations"]},
+               "Explorations"
+             )
+
+      refute has_element?(view, ~s{a[href="/sections/#{section.slug}/practice"]}, "Practice")
+
+      refute has_element?(
+               view,
+               ~s{a[href="/sections/#{section.slug}/discussions"]},
+               "Discussions"
+             )
+    end
+
+    test "renders Explorations, Practice and Collaboration links if those features are enabled",
+         %{
+           conn: conn,
+           user: user,
+           section: section,
+           page_1: page_1,
+           page_2: page_2,
+           page_3: page_3,
+           author: author
+         } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+
+      # change the purpose of the pages to have an exploration page and a deliberate practice page
+      Oli.Resources.update_revision(page_1, %{purpose: :application, author_id: author.id})
+
+      Oli.Resources.update_revision(page_2, %{purpose: :deliberate_practice, author_id: author.id})
+
+      # enable collab space on page 3
+      page_3_sr =
+        Oli.Delivery.Sections.get_section_resource(section.id, page_3.resource_id)
+
+      {:ok, _} =
+        Oli.Delivery.Sections.update_section_resource(page_3_sr, %{
+          collab_space_config: %Oli.Resources.Collaboration.CollabSpaceConfig{
+            status: :enabled
+          }
+        })
+
+      # process changes in section
+      Oli.Delivery.Sections.PostProcessing.apply(section, [
+        :discussions,
+        :explorations,
+        :deliberate_practice
+      ])
+
+      {:ok, view, _html} = live(conn, Utils.learn_live_path(section.slug))
+
+      assert has_element?(
+               view,
+               ~s{a[href="/sections/#{section.slug}/explorations"]},
+               "Explorations"
+             )
+
+      assert has_element?(view, ~s{a[href="/sections/#{section.slug}/practice"]}, "Practice")
+
+      assert has_element?(
+               view,
+               ~s{a[href="/sections/#{section.slug}/discussions"]},
+               "Discussions"
+             )
     end
   end
 end
