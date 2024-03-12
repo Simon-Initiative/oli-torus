@@ -22,8 +22,9 @@ end
 
 defmodule Oli.Authoring.Course.ProjectAttributes.License do
   use Ecto.Schema
+
   import Ecto.Changeset
-  import Oli.Utils
+
   alias Oli.Authoring.Course.CreativeCommons
   alias __MODULE__
 
