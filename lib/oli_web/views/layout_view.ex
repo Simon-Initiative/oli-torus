@@ -2,21 +2,15 @@ defmodule OliWeb.LayoutView do
   use OliWeb, :view
   use Phoenix.Component
 
-  import OliWeb.AuthoringView,
-    only: [
-      author_role_text: 1,
-      author_role_color: 1,
-      author_icon: 1
-    ]
-
   import Oli.Branding
+  import OliWeb.AuthoringView, only: [author_role_text: 1, author_role_color: 1, author_icon: 1]
 
   alias Oli.Accounts
   alias Oli.Authoring.Course.CreativeCommons
-  alias Oli.Publishing.AuthoringResolver
-  alias OliWeb.Breadcrumb.BreadcrumbTrailLive
   alias Oli.Delivery.Paywall.AccessSummary
+  alias Oli.Publishing.AuthoringResolver
   alias Oli.Resources.Collaboration.CollabSpaceConfig
+  alias OliWeb.Breadcrumb.BreadcrumbTrailLive
 
   @non_empty_license_opts Map.keys(CreativeCommons.cc_options()) -- [:none]
 
