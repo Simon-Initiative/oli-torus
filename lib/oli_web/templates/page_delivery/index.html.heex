@@ -47,7 +47,7 @@
             do: "lg:basis-2/3 mt-3",
             else: "w-full"
         }>
-          <%= live_render(@conn, OliWeb.Delivery.StudentDashboard.CourseContentLive,
+          <%= live_render(%{@conn | assigns: Map.delete(@conn.assigns, :flash)}, OliWeb.Delivery.StudentDashboard.CourseContentLive,
             session: %{
               "section_slug" => @section_slug,
               "current_user_id" => @current_user_id,

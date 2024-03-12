@@ -1,5 +1,4 @@
-
-<div id="live_flash_container" class="flash container mx-auto px-0 top-[80px]">
+<div :if={@flash not in [nil, %{}]} id="live_flash_container" class="flash container mx-auto px-0 top-[80px]">
   <%= if live_flash(@flash, :info) do %>
     <div class="alert alert-info flex flex-row" role="alert">
       <div class="flex-1">
@@ -28,6 +27,6 @@
   <% end %>
 </div>
 
-<script id="keep-alive" type="text/javascript" src="<%= Routes.static_path(OliWeb.Endpoint, "/js/keepalive.js") %>"></script>
+<script id="keep-alive" type="text/javascript" src={Routes.static_path(OliWeb.Endpoint, "/js/keepalive.js")}></script>
 
 <%= @inner_content %>
