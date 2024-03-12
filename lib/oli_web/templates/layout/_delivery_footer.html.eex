@@ -4,8 +4,8 @@
 %>
 
 <footer class="flex flex-row h-[90px] overflow-hidden absolute bottom-0 left-0 right-0 bg-delivery-footer dark:bg-delivery-footer-dark">
-<div class="container mx-auto flex flex-col px-10 justify-center items-center text-sm gap-2">
-  <div class="container mx-auto flex flex-col px-10 justify-between text-xs">
+<div class="container mx-auto flex flex-col px-3 justify-center items-center text-sm gap-2">
+  <div class="container mx-auto flex flex-col justify-between text-xs">
     <div class="text-left flex gap-2">
       <a href='javascript:;' onclick="OLI.selectCookiePreferences({privacyPoliciesUrl: '<%= privacy_policies_url %>'})">Cookie Preferences</a>
     </div>
