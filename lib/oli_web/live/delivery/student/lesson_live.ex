@@ -26,19 +26,20 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     # when updating to Liveview 0.20 we should replace this with assign_async/3
     # https://hexdocs.pm/phoenix_live_view/Phoenix.LiveView.html#assign_async/3
     if connected?(socket) do
-        async_load_annotations(
-          self(),
-          socket.assigns.section.id,
-          socket.assigns.page_context.page.resource_id,
-          socket.assigns[:current_user],
-          nil
-        )
-        async_load_post_counts(
-          self(),
-          socket.assigns.section.id,
-          socket.assigns.page_context.page.resource_id,
-          socket.assigns[:current_user].id
-        )
+      async_load_annotations(
+        self(),
+        socket.assigns.section.id,
+        socket.assigns.page_context.page.resource_id,
+        socket.assigns[:current_user],
+        nil
+      )
+
+      async_load_post_counts(
+        self(),
+        socket.assigns.section.id,
+        socket.assigns.page_context.page.resource_id,
+        socket.assigns[:current_user].id
+      )
     end
 
     {:ok,
@@ -833,10 +834,11 @@ defmodule OliWeb.Delivery.Student.LessonLive do
         liveview_pid,
         {:load_post_counts,
          Collaboration.list_post_counts_for_user_in_section(
-          section_id, resource_id, user_id
+           section_id,
+           resource_id,
+           user_id
          )}
       )
     end)
   end
-
 end

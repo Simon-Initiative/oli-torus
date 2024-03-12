@@ -330,9 +330,23 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
       />
       <%= case @count do %>
         <% nil -> %>
-          <text x="52%" y ="50%" dominant-baseline="middle" text-anchor="middle" class={["text-xl", if(@selected, do: "fill-white", else: "fill-gray-500")]}>+</text>
+          <text
+            x="52%"
+            y="50%"
+            dominant-baseline="middle"
+            text-anchor="middle"
+            class={["text-xl", if(@selected, do: "fill-white", else: "fill-gray-500")]}
+          >
+            +
+          </text>
         <% _ -> %>
-          <text x="52%" y ="50%" dominant-baseline="middle" text-anchor="middle" class={["text-sm", if(@selected, do: "fill-white", else: "fill-gray-500")]}>
+          <text
+            x="52%"
+            y="50%"
+            dominant-baseline="middle"
+            text-anchor="middle"
+            class={["text-sm", if(@selected, do: "fill-white", else: "fill-gray-500")]}
+          >
             <%= @count %>
           </text>
       <% end %>

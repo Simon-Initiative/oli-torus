@@ -1135,9 +1135,10 @@ defmodule Oli.Resources.Collaboration do
   def list_post_counts_for_user_in_section(section_id, resource_id, user_id) do
     from(
       post in Post,
-      where: post.section_id == ^section_id and post.resource_id == ^resource_id and
-        (post.status in [:approved, :archived] or
-          (post.status == :submitted and post.user_id == ^user_id)),
+      where:
+        post.section_id == ^section_id and post.resource_id == ^resource_id and
+          (post.status in [:approved, :archived] or
+             (post.status == :submitted and post.user_id == ^user_id)),
       group_by: post.annotated_block_id,
       select: {post.annotated_block_id, count(post.id)}
     )
