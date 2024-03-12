@@ -26,13 +26,14 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     # when updating to Liveview 0.20 we should replace this with assign_async/3
     # https://hexdocs.pm/phoenix_live_view/Phoenix.LiveView.html#assign_async/3
     if connected?(socket),
-      do: async_load_annotations(
-        self(),
-        socket.assigns.section.id,
-        socket.assigns.page_context.page.resource_id,
-        socket.assigns[:current_user],
-        nil
-      )
+      do:
+        async_load_annotations(
+          self(),
+          socket.assigns.section.id,
+          socket.assigns.page_context.page.resource_id,
+          socket.assigns[:current_user],
+          nil
+        )
 
     {:ok,
      socket
@@ -175,24 +176,24 @@ defmodule OliWeb.Delivery.Student.LessonLive do
 
   def handle_event("select_annotation_point", %{"point-marker-id" => point_marker_id}, socket) do
     async_load_annotations(
-        self(),
-        socket.assigns.section.id,
-        socket.assigns.page_context.page.resource_id,
-        socket.assigns[:current_user],
-        point_marker_id
-      )
+      self(),
+      socket.assigns.section.id,
+      socket.assigns.page_context.page.resource_id,
+      socket.assigns[:current_user],
+      point_marker_id
+    )
 
     {:noreply, assign(socket, selected_point: point_marker_id, annotations: {:loading})}
   end
 
   def handle_event("select_annotation_point", _params, socket) do
     async_load_annotations(
-        self(),
-        socket.assigns.section.id,
-        socket.assigns.page_context.page.resource_id,
-        socket.assigns[:current_user],
-        nil
-      )
+      self(),
+      socket.assigns.section.id,
+      socket.assigns.page_context.page.resource_id,
+      socket.assigns[:current_user],
+      nil
+    )
 
     {:noreply, assign(socket, selected_point: nil, annotations: {:loading})}
   end
@@ -210,7 +211,12 @@ defmodule OliWeb.Delivery.Student.LessonLive do
   end
 
   def handle_event("create_annotation", %{"content" => value, "private" => private}, socket) do
-    %{current_user: current_user, section: section, page_context: page_context, selected_point: selected_point} = socket.assigns
+    %{
+      current_user: current_user,
+      section: section,
+      page_context: page_context,
+      selected_point: selected_point
+    } = socket.assigns
 
     attrs = %{
       status: :submitted,
@@ -228,9 +234,10 @@ defmodule OliWeb.Delivery.Student.LessonLive do
 
     case Collaboration.create_post(attrs) do
       {:ok, post} ->
-        {:noreply, socket
-          |> put_flash(:info, "Note created successfully")
-          |> assign(create_new_annotation: false, annotations: {:loaded, [post | annotations]})}
+        {:noreply,
+         socket
+         |> put_flash(:info, "Note created successfully")
+         |> assign(create_new_annotation: false, annotations: {:loaded, [post | annotations]})}
 
       {:error, _} ->
         {:noreply, put_flash(socket, :error, "Failed to create note")}
@@ -286,7 +293,11 @@ defmodule OliWeb.Delivery.Student.LessonLive do
       </:sidebar_toggle>
 
       <:sidebar>
-        <Annotations.panel create_new_annotation={@create_new_annotation} annotations={@annotations} current_user={@current_user} />
+        <Annotations.panel
+          create_new_annotation={@create_new_annotation}
+          annotations={@annotations}
+          current_user={@current_user}
+        />
       </:sidebar>
     </.page_content_with_sidebar_layout>
 
@@ -774,7 +785,12 @@ defmodule OliWeb.Delivery.Student.LessonLive do
       send(
         liveview_pid,
         {:load_annotations,
-         Collaboration.list_posts_for_user_in_point_block(section_id, resource_id, current_user_id, point_block_id)}
+         Collaboration.list_posts_for_user_in_point_block(
+           section_id,
+           resource_id,
+           current_user_id,
+           point_block_id
+         )}
       )
     end)
   end
@@ -793,5 +809,4 @@ defmodule OliWeb.Delivery.Student.LessonLive do
       )
     end)
   end
-
 end

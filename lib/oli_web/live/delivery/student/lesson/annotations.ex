@@ -203,7 +203,10 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
 
   defp add_new_annotation_input(%{active: true} = assigns) do
     ~H"""
-    <div class={["flex flex-row p-2 border-2 border-gray-300 dark:border-gray-700 rounded-lg", @rest[:class]]}>
+    <div class={[
+      "flex flex-row p-2 border-2 border-gray-300 dark:border-gray-700 rounded-lg",
+      @rest[:class]
+    ]}>
       <form class="w-full" phx-submit="create_annotation">
         <div class="flex-1 flex flex-col relative border-gray-400 rounded-lg p-3">
           <div class="flex-1">
@@ -223,11 +226,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
             <Common.button variant={:primary}>
               Save
             </Common.button>
-            <Common.button
-              type="button"
-              variant={:secondary}
-              phx-click="cancel_create_annotation"
-            >
+            <Common.button type="button" variant={:secondary} phx-click="cancel_create_annotation">
               Cancel
             </Common.button>
           </div>
@@ -282,7 +281,8 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
   end
 
   defp days_ago(post) do
-    ago = DateTime.utc_now()
+    ago =
+      DateTime.utc_now()
       |> DateTime.diff(post.inserted_at, :day)
 
     case ago do
