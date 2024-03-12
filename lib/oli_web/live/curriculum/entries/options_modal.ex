@@ -59,6 +59,11 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
   def render(%{step: :poster_image_selection} = assigns) do
     ~H"""
     <div>
+      <div
+        id="options-modal-uploader-trigger"
+        data-auto_open_uploader={JS.dispatch("click", to: "##{@uploads.poster_image.ref}")}
+      >
+      </div>
       <h2 class="text-lg mb-6">
         <span :if={@poster_image_urls != []}>Select a poster image or</span>
         <a href="#" phx-click={JS.dispatch("click", to: "##{@uploads.poster_image.ref}")}>
@@ -425,15 +430,25 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
       list_poster_image_urls(socket.assigns.project.slug)
       |> list_selected_image_first(fetch_field(socket.assigns.changeset, :poster_image))
 
-    {
-      :noreply,
+    socket =
       socket
       |> maybe_cancel_not_consumed_uploads()
       |> assign(
         step: :poster_image_selection,
         poster_image_urls: poster_image_urls
       )
-    }
+
+    if poster_image_urls == [] do
+      # if there are no images, we open the uploader automatically to reduce the amount of user interactions
+      {:noreply,
+       socket
+       |> push_event("js-exec", %{
+         to: "#options-modal-uploader-trigger",
+         attr: "data-auto_open_uploader"
+       })}
+    else
+      {:noreply, socket}
+    end
   end
 
   def handle_event("change_step", %{"target_step" => "general", "action" => "cancel"}, socket) do
