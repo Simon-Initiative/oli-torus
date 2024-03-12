@@ -163,6 +163,7 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
       setScriptEnv(env);
     }
     simLife.domain = initResult.context.domain || 'stage';
+    simLife.simId = id;
     processInitStateVariable(currentStateSnapshot, simLife.domain);
   }, []);
 
@@ -681,6 +682,7 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
         configData: filterVars,
       });
       Object.keys(filterVars).forEach((variable: any) => {
+        const simKey = `${simLife.domain}.${simLife.simId}.${variable}`;
         const formatted: Record<string, any> = {};
         formatted[variable] = filterVars[variable];
         if (context !== contexts.REVIEW) {
@@ -697,7 +699,7 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
                   scriptEnv,
                   true,
                   false,
-                  variable,
+                  simKey,
                 );
           } else if (typeof value === 'string' && isMathExpr) {
             if (value.search(/app\.|variables\.|stage\.|session\./) >= 0) {
@@ -707,7 +709,8 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
                 simLife.snapshot,
                 scriptEnv,
                 true,
-                variable,
+                false,
+                simKey,
               );
             }
           }
