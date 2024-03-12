@@ -103,7 +103,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
         content: %{
           model: [],
           advancedDelivery: true,
-          displayApplicactionChrome: false,
+          displayApplicationChrome: false,
           additionalStylesheets: [
             "/css/delivery_adaptive_themes_default_light.css"
           ]
@@ -321,6 +321,22 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
         live(conn, Utils.lesson_live_path(section.slug, page_1.slug))
 
       assert redirect_path == "/unauthorized"
+    end
+
+    test "redirects when page is adaptive", %{
+      conn: conn,
+      user: user,
+      section: section,
+      exploration_1: exploration_1
+    } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+
+      {:error, {:redirect, %{to: redirect_path}}} =
+        live(conn, Utils.lesson_live_path(section.slug, exploration_1.slug))
+
+      assert redirect_path ==
+               live_view_adaptive_lesson_live_route(section.slug, exploration_1.slug)
     end
 
     test "can access when enrolled to course", %{

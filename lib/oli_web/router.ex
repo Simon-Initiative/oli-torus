@@ -968,6 +968,7 @@ defmodule OliWeb.Router do
           root_layout: {OliWeb.LayoutView, :delivery},
           layout: {OliWeb.Layouts, :student_delivery_lesson},
           on_mount: [
+            OliWeb.LiveSessionPlugs.RedirectAdaptiveChromeless,
             OliWeb.LiveSessionPlugs.SetUser,
             OliWeb.LiveSessionPlugs.SetSection,
             OliWeb.LiveSessionPlugs.SetBrand,

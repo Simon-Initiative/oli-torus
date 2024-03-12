@@ -68,11 +68,6 @@ defmodule Oli.Delivery.HierarchyTest do
       assert get.(node4)["next"] == nil
       assert get.(node4)["slug"] == node4.revision.slug
       assert get.(node4)["title"] == node4.revision.title
-
-      for node <- [node1, node2, unit_node, node3, node4] do
-        assert Map.has_key?(get.(node), "is_adaptive?")
-        assert Map.has_key?(get.(node), "is_chromeless?")
-      end
     end
 
     test "flatten_pages/1", %{hierarchy: hierarchy} do

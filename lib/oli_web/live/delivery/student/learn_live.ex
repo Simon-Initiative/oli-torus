@@ -4,7 +4,6 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   alias Oli.Accounts.User
   alias OliWeb.Common.FormatDateTime
   alias Oli.Delivery.{Metrics, Sections}
-  alias Oli.Delivery.Page.PageContext
   alias Phoenix.LiveView.JS
   alias Oli.Authoring.Course.Project
   alias Oli.Delivery.Sections.SectionCache
@@ -352,24 +351,10 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   def handle_event(
         "navigate_to_resource",
         %{"slug" => resource_slug} = values,
-        %{assigns: assigns} = socket
+        socket
       ) do
     section_slug = socket.assigns.section.slug
     resource_id = values["resource_id"] || values["module_resource_id"]
-
-    # TODO: Explore alternatives to avoid generating the whole context before redirecting to the lesson.
-    context =
-      PageContext.create_for_visit(
-        assigns.section,
-        resource_slug,
-        assigns.current_user,
-        assigns.datashop_session_id
-      )
-
-    adaptive_chromeless_in_progress? =
-      Map.get(context.page.content, "advancedDelivery", false) and
-        not Map.get(context.page.content, "displayApplicationChrome", false) and
-        context.progress_state == :in_progress
 
     {:noreply,
      push_redirect(socket,
@@ -377,8 +362,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
          resource_url(
            resource_slug,
            section_slug,
-           resource_id,
-           adaptive_chromeless_in_progress?
+           resource_id
          )
      )}
   end
@@ -1439,26 +1423,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     end)
   end
 
-  _docp = """
-    This function returns the url of a lesson, which varies depending on whether the lesson is adaptive and
-    is currently in progress or not.
-  """
-
-  defp resource_url(
-         resource_slug,
-         section_slug,
-         _resource_id,
-         true = _adaptive_chromeless_in_progress?
-       ) do
-    ~p"/sections/#{section_slug}/adaptive_lesson/#{resource_slug}"
-  end
-
-  defp resource_url(
-         resource_slug,
-         section_slug,
-         resource_id,
-         false = _adaptive_chromeless_in_progress
-       ) do
+  defp resource_url(resource_slug, section_slug, resource_id) do
     Utils.lesson_live_path(
       section_slug,
       resource_slug,

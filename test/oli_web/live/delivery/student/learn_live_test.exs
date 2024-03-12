@@ -1272,27 +1272,6 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       )
     end
 
-    test "can visit an adaptive chromeless page", %{
-      conn: conn,
-      user: user,
-      section: section,
-      exploration_1: exploration_1
-    } do
-      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
-      Sections.mark_section_visited_for_student(section, user)
-
-      {:ok, view, _html} = live(conn, Utils.learn_live_path(section.slug))
-
-      # click on exploration 1 to navigate to that page
-      view
-      |> element(
-        ~s{div[phx-click="navigate_to_resource"][phx-value-slug="#{exploration_1.slug}"]}
-      )
-      |> render_click()
-
-      assert_redirect(view, "/sections/#{section.slug}/adaptive_lesson/#{exploration_1.slug}")
-    end
-
     test "can see the unit schedule details considering if the instructor has already scheduled it",
          %{
            conn: conn,
