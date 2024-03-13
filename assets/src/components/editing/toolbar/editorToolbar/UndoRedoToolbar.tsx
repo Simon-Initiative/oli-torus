@@ -1,9 +1,11 @@
 import React, { useMemo } from 'react';
+import { useSlate } from 'slate-react';
 import { createButtonCommandDesc } from 'components/editing/elements/commands/commandFactories';
 import { Toolbar } from 'components/editing/toolbar/Toolbar';
 import { CommandButton } from '../buttons/CommandButton';
 
 export const UndoRedoToolbar = () => {
+  const editor = useSlate();
   const undoDesc = useMemo(
     () =>
       createButtonCommandDesc({
@@ -30,8 +32,8 @@ export const UndoRedoToolbar = () => {
 
   return (
     <Toolbar.Group>
-      <CommandButton description={undoDesc} />
-      <CommandButton description={redoDesc} />
+      <CommandButton disabled={editor.history.undos.length < 1} description={undoDesc} />
+      <CommandButton disabled={editor.history.redos.length < 1} description={redoDesc} />
     </Toolbar.Group>
   );
 };
