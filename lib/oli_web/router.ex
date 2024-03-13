@@ -1212,6 +1212,7 @@ defmodule OliWeb.Router do
     scope "/" do
       pipe_through([:reject_content_admin])
       live("/users", Users.UsersView)
+      live("/vr_user_agents", Users.VrUserAgentsView)
       live("/users/:user_id", Users.UsersDetailView)
       # Admin Author/User Account Management
       live("/authors", Users.AuthorsView)

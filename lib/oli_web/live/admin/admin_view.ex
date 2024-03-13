@@ -60,6 +60,11 @@ defmodule OliWeb.Admin.AdminView do
                 Manage LTI 1.3 Registrations
               </a>
             </li>
+            <li>
+              <a href={~p"/admin/vr_user_agents"}>
+                Manage VR User Agents
+              </a>
+            </li>
           </ul>
         </Group.render>
       <% end %>
