@@ -37,23 +37,7 @@ defmodule Oli.Delivery.Paywall.Discount do
     |> foreign_key_constraint(:institution_id)
   end
 
-  defp is_percentage_type?(changeset) do
-    case changeset do
-      %Ecto.Changeset{valid?: true} = changeset ->
-        get_field(changeset, :type) == :percentage
+  defp is_percentage_type?(changeset), do: get_field(changeset, :type) == :percentage
 
-      _ ->
-        false
-    end
-  end
-
-  defp is_amount_type?(changeset) do
-    case changeset do
-      %Ecto.Changeset{valid?: true} = changeset ->
-        get_field(changeset, :type) == :fixed_amount
-
-      _ ->
-        false
-    end
-  end
+  defp is_amount_type?(changeset), do: get_field(changeset, :type) == :fixed_amount
 end

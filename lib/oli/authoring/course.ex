@@ -13,6 +13,8 @@ defmodule Oli.Authoring.Course do
   alias Oli.{Accounts, Repo}
   alias Oli.Repo.{Paging, Sorting}
   alias Oli.Resources.{ResourceType, Revision, ScoringStrategy}
+  alias Oli.Delivery.Sections.SectionsProjectsPublications
+  alias Oli.Publishing.PublishedResource
 
   def create_project_resource(attrs) do
     %ProjectResource{}
@@ -565,5 +567,33 @@ defmodule Oli.Authoring.Course do
     %{project_slug: project.slug, section_ids: section_ids}
     |> Oli.Analytics.DatashopExportWorker.new()
     |> Oban.insert()
+  end
+
+  alias Oli.Authoring.Course.CreativeCommons
+  @cc_options Map.keys(CreativeCommons.cc_options())
+
+  @type license_types ::
+          :none | :cc_by | :cc_by_sa | :cc_by_nd | :cc_by_nc | :cc_by_nc_sa | :cc_by_nc_nd
+  @spec get_project_license(integer()) ::
+          %{license_type: :custom, custom_license_details: String.t()}
+          | %{license_type: license_types, custom_license_details: <<>>}
+          | nil
+  def get_project_license(revision_id) do
+    from(pr in PublishedResource,
+      join: spp in SectionsProjectsPublications,
+      on: pr.publication_id == spp.publication_id,
+      join: p in assoc(spp, :project),
+      where: pr.revision_id == ^revision_id,
+      distinct: true,
+      select: p.attributes
+    )
+    |> Repo.one()
+    |> case do
+      %{license: %{license_type: license_type} = license} when license_type in @cc_options ->
+        Map.from_struct(license)
+
+      nil ->
+        nil
+    end
   end
 end
