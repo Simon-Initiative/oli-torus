@@ -70,6 +70,8 @@ defmodule Oli.Accounts do
           {:asc, :id}
       end
 
+    %{limit: limit, offset: offset} = Keyword.get(opts, :paginate) |> IO.inspect()
+
     query =
       from(vrua in VrUserAgent,
         as: :vrua,
@@ -82,7 +84,9 @@ defmodule Oli.Accounts do
           name: u.name,
           given_name: u.given_name,
           family_name: u.family_name
-        }
+        },
+        limit: ^limit,
+        offset: ^offset
       )
 
     if column == :value do

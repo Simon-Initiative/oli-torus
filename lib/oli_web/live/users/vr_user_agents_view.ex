@@ -6,6 +6,8 @@ defmodule OliWeb.Users.VrUserAgentsView do
   alias OliWeb.Router.Helpers, as: Routes
   alias Oli.Repo
   alias Phoenix.LiveView.JS
+  alias OliWeb.Common.Paging
+  alias Oli.Accounts.Schemas.VrUserAgent
 
   defp set_breadcrumbs() do
     OliWeb.Admin.AdminView.breadcrumb()
@@ -33,8 +35,10 @@ defmodule OliWeb.Users.VrUserAgentsView do
   # Reset cache
 
   def mount(_, _session, socket) do
-    data_manager = %{sort: {:asc, "id"}, paginate: nil}
-    vr_user_agents = Oli.Accounts.all_vr_user_agents(sort_by: data_manager.sort)
+    data_manager = %{sort: {:asc, "id"}, paginate: %{limit: 10, offset: 0}}
+
+    vr_user_agents =
+      Oli.Accounts.all_vr_user_agents(sort_by: data_manager.sort, paginate: data_manager.paginate)
 
     form = to_form(%{"search_text" => "", "search_by" => "email"})
 
@@ -63,12 +67,12 @@ defmodule OliWeb.Users.VrUserAgentsView do
             <.input
               type="text"
               field={@form[:search_text]}
-              placeholder="Find record by name"
+              placeholder={"Add record by #{@form.source["search_by"]}"}
               autofocus
               autocomplete="off"
               phx-focus={JS.show(to: "#search_users_result")}
             />
-            <div class="form-check-label flex flex-row gap-2 cursor-pointer">
+            <div class="form-check-label flex flex-row gap-2 mt-2 cursor-pointer">
               <div>
                 <label>Name</label>
                 <%= radio_button(@form, :search_by, "name", class: "form-check-input") %>
@@ -110,9 +114,6 @@ defmodule OliWeb.Users.VrUserAgentsView do
                       <span><%= result.user_email %></span>
                     </span>
                   </div>
-                  <%!-- <div class="text-left w-[100px] overflow-ellipsis overflow-hidden whitespace-nowrap inline-block">
-                    <%= result.user_email %>
-                  </div> --%>
                   <div>
                     <input
                       type="checkbox"
@@ -137,13 +138,13 @@ defmodule OliWeb.Users.VrUserAgentsView do
           </div>
         </div>
       </div>
-      <%= if 5 > 0 do %>
-        <div class="d-flex justify-content-between items-center px-5 py-2">
-          <%= "Showing all results (#{5} total)" %>
-        </div>
-      <% else %>
-        <p>None exist</p>
-      <% end %>
+      <Paging.render
+        id="header_paging"
+        total_count={Repo.aggregate(VrUserAgent, :count)}
+        offset={@data_manager.paginate.offset}
+        limit={@data_manager.paginate.limit}
+        click={JS.push("paged_table_page_change")}
+      />
       <table class="min-w-full border ">
         <thead>
           <tr>
@@ -160,8 +161,8 @@ defmodule OliWeb.Users.VrUserAgentsView do
               phx-value-sort-column={sort_field}
             >
               <%= column_title %>
-              <i class="fas fa-sort-up"></i>
-              <i class="fas fa-sort-down"></i>
+              <i class={"fas fa-sort-#{if @data_manager.sort |> elem(0) == :asc, do: "up", else: "down"}"}>
+              </i>
             </th>
           </tr>
         </thead>
@@ -385,13 +386,37 @@ defmodule OliWeb.Users.VrUserAgentsView do
 
     socket =
       assign(socket,
-        vr_user_agents: Oli.Accounts.all_vr_user_agents(sort_by: socket.assigns.data_manager.sort)
+        vr_user_agents:
+          Oli.Accounts.all_vr_user_agents(
+            sort_by: socket.assigns.data_manager.sort,
+            paginate: data_manager.paginate
+          )
       )
 
     {:noreply, socket}
   end
 
   def handle_event("sort_by", _, socket) do
+    {:noreply, socket}
+  end
+
+  def handle_event("paged_table_page_change", %{"limit" => limit, "offset" => offset}, socket) do
+    data_manager = %{
+      socket.assigns.data_manager
+      | paginate: %{limit: String.to_integer(limit), offset: String.to_integer(offset)}
+    }
+
+    socket = assign(socket, data_manager: data_manager)
+
+    socket =
+      assign(socket,
+        vr_user_agents:
+          Oli.Accounts.all_vr_user_agents(
+            sort_by: socket.assigns.data_manager.sort,
+            paginate: data_manager.paginate
+          )
+      )
+
     {:noreply, socket}
   end
 
