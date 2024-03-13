@@ -31,14 +31,8 @@ defmodule OliWeb.Delivery.Student.LessonLive do
         socket.assigns.section.id,
         socket.assigns.page_context.page.resource_id,
         socket.assigns[:current_user],
+        :private,
         nil
-      )
-
-      async_load_post_counts(
-        self(),
-        socket.assigns.section.id,
-        socket.assigns.page_context.page.resource_id,
-        socket.assigns[:current_user].id
       )
     end
 
@@ -194,12 +188,13 @@ defmodule OliWeb.Delivery.Student.LessonLive do
       socket.assigns.section.id,
       socket.assigns.page_context.page.resource_id,
       socket.assigns[:current_user],
+      visibility_for_active_tab(socket.assigns.selected_annotations_tab),
       point_marker_id
     )
 
     {:noreply,
      socket
-     |> assign(selected_point: point_marker_id, annotations: {:loading})
+     |> assign(selected_point: point_marker_id, annotations: nil)
      |> push_event("highlight_point_marker", %{id: point_marker_id})}
   end
 
@@ -209,12 +204,13 @@ defmodule OliWeb.Delivery.Student.LessonLive do
       socket.assigns.section.id,
       socket.assigns.page_context.page.resource_id,
       socket.assigns[:current_user],
+      visibility_for_active_tab(socket.assigns.selected_annotations_tab),
       nil
     )
 
     {:noreply,
      socket
-     |> assign(selected_point: nil, annotations: {:loading})
+     |> assign(selected_point: nil, annotations: nil)
      |> push_event("clear_highlighted_point_markers", %{})}
   end
 
@@ -235,7 +231,9 @@ defmodule OliWeb.Delivery.Student.LessonLive do
       current_user: current_user,
       section: section,
       page_context: page_context,
-      selected_point: selected_point
+      annotations: annotations,
+      selected_point: selected_point,
+      selected_annotations_tab: selected_annotations_tab
     } = socket.assigns
 
     attrs = %{
@@ -247,36 +245,48 @@ defmodule OliWeb.Delivery.Student.LessonLive do
       annotated_block_id: selected_point,
       annotation_type: :point,
       anonymous: anonymous == "true",
-      visibility: :private,
+      visibility: visibility_for_active_tab(selected_annotations_tab),
       content: %Collaboration.PostContent{message: value}
     }
-
-    annotations = socket.assigns.annotations |> elem(1)
 
     case Collaboration.create_post(attrs) do
       {:ok, post} ->
         {:noreply,
          socket
          |> put_flash(:info, "Note created successfully")
-         |> assign(create_new_annotation: false, annotations: {:loaded, [post | annotations]})}
+         |> assign(create_new_annotation: false, annotations: [post | annotations])
+         |> increment_post_count(selected_point)}
 
       {:error, _} ->
         {:noreply, put_flash(socket, :error, "Failed to create note")}
     end
   end
 
-  def handle_info(
-        {:load_annotations, annotations},
-        socket
-      ) do
-    {:noreply, assign(socket, annotations: {:loaded, annotations})}
+  def handle_event("select_tab", %{"tab" => tab}, socket) do
+    tab =
+      case tab do
+        "my_notes" -> :my_notes
+        "all_notes" -> :all_notes
+        _ -> :my_notes
+      end
+
+    async_load_annotations(
+      self(),
+      socket.assigns.section.id,
+      socket.assigns.page_context.page.resource_id,
+      socket.assigns[:current_user],
+      visibility_for_active_tab(tab),
+      socket.assigns.selected_point
+    )
+
+    {:noreply, assign(socket, selected_annotations_tab: tab, annotations: nil)}
   end
 
   def handle_info(
-        {:load_post_counts, post_counts},
+        {:assign, key, annotations},
         socket
       ) do
-    {:noreply, assign(socket, post_counts: post_counts)}
+    {:noreply, assign(socket, [{key, annotations}])}
   end
 
   def render(%{view: :practice_page, annotations_enabled: true} = assigns) do
@@ -327,6 +337,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
           create_new_annotation={@create_new_annotation}
           annotations={@annotations}
           current_user={@current_user}
+          selected_annotations_tab={@selected_annotations_tab}
         />
       </:sidebar>
     </.page_content_with_sidebar_layout>
@@ -770,8 +781,9 @@ defmodule OliWeb.Delivery.Student.LessonLive do
       point_markers: nil,
       selected_point: nil,
       create_new_annotation: false,
-      annotations: {:loading},
-      post_counts: nil
+      annotations: nil,
+      post_counts: nil,
+      selected_annotations_tab: :my_notes
     )
   end
 
@@ -810,17 +822,34 @@ defmodule OliWeb.Delivery.Student.LessonLive do
          section_id,
          resource_id,
          %User{id: current_user_id},
+         visibility,
          point_block_id
        ) do
+    # load annotations
     Task.Supervisor.start_child(Oli.TaskSupervisor, fn ->
       send(
         liveview_pid,
-        {:load_annotations,
+        {:assign, :annotations,
          Collaboration.list_posts_for_user_in_point_block(
            section_id,
            resource_id,
            current_user_id,
+           visibility,
            point_block_id
+         )}
+      )
+    end)
+
+    # load post counts
+    Task.Supervisor.start_child(Oli.TaskSupervisor, fn ->
+      send(
+        liveview_pid,
+        {:assign, :post_counts,
+         Collaboration.list_post_counts_for_user_in_section(
+           section_id,
+           resource_id,
+           current_user_id,
+           visibility
          )}
       )
     end)
@@ -831,27 +860,30 @@ defmodule OliWeb.Delivery.Student.LessonLive do
          _section_id,
          _resource_id,
          _current_user,
+         _visibility,
          _point_block_id
        ) do
     Task.Supervisor.start_child(Oli.TaskSupervisor, fn ->
       send(
         liveview_pid,
-        {:load_annotations, []}
+        {:assign, :annotations, []}
       )
     end)
   end
 
-  defp async_load_post_counts(liveview_pid, section_id, resource_id, user_id) do
-    Task.Supervisor.start_child(Oli.TaskSupervisor, fn ->
-      send(
-        liveview_pid,
-        {:load_post_counts,
-         Collaboration.list_post_counts_for_user_in_section(
-           section_id,
-           resource_id,
-           user_id
-         )}
-      )
-    end)
+  defp visibility_for_active_tab(:all_notes), do: :public
+  defp visibility_for_active_tab(:my_notes), do: :private
+  defp visibility_for_active_tab(_), do: :private
+
+  defp increment_post_count(socket, selected_point) do
+    case socket.assigns.post_counts do
+      nil ->
+        socket
+
+      post_counts ->
+        assign(socket,
+          post_counts: Map.update(post_counts, selected_point, 1, &(&1 + 1))
+        )
+    end
   end
 end
