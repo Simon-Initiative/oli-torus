@@ -28,7 +28,11 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
         <.search_box class="mt-2" />
         <hr class="m-6 border-b border-b-gray-200" />
         <div class="flex-1 flex flex-col gap-3 overflow-y-auto pb-[80px]">
-          <.add_new_annotation_input class="my-2" active={@create_new_annotation} />
+          <.add_new_annotation_input
+            class="my-2"
+            active={@create_new_annotation}
+            disable_anonymous_option={@selected_annotations_tab == :my_notes}
+          />
 
           <%= case @annotations do %>
             <% nil -> %>
@@ -213,6 +217,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
   end
 
   attr :active, :boolean, default: false
+  attr :disable_anonymous_option, :boolean, default: false
   attr :rest, :global, include: ~w(class)
 
   defp add_new_annotation_input(%{active: true} = assigns) do
@@ -233,9 +238,11 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
               placeholder="Add a new note..."
             />
           </div>
-          <div class="flex flex-row justify-start my-2">
-            <.input type="checkbox" name="anonymous" value="true" label="Stay anonymous" />
-          </div>
+          <%= unless @disable_anonymous_option do %>
+            <div class="flex flex-row justify-start my-2">
+              <.input type="checkbox" name="anonymous" value="false" label="Stay anonymous" />
+            </div>
+          <% end %>
           <div class="flex flex-row-reverse justify-start gap-2 mt-3">
             <Common.button variant={:primary}>
               Save
