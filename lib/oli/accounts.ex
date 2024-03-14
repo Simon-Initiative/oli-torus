@@ -60,7 +60,7 @@ defmodule Oli.Accounts do
 
   def search_user_for_vr(_text_search, _identifier), do: []
 
-  def all_vr_user_agents(opts \\ []) do
+  def vr_user_agents(opts \\ []) do
     {order, column} =
       case Keyword.get(opts, :sort_by) do
         {order, column} when order in [:desc, :asc] and column in ["id", "name", "value"] ->

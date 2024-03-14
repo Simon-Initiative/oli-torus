@@ -38,7 +38,10 @@ defmodule OliWeb.Users.VrUserAgentsView do
     data_manager = %{sort: {:asc, "id"}, paginate: %{limit: 10, offset: 0}}
 
     vr_user_agents =
-      Oli.Accounts.all_vr_user_agents(sort_by: data_manager.sort, paginate: data_manager.paginate)
+      Oli.Accounts.vr_user_agents(
+        sort_by: data_manager.sort,
+        paginate: data_manager.paginate
+      )
 
     form = to_form(%{"search_text" => "", "search_by" => "email"})
 
@@ -53,10 +56,6 @@ defmodule OliWeb.Users.VrUserAgentsView do
 
     {:ok, socket}
   end
-
-  # def handle_params(_params, _, socket) do
-  # {:noreply, socket}
-  # end
 
   def render(assigns) do
     ~H"""
@@ -151,18 +150,19 @@ defmodule OliWeb.Users.VrUserAgentsView do
             <th
               :for={
                 {sort_field, column_title} <- [
-                  id: "User ID",
-                  name: "Name",
-                  value: "Value",
-                  nil: "Delete"
+                  {"id", "User ID"},
+                  {"name", "Name"},
+                  {"value", "Value"},
+                  {"nil", "Delete"}
                 ]
               }
               phx-click="sort_by"
               phx-value-sort-column={sort_field}
             >
               <%= column_title %>
-              <i class={"fas fa-sort-#{if @data_manager.sort |> elem(0) == :asc, do: "up", else: "down"}"}>
-              </i>
+              <% sort_data = @data_manager[:sort] %>
+              <i :if={match?(^sort_data, {:asc, sort_field})} class="fa fa-sort-up"></i>
+              <i :if={match?(^sort_data, {:desc, sort_field})} class="fa fa-sort-down"></i>
             </th>
           </tr>
         </thead>
@@ -245,13 +245,9 @@ defmodule OliWeb.Users.VrUserAgentsView do
   # end
 
   def handle_event("add_entry", %{"user-id" => user_id}, socket) do
-    # socket.assigns.search_results |> IO.inspect(label: "---A1")
     filter_fn = fn -> Access.filter(&(&1.user_id == String.to_integer(user_id))) end
     [data] = get_in(socket.assigns.search_results, [filter_fn.()])
-    data |> IO.inspect(label: "---data")
-    # socket.assigns.form.source["search_by"]
-    # socket.assigns.form.source["search_text"]
-    # socket.assigns.form.source["search_by"] |> IO.inspect(label: "---ASD")
+
     %Oli.Accounts.Schemas.VrUserAgent{}
     |> Oli.Accounts.Schemas.VrUserAgent.changeset(data)
     |> Oli.Repo.insert()
@@ -261,9 +257,14 @@ defmodule OliWeb.Users.VrUserAgentsView do
 
     search_results = Accounts.search_user_for_vr(search_text, search_by)
 
-    socket =
-      assign(socket, vr_user_agents: Oli.Accounts.all_vr_user_agents())
-      |> assign(search_results: search_results)
+    vr_user_agents =
+      Oli.Accounts.vr_user_agents(
+        sort_by: socket.assigns.data_manager.sort,
+        paginate: socket.assigns.data_manager.paginate
+      )
+
+    socket = assign(socket, vr_user_agents: vr_user_agents)
+    socket = assign(socket, search_results: search_results)
 
     {:noreply, socket}
   end
@@ -287,58 +288,6 @@ defmodule OliWeb.Users.VrUserAgentsView do
     {:noreply, socket}
   end
 
-  # def handle_event(
-  #       "search_user",
-  #       %{
-  #         "vr_user_agents_embed" =>
-  #           %{"search_by" => search_by, "search_text" => search_text} = params
-  #       },
-  #       socket
-  #     ) do
-  #   search_by |> IO.inspect(label: "--search_by")
-  #   search_text |> IO.inspect(label: "--search_text")
-
-  #   form =
-  #     socket.assigns.form.source
-  #     |> Ecto.Changeset.put_change(:search_by, search_by)
-  #     |> Ecto.Changeset.put_change(:search_text, search_text)
-  #     |> to_form()
-  #     |> IO.inspect(label: "---ASDASD")
-
-  #   socket = assign(socket, form: form)
-  #   socket.assigns.form.data |> IO.inspect(label: "socket.assigns.form.source.data")
-
-  #   to_form(params)
-  #   |> IO.inspect(label: "--AAA")
-
-  #   # form.data.search_by |> IO.inspect(label: "form.data.search_by")
-  #   # form.data.search_by |> IO.inspect(label: "form.data.search_by")
-  #   # search_text = Ecto.Changeset.get_field(socket.assigns.form.source, :search_text)
-  #   # search_by = Ecto.Changeset.get_field(socket.assigns.form.source, :search_by)
-
-  #   # socket.assigns.form |> IO.inspect(label: "---A1")
-
-  #   # Ecto.Changeset.apply_changes(socket.assigns.form.source)
-  #   # |> IO.inspect(label: "---A2")
-
-  #   # search_text |> IO.inspect(label: "search_text")
-  #   # search_by |> IO.inspect(label: "search_by")
-
-  #   {:noreply, socket}
-  # end
-
-  # def handle_event("find_user", %{"search_user_data" => ""}, socket) do
-  #   socket = assign(socket, search_results: [])
-  #   {:noreply, socket}
-  # end
-
-  # def handle_event("find_user", %{"search_user_data" => user_data}, socket) do
-  #   search_by = Ecto.Changeset.get_field(socket.assigns.form.source, :search_by)
-  #   results_found = Accounts.search_user_for_vr(user_data, String.to_existing_atom(search_by))
-  #   socket = assign(socket, search_results: results_found, search_user_data: user_data)
-  #   {:noreply, socket}
-  # end
-
   def handle_event("delete_vr_entry", %{"user-id" => user_id}, socket) do
     Repo.get_by(Oli.Accounts.Schemas.VrUserAgent, %{user_id: user_id})
     |> Repo.delete()
@@ -352,9 +301,14 @@ defmodule OliWeb.Users.VrUserAgentsView do
         _ -> Accounts.search_user_for_vr(search_text, search_by)
       end
 
-    socket =
-      assign(socket, vr_user_agents: Oli.Accounts.all_vr_user_agents())
-      |> assign(search_results: search_results)
+    vr_user_agents =
+      Oli.Accounts.vr_user_agents(
+        sort_by: socket.assigns.data_manager.sort,
+        paginate: socket.assigns.data_manager.paginate
+      )
+
+    socket = assign(socket, vr_user_agents: vr_user_agents)
+    socket = assign(socket, search_results: search_results)
 
     {:noreply, socket}
   end
@@ -366,7 +320,13 @@ defmodule OliWeb.Users.VrUserAgentsView do
     |> Oli.Accounts.Schemas.VrUserAgent.changeset(%{value: !vr_user_agent.value})
     |> Repo.update()
 
-    socket = assign(socket, vr_user_agents: Oli.Accounts.all_vr_user_agents())
+    vr_user_agents =
+      Oli.Accounts.vr_user_agents(
+        sort_by: socket.assigns.data_manager.sort,
+        paginate: socket.assigns.data_manager.paginate
+      )
+
+    socket = assign(socket, vr_user_agents: vr_user_agents)
     {:noreply, socket}
   end
 
@@ -387,7 +347,7 @@ defmodule OliWeb.Users.VrUserAgentsView do
     socket =
       assign(socket,
         vr_user_agents:
-          Oli.Accounts.all_vr_user_agents(
+          Oli.Accounts.vr_user_agents(
             sort_by: socket.assigns.data_manager.sort,
             paginate: data_manager.paginate
           )
@@ -411,7 +371,7 @@ defmodule OliWeb.Users.VrUserAgentsView do
     socket =
       assign(socket,
         vr_user_agents:
-          Oli.Accounts.all_vr_user_agents(
+          Oli.Accounts.vr_user_agents(
             sort_by: socket.assigns.data_manager.sort,
             paginate: data_manager.paginate
           )
