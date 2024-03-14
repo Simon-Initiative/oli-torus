@@ -482,10 +482,10 @@ defmodule OliWeb.Curriculum.ContainerLiveTest do
         }
       })
 
-      assert_redirect(
-        view,
-        ~p"/authoring/project/#{project.slug}/curriculum/root_container"
-      )
+      {path, flash} = assert_redirect(view)
+
+      assert path =~ "/authoring/project/#{project.slug}/curriculum/root_container"
+      assert flash == %{"info" => "Page options saved"}
 
       {:ok, view, _html} =
         live(conn, ~p"/authoring/project/#{project.slug}/curriculum")

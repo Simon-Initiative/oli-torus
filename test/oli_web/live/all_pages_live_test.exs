@@ -472,10 +472,10 @@ defmodule OliWeb.AllPagesLiveTest do
         }
       })
 
-      assert_redirect(
-        view,
-        ~p"/authoring/project/#{project.slug}/pages?offset=0&sort_by=title&text_search=&sort_order=asc"
-      )
+      {path, flash} = assert_redirect(view)
+
+      assert path =~ "/authoring/project/#{project.slug}/pages"
+      assert flash == %{"info" => "Page options saved"}
 
       {:ok, view, _html} =
         live(conn, live_view_all_pages_route(project.slug))

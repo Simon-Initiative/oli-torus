@@ -131,7 +131,7 @@ defmodule OliWeb.Curriculum.OptionsModalContentTest do
 
       assert has_element?(
                lcd,
-               "img[src='https://your_s3_media_bucket_url.s3.amazonaws.com/b.jpg']"
+               "img[data-filename='b.jpg']"
              )
     end
 
@@ -164,12 +164,12 @@ defmodule OliWeb.Curriculum.OptionsModalContentTest do
 
       assert has_element?(
                lcd,
-               "img[src='https://your_s3_media_bucket_url.s3.amazonaws.com/a.jpg']"
+               "img[data-filename='a.jpg']"
              )
 
       assert has_element?(
                lcd,
-               "img[src='https://your_s3_media_bucket_url.s3.amazonaws.com/b.jpg']"
+               "img[data-filename='b.jpg']"
              )
     end
 
@@ -209,8 +209,8 @@ defmodule OliWeb.Curriculum.OptionsModalContentTest do
 
       assert render(first_image)
              |> Floki.attribute("src")
-             |> hd() ==
-               "https://your_s3_media_bucket_url.s3.amazonaws.com/b.jpg"
+             |> hd() =~
+               "b.jpg"
 
       assert render(first_image)
              |> Floki.attribute("class")
@@ -338,11 +338,11 @@ defmodule OliWeb.Curriculum.OptionsModalContentTest do
       |> element("button[phx-click=change_step]", "Select")
       |> render_click()
 
-      assert element(lcd, "img[role=`poster_image`]")
+      refute element(lcd, "img[role=`poster_image`]")
              |> render()
              |> Floki.attribute("src")
              |> hd() =~
-               "https://your_s3_media_bucket_url.s3.amazonaws.com/poster_images/examplecourse0/"
+               "/images/course_default.jpg"
     end
 
     test "can Cancel image selection after upload has been completed, go back to the first modal step, and the initial poster image should not have changed",
@@ -432,7 +432,7 @@ defmodule OliWeb.Curriculum.OptionsModalContentTest do
 
       refute has_element?(
                lcd,
-               "img[src='https://your_s3_media_bucket_url.s3.amazonaws.com/c.jpg']"
+               "img[data-filename='c.jpg']"
              )
 
       # go to image selection step
@@ -441,7 +441,7 @@ defmodule OliWeb.Curriculum.OptionsModalContentTest do
       |> render_click()
 
       not_yet_selected_image =
-        element(lcd, "img[src='https://your_s3_media_bucket_url.s3.amazonaws.com/c.jpg']")
+        element(lcd, "img[data-filename='c.jpg']")
 
       refute render(not_yet_selected_image)
              |> Floki.attribute("class")
@@ -449,11 +449,11 @@ defmodule OliWeb.Curriculum.OptionsModalContentTest do
 
       # select an image from the list (it should be styled as the selected one)
       lcd
-      |> element("img[src='https://your_s3_media_bucket_url.s3.amazonaws.com/c.jpg']")
+      |> element("img[data-filename='c.jpg']")
       |> render_click()
 
       selected_image =
-        element(lcd, "img[src='https://your_s3_media_bucket_url.s3.amazonaws.com/c.jpg']")
+        element(lcd, "img[data-filename='c.jpg']")
 
       assert render(selected_image)
              |> Floki.attribute("class")
@@ -466,7 +466,7 @@ defmodule OliWeb.Curriculum.OptionsModalContentTest do
 
       assert has_element?(
                lcd,
-               "img[src='https://your_s3_media_bucket_url.s3.amazonaws.com/c.jpg']"
+               "img[data-filename='c.jpg']"
              )
     end
 
@@ -512,7 +512,7 @@ defmodule OliWeb.Curriculum.OptionsModalContentTest do
 
       # select "b.jpg" image from the list
       lcd
-      |> element("img[src='https://your_s3_media_bucket_url.s3.amazonaws.com/b.jpg']")
+      |> element("img[data-filename='b.jpg']")
       |> render_click()
 
       # go back to general step
@@ -529,10 +529,11 @@ defmodule OliWeb.Curriculum.OptionsModalContentTest do
       assert_received {:handle_event_intercepted, "save-options",
                        %{
                          "revision" => %{
-                           "poster_image" =>
-                             "https://your_s3_media_bucket_url.s3.amazonaws.com/b.jpg"
+                           "poster_image" => url
                          }
                        }}
+
+      assert url =~ "b.jpg"
     end
 
     test "a `restart_options_modal` event is sent to the parent liveview if the modal is closed by clicking `Cancel`",

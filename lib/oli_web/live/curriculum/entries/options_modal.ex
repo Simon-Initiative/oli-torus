@@ -113,9 +113,12 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
           phx-click="select-poster-image"
           phx-value-url={url}
           phx-target={@myself}
+          data-filename={get_filename(url)}
           class={[
             "object-cover h-[162px] w-[288px] mx-auto rounded-lg cursor-pointer outline outline-1 outline-gray-200 shadow-lg hover:scale-[1.02]",
-            if(url == fetch_field(@changeset, :poster_image), do: "!outline-[7px] outline-blue-400")
+            if(get_filename(url) == get_filename(fetch_field(@changeset, :poster_image)),
+              do: "!outline-[7px] outline-blue-400"
+            )
           ]}
         />
       </div>
@@ -418,6 +421,7 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
         src={@poster_image}
         class="object-cover h-[162px] w-[288px] mx-auto rounded-lg outline outline-1 outline-gray-200 shadow-lg"
         role="poster_image"
+        data-filename={get_filename(@poster_image)}
       />
       <button
         type="button"
@@ -577,9 +581,14 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
   end
 
   defp list_selected_image_first({:ok, images}, selected_image) do
-    case Enum.find(images, &(&1 == selected_image)) do
-      nil -> {:ok, images}
-      selected_image -> {:ok, [selected_image] ++ Enum.reject(images, &(&1 == selected_image))}
+    case Enum.find(images, &(get_filename(&1) == get_filename(selected_image))) do
+      nil ->
+        {:ok, images}
+
+      selected_image ->
+        {:ok,
+         [selected_image] ++
+           Enum.reject(images, &(get_filename(&1) == get_filename(selected_image)))}
     end
   end
 
@@ -602,5 +611,13 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
   defp ext(entry) do
     [ext | _] = MIME.extensions(entry.client_type)
     ext
+  end
+
+  defp get_filename(nil), do: nil
+
+  defp get_filename(url) do
+    url
+    |> String.split("/")
+    |> List.last()
   end
 end
