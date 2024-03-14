@@ -241,6 +241,12 @@ $element-margin-bottom: 1.5em;
     float: left;
   }
 
+  // MER-3066: Highlight terms outside of definitions, but leave normal size
+  .term {
+    color: var(--color-green-400);
+    font-weight: bold;
+  }
+
   .definition {
     margin-bottom: $element-margin-bottom;
 
