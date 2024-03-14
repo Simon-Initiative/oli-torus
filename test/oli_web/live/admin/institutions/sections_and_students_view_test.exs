@@ -57,14 +57,49 @@ defmodule OliWeb.Admin.Institutions.SectionsAndStudentsViewTest do
     # create sections with the same institution...
     [institution_1, institution_2] = insert_pair(:institution)
 
-    [section_1, section_2, section_3, section_4] =
-      insert_list(4, :section,
+    section_1 =
+      insert(:section,
         base_project: project,
         context_id: UUID.uuid4(),
         open_and_free: true,
         registration_open: true,
         type: :enrollable,
-        institution: institution_1
+        institution: institution_1,
+        requires_payment: true,
+        amount: %{
+          "amount" => "25.00",
+          "currency" => "USD"
+        }
+      )
+
+    section_2 =
+      insert(:section,
+        base_project: project,
+        context_id: UUID.uuid4(),
+        open_and_free: true,
+        registration_open: true,
+        type: :enrollable,
+        institution: institution_1,
+        requires_payment: true,
+        amount: %{
+          "amount" => "10.00",
+          "currency" => "USD"
+        }
+      )
+
+    [section_3, section_4] =
+      insert_pair(:section,
+        base_project: project,
+        context_id: UUID.uuid4(),
+        open_and_free: true,
+        registration_open: true,
+        type: :enrollable,
+        institution: institution_1,
+        requires_payment: true,
+        amount: %{
+          "amount" => "30.00",
+          "currency" => "USD"
+        }
       )
 
     {:ok, section_1} = Sections.create_section_resources(section_1, publication)
@@ -379,6 +414,47 @@ defmodule OliWeb.Admin.Institutions.SectionsAndStudentsViewTest do
 
       assert s_4.name == OliWeb.Common.Utils.name(student_4)
       assert s_4.email =~ student_4.email
+    end
+
+    test "sorting by cost is doing corretly", %{
+      conn: conn,
+      section_1: section_1,
+      section_2: section_2,
+      section_3: section_3,
+      section_4: section_4,
+      institution_1: institution
+    } do
+      {:ok, view, _html} =
+        live(
+          conn,
+          live_view_sections_and_students_live(institution.id, :sections)
+        )
+
+      [section_1, section_2, section_3, section_4] =
+        [section_1, section_2, section_3, section_4] |> Enum.sort_by(& &1.requires_payment)
+
+      open_browser(view)
+      [s_1, s_2, s_3, s_4] = rendered_sections = table_as_list_of_maps(view, :sections)
+
+      ere =
+        Enum.map(rendered_sections, fn rendered_sections ->
+          amount_str_no_currency =
+            String.replace(rendered_sections.requires_payment, "$", "")
+            |> String.trim()
+
+          String.to_float(amount_str_no_currency)
+        end)
+
+      max_amoon =
+        Enum.reduce(ere, nil, fn x, acc ->
+          if acc == nil or x > acc do
+            x
+          else
+            acc
+          end
+        end)
+
+      # assert with the first value of colum cost
     end
   end
 end
