@@ -51,7 +51,7 @@ if config_env() == :prod do
   maybe_ipv6 = if System.get_env("ECTO_IPV6") in ~w(true 1), do: [:inet6], else: []
 
   db_timeout =
-    case get_env_as_string("DB_TIMEOUT", "600000") do
+    case get_env_as_string.("DB_TIMEOUT", "600000") do
       "infinity" -> :infinity
       val -> String.to_integer(val)
     end
