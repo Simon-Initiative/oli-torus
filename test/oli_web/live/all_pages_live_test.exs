@@ -39,6 +39,103 @@ defmodule OliWeb.AllPagesLiveTest do
     end)
   end
 
+  defp create_project(_) do
+    author = insert(:author)
+
+    project = insert(:project, authors: [author])
+
+    nested_page_revision =
+      insert(:revision, %{
+        objectives: %{"attached" => []},
+        scoring_strategy_id: Oli.Resources.ScoringStrategy.get_id_by_type("average"),
+        resource_type_id: Oli.Resources.ResourceType.id_for_page(),
+        children: [],
+        content: %{"model" => []},
+        deleted: false,
+        title: "Nested page 1",
+        author_id: author.id
+      })
+
+    nested_page_revision_2 =
+      insert(:revision, %{
+        objectives: %{"attached" => []},
+        scoring_strategy_id: Oli.Resources.ScoringStrategy.get_id_by_type("average"),
+        resource_type_id: Oli.Resources.ResourceType.id_for_page(),
+        children: [],
+        content: %{"model" => []},
+        deleted: false,
+        title: "Nested page 2",
+        graded: true,
+        author_id: author.id
+      })
+
+    unit_one_revision =
+      insert(:revision, %{
+        objectives: %{},
+        resource_type_id: Oli.Resources.ResourceType.id_for_container(),
+        children: [nested_page_revision.resource_id, nested_page_revision_2.resource_id],
+        content: %{"model" => []},
+        deleted: false,
+        title: "The first unit",
+        slug: "first_unit",
+        author_id: author.id
+      })
+
+    container_revision =
+      insert(:revision, %{
+        objectives: %{},
+        resource_type_id: Oli.Resources.ResourceType.id_for_container(),
+        children: [unit_one_revision.resource_id],
+        content: %{},
+        deleted: false,
+        slug: "root_container",
+        title: "Root Container",
+        author_id: author.id
+      })
+
+    all_revisions =
+      [
+        nested_page_revision,
+        nested_page_revision_2,
+        unit_one_revision,
+        container_revision
+      ]
+
+    # asociate resources to project
+    Enum.each(all_revisions, fn revision ->
+      insert(:project_resource, %{
+        project_id: project.id,
+        resource_id: revision.resource_id
+      })
+    end)
+
+    # publish project
+    publication =
+      insert(:publication, %{
+        project: project,
+        root_resource_id: container_revision.resource_id,
+        published: nil
+      })
+
+    # publish resources
+    Enum.each(all_revisions, fn revision ->
+      insert(:published_resource, %{
+        publication: publication,
+        resource: revision.resource,
+        revision: revision,
+        author: author
+      })
+    end)
+
+    %{
+      publication: publication,
+      project: project,
+      unit_one_revision: unit_one_revision,
+      nested_page_revision: nested_page_revision,
+      nested_page_revision_2: nested_page_revision_2
+    }
+  end
+
   defp create_project_without_pages(_conn) do
     project = insert(:project)
     container_resource = insert(:resource)
@@ -92,7 +189,7 @@ defmodule OliWeb.AllPagesLiveTest do
   end
 
   describe "all pages view" do
-    setup [:admin_conn, :base_project_with_curriculum]
+    setup [:admin_conn, :create_project]
 
     test "loads all pages view correctly", %{
       conn: conn,
@@ -297,6 +394,112 @@ defmodule OliWeb.AllPagesLiveTest do
         view,
         ~p"/authoring/project/#{project.slug}/curriculum"
       )
+    end
+
+    test "can open the options modal for a page", %{
+      conn: conn,
+      project: project,
+      nested_page_revision: nested_page_revision
+    } do
+      {:ok, view, _html} =
+        live(conn, live_view_all_pages_route(project.slug))
+
+      refute view
+             |> has_element?(
+               ~s{div[id='options_modal-container'] h1[id="options_modal-title"]},
+               "Page Options"
+             )
+
+      view
+      |> element(
+        ~s{button[role="show_options_modal"][phx-value-slug="#{nested_page_revision.slug}"]},
+        "Options"
+      )
+      |> render_click()
+
+      assert view
+             |> has_element?(
+               ~s{div[id='options_modal-container'] h1[id="options_modal-title"]},
+               "Page Options"
+             )
+    end
+
+    test "updates the page revision data when a `save-options` event is handled after submitting the options modal",
+         %{
+           conn: conn,
+           project: project,
+           nested_page_revision: nested_page_revision
+         } do
+      {:ok, view, _html} =
+        live(conn, live_view_all_pages_route(project.slug))
+
+      assert has_element?(view, "a", "Nested page 1")
+
+      assert %Oli.Resources.Revision{
+               retake_mode: :normal,
+               duration_minutes: nil,
+               graded: false,
+               max_attempts: 0,
+               purpose: :foundation,
+               scoring_strategy_id: 1,
+               explanation_strategy: nil
+             } =
+               _initial_revision =
+               Oli.Publishing.AuthoringResolver.from_revision_slug(
+                 project.slug,
+                 nested_page_revision.slug
+               )
+
+      view
+      |> element(
+        ~s{button[role="show_options_modal"][phx-value-slug="#{nested_page_revision.slug}"]},
+        "Options"
+      )
+      |> render_click()
+
+      view
+      |> render_hook("save-options", %{
+        "revision" => %{
+          "duration_minutes" => "5",
+          "explanation_strategy" => %{"type" => "after_max_resource_attempts_exhausted"},
+          "graded" => "true",
+          "max_attempts" => "10",
+          "poster_image" => "some_poster_image_url",
+          "purpose" => "application",
+          "retake_mode" => "targeted",
+          "scoring_strategy_id" => "2",
+          "title" => "New Title!!"
+        }
+      })
+
+      assert_redirect(
+        view,
+        ~p"/authoring/project/#{project.slug}/pages?offset=0&sort_by=title&text_search=&sort_order=asc"
+      )
+
+      {:ok, view, _html} =
+        live(conn, live_view_all_pages_route(project.slug))
+
+      assert has_element?(view, "a", "New Title!!")
+
+      assert %Oli.Resources.Revision{
+               retake_mode: :targeted,
+               duration_minutes: 5,
+               graded: true,
+               max_attempts: 10,
+               purpose: :application,
+               scoring_strategy_id: 2,
+               explanation_strategy: %Oli.Resources.ExplanationStrategy{
+                 type: :after_max_resource_attempts_exhausted,
+                 set_num_attempts: nil
+               },
+               poster_image: "some_poster_image_url"
+             } =
+               _updated_revision =
+               Oli.Publishing.AuthoringResolver.from_revision_slug(
+                 project.slug,
+                 nested_page_revision.slug
+               )
     end
   end
 end
