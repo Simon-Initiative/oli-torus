@@ -2,6 +2,12 @@
 # from environment variables at runtime
 import Config
 
+get_env_as_string = fn key, default ->
+  System.get_env(key, default)
+  |> String.trim()
+  |> String.downcase()
+end
+
 get_env_as_boolean = fn key, default ->
   System.get_env(key, default)
   |> String.downcase()
@@ -10,6 +16,11 @@ get_env_as_boolean = fn key, default ->
     "true" -> true
     _ -> false
   end
+end
+
+get_env_as_integer = fn key, default ->
+  System.get_env(key, default)
+  |> String.to_integer()
 end
 
 # Appsignal client key is required for appsignal integration
@@ -39,11 +50,17 @@ if config_env() == :prod do
 
   maybe_ipv6 = if System.get_env("ECTO_IPV6") in ~w(true 1), do: [:inet6], else: []
 
+  db_timeout =
+    case get_env_as_string("DB_TIMEOUT", "600000") do
+      "infinity" -> :infinity
+      val -> String.to_integer(val)
+    end
+
   config :oli, Oli.Repo,
     url: database_url,
     database: System.get_env("DB_NAME", "oli"),
     pool_size: String.to_integer(System.get_env("POOL_SIZE") || "10"),
-    timeout: 600_000,
+    timeout: db_timeout,
     ownership_timeout: 600_000,
     socket_options: maybe_ipv6
 
