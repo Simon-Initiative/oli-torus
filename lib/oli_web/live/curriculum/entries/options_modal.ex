@@ -121,7 +121,13 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
       </div>
 
       <div class="modal-footer">
-        <form id="upload-form" action="#" phx-change="validate-upload" phx-target={@myself}>
+        <form
+          id="upload-form"
+          action="#"
+          phx-change="validate-upload"
+          phx-target={@myself}
+          phx-submit="consume-uploaded"
+        >
           <div class="hidden">
             <.live_file_input upload={@uploads.poster_image} />
           </div>
@@ -411,6 +417,7 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
       <img
         src={@poster_image}
         class="object-cover h-[162px] w-[288px] mx-auto rounded-lg outline outline-1 outline-gray-200 shadow-lg"
+        role="poster_image"
       />
       <button
         type="button"
