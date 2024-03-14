@@ -31,5 +31,4 @@ export const CommandButton = (props: Props) => {
       <ButtonContent description={props.description} />
     </button>
   );
-  //
 };
