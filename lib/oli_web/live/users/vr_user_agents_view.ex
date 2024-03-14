@@ -1,5 +1,4 @@
 defmodule OliWeb.Users.VrUserAgentsView do
-  alias Oli.Accounts
   use OliWeb, :live_view
 
   alias OliWeb.Common.Breadcrumb
@@ -38,7 +37,7 @@ defmodule OliWeb.Users.VrUserAgentsView do
     data_manager = %{sort: {:asc, "id"}, paginate: %{limit: 10, offset: 0}}
 
     vr_user_agents =
-      Oli.Accounts.vr_user_agents(
+      Oli.VrUserAgents.vr_user_agents(
         sort_by: data_manager.sort,
         paginate: data_manager.paginate
       )
@@ -248,10 +247,10 @@ defmodule OliWeb.Users.VrUserAgentsView do
     search_by = socket.assigns.form.source["search_by"]
     search_text = socket.assigns.form.source["search_text"]
 
-    search_results = Accounts.search_user_for_vr(search_text, search_by)
+    search_results = Oli.VrUserAgents.search_user_for_vr(search_text, search_by)
 
     vr_user_agents =
-      Oli.Accounts.vr_user_agents(
+      Oli.VrUserAgents.vr_user_agents(
         sort_by: socket.assigns.data_manager.sort,
         paginate: socket.assigns.data_manager.paginate
       )
@@ -273,7 +272,7 @@ defmodule OliWeb.Users.VrUserAgentsView do
     form = to_form(params)
 
     results_found =
-      Accounts.search_user_for_vr(form.source["search_text"], form.source["search_by"])
+      Oli.VrUserAgents.search_user_for_vr(form.source["search_text"], form.source["search_by"])
 
     socket = assign(socket, form: form)
     socket = assign(socket, search_results: results_found)
@@ -290,11 +289,11 @@ defmodule OliWeb.Users.VrUserAgentsView do
     search_results =
       case String.trim(search_text) do
         "" -> []
-        _ -> Accounts.search_user_for_vr(search_text, search_by)
+        _ -> Oli.VrUserAgents.search_user_for_vr(search_text, search_by)
       end
 
     vr_user_agents =
-      Oli.Accounts.vr_user_agents(
+      Oli.VrUserAgents.vr_user_agents(
         sort_by: socket.assigns.data_manager.sort,
         paginate: socket.assigns.data_manager.paginate
       )
@@ -313,7 +312,7 @@ defmodule OliWeb.Users.VrUserAgentsView do
     |> Repo.update()
 
     vr_user_agents =
-      Oli.Accounts.vr_user_agents(
+      Oli.VrUserAgents.vr_user_agents(
         sort_by: socket.assigns.data_manager.sort,
         paginate: socket.assigns.data_manager.paginate
       )
@@ -338,7 +337,7 @@ defmodule OliWeb.Users.VrUserAgentsView do
     socket =
       assign(socket,
         vr_user_agents:
-          Oli.Accounts.vr_user_agents(
+          Oli.VrUserAgents.vr_user_agents(
             sort_by: socket.assigns.data_manager.sort,
             paginate: data_manager.paginate
           )
@@ -362,7 +361,7 @@ defmodule OliWeb.Users.VrUserAgentsView do
     socket =
       assign(socket,
         vr_user_agents:
-          Oli.Accounts.vr_user_agents(
+          Oli.VrUserAgents.vr_user_agents(
             sort_by: socket.assigns.data_manager.sort,
             paginate: data_manager.paginate
           )
