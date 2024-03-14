@@ -4,19 +4,10 @@ defmodule OliWeb.Users.VrUserAgentsView do
   alias Oli.Accounts.Schemas.VrUserAgent
   alias Oli.Repo
   alias Oli.VrUserAgents
-  alias Phoenix.LiveView.JS
   alias OliWeb.Common.Breadcrumb
   alias OliWeb.Common.Paging
+  alias Phoenix.LiveView.JS
 
-  # Search |__email__| :: x user_1: value x <add>
-  #                    :: x user_2: value x <add>
-  # add_all_selected
-  #
-  # user_id | user_email | value | delete |
-  #    1    | user_email |   x   |   btn  |
-  #    2    | user_email |   o   |   btn  |
-  #
-  # Reset cache
   @initial_sort {:asc, "id"}
   @initial_paginate %{limit: 10, offset: 0}
   @initial_data_manager %{sort: @initial_sort, paginate: @initial_paginate}
@@ -178,6 +169,7 @@ defmodule OliWeb.Users.VrUserAgentsView do
           </tr>
         </tbody>
       </table>
+      <button phx-click="reset_cache">Reset Cache</button>
     </div>
     <style>
       .overflow {
@@ -201,6 +193,10 @@ defmodule OliWeb.Users.VrUserAgentsView do
       }
     </style>
     """
+  end
+
+  def handle_event("reset_cache", _, socket) do
+    {:noreply, socket}
   end
 
   def handle_event("change_search_vr_value", %{"user-id" => user_id} = _params, socket) do
