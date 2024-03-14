@@ -237,13 +237,6 @@ defmodule OliWeb.Users.VrUserAgentsView do
     {:noreply, socket}
   end
 
-  # def handle_event("add_entry", %{"user-id" => user_id} = params, socket) do
-  # filter_fn = fn -> Access.filter(&(&1.user_id == String.to_integer(user_id))) end
-  # params |> IO.inspect(label: "params")
-  # get_in(socket.assigns.search_results, [filter_fn.()]) |> IO.inspect(label: "ASD")
-  # {:noreply, socket}
-  # end
-
   def handle_event("add_entry", %{"user-id" => user_id}, socket) do
     filter_fn = fn -> Access.filter(&(&1.user_id == String.to_integer(user_id))) end
     [data] = get_in(socket.assigns.search_results, [filter_fn.()])
@@ -270,8 +263,7 @@ defmodule OliWeb.Users.VrUserAgentsView do
   end
 
   def handle_event("search_user", %{"search_text" => ""} = params, socket) do
-    params |> IO.inspect(label: "--params")
-    form = to_form(params) |> IO.inspect(label: "---form")
+    form = to_form(params)
     socket = assign(socket, form: form)
     socket = assign(socket, search_results: [])
     {:noreply, socket}
@@ -332,7 +324,6 @@ defmodule OliWeb.Users.VrUserAgentsView do
 
   def handle_event("sort_by", %{"sort-column" => column}, socket)
       when column in ["id", "name", "value"] do
-    column |> IO.inspect(label: "column")
     {previous_direction, previous_sort_column} = socket.assigns.data_manager.sort
 
     data_manager =
