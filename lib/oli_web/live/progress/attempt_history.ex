@@ -9,7 +9,7 @@ defmodule OliWeb.Progress.AttemptHistory do
 
   def render(assigns) do
     ~H"""
-    <div class="list-group">
+    <div class="list-group mb-5">
       <%= for attempt <- @resource_attempts do %>
         <PageAttemptSummary.render
           revision={@revision}

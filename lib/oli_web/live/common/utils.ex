@@ -73,6 +73,14 @@ defmodule OliWeb.Common.Utils do
     Float.round(score, 2)
   end
 
+  def format_score(score) when is_integer(score) do
+    score
+  end
+
+  def format_score(score) when is_nil(score) do
+    "-"
+  end
+
   defp has_value(v) do
     !is_nil(v) and v != ""
   end

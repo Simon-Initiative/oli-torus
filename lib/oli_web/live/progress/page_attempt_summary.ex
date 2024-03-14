@@ -72,7 +72,7 @@ defmodule OliWeb.Progress.PageAttemptSummary do
       >
         <div class="d-flex w-100 justify-content-between">
           <h5 class="mb-1">Attempt <%= @attempt.attempt_number %></h5>
-          <span><%= Utils.format_score(@attempt.score) %> / <%= @attempt.out_of %></span>
+          <span><%= Utils.format_score(@attempt.score) %> / <%= @attempt.out_of || "-" %></span>
         </div>
         <div class="d-flex flex-row">
           <%= if @attempt.was_late do %>
