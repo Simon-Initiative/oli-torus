@@ -1,8 +1,6 @@
 defmodule OliWeb.Users.VrUserAgentsView do
   use OliWeb, :live_view
 
-  alias Oli.Accounts.Schemas.VrUserAgent
-  alias Oli.Repo
   alias Oli.VrUserAgents
   alias OliWeb.Common.Breadcrumb
   alias OliWeb.Common.Paging
@@ -111,7 +109,7 @@ defmodule OliWeb.Users.VrUserAgentsView do
       </div>
       <Paging.render
         id="header_paging"
-        total_count={Repo.aggregate(VrUserAgent, :count)}
+        total_count={VrUserAgents.count()}
         offset={@data_manager.paginate.offset}
         limit={@data_manager.paginate.limit}
         click={JS.push("paged_table_page_change")}
@@ -218,23 +216,16 @@ defmodule OliWeb.Users.VrUserAgentsView do
     filter_fn = fn -> Access.filter(&(&1.user_id == String.to_integer(user_id))) end
     [data] = get_in(socket.assigns.search_results, [filter_fn.()])
 
-    %Oli.Accounts.Schemas.VrUserAgent{}
-    |> Oli.Accounts.Schemas.VrUserAgent.changeset(data)
-    |> Oli.Repo.insert()
+    VrUserAgents.insert(data)
 
     search_by = socket.assigns.form.source["search_by"]
     search_text = socket.assigns.form.source["search_text"]
 
     search_results = VrUserAgents.search_user_for_vr(search_text, search_by)
 
-    vr_user_agents =
-      VrUserAgents.vr_user_agents(
-        sort_by: socket.assigns.data_manager.sort,
-        paginate: socket.assigns.data_manager.paginate
-      )
-
-    socket = assign(socket, vr_user_agents: vr_user_agents)
-    socket = assign(socket, search_results: search_results)
+    socket =
+      reload_vr_user_agents(socket)
+      |> assign(search_results: search_results)
 
     {:noreply, socket}
   end
@@ -258,8 +249,7 @@ defmodule OliWeb.Users.VrUserAgentsView do
   end
 
   def handle_event("delete_vr_entry", %{"user-id" => user_id}, socket) do
-    Repo.get_by(Oli.Accounts.Schemas.VrUserAgent, %{user_id: user_id})
-    |> Repo.delete()
+    VrUserAgents.delete(user_id)
 
     search_by = socket.assigns.form.source["search_by"]
     search_text = socket.assigns.form.source["search_text"]
@@ -270,32 +260,20 @@ defmodule OliWeb.Users.VrUserAgentsView do
         _ -> VrUserAgents.search_user_for_vr(search_text, search_by)
       end
 
-    vr_user_agents =
-      VrUserAgents.vr_user_agents(
-        sort_by: socket.assigns.data_manager.sort,
-        paginate: socket.assigns.data_manager.paginate
-      )
-
-    socket = assign(socket, vr_user_agents: vr_user_agents)
-    socket = assign(socket, search_results: search_results)
+    socket =
+      socket
+      |> reload_vr_user_agents()
+      |> assign(search_results: search_results)
 
     {:noreply, socket}
   end
 
   def handle_event("change_vr_value", %{"user-id" => user_id}, socket) do
-    vr_user_agent = Repo.get_by(Oli.Accounts.Schemas.VrUserAgent, %{user_id: user_id})
+    vr_user_agent = VrUserAgents.get(user_id)
+    VrUserAgents.update(vr_user_agent, %{value: !vr_user_agent.value})
 
-    vr_user_agent
-    |> Oli.Accounts.Schemas.VrUserAgent.changeset(%{value: !vr_user_agent.value})
-    |> Repo.update()
+    socket = reload_vr_user_agents(socket)
 
-    vr_user_agents =
-      VrUserAgents.vr_user_agents(
-        sort_by: socket.assigns.data_manager.sort,
-        paginate: socket.assigns.data_manager.paginate
-      )
-
-    socket = assign(socket, vr_user_agents: vr_user_agents)
     {:noreply, socket}
   end
 
@@ -310,16 +288,10 @@ defmodule OliWeb.Users.VrUserAgentsView do
         %{socket.assigns.data_manager | sort: {:asc, column}}
       end
 
-    socket = assign(socket, data_manager: data_manager)
-
     socket =
-      assign(socket,
-        vr_user_agents:
-          VrUserAgents.vr_user_agents(
-            sort_by: socket.assigns.data_manager.sort,
-            paginate: data_manager.paginate
-          )
-      )
+      socket
+      |> reload_vr_user_agents(data_manager)
+      |> assign(data_manager: data_manager)
 
     {:noreply, socket}
   end
@@ -337,15 +309,31 @@ defmodule OliWeb.Users.VrUserAgentsView do
     socket = assign(socket, data_manager: data_manager)
 
     socket =
-      assign(socket,
-        vr_user_agents:
-          VrUserAgents.vr_user_agents(
-            sort_by: socket.assigns.data_manager.sort,
-            paginate: data_manager.paginate
-          )
-      )
+      socket
+      |> reload_vr_user_agents(data_manager)
+      |> assign(data_manager: data_manager)
 
     {:noreply, socket}
+  end
+
+  def reload_vr_user_agents(socket) do
+    vr_user_agents =
+      VrUserAgents.vr_user_agents(
+        sort_by: socket.assigns.data_manager.sort,
+        paginate: socket.assigns.data_manager.paginate
+      )
+
+    assign(socket, vr_user_agents: vr_user_agents)
+  end
+
+  def reload_vr_user_agents(socket, data_manager) do
+    vr_user_agents =
+      VrUserAgents.vr_user_agents(
+        sort_by: socket.assigns.data_manager.sort,
+        paginate: data_manager.paginate
+      )
+
+    assign(socket, vr_user_agents: vr_user_agents)
   end
 
   def i(:desc), do: :asc

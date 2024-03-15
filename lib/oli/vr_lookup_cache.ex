@@ -37,7 +37,7 @@ defmodule Oli.VrLookupCache do
         response
 
       _ ->
-        case VrUserAgents.get_vr_user_agent(user_id) do
+        case VrUserAgents.get(user_id) do
           nil ->
             {:error, :not_found}
 
