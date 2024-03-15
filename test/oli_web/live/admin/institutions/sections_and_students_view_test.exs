@@ -416,7 +416,7 @@ defmodule OliWeb.Admin.Institutions.SectionsAndStudentsViewTest do
       assert s_4.email =~ student_4.email
     end
 
-    test "sorting by cost is doing corretly", %{
+    test "sorting by cost is doing correctly", %{
       conn: conn,
       institution_1: institution
     } do
@@ -439,7 +439,6 @@ defmodule OliWeb.Admin.Institutions.SectionsAndStudentsViewTest do
       |> element("th[phx-value-sort_by=requires_payment]")
       |> render_click()
 
-      open_browser(view)
       # test order asc
       assert view
              |> element("table > tbody > tr:first-child > td:nth-child(4) > div")
