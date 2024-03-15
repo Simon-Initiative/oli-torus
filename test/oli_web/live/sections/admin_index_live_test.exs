@@ -293,18 +293,28 @@ defmodule OliWeb.Sections.AdminIndexLiveTest do
           base_project: project
         )
 
-      student = insert(:user)
+      students =
+        insert_list(5, :user)
 
       instructor = insert(:user)
 
-      enroll_user_to_section(student, section, :context_learner)
+      number_of_student_enrollments =
+        enroll_students_to_section(students, section)
+
       enroll_user_to_section(instructor, section, :context_instructor)
 
       {:ok, view, _html} = live(conn, @live_view_index_route)
 
       assert view
              |> element("table > tbody > tr:first-child > td:nth-child(3) > div")
-             |> render() =~ "1"
+             |> render() =~ number_of_student_enrollments
     end
+  end
+
+  defp enroll_students_to_section(students_list, section) do
+    students_list
+    |> Enum.map(fn student -> enroll_user_to_section(student, section, :context_learner) end)
+    |> length()
+    |> Integer.to_string()
   end
 end
