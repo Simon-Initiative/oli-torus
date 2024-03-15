@@ -32,6 +32,7 @@ import { EditorProps } from '../elements/interfaces';
 import { PageLinkEditor } from '../elements/page_link/PageLinkEditor';
 import { TcEditor } from '../elements/table/TcElement';
 import { VideoEditor } from '../elements/video/VideoEditor';
+import { GraphEditor } from '../elements/graph/GraphEditor';
 
 export function editorFor(
   model: ContentModel.ModelElement,
@@ -151,6 +152,8 @@ export function editorFor(
       );
     case 'video':
       return <VideoEditor {...(editorProps as EditorProps<ContentModel.Video>)} />;
+    case 'graph':
+      return <GraphEditor {...(editorProps as EditorProps<ContentModel.Graph>)} />;
     default:
       return <span>{children}</span>;
   }

@@ -18,6 +18,15 @@ defmodule Oli.Rendering.Content.Html do
 
   @behaviour Oli.Rendering.Content
 
+  def graph(%Context{} = context, _, attrs) do
+    {:safe, graph} =
+      OliWeb.Common.React.component(context, "Components.Graph", %{
+        src: attrs["src"],
+      })
+
+    graph
+  end
+
   def callout(%Oli.Rendering.Context{} = _context, next, _) do
     ["<span class=\"callout-block\">", next.(), "</span>\n"]
   end

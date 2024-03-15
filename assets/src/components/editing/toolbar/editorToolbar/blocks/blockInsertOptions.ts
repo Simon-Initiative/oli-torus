@@ -21,6 +21,8 @@ import { insertFormula } from '../../../elements/formula/formulaActions';
 import { insertPageLink } from '../../../elements/page_link/pageLinkActions';
 import { insertVideo } from '../../../elements/video/videoActions';
 
+import { insertGraph } from 'components/editing/elements/graph/graphActions';
+
 export const extendedBlockInsertActions = (
   onRequestMedia: any,
   optionalContentTypes: OptionalContentTypes | undefined,
@@ -61,6 +63,7 @@ export const allBlockInsertActions = (
     insertYoutube,
     insertCodeblock,
     insertVideo,
+    insertGraph,
     insertAudio(onRequestMedia),
     insertWebpage,
     insertFormula,

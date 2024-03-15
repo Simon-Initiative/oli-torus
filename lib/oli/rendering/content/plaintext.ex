@@ -119,6 +119,10 @@ defmodule Oli.Rendering.Content.Plaintext do
     ["[iframe with missing src] "]
   end
 
+  def graph(%Context{} = _context, _, %{"src" => src}) do
+    ["[graph with src #{src}] "]
+  end
+
   def audio(%Context{} = _context, _, %{"src" => src}) do
     ["[audio with src #{src}] "]
   end

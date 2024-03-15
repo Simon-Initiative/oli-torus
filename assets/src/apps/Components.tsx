@@ -17,6 +17,7 @@ import { globalStore } from 'state/store';
 import { VideoPlayer } from '../components/video_player/VideoPlayer';
 import { OfflineDetector } from './OfflineDetector';
 import { References } from './bibliography/References';
+import { Graph } from 'components/graph/Graph';
 
 registerApplication('ModalDisplay', ModalDisplay, globalStore);
 registerApplication('DarkModeSelector', DarkModeSelector);
@@ -25,6 +26,7 @@ registerApplication('AttemptSelector', AttemptSelector, globalStore);
 registerApplication('SurveyControls', SurveyControls, globalStore);
 registerApplication('References', References, globalStore);
 registerApplication('VideoPlayer', VideoPlayer);
+registerApplication('Graph', Graph);
 registerApplication('AlternativesPreferenceSelector', AlternativesPreferenceSelector, globalStore);
 registerApplication('Navbar', Navbar, globalStore);
 registerApplication('CourseContentOutline', CourseContentOutline, globalStore);

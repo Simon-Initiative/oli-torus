@@ -35,6 +35,7 @@ export type TopLevel =
   | Blockquote
   | FormulaBlock
   | Video
+  | Graph
   | Semantic
   | PageLink;
 
@@ -101,6 +102,11 @@ export interface Conjugation extends SlateElement<VoidChildren> {
   verb: string;
   pronunciation: Pronunciation;
   table: Table;
+}
+
+export interface Graph extends SlateElement<VoidChildren> {
+  type: 'graph';
+  src: string;
 }
 
 export interface HeadingOne extends SlateElement<HeadingChildren> {

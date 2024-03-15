@@ -41,6 +41,7 @@ import {
   Table,
   TableCell,
   TableConjugation,
+  Graph,
   TableData,
   TableHeader,
   TableRow,
@@ -180,6 +181,8 @@ export const Model = {
   imageInline: (src?: string) => create<ImageInline>({ type: 'img_inline', src }),
 
   audio: (src?: string) => create<Audio>({ type: 'audio', src }),
+
+  graph: (src?: string) => create<Graph>({ type: 'graph', src }),
 
   p: (children?: Paragraph['children'] | string) => {
     if (!children) return create<Paragraph>({ type: 'p' });

@@ -126,6 +126,8 @@ defmodule Oli.Rendering.Content.Markdown do
 
   def youtube(%Context{} = _context, _, _e), do: ""
 
+  def graph(%Context{} = _context, _, _e), do: ""
+
   def iframe(%Context{} = _context, _, %{"src" => src} = attrs) do
     adhoc_group("External WebPage IFRAME", [maybeAlt(attrs), "\n", "source: #{escape_xml!(src)}"])
   end

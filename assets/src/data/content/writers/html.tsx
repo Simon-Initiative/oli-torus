@@ -13,6 +13,7 @@ import { CodeLanguages } from 'components/editing/elements/blockcode/codeLanguag
 import { YoutubePlayer } from 'components/youtube_player/YoutubePlayer';
 import {
   Audio,
+  Graph as GraphType,
   Blockquote,
   Citation,
   CodeLine,
@@ -76,6 +77,7 @@ import { TableConjugation } from '../../../components/common/TableConjugation';
 import { Popup } from '../../../components/content/Popup';
 import { cellAttributes } from '../../../components/editing/elements/table/table-util';
 import { VideoPlayer } from '../../../components/video_player/VideoPlayer';
+import { Graph } from '../../../components/graph/Graph';
 import { PointMarkerContext, maybePointMarkerAttr } from '../utils';
 import { WriterContext } from './context';
 import { ContentWriter, Next, WriterImpl } from './writer';
@@ -343,6 +345,10 @@ export class HtmlParser implements WriterImpl {
 
   video(context: WriterContext, next: Next, v: Video) {
     return <VideoPlayer video={v} pointMarkerContext={pointMarkerContextFrom(context, v)} />;
+  }
+
+  graph(context: WriterContext, next: Next, v: GraphType) {
+    return <Graph src={v.src}/>;
   }
 
   ecl(context: WriterContext, next: Next, attrs: ECLRepl) {

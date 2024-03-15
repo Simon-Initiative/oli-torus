@@ -26,6 +26,7 @@ export interface WriterImpl {
   video: ElementWriter;
   ecl: ElementWriter;
   youtube: ElementWriter;
+  graph: ElementWriter;
   iframe: ElementWriter;
   audio: ElementWriter;
   table: ElementWriter;
@@ -169,6 +170,8 @@ export class ContentWriter {
         return impl.iframe(context, next, content);
       case 'audio':
         return impl.audio(context, next, content);
+      case 'graph':
+        return impl.graph(context, next, content);
       case 'table':
         return impl.table(context, next, content);
       case 'tr':

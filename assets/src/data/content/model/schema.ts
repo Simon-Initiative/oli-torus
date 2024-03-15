@@ -35,7 +35,7 @@ export const SemanticElements: SchemaKey[] = [
 
 const HeadingElements: SchemaKey[] = ['h1', 'h2', 'h3', 'h4', 'h5', 'h6'];
 const TextBlockElements: SchemaKey[] = ['p', ...HeadingElements];
-const MediaElements: SchemaKey[] = ['img', 'youtube', 'audio', 'video', 'iframe'];
+const MediaElements: SchemaKey[] = ['img', 'youtube', 'audio', 'video', 'iframe', 'graph'];
 const SemanticChildrenElements: SchemaKey[] = [
   ...BlockElements,
   ...MediaElements,
@@ -209,6 +209,7 @@ export const schema: Schema = {
     validChildren: toObj(['input_ref', 'img']),
   },
   youtube: media,
+  graph: media,
   audio: media,
   iframe: media,
   table: {
