@@ -295,13 +295,13 @@ defmodule OliWeb.Projects.OverviewLive do
         <%= if @is_admin do %>
           <div class="d-flex align-items-center">
             <div>
-              <%= button("Import CSV for NG23 Effort",
+              <%= button("Bulk Resource Attribute Edit",
                 to: Routes.ingest_path(@socket, :index_csv, @project.slug),
                 method: :get,
                 class: "btn btn-link action-button"
               ) %>
             </div>
-            <span>Imports an NG23 <code>.csv</code> file to set new attributes.</span>
+            <span>Imports a <code>.csv</code> file to set new attributes.</span>
           </div>
         <% end %>
 
