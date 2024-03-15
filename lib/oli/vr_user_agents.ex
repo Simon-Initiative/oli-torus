@@ -3,14 +3,15 @@ defmodule Oli.VrUserAgents do
   This module is responsible for managing the VR user agents.
   """
   import Ecto.Query, warn: false
-
   alias Oli.Accounts.Schemas.VrUserAgent
   alias Oli.Accounts.User
   alias Oli.Repo
+  alias Oli.VrLookupCache
 
   @spec delete(integer) :: {:ok, VrUserAgent.t()} | {:error, Ecto.Changeset.t()}
   def delete(user_id) do
-    get(user_id) |> Repo.delete()
+    get(user_id)
+    |> Repo.delete()
   end
 
   @spec update(VrUserAgent.t(), map()) :: {:ok, VrUserAgent.t()} | {:error, Ecto.Changeset.t()}
@@ -18,6 +19,20 @@ defmodule Oli.VrUserAgents do
     vr_user_agent
     |> VrUserAgent.changeset(data)
     |> Repo.update()
+    |> delete_from_cache()
+  end
+
+  @spec delete_from_cache({:ok, VrUserAgent.t()} | {:error, Ecto.Changeset.t()}) ::
+          {:ok, VrUserAgent.t()} | {:error, Ecto.Changeset.t()}
+  defp delete_from_cache(result) do
+    case result do
+      vr_user_agent = {:ok, %VrUserAgent{user_id: user_id}} ->
+        VrLookupCache.delete("vr_user_agent_#{user_id}")
+        vr_user_agent
+
+      error ->
+        error
+    end
   end
 
   @spec insert(map()) :: {:ok, VrUserAgent.t()} | {:error, Ecto.Changeset.t()}
