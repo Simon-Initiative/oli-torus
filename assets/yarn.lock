@@ -17272,9 +17272,9 @@ slate-react@^0.98.1:
     scroll-into-view-if-needed "^2.2.20"
     tiny-invariant "1.0.6"
 
-"slate@https://github.com/Simon-Initiative/slate#v1.0.0":
+"slate@https://github.com/Simon-Initiative/slate#v1.0.1":
   version "1.0.0"
-  resolved "https://github.com/Simon-Initiative/slate#454397d05f135241a6699b4afefe0688f8039a48"
+  resolved "https://github.com/Simon-Initiative/slate#76071e05b11c3802ca0f449b00c6134d300e59c6"
   dependencies:
     immer "^10.0.3"
     is-plain-object "^5.0.0"
