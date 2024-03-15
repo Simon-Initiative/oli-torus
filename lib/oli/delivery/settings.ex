@@ -203,6 +203,8 @@ defmodule Oli.Delivery.Settings do
     end
   end
 
+  def determine_effective_deadline(nil, _), do: nil
+
   def determine_effective_deadline(
         %ResourceAttempt{} = resource_attempt,
         %Combined{} = effective_settings

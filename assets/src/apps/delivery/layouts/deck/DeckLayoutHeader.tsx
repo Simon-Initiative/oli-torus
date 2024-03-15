@@ -56,7 +56,7 @@ const DeckLayoutHeader: React.FC<DeckLayoutHeaderProps> = ({
       setBackButtonUrl(`/authoring/project/${projectSlug}/resource/${resourceSlug}`);
       setBackButtonText('Back to Authoring');
     } else {
-      setBackButtonUrl(window.location.href.split('/page')[0] + '/explorations');
+      setBackButtonUrl(window.location.href.split('/adaptive_lesson')[0] + '/explorations');
       setBackButtonText('Back to Explorations');
     }
   }, [isPreviewMode]);

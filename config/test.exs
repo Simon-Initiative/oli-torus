@@ -68,7 +68,8 @@ config :lti_1p3,
 # you can enable the server option below.
 config :oli, OliWeb.Endpoint,
   http: [port: 4002],
-  server: false
+  server: false,
+  url: [scheme: "https"]
 
 # Config adapter for refreshing part_mapping
 config :oli, Oli.Publishing, refresh_adapter: Oli.Publishing.PartMappingRefreshSync
