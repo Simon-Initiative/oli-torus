@@ -56,7 +56,7 @@ defmodule Oli.VrUserAgents do
     text_search = String.trim(text_search)
 
     case Integer.parse(text_search) do
-      {text_search, _} -> Repo.all(query_search(text_search, identifier))
+      {number, _} -> Repo.all(query_search(number, identifier))
       _ -> []
     end
   end
@@ -70,7 +70,7 @@ defmodule Oli.VrUserAgents do
 
   def search_user_for_vr(_text_search, _identifier), do: []
 
-  def query_search(text_search, identifier) do
+  defp query_search(text_search, identifier) do
     from(u in User,
       as: :user,
       left_join: vrua in VrUserAgent,
@@ -81,10 +81,13 @@ defmodule Oli.VrUserAgents do
     )
   end
 
-  defp find_by(text_search, "id"), do: dynamic([user: u], u.id == ^text_search)
+  defp find_by(text_search, :id) when is_number(text_search) do
+    dynamic([user: u], u.id == ^text_search)
+  end
 
-  defp find_by(text_search, identifier),
-    do: dynamic([user: u], ilike(field(u, ^identifier), ^"%#{text_search}%"))
+  defp find_by(text_search, identifier) when identifier in [:name, :email] do
+    dynamic([user: u], ilike(field(u, ^identifier), ^"%#{text_search}%"))
+  end
 
   @spec vr_user_agents(Keyword.t()) :: [map()] | []
   def vr_user_agents(opts \\ []) do
@@ -97,7 +100,11 @@ defmodule Oli.VrUserAgents do
           {:asc, :id}
       end
 
-    %{limit: limit, offset: offset} = Keyword.get(opts, :paginate)
+    %{limit: limit, offset: offset} =
+      case Keyword.get(opts, :paginate) do
+        %{limit: _limit, offset: _offset} = paginate -> paginate
+        _ -> %{limit: 10, offset: 0}
+      end
 
     from(vrua in VrUserAgent,
       as: :vrua,

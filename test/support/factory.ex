@@ -2,6 +2,7 @@ defmodule Oli.Factory do
   use ExMachina.Ecto, repo: Oli.Repo
 
   alias Oli.Accounts.{Author, User, AuthorPreferences, UserPreferences}
+  alias Oli.Accounts.Schemas.VrUserAgent
   alias Oli.Authoring.Authors.{AuthorProject, ProjectRole}
   alias Oli.Authoring.Course.{Family, Project, ProjectVisibility, ProjectResource}
   alias Oli.Branding.Brand
@@ -39,6 +40,10 @@ defmodule Oli.Factory do
   alias Oli.Publishing.Publications.Publication
   alias Oli.Resources.{Resource, Revision}
   alias Oli.Resources.Collaboration.{CollabSpaceConfig, Post, PostContent}
+
+  def vr_user_agent_factory() do
+    %VrUserAgent{}
+  end
 
   def author_factory() do
     %Author{
