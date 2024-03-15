@@ -11338,6 +11338,11 @@ ignore@^5.2.0:
   resolved "https://registry.npmjs.org/ignore/-/ignore-5.2.4.tgz"
   integrity sha512-MAb38BcSbH0eHNBxn7ql2NH/kX33OkB3lZ1BNdh7ENeRChHTYsTvWrMubiIAMNS2llXEEgZ1MUOBtXChP3kaFQ==
 
+immer@^10.0.3:
+  version "10.0.4"
+  resolved "https://registry.yarnpkg.com/immer/-/immer-10.0.4.tgz#09af41477236b99449f9d705369a4daaf780362b"
+  integrity sha512-cuBuGK40P/sk5IzWa9QPUaAdvPHjkk1c+xYsd9oZw+YQQEV+10G0P5uMpGctZZKnyQ+ibRO08bD25nWLmYi2pw==
+
 immer@^9.0.1:
   version "9.0.3"
   resolved "https://registry.npmjs.org/immer/-/immer-9.0.3.tgz"
@@ -11347,11 +11352,6 @@ immer@^9.0.5:
   version "9.0.5"
   resolved "https://registry.npmjs.org/immer/-/immer-9.0.5.tgz"
   integrity sha512-2WuIehr2y4lmYz9gaQzetPR2ECniCifk4ORaQbU3g5EalLt+0IVTosEPJ5BoYl/75ky2mivzdRzV8wWgQGOSYQ==
-
-immer@^9.0.6:
-  version "9.0.7"
-  resolved "https://registry.npmjs.org/immer/-/immer-9.0.7.tgz"
-  integrity sha512-KGllzpbamZDvOIxnmJ0jI840g7Oikx58lBPWV0hUh7dtAyZpFqqrBZdKka5GlTwMTZ1Tjc/bKKW4VSFAt6BqMA==
 
 immutable@^4.0.0:
   version "4.0.0"
@@ -17272,12 +17272,11 @@ slate-react@^0.98.1:
     scroll-into-view-if-needed "^2.2.20"
     tiny-invariant "1.0.6"
 
-slate@^0.94.1:
-  version "0.94.1"
-  resolved "https://registry.npmjs.org/slate/-/slate-0.94.1.tgz"
-  integrity sha512-GH/yizXr1ceBoZ9P9uebIaHe3dC/g6Plpf9nlUwnvoyf6V1UOYrRwkabtOCd3ZfIGxomY4P7lfgLr7FPH8/BKA==
+"slate@https://github.com/Simon-Initiative/slate#main":
+  version "1.0.0"
+  resolved "https://github.com/Simon-Initiative/slate#454397d05f135241a6699b4afefe0688f8039a48"
   dependencies:
-    immer "^9.0.6"
+    immer "^10.0.3"
     is-plain-object "^5.0.0"
     tiny-warning "^1.0.3"
 
