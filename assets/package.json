@@ -98,7 +98,7 @@
     "redux-logger": "^3.0.6",
     "redux-thunk": "^2.3.0",
     "sanitize-html": "^2.12.1",
-    "slate": "https://github.com/Simon-Initiative/slate#main",
+    "slate": "https://github.com/Simon-Initiative/slate#v1.0.0",
     "slate-history": "^0.93.0",
     "slate-hyperscript": "^0.77.0",
     "slate-react": "^0.98.1",
