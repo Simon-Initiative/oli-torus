@@ -92,6 +92,7 @@ defmodule OliWeb.Router do
     )
 
     plug(Oli.Plugs.SetCurrentUser)
+    plug(Oli.Plugs.SetVrAgentValue)
   end
 
   # set the layout to be workspace

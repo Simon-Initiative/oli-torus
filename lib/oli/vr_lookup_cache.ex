@@ -49,6 +49,14 @@ defmodule Oli.VrLookupCache do
     end
   end
 
+  @spec get_vr_user_agent_value(integer) :: true | false
+  def get_vr_user_agent_value(user_id) do
+    case get_vr_user_agent(user_id) do
+      {:ok, %VrUserAgent{value: value}} -> value
+      _ -> false
+    end
+  end
+
   # ----------------
   # Server callbacks
 
