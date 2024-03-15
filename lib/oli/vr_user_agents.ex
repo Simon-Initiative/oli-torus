@@ -5,6 +5,11 @@ defmodule Oli.VrUserAgents do
   alias Oli.Accounts.User
   alias Oli.Repo
 
+  @spec get_vr_user_agent(integer) :: VrUserAgent.t() | nil
+  def get_vr_user_agent(user_id) do
+    Repo.get(VrUserAgent, user_id)
+  end
+
   def search_user_for_vr(text_search, identifier \\ "name")
 
   def search_user_for_vr(text_search, "id") do
