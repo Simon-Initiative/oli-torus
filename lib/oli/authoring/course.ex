@@ -592,6 +592,9 @@ defmodule Oli.Authoring.Course do
       %{license: %{license_type: license_type} = license} when license_type in @cc_options ->
         Map.from_struct(license)
 
+      %{license: nil} ->
+        nil
+
       nil ->
         nil
     end
