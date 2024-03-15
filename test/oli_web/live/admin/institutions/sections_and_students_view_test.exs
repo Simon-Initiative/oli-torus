@@ -67,7 +67,7 @@ defmodule OliWeb.Admin.Institutions.SectionsAndStudentsViewTest do
         institution: institution_1,
         requires_payment: true,
         amount: %{
-          "amount" => "25.00",
+          "amount" => "40.00",
           "currency" => "USD"
         }
       )
@@ -418,10 +418,6 @@ defmodule OliWeb.Admin.Institutions.SectionsAndStudentsViewTest do
 
     test "sorting by cost is doing corretly", %{
       conn: conn,
-      section_1: section_1,
-      section_2: section_2,
-      section_3: section_3,
-      section_4: section_4,
       institution_1: institution
     } do
       {:ok, view, _html} =
@@ -430,31 +426,24 @@ defmodule OliWeb.Admin.Institutions.SectionsAndStudentsViewTest do
           live_view_sections_and_students_live(institution.id, :sections)
         )
 
-      [section_1, section_2, section_3, section_4] =
-        [section_1, section_2, section_3, section_4] |> Enum.sort_by(& &1.requires_payment)
+      view
+      |> element("th[phx-value-sort_by=requires_payment]")
+      |> render_click()
+
+      # test order desc
+      assert view
+             |> element("table > tbody > tr:first-child > td:nth-child(4) > div")
+             |> render() =~ "$10.00"
+
+      view
+      |> element("th[phx-value-sort_by=requires_payment]")
+      |> render_click()
 
       open_browser(view)
-      [s_1, s_2, s_3, s_4] = rendered_sections = table_as_list_of_maps(view, :sections)
-
-      ere =
-        Enum.map(rendered_sections, fn rendered_sections ->
-          amount_str_no_currency =
-            String.replace(rendered_sections.requires_payment, "$", "")
-            |> String.trim()
-
-          String.to_float(amount_str_no_currency)
-        end)
-
-      max_amoon =
-        Enum.reduce(ere, nil, fn x, acc ->
-          if acc == nil or x > acc do
-            x
-          else
-            acc
-          end
-        end)
-
-      # assert with the first value of colum cost
+      # test order asc
+      assert view
+             |> element("table > tbody > tr:first-child > td:nth-child(4) > div")
+             |> render() =~ "$40.00"
     end
   end
 end
