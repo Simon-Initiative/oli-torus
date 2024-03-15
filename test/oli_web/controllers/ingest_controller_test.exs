@@ -81,4 +81,34 @@ defmodule OliWeb.IngestControllerTest do
                "/authoring/session/new?request_path=%2Fadmin%2F#{project.slug}%2Fimport%2Findex"
     end
   end
+
+  describe "upload_csv" do
+    setup [:admin_conn]
+
+    test "redirects to CSVImportView view when attaching a valid file", %{conn: conn} do
+      file_upload = %{
+        "digest" => %Plug.Upload{
+          content_type: "text/csv",
+          filename: "some.txt",
+          path: "some_path"
+        }
+      }
+
+      conn =
+        post(conn, Routes.ingest_path(conn, :upload_csv, "some_project_slug"), %{
+          upload_csv: file_upload
+        })
+
+      assert redirected_to(conn, 302) == ~p"/admin/some_project_slug/import/csv"
+    end
+
+    test "redirects to index csv view when there is no file attachment", %{conn: conn} do
+      conn =
+        post(conn, Routes.ingest_path(conn, :upload_csv, "some_project_slug"), %{})
+
+      assert redirected_to(conn, 302) == ~p"/admin/some_project_slug/import/index"
+
+      assert Phoenix.Flash.get(conn.assigns.flash, :error) =~ "A valid file must be attached"
+    end
+  end
 end
