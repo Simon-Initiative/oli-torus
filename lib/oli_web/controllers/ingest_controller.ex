@@ -158,7 +158,7 @@ defmodule OliWeb.IngestController do
     else
       conn
       |> put_flash(:error, "A valid file must be attached")
-      |> redirect(to: Routes.ingest_path(conn, :index_csv))
+      |> redirect(to: Routes.ingest_path(conn, :index_csv, project_slug))
     end
   end
 
