@@ -574,16 +574,17 @@ defmodule Oli.Authoring.Course do
 
   @type license_types ::
           :none | :cc_by | :cc_by_sa | :cc_by_nd | :cc_by_nc | :cc_by_nc_sa | :cc_by_nc_nd
-  @spec get_project_license(integer()) ::
+  @spec get_project_license(integer(), String.t()) ::
           %{license_type: :custom, custom_license_details: String.t()}
           | %{license_type: license_types, custom_license_details: <<>>}
           | nil
-  def get_project_license(revision_id) do
+  def get_project_license(revision_id, section_slug) do
     from(pr in PublishedResource,
       join: spp in SectionsProjectsPublications,
       on: pr.publication_id == spp.publication_id,
       join: p in assoc(spp, :project),
-      where: pr.revision_id == ^revision_id,
+      join: s in assoc(spp, :section),
+      where: pr.revision_id == ^revision_id and s.slug == ^section_slug,
       distinct: true,
       select: p.attributes
     )

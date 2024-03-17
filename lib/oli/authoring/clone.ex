@@ -144,9 +144,19 @@ defmodule Oli.Authoring.Clone do
     attributes =
       case base_project.attributes do
         nil -> nil
-        base_attributes -> Map.from_struct(base_attributes)
+        base_attributes -> from_struct(base_attributes)
       end
 
     {:ok, customizations, attributes}
   end
+
+  defp from_struct(attribute) when is_map(attribute) do
+    Map.from_struct(attribute)
+    |> Map.keys()
+    |> Enum.reduce(%{}, fn key, acc ->
+      Map.put(acc, key, from_struct(Map.get(attribute, key)))
+    end)
+  end
+
+  defp from_struct(attribute), do: attribute
 end
