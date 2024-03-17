@@ -267,7 +267,7 @@ defmodule Oli.CourseTest do
       Sections.update_section_project_publication(section, project.id, publication.id)
 
       assert %{license_type: :cc_by, custom_license_details: nil} =
-               Oli.Authoring.Course.get_project_license(page.id)
+               Oli.Authoring.Course.get_project_license(page.id, section.slug)
     end
 
     test "returns map for custom license", %{
@@ -288,11 +288,11 @@ defmodule Oli.CourseTest do
       Sections.update_section_project_publication(section, project.id, publication.id)
 
       assert %{license_type: :custom, custom_license_details: ^custom_license_msg} =
-               Oli.Authoring.Course.get_project_license(page.id)
+               Oli.Authoring.Course.get_project_license(page.id, section.slug)
     end
 
-    test "returns nil when no attributes are present", %{page: page} do
-      refute Oli.Authoring.Course.get_project_license(page.id)
+    test "returns nil when no attributes are present", %{page: page, section: section} do
+      refute Oli.Authoring.Course.get_project_license(page.id, section.slug)
     end
   end
 end
