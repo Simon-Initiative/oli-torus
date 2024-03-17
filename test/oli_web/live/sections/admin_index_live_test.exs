@@ -283,5 +283,38 @@ defmodule OliWeb.Sections.AdminIndexLiveTest do
                section.title
              )
     end
+
+    test "enrolled column only shows student enrollments", %{conn: conn} do
+      project = insert(:project, authors: [])
+
+      section =
+        insert(:section,
+          type: :enrollable,
+          base_project: project
+        )
+
+      students =
+        insert_list(5, :user)
+
+      instructor = insert(:user)
+
+      number_of_student_enrollments =
+        enroll_students_to_section(students, section)
+
+      enroll_user_to_section(instructor, section, :context_instructor)
+
+      {:ok, view, _html} = live(conn, @live_view_index_route)
+
+      assert view
+             |> element("table > tbody > tr:first-child > td:nth-child(3) > div")
+             |> render() =~ number_of_student_enrollments
+    end
+  end
+
+  defp enroll_students_to_section(students_list, section) do
+    students_list
+    |> Enum.map(fn student -> enroll_user_to_section(student, section, :context_learner) end)
+    |> length()
+    |> Integer.to_string()
   end
 end
