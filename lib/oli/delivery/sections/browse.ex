@@ -153,7 +153,10 @@ defmodule Oli.Delivery.Sections.Browse do
           order_by(query, [_, _, _, _, _, u], {^direction, fragment("coalesce(?, '')", u.name)})
 
         :requires_payment ->
-          order_by(query, [s, _, _], [{^direction, s.requires_payment}, {^direction, s.amount}])
+          order_by(query, [s, _, _], [
+            {^direction, s.requires_payment},
+            {^direction, fragment("CAST(?->>'amount' AS DECIMAL)", s.amount)}
+          ])
 
         :type ->
           order_by(query, [s, _, _], {^direction, s.open_and_free})
