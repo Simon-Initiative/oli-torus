@@ -87,6 +87,10 @@
     background-color: #edeef0;
   }
 
+  &[disabled]:hover {
+    background-color: transparent;
+  }
+
   &.active {
     background: #6b7281;
     color: #f8f9fb;
