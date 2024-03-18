@@ -17,7 +17,7 @@ import { configureStore } from 'state/store';
 import { DeliveryElement, DeliveryElementProps } from '../DeliveryElement';
 import { DeliveryElementProvider, useDeliveryElementContext } from '../DeliveryElementProvider';
 import { Manifest } from '../types';
-import { LogicLabModelSchema, isLabMessage } from './LogicLabModelSchema';
+import { LAB_SERVER, LogicLabModelSchema, isLabMessage } from './LogicLabModelSchema';
 
 type LogicLabDeliveryProps = DeliveryElementProps<LogicLabModelSchema>;
 
@@ -54,7 +54,7 @@ const LogicLab: React.FC<LogicLabDeliveryProps> = () => {
     let partGuid = activityState.parts[0].attemptGuid; // Moving to higher scope which helps state saving to work.
 
     const onMessage = async (e: MessageEvent) => {
-      const lab = new URL(model.src);
+      const lab = new URL(LAB_SERVER);
       const origin = new URL(e.origin);
       // filter so we do not process torus events.
       if (origin.host === lab.host) {
@@ -126,7 +126,7 @@ const LogicLab: React.FC<LogicLabDeliveryProps> = () => {
                 const saved = activityState?.parts[0].response?.input;
                 if (saved && e.source) {
                   // post saved state back to lab.
-                  e.source.postMessage(saved, { targetOrigin: model.src });
+                  e.source.postMessage(saved, { targetOrigin: LAB_SERVER });
                 }
               } // TODO if in preview, load appropriate content
               // Preview feature in lab servlet is not complete.
@@ -146,7 +146,7 @@ const LogicLab: React.FC<LogicLabDeliveryProps> = () => {
     return () => window.removeEventListener('message', onMessage);
   }, [activityState, model, context]);
 
-  const url = new URL(activity, model.src);
+  const url = new URL(`api/v1/activities/lab/${activity}`, LAB_SERVER);
   // url.searchParams.append('activity', activity); // Used in development environment
   url.searchParams.append('mode', mode);
   url.searchParams.append('attemptGuid', activityState.attemptGuid);

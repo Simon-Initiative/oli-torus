@@ -18,13 +18,10 @@ export { LogicLabDelivery } from './LogicLabDelivery';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const manifest: Manifest = require('./manifest.json');
 
-const labServer = 'http://localhost:5173/'; // 'http://localhost:8080/api/v1/activity/lab/'
-
 registerCreationFunc(manifest, async (context: CreationContext): Promise<LogicLabModelSchema> => {
   return {
-    src: labServer,
     activity: '',
-    context,
+    context, // For future work so that lab activity can reference context.
     authoring: {
       version: 1,
       parts: [

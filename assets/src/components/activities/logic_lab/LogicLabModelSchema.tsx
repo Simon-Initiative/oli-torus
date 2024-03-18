@@ -3,8 +3,13 @@
 */
 import { ActivityModelSchema, CreationContext, Feedback, Part, Transformation } from '../types';
 
+// Host for the LogicLab Servlet.
+// FIXME: This setting should be in some sort of site wide configuration so
+// that it can be adjusted by the administrator.
+// If forwarded to a different endpoint, make sure to include final "/"
+export const LAB_SERVER = 'http://localhost:8080/';
+
 export interface LogicLabModelSchema extends ActivityModelSchema {
-  src: string; // URL of servlet
   activity: string; // Have to set at higher level as not all information in authoring.parts (eg) targets, are available in all contexts
   context?: CreationContext;
   authoring: {

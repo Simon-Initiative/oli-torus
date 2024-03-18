@@ -12,10 +12,9 @@ import { configureStore } from 'state/store';
 import { AuthoringElement, AuthoringElementProps } from '../AuthoringElement';
 import { AuthoringElementProvider, useAuthoringElementContext } from '../AuthoringElementProvider';
 import { Manifest } from '../types';
-import { LabActivity, LogicLabModelSchema } from './LogicLabModelSchema';
+import { LAB_SERVER, LabActivity, LogicLabModelSchema } from './LogicLabModelSchema';
 
 const STORE = configureStore();
-const ACTIVITIES_URL = new URL('http://localhost:8080/api/v1/activities');
 
 /**
  * A simple Bootstrap loading spinner component.
@@ -103,13 +102,10 @@ type LogicLabAuthoringProps = AuthoringElementProps<LogicLabModelSchema>;
  * @component
  */
 const Authoring: FC<LogicLabAuthoringProps> = (props: LogicLabAuthoringProps) => {
-  const devmode = false; // Allows system developers to set some extra settings
   const { dispatch, model, editMode } = useAuthoringElementContext<LogicLabModelSchema>();
   const [activityId, setActivityId] = useState<string>(props.model.activity);
-  const [servlet, setServlet] = useState<string>(props.model.src);
   useEffect(() => {
     setActivityId(model.activity);
-    setServlet(model.src);
   }, [model]);
 
   // Current loading state.
@@ -136,8 +132,9 @@ const Authoring: FC<LogicLabAuthoringProps> = (props: LogicLabAuthoringProps) =>
     const controller = new AbortController();
     const signal = controller.signal;
     const getActivities = async () => {
+      setLoading('loading');
       // url should be relative to model.src, but is static for development.
-      const response = await fetch(ACTIVITIES_URL, {
+      const response = await fetch(new URL('api/v1/activities', LAB_SERVER), {
         signal,
         headers: { Accept: 'application/json' },
       });
@@ -183,22 +180,6 @@ const Authoring: FC<LogicLabAuthoringProps> = (props: LogicLabAuthoringProps) =>
   return (
     <div className="card">
       <div className="card-title">AProS LogicLab Activity</div>
-      {editMode && devmode && (
-        <form>
-          <div className="form-group">
-            <label className="form-label">
-              {/* Needed for development, to be removed when servlet is publicly hosted somewhere. */}
-              AProS Servlet url:
-              <input
-                className="form-control"
-                type="text"
-                value={servlet}
-                onChange={(e) => setServlet(e.target.value)}
-              />
-            </label>
-          </div>
-        </form>
-      )}
       {loading === 'loading' && <Loading />}
       {loading === 'error' && (
         <div className="alert alert-danger">
@@ -300,6 +281,7 @@ const Authoring: FC<LogicLabAuthoringProps> = (props: LogicLabAuthoringProps) =>
                 id={id}
                 value={activityId}
                 onChange={(e) => {
+                  setActivityId(e.target.value);
                   dispatch((draft, _post) => {
                     draft.activity = e.target.value;
                   });
@@ -375,7 +357,7 @@ const Authoring: FC<LogicLabAuthoringProps> = (props: LogicLabAuthoringProps) =>
  * Displays loading indicator and then the details of the activity.
  * @component
  */
-const Preview: FC<LogicLabAuthoringProps> = (props: LogicLabAuthoringProps) => {
+const Preview: FC<LogicLabAuthoringProps> = ({ model }: LogicLabAuthoringProps) => {
   // Current activity
   const [activity, setActivity] = useState<LabActivity | undefined>();
   // Loading state
@@ -386,7 +368,9 @@ const Preview: FC<LogicLabAuthoringProps> = (props: LogicLabAuthoringProps) => {
     const controller = new AbortController();
     const signal = controller.signal;
     const getActivity = async () => {
-      const response = await fetch(`${ACTIVITIES_URL.toString()}/${props.model.activity}`, {
+      setLoading('loading');
+      const url = new URL(`api/v1/activities/${model.activity}`, LAB_SERVER);
+      const response = await fetch(url, {
         signal,
         headers: { Accept: 'application/json' },
       });
@@ -407,7 +391,7 @@ const Preview: FC<LogicLabAuthoringProps> = (props: LogicLabAuthoringProps) => {
     });
 
     return () => controller.abort();
-  }, [props]);
+  }, [model]);
 
   // on setting activity, typeset the math.
   useEffect(() => {
