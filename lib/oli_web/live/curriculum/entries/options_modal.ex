@@ -119,6 +119,30 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
               phx-value-url="uploaded_one"
               phx-target={@myself}
             />
+
+            <div
+              :if={@step == :intro_video}
+              phx-hook="VideoPreview"
+              ref={entry.ref}
+              id={"video_preview_#{entry.ref}"}
+              name={@step}
+            >
+              <video
+                class={[
+                  "object-cover h-[162px] w-[288px] mx-auto rounded-lg cursor-pointer outline outline-1 outline-gray-200 shadow-lg",
+                  if(fetch_field(@changeset, @step) == "uploaded_one",
+                    do: "!outline-[7px] outline-blue-400"
+                  )
+                ]}
+                phx-click="select-resource"
+                phx-value-url="uploaded_one"
+                phx-target={@myself}
+                preload="metadata"
+                controls
+              >
+                <source />
+              </video>
+            </div>
           </figure>
 
           <button
@@ -147,6 +171,28 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
             )
           ]}
         />
+
+        <video
+          :for={url <- @resource_urls}
+          :if={@step == :intro_video}
+          id={"video_#{url}"}
+          phx-click="select-resource"
+          phx-value-url={url}
+          phx-target={@myself}
+          data-filename={get_filename(url)}
+          class={[
+            "object-cover h-[162px] w-[288px] mx-auto rounded-lg cursor-pointer outline outline-1 outline-gray-200 shadow-lg hover:scale-[1.02]",
+            if(get_filename(url) == get_filename(fetch_field(@changeset, @step)),
+              do: "!outline-[7px] outline-blue-400"
+            )
+          ]}
+          phx-hook="PauseOthersOnSelected"
+          preload="metadata"
+          controls
+          data-filename={get_filename(url)}
+        >
+          <source src={"#{url}"} type="video/mp4" /> Your browser does not support the video tag.
+        </video>
       </div>
 
       <div class="modal-footer">
