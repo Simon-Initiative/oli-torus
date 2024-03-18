@@ -28,6 +28,7 @@ defmodule OliWeb.Components.Modal do
   """
   attr :id, :string, required: true
   attr :class, :string, default: ""
+  attr :body_class, :string, default: "p-6 space-y-6"
   attr :show, :boolean, default: false
   attr :on_cancel, JS, default: %JS{}
   attr :on_confirm, JS, default: %JS{}
@@ -113,7 +114,7 @@ defmodule OliWeb.Components.Modal do
                 </button>
               </div>
               <!-- Modal body -->
-              <div class="p-6 space-y-6">
+              <div class={@body_class}>
                 <%= render_slot(@inner_block) %>
               </div>
               <!-- Modal footer -->

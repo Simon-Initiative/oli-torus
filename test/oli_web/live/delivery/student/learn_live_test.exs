@@ -90,6 +90,17 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
         duration_minutes: 10
       )
 
+    exploration_1_revision =
+      insert(:revision,
+        resource_type_id: ResourceType.get_id_by_type("page"),
+        title: "Exploration 1",
+        content: %{
+          model: [],
+          advancedDelivery: true,
+          displayApplicactionChrome: false
+        }
+      )
+
     page_2_revision =
       insert(:revision,
         resource_type_id: ResourceType.get_id_by_type("page"),
@@ -302,6 +313,13 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
         intro_video: "another_video"
       })
 
+    unit_6_revision =
+      insert(:revision, %{
+        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("container"),
+        children: [exploration_1_revision.resource_id],
+        title: "What did you learn?"
+      })
+
     ## root container...
     container_revision =
       insert(:revision, %{
@@ -312,6 +330,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
           unit_3_revision.resource_id,
           unit_4_revision.resource_id,
           unit_5_revision.resource_id,
+          unit_6_revision.resource_id,
           top_level_page_revision.resource_id
         ],
         title: "Root Container"
@@ -325,6 +344,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
         objective_4_revision,
         mcq_activity_1_revision,
         page_1_revision,
+        exploration_1_revision,
         page_2_revision,
         page_3_revision,
         page_4_revision,
@@ -348,6 +368,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
         unit_3_revision,
         unit_4_revision,
         unit_5_revision,
+        unit_6_revision,
         container_revision
       ]
 
@@ -414,6 +435,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       publication: publication,
       mcq_1: mcq_activity_1_revision,
       page_1: page_1_revision,
+      exploration_1: exploration_1_revision,
       page_2: page_2_revision,
       page_3: page_3_revision,
       page_4: page_4_revision,
@@ -436,7 +458,8 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       unit_2: unit_2_revision,
       unit_3: unit_3_revision,
       unit_4: unit_4_revision,
-      unit_5: unit_5_revision
+      unit_5: unit_5_revision,
+      unit_6: unit_6_revision
     }
   end
 
@@ -1470,7 +1493,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
              |> element(
                ~s{div[id="top_level_page_#{top_level_page.resource_id}"] div[role="header"]}
              )
-             |> render() =~ "PAGE 13"
+             |> render() =~ "PAGE 14"
 
       assert view
              |> element(

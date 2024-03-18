@@ -10,6 +10,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   alias OliWeb.Common.Utils, as: WebUtils
   alias OliWeb.Components.Delivery.Student
   alias OliWeb.Delivery.Student.Utils
+  alias Oli.Publishing.DeliveryResolver
 
   import Ecto.Query, warn: false, only: [from: 2]
 
@@ -349,14 +350,21 @@ defmodule OliWeb.Delivery.Student.LearnLive do
 
   def handle_event(
         "navigate_to_resource",
-        %{"slug" => resource_slug, "purpose" => purpose} = values,
+        %{"slug" => resource_slug} = values,
         socket
       ) do
     section_slug = socket.assigns.section.slug
     resource_id = values["resource_id"] || values["module_resource_id"]
 
     {:noreply,
-     push_redirect(socket, to: resource_url(resource_slug, section_slug, resource_id, purpose))}
+     push_redirect(socket,
+       to:
+         resource_url(
+           resource_slug,
+           section_slug,
+           resource_id
+         )
+     )}
   end
 
   def handle_event(
@@ -562,7 +570,6 @@ defmodule OliWeb.Delivery.Student.LearnLive do
               @selected_module_per_unit_resource_id[@unit["resource_id"]]["resource_id"] ==
                 @unit["resource_id"]
             }
-            purpose={@unit["purpose"]}
           />
         </div>
       </div>
@@ -663,7 +670,6 @@ defmodule OliWeb.Delivery.Student.LearnLive do
                 @selected_module_per_unit_resource_id[@unit["resource_id"]]["resource_id"] ==
                   module["resource_id"]
               }
-              purpose={module["purpose"]}
             />
           </div>
         </div>
@@ -879,7 +885,6 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         video_url={@module["intro_video"]}
         intro_video_viewed={@intro_video_viewed}
         progress={0.0}
-        purpose="intro"
       />
 
       <.index_item
@@ -919,7 +924,6 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         video_url={@module["intro_video"]}
         progress={Map.get(@student_progress_per_resource_id, child["resource_id"])}
         student_progress_per_resource_id={@student_progress_per_resource_id}
-        purpose={child["purpose"]}
         closed_sections={Map.get(@closed_sections_per_module_id, @module["resource_id"], [])}
       />
     </div>
@@ -946,7 +950,6 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   attr :intro_video_viewed, :boolean
   attr :video_url, :string, default: nil
   attr :progress, :float
-  attr :purpose, :string
   attr :closed_sections, :list, default: []
 
   def index_item(%{type: "section"} = assigns) do
@@ -1026,7 +1029,6 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         intro_video_viewed={@intro_video_viewed}
         progress={Map.get(@student_progress_per_resource_id, child["resource_id"])}
         student_progress_per_resource_id={@student_progress_per_resource_id}
-        purpose={child["purpose"]}
         closed_sections={@closed_sections}
       />
     </div>
@@ -1056,7 +1058,6 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         phx-value-module_resource_id={@module_resource_id}
         phx-value-video_url={@video_url}
         phx-value-is_intro_video="false"
-        phx-value-purpose={@purpose}
         class="flex shrink items-center gap-3 w-full px-2 dark:text-white cursor-pointer hover:bg-gray-200/70 dark:hover:bg-gray-800"
       >
         <.numbering_index type={@type} index={@numbering_index} />
@@ -1249,7 +1250,6 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   attr :selected, :boolean, default: false
   attr :bg_image_url, :string, doc: "the background image url for the card"
   attr :student_progress_per_resource_id, :map
-  attr :purpose, :string
   attr :default_image, :string, default: @default_image
 
   def card(assigns) do
@@ -1273,7 +1273,6 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       phx-value-unit_resource_id={@unit_resource_id}
       phx-value-module_resource_id={@module["resource_id"]}
       phx-value-slug={@module["slug"]}
-      phx-value-purpose={@purpose}
       class={[
         "relative hover:scale-[1.01] transition-transform duration-150",
         if(!is_page(@module), do: "slider-card")
@@ -1424,15 +1423,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     end)
   end
 
-  # TODO: Exploration pages are redirected to v26 pages (handled by the page_delivery_controller).
-  # This implies that the v26 prologue page will be shown when there is no attempt in course.
-  # We need to extend the NG23 prologue to support adaptive pages.
-
-  defp resource_url(resource_slug, section_slug, _, "application") do
-    ~p"/sections/#{section_slug}/page/#{resource_slug}"
-  end
-
-  defp resource_url(resource_slug, section_slug, resource_id, _purpose) do
+  defp resource_url(resource_slug, section_slug, resource_id) do
     Utils.lesson_live_path(
       section_slug,
       resource_slug,
@@ -1669,7 +1660,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       end
 
     from(
-      [s: s, sr: sr, rev: rev, spp: spp] in Oli.Publishing.DeliveryResolver.section_resource_revisions(
+      [s: s, sr: sr, rev: rev, spp: spp] in DeliveryResolver.section_resource_revisions(
         section.slug
       ),
       join: p in Project,
@@ -1695,7 +1686,6 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         "intro_content" => rev.intro_content,
         "duration_minutes" => rev.duration_minutes,
         "resource_type_id" => rev.resource_type_id,
-        "purpose" => rev.purpose,
         "section_resource" => sr,
         "is_root?" =>
           fragment(
