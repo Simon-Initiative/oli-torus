@@ -12,6 +12,10 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
   alias Oli.Resources.ResourceType
   alias OliWeb.Delivery.Student.Utils
 
+  defp live_view_adaptive_lesson_live_route(section_slug, revision_slug) do
+    ~p"/sections/#{section_slug}/adaptive_lesson/#{revision_slug}"
+  end
+
   defp create_attempt(student, section, revision, resource_attempt_data \\ %{}) do
     resource_access = get_or_insert_resource_access(student, section, revision)
 
@@ -88,6 +92,20 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
                 }
               ]
             }
+          ]
+        }
+      )
+
+    exploration_1_revision =
+      insert(:revision,
+        resource_type_id: ResourceType.get_id_by_type("page"),
+        title: "Exploration 1",
+        content: %{
+          model: [],
+          advancedDelivery: true,
+          displayApplicationChrome: false,
+          additionalStylesheets: [
+            "/css/delivery_adaptive_themes_default_light.css"
           ]
         }
       )
@@ -177,12 +195,20 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
         intro_video: "some_video_url"
       })
 
+    unit_2_revision =
+      insert(:revision, %{
+        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("container"),
+        children: [exploration_1_revision.resource_id],
+        title: "What did you learn?"
+      })
+
     ## root container...
     container_revision =
       insert(:revision, %{
         resource_type_id: Oli.Resources.ResourceType.get_id_by_type("container"),
         children: [
-          unit_1_revision.resource_id
+          unit_1_revision.resource_id,
+          unit_2_revision.resource_id
         ],
         title: "Root Container"
       })
@@ -192,11 +218,13 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
         objective_1_revision,
         objective_2_revision,
         page_1_revision,
+        exploration_1_revision,
         page_2_revision,
         page_3_revision,
         module_1_revision,
         module_2_revision,
         unit_1_revision,
+        unit_2_revision,
         container_revision
       ]
 
@@ -251,11 +279,13 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
     %{
       section: section,
       page_1: page_1_revision,
+      exploration_1: exploration_1_revision,
       page_2: page_2_revision,
       page_3: page_3_revision,
       module_1: module_1_revision,
       module_2: module_2_revision,
-      unit_1: unit_1_revision
+      unit_1: unit_1_revision,
+      unit_2: unit_2_revision
     }
   end
 
@@ -291,6 +321,22 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
         live(conn, Utils.lesson_live_path(section.slug, page_1.slug))
 
       assert redirect_path == "/unauthorized"
+    end
+
+    test "redirects when page is adaptive", %{
+      conn: conn,
+      user: user,
+      section: section,
+      exploration_1: exploration_1
+    } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+
+      {:error, {:redirect, %{to: redirect_path}}} =
+        live(conn, Utils.lesson_live_path(section.slug, exploration_1.slug))
+
+      assert redirect_path ==
+               live_view_adaptive_lesson_live_route(section.slug, exploration_1.slug)
     end
 
     test "can access when enrolled to course", %{
@@ -368,6 +414,26 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       refute has_element?(view, "button[id='begin_attempt_button']", "Begin 1st Attempt")
       assert has_element?(view, "div[role='page content']")
       assert has_element?(view, "button[id=submit_answers]", "Submit Answers")
+    end
+
+    test "does not see prologue but adaptive page when an attempt is in progress", %{
+      conn: conn,
+      user: user,
+      section: section,
+      exploration_1: exploration_1
+    } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+
+      _first_attempt_in_progress =
+        create_attempt(user, section, exploration_1, %{lifecycle_state: :active})
+
+      {:ok, view, html} =
+        live(conn, live_view_adaptive_lesson_live_route(section.slug, exploration_1.slug))
+
+      assert has_element?(view, "div[id='delivery_container']")
+      # It loads the adaptive themes
+      assert html =~ "/css/delivery_adaptive_themes_default_light.css"
     end
 
     test "password (if set by instructor) is required to begin a new attempt", %{

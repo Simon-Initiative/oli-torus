@@ -348,8 +348,9 @@ defmodule OliWeb.Delivery.Student.Utils do
       when activities != nil do
     # this is an optimization to exclude not needed activity scripts (~1.5mb each)
     Enum.map(activities, fn {_activity_id, activity} ->
-      activity.script
+      Map.get(activity, :script)
     end)
+    |> Enum.reject(&is_nil/1)
     |> Enum.uniq()
   end
 
