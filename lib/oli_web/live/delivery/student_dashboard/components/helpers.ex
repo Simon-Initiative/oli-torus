@@ -17,6 +17,7 @@ defmodule OliWeb.Delivery.StudentDashboard.Components.Helpers do
   attr(:breadcrumbs, :list, required: true)
   attr(:socket_or_conn, :any, required: true)
   attr(:preview_mode, :boolean, default: false)
+  slot(:inner_block, required: true)
 
   def main_layout(assigns) do
     ~H"""

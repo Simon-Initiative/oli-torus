@@ -1109,6 +1109,8 @@ defmodule OliWeb.Router do
 
     get("/:section_slug/enroll", DeliveryController, :show_enroll)
     post("/:section_slug/enroll", DeliveryController, :process_enroll)
+    get("/:section_slug/join", LaunchController, :join)
+    post("/:section_slug/auto_enroll", LaunchController, :auto_enroll_as_guest)
   end
 
   # Delivery Auth (Signin)

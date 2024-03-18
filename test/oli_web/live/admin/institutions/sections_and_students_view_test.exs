@@ -57,14 +57,49 @@ defmodule OliWeb.Admin.Institutions.SectionsAndStudentsViewTest do
     # create sections with the same institution...
     [institution_1, institution_2] = insert_pair(:institution)
 
-    [section_1, section_2, section_3, section_4] =
-      insert_list(4, :section,
+    section_1 =
+      insert(:section,
         base_project: project,
         context_id: UUID.uuid4(),
         open_and_free: true,
         registration_open: true,
         type: :enrollable,
-        institution: institution_1
+        institution: institution_1,
+        requires_payment: true,
+        amount: %{
+          "amount" => "40.00",
+          "currency" => "USD"
+        }
+      )
+
+    section_2 =
+      insert(:section,
+        base_project: project,
+        context_id: UUID.uuid4(),
+        open_and_free: true,
+        registration_open: true,
+        type: :enrollable,
+        institution: institution_1,
+        requires_payment: true,
+        amount: %{
+          "amount" => "10.00",
+          "currency" => "USD"
+        }
+      )
+
+    [section_3, section_4] =
+      insert_pair(:section,
+        base_project: project,
+        context_id: UUID.uuid4(),
+        open_and_free: true,
+        registration_open: true,
+        type: :enrollable,
+        institution: institution_1,
+        requires_payment: true,
+        amount: %{
+          "amount" => "30.00",
+          "currency" => "USD"
+        }
       )
 
     {:ok, section_1} = Sections.create_section_resources(section_1, publication)
@@ -379,6 +414,35 @@ defmodule OliWeb.Admin.Institutions.SectionsAndStudentsViewTest do
 
       assert s_4.name == OliWeb.Common.Utils.name(student_4)
       assert s_4.email =~ student_4.email
+    end
+
+    test "sorting by cost is doing correctly", %{
+      conn: conn,
+      institution_1: institution
+    } do
+      {:ok, view, _html} =
+        live(
+          conn,
+          live_view_sections_and_students_live(institution.id, :sections)
+        )
+
+      view
+      |> element("th[phx-value-sort_by=requires_payment]")
+      |> render_click()
+
+      # test order desc
+      assert view
+             |> element("table > tbody > tr:first-child > td:nth-child(4) > div")
+             |> render() =~ "$10.00"
+
+      view
+      |> element("th[phx-value-sort_by=requires_payment]")
+      |> render_click()
+
+      # test order asc
+      assert view
+             |> element("table > tbody > tr:first-child > td:nth-child(4) > div")
+             |> render() =~ "$40.00"
     end
   end
 end

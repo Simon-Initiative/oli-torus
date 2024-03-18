@@ -1,20 +1,18 @@
 defmodule OliWeb.LayoutView do
   use OliWeb, :view
-
-  import OliWeb.AuthoringView,
-    only: [
-      author_role_text: 1,
-      author_role_color: 1,
-      author_icon: 1
-    ]
+  use Phoenix.Component
 
   import Oli.Branding
+  import OliWeb.AuthoringView, only: [author_role_text: 1, author_role_color: 1, author_icon: 1]
 
   alias Oli.Accounts
-  alias Oli.Publishing.AuthoringResolver
-  alias OliWeb.Breadcrumb.BreadcrumbTrailLive
+  alias Oli.Authoring.Course.CreativeCommons
   alias Oli.Delivery.Paywall.AccessSummary
+  alias Oli.Publishing.AuthoringResolver
   alias Oli.Resources.Collaboration.CollabSpaceConfig
+  alias OliWeb.Breadcrumb.BreadcrumbTrailLive
+
+  @non_empty_license_opts Map.keys(CreativeCommons.cc_options()) -- [:none]
 
   def show_pay_early(%AccessSummary{reason: :within_grace_period}), do: true
   def show_pay_early(_), do: false
@@ -131,4 +129,66 @@ defmodule OliWeb.LayoutView do
   defp show_collab_space?(nil), do: false
   defp show_collab_space?(%CollabSpaceConfig{status: :disabled}), do: false
   defp show_collab_space?(_), do: true
+
+  def render_license(%{license_type: :custom} = assigns) do
+    ~H"""
+    <.license_wrapper>
+      <p class="h-full"><%= @custom_license_details %></p>
+    </.license_wrapper>
+    """
+  end
+
+  def render_license(%{license_type: cc_license} = assigns)
+      when cc_license in @non_empty_license_opts do
+    cc_data = CreativeCommons.cc_options()[cc_license]
+
+    logo_name =
+      Atom.to_string(cc_license) |> String.replace("cc_", "") |> String.replace("_", "-")
+
+    cc_text = String.split(cc_data.text, ":") |> Enum.at(1)
+
+    assigns =
+      assigns
+      |> Map.put(:logo_name, logo_name)
+      |> Map.put(:cc_text, cc_text)
+      |> Map.put(:cc_url, cc_data.url)
+
+    ~H"""
+    <.license_wrapper>
+      <div class="flex gap-2 items-center">
+        <a href={@cc_url} , target="_blank">
+          <img
+            class="w-[100px]"
+            src={~p"/images/cc_logos/#{@logo_name <> ".svg"}"}
+            alt="Common Creative Logo"
+          />
+        </a>
+        <p>
+          Unless otherwise noted this work is licensed under a Creative Commons<%= @cc_text %> 4.0 Unported License.
+        </p>
+      </div>
+    </.license_wrapper>
+    """
+  end
+
+  def render_license(assigns) do
+    ~H"""
+    <.license_wrapper>
+      <%= CreativeCommons.cc_options()[:none].text %>
+    </.license_wrapper>
+    """
+  end
+
+  slot(:inner_block, required: true)
+
+  def license_wrapper(assigns) do
+    ~H"""
+    <div
+      id="license"
+      class="container mx-auto flex items-center justify-start overflow-y-hidden h-[40px] max-h-[40px] relative top-0"
+    >
+      <%= render_slot(@inner_block) %>
+    </div>
+    """
+  end
 end

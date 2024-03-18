@@ -1,6 +1,7 @@
 defmodule Oli.Delivery.Sections.Browse do
   import Ecto.Query, warn: false
 
+  alias Oli.Delivery.Sections.EnrollmentContextRole
   alias Lti_1p3.Tool.ContextRoles
   alias Oli.Accounts.User
   alias Oli.Delivery.Sections.{Section, Enrollment, BrowseOptions}
@@ -98,9 +99,22 @@ defmodule Oli.Delivery.Sections.Browse do
         },
         group_by: [e.section_id]
 
+    student_role_id =
+      ContextRoles.get_role(:context_learner).id
+
+    student_enrollments =
+      from e in Enrollment,
+        join: ecr in EnrollmentContextRole,
+        on: ecr.enrollment_id == e.id,
+        where: ecr.context_role_id == ^student_role_id,
+        select: %{
+          id: e.id,
+          section_id: e.section_id
+        }
+
     query =
       Section
-      |> join(:left, [s], e in Enrollment, on: s.id == e.section_id)
+      |> join(:left, [s], e in subquery(student_enrollments), on: s.id == e.section_id)
       |> join(:left, [s, _], i in Oli.Institutions.Institution, on: s.institution_id == i.id)
       |> join(:left, [s, _], proj in Oli.Authoring.Course.Project,
         on: s.base_project_id == proj.id
@@ -139,7 +153,10 @@ defmodule Oli.Delivery.Sections.Browse do
           order_by(query, [_, _, _, _, _, u], {^direction, fragment("coalesce(?, '')", u.name)})
 
         :requires_payment ->
-          order_by(query, [s, _, _], [{^direction, s.requires_payment}, {^direction, s.amount}])
+          order_by(query, [s, _, _], [
+            {^direction, s.requires_payment},
+            {^direction, fragment("CAST(?->>'amount' AS DECIMAL)", s.amount)}
+          ])
 
         :type ->
           order_by(query, [s, _, _], {^direction, s.open_and_free})
