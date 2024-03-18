@@ -9,6 +9,8 @@ defmodule OliWeb.Router do
   import Phoenix.LiveDashboard.Router
   import PhoenixStorybook.Router
 
+  import Oli.Plugs.EnsureAdmin
+
   @user_persistent_session_cookie_key "oli_user_persistent_session_v2"
   @author_persistent_session_cookie_key "oli_author_persistent_session_v2"
 

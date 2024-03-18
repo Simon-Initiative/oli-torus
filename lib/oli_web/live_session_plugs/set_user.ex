@@ -32,7 +32,7 @@ defmodule OliWeb.LiveSessionPlugs.SetUser do
             socket
             |> assign(
               current_author: current_author,
-              is_system_admin: system_role_id == SystemRole.role_id().admin
+              is_system_admin: system_role_id == Oli.Accounts.has_admin_role?(current_author)
             )
 
           _ ->

@@ -410,10 +410,10 @@ defmodule OliWeb.Components.Delivery.UserAccount do
   def linked_author_account(_), do: nil
 
   defp signout_path(%SessionContext{user: user, author: author}) do
-    admin_role_id = Oli.Accounts.SystemRole.role_id().admin
+    is_admin? = Oli.Accounts.has_admin_role?(author)
 
-    case {user, author} do
-      {_, %Author{system_role_id: ^admin_role_id}} ->
+    case {user, is_admin?} do
+      {_, true} ->
         Routes.authoring_session_path(OliWeb.Endpoint, :signout, type: :author)
 
       {_user, _} ->
