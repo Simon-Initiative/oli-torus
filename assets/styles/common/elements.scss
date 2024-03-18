@@ -542,6 +542,11 @@ $element-margin-bottom: 1.5em;
       }
     }
   }
+
+  .highlighted-annotation-point-block {
+    background-color: #fdeccf80;
+    outline: 2px solid #fdeccf80;
+  }
 }
 
 .conjugation {

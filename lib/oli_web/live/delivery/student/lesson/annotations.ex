@@ -1,24 +1,49 @@
 defmodule OliWeb.Delivery.Student.Lesson.Annotations do
   use OliWeb, :html
 
+  alias OliWeb.Components.Common
+
+  attr :create_new_annotation, :boolean, default: false
+  attr :annotations, :any, required: true
+  attr :current_user, Oli.Accounts.User, required: true
+  attr :selected_annotations_tab, :atom, default: :my_notes
+
   def panel(assigns) do
     ~H"""
-    <div class="flex-1 flex flex-row">
+    <div class="flex-1 flex flex-row overflow-hidden">
       <div class="justify-start">
         <.toggle_notes_button>
           <i class="fa-solid fa-xmark group-hover:scale-110"></i>
         </.toggle_notes_button>
       </div>
-      <div class="flex-1 flex flex-col bg-white p-5">
+      <div class="flex-1 flex flex-col bg-white dark:bg-black p-5">
         <.tab_group class="py-3">
-          <.tab selected={true}><.user_icon class="mr-2" /> My Notes</.tab>
-          <.tab><.users_icon class="mr-2" /> Class Notes</.tab>
+          <.tab name={:my_notes} selected={@selected_annotations_tab == :my_notes}>
+            <.user_icon class="mr-2" /> My Notes
+          </.tab>
+          <.tab name={:all_notes} selected={@selected_annotations_tab == :all_notes}>
+            <.users_icon class="mr-2" /> Class Notes
+          </.tab>
         </.tab_group>
         <.search_box class="mt-2" />
         <hr class="m-6 border-b border-b-gray-200" />
-        <div class="flex-1 flex flex-col gap-3">
-          <.note></.note>
-          <.note></.note>
+        <div class="flex-1 flex flex-col gap-3 overflow-y-auto pb-[80px]">
+          <.add_new_annotation_input
+            class="my-2"
+            active={@create_new_annotation}
+            disable_anonymous_option={@selected_annotations_tab == :my_notes}
+          />
+
+          <%= case @annotations do %>
+            <% nil -> %>
+              <Common.loading_spinner />
+            <% [] -> %>
+              <div class="text-center p-4 text-gray-500">There are no posts yet</div>
+            <% annotations -> %>
+              <%= for annotation <- annotations do %>
+                <.note post={annotation} current_user={@current_user} />
+              <% end %>
+          <% end %>
         </div>
       </div>
     </div>
@@ -30,7 +55,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
   def toggle_notes_button(assigns) do
     ~H"""
     <button
-      class="flex flex-col items-center rounded-l-lg bg-white px-6 py-12 text-xl group"
+      class="flex flex-col items-center rounded-l-lg bg-white dark:bg-black px-6 py-12 text-xl group"
       phx-click="toggle_sidebar"
     >
       <%= render_slot(@inner_block) %>
@@ -76,18 +101,24 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
     """
   end
 
+  attr :name, :atom, required: true
   attr :selected, :boolean, default: false
   slot :inner_block, required: true
 
   defp tab(assigns) do
     ~H"""
-    <button class={[
-      "flex-1 inline-flex justify-center border-l border-t border-b first:rounded-l-lg last:rounded-r-lg last:border-r px-4 py-3 inline-flex items-center",
-      if(@selected,
-        do: "bg-primary border-primary text-white stroke-white font-semibold",
-        else: "stroke-[#383A44] border-gray-400 hover:bg-gray-100"
-      )
-    ]}>
+    <button
+      phx-click="select_tab"
+      phx-value-tab={@name}
+      class={[
+        "flex-1 inline-flex justify-center border-l border-t border-b first:rounded-l-lg last:rounded-r-lg last:border-r px-4 py-3 inline-flex items-center",
+        if(@selected,
+          do: "bg-primary border-primary text-white stroke-white font-semibold",
+          else:
+            "stroke-[#383A44] border-gray-400 hover:bg-gray-100 dark:border-gray-700 dark:hover:bg-gray-800"
+        )
+      ]}
+    >
       <%= render_slot(@inner_block) %>
     </button>
     """
@@ -176,43 +207,127 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
       <div class="flex-1 relative">
         <i class="fa-solid fa-search absolute left-4 top-4 text-gray-400 pointer-events-none text-lg">
         </i>
-        <input type="text" class="w-full border border-gray-400 rounded-lg pl-12 pr-3 py-3" />
+        <input
+          type="text"
+          class="w-full border border-gray-400 dark:border-gray-700 rounded-lg pl-12 pr-3 py-3"
+        />
       </div>
     </div>
     """
   end
 
+  attr :active, :boolean, default: false
+  attr :disable_anonymous_option, :boolean, default: false
+  attr :rest, :global, include: ~w(class)
+
+  defp add_new_annotation_input(%{active: true} = assigns) do
+    ~H"""
+    <div class={[
+      "flex flex-row p-2 border-2 border-gray-300 dark:border-gray-700 rounded-lg",
+      @rest[:class]
+    ]}>
+      <form class="w-full" phx-submit="create_annotation">
+        <div class="flex-1 flex flex-col relative border-gray-400 dark:border-gray-700 rounded-lg p-3">
+          <div class="flex-1">
+            <textarea
+              id="annotation_input"
+              name="content"
+              phx-hook="AutoSelect"
+              rows="4"
+              class="w-full border border-gray-400 dark:border-gray-700 dark:bg-black rounded-lg p-3"
+              placeholder="Add a new note..."
+            />
+          </div>
+          <%= unless @disable_anonymous_option do %>
+            <div class="flex flex-row justify-start my-2">
+              <.input type="checkbox" name="anonymous" value="false" label="Stay anonymous" />
+            </div>
+          <% end %>
+          <div class="flex flex-row-reverse justify-start gap-2 mt-3">
+            <Common.button variant={:primary}>
+              Save
+            </Common.button>
+            <Common.button type="button" variant={:secondary} phx-click="cancel_create_annotation">
+              Cancel
+            </Common.button>
+          </div>
+        </div>
+      </form>
+    </div>
+    """
+  end
+
+  defp add_new_annotation_input(assigns) do
+    ~H"""
+    <div class={["flex flex-row", @rest[:class]]}>
+      <div class="flex-1 relative">
+        <input
+          type="text"
+          class="w-full border border-gray-400 dark:border-gray-700 rounded-lg p-3"
+          placeholder="Add a new note..."
+          phx-focus="begin_create_annotation"
+        />
+      </div>
+    </div>
+    """
+  end
+
+  attr :post, Oli.Resources.Collaboration.Post, required: true
+  attr :current_user, Oli.Accounts.User, required: true
+
   defp note(assigns) do
     ~H"""
-    <div class="flex flex-col p-4 border-2 border-gray-200 rounded">
+    <div class="flex flex-col p-4 border-2 border-gray-200 dark:border-gray-800 rounded">
       <div class="flex flex-row justify-between mb-3">
         <div class="font-semibold">
-          Me
+          <%= post_creator(@post, @current_user) %>
         </div>
         <div class="text-sm text-gray-500">
-          1d
+          <%= Timex.from_now(@post.inserted_at) %>
         </div>
       </div>
       <p>
-        Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nulla nec dui in odio.
+        <%= @post.content.message %>
       </p>
     </div>
     """
   end
 
-  attr :point_marker, :map
+  defp post_creator(%{anonymous: true} = post, current_user) do
+    if post.user_id == current_user.id do
+      "Anonymous (Me)"
+    else
+      "Anonymous"
+    end
+  end
+
+  defp post_creator(post, current_user) do
+    if post.user_id == current_user.id do
+      "Me"
+    else
+      post.user.name
+    end
+  end
+
+  attr :point_marker, :map, required: true
+  attr :selected, :boolean, default: false
+  attr :count, :integer, default: nil
 
   def annotation_bubble(assigns) do
     ~H"""
-    <button class="absolute right-[-15px] cursor-pointer group" style={"top: #{@point_marker.top}px"}>
-      <.chat_bubble>
-        +
-      </.chat_bubble>
+    <button
+      class="absolute right-[-15px] cursor-pointer group"
+      style={"top: #{@point_marker.top}px"}
+      phx-click="select_annotation_point"
+      phx-value-point-marker-id={@point_marker.id}
+    >
+      <.chat_bubble selected={@selected} count={@count} />
     </button>
     """
   end
 
-  slot :inner_block
+  attr :selected, :boolean, default: false
+  attr :count, :integer, default: nil
 
   def chat_bubble(assigns) do
     ~H"""
@@ -226,14 +341,36 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
     >
       <path
         d="M30 14.6945C30.0055 16.8209 29.5087 18.9186 28.55 20.8167C27.4132 23.0912 25.6657 25.0042 23.5031 26.3416C21.3405 27.679 18.8483 28.3879 16.3055 28.3889C14.1791 28.3944 12.0814 27.8976 10.1833 26.9389L1 30L4.06111 20.8167C3.10239 18.9186 2.60556 16.8209 2.61111 14.6945C2.61209 12.1517 3.32098 9.65951 4.65837 7.49692C5.99577 5.33433 7.90884 3.58679 10.1833 2.45004C12.0814 1.49132 14.1791 0.994502 16.3055 1.00005H17.1111C20.4692 1.18531 23.641 2.60271 26.0191 4.98087C28.3973 7.35902 29.8147 10.5308 30 13.8889V14.6945Z"
-        class="fill-white stroke-gray-300"
+        class={[
+          "",
+          if(@selected, do: "fill-primary stroke-primary", else: "fill-white stroke-gray-300")
+        ]}
         stroke-width="1.61111"
         stroke-linecap="round"
         stroke-linejoin="round"
       />
-      <text x="11" y="22" class="text-xl fill-gray-500">
-        <%= render_slot(@inner_block) %>
-      </text>
+      <%= case @count do %>
+        <% nil -> %>
+          <text
+            x="52%"
+            y="50%"
+            dominant-baseline="middle"
+            text-anchor="middle"
+            class={["text-xl", if(@selected, do: "fill-white", else: "fill-gray-500")]}
+          >
+            +
+          </text>
+        <% _ -> %>
+          <text
+            x="52%"
+            y="50%"
+            dominant-baseline="middle"
+            text-anchor="middle"
+            class={["text-sm", if(@selected, do: "fill-white", else: "fill-gray-500")]}
+          >
+            <%= @count %>
+          </text>
+      <% end %>
     </svg>
     """
   end
