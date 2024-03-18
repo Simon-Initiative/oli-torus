@@ -13,6 +13,28 @@ defmodule OliWeb.ResourceControllerTest do
                "<div data-react-class=\"Components.PageEditor\" data-react-props=\""
     end
 
+    test "renders truncate title when page title is too long", %{
+      conn: conn,
+      project: project,
+      revision1: revision
+    } do
+      conn = get(conn, Routes.resource_path(conn, :edit, project.slug, revision.slug))
+
+      assert html_response(conn, 200) =~
+               "<h3 class=\"truncate\">#{revision.title}</h3>"
+    end
+
+    test "renders truncate breadcrumbs when page title is too long", %{
+      conn: conn,
+      project: project,
+      revision1: revision
+    } do
+      conn = get(conn, Routes.resource_path(conn, :edit, project.slug, revision.slug))
+
+      assert html_response(conn, 200) =~
+               "<li class=\"breadcrumb-item active truncate\" aria-current=\"page\">\n  #{revision.title}\n</li>"
+    end
+
     test "renders adaptive editor", %{
       conn: conn,
       project: project,
