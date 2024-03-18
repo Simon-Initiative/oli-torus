@@ -31,6 +31,8 @@ defmodule Oli.Delivery.Attempts.PageLifecycle do
     ReviewContext
   }
 
+  require Logger
+
   @doc """
 
   Create a new resource attempt in an active state for the given page revision slug
@@ -252,6 +254,7 @@ defmodule Oli.Delivery.Attempts.PageLifecycle do
         {:ok, finalization_summary}
 
       e ->
+        Logger.error("Failed to finalize attempt: #{inspect(e)}")
         e
     end
   end
