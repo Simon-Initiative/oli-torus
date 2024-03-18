@@ -150,7 +150,7 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
             phx-click="cancel-upload"
             phx-value-ref={entry.ref}
             aria-label="cancel"
-            class="absolute flex justify-center items-center h-6 w-6 -top-3 -left-3 p-2 bg-gray-300 rounded-full shadow-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-opacity-50"
+            class="absolute flex justify-center items-center h-6 w-6 -top-3 -left-3 p-2 bg-gray-300 rounded-full shadow-md hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-opacity-50"
             phx-target={@myself}
           >
             <span>&times;</span>
@@ -341,6 +341,9 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
             <.poster_image_selection
               target={@myself}
               poster_image={fetch_field(@changeset, :poster_image) || @default_poster_image}
+              delete_button_enabled={
+                fetch_field(@changeset, :poster_image) not in [nil, @default_poster_image]
+              }
             />
             <.intro_video_selection
               target={@myself}
@@ -473,6 +476,9 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
           <.poster_image_selection
             target={@myself}
             poster_image={fetch_field(@changeset, :poster_image) || @default_poster_image}
+            delete_button_enabled={
+              fetch_field(@changeset, :poster_image) not in [nil, @default_poster_image]
+            }
           />
           <.intro_video_selection
             target={@myself}
@@ -491,18 +497,32 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
 
   attr :poster_image, :string
   attr :target, :map
+  attr :delete_button_enabled, :boolean, default: false
 
   def poster_image_selection(assigns) do
     ~H"""
     <div class="form-group flex flex-col gap-2">
       <label>Poster image</label>
       <.input type="hidden" name="revision[poster_image]" value={@poster_image} />
-      <img
-        src={@poster_image}
-        class="object-cover h-[162px] w-[288px] mx-auto rounded-lg outline outline-1 outline-gray-200 shadow-lg"
-        role="poster_image"
-        data-filename={get_filename(@poster_image)}
-      />
+      <div class="relative mx-auto">
+        <button
+          :if={@delete_button_enabled}
+          type="button"
+          phx-click="clear-resource"
+          phx-value-resource_name="poster_image"
+          aria-label="remove"
+          class="absolute cursor-pointer flex justify-center items-center h-6 w-6 -top-3 -left-3 p-2 bg-gray-300 hover:scale-105 hover:bg-gray-400 rounded-full shadow-md focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-opacity-50"
+          phx-target={@target}
+        >
+          <span>&times;</span>
+        </button>
+        <img
+          src={@poster_image}
+          class="object-cover h-[162px] w-[288px] mx-auto rounded-lg outline outline-1 outline-gray-200 shadow-lg"
+          role="poster_image"
+          data-filename={get_filename(@poster_image)}
+        />
+      </div>
       <button
         type="button"
         class="btn btn-primary mx-auto mt-2"
@@ -550,15 +570,28 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
     <div class="form-group flex flex-col gap-2">
       <label>Intro video</label>
       <.input type="hidden" name="revision[intro_video]" value={@intro_video} />
-      <video
-        class="object-cover h-[162px] w-[288px] mx-auto rounded-lg outline outline-1 outline-gray-200 shadow-lg"
-        preload="metadata"
-        controls
-        data-filename={get_filename(@intro_video)}
-      >
-        <source src={"#{@intro_video}"} type="video/mp4" />
-        Your browser does not support the video tag.
-      </video>
+      <div class="relative mx-auto">
+        <button
+          type="button"
+          phx-click="clear-resource"
+          phx-value-resource_name="intro_video"
+          aria-label="remove"
+          class="absolute cursor-pointer flex justify-center items-center h-6 w-6 -top-3 -left-3 p-2 bg-gray-300 hover:scale-105 hover:bg-gray-400 rounded-full shadow-md focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-opacity-50"
+          phx-target={@target}
+        >
+          <span>&times;</span>
+        </button>
+
+        <video
+          class="object-cover h-[162px] w-[288px] mx-auto rounded-lg outline outline-1 outline-gray-200 shadow-lg"
+          preload="metadata"
+          controls
+          data-filename={get_filename(@intro_video)}
+        >
+          <source src={"#{@intro_video}"} type="video/mp4" />
+          Your browser does not support the video tag.
+        </video>
+      </div>
       <button
         id="select_intro_video_button"
         type="button"
@@ -620,11 +653,7 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
   end
 
   def handle_event("change_step", %{"target_step" => "general", "action" => "save"}, socket) do
-    if is_nil(Ecto.Changeset.get_change(socket.assigns.changeset, socket.assigns.step)) do
-      {:noreply, socket}
-    else
-      {:noreply, assign(socket, step: :general)}
-    end
+    {:noreply, assign(socket, step: :general)}
   end
 
   def handle_event("select-resource", %{"url" => url}, socket) do
@@ -665,6 +694,17 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
       Ecto.Changeset.put_change(changeset, step, hd(uploaded_files))
 
     {:noreply, assign(socket, :changeset, changeset)}
+  end
+
+  def handle_event("clear-resource", %{"resource_name" => resource_name}, socket) do
+    changeset =
+      Ecto.Changeset.put_change(
+        socket.assigns.changeset,
+        String.to_existing_atom(resource_name),
+        nil
+      )
+
+    {:noreply, assign(socket, changeset: changeset)}
   end
 
   defp is_foundation(changeset, revision) do
