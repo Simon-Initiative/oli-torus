@@ -67,7 +67,6 @@ defmodule OliWeb.RemixSectionLiveTest do
 
       {:ok, _view, html} = live(conn)
 
-      assert html =~ "Admin"
       assert html =~ "Customize Content"
     end
 

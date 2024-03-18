@@ -2,7 +2,7 @@ defmodule OliWeb.LiveSessionPlugs.SetUser do
   import Phoenix.Component, only: [assign: 2]
 
   alias Oli.Accounts
-  alias Oli.Accounts.{User, Author, SystemRole}
+  alias Oli.Accounts.{User, Author}
   alias Oli.AccountLookupCache
 
   def on_mount(:with_preloads, _, session, socket) do

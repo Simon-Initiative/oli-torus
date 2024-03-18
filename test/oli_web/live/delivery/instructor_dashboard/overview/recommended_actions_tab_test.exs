@@ -132,7 +132,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.Overview.RecommendedActionsTest do
 
       # click to approve pending posts (redirect to discussion activity tab)
       view
-      |> element("a[href=\"/sections/#{section.slug}/instructor_dashboard/discussions\"]")
+      |> element("div[id=\"recommended_actions\"] > a[href=\"/sections/#{section.slug}/instructor_dashboard/discussions\"]")
       |> render_click()
 
       # check if the pending post is displayed in the discussion activity tab

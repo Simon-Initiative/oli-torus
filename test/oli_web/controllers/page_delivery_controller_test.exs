@@ -6,7 +6,6 @@ defmodule OliWeb.PageDeliveryControllerTest do
   import Oli.Utils.Seeder.Utils
 
   alias Oli.Authoring.Course
-  alias Oli.Repo
   alias Oli.Seeder
   alias Oli.Delivery.{Sections, Settings}
   alias Oli.Delivery.Attempts.{Core, PageLifecycle}

@@ -5,7 +5,6 @@ defmodule OliWeb.LiveSessionPlugs.RequireEnrollment do
   import Phoenix.LiveView, only: [redirect: 2, put_flash: 3]
 
   alias Oli.Delivery.Sections
-  alias Oli.Accounts.{Author, SystemRole}
 
   def on_mount(:default, %{"section_slug" => section_slug}, _session, socket) do
 

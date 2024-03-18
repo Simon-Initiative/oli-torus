@@ -68,7 +68,7 @@ defmodule Oli.Repo.Migrations.AddPromptTemplates do
 
           flush()
 
-        e ->
+        _ ->
           true
       end
     end)
