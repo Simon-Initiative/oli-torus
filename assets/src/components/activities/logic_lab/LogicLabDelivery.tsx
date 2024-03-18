@@ -1,3 +1,9 @@
+/*
+React web component for delivering LogicLab based activities in Torus.
+
+This is designed to run the LogicLab in an iframe and handles the
+communication between the LogicLab and Torus.
+*/
 import React, { useEffect, useState } from 'react';
 import ReactDOM from 'react-dom';
 import { Provider, useDispatch } from 'react-redux';
@@ -34,10 +40,8 @@ const LogicLab: React.FC<LogicLabDeliveryProps> = () => {
     mode,
   } = useDeliveryElementContext<LogicLabModelSchema>();
   const dispatch = useDispatch();
-  // const part = activityState.parts[0].partId;
-  // const targets = model.authoring?.parts?.find(p => p.id === part)?.targets;
-  // const targets = model.authoring?.parts[0].targets;
   const [activity, setActivity] = useState<string>(model.activity);
+  const [modelContext, setModelContext] = useState(model.context);
 
   useEffect(() => {
     // This looks like boilerplate code for dealing with embedded activities.
@@ -46,7 +50,8 @@ const LogicLab: React.FC<LogicLabDeliveryProps> = () => {
     listenForReviewAttemptChange(model, activityState.activityId as number, dispatch, context);
 
     setActivity(model.activity);
-    let partGuid = activityState.parts[0].attemptGuid; // Moving to higher scope which gets state saving working again.
+    setModelContext(model.context);
+    let partGuid = activityState.parts[0].attemptGuid; // Moving to higher scope which helps state saving to work.
 
     const onMessage = async (e: MessageEvent) => {
       const lab = new URL(model.src);
@@ -82,7 +87,6 @@ const LogicLab: React.FC<LogicLabDeliveryProps> = () => {
                       response: { input: msg.score.input },
                     },
                   ]);
-                  // }
                   onSubmitEvaluations(attemptGuid, [
                     {
                       score: msg.score.score,
@@ -125,10 +129,10 @@ const LogicLab: React.FC<LogicLabDeliveryProps> = () => {
                   e.source.postMessage(saved, { targetOrigin: model.src });
                 }
               } // TODO if in preview, load appropriate content
-              // Preview featrue in lab servlet is not complete.
+              // Preview feature in lab servlet is not complete.
               break;
             case 'log':
-              // Currenly logging to console, TODO link into torus/oli logging
+              // Currently logging to console, TODO link into torus/oli logging
               console.log(msg.content);
               break;
             default:
@@ -142,14 +146,13 @@ const LogicLab: React.FC<LogicLabDeliveryProps> = () => {
     return () => window.removeEventListener('message', onMessage);
   }, [activityState, model, context]);
 
-  // const url = new URL(activity, model.src);
-  const url = new URL('http://localhost:5173');
-  url.searchParams.append('activity', activity); // FIXME for servlet use first url
+  const url = new URL(activity, model.src);
+  // url.searchParams.append('activity', activity); // Used in development environment
   url.searchParams.append('mode', mode);
   url.searchParams.append('attemptGuid', activityState.attemptGuid);
   return (
     <iframe
-      title="LogicLab Activity"
+      title={`LogicLab Activity ${modelContext?.title}`}
       src={url.toString()}
       allow="fullscreen"
       height="800"

@@ -1,3 +1,6 @@
+/*
+  Registers the LogicLab authoring component for use in Torus.
+*/
 import { registerCreationFunc } from '../creation';
 import {
   CreationContext,
@@ -17,10 +20,11 @@ const manifest: Manifest = require('./manifest.json');
 
 const labServer = 'http://localhost:5173/'; // 'http://localhost:8080/api/v1/activity/lab/'
 
-registerCreationFunc(manifest, async (content: CreationContext): Promise<LogicLabModelSchema> => {
+registerCreationFunc(manifest, async (context: CreationContext): Promise<LogicLabModelSchema> => {
   return {
     src: labServer,
     activity: '',
+    context,
     authoring: {
       version: 1,
       parts: [
