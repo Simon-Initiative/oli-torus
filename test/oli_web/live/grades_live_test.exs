@@ -193,7 +193,7 @@ defmodule OliWeb.GradesLiveTest do
       )
       |> render_click()
 
-      assert has_element?(view, "div.alert.alert-info", "LMS line items already up to date")
+      assert has_element?(view, "div#flash", "LMS line items already up to date")
     end
 
     test "update line items - shows an info message when line items are updated successfully", %{
@@ -258,7 +258,7 @@ defmodule OliWeb.GradesLiveTest do
       )
       |> render_click()
 
-      assert has_element?(view, "div.alert.alert-danger", "Error accessing LMS line items")
+      assert has_element?(view, "div#flash", "Error accessing LMS line items")
     end
 
     test "sync grades - shows results when no grade updates are pending", %{
@@ -494,7 +494,7 @@ defmodule OliWeb.GradesLiveTest do
       )
       |> render_click()
 
-      assert has_element?(view, "div.alert.alert-danger", "Error getting LMS access token")
+      assert has_element?(view, "div#flash", "Error getting LMS access token")
     end
 
     test "sync grades - shows error on failure to obtain access token",
@@ -514,7 +514,7 @@ defmodule OliWeb.GradesLiveTest do
       )
       |> render_click()
 
-      assert has_element?(view, "div.alert.alert-danger", "error fetching access token")
+      assert has_element?(view, "div#flash", "error fetching access token")
     end
   end
 end

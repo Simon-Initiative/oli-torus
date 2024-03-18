@@ -39,6 +39,7 @@ defmodule Oli.Factory do
   alias Oli.Publishing.Publications.Publication
   alias Oli.Resources.{Resource, Revision}
   alias Oli.Resources.Collaboration.{CollabSpaceConfig, Post, PostContent}
+  alias Oli.Search.RevisionEmbedding
 
   def author_factory() do
     %Author{
@@ -575,6 +576,24 @@ defmodule Oli.Factory do
       resource: anonymous_build(:resource),
       collab_space_config: build(:collab_space_config)
     }
+  end
+
+  def revision_embedding_factory() do
+    %RevisionEmbedding{
+      revision: anonymous_build(:revision),
+      resource: anonymous_build(:resource),
+      resource_type_id: 1,
+      component_type: :stem,
+      chunk_type: :paragraph,
+      chunk_ordinal: 1,
+      fingerprint_md5: "fingerprint_md5",
+      content: "content",
+      embedding: anonymous_build(:embedding)
+    }
+  end
+
+  def embedding_factory() do
+    Pgvector.new(Enum.to_list(1..1536))
   end
 
   # HELPERS

@@ -34,6 +34,8 @@ defmodule OliWeb.Projects.OverviewLiveTest do
       assert has_element?(view, "h4", "Publishing Visibility")
       assert has_element?(view, "h4", "Collaboration Space")
       assert has_element?(view, "h4", "Actions")
+
+      refute has_element?(view, "button", "Bulk Resource Attribute Edit")
     end
 
     test "project gets deleted correctly", %{conn: conn, author: author} do
@@ -126,6 +128,23 @@ defmodule OliWeb.Projects.OverviewLiveTest do
   describe "project overview as admin" do
     setup [:admin_conn]
 
+    test "loads the project correctly", %{conn: conn, admin: admin} do
+      project = create_project_with_author(admin)
+
+      {:ok, view, _html} = live(conn, Routes.live_path(Endpoint, OverviewLive, project.slug))
+      assert has_element?(view, "h4", "Details")
+      assert has_element?(view, "h4", "Project Attributes")
+      assert has_element?(view, "h4", "Project Labels")
+      assert has_element?(view, "h4", "Collaborators")
+      assert has_element?(view, "h4", "Advanced Activities")
+      assert has_element?(view, "h4", "Allow Duplication")
+      assert has_element?(view, "h4", "Publishing Visibility")
+      assert has_element?(view, "h4", "Collaboration Space")
+      assert has_element?(view, "h4", "Actions")
+
+      assert has_element?(view, "button", "Bulk Resource Attribute Edit")
+    end
+
     test "displays datashop analytics link when the project is published", %{
       conn: conn,
       admin: admin
@@ -134,7 +153,8 @@ defmodule OliWeb.Projects.OverviewLiveTest do
 
       Oli.Publishing.publish_project(
         project,
-        "Datashop test"
+        "Datashop test",
+        admin.id
       )
 
       {:ok, view, _html} = live(conn, Routes.live_path(Endpoint, OverviewLive, project.slug))
@@ -156,7 +176,7 @@ defmodule OliWeb.Projects.OverviewLiveTest do
 
       assert has_element?(
                view,
-               "a[disabled=\"disabled\"]",
+               "button[disabled=\"disabled\"]",
                "Datashop Analytics"
              )
     end

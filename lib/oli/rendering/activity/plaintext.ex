@@ -3,7 +3,6 @@ defmodule Oli.Rendering.Activity.Plaintext do
   Implements the Plaintext writer for activity rendering
   """
   import Oli.Utils
-  import Oli.Rendering.Activity.Common
 
   alias Oli.Rendering.Context
   alias Oli.Rendering.Error
@@ -14,8 +13,8 @@ defmodule Oli.Rendering.Activity.Plaintext do
         %Context{
           activity_map: activity_map,
           mode: mode,
-          group_id: group_id,
-          survey_id: survey_id
+          group_id: _group_id,
+          survey_id: _survey_id
         } = context,
         %{"activity_id" => activity_id} = activity
       ) do
@@ -38,15 +37,10 @@ defmodule Oli.Rendering.Activity.Plaintext do
             _ -> activity_summary.delivery_element
           end
 
-        if activity_summary.graded do
-          [
-            "[Graded activity '#{tag}'#{maybe_group_id(group_id)}#{maybe_survey_id(survey_id)}]"
-          ]
-        else
-          [
-            "[Ungraded activity '#{tag}'#{maybe_group_id(group_id)}#{maybe_survey_id(survey_id)}]"
-          ]
-        end
+        [
+          "[Activity '#{tag}']"
+          # "[Question Stem: #{activity_summary.unencoded_model["stem"]}]",
+        ]
     end
   end
 

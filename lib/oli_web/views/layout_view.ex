@@ -3,13 +3,11 @@ defmodule OliWeb.LayoutView do
   use Phoenix.Component
 
   import Oli.Branding
-  import OliWeb.AuthoringView, only: [author_role_text: 1, author_role_color: 1, author_icon: 1]
 
   alias Oli.Accounts
   alias Oli.Authoring.Course.CreativeCommons
   alias Oli.Delivery.Paywall.AccessSummary
   alias Oli.Publishing.AuthoringResolver
-  alias Oli.Resources.Collaboration.CollabSpaceConfig
   alias OliWeb.Breadcrumb.BreadcrumbTrailLive
 
   @non_empty_license_opts Map.keys(CreativeCommons.cc_options()) -- [:none]
@@ -111,13 +109,6 @@ defmodule OliWeb.LayoutView do
     end
   end
 
-  def account_dropdown(%{assigns: %{ctx: ctx}} = conn),
-    do:
-      render(__MODULE__, "_author_account_dropdown.html",
-        conn: conn,
-        ctx: ctx
-      )
-
   def render_layout(layout, assigns, do: content) do
     render(layout, Map.put(assigns, :inner_layout, content))
   end
@@ -125,10 +116,6 @@ defmodule OliWeb.LayoutView do
   def dev_mode?() do
     Application.fetch_env!(:oli, :env) == :dev
   end
-
-  defp show_collab_space?(nil), do: false
-  defp show_collab_space?(%CollabSpaceConfig{status: :disabled}), do: false
-  defp show_collab_space?(_), do: true
 
   def render_license(%{license_type: :custom} = assigns) do
     ~H"""

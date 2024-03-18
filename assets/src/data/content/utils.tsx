@@ -185,3 +185,35 @@ export const isEmptyContent = (content: (AllModelElements | Text)[]): boolean =>
       ('type' in c && !shouldIgnore(c.type)), // Any other non-paragraph/header element is considered not empty
   );
 };
+
+export interface PointMarkerContext {
+  renderPointMarkers: boolean;
+  isAnnotationLevel: boolean;
+}
+
+export function maybePointMarkerAttr(el: ModelElement, context?: PointMarkerContext) {
+  if (
+    !context ||
+    !context.renderPointMarkers ||
+    !context.isAnnotationLevel ||
+    isEmptyParagraph(el)
+  ) {
+    return {};
+  }
+
+  if (el['id'] === undefined) {
+    console.warn(
+      'Content element missing id attribute which is required for point marker. Point marker will not be rendered.',
+      el,
+    );
+    return {};
+  }
+
+  return {
+    ['data-point-marker']: el.id,
+  };
+}
+
+function isEmptyParagraph(el: ModelElement) {
+  return el.type === 'p' && el.children.every((c) => Text.isText(c) && c.text.trim() === '');
+}

@@ -49,7 +49,7 @@ defmodule OliWeb.Sections.InviteView do
 
   def render(assigns) do
     ~H"""
-    <div>
+    <div class="container mx-auto">
       <div class="mb-5">
         Create new invite link expiring after:
         <div class="btn-group" role="group">

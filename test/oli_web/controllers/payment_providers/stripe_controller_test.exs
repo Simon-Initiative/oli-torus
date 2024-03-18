@@ -94,7 +94,7 @@ defmodule OliWeb.PaymentProviders.StripeControllerTest do
       conn = get(conn, Routes.payment_path(conn, :make_payment, section.slug))
 
       assert html_response(conn, 302) =~
-               "You are being <a href=\"/sections/#{section.slug}/overview\">redirected"
+               "You are being <a href=\"/sections/#{section.slug}\">redirected"
     end
 
     test "displays stripe form", %{conn: conn, section: section, user: user} do
@@ -294,7 +294,7 @@ defmodule OliWeb.PaymentProviders.StripeControllerTest do
         })
 
       assert response(conn, 200) =~
-               "{\"result\":\"success\",\"url\":\"/sections/#{section.slug}/overview\"}"
+               "{\"result\":\"success\",\"url\":\"/sections/#{section.slug}\"}"
 
       finalized = Paywall.get_provider_payment(:stripe, "test_id")
       assert finalized
@@ -342,7 +342,7 @@ defmodule OliWeb.PaymentProviders.StripeControllerTest do
         })
 
       assert response(conn, 200) =~
-               "{\"result\":\"success\",\"url\":\"/sections/#{section.slug}/overview\"}"
+               "{\"result\":\"success\",\"url\":\"/sections/#{section.slug}\"}"
 
       finalized = Paywall.get_provider_payment(:stripe, "test_id")
       assert finalized

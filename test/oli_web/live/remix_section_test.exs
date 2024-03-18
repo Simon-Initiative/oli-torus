@@ -486,7 +486,7 @@ defmodule OliWeb.RemixSectionLiveTest do
 
       assert_redirect(
         view,
-        Routes.admin_open_and_free_path(OliWeb.Endpoint, :show, oaf_section_1)
+        ~p"/sections/#{oaf_section_1.slug}/remix"
       )
     end
 

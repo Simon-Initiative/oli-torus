@@ -295,7 +295,6 @@ defmodule Oli.Publishing.DeliveryResolver do
   end
 
   @impl Resolver
-  @spec full_hierarchy(String.t()) :: %HierarchyNode{}
   def full_hierarchy(section_slug) do
     {hierarchy_nodes, root_hierarchy_node} = hierarchy_nodes_by_sr_id(section_slug)
 
@@ -414,7 +413,6 @@ defmodule Oli.Publishing.DeliveryResolver do
       iex> get_by_purpose(invalid_section_slug, invalid_purpose)
       []
   """
-
   def get_by_purpose(section_slug, purpose) do
     page_id = Oli.Resources.ResourceType.id_for_page()
 
@@ -438,7 +436,6 @@ defmodule Oli.Publishing.DeliveryResolver do
       iex> targeted_via_related_to(invalid_section_slug, invalid_resource_id)
       []
   """
-
   def targeted_via_related_to(section_slug, resource_id) do
     page_id = Oli.Resources.ResourceType.id_for_page()
 

@@ -2,6 +2,7 @@ defmodule ECL.Constellation do
   @moduledoc """
   Constellation SDK.
   """
+
   import Oli.Utils.Autoretry
 
   @spec login(String.t(), String.t()) :: String.t()

@@ -1,4 +1,5 @@
 defmodule OliWeb.Projects.PublishView do
+  alias Oli.Search.Embeddings
   use OliWeb, :live_view
   use OliWeb.Common.Modal
   use OliWeb.Common.SortableTable.TableHandlers
@@ -218,13 +219,15 @@ defmodule OliWeb.Projects.PublishView do
   def handle_event("publish_active", %{"publication" => publication}, socket) do
     project = socket.assigns.project
 
+    user_id = socket.assigns.ctx.author.id
+
     with {:ok, description} <- Map.get(publication, "description") |> trap_nil(),
          {active_publication_id, ""} <-
            Map.get(publication, "active_publication_id") |> Integer.parse(),
          {:ok} <- check_active_publication_id(project.slug, active_publication_id),
          previous_publication <-
            Publishing.get_latest_published_publication_by_slug(project.slug),
-         {:ok, new_publication} <- Publishing.publish_project(project, description) do
+         {:ok, new_publication} <- Publishing.publish_project(project, description, user_id) do
       if Map.get(publication, "auto_push_update") == "true" do
         Publishing.push_publication_update_to_sections(
           project,
@@ -232,6 +235,8 @@ defmodule OliWeb.Projects.PublishView do
           new_publication
         )
       end
+
+      upsert_page_embeddings(socket.assigns.active_publication_changes, new_publication.id)
 
       {:noreply,
        socket
@@ -284,4 +289,37 @@ defmodule OliWeb.Projects.PublishView do
 
   defp string_to_bool("true"), do: true
   defp string_to_bool(_), do: false
+
+  _docp = """
+  Upsert page embeddings for the given changes and for the pages that not yet have embeddings calculated.
+  """
+
+  defp upsert_page_embeddings(changes, publication_id) do
+    page_resource_type_id = Oli.Resources.ResourceType.get_id_by_type("page")
+
+    changed_page_revision_ids =
+      Enum.reduce(changes || [], [], fn {
+                                          _resource_id,
+                                          {_status,
+                                           %{
+                                             resource: _resource,
+                                             revision: %{
+                                               id: revision_id,
+                                               resource_type_id: resource_type_id
+                                             }
+                                           }}
+                                        },
+                                        acc_revision_ids ->
+        if resource_type_id == page_resource_type_id,
+          do: [revision_id | acc_revision_ids],
+          else: acc_revision_ids
+      end)
+
+    page_revision_ids_without_embeddings =
+      Embeddings.revisions_to_embed(publication_id)
+
+    (changed_page_revision_ids ++ page_revision_ids_without_embeddings)
+    |> Enum.uniq()
+    |> Embeddings.update_by_revision_ids(publication_id)
+  end
 end

@@ -30,7 +30,7 @@ defmodule OliWeb.Sections.OverviewLiveTest do
       section_slug = section.slug
 
       redirect_path =
-        "/session/new?request_path=%2Fsections%2F#{section_slug}&section=#{section_slug}"
+        "/session/new?request_path=%2Fsections%2F#{section_slug}%2Fmanage&section=#{section_slug}"
 
       {:error, {:redirect, %{to: ^redirect_path}}} =
         live(conn, live_view_overview_route(section.slug))
@@ -46,7 +46,7 @@ defmodule OliWeb.Sections.OverviewLiveTest do
     } do
       conn = get(conn, live_view_overview_route(section.slug))
 
-      redirect_path = "/session/new?request_path=%2Fsections%2F#{section.slug}"
+      redirect_path = "/session/new?request_path=%2Fsections%2F#{section.slug}%2Fmanage"
       assert redirected_to(conn, 302) =~ redirect_path
     end
   end
@@ -180,7 +180,7 @@ defmodule OliWeb.Sections.OverviewLiveTest do
 
       assert has_element?(
                view,
-               "a[href=\"#{Routes.page_delivery_path(OliWeb.Endpoint, :index_preview, section.slug)}\"]",
+               "a[href=\"#{~p"/sections/#{section.slug}/preview"}\"]",
                "Preview Course as Instructor"
              )
 
@@ -394,7 +394,7 @@ defmodule OliWeb.Sections.OverviewLiveTest do
 
       assert has_element?(
                view,
-               "a[href=\"#{Routes.page_delivery_path(OliWeb.Endpoint, :index_preview, section.slug)}\"]",
+               "a[href=\"#{~p"/sections/#{section.slug}/preview"}\"]",
                "Preview Course as Instructor"
              )
     end
@@ -459,4 +459,30 @@ defmodule OliWeb.Sections.OverviewLiveTest do
   end
 
   defp section_with_disabled_survey(conn), do: section_with_survey(conn, survey_enabled: false)
+
+  describe "overview live shows assistant enable/disable" do
+    setup [:admin_conn, :section_with_assessment]
+
+    test "can enable and disable assistant", %{conn: conn, section: section} do
+      {:ok, view, _html} = live(conn, live_view_overview_route(section.slug))
+
+      assert has_element?(view, "button[phx-click=\"toggle_assistant\"]", "Enable Assistant")
+
+      element(view, "button[phx-click=\"toggle_assistant\"]")
+      |> render_click()
+
+      update_section = Oli.Delivery.Sections.get_section!(section.id)
+      assert update_section.assistant_enabled
+
+      refute has_element?(view, "button[phx-click=\"toggle_assistant\"]", "Enable Assistant")
+
+      element(view, "button[phx-click=\"toggle_assistant\"]")
+      |> render_click()
+
+      update_section = Oli.Delivery.Sections.get_section!(section.id)
+      refute update_section.assistant_enabled
+
+      refute has_element?(view, "button[phx-click=\"toggle_assistant\"]", "Disable Assistant")
+    end
+  end
 end

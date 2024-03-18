@@ -28,6 +28,7 @@ defmodule OliWeb.Components.Modal do
   """
   attr :id, :string, required: true
   attr :class, :string, default: ""
+  attr :body_class, :string, default: "p-6 space-y-6"
   attr :show, :boolean, default: false
   attr :on_cancel, JS, default: %JS{}
   attr :on_confirm, JS, default: %JS{}
@@ -113,7 +114,7 @@ defmodule OliWeb.Components.Modal do
                 </button>
               </div>
               <!-- Modal body -->
-              <div class="p-6 space-y-6">
+              <div class={@body_class}>
                 <%= render_slot(@inner_block) %>
               </div>
               <!-- Modal footer -->
@@ -148,27 +149,6 @@ defmodule OliWeb.Components.Modal do
   end
 
   ## JS Commands
-
-  def show(js \\ %JS{}, selector) do
-    JS.show(js,
-      to: selector,
-      transition:
-        {"transition-all transform ease-out duration-300",
-         "opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95",
-         "opacity-100 translate-y-0 sm:scale-100"}
-    )
-  end
-
-  def hide(js \\ %JS{}, selector) do
-    JS.hide(js,
-      to: selector,
-      time: 200,
-      transition:
-        {"transition-all transform ease-in duration-200",
-         "opacity-100 translate-y-0 sm:scale-100",
-         "opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"}
-    )
-  end
 
   def show_modal(js \\ %JS{}, id) when is_binary(id) do
     js
