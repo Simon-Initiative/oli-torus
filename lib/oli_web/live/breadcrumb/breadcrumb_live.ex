@@ -10,7 +10,7 @@ defmodule OliWeb.Breadcrumb.BreadcrumbLive do
 
   defp render_breadcrumb(%{is_last: true} = assigns) do
     ~H"""
-    <li class="breadcrumb-item active" aria-current="page">
+    <li class="breadcrumb-item active truncate" aria-current="page">
       <%= get_title(@breadcrumb, @show_short) %>
     </li>
     """
