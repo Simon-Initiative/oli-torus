@@ -2,6 +2,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
   use OliWeb, :html
 
   alias OliWeb.Components.Common
+  alias Oli.Accounts.User
 
   attr :create_new_annotation, :boolean, default: false
   attr :annotations, :any, required: true
@@ -31,7 +32,9 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
           <.add_new_annotation_input
             class="my-2"
             active={@create_new_annotation}
-            disable_anonymous_option={@selected_annotations_tab == :my_notes}
+            disable_anonymous_option={
+              @selected_annotations_tab == :my_notes || is_guest(@current_user)
+            }
           />
 
           <%= case @annotations do %>
@@ -49,6 +52,9 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
     </div>
     """
   end
+
+  defp is_guest(%User{guest: guest}), do: guest
+  defp is_guest(_), do: false
 
   slot :inner_block, required: true
 
@@ -278,7 +284,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
   defp note(assigns) do
     ~H"""
     <div class="flex flex-col p-4 border-2 border-gray-200 dark:border-gray-800 rounded">
-      <div class="flex flex-row justify-between mb-3">
+      <div class="flex flex-row justify-between mb-1">
         <div class="font-semibold">
           <%= post_creator(@post, @current_user) %>
         </div>
@@ -286,18 +292,21 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
           <%= Timex.from_now(@post.inserted_at) %>
         </div>
       </div>
-      <p>
+      <p class="my-2">
         <%= @post.content.message %>
       </p>
+      <.maybe_status post={@post} />
     </div>
     """
   end
 
   defp post_creator(%{anonymous: true} = post, current_user) do
+    anonymous_name = "Anonymous " <> Oli.Predefined.map_id_to_anonymous_name(post.user_id)
+
     if post.user_id == current_user.id do
-      "Anonymous (Me)"
+      anonymous_name <> " (Me)"
     else
-      "Anonymous"
+      anonymous_name
     end
   end
 
@@ -305,7 +314,29 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
     if post.user_id == current_user.id do
       "Me"
     else
-      post.user.name
+      case post.user do
+        %User{guest: true} ->
+          "Anonymous " <> Oli.Predefined.map_id_to_anonymous_name(post.user_id)
+
+        %User{name: name} ->
+          name
+      end
+    end
+  end
+
+  attr :post, Oli.Resources.Collaboration.Post, required: true
+
+  defp maybe_status(assigns) do
+    if assigns.post.status == :submitted do
+      ~H"""
+      <div class="text-right text-sm italic text-gray-500 mb-1">
+        Submitted and pending approval
+      </div>
+      """
+    else
+      ~H"""
+
+      """
     end
   end
 
