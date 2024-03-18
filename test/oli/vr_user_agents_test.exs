@@ -25,6 +25,28 @@ defmodule Oli.VrUserAgentsTest do
     end
   end
 
+  describe "insert/1" do
+    test "inserts a new vr_user_agent" do
+      %{id: user_id} = _user = insert(:user)
+      VrUserAgents.insert(%{user_id: user_id, value: true})
+
+      assert %VrUserAgent{user_id: ^user_id, value: true} = VrUserAgents.get(user_id)
+    end
+  end
+
+  describe "update/2" do
+    test "updates the vr_user_agent with the given user_id" do
+      %{id: user_id} = _user = insert(:user)
+      vr_user_agent = insert(:vr_user_agent, user_id: user_id)
+
+      assert vr_user_agent.value == false
+
+      VrUserAgents.update(vr_user_agent, %{value: true})
+
+      assert %VrUserAgent{user_id: ^user_id, value: true} = VrUserAgents.get(user_id)
+    end
+  end
+
   describe "delete/1" do
     test "deletes the vr_user_agent with the given user_id" do
       user = insert(:user)
@@ -35,15 +57,6 @@ defmodule Oli.VrUserAgentsTest do
       VrUserAgents.delete(user.id)
 
       assert VrUserAgents.get(user.id) == nil
-    end
-  end
-
-  describe "insert/1" do
-    test "inserts a new vr_user_agent" do
-      %{id: user_id} = _user = insert(:user)
-      VrUserAgents.insert(%{user_id: user_id, value: true})
-
-      assert %VrUserAgent{user_id: ^user_id, value: true} = VrUserAgents.get(user_id)
     end
   end
 

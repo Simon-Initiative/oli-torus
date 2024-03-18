@@ -8,10 +8,24 @@ defmodule Oli.VrUserAgents do
   alias Oli.Repo
   alias Oli.VrLookupCache
 
+  @spec count() :: integer()
+  def count(), do: Repo.aggregate(VrUserAgent, :count)
+
+  @spec get(integer) :: VrUserAgent.t() | nil
+  def get(user_id), do: Repo.get(VrUserAgent, user_id)
+
+  @spec insert(map()) :: {:ok, VrUserAgent.t()} | {:error, Ecto.Changeset.t()}
+  def insert(data) do
+    %VrUserAgent{}
+    |> VrUserAgent.changeset(data)
+    |> Oli.Repo.insert()
+  end
+
   @spec delete(integer) :: {:ok, VrUserAgent.t()} | {:error, Ecto.Changeset.t()}
   def delete(user_id) do
     get(user_id)
     |> Repo.delete()
+    |> delete_from_cache()
   end
 
   @spec update(VrUserAgent.t(), map()) :: {:ok, VrUserAgent.t()} | {:error, Ecto.Changeset.t()}
@@ -34,19 +48,6 @@ defmodule Oli.VrUserAgents do
         error
     end
   end
-
-  @spec insert(map()) :: {:ok, VrUserAgent.t()} | {:error, Ecto.Changeset.t()}
-  def insert(data) do
-    %VrUserAgent{}
-    |> VrUserAgent.changeset(data)
-    |> Oli.Repo.insert()
-  end
-
-  @spec count() :: integer()
-  def count(), do: Repo.aggregate(VrUserAgent, :count)
-
-  @spec get(integer) :: VrUserAgent.t() | nil
-  def get(user_id), do: Repo.get(VrUserAgent, user_id)
 
   @spec search_user_for_vr(String.t(), String.t()) :: [map()] | []
   def search_user_for_vr(text_search, identifier \\ "name")
