@@ -519,6 +519,32 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
   attr :intro_video, :string
   attr :target, :map
 
+  def intro_video_selection(%{intro_video: nil} = assigns) do
+    ~H"""
+    <div class="form-group flex flex-col gap-2">
+      <label>Intro video</label>
+      <.input type="hidden" name="revision[intro_video]" value={@intro_video} />
+      <div
+        class="flex items-center justify-center h-[162px] w-[288px] mx-auto rounded-lg border-[3px] border-dashed border-gray-300 cursor-pointer"
+        data-filename={get_filename(@intro_video)}
+        phx-click={JS.dispatch("click", to: "#select_intro_video_button")}
+      >
+        <i class="fa-solid fa-circle-plus scale-[200%] text-gray-400"></i>
+      </div>
+      <button
+        id="select_intro_video_button"
+        type="button"
+        class="btn btn-primary mx-auto mt-2"
+        phx-click="change_step"
+        phx-value-target_step="intro_video"
+        phx-target={@target}
+      >
+        Select
+      </button>
+    </div>
+    """
+  end
+
   def intro_video_selection(assigns) do
     ~H"""
     <div class="form-group flex flex-col gap-2">
@@ -534,6 +560,7 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
         Your browser does not support the video tag.
       </video>
       <button
+        id="select_intro_video_button"
         type="button"
         class="btn btn-primary mx-auto mt-2"
         phx-click="change_step"
