@@ -133,7 +133,6 @@ defmodule OliWeb.Admin.AdminView do
           </ul>
         </Group.render>
       <% end %>
-
     </Groups.render>
     """
   end

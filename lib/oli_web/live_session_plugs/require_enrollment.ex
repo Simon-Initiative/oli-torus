@@ -7,7 +7,6 @@ defmodule OliWeb.LiveSessionPlugs.RequireEnrollment do
   alias Oli.Delivery.Sections
 
   def on_mount(:default, %{"section_slug" => section_slug}, _session, socket) do
-
     is_admin? = Oli.Accounts.has_admin_role?(socket.assigns[:current_author])
 
     case {socket.assigns[:current_user], is_admin?} do
