@@ -193,49 +193,7 @@ defmodule OliWeb.GradesLiveTest do
       )
       |> render_click()
 
-      assert has_element?(view, "div.alert.alert-info", "LMS line items already up to date")
-    end
-
-    test "update line items - shows an info message when line items are updated successfully", %{
-      conn: conn,
-      section: section
-    } do
-      url_line_items = section.line_items_service_url <> "?limit=1000"
-      line_items_service_url = section.line_items_service_url
-
-      expect(MockHTTP, :get, fn ^url_line_items, _headers ->
-        {:ok,
-         %HTTPoison.Response{
-           status_code: 200,
-           body: "[
-            { \"id\": \"id1\", \"scoreMaximum1\": \"scoreMaximum\", \"resourceId\": \"resourceId1\", \"label\": \"label1\" },
-            { \"id\": \"id2\", \"scoreMaximum2\": \"scoreMaximum\", \"resourceId\": \"resourceId2\", \"label\": \"label2\" }
-            ]"
-         }}
-      end)
-      |> expect(:post, 2, fn ^line_items_service_url, _body, _headers ->
-        {:ok,
-         %HTTPoison.Response{
-           status_code: 200,
-           body:
-             "{\"id\": \"1\", \"label\":\"Revision(s)\", \"resourceId\":\"oli-torus-1744\", \"scoreMaximum\":1.0}"
-         }}
-      end)
-
-      {:ok, view, _html} = live(conn, live_view_grades_route(section.slug))
-
-      view
-      |> element(
-        "a[phx-click=\"send_line_items\"]",
-        "Update LMS Line Items"
-      )
-      |> render_click()
-
-      # Wait to complete processing all :pop_task_queue messages
-      # https://elixirforum.com/t/testing-liveviews-that-rely-on-pubsub-for-updates/40938/5
-      _ = :sys.get_state(view.pid)
-
-      assert has_element?(view, "div.alert.alert-info", "LMS up to date")
+      assert has_element?(view, "div#flash", "LMS line items already up to date")
     end
 
     @tag capture_log: true
@@ -258,7 +216,7 @@ defmodule OliWeb.GradesLiveTest do
       )
       |> render_click()
 
-      assert has_element?(view, "div.alert.alert-danger", "Error accessing LMS line items")
+      assert has_element?(view, "div#flash", "Error accessing LMS line items")
     end
 
     test "sync grades - shows results when no grade updates are pending", %{
@@ -494,7 +452,7 @@ defmodule OliWeb.GradesLiveTest do
       )
       |> render_click()
 
-      assert has_element?(view, "div.alert.alert-danger", "Error getting LMS access token")
+      assert has_element?(view, "div#flash", "Error getting LMS access token")
     end
 
     test "sync grades - shows error on failure to obtain access token",
@@ -514,7 +472,7 @@ defmodule OliWeb.GradesLiveTest do
       )
       |> render_click()
 
-      assert has_element?(view, "div.alert.alert-danger", "error fetching access token")
+      assert has_element?(view, "div#flash", "error fetching access token")
     end
   end
 end

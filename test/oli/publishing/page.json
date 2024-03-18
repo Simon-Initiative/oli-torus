@@ -1,0 +1,178 @@
+{
+  "bibrefs": [],
+  "model": [
+    {
+      "children": [
+        {
+          "children": [
+            {
+              "text": "Academic Integrity Policy: Violations and Consequences"
+            }
+          ],
+          "type": "h1"
+        },
+        {
+          "children": [
+            {
+              "text": "Every university has its own policy on academic integrity. Carnegie Mellon University’s "
+            },
+            {
+              "children": [
+                {
+                  "text": "policy"
+                }
+              ],
+              "href": "https://www.cmu.edu/academic-integrity",
+              "type": "a"
+            },
+            {
+              "text": " outlines the university’s position on academic integrity as well as the expected ethical behavior of the university community. This policy includes definitions of various terms and offers prevention methods to avoid committing an academic integrity violation. The document also lists potential violations, their consequences, and the processes by which they are dealt with. The university aims to promote a culture of academic integrity. In this course, we do not attempt to offer an alternative document to the university policy; instead, we focus on raising the awareness of academic integrity and motivating the students to adhere to a code of integrity throughout their studies and in an ongoing manner through their professional careers. "
+            }
+          ],
+          "type": "p"
+        },
+        {
+          "children": [
+            {
+              "text": ""
+            }
+          ],
+          "display": "block",
+          "id": "1",
+          "type": "img"
+        },
+        {
+          "children": [
+            {
+              "text": "Dimensions of Academic Integrity Violations"
+            }
+          ],
+          "type": "h2"
+        },
+        {
+          "children": [
+            {
+              "text": ""
+            }
+          ],
+          "type": "p"
+        },
+        {
+          "children": [
+            {
+              "children": [
+                {
+                  "children": [
+                    {
+                      "children": [
+                        {
+                          "text": "This paragrgraph"
+                        }
+                      ],
+                      "id": "1",
+                      "type": "p"
+                    },
+                    {
+                      "children": [
+                        {
+                          "text": "Within table"
+                        }
+                      ],
+                      "id": "1",
+                      "type": "p"
+                    }
+                  ],
+                  "id": "1",
+                  "type": "td"
+                },
+                {
+                  "children": [
+                    {
+                      "children": [
+                        {
+                          "text": "1"
+                        }
+                      ],
+                      "id": "1",
+                      "type": "p"
+                    }
+                  ],
+                  "id": "1",
+                  "type": "td"
+                }
+              ],
+              "id": "1",
+              "type": "tr"
+            },
+            {
+              "children": [
+                {
+                  "children": [
+                    {
+                      "children": [
+                        {
+                          "text": ""
+                        }
+                      ],
+                      "id": "1607410092",
+                      "type": "p"
+                    }
+                  ],
+                  "id": "309864447",
+                  "type": "td"
+                },
+                {
+                  "children": [
+                    {
+                      "children": [
+                        {
+                          "text": ""
+                        }
+                      ],
+                      "id": "1512302809",
+                      "type": "p"
+                    }
+                  ],
+                  "id": "3860028599",
+                  "type": "td"
+                }
+              ],
+              "id": "3814000980",
+              "type": "tr"
+            }
+          ],
+          "id": "1741038916",
+          "type": "table"
+        },
+        {
+          "children": [
+            {
+              "text": ""
+            }
+          ],
+          "id": "1976869538",
+          "type": "p"
+        }
+      ],
+      "id": "1945100384",
+      "selection": {
+        "anchor": {
+          "offset": 0,
+          "path": [
+            0,
+            0
+          ]
+        },
+        "focus": {
+          "offset": 0,
+          "path": [
+            1,
+            0
+          ]
+        }
+      },
+      "type": "content"
+    }
+  ],
+  "version": "0.1.0"
+}

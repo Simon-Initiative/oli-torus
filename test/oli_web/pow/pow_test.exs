@@ -389,7 +389,7 @@ defmodule OliWeb.Common.PowTest do
 
     %{project: project, institution: institution} = Seeder.base_project_with_resource(author)
 
-    {:ok, publication} = Oli.Publishing.publish_project(project, "some changes")
+    {:ok, publication} = Oli.Publishing.publish_project(project, "some changes", author.id)
 
     section =
       section_fixture(%{

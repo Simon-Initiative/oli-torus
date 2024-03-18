@@ -8,6 +8,7 @@ config :oli,
   media_url: System.get_env("TEST_MEDIA_URL"),
   http_client: Oli.Test.MockHTTP,
   aws_client: Oli.Test.MockAws,
+  openai_client: Oli.Test.MockOpenAIClient,
   slack_webhook_url: nil,
   branding: [
     name: "OLI Torus Test",
@@ -67,7 +68,8 @@ config :lti_1p3,
 # you can enable the server option below.
 config :oli, OliWeb.Endpoint,
   http: [port: 4002],
-  server: false
+  server: false,
+  url: [scheme: "https"]
 
 # Config adapter for refreshing part_mapping
 config :oli, Oli.Publishing, refresh_adapter: Oli.Publishing.PartMappingRefreshSync
@@ -99,3 +101,5 @@ config :oli, :auth_providers,
     System.get_env("AUTHOR_GITHUB_CLIENT_SECRET", "author_client_secret"),
   user_github_client_id: System.get_env("USER_GITHUB_CLIENT_ID", "user_client_id"),
   user_github_client_secret: System.get_env("USER_GITHUB_CLIENT_SECRET", "user_client_secret")
+
+config :oli, :section_cache, dispatcher: Oli.TestHelpers.CustomDispatcher

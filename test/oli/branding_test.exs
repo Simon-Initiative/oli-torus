@@ -103,7 +103,7 @@ defmodule Oli.BrandingTest do
       deployment =
         deployment_fixture(%{institution_id: institution.id, registration_id: registration.id})
 
-      {:ok, publication} = Oli.Publishing.publish_project(project, "some changes")
+      {:ok, publication} = Oli.Publishing.publish_project(project, "some changes", author.id)
 
       section =
         section_fixture(%{

@@ -121,7 +121,13 @@ defmodule OliWeb.Sections.SectionsView do
         show_sort={false}
         show_more_opts={true}
       >
-        <TextSearch.render id="text-search" text={@options.text_search} />
+        <div class="flex flex-row justify-between">
+          <TextSearch.render id="text-search" text={@options.text_search} />
+
+          <.button variant={:primary} href={~p"/admin/sections/create"}>
+            New Section
+          </.button>
+        </div>
 
         <:extra_opts>
           <Check.render checked={@options.active_today} click="active_today">

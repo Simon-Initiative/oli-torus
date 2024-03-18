@@ -10,8 +10,8 @@ defmodule Oli.Analytics.Datashop do
   import XmlBuilder
   import Oli.Utils, only: [value_or: 2]
   import Ecto.Query
-  alias Oli.Repo
 
+  alias Oli.Repo
   alias Oli.DatashopCache
   alias Oli.Publishing
   alias Oli.Delivery.Snapshots.Snapshot

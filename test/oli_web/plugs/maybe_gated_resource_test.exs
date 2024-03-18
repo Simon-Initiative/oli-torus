@@ -36,9 +36,9 @@ defmodule Oli.Plugs.MaybeGatedResourceTest do
 
       conn =
         conn
-        |> get(Routes.page_delivery_path(OliWeb.Endpoint, :index, section.slug))
+        |> get(~p"/sections/#{section.slug}")
 
-      assert html_response(conn, 200) =~ "Course Content"
+      assert html_response(conn, 200) =~ section.title
     end
 
     test "allows access to gated resource with an open gating condition", %{

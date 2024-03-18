@@ -1,7 +1,6 @@
 defmodule OliWeb.Sections.PaymentEnd do
   use OliWeb, :live_view
 
-  alias OliWeb.Router.Helpers, as: Routes
   alias Phoenix.PubSub
 
   def mount(
@@ -32,7 +31,6 @@ defmodule OliWeb.Sections.PaymentEnd do
   def handle_info({:payment, _payload}, socket) do
     %{section: section} = socket.assigns
 
-    {:noreply,
-     push_redirect(socket, to: Routes.page_delivery_path(OliWeb.Endpoint, :index, section.slug))}
+    {:noreply, push_redirect(socket, to: ~p"/sections/#{section.slug}")}
   end
 end

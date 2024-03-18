@@ -18,7 +18,14 @@ defmodule Oli.Resources.Revision do
              :max_attempts,
              :time_limit,
              :scoring_strategy_id,
-             :activity_type_id
+             :activity_type_id,
+             :title,
+             :resource_id,
+             :intro_video,
+             :poster_image,
+             :intro_content,
+             :duration_minutes,
+             :id
            ]}
   schema "revisions" do
     #
@@ -41,6 +48,10 @@ defmodule Oli.Resources.Revision do
     field :tags, {:array, :id}, default: []
     field :objectives, :map, default: %{}
     field :graded, :boolean, default: false
+    field :duration_minutes, :integer, default: nil
+    field :intro_content, :map, default: %{}
+    field :intro_video, :string, default: nil
+    field :poster_image, :string, default: nil
 
     # 0 represents "unlimited" attempts
     field :max_attempts, :integer, default: 0
@@ -95,6 +106,10 @@ defmodule Oli.Resources.Revision do
       :tags,
       :objectives,
       :graded,
+      :duration_minutes,
+      :intro_content,
+      :intro_video,
+      :poster_image,
       :max_attempts,
       :recommended_attempts,
       :time_limit,

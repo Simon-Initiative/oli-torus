@@ -2,16 +2,18 @@ import React from 'react';
 import { MathJaxLatexFormula, MathJaxMathMLFormula } from './MathJaxFormula';
 
 export const Formula: React.FC<{
+  id: string;
   type?: string;
   subtype: string;
   src: string;
   onClick?: () => void;
   style?: Record<string, string>;
-}> = ({ type, subtype, src, style, onClick }) => {
+}> = ({ id, type, subtype, src, style, onClick }) => {
   switch (subtype) {
     case 'latex':
       return (
         <MathJaxLatexFormula
+          id={id}
           onClick={onClick}
           style={style}
           inline={type === 'formula_inline'}
@@ -21,6 +23,7 @@ export const Formula: React.FC<{
     case 'mathml':
       return (
         <MathJaxMathMLFormula
+          id={id}
           onClick={onClick}
           style={style}
           inline={type === 'formula_inline'}

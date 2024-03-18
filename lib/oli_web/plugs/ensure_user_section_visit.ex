@@ -12,43 +12,49 @@ defmodule Oli.Plugs.EnsureUserSectionVisit do
   def call(conn, _opts) do
     user = conn.assigns[:current_user]
     section = conn.assigns[:section]
+    is_system_admin = conn.assigns[:is_system_admin]
 
-    if !has_visited_section_key(conn) do
-      if Sections.is_enrolled?(user.id, section.slug) do
-        if Sections.has_instructor_role?(user, section.slug) do
-          visited_sections =
-            Map.get(get_session(conn), @visited_sections_key, %{})
-            |> Map.put(section.slug, true)
+    cond do
+      is_system_admin ->
+        conn
 
-          put_session(conn, @visited_sections_key, visited_sections)
-        else
-          if Sections.has_visited_section(section, user) do
+      !has_visited_section_key(conn) ->
+        if Sections.is_enrolled?(user.id, section.slug) do
+          if Sections.has_instructor_role?(user, section.slug) do
             visited_sections =
               Map.get(get_session(conn), @visited_sections_key, %{})
               |> Map.put(section.slug, true)
 
             put_session(conn, @visited_sections_key, visited_sections)
           else
-            redirect(conn,
-              to: Routes.live_path(conn, OliWeb.Delivery.StudentOnboarding.Wizard, section.slug)
-            )
-            |> Plug.Conn.halt()
-          end
-        end
-      else
-        case Map.get(section, :open_and_free) and !Map.get(section, :requires_enrollment) do
-          true ->
-            conn
-            |> redirect(to: Routes.delivery_path(conn, :show_enroll, section.slug))
+            if Sections.has_visited_section(section, user) do
+              visited_sections =
+                Map.get(get_session(conn), @visited_sections_key, %{})
+                |> Map.put(section.slug, true)
 
-          _ ->
-            conn
-            |> redirect(to: Routes.static_page_path(OliWeb.Endpoint, :unauthorized))
+              put_session(conn, @visited_sections_key, visited_sections)
+            else
+              redirect(conn,
+                to: Routes.live_path(conn, OliWeb.Delivery.StudentOnboarding.Wizard, section.slug)
+              )
+              |> Plug.Conn.halt()
+            end
+          end
+        else
+          case Map.get(section, :open_and_free) and !Map.get(section, :requires_enrollment) do
+            true ->
+              conn
+              |> redirect(to: Routes.delivery_path(conn, :show_enroll, section.slug))
+
+            _ ->
+              conn
+              |> redirect(to: Routes.static_page_path(OliWeb.Endpoint, :unauthorized))
+          end
+          |> Plug.Conn.halt()
         end
-        |> Plug.Conn.halt()
-      end
-    else
-      conn
+
+      true ->
+        conn
     end
   end
 

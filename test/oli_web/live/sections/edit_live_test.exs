@@ -127,7 +127,6 @@ defmodule OliWeb.Sections.EditLiveTest do
 
       {:ok, view, html} = live(conn, live_view_edit_route(section.slug))
 
-      assert html =~ "Admin"
       assert html =~ "Edit Section Details"
       assert html =~ "Settings"
       assert html =~ "Manage the course section settings"

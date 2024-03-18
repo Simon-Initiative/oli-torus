@@ -59,7 +59,7 @@ defmodule OliWeb.DeliveryControllerTest do
         |> get(Routes.delivery_path(conn, :index))
 
       assert html_response(conn, 302) =~
-               "You are being <a href=\"/sections/#{section_no_rc.slug}/overview\">redirected"
+               "You are being <a href=\"/sections/#{section_no_rc.slug}\">redirected"
     end
 
     test "handles instructor with no section or linked account", %{
@@ -106,7 +106,7 @@ defmodule OliWeb.DeliveryControllerTest do
         |> get(Routes.delivery_path(conn, :index))
 
       assert html_response(conn, 302) =~
-               "You are being <a href=\"/sections/#{section_no_rc.slug}/overview\">redirected"
+               "You are being <a href=\"/sections/#{section_no_rc.slug}\">redirected"
     end
   end
 
@@ -131,7 +131,7 @@ defmodule OliWeb.DeliveryControllerTest do
       author: author,
       institution: institution
     } do
-      Publishing.publish_project(project, "some changes")
+      Publishing.publish_project(project, "some changes", author.id)
 
       Oli.Authoring.Course.update_project(project, %{status: :deleted})
 
@@ -436,7 +436,7 @@ defmodule OliWeb.DeliveryControllerTest do
       conn = get(conn, Routes.delivery_path(conn, :show_enroll, section.slug))
 
       assert html_response(conn, 302) =~
-               Routes.page_delivery_path(conn, :index, section.slug)
+               ~p"/sections/#{section.slug}"
     end
 
     test "handles open and free user access when date is before start date", %{
@@ -696,7 +696,7 @@ defmodule OliWeb.DeliveryControllerTest do
       conn = mock_captcha(conn, section)
 
       assert response(conn, 302) =~
-               "<html><body>You are being <a href=\"/sections/#{section.slug}/overview\">redirected</a>.</body></html>"
+               "<html><body>You are being <a href=\"/sections/#{section.slug}\">redirected</a>.</body></html>"
     end
   end
 
