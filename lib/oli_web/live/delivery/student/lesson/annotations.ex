@@ -6,6 +6,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
   attr :create_new_annotation, :boolean, default: false
   attr :annotations, :any, required: true
   attr :current_user, Oli.Accounts.User, required: true
+  attr :selected_annotations_tab, :atom, default: :my_notes
 
   def panel(assigns) do
     ~H"""
@@ -17,20 +18,28 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
       </div>
       <div class="flex-1 flex flex-col bg-white dark:bg-black p-5">
         <.tab_group class="py-3">
-          <.tab selected={true}><.user_icon class="mr-2" /> My Notes</.tab>
-          <.tab><.users_icon class="mr-2" /> Class Notes</.tab>
+          <.tab name={:my_notes} selected={@selected_annotations_tab == :my_notes}>
+            <.user_icon class="mr-2" /> My Notes
+          </.tab>
+          <.tab name={:all_notes} selected={@selected_annotations_tab == :all_notes}>
+            <.users_icon class="mr-2" /> Class Notes
+          </.tab>
         </.tab_group>
         <.search_box class="mt-2" />
         <hr class="m-6 border-b border-b-gray-200" />
         <div class="flex-1 flex flex-col gap-3 overflow-y-auto pb-[80px]">
-          <.add_new_annotation_input class="my-2" active={@create_new_annotation} />
+          <.add_new_annotation_input
+            class="my-2"
+            active={@create_new_annotation}
+            disable_anonymous_option={@selected_annotations_tab == :my_notes}
+          />
 
           <%= case @annotations do %>
-            <% {:loading} -> %>
+            <% nil -> %>
               <Common.loading_spinner />
-            <% {:loaded, []} -> %>
+            <% [] -> %>
               <div class="text-center p-4 text-gray-500">There are no posts yet</div>
-            <% {:loaded, annotations} -> %>
+            <% annotations -> %>
               <%= for annotation <- annotations do %>
                 <.note post={annotation} current_user={@current_user} />
               <% end %>
@@ -92,19 +101,24 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
     """
   end
 
+  attr :name, :atom, required: true
   attr :selected, :boolean, default: false
   slot :inner_block, required: true
 
   defp tab(assigns) do
     ~H"""
-    <button class={[
-      "flex-1 inline-flex justify-center border-l border-t border-b first:rounded-l-lg last:rounded-r-lg last:border-r px-4 py-3 inline-flex items-center",
-      if(@selected,
-        do: "bg-primary border-primary text-white stroke-white font-semibold",
-        else:
-          "stroke-[#383A44] border-gray-400 hover:bg-gray-100 dark:border-gray-700 dark:hover:bg-gray-800"
-      )
-    ]}>
+    <button
+      phx-click="select_tab"
+      phx-value-tab={@name}
+      class={[
+        "flex-1 inline-flex justify-center border-l border-t border-b first:rounded-l-lg last:rounded-r-lg last:border-r px-4 py-3 inline-flex items-center",
+        if(@selected,
+          do: "bg-primary border-primary text-white stroke-white font-semibold",
+          else:
+            "stroke-[#383A44] border-gray-400 hover:bg-gray-100 dark:border-gray-700 dark:hover:bg-gray-800"
+        )
+      ]}
+    >
       <%= render_slot(@inner_block) %>
     </button>
     """
@@ -203,6 +217,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
   end
 
   attr :active, :boolean, default: false
+  attr :disable_anonymous_option, :boolean, default: false
   attr :rest, :global, include: ~w(class)
 
   defp add_new_annotation_input(%{active: true} = assigns) do
@@ -223,9 +238,11 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
               placeholder="Add a new note..."
             />
           </div>
-          <div class="flex flex-row justify-start my-2">
-            <.input type="checkbox" name="anonymous" value="true" label="Stay anonymous" />
-          </div>
+          <%= unless @disable_anonymous_option do %>
+            <div class="flex flex-row justify-start my-2">
+              <.input type="checkbox" name="anonymous" value="false" label="Stay anonymous" />
+            </div>
+          <% end %>
           <div class="flex flex-row-reverse justify-start gap-2 mt-3">
             <Common.button variant={:primary}>
               Save

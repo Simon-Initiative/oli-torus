@@ -51,6 +51,7 @@ defmodule Oli.Resources.Collaboration.Post do
       :annotated_resource_id,
       :annotated_block_id,
       :annotation_type,
+      :visibility,
       :replies_count,
       :anonymous
     ])
@@ -65,6 +66,10 @@ defmodule Oli.Resources.Collaboration.Post do
       user_name: post.user.name,
       parent_post_id: post.parent_post_id,
       thread_root_id: post.thread_root_id,
+      annotated_resource_id: post.annotated_resource_id,
+      annotated_block_id: post.annotated_block_id,
+      annotation_type: post.annotation_type,
+      visibility: post.visibility,
       anonymous: post.anonymous,
       updated_at: post.updated_at
     }

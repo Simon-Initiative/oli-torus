@@ -1105,7 +1105,13 @@ defmodule Oli.Resources.Collaboration do
       iex> list_posts_for_user_in_point_block(2, 2, 2, "2")
       []
   """
-  def list_posts_for_user_in_point_block(section_id, resource_id, user_id, point_block_id \\ nil) do
+  def list_posts_for_user_in_point_block(
+        section_id,
+        resource_id,
+        user_id,
+        visibility,
+        point_block_id \\ nil
+      ) do
     filter_by_point_block_id =
       if is_nil(point_block_id) do
         dynamic([p], is_nil(p.annotated_block_id))
@@ -1121,6 +1127,7 @@ defmodule Oli.Resources.Collaboration do
             (post.status in [:approved, :archived] or
                (post.status == :submitted and post.user_id == ^user_id)),
         where: ^filter_by_point_block_id,
+        where: post.visibility == ^visibility,
         select: post,
         order_by: [desc: :inserted_at],
         preload: [:user]
@@ -1132,11 +1139,12 @@ defmodule Oli.Resources.Collaboration do
   Returns the count of posts that a user can see for each annotated block id. For top-level
   resource posts, the annotated block id is nil.
   """
-  def list_post_counts_for_user_in_section(section_id, resource_id, user_id) do
+  def list_post_counts_for_user_in_section(section_id, resource_id, user_id, visibility) do
     from(
       post in Post,
       where:
         post.section_id == ^section_id and post.resource_id == ^resource_id and
+          post.visibility == ^visibility and
           (post.status in [:approved, :archived] or
              (post.status == :submitted and post.user_id == ^user_id)),
       group_by: post.annotated_block_id,
