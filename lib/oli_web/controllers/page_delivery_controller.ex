@@ -251,9 +251,9 @@ defmodule OliWeb.PageDeliveryController do
     author = conn.assigns.current_author
     section = conn.assigns.section
 
-    if Accounts.is_admin?(author) or Sections.is_enrolled?(user.id, section_slug) do
-      container_type_id = Oli.Resources.ResourceType.get_id_by_type("container")
-      page_type_id = Oli.Resources.ResourceType.get_id_by_type("page")
+    if Accounts.at_least_content_admin?(author) or Sections.is_enrolled?(user.id, section_slug) do
+      container_type_id = Oli.Resources.ResourceType.id_for_container()
+      page_type_id = Oli.Resources.ResourceType.id_for_page()
 
       preview_mode = Map.get(conn.assigns, :preview_mode, false)
 
@@ -293,8 +293,9 @@ defmodule OliWeb.PageDeliveryController do
             scripts: [],
             section: section,
             title: title,
-            children: simulate_children_nodes(current, previous_next_index),
-            container: simulate_node(current),
+            children:
+              simulate_children_nodes(current, previous_next_index, section.customizations),
+            container: simulate_node(current, section.customizations),
             section_slug: section_slug,
             previous_page: previous,
             next_page: next,
@@ -447,6 +448,7 @@ defmodule OliWeb.PageDeliveryController do
     numbered_revisions = Sections.get_revision_indexes(section.slug)
 
     render(conn, "prologue.html", %{
+      license: context.license,
       user: user,
       resource_access: resource_access,
       section_slug: section_slug,
@@ -631,6 +633,7 @@ defmodule OliWeb.PageDeliveryController do
       conn,
       "page.html",
       %{
+        license: context.license,
         user: user,
         adaptive: adaptive,
         context: context,
@@ -1245,9 +1248,9 @@ defmodule OliWeb.PageDeliveryController do
 
     section = conn.assigns.section
 
-    is_admin? = Oli.Accounts.is_admin?(author)
+    is_admin? = Accounts.at_least_content_admin?(author)
 
-    if Oli.Accounts.is_admin?(author) or
+    if is_admin? or
          PageLifecycle.can_access_attempt?(attempt_guid, user, section) do
       page_context = PageContext.create_for_review(section_slug, attempt_guid, user, is_admin?)
 
@@ -1408,27 +1411,24 @@ defmodule OliWeb.PageDeliveryController do
     m
   end
 
-  def is_admin?(conn) do
-    case conn.assigns[:current_author] do
-      nil -> false
-      author -> Oli.Accounts.is_admin?(author)
-    end
-  end
-
-  defp simulate_node(%{
-         "level" => level_str,
-         "index" => index_str,
-         "title" => title,
-         "id" => id_str,
-         "type" => type,
-         "graded" => graded,
-         "slug" => slug
-       }) do
+  defp simulate_node(
+         %{
+           "level" => level_str,
+           "index" => index_str,
+           "title" => title,
+           "id" => id_str,
+           "type" => type,
+           "graded" => graded,
+           "slug" => slug
+         },
+         customizations
+       ) do
     %Oli.Delivery.Hierarchy.HierarchyNode{
       uuid: UUID.uuid4(),
       numbering: %Oli.Resources.Numbering{
         level: String.to_integer(level_str),
-        index: String.to_integer(index_str)
+        index: String.to_integer(index_str),
+        labels: customizations
       },
       revision: %{
         slug: slug,
@@ -1446,14 +1446,14 @@ defmodule OliWeb.PageDeliveryController do
     }
   end
 
-  defp simulate_children_nodes(current, previous_next_index) do
+  defp simulate_children_nodes(current, previous_next_index, customizations) do
     Enum.map(current["children"], fn s ->
       {:ok, {_, _, child}, _} =
         PreviousNextIndex.retrieve(previous_next_index, String.to_integer(s))
 
       child
     end)
-    |> Enum.map(fn link_desc -> simulate_node(link_desc) end)
+    |> Enum.map(fn link_desc -> simulate_node(link_desc, customizations) end)
   end
 
   defp format_datetime_fn(conn) do

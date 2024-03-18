@@ -59,7 +59,7 @@ export const LikertActions = {
   removeItem(id: string) {
     return (model: any & HasParts, post: PostUndoable) => {
       // remove part associated with this item
-      Operations.apply(model, Operations.filter('authoring.parts', `[?(@.id!=${id})]`));
+      Operations.apply(model, Operations.filter('authoring.parts', `[?(@.id!='${id}')]`));
 
       // remove the specified item
       Items.removeOne(id)(model);

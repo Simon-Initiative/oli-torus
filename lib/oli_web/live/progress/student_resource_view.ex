@@ -44,6 +44,13 @@ defmodule OliWeb.Progress.StudentResourceView do
             ctx = SessionContext.init(socket, session)
             resource_access = get_resource_access(resource_id, section_slug, user_id)
 
+            resource_attempts =
+              unless is_nil(resource_access),
+                do:
+                  resource_access.resource_attempts
+                  |> Enum.sort(&(&1.attempt_number < &2.attempt_number)),
+                else: []
+
             changeset =
               case resource_access do
                 nil ->
@@ -68,6 +75,7 @@ defmodule OliWeb.Progress.StudentResourceView do
                breadcrumbs: set_breadcrumbs(type, section, user_id),
                section: section,
                resource_access: resource_access,
+               resource_attempts: resource_attempts,
                revision: revision,
                last_failed: fetch_last_failed(resource_access),
                user: user,
@@ -211,7 +219,7 @@ defmodule OliWeb.Progress.StudentResourceView do
         <AttemptHistory.render
           revision={@revision}
           section={@section}
-          resource_attempts={@resource_access.resource_attempts}
+          resource_attempts={@resource_attempts}
           ctx={@ctx}
         />
       </Group.render>

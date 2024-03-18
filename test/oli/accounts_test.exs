@@ -23,7 +23,7 @@ defmodule Oli.AccountsTest do
         |> Repo.insert()
 
       assert author.system_role_id == Accounts.SystemRole.role_id().author
-      assert Accounts.is_admin?(author) == false
+      assert Accounts.is_system_admin?(author) == false
     end
 
     test "changeset accepts system role change", %{} do
@@ -37,16 +37,16 @@ defmodule Oli.AccountsTest do
         })
         |> Repo.insert()
 
-      assert Accounts.is_admin?(author) == false
+      assert Accounts.is_system_admin?(author) == false
 
       {:ok, author} =
         Accounts.insert_or_update_author(%{
           email: author.email,
-          system_role_id: Accounts.SystemRole.role_id().admin
+          system_role_id: Accounts.SystemRole.role_id().system_admin
         })
 
-      assert author.system_role_id == Accounts.SystemRole.role_id().admin
-      assert Accounts.is_admin?(author) == true
+      assert author.system_role_id == Accounts.SystemRole.role_id().system_admin
+      assert Accounts.is_system_admin?(author) == true
     end
 
     test "search_authors_matching/1 returns authors matching the input exactly" do
@@ -104,6 +104,82 @@ defmodule Oli.AccountsTest do
 
       assert author.preferences.timezone == "America/Los_Angeles"
     end
+
+    test "update author data from edit account form successfully" do
+      author = insert(:author)
+
+      attrs = %{
+        "current_password" => "password_1",
+        "email" => "new_email@example.com",
+        "family_name" => "new family name",
+        "given_name" => "new given name",
+        "password" => "password_2",
+        "password_confirmation" => "password_2"
+      }
+
+      assert {:ok, author = %Author{}} = Accounts.update_author(author, attrs)
+      assert author.email == attrs["email"]
+      assert author.family_name == attrs["family_name"]
+      assert author.given_name == attrs["given_name"]
+      assert Bcrypt.verify_pass(attrs["password"], author.password_hash)
+    end
+
+    test "update author password fails when new password and password confirmation are different" do
+      author = insert(:author)
+
+      attrs = %{
+        "current_password" => "password_1",
+        "password" => "password_22",
+        "password_confirmation" => "password_2"
+      }
+
+      assert {:error, changeset} = Accounts.update_author(author, attrs)
+      assert changeset.valid? == false
+
+      {:password_confirmation, {error_message, [validation: :confirmation]}} =
+        List.first(changeset.errors)
+
+      assert error_message == "does not match confirmation"
+    end
+
+    test "update author password fails when the new password is less than 8 characters long" do
+      author = insert(:author)
+
+      attrs = %{
+        "current_password" => "password_1",
+        "password" => "pass",
+        "password_confirmation" => "pass"
+      }
+
+      assert {:error, changeset} = Accounts.update_author(author, attrs)
+      assert changeset.valid? == false
+
+      {:password, {error_message, [count: 8, validation: :length, kind: :min, type: :string]}} =
+        List.first(changeset.errors)
+
+      assert error_message =~ "should be at least %{count} character(s)"
+    end
+
+    test "update author data with an email used by another author fails" do
+      author_1 = insert(:author)
+      author_2 = insert(:author)
+
+      attrs = %{
+        "email" => author_1.email,
+        "current_password" => "password_1",
+        "password" => "password_2",
+        "password_confirmation" => "password_2"
+      }
+
+      assert {:error, changeset = %Ecto.Changeset{}} = Accounts.update_author(author_2, attrs)
+      assert changeset.valid? == false
+
+      assert changeset.errors == [
+               email:
+                 {"has already been taken",
+                  [constraint: :unique, constraint_name: "authors_email_index"]}
+             ]
+    end
   end
 
   describe "users" do
@@ -125,7 +201,9 @@ defmodule Oli.AccountsTest do
       given_name: "some updated given_name",
       family_name: "some updated family_name",
       sub: "some updated sub",
-      picture: "some updated picture"
+      picture: "some updated picture",
+      password: "some_pass123",
+      password_confirmation: "some_pass123"
     }
     @invalid_attrs %{email: nil, given_name: nil, family_name: nil, sub: nil, picture: nil}
 
@@ -443,6 +521,82 @@ defmodule Oli.AccountsTest do
                users,
                &(!is_nil(&1.invitation_token))
              )
+    end
+
+    test "update user data from edit account form successfully" do
+      user = insert(:user)
+
+      attrs = %{
+        "current_password" => "password_1",
+        "email" => "new_email@example.com",
+        "family_name" => "new family name",
+        "given_name" => "new given name",
+        "password" => "password_2",
+        "password_confirmation" => "password_2"
+      }
+
+      assert {:ok, user = %User{}} = Accounts.update_user(user, attrs)
+      assert user.email == attrs["email"]
+      assert user.family_name == attrs["family_name"]
+      assert user.given_name == attrs["given_name"]
+      assert Bcrypt.verify_pass(attrs["password"], user.password_hash)
+    end
+
+    test "update user password fails when new password and password confirmation are different" do
+      user = insert(:user)
+
+      attrs = %{
+        "current_password" => "password_1",
+        "password" => "password_22",
+        "password_confirmation" => "password_2"
+      }
+
+      assert {:error, changeset} = Accounts.update_user(user, attrs)
+      assert changeset.valid? == false
+
+      {:password_confirmation, {error_message, [validation: :confirmation]}} =
+        List.first(changeset.errors)
+
+      assert error_message == "does not match confirmation"
+    end
+
+    test "update user password fails when the new password is less than 8 characters long" do
+      user = insert(:user)
+
+      attrs = %{
+        "current_password" => "password_1",
+        "password" => "pass",
+        "password_confirmation" => "pass"
+      }
+
+      assert {:error, changeset} = Accounts.update_user(user, attrs)
+      assert changeset.valid? == false
+
+      {:password, {error_message, [count: 8, validation: :length, kind: :min, type: :string]}} =
+        List.first(changeset.errors)
+
+      assert error_message =~ "should be at least %{count} character(s)"
+    end
+
+    test "update user data with an email used by another user fails" do
+      user_1 = insert(:user)
+      user_2 = insert(:user)
+
+      attrs = %{
+        "email" => user_1.email,
+        "current_password" => "password_1",
+        "password" => "password_2",
+        "password_confirmation" => "password_2"
+      }
+
+      assert {:error, changeset = %Ecto.Changeset{}} = Accounts.update_user(user_2, attrs)
+      assert changeset.valid? == false
+
+      assert changeset.errors == [
+               email:
+                 {"has already been taken",
+                  [constraint: :unique, constraint_name: "users_email_independent_learner_index"]}
+             ]
     end
   end
 

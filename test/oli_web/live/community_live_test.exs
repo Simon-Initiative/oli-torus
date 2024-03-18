@@ -143,7 +143,7 @@ defmodule OliWeb.CommunityLiveTest do
       assert has_element?(view, "##{c2.id}")
     end
 
-    test "applies sorting", %{conn: conn} do
+    test "applies sorting by name", %{conn: conn} do
       insert(:community, %{name: "Testing A"})
       insert(:community, %{name: "Testing B"})
 
@@ -162,6 +162,49 @@ defmodule OliWeb.CommunityLiveTest do
              |> element("tr:first-child > td:first-child")
              |> render() =~
                "Testing B"
+    end
+
+    test "applies sorting by created", %{conn: conn} do
+      elixir_community = insert(:community, %{name: "Elixir", inserted_at: yesterday()})
+      rust_community = insert(:community, %{name: "Rust", inserted_at: now()})
+      ruby_community = insert(:community, %{name: "Ruby", inserted_at: tomorrow()})
+
+      {:ok, view, _html} = live(conn, @live_view_index_route)
+
+      # firstly table is sorted by name
+      assert view
+             |> element("tr:first-child > td:first-child")
+             |> render() =~ elixir_community.name
+
+      assert view
+             |> element("tr:last-child > td:first-child")
+             |> render() =~ rust_community.name
+
+      # sort by created ascending
+      view
+      |> element("th[phx-click=\"sort\"][phx-value-sort_by=\"inserted_at\"]")
+      |> render_click(%{sort_by: "inserted_at"})
+
+      assert view
+             |> element("tr:first-child > td:first-child")
+             |> render() =~ elixir_community.name
+
+      assert view
+             |> element("tr:last-child > td:first-child")
+             |> render() =~ ruby_community.name
+
+      # sort by created descending
+      view
+      |> element("th[phx-click=\"sort\"][phx-value-sort_by=\"inserted_at\"]")
+      |> render_click(%{sort_by: "inserted_at"})
+
+      assert view
+             |> element("tr:first-child > td:first-child")
+             |> render() =~ ruby_community.name
+
+      assert view
+             |> element("tr:last-child > td:first-child")
+             |> render() =~ elixir_community.name
     end
 
     test "applies paging", %{conn: conn} do

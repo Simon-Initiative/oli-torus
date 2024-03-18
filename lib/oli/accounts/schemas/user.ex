@@ -170,6 +170,34 @@ defmodule Oli.Accounts.User do
     |> maybe_name_from_given_and_family()
   end
 
+  def update_changeset_for_admin(%__MODULE__{} = user, attrs \\ %{}) do
+    user
+    |> cast(attrs, [:given_name, :family_name, :independent_learner, :can_create_sections, :email])
+    |> validate_required([:given_name, :family_name])
+    |> maybe_name_from_given_and_family()
+    |> lowercase_email()
+    |> pow_user_id_field_changeset(attrs)
+    |> unique_constraint(:email,
+      name: :users_email_independent_learner_index,
+      message: "Email has already been taken by another independent learner"
+    )
+  end
+
+  @doc """
+  Creates a changeset that is used to update a user's profile
+  """
+
+  def update_changeset(user, attrs \\ %{}) do
+    user
+    |> pow_changeset(attrs)
+    |> cast(attrs, [:given_name, :family_name, :email])
+    |> validate_required_if([:email], &is_independent_learner_not_guest/1)
+    |> unique_constraint(:email, name: :users_email_independent_learner_index)
+    |> maybe_create_unique_sub()
+    |> lowercase_email()
+    |> maybe_name_from_given_and_family()
+  end
+
   def invite_changeset(user_or_changeset, invited_by, attrs) do
     user_or_changeset
     |> Ecto.Changeset.cast(attrs, [:name, :given_name, :family_name])
@@ -246,19 +274,13 @@ defmodule Oli.Accounts.User do
     end
   end
 
-  def is_independent_learner_not_guest(changeset) do
-    case changeset do
-      %Ecto.Changeset{valid?: true, changes: changes, data: data} ->
-        independent_learner =
-          Map.get(changes, :independent_learner) || Map.get(data, :independent_learner)
+  def is_independent_learner_not_guest(%{changes: changes, data: data} = _changeset) do
+    independent_learner =
+      Map.get(changes, :independent_learner) || Map.get(data, :independent_learner)
 
-        guest = Map.get(changes, :guest) || Map.get(data, :guest)
+    guest = Map.get(changes, :guest) || Map.get(data, :guest)
 
-        independent_learner && !guest
-
-      _ ->
-        false
-    end
+    independent_learner && !guest
   end
 
   defp validate_email_confirmation(changeset) do

@@ -5,6 +5,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
   import Oli.Factory
   import Oli.Utils.Seeder.Utils
 
+  alias Oli.Authoring.Course
   alias Oli.Repo
   alias Oli.Seeder
   alias Oli.Accounts
@@ -636,6 +637,123 @@ defmodule OliWeb.PageDeliveryControllerTest do
       assert html_response(conn, 200) =~ "Submit Answers"
     end
 
+    test "renders custom license in footer for started page", %{
+      conn: conn,
+      user: user,
+      section: section,
+      revision: revision,
+      project: project
+    } do
+      {:ok, _project_with_license} =
+        Course.update_project(project, %{
+          attributes: %{
+            license: %{license_type: :custom, custom_license_details: "This is a custom license"}
+          }
+        })
+
+      enroll_as_student(%{section: section, user: user})
+
+      html_response =
+        get(conn, ~p"/sections/#{section.slug}/page/#{revision.slug}") |> html_response(200)
+
+      # Verify License legend
+      assert html_response
+             |> Floki.parse_document!()
+             |> Floki.find("footer")
+             |> Floki.find("#license")
+             |> Floki.text() =~ "This is a custom license"
+    end
+
+    test "renders :none license case in footer for started page", %{
+      conn: conn,
+      user: user,
+      section: section,
+      revision: revision,
+      project: project
+    } do
+      {:ok, _project_with_license} =
+        Course.update_project(project, %{
+          attributes: %{
+            license: %{license_type: :none, custom_license_details: ""}
+          }
+        })
+
+      enroll_as_student(%{section: section, user: user})
+
+      html_response =
+        get(conn, ~p"/sections/#{section.slug}/page/#{revision.slug}") |> html_response(200)
+
+      # Verify License legend
+      assert html_response
+             |> Floki.parse_document!()
+             |> Floki.find("footer")
+             |> Floki.find("#license")
+             |> Floki.text() =~ "Non-CC / Copyrighted / Other"
+    end
+
+    test "renders custom license in footer for a not_started page -- prologue", %{
+      conn: conn,
+      user: user,
+      section: section,
+      page_revision: page_revision,
+      project: project
+    } do
+      {:ok, _project_with_license} =
+        Course.update_project(project, %{
+          attributes: %{
+            license: %{license_type: :custom, custom_license_details: "This is a custom license"}
+          }
+        })
+
+      enroll_as_student(%{section: section, user: user})
+
+      html_response =
+        get(conn, ~p"/sections/#{section.slug}/page/#{page_revision.slug}") |> html_response(200)
+
+      # Verify License legend
+      assert html_response
+             |> Floki.parse_document!()
+             |> Floki.find("footer")
+             |> Floki.find("#license")
+             |> Floki.text() =~ "This is a custom license"
+    end
+
+    test "renders creative commons license in footer for a not_started page -- prologue", %{
+      conn: conn,
+      user: user,
+      section: section,
+      page_revision: page_revision,
+      project: project
+    } do
+      {:ok, _project_with_license} =
+        Course.update_project(project, %{attributes: %{license: %{license_type: :cc_by}}})
+
+      enroll_as_student(%{section: section, user: user})
+
+      html_response =
+        get(conn, ~p"/sections/#{section.slug}/page/#{page_revision.slug}") |> html_response(200)
+
+      # Verify License legend
+      license =
+        html_response
+        |> Floki.parse_document!()
+        |> Floki.find("footer")
+        |> Floki.find("#license")
+
+      assert Floki.text(license) =~
+               "Unless otherwise noted this work is licensed under a Creative Commons Attribution 4.0 Unported License."
+
+      # Verify hiperlink to creative commons
+      assert Floki.find(license, "a")
+             |> Floki.attribute("href") ==
+               ["https://creativecommons.org/licenses/by/4.0/"]
+
+      assert Floki.find(license, "a") |> Floki.attribute("target") == ["_blank"]
+
+      # Verify logo
+      assert Floki.find(license, "img") |> Floki.attribute("src") == ["/images/cc_logos/by.svg"]
+    end
+
     # This tests the edge case for when a student goes to a page that is available to start and the instructor changes the start date
     # to a future date simultaneously and before the student refreshes the page.
     # The student should be redirected back to the page and see a message that the page is not yet available when trying to start an attempt.
@@ -1209,7 +1327,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
     } do
       page_revision =
         insert(:revision,
-          resource_type_id: Oli.Resources.ResourceType.get_id_by_type("page"),
+          resource_type_id: Oli.Resources.ResourceType.id_for_page(),
           title: "Upcoming assessment",
           graded: true,
           content: %{"advancedDelivery" => true}
@@ -1217,7 +1335,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
 
       container_revision =
         insert(:revision,
-          resource_type_id: Oli.Resources.ResourceType.get_id_by_type("container"),
+          resource_type_id: Oli.Resources.ResourceType.id_for_container(),
           title: "A graded container?",
           graded: true,
           content: %{"advancedDelivery" => true}
@@ -1786,6 +1904,73 @@ defmodule OliWeb.PageDeliveryControllerTest do
     end
   end
 
+  describe "displaying custom labels" do
+    setup [:setup_tags, :create_project_with_units_and_modules]
+
+    test "displays custom labels if setting are set", %{
+      conn: conn,
+      section: section,
+      revisions: %{unit_revision: unit_revision}
+    } do
+      user = insert(:user)
+
+      {:ok, section} =
+        Sections.update_section(section, %{
+          display_curriculum_item_numbering: true,
+          customizations: %{unit: "Volume", module: "Chapter", section: "Lesson"}
+        })
+
+      enroll_as_student(%{section: section, user: user})
+
+      conn =
+        recycle(conn)
+        |> Pow.Plug.assign_current_user(
+          user,
+          OliWeb.Pow.PowHelpers.get_pow_config(:user)
+        )
+
+      # Check visibility at the unit level
+      conn =
+        get(conn, Routes.page_delivery_path(conn, :container, section.slug, unit_revision.slug))
+
+      response = html_response(conn, 200)
+
+      assert response =~ "Volume 1: Unit Container"
+      assert response =~ "Chapter 1: Module Container 1"
+    end
+
+    test "displays default labels if setting are not set", %{
+      conn: conn,
+      section: section,
+      revisions: %{unit_revision: unit_revision}
+    } do
+      user = insert(:user)
+
+      {:ok, section} =
+        Sections.update_section(section, %{
+          display_curriculum_item_numbering: true
+        })
+
+      enroll_as_student(%{section: section, user: user})
+
+      conn =
+        recycle(conn)
+        |> Pow.Plug.assign_current_user(
+          user,
+          OliWeb.Pow.PowHelpers.get_pow_config(:user)
+        )
+
+      # Check visibility at the unit level
+      conn =
+        get(conn, Routes.page_delivery_path(conn, :container, section.slug, unit_revision.slug))
+
+      response = html_response(conn, 200)
+
+      assert response =~ "Unit 1: Unit Container"
+      assert response =~ "Module 1: Module Container 1"
+    end
+  end
+
   describe "export" do
     setup [:admin_conn]
 
@@ -2017,7 +2202,11 @@ defmodule OliWeb.PageDeliveryControllerTest do
       conn: conn,
       user: user
     } do
-      {:ok, section: section, unit_one_revision: unit_one_revision, page_revision: _page_revision} =
+      {:ok,
+       section: section,
+       unit_one_revision: unit_one_revision,
+       page_revision: _page_revision,
+       page_2_revision: _page_2_revision} =
         section_with_assessment(%{})
 
       enroll_as_instructor(%{user: user, section: section})
@@ -2206,7 +2395,10 @@ defmodule OliWeb.PageDeliveryControllerTest do
       conn: conn
     } do
       {:ok,
-       section: section, unit_one_revision: _unit_one_revision, page_revision: _page_revision} =
+       section: section,
+       unit_one_revision: _unit_one_revision,
+       page_revision: _page_revision,
+       page_2_revision: _page_2_revision} =
         section_with_assessment(%{})
 
       user = insert(:user)
@@ -2223,7 +2415,10 @@ defmodule OliWeb.PageDeliveryControllerTest do
     test "do not show the 'exploration' access in the left navbar when the section has no explorations to show",
          %{conn: conn} do
       {:ok,
-       section: section, unit_one_revision: _unit_one_revision, page_revision: _page_revision} =
+       section: section,
+       unit_one_revision: _unit_one_revision,
+       page_revision: _page_revision,
+       page_2_revision: _page_2_revision} =
         section_with_assessment(%{})
 
       user = insert(:user)
@@ -2241,7 +2436,10 @@ defmodule OliWeb.PageDeliveryControllerTest do
     test "do not show the 'exploration' access in the Windowshade when the section does not have explorations to show",
          %{conn: conn} do
       {:ok,
-       section: section, unit_one_revision: _unit_one_revision, page_revision: _page_revision} =
+       section: section,
+       unit_one_revision: _unit_one_revision,
+       page_revision: _page_revision,
+       page_2_revision: _page_2_revision} =
         section_with_assessment(%{})
 
       user = insert(:user)
@@ -2343,7 +2541,10 @@ defmodule OliWeb.PageDeliveryControllerTest do
       conn: conn
     } do
       {:ok,
-       section: section, unit_one_revision: _unit_one_revision, page_revision: _page_revision} =
+       section: section,
+       unit_one_revision: _unit_one_revision,
+       page_revision: _page_revision,
+       page_2_revision: _page_2_revision} =
         section_with_assessment(%{})
 
       user = insert(:user)

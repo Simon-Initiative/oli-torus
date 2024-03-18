@@ -4,8 +4,8 @@ defmodule OliWeb.Users.AuthorsTableModel do
   import OliWeb.Common.Utils
 
   alias OliWeb.Common.Table.{ColumnSpec, SortableTableModel}
-  alias Oli.Accounts.SystemRole
   alias OliWeb.Router.Helpers, as: Routes
+  alias Oli.Accounts
 
   def render(assigns) do
     ~H"""
@@ -45,19 +45,17 @@ defmodule OliWeb.Users.AuthorsTableModel do
     )
   end
 
-  def render_role_column(assigns, %{system_role_id: system_role_id}, _) do
-    admin_role_id = SystemRole.role_id().admin
+  def render_role_column(assigns, author, _) do
+    has_admin_role? = Accounts.has_admin_role?(author)
 
-    case system_role_id do
-      ^admin_role_id ->
-        ~H"""
-        <span class="badge badge-warning">Administrator</span>
-        """
-
-      _ ->
-        ~H"""
-        <span class="badge badge-dark">Author</span>
-        """
+    if has_admin_role? do
+      ~H"""
+      <span class="badge badge-warning">Administrator</span>
+      """
+    else
+      ~H"""
+      <span class="badge badge-dark">Author</span>
+      """
     end
   end
 

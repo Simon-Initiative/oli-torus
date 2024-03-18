@@ -88,8 +88,8 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
           | {:error, {:not_authorized}}
           | {:error, {:not_applicable}}
   def delete(project_slug, lock_id, activity_id, author) do
-    secondary_id = Oli.Resources.ResourceType.get_id_by_type("secondary")
-    activity_resource_id = Oli.Resources.ResourceType.get_id_by_type("activity")
+    secondary_id = Oli.Resources.ResourceType.id_for_secondary()
+    activity_resource_id = Oli.Resources.ResourceType.id_for_activity()
 
     with {:ok, project} <- Course.get_project_by_slug(project_slug) |> trap_nil(),
          {:ok} <- authorize_user(author, project),
@@ -180,7 +180,7 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
     {:ok, resource} = Resources.create_new_resource()
 
     with_type =
-      Map.put(attrs, "resource_type_id", Oli.Resources.ResourceType.get_id_by_type("secondary"))
+      Map.put(attrs, "resource_type_id", Oli.Resources.ResourceType.id_for_secondary())
       |> Map.put("resource_id", resource.id)
       |> Map.put("author_id", author_id)
       |> Map.put("primary_resource_id", primary_id)
@@ -631,7 +631,7 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
                  scope: scope,
                  activity_type_id: activity_type.id
                },
-               Oli.Resources.ResourceType.get_id_by_type("activity")
+               Oli.Resources.ResourceType.id_for_activity()
              ),
            {:ok, _} <-
              Course.create_project_resource(%{

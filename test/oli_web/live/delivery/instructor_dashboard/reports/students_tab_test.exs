@@ -783,7 +783,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
 
     admin =
       author_fixture(%{
-        system_role_id: Oli.Accounts.SystemRole.role_id().admin,
+        system_role_id: Oli.Accounts.SystemRole.role_id().system_admin,
         preferences:
           %Oli.Accounts.AuthorPreferences{show_relative_dates: false} |> Map.from_struct()
       })

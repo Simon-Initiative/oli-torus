@@ -18,7 +18,11 @@ defmodule OliWeb.Progress.StudentResourceViewLiveTest do
   end
 
   defp setup_section_resource_access(%{:instructor => instructor}) do
-    {:ok, section: section, unit_one_revision: _unit_one_revision, page_revision: page_revision} =
+    {:ok,
+     section: section,
+     unit_one_revision: _unit_one_revision,
+     page_revision: page_revision,
+     page_2_revision: _page_2_revision} =
       section_with_assessment(%{})
 
     student = insert(:user)

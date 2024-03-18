@@ -6,7 +6,7 @@ defmodule Oli.Interop.Ingest.Processor.Activities do
     State.notify_step_start(state, :activities)
     |> create_revisions(
       :activities,
-      Oli.Resources.ResourceType.get_id_by_type("activity"),
+      Oli.Resources.ResourceType.id_for_activity(),
       &mapper/3
     )
   end

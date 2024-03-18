@@ -34,7 +34,7 @@ defmodule Oli.Publishing do
       on: pr.revision_id == rev.id,
       where:
         pr.publication_id in ^publication_ids and
-          rev.resource_type_id == ^ResourceType.get_id_by_type("page"),
+          rev.resource_type_id == ^ResourceType.id_for_page(),
       select: {rev.resource_id, rev.slug},
       distinct: true
     )
@@ -47,7 +47,7 @@ defmodule Oli.Publishing do
       on: pr.revision_id == rev.id,
       where:
         pr.publication_id in ^publication_ids and
-          rev.resource_type_id == ^ResourceType.get_id_by_type("page"),
+          rev.resource_type_id == ^ResourceType.id_for_page(),
       select: rev.resource_id,
       distinct: true
     )
@@ -108,7 +108,9 @@ defmodule Oli.Publishing do
   end
 
   def query_unpublished_revisions_by_type(project_slug, type) do
-    publication_id = project_working_publication(project_slug).id
+    publication_id =
+      project_working_publication(project_slug).id
+
     resource_type_id = ResourceType.get_id_by_type(type)
 
     from rev in Revision,
@@ -117,6 +119,23 @@ defmodule Oli.Publishing do
       distinct: rev.resource_id,
       where:
         mapping.publication_id == ^publication_id and
+          rev.resource_type_id == ^resource_type_id and
+          rev.deleted == false,
+      select: rev
+  end
+
+  def query_unpublished_revisions_by_type_and_section(project_slug, type, list_section_ids) do
+    publication_ids =
+      project_working_publication_by_setion_list(project_slug, list_section_ids)
+
+    resource_type_id = ResourceType.get_id_by_type(type)
+
+    from rev in Revision,
+      join: mapping in PublishedResource,
+      on: mapping.revision_id == rev.id,
+      distinct: rev.resource_id,
+      where:
+        mapping.publication_id in ^publication_ids and
           rev.resource_type_id == ^resource_type_id and
           rev.deleted == false,
       select: rev
@@ -134,7 +153,7 @@ defmodule Oli.Publishing do
   that pertain to a given publication.
   """
   def get_published_activity_revisions(publication_id, activity_ids) do
-    activity = ResourceType.get_id_by_type("activity")
+    activity = ResourceType.id_for_activity()
 
     Repo.all(
       from mapping in PublishedResource,
@@ -391,6 +410,8 @@ defmodule Oli.Publishing do
       iex> retrieve_visible_sources(%User{}, %Institution{})
       []
   """
+  def retrieve_visible_sources(nil, _), do: []
+
   def retrieve_visible_sources(user, institution) do
     sources =
       Groups.list_community_associated_publications_and_products(user.id, institution) ++
@@ -498,6 +519,19 @@ defmodule Oli.Publishing do
         on: pub.project_id == proj.id,
         where: proj.slug == ^project_slug and is_nil(pub.published),
         select: pub
+    )
+  end
+
+  def project_working_publication_by_setion_list(project_slug, list_section_ids) do
+    Repo.all(
+      from pub in Publication,
+        join: proj in Project,
+        on: pub.project_id == proj.id,
+        join: section in Section,
+        on: section.base_project_id == proj.id,
+        where:
+          proj.slug == ^project_slug and section.id in ^list_section_ids and is_nil(pub.published),
+        select: pub.id
     )
   end
 
@@ -617,7 +651,7 @@ defmodule Oli.Publishing do
   end
 
   def get_published_objective_details(publication_id) do
-    objective = ResourceType.get_id_by_type("objective")
+    objective = ResourceType.id_for_objective()
 
     Repo.all(
       from mapping in PublishedResource,
@@ -789,7 +823,7 @@ defmodule Oli.Publishing do
   end
 
   def get_objective_mappings_by_publication(publication_id) do
-    objective = ResourceType.get_id_by_type("objective")
+    objective = ResourceType.id_for_objective()
 
     Repo.all(
       from mapping in PublishedResource,
@@ -1034,7 +1068,7 @@ defmodule Oli.Publishing do
     # or a failure in a {:error, failure} tuple
     case Repo.query!(query, [
            publication_id,
-           Oli.Resources.ResourceType.get_id_by_type("activity")
+           Oli.Resources.ResourceType.id_for_activity()
          ]) do
       %Postgrex.Result{num_rows: num_rows} = result ->
         Logger.info("Publication resulted in #{num_rows} new revision_parts records")
@@ -1310,8 +1344,8 @@ defmodule Oli.Publishing do
   }
   """
   def find_objective_attachments(resource_id, publication_id) do
-    page_id = ResourceType.get_id_by_type("page")
-    activity_id = ResourceType.get_id_by_type("activity")
+    page_id = ResourceType.id_for_page()
+    activity_id = ResourceType.id_for_activity()
 
     sql = """
     select
@@ -1358,8 +1392,8 @@ defmodule Oli.Publishing do
     The same revision will appear as many times as attached objectives it has.
   """
   def find_attached_objectives(publication_id) do
-    page_id = ResourceType.get_id_by_type("page")
-    activity_id = ResourceType.get_id_by_type("activity")
+    page_id = ResourceType.id_for_page()
+    activity_id = ResourceType.id_for_activity()
 
     sql = """
       SELECT
@@ -1418,7 +1452,7 @@ defmodule Oli.Publishing do
   page that encloses it
   """
   def determine_parent_pages(activity_resource_ids, publication_id) do
-    page_id = ResourceType.get_id_by_type("page")
+    page_id = ResourceType.id_for_page()
 
     activities = MapSet.new(activity_resource_ids)
 
@@ -1446,7 +1480,7 @@ defmodule Oli.Publishing do
   end
 
   def determine_parent_pages(publication_id) do
-    page_id = ResourceType.get_id_by_type("page")
+    page_id = ResourceType.id_for_page()
 
     sql = """
     select
@@ -1505,7 +1539,7 @@ defmodule Oli.Publishing do
   end
 
   def find_objective_in_selections(objective_id, publication_id) do
-    page_id = ResourceType.get_id_by_type("page")
+    page_id = ResourceType.id_for_page()
 
     sql = """
     select rev.slug, rev.title
@@ -1524,7 +1558,7 @@ defmodule Oli.Publishing do
   end
 
   def find_alternatives_group_references_in_pages(alternatives_resource_id, publication_id) do
-    page_id = ResourceType.get_id_by_type("page")
+    page_id = ResourceType.id_for_page()
 
     sql = """
     select rev.slug, rev.title

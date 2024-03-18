@@ -18,7 +18,7 @@ defmodule Oli.Authoring.Editing.ObjectiveEditor do
     attrs =
       Map.merge(attrs, %{
         author_id: author.id,
-        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("objective")
+        resource_type_id: Oli.Resources.ResourceType.id_for_objective()
       })
 
     result =
@@ -98,7 +98,7 @@ defmodule Oli.Authoring.Editing.ObjectiveEditor do
     attrs =
       Map.merge(attrs, %{
         author_id: author.id,
-        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("objective")
+        resource_type_id: Oli.Resources.ResourceType.id_for_objective()
       })
 
     result =

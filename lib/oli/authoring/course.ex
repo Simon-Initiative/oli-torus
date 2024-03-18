@@ -1,7 +1,7 @@
 defmodule Oli.Authoring.Course do
   import Ecto.Query, warn: false
 
-  alias Oli.Accounts.{SystemRole, Author}
+  alias Oli.Accounts.Author
   alias Oli.Authoring.Authors.AuthorProject
   alias Oli.Authoring.{Collaborators, ProjectSearch}
   alias Oli.Authoring.Course.{Project, Family, ProjectResource, ProjectAttributes}
@@ -10,9 +10,11 @@ defmodule Oli.Authoring.Course do
   alias Oli.Publishing
   alias Oli.Publishing.Publications.Publication
   alias Oli.Publishing.PublishedResource
-  alias Oli.Repo
+  alias Oli.{Accounts, Repo}
   alias Oli.Repo.{Paging, Sorting}
   alias Oli.Resources.{ResourceType, Revision, ScoringStrategy}
+  alias Oli.Delivery.Sections.SectionsProjectsPublications
+  alias Oli.Publishing.PublishedResource
 
   def create_project_resource(attrs) do
     %ProjectResource{}
@@ -76,13 +78,9 @@ defmodule Oli.Authoring.Course do
   end
 
   def get_projects_for_author(author) do
-    admin_role_id = SystemRole.role_id().admin
-
-    case author do
-      # Admin authors have access to every project
-      %{system_role_id: ^admin_role_id} -> Repo.all(Project)
-      _ -> Repo.preload(author, [:projects]).projects
-    end
+    if Accounts.has_admin_role?(author),
+      do: Repo.all(Project),
+      else: Repo.preload(author, [:projects]).projects
   end
 
   def browse_projects(
@@ -91,19 +89,13 @@ defmodule Oli.Authoring.Course do
         %Sorting{} = sorting,
         opts \\ []
       ) do
-    admin_role_id = SystemRole.role_id().admin
     include_deleted = Keyword.get(opts, :include_deleted, false)
     admin_show_all = Keyword.get(opts, :admin_show_all, true)
     text_search = Keyword.get(opts, :text_search, "")
 
-    case author do
-      # Admin authors have access to every project
-      %{system_role_id: ^admin_role_id} when admin_show_all ->
-        browse_projects_as_admin(paging, sorting, include_deleted, text_search)
-
-      _ ->
-        browse_projects_as_author(author, paging, sorting, include_deleted, text_search)
-    end
+    if Accounts.has_admin_role?(author) and admin_show_all,
+      do: browse_projects_as_admin(paging, sorting, include_deleted, text_search),
+      else: browse_projects_as_author(author, paging, sorting, include_deleted, text_search)
   end
 
   defp browse_projects_as_admin(
@@ -266,7 +258,7 @@ defmodule Oli.Authoring.Course do
     attrs = %{
       title: "Curriculum",
       author_id: author.id,
-      resource_type_id: Oli.Resources.ResourceType.get_id_by_type("container")
+      resource_type_id: Oli.Resources.ResourceType.id_for_container()
     }
 
     create_and_attach_resource(project, attrs)
@@ -415,7 +407,7 @@ defmodule Oli.Authoring.Course do
         author_id: author_id,
         max_attempts: 1,
         scoring_strategy_id: ScoringStrategy.get_id_by_type("most_recent"),
-        resource_type_id: ResourceType.get_id_by_type("page"),
+        resource_type_id: ResourceType.id_for_page(),
         content: %{
           "version" => "0.1.0",
           "model" => []
@@ -575,5 +567,37 @@ defmodule Oli.Authoring.Course do
     %{project_slug: project.slug, section_ids: section_ids}
     |> Oli.Analytics.DatashopExportWorker.new()
     |> Oban.insert()
+  end
+
+  alias Oli.Authoring.Course.CreativeCommons
+  @cc_options Map.keys(CreativeCommons.cc_options())
+
+  @type license_types ::
+          :none | :cc_by | :cc_by_sa | :cc_by_nd | :cc_by_nc | :cc_by_nc_sa | :cc_by_nc_nd
+  @spec get_project_license(integer(), String.t()) ::
+          %{license_type: :custom, custom_license_details: String.t()}
+          | %{license_type: license_types, custom_license_details: <<>>}
+          | nil
+  def get_project_license(revision_id, section_slug) do
+    from(pr in PublishedResource,
+      join: spp in SectionsProjectsPublications,
+      on: pr.publication_id == spp.publication_id,
+      join: p in assoc(spp, :project),
+      join: s in assoc(spp, :section),
+      where: pr.revision_id == ^revision_id and s.slug == ^section_slug,
+      distinct: true,
+      select: p.attributes
+    )
+    |> Repo.one()
+    |> case do
+      %{license: %{license_type: license_type} = license} when license_type in @cc_options ->
+        Map.from_struct(license)
+
+      %{license: nil} ->
+        nil
+
+      nil ->
+        nil
+    end
   end
 end

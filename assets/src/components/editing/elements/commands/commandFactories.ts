@@ -10,6 +10,7 @@ interface CommandWrapperProps {
   mark?: Mark;
   active?: CommandDescription['active'];
   precondition?: Command['precondition'];
+  tooltip?: string;
 }
 
 export function createButtonCommandDesc(attrs: CommandWrapperProps) {
@@ -22,12 +23,14 @@ function createCommandDesc({
   execute,
   active,
   category,
+  tooltip,
   precondition,
 }: CommandWrapperProps): CommandDescription {
   return {
     type: 'CommandDesc',
     category,
     icon: () => icon,
+    tooltip: tooltip,
     description: () => description,
     ...(active ? { active } : {}),
     command: {

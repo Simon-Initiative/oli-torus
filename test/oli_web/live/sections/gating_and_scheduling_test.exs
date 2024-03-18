@@ -8,7 +8,9 @@ defmodule OliWeb.Sections.GatingAndSchedulingTest do
   alias Lti_1p3.Tool.ContextRoles
   alias Oli.Delivery.{Gating, Sections}
   alias Oli.Delivery.Gating.GatingCondition
+  alias Oli.Delivery.Sections.Section
   alias Oli.{Repo, Seeder}
+  alias Oli.Repo.{Paging, Sorting}
 
   @endpoint OliWeb.Endpoint
 
@@ -85,6 +87,73 @@ defmodule OliWeb.Sections.GatingAndSchedulingTest do
              |> element("ul>li:nth-child(2)")
              |> render() =~
                "Conditional Accessibility Based on Student Performance"
+    end
+
+    test "default sorting will order by the order of the resources in the course section", %{
+      conn: conn,
+      section_1: section
+    } do
+      {:ok, view, _html} =
+        live(conn, Routes.live_path(@endpoint, OliWeb.Sections.GatingAndScheduling, section.slug))
+
+      # get gating conditions (here also we're testing the context function)
+      [page_one, nested_page_one, nested_page_two] =
+        Gating.browse_gating_conditions(
+          %Section{id: section.id, slug: section.slug},
+          %Paging{limit: 25, offset: 0},
+          %Sorting{field: :numbering_index, direction: :asc},
+          nil
+        )
+
+      # get the numbering index of the resources in the course section
+      page_one_sr =
+        Sections.get_section_resource(section.id, page_one.resource_id).numbering_index
+
+      nested_page_one_sr =
+        Sections.get_section_resource(section.id, nested_page_one.resource_id).numbering_index
+
+      nested_page_two_sr =
+        Sections.get_section_resource(section.id, nested_page_two.resource_id).numbering_index
+
+      # assert that the resources are ordered by the numbering index
+      assert page_one_sr < nested_page_one_sr && nested_page_one_sr < nested_page_two_sr
+
+      # assert that the resources are ordered by the numbering index in the view
+      assert view
+             |> element("table tbody tr:nth-child(1) td:nth-child(1)")
+             |> render() =~
+               page_one.revision.title
+
+      assert view
+             |> element("table tbody tr:nth-child(2) td:nth-child(1)")
+             |> render() =~
+               nested_page_one.revision.title
+
+      assert view
+             |> element("table tbody tr:nth-child(3) td:nth-child(1)")
+             |> render() =~
+               nested_page_two.revision.title
+
+      # sort by title to check that the sorting is working
+      view
+      |> element("th[phx-click=\"paged_table_sort\"]:first-of-type")
+      |> render_click(%{sort_by: :title})
+
+      # assert that the resources are ordered by title
+      assert view
+             |> element("table tbody tr:nth-child(1) td:nth-child(1)")
+             |> render() =~
+               nested_page_one.revision.title
+
+      assert view
+             |> element("table tbody tr:nth-child(2) td:nth-child(1)")
+             |> render() =~
+               nested_page_two.revision.title
+
+      assert view
+             |> element("table tbody tr:nth-child(3) td:nth-child(1)")
+             |> render() =~
+               page_one.revision.title
     end
   end
 
@@ -546,12 +615,26 @@ defmodule OliWeb.Sections.GatingAndSchedulingTest do
 
   defp setup_admin_session(%{conn: conn}) do
     map = Seeder.base_project_with_resource4()
-    admin = author_fixture(%{system_role_id: Oli.Accounts.SystemRole.role_id().admin})
+    admin = author_fixture(%{system_role_id: Oli.Accounts.SystemRole.role_id().system_admin})
 
     Seeder.create_schedule_gating_condition(
       DateTime.add(yesterday(), -(60 * 60 * 24), :second),
       yesterday(),
       map.page1.id,
+      map.section_1.id
+    )
+
+    Seeder.create_schedule_gating_condition(
+      DateTime.add(yesterday(), -(60 * 60 * 24), :second),
+      yesterday(),
+      map.nested_page1.id,
+      map.section_1.id
+    )
+
+    Seeder.create_schedule_gating_condition(
+      DateTime.add(yesterday(), -(60 * 60 * 24), :second),
+      yesterday(),
+      map.nested_page2.id,
       map.section_1.id
     )
 

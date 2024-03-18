@@ -51,7 +51,6 @@ const ActionFeedbackEditor: React.FC<ActionFeedbackEditorProps> = ({
   const [showEditor, setShowEditor] = useState(false);
 
   const handleShowFeedbackClick = () => {
-    // console.log('show feedback editor');
     setShowEditor(true);
   };
 

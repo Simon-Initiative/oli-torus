@@ -133,38 +133,53 @@ defmodule OliWeb.ProgressLiveTest do
 
       date_now = DateTime.utc_now()
 
-      insert(:resource_attempt,
-        revision: revision,
-        resource_access: resource_access,
-        score: first_attempt.score,
-        out_of: out_of,
-        lifecycle_state: "evaluated",
-        date_submitted: date_now,
-        date_evaluated: date_now
-      )
+      attempt_1 =
+        insert(:resource_attempt,
+          revision: revision,
+          resource_access: resource_access,
+          score: first_attempt.score,
+          out_of: out_of,
+          lifecycle_state: "evaluated",
+          date_submitted: date_now,
+          date_evaluated: date_now
+        )
 
-      insert(:resource_attempt,
-        revision: revision,
-        resource_access: resource_access,
-        score: second_attempt.score,
-        out_of: out_of,
-        lifecycle_state: "evaluated",
-        date_submitted: date_now,
-        date_evaluated: date_now
-      )
+      attempt_2 =
+        insert(:resource_attempt,
+          revision: revision,
+          resource_access: resource_access,
+          score: second_attempt.score,
+          out_of: out_of,
+          lifecycle_state: "evaluated",
+          date_submitted: date_now,
+          date_evaluated: date_now
+        )
 
-      insert(:resource_attempt,
-        revision: revision,
-        resource_access: resource_access,
-        score: third_attempt.score,
-        out_of: out_of,
-        lifecycle_state: "evaluated",
-        date_submitted: date_now,
-        date_evaluated: date_now
-      )
+      attempt_3 =
+        insert(:resource_attempt,
+          revision: revision,
+          resource_access: resource_access,
+          score: third_attempt.score,
+          out_of: out_of,
+          lifecycle_state: "evaluated",
+          date_submitted: date_now,
+          date_evaluated: date_now
+        )
 
       {:ok, view, _html} =
         live(conn, live_view_student_resource_route(section.slug, student.id, resource.id))
+
+      assert view
+             |> element(".list-group .list-group-item:nth-child(1)")
+             |> render =~ "Attempt #{attempt_1.attempt_number}"
+
+      assert view
+             |> element(".list-group .list-group-item:nth-child(2)")
+             |> render =~ "Attempt #{attempt_2.attempt_number}"
+
+      assert view
+             |> element(".list-group .list-group-item:nth-child(3)")
+             |> render =~ "Attempt #{attempt_3.attempt_number}"
 
       assert has_element?(view, "span", "#{first_attempt.formatted} / #{out_of}")
       assert has_element?(view, "span", "#{second_attempt.formatted} / #{out_of}")
@@ -303,7 +318,7 @@ defmodule OliWeb.ProgressLiveTest do
 
     revision =
       insert(:revision,
-        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("page"),
+        resource_type_id: Oli.Resources.ResourceType.id_for_page(),
         graded: true
       )
 

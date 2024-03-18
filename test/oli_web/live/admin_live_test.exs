@@ -91,7 +91,7 @@ defmodule OliWeb.AdminLiveTest do
     end
   end
 
-  describe "index" do
+  describe "index as system admin" do
     setup [:admin_conn]
 
     test "loads account management links correctly", %{conn: conn} do
@@ -128,6 +128,11 @@ defmodule OliWeb.AdminLiveTest do
       assert has_element?(
                view,
                "a[href=\"#{Routes.live_path(OliWeb.Endpoint, OliWeb.CommunityLive.IndexView)}\"]"
+             )
+
+      assert has_element?(
+               view,
+               "a[href=\"#{Routes.live_path(OliWeb.Endpoint, OliWeb.Admin.RegistrationsView)}\"]"
              )
     end
 
@@ -176,22 +181,332 @@ defmodule OliWeb.AdminLiveTest do
 
       assert has_element?(
                view,
-               "a[href=\"#{Routes.activity_manage_path(OliWeb.Endpoint, :index)}\"]"
+               "a[href=\"#{Routes.activity_manage_path(OliWeb.Endpoint, :index)}\"]",
+               "Manage Activities"
              )
 
       assert has_element?(
                view,
-               "a[href=\"#{Routes.live_path(OliWeb.Endpoint, OliWeb.Admin.RegistrationsView)}\"]"
+               "a[href=\"#{Routes.live_path(OliWeb.Endpoint, OliWeb.SystemMessageLive.IndexView)}\"]",
+               "Manage System Message Banner"
              )
 
       assert has_element?(
                view,
-               "a[href=\"#{Routes.live_path(OliWeb.Endpoint, OliWeb.Features.FeaturesLive)}\"]"
+               "a[href=\"#{Routes.live_path(OliWeb.Endpoint, OliWeb.Features.FeaturesLive)}\"]",
+               "Feature Flags and Logging"
              )
 
       assert has_element?(
                view,
-               "a[href=\"#{Routes.live_path(OliWeb.Endpoint, OliWeb.ApiKeys.ApiKeysLive)}\"]"
+               "a[href=\"#{Routes.live_path(OliWeb.Endpoint, OliWeb.ApiKeys.ApiKeysLive)}\"]",
+               "Manage Third-Party API Keys"
+             )
+
+      assert has_element?(
+               view,
+               "a[href=\"#{~p"/admin/dashboard"}\"]",
+               "View System Performance Dashboard"
+             )
+    end
+  end
+
+  describe "index as account admin" do
+    setup [:account_admin_conn]
+
+    test "loads account management links correctly", %{conn: conn} do
+      {:ok, view, _html} = live(conn, @live_view_route)
+
+      assert view
+             |> element(".alert")
+             |> render() =~
+               "All administrative actions taken in the system are logged for auditing purposes."
+
+      assert render(view) =~ "Account Management"
+      assert render(view) =~ "Access and manage all users and authors"
+
+      assert has_element?(
+               view,
+               "a[href=\"#{Routes.live_path(OliWeb.Endpoint, OliWeb.Users.UsersView)}\"]",
+               "Manage Students and Instructor Accounts"
+             )
+
+      assert has_element?(
+               view,
+               "a[href=\"#{Routes.live_path(OliWeb.Endpoint, OliWeb.Users.AuthorsView)}\"]",
+               "Manage Authoring Accounts"
+             )
+
+      assert has_element?(
+               view,
+               "a[href=\"#{~p"/admin/institutions"}\"]",
+               "Manage Institutions"
+             )
+
+      assert has_element?(
+               view,
+               "a[href=\"#{Routes.invite_path(OliWeb.Endpoint, :index)}\"]",
+               "Invite New Authors"
+             )
+
+      assert has_element?(
+               view,
+               "a[href=\"#{Routes.live_path(OliWeb.Endpoint, OliWeb.CommunityLive.IndexView)}\"]",
+               "Manage Communities"
+             )
+
+      assert has_element?(
+               view,
+               "a[href=\"#{Routes.live_path(OliWeb.Endpoint, OliWeb.Admin.RegistrationsView)}\"]",
+               "Manage LTI 1.3 Registrations"
+             )
+    end
+
+    test "loads content management links correctly", %{conn: conn} do
+      {:ok, view, _html} = live(conn, @live_view_route)
+
+      assert render(view) =~ "Content Management"
+      assert render(view) =~ "Access and manage created content"
+
+      assert has_element?(
+               view,
+               "a[href=\"#{Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.ProjectsLive)}\"]",
+               "Browse all Projects"
+             )
+
+      assert has_element?(
+               view,
+               "a[href=\"#{Routes.live_path(OliWeb.Endpoint, OliWeb.Products.ProductsView)}\"]",
+               "Browse all Products"
+             )
+
+      assert has_element?(
+               view,
+               "a[href=\"#{Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.SectionsView)}\"]",
+               "Browse all Course Sections"
+             )
+
+      assert has_element?(
+               view,
+               "a[href=\"#{~p"/admin/collaborative_spaces"}\"]",
+               "Browse all Collaborative Spaces"
+             )
+
+      assert has_element?(
+               view,
+               "a[href=\"#{Routes.admin_open_and_free_path(OliWeb.Endpoint, :index)}\"]",
+               "Manage Open and Free Sections"
+             )
+
+      assert has_element?(
+               view,
+               "a[href=\"#{Routes.live_path(OliWeb.Endpoint, OliWeb.Admin.Ingest)}\"]",
+               "Ingest Project"
+             )
+
+      assert has_element?(
+               view,
+               "a[href=\"#{~p"/admin/ingest/upload"}\"]",
+               "V2 Ingest Project"
+             )
+
+      assert has_element?(
+               view,
+               "a[href=\"#{Routes.brand_path(OliWeb.Endpoint, :index)}\"]",
+               "Manage Branding"
+             )
+
+      assert has_element?(
+               view,
+               "a[href=\"#{Routes.live_path(OliWeb.Endpoint, OliWeb.PublisherLive.IndexView)}\"]",
+               "Manage Publishers"
+             )
+    end
+
+    test "system management links are not rendered", %{conn: conn} do
+      {:ok, view, _html} = live(conn, @live_view_route)
+
+      refute render(view) =~ "System Management"
+      refute render(view) =~ "Manage and support system level functionality"
+
+      refute has_element?(
+               view,
+               "a[href=\"#{Routes.activity_manage_path(OliWeb.Endpoint, :index)}\"]",
+               "Manage Activities"
+             )
+
+      refute has_element?(
+               view,
+               "a[href=\"#{Routes.live_path(OliWeb.Endpoint, OliWeb.SystemMessageLive.IndexView)}\"]",
+               "Manage System Message Banner"
+             )
+
+      refute has_element?(
+               view,
+               "a[href=\"#{Routes.live_path(OliWeb.Endpoint, OliWeb.Features.FeaturesLive)}\"]",
+               "Feature Flags and Logging"
+             )
+
+      refute has_element?(
+               view,
+               "a[href=\"#{Routes.live_path(OliWeb.Endpoint, OliWeb.ApiKeys.ApiKeysLive)}\"]",
+               "Manage Third-Party API Keys"
+             )
+
+      refute has_element?(
+               view,
+               "a[href=\"#{~p"/admin/dashboard"}\"]",
+               "View System Performance Dashboard "
+             )
+    end
+  end
+
+  describe "index as content admin" do
+    setup [:content_admin_conn]
+
+    test "account management links are not rendered", %{conn: conn} do
+      {:ok, view, _html} = live(conn, @live_view_route)
+
+      assert view
+             |> element(".alert")
+             |> render() =~
+               "All administrative actions taken in the system are logged for auditing purposes."
+
+      refute render(view) =~ "Account Management"
+      refute render(view) =~ "Access and manage all users and authors"
+
+      refute has_element?(
+               view,
+               "a[href=\"#{Routes.live_path(OliWeb.Endpoint, OliWeb.Users.UsersView)}\"]",
+               "Manage Students and Instructor Accounts"
+             )
+
+      refute has_element?(
+               view,
+               "a[href=\"#{Routes.live_path(OliWeb.Endpoint, OliWeb.Users.AuthorsView)}\"]",
+               "Manage Authoring Accounts"
+             )
+
+      refute has_element?(
+               view,
+               "a[href=\"#{~p"/admin/institutions"}\"]",
+               "Manage Institutions"
+             )
+
+      refute has_element?(
+               view,
+               "a[href=\"#{Routes.invite_path(OliWeb.Endpoint, :index)}\"]",
+               "Invite New Authors"
+             )
+
+      refute has_element?(
+               view,
+               "a[href=\"#{Routes.live_path(OliWeb.Endpoint, OliWeb.CommunityLive.IndexView)}\"]",
+               "Manage Communities"
+             )
+
+      refute has_element?(
+               view,
+               "a[href=\"#{Routes.live_path(OliWeb.Endpoint, OliWeb.Admin.RegistrationsView)}\"]",
+               "Manage LTI 1.3 Registrations"
+             )
+    end
+
+    test "loads content management links correctly", %{conn: conn} do
+      {:ok, view, _html} = live(conn, @live_view_route)
+
+      assert render(view) =~ "Content Management"
+      assert render(view) =~ "Access and manage created content"
+
+      assert has_element?(
+               view,
+               "a[href=\"#{Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.ProjectsLive)}\"]",
+               "Browse all Projects"
+             )
+
+      assert has_element?(
+               view,
+               "a[href=\"#{Routes.live_path(OliWeb.Endpoint, OliWeb.Products.ProductsView)}\"]",
+               "Browse all Products"
+             )
+
+      assert has_element?(
+               view,
+               "a[href=\"#{Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.SectionsView)}\"]",
+               "Browse all Course Sections"
+             )
+
+      assert has_element?(
+               view,
+               "a[href=\"#{~p"/admin/collaborative_spaces"}\"]",
+               "Browse all Collaborative Spaces"
+             )
+
+      assert has_element?(
+               view,
+               "a[href=\"#{Routes.admin_open_and_free_path(OliWeb.Endpoint, :index)}\"]",
+               "Manage Open and Free Sections"
+             )
+
+      assert has_element?(
+               view,
+               "a[href=\"#{Routes.live_path(OliWeb.Endpoint, OliWeb.Admin.Ingest)}\"]",
+               "Ingest Project"
+             )
+
+      assert has_element?(
+               view,
+               "a[href=\"#{~p"/admin/ingest/upload"}\"]",
+               "V2 Ingest Project"
+             )
+
+      assert has_element?(
+               view,
+               "a[href=\"#{Routes.brand_path(OliWeb.Endpoint, :index)}\"]",
+               "Manage Branding"
+             )
+
+      assert has_element?(
+               view,
+               "a[href=\"#{Routes.live_path(OliWeb.Endpoint, OliWeb.PublisherLive.IndexView)}\"]",
+               "Manage Publishers"
+             )
+    end
+
+    test "system management links are not rendered", %{conn: conn} do
+      {:ok, view, _html} = live(conn, @live_view_route)
+
+      refute render(view) =~ "System Management"
+      refute render(view) =~ "Manage and support system level functionality"
+
+      refute has_element?(
+               view,
+               "a[href=\"#{Routes.activity_manage_path(OliWeb.Endpoint, :index)}\"]",
+               "Manage Activities"
+             )
+
+      refute has_element?(
+               view,
+               "a[href=\"#{Routes.live_path(OliWeb.Endpoint, OliWeb.SystemMessageLive.IndexView)}\"]",
+               "Manage System Message Banner"
+             )
+
+      refute has_element?(
+               view,
+               "a[href=\"#{Routes.live_path(OliWeb.Endpoint, OliWeb.Features.FeaturesLive)}\"]",
+               "Feature Flags and Logging"
+             )
+
+      refute has_element?(
+               view,
+               "a[href=\"#{Routes.live_path(OliWeb.Endpoint, OliWeb.ApiKeys.ApiKeysLive)}\"]",
+               "Manage Third-Party API Keys"
+             )
+
+      refute has_element?(
+               view,
+               "a[href=\"#{~p"/admin/dashboard"}\"]",
+               "View System Performance Dashboard "
              )
     end
   end
@@ -357,8 +672,8 @@ defmodule OliWeb.AdminLiveTest do
       assert has_element?(view, "input[value=\"#{user.family_name}\"]")
       assert has_element?(view, "input[value=\"#{user.email}\"]")
       assert has_element?(view, "input[value=\"#{boolean(user.guest)}\"]")
-      assert has_element?(view, "#independent_learner")
-      assert has_element?(view, "#can_create_sections")
+      assert has_element?(view, "#user_independent_learner")
+      assert has_element?(view, "#user_can_create_sections")
       assert has_element?(view, "input[value=\"#{boolean(user.research_opt_out)}\"]")
 
       assert has_element?(
@@ -375,40 +690,6 @@ defmodule OliWeb.AdminLiveTest do
                view,
                "input[value=\"#{Utils.render_date(user, :updated_at, session_context)}\"]"
              )
-    end
-
-    test "displays error message when submit fails", %{
-      conn: conn,
-      user: %User{id: id}
-    } do
-      {:ok, view, _html} = live(conn, live_view_user_detail_route(id))
-
-      view
-      |> element("form[phx-submit=\"submit\"")
-      |> render_submit(%{user: %{email: ""}})
-
-      assert view
-             |> element("div.alert.alert-danger")
-             |> render() =~
-               "User couldn&#39;t be updated."
-
-      refute Accounts.get_user!(id).name == ""
-    end
-
-    test "updates a user correctly when data is valid", %{
-      conn: conn,
-      user: %User{id: id}
-    } do
-      {:ok, view, _html} = live(conn, live_view_user_detail_route(id))
-
-      new_attributes = params_for(:user)
-
-      view
-      |> element("form[phx-submit=\"submit\"")
-      |> render_submit(%{user: new_attributes})
-
-      %User{name: new_name} = Accounts.get_user!(id)
-      assert new_attributes.name == new_name
     end
 
     test "redirects to index view and displays error message when user does not exist", %{
@@ -692,7 +973,7 @@ defmodule OliWeb.AdminLiveTest do
       assert has_element?(view, "input[value=\"#{author.given_name}\"]")
       assert has_element?(view, "input[value=\"#{author.family_name}\"]")
       assert has_element?(view, "input[value=\"#{author.email}\"]")
-      assert has_element?(view, "input[value=\"Author\"]")
+      assert has_element?(view, "select option[value=\"#{author.system_role_id}\"]")
     end
 
     test "redirects to index view and displays error message when author does not exist", %{
@@ -742,8 +1023,10 @@ defmodule OliWeb.AdminLiveTest do
 
     test "locks the author", %{
       conn: conn,
-      author: %Author{id: id}
+      author: %Author{id: id} = author
     } do
+      # Next line emulates the target author is cached in the system
+      Cachex.put(:cache_account_lookup, "author_#{id}", author)
       {:ok, view, _html} = live(conn, live_view_author_detail_route(id))
 
       view
@@ -756,13 +1039,18 @@ defmodule OliWeb.AdminLiveTest do
 
       %Author{locked_at: date} = Accounts.get_author!(id)
       assert not is_nil(date)
+
+      assert {:ok, nil} = Cachex.get(:cache_account_lookup, "author_#{id}")
     end
 
     test "unlocks the author", %{
       conn: conn
     } do
       {:ok, date, _timezone} = DateTime.from_iso8601("2019-05-22 20:30:00Z")
-      %Author{id: id} = insert(:author, %{locked_at: date})
+      %Author{id: id} = author = insert(:author, %{locked_at: date})
+
+      # Next line emulates the target author is cached in the system
+      Cachex.put(:cache_account_lookup, "author_#{id}", author)
 
       {:ok, view, _html} = live(conn, live_view_author_detail_route(id))
 
@@ -775,6 +1063,8 @@ defmodule OliWeb.AdminLiveTest do
       |> render_click()
 
       assert %Author{locked_at: nil} = Accounts.get_author!(id)
+
+      assert {:ok, nil} = Cachex.get(:cache_account_lookup, "author_#{id}")
     end
 
     test "confirms author email", %{
@@ -794,44 +1084,6 @@ defmodule OliWeb.AdminLiveTest do
 
       %Author{email_confirmed_at: date} = Accounts.get_author!(id)
       assert not is_nil(date)
-    end
-
-    test "grant admin to author", %{
-      conn: conn,
-      author: %Author{id: id}
-    } do
-      {:ok, view, _html} = live(conn, live_view_author_detail_route(id))
-
-      view
-      |> element("button[phx-click=\"show_grant_admin_modal\"]")
-      |> render_click()
-
-      view
-      |> element("button[phx-click=\"grant_admin\"]")
-      |> render_click()
-
-      admin_role = Oli.Accounts.SystemRole.role_id().admin
-      assert %Author{system_role_id: ^admin_role} = Accounts.get_author!(id)
-    end
-
-    test "revoke admin to author", %{
-      conn: conn
-    } do
-      %Author{id: id} =
-        insert(:author, %{system_role_id: Oli.Accounts.SystemRole.role_id().admin})
-
-      {:ok, view, _html} = live(conn, live_view_author_detail_route(id))
-
-      view
-      |> element("button[phx-click=\"show_revoke_admin_modal\"]")
-      |> render_click()
-
-      view
-      |> element("button[phx-click=\"revoke_admin\"]")
-      |> render_click()
-
-      author_role = Oli.Accounts.SystemRole.role_id().author
-      assert %Author{system_role_id: ^author_role} = Accounts.get_author!(id)
     end
 
     test "shows email confirmation buttons when author account was created but not confirmed yet",

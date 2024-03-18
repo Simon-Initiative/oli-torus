@@ -186,7 +186,9 @@ defmodule OliWeb.ObjectivesLive.Objectives do
           with_body={true}
         >
           <Listing.render
-            revision_history_link={@has_show_links_uri_hash and Accounts.is_admin?(@author)}
+            revision_history_link={
+              @has_show_links_uri_hash and Accounts.at_least_content_admin?(@author)
+            }
             rows={@table_model.rows}
             selected={@selected}
             project_slug={@project.slug}
@@ -498,8 +500,8 @@ defmodule OliWeb.ObjectivesLive.Objectives do
   end
 
   def handle_info({:finish_attachments, {objectives_attachments, flash_fn}}, socket) do
-    page_id = ResourceType.get_id_by_type("page")
-    activity_id = ResourceType.get_id_by_type("activity")
+    page_id = ResourceType.id_for_page()
+    activity_id = ResourceType.id_for_activity()
 
     objectives =
       Enum.reduce(socket.assigns.objectives, [], fn rev, acc ->

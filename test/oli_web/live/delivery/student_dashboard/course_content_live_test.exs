@@ -91,6 +91,25 @@ defmodule OliWeb.Delivery.StudentDashboard.CourseContentLiveTest do
     end
 
     test "navigates to next level in hierarchy", %{conn: conn, user: user, section: section} do
+      {:ok, section} =
+        Sections.update_section(section, %{
+          customizations: %{unit: "Volume", module: "Chapter", section: "Lesson"}
+        })
+
+      {:ok, view, _html} = isolated_live_view_course_content(conn, section.slug, user.id)
+
+      view
+      |> navigate_to_unit_1()
+
+      assert has_element?(view, "#course_browser_node_title", "Volume 1: Unit 1")
+
+      view
+      |> drill_down_to_module_1()
+
+      assert has_element?(view, "#course_browser_node_title", "Chapter 1: Module 1")
+    end
+
+    test "displays custom labels", %{conn: conn, user: user, section: section} do
       {:ok, view, _html} = isolated_live_view_course_content(conn, section.slug, user.id)
 
       view
@@ -226,6 +245,62 @@ defmodule OliWeb.Delivery.StudentDashboard.CourseContentLiveTest do
                view,
                ~s{section:has(h4[phx-click="go_down"]) span},
                "In class on #{FormatDateTime.date(inclass_end_date)}"
+             )
+
+      assert has_element?(
+               view,
+               ~s{section:has(h4[phx-click="go_down"]) span},
+               "No due date"
+             )
+    end
+
+    test "scheduled dates considers student exceptions", %{
+      conn: conn,
+      user: user,
+      section: section,
+      mod1_pages: mod1_pages
+    } do
+      [p1, p2, _p3] = mod1_pages
+
+      read_by_end_date = ~U[2023-10-15 12:00:00Z]
+      inclass_end_date = ~U[2023-10-01 12:00:00Z]
+
+      update_section_resource(section.id, p1.published_resource.resource_id, %{
+        end_date: read_by_end_date,
+        scheduling_type: :read_by
+      })
+
+      update_section_resource(section.id, p2.published_resource.resource_id, %{
+        end_date: inclass_end_date,
+        scheduling_type: :inclass_activity
+      })
+
+      ## set a student exception
+      student_exception_end_date = ~U[2023-10-29 12:00:00Z]
+
+      Oli.Delivery.create_delivery_setting(%{
+        resource_id: p2.published_resource.resource_id,
+        section_id: section.id,
+        user_id: user.id,
+        end_date: student_exception_end_date
+      })
+
+      {:ok, view, _html} = isolated_live_view_course_content(conn, section.slug, user.id)
+
+      view
+      |> navigate_to_unit_1()
+      |> drill_down_to_module_1()
+
+      assert has_element?(
+               view,
+               ~s{section:has(h4[phx-click="go_down"]) span},
+               "Read by #{FormatDateTime.date(read_by_end_date)}"
+             )
+
+      assert has_element?(
+               view,
+               ~s{section:has(h4[phx-click="go_down"]) span},
+               "In class on #{FormatDateTime.date(student_exception_end_date)}"
              )
 
       assert has_element?(
@@ -408,6 +483,62 @@ defmodule OliWeb.Delivery.StudentDashboard.CourseContentLiveTest do
           resource_slug
         )
       )
+    end
+
+    test "units and modules correctly display and hide item numbering", %{
+      conn: conn,
+      user: user,
+      section: section
+    } do
+      {:ok, view, _html} = isolated_live_view_course_content(conn, section.slug, user.id, true)
+
+      # Checks that the resource are rendered correctly with item numbering
+
+      navigate_to_unit_1(view)
+      assert has_element?(view, "#course_browser_node_title", "Unit 1: Unit 1")
+      assert has_element?(view, "h4", "1.1 Module 1")
+      assert has_element?(view, "h4", "1.2 Module 2")
+
+      # Updates section to not display item numbering
+
+      Sections.update_section(section, %{
+        display_curriculum_item_numbering: false
+      })
+
+      {:ok, view, _html} = isolated_live_view_course_content(conn, section.slug, user.id, true)
+
+      # Checks that the resource are rendered correctly without item numbering
+
+      navigate_to_unit_1(view)
+      assert has_element?(view, "#course_browser_node_title", "Unit: Unit 1")
+      assert has_element?(view, "h4", "Module 1")
+      assert has_element?(view, "h4", "Module 2")
+    end
+
+    test "does not show flash message after update timezone", %{
+      conn: conn,
+      user: user,
+      section: section
+    } do
+      {:ok, view, _html} = isolated_live_view_course_content(conn, section.slug, user.id)
+      redirect_to = ~p"/sections/#{section.slug}/overview"
+      new_timezone = "America/Montevideo"
+
+      conn =
+        post(conn, ~p"/update_timezone", %{
+          timezone: %{
+            timezone: new_timezone,
+            redirect_to: redirect_to
+          }
+        })
+
+      assert redirected_to(conn, 302) == redirect_to
+
+      refute has_element?(
+               view,
+               "div.alert.alert-info[id=\"live_flash_container\"]",
+               "Timezone updated successfully."
+             )
     end
   end
 

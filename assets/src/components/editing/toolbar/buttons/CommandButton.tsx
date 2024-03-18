@@ -8,6 +8,7 @@ import styles from '../Toolbar.modules.scss';
 
 interface Props {
   description: CommandDescription;
+  disabled?: boolean;
 }
 export const CommandButton = (props: Props) => {
   const editor = useSlate();
@@ -16,11 +17,16 @@ export const CommandButton = (props: Props) => {
 
   return (
     <button
-      className={classNames(styles.toolbarButton, active?.(editor) && styles.active)}
+      className={classNames(
+        'disabled:opacity-50',
+        styles.toolbarButton,
+        active?.(editor) && styles.active,
+      )}
       onMouseDown={(_e) => {
         command.execute(context, editor);
         closeSubmenus();
       }}
+      disabled={props.disabled}
     >
       <ButtonContent description={props.description} />
     </button>

@@ -2,44 +2,36 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
   use OliWeb, :live_component
 
   import Ecto.Query
+
   alias Oli.Accounts.User
-
-  alias Oli.Analytics.Summary.{
-    ResourcePartResponse,
-    ResourceSummary,
-    ResponseSummary,
-    StudentResponse
-  }
-
+  alias Oli.Analytics.Summary.ResourcePartResponse
+  alias Oli.Analytics.Summary.ResourceSummary
+  alias Oli.Analytics.Summary.ResponseSummary
+  alias Oli.Analytics.Summary.StudentResponse
+  alias Oli.Delivery.Attempts.Core
+  alias Oli.Delivery.Attempts.Core.ActivityAttempt
+  alias Oli.Delivery.Attempts.Core.ResourceAccess
+  alias Oli.Delivery.Attempts.Core.ResourceAttempt
+  alias Oli.Delivery.Sections.Section
+  alias Oli.Delivery.Sections.SectionsProjectsPublications
+  alias Oli.Publishing.DeliveryResolver
   alias Oli.Publishing.PublishedResource
   alias Oli.Repo
-
-  alias Oli.Publishing.DeliveryResolver
-
-  alias OliWeb.Delivery.ScoredActivities.{
-    ActivitiesTableModel,
-    AssessmentsTableModel
-  }
-
-  alias OliWeb.Common.Params
-  alias Phoenix.LiveView.JS
-  alias OliWeb.Common.{PagedTable, SearchInput}
-  alias OliWeb.Router.Helpers, as: Routes
-  alias OliWeb.Common.Table.SortableTableModel
-  alias Oli.Delivery.Attempts.Core
-  alias OliWeb.ManualGrading.RenderedActivity
-  alias Oli.Repo
-  alias Oli.Delivery.Sections.SectionsProjectsPublications
-
-  alias Oli.Delivery.Attempts.Core.{
-    ResourceAccess,
-    ResourceAttempt,
-    ActivityAttempt
-  }
-
-  alias Oli.Delivery.Sections.Section
-
+  alias Oli.Resources.ResourceType
   alias Oli.Resources.Revision
+
+  alias OliWeb.Common.PagedTable
+  alias OliWeb.Common.PagingParams
+  alias OliWeb.Common.Params
+  alias OliWeb.Common.SearchInput
+  alias OliWeb.Common.Table.SortableTableModel
+  alias OliWeb.Delivery.ScoredActivities.ActivitiesTableModel
+  alias OliWeb.Delivery.ScoredActivities.AssessmentsTableModel
+  alias OliWeb.ManualGrading.Rendering
+  alias OliWeb.ManualGrading.RenderedActivity
+  alias OliWeb.Router.Helpers, as: Routes
+
+  alias Phoenix.LiveView.JS
 
   @default_params %{
     offset: 0,
@@ -59,7 +51,6 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
     socket =
       assign(socket,
         params: params,
-        params: params,
         section: assigns.section,
         view: assigns.view,
         ctx: assigns.ctx,
@@ -77,10 +68,7 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
         {:ok, table_model} = AssessmentsTableModel.new(rows, assigns.ctx, socket.assigns.myself)
 
         table_model =
-          Map.merge(table_model, %{
-            rows: rows,
-            sort_order: params.sort_order
-          })
+          Map.merge(table_model, %{rows: rows, sort_order: params.sort_order})
           |> SortableTableModel.update_sort_params(params.sort_by)
 
         {:ok,
@@ -91,9 +79,7 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
          )}
 
       assessment_id ->
-        case Enum.find(assigns.assessments, fn a ->
-               a.id == assessment_id
-             end) do
+        case Enum.find(assigns.assessments, fn a -> a.id == assessment_id end) do
           nil ->
             send(self(), {:redirect_with_warning, "The assessment doesn't exist"})
             {:ok, socket}
@@ -112,11 +98,7 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
 
             student_emails_without_attempts =
               Enum.reduce(assigns.students, [], fn s, acc ->
-                if s.id in students_with_attempts do
-                  acc
-                else
-                  [s.email | acc]
-                end
+                if s.id in students_with_attempts, do: acc, else: [s.email | acc]
               end)
 
             {total_count, rows} = apply_filters(activities, params)
@@ -125,10 +107,7 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
 
             table_model =
               table_model
-              |> Map.merge(%{
-                rows: rows,
-                sort_order: params.sort_order
-              })
+              |> Map.merge(%{rows: rows, sort_order: params.sort_order})
               |> SortableTableModel.update_sort_params(params.sort_by)
 
             selected_activity =
@@ -248,10 +227,14 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
           show_bottom_paging={false}
           limit_change={JS.push("paged_table_limit_change", target: @myself)}
           show_limit_change={true}
+          no_records_message="There are no activities to show"
         />
       </div>
       <div :if={@current_assessment != nil and @activities != []} class="mt-9">
-        <div class="bg-white dark:bg-gray-800 dark:text-white w-min whitespace-nowrap rounded-t-md block font-medium text-sm leading-tight uppercase border-x-1 border-t-1 border-b-0 border-gray-300 px-6 py-4">
+        <div
+          role="activity_title"
+          class="bg-white dark:bg-gray-800 dark:text-white w-min whitespace-nowrap rounded-t-md block font-medium text-sm leading-tight uppercase border-x-1 border-t-1 border-b-0 border-gray-300 px-6 py-4"
+        >
           Question details
         </div>
         <div
@@ -283,11 +266,7 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
      )}
   end
 
-  def handle_event(
-        "paged_table_selection_change",
-        %{"id" => activity_resource_id},
-        socket
-      )
+  def handle_event("paged_table_selection_change", %{"id" => activity_resource_id}, socket)
       when not is_nil(socket.assigns.current_assessment) do
     {:noreply,
      push_patch(socket,
@@ -301,11 +280,7 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
      )}
   end
 
-  def handle_event(
-        "paged_table_selection_change",
-        %{"id" => selected_assessment_id},
-        socket
-      ) do
+  def handle_event("paged_table_selection_change", %{"id" => selected_assessment_id}, socket) do
     assessment_table_params = socket.assigns.params
 
     socket =
@@ -324,11 +299,7 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
      )}
   end
 
-  def handle_event(
-        "search_assessment",
-        %{"assessment_name" => assessment_name},
-        socket
-      ) do
+  def handle_event("search_assessment", %{"assessment_name" => assessment_name}, socket) do
     {:noreply,
      push_patch(socket,
        to:
@@ -342,11 +313,7 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
      )}
   end
 
-  def handle_event(
-        "paged_table_page_change",
-        %{"limit" => limit, "offset" => offset},
-        socket
-      ) do
+  def handle_event("paged_table_page_change", %{"limit" => limit, "offset" => offset}, socket) do
     {:noreply,
      push_patch(socket,
        to:
@@ -357,28 +324,14 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
      )}
   end
 
-  def handle_event(
-        "paged_table_limit_change",
-        params,
-        %{assigns: %{params: current_params}} = socket
-      ) do
+  def handle_event("paged_table_limit_change", params, socket) do
     new_limit = Params.get_int_param(params, "limit", 20)
+    total_count = socket.assigns.total_count
+    current_offset = socket.assigns.params.offset
+    new_offset = PagingParams.calculate_new_offset(current_offset, new_limit, total_count)
+    updated_params = update_params(socket.assigns.params, %{limit: new_limit, offset: new_offset})
 
-    new_offset =
-      OliWeb.Common.PagingParams.calculate_new_offset(
-        current_params.offset,
-        new_limit,
-        socket.assigns.total_count
-      )
-
-    {:noreply,
-     push_patch(socket,
-       to:
-         route_to(
-           socket,
-           update_params(socket.assigns.params, %{limit: new_limit, offset: new_offset})
-         )
-     )}
+    {:noreply, push_patch(socket, to: route_to(socket, updated_params))}
   end
 
   def handle_event("survey_scripts_loaded", %{"error" => _}, socket) do
@@ -389,21 +342,13 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
     {:noreply, assign(socket, scripts_loaded: true)}
   end
 
-  def handle_event(
-        "paged_table_sort",
-        %{"sort_by" => sort_by} = _params,
-        socket
-      ) do
-    {:noreply,
-     push_patch(socket,
-       to:
-         route_to(
-           socket,
-           update_params(socket.assigns.params, %{
-             sort_by: String.to_existing_atom(sort_by)
-           })
-         )
-     )}
+  def handle_event("paged_table_sort", %{"sort_by" => sort_by} = _params, socket) do
+    updated_params =
+      update_params(socket.assigns.params, %{
+        sort_by: String.to_existing_atom(sort_by)
+      })
+
+    {:noreply, push_patch(socket, to: route_to(socket, updated_params))}
   end
 
   defp assign_selected_activity(socket, selected_activity_id)
@@ -419,41 +364,31 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
 
   defp assign_selected_activity(socket, selected_activity_id) do
     selected_activity =
-      Enum.find(socket.assigns.activities, fn a ->
-        a.resource_id == selected_activity_id
-      end)
+      Enum.find(socket.assigns.activities, fn a -> a.resource_id == selected_activity_id end)
 
     table_model =
-      Map.merge(socket.assigns.table_model, %{
-        selected: "#{selected_activity_id}"
-      })
+      Map.merge(socket.assigns.table_model, %{selected: "#{selected_activity_id}"})
 
-    case get_activity_details(
-           selected_activity,
-           socket.assigns.section,
-           socket.assigns.activity_types_map
-         ) do
+    section = socket.assigns.section
+    activity_types_map = socket.assigns.activity_types_map
+
+    case get_activity_details(selected_activity, section, activity_types_map) do
       nil ->
-        socket
-        |> assign(table_model: table_model)
+        assign(socket, table_model: table_model)
 
       activity_attempt ->
         part_attempts = Core.get_latest_part_attempts(activity_attempt.attempt_guid)
 
         rendering_context =
-          OliWeb.ManualGrading.Rendering.create_rendering_context(
+          Rendering.create_rendering_context(
             activity_attempt,
             part_attempts,
-            socket.assigns.activity_types_map,
-            socket.assigns.section
+            activity_types_map,
+            section
           )
           |> Map.merge(%{is_liveview: true})
 
-        preview_rendered =
-          OliWeb.ManualGrading.Rendering.render(
-            rendering_context,
-            :instructor_preview
-          )
+        preview_rendered = Rendering.render(rendering_context, :instructor_preview)
 
         socket
         |> assign(table_model: table_model, preview_rendered: preview_rendered)
@@ -483,20 +418,20 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
 
   defp maybe_filter_by_text(assessments, text_search) do
     Enum.filter(assessments, fn assessment ->
-      String.contains?(
-        String.downcase(assessment.title),
-        String.downcase(text_search)
-      )
+      String.contains?(String.downcase(assessment.title), String.downcase(text_search))
     end)
   end
 
   defp sort_by(assessments, sort_by, sort_order) do
     case sort_by do
       :due_date ->
+        Enum.sort_by(assessments, & &1.end_date, sort_order)
+
         Enum.sort_by(
           assessments,
-          fn a ->
-            if a.scheduling_type != :due_by, do: 0, else: Map.get(a, :due_date)
+          fn
+            %{scheduling_type: :due_by} = assessment -> assessment.end_date
+            _ -> nil
           end,
           sort_order
         )
@@ -505,38 +440,19 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
         Enum.sort_by(assessments, fn a -> Map.get(a, sb) || -1 end, sort_order)
 
       :title ->
-        Enum.sort_by(
-          assessments,
-          fn a -> Map.get(a, :title) |> String.downcase() end,
-          sort_order
-        )
+        Enum.sort_by(assessments, &String.downcase(&1.title), sort_order)
     end
   end
 
   defp decode_params(params) do
+    sort_options = [:title, :due_date, :avg_score, :total_attempts, :students_completion]
+
     %{
       offset: Params.get_int_param(params, "offset", @default_params.offset),
       limit: Params.get_int_param(params, "limit", @default_params.limit),
       sort_order:
-        Params.get_atom_param(
-          params,
-          "sort_order",
-          [:asc, :desc],
-          @default_params.sort_order
-        ),
-      sort_by:
-        Params.get_atom_param(
-          params,
-          "sort_by",
-          [
-            :title,
-            :due_date,
-            :avg_score,
-            :total_attempts,
-            :students_completion
-          ],
-          @default_params.sort_by
-        ),
+        Params.get_atom_param(params, "sort_order", [:asc, :desc], @default_params.sort_order),
+      sort_by: Params.get_atom_param(params, "sort_by", sort_options, @default_params.sort_by),
       text_search: Params.get_param(params, "text_search", @default_params.text_search),
       assessment_id: Params.get_int_param(params, "assessment_id", nil),
       assessment_table_params: params["assessment_table_params"],
@@ -544,20 +460,12 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
     }
   end
 
-  defp update_params(
-         %{sort_by: current_sort_by, sort_order: current_sort_order} = params,
-         %{
-           sort_by: new_sort_by
-         }
-       )
-       when current_sort_by == new_sort_by do
-    toggled_sort_order = if current_sort_order == :asc, do: :desc, else: :asc
+  defp update_params(%{sort_by: sort_by} = params, %{sort_by: sort_by}) do
+    toggled_sort_order = if params.sort_order == :asc, do: :desc, else: :asc
     update_params(params, %{sort_order: toggled_sort_order})
   end
 
-  defp update_params(params, new_param) do
-    Map.merge(params, new_param)
-  end
+  defp update_params(params, new_param), do: Map.merge(params, new_param)
 
   defp route_to(socket, params)
        when not is_nil(socket.assigns.params.assessment_id) do
@@ -588,7 +496,7 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
          %Section{analytics_version: :v2, id: section_id},
          student_ids
        ) do
-    page_type_id = Oli.Resources.ResourceType.get_id_by_type("page")
+    page_type_id = ResourceType.get_id_by_type("page")
 
     from(rs in ResourceSummary,
       where:
@@ -671,7 +579,22 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
   end
 
   defp get_activity_details(selected_activity, section, activity_types_map) do
-    query =
+    multiple_choice_type_id =
+      Enum.find_value(activity_types_map, fn {k, v} -> if v.title == "Multiple Choice", do: k end)
+
+    single_response_type_id =
+      Enum.find_value(activity_types_map, fn {k, v} -> if v.title == "Single Response", do: k end)
+
+    multi_input_type_id =
+      Enum.find_value(activity_types_map, fn {k, v} ->
+        if v.title == "Multi Input",
+          do: k
+      end)
+
+    likert_type_id =
+      Enum.find_value(activity_types_map, fn {k, v} -> if v.title == "Likert", do: k end)
+
+    activity_attempt =
       ActivityAttempt
       |> join(:left, [aa], resource_attempt in ResourceAttempt,
         on: aa.resource_attempt_id == resource_attempt.id
@@ -709,56 +632,70 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
           resource_access_id: resource_access.id
         }
       )
+      |> Repo.one()
 
-    multiple_choice_type_id =
-      Enum.find(activity_types_map, fn {_k, v} -> v.title == "Multiple Choice" end)
-      |> elem(0)
+    if section.analytics_version == :v2 do
+      response_summaries =
+        from(rs in ResponseSummary,
+          join: rpp in ResourcePartResponse,
+          on: rs.resource_part_response_id == rpp.id,
+          join: sr in StudentResponse,
+          on:
+            rs.section_id == sr.section_id and rs.page_id == sr.page_id and
+              rs.resource_part_response_id == sr.resource_part_response_id,
+          join: u in User,
+          on: sr.user_id == u.id,
+          where:
+            rs.section_id == ^section.id and rs.activity_id == ^activity_attempt.resource_id and
+              rs.publication_id == -1 and rs.project_id == -1 and
+              rs.page_id == ^activity_attempt.page_id,
+          select: %{
+            part_id: rpp.part_id,
+            response: rpp.response,
+            count: rs.count,
+            user: u,
+            activity_id: rs.activity_id
+          }
+        )
+        |> Repo.all()
 
-    single_response_type_id =
-      Enum.find(activity_types_map, fn {_k, v} -> v.title == "Single Response" end)
-      |> elem(0)
+      case activity_attempt.activity_type_id do
+        ^multiple_choice_type_id ->
+          add_choices_frequencies(activity_attempt, response_summaries)
 
-    case Repo.one(query) do
-      nil ->
-        nil
+        ^single_response_type_id ->
+          add_single_response_details(activity_attempt, response_summaries)
 
-      %{activity_type_id: activity_type_id} = activity_attempt
-      when activity_type_id == multiple_choice_type_id ->
-        add_choices_frequencies(activity_attempt, section)
+        ^multi_input_type_id ->
+          add_multi_input_details(activity_attempt, response_summaries)
 
-      %{activity_type_id: activity_type_id} = activity_attempt
-      when activity_type_id == single_response_type_id ->
-        add_single_response_details(activity_attempt, section)
+        ^likert_type_id ->
+          add_likert_details(activity_attempt, response_summaries)
 
-      activity_attempt ->
-        activity_attempt
+        _ ->
+          activity_attempt
+      end
+    else
+      activity_attempt
     end
   end
 
-  defp add_single_response_details(activity_attempt, %Section{analytics_version: :v1}),
-    do: activity_attempt
-
-  defp add_single_response_details(activity_attempt, section) do
+  defp add_single_response_details(activity_attempt, response_summaries) do
     responses =
-      from(rs in ResponseSummary,
-        where:
-          rs.section_id == ^section.id and rs.activity_id == ^activity_attempt.resource_id and
-            rs.page_id == ^activity_attempt.page_id and
-            rs.publication_id == -1 and rs.project_id == -1,
-        join: rpp in ResourcePartResponse,
-        on: rs.resource_part_response_id == rpp.id,
-        join: sr in StudentResponse,
-        on:
-          rs.section_id == sr.section_id and rs.page_id == sr.page_id and
-            rs.resource_part_response_id == sr.resource_part_response_id,
-        join: u in User,
-        on: sr.user_id == u.id,
-        select: %{text: rpp.response, user: u}
-      )
-      |> Repo.all()
-      |> Enum.map(fn response ->
-        %{text: response.text, user_name: OliWeb.Common.Utils.name(response.user)}
+      Enum.reduce(response_summaries, [], fn response_summary, acc ->
+        if response_summary.activity_id == activity_attempt.resource_id do
+          [
+            %{
+              text: response_summary.response,
+              user_name: OliWeb.Common.Utils.name(response_summary.user)
+            }
+            | acc
+          ]
+        else
+          acc
+        end
       end)
+      |> Enum.reverse()
 
     update_in(
       activity_attempt,
@@ -767,36 +704,24 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
     )
   end
 
-  defp add_choices_frequencies(activity_attempt, %Section{analytics_version: :v1}),
-    do: activity_attempt
-
-  defp add_choices_frequencies(activity_attempt, section) do
-    choice_frequency_mapper =
-      from(rs in ResponseSummary,
-        where:
-          rs.section_id == ^section.id and
-            rs.project_id == -1 and
-            rs.publication_id == -1 and
-            rs.page_id == ^activity_attempt.page_id and
-            rs.activity_id == ^activity_attempt.resource_id,
-        join: rpp in assoc(rs, :resource_part_response),
-        preload: [resource_part_response: rpp],
-        select: rs
-      )
-      |> Repo.all()
-      |> Enum.reduce(%{}, fn response_summary, acc ->
-        Map.put(acc, response_summary.resource_part_response.response, response_summary.count)
+  defp add_choices_frequencies(activity_attempt, response_summaries) do
+    responses =
+      Enum.filter(response_summaries, fn response_summary ->
+        response_summary.activity_id == activity_attempt.resource_id
       end)
 
     choices =
       activity_attempt.transformed_model["choices"]
-      |> Enum.map(fn choice ->
-        Map.merge(choice, %{
-          "frequency" => Map.get(choice_frequency_mapper, choice["id"]) || 0
+      |> Enum.map(
+        &Map.merge(&1, %{
+          "frequency" =>
+            Enum.find(responses, %{count: 0}, fn r -> r.response == &1["id"] end).count
         })
-      end)
-      |> Kernel.++(
-        if Map.has_key?(choice_frequency_mapper, "") do
+      )
+      |> then(fn choices ->
+        blank_reponses = Enum.find(responses, fn r -> r.response == "" end)
+
+        if blank_reponses[:response] do
           [
             %{
               "content" => [
@@ -810,18 +735,144 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
                   "type" => "p"
                 }
               ],
-              "frequency" => Map.get(choice_frequency_mapper, "")
+              "frequency" => blank_reponses.count
             }
+            | choices
           ]
         else
-          []
+          choices
         end
-      )
+      end)
 
     update_in(
       activity_attempt,
       [Access.key!(:transformed_model)],
       &Map.put(&1, "choices", choices)
+    )
+  end
+
+  defp add_multi_input_details(activity_attempt, response_summaries) do
+    mapper = build_input_mapper(activity_attempt.transformed_model["inputs"])
+
+    Enum.reduce(
+      activity_attempt.transformed_model["inputs"],
+      activity_attempt,
+      fn input, acc2 ->
+        case input["inputType"] do
+          response when response in ["numeric", "text"] ->
+            add_text_or_numeric_responses(
+              acc2,
+              response_summaries,
+              mapper
+            )
+
+          "dropdown" ->
+            add_dropdown_choices(acc2, response_summaries)
+        end
+      end
+    )
+  end
+
+  defp add_dropdown_choices(acc, response_summaries) do
+    add_choices_frequencies(acc, response_summaries)
+    |> update_in(
+      [
+        Access.key!(:transformed_model),
+        Access.key!("inputs"),
+        Access.filter(&(&1["inputType"] == "dropdown")),
+        Access.key!("choiceIds")
+      ],
+      &List.insert_at(&1, -1, "0")
+    )
+  end
+
+  defp add_text_or_numeric_responses(acumulator, response_summaries, mapper) do
+    responses =
+      relevant_responses(acumulator.resource_id, response_summaries, mapper)
+
+    update_in(
+      acumulator,
+      [Access.key!(:transformed_model), Access.key!("authoring")],
+      &Map.put(&1, "responses", responses)
+    )
+  end
+
+  defp relevant_responses(resource_id, response_summaries, mapper) do
+    Enum.reduce(response_summaries, [], fn response_summary, acc_responses ->
+      if response_summary.activity_id == resource_id do
+        [
+          %{
+            text: response_summary.response,
+            user_name: OliWeb.Common.Utils.name(response_summary.user),
+            type: mapper[response_summary.part_id],
+            part_id: response_summary.part_id,
+            count: response_summary.count
+          }
+          | acc_responses
+        ]
+      else
+        acc_responses
+      end
+    end)
+  end
+
+  defp build_input_mapper(inputs) do
+    Enum.into(inputs, %{}, fn input ->
+      {input["partId"], input["inputType"]}
+    end)
+  end
+
+  defp add_likert_details(activity_attempt, response_summaries) do
+    responses =
+      Enum.filter(response_summaries, fn response_summary ->
+        response_summary.activity_id == activity_attempt.resource_id
+      end)
+
+    choices =
+      activity_attempt.revision.content["choices"]
+      |> Enum.map(
+        &Map.merge(&1, %{
+          "frequency" =>
+            Enum.find(responses, %{count: 0}, fn r -> r.response == &1["id"] end).count
+        })
+      )
+      |> then(fn choices ->
+        blank_reponses = Enum.find(responses, fn r -> r.response == "" end)
+
+        if blank_reponses[:response] do
+          [
+            %{
+              "content" => [
+                %{
+                  "children" => [
+                    %{
+                      "text" =>
+                        "Blank attempt (user submitted assessment without selecting any choice for this activity)"
+                    }
+                  ],
+                  "type" => "p"
+                }
+              ],
+              "frequency" => blank_reponses.count
+            }
+            | choices
+          ]
+        else
+          choices
+        end
+      end)
+
+    update_in(
+      activity_attempt,
+      [Access.key!(:revision), Access.key!(:content)],
+      &Map.put(&1, "choices", choices)
+    )
+    |> update_in(
+      [
+        Access.key!(:revision),
+        Access.key!(:content)
+      ],
+      &Map.put(&1, "activityTitle", activity_attempt.revision.title)
     )
   end
 end

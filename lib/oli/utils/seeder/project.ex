@@ -61,7 +61,7 @@ defmodule Oli.Utils.Seeder.Project do
       Author.noauth_changeset(%Author{}, %{
         email: "#{Slug.slugify(name)}@test.com",
         given_name: name,
-        system_role_id: SystemRole.role_id().admin
+        system_role_id: SystemRole.role_id().system_admin
       })
       |> Repo.insert()
 
@@ -263,7 +263,7 @@ defmodule Oli.Utils.Seeder.Project do
       Oli.Resources.create_revision(%{
         author_id: author.id,
         objectives: %{},
-        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("container"),
+        resource_type_id: Oli.Resources.ResourceType.id_for_container(),
         children: [],
         content: %{},
         deleted: false,
@@ -324,7 +324,7 @@ defmodule Oli.Utils.Seeder.Project do
       }
       |> Map.merge(attrs)
       |> Map.merge(%{
-        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("page"),
+        resource_type_id: Oli.Resources.ResourceType.id_for_page(),
         children: [],
         author_id: author.id,
         resource_id: resource.id,
@@ -402,7 +402,7 @@ defmodule Oli.Utils.Seeder.Project do
       }
       |> Map.merge(attrs)
       |> Map.merge(%{
-        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("container"),
+        resource_type_id: Oli.Resources.ResourceType.id_for_container(),
         content: %{},
         author_id: author.id,
         resource_id: resource.id,
@@ -622,7 +622,7 @@ defmodule Oli.Utils.Seeder.Project do
       }
       |> Map.merge(attrs)
       |> Map.merge(%{
-        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("activity"),
+        resource_type_id: Oli.Resources.ResourceType.id_for_activity(),
         children: [],
         author_id: author.id,
         resource_id: resource.id,

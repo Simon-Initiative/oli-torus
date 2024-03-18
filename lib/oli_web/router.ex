@@ -8,6 +8,7 @@ defmodule OliWeb.Router do
 
   import Phoenix.LiveDashboard.Router
   import PhoenixStorybook.Router
+  import Oli.Plugs.EnsureAdmin
 
   @user_persistent_session_cookie_key "oli_user_persistent_session_v2"
   @author_persistent_session_cookie_key "oli_author_persistent_session_v2"
@@ -366,7 +367,7 @@ defmodule OliWeb.Router do
     put("/account", WorkspaceController, :update_author)
 
     scope "/communities" do
-      pipe_through([:community_admin])
+      pipe_through([:community_admin, :reject_content_admin])
 
       live("/", CommunityLive.IndexView)
 
@@ -542,6 +543,7 @@ defmodule OliWeb.Router do
     pipe_through([:api, :authoring_protected])
 
     post("/", Api.MediaController, :create)
+    post("/delete", Api.MediaController, :delete)
     get("/", Api.MediaController, :index)
   end
 
@@ -652,6 +654,7 @@ defmodule OliWeb.Router do
 
     put("/", SchedulingController, :update)
     get("/", SchedulingController, :index)
+    delete("/", SchedulingController, :clear)
   end
 
   # User State Service, instrinsic state
@@ -1106,6 +1109,8 @@ defmodule OliWeb.Router do
 
     get("/:section_slug/enroll", DeliveryController, :show_enroll)
     post("/:section_slug/enroll", DeliveryController, :process_enroll)
+    get("/:section_slug/join", LaunchController, :join)
+    post("/:section_slug/auto_enroll", LaunchController, :auto_enroll_as_guest)
   end
 
   # Delivery Auth (Signin)
@@ -1144,7 +1149,7 @@ defmodule OliWeb.Router do
 
   ### Admin Dashboard / Telemetry
   scope "/admin", OliWeb do
-    pipe_through([:browser, :authoring_protected, :admin])
+    pipe_through([:browser, :authoring_protected, :admin, :reject_content_or_account_admin])
 
     live_dashboard("/dashboard",
       metrics: {OliWeb.Telemetry, :non_distributed_metrics},
@@ -1165,14 +1170,8 @@ defmodule OliWeb.Router do
       :pow_email_layout
     ])
 
-    get("/activity_review", ActivityReviewController, :index)
-
     # General
     live("/", Admin.AdminView)
-    live("/features", Features.FeaturesLive)
-    live("/part_attempts", Admin.PartAttemptsView)
-    get("/spot_check/:activity_attempt_id", SpotCheckController, :index)
-    live("/api_keys", ApiKeys.ApiKeysLive)
     live("/products", Products.ProductsView)
     live("/products/:product_id/discounts", Products.Payments.Discounts.ProductsIndexView)
     live("/collaborative_spaces", CollaborationLive.IndexView, :admin, as: :collab_spaces_index)
@@ -1197,41 +1196,6 @@ defmodule OliWeb.Router do
     resources("/open_and_free", OpenAndFreeController, as: :admin_open_and_free)
     live("/open_and_free/:section_slug/remix", Delivery.RemixSection, as: :open_and_free_remix)
 
-    # Institutions, LTI Registrations and Deployments
-    resources("/institutions", InstitutionController, except: [:index])
-
-    live("/institutions/", Admin.Institutions.IndexLive)
-
-    live(
-      "/institutions/:institution_id/discount",
-      Products.Payments.Discounts.ShowView,
-      :institution,
-      as: :discount
-    )
-
-    live("/institutions/:institution_id/research_consent", Admin.Institutions.ResearchConsentView,
-      as: :institution
-    )
-
-    live(
-      "/institutions/:institution_id/sections_and_students/:selected_tab",
-      Admin.Institutions.SectionsAndStudentsView
-    )
-
-    live("/registrations", Admin.RegistrationsView)
-
-    resources("/registrations", RegistrationController, except: [:index]) do
-      resources("/deployments", DeploymentController, except: [:index, :show])
-    end
-
-    put("/approve_registration", InstitutionController, :approve_registration)
-
-    # Communities
-    live("/communities/new", CommunityLive.NewView)
-
-    # System Message Banner
-    live("/system_messages", SystemMessageLive.IndexView)
-
     # Publishers
     live("/publishers", PublisherLive.IndexView)
     live("/publishers/new", PublisherLive.NewView)
@@ -1243,48 +1207,113 @@ defmodule OliWeb.Router do
     live("/ingest", Admin.Ingest)
     live("/ingest/process", Admin.IngestV2)
 
-    # Authoring Activity Management
-    get("/manage_activities", ActivityManageController, :index)
-    put("/manage_activities/make_global/:activity_slug", ActivityManageController, :make_global)
-    put("/manage_activities/make_private/:activity_slug", ActivityManageController, :make_private)
-
-    put(
-      "/manage_activities/make_globally_visible/:activity_slug",
-      ActivityManageController,
-      :make_globally_visible
-    )
-
-    put(
-      "/manage_activities/make_admin_visible/:activity_slug",
-      ActivityManageController,
-      :make_admin_visible
-    )
-
     # Branding
     resources("/brands", BrandController)
 
-    # Admin Author/User Account Management
-    live("/authors", Users.AuthorsView)
-    live("/authors/:user_id", Users.AuthorsDetailView)
-    live("/users", Users.UsersView)
-    live("/users/:user_id", Users.UsersDetailView)
-    get("/invite", InviteController, :index)
-    post("/invite", InviteController, :create)
-    post("/accounts/resend_user_confirmation_link", PowController, :resend_user_confirmation_link)
+    # Routes rejected for content admin
+    scope "/" do
+      pipe_through([:reject_content_admin])
+      live("/users", Users.UsersView)
+      live("/users/:user_id", Users.UsersDetailView)
+      # Admin Author/User Account Management
+      live("/authors", Users.AuthorsView)
+      live("/authors/:user_id", Users.AuthorsDetailView)
 
-    post(
-      "/accounts/resend_author_confirmation_link",
-      PowController,
-      :resend_author_confirmation_link
-    )
+      # Institutions, LTI Registrations and Deployments
+      resources("/institutions", InstitutionController, except: [:index])
+      put("/approve_registration", InstitutionController, :approve_registration)
+      live("/institutions/", Admin.Institutions.IndexLive)
 
-    post("/accounts/send_user_password_reset_link", PowController, :send_user_password_reset_link)
+      live(
+        "/institutions/:institution_id/discount",
+        Products.Payments.Discounts.ShowView,
+        :institution,
+        as: :discount
+      )
 
-    post(
-      "/accounts/send_author_password_reset_link",
-      PowController,
-      :send_author_password_reset_link
-    )
+      live(
+        "/institutions/:institution_id/research_consent",
+        Admin.Institutions.ResearchConsentView,
+        as: :institution
+      )
+
+      live(
+        "/institutions/:institution_id/sections_and_students/:selected_tab",
+        Admin.Institutions.SectionsAndStudentsView
+      )
+
+      get("/invite", InviteController, :index)
+      post("/invite", InviteController, :create)
+
+      # Communities
+      live("/communities/new", CommunityLive.NewView)
+
+      live("/registrations", Admin.RegistrationsView)
+
+      resources("/registrations", RegistrationController, except: [:index]) do
+        resources("/deployments", DeploymentController, except: [:index, :show])
+      end
+
+      post(
+        "/accounts/resend_user_confirmation_link",
+        PowController,
+        :resend_user_confirmation_link
+      )
+
+      post(
+        "/accounts/resend_author_confirmation_link",
+        PowController,
+        :resend_author_confirmation_link
+      )
+
+      post(
+        "/accounts/send_user_password_reset_link",
+        PowController,
+        :send_user_password_reset_link
+      )
+
+      post(
+        "/accounts/send_author_password_reset_link",
+        PowController,
+        :send_author_password_reset_link
+      )
+    end
+
+    # Routes rejected for account and content admin
+    scope "/" do
+      pipe_through([:reject_content_or_account_admin])
+      get("/activity_review", ActivityReviewController, :index)
+      live("/part_attempts", Admin.PartAttemptsView)
+      get("/spot_check/:activity_attempt_id", SpotCheckController, :index)
+
+      # Authoring Activity Management
+      get("/manage_activities", ActivityManageController, :index)
+      put("/manage_activities/make_global/:activity_slug", ActivityManageController, :make_global)
+
+      put(
+        "/manage_activities/make_private/:activity_slug",
+        ActivityManageController,
+        :make_private
+      )
+
+      put(
+        "/manage_activities/make_globally_visible/:activity_slug",
+        ActivityManageController,
+        :make_globally_visible
+      )
+
+      put(
+        "/manage_activities/make_admin_visible/:activity_slug",
+        ActivityManageController,
+        :make_admin_visible
+      )
+
+      # System Message Banner
+      live("/system_messages", SystemMessageLive.IndexView)
+
+      live("/features", Features.FeaturesLive)
+      live("/api_keys", ApiKeys.ApiKeysLive)
+    end
   end
 
   scope "/project", OliWeb do

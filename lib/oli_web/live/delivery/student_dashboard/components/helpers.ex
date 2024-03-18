@@ -17,6 +17,7 @@ defmodule OliWeb.Delivery.StudentDashboard.Components.Helpers do
   attr(:breadcrumbs, :list, required: true)
   attr(:socket_or_conn, :any, required: true)
   attr(:preview_mode, :boolean, default: false)
+  slot(:inner_block, required: true)
 
   def main_layout(assigns) do
     ~H"""
@@ -195,9 +196,15 @@ defmodule OliWeb.Delivery.StudentDashboard.Components.Helpers do
     <div id="student_details_card" class="flex flex-col sm:flex-row items-center mx-10">
       <div class="flex shrink-0 mb-6 sm:mb-0 sm:mr-6">
         <%= if @student.picture do %>
-          <img src={@student.picture} class="rounded-full h-52 w-52" referrerPolicy="no-referrer" />
+          <div class="text-center">
+            <img src={@student.picture} class="rounded-full h-52 w-52" referrerPolicy="no-referrer" />
+            <p class="text-gray-500 mt-2"><%= @student.email %></p>
+          </div>
         <% else %>
-          <i class="fa-solid fa-circle-user text-[208px] text-gray-200"></i>
+          <div class="text-center">
+            <i class="fa-solid fa-circle-user text-[208px] text-gray-200"></i>
+            <p class="text-gray-500 mt-2"><%= @student.email %></p>
+          </div>
         <% end %>
       </div>
       <div class="flex flex-col divide-y divide-gray-100 dark:divide-gray-700 w-full bg-white dark:bg-neutral-800">

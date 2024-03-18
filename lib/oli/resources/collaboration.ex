@@ -75,7 +75,7 @@ defmodule Oli.Resources.Collaboration do
   @spec list_collaborative_spaces_in_section(String.t(), limit: Integer.t(), offset: Integer.t()) ::
           {Integer.t(), list(%CollabSpaceConfig{})}
   def list_collaborative_spaces_in_section(section_slug, opts \\ []) do
-    page_type_id = ResourceType.get_id_by_type("page")
+    page_type_id = ResourceType.id_for_page()
 
     from(
       section in Section,
@@ -155,7 +155,7 @@ defmodule Oli.Resources.Collaboration do
   """
   @spec list_collaborative_spaces() :: list(%CollabSpaceConfig{})
   def list_collaborative_spaces() do
-    page_type_id = ResourceType.get_id_by_type("page")
+    page_type_id = ResourceType.id_for_page()
 
     Repo.all(
       from(
@@ -274,7 +274,7 @@ defmodule Oli.Resources.Collaboration do
       {1, 18}
   """
   def count_collab_spaces_enabled_in_pages_for_project(project_slug) do
-    page_id = Oli.Resources.ResourceType.get_id_by_type("page")
+    page_id = Oli.Resources.ResourceType.id_for_page()
 
     from(m in PublishedResource,
       join: rev in Revision,
@@ -308,7 +308,7 @@ defmodule Oli.Resources.Collaboration do
       {1, 18}
   """
   def count_collab_spaces_enabled_in_pages_for_section(section_slug) do
-    page_id = Oli.Resources.ResourceType.get_id_by_type("page")
+    page_id = Oli.Resources.ResourceType.id_for_page()
 
     from([sr: sr, rev: rev] in DeliveryResolver.section_resource_revisions(section_slug),
       where: rev.resource_type_id == ^page_id and rev.deleted == false,
@@ -333,7 +333,7 @@ defmodule Oli.Resources.Collaboration do
   """
 
   def disable_all_page_collab_spaces_for_project(project_slug) do
-    page_id = Oli.Resources.ResourceType.get_id_by_type("page")
+    page_id = Oli.Resources.ResourceType.id_for_page()
 
     from(rev in Revision,
       join: m in PublishedResource,
@@ -352,7 +352,7 @@ defmodule Oli.Resources.Collaboration do
   """
 
   def enable_all_page_collab_spaces_for_project(project_slug, collab_space_config) do
-    page_id = Oli.Resources.ResourceType.get_id_by_type("page")
+    page_id = Oli.Resources.ResourceType.id_for_page()
 
     from(rev in Revision,
       join: m in PublishedResource,
@@ -370,7 +370,7 @@ defmodule Oli.Resources.Collaboration do
   """
 
   def disable_all_page_collab_spaces_for_section(section_slug) do
-    page_id = Oli.Resources.ResourceType.get_id_by_type("page")
+    page_id = Oli.Resources.ResourceType.id_for_page()
 
     from([sr: sr, rev: rev] in DeliveryResolver.section_resource_revisions(section_slug),
       where: rev.resource_type_id == ^page_id and rev.deleted == false,
@@ -384,7 +384,7 @@ defmodule Oli.Resources.Collaboration do
   """
 
   def enable_all_page_collab_spaces_for_section(section_slug, collab_space_config) do
-    page_id = Oli.Resources.ResourceType.get_id_by_type("page")
+    page_id = Oli.Resources.ResourceType.id_for_page()
 
     from([sr: sr, rev: rev] in DeliveryResolver.section_resource_revisions(section_slug),
       where: rev.resource_type_id == ^page_id and rev.deleted == false,

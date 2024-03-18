@@ -5,6 +5,7 @@ import { useSelector } from 'react-redux';
 import { selectSequenceEditorExpanded } from 'apps/authoring/store/app/slice';
 import { selectCopiedItem, selectCopiedType } from 'apps/authoring/store/clipboard/slice';
 import { IAdaptiveRule, InitState } from 'apps/delivery/store/features/activities/slice';
+import { clone } from 'utils/common';
 
 const AdaptiveRuleContextMenu = (props: any) => {
   const [id, setId] = useState(false);
@@ -62,7 +63,12 @@ const AdaptiveRuleContextMenu = (props: any) => {
   };
 
   const handleCopyRule = async (rule: IAdaptiveRule | 'initState') => {
-    const details = { event: 'handleCopyRule', rule };
+    const copiedRule = clone(rule);
+
+    if (rule !== 'initState') {
+      copiedRule.default = false;
+    }
+    const details = { event: 'handleCopyRule', rule: copiedRule };
     props.onMenuItemClick(details);
     props.contextMenuClicked(false);
   };
@@ -103,7 +109,9 @@ const AdaptiveRuleContextMenu = (props: any) => {
           cursor: 'pointer',
           left: '70px',
           bottom: sequenceEditorExpanded ? `1px` : `auto`,
-          top: sequenceEditorExpanded ? `auto` : `${clientY - 30}px`,
+          top: sequenceEditorExpanded
+            ? `auto`
+            : `${clientY - (item !== 'initState' && !item?.default ? 270 : 30)}px`,
         }}
         className={`dropdown-menu ${props.show ? 'show' : ''}`}
       >

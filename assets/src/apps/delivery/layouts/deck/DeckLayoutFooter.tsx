@@ -3,6 +3,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { applyState, templatizeText } from 'adaptivity/scripting';
 import { savePartState } from 'apps/delivery/store/features/attempt/actions/savePart';
 import { updateGlobalUserState } from 'data/persistence/extrinsic';
+import { writePageAttemptState } from 'data/persistence/state/intrinsic';
 import {
   ApplyStateOperation,
   bulkApplyState,
@@ -42,11 +43,12 @@ import {
   selectCurrentActivityTreeAttemptState,
 } from '../../store/features/groups/selectors/deck';
 import {
-  selectEnableHistory,
   selectIsLegacyTheme,
   selectPageContent,
   selectPreviewMode,
+  selectResourceAttemptGuid,
   selectReviewMode,
+  selectSectionSlug,
   setScore,
   setScreenIdleExpirationTime,
 } from '../../store/features/page/slice';
@@ -226,7 +228,6 @@ const DeckLayoutFooter: React.FC = () => {
   const isGoodFeedback = useSelector(selectIsGoodFeedback);
   const currentFeedbacks = useSelector(selectCurrentFeedbacks);
   const nextActivityId: string = useSelector(selectNextActivityId);
-  const enableHistory = useSelector(selectEnableHistory);
   const lastCheckTimestamp = useSelector(selectLastCheckTriggered);
   const lastCheckResults = useSelector(selectLastCheckResults);
   const initPhaseComplete = useSelector(selectInitPhaseComplete);
@@ -241,6 +242,8 @@ const DeckLayoutFooter: React.FC = () => {
   const [nextCheckButtonText, setNextCheckButtonText] = useState('Next');
   const [solutionButtonText, setSolutionButtonText] = useState('Show Solution');
   const [displaySolutionButton, setDisplaySolutionButton] = useState(false);
+  const sectionSlug = useSelector(selectSectionSlug);
+  const resourceAttemptGuid = useSelector(selectResourceAttemptGuid);
 
   useEffect(() => {
     if (!lastCheckTimestamp) {
@@ -328,6 +331,24 @@ const DeckLayoutFooter: React.FC = () => {
         }
       }
     });
+
+    //when lesson 'variables' were getting update via mutate state, we were not sending the updated values to server
+    // the previous savePartState code (line 326) was only sending the parts variable to the server which starts from 'stage.something.value' etc.
+    // we need to update the extrinsic  Snapshot to server
+    const latestSnapshot = getLocalizedStateSnapshot((currentActivityTree || []).map((a) => a.id));
+    const extrinsicSnapshot = Object.keys(latestSnapshot).reduce(
+      (acc: Record<string, any>, key) => {
+        const isSessionVariable = key.startsWith('session.');
+        const isVarVariable = key.startsWith('variables.');
+        const isEverAppVariable = key.startsWith('app.');
+        if (isSessionVariable || isVarVariable || isEverAppVariable) {
+          acc[key] = latestSnapshot[key];
+        }
+        return acc;
+      },
+      {},
+    );
+    writePageAttemptState(sectionSlug, resourceAttemptGuid, extrinsicSnapshot);
   };
 
   useEffect(() => {
@@ -590,13 +611,13 @@ const DeckLayoutFooter: React.FC = () => {
         if (activityHistoryTimeStamp === 0) {
           updateActivityHistoryTimeStamp();
         }
-        //** there are cases when wrong trap state gets trigger but user is still allowed to jump to another activity */
+        //** there are cases when wrong trap state gets trigger but user is still allowed to jump to another activity  */
         //** if we don't do this then, every time Next button will trigger a check events instead of navigating user to respective activity */
         dispatch(
           nextActivityId === 'next' ? navigateToNextActivity() : navigateToActivity(nextActivityId),
         );
         dispatch(setNextActivityId({ nextActivityId: '' }));
-      } else if (!enableHistory) {
+      } else if (!currentActivity?.custom?.showCheckBtn) {
         dispatch(triggerCheck({ activityId: currentActivity?.id }));
       } else {
         dispatch(setIsGoodFeedback({ isGoodFeedback: false }));

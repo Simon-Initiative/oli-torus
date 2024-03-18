@@ -15,7 +15,7 @@ defmodule OliWeb.Api.MediaController do
   use OliWeb, :controller
   use OpenApiSpex.Controller
 
-  plug(:fetch_project when action not in [:index, :create])
+  plug(:fetch_project when action not in [:index, :create, :delete])
 
   defmodule MediaItemUpload do
     require OpenApiSpex
@@ -32,6 +32,41 @@ defmodule OliWeb.Api.MediaController do
       example: %{
         "file" => "QSBob2xsb3cgdm9pY2Ugc2F5cyBQbHVnaCE=",
         "name" => "untitled.jpg"
+      }
+    })
+  end
+
+  defmodule MediaItemsDelete do
+    require OpenApiSpex
+
+    OpenApiSpex.schema(%{
+      title: "Media Items Delete",
+      description: "Deleted media items",
+      type: :object,
+      properties: %{
+        mediaItemIds: %Schema{type: :list, description: "The media items ids"}
+      },
+      required: [:mediaItemIds],
+      example: %{
+        "mediaItemIds" => [1, 2, 3]
+      }
+    })
+  end
+
+  defmodule MediaItemsDeleteResponse do
+    require OpenApiSpex
+
+    OpenApiSpex.schema(%{
+      title: "Media Items Delete Response",
+      description: "Deleted media items response",
+      type: :object,
+      properties: %{
+        type: %Schema{type: :string, description: "Success"},
+        count: %Schema{type: :integer, description: "Count of media deleted"}
+      },
+      required: [:result],
+      example: %{
+        "result" => "success"
       }
     })
   end
@@ -228,6 +263,35 @@ defmodule OliWeb.Api.MediaController do
 
       _ ->
         error(conn, 400, "invalid encoded file")
+    end
+  end
+
+  @doc """
+  Mark a list of media items as deleted.
+  """
+  @doc parameters: [
+         project: [
+           in: :url,
+           schema: %OpenApiSpex.Schema{type: :string},
+           required: true,
+           description: "The project id"
+         ]
+       ],
+       request_body:
+         {"Request body to delete a list of media items", "application/json",
+          OliWeb.Api.MediaController.MediaItemsDelete, required: true},
+       responses: %{
+         200 =>
+           {"Media Items Delete Response", "application/json",
+            OliWeb.Api.MediaController.MediaItemsDeleteResponse}
+       }
+  def delete(conn, %{"project" => project_slug, "mediaItemIds" => media_item_ids}) do
+    case MediaLibrary.delete_media_items(project_slug, media_item_ids) do
+      {:ok, count} ->
+        json(conn, %{type: "success", count: count})
+
+      {:error, err_msg} ->
+        error(conn, 400, err_msg)
     end
   end
 

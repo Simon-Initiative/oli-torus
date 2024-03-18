@@ -34,7 +34,6 @@ defmodule OliWeb.Projects.PublishView do
       ) do
     ctx = SessionContext.init(socket, session)
     project = Course.get_project_by_slug(project_slug)
-    active_sections = Sections.get_active_sections_by_project(project.id)
 
     latest_published_publication =
       Publishing.get_latest_published_publication_by_slug(project_slug)
@@ -70,7 +69,7 @@ defmodule OliWeb.Projects.PublishView do
                 Map.values(changes)
                 |> Enum.map(fn {_, %{revision: revision}} -> revision end)
                 |> Enum.filter(fn r ->
-                  r.resource_type_id == Oli.Resources.ResourceType.get_id_by_type("activity")
+                  r.resource_type_id == Oli.Resources.ResourceType.id_for_activity()
                 end)
                 |> Enum.map(fn r -> r.resource_id end)
                 |> Oli.Publishing.determine_parent_pages(
@@ -98,6 +97,8 @@ defmodule OliWeb.Projects.PublishView do
         {:no_changes, _} -> false
         _ -> true
       end
+
+    active_sections = Sections.get_active_sections_by_project(project.id)
 
     {:ok, table_model} = ActiveSectionsTableModel.new(ctx, active_sections, project)
 

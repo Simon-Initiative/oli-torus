@@ -66,7 +66,9 @@ defmodule OliWeb.Admin.Institutions.SectionsAndStudentsView do
     {:ok, table_model} =
       OliWeb.Sections.SectionsTableModel.new(socket.assigns.ctx, sections, true)
 
-    table_model = SortableTableModel.update_from_params(table_model, params)
+    table_model =
+      SortableTableModel.update_from_params(table_model, params)
+      |> Map.put(:rows, sections)
 
     {:noreply,
      assign(socket,

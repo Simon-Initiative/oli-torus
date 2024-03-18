@@ -114,7 +114,7 @@ export function rangeOperator(s: string): RangeOperator {
 }
 
 const escapeInput = (s: string) => s.replace(/[\\{}]/g, (i) => `\\${i}`);
-const unescapeInput = (s: string) => s.replace(/\\[\\{}]/g, (i) => i.substring(1));
+export const unescapeInput = (s: string) => s.replace(/\\[\\{}]/g, (i) => i.substring(1));
 
 const valueWithPrecision = (value: numberOrVar, precision?: number) =>
   precision !== undefined ? `${value}#${precision}` : `${value}`;
@@ -195,17 +195,19 @@ export const notRangeRule = (
 
 export const makeRule = (input: Input): string => {
   if (input.kind === InputKind.Text) {
+    const trimmedValue = input.value.trim().replace(/\s+/g, ' ');
+
     switch (input.operator) {
       case 'contains':
-        return containsRule(input.value);
+        return containsRule(trimmedValue);
       case 'notcontains':
-        return notContainsRule(input.value);
+        return notContainsRule(trimmedValue);
       case 'regex':
-        return matchRule(input.value);
+        return matchRule(trimmedValue);
       case 'equals':
-        return equalsRule(input.value);
+        return equalsRule(trimmedValue);
       case 'iequals':
-        return iequalsRule(input.value);
+        return iequalsRule(trimmedValue);
     }
   }
 

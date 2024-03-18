@@ -210,7 +210,7 @@ defmodule Oli.TestHelpers do
         %{
           title: "Test learning objective",
           author_id: author.id,
-          resource_type_id: Oli.Resources.ResourceType.get_id_by_type("objective")
+          resource_type_id: Oli.Resources.ResourceType.id_for_objective()
         }
       )
 
@@ -340,7 +340,7 @@ defmodule Oli.TestHelpers do
   def admin_conn(%{conn: conn}) do
     admin =
       author_fixture(%{
-        system_role_id: Accounts.SystemRole.role_id().admin,
+        system_role_id: Accounts.SystemRole.role_id().system_admin,
         preferences: %AuthorPreferences{show_relative_dates: false} |> Map.from_struct()
       })
 
@@ -348,6 +348,40 @@ defmodule Oli.TestHelpers do
       Pow.Plug.assign_current_user(conn, admin, OliWeb.Pow.PowHelpers.get_pow_config(:author))
 
     {:ok, conn: conn, admin: admin}
+  end
+
+  def account_admin_conn(%{conn: conn}) do
+    account_admin =
+      author_fixture(%{
+        system_role_id: Accounts.SystemRole.role_id().account_admin,
+        preferences: %AuthorPreferences{show_relative_dates: false} |> Map.from_struct()
+      })
+
+    conn =
+      Pow.Plug.assign_current_user(
+        conn,
+        account_admin,
+        OliWeb.Pow.PowHelpers.get_pow_config(:author)
+      )
+
+    {:ok, conn: conn, account_admin: account_admin}
+  end
+
+  def content_admin_conn(%{conn: conn}) do
+    content_admin =
+      author_fixture(%{
+        system_role_id: Accounts.SystemRole.role_id().content_admin,
+        preferences: %AuthorPreferences{show_relative_dates: false} |> Map.from_struct()
+      })
+
+    conn =
+      Pow.Plug.assign_current_user(
+        conn,
+        content_admin,
+        OliWeb.Pow.PowHelpers.get_pow_config(:author)
+      )
+
+    {:ok, conn: conn, content_admin: content_admin}
   end
 
   def recycle_author_session(conn, author) do
@@ -510,7 +544,7 @@ defmodule Oli.TestHelpers do
       insert(:revision, %{
         objectives: %{"attached" => []},
         scoring_strategy_id: Oli.Resources.ScoringStrategy.get_id_by_type("average"),
-        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("page"),
+        resource_type_id: Oli.Resources.ResourceType.id_for_page(),
         children: [],
         content: %{"model" => []},
         deleted: false,
@@ -520,6 +554,24 @@ defmodule Oli.TestHelpers do
 
     # Associate nested page to the project
     insert(:project_resource, %{project_id: project.id, resource_id: nested_page_resource.id})
+
+    nested_page_resource_2 = insert(:resource)
+
+    nested_page_revision_2 =
+      insert(:revision, %{
+        objectives: %{"attached" => []},
+        scoring_strategy_id: Oli.Resources.ScoringStrategy.get_id_by_type("average"),
+        resource_type_id: Oli.Resources.ResourceType.id_for_page(),
+        children: [],
+        content: %{"model" => []},
+        deleted: false,
+        title: "Nested page 2",
+        resource: nested_page_resource_2,
+        graded: true
+      })
+
+    # Associate nested page to the project
+    insert(:project_resource, %{project_id: project.id, resource_id: nested_page_resource_2.id})
 
     unit_one_resource = insert(:resource)
 
@@ -532,8 +584,8 @@ defmodule Oli.TestHelpers do
     unit_one_revision =
       insert(:revision, %{
         objectives: %{},
-        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("container"),
-        children: [nested_page_resource.id],
+        resource_type_id: Oli.Resources.ResourceType.id_for_container(),
+        children: [nested_page_resource.id, nested_page_resource_2.id],
         content: %{"model" => []},
         deleted: false,
         title: "The first unit",
@@ -551,7 +603,7 @@ defmodule Oli.TestHelpers do
       insert(:revision, %{
         resource: container_resource,
         objectives: %{},
-        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("container"),
+        resource_type_id: Oli.Resources.ResourceType.id_for_container(),
         children: [unit_one_resource.id],
         content: %{},
         deleted: false,
@@ -581,6 +633,13 @@ defmodule Oli.TestHelpers do
       revision: nested_page_revision
     })
 
+    # Publish nested page resource 2
+    insert(:published_resource, %{
+      publication: publication,
+      resource: nested_page_resource_2,
+      revision: nested_page_revision_2
+    })
+
     # Publish unit one resource
     insert(
       :published_resource,
@@ -591,7 +650,13 @@ defmodule Oli.TestHelpers do
       }
     )
 
-    %{publication: publication, project: project, unit_one_revision: unit_one_revision}
+    %{
+      publication: publication,
+      project: project,
+      unit_one_revision: unit_one_revision,
+      nested_page_revision: nested_page_revision,
+      nested_page_revision_2: nested_page_revision_2
+    }
   end
 
   def section_with_assessment(_context, deployment \\ nil) do
@@ -602,14 +667,23 @@ defmodule Oli.TestHelpers do
     # Graded page revision
     page_revision =
       insert(:revision,
-        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("page"),
+        resource_type_id: Oli.Resources.ResourceType.id_for_page(),
         title: "Progress test revision",
+        graded: true,
+        content: %{"advancedDelivery" => true}
+      )
+
+    page_2_revision =
+      insert(:revision,
+        resource_type_id: Oli.Resources.ResourceType.id_for_page(),
+        title: "Other test revision",
         graded: true,
         content: %{"advancedDelivery" => true}
       )
 
     # Associate nested graded page to the project
     insert(:project_resource, %{project_id: project.id, resource_id: page_revision.resource.id})
+    insert(:project_resource, %{project_id: project.id, resource_id: page_2_revision.resource.id})
 
     unit_one_resource = insert(:resource)
 
@@ -622,7 +696,7 @@ defmodule Oli.TestHelpers do
     unit_one_revision =
       insert(:revision, %{
         objectives: %{},
-        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("container"),
+        resource_type_id: Oli.Resources.ResourceType.id_for_container(),
         children: [],
         content: %{"model" => []},
         deleted: false,
@@ -641,8 +715,8 @@ defmodule Oli.TestHelpers do
       insert(:revision, %{
         resource: container_resource,
         objectives: %{},
-        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("container"),
-        children: [unit_one_resource.id, page_revision.resource.id],
+        resource_type_id: Oli.Resources.ResourceType.id_for_container(),
+        children: [unit_one_resource.id, page_revision.resource.id, page_2_revision.resource.id],
         content: %{},
         deleted: false,
         title: "Root Container"
@@ -673,6 +747,13 @@ defmodule Oli.TestHelpers do
       publication: publication,
       resource: page_revision.resource,
       revision: page_revision,
+      author: author
+    })
+
+    insert(:published_resource, %{
+      publication: publication,
+      resource: page_2_revision.resource,
+      revision: page_2_revision,
       author: author
     })
 
@@ -726,7 +807,18 @@ defmodule Oli.TestHelpers do
       author: author
     })
 
-    {:ok, section: section, unit_one_revision: unit_one_revision, page_revision: page_revision}
+    insert(:published_resource, %{
+      publication: new_publication,
+      resource: page_2_revision.resource,
+      revision: page_2_revision,
+      author: author
+    })
+
+    {:ok,
+     section: section,
+     unit_one_revision: unit_one_revision,
+     page_revision: page_revision,
+     page_2_revision: page_2_revision}
   end
 
   def create_project_with_products(_conn) do
@@ -739,7 +831,7 @@ defmodule Oli.TestHelpers do
     page_revision_1 =
       insert(:revision, %{
         objectives: %{},
-        resource_type_id: ResourceType.get_id_by_type("page"),
+        resource_type_id: ResourceType.id_for_page(),
         children: [],
         content: %{"model" => []},
         deleted: false,
@@ -757,7 +849,7 @@ defmodule Oli.TestHelpers do
     page_revision_2 =
       insert(:revision, %{
         objectives: %{},
-        resource_type_id: ResourceType.get_id_by_type("page"),
+        resource_type_id: ResourceType.id_for_page(),
         children: [],
         content: %{"model" => []},
         deleted: false,
@@ -776,7 +868,7 @@ defmodule Oli.TestHelpers do
       insert(:revision, %{
         resource: module_resource,
         objectives: %{},
-        resource_type_id: ResourceType.get_id_by_type("container"),
+        resource_type_id: ResourceType.id_for_container(),
         children: [page_resource_2.id],
         content: %{},
         deleted: false,
@@ -794,7 +886,7 @@ defmodule Oli.TestHelpers do
       insert(:revision, %{
         resource: unit_resource,
         objectives: %{},
-        resource_type_id: ResourceType.get_id_by_type("container"),
+        resource_type_id: ResourceType.id_for_container(),
         children: [module_resource.id],
         content: %{},
         deleted: false,
@@ -812,7 +904,7 @@ defmodule Oli.TestHelpers do
       insert(:revision, %{
         resource: container_resource,
         objectives: %{},
-        resource_type_id: ResourceType.get_id_by_type("container"),
+        resource_type_id: ResourceType.id_for_container(),
         children: [unit_resource.id, page_resource_1.id],
         content: %{},
         deleted: false,
@@ -961,7 +1053,7 @@ defmodule Oli.TestHelpers do
       insert(:revision, %{
         resource: obj_resource_1,
         objectives: %{},
-        resource_type_id: ResourceType.get_id_by_type("objective"),
+        resource_type_id: ResourceType.id_for_objective(),
         children: [],
         content: %{},
         deleted: false,
@@ -979,7 +1071,7 @@ defmodule Oli.TestHelpers do
       insert(:revision, %{
         resource: obj_resource_2,
         objectives: %{},
-        resource_type_id: ResourceType.get_id_by_type("objective"),
+        resource_type_id: ResourceType.id_for_objective(),
         children: [],
         content: %{},
         deleted: false,
@@ -997,7 +1089,7 @@ defmodule Oli.TestHelpers do
       insert(:revision, %{
         objectives: %{"attached" => [obj_resource_1.id]},
         scoring_strategy_id: Oli.Resources.ScoringStrategy.get_id_by_type("average"),
-        resource_type_id: ResourceType.get_id_by_type("page"),
+        resource_type_id: ResourceType.id_for_page(),
         children: [],
         content: %{"model" => []},
         deleted: false,
@@ -1016,7 +1108,7 @@ defmodule Oli.TestHelpers do
       insert(:revision, %{
         objectives: %{"attached" => [obj_resource_2.id]},
         scoring_strategy_id: Oli.Resources.ScoringStrategy.get_id_by_type("average"),
-        resource_type_id: ResourceType.get_id_by_type("page"),
+        resource_type_id: ResourceType.id_for_page(),
         children: [],
         content: %{"model" => []},
         deleted: false,
@@ -1035,7 +1127,7 @@ defmodule Oli.TestHelpers do
       insert(:revision, %{
         resource: module_resource,
         objectives: %{},
-        resource_type_id: ResourceType.get_id_by_type("container"),
+        resource_type_id: ResourceType.id_for_container(),
         children: [page_resource_2.id],
         content: %{},
         deleted: false,
@@ -1053,7 +1145,7 @@ defmodule Oli.TestHelpers do
       insert(:revision, %{
         resource: unit_resource,
         objectives: %{},
-        resource_type_id: ResourceType.get_id_by_type("container"),
+        resource_type_id: ResourceType.id_for_container(),
         children: [module_resource.id],
         content: %{},
         deleted: false,
@@ -1071,7 +1163,7 @@ defmodule Oli.TestHelpers do
       insert(:revision, %{
         resource: container_resource,
         objectives: %{},
-        resource_type_id: ResourceType.get_id_by_type("container"),
+        resource_type_id: ResourceType.id_for_container(),
         children: [unit_resource.id, page_resource_1.id],
         content: %{},
         deleted: false,
@@ -1446,7 +1538,7 @@ defmodule Oli.TestHelpers do
       insert(:revision, %{
         resource: obj_resource,
         objectives: %{},
-        resource_type_id: ResourceType.get_id_by_type("objective"),
+        resource_type_id: ResourceType.id_for_objective(),
         children: subobjectives,
         content: %{},
         deleted: false,
@@ -1467,7 +1559,7 @@ defmodule Oli.TestHelpers do
       insert(:revision, %{
         objectives: %{"1" => objectives},
         scoring_strategy_id: Oli.Resources.ScoringStrategy.get_id_by_type("average"),
-        resource_type_id: ResourceType.get_id_by_type("activity"),
+        resource_type_id: ResourceType.id_for_activity(),
         activity_type_id: Activities.get_registration_by_slug("oli_multiple_choice").id,
         children: [],
         content: %{"model" => []},
@@ -1490,7 +1582,7 @@ defmodule Oli.TestHelpers do
       insert(:revision, %{
         objectives: %{"attached" => objectives},
         scoring_strategy_id: Oli.Resources.ScoringStrategy.get_id_by_type("average"),
-        resource_type_id: ResourceType.get_id_by_type("page"),
+        resource_type_id: ResourceType.id_for_page(),
         children: [],
         content: %{"model" => content_model},
         deleted: false,
@@ -1512,7 +1604,7 @@ defmodule Oli.TestHelpers do
       insert(:revision, %{
         resource: container_resource,
         objectives: %{},
-        resource_type_id: ResourceType.get_id_by_type("container"),
+        resource_type_id: ResourceType.id_for_container(),
         children: children,
         content: %{},
         deleted: false,
@@ -1567,7 +1659,7 @@ defmodule Oli.TestHelpers do
     survey_question_revision =
       insert(:revision,
         resource: survey_question_resource,
-        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("activity"),
+        resource_type_id: Oli.Resources.ResourceType.id_for_activity(),
         activity_type_id: mcq_reg.id,
         title: "Experience",
         content: generate_attempt_content()
@@ -1578,7 +1670,7 @@ defmodule Oli.TestHelpers do
     survey_revision =
       insert(:revision,
         resource: survey_resource,
-        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("page"),
+        resource_type_id: Oli.Resources.ResourceType.id_for_page(),
         content: %{
           model: [
             %{
@@ -1621,7 +1713,7 @@ defmodule Oli.TestHelpers do
     page_revision =
       insert(:revision, %{
         scoring_strategy_id: Oli.Resources.ScoringStrategy.get_id_by_type("average"),
-        resource_type_id: ResourceType.get_id_by_type("page"),
+        resource_type_id: ResourceType.id_for_page(),
         children: [],
         content: %{"model" => []},
         deleted: false,
@@ -1643,7 +1735,7 @@ defmodule Oli.TestHelpers do
       insert(:revision, %{
         resource: container_resource,
         objectives: %{},
-        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("container"),
+        resource_type_id: Oli.Resources.ResourceType.id_for_container(),
         children: [page_resource.id],
         content: %{},
         deleted: false,
@@ -1767,7 +1859,7 @@ defmodule Oli.TestHelpers do
     page_1_revision =
       insert(
         :revision,
-        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("page"),
+        resource_type_id: Oli.Resources.ResourceType.id_for_page(),
         title: "Page 1",
         graded: false,
         resource: page_resource_1
@@ -1780,7 +1872,7 @@ defmodule Oli.TestHelpers do
     page_2_revision =
       insert(
         :revision,
-        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("page"),
+        resource_type_id: Oli.Resources.ResourceType.id_for_page(),
         title: "Page 2",
         graded: true,
         resource: page_resource_2
@@ -1794,7 +1886,7 @@ defmodule Oli.TestHelpers do
       insert(:revision, %{
         resource: root_container_resource,
         objectives: %{},
-        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("container"),
+        resource_type_id: Oli.Resources.ResourceType.id_for_container(),
         children: [
           page_resource_1.id,
           page_resource_2.id
@@ -1929,7 +2021,7 @@ defmodule Oli.TestHelpers do
     graded_page_1_revision =
       insert(
         :revision,
-        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("page"),
+        resource_type_id: Oli.Resources.ResourceType.id_for_page(),
         title: "Graded page 1 - Level 1 (w/ no date)",
         graded: true,
         resource: graded_page_1_resource
@@ -1938,7 +2030,7 @@ defmodule Oli.TestHelpers do
     graded_page_2_revision =
       insert(
         :revision,
-        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("page"),
+        resource_type_id: Oli.Resources.ResourceType.id_for_page(),
         title: "Graded page 2 - Level 0 (w/ date)",
         graded: true,
         purpose: :application,
@@ -1948,7 +2040,7 @@ defmodule Oli.TestHelpers do
     graded_page_3_revision =
       insert(
         :revision,
-        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("page"),
+        resource_type_id: Oli.Resources.ResourceType.id_for_page(),
         title: "Graded page 3 - Level 1 (w/ no date)",
         graded: true,
         resource: graded_page_3_resource,
@@ -1958,7 +2050,7 @@ defmodule Oli.TestHelpers do
     graded_page_4_revision =
       insert(
         :revision,
-        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("page"),
+        resource_type_id: Oli.Resources.ResourceType.id_for_page(),
         title: "Graded page 4 - Level 0 (w/ gating condition)",
         graded: true,
         resource: graded_page_4_resource
@@ -1967,7 +2059,7 @@ defmodule Oli.TestHelpers do
     graded_page_5_revision =
       insert(
         :revision,
-        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("page"),
+        resource_type_id: Oli.Resources.ResourceType.id_for_page(),
         title: "Graded page 5 - Level 0 (w/ student gating condition)",
         graded: true,
         resource: graded_page_5_resource,
@@ -1977,7 +2069,7 @@ defmodule Oli.TestHelpers do
     graded_page_6_revision =
       insert(
         :revision,
-        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("page"),
+        resource_type_id: Oli.Resources.ResourceType.id_for_page(),
         title: "Graded page 6 - Level 0 (w/o student gating condition)",
         graded: true,
         resource: graded_page_6_resource
@@ -1994,7 +2086,7 @@ defmodule Oli.TestHelpers do
     unit_one_revision =
       insert(:revision, %{
         objectives: %{},
-        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("container"),
+        resource_type_id: Oli.Resources.ResourceType.id_for_container(),
         children: [graded_page_1_resource.id, graded_page_2_resource.id],
         content: %{"model" => []},
         deleted: false,
@@ -2011,7 +2103,7 @@ defmodule Oli.TestHelpers do
       insert(:revision, %{
         resource: root_container_resource,
         objectives: %{},
-        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("container"),
+        resource_type_id: Oli.Resources.ResourceType.id_for_container(),
         children: [
           unit_one_resource.id,
           graded_page_3_resource.id,
@@ -2188,7 +2280,7 @@ defmodule Oli.TestHelpers do
     unreachable_graded_page_1_revision =
       insert(
         :revision,
-        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("page"),
+        resource_type_id: Oli.Resources.ResourceType.id_for_page(),
         title: "Unreachable Graded page 1",
         graded: true,
         resource: unreachable_graded_page_1_resource
@@ -2197,7 +2289,7 @@ defmodule Oli.TestHelpers do
     unreachable_graded_page_2_revision =
       insert(
         :revision,
-        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("page"),
+        resource_type_id: Oli.Resources.ResourceType.id_for_page(),
         title: "Unreachable Graded page 2",
         graded: true,
         resource: unreachable_graded_page_2_resource
@@ -2206,7 +2298,7 @@ defmodule Oli.TestHelpers do
     graded_page_1_revision =
       insert(
         :revision,
-        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("page"),
+        resource_type_id: Oli.Resources.ResourceType.id_for_page(),
         title: "Graded page 1 - Level 1 (w/ no date)",
         graded: true,
         content: %{
@@ -2236,7 +2328,7 @@ defmodule Oli.TestHelpers do
     graded_page_2_revision =
       insert(
         :revision,
-        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("page"),
+        resource_type_id: Oli.Resources.ResourceType.id_for_page(),
         title: "Graded page 2 - Level 0 (w/ date)",
         graded: true,
         purpose: :application,
@@ -2267,7 +2359,7 @@ defmodule Oli.TestHelpers do
     graded_page_3_revision =
       insert(
         :revision,
-        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("page"),
+        resource_type_id: Oli.Resources.ResourceType.id_for_page(),
         title: "Graded page 3 - Level 1 (w/ no date)",
         graded: true,
         resource: graded_page_3_resource,
@@ -2277,7 +2369,7 @@ defmodule Oli.TestHelpers do
     graded_page_4_revision =
       insert(
         :revision,
-        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("page"),
+        resource_type_id: Oli.Resources.ResourceType.id_for_page(),
         title: "Graded page 4 - Level 0 (w/ gating condition)",
         graded: true,
         resource: graded_page_4_resource
@@ -2286,7 +2378,7 @@ defmodule Oli.TestHelpers do
     graded_page_5_revision =
       insert(
         :revision,
-        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("page"),
+        resource_type_id: Oli.Resources.ResourceType.id_for_page(),
         title: "Graded page 5 - Level 0 (w/ student gating condition)",
         graded: true,
         resource: graded_page_5_resource,
@@ -2296,7 +2388,7 @@ defmodule Oli.TestHelpers do
     graded_page_6_revision =
       insert(
         :revision,
-        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("page"),
+        resource_type_id: Oli.Resources.ResourceType.id_for_page(),
         title: "Graded page 6 - Level 0 (w/o student gating condition)",
         graded: true,
         resource: graded_page_6_resource
@@ -2313,7 +2405,7 @@ defmodule Oli.TestHelpers do
     unit_one_revision =
       insert(:revision, %{
         objectives: %{},
-        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("container"),
+        resource_type_id: Oli.Resources.ResourceType.id_for_container(),
         children: [graded_page_1_resource.id, graded_page_2_resource.id],
         content: %{"model" => []},
         deleted: false,
@@ -2330,7 +2422,7 @@ defmodule Oli.TestHelpers do
       insert(:revision, %{
         resource: root_container_resource,
         objectives: %{},
-        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("container"),
+        resource_type_id: Oli.Resources.ResourceType.id_for_container(),
         children: [
           unit_one_resource.id,
           graded_page_3_resource.id,
@@ -2472,7 +2564,7 @@ defmodule Oli.TestHelpers do
       insert(:revision, %{
         resource: container_resource,
         objectives: %{},
-        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("container"),
+        resource_type_id: Oli.Resources.ResourceType.id_for_container(),
         children: [],
         content: %{},
         deleted: false,
@@ -2513,7 +2605,7 @@ defmodule Oli.TestHelpers do
     # Graded page revision
     page_revision =
       insert(:revision,
-        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("page"),
+        resource_type_id: Oli.Resources.ResourceType.id_for_page(),
         title: "Progress test revision",
         graded: true,
         content: %{"advancedDelivery" => true}
@@ -2533,7 +2625,7 @@ defmodule Oli.TestHelpers do
     unit_one_revision =
       insert(:revision, %{
         objectives: %{},
-        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("container"),
+        resource_type_id: Oli.Resources.ResourceType.id_for_container(),
         children: [],
         content: %{"model" => []},
         deleted: false,
@@ -2552,7 +2644,7 @@ defmodule Oli.TestHelpers do
       insert(:revision, %{
         resource: container_resource,
         objectives: %{},
-        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("container"),
+        resource_type_id: Oli.Resources.ResourceType.id_for_container(),
         children: [unit_one_resource.id, page_revision.resource.id],
         content: %{},
         deleted: false,
@@ -2626,7 +2718,7 @@ defmodule Oli.TestHelpers do
     page_revision_cs =
       insert(:revision, %{
         scoring_strategy_id: Oli.Resources.ScoringStrategy.get_id_by_type("average"),
-        resource_type_id: ResourceType.get_id_by_type("page"),
+        resource_type_id: ResourceType.id_for_page(),
         collab_space_config: collab_space_config,
         children: [],
         content: %{"model" => []},
@@ -2645,7 +2737,7 @@ defmodule Oli.TestHelpers do
     page_revision =
       insert(:revision, %{
         scoring_strategy_id: Oli.Resources.ScoringStrategy.get_id_by_type("average"),
-        resource_type_id: ResourceType.get_id_by_type("page"),
+        resource_type_id: ResourceType.id_for_page(),
         children: [],
         content: %{"model" => []},
         deleted: false,
@@ -2668,7 +2760,7 @@ defmodule Oli.TestHelpers do
       insert(:revision, %{
         resource: container_resource,
         objectives: %{},
-        resource_type_id: ResourceType.get_id_by_type("container"),
+        resource_type_id: ResourceType.id_for_container(),
         children: [page_resource_cs.id, page_resource.id],
         content: %{},
         collab_space_config: root_container_collab_space_config,
@@ -2758,7 +2850,7 @@ defmodule Oli.TestHelpers do
     container_revision =
       insert(:revision, %{
         objectives: %{},
-        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("container"),
+        resource_type_id: Oli.Resources.ResourceType.id_for_container(),
         children:
           Enum.map(revisions, fn {revision = %Oli.Resources.Revision{}, _section_attributes} ->
             revision.resource.id
@@ -2871,7 +2963,7 @@ defmodule Oli.TestHelpers do
     # Graded page revision
     page_revision =
       insert(:revision,
-        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("page"),
+        resource_type_id: Oli.Resources.ResourceType.id_for_page(),
         title: "Progress test revision",
         graded: true,
         content: %{"advancedDelivery" => true}
@@ -2879,7 +2971,7 @@ defmodule Oli.TestHelpers do
 
     other_revision =
       insert(:revision,
-        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("page"),
+        resource_type_id: Oli.Resources.ResourceType.id_for_page(),
         title: "Other test revision",
         graded: true,
         content: %{"advancedDelivery" => true},
@@ -2901,7 +2993,7 @@ defmodule Oli.TestHelpers do
       insert(:revision, %{
         resource: container_resource,
         objectives: %{},
-        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("container"),
+        resource_type_id: Oli.Resources.ResourceType.id_for_container(),
         children: [page_revision.resource.id, other_revision.resource.id],
         content: %{},
         deleted: false,
@@ -2969,7 +3061,7 @@ defmodule Oli.TestHelpers do
     page_revision =
       insert(:revision,
         resource: page_resource,
-        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("page"),
+        resource_type_id: Oli.Resources.ResourceType.id_for_page(),
         content: %{"model" => []},
         title: "Other revision A"
       )
@@ -2982,7 +3074,7 @@ defmodule Oli.TestHelpers do
     page_revision_cs =
       insert(:revision,
         resource: page_resource_cs,
-        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("page"),
+        resource_type_id: Oli.Resources.ResourceType.id_for_page(),
         content: %{"model" => []},
         slug: "page_revision_cs",
         collab_space_config: collab_space_config,
@@ -2996,7 +3088,7 @@ defmodule Oli.TestHelpers do
     container_revision =
       insert(:revision, %{
         resource: container_resource,
-        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("container"),
+        resource_type_id: Oli.Resources.ResourceType.id_for_container(),
         children: [page_resource.id, page_resource_cs.id],
         content: %{},
         deleted: false,
@@ -3069,7 +3161,7 @@ defmodule Oli.TestHelpers do
 
     page_revision =
       insert(:revision, %{
-        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("page"),
+        resource_type_id: Oli.Resources.ResourceType.id_for_page(),
         title: "Basic Page"
       })
 
@@ -3082,7 +3174,7 @@ defmodule Oli.TestHelpers do
       insert(:revision, %{
         resource: container_resource,
         objectives: %{},
-        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("container"),
+        resource_type_id: Oli.Resources.ResourceType.id_for_container(),
         children: [page_revision.resource.id],
         content: %{},
         deleted: false
@@ -3104,7 +3196,8 @@ defmodule Oli.TestHelpers do
     insert(:published_resource, %{
       publication: publication,
       resource: page_revision.resource,
-      revision: page_revision
+      revision: page_revision,
+      author: insert(:author, email: "some_email@email.com")
     })
 
     section =
@@ -3300,8 +3393,7 @@ defmodule Oli.TestHelpers do
   end
 
   ### Begins helpers to create resources ###
-
-  def create_bundle_for(type_id, project, author, publication, resource, opts)
+  def create_bundle_for(type_id, project, author, publication, resource \\ nil, opts \\ [])
 
   def create_bundle_for(type_id, project, author, nil, nil, opts) do
     resource = insert(:resource)

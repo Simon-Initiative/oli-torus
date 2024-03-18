@@ -34,7 +34,7 @@ defmodule OliWeb.Discussion.TableModel do
   end
 
   defp href(section_slug, post) do
-    container_type_id = Oli.Resources.ResourceType.get_id_by_type("container")
+    container_type_id = Oli.Resources.ResourceType.id_for_container()
 
     case post.resource_type_id do
       ^container_type_id ->

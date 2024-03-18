@@ -776,7 +776,7 @@ defmodule OliWeb.RemixSectionLiveTest do
   defp setup_admin_session(%{conn: conn}) do
     map = Seeder.base_project_with_resource4()
 
-    admin = author_fixture(%{system_role_id: Oli.Accounts.SystemRole.role_id().admin})
+    admin = author_fixture(%{system_role_id: Oli.Accounts.SystemRole.role_id().system_admin})
 
     conn =
       Plug.Test.init_test_session(conn, %{})
@@ -785,7 +785,7 @@ defmodule OliWeb.RemixSectionLiveTest do
     # Add an orphan page to the section
     orphan_revision =
       insert(:revision, %{
-        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("page"),
+        resource_type_id: Oli.Resources.ResourceType.id_for_page(),
         title: "An Orphan Page"
       })
 
@@ -810,13 +810,13 @@ defmodule OliWeb.RemixSectionLiveTest do
 
     page_revision =
       insert(:revision, %{
-        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("page"),
+        resource_type_id: Oli.Resources.ResourceType.id_for_page(),
         title: "Elixir Page"
       })
 
     orphan_revision_2 =
       insert(:revision, %{
-        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("page"),
+        resource_type_id: Oli.Resources.ResourceType.id_for_page(),
         title: "Another orph. Page"
       })
 
@@ -824,7 +824,7 @@ defmodule OliWeb.RemixSectionLiveTest do
       insert(:revision, %{
         resource: insert(:resource),
         objectives: %{},
-        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("container"),
+        resource_type_id: Oli.Resources.ResourceType.id_for_container(),
         children: [
           page_revision.resource_id,
           orphan_revision_2.resource_id
@@ -941,7 +941,7 @@ defmodule OliWeb.RemixSectionLiveTest do
     # Add an orphan page to the section
     orphan_revision =
       insert(:revision, %{
-        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("page"),
+        resource_type_id: Oli.Resources.ResourceType.id_for_page(),
         title: "An Orphan Page"
       })
 
@@ -963,19 +963,19 @@ defmodule OliWeb.RemixSectionLiveTest do
 
     page_revision =
       insert(:revision, %{
-        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("page"),
+        resource_type_id: Oli.Resources.ResourceType.id_for_page(),
         title: "Elixir Page"
       })
 
     orphan_revision_2 =
       insert(:revision, %{
-        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("page"),
+        resource_type_id: Oli.Resources.ResourceType.id_for_page(),
         title: "Another orph. Page"
       })
 
     unit_1_revision =
       insert(:revision, %{
-        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("container"),
+        resource_type_id: Oli.Resources.ResourceType.id_for_container(),
         title: "Great Unit 1",
         max_attempts: nil
       })
@@ -984,7 +984,7 @@ defmodule OliWeb.RemixSectionLiveTest do
       insert(:revision, %{
         resource: insert(:resource),
         objectives: %{},
-        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("container"),
+        resource_type_id: Oli.Resources.ResourceType.id_for_container(),
         children: [
           page_revision.resource_id,
           orphan_revision_2.resource_id,
