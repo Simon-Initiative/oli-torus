@@ -26,21 +26,34 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
     Unlimited: 0
   ]
 
-  @max_file_size 5_000_000
+  @max_poster_image_size 5_000_000
   @default_poster_image "/images/course_default.jpg"
+
+  @max_intro_video_size 50_000_000
 
   def mount(socket) do
     {:ok,
      socket
      |> assign(step: :general)
-     |> assign(max_size: trunc(@max_file_size / 1_000_000))
+     |> assign(
+       max_upload_size: %{
+         poster_image: trunc(@max_poster_image_size / 1_000_000),
+         intro_video: trunc(@max_intro_video_size / 1_000_000)
+       }
+     )
      |> assign(uploaded_files: [])
      |> assign(default_poster_image: @default_poster_image)
      |> allow_upload(:poster_image,
        accept: ~w(.jpg .jpeg .png),
        max_entries: 1,
        auto_upload: true,
-       max_file_size: @max_file_size
+       max_file_size: @max_poster_image_size
+     )
+     |> allow_upload(:intro_video,
+       accept: ~w(video/*),
+       max_entries: 1,
+       auto_upload: true,
+       max_file_size: @max_intro_video_size
      )}
   end
 
@@ -56,41 +69,53 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
   attr(:attempt_options, :list, default: @attempt_options)
   attr(:selected_resources, :list, default: [])
 
-  def render(%{step: :poster_image_selection} = assigns) do
+  def render(%{step: step} = assigns) when step in [:poster_image, :intro_video] do
     ~H"""
     <div>
       <div
         id="options-modal-uploader-trigger"
-        data-auto_open_uploader={JS.dispatch("click", to: "##{@uploads.poster_image.ref}")}
+        data-auto_open_uploader={JS.dispatch("click", to: "##{@uploads[@step].ref}")}
       >
       </div>
       <h2 class="text-lg mb-6">
-        <span :if={@poster_image_urls != []}>Select a poster image or</span>
-        <a href="#" phx-click={JS.dispatch("click", to: "##{@uploads.poster_image.ref}")}>
-          <%= if @poster_image_urls != [], do: "upload a new one", else: "Upload a poster image" %>
+        <span :if={@resource_urls != []}>
+          <%= "Select #{humanize_and_pluralize_atom(@step)} or" %>
+        </span>
+        <a
+          href="#"
+          phx-click={
+            JS.dispatch("click", to: "##{@uploads[@step].ref}")
+            |> JS.push("cancel_not_consumed_uploads")
+          }
+          phx-target={@myself}
+        >
+          <%= if @resource_urls != [],
+            do: "upload a new one",
+            else: "Upload #{humanize_and_pluralize_atom(@step)}" %>
         </a>
-        <span class="text-xs text-gray-500">(max size: <%= @max_size %> MB)</span>
+        <span class="text-xs text-gray-500">(max size: <%= @max_upload_size[@step] %> MB)</span>
       </h2>
       <div
-        id="s3_uploaded_images"
+        id="s3_uploaded_resources"
         class="grid grid-cols-4 gap-4 gap-y-10 p-6 max-h-[65vh] overflow-y-scroll"
-        phx-drop-target={@uploads.poster_image.ref}
+        phx-drop-target={@uploads[@step].ref}
       >
         <article
-          :for={entry <- @uploads.poster_image.entries}
+          :for={entry <- @uploads[@step].entries}
           :if={entry.valid?}
           class="relative hover:scale-[1.02]"
         >
           <figure>
             <.live_img_preview
+              :if={@step == :poster_image}
               entry={entry}
               class={[
                 "object-cover h-[162px] w-[288px] mx-auto rounded-lg cursor-pointer outline outline-1 outline-gray-200 shadow-lg",
-                if(fetch_field(@changeset, :poster_image) == "uploaded_one",
+                if(fetch_field(@changeset, @step) == "uploaded_one",
                   do: "!outline-[7px] outline-blue-400"
                 )
               ]}
-              phx-click="select-poster-image"
+              phx-click="select-resource"
               phx-value-url="uploaded_one"
               phx-target={@myself}
             />
@@ -108,15 +133,16 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
           </button>
         </article>
         <img
-          :for={url <- @poster_image_urls}
+          :for={url <- @resource_urls}
+          :if={@step == :poster_image}
           src={url}
-          phx-click="select-poster-image"
+          phx-click="select-resource"
           phx-value-url={url}
           phx-target={@myself}
           data-filename={get_filename(url)}
           class={[
             "object-cover h-[162px] w-[288px] mx-auto rounded-lg cursor-pointer outline outline-1 outline-gray-200 shadow-lg hover:scale-[1.02]",
-            if(get_filename(url) == get_filename(fetch_field(@changeset, :poster_image)),
+            if(get_filename(url) == get_filename(fetch_field(@changeset, @step)),
               do: "!outline-[7px] outline-blue-400"
             )
           ]}
@@ -132,15 +158,15 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
           phx-submit="consume-uploaded"
         >
           <div class="hidden">
-            <.live_file_input upload={@uploads.poster_image} />
+            <.live_file_input upload={@uploads[@step]} />
           </div>
-          <div :if={fetch_field(@changeset, :poster_image) == "uploaded_one"}>
-            <%= for entry <- @uploads.poster_image.entries do %>
+          <div :if={fetch_field(@changeset, @step) == "uploaded_one"}>
+            <%= for entry <- @uploads[@step].entries do %>
               <progress :if={entry.valid? and entry.progress != 100} value={entry.progress} max="100">
                 <%= entry.progress %>%
               </progress>
-              <%= for err <- upload_errors(@uploads.poster_image, entry) do %>
-                <p class="alert alert-danger"><%= error_to_string(err) %></p>
+              <%= for err <- upload_errors(@uploads[@step], entry) do %>
+                <p class="alert alert-danger"><%= error_to_string(err, @step) %></p>
               <% end %>
             <% end %>
           </div>
@@ -160,7 +186,7 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
           phx-disable-with="Selecting..."
           class="btn btn-primary"
           phx-click={
-            if fetch_field(@changeset, :poster_image) == "uploaded_one",
+            if fetch_field(@changeset, @step) == "uploaded_one",
               do: JS.push("consume-uploaded") |> JS.push("change_step"),
               else: "change_step"
           }
@@ -168,9 +194,9 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
           phx-value-action="save"
           phx-target={@myself}
           disabled={
-            !can_submit_poster_selection?(
-              fetch_field(@changeset, :poster_image),
-              @uploads.poster_image.entries
+            !can_submit_resource_selection?(
+              fetch_field(@changeset, @step),
+              @uploads[@step].entries
             )
           }
         >
@@ -269,6 +295,10 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
             <.poster_image_selection
               target={@myself}
               poster_image={fetch_field(@changeset, :poster_image) || @default_poster_image}
+            />
+            <.intro_video_selection
+              target={@myself}
+              intro_video={fetch_field(@changeset, :intro_video)}
             />
           </div>
 
@@ -398,6 +428,10 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
             target={@myself}
             poster_image={fetch_field(@changeset, :poster_image) || @default_poster_image}
           />
+          <.intro_video_selection
+            target={@myself}
+            intro_video={fetch_field(@changeset, :intro_video)}
+          />
         <% end %>
 
         <div class="modal-footer">
@@ -427,7 +461,7 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
         type="button"
         class="btn btn-primary mx-auto mt-2"
         phx-click="change_step"
-        phx-value-target_step="poster_image_selection"
+        phx-value-target_step="poster_image"
         phx-target={@target}
       >
         Select
@@ -436,21 +470,54 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
     """
   end
 
-  def handle_event("change_step", %{"target_step" => "poster_image_selection"}, socket) do
-    {:ok, poster_image_urls} =
-      list_poster_image_urls(socket.assigns.project.slug)
-      |> list_selected_image_first(fetch_field(socket.assigns.changeset, :poster_image))
+  attr :intro_video, :string
+  attr :target, :map
+
+  def intro_video_selection(assigns) do
+    ~H"""
+    <div class="form-group flex flex-col gap-2">
+      <label>Intro video</label>
+      <.input type="hidden" name="revision[intro_video]" value={@intro_video} />
+      <video
+        class="object-cover h-[162px] w-[288px] mx-auto rounded-lg outline outline-1 outline-gray-200 shadow-lg"
+        preload="metadata"
+        controls
+        data-filename={get_filename(@intro_video)}
+      >
+        <source src={"#{@intro_video}"} type="video/mp4" />
+        Your browser does not support the video tag.
+      </video>
+      <button
+        type="button"
+        class="btn btn-primary mx-auto mt-2"
+        phx-click="change_step"
+        phx-value-target_step="intro_video"
+        phx-target={@target}
+      >
+        Select
+      </button>
+    </div>
+    """
+  end
+
+  def handle_event("change_step", %{"target_step" => target_step}, socket)
+      when target_step in ["poster_image", "intro_video"] do
+    resource_name = String.to_existing_atom(target_step)
+
+    {:ok, resource_urls} =
+      list_resource_urls(socket.assigns.project.slug, resource_name)
+      |> list_selected_resource_first(fetch_field(socket.assigns.changeset, resource_name))
 
     socket =
       socket
-      |> maybe_cancel_not_consumed_uploads()
+      |> maybe_cancel_not_consumed_uploads(resource_name)
       |> assign(
-        step: :poster_image_selection,
-        poster_image_urls: poster_image_urls
+        step: resource_name,
+        resource_urls: resource_urls
       )
 
-    if poster_image_urls == [] do
-      # if there are no images, we open the uploader automatically to reduce the amount of user interactions
+    if resource_urls == [] do
+      # if there are no resources, we open the uploader automatically to reduce the amount of user interactions
       {:noreply,
        socket
        |> push_event("js-exec", %{
@@ -462,57 +529,67 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
     end
   end
 
+  def handle_event("cancel_not_consumed_uploads", _params, socket) do
+    {:noreply, maybe_cancel_not_consumed_uploads(socket, socket.assigns.step)}
+  end
+
   def handle_event("change_step", %{"target_step" => "general", "action" => "cancel"}, socket) do
+    %{changeset: changeset, step: step} = socket.assigns
+
     changeset =
-      socket.assigns.changeset
-      |> Ecto.Changeset.delete_change(:poster_image)
+      changeset
+      |> Ecto.Changeset.delete_change(step)
 
     {:noreply,
      socket
-     |> maybe_cancel_not_consumed_uploads()
+     |> maybe_cancel_not_consumed_uploads(step)
      |> assign(step: :general, changeset: changeset)}
   end
 
   def handle_event("change_step", %{"target_step" => "general", "action" => "save"}, socket) do
-    if is_nil(Ecto.Changeset.get_change(socket.assigns.changeset, :poster_image)) do
+    if is_nil(Ecto.Changeset.get_change(socket.assigns.changeset, socket.assigns.step)) do
       {:noreply, socket}
     else
       {:noreply, assign(socket, step: :general)}
     end
   end
 
-  def handle_event("select-poster-image", %{"url" => url}, socket) do
-    changeset = Ecto.Changeset.put_change(socket.assigns.changeset, :poster_image, url)
+  def handle_event("select-resource", %{"url" => url}, socket) do
+    changeset = Ecto.Changeset.put_change(socket.assigns.changeset, socket.assigns.step, url)
 
     {:noreply, assign(socket, changeset: changeset)}
   end
 
   def handle_event("validate-upload", _params, socket) do
-    changeset = Ecto.Changeset.put_change(socket.assigns.changeset, :poster_image, "uploaded_one")
+    changeset =
+      Ecto.Changeset.put_change(socket.assigns.changeset, socket.assigns.step, "uploaded_one")
 
     {:noreply, assign(socket, changeset: changeset)}
   end
 
   def handle_event("cancel-upload", %{"ref" => ref}, socket) do
-    changeset = Ecto.Changeset.delete_change(socket.assigns.changeset, :poster_image)
+    changeset = Ecto.Changeset.delete_change(socket.assigns.changeset, socket.assigns.step)
 
-    {:noreply, cancel_upload(socket, :poster_image, ref) |> assign(changeset: changeset)}
+    {:noreply, cancel_upload(socket, socket.assigns.step, ref) |> assign(changeset: changeset)}
   end
 
   def handle_event("consume-uploaded", _params, socket) do
+    %{step: step, project: project, changeset: changeset} = socket.assigns
+
     bucket_name = Application.fetch_env!(:oli, :s3_media_bucket_name)
 
     uploaded_files =
-      consume_uploaded_entries(socket, :poster_image, fn %{path: temp_file_path}, entry ->
-        image_file_name = "#{entry.uuid}.#{ext(entry)}"
+      consume_uploaded_entries(socket, step, fn %{path: temp_file_path}, entry ->
+        resource_file_name = "#{entry.uuid}.#{ext(entry)}"
 
-        upload_path = poster_images_path(socket.assigns.project.slug) <> "/#{image_file_name}"
+        upload_path =
+          resource_path(project.slug, step) <> "/#{resource_file_name}"
 
         S3Storage.upload_file(bucket_name, upload_path, temp_file_path)
       end)
 
     changeset =
-      Ecto.Changeset.put_change(socket.assigns.changeset, :poster_image, hd(uploaded_files))
+      Ecto.Changeset.put_change(changeset, step, hd(uploaded_files))
 
     {:noreply, assign(socket, :changeset, changeset)}
   end
@@ -553,54 +630,59 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
     |> Enum.concat([{name, id}])
   end
 
-  defp can_submit_poster_selection?(nil, _uploaded_entries), do: false
+  defp can_submit_resource_selection?(nil, _uploaded_entries), do: false
 
-  defp can_submit_poster_selection?(selected_poster_image, _uploaded_entries)
-       when selected_poster_image != "uploaded_one",
+  defp can_submit_resource_selection?(selected_resource, _uploaded_entries)
+       when selected_resource != "uploaded_one",
        do: true
 
-  defp can_submit_poster_selection?(
+  defp can_submit_resource_selection?(
          "uploaded_one",
          [%{progress: 100, valid?: true} | _other_entries] = _uploaded_entries
        ),
        do: true
 
-  defp can_submit_poster_selection?(
+  defp can_submit_resource_selection?(
          "uploaded_one",
          _uploaded_entries
        ),
        do: false
 
-  defp error_to_string(:too_large), do: "The uploaded image is too large"
-  defp error_to_string(:too_many_files), do: "You have selected too many files"
-  defp error_to_string(:not_accepted), do: "You have selected an unacceptable file type"
+  defp error_to_string(:too_large, resource_name),
+    do: "The uploaded #{humanize_atom(resource_name)} is too large"
 
-  defp list_poster_image_urls(project_slug) do
-    poster_images_path(project_slug)
+  defp error_to_string(:too_many_files, _resource_name), do: "You have selected too many files"
+
+  defp error_to_string(:not_accepted, _resource_name),
+    do: "You have selected an unacceptable file type"
+
+  defp list_resource_urls(project_slug, resource_name) do
+    resource_path(project_slug, resource_name)
     |> S3Storage.list_file_urls()
   end
 
-  defp list_selected_image_first({:ok, images}, selected_image) do
-    case Enum.find(images, &(get_filename(&1) == get_filename(selected_image))) do
+  defp list_selected_resource_first({:ok, resource}, selected_resource) do
+    case Enum.find(resource, &(get_filename(&1) == get_filename(selected_resource))) do
       nil ->
-        {:ok, images}
+        {:ok, resource}
 
-      selected_image ->
+      selected_resource ->
         {:ok,
-         [selected_image] ++
-           Enum.reject(images, &(get_filename(&1) == get_filename(selected_image)))}
+         [selected_resource] ++
+           Enum.reject(resource, &(get_filename(&1) == get_filename(selected_resource)))}
     end
   end
 
-  defp list_selected_image_first(error, _selected_image), do: error
+  defp list_selected_resource_first(error, _selected_resource), do: error
 
-  defp poster_images_path(project_slug), do: Path.join(["poster_images", project_slug])
+  defp resource_path(project_slug, resource_name),
+    do: Path.join([Atom.to_string(resource_name) <> "s", project_slug]) |> IO.inspect()
 
-  defp maybe_cancel_not_consumed_uploads(socket) do
-    # we need to cancel any residual not consumed image between step navigations
-    # in order to allow the user to upload a new image.
-    for entry <- socket.assigns.uploads.poster_image.entries do
-      cancel_upload(socket, :poster_image, entry.ref)
+  defp maybe_cancel_not_consumed_uploads(socket, allow_upload_name) do
+    # we need to cancel any residual not consumed resource between step navigations
+    # in order to allow the user to upload a new resource.
+    for entry <- socket.assigns.uploads[allow_upload_name].entries do
+      cancel_upload(socket, allow_upload_name, entry.ref)
     end
     |> case do
       [] -> socket
@@ -620,4 +702,9 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
     |> String.split("/")
     |> List.last()
   end
+
+  defp humanize_and_pluralize_atom(:intro_video), do: "an #{humanize_atom(:intro_video)}"
+  defp humanize_and_pluralize_atom(atom), do: "a #{humanize_atom(atom)}"
+
+  defp humanize_atom(atom), do: Phoenix.Naming.humanize(atom) |> String.downcase()
 end
