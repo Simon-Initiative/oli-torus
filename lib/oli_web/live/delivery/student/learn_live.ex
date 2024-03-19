@@ -658,12 +658,6 @@ defmodule OliWeb.Delivery.Student.LearnLive do
               intro_video_viewed={@unit["resource_id"] in @viewed_intro_video_resource_ids}
               is_youtube_video={WebUtils.is_youtube_video?(@unit["intro_video"])}
             />
-            <.intro_poster_card
-              :if={@unit["poster_image"]}
-              bg_image_url={@unit["poster_image"]}
-              card_resource_id={@unit["resource_id"]}
-              resource_id={@unit["resource_id"]}
-            />
             <.card
               :for={module <- @unit["children"]}
               module={module}
@@ -1295,28 +1289,6 @@ defmodule OliWeb.Delivery.Student.LearnLive do
             </svg>
           </button>
         </div>
-      </div>
-    </div>
-    """
-  end
-
-  attr :title, :string, default: "Intro"
-  attr :bg_image_url, :string, doc: "the background image url for the card"
-  attr :card_resource_id, :string
-  attr :resource_id, :string
-
-  def intro_poster_card(assigns) do
-    # TODO: handle click event (expand and show intro_content)
-    ~H"""
-    <div class="relative slider-card hover:scale-[1.01]" role="intro_poster_card">
-      <div class="rounded-xl absolute -top-[0.7px] -left-[0.7px] h-[163px] w-[289.5px] cursor-pointer bg-[linear-gradient(180deg,#223_0%,rgba(34,34,51,0.72)_52.6%,rgba(34,34,51,0.00)_100%)]" />
-      <div
-        class="flex flex-col items-center rounded-xl h-[162px] w-[288px] bg-gray-200/50 shrink-0 px-5 pt-[15px] bg-cover bg-center"
-        style={"background-image: url('#{@bg_image_url}');"}
-      >
-        <h5 class="text-[13px] leading-[18px] font-bold opacity-60 text-gray-500 text-white dark:text-opacity-50 self-start">
-          <%= @title %>
-        </h5>
       </div>
     </div>
     """
