@@ -744,24 +744,19 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       # unit 1 has an intro card with a video url provided, so there must be a play button
       assert has_element?(
                view,
-               ~s{div[role="unit_1"] div[role="slider"] div[role="intro_card"] button[role="play_unit_intro_video"]}
+               ~s{div[role="unit_1"] div[role="slider"] div[role="youtube_intro_video_card"] button[role="play_unit_intro_video"]}
              )
 
-      # unit 2 has an intro card without video url (only poster_image was provided)
-      assert has_element?(
-               view,
-               ~s{div[role="unit_2"] div[role="slider"] div[role="intro_card"]}
-             )
-
+      # unit 2 has no video intro card
       refute has_element?(
                view,
-               ~s{div[role="unit_2"] div[role="slider"] div[role="intro_card"] button[role="play_unit_intro_video"]}
+               ~s{div[role="unit_2"] div[role="slider"] div[role="youtube_intro_video_card"] button[role="play_unit_intro_video"]}
              )
 
-      # unit 3 has no intro card at all
+      # unit 3 has no video intro card
       refute has_element?(
                view,
-               ~s{div[role="unit_3"] div[role="slider"] div[role="intro_card"]}
+               ~s{div[role="unit_3"] div[role="slider"] div[role="youtube_intro_video_card"]}
              )
     end
 
@@ -1450,7 +1445,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
              |> render =~ "style=\"background-image: url(&#39;/images/course_default.jpg&#39;)"
     end
 
-    test "can see Youtube video poster image (if not the default one is shown)",
+    test "can see Youtube or S3 video poster image",
          %{
            conn: conn,
            user: user,
@@ -1462,19 +1457,13 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       {:ok, view, _html} = live(conn, Utils.learn_live_path(section.slug))
 
       assert view
-             |> element(~s{div[role="unit_1"] div[role="intro_card"]"})
+             |> element(~s{div[role="unit_1"] div[role="youtube_intro_video_card"]"})
              |> render =~
                "style=\"background-image: url(&#39;https://img.youtube.com/vi/123456789ab/hqdefault.jpg&#39;)"
 
-      # S3 video, uses provided poster image
+      # S3 video
       assert view
-             |> element(~s{div[role="unit_4"] div[role="intro_card"]"})
-             |> render =~ "style=\"background-image: url(&#39;some_other_image_url&#39;)"
-
-      # S3 video without poster image, uses default one
-      assert view
-             |> element(~s{div[role="unit_5"] div[role="intro_card"]"})
-             |> render =~ "style=\"background-image: url(&#39;/images/course_default.jpg&#39;)"
+             |> has_element?(~s{div[role="unit_4"] div[role="intro_video_card"]"})
     end
 
     test "can see pages at the top level of the curriculum (at unit level) with it's header and corresponding card",
