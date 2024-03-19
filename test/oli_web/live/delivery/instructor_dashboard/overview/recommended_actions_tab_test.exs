@@ -102,6 +102,49 @@ defmodule OliWeb.Delivery.InstructorDashboard.Overview.RecommendedActionsTest do
              )
     end
 
+    test "redirects to discussion activity tab when click to approve pending posts", %{
+      conn: conn,
+      section: section,
+      section_page: section_page
+    } do
+      user = insert(:user)
+
+      # create a pending post
+      post =
+        insert(:post,
+          content: %{message: "Example Post Content 1"},
+          section: section,
+          resource: section_page.resource,
+          user: user,
+          status: :submitted
+        )
+
+      # access to recommended actions tab to see the pending post
+      {:ok, view, _html} = live(conn, instructor_course_content_path(section.slug))
+
+      assert has_element?(view, "h4", "Approve Pending Posts")
+
+      assert has_element?(
+               view,
+               "span",
+               "You have 1 discussion post that is pending your approval"
+             )
+
+      # click to approve pending posts (redirect to discussion activity tab)
+      view
+      |> element(
+        "div[id=\"recommended_actions\"] > a[href=\"/sections/#{section.slug}/instructor_dashboard/discussions\"]"
+      )
+      |> render_click()
+
+      # check if the pending post is displayed in the discussion activity tab
+      {:ok, view, _html} =
+        live(conn, ~p"/sections/#{section.slug}/instructor_dashboard/discussions")
+
+      assert has_element?(view, "h4", "Discussion Activity")
+      assert has_element?(view, "p[class=\"torus-p\"]", post.content.message)
+    end
+
     test "renders the \"score questions\" action when necessary", %{
       conn: conn,
       section: section,

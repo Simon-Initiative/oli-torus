@@ -27,7 +27,10 @@ defmodule OliWeb do
       import OliWeb.Gettext
       import OliWeb.Pow.PowHelpers
       import Phoenix.LiveView.Controller
+
       alias OliWeb.Router.Helpers, as: Routes
+
+      unquote(verified_routes())
     end
   end
 
@@ -67,6 +70,14 @@ defmodule OliWeb do
     quote do
       use Phoenix.LiveView,
         layout: {OliWeb.LayoutView, :live}
+
+      # Define on_mount for all live views
+      #
+      # NOTE: for a live_session that specifies on_mount, this will be called
+      # after the specified on_mounts, and therefore should be included
+      # in the live_session on_mount if needed before other on_mount plugs
+      on_mount OliWeb.LiveSessionPlugs.SetUser
+      on_mount OliWeb.LiveSessionPlugs.SetPreviewMode
 
       unquote(html_helpers())
     end
@@ -139,6 +150,8 @@ defmodule OliWeb do
       import OliWeb.Components.Common
 
       import ReactPhoenix.ClientSide
+
+      alias Phoenix.LiveView.JS
 
       # Routes generation with the ~p sigil
       unquote(verified_routes())

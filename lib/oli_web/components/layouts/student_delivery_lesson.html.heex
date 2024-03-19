@@ -1,0 +1,85 @@
+<div id="live_flash_container" class="fixed top-14 w-full mx-auto z-50">
+  <%= if live_flash(@flash, :info) do %>
+    <div class="alert alert-info flex flex-row" role="alert">
+      <div class="flex-1">
+        <%= live_flash(@flash, :info) %>
+      </div>
+
+      <button
+        type="button"
+        class="close"
+        data-bs-dismiss="alert"
+        aria-label="Close"
+        phx-click="lv:clear-flash"
+        phx-value-key="info"
+      >
+        <i class="fa-solid fa-xmark fa-lg"></i>
+      </button>
+    </div>
+  <% end %>
+
+  <%= if live_flash(@flash, :error) do %>
+    <div class="alert alert-danger flex flex-row" role="alert">
+      <div class="flex-1">
+        <%= live_flash(@flash, :error) %>
+      </div>
+
+      <button
+        type="button"
+        class="close"
+        data-bs-dismiss="alert"
+        aria-label="Close"
+        phx-click="lv:clear-flash"
+        phx-value-key="error"
+      >
+        <i class="fa-solid fa-xmark fa-lg"></i>
+      </button>
+    </div>
+  <% end %>
+</div>
+
+<div class="h-screen flex flex-col overscroll-none overflow-hidden">
+  <Components.Delivery.Layouts.header
+    ctx={@ctx}
+    is_system_admin={assigns[:is_system_admin] || false}
+    section={@section}
+    brand={@brand}
+    preview_mode={@preview_mode}
+  />
+
+  <div class="flex-1 flex flex-col mt-14 overflow-hidden">
+    <div
+      :if={@section}
+      id="page-content"
+      class="flex-1 flex flex-col relative justify-center items-start overflow-hidden"
+    >
+      <.back_arrow to={@request_path} show_sidebar={assigns[:show_sidebar]} />
+
+      <%!-- This feature will not be implemented in the first release. This is just a placeholder--%>
+      <.annotations_dropdown />
+
+      <%= @inner_content %>
+    </div>
+
+    <Components.Delivery.Layouts.previous_next_nav
+      :if={assigns[:page_context]}
+      current_page={@current_page}
+      previous_page={@previous_page}
+      next_page={@next_page}
+      section_slug={@section.slug}
+      request_path={@request_path}
+    />
+  </div>
+
+  <%= if @section do %>
+    <%= live_render(@socket, OliWeb.Dialogue.WindowLive,
+      session: %{
+        "section_slug" => @section.slug,
+        "resource_id" => @current_page["id"],
+        "revision_id" => @page_context.page.id,
+        "is_page" => true
+      },
+      id: "dialogue-window"
+    ) %>
+  <% end %>
+</div>

@@ -11,7 +11,7 @@ defmodule OliWeb.Components.Delivery.UpNext do
 
   def up_next(assigns) do
     ~H"""
-    <div class="bg-delivery-header text-white border-b border-slate-300">
+    <div class="bg-delivery-instructor-dashboard-header text-white border-b border-slate-300">
       <div class="container mx-auto flex flex-col justify-between">
         <h4 class="leading-loose px-8 py-4">
           Up Next for <span class="font-bold"><%= user_name(@user) %></span>
@@ -50,7 +50,7 @@ defmodule OliWeb.Components.Delivery.UpNext do
 
   def card(assigns) do
     ~H"""
-    <div class="flex-1 rounded p-8 py-4 mb-2 last:mb-0 md:last:mb-2 md:mr-2 bg-delivery-header-800">
+    <div class="flex-1 rounded p-8 py-4 mb-2 last:mb-0 md:last:mb-2 md:mr-2 bg-delivery-instructor-dashboard-header-800">
       <div class="flex my-2">
         <span class={"rounded-full py-1 px-6 #{@badge_bg_color} text-white"}>
           <%= @badge_name %>
@@ -61,7 +61,7 @@ defmodule OliWeb.Components.Delivery.UpNext do
       </div>
       <.progress_bar width="200px" percent={@percent_complete} />
       <div class="my-2 flex flex-row">
-        <div class="flex-1 bg-delivery-header-700 rounded p-2 text-center">
+        <div class="flex-1 bg-delivery-instructor-dashboard-header-700 rounded p-2 text-center">
           <%= @scheduling_type %> <%= @complete_by_date %>
         </div>
         <div class="text-white">

@@ -182,19 +182,16 @@ module.exports = {
           DEFAULT: colors.white,
         },
       },
-      footer: {
-        DEFAULT: '#eceef1',
+      header: {
+        DEFAULT: '#ffffff',
         dark: {
-          DEFAULT: '#323233',
+          DEFAULT: '#000000',
         },
       },
-      header: {
-        DEFAULT: '#222439',
-        600: '#52526b',
-        700: '#3b3b4d',
-        800: '#2a2a3e',
+      navbar: {
+        DEFAULT: '#ffffff',
         dark: {
-          DEFAULT: '#222439',
+          DEFAULT: '#000000',
         },
       },
       primary: {
@@ -232,6 +229,23 @@ module.exports = {
           },
         },
       },
+      'instructor-dashboard': {
+        footer: {
+          DEFAULT: '#eceef1',
+          dark: {
+            DEFAULT: '#323233',
+          },
+        },
+        header: {
+          DEFAULT: '#222439',
+          600: '#52526b',
+          700: '#3b3b4d',
+          800: '#2a2a3e',
+          dark: {
+            DEFAULT: '#222439',
+          },
+        },
+      },
       tooltip: {
         bg: {
           DEFAULT: colors.offBlack,
@@ -254,22 +268,52 @@ module.exports = {
     forms: {
       borderRadius: 4,
     },
-    extend: {
-      keyframes: {
-        'slide-in-right': {
-          '0%': {
-            transform: 'translateX(100%)',
-          },
-          '100%': {
-            transform: 'translateX(0)',
-          },
+    keyframes: {
+      'slide-in-right': {
+        '0%': {
+          transform: 'translateX(100%)',
+        },
+        '100%': {
+          transform: 'translateX(0)',
         },
       },
-      animation: {
-        'slide-in-right': {
-          'slide-in-right': 'slide-in-right 0.5s ease-out',
+      shimmer: {
+        '100%': {
+          transform: 'translateX(100%)',
         },
       },
+    },
+    animation: {
+      'slide-in-right': {
+        'slide-in-right': 'slide-in-right 0.5s ease-out',
+      },
+    },
+    screens: {
+      // horizontal breakpoints
+      sm: '640px',
+      // => @media (min-width: 640px) { ... }
+      md: '768px',
+      // => @media (min-width: 768px) { ... }
+      lg: '1024px',
+      // => @media (min-width: 1024px) { ... }
+      xl: '1280px',
+      // => @media (min-width: 1280px) { ... }
+      '2xl': '1536px',
+      // => @media (min-width: 1536px) { ... }
+
+      // vertical breakpoints
+      vsm: { raw: '(min-height: 350px)' },
+      vmd: { raw: '(min-height: 500px)' },
+      vlg: { raw: '(min-height: 650px)' },
+      vxl: { raw: '(min-height: 800px)' },
+      v2xl: { raw: '(min-height: 950px)' },
+
+      // horizontal-vertical breakpoints (triggered when the horizontal or vertical conditions are met)
+      hvsm: { raw: '(min-width: 640px) and (min-height: 350px)' },
+      hvmd: { raw: '(min-width: 768px) and (min-height: 500px)' },
+      hvlg: { raw: '(min-width: 1024px) and (min-height: 650px)' },
+      hvxl: { raw: '(min-width: 1280px) and (min-height: 800px)' },
+      hv2xl: { raw: '(min-width: 1536px) and (min-height: 950px)' },
     },
   },
 };

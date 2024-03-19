@@ -73,6 +73,14 @@ defmodule OliWeb.Common.Utils do
     Float.round(score, 2)
   end
 
+  def format_score(score) when is_integer(score) do
+    score
+  end
+
+  def format_score(score) when is_nil(score) do
+    "-"
+  end
+
   defp has_value(v) do
     !is_nil(v) and v != ""
   end
@@ -180,6 +188,49 @@ defmodule OliWeb.Common.Utils do
         new_start_date = DateTime.add(new_end_date, diff)
 
         {new_start_date, new_end_date, :start_date}
+    end
+  end
+
+  @doc """
+  Checks if a given URL is a YouTube video.
+
+  ## Examples
+
+      iex> is_youtube_video?("https://www.youtube.com/watch?v=dQw4w9WgXcQ")
+      true
+
+      iex> is_youtube_video?("https://youtu.be/dQw4w9WgXcQ")
+      true
+
+      iex> is_youtube_video?("https://www.example.com/video.mp4")
+      false
+  """
+  def is_youtube_video?(video_url),
+    do: String.contains?(video_url, "youtube.com") or String.contains?(video_url, "youtu.be")
+
+  @doc """
+  Converts a YouTube video URL to a YouTube preview image URL.
+
+  ## Examples
+
+      iex> convert_to_youtube_image_url("https://www.youtube.com/watch?v=dQw4w9WgXcQ")
+      "https://img.youtube.com/vi/dQw4w9WgXcQ/hqdefault.jpg"
+
+      iex> convert_to_youtube_image_url("https://youtu.be/dQw4w9WgXcQ")
+      "https://img.youtube.com/vi/dQw4w9WgXcQ/hqdefault.jpg"
+
+      iex> convert_to_youtube_image_url("https://www.example.com/video.mp4")
+      nil
+  """
+  def convert_to_youtube_image_url(video_url) do
+    regex = ~r/^.*(youtu\.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/
+
+    case Regex.run(regex, video_url) do
+      [_, _, video_id] when byte_size(video_id) == 11 ->
+        "https://img.youtube.com/vi/#{video_id}/hqdefault.jpg"
+
+      _ ->
+        nil
     end
   end
 end

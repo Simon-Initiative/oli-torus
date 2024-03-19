@@ -1,6 +1,8 @@
 defmodule OliWeb.IngestControllerTest do
   use OliWeb.ConnCase
 
+  import Oli.Factory
+
   alias OliWeb.Router.Helpers, as: Routes
 
   describe "index" do
@@ -43,6 +45,68 @@ defmodule OliWeb.IngestControllerTest do
       conn = post(conn, Routes.ingest_path(conn, :upload), %{})
 
       assert redirected_to(conn, 302) == Routes.ingest_path(conn, :index)
+
+      assert Phoenix.Flash.get(conn.assigns.flash, :error) =~ "A valid file must be attached"
+    end
+  end
+
+  describe "index_csv" do
+    test "can be accessed by an Admin", %{conn: conn} do
+      project = insert(:project)
+
+      {:ok, conn: conn, admin: _} = admin_conn(%{conn: conn})
+      conn = get(conn, ~p"/admin/#{project.slug}/import/index")
+
+      assert response(conn, 200) =~ ~s{<h3 class="display-6">CSV Import</h3>}
+    end
+
+    test "can not be accessed by an author", %{conn: conn} do
+      project = insert(:project)
+
+      {:ok, conn: conn, author: _} = author_conn(%{conn: conn})
+
+      conn = get(conn, ~p"/admin/#{project.slug}/import/index")
+
+      assert response(conn, 403) == "Forbidden"
+    end
+
+    test "can not be accessed by a user", %{conn: conn} do
+      project = insert(:project)
+
+      {:ok, conn: conn, user: _} = user_conn(%{conn: conn})
+
+      conn = get(conn, ~p"/admin/#{project.slug}/import/index")
+
+      assert redirected_to(conn, 302) ==
+               "/authoring/session/new?request_path=%2Fadmin%2F#{project.slug}%2Fimport%2Findex"
+    end
+  end
+
+  describe "upload_csv" do
+    setup [:admin_conn]
+
+    test "redirects to CSVImportView view when attaching a valid file", %{conn: conn} do
+      file_upload = %{
+        "digest" => %Plug.Upload{
+          content_type: "text/csv",
+          filename: "some.txt",
+          path: "some_path"
+        }
+      }
+
+      conn =
+        post(conn, Routes.ingest_path(conn, :upload_csv, "some_project_slug"), %{
+          upload_csv: file_upload
+        })
+
+      assert redirected_to(conn, 302) == ~p"/admin/some_project_slug/import/csv"
+    end
+
+    test "redirects to index csv view when there is no file attachment", %{conn: conn} do
+      conn =
+        post(conn, Routes.ingest_path(conn, :upload_csv, "some_project_slug"), %{})
+
+      assert redirected_to(conn, 302) == ~p"/admin/some_project_slug/import/index"
 
       assert Phoenix.Flash.get(conn.assigns.flash, :error) =~ "A valid file must be attached"
     end

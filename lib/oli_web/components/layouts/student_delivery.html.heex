@@ -1,0 +1,33 @@
+<div class="h-screen flex flex-col overscroll-none">
+  <Components.Delivery.Layouts.header
+    ctx={@ctx}
+    is_system_admin={assigns[:is_system_admin] || false}
+    section={@section}
+    brand={@brand}
+    preview_mode={@preview_mode}
+  />
+
+  <main role="main" class="flex-1 flex flex-col md:flex-row overscroll-contain">
+    <Components.Delivery.Layouts.sidebar_nav
+      :if={@section}
+      ctx={@ctx}
+      is_system_admin={assigns[:is_system_admin] || false}
+      section={@section}
+      active_tab={assigns[:active_tab]}
+      preview_mode={@preview_mode}
+    />
+    <div class="md:w-[calc(100%-192px)] flex-1 flex flex-col md:ml-48 mt-14 relative">
+      <div class="container mx-auto sticky top-[60px] z-50">
+        <.flash_group flash={@flash} />
+      </div>
+
+      <%= @inner_content %>
+    </div>
+  </main>
+  <%= if @section do %>
+    <%= live_render(@socket, OliWeb.Dialogue.WindowLive,
+      session: %{"section_slug" => @section.slug},
+      id: "dialogue-window"
+    ) %>
+  <% end %>
+</div>

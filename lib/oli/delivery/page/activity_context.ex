@@ -47,6 +47,7 @@ defmodule Oli.Delivery.Page.ActivityContext do
        %ActivitySummary{
          id: id,
          attempt_guid: state.attemptGuid,
+         unencoded_model: model,
          model: prepare_model(model, opts),
          state: prepare_state(state),
          lifecycle_state: state.lifecycle_state,

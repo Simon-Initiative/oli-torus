@@ -1,0 +1,62 @@
+{
+  "stem": {
+    "content": [
+      { "type": "p", "id": "1", "children": [{"text": "A paragraph" }] },
+      { "type": "p", "id": "1", "children": [{"text": "Another paragraph" }] },
+      { "type": "input_ref", "id": "1" }
+    ]
+  },
+  "choices": [
+    {"content": [
+      { "type": "p", "id": "1", "children": [{"text": "Choice 1" }] },
+      { "type": "p", "id": "this_cannot_change", "children": [{"text": "Another paragraph" }] }
+    ]},
+    {"content": [
+      { "type": "p", "children": [{"text": "Choice 2" }] },
+      { "type": "p", "children": [{"text": "Another paragraph" }] }
+    ]}
+  ],
+  "authoring": {
+   "parts": [
+      {
+        "id": "this_cannot_change",
+        "scoringStrategy": "average",
+        "responses": [
+          {
+            "id": 3,
+            "rule": "input like {test}",
+            "score": 3,
+            "feedback": {
+              "content": [
+                { "type": "p", "children": [{"text": "Correct!" }] }
+              ]
+            }
+          },
+          {
+            "id": 5,
+            "rule": "input like {.*}",
+            "score": 0,
+            "feedback": {
+              "id": 6,
+              "content": [
+                { "type": "p", "children": [{"text": "Incorrect!" }] }
+              ]
+            }
+          }
+        ],
+        "hints": [
+          {
+            "content": [
+              { "type": "p", "children": [{"text": "Try harder" }] }
+            ]
+          },
+          {
+            "content": [
+              { "type": "p", "children": [{"text": "Try again" }] }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

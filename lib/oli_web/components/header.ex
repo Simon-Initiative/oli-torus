@@ -1,5 +1,5 @@
 defmodule OliWeb.Components.Header do
-  use Phoenix.Component
+  use OliWeb, :html
 
   import Phoenix.HTML.Link
   import OliWeb.ViewHelpers, only: [brand_logo: 1]
@@ -7,7 +7,7 @@ defmodule OliWeb.Components.Header do
   import OliWeb.Components.Delivery.Utils
 
   alias OliWeb.Router.Helpers, as: Routes
-  alias OliWeb.Components.Delivery.UserAccountMenu
+  alias OliWeb.Components.Delivery.UserAccount
   alias OliWeb.Components.Delivery.Buttons
   alias OliWeb.Breadcrumb.BreadcrumbTrailLive
   alias OliWeb.Common.SessionContext
@@ -15,8 +15,10 @@ defmodule OliWeb.Components.Header do
   attr(:ctx, SessionContext, required: true)
 
   def header(assigns) do
+    assigns = assign(assigns, :is_system_admin, assigns[:is_system_admin] || false)
+
     ~H"""
-    <nav class="navbar py-1">
+    <nav class="navbar py-1 bg-delivery-header dark:bg-delivery-header-dark shadow-sm">
       <div class="container mx-auto flex flex-row">
         <a
           class="navbar-brand torus-logo my-1 mr-auto"
@@ -34,7 +36,7 @@ defmodule OliWeb.Components.Header do
         </a>
 
         <%= if not is_preview_mode?(assigns) do %>
-          <div class="nav-item my-2 my-lg-0 mr-2">
+          <div class="inline-flex items-center mr-2">
             <Buttons.help_button />
           </div>
         <% end %>
@@ -73,14 +75,16 @@ defmodule OliWeb.Components.Header do
               </button>
             </div>
           <% user_signed_in?(assigns) -> %>
-            <div class="max-w-[400px]">
-              <UserAccountMenu.menu ctx={@ctx} is_liveview={Map.get(@ctx, :is_liveview)} />
+            <div class="max-w-[400px] my-auto">
+              <UserAccount.menu id="user-account-menu" ctx={@ctx} is_system_admin={@is_system_admin} />
             </div>
           <% true -> %>
-            <%= link("Learner/Educator Sign In",
-              to: Routes.pow_session_path(OliWeb.Endpoint, :new),
-              class: "btn btn-primary btn-sm my-2 flex items-center"
-            ) %>
+            <div class="inline-flex items-center">
+              <%= link to: Routes.pow_session_path(OliWeb.Endpoint, :new), class: "btn btn-primary btn-sm mr-2 inline-flex items-center" do %>
+                <span class="hidden sm:inline">Learner/Educator Sign In</span>
+                <span class="inline sm:hidden">Sign In</span>
+              <% end %>
+            </div>
         <% end %>
       </div>
     </nav>
@@ -101,6 +105,7 @@ defmodule OliWeb.Components.Header do
         <nav class="breadcrumb-bar d-flex align-items-center mt-3 mb-1">
           <div class="flex-1">
             <%= live_render(@socket_or_conn, BreadcrumbTrailLive,
+              id: "breadcrumb-trail",
               session: %{"breadcrumbs" => @breadcrumbs}
             ) %>
           </div>

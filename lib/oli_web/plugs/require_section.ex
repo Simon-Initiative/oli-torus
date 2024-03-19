@@ -18,6 +18,7 @@ defmodule Oli.Plugs.RequireSection do
           section ->
             conn
             |> assign(:section, section)
+            |> assign(:brand, Oli.Branding.get_section_brand(section))
             |> put_session(:section_slug, section_slug)
         end
 
@@ -32,6 +33,7 @@ defmodule Oli.Plugs.RequireSection do
             section ->
               conn
               |> assign(:section, section)
+              |> assign(:brand, Oli.Branding.get_section_brand(section))
           end
         else
           conn

@@ -1,5 +1,6 @@
 import React from 'react';
 import * as ContentModel from 'data/content/model/elements/types';
+import { PointMarkerContext, maybePointMarkerAttr } from 'data/content/utils';
 import { WriterContext } from '../data/content/writers/context';
 import { HtmlContentModelRenderer } from '../data/content/writers/renderer';
 
@@ -42,9 +43,10 @@ const DialogLine: React.FC<{
 export const Dialog: React.FC<{
   dialog: ContentModel.Dialog;
   context: WriterContext;
-}> = ({ dialog, context }) => {
+  pointMarkerContext?: PointMarkerContext;
+}> = ({ dialog, context, pointMarkerContext }) => {
   return (
-    <div className="dialog">
+    <div className="dialog" {...maybePointMarkerAttr(dialog, pointMarkerContext)}>
       {dialog.title && <h1>{dialog.title}</h1>}
       {dialog.lines.map((line, index) => (
         <DialogLine key={index} context={context} speakers={dialog.speakers} line={line} />

@@ -232,7 +232,7 @@ defmodule Oli.Delivery.Page.PageContext do
 
     user_roles = Sections.get_user_roles(user, section_slug)
 
-    license = Oli.Authoring.Course.get_project_license(page_revision.id)
+    license = Oli.Authoring.Course.get_project_license(page_revision.id, section_slug)
 
     %PageContext{
       license: license,

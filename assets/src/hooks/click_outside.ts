@@ -1,31 +1,31 @@
-import { useEffect, useRef } from 'react';
-
 /**
- * Attaches a click handler to the window that is triggered when
- * clicked outside the ref element. Optimization is recommended to
- * wrap the handler function in useCallback to prevent listeners
- * from be created/destroyed on every render.
+ * Phoenix hook that allows you to detect clicks outside of an element.
  *
- * @param ref
- * @param handler
+ * Example:
+ *   <div phx-hook="ClickOutside" phx-value-click-outside="click_outside" id="my-element">
+ *
+ * def handle_event("click_outside", %{"id" => id}, socket) do
+ *  # do something
+ * end
+ *
  */
-export const useOnClickOutside = <T>(handler: (e: MouseEvent) => void) => {
-  const ref = useRef<T>(null);
+export const ClickOutside = {
+  mounted() {
+    const el = this.el;
+    const click_outside_event = this.el.getAttribute('phx-value-click-outside') || 'click-outside';
 
-  useEffect(() => {
-    const listener = (event: MouseEvent) => {
+    this.listener = (event: MouseEvent) => {
       // Do nothing if clicking ref's element or descendent elements
-      if (!ref.current || (ref.current as any).contains(event.target)) {
+      if (el.contains(event.target)) {
         return;
       }
-      handler(event);
-    };
-    window.addEventListener('click', listener);
 
-    return () => {
-      window.removeEventListener('click', listener);
+      this.pushEvent(click_outside_event, { id: el.id });
     };
-  }, [ref, handler]);
 
-  return ref;
+    window.addEventListener('click', this.listener);
+  },
+  unmount() {
+    window.removeEventListener('click', this.listener);
+  },
 };

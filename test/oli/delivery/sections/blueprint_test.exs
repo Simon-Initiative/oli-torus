@@ -102,7 +102,7 @@ defmodule Oli.Delivery.Sections.BlueprintTest do
       institution: institution,
       author: author
     } do
-      {:ok, initial_pub} = Publishing.publish_project(project, "some changes")
+      {:ok, initial_pub} = Publishing.publish_project(project, "some changes", author.id)
 
       # Create a course section using the initial publication
       {:ok, section} =
@@ -129,9 +129,10 @@ defmodule Oli.Delivery.Sections.BlueprintTest do
 
     test "duplicate/1 deep copies a course section, turning it into a blueprint", %{
       project: project,
-      institution: institution
+      institution: institution,
+      author: author
     } do
-      {:ok, initial_pub} = Publishing.publish_project(project, "some changes")
+      {:ok, initial_pub} = Publishing.publish_project(project, "some changes", author.id)
 
       # Create a course section using the initial publication
       {:ok, section} =
@@ -335,7 +336,7 @@ defmodule Oli.Delivery.Sections.BlueprintTest do
           publisher_id: project.publisher_id
         })
 
-      {:ok, initial_pub} = Publishing.publish_project(project, "some changes")
+      {:ok, initial_pub} = Publishing.publish_project(project, "some changes", author.id)
 
       # Create a blueprint using the initial publication
       {:ok, section} =
@@ -366,7 +367,7 @@ defmodule Oli.Delivery.Sections.BlueprintTest do
       assert length(available) == 2
 
       # After publishing the project, the product is now visible
-      {:ok, _} = Publishing.publish_project(another.project, "some changes")
+      {:ok, _} = Publishing.publish_project(another.project, "some changes", author.id)
       available = Blueprint.available_products(author, institution)
       assert length(available) == 3
     end

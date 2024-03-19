@@ -319,7 +319,8 @@ defmodule OliWeb.LegacySuperactivityControllerTest do
 
     map = Seeder.add_page(map, attrs, :page)
 
-    {:ok, publication} = Oli.Publishing.publish_project(map.project, "some changes")
+    {:ok, publication} =
+      Oli.Publishing.publish_project(map.project, "some changes", map.author.id)
 
     map = Map.put(map, :publication, publication)
 

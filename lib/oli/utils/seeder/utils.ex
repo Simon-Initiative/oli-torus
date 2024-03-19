@@ -1,7 +1,7 @@
 defmodule Oli.Utils.Seeder.Utils do
   import Oli.Utils
 
-  alias Oli.Utils.Seeder.SeedRef
+  alias Oli.Utils.Seeder.{SeedRef, MapRefs}
 
   @doc """
   Unpacks a list of possible refs and returns the unpacked values in
@@ -35,6 +35,8 @@ defmodule Oli.Utils.Seeder.Utils do
   @spec ref(Atom.t()) :: SeedRef.t()
   def ref(tag), do: %SeedRef{tag: tag}
 
+  def refs(tags, mapper), do: %MapRefs{tags: tags, mapper: mapper}
+
   def random_tag(), do: uuid()
   def random_tag(label) when is_atom(label), do: random_tag(to_string(label))
   def random_tag(label), do: "#{label}_#{uuid()}"
@@ -49,12 +51,30 @@ defmodule Oli.Utils.Seeder.Utils do
     case(Map.get(seeds, tag)) do
       nil ->
         throw(
-          "Failed to load #{to_string(tag)} from seeds. Please make sure the tag is correct and the value has previously been created."
+          "Failed to load :#{to_string(tag)} from seeds. Please make sure the tag is correct and the value has previously been created."
         )
 
       value ->
         value
     end
+  end
+
+  def maybe_ref(%MapRefs{tags: tags, mapper: mapper}, seeds) do
+    values =
+      tags
+      |> Enum.map(fn tag ->
+        case(Map.get(seeds, tag)) do
+          nil ->
+            throw(
+              "Failed to load :#{to_string(tag)} from seeds. Please make sure the tag is correct and the value has previously been created."
+            )
+
+          value ->
+            value
+        end
+      end)
+
+    apply(mapper, [values])
   end
 
   def maybe_ref(value, _seeds), do: value

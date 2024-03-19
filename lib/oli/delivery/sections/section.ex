@@ -18,6 +18,13 @@ defmodule Oli.Delivery.Sections.Section do
     Section
   }
 
+  @required_fields [
+    :type,
+    :title,
+    :registration_open,
+    :base_project_id
+  ]
+
   schema "sections" do
     field(:type, Ecto.Enum, values: [:enrollable, :blueprint], default: :enrollable)
 
@@ -138,8 +145,15 @@ defmodule Oli.Delivery.Sections.Section do
       default: :done
     )
 
+    field(:page_prompt_template, :string)
+
+    # we store the full section hierarchy to avoid having to build it on the fly when needed.
+
     # Allow major project publications to be applied to course sections created from this product
     field(:apply_major_updates, :boolean, default: false)
+
+    # enable/disable the ai chatbot assistant for this section
+    field(:assistant_enabled, :boolean, default: false)
 
     timestamps(type: :utc_datetime)
   end
@@ -197,15 +211,12 @@ defmodule Oli.Delivery.Sections.Section do
       :course_section_number,
       :preferred_scheduling_time,
       :v25_migration,
-      :apply_major_updates
+      :page_prompt_template,
+      :apply_major_updates,
+      :assistant_enabled
     ])
     |> cast_embed(:customizations, required: false)
-    |> validate_required([
-      :type,
-      :title,
-      :registration_open,
-      :base_project_id
-    ])
+    |> validate_required(@required_fields)
     |> validate_required_if([:amount], &requires_payment?/1)
     |> validate_required_if([:grace_period_days], &has_grace_period?/1)
     |> validate_required_if([:publisher_id, :apply_major_updates], &is_product?/1)
@@ -230,6 +241,12 @@ defmodule Oli.Delivery.Sections.Section do
       end
     end)
   end
+
+  @doc """
+  Returns the required fields for a section.
+  """
+  @spec required_fields() :: [atom()]
+  def required_fields, do: @required_fields
 
   defp requires_payment?(changeset), do: get_field(changeset, :requires_payment)
 
