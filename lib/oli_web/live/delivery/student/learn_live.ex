@@ -650,13 +650,19 @@ defmodule OliWeb.Delivery.Student.LearnLive do
             data-resource_id={@unit["resource_id"]}
             class="flex gap-4 overflow-x-scroll overflow-y-hidden h-[178px] pt-[3px] px-[3px] scrollbar-hide"
           >
-            <.intro_card
-              :if={@unit["intro_video"] || @unit["poster_image"]}
-              bg_image_url={@unit["poster_image"]}
+            <.intro_video_card
+              :if={@unit["intro_video"]}
               video_url={@unit["intro_video"]}
               card_resource_id={@unit["resource_id"]}
               resource_id={@unit["resource_id"]}
               intro_video_viewed={@unit["resource_id"] in @viewed_intro_video_resource_ids}
+              is_youtube_video={WebUtils.is_youtube_video?(@unit["intro_video"])}
+            />
+            <.intro_poster_card
+              :if={@unit["poster_image"]}
+              bg_image_url={@unit["poster_image"]}
+              card_resource_id={@unit["resource_id"]}
+              resource_id={@unit["resource_id"]}
             />
             <.card
               :for={module <- @unit["children"]}
@@ -1180,19 +1186,15 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   end
 
   attr :title, :string, default: "Intro"
-
-  attr :video_url,
-       :string,
-       doc: "the video url is optional and, if provided, the play button will be rendered"
-
-  attr :bg_image_url, :string, doc: "the background image url for the card"
+  attr :video_url, :string
   attr :card_resource_id, :string
   attr :resource_id, :string
   attr :intro_video_viewed, :boolean, default: false
+  attr :is_youtube_video, :boolean, default: false
 
-  def intro_card(assigns) do
+  def intro_video_card(%{is_youtube_video: true} = assigns) do
     ~H"""
-    <div class="relative slider-card hover:scale-[1.01]" role="intro_card">
+    <div class="relative slider-card hover:scale-[1.01]" role="youtube_intro_video_card">
       <div class="z-10 rounded-xl overflow-hidden absolute w-[288px] h-10">
         <.progress_bar
           percent={if @intro_video_viewed, do: 100, else: 0}
@@ -1201,20 +1203,19 @@ defmodule OliWeb.Delivery.Student.LearnLive do
           show_percent={false}
           on_going_colour="bg-[#0F6CF5]"
           completed_colour="bg-[#0CAF61]"
-          role="intro card progress"
+          role="intro video card progress"
         />
       </div>
       <div class="rounded-xl absolute -top-[0.7px] -left-[0.7px] h-[163px] w-[289.5px] cursor-pointer bg-[linear-gradient(180deg,#223_0%,rgba(34,34,51,0.72)_52.6%,rgba(34,34,51,0.00)_100%)]" />
       <div
         class="flex flex-col items-center rounded-xl h-[162px] w-[288px] bg-gray-200/50 shrink-0 px-5 pt-[15px] bg-cover bg-center"
-        style={"background-image: url('#{build_image_url(@bg_image_url, @video_url)}');"}
+        style={"background-image: url('#{WebUtils.convert_to_youtube_image_url(@video_url)}');"}
       >
         <h5 class="text-[13px] leading-[18px] font-bold opacity-60 text-gray-500 text-white dark:text-opacity-50 self-start">
           <%= @title %>
         </h5>
         <div
-          :if={@video_url}
-          id={"intro_card_#{@card_resource_id}"}
+          id={"intro_video_card_#{@card_resource_id}"}
           class="w-[70px] h-[70px] relative my-auto -top-2 cursor-pointer"
         >
           <div class="w-full h-full rounded-full backdrop-blur bg-gray/50"></div>
@@ -1238,6 +1239,84 @@ defmodule OliWeb.Delivery.Student.LearnLive do
             </svg>
           </button>
         </div>
+      </div>
+    </div>
+    """
+  end
+
+  def intro_video_card(%{is_youtube_video: false} = assigns) do
+    ~H"""
+    <div class="relative slider-card hover:scale-[1.01]" role="intro_video_card">
+      <div class="z-20 rounded-xl overflow-hidden absolute w-[288px] h-10">
+        <.progress_bar
+          percent={if @intro_video_viewed, do: 100, else: 0}
+          width="100%"
+          height="h-[4px]"
+          show_percent={false}
+          on_going_colour="bg-[#0F6CF5]"
+          completed_colour="bg-[#0CAF61]"
+          role="intro video card progress"
+        />
+      </div>
+      <div class="z-10 rounded-xl absolute -top-[0.7px] -left-[0.7px] h-[163px] w-[289.5px] cursor-pointer bg-[linear-gradient(180deg,#223_0%,rgba(34,34,51,0.72)_52.6%,rgba(34,34,51,0.00)_100%)]" />
+      <div class="relative flex flex-col items-center rounded-xl h-[162px] w-[288px] bg-gray-200/50 shrink-0 px-5 pt-[15px] bg-cover bg-center">
+        <video
+          id={"video_preview_image_#{@video_url}"}
+          class="rounded-xl object-cover absolute -top-[0.7px] -left-[0.7px] h-[163px] w-[289.5px]"
+          preload="metadata"
+        >
+          <source src={"#{@video_url}#t=0.5"} /> Your browser does not support the video tag.
+        </video>
+        <h5 class="z-30 text-[13px] leading-[18px] font-bold opacity-60 text-gray-500 text-white dark:text-opacity-50 self-start">
+          <%= @title %>
+        </h5>
+        <div
+          id={"intro_video_card_#{@card_resource_id}"}
+          class="w-[70px] h-[70px] relative my-auto -top-2 cursor-pointer"
+        >
+          <div class="w-full h-full rounded-full backdrop-blur bg-gray/50"></div>
+          <button
+            role="play_unit_intro_video"
+            class="z-30 w-full h-full absolute top-0 left-0 flex items-center justify-center"
+            phx-click="play_video"
+            phx-value-video_url={@video_url}
+            phx-value-module_resource_id={@resource_id}
+            phx-value-is_intro_video="true"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              fill="white"
+              width="33"
+              height="38"
+              viewBox="0 0 16.984 24.8075"
+              class="scale-110 ml-[6px] mt-[9px]"
+            >
+              <path d="M0.759,0.158c0.39-0.219,0.932-0.21,1.313,0.021l14.303,8.687c0.368,0.225,0.609,0.625,0.609,1.057   s-0.217,0.832-0.586,1.057L2.132,19.666c-0.382,0.231-0.984,0.24-1.375,0.021C0.367,19.468,0,19.056,0,18.608V1.237   C0,0.79,0.369,0.378,0.759,0.158z" />
+            </svg>
+          </button>
+        </div>
+      </div>
+    </div>
+    """
+  end
+
+  attr :title, :string, default: "Intro"
+  attr :bg_image_url, :string, doc: "the background image url for the card"
+  attr :card_resource_id, :string
+  attr :resource_id, :string
+
+  def intro_poster_card(assigns) do
+    # TODO: handle click event (expand and show intro_content)
+    ~H"""
+    <div class="relative slider-card hover:scale-[1.01]" role="intro_poster_card">
+      <div class="rounded-xl absolute -top-[0.7px] -left-[0.7px] h-[163px] w-[289.5px] cursor-pointer bg-[linear-gradient(180deg,#223_0%,rgba(34,34,51,0.72)_52.6%,rgba(34,34,51,0.00)_100%)]" />
+      <div
+        class="flex flex-col items-center rounded-xl h-[162px] w-[288px] bg-gray-200/50 shrink-0 px-5 pt-[15px] bg-cover bg-center"
+        style={"background-image: url('#{@bg_image_url}');"}
+      >
+        <h5 class="text-[13px] leading-[18px] font-bold opacity-60 text-gray-500 text-white dark:text-opacity-50 self-start">
+          <%= @title %>
+        </h5>
       </div>
     </div>
     """
@@ -1712,19 +1791,6 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         if(item["is_root?"], do: item, else: root)
       }
     end)
-  end
-
-  defp build_image_url(bg_image_url, video_url) when video_url not in ["", nil],
-    do: maybe_convert_to_image(video_url) || build_image_url(bg_image_url, nil)
-
-  defp build_image_url(bg_image_url, _) when bg_image_url not in ["", nil], do: bg_image_url
-
-  defp build_image_url(_, _), do: @default_image
-
-  defp maybe_convert_to_image(video_url) do
-    if WebUtils.is_youtube_video?(video_url) do
-      WebUtils.convert_to_youtube_image_url(video_url)
-    end
   end
 
   defp is_section?(resource_type_id, numbering_level),
