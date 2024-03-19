@@ -151,6 +151,10 @@ defmodule Oli.Branding do
     Brand.changeset(brand, attrs)
   end
 
+  def get_section_brand(section \\ nil) do
+    brand_with_defaults(section)
+  end
+
   def brand_name(section \\ nil) do
     brand_with_defaults(section)
     |> Map.get(:name)

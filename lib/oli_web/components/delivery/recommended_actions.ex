@@ -29,7 +29,7 @@ defmodule OliWeb.Components.Delivery.RecommendedActions do
 
   def render(assigns) do
     ~H"""
-    <div class="grid grid-cols-2 gap-2">
+    <div id="recommended_actions" class="grid grid-cols-2 gap-2">
       <%= if !@has_scheduled_resources do %>
         <.action_card to={
           Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.ScheduleView, @section_slug)

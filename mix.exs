@@ -4,7 +4,7 @@ defmodule Oli.MixProject do
   def project do
     [
       app: :oli,
-      version: "0.27.0",
+      version: "0.28.0",
       elixir: "~> 1.15.5",
       elixirc_paths: elixirc_paths(Mix.env()),
       elixirc_options: elixirc_options(Mix.env()),
@@ -141,6 +141,7 @@ defmodule Oli.MixProject do
       {:csv, "~> 3.0.5"},
       {:decimal, "~> 2.0"},
       {:dialyxir, "~> 0.5.0", only: [:dev], runtime: true},
+      {:earmark, "~> 1.4"},
       {:ecto_sql, "~> 3.10"},
       {:eflame, "~> 1.0"},
       {:ecto_psql_extras, "~> 0.2"},
@@ -166,8 +167,8 @@ defmodule Oli.MixProject do
       {:jason, "~> 1.3"},
       {:joken, "~> 2.2.0"},
       {:jose, "~> 1.10"},
-      {:lti_1p3, "~> 0.5.0"},
-      {:lti_1p3_ecto_provider, "~> 0.5.0"},
+      {:lti_1p3, "~> 0.6.0"},
+      {:lti_1p3_ecto_provider, "~> 0.6.0"},
       {:libcluster, "~> 3.3"},
       {:libcluster_ec2, "~> 0.6"},
       {:mime, "~> 1.2"},
@@ -178,6 +179,8 @@ defmodule Oli.MixProject do
       {:nodejs, "~> 2.0"},
       {:oban, "~> 2.17.2"},
       {:open_api_spex, "~> 3.9"},
+      {:openai, "~> 0.5.4"},
+      {:pgvector, "~> 0.2.0"},
       {:phoenix, "~> 1.7"},
       {:phoenix_ecto, "~> 4.4"},
       {:phoenix_html, "~> 3.0"},
@@ -186,7 +189,7 @@ defmodule Oli.MixProject do
       {:phoenix_live_reload, "~> 1.3", only: :dev},
       {:phoenix_live_view, "~> 0.19.5"},
       {:phoenix_pubsub, "~> 2.0"},
-      {:phoenix_storybook, "~> 0.5.0"},
+      {:phoenix_storybook, "~> 0.5.6"},
       {:phoenix_view, "~> 2.0"},
       {:plug_cowboy, "~> 2.1"},
       {:poison, "~> 3.1"},
@@ -226,6 +229,9 @@ defmodule Oli.MixProject do
 
       # resets the database in the :test env
       "test.ecto.reset": ["ecto.reset"],
+
+      # runs the test suite and watches for changes
+      "test.watch": ["test.watch --seed 0 --max-failures 1 --include pending --trace"],
 
       # deploy tailwind assets
       "assets.deploy": ["tailwind default --minify", "tailwind storybook --minify", "phx.digest"]

@@ -117,7 +117,12 @@ export class ContentWriter {
       return impl.text(context, content);
     }
 
-    const next = () => this.render(context, content.children as AllModelElements[], impl);
+    const next = () =>
+      this.render(
+        { ...context, isAnnotationLevel: false },
+        content.children as AllModelElements[],
+        impl,
+      );
 
     switch (content.type) {
       case 'p':

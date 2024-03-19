@@ -80,7 +80,7 @@ defmodule OliWeb.LaunchControllerTest do
         )
 
       assert html_response(conn, 302) =~
-               "You are being <a href=\"/sections/#{section.slug}/overview\">redirected"
+               "You are being <a href=\"/sections/#{section.slug}\">redirected"
     end
   end
 
@@ -161,7 +161,7 @@ defmodule OliWeb.LaunchControllerTest do
         )
 
       assert html_response(conn, 302) =~
-               "You are being <a href=\"/sections/#{section.slug}/overview\">redirected"
+               "You are being <a href=\"/sections/#{section.slug}\">redirected"
     end
   end
 end

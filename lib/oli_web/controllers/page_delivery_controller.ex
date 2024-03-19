@@ -257,7 +257,10 @@ defmodule OliWeb.PageDeliveryController do
 
       preview_mode = Map.get(conn.assigns, :preview_mode, false)
 
-      conn = put_root_layout(conn, {OliWeb.LayoutView, "page.html"})
+      conn =
+        conn
+        |> put_root_layout(html: {OliWeb.LayoutView, :delivery})
+        |> put_layout(html: {OliWeb.Layouts, :page})
 
       {page_link_url, container_link_url} =
         if preview_mode do
@@ -373,6 +376,12 @@ defmodule OliWeb.PageDeliveryController do
     Page.render(render_context, content, Page.Html)
   end
 
+  def render_content_text(render_context, content, _page_slug) do
+    # Render a basic page content.
+
+    Page.render(render_context, content, Page.Markdown) |> :erlang.iolist_to_binary()
+  end
+
   # Matches a not-started page that displays the "start attempt" button
   defp render_page(
          %PageContext{
@@ -431,7 +440,10 @@ defmodule OliWeb.PageDeliveryController do
           end
       end
 
-    conn = put_root_layout(conn, {OliWeb.LayoutView, "page.html"})
+    conn =
+      conn
+      |> put_root_layout(html: {OliWeb.LayoutView, :delivery})
+      |> put_layout(html: {OliWeb.Layouts, :page})
 
     resource_attempts =
       Enum.filter(resource_attempts, fn r -> r.date_submitted != nil end)
@@ -613,7 +625,15 @@ defmodule OliWeb.PageDeliveryController do
       end
 
     html = render_content_html(render_context, attempt_content, context.page.slug)
-    conn = put_root_layout(conn, {OliWeb.LayoutView, "page.html"})
+
+    # Cache the page as text to allow the AI agent LV to access it.
+    page_as_text = render_content_text(render_context, attempt_content, context.page.slug)
+    Oli.Converstation.PageContentCache.put(context.page.id, page_as_text)
+
+    conn =
+      conn
+      |> put_root_layout(html: {OliWeb.LayoutView, :delivery})
+      |> put_layout(html: {OliWeb.Layouts, :page})
 
     all_activities = Activities.list_activity_registrations()
 
@@ -743,7 +763,7 @@ defmodule OliWeb.PageDeliveryController do
         previewMode: preview_mode,
         isInstructor: true,
         reviewMode: context.review_mode,
-        overviewURL: Routes.page_delivery_path(OliWeb.Endpoint, :index, section.slug),
+        overviewURL: ~p"/sections/#{section_slug}",
         finalizeGradedURL:
           Routes.page_lifecycle_path(
             conn,
@@ -936,7 +956,8 @@ defmodule OliWeb.PageDeliveryController do
             numbered_revisions = Sections.get_revision_indexes(section.slug)
 
             conn
-            |> put_root_layout({OliWeb.LayoutView, "page.html"})
+            |> put_root_layout({OliWeb.LayoutView, :delivery})
+            |> put_layout(html: {OliWeb.Layouts, :page})
             |> render(
               "instructor_page_preview.html",
               %{
@@ -1100,7 +1121,8 @@ defmodule OliWeb.PageDeliveryController do
       ObjectivesRollup.rollup_objectives(revision, activity_revisions, Resolver, section_slug)
 
     conn
-    |> put_root_layout({OliWeb.LayoutView, "page.html"})
+    |> put_root_layout(html: {OliWeb.LayoutView, :delivery})
+    |> put_layout(html: {OliWeb.Layouts, :page})
     |> render(
       "instructor_page_preview.html",
       %{
@@ -1351,14 +1373,7 @@ defmodule OliWeb.PageDeliveryController do
           case get_req_header(conn, "referer") do
             [] ->
               conn
-              |> redirect(
-                to:
-                  Routes.page_delivery_path(
-                    OliWeb.Endpoint,
-                    :index,
-                    section_slug
-                  )
-              )
+              |> redirect(to: ~p"/sections/#{section_slug}")
 
             [origin_url] ->
               conn |> put_flash(:error, "Invalid page index") |> redirect(external: origin_url)

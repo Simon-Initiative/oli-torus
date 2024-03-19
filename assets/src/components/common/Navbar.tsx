@@ -1,8 +1,9 @@
 import React, { PropsWithChildren, useCallback, useState } from 'react';
 import { Transition } from '@tailwindui/react';
-import { useOnClickOutside } from 'hooks/click_outside';
+import { useClickOutside } from 'components/hooks/useClickOutside';
 import { MediaSize, useMediaQuery } from 'hooks/media_query';
 import { classNames } from 'utils/classNames';
+import { TechSupportButton } from './TechSupportButton';
 import { Routes, User, UserAccountMenu } from './UserAccountMenu';
 
 /**
@@ -67,9 +68,7 @@ export const Navbar = ({
   const [showNavbar, setShowNavbar] = useState(false);
   const [popoutContainer, setPopoutContainer] = useState<Popout>();
   const isLargeScreen = useMediaQuery(MediaSize.lg);
-  const ref = useOnClickOutside<HTMLDivElement>(
-    useCallback(() => setPopoutContainer(undefined), []),
-  );
+  const ref = useClickOutside<HTMLDivElement>(useCallback(() => setPopoutContainer(undefined), []));
 
   return (
     <div ref={ref}>
@@ -132,26 +131,8 @@ export const Navbar = ({
               ),
             )}
           </div>
-          <button
-            className="
-              block
-              no-underline
-              m-4
-              text-delivery-body-color
-              dark:text-delivery-body-color-dark
-              font-bold
-              hover:no-underline
-              border-b
-              border-transparent
-              hover:text-delivery-primary
-              dark:hover:text-delivery-primary:text-delivery-primary
-              active:text-delivery-primary-600
-              active:hover:text-delivery-primary-600
-            "
-            onClick={() => (window as any).showHelpModal()}
-          >
-            Tech Support
-          </button>
+
+          <TechSupportButton />
 
           <hr className="border-t border-gray-300 dark:border-gray-700" />
 
@@ -216,7 +197,7 @@ const NavExpand = ({
   const [show, setShow] = useState(false);
   const isLargeScreen = useMediaQuery(MediaSize.lg);
 
-  const ref = useOnClickOutside<HTMLDivElement>(useCallback(() => setShow(false), []));
+  const ref = useClickOutside<HTMLDivElement>(useCallback(() => setShow(false), []));
 
   return (
     <div ref={ref}>

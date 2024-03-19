@@ -6,7 +6,6 @@ defmodule OliWeb.PaymentProviders.StripeController do
 
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Paywall.Providers.Stripe
-  alias OliWeb.Router.Helpers, as: Routes
 
   require Logger
 
@@ -64,7 +63,7 @@ defmodule OliWeb.PaymentProviders.StripeController do
 
         json(conn, %{
           result: "success",
-          url: Routes.page_delivery_path(OliWeb.Endpoint, :index, slug)
+          url: ~p"/sections/#{slug}"
         })
 
       {:error, reason} when is_binary(reason) ->

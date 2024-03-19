@@ -190,6 +190,9 @@ defmodule OliWeb.Common.FormatDateTime do
       :date ->
         Timex.format!(datetime, "{Mfull} {D}, {YYYY}#{maybe_timezone}")
 
+      :day ->
+        Timex.format!(datetime, "{WDshort}, {D}#{maybe_timezone}")
+
       :minutes ->
         Timex.format!(datetime, "{Mfull} {D}, {YYYY} {h12}:{m} {AM}#{maybe_timezone}")
 
@@ -275,5 +278,45 @@ defmodule OliWeb.Common.FormatDateTime do
         browser_timezone
     end
     |> value_or(@utc_timezone)
+  end
+
+  def to_formatted_datetime(datetime, ctx, format \\ "{WDshort} {Mshort} {D}, {YYYY}")
+
+  def to_formatted_datetime(nil, _ctx, _format), do: "not yet scheduled"
+
+  def to_formatted_datetime(datetime, ctx, format) do
+    if is_binary(datetime) do
+      datetime
+      |> to_datetime
+      |> parse_datetime(ctx, format)
+    else
+      parse_datetime(datetime, ctx, format)
+    end
+  end
+
+  defp to_datetime(nil), do: "not yet scheduled"
+
+  defp to_datetime(string_datetime) do
+    {:ok, datetime, _} = DateTime.from_iso8601(string_datetime)
+
+    datetime
+  end
+
+  @doc """
+  Parses a DateTime (UTC) considering the given context to localize it,
+  and formats it using the given format string.
+
+  ## Examples
+    iex> parse_datetime(~U[2023-11-17 12:25:31.887855Z], %SessionContext{local_tz: "America/Montevideo"})
+    "Fri Nov 17, 2023"
+
+    iex> parse_datetime(~U[2023-11-17 12:25:31.887855Z], %SessionContext{local_tz: "America/Montevideo"}, "{YYYY}-{0M}-{D}")
+    "2023-11-17"
+  """
+
+  def parse_datetime(datetime, ctx, format_string \\ "{WDshort} {Mshort} {D}, {YYYY}") do
+    datetime
+    |> convert_datetime(ctx)
+    |> Timex.format!(format_string)
   end
 end

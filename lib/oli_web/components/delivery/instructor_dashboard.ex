@@ -5,11 +5,12 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard do
 
   alias OliWeb.Router.Helpers, as: Routes
   alias Oli.Delivery.Sections.Section
-  alias OliWeb.Components.Delivery.UserAccountMenu
+  alias OliWeb.Components.Delivery.UserAccount
   alias OliWeb.Components.Header
   alias OliWeb.Common.SessionContext
 
   attr(:ctx, SessionContext)
+  attr(:is_system_admin, :boolean, required: true)
   attr(:section, Section)
   attr(:breadcrumbs, :list, required: true)
   attr(:socket_or_conn, :any, required: true)
@@ -21,8 +22,8 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard do
     ~H"""
     <div class="flex-1 flex flex-col h-screen">
       <.header
-        socket_or_conn={@socket_or_conn}
         ctx={@ctx}
+        is_system_admin={@is_system_admin}
         view={@view}
         section={@section}
         preview_mode={@preview_mode}
@@ -108,7 +109,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard do
     if preview_mode do
       Routes.instructor_dashboard_path(OliWeb.Endpoint, :preview, section.slug, :content)
     else
-      Routes.page_delivery_path(OliWeb.Endpoint, :index, section.slug)
+      ~p"/sections/#{section.slug}"
     end
   end
 
@@ -139,13 +140,17 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard do
     """
   end
 
-  defp header_link_path(_socket_or_conn, %Section{slug: slug}, view, _preview_mode = true) do
+  defp header_link_path(nil, _view, _preview_mode) do
+    nil
+  end
+
+  defp header_link_path(%Section{slug: slug}, view, true = _preview_mode) do
     Routes.instructor_dashboard_path(OliWeb.Endpoint, :preview, slug, view)
   end
 
-  defp header_link_path(socket_or_conn, %Section{slug: slug}, view, _preview_mode) do
+  defp header_link_path(%Section{slug: slug}, view, _preview_mode) do
     Routes.live_path(
-      socket_or_conn,
+      OliWeb.Endpoint,
       OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
       slug,
       view
@@ -155,14 +160,14 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard do
   defp is_active?(current_view, view), do: current_view == view
 
   attr(:ctx, SessionContext)
+  attr(:is_system_admin, :boolean, required: true)
   attr(:section, Section)
   attr(:preview_mode, :boolean, default: false)
-  attr(:socket_or_conn, :any, required: true)
-  attr(:view, :atom)
+  attr(:view, :atom, values: [:manage, :overview, :reports, :discussions])
 
   def header(assigns) do
     ~H"""
-    <div class="w-full bg-delivery-header text-white border-b border-slate-600">
+    <div class="w-full bg-delivery-instructor-dashboard-header text-white border-b border-slate-600">
       <div class="container mx-auto flex flex-row">
         <div class="flex items-center">
           <a
@@ -175,36 +180,45 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard do
 
         <div class="flex flex-1 flex-row justify-center">
           <.header_link
-            path={header_link_path(@socket_or_conn, @section, :overview, @preview_mode)}
+            path={header_link_path(@section, :overview, @preview_mode)}
             active={is_active?(@view, :overview)}
           >
             Overview
           </.header_link>
           <.header_link
-            path={header_link_path(@socket_or_conn, @section, :reports, @preview_mode)}
+            path={header_link_path(@section, :reports, @preview_mode)}
             active={is_active?(@view, :reports)}
           >
             Reports
           </.header_link>
           <.header_link
-            path={header_link_path(@socket_or_conn, @section, :manage, @preview_mode)}
+            path={header_link_path(@section, :manage, @preview_mode)}
             active={is_active?(@view, :manage)}
           >
             Manage
           </.header_link>
           <.header_link
-            path={header_link_path(@socket_or_conn, @section, :discussions, @preview_mode)}
+            path={header_link_path(@section, :discussions, @preview_mode)}
             active={is_active?(@view, :discussions)}
           >
             Discussion Activity
           </.header_link>
         </div>
 
-        <%= if @preview_mode do %>
-          <UserAccountMenu.preview_user />
-        <% else %>
-          <UserAccountMenu.menu ctx={@ctx} section={@section} />
-        <% end %>
+        <div class="p-3">
+          <%= if @preview_mode do %>
+            <UserAccount.preview_user_menu />
+          <% else %>
+            <UserAccount.menu
+              id="user-account-menu"
+              ctx={@ctx}
+              section={@section}
+              class="hover:!bg-delivery-instructor-dashboard-header-700"
+              dropdown_class="text-body-color dark:text-body-color-dark"
+              is_system_admin={@is_system_admin}
+            />
+          <% end %>
+        </div>
 
         <div class="flex items-center border-l border-slate-300 my-2">
           <button
@@ -216,8 +230,8 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard do
                 no-underline
                 text-slate-100
                 hover:no-underline
-                hover:bg-delivery-header-700
-                active:bg-delivery-header-600
+                hover:bg-delivery-instructor-dashboard-header-700
+                active:bg-delivery-instructor-dashboard-header-600
               "
             onclick="window.showHelpModal();"
           >
@@ -231,11 +245,15 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard do
 
   attr(:section, Section)
 
-  def section_details_header(%{section: nil}), do: nil
+  def section_details_header(%{section: nil} = assigns) do
+    ~H"""
+
+    """
+  end
 
   def section_details_header(assigns) do
     ~H"""
-    <div class="w-full bg-delivery-header text-white py-8">
+    <div class="w-full bg-delivery-instructor-dashboard-header text-white py-8">
       <div class="container mx-auto flex flex-row justify-between">
         <div class="flex-1 flex items-center text-[1.5em]">
           <div class="font-bold text-slate-300">
@@ -250,6 +268,12 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard do
         </div>
       </div>
     </div>
+    """
+  end
+
+  def footer(assigns) do
+    ~H"""
+    <%= Phoenix.View.render(OliWeb.LayoutView, "_delivery_footer.html", assigns) %>
     """
   end
 end

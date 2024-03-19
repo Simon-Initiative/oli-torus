@@ -26,6 +26,7 @@ defmodule Oli.Plugs.SetCurrentUser do
       |> put_session(:is_community_admin, current_author.community_admin_count > 0)
       |> put_session(:is_system_admin, Accounts.has_admin_role?(current_author))
       |> assign(:current_author, current_author)
+      |> assign(:is_system_admin, Accounts.has_admin_role?(current_author))
     else
       _ ->
         conn
@@ -33,6 +34,7 @@ defmodule Oli.Plugs.SetCurrentUser do
         |> delete_session(:is_community_admin)
         |> delete_session(:is_system_admin)
         |> assign(:current_author, nil)
+        |> assign(:is_system_admin, false)
     end
   end
 

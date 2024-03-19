@@ -61,6 +61,8 @@ export interface ActivityContext {
   pageState?: any;
   showFeedback: boolean | null;
   resourceId?: number;
+  renderPointMarkers: boolean;
+  isAnnotationLevel: boolean;
 }
 
 /**

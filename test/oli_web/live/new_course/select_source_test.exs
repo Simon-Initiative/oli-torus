@@ -18,7 +18,7 @@ defmodule OliWeb.NewCourse.SelectSourceTest do
   describe "user cannot access when is not logged in" do
     test "redirects to new session when accessing the admin view", %{conn: conn} do
       {:error,
-       {:redirect, %{to: "/authoring/session/new?request_path=%2Fadmin%2Fopen_and_free%2Fcreate"}}} =
+       {:redirect, %{to: "/authoring/session/new?request_path=%2Fadmin%2Fsections%2Fcreate"}}} =
         live(conn, @live_view_admin_route)
     end
 

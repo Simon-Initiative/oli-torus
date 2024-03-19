@@ -646,24 +646,29 @@ defmodule Oli.Delivery.Attempts.Core do
   def get_resource_attempt_history(resource_id, section_slug, user_id) do
     access = get_resource_access(resource_id, section_slug, user_id)
 
-    id = access.id
+    case access do
+      nil ->
+        nil
 
-    attempts =
-      Repo.all(
-        from(ra in ResourceAttempt,
-          where: ra.resource_access_id == ^id,
-          select: ra,
-          preload: [:revision]
-        )
-      )
+      %{id: id} ->
+        attempts =
+          Repo.all(
+            from(ra in ResourceAttempt,
+              where: ra.resource_access_id == ^id,
+              order_by: ra.attempt_number,
+              select: ra,
+              preload: [:revision]
+            )
+          )
 
-    attempt_representation =
-      case attempts do
-        nil -> []
-        records -> records
-      end
+        attempt_representation =
+          case attempts do
+            nil -> []
+            records -> records
+          end
 
-    {access, attempt_representation}
+        {access, attempt_representation}
+    end
   end
 
   @doc """

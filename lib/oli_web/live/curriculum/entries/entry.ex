@@ -46,7 +46,7 @@ defmodule OliWeb.Curriculum.Entry do
     >
       <div class="flex-grow-1 d-flex flex-column self-center">
         <div class="flex-1">
-          <%= icon(assigns) %>
+          <%= entry_icon(assigns) %>
           <%= if Oli.Resources.ResourceType.get_type_by_id(@child.resource_type_id) == "container" do %>
             <%= Links.resource_link(@child, [], @project, @numberings, "ml-1 mr-1 entry-title") %>
           <% else %>
@@ -97,7 +97,7 @@ defmodule OliWeb.Curriculum.Entry do
     """
   end
 
-  def icon(%{child: child} = assigns) do
+  def entry_icon(%{child: child} = assigns) do
     if is_container?(child) do
       ~H"""
       <i class="fa fa-archive fa-lg mx-2 text-gray-700 dark:text-gray-100"></i>

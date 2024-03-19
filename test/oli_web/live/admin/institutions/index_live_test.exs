@@ -144,6 +144,7 @@ defmodule OliWeb.Admin.Institutions.IndexLiveTest do
              )
     end
 
+    @tag capture_log: true
     test "can approve pending registrations", %{conn: conn} do
       pending_registration =
         insert(:pending_registration, %{
@@ -192,6 +193,7 @@ defmodule OliWeb.Admin.Institutions.IndexLiveTest do
              |> Repo.one() != nil
     end
 
+    @tag capture_log: true
     test "when a pending registration is approved by setting a `New Institution`, the new institution is created correctly",
          %{conn: conn} do
       insert(:institution, %{
@@ -258,6 +260,7 @@ defmodule OliWeb.Admin.Institutions.IndexLiveTest do
       assert new_institution.institution_url == "www.existing_institution.com"
     end
 
+    @tag capture_log: true
     test "when a pending registration contains the url of an existing institution, the existing institution is used instead",
          %{conn: conn} do
       existing_institution =

@@ -25,7 +25,7 @@ defmodule Oli.Plugs.AuthorizeSectionPreview do
         redirect_path =
           conn
           |> current_path()
-          |> String.replace("/preview/", "/")
+          |> String.replace(~r/\/preview\/?/, "/")
 
         conn
         |> redirect(to: redirect_path)

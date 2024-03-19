@@ -9,7 +9,7 @@
     text-transform: uppercase;
 
     &.admin-color {
-      color: #2ecc71;
+      color: var(--color-yellow);
     }
 
     &.author-color {
