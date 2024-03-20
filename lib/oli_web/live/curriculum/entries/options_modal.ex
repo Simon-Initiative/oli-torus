@@ -2,9 +2,10 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
   use OliWeb, :live_component
 
   import OliWeb.Curriculum.Utils
-
-  alias Oli.Resources.ScoringStrategy
+  alias Oli.Publishing.AuthoringResolver
   alias Oli.Resources.ExplanationStrategy
+  alias Oli.Resources.Revision.IntroVideo
+  alias Oli.Resources.ScoringStrategy
   alias Oli.Utils.S3Storage
   alias OliWeb.Components.HierarchySelector
 
@@ -94,9 +95,20 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
             else: "Upload #{humanize_and_pluralize_atom(@step)}" %>
         </a>
         <span class="text-xs text-gray-500">(max size: <%= @max_upload_size[@step] %> MB)</span>
+        <.form :if={@step == :intro_video} for={@intro_video_form} class="flex space-x-3 w-full">
+          <span>or</span>
+          <.input
+            type="text"
+            field={@intro_video_form[:url]}
+            placeholder="Paste a youtube video URL"
+            phx-change="validate-youtube-url"
+            class="h-8"
+            phx-target={@myself}
+          />
+        </.form>
       </h2>
       <div
-        id="s3_uploaded_resources"
+        id="uploaded_resources"
         class="grid grid-cols-4 gap-4 gap-y-10 p-6 max-h-[65vh] overflow-y-scroll"
         phx-drop-target={@uploads[@step].ref}
       >
@@ -156,43 +168,47 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
             <span>&times;</span>
           </button>
         </article>
-        <img
+        <.poster_image_card
           :for={url <- @resource_urls}
           :if={@step == :poster_image}
-          src={url}
-          phx-click="select-resource"
-          phx-value-url={url}
-          phx-target={@myself}
-          data-filename={get_filename(url)}
-          class={[
-            "object-cover h-[162px] w-[288px] mx-auto rounded-lg cursor-pointer outline outline-1 outline-gray-200 shadow-lg hover:scale-[1.02]",
-            if(get_filename(url) == get_filename(fetch_field(@changeset, @step)),
-              do: "!outline-[7px] outline-blue-400"
-            )
-          ]}
+          url={url}
+          target={@myself}
+          is_selected={get_filename(url) == get_filename(fetch_field(@changeset, @step))}
         />
 
-        <video
+        <.video_card
+          :if={
+            @step == :intro_video and
+              valid_youtube_url(@intro_video_form)
+          }
+          url={
+            valid_youtube_to_embed_url(
+              Ecto.Changeset.get_change(
+                @intro_video_form.source,
+                :url
+              )
+            )
+          }
+          target={@myself}
+          is_youtube_link={is_youtube_link(Ecto.Changeset.get_change(@intro_video_form.source, :url))}
+          is_selected={
+            valid_youtube_to_embed_url(
+              Ecto.Changeset.get_change(
+                @intro_video_form.source,
+                :url
+              )
+            ) == valid_youtube_to_embed_url(fetch_field(@changeset, @step))
+          }
+        />
+
+        <.video_card
           :for={url <- @resource_urls}
           :if={@step == :intro_video}
-          id={"video_#{url}"}
-          phx-click="select-resource"
-          phx-value-url={url}
-          phx-target={@myself}
-          data-filename={get_filename(url)}
-          class={[
-            "object-cover h-[162px] w-[288px] mx-auto rounded-lg cursor-pointer outline outline-1 outline-gray-200 shadow-lg hover:scale-[1.02]",
-            if(get_filename(url) == get_filename(fetch_field(@changeset, @step)),
-              do: "!outline-[7px] outline-blue-400"
-            )
-          ]}
-          phx-hook="PauseOthersOnSelected"
-          preload="metadata"
-          controls
-          data-filename={get_filename(url)}
-        >
-          <source src={"#{url}"} type="video/mp4" /> Your browser does not support the video tag.
-        </video>
+          url={url}
+          target={@myself}
+          is_youtube_link={is_youtube_link(url)}
+          is_selected={get_filename(url) == get_filename(fetch_field(@changeset, @step))}
+        />
       </div>
 
       <div class="modal-footer">
@@ -495,6 +511,84 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
     """
   end
 
+  attr :url, :string
+  attr :target, :map
+  attr :is_youtube_link, :boolean
+  attr :is_selected, :boolean
+
+  def video_card(%{is_youtube_link: true} = assigns) do
+    ~H"""
+    <div class={[
+      "relative outline outline-1 outline-gray-200 h-[162px] w-[288px] mx-auto rounded-lg shadow-lg hover:scale-[1.02]",
+      if(
+        @is_selected,
+        do: "!outline-[7px] outline-blue-400"
+      )
+    ]}>
+      <div
+        id={"youtube_click_interceptor_#{@url}"}
+        class="absolute z-10 top-0 left-0 h-[162px] w-[288px] mx-auto rounded-lg cursor-pointer"
+        phx-click="select-resource"
+        phx-value-url={@url}
+        phx-target={@target}
+        phx-hook="PauseOthersOnSelected"
+      >
+      </div>
+      <iframe
+        id={"youtube_video_#{@url}"}
+        role="youtube iframe video"
+        src={@url}
+        frameborder="0"
+        allowfullscreen
+        class="object-cover h-[162px] w-[288px] mx-auto rounded-lg"
+      >
+      </iframe>
+    </div>
+    """
+  end
+
+  def video_card(assigns) do
+    ~H"""
+    <video
+      id={"video_#{@url}"}
+      phx-click="select-resource"
+      phx-value-url={@url}
+      phx-target={@target}
+      data-filename={get_filename(@url)}
+      class={[
+        "object-cover h-[162px] w-[288px] mx-auto rounded-lg cursor-pointer outline outline-1 outline-gray-200 shadow-lg hover:scale-[1.02]",
+        if(@is_selected, do: "!outline-[7px] outline-blue-400")
+      ]}
+      phx-hook="PauseOthersOnSelected"
+      preload="metadata"
+      controls
+      data-filename={get_filename(@url)}
+    >
+      <source src={"#{@url}"} type="video/mp4" /> Your browser does not support the video tag.
+    </video>
+    """
+  end
+
+  attr :url, :string
+  attr :is_selected, :boolean
+  attr :target, :map
+
+  def poster_image_card(assigns) do
+    ~H"""
+    <img
+      src={@url}
+      phx-click="select-resource"
+      phx-value-url={@url}
+      phx-target={@target}
+      data-filename={get_filename(@url)}
+      class={[
+        "object-cover h-[162px] w-[288px] mx-auto rounded-lg cursor-pointer outline outline-1 outline-gray-200 shadow-lg hover:scale-[1.02]",
+        if(@is_selected, do: "!outline-[7px] outline-blue-400")
+      ]}
+    />
+    """
+  end
+
   attr :poster_image, :string
   attr :target, :map
   attr :delete_button_enabled, :boolean, default: false
@@ -582,7 +676,22 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
           <span>&times;</span>
         </button>
 
+        <div
+          :if={is_youtube_link(@intro_video)}
+          id="youtube_video"
+          class="object-cover h-[162px] w-[288px] mx-auto rounded-lg outline outline-1 outline-gray-200 shadow-lg"
+        >
+          <iframe
+            src={valid_youtube_to_embed_url(@intro_video)}
+            frameborder="0"
+            allowfullscreen
+            class="object-cover h-[162px] w-[288px] mx-auto rounded-lg"
+          >
+          </iframe>
+        </div>
+
         <video
+          :if={!is_youtube_link(@intro_video)}
           class="object-cover h-[162px] w-[288px] mx-auto rounded-lg outline outline-1 outline-gray-200 shadow-lg"
           preload="metadata"
           controls
@@ -610,29 +719,13 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
       when target_step in ["poster_image", "intro_video"] do
     resource_name = String.to_existing_atom(target_step)
 
-    {:ok, resource_urls} =
-      list_resource_urls(socket.assigns.project.slug, resource_name)
-      |> list_selected_resource_first(fetch_field(socket.assigns.changeset, resource_name))
-
-    socket =
-      socket
-      |> maybe_cancel_not_consumed_uploads(resource_name)
-      |> assign(
-        step: resource_name,
-        resource_urls: resource_urls
-      )
-
-    if resource_urls == [] do
-      # if there are no resources, we open the uploader automatically to reduce the amount of user interactions
-      {:noreply,
-       socket
-       |> push_event("js-exec", %{
-         to: "#options-modal-uploader-trigger",
-         attr: "data-auto_open_uploader"
-       })}
-    else
-      {:noreply, socket}
-    end
+    {:noreply,
+     socket
+     |> assign(step: resource_name)
+     |> assign_resource_urls(resource_name)
+     |> maybe_assign_intro_video_form(target_step)
+     |> maybe_cancel_not_consumed_uploads(resource_name)
+     |> maybe_auto_open_uploader()}
   end
 
   def handle_event("cancel_not_consumed_uploads", _params, socket) do
@@ -707,6 +800,28 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
     {:noreply, assign(socket, changeset: changeset)}
   end
 
+  def handle_event(
+        "validate-youtube-url",
+        %{"intro_video" => %{"url" => youtube_url}},
+        socket
+      ) do
+    intro_video_form =
+      %IntroVideo{source: :youtube}
+      |> Ecto.Changeset.change()
+      |> IntroVideo.changeset(%{url: youtube_url})
+      |> Map.put(:action, :validate)
+      |> to_form()
+
+    if intro_video_form.source.valid? do
+      changeset =
+        Ecto.Changeset.put_change(socket.assigns.changeset, socket.assigns.step, youtube_url)
+
+      {:noreply, assign(socket, intro_video_form: intro_video_form, changeset: changeset)}
+    else
+      {:noreply, assign(socket, intro_video_form: intro_video_form)}
+    end
+  end
+
   defp is_foundation(changeset, revision) do
     if !is_nil(changeset.changes |> Map.get(:purpose)) do
       changeset.changes.purpose == :foundation
@@ -769,27 +884,76 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
   defp error_to_string(:not_accepted, _resource_name),
     do: "You have selected an unacceptable file type"
 
-  defp list_resource_urls(project_slug, resource_name) do
-    resource_path(project_slug, resource_name)
-    |> S3Storage.list_file_urls()
+  defp resource_path(project_slug, resource_name),
+    do: Path.join([Atom.to_string(resource_name) <> "s", project_slug])
+
+  defp ext(entry) do
+    [ext | _] = MIME.extensions(entry.client_type)
+    ext
   end
 
-  defp list_selected_resource_first({:ok, resource}, selected_resource) do
-    case Enum.find(resource, &(get_filename(&1) == get_filename(selected_resource))) do
-      nil ->
-        {:ok, resource}
+  defp get_filename(nil), do: nil
 
-      selected_resource ->
-        {:ok,
-         [selected_resource] ++
-           Enum.reject(resource, &(get_filename(&1) == get_filename(selected_resource)))}
+  defp get_filename(url) do
+    if is_youtube_link(url) do
+      url
+    else
+      url
+      |> String.split("/")
+      |> List.last()
     end
   end
 
-  defp list_selected_resource_first(error, _selected_resource), do: error
+  defp humanize_and_pluralize_atom(:intro_video), do: "an #{humanize_atom(:intro_video)}"
+  defp humanize_and_pluralize_atom(atom), do: "a #{humanize_atom(atom)}"
 
-  defp resource_path(project_slug, resource_name),
-    do: Path.join([Atom.to_string(resource_name) <> "s", project_slug]) |> IO.inspect()
+  defp humanize_atom(atom), do: Phoenix.Naming.humanize(atom) |> String.downcase()
+
+  defp is_youtube_link(url) do
+    Regex.match?(~r{youtube\.com|youtu\.be}, url)
+  end
+
+  defp valid_youtube_url(form) do
+    form.source.valid? and not is_nil(Ecto.Changeset.get_change(form.source, :url))
+  end
+
+  defp valid_youtube_to_embed_url(url) do
+    regex = ~r/(youtu\.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/
+
+    case Regex.run(regex, url) do
+      [_, _, video_id] when byte_size(video_id) == 11 ->
+        "https://www.youtube.com/embed/#{video_id}?autoplay=0&rel=0"
+
+      _ ->
+        url
+    end
+  end
+
+  ## assign helpers (start) ##
+
+  defp maybe_assign_intro_video_form(socket, "intro_video") do
+    assign(socket,
+      intro_video_form:
+        %IntroVideo{source: :youtube}
+        |> Ecto.Changeset.change()
+        |> to_form()
+    )
+  end
+
+  defp maybe_assign_intro_video_form(socket, _), do: socket
+
+  defp maybe_auto_open_uploader(socket) do
+    if socket.assigns.resource_urls == [] do
+      # if there are no resources, we open the uploader automatically to reduce the amount of user interactions
+      socket
+      |> push_event("js-exec", %{
+        to: "#options-modal-uploader-trigger",
+        attr: "data-auto_open_uploader"
+      })
+    else
+      socket
+    end
+  end
 
   defp maybe_cancel_not_consumed_uploads(socket, allow_upload_name) do
     # we need to cancel any residual not consumed resource between step navigations
@@ -803,21 +967,43 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
     end
   end
 
-  defp ext(entry) do
-    [ext | _] = MIME.extensions(entry.client_type)
-    ext
+  defp assign_resource_urls(socket, resource_name) do
+    resource_urls =
+      with {:ok, s3_resource_urls} <-
+             list_S3_resource_urls(socket.assigns.project.slug, resource_name),
+           youtube_resource_urls <-
+             maybe_list_all_youtube_resource_urls(socket.assigns.project.slug, resource_name) do
+        list_selected_resource_first(
+          youtube_resource_urls ++ s3_resource_urls,
+          fetch_field(socket.assigns.changeset, resource_name)
+        )
+      end
+
+    assign(socket, resource_urls: resource_urls)
   end
 
-  defp get_filename(nil), do: nil
-
-  defp get_filename(url) do
-    url
-    |> String.split("/")
-    |> List.last()
+  defp list_S3_resource_urls(project_slug, resource_name) do
+    resource_path(project_slug, resource_name)
+    |> S3Storage.list_file_urls()
   end
 
-  defp humanize_and_pluralize_atom(:intro_video), do: "an #{humanize_atom(:intro_video)}"
-  defp humanize_and_pluralize_atom(atom), do: "a #{humanize_atom(atom)}"
+  defp maybe_list_all_youtube_resource_urls(project_slug, :intro_video) do
+    AuthoringResolver.all_unique_youtube_intro_videos(project_slug)
+    |> Enum.map(&valid_youtube_to_embed_url/1)
+  end
 
-  defp humanize_atom(atom), do: Phoenix.Naming.humanize(atom) |> String.downcase()
+  defp maybe_list_all_youtube_resource_urls(_project_slug, _resource_name), do: []
+
+  defp list_selected_resource_first(resources, selected_resource) do
+    case Enum.find(resources, &(get_filename(&1) == get_filename(selected_resource))) do
+      nil ->
+        resources
+
+      selected_resource ->
+        [selected_resource] ++
+          Enum.reject(resources, &(get_filename(&1) == get_filename(selected_resource)))
+    end
+  end
+
+  ## assign helpers (end) ##
 end
