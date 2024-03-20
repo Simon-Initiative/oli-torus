@@ -134,12 +134,15 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
               phx-target={@myself}
             />
 
-            <div
+            <button
               :if={@step == :intro_video}
               phx-hook="VideoPreview"
               ref={entry.ref}
               id={"video_preview_#{entry.ref}"}
               name={@step}
+              phx-click="select-resource"
+              phx-value-url="uploaded_one"
+              phx-target={@myself}
             >
               <video
                 class={[
@@ -148,15 +151,13 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
                     do: "!outline-[7px] outline-blue-400"
                   )
                 ]}
-                phx-click="select-resource"
-                phx-value-url="uploaded_one"
-                phx-target={@myself}
                 preload="metadata"
+                tabindex="-1"
                 controls
               >
                 <source />
               </video>
-            </div>
+            </button>
           </figure>
 
           <button
@@ -527,7 +528,7 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
         do: "!outline-[7px] outline-blue-400"
       )
     ]}>
-      <div
+      <button
         id={"youtube_click_interceptor_#{@url}"}
         class="absolute z-10 top-0 left-0 h-[162px] w-[288px] mx-auto rounded-lg cursor-pointer"
         phx-click="select-resource"
@@ -535,7 +536,7 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
         phx-target={@target}
         phx-hook="PauseOthersOnSelected"
       >
-      </div>
+      </button>
       <iframe
         id={"youtube_video_#{@url}"}
         role="youtube iframe video"
@@ -551,23 +552,26 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
 
   def video_card(assigns) do
     ~H"""
-    <video
+    <button
       id={"video_#{@url}"}
       phx-click="select-resource"
       phx-value-url={@url}
       phx-target={@target}
-      data-filename={get_filename(@url)}
-      class={[
-        "object-cover h-[162px] w-[288px] mx-auto rounded-lg cursor-pointer outline outline-1 outline-gray-200 shadow-lg hover:scale-[1.02]",
-        if(@is_selected, do: "!outline-[7px] outline-blue-400")
-      ]}
       phx-hook="PauseOthersOnSelected"
-      preload="metadata"
-      controls
       data-filename={get_filename(@url)}
     >
-      <source src={"#{@url}"} type="video/mp4" /> Your browser does not support the video tag.
-    </video>
+      <video
+        class={[
+          "object-cover h-[162px] w-[288px] mx-auto rounded-lg cursor-pointer outline outline-1 outline-gray-200 shadow-lg hover:scale-[1.02]",
+          if(@is_selected, do: "!outline-[7px] outline-blue-400")
+        ]}
+        preload="metadata"
+        tabindex="-1"
+        controls
+      >
+        <source src={"#{@url}"} type="video/mp4" /> Your browser does not support the video tag.
+      </video>
+    </button>
     """
   end
 
@@ -577,17 +581,20 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
 
   def poster_image_card(assigns) do
     ~H"""
-    <img
-      src={@url}
+    <button
       phx-click="select-resource"
       phx-value-url={@url}
       phx-target={@target}
       data-filename={get_filename(@url)}
-      class={[
-        "object-cover h-[162px] w-[288px] mx-auto rounded-lg cursor-pointer outline outline-1 outline-gray-200 shadow-lg hover:scale-[1.02]",
-        if(@is_selected, do: "!outline-[7px] outline-blue-400")
-      ]}
-    />
+    >
+      <img
+        src={@url}
+        class={[
+          "object-cover h-[162px] w-[288px] mx-auto rounded-lg cursor-pointer outline outline-1 outline-gray-200 shadow-lg hover:scale-[1.02]",
+          if(@is_selected, do: "!outline-[7px] outline-blue-400")
+        ]}
+      />
+    </button>
     """
   end
 
@@ -640,13 +647,14 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
     <div class="form-group flex flex-col gap-2">
       <label>Intro video</label>
       <.input type="hidden" name="revision[intro_video]" value={@intro_video} />
-      <div
+      <button
         class="flex items-center justify-center h-[162px] w-[288px] mx-auto rounded-lg border-[3px] border-dashed border-gray-300 cursor-pointer"
         data-filename={get_filename(@intro_video)}
+        type="button"
         phx-click={JS.dispatch("click", to: "#select_intro_video_button")}
       >
         <i class="fa-solid fa-circle-plus scale-[200%] text-gray-400"></i>
-      </div>
+      </button>
       <button
         id="select_intro_video_button"
         type="button"
@@ -696,6 +704,7 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
           :if={!is_youtube_link(@intro_video)}
           class="object-cover h-[162px] w-[288px] mx-auto rounded-lg outline outline-1 outline-gray-200 shadow-lg"
           preload="metadata"
+          tabindex="-1"
           controls
           data-filename={get_filename(@intro_video)}
         >
