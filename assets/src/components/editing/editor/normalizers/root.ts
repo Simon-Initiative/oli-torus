@@ -1,5 +1,6 @@
 import { Descendant, Editor, Element, Path, Transforms } from 'slate';
 import { Model } from 'data/content/model/elements/factories';
+import guid from 'utils/guid';
 
 const blockTexts = ['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p'];
 const isBlockText = (e: Descendant) => Element.isElement(e) && blockTexts.includes(e.type);
@@ -29,5 +30,24 @@ export const normalize = (editor: Editor, node: Editor, _path: Path) => {
     });
     console.warn('Normalizing content: Inserted paragraph at end of document');
     return;
+  }
+
+  // ensure all block node ids are unique
+  const blockIds = new Set<string>();
+  for (const [node, path] of Editor.nodes(editor, { at: [], match: isBlockText })) {
+    if (Element.isElement(node)) {
+      if (blockIds.has(node.id)) {
+        const newId = guid();
+        Transforms.setNodes(editor, { id: newId }, { at: path });
+
+        console.warn(
+          `Normalizing content: Duplicate block id found: ${node.id}, changed to ${newId}`,
+        );
+
+        return;
+      } else {
+        blockIds.add(node.id);
+      }
+    }
   }
 };
