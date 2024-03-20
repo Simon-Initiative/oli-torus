@@ -33,8 +33,10 @@ export const normalize = (editor: Editor, node: Editor, _path: Path) => {
   }
 
   // ensure all block node ids are unique
+  const isBlockElement = (e: Descendant) => Element.isElement(e) && Editor.isBlock(editor, e);
+
   const blockIds = new Set<string>();
-  for (const [node, path] of Editor.nodes(editor, { at: [], match: isBlockText })) {
+  for (const [node, path] of Editor.nodes(editor, { at: [], match: isBlockElement })) {
     if (Element.isElement(node)) {
       if (blockIds.has(node.id)) {
         const newId = guid();
