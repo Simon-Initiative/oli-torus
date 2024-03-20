@@ -78,9 +78,9 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
         data-auto_open_uploader={JS.dispatch("click", to: "##{@uploads[@step].ref}")}
       >
       </div>
-      <h2 class="text-lg mb-6">
+      <div class="text-lg mb-6 flex w-full">
         <span :if={@resource_urls != []}>
-          <%= "Select #{humanize_and_pluralize_atom(@step)} or" %>
+          <%= "Select #{humanize_and_pluralize_atom(@step)}," %> &nbsp
         </span>
         <a
           href="#"
@@ -94,19 +94,21 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
             do: "upload a new one",
             else: "Upload #{humanize_and_pluralize_atom(@step)}" %>
         </a>
-        <span class="text-xs text-gray-500">(max size: <%= @max_upload_size[@step] %> MB)</span>
-        <.form :if={@step == :intro_video} for={@intro_video_form} class="flex space-x-3 w-full">
-          <span>or</span>
-          <.input
-            type="text"
-            field={@intro_video_form[:url]}
-            placeholder="Paste a youtube video URL"
-            phx-change="validate-youtube-url"
-            class="h-8"
-            phx-target={@myself}
-          />
+        <span class="ml-2 text-xs text-gray-500">(max size: <%= @max_upload_size[@step] %> MB)</span>
+        <.form :if={@step == :intro_video} for={@intro_video_form}>
+          <div class="flex space-x-2 w-full">
+            <span>, or</span>
+            <.input
+              type="text"
+              field={@intro_video_form[:url]}
+              placeholder="Paste a youtube URL"
+              phx-change="validate-youtube-url"
+              class="w-full h-8"
+              phx-target={@myself}
+            />
+          </div>
         </.form>
-      </h2>
+      </div>
       <div
         id="uploaded_resources"
         class="grid grid-cols-4 gap-4 gap-y-10 p-6 max-h-[65vh] overflow-y-scroll"
