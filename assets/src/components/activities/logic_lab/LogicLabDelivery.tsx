@@ -126,7 +126,7 @@ const LogicLab: React.FC<LogicLabDeliveryProps> = () => {
                 const saved = activityState?.parts[0].response?.input;
                 if (saved && e.source) {
                   // post saved state back to lab.
-                  e.source.postMessage(saved, { targetOrigin: LAB_SERVER });
+                  e.source.postMessage(saved, { targetOrigin: LAB_SERVER.origin });
                 }
               } // TODO if in preview, load appropriate content
               // Preview feature in lab servlet is not complete.
