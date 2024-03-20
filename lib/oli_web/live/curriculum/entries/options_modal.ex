@@ -707,6 +707,7 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
           tabindex="-1"
           controls
           data-filename={get_filename(@intro_video)}
+          aria-label="Video Player"
         >
           <source src={"#{@intro_video}"} type="video/mp4" />
           Your browser does not support the video tag.
@@ -719,6 +720,7 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
         phx-click="change_step"
         phx-value-target_step="intro_video"
         phx-target={@target}
+        aria-label="Select Intro Video"
       >
         Select
       </button>
