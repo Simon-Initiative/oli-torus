@@ -60,11 +60,6 @@ defmodule OliWeb.Admin.AdminView do
                 Manage LTI 1.3 Registrations
               </a>
             </li>
-            <li>
-              <a href={~p"/admin/vr_user_agents"}>
-                Manage VR User Agents
-              </a>
-            </li>
           </ul>
         </Group.render>
       <% end %>
@@ -138,6 +133,11 @@ defmodule OliWeb.Admin.AdminView do
               <a href={Routes.live_dashboard_path(OliWeb.Endpoint, :home)} target="_blank">
                 <span>View System Performance Dashboard</span>
                 <i class="fas fa-external-link-alt self-center ml-1"></i>
+              </a>
+            </li>
+            <li>
+              <a href={~p"/admin/vr_user_agents"}>
+                Manage VR User Agents
               </a>
             </li>
           </ul>

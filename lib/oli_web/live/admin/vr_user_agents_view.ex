@@ -45,10 +45,7 @@ defmodule OliWeb.Admin.VrUserAgentsView do
             autofocus
             class="w-full focus:ring-2 focus:ring-blue-300 rounded-lg text-sm px-5 py-1.5 dark:bg-gray-800"
           />
-          <button
-            type="submit"
-            class="w-1/12 px-3 py-2 text-sm font-medium text-center text-white bg-blue-700 rounded-lg hover:bg-blue-800 focus:outline-none dark:bg-blue-600 dark:hover:bg-blue-700"
-          >
+          <button type="submit" class="form-button btn btn-md btn-primary btn-block mt-3">
             Add
           </button>
         </div>
@@ -88,7 +85,7 @@ defmodule OliWeb.Admin.VrUserAgentsView do
                 type="button"
                 phx-click="delete_vr_entry"
                 phx-value-id={vr_user_agent.id}
-                class="focus:outline-none text-white bg-red-700 hover:bg-red-800 focus:ring-4 focus:ring-red-300 font-medium rounded-lg text-sm px-5 py-1.5 me-2 dark:bg-red-600 dark:hover:bg-red-700 dark:focus:ring-red-900"
+                class="form-button btn btn-md btn-danger btn-block mt-3"
               >
                 Delete
               </button>
