@@ -133,8 +133,7 @@ const Authoring: FC<LogicLabAuthoringProps> = (props: LogicLabAuthoringProps) =>
     const signal = controller.signal;
     const getActivities = async () => {
       setLoading('loading');
-      // url should be relative to model.src, but is static for development.
-      const response = await fetch(new URL('api/v1/activities', LAB_SERVER), {
+      const response = await fetch(new URL('api/v1/activities', LAB_SERVER).toString(), {
         signal,
         headers: { Accept: 'application/json' },
       });
@@ -370,7 +369,7 @@ const Preview: FC<LogicLabAuthoringProps> = ({ model }: LogicLabAuthoringProps) 
     const getActivity = async () => {
       setLoading('loading');
       const url = new URL(`api/v1/activities/${model.activity}`, LAB_SERVER);
-      const response = await fetch(url, {
+      const response = await fetch(url.toString(), {
         signal,
         headers: { Accept: 'application/json' },
       });
