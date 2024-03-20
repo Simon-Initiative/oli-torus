@@ -833,7 +833,9 @@ defmodule OliWeb.Components.Delivery.PracticeActivities do
           %{
             text: response_summary.response,
             user_name: OliWeb.Common.Utils.name(response_summary.user),
-            type: mapper[response_summary.part_id]
+            type: mapper[response_summary.part_id],
+            part_id: response_summary.part_id,
+            count: response_summary.count
           }
           | acc_responses
         ]
