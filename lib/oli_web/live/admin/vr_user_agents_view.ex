@@ -45,10 +45,10 @@ defmodule OliWeb.Admin.VrUserAgentsView do
             autofocus
             class="w-full focus:ring-2 focus:ring-blue-300 rounded-lg text-sm px-5 py-1.5 dark:bg-gray-800"
           />
-          <button type="submit" class="form-button btn btn-md btn-primary btn-block mt-3">
-            Add
-          </button>
         </div>
+        <button type="submit" class="form-button btn btn-md btn-primary mt-3">
+          Add
+        </button>
       </.form>
       <Paging.render
         id="header_paging"
@@ -85,7 +85,7 @@ defmodule OliWeb.Admin.VrUserAgentsView do
                 type="button"
                 phx-click="delete_vr_entry"
                 phx-value-id={vr_user_agent.id}
-                class="form-button btn btn-md btn-danger btn-block mt-3"
+                class="form-button btn btn-md btn-danger mt-3"
               >
                 Delete
               </button>
@@ -153,6 +153,9 @@ defmodule OliWeb.Admin.VrUserAgentsView do
     case VrUserAgents.insert(%{user_agent: String.trim(user_agent)}) do
       {:ok, _} ->
         form = VrUserAgent.new_changeset() |> to_form()
+
+        Oli.VrLookupCache.reload()
+
         {:noreply, reload_vr_user_agents(socket) |> assign(form: form)}
 
       {:error, changeset} ->
@@ -164,6 +167,9 @@ defmodule OliWeb.Admin.VrUserAgentsView do
     case VrUserAgents.delete(id) do
       {:ok, _} ->
         form = VrUserAgent.new_changeset() |> to_form()
+
+        Oli.VrLookupCache.reload()
+
         {:noreply, reload_vr_user_agents(socket) |> assign(form: form)}
 
       {:error, changeset} ->

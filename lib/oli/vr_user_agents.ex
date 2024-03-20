@@ -16,14 +16,12 @@ defmodule Oli.VrUserAgents do
   def insert(data) do
     VrUserAgent.new_changeset(data)
     |> Oli.Repo.insert()
-    |> tap(fn _ -> Oli.VrLookupCache.reload() end)
   end
 
   @spec delete(integer) :: {:ok, VrUserAgent.t()} | {:error, Ecto.Changeset.t()}
   def delete(user_id) do
     get(user_id)
     |> Repo.delete()
-    |> tap(fn _ -> Oli.VrLookupCache.reload() end)
   end
 
   @spec vr_user_agents(Keyword.t()) :: [map()] | []
