@@ -57,8 +57,12 @@ export const PauseOthersOnSelected = {
   mounted() {
     this.el.addEventListener('click', (e: any) => {
       const videos = document.querySelectorAll('video');
-      for (let i = 0; i < videos.length; i++) {
-        videos[i].pause();
+
+      const currentVideo = this.el;
+      const otherVideos = Array.from(videos).filter((video) => video !== currentVideo);
+
+      for (let i = 0; i < otherVideos.length; i++) {
+        otherVideos[i].pause();
       }
     });
   },
