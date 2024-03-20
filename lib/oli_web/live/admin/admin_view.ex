@@ -135,6 +135,11 @@ defmodule OliWeb.Admin.AdminView do
                 <i class="fas fa-external-link-alt self-center ml-1"></i>
               </a>
             </li>
+            <li>
+              <a href={~p"/admin/vr_user_agents"}>
+                Manage VR User Agents
+              </a>
+            </li>
           </ul>
         </Group.render>
       <% end %>

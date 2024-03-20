@@ -92,6 +92,7 @@ defmodule OliWeb.Router do
     )
 
     plug(Oli.Plugs.SetCurrentUser)
+    plug(Oli.Plugs.SetVrAgentValue)
   end
 
   # set the layout to be workspace
@@ -1172,6 +1173,7 @@ defmodule OliWeb.Router do
 
     # General
     live("/", Admin.AdminView)
+    live("/vr_user_agents", Admin.VrUserAgentsView)
     live("/products", Products.ProductsView)
     live("/products/:product_id/discounts", Products.Payments.Discounts.ProductsIndexView)
     live("/collaborative_spaces", CollaborationLive.IndexView, :admin, as: :collab_spaces_index)
