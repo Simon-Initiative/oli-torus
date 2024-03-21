@@ -1,4 +1,4 @@
-defmodule OliWeb.Users.UsersDetailViewTest do
+defmodule OliWeb.Admin.VrUserAgentsViewTest do
   use OliWeb.ConnCase
   import Phoenix.LiveViewTest
   import Oli.Factory
