@@ -80,11 +80,12 @@ defmodule Oli.Rendering.Activity.Html do
         {:ok, bib_params_json} = Jason.encode(bib_params)
         activity_html_id = get_activity_html_id(activity_id, model_json)
 
-        activity_context = %{
-          variables: variables
-        }
-        |> Poison.encode!()
-        |> HtmlEntities.encode()
+        activity_context =
+          %{
+            variables: variables
+          }
+          |> Poison.encode!()
+          |> HtmlEntities.encode()
 
         [
           ~s|<#{tag} authoringcontext="#{activity_context}" section_slug=\"#{section_slug}\" activity_id=\"#{activity_html_id}\" model="#{model_json}" activityId="#{activity_id}" editmode="false" projectSlug="#{section_slug}" bib_params="#{Base.encode64(bib_params_json)}"></#{tag}>\n|
