@@ -133,7 +133,9 @@ defmodule OliWeb.LayoutView do
   def render_license(%{license_type: :custom} = assigns) do
     ~H"""
     <.license_wrapper>
-      <p class="h-full"><%= @custom_license_details %></p>
+      <a href={@custom_license_details} , target="_blank">
+        <%= @custom_license_details %>
+      </a>
     </.license_wrapper>
     """
   end
