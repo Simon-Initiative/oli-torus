@@ -159,17 +159,17 @@ defmodule OliWeb.Curriculum.OptionsModalContentTest do
 
       # go to image selection step
       lcd
-      |> element("button[phx-click=change_step]", "Select")
+      |> element("button[phx-click=change_step][phx-value-target_step=poster_image]", "Select")
       |> render_click()
 
       assert has_element?(
                lcd,
-               "img[data-filename='a.jpg']"
+               "button[data-filename='a.jpg']"
              )
 
       assert has_element?(
                lcd,
-               "img[data-filename='b.jpg']"
+               "button[data-filename='b.jpg']"
              )
     end
 
@@ -202,10 +202,10 @@ defmodule OliWeb.Curriculum.OptionsModalContentTest do
 
       # go to image selection step
       lcd
-      |> element("button[phx-click=change_step]", "Select")
+      |> element("button[phx-click=change_step][phx-value-target_step=poster_image]", "Select")
       |> render_click()
 
-      first_image = element(lcd, "img:first-of-type")
+      first_image = element(lcd, "button[phx-click=select-resource]:first-of-type img")
 
       assert render(first_image)
              |> Floki.attribute("src")
@@ -241,7 +241,7 @@ defmodule OliWeb.Curriculum.OptionsModalContentTest do
 
       # go to image selection step
       lcd
-      |> element("button[phx-click=change_step]", "Select")
+      |> element("button[phx-click=change_step][phx-value-target_step=poster_image]", "Select")
       |> render_click()
 
       assert has_element?(lcd, "a", "Upload a poster image")
@@ -264,7 +264,7 @@ defmodule OliWeb.Curriculum.OptionsModalContentTest do
 
       # go to image selection step
       lcd
-      |> element("button[phx-click=change_step]", "Select")
+      |> element("button[phx-click=change_step][phx-value-target_step=poster_image]", "Select")
       |> render_click()
 
       assert has_element?(lcd, "a", "upload a new one")
@@ -301,7 +301,7 @@ defmodule OliWeb.Curriculum.OptionsModalContentTest do
 
       # go to image selection step
       lcd
-      |> element("button[phx-click=change_step]", "Select")
+      |> element("button[phx-click=change_step][phx-value-target_step=poster_image]", "Select")
       |> render_click()
 
       refute has_element?(lcd, "img[phx-value-url='uploaded_one']")
@@ -374,7 +374,7 @@ defmodule OliWeb.Curriculum.OptionsModalContentTest do
 
       # go to image selection step
       lcd
-      |> element("button[phx-click=change_step]", "Select")
+      |> element("button[phx-click=change_step][phx-value-target_step=poster_image]", "Select")
       |> render_click()
 
       # upload an image
@@ -432,16 +432,16 @@ defmodule OliWeb.Curriculum.OptionsModalContentTest do
 
       refute has_element?(
                lcd,
-               "img[data-filename='c.jpg']"
+               "button[data-filename='c.jpg']"
              )
 
       # go to image selection step
       lcd
-      |> element("button[phx-click=change_step]", "Select")
+      |> element("button[phx-click=change_step][phx-value-target_step=poster_image]", "Select")
       |> render_click()
 
       not_yet_selected_image =
-        element(lcd, "img[data-filename='c.jpg']")
+        element(lcd, "button[data-filename='c.jpg'] img")
 
       refute render(not_yet_selected_image)
              |> Floki.attribute("class")
@@ -449,11 +449,11 @@ defmodule OliWeb.Curriculum.OptionsModalContentTest do
 
       # select an image from the list (it should be styled as the selected one)
       lcd
-      |> element("img[data-filename='c.jpg']")
+      |> element("button[data-filename='c.jpg']")
       |> render_click()
 
       selected_image =
-        element(lcd, "img[data-filename='c.jpg']")
+        element(lcd, "button[data-filename='c.jpg'] img")
 
       assert render(selected_image)
              |> Floki.attribute("class")
@@ -507,12 +507,12 @@ defmodule OliWeb.Curriculum.OptionsModalContentTest do
 
       # go to image selection step
       lcd
-      |> element("button[phx-click=change_step]", "Select")
+      |> element("button[phx-click=change_step][phx-value-target_step=poster_image]", "Select")
       |> render_click()
 
       # select "b.jpg" image from the list
       lcd
-      |> element("img[data-filename='b.jpg']")
+      |> element("button[data-filename='b.jpg']")
       |> render_click()
 
       # go back to general step
