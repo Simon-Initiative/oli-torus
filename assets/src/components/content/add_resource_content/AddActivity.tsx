@@ -98,7 +98,7 @@ const addActivity = (
         model,
         objectives,
         tags: [],
-        variables: editorDesc.variables
+        variables: editorDesc.variables,
       });
     })
     .catch((err) => {
