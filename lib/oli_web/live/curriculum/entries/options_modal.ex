@@ -109,6 +109,7 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
               field={@intro_video_form[:url]}
               placeholder="Paste a youtube URL"
               class="w-full h-8"
+              phx-debounce={500}
             />
           </div>
         </.form>
