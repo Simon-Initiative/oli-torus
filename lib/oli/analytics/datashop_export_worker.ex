@@ -60,32 +60,35 @@ defmodule Oli.Analytics.DatashopExportWorker do
     datashop_snapshot_path = build_filename(project)
 
     {:ok, result} =
-      Oli.Repo.transaction(fn ->
-        Oli.Utils.use_tmp(fn tmp_dir ->
-          temp_file_name =
-            Path.join([tmp_dir, "datashop_#{project_slug}_#{Oli.Utils.random_string(16)}.xml"])
+      Oli.Repo.transaction(
+        fn ->
+          Oli.Utils.use_tmp(fn tmp_dir ->
+            temp_file_name =
+              Path.join([tmp_dir, "datashop_#{project_slug}_#{Oli.Utils.random_string(16)}.xml"])
 
-          write_to_file(temp_file_name, project, section_ids)
+            write_to_file(temp_file_name, project, section_ids)
 
-          Logger.info("Wrote Datashop file #{temp_file_name} for project #{project_slug}")
+            Logger.info("Wrote Datashop file #{temp_file_name} for project #{project_slug}")
 
-          {:ok, full_upload_url} =
-            Oli.Utils.S3Storage.stream_file(bucket_name, datashop_snapshot_path, temp_file_name)
+            {:ok, full_upload_url} =
+              Oli.Utils.S3Storage.stream_file(bucket_name, datashop_snapshot_path, temp_file_name)
 
-          Logger.info("Uploaded Datashop file #{full_upload_url} for project #{project_slug}")
+            Logger.info("Uploaded Datashop file #{full_upload_url} for project #{project_slug}")
 
-          timestamp = DateTime.utc_now()
+            timestamp = DateTime.utc_now()
 
-          # update the project's last_exported_at timestamp
-          Course.update_project_latest_datashop_snapshot_url(
-            project_slug,
-            full_upload_url,
-            timestamp
-          )
+            # update the project's last_exported_at timestamp
+            Course.update_project_latest_datashop_snapshot_url(
+              project_slug,
+              full_upload_url,
+              timestamp
+            )
 
-          {full_upload_url, timestamp}
-        end)
-      end)
+            {full_upload_url, timestamp}
+          end)
+        end,
+        timeout: :infinity
+      )
 
     result
   end

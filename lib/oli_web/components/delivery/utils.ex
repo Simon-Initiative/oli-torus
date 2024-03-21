@@ -190,11 +190,15 @@ defmodule OliWeb.Components.Delivery.Utils do
     ContextRoles.get_role(:context_learner)
   ]
 
-  @system_admin_role_id SystemRole.role_id().admin
+  @system_admin_role_ids [
+    SystemRole.role_id().system_admin,
+    SystemRole.role_id().account_admin,
+    SystemRole.role_id().content_admin
+  ]
 
   def user_role(section, user) do
     case user do
-      %Author{system_role_id: @system_admin_role_id} ->
+      %Author{system_role_id: system_role_id} when system_role_id in @system_admin_role_ids ->
         :system_admin
 
       %Author{} ->

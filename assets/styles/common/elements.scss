@@ -241,6 +241,12 @@ $element-margin-bottom: 1.5em;
     float: left;
   }
 
+  // MER-3066: Highlight terms outside of definitions, but leave normal size
+  .term {
+    color: var(--color-green-400);
+    font-weight: bold;
+  }
+
   .definition {
     margin-bottom: $element-margin-bottom;
 
@@ -318,12 +324,20 @@ $element-margin-bottom: 1.5em;
   .callout-inline,
   .formula-inline {
     display: inline-block;
-    padding: 2px 0.5em;
 
     mjx-container[display='true'] {
       pointer-events: none;
       margin: 0px !important;
     }
+  }
+
+  .formula-inline {
+    /* no padding on left and right, some use to mix symbols with surrounding punctuation */
+    padding: 2px 0em;
+  }
+
+  .callout-inline {
+    padding: 2px 0.5em;
   }
 
   .callout-inline,
@@ -335,6 +349,9 @@ $element-margin-bottom: 1.5em;
     /* The mathjax formulas were rendering out much larger than the surrounding text, so we're scaling them down to better match the
        legacy content, but the callouts should not be scaled down since that made them look too small. */
     font-size: 0.9em;
+
+    /* MER-2961 - Formulas that were too wide were being cut off. */
+    overflow-x: auto;
   }
 
   .callout-block,
@@ -541,6 +558,11 @@ $element-margin-bottom: 1.5em;
         width: 400px;
       }
     }
+  }
+
+  .highlighted-annotation-point-block {
+    background-color: #fdeccf80;
+    outline: 2px solid #fdeccf80;
   }
 }
 

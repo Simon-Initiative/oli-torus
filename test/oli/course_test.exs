@@ -5,6 +5,7 @@ defmodule Oli.CourseTest do
 
   alias Oli.Authoring.Course
   alias Oli.Authoring.Course.{Family, Project}
+  alias Oli.Delivery.Sections
   alias Oli.Inventories
 
   describe "projects basic" do
@@ -235,6 +236,63 @@ defmodule Oli.CourseTest do
     } do
       assert {:error, "The project doesn't have a survey"} ==
                Course.delete_project_survey(project)
+    end
+  end
+
+  describe "get_project_license/1" do
+    setup do
+      attributes = nil
+      project = insert(:project, attributes: attributes)
+      %{revision: revision, publication: publication} = insert(:published_resource)
+
+      %{section: section} =
+        _spp = insert(:section_project_publication, project: project, publication: publication)
+
+      %{page: revision, project: project, publication: publication, section: section}
+    end
+
+    test "returns map for a Creative Commons license", %{
+      page: page,
+      project: project,
+      publication: publication,
+      section: section
+    } do
+      attributes = %{
+        attributes: %{
+          license: %{license_type: :cc_by, custom_license_details: nil}
+        }
+      }
+
+      {:ok, project} = Course.update_project(project, attributes)
+      Sections.update_section_project_publication(section, project.id, publication.id)
+
+      assert %{license_type: :cc_by, custom_license_details: nil} =
+               Oli.Authoring.Course.get_project_license(page.id, section.slug)
+    end
+
+    test "returns map for custom license", %{
+      page: page,
+      project: project,
+      publication: publication,
+      section: section
+    } do
+      custom_license_msg = "Some custom license"
+
+      attributes = %{
+        attributes: %{
+          license: %{license_type: :custom, custom_license_details: custom_license_msg}
+        }
+      }
+
+      {:ok, project} = Course.update_project(project, attributes)
+      Sections.update_section_project_publication(section, project.id, publication.id)
+
+      assert %{license_type: :custom, custom_license_details: ^custom_license_msg} =
+               Oli.Authoring.Course.get_project_license(page.id, section.slug)
+    end
+
+    test "returns nil when no attributes are present", %{page: page, section: section} do
+      refute Oli.Authoring.Course.get_project_license(page.id, section.slug)
     end
   end
 end

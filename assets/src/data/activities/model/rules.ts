@@ -195,17 +195,19 @@ export const notRangeRule = (
 
 export const makeRule = (input: Input): string => {
   if (input.kind === InputKind.Text) {
+    const trimmedValue = input.value.trim().replace(/\s+/g, ' ');
+
     switch (input.operator) {
       case 'contains':
-        return containsRule(input.value);
+        return containsRule(trimmedValue);
       case 'notcontains':
-        return notContainsRule(input.value);
+        return notContainsRule(trimmedValue);
       case 'regex':
-        return matchRule(input.value);
+        return matchRule(trimmedValue);
       case 'equals':
-        return equalsRule(input.value);
+        return equalsRule(trimmedValue);
       case 'iequals':
-        return iequalsRule(input.value);
+        return iequalsRule(trimmedValue);
     }
   }
 

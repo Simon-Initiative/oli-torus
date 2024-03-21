@@ -30,6 +30,19 @@ export const PointMarkers = {
     this.handleEvent('request_point_markers', () => {
       updatePointMarkers();
     });
+
+    this.handleEvent('highlight_point_marker', ({ id }: any) => {
+      clearAllHighlightedPointMarkers(el);
+
+      const markerEl = el.querySelector(`[data-point-marker="${id}"]`);
+      if (markerEl) {
+        markerEl.classList.add('highlighted-annotation-point-block');
+      }
+    });
+
+    this.handleEvent('clear_highlighted_point_markers', () => {
+      clearAllHighlightedPointMarkers(el);
+    });
   },
 };
 
@@ -42,4 +55,11 @@ function queryPointMarkers(el: HTMLElement) {
     id: markerEl.getAttribute('data-point-marker'),
     top: markerEl.getBoundingClientRect().top - el.getBoundingClientRect().top + OFFSET_TOP,
   }));
+}
+
+function clearAllHighlightedPointMarkers(el: HTMLElement) {
+  const markerElements = el.querySelectorAll('.highlighted-annotation-point-block');
+  markerElements.forEach((markerEl) => {
+    markerEl.classList.remove('highlighted-annotation-point-block');
+  });
 }

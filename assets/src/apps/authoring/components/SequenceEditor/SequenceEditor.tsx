@@ -56,7 +56,7 @@ const SequenceEditor: React.FC<any> = (props: any) => {
   const bankLabel = 'Question Bank';
   const screenLabel = 'Screen';
   const ref = useRef<HTMLDivElement>(null);
-
+  const refSequence = useRef<HTMLOListElement>(null);
   useEffect(() => {
     if (props.menuItemClicked) {
       const { event, item, parentItem, isLayer, isBank, direction } = props.menuItemClicked;
@@ -222,7 +222,7 @@ const SequenceEditor: React.FC<any> = (props: any) => {
           if (parent) {
             move(itemIndex, itemIndex + 1, parent.children);
           } else {
-            // if there is no parent, move within hierarchy
+            // if there is no parent , move within hierarchy
             move(itemIndex, itemIndex + 1, hierarchyCopy);
           }
         }
@@ -399,13 +399,13 @@ const SequenceEditor: React.FC<any> = (props: any) => {
   const sequenceItemToggleClick = () => {
     setTimeout(() => {
       const scrollHeight = ref.current?.scrollHeight || 0;
-      const clientHeight = ref.current?.clientHeight || 0;
+      const sequenceClientHeight = refSequence?.current?.clientHeight || 0;
       dispatch(
         setLeftPanelState({
           sequenceEditorHeight: ref?.current?.clientHeight
             ? ref?.current?.clientHeight + 150
             : ref?.current?.clientHeight,
-          sequenceEditorExpanded: scrollHeight > clientHeight ? true : false,
+          sequenceEditorExpanded: scrollHeight < sequenceClientHeight ? true : false,
         }),
       );
     }, 1000);
@@ -606,7 +606,7 @@ const SequenceEditor: React.FC<any> = (props: any) => {
           maxHeight: !bottomLeftPanel && open ? 'calc(100vh - 100px)' : '55vh',
         }}
       >
-        <ListGroup as="ol" className="aa-sequence">
+        <ListGroup ref={refSequence} as="ol" className="aa-sequence">
           {getHierarchyList(hierarchy)}
         </ListGroup>
       </Accordion.Collapse>

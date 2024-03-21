@@ -5,13 +5,12 @@ defmodule OliWeb.LiveSessionPlugs.RequireEnrollment do
   import Phoenix.LiveView, only: [redirect: 2, put_flash: 3]
 
   alias Oli.Delivery.Sections
-  alias Oli.Accounts.{Author, SystemRole}
 
   def on_mount(:default, %{"section_slug" => section_slug}, _session, socket) do
-    admin_system_role_id = SystemRole.role_id().admin
+    is_admin? = Oli.Accounts.has_admin_role?(socket.assigns[:current_author])
 
-    case {socket.assigns[:current_user], socket.assigns[:current_author]} do
-      {_, %Author{system_role_id: ^admin_system_role_id}} ->
+    case {socket.assigns[:current_user], is_admin?} do
+      {_, true} ->
         {:cont, assign(socket, is_enrolled: false)}
 
       {nil, _} ->

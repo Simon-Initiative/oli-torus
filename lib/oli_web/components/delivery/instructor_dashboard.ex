@@ -16,6 +16,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard do
   attr(:socket_or_conn, :any, required: true)
   attr(:preview_mode, :boolean, default: false)
   attr(:view, :atom, default: nil)
+  slot(:inner_block, required: true)
 
   def main_layout(assigns) do
     ~H"""

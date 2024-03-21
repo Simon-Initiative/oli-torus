@@ -109,7 +109,9 @@ const AdaptiveRuleContextMenu = (props: any) => {
           cursor: 'pointer',
           left: '70px',
           bottom: sequenceEditorExpanded ? `1px` : `auto`,
-          top: sequenceEditorExpanded ? `auto` : `${clientY - 30}px`,
+          top: sequenceEditorExpanded
+            ? `auto`
+            : `${clientY - (item !== 'initState' && !item?.default ? 270 : 30)}px`,
         }}
         className={`dropdown-menu ${props.show ? 'show' : ''}`}
       >

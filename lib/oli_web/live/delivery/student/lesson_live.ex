@@ -4,11 +4,13 @@ defmodule OliWeb.Delivery.Student.LessonLive do
   import OliWeb.Delivery.Student.Utils,
     only: [page_header: 1, star_icon: 1, scripts: 1]
 
+  alias Oli.Accounts.User
   alias Oli.Delivery.Attempts.Core.ResourceAttempt
   alias Oli.Delivery.Attempts.PageLifecycle
   alias Oli.Delivery.Attempts.PageLifecycle.FinalizationSummary
   alias Oli.Delivery.Page.PageContext
   alias Oli.Delivery.{Sections, Settings}
+  alias Oli.Resources.Collaboration
   alias OliWeb.Common.FormatDateTime
   alias OliWeb.Components.Delivery.Layouts
   alias OliWeb.Components.Modal
@@ -21,10 +23,23 @@ defmodule OliWeb.Delivery.Student.LessonLive do
   on_mount {OliWeb.LiveSessionPlugs.InitPage, :previous_next_index}
 
   def mount(_params, _session, %{assigns: %{view: :practice_page}} = socket) do
+    # when updating to Liveview 0.20 we should replace this with assign_async/3
+    # https://hexdocs.pm/phoenix_live_view/Phoenix.LiveView.html#assign_async/3
+    if connected?(socket) do
+      async_load_annotations(
+        self(),
+        socket.assigns.section.id,
+        socket.assigns.page_context.page.resource_id,
+        socket.assigns[:current_user],
+        :private,
+        nil
+      )
+    end
+
     {:ok,
      socket
      |> assign_html_and_scripts()
-     |> assign(annotations_enabled: true, show_sidebar: false, point_markers: nil)}
+     |> assign_annotations()}
   end
 
   def mount(
@@ -170,12 +185,126 @@ defmodule OliWeb.Delivery.Student.LessonLive do
   end
 
   def handle_event("toggle_sidebar", _params, socket) do
-    %{show_sidebar: show_sidebar} = socket.assigns
+    %{show_sidebar: show_sidebar, selected_point: selected_point} = socket.assigns
 
     {:noreply,
      socket
      |> assign(show_sidebar: !show_sidebar)
-     |> push_event("request_point_markers", %{})}
+     |> push_event("request_point_markers", %{})
+     |> then(fn socket ->
+       if show_sidebar do
+         push_event(socket, "clear_highlighted_point_markers", %{})
+       else
+         push_event(socket, "highlight_point_marker", %{id: selected_point})
+       end
+     end)}
+  end
+
+  def handle_event("select_annotation_point", %{"point-marker-id" => point_marker_id}, socket) do
+    async_load_annotations(
+      self(),
+      socket.assigns.section.id,
+      socket.assigns.page_context.page.resource_id,
+      socket.assigns[:current_user],
+      visibility_for_active_tab(socket.assigns.selected_annotations_tab),
+      point_marker_id
+    )
+
+    {:noreply,
+     socket
+     |> assign(selected_point: point_marker_id, annotations: nil)
+     |> push_event("highlight_point_marker", %{id: point_marker_id})}
+  end
+
+  def handle_event("select_annotation_point", _params, socket) do
+    async_load_annotations(
+      self(),
+      socket.assigns.section.id,
+      socket.assigns.page_context.page.resource_id,
+      socket.assigns[:current_user],
+      visibility_for_active_tab(socket.assigns.selected_annotations_tab),
+      nil
+    )
+
+    {:noreply,
+     socket
+     |> assign(selected_point: nil, annotations: nil)
+     |> push_event("clear_highlighted_point_markers", %{})}
+  end
+
+  def handle_event("begin_create_annotation", _, socket) do
+    {:noreply, assign(socket, create_new_annotation: true)}
+  end
+
+  def handle_event("cancel_create_annotation", _, socket) do
+    {:noreply, assign(socket, create_new_annotation: false)}
+  end
+
+  def handle_event("create_annotation", %{"content" => ""}, socket) do
+    {:noreply, put_flash(socket, :error, "Note cannot be empty")}
+  end
+
+  def handle_event("create_annotation", %{"content" => value} = params, socket) do
+    %{
+      current_user: current_user,
+      section: section,
+      page_context: page_context,
+      annotations: annotations,
+      selected_point: selected_point,
+      selected_annotations_tab: selected_annotations_tab
+    } = socket.assigns
+
+    attrs = %{
+      status: :submitted,
+      user_id: current_user.id,
+      section_id: section.id,
+      resource_id: page_context.page.resource_id,
+      annotated_resource_id: page_context.page.resource_id,
+      annotated_block_id: selected_point,
+      annotation_type: :point,
+      anonymous: params["anonymous"] == "true",
+      visibility: visibility_for_active_tab(selected_annotations_tab),
+      content: %Collaboration.PostContent{message: value}
+    }
+
+    case Collaboration.create_post(attrs) do
+      {:ok, post} ->
+        {:noreply,
+         socket
+         |> put_flash(:info, "Note created successfully")
+         |> assign(create_new_annotation: false, annotations: [post | annotations])
+         |> increment_post_count(selected_point)}
+
+      {:error, _} ->
+        {:noreply, put_flash(socket, :error, "Failed to create note")}
+    end
+  end
+
+  def handle_event("select_tab", %{"tab" => tab}, socket) do
+    tab =
+      case tab do
+        "my_notes" -> :my_notes
+        "all_notes" -> :all_notes
+        _ -> :my_notes
+      end
+
+    async_load_annotations(
+      self(),
+      socket.assigns.section.id,
+      socket.assigns.page_context.page.resource_id,
+      socket.assigns[:current_user],
+      visibility_for_active_tab(tab),
+      socket.assigns.selected_point
+    )
+
+    {:noreply, assign(socket, selected_annotations_tab: tab, annotations: nil)}
+  end
+
+  def handle_info(
+        {:assign, key, annotations},
+        socket
+      ) do
+    {:noreply, assign(socket, [{key, annotations}])}
   end
 
   def render(%{view: :practice_page, annotations_enabled: true} = assigns) do
@@ -202,10 +331,16 @@ defmodule OliWeb.Delivery.Student.LessonLive do
       </div>
 
       <:point_markers :if={@show_sidebar && @point_markers}>
-        <Annotations.annotation_bubble point_marker={%{id: "page-marker", top: 0}} />
+        <Annotations.annotation_bubble
+          point_marker={%{id: nil, top: 0}}
+          selected={@selected_point == nil}
+          count={@post_counts && @post_counts[nil]}
+        />
         <Annotations.annotation_bubble
           :for={point_marker <- @point_markers}
           point_marker={point_marker}
+          selected={@selected_point == point_marker.id}
+          count={@post_counts && @post_counts[point_marker.id]}
         />
       </:point_markers>
 
@@ -216,7 +351,12 @@ defmodule OliWeb.Delivery.Student.LessonLive do
       </:sidebar_toggle>
 
       <:sidebar>
-        <Annotations.panel show_sidebar={@show_sidebar} />
+        <Annotations.panel
+          create_new_annotation={@create_new_annotation}
+          annotations={@annotations}
+          current_user={@current_user}
+          selected_annotations_tab={@selected_annotations_tab}
+        />
       </:sidebar>
     </.page_content_with_sidebar_layout>
 
@@ -693,6 +833,19 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     )
   end
 
+  defp assign_annotations(socket) do
+    assign(socket,
+      annotations_enabled: true,
+      show_sidebar: false,
+      point_markers: nil,
+      selected_point: nil,
+      create_new_annotation: false,
+      annotations: nil,
+      post_counts: nil,
+      selected_annotations_tab: :my_notes
+    )
+  end
+
   defp get_max_attempts(%{effective_settings: %{max_attempts: 0}} = _page_context),
     do: "unlimited"
 
@@ -721,6 +874,76 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     push_event(socket, "load_survey_scripts", %{
       script_sources: Enum.map(socket.assigns.scripts, fn script -> "/js/#{script}" end)
     })
+  end
+
+  defp async_load_annotations(
+         liveview_pid,
+         section_id,
+         resource_id,
+         %User{id: current_user_id},
+         visibility,
+         point_block_id
+       ) do
+    # load annotations
+    Task.Supervisor.start_child(Oli.TaskSupervisor, fn ->
+      send(
+        liveview_pid,
+        {:assign, :annotations,
+         Collaboration.list_posts_for_user_in_point_block(
+           section_id,
+           resource_id,
+           current_user_id,
+           visibility,
+           point_block_id
+         )}
+      )
+    end)
+
+    # load post counts
+    Task.Supervisor.start_child(Oli.TaskSupervisor, fn ->
+      send(
+        liveview_pid,
+        {:assign, :post_counts,
+         Collaboration.list_post_counts_for_user_in_section(
+           section_id,
+           resource_id,
+           current_user_id,
+           visibility
+         )}
+      )
+    end)
+  end
+
+  defp async_load_annotations(
+         liveview_pid,
+         _section_id,
+         _resource_id,
+         _current_user,
+         _visibility,
+         _point_block_id
+       ) do
+    Task.Supervisor.start_child(Oli.TaskSupervisor, fn ->
+      send(
+        liveview_pid,
+        {:assign, :annotations, []}
+      )
+    end)
+  end
+
+  defp visibility_for_active_tab(:all_notes), do: :public
+  defp visibility_for_active_tab(:my_notes), do: :private
+  defp visibility_for_active_tab(_), do: :private
+
+  defp increment_post_count(socket, selected_point) do
+    case socket.assigns.post_counts do
+      nil ->
+        socket
+
+      post_counts ->
+        assign(socket,
+          post_counts: Map.update(post_counts, selected_point, 1, &(&1 + 1))
+        )
+    end
   end
 
   defp check_gating_conditions(section, user, resource_id) do

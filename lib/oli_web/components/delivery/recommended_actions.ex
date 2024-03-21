@@ -1,5 +1,6 @@
 defmodule OliWeb.Components.Delivery.RecommendedActions do
-  use OliWeb, :html
+  use OliWeb, :verified_routes
+  use Phoenix.Component
 
   alias OliWeb.Router.Helpers, as: Routes
 
@@ -28,7 +29,7 @@ defmodule OliWeb.Components.Delivery.RecommendedActions do
 
   def render(assigns) do
     ~H"""
-    <div class="grid grid-cols-2 gap-2">
+    <div id="recommended_actions" class="grid grid-cols-2 gap-2">
       <%= if !@has_scheduled_resources do %>
         <.action_card to={
           Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.ScheduleView, @section_slug)
@@ -55,7 +56,7 @@ defmodule OliWeb.Components.Delivery.RecommendedActions do
         </.action_card>
       <% end %>
       <%= if @approval_pending_posts_count > 0 do %>
-        <.action_card to={~p"/sections/#{@section_slug}/discussions"}>
+        <.action_card to={~p"/sections/#{@section_slug}/instructor_dashboard/discussions"}>
           <:icon><i class="fa-solid fa-circle-check" /></:icon>
           <:title>Approve Pending Posts</:title>
           <:description>

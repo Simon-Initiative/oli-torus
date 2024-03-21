@@ -248,33 +248,10 @@ defmodule Oli.Delivery.Sections.Section do
   @spec required_fields() :: [atom()]
   def required_fields, do: @required_fields
 
-  defp requires_payment?(changeset) do
-    case changeset do
-      %Ecto.Changeset{valid?: true} = changeset ->
-        get_field(changeset, :requires_payment)
+  defp requires_payment?(changeset), do: get_field(changeset, :requires_payment)
 
-      _ ->
-        false
-    end
-  end
+  defp has_grace_period?(changeset),
+    do: get_field(changeset, :has_grace_period) and get_field(changeset, :requires_payment)
 
-  defp has_grace_period?(changeset) do
-    case changeset do
-      %Ecto.Changeset{valid?: true} = changeset ->
-        get_field(changeset, :has_grace_period) and get_field(changeset, :requires_payment)
-
-      _ ->
-        false
-    end
-  end
-
-  defp is_product?(changeset) do
-    case changeset do
-      %Ecto.Changeset{valid?: true} = changeset ->
-        get_field(changeset, :type) == :blueprint
-
-      _ ->
-        false
-    end
-  end
+  defp is_product?(changeset), do: get_field(changeset, :type) == :blueprint
 end

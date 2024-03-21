@@ -2,7 +2,7 @@ defmodule OliWeb.LiveSessionPlugs.SetUser do
   import Phoenix.Component, only: [assign: 2]
 
   alias Oli.Accounts
-  alias Oli.Accounts.{User, Author, SystemRole}
+  alias Oli.Accounts.{User, Author}
   alias Oli.AccountLookupCache
 
   def on_mount(:with_preloads, _, session, socket) do
@@ -32,7 +32,7 @@ defmodule OliWeb.LiveSessionPlugs.SetUser do
             socket
             |> assign(
               current_author: current_author,
-              is_system_admin: system_role_id == SystemRole.role_id().admin
+              is_system_admin: system_role_id == Oli.Accounts.has_admin_role?(current_author)
             )
 
           _ ->

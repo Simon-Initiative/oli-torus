@@ -251,7 +251,7 @@ defmodule OliWeb.PageDeliveryController do
     author = conn.assigns.current_author
     section = conn.assigns.section
 
-    if Accounts.is_admin?(author) or Sections.is_enrolled?(user.id, section_slug) do
+    if Accounts.at_least_content_admin?(author) or Sections.is_enrolled?(user.id, section_slug) do
       container_type_id = Oli.Resources.ResourceType.id_for_container()
       page_type_id = Oli.Resources.ResourceType.id_for_page()
 
@@ -460,6 +460,7 @@ defmodule OliWeb.PageDeliveryController do
     numbered_revisions = Sections.get_revision_indexes(section.slug)
 
     render(conn, "prologue.html", %{
+      license: context.license,
       user: user,
       resource_access: resource_access,
       section_slug: section_slug,
@@ -652,6 +653,7 @@ defmodule OliWeb.PageDeliveryController do
       conn,
       "page.html",
       %{
+        license: context.license,
         user: user,
         adaptive: adaptive,
         context: context,
@@ -1268,9 +1270,9 @@ defmodule OliWeb.PageDeliveryController do
 
     section = conn.assigns.section
 
-    is_admin? = Oli.Accounts.is_admin?(author)
+    is_admin? = Accounts.at_least_content_admin?(author)
 
-    if Oli.Accounts.is_admin?(author) or
+    if is_admin? or
          PageLifecycle.can_access_attempt?(attempt_guid, user, section) do
       page_context = PageContext.create_for_review(section_slug, attempt_guid, user, is_admin?)
 
@@ -1422,13 +1424,6 @@ defmodule OliWeb.PageDeliveryController do
   defp get_discount_string(%Discount{type: :fixed_amount, amount: amount}) do
     {:ok, m} = Money.to_string(amount)
     m
-  end
-
-  def is_admin?(conn) do
-    case conn.assigns[:current_author] do
-      nil -> false
-      author -> Oli.Accounts.is_admin?(author)
-    end
   end
 
   defp simulate_node(

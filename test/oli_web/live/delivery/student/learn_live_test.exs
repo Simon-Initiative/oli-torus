@@ -1220,6 +1220,60 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       assert has_element?(view, ~s{div[role="page 11 details"] div[role="check icon"]})
     end
 
+    test "hides/shows completed pages", %{
+      conn: conn,
+      user: user,
+      section: section,
+      section_1: section_1,
+      subsection_1: subsection_1,
+      page_11: page_11
+    } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+
+      set_progress(section.id, page_11.resource_id, user.id, 1.0, page_11)
+      {:ok, view, _html} = live(conn, Utils.learn_live_path(section.slug))
+
+      # when the slider buttons are enabled we know the student async metrics were loaded
+      assert_receive({_ref, {:push_event, "enable-slider-buttons", _}}, 2_000)
+
+      # expand unit 5/module 3 details
+      view
+      |> element(~s{div[role="unit_5"] div[role="card_4"]})
+      |> render_click()
+
+      assert view
+             |> element(~s{div[role="completed count"]})
+             |> render() =~ "1 page"
+
+      completed_toggle = element(view, ~s{div[role="toggle completed button"]})
+
+      assert render(completed_toggle) =~ "Hide Completed"
+
+      # By default it shows the completed and incompleted pages
+      assert has_element?(view, ~s{div[role="page 11 details"] div[role="check icon"]})
+      assert has_element?(view, ~s{div[role="page 12 details"]})
+
+      # Click on the toggle to hide the completed pages
+      render_click(completed_toggle)
+
+      assert render(completed_toggle) =~ "Show Completed"
+
+      # Hides the completed pages and sections
+      refute has_element?(view, ~s{div[role="page 11 details"] div[role="check icon"]})
+      assert has_element?(view, ~s{div[role="page 12 details"]})
+
+      refute has_element?(
+               view,
+               "#index_item_1_#{subsection_1.resource_id}"
+             )
+
+      assert has_element?(
+               view,
+               "#index_item_1_#{section_1.resource_id}"
+             )
+    end
+
     test "does not see a check icon on visited pages that are not fully completed", %{
       conn: conn,
       user: user,

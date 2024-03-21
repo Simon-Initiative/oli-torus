@@ -277,19 +277,13 @@ defmodule Oli.Accounts.User do
     end
   end
 
-  def is_independent_learner_not_guest(changeset) do
-    case changeset do
-      %Ecto.Changeset{valid?: true, changes: changes, data: data} ->
-        independent_learner =
-          Map.get(changes, :independent_learner) || Map.get(data, :independent_learner)
+  def is_independent_learner_not_guest(%{changes: changes, data: data} = _changeset) do
+    independent_learner =
+      Map.get(changes, :independent_learner) || Map.get(data, :independent_learner)
 
-        guest = Map.get(changes, :guest) || Map.get(data, :guest)
+    guest = Map.get(changes, :guest) || Map.get(data, :guest)
 
-        independent_learner && !guest
-
-      _ ->
-        false
-    end
+    independent_learner && !guest
   end
 
   defp validate_email_confirmation(changeset) do

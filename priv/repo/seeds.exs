@@ -46,7 +46,7 @@ if !Oli.Repo.get_by(Oli.Accounts.Author,
            family_name: "",
            password: System.get_env("ADMIN_PASSWORD", "changeme"),
            password_confirmation: System.get_env("ADMIN_PASSWORD", "changeme"),
-           system_role_id: Oli.Accounts.SystemRole.role_id().admin
+           system_role_id: Oli.Accounts.SystemRole.role_id().system_admin
          },
          pow_config
        ) do
@@ -165,7 +165,7 @@ if Application.fetch_env!(:oli, :env) == :dev do
 
     Collaborators.add_collaborator(admin_author, seeds.project)
 
-    {:ok, publication} = Oli.Publishing.publish_project(seeds.project, "Initial publish")
+    {:ok, publication} = Oli.Publishing.publish_project(seeds.project, "Initial publish", 1)
 
     section_params =
       %{}

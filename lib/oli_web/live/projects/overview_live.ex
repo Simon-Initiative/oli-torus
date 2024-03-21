@@ -22,7 +22,7 @@ defmodule OliWeb.Projects.OverviewLive do
     project = socket.assigns.project
 
     author = socket.assigns[:current_author]
-    is_admin? = Accounts.is_admin?(author)
+    is_admin? = Accounts.has_admin_role?(author)
 
     latest_published_publication =
       Publishing.get_latest_published_publication_by_slug(project.slug)
@@ -30,6 +30,11 @@ defmodule OliWeb.Projects.OverviewLive do
     {collab_space_config, revision_slug} = get_collab_space_config_and_revision(project.slug)
 
     latest_publication = Publishing.get_latest_published_publication_by_slug(project.slug)
+
+    cc_options =
+      Oli.Authoring.Course.CreativeCommons.cc_options()
+      |> Enum.map(fn {k, v} -> {v.text, k} end)
+      |> Enum.sort(:desc)
 
     socket =
       assign(socket,
@@ -46,6 +51,7 @@ defmodule OliWeb.Projects.OverviewLive do
         title: "Overview | " <> project.title,
         attributes: project.attributes,
         language_codes: Oli.LanguageCodesIso639.codes(),
+        license_opts: cc_options,
         collab_space_config: collab_space_config,
         revision_slug: revision_slug,
         latest_publication: latest_publication
@@ -100,30 +106,32 @@ defmodule OliWeb.Projects.OverviewLive do
               required: true
             ) %>
           </div>
-          <%= if @can_enable_experiments do %>
-            <div class="form-label-group mb-3">
+
+          <div class="form-label-group mb-3">
+            <%= if @can_enable_experiments do %>
               <div class="form-label-group mb-3 form-check">
                 <%= checkbox(f, :has_experiments, required: false) %>
                 <%= label(f, :has_experiments, "Enable Upgrade-based Experiments") %>
               </div>
+            <% end %>
 
-              <%= if @project.has_experiments do %>
-                <a
-                  type="button"
-                  class="btn btn-link pl-0"
-                  href={
-                    Routes.live_path(
-                      OliWeb.Endpoint,
-                      OliWeb.Experiments.ExperimentsView,
-                      @project.slug
-                    )
-                  }
-                >
-                  Manage Experiments
-                </a>
-              <% end %>
-            </div>
-          <% end %>
+            <%= if @project.has_experiments do %>
+              <a
+                type="button"
+                class="btn btn-link pl-0"
+                href={
+                  Routes.live_path(
+                    OliWeb.Endpoint,
+                    OliWeb.Experiments.ExperimentsView,
+                    @project.slug
+                  )
+                }
+              >
+                Manage Experiments
+              </a>
+            <% end %>
+          </div>
+
           <%= submit("Save", class: "btn btn-md btn-primary mt-2") %>
         </Overview.section>
         <Overview.section
@@ -142,6 +150,22 @@ defmodule OliWeb.Projects.OverviewLive do
                   prompt: "What language is being taught in this project?"
                 ) %>
               </div>
+              <%= inputs_for fp, :license, fn fpp -> %>
+                <%= label(fpp, :license_type, "License (optional)", class: "control-label") %>
+                <%= select(fpp, :license_type, @license_opts,
+                  phx_change: "on_selected",
+                  class: "form-control",
+                  required: false
+                ) %>
+                <div :if={open_custom_type?(@changeset)} class="form-label-group mb-3">
+                  <%= label(fpp, :custom_license_details, "Custom license", class: "control-label") %>
+                  <%= text_input(fpp, :custom_license_details,
+                    class: "form-control",
+                    placeholder: "The custom license of your project...",
+                    required: false
+                  ) %>
+                </div>
+              <% end %>
             <% end %>
           </div>
           <div>
@@ -295,13 +319,13 @@ defmodule OliWeb.Projects.OverviewLive do
         <%= if @is_admin do %>
           <div class="d-flex align-items-center">
             <div>
-              <%= button("Import CSV for NG23 Effort",
+              <%= button("Bulk Resource Attribute Edit",
                 to: Routes.ingest_path(@socket, :index_csv, @project.slug),
                 method: :get,
                 class: "btn btn-link action-button"
               ) %>
             </div>
-            <span>Imports an NG23 <code>.csv</code> file to set new attributes.</span>
+            <span>Imports a <code>.csv</code> file to set new attributes.</span>
           </div>
         <% end %>
 
@@ -412,6 +436,16 @@ defmodule OliWeb.Projects.OverviewLive do
     """
   end
 
+  defp open_custom_type?(changeset) do
+    with %Ecto.Changeset{} = changeset <- Ecto.Changeset.get_embed(changeset, :attributes),
+         %Ecto.Changeset{} = changeset <- Ecto.Changeset.get_embed(changeset, :license),
+         :custom <- Ecto.Changeset.get_field(changeset, :license_type) do
+      true
+    else
+      _ -> false
+    end
+  end
+
   defp get_collab_space_config_and_revision(project_slug) do
     %{slug: revision_slug} = AuthoringResolver.root_container(project_slug)
 
@@ -424,13 +458,25 @@ defmodule OliWeb.Projects.OverviewLive do
     {collab_space_config, revision_slug}
   end
 
+  def handle_event("on_selected", %{"project" => project_attrs}, socket) do
+    project = socket.assigns.project
+    changeset = Project.changeset(project, project_attrs)
+    {:noreply, assign(socket, changeset: changeset)}
+  end
+
   def handle_event("update", %{"project" => project_params}, socket) do
+    project_params =
+      if project_params["license"] == "custom",
+        do: project_params,
+        else: Map.put(project_params, "custom_license_details", nil)
+
     project = socket.assigns.project
 
     socket =
       case Course.update_project(project, project_params) do
         {:ok, project} ->
           socket
+          |> assign(:project, project)
           |> assign(:changeset, Project.changeset(project))
           |> put_flash(:info, "Project updated successfully.")
 

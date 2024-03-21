@@ -514,6 +514,32 @@ defmodule OliWeb.Delivery.StudentDashboard.CourseContentLiveTest do
       assert has_element?(view, "h4", "Module 1")
       assert has_element?(view, "h4", "Module 2")
     end
+
+    test "does not show flash message after update timezone", %{
+      conn: conn,
+      user: user,
+      section: section
+    } do
+      {:ok, view, _html} = isolated_live_view_course_content(conn, section.slug, user.id)
+      redirect_to = ~p"/sections/#{section.slug}"
+      new_timezone = "America/Montevideo"
+
+      conn =
+        post(conn, ~p"/update_timezone", %{
+          timezone: %{
+            timezone: new_timezone,
+            redirect_to: redirect_to
+          }
+        })
+
+      assert redirected_to(conn, 302) == redirect_to
+
+      refute has_element?(
+               view,
+               "div.alert.alert-info[id=\"live_flash_container\"]",
+               "Timezone updated successfully."
+             )
+    end
   end
 
   defp breadcrumbs_length(view) do

@@ -66,8 +66,14 @@ defmodule OliWeb.Delivery.NewCourse do
 
     current_user =
       case session["current_user_id"] do
-        nil -> nil
-        current_user_id -> Accounts.get_user!(current_user_id, preload: [:author])
+        nil ->
+          nil
+
+        current_user_id ->
+          case session["is_system_admin"] do
+            true -> nil
+            _ -> Accounts.get_user!(current_user_id, preload: [:author])
+          end
       end
 
     changeset =

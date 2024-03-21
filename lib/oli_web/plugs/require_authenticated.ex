@@ -43,7 +43,7 @@ defmodule OliWeb.Plugs.RequireAuthenticated do
         false
 
       author ->
-        Oli.Accounts.is_admin?(author)
+        Oli.Accounts.is_system_admin?(author)
     end
   end
 

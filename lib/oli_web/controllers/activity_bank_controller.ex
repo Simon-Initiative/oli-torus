@@ -15,7 +15,7 @@ defmodule OliWeb.ActivityBankController do
         "project_id" => project_slug
       }) do
     author = conn.assigns[:current_author]
-    is_admin? = Accounts.is_admin?(author)
+    is_admin? = Accounts.at_least_content_admin?(author)
 
     case Oli.Authoring.Editing.BankEditor.create_context(project_slug, author) do
       {:ok, context} ->
@@ -42,7 +42,7 @@ defmodule OliWeb.ActivityBankController do
       }) do
     user = conn.assigns.current_user
     author = conn.assigns.current_author
-    is_admin? = Accounts.is_admin?(author)
+    is_admin? = Accounts.at_least_content_admin?(author)
 
     offset =
       Map.get(conn.query_params, "offset", "0")

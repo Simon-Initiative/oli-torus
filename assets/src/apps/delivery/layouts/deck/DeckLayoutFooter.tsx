@@ -43,7 +43,6 @@ import {
   selectCurrentActivityTreeAttemptState,
 } from '../../store/features/groups/selectors/deck';
 import {
-  selectEnableHistory,
   selectIsLegacyTheme,
   selectPageContent,
   selectPreviewMode,
@@ -229,7 +228,6 @@ const DeckLayoutFooter: React.FC = () => {
   const isGoodFeedback = useSelector(selectIsGoodFeedback);
   const currentFeedbacks = useSelector(selectCurrentFeedbacks);
   const nextActivityId: string = useSelector(selectNextActivityId);
-  const enableHistory = useSelector(selectEnableHistory);
   const lastCheckTimestamp = useSelector(selectLastCheckTriggered);
   const lastCheckResults = useSelector(selectLastCheckResults);
   const initPhaseComplete = useSelector(selectInitPhaseComplete);
@@ -613,13 +611,13 @@ const DeckLayoutFooter: React.FC = () => {
         if (activityHistoryTimeStamp === 0) {
           updateActivityHistoryTimeStamp();
         }
-        //** there are cases when wrong trap state gets trigger but user is still allowed to jump to another activity */
+        //** there are cases when wrong trap state gets trigger but user is still allowed to jump to another activity  */
         //** if we don't do this then, every time Next button will trigger a check events instead of navigating user to respective activity */
         dispatch(
           nextActivityId === 'next' ? navigateToNextActivity() : navigateToActivity(nextActivityId),
         );
         dispatch(setNextActivityId({ nextActivityId: '' }));
-      } else if (!enableHistory) {
+      } else if (!currentActivity?.custom?.showCheckBtn) {
         dispatch(triggerCheck({ activityId: currentActivity?.id }));
       } else {
         dispatch(setIsGoodFeedback({ isGoodFeedback: false }));
