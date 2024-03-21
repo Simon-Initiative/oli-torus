@@ -64,7 +64,6 @@ defmodule Oli.Delivery.Page.ActivityContext do
   end
 
   def build_variables_map(variables, petite_label) do
-
     whitelist_prefix = "ACTIVITY_" <> String.upcase(petite_label) <> "_"
 
     Enum.reduce(variables, %{}, fn variable_name, acc ->
