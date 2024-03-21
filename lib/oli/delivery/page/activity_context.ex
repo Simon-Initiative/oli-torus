@@ -56,10 +56,17 @@ defmodule Oli.Delivery.Page.ActivityContext do
          script: type.delivery_script,
          graded: graded,
          bib_refs: Map.get(model, "bibrefs", []),
-         ordinal: ordinal_assign_fn.(id)
+         ordinal: ordinal_assign_fn.(id),
+         variables: build_variables_map(type.variables)
        }}
     end)
     |> Map.new()
+  end
+
+  def build_variables_map(variables) do
+    Enum.reduce(variables, %{}, fn variable_name, acc ->
+      Map.put(acc, variable_name, System.get_env(variable_name, ""))
+    end)
   end
 
   defp prune_feedback_from_state(state, true), do: state

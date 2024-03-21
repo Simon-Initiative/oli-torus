@@ -33,6 +33,7 @@ describe('multiple choice delivery', () => {
         showFeedback: true,
         renderPointMarkers: false,
         isAnnotationLevel: false,
+        variables: {},
       },
       graded: false,
       preview: false,

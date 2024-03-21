@@ -43,6 +43,7 @@ const create = (
         model,
         objectives,
         tags: [],
+        variables: editorDesc.variables,
       };
 
       onAdded(activity);
