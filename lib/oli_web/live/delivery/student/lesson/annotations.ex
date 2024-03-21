@@ -7,7 +7,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
   attr :create_new_annotation, :boolean, default: false
   attr :annotations, :any, required: true
   attr :current_user, Oli.Accounts.User, required: true
-  attr :selected_annotations_tab, :atom, default: :my_notes
+  attr :active_tab, :atom, default: :my_notes
 
   def panel(assigns) do
     ~H"""
@@ -19,10 +19,10 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
       </div>
       <div class="flex-1 flex flex-col bg-white dark:bg-black p-5">
         <.tab_group class="py-3">
-          <.tab name={:my_notes} selected={@selected_annotations_tab == :my_notes}>
+          <.tab name={:my_notes} selected={@active_tab == :my_notes}>
             <.user_icon class="mr-2" /> My Notes
           </.tab>
-          <.tab name={:all_notes} selected={@selected_annotations_tab == :all_notes}>
+          <.tab name={:all_notes} selected={@active_tab == :all_notes}>
             <.users_icon class="mr-2" /> Class Notes
           </.tab>
         </.tab_group>
@@ -32,9 +32,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
           <.add_new_annotation_input
             class="my-2"
             active={@create_new_annotation}
-            disable_anonymous_option={
-              @selected_annotations_tab == :my_notes || is_guest(@current_user)
-            }
+            disable_anonymous_option={@active_tab == :my_notes || is_guest(@current_user)}
           />
 
           <%= case @annotations do %>
