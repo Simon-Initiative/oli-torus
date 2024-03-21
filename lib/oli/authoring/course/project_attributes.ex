@@ -9,13 +9,14 @@ defmodule Oli.Authoring.Course.ProjectAttributes do
     # For language-learning projects, what language are we targeting?
     field :learning_language, :string
     embeds_one :license, ProjectAttributes.License
+    field :calculate_embeddings_on_publish, :boolean, default: false
   end
 
   @type module_struct_or_changeset_type :: %ProjectAttributes{} | %Ecto.Changeset{}
   @spec changeset(module_struct_or_changeset_type, map) :: %Ecto.Changeset{}
   def changeset(item, attrs \\ %{}) do
     item
-    |> cast(attrs, [:learning_language])
+    |> cast(attrs, [:learning_language, :calculate_embeddings_on_publish])
     |> cast_embed(:license, required: false)
   end
 end

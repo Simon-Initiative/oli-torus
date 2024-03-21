@@ -141,6 +141,12 @@ defmodule OliWeb.Projects.OverviewLive do
           <div class="d-block">
             <%= inputs_for f, :attributes, fn fp -> %>
               <div class="form-label-group mb-3">
+                <%= label(fp, :learning_language, "Calculate embeddings on publish",
+                  class: "control-label"
+                ) %>
+                <%= checkbox(fp, :calculate_embeddings_on_publish) %>
+              </div>
+              <div class="form-label-group mb-3">
                 <%= label(fp, :learning_language, "Learning Language (optional)",
                   class: "control-label"
                 ) %>
