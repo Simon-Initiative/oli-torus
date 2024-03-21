@@ -95,16 +95,20 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
             else: "Upload #{humanize_and_pluralize_atom(@step)}" %>
         </a>
         <span class="ml-2 text-xs text-gray-500">(max size: <%= @max_upload_size[@step] %> MB)</span>
-        <.form :if={@step == :intro_video} for={@intro_video_form}>
+        <.form
+          :if={@step == :intro_video}
+          for={@intro_video_form}
+          id="youtube_url_form"
+          phx-change="validate-youtube-url"
+          phx-target={@myself}
+        >
           <div class="flex space-x-2 w-full">
             <span>, or</span>
             <.input
               type="text"
               field={@intro_video_form[:url]}
               placeholder="Paste a youtube URL"
-              phx-change="validate-youtube-url"
               class="w-full h-8"
-              phx-target={@myself}
             />
           </div>
         </.form>
@@ -152,6 +156,7 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
                   )
                 ]}
                 preload="metadata"
+                id="uploaded_video_preview"
                 tabindex="-1"
                 controls
               >
@@ -566,6 +571,7 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
           if(@is_selected, do: "!outline-[7px] outline-blue-400")
         ]}
         preload="metadata"
+        data-filename={get_filename(@url)}
         tabindex="-1"
         controls
       >
