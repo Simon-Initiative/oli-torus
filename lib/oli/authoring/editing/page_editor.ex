@@ -370,7 +370,8 @@ defmodule Oli.Authoring.Editing.PageEditor do
            script: type.delivery_script,
            graded: graded,
            bib_refs: Map.get(content, "bibrefs", []),
-           ordinal: Map.get(ordinal_map, resource_id)
+           ordinal: Map.get(ordinal_map, resource_id),
+           variables: Oli.Delivery.Page.ActivityContext.build_variables_map(type.variables)
          }
        end)
        |> Enum.reduce(%{}, fn summary, acc -> Map.put(acc, summary.id, summary) end)}

@@ -31,7 +31,7 @@ import { MCSchema } from './schema';
 const store = configureStore();
 
 const MultipleChoice: React.FC = () => {
-  const { dispatch, model, editMode, projectSlug } = useAuthoringElementContext<MCSchema>();
+  const { dispatch, model, editMode, projectSlug, authoringContext } = useAuthoringElementContext<MCSchema>();
   const writerContext = defaultWriterContext({
     projectSlug: projectSlug,
   });

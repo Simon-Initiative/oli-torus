@@ -717,7 +717,8 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
         objectives: objectives,
         allObjectives: PageEditor.construct_parent_references(all_objectives),
         typeSlug: activity_type.slug,
-        tags: tags
+        tags: tags,
+        variables: Oli.Delivery.Page.ActivityContext.build_variables_map(activity_type.variables)
       }
 
       {:ok, context}
@@ -749,7 +750,8 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
         model: r.content,
         objectives: r.objectives,
         typeSlug: activity_type.slug,
-        tags: r.tags
+        tags: r.tags,
+        variables: Oli.Delivery.Page.ActivityContext.build_variables_map(activity_type.variables)
       }
     end)
   end

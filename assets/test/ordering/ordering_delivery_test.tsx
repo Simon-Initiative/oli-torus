@@ -32,6 +32,7 @@ describe('ordering delivery', () => {
         showFeedback: true,
         renderPointMarkers: false,
         isAnnotationLevel: false,
+        variables: {},
       },
       preview: false,
     };
