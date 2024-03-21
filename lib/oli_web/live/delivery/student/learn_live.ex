@@ -11,6 +11,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   alias OliWeb.Components.Delivery.Student
   alias OliWeb.Delivery.Student.Utils
   alias Oli.Publishing.DeliveryResolver
+  alias Phoenix.LiveView.JS
 
   import Oli.Utils, only: [get_in: 3]
   import Ecto.Query, warn: false, only: [from: 2]
@@ -451,6 +452,18 @@ defmodule OliWeb.Delivery.Student.LearnLive do
      |> update(:units, fn units -> [selected_unit | units] end)}
   end
 
+  def enter_unit(js \\ %JS{}, unit_id) do
+    unit_cards_selector = "#slider_#{unit_id} > div[role*=\"card\"]"
+
+    JS.set_attribute(js, {"tabindex", "0"}, to: unit_cards_selector)
+    |> JS.focus(to: unit_cards_selector <> ":first-of-type")
+  end
+
+  def leave_unit(js \\ %JS{}, unit_id) do
+    JS.remove_attribute(js, "tabindex", to: "#slider_#{unit_id} > div[role*=\"card\"]")
+    |> JS.focus(to: "#unit_#{unit_id}")
+  end
+
   def handle_info(:gc, socket) do
     :erlang.garbage_collect(socket.transport_pid)
     :erlang.garbage_collect(self())
@@ -560,7 +573,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   # top level page as a card with title and header
   def row(%{unit: %{"resource_type_id" => 1}} = assigns) do
     ~H"""
-    <div id={"top_level_page_#{@unit["resource_id"]}"}>
+    <div id={"top_level_page_#{@unit["resource_id"]}"} tabindex="0">
       <div class="md:p-[25px] md:pl-[50px]" role={"top_level_page_#{@unit["numbering"]["index"]}"}>
         <div role="header" class="flex flex-col md:flex-row md:gap-[30px]">
           <div class="text-[14px] leading-[19px] tracking-[1.4px] uppercase mt-[7px] mb-1 whitespace-nowrap opacity-60">
@@ -632,7 +645,12 @@ defmodule OliWeb.Delivery.Student.LearnLive do
 
   def row(assigns) do
     ~H"""
-    <div id={"unit_#{@unit["resource_id"]}"}>
+    <div
+      id={"unit_#{@unit["resource_id"]}"}
+      tabindex="0"
+      phx-keydown={enter_unit(@unit["resource_id"])}
+      phx-key="enter"
+    >
       <div class="md:p-[25px] md:pl-[50px]" role={"unit_#{@unit["numbering"]["index"]}"}>
         <div class="flex flex-col md:flex-row md:gap-[30px]">
           <div class="text-[14px] leading-[19px] tracking-[1.4px] uppercase mt-[7px] mb-1 whitespace-nowrap opacity-60">
@@ -687,12 +705,14 @@ defmodule OliWeb.Delivery.Student.LearnLive do
           <button
             id={"slider_left_button_#{@unit["resource_id"]}"}
             class="hidden absolute items-center justify-start -top-1 -left-1 w-10 bg-gradient-to-r from-gray-100 dark:from-gray-900 h-[180px] z-20 text-gray-700 dark:text-gray-600 hover:text-xl hover:dark:text-gray-200 hover:w-16 cursor-pointer"
+            tabindex="-1"
           >
             <i class="fa-solid fa-chevron-left ml-3"></i>
           </button>
           <button
             id={"slider_right_button_#{@unit["resource_id"]}"}
             class="hidden absolute items-center justify-end -top-1 -right-1 w-10 bg-gradient-to-l from-gray-100 dark:from-gray-900 h-[180px] z-20 text-gray-700 dark:text-gray-600 hover:text-xl hover:dark:text-gray-200 hover:w-16 cursor-pointer"
+            tabindex="-1"
           >
             <i class="fa-solid fa-chevron-right mr-3"></i>
           </button>
@@ -710,6 +730,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
               resource_id={@unit["resource_id"]}
               intro_video_viewed={@unit["resource_id"] in @viewed_intro_video_resource_ids}
               is_youtube_video={WebUtils.is_youtube_video?(@unit["intro_video"])}
+              unit_resource_id={@unit["resource_id"]}
             />
             <.card
               :for={module <- @unit["children"]}
@@ -1321,10 +1342,16 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   attr :resource_id, :string
   attr :intro_video_viewed, :boolean, default: false
   attr :is_youtube_video, :boolean, default: false
+  attr :unit_resource_id, :string
 
   def intro_video_card(%{is_youtube_video: true} = assigns) do
     ~H"""
-    <div class="relative slider-card hover:scale-[1.01]" role="youtube_intro_video_card">
+    <div
+      class="relative slider-card hover:scale-[1.01]"
+      role="youtube_intro_video_card"
+      phx-keydown={leave_unit(@unit_resource_id)}
+      phx-key="escape"
+    >
       <div class="z-10 rounded-xl overflow-hidden absolute w-[288px] h-10">
         <.progress_bar
           percent={if @intro_video_viewed, do: 100, else: 0}
@@ -1351,6 +1378,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
           <div class="w-full h-full rounded-full backdrop-blur bg-gray/50"></div>
           <button
             role="play_unit_intro_video"
+            tabindex="-1"
             class="w-full h-full absolute top-0 left-0 flex items-center justify-center"
             phx-click="play_video"
             phx-value-video_url={@video_url}
@@ -1465,6 +1493,8 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         if(!is_page(@module), do: "slider-card")
       ]}
       role={"card_#{@module_index}"}
+      phx-keydown={leave_unit(@unit_resource_id)}
+      phx-key="escape"
     >
       <div class="z-10 rounded-xl overflow-hidden absolute h-[163px] w-[288px] cursor-pointer">
         <.progress_bar
