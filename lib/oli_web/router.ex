@@ -228,9 +228,8 @@ defmodule OliWeb.Router do
     plug(Oli.Plugs.DeliveryPreview)
   end
 
-  pipeline :put_license do
-    plug(OliWeb.Plugs.SetLicense)
-  end
+  pipeline :put_license, do: plug(:set_license)
+  def set_license(conn, _), do: Plug.Conn.assign(conn, :has_license, true)
 
   ### HELPERS ###
 
