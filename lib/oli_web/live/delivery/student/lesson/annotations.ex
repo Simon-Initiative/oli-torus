@@ -327,16 +327,18 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
   attr :post, Oli.Resources.Collaboration.Post, required: true
 
   defp maybe_status(assigns) do
-    if assigns.post.status == :submitted do
-      ~H"""
-      <div class="text-right text-sm italic text-gray-500 mb-1">
-        Submitted and pending approval
-      </div>
-      """
-    else
-      ~H"""
+    case assigns.post do
+      %Oli.Resources.Collaboration.Post{visibility: :public, status: :submitted} ->
+        ~H"""
+        <div class="text-right text-sm italic text-gray-500 mb-1">
+          Submitted and pending approval
+        </div>
+        """
 
-      """
+      _ ->
+        ~H"""
+
+        """
     end
   end
 
