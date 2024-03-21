@@ -3,11 +3,22 @@
 */
 import { ActivityModelSchema, CreationContext, Feedback, Part, Transformation } from '../types';
 
-// Host for the LogicLab Servlet.
-// FIXME: This setting should be in some sort of site wide configuration so
-// that it can be adjusted by the administrator.
-// If forwarded to a different endpoint, make sure to include final "/"
-export const LAB_SERVER = new URL('/logiclab/', window.location.origin); // default Torus base URI
+/**
+ * Extract the LogicLab url from a context with null safety.
+ * @param context deploy context or activity edit context
+ * @returns url to use as a base for logiclab service calls
+ */
+export function getLabServer(context: unknown): string {
+  if (context instanceof Object && 'variables' in context) {
+    const ctx = context as { variables: Record<string, string> };
+    const variables = ctx.variables;
+    if ('ACTIVITY_LOGICLAB_URL' in variables) {
+      return variables.ACTIVITY_LOGICLAB_URL;
+    }
+  }
+  const local = new URL('/logiclab/', window.location.origin); // default Torus base URI
+  return local.toString();
+}
 
 export interface LogicLabModelSchema extends ActivityModelSchema {
   activity: string; // Have to set at higher level as not all information in authoring.parts (eg) targets, are available in all contexts

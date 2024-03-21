@@ -12,5 +12,6 @@
   "authoring": {
     "element": "oli-logic-lab-authoring",
     "entry": "./authoring-entry.ts"
-  }
+  },
+  "variables": ["ACTIVITY_LOGICLAB_URL"]
 }

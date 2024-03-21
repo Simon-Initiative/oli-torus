@@ -12,7 +12,7 @@ import { configureStore } from 'state/store';
 import { AuthoringElement, AuthoringElementProps } from '../AuthoringElement';
 import { AuthoringElementProvider, useAuthoringElementContext } from '../AuthoringElementProvider';
 import { Manifest } from '../types';
-import { LAB_SERVER, LabActivity, LogicLabModelSchema } from './LogicLabModelSchema';
+import { LabActivity, LogicLabModelSchema, getLabServer } from './LogicLabModelSchema';
 
 const STORE = configureStore();
 
@@ -102,11 +102,14 @@ type LogicLabAuthoringProps = AuthoringElementProps<LogicLabModelSchema>;
  * @component
  */
 const Authoring: FC<LogicLabAuthoringProps> = (props: LogicLabAuthoringProps) => {
-  const { dispatch, model, editMode } = useAuthoringElementContext<LogicLabModelSchema>();
+  const { dispatch, model, editMode, authoringContext } =
+    useAuthoringElementContext<LogicLabModelSchema>();
   const [activityId, setActivityId] = useState<string>(props.model.activity);
   useEffect(() => {
     setActivityId(model.activity);
   }, [model]);
+
+  const labServer = getLabServer(authoringContext);
 
   // Current loading state.
   const [loading, setLoading] = useState<'loading' | 'loaded' | 'error'>('loading');
@@ -133,10 +136,14 @@ const Authoring: FC<LogicLabAuthoringProps> = (props: LogicLabAuthoringProps) =>
     const signal = controller.signal;
     const getActivities = async () => {
       setLoading('loading');
-      const response = await fetch(new URL('api/v1/activities', LAB_SERVER).toString(), {
-        signal,
-        headers: { Accept: 'application/json' },
-      });
+      const url = new URL('api/v1/activities', labServer);
+      const response = await fetch(
+        url.toString(), // tsc does not allow URL as parameter, contrary to MDM spec.
+        {
+          signal,
+          headers: { Accept: 'application/json' },
+        },
+      );
       if (signal.aborted) {
         return;
       }
@@ -356,7 +363,10 @@ const Authoring: FC<LogicLabAuthoringProps> = (props: LogicLabAuthoringProps) =>
  * Displays loading indicator and then the details of the activity.
  * @component
  */
-const Preview: FC<LogicLabAuthoringProps> = ({ model }: LogicLabAuthoringProps) => {
+const Preview: FC<LogicLabAuthoringProps> = ({
+  model,
+  authoringContext,
+}: LogicLabAuthoringProps) => {
   // Current activity
   const [activity, setActivity] = useState<LabActivity | undefined>();
   // Loading state
@@ -368,7 +378,7 @@ const Preview: FC<LogicLabAuthoringProps> = ({ model }: LogicLabAuthoringProps) 
     const signal = controller.signal;
     const getActivity = async () => {
       setLoading('loading');
-      const url = new URL(`api/v1/activities/${model.activity}`, LAB_SERVER);
+      const url = new URL(`api/v1/activities/${model.activity}`, getLabServer(authoringContext));
       const response = await fetch(url.toString(), {
         signal,
         headers: { Accept: 'application/json' },
@@ -390,7 +400,7 @@ const Preview: FC<LogicLabAuthoringProps> = ({ model }: LogicLabAuthoringProps) 
     });
 
     return () => controller.abort();
-  }, [model]);
+  }, [model, authoringContext]);
 
   // on setting activity, typeset the math.
   useEffect(() => {
