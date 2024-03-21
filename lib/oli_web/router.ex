@@ -228,6 +228,10 @@ defmodule OliWeb.Router do
     plug(Oli.Plugs.DeliveryPreview)
   end
 
+  pipeline :put_license do
+    plug(OliWeb.Plugs.SetLicense)
+  end
+
   ### HELPERS ###
 
   defp put_pow_mailer_layout(conn, layout), do: put_private(conn, :pow_mailer_layouts, layout)
@@ -957,10 +961,20 @@ defmodule OliWeb.Router do
     get("/discussion", PageDeliveryController, :discussion)
     get("/my_assignments", PageDeliveryController, :assignments)
     get("/container/:revision_slug", PageDeliveryController, :container)
-    get("/page/:revision_slug", PageDeliveryController, :page)
-    get("/page_fullscreen/:revision_slug", PageDeliveryController, :page_fullscreen)
-    get("/page/:revision_slug/page/:page", PageDeliveryController, :page)
-    get("/page/:revision_slug/attempt", PageDeliveryController, :start_attempt)
+
+    scope "/" do
+      pipe_through([:put_license])
+      get("/page/:revision_slug", PageDeliveryController, :page)
+      get("/page_fullscreen/:revision_slug", PageDeliveryController, :page_fullscreen)
+      get("/page/:revision_slug/page/:page", PageDeliveryController, :page)
+      get("/page/:revision_slug/attempt", PageDeliveryController, :start_attempt)
+
+      get(
+        "/page/:revision_slug/attempt/:attempt_guid/review",
+        PageDeliveryController,
+        :review_attempt
+      )
+    end
 
     post(
       "/page/:revision_slug/attempt_protected",
@@ -968,17 +982,7 @@ defmodule OliWeb.Router do
       :start_attempt_protected
     )
 
-    post(
-      "/page",
-      PageDeliveryController,
-      :navigate_by_index
-    )
-
-    get(
-      "/page/:revision_slug/attempt/:attempt_guid/review",
-      PageDeliveryController,
-      :review_attempt
-    )
+    post("/page", PageDeliveryController, :navigate_by_index)
   end
 
   ### Sections - Preview
@@ -1000,9 +1004,13 @@ defmodule OliWeb.Router do
     get("/discussion", PageDeliveryController, :discussion_preview)
     get("/my_assignments", PageDeliveryController, :assignments_preview)
     get("/container/:revision_slug", PageDeliveryController, :container_preview)
-    get("/page/:revision_slug", PageDeliveryController, :page_preview)
-    get("/page/:revision_slug/page/:page", PageDeliveryController, :page_preview)
-    get("/page/:revision_slug/selection/:selection_id", ActivityBankController, :preview)
+
+    scope "/" do
+      pipe_through([:put_license])
+      get("/page/:revision_slug", PageDeliveryController, :page_preview)
+      get("/page/:revision_slug/page/:page", PageDeliveryController, :page_preview)
+      get("/page/:revision_slug/selection/:selection_id", ActivityBankController, :preview)
+    end
   end
 
   scope "/sections", OliWeb do
