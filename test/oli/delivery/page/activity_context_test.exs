@@ -61,5 +61,36 @@ defmodule Oli.Delivery.Page.ActivityContextTest do
       assert Map.get(m, a1.resource.id).delivery_element == "oli-multiple-choice-delivery"
       assert Map.get(m, a1.resource.id).script == "oli_multiple_choice_delivery.js"
     end
+
+    test "build_variables_map/2 returns correct vars", %{} do
+      System.put_env("ACTIVITY_MCQ_TEST1", "1")
+      System.put_env("ACTIVITY_MCQ_TEST2", "2")
+      System.put_env("MY_SECRET", "secret")
+
+      vars =
+        ActivityContext.build_variables_map(["ACTIVITY_MCQ_TEST1", "ACTIVITY_MCQ_TEST2"], "mcq")
+
+      assert Map.keys(vars) |> Enum.count() == 2
+
+      assert Map.get(vars, "ACTIVITY_MCQ_TEST1") == "1"
+      assert Map.get(vars, "ACTIVITY_MCQ_TEST2") == "2"
+
+      # Verify the secret is not included
+      vars =
+        ActivityContext.build_variables_map(
+          ["ACTIVITY_MCQ_TEST1", "ACTIVITY_MCQ_TEST2", "MY_SECRET"],
+          "mcq"
+        )
+
+      assert Map.keys(vars) |> Enum.count() == 2
+
+      assert Map.get(vars, "ACTIVITY_MCQ_TEST1") == "1"
+      assert Map.get(vars, "ACTIVITY_MCQ_TEST2") == "2"
+
+      # ensure one that does not exist gets the empty string
+      vars = ActivityContext.build_variables_map(["ACTIVITY_MCQ_DOES_NOT_EXIST"], "mcq")
+      assert Map.keys(vars) |> Enum.count() == 1
+      assert Map.get(vars, "ACTIVITY_MCQ_DOES_NOT_EXIST") == ""
+    end
   end
 end

@@ -39,7 +39,7 @@ defmodule Oli.Activities.ActivityMapEntry do
       deliveryElement: delivery_element,
       globallyAvailable: globally_available,
       enabledForProject: globally_available,
-      variables: Oli.Delivery.Page.ActivityContext.build_variables_map(variables)
+      variables: Oli.Delivery.Page.ActivityContext.build_variables_map(variables, petite_label)
     }
   end
 end
