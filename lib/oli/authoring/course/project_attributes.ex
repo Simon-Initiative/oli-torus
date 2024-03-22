@@ -30,6 +30,7 @@ defmodule Oli.Authoring.Course.ProjectAttributes.License do
 
   @license_opts Map.keys(CreativeCommons.cc_options())
 
+  @derive Jason.Encoder
   @primary_key false
   embedded_schema do
     field(:license_type, Ecto.Enum, values: @license_opts, default: :none)
