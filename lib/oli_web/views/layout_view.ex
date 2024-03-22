@@ -130,12 +130,36 @@ defmodule OliWeb.LayoutView do
   defp show_collab_space?(%CollabSpaceConfig{status: :disabled}), do: false
   defp show_collab_space?(_), do: true
 
-  def render_license(%{license_type: :custom} = assigns) do
+  def is_only_url?(url) do
+    trimmed = String.trim(url)
+
+    !String.contains?(trimmed, " ") and
+      (String.starts_with?(trimmed, "http://") or String.starts_with?(trimmed, "https://"))
+  end
+
+  defp render_as_link(assigns) do
     ~H"""
     <.license_wrapper>
-      <p class="h-full"><%= @custom_license_details %></p>
+      <a href={String.trim(@custom_license_details)} , target="_blank">
+        <%= String.trim(@custom_license_details) %>
+      </a>
     </.license_wrapper>
     """
+  end
+
+  defp render_as_text(assigns) do
+    ~H"""
+    <.license_wrapper>
+      <%= @custom_license_details %>
+    </.license_wrapper>
+    """
+  end
+
+  def render_license(%{license_type: :custom} = assigns) do
+    case is_only_url?(assigns[:custom_license_details]) do
+      true -> render_as_link(assigns)
+      false -> render_as_text(assigns)
+    end
   end
 
   def render_license(%{license_type: cc_license} = assigns)
