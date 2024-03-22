@@ -363,24 +363,8 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     }
   end
 
-  def handle_event(
-        "navigate_to_resource",
-        %{"slug" => resource_slug} = values,
-        socket
-      ) do
-    section_slug = socket.assigns.section.slug
-    resource_id = values["resource_id"] || values["module_resource_id"]
-
-    {:noreply,
-     push_redirect(socket,
-       to:
-         resource_url(
-           resource_slug,
-           section_slug,
-           resource_id
-         )
-     )}
-  end
+  def handle_event("navigate_to_resource", %{"slug" => _} = values, socket),
+    do: navigate_to_resource(values, socket)
 
   def handle_event(
         "expand_section",
@@ -452,6 +436,52 @@ defmodule OliWeb.Delivery.Student.LearnLive do
      |> update(:units, fn units -> [selected_unit | units] end)}
   end
 
+  # Tab navigation
+
+  def handle_event("intro_card_keydown", params, socket) do
+    case params["key"] do
+      "Enter" ->
+        {:noreply, push_event(socket, "play_video", %{"video_url" => params["video_url"]})}
+
+      "Escape" ->
+        {:noreply,
+         push_event(socket, "js-exec", %{
+           to: "#intro_card_#{params["card_resource_id"]}",
+           attr: "data-event"
+         })}
+
+      _ ->
+        {:noreply, socket}
+    end
+  end
+
+  def handle_event("card_keydown", %{"key" => "Escape"} = params, socket) do
+    {:noreply,
+     push_event(socket, "js-exec", %{
+       to: "##{params["type"]}_#{params["resource_id"]}",
+       attr: "data-leave-event"
+     })}
+  end
+
+  def handle_event("card_keydown", %{"key" => "Enter"} = params, socket) do
+    case params["type"] do
+      "page" ->
+        navigate_to_resource(params, socket)
+
+      "module" ->
+        {:noreply,
+         push_event(socket, "js-exec", %{
+           to: "##{params["type"]}_#{params["resource_id"]}",
+           attr: "data-enter-event"
+         })}
+
+      _ ->
+        {:noreply, socket}
+    end
+  end
+
+  def handle_event("card_keydown", _, socket), do: {:noreply, socket}
+
   def enter_unit(js \\ %JS{}, unit_id) do
     unit_cards_selector = "#slider_#{unit_id} > div[role*=\"card\"]"
 
@@ -462,6 +492,39 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   def leave_unit(js \\ %JS{}, unit_id) do
     JS.remove_attribute(js, "tabindex", to: "#slider_#{unit_id} > div[role*=\"card\"]")
     |> JS.focus(to: "#unit_#{unit_id}")
+  end
+
+  def enter_module(js \\ %JS{}, unit_id, module_resource_id) do
+    # This selector is not working yet
+    module_items_selector = "#selected_module_in_unit_#{unit_id} div[id*=\"index_item_\"]"
+
+    js
+    |> JS.set_attribute({"tabindex", "0"}, to: module_items_selector)
+    |> JS.focus(to: module_items_selector <> ":first-of-type")
+    |> select_module(unit_id)
+  end
+
+  def navigate_to_resource(values, socket) do
+    section_slug = socket.assigns.section.slug
+    resource_id = values["resource_id"] || values["module_resource_id"]
+
+    {:noreply,
+     push_redirect(socket,
+       to:
+         resource_url(
+           values["slug"],
+           section_slug,
+           resource_id
+         )
+     )}
+  end
+
+  def select_module(js \\ %JS{}, unit_resource_id) do
+    JS.hide(
+      to: "#selected_module_in_unit_#{unit_resource_id}",
+      transition: {"ease-out duration-500", "opacity-100", "opacity-0"}
+    )
+    |> JS.push("select_module")
   end
 
   def handle_info(:gc, socket) do
@@ -626,7 +689,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         </div>
         <div class="w-[288px]">
           <.card
-            module={@unit}
+            card={@unit}
             module_index={1}
             unit_resource_id={@unit["resource_id"]}
             unit_numbering_index={@unit["numbering"]["index"]}
@@ -734,7 +797,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
             />
             <.card
               :for={module <- @unit["children"]}
-              module={module}
+              card={module}
               module_index={module["numbering"]["index"]}
               unit_resource_id={@unit["resource_id"]}
               unit_numbering_index={@unit["numbering"]["index"]}
@@ -1347,10 +1410,13 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   def intro_video_card(%{is_youtube_video: true} = assigns) do
     ~H"""
     <div
+      id={"intro_card_#{@card_resource_id}"}
       class="relative slider-card hover:scale-[1.01]"
       role="youtube_intro_video_card"
-      phx-keydown={leave_unit(@unit_resource_id)}
-      phx-key="escape"
+      phx-keydown="intro_card_keydown"
+      phx-value-video_url={@video_url}
+      phx-value-card_resource_id={@card_resource_id}
+      data-event={leave_unit(@unit_resource_id)}
     >
       <div class="z-10 rounded-xl overflow-hidden absolute w-[288px] h-10">
         <.progress_bar
@@ -1404,7 +1470,15 @@ defmodule OliWeb.Delivery.Student.LearnLive do
 
   def intro_video_card(%{is_youtube_video: false} = assigns) do
     ~H"""
-    <div class="relative slider-card hover:scale-[1.01]" role="intro_video_card">
+    <div
+      id={"intro_card_#{@card_resource_id}"}
+      class="relative slider-card hover:scale-[1.01]"
+      role="intro_video_card"
+      phx-keydown="intro_card_keydown"
+      phx-value-video_url={@video_url}
+      phx-value-card_resource_id={@card_resource_id}
+      data-event={leave_unit(@unit_resource_id)}
+    >
       <div class="z-20 rounded-xl overflow-hidden absolute w-[288px] h-10">
         <.progress_bar
           percent={if @intro_video_viewed, do: 100, else: 0}
@@ -1435,6 +1509,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
           <div class="w-full h-full rounded-full backdrop-blur bg-gray/50"></div>
           <button
             role="play_unit_intro_video"
+            tabindex="-1"
             class="z-30 w-full h-full absolute top-0 left-0 flex items-center justify-center"
             phx-click="play_video"
             phx-value-video_url={@video_url}
@@ -1458,7 +1533,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     """
   end
 
-  attr :module, :map
+  attr :card, :map
   attr :module_index, :integer
   attr :unit_numbering_index, :integer
   attr :unit_resource_id, :string
@@ -1468,41 +1543,41 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   attr :default_image, :string, default: @default_image
 
   def card(assigns) do
+    assigns = Map.put(assigns, :is_page, is_page(assigns.card))
+
     ~H"""
     <div
       id={
-        if is_page(@module),
-          do: "page_#{@module["resource_id"]}",
-          else: "module_#{@module["resource_id"]}"
+        if @is_page,
+          do: "page_#{@card["resource_id"]}",
+          else: "module_#{@card["resource_id"]}"
       }
       phx-click={
-        if is_page(@module),
+        if @is_page,
           do: "navigate_to_resource",
-          else:
-            JS.hide(
-              to: "#selected_module_in_unit_#{@unit_resource_id}",
-              transition: {"ease-out duration-500", "opacity-100", "opacity-0"}
-            )
-            |> JS.push("select_module")
+          else: select_module(@unit_resource_id)
       }
+      phx-keydown="card_keydown"
       phx-value-unit_resource_id={@unit_resource_id}
-      phx-value-module_resource_id={@module["resource_id"]}
-      phx-value-slug={@module["slug"]}
+      phx-value-module_resource_id={@card["resource_id"]}
+      phx-value-slug={@card["slug"]}
+      phx-value-resource_id={@card["resource_id"]}
+      phx-value-type={if @is_page, do: "page", else: "module"}
       class={[
         "relative hover:scale-[1.01] transition-transform duration-150",
-        if(!is_page(@module), do: "slider-card")
+        if(!@is_page, do: "slider-card")
       ]}
       role={"card_#{@module_index}"}
-      phx-keydown={leave_unit(@unit_resource_id)}
-      phx-key="escape"
+      data-enter-event={enter_module(@unit_resource_id, @card["resource_id"])}
+      data-leave-event={leave_unit(@unit_resource_id)}
     >
       <div class="z-10 rounded-xl overflow-hidden absolute h-[163px] w-[288px] cursor-pointer">
         <.progress_bar
-          :if={progress_started(@student_progress_per_resource_id, @module["resource_id"])}
+          :if={progress_started(@student_progress_per_resource_id, @card["resource_id"])}
           percent={
             parse_student_progress_for_resource(
               @student_progress_per_resource_id,
-              @module["resource_id"]
+              @card["resource_id"]
             )
           }
           width="100%"
@@ -1515,7 +1590,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       </div>
       <div class="rounded-xl absolute h-[163px] w-[288px] cursor-pointer bg-[linear-gradient(180deg,#223_0%,rgba(34,34,51,0.72)_52.6%,rgba(34,34,51,0.00)_100%)]">
       </div>
-      <.page_icon :if={is_page(@module)} graded={@module["graded"]} />
+      <.page_icon :if={@is_page} graded={@card["graded"]} />
 
       <div class="h-[170px] w-[288px]">
         <div
@@ -1528,12 +1603,12 @@ defmodule OliWeb.Delivery.Student.LearnLive do
           style={"background-image: url('#{if(@bg_image_url in ["", nil], do: @default_image, else: @bg_image_url)}');"}
         >
           <span class="text-[12px] leading-[16px] font-bold opacity-60 text-white dark:text-opacity-50">
-            <%= if is_page(@module),
+            <%= if @is_page,
               do: Phoenix.HTML.raw("&nbsp;"),
               else: "#{@unit_numbering_index}.#{@module_index}" %>
           </span>
           <h5 class="text-[18px] leading-[25px] font-bold text-white z-10">
-            <%= @module["title"] %>
+            <%= @card["title"] %>
           </h5>
         </div>
 
