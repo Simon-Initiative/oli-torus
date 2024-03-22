@@ -50,7 +50,9 @@ defmodule OliWeb.Components.Delivery.DeliberatePractice do
           nil
         else
           Content.render(
-            %Oli.Rendering.Context{render_opts: %{render_errors: true}},
+            %Oli.Rendering.Context{
+              render_opts: %{render_errors: true, render_point_markers: false}
+            },
             intro_content,
             Content.Html
           )
