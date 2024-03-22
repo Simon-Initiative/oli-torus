@@ -36,6 +36,7 @@ defmodule OliWeb.Projects.OverviewLiveTest do
       assert has_element?(view, "h4", "Actions")
 
       refute has_element?(view, "button", "Bulk Resource Attribute Edit")
+      refute has_element?(view, "label", "Calculate embeddings on publish")
     end
 
     test "project gets deleted correctly", %{conn: conn, author: author} do
@@ -143,6 +144,7 @@ defmodule OliWeb.Projects.OverviewLiveTest do
       assert has_element?(view, "h4", "Actions")
 
       assert has_element?(view, "button", "Bulk Resource Attribute Edit")
+      assert has_element?(view, "label", "Calculate embeddings on publish")
     end
 
     test "displays datashop analytics link when the project is published", %{
@@ -164,6 +166,34 @@ defmodule OliWeb.Projects.OverviewLiveTest do
                "a[href=\"/project/#{project.slug}/datashop\"]",
                "Datashop Analytics"
              )
+    end
+
+    test "can update calculate_embeddings_on_publish attribute (false by default)", %{
+      conn: conn,
+      admin: admin
+    } do
+      project = create_project_with_author(admin)
+
+      Oli.Publishing.publish_project(
+        project,
+        "Datashop test",
+        admin.id
+      )
+
+      refute project.attributes.calculate_embeddings_on_publish
+
+      {:ok, view, _html} = live(conn, Routes.live_path(Endpoint, OverviewLive, project.slug))
+
+      element(view, "form[phx-submit=\"update\"]")
+      |> render_submit(%{
+        "project" => %{
+          "attributes" => %{
+            "calculate_embeddings_on_publish" => "true"
+          }
+        }
+      })
+
+      assert Oli.Authoring.Course.get_project!(project.id).attributes.calculate_embeddings_on_publish
     end
 
     test "disables datashop analytics link when the project is not published", %{

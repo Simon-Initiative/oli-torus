@@ -236,7 +236,8 @@ defmodule OliWeb.Projects.PublishView do
         )
       end
 
-      upsert_page_embeddings(socket.assigns.active_publication_changes, new_publication.id)
+      if project.attributes && project.attributes.calculate_embeddings_on_publish,
+        do: upsert_page_embeddings(socket.assigns.active_publication_changes, new_publication.id)
 
       {:noreply,
        socket
