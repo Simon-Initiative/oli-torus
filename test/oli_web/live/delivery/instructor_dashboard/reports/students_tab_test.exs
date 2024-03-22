@@ -702,12 +702,12 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
       assert has_element?(view, "p", "You're signed with two accounts.")
       assert has_element?(view, "p", "Please select the one to use as an inviter:")
 
-      refute view |> element("fieldset input#author") |> render() =~ "checked=\"checked\""
-      assert view |> element("fieldset input#user") |> render() =~ "checked=\"checked\""
-
-      view |> element("fieldset input#author") |> render_click()
       assert view |> element("fieldset input#author") |> render() =~ "checked=\"checked\""
       refute view |> element("fieldset input#user") |> render() =~ "checked=\"checked\""
+
+      view |> element("fieldset input#user") |> render_click()
+      refute view |> element("fieldset input#author") |> render() =~ "checked=\"checked\""
+      assert view |> element("fieldset input#user") |> render() =~ "checked=\"checked\""
 
       # Send the invitations (this mocks the POST request made by the form)
       conn =
