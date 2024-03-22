@@ -40,6 +40,5 @@ defmodule OliWeb.LayoutViewTest do
       refute LayoutView.is_only_url?("foo.com")
       refute LayoutView.is_only_url?("https://foo.com bar")
     end
-
   end
 end

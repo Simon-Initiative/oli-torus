@@ -131,9 +131,10 @@ defmodule OliWeb.LayoutView do
   defp show_collab_space?(_), do: true
 
   def is_only_url?(url) do
-
     trimmed = String.trim(url)
-    !String.contains?(trimmed, " ") and (String.starts_with?(trimmed, "http://") or String.starts_with?(trimmed, "https://"))
+
+    !String.contains?(trimmed, " ") and
+      (String.starts_with?(trimmed, "http://") or String.starts_with?(trimmed, "https://"))
   end
 
   defp render_as_link(assigns) do
