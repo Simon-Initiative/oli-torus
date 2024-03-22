@@ -11,6 +11,7 @@ export type EditorDesc = {
   globallyAvailable: boolean;
   enabledForProject: boolean;
   id: number;
+  variables: any;
 };
 
 export interface ActivityEditorMap {

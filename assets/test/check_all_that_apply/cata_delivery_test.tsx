@@ -32,6 +32,7 @@ describe('check all that apply delivery', () => {
         showFeedback: true,
         renderPointMarkers: false,
         isAnnotationLevel: false,
+        variables: {},
       },
       preview: false,
     };

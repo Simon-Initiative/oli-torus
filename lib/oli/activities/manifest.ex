@@ -10,7 +10,8 @@ defmodule Oli.Activities.Manifest do
     :authoring,
     :allowClientEvaluation,
     :icon,
-    :global
+    :global,
+    :variables
   ]
 
   def parse(
@@ -33,7 +34,8 @@ defmodule Oli.Activities.Manifest do
        delivery: Oli.Activities.ModeSpecification.parse(delivery),
        authoring: Oli.Activities.ModeSpecification.parse(authoring),
        allowClientEvaluation: value_or(json["allowClientEvaluation"], false),
-       global: false
+       global: false,
+       variables: value_or(json["variables"], [])
      }}
   end
 

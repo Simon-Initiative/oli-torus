@@ -26,7 +26,8 @@ defmodule Oli.Activities do
       title: manifest.friendlyName,
       petite_label: manifest.petiteLabel,
       icon: manifest.icon,
-      slug: manifest.id
+      slug: manifest.id,
+      variables: manifest.variables
     }
 
     case get_registration_by_slug(attrs.slug) do

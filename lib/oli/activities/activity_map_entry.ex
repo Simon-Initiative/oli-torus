@@ -12,6 +12,7 @@ defmodule Oli.Activities.ActivityMapEntry do
     :petiteLabel,
     :slug,
     :globallyAvailable,
+    :variables,
     enabledForProject: false
   ]
 
@@ -24,7 +25,8 @@ defmodule Oli.Activities.ActivityMapEntry do
         petite_label: petite_label,
         authoring_element: authoring_element,
         delivery_element: delivery_element,
-        globally_available: globally_available
+        globally_available: globally_available,
+        variables: variables
       }) do
     %Oli.Activities.ActivityMapEntry{
       id: id,
@@ -36,7 +38,8 @@ defmodule Oli.Activities.ActivityMapEntry do
       icon: icon,
       deliveryElement: delivery_element,
       globallyAvailable: globally_available,
-      enabledForProject: globally_available
+      enabledForProject: globally_available,
+      variables: Oli.Delivery.Page.ActivityContext.build_variables_map(variables, petite_label)
     }
   end
 end

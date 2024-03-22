@@ -56,10 +56,23 @@ defmodule Oli.Delivery.Page.ActivityContext do
          script: type.delivery_script,
          graded: graded,
          bib_refs: Map.get(model, "bibrefs", []),
-         ordinal: ordinal_assign_fn.(id)
+         ordinal: ordinal_assign_fn.(id),
+         variables: build_variables_map(type.variables, type.petite_label)
        }}
     end)
     |> Map.new()
+  end
+
+  def build_variables_map(variables, petite_label) do
+    whitelist_prefix = "ACTIVITY_" <> String.upcase(petite_label) <> "_"
+
+    Enum.reduce(variables, %{}, fn variable_name, acc ->
+      if String.starts_with?(variable_name, whitelist_prefix) do
+        Map.put(acc, variable_name, System.get_env(variable_name, ""))
+      else
+        acc
+      end
+    end)
   end
 
   defp prune_feedback_from_state(state, true), do: state
