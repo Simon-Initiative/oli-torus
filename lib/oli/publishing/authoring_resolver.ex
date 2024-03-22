@@ -341,4 +341,25 @@ defmodule Oli.Publishing.AuthoringResolver do
       )
     )
   end
+
+  @doc """
+  Returns all unique youtube video intro urls in the project
+  """
+
+  def all_unique_youtube_intro_videos(project_slug) do
+    Repo.all(
+      from(
+        revision in Revision,
+        join: pub_res in PublishedResource,
+        on: pub_res.revision_id == revision.id,
+        where:
+          pub_res.publication_id in subquery(project_working_publication(project_slug)) and
+            revision.deleted == false and not is_nil(revision.intro_video) and
+            (ilike(revision.intro_video, "%youtube.com%") or
+               ilike(revision.intro_video, "%youtu.be%")),
+        distinct: revision.intro_video,
+        select: revision.intro_video
+      )
+    )
+  end
 end
