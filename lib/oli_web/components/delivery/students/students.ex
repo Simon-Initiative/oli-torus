@@ -61,7 +61,7 @@ defmodule OliWeb.Components.Delivery.Students do
        add_enrollments_selected_role: :student,
        add_enrollments_emails: [],
        add_enrollments_users_not_found: [],
-       inviter: "user",
+       inviter: if(is_nil(ctx.author), do: "user", else: "author"),
        current_user: ctx.user,
        current_author: ctx.author
      )}
