@@ -249,7 +249,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
           <% end %>
           <div class="flex flex-row-reverse justify-start gap-2 mt-3">
             <Common.button variant={:primary}>
-              Save
+              Post
             </Common.button>
             <Common.button type="button" variant={:secondary} phx-click="cancel_create_annotation">
               Cancel
