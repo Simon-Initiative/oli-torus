@@ -702,12 +702,14 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
       assert has_element?(view, "p", "You're signed with two accounts.")
       assert has_element?(view, "p", "Please select the one to use as an inviter:")
 
-      refute view |> element("fieldset input#author") |> render() =~ "checked=\"checked\""
-      assert view |> element("fieldset input#user") |> render() =~ "checked=\"checked\""
-
-      view |> element("fieldset input#author") |> render_click()
+      # when logged in under two accounts, "author" selected by default
       assert view |> element("fieldset input#author") |> render() =~ "checked=\"checked\""
       refute view |> element("fieldset input#user") |> render() =~ "checked=\"checked\""
+
+      # can change to "user" account
+      view |> element("fieldset input#user") |> render_click()
+      refute view |> element("fieldset input#author") |> render() =~ "checked=\"checked\""
+      assert view |> element("fieldset input#user") |> render() =~ "checked=\"checked\""
 
       # Send the invitations (this mocks the POST request made by the form)
       conn =
@@ -717,7 +719,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
             emails: [user_1.email, user_2.email, non_existant_email_1],
             role: "instructor",
             "g-recaptcha-response": "any",
-            inviter: "author"
+            inviter: "user"
           )
         )
 
