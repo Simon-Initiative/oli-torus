@@ -42,7 +42,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
               <div class="text-center p-4 text-gray-500">There are no posts yet</div>
             <% annotations -> %>
               <%= for annotation <- annotations do %>
-                <.note post={annotation} current_user={@current_user} />
+                <.post post={annotation} current_user={@current_user} />
               <% end %>
           <% end %>
         </div>
@@ -279,7 +279,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
   attr :post, Oli.Resources.Collaboration.Post, required: true
   attr :current_user, Oli.Accounts.User, required: true
 
-  defp note(assigns) do
+  defp post(assigns) do
     ~H"""
     <div class="flex flex-col p-4 border-2 border-gray-200 dark:border-gray-800 rounded">
       <div class="flex flex-row justify-between mb-1">
@@ -293,7 +293,19 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
       <p class="my-2">
         <%= @post.content.message %>
       </p>
-      <.maybe_status post={@post} />
+      <.post_actions post={@post} />
+    </div>
+    """
+  end
+
+  attr :replies, :list, required: true
+
+  defp post_replies(assigns) do
+    ~H"""
+    <div class="flex flex-col gap-2">
+      <%= for reply <- @post.replies do %>
+        <.post post={reply} current_user={@current_user} />
+      <% end %>
     </div>
     """
   end
@@ -324,12 +336,25 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
 
   attr :post, Oli.Resources.Collaboration.Post, required: true
 
-  defp maybe_status(assigns) do
+  defp post_actions(assigns) do
     case assigns.post do
       %Oli.Resources.Collaboration.Post{visibility: :public, status: :submitted} ->
         ~H"""
         <div class="text-right text-sm italic text-gray-500 mb-1">
           Submitted and pending approval
+        </div>
+        """
+
+      %Oli.Resources.Collaboration.Post{visibility: :public} ->
+        ~H"""
+        <div class="flex flex-row gap-2 my-1">
+          <button
+            class="inline-flex gap-1 text-sm text-gray-500 bold py-1 px-2 rounded-lg hover:bg-gray-100"
+            phx-click="toggle_post_replies"
+            phx-value-post-id={assigns.post.id}
+          >
+            <.replies_bubble_icon /> 3
+          </button>
         </div>
         """
 
@@ -402,6 +427,21 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
             <%= @count %>
           </text>
       <% end %>
+    </svg>
+    """
+  end
+
+  def replies_bubble_icon(assigns) do
+    ~H"""
+    <svg width="23" height="23" viewBox="0 0 23 23" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <line x1="6.16821" y1="8.60156" x2="16.0243" y2="8.60156" stroke="#2D3648" stroke-width="1.5" />
+      <line x1="6.16821" y1="13.6055" x2="16.0243" y2="13.6055" stroke="#2D3648" stroke-width="1.5" />
+      <path
+        fill-rule="evenodd"
+        clip-rule="evenodd"
+        d="M11.7869 2.27309C7.1428 2.27309 3.37805 6.03784 3.37805 10.6819C3.37805 12.0261 3.69262 13.2936 4.25113 14.4177C4.38308 14.6833 4.4045 14.9903 4.31072 15.2717L2.8872 19.5421L7.20077 18.1512C7.47968 18.0613 7.78271 18.084 8.04505 18.2146C9.17069 18.775 10.4403 19.0907 11.7869 19.0907C16.4309 19.0907 20.1957 15.3259 20.1957 10.6819C20.1957 6.03784 16.4309 2.27309 11.7869 2.27309ZM1.13425 10.6819C1.13425 4.79863 5.90359 0.0292969 11.7869 0.0292969C17.6701 0.0292969 22.4395 4.79863 22.4395 10.6819C22.4395 16.5652 17.6701 21.3345 11.7869 21.3345C10.2515 21.3345 8.78951 21.009 7.46835 20.4225L1.46623 22.3579C1.06368 22.4877 0.622338 22.38 0.324734 22.0795C0.0271304 21.779 -0.0761506 21.3366 0.0576046 20.9353L2.04039 14.9871C1.45758 13.6695 1.13425 12.2121 1.13425 10.6819Z"
+        fill="#2D3648"
+      />
     </svg>
     """
   end
