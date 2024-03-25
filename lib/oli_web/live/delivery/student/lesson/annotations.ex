@@ -33,6 +33,10 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
             class="my-2"
             active={@create_new_annotation}
             disable_anonymous_option={@active_tab == :my_notes || is_guest(@current_user)}
+            save_label={if(@active_tab == :my_notes, do: "Save", else: "Post")}
+            placeholder={
+              if(@active_tab == :my_notes, do: "Add a new note...", else: "Post a new note...")
+            }
           />
 
           <%= case @annotations do %>
@@ -222,6 +226,8 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
 
   attr :active, :boolean, default: false
   attr :disable_anonymous_option, :boolean, default: false
+  attr :save_label, :string, default: "Save"
+  attr :placeholder, :string, default: "Add a new note..."
   attr :rest, :global, include: ~w(class)
 
   defp add_new_annotation_input(%{active: true} = assigns) do
@@ -239,7 +245,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
               phx-hook="AutoSelect"
               rows="4"
               class="w-full border border-gray-400 dark:border-gray-700 dark:bg-black rounded-lg p-3"
-              placeholder="Add a new note..."
+              placeholder={@placeholder}
             />
           </div>
           <%= unless @disable_anonymous_option do %>
@@ -249,7 +255,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
           <% end %>
           <div class="flex flex-row-reverse justify-start gap-2 mt-3">
             <Common.button variant={:primary}>
-              Post
+              <%= @save_label %>
             </Common.button>
             <Common.button type="button" variant={:secondary} phx-click="cancel_create_annotation">
               Cancel
@@ -268,7 +274,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
         <input
           type="text"
           class="w-full border border-gray-400 dark:border-gray-700 rounded-lg p-3"
-          placeholder="Add a new note..."
+          placeholder={@placeholder}
           phx-focus="begin_create_annotation"
         />
       </div>
