@@ -1,7 +1,6 @@
 defmodule Oli.Analytics.ByActivity do
   import Ecto.Query, warn: false
   alias Oli.Publishing.DeliveryResolver
-  alias Oli.Delivery.Sections.SectionResource
   alias Oli.Repo
   alias Oli.Analytics.Common
   alias Oli.Publishing

@@ -485,7 +485,9 @@ defmodule OliWeb.Insights do
   end
 
   def handle_info(:init_by_objective, socket) do
-    by_objective_rows = get_by_page_row(socket, :by_objective)
+    by_objective_rows =
+      get_by_page_row(socket, :by_objective)
+      |> arrange_rows_into_objective_hierarchy()
 
     active_rows =
       apply_filter_sort(
