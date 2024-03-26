@@ -276,8 +276,21 @@ defmodule OliWeb.Curriculum.ContainerLive do
         %{"explanation_strategy" => %{"type" => "none"}} ->
           Map.put(revision_params, "explanation_strategy", nil)
 
+        %{"intro_content" => ""} ->
+          Map.put(
+            revision_params,
+            "intro_content",
+            %{}
+          )
+
         _ ->
-          revision_params
+          intro_content = Jason.decode!(revision_params["intro_content"])
+
+          Map.put(
+            revision_params,
+            "intro_content",
+            intro_content
+          )
       end
 
     case ContainerEditor.edit_page(project, revision.slug, revision_params) do
