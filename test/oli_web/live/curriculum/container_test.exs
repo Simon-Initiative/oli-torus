@@ -478,7 +478,8 @@ defmodule OliWeb.Curriculum.ContainerLiveTest do
           "purpose" => "application",
           "retake_mode" => "targeted",
           "scoring_strategy_id" => "2",
-          "title" => "New Title!!"
+          "title" => "New Title!!",
+          "intro_content" => ""
         }
       })
 
