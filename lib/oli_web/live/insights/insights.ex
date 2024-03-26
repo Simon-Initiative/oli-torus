@@ -99,7 +99,8 @@ defmodule OliWeb.Insights do
          |> to_form(),
        section_ids: [],
        product_ids: [],
-       form_uid: ""
+       form_uid_for_product: "",
+       form_uid_for_section: ""
      )}
   end
 
@@ -189,7 +190,7 @@ defmodule OliWeb.Insights do
               options={@sections}
               form={@form_sections}
               label="Select a section"
-              uid={@form_uid}
+              uid={@form_uid_for_section}
             />
           </.form>
 
@@ -200,7 +201,7 @@ defmodule OliWeb.Insights do
               options={@products}
               form={@form_products}
               label="Select a product"
-              uid={@form_uid}
+              uid={@form_uid_for_product}
             />
           </.form>
         </div>
@@ -469,7 +470,7 @@ defmodule OliWeb.Insights do
 
   def handle_info(:init_by_page, socket) do
     by_page_rows =
-      get_by_page_row(socket)
+      get_by_page_row(socket, :by_page)
 
     active_rows =
       apply_filter_sort(
@@ -484,12 +485,7 @@ defmodule OliWeb.Insights do
   end
 
   def handle_info(:init_by_objective, socket) do
-    by_objective_rows =
-      Oli.Analytics.ByObjective.query_against_project_slug(
-        socket.assigns.project.slug,
-        socket.assigns.section_ids
-      )
-      |> arrange_rows_into_objective_hierarchy()
+    by_objective_rows = get_by_page_row(socket, :by_objective)
 
     active_rows =
       apply_filter_sort(
@@ -505,7 +501,7 @@ defmodule OliWeb.Insights do
 
   def handle_info(:init_by_activity, socket) do
     by_activity_rows =
-      get_by_page_row(socket)
+      get_by_page_row(socket, :by_activity)
 
     active_rows =
       apply_filter_sort(
@@ -519,7 +515,7 @@ defmodule OliWeb.Insights do
     {:noreply, assign(socket, by_activity_rows: by_activity_rows, active_rows: active_rows)}
   end
 
-  defp get_by_page_row(socket) do
+  defp get_by_page_row(socket, :by_activity) do
     if socket.assigns.is_product do
       Oli.Analytics.ByActivity.query_against_project_slug(
         socket.assigns.project.slug,
@@ -527,6 +523,34 @@ defmodule OliWeb.Insights do
       )
     else
       Oli.Analytics.ByActivity.query_against_project_slug(
+        socket.assigns.project.slug,
+        socket.assigns.section_ids
+      )
+    end
+  end
+
+  defp get_by_page_row(socket, :by_objective) do
+    if socket.assigns.is_product do
+      Oli.Analytics.ByObjective.query_against_project_slug(
+        socket.assigns.project.slug,
+        socket.assigns.product_ids
+      )
+    else
+      Oli.Analytics.ByObjective.query_against_project_slug(
+        socket.assigns.project.slug,
+        socket.assigns.section_ids
+      )
+    end
+  end
+
+  defp get_by_page_row(socket, :by_page) do
+    if socket.assigns.is_product do
+      Oli.Analytics.ByPage.query_against_project_slug(
+        socket.assigns.project.slug,
+        socket.assigns.product_ids
+      )
+    else
+      Oli.Analytics.ByPage.query_against_project_slug(
         socket.assigns.project.slug,
         socket.assigns.section_ids
       )
@@ -548,7 +572,7 @@ defmodule OliWeb.Insights do
         socket.assigns.section_ids
       )
 
-    reset_form_section_values(socket.assigns.product_ids, section_ids_updated, socket)
+    reset_form_product_values(socket.assigns.product_ids, section_ids_updated, socket)
   end
 
   defp update_section_by_value("false", socket, target_value) do
@@ -570,7 +594,7 @@ defmodule OliWeb.Insights do
     {:noreply, socket}
   end
 
-  defp reset_form_section_values([], section_ids_updated, socket) do
+  defp reset_form_product_values([], section_ids_updated, socket) do
     socket =
       assign(socket,
         is_product: false,
@@ -581,12 +605,12 @@ defmodule OliWeb.Insights do
     {:noreply, socket}
   end
 
-  defp reset_form_section_values(_section_ids, section_ids_updated, socket) do
+  defp reset_form_product_values(_section_ids, section_ids_updated, socket) do
     socket =
       assign(socket,
         is_product: false,
         section_ids: section_ids_updated,
-        form_uid: generate_uuid(),
+        form_uid_for_product: generate_uuid(),
         product_ids: [],
         form_products: socket.assigns.initial_product_options
       )
@@ -604,7 +628,7 @@ defmodule OliWeb.Insights do
         socket.assigns.product_ids
       )
 
-    reset_form_products(socket.assigns.section_ids, product_ids_updated, socket)
+    reset_form_section_values(socket.assigns.section_ids, product_ids_updated, socket)
   end
 
   defp update_product_by_value("false", socket, target_value) do
@@ -626,10 +650,10 @@ defmodule OliWeb.Insights do
     {:noreply, socket}
   end
 
-  defp reset_form_products([], product_ids_updated, socket) do
+  defp reset_form_section_values([], product_ids_updated, socket) do
     socket =
       assign(socket,
-        is_product: false,
+        is_product: true,
         product_ids: product_ids_updated
       )
 
@@ -637,12 +661,12 @@ defmodule OliWeb.Insights do
     {:noreply, socket}
   end
 
-  defp reset_form_products(_section_ids, product_ids_updated, socket) do
+  defp reset_form_section_values(_product_ids, product_ids_updated, socket) do
     socket =
       assign(socket,
-        is_product: false,
+        is_product: true,
         product_ids: product_ids_updated,
-        form_uid: generate_uuid(),
+        form_uid_for_section: generate_uuid(),
         section_ids: [],
         form_sections: socket.assigns.initial_section_options
       )
