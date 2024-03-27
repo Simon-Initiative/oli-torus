@@ -113,10 +113,10 @@ const LessonFinishedDialog: React.FC<LessonFinishedDialogProps> = ({
         aria-hidden={!isOpen}
         style={{
           display: isOpen ? 'block' : 'none',
-          minHeight: '350px',
+          minHeight: '250px',
           height: 'unset',
           width: '500px',
-          top: '20%',
+          top: '25%',
           backgroundImage: imageUrl ? `url('${imageUrl}')` : '',
           left: '50%',
         }}

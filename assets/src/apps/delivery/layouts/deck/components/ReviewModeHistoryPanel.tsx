@@ -109,6 +109,7 @@ const ReviewModeHistoryPanel: React.FC<ReviewModeHistoryPanelProps> = ({ items }
           <div className="title screenListTitle">
             Lesson History
             <a
+              className="review-mode-panel-close-button"
               onClick={() => handleToggleHistory(false)}
               style={{ float: 'right', color: 'white', cursor: 'pointer' }}
             >
@@ -116,7 +117,7 @@ const ReviewModeHistoryPanel: React.FC<ReviewModeHistoryPanelProps> = ({ items }
             </a>
           </div>
           <div
-            className="fixed top-0 w-72 text-black bg-white p-2 border-gray-500 border-2 max-h-[80vh] overflow-auto"
+            className="review-mode-screen-list fixed top-0 w-72 text-black bg-white p-2 border-gray-500 border-2 max-h-[80vh] overflow-auto"
             style={{
               transform: 'translate(-50%, 110px)',
             }}
