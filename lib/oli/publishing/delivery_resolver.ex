@@ -263,6 +263,63 @@ defmodule Oli.Publishing.DeliveryResolver do
     |> emit([:oli, :resolvers, :delivery], :duration)
   end
 
+  def revisions_of_type_filtered_by_section_ids(section_ids, resource_type_id) do
+    from(
+      [s: s, sr: sr, rev: rev] in section_resource_revisions_filtered_by_section_ids(section_ids),
+      where: rev.resource_type_id == ^resource_type_id and rev.deleted == false,
+      select: rev
+    )
+  end
+
+  def revisions_filter_by_section_ids(section_ids, resource_type_id) do
+    from(sr in SectionResource,
+      as: :sr,
+      join: s in Section,
+      as: :s,
+      on: s.id == sr.section_id,
+      where: s.id in ^section_ids,
+      join: spp in SectionsProjectsPublications,
+      as: :spp,
+      on: s.id == spp.section_id,
+      where: sr.project_id == spp.project_id,
+      join: pr in PublishedResource,
+      as: :pr,
+      on: pr.publication_id == spp.publication_id,
+      where: pr.resource_id == sr.resource_id,
+      join: rev in Revision,
+      as: :rev,
+      on: rev.id == pr.revision_id,
+      where: rev.resource_type_id == ^resource_type_id and rev.deleted == false,
+      select: rev
+    )
+  end
+
+  defp section_resource_revisions_filtered_by_section_ids(section_ids) do
+    from([sr, s] in section_resources_filtered_by_section_ids(section_ids),
+      join: spp in SectionsProjectsPublications,
+      as: :spp,
+      on: s.id == spp.section_id,
+      where: sr.project_id == spp.project_id,
+      join: pr in PublishedResource,
+      as: :pr,
+      on: pr.publication_id == spp.publication_id,
+      where: pr.resource_id == sr.resource_id,
+      join: rev in Revision,
+      as: :rev,
+      on: rev.id == pr.revision_id
+    )
+  end
+
+  defp section_resources_filtered_by_section_ids(section_ids) do
+    from(sr in SectionResource,
+      as: :sr,
+      join: s in Section,
+      as: :s,
+      on: s.id == sr.section_id,
+      where: s.id in ^section_ids
+    )
+  end
+
   @impl Resolver
   def revisions_of_type(section_slug, resource_type_id) do
     fn ->

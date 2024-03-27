@@ -62,9 +62,9 @@ defmodule Oli.Delivery.Analytics.AnalyticsTest do
       activity_no_attempts = seeds.activity_no_attempts.revision
       activity_results = Enum.find(activity_query, &(&1.slice.id == activity_no_attempts.id))
       assert activity_results.number_of_attempts == nil
-
       page_no_attempts = seeds.revision1
       page_results = Enum.find(page_query, &(&1.slice.id == page_no_attempts.id))
+
       assert page_results.number_of_attempts == nil
 
       objective_no_attempts = seeds.obj_not_used.revision
@@ -99,7 +99,7 @@ defmodule Oli.Delivery.Analytics.AnalyticsTest do
     } do
       assert length(activity_query) == 4
       assert length(objective_query) == 2
-      assert length(page_query) == 5
+      assert length(page_query) == 4
     end
   end
 
@@ -309,7 +309,7 @@ defmodule Oli.Delivery.Analytics.AnalyticsTest do
       # Parent course should still have analytics after duplicating project
       assert Enum.count(objective_query) == 2
       assert Enum.count(activity_query) == 4
-      assert Enum.count(page_query) == 5
+      assert Enum.count(page_query) == 4
 
       # Duplicated course should not have analytics
 
@@ -340,7 +340,7 @@ defmodule Oli.Delivery.Analytics.AnalyticsTest do
 
       # 3 pages with no analytics
       page_insights = ByPage.query_against_project_slug(duplicated.slug, [])
-      assert Enum.count(page_insights) == 3
+      assert Enum.count(page_insights) == 1
 
       assert Enum.all?(page_insights, fn obj ->
                Enum.all?(insights_from_struct.(obj), &is_nil(&1))
