@@ -479,7 +479,17 @@ defmodule OliWeb.Curriculum.ContainerLiveTest do
           "retake_mode" => "targeted",
           "scoring_strategy_id" => "2",
           "title" => "New Title!!",
-          "intro_content" => ""
+          "intro_content" =>
+            Jason.encode!(%{
+              "type" => "p",
+              "children" => [
+                %{
+                  "id" => "3477687079",
+                  "type" => "p",
+                  "children" => [%{"text" => "Some new intro content text!"}]
+                }
+              ]
+            })
         }
       })
 
@@ -504,7 +514,17 @@ defmodule OliWeb.Curriculum.ContainerLiveTest do
                  type: :after_max_resource_attempts_exhausted,
                  set_num_attempts: nil
                },
-               poster_image: "some_poster_image_url"
+               poster_image: "some_poster_image_url",
+               intro_content: %{
+                 "children" => [
+                   %{
+                     "children" => [%{"text" => "Some new intro content text!"}],
+                     "id" => "3477687079",
+                     "type" => "p"
+                   }
+                 ],
+                 "type" => "p"
+               }
              } =
                _updated_revision =
                Oli.Publishing.AuthoringResolver.from_revision_slug(
