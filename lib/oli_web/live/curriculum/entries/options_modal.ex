@@ -91,7 +91,7 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
               (fetch_field(@changeset, :intro_content) &&
                  fetch_field(@changeset, :intro_content)["children"]) || [],
             fixedToolbar: true,
-            allowBlockElements: true
+            allowBlockElements: false
           },
           id: "rich_text_editor_react_component"
         ) %>
