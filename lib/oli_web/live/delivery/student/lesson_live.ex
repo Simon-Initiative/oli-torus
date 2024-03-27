@@ -285,8 +285,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
         {:noreply,
          socket
          |> put_flash(:info, "Note created successfully")
-         |> assign_annotations(create_new_annotation: false, posts: [post | posts])
-         |> increment_post_count(selected_point)}
+         |> optimistically_add_post(selected_point, post)}
 
       {:error, _} ->
         {:noreply, put_flash(socket, :error, "Failed to create note")}
@@ -349,8 +348,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
       annotations: %{
         selected_point: selected_point,
         active_tab: active_tab,
-        auto_approve_annotations: auto_approve_annotations,
-        post_replies: {_, post_replies}
+        auto_approve_annotations: auto_approve_annotations
       }
     } = socket.assigns
 
@@ -365,7 +363,8 @@ defmodule OliWeb.Delivery.Student.LessonLive do
       anonymous: params["anonymous"] == "true",
       visibility: visibility_for_active_tab(active_tab),
       content: %Collaboration.PostContent{message: value},
-      parent_post_id: parent_post_id
+      parent_post_id: parent_post_id,
+      thread_root_id: parent_post_id
     }
 
     case Collaboration.create_post(attrs) do
@@ -373,7 +372,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
         {:noreply,
          socket
          |> put_flash(:info, "Reply successfully created")
-         |> assign_annotations(post_replies: {parent_post_id, post_replies ++ [post]})}
+         |> optimistically_add_reply_post(post, parent_post_id)}
 
       {:error, _} ->
         {:noreply, put_flash(socket, :error, "Failed to create reply")}
@@ -1036,16 +1035,32 @@ defmodule OliWeb.Delivery.Student.LessonLive do
   defp visibility_for_active_tab(:my_notes), do: :private
   defp visibility_for_active_tab(_), do: :private
 
-  defp increment_post_count(socket, selected_point) do
-    case socket.assigns.annotations.post_counts do
-      nil ->
-        socket
+  defp optimistically_add_post(socket, selected_point, post) do
+    %{posts: posts, post_counts: post_counts} = socket.assigns.annotations
 
-      post_counts ->
-        assign_annotations(socket,
-          post_counts: Map.update(post_counts, selected_point, 1, &(&1 + 1))
-        )
-    end
+    socket
+    |> assign_annotations(
+      posts: [%Collaboration.Post{post | replies_count: 0} | posts],
+      post_counts: Map.update(post_counts, selected_point, 1, &(&1 + 1)),
+      create_new_annotation: false
+    )
+  end
+
+  defp optimistically_add_reply_post(socket, reply_post, parent_post_id) do
+    %{posts: posts, post_replies: {_, post_replies}} = socket.assigns.annotations
+
+    socket
+    |> assign_annotations(
+      posts:
+        Enum.map(posts, fn post ->
+          if post.id == parent_post_id do
+            %Collaboration.Post{post | replies_count: post.replies_count + 1}
+          else
+            post
+          end
+        end),
+      post_replies: {parent_post_id, post_replies ++ [reply_post]}
+    )
   end
 
   defp check_gating_conditions(section, user, resource_id) do

@@ -47,12 +47,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
               <div class="text-center p-4 text-gray-500"><%= empty_label(@active_tab) %></div>
             <% annotations -> %>
               <%= for annotation <- annotations do %>
-                <.post
-                  post={annotation}
-                  current_user={@current_user}
-                  post_replies={@post_replies}
-                  disable_anonymous_option={@active_tab == :my_notes || is_guest(@current_user)}
-                />
+                <.post post={annotation} current_user={@current_user} post_replies={@post_replies} />
               <% end %>
           <% end %>
         </div>
