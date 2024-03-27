@@ -274,7 +274,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
       resource_id: page_context.page.resource_id,
       annotated_resource_id: page_context.page.resource_id,
       annotated_block_id: selected_point,
-      annotation_type: :point,
+      annotation_type: if(selected_point, do: :point, else: :none),
       anonymous: params["anonymous"] == "true",
       visibility: visibility_for_active_tab(active_tab),
       content: %Collaboration.PostContent{message: value}
@@ -312,6 +312,72 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     )
 
     {:noreply, assign_annotations(socket, active_tab: tab, posts: nil)}
+  end
+
+  def handle_event("toggle_post_replies", %{"post-id" => post_id}, socket) do
+    %{current_user: current_user} = socket.assigns
+    %{post_replies: post_replies} = socket.assigns.annotations
+
+    post_id = String.to_integer(post_id)
+
+    case post_replies do
+      {^post_id, _} ->
+        {:noreply, assign_annotations(socket, post_replies: nil)}
+
+      _ ->
+        async_load_post_replies(self(), current_user.id, post_id)
+
+        {:noreply, assign_annotations(socket, post_replies: {post_id, :loading})}
+    end
+  end
+
+  def handle_event("create_reply", %{"content" => ""}, socket) do
+    {:noreply, put_flash(socket, :error, "Reply cannot be empty")}
+  end
+
+  def handle_event(
+        "create_reply",
+        %{"parent-post-id" => parent_post_id, "content" => value} = params,
+        socket
+      ) do
+    parent_post_id = String.to_integer(parent_post_id)
+
+    %{
+      current_user: current_user,
+      section: section,
+      page_context: page_context,
+      annotations: %{
+        selected_point: selected_point,
+        active_tab: active_tab,
+        auto_approve_annotations: auto_approve_annotations,
+        post_replies: {_, post_replies}
+      }
+    } = socket.assigns
+
+    attrs = %{
+      status: if(auto_approve_annotations, do: :approved, else: :submitted),
+      user_id: current_user.id,
+      section_id: section.id,
+      resource_id: page_context.page.resource_id,
+      annotated_resource_id: page_context.page.resource_id,
+      annotated_block_id: selected_point,
+      annotation_type: if(selected_point, do: :point, else: :none),
+      anonymous: params["anonymous"] == "true",
+      visibility: visibility_for_active_tab(active_tab),
+      content: %Collaboration.PostContent{message: value},
+      parent_post_id: parent_post_id
+    }
+
+    case Collaboration.create_post(attrs) do
+      {:ok, post} ->
+        {:noreply,
+         socket
+         |> put_flash(:info, "Reply successfully created")
+         |> assign_annotations(post_replies: {parent_post_id, post_replies ++ [post]})}
+
+      {:error, _} ->
+        {:noreply, put_flash(socket, :error, "Failed to create reply")}
+    end
   end
 
   # handle assigns directly from other sub-tasks and processes
@@ -371,6 +437,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
           annotations={@annotations.posts}
           current_user={@current_user}
           active_tab={@annotations.active_tab}
+          post_replies={@annotations.post_replies}
         />
       </:sidebar>
     </.page_content_with_sidebar_layout>
@@ -890,7 +957,8 @@ defmodule OliWeb.Delivery.Student.LessonLive do
             posts: nil,
             active_tab: :my_notes,
             create_new_annotation: false,
-            auto_approve_annotations: course_collab_space_config.auto_accept
+            auto_approve_annotations: course_collab_space_config.auto_accept,
+            post_replies: nil
           }
         )
 
@@ -947,6 +1015,17 @@ defmodule OliWeb.Delivery.Student.LessonLive do
         end
       end)
     end
+  end
+
+  defp async_load_post_replies(caller, user_id, post_id) do
+    Task.Supervisor.start_child(Oli.TaskSupervisor, fn ->
+      post_replies = Collaboration.list_replies_for_post_in_point_block(user_id, post_id)
+
+      send(
+        caller,
+        {:assign_annotations, %{post_replies: {post_id, post_replies}}}
+      )
+    end)
   end
 
   defp assign_annotations(socket, annotations) do

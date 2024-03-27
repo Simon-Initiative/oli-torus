@@ -491,6 +491,40 @@ defmodule Oli.Resources.Collaboration do
     )
   end
 
+  # Define a subquery for root thread post replies count
+  defp replies_subquery() do
+    from(p in Post,
+      group_by: p.thread_root_id,
+      select: %{
+        thread_root_id: p.thread_root_id,
+        count: count(p.id),
+        last_reply: max(p.updated_at)
+      }
+    )
+  end
+
+  # Define a subquery for root thread post read replies count
+  # (replies by the user are counted as read)
+  defp read_replies_subquery(user_id) do
+    from(
+      p in Post,
+      left_join: urp in UserReadPost,
+      on: urp.post_id == p.id,
+      where:
+        not is_nil(p.thread_root_id) and
+          (p.user_id == ^user_id or (urp.user_id == ^user_id and not is_nil(urp.post_id))),
+      group_by: p.thread_root_id,
+      select: %{
+        thread_root_id: p.thread_root_id,
+        # Counting both user's posts and read posts
+        count: count(p.id)
+      }
+    )
+  end
+
+  @doc """
+  Returns the list of root posts for a section.
+  """
   def list_root_posts_for_section(
         user_id,
         section_id,
@@ -500,35 +534,6 @@ defmodule Oli.Resources.Collaboration do
         sort_by,
         sort_order
       ) do
-    # Define a subquery for root thread post replies count
-    replies_subquery =
-      from(p in Post,
-        group_by: p.thread_root_id,
-        select: %{
-          thread_root_id: p.thread_root_id,
-          count: count(p.id),
-          last_reply: max(p.updated_at)
-        }
-      )
-
-    # Define a subquery for root thread post read replies count
-    # (replies by the user are counted as read)
-    read_replies_subquery =
-      from(
-        p in Post,
-        left_join: urp in UserReadPost,
-        on: urp.post_id == p.id,
-        where:
-          not is_nil(p.thread_root_id) and
-            (p.user_id == ^user_id or (urp.user_id == ^user_id and not is_nil(urp.post_id))),
-        group_by: p.thread_root_id,
-        select: %{
-          thread_root_id: p.thread_root_id,
-          # Counting both user's posts and read posts
-          count: count(p.id)
-        }
-      )
-
     order_clause =
       case {sort_by, sort_order} do
         {"popularity", :desc} ->
@@ -566,9 +571,9 @@ defmodule Oli.Resources.Collaboration do
         on: rev.id == pr.revision_id,
         join: user in User,
         on: post.user_id == user.id,
-        left_join: replies in subquery(replies_subquery),
+        left_join: replies in subquery(replies_subquery()),
         on: replies.thread_root_id == post.id,
-        left_join: read_replies in subquery(read_replies_subquery),
+        left_join: read_replies in subquery(read_replies_subquery(user_id)),
         on: read_replies.thread_root_id == post.id,
         where:
           post.section_id == ^section_id and
@@ -1122,15 +1127,24 @@ defmodule Oli.Resources.Collaboration do
     Repo.all(
       from(
         post in Post,
+        left_join: replies in subquery(replies_subquery()),
+        on: replies.thread_root_id == post.id,
+        left_join: read_replies in subquery(read_replies_subquery(user_id)),
+        on: read_replies.thread_root_id == post.id,
         where:
           post.section_id == ^section_id and post.resource_id == ^resource_id and
+            is_nil(post.parent_post_id) and is_nil(post.thread_root_id) and
             (post.status in [:approved, :archived] or
                (post.status == :submitted and post.user_id == ^user_id)),
         where: ^filter_by_point_block_id,
         where: post.visibility == ^visibility,
-        select: post,
         order_by: [desc: :inserted_at],
-        preload: [:user]
+        preload: [:user],
+        select: %{
+          post
+          | replies_count: coalesce(replies.count, 0),
+            read_replies_count: coalesce(read_replies.count, 0)
+        }
       )
     )
   end
@@ -1152,5 +1166,32 @@ defmodule Oli.Resources.Collaboration do
     )
     |> Repo.all()
     |> Enum.into(%{})
+  end
+
+  def list_replies_for_post_in_point_block(user_id, post_id) do
+    Repo.all(
+      from(
+        post in Post,
+        join: sr in SectionResource,
+        on: sr.resource_id == post.resource_id and sr.section_id == post.section_id,
+        join: spp in SectionsProjectsPublications,
+        on: spp.section_id == post.section_id and spp.project_id == sr.project_id,
+        join: pr in PublishedResource,
+        on: pr.publication_id == spp.publication_id and pr.resource_id == post.resource_id,
+        join: rev in Revision,
+        on: rev.id == pr.revision_id,
+        join: user in User,
+        on: post.user_id == user.id,
+        left_join: urp in UserReadPost,
+        on: urp.post_id == post.id and urp.user_id == ^user_id,
+        where:
+          post.parent_post_id == ^post_id and
+            (post.status in [:approved, :archived] or
+               (post.status == :submitted and post.user_id == ^user_id)),
+        select: post,
+        order_by: [asc: :updated_at]
+      )
+    )
+    |> build_metrics_for_reply_posts(user_id)
   end
 end
