@@ -1158,6 +1158,7 @@ defmodule Oli.Resources.Collaboration do
       post in Post,
       where:
         post.section_id == ^section_id and post.resource_id == ^resource_id and
+          is_nil(post.parent_post_id) and is_nil(post.thread_root_id) and
           post.visibility == ^visibility and
           (post.status in [:approved, :archived] or
              (post.status == :submitted and post.user_id == ^user_id)),
