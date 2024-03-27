@@ -668,7 +668,8 @@ defmodule Oli.Delivery.AttemptsTest do
             entry: "./authoring-entry.ts"
           },
           allowClientEvaluation: true,
-          global: true
+          global: true,
+          variables: []
         })
 
       # create an example project with the activity in a graded page
@@ -788,7 +789,8 @@ defmodule Oli.Delivery.AttemptsTest do
             entry: "./authoring-entry.ts"
           },
           allowClientEvaluation: false,
-          global: true
+          global: true,
+          variables: []
         })
 
       # create an example project with the activity in a graded page

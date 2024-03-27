@@ -520,6 +520,7 @@ export class ActivityBank extends React.Component<ActivityBankProps, ActivityBan
             const editorDesc = this.editorById[r.activity_type_id];
 
             return {
+              variables: editorDesc.variables,
               authoringElement: editorDesc.authoringElement,
               friendlyName: editorDesc.friendlyName,
               description: editorDesc.description,

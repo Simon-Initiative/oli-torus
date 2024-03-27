@@ -3,7 +3,15 @@ defmodule Oli.Factory do
 
   alias Oli.Accounts.{Author, User, AuthorPreferences, UserPreferences}
   alias Oli.Authoring.Authors.{AuthorProject, ProjectRole}
-  alias Oli.Authoring.Course.{Family, Project, ProjectVisibility, ProjectResource}
+
+  alias Oli.Authoring.Course.{
+    Family,
+    Project,
+    ProjectAttributes,
+    ProjectVisibility,
+    ProjectResource
+  }
+
   alias Oli.Branding.Brand
 
   alias Oli.Delivery.Sections.ContainedObjective
@@ -134,7 +142,8 @@ defmodule Oli.Factory do
       family: anonymous_build(:family),
       visibility: :global,
       authors: anonymous_build_list(2, :author),
-      publisher: anonymous_build(:publisher)
+      publisher: anonymous_build(:publisher),
+      attributes: anonymous_build(:project_attributes)
     }
   end
 
@@ -594,6 +603,21 @@ defmodule Oli.Factory do
 
   def embedding_factory() do
     Pgvector.new(Enum.to_list(1..1536))
+  end
+
+  def project_attributes_factory() do
+    %ProjectAttributes{
+      learning_language: "en",
+      license: anonymous_build(:project_attributes_license),
+      calculate_embeddings_on_publish: false
+    }
+  end
+
+  def project_attributes_license_factory() do
+    %ProjectAttributes.License{
+      license_type: :none,
+      custom_license_details: ""
+    }
   end
 
   # HELPERS

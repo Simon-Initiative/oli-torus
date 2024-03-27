@@ -31,6 +31,7 @@ import { TextareaListener } from './textarea_listener';
 import { ThemeToggle } from './theme_toggle';
 import { TooltipInit, TooltipWithTarget } from './tooltip';
 import { VideoPlayer } from './video_player';
+import { PauseOthersOnSelected, VideoPreview } from './video_preview';
 
 export const Hooks = {
   GraphNavigation,
@@ -66,6 +67,8 @@ export const Hooks = {
   KeepScrollAtBottom,
   SliderScroll,
   VideoPlayer,
+  VideoPreview,
+  PauseOthersOnSelected,
   PointMarkers,
   AutoSelect,
 };

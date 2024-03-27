@@ -278,5 +278,31 @@ defmodule Oli.Publishing.AuthoringResolverTest do
       assert AuthoringResolver.targeted_via_related_to(project.slug, page_revision.resource_id) ==
                []
     end
+
+    test "all_unique_youtube_intro_videos/1 returns all unique youtube intro videos", %{
+      latest2: revision,
+      latest3: revision_1,
+      latest4: revision_2,
+      project: project
+    } do
+      assert AuthoringResolver.all_unique_youtube_intro_videos(project.slug) == []
+
+      # not youtube urls are ignored
+      Oli.Resources.update_revision(revision, %{intro_video: "some_S3_video_url"})
+      assert AuthoringResolver.all_unique_youtube_intro_videos(project.slug) == []
+
+      # only unique youtube urls are returned
+      Oli.Resources.update_revision(revision_1, %{
+        intro_video: "https://www.youtube.com/watch?v=1234"
+      })
+
+      Oli.Resources.update_revision(revision_2, %{
+        intro_video: "https://www.youtube.com/watch?v=1234"
+      })
+
+      assert AuthoringResolver.all_unique_youtube_intro_videos(project.slug) == [
+               "https://www.youtube.com/watch?v=1234"
+             ]
+    end
   end
 end

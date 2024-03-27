@@ -63,6 +63,7 @@ export interface ActivityContext {
   resourceId?: number;
   renderPointMarkers: boolean;
   isAnnotationLevel: boolean;
+  variables: any;
 }
 
 /**

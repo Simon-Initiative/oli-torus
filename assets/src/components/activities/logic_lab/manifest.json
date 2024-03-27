@@ -1,0 +1,17 @@
+{
+  "id": "oli_logic_lab",
+  "friendlyName": "AProS LogicLab",
+  "petiteLabel": "LogicLab",
+  "description": "An expert system backed intelligent tutor for composing logic derivations and other instructional activities to support learning logic.",
+  "icon": "question-circle",
+  "allowClientEvaluation": true,
+  "delivery": {
+    "element": "oli-logic-lab-delivery",
+    "entry": "./delivery-entry.ts"
+  },
+  "authoring": {
+    "element": "oli-logic-lab-authoring",
+    "entry": "./authoring-entry.ts"
+  },
+  "variables": ["ACTIVITY_LOGICLAB_URL"]
+}

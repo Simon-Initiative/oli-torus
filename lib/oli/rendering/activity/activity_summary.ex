@@ -42,6 +42,10 @@ defmodule Oli.Rendering.Activity.ActivitySummary do
     :bib_refs,
 
     # The ordinal position of this activity within the page
-    :ordinal
+    :ordinal,
+
+    # Map of key-value pairs that can be used to pass additional data to the activity
+    # for client-side use
+    :variables
   ]
 end

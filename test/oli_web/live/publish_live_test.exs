@@ -637,13 +637,18 @@ defmodule OliWeb.PublishLiveTest do
       assert flash["info"] == "Publish Successful!"
     end
 
-    test "enques an embedding Oban job for each PAGE revision when publishing", %{
-      conn: conn,
-      project: project,
-      publication: publication,
-      page_revision: page_revision,
-      page_2_revision: page_2_revision
-    } do
+    test "enques an embedding Oban job for each PAGE revision when publishing if the calculate_embeddings_on_publish attribute is enabled",
+         %{
+           conn: conn,
+           project: project,
+           publication: publication,
+           page_revision: page_revision,
+           page_2_revision: page_2_revision
+         } do
+      Oli.Authoring.Course.update_project(project, %{
+        attributes: %{calculate_embeddings_on_publish: true}
+      })
+
       {:ok, view, _html} = live(conn, live_view_publish_route(project.slug))
 
       view
@@ -664,6 +669,40 @@ defmodule OliWeb.PublishLiveTest do
       enqueued_jobs = all_enqueued(worker: Oli.Search.EmbeddingWorker)
 
       assert length(enqueued_jobs) == 2
+    end
+
+    test "does NOT calculates the embeddings if calculate_embeddings_on_publish attribute is disabled",
+         %{
+           conn: conn,
+           project: project,
+           publication: publication,
+           page_revision: page_revision,
+           page_2_revision: page_2_revision
+         } do
+      Oli.Authoring.Course.update_project(project, %{
+        attributes: %{calculate_embeddings_on_publish: false}
+      })
+
+      {:ok, view, _html} = live(conn, live_view_publish_route(project.slug))
+
+      view
+      |> element("form[phx-submit=\"publish_active\"")
+      |> render_submit(%{description: "New description"})
+
+      # No jobs are enqueued
+      refute_enqueued(
+        worker: Oli.Search.EmbeddingWorker,
+        args: %{"publication_id" => publication.id, "revision_id" => page_revision.id}
+      )
+
+      refute_enqueued(
+        worker: Oli.Search.EmbeddingWorker,
+        args: %{"publication_id" => publication.id, "revision_id" => page_2_revision.id}
+      )
+
+      enqueued_jobs = all_enqueued(worker: Oli.Search.EmbeddingWorker)
+
+      assert length(enqueued_jobs) == 0
     end
   end
 end

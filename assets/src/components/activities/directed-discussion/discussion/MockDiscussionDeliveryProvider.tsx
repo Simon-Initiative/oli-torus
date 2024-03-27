@@ -45,6 +45,7 @@ export const MockDiscussionDeliveryProvider: React.FC<{
         showFeedback: false,
         renderPointMarkers: false,
         isAnnotationLevel: false,
+        variables: {},
       }}
       onSaveActivity={nullHandler}
       onSavePart={nullHandler}
