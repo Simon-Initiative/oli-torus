@@ -562,18 +562,30 @@ defmodule OliWeb.Api.AttemptController do
         }
       end)
 
-    case ActivityEvaluation.evaluate_activity(
-           section_slug,
-           activity_attempt_guid,
-           parsed,
-           datashop_session_id
-         ) do
-      {:ok, evaluations} ->
-        json(conn, %{"type" => "success", "actions" => evaluations})
+    state = Attempts.get_activity_attempt_by(attempt_guid: activity_attempt_guid).lifecycle_state
 
-      {:error, message} ->
-        {_, msg} = Oli.Utils.log_error("Could not submit activity", message)
-        error(conn, 500, msg)
+    if state in [:submitted, :evaluated] do
+      conn
+      |> put_status(403)
+      |> json(%{
+        "error" => true,
+        "message" =>
+          "These changes could not be saved as this attempt may have already been submitted"
+      })
+    else
+      case ActivityEvaluation.evaluate_activity(
+             section_slug,
+             activity_attempt_guid,
+             parsed,
+             datashop_session_id
+           ) do
+        {:ok, evaluations} ->
+          json(conn, %{"type" => "success", "actions" => evaluations})
+
+        {:error, message} ->
+          {_, msg} = Oli.Utils.log_error("Could not submit activity", message)
+          error(conn, 500, msg)
+      end
     end
   end
 
