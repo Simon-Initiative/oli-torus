@@ -4,7 +4,6 @@ defmodule OliWeb.Delivery.Student.LessonLive do
   import OliWeb.Delivery.Student.Utils,
     only: [page_header: 1, star_icon: 1, scripts: 1]
 
-  alias Oli.Accounts.User
   alias Oli.Delivery.Attempts.Core.ResourceAttempt
   alias Oli.Delivery.Attempts.PageLifecycle
   alias Oli.Delivery.Attempts.PageLifecycle.FinalizationSummary
@@ -260,7 +259,6 @@ defmodule OliWeb.Delivery.Student.LessonLive do
       section: section,
       page_context: page_context,
       annotations: %{
-        posts: posts,
         selected_point: selected_point,
         active_tab: active_tab,
         auto_approve_annotations: auto_approve_annotations
