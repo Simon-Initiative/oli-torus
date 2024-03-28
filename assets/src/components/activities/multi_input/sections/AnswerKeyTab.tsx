@@ -20,7 +20,7 @@ import { InputEntry } from 'components/activities/short_answer/sections/InputEnt
 import { getTargetedResponses } from 'components/activities/short_answer/utils';
 import { Response, RichText, makeResponse } from 'components/activities/types';
 import { Radio } from 'components/misc/icons/radio/Radio';
-import { getCorrectResponse, hasCustomScoring } from 'data/activities/model/responses';
+import { getCorrectResponse } from 'data/activities/model/responses';
 import { containsRule, eqRule, equalsRule } from 'data/activities/model/rules';
 import { defaultWriterContext } from 'data/content/writers/context';
 import { MultiInputScoringMethod } from '../MultiInputScoringMethod';
@@ -127,7 +127,7 @@ export const AnswerKeyTab: React.FC<Props> = (props) => {
           updateScore={(_id, score) =>
             dispatch(ResponseActions.editResponseScore(response.id, score))
           }
-          customScoring={hasCustomScoring(model, props.input.partId)}
+          customScoring={model.customScoring}
           removeResponse={(id) => dispatch(ResponseActions.removeResponse(id))}
           key={response.id}
         >
