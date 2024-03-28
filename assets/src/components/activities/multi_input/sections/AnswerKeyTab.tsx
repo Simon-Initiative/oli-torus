@@ -127,7 +127,7 @@ export const AnswerKeyTab: React.FC<Props> = (props) => {
           updateScore={(_id, score) =>
             dispatch(ResponseActions.editResponseScore(response.id, score))
           }
-          customScoring={hasCustomScoring(model, props.input.partId)}
+          customScoring={model.customScoring}
           removeResponse={(id) => dispatch(ResponseActions.removeResponse(id))}
           key={response.id}
         >
