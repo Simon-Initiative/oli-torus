@@ -47,7 +47,12 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
               <div class="text-center p-4 text-gray-500"><%= empty_label(@active_tab) %></div>
             <% annotations -> %>
               <%= for annotation <- annotations do %>
-                <.post post={annotation} current_user={@current_user} post_replies={@post_replies} />
+                <.post
+                  post={annotation}
+                  current_user={@current_user}
+                  post_replies={@post_replies}
+                  disable_anonymous_option={@active_tab == :my_notes || is_guest(@current_user)}
+                />
               <% end %>
           <% end %>
         </div>
@@ -289,6 +294,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
   attr :post, Oli.Resources.Collaboration.Post, required: true
   attr :current_user, Oli.Accounts.User, required: true
   attr :post_replies, :any, required: true
+  attr :disable_anonymous_option, :boolean, default: false
 
   defp post(assigns) do
     ~H"""
@@ -305,7 +311,12 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
         <%= @post.content.message %>
       </p>
       <.post_actions post={@post} />
-      <.post_replies post={@post} replies={@post_replies} current_user={@current_user} />
+      <.post_replies
+        post={@post}
+        replies={@post_replies}
+        current_user={@current_user}
+        disable_anonymous_option={@disable_anonymous_option}
+      />
     </div>
     """
   end
@@ -347,15 +358,28 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
 
       %Oli.Resources.Collaboration.Post{visibility: :public} ->
         ~H"""
-        <div class="flex flex-row gap-2 my-2">
+        <div class="flex flex-row gap-3 my-2">
+          <button
+            class="inline-flex gap-1 text-sm text-gray-500 bold py-1 px-2 rounded-lg hover:bg-gray-100"
+            phx-click="toggle_reaction"
+            phx-value-reaction={:like}
+            phx-value-post-id={assigns.post.id}
+          >
+            <.like_icon />
+            <%= case Map.get(@post.reaction_counts, :like) do %>
+              <% nil -> %>
+              <% count -> %>
+                <%= if(count > 0, do: count) %>
+            <% end %>
+          </button>
           <button
             class="inline-flex gap-1 text-sm text-gray-500 bold py-1 px-2 rounded-lg hover:bg-gray-100"
             phx-click="toggle_post_replies"
             phx-value-post-id={assigns.post.id}
           >
-            <.replies_bubble_icon /> <%= if(@post.replies_count > 0,
-              do: @post.replies_count,
-              else: "Reply"
+            <.replies_bubble_icon />
+            <%= if(@post.replies_count > 0,
+              do: @post.replies_count
             ) %>
           </button>
         </div>
@@ -539,6 +563,20 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
         clip-rule="evenodd"
         d="M11.7869 2.27309C7.1428 2.27309 3.37805 6.03784 3.37805 10.6819C3.37805 12.0261 3.69262 13.2936 4.25113 14.4177C4.38308 14.6833 4.4045 14.9903 4.31072 15.2717L2.8872 19.5421L7.20077 18.1512C7.47968 18.0613 7.78271 18.084 8.04505 18.2146C9.17069 18.775 10.4403 19.0907 11.7869 19.0907C16.4309 19.0907 20.1957 15.3259 20.1957 10.6819C20.1957 6.03784 16.4309 2.27309 11.7869 2.27309ZM1.13425 10.6819C1.13425 4.79863 5.90359 0.0292969 11.7869 0.0292969C17.6701 0.0292969 22.4395 4.79863 22.4395 10.6819C22.4395 16.5652 17.6701 21.3345 11.7869 21.3345C10.2515 21.3345 8.78951 21.009 7.46835 20.4225L1.46623 22.3579C1.06368 22.4877 0.622338 22.38 0.324734 22.0795C0.0271304 21.779 -0.0761506 21.3366 0.0576046 20.9353L2.04039 14.9871C1.45758 13.6695 1.13425 12.2121 1.13425 10.6819Z"
         fill="#2D3648"
+      />
+    </svg>
+    """
+  end
+
+  defp like_icon(assigns) do
+    ~H"""
+    <svg width="22" height="24" viewBox="0 0 22 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path
+        d="M6 10.6466L10 1.11719C10.7956 1.11719 11.5587 1.45185 12.1213 2.04755C12.6839 2.64326 13 3.45121 13 4.29366V8.52895H18.66C18.9499 8.52548 19.2371 8.58878 19.5016 8.71448C19.7661 8.84017 20.0016 9.02526 20.1919 9.25691C20.3821 9.48856 20.5225 9.76123 20.6033 10.056C20.6842 10.3508 20.7035 10.6607 20.66 10.9642L19.28 20.4937C19.2077 20.9986 18.9654 21.4589 18.5979 21.7897C18.2304 22.1204 17.7623 22.2994 17.28 22.2937H6M6 10.6466V22.2937M6 10.6466H3C2.46957 10.6466 1.96086 10.8697 1.58579 11.2668C1.21071 11.664 1 12.2026 1 12.7642V20.176C1 20.7376 1.21071 21.2763 1.58579 21.6734C1.96086 22.0705 2.46957 22.2937 3 22.2937H6"
+        stroke="#383A44"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
       />
     </svg>
     """
