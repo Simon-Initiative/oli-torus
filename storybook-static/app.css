@@ -11590,6 +11590,12 @@ https://tailwindcss.com/docs/utility-first
   color: rgb(255 255 255 / var(--tw-text-opacity));
 }
 
+.truncate-form-control p {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .scrollbar-hide::-webkit-scrollbar {
   display: none;
 }
