@@ -25,6 +25,12 @@ type Props = {
   onChangeTextDirection?: (textDirection: 'ltr' | 'rtl') => void;
   onEdit: (value: Descendant[], editor: SlateEditor, operations: Operation[]) => void;
   onRequestMedia?: (request: MediaItemRequest) => Promise<string | boolean>;
+  // the name of the event to be pushed back to the liveview (or live_component) when rendered with React.component
+  onEditEvent?: string;
+  // the name of the event target element (if the target is a live_component, ex: "#my-live-component-id")
+  onEditTarget?: string;
+  pushEvent?: (event: string, payload: any) => void;
+  pushEventTo?: (selectorOrTarget: string, event: string, payload: any) => void;
 };
 export const RichTextEditor: React.FC<Props> = ({
   projectSlug,
@@ -42,9 +48,28 @@ export const RichTextEditor: React.FC<Props> = ({
   children,
   textDirection,
   onChangeTextDirection,
+  onEditEvent,
+  onEditTarget,
+  pushEvent,
+  pushEventTo,
 }) => {
   // Support content persisted when RichText had a `model` property.
   value = (value as any).model ? (value as any).model : value;
+
+  // Support for rendering the component within a LiveView or a LiveComponent:
+  // if onEditEvent is not null it means this react component is rendered within a LiveView or a live_component
+  // using the React.component wrapper
+  // If so, events need to be pushed back to the LiveView or the live_component (the optional onEditTarget is used to target the event to a live_component)
+
+  if (onEditEvent && pushEvent && pushEventTo) {
+    onEdit = (values) => {
+      if (onEditTarget) {
+        pushEventTo(onEditTarget, onEditEvent, { values: values });
+      } else {
+        pushEvent(onEditEvent, { values: values });
+      }
+    };
+  }
 
   return (
     <div className={classNames('rich-text-editor', fixedToolbar && 'fixed-toolbar', className)}>
