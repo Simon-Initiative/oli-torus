@@ -374,25 +374,25 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
   attr :disable_anonymous_option, :boolean, default: false
 
   defp post_replies(assigns) do
-    id = assigns.post.id
-
     ~H"""
-    <%= case @replies do %>
-      <% {^id, :loading} -> %>
-        <Common.loading_spinner />
-      <% {^id, []} -> %>
-        <.add_new_reply_input parent_post_id={@post.id} />
-      <% {^id, replies} -> %>
-        <div class="flex flex-col gap-2 pl-4">
-          <%= for reply <- replies do %>
-            <.reply post={reply} current_user={@current_user} />
-          <% end %>
-        </div>
-        <.add_new_reply_input
-          parent_post_id={@post.id}
-          disable_anonymous_option={@disable_anonymous_option}
-        />
-      <% _ -> %>
+    <%= if !is_nil(@replies) && elem(@replies, 0) == @post.id do %>
+      <%= case @replies do %>
+        <% {_, :loading} -> %>
+          <Common.loading_spinner />
+        <% {_, []} -> %>
+          <.add_new_reply_input parent_post_id={@post.id} />
+        <% {_, replies} -> %>
+          <div class="flex flex-col gap-2 pl-4">
+            <%= for reply <- replies do %>
+              <.reply post={reply} current_user={@current_user} />
+            <% end %>
+          </div>
+          <.add_new_reply_input
+            parent_post_id={@post.id}
+            disable_anonymous_option={@disable_anonymous_option}
+          />
+        <% _ -> %>
+      <% end %>
     <% end %>
     """
   end
