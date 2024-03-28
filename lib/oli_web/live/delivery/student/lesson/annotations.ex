@@ -7,7 +7,8 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
   attr :create_new_annotation, :boolean, default: false
   attr :annotations, :any, required: true
   attr :current_user, Oli.Accounts.User, required: true
-  attr :selected_annotations_tab, :atom, default: :my_notes
+  attr :active_tab, :atom, default: :my_notes
+  attr :post_replies, :list, default: nil
 
   def panel(assigns) do
     ~H"""
@@ -19,10 +20,10 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
       </div>
       <div class="flex-1 flex flex-col bg-white dark:bg-black p-5">
         <.tab_group class="py-3">
-          <.tab name={:my_notes} selected={@selected_annotations_tab == :my_notes}>
+          <.tab name={:my_notes} selected={@active_tab == :my_notes}>
             <.user_icon class="mr-2" /> My Notes
           </.tab>
-          <.tab name={:all_notes} selected={@selected_annotations_tab == :all_notes}>
+          <.tab name={:all_notes} selected={@active_tab == :all_notes}>
             <.users_icon class="mr-2" /> Class Notes
           </.tab>
         </.tab_group>
@@ -32,8 +33,10 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
           <.add_new_annotation_input
             class="my-2"
             active={@create_new_annotation}
-            disable_anonymous_option={
-              @selected_annotations_tab == :my_notes || is_guest(@current_user)
+            disable_anonymous_option={@active_tab == :my_notes || is_guest(@current_user)}
+            save_label={if(@active_tab == :my_notes, do: "Save", else: "Post")}
+            placeholder={
+              if(@active_tab == :my_notes, do: "Add a new note...", else: "Post a new note...")
             }
           />
 
@@ -41,10 +44,10 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
             <% nil -> %>
               <Common.loading_spinner />
             <% [] -> %>
-              <div class="text-center p-4 text-gray-500">There are no posts yet</div>
+              <div class="text-center p-4 text-gray-500"><%= empty_label(@active_tab) %></div>
             <% annotations -> %>
               <%= for annotation <- annotations do %>
-                <.note post={annotation} current_user={@current_user} />
+                <.post post={annotation} current_user={@current_user} post_replies={@post_replies} />
               <% end %>
           <% end %>
         </div>
@@ -55,6 +58,9 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
 
   defp is_guest(%User{guest: guest}), do: guest
   defp is_guest(_), do: false
+
+  defp empty_label(:my_notes), do: "There are no notes yet"
+  defp empty_label(_), do: "There are no posts yet"
 
   slot :inner_block, required: true
 
@@ -224,6 +230,8 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
 
   attr :active, :boolean, default: false
   attr :disable_anonymous_option, :boolean, default: false
+  attr :save_label, :string, default: "Save"
+  attr :placeholder, :string, default: "Add a new note..."
   attr :rest, :global, include: ~w(class)
 
   defp add_new_annotation_input(%{active: true} = assigns) do
@@ -241,7 +249,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
               phx-hook="AutoSelect"
               rows="4"
               class="w-full border border-gray-400 dark:border-gray-700 dark:bg-black rounded-lg p-3"
-              placeholder="Add a new note..."
+              placeholder={@placeholder}
             />
           </div>
           <%= unless @disable_anonymous_option do %>
@@ -251,7 +259,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
           <% end %>
           <div class="flex flex-row-reverse justify-start gap-2 mt-3">
             <Common.button variant={:primary}>
-              Save
+              <%= @save_label %>
             </Common.button>
             <Common.button type="button" variant={:secondary} phx-click="cancel_create_annotation">
               Cancel
@@ -270,7 +278,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
         <input
           type="text"
           class="w-full border border-gray-400 dark:border-gray-700 rounded-lg p-3"
-          placeholder="Add a new note..."
+          placeholder={@placeholder}
           phx-focus="begin_create_annotation"
         />
       </div>
@@ -280,8 +288,9 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
 
   attr :post, Oli.Resources.Collaboration.Post, required: true
   attr :current_user, Oli.Accounts.User, required: true
+  attr :post_replies, :any, required: true
 
-  defp note(assigns) do
+  defp post(assigns) do
     ~H"""
     <div class="flex flex-col p-4 border-2 border-gray-200 dark:border-gray-800 rounded">
       <div class="flex flex-row justify-between mb-1">
@@ -295,7 +304,8 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
       <p class="my-2">
         <%= @post.content.message %>
       </p>
-      <.maybe_status post={@post} />
+      <.post_actions post={@post} />
+      <.post_replies post={@post} replies={@post_replies} current_user={@current_user} />
     </div>
     """
   end
@@ -326,18 +336,131 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
 
   attr :post, Oli.Resources.Collaboration.Post, required: true
 
-  defp maybe_status(assigns) do
-    if assigns.post.status == :submitted do
-      ~H"""
-      <div class="text-right text-sm italic text-gray-500 mb-1">
-        Submitted and pending approval
-      </div>
-      """
-    else
-      ~H"""
+  defp post_actions(assigns) do
+    case assigns.post do
+      %Oli.Resources.Collaboration.Post{visibility: :public, status: :submitted} ->
+        ~H"""
+        <div class="text-sm italic text-gray-500 my-2">
+          Submitted and pending approval
+        </div>
+        """
 
-      """
+      %Oli.Resources.Collaboration.Post{visibility: :public} ->
+        ~H"""
+        <div class="flex flex-row gap-2 my-2">
+          <button
+            class="inline-flex gap-1 text-sm text-gray-500 bold py-1 px-2 rounded-lg hover:bg-gray-100"
+            phx-click="toggle_post_replies"
+            phx-value-post-id={assigns.post.id}
+          >
+            <.replies_bubble_icon /> <%= if(@post.replies_count > 0,
+              do: @post.replies_count,
+              else: "Reply"
+            ) %>
+          </button>
+        </div>
+        """
+
+      _ ->
+        ~H"""
+
+        """
     end
+  end
+
+  attr :post, Oli.Resources.Collaboration.Post, required: true
+  attr :current_user, Oli.Accounts.User, required: true
+  attr :replies, :any, required: true
+  attr :disable_anonymous_option, :boolean, default: false
+
+  defp post_replies(assigns) do
+    ~H"""
+    <%= if !is_nil(@replies) && elem(@replies, 0) == @post.id do %>
+      <%= case @replies do %>
+        <% {_, :loading} -> %>
+          <Common.loading_spinner />
+        <% {_, []} -> %>
+          <.add_new_reply_input parent_post_id={@post.id} />
+        <% {_, replies} -> %>
+          <div class="flex flex-col gap-2 pl-4">
+            <%= for reply <- replies do %>
+              <.reply post={reply} current_user={@current_user} />
+            <% end %>
+          </div>
+          <.add_new_reply_input
+            parent_post_id={@post.id}
+            disable_anonymous_option={@disable_anonymous_option}
+          />
+        <% _ -> %>
+      <% end %>
+    <% end %>
+    """
+  end
+
+  attr :parent_post_id, :integer, required: true
+  attr :disable_anonymous_option, :boolean, default: false
+
+  defp add_new_reply_input(assigns) do
+    ~H"""
+    <div class="flex flex-row mt-2">
+      <form class="w-full" phx-submit="create_reply" phx-value-parent-post-id={@parent_post_id}>
+        <div class="flex-1 relative">
+          <textarea
+            id="reply_input"
+            name="content"
+            phx-hook="AutoSelect"
+            rows="1"
+            class="w-full min-h-[50px] border border-gray-400 dark:border-gray-700 dark:bg-black rounded-lg p-3 pr-12"
+            placeholder="Add a reply..."
+          />
+          <button class="absolute right-2 bottom-2.5 py-1 px-1.5 rounded-lg">
+            <.send_icon />
+          </button>
+        </div>
+        <%= unless @disable_anonymous_option do %>
+          <div class="flex flex-row justify-start my-2">
+            <.input type="checkbox" name="anonymous" value="false" label="Stay anonymous" />
+          </div>
+        <% end %>
+      </form>
+    </div>
+    """
+  end
+
+  defp send_icon(assigns) do
+    ~H"""
+    <svg width="34" height="34" viewBox="0 0 34 34" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <g>
+        <path
+          fill-rule="evenodd"
+          clip-rule="evenodd"
+          d="M32.1126 16.9704C32.1126 17.2865 31.966 17.5683 31.737 17.7516C31.6728 17.8029 31.6022 17.8465 31.5265 17.881L12.4545 27.0638C12.0851 27.2417 11.6445 27.176 11.343 26.8982C11.0415 26.6203 10.9402 26.1865 11.0873 25.8038L14.4848 16.9704L11.0873 8.13703C10.9402 7.75434 11.0415 7.32057 11.343 7.0427C11.6445 6.76484 12.0851 6.69917 12.4545 6.87705L31.5265 16.0598C31.6026 16.0945 31.6737 16.1385 31.7382 16.1903C31.7856 16.2283 31.8292 16.2704 31.8686 16.3158C32.0206 16.4912 32.1126 16.7201 32.1126 16.9704ZM26.7305 15.9704L13.8595 9.77328L16.243 15.9704H26.7305ZM16.243 17.9704L26.7305 17.9704L13.8595 24.1676L16.243 17.9704Z"
+          fill="#0064ED"
+        />
+      </g>
+    </svg>
+    """
+  end
+
+  attr :post, Oli.Resources.Collaboration.Post, required: true
+  attr :current_user, Oli.Accounts.User, required: true
+
+  defp reply(assigns) do
+    ~H"""
+    <div class="flex flex-col my-2 pl-4 border-l-2 border-gray-200 dark:border-gray-800">
+      <div class="flex flex-row justify-between mb-1">
+        <div class="font-semibold">
+          <%= post_creator(@post, @current_user) %>
+        </div>
+        <div class="text-sm text-gray-500">
+          <%= Timex.from_now(@post.inserted_at) %>
+        </div>
+      </div>
+      <p class="my-2">
+        <%= @post.content.message %>
+      </p>
+    </div>
+    """
   end
 
   attr :point_marker, :map, required: true
@@ -402,6 +525,21 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
             <%= @count %>
           </text>
       <% end %>
+    </svg>
+    """
+  end
+
+  def replies_bubble_icon(assigns) do
+    ~H"""
+    <svg width="23" height="23" viewBox="0 0 23 23" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <line x1="6.16821" y1="8.60156" x2="16.0243" y2="8.60156" stroke="#2D3648" stroke-width="1.5" />
+      <line x1="6.16821" y1="13.6055" x2="16.0243" y2="13.6055" stroke="#2D3648" stroke-width="1.5" />
+      <path
+        fill-rule="evenodd"
+        clip-rule="evenodd"
+        d="M11.7869 2.27309C7.1428 2.27309 3.37805 6.03784 3.37805 10.6819C3.37805 12.0261 3.69262 13.2936 4.25113 14.4177C4.38308 14.6833 4.4045 14.9903 4.31072 15.2717L2.8872 19.5421L7.20077 18.1512C7.47968 18.0613 7.78271 18.084 8.04505 18.2146C9.17069 18.775 10.4403 19.0907 11.7869 19.0907C16.4309 19.0907 20.1957 15.3259 20.1957 10.6819C20.1957 6.03784 16.4309 2.27309 11.7869 2.27309ZM1.13425 10.6819C1.13425 4.79863 5.90359 0.0292969 11.7869 0.0292969C17.6701 0.0292969 22.4395 4.79863 22.4395 10.6819C22.4395 16.5652 17.6701 21.3345 11.7869 21.3345C10.2515 21.3345 8.78951 21.009 7.46835 20.4225L1.46623 22.3579C1.06368 22.4877 0.622338 22.38 0.324734 22.0795C0.0271304 21.779 -0.0761506 21.3366 0.0576046 20.9353L2.04039 14.9871C1.45758 13.6695 1.13425 12.2121 1.13425 10.6819Z"
+        fill="#2D3648"
+      />
     </svg>
     """
   end
