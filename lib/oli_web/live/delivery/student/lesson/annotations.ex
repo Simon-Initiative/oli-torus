@@ -404,7 +404,10 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
         <% {_, :loading} -> %>
           <Common.loading_spinner />
         <% {_, []} -> %>
-          <.add_new_reply_input parent_post_id={@post.id} />
+          <.add_new_reply_input
+            parent_post_id={@post.id}
+            disable_anonymous_option={@disable_anonymous_option}
+          />
         <% {_, replies} -> %>
           <div class="flex flex-col gap-2 pl-4">
             <%= for reply <- replies do %>
