@@ -5,9 +5,14 @@ export const PointMarkers = {
   mounted() {
     const el = this.el as HTMLElement;
 
+    const pageHeaderOffset =
+      document.getElementById('page_header')?.getBoundingClientRect().height || 0;
+
     const UPDATE_DEBOUNCE_INTERVAL = 200;
     const updatePointMarkers = debounce(() => {
-      this.pushEvent('update_point_markers', { ['point_markers']: queryPointMarkers(el) });
+      this.pushEvent('update_point_markers', {
+        ['point_markers']: queryPointMarkers(el, pageHeaderOffset),
+      });
     }, UPDATE_DEBOUNCE_INTERVAL);
 
     // update the marker positions immediately when the page is mounted
@@ -46,14 +51,12 @@ export const PointMarkers = {
   },
 };
 
-function queryPointMarkers(el: HTMLElement) {
+function queryPointMarkers(el: HTMLElement, pageHeaderOffset: number) {
   const markerElements = el.querySelectorAll('[data-point-marker]');
-
-  const OFFSET_TOP = 110;
 
   return Array.from(markerElements).map((markerEl) => ({
     id: markerEl.getAttribute('data-point-marker'),
-    top: markerEl.getBoundingClientRect().top - el.getBoundingClientRect().top + OFFSET_TOP,
+    top: markerEl.getBoundingClientRect().top - el.getBoundingClientRect().top + pageHeaderOffset,
   }));
 }
 
