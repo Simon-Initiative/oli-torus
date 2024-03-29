@@ -7,7 +7,7 @@ defmodule Oli.Resources.Collaboration do
   alias Oli.Delivery.Sections.{Section, SectionResource, SectionsProjectsPublications}
   alias Oli.Resources
   alias Oli.Resources.{ResourceType, Revision}
-  alias Oli.Resources.Collaboration.{CollabSpaceConfig, Post, UserReadPost}
+  alias Oli.Resources.Collaboration.{CollabSpaceConfig, Post, UserReadPost, UserReactionPost}
   alias Oli.Repo
   alias Oli.Accounts.User
 
@@ -1104,10 +1104,10 @@ defmodule Oli.Resources.Collaboration do
 
   ## Examples
 
-      iex> list_posts_for_user_in_point_block(1, 1, 1, "1"))
+      iex> list_posts_for_user_in_point_block(1, 1, 1, :private, "1"))
       [%Post{status: :archived}, ...]
 
-      iex> list_posts_for_user_in_point_block(2, 2, 2, "2")
+      iex> list_posts_for_user_in_point_block(2, 2, 2, :private, "2")
       []
   """
   def list_posts_for_user_in_point_block(
@@ -1131,6 +1131,8 @@ defmodule Oli.Resources.Collaboration do
         on: replies.thread_root_id == post.id,
         left_join: read_replies in subquery(read_replies_subquery(user_id)),
         on: read_replies.thread_root_id == post.id,
+        left_join: reactions in assoc(post, :reactions),
+        left_join: user in assoc(post, :user),
         where:
           post.section_id == ^section_id and post.resource_id == ^resource_id and
             is_nil(post.parent_post_id) and is_nil(post.thread_root_id) and
@@ -1139,7 +1141,7 @@ defmodule Oli.Resources.Collaboration do
         where: ^filter_by_point_block_id,
         where: post.visibility == ^visibility,
         order_by: [desc: :inserted_at],
-        preload: [:user],
+        preload: [user: user, reactions: reactions],
         select: %{
           post
           | replies_count: coalesce(replies.count, 0),
@@ -1147,6 +1149,19 @@ defmodule Oli.Resources.Collaboration do
         }
       )
     )
+    |> count_reactions()
+  end
+
+  defp count_reactions(posts) do
+    Enum.map(posts, fn post ->
+      %{
+        post
+        | reaction_counts:
+            Enum.reduce(post.reactions, %{}, fn r, acc ->
+              Map.update(acc, r.reaction, 1, &(&1 + 1))
+            end)
+      }
+    end)
   end
 
   @doc """
@@ -1187,5 +1202,40 @@ defmodule Oli.Resources.Collaboration do
       )
     )
     |> build_metrics_for_reply_posts(user_id)
+  end
+
+  def toggle_reaction(post_id, user_id, reaction) do
+    case get_reaction(post_id, user_id, reaction) do
+      nil ->
+        case create_reaction(post_id, user_id, reaction) do
+          {:ok, _} ->
+            {:ok, 1}
+
+          error ->
+            error
+        end
+
+      reaction ->
+        case delete_reaction(reaction) do
+          {:ok, _} ->
+            {:ok, -1}
+
+          error ->
+            error
+        end
+    end
+  end
+
+  def get_reaction(post_id, user_id, reaction) do
+    Repo.get_by(UserReactionPost, post_id: post_id, user_id: user_id, reaction: reaction)
+  end
+
+  def create_reaction(post_id, user_id, reaction) do
+    %UserReactionPost{post_id: post_id, user_id: user_id, reaction: reaction}
+    |> Repo.insert()
+  end
+
+  def delete_reaction(%UserReactionPost{} = reaction) do
+    Repo.delete(reaction)
   end
 end

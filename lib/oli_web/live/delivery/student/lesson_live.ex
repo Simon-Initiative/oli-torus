@@ -328,6 +328,38 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     end
   end
 
+  def handle_event("toggle_reaction", %{"post-id" => post_id, "reaction" => reaction}, socket) do
+    %{current_user: current_user, annotations: %{posts: posts}} = socket.assigns
+
+    post_id = String.to_integer(post_id)
+    reaction = String.to_existing_atom(reaction)
+
+    case Collaboration.toggle_reaction(post_id, current_user.id, reaction) do
+      {:ok, change} ->
+        {:noreply,
+         assign_annotations(socket,
+           posts:
+             Enum.map(
+               posts,
+               fn post ->
+                 if post.id == post_id do
+                   %{
+                     post
+                     | reaction_counts:
+                         Map.update(post.reaction_counts, reaction, 1, &(&1 + change))
+                   }
+                 else
+                   post
+                 end
+               end
+             )
+         )}
+
+      {:error, _} ->
+        {:noreply, put_flash(socket, :error, "Failed to update reaction for post")}
+    end
+  end
+
   def handle_event("create_reply", %{"content" => ""}, socket) do
     {:noreply, put_flash(socket, :error, "Reply cannot be empty")}
   end
@@ -1038,7 +1070,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
 
     socket
     |> assign_annotations(
-      posts: [%Collaboration.Post{post | replies_count: 0} | posts],
+      posts: [%Collaboration.Post{post | replies_count: 0, reaction_counts: 0} | posts],
       post_counts: Map.update(post_counts, selected_point, 1, &(&1 + 1)),
       create_new_annotation: false
     )

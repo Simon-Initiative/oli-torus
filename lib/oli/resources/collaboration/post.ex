@@ -36,6 +36,10 @@ defmodule Oli.Resources.Collaboration.Post do
 
     field :anonymous, :boolean, default: false
 
+    has_many :reactions, Oli.Resources.Collaboration.UserReactionPost
+
+    field :reaction_counts, :map, virtual: true
+
     timestamps(type: :utc_datetime)
   end
 
