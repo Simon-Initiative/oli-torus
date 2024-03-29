@@ -1188,14 +1188,6 @@ defmodule Oli.Resources.Collaboration do
     Repo.all(
       from(
         post in Post,
-        join: sr in SectionResource,
-        on: sr.resource_id == post.resource_id and sr.section_id == post.section_id,
-        join: spp in SectionsProjectsPublications,
-        on: spp.section_id == post.section_id and spp.project_id == sr.project_id,
-        join: pr in PublishedResource,
-        on: pr.publication_id == spp.publication_id and pr.resource_id == post.resource_id,
-        join: rev in Revision,
-        on: rev.id == pr.revision_id,
         join: user in User,
         on: post.user_id == user.id,
         left_join: urp in UserReadPost,
