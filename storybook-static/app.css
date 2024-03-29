@@ -4066,6 +4066,14 @@ table.table-striped tbody tr:nth-child(even) {
   bottom: 0.25rem;
 }
 
+.bottom-2 {
+  bottom: 0.5rem;
+}
+
+.bottom-2\.5 {
+  bottom: 0.625rem;
+}
+
 .bottom-20 {
   bottom: 5rem;
 }
@@ -5087,6 +5095,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .min-h-\[300px\] {
   min-height: 300px;
+}
+
+.min-h-\[50px\] {
+  min-height: 50px;
 }
 
 .min-h-\[5rem\] {
@@ -6256,6 +6268,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .border-l-0 {
   border-left-width: 0px;
+}
+
+.border-l-2 {
+  border-left-width: 2px;
 }
 
 .border-l-4 {
@@ -7461,6 +7477,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .pr-1 {
   padding-right: 0.25rem;
+}
+
+.pr-12 {
+  padding-right: 3rem;
 }
 
 .pr-2 {
