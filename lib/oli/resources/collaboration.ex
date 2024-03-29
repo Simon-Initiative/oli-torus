@@ -1104,10 +1104,10 @@ defmodule Oli.Resources.Collaboration do
 
   ## Examples
 
-      iex> list_posts_for_user_in_point_block(1, 1, 1, "1"))
+      iex> list_posts_for_user_in_point_block(1, 1, 1, :private, "1"))
       [%Post{status: :archived}, ...]
 
-      iex> list_posts_for_user_in_point_block(2, 2, 2, "2")
+      iex> list_posts_for_user_in_point_block(2, 2, 2, :private, "2")
       []
   """
   def list_posts_for_user_in_point_block(
