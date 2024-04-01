@@ -1192,16 +1192,18 @@ defmodule Oli.Resources.Collaboration do
         on: post.user_id == user.id,
         left_join: urp in UserReadPost,
         on: urp.post_id == post.id and urp.user_id == ^user_id,
+        left_join: reactions in assoc(post, :reactions),
         where:
           post.parent_post_id == ^post_id and
             (post.status in [:approved, :archived] or
                (post.status == :submitted and post.user_id == ^user_id)),
         order_by: [asc: :updated_at],
-        preload: [user: user],
+        preload: [user: user, reactions: reactions],
         select: post
       )
     )
     |> build_metrics_for_reply_posts(user_id)
+    |> count_reactions()
   end
 
   def toggle_reaction(post_id, user_id, reaction) do

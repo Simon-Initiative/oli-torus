@@ -310,7 +310,11 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
       <p class="my-2">
         <%= @post.content.message %>
       </p>
-      <.post_actions post={@post} />
+      <.post_actions
+        post={@post}
+        on_toggle_reaction="toggle_reaction"
+        on_toggle_replies="toggle_post_replies"
+      />
       <.post_replies
         post={@post}
         replies={@post_replies}
@@ -346,6 +350,8 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
   end
 
   attr :post, Oli.Resources.Collaboration.Post, required: true
+  attr :on_toggle_reaction, :string, default: nil
+  attr :on_toggle_replies, :string, default: nil
 
   defp post_actions(assigns) do
     case assigns.post do
@@ -360,8 +366,9 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
         ~H"""
         <div class="flex flex-row gap-3 my-2">
           <button
+            :if={@on_toggle_reaction}
             class="inline-flex gap-1 text-sm text-gray-500 bold py-1 px-2 rounded-lg hover:bg-gray-100"
-            phx-click="toggle_reaction"
+            phx-click={@on_toggle_reaction}
             phx-value-reaction={:like}
             phx-value-post-id={assigns.post.id}
           >
@@ -373,8 +380,9 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
             <% end %>
           </button>
           <button
+            :if={@on_toggle_replies}
             class="inline-flex gap-1 text-sm text-gray-500 bold py-1 px-2 rounded-lg hover:bg-gray-100"
-            phx-click="toggle_post_replies"
+            phx-click={@on_toggle_replies}
             phx-value-post-id={assigns.post.id}
           >
             <.replies_bubble_icon />
@@ -486,6 +494,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
       <p class="my-2">
         <%= @post.content.message %>
       </p>
+      <.post_actions post={@post} on_toggle_reaction="toggle_reply_reaction" />
     </div>
     """
   end

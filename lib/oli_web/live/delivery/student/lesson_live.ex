@@ -360,6 +360,44 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     end
   end
 
+  def handle_event(
+        "toggle_reply_reaction",
+        %{"post-id" => post_id, "reaction" => reaction},
+        socket
+      ) do
+    %{current_user: current_user, annotations: %{post_replies: {parent_post_id, post_replies}}} =
+      socket.assigns
+
+    post_id = String.to_integer(post_id)
+    reaction = String.to_existing_atom(reaction)
+
+    case Collaboration.toggle_reaction(post_id, current_user.id, reaction) do
+      {:ok, change} ->
+        {:noreply,
+         assign_annotations(socket,
+           post_replies:
+             {parent_post_id,
+              Enum.map(
+                post_replies,
+                fn post ->
+                  if post.id == post_id do
+                    %{
+                      post
+                      | reaction_counts:
+                          Map.update(post.reaction_counts, reaction, 1, &(&1 + change))
+                    }
+                  else
+                    post
+                  end
+                end
+              )}
+         )}
+
+      {:error, _} ->
+        {:noreply, put_flash(socket, :error, "Failed to update reaction for post")}
+    end
+  end
+
   def handle_event("create_reply", %{"content" => ""}, socket) do
     {:noreply, put_flash(socket, :error, "Reply cannot be empty")}
   end
