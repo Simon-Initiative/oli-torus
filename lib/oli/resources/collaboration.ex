@@ -1149,16 +1149,28 @@ defmodule Oli.Resources.Collaboration do
         }
       )
     )
-    |> count_reactions()
+    |> summarize_reactions(user_id)
   end
 
-  defp count_reactions(posts) do
+  defp summarize_reactions(posts, current_user_id) do
     Enum.map(posts, fn post ->
       %{
         post
-        | reaction_counts:
+        | reaction_summaries:
             Enum.reduce(post.reactions, %{}, fn r, acc ->
-              Map.update(acc, r.reaction, 1, &(&1 + 1))
+              reacted_by_current_user = r.user_id == current_user_id
+
+              Map.update(
+                acc,
+                r.reaction,
+                %{count: 1, reacted: reacted_by_current_user},
+                fn %{
+                     count: count,
+                     reacted: reacted
+                   } ->
+                  %{count: count + 1, reacted: reacted_by_current_user || reacted}
+                end
+              )
             end)
       }
     end)
@@ -1203,7 +1215,7 @@ defmodule Oli.Resources.Collaboration do
       )
     )
     |> build_metrics_for_reply_posts(user_id)
-    |> count_reactions()
+    |> summarize_reactions(user_id)
   end
 
   def toggle_reaction(post_id, user_id, reaction) do

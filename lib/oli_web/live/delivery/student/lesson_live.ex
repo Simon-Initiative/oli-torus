@@ -345,8 +345,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
                  if post.id == post_id do
                    %{
                      post
-                     | reaction_counts:
-                         Map.update(post.reaction_counts, reaction, 1, &(&1 + change))
+                     | reaction_summaries: update_reaction_summaries(post, reaction, change)
                    }
                  else
                    post
@@ -383,8 +382,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
                   if post.id == post_id do
                     %{
                       post
-                      | reaction_counts:
-                          Map.update(post.reaction_counts, reaction, 1, &(&1 + change))
+                      | reaction_summaries: update_reaction_summaries(post, reaction, change)
                     }
                   else
                     post
@@ -1108,7 +1106,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
 
     socket
     |> assign_annotations(
-      posts: [%Collaboration.Post{post | replies_count: 0, reaction_counts: 0} | posts],
+      posts: [%Collaboration.Post{post | replies_count: 0, reaction_summaries: %{}} | posts],
       post_counts: Map.update(post_counts, selected_point, 1, &(&1 + 1)),
       create_new_annotation: false
     )
@@ -1128,6 +1126,18 @@ defmodule OliWeb.Delivery.Student.LessonLive do
           end
         end),
       post_replies: {parent_post_id, post_replies ++ [reply_post]}
+    )
+  end
+
+  def update_reaction_summaries(post, reaction, change) do
+    Map.update(
+      post.reaction_summaries,
+      reaction,
+      %{count: 1, reacted: true},
+      &%{
+        count: &1.count + change,
+        reacted: if(change > 0, do: true, else: false)
+      }
     )
   end
 

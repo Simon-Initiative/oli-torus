@@ -38,7 +38,7 @@ defmodule Oli.Resources.Collaboration.Post do
 
     has_many :reactions, Oli.Resources.Collaboration.UserReactionPost
 
-    field :reaction_counts, :map, virtual: true
+    field :reaction_summaries, :map, virtual: true
 
     timestamps(type: :utc_datetime)
   end
