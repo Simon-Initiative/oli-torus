@@ -37,6 +37,7 @@ export const ActivityEditor = ({
         onRemove={onRemove}
       >
         <InlineActivityEditor
+          variables={activity.variables}
           model={activity.model}
           activitySlug={activity.activitySlug}
           typeSlug={activity.typeSlug}

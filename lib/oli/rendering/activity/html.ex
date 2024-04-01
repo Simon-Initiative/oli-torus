@@ -56,7 +56,8 @@ defmodule Oli.Rendering.Activity.Html do
          %ActivitySummary{
            authoring_element: authoring_element,
            delivery_element: delivery_element,
-           model: model
+           model: model,
+           variables: variables
          } = summary,
          %{"activity_id" => activity_id}
        ) do
@@ -79,8 +80,15 @@ defmodule Oli.Rendering.Activity.Html do
         {:ok, bib_params_json} = Jason.encode(bib_params)
         activity_html_id = get_activity_html_id(activity_id, model_json)
 
+        activity_context =
+          %{
+            variables: variables
+          }
+          |> Poison.encode!()
+          |> HtmlEntities.encode()
+
         [
-          ~s|<#{tag} section_slug=\"#{section_slug}\" activity_id=\"#{activity_html_id}\" model="#{model_json}" activityId="#{activity_id}" editmode="false" projectSlug="#{section_slug}" bib_params="#{Base.encode64(bib_params_json)}"></#{tag}>\n|
+          ~s|<#{tag} authoringcontext="#{activity_context}" section_slug=\"#{section_slug}\" activity_id=\"#{activity_html_id}\" model="#{model_json}" activityId="#{activity_id}" editmode="false" projectSlug="#{section_slug}" bib_params="#{Base.encode64(bib_params_json)}"></#{tag}>\n|
         ]
 
       :review ->
@@ -150,11 +158,13 @@ defmodule Oli.Rendering.Activity.Html do
            group_id: group_id,
            survey_id: survey_id,
            learning_language: learning_language,
-           effective_settings: effective_settings
+           effective_settings: effective_settings,
+           render_opts: render_opts
          } = context,
          %ActivitySummary{
            state: state,
-           graded: graded
+           graded: graded,
+           variables: variables
          },
          bib_params,
          model_json
@@ -181,7 +191,10 @@ defmodule Oli.Rendering.Activity.Html do
             "{}"
           else
             resource_attempt.state
-          end
+          end,
+        renderPointMarkers: render_opts.render_point_markers,
+        isAnnotationLevel: true,
+        variables: variables
       }
       |> Poison.encode!()
       |> HtmlEntities.encode()

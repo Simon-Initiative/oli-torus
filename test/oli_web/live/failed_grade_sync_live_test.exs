@@ -211,7 +211,7 @@ defmodule OliWeb.FailedGradeSyncLiveTest do
                |> render_click(%{"resource-id" => -1, "user-id" => user_id})
 
                assert view
-                      |> element("div.alert.alert-danger")
+                      |> element("div#flash")
                       |> render() =~
                         "Couldn&#39;t retry grade sync."
              end) =~

@@ -1,6 +1,7 @@
 defmodule OliWeb.PublishLiveTest do
   use ExUnit.Case, async: true
   use OliWeb.ConnCase
+  use Oban.Testing, repo: Oli.Repo
 
   import Oli.Factory
   import Phoenix.LiveViewTest
@@ -18,53 +19,75 @@ defmodule OliWeb.PublishLiveTest do
     author = insert(:author)
     project = insert(:project, authors: [author])
 
-    page_resource = insert(:resource)
+    objective_1_revision =
+      insert(:revision,
+        resource_type_id: ResourceType.get_id_by_type("objective"),
+        title: "Objective 1"
+      )
 
     page_revision =
       insert(:revision,
-        resource: page_resource,
         resource_type_id: ResourceType.id_for_page(),
         content: %{"model" => []},
+        objectives: %{
+          "1" => [
+            objective_1_revision.resource_id
+          ]
+        },
         title: "revision A"
       )
 
-    insert(:project_resource, %{project_id: project.id, resource_id: page_resource.id})
-
-    container_resource = insert(:resource)
+    page_2_revision =
+      insert(:revision,
+        resource_type_id: ResourceType.id_for_page(),
+        content: %{"model" => []},
+        title: "revision B"
+      )
 
     container_revision =
       insert(:revision, %{
-        resource: container_resource,
         resource_type_id: ResourceType.id_for_container(),
-        children: [page_resource.id],
+        children: [page_revision.resource_id, page_2_revision.resource_id],
         content: %{},
         deleted: false,
         slug: "root_container",
         title: "Root Container"
       })
 
-    insert(:project_resource, %{project_id: project.id, resource_id: container_resource.id})
+    all_revisions =
+      [
+        objective_1_revision,
+        page_revision,
+        page_2_revision,
+        container_revision
+      ]
 
+    # asociate resources to project
+    Enum.each(all_revisions, fn revision ->
+      insert(:project_resource, %{
+        project_id: project.id,
+        resource_id: revision.resource_id
+      })
+    end)
+
+    # publish project
     publication =
       insert(:publication, %{
         project: project,
-        root_resource_id: container_resource.id,
-        published: nil
+        root_resource_id: container_revision.resource_id,
+        published: nil,
+        ids_added: true
       })
 
-    insert(:published_resource, %{
-      publication: publication,
-      resource: container_resource,
-      revision: container_revision,
-      author: author
-    })
-
-    insert(:published_resource, %{
-      publication: publication,
-      resource: page_resource,
-      revision: page_revision,
-      author: author
-    })
+    # publish resources
+    Enum.each(all_revisions, fn revision ->
+      insert(:published_resource, %{
+        publication: publication,
+        resource: revision.resource,
+        revision: revision,
+        author: author
+      })
+    end)
 
     section1 =
       insert(:section,
@@ -95,6 +118,7 @@ defmodule OliWeb.PublishLiveTest do
       project: project,
       publication: publication,
       page_revision: page_revision,
+      page_2_revision: page_2_revision,
       section1: section1,
       section2: section2,
       author: author,
@@ -226,9 +250,7 @@ defmodule OliWeb.PublishLiveTest do
 
     test "shows publication details", %{
       conn: conn,
-      project: project,
-      page_revision: page_revision,
-      container_revision: container_revision
+      project: project
     } do
       insert(:publication, project: project, published: yesterday())
       {:ok, view, _html} = live(conn, live_view_publish_route(project.slug))
@@ -237,11 +259,11 @@ defmodule OliWeb.PublishLiveTest do
 
       assert view
              |> element(".publish_changes_table tr:first-child > td:first-child")
-             |> render() =~ container_revision.title
+             |> render() =~ "Objective 1"
 
       assert view
              |> element(".publish_changes_table tr:last-child > td:first-child")
-             |> render() =~ page_revision.title
+             |> render() =~ "revision B"
 
       assert view
              |> element(
@@ -257,7 +279,7 @@ defmodule OliWeb.PublishLiveTest do
 
       assert view
              |> element(".publish_changes_table tr:first-child > td:nth-child(3)")
-             |> render() =~ "Major"
+             |> render() =~ "Minor"
 
       assert view
              |> element(".publish_changes_table tr:last-child > td:nth-child(3)")
@@ -266,20 +288,18 @@ defmodule OliWeb.PublishLiveTest do
 
     test "applies sorting to publication details table", %{
       conn: conn,
-      project: project,
-      page_revision: page_revision,
-      container_revision: container_revision
+      project: project
     } do
       insert(:publication, project: project, published: yesterday())
       {:ok, view, _html} = live(conn, live_view_publish_route(project.slug))
 
       assert view
              |> element(".publish_changes_table tr:first-child > td:first-child")
-             |> render() =~ container_revision.title
+             |> render() =~ "Objective 1"
 
       assert view
              |> element(".publish_changes_table tr:last-child > td:first-child")
-             |> render() =~ page_revision.title
+             |> render() =~ "revision B"
 
       view
       |> element(".publish_changes_table th[phx-value-sort_by=\"title\"]", "Title")
@@ -287,11 +307,11 @@ defmodule OliWeb.PublishLiveTest do
 
       assert view
              |> element(".publish_changes_table tr:first-child > td:first-child")
-             |> render() =~ page_revision.title
+             |> render() =~ "revision B"
 
       assert view
              |> element(".publish_changes_table tr:last-child > td:first-child")
-             |> render() =~ container_revision.title
+             |> render() =~ "Objective 1"
     end
 
     test "applies paging to publication details table", %{
@@ -331,7 +351,7 @@ defmodule OliWeb.PublishLiveTest do
 
       assert view
              |> element(".publish_changes_table tr:first-child > td:first-child")
-             |> render() =~ container_revision.title
+             |> render() =~ "Objective 1"
 
       refute view
              |> element(".publish_changes_table tr:last-child > td:first-child")
@@ -615,6 +635,74 @@ defmodule OliWeb.PublishLiveTest do
 
       flash = assert_redirected(view, live_view_publish_route(project.slug))
       assert flash["info"] == "Publish Successful!"
+    end
+
+    test "enques an embedding Oban job for each PAGE revision when publishing if the calculate_embeddings_on_publish attribute is enabled",
+         %{
+           conn: conn,
+           project: project,
+           publication: publication,
+           page_revision: page_revision,
+           page_2_revision: page_2_revision
+         } do
+      Oli.Authoring.Course.update_project(project, %{
+        attributes: %{calculate_embeddings_on_publish: true}
+      })
+
+      {:ok, view, _html} = live(conn, live_view_publish_route(project.slug))
+
+      view
+      |> element("form[phx-submit=\"publish_active\"")
+      |> render_submit(%{description: "New description"})
+
+      # Two jobs are enqueued (only page revisions are considered, the objective revision is ignored)
+      assert_enqueued(
+        worker: Oli.Search.EmbeddingWorker,
+        args: %{"publication_id" => publication.id, "revision_id" => page_revision.id}
+      )
+
+      assert_enqueued(
+        worker: Oli.Search.EmbeddingWorker,
+        args: %{"publication_id" => publication.id, "revision_id" => page_2_revision.id}
+      )
+
+      enqueued_jobs = all_enqueued(worker: Oli.Search.EmbeddingWorker)
+
+      assert length(enqueued_jobs) == 2
+    end
+
+    test "does NOT calculates the embeddings if calculate_embeddings_on_publish attribute is disabled",
+         %{
+           conn: conn,
+           project: project,
+           publication: publication,
+           page_revision: page_revision,
+           page_2_revision: page_2_revision
+         } do
+      Oli.Authoring.Course.update_project(project, %{
+        attributes: %{calculate_embeddings_on_publish: false}
+      })
+
+      {:ok, view, _html} = live(conn, live_view_publish_route(project.slug))
+
+      view
+      |> element("form[phx-submit=\"publish_active\"")
+      |> render_submit(%{description: "New description"})
+
+      # No jobs are enqueued
+      refute_enqueued(
+        worker: Oli.Search.EmbeddingWorker,
+        args: %{"publication_id" => publication.id, "revision_id" => page_revision.id}
+      )
+
+      refute_enqueued(
+        worker: Oli.Search.EmbeddingWorker,
+        args: %{"publication_id" => publication.id, "revision_id" => page_2_revision.id}
+      )
+
+      enqueued_jobs = all_enqueued(worker: Oli.Search.EmbeddingWorker)
+
+      assert length(enqueued_jobs) == 0
     end
   end
 end

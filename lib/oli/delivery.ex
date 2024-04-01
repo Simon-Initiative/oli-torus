@@ -160,6 +160,7 @@ defmodule Oli.Delivery do
       {:ok, _} = Sections.rebuild_contained_objectives(section)
 
       enroll(user.id, section.id, lti_params)
+
       {:ok, updated_section} = maybe_update_section_contains_explorations(section)
 
       updated_section

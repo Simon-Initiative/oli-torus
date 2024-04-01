@@ -521,7 +521,7 @@ defmodule OliWeb.Delivery.StudentDashboard.CourseContentLiveTest do
       section: section
     } do
       {:ok, view, _html} = isolated_live_view_course_content(conn, section.slug, user.id)
-      redirect_to = ~p"/sections/#{section.slug}/overview"
+      redirect_to = ~p"/sections/#{section.slug}"
       new_timezone = "America/Montevideo"
 
       conn =

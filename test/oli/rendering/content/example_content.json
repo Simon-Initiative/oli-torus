@@ -426,7 +426,11 @@
     },
     {
       "type": "callout",
-      "children": [{ "text": "a richtext callout" }]
+      "children": [
+        {
+          "text": "a richtext callout"
+        }
+      ]
     },
     {
       "type": "formula",
@@ -436,17 +440,29 @@
     {
       "type": "formula",
       "subtype": "latex",
-      "src": "x^2 + y^2 = z^2"
+      "src": "x^2 + y^2 = z^2",
+      "id": 169365460
     },
     {
       "type": "conjugation",
       "title": "My Term",
       "verb": "El Verbo",
-      "children": [{ "text": "" }],
+      "children": [
+        {
+          "text": ""
+        }
+      ],
       "pronunciation": {
         "type": "pronunciation",
         "children": [
-          { "type": "p", "children": [{ "text": "my pronunciation" }] }
+          {
+            "type": "p",
+            "children": [
+              {
+                "text": "my pronunciation"
+              }
+            ]
+          }
         ]
       },
       "table": {
@@ -455,19 +471,48 @@
           {
             "type": "tr",
             "children": [
-              { "type": "th", "children": [{ "text": "form" }] },
-              { "type": "th", "children": [{ "text": "meaning" }] }
+              {
+                "type": "th",
+                "children": [
+                  {
+                    "text": "form"
+                  }
+                ]
+              },
+              {
+                "type": "th",
+                "children": [
+                  {
+                    "text": "meaning"
+                  }
+                ]
+              }
             ]
           },
           {
             "type": "tr",
             "children": [
-              { "type": "td", "children": [{ "text": "my form" }] },
-              { "type": "td", "children": [{ "text": "my meaning" }] }
+              {
+                "type": "td",
+                "children": [
+                  {
+                    "text": "my form"
+                  }
+                ]
+              },
+              {
+                "type": "td",
+                "children": [
+                  {
+                    "text": "my meaning"
+                  }
+                ]
+              }
             ]
           }
         ]
-      }
+      },
+      "id": 169365461
     },
     {
       "type": "dialog",
@@ -490,7 +535,11 @@
           "children": [
             {
               "type": "p",
-              "children": [{ "text": "Hello Speaker 2" }]
+              "children": [
+                {
+                  "text": "Hello Speaker 2"
+                }
+              ]
             }
           ]
         },
@@ -499,7 +548,11 @@
           "children": [
             {
               "type": "p",
-              "children": [{ "text": "Hello Speaker 1" }]
+              "children": [
+                {
+                  "text": "Hello Speaker 1"
+                }
+              ]
             }
           ]
         },
@@ -508,24 +561,51 @@
           "children": [
             {
               "type": "p",
-              "children": [{ "text": "This speaker does not exist." }]
+              "children": [
+                {
+                  "text": "This speaker does not exist."
+                }
+              ]
             }
           ]
         }
-      ]
+      ],
+      "id": 169365462
     },
     {
       "type": "figure",
-      "title": [{ "type": "p", "children": [{ "text": "Figure Title" }] }],
-      "children": [{ "type": "p", "children": [{ "text": "Figure Content" }] }]
+      "title": [
+        {
+          "type": "p",
+          "children": [
+            {
+              "text": "Figure Title"
+            }
+          ]
+        }
+      ],
+      "children": [
+        {
+          "type": "p",
+          "children": [
+            {
+              "text": "Figure Content"
+            }
+          ]
+        }
+      ],
+      "id": 169365463
     },
-
     {
       "type": "p",
       "children": [
         {
           "type": "callout_inline",
-          "children": [{ "text": "a richtext inline callout" }]
+          "children": [
+            {
+              "text": "a richtext inline callout"
+            }
+          ]
         },
         {
           "type": "formula_inline",
@@ -549,7 +629,8 @@
           "target": "3603298117",
           "type": "command_button"
         }
-      ]
+      ],
+      "id": 169365464
     }
   ]
 }

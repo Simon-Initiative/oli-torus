@@ -1,6 +1,6 @@
 .vscode
 lib/oli/analytics/test.xml
-Mnesia.nonode@nohost
+Mnesia.*
 
 # IDEA
 *.iml
@@ -92,6 +92,9 @@ yarn-error.log
 /assets/storybook-static
 /assets/.storybook/temp
 _digests
+_imports
 # the directory for AWS S3 uploads (for dev)
 /data
 logfile
+MnesiaCore.nonode@nohost_1698_943806_800396
+.envrc

@@ -6,12 +6,13 @@ defmodule OliWeb.Sections.OverviewView do
   alias OliWeb.Common.{Breadcrumb, DeleteModalNoConfirmation}
   alias OliWeb.Common.Properties.{Groups, Group, ReadOnly}
   alias Oli.Delivery.Sections
-  alias Oli.Delivery.Sections.EnrollmentBrowseOptions
+  alias Oli.Delivery.Sections.{Section, EnrollmentBrowseOptions}
   alias OliWeb.Router.Helpers, as: Routes
   alias OliWeb.Sections.{Instructors, Mount, UnlinkSection}
   alias Oli.Publishing.DeliveryResolver
   alias Oli.Resources.Collaboration
   alias OliWeb.Projects.RequiredSurvey
+  alias OliWeb.Common.MonacoEditor
   alias Oli.Repo
 
   def set_breadcrumbs(:admin, section) do
@@ -27,7 +28,7 @@ defmodule OliWeb.Sections.OverviewView do
     previous ++
       [
         Breadcrumb.new(%{
-          full_title: "Manage Section",
+          full_title: section.title,
           link:
             Routes.live_path(
               OliWeb.Endpoint,
@@ -75,6 +76,7 @@ defmodule OliWeb.Sections.OverviewView do
 
         {:ok,
          assign(socket,
+           page_prompt_template: section.page_prompt_template,
            is_system_admin: type == :admin,
            is_lms_or_system_admin: Mount.is_lms_or_system_admin?(user, section),
            breadcrumbs: set_breadcrumbs(type, section),
@@ -125,11 +127,7 @@ defmodule OliWeb.Sections.OverviewView do
         <ReadOnly.render label="Course Section ID" value={@section.slug} />
         <ReadOnly.render label="Title" value={@section.title} />
         <ReadOnly.render label="Course Section Type" value={type_to_string(@section)} />
-        <ReadOnly.render
-          label="URL"
-          show_copy_btn={true}
-          value={Routes.page_delivery_url(OliWeb.Endpoint, :index, @section.slug)}
-        />
+        <ReadOnly.render label="URL" show_copy_btn={true} value={url(~p"/sections/#{@section.slug}")} />
         <%= unless is_nil(@deployment) do %>
           <ReadOnly.render
             label="Institution"
@@ -167,11 +165,7 @@ defmodule OliWeb.Sections.OverviewView do
       <Group.render label="Curriculum" description="Manage content delivered to students">
         <ul class="link-list">
           <li>
-            <a
-              target="_blank"
-              href={Routes.page_delivery_path(OliWeb.Endpoint, :index_preview, @section.slug)}
-              class="btn btn-link"
-            >
+            <a target="_blank" href={~p"/sections/#{@section.slug}/preview"} class="btn btn-link">
               <span>Preview Course as Instructor</span>
               <i class="fas fa-external-link-alt self-center ml-1" />
             </a>
@@ -405,10 +399,82 @@ defmodule OliWeb.Sections.OverviewView do
       </Group.render>
 
       <%= if @is_lms_or_system_admin and !@section.open_and_free do %>
-        <Group.render label="LMS Admin" description="Administrator LMS Connection" is_last={true}>
+        <Group.render
+          label="LMS Admin"
+          description="Administrator LMS Connection"
+          is_last={!@is_system_admin}
+        >
           <UnlinkSection.render unlink="unlink" section={@section} />
         </Group.render>
       <% end %>
+
+      <div :if={@is_system_admin} class="border-t dark:border-gray-700">
+        <Group.render
+          label="AI Assistant"
+          description="View and manage the AI Assistant details"
+          is_last={true}
+        >
+          <div :if={Sections.assistant_enabled?(@section)}>
+            <section class="flex flex-col space-y-4">
+              <ul class="link-list">
+                <li>
+                  <a
+                    href={~p"/sections/#{@section.slug}/assistant/conversations"}
+                    class="btn btn-link"
+                  >
+                    Browse Student Conversations
+                  </a>
+                </li>
+              </ul>
+            </section>
+
+            <section class="flex flex-col space-y-4 mt-8 pt-6 border-t border-gray-200">
+              <h5>Prompt Templates</h5>
+
+              <MonacoEditor.render
+                id="attribute-monaco-editor"
+                height="200px"
+                language="text"
+                on_change="monaco_editor_on_change"
+                set_options="monaco_editor_set_options"
+                set_value="monaco_editor_set_value"
+                get_value="monaco_editor_get_value"
+                validate_schema_uri=""
+                default_value={
+                  if is_nil(@section.page_prompt_template) do
+                    ""
+                  else
+                    @section.page_prompt_template
+                  end
+                }
+                default_options={
+                  %{
+                    "readOnly" => false,
+                    "selectOnLineNumbers" => true,
+                    "minimap" => %{"enabled" => false},
+                    "scrollBeyondLastLine" => false,
+                    "tabSize" => 2
+                  }
+                }
+                use_code_lenses={[]}
+              />
+
+              <div>
+                <button
+                  type="button"
+                  class="btn btn-primary action-button mt-4"
+                  phx-click="save_prompt"
+                >
+                  Save
+                </button>
+              </div>
+            </section>
+          </div>
+          <div class="my-2">
+            <.assistant_toggle_button section={@section} />
+          </div>
+        </Group.render>
+      </div>
     </Groups.render>
     """
   end
@@ -418,6 +484,24 @@ defmodule OliWeb.Sections.OverviewView do
       true -> "Direct Delivery"
       _ -> "LTI"
     end
+  end
+
+  def handle_event("monaco_editor_on_change", value, socket) do
+    {:noreply, assign(socket, page_prompt_template: value)}
+  end
+
+  def handle_event("save_prompt", _, socket) do
+    section = socket.assigns.section
+
+    Oli.Delivery.Sections.update_section(section, %{
+      page_prompt_template: socket.assigns.page_prompt_template
+    })
+
+    socket =
+      socket
+      |> put_flash(:info, "Prompt successfully saved")
+
+    {:noreply, socket}
   end
 
   def handle_event("unlink", _, socket) do
@@ -510,5 +594,35 @@ defmodule OliWeb.Sections.OverviewView do
       end
 
     {:noreply, socket |> hide_modal(modal_assigns: nil, section_has_student_data: nil)}
+  end
+
+  def handle_event("toggle_assistant", _, socket) do
+    section = socket.assigns.section
+    assistant_enabled = section.assistant_enabled
+
+    {:ok, section} =
+      Oli.Delivery.Sections.update_section(section, %{assistant_enabled: !assistant_enabled})
+
+    socket =
+      socket
+      |> put_flash(:info, "Assistant settings updated successfully")
+
+    {:noreply, assign(socket, section: section)}
+  end
+
+  attr :section, Section
+
+  def assistant_toggle_button(assigns) do
+    ~H"""
+    <%= if Sections.assistant_enabled?(@section) do %>
+      <.button variant={:warning} phx-click="toggle_assistant">
+        Disable Assistant
+      </.button>
+    <% else %>
+      <.button variant={:primary} phx-click="toggle_assistant">
+        Enable Assistant
+      </.button>
+    <% end %>
+    """
   end
 end

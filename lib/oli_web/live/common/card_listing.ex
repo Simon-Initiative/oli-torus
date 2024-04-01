@@ -12,8 +12,8 @@ defmodule OliWeb.Common.CardListing do
 
   def render(assigns) do
     ~H"""
-    <div class="select-sources">
-      <div class="card-deck mr-0 ml-0 inline-flex flex-wrap">
+    <div class="select-sources flex justify-center">
+      <div class="card-deck mr-0 ml-0 inline-flex flex-wrap justify-center">
         <%= for item <- @model.rows do %>
           <a
             phx-click={@selected}

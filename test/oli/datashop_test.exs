@@ -440,7 +440,7 @@ defmodule Oli.DatashopTest do
           :sa1
         )
 
-      Publishing.publish_project(map.project, "some changes")
+      Publishing.publish_project(map.project, "some changes", map.author.id)
 
       page1_attrs = %{
         title: "page1",
@@ -830,7 +830,7 @@ defmodule Oli.DatashopTest do
       datashop_file: datashop_file
     } do
       regex =
-        ~r/<context_message name="START_PROBLEM" context_message_id="(.*)".*<\/context_message>.*<tool_message context_message_id="\1">.*<\/tool_message>.*<tutor_message context_message_id="\1">.*<\/tutor_message>/s
+        ~r/<context_message name="START_PROBLEM" context_message_id="(.*)".*<tool_message context_message_id="\1">.*<tutor_message context_message_id="\1">/s
 
       assert String.match?(datashop_file, regex)
     end
@@ -872,7 +872,7 @@ defmodule Oli.DatashopTest do
         Enum.count(Oli.Delivery.Attempts.Core.get_part_attempts_and_users(project.id))
 
       # Making a new publication should not "reset" data
-      {:ok, pub2} = Publishing.publish_project(project, "some changes")
+      {:ok, pub2} = Publishing.publish_project(project, "some changes", map.author.id)
       count_after = Enum.count(Oli.Delivery.Attempts.Core.get_part_attempts_and_users(project.id))
 
       assert count_before == count_after

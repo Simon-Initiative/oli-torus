@@ -375,6 +375,165 @@ defmodule OliWeb.Curriculum.ContainerLiveTest do
     end
   end
 
+  describe "options modal" do
+    setup [:create_project, :admin_conn]
+
+    test "can be opened for a page", %{
+      conn: conn,
+      project: project,
+      page_2: page_2
+    } do
+      {:ok, view, _html} =
+        live(conn, ~p"/authoring/project/#{project.slug}/curriculum")
+
+      refute view
+             |> has_element?(
+               ~s{div[id='options_modal-container'] h1[id="options_modal-title"]},
+               "Page Options"
+             )
+
+      view
+      |> element(
+        ~s{button[role="show_options_modal"][phx-value-slug="#{page_2.slug}"]},
+        "Options"
+      )
+      |> render_click()
+
+      assert view
+             |> has_element?(
+               ~s{div[id='options_modal-container'] h1[id="options_modal-title"]},
+               "Page Options"
+             )
+    end
+
+    test "can be opened for a container", %{
+      conn: conn,
+      project: project,
+      unit: unit
+    } do
+      {:ok, view, _html} =
+        live(conn, ~p"/authoring/project/#{project.slug}/curriculum")
+
+      refute view
+             |> has_element?(
+               ~s{div[id='options_modal-container'] h1[id="options_modal-title"]},
+               "Container Options"
+             )
+
+      view
+      |> element(
+        ~s{button[role="show_options_modal"][phx-value-slug="#{unit.slug}"]},
+        "Options"
+      )
+      |> render_click()
+
+      assert view
+             |> has_element?(
+               ~s{div[id='options_modal-container'] h1[id="options_modal-title"]},
+               "Container Options"
+             )
+    end
+
+    test "updates a revision data when a `save-options` event is handled after submitting the options modal",
+         %{
+           conn: conn,
+           project: project,
+           page_2: page_2
+         } do
+      {:ok, view, _html} =
+        live(conn, ~p"/authoring/project/#{project.slug}/curriculum")
+
+      assert has_element?(view, "span", "Page 2")
+
+      assert %Oli.Resources.Revision{
+               retake_mode: :normal,
+               duration_minutes: nil,
+               graded: false,
+               max_attempts: 0,
+               purpose: :foundation,
+               scoring_strategy_id: 1,
+               explanation_strategy: nil
+             } =
+               _initial_revision =
+               Oli.Publishing.AuthoringResolver.from_revision_slug(
+                 project.slug,
+                 page_2.slug
+               )
+
+      view
+      |> element(
+        ~s{button[role="show_options_modal"][phx-value-slug="#{page_2.slug}"]},
+        "Options"
+      )
+      |> render_click()
+
+      view
+      |> render_hook("save-options", %{
+        "revision" => %{
+          "duration_minutes" => "5",
+          "explanation_strategy" => %{"type" => "after_max_resource_attempts_exhausted"},
+          "graded" => "true",
+          "max_attempts" => "10",
+          "poster_image" => "some_poster_image_url",
+          "purpose" => "application",
+          "retake_mode" => "targeted",
+          "scoring_strategy_id" => "2",
+          "title" => "New Title!!",
+          "intro_content" =>
+            Jason.encode!(%{
+              "type" => "p",
+              "children" => [
+                %{
+                  "id" => "3477687079",
+                  "type" => "p",
+                  "children" => [%{"text" => "Some new intro content text!"}]
+                }
+              ]
+            })
+        }
+      })
+
+      {path, flash} = assert_redirect(view)
+
+      assert path =~ "/authoring/project/#{project.slug}/curriculum/root_container"
+      assert flash == %{"info" => "Page options saved"}
+
+      {:ok, view, _html} =
+        live(conn, ~p"/authoring/project/#{project.slug}/curriculum")
+
+      assert has_element?(view, "span", "New Title!!")
+
+      assert %Oli.Resources.Revision{
+               retake_mode: :targeted,
+               duration_minutes: 5,
+               graded: true,
+               max_attempts: 10,
+               purpose: :application,
+               scoring_strategy_id: 2,
+               explanation_strategy: %Oli.Resources.ExplanationStrategy{
+                 type: :after_max_resource_attempts_exhausted,
+                 set_num_attempts: nil
+               },
+               poster_image: "some_poster_image_url",
+               intro_content: %{
+                 "children" => [
+                   %{
+                     "children" => [%{"text" => "Some new intro content text!"}],
+                     "id" => "3477687079",
+                     "type" => "p"
+                   }
+                 ],
+                 "type" => "p"
+               }
+             } =
+               _updated_revision =
+               Oli.Publishing.AuthoringResolver.from_revision_slug(
+                 project.slug,
+                 page_2.slug
+               )
+    end
+  end
+
   defp setup_session(%{conn: conn}) do
     map =
       Seeder.base_project_with_resource2()
@@ -394,6 +553,103 @@ defmodule OliWeb.Curriculum.ContainerLiveTest do
      project: map.project,
      adaptive_page_revision: map.adaptive_page_revision,
      revision1: map.revision1,
-     revision2: map.revision2}
+     revision2: map.revision2,
+     container: map.container.revision}
+  end
+
+  defp create_project(_) do
+    author = insert(:author)
+
+    project = insert(:project, authors: [author])
+
+    page_revision =
+      insert(:revision, %{
+        objectives: %{"attached" => []},
+        scoring_strategy_id: Oli.Resources.ScoringStrategy.get_id_by_type("average"),
+        resource_type_id: Oli.Resources.ResourceType.id_for_page(),
+        children: [],
+        content: %{"model" => []},
+        deleted: false,
+        title: "Page 1",
+        author_id: author.id
+      })
+
+    page_2_revision =
+      insert(:revision, %{
+        objectives: %{"attached" => []},
+        scoring_strategy_id: Oli.Resources.ScoringStrategy.get_id_by_type("average"),
+        resource_type_id: Oli.Resources.ResourceType.id_for_page(),
+        children: [],
+        content: %{"model" => []},
+        deleted: false,
+        title: "Page 2",
+        author_id: author.id
+      })
+
+    unit_revision =
+      insert(:revision, %{
+        objectives: %{},
+        resource_type_id: Oli.Resources.ResourceType.id_for_container(),
+        children: [page_revision.resource_id],
+        content: %{"model" => []},
+        deleted: false,
+        title: "The first unit",
+        slug: "first_unit",
+        author_id: author.id
+      })
+
+    container_revision =
+      insert(:revision, %{
+        objectives: %{},
+        resource_type_id: Oli.Resources.ResourceType.id_for_container(),
+        children: [unit_revision.resource_id, page_2_revision.resource_id],
+        content: %{},
+        deleted: false,
+        slug: "root_container",
+        title: "Root Container",
+        author_id: author.id
+      })
+
+    all_revisions =
+      [
+        page_revision,
+        page_2_revision,
+        unit_revision,
+        container_revision
+      ]
+
+    # asociate resources to project
+    Enum.each(all_revisions, fn revision ->
+      insert(:project_resource, %{
+        project_id: project.id,
+        resource_id: revision.resource_id
+      })
+    end)
+
+    # publish project
+    publication =
+      insert(:publication, %{
+        project: project,
+        root_resource_id: container_revision.resource_id,
+        published: nil
+      })
+
+    # publish resources
+    Enum.each(all_revisions, fn revision ->
+      insert(:published_resource, %{
+        publication: publication,
+        resource: revision.resource,
+        revision: revision,
+        author: author
+      })
+    end)
+
+    %{
+      publication: publication,
+      project: project,
+      unit: unit_revision,
+      page: page_revision,
+      page_2: page_2_revision
+    }
   end
 end

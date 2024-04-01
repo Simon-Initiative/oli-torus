@@ -43,12 +43,12 @@ defmodule OliWeb.CollaborationLive.IndexView do
       ]
   end
 
-  def breadcrumb(:instructor, section_slug) do
-    OliWeb.Sections.OverviewView.set_breadcrumbs(:instructor, %{slug: section_slug}) ++
+  def breadcrumb(:instructor, section) do
+    OliWeb.Sections.OverviewView.set_breadcrumbs(:instructor, section) ++
       [
         Breadcrumb.new(%{
           full_title: @title,
-          link: Routes.collab_spaces_index_path(OliWeb.Endpoint, :instructor, section_slug)
+          link: Routes.collab_spaces_index_path(OliWeb.Endpoint, :instructor, section.slug)
         })
       ]
   end
@@ -64,7 +64,7 @@ defmodule OliWeb.CollaborationLive.IndexView do
 
       {:ok,
        assign(socket,
-         breadcrumbs: breadcrumb(live_action, section_slug),
+         breadcrumbs: breadcrumb(live_action, socket.assigns[:section]),
          section_slug: section_slug,
          collab_spaces: collab_spaces,
          table_model: table_model,
@@ -92,21 +92,28 @@ defmodule OliWeb.CollaborationLive.IndexView do
 
   def render(assigns) do
     ~H"""
-    <div class="d-flex p-3 justify-content-between">
-      <Filter.render change="change_search" reset="reset_search" apply="apply_search" query={@query} />
-    </div>
+    <div class="container mx-auto">
+      <div class="d-flex p-3 justify-content-between">
+        <Filter.render
+          change="change_search"
+          reset="reset_search"
+          apply="apply_search"
+          query={@query}
+        />
+      </div>
 
-    <div id="collaborative-spaces-table" class="p-4">
-      <Listing.render
-        filter={@query}
-        table_model={@table_model}
-        total_count={@total_count}
-        offset={@offset}
-        limit={@limit}
-        sort="sort"
-        page_change="page_change"
-        show_bottom_paging={false}
-      />
+      <div id="collaborative-spaces-table" class="p-4">
+        <Listing.render
+          filter={@query}
+          table_model={@table_model}
+          total_count={@total_count}
+          offset={@offset}
+          limit={@limit}
+          sort="sort"
+          page_change="page_change"
+          show_bottom_paging={false}
+        />
+      </div>
     </div>
     """
   end

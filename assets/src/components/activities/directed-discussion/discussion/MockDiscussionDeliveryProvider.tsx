@@ -43,6 +43,9 @@ export const MockDiscussionDeliveryProvider: React.FC<{
         surveyId: '',
         groupId: '',
         showFeedback: false,
+        renderPointMarkers: false,
+        isAnnotationLevel: false,
+        variables: {},
       }}
       onSaveActivity={nullHandler}
       onSavePart={nullHandler}
