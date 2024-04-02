@@ -797,4 +797,109 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       )
     end
   end
+
+  describe "annotations toggle" do
+    setup [:user_conn, :create_elixir_project]
+
+    test "button is not rendered when annotations are disabled", %{
+      conn: conn,
+      section: section,
+      user: user,
+      page_1: page_1
+    } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+
+      {:ok, view, _html} = live(conn, Utils.lesson_live_path(section.slug, page_1.slug))
+
+      assert not has_element?(
+               view,
+               "button[phx-click='toggle_sidebar']"
+             )
+    end
+
+    test "button is rendered when annotations are enabled", %{
+      conn: conn,
+      section: section,
+      user: user,
+      page_1: page_1
+    } do
+      enable_collaborative_spaces(%{section: section})
+
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+
+      {:ok, view, _html} = live(conn, Utils.lesson_live_path(section.slug, page_1.slug))
+
+      assert has_element?(
+               view,
+               "button[phx-click='toggle_sidebar']"
+             )
+    end
+  end
+
+  describe "annotations panel" do
+    setup [:user_conn, :create_elixir_project, :enable_collaborative_spaces]
+
+    test "is toggled open when toolbar button is clicked", %{
+      conn: conn,
+      section: section,
+      user: user,
+      page_1: page_1
+    } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+
+      {:ok, view, _html} = live(conn, Utils.lesson_live_path(section.slug, page_1.slug))
+
+      view
+      |> element(~s{button[phx-click='toggle_sidebar']})
+      |> render_click
+
+      assert has_element?(
+               view,
+               "#annotations_panel"
+             )
+    end
+
+    test "renders empty message when there are no notes", %{
+      conn: conn,
+      section: section,
+      user: user,
+      page_1: page_1
+    } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+
+      {:ok, view, _html} = live(conn, Utils.lesson_live_path(section.slug, page_1.slug))
+
+      view
+      |> element(~s{button[phx-click='toggle_sidebar']})
+      |> render_click
+
+      wait_while(fn -> has_element?(view, "svg.loading") end)
+
+      assert has_element?(
+               view,
+               "div",
+               "There are no notes yet"
+             )
+    end
+  end
+
+  defp enable_collaborative_spaces(%{section: section}) do
+    course_collab_space_config =
+      Oli.Resources.Collaboration.get_course_collab_space_config(section.root_section_resource_id)
+      |> Map.from_struct()
+      |> Map.merge(%{status: :enabled})
+
+    %{resource_id: resource_id} = Oli.Publishing.DeliveryResolver.root_container(section.slug)
+
+    Oli.Delivery.Sections.get_section_resource(section.id, resource_id)
+    |> Oli.Delivery.Sections.update_section_resource(%{
+      collab_space_config: course_collab_space_config
+    })
+
+    %{}
+  end
 end

@@ -12,7 +12,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
 
   def panel(assigns) do
     ~H"""
-    <div class="flex-1 flex flex-row overflow-hidden">
+    <div id="annotations_panel" class="flex-1 flex flex-row overflow-hidden">
       <div class="justify-start">
         <.toggle_notes_button>
           <i class="fa-solid fa-xmark group-hover:scale-110"></i>
