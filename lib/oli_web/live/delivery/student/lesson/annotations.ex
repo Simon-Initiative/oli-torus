@@ -298,7 +298,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
 
   defp post(assigns) do
     ~H"""
-    <div class="flex flex-col p-4 border-2 border-gray-200 dark:border-gray-800 rounded">
+    <div class="post flex flex-col p-4 border-2 border-gray-200 dark:border-gray-800 rounded">
       <div class="flex flex-row justify-between mb-1">
         <div class="font-semibold">
           <%= post_creator(@post, @current_user) %>

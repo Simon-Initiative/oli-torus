@@ -46,7 +46,7 @@ defmodule Oli.Factory do
   alias Oli.Publishing.{PublishedResource}
   alias Oli.Publishing.Publications.Publication
   alias Oli.Resources.{Resource, Revision}
-  alias Oli.Resources.Collaboration.{CollabSpaceConfig, Post, PostContent}
+  alias Oli.Resources.Collaboration.{CollabSpaceConfig, Post, PostContent, UserReactionPost}
   alias Oli.Search.RevisionEmbedding
 
   def author_factory() do
@@ -355,6 +355,14 @@ defmodule Oli.Factory do
       updated_at: DateTime.utc_now(),
       inserted_at: DateTime.utc_now(),
       anonymous: false
+    }
+  end
+
+  def user_reaction_post_factory() do
+    %UserReactionPost{
+      reaction: :like
+      # user: anonymous_build(:user),
+      # post: anonymous_build(:post)
     }
   end
 
