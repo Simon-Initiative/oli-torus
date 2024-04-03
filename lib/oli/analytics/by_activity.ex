@@ -2,6 +2,7 @@ defmodule Oli.Analytics.ByActivity do
   import Ecto.Query, warn: false
   alias Oli.Publishing.DeliveryResolver
   alias Oli.Repo
+  alias Oli.Resources.ResourceType
   alias Oli.Analytics.Common
   alias Oli.Publishing
 
@@ -17,7 +18,10 @@ defmodule Oli.Analytics.ByActivity do
   defp get_base_query(project_slug, filtered_sections) do
     subquery =
       if filtered_sections != [] do
-        DeliveryResolver.revisions_filter_by_section_ids(filtered_sections, 3)
+        DeliveryResolver.revisions_filter_by_section_ids(
+          filtered_sections,
+          ResourceType.id_for_activity()
+        )
       else
         Publishing.query_unpublished_revisions_by_type(
           project_slug,

@@ -5,6 +5,7 @@ defmodule Oli.Analytics.ByPage do
   alias Oli.Repo
   alias Oli.Analytics.Common
   alias Oli.Publishing
+  alias Oli.Resources.ResourceType
   alias Oli.Authoring.Course.Project
 
   def query_against_project_slug(project_slug, []),
@@ -31,7 +32,10 @@ defmodule Oli.Analytics.ByPage do
 
     subquery_activity =
       if filtered_sections != [] do
-        DeliveryResolver.revisions_filter_by_section_ids(filtered_sections, 3)
+        DeliveryResolver.revisions_filter_by_section_ids(
+          filtered_sections,
+          ResourceType.id_for_page()
+        )
       else
         Publishing.query_unpublished_revisions_by_type(
           project_slug,
