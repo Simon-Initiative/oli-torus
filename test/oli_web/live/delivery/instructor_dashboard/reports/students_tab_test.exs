@@ -194,12 +194,6 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
 
       {:ok, _} = Sections.rebuild_contained_pages(section)
 
-      set_progress(section.id, page_1.published_resource.resource_id, user_1.id, 0)
-      set_progress(section.id, page_1.published_resource.resource_id, user_2.id, 0.2)
-      set_progress(section.id, page_1.published_resource.resource_id, user_3.id, 0.2)
-      set_progress(section.id, page_1.published_resource.resource_id, user_4.id, 0.3)
-      set_progress(section.id, page_1.published_resource.resource_id, user_5.id, 0.7)
-
       set_interaction(
         section,
         page_1,
@@ -245,6 +239,17 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
         |> Enum.map(fn a_tag -> Floki.text(a_tag) end)
 
       assert student_for_tr_1 =~ "Di Maria, Angelito"
+      assert student_for_tr_2 =~ "Messi, Lionel"
+      assert student_for_tr_3 =~ "Suarez, Luis"
+      assert student_for_tr_4 =~ "Jr, Neymar"
+
+      ###
+
+      set_progress(section.id, page_1.published_resource.resource_id, user_1.id, 0)
+      set_progress(section.id, page_1.published_resource.resource_id, user_2.id, 0.2)
+      set_progress(section.id, page_1.published_resource.resource_id, user_3.id, 0.2)
+      set_progress(section.id, page_1.published_resource.resource_id, user_4.id, 0.3)
+      set_progress(section.id, page_1.published_resource.resource_id, user_5.id, 0.7)
 
       ### sorting by student
       params = %{
