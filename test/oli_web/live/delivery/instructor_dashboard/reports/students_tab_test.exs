@@ -200,6 +200,52 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
       set_progress(section.id, page_1.published_resource.resource_id, user_4.id, 0.3)
       set_progress(section.id, page_1.published_resource.resource_id, user_5.id, 0.7)
 
+      set_interaction(
+        section,
+        page_1,
+        user_1,
+        ~U[2020-04-05 12:25:42Z]
+      )
+
+      set_interaction(
+        section,
+        page_1,
+        user_2,
+        ~U[2021-04-05 12:26:42Z]
+      )
+
+      set_interaction(
+        section,
+        page_1,
+        user_3,
+        ~U[2023-04-05 12:28:42Z]
+      )
+
+      set_interaction(
+        section,
+        page_1,
+        user_4,
+        ~U[2019-04-05 11:28:42Z]
+      )
+
+      ### sorting by last interaction
+
+      params = %{
+        sort_order: :asc,
+        sort_by: :last_interaction
+      }
+
+      {:ok, view, _html} = live(conn, live_view_students_route(section.slug, params))
+
+      [student_for_tr_1, student_for_tr_2, student_for_tr_3, student_for_tr_4] =
+        view
+        |> render()
+        |> Floki.parse_fragment!()
+        |> Floki.find(~s{.instructor_dashboard_table tr a})
+        |> Enum.map(fn a_tag -> Floki.text(a_tag) end)
+
+      assert student_for_tr_1 =~ "Di Maria, Angelito"
+
       ### sorting by student
       params = %{
         sort_order: :desc,
