@@ -31,6 +31,8 @@ import { finalize } from './finalize';
 import { showModal } from './modal';
 import { enableSubmitWhenTitleMatches } from './package_delete';
 import { onReady } from './ready';
+import { sessionTimeout } from './session_timeout';
+
 
 (window as any).Alert = Alert;
 (window as any).Button = Button;
@@ -95,6 +97,7 @@ window.OLI = {
   onReady,
   finalize,
   initCountdownTimer,
+  sessionTimeout,
   initEndDateTimer,
   CreateAccountPopup: (node: any, props: any) => mount(CreateAccountPopup, node, props),
 };
@@ -175,6 +178,7 @@ declare global {
     toggleAudio: (element: HTMLAudioElement) => void;
     OLI: {
       initActivityBridge: typeof initActivityBridge;
+      sessionTimeout: typeof sessionTimeout;
       initPreviewActivityBridge: typeof initPreviewActivityBridge;
       showModal: typeof showModal;
       enableSubmitWhenTitleMatches: typeof enableSubmitWhenTitleMatches;
