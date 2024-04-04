@@ -7,68 +7,8 @@ defmodule Oli.Application do
 
   def start(_type, _args) do
     # List all child processes to be supervised
-    children =
-      [
-        # libcluster config
-        {Cluster.Supervisor,
-         [Application.fetch_env!(:libcluster, :topologies), [name: Oli.ClusterSupervisor]]},
 
-        # Start Phoenix PubSub
-        {Phoenix.PubSub, name: Oli.PubSub},
-
-        # Start the Ecto repository
-        Oli.Repo,
-
-        # Starts telemetry
-        OliWeb.Telemetry,
-
-        # Start the endpoint when the application starts
-        OliWeb.Endpoint,
-
-        # Start the Oban background job processor
-        {Oban, oban_config()},
-
-        # Start the Pow MnesiaCache to persist session across multiple servers
-        Oli.MnesiaClusterSupervisor,
-        OliWeb.Presence,
-
-        # Starts the nonce cleanup task, call Lti_1p3.Nonces.cleanup_nonce_store/0 at 1:01 UTC every day
-        %{
-          id: "cleanup_nonce_store_daily",
-          start: {SchedEx, :run_every, [Lti_1p3.Nonces, :cleanup_nonce_store, [], "1 1 * * *"]}
-        },
-        # Starts the login hint cleanup task
-        %{
-          id: "cleanup_login_hint_store_daily",
-          start:
-            {SchedEx, :run_every,
-             [Lti_1p3.Platform.LoginHints, :cleanup_login_hint_store, [], "1 1 * * *"]}
-        },
-        # Starts the publication diff cleanup task
-        %{
-          id: "cleanup_publication_diffs_daily",
-          start:
-            {SchedEx, :run_every,
-             [Oli.Publishing.Publications.DiffAgent, :cleanup_diff_store, [], "1 1 * * *"]}
-        },
-
-        # Starts the publication diff agent store
-        Oli.Publishing.Publications.DiffAgent,
-        Oli.Delivery.Attempts.PartAttemptCleaner,
-
-        # Starts Cachex to store user/author info across requests
-        Oli.AccountLookupCache,
-        {Cachex, name: :page_content_cache},
-
-        # Starts Cachex to store datashop export info
-        Oli.DatashopCache,
-
-        # Starts Cachex to store section info
-        Oli.Delivery.Sections.SectionCache,
-
-        # a supervisor which can be used to dynamically supervise tasks
-        {Task.Supervisor, name: Oli.TaskSupervisor}
-      ] ++ maybe_node_js_config()
+    children = Oli.Deployment.mode() |> children()
 
     if log_incomplete_requests?() do
       :ok =
@@ -83,7 +23,74 @@ defmodule Oli.Application do
     # See https://hexdocs.pm/elixir/Supervisor.html
     # for other strategies and supported options
     opts = [strategy: :one_for_one, name: Oli.Supervisor]
+
     Supervisor.start_link(children, opts)
+  end
+
+  defp children(:analytics) do
+    [
+      {Phoenix.PubSub, name: Oli.PubSub},
+      Oli.Repo,
+      OliWeb.Telemetry,
+      OliWeb.Endpoint,
+      {Oban, oban_config()},
+      OliWeb.Presence,
+      nonce_cleanup(),
+      login_hint_cleanup(),
+      Oli.AccountLookupCache,
+      {Task.Supervisor, name: Oli.TaskSupervisor},
+      Oli.DatashopCache,
+    ]
+  end
+
+  defp children(:application) do
+    [
+      {Cluster.Supervisor, [Application.fetch_env!(:libcluster, :topologies), [name: Oli.ClusterSupervisor]]},
+      {Phoenix.PubSub, name: Oli.PubSub},
+      Oli.Repo,
+      OliWeb.Telemetry,
+      OliWeb.Endpoint,
+      {Oban, oban_config()},
+      Oli.MnesiaClusterSupervisor,
+      OliWeb.Presence,
+      nonce_cleanup(),
+      login_hint_cleanup(),
+      publication_diff_cleanup(),
+      Oli.Publishing.Publications.DiffAgent,
+      Oli.AccountLookupCache,
+      {Cachex, name: :page_content_cache},
+      Oli.Delivery.Sections.SectionCache,
+      {Task.Supervisor, name: Oli.TaskSupervisor},
+    ] ++ maybe_node_js_config()
+  end
+
+  defp children(:both) do
+    children(:application) ++ [Oli.DatashopCache]
+  end
+
+  defp nonce_cleanup() do
+    %{
+      id: "cleanup_nonce_store_daily",
+      start: {SchedEx, :run_every, [Lti_1p3.Nonces, :cleanup_nonce_store, [], "1 1 * * *"]}
+    }
+  end
+
+  defp login_hint_cleanup() do
+    %{
+      id: "cleanup_login_hint_store_daily",
+      start:
+        {SchedEx, :run_every,
+         [Lti_1p3.Platform.LoginHints, :cleanup_login_hint_store, [], "1 1 * * *"]}
+    }
+  end
+
+  defp publication_diff_cleanup() do
+    %{
+      id: "cleanup_publication_diffs_daily",
+      start:
+        {SchedEx, :run_every,
+         [Oli.Publishing.Publications.DiffAgent, :cleanup_diff_store, [], "1 1 * * *"]}
+    }
   end
 
   # Tell Phoenix to update the endpoint configuration
@@ -113,7 +120,7 @@ defmodule Oli.Application do
          Application.fetch_env!(:oli, :variable_substitution)[:dispatcher] ==
            Oli.Activities.Transformers.VariableSubstitution.NodeImpl do
       [
-        %{
+        {[:application, :both], %{
           id: NodeJS,
           start:
             {NodeJS, :start_link,
@@ -123,7 +130,7 @@ defmodule Oli.Application do
                  pool_size: Application.fetch_env!(:oli, :node_js_pool_size)
                ]
              ]}
-        }
+        }}
       ]
     else
       []

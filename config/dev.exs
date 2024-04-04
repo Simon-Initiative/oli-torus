@@ -10,6 +10,22 @@ get_env_as_boolean = fn key, default ->
   end
 end
 
+case System.get_env("DEPLOYMENT_MODE", "both") do
+  "application" ->
+    config :oli, :deployment_mode, :application
+
+  "both" ->
+    config :oli, :deployment_mode, :both
+
+  "analytics" ->
+    config :oli, :deployment_mode, :analytics
+
+  _ ->
+    raise """
+    Invalid value for DEPLOYMENT_MODE. Must be either 'application' or 'both' or 'analytics'.
+    """
+end
+
 config :oli,
   env: :dev,
   s3_xapi_bucket_name: System.get_env("S3_XAPI_BUCKET_NAME"),

@@ -74,5 +74,10 @@ defmodule OliWeb.Endpoint do
   plug(Pow.Plug.Session, OliWeb.Pow.PowHelpers.get_pow_config(:author))
   plug(PowPersistentSession.Plug.Cookie)
 
-  plug(OliWeb.Router)
+  if Application.compile_env(:oli, :deployment_mode) == :analytics do
+    plug(OliWeb.AnalyticsRouter)
+  else
+    plug(OliWeb.Router)
+  end
+
 end

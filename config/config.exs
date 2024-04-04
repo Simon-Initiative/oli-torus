@@ -25,6 +25,22 @@ world_universities_and_domains_json =
 
 default_sha = if Mix.env() == :dev, do: "DEV BUILD", else: "UNKNOWN BUILD"
 
+case System.get_env("DEPLOYMENT_MODE", "both") do
+  "application" ->
+    config :oli, :deployment_mode, :application
+
+  "both" ->
+    config :oli, :deployment_mode, :both
+
+  "analytics" ->
+    config :oli, :deployment_mode, :analytics
+
+  _ ->
+    raise """
+    Invalid value for DEPLOYMENT_MODE. Must be either 'application' or 'both' or 'analytics'.
+    """
+end
+
 config :oli,
   load_testing_mode: false,
   problematic_query_detection: false,

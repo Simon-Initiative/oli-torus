@@ -8,7 +8,13 @@ defmodule OliWeb.Pow.AuthorRoutes do
   def after_sign_in_path(conn) do
     case maybe_link_account_route(conn) do
       nil ->
-        Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.ProjectsLive)
+        case Oli.Deployment.mode() do
+          :analytics ->
+            Routes.live_path(OliWeb.Endpoint, OliWeb.Analytics.DatashopLive)
+
+          _ ->
+            Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.ProjectsLive)
+        end
 
       route ->
         route
@@ -19,7 +25,13 @@ defmodule OliWeb.Pow.AuthorRoutes do
   def after_registration_path(conn) do
     case maybe_link_account_route(conn) do
       nil ->
-        Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.ProjectsLive)
+        case Oli.Deployment.mode() do
+          :analytics ->
+            Routes.live_path(OliWeb.Endpoint, OliWeb.Analytics.DatashopLive)
+
+          _ ->
+            Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.ProjectsLive)
+        end
 
       route ->
         route

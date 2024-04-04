@@ -7,6 +7,7 @@ defmodule OliWeb.Router do
     extensions: [PowResetPassword, PowEmailConfirmation]
 
   import Phoenix.LiveDashboard.Router
+  import OliWeb.Router.Analytics
   import PhoenixStorybook.Router
 
   import Oli.Plugs.EnsureAdmin
@@ -226,6 +227,13 @@ defmodule OliWeb.Router do
     pow_extension_routes()
   end
 
+  scope "/", OliWeb do
+    pipe_through([:browser, :delivery_protected])
+
+    # keep a session active by periodically calling this endpoint
+    get("/keep-alive", StaticPageController, :keep_alive)
+  end
+
   scope "/" do
     pipe_through([:skip_csrf_protection, :delivery])
     post("/jcourse/superactivity/server", OliWeb.LegacySuperactivityController, :process)
@@ -240,11 +248,17 @@ defmodule OliWeb.Router do
     pow_assent_authorization_post_callback_routes()
   end
 
+  # open access routes
   scope "/", OliWeb do
-    pipe_through([:browser, :delivery_protected])
+    pipe_through([:browser, :delivery, :authoring])
 
-    # keep a session active by periodically calling this endpoint
-    get("/keep-alive", StaticPageController, :keep_alive)
+    get("/", StaticPageController, :index)
+    get("/unauthorized", StaticPageController, :unauthorized)
+    get("/not_found", StaticPageController, :not_found)
+
+    # update session timezone information
+    get("/timezones", StaticPageController, :list_timezones)
+    post("/update_timezone", StaticPageController, :update_timezone)
   end
 
   scope "/authoring", as: :authoring do
@@ -279,18 +293,6 @@ defmodule OliWeb.Router do
     resources("/invitations", InvitationController, only: [:edit, :update])
   end
 
-  # open access routes
-  scope "/", OliWeb do
-    pipe_through([:browser, :delivery, :authoring])
-
-    get("/", StaticPageController, :index)
-    get("/unauthorized", StaticPageController, :unauthorized)
-    get("/not_found", StaticPageController, :not_found)
-
-    # update session timezone information
-    get("/timezones", StaticPageController, :list_timezones)
-    post("/update_timezone", StaticPageController, :update_timezone)
-  end
 
   scope "/", OliWeb do
     pipe_through([:api])
@@ -1515,4 +1517,9 @@ defmodule OliWeb.Router do
       get("/flame_graphs", DevController, :flame_graphs)
     end
   end
+
+  if Application.compile_env(:oli, :deployment_mode) == :both do
+    analytics_routes("/analytics")
+  end
+
 end
