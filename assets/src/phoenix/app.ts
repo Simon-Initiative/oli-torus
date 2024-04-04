@@ -33,7 +33,6 @@ import { enableSubmitWhenTitleMatches } from './package_delete';
 import { onReady } from './ready';
 import { sessionTimeout } from './session_timeout';
 
-
 (window as any).Alert = Alert;
 (window as any).Button = Button;
 (window as any).Dropdown = Dropdown;
