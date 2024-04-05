@@ -118,8 +118,12 @@
     <% end %>
     <script type="text/javascript" src={Routes.static_path(@conn, "/js/dark.js")}>
     </script>
+    <script>
+      OLI.sessionTimeout();
+    </script>
   </head>
   <body class="min-h-screen flex flex-col bg-delivery-body text-delivery-body-color dark:bg-delivery-body-dark dark:text-delivery-body-color-dark">
+    <div id="sessionExpirationContainerId"></div>
     <%= @inner_content %>
   </body>
 </html>

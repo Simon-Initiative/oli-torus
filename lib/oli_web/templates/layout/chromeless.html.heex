@@ -111,8 +111,12 @@
     </script>
 
     <%= additional_stylesheets(assigns) %>
+    <script>
+      OLI.sessionTimeout();
+    </script>
   </head>
   <body>
+    <div id="sessionExpirationContainerId"></div>
     <%= Map.get(assigns, :inner_layout) || @inner_content %>
   </body>
 </html>
