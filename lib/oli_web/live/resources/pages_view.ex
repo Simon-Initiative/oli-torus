@@ -608,6 +608,7 @@ defmodule OliWeb.Resources.PagesView do
 
     case ContainerEditor.add_new(
            nil,
+           "Basic",
            type,
            author,
            project
