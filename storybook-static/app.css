@@ -7016,6 +7016,10 @@ table.table-striped tbody tr:nth-child(even) {
   fill: #404040;
 }
 
+.fill-gray-800 {
+  fill: #262626;
+}
+
 .fill-primary {
   fill: #3B76D3;
 }
@@ -7038,6 +7042,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .stroke-gray-300 {
   stroke: #d4d4d4;
+}
+
+.stroke-gray-800 {
+  stroke: #262626;
 }
 
 .stroke-primary {
