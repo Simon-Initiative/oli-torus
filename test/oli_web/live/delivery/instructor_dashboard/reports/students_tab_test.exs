@@ -219,7 +219,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
         section,
         page_1,
         user_4,
-        ~U[2019-04-05 11:28:42Z]
+        ~U[2019-04-05 13:28:42Z]
       )
 
       ### sorting by last interaction
