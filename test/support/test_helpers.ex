@@ -3507,4 +3507,31 @@ defmodule Oli.TestHelpers do
   end
 
   ### Ends helper that waits for Tasks to complete ###
+
+  @doc """
+  Waits for the given condition to be true. The condition is checked every `interval` milliseconds.
+  """
+  def wait_while(f, opts \\ []) do
+    wait_while_helper(
+      f,
+      Keyword.get(opts, :interval, 100),
+      Keyword.get(opts, :timeout, 5000),
+      :os.system_time(:millisecond)
+    )
+  end
+
+  defp wait_while_helper(f, interval, timeout, start) do
+    if :os.system_time(:millisecond) - start > timeout do
+      throw("Timeout waiting for condition to be true. Timeout: #{timeout} ms.")
+    else
+      case f.() do
+        true ->
+          :timer.sleep(interval)
+          wait_while_helper(f, interval, timeout, start)
+
+        false ->
+          :ok
+      end
+    end
+  end
 end

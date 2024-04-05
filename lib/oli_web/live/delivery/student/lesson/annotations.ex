@@ -12,7 +12,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
 
   def panel(assigns) do
     ~H"""
-    <div class="flex-1 flex flex-row overflow-hidden">
+    <div id="annotations_panel" class="flex-1 flex flex-row overflow-hidden">
       <div class="justify-start">
         <.toggle_notes_button>
           <i class="fa-solid fa-xmark group-hover:scale-110"></i>
@@ -298,7 +298,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
 
   defp post(assigns) do
     ~H"""
-    <div class="flex flex-col p-4 border-2 border-gray-200 dark:border-gray-800 rounded">
+    <div class="post flex flex-col p-4 border-2 border-gray-200 dark:border-gray-800 rounded">
       <div class="flex flex-row justify-between mb-1">
         <div class="font-semibold">
           <%= post_creator(@post, @current_user) %>
@@ -310,7 +310,11 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
       <p class="my-2">
         <%= @post.content.message %>
       </p>
-      <.post_actions post={@post} />
+      <.post_actions
+        post={@post}
+        on_toggle_reaction="toggle_reaction"
+        on_toggle_replies="toggle_post_replies"
+      />
       <.post_replies
         post={@post}
         replies={@post_replies}
@@ -346,6 +350,8 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
   end
 
   attr :post, Oli.Resources.Collaboration.Post, required: true
+  attr :on_toggle_reaction, :string, default: nil
+  attr :on_toggle_replies, :string, default: nil
 
   defp post_actions(assigns) do
     case assigns.post do
@@ -360,21 +366,23 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
         ~H"""
         <div class="flex flex-row gap-3 my-2">
           <button
+            :if={@on_toggle_reaction}
             class="inline-flex gap-1 text-sm text-gray-500 bold py-1 px-2 rounded-lg hover:bg-gray-100"
-            phx-click="toggle_reaction"
+            phx-click={@on_toggle_reaction}
             phx-value-reaction={:like}
             phx-value-post-id={assigns.post.id}
           >
-            <.like_icon />
-            <%= case Map.get(@post.reaction_counts, :like) do %>
+            <%= case Map.get(@post.reaction_summaries, :like) do %>
               <% nil -> %>
-              <% count -> %>
-                <%= if(count > 0, do: count) %>
+                <.like_icon />
+              <% %{count: count, reacted: reacted} -> %>
+                <.like_icon selected={reacted} /> <%= if(count > 0, do: count) %>
             <% end %>
           </button>
           <button
+            :if={@on_toggle_replies}
             class="inline-flex gap-1 text-sm text-gray-500 bold py-1 px-2 rounded-lg hover:bg-gray-100"
-            phx-click="toggle_post_replies"
+            phx-click={@on_toggle_replies}
             phx-value-post-id={assigns.post.id}
           >
             <.replies_bubble_icon />
@@ -486,6 +494,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
       <p class="my-2">
         <%= @post.content.message %>
       </p>
+      <.post_actions post={@post} on_toggle_reaction="toggle_reply_reaction" />
     </div>
     """
   end
@@ -523,7 +532,6 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
       <path
         d="M30 14.6945C30.0055 16.8209 29.5087 18.9186 28.55 20.8167C27.4132 23.0912 25.6657 25.0042 23.5031 26.3416C21.3405 27.679 18.8483 28.3879 16.3055 28.3889C14.1791 28.3944 12.0814 27.8976 10.1833 26.9389L1 30L4.06111 20.8167C3.10239 18.9186 2.60556 16.8209 2.61111 14.6945C2.61209 12.1517 3.32098 9.65951 4.65837 7.49692C5.99577 5.33433 7.90884 3.58679 10.1833 2.45004C12.0814 1.49132 14.1791 0.994502 16.3055 1.00005H17.1111C20.4692 1.18531 23.641 2.60271 26.0191 4.98087C28.3973 7.35902 29.8147 10.5308 30 13.8889V14.6945Z"
         class={[
-          "",
           if(@selected, do: "fill-primary stroke-primary", else: "fill-white stroke-gray-300")
         ]}
         stroke-width="1.61111"
@@ -559,24 +567,42 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
   def replies_bubble_icon(assigns) do
     ~H"""
     <svg width="23" height="23" viewBox="0 0 23 23" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <line x1="6.16821" y1="8.60156" x2="16.0243" y2="8.60156" stroke="#2D3648" stroke-width="1.5" />
-      <line x1="6.16821" y1="13.6055" x2="16.0243" y2="13.6055" stroke="#2D3648" stroke-width="1.5" />
+      <line
+        class="stroke-gray-800"
+        x1="6.16821"
+        y1="8.60156"
+        x2="16.0243"
+        y2="8.60156"
+        stroke-width="1.5"
+      />
+      <line
+        class="stroke-gray-800"
+        x1="6.16821"
+        y1="13.6055"
+        x2="16.0243"
+        y2="13.6055"
+        stroke-width="1.5"
+      />
       <path
+        class="fill-gray-800"
         fill-rule="evenodd"
         clip-rule="evenodd"
         d="M11.7869 2.27309C7.1428 2.27309 3.37805 6.03784 3.37805 10.6819C3.37805 12.0261 3.69262 13.2936 4.25113 14.4177C4.38308 14.6833 4.4045 14.9903 4.31072 15.2717L2.8872 19.5421L7.20077 18.1512C7.47968 18.0613 7.78271 18.084 8.04505 18.2146C9.17069 18.775 10.4403 19.0907 11.7869 19.0907C16.4309 19.0907 20.1957 15.3259 20.1957 10.6819C20.1957 6.03784 16.4309 2.27309 11.7869 2.27309ZM1.13425 10.6819C1.13425 4.79863 5.90359 0.0292969 11.7869 0.0292969C17.6701 0.0292969 22.4395 4.79863 22.4395 10.6819C22.4395 16.5652 17.6701 21.3345 11.7869 21.3345C10.2515 21.3345 8.78951 21.009 7.46835 20.4225L1.46623 22.3579C1.06368 22.4877 0.622338 22.38 0.324734 22.0795C0.0271304 21.779 -0.0761506 21.3366 0.0576046 20.9353L2.04039 14.9871C1.45758 13.6695 1.13425 12.2121 1.13425 10.6819Z"
-        fill="#2D3648"
       />
     </svg>
     """
   end
 
+  attr :selected, :boolean, default: false
+
   defp like_icon(assigns) do
     ~H"""
     <svg width="22" height="24" viewBox="0 0 22 24" fill="none" xmlns="http://www.w3.org/2000/svg">
       <path
+        class={[
+          if(@selected, do: "stroke-primary", else: "stroke-gray-800")
+        ]}
         d="M6 10.6466L10 1.11719C10.7956 1.11719 11.5587 1.45185 12.1213 2.04755C12.6839 2.64326 13 3.45121 13 4.29366V8.52895H18.66C18.9499 8.52548 19.2371 8.58878 19.5016 8.71448C19.7661 8.84017 20.0016 9.02526 20.1919 9.25691C20.3821 9.48856 20.5225 9.76123 20.6033 10.056C20.6842 10.3508 20.7035 10.6607 20.66 10.9642L19.28 20.4937C19.2077 20.9986 18.9654 21.4589 18.5979 21.7897C18.2304 22.1204 17.7623 22.2994 17.28 22.2937H6M6 10.6466V22.2937M6 10.6466H3C2.46957 10.6466 1.96086 10.8697 1.58579 11.2668C1.21071 11.664 1 12.2026 1 12.7642V20.176C1 20.7376 1.21071 21.2763 1.58579 21.6734C1.96086 22.0705 2.46957 22.2937 3 22.2937H6"
-        stroke="#383A44"
         stroke-width="2"
         stroke-linecap="round"
         stroke-linejoin="round"
