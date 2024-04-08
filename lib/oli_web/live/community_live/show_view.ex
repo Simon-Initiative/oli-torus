@@ -369,7 +369,7 @@ defmodule OliWeb.CommunityLive.ShowView do
       {:noreply, socket}
     else
       socket =
-        case Groups.create_community_institutions_from_ids(institution_id |> List.wrap(), %{
+        case Groups.create_community_institutions_from_ids([institution_id], %{
                community_id: community_id
              }) do
           {:ok, _community_institutions} ->
