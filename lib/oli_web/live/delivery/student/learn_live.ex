@@ -938,15 +938,11 @@ defmodule OliWeb.Delivery.Student.LearnLive do
           ),
         show_completed_pages: show_completed_pages,
         page_due_dates:
-          contained_pages_due_dates(
+          get_contained_pages_due_dates(
             assigns.module,
             assigns.student_end_date_exceptions_per_resource_id,
             show_completed_pages
           )
-          |> Enum.uniq()
-          |> Enum.sort_by(& &1, {:asc, Date})
-
-        # TODO sort null last and ensure to render it as "Not yet scheduled"
       })
 
     ~H"""
@@ -1832,7 +1828,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
           child["resource_id"],
           child["section_resource"].end_date
         )
-        |> DateTime.to_date()
+        |> then(&if is_nil(&1), do: "Not yet scheduled", else: DateTime.to_date(&1))
 
       if show_completed_pages do
         student_due_date == grouped_due_date
@@ -1844,6 +1840,29 @@ defmodule OliWeb.Delivery.Student.LearnLive do
 
   # In-class Activities should not appear in the course content in the learn page (but only in the schedule) so we can ignore those.
   # As for 'read by' (lessons) and 'due date' (graded assignments) we assumed that we could group both together and treat the Read By Date as a general Due Date
+  defp get_contained_pages_due_dates(
+         container,
+         student_end_date_exceptions_per_resource_id,
+         show_completed_pages
+       ) do
+    contained_pages_due_dates(
+      container,
+      student_end_date_exceptions_per_resource_id,
+      show_completed_pages
+    )
+    |> Enum.uniq()
+    |> then(fn dates ->
+      if nil in dates do
+        dates
+        |> Enum.reject(&is_nil/1)
+        |> Enum.sort_by(& &1, {:asc, Date})
+        |> Enum.concat(["Not yet scheduled"])
+      else
+        Enum.sort_by(dates, & &1, {:asc, Date})
+      end
+    end)
+  end
+
   defp contained_pages_due_dates(
          container,
          student_end_date_exceptions_per_resource_id,
@@ -1867,9 +1886,10 @@ defmodule OliWeb.Delivery.Student.LearnLive do
           []
         else
           [
-            DateTime.to_date(
-              Map.get(student_end_date_exceptions_per_resource_id, resource_id, end_date)
-            )
+            Map.get(student_end_date_exceptions_per_resource_id, resource_id, end_date) &&
+              DateTime.to_date(
+                Map.get(student_end_date_exceptions_per_resource_id, resource_id, end_date)
+              )
           ]
         end
 
@@ -1958,6 +1978,8 @@ defmodule OliWeb.Delivery.Student.LearnLive do
        ) do
     Map.get(student_end_date_exceptions_per_resource_id, resource_id, end_date)
   end
+
+  defp format_date("Not yet scheduled", _context, _format), do: "Not yet scheduled"
 
   defp format_date(due_date, context, format) do
     FormatDateTime.to_formatted_datetime(due_date, context, format)
