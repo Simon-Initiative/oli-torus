@@ -428,6 +428,19 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       end_date: ~U[2023-11-03 20:00:00Z]
     })
 
+    # schedule start and end date for page 11 and 12 section_resource
+    Sections.get_section_resource(section.id, page_11_revision.resource_id)
+    |> Sections.update_section_resource(%{
+      start_date: ~U[2023-11-02 20:00:00Z],
+      end_date: ~U[2023-11-03 20:00:00Z]
+    })
+
+    Sections.get_section_resource(section.id, page_12_revision.resource_id)
+    |> Sections.update_section_resource(%{
+      start_date: ~U[2023-11-02 20:00:00Z],
+      end_date: ~U[2023-11-03 20:00:00Z]
+    })
+
     %{
       author: author,
       section: section,
@@ -841,12 +854,12 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       |> render_click()
 
       assert view
-             |> element(~s{div[role="intro 1 details"]})
+             |> element(~s{div[role="intro video details"]})
              |> render() =~ "Introduction"
 
       assert has_element?(
                view,
-               ~s{div[role="intro 1 details"] div[role="unseen video icon"]}
+               ~s{div[role="intro video details"] div[role="unseen video icon"]}
              )
 
       # module 2 has no intro video
@@ -854,7 +867,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       |> element(~s{div[role="unit_1"] div[role="card_2"]})
       |> render_click()
 
-      refute has_element?(view, ~s{div[role="intro 1 details"] div[role="unseen video icon"]})
+      refute has_element?(view, ~s{div[role="intro video details"] div[role="unseen video icon"]})
     end
 
     test "intro video is marked as seen after playing it",
@@ -880,11 +893,11 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       assert has_element?(
                view,
-               ~s{div[role="intro 1 details"] div[role="unseen video icon"]}
+               ~s{div[role="intro video details"] div[role="unseen video icon"]}
              )
 
       view
-      |> element(~s{div[role="intro 1 details"] div[phx-click="play_video"]})
+      |> element(~s{div[role="intro video details"] div[phx-click="play_video"]})
       |> render_click()
 
       # since the video is marked as seen in an async way, we revisit the page to check if the icon changed
@@ -901,7 +914,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       assert has_element?(
                view,
-               ~s{div[role="intro 1 details"] div[role="seen video icon"]}
+               ~s{div[role="intro video details"] div[role="seen video icon"]}
              )
     end
 
@@ -1270,7 +1283,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       assert has_element?(
                view,
-               "#index_item_1_#{section_1.resource_id}"
+               "#index_item_1_#{section_1.resource_id}_2023-11-03"
              )
     end
 
@@ -1807,13 +1820,13 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       section_1_element =
         element(
           view,
-          "#index_item_1_#{section_1.resource_id}"
+          "#index_item_1_#{section_1.resource_id}_2023-11-03"
         )
 
       subsection_1_element =
         element(
           view,
-          "#index_item_1_#{subsection_1.resource_id}"
+          "#index_item_1_#{subsection_1.resource_id}_2023-11-03"
         )
 
       assert render(section_1_element) =~ "Why Elixir?"
@@ -1840,7 +1853,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       assert has_element?(
                view,
-               "div.hidden #index_item_1_#{subsection_1.resource_id}"
+               "div.hidden #index_item_1_#{subsection_1.resource_id}_2023-11-03"
              )
     end
   end
