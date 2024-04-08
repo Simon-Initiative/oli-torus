@@ -52,6 +52,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         active_tab: :learn,
         units: get_or_compute_full_hierarchy(section)["children"],
         selected_module_per_unit_resource_id: %{},
+        student_end_date_exceptions_per_resource_id: %{},
         student_visited_pages: %{},
         student_progress_per_resource_id: %{},
         student_raw_avg_score_per_page_id: %{},
@@ -469,7 +470,8 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   def handle_info(
         {:student_metrics_and_enable_slider_buttons,
          {student_visited_pages, student_progress_per_resource_id,
-          student_raw_avg_score_per_page_id, student_raw_avg_score_per_container_id}},
+          student_raw_avg_score_per_page_id, student_raw_avg_score_per_container_id,
+          student_end_date_exceptions_per_resource_id}},
         socket
       ) do
     full_hierarchy = get_or_compute_full_hierarchy(socket.assigns.section)
@@ -478,6 +480,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
 
     {:noreply,
      assign(socket,
+       student_end_date_exceptions_per_resource_id: student_end_date_exceptions_per_resource_id,
        student_visited_pages: student_visited_pages,
        student_progress_per_resource_id: student_progress_per_resource_id,
        student_raw_avg_score_per_page_id: student_raw_avg_score_per_page_id,
@@ -520,6 +523,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
           unit={unit}
           ctx={@ctx}
           student_progress_per_resource_id={@student_progress_per_resource_id}
+          student_end_date_exceptions_per_resource_id={@student_end_date_exceptions_per_resource_id}
           selected_module_per_unit_resource_id={@selected_module_per_unit_resource_id}
           student_raw_avg_score_per_page_id={@student_raw_avg_score_per_page_id}
           viewed_intro_video_resource_ids={@viewed_intro_video_resource_ids}
@@ -549,6 +553,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   attr :ctx, :map, doc: "the context is needed to format the date considering the user's timezone"
   attr :student_progress_per_resource_id, :map
   attr :student_raw_avg_score_per_page_id, :map
+  attr :student_end_date_exceptions_per_resource_id, :map
   attr :selected_module_per_unit_resource_id, :map
   attr :progress, :integer
   attr :student_id, :integer
@@ -812,6 +817,9 @@ defmodule OliWeb.Delivery.Student.LearnLive do
               module={module}
               student_raw_avg_score_per_page_id={@student_raw_avg_score_per_page_id}
               student_progress_per_resource_id={@student_progress_per_resource_id}
+              student_end_date_exceptions_per_resource_id={
+                @student_end_date_exceptions_per_resource_id
+              }
               ctx={@ctx}
               student_id={@student_id}
               intro_video_viewed={
@@ -899,6 +907,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
 
   attr :module, :map
   attr :student_raw_avg_score_per_page_id, :map
+  attr :student_end_date_exceptions_per_resource_id, :map
   attr :ctx, :map
   attr :student_id, :integer
   attr :intro_video_viewed, :boolean
@@ -1041,14 +1050,14 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         resource_id={child["resource_id"]}
         student_id={@student_id}
         ctx={@ctx}
+        student_end_date_exceptions_per_resource_id={@student_end_date_exceptions_per_resource_id}
         due_date={
           if child["graded"],
             do:
               get_due_date_for_student(
                 child["section_resource"].end_date,
                 child["resource_id"],
-                child["section_resource"].section_id,
-                @student_id,
+                @student_end_date_exceptions_per_resource_id,
                 @ctx,
                 "{WDshort} {Mshort} {D}, {YYYY}"
               )
@@ -1081,6 +1090,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   attr :graded, :boolean
   attr :raw_avg_score, :map
   attr :student_raw_avg_score_per_page_id, :map
+  attr :student_end_date_exceptions_per_resource_id, :map
   attr :student_progress_per_resource_id, :map
   attr :due_date, :string
   attr :intro_video_viewed, :boolean
@@ -1158,14 +1168,14 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         resource_id={child["resource_id"]}
         student_id={@student_id}
         ctx={@ctx}
+        student_end_date_exceptions_per_resource_id={@student_end_date_exceptions_per_resource_id}
         due_date={
           if child["graded"],
             do:
               get_due_date_for_student(
                 child["section_resource"].end_date,
                 child["resource_id"],
-                child["section_resource"].section_id,
-                @student_id,
+                @student_end_date_exceptions_per_resource_id,
                 @ctx,
                 "{WDshort} {Mshort} {D}, {YYYY}"
               )
@@ -1641,6 +1651,17 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   end
 
   defp get_student_metrics(section, current_user_id) do
+    student_end_date_exceptions_per_resource_id =
+      Oli.Delivery.Settings.get_student_exception_setting_for_all_resources(
+        section.id,
+        current_user_id,
+        [:end_date]
+      )
+      |> Enum.reduce(%{}, fn {resource_id, settings}, acc ->
+        Map.put(acc, resource_id, settings[:end_date])
+      end)
+      |> IO.inspect(label: "Aca!!!")
+
     visited_pages_map = Sections.get_visited_pages(section.id, current_user_id)
 
     %{"container" => container_ids, "page" => page_ids} =
@@ -1666,7 +1687,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       |> Map.filter(fn {_, progress} -> progress not in [nil, 0.0] end)
 
     {visited_pages_map, progress_per_resource_id, raw_avg_score_per_page_id,
-     raw_avg_score_per_container_id}
+     raw_avg_score_per_container_id, student_end_date_exceptions_per_resource_id}
   end
 
   defp mark_visited_and_completed_pages(
@@ -1798,14 +1819,14 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   This function returns the end date for a resource considering the student exception (if any)
   """
 
-  defp get_due_date_for_student(end_date, resource_id, section_id, student_id, context, format) do
-    case Oli.Delivery.Settings.get_student_exception(resource_id, section_id, student_id) do
-      nil ->
-        end_date
-
-      student_exception ->
-        student_exception.end_date
-    end
+  defp get_due_date_for_student(
+         end_date,
+         resource_id,
+         student_end_date_exceptions_per_resource_id,
+         context,
+         format
+       ) do
+    Map.get(student_end_date_exceptions_per_resource_id, resource_id, end_date)
     |> FormatDateTime.to_formatted_datetime(context, format)
   end
 
