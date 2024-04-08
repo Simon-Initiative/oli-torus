@@ -948,7 +948,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     ~H"""
     <div
       id={"index_for_#{@module["resource_id"]}"}
-      class="relative flex flex-col gap-[6px] items-start"
+      class="relative flex flex-col gap-[25px] items-start"
     >
       <div
         :if={@module["learning_objectives"] != []}
@@ -1034,7 +1034,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         intro_video_viewed={@intro_video_viewed}
       />
       <div :for={grouped_due_date <- @page_due_dates} class="flex flex-col w-full">
-        <div class="h-[19px] mb-[10px] mt-[25px]">
+        <div class="h-[19px] mb-[10px]">
           <span class="text-[#3399FF] text-[14px] leading-[19px]">
             <%= "Due: #{format_date(grouped_due_date, @ctx, "{WDshort} {Mshort} {D}, {YYYY}")}" %>
           </span>
@@ -1163,7 +1163,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     <div
       id={"section_group_#{@resource_id}_#{@parent_due_date}"}
       class={[
-        "flex relative flex-col items-center gap-3 w-full",
+        "flex relative flex-col items-center w-full",
         maybe_hidden_section(@closed_sections, @resource_id, @parent_due_date)
       ]}
     >
@@ -1719,7 +1719,6 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       |> Enum.reduce(%{}, fn {resource_id, settings}, acc ->
         Map.put(acc, resource_id, settings[:end_date])
       end)
-      |> IO.inspect(label: "Aca!!!")
 
     visited_pages_map = Sections.get_visited_pages(section.id, current_user_id)
 
