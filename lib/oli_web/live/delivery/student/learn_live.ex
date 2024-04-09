@@ -1805,7 +1805,13 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     end)
   end
 
-  # defp display_module_item?(true, grouped_due_date, child), do: true
+  defp display_module_item?(
+         _show_completed_pages,
+         _grouped_due_date,
+         _student_end_date_exceptions_per_resource_id,
+         %{"section_resource" => %{scheduling_type: :inclass_activity}} = _child
+       ),
+       do: false
 
   defp display_module_item?(
          show_completed_pages,

@@ -222,6 +222,13 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
         duration_minutes: 15
       )
 
+    page_15_revision =
+      insert(:revision,
+        resource_type_id: ResourceType.get_id_by_type("page"),
+        title: "Page 15 - in class activity",
+        duration_minutes: 15
+      )
+
     # sections and sub-sections...
 
     subsection_1_revision =
@@ -230,7 +237,8 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
         children: [
           page_11_revision.resource_id,
           page_13_revision.resource_id,
-          page_14_revision.resource_id
+          page_14_revision.resource_id,
+          page_15_revision.resource_id
         ],
         title: "Erlang as a motivation"
       })
@@ -377,6 +385,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
         page_12_revision,
         page_13_revision,
         page_14_revision,
+        page_15_revision,
         section_1_revision,
         subsection_1_revision,
         module_1_revision,
@@ -461,6 +470,17 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       end_date: ~U[2023-11-03 20:00:00Z]
     })
 
+    # set page 15 to in class activity and page 14 to due by
+    Sections.get_section_resource(section.id, page_15_revision.resource_id)
+    |> Sections.update_section_resource(%{
+      scheduling_type: :inclass_activity
+    })
+
+    Sections.get_section_resource(section.id, page_14_revision.resource_id)
+    |> Sections.update_section_resource(%{
+      scheduling_type: :due_by
+    })
+
     %{
       author: author,
       section: section,
@@ -481,6 +501,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       top_level_page: top_level_page_revision,
       page_11: page_11_revision,
       page_12: page_12_revision,
+      page_13: page_13_revision,
       section_1: section_1_revision,
       subsection_1: subsection_1_revision,
       module_1: module_1_revision,
@@ -1904,6 +1925,58 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       assert render(group_by_not_yet_scheduled_div) =~ "Due: Not yet scheduled"
       assert render(group_by_not_yet_scheduled_div) =~ "Page 13"
       assert render(group_by_not_yet_scheduled_div) =~ "Page 14"
+    end
+
+    test "considers student exceptions when grouping pages in index by due date", %{
+      conn: conn,
+      user: user,
+      section: section,
+      page_13: page_13
+    } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+
+      # add a student exception for page 13
+      insert(:student_exception, %{
+        section: section,
+        user: user,
+        resource: page_13.resource,
+        end_date: ~U[2023-11-10 00:00:00Z]
+      })
+
+      {:ok, view, _html} = live(conn, Utils.learn_live_path(section.slug))
+
+      # when the slider buttons are enabled we know the student async metrics (including student exceptions) were loaded
+      assert_receive({_ref, {:push_event, "enable-slider-buttons", _}}, 2_000)
+
+      view
+      |> element(~s{div[role="unit_5"] div[role="card_4"]})
+      |> render_click()
+
+      group_by_due_date_div = element(view, ~s{div[id="pages_grouped_by_2023-11-10"]})
+
+      # page 13 is due on Nov 10, 2023 as defined in the student exception
+      assert render(group_by_due_date_div) =~ "Due: Fri Nov 10, 2023"
+      assert render(group_by_due_date_div) =~ "Page 13"
+    end
+
+    test "in class activities pages are not listed in the module index", %{
+      conn: conn,
+      user: user,
+      section: section
+    } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+
+      {:ok, view, _html} = live(conn, Utils.learn_live_path(section.slug))
+
+      view
+      |> element(~s{div[role="unit_5"] div[role="card_4"]})
+      |> render_click()
+
+      assert render(view) =~ "Page 13"
+      assert render(view) =~ "Page 14"
+      refute render(view) =~ "Page 15"
     end
   end
 
