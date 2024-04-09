@@ -1033,7 +1033,11 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         video_url={@module["intro_video"]}
         intro_video_viewed={@intro_video_viewed}
       />
-      <div :for={grouped_due_date <- @page_due_dates} class="flex flex-col w-full">
+      <div
+        :for={grouped_due_date <- @page_due_dates}
+        class="flex flex-col w-full"
+        id={"pages_grouped_by_#{grouped_due_date}"}
+      >
         <div class="h-[19px] mb-[10px]">
           <span class="text-[#3399FF] text-[14px] leading-[19px]">
             <%= "Due: #{format_date(grouped_due_date, @ctx, "{WDshort} {Mshort} {D}, {YYYY}")}" %>

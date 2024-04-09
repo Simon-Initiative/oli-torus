@@ -208,12 +208,30 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
         duration_minutes: 15
       )
 
+    page_13_revision =
+      insert(:revision,
+        resource_type_id: ResourceType.get_id_by_type("page"),
+        title: "Page 13",
+        duration_minutes: 15
+      )
+
+    page_14_revision =
+      insert(:revision,
+        resource_type_id: ResourceType.get_id_by_type("page"),
+        title: "Page 14",
+        duration_minutes: 15
+      )
+
     # sections and sub-sections...
 
     subsection_1_revision =
       insert(:revision, %{
         resource_type_id: Oli.Resources.ResourceType.get_id_by_type("container"),
-        children: [page_11_revision.resource_id],
+        children: [
+          page_11_revision.resource_id,
+          page_13_revision.resource_id,
+          page_14_revision.resource_id
+        ],
         title: "Erlang as a motivation"
       })
 
@@ -357,6 +375,8 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
         top_level_page_revision,
         page_11_revision,
         page_12_revision,
+        page_13_revision,
+        page_14_revision,
         section_1_revision,
         subsection_1_revision,
         module_1_revision,
@@ -1855,6 +1875,35 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
                view,
                "div.hidden #index_item_1_#{subsection_1.resource_id}_2023-11-03"
              )
+    end
+
+    test "groups pages within a module index by due date (even if some pages do not yet have a scheduled date)",
+         %{
+           conn: conn,
+           user: user,
+           section: section
+         } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+
+      {:ok, view, _html} = live(conn, Utils.learn_live_path(section.slug))
+
+      view
+      |> element(~s{div[role="unit_5"] div[role="card_4"]})
+      |> render_click()
+
+      group_by_due_date_div = element(view, ~s{div[id="pages_grouped_by_2023-11-03"]})
+
+      group_by_not_yet_scheduled_div =
+        element(view, ~s{div[id="pages_grouped_by_Not yet scheduled"]})
+
+      assert render(group_by_due_date_div) =~ "Due: Fri Nov 3, 2023"
+      assert render(group_by_due_date_div) =~ "Page 11"
+      assert render(group_by_due_date_div) =~ "Page 12"
+
+      assert render(group_by_not_yet_scheduled_div) =~ "Due: Not yet scheduled"
+      assert render(group_by_not_yet_scheduled_div) =~ "Page 13"
+      assert render(group_by_not_yet_scheduled_div) =~ "Page 14"
     end
   end
 
