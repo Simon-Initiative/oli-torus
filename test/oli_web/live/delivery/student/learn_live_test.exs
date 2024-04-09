@@ -1526,6 +1526,9 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       {:ok, view, _html} = live(conn, Utils.learn_live_path(section.slug))
 
+      # when the slider buttons are enabled we know the student async metrics (including progress) were loaded
+      assert_receive({_ref, {:push_event, "enable-slider-buttons", _}}, 2_000)
+
       # Progress in module 1 (which has page 2)
       assert has_element?(view, ~s{div[role="unit_1"] div[role="card_1_progress"]})
 
@@ -1590,7 +1593,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
              |> element(
                ~s{div[id="top_level_page_#{top_level_page.resource_id}"] div[role="header"]}
              )
-             |> render() =~ "PAGE 14"
+             |> render() =~ "PAGE 17"
 
       assert view
              |> element(
