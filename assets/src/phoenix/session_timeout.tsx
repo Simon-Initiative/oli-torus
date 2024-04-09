@@ -24,9 +24,8 @@ const SessionExpirationWarningComponent = (props: any) => {
   return (
     <div id="sessionExpirationId" className="fixed right-0" style={{ zIndex: 99 }}>
       <div
-        className={`${isEntering ? 'opacity-100' : 'opacity-0'} ${
-          isEntering ? 'translate-y-[0px]' : 'translate-y-[-25px]'
-        } transform transition duration-700 ease-in flex gap-2 items-center p-4 mb-4 text-sm text-yellow-800 rounded-lg bg-yellow-50 dark:bg-gray-800 dark:text-yellow-300 border-2 border-solid border-yellow-300`}
+        className={`${isEntering ? 'opacity-100' : 'opacity-0'} ${isEntering ? 'translate-y-[0px]' : 'translate-y-[-25px]'
+          } transform transition duration-700 ease-in flex gap-2 items-center p-4 mb-4 text-sm text-yellow-800 rounded-lg bg-yellow-50 dark:bg-gray-800 dark:text-yellow-300 border-2 border-solid border-yellow-300`}
         role="alert"
       >
         <svg
@@ -128,7 +127,6 @@ function triggerTimers() {
   const result = computeTimes();
   if (result !== undefined) {
     const { remainingTime, timeBeforeWarning } = result;
-    console.log(`remainingTime: ${remainingTime}, timeBeforeWarning: ${timeBeforeWarning}`);
     if (timeBeforeWarning > 0) {
       setTimeout(() => renderSessionExpirationWarning(), timeBeforeWarning);
     }
