@@ -85,14 +85,18 @@ defmodule Oli.Delivery.Settings do
   iex> Oli.Delivery.Settings.get_student_exception_setting_for_all_resources(1, 5)
   %{}
   """
-  def get_student_exception_setting_for_all_resources(section_id, user_id, fields \\ nil) do
-    fields =
-      if !fields do
-        %Oli.Delivery.Settings.StudentException{} |> Map.from_struct() |> Map.keys()
-      else
-        fields
-      end
 
+  def get_student_exception_setting_for_all_resources(section_id, user_id, fields \\ nil)
+
+  def get_student_exception_setting_for_all_resources(section_id, user_id, nil) do
+    fields = %Oli.Delivery.Settings.StudentException{} |> Map.from_struct() |> Map.keys()
+
+    get_all_student_exceptions(section_id, user_id)
+    |> Enum.reduce(%{}, fn se, acc -> Map.put(acc, se.resource_id, Map.take(se, fields)) end)
+  end
+
+  def get_student_exception_setting_for_all_resources(section_id, user_id, fields)
+      when is_list(fields) do
     get_all_student_exceptions(section_id, user_id)
     |> Enum.reduce(%{}, fn se, acc -> Map.put(acc, se.resource_id, Map.take(se, fields)) end)
   end
