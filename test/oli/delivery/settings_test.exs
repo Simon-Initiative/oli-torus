@@ -364,4 +364,58 @@ defmodule Oli.Delivery.SettingsTest do
             }} =
              Settings.update_student_exception(student_exception, %{end_date: nil}, [:end_date])
   end
+
+  test "get_student_exception_setting_for_all_resources/3 returns the student exception setting for all resources" do
+    section = insert(:section)
+    student = insert(:user)
+
+    student_exception =
+      insert(:student_exception, %{
+        max_attempts: 10,
+        end_date: ~U[2024-01-10 00:00:00Z],
+        section: section,
+        user: student
+      })
+
+    student_exception_2 =
+      insert(:student_exception, %{
+        max_attempts: 12,
+        end_date: ~U[2024-01-10 00:00:00Z],
+        section: section,
+        user: student
+      })
+
+    # returns all fields
+    result =
+      Settings.get_student_exception_setting_for_all_resources(
+        student_exception.section_id,
+        student_exception.user_id
+      )
+
+    assert result |> Map.get(student_exception.resource_id) |> Map.keys() ==
+             %Oli.Delivery.Settings.StudentException{} |> Map.from_struct() |> Map.keys()
+
+    assert result[student_exception.resource_id].max_attempts == 10
+    assert result[student_exception_2.resource_id].max_attempts == 12
+
+    # only returns the requested fields
+    assert %{
+             student_exception.resource_id => %{max_attempts: 10},
+             student_exception_2.resource_id => %{max_attempts: 12}
+           } ==
+             Settings.get_student_exception_setting_for_all_resources(
+               student_exception.section_id,
+               student_exception.user_id,
+               [:max_attempts]
+             )
+
+    # returns an empty map if there are no exceptions for that section and user
+    section_with_no_exceptions = insert(:section)
+
+    assert %{} ==
+             Settings.get_student_exception_setting_for_all_resources(
+               section_with_no_exceptions.id,
+               student.id
+             )
+  end
 end
