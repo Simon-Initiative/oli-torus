@@ -1,13 +1,17 @@
 
 <div class="workspace-header-container flex-1 flex flex-column shadow overflow-x-clip">
-  <div class="workspace-header flex-grow-1 flex flex-row flex-nowrap px-6 <%= if Map.has_key?(@conn.assigns, :breadcrumbs) and length(@breadcrumbs) > 0, do: "with-breadcrumbs", else: "" %>">
+  <div class={"workspace-header flex-grow-1 flex flex-row flex-nowrap px-6 #{if Map.has_key?(@conn.assigns, :breadcrumbs) and length(@breadcrumbs) > 0, do: "with-breadcrumbs", else: ""}"}>
     <h3 class="truncate"><%= if Map.has_key?(@conn.assigns, :breadcrumbs) and length(@breadcrumbs) > 0, do: hd(Enum.reverse(@breadcrumbs)).short_title, else: @title %></h3>
     <div class="flex-1"></div>
     <div>
       <%= render OliWeb.SharedView, "_help_button.html", conn: @conn %>
     </div>
     <div>
-      <%= account_dropdown @conn %>
+      <Components.Delivery.UserAccount.menu
+        id="user-account-menu"
+        ctx={@ctx}
+        is_system_admin={@is_system_admin}
+      />
     </div>
   </div>
 
