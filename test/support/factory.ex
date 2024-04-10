@@ -595,7 +595,6 @@ defmodule Oli.Factory do
     }
   end
 
-
   def vr_user_agent_factory() do
     %VrUserAgent{}
   end
