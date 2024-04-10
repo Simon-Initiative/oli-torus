@@ -2,8 +2,8 @@
 import React, { useCallback, useMemo } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { EntityId } from '@reduxjs/toolkit';
+import { useClickOutside } from '../../../../components/hooks/useClickOutside';
 import { useToggle } from '../../../../components/hooks/useToggle';
-import { useOnClickOutside } from '../../../../hooks/click_outside';
 import {
   selectAllActivities,
   selectCurrentActivityId,
@@ -40,7 +40,7 @@ interface ContextProps {
 }
 
 const ContextMenu: React.FC<ContextProps> = ({ position, onDelete, onDuplicate, onCancel }) => {
-  const ref = useOnClickOutside<HTMLUListElement>(onCancel);
+  const ref = useClickOutside<HTMLUListElement>(onCancel);
   return (
     <ul
       className="screen-context-menu"

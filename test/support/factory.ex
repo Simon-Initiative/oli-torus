@@ -4,7 +4,15 @@ defmodule Oli.Factory do
   alias Oli.Accounts.VrUserAgent
   alias Oli.Accounts.{Author, User, AuthorPreferences, UserPreferences}
   alias Oli.Authoring.Authors.{AuthorProject, ProjectRole}
-  alias Oli.Authoring.Course.{Family, Project, ProjectVisibility, ProjectResource}
+
+  alias Oli.Authoring.Course.{
+    Family,
+    Project,
+    ProjectAttributes,
+    ProjectVisibility,
+    ProjectResource
+  }
+
   alias Oli.Branding.Brand
   alias Oli.Delivery.Sections.ContainedObjective
 
@@ -38,7 +46,8 @@ defmodule Oli.Factory do
   alias Oli.Publishing.{PublishedResource}
   alias Oli.Publishing.Publications.Publication
   alias Oli.Resources.{Resource, Revision}
-  alias Oli.Resources.Collaboration.{CollabSpaceConfig, Post, PostContent}
+  alias Oli.Resources.Collaboration.{CollabSpaceConfig, Post, PostContent, UserReactionPost}
+  alias Oli.Search.RevisionEmbedding
 
   def author_factory() do
     %Author{
@@ -133,7 +142,8 @@ defmodule Oli.Factory do
       family: anonymous_build(:family),
       visibility: :global,
       authors: anonymous_build_list(2, :author),
-      publisher: anonymous_build(:publisher)
+      publisher: anonymous_build(:publisher),
+      attributes: anonymous_build(:project_attributes)
     }
   end
 
@@ -345,6 +355,14 @@ defmodule Oli.Factory do
       updated_at: DateTime.utc_now(),
       inserted_at: DateTime.utc_now(),
       anonymous: false
+    }
+  end
+
+  def user_reaction_post_factory() do
+    %UserReactionPost{
+      reaction: :like
+      # user: anonymous_build(:user),
+      # post: anonymous_build(:post)
     }
   end
 
@@ -577,8 +595,42 @@ defmodule Oli.Factory do
     }
   end
 
+
   def vr_user_agent_factory() do
     %VrUserAgent{}
+  end
+
+  def revision_embedding_factory() do
+    %RevisionEmbedding{
+      revision: anonymous_build(:revision),
+      resource: anonymous_build(:resource),
+      resource_type_id: 1,
+      component_type: :stem,
+      chunk_type: :paragraph,
+      chunk_ordinal: 1,
+      fingerprint_md5: "fingerprint_md5",
+      content: "content",
+      embedding: anonymous_build(:embedding)
+    }
+  end
+
+  def embedding_factory() do
+    Pgvector.new(Enum.to_list(1..1536))
+  end
+
+  def project_attributes_factory() do
+    %ProjectAttributes{
+      learning_language: "en",
+      license: anonymous_build(:project_attributes_license),
+      calculate_embeddings_on_publish: false
+    }
+  end
+
+  def project_attributes_license_factory() do
+    %ProjectAttributes.License{
+      license_type: :none,
+      custom_license_details: ""
+    }
   end
 
   # HELPERS

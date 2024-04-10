@@ -58,10 +58,16 @@ defmodule Oli.Application do
 
         # Starts Cachex to store user/author info across requests
         Oli.AccountLookupCache,
+        {Cachex, name: :page_content_cache},
+
         # Starts Cachex to store datashop export info
         Oli.DatashopCache,
         # Starts Cachex to store vr user agents
         Oli.VrLookupCache,
+
+        # Starts Cachex to store section info
+        Oli.Delivery.Sections.SectionCache,
+
         # a supervisor which can be used to dynamically supervise tasks
         {Task.Supervisor, name: Oli.TaskSupervisor}
       ] ++ maybe_node_js_config()

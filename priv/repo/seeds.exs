@@ -165,7 +165,7 @@ if Application.fetch_env!(:oli, :env) == :dev do
 
     Collaborators.add_collaborator(admin_author, seeds.project)
 
-    {:ok, publication} = Oli.Publishing.publish_project(seeds.project, "Initial publish")
+    {:ok, publication} = Oli.Publishing.publish_project(seeds.project, "Initial publish", 1)
 
     section_params =
       %{}

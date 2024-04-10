@@ -1,6 +1,8 @@
 defmodule OliWeb.Components.Common do
   use Phoenix.Component
 
+  import OliWeb.Gettext
+
   alias OliWeb.Common.FormatDateTime
   alias Phoenix.LiveView.JS
 
@@ -49,6 +51,115 @@ defmodule OliWeb.Components.Common do
     end
   end
 
+  defp button_variant_classes(variant, disabled: true) do
+    case variant do
+      :primary ->
+        "rounded text-white bg-primary-200 dark:bg-primary-900 cursor-not-allowed hover:no-underline"
+
+      :secondary ->
+        "rounded text-gray-500 bg-transparent dark:text-gray-500 cursor-not-allowed hover:no-underline"
+
+      :tertiary ->
+        "rounded text-primary-300 bg-primary-50 dark:text-primary-500 dark:bg-primary-800 cursor-not-allowed hover:no-underline"
+
+      :light ->
+        "rounded text-gray-400 bg-gray-50 dark:text-gray-500 dark:bg-gray-900 cursor-not-allowed hover:no-underline"
+
+      :dark ->
+        "rounded text-gray-400 bg-gray-500 dark:text-gray-300 dark:bg-gray-800 cursor-not-allowed hover:no-underline"
+
+      :info ->
+        "rounded text-gray-100 bg-gray-300 dark:bg-gray-800 cursor-not-allowed hover:no-underline"
+
+      :success ->
+        "rounded text-green-100 bg-green-300 dark:bg-green-600 cursor-not-allowed hover:no-underline"
+
+      :warning ->
+        "rounded text-yellow-100 bg-yellow-300 dark:bg-yellow-600 cursor-not-allowed hover:no-underline"
+
+      :danger ->
+        "rounded text-red-100 bg-red-300 dark:bg-red-600 cursor-not-allowed hover:no-underline"
+
+      :link ->
+        "rounded text-blue-400 dark:text-blue-800 cursor-default"
+
+      :link_info ->
+        "rounded text-gray-400 dark:text-gray-800 cursor-default"
+
+      :link_success ->
+        "rounded text-green-400 dark:text-green-800 cursor-default"
+
+      :link_warning ->
+        "rounded text-yellow-400 dark:text-yellow-800 cursor-default"
+
+      :link_danger ->
+        "rounded text-red-400 dark:text-red-800 cursor-default"
+
+      _ ->
+        ""
+    end
+  end
+
+  defp button_variant_classes(variant, _) do
+    case variant do
+      :primary ->
+        "rounded text-white hover:text-white bg-primary-500 hover:bg-primary-600 active:bg-primary-700 focus:ring-2 focus:ring-primary-400 dark:bg-primary-600 dark:hover:bg-primary dark:active:bg-primary-400 focus:outline-none dark:focus:ring-primary-700 hover:no-underline"
+
+      :secondary ->
+        "rounded text-body-color bg-transparent hover:bg-gray-200 active:text-white active:bg-primary-700 focus:ring-2 focus:ring-primary-400 dark:text-body-color-dark dark:hover:bg-gray-600 dark:active:bg-primary-400 focus:outline-none dark:focus:ring-primary-700 hover:no-underline"
+
+      :tertiary ->
+        "rounded text-primary-700 bg-primary-50 hover:bg-primary-100 active:bg-primary-200 focus:ring-2 focus:ring-primary-100 dark:text-primary-300 dark:bg-primary-800 dark:hover:bg-primary-700 dark:active:bg-primary-600 focus:outline-none dark:focus:ring-primary-800 hover:no-underline"
+
+      :light ->
+        "rounded text-body-color bg-gray-100 hover:bg-gray-200 active:bg-gray-300 focus:ring-2 focus:ring-gray-100 dark:text-white dark:bg-gray-800 dark:hover:bg-gray-700 dark:active:bg-gray-600 focus:outline-none dark:focus:ring-gray-800 hover:no-underline"
+
+      :dark ->
+        "rounded text-white bg-gray-700 hover:bg-gray-800 active:bg-gray-600 focus:ring-2 focus:ring-gray-600 dark:text-white dark:bg-gray-700 dark:hover:bg-gray-600 dark:active:bg-gray-500 focus:outline-none dark:focus:ring-gray-500 hover:no-underline"
+
+      :info ->
+        "rounded text-white bg-gray-500 hover:bg-gray-600 active:bg-gray-700 focus:ring-2 focus:ring-gray-400 dark:bg-gray-600 dark:hover:bg-gray-500 dark:active:bg-gray-400 focus:outline-none dark:focus:ring-gray-700 hover:no-underline"
+
+      :success ->
+        "rounded text-white bg-green-600 hover:bg-green-700 active:bg-green-800 focus:ring-2 focus:ring-green-700 dark:bg-green-600 dark:hover:bg-green-500 dark:active:bg-green-400 focus:outline-none dark:focus:ring-green-700 hover:no-underline"
+
+      :warning ->
+        "rounded text-white bg-yellow-500 hover:bg-yellow-600 active:bg-yellow-700 focus:ring-2 focus:ring-yellow-400 dark:bg-yellow-600 dark:hover:bg-yellow-500 dark:active:bg-yellow-400 focus:outline-none dark:focus:ring-yellow-700 hover:no-underline"
+
+      :danger ->
+        "rounded text-white bg-red-500 hover:bg-red-600 active:bg-red-700 focus:ring-2 focus:ring-red-400 dark:bg-red-600 dark:hover:bg-red-500 dark:active:bg-red-400 focus:outline-none dark:focus:ring-red-700 hover:no-underline"
+
+      :link ->
+        "rounded text-blue-500 hover:text-blue-600 active:text-blue-700 focus:ring-2 focus:ring-blue-400 dark:text-blue-600 dark:hover:text-blue-500 dark:active:text-blue-400 focus:outline-none dark:focus:ring-blue-700 hover:underline cursor-pointer"
+
+      :link_info ->
+        "rounded text-gray-500 hover:text-gray-600 active:text-gray-700 focus:ring-2 focus:ring-gray-400 dark:text-gray-600 dark:hover:text-gray-500 dark:active:text-gray-400 focus:outline-none dark:focus:ring-gray-700 hover:underline cursor-pointer"
+
+      :link_success ->
+        "rounded text-green-500 hover:text-green-600 active:text-green-700 focus:ring-2 focus:ring-green-400 dark:text-green-600 dark:hover:text-green-500 dark:active:text-green-400 focus:outline-none dark:focus:ring-green-700 hover:underline cursor-pointer"
+
+      :link_warning ->
+        "rounded text-yellow-500 hover:text-yellow-600 active:text-yellow-700 focus:ring-2 focus:ring-yellow-400 dark:text-yellow-600 dark:hover:text-yellow-500 dark:active:text-yellow-400 focus:outline-none dark:focus:ring-yellow-700 hover:underline cursor-pointer"
+
+      :link_danger ->
+        "rounded text-red-500 hover:text-red-600 active:text-red-700 focus:ring-2 focus:ring-red-400 dark:text-red-600 dark:hover:text-red-500 dark:active:text-red-400 focus:outline-none dark:focus:ring-red-700 hover:underline cursor-pointer"
+
+      _ ->
+        ""
+    end
+  end
+
+  defp button_size_classes(size) do
+    case size do
+      :xs -> "text-xs px-3 py-1"
+      :sm -> "text-sm px-4 py-1.5"
+      :md -> "text-base px-6 py-2"
+      :lg -> "text-lg px-7 py-2"
+      :xl -> "text-xl px-8 py-2"
+      _ -> ""
+    end
+  end
+
   @doc """
   Button component.
 
@@ -56,6 +167,7 @@ defmodule OliWeb.Components.Common do
 
       <.button>Send!</.button>
       <.button phx-click="go" class="ml-2">Send!</.button>
+      <.button href={~p"/some/route"} class="ml-2">Go!</.button>
   """
   attr(:variant, :atom,
     default: nil,
@@ -69,133 +181,54 @@ defmodule OliWeb.Components.Common do
       :success,
       :warning,
       :danger,
+      :link,
+      :link_info,
+      :link_success,
+      :link_warning,
+      :link_danger,
       nil
     ]
   )
 
   attr(:size, :atom, default: :md, values: [:xs, :sm, :md, :lg, :xl, :custom, nil])
-
+  attr(:href, :string, default: nil)
   attr(:type, :string, default: nil)
   attr(:class, :string, default: nil)
-  attr(:rest, :global, include: ~w(disabled form name value))
+  attr(:rest, :global, include: ~w(disabled form name value target rel download))
 
   slot(:inner_block, required: true)
 
   def button(assigns) do
     ~H"""
-    <button
-      type={@type}
-      class={[
-        "rounded whitespace-nowrap",
-        button_variant_classes(@variant),
-        button_size_classes(@size),
-        @class
-      ]}
-      {@rest}
-    >
-      <%= render_slot(@inner_block) %>
-    </button>
+    <%= case @href do %>
+      <% nil -> %>
+        <button
+          type={@type}
+          class={[
+            "whitespace-nowrap",
+            button_variant_classes(@variant, disabled: @rest[:disabled]),
+            button_size_classes(@size),
+            @class
+          ]}
+          {@rest}
+        >
+          <%= render_slot(@inner_block) %>
+        </button>
+      <% _ -> %>
+        <a
+          href={@href}
+          class={[
+            "whitespace-nowrap",
+            button_variant_classes(@variant, disabled: @rest[:disabled]),
+            button_size_classes(@size),
+            @class
+          ]}
+          {@rest}
+        >
+          <%= render_slot(@inner_block) %>
+        </a>
+    <% end %>
     """
-  end
-
-  defp button_variant_classes(variant) do
-    case variant do
-      :primary ->
-        "text-white bg-primary-500 hover:bg-primary-600 active:bg-primary-700 focus:ring-2 focus:ring-primary-400 dark:bg-primary-600 dark:hover:bg-primary dark:active:bg-primary-400 focus:outline-none dark:focus:ring-primary-700"
-
-      :secondary ->
-        "text-body-color bg-transparent hover:bg-gray-200 active:text-white active:bg-primary-600 focus:ring-2 focus:ring-primary-400 dark:text-body-color-dark dark:hover:bg-gray-600 dark:active:bg-primary-400 focus:outline-none dark:focus:ring-primary-700"
-
-      :tertiary ->
-        "text-primary-700 bg-primary-50 hover:bg-primary-100 active:bg-primary-200 focus:ring-2 focus:ring-primary-100 dark:text-primary-300 dark:bg-primary-800 dark:hover:bg-primary-700 dark:active:bg-primary-600 focus:outline-none dark:focus:ring-primary-800"
-
-      :light ->
-        "text-body-color bg-gray-100 hover:bg-gray-200 active:bg-gray-300 focus:ring-2 focus:ring-gray-100 dark:text-white dark:bg-gray-800 dark:hover:bg-gray-700 dark:active:bg-gray-600 focus:outline-none dark:focus:ring-gray-800"
-
-      :dark ->
-        "text-white bg-gray-500 hover:bg-gray-600 active:bg-gray-700 focus:ring-2 focus:ring-gray-500 dark:text-white dark:bg-gray-500 dark:hover:bg-gray-400 dark:active:bg-gray-300 focus:outline-none dark:focus:ring-gray-500"
-
-      :info ->
-        "text-white bg-gray-500 hover:bg-gray-600 active:bg-gray-700 focus:ring-2 focus:ring-gray-400 dark:bg-gray-600 dark:hover:bg-gray-500 dark:active:bg-gray-400 focus:outline-none dark:focus:ring-gray-700"
-
-      :success ->
-        "text-white bg-green-500 hover:bg-green-600 active:bg-green-700 focus:ring-2 focus:ring-green-400 dark:bg-green-600 dark:hover:bg-green-500 dark:active:bg-green-400 focus:outline-none dark:focus:ring-green-700"
-
-      :warning ->
-        "text-white bg-yellow-500 hover:bg-yellow-600 active:bg-yellow-700 focus:ring-2 focus:ring-yellow-400 dark:bg-yellow-600 dark:hover:bg-yellow-500 dark:active:bg-yellow-400 focus:outline-none dark:focus:ring-yellow-700"
-
-      :danger ->
-        "text-white bg-red-500 hover:bg-red-600 active:bg-red-700 focus:ring-2 focus:ring-red-400 dark:bg-red-600 dark:hover:bg-red-500 dark:active:bg-red-400 focus:outline-none dark:focus:ring-red-700"
-
-      _ ->
-        ""
-    end
-  end
-
-  defp button_size_classes(size) do
-    case size do
-      :xs -> "text-xs px-2 py-1"
-      :sm -> "text-sm px-2.5 py-1.5"
-      :md -> "text-base px-3 py-2"
-      :lg -> "text-lg px-4 py-2"
-      :xl -> "text-xl px-4 py-2"
-      _ -> ""
-    end
-  end
-
-  @doc """
-  Link button component.
-
-  ## Examples
-
-      <.link>Navigate!</.link>
-      <.link phx-click="go" class="ml-2">Navigate!</.link>
-  """
-  attr(:variant, :atom, default: nil, values: [:primary, :info, :success, :warning, :danger, nil])
-  attr(:href, :string, default: nil)
-  attr(:class, :string, default: nil)
-  attr(:rest, :global, include: ~w(disabled target rel download))
-
-  slot(:inner_block, required: true)
-
-  def button_link(assigns) do
-    ~H"""
-    <a
-      href={@href}
-      class={[
-        "rounded px-3.5 py-2 whitespace-nowrap hover:underline",
-        link_variant_classes(@variant),
-        @rest[:disabled] &&
-          "text-gray-500 hover:text-gray-500 focus:ring-0 hover:no-underline cursor-default",
-        @class
-      ]}
-      {@rest}
-    >
-      <%= render_slot(@inner_block) %>
-    </a>
-    """
-  end
-
-  defp link_variant_classes(variant) do
-    case variant do
-      :primary ->
-        "text-blue-500 hover:text-blue-600 active:text-blue-700 focus:ring-2 focus:ring-blue-400 dark:text-blue-600 dark:hover:text-blue-500 dark:active:text-blue-400 focus:outline-none dark:focus:ring-blue-700"
-
-      :info ->
-        "text-gray-500 hover:text-gray-600 active:text-gray-700 focus:ring-2 focus:ring-gray-400 dark:text-gray-600 dark:hover:text-gray-500 dark:active:text-gray-400 focus:outline-none dark:focus:ring-gray-700"
-
-      :success ->
-        "text-green-500 hover:text-green-600 active:text-green-700 focus:ring-2 focus:ring-green-400 dark:text-green-600 dark:hover:text-green-500 dark:active:text-green-400 focus:outline-none dark:focus:ring-green-700"
-
-      :warning ->
-        "text-yellow-500 hover:text-yellow-600 active:text-yellow-700 focus:ring-2 focus:ring-yellow-400 dark:text-yellow-600 dark:hover:text-yellow-500 dark:active:text-yellow-400 focus:outline-none dark:focus:ring-yellow-700"
-
-      :danger ->
-        "text-red-500 hover:text-red-600 active:text-red-700 focus:ring-2 focus:ring-red-400 dark:text-red-600 dark:hover:text-red-500 dark:active:text-red-400 focus:outline-none dark:focus:ring-red-700"
-
-      _ ->
-        ""
-    end
   end
 
   @doc """
@@ -266,7 +299,7 @@ defmodule OliWeb.Components.Common do
   def input(%{field: %Phoenix.HTML.FormField{} = field} = assigns) do
     assigns
     |> assign(field: nil, id: assigns.id || field.id, field_value: field.value)
-    |> assign(:errors, Enum.map(field.errors, &OliWeb.ErrorHelpers.translate_error(&1)))
+    |> assign(:errors, Enum.map(field.errors, &translate_error(&1)))
     |> assign_new(:name, fn -> if assigns.multiple, do: field.name <> "[]", else: field.name end)
     |> assign_new(:value, fn -> field.value end)
     |> assign_new(:class, fn -> assigns[:class] end)
@@ -546,6 +579,437 @@ defmodule OliWeb.Components.Common do
         aria-hidden="true"
       />
     </div>
+    """
+  end
+
+  attr(:percent, :integer, required: true)
+  attr(:width, :string, default: "100%")
+  attr(:show_percent, :boolean, default: true)
+  attr(:role, :string, default: "progress_bar")
+  attr(:height, :string, default: "h-1")
+
+  attr(:on_going_colour, :string,
+    default: "bg-[#1E9531]",
+    doc: "the colour of the progress bar when progress < 100%"
+  )
+
+  attr(:completed_colour, :string,
+    default: "bg-[#1E9531]",
+    doc: "the colour of the progress bar when progress = 100%"
+  )
+
+  def progress_bar(assigns) do
+    ~H"""
+    <div class="flex flex-row items-center mx-auto" role={@role}>
+      <div class="flex justify-center w-full">
+        <div
+          class={"rounded-[60px] bg-gray-200 #{@height} dark:bg-[rgba(170,170,170,0.20)]"}
+          style={"width: #{@width}"}
+        >
+          <div
+            class={[
+              "rounded-[60px] #{@height}",
+              if(@percent == 100, do: @completed_colour, else: @on_going_colour)
+            ]}
+            style={"width: #{@percent}%"}
+          >
+          </div>
+        </div>
+      </div>
+      <div
+        :if={@show_percent}
+        class="ml-[6px] text-[16px] dark:text-[#DDD] leading-[32px] tracking-[0.02px] font-semibold"
+      >
+        <%= @percent %>%
+      </div>
+    </div>
+    """
+  end
+
+  attr(:role, :string)
+  attr(:id, :string)
+  attr(:button_class, :string)
+  attr(:options, :list)
+  slot(:inner_block)
+
+  def dropdown(assigns) do
+    ~H"""
+    <div class="relative" phx-click-away={JS.hide(to: "##{@id}-options")}>
+      <button
+        phx-click={
+          JS.toggle(
+            to: "##{@id}-options",
+            in: {"ease-out duration-300", "opacity-0", "opacity-100"},
+            out: {"ease-out duration-200", "opacity-100", "opacity-0"}
+          )
+        }
+        id={@id}
+        role={@role}
+        class={[@button_class]}
+      >
+        <%= render_slot(@inner_block) %>
+      </button>
+      <ul
+        class="hidden absolute top-10 rounded-lg bg-white dark:bg-gray-800 dark:border dark:border-gray-900 p-4 z-10 shadow-lg"
+        id={"#{@id}-options"}
+        class="hidden"
+      >
+        <%= for option <- @options do %>
+          <li>
+            <button
+              phx-click={option.on_click |> JS.hide(to: "##{@id}-options")}
+              class={[
+                "flex items-center w-full gap-[10px] px-[10px] py-[4px] hover:text-gray-400 dark:text-white dark:hover:text-white/50",
+                option[:class]
+              ]}
+              role={"dropdown-item #{option.text}"}
+            >
+              <span class="text-[14px] leading-[20px] whitespace-nowrap"><%= option.text %></span>
+              <%= Phoenix.HTML.raw(option[:icon]) %>
+            </button>
+          </li>
+        <% end %>
+      </ul>
+    </div>
+    """
+  end
+
+  @doc """
+  Renders a [Fontawesome 6](https://fontawesome.com/icons) icon.
+
+  ## Examples
+
+      <.icon name="fa-solid fa-xmark" />
+      <.icon name="fa-solid fa-xmark" class="ml-1 w-3 h-3 animate-spin" />
+  """
+  attr(:name, :string, required: true)
+  attr(:class, :string, default: nil)
+
+  def icon(assigns) do
+    ~H"""
+    <i class={[@name, @class]} />
+    """
+  end
+
+  @doc """
+  Renders flash notices.
+
+  ## Examples
+
+      <.flash kind={:info} flash={@flash} />
+      <.flash kind={:info} phx-mounted={show("#flash")}>Welcome Back!</.flash>
+  """
+  attr(:id, :string, default: "flash", doc: "the optional id of flash container")
+  attr(:flash, :map, default: %{}, doc: "the map of flash messages to display")
+  attr(:title, :string, default: nil)
+  attr(:kind, :atom, values: [:info, :error], doc: "used for styling and flash lookup")
+  attr(:rest, :global, doc: "the arbitrary HTML attributes to add to the flash container")
+
+  slot(:inner_block, doc: "the optional inner block that renders the flash message")
+
+  def flash(assigns) do
+    ~H"""
+    <div
+      :if={msg = render_slot(@inner_block) || Phoenix.Flash.get(@flash, @kind)}
+      id={@id}
+      class={[
+        "mb-4 rounded-lg px-5 py-3 text-base text-primary-600",
+        @kind == :info && "bg-primary-100 text-primary-600",
+        @kind == :error && "bg-red-100 text-red-700"
+      ]}
+      role="alert"
+      {@rest}
+    >
+      <div class="flex flex-row">
+        <div class="flex-1">
+          <p :if={@title} class="flex items-center gap-1.5 text-sm font-semibold leading-6">
+            <.icon :if={@kind == :info} name="fa-solid fa-circle-info" class="h-4 w-4" />
+            <.icon :if={@kind == :error} name="fa-solid fa-circle-exclamation" class="h-4 w-4" />
+            <%= @title %>
+          </p>
+          <p class="mt-2 text-sm leading-5"><%= msg %></p>
+        </div>
+        <div>
+          <button
+            type="button"
+            class="group"
+            aria-label={gettext("close")}
+            phx-click={JS.push("lv:clear-flash", value: %{key: @kind}) |> hide("##{@id}")}
+          >
+            <.icon name="fa-solid fa-xmark" class="w-5 h-5 opacity-40 group-hover:opacity-70" />
+          </button>
+        </div>
+      </div>
+    </div>
+    """
+  end
+
+  @doc """
+  Shows the flash group with standard titles and content.
+
+  ## Examples
+
+      <.flash_group flash={@flash} />
+  """
+  attr(:flash, :map, required: true, doc: "the map of flash messages")
+
+  def flash_group(assigns) do
+    ~H"""
+    <.flash kind={:info} title="Success!" flash={@flash} />
+    <.flash kind={:error} title="Error!" flash={@flash} />
+    <.flash
+      id="client-error"
+      kind={:error}
+      title="We can't find the internet"
+      phx-disconnected={show(".phx-client-error #client-error")}
+      phx-connected={hide("#client-error")}
+      hidden
+    >
+      Attempting to reconnect <.icon name="hero-arrow-path" class="ml-1 h-3 w-3 animate-spin" />
+    </.flash>
+
+    <.flash
+      id="server-error"
+      kind={:error}
+      title="Something went wrong!"
+      phx-disconnected={show(".phx-server-error #server-error")}
+      phx-connected={hide("#server-error")}
+      hidden
+    >
+      Hang in there while we get back on track
+      <.icon name="hero-arrow-path" class="ml-1 h-3 w-3 animate-spin" />
+    </.flash>
+    """
+  end
+
+  ## JS Commands
+
+  def show(js \\ %JS{}, selector) do
+    JS.show(js,
+      to: selector,
+      transition:
+        {"transition-all transform ease-out duration-300",
+         "opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95",
+         "opacity-100 translate-y-0 sm:scale-100"}
+    )
+  end
+
+  def hide(js \\ %JS{}, selector) do
+    JS.hide(js,
+      to: selector,
+      time: 200,
+      transition:
+        {"transition-all transform ease-in duration-200",
+         "opacity-100 translate-y-0 sm:scale-100",
+         "opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"}
+    )
+  end
+
+  @doc """
+  Translates an error message using gettext.
+  """
+  def translate_error({msg, opts}) do
+    # When using gettext, we typically pass the strings we want
+    # to translate as a static argument:
+    #
+    #     # Translate the number of files with plural rules
+    #     dngettext("errors", "1 file", "%{count} files", count)
+    #
+    # However the error messages in our forms and APIs are generated
+    # dynamically, so we need to translate them by calling Gettext
+    # with our gettext backend as first argument. Translations are
+    # available in the errors.po file (as we use the "errors" domain).
+    if count = opts[:count] do
+      Gettext.dngettext(OliWeb.Gettext, "errors", msg, msg, count, opts)
+    else
+      Gettext.dgettext(OliWeb.Gettext, "errors", msg, opts)
+    end
+  end
+
+  @doc """
+  Translates the errors for a field from a keyword list of errors.
+  """
+  def translate_errors(errors, field) when is_list(errors) do
+    for {^field, {msg, opts}} <- errors, do: translate_error({msg, opts})
+  end
+
+  @doc """
+  Renders a hero banner.
+  """
+  attr(:class, :string, default: nil)
+  slot(:inner_block, required: true)
+
+  def hero_banner(assigns) do
+    ~H"""
+    <div class={["w-full bg-cover bg-center bg-no-repeat py-24 px-16", @class]}>
+      <div class="container mx-auto flex flex-col">
+        <%= render_slot(@inner_block) %>
+      </div>
+    </div>
+    """
+  end
+
+  @doc """
+  Renders a loading spinner.
+  """
+  attr(:size_px, :integer, default: 64)
+
+  def loading_spinner(assigns) do
+    ~H"""
+    <svg
+      class="loading"
+      xmlns="http://www.w3.org/2000/svg"
+      xmlns:xlink="http://www.w3.org/1999/xlink"
+      style="margin: auto; background: none; display: block; shape-rendering: auto;"
+      width={"#{@size_px}px"}
+      height={"#{@size_px}px"}
+      viewBox={"#{Kernel.div(@size_px, 4)} #{Kernel.div(@size_px, 4)} #{@size_px} #{@size_px}"}
+      preserveAspectRatio="xMidYMid"
+    >
+      <g transform="rotate(0 50 50)">
+        <rect x="48.5" y="34" rx="1.28" ry="1.28" width="3" height="8" fill="#757575">
+          <animate
+            attributeName="opacity"
+            values="1;0"
+            keyTimes="0;1"
+            dur="1s"
+            begin="-0.9090909090909091s"
+            repeatCount="indefinite"
+          >
+          </animate>
+        </rect>
+      </g>
+      <g transform="rotate(32.72727272727273 50 50)">
+        <rect x="48.5" y="34" rx="1.28" ry="1.28" width="3" height="8" fill="#757575">
+          <animate
+            attributeName="opacity"
+            values="1;0"
+            keyTimes="0;1"
+            dur="1s"
+            begin="-0.8181818181818182s"
+            repeatCount="indefinite"
+          >
+          </animate>
+        </rect>
+      </g>
+      <g transform="rotate(65.45454545454545 50 50)">
+        <rect x="48.5" y="34" rx="1.28" ry="1.28" width="3" height="8" fill="#757575">
+          <animate
+            attributeName="opacity"
+            values="1;0"
+            keyTimes="0;1"
+            dur="1s"
+            begin="-0.7272727272727273s"
+            repeatCount="indefinite"
+          >
+          </animate>
+        </rect>
+      </g>
+      <g transform="rotate(98.18181818181819 50 50)">
+        <rect x="48.5" y="34" rx="1.28" ry="1.28" width="3" height="8" fill="#757575">
+          <animate
+            attributeName="opacity"
+            values="1;0"
+            keyTimes="0;1"
+            dur="1s"
+            begin="-0.6363636363636364s"
+            repeatCount="indefinite"
+          >
+          </animate>
+        </rect>
+      </g>
+      <g transform="rotate(130.9090909090909 50 50)">
+        <rect x="48.5" y="34" rx="1.28" ry="1.28" width="3" height="8" fill="#757575">
+          <animate
+            attributeName="opacity"
+            values="1;0"
+            keyTimes="0;1"
+            dur="1s"
+            begin="-0.5454545454545454s"
+            repeatCount="indefinite"
+          >
+          </animate>
+        </rect>
+      </g>
+      <g transform="rotate(163.63636363636363 50 50)">
+        <rect x="48.5" y="34" rx="1.28" ry="1.28" width="3" height="8" fill="#757575">
+          <animate
+            attributeName="opacity"
+            values="1;0"
+            keyTimes="0;1"
+            dur="1s"
+            begin="-0.45454545454545453s"
+            repeatCount="indefinite"
+          >
+          </animate>
+        </rect>
+      </g>
+      <g transform="rotate(196.36363636363637 50 50)">
+        <rect x="48.5" y="34" rx="1.28" ry="1.28" width="3" height="8" fill="#757575">
+          <animate
+            attributeName="opacity"
+            values="1;0"
+            keyTimes="0;1"
+            dur="1s"
+            begin="-0.36363636363636365s"
+            repeatCount="indefinite"
+          >
+          </animate>
+        </rect>
+      </g>
+      <g transform="rotate(229.0909090909091 50 50)">
+        <rect x="48.5" y="34" rx="1.28" ry="1.28" width="3" height="8" fill="#757575">
+          <animate
+            attributeName="opacity"
+            values="1;0"
+            keyTimes="0;1"
+            dur="1s"
+            begin="-0.2727272727272727s"
+            repeatCount="indefinite"
+          >
+          </animate>
+        </rect>
+      </g>
+      <g transform="rotate(261.8181818181818 50 50)">
+        <rect x="48.5" y="34" rx="1.28" ry="1.28" width="3" height="8" fill="#757575">
+          <animate
+            attributeName="opacity"
+            values="1;0"
+            keyTimes="0;1"
+            dur="1s"
+            begin="-0.18181818181818182s"
+            repeatCount="indefinite"
+          >
+          </animate>
+        </rect>
+      </g>
+      <g transform="rotate(294.54545454545456 50 50)">
+        <rect x="48.5" y="34" rx="1.28" ry="1.28" width="3" height="8" fill="#757575">
+          <animate
+            attributeName="opacity"
+            values="1;0"
+            keyTimes="0;1"
+            dur="1s"
+            begin="-0.09090909090909091s"
+            repeatCount="indefinite"
+          >
+          </animate>
+        </rect>
+      </g>
+      <g transform="rotate(327.27272727272725 50 50)">
+        <rect x="48.5" y="34" rx="1.28" ry="1.28" width="3" height="8" fill="#757575">
+          <animate
+            attributeName="opacity"
+            values="1;0"
+            keyTimes="0;1"
+            dur="1s"
+            begin="0s"
+            repeatCount="indefinite"
+          >
+          </animate>
+        </rect>
+      </g>
+    </svg>
     """
   end
 end

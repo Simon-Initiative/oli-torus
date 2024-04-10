@@ -9,6 +9,14 @@ defmodule Oli.Delivery.Sections.SectionResource do
   alias Oli.Delivery.Sections.Section
   alias Oli.Delivery.DeliveryPolicy
 
+  @derive {Jason.Encoder,
+           only: [
+             :numbering_index,
+             :numbering_level,
+             :start_date,
+             :end_date,
+             :section_id
+           ]}
   # contextual information
   schema "section_resources" do
     # the index of this resource within the flattened ordered list of section resources
@@ -64,6 +72,8 @@ defmodule Oli.Delivery.Sections.SectionResource do
     field(:title, :string, virtual: true)
     field(:graded, :boolean, virtual: true)
     field(:resource_type_id, :integer, virtual: true)
+    field(:revision_slug, :string, virtual: true)
+    field(:purpose, :string, virtual: true)
 
     timestamps(type: :utc_datetime)
   end

@@ -1,6 +1,8 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import debounce from 'lodash/debounce';
 import { WrappedMonaco } from 'components/activities/common/variables/WrappedMonaco';
+import * as ContentModel from 'data/content/model/elements/types';
+import { PointMarkerContext, maybePointMarkerAttr } from 'data/content/utils';
 import { ServerError, makeRequest } from 'data/persistence/common';
 import * as Extrinsic from 'data/persistence/extrinsic';
 
@@ -10,6 +12,7 @@ interface Props {
   slug: string;
   attemptGuid: string;
   children?: React.ReactNode;
+  pointMarkerContext?: PointMarkerContext;
 }
 
 export type EvalResult = Evaluation | ServerError;
@@ -108,7 +111,9 @@ export const ECLRepl: React.FC<Props> = (props) => {
     ) : null;
 
   return (
-    <div>
+    <div
+      {...maybePointMarkerAttr({ id: props.id } as ContentModel.ECLRepl, props.pointMarkerContext)}
+    >
       {maybeShowEditor}
       <div className="mt-2 mb-2 d-flex flex-row-reverse">
         <button className="btn btn-sm btn-secondary" onClick={onReset}>

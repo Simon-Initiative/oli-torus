@@ -1,4 +1,6 @@
 import React, { useCallback } from 'react';
+import * as ContentModel from 'data/content/model/elements/types';
+import { PointMarkerContext, maybePointMarkerAttr } from 'data/content/utils';
 import { sanitizeMathML } from '../../utils/mathmlSanitizer';
 
 /**
@@ -58,16 +60,20 @@ const useMathJax = (src: string) => {
 };
 
 interface MathJaxFormulaProps {
+  id: string;
   src: string;
   inline: boolean;
   style?: Record<string, string>;
+  pointMarkerContext?: PointMarkerContext;
   onClick?: () => void;
 }
 
 export const MathJaxMathMLFormula: React.FC<MathJaxFormulaProps> = ({
+  id,
   src,
   inline,
   style,
+  pointMarkerContext,
   onClick,
 }) => {
   const ref = useMathJax(src);
@@ -78,6 +84,7 @@ export const MathJaxMathMLFormula: React.FC<MathJaxFormulaProps> = ({
       className={cssClass(inline)}
       ref={ref}
       dangerouslySetInnerHTML={{ __html: sanitizeMathML(src) }}
+      {...maybePointMarkerAttr({ id: id } as ContentModel.FormulaBlock, pointMarkerContext)}
     />
   );
 };
@@ -92,17 +99,25 @@ const fixNL = (s: string) =>
     : s;
 
 export const MathJaxLatexFormula: React.FC<MathJaxFormulaProps> = ({
+  id,
   src,
   inline,
   style,
   onClick,
+  pointMarkerContext,
 }) => {
   const ref = useMathJax(src);
   const fixed = fixNL(src);
   const wrapped = inline ? `\\(${fixed}\\)` : `\\[${fixed}\\]`;
 
   return (
-    <span onClick={onClick} style={style} className={cssClass(inline)} ref={ref}>
+    <span
+      onClick={onClick}
+      style={style}
+      className={cssClass(inline)}
+      ref={ref}
+      {...maybePointMarkerAttr({ id: id } as ContentModel.FormulaBlock, pointMarkerContext)}
+    >
       {wrapped}
     </span>
   );

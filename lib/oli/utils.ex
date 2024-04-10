@@ -469,4 +469,15 @@ defmodule Oli.Utils do
   Converts an atom into a readable string by replacing underscores with empty spaces.
   """
   def stringify_atom(atom), do: atom |> Atom.to_string() |> String.replace("_", " ")
+
+  @doc """
+  Returns the value from a nested map given a list of keys. If the value is not found, returns the default value.
+  """
+  @spec get_in(map :: map, keys :: list, default :: any) :: any
+  def get_in(map, keys, default) do
+    case get_in(map, keys) do
+      nil -> default
+      value -> value
+    end
+  end
 end

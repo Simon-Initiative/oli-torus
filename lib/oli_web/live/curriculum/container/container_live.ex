@@ -18,7 +18,7 @@ defmodule OliWeb.Curriculum.ContainerLive do
     ActivityDelta,
     DropTarget,
     Entry,
-    OptionsModal,
+    OptionsModalContent,
     DeleteModal,
     NotEmptyModal
   }
@@ -39,6 +39,7 @@ defmodule OliWeb.Curriculum.ContainerLive do
   alias OliWeb.Common.SessionContext
   alias Oli.Resources
   alias Oli.Delivery.Hierarchy.HierarchyNode
+  alias OliWeb.Components.Modal
 
   def mount(
         %{"project_id" => project_slug} = params,
@@ -111,7 +112,8 @@ defmodule OliWeb.Curriculum.ContainerLive do
                project.customizations
              ),
            dragging: nil,
-           page_title: "Curriculum | " <> project.title
+           page_title: "Curriculum | " <> project.title,
+           options_modal_assigns: nil
          )
          |> attach_hook(:has_show_links_uri_hash, :handle_params, fn _params, uri, socket ->
            {:cont,
@@ -229,49 +231,44 @@ defmodule OliWeb.Curriculum.ContainerLive do
   end
 
   def handle_event("show_options_modal", %{"slug" => slug}, socket) do
-    %{container: container, project: project, project_hierarchy: project_hierarchy} =
+    %{container: container, project: project} =
       socket.assigns
 
     revision = Enum.find(socket.assigns.children, fn r -> r.slug == slug end)
 
-    modal_assigns = %{
+    options_modal_assigns = %{
       id: "options_#{slug}",
       redirect_url: Routes.container_path(socket, :index, project.slug, container.slug),
       revision: revision,
       changeset: Resources.change_revision(revision),
-      project: project,
-      project_hierarchy: project_hierarchy,
-      validate: "validate-options",
-      submit: "save-options"
+      title: "#{resource_type_label(revision) |> String.capitalize()} Options"
     }
 
-    modal = fn assigns ->
-      ~H"""
-      <OptionsModal.render {@modal_assigns} />
-      """
-    end
-
     {:noreply,
-     show_modal(
-       socket,
-       modal,
-       modal_assigns: modal_assigns
-     )}
+     assign(socket, options_modal_assigns: options_modal_assigns)
+     |> push_event("js-exec", %{
+       to: "#options-modal-assigns-trigger",
+       attr: "data-show_modal"
+     })}
+  end
+
+  def handle_event("restart_options_modal", _, socket) do
+    {:noreply, assign(socket, options_modal_assigns: nil)}
   end
 
   def handle_event("validate-options", %{"revision" => revision_params}, socket) do
-    %{modal_assigns: %{revision: revision} = modal_assigns} = socket.assigns
+    %{options_modal_assigns: %{revision: revision} = modal_assigns} = socket.assigns
 
     changeset =
       revision
       |> Resources.change_revision(revision_params)
       |> Map.put(:action, :validate)
 
-    {:noreply, assign(socket, modal_assigns: %{modal_assigns | changeset: changeset})}
+    {:noreply, assign(socket, options_modal_assigns: %{modal_assigns | changeset: changeset})}
   end
 
   def handle_event("save-options", %{"revision" => revision_params}, socket) do
-    %{modal_assigns: %{redirect_url: redirect_url, project: project, revision: revision}} =
+    %{options_modal_assigns: %{redirect_url: redirect_url, revision: revision}, project: project} =
       socket.assigns
 
     revision_params =
@@ -279,8 +276,21 @@ defmodule OliWeb.Curriculum.ContainerLive do
         %{"explanation_strategy" => %{"type" => "none"}} ->
           Map.put(revision_params, "explanation_strategy", nil)
 
+        %{"intro_content" => ""} ->
+          Map.put(
+            revision_params,
+            "intro_content",
+            %{}
+          )
+
         _ ->
-          revision_params
+          intro_content = Jason.decode!(revision_params["intro_content"])
+
+          Map.put(
+            revision_params,
+            "intro_content",
+            intro_content
+          )
       end
 
     case ContainerEditor.edit_page(project, revision.slug, revision_params) do

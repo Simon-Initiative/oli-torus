@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html
+  lang="en"
+  xmlns:m="http://www.w3.org/1998/Math/MathML"
+  class={if @preview_mode, do: "preview", else: "delivery"}
+>
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <%= csrf_meta_tag() %>
+    <%= get_title(assigns) %>
+
+    <link
+      rel="apple-touch-icon"
+      sizes="180x180"
+      href={favicons("apple-touch-icon.png", assigns[:section])}
+    />
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="16x16"
+      href={favicons("favicon-16x16.png", assigns[:section])}
+    />
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="32x32"
+      href={favicons("favicon-32x32.png", assigns[:section])}
+    />
+    <!-- Tailwind CSS -->
+    <link id="app" rel="stylesheet" href="/css/app.css" />
+    <link id="app" rel="stylesheet" href="/css/adaptive.css" />
+
+    <%= if dev_mode?() do %>
+      <script
+        crossorigin
+        src="https://cdnjs.cloudflare.com/ajax/libs/react/17.0.2/umd/react.development.js"
+      >
+      </script>
+      <script
+        crossorigin
+        src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/17.0.2/umd/react-dom.development.js"
+      >
+      </script>
+    <% else %>
+      <script
+        crossorigin
+        src="https://cdnjs.cloudflare.com/ajax/libs/react/17.0.2/umd/react.production.min.js"
+      >
+      </script>
+      <script
+        crossorigin
+        src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/17.0.2/umd/react-dom.production.min.js"
+      >
+      </script>
+    <% end %>
+    <!-- jQuery (DEPRECATED) -->
+    <script
+      src="https://cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.slim.min.js"
+      integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj"
+      crossorigin="anonymous"
+    >
+    </script>
+    <!-- Font Awesome 6 -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.1/css/all.min.css"
+      integrity="sha512-MV7K8+y+gLIBoVD59lQIYicR65iaqukzvf/nwasF0nqhPay5w/9lJmVM2hMDcnK1OnMGCdVK+iQrJ7lzPJQd1w=="
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer"
+    />
+
+    <link
+      href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;600;700&family=Inter:wght@400;700;900&family=Muli:wght@300;400;700&family=Source+Code+Pro:ital,wght@0,400;0,500;0,700;1,400;1,500;1,700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/icon?family=Material+Icons|Material+Icons+Outlined"
+      rel="stylesheet"
+    />
+
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.5.0/styles/default.min.css"
+    />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.5.0/highlight.min.js">
+    </script>
+
+    <%= if @preview_mode == true do %>
+      <!-- Preview Mode Styles -->
+      <link id="preview-theme-light" rel="stylesheet" href="/css/preview.css" />
+    <% end %>
+    <!-- Janus Part Component external CSS Files -->
+    <link rel="stylesheet" href="/css/janus_image_carousel_delivery.css" />
+
+    <%= unless Map.get(assigns, :vr_agent_active, false) do %>
+      <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <% end %>
+
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/citation-js">
+    </script>
+    <script>
+      window.cite = require('citation-js')
+    </script>
+
+    <%= OliWeb.Common.MathJaxScript.render(@conn) %>
+
+    <script type="text/javascript" src={Routes.static_path(@conn, "/js/vendor.js")}>
+    </script>
+    <script type="text/javascript" src={Routes.static_path(@conn, "/js/app.js")}>
+    </script>
+
+    <%= additional_stylesheets(assigns) %>
+  </head>
+  <body>
+    <%= Map.get(assigns, :inner_layout) || @inner_content %>
+  </body>
+</html>

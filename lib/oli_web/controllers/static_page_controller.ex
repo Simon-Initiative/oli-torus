@@ -60,6 +60,19 @@ defmodule OliWeb.StaticPageController do
     |> send_resp(200, "Ok")
   end
 
+  def list_timezones(conn, _params) do
+    timezones =
+      Enum.map(Tzdata.zone_list(), fn tz ->
+        {tz, tz}
+      end)
+      |> Enum.map(&Tuple.to_list/1)
+
+    conn
+    |> json(%{
+      "timezones" => timezones
+    })
+  end
+
   def update_timezone(conn, %{
         "timezone" => %{"timezone" => timezone, "redirect_to" => redirect_to}
       }) do

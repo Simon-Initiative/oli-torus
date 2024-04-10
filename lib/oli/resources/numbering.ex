@@ -48,6 +48,7 @@ defmodule Oli.Resources.Numbering do
   alias Oli.Delivery.Hierarchy.HierarchyNode
   alias Oli.Branding.CustomLabels
 
+  @derive Jason.Encoder
   defstruct level: 0,
             index: 0,
             labels: CustomLabels.default_map()

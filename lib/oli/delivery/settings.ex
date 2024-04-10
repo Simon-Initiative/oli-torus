@@ -1,10 +1,12 @@
 defmodule Oli.Delivery.Settings do
   import Ecto.Query, warn: false
+
   alias Oli.Repo
   alias Oli.Resources.Revision
   alias Oli.Delivery.Settings.Combined
   alias Oli.Delivery.Settings.StudentException
   alias Oli.Delivery.Attempts.Core.ResourceAttempt
+  alias Oli.Publishing.DeliveryResolver
 
   @doc """
   For a resolved delivery revision of a page and a course section id and user id, return
@@ -27,6 +29,95 @@ defmodule Oli.Delivery.Settings do
       Oli.Delivery.Sections.get_section_resource(section_id, resolved_revision.resource_id)
 
     combine(resolved_revision, section_resource, nil)
+  end
+
+  def get_combined_settings_for_all_resources(section_id, user_id) do
+    section = Oli.Delivery.Sections.get_section!(section_id)
+
+    student_exceptions_map =
+      get_all_student_exceptions(section_id, user_id)
+      |> Enum.reduce(%{}, fn se, acc -> Map.put(acc, se.resource_id, se) end)
+
+    get_page_resources_with_settings(section.slug)
+    |> Enum.reduce(%{}, fn {resource_id, section_resource, page_settings}, acc ->
+      student_exception = student_exceptions_map[resource_id]
+
+      Map.put(acc, resource_id, combine(page_settings, section_resource, student_exception))
+    end)
+  end
+
+  @doc """
+  For a course section id and user id, return a map of resource_id to student exception settings.
+  The third argument allows to specific the field/s to be returned in the map.
+  If no fields are specified, all fields from the Oli.Delivery.Settings.Combined struct are returned.
+
+  If the are no student exception for a specific resource id, that resource id won't be included in the map.
+  (so if there are no student exceptions for any resources, an empty map will be returned)
+
+  Example:
+
+  ```
+  iex> Oli.Delivery.Settings.get_student_exception_setting_for_all_resources(1, 2)
+  %{
+  22433 => %{
+    max_attempts: nil,
+    password: nil,
+    end_date: ~U[2024-05-25 13:41:00Z],
+    time_limit: 30,
+    collab_space_config: nil,
+    start_date: nil,
+    resource_id: 22433,
+    retake_mode: nil,
+    late_submit: nil,
+    late_start: nil,
+    grace_period: nil,
+    scoring_strategy_id: nil,
+    review_submission: nil,
+    feedback_mode: nil,
+    feedback_scheduled_date: nil,
+    explanation_strategy: nil
+  }
+  }
+
+  iex> Oli.Delivery.Settings.get_student_exception_setting_for_all_resources(1, 2, [:end_date, :time_limit])
+  %{22433 => %{end_date: ~U[2024-05-25 13:41:00Z], time_limit: 30}}
+
+  iex> Oli.Delivery.Settings.get_student_exception_setting_for_all_resources(1, 5)
+  %{}
+  """
+
+  def get_student_exception_setting_for_all_resources(section_id, user_id, fields \\ nil)
+
+  def get_student_exception_setting_for_all_resources(section_id, user_id, nil) do
+    fields = %Oli.Delivery.Settings.StudentException{} |> Map.from_struct() |> Map.keys()
+
+    get_all_student_exceptions(section_id, user_id)
+    |> Enum.reduce(%{}, fn se, acc -> Map.put(acc, se.resource_id, Map.take(se, fields)) end)
+  end
+
+  def get_student_exception_setting_for_all_resources(section_id, user_id, fields)
+      when is_list(fields) do
+    get_all_student_exceptions(section_id, user_id)
+    |> Enum.reduce(%{}, fn se, acc -> Map.put(acc, se.resource_id, Map.take(se, fields)) end)
+  end
+
+  defp get_page_resources_with_settings(section_slug) do
+    page_id = Oli.Resources.ResourceType.id_for_page()
+
+    from([s: s, sr: sr, rev: rev] in DeliveryResolver.section_resource_revisions(section_slug),
+      where: rev.resource_type_id == ^page_id,
+      select: {
+        rev.resource_id,
+        sr,
+        %{
+          resource_id: rev.resource_id,
+          max_attempts: rev.max_attempts,
+          explanation_strategy: rev.explanation_strategy,
+          collab_space_config: rev.collab_space_config
+        }
+      }
+    )
+    |> Repo.all()
   end
 
   def combine(resolved_revision, section_resource, student_exception) do
@@ -94,6 +185,13 @@ defmodule Oli.Delivery.Settings do
     |> Repo.one()
   end
 
+  def get_all_student_exceptions(section_id, user_id) do
+    StudentException
+    |> where(section_id: ^section_id)
+    |> where(user_id: ^user_id)
+    |> Repo.all()
+  end
+
   def update_student_exception(
         %StudentException{} = student_exception,
         attrs,
@@ -159,6 +257,8 @@ defmodule Oli.Delivery.Settings do
       {:end_date_passed}
     end
   end
+
+  def determine_effective_deadline(nil, _), do: nil
 
   def determine_effective_deadline(
         %ResourceAttempt{} = resource_attempt,

@@ -1,5 +1,5 @@
 defmodule OliWeb.Delivery.StudentOnboarding.Survey do
-  use Phoenix.LiveComponent
+  use OliWeb, :live_component
 
   alias Oli.Delivery.Sections
   alias Oli.Resources.PageContent
@@ -110,14 +110,30 @@ defmodule OliWeb.Delivery.StudentOnboarding.Survey do
           Something went wrong when loading the survey
         </div>
       <% else %>
+        <div class="flex py-6 px-[20px] hvsm:px-[70px] hvxl:px-[84px] gap-3">
+          <div class="flex relative">
+            <img
+              src={~p"/images/assistant/dot_ai_icon.png"}
+              alt="dot icon"
+              class="w-24 absolute -top-4 -left-2"
+            />
+            <div class="w-14 shrink-0 mr-5" />
+            <div class="flex flex-col gap-3">
+              <h2 class="text-[18xl] leading-[24px] hvsm:text-[30px] hvsm:leading-[40px] hvxl:text-[40px] hvxl:leading-[54px] tracking-[0.02px] dark:text-white">
+                <%= @title %>
+              </h2>
+              <span class="text-[14px] leading-[20px] tracking-[0.02px] dark:text-white">
+                We’ve pulled the information we can from your LMS, but feel free to adjust it!
+              </span>
+            </div>
+          </div>
+        </div>
         <%= if @loaded do %>
-          <h1 class="mb-4"><%= @title %></h1>
-          <hr class="text-gray-400 my-4" />
-          <div class="pb-1">
+          <div class="px-[20px] hvsm:px-[70px] hvxl:px-[84px] py-9 h-[334px]">
             <%= Phoenix.HTML.raw(@html) %>
           </div>
         <% else %>
-          <div class="h-full w-full flex items-center justify-center">
+          <div class="w-full flex items-center justify-center my-10 h-[334px]">
             <span
               class="spinner-border spinner-border-sm text-primary h-16 w-16"
               role="status"

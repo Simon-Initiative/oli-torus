@@ -140,6 +140,12 @@ defmodule OliWeb.Projects.OverviewLive do
         >
           <div class="d-block">
             <%= inputs_for f, :attributes, fn fp -> %>
+              <div :if={@is_admin} class="form-label-group mb-3">
+                <%= checkbox(fp, :calculate_embeddings_on_publish) %>
+                <%= label(fp, :calculate_embeddings_on_publish, "Calculate embeddings on publish",
+                  class: "control-label"
+                ) %>
+              </div>
               <div class="form-label-group mb-3">
                 <%= label(fp, :learning_language, "Learning Language (optional)",
                   class: "control-label"
@@ -318,6 +324,19 @@ defmodule OliWeb.Projects.OverviewLive do
       </Overview.section>
 
       <Overview.section title="Actions" is_last={true}>
+        <%= if @is_admin do %>
+          <div class="d-flex align-items-center">
+            <div>
+              <%= button("Bulk Resource Attribute Edit",
+                to: Routes.ingest_path(@socket, :index_csv, @project.slug),
+                method: :get,
+                class: "btn btn-link action-button"
+              ) %>
+            </div>
+            <span>Imports a <code>.csv</code> file to set new attributes.</span>
+          </div>
+        <% end %>
+
         <div class="d-flex align-items-center">
           <div>
             <%= button("Duplicate",
@@ -342,17 +361,17 @@ defmodule OliWeb.Projects.OverviewLive do
         <div :if={@is_admin} class="d-flex align-items-center">
           <%= case @latest_publication do %>
             <% nil -> %>
-              <.button_link disabled>Datashop Analytics</.button_link>
+              <.button variant={:link} disabled>Datashop Analytics</.button>
               <span>
                 Project must be published to create a <.datashop_link /> snapshot for download
               </span>
             <% _pub -> %>
-              <.button_link
+              <.button
                 class="btn btn-link action-button"
                 href={~p"/project/#{@project.slug}/datashop"}
               >
                 Datashop Analytics
-              </.button_link>
+              </.button>
               <span>Create a <.datashop_link /> snapshot for download</span>
           <% end %>
         </div>

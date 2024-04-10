@@ -21,17 +21,17 @@ defmodule OliWeb.Components.Project.AsyncExporter do
     ~H"""
     <%= case @latest_publication do %>
       <% nil -> %>
-        <.button_link disabled>Raw Analytics</.button_link>
+        <.button variant={:link} disabled>Raw Analytics</.button>
         Project must be published to generate an analytics snapshot.
       <% _pub -> %>
         <%= case @analytics_export_status do %>
           <% status when status in [:not_available, :expired] -> %>
-            <.button_link variant={:primary} phx-click={@on_generate_analytics_snapshot}>
+            <.button variant={:link} phx-click={@on_generate_analytics_snapshot}>
               Generate Raw Analytics
-            </.button_link>
+            </.button>
             <div>Create a raw analytics snapshot for download</div>
           <% :in_progress -> %>
-            <.button_link disabled>Generate Raw Analytics</.button_link>
+            <.button variant={:link} disabled>Generate Raw Analytics</.button>
             <div class="flex flex-col">
               <div>Create a raw analytics snapshot for download</div>
               <div class="text-sm text-gray-500">
@@ -40,22 +40,22 @@ defmodule OliWeb.Components.Project.AsyncExporter do
               </div>
             </div>
           <% :available -> %>
-            <.button_link variant={:primary} href={@analytics_export_url} download>
+            <.button variant={:link} href={@analytics_export_url} download>
               <i class="fa-solid fa-download mr-1"></i> Raw Analytics
-            </.button_link>
+            </.button>
             <div class="flex flex-col">
               <div>Download raw analytics snapshot.</div>
               <div class="text-sm text-gray-500">
                 Created <%= date(@analytics_export_timestamp, @ctx) %>.
-                <.button_link phx-click={@on_generate_analytics_snapshot}>
+                <.button variant={:link} phx-click={@on_generate_analytics_snapshot}>
                   <i class="fa-solid fa-rotate-right mr-1"></i>Regenerate
-                </.button_link>
+                </.button>
               </div>
             </div>
           <% :error -> %>
-            <.button_link variant={:primary} phx-click={@on_generate_analytics_snapshot}>
+            <.button variant={:link} phx-click={@on_generate_analytics_snapshot}>
               Generate Raw Analytics
-            </.button_link>
+            </.button>
             <div class="flex flex-col">
               <div>Create a raw analytics snapshot for download</div>
               <div class="text-sm text-gray-500">
@@ -75,8 +75,8 @@ defmodule OliWeb.Components.Project.AsyncExporter do
   attr(:datashop_export_timestamp, :string)
   attr(:datashop_export_current_batch, :integer)
   attr(:datashop_export_batch_count, :integer)
-  attr(:on_generate_datashop_snapshot, :string)
-  attr(:on_kill, :string)
+  attr(:on_generate_datashop_snapshot, :string, default: "generate_datashop_snapshot")
+  attr(:on_kill, :string, default: "kill_datashop_snapshot")
 
   def datashop(assigns) do
     ~H"""
@@ -105,9 +105,9 @@ defmodule OliWeb.Components.Project.AsyncExporter do
         </div>
       <% :available -> %>
         <div class="flex flex-col mx-4 text-center">
-          <.button_link variant={:primary} href={@datashop_export_url} download>
+          <.button variant={:primary} href={@datashop_export_url} download>
             <i class="fa-solid fa-download mr-1"></i> Datashop
-          </.button_link>
+          </.button>
           <div class="text-xs text-gray-500">
             Created <%= date(@datashop_export_timestamp, @ctx) %>.
           </div>

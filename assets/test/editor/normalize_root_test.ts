@@ -29,5 +29,28 @@ describe('editor / root normalizer', () => {
       const { editor } = runNormalizer(original);
       expect(editor.children).toEqual(expected);
     });
+
+    it('Should fix duplicate block ids.', () => {
+      const original = [
+        { ...Model.p(), id: 'identical' },
+        { ...Model.p(), id: 'identical' },
+        Model.p(),
+      ];
+
+      const originalParagraphOne = original[0] as any;
+      const originalParagraphTwo = original[1] as any;
+      const originalParagraphThree = original[2] as any;
+
+      expect(originalParagraphOne.id).toEqual(originalParagraphTwo.id);
+
+      const { editor } = runNormalizer(original);
+
+      const normalizedParagraphOne = editor.children[0] as any;
+      const normalizedParagraphTwo = editor.children[1] as any;
+      const normalizedParagraphThree = editor.children[2] as any;
+
+      expect(normalizedParagraphOne.id).not.toEqual(normalizedParagraphTwo.id);
+      expect(originalParagraphThree.id).toEqual(normalizedParagraphThree.id);
+    });
   });
 });

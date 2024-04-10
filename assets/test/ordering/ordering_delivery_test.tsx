@@ -30,6 +30,9 @@ describe('ordering delivery', () => {
         projectSlug: '',
         bibParams: [],
         showFeedback: true,
+        renderPointMarkers: false,
+        isAnnotationLevel: false,
+        variables: {},
       },
       preview: false,
     };

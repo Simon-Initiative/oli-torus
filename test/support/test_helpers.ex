@@ -25,6 +25,26 @@ defmodule Oli.TestHelpers do
 
   Mox.defmock(Oli.Test.MockHTTP, for: HTTPoison.Base)
   Mox.defmock(Oli.Test.MockAws, for: ExAws.Behaviour)
+  Mox.defmock(Oli.Test.MockOpenAIClient, for: Oli.OpenAIClient)
+
+  defmodule CustomDispatcher do
+    @moduledoc """
+    Custom dispatcher for testing PubSub messages emitted by broadcast_from/5.
+    """
+
+    @doc """
+    Dispatches messages to the given list of pids.
+    When used as a custom dispatcher in the broadcast_from/5 function, it converts it into broadcast/3 calls,
+    meaning that all the nodes (including the current process) receive the message.
+    """
+    def dispatch(entries, _from, message) do
+      for {pid, _metadata} <- entries do
+        send(pid, message)
+      end
+
+      :ok
+    end
+  end
 
   def yesterday() do
     {:ok, datetime} = DateTime.now("Etc/UTC")
@@ -3487,4 +3507,31 @@ defmodule Oli.TestHelpers do
   end
 
   ### Ends helper that waits for Tasks to complete ###
+
+  @doc """
+  Waits for the given condition to be true. The condition is checked every `interval` milliseconds.
+  """
+  def wait_while(f, opts \\ []) do
+    wait_while_helper(
+      f,
+      Keyword.get(opts, :interval, 100),
+      Keyword.get(opts, :timeout, 5000),
+      :os.system_time(:millisecond)
+    )
+  end
+
+  defp wait_while_helper(f, interval, timeout, start) do
+    if :os.system_time(:millisecond) - start > timeout do
+      throw("Timeout waiting for condition to be true. Timeout: #{timeout} ms.")
+    else
+      case f.() do
+        true ->
+          :timer.sleep(interval)
+          wait_while_helper(f, interval, timeout, start)
+
+        false ->
+          :ok
+      end
+    end
+  end
 end

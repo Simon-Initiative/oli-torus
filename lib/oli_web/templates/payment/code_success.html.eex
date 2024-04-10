@@ -5,6 +5,6 @@
     Your payment code was applied successfully. You can now access your course material.
   </p>
 
-  <%= link "Go to my course", to: Routes.page_delivery_path(@conn, :index, @section_slug), class: "btn btn-primary" %>
+  <%= link "Go to my course", to: ~p"/sections/#{@section_slug}", class: "btn btn-primary" %>
 
 </div>

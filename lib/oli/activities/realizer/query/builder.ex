@@ -169,7 +169,7 @@ defmodule Oli.Activities.Realizer.Query.Builder do
 
         :does_not_equal ->
           [
-            "(NOT ((objectives_count = #{length(value)} AND (#{build_objectives_conjunction(value)})))"
+            "NOT (objectives_count = #{length(value)} AND #{build_objectives_conjunction(value)})"
           ]
       end
 
@@ -206,7 +206,7 @@ defmodule Oli.Activities.Realizer.Query.Builder do
       Enum.map(objective_ids, fn id -> "@ == #{id}" end)
       |> Enum.join(" || ")
 
-    "jsonb_path_match(objectives, 'exists($.** ? (#{id_filter}))')"
+    "jsonb_path_exists(objectives, '$.** ? (#{id_filter})')"
   end
 
   defp build_objectives_conjunction(objective_ids) do
@@ -214,6 +214,6 @@ defmodule Oli.Activities.Realizer.Query.Builder do
       Enum.map(objective_ids, fn id -> build_objectives_disjunction([id]) end)
       |> Enum.join(" AND ")
 
-    "(#{clauses})"
+    "#{clauses}"
   end
 end

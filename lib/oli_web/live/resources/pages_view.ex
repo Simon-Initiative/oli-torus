@@ -26,7 +26,8 @@ defmodule OliWeb.Resources.PagesView do
   alias Oli.Delivery.Hierarchy
   alias Oli.Delivery.Hierarchy.HierarchyNode
   alias Oli.Authoring.Course.Project
-  alias OliWeb.Curriculum.OptionsModal
+  alias OliWeb.Curriculum.OptionsModalContent
+  alias OliWeb.Components.Modal
 
   @limit 25
 
@@ -93,7 +94,8 @@ defmodule OliWeb.Resources.PagesView do
           author: author,
           total_count: total_count,
           table_model: table_model,
-          options: @default_options
+          options: @default_options,
+          options_modal_assigns: nil
         )
       else
         _ ->
@@ -157,6 +159,35 @@ defmodule OliWeb.Resources.PagesView do
   def render(assigns) do
     ~H"""
     <%= render_modal(assigns) %>
+
+    <Modal.modal
+      id="options_modal"
+      class="w-auto min-w-[50%]"
+      body_class="px-6"
+      on_cancel={JS.push("restart_options_modal")}
+    >
+      <:title>
+        <%= @options_modal_assigns[:title] %>
+      </:title>
+
+      <%= if @options_modal_assigns do %>
+        <.live_component
+          module={OptionsModalContent}
+          id="modal_content"
+          redirect_url={@options_modal_assigns.redirect_url}
+          revision={@options_modal_assigns.revision}
+          changeset={@options_modal_assigns.changeset}
+          project={@project}
+          project_hierarchy={@project_hierarchy}
+          validate={JS.push("validate-options")}
+          submit={JS.push("save-options")}
+          cancel={Modal.hide_modal("options_modal") |> JS.push("restart_options_modal")}
+        />
+      <% end %>
+      <div id="options-modal-assigns-trigger" data-show_modal={Modal.show_modal("options_modal")}>
+      </div>
+    </Modal.modal>
+
     <div class="container mx-auto">
       <div class="flex flex-row justify-between">
         <FilterBox.render
@@ -415,11 +446,9 @@ defmodule OliWeb.Resources.PagesView do
   end
 
   def handle_event("show_options_modal", %{"slug" => slug}, socket) do
-    %{project: project, project_hierarchy: project_hierarchy} = socket.assigns
-
     revision = Enum.find(socket.assigns.table_model.rows, fn r -> r.slug == slug end)
 
-    modal_assigns = %{
+    options_modal_assigns = %{
       id: "options_#{slug}",
       redirect_url:
         Routes.live_path(
@@ -435,39 +464,34 @@ defmodule OliWeb.Resources.PagesView do
         ),
       revision: revision,
       changeset: Resources.change_revision(revision),
-      project: project,
-      project_hierarchy: project_hierarchy,
-      validate: "validate-options",
-      submit: "save-options"
+      title: "#{resource_type_label(revision) |> String.capitalize()} Options"
     }
 
-    modal = fn assigns ->
-      ~H"""
-      <OptionsModal.render {@modal_assigns} />
-      """
-    end
-
     {:noreply,
-     show_modal(
-       socket,
-       modal,
-       modal_assigns: modal_assigns
-     )}
+     assign(socket, options_modal_assigns: options_modal_assigns)
+     |> push_event("js-exec", %{
+       to: "#options-modal-assigns-trigger",
+       attr: "data-show_modal"
+     })}
+  end
+
+  def handle_event("restart_options_modal", _, socket) do
+    {:noreply, assign(socket, options_modal_assigns: nil)}
   end
 
   def handle_event("validate-options", %{"revision" => revision_params}, socket) do
-    %{modal_assigns: %{revision: revision} = modal_assigns} = socket.assigns
+    %{options_modal_assigns: %{revision: revision} = modal_assigns} = socket.assigns
 
     changeset =
       revision
       |> Resources.change_revision(revision_params)
       |> Map.put(:action, :validate)
 
-    {:noreply, assign(socket, modal_assigns: %{modal_assigns | changeset: changeset})}
+    {:noreply, assign(socket, options_modal_assigns: %{modal_assigns | changeset: changeset})}
   end
 
   def handle_event("save-options", %{"revision" => revision_params}, socket) do
-    %{modal_assigns: %{redirect_url: redirect_url, project: project, revision: revision}} =
+    %{options_modal_assigns: %{redirect_url: redirect_url, revision: revision}, project: project} =
       socket.assigns
 
     revision_params =
@@ -552,10 +576,16 @@ defmodule OliWeb.Resources.PagesView do
 
     %{revision: revision} = node
 
-    %{revision: from_container} =
+    from_container =
       case params["from_uuid"] do
-        nil -> %{revision: nil}
-        from_uuid -> Hierarchy.find_in_hierarchy(hierarchy, from_uuid)
+        nil ->
+          nil
+
+        from_uuid ->
+          case Hierarchy.find_parent_in_hierarchy(hierarchy, from_uuid) do
+            %{revision: from_container} -> from_container
+            _ -> nil
+          end
       end
 
     %{revision: to_container} = Hierarchy.find_in_hierarchy(hierarchy, to_uuid)

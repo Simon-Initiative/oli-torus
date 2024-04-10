@@ -7,7 +7,7 @@ defmodule Oli.Resources.Collaboration do
   alias Oli.Delivery.Sections.{Section, SectionResource, SectionsProjectsPublications}
   alias Oli.Resources
   alias Oli.Resources.{ResourceType, Revision}
-  alias Oli.Resources.Collaboration.{CollabSpaceConfig, Post}
+  alias Oli.Resources.Collaboration.{CollabSpaceConfig, Post, UserReadPost, UserReactionPost}
   alias Oli.Repo
   alias Oli.Accounts.User
 
@@ -191,6 +191,19 @@ defmodule Oli.Resources.Collaboration do
               page_revision.resource_id
             )
         }
+      )
+    )
+  end
+
+  @doc """
+  Returns the collab space config at the course level, the one "attached"
+  at the curriculum level.
+  """
+  def get_course_collab_space_config(root_section_resource_id) do
+    Repo.one(
+      from(sr in SectionResource,
+        where: sr.id == ^root_section_resource_id,
+        select: sr.collab_space_config
       )
     )
   end
@@ -478,6 +491,299 @@ defmodule Oli.Resources.Collaboration do
     )
   end
 
+  # Define a subquery for root thread post replies count
+  defp replies_subquery() do
+    from(p in Post,
+      group_by: p.thread_root_id,
+      select: %{
+        thread_root_id: p.thread_root_id,
+        count: count(p.id),
+        last_reply: max(p.updated_at)
+      }
+    )
+  end
+
+  # Define a subquery for root thread post read replies count
+  # (replies by the user are counted as read)
+  defp read_replies_subquery(user_id) do
+    from(
+      p in Post,
+      left_join: urp in UserReadPost,
+      on: urp.post_id == p.id,
+      where:
+        not is_nil(p.thread_root_id) and
+          (p.user_id == ^user_id or (urp.user_id == ^user_id and not is_nil(urp.post_id))),
+      group_by: p.thread_root_id,
+      select: %{
+        thread_root_id: p.thread_root_id,
+        # Counting both user's posts and read posts
+        count: count(p.id)
+      }
+    )
+  end
+
+  @doc """
+  Returns the list of root posts for a section.
+  """
+  def list_root_posts_for_section(
+        user_id,
+        section_id,
+        limit,
+        offset,
+        filter_by,
+        sort_by,
+        sort_order
+      ) do
+    order_clause =
+      case {sort_by, sort_order} do
+        {"popularity", :desc} ->
+          {:desc_nulls_last,
+           dynamic(
+             [_post, _sr, _spp, _pr, _rev, _user, replies, _read_replies],
+             replies.count
+           )}
+
+        {"popularity", :asc} ->
+          {:asc_nulls_first,
+           dynamic(
+             [_post, _sr, _spp, _pr, _rev, _user, replies, _read_replies],
+             replies.count
+           )}
+
+        {"date", sort_order} ->
+          {sort_order,
+           dynamic(
+             [post, _sr, _spp, _pr, _rev, _user, _replies, _read_replies],
+             post.updated_at
+           )}
+      end
+
+    main_query =
+      from(
+        post in Post,
+        join: sr in SectionResource,
+        on: sr.resource_id == post.resource_id and sr.section_id == post.section_id,
+        join: spp in SectionsProjectsPublications,
+        on: spp.section_id == post.section_id and spp.project_id == sr.project_id,
+        join: pr in PublishedResource,
+        on: pr.publication_id == spp.publication_id and pr.resource_id == post.resource_id,
+        join: rev in Revision,
+        on: rev.id == pr.revision_id,
+        join: user in User,
+        on: post.user_id == user.id,
+        left_join: replies in subquery(replies_subquery()),
+        on: replies.thread_root_id == post.id,
+        left_join: read_replies in subquery(read_replies_subquery(user_id)),
+        on: read_replies.thread_root_id == post.id,
+        where:
+          post.section_id == ^section_id and
+            (post.status in [:approved, :archived] or
+               (post.status == :submitted and post.user_id == ^user_id)) and
+            is_nil(post.parent_post_id) and is_nil(post.thread_root_id),
+        select: %{
+          id: post.id,
+          thread_root_id: post.thread_root_id,
+          content: post.content,
+          user_name: user.name,
+          user_id: user.id,
+          posted_anonymously: post.anonymous,
+          title: rev.title,
+          slug: rev.slug,
+          resource_numbering_index: sr.numbering_index,
+          resource_id: sr.resource_id,
+          resource_type_id: rev.resource_type_id,
+          updated_at: post.updated_at,
+          replies_count: coalesce(replies.count, 0),
+          read_replies_count: coalesce(read_replies.count, 0),
+          last_reply: coalesce(replies.last_reply, nil),
+          unread_replies_count: coalesce(replies.count, 0) - coalesce(read_replies.count, 0),
+          is_read: true
+        },
+        order_by: ^order_clause
+      )
+
+    posts =
+      case filter_by do
+        f when f in [nil, "all"] ->
+          main_query
+          |> limit(^limit + 1)
+          |> offset(^offset)
+          |> Repo.all()
+
+        "my_activity" ->
+          post_thread_ids_user_interacted_with =
+            from(p in Post,
+              where: p.section_id == ^section_id and p.user_id == ^user_id,
+              select: coalesce(p.thread_root_id, p.id)
+            )
+
+          main_query
+          |> where(
+            ^dynamic(
+              [post, _sr, _spp, _pr, _rev, _user],
+              post.id in subquery(post_thread_ids_user_interacted_with)
+            )
+          )
+          |> limit(^limit + 1)
+          |> offset(^offset)
+          |> Repo.all()
+
+        "course_discussions" ->
+          main_query
+          |> where([_post, _sr, _spp, _pr, rev, _user], rev.resource_type_id == 2)
+          |> limit(^limit + 1)
+          |> offset(^offset)
+          |> Repo.all()
+
+        "page_discussions" ->
+          main_query
+          |> where([_post, _sr, _spp, _pr, rev, _user], rev.resource_type_id == 1)
+          |> limit(^limit + 1)
+          |> offset(^offset)
+          |> Repo.all()
+
+        "unread" ->
+          from(
+            p in subquery(main_query),
+            where: p.unread_replies_count > 0,
+            select: p,
+            limit: ^limit + 1,
+            offset: ^offset
+          )
+          |> Repo.all()
+      end
+
+    # Determine if more records exist beyond the current page
+    more_posts_exist? = length(posts) > limit
+    # Trim the posts to the desired limit
+    final_posts = Enum.take(posts, limit)
+
+    {final_posts, more_posts_exist?}
+  end
+
+  def list_replies_for_post(user_id, post_id) do
+    Repo.all(
+      from(
+        post in Post,
+        join: sr in SectionResource,
+        on: sr.resource_id == post.resource_id and sr.section_id == post.section_id,
+        join: spp in SectionsProjectsPublications,
+        on: spp.section_id == post.section_id and spp.project_id == sr.project_id,
+        join: pr in PublishedResource,
+        on: pr.publication_id == spp.publication_id and pr.resource_id == post.resource_id,
+        join: rev in Revision,
+        on: rev.id == pr.revision_id,
+        join: user in User,
+        on: post.user_id == user.id,
+        left_join: urp in UserReadPost,
+        on: urp.post_id == post.id and urp.user_id == ^user_id,
+        where:
+          post.parent_post_id == ^post_id and
+            (post.status in [:approved, :archived] or
+               (post.status == :submitted and post.user_id == ^user_id)),
+        select: %{
+          id: post.id,
+          thread_root_id: post.thread_root_id,
+          content: post.content,
+          user_name: user.name,
+          user_id: user.id,
+          posted_anonymously: post.anonymous,
+          title: rev.title,
+          slug: rev.slug,
+          resource_type_id: rev.resource_type_id,
+          updated_at: post.updated_at,
+          is_read: not is_nil(urp.id) or post.user_id == ^user_id
+        },
+        order_by: [asc: :updated_at]
+      )
+    )
+    |> build_metrics_for_reply_posts(user_id)
+  end
+
+  @doc """
+  This query is an optimization used to update the metrics of a thread root post
+  every time it is expanded, collapsed or changed by a new reply post broadcasted.
+  It avoids having to refetch all thread posts with list_root_posts_for_section/4
+  """
+
+  def rebuild_metrics_for_root_post(root_post, user_id) do
+    post_metrics =
+      Repo.one(
+        from(
+          post in Post,
+          left_join: urp in UserReadPost,
+          on: urp.post_id == post.id and urp.user_id == ^user_id,
+          where: post.thread_root_id == ^root_post.id,
+          group_by: post.thread_root_id,
+          select: %{
+            replies_count: count(post.id),
+            last_reply: max(post.updated_at),
+            read_replies_count: count(urp.user_id == ^user_id and post.user_id != ^user_id),
+            is_read: count(urp.user_id == ^user_id and post.id == urp.post_id) > 0
+          }
+        )
+      )
+      |> case do
+        nil -> %{}
+        metrics -> metrics
+      end
+
+    Map.merge(root_post, post_metrics)
+  end
+
+  def build_metrics_for_reply_posts(posts, user_id) do
+    Enum.map(posts, fn post ->
+      case get_post_children([post], user_id) do
+        [] ->
+          Map.merge(post, %{
+            replies_count: 0,
+            last_reply: nil,
+            read_replies_count: 0
+          })
+
+        child_posts ->
+          Map.merge(post, %{
+            replies_count: Enum.count(child_posts),
+            last_reply:
+              Enum.max_by(
+                child_posts,
+                fn child_post -> child_post.updated_at end
+              )
+              |> Map.get(:updated_at),
+            read_replies_count:
+              Enum.reduce(child_posts, 0, fn child_post, acc ->
+                child_post.read_replies_count + acc
+              end)
+          })
+      end
+    end)
+  end
+
+  defp get_post_children(parent_post, user_id, acum_child_posts \\ [])
+
+  defp get_post_children([], _user_id, acum_child_posts), do: List.flatten(acum_child_posts)
+
+  defp get_post_children(parent_posts, user_id, acum_child_posts) do
+    parent_post_ids = Enum.map(parent_posts, &Map.get(&1, :id))
+
+    child_posts =
+      Repo.all(
+        from(
+          post in Post,
+          left_join: urp in UserReadPost,
+          on: urp.post_id == post.id and urp.user_id == ^user_id,
+          where: post.parent_post_id in ^parent_post_ids,
+          group_by: post.id,
+          select: %{
+            post
+            | read_replies_count: count(urp.user_id == ^user_id and post.user_id != ^user_id)
+          }
+        )
+      )
+
+    get_post_children(child_posts, user_id, [child_posts | acum_child_posts])
+  end
+
   @doc """
   Returns the list of posts created by an user in a section.
 
@@ -550,8 +856,9 @@ defmodule Oli.Resources.Collaboration do
         join: user in User,
         on: post.user_id == user.id,
         where:
-          post.section_id == ^section_id and post.user_id != ^user_id and
-            post.status in [:approved, :archived],
+          (post.section_id == ^section_id and post.user_id != ^user_id and
+             post.status in [:approved, :archived]) or
+            (post.status == :submitted and post.user_id != ^user_id),
         select: %{
           id: post.id,
           content: post.content,
@@ -752,5 +1059,197 @@ defmodule Oli.Resources.Collaboration do
   """
   def change_post(%Post{} = post, attrs \\ %{}) do
     Post.changeset(post, attrs)
+  end
+
+  @doc """
+  Marks the given posts as read for the given user, excluding posts that where posted by the user.
+  In case the user has already read the posts, it updates the :updated_at field.
+  The third optional argument is a boolean that indicates if the operation should be performed in an async way.
+  """
+
+  def mark_posts_as_read(posts, user_id, async \\ false)
+
+  def mark_posts_as_read(posts, user_id, false) do
+    Enum.reduce(posts, [], fn post, acc ->
+      if post.user_id != user_id, do: [post.id | acc], else: acc
+    end)
+    |> read_posts(user_id)
+  end
+
+  def mark_posts_as_read(posts, user_id, true) do
+    Task.Supervisor.start_child(Oli.TaskSupervisor, fn ->
+      Enum.reduce(posts, [], fn post, acc ->
+        if post.user_id != user_id, do: [post.id | acc], else: acc
+      end)
+      |> read_posts(user_id)
+    end)
+  end
+
+  defp read_posts(post_ids, user_id) do
+    now = DateTime.utc_now(:second)
+
+    Enum.map(post_ids, fn post_id ->
+      %{post_id: post_id, user_id: user_id, inserted_at: now, updated_at: now}
+    end)
+    |> then(fn posts ->
+      Repo.insert_all(UserReadPost, posts,
+        on_conflict: {:replace, [:updated_at]},
+        conflict_target: [:post_id, :user_id]
+      )
+    end)
+  end
+
+  @doc """
+  Returns the list of posts that a user can see for a particular point content block id.
+
+  ## Examples
+
+      iex> list_posts_for_user_in_point_block(1, 1, 1, :private, "1"))
+      [%Post{status: :archived}, ...]
+
+      iex> list_posts_for_user_in_point_block(2, 2, 2, :private, "2")
+      []
+  """
+  def list_posts_for_user_in_point_block(
+        section_id,
+        resource_id,
+        user_id,
+        visibility,
+        point_block_id \\ nil
+      ) do
+    filter_by_point_block_id =
+      if is_nil(point_block_id) do
+        dynamic([p], is_nil(p.annotated_block_id))
+      else
+        dynamic([p], p.annotated_block_id == ^point_block_id)
+      end
+
+    Repo.all(
+      from(
+        post in Post,
+        left_join: replies in subquery(replies_subquery()),
+        on: replies.thread_root_id == post.id,
+        left_join: read_replies in subquery(read_replies_subquery(user_id)),
+        on: read_replies.thread_root_id == post.id,
+        left_join: reactions in assoc(post, :reactions),
+        left_join: user in assoc(post, :user),
+        where:
+          post.section_id == ^section_id and post.resource_id == ^resource_id and
+            is_nil(post.parent_post_id) and is_nil(post.thread_root_id) and
+            (post.status in [:approved, :archived] or
+               (post.status == :submitted and post.user_id == ^user_id)),
+        where: ^filter_by_point_block_id,
+        where: post.visibility == ^visibility,
+        order_by: [desc: :inserted_at],
+        preload: [user: user, reactions: reactions],
+        select: %{
+          post
+          | replies_count: coalesce(replies.count, 0),
+            read_replies_count: coalesce(read_replies.count, 0)
+        }
+      )
+    )
+    |> summarize_reactions(user_id)
+  end
+
+  defp summarize_reactions(posts, current_user_id) do
+    Enum.map(posts, fn post ->
+      %{
+        post
+        | reaction_summaries:
+            Enum.reduce(post.reactions, %{}, fn r, acc ->
+              reacted_by_current_user = r.user_id == current_user_id
+
+              Map.update(
+                acc,
+                r.reaction,
+                %{count: 1, reacted: reacted_by_current_user},
+                fn %{
+                     count: count,
+                     reacted: reacted
+                   } ->
+                  %{count: count + 1, reacted: reacted_by_current_user || reacted}
+                end
+              )
+            end)
+      }
+    end)
+  end
+
+  @doc """
+  Returns the count of posts that a user can see for each annotated block id. For top-level
+  resource posts, the annotated block id is nil.
+  """
+  def list_post_counts_for_user_in_section(section_id, resource_id, user_id, visibility) do
+    from(
+      post in Post,
+      where:
+        post.section_id == ^section_id and post.resource_id == ^resource_id and
+          is_nil(post.parent_post_id) and is_nil(post.thread_root_id) and
+          post.visibility == ^visibility and
+          (post.status in [:approved, :archived] or
+             (post.status == :submitted and post.user_id == ^user_id)),
+      group_by: post.annotated_block_id,
+      select: {post.annotated_block_id, count(post.id)}
+    )
+    |> Repo.all()
+    |> Enum.into(%{})
+  end
+
+  def list_replies_for_post_in_point_block(user_id, post_id) do
+    Repo.all(
+      from(
+        post in Post,
+        join: user in User,
+        on: post.user_id == user.id,
+        left_join: urp in UserReadPost,
+        on: urp.post_id == post.id and urp.user_id == ^user_id,
+        left_join: reactions in assoc(post, :reactions),
+        where:
+          post.parent_post_id == ^post_id and
+            (post.status in [:approved, :archived] or
+               (post.status == :submitted and post.user_id == ^user_id)),
+        order_by: [asc: :updated_at],
+        preload: [user: user, reactions: reactions],
+        select: post
+      )
+    )
+    |> build_metrics_for_reply_posts(user_id)
+    |> summarize_reactions(user_id)
+  end
+
+  def toggle_reaction(post_id, user_id, reaction) do
+    case get_reaction(post_id, user_id, reaction) do
+      nil ->
+        case create_reaction(post_id, user_id, reaction) do
+          {:ok, _} ->
+            {:ok, 1}
+
+          error ->
+            error
+        end
+
+      reaction ->
+        case delete_reaction(reaction) do
+          {:ok, _} ->
+            {:ok, -1}
+
+          error ->
+            error
+        end
+    end
+  end
+
+  def get_reaction(post_id, user_id, reaction) do
+    Repo.get_by(UserReactionPost, post_id: post_id, user_id: user_id, reaction: reaction)
+  end
+
+  def create_reaction(post_id, user_id, reaction) do
+    %UserReactionPost{post_id: post_id, user_id: user_id, reaction: reaction}
+    |> Repo.insert()
+  end
+
+  def delete_reaction(%UserReactionPost{} = reaction) do
+    Repo.delete(reaction)
   end
 end

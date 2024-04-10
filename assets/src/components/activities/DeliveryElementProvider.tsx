@@ -35,6 +35,8 @@ export const DeliveryElementProvider: React.FC<DeliveryElementProps<any>> = (pro
     bibParams: props.context.bibParams,
     learningLanguage: props.context.learningLanguage,
     resourceAttemptGuid: props.context.pageAttemptGuid,
+    renderPointMarkers: props.context.renderPointMarkers,
+    isAnnotationLevel: props.context.isAnnotationLevel,
   });
 
   return (
