@@ -33,17 +33,16 @@ defmodule OliWeb.Users.Actions do
           <input
             readonly
             type="text"
-            id="invite-link-1"
+            id="password-reset-link-1"
             class="form-control"
-            placeholder="Section Invite Link"
-            aria-label="Section Invite Link"
+            aria-label="Password Reset Link Text Input"
             value={@password_reset_link}
           />
           <div class="input-group-append">
             <button
-              id="copy-invite-link-button"
+              id="copy-password-reset-link-button"
               class="btn btn-outline-secondary"
-              data-clipboard-target="#invite-link-1"
+              data-clipboard-target="#password-reset-link-1"
               phx-hook="CopyListener"
             >
               <i class="far fa-clipboard"></i> Copy
