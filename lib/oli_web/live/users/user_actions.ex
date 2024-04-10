@@ -7,6 +7,7 @@ defmodule OliWeb.Users.Actions do
   attr(:for_author, :boolean, default: false)
   attr(:user, :any, required: true)
   attr(:csrf_token, :any, required: true)
+  attr(:password_reset_link, :string, default: "")
 
   def render(assigns) do
     {resend, reset} =
@@ -26,6 +27,41 @@ defmodule OliWeb.Users.Actions do
 
     ~H"""
     <div>
+      <div class="form-group">
+        <label for="reset_link_input">Generate Reset Password Link</label>
+        <div class="input-group" style="max-width: 100%;">
+          <input
+            readonly
+            type="text"
+            id="password-reset-link-1"
+            class="form-control"
+            aria-label="Password Reset Link Text Input"
+            value={@password_reset_link}
+          />
+          <div class="input-group-append">
+            <button
+              id="copy-password-reset-link-button"
+              class="btn btn-outline-secondary"
+              data-clipboard-target="#password-reset-link-1"
+              phx-hook="CopyListener"
+            >
+              <i class="far fa-clipboard"></i> Copy
+            </button>
+          </div>
+        </div>
+
+        <p :if={@password_reset_link not in [nil, ""]} class="mb-1">
+          This link will expired in 24 hours.
+        </p>
+        <button
+          phx-click="generate_reset_password_link"
+          phx-value-id={@user.id}
+          class="btn btn-md btn-primary"
+        >
+          Generate
+        </button>
+      </div>
+
       <form
         id={"resend-confirmation-#{@user.id}"}
         method="post"
