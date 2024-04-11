@@ -1011,4 +1011,53 @@ defmodule OliWeb.Components.Common do
     </svg>
     """
   end
+
+  @doc """
+  Wraps tab focus around a container for accessibility.
+
+  This is an essential accessibility feature for interfaces such as modals, dialogs, and menus.
+
+  It differs from the native focus_wrap as it does not autofocus the first element in the container
+  on mount.
+
+  ## Examples
+
+  Simply render your inner content within this component and focus will be wrapped around the
+  container as the user tabs through the containers content:
+
+  ```heex
+  <.custom_focus_wrap id="my-modal" class="bg-white">
+    <div id="modal-content">
+      Are you sure?
+      <button phx-click="cancel">Cancel</button>
+      <button phx-click="confirm">OK</button>
+    </div>
+  </.custom_focus_wrap>
+  ```
+  """
+  attr(:id, :string, required: true, doc: "The DOM identifier of the container tag.")
+
+  attr(:rest, :global, doc: "Additional HTML attributes to add to the container tag.")
+
+  attr(:initially_enabled, :boolean,
+    default: true,
+    doc: "Whether the focus wrap is initially enabled."
+  )
+
+  slot(:inner_block, required: true, doc: "The content rendered inside of the container tag.")
+
+  def custom_focus_wrap(assigns) do
+    ~H"""
+    <div id={@id} phx-hook="CustomFocusWrap" {@rest}>
+      <span
+        id={"#{@id}-start"}
+        tabindex={if @initially_enabled, do: "0", else: "-1"}
+        aria-hidden="true"
+      >
+      </span>
+      <%= render_slot(@inner_block) %>
+      <span id={"#{@id}-end"} tabindex="-1" aria-hidden="true"></span>
+    </div>
+    """
+  end
 end
