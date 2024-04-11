@@ -813,7 +813,7 @@ defmodule OliWeb.CommunityLiveTest do
 
       view
       |> element("form[phx-submit=\"add_institution\"")
-      |> render_submit(%{name: institution.name})
+      |> render_submit(%{institution_id: institution.id})
 
       assert view
              |> element("div.alert.alert-info")
@@ -827,23 +827,14 @@ defmodule OliWeb.CommunityLiveTest do
       conn: conn,
       community: community
     } do
-      institution = build(:institution)
+      institution = insert(:institution)
       insert(:community_institution, %{community: community, institution: institution})
 
       {:ok, view, _html} = live(conn, live_view_show_route(community.id))
 
       view
       |> element("form[phx-submit=\"add_institution\"")
-      |> render_submit(%{name: institution.name})
-
-      assert view
-             |> element("div.alert.alert-danger")
-             |> render() =~
-               "Some of the community institutions couldn&#39;t be added because the institutions don&#39;t exist in the system or are already associated."
-
-      view
-      |> element("form[phx-submit=\"add_institution\"")
-      |> render_submit(%{name: "Bad institution"})
+      |> render_submit(%{institution_id: "0"})
 
       assert view
              |> element("div.alert.alert-danger")
@@ -853,27 +844,43 @@ defmodule OliWeb.CommunityLiveTest do
       assert 1 == length(Groups.list_community_institutions(community.id))
     end
 
-    test "adds more than one community institution correctly", %{
+    test "displays error message when institution has already been added", %{
       conn: conn,
       community: community
     } do
-      names = insert_pair(:institution) |> Enum.map(& &1.name)
-      insert(:community_institution, %{community: community})
+      institution = insert(:institution)
+      insert(:community_institution, %{community: community, institution: institution})
 
       {:ok, view, _html} = live(conn, live_view_show_route(community.id))
 
+      view
+      |> element("form[phx-submit=\"add_institution\"")
+      |> render_submit(%{institution_id: institution.id})
+
+      assert view
+             |> element("div.alert.alert-danger")
+             |> render() =~
+               "Institution has already been added to the community."
+
       assert 1 == length(Groups.list_community_institutions(community.id))
+    end
+
+    test "displays error message when no institution is selected", %{
+      conn: conn,
+      community: community
+    } do
+      {:ok, view, _html} = live(conn, live_view_show_route(community.id))
 
       view
       |> element("form[phx-submit=\"add_institution\"")
-      |> render_submit(%{name: Enum.join(names, ",")})
+      |> render_submit(%{institution_id: ""})
 
       assert view
-             |> element("div.alert.alert-info")
+             |> element("div.alert.alert-danger")
              |> render() =~
-               "Community institution(s) successfully added."
+               "Please select an institution."
 
-      assert 3 == length(Groups.list_community_institutions(community.id))
+      assert 0 == length(Groups.list_community_institutions(community.id))
     end
 
     test "removes community institution correctly", %{
@@ -920,33 +927,6 @@ defmodule OliWeb.CommunityLiveTest do
                "Community institution couldn&#39;t be removed."
 
       assert 1 == length(Groups.list_community_institutions(community.id))
-    end
-
-    test "suggests community institution correctly", %{
-      conn: conn,
-      community: community
-    } do
-      institution = insert(:institution)
-
-      {:ok, view, _html} = live(conn, live_view_show_route(community.id))
-
-      view
-      |> element("form[phx-change=\"suggest_institution\"")
-      |> render_change(%{name: institution.name})
-
-      assert view
-             |> element("#institution_matches")
-             |> render() =~
-               institution.name
-
-      view
-      |> element("form[phx-change=\"suggest_institution\"")
-      |> render_change(%{name: "other_name"})
-
-      refute view
-             |> element("#institution_matches")
-             |> render() =~
-               institution.name
     end
   end
 

@@ -640,6 +640,29 @@ defmodule Oli.Groups do
   end
 
   @doc """
+  Creates a community institution from an institution id (gets the institution first).
+
+  ## Examples
+
+      iex> create_community_institution_from_institution_id(1, %{community_id: 1})
+      {:ok, %CommunityInstitution{}}
+
+      iex> create_community_institution_from_institution_id(0, %{community_id: 1})
+      {:error, :institution_not_found}
+
+  """
+
+  def create_community_institution_from_institution_id(institution_id, attrs \\ %{}) do
+    case Institutions.get_institution_by!(%{id: institution_id}) do
+      %Institution{} ->
+        attrs |> Map.put(:institution_id, institution_id) |> create_community_institution()
+
+      nil ->
+        {:error, :institution_not_found}
+    end
+  end
+
+  @doc """
   Creates community institutions from names.
   ## Examples
       iex> create_community_institutions_from_names(["Institution 1", "Institution 2"], %{community_id: 1})
@@ -654,6 +677,23 @@ defmodule Oli.Groups do
         names,
         attrs,
         &create_community_institution_from_institution_name/2
+      )
+
+  @doc """
+  Creates community institutions from ids.
+  ## Examples
+      iex> create_community_institutions_from_ids([1], %{community_id: 1})
+      {:ok, [%CommunityInstitution{}, %CommunityInstitution{}]}
+      iex> create_community_institutions_from_ids([1], %{community_id: bad_value})
+      {:error, %Ecto.Changeset{}}
+  """
+
+  def create_community_institutions_from_ids(ids, attrs),
+    do:
+      create_community_associations_from_fields(
+        ids,
+        attrs,
+        &create_community_institution_from_institution_id/2
       )
 
   @doc """
