@@ -28,7 +28,6 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
     activity_model = select_model(activity_attempt)
     part_attempts = get_latest_part_attempts(activity_attempt_guid)
 
-
     case Model.parse(activity_model) do
       {:ok, %Model{rules: []}} ->
         evaluate_from_input(
