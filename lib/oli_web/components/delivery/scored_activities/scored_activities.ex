@@ -425,15 +425,19 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
   defp sort_by(assessments, sort_by, sort_order) do
     case sort_by do
       :due_date ->
-        Enum.sort_by(assessments, & &1.end_date, sort_order)
-
         Enum.sort_by(
           assessments,
           fn
-            %{scheduling_type: :due_by} = assessment -> assessment.end_date
-            _ -> nil
+            %{scheduling_type: :due_by, end_date: nil} = _assessment ->
+              DateTime.from_unix(0, :second) |> elem(1)
+
+            %{scheduling_type: :due_by} = assessment ->
+              assessment.end_date
+
+            _ ->
+              DateTime.from_unix(0, :second) |> elem(1)
           end,
-          sort_order
+          {sort_order, DateTime}
         )
 
       sb when sb in [:avg_score, :students_completion, :total_attempts] ->

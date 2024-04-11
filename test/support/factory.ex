@@ -1,6 +1,7 @@
 defmodule Oli.Factory do
   use ExMachina.Ecto, repo: Oli.Repo
 
+  alias Oli.Accounts.VrUserAgent
   alias Oli.Accounts.{Author, User, AuthorPreferences, UserPreferences}
   alias Oli.Authoring.Authors.{AuthorProject, ProjectRole}
 
@@ -13,7 +14,6 @@ defmodule Oli.Factory do
   }
 
   alias Oli.Branding.Brand
-
   alias Oli.Delivery.Sections.ContainedObjective
 
   alias Oli.Delivery.Attempts.Core.{
@@ -593,6 +593,10 @@ defmodule Oli.Factory do
       resource: anonymous_build(:resource),
       collab_space_config: build(:collab_space_config)
     }
+  end
+
+  def vr_user_agent_factory() do
+    %VrUserAgent{}
   end
 
   def revision_embedding_factory() do

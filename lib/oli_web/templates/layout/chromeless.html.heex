@@ -94,8 +94,10 @@
     <!-- Janus Part Component external CSS Files -->
     <link rel="stylesheet" href="/css/janus_image_carousel_delivery.css" />
 
-    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6">
-    </script>
+    <%= unless Map.get(assigns, :vr_agent_active, false) do %>
+      <script src="https://polyfill.io/v3/polyfill.min.js?features=es6">
+      </script>
+    <% end %>
 
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/citation-js">
     </script>

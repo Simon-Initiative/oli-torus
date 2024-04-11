@@ -28,7 +28,9 @@ function makeRequest(
 
 const nothingTransform = (result: any) => Promise.resolve(result);
 const submissionTransform = (key: string, result: any) => {
-  return Promise.resolve({ actions: result[key] });
+  return result.error
+    ? Promise.reject({ message: result.message })
+    : Promise.resolve({ actions: result[key] });
 };
 
 export const initActivityBridge = (elementId: string) => {
