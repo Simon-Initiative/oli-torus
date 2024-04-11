@@ -895,12 +895,12 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       |> render_click()
 
       assert view
-             |> element(~s{div[role="intro video details"]})
+             |> element(~s{button[role="intro video details"]})
              |> render() =~ "Introduction"
 
       assert has_element?(
                view,
-               ~s{div[role="intro video details"] div[role="unseen video icon"]}
+               ~s{button[role="intro video details"] div[role="unseen video icon"]}
              )
 
       # module 2 has no intro video
@@ -908,7 +908,10 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       |> element(~s{div[role="unit_1"] div[role="card_2"]})
       |> render_click()
 
-      refute has_element?(view, ~s{div[role="intro video details"] div[role="unseen video icon"]})
+      refute has_element?(
+               view,
+               ~s{button[role="intro video details"] div[role="unseen video icon"]}
+             )
     end
 
     test "intro video is marked as seen after playing it",
@@ -934,11 +937,11 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       assert has_element?(
                view,
-               ~s{div[role="intro video details"] div[role="unseen video icon"]}
+               ~s{button[role="intro video details"] div[role="unseen video icon"]}
              )
 
       view
-      |> element(~s{div[role="intro video details"] div[phx-click="play_video"]})
+      |> element(~s{button[role="intro video details"]})
       |> render_click()
 
       # since the video is marked as seen in an async way, we revisit the page to check if the icon changed
@@ -955,7 +958,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       assert has_element?(
                view,
-               ~s{div[role="intro video details"] div[role="seen video icon"]}
+               ~s{button[role="intro video details"] div[role="seen video icon"]}
              )
     end
 

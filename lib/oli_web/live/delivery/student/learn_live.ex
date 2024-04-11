@@ -1005,7 +1005,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       </div>
       <button
         role="toggle completed button"
-        class="flex items-center opacity-80 hover:opacity-100 cursor-pointer"
+        class="flex items-center opacity-80 hover:opacity-100 cursor-pointer pr-2"
         phx-click="toggle_completed_pages"
         phx-value-module_resource_id={@module["resource_id"]}
       >
@@ -1127,7 +1127,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       <button
         :if={@module["learning_objectives"] != []}
         role="module learning objectives"
-        class="flex items-center gap-[14px] px-[10px] w-full cursor-pointer"
+        class="flex items-center gap-[14px] px-[10px] w-full p-1 cursor-pointer"
         phx-click={JS.toggle(to: "#learning_objectives_#{@module["resource_id"]}", display: "flex")}
       >
         <svg
@@ -1345,7 +1345,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     ~H"""
     <button
       role={"#{@type} #{@numbering_index} details"}
-      class="flex items-center gap-[14px] w-full"
+      class="flex items-center gap-[14px] w-full py-1 pr-2"
       id={"index_item_#{@resource_id}"}
       phx-click="navigate_to_resource"
       phx-value-slug={@revision_slug}
@@ -1405,10 +1405,14 @@ defmodule OliWeb.Delivery.Student.LearnLive do
 
   def intro_video_item(assigns) do
     ~H"""
-    <div
+    <button
       role="intro video details"
       class="flex items-center gap-[14px] w-full"
       id={"intro_video_for_module_#{@module_resource_id}"}
+      phx-click="play_video"
+      phx-value-module_resource_id={@module_resource_id}
+      phx-value-video_url={@video_url}
+      phx-value-is_intro_video="false"
     >
       <div
         role={"#{if @intro_video_viewed, do: "seen", else: "unseen"} video icon"}
@@ -1428,13 +1432,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
           />
         </svg>
       </div>
-      <div
-        phx-click="play_video"
-        phx-value-module_resource_id={@module_resource_id}
-        phx-value-video_url={@video_url}
-        phx-value-is_intro_video="false"
-        class="flex shrink items-center gap-3 w-full dark:text-white cursor-pointer hover:bg-gray-200/70 dark:hover:bg-gray-800"
-      >
+      <div class="flex shrink items-center gap-3 w-full dark:text-white cursor-pointer hover:bg-gray-200/70 dark:hover:bg-gray-800">
         <div class="flex flex-col gap-1 w-full ml-0">
           <div class="flex">
             <span class={
@@ -1458,7 +1456,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
           </div>
         </div>
       </div>
-    </div>
+    </button>
     """
   end
 
