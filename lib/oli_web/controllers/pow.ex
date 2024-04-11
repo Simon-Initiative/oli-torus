@@ -8,12 +8,6 @@ defmodule OliWeb.PowController do
   alias PowResetPassword.Phoenix.ResetPasswordController
   alias Oli.Repo
 
-  @secret_key_base Application.compile_env(:oli, OliWeb.Endpoint)[:secret_key_base]
-  @basic_conn_for_pow %Plug.Conn{
-    private: %{phoenix_router: OliWeb.Router, phoenix_endpoint: OliWeb.Endpoint, otp_app: :oli},
-    secret_key_base: @secret_key_base
-  }
-
   @ttl :timer.minutes(24 * 60)
   @cache_config {PowResetPassword.Store.ResetTokenCache, ttl: @ttl}
 
@@ -21,7 +15,12 @@ defmodule OliWeb.PowController do
     %{email: email} = _user = Repo.get(User, id)
     params = %{"user" => %{"email" => email}}
 
-    @basic_conn_for_pow
+    secret_key_base = Application.get_env(:oli, OliWeb.Endpoint)[:secret_key_base]
+
+    %Plug.Conn{
+      private: %{phoenix_router: OliWeb.Router, phoenix_endpoint: OliWeb.Endpoint, otp_app: :oli},
+      secret_key_base: secret_key_base
+    }
     |> use_pow_config(:user)
     |> put_reset_password_token_store_into_pow_config()
     |> ResetPasswordController.process_create(params)
