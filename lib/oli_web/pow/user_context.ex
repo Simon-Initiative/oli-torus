@@ -7,7 +7,7 @@ defmodule OliWeb.Pow.UserContext do
     repo: Oli.Repo,
     user: Oli.Accounts.User
 
-  alias Oli.Accounts
+  alias Oli.{AccountLookupCache, Accounts}
   alias Oli.Accounts.User
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.Section
@@ -31,6 +31,13 @@ defmodule OliWeb.Pow.UserContext do
     user
     |> User.lock_changeset()
     |> Repo.update()
+    |> case do
+      {:ok, %User{id: user_id}} ->
+        AccountLookupCache.delete("user_#{user_id}")
+
+      error ->
+        error
+    end
   end
 
   @spec unlock(map()) :: {:ok, map()} | {:error, map()}
@@ -38,6 +45,13 @@ defmodule OliWeb.Pow.UserContext do
     user
     |> User.noauth_changeset(%{locked_at: nil})
     |> Repo.update()
+    |> case do
+      {:ok, %User{id: user_id}} ->
+        AccountLookupCache.delete("user_#{user_id}")
+
+      error ->
+        error
+    end
   end
 
   @doc """

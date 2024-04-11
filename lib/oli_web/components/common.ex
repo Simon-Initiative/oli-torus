@@ -857,6 +857,7 @@ defmodule OliWeb.Components.Common do
   def loading_spinner(assigns) do
     ~H"""
     <svg
+      class="loading"
       xmlns="http://www.w3.org/2000/svg"
       xmlns:xlink="http://www.w3.org/1999/xlink"
       style="margin: auto; background: none; display: block; shape-rendering: auto;"

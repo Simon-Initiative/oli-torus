@@ -1,6 +1,7 @@
 defmodule Oli.Factory do
   use ExMachina.Ecto, repo: Oli.Repo
 
+  alias Oli.Accounts.VrUserAgent
   alias Oli.Accounts.{Author, User, AuthorPreferences, UserPreferences}
   alias Oli.Authoring.Authors.{AuthorProject, ProjectRole}
 
@@ -13,7 +14,6 @@ defmodule Oli.Factory do
   }
 
   alias Oli.Branding.Brand
-
   alias Oli.Delivery.Sections.ContainedObjective
 
   alias Oli.Delivery.Attempts.Core.{
@@ -46,7 +46,7 @@ defmodule Oli.Factory do
   alias Oli.Publishing.{PublishedResource}
   alias Oli.Publishing.Publications.Publication
   alias Oli.Resources.{Resource, Revision}
-  alias Oli.Resources.Collaboration.{CollabSpaceConfig, Post, PostContent}
+  alias Oli.Resources.Collaboration.{CollabSpaceConfig, Post, PostContent, UserReactionPost}
   alias Oli.Search.RevisionEmbedding
 
   def author_factory() do
@@ -358,6 +358,14 @@ defmodule Oli.Factory do
     }
   end
 
+  def user_reaction_post_factory() do
+    %UserReactionPost{
+      reaction: :like
+      # user: anonymous_build(:user),
+      # post: anonymous_build(:post)
+    }
+  end
+
   def delivery_setting_factory() do
     %StudentException{
       user: anonymous_build(:user),
@@ -585,6 +593,10 @@ defmodule Oli.Factory do
       resource: anonymous_build(:resource),
       collab_space_config: build(:collab_space_config)
     }
+  end
+
+  def vr_user_agent_factory() do
+    %VrUserAgent{}
   end
 
   def revision_embedding_factory() do

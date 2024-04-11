@@ -123,9 +123,12 @@ defmodule OliWeb.Delivery.ScoredActivities.AssessmentsTableModel do
   end
 
   defp parse_due_date(datetime, ctx, :due_by) do
-    datetime
-    |> FormatDateTime.convert_datetime(ctx)
-    |> Timex.format!("{Mshort}. {0D}, {YYYY} - {h12}:{m} {AM}")
+    if is_nil(datetime),
+      do: "No due date",
+      else:
+        datetime
+        |> FormatDateTime.convert_datetime(ctx)
+        |> Timex.format!("{Mshort}. {0D}, {YYYY} - {h12}:{m} {AM}")
   end
 
   defp parse_due_date(_datetime, _ctx, _scheduling_type), do: "No due date"

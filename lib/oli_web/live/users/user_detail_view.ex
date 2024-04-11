@@ -67,7 +67,8 @@ defmodule OliWeb.Users.UsersDetailView do
            user_lti_params: LtiParams.all_user_lti_params(user.id),
            enrolled_sections: enrolled_sections,
            disabled_edit: true,
-           user_name: user.name
+           user_name: user.name,
+           password_reset_link: ""
          )}
     end
   end
@@ -205,7 +206,11 @@ defmodule OliWeb.Users.UsersDetailView do
         </Group.render>
         <Group.render label="Actions" description="Actions that can be taken for this user">
           <%= if @user.independent_learner do %>
-            <Actions.render user={@user} csrf_token={@csrf_token} />
+            <Actions.render
+              user={@user}
+              csrf_token={@csrf_token}
+              password_reset_link={@password_reset_link}
+            />
           <% else %>
             <div>No actions available</div>
             <div class="text-secondary">LTI users are managed by their LMS</div>
@@ -222,6 +227,12 @@ defmodule OliWeb.Users.UsersDetailView do
       socket
       |> assign(params: params)
 
+    {:noreply, socket}
+  end
+
+  def handle_event("generate_reset_password_link", params, socket) do
+    password_reset_link = OliWeb.PowController.create_user_password_reset_link(params)
+    socket = assign(socket, password_reset_link: password_reset_link)
     {:noreply, socket}
   end
 

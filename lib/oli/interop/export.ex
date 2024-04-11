@@ -121,6 +121,9 @@ defmodule Oli.Interop.Export do
         {results, _} = rewire_elements(adjusted_content, project)
         content = Map.put(map, "model", results["children"])
         Map.put(content_as_list, "content", content)
+
+      nil ->
+        content_as_list
     end
   end
 

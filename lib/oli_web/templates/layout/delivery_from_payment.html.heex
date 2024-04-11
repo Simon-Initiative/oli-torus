@@ -93,8 +93,10 @@
     >
     </script>
 
-    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6">
-    </script>
+    <%= unless Map.get(assigns, :vr_agent_active, false) do %>
+      <script src="https://polyfill.io/v3/polyfill.min.js?features=es6">
+      </script>
+    <% end %>
     <!-- ReCAPTCHA -->
     <script src="https://www.google.com/recaptcha/api.js">
     </script>

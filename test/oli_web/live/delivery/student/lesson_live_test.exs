@@ -797,4 +797,215 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       )
     end
   end
+
+  describe "annotations toggle" do
+    setup [:user_conn, :create_elixir_project]
+
+    test "button is not rendered when annotations are disabled", %{
+      conn: conn,
+      section: section,
+      user: user,
+      page_1: page_1
+    } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+
+      {:ok, view, _html} = live(conn, Utils.lesson_live_path(section.slug, page_1.slug))
+
+      assert not has_element?(
+               view,
+               "button[phx-click='toggle_sidebar']"
+             )
+    end
+
+    test "button is rendered when annotations are enabled", %{
+      conn: conn,
+      section: section,
+      user: user,
+      page_1: page_1
+    } do
+      enable_collaborative_spaces(%{section: section})
+
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+
+      {:ok, view, _html} = live(conn, Utils.lesson_live_path(section.slug, page_1.slug))
+
+      assert has_element?(
+               view,
+               "button[phx-click='toggle_sidebar']"
+             )
+    end
+  end
+
+  describe "annotations panel" do
+    setup [:user_conn, :create_elixir_project, :enable_collaborative_spaces]
+
+    test "is toggled open when toolbar button is clicked", %{
+      conn: conn,
+      section: section,
+      user: user,
+      page_1: page_1
+    } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+
+      {:ok, view, _html} = live(conn, Utils.lesson_live_path(section.slug, page_1.slug))
+
+      view
+      |> element(~s{button[phx-click='toggle_sidebar']})
+      |> render_click
+
+      assert has_element?(
+               view,
+               "#annotations_panel"
+             )
+    end
+
+    test "renders empty message when there are no notes", %{
+      conn: conn,
+      section: section,
+      user: user,
+      page_1: page_1
+    } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+
+      {:ok, view, _html} = live(conn, Utils.lesson_live_path(section.slug, page_1.slug))
+
+      view
+      |> element(~s{button[phx-click='toggle_sidebar']})
+      |> render_click
+
+      wait_while(fn -> has_element?(view, "svg.loading") end)
+
+      assert has_element?(
+               view,
+               "div",
+               "There are no notes yet"
+             )
+    end
+
+    test "renders class notes", %{
+      conn: conn,
+      section: section,
+      user: user,
+      page_1: page_1
+    } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+
+      # create a class note
+      create_post(user, section, page_1, "This is a class note")
+      create_post(user, section, page_1, "This is another class note")
+
+      {:ok, view, _html} = live(conn, Utils.lesson_live_path(section.slug, page_1.slug))
+
+      view
+      |> element(~s{button[phx-click='toggle_sidebar']})
+      |> render_click
+
+      view
+      |> element(~s{button[phx-click='select_tab'][phx-value-tab='all_notes']})
+      |> render_click
+
+      wait_while(fn -> has_element?(view, "svg.loading") end)
+
+      assert has_element?(
+               view,
+               "div.post",
+               "This is a class note"
+             )
+
+      assert has_element?(
+               view,
+               "div.post",
+               "This is another class note"
+             )
+    end
+
+    test "renders class note with correct number of likes", %{
+      conn: conn,
+      section: section,
+      user: user,
+      page_1: page_1
+    } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+
+      # create a class note
+      {:ok, post_1} = create_post(user, section, page_1, "This is a class note")
+      create_post(user, section, page_1, "This is another class note")
+
+      # like the post by 3 different users
+      user2 = insert(:user)
+      user3 = insert(:user)
+
+      react_to_post(post_1, user, :like)
+      react_to_post(post_1, user2, :like)
+      react_to_post(post_1, user3, :like)
+
+      {:ok, view, _html} = live(conn, Utils.lesson_live_path(section.slug, page_1.slug))
+
+      view
+      |> element(~s{button[phx-click='toggle_sidebar']})
+      |> render_click
+
+      view
+      |> element(~s{button[phx-click='select_tab'][phx-value-tab='all_notes']})
+      |> render_click
+
+      wait_while(fn -> has_element?(view, "svg.loading") end)
+
+      like_button_html =
+        element(
+          view,
+          "button[phx-value-reaction='like'][phx-value-post-id='#{post_1.id}']"
+        )
+        |> render()
+
+      # verify number of likes is correct
+      assert like_button_html =~ "3"
+
+      # verify the like button is styled as primary since it was liked by the current user
+      assert like_button_html =~ "<path class=\"stroke-primary\""
+    end
+  end
+
+  defp create_post(user, section, page, message, attrs \\ %{}) do
+    default_attrs = %{
+      status: :approved,
+      user_id: user.id,
+      section_id: section.id,
+      resource_id: page.resource_id,
+      annotated_resource_id: page.resource_id,
+      annotated_block_id: nil,
+      annotation_type: :none,
+      anonymous: false,
+      visibility: :public,
+      content: %Oli.Resources.Collaboration.PostContent{message: message}
+    }
+
+    Oli.Resources.Collaboration.create_post(Map.merge(default_attrs, attrs))
+  end
+
+  defp react_to_post(post, user, reaction) do
+    Oli.Resources.Collaboration.toggle_reaction(post.id, user.id, reaction)
+  end
+
+  defp enable_collaborative_spaces(%{section: section}) do
+    course_collab_space_config =
+      Oli.Resources.Collaboration.get_course_collab_space_config(section.root_section_resource_id)
+      |> Map.from_struct()
+      |> Map.merge(%{status: :enabled})
+
+    %{resource_id: resource_id} = Oli.Publishing.DeliveryResolver.root_container(section.slug)
+
+    Oli.Delivery.Sections.get_section_resource(section.id, resource_id)
+    |> Oli.Delivery.Sections.update_section_resource(%{
+      collab_space_config: course_collab_space_config
+    })
+
+    %{}
+  end
 end

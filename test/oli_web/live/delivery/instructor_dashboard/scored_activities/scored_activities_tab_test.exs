@@ -1246,13 +1246,16 @@ defmodule OliWeb.Delivery.InstructorDashboard.ScoredActivitiesTabTest do
       section: section,
       page_1: page_1,
       page_2: page_2,
-      page_3: page_3
+      page_3: page_3,
+      page_4: page_4
     } do
       # Only section resources of scheduling_type = due_by are considered when sorting by Due Date
+      # It's considered also in the case that the scheduling_type is read_by, but the end_date is nil
       [
         {page_1, %{end_date: ~U[2000-01-21 12:00:00.00Z], scheduling_type: :due_by}},
         {page_2, %{end_date: ~U[2000-01-22 12:00:00.00Z], scheduling_type: :read_by}},
-        {page_3, %{end_date: ~U[2000-01-23 12:00:00.00Z], scheduling_type: :due_by}}
+        {page_3, %{end_date: ~U[2000-01-23 12:00:00.00Z], scheduling_type: :due_by}},
+        {page_4, %{end_date: nil, scheduling_type: :due_by}}
       ]
       |> Enum.each(fn {page, params} ->
         Sections.get_section_resource(section.id, page.resource_id)

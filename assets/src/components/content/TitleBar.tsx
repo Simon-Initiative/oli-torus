@@ -51,7 +51,7 @@ export const TitleBar = (props: TitleBarProps) => {
             setTitleBarHeight(boundingClientRect.height);
           }
         }}
-        className={classNames('TitleBar', 'sticky w-100 align-items-baseline z-40', className)}
+        className={classNames('TitleBar', 'w-100 align-items-baseline z-40', className)}
         style={{ top: workspaceHeaderHeight }}
       >
         <div
