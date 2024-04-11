@@ -6069,6 +6069,10 @@ table.table-striped tbody tr:nth-child(even) {
   overflow-y: hidden;
 }
 
+.overflow-x-clip {
+  overflow-x: clip;
+}
+
 .overflow-x-scroll {
   overflow-x: scroll;
 }
@@ -12271,6 +12275,11 @@ https://tailwindcss.com/docs/utility-first
 
 .focus\:ring-inset:focus {
   --tw-ring-inset: inset;
+}
+
+.focus\:ring-blue-300:focus {
+  --tw-ring-opacity: 1;
+  --tw-ring-color: rgb(126 165 226 / var(--tw-ring-opacity));
 }
 
 .focus\:ring-blue-400:focus {
