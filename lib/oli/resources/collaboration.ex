@@ -1127,12 +1127,12 @@ defmodule Oli.Resources.Collaboration do
 
     filter_by_search_term =
       if is_nil(search_term) do
-        true
+        dynamic([p], is_nil(p.parent_post_id) and is_nil(p.thread_root_id))
       else
         dynamic(
           [p],
           fragment(
-            "to_tsvector('english', ?) @@ to_tsquery('english', ?)",
+            "to_tsvector('english', ?) @@ websearch_to_tsquery('english', ?)",
             p.content,
             ^search_term
           )
@@ -1150,7 +1150,6 @@ defmodule Oli.Resources.Collaboration do
         left_join: user in assoc(post, :user),
         where:
           post.section_id == ^section_id and post.resource_id == ^resource_id and
-            is_nil(post.parent_post_id) and is_nil(post.thread_root_id) and
             (post.status in [:approved, :archived] or
                (post.status == :submitted and post.user_id == ^user_id)),
         where: ^filter_by_point_block_id,
