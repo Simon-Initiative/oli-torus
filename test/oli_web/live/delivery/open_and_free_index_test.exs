@@ -7,8 +7,9 @@ defmodule OliWeb.Delivery.OpenAndFreeIndexTest do
 
   alias Lti_1p3.Tool.ContextRoles
   alias Oli.Delivery.Sections
-  alias Oli.Seeder
+  alias Oli.{Accounts, Seeder}
   alias Oli.Delivery.Attempts.Core
+  alias OliWeb.Pow.UserContext
 
   defp set_progress(section_id, resource_id, user_id, progress, revision) do
     {:ok, resource_access} =
@@ -58,6 +59,31 @@ defmodule OliWeb.Delivery.OpenAndFreeIndexTest do
     test "can access when user is not enrolled to any section", %{conn: conn} do
       {:ok, view, _html} = live(conn, ~p"/sections")
 
+      assert has_element?(view, "p", "You are not enrolled in any courses.")
+    end
+
+    test "cannot access when user is locked", %{conn: conn, user: user} do
+      UserContext.lock(user)
+
+      {:error,
+       {:redirect,
+        %{
+          to: "/session/new",
+          flash: %{"error" => "Sorry, your account is locked. Please contact support."}
+        }}} = live(conn, ~p"/sections")
+    end
+
+    test "can access when user is unlocked after being locked", %{conn: conn, user: user} do
+      # Lock the user
+      {:ok, date, _timezone} = DateTime.from_iso8601("2019-05-22 20:30:00Z")
+      {:ok, user} = Accounts.update_user(user, %{locked_at: date})
+
+      # Unlock the user
+      UserContext.unlock(user)
+
+      {:ok, view, _html} = live(conn, ~p"/sections")
+
+      assert has_element?(view, "h3", "Courses available")
       assert has_element?(view, "p", "You are not enrolled in any courses.")
     end
 

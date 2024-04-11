@@ -127,6 +127,10 @@ https://tailwindcss.com/docs/utility-first
   @apply mb-[20px] text-2xl tracking-[0.02px] font-light dark:text-white;
 }
 
+.truncate-form-control p {
+  @apply truncate;
+}
+
 .scrollbar-hide::-webkit-scrollbar {
   display: none;
 }

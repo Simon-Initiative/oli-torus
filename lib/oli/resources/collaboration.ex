@@ -7,7 +7,7 @@ defmodule Oli.Resources.Collaboration do
   alias Oli.Delivery.Sections.{Section, SectionResource, SectionsProjectsPublications}
   alias Oli.Resources
   alias Oli.Resources.{ResourceType, Revision}
-  alias Oli.Resources.Collaboration.{CollabSpaceConfig, Post, UserReadPost}
+  alias Oli.Resources.Collaboration.{CollabSpaceConfig, Post, UserReadPost, UserReactionPost}
   alias Oli.Repo
   alias Oli.Accounts.User
 
@@ -491,6 +491,40 @@ defmodule Oli.Resources.Collaboration do
     )
   end
 
+  # Define a subquery for root thread post replies count
+  defp replies_subquery() do
+    from(p in Post,
+      group_by: p.thread_root_id,
+      select: %{
+        thread_root_id: p.thread_root_id,
+        count: count(p.id),
+        last_reply: max(p.updated_at)
+      }
+    )
+  end
+
+  # Define a subquery for root thread post read replies count
+  # (replies by the user are counted as read)
+  defp read_replies_subquery(user_id) do
+    from(
+      p in Post,
+      left_join: urp in UserReadPost,
+      on: urp.post_id == p.id,
+      where:
+        not is_nil(p.thread_root_id) and
+          (p.user_id == ^user_id or (urp.user_id == ^user_id and not is_nil(urp.post_id))),
+      group_by: p.thread_root_id,
+      select: %{
+        thread_root_id: p.thread_root_id,
+        # Counting both user's posts and read posts
+        count: count(p.id)
+      }
+    )
+  end
+
+  @doc """
+  Returns the list of root posts for a section.
+  """
   def list_root_posts_for_section(
         user_id,
         section_id,
@@ -500,35 +534,6 @@ defmodule Oli.Resources.Collaboration do
         sort_by,
         sort_order
       ) do
-    # Define a subquery for root thread post replies count
-    replies_subquery =
-      from(p in Post,
-        group_by: p.thread_root_id,
-        select: %{
-          thread_root_id: p.thread_root_id,
-          count: count(p.id),
-          last_reply: max(p.updated_at)
-        }
-      )
-
-    # Define a subquery for root thread post read replies count
-    # (replies by the user are counted as read)
-    read_replies_subquery =
-      from(
-        p in Post,
-        left_join: urp in UserReadPost,
-        on: urp.post_id == p.id,
-        where:
-          not is_nil(p.thread_root_id) and
-            (p.user_id == ^user_id or (urp.user_id == ^user_id and not is_nil(urp.post_id))),
-        group_by: p.thread_root_id,
-        select: %{
-          thread_root_id: p.thread_root_id,
-          # Counting both user's posts and read posts
-          count: count(p.id)
-        }
-      )
-
     order_clause =
       case {sort_by, sort_order} do
         {"popularity", :desc} ->
@@ -566,9 +571,9 @@ defmodule Oli.Resources.Collaboration do
         on: rev.id == pr.revision_id,
         join: user in User,
         on: post.user_id == user.id,
-        left_join: replies in subquery(replies_subquery),
+        left_join: replies in subquery(replies_subquery()),
         on: replies.thread_root_id == post.id,
-        left_join: read_replies in subquery(read_replies_subquery),
+        left_join: read_replies in subquery(read_replies_subquery(user_id)),
         on: read_replies.thread_root_id == post.id,
         where:
           post.section_id == ^section_id and
@@ -1099,10 +1104,10 @@ defmodule Oli.Resources.Collaboration do
 
   ## Examples
 
-      iex> list_posts_for_user_in_point_block(1, 1, 1, "1"))
+      iex> list_posts_for_user_in_point_block(1, 1, 1, :private, "1"))
       [%Post{status: :archived}, ...]
 
-      iex> list_posts_for_user_in_point_block(2, 2, 2, "2")
+      iex> list_posts_for_user_in_point_block(2, 2, 2, :private, "2")
       []
   """
   def list_posts_for_user_in_point_block(
@@ -1122,17 +1127,53 @@ defmodule Oli.Resources.Collaboration do
     Repo.all(
       from(
         post in Post,
+        left_join: replies in subquery(replies_subquery()),
+        on: replies.thread_root_id == post.id,
+        left_join: read_replies in subquery(read_replies_subquery(user_id)),
+        on: read_replies.thread_root_id == post.id,
+        left_join: reactions in assoc(post, :reactions),
+        left_join: user in assoc(post, :user),
         where:
           post.section_id == ^section_id and post.resource_id == ^resource_id and
+            is_nil(post.parent_post_id) and is_nil(post.thread_root_id) and
             (post.status in [:approved, :archived] or
                (post.status == :submitted and post.user_id == ^user_id)),
         where: ^filter_by_point_block_id,
         where: post.visibility == ^visibility,
-        select: post,
         order_by: [desc: :inserted_at],
-        preload: [:user]
+        preload: [user: user, reactions: reactions],
+        select: %{
+          post
+          | replies_count: coalesce(replies.count, 0),
+            read_replies_count: coalesce(read_replies.count, 0)
+        }
       )
     )
+    |> summarize_reactions(user_id)
+  end
+
+  defp summarize_reactions(posts, current_user_id) do
+    Enum.map(posts, fn post ->
+      %{
+        post
+        | reaction_summaries:
+            Enum.reduce(post.reactions, %{}, fn r, acc ->
+              reacted_by_current_user = r.user_id == current_user_id
+
+              Map.update(
+                acc,
+                r.reaction,
+                %{count: 1, reacted: reacted_by_current_user},
+                fn %{
+                     count: count,
+                     reacted: reacted
+                   } ->
+                  %{count: count + 1, reacted: reacted_by_current_user || reacted}
+                end
+              )
+            end)
+      }
+    end)
   end
 
   @doc """
@@ -1144,6 +1185,7 @@ defmodule Oli.Resources.Collaboration do
       post in Post,
       where:
         post.section_id == ^section_id and post.resource_id == ^resource_id and
+          is_nil(post.parent_post_id) and is_nil(post.thread_root_id) and
           post.visibility == ^visibility and
           (post.status in [:approved, :archived] or
              (post.status == :submitted and post.user_id == ^user_id)),
@@ -1152,5 +1194,62 @@ defmodule Oli.Resources.Collaboration do
     )
     |> Repo.all()
     |> Enum.into(%{})
+  end
+
+  def list_replies_for_post_in_point_block(user_id, post_id) do
+    Repo.all(
+      from(
+        post in Post,
+        join: user in User,
+        on: post.user_id == user.id,
+        left_join: urp in UserReadPost,
+        on: urp.post_id == post.id and urp.user_id == ^user_id,
+        left_join: reactions in assoc(post, :reactions),
+        where:
+          post.parent_post_id == ^post_id and
+            (post.status in [:approved, :archived] or
+               (post.status == :submitted and post.user_id == ^user_id)),
+        order_by: [asc: :updated_at],
+        preload: [user: user, reactions: reactions],
+        select: post
+      )
+    )
+    |> build_metrics_for_reply_posts(user_id)
+    |> summarize_reactions(user_id)
+  end
+
+  def toggle_reaction(post_id, user_id, reaction) do
+    case get_reaction(post_id, user_id, reaction) do
+      nil ->
+        case create_reaction(post_id, user_id, reaction) do
+          {:ok, _} ->
+            {:ok, 1}
+
+          error ->
+            error
+        end
+
+      reaction ->
+        case delete_reaction(reaction) do
+          {:ok, _} ->
+            {:ok, -1}
+
+          error ->
+            error
+        end
+    end
+  end
+
+  def get_reaction(post_id, user_id, reaction) do
+    Repo.get_by(UserReactionPost, post_id: post_id, user_id: user_id, reaction: reaction)
+  end
+
+  def create_reaction(post_id, user_id, reaction) do
+    %UserReactionPost{post_id: post_id, user_id: user_id, reaction: reaction}
+    |> Repo.insert()
+  end
+
+  def delete_reaction(%UserReactionPost{} = reaction) do
+    Repo.delete(reaction)
   end
 end

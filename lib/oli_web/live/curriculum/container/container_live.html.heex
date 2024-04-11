@@ -13,6 +13,7 @@
   <%= if @options_modal_assigns do %>
     <.live_component
       module={OptionsModalContent}
+      ctx={@ctx}
       id="modal_content"
       redirect_url={@options_modal_assigns.redirect_url}
       revision={@options_modal_assigns.revision}

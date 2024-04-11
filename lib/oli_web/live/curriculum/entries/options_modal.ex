@@ -8,6 +8,7 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
   alias Oli.Resources.ScoringStrategy
   alias Oli.Utils.S3Storage
   alias OliWeb.Components.HierarchySelector
+  alias OliWeb.Common.React
 
   @attempt_options [
     "1": 1,
@@ -69,6 +70,59 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
 
   attr(:attempt_options, :list, default: @attempt_options)
   attr(:selected_resources, :list, default: [])
+
+  def render(%{step: :intro_content} = assigns) do
+    ~H"""
+    <div id="intro_content_step">
+      <div class="form-group">
+        <label for="introduction_content">Introduction content</label>
+      </div>
+      <div id="rich_text_editor_wrapper" phx-update="ignore">
+        <%= React.component(
+          @ctx,
+          "Components.RichTextEditor",
+          %{
+            projectSlug: @project.slug,
+            onEdit: "initial_function_that_will_be_overwritten",
+            onEditEvent: "intro_content_change",
+            onEditTarget: "#intro_content_step",
+            editMode: true,
+            value:
+              (fetch_field(@changeset, :intro_content) &&
+                 fetch_field(@changeset, :intro_content)["children"]) || [],
+            fixedToolbar: true,
+            allowBlockElements: false
+          },
+          id: "rich_text_editor_react_component"
+        ) %>
+      </div>
+
+      <div class="modal-footer">
+        <button
+          type="button"
+          class="btn btn-secondary"
+          phx-click="change_step"
+          phx-value-target_step="general"
+          phx-value-action="cancel"
+          phx-target={@myself}
+        >
+          Cancel
+        </button>
+        <button
+          type="button"
+          phx-disable-with="Selecting..."
+          class="btn btn-primary"
+          phx-click="change_step"
+          phx-value-target_step="general"
+          phx-value-action="save"
+          phx-target={@myself}
+        >
+          Save
+        </button>
+      </div>
+    </div>
+    """
+  end
 
   def render(%{step: step} = assigns) when step in [:poster_image, :intro_video] do
     ~H"""
@@ -498,17 +552,50 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
               The title is used to identify this <%= resource_type_label(@revision) %>.
             </small>
           </div>
-          <.poster_image_selection
-            target={@myself}
-            poster_image={fetch_field(@changeset, :poster_image) || @default_poster_image}
-            delete_button_enabled={
-              fetch_field(@changeset, :poster_image) not in [nil, @default_poster_image]
-            }
-          />
-          <.intro_video_selection
-            target={@myself}
-            intro_video={fetch_field(@changeset, :intro_video)}
-          />
+          <div class="form-group">
+            <label for="introduction_content">Introduction content</label>
+            <input
+              type="hidden"
+              name="revision[intro_content]"
+              value={fetch_field(@changeset, :intro_content) || %{}}
+            />
+            <div class="form-control overflow-hidden truncate-form-control">
+              <div :if={fetch_field(@changeset, :intro_content) not in [nil, "", %{}]}>
+                <%= Phoenix.HTML.raw(
+                  Oli.Rendering.Content.render(
+                    %Oli.Rendering.Context{},
+                    fetch_field(@changeset, :intro_content)[
+                      "children"
+                    ],
+                    Oli.Rendering.Content.Html
+                  )
+                ) %>
+              </div>
+            </div>
+
+            <.button
+              phx-click="change_step"
+              phx-target={@myself}
+              phx-value-target_step="intro_content"
+              type="button"
+              class="btn btn-primary mt-2"
+            >
+              Edit
+            </.button>
+          </div>
+          <div class="flex gap-10 justify-center">
+            <.poster_image_selection
+              target={@myself}
+              poster_image={fetch_field(@changeset, :poster_image) || @default_poster_image}
+              delete_button_enabled={
+                fetch_field(@changeset, :poster_image) not in [nil, @default_poster_image]
+              }
+            />
+            <.intro_video_selection
+              target={@myself}
+              intro_video={fetch_field(@changeset, :intro_video)}
+            />
+          </div>
         <% end %>
 
         <div class="modal-footer">
@@ -748,6 +835,10 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
      |> maybe_auto_open_uploader()}
   end
 
+  def handle_event("change_step", %{"target_step" => "intro_content"}, socket) do
+    {:noreply, assign(socket, step: :intro_content)}
+  end
+
   def handle_event("cancel_not_consumed_uploads", _params, socket) do
     {:noreply, maybe_cancel_not_consumed_uploads(socket, socket.assigns.step)}
   end
@@ -840,6 +931,16 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
     else
       {:noreply, assign(socket, intro_video_form: intro_video_form)}
     end
+  end
+
+  def handle_event("intro_content_change", %{"values" => intro_content}, socket) do
+    changeset =
+      Ecto.Changeset.put_change(socket.assigns.changeset, :intro_content, %{
+        "type" => "p",
+        "children" => intro_content
+      })
+
+    {:noreply, assign(socket, changeset: changeset)}
   end
 
   defp is_foundation(changeset, revision) do
@@ -975,7 +1076,8 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
     end
   end
 
-  defp maybe_cancel_not_consumed_uploads(socket, allow_upload_name) do
+  defp maybe_cancel_not_consumed_uploads(socket, allow_upload_name)
+       when allow_upload_name in [:poster_image, :intro_video] do
     # we need to cancel any residual not consumed resource between step navigations
     # in order to allow the user to upload a new resource.
     for entry <- socket.assigns.uploads[allow_upload_name].entries do
@@ -986,6 +1088,8 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
       [socket | _rest] -> socket
     end
   end
+
+  defp maybe_cancel_not_consumed_uploads(socket, _), do: socket
 
   defp assign_resource_urls(socket, resource_name) do
     resource_urls =

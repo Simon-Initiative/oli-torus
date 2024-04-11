@@ -46,10 +46,38 @@ defmodule OliWeb.Curriculum.OptionsModalContentTest do
         intro_video: "https://youtu.be/i8Pq1jpM3PE"
       )
 
+    page_5_revision =
+      insert(:revision,
+        resource_type_id: ResourceType.id_for_page(),
+        content: %{"model" => []},
+        title: "revision E"
+      )
+
+    unit_revision =
+      insert(:revision, %{
+        resource_type_id: ResourceType.id_for_container(),
+        children: [
+          page_5_revision.resource_id
+        ],
+        content: %{},
+        title: "Unit 1",
+        intro_content: %{
+          "type" => "p",
+          "children" => [
+            %{
+              "id" => "3477687079",
+              "type" => "p",
+              "children" => [%{"text" => "Some intro content text!"}]
+            }
+          ]
+        }
+      })
+
     container_revision =
       insert(:revision, %{
         resource_type_id: ResourceType.id_for_container(),
         children: [
+          unit_revision.resource_id,
           page_revision.resource_id,
           page_2_revision.resource_id,
           page_3_revision.resource_id,
@@ -67,6 +95,8 @@ defmodule OliWeb.Curriculum.OptionsModalContentTest do
         page_2_revision,
         page_3_revision,
         page_4_revision,
+        page_5_revision,
+        unit_revision,
         container_revision
       ]
 
@@ -107,6 +137,7 @@ defmodule OliWeb.Curriculum.OptionsModalContentTest do
       page_revision: page_revision,
       page_2_revision: page_2_revision,
       page_3_revision: page_3_revision,
+      unit_revision: unit_revision,
       author: author,
       container_revision: container_revision,
       project_hierarchy: project_hierarchy
@@ -1144,6 +1175,102 @@ defmodule OliWeb.Curriculum.OptionsModalContentTest do
 
       refute has_element?(lcd, "img[data-filename='b.jpg']")
       refute has_element?(lcd, "video[data-filename='b.mp4']")
+    end
+
+    test "renders no intro content if the revision is a not a container", %{
+      conn: conn,
+      project: project,
+      page_revision: revision,
+      project_hierarchy: project_hierarchy
+    } do
+      {:ok, lcd, _html} =
+        live_component_isolated(conn, OliWeb.Curriculum.OptionsModalContent, %{
+          revision: revision,
+          changeset: Oli.Resources.change_revision(revision),
+          redirect_url: "some_redirect_url",
+          project_hierarchy: project_hierarchy,
+          project: project,
+          validate: "validate-options",
+          submit: "save-options",
+          cancel: "restart_options_modal"
+        })
+
+      refute has_element?(
+               lcd,
+               "label",
+               "Introduction content"
+             )
+    end
+
+    test "renders the intro content if the revision is a container", %{
+      conn: conn,
+      project: project,
+      unit_revision: revision,
+      project_hierarchy: project_hierarchy
+    } do
+      {:ok, lcd, _html} =
+        live_component_isolated(conn, OliWeb.Curriculum.OptionsModalContent, %{
+          revision: revision,
+          changeset: Oli.Resources.change_revision(revision),
+          redirect_url: "some_redirect_url",
+          project_hierarchy: project_hierarchy,
+          project: project,
+          validate: "validate-options",
+          submit: "save-options",
+          cancel: "restart_options_modal"
+        })
+
+      assert has_element?(
+               lcd,
+               "label",
+               "Introduction content"
+             )
+
+      assert render(lcd) =~ "Some intro content text!"
+    end
+
+    test "can edit the intro content", %{
+      conn: conn,
+      project: project,
+      unit_revision: revision,
+      project_hierarchy: project_hierarchy,
+      author: author
+    } do
+      session_context = %OliWeb.Common.SessionContext{
+        browser_timezone: "utc",
+        local_tz: "utc",
+        author: author,
+        user: author,
+        is_liveview: true
+      }
+
+      {:ok, lcd, _html} =
+        live_component_isolated(conn, OliWeb.Curriculum.OptionsModalContent, %{
+          revision: revision,
+          changeset: Oli.Resources.change_revision(revision),
+          redirect_url: "some_redirect_url",
+          project_hierarchy: project_hierarchy,
+          project: project,
+          validate: "validate-options",
+          submit: "save-options",
+          cancel: "restart_options_modal",
+          ctx: session_context
+        })
+
+      assert render(lcd) =~ "Some intro content text!"
+
+      # go to the intro content step
+      lcd
+      |> element("button[phx-click=change_step][phx-value-target_step=intro_content]", "Edit")
+      |> render_click()
+
+      lcd
+      |> render()
+      |> Floki.parse_fragment!()
+      |> Floki.find(~s{div[data-live-react-class="Components.RichTextEditor"]})
+      |> Floki.attribute("data-live-react-props")
+      |> hd() =~
+        "Some intro content text!"
     end
   end
 end

@@ -52,6 +52,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         active_tab: :learn,
         units: get_or_compute_full_hierarchy(section)["children"],
         selected_module_per_unit_resource_id: %{},
+        student_end_date_exceptions_per_resource_id: %{},
         student_visited_pages: %{},
         student_progress_per_resource_id: %{},
         student_raw_avg_score_per_page_id: %{},
@@ -383,7 +384,11 @@ defmodule OliWeb.Delivery.Student.LearnLive do
 
   def handle_event(
         "expand_section",
-        %{"resource_id" => resource_id, "module_resource_id" => module_resource_id},
+        %{
+          "resource_id" => resource_id,
+          "module_resource_id" => module_resource_id,
+          "parent_due_date" => parent_due_date
+        },
         socket
       ) do
     full_hierarchy = get_or_compute_full_hierarchy(socket.assigns.section)
@@ -396,13 +401,15 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         &(&1["resource_id"] == module_resource_id)
       )
 
+    # we concatenate the resource_id with the parent_due_date to create a unique key
+    # and allow the student to expand and collapse same sections grouping pages with different due dates independently
     closed_sections =
       socket.assigns.display_props_per_module_id
       |> get_in([module_resource_id, :closed_sections], [])
       |> then(
-        &if Enum.member?(&1, resource_id),
-          do: List.delete(&1, resource_id),
-          else: [resource_id | &1]
+        &if Enum.member?(&1, "#{resource_id}-#{parent_due_date}"),
+          do: List.delete(&1, "#{resource_id}-#{parent_due_date}"),
+          else: ["#{resource_id}-#{parent_due_date}" | &1]
       )
 
     display_props_per_module_id =
@@ -469,7 +476,8 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   def handle_info(
         {:student_metrics_and_enable_slider_buttons,
          {student_visited_pages, student_progress_per_resource_id,
-          student_raw_avg_score_per_page_id, student_raw_avg_score_per_container_id}},
+          student_raw_avg_score_per_page_id, student_raw_avg_score_per_container_id,
+          student_end_date_exceptions_per_resource_id}},
         socket
       ) do
     full_hierarchy = get_or_compute_full_hierarchy(socket.assigns.section)
@@ -478,6 +486,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
 
     {:noreply,
      assign(socket,
+       student_end_date_exceptions_per_resource_id: student_end_date_exceptions_per_resource_id,
        student_visited_pages: student_visited_pages,
        student_progress_per_resource_id: student_progress_per_resource_id,
        student_raw_avg_score_per_page_id: student_raw_avg_score_per_page_id,
@@ -520,6 +529,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
           unit={unit}
           ctx={@ctx}
           student_progress_per_resource_id={@student_progress_per_resource_id}
+          student_end_date_exceptions_per_resource_id={@student_end_date_exceptions_per_resource_id}
           selected_module_per_unit_resource_id={@selected_module_per_unit_resource_id}
           student_raw_avg_score_per_page_id={@student_raw_avg_score_per_page_id}
           viewed_intro_video_resource_ids={@viewed_intro_video_resource_ids}
@@ -549,6 +559,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   attr :ctx, :map, doc: "the context is needed to format the date considering the user's timezone"
   attr :student_progress_per_resource_id, :map
   attr :student_raw_avg_score_per_page_id, :map
+  attr :student_end_date_exceptions_per_resource_id, :map
   attr :selected_module_per_unit_resource_id, :map
   attr :progress, :integer
   attr :student_id, :integer
@@ -576,7 +587,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
                   <span class="text-gray-400 opacity-80 dark:text-[#696974] dark:opacity-100 mr-1">
                     Due:
                   </span>
-                  <%= FormatDateTime.to_formatted_datetime(
+                  <%= format_date(
                     @unit["section_resource"].end_date,
                     @ctx,
                     "{WDshort}, {Mshort} {D}, {YYYY} ({h12}:{m}{am})"
@@ -648,7 +659,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
                   <span class="text-gray-400 opacity-80 dark:text-[#696974] dark:opacity-100 mr-1">
                     Due:
                   </span>
-                  <%= FormatDateTime.to_formatted_datetime(
+                  <%= format_date(
                     @unit["section_resource"].end_date,
                     @ctx,
                     "{WDshort}, {Mshort} {D}, {YYYY} ({h12}:{m}{am})"
@@ -747,7 +758,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
             ] %>
           </h2>
           <span class="text-[12px] leading-[16px] opacity-50 dark:text-white">
-            Due: <%= FormatDateTime.to_formatted_datetime(
+            Due: <%= format_date(
               Map.get(@selected_module_per_unit_resource_id, @unit["resource_id"])["section_resource"].end_date,
               @ctx,
               "{WDshort} {Mshort} {D}, {YYYY}"
@@ -812,6 +823,9 @@ defmodule OliWeb.Delivery.Student.LearnLive do
               module={module}
               student_raw_avg_score_per_page_id={@student_raw_avg_score_per_page_id}
               student_progress_per_resource_id={@student_progress_per_resource_id}
+              student_end_date_exceptions_per_resource_id={
+                @student_end_date_exceptions_per_resource_id
+              }
               ctx={@ctx}
               student_id={@student_id}
               intro_video_viewed={
@@ -899,6 +913,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
 
   attr :module, :map
   attr :student_raw_avg_score_per_page_id, :map
+  attr :student_end_date_exceptions_per_resource_id, :map
   attr :ctx, :map
   attr :student_id, :integer
   attr :intro_video_viewed, :boolean
@@ -906,6 +921,13 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   attr :display_props_per_module_id, :map
 
   def module_index(assigns) do
+    show_completed_pages =
+      get_in(
+        assigns.display_props_per_module_id,
+        [assigns.module["resource_id"], :show_completed_pages],
+        true
+      )
+
     assigns =
       Map.merge(assigns, %{
         closed_sections:
@@ -914,18 +936,19 @@ defmodule OliWeb.Delivery.Student.LearnLive do
             [assigns.module["resource_id"], :closed_sections],
             []
           ),
-        show_completed_pages:
-          get_in(
-            assigns.display_props_per_module_id,
-            [assigns.module["resource_id"], :show_completed_pages],
-            true
+        show_completed_pages: show_completed_pages,
+        page_due_dates:
+          get_contained_pages_due_dates(
+            assigns.module,
+            assigns.student_end_date_exceptions_per_resource_id,
+            show_completed_pages
           )
       })
 
     ~H"""
     <div
       id={"index_for_#{@module["resource_id"]}"}
-      class="relative flex flex-col gap-[6px] items-start"
+      class="relative flex flex-col gap-[25px] items-start"
     >
       <div
         :if={@module["learning_objectives"] != []}
@@ -1003,65 +1026,67 @@ defmodule OliWeb.Delivery.Student.LearnLive do
           Introduction and Learning Objectives
         </h3>
       </div>
-      <.index_item
+      <.intro_video_item
         :if={module_has_intro_video(@module)}
-        title="Introduction"
-        type="intro"
-        numbering_index={1}
-        numbering_level={3}
-        was_visited={false}
-        graded={@module["graded"]}
         duration_minutes={@module["duration_minutes"]}
-        revision_slug={@module["slug"]}
         module_resource_id={@module["resource_id"]}
-        resource_id="intro"
-        raw_avg_score={%{}}
         video_url={@module["intro_video"]}
         intro_video_viewed={@intro_video_viewed}
-        progress={0.0}
       />
-
-      <.index_item
-        :for={child <- @module["children"]}
-        :if={display_module_item?(@show_completed_pages, child)}
-        title={child["title"]}
-        type={
-          if is_section?(child),
-            do: "section",
-            else: "page"
-        }
-        numbering_index={child["numbering"]["index"]}
-        numbering_level={child["numbering"]["level"]}
-        children={child["children"]}
-        was_visited={child["visited"]}
-        duration_minutes={child["duration_minutes"]}
-        graded={child["graded"]}
-        revision_slug={child["slug"]}
-        module_resource_id={@module["resource_id"]}
-        resource_id={child["resource_id"]}
-        student_id={@student_id}
-        ctx={@ctx}
-        due_date={
-          if child["graded"],
-            do:
-              get_due_date_for_student(
-                child["section_resource"].end_date,
-                child["resource_id"],
-                child["section_resource"].section_id,
-                @student_id,
-                @ctx,
-                "{WDshort} {Mshort} {D}, {YYYY}"
-              )
-        }
-        student_raw_avg_score_per_page_id={@student_raw_avg_score_per_page_id}
-        raw_avg_score={Map.get(@student_raw_avg_score_per_page_id, child["resource_id"])}
-        intro_video_viewed={@intro_video_viewed}
-        video_url={@module["intro_video"]}
-        progress={Map.get(@student_progress_per_resource_id, child["resource_id"])}
-        student_progress_per_resource_id={@student_progress_per_resource_id}
-        closed_sections={@closed_sections}
-        show_completed_pages={@show_completed_pages}
-      />
+      <div
+        :for={grouped_due_date <- @page_due_dates}
+        class="flex flex-col w-full"
+        id={"pages_grouped_by_#{grouped_due_date}"}
+      >
+        <div class="h-[19px] mb-[10px]">
+          <span class="text-[#3399FF] text-[14px] leading-[19px]">
+            <%= "Due: #{format_date(grouped_due_date, @ctx, "{WDshort} {Mshort} {D}, {YYYY}")}" %>
+          </span>
+        </div>
+        <.index_item
+          :for={child <- @module["children"]}
+          :if={
+            display_module_item?(
+              @show_completed_pages,
+              grouped_due_date,
+              @student_end_date_exceptions_per_resource_id,
+              child
+            )
+          }
+          title={child["title"]}
+          type={
+            if is_section?(child),
+              do: "section",
+              else: "page"
+          }
+          numbering_index={child["numbering"]["index"]}
+          numbering_level={child["numbering"]["level"]}
+          children={child["children"]}
+          was_visited={child["visited"]}
+          duration_minutes={child["duration_minutes"]}
+          graded={child["graded"]}
+          revision_slug={child["slug"]}
+          module_resource_id={@module["resource_id"]}
+          resource_id={child["resource_id"]}
+          student_id={@student_id}
+          ctx={@ctx}
+          student_end_date_exceptions_per_resource_id={@student_end_date_exceptions_per_resource_id}
+          parent_due_date={grouped_due_date}
+          due_date={
+            get_due_date_for_student(
+              child["section_resource"].end_date,
+              child["resource_id"],
+              @student_end_date_exceptions_per_resource_id
+            )
+          }
+          student_raw_avg_score_per_page_id={@student_raw_avg_score_per_page_id}
+          raw_avg_score={Map.get(@student_raw_avg_score_per_page_id, child["resource_id"])}
+          progress={Map.get(@student_progress_per_resource_id, child["resource_id"])}
+          student_progress_per_resource_id={@student_progress_per_resource_id}
+          closed_sections={@closed_sections}
+          show_completed_pages={@show_completed_pages}
+        />
+      </div>
     </div>
     """
   end
@@ -1081,10 +1106,10 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   attr :graded, :boolean
   attr :raw_avg_score, :map
   attr :student_raw_avg_score_per_page_id, :map
+  attr :student_end_date_exceptions_per_resource_id, :map
   attr :student_progress_per_resource_id, :map
-  attr :due_date, :string
-  attr :intro_video_viewed, :boolean
-  attr :video_url, :string, default: nil
+  attr :due_date, Date
+  attr :parent_due_date, Date
   attr :progress, :float
   attr :closed_sections, :list, default: []
   attr :show_completed_pages, :boolean
@@ -1099,18 +1124,25 @@ defmodule OliWeb.Delivery.Student.LearnLive do
 
     ~H"""
     <div
-      :if={display_module_item?(@show_completed_pages, @section_attrs)}
+      :if={
+        display_module_item?(
+          @show_completed_pages,
+          @parent_due_date,
+          @student_end_date_exceptions_per_resource_id,
+          @section_attrs
+        )
+      }
       role={"#{@type} #{@numbering_index} details"}
       class="flex items-center gap-[14px] w-full"
-      id={"index_item_#{@resource_id}"}
+      id={"index_item_#{@resource_id}_#{@parent_due_date}"}
     >
       <.no_icon />
 
       <div
-        id={"index_item_#{@numbering_index}_#{@resource_id}"}
+        id={"index_item_#{@numbering_index}_#{@resource_id}_#{@parent_due_date}"}
         phx-click={
           JS.toggle(
-            to: "#section_group_#{@resource_id}",
+            to: "#section_group_#{@resource_id}_#{@parent_due_date}",
             out: {"fade-out duration-300", "opacity-100", "opacity-0"},
             in: {"fade-in duration-300", "opacity-0", "opacity-100"},
             display: "flex"
@@ -1118,6 +1150,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
           |> JS.push("expand_section")
         }
         phx-value-resource_id={@resource_id}
+        phx-value-parent_due_date={@parent_due_date}
         phx-value-module_resource_id={@module_resource_id}
         class="flex shrink items-center gap-3 w-full dark:text-white cursor-pointer hover:bg-gray-200/70 dark:hover:bg-gray-800"
       >
@@ -1132,15 +1165,22 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       </div>
     </div>
     <div
-      id={"section_group_#{@resource_id}"}
+      id={"section_group_#{@resource_id}_#{@parent_due_date}"}
       class={[
-        "flex relative flex-col items-center gap-3 w-full",
-        maybe_hidden_section(@closed_sections, @resource_id)
+        "flex relative flex-col items-center w-full",
+        maybe_hidden_section(@closed_sections, @resource_id, @parent_due_date)
       ]}
     >
       <.index_item
         :for={child <- @children}
-        :if={display_module_item?(@show_completed_pages, child)}
+        :if={
+          display_module_item?(
+            @show_completed_pages,
+            @parent_due_date,
+            @student_end_date_exceptions_per_resource_id,
+            child
+          )
+        }
         title={child["title"]}
         type={
           if is_section?(child),
@@ -1158,21 +1198,17 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         resource_id={child["resource_id"]}
         student_id={@student_id}
         ctx={@ctx}
+        student_end_date_exceptions_per_resource_id={@student_end_date_exceptions_per_resource_id}
+        parent_due_date={@parent_due_date}
         due_date={
-          if child["graded"],
-            do:
-              get_due_date_for_student(
-                child["section_resource"].end_date,
-                child["resource_id"],
-                child["section_resource"].section_id,
-                @student_id,
-                @ctx,
-                "{WDshort} {Mshort} {D}, {YYYY}"
-              )
+          get_due_date_for_student(
+            child["section_resource"].end_date,
+            child["resource_id"],
+            @student_end_date_exceptions_per_resource_id
+          )
         }
         raw_avg_score={Map.get(@student_raw_avg_score_per_page_id, child["resource_id"])}
         student_raw_avg_score_per_page_id={@student_raw_avg_score_per_page_id}
-        intro_video_viewed={@intro_video_viewed}
         progress={Map.get(@student_progress_per_resource_id, child["resource_id"])}
         student_progress_per_resource_id={@student_progress_per_resource_id}
         closed_sections={@closed_sections}
@@ -1192,19 +1228,16 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       <.index_item_icon
         item_type={@type}
         was_visited={@was_visited}
-        intro_video_viewed={@intro_video_viewed}
         graded={@graded}
         raw_avg_score={@raw_avg_score[:score]}
         progress={@progress}
       />
       <div
         id={"index_item_#{@numbering_index}_#{@resource_id}"}
-        phx-click={if @type != "intro", do: "navigate_to_resource", else: "play_video"}
+        phx-click="navigate_to_resource"
         phx-value-slug={@revision_slug}
         phx-value-resource_id={@resource_id}
         phx-value-module_resource_id={@module_resource_id}
-        phx-value-video_url={@video_url}
-        phx-value-is_intro_video="false"
         class="flex shrink items-center gap-3 w-full dark:text-white cursor-pointer hover:bg-gray-200/70 dark:hover:bg-gray-800"
       >
         <.numbering_index type={@type} index={@numbering_index} />
@@ -1214,8 +1247,8 @@ defmodule OliWeb.Delivery.Student.LearnLive do
             <span class={
               [
                 "text-[16px] leading-[22px] pr-2 dark:text-white",
-                # Opacity is set if the item is visited or the intro video is viewed, but not necessarily completed
-                if(@was_visited or (@intro_video_viewed and @type == "intro"), do: "opacity-50")
+                # Opacity is set if the item is visited, but not necessarily completed
+                if(@was_visited, do: "opacity-50")
               ]
             }>
               <%= "#{@title}" %>
@@ -1232,9 +1265,73 @@ defmodule OliWeb.Delivery.Student.LearnLive do
           </div>
           <div :if={@graded} role="due date and score" class="flex">
             <span class="text-[12px] leading-[16px] opacity-50 dark:text-white">
-              Due: <%= @due_date %>
+              Due: <%= format_date(@due_date, @ctx, "{WDshort} {Mshort} {D}, {YYYY}") %>
             </span>
             <Student.score_summary raw_avg_score={@raw_avg_score} />
+          </div>
+        </div>
+      </div>
+    </div>
+    """
+  end
+
+  attr :duration_minutes, :integer
+  attr :module_resource_id, :integer
+  attr :intro_video_viewed, :boolean
+  attr :video_url, :string, default: nil
+
+  def intro_video_item(assigns) do
+    ~H"""
+    <div
+      role="intro video details"
+      class="flex items-center gap-[14px] w-full"
+      id={"intro_video_for_module_#{@module_resource_id}"}
+    >
+      <div
+        role={"#{if @intro_video_viewed, do: "seen", else: "unseen"} video icon"}
+        class="flex justify-center items-center h-7 w-7 shrink-0"
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="24"
+          height="24"
+          viewBox="0 0 24 24"
+          class="fill-black dark:fill-white"
+        >
+          <path
+            opacity="0.5"
+            d="M9.5 16.5L16.5 12L9.5 7.5V16.5ZM4 20C3.45 20 2.97917 19.8042 2.5875 19.4125C2.19583 19.0208 2 18.55 2 18V6C2 5.45 2.19583 4.97917 2.5875 4.5875C2.97917 4.19583 3.45 4 4 4H20C20.55 4 21.0208 4.19583 21.4125 4.5875C21.8042 4.97917 22 5.45 22 6V18C22 18.55 21.8042 19.0208 21.4125 19.4125C21.0208 19.8042 20.55 20 20 20H4Z"
+            fill={if @intro_video_viewed, do: "#0CAF61"}
+          />
+        </svg>
+      </div>
+      <div
+        phx-click="play_video"
+        phx-value-module_resource_id={@module_resource_id}
+        phx-value-video_url={@video_url}
+        phx-value-is_intro_video="false"
+        class="flex shrink items-center gap-3 w-full dark:text-white cursor-pointer hover:bg-gray-200/70 dark:hover:bg-gray-800"
+      >
+        <div class="flex flex-col gap-1 w-full ml-0">
+          <div class="flex">
+            <span class={
+              [
+                "text-[16px] leading-[22px] pr-2 dark:text-white",
+                # Opacity is set if the intro video is viewed, but not necessarily completed
+                if(@intro_video_viewed, do: "opacity-50")
+              ]
+            }>
+              Introduction
+            </span>
+
+            <div class="text-right dark:text-white opacity-50 whitespace-nowrap ml-auto">
+              <span class="text-[12px] leading-[16px] font-bold uppercase tracking-[0.96px] text-right">
+                <%= parse_minutes(@duration_minutes) %>
+                <span class="text-[9px] font-bold uppercase tracking-[0.72px] text-right">
+                  min
+                </span>
+              </span>
+            </div>
           </div>
         </div>
       </div>
@@ -1246,7 +1343,6 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   attr :was_visited, :boolean
   attr :graded, :boolean
   attr :raw_avg_score, :map
-  attr :intro_video_viewed, :boolean
   attr :progress, :float
 
   def index_item_icon(assigns) do
@@ -1286,29 +1382,6 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         <div role="orange flag icon" class="flex justify-center items-center h-7 w-7 shrink-0">
           <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
             <path d="M5 21V4H14L14.4 6H20V16H13L12.6 14H7V21H5Z" fill="#F68E2E" />
-          </svg>
-        </div>
-        """
-
-      {_, "intro", _, _} ->
-        # intro video
-        ~H"""
-        <div
-          role={"#{if @intro_video_viewed, do: "seen", else: "unseen"} video icon"}
-          class="flex justify-center items-center h-7 w-7 shrink-0"
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="24"
-            height="24"
-            viewBox="0 0 24 24"
-            class="fill-black dark:fill-white"
-          >
-            <path
-              opacity="0.5"
-              d="M9.5 16.5L16.5 12L9.5 7.5V16.5ZM4 20C3.45 20 2.97917 19.8042 2.5875 19.4125C2.19583 19.0208 2 18.55 2 18V6C2 5.45 2.19583 4.97917 2.5875 4.5875C2.97917 4.19583 3.45 4 4 4H20C20.55 4 21.0208 4.19583 21.4125 4.5875C21.8042 4.97917 22 5.45 22 6V18C22 18.55 21.8042 19.0208 21.4125 19.4125C21.0208 19.8042 20.55 20 20 20H4Z"
-              fill={if @intro_video_viewed, do: "#0CAF61"}
-            />
           </svg>
         </div>
         """
@@ -1641,6 +1714,16 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   end
 
   defp get_student_metrics(section, current_user_id) do
+    student_end_date_exceptions_per_resource_id =
+      Oli.Delivery.Settings.get_student_exception_setting_for_all_resources(
+        section.id,
+        current_user_id,
+        [:end_date]
+      )
+      |> Enum.reduce(%{}, fn {resource_id, settings}, acc ->
+        Map.put(acc, resource_id, settings[:end_date])
+      end)
+
     visited_pages_map = Sections.get_visited_pages(section.id, current_user_id)
 
     %{"container" => container_ids, "page" => page_ids} =
@@ -1666,7 +1749,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       |> Map.filter(fn {_, progress} -> progress not in [nil, 0.0] end)
 
     {visited_pages_map, progress_per_resource_id, raw_avg_score_per_page_id,
-     raw_avg_score_per_container_id}
+     raw_avg_score_per_container_id, student_end_date_exceptions_per_resource_id}
   end
 
   defp mark_visited_and_completed_pages(
@@ -1722,14 +1805,113 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     end)
   end
 
-  defp display_module_item?(true, _child), do: true
+  defp display_module_item?(
+         _show_completed_pages,
+         _grouped_due_date,
+         _student_end_date_exceptions_per_resource_id,
+         %{"section_resource" => %{scheduling_type: :inclass_activity}} = _child
+       ),
+       do: false
 
-  defp display_module_item?(show_completed_pages, child) do
+  defp display_module_item?(
+         show_completed_pages,
+         grouped_due_date,
+         student_end_date_exceptions_per_resource_id,
+         child
+       ) do
     if is_section?(child) do
-      Enum.any?(child["children"], &display_module_item?(show_completed_pages, &1))
+      Enum.any?(
+        child["children"],
+        &display_module_item?(
+          show_completed_pages,
+          grouped_due_date,
+          student_end_date_exceptions_per_resource_id,
+          &1
+        )
+      )
     else
-      !child["completed"]
+      # this due date considers the student exception (if any)
+      student_due_date =
+        Map.get(
+          student_end_date_exceptions_per_resource_id,
+          child["resource_id"],
+          child["section_resource"].end_date
+        )
+        |> then(&if is_nil(&1), do: "Not yet scheduled", else: DateTime.to_date(&1))
+
+      if show_completed_pages do
+        student_due_date == grouped_due_date
+      else
+        !child["completed"] and student_due_date == grouped_due_date
+      end
     end
+  end
+
+  # In-class Activities should not appear in the course content in the learn page (but only in the schedule) so we can ignore those.
+  # As for 'read by' (lessons) and 'due date' (graded assignments) we assumed that we could group both together and treat the Read By Date as a general Due Date
+  defp get_contained_pages_due_dates(
+         container,
+         student_end_date_exceptions_per_resource_id,
+         show_completed_pages
+       ) do
+    contained_pages_due_dates(
+      container,
+      student_end_date_exceptions_per_resource_id,
+      show_completed_pages
+    )
+    |> Enum.uniq()
+    |> then(fn dates ->
+      if nil in dates do
+        dates
+        |> Enum.reject(&is_nil/1)
+        |> Enum.sort_by(& &1, {:asc, Date})
+        |> Enum.concat(["Not yet scheduled"])
+      else
+        Enum.sort_by(dates, & &1, {:asc, Date})
+      end
+    end)
+  end
+
+  defp contained_pages_due_dates(
+         container,
+         student_end_date_exceptions_per_resource_id,
+         show_completed_pages
+       ) do
+    page_type_id = Oli.Resources.ResourceType.get_id_by_type("page")
+    container_type_id = Oli.Resources.ResourceType.get_id_by_type("container")
+
+    Enum.flat_map(container["children"], fn
+      %{
+        "resource_type_id" => ^page_type_id,
+        "completed" => completed,
+        "section_resource" => %{
+          scheduling_type: scheduling_type,
+          end_date: end_date,
+          resource_id: resource_id
+        }
+      }
+      when scheduling_type in [:due_by, :read_by] ->
+        if completed and !show_completed_pages do
+          []
+        else
+          [
+            Map.get(student_end_date_exceptions_per_resource_id, resource_id, end_date) &&
+              DateTime.to_date(
+                Map.get(student_end_date_exceptions_per_resource_id, resource_id, end_date)
+              )
+          ]
+        end
+
+      %{"resource_type_id" => ^container_type_id} = section_or_subsection ->
+        contained_pages_due_dates(
+          section_or_subsection,
+          student_end_date_exceptions_per_resource_id,
+          show_completed_pages
+        )
+
+      _ ->
+        []
+    end)
   end
 
   defp progress_started(student_progress_per_resource_id, resource_id) do
@@ -1798,15 +1980,18 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   This function returns the end date for a resource considering the student exception (if any)
   """
 
-  defp get_due_date_for_student(end_date, resource_id, section_id, student_id, context, format) do
-    case Oli.Delivery.Settings.get_student_exception(resource_id, section_id, student_id) do
-      nil ->
-        end_date
+  defp get_due_date_for_student(
+         end_date,
+         resource_id,
+         student_end_date_exceptions_per_resource_id
+       ) do
+    Map.get(student_end_date_exceptions_per_resource_id, resource_id, end_date)
+  end
 
-      student_exception ->
-        student_exception.end_date
-    end
-    |> FormatDateTime.to_formatted_datetime(context, format)
+  defp format_date("Not yet scheduled", _context, _format), do: "Not yet scheduled"
+
+  defp format_date(due_date, context, format) do
+    FormatDateTime.to_formatted_datetime(due_date, context, format)
   end
 
   defp get_viewed_intro_video_resource_ids(section_slug, current_user_id) do
@@ -2007,7 +2192,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     end
   end
 
-  defp maybe_hidden_section(closed_sections, resource_id) do
-    if Enum.member?(closed_sections, resource_id), do: "hidden", else: ""
+  defp maybe_hidden_section(closed_sections, resource_id, parent_due_date) do
+    if Enum.member?(closed_sections, "#{resource_id}-#{parent_due_date}"), do: "hidden", else: ""
   end
 end

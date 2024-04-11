@@ -13,6 +13,7 @@ on:
           - tokamak.oli.cmu.edu
           - stellarator.oli.cmu.edu
           - heliotron.oli.cmu.edu
+          - neutron.oli.cmu.edu
           - loadtest.oli.cmu.edu
           - proton.oli.cmu.edu
 
