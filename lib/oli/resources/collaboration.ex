@@ -1115,13 +1115,28 @@ defmodule Oli.Resources.Collaboration do
         resource_id,
         user_id,
         visibility,
-        point_block_id \\ nil
+        point_block_id \\ nil,
+        search_term \\ nil
       ) do
     filter_by_point_block_id =
       if is_nil(point_block_id) do
         dynamic([p], is_nil(p.annotated_block_id))
       else
         dynamic([p], p.annotated_block_id == ^point_block_id)
+      end
+
+    filter_by_search_term =
+      if is_nil(search_term) do
+        true
+      else
+        dynamic(
+          [p],
+          fragment(
+            "to_tsvector('english', ?) @@ to_tsquery('english', ?)",
+            p.content,
+            ^search_term
+          )
+        )
       end
 
     Repo.all(
@@ -1139,6 +1154,7 @@ defmodule Oli.Resources.Collaboration do
             (post.status in [:approved, :archived] or
                (post.status == :submitted and post.user_id == ^user_id)),
         where: ^filter_by_point_block_id,
+        where: ^filter_by_search_term,
         where: post.visibility == ^visibility,
         order_by: [desc: :inserted_at],
         preload: [user: user, reactions: reactions],

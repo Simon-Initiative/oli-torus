@@ -444,6 +444,35 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     end
   end
 
+  def handle_event("search_annotations", %{"search_term" => ""}, socket) do
+    {:noreply, assign_annotations(socket, search_results: nil, search_term: "")}
+  end
+
+  def handle_event("search_annotations", %{"search_term" => search_term}, socket) do
+    %{
+      current_user: current_user,
+      section: section,
+      page_context: %{
+        page: %{resource_id: resource_id}
+      },
+      annotations: %{
+        selected_point: selected_point,
+        active_tab: active_tab
+      }
+    } = socket.assigns
+
+    async_search_annotations(
+      section,
+      resource_id,
+      current_user,
+      visibility_for_active_tab(active_tab),
+      selected_point,
+      search_term
+    )
+
+    {:noreply, assign_annotations(socket, search_results: :loading, search_term: search_term)}
+  end
+
   # handle assigns directly from async tasks
   def handle_info({ref, result}, socket) do
     Process.demonitor(ref, [:flush])
@@ -510,6 +539,8 @@ defmodule OliWeb.Delivery.Student.LessonLive do
           current_user={@current_user}
           active_tab={@annotations.active_tab}
           post_replies={@annotations.post_replies}
+          search_results={@annotations.search_results}
+          search_term={@annotations.search_term}
         />
       </:sidebar>
     </.page_content_with_sidebar_layout>
@@ -1030,7 +1061,9 @@ defmodule OliWeb.Delivery.Student.LessonLive do
             active_tab: :my_notes,
             create_new_annotation: false,
             auto_approve_annotations: course_collab_space_config.auto_accept,
-            post_replies: nil
+            post_replies: nil,
+            search_results: nil,
+            search_term: ""
           }
         )
 
@@ -1090,6 +1123,29 @@ defmodule OliWeb.Delivery.Student.LessonLive do
       post_replies = Collaboration.list_replies_for_post_in_point_block(user_id, post_id)
 
       {:assign_annotations, %{post_replies: {post_id, post_replies}}}
+    end)
+  end
+
+  defp async_search_annotations(
+         section,
+         resource_id,
+         current_user,
+         visibility,
+         point_block_id,
+         search_term
+       ) do
+    Task.async(fn ->
+      search_results =
+        Collaboration.list_posts_for_user_in_point_block(
+          section.id,
+          resource_id,
+          current_user.id,
+          visibility,
+          point_block_id,
+          search_term
+        )
+
+      {:assign_annotations, %{search_results: search_results}}
     end)
   end
 
