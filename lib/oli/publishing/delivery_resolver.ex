@@ -265,21 +265,16 @@ defmodule Oli.Publishing.DeliveryResolver do
 
   def revisions_filter_by_section_ids(section_ids, resource_type_id) do
     from(sr in SectionResource,
-      as: :sr,
       join: s in Section,
-      as: :s,
       on: s.id == sr.section_id,
       where: s.id in ^section_ids,
       join: spp in SectionsProjectsPublications,
-      as: :spp,
       on: s.id == spp.section_id,
       where: sr.project_id == spp.project_id,
       join: pr in PublishedResource,
-      as: :pr,
       on: pr.publication_id == spp.publication_id,
       where: pr.resource_id == sr.resource_id,
       join: rev in Revision,
-      as: :rev,
       on: rev.id == pr.revision_id,
       where: rev.resource_type_id == ^resource_type_id and rev.deleted == false,
       select: rev
