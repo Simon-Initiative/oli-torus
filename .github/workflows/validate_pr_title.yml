@@ -1,6 +1,10 @@
 name: "Validate Pull Request Title"
 on:
   pull_request:
+    branches:
+      - master
+      - 'hotfix-*'
+      - 'prerelease-*'
     types: [opened, edited, reopened]
 
 jobs:
