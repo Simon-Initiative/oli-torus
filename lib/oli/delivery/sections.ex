@@ -1904,7 +1904,10 @@ defmodule Oli.Delivery.Sections do
 
   def get_schedule_for_current_week(section, current_user_id) do
     current_week_number =
-      OliWeb.Components.Delivery.Utils.week_number(section.start_date, DateTime.utc_now())
+      OliWeb.Components.Delivery.Utils.week_number(
+        section.start_date,
+        Oli.DateTime.utc_now()
+      )
 
     get_ordered_schedule(section, current_user_id)
     |> Enum.map(fn {{_month, _year}, weeks} ->
