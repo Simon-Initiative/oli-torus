@@ -7,10 +7,10 @@
     <meta name="generator" content="ExDoc v0.28.5">
     <meta name="project" content="OLI Torus v0.28.0">
 
-    <title>Changelog processes — OLI Torus v0.28.0</title>
+    <title>PR processes — OLI Torus v0.28.0</title>
     <link rel="stylesheet" href="dist/elixir-64c5e2b63575bddb1c5b.css" />
 
-    <script src="dist/sidebar_items-c80f8d1552.js"></script>
+    <script src="dist/sidebar_items-64e16f6815.js"></script>
 
       <script src="docs_config.js"></script>
 
@@ -101,7 +101,7 @@ OLI Torus
       <span class="sr-only">View Source</span>
     </a>
 
-  <span>Changelog processes</span>
+  <span>PR processes</span>
 </h1>
 
 <h2 id="feature-development-bug-fixing" class="section-heading">
@@ -110,28 +110,19 @@ OLI Torus
   </a>
   Feature development / bug fixing
 </h2>
-<ol><li>Developer performs feature work or bug fix on a branch off of <code class="inline">master</code>.</li><li>Developer opens a pull request against <code class="inline">master</code> once the work is completed. The PR should include a change to <code class="inline">CHANGELOG.md</code> summarizing the work.</li><li>Reviewer reviews the PR and either requests changes or approves.</li><li>After approval, the reviewer <strong>squashes and merges</strong> to master, updating the commit message to summarize the entirety of the work item. This aggregate commit message must be prefixed with the change type, a description, and a reference to the pull request number. For example, <code class="inline">[BUG FIX] A description #123 CMU-30</code> or <code class="inline">[FEATURE] Another description #231 CMU-30</code>. It should also include a reference to the Argos JIRA ticket number.</li></ol><h3 id="valid-change-types" class="section-heading">
+<ol><li>Developer performs feature work or bug fix on a branch off of <code class="inline">master</code>.</li><li>Developer opens a pull request against <code class="inline">master</code> once the work is completed.</li><li>Reviewer reviews the PR and either requests changes or approves.</li><li>After approval, the reviewer <strong>squashes and merges</strong> to master, updating the commit message to summarize the entirety of the work item. This aggregate commit message must be prefixed with the change type, a ticket reference and a description. For example, <code class="inline">[BUG FIX] [MER-1234] A description</code> or <code class="inline">[FEATURE] [NG23-29] Another description</code>.</li></ol><h3 id="valid-change-types" class="section-heading">
   <a href="#valid-change-types" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i>
   <p class="sr-only">valid-change-types</p>
   </a>
   Valid Change Types
 </h3>
-<ul><li><code class="inline">[FEATURE]</code>: New feature for the user</li><li><code class="inline">[BUG FIX]</code>: Bug fix for an existing feature</li><li><code class="inline">[DOCS]</code>: Changes purely to documentation</li><li><code class="inline">[REFACTOR]</code>: Refactoring of code, no changes in functionality</li><li><code class="inline">[CHORE]</code>: Updating of build infrastructure, deployment automation, etc.</li><li><code class="inline">[PERF]</code>: Changes that target a performance improvement</li><li><code class="inline">[ENHANCEMENT]</code>: Small improvements to existing features</li></ul><p><img src="assets/message.png" alt="changes" title="Message"/></p><h2 id="release" class="section-heading">
-  <a href="#release" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i>
-  <p class="sr-only">release</p>
+<ul><li><code class="inline">[FEATURE]</code>: New feature for the user</li><li><code class="inline">[ENHANCEMENT]</code>: Small improvements to existing features</li><li><code class="inline">[BUG FIX]</code>: Bug fix for an existing feature</li><li><code class="inline">[CHORE]</code>: Updating of build infrastructure, deployment automation, branch merging, docs, etc.</li><li><code class="inline">[PERFORMANCE]</code>: Changes that target a performance improvement</li></ul><h3 id="valid-ticket-references" class="section-heading">
+  <a href="#valid-ticket-references" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i>
+  <p class="sr-only">valid-ticket-references</p>
   </a>
-  Release
-</h2>
-<ol><li>Developer opens a PR against <code class="inline">master</code> to update the version in <code class="inline">mix.exs</code> and to update the release date within <code class="inline">CHANGELOG.md</code>.</li><li>PR lands to <code class="inline">master</code> with a commit message of <code class="inline">[RELEASE] x.y.z</code> with the appropriate version number.</li><li>A <a href="https://github.com/Simon-Initiative/oli-torus/releases">Github Release</a> is created with the <strong>Tag version</strong> and <strong>Release title</strong> formatted as <code class="inline">vx.y.z</code> (e.g. <code class="inline">v1.0.0</code>) and the corresponding list of <strong>Enhancements</strong> and <strong>Features</strong> as well as any other relevant information for the release copied from <code class="inline">CHANGELOG.md</code> into the description.</li><li>A PR is opened to merge <code class="inline">master</code> to <code class="inline">test</code>, after it builds and merged any required testing is done on <code class="inline">tokamak.oli.cmu.edu</code></li><li>A PR is opened to merge <code class="inline">master</code> to <code class="inline">prod</code>. After it builds it is merged to trigger the deployment to production.</li></ol><h2 id="examples" class="section-heading">
-  <a href="#examples" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i>
-  <p class="sr-only">examples</p>
-  </a>
-  Examples
-</h2>
-<p>The following is an example of what the above guidelines yield in the commit history on <code class="inline">master</code>:</p><pre><code class="makeup elixir" translate="no"><span class="p" data-group-id="1048255158-1">[</span><span class="nc">RELEASE</span><span class="p" data-group-id="1048255158-1">]</span><span class="w"> </span><span class="n">v0</span><span class="o">.</span><span class="mf">4.1</span><span class="w">
-</span><span class="p" data-group-id="1048255158-2">[</span><span class="nc">BUG</span><span class="w"> </span><span class="nc">FIX</span><span class="p" data-group-id="1048255158-2">]</span><span class="w"> </span><span class="nc">Restored</span><span class="w"> </span><span class="n">ability</span><span class="w"> </span><span class="n">to</span><span class="w"> </span><span class="n">sort</span><span class="w"> </span><span class="n">media</span><span class="w"> </span><span class="n">items</span><span class="w"> </span><span class="n">by</span><span class="w"> </span><span class="n">size</span><span class="w"> </span><span class="c1">#324</span><span class="w">
-</span><span class="p" data-group-id="1048255158-3">[</span><span class="nc">BUG</span><span class="w"> </span><span class="nc">FIX</span><span class="p" data-group-id="1048255158-3">]</span><span class="w"> </span><span class="nc">Corrected</span><span class="w"> </span><span class="n">position</span><span class="w"> </span><span class="n">of</span><span class="w"> </span><span class="n">image</span><span class="w"> </span><span class="n">thumbnails</span><span class="w"> </span><span class="n">within</span><span class="w"> </span><span class="n">media</span><span class="w"> </span><span class="n">library</span><span class="w"> </span><span class="c1">#345</span><span class="w">
-</span><span class="p" data-group-id="1048255158-4">[</span><span class="nc">FEATURE</span><span class="p" data-group-id="1048255158-4">]</span><span class="w"> </span><span class="nc">Added</span><span class="w"> </span><span class="n">new</span><span class="w"> </span><span class="nc">Ordering</span><span class="w"> </span><span class="n">activity</span><span class="w"> </span><span class="n">type</span><span class="w"> </span><span class="c1">#346</span></code></pre>
+  Valid ticket references
+</h3>
+<ul><li><code class="inline">[MER-xxxx]</code>: MER board tickets</li><li><code class="inline">[NG23-xxxx]</code>: NG board tickets</li></ul>
 <div class="bottom-actions">
   <div class="bottom-actions-item">
 
