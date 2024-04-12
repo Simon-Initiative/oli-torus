@@ -3,21 +3,24 @@
 */
 import { ActivityModelSchema, CreationContext, Feedback, Part, Transformation } from '../types';
 
+// Typing and type checking for existence of variables in a context.
+type ContextVariables = { variables: Record<string, string> };
+function contextHasVariables(ctx: ContextVariables | unknown): ctx is ContextVariables {
+  return !!ctx && ctx instanceof Object && 'variables' in ctx;
+}
 /**
  * Extract the LogicLab url from a context with null safety.
  * @param context deploy context or activity edit context
  * @returns url to use as a base for logiclab service calls
  */
-export function getLabServer(context: unknown): string {
-  if (context instanceof Object && 'variables' in context) {
-    const ctx = context as { variables: Record<string, string> };
-    const variables = ctx.variables;
-    if ('ACTIVITY_LOGICLAB_URL' in variables) {
+export function getLabServer(context: ContextVariables | unknown): string {
+  if (contextHasVariables(context)) {
+    const variables = context.variables;
+    if ('ACTIVITY_LOGICLAB_URL' in variables && variables.ACTIVITY_LOGICLAB_URL) {
       return variables.ACTIVITY_LOGICLAB_URL;
     }
   }
-  const local = new URL('/logiclab/', window.location.origin); // default Torus base URI
-  return local.toString();
+  throw new ReferenceError('ACTIVITY_LOGICLAB_URL is not set.');
 }
 
 export interface LogicLabModelSchema extends ActivityModelSchema {
