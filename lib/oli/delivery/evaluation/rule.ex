@@ -119,12 +119,13 @@ defmodule Oli.Delivery.Evaluation.Rule do
         l_value = parse_number(left)
 
         case parse_range(right) do
+          # allow bounds in any order (may have come from dynamic variables)
           {:inclusive, lower, upper, precision} ->
-            lower <= l_value && l_value <= upper &&
+            min(lower, upper) <= l_value && l_value <= max(lower, upper) &&
               check_precision(left, precision)
 
           {:exclusive, lower, upper, precision} ->
-            lower < l_value && l_value < upper &&
+            min(lower, upper) < l_value && l_value < max(lower, upper) &&
               check_precision(left, precision)
         end
 
