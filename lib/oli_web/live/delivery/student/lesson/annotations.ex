@@ -321,7 +321,8 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
           name="search_term"
           value={@search_term}
           class="w-full border border-gray-400 dark:border-gray-700 rounded-lg px-12 py-3"
-          phx-change="search_term_change"
+          phx-change="search_annotations"
+          phx-debounce="500"
         />
         <button
           :if={@search_term != ""}
