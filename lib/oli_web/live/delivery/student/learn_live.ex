@@ -875,19 +875,34 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         }
         phx-key="Escape"
       >
-        <div role="expanded module header" class="flex flex-col gap-[8px] items-center">
-          <h2 class="text-[26px] leading-[32px] tracking-[0.02px] dark:text-white">
+        <div
+          role="expanded module header"
+          class="px-6 py-0.5 flex-col justify-start items-center gap-2 inline-flex"
+        >
+          <div class="justify-start items-start gap-1 inline-flex">
+            <div class="opacity-60 dark:text-white text-sm font-bold font-['Open Sans'] uppercase tracking-tight">
+              Module <%= Map.get(@selected_module_per_unit_resource_id, @unit["resource_id"])[
+                "numbering"
+              ]["index"] %>
+            </div>
+          </div>
+          <h2 class="self-stretch opacity-90 text-center text-[26px] font-normal font-['Open Sans'] leading-loose tracking-tight dark:text-white">
             <%= Map.get(@selected_module_per_unit_resource_id, @unit["resource_id"])[
               "title"
             ] %>
           </h2>
-          <span class="text-[12px] leading-[16px] opacity-50 dark:text-white">
-            Due: <%= format_date(
-              Map.get(@selected_module_per_unit_resource_id, @unit["resource_id"])["section_resource"].end_date,
-              @ctx,
-              "{WDshort} {Mshort} {D}, {YYYY}"
-            ) %>
-          </span>
+          <div class="justify-start items-start gap-1 inline-flex">
+            <div class="opacity-50 dark:text-white text-xs font-normal font-['Open Sans']">Due:</div>
+            <div class="opacity-50 dark:text-white text-xs font-normal font-['Open Sans']">
+              <%= format_date(
+                Map.get(@selected_module_per_unit_resource_id, @unit["resource_id"])[
+                  "section_resource"
+                ].end_date,
+                @ctx,
+                "{WDshort} {Mshort} {D}, {YYYY}"
+              ) %>
+            </div>
+          </div>
         </div>
         <div role="intro content and index" class="flex flex-col lg:flex-row lg:gap-12">
           <div class="flex flex-row lg:w-1/2 lg:flex-col">
