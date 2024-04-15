@@ -177,6 +177,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
       section: section
     } do
       enroll_as_student(%{section: section, user: user})
+      stub_current_time(~U[2023-11-04 20:00:00Z])
 
       conn =
         conn
@@ -328,6 +329,8 @@ defmodule OliWeb.PageDeliveryControllerTest do
           has_grace_period: false,
           pay_by_institution: true
         })
+
+      stub_current_time(~U[2023-11-04 20:00:00Z])
 
       enroll_as_student(%{section: section, user: user})
 
@@ -1502,6 +1505,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
       section: section
     } do
       enroll_as_student(%{section: section, user: user})
+      stub_current_time(~U[2023-11-04 20:00:00Z])
 
       conn =
         conn
@@ -1529,6 +1533,8 @@ defmodule OliWeb.PageDeliveryControllerTest do
              })
          }}
       end)
+
+      stub_current_time(~U[2023-11-04 20:00:00Z])
 
       conn =
         conn
@@ -1580,6 +1586,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
     } do
       enrolled_user = user_fixture()
       other_user = user_fixture()
+      stub_current_time(~U[2023-11-04 20:00:00Z])
 
       enroll_as_student(%{section: section, user: enrolled_user})
 
@@ -2199,6 +2206,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
     } do
       user = insert(:user)
       enroll_as_instructor(%{section: section, user: user})
+      stub_current_time(~U[2023-11-04 20:00:00Z])
 
       conn =
         get(
@@ -2215,6 +2223,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
       section: section
     } do
       {:ok, conn: conn, admin: _admin} = admin_conn(%{conn: conn})
+      stub_current_time(~U[2023-11-04 20:00:00Z])
 
       conn =
         get(
@@ -2348,6 +2357,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
 
       user = insert(:user)
       enroll_as_student(%{section: section, user: user})
+      stub_current_time(~U[2023-11-04 20:00:00Z])
 
       conn =
         recycle(conn)
@@ -2369,6 +2379,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
 
       user = insert(:user)
       enroll_as_student(%{section: section, user: user})
+      stub_current_time(~U[2023-11-04 20:00:00Z])
 
       conn =
         recycle(conn)
@@ -2560,6 +2571,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
       survey_questions: survey_questions
     } do
       enroll_as_student(%{section: section, user: user})
+      stub_current_time(~U[2023-11-04 20:00:00Z])
 
       create_survey_access(user, section, survey, survey_questions)
 
@@ -2577,6 +2589,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
       section: section
     } do
       enroll_as_instructor(%{user: user, section: section})
+      stub_current_time(~U[2023-11-04 20:00:00Z])
 
       conn =
         conn
@@ -2593,6 +2606,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
       survey_questions: survey_questions
     } do
       enroll_as_student(%{section: section, user: user})
+      stub_current_time(~U[2023-11-04 20:00:00Z])
 
       complete_student_survey(user, section, survey, survey_questions)
 

@@ -26,6 +26,7 @@ defmodule Oli.TestHelpers do
   Mox.defmock(Oli.Test.MockHTTP, for: HTTPoison.Base)
   Mox.defmock(Oli.Test.MockAws, for: ExAws.Behaviour)
   Mox.defmock(Oli.Test.MockOpenAIClient, for: Oli.OpenAIClient)
+  Mox.defmock(Oli.Test.DateTimeMock, for: Oli.DateTime)
 
   defmodule CustomDispatcher do
     @moduledoc """
@@ -44,6 +45,10 @@ defmodule Oli.TestHelpers do
 
       :ok
     end
+  end
+
+  def stub_current_time(now) do
+    Mox.stub(Oli.Test.DateTimeMock, :utc_now, fn -> now end)
   end
 
   def yesterday() do

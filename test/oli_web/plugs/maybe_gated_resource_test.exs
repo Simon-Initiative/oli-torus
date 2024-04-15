@@ -33,6 +33,7 @@ defmodule Oli.Plugs.MaybeGatedResourceTest do
     } do
       Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
       ensure_user_visit(user, section)
+      stub_current_time(~U[2023-11-04 20:00:00Z])
 
       conn =
         conn

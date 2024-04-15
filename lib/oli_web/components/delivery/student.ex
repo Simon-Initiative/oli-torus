@@ -275,10 +275,8 @@ defmodule OliWeb.Components.Delivery.Student do
     """
   end
 
-  defp allow_review_submission?(effective_settings) do
-    effective_settings
-    |> Map.get(:allow_review_submission, true)
-  end
+  defp allow_review_submission?(%{review_submission: :allow}), do: true
+  defp allow_review_submission?(_), do: false
 
   defp has_end_date?(effective_settings) do
     case effective_settings.end_date do

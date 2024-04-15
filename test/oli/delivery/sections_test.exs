@@ -180,6 +180,8 @@ defmodule Oli.Delivery.SectionsTest do
     @tag capture_log: true
     test "opens section overview when there is a scheduled gating condition and end_datetime is nil",
          seeds do
+      stub_current_time(~U[2023-11-04 20:00:00Z])
+
       start_date = yesterday()
       end_date = nil
 
