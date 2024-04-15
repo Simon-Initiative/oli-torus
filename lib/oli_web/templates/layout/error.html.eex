@@ -14,8 +14,10 @@
 
     <!-- Tailwind CSS -->
     <link id="app" rel="stylesheet" href="/css/app.css" />
+    <script>OLI.sessionTimeout();</script>
   </head>
   <body class="min-h-screen flex flex-col bg-delivery-body text-delivery-body-color dark:bg-delivery-body-dark dark:text-delivery-body-color-dark">
+  <div id="sessionExpirationContainerId"></div>
 
     <%= Map.get(assigns, :inner_layout) || @inner_content %>
 

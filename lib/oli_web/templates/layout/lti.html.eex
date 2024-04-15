@@ -43,8 +43,10 @@
     <script>
       window.cite = require('citation-js')
     </script>
+    <script>OLI.sessionTimeout();</script>
   </head>
   <body>
+  <div id="sessionExpirationContainerId"></div>
 
     <main role="main" class="container mx-auto">
 
