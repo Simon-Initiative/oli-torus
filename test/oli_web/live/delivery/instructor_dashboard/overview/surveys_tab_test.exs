@@ -1454,7 +1454,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.SurveysTabTest do
              )
 
       assert selected_activity_model =~
-               "{\"authoring\":{\"responses\":[{\"count\":1,\"type\":\"text\",\"text\":\"unsupported\",\"user_name\":\"#{student_1.family_name}, #{student_1.given_name}\",\"part_id\":\"1\"}]},\"inputs\":[{\"id\":\"1458555427\",\"inputType\":\"text\",\"partId\":\"1\"}]}"
+               "{\"authoring\":{\"responses\":[{\"type\":\"text\",\"text\":\"unsupported\",\"user_name\":\"#{student_1.family_name}, #{student_1.given_name}\",\"part_id\":\"1\"}]},\"inputs\":[{\"id\":\"1458555427\",\"inputType\":\"text\",\"partId\":\"1\"}]}"
     end
 
     test "likert activity details get rendered correctly when page is selected",
