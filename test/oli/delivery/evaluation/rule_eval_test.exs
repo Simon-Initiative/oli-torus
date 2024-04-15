@@ -109,6 +109,14 @@ defmodule Oli.Delivery.Evaluation.RuleEvalTest do
     assert eval("attemptNumber = {1} && input = {(-1, 1)#1}", "0.0") == false
     assert eval("attemptNumber = {1} && input = {(-1, 1)#1}", "0.5") == true
     assert eval("attemptNumber = {1} && input = {(-1, 1)#1}", "0.50") == false
+
+    # handle ranges in wrong order
+    assert eval("attemptNumber = {1} && input = {[3e-3, 4e-5]}", "3e-4") == true
+    assert eval("attemptNumber = {1} && input = {(4, 3.0)}", "3.1") == true
+    assert eval("attemptNumber = {1} && input = {(4, 3)}", "2.0") == false
+    assert eval("attemptNumber = {1} && input = {[4,3]}", "3") == true
+    assert eval("attemptNumber = {1} && input = {[5, -3]}", "0") == true
+    assert eval("attemptNumber = {1} && input = {[5, -3.0]}", "-3.1") == false
   end
 
   test "evaluating like" do
