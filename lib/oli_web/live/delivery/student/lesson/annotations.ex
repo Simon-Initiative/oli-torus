@@ -98,7 +98,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
         <% :loading -> %>
           <Common.loading_spinner />
         <% [] -> %>
-          <div class="text-center p-4 text-gray-500">No results found for '<%= @search_term %>'</div>
+          <div class="text-center p-4 text-gray-500">No results found</div>
         <% annotations -> %>
           <%= for annotation <- annotations do %>
             <.search_result post={annotation} current_user={@current_user} />
@@ -320,8 +320,17 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
           type="text"
           name="search_term"
           value={@search_term}
-          class="w-full border border-gray-400 dark:border-gray-700 rounded-lg pl-12 pr-3 py-3"
+          class="w-full border border-gray-400 dark:border-gray-700 rounded-lg px-12 py-3"
+          phx-change="search_term_change"
         />
+        <button
+          :if={@search_term != ""}
+          type="button"
+          class="absolute right-0 top-0 bottom-0 py-3 px-4"
+          phx-click="clear_search"
+        >
+          <i class="fa-solid fa-xmark text-lg"></i>
+        </button>
       </div>
     </form>
     """

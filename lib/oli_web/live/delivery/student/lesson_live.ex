@@ -450,6 +450,10 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     end
   end
 
+  def handle_event("search_term_change", %{"search_term" => search_term}, socket) do
+    {:noreply, assign_annotations(socket, search_term: search_term)}
+  end
+
   def handle_event("search_annotations", %{"search_term" => ""}, socket) do
     {:noreply, assign_annotations(socket, search_results: nil, search_term: "")}
   end
@@ -477,6 +481,10 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     )
 
     {:noreply, assign_annotations(socket, search_results: :loading, search_term: search_term)}
+  end
+
+  def handle_event("clear_search", _, socket) do
+    {:noreply, assign_annotations(socket, search_results: nil, search_term: "")}
   end
 
   # handle assigns directly from async tasks
