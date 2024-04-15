@@ -8,7 +8,6 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
   attr :annotations, :any, required: true
   attr :current_user, Oli.Accounts.User, required: true
   attr :active_tab, :atom, default: :my_notes
-  attr :post_replies, :list, default: nil
   attr :search_results, :any, default: nil
   attr :search_term, :string, default: ""
 
@@ -36,7 +35,6 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
             <.annotations
               annotations={@annotations}
               current_user={@current_user}
-              post_replies={@post_replies}
               create_new_annotation={@create_new_annotation}
             />
           <% _ -> %>
@@ -44,7 +42,6 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
               search_results={@search_results}
               search_term={@search_term}
               current_user={@current_user}
-              post_replies={@post_replies}
               active_tab={@active_tab}
             />
         <% end %>
@@ -57,7 +54,6 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
   attr :annotations, :any, required: true
   attr :current_user, Oli.Accounts.User, required: true
   attr :active_tab, :atom, default: :my_notes
-  attr :post_replies, :list, default: nil
 
   defp annotations(assigns) do
     ~H"""
@@ -82,7 +78,6 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
             <.post
               post={annotation}
               current_user={@current_user}
-              post_replies={@post_replies}
               disable_anonymous_option={@active_tab == :my_notes || is_guest(@current_user)}
             />
           <% end %>
@@ -93,7 +88,6 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
 
   attr :current_user, Oli.Accounts.User, required: true
   attr :active_tab, :atom, default: :my_notes
-  attr :post_replies, :list, default: nil
   attr :search_results, :any, default: nil
   attr :search_term, :string, default: ""
 
@@ -107,14 +101,53 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
           <div class="text-center p-4 text-gray-500">No results found for '<%= @search_term %>'</div>
         <% annotations -> %>
           <%= for annotation <- annotations do %>
-            <.post
-              post={annotation}
-              current_user={@current_user}
-              post_replies={@post_replies}
-              disable_anonymous_option={@active_tab == :my_notes || is_guest(@current_user)}
-            />
+            <.search_result post={annotation} current_user={@current_user} />
           <% end %>
       <% end %>
+    </div>
+    """
+  end
+
+  attr :post, Oli.Resources.Collaboration.Post, required: true
+  attr :current_user, Oli.Accounts.User, required: true
+  attr :is_reply, :boolean, default: false
+
+  defp search_result(assigns) do
+    ~H"""
+    <div class={[
+      "search-result flex flex-col border-gray-200 dark:border-gray-800 rounded",
+      if(@is_reply, do: "my-2 pl-4 border-l-2", else: "p-4 border-2")
+    ]}>
+      <div class="flex flex-row justify-between mb-1">
+        <div class="font-semibold">
+          <%= post_creator(@post, @current_user) %>
+        </div>
+        <div class="text-sm text-gray-500">
+          <%= Timex.from_now(@post.inserted_at) %>
+        </div>
+      </div>
+      <p class="my-2">
+        <%= case @post.headline["message"] do %>
+          <% nil -> %>
+            <%= @post.content.message %>
+          <% message -> %>
+            <%= raw(message) %>
+        <% end %>
+      </p>
+      <%= case @post.replies do %>
+        <% nil -> %>
+        <% replies -> %>
+          <div class="flex flex-col gap-2 pl-4">
+            <%= for reply <- replies do %>
+              <.search_result post={reply} current_user={@current_user} is_reply={true} />
+            <% end %>
+          </div>
+      <% end %>
+      <div :if={not @is_reply} class="flex flex-row justify-end">
+        <a href="#" class="text-primary">
+          View original post <i class="fa-solid fa-arrow-right"></i>
+        </a>
+      </div>
     </div>
     """
   end
@@ -354,7 +387,6 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
 
   attr :post, Oli.Resources.Collaboration.Post, required: true
   attr :current_user, Oli.Accounts.User, required: true
-  attr :post_replies, :any, required: true
   attr :disable_anonymous_option, :boolean, default: false
 
   defp post(assigns) do
@@ -378,7 +410,6 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
       />
       <.post_replies
         post={@post}
-        replies={@post_replies}
         current_user={@current_user}
         disable_anonymous_option={@disable_anonymous_option}
       />
@@ -432,6 +463,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
             phx-click={@on_toggle_reaction}
             phx-value-reaction={:like}
             phx-value-post-id={assigns.post.id}
+            phx-value-parent-post-id={assigns.post.parent_post_id}
           >
             <%= case Map.get(@post.reaction_summaries, :like) do %>
               <% nil -> %>
@@ -463,32 +495,29 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
 
   attr :post, Oli.Resources.Collaboration.Post, required: true
   attr :current_user, Oli.Accounts.User, required: true
-  attr :replies, :any, required: true
   attr :disable_anonymous_option, :boolean, default: false
 
   defp post_replies(assigns) do
     ~H"""
-    <%= if !is_nil(@replies) && elem(@replies, 0) == @post.id do %>
-      <%= case @replies do %>
-        <% {_, :loading} -> %>
-          <Common.loading_spinner />
-        <% {_, []} -> %>
-          <.add_new_reply_input
-            parent_post_id={@post.id}
-            disable_anonymous_option={@disable_anonymous_option}
-          />
-        <% {_, replies} -> %>
-          <div class="flex flex-col gap-2 pl-4">
-            <%= for reply <- replies do %>
-              <.reply post={reply} current_user={@current_user} />
-            <% end %>
-          </div>
-          <.add_new_reply_input
-            parent_post_id={@post.id}
-            disable_anonymous_option={@disable_anonymous_option}
-          />
-        <% _ -> %>
-      <% end %>
+    <%= case @post.replies do %>
+      <% nil -> %>
+      <% :loading -> %>
+        <Common.loading_spinner />
+      <% [] -> %>
+        <.add_new_reply_input
+          parent_post_id={@post.id}
+          disable_anonymous_option={@disable_anonymous_option}
+        />
+      <% replies -> %>
+        <div class="flex flex-col gap-2 pl-4">
+          <%= for reply <- replies do %>
+            <.reply post={reply} current_user={@current_user} />
+          <% end %>
+        </div>
+        <.add_new_reply_input
+          parent_post_id={@post.id}
+          disable_anonymous_option={@disable_anonymous_option}
+        />
     <% end %>
     """
   end
@@ -555,7 +584,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
       <p class="my-2">
         <%= @post.content.message %>
       </p>
-      <.post_actions post={@post} on_toggle_reaction="toggle_reply_reaction" />
+      <.post_actions post={@post} on_toggle_reaction="toggle_reaction" />
     </div>
     """
   end

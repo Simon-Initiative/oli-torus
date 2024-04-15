@@ -309,22 +309,65 @@ defmodule OliWeb.Delivery.Student.LessonLive do
 
   def handle_event("toggle_post_replies", %{"post-id" => post_id}, socket) do
     %{current_user: current_user} = socket.assigns
-    %{post_replies: post_replies} = socket.assigns.annotations
 
     post_id = String.to_integer(post_id)
+    post = get_post(socket, post_id)
 
-    case post_replies do
-      {^post_id, _} ->
-        {:noreply, assign_annotations(socket, post_replies: nil)}
-
-      _ ->
+    case post.replies do
+      nil ->
+        # load replies
         async_load_post_replies(current_user.id, post_id)
 
-        {:noreply, assign_annotations(socket, post_replies: {post_id, :loading})}
+        {:noreply, update_post_replies(socket, post_id, :loading, fn _ -> :loading end)}
+
+      _ ->
+        # unload replies
+        {:noreply, update_post_replies(socket, post_id, nil, fn _ -> nil end)}
     end
   end
 
-  def handle_event("toggle_reaction", %{"post-id" => post_id, "reaction" => reaction}, socket) do
+  # handle toggle_reaction for reply posts
+  def handle_event(
+        "toggle_reaction",
+        %{"parent-post-id" => parent_post_id, "post-id" => post_id, "reaction" => reaction},
+        socket
+      ) do
+    %{current_user: current_user} = socket.assigns
+
+    parent_post_id = String.to_integer(parent_post_id)
+    post_id = String.to_integer(post_id)
+    reaction = String.to_existing_atom(reaction)
+
+    case Collaboration.toggle_reaction(post_id, current_user.id, reaction) do
+      {:ok, change} ->
+        {:noreply,
+         update_post_replies(socket, parent_post_id, nil, fn replies ->
+           Enum.map(
+             replies,
+             fn post ->
+               if post.id == post_id do
+                 %{
+                   post
+                   | reaction_summaries: update_reaction_summaries(post, reaction, change)
+                 }
+               else
+                 post
+               end
+             end
+           )
+         end)}
+
+      {:error, _} ->
+        {:noreply, put_flash(socket, :error, "Failed to update reaction for post")}
+    end
+  end
+
+  # handle toggle_reaction for root posts
+  def handle_event(
+        "toggle_reaction",
+        %{"post-id" => post_id, "reaction" => reaction},
+        socket
+      ) do
     %{current_user: current_user, annotations: %{posts: posts}} = socket.assigns
 
     post_id = String.to_integer(post_id)
@@ -348,43 +391,6 @@ defmodule OliWeb.Delivery.Student.LessonLive do
                  end
                end
              )
-         )}
-
-      {:error, _} ->
-        {:noreply, put_flash(socket, :error, "Failed to update reaction for post")}
-    end
-  end
-
-  def handle_event(
-        "toggle_reply_reaction",
-        %{"post-id" => post_id, "reaction" => reaction},
-        socket
-      ) do
-    %{current_user: current_user, annotations: %{post_replies: {parent_post_id, post_replies}}} =
-      socket.assigns
-
-    post_id = String.to_integer(post_id)
-    reaction = String.to_existing_atom(reaction)
-
-    case Collaboration.toggle_reaction(post_id, current_user.id, reaction) do
-      {:ok, change} ->
-        {:noreply,
-         assign_annotations(socket,
-           post_replies:
-             {parent_post_id,
-              Enum.map(
-                post_replies,
-                fn post ->
-                  if post.id == post_id do
-                    %{
-                      post
-                      | reaction_summaries: update_reaction_summaries(post, reaction, change)
-                    }
-                  else
-                    post
-                  end
-                end
-              )}
          )}
 
       {:error, _} ->
@@ -481,6 +487,9 @@ defmodule OliWeb.Delivery.Student.LessonLive do
       {:assign_annotations, annotations} ->
         {:noreply, assign_annotations(socket, Enum.into(annotations, socket.assigns.annotations))}
 
+      {:assign_post_replies, {parent_post_id, replies}} ->
+        {:noreply, update_post_replies(socket, parent_post_id, replies, fn _ -> replies end)}
+
       {:error, _} ->
         {:noreply, put_flash(socket, :error, "Failed to load annotations")}
 
@@ -538,7 +547,6 @@ defmodule OliWeb.Delivery.Student.LessonLive do
           annotations={@annotations.posts}
           current_user={@current_user}
           active_tab={@annotations.active_tab}
-          post_replies={@annotations.post_replies}
           search_results={@annotations.search_results}
           search_term={@annotations.search_term}
         />
@@ -1048,6 +1056,26 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     })
   end
 
+  defp get_post(socket, post_id) do
+    Enum.find(socket.assigns.annotations.posts, fn post -> post.id == post_id end)
+  end
+
+  defp update_post_replies(socket, post_id, default, updater) do
+    %{posts: posts} = socket.assigns.annotations
+
+    socket
+    |> assign_annotations(
+      posts:
+        Enum.map(posts, fn post ->
+          if post.id == post_id do
+            Map.update(post, :replies, default, updater)
+          else
+            post
+          end
+        end)
+    )
+  end
+
   defp annotations_assigns(socket, course_collab_space_config) do
     case course_collab_space_config do
       %CollabSpaceConfig{status: :enabled} ->
@@ -1061,7 +1089,6 @@ defmodule OliWeb.Delivery.Student.LessonLive do
             active_tab: :my_notes,
             create_new_annotation: false,
             auto_approve_annotations: course_collab_space_config.auto_accept,
-            post_replies: nil,
             search_results: nil,
             search_term: ""
           }
@@ -1122,7 +1149,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     Task.async(fn ->
       post_replies = Collaboration.list_replies_for_post_in_point_block(user_id, post_id)
 
-      {:assign_annotations, %{post_replies: {post_id, post_replies}}}
+      {:assign_post_replies, {post_id, post_replies}}
     end)
   end
 
@@ -1136,7 +1163,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
        ) do
     Task.async(fn ->
       search_results =
-        Collaboration.list_posts_for_user_in_point_block(
+        Collaboration.search_posts_for_user_in_point_block(
           section.id,
           resource_id,
           current_user.id,
@@ -1169,7 +1196,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
   end
 
   defp optimistically_add_reply_post(socket, reply_post, parent_post_id) do
-    %{posts: posts, post_replies: {_, post_replies}} = socket.assigns.annotations
+    %{posts: posts} = socket.assigns.annotations
 
     socket
     |> assign_annotations(
@@ -1178,13 +1205,17 @@ defmodule OliWeb.Delivery.Student.LessonLive do
           if post.id == parent_post_id do
             %Collaboration.Post{
               post
-              | replies_count: post.replies_count + 1
+              | replies_count: post.replies_count + 1,
+                replies:
+                  case post.replies do
+                    nil -> [reply_post]
+                    replies -> replies ++ [reply_post]
+                  end
             }
           else
             post
           end
-        end),
-      post_replies: {parent_post_id, post_replies ++ [reply_post]}
+        end)
     )
   end
 

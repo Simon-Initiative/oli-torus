@@ -1115,28 +1115,13 @@ defmodule Oli.Resources.Collaboration do
         resource_id,
         user_id,
         visibility,
-        point_block_id \\ nil,
-        search_term \\ nil
+        point_block_id \\ nil
       ) do
     filter_by_point_block_id =
       if is_nil(point_block_id) do
         dynamic([p], is_nil(p.annotated_block_id))
       else
         dynamic([p], p.annotated_block_id == ^point_block_id)
-      end
-
-    filter_by_search_term =
-      if is_nil(search_term) do
-        dynamic([p], is_nil(p.parent_post_id) and is_nil(p.thread_root_id))
-      else
-        dynamic(
-          [p],
-          fragment(
-            "to_tsvector('english', ?) @@ websearch_to_tsquery('english', ?)",
-            p.content,
-            ^search_term
-          )
-        )
       end
 
     Repo.all(
@@ -1150,10 +1135,10 @@ defmodule Oli.Resources.Collaboration do
         left_join: user in assoc(post, :user),
         where:
           post.section_id == ^section_id and post.resource_id == ^resource_id and
+            is_nil(post.parent_post_id) and is_nil(post.thread_root_id) and
             (post.status in [:approved, :archived] or
                (post.status == :submitted and post.user_id == ^user_id)),
         where: ^filter_by_point_block_id,
-        where: ^filter_by_search_term,
         where: post.visibility == ^visibility,
         order_by: [desc: :inserted_at],
         preload: [user: user, reactions: reactions],
@@ -1165,6 +1150,121 @@ defmodule Oli.Resources.Collaboration do
       )
     )
     |> summarize_reactions(user_id)
+  end
+
+  @doc """
+  Returns the list of posts that a user can see which match a given search term.
+
+  ## Examples
+
+      iex> search_posts_for_user_in_point_block(1, 1, 1, :private, "1", "search term"))
+      [%Post{status: :archived}, ...]
+
+      iex> search_posts_for_user_in_point_block(2, 2, 2, :private, "2", "search term")
+      []
+  """
+  def search_posts_for_user_in_point_block(
+        section_id,
+        resource_id,
+        user_id,
+        visibility,
+        point_block_id,
+        search_term
+      ) do
+    filter_by_point_block_id =
+      if is_nil(point_block_id) do
+        dynamic([p], is_nil(p.annotated_block_id))
+      else
+        dynamic([p], p.annotated_block_id == ^point_block_id)
+      end
+
+    Repo.all(
+      from(
+        post in Post,
+        left_join: replies in subquery(replies_subquery()),
+        on: replies.thread_root_id == post.id,
+        left_join: read_replies in subquery(read_replies_subquery(user_id)),
+        on: read_replies.thread_root_id == post.id,
+        left_join: parent_post in assoc(post, :parent_post),
+        left_join: reactions in assoc(post, :reactions),
+        left_join: user in assoc(post, :user),
+        where:
+          post.section_id == ^section_id and post.resource_id == ^resource_id and
+            (post.status in [:approved, :archived] or
+               (post.status == :submitted and post.user_id == ^user_id)),
+        where: ^filter_by_point_block_id,
+        where:
+          fragment(
+            "to_tsvector('english', ?) @@ websearch_to_tsquery('english', ?)",
+            post.content,
+            ^search_term
+          ),
+        where: post.visibility == ^visibility,
+        order_by: [desc: :inserted_at],
+        preload: [
+          user: user,
+          reactions: reactions,
+          parent_post: parent_post
+        ],
+        select: %{
+          post
+          | replies_count: coalesce(replies.count, 0),
+            read_replies_count: coalesce(read_replies.count, 0),
+            headline:
+              fragment(
+                """
+                ts_headline(
+                  'english',
+                  ?,
+                  websearch_to_tsquery(?),
+                  'StartSel=<em>,StopSel=</em>,MinWords=25,MaxWords=75'
+                )
+                """,
+                post.content,
+                ^search_term
+              )
+        }
+      )
+    )
+    |> summarize_reactions(user_id)
+    |> group_by_parent_post()
+  end
+
+  defp group_by_parent_post(posts) do
+    by_parent_id = Enum.group_by(posts, &Map.get(&1, :parent_post_id))
+
+    # we want to preserve the order of the posts returned by the query
+    # so we need to reduce over the list of posts and place each post in the correct
+    # parent post's replies list
+    {results, _} =
+      posts
+      |> Enum.reduce({[], by_parent_id}, fn post, {acc, by_parent_id} ->
+        parent_post_id = post.parent_post_id
+
+        case parent_post_id do
+          nil ->
+            # this is a top-level post
+            {[post | acc], by_parent_id}
+
+          _ ->
+            # this is a reply post, so place parent post with it's replies we already groups
+            # in the list if it's not there yet
+            case by_parent_id[parent_post_id] do
+              nil ->
+                # parent post is already in the list, so skip it
+                {acc, by_parent_id}
+
+              replies ->
+                # parent post is not in the list yet, so add it and drop it from the by_parent_id map
+                # to track which parent posts we already processed
+                {[Map.put(post.parent_post, :replies, replies) | acc],
+                 Map.delete(by_parent_id, parent_post_id)}
+            end
+        end
+      end)
+
+    results
+    |> Enum.reverse()
   end
 
   defp summarize_reactions(posts, current_user_id) do
