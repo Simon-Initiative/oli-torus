@@ -145,19 +145,7 @@ defmodule OliWeb.Components.Delivery.Students do
         Enum.sort_by(students, fn student -> student.email end, sort_order)
 
       :last_interaction ->
-        comparator =
-          case sort_order do
-            :asc ->
-              fn x, y -> DateTime.compare(x.last_interaction, y.last_interaction) != :gt end
-
-            :desc ->
-              fn x, y -> DateTime.compare(x.last_interaction, y.last_interaction) != :lt end
-          end
-
-        Enum.sort(
-          students,
-          comparator
-        )
+        Enum.sort_by(students, & &1.last_interaction, {sort_order, Date})
 
       :progress ->
         Enum.sort_by(
