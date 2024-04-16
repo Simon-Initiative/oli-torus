@@ -206,36 +206,38 @@ defmodule OliWeb.Delivery.Student.LessonLive do
      end)}
   end
 
-  def handle_event("select_annotation_point", %{"point-marker-id" => point_marker_id}, socket) do
-    async_load_annotations(
-      socket.assigns.section,
-      socket.assigns.page_context.page.resource_id,
-      socket.assigns.current_user,
-      socket.assigns.course_collab_space_config,
-      visibility_for_active_tab(socket.assigns.annotations.active_tab),
-      point_marker_id
-    )
+  def handle_event("toggle_annotation_point", %{"point-marker-id" => point_marker_id}, socket) do
+    %{annotations: %{selected_point: selected_point}} = socket.assigns
 
-    {:noreply,
-     socket
-     |> assign_annotations(selected_point: point_marker_id, posts: nil)
-     |> push_event("highlight_point_marker", %{id: point_marker_id})}
-  end
+    if selected_point == point_marker_id do
+      async_load_annotations(
+        socket.assigns.section,
+        socket.assigns.page_context.page.resource_id,
+        socket.assigns.current_user,
+        socket.assigns.course_collab_space_config,
+        visibility_for_active_tab(socket.assigns.annotations.active_tab),
+        nil
+      )
 
-  def handle_event("select_annotation_point", _params, socket) do
-    async_load_annotations(
-      socket.assigns.section,
-      socket.assigns.page_context.page.resource_id,
-      socket.assigns.current_user,
-      socket.assigns.course_collab_space_config,
-      visibility_for_active_tab(socket.assigns.annotations.active_tab),
-      nil
-    )
+      {:noreply,
+       socket
+       |> assign_annotations(selected_point: nil, posts: nil)
+       |> push_event("clear_highlighted_point_markers", %{})}
+    else
+      async_load_annotations(
+        socket.assigns.section,
+        socket.assigns.page_context.page.resource_id,
+        socket.assigns.current_user,
+        socket.assigns.course_collab_space_config,
+        visibility_for_active_tab(socket.assigns.annotations.active_tab),
+        point_marker_id
+      )
 
-    {:noreply,
-     socket
-     |> assign_annotations(selected_point: nil, posts: nil)
-     |> push_event("clear_highlighted_point_markers", %{})}
+      {:noreply,
+       socket
+       |> assign_annotations(selected_point: point_marker_id, posts: nil)
+       |> push_event("highlight_point_marker", %{id: point_marker_id})}
+    end
   end
 
   def handle_event("begin_create_annotation", _, socket) do
@@ -483,6 +485,35 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     {:noreply, assign_annotations(socket, search_results: nil, search_term: "")}
   end
 
+  def handle_event(
+        "reveal_post",
+        %{"point-marker-id" => point_marker_id, "post-id" => post_id},
+        socket
+      ) do
+    %{
+      annotations: %{
+        active_tab: active_tab
+      }
+    } = socket.assigns
+
+    async_load_annotations(
+      socket.assigns.section,
+      socket.assigns.page_context.page.resource_id,
+      socket.assigns.current_user,
+      socket.assigns.course_collab_space_config,
+      visibility_for_active_tab(active_tab),
+      point_marker_id,
+      String.to_integer(post_id)
+    )
+
+    {:noreply,
+     assign_annotations(socket,
+       selected_point: point_marker_id,
+       search_results: nil,
+       search_term: ""
+     )}
+  end
+
   # handle assigns directly from async tasks
   def handle_info({ref, result}, socket) do
     Process.demonitor(ref, [:flush])
@@ -527,8 +558,8 @@ defmodule OliWeb.Delivery.Student.LessonLive do
 
       <:point_markers :if={@annotations.show_sidebar && @annotations.point_markers}>
         <Annotations.annotation_bubble
-          point_marker={%{id: nil, top: 0}}
-          selected={@annotations.selected_point == nil}
+          point_marker={%{id: :page, top: 0}}
+          selected={@annotations.selected_point == :page}
           count={@annotations.post_counts && @annotations.post_counts[nil]}
         />
         <Annotations.annotation_bubble
@@ -1109,7 +1140,8 @@ defmodule OliWeb.Delivery.Student.LessonLive do
          current_user,
          course_collab_space_config,
          visibility,
-         point_block_id
+         point_block_id,
+         load_replies_for_post_id \\ nil
        ) do
     if current_user do
       Task.async(fn ->
@@ -1133,6 +1165,27 @@ defmodule OliWeb.Delivery.Student.LessonLive do
                 visibility,
                 point_block_id
               )
+
+            # load_replies_for_post_id is an option that allows a specific post to be loaded with
+            # its replies, used for when a user click "View Original Post" in the search results
+            posts =
+              if load_replies_for_post_id do
+                post_replies =
+                  Collaboration.list_replies_for_post_in_point_block(
+                    current_user.id,
+                    load_replies_for_post_id
+                  )
+
+                Enum.map(posts, fn post ->
+                  if post.id == load_replies_for_post_id do
+                    %Collaboration.Post{post | replies: post_replies}
+                  else
+                    post
+                  end
+                end)
+              else
+                posts
+              end
 
             {:assign_annotations,
              %{

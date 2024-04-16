@@ -144,9 +144,14 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
           </div>
       <% end %>
       <div :if={not @is_reply} class="flex flex-row justify-end">
-        <a href="#" class="text-primary">
+        <Common.button
+          variant={:link}
+          phx-click="reveal_post"
+          phx-value-point-marker-id={@post.annotated_block_id}
+          phx-value-post-id={@post.id}
+        >
           View original post <i class="fa-solid fa-arrow-right"></i>
-        </a>
+        </Common.button>
       </div>
     </div>
     """
@@ -608,7 +613,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
     <button
       class="absolute right-[-15px] cursor-pointer group"
       style={"top: #{@point_marker.top}px"}
-      phx-click="select_annotation_point"
+      phx-click="toggle_annotation_point"
       phx-value-point-marker-id={@point_marker.id}
     >
       <.chat_bubble selected={@selected} count={@count} />

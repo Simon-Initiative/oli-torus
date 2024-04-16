@@ -1118,10 +1118,15 @@ defmodule Oli.Resources.Collaboration do
         point_block_id \\ nil
       ) do
     filter_by_point_block_id =
-      if is_nil(point_block_id) do
-        dynamic([p], is_nil(p.annotated_block_id))
-      else
-        dynamic([p], p.annotated_block_id == ^point_block_id)
+      case point_block_id do
+        nil ->
+          true
+
+        :page ->
+          dynamic([p], is_nil(p.annotated_block_id))
+
+        point_block_id ->
+          dynamic([p], p.annotated_block_id == ^point_block_id)
       end
 
     Repo.all(
@@ -1172,10 +1177,15 @@ defmodule Oli.Resources.Collaboration do
         search_term
       ) do
     filter_by_point_block_id =
-      if is_nil(point_block_id) do
-        dynamic([p], is_nil(p.annotated_block_id))
-      else
-        dynamic([p], p.annotated_block_id == ^point_block_id)
+      case point_block_id do
+        nil ->
+          true
+
+        :page ->
+          dynamic([p], is_nil(p.annotated_block_id))
+
+        point_block_id ->
+          dynamic([p], p.annotated_block_id == ^point_block_id)
       end
 
     Repo.all(
