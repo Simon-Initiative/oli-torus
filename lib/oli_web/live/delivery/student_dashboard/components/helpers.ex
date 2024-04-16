@@ -27,7 +27,9 @@ defmodule OliWeb.Delivery.StudentDashboard.Components.Helpers do
       <div class="flex-1 flex flex-col">
         <div class="relative flex-1 flex flex-col pb-[60px]">
           <%= render_slot(@inner_block) %>
-          <%= Phoenix.View.render(OliWeb.LayoutView, "_delivery_footer.html", assigns) %>
+          <OliWeb.Components.Footer.delivery_footer license={
+            Map.get(assigns, :has_license) && assigns[:license]
+          } />
         </div>
       </div>
     </div>

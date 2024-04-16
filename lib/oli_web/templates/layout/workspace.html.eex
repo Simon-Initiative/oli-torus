@@ -23,7 +23,7 @@
         <main role="main" id="main-content flex-1">
           <%= @inner_content %>
         </main>
-        <%= render OliWeb.LayoutView, "_footer.html", assigns %>
+        <%= OliWeb.Components.Footer.global_footer(%{}) %>
       </div>
     </div>
   </div>

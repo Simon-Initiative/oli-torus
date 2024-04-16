@@ -1,4 +1,8 @@
-<%= render OliWeb.LayoutView, "_delivery_header.html", Map.merge(assigns, %{logo_link: "#", hide_user: true}) %>
+<%= render(
+  OliWeb.LayoutView,
+  "_delivery_header.html",
+  Map.merge(assigns, %{logo_link: "#", hide_user: true})
+) %>
 
 <div class="pb-[60px]">
   <div class="container box-form-container">
@@ -41,5 +45,6 @@
 
   <%= render OliWeb.SharedView, "_help.html", conn: @conn %>
 
-  <%= render OliWeb.LayoutView, "_delivery_footer.html", assigns %>
+  <%= OliWeb.Components.Footer.delivery_footer(%{license: Map.get(assigns, :has_license) && assigns[:license]}) %>
+  </div>
 </div>
