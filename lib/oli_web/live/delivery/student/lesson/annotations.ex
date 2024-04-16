@@ -105,7 +105,14 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
           <div class="text-center p-4 text-gray-500">No results found</div>
         <% annotations -> %>
           <%= for annotation <- annotations do %>
-            <.search_result post={annotation} current_user={@current_user} />
+            <div
+              class="flex flex-col cursor-pointer"
+              phx-click="reveal_post"
+              phx-value-point-marker-id={annotation.annotated_block_id}
+              phx-value-post-id={annotation.id}
+            >
+              <.search_result post={annotation} current_user={@current_user} />
+            </div>
           <% end %>
       <% end %>
     </div>
@@ -147,16 +154,6 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
             <% end %>
           </div>
       <% end %>
-      <div :if={not @is_reply} class="flex flex-row justify-end">
-        <Common.button
-          variant={:link}
-          phx-click="reveal_post"
-          phx-value-point-marker-id={@post.annotated_block_id}
-          phx-value-post-id={@post.id}
-        >
-          View original post <i class="fa-solid fa-arrow-right"></i>
-        </Common.button>
-      </div>
     </div>
     """
   end
