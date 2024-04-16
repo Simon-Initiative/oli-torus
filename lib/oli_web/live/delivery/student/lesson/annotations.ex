@@ -7,6 +7,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
   attr :create_new_annotation, :boolean, default: false
   attr :annotations, :any, required: true
   attr :current_user, Oli.Accounts.User, required: true
+  attr :selected_point, :any, required: true
   attr :active_tab, :atom, default: :my_notes
   attr :search_results, :any, default: nil
   attr :search_term, :string, default: ""
@@ -36,6 +37,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
               annotations={@annotations}
               current_user={@current_user}
               create_new_annotation={@create_new_annotation}
+              selected_point={@selected_point}
             />
           <% _ -> %>
             <.search_results
@@ -53,12 +55,14 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
   attr :create_new_annotation, :boolean, default: false
   attr :annotations, :any, required: true
   attr :current_user, Oli.Accounts.User, required: true
+  attr :selected_point, :any, required: true
   attr :active_tab, :atom, default: :my_notes
 
   defp annotations(assigns) do
     ~H"""
     <div class="flex-1 flex flex-col gap-3 overflow-y-auto pb-[80px]">
       <.add_new_annotation_input
+        :if={@selected_point}
         class="my-2"
         active={@create_new_annotation}
         disable_anonymous_option={@active_tab == :my_notes || is_guest(@current_user)}
@@ -604,9 +608,20 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
     """
   end
 
-  attr :point_marker, :map, required: true
+  attr :point_marker, :any, required: true
   attr :selected, :boolean, default: false
   attr :count, :integer, default: nil
+
+  def annotation_bubble(%{point_marker: :page} = assigns) do
+    ~H"""
+    <button
+      class="absolute top-0 right-[-15px] cursor-pointer group"
+      phx-click="toggle_annotation_point"
+    >
+      <.chat_bubble selected={@selected} count={@count} />
+    </button>
+    """
+  end
 
   def annotation_bubble(assigns) do
     ~H"""

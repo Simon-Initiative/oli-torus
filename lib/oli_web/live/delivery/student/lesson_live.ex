@@ -206,10 +206,17 @@ defmodule OliWeb.Delivery.Student.LessonLive do
      end)}
   end
 
-  def handle_event("toggle_annotation_point", %{"point-marker-id" => point_marker_id}, socket) do
+  def handle_event("toggle_annotation_point", params, socket) do
     %{annotations: %{selected_point: selected_point}} = socket.assigns
 
+    point_marker_id =
+      case params do
+        %{"point-marker-id" => point_marker_id} -> point_marker_id
+        _ -> :page
+      end
+
     if selected_point == point_marker_id do
+      # unselect the point marker and load all annotations
       async_load_annotations(
         socket.assigns.section,
         socket.assigns.page_context.page.resource_id,
@@ -224,6 +231,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
        |> assign_annotations(selected_point: nil, posts: nil)
        |> push_event("clear_highlighted_point_markers", %{})}
     else
+      # select the point marker and load annotations for that point
       async_load_annotations(
         socket.assigns.section,
         socket.assigns.page_context.page.resource_id,
@@ -263,6 +271,10 @@ defmodule OliWeb.Delivery.Student.LessonLive do
         auto_approve_annotations: auto_approve_annotations
       }
     } = socket.assigns
+
+    # if the selected point is the page resource id, we treat it as nil
+    selected_point =
+      if(selected_point == :page, do: nil, else: selected_point)
 
     attrs = %{
       status: if(auto_approve_annotations, do: :approved, else: :submitted),
@@ -422,6 +434,10 @@ defmodule OliWeb.Delivery.Student.LessonLive do
       }
     } = socket.assigns
 
+    # if the selected point is the page, we treat it as nil
+    selected_point =
+      if(selected_point == :page, do: nil, else: selected_point)
+
     attrs = %{
       status: if(auto_approve_annotations, do: :approved, else: :submitted),
       user_id: current_user.id,
@@ -487,20 +503,30 @@ defmodule OliWeb.Delivery.Student.LessonLive do
 
   def handle_event(
         "reveal_post",
-        %{"point-marker-id" => point_marker_id, "post-id" => post_id},
+        %{"post-id" => post_id} = params,
         socket
       ) do
     %{
+      section: section,
+      page_context: page_context,
+      current_user: current_user,
+      course_collab_space_config: course_collab_space_config,
       annotations: %{
         active_tab: active_tab
       }
     } = socket.assigns
 
+    point_marker_id =
+      case params do
+        %{"point-marker-id" => point_marker_id} -> point_marker_id
+        _ -> :page
+      end
+
     async_load_annotations(
-      socket.assigns.section,
-      socket.assigns.page_context.page.resource_id,
-      socket.assigns.current_user,
-      socket.assigns.course_collab_space_config,
+      section,
+      page_context.page.resource_id,
+      current_user,
+      course_collab_space_config,
       visibility_for_active_tab(active_tab),
       point_marker_id,
       String.to_integer(post_id)
@@ -558,7 +584,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
 
       <:point_markers :if={@annotations.show_sidebar && @annotations.point_markers}>
         <Annotations.annotation_bubble
-          point_marker={%{id: :page, top: 0}}
+          point_marker={:page}
           selected={@annotations.selected_point == :page}
           count={@annotations.post_counts && @annotations.post_counts[nil]}
         />
@@ -584,6 +610,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
           active_tab={@annotations.active_tab}
           search_results={@annotations.search_results}
           search_term={@annotations.search_term}
+          selected_point={@annotations.selected_point}
         />
       </:sidebar>
     </.page_content_with_sidebar_layout>
