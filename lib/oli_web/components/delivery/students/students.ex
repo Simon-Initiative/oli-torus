@@ -145,7 +145,7 @@ defmodule OliWeb.Components.Delivery.Students do
         Enum.sort_by(students, fn student -> student.email end, sort_order)
 
       :last_interaction ->
-        Enum.sort_by(students, & &1.last_interaction, {sort_order, Date})
+        Enum.sort_by(students, & &1.last_interaction, {sort_order, DateTime})
 
       :progress ->
         Enum.sort_by(
