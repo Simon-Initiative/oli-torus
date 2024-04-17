@@ -22,7 +22,10 @@ defmodule Oli.Analytics.ByPage do
   defp get_base_query(project_slug, activity_pages, filtered_sections) do
     subquery =
       if filtered_sections != [] do
-        DeliveryResolver.revisions_filter_by_section_ids(filtered_sections, 1)
+        DeliveryResolver.revisions_filter_by_section_ids(
+          filtered_sections,
+          ResourceType.id_for_page()
+        )
       else
         Publishing.query_unpublished_revisions_by_type(
           project_slug,
