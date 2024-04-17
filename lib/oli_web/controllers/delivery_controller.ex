@@ -239,22 +239,29 @@ defmodule OliWeb.DeliveryController do
     |> render_create_and_link_form()
   end
 
+  @spec process_create_and_link_account_user(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def process_create_and_link_account_user(conn, %{"user" => user_params}) do
+    %{current_user: current_user} = conn.assigns
+
     conn
     |> use_pow_config(:author)
     |> Pow.Plug.create_user(user_params)
     |> case do
-      {:ok, user, conn} ->
+      {:ok, _user, conn} ->
         conn
-        |> PowPersistentSession.Plug.create(user)
         |> put_flash(
           :info,
           Pow.Phoenix.Controller.messages(conn, Pow.Phoenix.Messages).user_has_been_created(conn)
         )
-        |> redirect(
-          to:
-            Pow.Phoenix.Controller.routes(conn, Pow.Phoenix.Routes).after_registration_path(conn)
-        )
+
+        Pow.Phoenix.Controller.routes(conn, Pow.Phoenix.Routes).after_registration_path(conn)
+        conn = Pow.Plug.Session.do_delete(conn, get_pow_config(:author))
+
+        if current_user.independent_learner do
+          redirect(conn, to: Routes.live_path(conn, OliWeb.Delivery.OpenAndFreeIndex))
+        else
+          redirect(conn, to: Routes.delivery_path(conn, :index))
+        end
 
       {:error, changeset, conn} ->
         conn
