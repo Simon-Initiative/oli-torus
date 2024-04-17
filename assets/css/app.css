@@ -140,3 +140,7 @@ https://tailwindcss.com/docs/utility-first
   -ms-overflow-style: none; /* IE and Edge */
   scrollbar-width: none; /* Firefox */
 }
+
+.search-result em {
+  @apply not-italic bg-yellow-50;
+}

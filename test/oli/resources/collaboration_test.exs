@@ -2,7 +2,9 @@ defmodule Oli.Resources.CollaborationTest do
   use Oli.DataCase
 
   import Oli.Factory
+  import Oli.Utils.Seeder.Utils
 
+  alias Oli.Utils.Seeder
   alias Oli.Resources
   alias Oli.Resources.Collaboration
   alias Oli.Resources.Collaboration.{CollabSpaceConfig, Post}
@@ -668,5 +670,123 @@ defmodule Oli.Resources.CollaborationTest do
       assert %Post{status: :deleted} = Collaboration.get_post_by(%{id: reply.id})
       assert %Post{status: :approved} = Collaboration.get_post_by(%{id: post.id})
     end
+  end
+
+  describe "audience" do
+    setup do
+      %{}
+      |> Seeder.Project.create_author(author_tag: :author)
+      |> Seeder.Project.create_sample_project(
+        ref(:author),
+        project_tag: :proj,
+        publication_tag: :pub,
+        curriculum_revision_tag: :curriculum,
+        unscored_page1_tag: :page1
+      )
+      |> Seeder.Project.ensure_published(ref(:pub), publication_tag: :pub)
+      |> Seeder.Section.create_section(
+        ref(:proj),
+        ref(:pub),
+        nil,
+        %{},
+        section_tag: :section
+      )
+      |> Seeder.Section.create_and_enroll_learner(
+        ref(:section),
+        %{},
+        user_tag: :student1
+      )
+    end
+
+    test "search_posts_for_user_in_point_block/6 returns all posts with given search term", %{
+      section: section,
+      page1: page1,
+      student1: student1
+    } do
+      create_post(student1.id, section.id, page1.resource_id, "test")
+      create_post(student1.id, section.id, page1.resource_id, "another test")
+      create_post(student1.id, section.id, page1.resource_id, "no match")
+
+      create_post(student1.id, section.id, page1.resource_id, "private note",
+        visibility: :private
+      )
+
+      create_post(student1.id, section.id, page1.resource_id, "point block test",
+        annotation_type: :point,
+        annotated_block_id: "block1"
+      )
+
+      create_post(student1.id, section.id, page1.resource_id, "point block no match",
+        annotation_type: :point,
+        annotated_block_id: "block1"
+      )
+
+      create_post(student1.id, section.id, page1.resource_id, "my note",
+        visibility: :private,
+        annotation_type: :point,
+        annotated_block_id: "block1"
+      )
+
+      # get all public notes for a resource
+      results =
+        Collaboration.search_posts_for_user_in_point_block(
+          section.id,
+          page1.resource_id,
+          student1.id,
+          :public,
+          nil,
+          "test"
+        )
+
+      assert length(results) == 3
+      assert Enum.all?(results, &(&1.content.message =~ "test"))
+
+      refute Enum.any?(results, &(&1.content.message =~ "no match"))
+
+      # get all private notes for a resource
+      results =
+        Collaboration.search_posts_for_user_in_point_block(
+          section.id,
+          page1.resource_id,
+          student1.id,
+          :private,
+          nil,
+          "note"
+        )
+
+      assert length(results) == 2
+      assert Enum.all?(results, &(&1.content.message =~ "note"))
+
+      # get all public notes for a particular point block
+      results =
+        Collaboration.search_posts_for_user_in_point_block(
+          section.id,
+          page1.resource_id,
+          student1.id,
+          :public,
+          "block1",
+          "test"
+        )
+
+      assert length(results) == 1
+      assert Enum.all?(results, &(&1.content.message =~ "test"))
+    end
+  end
+
+  defp create_post(user_id, section_id, resource_id, message, attrs \\ []) do
+    attrs
+    |> Enum.into(%{
+      status: :approved,
+      user_id: user_id,
+      section_id: section_id,
+      resource_id: resource_id,
+      annotated_resource_id: resource_id,
+      annotated_block_id: nil,
+      annotation_type: :none,
+      anonymous: true,
+      visibility: :public,
+      content: %Collaboration.PostContent{message: message}
+    })
+    |> Collaboration.create_post()
   end
 end
