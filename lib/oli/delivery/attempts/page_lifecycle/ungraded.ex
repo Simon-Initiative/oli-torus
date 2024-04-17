@@ -60,18 +60,18 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Ungraded do
       }) do
     now = DateTime.utc_now()
 
-    {:ok, {:ok, resource_access}} = Repo.transaction(fn ->
+    {:ok, {:ok, resource_access}} =
+      Repo.transaction(fn ->
+        {:ok, _} =
+          update_resource_attempt(resource_attempt, %{
+            date_evaluated: now,
+            date_submitted: now,
+            lifecycle_state: :evaluated
+          })
 
-      {:ok, _} = update_resource_attempt(resource_attempt, %{
-        date_evaluated: now,
-        date_submitted: now,
-        lifecycle_state: :evaluated
-      })
-
-      get_resource_access(resource_attempt.resource_access_id)
-      |> Oli.Delivery.Metrics.mark_progress_completed()
-
-    end)
+        get_resource_access(resource_attempt.resource_access_id)
+        |> Oli.Delivery.Metrics.mark_progress_completed()
+      end)
 
     {:ok,
      %FinalizationSummary{
