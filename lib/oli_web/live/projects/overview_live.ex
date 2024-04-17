@@ -164,10 +164,12 @@ defmodule OliWeb.Projects.OverviewLive do
                   required: false
                 ) %>
                 <div :if={open_custom_type?(@changeset)} class="form-label-group mb-3">
-                  <%= label(fpp, :custom_license_details, "Custom license", class: "control-label") %>
+                  <%= label(fpp, :custom_license_details, "Custom license (URL)",
+                    class: "control-label"
+                  ) %>
                   <%= text_input(fpp, :custom_license_details,
                     class: "form-control",
-                    placeholder: "The custom license of your project...",
+                    placeholder: "https://creativecommons.org/licenses/by/4.0/",
                     required: false
                   ) %>
                 </div>

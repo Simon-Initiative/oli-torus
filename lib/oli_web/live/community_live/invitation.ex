@@ -4,7 +4,7 @@ defmodule OliWeb.CommunityLive.Invitation do
   attr(:list_id, :string, required: true)
   attr(:invite, :any, required: true)
   attr(:remove, :any, required: true)
-  attr(:suggest, :any)
+  attr(:suggest, :any, default: nil)
   attr(:collaborators, :any, default: [])
   attr(:matches, :any, default: [])
   attr(:to_invite, :any, default: :collaborator)
@@ -13,6 +13,7 @@ defmodule OliWeb.CommunityLive.Invitation do
   attr(:placeholder, :string, default: "collaborator@example.edu")
   attr(:button_text, :string, default: "Send invite")
   attr(:allow_removal, :boolean, default: true)
+  attr(:available_institutions, :list, default: [])
 
   def render(assigns) do
     ~H"""
@@ -22,17 +23,35 @@ defmodule OliWeb.CommunityLive.Invitation do
       as={@to_invite}
       phx-submit={@invite}
       phx-change={@suggest}
-      class="d-flex mb-5"
+      class="flex items-center gap-x-4 mb-5"
     >
       <div class="w-100">
-        <.input
-          name={@search_field}
-          value=""
-          class="form-control"
-          placeholder={@placeholder}
-          autocomplete="off"
-          list={@list_id}
-        />
+        <%= if @list_id == "institution_matches" do %>
+          <select class="torus-select" name="institution_id">
+            <option value="" selected hidden>Select an institution</option>
+            <option
+              :for={institution <- @available_institutions}
+              value={institution.id}
+              disabled={
+                if institution.id in Enum.map(@collaborators, & &1.id),
+                  do: true,
+                  else: false
+              }
+            >
+              <%= institution.name %>
+            </option>
+          </select>
+        <% else %>
+          <.input
+            name={@search_field}
+            value=""
+            class="form-control"
+            placeholder={@placeholder}
+            autocomplete="off"
+            list={@list_id}
+          />
+        <% end %>
+
         <datalist id={@list_id}>
           <%= for match <- @matches do %>
             <option value={Map.get(match, @search_field)}>

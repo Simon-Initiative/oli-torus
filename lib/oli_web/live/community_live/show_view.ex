@@ -46,6 +46,10 @@ defmodule OliWeb.CommunityLive.ShowView do
           community_members = Groups.list_community_members(community_id, 3)
           community_institutions = Groups.list_community_institutions(community_id)
 
+          available_institutions =
+            Institutions.list_institutions()
+            |> Enum.sort_by(& &1.name)
+
           assign(socket,
             community: community,
             form: to_form(changeset),
@@ -55,7 +59,8 @@ defmodule OliWeb.CommunityLive.ShowView do
             community_members: community_members,
             community_institutions: community_institutions,
             is_system_admin: is_system_admin,
-            matches: %{"admin" => [], "member" => [], "institution" => []}
+            matches: %{"admin" => [], "member" => [], "institution" => []},
+            available_institutions: available_institutions
           )
       end
 
@@ -133,12 +138,12 @@ defmodule OliWeb.CommunityLive.ShowView do
           search_field={:name}
           invite="add_institution"
           remove="remove_institution"
-          suggest="suggest_institution"
           matches={@matches["institution"]}
           main_fields={[primary: :name, secondary: :institution_email]}
           placeholder="Institution name"
           button_text="Add"
           collaborators={@community_institutions}
+          available_institutions={@available_institutions}
         />
       </ShowSection.render>
 
@@ -338,31 +343,50 @@ defmodule OliWeb.CommunityLive.ShowView do
     {:noreply, socket}
   end
 
-  def handle_event("add_institution", %{"name" => name}, socket) do
+  def handle_event(
+        "add_institution",
+        %{"institution_id" => ""},
+        socket
+      ) do
+    socket = clear_flash(socket)
+    socket = put_flash(socket, :error, "Please select an institution.")
+    {:noreply, socket}
+  end
+
+  def handle_event(
+        "add_institution",
+        %{"institution_id" => institution_id},
+        socket
+      ) do
     socket = clear_flash(socket)
     community_id = socket.assigns.community.id
+    institution_id = String.to_integer(institution_id)
 
-    names =
-      name
-      |> String.split(",")
-      |> Enum.map(&String.trim(&1))
+    institutions_added = socket.assigns.community_institutions |> Enum.map(& &1.id)
 
-    socket =
-      case Groups.create_community_institutions_from_names(names, %{
-             community_id: community_id
-           }) do
-        {:ok, _community_institutions} ->
-          put_flash(socket, :info, "Community institution(s) successfully added.")
+    if institution_id in institutions_added do
+      socket = put_flash(socket, :error, "Institution has already been added to the community.")
+      {:noreply, socket}
+    else
+      socket =
+        case Groups.create_community_institutions_from_ids([institution_id], %{
+               community_id: community_id
+             }) do
+          {:ok, _community_institutions} ->
+            put_flash(socket, :info, "Community institution(s) successfully added.")
 
-        {:error, _error} ->
-          message =
-            "Some of the community institutions couldn't be added because the institutions don't exist in the system or are already associated."
+          {:error, _error} ->
+            message =
+              "Some of the community institutions couldn't be added because the institutions don't exist in the system or are already associated."
 
-          put_flash(socket, :error, message)
-      end
+            put_flash(socket, :error, message)
+        end
 
-    {:noreply,
-     assign(socket, community_institutions: Groups.list_community_institutions(community_id))}
+      {:noreply,
+       assign(socket,
+         community_institutions: Groups.list_community_institutions(community_id)
+       )}
+    end
   end
 
   def handle_event("remove_institution", %{"collaborator-id" => institution_id}, socket) do

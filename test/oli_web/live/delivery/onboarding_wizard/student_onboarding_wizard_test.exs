@@ -27,6 +27,7 @@ defmodule OliWeb.Deliver.StudentOnboarding.WizardTest do
         basic_section(nil, %{title: "Chemistry 101"})
 
       enroll_student(student, section)
+      stub_current_time(~U[2023-11-04 20:00:00Z])
       insert(:resource_access, user: student, section: section, resource: section_page.resource)
 
       conn = get(conn, section_overview_route(section.slug))
@@ -38,6 +39,7 @@ defmodule OliWeb.Deliver.StudentOnboarding.WizardTest do
          %{conn: conn, user: student} do
       %{section: section} = basic_section(nil, %{title: "Chemistry 101"})
       enroll_student(student, section, has_visited_section: true)
+      stub_current_time(~U[2023-11-04 20:00:00Z])
 
       conn = get(conn, section_overview_route(section.slug))
 

@@ -28,7 +28,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
   def header(assigns) do
     ~H"""
     <div class="fixed z-50 w-full h-14 flex flex-row bg-delivery-header dark:bg-delivery-header-dark shadow-sm">
-      <div class="w-48 p-2">
+      <div class="w-48 p-2" tab-index="0">
         <a
           className="block lg:p-2 lg:mb-14 mx-auto"
           href={logo_link_path(@preview_mode, @section, @ctx.user)}
@@ -396,7 +396,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
     ~H"""
     <div
       class={[
-        "flex justify-center items-center absolute top-2 left-2 p-4",
+        "flex justify-center items-center absolute top-2 left-2 p-4 z-50",
         if(!@show_sidebar, do: "xl:top-10 xl:left-12")
       ]}
       role="back_link"

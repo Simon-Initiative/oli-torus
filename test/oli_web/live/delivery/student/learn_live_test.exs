@@ -798,13 +798,13 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       # unit 1 has an intro card with a video url provided, so there must be a play button
       assert has_element?(
                view,
-               ~s{div[role="unit_1"] div[role="slider"] div[role="youtube_intro_video_card"] button[role="play_unit_intro_video"]}
+               ~s{div[role="unit_1"] div[role="slider"] div[role="youtube_intro_video_card"] div[role="play_unit_intro_video"]}
              )
 
       # unit 2 has no video intro card
       refute has_element?(
                view,
-               ~s{div[role="unit_2"] div[role="slider"] div[role="youtube_intro_video_card"] button[role="play_unit_intro_video"]}
+               ~s{div[role="unit_2"] div[role="slider"] div[role="youtube_intro_video_card"] div[role="play_unit_intro_video"]}
              )
 
       # unit 3 has no video intro card
@@ -829,7 +829,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       refute has_element?(
                view,
-               ~s{div[phx-click="navigate_to_resource"][phx-value-slug="#{page_1.slug}"]}
+               ~s{button[phx-click="navigate_to_resource"][phx-value-slug="#{page_1.slug}"]}
              )
 
       view
@@ -840,7 +840,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       page_1_element =
         element(
           view,
-          ~s{div[phx-click="navigate_to_resource"][phx-value-slug="#{page_1.slug}"]}
+          ~s{button[phx-click="navigate_to_resource"][phx-value-slug="#{page_1.slug}"]}
         )
 
       assert render(page_1_element) =~ "Page 1"
@@ -850,7 +850,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       page_2_element =
         element(
           view,
-          ~s{div[phx-click="navigate_to_resource"][phx-value-slug="#{page_2.slug}"]}
+          ~s{button[phx-click="navigate_to_resource"][phx-value-slug="#{page_2.slug}"]}
         )
 
       assert render(page_2_element) =~ "Page 2"
@@ -895,12 +895,12 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       |> render_click()
 
       assert view
-             |> element(~s{div[role="intro video details"]})
+             |> element(~s{button[role="intro video details"]})
              |> render() =~ "Introduction"
 
       assert has_element?(
                view,
-               ~s{div[role="intro video details"] div[role="unseen video icon"]}
+               ~s{button[role="intro video details"] div[role="unseen video icon"]}
              )
 
       # module 2 has no intro video
@@ -908,7 +908,10 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       |> element(~s{div[role="unit_1"] div[role="card_2"]})
       |> render_click()
 
-      refute has_element?(view, ~s{div[role="intro video details"] div[role="unseen video icon"]})
+      refute has_element?(
+               view,
+               ~s{button[role="intro video details"] div[role="unseen video icon"]}
+             )
     end
 
     test "intro video is marked as seen after playing it",
@@ -934,11 +937,11 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       assert has_element?(
                view,
-               ~s{div[role="intro video details"] div[role="unseen video icon"]}
+               ~s{button[role="intro video details"] div[role="unseen video icon"]}
              )
 
       view
-      |> element(~s{div[role="intro video details"] div[phx-click="play_video"]})
+      |> element(~s{button[role="intro video details"]})
       |> render_click()
 
       # since the video is marked as seen in an async way, we revisit the page to check if the icon changed
@@ -955,7 +958,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       assert has_element?(
                view,
-               ~s{div[role="intro video details"] div[role="seen video icon"]}
+               ~s{button[role="intro video details"] div[role="seen video icon"]}
              )
     end
 
@@ -976,12 +979,12 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       assert has_element?(
                view,
-               ~s{div[role="page 4 details"] div[role="orange flag icon"]}
+               ~s{button[role="page 4 details"] div[role="orange flag icon"]}
              )
 
       assert has_element?(
                view,
-               ~s{div[role="page 4 details"] div[role="due date and score"]},
+               ~s{button[role="page 4 details"] div[role="due date and score"]},
                "Due: Fri Nov 3, 2023"
              )
     end
@@ -1034,20 +1037,20 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       # graded page with title "Page 4" in the hierarchy has the correct icon
       assert has_element?(
                view,
-               ~s{div[role="page 4 details"] div[role="square check icon"]}
+               ~s{button[role="page 4 details"] div[role="square check icon"]}
              )
 
       # correct due date
       assert has_element?(
                view,
-               ~s{div[role="page 4 details"] div[role="due date and score"]},
+               ~s{button[role="page 4 details"] div[role="due date and score"]},
                "Due: Fri Nov 3, 2023"
              )
 
       # and correct score summary
       assert has_element?(
                view,
-               ~s{div[role="page 4 details"] div[role="due date and score"]},
+               ~s{button[role="page 4 details"] div[role="due date and score"]},
                "1 / 2"
              )
     end
@@ -1084,7 +1087,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       assert has_element?(
                view,
-               ~s{div[role="module learning objectives"]},
+               ~s{button[role="module learning objectives"]},
                "Introduction and Learning Objectives"
              )
 
@@ -1174,12 +1177,12 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       # Both should not be visible since they are not expanded yet
       refute has_element?(
                view,
-               ~s{div[phx-click="navigate_to_resource"][phx-value-slug="#{page_1.slug}"]}
+               ~s{button[phx-click="navigate_to_resource"][phx-value-slug="#{page_1.slug}"]}
              )
 
       refute has_element?(
                view,
-               ~s{div[phx-click="navigate_to_resource"][phx-value-slug="#{page_5.slug}"]}
+               ~s{button[phx-click="navigate_to_resource"][phx-value-slug="#{page_5.slug}"]}
              )
 
       # expand unit 1/module 1 details
@@ -1189,12 +1192,12 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       assert has_element?(
                view,
-               ~s{div[phx-click="navigate_to_resource"][phx-value-slug="#{page_1.slug}"]}
+               ~s{button[phx-click="navigate_to_resource"][phx-value-slug="#{page_1.slug}"]}
              )
 
       refute has_element?(
                view,
-               ~s{div[phx-click="navigate_to_resource"][phx-value-slug="#{page_5.slug}"]}
+               ~s{button[phx-click="navigate_to_resource"][phx-value-slug="#{page_5.slug}"]}
              )
 
       # expand unit 2/module 3 details
@@ -1204,12 +1207,12 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       assert has_element?(
                view,
-               ~s{div[phx-click="navigate_to_resource"][phx-value-slug="#{page_1.slug}"]}
+               ~s{button[phx-click="navigate_to_resource"][phx-value-slug="#{page_1.slug}"]}
              )
 
       assert has_element?(
                view,
-               ~s{div[phx-click="navigate_to_resource"][phx-value-slug="#{page_5.slug}"]}
+               ~s{button[phx-click="navigate_to_resource"][phx-value-slug="#{page_5.slug}"]}
              )
     end
 
@@ -1246,9 +1249,9 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       |> element(~s{div[role="unit_1"] div[role="card_1"]})
       |> render_click()
 
-      assert has_element?(view, ~s{div[role="page 1 details"] div[role="check icon"]})
-      assert has_element?(view, ~s{div[role="page 2 details"]})
-      refute has_element?(view, ~s{div[role="page 2 details"] div[role="check icon"]})
+      assert has_element?(view, ~s{button[role="page 1 details"] div[role="check icon"]})
+      assert has_element?(view, ~s{button[role="page 2 details"]})
+      refute has_element?(view, ~s{button[role="page 2 details"] div[role="check icon"]})
     end
 
     test "sees a check icon on visited and completed pages within a section", %{
@@ -1271,7 +1274,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       |> element(~s{div[role="unit_5"] div[role="card_4"]})
       |> render_click()
 
-      assert has_element?(view, ~s{div[role="page 11 details"] div[role="check icon"]})
+      assert has_element?(view, ~s{button[role="page 11 details"] div[role="check icon"]})
     end
 
     test "hides/shows completed pages", %{
@@ -1300,13 +1303,13 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
              |> element(~s{div[role="completed count"]})
              |> render() =~ "1 page"
 
-      completed_toggle = element(view, ~s{div[role="toggle completed button"]})
+      completed_toggle = element(view, ~s{button[role="toggle completed button"]})
 
       assert render(completed_toggle) =~ "Hide Completed"
 
       # By default it shows the completed and incompleted pages
-      assert has_element?(view, ~s{div[role="page 11 details"] div[role="check icon"]})
-      assert has_element?(view, ~s{div[role="page 12 details"]})
+      assert has_element?(view, ~s{button[role="page 11 details"] div[role="check icon"]})
+      assert has_element?(view, ~s{button[role="page 12 details"]})
 
       # Click on the toggle to hide the completed pages
       render_click(completed_toggle)
@@ -1314,8 +1317,8 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       assert render(completed_toggle) =~ "Show Completed"
 
       # Hides the completed pages and sections
-      refute has_element?(view, ~s{div[role="page 11 details"] div[role="check icon"]})
-      assert has_element?(view, ~s{div[role="page 12 details"]})
+      refute has_element?(view, ~s{button[role="page 11 details"] div[role="check icon"]})
+      assert has_element?(view, ~s{button[role="page 12 details"]})
 
       refute has_element?(
                view,
@@ -1345,10 +1348,10 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       |> element(~s{div[role="unit_1"] div[role="card_1"]})
       |> render_click()
 
-      assert has_element?(view, ~s{div[role="page 2 details"]})
-      refute has_element?(view, ~s{div[role="page 1 details"] svg[role="visited check icon"]})
-      assert has_element?(view, ~s{div[role="page 2 details"]})
-      refute has_element?(view, ~s{div[role="page 2 details"] svg[role="visited check icon"]})
+      assert has_element?(view, ~s{button[role="page 2 details"]})
+      refute has_element?(view, ~s{button[role="page 1 details"] svg[role="visited check icon"]})
+      assert has_element?(view, ~s{button[role="page 2 details"]})
+      refute has_element?(view, ~s{button[role="page 2 details"] svg[role="visited check icon"]})
     end
 
     test "can visit a page", %{conn: conn, user: user, section: section, page_1: page_1} do
@@ -1364,7 +1367,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       # click on page 1 to navigate to that page
       view
-      |> element(~s{div[phx-click="navigate_to_resource"][phx-value-slug="#{page_1.slug}"]})
+      |> element(~s{button[phx-click="navigate_to_resource"][phx-value-slug="#{page_1.slug}"]})
       |> render_click()
 
       request_path = Utils.learn_live_path(section.slug, target_resource_id: page_1.resource_id)
@@ -1829,12 +1832,12 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       refute has_element?(
                view,
-               ~s{div[phx-click="navigate_to_resource"][phx-value-slug="#{page_11.slug}"]}
+               ~s{button[phx-click="navigate_to_resource"][phx-value-slug="#{page_11.slug}"]}
              )
 
       refute has_element?(
                view,
-               ~s{div[phx-click="navigate_to_resource"][phx-value-slug="#{page_12.slug}"]}
+               ~s{button[phx-click="navigate_to_resource"][phx-value-slug="#{page_12.slug}"]}
              )
 
       view
@@ -1845,7 +1848,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       page_11_element =
         element(
           view,
-          ~s{div[phx-click="navigate_to_resource"][phx-value-slug="#{page_11.slug}"]}
+          ~s{button[phx-click="navigate_to_resource"][phx-value-slug="#{page_11.slug}"]}
         )
 
       assert render(page_11_element) =~ "Page 11"
@@ -1854,7 +1857,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       page_12_element =
         element(
           view,
-          ~s{div[phx-click="navigate_to_resource"][phx-value-slug="#{page_12.slug}"]}
+          ~s{button[phx-click="navigate_to_resource"][phx-value-slug="#{page_12.slug}"]}
         )
 
       assert render(page_12_element) =~ "Page 12"
@@ -1884,7 +1887,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       assert has_element?(
                view,
-               ~s{div.hidden div[phx-click="navigate_to_resource"][phx-value-slug="#{page_11.slug}"]}
+               ~s{div.hidden button[phx-click="navigate_to_resource"][phx-value-slug="#{page_11.slug}"]}
              )
 
       # Hides the section content when it is clicked
@@ -1892,7 +1895,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       assert has_element?(
                view,
-               ~s{div.hidden div[phx-click="navigate_to_resource"][phx-value-slug="#{page_12.slug}"]}
+               ~s{div.hidden button[phx-click="navigate_to_resource"][phx-value-slug="#{page_12.slug}"]}
              )
 
       assert has_element?(

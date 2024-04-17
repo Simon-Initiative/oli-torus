@@ -849,7 +849,8 @@ defmodule OliWeb.Components.Delivery.Surveys do
           %{
             text: response_summary.response,
             user_name: OliWeb.Common.Utils.name(response_summary.user),
-            type: mapper[response_summary.part_id]
+            type: mapper[response_summary.part_id],
+            part_id: response_summary.part_id
           }
           | acc_responses
         ]

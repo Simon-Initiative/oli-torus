@@ -62,6 +62,8 @@ defmodule Oli.Application do
 
         # Starts Cachex to store datashop export info
         Oli.DatashopCache,
+        # Starts Cachex to store vr user agents
+        Oli.VrLookupCache,
 
         # Starts Cachex to store section info
         Oli.Delivery.Sections.SectionCache,
