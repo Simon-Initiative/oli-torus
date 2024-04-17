@@ -275,7 +275,9 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard do
 
   def footer(assigns) do
     ~H"""
-    <%= Phoenix.View.render(OliWeb.LayoutView, "_delivery_footer.html", assigns) %>
+    <OliWeb.Components.Footer.delivery_footer license={
+      Map.get(assigns, :has_license) && assigns[:license]
+    } />
     """
   end
 end
