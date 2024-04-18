@@ -966,7 +966,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         <button
           :if={@assistant_enabled}
           phx-click={JS.dispatch("click", to: "#ai_bot_collapsed_button")}
-          class="h-[39px] p-2.5 bg-blue-700 rounded text-white text-sm font-semibold font-['Open Sans'] tracking-tight"
+          class="h-[39px] p-2.5 bg-blue-500 hover:bg-blue-600 focus:bg-blue-600 dark:bg-blue-700 dark:hover:bg-opacity-60 dark:focus:bg-opacity-60 rounded text-white text-sm font-semibold font-['Open Sans'] tracking-tight"
         >
           Let's discuss?
         </button>
@@ -1122,12 +1122,12 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       <div
         :if={@module["learning_objectives"] != []}
         phx-click-away={JS.hide(to: "#learning_objectives_#{@module["resource_id"]}")}
-        class="hidden flex-col gap-3 w-full p-6 bg-white dark:bg-[#242533] shadow-xl rounded-xl absolute -top-[18px] left-0 transform -translate-x-[calc(100%+10px)] z-50"
+        class="hidden flex-col gap-3 w-full p-6 bg-white dark:bg-[#242533] shadow-xl rounded-xl absolute top-[35px] left-0 z-50"
         id={"learning_objectives_#{@module["resource_id"]}"}
         role="learning objectives tooltip"
       >
         <svg
-          class="absolute top-6 -right-4 w-[27px] h-3 fill-white dark:fill-[#242533]"
+          class="absolute -top-[8px] left-[8px] w-[27px] h-3 fill-white dark:fill-[#242533] -rotate-90"
           xmlns="http://www.w3.org/2000/svg"
           width="12"
           height="27"
@@ -1206,8 +1206,8 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         class="flex flex-col w-full"
         id={"pages_grouped_by_#{grouped_due_date}"}
       >
-        <div class="h-[19px] mb-[10px]">
-          <span class="text-[#3399FF] text-[14px] leading-[19px]">
+        <div class="h-[19px] mb-5">
+          <span class="dark:text-white text-sm font-bold font-['Open Sans']">
             <%= "Due: #{format_date(grouped_due_date, @ctx, "{WDshort} {Mshort} {D}, {YYYY}")}" %>
           </span>
         </div>
@@ -1301,7 +1301,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         )
       }
       role={"#{@type} #{@numbering_index} details"}
-      class="flex items-center gap-[14px] w-full"
+      class="w-full h-[42px] py-2.5 rounded-lg justify-start items-start gap-5 inline-flex"
       id={"index_item_#{@resource_id}_#{@parent_due_date}"}
     >
       <.no_icon />
@@ -1390,49 +1390,54 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     ~H"""
     <button
       role={"#{@type} #{@numbering_index} details"}
-      class="flex items-center gap-[14px] w-full py-1 pr-2"
+      class={[
+        "w-full pl-[5px] pr-[7px] py-2.5 rounded-lg justify-start items-center gap-5 flex rounded-lg focus:bg-[#000000]/5 hover:bg-[#000000]/5 dark:focus:bg-[#FFFFFF]/5 dark:hover:bg-[#FFFFFF]/5",
+        if(@graded,
+          do: "font-semibold hover:font-bold focus:font-bold",
+          else: "font-normal hover:font-medium focus:font-medium"
+        )
+      ]}
       id={"index_item_#{@resource_id}"}
       phx-click="navigate_to_resource"
       phx-value-slug={@revision_slug}
       phx-value-resource_id={@resource_id}
       phx-value-module_resource_id={@module_resource_id}
     >
-      <.index_item_icon
-        item_type={@type}
-        was_visited={@was_visited}
-        graded={@graded}
-        raw_avg_score={@raw_avg_score[:score]}
-        progress={@progress}
-      />
+      <div class="justify-start items-start gap-5 flex">
+        <.index_item_icon
+          item_type={@type}
+          was_visited={@was_visited}
+          graded={@graded}
+          raw_avg_score={@raw_avg_score[:score]}
+          progress={@progress}
+        />
+        <div class="w-[26px] justify-start items-center">
+          <div class="grow shrink basis-0 opacity-60 text-white text-[13px] font-semibold font-['Open Sans'] capitalize">
+            <.numbering_index type={@type} index={@numbering_index} />
+          </div>
+        </div>
+      </div>
+
       <div
         id={"index_item_#{@numbering_index}_#{@resource_id}"}
-        class="flex shrink items-center gap-3 w-full dark:text-white cursor-pointer hover:bg-gray-200/70 dark:hover:bg-gray-800"
+        class="flex shrink items-center gap-3 w-full dark:text-white"
       >
-        <.numbering_index type={@type} index={@numbering_index} />
-
         <div class={["flex flex-col gap-1 w-full", left_indentation(@numbering_level)]}>
           <div class="flex">
             <span class={
               [
-                "text-[16px] leading-[22px] pr-2 dark:text-white",
+                "text-left dark:text-white opacity-90 text-base font-['Open Sans']",
                 # Opacity is set if the item is visited, but not necessarily completed
-                if(@was_visited, do: "opacity-50")
+                if(@was_visited, do: "opacity-60")
               ]
             }>
               <%= "#{@title}" %>
             </span>
 
-            <div class="text-right dark:text-white opacity-50 whitespace-nowrap ml-auto">
-              <span class="text-[12px] leading-[16px] font-bold uppercase tracking-[0.96px] text-right">
-                <%= parse_minutes(@duration_minutes) %>
-                <span class="text-[9px] font-bold uppercase tracking-[0.72px] text-right">
-                  min
-                </span>
-              </span>
-            </div>
+            <.duration_in_minutes duration_minutes={@duration_minutes} />
           </div>
           <div :if={@graded} role="due date and score" class="flex">
-            <span class="text-[12px] leading-[16px] opacity-50 dark:text-white">
+            <span class="opacity-60 text-[13px] font-normal font-['Open Sans'] !font-normal opacity-60 dark:text-white">
               Due: <%= format_date(@due_date, @ctx, "{WDshort} {Mshort} {D}, {YYYY}") %>
             </span>
             <Student.score_summary raw_avg_score={@raw_avg_score} />
@@ -1440,6 +1445,27 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         </div>
       </div>
     </button>
+    """
+  end
+
+  attr :graded, :boolean, default: false
+  attr :duration_minutes, :integer
+
+  def duration_in_minutes(assigns) do
+    ~H"""
+    <div class="ml-auto items-center gap-1.5 flex">
+      <div :if={@graded} class="w-[22px] h-[22px] opacity-60 flex items-center justify-center">
+        <.clock_icon />
+      </div>
+      <div class="text-right dark:text-white opacity-50 whitespace-nowrap">
+        <span class="opacity-60 text-sm font-semibold font-['Open Sans']">
+          <%= parse_minutes(@duration_minutes) %>
+          <span class="w-[25px] self-stretch opacity-60 text-[13px] font-semibold font-['Open Sans']">
+            min
+          </span>
+        </span>
+      </div>
+    </div>
     """
   end
 
@@ -1452,7 +1478,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     ~H"""
     <button
       role="intro video details"
-      class="flex items-center gap-[14px] w-full"
+      class="w-full pl-[5px] pr-[7px] py-2.5 rounded-lg justify-start items-center gap-5 flex rounded-lg focus:bg-[#000000]/5 hover:bg-[#000000]/5 dark:focus:bg-[#FFFFFF]/5 dark:hover:bg-[#FFFFFF]/5 font-normal hover:font-medium focus:font-medium"
       id={"intro_video_for_module_#{@module_resource_id}"}
       phx-click="play_video"
       phx-value-module_resource_id={@module_resource_id}
@@ -1471,33 +1497,28 @@ defmodule OliWeb.Delivery.Student.LearnLive do
           class="fill-black dark:fill-white"
         >
           <path
-            opacity="0.5"
             d="M9.5 16.5L16.5 12L9.5 7.5V16.5ZM4 20C3.45 20 2.97917 19.8042 2.5875 19.4125C2.19583 19.0208 2 18.55 2 18V6C2 5.45 2.19583 4.97917 2.5875 4.5875C2.97917 4.19583 3.45 4 4 4H20C20.55 4 21.0208 4.19583 21.4125 4.5875C21.8042 4.97917 22 5.45 22 6V18C22 18.55 21.8042 19.0208 21.4125 19.4125C21.0208 19.8042 20.55 20 20 20H4Z"
-            fill={if @intro_video_viewed, do: "#0CAF61"}
+            class={[
+              "opacity-60",
+              if(@intro_video_viewed, do: "!opacity-100 fill-[#0CAF61] dark:fill-[#12E56A]")
+            ]}
           />
         </svg>
       </div>
-      <div class="flex shrink items-center gap-3 w-full dark:text-white cursor-pointer hover:bg-gray-200/70 dark:hover:bg-gray-800">
+      <div class="flex shrink items-center gap-3 w-full dark:text-white">
         <div class="flex flex-col gap-1 w-full ml-0">
           <div class="flex">
             <span class={
               [
-                "text-[16px] leading-[22px] pr-2 dark:text-white",
+                "text-left dark:text-white opacity-90 text-base font-['Open Sans']",
                 # Opacity is set if the intro video is viewed, but not necessarily completed
-                if(@intro_video_viewed, do: "opacity-50")
+                if(@intro_video_viewed, do: "opacity-60")
               ]
             }>
               Introduction
             </span>
 
-            <div class="text-right dark:text-white opacity-50 whitespace-nowrap ml-auto">
-              <span class="text-[12px] leading-[16px] font-bold uppercase tracking-[0.96px] text-right">
-                <%= parse_minutes(@duration_minutes) %>
-                <span class="text-[9px] font-bold uppercase tracking-[0.72px] text-right">
-                  min
-                </span>
-              </span>
-            </div>
+            <.duration_in_minutes duration_minutes={@duration_minutes} />
           </div>
         </div>
       </div>
@@ -1528,15 +1549,15 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       {true, "page", true, raw_avg_score} when not is_nil(raw_avg_score) ->
         # completed graded page
         ~H"""
-        <div role="square check icon" class="flex justify-center items-center h-7 w-7 shrink-0">
+        <div role="square check icon" class="flex justify-center items-center w-[22px] h-[22px] shrink-0">
           <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
             <path
               d="M5 21C4.45 21 3.97917 20.8042 3.5875 20.4125C3.19583 20.0208 3 19.55 3 19V5C3 4.45 3.19583 3.97917 3.5875 3.5875C3.97917 3.19583 4.45 3 5 3H17.925L15.925 5H5V19H19V12.05L21 10.05V19C21 19.55 20.8042 20.0208 20.4125 20.4125C20.0208 20.8042 19.55 21 19 21H5Z"
-              fill="#0CAF61"
+              class="fill-[#0CAF61] dark:fill-[#12E56A]"
             />
             <path
               d="M11.7 16.025L6 10.325L7.425 8.9L11.7 13.175L20.875 4L22.3 5.425L11.7 16.025Z"
-              fill="#0CAF61"
+              class="fill-[#0CAF61] dark:fill-[#12E56A]"
             />
           </svg>
         </div>
@@ -1545,9 +1566,20 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       {_, "page", true, _} ->
         # not completed graded page
         ~H"""
-        <div role="orange flag icon" class="flex justify-center items-center h-7 w-7 shrink-0">
-          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
-            <path d="M5 21V4H14L14.4 6H20V16H13L12.6 14H7V21H5Z" fill="#F68E2E" />
+        <div role="orange flag icon" class="flex justify-center items-center w-[22px] h-[22px] shrink-0">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="currentColor"
+            class="icon icon-tabler icons-tabler-filled icon-tabler-flag-3"
+          >
+            <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+            <path
+              d="M19 4c.852 0 1.297 .986 .783 1.623l-.076 .084l-3.792 3.793l3.792 3.793c.603 .602 .22 1.614 -.593 1.701l-.114 .006h-13v6a1 1 0 0 1 -.883 .993l-.117 .007a1 1 0 0 1 -.993 -.883l-.007 -.117v-16a1 1 0 0 1 .883 -.993l.117 -.007h14z"
+              fill="#FF9040"
+            />
           </svg>
         </div>
         """
@@ -1834,7 +1866,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
 
   defp numbering_index(assigns) do
     ~H"""
-    <span class="text-[12px] leading-[16px] font-bold w-[30px] shrink-0 opacity-40 dark:text-white">
+    <span class="opacity-60 text-black dark:text-white text-[13px] font-semibold font-['Open Sans'] capitalize">
       <%= if @type == "page", do: "#{@index}", else: " " %>
     </span>
     """
@@ -1842,7 +1874,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
 
   defp no_icon(assigns) do
     ~H"""
-    <div role="no icon" class="flex justify-center items-center h-7 w-7 shrink-0"></div>
+    <div role="no icon" class="flex justify-center items-center w-[22px] h-[22px] shrink-0"></div>
     """
   end
 
@@ -1850,7 +1882,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
 
   defp check_icon(assigns) do
     ~H"""
-    <div role="check icon" class="flex justify-center items-center h-7 w-7 shrink-0">
+    <div role="check icon" class="flex justify-center items-center w-[22px] h-[22px] shrink-0">
       <svg
         :if={@progress == 1.0}
         xmlns="http://www.w3.org/2000/svg"
@@ -1858,13 +1890,36 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         height="24"
         viewBox="0 0 24 24"
         fill="none"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        class="icon icon-tabler icons-tabler-outline icon-tabler-check stroke-[#0CAF61] dark:stroke-[#12E56A]"
       >
-        <path
-          d="M9.54961 17.9996L3.84961 12.2996L5.27461 10.8746L9.54961 15.1496L18.7246 5.97461L20.1496 7.39961L9.54961 17.9996Z"
-          fill="#0CAF61"
-        />
+        <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+        <path d="M5 12l5 5l10 -10" />
       </svg>
     </div>
+    """
+  end
+
+  def clock_icon(assigns) do
+    ~H"""
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="24"
+      height="24"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      class="icon icon-tabler icons-tabler-outline icon-tabler-clock"
+    >
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M3 12a9 9 0 1 0 18 0a9 9 0 0 0 -18 0" />
+      <path d="M12 7v5l3 3" />
+    </svg>
     """
   end
 
