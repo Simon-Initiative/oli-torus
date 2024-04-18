@@ -359,6 +359,7 @@ export const PartPropertyEditor: React.FC<Props> = ({
         uiSchema={componentUiSchema}
         value={currentComponentData}
         onChangeHandler={componentPropertyChangeHandler}
+        triggerOnChange={true}
       />
     </div>
   );
