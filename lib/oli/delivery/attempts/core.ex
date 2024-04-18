@@ -405,6 +405,19 @@ defmodule Oli.Delivery.Attempts.Core do
     )
   end
 
+  def get_resource_access_from_guid(resource_attempt_guid) do
+    Repo.one(
+      from(a in ResourceAccess,
+        left_join: ra in ResourceAttempt,
+        on: a.id == ra.resource_access_id,
+        where: ra.attempt_guid == ^resource_attempt_guid,
+        select: a
+      )
+    )
+  end
+
+
+
   @doc """
   For a given project id, this retrieves part attempts and user information, for those part attempts
   that are evaluated and that have snapshots defined. This is a key query for powering analytics

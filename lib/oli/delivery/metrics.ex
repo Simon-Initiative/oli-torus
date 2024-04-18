@@ -1166,6 +1166,11 @@ defmodule Oli.Delivery.Metrics do
   @doc """
   Updates page progress to be 100% complete.
   """
+  def mark_progress_completed(resource_attempt_guid) when is_binary(resource_attempt_guid) do
+    Core.get_resource_access_from_guid(resource_attempt_guid)
+    |> mark_progress_completed()
+  end
+
   def mark_progress_completed(%ResourceAccess{} = ra) do
     Core.update_resource_access(ra, %{progress: 1.0})
   end

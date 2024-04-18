@@ -87,6 +87,28 @@ defmodule OliWeb.Api.PageLifecycleController do
     end
   end
 
+  def transition(conn, %{
+    "action" => "mark_completed",
+    "attempt_guid" => attempt_guid
+  }) do
+
+    case Oli.Delivery.Metrics.mark_progress_completed(attempt_guid) do
+      {:ok, _} ->
+        json(conn, %{
+          result: "success",
+          commandResult: "success"
+        })
+
+      {:error, reason} ->
+        json(conn, %{
+          result: "success",
+          commandResult: "failure",
+          reason: reason
+        })
+    end
+
+  end
+
   defp command_failure(conn, reason, section_slug, revision_slug) do
     json(conn, %{
       result: "success",
