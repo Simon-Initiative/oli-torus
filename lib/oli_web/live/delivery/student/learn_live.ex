@@ -853,7 +853,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       </div>
       <.custom_focus_wrap
         :if={Map.has_key?(@selected_module_per_unit_resource_id, @unit["resource_id"])}
-        class="px-[50px] rounded-lg flex-col justify-start items-center gap-[25px] inline-flex"
+        class="px-[50px] rounded-lg flex-col justify-start items-center gap-[25px] flex"
         role="module_details"
         id={"selected_module_in_unit_#{@unit["resource_id"]}"}
         data-animate={
@@ -877,7 +877,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       >
         <div
           role="expanded module header"
-          class="max-w-[760px] px-6 py-0.5 flex-col justify-start items-center gap-2 inline-flex"
+          class="self-stretch px-6 py-0.5 flex-col justify-start items-center gap-2 flex"
         >
           <div class="justify-start items-start gap-1 inline-flex">
             <div class="opacity-60 dark:text-white text-sm font-bold font-['Open Sans'] uppercase tracking-tight">
@@ -971,8 +971,11 @@ defmodule OliWeb.Delivery.Student.LearnLive do
           Let's discuss?
         </button>
 
-        <div role="intro content and index" class="flex flex-col lg:flex-row lg:gap-12">
-          <div class="mt-[57px] lg:w-1/2">
+        <div
+          role="module index"
+          class="flex flex-col max-w-[760px] pt-[25px] pb-2.5 justify-start items-start gap-[23px] inline-flex w-full"
+        >
+          <div class="w-full">
             <% module =
               Map.get(assigns.selected_module_per_unit_resource_id, assigns.unit["resource_id"]) %>
             <.module_content_header
@@ -1036,10 +1039,10 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         </div>
         <div class="w-34 h-8 pl-1 flex gap-1.5">
           <div class="flex gap-0.5 items-center">
-            <span class="opacity-80 text-sm text-left leading-[22px] dark:text-white">
-              <%= case count_completed_pages(@module) do
-                1 -> "1 page"
-                completed_count -> "#{completed_count} pages"
+            <span class="opacity-80 dark:text-white text-[13px] font-normal font-['Open Sans'] leading-loose">
+              <%= case count_completed_and_total_pages(@module) do
+                {1, 1} -> "1 of 1 Page"
+                {completed_count, total_count} -> "#{completed_count} of #{total_count} Pages"
               end %>
             </span>
           </div>
@@ -1066,7 +1069,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
 
         <div class="flex gap-1.5">
           <div class="flex gap-0.5 items-center">
-            <span class="text-sm font-semibold text-left leading-[22px] dark:text-white">
+            <span class="opacity-80 dark:text-white text-[13px] font-semibold font-['Open Sans'] leading-loose tracking-tight">
               <%= if @show_completed_pages, do: "Hide", else: "Show" %> Completed
             </span>
           </div>
@@ -1963,16 +1966,19 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   defp completed_page?(false = _graded, visited?, _score, progress),
     do: visited? and progress == 1.0
 
-  defp count_completed_pages(container) do
+  defp count_completed_and_total_pages(container) do
     page_resource_type_id = Oli.Resources.ResourceType.get_id_by_type("page")
     container_resource_type_id = Oli.Resources.ResourceType.get_id_by_type("container")
 
-    Enum.reduce(container["children"], 0, fn
-      %{"resource_type_id" => ^page_resource_type_id} = page, total ->
-        if(page["completed"], do: 1, else: 0) + total
+    Enum.reduce(container["children"], {0, 0}, fn
+      %{"resource_type_id" => ^page_resource_type_id} = page, {completed_count, total_count} ->
+        {if(page["completed"], do: 1, else: 0) + completed_count, total_count + 1}
 
-      %{"resource_type_id" => ^container_resource_type_id} = section, total ->
-        count_completed_pages(section) + total
+      %{"resource_type_id" => ^container_resource_type_id} = section,
+      {completed_count, total_count} ->
+        {completed, total} = count_completed_and_total_pages(section)
+
+        {completed + completed_count, total + total_count}
     end)
   end
 
