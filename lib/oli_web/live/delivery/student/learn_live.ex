@@ -891,18 +891,15 @@ defmodule OliWeb.Delivery.Student.LearnLive do
               "title"
             ] %>
           </h2>
-          <div class="justify-start items-start gap-1 inline-flex">
-            <div class="opacity-50 dark:text-white text-xs font-normal font-['Open Sans']">Due:</div>
-            <div class="opacity-50 dark:text-white text-xs font-normal font-['Open Sans']">
-              <%= format_date(
-                Map.get(@selected_module_per_unit_resource_id, @unit["resource_id"])[
-                  "section_resource"
-                ].end_date,
-                @ctx,
-                "{WDshort} {Mshort} {D}, {YYYY}"
-              ) %>
-            </div>
-          </div>
+          <span class="opacity-50 dark:text-white text-xs font-normal font-['Open Sans']">
+            Due: <%= format_date(
+              Map.get(@selected_module_per_unit_resource_id, @unit["resource_id"])[
+                "section_resource"
+              ].end_date,
+              @ctx,
+              "{WDshort} {Mshort} {D}, {YYYY}"
+            ) %>
+          </span>
         </div>
         <div
           :if={
@@ -1325,10 +1322,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         </div>
       </div>
 
-      <div
-        id={"index_item_#{@numbering_index}_#{@resource_id}_#{@parent_due_date}"}
-        class="flex shrink items-center gap-3 w-full dark:text-white"
-      >
+      <div class="flex shrink items-center gap-3 w-full dark:text-white">
         <div class="flex flex-col gap-1 w-full">
           <div class={["flex", left_indentation(@numbering_level)]}>
             <span class="opacity-90 dark:text-white text-base font-semibold font-['Open Sans']">
