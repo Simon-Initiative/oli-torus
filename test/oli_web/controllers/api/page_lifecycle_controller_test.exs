@@ -13,7 +13,6 @@ defmodule OliWeb.PageLifecycleTest do
       conn: conn,
       map: map
     } do
-
       attempt = map.ungraded_page_user1_attempt1
 
       assert_progress(0.0, attempt.attempt_guid)
@@ -28,13 +27,11 @@ defmodule OliWeb.PageLifecycleTest do
       assert %{"result" => "success", "commandResult" => "success"} = json_response(conn, 200)
 
       assert_progress(1.0, attempt.attempt_guid)
-
     end
 
     test "fails when guid is bad", %{
       conn: conn
     } do
-
       conn =
         post(
           conn,
@@ -43,9 +40,7 @@ defmodule OliWeb.PageLifecycleTest do
         )
 
       assert %{"result" => "success", "commandResult" => "failure"} = json_response(conn, 200)
-
     end
-
   end
 
   defp assert_progress(progress, guid) do
@@ -53,7 +48,6 @@ defmodule OliWeb.PageLifecycleTest do
   end
 
   defp setup_session(%{conn: conn}) do
-
     content = %{
       "stem" => "1",
       "authoring" => %{
@@ -87,7 +81,6 @@ defmodule OliWeb.PageLifecycleTest do
       }
     }
 
-
     map =
       Seeder.base_project_with_resource2()
       |> Seeder.add_activity(%{title: "one", max_attempts: 2, content: content}, :activity)
@@ -96,7 +89,8 @@ defmodule OliWeb.PageLifecycleTest do
 
     Seeder.ensure_published(map.publication.id)
 
-    map = Seeder.add_page(
+    map =
+      Seeder.add_page(
         map,
         %{
           title: "page1",

@@ -416,8 +416,6 @@ defmodule Oli.Delivery.Attempts.Core do
     )
   end
 
-
-
   @doc """
   For a given project id, this retrieves part attempts and user information, for those part attempts
   that are evaluated and that have snapshots defined. This is a key query for powering analytics
