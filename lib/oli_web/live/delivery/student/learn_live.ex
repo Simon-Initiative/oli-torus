@@ -909,11 +909,14 @@ defmodule OliWeb.Delivery.Student.LearnLive do
               "children"
             ]
           }
+          id={"module_intro_contentin_unit_#{@unit["resource_id"]}"}
           role="module intro content"
           class="max-w-[760px] pt-[25px] pb-2.5 justify-start items-start gap-[23px] inline-flex"
         >
           <div class="flex flex-col opacity-80">
             <span
+              data-toggle_read_more_button_id={"toggle_read_more_#{Map.get(@selected_module_per_unit_resource_id, @unit["resource_id"])["resource_id"]}"}
+              phx-hook="ToggleReadMore"
               id={"selected_module_in_unit_#{@unit["resource_id"]}_intro_content"}
               class="text-sm font-normal font-['Open Sans'] leading-[30px] max-w-[760px] overflow-hidden dark:text-white"
               style="display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;"
@@ -930,34 +933,39 @@ defmodule OliWeb.Delivery.Student.LearnLive do
                 )
               ) %>
             </span>
-            <button
-              id={"selected_module_in_unit_#{@unit["resource_id"]}_read_more_intro"}
-              phx-click={
-                JS.remove_attribute("style",
-                  to: "#selected_module_in_unit_#{@unit["resource_id"]}_intro_content"
-                )
-                |> JS.toggle(to: "#selected_module_in_unit_#{@unit["resource_id"]}_read_less_intro")
-                |> JS.toggle()
-              }
-              class="text-blue-500 text-sm font-normal font-['Open Sans'] leading-[30px] ml-auto"
+            <div
+              id={"toggle_read_more_#{Map.get(@selected_module_per_unit_resource_id, @unit["resource_id"])["resource_id"]}"}
+              class="ml-auto"
             >
-              Read more
-            </button>
-            <button
-              id={"selected_module_in_unit_#{@unit["resource_id"]}_read_less_intro"}
-              phx-click={
-                JS.set_attribute(
-                  {"style",
-                   "display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;"},
-                  to: "#selected_module_in_unit_#{@unit["resource_id"]}_intro_content"
-                )
-                |> JS.toggle(to: "#selected_module_in_unit_#{@unit["resource_id"]}_read_more_intro")
-                |> JS.toggle()
-              }
-              class="hidden text-blue-500 text-sm font-normal font-['Open Sans'] leading-[30px] ml-auto"
-            >
-              Read less
-            </button>
+              <button
+                id={"read_more_module_intro_in_unit_#{@unit["resource_id"]}"}
+                phx-click={
+                  JS.remove_attribute("style",
+                    to: "#selected_module_in_unit_#{@unit["resource_id"]}_intro_content"
+                  )
+                  |> JS.toggle(to: "#read_less_module_intro_in_unit_#{@unit["resource_id"]}")
+                  |> JS.toggle()
+                }
+                class="text-blue-500 text-sm font-normal font-['Open Sans'] leading-[30px] ml-auto"
+              >
+                Read more
+              </button>
+              <button
+                id={"read_less_module_intro_in_unit_#{@unit["resource_id"]}"}
+                phx-click={
+                  JS.set_attribute(
+                    {"style",
+                     "display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;"},
+                    to: "#selected_module_in_unit_#{@unit["resource_id"]}_intro_content"
+                  )
+                  |> JS.toggle(to: "#read_more_module_intro_in_unit_#{@unit["resource_id"]}")
+                  |> JS.toggle()
+                }
+                class="hidden text-blue-500 text-sm font-normal font-['Open Sans'] leading-[30px] ml-auto"
+              >
+                Read less
+              </button>
+            </div>
           </div>
         </div>
         <button
