@@ -1291,7 +1291,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       })
 
     ~H"""
-    <div
+    <button
       :if={
         display_module_item?(
           @show_completed_pages,
@@ -1301,37 +1301,43 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         )
       }
       role={"#{@type} #{@numbering_index} details"}
-      class="w-full h-[42px] py-2.5 rounded-lg justify-start items-start gap-5 inline-flex"
+      class="w-full pl-[5px] pr-[7px] py-2.5 rounded-lg justify-start items-center gap-5 flex rounded-lg focus:bg-[#000000]/5 hover:bg-[#000000]/5 dark:focus:bg-[#FFFFFF]/5 dark:hover:bg-[#FFFFFF]/5"
       id={"index_item_#{@resource_id}_#{@parent_due_date}"}
+      phx-click={
+        JS.toggle(
+          to: "#section_group_#{@resource_id}_#{@parent_due_date}",
+          out: {"fade-out duration-300", "opacity-100", "opacity-0"},
+          in: {"fade-in duration-300", "opacity-0", "opacity-100"},
+          display: "flex"
+        )
+        |> JS.push("expand_section")
+      }
+      phx-value-resource_id={@resource_id}
+      phx-value-parent_due_date={@parent_due_date}
+      phx-value-module_resource_id={@module_resource_id}
     >
-      <.no_icon />
+      <div class="justify-start items-start gap-5 flex">
+        <.no_icon />
+        <div class="w-[26px] justify-start items-center">
+          <div class="grow shrink basis-0 opacity-60 text-white text-[13px] font-semibold font-['Open Sans'] capitalize">
+            <.numbering_index type={@type} index={@numbering_index} />
+          </div>
+        </div>
+      </div>
 
       <div
         id={"index_item_#{@numbering_index}_#{@resource_id}_#{@parent_due_date}"}
-        phx-click={
-          JS.toggle(
-            to: "#section_group_#{@resource_id}_#{@parent_due_date}",
-            out: {"fade-out duration-300", "opacity-100", "opacity-0"},
-            in: {"fade-in duration-300", "opacity-0", "opacity-100"},
-            display: "flex"
-          )
-          |> JS.push("expand_section")
-        }
-        phx-value-resource_id={@resource_id}
-        phx-value-parent_due_date={@parent_due_date}
-        phx-value-module_resource_id={@module_resource_id}
-        class="flex shrink items-center gap-3 w-full dark:text-white cursor-pointer hover:bg-gray-200/70 dark:hover:bg-gray-800"
+        class="flex shrink items-center gap-3 w-full dark:text-white"
       >
-        <.numbering_index type={@type} index={@numbering_index} />
         <div class="flex flex-col gap-1 w-full">
           <div class={["flex", left_indentation(@numbering_level)]}>
-            <span class="text-[16px] leading-[22px] pr-2 font-bold dark:text-white">
+            <span class="opacity-90 dark:text-white text-base font-semibold font-['Open Sans']">
               <%= "#{@title}" %>
             </span>
           </div>
         </div>
       </div>
-    </div>
+    </button>
     <div
       id={"section_group_#{@resource_id}_#{@parent_due_date}"}
       class={[
@@ -2399,11 +2405,11 @@ defmodule OliWeb.Delivery.Student.LearnLive do
 
   defp left_indentation(numbering_level) do
     case numbering_level do
-      4 -> "ml-[30px]"
-      5 -> "ml-[60px]"
-      6 -> "ml-[90px]"
-      7 -> "ml-[120px]"
-      level when level >= 8 -> "ml-[150px]"
+      4 -> "ml-[20px]"
+      5 -> "ml-[40px]"
+      6 -> "ml-[60px]"
+      7 -> "ml-[80px]"
+      level when level >= 8 -> "ml-[100px]"
       _ -> "ml-0"
     end
   end
