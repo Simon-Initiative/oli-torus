@@ -31,6 +31,21 @@ defmodule OliWeb.PageLifecycleTest do
 
     end
 
+    test "fails when guid is bad", %{
+      conn: conn
+    } do
+
+      conn =
+        post(
+          conn,
+          Routes.page_lifecycle_path(conn, :transition),
+          %{"attempt_guid" => "this_guid_does_not_exist", "action" => "mark_completed"}
+        )
+
+      assert %{"result" => "success", "commandResult" => "failure"} = json_response(conn, 200)
+
+    end
+
   end
 
   defp assert_progress(progress, guid) do
