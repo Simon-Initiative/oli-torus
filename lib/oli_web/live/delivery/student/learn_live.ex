@@ -853,7 +853,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       </div>
       <.custom_focus_wrap
         :if={Map.has_key?(@selected_module_per_unit_resource_id, @unit["resource_id"])}
-        class="flex-col py-6 md:px-[50px] gap-x-4 lg:gap-x-12 gap-y-6"
+        class="px-[50px] rounded-lg flex-col justify-start items-center gap-[25px] inline-flex"
         role="module_details"
         id={"selected_module_in_unit_#{@unit["resource_id"]}"}
         data-animate={
@@ -877,7 +877,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       >
         <div
           role="expanded module header"
-          class="px-6 py-0.5 flex-col justify-start items-center gap-2 inline-flex"
+          class="max-w-[760px] px-6 py-0.5 flex-col justify-start items-center gap-2 inline-flex"
         >
           <div class="justify-start items-start gap-1 inline-flex">
             <div class="opacity-60 dark:text-white text-sm font-bold font-['Open Sans'] uppercase tracking-tight">
@@ -904,26 +904,22 @@ defmodule OliWeb.Delivery.Student.LearnLive do
             </div>
           </div>
         </div>
-        <div role="intro content and index" class="flex flex-col lg:flex-row lg:gap-12">
-          <div class="flex flex-row lg:w-1/2 lg:flex-col">
-            <div
-              :if={
-                Map.get(@selected_module_per_unit_resource_id, @unit["resource_id"])[
-                  "intro_content"
-                ][
-                  "children"
-                ]
-              }
-              class={[
-                "intro-content",
-                maybe_additional_margin_top(
-                  Map.get(@selected_module_per_unit_resource_id, @unit["resource_id"])[
-                    "intro_content"
-                  ][
-                    "children"
-                  ]
-                )
-              ]}
+        <div
+          :if={
+            Map.get(@selected_module_per_unit_resource_id, @unit["resource_id"])[
+              "intro_content"
+            ][
+              "children"
+            ]
+          }
+          role="module intro content"
+          class="max-w-[760px] pt-[25px] pb-2.5 justify-start items-start gap-[23px] inline-flex"
+        >
+          <div class="flex flex-col opacity-80">
+            <span
+              id={"selected_module_in_unit_#{@unit["resource_id"]}_intro_content"}
+              class="text-sm font-normal font-['Open Sans'] leading-[30px] max-w-[760px] overflow-hidden dark:text-white"
+              style="display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;"
             >
               <%= Phoenix.HTML.raw(
                 Oli.Rendering.Content.render(
@@ -936,15 +932,46 @@ defmodule OliWeb.Delivery.Student.LearnLive do
                   Oli.Rendering.Content.Html
                 )
               ) %>
-            </div>
+            </span>
             <button
-              :if={@assistant_enabled}
-              phx-click={JS.dispatch("click", to: "#ai_bot_collapsed_button")}
-              class="rounded-[4px] p-[10px] flex justify-center items-center ml-auto mt-[42px] text-[14px] leading-[19px] tracking-[0.024px] font-normal text-white bg-blue-500 hover:bg-blue-600 dark:text-white dark:bg-[rgba(255,255,255,0.10);] dark:hover:bg-gray-800"
+              id={"selected_module_in_unit_#{@unit["resource_id"]}_read_more_intro"}
+              phx-click={
+                JS.remove_attribute("style",
+                  to: "#selected_module_in_unit_#{@unit["resource_id"]}_intro_content"
+                )
+                |> JS.toggle(to: "#selected_module_in_unit_#{@unit["resource_id"]}_read_less_intro")
+                |> JS.toggle()
+              }
+              class="text-blue-500 text-sm font-normal font-['Open Sans'] leading-[30px] ml-auto"
             >
-              Let's discuss?
+              Read more
+            </button>
+            <button
+              id={"selected_module_in_unit_#{@unit["resource_id"]}_read_less_intro"}
+              phx-click={
+                JS.set_attribute(
+                  {"style",
+                   "display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;"},
+                  to: "#selected_module_in_unit_#{@unit["resource_id"]}_intro_content"
+                )
+                |> JS.toggle(to: "#selected_module_in_unit_#{@unit["resource_id"]}_read_more_intro")
+                |> JS.toggle()
+              }
+              class="hidden text-blue-500 text-sm font-normal font-['Open Sans'] leading-[30px] ml-auto"
+            >
+              Read less
             </button>
           </div>
+        </div>
+        <button
+          :if={@assistant_enabled}
+          phx-click={JS.dispatch("click", to: "#ai_bot_collapsed_button")}
+          class="h-[39px] p-2.5 bg-blue-700 rounded text-white text-sm font-semibold font-['Open Sans'] tracking-tight"
+        >
+          Let's discuss?
+        </button>
+
+        <div role="intro content and index" class="flex flex-col lg:flex-row lg:gap-12">
           <div class="mt-[57px] lg:w-1/2">
             <% module =
               Map.get(assigns.selected_module_per_unit_resource_id, assigns.unit["resource_id"]) %>
@@ -1836,16 +1863,6 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       </svg>
     </div>
     """
-  end
-
-  _docp = """
-    Currently the intro_content for a revision does not support h1 tags. So,
-    if there is no <h1> tag in the content then we need to add an additional margin
-    to match the given figma design.
-  """
-
-  defp maybe_additional_margin_top(content) do
-    if !String.contains?(Jason.encode!(content), "\"type\":\"h1\""), do: "mt-[52px]"
   end
 
   defp get_module(hierarchy, unit_resource_id, module_resource_id) do
