@@ -22,16 +22,16 @@ defmodule OliWeb.LiveSessionPlugs.RedirectAdaptiveChromeless do
     end
   end
 
+  def on_mount(:default, _params, _session, socket) do
+    {:cont, socket}
+  end
+
   def adaptive_chromeless_url(section_slug, revision_slug, nil),
     do: ~p"/sections/#{section_slug}/adaptive_lesson/#{revision_slug}"
 
   def adaptive_chromeless_url(section_slug, revision_slug, request_path),
     do:
       ~p"/sections/#{section_slug}/adaptive_lesson/#{revision_slug}?#{%{request_path: request_path}}"
-
-  def on_mount(:default, _params, _session, socket) do
-    {:cont, socket}
-  end
 
   defp is_adaptive_chromeless_view?(revision_slug) do
     Repo.exists?(
