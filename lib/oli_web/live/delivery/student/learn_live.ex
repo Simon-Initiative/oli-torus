@@ -1465,10 +1465,10 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       <div :if={@graded} class="w-[22px] h-[22px] opacity-60 flex items-center justify-center">
         <.clock_icon />
       </div>
-      <div class="text-right dark:text-white opacity-50 whitespace-nowrap">
-        <span class="opacity-60 text-sm font-semibold font-['Open Sans']">
+      <div class="text-right dark:text-white opacity-60 whitespace-nowrap">
+        <span class="text-sm font-semibold font-['Open Sans']">
           <%= parse_minutes(@duration_minutes) %>
-          <span class="w-[25px] self-stretch opacity-60 text-[13px] font-semibold font-['Open Sans']">
+          <span class="w-[25px] self-stretch text-[13px] font-semibold font-['Open Sans']">
             min
           </span>
         </span>
