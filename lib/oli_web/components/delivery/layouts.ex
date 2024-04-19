@@ -29,10 +29,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
     ~H"""
     <div class="fixed z-50 w-full h-14 flex flex-row bg-delivery-header dark:bg-delivery-header-dark shadow-sm">
       <div class="w-48 p-2" tab-index="0">
-        <a
-          className="block lg:p-2 lg:mb-14 mx-auto"
-          href={logo_link_path(@preview_mode, @section, @ctx.user)}
-        >
+        <a href={logo_link_path(@preview_mode, @section, @ctx.user)}>
           <.logo_img />
         </a>
       </div>
@@ -265,8 +262,8 @@ defmodule OliWeb.Components.Delivery.Layouts do
       |> assign(:logo_src_dark, Branding.brand_logo_url_dark(assigns[:section]))
 
     ~H"""
-    <img src={@logo_src} class="inline-block dark:hidden" alt="logo" />
-    <img src={@logo_src_dark} class="hidden dark:inline-block" alt="logo dark" />
+    <img src={@logo_src} class="inline-block dark:hidden h-9" alt="logo" />
+    <img src={@logo_src_dark} class="hidden dark:inline-block h-9" alt="logo dark" />
     """
   end
 
