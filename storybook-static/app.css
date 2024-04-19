@@ -5033,10 +5033,6 @@ table.table-striped tbody tr:nth-child(even) {
   height: 56px;
 }
 
-.h-\[60px\] {
-  height: 60px;
-}
-
 .h-\[64px\] {
   height: 64px;
 }
@@ -5051,10 +5047,6 @@ table.table-striped tbody tr:nth-child(even) {
 
 .h-\[74px\] {
   height: 74px;
-}
-
-.h-\[90px\] {
-  height: 90px;
 }
 
 .h-\[calc\(100\%-64px\)\] {
@@ -5177,6 +5169,10 @@ table.table-striped tbody tr:nth-child(even) {
   width: 0.5rem;
 }
 
+.w-2\/12 {
+  width: 16.666667%;
+}
+
 .w-2\/3 {
   width: 66.666667%;
 }
@@ -5195,6 +5191,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .w-3 {
   width: 0.75rem;
+}
+
+.w-3\/12 {
+  width: 25%;
 }
 
 .w-32 {
@@ -5255,6 +5255,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .w-9 {
   width: 2.25rem;
+}
+
+.w-9\/12 {
+  width: 75%;
 }
 
 .w-96 {
@@ -6927,10 +6931,6 @@ table.table-striped tbody tr:nth-child(even) {
 .bg-white {
   --tw-bg-opacity: 1;
   background-color: rgb(255 255 255 / var(--tw-bg-opacity));
-}
-
-.bg-workspace-footer-bg {
-  background-color: transparent;
 }
 
 .bg-yellow-100 {
@@ -13026,10 +13026,6 @@ https://tailwindcss.com/docs/utility-first
   background-color: rgb(255 255 255 / 0.05);
 }
 
-.dark .dark\:bg-workspace-footer-bg-dark {
-  background-color: transparent;
-}
-
 .dark .dark\:bg-yellow-600 {
   --tw-bg-opacity: 1;
   background-color: rgb(232 149 9 / var(--tw-bg-opacity));
@@ -13702,6 +13698,18 @@ https://tailwindcss.com/docs/utility-first
 
   .sm\:pb-0 {
     padding-bottom: 0px;
+  }
+
+  .sm\:text-left {
+    text-align: left;
+  }
+
+  .sm\:text-center {
+    text-align: center;
+  }
+
+  .sm\:text-right {
+    text-align: right;
   }
 
   .sm\:text-sm {
