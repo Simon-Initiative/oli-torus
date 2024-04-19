@@ -60,7 +60,6 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Ungraded do
       }) do
     now = DateTime.utc_now()
 
-    # mark resource attempt as evaluated
     update_resource_attempt(resource_attempt, %{
       date_evaluated: now,
       date_submitted: now,
