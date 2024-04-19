@@ -7202,6 +7202,11 @@ table.table-striped tbody tr:nth-child(even) {
   padding-right: 2.5rem;
 }
 
+.px-12 {
+  padding-left: 3rem;
+  padding-right: 3rem;
+}
+
 .px-14 {
   padding-left: 3.5rem;
   padding-right: 3.5rem;
@@ -7470,10 +7475,6 @@ table.table-striped tbody tr:nth-child(even) {
 
 .pl-11 {
   padding-left: 2.75rem;
-}
-
-.pl-12 {
-  padding-left: 3rem;
 }
 
 .pl-16 {
@@ -11686,6 +11687,12 @@ https://tailwindcss.com/docs/utility-first
   /* IE and Edge */
   scrollbar-width: none;
   /* Firefox */
+}
+
+.search-result em {
+  --tw-bg-opacity: 1;
+  background-color: rgb(254 244 227 / var(--tw-bg-opacity));
+  font-style: normal;
 }
 
 @media (min-width: 768px) {
