@@ -1,8 +1,8 @@
 defmodule Oli.Analytics.ByObjective do
   import Ecto.Query, warn: false
+  alias Oli.Publishing.DeliveryResolver
   alias Oli.Delivery.Snapshots.Snapshot
-  alias Oli.Delivery.Sections.SectionResource
-
+  alias Oli.Resources.ResourceType
   alias Oli.Repo
   alias Oli.Analytics.Common
   alias Oli.Publishing
@@ -14,17 +14,15 @@ defmodule Oli.Analytics.ByObjective do
   def query_against_project_slug(project_slug, filtered_sections) do
     project_slug
     |> get_base_query(get_activity_objectives(project_slug), filtered_sections)
-    |> get_query_with_join_filter(filtered_sections)
     |> Repo.all()
   end
 
   defp get_base_query(project_slug, activity_objectives, filtered_sections) do
     subquery =
       if filtered_sections != [] do
-        Publishing.query_unpublished_revisions_by_type_and_section(
-          project_slug,
-          "objective",
-          filtered_sections
+        DeliveryResolver.revisions_filter_by_section_ids(
+          filtered_sections,
+          ResourceType.id_for_objective()
         )
       else
         Publishing.query_unpublished_revisions_by_type(
@@ -48,14 +46,6 @@ defmodule Oli.Analytics.ByObjective do
       },
       preload: [:resource_type]
     )
-  end
-
-  defp get_query_with_join_filter(query, filter) do
-    from objective in query,
-      join: resource in assoc(objective, :resource),
-      left_join: section_resource in SectionResource,
-      on: resource.id == section_resource.resource_id,
-      where: section_resource.section_id in ^filter
   end
 
   defp get_activity_objectives(project_slug) do

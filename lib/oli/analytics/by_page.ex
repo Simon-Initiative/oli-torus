@@ -1,10 +1,11 @@
 defmodule Oli.Analytics.ByPage do
   import Ecto.Query, warn: false
-  alias Oli.Delivery.Sections.SectionResource
+  alias Oli.Publishing.DeliveryResolver
   alias Oli.Delivery.Snapshots.Snapshot
   alias Oli.Repo
   alias Oli.Analytics.Common
   alias Oli.Publishing
+  alias Oli.Resources.ResourceType
   alias Oli.Authoring.Course.Project
 
   def query_against_project_slug(project_slug, []),
@@ -15,25 +16,15 @@ defmodule Oli.Analytics.ByPage do
   def query_against_project_slug(project_slug, filtered_sections) do
     project_slug
     |> get_base_query(get_activity_pages(project_slug), filtered_sections)
-    |> get_query_with_join_filter(filtered_sections)
     |> Repo.all()
-  end
-
-  defp get_query_with_join_filter(query, filter_list) do
-    from page in query,
-      join: resource in assoc(page, :resource),
-      left_join: section_resource in SectionResource,
-      on: resource.id == section_resource.resource_id,
-      where: section_resource.section_id in ^filter_list
   end
 
   defp get_base_query(project_slug, activity_pages, filtered_sections) do
     subquery =
       if filtered_sections != [] do
-        Publishing.query_unpublished_revisions_by_type_and_section(
-          project_slug,
-          "page",
-          filtered_sections
+        DeliveryResolver.revisions_filter_by_section_ids(
+          filtered_sections,
+          ResourceType.id_for_page()
         )
       else
         Publishing.query_unpublished_revisions_by_type(
@@ -44,10 +35,9 @@ defmodule Oli.Analytics.ByPage do
 
     subquery_activity =
       if filtered_sections != [] do
-        Publishing.query_unpublished_revisions_by_type_and_section(
-          project_slug,
-          "activity",
-          filtered_sections
+        DeliveryResolver.revisions_filter_by_section_ids(
+          filtered_sections,
+          ResourceType.id_for_page()
         )
       else
         Publishing.query_unpublished_revisions_by_type(
@@ -72,7 +62,8 @@ defmodule Oli.Analytics.ByPage do
         number_of_attempts: analytics.number_of_attempts,
         relative_difficulty: analytics.relative_difficulty
       },
-      preload: [:resource_type]
+      preload: [:resource_type],
+      distinct: [activity]
     )
   end
 
