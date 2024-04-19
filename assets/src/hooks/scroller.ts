@@ -6,7 +6,7 @@ export const Scroller = {
   // It is triggered from the backend as follows:
   //
   //    def handle_event(..., socket) do
-  //      {:no_reply, push_event(socket, "scroll-y-to-target", %{id: "element-id", offset: 50, scroll: true, scroll_delay: 500})
+  //      {:no_reply, push_event(socket, "scroll-y-to-target", %{id: "element-id", offset: 50, scroll: true, scroll_delay: 500})}
   //    end
   //
   // Expects the id of the element to scroll to, an optional offset
