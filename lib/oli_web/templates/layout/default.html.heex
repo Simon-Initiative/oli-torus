@@ -10,6 +10,8 @@
       <%= @inner_content %>
     </main>
 
-    <%= render(OliWeb.LayoutView, "_footer.html", assigns) %>
+    <OliWeb.Components.Footer.delivery_footer license={
+      Map.get(assigns, :has_license) && assigns[:license]
+    } />
   </div>
 <% end %>
