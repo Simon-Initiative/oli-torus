@@ -1137,7 +1137,7 @@ select {
   --color-toolbar-border: #e5e6e8;
   --color-toolbar-border-dark: #55565d;
   --color-delivery-body: #f3f5f8;
-  --color-delivery-body-dark: #171717;
+  --color-delivery-body-dark: #0D0C0F;
   --color-delivery-body-color: #373A44;
   --color-delivery-body-color-dark: #fff;
   --color-delivery-header: #ffffff;
@@ -4018,10 +4018,6 @@ table.table-striped tbody tr:nth-child(even) {
   right: -0.25rem;
 }
 
-.-right-4 {
-  right: -1rem;
-}
-
 .-right-\[114px\] {
   right: -114px;
 }
@@ -4054,8 +4050,8 @@ table.table-striped tbody tr:nth-child(even) {
   top: -0.7px;
 }
 
-.-top-\[18px\] {
-  top: -18px;
+.-top-\[8px\] {
+  top: -8px;
 }
 
 .bottom-0 {
@@ -4120,6 +4116,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .left-\[-10px\] {
   left: -10px;
+}
+
+.left-\[8px\] {
+  left: 8px;
 }
 
 .right-0 {
@@ -4200,6 +4200,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .top-6 {
   top: 1.5rem;
+}
+
+.top-\[35px\] {
+  top: 35px;
 }
 
 .top-\[40px\] {
@@ -4509,10 +4513,6 @@ table.table-striped tbody tr:nth-child(even) {
   margin-bottom: 2.25rem;
 }
 
-.mb-\[10px\] {
-  margin-bottom: 10px;
-}
-
 .mb-\[9px\] {
   margin-bottom: 9px;
 }
@@ -4565,36 +4565,36 @@ table.table-striped tbody tr:nth-child(even) {
   margin-left: -1px;
 }
 
-.ml-\[10px\] {
-  margin-left: 10px;
+.ml-\[100px\] {
+  margin-left: 100px;
 }
 
-.ml-\[120px\] {
-  margin-left: 120px;
+.ml-\[10px\] {
+  margin-left: 10px;
 }
 
 .ml-\[12px\] {
   margin-left: 12px;
 }
 
-.ml-\[150px\] {
-  margin-left: 150px;
-}
-
 .ml-\[16px\] {
   margin-left: 16px;
+}
+
+.ml-\[20px\] {
+  margin-left: 20px;
 }
 
 .ml-\[24px\] {
   margin-left: 24px;
 }
 
-.ml-\[30px\] {
-  margin-left: 30px;
-}
-
 .ml-\[36px\] {
   margin-left: 36px;
+}
+
+.ml-\[40px\] {
+  margin-left: 40px;
 }
 
 .ml-\[48px\] {
@@ -4609,8 +4609,8 @@ table.table-striped tbody tr:nth-child(even) {
   margin-left: 6px;
 }
 
-.ml-\[90px\] {
-  margin-left: 90px;
+.ml-\[80px\] {
+  margin-left: 80px;
 }
 
 .ml-auto {
@@ -4729,20 +4729,8 @@ table.table-striped tbody tr:nth-child(even) {
   margin-top: 2px;
 }
 
-.mt-\[42px\] {
-  margin-top: 42px;
-}
-
 .mt-\[50px\] {
   margin-top: 50px;
-}
-
-.mt-\[52px\] {
-  margin-top: 52px;
-}
-
-.mt-\[57px\] {
-  margin-top: 57px;
 }
 
 .mt-\[7px\] {
@@ -4961,6 +4949,10 @@ table.table-striped tbody tr:nth-child(even) {
   height: 201px;
 }
 
+.h-\[22px\] {
+  height: 22px;
+}
+
 .h-\[247px\] {
   height: 247px;
 }
@@ -4995,6 +4987,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .h-\[38px\] {
   height: 38px;
+}
+
+.h-\[39px\] {
+  height: 39px;
 }
 
 .h-\[400px\] {
@@ -5293,12 +5289,20 @@ table.table-striped tbody tr:nth-child(even) {
   width: 20px;
 }
 
+.w-\[22px\] {
+  width: 22px;
+}
+
 .w-\[24px\] {
   width: 24px;
 }
 
 .w-\[25px\] {
   width: 25px;
+}
+
+.w-\[26px\] {
+  width: 26px;
 }
 
 .w-\[27px\] {
@@ -5447,6 +5451,10 @@ table.table-striped tbody tr:nth-child(even) {
   max-width: 720px;
 }
 
+.max-w-\[760px\] {
+  max-width: 760px;
+}
+
 .max-w-\[880px\] {
   max-width: 880px;
 }
@@ -5536,11 +5544,6 @@ table.table-striped tbody tr:nth-child(even) {
   transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
 }
 
-.-translate-x-\[calc\(100\%\+10px\)\] {
-  --tw-translate-x: calc(calc(100% + 10px) * -1);
-  transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
-}
-
 .translate-x-0 {
   --tw-translate-x: 0px;
   transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
@@ -5598,6 +5601,11 @@ table.table-striped tbody tr:nth-child(even) {
 
 .translate-y-full {
   --tw-translate-y: 100%;
+  transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
+}
+
+.-rotate-90 {
+  --tw-rotate: -90deg;
   transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
 }
 
@@ -5881,6 +5889,10 @@ table.table-striped tbody tr:nth-child(even) {
   gap: 1rem;
 }
 
+.gap-5 {
+  gap: 1.25rem;
+}
+
 .gap-6 {
   gap: 1.5rem;
 }
@@ -5905,6 +5917,10 @@ table.table-striped tbody tr:nth-child(even) {
   gap: 1px;
 }
 
+.gap-\[23px\] {
+  gap: 23px;
+}
+
 .gap-\[25px\] {
   gap: 25px;
 }
@@ -5919,10 +5935,6 @@ table.table-striped tbody tr:nth-child(even) {
 
 .gap-\[6px\] {
   gap: 6px;
-}
-
-.gap-\[8px\] {
-  gap: 8px;
 }
 
 .gap-x-2 {
@@ -5961,10 +5973,6 @@ table.table-striped tbody tr:nth-child(even) {
 
 .gap-y-4 {
   row-gap: 1rem;
-}
-
-.gap-y-6 {
-  row-gap: 1.5rem;
 }
 
 .space-x-2 > :not([hidden]) ~ :not([hidden]) {
@@ -6143,10 +6151,6 @@ table.table-striped tbody tr:nth-child(even) {
 
 .rounded-\[3px\] {
   border-radius: 3px;
-}
-
-.rounded-\[4px\] {
-  border-radius: 4px;
 }
 
 .rounded-\[60px\] {
@@ -7025,6 +7029,10 @@ table.table-striped tbody tr:nth-child(even) {
   background-repeat: no-repeat;
 }
 
+.fill-\[\#0CAF61\] {
+  fill: #0CAF61;
+}
+
 .fill-\[\#0caf61\] {
   fill: #0caf61;
 }
@@ -7067,6 +7075,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .fill-white {
   fill: #fff;
+}
+
+.stroke-\[\#0CAF61\] {
+  stroke: #0CAF61;
 }
 
 .stroke-\[\#333333\] {
@@ -7148,10 +7160,6 @@ table.table-striped tbody tr:nth-child(even) {
 
 .p-8 {
   padding: 2rem;
-}
-
-.p-\[10px\] {
-  padding: 10px;
 }
 
 .p-\[25px\] {
@@ -7437,6 +7445,10 @@ table.table-striped tbody tr:nth-child(even) {
   padding-bottom: 0.5rem;
 }
 
+.pb-2\.5 {
+  padding-bottom: 0.625rem;
+}
+
 .pb-20 {
   padding-bottom: 5rem;
 }
@@ -7521,6 +7533,10 @@ table.table-striped tbody tr:nth-child(even) {
   padding-left: 3.12px;
 }
 
+.pl-\[5px\] {
+  padding-left: 5px;
+}
+
 .pr-0 {
   padding-right: 0px;
 }
@@ -7565,6 +7581,10 @@ table.table-striped tbody tr:nth-child(even) {
   padding-right: 2.08px;
 }
 
+.pr-\[7px\] {
+  padding-right: 7px;
+}
+
 .pt-0 {
   padding-top: 0px;
 }
@@ -7607,6 +7627,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .pt-\[15px\] {
   padding-top: 15px;
+}
+
+.pt-\[25px\] {
+  padding-top: 25px;
 }
 
 .pt-\[3px\] {
@@ -7766,6 +7790,10 @@ table.table-striped tbody tr:nth-child(even) {
   font-size: 0.8rem;
 }
 
+.\!font-normal {
+  font-weight: 400 !important;
+}
+
 .font-bold {
   font-weight: 700;
 }
@@ -7859,6 +7887,10 @@ table.table-striped tbody tr:nth-child(even) {
   line-height: 25px;
 }
 
+.leading-\[30px\] {
+  line-height: 30px;
+}
+
 .leading-\[32px\] {
   line-height: 32px;
 }
@@ -7887,16 +7919,8 @@ table.table-striped tbody tr:nth-child(even) {
   line-height: 1.25;
 }
 
-.tracking-\[0\.024px\] {
-  letter-spacing: 0.024px;
-}
-
 .tracking-\[0\.02px\] {
   letter-spacing: 0.02px;
-}
-
-.tracking-\[0\.72px\] {
-  letter-spacing: 0.72px;
 }
 
 .tracking-\[0\.96px\] {
@@ -7944,11 +7968,6 @@ table.table-striped tbody tr:nth-child(even) {
 .text-\[\#0CAF61\] {
   --tw-text-opacity: 1;
   color: rgb(12 175 97 / var(--tw-text-opacity));
-}
-
-.text-\[\#3399FF\] {
-  --tw-text-opacity: 1;
-  color: rgb(51 153 255 / var(--tw-text-opacity));
 }
 
 .text-\[\#468AEF\] {
@@ -8270,6 +8289,10 @@ table.table-striped tbody tr:nth-child(even) {
 .antialiased {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+.\!opacity-100 {
+  opacity: 1 !important;
 }
 
 .opacity-0 {
@@ -11644,32 +11667,6 @@ The prefered way is to do it directly in the HTML with TailwindCSS, as explained
 https://tailwindcss.com/docs/utility-first
 */
 
-.intro-content p {
-  padding-bottom: 0.5rem;
-  font-size: 14px;
-  font-weight: 400;
-  line-height: 30px;
-  opacity: 0.8;
-}
-
-.dark .intro-content p {
-  --tw-text-opacity: 1;
-  color: rgb(255 255 255 / var(--tw-text-opacity));
-}
-
-.intro-content h1 {
-  margin-bottom: 20px;
-  font-size: 1.5rem;
-  line-height: 2rem;
-  font-weight: 300;
-  letter-spacing: 0.02px;
-}
-
-.dark .intro-content h1 {
-  --tw-text-opacity: 1;
-  color: rgb(255 255 255 / var(--tw-text-opacity));
-}
-
 .truncate-form-control p {
   overflow: hidden;
   text-overflow: ellipsis;
@@ -11963,6 +11960,10 @@ https://tailwindcss.com/docs/utility-first
   background-color: rgb(59 59 77 / var(--tw-bg-opacity)) !important;
 }
 
+.hover\:bg-\[\#000000\]\/5:hover {
+  background-color: rgb(0 0 0 / 0.05);
+}
+
 .hover\:bg-blue-600:hover {
   --tw-bg-opacity: 1;
   background-color: rgb(39 92 175 / var(--tw-bg-opacity));
@@ -12011,10 +12012,6 @@ https://tailwindcss.com/docs/utility-first
 .hover\:bg-gray-200:hover {
   --tw-bg-opacity: 1;
   background-color: rgb(229 229 229 / var(--tw-bg-opacity));
-}
-
-.hover\:bg-gray-200\/70:hover {
-  background-color: rgb(229 229 229 / 0.7);
 }
 
 .hover\:bg-gray-400:hover {
@@ -12078,6 +12075,14 @@ https://tailwindcss.com/docs/utility-first
 .hover\:text-xl:hover {
   font-size: 1.25rem;
   line-height: 1.75rem;
+}
+
+.hover\:font-bold:hover {
+  font-weight: 700;
+}
+
+.hover\:font-medium:hover {
+  font-weight: 500;
 }
 
 .hover\:text-\[\#468AEF\]\/70:hover {
@@ -12258,9 +12263,26 @@ https://tailwindcss.com/docs/utility-first
   border-color: transparent;
 }
 
+.focus\:bg-\[\#000000\]\/5:focus {
+  background-color: rgb(0 0 0 / 0.05);
+}
+
+.focus\:bg-blue-600:focus {
+  --tw-bg-opacity: 1;
+  background-color: rgb(39 92 175 / var(--tw-bg-opacity));
+}
+
 .focus\:bg-gray-100:focus {
   --tw-bg-opacity: 1;
   background-color: rgb(245 245 245 / var(--tw-bg-opacity));
+}
+
+.focus\:font-bold:focus {
+  font-weight: 700;
+}
+
+.focus\:font-medium:focus {
+  font-weight: 500;
 }
 
 .focus\:text-blue-700:focus {
@@ -12872,10 +12894,6 @@ https://tailwindcss.com/docs/utility-first
   background-color: rgba(255,255,255,0.06);
 }
 
-.dark .dark\:bg-\[rgba\(255\2c 255\2c 255\2c 0\.10\)\;\] {
-  background-color: rgba(255,255,255,0.10);;
-}
-
 .dark .dark\:bg-black {
   --tw-bg-opacity: 1;
   background-color: rgb(0 0 0 / var(--tw-bg-opacity));
@@ -12905,7 +12923,7 @@ https://tailwindcss.com/docs/utility-first
 
 .dark .dark\:bg-delivery-body-dark {
   --tw-bg-opacity: 1;
-  background-color: rgb(23 23 23 / var(--tw-bg-opacity));
+  background-color: rgb(13 12 15 / var(--tw-bg-opacity));
 }
 
 .dark .dark\:bg-delivery-header-dark {
@@ -13045,6 +13063,10 @@ https://tailwindcss.com/docs/utility-first
   --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);
 }
 
+.dark .dark\:fill-\[\#12E56A\] {
+  fill: #12E56A;
+}
+
 .dark .dark\:fill-\[\#242533\] {
   fill: #242533;
 }
@@ -13055,6 +13077,10 @@ https://tailwindcss.com/docs/utility-first
 
 .dark .dark\:fill-white {
   fill: #fff;
+}
+
+.dark .dark\:stroke-\[\#12E56A\] {
+  stroke: #12E56A;
 }
 
 .dark .dark\:stroke-white {
@@ -13072,6 +13098,11 @@ https://tailwindcss.com/docs/utility-first
 .dark .dark\:\!text-white {
   --tw-text-opacity: 1 !important;
   color: rgb(255 255 255 / var(--tw-text-opacity)) !important;
+}
+
+.dark .dark\:text-\[\#12E56A\] {
+  --tw-text-opacity: 1;
+  color: rgb(18 229 106 / var(--tw-text-opacity));
 }
 
 .dark .dark\:text-\[\#696974\] {
@@ -13280,6 +13311,10 @@ https://tailwindcss.com/docs/utility-first
   background-color: rgb(23 23 23 / var(--tw-bg-opacity)) !important;
 }
 
+.dark .dark\:hover\:bg-\[\#FFFFFF\]\/5:hover {
+  background-color: rgb(255 255 255 / 0.05);
+}
+
 .dark .dark\:hover\:bg-gray-400:hover {
   --tw-bg-opacity: 1;
   background-color: rgb(163 163 163 / var(--tw-bg-opacity));
@@ -13333,6 +13368,10 @@ https://tailwindcss.com/docs/utility-first
 .dark .dark\:hover\:bg-yellow-500:hover {
   --tw-bg-opacity: 1;
   background-color: rgb(247 174 50 / var(--tw-bg-opacity));
+}
+
+.dark .dark\:hover\:bg-opacity-60:hover {
+  --tw-bg-opacity: 0.6;
 }
 
 .dark .dark\:hover\:text-blue-500:hover {
@@ -13397,9 +13436,17 @@ https://tailwindcss.com/docs/utility-first
   opacity: 0.8;
 }
 
+.dark .dark\:focus\:bg-\[\#FFFFFF\]\/5:focus {
+  background-color: rgb(255 255 255 / 0.05);
+}
+
 .dark .dark\:focus\:bg-gray-700:focus {
   --tw-bg-opacity: 1;
   background-color: rgb(64 64 64 / var(--tw-bg-opacity));
+}
+
+.dark .dark\:focus\:bg-opacity-60:focus {
+  --tw-bg-opacity: 0.6;
 }
 
 .dark .dark\:focus\:text-white:focus {
@@ -13933,11 +13980,6 @@ https://tailwindcss.com/docs/utility-first
     padding-right: 2rem;
   }
 
-  .md\:px-\[50px\] {
-    padding-left: 50px;
-    padding-right: 50px;
-  }
-
   .md\:pb-4 {
     padding-bottom: 1rem;
   }
@@ -14115,17 +14157,8 @@ https://tailwindcss.com/docs/utility-first
     justify-content: space-between;
   }
 
-  .lg\:gap-12 {
-    gap: 3rem;
-  }
-
   .lg\:gap-6 {
     gap: 1.5rem;
-  }
-
-  .lg\:gap-x-12 {
-    -moz-column-gap: 3rem;
-         column-gap: 3rem;
   }
 
   .lg\:space-x-0 > :not([hidden]) ~ :not([hidden]) {
