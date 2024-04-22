@@ -151,7 +151,9 @@ defmodule OliWeb.Delivery.OpenAndFreeIndex do
         </div>
       </div>
     </main>
-    <%= render(OliWeb.LayoutView, "_delivery_footer.html", assigns) %>
+    <OliWeb.Components.Footer.delivery_footer license={
+      Map.get(assigns, :has_license) && assigns[:license]
+    } />
     """
   end
 

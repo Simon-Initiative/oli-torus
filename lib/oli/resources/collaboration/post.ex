@@ -39,6 +39,8 @@ defmodule Oli.Resources.Collaboration.Post do
     has_many :reactions, Oli.Resources.Collaboration.UserReactionPost
 
     field :reaction_summaries, :map, virtual: true
+    field :headline, :string, virtual: true
+    field :replies, :any, virtual: true
 
     timestamps(type: :utc_datetime)
   end

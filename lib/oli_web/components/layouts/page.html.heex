@@ -96,9 +96,11 @@
           resource_slug: @resource_slug,
           numbered_revisions: assigns[:numbered_revisions]
         ) %>
+        <OliWeb.Components.Footer.delivery_footer
+          license={Map.get(assigns, :has_license) && assigns[:license]}
+          is_page={true}
+        />
       </div>
-
-      <%= render(OliWeb.LayoutView, "_delivery_footer.html", assigns) %>
     </div>
   </main>
 </div>
