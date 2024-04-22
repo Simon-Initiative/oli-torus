@@ -1,7 +1,13 @@
 import React, { Fragment, useCallback, useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
-import { ActionFailure, ActionResult, finalizePageAttempt } from 'data/persistence/page_lifecycle';
 import {
+  ActionFailure,
+  ActionResult,
+  finalizePageAttempt,
+  finalizePageProgress,
+} from 'data/persistence/page_lifecycle';
+import {
+  selectIsGraded,
   selectPageSlug,
   selectPreviewMode,
   selectResourceAttemptGuid,
@@ -23,6 +29,7 @@ const LessonFinishedDialog: React.FC<LessonFinishedDialogProps> = ({
   const [redirectURL, setRedirectURL] = useState('');
   const [finalizeError, setFinalizeError] = useState<string | null>(null);
   const isPreviewMode = useSelector(selectPreviewMode);
+  const graded = useSelector(selectIsGraded);
   const revisionSlug = useSelector(selectPageSlug);
   const sectionSlug = useSelector(selectSectionSlug);
   const resourceAttemptGuid = useSelector(selectResourceAttemptGuid);
@@ -37,7 +44,7 @@ const LessonFinishedDialog: React.FC<LessonFinishedDialogProps> = ({
       return;
     }
     setIsOpen(false);
-    if (isPreviewMode) {
+    if (!graded || isPreviewMode) {
       window.location.reload();
     } else {
       window.location.href = redirectURL;
@@ -49,11 +56,9 @@ const LessonFinishedDialog: React.FC<LessonFinishedDialogProps> = ({
     if (!isPreviewMode) {
       // only graded pages are finalized
       try {
-        const finalizeResult = await finalizePageAttempt(
-          sectionSlug,
-          revisionSlug,
-          resourceAttemptGuid,
-        );
+        const finalizeResult = graded
+          ? await finalizePageAttempt(sectionSlug, revisionSlug, resourceAttemptGuid)
+          : await finalizePageProgress(resourceAttemptGuid);
         console.log('finalize attempt result: ', finalizeResult);
         if (finalizeResult.result === 'success') {
           if ((finalizeResult as ActionResult).commandResult === 'failure') {
@@ -84,7 +89,7 @@ const LessonFinishedDialog: React.FC<LessonFinishedDialogProps> = ({
       }
     }
     setIsFinalized(true);
-  }, [sectionSlug, revisionSlug, resourceAttemptGuid, isPreviewMode]);
+  }, [sectionSlug, revisionSlug, resourceAttemptGuid, graded, isPreviewMode]);
 
   useEffect(() => {
     // TODO: maybe we should call finalization elsewhere than in this modal
