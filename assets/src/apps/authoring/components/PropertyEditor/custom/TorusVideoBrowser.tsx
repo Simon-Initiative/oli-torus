@@ -34,7 +34,9 @@ const _TorusVideoBrowser: MediaBrowserComponent = ({ id, label, value, onChange,
       >
         <i className="fa-regular fa-file-video"></i>
       </Button>
-
+      <a href="#" style={{ marginLeft: '5px', textDecoration: 'underline' }} onClick={openPicker}>
+        Upload or Link Video
+      </a>
       {pickerOpen && (
         <MediaPickerModal
           onUrlChanged={onChange}
