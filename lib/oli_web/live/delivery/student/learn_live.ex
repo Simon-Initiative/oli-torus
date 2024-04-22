@@ -1442,7 +1442,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
               <%= "#{@title}" %>
             </span>
 
-            <.duration_in_minutes duration_minutes={@duration_minutes} />
+            <.duration_in_minutes duration_minutes={@duration_minutes} graded={@graded} />
           </div>
           <div :if={@graded} role="due date and score" class="flex">
             <span class="opacity-60 text-[13px] font-normal font-['Open Sans'] !font-normal opacity-60 dark:text-white">
@@ -1466,7 +1466,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         <.clock_icon />
       </div>
       <div class="text-right dark:text-white opacity-60 whitespace-nowrap">
-        <span class="text-sm font-semibold font-['Open Sans']">
+        <span class="text-sm font-semibold font-['Open Sans']" role="duration in minutes">
           <%= parse_minutes(@duration_minutes) %>
           <span class="w-[25px] self-stretch text-[13px] font-semibold font-['Open Sans']">
             min
@@ -1923,6 +1923,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       stroke-linecap="round"
       stroke-linejoin="round"
       class="icon icon-tabler icons-tabler-outline icon-tabler-clock"
+      role="clock icon"
     >
       <path stroke="none" d="M0 0h24v24H0z" fill="none" />
       <path d="M3 12a9 9 0 1 0 18 0a9 9 0 0 0 -18 0" />

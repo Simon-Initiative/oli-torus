@@ -119,6 +119,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
         resource_type_id: ResourceType.get_id_by_type("page"),
         title: "Page 4",
         graded: true,
+        duration_minutes: 22,
         content: %{
           model: [
             %{
@@ -1227,6 +1228,34 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       Sections.mark_section_visited_for_student(section, user)
 
       {:ok, _view, _html} = live(conn, Utils.learn_live_path(section.slug))
+    end
+
+    test "sees a clock icon beside the duration in minutes for graded pages", %{
+      conn: conn,
+      user: user,
+      section: section,
+      page_4: page_4
+    } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+
+      {:ok, view, _html} = live(conn, Utils.learn_live_path(section.slug))
+
+      # expand unit 1/module 2 details
+      view
+      |> element(~s{div[role="unit_1"] div[role="card_2"]})
+      |> render_click()
+
+      assert has_element?(
+               view,
+               ~s{div[id="index_item_4_#{page_4.resource_id}"] svg[role="clock icon"]}
+             )
+
+      assert has_element?(
+               view,
+               ~s{div[id="index_item_4_#{page_4.resource_id}"] span[role="duration in minutes"]},
+               "22"
+             )
     end
 
     test "sees a check icon on visited and completed pages", %{
