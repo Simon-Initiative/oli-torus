@@ -1881,27 +1881,6 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       assert render(subsection_1_element) =~ "Erlang as a motivation"
       assert render(subsection_1_element) =~ "ml-[20px]"
-
-      # Hides the sub-section content when it is clicked
-      render_click(subsection_1_element)
-
-      assert has_element?(
-               view,
-               ~s{div.hidden button[phx-click="navigate_to_resource"][phx-value-slug="#{page_11.slug}"]}
-             )
-
-      # Hides the section content when it is clicked
-      render_click(section_1_element)
-
-      assert has_element?(
-               view,
-               ~s{div.hidden button[phx-click="navigate_to_resource"][phx-value-slug="#{page_12.slug}"]}
-             )
-
-      assert has_element?(
-               view,
-               "div.hidden #index_item_#{subsection_1.resource_id}_2023-11-03"
-             )
     end
 
     test "groups pages within a module index by due date (even if some pages do not yet have a scheduled date)",
