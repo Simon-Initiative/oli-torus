@@ -85,8 +85,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     {:ok,
      socket
      |> assign_scripts()
-     |> assign(begin_attempt?: false)
-     |> assign_new(:request_path, fn -> nil end)}
+     |> assign(begin_attempt?: false)}
   end
 
   def handle_event("begin_attempt", %{"password" => password}, socket)
