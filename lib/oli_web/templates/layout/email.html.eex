@@ -238,7 +238,7 @@
 
         <!-- Email Footer : BEGIN -->
 
-        <%= render OliWeb.EmailView, "_footer.html" %>
+        <%= OliWeb.Components.Footer.global_footer(%{}) %>
 
         <!-- Email Footer : END -->
 

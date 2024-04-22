@@ -29,10 +29,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
     ~H"""
     <div class="fixed z-50 w-full h-14 flex flex-row bg-delivery-header dark:bg-delivery-header-dark shadow-sm">
       <div class="w-48 p-2" tab-index="0">
-        <a
-          className="block lg:p-2 lg:mb-14 mx-auto"
-          href={logo_link_path(@preview_mode, @section, @ctx.user)}
-        >
+        <a href={logo_link_path(@preview_mode, @section, @ctx.user)}>
           <.logo_img />
         </a>
       </div>
@@ -265,8 +262,8 @@ defmodule OliWeb.Components.Delivery.Layouts do
       |> assign(:logo_src_dark, Branding.brand_logo_url_dark(assigns[:section]))
 
     ~H"""
-    <img src={@logo_src} class="inline-block dark:hidden" alt="logo" />
-    <img src={@logo_src_dark} class="hidden dark:inline-block" alt="logo dark" />
+    <img src={@logo_src} class="inline-block dark:hidden h-9" alt="logo" />
+    <img src={@logo_src_dark} class="hidden dark:inline-block h-9" alt="logo dark" />
     """
   end
 
@@ -391,6 +388,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
 
   attr(:to, :string)
   attr(:show_sidebar, :boolean, default: false)
+  attr(:view, :atom, required: true, doc: "adaptive_chromeless pages can't use the link navigate")
 
   def back_arrow(assigns) do
     ~H"""
@@ -401,22 +399,39 @@ defmodule OliWeb.Components.Delivery.Layouts do
       ]}
       role="back_link"
     >
-      <.link navigate={@to} class="hover:no-underline hover:scale-105 cursor-pointer">
-        <svg
-          width="34"
-          height="33"
-          viewBox="0 0 34 33"
-          fill="none"
-          xmlns="http://www.w3.org/2000/svg"
-          class="hover:opacity-100 hover:scale-105"
-        >
-          <path
-            d="M17.0459 32.5278C8.19971 32.5278 0.884277 25.2124 0.884277 16.3662C0.884277 7.50391 8.18359 0.20459 17.0298 0.20459C25.8921 0.20459 33.2075 7.50391 33.2075 16.3662C33.2075 25.2124 25.8921 32.5278 17.0459 32.5278ZM17.0459 30.4331C24.8447 30.4331 31.1289 24.1489 31.1289 16.3662C31.1289 8.56738 24.8286 2.2832 17.0298 2.2832C9.24707 2.2832 2.979 8.56738 2.979 16.3662C2.979 24.1489 9.24707 30.4331 17.0459 30.4331ZM20.1235 24.2778C19.7852 24.6162 19.1567 24.6001 18.7861 24.2456L11.8252 17.5747C11.1162 16.9141 11.1001 15.8184 11.8252 15.1416L18.7861 8.4707C19.189 8.1001 19.7529 8.1001 20.1235 8.43848C20.5103 8.79297 20.5103 9.42139 20.1235 9.79199L13.2593 16.3501L20.1235 22.9404C20.5103 23.2949 20.5103 23.8911 20.1235 24.2778Z"
-            fill="#9D9D9D"
-          />
-        </svg>
+      <.link
+        :if={@view == :adaptive_chromeless}
+        href={@to}
+        class="hover:no-underline hover:scale-105 cursor-pointer"
+      >
+        <.back_arrow_icon />
+      </.link>
+      <.link
+        :if={@view != :adaptive_chromeless}
+        navigate={@to}
+        class="hover:no-underline hover:scale-105 cursor-pointer"
+      >
+        <.back_arrow_icon />
       </.link>
     </div>
+    """
+  end
+
+  defp back_arrow_icon(assigns) do
+    ~H"""
+    <svg
+      width="34"
+      height="33"
+      viewBox="0 0 34 33"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      class="hover:opacity-100 hover:scale-105"
+    >
+      <path
+        d="M17.0459 32.5278C8.19971 32.5278 0.884277 25.2124 0.884277 16.3662C0.884277 7.50391 8.18359 0.20459 17.0298 0.20459C25.8921 0.20459 33.2075 7.50391 33.2075 16.3662C33.2075 25.2124 25.8921 32.5278 17.0459 32.5278ZM17.0459 30.4331C24.8447 30.4331 31.1289 24.1489 31.1289 16.3662C31.1289 8.56738 24.8286 2.2832 17.0298 2.2832C9.24707 2.2832 2.979 8.56738 2.979 16.3662C2.979 24.1489 9.24707 30.4331 17.0459 30.4331ZM20.1235 24.2778C19.7852 24.6162 19.1567 24.6001 18.7861 24.2456L11.8252 17.5747C11.1162 16.9141 11.1001 15.8184 11.8252 15.1416L18.7861 8.4707C19.189 8.1001 19.7529 8.1001 20.1235 8.43848C20.5103 8.79297 20.5103 9.42139 20.1235 9.79199L13.2593 16.3501L20.1235 22.9404C20.5103 23.2949 20.5103 23.8911 20.1235 24.2778Z"
+        fill="#9D9D9D"
+      />
+    </svg>
     """
   end
 

@@ -12,8 +12,15 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
   alias Oli.Resources.ResourceType
   alias OliWeb.Delivery.Student.Utils
 
-  defp live_view_adaptive_lesson_live_route(section_slug, revision_slug) do
-    ~p"/sections/#{section_slug}/adaptive_lesson/#{revision_slug}"
+  defp live_view_adaptive_lesson_live_route(section_slug, revision_slug, request_path \\ nil)
+
+  defp live_view_adaptive_lesson_live_route(section_slug, revision_slug, nil) do
+    ~p"/sections/#{section_slug}/adaptive_lesson/#{revision_slug}" |> IO.inspect()
+  end
+
+  defp live_view_adaptive_lesson_live_route(section_slug, revision_slug, request_path) do
+    ~p"/sections/#{section_slug}/adaptive_lesson/#{revision_slug}?request_path=#{request_path}"
+    |> IO.inspect()
   end
 
   defp create_attempt(student, section, revision, resource_attempt_data \\ %{}) do
@@ -100,6 +107,22 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       insert(:revision,
         resource_type_id: ResourceType.get_id_by_type("page"),
         title: "Exploration 1",
+        content: %{
+          model: [],
+          advancedDelivery: true,
+          displayApplicationChrome: false,
+          additionalStylesheets: [
+            "/css/delivery_adaptive_themes_default_light.css"
+          ]
+        }
+      )
+
+    graded_adaptive_page_revision =
+      insert(:revision,
+        resource_type_id: ResourceType.get_id_by_type("page"),
+        graded: true,
+        max_attempts: 5,
+        title: "Graded Adaptive Page",
         content: %{
           model: [],
           advancedDelivery: true,
@@ -198,7 +221,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
     unit_2_revision =
       insert(:revision, %{
         resource_type_id: Oli.Resources.ResourceType.get_id_by_type("container"),
-        children: [exploration_1_revision.resource_id],
+        children: [exploration_1_revision.resource_id, graded_adaptive_page_revision.resource_id],
         title: "What did you learn?"
       })
 
@@ -219,6 +242,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
         objective_2_revision,
         page_1_revision,
         exploration_1_revision,
+        graded_adaptive_page_revision,
         page_2_revision,
         page_3_revision,
         module_1_revision,
@@ -280,6 +304,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       section: section,
       page_1: page_1_revision,
       exploration_1: exploration_1_revision,
+      graded_adaptive_page_revision: graded_adaptive_page_revision,
       page_2: page_2_revision,
       page_3: page_3_revision,
       module_1: module_1_revision,
@@ -394,6 +419,27 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
 
       assert has_element?(view, "div[id='attempts_summary_with_tooltip']", "Attempts 0/5")
       assert has_element?(view, "button[id='begin_attempt_button']", "Begin 1st Attempt")
+    end
+
+    test "can see prologue on graded adaptive pages with no attempt in progress", %{
+      conn: conn,
+      user: user,
+      section: section,
+      graded_adaptive_page_revision: graded_adaptive_page_revision
+    } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+
+      {:ok, view, html} =
+        live(
+          conn,
+          live_view_adaptive_lesson_live_route(section.slug, graded_adaptive_page_revision.slug)
+        )
+
+      assert has_element?(view, "div[id='attempts_summary_with_tooltip']", "Attempts 0/5")
+      assert has_element?(view, "button[id='begin_attempt_button']", "Begin 1st Attempt")
+      # It loads the adaptive themes
+      assert html =~ "/css/delivery_adaptive_themes_default_light.css"
     end
 
     test "does not see prologue but graded page when an attempt is in progress", %{
@@ -794,6 +840,66 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       assert_redirected(
         view,
         request_path
+      )
+    end
+
+    test "back link in a graded adaptive page returns to the learn view when visited from there",
+         %{
+           conn: conn,
+           user: user,
+           section: section,
+           graded_adaptive_page_revision: graded_adaptive_page_revision
+         } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+
+      request_path =
+        Utils.learn_live_path(section.slug,
+          target_resource_id: graded_adaptive_page_revision.resource_id
+        )
+
+      {:ok, view, _html} =
+        live(
+          conn,
+          live_view_adaptive_lesson_live_route(
+            section.slug,
+            graded_adaptive_page_revision.slug,
+            request_path
+          )
+        )
+
+      view
+      |> element(~s{div[role="back_link"] a})
+      |> render_click
+
+      assert_redirected(
+        view,
+        request_path
+      )
+    end
+
+    test "back link in a graded adaptive page returns to the learn view when visited directly", %{
+      conn: conn,
+      user: user,
+      section: section,
+      graded_adaptive_page_revision: graded_adaptive_page_revision
+    } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+
+      {:ok, view, _html} =
+        live(
+          conn,
+          live_view_adaptive_lesson_live_route(section.slug, graded_adaptive_page_revision.slug)
+        )
+
+      view
+      |> element(~s{div[role="back_link"] a})
+      |> render_click
+
+      assert_redirected(
+        view,
+        Utils.learn_live_path(section.slug)
       )
     end
   end

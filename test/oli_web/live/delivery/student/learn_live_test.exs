@@ -1301,7 +1301,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       assert view
              |> element(~s{div[role="completed count"]})
-             |> render() =~ "1 page"
+             |> render() =~ "1 of 5 Pages"
 
       completed_toggle = element(view, ~s{button[role="toggle completed button"]})
 
@@ -1322,12 +1322,12 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       refute has_element?(
                view,
-               "#index_item_1_#{subsection_1.resource_id}"
+               "#index_item_#{subsection_1.resource_id}"
              )
 
       assert has_element?(
                view,
-               "#index_item_1_#{section_1.resource_id}_2023-11-03"
+               "#index_item_#{section_1.resource_id}_2023-11-03"
              )
     end
 
@@ -1852,7 +1852,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
         )
 
       assert render(page_11_element) =~ "Page 11"
-      assert render(page_11_element) =~ "ml-[60px]"
+      assert render(page_11_element) =~ "ml-[40px]"
 
       page_12_element =
         element(
@@ -1861,26 +1861,26 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
         )
 
       assert render(page_12_element) =~ "Page 12"
-      assert render(page_12_element) =~ "ml-[30px]"
+      assert render(page_12_element) =~ "ml-[20px]"
 
       # Section and Sub-section are displayed with their corresponding indentation
       section_1_element =
         element(
           view,
-          "#index_item_1_#{section_1.resource_id}_2023-11-03"
+          "#index_item_#{section_1.resource_id}_2023-11-03"
         )
 
       subsection_1_element =
         element(
           view,
-          "#index_item_1_#{subsection_1.resource_id}_2023-11-03"
+          "#index_item_#{subsection_1.resource_id}_2023-11-03"
         )
 
       assert render(section_1_element) =~ "Why Elixir?"
       assert render(section_1_element) =~ "ml-0"
 
       assert render(subsection_1_element) =~ "Erlang as a motivation"
-      assert render(subsection_1_element) =~ "ml-[30px]"
+      assert render(subsection_1_element) =~ "ml-[20px]"
 
       # Hides the sub-section content when it is clicked
       render_click(subsection_1_element)
@@ -1900,7 +1900,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       assert has_element?(
                view,
-               "div.hidden #index_item_1_#{subsection_1.resource_id}_2023-11-03"
+               "div.hidden #index_item_#{subsection_1.resource_id}_2023-11-03"
              )
     end
 

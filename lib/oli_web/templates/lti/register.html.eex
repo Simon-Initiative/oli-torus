@@ -205,5 +205,6 @@
 
   <%= render OliWeb.SharedView, "_help.html", conn: @conn %>
 
-  <%= render OliWeb.LayoutView, "_delivery_footer.html", assigns %>
+  <%= OliWeb.Components.Footer.delivery_footer(%{license: Map.get(assigns, :has_license) && assigns[:license]}) %>
+
 </div>

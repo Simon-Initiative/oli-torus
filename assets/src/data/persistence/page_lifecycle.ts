@@ -37,3 +37,17 @@ export function finalizePageAttempt(
 
   return makeRequest<ActionResult>(params);
 }
+
+export function finalizePageProgress(attemptGuid: string): Promise<ActionResult | ServerError> {
+  const body = {
+    action: 'mark_completed',
+    attempt_guid: attemptGuid,
+  };
+  const params = {
+    method: 'POST',
+    body: JSON.stringify(body),
+    url: `/page_lifecycle`,
+  };
+
+  return makeRequest<ActionResult>(params);
+}

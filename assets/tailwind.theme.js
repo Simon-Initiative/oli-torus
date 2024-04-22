@@ -173,7 +173,7 @@ module.exports = {
       body: {
         DEFAULT: '#f3f5f8',
         dark: {
-          DEFAULT: colors.gray['900'],
+          DEFAULT: '#0D0C0F',
         },
       },
       'body-color': {
