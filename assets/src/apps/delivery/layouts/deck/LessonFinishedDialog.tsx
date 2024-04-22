@@ -92,7 +92,7 @@ const LessonFinishedDialog: React.FC<LessonFinishedDialogProps> = ({
   }, [sectionSlug, revisionSlug, resourceAttemptGuid, graded, isPreviewMode]);
 
   useEffect(() => {
-    // TODO: maybe we should call finalization elsewhere than in this modal
+    // TODO:  maybe we should call finalization elsewhere than in this modal
     if (isOpen && !finalizationCalled) {
       handleFinalization();
     }
