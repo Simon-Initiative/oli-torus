@@ -575,29 +575,19 @@ defmodule Oli.Resources.Collaboration do
         on: replies.thread_root_id == post.id,
         left_join: read_replies in subquery(read_replies_subquery(user_id)),
         on: read_replies.thread_root_id == post.id,
+        left_join: reactions in assoc(post, :reactions),
         where:
           post.section_id == ^section_id and
             (post.status in [:approved, :archived] or
                (post.status == :submitted and post.user_id == ^user_id)) and
             is_nil(post.parent_post_id) and is_nil(post.thread_root_id),
-        select: %{
-          id: post.id,
-          thread_root_id: post.thread_root_id,
-          content: post.content,
-          user_name: user.name,
-          user_id: user.id,
-          posted_anonymously: post.anonymous,
-          title: rev.title,
-          slug: rev.slug,
-          resource_numbering_index: sr.numbering_index,
-          resource_id: sr.resource_id,
+        preload: [
+          reactions: reactions
+        ],
+        select_merge: %{
           resource_type_id: rev.resource_type_id,
-          updated_at: post.updated_at,
           replies_count: coalesce(replies.count, 0),
-          read_replies_count: coalesce(read_replies.count, 0),
-          last_reply: coalesce(replies.last_reply, nil),
-          unread_replies_count: coalesce(replies.count, 0) - coalesce(read_replies.count, 0),
-          is_read: true
+          read_replies_count: coalesce(read_replies.count, 0)
         },
         order_by: ^order_clause
       )
@@ -657,6 +647,10 @@ defmodule Oli.Resources.Collaboration do
     more_posts_exist? = length(posts) > limit
     # Trim the posts to the desired limit
     final_posts = Enum.take(posts, limit)
+
+    final_posts =
+      final_posts
+      |> summarize_reactions(user_id)
 
     {final_posts, more_posts_exist?}
   end

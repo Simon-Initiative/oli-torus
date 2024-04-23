@@ -404,10 +404,14 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
   attr :post, Oli.Resources.Collaboration.Post, required: true
   attr :current_user, Oli.Accounts.User, required: true
   attr :disable_anonymous_option, :boolean, default: false
+  attr :rest, :global, include: ~w(class)
 
-  defp post(assigns) do
+  def post(assigns) do
     ~H"""
-    <div class="post flex flex-col p-4 border-2 border-gray-200 dark:border-gray-800 rounded">
+    <div class={[
+      "post flex flex-col p-4 border-2 border-gray-200 dark:border-gray-800 rounded",
+      @rest[:class]
+    ]}>
       <div class="flex flex-row justify-between mb-1">
         <div class="font-semibold">
           <%= post_creator(@post, @current_user) %>
