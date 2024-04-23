@@ -65,9 +65,27 @@ export const addSequenceItem = createAsyncThunk(
       }
     } else {
       if (siblingId) {
-        const siblingEntryIndex = sequenceItems.findIndex(
+        let siblingEntryIndex = sequenceItems.findIndex(
           (entry) => entry.activitySlug === siblingId,
         );
+        const siblingDetails = sequenceItems.find((i) => i.activitySlug === siblingId);
+        const isSiblingALayerORQuestionBank =
+          siblingDetails?.custom?.isLayer || siblingDetails?.custom?.isBank;
+        if (isSiblingALayerORQuestionBank) {
+          //Since the current selected screen is layer/question bank, we need to insert the new screen at end of all
+          //the children screens of the selected layer
+          const hierarchy = getHierarchy(sequenceItems);
+          const parentInHierarchy = findInHierarchy(hierarchy, siblingDetails?.custom?.sequenceId);
+          if (parentInHierarchy?.children?.length) {
+            //Now lets find the index of the last children of the layer/question bank in the hierarchy
+            //so that we can insert the new screen after the last children of the selected layer/question bank
+            siblingEntryIndex = sequenceItems.findIndex(
+              (entry) =>
+                entry.activitySlug ===
+                parentInHierarchy?.children[parentInHierarchy?.children?.length - 1].activitySlug,
+            );
+          }
+        }
         if (siblingEntryIndex < 0) {
           console.warn(`couldn't find sibling ${siblingId}, shouldn't be possible`);
           // just push at the end then
