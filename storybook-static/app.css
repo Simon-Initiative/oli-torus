@@ -13057,9 +13057,9 @@ https://tailwindcss.com/docs/utility-first
   --tw-bg-opacity: 1;
 }
 
-.dark .dark\:from-gray-900 {
-  --tw-gradient-from: #171717;
-  --tw-gradient-to: rgb(23 23 23 / 0);
+.dark .dark\:from-\[\#0D0C0F\] {
+  --tw-gradient-from: #0D0C0F;
+  --tw-gradient-to: rgb(13 12 15 / 0);
   --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);
 }
 
