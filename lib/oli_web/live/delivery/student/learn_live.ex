@@ -762,14 +762,14 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         <div class="flex relative">
           <button
             id={"slider_left_button_#{@unit["resource_id"]}"}
-            class="hidden absolute items-center justify-start -top-1 -left-1 w-10 bg-gradient-to-r from-gray-100 dark:from-gray-900 h-[180px] z-20 text-gray-700 dark:text-gray-600 hover:text-xl hover:dark:text-gray-200 hover:w-16 cursor-pointer"
+            class="hidden absolute items-center justify-start -top-1 -left-1 w-10 bg-gradient-to-r from-gray-100 dark:from-[#0D0C0F] h-[180px] z-20 text-gray-700 dark:text-gray-600 hover:text-xl hover:dark:text-gray-200 hover:w-16 cursor-pointer"
             tabindex="-1"
           >
             <i class="fa-solid fa-chevron-left ml-3"></i>
           </button>
           <button
             id={"slider_right_button_#{@unit["resource_id"]}"}
-            class="hidden absolute items-center justify-end -top-1 -right-1 w-10 bg-gradient-to-l from-gray-100 dark:from-gray-900 h-[180px] z-20 text-gray-700 dark:text-gray-600 hover:text-xl hover:dark:text-gray-200 hover:w-16 cursor-pointer"
+            class="hidden absolute items-center justify-end -top-1 -right-1 w-10 bg-gradient-to-l from-gray-100 dark:from-[#0D0C0F] h-[180px] z-20 text-gray-700 dark:text-gray-600 hover:text-xl hover:dark:text-gray-200 hover:w-16 cursor-pointer"
             tabindex="-1"
           >
             <i class="fa-solid fa-chevron-right mr-3"></i>
@@ -1377,7 +1377,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
               <%= "#{@title}" %>
             </span>
 
-            <.duration_in_minutes duration_minutes={@duration_minutes} />
+            <.duration_in_minutes duration_minutes={@duration_minutes} graded={@graded} />
           </div>
           <div :if={@graded} role="due date and score" class="flex">
             <span class="opacity-60 text-[13px] font-normal font-['Open Sans'] !font-normal opacity-60 dark:text-white">
@@ -1401,7 +1401,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         <.clock_icon />
       </div>
       <div class="text-right dark:text-white opacity-60 whitespace-nowrap">
-        <span class="text-sm font-semibold font-['Open Sans']">
+        <span class="text-sm font-semibold font-['Open Sans']" role="duration in minutes">
           <%= parse_minutes(@duration_minutes) %>
           <span class="w-[25px] self-stretch text-[13px] font-semibold font-['Open Sans']">
             min
@@ -1858,6 +1858,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       stroke-linecap="round"
       stroke-linejoin="round"
       class="icon icon-tabler icons-tabler-outline icon-tabler-clock"
+      role="clock icon"
     >
       <path stroke="none" d="M0 0h24v24H0z" fill="none" />
       <path d="M3 12a9 9 0 1 0 18 0a9 9 0 0 0 -18 0" />
