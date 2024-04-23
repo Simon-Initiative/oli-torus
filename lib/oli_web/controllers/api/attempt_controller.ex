@@ -411,6 +411,15 @@ defmodule OliWeb.Api.AttemptController do
       {:ok, _} ->
         json(conn, %{"type" => "success"})
 
+      {:error, :already_submitted} ->
+        conn
+        |> put_status(403)
+        |> json(%{
+          "error" => true,
+          "message" =>
+            "These changes could not be saved as this attempt may have already been submitted"
+        })
+
       {:error, e} ->
         {_, msg} = Oli.Utils.log_error("Could not save part", e)
         error(conn, 500, msg)
@@ -531,6 +540,15 @@ defmodule OliWeb.Api.AttemptController do
     case Activity.save_student_input(parsed) do
       {:ok, _} ->
         json(conn, %{"type" => "success"})
+
+      {:error, :already_submitted} ->
+        conn
+        |> put_status(403)
+        |> json(%{
+          "error" => true,
+          "message" =>
+            "These changes could not be saved as this attempt may have already been submitted"
+        })
 
       {:error, e} ->
         {_, msg} = Oli.Utils.log_error("Could not save activity", e)

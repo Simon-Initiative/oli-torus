@@ -20,6 +20,7 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle do
   alias Oli.Delivery.Evaluation.{Explanation, ExplanationContext}
 
   import Oli.Delivery.Attempts.Core
+  require Logger
 
   @doc """
   Retrieve a hint for an attempt.
@@ -332,21 +333,31 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle do
         }
       end)
 
-    part_input_values = Enum.join(part_input_values, ",")
+    part_attempt = get_part_attempt_by(attempt_guid: hd(params))
 
-    sql = """
-      UPDATE part_attempts
-      SET
-        response = batch_values.response,
-        updated_at = NOW()
-      FROM (
-          VALUES
-          #{part_input_values}
-      ) AS batch_values (attempt_guid, response)
-      WHERE part_attempts.attempt_guid = batch_values.attempt_guid
-    """
+    if part_attempt.lifecycle_state in [:evaluated, :submitted] do
+      Logger.info(
+        "These changes could not be saved as this attempt may have already been submitted"
+      )
 
-    Ecto.Adapters.SQL.query(Oli.Repo, sql, params)
+      {:error, :already_submitted}
+    else
+      part_input_values = Enum.join(part_input_values, ",")
+
+      sql = """
+        UPDATE part_attempts
+        SET
+          response = batch_values.response,
+          updated_at = NOW()
+        FROM (
+            VALUES
+            #{part_input_values}
+        ) AS batch_values (attempt_guid, response)
+        WHERE part_attempts.attempt_guid = batch_values.attempt_guid
+      """
+
+      Ecto.Adapters.SQL.query(Oli.Repo, sql, params)
+    end
   end
 
   @doc """
