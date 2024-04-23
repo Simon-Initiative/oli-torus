@@ -110,7 +110,20 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
   end
 
   def handle_event("create_new_discussion", %{"post" => attrs} = _params, socket) do
-    case Collaboration.create_post(Map.merge(attrs, %{"visibility" => :public})) do
+    attrs =
+      Map.merge(attrs, %{
+        "user_id" => socket.assigns.current_user.id,
+        "section_id" => socket.assigns.section.id,
+        "resource_id" => socket.assigns.root_section_resource_resource_id,
+        "status" =>
+          if(socket.assigns.course_collab_space_config.auto_accept,
+            do: :approved,
+            else: :submitted
+          ),
+        "visibility" => :public
+      })
+
+    case Collaboration.create_post(attrs) do
       {:ok, %Post{} = post} ->
         new_post = %Post{
           post
@@ -298,7 +311,6 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
     ~H"""
     <.create_discussion_modal
       course_collab_space_config={@course_collab_space_config}
-      new_discussion_form_uuid={@new_discussion_form_uuid}
       new_discussion_form={@new_discussion_form}
     />
     <.hero_banner class="bg-discussions">
@@ -312,7 +324,6 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
         expanded_posts={@expanded_posts}
         current_user_id={@current_user.id}
         course_collab_space_config={@course_collab_space_config}
-        new_discussion_form_uuid={@new_discussion_form_uuid}
         post_params={@post_params}
         more_posts_exist?={@more_posts_exist?}
       />
@@ -321,7 +332,6 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
   end
 
   attr :course_collab_space_config, Oli.Resources.Collaboration.CollabSpaceConfig
-  attr :new_discussion_form_uuid, :string
   attr :new_discussion_form, :map
 
   defp create_discussion_modal(assigns) do
@@ -331,7 +341,7 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
         :if={@course_collab_space_config && @course_collab_space_config.status == :enabled}
         class="w-1/2"
         on_cancel={JS.push("reset_discussion_modal")}
-        id={"new-discussion-modal-#{@new_discussion_form_uuid}"}
+        id="new-discussion-modal"
       >
         <:title>New Discussion</:title>
         <.form
@@ -339,17 +349,10 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
           id="new_discussion_form"
           phx-submit={
             JS.push("create_new_discussion")
-            |> Modal.hide_modal("new-discussion-modal-#{@new_discussion_form_uuid}")
+            |> Modal.hide_modal("new-discussion-modal")
             |> JS.push("reset_discussion_modal")
           }
         >
-          <.input type="hidden" field={@new_discussion_form[:user_id]} />
-          <.input type="hidden" field={@new_discussion_form[:section_id]} />
-          <.input type="hidden" field={@new_discussion_form[:resource_id]} />
-          <.input type="hidden" field={@new_discussion_form[:parent_post_id]} />
-          <.input type="hidden" field={@new_discussion_form[:thread_root_id]} />
-          <.input type="hidden" field={@new_discussion_form[:status]} />
-
           <.inputs_for :let={post_content} field={@new_discussion_form[:content]}>
             <.input
               type="textarea"
@@ -366,7 +369,7 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
           <div class="flex items-center justify-end">
             <.button
               phx-click={
-                Modal.hide_modal("new-discussion-modal-#{@new_discussion_form_uuid}")
+                Modal.hide_modal("new-discussion-modal")
                 |> JS.push("reset_discussion_modal")
               }
               type="button"
@@ -414,7 +417,6 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
   attr :expanded_posts, :map
   attr :current_user_id, :integer
   attr :course_collab_space_config, Oli.Resources.Collaboration.CollabSpaceConfig
-  attr :new_discussion_form_uuid, :string
   attr :post_params, :map
   attr :more_posts_exist?, :boolean
 
@@ -427,11 +429,7 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
         </h3>
       </div>
 
-      <.actions
-        post_params={@post_params}
-        course_collab_space_config={@course_collab_space_config}
-        new_discussion_form_uuid={@new_discussion_form_uuid}
-      />
+      <.actions post_params={@post_params} course_collab_space_config={@course_collab_space_config} />
 
       <div role="posts list" class="w-full">
         <%= for post <- @posts do %>
@@ -461,7 +459,6 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
 
   attr :post_params, :map
   attr :course_collab_space_config, Oli.Resources.Collaboration.CollabSpaceConfig
-  attr :new_discussion_form_uuid, :string
 
   defp actions(assigns) do
     ~H"""
@@ -595,7 +592,7 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
       <button
         :if={@course_collab_space_config && @course_collab_space_config.status == :enabled}
         role="new discussion"
-        phx-click={Modal.show_modal("new-discussion-modal-#{@new_discussion_form_uuid}")}
+        phx-click={Modal.show_modal("new-discussion-modal")}
         class="rounded-[3px] py-[10px] pl-[18px] pr-6 flex justify-center items-center whitespace-nowrap text-[14px] leading-[20px] font-normal text-white bg-[#0F6CF5] hover:bg-blue-600"
       >
         <svg
@@ -638,32 +635,13 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
     if socket.assigns.course_collab_space_config,
       do:
         assign(socket,
-          new_discussion_form_uuid: UUID.uuid4(),
-          new_discussion_form:
-            new_discussion_form(
-              socket.assigns.current_user.id,
-              socket.assigns.section.id,
-              socket.assigns.course_collab_space_config,
-              socket.assigns.root_section_resource_resource_id
-            )
+          new_discussion_form: new_discussion_form()
         ),
-      else: assign(socket, new_discussion_form_uuid: nil, new_discussion_form: nil)
+      else: assign(socket, new_discussion_form: nil)
   end
 
-  defp new_discussion_form(
-         current_user_id,
-         section_id,
-         course_collab_space_config,
-         root_section_resource_resource_id
-       ) do
-    to_form(
-      Collaboration.change_post(%Post{
-        user_id: current_user_id,
-        section_id: section_id,
-        resource_id: root_section_resource_resource_id,
-        status: if(course_collab_space_config.auto_accept, do: :approved, else: :submitted)
-      })
-    )
+  defp new_discussion_form() do
+    to_form(Collaboration.change_post(%Post{}))
   end
 
   defp update_metrics_of_thread(root_posts, expanded_posts, new_post, current_user_id) do
