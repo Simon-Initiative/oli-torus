@@ -251,19 +251,33 @@ defmodule OliWeb.Delivery.Student.Utils do
     - `revision_slug`: The unique identifier for the lesson revision.
     - `attempt_guid`: The unique identifier for the attempt.
     - `params`: (Optional) Additional query parameters in a list or map format. If omitted, a URL is generated without additional parameters.
+    - `adaptive_chromeless?`: (Optional) A boolean value indicating whether the review page is adaptive chromeless.
 
   ## Examples
     - `review_live_path("math", "intro", "abcd")` returns `"/sections/math/lesson/intro/attempt/abcd/review"`.
     - `review_live_path("math", "intro", "abcd", request_path: "some/previous/url")` returns `"/sections/math/lesson/intro/attempt/abcd/review?request_path=some/previous/url"`.
   """
-  def review_live_path(section_slug, revision_slug, attempt_guid, params \\ [])
+  def review_live_path(
+        section_slug,
+        revision_slug,
+        attempt_guid,
+        params \\ [],
+        adaptive_chromeless? \\ false
+      )
 
-  def review_live_path(section_slug, revision_slug, attempt_guid, []),
+  def review_live_path(section_slug, revision_slug, attempt_guid, [], false),
     do: ~p"/sections/#{section_slug}/lesson/#{revision_slug}/attempt/#{attempt_guid}/review"
 
-  def review_live_path(section_slug, revision_slug, attempt_guid, params),
+  def review_live_path(section_slug, revision_slug, attempt_guid, params, false),
     do:
       ~p"/sections/#{section_slug}/lesson/#{revision_slug}/attempt/#{attempt_guid}/review?#{params}"
+
+  def review_live_path(section_slug, revision_slug, attempt_guid, [], true),
+    do: ~p"/sections/#{section_slug}/page/#{revision_slug}/attempt/#{attempt_guid}/review"
+
+  def review_live_path(section_slug, revision_slug, attempt_guid, params, true),
+    do:
+      ~p"/sections/#{section_slug}/page/#{revision_slug}/attempt/#{attempt_guid}/review?#{params}"
 
   def get_container_label(page_id, section) do
     section_id = section.id

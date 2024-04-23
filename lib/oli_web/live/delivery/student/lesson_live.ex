@@ -971,7 +971,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
           </div>
         </div>
         <div
-          :if={@allow_review_submission? and not @adaptive_chromeless?}
+          :if={@allow_review_submission?}
           class="w-[124px] py-1 justify-end items-center gap-2.5 inline-flex"
         >
           <.link
@@ -980,7 +980,8 @@ defmodule OliWeb.Delivery.Student.LessonLive do
                 @section_slug,
                 @page_revision_slug,
                 @attempt.attempt_guid,
-                request_path: @request_path
+                %{request_path: @request_path},
+                @adaptive_chromeless?
               )
             }
             role="review_attempt_link"
