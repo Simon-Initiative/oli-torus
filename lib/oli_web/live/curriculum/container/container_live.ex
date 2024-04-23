@@ -236,12 +236,15 @@ defmodule OliWeb.Curriculum.ContainerLive do
 
     revision = Enum.find(socket.assigns.children, fn r -> r.slug == slug end)
 
+    changeset = Resources.change_revision(revision)
+
     options_modal_assigns = %{
       id: "options_#{slug}",
       redirect_url: Routes.container_path(socket, :index, project.slug, container.slug),
       revision: revision,
-      changeset: Resources.change_revision(revision),
-      title: "#{resource_type_label(revision) |> String.capitalize()} Options"
+      changeset: changeset,
+      title: "#{resource_type_label(revision) |> String.capitalize()} Options",
+      form: to_form(changeset)
     }
 
     {:noreply,

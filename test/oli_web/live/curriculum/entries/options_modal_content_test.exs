@@ -155,16 +155,20 @@ defmodule OliWeb.Curriculum.OptionsModalContentTest do
       page_revision: revision,
       project_hierarchy: project_hierarchy
     } do
+      changeset = Oli.Resources.change_revision(revision)
+      form = Phoenix.Component.to_form(changeset)
+
       {:ok, lcd, _html} =
         live_component_isolated(conn, OliWeb.Curriculum.OptionsModalContent, %{
           revision: revision,
-          changeset: Oli.Resources.change_revision(revision),
+          changeset: changeset,
           redirect_url: "some_redirect_url",
           project_hierarchy: project_hierarchy,
           project: project,
           validate: "validate-options",
           submit: "save-options",
-          cancel: "restart_options_modal"
+          cancel: "restart_options_modal",
+          form: form
         })
 
       assert has_element?(lcd, "img[src='/images/course_default.jpg']")
@@ -176,16 +180,20 @@ defmodule OliWeb.Curriculum.OptionsModalContentTest do
       page_2_revision: page_2_revision,
       project_hierarchy: project_hierarchy
     } do
+      changeset = Oli.Resources.change_revision(page_2_revision)
+      form = Phoenix.Component.to_form(changeset)
+
       {:ok, lcd, _html} =
         live_component_isolated(conn, OliWeb.Curriculum.OptionsModalContent, %{
           revision: page_2_revision,
-          changeset: Oli.Resources.change_revision(page_2_revision),
+          changeset: changeset,
           redirect_url: "some_redirect_url",
           project_hierarchy: project_hierarchy,
           project: project,
           validate: "validate-options",
           submit: "save-options",
-          cancel: "restart_options_modal"
+          cancel: "restart_options_modal",
+          form: form
         })
 
       assert has_element?(
@@ -200,16 +208,20 @@ defmodule OliWeb.Curriculum.OptionsModalContentTest do
       page_revision: revision,
       project_hierarchy: project_hierarchy
     } do
+      changeset = Oli.Resources.change_revision(revision)
+      form = Phoenix.Component.to_form(changeset)
+
       {:ok, lcd, _html} =
         live_component_isolated(conn, OliWeb.Curriculum.OptionsModalContent, %{
           revision: revision,
-          changeset: Oli.Resources.change_revision(revision),
+          changeset: changeset,
           redirect_url: "some_redirect_url",
           project_hierarchy: project_hierarchy,
           project: project,
           validate: "validate-options",
           submit: "save-options",
-          cancel: "restart_options_modal"
+          cancel: "restart_options_modal",
+          form: form
         })
 
       expect(Oli.Test.MockAws, :request, 1, fn %ExAws.Operation.S3{} ->
@@ -239,16 +251,20 @@ defmodule OliWeb.Curriculum.OptionsModalContentTest do
            page_2_revision: revision,
            project_hierarchy: project_hierarchy
          } do
+      changeset = Oli.Resources.change_revision(revision)
+      form = Phoenix.Component.to_form(changeset)
+
       {:ok, lcd, _html} =
         live_component_isolated(conn, OliWeb.Curriculum.OptionsModalContent, %{
           revision: revision,
-          changeset: Oli.Resources.change_revision(revision),
+          changeset: changeset,
           redirect_url: "some_redirect_url",
           project_hierarchy: project_hierarchy,
           project: project,
           validate: "validate-options",
           submit: "save-options",
-          cancel: "restart_options_modal"
+          cancel: "restart_options_modal",
+          form: form
         })
 
       expect(Oli.Test.MockAws, :request, 1, fn %ExAws.Operation.S3{} ->
@@ -282,16 +298,20 @@ defmodule OliWeb.Curriculum.OptionsModalContentTest do
       page_revision: revision,
       project_hierarchy: project_hierarchy
     } do
+      changeset = Oli.Resources.change_revision(revision)
+      form = Phoenix.Component.to_form(changeset)
+
       {:ok, lcd, _html} =
         live_component_isolated(conn, OliWeb.Curriculum.OptionsModalContent, %{
           revision: revision,
-          changeset: Oli.Resources.change_revision(revision),
+          changeset: changeset,
           redirect_url: "some_redirect_url",
           project_hierarchy: project_hierarchy,
           project: project,
           validate: "validate-options",
           submit: "save-options",
-          cancel: "restart_options_modal"
+          cancel: "restart_options_modal",
+          form: form
         })
 
       expect(Oli.Test.MockAws, :request, 1, fn %ExAws.Operation.S3{} ->
@@ -308,13 +328,14 @@ defmodule OliWeb.Curriculum.OptionsModalContentTest do
       {:ok, lcd, _html} =
         live_component_isolated(conn, OliWeb.Curriculum.OptionsModalContent, %{
           revision: revision,
-          changeset: Oli.Resources.change_revision(revision),
+          changeset: changeset,
           redirect_url: "some_redirect_url",
           project_hierarchy: project_hierarchy,
           project: project,
           validate: "validate-options",
           submit: "save-options",
-          cancel: "restart_options_modal"
+          cancel: "restart_options_modal",
+          form: form
         })
 
       expect(Oli.Test.MockAws, :request, 1, fn %ExAws.Operation.S3{} ->
@@ -335,16 +356,20 @@ defmodule OliWeb.Curriculum.OptionsModalContentTest do
       page_revision: revision,
       project_hierarchy: project_hierarchy
     } do
+      changeset = Oli.Resources.change_revision(revision)
+      form = Phoenix.Component.to_form(changeset)
+
       {:ok, lcd, _html} =
         live_component_isolated(conn, OliWeb.Curriculum.OptionsModalContent, %{
           revision: revision,
-          changeset: Oli.Resources.change_revision(revision),
+          changeset: changeset,
           redirect_url: "some_redirect_url",
           project_hierarchy: project_hierarchy,
           project: project,
           validate: "validate-options",
           submit: "save-options",
-          cancel: "restart_options_modal"
+          cancel: "restart_options_modal",
+          form: form
         })
 
       # this mock is for the 2 images previously uploaded
@@ -411,16 +436,20 @@ defmodule OliWeb.Curriculum.OptionsModalContentTest do
            page_revision: revision,
            project_hierarchy: project_hierarchy
          } do
+      changeset = Oli.Resources.change_revision(revision)
+      form = Phoenix.Component.to_form(changeset)
+
       {:ok, lcd, _html} =
         live_component_isolated(conn, OliWeb.Curriculum.OptionsModalContent, %{
           revision: revision,
-          changeset: Oli.Resources.change_revision(revision),
+          changeset: changeset,
           redirect_url: "some_redirect_url",
           project_hierarchy: project_hierarchy,
           project: project,
           validate: "validate-options",
           submit: "save-options",
-          cancel: "restart_options_modal"
+          cancel: "restart_options_modal",
+          form: form
         })
 
       expect(Oli.Test.MockAws, :request, 1, fn %ExAws.Operation.S3{} ->
@@ -469,16 +498,20 @@ defmodule OliWeb.Curriculum.OptionsModalContentTest do
            page_revision: revision,
            project_hierarchy: project_hierarchy
          } do
+      changeset = Oli.Resources.change_revision(revision)
+      form = Phoenix.Component.to_form(changeset)
+
       {:ok, lcd, _html} =
         live_component_isolated(conn, OliWeb.Curriculum.OptionsModalContent, %{
           revision: revision,
-          changeset: Oli.Resources.change_revision(revision),
+          changeset: changeset,
           redirect_url: "some_redirect_url",
           project_hierarchy: project_hierarchy,
           project: project,
           validate: "validate-options",
           submit: "save-options",
-          cancel: "restart_options_modal"
+          cancel: "restart_options_modal",
+          form: form
         })
 
       expect(Oli.Test.MockAws, :request, 1, fn %ExAws.Operation.S3{} ->
@@ -536,16 +569,20 @@ defmodule OliWeb.Curriculum.OptionsModalContentTest do
            page_revision: revision,
            project_hierarchy: project_hierarchy
          } do
+      changeset = Oli.Resources.change_revision(revision)
+      form = Phoenix.Component.to_form(changeset)
+
       {:ok, lcd, _html} =
         live_component_isolated(conn, OliWeb.Curriculum.OptionsModalContent, %{
           revision: revision,
-          changeset: Oli.Resources.change_revision(revision),
+          changeset: changeset,
           redirect_url: "some_redirect_url",
           project_hierarchy: project_hierarchy,
           project: project,
           validate: "validate-options",
           submit: "save-options",
-          cancel: "restart_options_modal"
+          cancel: "restart_options_modal",
+          form: form
         })
 
       test_pid = self()
@@ -602,16 +639,20 @@ defmodule OliWeb.Curriculum.OptionsModalContentTest do
            page_revision: revision,
            project_hierarchy: project_hierarchy
          } do
+      changeset = Oli.Resources.change_revision(revision)
+      form = Phoenix.Component.to_form(changeset)
+
       {:ok, lcd, _html} =
         live_component_isolated(conn, OliWeb.Curriculum.OptionsModalContent, %{
           revision: revision,
-          changeset: Oli.Resources.change_revision(revision),
+          changeset: changeset,
           redirect_url: "some_redirect_url",
           project_hierarchy: project_hierarchy,
           project: project,
           validate: "validate-options",
           submit: "save-options",
-          cancel: "restart_options_modal"
+          cancel: "restart_options_modal",
+          form: form
         })
 
       test_pid = self()
@@ -642,16 +683,20 @@ defmodule OliWeb.Curriculum.OptionsModalContentTest do
            page_revision: revision,
            project_hierarchy: project_hierarchy
          } do
+      changeset = Oli.Resources.change_revision(revision)
+      form = Phoenix.Component.to_form(changeset)
+
       {:ok, lcd, _html} =
         live_component_isolated(conn, OliWeb.Curriculum.OptionsModalContent, %{
           revision: revision,
-          changeset: Oli.Resources.change_revision(revision),
+          changeset: changeset,
           redirect_url: "some_redirect_url",
           project_hierarchy: project_hierarchy,
           project: project,
           validate: "validate-options",
           submit: "save-options",
-          cancel: "restart_options_modal"
+          cancel: "restart_options_modal",
+          form: form
         })
 
       test_pid = self()
@@ -691,16 +736,20 @@ defmodule OliWeb.Curriculum.OptionsModalContentTest do
       page_revision: revision,
       project_hierarchy: project_hierarchy
     } do
+      changeset = Oli.Resources.change_revision(revision)
+      form = Phoenix.Component.to_form(changeset)
+
       {:ok, lcd, _html} =
         live_component_isolated(conn, OliWeb.Curriculum.OptionsModalContent, %{
           revision: revision,
-          changeset: Oli.Resources.change_revision(revision),
+          changeset: changeset,
           redirect_url: "some_redirect_url",
           project_hierarchy: project_hierarchy,
           project: project,
           validate: "validate-options",
           submit: "save-options",
-          cancel: "restart_options_modal"
+          cancel: "restart_options_modal",
+          form: form
         })
 
       refute has_element?(lcd, "video")
@@ -712,16 +761,20 @@ defmodule OliWeb.Curriculum.OptionsModalContentTest do
       page_2_revision: page_2_revision,
       project_hierarchy: project_hierarchy
     } do
+      changeset = Oli.Resources.change_revision(page_2_revision)
+      form = Phoenix.Component.to_form(changeset)
+
       {:ok, lcd, _html} =
         live_component_isolated(conn, OliWeb.Curriculum.OptionsModalContent, %{
           revision: page_2_revision,
-          changeset: Oli.Resources.change_revision(page_2_revision),
+          changeset: changeset,
           redirect_url: "some_redirect_url",
           project_hierarchy: project_hierarchy,
           project: project,
           validate: "validate-options",
           submit: "save-options",
-          cancel: "restart_options_modal"
+          cancel: "restart_options_modal",
+          form: form
         })
 
       assert has_element?(
@@ -736,16 +789,20 @@ defmodule OliWeb.Curriculum.OptionsModalContentTest do
       page_3_revision: page_3_revision,
       project_hierarchy: project_hierarchy
     } do
+      changeset = Oli.Resources.change_revision(page_3_revision)
+      form = Phoenix.Component.to_form(changeset)
+
       {:ok, lcd, _html} =
         live_component_isolated(conn, OliWeb.Curriculum.OptionsModalContent, %{
           revision: page_3_revision,
-          changeset: Oli.Resources.change_revision(page_3_revision),
+          changeset: changeset,
           redirect_url: "some_redirect_url",
           project_hierarchy: project_hierarchy,
           project: project,
           validate: "validate-options",
           submit: "save-options",
-          cancel: "restart_options_modal"
+          cancel: "restart_options_modal",
+          form: form
         })
 
       # the youtube url is converted to a valid youtube embed url
@@ -762,16 +819,20 @@ defmodule OliWeb.Curriculum.OptionsModalContentTest do
            page_revision: revision,
            project_hierarchy: project_hierarchy
          } do
+      changeset = Oli.Resources.change_revision(revision)
+      form = Phoenix.Component.to_form(changeset)
+
       {:ok, lcd, _html} =
         live_component_isolated(conn, OliWeb.Curriculum.OptionsModalContent, %{
           revision: revision,
-          changeset: Oli.Resources.change_revision(revision),
+          changeset: changeset,
           redirect_url: "some_redirect_url",
           project_hierarchy: project_hierarchy,
           project: project,
           validate: "validate-options",
           submit: "save-options",
-          cancel: "restart_options_modal"
+          cancel: "restart_options_modal",
+          form: form
         })
 
       expect(Oli.Test.MockAws, :request, 1, fn %ExAws.Operation.S3{} ->
@@ -806,16 +867,20 @@ defmodule OliWeb.Curriculum.OptionsModalContentTest do
            page_2_revision: revision,
            project_hierarchy: project_hierarchy
          } do
+      changeset = Oli.Resources.change_revision(revision)
+      form = Phoenix.Component.to_form(changeset)
+
       {:ok, lcd, _html} =
         live_component_isolated(conn, OliWeb.Curriculum.OptionsModalContent, %{
           revision: revision,
-          changeset: Oli.Resources.change_revision(revision),
+          changeset: changeset,
           redirect_url: "some_redirect_url",
           project_hierarchy: project_hierarchy,
           project: project,
           validate: "validate-options",
           submit: "save-options",
-          cancel: "restart_options_modal"
+          cancel: "restart_options_modal",
+          form: form
         })
 
       expect(Oli.Test.MockAws, :request, 1, fn %ExAws.Operation.S3{} ->
@@ -849,16 +914,20 @@ defmodule OliWeb.Curriculum.OptionsModalContentTest do
       page_revision: revision,
       project_hierarchy: project_hierarchy
     } do
+      changeset = Oli.Resources.change_revision(revision)
+      form = Phoenix.Component.to_form(changeset)
+
       {:ok, lcd, _html} =
         live_component_isolated(conn, OliWeb.Curriculum.OptionsModalContent, %{
           revision: revision,
-          changeset: Oli.Resources.change_revision(revision),
+          changeset: changeset,
           redirect_url: "some_redirect_url",
           project_hierarchy: project_hierarchy,
           project: project,
           validate: "validate-options",
           submit: "save-options",
-          cancel: "restart_options_modal"
+          cancel: "restart_options_modal",
+          form: form
         })
 
       # this mock is for the 2 videos previously uploaded
@@ -924,16 +993,22 @@ defmodule OliWeb.Curriculum.OptionsModalContentTest do
       page_revision: revision,
       project_hierarchy: project_hierarchy
     } do
+      changeset = Oli.Resources.change_revision(revision)
+
+      form =
+        Phoenix.Component.to_form(changeset)
+
       {:ok, lcd, _html} =
         live_component_isolated(conn, OliWeb.Curriculum.OptionsModalContent, %{
           revision: revision,
-          changeset: Oli.Resources.change_revision(revision),
+          changeset: changeset,
           redirect_url: "some_redirect_url",
           project_hierarchy: project_hierarchy,
           project: project,
           validate: "validate-options",
           submit: "save-options",
-          cancel: "restart_options_modal"
+          cancel: "restart_options_modal",
+          form: form
         })
 
       expect(Oli.Test.MockAws, :request, 1, fn %ExAws.Operation.S3{} ->
@@ -987,16 +1062,20 @@ defmodule OliWeb.Curriculum.OptionsModalContentTest do
            page_revision: revision,
            project_hierarchy: project_hierarchy
          } do
+      changeset = Oli.Resources.change_revision(revision)
+      form = Phoenix.Component.to_form(changeset)
+
       {:ok, lcd, _html} =
         live_component_isolated(conn, OliWeb.Curriculum.OptionsModalContent, %{
           revision: revision,
-          changeset: Oli.Resources.change_revision(revision),
+          changeset: changeset,
           redirect_url: "some_redirect_url",
           project_hierarchy: project_hierarchy,
           project: project,
           validate: "validate-options",
           submit: "save-options",
-          cancel: "restart_options_modal"
+          cancel: "restart_options_modal",
+          form: form
         })
 
       expect(Oli.Test.MockAws, :request, 1, fn %ExAws.Operation.S3{} ->
@@ -1022,16 +1101,20 @@ defmodule OliWeb.Curriculum.OptionsModalContentTest do
            page_3_revision: revision,
            project_hierarchy: project_hierarchy
          } do
+      changeset = Oli.Resources.change_revision(revision)
+      form = Phoenix.Component.to_form(changeset)
+
       {:ok, lcd, _html} =
         live_component_isolated(conn, OliWeb.Curriculum.OptionsModalContent, %{
           revision: revision,
-          changeset: Oli.Resources.change_revision(revision),
+          changeset: changeset,
           redirect_url: "some_redirect_url",
           project_hierarchy: project_hierarchy,
           project: project,
           validate: "validate-options",
           submit: "save-options",
-          cancel: "restart_options_modal"
+          cancel: "restart_options_modal",
+          form: form
         })
 
       expect(Oli.Test.MockAws, :request, 1, fn %ExAws.Operation.S3{} ->
@@ -1086,16 +1169,20 @@ defmodule OliWeb.Curriculum.OptionsModalContentTest do
            page_revision: revision,
            project_hierarchy: project_hierarchy
          } do
+      changeset = Oli.Resources.change_revision(revision)
+      form = Phoenix.Component.to_form(changeset)
+
       {:ok, lcd, _html} =
         live_component_isolated(conn, OliWeb.Curriculum.OptionsModalContent, %{
           revision: revision,
-          changeset: Oli.Resources.change_revision(revision),
+          changeset: changeset,
           redirect_url: "some_redirect_url",
           project_hierarchy: project_hierarchy,
           project: project,
           validate: "validate-options",
           submit: "save-options",
-          cancel: "restart_options_modal"
+          cancel: "restart_options_modal",
+          form: form
         })
 
       expect(Oli.Test.MockAws, :request, 1, fn %ExAws.Operation.S3{} ->
@@ -1152,16 +1239,20 @@ defmodule OliWeb.Curriculum.OptionsModalContentTest do
       page_2_revision: revision,
       project_hierarchy: project_hierarchy
     } do
+      changeset = Oli.Resources.change_revision(revision)
+      form = Phoenix.Component.to_form(changeset)
+
       {:ok, lcd, _html} =
         live_component_isolated(conn, OliWeb.Curriculum.OptionsModalContent, %{
           revision: revision,
-          changeset: Oli.Resources.change_revision(revision),
+          changeset: changeset,
           redirect_url: "some_redirect_url",
           project_hierarchy: project_hierarchy,
           project: project,
           validate: "validate-options",
           submit: "save-options",
-          cancel: "restart_options_modal"
+          cancel: "restart_options_modal",
+          form: form
         })
 
       assert has_element?(lcd, "img[data-filename='b.jpg']")
@@ -1183,16 +1274,20 @@ defmodule OliWeb.Curriculum.OptionsModalContentTest do
       page_revision: revision,
       project_hierarchy: project_hierarchy
     } do
+      changeset = Oli.Resources.change_revision(revision)
+      form = Phoenix.Component.to_form(changeset)
+
       {:ok, lcd, _html} =
         live_component_isolated(conn, OliWeb.Curriculum.OptionsModalContent, %{
           revision: revision,
-          changeset: Oli.Resources.change_revision(revision),
+          changeset: changeset,
           redirect_url: "some_redirect_url",
           project_hierarchy: project_hierarchy,
           project: project,
           validate: "validate-options",
           submit: "save-options",
-          cancel: "restart_options_modal"
+          cancel: "restart_options_modal",
+          form: form
         })
 
       refute has_element?(
@@ -1208,16 +1303,20 @@ defmodule OliWeb.Curriculum.OptionsModalContentTest do
       unit_revision: revision,
       project_hierarchy: project_hierarchy
     } do
+      changeset = Oli.Resources.change_revision(revision)
+      form = Phoenix.Component.to_form(changeset)
+
       {:ok, lcd, _html} =
         live_component_isolated(conn, OliWeb.Curriculum.OptionsModalContent, %{
           revision: revision,
-          changeset: Oli.Resources.change_revision(revision),
+          changeset: changeset,
           redirect_url: "some_redirect_url",
           project_hierarchy: project_hierarchy,
           project: project,
           validate: "validate-options",
           submit: "save-options",
-          cancel: "restart_options_modal"
+          cancel: "restart_options_modal",
+          form: form
         })
 
       assert has_element?(
@@ -1244,17 +1343,21 @@ defmodule OliWeb.Curriculum.OptionsModalContentTest do
         is_liveview: true
       }
 
+      changeset = Oli.Resources.change_revision(revision)
+      form = Phoenix.Component.to_form(changeset)
+
       {:ok, lcd, _html} =
         live_component_isolated(conn, OliWeb.Curriculum.OptionsModalContent, %{
           revision: revision,
-          changeset: Oli.Resources.change_revision(revision),
+          changeset: changeset,
           redirect_url: "some_redirect_url",
           project_hierarchy: project_hierarchy,
           project: project,
           validate: "validate-options",
           submit: "save-options",
           cancel: "restart_options_modal",
-          ctx: session_context
+          ctx: session_context,
+          form: form
         })
 
       assert render(lcd) =~ "Some intro content text!"
