@@ -62,6 +62,7 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
   attr(:redirect_url, :string, required: true)
   attr(:revision, :map, required: true)
   attr(:changeset, :map, required: true)
+  attr(:form, :map, required: false)
   attr(:project, :map, required: true)
   attr(:project_hierarchy, :map, required: true)
   attr(:validate, :string, required: true)
@@ -336,12 +337,243 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
     ~H"""
     <div>
       <.form
+        for={@form}
+        id="revision-settings-form"
+        phx-change={@validate}
+        phx-submit={@submit}
+        action="#"
+      >
+        <%= if !is_container?(@revision) do %>
+          <div class="flex gap-10">
+            <div>
+              <div class="form-group">
+                <label for="title">Title</label>
+                <.input type="text" field={@form[:title]} class="form-control" />
+                <small id="title_description" class="form-text text-muted">
+                  The title is used to identify this <%= resource_type_label(@revision) %>.
+                </small>
+              </div>
+              <div class="form-group">
+                <label for="grading_type">Grading Type</label>
+                <.input
+                  type="select"
+                  class="form-control custom-select"
+                  field={@form[:graded]}
+                  options={[{"Graded Assessment", "true"}, {"Ungraded Practice Page", "false"}]}
+                />
+                <small id="grading_type_description" class="form-text text-muted">
+                  Graded assessments report a grade to the grade book, while practice pages do not.
+                </small>
+              </div>
+
+              <div class="form-group">
+                <label>Explanation Strategy</label>
+                <div class="flex gap-2">
+                  <.inputs_for :let={es} field={@form[:explanation_strategy]}>
+                    <.input
+                      type="select"
+                      name="revision[explanation_strategy][type]"
+                      class="form-control custom-select w-full"
+                      aria-describedby="explanation_strategy_description"
+                      placeholder="Explanation Strategy"
+                      field={es[:type]}
+                      options={
+                        Enum.map(
+                          ExplanationStrategy.types(),
+                          &{Oli.Utils.snake_case_to_friendly(&1), &1}
+                        )
+                      }
+                    />
+                    <%= case Map.get(@form[:explanation_strategy].value || %{}, :type) do %>
+                      <% :after_set_num_attempts -> %>
+                        <div class="ml-2">
+                          <.input
+                            name="revision[explanation_strategy][set_num_attempts]"
+                            type="number"
+                            class="form-control"
+                            placeholder="# of Attempts"
+                            field={es[:set_num_attempts]}
+                          />
+                        </div>
+                      <% _ -> %>
+                    <% end %>
+                  </.inputs_for>
+                </div>
+                <small id="explanation_strategy_description" class="form-text text-muted">
+                  Explanation strategy determines how activity explanations will be shown to learners.
+                </small>
+              </div>
+            </div>
+            <.poster_image_selection
+              target={@myself}
+              poster_image={@form[:poster_image].value || @default_poster_image}
+              delete_button_enabled={@form[:poster_image].value not in [nil, @default_poster_image]}
+            />
+            <.intro_video_selection target={@myself} intro_video={@form[:intro_video].value} />
+          </div>
+
+          <div class="form-group">
+            <label for="max_attempts">Number of Attempts</label>
+            <.input
+              type="select"
+              id="max_attempts"
+              name="revision[max_attempts]"
+              aria-describedby="number_of_attempts_description"
+              placeholder="Number of Attempts"
+              disabled={is_disabled(@form, @revision)}
+              class="form-control custom-select"
+              field={@form[:max_attempts] || 0}
+              options={@attempt_options}
+            />
+            <small id="number_of_attempts_description" class="form-text text-muted">
+              Graded assessments allow a configurable number of attempts, while practice pages offer unlimited attempts.
+            </small>
+          </div>
+          <div class="form-group">
+            <label for="duration_minutes">Suggested Duration (minutes)</label>
+            <.input
+              id="duration_minutes"
+              type="number"
+              min="0"
+              step="1"
+              name="revision[duration_minutes]"
+              class="form-control"
+              aria-describedby="duration_description"
+              field={@form[:duration_minutes]}
+            />
+            <small id="duration_description" class="form-text text-muted">
+              A suggested time in minutes that the page should take a student to complete.
+            </small>
+          </div>
+          <div class="form-group">
+            <label for="scoring_strategy_id">Scoring Strategy</label>
+            <.input
+              type="select"
+              id="scoring_strategy_id"
+              name="revision[scoring_strategy_id]"
+              aria-describedby="scoring_strategy_description"
+              placeholder="Scoring Strategy"
+              disabled={is_disabled(@form, @revision)}
+              class="form-control custom-select"
+              field={@form[:scoring_strategy_id]}
+              options={
+                Enum.map(
+                  ScoringStrategy.get_types(),
+                  &{Oli.Utils.snake_case_to_friendly(&1[:type]), &1[:id]}
+                )
+              }
+            />
+            <small id="scoring_strategy_description" class="form-text text-muted">
+              The scoring strategy determines how to calculate the final grade book score across all attempts.
+            </small>
+          </div>
+
+          <div class="form-group">
+            <label for="retake_mode">Retake Mode</label>
+            <.input
+              type="select"
+              id="retake_mode"
+              name="revision[retake_mode]"
+              aria-describedby="retake_mode_description"
+              placeholder="Retake Mode"
+              disabled={is_disabled(@form, @revision)}
+              class="form-control custom-select"
+              field={@form[:retake_mode]}
+              options={[
+                {"Normal: Students answer all questions in each attempt", :normal},
+                {"Targeted: Students answer only incorrect questions from previous attempts",
+                 :targeted}
+              ]}
+            />
+            <small id="retake_mode_description" class="form-text text-muted">
+              The retake mode determines how subsequent attempts are presented to students.
+            </small>
+          </div>
+
+          <div class="form-group">
+            <label for="purpose">Purpose</label>
+            <%= select(
+              @form,
+              :purpose,
+              [
+                {"Foundation", :foundation},
+                {"Deliberate Practice", :deliberate_practice},
+                {"Exploration", :application}
+              ],
+              prompt: "Purpose",
+              class: "form-control custom-select"
+            ) %>
+          </div>
+
+          <div class="form-group">
+            <label>Related Resource</label>
+            <%= live_component(HierarchySelector,
+              disabled:
+                !@revision.graded &&
+                  is_foundation(@form, @revision),
+              field_name: "revision[relates_to][]",
+              id: "related-resources-selector",
+              items: @project_hierarchy.children,
+              initial_values: get_selected_related_resources(@revision, @project_hierarchy)
+            ) %>
+          </div>
+        <% else %>
+          <div class="form-group">
+            <label for="title">Title</label>
+            <.input type="text" field={@form[:title]} class="form-control" />
+            <small id="title_description" class="form-text text-muted">
+              The title is used to identify this <%= resource_type_label(@revision) %>.
+            </small>
+          </div>
+          <div class="form-group">
+            <label for="introduction_content">Introduction content</label>
+            <.input type="hidden" name="revision[intro_content]" field={@form[:intro_content] || %{}} />
+            <div class="form-control overflow-hidden truncate-form-control">
+              <div :if={@form[:intro_content] not in [nil, "", %{}]}>
+                <%= Phoenix.HTML.raw(
+                  Oli.Rendering.Content.render(
+                    %Oli.Rendering.Context{},
+                    fetch_field(@changeset, :intro_content)[
+                      "children"
+                    ],
+                    Oli.Rendering.Content.Html
+                  )
+                ) %>
+              </div>
+            </div>
+
+            <.button
+              phx-click="change_step"
+              phx-target={@myself}
+              phx-value-target_step="intro_content"
+              type="button"
+              class="btn btn-primary mt-2"
+            >
+              Edit
+            </.button>
+          </div>
+        <% end %>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" phx-click={@cancel}>Cancel</button>
+
+          <button
+            type="submit"
+            disabled={@form.errors != []}
+            phx-disable-with="Saving..."
+            class="btn btn-primary"
+          >
+            Save
+          </button>
+        </div>
+      </.form>
+      <%!-- <.form
         for={@changeset}
         id="revision-settings-form"
         phx-change={@validate}
         phx-submit={@submit}
         action="#"
       >
+
         <%= if !is_container?(@revision) do %>
           <div class="flex gap-10">
             <div>
@@ -602,7 +834,7 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
           <button type="button" class="btn btn-secondary" phx-click={@cancel}>Cancel</button>
           <button type="submit" phx-disable-with="Saving..." class="btn btn-primary">Save</button>
         </div>
-      </.form>
+      </.form> --%>
     </div>
     """
   end
@@ -853,7 +1085,7 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
     {:noreply,
      socket
      |> maybe_cancel_not_consumed_uploads(step)
-     |> assign(step: :general, changeset: changeset)}
+     |> assign(step: :general, changeset: changeset, form: to_form(changeset))}
   end
 
   def handle_event("change_step", %{"target_step" => "general", "action" => "save"}, socket) do
@@ -862,21 +1094,22 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
 
   def handle_event("select-resource", %{"url" => url}, socket) do
     changeset = Ecto.Changeset.put_change(socket.assigns.changeset, socket.assigns.step, url)
-
-    {:noreply, assign(socket, changeset: changeset)}
+    {:noreply, assign(socket, changeset: changeset, form: to_form(changeset))}
   end
 
   def handle_event("validate-upload", _params, socket) do
     changeset =
       Ecto.Changeset.put_change(socket.assigns.changeset, socket.assigns.step, "uploaded_one")
 
-    {:noreply, assign(socket, changeset: changeset)}
+    {:noreply, assign(socket, changeset: changeset, form: to_form(changeset))}
   end
 
   def handle_event("cancel-upload", %{"ref" => ref}, socket) do
     changeset = Ecto.Changeset.delete_change(socket.assigns.changeset, socket.assigns.step)
 
-    {:noreply, cancel_upload(socket, socket.assigns.step, ref) |> assign(changeset: changeset)}
+    {:noreply,
+     cancel_upload(socket, socket.assigns.step, ref)
+     |> assign(changeset: changeset, form: to_form(changeset))}
   end
 
   def handle_event("consume-uploaded", _params, socket) do
@@ -897,7 +1130,7 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
     changeset =
       Ecto.Changeset.put_change(changeset, step, hd(uploaded_files))
 
-    {:noreply, assign(socket, :changeset, changeset)}
+    {:noreply, assign(socket, changeset: changeset, form: to_form(changeset))}
   end
 
   def handle_event("clear-resource", %{"resource_name" => resource_name}, socket) do
@@ -908,7 +1141,7 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
         nil
       )
 
-    {:noreply, assign(socket, changeset: changeset)}
+    {:noreply, assign(socket, changeset: changeset, form: to_form(changeset))}
   end
 
   def handle_event(
@@ -927,7 +1160,12 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
       changeset =
         Ecto.Changeset.put_change(socket.assigns.changeset, socket.assigns.step, youtube_url)
 
-      {:noreply, assign(socket, intro_video_form: intro_video_form, changeset: changeset)}
+      {:noreply,
+       assign(socket,
+         intro_video_form: intro_video_form,
+         changeset: changeset,
+         form: to_form(changeset)
+       )}
     else
       {:noreply, assign(socket, intro_video_form: intro_video_form)}
     end
@@ -940,20 +1178,20 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
         "children" => intro_content
       })
 
-    {:noreply, assign(socket, changeset: changeset)}
+    {:noreply, assign(socket, changeset: changeset, form: to_form(changeset))}
   end
 
-  defp is_foundation(changeset, revision) do
-    if !is_nil(changeset.changes |> Map.get(:purpose)) do
-      changeset.changes.purpose == :foundation
+  defp is_foundation(form, revision) do
+    if !is_nil(form.source.changes |> Map.get(:purpose)) do
+      form.source.changes.purpose == :foundation
     else
       revision.purpose == :foundation
     end
   end
 
-  defp is_disabled(changeset, revision) do
-    if !is_nil(changeset.changes[:graded]) do
-      !changeset.changes[:graded]
+  defp is_disabled(form, revision) do
+    if !is_nil(form.source.changes[:graded]) do
+      !form.source.changes[:graded]
     else
       !revision.graded
     end
