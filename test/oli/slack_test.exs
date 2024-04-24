@@ -7,7 +7,8 @@ defmodule Oli.SlackTest do
   alias Oli.Test.MockHTTP
   alias Oli.Slack
 
-  @slack_webhook_url "https://hooks.example.com/services/ASDF7ASDF7ASH/ASDF7HQ9JF3/0JR43098o78hdfsdf"
+  # @slack_webhook_url "https://hooks.example.com/services/ASDF7ASDF7ASH/ASDF7HQ9JF3/0JR43098o78hdfsdf"
+  @slack_webhook_url "https://hooks.slack.com/services/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"
 
   defp setup_slack_webhook_url_env(_) do
     Application.put_env(:oli, :slack_webhook_url, @slack_webhook_url)

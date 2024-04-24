@@ -247,6 +247,8 @@ defmodule OliWeb.LtiController do
     case Institutions.create_pending_registration(pending_registration_attrs) do
       {:ok, pending_registration} ->
         # send a Slack notification regarding the new registration request
+        IO.inspect("Sending slack message")
+
         Slack.send(%{
           "username" => "Torus Bot",
           "icon_emoji" => ":robot_face:",
@@ -256,7 +258,7 @@ defmodule OliWeb.LtiController do
               "text" => %{
                 "type" => "mrkdwn",
                 "text" =>
-                  "New registration request from *#{pending_registration.name}*. <#{~p"/admin/institutions"}|Click here to view all pending requests>."
+                  "New registration request from *#{pending_registration.name}*. <#{Routes.institution_url(conn, :index)}#pending-registrations|Click here to view all pending requests>."
               }
             },
             %{
@@ -294,7 +296,7 @@ defmodule OliWeb.LtiController do
                     "type" => "plain_text",
                     "text" => "Review Request"
                   },
-                  "url" => ~p"/admin/institutions"
+                  "url" => "#{Routes.institution_url(conn, :index)}#pending-registrations"
                 }
               ]
             }

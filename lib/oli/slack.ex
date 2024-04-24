@@ -41,6 +41,8 @@ defmodule Oli.Slack do
   }
   """
   def send(payload) do
+    IO.inspect(payload)
+
     case Application.fetch_env!(:oli, :slack_webhook_url) do
       nil ->
         Logger.warning(
@@ -51,11 +53,15 @@ defmodule Oli.Slack do
         {:error, "SLACK_WEBHOOK_URL not configured"}
 
       slack_webhook_url ->
-        http().post(
-          slack_webhook_url,
-          Jason.encode!(payload),
-          [{"Content-Type", "application/json"}]
-        )
+        jpayload = Jason.encode!(payload)
+        IO.inspect(jpayload)
+        case http().post(
+               slack_webhook_url,
+               jpayload,
+               [{"Content-Type", "application/json"}]
+             ) do
+          e -> IO.inspect(e)
+        end
     end
   end
 end
