@@ -15,12 +15,11 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
   defp live_view_adaptive_lesson_live_route(section_slug, revision_slug, request_path \\ nil)
 
   defp live_view_adaptive_lesson_live_route(section_slug, revision_slug, nil) do
-    ~p"/sections/#{section_slug}/adaptive_lesson/#{revision_slug}" |> IO.inspect()
+    ~p"/sections/#{section_slug}/adaptive_lesson/#{revision_slug}"
   end
 
   defp live_view_adaptive_lesson_live_route(section_slug, revision_slug, request_path) do
     ~p"/sections/#{section_slug}/adaptive_lesson/#{revision_slug}?request_path=#{request_path}"
-    |> IO.inspect()
   end
 
   defp create_attempt(student, section, revision, resource_attempt_data \\ %{}) do

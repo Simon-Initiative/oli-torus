@@ -287,50 +287,6 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     do: navigate_to_resource(values, socket)
 
   def handle_event(
-        "expand_section",
-        %{
-          "resource_id" => resource_id,
-          "module_resource_id" => module_resource_id,
-          "parent_due_date" => parent_due_date
-        },
-        socket
-      ) do
-    full_hierarchy = get_or_compute_full_hierarchy(socket.assigns.section)
-    resource_id = String.to_integer(resource_id)
-    module_resource_id = String.to_integer(module_resource_id)
-
-    selected_unit =
-      Oli.Delivery.Hierarchy.find_parent_in_hierarchy(
-        full_hierarchy,
-        &(&1["resource_id"] == module_resource_id)
-      )
-
-    # we concatenate the resource_id with the parent_due_date to create a unique key
-    # and allow the student to expand and collapse same sections grouping pages with different due dates independently
-    closed_sections =
-      socket.assigns.display_props_per_module_id
-      |> get_in([module_resource_id, :closed_sections], [])
-      |> then(
-        &if Enum.member?(&1, "#{resource_id}-#{parent_due_date}"),
-          do: List.delete(&1, "#{resource_id}-#{parent_due_date}"),
-          else: ["#{resource_id}-#{parent_due_date}" | &1]
-      )
-
-    display_props_per_module_id =
-      Map.update(
-        socket.assigns.display_props_per_module_id,
-        module_resource_id,
-        %{closed_sections: closed_sections, show_completed_pages: true},
-        &%{closed_sections: closed_sections, show_completed_pages: &1.show_completed_pages}
-      )
-
-    {:noreply,
-     socket
-     |> assign(display_props_per_module_id: display_props_per_module_id)
-     |> update(:units, fn units -> [selected_unit | units] end)}
-  end
-
-  def handle_event(
         "toggle_completed_pages",
         %{"module_resource_id" => module_resource_id},
         socket
@@ -352,8 +308,8 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       Map.update(
         socket.assigns.display_props_per_module_id,
         module_resource_id,
-        %{closed_sections: [], show_completed_pages: show_completed_pages?},
-        &%{closed_sections: &1.closed_sections, show_completed_pages: show_completed_pages?}
+        %{show_completed_pages: show_completed_pages?},
+        fn _ -> %{show_completed_pages: show_completed_pages?} end
       )
 
     {:noreply,
@@ -806,14 +762,14 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         <div class="flex relative">
           <button
             id={"slider_left_button_#{@unit["resource_id"]}"}
-            class="hidden absolute items-center justify-start -top-1 -left-1 w-10 bg-gradient-to-r from-gray-100 dark:from-gray-900 h-[180px] z-20 text-gray-700 dark:text-gray-600 hover:text-xl hover:dark:text-gray-200 hover:w-16 cursor-pointer"
+            class="hidden absolute items-center justify-start -top-1 -left-1 w-10 bg-gradient-to-r from-gray-100 dark:from-[#0D0C0F] h-[180px] z-20 text-gray-700 dark:text-gray-600 hover:text-xl hover:dark:text-gray-200 hover:w-16 cursor-pointer"
             tabindex="-1"
           >
             <i class="fa-solid fa-chevron-left ml-3"></i>
           </button>
           <button
             id={"slider_right_button_#{@unit["resource_id"]}"}
-            class="hidden absolute items-center justify-end -top-1 -right-1 w-10 bg-gradient-to-l from-gray-100 dark:from-gray-900 h-[180px] z-20 text-gray-700 dark:text-gray-600 hover:text-xl hover:dark:text-gray-200 hover:w-16 cursor-pointer"
+            class="hidden absolute items-center justify-end -top-1 -right-1 w-10 bg-gradient-to-l from-gray-100 dark:from-[#0D0C0F] h-[180px] z-20 text-gray-700 dark:text-gray-600 hover:text-xl hover:dark:text-gray-200 hover:w-16 cursor-pointer"
             tabindex="-1"
           >
             <i class="fa-solid fa-chevron-right mr-3"></i>
@@ -1104,12 +1060,6 @@ defmodule OliWeb.Delivery.Student.LearnLive do
 
     assigns =
       Map.merge(assigns, %{
-        closed_sections:
-          get_in(
-            assigns.display_props_per_module_id,
-            [assigns.module["resource_id"], :closed_sections],
-            []
-          ),
         show_completed_pages: show_completed_pages,
         page_due_dates:
           get_contained_pages_due_dates(
@@ -1256,7 +1206,6 @@ defmodule OliWeb.Delivery.Student.LearnLive do
           raw_avg_score={Map.get(@student_raw_avg_score_per_page_id, child["resource_id"])}
           progress={Map.get(@student_progress_per_resource_id, child["resource_id"])}
           student_progress_per_resource_id={@student_progress_per_resource_id}
-          closed_sections={@closed_sections}
           show_completed_pages={@show_completed_pages}
         />
       </div>
@@ -1284,7 +1233,6 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   attr :due_date, Date
   attr :parent_due_date, Date
   attr :progress, :float
-  attr :closed_sections, :list, default: []
   attr :show_completed_pages, :boolean
 
   def index_item(%{type: "section"} = assigns) do
@@ -1296,7 +1244,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       })
 
     ~H"""
-    <button
+    <div
       :if={
         display_module_item?(
           @show_completed_pages,
@@ -1306,17 +1254,8 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         )
       }
       role={"#{@type} #{@numbering_index} details"}
-      class="w-full pl-[5px] pr-[7px] py-2.5 rounded-lg justify-start items-center gap-5 flex rounded-lg focus:bg-[#000000]/5 hover:bg-[#000000]/5 dark:focus:bg-[#FFFFFF]/5 dark:hover:bg-[#FFFFFF]/5"
+      class="w-full pl-[5px] pr-[7px] py-2.5 rounded-lg justify-start items-center gap-5 flex rounded-lg"
       id={"index_item_#{@resource_id}_#{@parent_due_date}"}
-      phx-click={
-        JS.toggle(
-          to: "#section_group_#{@resource_id}_#{@parent_due_date}",
-          out: {"fade-out duration-300", "opacity-100", "opacity-0"},
-          in: {"fade-in duration-300", "opacity-0", "opacity-100"},
-          display: "flex"
-        )
-        |> JS.push("expand_section")
-      }
       phx-value-resource_id={@resource_id}
       phx-value-parent_due_date={@parent_due_date}
       phx-value-module_resource_id={@module_resource_id}
@@ -1339,13 +1278,10 @@ defmodule OliWeb.Delivery.Student.LearnLive do
           </div>
         </div>
       </div>
-    </button>
+    </div>
     <div
       id={"section_group_#{@resource_id}_#{@parent_due_date}"}
-      class={[
-        "flex relative flex-col items-center w-full",
-        maybe_hidden_section(@closed_sections, @resource_id, @parent_due_date)
-      ]}
+      class="flex relative flex-col items-center w-full"
     >
       <.index_item
         :for={child <- @children}
@@ -1387,7 +1323,6 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         student_raw_avg_score_per_page_id={@student_raw_avg_score_per_page_id}
         progress={Map.get(@student_progress_per_resource_id, child["resource_id"])}
         student_progress_per_resource_id={@student_progress_per_resource_id}
-        closed_sections={@closed_sections}
         show_completed_pages={@show_completed_pages}
       />
     </div>
@@ -1442,7 +1377,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
               <%= "#{@title}" %>
             </span>
 
-            <.duration_in_minutes duration_minutes={@duration_minutes} />
+            <.duration_in_minutes duration_minutes={@duration_minutes} graded={@graded} />
           </div>
           <div :if={@graded} role="due date and score" class="flex">
             <span class="opacity-60 text-[13px] font-normal font-['Open Sans'] !font-normal opacity-60 dark:text-white">
@@ -1466,7 +1401,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         <.clock_icon />
       </div>
       <div class="text-right dark:text-white opacity-60 whitespace-nowrap">
-        <span class="text-sm font-semibold font-['Open Sans']">
+        <span class="text-sm font-semibold font-['Open Sans']" role="duration in minutes">
           <%= parse_minutes(@duration_minutes) %>
           <span class="w-[25px] self-stretch text-[13px] font-semibold font-['Open Sans']">
             min
@@ -1923,6 +1858,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       stroke-linecap="round"
       stroke-linejoin="round"
       class="icon icon-tabler icons-tabler-outline icon-tabler-clock"
+      role="clock icon"
     >
       <path stroke="none" d="M0 0h24v24H0z" fill="none" />
       <path d="M3 12a9 9 0 1 0 18 0a9 9 0 0 0 -18 0" />
@@ -2430,9 +2366,5 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       parent ->
         find_module_ancestor(hierarchy, parent["resource_id"], container_resource_type_id)
     end
-  end
-
-  defp maybe_hidden_section(closed_sections, resource_id, parent_due_date) do
-    if Enum.member?(closed_sections, "#{resource_id}-#{parent_due_date}"), do: "hidden", else: ""
   end
 end

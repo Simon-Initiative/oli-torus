@@ -119,6 +119,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
         resource_type_id: ResourceType.get_id_by_type("page"),
         title: "Page 4",
         graded: true,
+        duration_minutes: 22,
         content: %{
           model: [
             %{
@@ -1229,6 +1230,34 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       {:ok, _view, _html} = live(conn, Utils.learn_live_path(section.slug))
     end
 
+    test "sees a clock icon beside the duration in minutes for graded pages", %{
+      conn: conn,
+      user: user,
+      section: section,
+      page_4: page_4
+    } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+
+      {:ok, view, _html} = live(conn, Utils.learn_live_path(section.slug))
+
+      # expand unit 1/module 2 details
+      view
+      |> element(~s{div[role="unit_1"] div[role="card_2"]})
+      |> render_click()
+
+      assert has_element?(
+               view,
+               ~s{div[id="index_item_4_#{page_4.resource_id}"] svg[role="clock icon"]}
+             )
+
+      assert has_element?(
+               view,
+               ~s{div[id="index_item_4_#{page_4.resource_id}"] span[role="duration in minutes"]},
+               "22"
+             )
+    end
+
     test "sees a check icon on visited and completed pages", %{
       conn: conn,
       user: user,
@@ -1881,27 +1910,6 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       assert render(subsection_1_element) =~ "Erlang as a motivation"
       assert render(subsection_1_element) =~ "ml-[20px]"
-
-      # Hides the sub-section content when it is clicked
-      render_click(subsection_1_element)
-
-      assert has_element?(
-               view,
-               ~s{div.hidden button[phx-click="navigate_to_resource"][phx-value-slug="#{page_11.slug}"]}
-             )
-
-      # Hides the section content when it is clicked
-      render_click(section_1_element)
-
-      assert has_element?(
-               view,
-               ~s{div.hidden button[phx-click="navigate_to_resource"][phx-value-slug="#{page_12.slug}"]}
-             )
-
-      assert has_element?(
-               view,
-               "div.hidden #index_item_#{subsection_1.resource_id}_2023-11-03"
-             )
     end
 
     test "groups pages within a module index by due date (even if some pages do not yet have a scheduled date)",
