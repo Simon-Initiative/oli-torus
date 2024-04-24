@@ -41,7 +41,6 @@ const _TorusImageBrowser: MediaBrowserComponent = ({ id, label, value, onChange,
       >
         <i className="fa-solid fa-image"></i>
       </Button>
-
       <a href="#" style={{ marginLeft: '5px', textDecoration: 'underline' }} onClick={openPicker}>
         Upload or Link Image
       </a>
