@@ -17,8 +17,6 @@ defmodule Oli.Publishing.DeliveryResolver do
   alias Oli.Delivery.Attempts.Core.{ResourceAttempt, ResourceAccess}
   alias Oli.Authoring.Course.Project
 
-  @page_resource_type_id Oli.Resources.ResourceType.id_for_page()
-
   defp section_resources(section_slug) do
     from(sr in SectionResource,
       as: :sr,
@@ -469,17 +467,4 @@ defmodule Oli.Publishing.DeliveryResolver do
       )
     )
   end
-
-  @doc """
-  Given a page revision, determines if it is an adaptive chromeless page.
-  """
-  @spec is_adaptive_chromeless_page(Oli.Resources.Revision.t()) :: boolean
-  def is_adaptive_chromeless_page(%Oli.Resources.Revision{
-        resource_type_id: resource_type_id,
-        content: %{"advancedDelivery" => true, "displayApplicationChrome" => false}
-      })
-      when resource_type_id == @page_resource_type_id,
-      do: true
-
-  def is_adaptive_chromeless_page(_revision), do: false
 end

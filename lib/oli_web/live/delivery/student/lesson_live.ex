@@ -980,8 +980,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
                 @section_slug,
                 @page_revision_slug,
                 @attempt.attempt_guid,
-                %{request_path: @request_path},
-                @adaptive_chromeless?
+                request_path: @request_path
               )
             }
             role="review_attempt_link"

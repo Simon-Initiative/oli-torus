@@ -8,7 +8,6 @@ defmodule OliWeb.Components.Delivery.Student do
   alias Oli.Delivery.Attempts.HistoricalGradedAttemptSummary
   alias Oli.Delivery.Attempts.Core.ResourceAttempt
   alias OliWeb.Components.Common
-  alias OliWeb.Delivery.Student.Utils
 
   attr(:raw_avg_score, :map)
 
@@ -230,12 +229,6 @@ defmodule OliWeb.Components.Delivery.Student do
   end
 
   defp attempt_details(assigns) do
-    assigns =
-      assign(assigns,
-        adaptive_chromeless?:
-          Oli.Publishing.DeliveryResolver.is_adaptive_chromeless_page(assigns.attempt.revision)
-      )
-
     ~H"""
     <div class="flex flex-col">
       <div class="flex flex-row justify-between gap-10 text-xs">
@@ -268,13 +261,7 @@ defmodule OliWeb.Components.Delivery.Student do
         >
           <.link
             href={
-              Utils.review_live_path(
-                @section_slug,
-                @page_revision_slug,
-                @attempt.attempt_guid,
-                [],
-                @adaptive_chromeless?
-              )
+              ~p"/sections/#{@section_slug}/lesson/#{@page_revision_slug}/attempt/#{@attempt.attempt_guid}/review"
             }
             role="review_attempt_link"
           >
