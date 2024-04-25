@@ -5733,10 +5733,6 @@ table.table-striped tbody tr:nth-child(even) {
   list-style-position: inside;
 }
 
-.list-decimal {
-  list-style-type: decimal;
-}
-
 .list-disc {
   list-style-type: disc;
 }
@@ -5963,6 +5959,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .gap-y-4 {
   row-gap: 1rem;
+}
+
+.gap-y-6 {
+  row-gap: 1.5rem;
 }
 
 .space-x-2 > :not([hidden]) ~ :not([hidden]) {
@@ -8115,6 +8115,10 @@ table.table-striped tbody tr:nth-child(even) {
 .text-info {
   --tw-text-opacity: 1;
   color: rgb(52 152 219 / var(--tw-text-opacity));
+}
+
+.text-inherit {
+  color: inherit;
 }
 
 .text-primary {
