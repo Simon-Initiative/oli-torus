@@ -89,8 +89,8 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
             onEditTarget: "#intro_content_step",
             editMode: true,
             value:
-              (fetch_field(@changeset, :intro_content) &&
-                 fetch_field(@changeset, :intro_content)["children"]) || [],
+              (fetch_field(@form.source, :intro_content) &&
+                 fetch_field(@form.source, :intro_content)["children"]) || [],
             fixedToolbar: true,
             allowBlockElements: false
           },
@@ -185,7 +185,7 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
               entry={entry}
               class={[
                 "object-cover h-[162px] w-[288px] mx-auto rounded-lg cursor-pointer outline outline-1 outline-gray-200 shadow-lg",
-                if(fetch_field(@changeset, @step) == "uploaded_one",
+                if(fetch_field(@form.source, @step) == "uploaded_one",
                   do: "!outline-[7px] outline-blue-400"
                 )
               ]}
@@ -207,7 +207,7 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
               <video
                 class={[
                   "object-cover h-[162px] w-[288px] mx-auto rounded-lg cursor-pointer outline outline-1 outline-gray-200 shadow-lg",
-                  if(fetch_field(@changeset, @step) == "uploaded_one",
+                  if(fetch_field(@form.source, @step) == "uploaded_one",
                     do: "!outline-[7px] outline-blue-400"
                   )
                 ]}
@@ -237,7 +237,7 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
           :if={@step == :poster_image}
           url={url}
           target={@myself}
-          is_selected={get_filename(url) == get_filename(fetch_field(@changeset, @step))}
+          is_selected={get_filename(url) == get_filename(fetch_field(@form.source, @step))}
         />
 
         <.video_card
@@ -261,7 +261,7 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
                 @intro_video_form.source,
                 :url
               )
-            ) == valid_youtube_to_embed_url(fetch_field(@changeset, @step))
+            ) == valid_youtube_to_embed_url(fetch_field(@form.source, @step))
           }
         />
 
@@ -271,7 +271,7 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
           url={url}
           target={@myself}
           is_youtube_link={is_youtube_link(url)}
-          is_selected={get_filename(url) == get_filename(fetch_field(@changeset, @step))}
+          is_selected={get_filename(url) == get_filename(fetch_field(@form.source, @step))}
         />
       </div>
 
@@ -286,7 +286,7 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
           <div class="hidden">
             <.live_file_input upload={@uploads[@step]} />
           </div>
-          <div :if={fetch_field(@changeset, @step) == "uploaded_one"}>
+          <div :if={fetch_field(@form.source, @step) == "uploaded_one"}>
             <%= for entry <- @uploads[@step].entries do %>
               <progress :if={entry.valid? and entry.progress != 100} value={entry.progress} max="100">
                 <%= entry.progress %>%
@@ -312,7 +312,7 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
           phx-disable-with="Selecting..."
           class="btn btn-primary"
           phx-click={
-            if fetch_field(@changeset, @step) == "uploaded_one",
+            if fetch_field(@form.source, @step) == "uploaded_one",
               do: JS.push("consume-uploaded") |> JS.push("change_step"),
               else: "change_step"
           }
@@ -321,7 +321,7 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
           phx-target={@myself}
           disabled={
             !can_submit_resource_selection?(
-              fetch_field(@changeset, @step),
+              fetch_field(@form.source, @step),
               @uploads[@step].entries
             )
           }
@@ -533,7 +533,7 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
                 <%= Phoenix.HTML.raw(
                   Oli.Rendering.Content.render(
                     %Oli.Rendering.Context{},
-                    fetch_field(@changeset, :intro_content)[
+                    fetch_field(@form.source, :intro_content)[
                       "children"
                     ],
                     Oli.Rendering.Content.Html
@@ -551,6 +551,19 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
             >
               Edit
             </.button>
+          </div>
+          <div class="flex gap-10 justify-center">
+            <.poster_image_selection
+              target={@myself}
+              poster_image={fetch_field(@form.source, :poster_image) || @default_poster_image}
+              delete_button_enabled={
+                fetch_field(@form.source, :poster_image) not in [nil, @default_poster_image]
+              }
+            />
+            <.intro_video_selection
+              target={@myself}
+              intro_video={fetch_field(@form.source, :intro_video)}
+            />
           </div>
         <% end %>
         <div class="modal-footer">
@@ -1337,7 +1350,7 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
              maybe_list_all_youtube_resource_urls(socket.assigns.project.slug, resource_name) do
         list_selected_resource_first(
           youtube_resource_urls ++ s3_resource_urls,
-          fetch_field(socket.assigns.changeset, resource_name)
+          fetch_field(socket.assigns.form.source, resource_name)
         )
       end
 

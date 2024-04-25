@@ -274,7 +274,28 @@ defmodule OliWeb.Curriculum.ContainerLive do
     %{options_modal_assigns: %{redirect_url: redirect_url, revision: revision}, project: project} =
       socket.assigns
 
-    revision_params = decode_revision_params(revision_params)
+    revision_params =
+      case revision_params do
+        %{"explanation_strategy" => %{"type" => "none"}} ->
+          Map.put(revision_params, "explanation_strategy", nil)
+
+        %{"intro_content" => intro_content} when intro_content in ["", nil] ->
+          Map.put(
+            revision_params,
+            "intro_content",
+            %{}
+          )
+
+        %{"intro_content" => intro_content} ->
+          Map.put(
+            revision_params,
+            "intro_content",
+            Jason.decode!(intro_content)
+          )
+
+        _ ->
+          revision_params
+      end
 
     case ContainerEditor.edit_page(project, revision.slug, revision_params) do
       {:ok, _} ->
