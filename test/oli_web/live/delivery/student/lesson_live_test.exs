@@ -597,6 +597,46 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       )
     end
 
+    test "Review link redirects to the lesson review page for adaptive chromeles pages",
+         %{
+           conn: conn,
+           user: user,
+           section: section,
+           graded_adaptive_page_revision: graded_adaptive_page_revision
+         } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+
+      attempt = create_attempt(user, section, graded_adaptive_page_revision)
+
+      request_path =
+        Utils.learn_live_path(section.slug,
+          target_resource_id: graded_adaptive_page_revision.resource_id
+        )
+
+      {:ok, view, _html} =
+        live(
+          conn,
+          live_view_adaptive_lesson_live_route(
+            section.slug,
+            graded_adaptive_page_revision.slug,
+            request_path
+          )
+        )
+
+      view
+      |> element(~s{a[role="review_attempt_link"]})
+      |> render_click
+
+      assert_redirected(
+        view,
+        ~p"/sections/#{section.slug}/lesson/#{graded_adaptive_page_revision.slug}/attempt/#{attempt.attempt_guid}/review?#{%{request_path: request_path}}"
+      )
+
+      # Note that the student will then be redirected to the adaptive chromeless review path in OliWeb.LiveSessionPlugs.RedirectAdaptiveChromeless
+      # (tested in OliWeb.LiveSessionPlugs.RedirectAdaptiveChromelessTest)
+    end
+
     test "does not render 'Review' link on attempt summary if instructor does not allow it", %{
       conn: conn,
       user: user,
