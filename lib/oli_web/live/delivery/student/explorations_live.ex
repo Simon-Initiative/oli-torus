@@ -83,7 +83,7 @@ defmodule OliWeb.Delivery.Student.ExplorationsLive do
     if preview_mode do
       ~p"/sections/#{section_slug}/preview/page/#{exploration.slug}"
     else
-      ~p"/sections/#{section_slug}/page/#{exploration.slug}"
+      ~p"/sections/#{section_slug}/lesson/#{exploration.slug}"
     end
   end
 
