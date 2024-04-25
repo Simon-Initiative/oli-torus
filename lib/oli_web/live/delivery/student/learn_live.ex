@@ -867,7 +867,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
           }
           id={"module_intro_contentin_unit_#{@unit["resource_id"]}"}
           role="module intro content"
-          class="max-w-[760px] pt-[25px] pb-2.5 justify-start items-start gap-[23px] inline-flex"
+          class="max-w-[760px] w-full pt-[25px] pb-2.5 justify-start items-start gap-[23px] inline-flex"
         >
           <div class="flex flex-col opacity-80">
             <span
