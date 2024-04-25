@@ -56,8 +56,8 @@ defmodule Oli.Slack do
                Jason.encode!(payload),
                [{"Content-Type", "application/json"}]
              ) do
-          {:ok, %{status_code: 200, body: result}} ->
-            result
+          {:ok, %{status_code: 200}} = response ->
+            response
 
           e ->
             Oli.Utils.Appsignal.capture_error(e)
