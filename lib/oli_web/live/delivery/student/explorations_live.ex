@@ -54,7 +54,10 @@ defmodule OliWeb.Delivery.Student.ExplorationsLive do
 
   defp exploration_card(assigns) do
     ~H"""
-    <div class="flex flex-col lg:flex-row-reverse items-center rounded-lg bg-black/5 dark:bg-white/5 mb-4">
+    <div
+      id={"exploration_card_#{@exploration.id}"}
+      class="flex flex-col lg:flex-row-reverse items-center rounded-lg bg-black/5 dark:bg-white/5 mb-4"
+    >
       <img
         class="object-cover rounded-t-lg lg:rounded-tl-none w-full lg:w-[300px] lg:rounded-r-lg h-64 lg:h-full shrink-0"
         src={poster_image(@exploration)}
