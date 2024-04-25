@@ -52,6 +52,9 @@ const _TorusAudioBrowser: MediaBrowserComponent = ({ id, label, value, onChange,
             )}
           </Button>
         )}
+        <a href="#" style={{ marginLeft: '5px', textDecoration: 'underline' }} onClick={openPicker}>
+          Upload or Link Audio
+        </a>
       </ButtonGroup>
 
       {pickerOpen && (
