@@ -16,6 +16,8 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   import Oli.Utils, only: [get_in: 3]
   import Ecto.Query, warn: false, only: [from: 2]
 
+  @default_selected_view :gallery
+
   @default_image "/images/course_default.jpg"
   # this is an optimization to reduce the memory footprint of the liveview process
   @required_keys_per_assign %{
@@ -64,7 +66,8 @@ defmodule OliWeb.Delivery.Student.LearnLive do
             socket.assigns.current_user.id
           ),
         assistant_enabled: Sections.assistant_enabled?(section),
-        display_props_per_module_id: %{}
+        display_props_per_module_id: %{},
+        selected_view: @default_selected_view
       )
       |> slim_assigns()
 
@@ -83,6 +86,19 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         )
       )
     end)
+  end
+
+  def handle_params(%{"selected_view" => selected_view}, _uri, socket) do
+    full_hierarchy = get_or_compute_full_hierarchy(socket.assigns.section)
+    selected_view = String.to_existing_atom(selected_view)
+
+    send(self(), :gc)
+
+    {:noreply,
+     socket
+     |> assign(selected_view: selected_view)
+     |> update(:units, fn _units -> full_hierarchy["children"] end)
+     |> maybe_enable_gallery_slider_buttons(full_hierarchy, selected_view)}
   end
 
   def handle_params(%{"target_resource_id" => resource_id}, _uri, socket) do
@@ -275,6 +291,13 @@ defmodule OliWeb.Delivery.Student.LearnLive do
      |> push_event("play_video", %{"video_url" => video_url})}
   end
 
+  def handle_event("change_selected_view", %{"selected_view" => selected_view}, socket) do
+    {:noreply,
+     push_patch(socket,
+       to: ~p"/sections/#{socket.assigns.section.slug}/learn?#{%{selected_view: selected_view}}"
+     )}
+  end
+
   def handle_event(
         "select_module",
         %{"unit_resource_id" => unit_resource_id, "module_resource_id" => module_resource_id},
@@ -311,6 +334,8 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         %{show_completed_pages: show_completed_pages?},
         fn _ -> %{show_completed_pages: show_completed_pages?} end
       )
+
+    send(self(), :gc)
 
     {:noreply,
      socket
@@ -540,7 +565,13 @@ defmodule OliWeb.Delivery.Student.LearnLive do
           student_end_date_exceptions_per_resource_id}},
         socket
       ) do
-    full_hierarchy = get_or_compute_full_hierarchy(socket.assigns.section)
+    %{
+      section: section,
+      selected_module_per_unit_resource_id: selected_module_per_unit_resource_id,
+      selected_view: selected_view
+    } = socket.assigns
+
+    full_hierarchy = get_or_compute_full_hierarchy(section)
 
     send(self(), :gc)
 
@@ -553,7 +584,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
        student_raw_avg_score_per_container_id: student_raw_avg_score_per_container_id,
        selected_module_per_unit_resource_id:
          Enum.into(
-           socket.assigns.selected_module_per_unit_resource_id,
+           selected_module_per_unit_resource_id,
            %{},
            fn {unit_resource_id, selected_module} ->
              {unit_resource_id,
@@ -567,23 +598,41 @@ defmodule OliWeb.Delivery.Student.LearnLive do
          )
      )
      |> update(:units, fn _units -> full_hierarchy["children"] end)
-     |> push_event("enable-slider-buttons", %{
-       unit_resource_ids:
-         Enum.map(
-           full_hierarchy["children"],
-           & &1["resource_id"]
-         )
-     })}
+     |> maybe_enable_gallery_slider_buttons(full_hierarchy, selected_view)}
   end
 
   # needed to ignore results of Task invocation
   def handle_info(_, socket), do: {:noreply, socket}
 
-  def render(assigns) do
+  def render(%{selected_view: :outline} = assigns) do
     ~H"""
     <div id="student_learn" class="lg:container lg:mx-auto p-[25px]" phx-hook="Scroller">
       <.video_player />
-      <div id="all_units" phx-update="append">
+      <div class="flex justify-end md:p-[25px]">
+        <.live_component
+          id="view_selector"
+          module={OliWeb.Delivery.Student.Learn.Components.ViewSelector}
+          selected_view={@selected_view}
+        />
+      </div>
+      <div>TODO: implement OUTLINE view</div>
+      <div id="all_units_as_outline" phx-update="append"></div>
+    </div>
+    """
+  end
+
+  def render(%{selected_view: :gallery} = assigns) do
+    ~H"""
+    <div id="student_learn" class="lg:container lg:mx-auto p-[25px]" phx-hook="Scroller">
+      <.video_player />
+      <div class="flex justify-end md:p-[25px]">
+        <.live_component
+          id="view_selector"
+          module={OliWeb.Delivery.Student.Learn.Components.ViewSelector}
+          selected_view={@selected_view}
+        />
+      </div>
+      <div id="all_units_as_gallery" phx-update="append">
         <.row
           :for={unit <- @units}
           unit={unit}
@@ -2149,6 +2198,22 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   defp maybe_scroll_y_to_unit(socket, unit_resource_id, true) do
     push_event(socket, "scroll-y-to-target", %{id: "unit_#{unit_resource_id}", offset: 80})
   end
+
+  _docp = """
+  When rendering learn page in gallery view, we need to execute the Scroller hook to enable the slider buttons
+  """
+
+  defp maybe_enable_gallery_slider_buttons(socket, full_hierarchy, :gallery) do
+    push_event(socket, "enable-slider-buttons", %{
+      unit_resource_ids:
+        Enum.map(
+          full_hierarchy["children"],
+          & &1["resource_id"]
+        )
+    })
+  end
+
+  defp maybe_enable_gallery_slider_buttons(socket, _full_hierarchy, _selected_view), do: socket
 
   defp module_has_intro_video(module), do: module["intro_video"] != nil
 
