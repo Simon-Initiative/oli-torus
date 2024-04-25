@@ -49,7 +49,7 @@ export const initActivityBridge = (elementId: string) => {
         'PATCH',
         { partInputs: e.detail.payload },
         e.detail.continuation,
-        saveTransform
+        saveTransform,
       );
     },
     false,
@@ -97,7 +97,7 @@ export const initActivityBridge = (elementId: string) => {
         'PATCH',
         { response: e.detail.payload },
         e.detail.continuation,
-        saveTransform
+        saveTransform,
       );
     },
     false,
