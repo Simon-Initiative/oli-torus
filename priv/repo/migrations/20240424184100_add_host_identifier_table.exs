@@ -11,6 +11,5 @@ defmodule Oli.Repo.Migrations.AddHostIdentifierTable do
     create constraint("host_identifier", :one_row, check: "id = 1")
 
     create unique_index(:host_identifier, :id)
-    create unique_index(:host_identifier, :host)
   end
 end
