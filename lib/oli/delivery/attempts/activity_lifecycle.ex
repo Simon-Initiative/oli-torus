@@ -333,30 +333,29 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle do
         }
       end)
 
-    part_attempt = get_part_attempt_by(attempt_guid: hd(params))
+    part_input_values = Enum.join(part_input_values, ",")
 
-    if part_attempt.lifecycle_state in [:evaluated, :submitted] do
-      Logger.info(
-        "These changes could not be saved as this attempt may have already been submitted"
-      )
+    sql = """
+      UPDATE part_attempts
+      SET
+        response = batch_values.response,
+        updated_at = NOW()
+      FROM (
+          VALUES
+          #{part_input_values}
+      ) AS batch_values (attempt_guid, response)
+      WHERE part_attempts.attempt_guid = batch_values.attempt_guid and lifecycle_state = 'active'
+    """
 
-      {:error, :already_submitted}
-    else
-      part_input_values = Enum.join(part_input_values, ",")
+    case Ecto.Adapters.SQL.query(Oli.Repo, sql, params) do
+      {:ok, %Postgrex.Result{num_rows: n}} when n > 0 ->
+        {:ok, %{num_rows: n}}
 
-      sql = """
-        UPDATE part_attempts
-        SET
-          response = batch_values.response,
-          updated_at = NOW()
-        FROM (
-            VALUES
-            #{part_input_values}
-        ) AS batch_values (attempt_guid, response)
-        WHERE part_attempts.attempt_guid = batch_values.attempt_guid
-      """
+      {:ok, %Postgrex.Result{num_rows: 0}} ->
+        {:error, :already_submitted}
 
-      Ecto.Adapters.SQL.query(Oli.Repo, sql, params)
+      {:error, _} ->
+        {:error, "Failed to save student input"}
     end
   end
 
