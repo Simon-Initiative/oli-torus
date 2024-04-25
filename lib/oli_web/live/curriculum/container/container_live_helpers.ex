@@ -24,29 +24,17 @@ defmodule OliWeb.Curriculum.Container.ContainerLiveHelpers do
     Routes.container_path(socket, :index, project_slug, container_slug)
   end
 
-  def decode_revision_params(revision_params) do
-    case revision_params do
-      %{"explanation_strategy" => %{"type" => "none"}} ->
-        Map.put(revision_params, "explanation_strategy", nil)
+  def decode_revision_params(%{"explanation_strategy" => %{"type" => "none"}} = params),
+    do: Map.put(params, "explanation_strategy", nil)
 
-      %{"intro_content" => intro_content} when intro_content in ["", nil] ->
-        Map.put(
-          revision_params,
-          "intro_content",
-          %{}
-        )
+  def decode_revision_params(%{"intro_content" => intro_content} = params)
+      when intro_content in ["", nil],
+      do: Map.put(params, "intro_content", %{})
 
-      %{"intro_content" => intro_content} ->
-        Map.put(
-          revision_params,
-          "intro_content",
-          Jason.decode!(intro_content)
-        )
+  def decode_revision_params(%{"intro_content" => intro_content} = params),
+    do: Map.put(params, "intro_content", Jason.decode!(intro_content))
 
-      _ ->
-        revision_params
-    end
-  end
+  def decode_revision_params(params), do: params
 
   def build_modal_assigns(container_slug, project_slug, slug) do
     hierarchy = AuthoringResolver.full_hierarchy(project_slug)
