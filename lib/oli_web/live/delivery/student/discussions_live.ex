@@ -138,14 +138,15 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
         # collab space may be configured to need approval from instructor
         if post.status == :approved,
           do:
-            Phoenix.PubSub.broadcast_from(
+            Phoenix.PubSub.broadcast(
               Oli.PubSub,
-              self(),
               "collab_space_discussion_#{socket.assigns.section.slug}",
               {:discussion_created, %Post{new_post | is_read: false}}
             )
 
-        {:noreply, assign(socket, :posts, [new_post | socket.assigns.posts])}
+        {:noreply,
+         socket
+         |> put_flash(:info, "Post successfully created")}
 
       {:error, %Ecto.Changeset{} = _changeset} ->
         {:noreply,
@@ -154,105 +155,147 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
     end
   end
 
-  def handle_event("expand_post", %{"post_id" => post_id}, socket) do
-    post_replies =
-      Collaboration.list_replies_for_post(
-        socket.assigns.current_user.id,
-        post_id
-      )
-      |> group_unread_last()
+  def handle_event("toggle_post_replies", %{"post-id" => post_id}, socket) do
+    %{current_user: current_user, posts: posts} = socket.assigns
 
-    updated_expanded_posts =
-      Map.merge(
-        socket.assigns.expanded_posts,
-        Enum.into([{String.to_integer(post_id), post_replies}], %{})
-      )
+    post_id = String.to_integer(post_id)
+    post = Enum.find(posts, fn post -> post.id == post_id end)
 
-    Collaboration.mark_posts_as_read(post_replies, socket.assigns.current_user.id, true)
+    case post.replies do
+      nil ->
+        # load replies
+        async_load_post_replies(current_user.id, post_id)
 
-    {:noreply, assign(socket, expanded_posts: updated_expanded_posts)}
+        {:noreply, update_post_replies(socket, post_id, :loading, fn _ -> :loading end)}
+
+      _ ->
+        # unload replies
+        {:noreply, update_post_replies(socket, post_id, nil, fn _ -> nil end)}
+    end
   end
 
-  def handle_event("collapse_post", %{"post_id" => post_id}, socket) do
-    # mark the collapsed posts replies as read
-    # although we mark them when expanded, we need to handle the
-    # case when a post reply is shown because a new_post broadcast is received
-    # while having the parent post expanded.
-    Collaboration.mark_posts_as_read(
-      Map.get(socket.assigns.expanded_posts, String.to_integer(post_id), []),
-      socket.assigns.current_user.id
-    )
-
-    # update the metrics of the parent post that just was collapsed
-    # and remove it from the expanded posts map.
-    collapsed_post = Collaboration.get_post_by(id: post_id)
-
-    {updated_root_posts, updated_expanded_posts} =
-      update_metrics_of_thread(
-        socket.assigns.posts,
-        Map.drop(socket.assigns.expanded_posts, [String.to_integer(post_id)]),
-        collapsed_post,
-        socket.assigns.current_user.id
-      )
-
-    {:noreply,
-     socket
-     |> assign(posts: updated_root_posts)
-     |> assign(expanded_posts: updated_expanded_posts)}
+  def handle_event("create_reply", %{"content" => ""}, socket) do
+    {:noreply, put_flash(socket, :error, "Reply cannot be empty")}
   end
 
   def handle_event(
-        "post_reply",
-        %{"content" => %{"message" => ""}},
+        "create_reply",
+        %{"parent-post-id" => parent_post_id, "content" => value} = params,
         socket
       ) do
-    {:noreply, socket}
-  end
+    %{
+      current_user: current_user,
+      section: section,
+      course_collab_space_config: course_collab_space_config,
+      root_section_resource_resource_id: root_section_resource_resource_id
+    } = socket.assigns
 
-  def handle_event(
-        "post_reply",
-        attrs,
-        socket
-      ) do
-    attrs =
-      Map.merge(attrs, %{
-        "user_id" => socket.assigns.current_user.id,
-        "section_id" => socket.assigns.section.id,
-        "resource_id" => socket.assigns.root_section_resource_resource_id,
-        "status" =>
-          if(socket.assigns.course_collab_space_config.auto_accept,
-            do: :approved,
-            else: :submitted
-          )
-      })
+    parent_post_id = String.to_integer(parent_post_id)
+
+    status =
+      if(course_collab_space_config.auto_accept,
+        do: :approved,
+        else: :submitted
+      )
+
+    attrs = %{
+      status: status,
+      user_id: current_user.id,
+      section_id: section.id,
+      resource_id: root_section_resource_resource_id,
+      anonymous: params["anonymous"] == "true",
+      visibility: :public,
+      content: %Collaboration.PostContent{message: value},
+      parent_post_id: parent_post_id,
+      thread_root_id: parent_post_id
+    }
 
     case Collaboration.create_post(attrs) do
-      {:ok, %Post{} = new_post} ->
-        {updated_root_posts, updated_expanded_posts} =
-          update_metrics_of_thread(
-            socket.assigns.posts,
-            socket.assigns.expanded_posts,
-            new_post,
-            socket.assigns.current_user.id
-          )
+      {:ok, post} ->
+        Phoenix.PubSub.broadcast(
+          Oli.PubSub,
+          "collab_space_discussion_#{socket.assigns.section.slug}",
+          {:reply_posted, %Collaboration.Post{post | reaction_summaries: %{}}}
+        )
 
-        # collab space may be configured to need approval from instructor
-        if new_post.status == :approved,
-          do:
-            Phoenix.PubSub.broadcast_from(
-              Oli.PubSub,
-              self(),
-              "collab_space_discussion_#{socket.assigns.section.slug}",
-              {:reply_posted, new_post}
-            )
-
-        {:noreply,
-         assign(socket, expanded_posts: updated_expanded_posts, posts: updated_root_posts)}
-
-      {:error, %Ecto.Changeset{} = _changeset} ->
         {:noreply,
          socket
-         |> put_flash(:error, "Couldn't create post")}
+         |> put_flash(:info, "Reply successfully created")}
+
+      {:error, _} ->
+        {:noreply, put_flash(socket, :error, "Failed to create reply")}
+    end
+  end
+
+  # handle toggle_reaction for reply posts
+  def handle_event(
+        "toggle_reaction",
+        %{"parent-post-id" => parent_post_id, "post-id" => post_id, "reaction" => reaction},
+        socket
+      ) do
+    %{current_user: current_user} = socket.assigns
+
+    parent_post_id = String.to_integer(parent_post_id)
+    post_id = String.to_integer(post_id)
+    reaction = String.to_existing_atom(reaction)
+
+    case Collaboration.toggle_reaction(post_id, current_user.id, reaction) do
+      {:ok, change} ->
+        {:noreply,
+         update_post_replies(socket, parent_post_id, nil, fn replies ->
+           Enum.map(
+             replies,
+             fn post ->
+               if post.id == post_id do
+                 %{
+                   post
+                   | reaction_summaries: update_reaction_summaries(post, reaction, change)
+                 }
+               else
+                 post
+               end
+             end
+           )
+         end)}
+
+      {:error, _} ->
+        {:noreply, put_flash(socket, :error, "Failed to update reaction for post")}
+    end
+  end
+
+  # handle toggle_reaction for root posts
+  def handle_event(
+        "toggle_reaction",
+        %{"post-id" => post_id, "reaction" => reaction},
+        socket
+      ) do
+    %{current_user: current_user, posts: posts} = socket.assigns
+
+    post_id = String.to_integer(post_id)
+    reaction = String.to_existing_atom(reaction)
+
+    case Collaboration.toggle_reaction(post_id, current_user.id, reaction) do
+      {:ok, change} ->
+        {:noreply,
+         assign(socket,
+           posts:
+             Enum.map(
+               posts,
+               fn post ->
+                 if post.id == post_id do
+                   %{
+                     post
+                     | reaction_summaries: update_reaction_summaries(post, reaction, change)
+                   }
+                 else
+                   post
+                 end
+               end
+             )
+         )}
+
+      {:error, _} ->
+        {:noreply, put_flash(socket, :error, "Failed to update reaction for post")}
     end
   end
 
@@ -296,15 +339,43 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
   end
 
   def handle_info({:reply_posted, new_post}, socket) do
-    {updated_root_posts, updated_expanded_posts} =
-      update_metrics_of_thread(
-        socket.assigns.posts,
-        socket.assigns.expanded_posts,
-        new_post,
-        socket.assigns.current_user.id
-      )
+    %{posts: posts} = socket.assigns
 
-    {:noreply, assign(socket, expanded_posts: updated_expanded_posts, posts: updated_root_posts)}
+    {:noreply,
+     assign(socket,
+       posts:
+         Enum.map(posts, fn post ->
+           if post.id == new_post.parent_post_id do
+             %Collaboration.Post{
+               post
+               | replies_count: post.replies_count + 1,
+                 replies:
+                   case post.replies do
+                     nil -> [new_post]
+                     replies -> replies ++ [new_post]
+                   end
+             }
+           else
+             post
+           end
+         end)
+     )}
+  end
+
+  # handle assigns directly from async tasks
+  def handle_info({ref, result}, socket) do
+    Process.demonitor(ref, [:flush])
+
+    case result do
+      {:assign_post_replies, {parent_post_id, replies}} ->
+        {:noreply, update_post_replies(socket, parent_post_id, replies, fn _ -> replies end)}
+
+      {:error, _} ->
+        {:noreply, put_flash(socket, :error, "Something went wrong")}
+
+      _ ->
+        {:noreply, socket}
+    end
   end
 
   def render(assigns) do
@@ -644,44 +715,6 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
     to_form(Collaboration.change_post(%Post{}))
   end
 
-  defp update_metrics_of_thread(root_posts, expanded_posts, new_post, current_user_id) do
-    # we need to update the metrics of the root post the new post belongs to
-    # (considering the case where the new post is a root post itself)
-    updated_root_posts =
-      Enum.map(root_posts, fn root_post ->
-        if root_post.id == new_post.thread_root_id or root_post.id == new_post.id do
-          Collaboration.rebuild_metrics_for_root_post(root_post, current_user_id)
-        else
-          root_post
-        end
-      end)
-
-    # and update the metrics for the expanded posts that belong
-    # to the same thread as the new post
-    updated_expanded_posts =
-      Enum.into(expanded_posts, %{}, fn
-        {expanded_post_id, _expanded_replies} when expanded_post_id == new_post.parent_post_id ->
-          # the new post must be shown as part of the expanded replies
-          {expanded_post_id,
-           Collaboration.list_replies_for_post(
-             current_user_id,
-             new_post.parent_post_id
-           )
-           |> group_unread_last()}
-
-        {expanded_post_id, [expanded_reply | _rest] = expanded_replies}
-        when expanded_reply.thread_root_id == new_post.thread_root_id ->
-          {expanded_post_id,
-           Collaboration.build_metrics_for_reply_posts(expanded_replies, current_user_id)
-           |> group_unread_last()}
-
-        {expanded_post_id, expanded_replies} ->
-          {expanded_post_id, expanded_replies}
-      end)
-
-    {updated_root_posts, updated_expanded_posts}
-  end
-
   defp get_sort_order(current_sort_by, new_sort_by, sort_order)
        when current_sort_by == new_sort_by,
        do: toggle_sort_order(sort_order)
@@ -695,42 +728,39 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
   defp sort_by_icon(true, :asc), do: ~s{<i class="fa-solid fa-arrow-up"></i>}
   defp sort_by_icon(false, _), do: nil
 
-  _docp = """
-   If there are any unread posts (or posts with unread replies), they are grouped at the end of the list
-   and, in case there are any read post, the first unread post is marked with a flag.
-   This flag is used to render the "UNREAD REPLIES" label in the UI.
-  """
+  defp update_post_replies(socket, post_id, default, updater) do
+    %{posts: posts} = socket.assigns
 
-  defp group_unread_last(posts) when posts in [nil, []], do: []
-
-  defp group_unread_last(posts) do
-    {read_posts, unread_posts} =
-      Enum.reduce(posts, {[], []}, fn post, {read_posts, unread_posts} ->
-        if post.replies_count - post.read_replies_count > 0 or
-             !post.is_read do
-          {read_posts, [post | unread_posts]}
-        else
-          {[post | read_posts], unread_posts}
-        end
-      end)
-
-    Enum.reverse(read_posts) ++
-      add_first_unread_flag(Enum.reverse(unread_posts))
+    socket
+    |> assign(
+      posts:
+        Enum.map(posts, fn post ->
+          if post.id == post_id do
+            Map.update(post, :replies, default, updater)
+          else
+            post
+          end
+        end)
+    )
   end
 
-  _docp = """
-  The first unread post is marked with a flag, so it can be rendered differently in the UI, showing
-  a "UNREAD REPLIES" label on top.
-  We also need to mark the other posts in the thread as `is_first_unread: false` to
-  avoid issues when the current liveview recieves a broadcasted new post in the expanded thread.
-  If not, two unread posts end up having the flag => two "UNREAD REPLIES" labels.
-  """
+  def update_reaction_summaries(post, reaction, change) do
+    Map.update(
+      post.reaction_summaries,
+      reaction,
+      %{count: 1, reacted: true},
+      &%{
+        count: &1.count + change,
+        reacted: if(change > 0, do: true, else: false)
+      }
+    )
+  end
 
-  defp add_first_unread_flag([]), do: []
+  defp async_load_post_replies(user_id, post_id) do
+    Task.async(fn ->
+      post_replies = Collaboration.list_replies_for_post(user_id, post_id)
 
-  defp add_first_unread_flag([first_unread_post | rest]),
-    do: [
-      Map.merge(first_unread_post, %{is_first_unread: true})
-      | Enum.map(rest, fn r -> Map.merge(r, %{is_first_unread: false}) end)
-    ]
+      {:assign_post_replies, {post_id, post_replies}}
+    end)
+  end
 end

@@ -655,44 +655,44 @@ defmodule Oli.Resources.Collaboration do
     {final_posts, more_posts_exist?}
   end
 
-  def list_replies_for_post(user_id, post_id) do
-    Repo.all(
-      from(
-        post in Post,
-        join: sr in SectionResource,
-        on: sr.resource_id == post.resource_id and sr.section_id == post.section_id,
-        join: spp in SectionsProjectsPublications,
-        on: spp.section_id == post.section_id and spp.project_id == sr.project_id,
-        join: pr in PublishedResource,
-        on: pr.publication_id == spp.publication_id and pr.resource_id == post.resource_id,
-        join: rev in Revision,
-        on: rev.id == pr.revision_id,
-        join: user in User,
-        on: post.user_id == user.id,
-        left_join: urp in UserReadPost,
-        on: urp.post_id == post.id and urp.user_id == ^user_id,
-        where:
-          post.parent_post_id == ^post_id and
-            (post.status in [:approved, :archived] or
-               (post.status == :submitted and post.user_id == ^user_id)),
-        select: %{
-          id: post.id,
-          thread_root_id: post.thread_root_id,
-          content: post.content,
-          user_name: user.name,
-          user_id: user.id,
-          posted_anonymously: post.anonymous,
-          title: rev.title,
-          slug: rev.slug,
-          resource_type_id: rev.resource_type_id,
-          updated_at: post.updated_at,
-          is_read: not is_nil(urp.id) or post.user_id == ^user_id
-        },
-        order_by: [asc: :updated_at]
-      )
-    )
-    |> build_metrics_for_reply_posts(user_id)
-  end
+  # def list_replies_for_post(user_id, post_id) do
+  #   Repo.all(
+  #     from(
+  #       post in Post,
+  #       join: sr in SectionResource,
+  #       on: sr.resource_id == post.resource_id and sr.section_id == post.section_id,
+  #       join: spp in SectionsProjectsPublications,
+  #       on: spp.section_id == post.section_id and spp.project_id == sr.project_id,
+  #       join: pr in PublishedResource,
+  #       on: pr.publication_id == spp.publication_id and pr.resource_id == post.resource_id,
+  #       join: rev in Revision,
+  #       on: rev.id == pr.revision_id,
+  #       join: user in User,
+  #       on: post.user_id == user.id,
+  #       left_join: urp in UserReadPost,
+  #       on: urp.post_id == post.id and urp.user_id == ^user_id,
+  #       where:
+  #         post.parent_post_id == ^post_id and
+  #           (post.status in [:approved, :archived] or
+  #              (post.status == :submitted and post.user_id == ^user_id)),
+  #       select: %{
+  #         id: post.id,
+  #         thread_root_id: post.thread_root_id,
+  #         content: post.content,
+  #         user_name: user.name,
+  #         user_id: user.id,
+  #         posted_anonymously: post.anonymous,
+  #         title: rev.title,
+  #         slug: rev.slug,
+  #         resource_type_id: rev.resource_type_id,
+  #         updated_at: post.updated_at,
+  #         is_read: not is_nil(urp.id) or post.user_id == ^user_id
+  #       },
+  #       order_by: [asc: :updated_at]
+  #     )
+  #   )
+  #   |> build_metrics_for_reply_posts(user_id)
+  # end
 
   @doc """
   This query is an optimization used to update the metrics of a thread root post
@@ -1315,7 +1315,7 @@ defmodule Oli.Resources.Collaboration do
     |> Enum.into(%{})
   end
 
-  def list_replies_for_post_in_point_block(user_id, post_id) do
+  def list_replies_for_post(user_id, post_id) do
     Repo.all(
       from(
         post in Post,
