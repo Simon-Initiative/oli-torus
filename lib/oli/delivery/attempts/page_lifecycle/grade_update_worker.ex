@@ -47,6 +47,8 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.GradeUpdateWorker do
     LMSGradeUpdate
   }
 
+  @host Application.compile_env!(:oli, OliWeb.Endpoint)[:url][:host]
+
   @doc """
   Create a grade update worker, given a resource_access_id and a job type.  The job type
   is one of `[:inline, :manual, :manual_batch]`
@@ -64,7 +66,12 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.GradeUpdateWorker do
   """
   def create(section_id, resource_access_id, update_type) do
     case Oli.Delivery.Attempts.PageLifecycle.GradeUpdateWorker.new(
-           %{resource_access_id: resource_access_id, type: update_type, section_id: section_id},
+           %{
+             resource_access_id: resource_access_id,
+             type: update_type,
+             section_id: section_id,
+             host: host()
+           },
            replace: [:args]
          )
          |> Oban.insert() do
@@ -83,6 +90,9 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.GradeUpdateWorker do
         e
     end
   end
+
+  @impl Oban.Worker
+  def perform(%Oban.Job{args: %{"host" => host}}) when host != @host, do: :ok
 
   @impl Oban.Worker
   def perform(
