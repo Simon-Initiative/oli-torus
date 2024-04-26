@@ -18,7 +18,6 @@ alias Oli.Accounts
 alias Oli.Accounts.{User, Author}
 alias Oli.Repo
 alias Oli.Utils.DataGenerators.NameGenerator
-alias Oli.Host.HostIdentifier
 
 # create system roles
 if !Oli.Repo.get_by(Oli.Accounts.SystemRole, id: 1) do
