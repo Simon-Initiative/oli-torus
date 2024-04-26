@@ -19,9 +19,6 @@ alias Oli.Accounts.{User, Author}
 alias Oli.Repo
 alias Oli.Utils.DataGenerators.NameGenerator
 alias Oli.Host.HostIdentifier
-def host(), do: Application.get_env(:oli, OliWeb.Endpoint)[:url][:host]
-
-if !Repo.exists?(HostIdentifier), do: Repo.insert!(%HostIdentifier{host: host()})
 
 # create system roles
 if !Oli.Repo.get_by(Oli.Accounts.SystemRole, id: 1) do
