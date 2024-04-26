@@ -109,8 +109,6 @@ const Authoring: FC<LogicLabAuthoringProps> = (props: LogicLabAuthoringProps) =>
     setActivityId(model.activity);
   }, [model]);
 
-  const labServer = getLabServer(authoringContext);
-
   // Current loading state.
   const [loading, setLoading] = useState<'loading' | 'loaded' | 'error'>('loading');
   const [servletError, setServletError] = useState(''); // last error from servlet call
@@ -136,7 +134,8 @@ const Authoring: FC<LogicLabAuthoringProps> = (props: LogicLabAuthoringProps) =>
     const signal = controller.signal;
     const getActivities = async () => {
       setLoading('loading');
-      const url = new URL('api/v1/activities', labServer);
+      const server = getLabServer(authoringContext);
+      const url = new URL('api/v1/activities', server);
       const response = await fetch(
         url.toString(), // tsc does not allow URL as parameter, contrary to MDM spec.
         {
@@ -160,7 +159,9 @@ const Authoring: FC<LogicLabAuthoringProps> = (props: LogicLabAuthoringProps) =>
     getActivities().catch((err) => {
       console.error(err);
       setLoading('error');
-      if (err instanceof Error) {
+      if (err instanceof ReferenceError) {
+        setServletError('LogicLab server is not configured for this Torus instance.');
+      } else if (err instanceof Error) {
         setServletError(err.message);
       } else if (typeof err === 'string') {
         setServletError(err);
@@ -171,7 +172,7 @@ const Authoring: FC<LogicLabAuthoringProps> = (props: LogicLabAuthoringProps) =>
 
     // abort load if component rendering interupted.
     return () => controller.abort();
-  }, []);
+  }, [authoringContext]);
 
   // Set activity data when there are activities an an id.
   useEffect(() => {
@@ -378,7 +379,8 @@ const Preview: FC<LogicLabAuthoringProps> = ({
     const signal = controller.signal;
     const getActivity = async () => {
       setLoading('loading');
-      const url = new URL(`api/v1/activities/${model.activity}`, getLabServer(authoringContext));
+      const server = getLabServer(authoringContext);
+      const url = new URL(`api/v1/activities/${model.activity}`, server);
       const response = await fetch(url.toString(), {
         signal,
         headers: { Accept: 'application/json' },
