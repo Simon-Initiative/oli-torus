@@ -20,9 +20,14 @@ defmodule Oli.Analytics.ByPage do
   end
 
   defp get_base_query(project_slug, activity_pages, filtered_sections) do
+    IO.inspect(project_slug, label: "projecttt_dslug")
+
+    Repo.all(activity_pages)
+    |> IO.inspect(label: "activitiesss")
+
     subquery =
       if filtered_sections != [] do
-        DeliveryResolver.revisions_filter_by_section_ids(
+        DeliveryResolver.revisions_by_section_ids(
           filtered_sections,
           ResourceType.id_for_page()
         )
@@ -33,11 +38,14 @@ defmodule Oli.Analytics.ByPage do
         )
       end
 
+    Repo.all(subquery)
+    |> IO.inspect(label: "subquery")
+
     subquery_activity =
       if filtered_sections != [] do
-        DeliveryResolver.revisions_filter_by_section_ids(
+        DeliveryResolver.revisions_by_section_ids(
           filtered_sections,
-          ResourceType.id_for_page()
+          ResourceType.id_for_activity()
         )
       else
         Publishing.query_unpublished_revisions_by_type(
@@ -62,8 +70,7 @@ defmodule Oli.Analytics.ByPage do
         number_of_attempts: analytics.number_of_attempts,
         relative_difficulty: analytics.relative_difficulty
       },
-      preload: [:resource_type],
-      distinct: [activity]
+      preload: [:resource_type]
     )
   end
 
