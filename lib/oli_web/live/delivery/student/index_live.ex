@@ -75,33 +75,25 @@ defmodule OliWeb.Delivery.Student.IndexLive do
               </div>
               <div class="justify-start items-center gap-1 inline-flex self-stretch">
                 <div class="text-white text-base font-normal tracking-tight grow">
-                  This week
+                  <%= case @schedule_for_current_week do %>
+                    <% {week, schedule_ranges} -> %>
+                      <Schedule.week
+                        ctx={@ctx}
+                        week_number={week}
+                        show_border={false}
+                        schedule_ranges={schedule_ranges}
+                        section_slug={@section_slug}
+                        historical_graded_attempt_summary={@historical_graded_attempt_summary}
+                        request_path={~p"/sections/#{@section_slug}"}
+                      />
+                    <% _ -> %>
+                      <div class="text-xl">No schedule for this week.</div>
+                  <% end %>
                 </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
-    </div>
-
-    <div class="container mx-auto">
-      <div class="my-8 px-16">
-        <div class="font-bold text-2xl mb-4">Up Next</div>
-
-        <%= case @schedule_for_current_week do %>
-          <% {week, schedule_ranges} -> %>
-            <Schedule.week
-              ctx={@ctx}
-              week_number={week}
-              show_border={false}
-              schedule_ranges={schedule_ranges}
-              section_slug={@section_slug}
-              historical_graded_attempt_summary={@historical_graded_attempt_summary}
-              request_path={~p"/sections/#{@section_slug}"}
-            />
-          <% _ -> %>
-            <div class="text-xl">No schedule for this week.</div>
-        <% end %>
       </div>
     </div>
     """
