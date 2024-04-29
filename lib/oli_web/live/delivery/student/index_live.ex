@@ -4,7 +4,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
   import OliWeb.Components.Delivery.Layouts
 
   alias Oli.Authoring.Course.Project
-  alias Oli.Delivery.{Attempts, Sections}
+  alias Oli.Delivery.{Attempts, Sections, Metrics}
   alias Oli.Delivery.Sections.SectionCache
   alias Oli.Publishing.DeliveryResolver
   alias OliWeb.Components.Delivery.Schedule
@@ -48,7 +48,8 @@ defmodule OliWeb.Delivery.Student.IndexLive do
        historical_graded_attempt_summary: nil,
        has_visited_section: Sections.has_visited_section(section, socket.assigns[:current_user]),
        last_open_and_unfinished_page: last_open_and_unfinished_page,
-       nearest_upcoming_lesson: nearest_upcoming_lesson
+       nearest_upcoming_lesson: nearest_upcoming_lesson,
+       section_progress: section_progress(section.id, current_user_id)
      )}
   end
 
@@ -63,7 +64,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
     />
     <div class="w-full h-96 relative bg-stone-950">
       <div class="w-full absolute p-8 justify-start items-start gap-6 inline-flex">
-        <.course_progress />
+        <.course_progress has_visited_section={@has_visited_section} progress={@section_progress} />
         <div class="w-3/4 h-full flex-col justify-start items-start gap-6 inline-flex">
           <div class="w-full h-96 p-6 bg-gradient-to-b from-zinc-900 to-zinc-900 rounded-2xl justify-start items-start gap-32 inline-flex">
             <div class="flex-col justify-start items-start gap-7 inline-flex grow">
@@ -278,21 +279,33 @@ defmodule OliWeb.Delivery.Student.IndexLive do
     """
   end
 
+  attr(:has_visited_section, :boolean, required: true)
+  attr(:progress, :integer, required: true)
+
   defp course_progress(assigns) do
     ~H"""
-    <div class="w-1/4 h-full flex-col justify-start items-start gap-6 inline-flex">
+    <div class="w-1/4 h-48 flex-col justify-start items-start gap-6 inline-flex">
       <div class="w-full h-96 p-6 bg-gradient-to-b from-zinc-900 to-zinc-900 rounded-2xl justify-start items-start gap-32 inline-flex">
-        <div class="flex-col justify-start items-start gap-7 inline-flex grow">
+        <div class="flex-col justify-start items-start gap-5 inline-flex grow">
           <div class="justify-start items-start gap-2.5 inline-flex">
             <div class="text-white text-2xl font-bold leading-loose tracking-tight">
               Course Progress
             </div>
           </div>
-          <div class="justify-start items-center gap-1 inline-flex self-stretch">
-            <div class="text-white text-base font-normal tracking-tight grow">
-              Begin your learning journey to watch your progress unfold here!
+          <%= if @has_visited_section do %>
+            <div class="flex-col justify-start items-start flex">
+              <div>
+                <span class="text-white text-6xl font-bold tracking-wide"><%= @progress %></span>
+                <span class="text-white text-3xl font-bold tracking-tight">%</span>
+              </div>
             </div>
-          </div>
+          <% else %>
+            <div class="justify-start items-center gap-1 inline-flex self-stretch">
+              <div class="text-white text-base font-normal tracking-tight grow">
+                Begin your learning journey to watch your progress unfold here!
+              </div>
+            </div>
+          <% end %>
         </div>
       </div>
     </div>
@@ -446,5 +459,12 @@ defmodule OliWeb.Delivery.Student.IndexLive do
         page.purpose == :application -> " exploration"
         true -> " lesson"
       end
+  end
+
+  defp section_progress(section_id, user_id) do
+    Metrics.progress_for(section_id, user_id)
+    |> Kernel.*(100)
+    |> round()
+    |> trunc()
   end
 end
