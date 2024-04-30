@@ -275,7 +275,7 @@ defmodule OliWeb.Products.DetailsView do
           socket = put_flash(socket, :info, "Payment codes transferred successfully")
 
           redirect(socket,
-            to: Routes.live_path(socket, OliWeb.Products.DetailsView, socket.assigns.product.slug)
+            to: ~p"/authoring/products/#{socket.assigns.product.slug}"
           )
       end
 
