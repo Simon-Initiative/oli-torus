@@ -238,8 +238,7 @@ defmodule OliWeb.FailedGradeSyncLiveTest do
       assert %{
                "resource_access_id" => id,
                "section_id" => section.id,
-               "type" => "manual",
-               "host" => "localhost"
+               "type" => "manual"
              } == args
     end
 
