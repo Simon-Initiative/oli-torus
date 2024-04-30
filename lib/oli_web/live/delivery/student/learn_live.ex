@@ -1097,6 +1097,29 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     """
   end
 
+  def outline_row(%{type: :top_level_page} = assigns) do
+    ~H"""
+    <div id={"top_level_page_#{@row["resource_id"]}"}>
+      <div class="md:p-[25px] md:pl-[125px] md:pr-[175px]" role={"row_#{@row["numbering"]["index"]}"}>
+        <div class="flex flex-col md:flex-row md:gap-[30px]">
+          <div class="text-white text-xl font-bold font-['Open Sans']">
+            <%= @row["title"] %>
+          </div>
+        </div>
+        <div class="flex flex-col mt-6">
+          <.outline_row
+            row={@row}
+            type={:page}
+            student_progress_per_resource_id={@student_progress_per_resource_id}
+            viewed_intro_video_resource_ids={@viewed_intro_video_resource_ids}
+            student_id={@student_id}
+          />
+        </div>
+      </div>
+    </div>
+    """
+  end
+
   def outline_row(%{type: type} = assigns) when type in [:module, :section] do
     ~H"""
     <div id={"#{@type}_#{@row["resource_id"]}"}>
@@ -2577,6 +2600,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       {"container", 1} -> :unit
       {"container", 2} -> :module
       {"container", _} -> :section
+      {"page", 1} -> :top_level_page
       {"page", _} -> :page
     end
   end
