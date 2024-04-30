@@ -323,9 +323,9 @@ defmodule OliWeb.Components.Delivery.Layouts do
           <.link href={
             resource_navigation_url(@previous_page, @section_slug, @request_path, @selected_view)
           }>
-            <div class="w-[72px] h-10 opacity-30 hover:opacity-40 bg-blue-600 flex items-center justify-center cursor-pointer">
+            <button class="w-[72px] h-10 opacity-90 hover:opacity-100 bg-blue-600 flex items-center justify-center">
               <.left_arrow />
-            </div>
+            </button>
           </.link>
         </div>
         <div class="grow shrink basis-0 dark:text-white text-xs font-normal overflow-hidden text-ellipsis">
@@ -345,9 +345,9 @@ defmodule OliWeb.Components.Delivery.Layouts do
           <.link href={
             resource_navigation_url(@next_page, @section_slug, @request_path, @selected_view)
           }>
-            <div class="w-[72px] h-10 opacity-90 hover:opacity-100 bg-blue-600 flex items-center justify-center cursor-pointer">
+            <button class="w-[72px] h-10 opacity-90 hover:opacity-100 bg-blue-600 flex items-center justify-center">
               <.right_arrow />
-            </div>
+            </button>
           </.link>
         </div>
       </div>
