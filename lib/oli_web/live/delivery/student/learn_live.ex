@@ -1162,16 +1162,6 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     """
   end
 
-  defp render_intro_content(intro_content) do
-    Phoenix.HTML.raw(
-      Oli.Rendering.Content.render(
-        %Oli.Rendering.Context{},
-        intro_content,
-        Oli.Rendering.Content.Html
-      )
-    )
-  end
-
   def outline_row(%{type: type} = assigns) when type in [:module, :section] do
     ~H"""
     <div id={"#{@type}_#{@row["resource_id"]}"}>
@@ -1198,6 +1188,14 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         </div>
       </div>
       <div class="flex flex-col">
+        <.intro_video_item
+          :if={@type == :module and module_has_intro_video(@row)}
+          duration_minutes={@row["duration_minutes"]}
+          module_resource_id={@row["resource_id"]}
+          video_url={@row["intro_video"]}
+          intro_video_viewed={@row["resource_id"] in @viewed_intro_video_resource_ids}
+          view={:outline}
+        />
         <.outline_row
           :for={row <- @row["children"]}
           row={row}
@@ -1703,6 +1701,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   attr :module_resource_id, :integer
   attr :intro_video_viewed, :boolean
   attr :video_url, :string, default: nil
+  attr :view, :atom, default: @default_selected_view
 
   def intro_video_item(assigns) do
     ~H"""
@@ -1736,7 +1735,10 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         </svg>
       </div>
       <div class="flex shrink items-center gap-3 w-full dark:text-white">
-        <div class="flex flex-col gap-1 w-full ml-0">
+        <div class={[
+          "flex flex-col gap-1 w-full",
+          if(@view == :outline, do: "ml-[60px]", else: "ml-10")
+        ]}>
           <div class="flex">
             <span class={
               [
@@ -2152,6 +2154,16 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       <path d="M12 7v5l3 3" />
     </svg>
     """
+  end
+
+  defp render_intro_content(intro_content) do
+    Phoenix.HTML.raw(
+      Oli.Rendering.Content.render(
+        %Oli.Rendering.Context{},
+        intro_content,
+        Oli.Rendering.Content.Html
+      )
+    )
   end
 
   defp get_module(hierarchy, unit_resource_id, module_resource_id) do
