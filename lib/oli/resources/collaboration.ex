@@ -530,7 +530,6 @@ defmodule Oli.Resources.Collaboration do
         section_id,
         limit,
         offset,
-        filter_by,
         sort_by,
         sort_order
       ) do
@@ -558,17 +557,9 @@ defmodule Oli.Resources.Collaboration do
            )}
       end
 
-    main_query =
+    results =
       from(
         post in Post,
-        join: sr in SectionResource,
-        on: sr.resource_id == post.resource_id and sr.section_id == post.section_id,
-        join: spp in SectionsProjectsPublications,
-        on: spp.section_id == post.section_id and spp.project_id == sr.project_id,
-        join: pr in PublishedResource,
-        on: pr.publication_id == spp.publication_id and pr.resource_id == post.resource_id,
-        join: rev in Revision,
-        on: rev.id == pr.revision_id,
         join: user in User,
         on: post.user_id == user.id,
         left_join: replies in subquery(replies_subquery()),
@@ -581,78 +572,38 @@ defmodule Oli.Resources.Collaboration do
             (post.status in [:approved, :archived] or
                (post.status == :submitted and post.user_id == ^user_id)) and
             is_nil(post.parent_post_id) and is_nil(post.thread_root_id),
+        order_by: ^order_clause,
+        limit: ^limit,
+        offset: ^offset,
         preload: [
           reactions: reactions
         ],
-        select_merge: %{
-          resource_type_id: rev.resource_type_id,
-          replies_count: coalesce(replies.count, 0),
-          read_replies_count: coalesce(read_replies.count, 0)
-        },
-        order_by: ^order_clause
+        select: %{
+          post: %{
+            post
+            | replies_count: coalesce(replies.count, 0),
+              read_replies_count: coalesce(read_replies.count, 0)
+          },
+          total_count: over(count(post.id))
+        }
       )
+      |> Repo.all()
 
-    posts =
-      case filter_by do
-        f when f in [nil, "all"] ->
-          main_query
-          |> limit(^limit + 1)
-          |> offset(^offset)
-          |> Repo.all()
-
-        "my_activity" ->
-          post_thread_ids_user_interacted_with =
-            from(p in Post,
-              where: p.section_id == ^section_id and p.user_id == ^user_id,
-              select: coalesce(p.thread_root_id, p.id)
-            )
-
-          main_query
-          |> where(
-            ^dynamic(
-              [post, _sr, _spp, _pr, _rev, _user],
-              post.id in subquery(post_thread_ids_user_interacted_with)
-            )
-          )
-          |> limit(^limit + 1)
-          |> offset(^offset)
-          |> Repo.all()
-
-        "course_discussions" ->
-          main_query
-          |> where([_post, _sr, _spp, _pr, rev, _user], rev.resource_type_id == 2)
-          |> limit(^limit + 1)
-          |> offset(^offset)
-          |> Repo.all()
-
-        "page_discussions" ->
-          main_query
-          |> where([_post, _sr, _spp, _pr, rev, _user], rev.resource_type_id == 1)
-          |> limit(^limit + 1)
-          |> offset(^offset)
-          |> Repo.all()
-
-        "unread" ->
-          from(
-            p in subquery(main_query),
-            where: p.unread_replies_count > 0,
-            select: p,
-            limit: ^limit + 1,
-            offset: ^offset
-          )
-          |> Repo.all()
+    total_count =
+      case results do
+        [] -> 0
+        _ -> hd(results).total_count
       end
 
     # Determine if more records exist beyond the current page
-    more_posts_exist? = length(posts) > limit
-    # Trim the posts to the desired limit
-    final_posts = Enum.take(posts, limit)
+    more_posts_exist? = total_count > offset + limit
 
-    final_posts =
-      final_posts
+    posts =
+      results
+      |> Enum.map(fn %{post: post} -> post end)
       |> summarize_reactions(user_id)
 
-    {final_posts, more_posts_exist?}
+    {posts, more_posts_exist?}
   end
 
   @doc """
@@ -688,12 +639,12 @@ defmodule Oli.Resources.Collaboration do
         where:
           post.section_id == ^section_id and post.visibility == :private and
             post.user_id == ^user_id,
+        order_by: ^order_clause,
+        limit: ^limit,
+        offset: ^offset,
         preload: [
           user: user
         ],
-        order_by: ^order_clause,
-        limit: ^limit + 1,
-        offset: ^offset,
         select: %{
           post: %{
             post

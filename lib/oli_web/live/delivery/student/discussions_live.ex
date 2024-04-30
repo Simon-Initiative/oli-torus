@@ -138,8 +138,7 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
       {:ok, %Post{} = post} ->
         new_post = %Post{
           post
-          | resource_type_id: Oli.Resources.ResourceType.get_id_by_type("container"),
-            replies_count: 0,
+          | replies_count: 0,
             read_replies_count: 0,
             is_read: true,
             reaction_summaries: %{},
@@ -548,10 +547,7 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
 
       <div role="posts list" class="w-full">
         <%= for post <- @posts do %>
-          <div
-            :if={post.resource_type_id == Oli.Resources.ResourceType.get_id_by_type("container")}
-            class="mb-3"
-          >
+          <div class="mb-3">
             <Annotations.post class="bg-white" post={post} current_user={@ctx.user} />
           </div>
         <% end %>
@@ -743,7 +739,6 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
         section_id,
         post_params.limit,
         post_params.offset,
-        post_params.filter_by,
         post_params.sort_by,
         post_params.sort_order
       )
