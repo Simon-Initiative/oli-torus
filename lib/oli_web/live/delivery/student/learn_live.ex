@@ -1008,16 +1008,12 @@ defmodule OliWeb.Delivery.Student.LearnLive do
               class="text-sm font-normal font-['Open Sans'] leading-[30px] max-w-[760px] overflow-hidden dark:text-white"
               style="display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;"
             >
-              <%= Phoenix.HTML.raw(
-                Oli.Rendering.Content.render(
-                  %Oli.Rendering.Context{},
-                  Map.get(@selected_module_per_unit_resource_id, @unit["resource_id"])[
-                    "intro_content"
-                  ][
-                    "children"
-                  ],
-                  Oli.Rendering.Content.Html
-                )
+              <%= render_intro_content(
+                Map.get(@selected_module_per_unit_resource_id, @unit["resource_id"])[
+                  "intro_content"
+                ][
+                  "children"
+                ]
               ) %>
             </span>
             <div
@@ -1166,6 +1162,16 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     """
   end
 
+  defp render_intro_content(intro_content) do
+    Phoenix.HTML.raw(
+      Oli.Rendering.Content.render(
+        %Oli.Rendering.Context{},
+        intro_content,
+        Oli.Rendering.Content.Html
+      )
+    )
+  end
+
   def outline_row(%{type: type} = assigns) when type in [:module, :section] do
     ~H"""
     <div id={"#{@type}_#{@row["resource_id"]}"}>
@@ -1182,7 +1188,13 @@ defmodule OliWeb.Delivery.Student.LearnLive do
           "text-white text-base font-bold font-['Open Sans']",
           left_indentation(@row["numbering"]["level"], :outline)
         ]}>
-          <%= @row["title"] %>
+          <span><%= @row["title"] %></span>
+          <div
+            :if={@type == :module and @row["intro_content"]["children"] not in ["", nil]}
+            class="mt-3 text-white text-base font-normal font-['Open Sans']"
+          >
+            <%= render_intro_content(@row["intro_content"]["children"]) %>
+          </div>
         </div>
       </div>
       <div class="flex flex-col">
