@@ -91,7 +91,29 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     end)
   end
 
-  def handle_params(%{"selected_view" => selected_view}, _uri, socket) do
+  def handle_params(
+        %{"selected_view" => selected_view, "target_resource_id" => resource_id},
+        _uri,
+        socket
+      ) do
+    full_hierarchy = get_or_compute_full_hierarchy(socket.assigns.section)
+    selected_view = String.to_existing_atom(selected_view)
+
+    send(self(), :gc)
+
+    {:noreply,
+     socket
+     |> assign(selected_view: selected_view)
+     |> update(:units, fn _units -> full_hierarchy["children"] end)
+     |> maybe_enable_gallery_slider_buttons(full_hierarchy, selected_view)
+     |> scroll_to_target_resource(resource_id, full_hierarchy, selected_view)}
+  end
+
+  def handle_params(
+        %{"selected_view" => selected_view},
+        _uri,
+        socket
+      ) do
     full_hierarchy = get_or_compute_full_hierarchy(socket.assigns.section)
     selected_view = String.to_existing_atom(selected_view)
 
@@ -104,31 +126,60 @@ defmodule OliWeb.Delivery.Student.LearnLive do
      |> maybe_enable_gallery_slider_buttons(full_hierarchy, selected_view)}
   end
 
-  def handle_params(%{"target_resource_id" => resource_id}, _uri, socket) do
-    # the goal of this callback is to scroll to the target resource.
-    # the target can be a unit, a module, a page contained at a unit level, at a module level, or a page contained in a module
+  def handle_params(_params, _uri, socket) do
+    {:noreply, socket}
+  end
 
-    container_resource_type_id = Oli.Resources.ResourceType.get_id_by_type("container")
-    page_resource_type_id = Oli.Resources.ResourceType.get_id_by_type("page")
-    full_hierarchy = get_or_compute_full_hierarchy(socket.assigns.section)
+  _docp = """
+  This assign helper function is responsible for scrolling to the target resource.
+  The target can be a unit, a module, a page contained at a unit level, at a module level, or a page contained in a module.
+  """
 
+  defp scroll_to_target_resource(socket, resource_id, _full_hierarchy, :outline) do
+    case Sections.get_section_resource_with_resource_type(
+           socket.assigns.section.slug,
+           resource_id
+         ) do
+      %{resource_type_id: resource_type_id, numbering_level: numbering_level} ->
+        resource_type =
+          case {resource_type_id, numbering_level} do
+            {@container_resource_type_id, 1} -> "unit"
+            {@container_resource_type_id, 2} -> "module"
+            {@container_resource_type_id, 3} -> "section"
+            {@page_resource_type_id, 1} -> "top_level_page"
+            {@page_resource_type_id, _} -> "page"
+          end
+
+        push_event(socket, "scroll-y-to-target", %{
+          id: "#{resource_type}_#{resource_id}" |> IO.inspect(label: "target scroll id"),
+          offset: 10,
+          pulse: true,
+          pulse_delay: 500
+        })
+
+      _ ->
+        socket
+    end
+  end
+
+  defp scroll_to_target_resource(socket, resource_id, full_hierarchy, :gallery) do
     case Sections.get_section_resource_with_resource_type(
            socket.assigns.section.slug,
            resource_id
          ) do
       %{resource_type_id: resource_type_id, numbering_level: 1}
-      when resource_type_id == container_resource_type_id ->
+      when resource_type_id == @container_resource_type_id ->
         # the target is a unit, so we sroll in the Y direction to it
-        {:noreply,
-         push_event(socket, "scroll-y-to-target", %{
-           id: "unit_#{resource_id}",
-           offset: 80,
-           pulse: true,
-           pulse_delay: 500
-         })}
+
+        push_event(socket, "scroll-y-to-target", %{
+          id: "unit_#{resource_id}",
+          offset: 80,
+          pulse: true,
+          pulse_delay: 500
+        })
 
       %{resource_type_id: resource_type_id, numbering_level: 2}
-      when resource_type_id == container_resource_type_id ->
+      when resource_type_id == @container_resource_type_id ->
         # the target is a module, so we scroll in the Y direction to the unit that is parent of that module,
         # and then scroll X in the slider to that module and expand it
 
@@ -140,43 +191,42 @@ defmodule OliWeb.Delivery.Student.LearnLive do
             fn node -> node["resource_id"] == module_resource_id end
           )["resource_id"]
 
-        {:noreply,
-         socket
-         |> assign(
-           selected_module_per_unit_resource_id:
-             merge_target_module_as_selected(
-               socket.assigns.selected_module_per_unit_resource_id,
-               socket.assigns.section,
-               socket.assigns.student_visited_pages,
-               module_resource_id,
-               unit_resource_id,
-               full_hierarchy,
-               socket.assigns.student_raw_avg_score_per_page_id,
-               socket.assigns.student_progress_per_resource_id
-             )
-         )
-         |> push_event("scroll-y-to-target", %{id: "unit_#{unit_resource_id}", offset: 80})
-         |> push_event("scroll-x-to-card-in-slider", %{
-           card_id: "module_#{resource_id}",
-           scroll_delay: 300,
-           unit_resource_id: unit_resource_id,
-           pulse_target_id: "module_#{resource_id}",
-           pulse_delay: 500
-         })}
+        socket
+        |> assign(
+          selected_module_per_unit_resource_id:
+            merge_target_module_as_selected(
+              socket.assigns.selected_module_per_unit_resource_id,
+              socket.assigns.section,
+              socket.assigns.student_visited_pages,
+              module_resource_id,
+              unit_resource_id,
+              full_hierarchy,
+              socket.assigns.student_raw_avg_score_per_page_id,
+              socket.assigns.student_progress_per_resource_id
+            )
+        )
+        |> push_event("scroll-y-to-target", %{id: "unit_#{unit_resource_id}", offset: 80})
+        |> push_event("scroll-x-to-card-in-slider", %{
+          card_id: "module_#{resource_id}",
+          scroll_delay: 300,
+          unit_resource_id: unit_resource_id,
+          pulse_target_id: "module_#{resource_id}",
+          pulse_delay: 500
+        })
 
       %{resource_type_id: resource_type_id, numbering_level: 1}
-      when resource_type_id == page_resource_type_id ->
+      when resource_type_id == @page_resource_type_id ->
         # the target is a page at the highest level (unit level), so we scroll in the Y direction to that page and pulse it
-        {:noreply,
-         push_event(socket, "scroll-y-to-target", %{
-           id: "top_level_page_#{resource_id}",
-           offset: 80,
-           pulse: true,
-           pulse_delay: 500
-         })}
+
+        push_event(socket, "scroll-y-to-target", %{
+          id: "top_level_page_#{resource_id}",
+          offset: 80,
+          pulse: true,
+          pulse_delay: 500
+        })
 
       %{resource_type_id: resource_type_id, numbering_level: 2}
-      when resource_type_id == page_resource_type_id ->
+      when resource_type_id == @page_resource_type_id ->
         # the target is a page at a module level, so we scroll in the Y direction to the unit that is parent of that page,
         # and then scroll X in the slider to that page
 
@@ -186,19 +236,18 @@ defmodule OliWeb.Delivery.Student.LearnLive do
             fn node -> node["resource_id"] == String.to_integer(resource_id) end
           )["resource_id"]
 
-        {:noreply,
-         socket
-         |> push_event("scroll-y-to-target", %{id: "unit_#{unit_resource_id}", offset: 80})
-         |> push_event("scroll-x-to-card-in-slider", %{
-           card_id: "page_#{resource_id}",
-           scroll_delay: 300,
-           unit_resource_id: unit_resource_id,
-           pulse_target_id: "page_#{resource_id}",
-           pulse_delay: 500
-         })}
+        socket
+        |> push_event("scroll-y-to-target", %{id: "unit_#{unit_resource_id}", offset: 80})
+        |> push_event("scroll-x-to-card-in-slider", %{
+          card_id: "page_#{resource_id}",
+          scroll_delay: 300,
+          unit_resource_id: unit_resource_id,
+          pulse_target_id: "page_#{resource_id}",
+          pulse_delay: 500
+        })
 
       %{resource_type_id: resource_type_id, numbering_level: level}
-      when resource_type_id == page_resource_type_id and level > 2 ->
+      when resource_type_id == @page_resource_type_id and level > 2 ->
         # the target is a page contained in a module or a section, so we scroll in the Y direction to the unit that is parent of that module,
         # and then scroll X in the slider to that module and expand it
 
@@ -206,7 +255,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
           find_module_ancestor(
             full_hierarchy,
             String.to_integer(resource_id),
-            container_resource_type_id
+            @container_resource_type_id
           )
 
         unit_resource_id =
@@ -217,37 +266,32 @@ defmodule OliWeb.Delivery.Student.LearnLive do
             end
           )["resource_id"]
 
-        {:noreply,
-         socket
-         |> assign(
-           selected_module_per_unit_resource_id:
-             merge_target_module_as_selected(
-               socket.assigns.selected_module_per_unit_resource_id,
-               socket.assigns.section,
-               socket.assigns.student_visited_pages,
-               module_resource_id,
-               unit_resource_id,
-               full_hierarchy,
-               socket.assigns.student_raw_avg_score_per_page_id,
-               socket.assigns.student_progress_per_resource_id
-             )
-         )
-         |> push_event("scroll-y-to-target", %{id: "unit_#{unit_resource_id}", offset: 80})
-         |> push_event("scroll-x-to-card-in-slider", %{
-           card_id: "module_#{module_resource_id}",
-           scroll_delay: 300,
-           unit_resource_id: unit_resource_id,
-           pulse_target_id: "index_item_#{resource_id}",
-           pulse_delay: 500
-         })}
+        socket
+        |> assign(
+          selected_module_per_unit_resource_id:
+            merge_target_module_as_selected(
+              socket.assigns.selected_module_per_unit_resource_id,
+              socket.assigns.section,
+              socket.assigns.student_visited_pages,
+              module_resource_id,
+              unit_resource_id,
+              full_hierarchy,
+              socket.assigns.student_raw_avg_score_per_page_id,
+              socket.assigns.student_progress_per_resource_id
+            )
+        )
+        |> push_event("scroll-y-to-target", %{id: "unit_#{unit_resource_id}", offset: 80})
+        |> push_event("scroll-x-to-card-in-slider", %{
+          card_id: "module_#{module_resource_id}",
+          scroll_delay: 300,
+          unit_resource_id: unit_resource_id,
+          pulse_target_id: "index_item_#{resource_id}",
+          pulse_delay: 500
+        })
 
       _ ->
-        {:noreply, socket}
+        socket
     end
-  end
-
-  def handle_params(_params, _uri, socket) do
-    {:noreply, socket}
   end
 
   def handle_event(
@@ -1157,7 +1201,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
 
   def outline_row(%{type: :page} = assigns) do
     ~H"""
-    <div id={"page_#{@row["id"]}"}>
+    <div id={"page_#{@row["resource_id"]}"}>
       <button
         role={"page #{@row["numbering"]["index"]} details"}
         class={[
@@ -1171,7 +1215,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         phx-click="navigate_to_resource"
         phx-value-view={:outline}
         phx-value-slug={@row["slug"]}
-        phx-value-resource_id={@row["id"]}
+        phx-value-resource_id={@row["resource_id"]}
       >
         <div class="justify-start items-start gap-5 flex">
           <.index_item_icon
