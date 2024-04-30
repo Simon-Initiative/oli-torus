@@ -17,6 +17,12 @@ defmodule OliWeb.Delivery.Student.IndexLive do
     schedule_for_current_week =
       Sections.get_schedule_for_current_week(section, current_user_id)
 
+    # Use the root container revision to store the intro message for the course
+    intro_message =
+      section.slug
+      |> DeliveryResolver.root_container()
+      |> build_intro_message()
+
     [last_open_and_unfinished_page, nearest_upcoming_lesson] =
       Enum.map(
         [
@@ -50,7 +56,8 @@ defmodule OliWeb.Delivery.Student.IndexLive do
        has_visited_section: Sections.has_visited_section(section, socket.assigns[:current_user]),
        last_open_and_unfinished_page: last_open_and_unfinished_page,
        nearest_upcoming_lesson: nearest_upcoming_lesson,
-       section_progress: section_progress(section.id, current_user_id)
+       section_progress: section_progress(section.id, current_user_id),
+       intro_message: intro_message
      )}
   end
 
@@ -62,6 +69,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
       has_visited_section={@has_visited_section}
       suggested_page={@last_open_and_unfinished_page || @nearest_upcoming_lesson}
       unfinished_lesson={!is_nil(@last_open_and_unfinished_page)}
+      intro_message={@intro_message}
     />
     <div class="w-full h-96 relative bg-stone-950">
       <div class="w-full absolute p-8 justify-start items-start gap-6 inline-flex">
@@ -105,6 +113,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
   attr(:has_visited_section, :boolean, required: true)
   attr(:suggested_page, :map)
   attr(:unfinished_lesson, :boolean, required: true)
+  attr(:intro_message, :map)
 
   defp header_banner(%{has_visited_section: true} = assigns) do
     ~H"""
@@ -235,14 +244,11 @@ defmodule OliWeb.Delivery.Student.IndexLive do
         <div class="w-full text-white text-2xl font-bold tracking-wide whitespace-nowrap overflow-hidden">
           Hi, <%= user_given_name(@ctx) %> !
         </div>
-        <div id="pepe" class="w-full flex flex-col items-start gap-2.5">
+        <div class="w-full flex flex-col items-start gap-2.5">
           <div class="w-full whitespace-nowrap overflow-hidden">
             <span class="text-white text-3xl font-medium">
-              Unlock the world of chemistry with <b>RealCHEM</b>
+              <%= @intro_message %>
             </span>
-          </div>
-          <div class="w-4/12 text-white text-opacity-60 text-lg font-semibold">
-            Dive in now and start shaping the future, one molecule at a time!
           </div>
         </div>
         <div class="pt-5 flex items-start gap-6">
@@ -361,4 +367,16 @@ defmodule OliWeb.Delivery.Student.IndexLive do
     |> round()
     |> trunc()
   end
+
+  defp build_intro_message(%{intro_content: intro_content}) when intro_content not in [nil, %{}],
+    do:
+      Phoenix.HTML.raw(
+        Oli.Rendering.Content.render(
+          %Oli.Rendering.Context{},
+          intro_content["children"],
+          Oli.Rendering.Content.Html
+        )
+      )
+
+  defp build_intro_message(_), do: "Welcome to this course!"
 end

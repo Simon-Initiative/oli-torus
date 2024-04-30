@@ -550,7 +550,7 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
       {:ok, view, _html} = live(conn, ~p"/sections/#{section.slug}")
 
       assert has_element?(view, "span", "The best course ever!")
-      assert has_element?(view, "div", "Up Next")
+      assert has_element?(view, "div", "Upcoming Agenda")
     end
 
     test "can see attempts summary and review historical attempts (if setting enabled by instructor)",

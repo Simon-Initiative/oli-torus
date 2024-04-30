@@ -189,7 +189,7 @@ defmodule Oli.Delivery.Attempts.Core do
       {:error, %Ecto.Changeset{}}
   """
   def track_access(resource_id, section_id, user_id) do
-    now = DateTime.utc_now()
+    now = Oli.DateTime.utc_now()
 
     Oli.Repo.insert!(
       %ResourceAccess{

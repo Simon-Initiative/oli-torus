@@ -3939,7 +3939,7 @@ defmodule Oli.Delivery.Sections do
   """
   @spec get_nearest_upcoming_lesson(Oli.Delivery.Sections.Section.t()) :: map() | nil
   def get_nearest_upcoming_lesson(section) do
-    today = DateTime.utc_now()
+    today = Oli.DateTime.utc_now()
     page_resource_type_id = Oli.Resources.ResourceType.get_id_by_type("page")
 
     from([rev: rev, sr: sr] in DeliveryResolver.section_resource_revisions(section.slug),
