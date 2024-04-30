@@ -488,7 +488,7 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
       );
       if (triggerWindowsScrollPosition && currentSequence.length && previousSquence.length) {
         //when a user is navigated to next scree, if the new screen is child screen of the existing screen
-        // then we need to maintain the scroll position  of the user
+        // then we need to maintain the scroll position of the user
         const currentScreenOwnerId = currentSequence[0].custom?.layerRef;
         const previousScreenSequenceId = previousSquence[0].custom?.sequenceId;
         if (currentScreenOwnerId === previousScreenSequenceId) {
