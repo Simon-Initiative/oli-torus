@@ -9,12 +9,14 @@ defmodule Oli.Delivery.Hierarchy do
   See also HierarchyNode for more details
   """
   import Oli.Utils
+  import Ecto.Query, warn: false, only: [from: 2]
 
   alias Oli.Delivery.Hierarchy.HierarchyNode
   alias Oli.Resources.Numbering
-  alias Oli.Publishing.PublishedResource
+  alias Oli.Publishing.{DeliveryResolver, PublishedResource}
   alias Oli.Resources.ResourceType
   alias Oli.Branding.CustomLabels
+  alias Oli.Authoring.Course.Project
   alias Oli.Repo
 
   @doc """
@@ -262,6 +264,124 @@ defmodule Oli.Delivery.Hierarchy do
         if acc == nil, do: find_parent_in_hierarchy(child, find_by, node), else: acc
       end)
     end
+  end
+
+  @doc """
+  Finds the nearest ancestor module in a given hierarchy that matches the specified container resource type.
+
+  ## Parameters:
+  - `hierarchy` : The complete hierarchy of the course.
+  - `resource_id` : The resource ID for which to find the ancestor.
+  - `container_resource_type_id` : The resource type ID that the ancestor must match.
+
+  ## Returns:
+  - Returns the matching ancestor module as a map if found, otherwise `nil`.
+  """
+  @spec find_module_ancestor(map(), integer() | nil, integer()) :: map() | nil
+  def find_module_ancestor(_, nil, _), do: nil
+
+  def find_module_ancestor(hierarchy, resource_id, container_resource_type_id) do
+    case Oli.Delivery.Hierarchy.find_parent_in_hierarchy(
+           hierarchy,
+           &(&1["resource_id"] == resource_id)
+         ) do
+      %{"resource_type_id" => ^container_resource_type_id, "numbering" => %{"level" => 2}} =
+          module ->
+        module
+
+      parent ->
+        find_module_ancestor(hierarchy, parent["resource_id"], container_resource_type_id)
+    end
+  end
+
+  @doc """
+  Generates the full hierarchy of a given section, including all the attributrs required for student delivery views.
+  """
+  @spec full_hierarchy(Oli.Delivery.Sections.Section.t()) :: map()
+  def full_hierarchy(section) do
+    {hierarchy_nodes, root_hierarchy_node} = hierarchy_nodes_by_sr_id(section)
+
+    hierarchy_node_with_children(root_hierarchy_node, hierarchy_nodes)
+  end
+
+  defp hierarchy_node_with_children(
+         %{"children" => children_ids} = node,
+         nodes_by_sr_id
+       ) do
+    Map.put(
+      node,
+      "children",
+      Enum.map(children_ids, fn sr_id ->
+        Map.get(nodes_by_sr_id, sr_id)
+        |> hierarchy_node_with_children(nodes_by_sr_id)
+      end)
+    )
+  end
+
+  # Returns a map of resource ids to hierarchy nodes and the root hierarchy node
+  defp hierarchy_nodes_by_sr_id(section) do
+    page_id = Oli.Resources.ResourceType.get_id_by_type("page")
+    container_id = Oli.Resources.ResourceType.get_id_by_type("container")
+
+    labels =
+      case section.customizations do
+        nil -> Oli.Branding.CustomLabels.default_map()
+        l -> Map.from_struct(l)
+      end
+
+    from(
+      [s: s, sr: sr, rev: rev, spp: spp] in DeliveryResolver.section_resource_revisions(
+        section.slug
+      ),
+      join: p in Project,
+      on: p.id == spp.project_id,
+      where:
+        rev.resource_type_id == ^page_id or
+          rev.resource_type_id == ^container_id,
+      select: %{
+        "id" => rev.id,
+        "numbering" => %{
+          "index" => sr.numbering_index,
+          "level" => sr.numbering_level
+        },
+        "children" => sr.children,
+        "resource_id" => rev.resource_id,
+        "project_id" => sr.project_id,
+        "project_slug" => p.slug,
+        "title" => rev.title,
+        "slug" => rev.slug,
+        "graded" => rev.graded,
+        "intro_video" => rev.intro_video,
+        "poster_image" => rev.poster_image,
+        "intro_content" => rev.intro_content,
+        "duration_minutes" => rev.duration_minutes,
+        "resource_type_id" => rev.resource_type_id,
+        "section_resource" => sr,
+        "is_root?" =>
+          fragment(
+            "CASE WHEN ? = ? THEN true ELSE false END",
+            sr.id,
+            s.root_section_resource_id
+          )
+      }
+    )
+    |> Oli.Repo.all()
+    |> Enum.map(fn node ->
+      numbering = Map.put(node["numbering"], "labels", labels)
+
+      Map.put(node, "uuid", Oli.Utils.uuid())
+      |> Map.put("numbering", numbering)
+    end)
+    |> Enum.reduce({%{}, nil}, fn item, {nodes, root} ->
+      {
+        Map.put(
+          nodes,
+          item["section_resource"].id,
+          item
+        ),
+        if(item["is_root?"], do: item, else: root)
+      }
+    end)
   end
 
   def reorder_children(
