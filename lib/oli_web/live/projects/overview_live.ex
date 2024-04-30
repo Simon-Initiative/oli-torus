@@ -324,7 +324,7 @@ defmodule OliWeb.Projects.OverviewLive do
       </Overview.section>
 
       <Overview.section
-        title="Transfer payment codes"
+        title="Transfer Payment Codes"
         description="Allows to transfer payment codes between products of this project."
       >
         <.live_component
