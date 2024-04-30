@@ -576,6 +576,7 @@ defmodule Oli.Resources.Collaboration do
         limit: ^limit,
         offset: ^offset,
         preload: [
+          user: user,
           reactions: reactions
         ],
         select: %{

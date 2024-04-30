@@ -219,7 +219,7 @@ defmodule OliWeb.Delivery.Student.DiscussionsLiveTest do
              )
     end
 
-    test "can only see course discussion and not page posts", %{
+    test "can see course discussion and page posts", %{
       conn: conn,
       student: student,
       section: section,
@@ -249,7 +249,7 @@ defmodule OliWeb.Delivery.Student.DiscussionsLiveTest do
 
       {:ok, view, _html} = live(conn, live_view_discussions_live_route(section.slug))
 
-      refute view
+      assert view
              |> has_element?("div[id=\"post-#{page_post.id}\"]")
 
       assert view
