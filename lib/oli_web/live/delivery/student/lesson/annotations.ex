@@ -316,7 +316,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
   attr :search_term, :string, default: ""
   attr :rest, :global, include: ~w(class)
 
-  defp search_box(assigns) do
+  def search_box(assigns) do
     ~H"""
     <form class={["flex flex-row", @rest[:class]]} phx-submit="search_annotations">
       <div class="flex-1 relative">

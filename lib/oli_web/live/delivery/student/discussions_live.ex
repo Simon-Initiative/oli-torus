@@ -50,33 +50,6 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
     }
   end
 
-  def handle_event("filter_posts", %{"filter_by" => filter_by}, socket)
-      when filter_by == socket.assigns.post_params.filter_by do
-    # do not change the UI if the user selects the same filter as before
-    {:noreply, socket}
-  end
-
-  def handle_event("filter_posts", %{"filter_by" => filter_by}, socket) do
-    updated_post_params =
-      Map.merge(socket.assigns.post_params, %{filter_by: filter_by, offset: 0})
-
-    {posts, more_posts_exist?} =
-      get_posts(
-        socket.assigns.current_user.id,
-        socket.assigns.section.id,
-        updated_post_params
-      )
-
-    {:noreply,
-     assign(
-       socket,
-       posts: posts,
-       more_posts_exist?: more_posts_exist?,
-       post_params: updated_post_params,
-       expanded_posts: %{}
-     )}
-  end
-
   def handle_event("sort_posts", %{"sort_by" => sort_by}, socket) do
     updated_post_params =
       Map.merge(socket.assigns.post_params, %{
@@ -533,91 +506,15 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
 
   defp actions(assigns) do
     ~H"""
-    <div role="posts actions" class="flex items-center justify-end gap-6">
-      <div class="flex space-x-3">
-        <.dropdown
-          id="filter-dropdown"
-          role="filter"
-          button_class="flex items-center gap-[10px] px-[10px] py-[4px] hover:text-gray-400 dark:text-white dark:hover:text-white/50"
-          options={
-            [
-              %{
-                text: "All",
-                on_click: JS.push("filter_posts", value: %{filter_by: "all"}),
-                class:
-                  if(@post_params.filter_by == "all",
-                    do: "font-bold dark:font-extrabold",
-                    else: "dark:font-light"
-                  )
-              }
-            ] ++
-              if(@course_collab_space_config && @course_collab_space_config.status == :enabled,
-                do: [
-                  %{
-                    text: "Course Discussions",
-                    on_click: JS.push("filter_posts", value: %{filter_by: "course_discussions"}),
-                    class:
-                      if(@post_params.filter_by == "course_discussions",
-                        do: "font-bold dark:font-extrabold",
-                        else: "dark:font-light"
-                      )
-                  },
-                  %{
-                    text: "Page Discussions",
-                    on_click: JS.push("filter_posts", value: %{filter_by: "page_discussions"}),
-                    class:
-                      if(@post_params.filter_by == "page_discussions",
-                        do: "font-bold dark:font-extrabold",
-                        else: "dark:font-light"
-                      )
-                  }
-                ],
-                else: []
-              ) ++
-              [
-                %{
-                  text: "Unread",
-                  on_click: JS.push("filter_posts", value: %{filter_by: "unread"}),
-                  class:
-                    if(@post_params.filter_by == "unread",
-                      do: "font-bold dark:font-extrabold",
-                      else: "dark:font-light"
-                    )
-                },
-                %{
-                  text: "My Activity",
-                  on_click: JS.push("filter_posts", value: %{filter_by: "my_activity"}),
-                  class:
-                    if(@post_params.filter_by == "my_activity",
-                      do: "font-bold dark:font-extrabold",
-                      else: "dark:font-light"
-                    )
-                }
-              ]
-          }
-        >
-          <span class="text-[14px] leading-[20px]">Filter</span>
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="24"
-            height="24"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          >
-            <line x1="3" y1="6" x2="21" y2="6"></line>
-            <line x1="6" y1="12" x2="18" y2="12"></line>
-            <line x1="9" y1="18" x2="15" y2="18"></line>
-          </svg>
-        </.dropdown>
+    <div role="posts actions" class="w-full flex gap-6">
+      <div class="flex flex-1 space-x-3">
+        <Annotations.search_box class="flex-1" />
 
         <.dropdown
           id="sort-dropdown"
           role="sort"
-          button_class="flex items-center gap-[10px] px-[10px] py-[4px] hover:text-gray-400 dark:text-white dark:hover:text-white/50"
+          class="inline-flex"
+          button_class="rounded-[3px] py-[10px] px-6 flex justify-center items-center whitespace-nowrap text-[14px] leading-[20px] font-normal text-white bg-[#0F6CF5] hover:bg-blue-600"
           options={[
             %{
               text: "Date",
@@ -641,21 +538,18 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
             }
           ]}
         >
-          <span class="text-[14px] leading-[20px]">Sort</span>
+          <span class="text-[14px] leading-[20px] mr-2">Sort</span>
           <svg
-            xmlns="http://www.w3.org/2000/svg"
             width="24"
             height="24"
             viewBox="0 0 24 24"
             fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
+            xmlns="http://www.w3.org/2000/svg"
           >
-            <line x1="3" y1="6" x2="21" y2="6"></line>
-            <line x1="3" y1="12" x2="14" y2="12"></line>
-            <line x1="3" y1="18" x2="7" y2="18"></line>
+            <path
+              d="M6.70711 8.29289C6.31658 7.90237 5.68342 7.90237 5.29289 8.29289C4.90237 8.68342 4.90237 9.31658 5.29289 9.70711L11.2929 15.7071C11.6834 16.0976 12.3166 16.0976 12.7071 15.7071L18.7071 9.70711C19.0976 9.31658 19.0976 8.68342 18.7071 8.29289C18.3166 7.90237 17.6834 7.90237 17.2929 8.29289L12 13.5858L6.70711 8.29289Z"
+              fill="white"
+            />
           </svg>
         </.dropdown>
       </div>
