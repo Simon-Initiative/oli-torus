@@ -37,6 +37,9 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     current_user: {[:id, :name, :email], %User{}}
   }
 
+  @page_resource_type_id Oli.Resources.ResourceType.get_id_by_type("page")
+  @container_resource_type_id Oli.Resources.ResourceType.get_id_by_type("container")
+
   def mount(_params, _session, socket) do
     section = socket.assigns.section
 
@@ -605,6 +608,31 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   def handle_info(_, socket), do: {:noreply, socket}
 
   def render(%{selected_view: :outline} = assigns) do
+    %{
+      units: units,
+      student_visited_pages: student_visited_pages,
+      student_raw_avg_score_per_page_id: student_raw_avg_score_per_page_id,
+      student_progress_per_resource_id: student_progress_per_resource_id,
+      section: %{id: section_id}
+    } = assigns
+
+    units_with_metrics =
+      units
+      |> Enum.map(fn unit ->
+        unit
+        |> mark_visited_and_completed_pages(
+          student_visited_pages,
+          student_raw_avg_score_per_page_id,
+          student_progress_per_resource_id
+        )
+        |> fetch_learning_objectives(section_id)
+      end)
+
+    assigns =
+      Map.merge(assigns, %{
+        units: units_with_metrics
+      })
+
     ~H"""
     <div id="student_learn" class="lg:container lg:mx-auto p-[25px]" phx-hook="Scroller">
       <.video_player />
@@ -615,8 +643,16 @@ defmodule OliWeb.Delivery.Student.LearnLive do
           selected_view={@selected_view}
         />
       </div>
-      <div>TODO: implement OUTLINE view</div>
-      <div id="all_units_as_outline" phx-update="append"></div>
+      <div id="outline_rows" phx-update="append">
+        <.outline_row
+          :for={row <- @units}
+          row={row}
+          type={child_type(row)}
+          student_progress_per_resource_id={@student_progress_per_resource_id}
+          viewed_intro_video_resource_ids={@viewed_intro_video_resource_ids}
+          student_id={@current_user.id}
+        />
+      </div>
     </div>
     """
   end
@@ -633,7 +669,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         />
       </div>
       <div id="all_units_as_gallery" phx-update="append">
-        <.row
+        <.gallery_row
           :for={unit <- @units}
           unit={unit}
           ctx={@ctx}
@@ -678,7 +714,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   attr :display_props_per_module_id, :map
 
   # top level page as a card with title and header
-  def row(%{unit: %{"resource_type_id" => 1}} = assigns) do
+  def gallery_row(%{unit: %{"resource_type_id" => 1}} = assigns) do
     ~H"""
     <div id={"top_level_page_#{@unit["resource_id"]}"} tabindex="0">
       <div class="md:p-[25px] md:pl-[50px]" role={"top_level_page_#{@unit["numbering"]["index"]}"}>
@@ -750,7 +786,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     """
   end
 
-  def row(assigns) do
+  def gallery_row(assigns) do
     ~H"""
     <div
       id={"unit_#{@unit["resource_id"]}"}
@@ -1033,6 +1069,127 @@ defmodule OliWeb.Delivery.Student.LearnLive do
           </span>
         </div>
       </.custom_focus_wrap>
+    </div>
+    """
+  end
+
+  def outline_row(%{type: :unit} = assigns) do
+    ~H"""
+    <div id={"unit_#{@row["resource_id"]}"}>
+      <div class="md:p-[25px] md:pl-[125px] md:pr-[175px]" role={"row_#{@row["numbering"]["index"]}"}>
+        <div class="flex flex-col md:flex-row md:gap-[30px]">
+          <div class="text-white text-xl font-bold font-['Open Sans']">
+            <%= "Unit #{@row["numbering"]["index"]}: #{@row["title"]}" %>
+          </div>
+        </div>
+        <div class="flex flex-col mt-6">
+          <.outline_row
+            :for={row <- @row["children"]}
+            row={row}
+            type={child_type(row)}
+            student_progress_per_resource_id={@student_progress_per_resource_id}
+            viewed_intro_video_resource_ids={@viewed_intro_video_resource_ids}
+            student_id={@student_id}
+          />
+        </div>
+      </div>
+    </div>
+    """
+  end
+
+  def outline_row(%{type: type} = assigns) when type in [:module, :section] do
+    ~H"""
+    <div id={"#{@type}_#{@row["resource_id"]}"}>
+      <div class="w-full pl-[5px] pr-[7px] py-2.5 rounded-lg justify-start items-center gap-5 flex">
+        <div class="justify-start items-start gap-5 flex">
+          <.no_icon />
+          <div class="w-[26px] justify-start items-center">
+            <div class="grow shrink basis-0 opacity-60 text-white text-[13px] font-semibold font-['Open Sans'] capitalize">
+              <.numbering_index type={Atom.to_string(@type)} />
+            </div>
+          </div>
+        </div>
+        <div class={[
+          "text-white text-base font-bold font-['Open Sans']",
+          left_indentation(@row["numbering"]["level"], :outline)
+        ]}>
+          <%= @row["title"] %>
+        </div>
+      </div>
+      <div class="flex flex-col">
+        <.outline_row
+          :for={row <- @row["children"]}
+          row={row}
+          type={child_type(row)}
+          student_progress_per_resource_id={@student_progress_per_resource_id}
+          viewed_intro_video_resource_ids={@viewed_intro_video_resource_ids}
+          student_id={@student_id}
+        />
+      </div>
+    </div>
+    """
+  end
+
+  def outline_row(%{type: :page} = assigns) do
+    ~H"""
+    <div id={"page_#{@row["id"]}"}>
+      <button
+        role={"page #{@row["numbering"]["index"]} details"}
+        class={[
+          "w-full pl-[5px] pr-[7px] py-2.5 rounded-lg justify-start items-center gap-5 flex rounded-lg focus:bg-[#000000]/5 hover:bg-[#000000]/5 dark:focus:bg-[#FFFFFF]/5 dark:hover:bg-[#FFFFFF]/5",
+          if(@row["graded"],
+            do: "font-semibold hover:font-bold focus:font-bold",
+            else: "font-normal hover:font-medium focus:font-medium"
+          )
+        ]}
+        id={"index_item_#{@row["id"]}"}
+        phx-click="navigate_to_resource"
+        phx-value-view={:outline}
+        phx-value-slug={@row["slug"]}
+        phx-value-resource_id={@row["id"]}
+      >
+        <div class="justify-start items-start gap-5 flex">
+          <.index_item_icon
+            item_type={Atom.to_string(@type)}
+            was_visited={@row["visited"]}
+            graded={@row["graded"]}
+            raw_avg_score={@row["score"]}
+            progress={@row["progress"]}
+          />
+          <div class="w-[26px] justify-start items-center">
+            <div class="grow shrink basis-0 opacity-60 text-white text-[13px] font-semibold font-['Open Sans'] capitalize">
+              <.numbering_index type={Atom.to_string(@type)} index={@row["numbering"]["index"]} />
+            </div>
+          </div>
+        </div>
+
+        <div
+          id={"index_item_#{@row["numbering"]["index"]}_#{@row["id"]}"}
+          class="flex shrink items-center gap-3 w-full dark:text-white"
+        >
+          <div class={[
+            "flex flex-col gap-1 w-full",
+            left_indentation(@row["numbering"]["level"], :outline)
+          ]}>
+            <div class="flex">
+              <span class={
+                [
+                  "text-left dark:text-white opacity-90 text-base font-['Open Sans']",
+                  # Opacity is set if the item is visited, but not necessarily completed
+                  if(@row["visited"], do: "opacity-60")
+                ]
+              }>
+                <%= "#{@row["title"]}" %>
+              </span>
+
+              <.duration_in_minutes
+                duration_minutes={@row["duration_minutes"]}
+                graded={@row["graded"]}
+              />
+            </div>
+          </div>
+        </div>
+      </button>
     </div>
     """
   end
@@ -1975,35 +2132,43 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   end
 
   defp mark_visited_and_completed_pages(
-         container,
+         %{"resource_type_id" => resource_type_id} = top_level_page_resource,
          visited_pages,
          student_raw_avg_score_per_page_id,
          student_progress_per_resource_id
-       ) do
-    page_resource_type_id = Oli.Resources.ResourceType.get_id_by_type("page")
-    container_resource_type_id = Oli.Resources.ResourceType.get_id_by_type("container")
+       )
+       when resource_type_id == @page_resource_type_id do
+    score =
+      get_in(student_raw_avg_score_per_page_id, [top_level_page_resource["resource_id"], :score])
 
+    progress = student_progress_per_resource_id[top_level_page_resource["resource_id"]]
+    visited? = Map.get(visited_pages, top_level_page_resource["id"], false)
+    completed? = completed_page?(top_level_page_resource["graded"], visited?, score, progress)
+
+    top_level_page_resource
+    |> Map.put("visited", Map.get(visited_pages, top_level_page_resource["id"], false))
+    |> Map.put("completed", completed?)
+    |> Map.put("progress", progress)
+    |> Map.put("score", score)
+  end
+
+  defp mark_visited_and_completed_pages(
+         %{"resource_type_id" => resource_type_id} = container,
+         visited_pages,
+         student_raw_avg_score_per_page_id,
+         student_progress_per_resource_id
+       )
+       when resource_type_id == @container_resource_type_id do
     update_in(
       container,
       ["children"],
-      &Enum.map(&1, fn
-        %{"resource_type_id" => ^page_resource_type_id} = page ->
-          score = get_in(student_raw_avg_score_per_page_id, [page["resource_id"], :score])
-          progress = student_progress_per_resource_id[page["resource_id"]]
-          visited? = Map.get(visited_pages, page["id"], false)
-          completed? = completed_page?(page["graded"], visited?, score, progress)
-
-          page
-          |> Map.put("visited", Map.get(visited_pages, page["id"], false))
-          |> Map.put("completed", completed?)
-
-        %{"resource_type_id" => ^container_resource_type_id} = section ->
-          mark_visited_and_completed_pages(
-            section,
-            visited_pages,
-            student_raw_avg_score_per_page_id,
-            student_progress_per_resource_id
-          )
+      &Enum.map(&1, fn resource ->
+        mark_visited_and_completed_pages(
+          resource,
+          visited_pages,
+          student_raw_avg_score_per_page_id,
+          student_progress_per_resource_id
+        )
       end)
     )
   end
@@ -2406,8 +2571,22 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       Oli.Resources.ResourceType.get_type_by_id(child["resource_type_id"]) == "container" and
         child["numbering"]["level"] > 2
 
-  defp left_indentation(numbering_level) do
-    case numbering_level do
+  defp child_type(child) do
+    case {Oli.Resources.ResourceType.get_type_by_id(child["resource_type_id"]),
+          child["numbering"]["level"]} do
+      {"container", 1} -> :unit
+      {"container", 2} -> :module
+      {"container", _} -> :section
+      {"page", _} -> :page
+    end
+  end
+
+  defp left_indentation(numbering_level, view \\ :gallery)
+
+  defp left_indentation(numbering_level, view) do
+    level_adjustment = if view == :outline, do: 1, else: 0
+
+    case numbering_level + level_adjustment do
       4 -> "ml-[20px]"
       5 -> "ml-[40px]"
       6 -> "ml-[60px]"
