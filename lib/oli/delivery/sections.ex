@@ -3912,15 +3912,18 @@ defmodule Oli.Delivery.Sections do
         section.slug
       ),
       join: r_att in ResourceAttempt,
-      on: rev.id == r_att.revision_id and r_att.lifecycle_state == :active,
+      on: rev.id == r_att.revision_id,
       join: ra in assoc(r_att, :resource_access),
       where:
         ra.section_id == ^section.id and ra.user_id == ^user_id and
-          rev.resource_type_id == ^page_resource_type_id,
-      order_by: [desc: r_att.updated_at],
+          rev.resource_type_id == ^page_resource_type_id and ra.progress != 1.0,
+      order_by: [desc: ra.updated_at],
       limit: 1,
       select: map(rev, [:id, :title, :slug, :duration_minutes, :resource_id, :graded, :purpose]),
-      select_merge: %{numbering_index: sr.numbering_index, end_date: sr.end_date}
+      select_merge: %{
+        numbering_index: sr.numbering_index,
+        end_date: sr.end_date
+      }
     )
     |> Repo.one()
   end

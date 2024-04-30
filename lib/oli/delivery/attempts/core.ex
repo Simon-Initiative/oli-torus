@@ -189,6 +189,8 @@ defmodule Oli.Delivery.Attempts.Core do
       {:error, %Ecto.Changeset{}}
   """
   def track_access(resource_id, section_id, user_id) do
+    now = DateTime.utc_now()
+
     Oli.Repo.insert!(
       %ResourceAccess{
         access_count: 1,
@@ -196,7 +198,7 @@ defmodule Oli.Delivery.Attempts.Core do
         section_id: section_id,
         resource_id: resource_id
       },
-      on_conflict: [inc: [access_count: 1]],
+      on_conflict: [inc: [access_count: 1], set: [updated_at: now]],
       conflict_target: [:resource_id, :user_id, :section_id]
     )
   end
