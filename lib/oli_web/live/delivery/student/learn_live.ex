@@ -525,6 +525,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   def navigate_to_resource(values, socket) do
     section_slug = socket.assigns.section.slug
     resource_id = values["resource_id"] || values["module_resource_id"]
+    selected_view = values["view"] || :gallery
 
     {:noreply,
      push_redirect(socket,
@@ -532,7 +533,8 @@ defmodule OliWeb.Delivery.Student.LearnLive do
          resource_url(
            values["slug"],
            section_slug,
-           resource_id
+           resource_id,
+           selected_view
          )
      )}
   end
@@ -2107,11 +2109,16 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     end)
   end
 
-  defp resource_url(resource_slug, section_slug, resource_id) do
+  defp resource_url(resource_slug, section_slug, resource_id, selected_view) do
     Utils.lesson_live_path(
       section_slug,
       resource_slug,
-      request_path: Utils.learn_live_path(section_slug, target_resource_id: resource_id)
+      request_path:
+        Utils.learn_live_path(section_slug,
+          target_resource_id: resource_id,
+          selected_view: selected_view
+        ),
+      selected_view: selected_view
     )
   end
 
