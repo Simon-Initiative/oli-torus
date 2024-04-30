@@ -8,7 +8,7 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
   alias OliWeb.Components.Delivery.Buttons
   alias OliWeb.Delivery.Student.Lesson.Annotations
 
-  @default_post_params %{
+  @default_params %{
     sort_by: "date",
     sort_order: :desc,
     filter_by: "all",
@@ -28,7 +28,14 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
       get_posts(
         socket.assigns.current_user.id,
         socket.assigns.section.id,
-        @default_post_params
+        @default_params
+      )
+
+    {notes, more_notes_exist?} =
+      get_notes(
+        socket.assigns.current_user.id,
+        socket.assigns.section.id,
+        @default_params
       )
 
     {
@@ -36,13 +43,16 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
       assign(socket,
         active_tab: :discussions,
         posts: posts,
+        notes: notes,
         expanded_posts: %{},
         course_collab_space_config:
           Collaboration.get_course_collab_space_config(
             socket.assigns.section.root_section_resource_id
           ),
-        post_params: @default_post_params,
+        post_params: @default_params,
+        note_params: @default_params,
         more_posts_exist?: more_posts_exist?,
+        more_notes_exist?: more_notes_exist?,
         root_section_resource_resource_id:
           Sections.get_root_section_resource_resource_id(socket.assigns.section)
       )
@@ -75,6 +85,34 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
        posts: posts,
        post_params: updated_post_params,
        more_posts_exist?: more_posts_exist?
+     )}
+  end
+
+  def handle_event("sort_notes", %{"sort_by" => sort_by}, socket) do
+    updated_note_params =
+      Map.merge(socket.assigns.note_params, %{
+        sort_by: sort_by,
+        sort_order:
+          get_sort_order(
+            socket.assigns.note_params.sort_by,
+            sort_by,
+            socket.assigns.note_params.sort_order
+          )
+      })
+
+    {notes, more_notes_exist?} =
+      get_notes(
+        socket.assigns.current_user.id,
+        socket.assigns.section.id,
+        updated_note_params
+      )
+
+    {:noreply,
+     assign(
+       socket,
+       notes: notes,
+       note_params: updated_note_params,
+       more_notes_exist?: more_notes_exist?
      )}
   end
 
@@ -299,6 +337,33 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
     end
   end
 
+  def handle_event("load_more_notes", _, socket) do
+    updated_note_params =
+      Map.merge(socket.assigns.note_params, %{
+        offset: socket.assigns.note_params.offset + socket.assigns.note_params.limit
+      })
+
+    {notes, more_notes_exist?} =
+      get_notes(
+        socket.assigns.current_user.id,
+        socket.assigns.section.id,
+        updated_note_params
+      )
+
+    case notes do
+      [] ->
+        {:noreply, assign(socket, more_notes_exist?: false)}
+
+      more_notes ->
+        {:noreply,
+         assign(socket,
+           notes: socket.assigns.notes ++ more_notes,
+           note_params: updated_note_params,
+           more_notes_exist?: more_notes_exist?
+         )}
+    end
+  end
+
   def handle_info({:discussion_created, _new_post}, socket)
       when socket.assigns.post_params.filter_by in ["my_activity", "page_discussions"] do
     # new broadcasted post should not be added to the UI if the user is filtering by "my activity"
@@ -360,7 +425,7 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
     <.hero_banner class="bg-discussions">
       <h1 class="text-6xl mb-8">Discussions</h1>
     </.hero_banner>
-    <div id="discussions_content" class="flex flex-col py-6 px-16 gap-6 items-start">
+    <div id="discussions_content" class="flex flex-col py-6 px-16 mb-10 gap-6 items-start">
       <.posts_section
         posts={@posts}
         ctx={@ctx}
@@ -370,6 +435,12 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
         course_collab_space_config={@course_collab_space_config}
         post_params={@post_params}
         more_posts_exist?={@more_posts_exist?}
+      />
+      <.notes_section
+        ctx={@ctx}
+        notes={@notes}
+        note_params={@note_params}
+        more_notes_exist?={@more_notes_exist?}
       />
     </div>
     """
@@ -501,6 +572,45 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
     """
   end
 
+  attr :notes, :list
+  attr :ctx, :map
+  attr :note_params, :map
+  attr :more_notes_exist?, :boolean
+
+  defp notes_section(assigns) do
+    ~H"""
+    <section id="notes" class="container mx-auto flex flex-col items-start w-full gap-6">
+      <div role="notes header" class="flex justify-between items-center w-full self-stretch">
+        <h3 class="text-2xl tracking-[0.02px] font-semibold dark:text-white">
+          Notes
+        </h3>
+      </div>
+
+      <.notes_actions note_params={@note_params} />
+
+      <div role="notes list" class="w-full">
+        <%= for post <- @notes do %>
+          <div class="mb-3">
+            <Annotations.post class="bg-white" post={post} current_user={@ctx.user} />
+          </div>
+        <% end %>
+        <div :if={@notes == []} class="flex p-4 text-center w-full">
+          There are no notes to show.
+        </div>
+        <div class="flex w-full justify-end">
+          <button
+            :if={@more_notes_exist?}
+            phx-click="load_more_notes"
+            class="text-primary text-sm px-6 py-2 hover:text-primary/70"
+          >
+            Load more notes
+          </button>
+        </div>
+      </div>
+    </section>
+    """
+  end
+
   attr :post_params, :map
   attr :course_collab_space_config, Oli.Resources.Collaboration.CollabSpaceConfig
 
@@ -577,6 +687,51 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
     """
   end
 
+  attr :note_params, :map
+
+  defp notes_actions(assigns) do
+    ~H"""
+    <div role="notes actions" class="w-full flex gap-6">
+      <div class="flex flex-1 space-x-3">
+        <Annotations.search_box class="flex-1" />
+
+        <.dropdown
+          id="sort-dropdown"
+          role="sort"
+          class="inline-flex"
+          button_class="rounded-[3px] py-[10px] px-6 flex justify-center items-center whitespace-nowrap text-[14px] leading-[20px] font-normal text-white bg-[#0F6CF5] hover:bg-blue-600"
+          options={[
+            %{
+              text: "Date",
+              on_click: JS.push("sort_notes", value: %{sort_by: "date"}),
+              icon: sort_by_icon(@note_params.sort_by == "date", @note_params.sort_order),
+              class:
+                if(@note_params.sort_by == "date",
+                  do: "font-bold dark:font-extrabold",
+                  else: "dark:font-light"
+                )
+            }
+          ]}
+        >
+          <span class="text-[14px] leading-[20px] mr-2">Sort</span>
+          <svg
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="M6.70711 8.29289C6.31658 7.90237 5.68342 7.90237 5.29289 8.29289C4.90237 8.68342 4.90237 9.31658 5.29289 9.70711L11.2929 15.7071C11.6834 16.0976 12.3166 16.0976 12.7071 15.7071L18.7071 9.70711C19.0976 9.31658 19.0976 8.68342 18.7071 8.29289C18.3166 7.90237 17.6834 7.90237 17.2929 8.29289L12 13.5858L6.70711 8.29289Z"
+              fill="white"
+            />
+          </svg>
+        </.dropdown>
+      </div>
+    </div>
+    """
+  end
+
   defp get_posts(
          current_user_id,
          section_id,
@@ -594,6 +749,21 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
       )
 
     {posts, more_posts_exist?}
+  end
+
+  defp get_notes(
+         current_user_id,
+         section_id,
+         note_params
+       ) do
+    Collaboration.list_all_user_notes_for_section(
+      current_user_id,
+      section_id,
+      note_params.limit,
+      note_params.offset,
+      note_params.sort_by,
+      note_params.sort_order
+    )
   end
 
   defp assign_new_discussion_form(socket) do
