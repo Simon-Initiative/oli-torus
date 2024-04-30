@@ -28,7 +28,7 @@ defmodule Oli.Resources.Collaboration.Post do
 
     field :visibility, Ecto.Enum,
       values: [:private, :public],
-      default: :private
+      default: :public
 
     field :anonymous, :boolean, default: false
 

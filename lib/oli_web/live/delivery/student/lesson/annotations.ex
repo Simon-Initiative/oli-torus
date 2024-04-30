@@ -408,19 +408,22 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
 
   def post(assigns) do
     ~H"""
-    <div class={[
-      "post flex flex-col p-4 border-2 border-gray-200 dark:border-gray-800 rounded",
-      @rest[:class]
-    ]}>
-      <div class="flex flex-row justify-between mb-1">
-        <div class="font-semibold">
+    <div
+      id={"post-#{@post.id}"}
+      class={[
+        "post flex flex-col p-4 border-2 border-gray-200 dark:border-gray-800 rounded",
+        @rest[:class]
+      ]}
+    >
+      <div class="flex flex-row justify-between mb-1" role="post header">
+        <div class="font-semibold" role="user name">
           <%= post_creator(@post, @current_user) %>
         </div>
         <div class="text-sm text-gray-500">
           <%= Timex.from_now(@post.inserted_at) %>
         </div>
       </div>
-      <p class="my-2">
+      <p class="my-2" role="post content">
         <%= @post.content.message %>
       </p>
       <.post_actions
@@ -476,10 +479,11 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
 
       %Oli.Resources.Collaboration.Post{visibility: :public} ->
         ~H"""
-        <div class="flex flex-row gap-3 my-2">
+        <div class="flex flex-row gap-3 my-2" role="post actions">
           <button
             :if={@on_toggle_reaction}
             class="inline-flex gap-1 text-sm text-gray-500 bold py-1 px-2 rounded-lg hover:bg-gray-100"
+            role="reactions"
             phx-click={@on_toggle_reaction}
             phx-value-reaction={:like}
             phx-value-post-id={assigns.post.id}
@@ -495,6 +499,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
           <button
             :if={@on_toggle_replies}
             class="inline-flex gap-1 text-sm text-gray-500 bold py-1 px-2 rounded-lg hover:bg-gray-100"
+            role="replies"
             phx-click={@on_toggle_replies}
             phx-value-post-id={assigns.post.id}
           >
