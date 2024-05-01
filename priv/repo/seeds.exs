@@ -19,9 +19,13 @@ alias Oli.Accounts.{User, Author}
 alias Oli.Repo
 alias Oli.Utils.DataGenerators.NameGenerator
 alias Oli.Host.HostIdentifier
-def host(), do: Application.get_env(:oli, OliWeb.Endpoint)[:url][:host]
+import Ecto.Query
 
-if !Repo.exists?(HostIdentifier), do: Repo.insert!(%HostIdentifier{host: host()})
+unless Repo.exists?(HostIdentifier) do
+  # The hostmane must exists otherwise an error is thrown
+  Repo.insert!(%HostIdentifier{host: System.get_env("HOST")})
+  from(oj in "oban_jobs") |> Repo.delete_all()
+end
 
 # create system roles
 if !Oli.Repo.get_by(Oli.Accounts.SystemRole, id: 1) do
