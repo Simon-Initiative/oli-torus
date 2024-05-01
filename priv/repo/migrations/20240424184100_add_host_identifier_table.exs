@@ -4,7 +4,7 @@ defmodule Oli.Repo.Migrations.AddHostIdentifierTable do
   def change do
     create table(:host_identifier, primary_key: false) do
       add :id, :integer, null: false
-      add :host, :string, null: false
+      add :hostname, :string, null: false
       timestamps()
     end
 

@@ -23,7 +23,7 @@ import Ecto.Query
 
 unless Repo.exists?(HostIdentifier) do
   # The hostmane must exists otherwise an error is thrown
-  Repo.insert!(%HostIdentifier{host: System.get_env("HOST")})
+  Repo.insert!(%HostIdentifier{hostname: System.get_env("HOST")})
   from(oj in "oban_jobs") |> Repo.delete_all()
 end
 
