@@ -13,6 +13,8 @@ jobs:
     name: Elixir build and test
     runs-on: ubuntu-latest
 
+    environment: ci-build-test
+
     env:
       MIX_ENV: test
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -25,7 +27,7 @@ jobs:
         run: |
           cp postgres.example.env postgres.env
           cat > oli.env <<EOL
-          ${{ env.CI_OLI_ENV }}
+          ${{ vars.CI_OLI_ENV }}
           EOL
 
       - name: 🗄 Start test database
