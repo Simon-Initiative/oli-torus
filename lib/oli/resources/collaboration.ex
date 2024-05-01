@@ -1197,6 +1197,15 @@ defmodule Oli.Resources.Collaboration do
           dynamic([p], p.annotated_block_id == ^point_block_id)
       end
 
+    filter_by_visibility =
+      case visibility do
+        :private ->
+          dynamic([p], p.visibility == ^visibility and p.user_id == ^user_id)
+
+        _ ->
+          dynamic([p], p.visibility == ^visibility)
+      end
+
     Repo.all(
       from(
         post in Post,
@@ -1212,6 +1221,7 @@ defmodule Oli.Resources.Collaboration do
             (post.status in [:approved, :archived] or
                (post.status == :submitted and post.user_id == ^user_id)),
         where: ^filter_by_point_block_id,
+        where: ^filter_by_visibility,
         where:
           fragment(
             "to_tsvector('english', ?) @@ websearch_to_tsquery('english', ?)",
