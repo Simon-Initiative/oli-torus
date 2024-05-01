@@ -26,9 +26,7 @@ jobs:
       - name: 🔧 Configure
         run: |
           cp postgres.example.env postgres.env
-          cat > oli.env <<EOL
-          ${{ vars.CI_OLI_ENV }}
-          EOL
+          cp oli.example.env oli.env
 
       - name: 🗄 Start test database
         run: docker-compose up -d postgres
