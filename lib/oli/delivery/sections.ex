@@ -2072,7 +2072,8 @@ defmodule Oli.Delivery.Sections do
       # create any remaining section resources which are not in the hierarchy
       create_nonstructural_section_resources(section.id, [publication_id],
         skip_resource_ids: processed_ids,
-        required_survey_resource_id: survey_id
+        required_survey_resource_id: survey_id,
+        list_children_activity_ids: []
       )
 
       root_section_resource_id = section_resources_by_resource_id[root_resource_id].id
@@ -2571,9 +2572,12 @@ defmodule Oli.Delivery.Sections do
         |> select([p], p.required_survey_resource_id)
         |> Repo.one()
 
+      list_children_activity_ids = build_list_children_activity_ids(hierarchy.children)
+
       create_nonstructural_section_resources(section_id, publication_ids,
         skip_resource_ids: processed_resource_ids,
-        required_survey_resource_id: survey_id
+        required_survey_resource_id: survey_id,
+        list_children_activity_ids: list_children_activity_ids
       )
 
       # Rebuild section previous next index
@@ -2585,6 +2589,61 @@ defmodule Oli.Delivery.Sections do
       section_resources
     end)
   end
+
+  defp build_list_children_activity_ids([]), do: []
+
+  defp build_list_children_activity_ids(children_activities) do
+    tuple_of_children_activities =
+      children_activities
+      |> process_activity_ids()
+
+    Enum.concat(Tuple.to_list(tuple_of_children_activities))
+  end
+
+  defp process_activity_ids(children_activities) do
+    children_activities
+    |> Enum.reduce({[], []}, fn r, {children_unit_activities_ids, children_activities_ids} ->
+      new_children_unit_activities_ids = build_child_activity_ids_for_units(r.children)
+
+      if Map.has_key?(r.revision, :content) do
+        new_children_activities_ids = build_child_activity_ids(r.revision.content)
+
+        {children_unit_activities_ids ++ new_children_unit_activities_ids,
+         children_activities_ids ++ new_children_activities_ids}
+      else
+        {children_unit_activities_ids ++ new_children_unit_activities_ids,
+         children_activities_ids ++ []}
+      end
+    end)
+  end
+
+  defp build_child_activity_ids_for_units([]), do: []
+
+  defp build_child_activity_ids_for_units(children) do
+    children
+    |> Enum.map(fn c ->
+      if Map.has_key?(c.revision, :content) do
+        build_child_activity_ids(c.revision.content)
+      else
+        []
+      end
+    end)
+    |> List.flatten()
+  end
+
+  defp build_child_activity_ids(%{"model" => nil}), do: []
+
+  defp build_child_activity_ids(%{"model" => model}) do
+    model
+    |> Enum.reduce([], fn item, activity_ids ->
+      case item["activity_id"] do
+        nil -> activity_ids
+        activity_id -> [activity_id | activity_ids]
+      end
+    end)
+  end
+
+  defp build_child_activity_ids(_), do: []
 
   def get_contained_pages(%Section{id: section_id}) do
     from(cp in ContainedPage,
@@ -3378,10 +3437,11 @@ defmodule Oli.Delivery.Sections do
   # any that belong to the resource ids in skip_resource_ids
   defp create_nonstructural_section_resources(section_id, publication_ids,
          skip_resource_ids: skip_resource_ids,
-         required_survey_resource_id: required_survey_resource_id
+         required_survey_resource_id: required_survey_resource_id,
+         list_children_activity_ids: list_children_activity_ids
        ) do
     published_resources_by_resource_id =
-      MinimalHierarchy.published_resources_map(publication_ids)
+      build_published_resources_by_resource_id(publication_ids, list_children_activity_ids)
 
     now = DateTime.utc_now() |> DateTime.truncate(:second)
 
@@ -3424,6 +3484,14 @@ defmodule Oli.Delivery.Sections do
 
     Database.batch_insert_all(SectionResource, section_resource_rows)
   end
+
+  defp build_published_resources_by_resource_id(publication_ids, []),
+    do: MinimalHierarchy.published_resources_map(publication_ids)
+
+  defp build_published_resources_by_resource_id(publication_ids, list_children_section_ids),
+    do:
+      MinimalHierarchy.published_resources_map(publication_ids)
+      |> Map.take(list_children_section_ids)
 
   def is_structural?(%Revision{resource_type_id: resource_type_id}) do
     container = ResourceType.id_for_container()
