@@ -136,7 +136,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
             ctx={@ctx}
             is_system_admin={@is_system_admin}
             section={@section}
-            dropdown_class="absolute -top-[310px] right-0 border"
+            dropdown_class="absolute -translate-y-[calc(100%+58px)] right-0 border"
           />
         </div>
       </nav>
