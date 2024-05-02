@@ -1121,7 +1121,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     <div id={"unit_#{@row["resource_id"]}"}>
       <div class="md:p-[25px] md:pl-[125px] md:pr-[175px]" role={"row_#{@row["numbering"]["index"]}"}>
         <div class="flex flex-col md:flex-row md:gap-[30px]">
-          <div class="text-white text-xl font-bold font-['Open Sans']">
+          <div class="dark:text-white text-xl font-bold font-['Open Sans']">
             <%= "Unit #{@row["numbering"]["index"]}: #{@row["title"]}" %>
           </div>
         </div>
@@ -1145,7 +1145,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     <div id={"top_level_page_#{@row["resource_id"]}"}>
       <div class="md:p-[25px] md:pl-[125px] md:pr-[175px]" role={"row_#{@row["numbering"]["index"]}"}>
         <div class="flex flex-col md:flex-row md:gap-[30px]">
-          <div class="text-white text-xl font-bold font-['Open Sans']">
+          <div class="dark:text-white text-xl font-bold font-['Open Sans']">
             <%= @row["title"] %>
           </div>
         </div>
@@ -1170,19 +1170,19 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         <div class="justify-start items-start gap-5 flex">
           <.no_icon />
           <div class="w-[26px] justify-start items-center">
-            <div class="grow shrink basis-0 opacity-60 text-white text-[13px] font-semibold font-['Open Sans'] capitalize">
+            <div class="grow shrink basis-0 opacity-60 dark:text-white text-[13px] font-semibold font-['Open Sans'] capitalize">
               <.numbering_index type={Atom.to_string(@type)} />
             </div>
           </div>
         </div>
         <div class={[
-          "text-white text-base font-bold font-['Open Sans']",
+          "dark:text-white text-base font-bold font-['Open Sans']",
           left_indentation(@row["numbering"]["level"], :outline)
         ]}>
           <span><%= @row["title"] %></span>
           <div
             :if={@type == :module and @row["intro_content"]["children"] not in ["", nil]}
-            class="mt-3 text-white text-base font-normal font-['Open Sans']"
+            class="mt-3 dark:text-white text-base font-normal font-['Open Sans']"
           >
             <%= render_intro_content(@row["intro_content"]["children"]) %>
           </div>
@@ -1237,7 +1237,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
             progress={@row["progress"]}
           />
           <div class="w-[26px] justify-start items-center">
-            <div class="grow shrink basis-0 opacity-60 text-white text-[13px] font-semibold font-['Open Sans'] capitalize">
+            <div class="grow shrink basis-0 opacity-60 dark:text-white text-[13px] font-semibold font-['Open Sans'] capitalize">
               <.numbering_index type={Atom.to_string(@type)} index={@row["numbering"]["index"]} />
             </div>
           </div>
