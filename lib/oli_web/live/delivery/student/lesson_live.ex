@@ -1197,7 +1197,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
             posts =
               if load_replies_for_post_id do
                 post_replies =
-                  Collaboration.list_replies_for_post_in_point_block(
+                  Collaboration.list_replies_for_post(
                     current_user.id,
                     load_replies_for_post_id
                   )
@@ -1230,7 +1230,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
 
   defp async_load_post_replies(user_id, post_id) do
     Task.async(fn ->
-      post_replies = Collaboration.list_replies_for_post_in_point_block(user_id, post_id)
+      post_replies = Collaboration.list_replies_for_post(user_id, post_id)
 
       {:assign_post_replies, {post_id, post_replies}}
     end)

@@ -28,19 +28,23 @@ defmodule Oli.Resources.Collaboration.Post do
 
     field :visibility, Ecto.Enum,
       values: [:private, :public],
-      default: :private
-
-    field :replies_count, :integer, virtual: true
-    field :read_replies_count, :integer, virtual: true
-    field :is_read, :boolean, virtual: true
+      default: :public
 
     field :anonymous, :boolean, default: false
 
     has_many :reactions, Oli.Resources.Collaboration.UserReactionPost
 
+    field :resource_type_id, :id, virtual: true
+    field :replies_count, :integer, virtual: true
+    field :read_replies_count, :integer, virtual: true
+    field :is_read, :boolean, virtual: true
+
     field :reaction_summaries, :map, virtual: true
-    field :headline, :string, virtual: true
     field :replies, :any, virtual: true
+
+    # headline is a virtual field that is used to store the marked-up text returned
+    # by a search result for highlighting the search term in the search results
+    field :headline, :string, virtual: true
 
     timestamps(type: :utc_datetime)
   end
