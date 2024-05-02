@@ -757,6 +757,45 @@ defmodule Oli.Delivery.PaywallTest do
       codes = Paywall.list_payments_by_count(product.slug, 1)
       assert length(codes) == 1
     end
+
+    test "has_payment_codes?/1 returns true if the product has payment codes created", %{
+      product: product
+    } do
+      insert(:payment, section: product, code: 123_456_789)
+      insert(:payment, section: product, code: 987_654_321)
+      assert Paywall.has_payment_codes?(product.id)
+    end
+
+    test "has_payment_codes?/1 returns false if the product has no payment codes created", %{
+      product: product
+    } do
+      refute Paywall.has_payment_codes?(product.id)
+    end
+
+    test "transfer payment codes works correctly", %{
+      product: product
+    } do
+      product_2 =
+        insert(:section, %{
+          type: :blueprint,
+          requires_payment: true,
+          amount: Money.new(:USD, 100),
+          base_project: product.base_project,
+          base_project_id: product.base_project_id
+        })
+
+      insert(:payment, section: product, code: 123_456_789)
+      insert(:payment, section: product, code: 987_654_321)
+
+      assert Paywall.has_payment_codes?(product.id)
+      refute Paywall.has_payment_codes?(product_2.id)
+
+      {count, nil} = Paywall.transfer_payment_codes(product.id, product_2.id)
+
+      assert count == 2
+      assert Paywall.has_payment_codes?(product_2.id)
+      refute Paywall.has_payment_codes?(product.id)
+    end
   end
 
   describe "payments" do

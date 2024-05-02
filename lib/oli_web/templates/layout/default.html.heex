@@ -9,9 +9,6 @@
     <main role="main" id="main-content" class="pb-20">
       <%= @inner_content %>
     </main>
-
-    <OliWeb.Components.Footer.delivery_footer license={
-      Map.get(assigns, :has_license) && assigns[:license]
-    } />
+    <%= OliWeb.Components.Footer.global_footer(%{}) %>
   </div>
 <% end %>
