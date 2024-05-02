@@ -981,6 +981,20 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
                "button[phx-click='toggle_sidebar']"
              )
     end
+
+    test "can access user menu on the header", %{
+      conn: conn,
+      section: section,
+      user: user,
+      page_1: page_1
+    } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+
+      {:ok, view, _html} = live(conn, Utils.lesson_live_path(section.slug, page_1.slug))
+
+      assert has_element?(view, "button[id=user-account-menu]")
+    end
   end
 
   describe "annotations panel" do
