@@ -20,10 +20,7 @@ defmodule Oli.Analytics.ByPage do
   end
 
   defp get_base_query(project_slug, activity_pages, filtered_sections) do
-    IO.inspect(project_slug, label: "projecttt_dslug")
-
     Repo.all(activity_pages)
-    |> IO.inspect(label: "activitiesss")
 
     subquery =
       if filtered_sections != [] do
@@ -39,7 +36,6 @@ defmodule Oli.Analytics.ByPage do
       end
 
     Repo.all(subquery)
-    |> IO.inspect(label: "subquery")
 
     subquery_activity =
       if filtered_sections != [] do

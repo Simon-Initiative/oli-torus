@@ -63,8 +63,6 @@ defmodule Oli.Delivery.Analytics.AnalyticsTest do
       activity_results = Enum.find(activity_query, &(&1.slice.id == activity_no_attempts.id))
       assert activity_results.number_of_attempts == nil
       page_no_attempts = seeds.revision1
-      IO.inspect(page_no_attempts.id, label: "marerer")
-      IO.inspect(page_query, label: "rereee")
       page_results = Enum.find(page_query, &(&1.slice.id == page_no_attempts.id))
 
       assert page_results.number_of_attempts == nil
