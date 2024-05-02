@@ -92,42 +92,43 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   end
 
   def handle_params(
-        %{"selected_view" => selected_view, "target_resource_id" => resource_id},
+        params,
         _uri,
         socket
       ) do
     full_hierarchy = get_or_compute_full_hierarchy(socket.assigns.section)
-    selected_view = String.to_existing_atom(selected_view)
 
     send(self(), :gc)
 
-    {:noreply,
-     socket
-     |> assign(selected_view: selected_view)
-     |> update(:units, fn _units -> full_hierarchy["children"] end)
-     |> maybe_enable_gallery_slider_buttons(full_hierarchy, selected_view)
-     |> scroll_to_target_resource(resource_id, full_hierarchy, selected_view)}
-  end
+    case params do
+      %{"selected_view" => selected_view, "target_resource_id" => resource_id} ->
+        selected_view = String.to_existing_atom(selected_view)
 
-  def handle_params(
-        %{"selected_view" => selected_view},
-        _uri,
-        socket
-      ) do
-    full_hierarchy = get_or_compute_full_hierarchy(socket.assigns.section)
-    selected_view = String.to_existing_atom(selected_view)
+        {:noreply,
+         socket
+         |> assign(selected_view: selected_view)
+         |> update(:units, fn _units -> full_hierarchy["children"] end)
+         |> maybe_enable_gallery_slider_buttons(full_hierarchy, selected_view)
+         |> scroll_to_target_resource(resource_id, full_hierarchy, selected_view)}
 
-    send(self(), :gc)
+      %{"selected_view" => selected_view} ->
+        selected_view = String.to_existing_atom(selected_view)
 
-    {:noreply,
-     socket
-     |> assign(selected_view: selected_view)
-     |> update(:units, fn _units -> full_hierarchy["children"] end)
-     |> maybe_enable_gallery_slider_buttons(full_hierarchy, selected_view)}
-  end
+        {:noreply,
+         socket
+         |> assign(selected_view: selected_view)
+         |> update(:units, fn _units -> full_hierarchy["children"] end)
+         |> maybe_enable_gallery_slider_buttons(full_hierarchy, selected_view)}
 
-  def handle_params(_params, _uri, socket) do
-    {:noreply, socket}
+      %{"target_resource_id" => resource_id} ->
+        {:noreply,
+         socket
+         |> maybe_enable_gallery_slider_buttons(full_hierarchy, :gallery)
+         |> scroll_to_target_resource(resource_id, full_hierarchy, :gallery)}
+
+      _ ->
+        {:noreply, socket}
+    end
   end
 
   _docp = """
