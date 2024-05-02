@@ -9,7 +9,6 @@ import { DateTimeLocalInputListener } from './datetimelocal_input_listener';
 import { DragSource, DropTarget } from './dragdrop';
 import { EmailList } from './email_list';
 import { GraphNavigation } from './graph';
-import { HideOnOutsideClick } from './hide_on_outside_click';
 import { HierarchySelector } from './hierarchy_selector';
 import { InputAutoSelect } from './input_auto_select';
 import { KeepScrollAtBottom } from './keep_scroll_at_bottom';
@@ -64,7 +63,6 @@ export const Hooks = {
   LiveModal,
   EmailList,
   ClickOutside,
-  HideOnOutsideClick,
   Scroller,
   ResizeListener,
   KeepScrollAtBottom,

@@ -41,10 +41,6 @@ defmodule OliWeb.Components.Delivery.UserAccount do
           #{@class}
         "}
         phx-click={toggle_menu("##{@id}-dropdown")}
-        phx-hook="HideOnOutsideClick"
-        phx-value-hide-target={"##{@id}-dropdown"}
-        phx-value-ignore-initiator="true"
-        phx-value-display="flex"
       >
         <div class="mr-2 block">
           <div class={if !@is_system_admin, do: "py-2", else: ""}><%= username(@ctx) %></div>
@@ -152,6 +148,7 @@ defmodule OliWeb.Components.Delivery.UserAccount do
     ~H"""
     <div
       id={@id}
+      phx-click-away={JS.hide()}
       class={"hidden absolute top-[50px] right-0 z-50 whitespace-nowrap bg-white dark:bg-black p-2 rounded-lg shadow-lg #{@class}"}
     >
       <ul>
