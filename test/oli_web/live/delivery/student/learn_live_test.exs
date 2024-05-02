@@ -21,6 +21,8 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
     AttemptGroup
   }
 
+  @default_selected_view :gallery
+
   defp set_progress(section_id, resource_id, user_id, progress, revision) do
     {:ok, resource_access} =
       Core.track_access(resource_id, section_id, user_id)
@@ -1399,11 +1401,18 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       |> element(~s{button[phx-click="navigate_to_resource"][phx-value-slug="#{page_1.slug}"]})
       |> render_click()
 
-      request_path = Utils.learn_live_path(section.slug, target_resource_id: page_1.resource_id)
+      request_path =
+        Utils.learn_live_path(section.slug,
+          target_resource_id: page_1.resource_id,
+          selected_view: @default_selected_view
+        )
 
       assert_redirect(
         view,
-        Utils.lesson_live_path(section.slug, page_1.slug, request_path: request_path)
+        Utils.lesson_live_path(section.slug, page_1.slug,
+          request_path: request_path,
+          selected_view: @default_selected_view
+        )
       )
     end
 
@@ -1488,11 +1497,18 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       |> element(~s{div[role="unit_3"] div[role="card_7"]})
       |> render_click()
 
-      request_path = Utils.learn_live_path(section.slug, target_resource_id: page_7.resource_id)
+      request_path =
+        Utils.learn_live_path(section.slug,
+          target_resource_id: page_7.resource_id,
+          selected_view: @default_selected_view
+        )
 
       assert_redirect(
         view,
-        Utils.lesson_live_path(section.slug, page_7.slug, request_path: request_path)
+        Utils.lesson_live_path(section.slug, page_7.slug,
+          request_path: request_path,
+          selected_view: @default_selected_view
+        )
       )
     end
 
@@ -1518,11 +1534,18 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       |> element(~s{div[role="unit_3"] div[role="card_8"]})
       |> render_click()
 
-      request_path = Utils.learn_live_path(section.slug, target_resource_id: page_8.resource_id)
+      request_path =
+        Utils.learn_live_path(section.slug,
+          target_resource_id: page_8.resource_id,
+          selected_view: @default_selected_view
+        )
 
       assert_redirect(
         view,
-        Utils.lesson_live_path(section.slug, page_8.slug, request_path: request_path)
+        Utils.lesson_live_path(section.slug, page_8.slug,
+          request_path: request_path,
+          selected_view: @default_selected_view
+        )
       )
     end
 
