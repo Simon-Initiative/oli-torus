@@ -766,7 +766,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
     end
   end
 
-  describe "student" do
+  describe "student at Gallery view mode (the default view)" do
     setup [:user_conn, :create_elixir_project]
 
     test "can not access when not enrolled to course", %{conn: conn, section: section} do
@@ -2014,6 +2014,603 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       assert render(view) =~ "Page 13"
       assert render(view) =~ "Page 14"
       refute render(view) =~ "Page 15"
+    end
+  end
+
+  describe "student at Outline view mode" do
+    setup [:user_conn, :create_elixir_project]
+
+    test "can not access when not enrolled to course", %{conn: conn, section: section} do
+      {:error, {:redirect, %{to: redirect_path, flash: _flash_msg}}} =
+        live(conn, Utils.learn_live_path(section.slug, selected_view: :outline))
+
+      assert redirect_path == "/unauthorized"
+    end
+
+    test "can access when enrolled to course", %{conn: conn, user: user, section: section} do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+
+      {:ok, view, _html} =
+        live(conn, Utils.learn_live_path(section.slug, selected_view: :outline))
+
+      assert has_element?(view, "span", "The best course ever!")
+      assert has_element?(view, "div", "Unit 1: Introduction")
+      assert has_element?(view, "div", "Unit 2: Building a Phoenix app")
+      assert has_element?(view, "div", "Unit 3: Implementing LiveView")
+    end
+
+    test "can see unit intro as first row and play the video (if provided)", %{
+      conn: conn,
+      user: user,
+      section: section,
+      module_1: module_1,
+      module_2: module_2
+    } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+
+      {:ok, view, _html} =
+        live(conn, Utils.learn_live_path(section.slug, selected_view: :outline))
+
+      # unit 1 has an intro video
+      assert has_element?(
+               view,
+               ~s{button[role="intro video details"][id=intro_video_for_module_#{module_1.resource_id}]},
+               "Introduction"
+             )
+
+      # unit 2 has no intro video
+      refute has_element?(
+               view,
+               ~s{button[role="intro video details"][id=intro_video_for_module_#{module_2.resource_id}]},
+               "Introduction"
+             )
+    end
+
+    test "intro video is marked as seen after playing it",
+         %{
+           conn: conn,
+           user: user,
+           section: section,
+           module_1: module_1
+         } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+
+      %{state: enrollment_state} =
+        Sections.get_enrollment(section.slug, user.id)
+
+      {:ok, view, _html} =
+        live(conn, Utils.learn_live_path(section.slug, selected_view: :outline))
+
+      refute enrollment_state["viewed_intro_video_resource_ids"]
+
+      assert has_element?(
+               view,
+               ~s{button[role="intro video details"] div[role="unseen video icon"]}
+             )
+
+      view
+      |> element(~s{button[role="intro video details"]})
+      |> render_click()
+
+      # since the video is marked as seen in an async way, we revisit the page to check if the icon changed
+      {:ok, view, _html} =
+        live(conn, Utils.learn_live_path(section.slug, selected_view: :outline))
+
+      %{state: enrollment_state} =
+        Sections.get_enrollment(section.slug, user.id)
+
+      assert enrollment_state["viewed_intro_video_resource_ids"] == [module_1.resource_id]
+
+      assert has_element?(
+               view,
+               ~s{button[role="intro video details"] div[role="seen video icon"]}
+             )
+    end
+
+    test "can see orange flag and due date for graded pages in the module index details",
+         %{
+           conn: conn,
+           user: user,
+           section: section
+         } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+
+      {:ok, view, _html} =
+        live(conn, Utils.learn_live_path(section.slug, selected_view: :outline))
+
+      assert has_element?(
+               view,
+               ~s{button[role="page 4 details"] div[role="orange flag icon"]}
+             )
+    end
+
+    test "can see checked square icon and score details for attempted graded pages in the module index details",
+         %{
+           conn: conn,
+           user: user,
+           section: section,
+           mcq_1: mcq_1,
+           page_4: page_4_revision,
+           project: project,
+           publication: publication
+         } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+
+      set_progress(section.id, page_4_revision.resource_id, user.id, 1.0, page_4_revision)
+
+      set_activity_attempt(
+        page_4_revision,
+        mcq_1,
+        user,
+        section,
+        project.id,
+        publication.id,
+        "id_for_option_a",
+        true
+      )
+
+      set_activity_attempt(
+        page_4_revision,
+        mcq_1,
+        user,
+        section,
+        project.id,
+        publication.id,
+        "id_for_option_a",
+        false
+      )
+
+      {:ok, view, _html} =
+        live(conn, Utils.learn_live_path(section.slug, selected_view: :outline))
+
+      # when the garbage collection message is recieved we know the async metrics were loaded
+      # since the gc message is sent from the handle_info that loads the async metrics
+      assert_receive(:gc, 2_000)
+
+      # graded page with title "Page 4" in the hierarchy has the correct icon
+      assert has_element?(
+               view,
+               ~s{button[role="page 4 details"] div[role="square check icon"]}
+             )
+    end
+
+    test "sees a clock icon beside the duration in minutes for graded pages", %{
+      conn: conn,
+      user: user,
+      section: section,
+      page_4: page_4
+    } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+
+      {:ok, view, _html} =
+        live(conn, Utils.learn_live_path(section.slug, selected_view: :outline))
+
+      assert has_element?(
+               view,
+               ~s{div[id="index_item_4_#{page_4.resource_id}"] svg[role="clock icon"]}
+             )
+
+      assert has_element?(
+               view,
+               ~s{div[id="index_item_4_#{page_4.resource_id}"] span[role="duration in minutes"]},
+               "22"
+             )
+    end
+
+    test "sees a check icon on visited and completed pages", %{
+      conn: conn,
+      user: user,
+      section: section,
+      page_1: page_1
+    } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+
+      set_progress(section.id, page_1.resource_id, user.id, 1.0, page_1)
+
+      {:ok, view, _html} =
+        live(conn, Utils.learn_live_path(section.slug, selected_view: :outline))
+
+      # when the garbage collection message is recieved we know the async metrics were loaded
+      # since the gc message is sent from the handle_info that loads the async metrics
+      assert_receive(:gc, 2_000)
+
+      assert has_element?(view, ~s{button[role="page 1 details"] div[role="check icon"]})
+      assert has_element?(view, ~s{button[role="page 2 details"]})
+      refute has_element?(view, ~s{button[role="page 2 details"] div[role="check icon"]})
+    end
+
+    test "sees a check icon on visited and completed pages within a section", %{
+      conn: conn,
+      user: user,
+      section: section,
+      page_11: page_11
+    } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+
+      set_progress(section.id, page_11.resource_id, user.id, 1.0, page_11)
+
+      {:ok, view, _html} =
+        live(conn, Utils.learn_live_path(section.slug, selected_view: :outline))
+
+      # when the garbage collection message is recieved we know the async metrics were loaded
+      # since the gc message is sent from the handle_info that loads the async metrics
+      assert_receive(:gc, 2_000)
+
+      assert has_element?(view, ~s{button[role="page 11 details"] div[role="check icon"]})
+    end
+
+    test "does not see a check icon on visited pages that are not fully completed", %{
+      conn: conn,
+      user: user,
+      section: section,
+      page_1: page_1
+    } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+
+      set_progress(section.id, page_1.resource_id, user.id, 0.5, page_1)
+
+      {:ok, view, _html} =
+        live(conn, Utils.learn_live_path(section.slug, selected_view: :outline))
+
+      # when the garbage collection message is recieved we know the async metrics were loaded
+      # since the gc message is sent from the handle_info that loads the async metrics
+      assert_receive(:gc, 2_000)
+
+      assert has_element?(view, ~s{button[role="page 2 details"]})
+      refute has_element?(view, ~s{button[role="page 1 details"] svg[role="visited check icon"]})
+      assert has_element?(view, ~s{button[role="page 2 details"]})
+      refute has_element?(view, ~s{button[role="page 2 details"] svg[role="visited check icon"]})
+    end
+
+    test "can visit a page", %{conn: conn, user: user, section: section, page_1: page_1} do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+
+      {:ok, view, _html} =
+        live(conn, Utils.learn_live_path(section.slug, selected_view: :outline))
+
+      # click on page 1 to navigate to that page
+      view
+      |> element(~s{button[phx-click="navigate_to_resource"][phx-value-slug="#{page_1.slug}"]})
+      |> render_click()
+
+      request_path =
+        Utils.learn_live_path(section.slug,
+          target_resource_id: page_1.resource_id,
+          selected_view: :outline
+        )
+
+      assert_redirect(
+        view,
+        Utils.lesson_live_path(section.slug, page_1.slug,
+          request_path: request_path,
+          selected_view: :outline
+        )
+      )
+    end
+
+    test "can see pages at the top level of the curriculum (at unit level) with it's header and corresponding row",
+         %{
+           conn: conn,
+           user: user,
+           section: section,
+           top_level_page: top_level_page
+         } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+
+      {:ok, view, _html} =
+        live(conn, Utils.learn_live_path(section.slug, selected_view: :outline))
+
+      assert view
+             |> element(
+               ~s{div[id="top_level_page_#{top_level_page.resource_id}"] div[role="header"]}
+             )
+             |> render() =~ "Top Level Page"
+
+      assert view
+             |> element(~s{div[id="page_#{top_level_page.resource_id}"] span[role="page title"]})
+             |> render() =~ "Top Level Page"
+    end
+
+    test "can navigate to a unit through url params",
+         %{
+           conn: conn,
+           user: user,
+           section: section,
+           unit_2: unit_2
+         } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+      unit_id = "unit_#{unit_2.resource_id}"
+
+      {:ok, view, _html} =
+        live(
+          conn,
+          Utils.learn_live_path(section.slug,
+            target_resource_id: unit_2.resource_id,
+            selected_view: :outline
+          )
+        )
+
+      # scrolling and pulse animation are triggered
+      assert_push_event(view, "scroll-y-to-target", %{
+        id: ^unit_id,
+        offset: 10,
+        pulse: true,
+        pulse_delay: 500
+      })
+    end
+
+    test "can navigate to a module through url params",
+         %{
+           conn: conn,
+           user: user,
+           section: section,
+           module_3: module_3
+         } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+      module_id = "module_#{module_3.resource_id}"
+
+      {:ok, view, _html} =
+        live(
+          conn,
+          Utils.learn_live_path(section.slug,
+            target_resource_id: module_3.resource_id,
+            selected_view: :outline
+          )
+        )
+
+      # scrolling and pulse animation are triggered
+      assert_push_event(view, "scroll-y-to-target", %{
+        id: ^module_id,
+        offset: 10,
+        pulse: true,
+        pulse_delay: 500
+      })
+    end
+
+    test "can navigate to a page at top level (at unit level) through url params",
+         %{
+           conn: conn,
+           user: user,
+           section: section,
+           top_level_page: top_level_page
+         } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+      top_level_page_id = "top_level_page_#{top_level_page.resource_id}"
+
+      {:ok, view, _html} =
+        live(
+          conn,
+          Utils.learn_live_path(section.slug,
+            target_resource_id: top_level_page.resource_id,
+            selected_view: :outline
+          )
+        )
+
+      # scrolling and pulse animation are triggered
+      assert_push_event(view, "scroll-y-to-target", %{
+        id: ^top_level_page_id,
+        offset: 10,
+        pulse: true,
+        pulse_delay: 500
+      })
+    end
+
+    test "can navigate to a page at module level through url params",
+         %{
+           conn: conn,
+           user: user,
+           section: section,
+           page_8: page_8
+         } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+      page_id = "page_#{page_8.resource_id}"
+
+      {:ok, view, _html} =
+        live(
+          conn,
+          Utils.learn_live_path(section.slug,
+            target_resource_id: page_8.resource_id,
+            selected_view: :outline
+          )
+        )
+
+      # scrolling and pulse animation are triggered
+      assert_push_event(view, "scroll-y-to-target", %{
+        id: ^page_id,
+        offset: 10,
+        pulse: true,
+        pulse_delay: 500
+      })
+    end
+
+    test "can navigate to a page through url params",
+         %{
+           conn: conn,
+           user: user,
+           section: section,
+           page_6: page_6
+         } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+      page_id = "page_#{page_6.resource_id}"
+
+      {:ok, view, _html} =
+        live(
+          conn,
+          Utils.learn_live_path(section.slug,
+            target_resource_id: page_6.resource_id,
+            selected_view: :outline
+          )
+        )
+
+      # scrolling and pulse animation are triggered
+      assert_push_event(view, "scroll-y-to-target", %{
+        id: ^page_id,
+        offset: 10,
+        pulse: true,
+        pulse_delay: 500
+      })
+    end
+
+    test "can navigate to a page at section level through url params",
+         %{
+           conn: conn,
+           user: user,
+           section: section,
+           page_11: page_11
+         } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+      page_id = "page_#{page_11.resource_id}"
+
+      {:ok, view, _html} =
+        live(
+          conn,
+          Utils.learn_live_path(section.slug,
+            target_resource_id: page_11.resource_id,
+            selected_view: :outline
+          )
+        )
+
+      # scrolling and pulse animation are triggered
+      assert_push_event(view, "scroll-y-to-target", %{
+        id: ^page_id,
+        offset: 10,
+        pulse: true,
+        pulse_delay: 500
+      })
+    end
+
+    test "can see pages within sections and sub-sections",
+         %{
+           conn: conn,
+           user: user,
+           section: section,
+           section_1: section_1,
+           subsection_1: subsection_1,
+           page_11: page_11,
+           page_12: page_12
+         } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+
+      {:ok, view, _html} =
+        live(conn, Utils.learn_live_path(section.slug, selected_view: :outline))
+
+      # page 11 and page 12 are displayed by default with their corresponding indentation
+      page_11_element =
+        element(
+          view,
+          ~s{button[phx-click="navigate_to_resource"][phx-value-slug="#{page_11.slug}"]}
+        )
+
+      assert render(page_11_element) =~ "Page 11"
+      assert render(page_11_element) =~ "ml-[60px]"
+
+      page_12_element =
+        element(
+          view,
+          ~s{button[phx-click="navigate_to_resource"][phx-value-slug="#{page_12.slug}"]}
+        )
+
+      assert render(page_12_element) =~ "Page 12"
+      assert render(page_12_element) =~ "ml-[40px]"
+
+      # Section and Sub-section are displayed with their corresponding indentation
+      section_1_element =
+        element(
+          view,
+          "#section_#{section_1.resource_id}"
+        )
+
+      subsection_1_element =
+        element(
+          view,
+          "#section_#{subsection_1.resource_id}"
+        )
+
+      assert render(section_1_element) =~ "Why Elixir?"
+      assert render(subsection_1_element) =~ "Erlang as a motivation"
+      assert render(subsection_1_element) =~ "ml-[40px]"
+    end
+  end
+
+  describe "view selector" do
+    setup [:user_conn, :create_elixir_project]
+
+    test "can switch from Outline to Gallery view", %{conn: conn, user: user, section: section} do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+
+      {:ok, view, _html} =
+        live(conn, Utils.learn_live_path(section.slug, selected_view: :outline))
+
+      # selector text matches current view
+      assert has_element?(view, ~s{div[id=view_selector] div}, "Outline")
+
+      view
+      |> element(~s{div[id=view_selector] button[phx-click="expand_select"]})
+      |> render_click()
+
+      # selector text changes when expanded
+      assert has_element?(view, ~s{div[id=view_selector] div}, "View page as")
+
+      view
+      |> element(~s{button[phx-value-selected_view=gallery]})
+      |> render_click()
+
+      assert_patch(
+        view,
+        Utils.learn_live_path(section.slug, selected_view: :gallery)
+      )
+
+      # selector text matches target view
+      assert has_element?(view, ~s{div[id=view_selector] div}, "Gallery")
+    end
+
+    test "can switch from Gallery to Outline view", %{conn: conn, user: user, section: section} do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+
+      {:ok, view, _html} =
+        live(conn, Utils.learn_live_path(section.slug, selected_view: :gallery))
+
+      # selector text matches current view
+      assert has_element?(view, ~s{div[id=view_selector] div}, "Gallery")
+
+      view
+      |> element(~s{div[id=view_selector] button[phx-click="expand_select"]})
+      |> render_click()
+
+      # selector text changes when expanded
+      assert has_element?(view, ~s{div[id=view_selector] div}, "View page as")
+
+      view
+      |> element(~s{button[phx-value-selected_view=outline]})
+      |> render_click()
+
+      assert_patch(
+        view,
+        Utils.learn_live_path(section.slug, selected_view: :outline)
+      )
+
+      # selector text matches target view
+      assert has_element?(view, ~s{div[id=view_selector] div}, "Outline")
     end
   end
 

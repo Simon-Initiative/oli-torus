@@ -152,7 +152,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
           end
 
         push_event(socket, "scroll-y-to-target", %{
-          id: "#{resource_type}_#{resource_id}" |> IO.inspect(label: "target scroll id"),
+          id: "#{resource_type}_#{resource_id}",
           offset: 10,
           pulse: true,
           pulse_delay: 500
@@ -1144,7 +1144,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     ~H"""
     <div id={"top_level_page_#{@row["resource_id"]}"}>
       <div class="md:p-[25px] md:pl-[125px] md:pr-[175px]" role={"row_#{@row["numbering"]["index"]}"}>
-        <div class="flex flex-col md:flex-row md:gap-[30px]">
+        <div role="header" class="flex flex-col md:flex-row md:gap-[30px]">
           <div class="dark:text-white text-xl font-bold font-['Open Sans']">
             <%= @row["title"] %>
           </div>
@@ -1244,7 +1244,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         </div>
 
         <div
-          id={"index_item_#{@row["numbering"]["index"]}_#{@row["id"]}"}
+          id={"index_item_#{@row["numbering"]["index"]}_#{@row["resource_id"]}"}
           class="flex shrink items-center gap-3 w-full dark:text-white"
         >
           <div class={[
@@ -1252,13 +1252,16 @@ defmodule OliWeb.Delivery.Student.LearnLive do
             left_indentation(@row["numbering"]["level"], :outline)
           ]}>
             <div class="flex">
-              <span class={
-                [
-                  "text-left dark:text-white opacity-90 text-base font-['Open Sans']",
-                  # Opacity is set if the item is visited, but not necessarily completed
-                  if(@row["visited"], do: "opacity-60")
-                ]
-              }>
+              <span
+                role="page title"
+                class={
+                  [
+                    "text-left dark:text-white opacity-90 text-base font-['Open Sans']",
+                    # Opacity is set if the item is visited, but not necessarily completed
+                    if(@row["visited"], do: "opacity-60")
+                  ]
+                }
+              >
                 <%= "#{@row["title"]}" %>
               </span>
 

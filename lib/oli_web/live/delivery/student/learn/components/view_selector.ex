@@ -11,7 +11,7 @@ defmodule OliWeb.Delivery.Student.Learn.Components.ViewSelector do
 
   def render(%{expanded: true} = assigns) do
     ~H"""
-    <div class="relative" phx-click-away="collapse_select" phx-target={@myself}>
+    <div id={@id} class="relative" phx-click-away="collapse_select" phx-target={@myself}>
       <button
         id="select_view_button"
         phx-click="collapse_select"
@@ -49,19 +49,21 @@ defmodule OliWeb.Delivery.Student.Learn.Components.ViewSelector do
 
   def render(%{expanded: false} = assigns) do
     ~H"""
-    <button
-      phx-click="expand_select"
-      phx-target={@myself}
-      class="h-[31px] justify-center items-center gap-2 inline-flex"
-    >
-      <div class="pl-2.5 pr-[7px] py-2.5 justify-center items-center gap-[5px] flex">
-        <div class="justify-center items-center flex"><.view_icon option={@selected_view} /></div>
-        <div class="ml-1 dark:text-white text-base font-normal font-['Open Sans']">
-          <%= to_capitalized_string(@selected_view) %> View
+    <div id={@id}>
+      <button
+        phx-click="expand_select"
+        phx-target={@myself}
+        class="h-[31px] justify-center items-center gap-2 inline-flex"
+      >
+        <div class="pl-2.5 pr-[7px] py-2.5 justify-center items-center gap-[5px] flex">
+          <div class="justify-center items-center flex"><.view_icon option={@selected_view} /></div>
+          <div class="ml-1 dark:text-white text-base font-normal font-['Open Sans']">
+            <%= to_capitalized_string(@selected_view) %> View
+          </div>
         </div>
-      </div>
-      <div class="w-8 h-[26px] px-2.5 justify-center items-center flex"><.chevron_icon /></div>
-    </button>
+        <div class="w-8 h-[26px] px-2.5 justify-center items-center flex"><.chevron_icon /></div>
+      </button>
+    </div>
     """
   end
 
