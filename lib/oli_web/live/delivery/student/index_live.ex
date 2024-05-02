@@ -74,19 +74,19 @@ defmodule OliWeb.Delivery.Student.IndexLive do
       unfinished_lesson={!is_nil(@last_open_and_unfinished_page)}
       intro_message={@intro_message}
     />
-    <div class="w-full h-96 relative bg-stone-950">
+    <div class="w-full h-96 relative bg-stone-950 dark:text-white">
       <div class="w-full absolute p-8 justify-start items-start gap-6 inline-flex">
         <.course_progress has_visited_section={@has_visited_section} progress={@section_progress} />
         <div class="w-3/4 h-full flex-col justify-start items-start gap-6 inline-flex">
-          <div class="w-full h-96 p-6 bg-gradient-to-b from-zinc-900 to-zinc-900 rounded-2xl justify-start items-start gap-32 inline-flex">
+          <div class="w-full h-96 p-6 bg-zinc-900 bg-opacity-20 dark:bg-opacity-100 rounded-2xl justify-start items-start gap-32 inline-flex">
             <div class="flex-col justify-start items-start gap-7 inline-flex grow">
               <div class="justify-start items-start gap-2.5 inline-flex">
-                <div class="text-white text-2xl font-bold leading-loose tracking-tight">
+                <div class="text-2xl font-bold leading-loose tracking-tight">
                   Upcoming Agenda
                 </div>
               </div>
               <div class="justify-start items-center gap-1 inline-flex self-stretch">
-                <div class="text-white text-base font-normal tracking-tight grow">
+                <div class="text-base font-normal tracking-tight grow">
                   <%= case @schedule_for_current_week do %>
                     <% {week, schedule_ranges} -> %>
                       <Schedule.week
@@ -125,7 +125,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
         <img
           src="/images/gradients/home-bg.png"
           alt="Background Image"
-          class="absolute inset-0 w-full h-full object-cover border border-black mix-blend-luminosity"
+          class="absolute inset-0 w-full h-full object-cover border border-gray-300 dark:border-black mix-blend-luminosity"
         />
         <div class="absolute inset-0 opacity-60">
           <div class="absolute left-[1250px] top-0 origin-top-left rotate-180 bg-gradient-to-r from-white to-white">
@@ -234,7 +234,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
         <img
           src="/images/gradients/home-bg.png"
           alt="Background Image"
-          class="absolute inset-0 w-full h-full object-cover border border-black mix-blend-luminosity"
+          class="absolute inset-0 w-full h-full object-cover border border-gray-300 dark:border-black mix-blend-luminosity"
         />
         <div class="absolute inset-0 opacity-60">
           <div class="absolute left-[1250px] top-0 origin-top-left rotate-180 bg-gradient-to-r from-white to-white">
@@ -244,12 +244,12 @@ defmodule OliWeb.Delivery.Student.IndexLive do
       </div>
 
       <div class="w-full pl-14 pr-5 absolute flex flex-col justify-center items-start gap-6">
-        <div class="w-full text-white text-2xl font-bold tracking-wide whitespace-nowrap overflow-hidden">
+        <div class="w-full text-2xl font-bold tracking-wide whitespace-nowrap overflow-hidden">
           Hi, <%= user_given_name(@ctx) %> !
         </div>
         <div class="w-full flex flex-col items-start gap-2.5">
           <div class="w-full whitespace-nowrap overflow-hidden">
-            <span class="text-white text-3xl font-medium">
+            <span class="text-3xl font-medium">
               <%= @intro_message %>
             </span>
           </div>
@@ -266,14 +266,14 @@ defmodule OliWeb.Delivery.Student.IndexLive do
             class="hover:no-underline"
           >
             <div class="w-52 h-11 px-5 py-2.5 bg-blue-600 rounded-lg shadow flex justify-center items-center gap-2.5 hover:bg-blue-500">
-              <div class="text-white text-base font-bold leading-tight">
+              <div class="text-base font-bold leading-tight">
                 Start course
               </div>
             </div>
           </.link>
           <.link href={Utils.learn_live_path(@section_slug)} class="hover:no-underline">
             <div class="w-52 h-11 px-5 py-2.5 bg-white bg-opacity-20 rounded-lg shadow flex justify-center items-center gap-2.5 hover:bg-opacity-40">
-              <div class="text-white text-base font-semibold leading-tight">
+              <div class="text-base font-semibold leading-tight">
                 Discover content
               </div>
             </div>
@@ -290,23 +290,23 @@ defmodule OliWeb.Delivery.Student.IndexLive do
   defp course_progress(assigns) do
     ~H"""
     <div class="w-1/4 h-48 flex-col justify-start items-start gap-6 inline-flex">
-      <div class="w-full h-96 p-6 bg-gradient-to-b from-zinc-900 to-zinc-900 rounded-2xl justify-start items-start gap-32 inline-flex">
+      <div class="w-full h-96 p-6 bg-zinc-900 bg-opacity-20 dark:bg-opacity-100 rounded-2xl justify-start items-start gap-32 inline-flex">
         <div class="flex-col justify-start items-start gap-5 inline-flex grow">
           <div class="justify-start items-start gap-2.5 inline-flex">
-            <div class="text-white text-2xl font-bold leading-loose tracking-tight">
+            <div class="text-2xl font-bold leading-loose tracking-tight">
               Course Progress
             </div>
           </div>
           <%= if @has_visited_section do %>
             <div class="flex-col justify-start items-start flex">
               <div>
-                <span class="text-white text-6xl font-bold tracking-wide"><%= @progress %></span>
-                <span class="text-white text-3xl font-bold tracking-tight">%</span>
+                <span class="text-6xl font-bold tracking-wide"><%= @progress %></span>
+                <span class="text-3xl font-bold tracking-tight">%</span>
               </div>
             </div>
           <% else %>
             <div class="justify-start items-center gap-1 inline-flex self-stretch">
-              <div class="text-white text-base font-normal tracking-tight grow">
+              <div class="text-base font-normal tracking-tight grow">
                 Begin your learning journey to watch your progress unfold here!
               </div>
             </div>
