@@ -13,7 +13,6 @@ defmodule OliWeb.Components.Delivery.Layouts do
   alias Oli.Delivery.Sections.Section
   alias Oli.Accounts.{User, Author}
   alias Oli.Branding
-  alias Oli.Branding.Brand
   alias OliWeb.Components.Delivery.UserAccount
   alias Oli.Resources.Collaboration.CollabSpaceConfig
   alias OliWeb.Delivery.Student.Utils
@@ -22,7 +21,6 @@ defmodule OliWeb.Components.Delivery.Layouts do
   attr(:is_system_admin, :boolean, required: true)
   attr(:section, Section, default: nil)
   attr(:project, Project, default: nil)
-  attr(:brand, Brand)
   attr(:preview_mode, :boolean)
 
   def header(assigns) do
@@ -30,7 +28,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
     <div class="fixed z-50 w-full h-14 flex flex-row bg-delivery-header dark:bg-delivery-header-dark shadow-sm">
       <div class="w-48 p-2" tab-index="0">
         <a href={logo_link_path(@preview_mode, @section, @ctx.user)}>
-          <.logo_img />
+          <.logo_img section={@section} />
         </a>
       </div>
       <div class="flex items-center flex-grow-1 p-2">
@@ -253,7 +251,6 @@ defmodule OliWeb.Components.Delivery.Layouts do
   end
 
   attr(:section, Section)
-  attr(:brand, Brand)
 
   def logo_img(assigns) do
     assigns =
@@ -455,24 +452,6 @@ defmodule OliWeb.Components.Delivery.Layouts do
     >
       <path d="M7.825 13H20V11H7.825L13.425 5.4L12 4L4 12L12 20L13.425 18.6L7.825 13Z" fill="white" />
     </svg>
-    """
-  end
-
-  def annotations_dropdown(assigns) do
-    ~H"""
-    <div class="flex items-center gap-2.5 absolute top-10 right-12 z-50 p-4 hidden">
-      <div class="flex py-1.5 pl-[18px] items-center gap-2.5">
-        <div class="w-6 h-6 relative opacity-50">
-          <i class="fa-solid fa-eye" />
-        </div>
-        <div class="w-[132px] dark:text-white text-xs font-bold uppercase tracking-wide">
-          All annotations
-        </div>
-      </div>
-      <div class="w-6 h-6 justify-center items-center gap-2.5 inline-flex">
-        <i class="fa-solid fa-caret-down" />
-      </div>
-    </div>
     """
   end
 
