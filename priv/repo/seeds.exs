@@ -21,10 +21,13 @@ alias Oli.Utils.DataGenerators.NameGenerator
 alias Oli.Host.HostIdentifier
 import Ecto.Query
 
-unless Repo.exists?(HostIdentifier) do
-  # The hostmane must exists otherwise an error is thrown
-  Repo.insert!(%HostIdentifier{hostname: System.get_env("HOST")})
-  from(oj in "oban_jobs") |> Repo.delete_all()
+case Repo.get_by(HostIdentifier, id: 1) do
+  nil ->
+    Repo.insert!(%HostIdentifier{hostname: System.get_env("HOST")})
+
+  %{hostname: hostname} ->
+    if System.get_env("RUN_BACKGROUND_JOBS_HOST_CHECK") && hostname != System.get_env("HOST"),
+      do: Repo.delete_all(from(oj in "oban_jobs"))
 end
 
 # create system roles
