@@ -4,6 +4,8 @@ defmodule OliWeb.Products.Details.Actions do
 
   attr(:product, :any, required: true)
   attr(:is_admin, :boolean, required: true)
+  attr(:base_project, :map, required: true)
+  attr(:has_payment_codes, :boolean, required: true)
 
   def render(assigns) do
     ~H"""
@@ -27,6 +29,18 @@ defmodule OliWeb.Products.Details.Actions do
           </a>
         </div>
         <div>Audit payments and manage payment codes.</div>
+      </div>
+
+      <div
+        :if={@base_project.allow_transfer_payment_codes && @has_payment_codes}
+        class="d-flex align-items-center"
+      >
+        <div>
+          <button class="btn btn-link action-button" phx-click="show_products_to_transfer">
+            Transfer Payment Codes
+          </button>
+        </div>
+        <div>Allow transfer of payment codes to another product.</div>
       </div>
 
       <div class="d-flex align-items-center">
