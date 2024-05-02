@@ -36,7 +36,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
       <div class="flex items-center flex-grow-1 p-2">
         <.title section={@section} project={@project} preview_mode={@preview_mode} />
       </div>
-      <div class="flex items-center p-2">
+      <div class="flex items-center p-2 ml-auto">
         <div class="hidden md:block">
           <UserAccount.menu
             id="user-account-menu"
@@ -46,7 +46,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
           />
         </div>
         <button
-          class="block md:hidden py-1.5 px-3 rounded border border-transparent hover:border-gray-300 active:bg-gray-100"
+          class="md:hidden py-1.5 px-3 rounded border border-transparent hover:border-gray-300 active:bg-gray-100"
           phx-click={JS.toggle(to: "#mobile-nav-menu", display: "flex")}
         >
           <i class="fa-solid fa-bars"></i>
@@ -62,16 +62,12 @@ defmodule OliWeb.Components.Delivery.Layouts do
 
   def title(assigns) do
     ~H"""
-    <div :if={@section} class="hidden md:block">
-      <span class="text-2xl text-bold">
-        <%= @section.title %><%= if @preview_mode, do: " (Preview Mode)" %>
-      </span>
-    </div>
-    <div :if={@project} class="hidden md:block">
-      <span class="text-2xl text-bold">
-        <%= @project.title %>
-      </span>
-    </div>
+    <span :if={@section} class="text-2xl text-bold hidden md:block">
+      <%= @section.title %><%= if @preview_mode, do: " (Preview Mode)" %>
+    </span>
+    <span :if={@project} class="text-2xl text-bold hidden md:block">
+      <%= @project.title %>
+    </span>
     """
   end
 
@@ -83,10 +79,13 @@ defmodule OliWeb.Components.Delivery.Layouts do
 
   def sidebar_nav(assigns) do
     ~H"""
-    <div class="fixed z-50 w-full">
+    <div>
       <nav
         id="desktop-nav-menu"
         class="
+        fixed
+        z-50
+        w-full
         hidden
         mt-14
         md:h-[calc(100vh-56px)]
@@ -106,6 +105,9 @@ defmodule OliWeb.Components.Delivery.Layouts do
       <nav
         id="mobile-nav-menu"
         class="
+        fixed
+        z-50
+        w-full
         mt-14
         hidden
         md:hidden

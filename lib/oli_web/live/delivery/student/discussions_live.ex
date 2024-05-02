@@ -422,9 +422,12 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
       new_discussion_form={@new_discussion_form}
     />
     <.hero_banner class="bg-discussions">
-      <h1 class="text-6xl mb-8">Discussions</h1>
+      <h1 class="text-4xl md:text-6xl mb-8">Discussions</h1>
     </.hero_banner>
-    <div id="discussions_content" class="flex flex-col py-6 px-16 mb-10 gap-6 items-start">
+    <div
+      id="discussions_content"
+      class="overflow-x-scroll md:overflow-x-auto flex flex-col py-6 px-16 mb-10 gap-6 items-start"
+    >
       <.posts_section
         posts={@posts}
         ctx={@ctx}

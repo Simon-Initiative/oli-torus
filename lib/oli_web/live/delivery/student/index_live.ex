@@ -26,10 +26,12 @@ defmodule OliWeb.Delivery.Student.IndexLive do
   def render(assigns) do
     ~H"""
     <.hero_banner class="bg-index">
-      <h1 class="text-6xl mb-8">Hi, <span class="font-bold"><%= user_given_name(@ctx) %></span></h1>
+      <h1 class="text-4xl md:text-6xl mb-8">
+        Hi, <span class="font-bold"><%= user_given_name(@ctx) %></span>
+      </h1>
     </.hero_banner>
 
-    <div class="container mx-auto">
+    <div class="overflow-x-scroll md:overflow-x-auto container mx-auto">
       <div class="my-8 px-16">
         <div class="font-bold text-2xl mb-4">Up Next</div>
 
