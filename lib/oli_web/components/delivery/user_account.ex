@@ -43,7 +43,11 @@ defmodule OliWeb.Components.Delivery.UserAccount do
         phx-click={toggle_menu("##{@id}-dropdown")}
       >
         <div class="mr-2 block">
-          <div class={if !@is_system_admin, do: "py-2", else: ""}><%= username(@ctx) %></div>
+          <div class={
+            if !@is_system_admin, do: "text-xs sm:text-base py-2 whitespace-nowrap", else: ""
+          }>
+            <%= username(@ctx) %>
+          </div>
           <div :if={@is_system_admin} class="text-xs text-right uppercase font-bold text-yellow">
             Admin
           </div>

@@ -25,10 +25,15 @@ defmodule OliWeb.Components.Delivery.Layouts do
   attr(:brand, Brand)
   attr(:preview_mode, :boolean)
 
+  attr(:force_show_user_menu, :boolean,
+    default: false,
+    doc: "Forces the user menu to be shown on the header and does not show the mobile menu button"
+  )
+
   def header(assigns) do
     ~H"""
     <div class="fixed z-50 w-full h-14 flex flex-row bg-delivery-header dark:bg-delivery-header-dark shadow-sm">
-      <div class="w-48 p-2" tab-index="0">
+      <div class="w-48 p-2 flex shrink-0" tab-index="0">
         <a href={logo_link_path(@preview_mode, @section, @ctx.user)}>
           <.logo_img />
         </a>
@@ -37,7 +42,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
         <.title section={@section} project={@project} preview_mode={@preview_mode} />
       </div>
       <div class="flex items-center p-2 ml-auto">
-        <div class="hidden md:block">
+        <div class={if @force_show_user_menu, do: "block", else: "hidden md:block"}>
           <UserAccount.menu
             id="user-account-menu"
             ctx={@ctx}
@@ -46,7 +51,10 @@ defmodule OliWeb.Components.Delivery.Layouts do
           />
         </div>
         <button
-          class="md:hidden py-1.5 px-3 rounded border border-transparent hover:border-gray-300 active:bg-gray-100"
+          class={[
+            "py-1.5 px-3 rounded border border-transparent hover:border-gray-300 active:bg-gray-100",
+            if(@force_show_user_menu, do: "hidden", else: "md:hidden")
+          ]}
           phx-click={JS.toggle(to: "#mobile-nav-menu", display: "flex")}
         >
           <i class="fa-solid fa-bars"></i>
