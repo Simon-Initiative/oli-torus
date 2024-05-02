@@ -53,7 +53,10 @@ defmodule OliWeb.Delivery.Student.IndexLive do
        schedule_for_current_week: schedule_for_current_week,
        section_slug: section.slug,
        historical_graded_attempt_summary: nil,
-       has_visited_section: Sections.has_visited_section(section, socket.assigns[:current_user]),
+       has_visited_section:
+         Sections.has_visited_section(section, socket.assigns[:current_user],
+           enrollment_state: false
+         ),
        last_open_and_unfinished_page: last_open_and_unfinished_page,
        nearest_upcoming_lesson: nearest_upcoming_lesson,
        section_progress: section_progress(section.id, current_user_id),

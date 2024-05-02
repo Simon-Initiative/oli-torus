@@ -4456,8 +4456,12 @@ defmodule Oli.Delivery.Sections do
     end
   end
 
+  @type opts :: {:enrollment_state, Boolean.t()}
   @spec has_visited_section(map, map) :: boolean
-  def has_visited_section(section, user) do
+  @spec has_visited_section(map, map, [opts]) :: boolean
+  def has_visited_section(section, user, opts \\ [enrollment_state: true])
+
+  def has_visited_section(section, user, opts) do
     required_survey_filter =
       if section.required_survey_resource_id,
         do: dynamic([ra], ra.resource_id != ^section.required_survey_resource_id),
@@ -4475,22 +4479,21 @@ defmodule Oli.Delivery.Sections do
       |> length()
       |> Kernel.>(0)
 
-    case has_resource_accesses do
+    if has_resource_accesses do
       # If the user already has a resource access, they have already visited the section
-      true ->
-        true
+      true
 
       # If the user doesn't, check if the visited flag in the enrollment state is true
-      false ->
-        visited_section_key = Oli.Delivery.ExtrinsicState.Key.has_visited_once()
+    else
+      visited_section_key = Oli.Delivery.ExtrinsicState.Key.has_visited_once()
 
-        state =
-          case Oli.Delivery.ExtrinsicState.read_section(user.id, section.slug) do
-            {:ok, state} -> state
-            _ -> %{}
-          end
+      state =
+        case Oli.Delivery.ExtrinsicState.read_section(user.id, section.slug) do
+          {:ok, state} -> state
+          _ -> %{}
+        end
 
-        !is_nil(state[visited_section_key])
+      opts[:enrollment_state] and !is_nil(state[visited_section_key])
     end
   end
 
