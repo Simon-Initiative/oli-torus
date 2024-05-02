@@ -80,7 +80,6 @@ defmodule OliWeb.AttemptControllerTest do
   describe "activity and attempt already submitted" do
     setup [:setup_session]
 
-    @tag :skip
     test "cannot submit an already submitted activity in a graded page", %{
       conn: conn,
       map: map
@@ -114,7 +113,6 @@ defmodule OliWeb.AttemptControllerTest do
                json_response(conn, 403)
     end
 
-    @tag :skip
     test "cannot change an already input submitted in a graded page", %{
       conn: conn,
       map: map
@@ -152,7 +150,6 @@ defmodule OliWeb.AttemptControllerTest do
                json_response(conn, 403)
     end
 
-    @tag :skip
     test "cannot save an already part attempt submitted in a graded page", %{
       conn: conn,
       map: map
@@ -186,7 +183,6 @@ defmodule OliWeb.AttemptControllerTest do
                json_response(conn, 403)
     end
 
-    @tag :skip
     test "cannot submit an already submitted activity in a adaptive page", %{
       conn: conn,
       map: map
@@ -220,7 +216,6 @@ defmodule OliWeb.AttemptControllerTest do
                json_response(conn, 403)
     end
 
-    @tag :skip
     test "cannot change an already input submitted in a adaptive page", %{
       conn: conn,
       map: map
@@ -258,7 +253,6 @@ defmodule OliWeb.AttemptControllerTest do
                json_response(conn, 403)
     end
 
-    @tag :skip
     test "cannot save an already part attempt submitted in a adaptive page", %{
       conn: conn,
       map: map
