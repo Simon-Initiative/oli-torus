@@ -78,7 +78,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
       <div class="w-full absolute p-8 justify-start items-start gap-6 inline-flex">
         <.course_progress has_visited_section={@has_visited_section} progress={@section_progress} />
         <div class="w-3/4 h-full flex-col justify-start items-start gap-6 inline-flex">
-          <div class="w-full h-96 p-6 bg-zinc-900 bg-opacity-20 dark:bg-opacity-100 rounded-2xl justify-start items-start gap-32 inline-flex">
+          <div class="w-full h-fit overflow-y-auto p-6 bg-zinc-900 bg-opacity-20 dark:bg-opacity-100 rounded-2xl justify-start items-start gap-32 inline-flex">
             <div class="flex-col justify-start items-start gap-7 inline-flex grow">
               <div class="justify-start items-start gap-2.5 inline-flex">
                 <div class="text-2xl font-bold leading-loose tracking-tight">
@@ -122,6 +122,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
     ~H"""
     <div class="w-full h-72 relative flex items-center">
       <div class="inset-0 absolute">
+        <div class="inset-0 absolute bg-purple-700 bg-opacity-50"></div>
         <img
           src="/images/gradients/home-bg.png"
           alt="Background Image"
