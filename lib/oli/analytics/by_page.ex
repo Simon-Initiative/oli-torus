@@ -20,8 +20,6 @@ defmodule Oli.Analytics.ByPage do
   end
 
   defp get_base_query(project_slug, activity_pages, filtered_sections) do
-    Repo.all(activity_pages)
-
     subquery =
       if filtered_sections != [] do
         DeliveryResolver.revisions_by_section_ids(
@@ -34,8 +32,6 @@ defmodule Oli.Analytics.ByPage do
           "page"
         )
       end
-
-    Repo.all(subquery)
 
     subquery_activity =
       if filtered_sections != [] do

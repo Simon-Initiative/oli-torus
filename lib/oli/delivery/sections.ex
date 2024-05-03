@@ -2594,10 +2594,11 @@ defmodule Oli.Delivery.Sections do
 
   defp build_list_children_activity_ids(children_activities) do
     tuple_of_children_activities =
-      children_activities
-      |> process_activity_ids()
+      process_activity_ids(children_activities)
 
-    Enum.concat(Tuple.to_list(tuple_of_children_activities))
+    tuple_of_children_activities
+    |> Tuple.to_list()
+    |> Enum.concat()
   end
 
   defp process_activity_ids(children_activities) do
