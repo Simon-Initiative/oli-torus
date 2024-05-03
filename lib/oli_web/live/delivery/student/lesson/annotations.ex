@@ -455,11 +455,11 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
       "Me"
     else
       case post.user do
-        %User{guest: true} ->
-          "Anonymous " <> Oli.Predefined.map_id_to_anonymous_name(post.user_id)
-
-        %User{name: name} ->
+        %User{guest: false, name: name} ->
           name
+
+        _ ->
+          "Anonymous " <> Oli.Predefined.map_id_to_anonymous_name(post.user_id)
       end
     end
   end
