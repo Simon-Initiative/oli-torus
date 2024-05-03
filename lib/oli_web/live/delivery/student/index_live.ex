@@ -267,14 +267,14 @@ defmodule OliWeb.Delivery.Student.IndexLive do
             class="hover:no-underline"
           >
             <div class="w-52 h-11 px-5 py-2.5 bg-blue-600 rounded-lg shadow flex justify-center items-center gap-2.5 hover:bg-blue-500">
-              <div class="text-base font-bold leading-tight">
+              <div class="text-white text-base font-bold leading-tight">
                 Start course
               </div>
             </div>
           </.link>
           <.link href={Utils.learn_live_path(@section_slug)} class="hover:no-underline">
             <div class="w-52 h-11 px-5 py-2.5 bg-white bg-opacity-20 rounded-lg shadow flex justify-center items-center gap-2.5 hover:bg-opacity-40">
-              <div class="text-base font-semibold leading-tight">
+              <div class="text-white text-base font-semibold leading-tight">
                 Discover content
               </div>
             </div>
