@@ -51,7 +51,7 @@ defmodule OliWeb.Delivery.Student.Utils do
             </div>
             <div
               :if={@page_context.page.graded}
-              class="px-2 py-1 bg-black bg-opacity-10 dark:bg-white dark:bg-opacity-10 rounded-xl shadow justify-start items-center gap-1 flex"
+              class="px-2 py-1 bg-gray-300 bg-opacity-10 dark:bg-white dark:bg-opacity-10 rounded-xl shadow justify-start items-center gap-1 flex"
               role="assignment marker"
             >
               <div class="dark:text-white text-[10px] font-normal font-['Open Sans']">
