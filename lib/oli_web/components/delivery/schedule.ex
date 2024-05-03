@@ -6,6 +6,7 @@ defmodule OliWeb.Components.Delivery.Schedule do
   alias Oli.Delivery.Attempts.HistoricalGradedAttemptSummary
   alias Oli.Delivery.Sections.{ScheduledContainerGroup, ScheduledSectionResource}
   alias OliWeb.Delivery.Student.Utils
+  alias OliWeb.Icons
 
   attr(:ctx, SessionContext, required: true)
   attr(:week_number, :integer, required: true)
@@ -134,10 +135,10 @@ defmodule OliWeb.Components.Delivery.Schedule do
     ~H"""
     <div class="w-[28px]">
       <div :if={@progress == 100}>
-        <Utils.check_icon progress={1.0} />
+        <Icons.check progress={1.0} />
       </div>
       <div :if={is_nil(@progress) || @progress < 100}>
-        <Utils.bullet_icon />
+        <Icons.bullet />
       </div>
     </div>
     """
@@ -152,15 +153,15 @@ defmodule OliWeb.Components.Delivery.Schedule do
     <div class="w-[36px] shrink-0">
       <%= cond do %>
         <% @purpose == :application -> %>
-          <Utils.exploration_icon />
+          <Icons.exploration />
         <% @graded && @progress == 100 -> %>
-          <Utils.square_checked_icon />
+          <Icons.square_checked />
         <% @graded -> %>
-          <Utils.orange_flag_icon />
+          <Icons.flag />
         <% @progress == 100 -> %>
-          <Utils.check_icon progress={1.0} />
+          <Icons.check progress={1.0} />
         <% true -> %>
-          <Utils.bullet_icon />
+          <Icons.bullet />
       <% end %>
     </div>
     """
