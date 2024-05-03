@@ -751,6 +751,16 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
     end
   end
 
+  defp enroll_as_student(%{user: user, section: section} = context) do
+    Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+    context
+  end
+
+  defp mark_section_visited(%{section: section, user: user} = context) do
+    Sections.mark_section_visited_for_student(section, user)
+    context
+  end
+
   describe "user" do
     test "can not access page when it is not logged in", %{conn: conn} do
       section = insert(:section)
@@ -767,19 +777,9 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
   end
 
   describe "student at Gallery view mode (the default view)" do
-    setup [:user_conn, :create_elixir_project]
+    setup [:user_conn, :create_elixir_project, :enroll_as_student, :mark_section_visited]
 
-    test "can not access when not enrolled to course", %{conn: conn, section: section} do
-      {:error, {:redirect, %{to: redirect_path, flash: _flash_msg}}} =
-        live(conn, Utils.learn_live_path(section.slug))
-
-      assert redirect_path == "/unauthorized"
-    end
-
-    test "can access when enrolled to course", %{conn: conn, user: user, section: section} do
-      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
-      Sections.mark_section_visited_for_student(section, user)
-
+    test "can access when enrolled to course", %{conn: conn, section: section} do
       {:ok, view, _html} = live(conn, Utils.learn_live_path(section.slug))
 
       assert has_element?(view, "span", "The best course ever!")
@@ -790,12 +790,8 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
     test "can see unit intro as first slider card and play the video (if provided)", %{
       conn: conn,
-      user: user,
       section: section
     } do
-      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
-      Sections.mark_section_visited_for_student(section, user)
-
       {:ok, view, _html} = live(conn, Utils.learn_live_path(section.slug))
 
       # unit 1 has an intro card with a video url provided, so there must be a play button
@@ -820,14 +816,10 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
     test "can expand a module card to view its details (header with title and due date, intro content and page details)",
          %{
            conn: conn,
-           user: user,
            section: section,
            page_1: page_1,
            page_2: page_2
          } do
-      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
-      Sections.mark_section_visited_for_student(section, user)
-
       {:ok, view, _html} = live(conn, Utils.learn_live_path(section.slug))
 
       refute has_element?(
@@ -882,14 +874,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
     end
 
     test "can see intro video (if any) when expanding a module card",
-         %{
-           conn: conn,
-           user: user,
-           section: section
-         } do
-      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
-      Sections.mark_section_visited_for_student(section, user)
-
+         %{conn: conn, section: section} do
       {:ok, view, _html} = live(conn, Utils.learn_live_path(section.slug))
 
       # module 1 has intro video
@@ -924,9 +909,6 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
            section: section,
            module_1: module_1
          } do
-      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
-      Sections.mark_section_visited_for_student(section, user)
-
       %{state: enrollment_state} =
         Sections.get_enrollment(section.slug, user.id)
 
@@ -966,14 +948,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
     end
 
     test "can see orange flag and due date for graded pages in the module index details",
-         %{
-           conn: conn,
-           user: user,
-           section: section
-         } do
-      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
-      Sections.mark_section_visited_for_student(section, user)
-
+         %{conn: conn, section: section} do
       {:ok, view, _html} = live(conn, Utils.learn_live_path(section.slug))
 
       view
@@ -1002,9 +977,6 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
            project: project,
            publication: publication
          } do
-      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
-      Sections.mark_section_visited_for_student(section, user)
-
       set_progress(section.id, page_4_revision.resource_id, user.id, 1.0, page_4_revision)
 
       set_activity_attempt(
@@ -1060,12 +1032,8 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
     test "can see module learning objectives (if any) in the tooltip", %{
       conn: conn,
-      user: user,
       section: section
     } do
-      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
-      Sections.mark_section_visited_for_student(section, user)
-
       {:ok, view, _html} = live(conn, Utils.learn_live_path(section.slug))
 
       # expand unit 1/module 1 details
@@ -1117,9 +1085,6 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
            project: project,
            publication: publication
          } do
-      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
-      Sections.mark_section_visited_for_student(section, user)
-
       set_progress(section.id, page_1_revision.resource_id, user.id, 1.0, page_1_revision)
       set_progress(section.id, page_2_revision.resource_id, user.id, 1.0, page_2_revision)
       set_progress(section.id, page_3_revision.resource_id, user.id, 1.0, page_3_revision)
@@ -1166,14 +1131,10 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
     test "can expand more than one module card", %{
       conn: conn,
-      user: user,
       section: section,
       page_1: page_1,
       page_5: page_5
     } do
-      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
-      Sections.mark_section_visited_for_student(section, user)
-
       {:ok, view, _html} = live(conn, Utils.learn_live_path(section.slug))
 
       # page 1 belongs to module 1 (of unit 1) and page 5 belongs to module 3 (of unit 2)
@@ -1223,24 +1184,16 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
     @tag :skip
     test "can click on let's discuss button to open DOT AI Bot interface", %{
       conn: conn,
-      user: user,
       section: section
     } do
-      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
-      Sections.mark_section_visited_for_student(section, user)
-
       {:ok, _view, _html} = live(conn, Utils.learn_live_path(section.slug))
     end
 
     test "sees a clock icon beside the duration in minutes for graded pages", %{
       conn: conn,
-      user: user,
       section: section,
       page_4: page_4
     } do
-      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
-      Sections.mark_section_visited_for_student(section, user)
-
       {:ok, view, _html} = live(conn, Utils.learn_live_path(section.slug))
 
       # expand unit 1/module 2 details
@@ -1266,9 +1219,6 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       section: section,
       page_1: page_1
     } do
-      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
-      Sections.mark_section_visited_for_student(section, user)
-
       set_progress(section.id, page_1.resource_id, user.id, 1.0, page_1)
       {:ok, view, _html} = live(conn, Utils.learn_live_path(section.slug))
 
@@ -1291,9 +1241,6 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       section: section,
       page_11: page_11
     } do
-      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
-      Sections.mark_section_visited_for_student(section, user)
-
       set_progress(section.id, page_11.resource_id, user.id, 1.0, page_11)
       {:ok, view, _html} = live(conn, Utils.learn_live_path(section.slug))
 
@@ -1316,9 +1263,6 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       subsection_1: subsection_1,
       page_11: page_11
     } do
-      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
-      Sections.mark_section_visited_for_student(section, user)
-
       set_progress(section.id, page_11.resource_id, user.id, 1.0, page_11)
       {:ok, view, _html} = live(conn, Utils.learn_live_path(section.slug))
 
@@ -1368,9 +1312,6 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       section: section,
       page_1: page_1
     } do
-      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
-      Sections.mark_section_visited_for_student(section, user)
-
       set_progress(section.id, page_1.resource_id, user.id, 0.5, page_1)
       {:ok, view, _html} = live(conn, Utils.learn_live_path(section.slug))
 
@@ -1385,10 +1326,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       refute has_element?(view, ~s{button[role="page 2 details"] svg[role="visited check icon"]})
     end
 
-    test "can visit a page", %{conn: conn, user: user, section: section, page_1: page_1} do
-      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
-      Sections.mark_section_visited_for_student(section, user)
-
+    test "can visit a page", %{conn: conn, section: section, page_1: page_1} do
       {:ok, view, _html} = live(conn, Utils.learn_live_path(section.slug))
 
       # expand unit 1/module 1 details
@@ -1417,14 +1355,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
     end
 
     test "can see the unit schedule details considering if the instructor has already scheduled it",
-         %{
-           conn: conn,
-           user: user,
-           section: section
-         } do
-      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
-      Sections.mark_section_visited_for_student(section, user)
-
+         %{conn: conn, section: section} do
       {:ok, view, _html} = live(conn, Utils.learn_live_path(section.slug))
 
       # unit 1 has been scheduled by instructor, so there must be schedule details data
@@ -1447,9 +1378,6 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       page_2: page_2,
       page_7: page_7
     } do
-      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
-      Sections.mark_section_visited_for_student(section, user)
-
       set_progress(section.id, page_1.resource_id, user.id, 1.0, page_1)
       set_progress(section.id, page_2.resource_id, user.id, 0.5, page_2)
       set_progress(section.id, page_7.resource_id, user.id, 1.0, page_7)
@@ -1481,13 +1409,9 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
     test "can see icon that identifies practice pages at level 2 of hierarchy (and can navigate to them)",
          %{
            conn: conn,
-           user: user,
            section: section,
            page_7: page_7
          } do
-      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
-      Sections.mark_section_visited_for_student(section, user)
-
       {:ok, view, _html} = live(conn, Utils.learn_live_path(section.slug))
 
       assert has_element?(view, ~s{div[role="unit_3"] div[role="card_7"] div[role="page icon"]})
@@ -1515,13 +1439,9 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
     test "can see icon that identifies graded pages at level 2 of hierarchy (and can navigate to them)",
          %{
            conn: conn,
-           user: user,
            section: section,
            page_8: page_8
          } do
-      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
-      Sections.mark_section_visited_for_student(section, user)
-
       {:ok, view, _html} = live(conn, Utils.learn_live_path(section.slug))
 
       assert has_element?(
@@ -1550,14 +1470,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
     end
 
     test "progress bar is not rendered when there is no progress",
-         %{
-           conn: conn,
-           user: user,
-           section: section
-         } do
-      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
-      Sections.mark_section_visited_for_student(section, user)
-
+         %{conn: conn, section: section} do
       {:ok, view, _html} = live(conn, Utils.learn_live_path(section.slug))
 
       # no progress yet, so progress bar is not rendered
@@ -1573,9 +1486,6 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
            page_2: page_2,
            page_7: page_7
          } do
-      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
-      Sections.mark_section_visited_for_student(section, user)
-
       set_progress(section.id, page_2.resource_id, user.id, 0.5, page_2)
       set_progress(section.id, page_7.resource_id, user.id, 1.0, page_7)
 
@@ -1592,14 +1502,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
     end
 
     test "can see card background image if provided (if not the default one is shown)",
-         %{
-           conn: conn,
-           user: user,
-           section: section
-         } do
-      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
-      Sections.mark_section_visited_for_student(section, user)
-
+         %{conn: conn, section: section} do
       {:ok, view, _html} = live(conn, Utils.learn_live_path(section.slug))
 
       assert view
@@ -1612,14 +1515,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
     end
 
     test "can see Youtube or S3 video poster image",
-         %{
-           conn: conn,
-           user: user,
-           section: section
-         } do
-      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
-      Sections.mark_section_visited_for_student(section, user)
-
+         %{conn: conn, section: section} do
       {:ok, view, _html} = live(conn, Utils.learn_live_path(section.slug))
 
       assert view
@@ -1635,13 +1531,9 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
     test "can see pages at the top level of the curriculum (at unit level) with it's header and corresponding card",
          %{
            conn: conn,
-           user: user,
            section: section,
            top_level_page: top_level_page
          } do
-      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
-      Sections.mark_section_visited_for_student(section, user)
-
       {:ok, view, _html} = live(conn, Utils.learn_live_path(section.slug))
 
       assert view
@@ -1670,12 +1562,9 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
     test "can navigate to a unit through url params",
          %{
            conn: conn,
-           user: user,
            section: section,
            unit_2: unit_2
          } do
-      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
-      Sections.mark_section_visited_for_student(section, user)
       unit_id = "unit_#{unit_2.resource_id}"
 
       {:ok, view, _html} =
@@ -1696,13 +1585,10 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
     test "can navigate to a module through url params",
          %{
            conn: conn,
-           user: user,
            section: section,
            unit_2: unit_2,
            module_3: module_3
          } do
-      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
-      Sections.mark_section_visited_for_student(section, user)
       unit_id = "unit_#{unit_2.resource_id}"
       card_id = "module_#{module_3.resource_id}"
       unit_resource_id = unit_2.resource_id
@@ -1737,12 +1623,9 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
     test "can navigate to a page at top level (at unit level) through url params",
          %{
            conn: conn,
-           user: user,
            section: section,
            top_level_page: top_level_page
          } do
-      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
-      Sections.mark_section_visited_for_student(section, user)
       top_level_page_id = "top_level_page_#{top_level_page.resource_id}"
 
       {:ok, view, _html} =
@@ -1763,13 +1646,10 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
     test "can navigate to a page at module level through url params",
          %{
            conn: conn,
-           user: user,
            section: section,
            unit_3: unit_3,
            page_8: page_8
          } do
-      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
-      Sections.mark_section_visited_for_student(section, user)
       unit_id = "unit_#{unit_3.resource_id}"
       card_id = "page_#{page_8.resource_id}"
       unit_resource_id = unit_3.resource_id
@@ -1795,14 +1675,11 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
     test "can navigate to a page through url params",
          %{
            conn: conn,
-           user: user,
            section: section,
            unit_2: unit_2,
            module_3: module_3,
            page_6: page_6
          } do
-      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
-      Sections.mark_section_visited_for_student(section, user)
       unit_id = "unit_#{unit_2.resource_id}"
       card_id = "module_#{module_3.resource_id}"
       unit_resource_id = unit_2.resource_id
@@ -1836,14 +1713,11 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
     test "can navigate to a page at section level through url params",
          %{
            conn: conn,
-           user: user,
            section: section,
            unit_5: unit_5,
            module_4: module_4,
            page_11: page_11
          } do
-      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
-      Sections.mark_section_visited_for_student(section, user)
       unit_id = "unit_#{unit_5.resource_id}"
       card_id = "module_#{module_4.resource_id}"
       unit_resource_id = unit_5.resource_id
@@ -1870,16 +1744,12 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
     test "can see pages within sections and sub-sections",
          %{
            conn: conn,
-           user: user,
            section: section,
            section_1: section_1,
            subsection_1: subsection_1,
            page_11: page_11,
            page_12: page_12
          } do
-      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
-      Sections.mark_section_visited_for_student(section, user)
-
       {:ok, view, _html} = live(conn, Utils.learn_live_path(section.slug))
 
       refute has_element?(
@@ -1936,14 +1806,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
     end
 
     test "groups pages within a module index by due date (even if some pages do not yet have a scheduled date)",
-         %{
-           conn: conn,
-           user: user,
-           section: section
-         } do
-      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
-      Sections.mark_section_visited_for_student(section, user)
-
+         %{conn: conn, section: section} do
       {:ok, view, _html} = live(conn, Utils.learn_live_path(section.slug))
 
       view
@@ -1970,9 +1833,6 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       section: section,
       page_13: page_13
     } do
-      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
-      Sections.mark_section_visited_for_student(section, user)
-
       # add a student exception for page 13
       insert(:student_exception, %{
         section: section,
@@ -1999,12 +1859,8 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
     test "in class activities pages are not listed in the module index", %{
       conn: conn,
-      user: user,
       section: section
     } do
-      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
-      Sections.mark_section_visited_for_student(section, user)
-
       {:ok, view, _html} = live(conn, Utils.learn_live_path(section.slug))
 
       view
@@ -2017,20 +1873,34 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
     end
   end
 
-  describe "student at Outline view mode" do
+  describe "student" do
     setup [:user_conn, :create_elixir_project]
 
-    test "can not access when not enrolled to course", %{conn: conn, section: section} do
+    test "can not access Outline view when not enrolled to course", %{
+      conn: conn,
+      section: section
+    } do
       {:error, {:redirect, %{to: redirect_path, flash: _flash_msg}}} =
         live(conn, Utils.learn_live_path(section.slug, selected_view: :outline))
 
       assert redirect_path == "/unauthorized"
     end
 
-    test "can access when enrolled to course", %{conn: conn, user: user, section: section} do
-      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
-      Sections.mark_section_visited_for_student(section, user)
+    test "can not access Gallery view (default one) when not enrolled to course", %{
+      conn: conn,
+      section: section
+    } do
+      {:error, {:redirect, %{to: redirect_path, flash: _flash_msg}}} =
+        live(conn, Utils.learn_live_path(section.slug))
 
+      assert redirect_path == "/unauthorized"
+    end
+  end
+
+  describe "student at Outline view mode" do
+    setup [:user_conn, :create_elixir_project, :enroll_as_student, :mark_section_visited]
+
+    test "can access when enrolled to course", %{conn: conn, section: section} do
       {:ok, view, _html} =
         live(conn, Utils.learn_live_path(section.slug, selected_view: :outline))
 
@@ -2042,14 +1912,10 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
     test "can see unit intro as first row and play the video (if provided)", %{
       conn: conn,
-      user: user,
       section: section,
       module_1: module_1,
       module_2: module_2
     } do
-      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
-      Sections.mark_section_visited_for_student(section, user)
-
       {:ok, view, _html} =
         live(conn, Utils.learn_live_path(section.slug, selected_view: :outline))
 
@@ -2075,9 +1941,6 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
            section: section,
            module_1: module_1
          } do
-      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
-      Sections.mark_section_visited_for_student(section, user)
-
       %{state: enrollment_state} =
         Sections.get_enrollment(section.slug, user.id)
 
@@ -2111,14 +1974,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
     end
 
     test "can see orange flag and due date for graded pages in the module index details",
-         %{
-           conn: conn,
-           user: user,
-           section: section
-         } do
-      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
-      Sections.mark_section_visited_for_student(section, user)
-
+         %{conn: conn, section: section} do
       {:ok, view, _html} =
         live(conn, Utils.learn_live_path(section.slug, selected_view: :outline))
 
@@ -2138,9 +1994,6 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
            project: project,
            publication: publication
          } do
-      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
-      Sections.mark_section_visited_for_student(section, user)
-
       set_progress(section.id, page_4_revision.resource_id, user.id, 1.0, page_4_revision)
 
       set_activity_attempt(
@@ -2181,13 +2034,9 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
     test "sees a clock icon beside the duration in minutes for graded pages", %{
       conn: conn,
-      user: user,
       section: section,
       page_4: page_4
     } do
-      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
-      Sections.mark_section_visited_for_student(section, user)
-
       {:ok, view, _html} =
         live(conn, Utils.learn_live_path(section.slug, selected_view: :outline))
 
@@ -2209,9 +2058,6 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       section: section,
       page_1: page_1
     } do
-      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
-      Sections.mark_section_visited_for_student(section, user)
-
       set_progress(section.id, page_1.resource_id, user.id, 1.0, page_1)
 
       {:ok, view, _html} =
@@ -2232,9 +2078,6 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       section: section,
       page_11: page_11
     } do
-      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
-      Sections.mark_section_visited_for_student(section, user)
-
       set_progress(section.id, page_11.resource_id, user.id, 1.0, page_11)
 
       {:ok, view, _html} =
@@ -2253,9 +2096,6 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       section: section,
       page_1: page_1
     } do
-      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
-      Sections.mark_section_visited_for_student(section, user)
-
       set_progress(section.id, page_1.resource_id, user.id, 0.5, page_1)
 
       {:ok, view, _html} =
@@ -2271,10 +2111,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       refute has_element?(view, ~s{button[role="page 2 details"] svg[role="visited check icon"]})
     end
 
-    test "can visit a page", %{conn: conn, user: user, section: section, page_1: page_1} do
-      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
-      Sections.mark_section_visited_for_student(section, user)
-
+    test "can visit a page", %{conn: conn, section: section, page_1: page_1} do
       {:ok, view, _html} =
         live(conn, Utils.learn_live_path(section.slug, selected_view: :outline))
 
@@ -2301,13 +2138,9 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
     test "can see pages at the top level of the curriculum (at unit level) with it's header and corresponding row",
          %{
            conn: conn,
-           user: user,
            section: section,
            top_level_page: top_level_page
          } do
-      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
-      Sections.mark_section_visited_for_student(section, user)
-
       {:ok, view, _html} =
         live(conn, Utils.learn_live_path(section.slug, selected_view: :outline))
 
@@ -2325,12 +2158,9 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
     test "can navigate to a unit through url params",
          %{
            conn: conn,
-           user: user,
            section: section,
            unit_2: unit_2
          } do
-      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
-      Sections.mark_section_visited_for_student(section, user)
       unit_id = "unit_#{unit_2.resource_id}"
 
       {:ok, view, _html} =
@@ -2354,12 +2184,9 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
     test "can navigate to a module through url params",
          %{
            conn: conn,
-           user: user,
            section: section,
            module_3: module_3
          } do
-      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
-      Sections.mark_section_visited_for_student(section, user)
       module_id = "module_#{module_3.resource_id}"
 
       {:ok, view, _html} =
@@ -2383,12 +2210,9 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
     test "can navigate to a page at top level (at unit level) through url params",
          %{
            conn: conn,
-           user: user,
            section: section,
            top_level_page: top_level_page
          } do
-      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
-      Sections.mark_section_visited_for_student(section, user)
       top_level_page_id = "top_level_page_#{top_level_page.resource_id}"
 
       {:ok, view, _html} =
@@ -2412,12 +2236,9 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
     test "can navigate to a page at module level through url params",
          %{
            conn: conn,
-           user: user,
            section: section,
            page_8: page_8
          } do
-      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
-      Sections.mark_section_visited_for_student(section, user)
       page_id = "page_#{page_8.resource_id}"
 
       {:ok, view, _html} =
@@ -2441,12 +2262,9 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
     test "can navigate to a page through url params",
          %{
            conn: conn,
-           user: user,
            section: section,
            page_6: page_6
          } do
-      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
-      Sections.mark_section_visited_for_student(section, user)
       page_id = "page_#{page_6.resource_id}"
 
       {:ok, view, _html} =
@@ -2470,12 +2288,9 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
     test "can navigate to a page at section level through url params",
          %{
            conn: conn,
-           user: user,
            section: section,
            page_11: page_11
          } do
-      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
-      Sections.mark_section_visited_for_student(section, user)
       page_id = "page_#{page_11.resource_id}"
 
       {:ok, view, _html} =
@@ -2499,16 +2314,12 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
     test "can see pages within sections and sub-sections",
          %{
            conn: conn,
-           user: user,
            section: section,
            section_1: section_1,
            subsection_1: subsection_1,
            page_11: page_11,
            page_12: page_12
          } do
-      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
-      Sections.mark_section_visited_for_student(section, user)
-
       {:ok, view, _html} =
         live(conn, Utils.learn_live_path(section.slug, selected_view: :outline))
 
@@ -2551,12 +2362,9 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
   end
 
   describe "view selector" do
-    setup [:user_conn, :create_elixir_project]
+    setup [:user_conn, :create_elixir_project, :enroll_as_student, :mark_section_visited]
 
-    test "can switch from Outline to Gallery view", %{conn: conn, user: user, section: section} do
-      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
-      Sections.mark_section_visited_for_student(section, user)
-
+    test "can switch from Outline to Gallery view", %{conn: conn, section: section} do
       {:ok, view, _html} =
         live(conn, Utils.learn_live_path(section.slug, selected_view: :outline))
 
@@ -2583,10 +2391,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       assert has_element?(view, ~s{div[id=view_selector] div}, "Gallery")
     end
 
-    test "can switch from Gallery to Outline view", %{conn: conn, user: user, section: section} do
-      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
-      Sections.mark_section_visited_for_student(section, user)
-
+    test "can switch from Gallery to Outline view", %{conn: conn, section: section} do
       {:ok, view, _html} =
         live(conn, Utils.learn_live_path(section.slug, selected_view: :gallery))
 
@@ -2615,12 +2420,10 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
   end
 
   describe "sidebar menu" do
-    setup [:user_conn, :create_elixir_project]
+    setup [:user_conn, :create_elixir_project, :enroll_as_student, :mark_section_visited]
 
     test "does not render Explorations, Practice and Collaboration links if those features are not enabled",
-         %{conn: conn, user: user, section: section} do
-      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
-      Sections.mark_section_visited_for_student(section, user)
+         %{conn: conn, section: section} do
       {:ok, view, _html} = live(conn, Utils.learn_live_path(section.slug))
 
       refute has_element?(
@@ -2641,16 +2444,12 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
     test "renders Explorations, Practice and Collaboration links if those features are enabled",
          %{
            conn: conn,
-           user: user,
            section: section,
            page_1: page_1,
            page_2: page_2,
            page_3: page_3,
            author: author
          } do
-      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
-      Sections.mark_section_visited_for_student(section, user)
-
       # change the purpose of the pages to have an exploration page and a deliberate practice page
       Oli.Resources.update_revision(page_1, %{purpose: :application, author_id: author.id})
 
