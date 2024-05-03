@@ -996,7 +996,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     <div class="w-full border-b dark:border-white/20 flex items-center justify-between pb-1.5">
       <div role="completed count" class="flex gap-2.5">
         <div class="w-7 h-8 py-1 flex gap-2.5">
-          <.check_icon />
+          <Utils.check_icon />
         </div>
         <div class="w-34 h-8 pl-1 flex gap-1.5">
           <div class="flex gap-0.5 items-center">
@@ -1480,7 +1480,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       {true, "page", false, _} ->
         # visited practice page (check icon shown when progress = 100%)
         ~H"""
-        <.check_icon progress={@progress} />
+        <Utils.check_icon progress={@progress} />
         """
 
       {false, "page", false, _} ->
@@ -1493,16 +1493,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         # completed graded page
         ~H"""
         <div role="square check icon" class="flex justify-center items-center w-[22px] h-[22px] shrink-0">
-          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
-            <path
-              d="M5 21C4.45 21 3.97917 20.8042 3.5875 20.4125C3.19583 20.0208 3 19.55 3 19V5C3 4.45 3.19583 3.97917 3.5875 3.5875C3.97917 3.19583 4.45 3 5 3H17.925L15.925 5H5V19H19V12.05L21 10.05V19C21 19.55 20.8042 20.0208 20.4125 20.4125C20.0208 20.8042 19.55 21 19 21H5Z"
-              class="fill-[#0CAF61] dark:fill-[#12E56A]"
-            />
-            <path
-              d="M11.7 16.025L6 10.325L7.425 8.9L11.7 13.175L20.875 4L22.3 5.425L11.7 16.025Z"
-              class="fill-[#0CAF61] dark:fill-[#12E56A]"
-            />
-          </svg>
+          <Utils.square_checked_icon />
         </div>
         """
 
@@ -1510,20 +1501,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         # not completed graded page
         ~H"""
         <div role="orange flag icon" class="flex justify-center items-center w-[22px] h-[22px] shrink-0">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="24"
-            height="24"
-            viewBox="0 0 24 24"
-            fill="currentColor"
-            class="icon icon-tabler icons-tabler-filled icon-tabler-flag-3"
-          >
-            <path stroke="none" d="M0 0h24v24H0z" fill="none" />
-            <path
-              d="M19 4c.852 0 1.297 .986 .783 1.623l-.076 .084l-3.792 3.793l3.792 3.793c.603 .602 .22 1.614 -.593 1.701l-.114 .006h-13v6a1 1 0 0 1 -.883 .993l-.117 .007a1 1 0 0 1 -.993 -.883l-.007 -.117v-16a1 1 0 0 1 .883 -.993l.117 -.007h14z"
-              fill="#FF9040"
-            />
-          </svg>
+          <Utils.orange_flag_icon />
         </div>
         """
     end
@@ -1770,8 +1748,19 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         role="graded page icon"
       >
         <div class="absolute top-0 right-0 h-[36px] w-[36px] flex justify-center items-center">
-          <svg xmlns="http://www.w3.org/2000/svg" width="25" height="24" viewBox="0 0 25 24" fill="none">
-            <path d="M5.5 21V4H14.5L14.9 6H20.5V16H13.5L13.1 14H7.5V21H5.5Z" fill="white" />
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="currentColor"
+            class="icon icon-tabler icons-tabler-filled icon-tabler-flag-3"
+          >
+            <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+            <path
+              d="M19 4c.852 0 1.297 .986 .783 1.623l-.076 .084l-3.792 3.793l3.792 3.793c.603 .602 .22 1.614 -.593 1.701l-.114 .006h-13v6a1 1 0 0 1 -.883 .993l-.117 .007a1 1 0 0 1 -.993 -.883l-.007 -.117v-16a1 1 0 0 1 .883 -.993l.117 -.007h14z"
+              fill="white"
+            />
           </svg>
         </div>
       </div>
@@ -1818,30 +1807,6 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   defp no_icon(assigns) do
     ~H"""
     <div role="no icon" class="flex justify-center items-center w-[22px] h-[22px] shrink-0"></div>
-    """
-  end
-
-  attr :progress, :float, default: 1.0
-
-  defp check_icon(assigns) do
-    ~H"""
-    <div role="check icon" class="flex justify-center items-center w-[22px] h-[22px] shrink-0">
-      <svg
-        :if={@progress == 1.0}
-        xmlns="http://www.w3.org/2000/svg"
-        width="24"
-        height="24"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke-width="2"
-        stroke-linecap="round"
-        stroke-linejoin="round"
-        class="icon icon-tabler icons-tabler-outline icon-tabler-check stroke-[#0CAF61] dark:stroke-[#12E56A]"
-      >
-        <path stroke="none" d="M0 0h24v24H0z" fill="none" />
-        <path d="M5 12l5 5l10 -10" />
-      </svg>
-    </div>
     """
   end
 
