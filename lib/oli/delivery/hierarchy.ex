@@ -304,20 +304,6 @@ defmodule Oli.Delivery.Hierarchy do
     hierarchy_node_with_children(root_hierarchy_node, hierarchy_nodes)
   end
 
-  defp hierarchy_node_with_children(
-         %{"children" => children_ids} = node,
-         nodes_by_sr_id
-       ) do
-    Map.put(
-      node,
-      "children",
-      Enum.map(children_ids, fn sr_id ->
-        Map.get(nodes_by_sr_id, sr_id)
-        |> hierarchy_node_with_children(nodes_by_sr_id)
-      end)
-    )
-  end
-
   # Returns a map of resource ids to hierarchy nodes and the root hierarchy node
   defp hierarchy_nodes_by_sr_id(section) do
     page_id = Oli.Resources.ResourceType.get_id_by_type("page")
@@ -329,21 +315,33 @@ defmodule Oli.Delivery.Hierarchy do
         l -> Map.from_struct(l)
       end
 
+    hierarchy_nodes_query(section.slug, page_id, container_id)
+    |> Oli.Repo.all()
+    |> Enum.map(&add_uuid_and_labels(&1, labels))
+    |> Enum.reduce({%{}, nil}, &add_nodes_and_root/2)
+  end
+
+  defp add_uuid_and_labels(node, labels) do
+    numbering_with_labels = Map.put(node["numbering"], "labels", labels)
+    Map.put(node, "uuid", Oli.Utils.uuid()) |> Map.put("numbering", numbering_with_labels)
+  end
+
+  defp add_nodes_and_root(item, {nodes, root}) do
+    updated_nodes = Map.put(nodes, item["section_resource"].id, item)
+    {updated_nodes, if(item["is_root?"], do: item, else: root)}
+  end
+
+  defp hierarchy_nodes_query(section_slug, page_id, container_id) do
     from(
       [s: s, sr: sr, rev: rev, spp: spp] in DeliveryResolver.section_resource_revisions(
-        section.slug
+        section_slug
       ),
       join: p in Project,
       on: p.id == spp.project_id,
-      where:
-        rev.resource_type_id == ^page_id or
-          rev.resource_type_id == ^container_id,
+      where: rev.resource_type_id in ^[page_id, container_id],
       select: %{
         "id" => rev.id,
-        "numbering" => %{
-          "index" => sr.numbering_index,
-          "level" => sr.numbering_level
-        },
+        "numbering" => %{"index" => sr.numbering_index, "level" => sr.numbering_level},
         "children" => sr.children,
         "resource_id" => rev.resource_id,
         "project_id" => sr.project_id,
@@ -358,30 +356,20 @@ defmodule Oli.Delivery.Hierarchy do
         "resource_type_id" => rev.resource_type_id,
         "section_resource" => sr,
         "is_root?" =>
-          fragment(
-            "CASE WHEN ? = ? THEN true ELSE false END",
-            sr.id,
-            s.root_section_resource_id
-          )
+          fragment("CASE WHEN ? = ? THEN true ELSE false END", sr.id, s.root_section_resource_id)
       }
     )
-    |> Oli.Repo.all()
-    |> Enum.map(fn node ->
-      numbering = Map.put(node["numbering"], "labels", labels)
+  end
 
-      Map.put(node, "uuid", Oli.Utils.uuid())
-      |> Map.put("numbering", numbering)
-    end)
-    |> Enum.reduce({%{}, nil}, fn item, {nodes, root} ->
-      {
-        Map.put(
-          nodes,
-          item["section_resource"].id,
-          item
-        ),
-        if(item["is_root?"], do: item, else: root)
-      }
-    end)
+  defp hierarchy_node_with_children(%{"children" => children_ids} = node, nodes_by_sr_id) do
+    Map.put(node, "children", build_updated_children(children_ids, nodes_by_sr_id))
+  end
+
+  defp build_updated_children(children_ids, nodes_by_sr_id) do
+    Enum.map(
+      children_ids,
+      &(Map.get(nodes_by_sr_id, &1) |> hierarchy_node_with_children(nodes_by_sr_id))
+    )
   end
 
   def reorder_children(
