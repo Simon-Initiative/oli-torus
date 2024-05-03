@@ -4,6 +4,7 @@ defmodule OliWeb.Projects.OverviewLiveTest do
   import Phoenix.LiveViewTest
   import Oli.Factory
 
+  alias Oli.Authoring.Course
   alias OliWeb.Endpoint
   alias OliWeb.Projects.OverviewLive
 
@@ -33,6 +34,7 @@ defmodule OliWeb.Projects.OverviewLiveTest do
       assert has_element?(view, "h4", "Allow Duplication")
       assert has_element?(view, "h4", "Publishing Visibility")
       assert has_element?(view, "h4", "Collaboration Space")
+      assert has_element?(view, "h4", "Transfer Payment Codes")
       assert has_element?(view, "h4", "Actions")
 
       refute has_element?(view, "button", "Bulk Resource Attribute Edit")
@@ -49,7 +51,7 @@ defmodule OliWeb.Projects.OverviewLiveTest do
         |> render_submit()
         |> follow_redirect(conn, "/authoring/projects")
 
-      assert Oli.Authoring.Course.get_project_by_slug(project.slug).status == :deleted
+      assert Course.get_project_by_slug(project.slug).status == :deleted
       assert has_element?(view, "button#button-new-project")
       refute has_element?(view, "a", project.title)
     end
@@ -81,7 +83,7 @@ defmodule OliWeb.Projects.OverviewLiveTest do
         survey: "on"
       })
 
-      updated_project = Oli.Authoring.Course.get_project!(project.id)
+      updated_project = Course.get_project!(project.id)
       assert updated_project.required_survey_resource_id != nil
       assert has_element?(view, "input[name=\"survey\"][checked]")
       assert has_element?(view, "a", "Edit survey")
@@ -89,7 +91,7 @@ defmodule OliWeb.Projects.OverviewLiveTest do
 
     test "project can disable required surveys", %{conn: conn, author: author} do
       project = create_project_with_author(author)
-      Oli.Authoring.Course.create_project_survey(project, author.id)
+      Course.create_project_survey(project, author.id)
 
       {:ok, view, _html} = live(conn, Routes.live_path(Endpoint, OverviewLive, project.slug))
 
@@ -98,10 +100,38 @@ defmodule OliWeb.Projects.OverviewLiveTest do
       element(view, "form[phx-change=\"set-required-survey\"]")
       |> render_change(%{})
 
-      updated_project = Oli.Authoring.Course.get_project!(project.id)
+      updated_project = Course.get_project!(project.id)
       assert updated_project.required_survey_resource_id == nil
       refute has_element?(view, "input[name=\"survey\"][checked]")
       refute has_element?(view, "a", "Edit survey")
+    end
+
+    test "project can enable transfer payment codes", %{conn: conn, author: author} do
+      project = create_project_with_author(author)
+
+      {:ok, view, _html} = live(conn, ~p"/authoring/project/#{project.slug}/overview")
+
+      refute project.allow_transfer_payment_codes
+
+      element(view, "form[phx-change=\"set_allow_transfer\"]")
+      |> render_change(%{})
+
+      assert Course.get_project!(project.id).allow_transfer_payment_codes
+    end
+
+    test "project can disable transfer payment codes", %{conn: conn, author: author} do
+      project = create_project_with_author(author)
+
+      {:ok, project} = Course.update_project(project, %{allow_transfer_payment_codes: true})
+
+      {:ok, view, _html} = live(conn, ~p"/authoring/project/#{project.slug}/overview")
+
+      assert project.allow_transfer_payment_codes
+
+      element(view, "form[phx-change=\"set_allow_transfer\"]")
+      |> render_change(%{})
+
+      refute Course.get_project!(project.id).allow_transfer_payment_codes
     end
 
     test "does not display datashop analytics link when author is not admin", %{
@@ -193,7 +223,7 @@ defmodule OliWeb.Projects.OverviewLiveTest do
         }
       })
 
-      assert Oli.Authoring.Course.get_project!(project.id).attributes.calculate_embeddings_on_publish
+      assert Course.get_project!(project.id).attributes.calculate_embeddings_on_publish
     end
 
     test "disables datashop analytics link when the project is not published", %{

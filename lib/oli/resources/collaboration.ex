@@ -530,7 +530,6 @@ defmodule Oli.Resources.Collaboration do
         section_id,
         limit,
         offset,
-        filter_by,
         sort_by,
         sort_order
       ) do
@@ -558,17 +557,80 @@ defmodule Oli.Resources.Collaboration do
            )}
       end
 
-    main_query =
+    results =
       from(
         post in Post,
-        join: sr in SectionResource,
-        on: sr.resource_id == post.resource_id and sr.section_id == post.section_id,
-        join: spp in SectionsProjectsPublications,
-        on: spp.section_id == post.section_id and spp.project_id == sr.project_id,
-        join: pr in PublishedResource,
-        on: pr.publication_id == spp.publication_id and pr.resource_id == post.resource_id,
-        join: rev in Revision,
-        on: rev.id == pr.revision_id,
+        join: user in User,
+        on: post.user_id == user.id,
+        left_join: replies in subquery(replies_subquery()),
+        on: replies.thread_root_id == post.id,
+        left_join: read_replies in subquery(read_replies_subquery(user_id)),
+        on: read_replies.thread_root_id == post.id,
+        left_join: reactions in assoc(post, :reactions),
+        where:
+          post.section_id == ^section_id and post.visibility == :public and
+            (post.status in [:approved, :archived] or
+               (post.status == :submitted and post.user_id == ^user_id)) and
+            is_nil(post.parent_post_id) and is_nil(post.thread_root_id),
+        order_by: ^order_clause,
+        limit: ^limit,
+        offset: ^offset,
+        preload: [
+          user: user,
+          reactions: reactions
+        ],
+        select: %{
+          post: %{
+            post
+            | replies_count: coalesce(replies.count, 0),
+              read_replies_count: coalesce(read_replies.count, 0)
+          },
+          total_count: over(count(post.id))
+        }
+      )
+      |> Repo.all()
+
+    total_count =
+      case results do
+        [] -> 0
+        _ -> hd(results).total_count
+      end
+
+    # Determine if more records exist beyond the current page
+    more_posts_exist? = total_count > offset + limit
+
+    posts =
+      results
+      |> Enum.map(fn %{post: post} -> post end)
+      |> summarize_reactions(user_id)
+
+    {posts, more_posts_exist?}
+  end
+
+  @doc """
+  Returns the list of all the user's private notes for a section.
+  """
+  def list_all_user_notes_for_section(
+        user_id,
+        section_id,
+        limit,
+        offset,
+        sort_by,
+        sort_order
+      ) do
+    order_clause =
+      case {sort_by, sort_order} do
+        {"date", sort_order} ->
+          {sort_order,
+           dynamic(
+             [post, _sr, _spp, _pr, _rev, _user, _replies, _read_replies],
+             post.updated_at
+           )}
+      end
+
+    results =
+      from(
+        post in Post,
         join: user in User,
         on: post.user_id == user.id,
         left_join: replies in subquery(replies_subquery()),
@@ -576,128 +638,39 @@ defmodule Oli.Resources.Collaboration do
         left_join: read_replies in subquery(read_replies_subquery(user_id)),
         on: read_replies.thread_root_id == post.id,
         where:
-          post.section_id == ^section_id and
-            (post.status in [:approved, :archived] or
-               (post.status == :submitted and post.user_id == ^user_id)) and
-            is_nil(post.parent_post_id) and is_nil(post.thread_root_id),
+          post.section_id == ^section_id and post.visibility == :private and
+            post.user_id == ^user_id,
+        order_by: ^order_clause,
+        limit: ^limit,
+        offset: ^offset,
+        preload: [
+          user: user
+        ],
         select: %{
-          id: post.id,
-          thread_root_id: post.thread_root_id,
-          content: post.content,
-          user_name: user.name,
-          user_id: user.id,
-          posted_anonymously: post.anonymous,
-          title: rev.title,
-          slug: rev.slug,
-          resource_numbering_index: sr.numbering_index,
-          resource_id: sr.resource_id,
-          resource_type_id: rev.resource_type_id,
-          updated_at: post.updated_at,
-          replies_count: coalesce(replies.count, 0),
-          read_replies_count: coalesce(read_replies.count, 0),
-          last_reply: coalesce(replies.last_reply, nil),
-          unread_replies_count: coalesce(replies.count, 0) - coalesce(read_replies.count, 0),
-          is_read: true
-        },
-        order_by: ^order_clause
+          post: %{
+            post
+            | replies_count: coalesce(replies.count, 0),
+              read_replies_count: coalesce(read_replies.count, 0)
+          },
+          total_count: over(count(post.id))
+        }
       )
+      |> Repo.all()
 
-    posts =
-      case filter_by do
-        f when f in [nil, "all"] ->
-          main_query
-          |> limit(^limit + 1)
-          |> offset(^offset)
-          |> Repo.all()
-
-        "my_activity" ->
-          post_thread_ids_user_interacted_with =
-            from(p in Post,
-              where: p.section_id == ^section_id and p.user_id == ^user_id,
-              select: coalesce(p.thread_root_id, p.id)
-            )
-
-          main_query
-          |> where(
-            ^dynamic(
-              [post, _sr, _spp, _pr, _rev, _user],
-              post.id in subquery(post_thread_ids_user_interacted_with)
-            )
-          )
-          |> limit(^limit + 1)
-          |> offset(^offset)
-          |> Repo.all()
-
-        "course_discussions" ->
-          main_query
-          |> where([_post, _sr, _spp, _pr, rev, _user], rev.resource_type_id == 2)
-          |> limit(^limit + 1)
-          |> offset(^offset)
-          |> Repo.all()
-
-        "page_discussions" ->
-          main_query
-          |> where([_post, _sr, _spp, _pr, rev, _user], rev.resource_type_id == 1)
-          |> limit(^limit + 1)
-          |> offset(^offset)
-          |> Repo.all()
-
-        "unread" ->
-          from(
-            p in subquery(main_query),
-            where: p.unread_replies_count > 0,
-            select: p,
-            limit: ^limit + 1,
-            offset: ^offset
-          )
-          |> Repo.all()
+    total_count =
+      case results do
+        [] -> 0
+        _ -> hd(results).total_count
       end
 
     # Determine if more records exist beyond the current page
-    more_posts_exist? = length(posts) > limit
-    # Trim the posts to the desired limit
-    final_posts = Enum.take(posts, limit)
+    more_posts_exist? = total_count > offset + limit
 
-    {final_posts, more_posts_exist?}
-  end
+    posts =
+      results
+      |> Enum.map(fn %{post: post} -> post end)
 
-  def list_replies_for_post(user_id, post_id) do
-    Repo.all(
-      from(
-        post in Post,
-        join: sr in SectionResource,
-        on: sr.resource_id == post.resource_id and sr.section_id == post.section_id,
-        join: spp in SectionsProjectsPublications,
-        on: spp.section_id == post.section_id and spp.project_id == sr.project_id,
-        join: pr in PublishedResource,
-        on: pr.publication_id == spp.publication_id and pr.resource_id == post.resource_id,
-        join: rev in Revision,
-        on: rev.id == pr.revision_id,
-        join: user in User,
-        on: post.user_id == user.id,
-        left_join: urp in UserReadPost,
-        on: urp.post_id == post.id and urp.user_id == ^user_id,
-        where:
-          post.parent_post_id == ^post_id and
-            (post.status in [:approved, :archived] or
-               (post.status == :submitted and post.user_id == ^user_id)),
-        select: %{
-          id: post.id,
-          thread_root_id: post.thread_root_id,
-          content: post.content,
-          user_name: user.name,
-          user_id: user.id,
-          posted_anonymously: post.anonymous,
-          title: rev.title,
-          slug: rev.slug,
-          resource_type_id: rev.resource_type_id,
-          updated_at: post.updated_at,
-          is_read: not is_nil(urp.id) or post.user_id == ^user_id
-        },
-        order_by: [asc: :updated_at]
-      )
-    )
-    |> build_metrics_for_reply_posts(user_id)
+    {posts, more_posts_exist?}
   end
 
   @doc """
@@ -1321,7 +1294,7 @@ defmodule Oli.Resources.Collaboration do
     |> Enum.into(%{})
   end
 
-  def list_replies_for_post_in_point_block(user_id, post_id) do
+  def list_replies_for_post(user_id, post_id) do
     Repo.all(
       from(
         post in Post,
