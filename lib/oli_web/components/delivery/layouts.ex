@@ -320,12 +320,13 @@ defmodule OliWeb.Components.Delivery.Layouts do
         role="prev_page"
       >
         <div class="px-2 lg:px-6 rounded justify-end items-center gap-2 flex">
-          <.link href={
-            resource_navigation_url(@previous_page, @section_slug, @request_path, @selected_view)
-          }>
-            <button class="w-[72px] h-10 opacity-90 hover:opacity-100 bg-blue-600 flex items-center justify-center">
-              <.left_arrow />
-            </button>
+          <.link
+            href={
+              resource_navigation_url(@previous_page, @section_slug, @request_path, @selected_view)
+            }
+            class="w-[72px] h-10 opacity-90 hover:opacity-100 bg-blue-600 flex items-center justify-center"
+          >
+            <.left_arrow />
           </.link>
         </div>
         <div class="grow shrink basis-0 dark:text-white text-xs font-normal overflow-hidden text-ellipsis">
@@ -342,12 +343,11 @@ defmodule OliWeb.Components.Delivery.Layouts do
           <%= @next_page["title"] %>
         </div>
         <div class="px-2 lg:px-6 py-2 rounded justify-end items-center gap-2 flex">
-          <.link href={
-            resource_navigation_url(@next_page, @section_slug, @request_path, @selected_view)
-          }>
-            <button class="w-[72px] h-10 opacity-90 hover:opacity-100 bg-blue-600 flex items-center justify-center">
-              <.right_arrow />
-            </button>
+          <.link
+            href={resource_navigation_url(@next_page, @section_slug, @request_path, @selected_view)}
+            class="w-[72px] h-10 opacity-90 hover:opacity-100 bg-blue-600 flex items-center justify-center"
+          >
+            <.right_arrow />
           </.link>
         </div>
       </div>

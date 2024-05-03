@@ -19,7 +19,7 @@ defmodule OliWeb.Delivery.Student.Learn.Components.ViewSelector do
         class="h-[31px] justify-center items-center gap-2 inline-flex"
       >
         <div class="w-[114px] pl-2.5 pr-[7px] py-2.5 justify-center items-center gap-2.5 flex">
-          <div class="dark:text-white text-base font-normal font-['Open Sans']">View page as</div>
+          <div class="dark:text-white text-base font-normal">View page as</div>
         </div>
         <div class="w-8 h-[26px] px-2.5 justify-center items-center flex rotate-180">
           <.chevron_icon />
@@ -38,7 +38,7 @@ defmodule OliWeb.Delivery.Student.Learn.Components.ViewSelector do
           <div class="w-6 flex items-center justify-center">
             <.view_icon option={option} />
           </div>
-          <div class="dark:text-white text-base font-normal font-['Open Sans']">
+          <div class="dark:text-white text-base font-normal">
             <%= to_capitalized_string(option) %>
           </div>
         </button>
@@ -57,7 +57,7 @@ defmodule OliWeb.Delivery.Student.Learn.Components.ViewSelector do
       >
         <div class="pl-2.5 pr-[7px] py-2.5 justify-center items-center gap-[5px] flex">
           <div class="justify-center items-center flex"><.view_icon option={@selected_view} /></div>
-          <div class="ml-1 dark:text-white text-base font-normal font-['Open Sans']">
+          <div class="ml-1 dark:text-white text-base font-normal">
             <%= to_capitalized_string(@selected_view) %> View
           </div>
         </div>
