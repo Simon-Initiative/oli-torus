@@ -6,10 +6,12 @@ defmodule OliWeb.Experiments.ExperimentsView do
   import Oli.Utils, only: [uuid: 0]
   import OliWeb.Components.Common
   import OliWeb.ErrorHelpers
+  import OliWeb.Resources.AlternativesEditor.GroupOption
 
   alias Oli.Resources.ResourceType
   alias Oli.Authoring.Editing.ResourceEditor
   alias Oli.Resources.Revision
+  alias OliWeb.Common.Modal.DeleteModal
   alias OliWeb.Common.Modal.FormModal
 
   @title "Experiments"
@@ -197,6 +199,100 @@ defmodule OliWeb.Experiments.ExperimentsView do
   end
 
   def handle_event(
+        "delete_option",
+        %{"resource-id" => resource_id, "option-id" => option_id},
+        socket
+      ) do
+    resource_id = ensure_integer(resource_id)
+    %{project: project, ctx: ctx} = socket.assigns
+
+    %{content: %{"options" => options} = content} = experiment = socket.assigns.experiment
+
+    new_options = Enum.filter(options, fn o -> o["id"] != option_id end)
+
+    case edit_group_options(
+           project.slug,
+           ctx.author,
+           [experiment],
+           resource_id,
+           content,
+           new_options
+         ) do
+      {:ok, [experiment], _group} ->
+        {:noreply, hide_modal(socket) |> assign(experiment: experiment)}
+
+      {:error, _} ->
+        show_error(socket)
+    end
+  end
+
+  def handle_event(
+        "show_delete_option_modal",
+        %{"resource-id" => resource_id, "option-id" => option_id},
+        socket
+      ) do
+    resource_id = ensure_integer(resource_id)
+    experiment = socket.assigns.experiment
+    option = Enum.find(experiment.content["options"], fn o -> o["id"] === option_id end)
+
+    preview_fn = fn assigns ->
+      ~H"""
+      <ul class="list-group">
+        <.group_option group={@group} option={@option} show_actions={false} />
+      </ul>
+      """
+    end
+
+    modal_assigns = %{
+      id: "delete_modal",
+      title: "Delete Option",
+      message: "Are you sure you want to delete this option?",
+      preview_fn: preview_fn,
+      group: experiment,
+      option: option,
+      on_delete: "delete_option",
+      phx_values: ["phx-value-resource-id": resource_id, "phx-value-option-id": option_id]
+    }
+
+    modal = fn assigns ->
+      ~H"""
+      <DeleteModal.modal {@modal_assigns} />
+      """
+    end
+
+    {:noreply, show_modal(socket, modal, modal_assigns: modal_assigns)}
+  end
+
+  def handle_event(
+        "edit_group",
+        %{"params" => %{"resource_id" => resource_id, "title" => title}},
+        socket
+      ) do
+    %{project: project, ctx: ctx} = socket.assigns
+    resource_id = ensure_integer(resource_id)
+
+    experiment = socket.assigns.experiment
+
+    case edit_group_title(
+           project.slug,
+           ctx.author,
+           [experiment],
+           resource_id,
+           title
+         ) do
+      {:ok, [experiment], _group} ->
+        {:noreply, hide_modal(socket) |> assign(experiment: experiment)}
+
+      {:error, _} ->
+        show_error(socket)
+    end
+  end
+
+  def handle_event("validate_group", %{"params" => %{"title" => _}}, socket) do
+    {:noreply, socket}
+  end
+
+  def handle_event(
         "show_edit_option_modal",
         %{"resource-id" => resource_id, "option-id" => option_id},
         socket
@@ -283,6 +379,34 @@ defmodule OliWeb.Experiments.ExperimentsView do
 
       {:error, _} ->
         show_error(socket)
+    end
+  end
+
+  defp edit_group_title(
+         project_slug,
+         author,
+         alternatives,
+         resource_id,
+         title
+       ) do
+    case ResourceEditor.edit(project_slug, resource_id, author, %{
+           title: title
+         }) do
+      {:ok, updated_group} ->
+        # update groups list to reflect latest update
+        alternatives =
+          Enum.map(alternatives, fn g ->
+            if g.resource_id == updated_group.resource_id do
+              updated_group
+            else
+              g
+            end
+          end)
+
+        {:ok, alternatives, updated_group}
+
+      error ->
+        error
     end
   end
 
