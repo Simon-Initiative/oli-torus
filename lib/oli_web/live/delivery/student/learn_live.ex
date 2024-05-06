@@ -441,16 +441,16 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   def handle_event("card_keydown", _, socket), do: {:noreply, socket}
 
   def enter_unit(js \\ %JS{}, unit_id) do
-    unit_cards_selector = "#slider_#{unit_id} > div[role*=\"card\"]"
+    unit_cards_selector = "#slider_focus_wrap_#{unit_id} > div[role*=\"card\"]"
 
     JS.set_attribute(js, {"tabindex", "0"}, to: unit_cards_selector)
-    |> enable_focus_wrap_for("#slider_#{unit_id}")
+    |> enable_focus_wrap_for("#slider_focus_wrap_#{unit_id}")
     |> JS.focus(to: unit_cards_selector <> ":first-of-type")
   end
 
   def leave_unit(js \\ %JS{}, unit_id) do
     JS.remove_attribute(js, "tabindex", to: "#slider_#{unit_id} > div[role*=\"card\"]")
-    |> disable_focus_wrap_for("#slider_#{unit_id}")
+    |> disable_focus_wrap_for("#slider_focus_wrap_#{unit_id}")
     |> JS.focus(to: "#unit_#{unit_id}")
   end
 
@@ -906,37 +906,42 @@ defmodule OliWeb.Delivery.Student.LearnLive do
           >
             <i class="fa-solid fa-chevron-right mr-3"></i>
           </button>
-          <.custom_focus_wrap
+          <div
             id={"slider_#{@unit["resource_id"]}"}
             role="slider"
-            initially_enabled={false}
             phx-hook="SliderScroll"
             data-resource_id={@unit["resource_id"]}
-            class="flex overflow-x-scroll overflow-y-hidden h-[187px] pt-[5px] px-[5px] -left-[5px] scrollbar-hide"
+            class="overflow-x-scroll overflow-y-hidden h-[187px] pt-[5px] px-[5px] scrollbar-hide"
           >
-            <.intro_video_card
-              :if={@unit["intro_video"]}
-              video_url={@unit["intro_video"]}
-              card_resource_id={@unit["resource_id"]}
-              resource_id={@unit["resource_id"]}
-              intro_video_viewed={@unit["resource_id"] in @viewed_intro_video_resource_ids}
-              is_youtube_video={WebUtils.is_youtube_video?(@unit["intro_video"])}
-              unit_resource_id={@unit["resource_id"]}
-            />
-            <.card
-              :for={module <- @unit["children"]}
-              card={module}
-              module_index={module["numbering"]["index"]}
-              unit_resource_id={@unit["resource_id"]}
-              unit_numbering_index={@unit["numbering"]["index"]}
-              bg_image_url={module["poster_image"]}
-              student_progress_per_resource_id={@student_progress_per_resource_id}
-              selected={
-                @selected_module_per_unit_resource_id[@unit["resource_id"]]["resource_id"] ==
-                  module["resource_id"]
-              }
-            />
-          </.custom_focus_wrap>
+            <.custom_focus_wrap
+              id={"slider_focus_wrap_#{@unit["resource_id"]}"}
+              initially_enabled={false}
+              class="flex"
+            >
+              <.intro_video_card
+                :if={@unit["intro_video"]}
+                video_url={@unit["intro_video"]}
+                card_resource_id={@unit["resource_id"]}
+                resource_id={@unit["resource_id"]}
+                intro_video_viewed={@unit["resource_id"] in @viewed_intro_video_resource_ids}
+                is_youtube_video={WebUtils.is_youtube_video?(@unit["intro_video"])}
+                unit_resource_id={@unit["resource_id"]}
+              />
+              <.card
+                :for={module <- @unit["children"]}
+                card={module}
+                module_index={module["numbering"]["index"]}
+                unit_resource_id={@unit["resource_id"]}
+                unit_numbering_index={@unit["numbering"]["index"]}
+                bg_image_url={module["poster_image"]}
+                student_progress_per_resource_id={@student_progress_per_resource_id}
+                selected={
+                  @selected_module_per_unit_resource_id[@unit["resource_id"]]["resource_id"] ==
+                    module["resource_id"]
+                }
+              />
+            </.custom_focus_wrap>
+          </div>
         </div>
       </div>
       <.custom_focus_wrap
@@ -1986,7 +1991,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       phx-value-slug={@card["slug"]}
       phx-value-type={if @is_page, do: "page", else: "module"}
       class={[
-        "relative hover:scale-[1.01] transition-transform duration-150 mr-4",
+        "relative slider-card hover:scale-[1.01] transition-transform duration-150 mr-4",
         if(!@is_page, do: "slider-card")
       ]}
       role={"card_#{@module_index}"}
