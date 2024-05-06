@@ -4441,6 +4441,10 @@ table.table-striped tbody tr:nth-child(even) {
   margin-left: -2.5rem;
 }
 
+.-ml-2 {
+  margin-left: -0.5rem;
+}
+
 .-ml-20 {
   margin-left: -5rem;
 }
@@ -4519,6 +4523,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .ml-1 {
   margin-left: 0.25rem;
+}
+
+.ml-10 {
+  margin-left: 2.5rem;
 }
 
 .ml-12 {
@@ -4989,6 +4997,10 @@ table.table-striped tbody tr:nth-child(even) {
   height: 41px;
 }
 
+.h-\[42px\] {
+  height: 42px;
+}
+
 .h-\[450px\] {
   height: 450px;
 }
@@ -5253,12 +5265,20 @@ table.table-striped tbody tr:nth-child(even) {
   width: 100px;
 }
 
+.w-\[114px\] {
+  width: 114px;
+}
+
 .w-\[124px\] {
   width: 124px;
 }
 
 .w-\[132px\] {
   width: 132px;
+}
+
+.w-\[171px\] {
+  width: 171px;
 }
 
 .w-\[18px\] {
@@ -6010,6 +6030,11 @@ table.table-striped tbody tr:nth-child(even) {
   border-color: rgb(245 245 245 / var(--tw-divide-opacity));
 }
 
+.divide-gray-300 > :not([hidden]) ~ :not([hidden]) {
+  --tw-divide-opacity: 1;
+  border-color: rgb(212 212 212 / var(--tw-divide-opacity));
+}
+
 .self-start {
   align-self: flex-start;
 }
@@ -6110,6 +6135,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .rounded-\[3px\] {
   border-radius: 3px;
+}
+
+.rounded-\[5px\] {
+  border-radius: 5px;
 }
 
 .rounded-\[60px\] {
@@ -6989,6 +7018,10 @@ table.table-striped tbody tr:nth-child(even) {
   stroke: #000;
 }
 
+.stroke-black\/60 {
+  stroke: rgb(0 0 0 / 0.6);
+}
+
 .stroke-gray-300 {
   stroke: #d4d4d4;
 }
@@ -7184,6 +7217,11 @@ table.table-striped tbody tr:nth-child(even) {
 .px-\[10px\] {
   padding-left: 10px;
   padding-right: 10px;
+}
+
+.px-\[11px\] {
+  padding-left: 11px;
+  padding-right: 11px;
 }
 
 .px-\[20px\] {
@@ -7391,6 +7429,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .pl-2 {
   padding-left: 0.5rem;
+}
+
+.pl-2\.5 {
+  padding-left: 0.625rem;
 }
 
 .pl-3 {
@@ -8182,10 +8224,6 @@ table.table-striped tbody tr:nth-child(even) {
 
 .opacity-100 {
   opacity: 1;
-}
-
-.opacity-30 {
-  opacity: 0.3;
 }
 
 .opacity-40 {
@@ -11895,6 +11933,11 @@ https://tailwindcss.com/docs/utility-first
   background-color: rgb(229 229 229 / var(--tw-bg-opacity));
 }
 
+.hover\:bg-gray-300:hover {
+  --tw-bg-opacity: 1;
+  background-color: rgb(212 212 212 / var(--tw-bg-opacity));
+}
+
 .hover\:bg-gray-400:hover {
   --tw-bg-opacity: 1;
   background-color: rgb(163 163 163 / var(--tw-bg-opacity));
@@ -12621,6 +12664,10 @@ https://tailwindcss.com/docs/utility-first
   border-color: rgb(64 64 64 / var(--tw-divide-opacity));
 }
 
+.dark .dark\:divide-white\/20 > :not([hidden]) ~ :not([hidden]) {
+  border-color: rgb(255 255 255 / 0.2);
+}
+
 .dark .dark\:border {
   border-width: 1px;
 }
@@ -13198,6 +13245,11 @@ https://tailwindcss.com/docs/utility-first
 .dark .dark\:hover\:bg-yellow-500:hover {
   --tw-bg-opacity: 1;
   background-color: rgb(247 174 50 / var(--tw-bg-opacity));
+}
+
+.dark .hover\:dark\:bg-\[\#262626\]:hover {
+  --tw-bg-opacity: 1;
+  background-color: rgb(38 38 38 / var(--tw-bg-opacity));
 }
 
 .dark .dark\:hover\:bg-opacity-60:hover {
@@ -13804,8 +13856,16 @@ https://tailwindcss.com/docs/utility-first
     padding-bottom: 1rem;
   }
 
+  .md\:pl-\[125px\] {
+    padding-left: 125px;
+  }
+
   .md\:pl-\[50px\] {
     padding-left: 50px;
+  }
+
+  .md\:pr-\[175px\] {
+    padding-right: 175px;
   }
 
   .md\:text-\[16px\] {
