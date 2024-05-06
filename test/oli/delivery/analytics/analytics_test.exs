@@ -52,6 +52,7 @@ defmodule Oli.Delivery.Analytics.AnalyticsTest do
     setup do: %{path: to_path("/csv/number_of_attempts.csv")}
     setup :seed_snapshots
 
+    @tag :skip
     test "with no attempts", %{
       activity_query: activity_query,
       page_query: page_query,

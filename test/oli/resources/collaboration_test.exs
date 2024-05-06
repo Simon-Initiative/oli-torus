@@ -696,6 +696,11 @@ defmodule Oli.Resources.CollaborationTest do
         %{},
         user_tag: :student1
       )
+      |> Seeder.Section.create_and_enroll_learner(
+        ref(:section),
+        %{},
+        user_tag: :student2
+      )
     end
 
     test "search_posts_for_user_in_point_block/6 returns all posts with given search term", %{
@@ -770,6 +775,96 @@ defmodule Oli.Resources.CollaborationTest do
 
       assert length(results) == 1
       assert Enum.all?(results, &(&1.content.message =~ "test"))
+    end
+
+    test "list_posts_for_user_in_point_block/5 returns correct private notes and counts", %{
+      section: section,
+      page1: page1,
+      student1: student1,
+      student2: student2
+    } do
+      create_post(student1.id, section.id, page1.resource_id, "student 1 public note",
+        visibility: :public
+      )
+
+      create_post(student1.id, section.id, page1.resource_id, "student 1 private note 1",
+        visibility: :private,
+        annotation_type: :point,
+        annotated_block_id: "block1"
+      )
+
+      create_post(student1.id, section.id, page1.resource_id, "student 1 private note 2",
+        visibility: :private,
+        annotation_type: :point,
+        annotated_block_id: "block1"
+      )
+
+      create_post(student1.id, section.id, page1.resource_id, "student 1 private note 3",
+        visibility: :private,
+        annotation_type: :point,
+        annotated_block_id: "block1"
+      )
+
+      create_post(student2.id, section.id, page1.resource_id, "student 2 private note 1",
+        visibility: :private,
+        annotation_type: :point,
+        annotated_block_id: "block1"
+      )
+
+      create_post(student2.id, section.id, page1.resource_id, "student 2 private note 2",
+        visibility: :private,
+        annotation_type: :point,
+        annotated_block_id: "block1"
+      )
+
+      # get all private notes for a resource and student
+      student1_private_notes =
+        Collaboration.list_posts_for_user_in_point_block(
+          section.id,
+          page1.resource_id,
+          student1.id,
+          :private,
+          nil
+        )
+
+      student1_private_notes_counts =
+        Collaboration.list_post_counts_for_user_in_section(
+          section.id,
+          page1.resource_id,
+          student1.id,
+          :private
+        )
+
+      assert length(student1_private_notes) == 3
+      assert Enum.all?(student1_private_notes, &(&1.content.message =~ "student 1 private note"))
+
+      refute Enum.any?(student1_private_notes, &(&1.content.message =~ "student 1 public note"))
+
+      assert %{"block1" => 3} == student1_private_notes_counts
+
+      student2_private_notes =
+        Collaboration.list_posts_for_user_in_point_block(
+          section.id,
+          page1.resource_id,
+          student2.id,
+          :private,
+          nil
+        )
+
+      student2_private_notes_counts =
+        Collaboration.list_post_counts_for_user_in_section(
+          section.id,
+          page1.resource_id,
+          student2.id,
+          :private
+        )
+
+      assert length(student2_private_notes) == 2
+      assert Enum.all?(student2_private_notes, &(&1.content.message =~ "student 2 private note"))
+
+      refute Enum.any?(student2_private_notes, &(&1.content.message =~ "student 2 public note"))
+
+      assert %{"block1" => 2} == student2_private_notes_counts
     end
   end
 
