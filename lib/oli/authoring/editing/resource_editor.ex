@@ -7,9 +7,29 @@ defmodule Oli.Authoring.Editing.ResourceEditor do
   import Ecto.Query, warn: false
   import Oli.Authoring.Editing.Utils
 
+  alias Oli.Resources.ResourceType
+  alias Oli.Authoring.Course.Project
+  alias Oli.Authoring.Course.ProjectResource
   alias Oli.Resources.Revision
   alias Oli.Authoring.Course
   alias Oli.Publishing.AuthoringResolver
+
+  @alternatives_type_id ResourceType.id_for_alternatives()
+  @experiment_id "upgrade_decision_point"
+
+  def get_experiment(project_slug) do
+    from(pr in ProjectResource,
+      join: p in Project,
+      on: p.id == pr.project_id,
+      join: r in Revision,
+      on: r.resource_id == pr.resource_id,
+      where: p.slug == ^project_slug,
+      where: r.resource_type_id == @alternatives_type_id,
+      where: fragment("?->>'strategy' = ?", r.content, @experiment_id),
+      select: r
+    )
+    |> Oli.Repo.one()
+  end
 
   @doc """
   Retrieves a list of all (non-deleted) resources of the specified type for a given project.
