@@ -1469,13 +1469,12 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       )
     end
 
-    test "progress bar is not rendered when there is no progress",
+    test "progress bar is rendered EVEN when there is no progress",
          %{conn: conn, section: section} do
       {:ok, view, _html} = live(conn, Utils.learn_live_path(section.slug))
 
-      # no progress yet, so progress bar is not rendered
-      refute has_element?(view, ~s{div[role="unit_1"] div[role="card_1_progress"]})
-      refute has_element?(view, ~s{div[role="unit_3"] div[role="card_1_progress"]})
+      assert has_element?(view, ~s{div[role="unit_1"] div[role="card 1 progress"]})
+      assert has_element?(view, ~s{div[role="unit_3"] div[role="card 8 progress"]})
     end
 
     test "can see card progress bar for modules at level 2 of hierarchy, and even for pages at level 2",

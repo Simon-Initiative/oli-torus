@@ -1911,7 +1911,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       phx-value-module_resource_id={@resource_id}
       phx-value-is_intro_video="true"
     >
-      <div class="border border-green-500 rounded-xl absolute overflow-hidden -top-[0.7px] -left-[0.7px] h-[170px] w-[294px] cursor-pointer bg-[linear-gradient(180deg,#223_0%,rgba(34,34,51,0.72)_52.6%,rgba(34,34,51,0.00)_100%)]">
+      <div class="rounded-xl absolute overflow-hidden -top-[0.7px] -left-[0.7px] h-[170px] w-[294px] cursor-pointer bg-[linear-gradient(180deg,#223_0%,rgba(34,34,51,0.72)_52.6%,rgba(34,34,51,0.00)_100%)]">
         <div class="mt-[166px]">
           <.progress_bar
             percent={if @intro_video_viewed, do: 100, else: 0}
@@ -1999,7 +1999,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       data-leave-event={leave_unit(@unit_resource_id)}
     >
       <div class="rounded-xl absolute h-[170px] w-[294px] overflow-hidden cursor-pointer bg-[linear-gradient(180deg,#223_0%,rgba(34,34,51,0.72)_52.6%,rgba(34,34,51,0.00)_100%)]">
-        <div class="mt-[166px]">
+        <div class="mt-[166px]" role={"card #{@module_index} progress"}>
           <.progress_bar
             percent={
               parse_student_progress_for_resource(
@@ -2409,10 +2409,6 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       _ ->
         []
     end)
-  end
-
-  defp progress_started(student_progress_per_resource_id, resource_id) do
-    Map.get(student_progress_per_resource_id, resource_id, 0.0) > 0.0
   end
 
   defp parse_student_progress_for_resource(student_progress_per_resource_id, resource_id) do
