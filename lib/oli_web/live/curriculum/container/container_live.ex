@@ -259,8 +259,9 @@ defmodule OliWeb.Curriculum.ContainerLive do
       revision
       |> Resources.change_revision(revision_params)
       |> Map.put(:action, :validate)
+      |> to_form()
 
-    {:noreply, assign(socket, options_modal_assigns: %{modal_assigns | changeset: changeset})}
+    {:noreply, assign(socket, options_modal_assigns: %{modal_assigns | form: changeset})}
   end
 
   def handle_event("save-options", %{"revision" => revision_params}, socket) do
