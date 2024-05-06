@@ -17,7 +17,7 @@ defmodule Oli.Authoring.Editing.ResourceEditor do
   @alternatives_type_id ResourceType.id_for_alternatives()
   @experiment_id "upgrade_decision_point"
 
-  def get_experiment(project_slug) do
+  def get_latest_experiment(project_slug) do
     from(pr in ProjectResource,
       join: p in Project,
       on: p.id == pr.project_id,
@@ -26,7 +26,9 @@ defmodule Oli.Authoring.Editing.ResourceEditor do
       where: p.slug == ^project_slug,
       where: r.resource_type_id == @alternatives_type_id,
       where: fragment("?->>'strategy' = ?", r.content, @experiment_id),
-      select: r
+      select: r,
+      limit: 1,
+      order_by: [desc: r.inserted_at]
     )
     |> Oli.Repo.one()
   end

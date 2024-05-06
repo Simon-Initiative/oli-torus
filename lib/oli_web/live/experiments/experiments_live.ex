@@ -1,18 +1,22 @@
 defmodule OliWeb.Experiments.ExperimentsView do
   use Phoenix.LiveView, layout: {OliWeb.LayoutView, :live}
+  use Phoenix.HTML
+  use OliWeb.Common.Modal
 
   import Oli.Utils, only: [uuid: 0]
   import OliWeb.Components.Common
+  import OliWeb.ErrorHelpers
 
   alias Oli.Resources.ResourceType
   alias Oli.Authoring.Editing.ResourceEditor
   alias Oli.Resources.Revision
+  alias OliWeb.Common.Modal.FormModal
 
   @title "Experiments"
   @alternatives_type_id ResourceType.id_for_alternatives()
 
   def mount(_params, _session, socket) do
-    experiment = ResourceEditor.get_experiment(socket.assigns.project.slug)
+    experiment = ResourceEditor.get_latest_experiment(socket.assigns.project.slug)
 
     socket = assign(socket, is_upgrade_enabled: false)
     socket = assign(socket, title: @title)
@@ -23,6 +27,7 @@ defmodule OliWeb.Experiments.ExperimentsView do
 
   def render(assigns) do
     ~H"""
+    <%= render_modal(assigns) %>
     <div class="flex flex-col gap-y-6 ml-8 mt-4">
       <h3>A/B Testing with UpGrade</h3>
       <p>
@@ -75,6 +80,212 @@ defmodule OliWeb.Experiments.ExperimentsView do
     {:noreply, socket}
   end
 
+  def handle_event("show_create_option_modal", %{"resource_id" => resource_id}, socket) do
+    changeset =
+      {%{id: uuid(), resource_id: resource_id}, %{id: :string, resource_id: :int, name: :string}}
+      |> Ecto.Changeset.cast(%{}, [:id, :resource_id, :name])
+
+    form_body_fn = fn assigns ->
+      ~H"""
+      <div class="form-group">
+        <%= hidden_input(@form, :id) %>
+        <%= hidden_input(@form, :resource_id) %>
+
+        <%= text_input(
+          @form,
+          :name,
+          class: "form-control my-2" <> error_class(@form, :name, "is-invalid"),
+          placeholder: "Enter a name",
+          phx_hook: "InputAutoSelect",
+          required: true
+        ) %>
+      </div>
+      """
+    end
+
+    modal_assigns = %{
+      id: "create_modal",
+      title: "Create Option",
+      submit_label: "Create",
+      changeset: changeset,
+      form_body_fn: form_body_fn,
+      on_validate: "validate_option",
+      on_submit: "create_option"
+    }
+
+    modal = fn assigns ->
+      ~H"""
+      <FormModal.modal {@modal_assigns} />
+      """
+    end
+
+    {:noreply, show_modal(socket, modal, modal_assigns: modal_assigns)}
+  end
+
+  def handle_event(
+        "create_option",
+        %{"params" => %{"id" => option_id, "name" => name, "resource_id" => resource_id}},
+        socket
+      ) do
+    ###
+    resource_id = ensure_integer(resource_id)
+
+    %{content: %{"options" => options} = content} = socket.assigns.experiment
+
+    new_options = [%{"id" => option_id, "name" => name} | options]
+
+    %{project: project, ctx: ctx} = socket.assigns
+
+    case edit_group_options(
+           project.slug,
+           ctx.author,
+           [socket.assigns.experiment],
+           resource_id,
+           content,
+           new_options
+         ) do
+      {:ok, [experiment], _group} ->
+        {:noreply, hide_modal(socket) |> assign(experiment: experiment)}
+
+      {:error, _} ->
+        show_error(socket)
+    end
+  end
+
+  def handle_event(
+        "show_edit_group_modal",
+        %{"resource-id" => _resource_id},
+        socket
+      ) do
+    changeset = Oli.Resources.Revision.changeset(socket.assigns.experiment)
+
+    form_body_fn = fn assigns ->
+      ~H"""
+      <div class="form-group">
+        <%= hidden_input(@form, :id) %>
+        <%= hidden_input(@form, :resource_id) %>
+
+        <%= text_input(
+          @form,
+          :title,
+          class: "form-control my-2" <> error_class(@form, :name, "is-invalid"),
+          placeholder: "Enter a title",
+          phx_hook: "InputAutoSelect",
+          required: true
+        ) %>
+      </div>
+      """
+    end
+
+    modal_assigns = %{
+      id: "edit_modal",
+      title: "Edit",
+      submit_label: "Save",
+      changeset: changeset,
+      form_body_fn: form_body_fn,
+      on_validate: "validate_group",
+      on_submit: "edit_group"
+    }
+
+    modal = fn assigns ->
+      ~H"""
+      <FormModal.modal {@modal_assigns} />
+      """
+    end
+
+    {:noreply, show_modal(socket, modal, modal_assigns: modal_assigns)}
+  end
+
+  def handle_event(
+        "show_edit_option_modal",
+        %{"resource-id" => resource_id, "option-id" => option_id},
+        socket
+      ) do
+    experiment = socket.assigns.experiment
+
+    option = Enum.find(experiment.content["options"], fn o -> o["id"] === option_id end)
+
+    changeset =
+      {%{resource_id: resource_id}, %{id: :string, resource_id: :int, name: :string}}
+      |> Ecto.Changeset.cast(option, [:id, :resource_id, :name])
+
+    form_body_fn = fn assigns ->
+      ~H"""
+      <div class="form-group">
+        <%= hidden_input(@form, :id) %>
+        <%= hidden_input(@form, :resource_id) %>
+
+        <%= text_input(
+          @form,
+          :name,
+          class: "form-control my-2" <> error_class(@form, :name, "is-invalid"),
+          placeholder: "Enter a name",
+          phx_hook: "InputAutoSelect",
+          required: true
+        ) %>
+      </div>
+      """
+    end
+
+    modal_assigns = %{
+      id: "edit_modal",
+      title: "Edit Option",
+      submit_label: "Save",
+      changeset: changeset,
+      form_body_fn: form_body_fn,
+      on_validate: "validate_option",
+      on_submit: "edit_option"
+    }
+
+    modal = fn assigns ->
+      ~H"""
+      <FormModal.modal {@modal_assigns} />
+      """
+    end
+
+    {:noreply, show_modal(socket, modal, modal_assigns: modal_assigns)}
+  end
+
+  def handle_event("validate_option", %{"params" => %{"name" => _}}, socket) do
+    {:noreply, socket}
+  end
+
+  def handle_event(
+        "edit_option",
+        %{"params" => %{"resource_id" => resource_id, "id" => option_id, "name" => name}},
+        socket
+      ) do
+    resource_id = ensure_integer(resource_id)
+
+    %{content: %{"options" => options} = content} = socket.assigns.experiment
+
+    updated_options =
+      Enum.map(options, fn o ->
+        if o["id"] == option_id do
+          %{o | "name" => name}
+        else
+          o
+        end
+      end)
+
+    %{project: project, ctx: ctx} = socket.assigns
+
+    case edit_group_options(
+           project.slug,
+           ctx.author,
+           [socket.assigns.experiment],
+           resource_id,
+           content,
+           updated_options
+         ) do
+      {:ok, [experiment], _group} ->
+        {:noreply, hide_modal(socket) |> assign(experiment: experiment)}
+
+      {:error, _} ->
+        show_error(socket)
+    end
+  end
+
   defp create_experiment(project, author) do
     initial_opts = [
       %{"id" => uuid(), "name" => "Option 1"},
@@ -87,5 +298,48 @@ defmodule OliWeb.Experiments.ExperimentsView do
     }
 
     ResourceEditor.create(project.slug, author, @alternatives_type_id, attrs)
+  end
+
+  defp edit_group_options(
+         project_slug,
+         author,
+         alternatives,
+         resource_id,
+         content,
+         updated_options
+       ) do
+    case ResourceEditor.edit(project_slug, resource_id, author, %{
+           content: %{content | "options" => updated_options}
+         }) do
+      {:ok, updated_group} ->
+        # update groups list to reflect latest update
+        alternatives =
+          Enum.map(alternatives, fn g ->
+            if g.resource_id == updated_group.resource_id do
+              updated_group
+            else
+              g
+            end
+          end)
+
+        {:ok, alternatives, updated_group}
+
+      error ->
+        error
+    end
+  end
+
+  defp ensure_integer(i) when is_integer(i), do: i
+
+  defp ensure_integer(s) when is_binary(s) do
+    case Integer.parse(s) do
+      {i, _rem} -> i
+      _ -> throw("Invalid integer")
+    end
+  end
+
+  defp show_error(socket) do
+    {:noreply,
+     put_flash(socket, :error, "Something went wrong. Please refresh the page and try again.")}
   end
 end
