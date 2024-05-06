@@ -14,6 +14,9 @@ defmodule OliWeb.Experiments.ExperimentsView do
   alias OliWeb.Common.Modal.DeleteModal
   alias OliWeb.Common.Modal.FormModal
 
+  on_mount {OliWeb.LiveSessionPlugs.SetUser, :default}
+  on_mount {OliWeb.LiveSessionPlugs.SetProject, :default}
+
   @title "Experiments"
   @alternatives_type_id ResourceType.id_for_alternatives()
 
@@ -129,20 +132,15 @@ defmodule OliWeb.Experiments.ExperimentsView do
         %{"params" => %{"id" => option_id, "name" => name, "resource_id" => resource_id}},
         socket
       ) do
-    ###
-    resource_id = ensure_integer(resource_id)
-
-    %{content: %{"options" => options} = content} = socket.assigns.experiment
-
+    %{project: project, ctx: ctx, experiment: experiment} = socket.assigns
+    %{content: %{"options" => options} = content} = experiment
     new_options = [%{"id" => option_id, "name" => name} | options]
-
-    %{project: project, ctx: ctx} = socket.assigns
 
     case edit_group_options(
            project.slug,
            ctx.author,
            [socket.assigns.experiment],
-           resource_id,
+           ensure_integer(resource_id),
            content,
            new_options
          ) do
@@ -203,10 +201,8 @@ defmodule OliWeb.Experiments.ExperimentsView do
         %{"resource-id" => resource_id, "option-id" => option_id},
         socket
       ) do
-    resource_id = ensure_integer(resource_id)
-    %{project: project, ctx: ctx} = socket.assigns
-
-    %{content: %{"options" => options} = content} = experiment = socket.assigns.experiment
+    %{project: project, ctx: ctx, experiment: experiment} = socket.assigns
+    %{content: %{"options" => options} = content} = experiment
 
     new_options = Enum.filter(options, fn o -> o["id"] != option_id end)
 
@@ -214,7 +210,7 @@ defmodule OliWeb.Experiments.ExperimentsView do
            project.slug,
            ctx.author,
            [experiment],
-           resource_id,
+           ensure_integer(resource_id),
            content,
            new_options
          ) do
@@ -231,7 +227,6 @@ defmodule OliWeb.Experiments.ExperimentsView do
         %{"resource-id" => resource_id, "option-id" => option_id},
         socket
       ) do
-    resource_id = ensure_integer(resource_id)
     experiment = socket.assigns.experiment
     option = Enum.find(experiment.content["options"], fn o -> o["id"] === option_id end)
 
@@ -251,7 +246,10 @@ defmodule OliWeb.Experiments.ExperimentsView do
       group: experiment,
       option: option,
       on_delete: "delete_option",
-      phx_values: ["phx-value-resource-id": resource_id, "phx-value-option-id": option_id]
+      phx_values: [
+        "phx-value-resource-id": ensure_integer(resource_id),
+        "phx-value-option-id": option_id
+      ]
     }
 
     modal = fn assigns ->
@@ -268,16 +266,13 @@ defmodule OliWeb.Experiments.ExperimentsView do
         %{"params" => %{"resource_id" => resource_id, "title" => title}},
         socket
       ) do
-    %{project: project, ctx: ctx} = socket.assigns
-    resource_id = ensure_integer(resource_id)
-
-    experiment = socket.assigns.experiment
+    %{project: project, ctx: ctx, experiment: experiment} = socket.assigns
 
     case edit_group_title(
            project.slug,
            ctx.author,
            [experiment],
-           resource_id,
+           ensure_integer(resource_id),
            title
          ) do
       {:ok, [experiment], _group} ->

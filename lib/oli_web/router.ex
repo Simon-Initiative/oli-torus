@@ -418,16 +418,9 @@ defmodule OliWeb.Router do
 
     # Experiment management
 
-    live_session :another_load_projects,
-      on_mount: [
-        OliWeb.LiveSessionPlugs.SetUser,
-        OliWeb.LiveSessionPlugs.SetProject
-      ] do
-      live("/:project_id/experiments", Experiments.ExperimentsView)
-    end
-
     get("/:project_id/experiments/segment.json", ExperimentController, :segment_download)
     get("/:project_id/experiments/experiment.json", ExperimentController, :experiment_download)
+    live("/:project_id/experiments", Experiments.ExperimentsView)
 
     # Curriculum
     live(
