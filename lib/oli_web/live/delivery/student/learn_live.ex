@@ -847,11 +847,11 @@ defmodule OliWeb.Delivery.Student.LearnLive do
             <%= "UNIT #{@unit["numbering"]["index"]}" %>
           </div>
           <div class="mb-6 flex flex-col items-start gap-[6px] w-full">
-            <h3 class="text-[26px] leading-[32px] tracking-[0.02px] font-normal dark:text-[#DDD]">
-              <%= @unit["title"] %>
-            </h3>
-            <div class="flex items-center w-full gap-3">
-              <div class="flex items-center gap-3" role="schedule_details">
+            <div class="flex w-full">
+              <h3 class="text-[26px] leading-[32px] tracking-[0.02px] font-normal dark:text-[#DDD]">
+                <%= @unit["title"] %>
+              </h3>
+              <div class="ml-auto flex items-center gap-3" role="schedule_details">
                 <div class="text-[14px] leading-[32px] tracking-[0.02px] font-semibold">
                   <span class="text-gray-400 opacity-80 dark:text-[#696974] dark:opacity-100 mr-1">
                     Due:
@@ -863,31 +863,31 @@ defmodule OliWeb.Delivery.Student.LearnLive do
                   ) %>
                 </div>
               </div>
-              <div class="ml-auto flex items-center gap-6">
-                <Student.score_summary :if={@progress == 100} raw_avg_score={@unit_raw_avg_score} />
-                <.progress_bar
-                  percent={@progress}
-                  width="100px"
-                  on_going_colour="bg-[#0CAF61]"
-                  completed_colour="bg-[#0CAF61]"
-                  role={"unit_#{@unit["numbering"]["index"]}_progress"}
-                  show_percent={@progress != 100}
+            </div>
+            <div class="flex items-center gap-6">
+              <.progress_bar
+                percent={@progress}
+                width="194px"
+                on_going_colour="bg-[#0CAF61]"
+                completed_colour="bg-[#0CAF61]"
+                role={"unit_#{@unit["numbering"]["index"]}_progress"}
+                show_percent={@progress != 100}
+              />
+              <svg
+                :if={@progress == 100}
+                xmlns="http://www.w3.org/2000/svg"
+                width="25"
+                height="24"
+                viewBox="0 0 25 24"
+                fill="none"
+                role="unit completed check icon"
+              >
+                <path
+                  d="M10.0496 17.9996L4.34961 12.2996L5.77461 10.8746L10.0496 15.1496L19.2246 5.97461L20.6496 7.39961L10.0496 17.9996Z"
+                  fill="#0CAF61"
                 />
-                <svg
-                  :if={@progress == 100}
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="25"
-                  height="24"
-                  viewBox="0 0 25 24"
-                  fill="none"
-                  role="unit completed check icon"
-                >
-                  <path
-                    d="M10.0496 17.9996L4.34961 12.2996L5.77461 10.8746L10.0496 15.1496L19.2246 5.97461L20.6496 7.39961L10.0496 17.9996Z"
-                    fill="#0CAF61"
-                  />
-                </svg>
-              </div>
+              </svg>
+              <Student.score_summary :if={@progress == 100} raw_avg_score={@unit_raw_avg_score} />
             </div>
           </div>
         </div>
