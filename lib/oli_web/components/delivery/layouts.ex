@@ -286,6 +286,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
   attr(:next_page, :map)
   attr(:section_slug, :string)
   attr(:request_path, :string)
+  attr(:selected_view, :string, doc: "The selected view for the Learn page (gallery or outline)")
 
   def previous_next_nav(assigns) do
     # <.links /> were changed from "navigate" to "href" to force a page reload
@@ -319,10 +320,13 @@ defmodule OliWeb.Components.Delivery.Layouts do
         role="prev_page"
       >
         <div class="px-2 lg:px-6 rounded justify-end items-center gap-2 flex">
-          <.link href={resource_navigation_url(@previous_page, @section_slug, @request_path)}>
-            <div class="w-[72px] h-10 opacity-30 hover:opacity-40 bg-blue-600 flex items-center justify-center cursor-pointer">
-              <.left_arrow />
-            </div>
+          <.link
+            href={
+              resource_navigation_url(@previous_page, @section_slug, @request_path, @selected_view)
+            }
+            class="w-[72px] h-10 opacity-90 hover:opacity-100 bg-blue-600 flex items-center justify-center"
+          >
+            <.left_arrow />
           </.link>
         </div>
         <div class="grow shrink basis-0 dark:text-white text-xs font-normal overflow-hidden text-ellipsis">
@@ -339,10 +343,11 @@ defmodule OliWeb.Components.Delivery.Layouts do
           <%= @next_page["title"] %>
         </div>
         <div class="px-2 lg:px-6 py-2 rounded justify-end items-center gap-2 flex">
-          <.link href={resource_navigation_url(@next_page, @section_slug, @request_path)}>
-            <div class="w-[72px] h-10 opacity-90 hover:opacity-100 bg-blue-600 flex items-center justify-center cursor-pointer">
-              <.right_arrow />
-            </div>
+          <.link
+            href={resource_navigation_url(@next_page, @section_slug, @request_path, @selected_view)}
+            class="w-[72px] h-10 opacity-90 hover:opacity-100 bg-blue-600 flex items-center justify-center"
+          >
+            <.right_arrow />
           </.link>
         </div>
       </div>
@@ -368,22 +373,32 @@ defmodule OliWeb.Components.Delivery.Layouts do
   defp resource_navigation_url(
          %{"slug" => slug, "type" => "page", "id" => resource_id},
          section_slug,
-         request_path
+         request_path,
+         selected_view
        ) do
     # If the request_path is the Learn page and we navigate to a different lesson,
     # we need to update the request_path to include the new target resource.
     request_path =
       if request_path && String.contains?(request_path, "/learn") do
-        Utils.learn_live_path(section_slug, target_resource_id: resource_id)
+        Utils.learn_live_path(section_slug,
+          target_resource_id: resource_id,
+          selected_view: selected_view
+        )
       else
         request_path
       end
 
-    Utils.lesson_live_path(section_slug, slug, request_path: request_path)
+    Utils.lesson_live_path(section_slug, slug,
+      request_path: request_path,
+      selected_view: selected_view
+    )
   end
 
-  defp resource_navigation_url(%{"id" => container_id}, section_slug, _) do
-    Utils.learn_live_path(section_slug, target_resource_id: container_id)
+  defp resource_navigation_url(%{"id" => container_id}, section_slug, _, selected_view) do
+    Utils.learn_live_path(section_slug,
+      target_resource_id: container_id,
+      selected_view: selected_view
+    )
   end
 
   attr(:to, :string)
