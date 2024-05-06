@@ -528,7 +528,7 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
             <label for="introduction_content">Introduction content</label>
             <.input type="hidden" name="revision[intro_content]" field={@form[:intro_content] || %{}} />
             <div class="form-control overflow-hidden truncate-form-control">
-              <div :if={@form[:intro_content] not in [nil, "", %{}]}>
+              <div :if={fetch_field(@form.source, :intro_content) not in [nil, "", %{}]}>
                 <%= Phoenix.HTML.raw(
                   Oli.Rendering.Content.render(
                     %Oli.Rendering.Context{},
