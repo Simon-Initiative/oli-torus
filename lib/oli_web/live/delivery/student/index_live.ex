@@ -232,6 +232,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
     ~H"""
     <div class="w-full h-96 relative flex items-center">
       <div class="inset-0 absolute">
+        <div class="inset-0 absolute bg-purple-700 bg-opacity-50"></div>
         <img
           src="/images/gradients/home-bg.png"
           alt="Background Image"
@@ -245,7 +246,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
       </div>
 
       <div class="w-full pl-14 pr-5 absolute flex flex-col justify-center items-start gap-6">
-        <div class="w-full text-2xl font-bold tracking-wide whitespace-nowrap overflow-hidden">
+        <div class="w-full text-white text-2xl font-bold tracking-wide whitespace-nowrap overflow-hidden">
           Hi, <%= user_given_name(@ctx) %> !
         </div>
         <div class="w-full flex flex-col items-start gap-2.5">

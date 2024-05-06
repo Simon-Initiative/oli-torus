@@ -252,7 +252,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
           Hierarchy.find_module_ancestor(
             full_hierarchy,
             String.to_integer(resource_id),
-            container_resource_type_id
+            @container_resource_type_id
           )["resource_id"]
 
         unit_resource_id =
