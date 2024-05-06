@@ -791,7 +791,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
                 <.progress_bar
                   percent={@progress}
                   width="100px"
-                  on_going_colour="bg-[#0F6CF5]"
+                  on_going_colour="bg-[#0CAF61]"
                   completed_colour="bg-[#0CAF61]"
                   role={"unit_#{@unit["numbering"]["index"]}_progress"}
                   show_percent={@progress != 100}
@@ -814,7 +814,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
             </div>
           </div>
         </div>
-        <div class="w-[288px]">
+        <div class="w-[294px]">
           <.card
             card={@unit}
             module_index={1}
@@ -868,7 +868,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
                 <.progress_bar
                   percent={@progress}
                   width="100px"
-                  on_going_colour="bg-[#0F6CF5]"
+                  on_going_colour="bg-[#0CAF61]"
                   completed_colour="bg-[#0CAF61]"
                   role={"unit_#{@unit["numbering"]["index"]}_progress"}
                   show_percent={@progress != 100}
@@ -894,14 +894,14 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         <div class="flex relative">
           <button
             id={"slider_left_button_#{@unit["resource_id"]}"}
-            class="hidden absolute items-center justify-start -top-1 -left-1 w-10 bg-gradient-to-r from-gray-100 dark:from-[#0D0C0F] h-[180px] z-20 text-gray-700 dark:text-gray-600 hover:text-xl hover:dark:text-gray-200 hover:w-16 cursor-pointer"
+            class="hidden absolute items-center justify-start -top-1 -left-1 w-10 bg-gradient-to-r from-gray-100 dark:from-[#0D0C0F] h-[187px] z-20 text-gray-700 dark:text-gray-600 hover:text-xl hover:dark:text-gray-200 hover:w-16 cursor-pointer"
             tabindex="-1"
           >
             <i class="fa-solid fa-chevron-left ml-3"></i>
           </button>
           <button
             id={"slider_right_button_#{@unit["resource_id"]}"}
-            class="hidden absolute items-center justify-end -top-1 -right-1 w-10 bg-gradient-to-l from-gray-100 dark:from-[#0D0C0F] h-[180px] z-20 text-gray-700 dark:text-gray-600 hover:text-xl hover:dark:text-gray-200 hover:w-16 cursor-pointer"
+            class="hidden absolute items-center justify-end -top-1 -right-1 w-10 bg-gradient-to-l from-gray-100 dark:from-[#0D0C0F] h-[187px] z-20 text-gray-700 dark:text-gray-600 hover:text-xl hover:dark:text-gray-200 hover:w-16 cursor-pointer"
             tabindex="-1"
           >
             <i class="fa-solid fa-chevron-right mr-3"></i>
@@ -912,7 +912,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
             initially_enabled={false}
             phx-hook="SliderScroll"
             data-resource_id={@unit["resource_id"]}
-            class="flex gap-4 overflow-x-scroll overflow-y-hidden h-[178px] pt-[3px] px-[3px] scrollbar-hide"
+            class="flex overflow-x-scroll overflow-y-hidden h-[187px] pt-[5px] px-[5px] -left-[5px] scrollbar-hide"
           >
             <.intro_video_card
               :if={@unit["intro_video"]}
@@ -1834,27 +1834,32 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     ~H"""
     <div
       id={"intro_card_#{@card_resource_id}"}
-      class="relative slider-card hover:scale-[1.01]"
+      class="relative slider-card hover:scale-[1.01] mr-4"
       role="youtube_intro_video_card"
       phx-keydown="intro_card_keydown"
       phx-value-video_url={@video_url}
       phx-value-card_resource_id={@card_resource_id}
       data-event={leave_unit(@unit_resource_id)}
+      phx-click="play_video"
+      phx-value-video_url={@video_url}
+      phx-value-module_resource_id={@resource_id}
+      phx-value-is_intro_video="true"
     >
-      <div class="z-10 rounded-xl overflow-hidden absolute w-[288px] h-10">
-        <.progress_bar
-          percent={if @intro_video_viewed, do: 100, else: 0}
-          width="100%"
-          height="h-[4px]"
-          show_percent={false}
-          on_going_colour="bg-[#0F6CF5]"
-          completed_colour="bg-[#0CAF61]"
-          role="intro video card progress"
-        />
+      <div class="rounded-xl absolute overflow-hidden h-[170px] w-[294px] cursor-pointer bg-[linear-gradient(180deg,#223_0%,rgba(34,34,51,0.72)_52.6%,rgba(34,34,51,0.00)_100%)]">
+        <div class="mt-[166px]">
+          <.progress_bar
+            percent={if @intro_video_viewed, do: 100, else: 0}
+            width="100%"
+            height="h-[4px]"
+            show_percent={false}
+            on_going_colour="bg-[#0CAF61]"
+            completed_colour="bg-[#0CAF61]"
+            role="intro video card progress"
+          />
+        </div>
       </div>
-      <div class="rounded-xl absolute -top-[0.7px] -left-[0.7px] h-[163px] w-[289.5px] cursor-pointer bg-[linear-gradient(180deg,#223_0%,rgba(34,34,51,0.72)_52.6%,rgba(34,34,51,0.00)_100%)]" />
       <div
-        class="flex flex-col items-center rounded-xl h-[162px] w-[288px] bg-gray-200/50 shrink-0 px-5 pt-[15px] bg-cover bg-center"
+        class="flex flex-col items-center rounded-xl h-[170px] w-[294px] bg-gray-200/50 shrink-0 px-5 pt-[15px] bg-cover bg-center"
         style={"background-image: url('#{WebUtils.convert_to_youtube_image_url(@video_url)}');"}
       >
         <h5 class="text-[13px] leading-[18px] font-bold opacity-60 text-gray-500 text-white dark:text-opacity-50 self-start">
@@ -1868,10 +1873,6 @@ defmodule OliWeb.Delivery.Student.LearnLive do
           <div
             role="play_unit_intro_video"
             class="w-full h-full absolute top-0 left-0 flex items-center justify-center"
-            phx-click="play_video"
-            phx-value-video_url={@video_url}
-            phx-value-module_resource_id={@resource_id}
-            phx-value-is_intro_video="true"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -1894,29 +1895,34 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     ~H"""
     <div
       id={"intro_card_#{@card_resource_id}"}
-      class="relative slider-card hover:scale-[1.01]"
+      class="relative slider-card hover:scale-[1.01] mr-4"
       role="intro_video_card"
       phx-keydown="intro_card_keydown"
       phx-value-video_url={@video_url}
       phx-value-card_resource_id={@card_resource_id}
       data-event={leave_unit(@unit_resource_id)}
+      phx-click="play_video"
+      phx-value-video_url={@video_url}
+      phx-value-module_resource_id={@resource_id}
+      phx-value-is_intro_video="true"
     >
-      <div class="z-20 rounded-xl overflow-hidden absolute w-[288px] h-10">
-        <.progress_bar
-          percent={if @intro_video_viewed, do: 100, else: 0}
-          width="100%"
-          height="h-[4px]"
-          show_percent={false}
-          on_going_colour="bg-[#0F6CF5]"
-          completed_colour="bg-[#0CAF61]"
-          role="intro video card progress"
-        />
+      <div class="border border-green-500 rounded-xl absolute overflow-hidden -top-[0.7px] -left-[0.7px] h-[170px] w-[294px] cursor-pointer bg-[linear-gradient(180deg,#223_0%,rgba(34,34,51,0.72)_52.6%,rgba(34,34,51,0.00)_100%)]">
+        <div class="mt-[166px]">
+          <.progress_bar
+            percent={if @intro_video_viewed, do: 100, else: 0}
+            width="100%"
+            height="h-[4px]"
+            show_percent={false}
+            on_going_colour="bg-[#0CAF61]"
+            completed_colour="bg-[#0CAF61]"
+            role="intro video card progress"
+          />
+        </div>
       </div>
-      <div class="z-10 rounded-xl absolute -top-[0.7px] -left-[0.7px] h-[163px] w-[289.5px] cursor-pointer bg-[linear-gradient(180deg,#223_0%,rgba(34,34,51,0.72)_52.6%,rgba(34,34,51,0.00)_100%)]" />
-      <div class="relative flex flex-col items-center rounded-xl h-[162px] w-[288px] bg-gray-200/50 shrink-0 px-5 pt-[15px] bg-cover bg-center">
+      <div class="relative flex flex-col items-center rounded-xl h-[170px] w-[294px] bg-gray-200/50 shrink-0 px-5 pt-[15px] bg-cover bg-center">
         <video
           id={"video_preview_image_#{@video_url}"}
-          class="rounded-xl object-cover absolute -top-[0.7px] -left-[0.7px] h-[163px] w-[289.5px]"
+          class="rounded-xl object-cover absolute -top-[0.7px] -left-[0.7px] h-[170px] w-[294px]"
           preload="metadata"
         >
           <source src={"#{@video_url}#t=0.5"} /> Your browser does not support the video tag.
@@ -1932,10 +1938,6 @@ defmodule OliWeb.Delivery.Student.LearnLive do
           <div
             role="play_unit_intro_video"
             class="z-30 w-full h-full absolute top-0 left-0 flex items-center justify-center"
-            phx-click="play_video"
-            phx-value-video_url={@video_url}
-            phx-value-module_resource_id={@resource_id}
-            phx-value-is_intro_video="true"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -1984,40 +1986,39 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       phx-value-slug={@card["slug"]}
       phx-value-type={if @is_page, do: "page", else: "module"}
       class={[
-        "relative hover:scale-[1.01] transition-transform duration-150",
+        "relative hover:scale-[1.01] transition-transform duration-150 mr-4",
         if(!@is_page, do: "slider-card")
       ]}
       role={"card_#{@module_index}"}
       data-enter-event={enter_module(@unit_resource_id)}
       data-leave-event={leave_unit(@unit_resource_id)}
     >
-      <div class="z-10 rounded-xl overflow-hidden absolute h-[163px] w-[288px] cursor-pointer">
-        <.progress_bar
-          :if={progress_started(@student_progress_per_resource_id, @card["resource_id"])}
-          percent={
-            parse_student_progress_for_resource(
-              @student_progress_per_resource_id,
-              @card["resource_id"]
-            )
-          }
-          width="100%"
-          height="h-[4px]"
-          show_percent={false}
-          on_going_colour="bg-[#0F6CF5]"
-          completed_colour="bg-[#0CAF61]"
-          role={"card_#{@module_index}_progress"}
-        />
-      </div>
-      <div class="rounded-xl absolute h-[163px] w-[288px] cursor-pointer bg-[linear-gradient(180deg,#223_0%,rgba(34,34,51,0.72)_52.6%,rgba(34,34,51,0.00)_100%)]">
+      <div class="rounded-xl absolute h-[170px] w-[294px] overflow-hidden cursor-pointer bg-[linear-gradient(180deg,#223_0%,rgba(34,34,51,0.72)_52.6%,rgba(34,34,51,0.00)_100%)]">
+        <div class="mt-[166px]">
+          <.progress_bar
+            percent={
+              parse_student_progress_for_resource(
+                @student_progress_per_resource_id,
+                @card["resource_id"]
+              )
+            }
+            width="100%"
+            height="h-[4px]"
+            show_percent={false}
+            on_going_colour="bg-[#0CAF61]"
+            completed_colour="bg-[#0CAF61]"
+            role={"card_#{@module_index}_progress"}
+          />
+        </div>
       </div>
       <.page_icon :if={@is_page} graded={@card["graded"]} />
 
-      <div class="h-[170px] w-[288px]">
+      <div class="h-[170px] w-[294px]">
         <div
           class={[
-            "flex flex-col gap-[5px] cursor-pointer rounded-xl h-[162px] w-[288px] shrink-0 mb-1 px-5 pt-[15px] bg-gray-200 z-10 bg-cover bg-center",
+            "flex flex-col gap-[5px] cursor-pointer rounded-xl h-[170px] w-[294px] shrink-0 mb-1 px-5 pt-[15px] bg-gray-200 z-10 bg-cover bg-center",
             if(@selected,
-              do: "bg-gray-400 outline outline-2 outline-gray-800 dark:outline-white"
+              do: "bg-gray-400 outline outline-[3px] outline-gray-800 dark:outline-white"
             )
           ]}
           style={"background-image: url('#{if(@bg_image_url in ["", nil], do: @default_image, else: @bg_image_url)}');"}
@@ -2031,7 +2032,6 @@ defmodule OliWeb.Delivery.Student.LearnLive do
             <%= @card["title"] %>
           </h5>
         </div>
-
         <div
           :if={@selected}
           class={[
