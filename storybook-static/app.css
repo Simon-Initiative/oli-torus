@@ -5569,6 +5569,11 @@ table.table-striped tbody tr:nth-child(even) {
   transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
 }
 
+.-translate-y-\[calc\(100\%\+58px\)\] {
+  --tw-translate-y: calc(calc(100% + 58px) * -1);
+  transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
+}
+
 .translate-x-0 {
   --tw-translate-x: 0px;
   transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
@@ -7716,6 +7721,11 @@ table.table-striped tbody tr:nth-child(even) {
 .text-3xl {
   font-size: 1.875rem;
   line-height: 2.25rem;
+}
+
+.text-4xl {
+  font-size: 2.25rem;
+  line-height: 2.5rem;
 }
 
 .text-6xl {
@@ -13729,6 +13739,11 @@ https://tailwindcss.com/docs/utility-first
     text-align: right;
   }
 
+  .sm\:text-base {
+    font-size: 1rem;
+    line-height: 1.5rem;
+  }
+
   .sm\:text-sm {
     font-size: 0.875rem;
     line-height: 1.25rem;
@@ -13901,6 +13916,10 @@ https://tailwindcss.com/docs/utility-first
     gap: 30px;
   }
 
+  .md\:overflow-x-auto {
+    overflow-x: auto;
+  }
+
   .md\:overflow-x-hidden {
     overflow-x: hidden;
   }
@@ -13959,6 +13978,11 @@ https://tailwindcss.com/docs/utility-first
 
   .md\:pr-\[175px\] {
     padding-right: 175px;
+  }
+
+  .md\:text-6xl {
+    font-size: 3.75rem;
+    line-height: 1;
   }
 
   .md\:text-\[16px\] {
