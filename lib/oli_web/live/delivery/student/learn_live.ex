@@ -63,6 +63,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         student_progress_per_resource_id: %{},
         student_raw_avg_score_per_page_id: %{},
         student_raw_avg_score_per_container_id: %{},
+        page_metrics_per_module_id: %{},
         viewed_intro_video_resource_ids:
           get_viewed_intro_video_resource_ids(
             section.slug,
@@ -108,7 +109,6 @@ defmodule OliWeb.Delivery.Student.LearnLive do
          socket
          |> assign(selected_view: selected_view)
          |> update(:units, fn _units -> full_hierarchy["children"] end)
-         |> maybe_enable_gallery_slider_buttons(full_hierarchy, selected_view)
          |> scroll_to_target_resource(resource_id, full_hierarchy, selected_view)}
 
       %{"selected_view" => selected_view} ->
@@ -117,13 +117,11 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         {:noreply,
          socket
          |> assign(selected_view: selected_view)
-         |> update(:units, fn _units -> full_hierarchy["children"] end)
-         |> maybe_enable_gallery_slider_buttons(full_hierarchy, selected_view)}
+         |> update(:units, fn _units -> full_hierarchy["children"] end)}
 
       %{"target_resource_id" => resource_id} ->
         {:noreply,
          socket
-         |> maybe_enable_gallery_slider_buttons(full_hierarchy, :gallery)
          |> scroll_to_target_resource(resource_id, full_hierarchy, :gallery)}
 
       _ ->
@@ -621,8 +619,6 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       selected_view: selected_view
     } = socket.assigns
 
-    full_hierarchy = get_or_compute_full_hierarchy(section)
-
     send(self(), :gc)
 
     {:noreply,
@@ -647,8 +643,8 @@ defmodule OliWeb.Delivery.Student.LearnLive do
            end
          )
      )
-     |> update(:units, fn _units -> full_hierarchy["children"] end)
-     |> maybe_enable_gallery_slider_buttons(full_hierarchy, selected_view)}
+     |> update(:units, fn _units -> get_or_compute_full_hierarchy(section)["children"] end)
+     |> maybe_assign_gallery_data(selected_view)}
   end
 
   # needed to ignore results of Task invocation
@@ -724,6 +720,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
           student_end_date_exceptions_per_resource_id={@student_end_date_exceptions_per_resource_id}
           selected_module_per_unit_resource_id={@selected_module_per_unit_resource_id}
           student_raw_avg_score_per_page_id={@student_raw_avg_score_per_page_id}
+          page_metrics_per_module_id={@page_metrics_per_module_id}
           viewed_intro_video_resource_ids={@viewed_intro_video_resource_ids}
           progress={
             parse_student_progress_for_resource(
@@ -759,6 +756,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   attr :unit_raw_avg_score, :map
   attr :assistant_enabled, :boolean, required: true
   attr :display_props_per_module_id, :map
+  attr :page_metrics_per_module_id, :map
 
   # top level page as a card with title and header
   def gallery_row(%{unit: %{"resource_type_id" => 1}} = assigns) do
@@ -938,6 +936,10 @@ defmodule OliWeb.Delivery.Student.LearnLive do
                 selected={
                   @selected_module_per_unit_resource_id[@unit["resource_id"]]["resource_id"] ==
                     module["resource_id"]
+                }
+                page_metrics={
+                  @page_metrics_per_module_id[module["resource_id"]] ||
+                    %{total_pages_count: 0, completed_pages_count: 0, total_duration_minutes: 0}
                 }
               />
             </.custom_focus_wrap>
@@ -1286,6 +1288,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   attr :show_completed_pages, :boolean, default: true
 
   def module_content_header(assigns) do
+    # TODO, do not recalculate module metrics!
     ~H"""
     <div class="w-full border-b dark:border-white/20 flex items-center justify-between pb-1.5">
       <div role="completed count" class="flex gap-2.5">
@@ -1295,9 +1298,12 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         <div class="w-34 h-8 pl-1 flex gap-1.5">
           <div class="flex gap-0.5 items-center">
             <span class="opacity-80 dark:text-white text-[13px] font-normal font-['Open Sans'] leading-loose">
-              <%= case count_completed_and_total_pages(@module) do
-                {1, 1} -> "1 of 1 Page"
-                {completed_count, total_count} -> "#{completed_count} of #{total_count} Pages"
+              <%= case module_page_metrics(@module) do
+                %{total_pages_count: 1, completed_pages_count: 1} ->
+                  "1 of 1 Page"
+
+                %{total_pages_count: total_count, completed_pages_count: completed_count} ->
+                  "#{completed_count} of #{total_count} Pages"
               end %>
             </span>
           </div>
@@ -1628,7 +1634,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     <button
       role={"#{@type} #{@numbering_index} details"}
       class={[
-        "w-full pl-[5px] pr-[7px] py-2.5 rounded-lg justify-start items-center gap-5 flex rounded-lg focus:bg-[#000000]/5 hover:bg-[#000000]/5 dark:focus:bg-[#FFFFFF]/5 dark:hover:bg-[#FFFFFF]/5",
+        "w-full pl-[5px] pr-[7px] py-2.5 rounded-lg justify-start items-center gap-5 flex focus:bg-[#000000]/5 hover:bg-[#000000]/5 dark:focus:bg-[#FFFFFF]/5 dark:hover:bg-[#FFFFFF]/5",
         if(@graded,
           do: "font-semibold hover:font-bold focus:font-bold",
           else: "font-normal hover:font-medium focus:font-medium"
@@ -1970,6 +1976,9 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   attr :student_progress_per_resource_id, :map
   attr :default_image, :string, default: @default_image
 
+  attr :page_metrics, :map,
+    default: %{total_pages_count: 0, completed_pages_count: 0, total_duration_minutes: 0}
+
   def card(assigns) do
     assigns = Map.put(assigns, :is_page, is_page(assigns.card))
 
@@ -2036,6 +2045,15 @@ defmodule OliWeb.Delivery.Student.LearnLive do
           <h5 class="text-[18px] leading-[25px] font-bold text-white z-10">
             <%= @card["title"] %>
           </h5>
+          <div :if={!@is_page} class="rounded-lg p-2 bg-gray-300 bg-opacity-50">
+            <div :if={@page_metrics.completed_pages_count < @page_metrics.total_pages_count}>
+              <%= @page_metrics.completed_pages_count %> - <%= @page_metrics.total_pages_count %> - <%= @page_metrics.total_duration_minutes %>
+            </div>
+
+            <div :if={@page_metrics.completed_pages_count == @page_metrics.total_pages_count}>
+              Completed!!
+            </div>
+          </div>
         </div>
         <div
           :if={@selected}
@@ -2286,20 +2304,80 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   defp completed_page?(false = _graded, visited?, _score, progress),
     do: visited? and progress == 1.0
 
-  defp count_completed_and_total_pages(container) do
-    page_resource_type_id = Oli.Resources.ResourceType.get_id_by_type("page")
-    container_resource_type_id = Oli.Resources.ResourceType.get_id_by_type("container")
+  defp module_page_metrics(container) do
+    Enum.reduce(
+      container["children"],
+      %{total_pages_count: 0, completed_pages_count: 0, total_duration_minutes: 0},
+      fn
+        %{"resource_type_id" => @page_resource_type_id} = page,
+        %{
+          total_pages_count: total_pages_count,
+          completed_pages_count: completed_pages_count,
+          total_duration_minutes: total_duration_minutes
+        } ->
+          %{
+            total_pages_count: total_pages_count + 1,
+            completed_pages_count: completed_pages_count + if(page["completed"], do: 1, else: 0),
+            total_duration_minutes: total_duration_minutes + (page["duration_minutes"] || 0)
+          }
 
-    Enum.reduce(container["children"], {0, 0}, fn
-      %{"resource_type_id" => ^page_resource_type_id} = page, {completed_count, total_count} ->
-        {if(page["completed"], do: 1, else: 0) + completed_count, total_count + 1}
+        %{"resource_type_id" => @container_resource_type_id} = section,
+        %{
+          total_pages_count: total_pages_count,
+          completed_pages_count: completed_pages_count,
+          total_duration_minutes: total_duration_minutes
+        } ->
+          %{
+            total_pages_count: total,
+            completed_pages_count: completed,
+            total_duration_minutes: minutes
+          } =
+            module_page_metrics(section)
 
-      %{"resource_type_id" => ^container_resource_type_id} = section,
-      {completed_count, total_count} ->
-        {completed, total} = count_completed_and_total_pages(section)
+          %{
+            total_pages_count: total_pages_count + total,
+            completed_pages_count: completed_pages_count + completed,
+            total_duration_minutes: total_duration_minutes + minutes
+          }
+      end
+    )
+  end
 
-        {completed + completed_count, total + total_count}
-    end)
+  defp page_metrics_per_module_id(resources, pages_per_module_id \\ %{})
+
+  defp page_metrics_per_module_id([], pages_per_module_id), do: pages_per_module_id
+
+  defp page_metrics_per_module_id(
+         [
+           %{"numbering" => %{"level" => level}, "resource_type_id" => resource_type_id} =
+             resource
+           | rest
+         ],
+         pages_per_module_id
+       ) do
+    resource_completed_and_total_pages =
+      case {level, resource_type_id} do
+        {1, @container_resource_type_id} ->
+          # unit
+          Map.merge(
+            pages_per_module_id,
+            page_metrics_per_module_id(resource["children"], pages_per_module_id)
+          )
+
+        {2, @container_resource_type_id} ->
+          # module
+          page_metrics_per_module_id(
+            rest,
+            Map.merge(pages_per_module_id, %{
+              resource["resource_id"] => module_page_metrics(resource)
+            })
+          )
+
+        _ ->
+          pages_per_module_id
+      end
+
+    page_metrics_per_module_id(rest, resource_completed_and_total_pages)
   end
 
   defp display_module_item?(
@@ -2468,20 +2546,51 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   end
 
   _docp = """
+  When rendering learn page in gallery view, we need to calculate the unit and module metrics
+  """
+
+  defp maybe_assign_gallery_data(socket, :gallery) do
+    %{
+      units: units,
+      student_visited_pages: student_visited_pages,
+      student_raw_avg_score_per_page_id: student_raw_avg_score_per_page_id,
+      student_progress_per_resource_id: student_progress_per_resource_id,
+      section: section
+    } = socket.assigns
+
+    units_with_metrics =
+      units
+      |> Enum.map(fn unit ->
+        unit
+        |> mark_visited_and_completed_pages(
+          student_visited_pages,
+          student_raw_avg_score_per_page_id,
+          student_progress_per_resource_id
+        )
+        |> fetch_learning_objectives(section.id)
+      end)
+
+    socket
+    |> update(:units, fn _units -> units_with_metrics end)
+    |> assign(page_metrics_per_module_id: page_metrics_per_module_id(units_with_metrics))
+    |> enable_gallery_slider_buttons()
+  end
+
+  defp maybe_assign_gallery_data(socket, _another_view), do: socket
+
+  _docp = """
   When rendering learn page in gallery view, we need to execute the Scroller hook to enable the slider buttons
   """
 
-  defp maybe_enable_gallery_slider_buttons(socket, full_hierarchy, :gallery) do
+  defp enable_gallery_slider_buttons(socket) do
     push_event(socket, "enable-slider-buttons", %{
       unit_resource_ids:
         Enum.map(
-          full_hierarchy["children"],
+          socket.assigns.units,
           & &1["resource_id"]
         )
     })
   end
-
-  defp maybe_enable_gallery_slider_buttons(socket, _full_hierarchy, _selected_view), do: socket
 
   defp module_has_intro_video(module), do: module["intro_video"] != nil
 
