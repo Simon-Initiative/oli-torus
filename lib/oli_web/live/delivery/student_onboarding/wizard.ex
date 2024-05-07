@@ -107,7 +107,6 @@ defmodule OliWeb.Delivery.StudentOnboarding.Wizard do
       ctx={@ctx}
       is_system_admin={@is_system_admin}
       section={@section}
-      brand={@brand}
       preview_mode={@preview_mode}
     />
     <div id="content" class="mt-14 h-[calc(100vh-56px)] transition-all duration-100">

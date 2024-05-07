@@ -42,7 +42,9 @@ defmodule OliWeb.LiveSessionPlugs.RedirectAdaptiveChromelessTest do
         %{
           "section_slug" => "some-section-slug",
           "revision_slug" => adaptive_chromeless_page_revision.slug,
-          "attempt_guid" => "some-attempt-guid"
+          "attempt_guid" => "some-attempt-guid",
+          "request_path" => "some-request-path",
+          "selected_view" => "gallery"
         },
         %{},
         %Phoenix.LiveView.Socket{}
@@ -52,7 +54,7 @@ defmodule OliWeb.LiveSessionPlugs.RedirectAdaptiveChromelessTest do
              {:redirect,
               %{
                 to:
-                  "/sections/some-section-slug/page/#{adaptive_chromeless_page_revision.slug}/attempt/some-attempt-guid/review"
+                  "/sections/some-section-slug/page/#{adaptive_chromeless_page_revision.slug}/attempt/some-attempt-guid/review?request_path=some-request-path&selected_view=gallery"
               }}
   end
 
@@ -64,7 +66,9 @@ defmodule OliWeb.LiveSessionPlugs.RedirectAdaptiveChromelessTest do
         :default,
         %{
           "section_slug" => "some-section-slug",
-          "revision_slug" => adaptive_chromeless_page_revision.slug
+          "revision_slug" => adaptive_chromeless_page_revision.slug,
+          "request_path" => "some-request-path",
+          "selected_view" => "gallery"
         },
         %{},
         %Phoenix.LiveView.Socket{}
@@ -74,7 +78,7 @@ defmodule OliWeb.LiveSessionPlugs.RedirectAdaptiveChromelessTest do
              {:redirect,
               %{
                 to:
-                  "/sections/some-section-slug/adaptive_lesson/#{adaptive_chromeless_page_revision.slug}"
+                  "/sections/some-section-slug/adaptive_lesson/#{adaptive_chromeless_page_revision.slug}?request_path=some-request-path&selected_view=gallery"
               }}
   end
 

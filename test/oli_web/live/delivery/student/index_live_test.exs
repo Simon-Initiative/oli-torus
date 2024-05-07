@@ -36,12 +36,47 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
         content: generate_mcq_content("This is the first question")
       )
 
+    mcq_activity_2_revision =
+      insert(:revision,
+        resource_type_id: ResourceType.get_id_by_type("activity"),
+        activity_type_id: mcq_reg.id,
+        title: "Multiple Choice 2",
+        content: generate_mcq_content("This is the second question")
+      )
+
     ## pages...
     page_1_revision =
       insert(:revision,
         resource_type_id: ResourceType.get_id_by_type("page"),
         title: "Page 1",
-        duration_minutes: 10
+        duration_minutes: 10,
+        content: %{
+          model: [
+            %{
+              id: "4286170280",
+              type: "content",
+              children: [
+                %{
+                  id: "2905665054",
+                  type: "p",
+                  children: [
+                    %{
+                      text: "This is a page with a multiple choice activity."
+                    }
+                  ]
+                }
+              ]
+            },
+            %{
+              id: "3330767711",
+              type: "activity-reference",
+              children: [],
+              activity_id: mcq_activity_2_revision.resource.id
+            }
+          ],
+          bibrefs: [],
+          version: "0.1.0"
+        }
       )
 
     page_2_revision =
@@ -55,7 +90,8 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
       insert(:revision,
         resource_type_id: ResourceType.get_id_by_type("page"),
         title: "Page 3",
-        graded: true
+        graded: true,
+        purpose: :application
       )
 
     page_4_revision =
@@ -145,6 +181,16 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
     container_revision =
       insert(:revision, %{
         resource_type_id: Oli.Resources.ResourceType.get_id_by_type("container"),
+        intro_content: %{
+          "children" => [
+            %{
+              "children" => [%{"text" => "Welcome to the best course ever!"}],
+              "id" => "3477687079",
+              "type" => "p"
+            }
+          ],
+          "type" => "p"
+        },
         children: [
           unit_1_revision.resource_id,
           unit_2_revision.resource_id
@@ -155,6 +201,7 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
     all_revisions =
       [
         mcq_activity_1_revision,
+        mcq_activity_2_revision,
         page_1_revision,
         page_2_revision,
         page_3_revision,
@@ -261,6 +308,7 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
       project: project,
       publication: publication,
       mcq_1: mcq_activity_1_revision,
+      mcq_2: mcq_activity_2_revision,
       page_1: page_1_revision,
       page_2: page_2_revision,
       page_3: page_3_revision,
@@ -271,7 +319,8 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
       module_2: module_2_revision,
       module_3: module_3_revision,
       unit_1: unit_1_revision,
-      unit_2: unit_2_revision
+      unit_2: unit_2_revision,
+      container_revision: container_revision
     }
   end
 
@@ -462,6 +511,23 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
     )
   end
 
+  defp initiate_activity_attempt(
+         page,
+         student,
+         section
+       ) do
+    resource_access =
+      get_or_insert_resource_access(student, section, page.resource)
+
+    insert(:resource_attempt, %{
+      resource_access: resource_access,
+      revision: page,
+      lifecycle_state: :active,
+      score: 0,
+      out_of: 1
+    })
+  end
+
   defp build_analytics_v2(
          context,
          page_id,
@@ -550,7 +616,7 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
       {:ok, view, _html} = live(conn, ~p"/sections/#{section.slug}")
 
       assert has_element?(view, "span", "The best course ever!")
-      assert has_element?(view, "div", "Up Next")
+      assert has_element?(view, "div", "Upcoming Agenda")
     end
 
     test "can see attempts summary and review historical attempts (if setting enabled by instructor)",
@@ -716,6 +782,281 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
                ~s{div[id="page-#{page_4_revision.slug}-attempts-dropdown"] div[id=attempts_summary] a[role='review_attempt_link']},
                "Review"
              )
+    end
+
+    test "can see intro message when the student just joined the course", %{
+      conn: conn,
+      user: user,
+      section: section,
+      page_1: page_1
+    } do
+      stub_current_time(~U[2023-11-04 20:00:00Z])
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+
+      {:ok, view, _html} = live(conn, ~p"/sections/#{section.slug}")
+
+      assert has_element?(view, "span", "The best course ever!")
+      assert has_element?(view, "div", "Hi, #{user.given_name} !")
+
+      # Shows intro message from root container
+      assert has_element?(
+               view,
+               "span",
+               "Welcome to the best course ever!"
+             )
+
+      assert has_element?(view, "div", "Upcoming Agenda")
+
+      # Shows link of the first page of the course
+      assert has_element?(view, "a", "Start course")
+
+      assert element(
+               view,
+               "a",
+               "href=\"/sections/#{section.slug}/lesson/#{page_1.slug}?request_path=%2Fsections%2F#{section.slug}\""
+             )
+
+      assert has_element?(view, "a", "Discover content")
+
+      assert element(
+               view,
+               "a",
+               "href=\"/sections/#{section.slug}/learn"
+             )
+
+      # Shows course progress initial message
+      assert has_element?(view, "div", "Course Progress")
+
+      assert has_element?(
+               view,
+               "div",
+               "Begin your learning journey to watch your progress unfold here!"
+             )
+    end
+
+    test "can see the last open and unfinished page when it is a graded page", %{
+      conn: conn,
+      user: user,
+      section: section,
+      page_4: page_4,
+      mcq_1: mcq_1,
+      project: project,
+      publication: publication
+    } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+
+      stub_current_time(~U[2024-05-01 20:00:00Z])
+
+      set_activity_attempt(
+        page_4,
+        mcq_1,
+        user,
+        section,
+        project.id,
+        publication.id,
+        "id_for_option_a",
+        false
+      )
+
+      {:ok, view, _html} = live(conn, ~p"/sections/#{section.slug}")
+
+      assert has_element?(view, "span", "The best course ever!")
+      assert has_element?(view, "div", "Continue Learning")
+
+      # the last open and unfinished page is page 4
+      assert has_element?(view, "div", page_4.title)
+
+      assert has_element?(
+               view,
+               "div",
+               "Sun Nov 5, 2023"
+             )
+
+      assert has_element?(view, "div", "Module 2")
+      assert has_element?(view, "a", "Resume lesson")
+
+      assert element(
+               view,
+               "a",
+               "href=\"/sections/#{section.slug}/lesson/#{page_4.slug}?request_path=%2Fsections%2F#{section.slug}\""
+             )
+
+      assert has_element?(view, "a", "Show in course")
+
+      assert element(
+               view,
+               "a",
+               "href=\"/sections/#{section.slug}/learn?target_resource_id=#{page_4.resource_id}&amp;request_path=%2Fsections%2F#{section.slug}\""
+             )
+    end
+
+    test "can see the last open and unfinished page when it is a practice page", %{
+      conn: conn,
+      user: user,
+      section: section,
+      page_1: page_1
+    } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+
+      stub_current_time(~U[2024-05-01 20:00:00Z])
+
+      initiate_activity_attempt(page_1, user, section)
+
+      {:ok, view, _html} = live(conn, ~p"/sections/#{section.slug}")
+
+      assert has_element?(view, "span", "The best course ever!")
+      assert has_element?(view, "div", "Continue Learning")
+
+      # the last open and unfinished page is page 1
+      assert has_element?(view, "div", page_1.title)
+      assert has_element?(view, "div", "Estimated time #{page_1.duration_minutes} m")
+
+      assert has_element?(
+               view,
+               "div",
+               "Thu Nov 2, 2023"
+             )
+
+      assert has_element?(view, "a", "Resume practice")
+
+      assert element(
+               view,
+               "a",
+               "href=\"/sections/#{section.slug}/lesson/#{page_1.slug}?request_path=%2Fsections%2F#{section.slug}\""
+             )
+
+      assert has_element?(view, "a", "Show in course")
+
+      assert element(
+               view,
+               "a",
+               "href=\"/sections/#{section.slug}/learn?target_resource_id=#{page_1.resource_id}&amp;request_path=%2Fsections%2F#{section.slug}\""
+             )
+    end
+
+    test "can see the last open and unfinished page when it is an exploration page", %{
+      conn: conn,
+      user: user,
+      section: section,
+      page_3: page_3
+    } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+
+      stub_current_time(~U[2024-05-01 20:00:00Z])
+
+      initiate_activity_attempt(page_3, user, section)
+
+      {:ok, view, _html} = live(conn, ~p"/sections/#{section.slug}")
+
+      assert has_element?(view, "span", "The best course ever!")
+      assert has_element?(view, "div", "Continue Learning")
+
+      # the last open and unfinished page is page 3
+      assert has_element?(view, "div", page_3.title)
+
+      assert has_element?(
+               view,
+               "div",
+               "Sat Nov 4, 2023"
+             )
+
+      assert has_element?(view, "a", "Resume exploration")
+
+      assert element(
+               view,
+               "a",
+               "href=\"/sections/#{section.slug}/lesson/#{page_3.slug}?request_path=%2Fsections%2F#{section.slug}\""
+             )
+
+      assert has_element?(view, "a", "Show in course")
+
+      assert element(
+               view,
+               "a",
+               "href=\"/sections/#{section.slug}/learn?target_resource_id=#{page_3.resource_id}&amp;request_path=%2Fsections%2F#{section.slug}\""
+             )
+    end
+
+    test "can see nearest upcoming page from agenda when there are no attempts in progress",
+         %{conn: conn, user: user, section: section, page_1: page_1, page_2: page_2} do
+      stub_current_time(~U[2023-11-04 20:00:00Z])
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+
+      stub_current_time(~U[2023-11-02 20:00:00Z])
+
+      initiate_activity_attempt(page_1, user, section)
+
+      set_progress(section.id, page_1.resource_id, user.id, 1.0)
+
+      {:ok, view, _html} = live(conn, ~p"/sections/#{section.slug}")
+
+      assert has_element?(view, "span", "The best course ever!")
+      assert has_element?(view, "div", "Continue Learning")
+
+      # the next page from agenda is page 2
+      assert has_element?(view, "div", page_2.title)
+
+      assert has_element?(
+               view,
+               "div",
+               "Fri Nov 3, 2023"
+             )
+
+      assert has_element?(view, "a", "Start practice")
+
+      assert element(
+               view,
+               "a",
+               "href=\"/sections/#{section.slug}/lesson/#{page_2.slug}?request_path=%2Fsections%2F#{section.slug}\""
+             )
+
+      assert has_element?(view, "a", "Show in course")
+
+      assert element(
+               view,
+               "a",
+               "href=\"/sections/#{section.slug}/learn?target_resource_id=#{page_2.resource_id}&amp;request_path=%2Fsections%2F#{section.slug}\""
+             )
+    end
+
+    test "can see the course progress", %{
+      conn: conn,
+      user: user,
+      section: section,
+      page_4: page_4,
+      mcq_1: mcq_1,
+      project: project,
+      publication: publication
+    } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+
+      stub_current_time(~U[2024-05-01 20:00:00Z])
+
+      set_activity_attempt(
+        page_4,
+        mcq_1,
+        user,
+        section,
+        project.id,
+        publication.id,
+        "id_for_option_a",
+        false
+      )
+
+      set_progress(section.id, page_4.resource_id, user.id, 1.0)
+
+      {:ok, view, _html} = live(conn, ~p"/sections/#{section.slug}")
+
+      # Shows course progress initial message
+      assert has_element?(view, "div", "Course Progress")
+
+      assert has_element?(view, "div", "17%")
     end
   end
 end

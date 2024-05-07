@@ -15,10 +15,218 @@ defmodule Oli.Delivery.SectionsTest do
     ScheduledSectionResource
   }
 
+  alias Oli.Delivery.Attempts.Core
+  alias Oli.Delivery.Attempts.Core.ResourceAccess
+
   alias Oli.Publishing.DeliveryResolver
+  alias Oli.Resources.ResourceType
+
+  defp set_progress(section_id, resource_id, user_id, progress) do
+    {:ok, _resource_access} =
+      Core.track_access(resource_id, section_id, user_id)
+      |> Core.update_resource_access(%{progress: progress})
+  end
+
+  defp initiate_activity_attempt(
+         page,
+         student,
+         section
+       ) do
+    resource_access =
+      case Oli.Repo.get_by(
+             ResourceAccess,
+             resource_id: page.resource_id,
+             section_id: section.id,
+             user_id: student.id
+           ) do
+        nil ->
+          insert(:resource_access, %{
+            resource: page.resource,
+            section: section,
+            user: student
+          })
+
+        ra ->
+          ra
+      end
+
+    insert(:resource_attempt, %{
+      resource_access: resource_access,
+      revision: page,
+      lifecycle_state: :active,
+      score: 0,
+      out_of: 1
+    })
+  end
+
+  defp create_elixir_project(_) do
+    author = insert(:author)
+    project = insert(:project, authors: [author])
+
+    # revisions...
+
+    ## pages...
+    page_1_revision =
+      insert(:revision,
+        resource_type_id: ResourceType.get_id_by_type("page"),
+        title: "Page 1",
+        duration_minutes: 10
+      )
+
+    page_2_revision =
+      insert(:revision,
+        resource_type_id: ResourceType.get_id_by_type("page"),
+        title: "Page 2",
+        duration_minutes: 15
+      )
+
+    page_3_revision =
+      insert(:revision,
+        resource_type_id: ResourceType.get_id_by_type("page"),
+        title: "Page 3",
+        graded: true,
+        purpose: :application
+      )
+
+    ## modules...
+    module_1_revision =
+      insert(:revision, %{
+        resource_type_id: ResourceType.get_id_by_type("container"),
+        children: [page_1_revision.resource_id, page_2_revision.resource_id],
+        title: "How to use this course"
+      })
+
+    module_2_revision =
+      insert(:revision, %{
+        resource_type_id: ResourceType.get_id_by_type("container"),
+        children: [page_3_revision.resource_id],
+        title: "Configure your setup"
+      })
+
+    ## units...
+    unit_1_revision =
+      insert(:revision, %{
+        resource_type_id: ResourceType.get_id_by_type("container"),
+        children: [module_1_revision.resource_id, module_2_revision.resource_id],
+        title: "Introduction"
+      })
+
+    ## root container...
+    container_revision =
+      insert(:revision, %{
+        resource_type_id: ResourceType.get_id_by_type("container"),
+        intro_content: %{
+          "children" => [
+            %{
+              "children" => [%{"text" => "Welcome to the best course ever!"}],
+              "id" => "3477687079",
+              "type" => "p"
+            }
+          ],
+          "type" => "p"
+        },
+        children: [
+          unit_1_revision.resource_id
+        ],
+        title: "Root Container"
+      })
+
+    all_revisions =
+      [
+        page_1_revision,
+        page_2_revision,
+        page_3_revision,
+        module_1_revision,
+        module_2_revision,
+        unit_1_revision,
+        container_revision
+      ]
+
+    # asociate resources to project
+    Enum.each(all_revisions, fn revision ->
+      insert(:project_resource, %{
+        project_id: project.id,
+        resource_id: revision.resource_id
+      })
+    end)
+
+    # publish project
+    publication =
+      insert(:publication, %{project: project, root_resource_id: container_revision.resource_id})
+
+    # publish resources
+    Enum.each(all_revisions, fn revision ->
+      insert(:published_resource, %{
+        publication: publication,
+        resource: revision.resource,
+        revision: revision,
+        author: author
+      })
+    end)
+
+    # create section...
+    section =
+      insert(:section,
+        base_project: project,
+        title: "The best course ever!",
+        start_date: ~U[2023-10-30 20:00:00Z],
+        analytics_version: :v2
+      )
+
+    {:ok, section} = Sections.create_section_resources(section, publication)
+    {:ok, _} = Sections.rebuild_contained_pages(section)
+    {:ok, _} = Sections.rebuild_contained_objectives(section)
+
+    # schedule start and end date for unit 1 section_resource
+    Sections.get_section_resource(section.id, unit_1_revision.resource_id)
+    |> Sections.update_section_resource(%{
+      start_date: ~U[2023-10-31 20:00:00Z],
+      end_date: ~U[2023-12-31 20:00:00Z]
+    })
+
+    # schedule start and end date for module 1 section_resource
+    Sections.get_section_resource(section.id, module_1_revision.resource_id)
+    |> Sections.update_section_resource(%{
+      start_date: ~U[2023-11-01 20:00:00Z],
+      end_date: ~U[2023-11-15 20:00:00Z]
+    })
+
+    # schedule start and end date for page 1 to 3 section_resource
+    Sections.get_section_resource(section.id, page_1_revision.resource_id)
+    |> Sections.update_section_resource(%{
+      start_date: ~U[2023-11-01 20:00:00Z],
+      end_date: ~U[2023-11-02 20:00:00Z]
+    })
+
+    Sections.get_section_resource(section.id, page_2_revision.resource_id)
+    |> Sections.update_section_resource(%{
+      start_date: ~U[2023-11-02 20:00:00Z],
+      end_date: ~U[2023-11-03 20:00:00Z]
+    })
+
+    Sections.get_section_resource(section.id, page_3_revision.resource_id)
+    |> Sections.update_section_resource(%{
+      start_date: ~U[2023-11-03 20:00:00Z],
+      end_date: ~U[2023-11-04 20:00:00Z]
+    })
+
+    %{
+      author: author,
+      section: section,
+      project: project,
+      publication: publication,
+      page_1: page_1_revision,
+      page_2: page_2_revision,
+      page_3: page_3_revision,
+      module_1: module_1_revision,
+      module_2: module_2_revision,
+      unit_1: unit_1_revision,
+      container_revision: container_revision
+    }
+  end
 
   describe "PostProcessing.apply/2 case :discussions" do
-    alias Oli.Resources.ResourceType
+    alias ResourceType
     alias Oli.Resources.Collaboration.CollabSpaceConfig
     import Oli.Factory
     import Oli.TestHelpers
@@ -500,7 +708,7 @@ defmodule Oli.Delivery.SectionsTest do
       all_containers =
         DeliveryResolver.revisions_of_type(
           section.slug,
-          Oli.Resources.ResourceType.get_id_by_type("container")
+          ResourceType.get_id_by_type("container")
         )
 
       container_ids = Enum.map(all_containers, fn c -> c.resource_id end)
@@ -1285,42 +1493,42 @@ defmodule Oli.Delivery.SectionsTest do
       ## section container...
       section_1_revision =
         insert(:revision, %{
-          resource_type_id: Oli.Resources.ResourceType.get_id_by_type("container")
+          resource_type_id: ResourceType.get_id_by_type("container")
         })
 
       section_2_revision =
         insert(:revision, %{
-          resource_type_id: Oli.Resources.ResourceType.get_id_by_type("container")
+          resource_type_id: ResourceType.get_id_by_type("container")
         })
 
       ## module...
       module_1_revision =
         insert(:revision, %{
-          resource_type_id: Oli.Resources.ResourceType.get_id_by_type("container"),
+          resource_type_id: ResourceType.get_id_by_type("container"),
           children: [section_1_revision.resource_id, section_2_revision.resource_id]
         })
 
       module_2_revision =
         insert(:revision, %{
-          resource_type_id: Oli.Resources.ResourceType.get_id_by_type("container")
+          resource_type_id: ResourceType.get_id_by_type("container")
         })
 
       ## unit...
       unit_1_revision =
         insert(:revision, %{
-          resource_type_id: Oli.Resources.ResourceType.get_id_by_type("container"),
+          resource_type_id: ResourceType.get_id_by_type("container"),
           children: [module_1_revision.resource_id, module_2_revision.resource_id]
         })
 
       unit_2_revision =
         insert(:revision, %{
-          resource_type_id: Oli.Resources.ResourceType.get_id_by_type("container")
+          resource_type_id: ResourceType.get_id_by_type("container")
         })
 
       ## root container...
       container_revision =
         insert(:revision, %{
-          resource_type_id: Oli.Resources.ResourceType.get_id_by_type("container"),
+          resource_type_id: ResourceType.get_id_by_type("container"),
           children: [unit_1_revision.resource_id, unit_2_revision.resource_id],
           title: "Root Container"
         })
@@ -1498,6 +1706,55 @@ defmodule Oli.Delivery.SectionsTest do
                unit_2_section_resource,
                custom_labels
              ) == "Volume 2"
+    end
+  end
+
+  describe "get_last_open_and_unfinished_page/2" do
+    setup [:create_elixir_project]
+
+    test "returns nil when no pages are open", %{section: section} do
+      user = insert(:user)
+      refute Sections.get_last_open_and_unfinished_page(section, user.id)
+    end
+
+    test "returns last open and unfinished page", %{
+      section: section,
+      page_1: page_1,
+      page_3: page_3
+    } do
+      user = insert(:user)
+      stub_current_time(~U[2023-11-04 20:00:00Z])
+
+      # Initiate attempt for page 1
+      initiate_activity_attempt(page_1, user, section)
+      set_progress(section.id, page_1.resource_id, user.id, 1.0)
+
+      # Initiate attempt for page 3
+      initiate_activity_attempt(page_3, user, section)
+      set_progress(section.id, page_3.resource_id, user.id, 0.9)
+
+      page = Sections.get_last_open_and_unfinished_page(section, user.id)
+
+      # Returns page 3 since it is the last open and unfinished page
+      assert page.slug == page_3.slug
+    end
+  end
+
+  describe "get_nearest_upcoming_lesson/2" do
+    setup [:create_elixir_project]
+
+    test "returns nil if there are no upcoming lessons", %{section: section} do
+      stub_current_time(~U[2024-01-01 00:00:00Z])
+
+      refute Sections.get_nearest_upcoming_lesson(section)
+    end
+
+    test "returns the nearest upcoming lesson", %{section: section, page_3: page_3} do
+      stub_current_time(~U[2023-11-03 00:00:00Z])
+
+      page = Sections.get_nearest_upcoming_lesson(section)
+
+      assert page.slug == page_3.slug
     end
   end
 end

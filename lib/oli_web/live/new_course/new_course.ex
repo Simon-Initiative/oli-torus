@@ -106,7 +106,6 @@ defmodule OliWeb.Delivery.NewCourse do
         <.header
           ctx={@ctx}
           section={@section}
-          brand={@brand}
           preview_mode={@preview_mode}
           is_system_admin={@is_system_admin}
         />
