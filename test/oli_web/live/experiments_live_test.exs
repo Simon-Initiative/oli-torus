@@ -1,16 +1,13 @@
 defmodule OliWeb.ExperimentsLiveTest do
   use ExUnit.Case, async: true
+  alias Oli.Resources.Revision
   use OliWeb.ConnCase
 
   import Oli.Factory
   import Phoenix.LiveViewTest
 
   defp live_view_experiments_route(project_slug) do
-    Routes.live_path(
-      OliWeb.Endpoint,
-      OliWeb.Experiments.ExperimentsView,
-      project_slug
-    )
+    ~p"/authoring/project/#{project_slug}/experiments"
   end
 
   defp create_project(_conn) do
@@ -127,6 +124,100 @@ defmodule OliWeb.ExperimentsLiveTest do
                "label",
                "Enable A/B testing with UpGrade"
              )
+    end
+
+    test "check, then uncheck, when no previous experiment exists", %{
+      conn: conn,
+      project: project
+    } do
+      {:ok, view, _html} = live(conn, live_view_experiments_route(project.slug))
+
+      refute has_element?(view, ".alternatives-group")
+
+      # Checking checkbox
+      view |> element("input[phx-click=\"enable_upgrade\"]") |> render_click()
+
+      assert has_element?(view, ".alternatives-group", "Decision Point")
+      assert has_element?(view, ".list-group", "Option 1")
+      assert has_element?(view, ".list-group", "Option 2")
+      refute has_element?(view, ".list-group", "Option 3")
+
+      [resource_id] =
+        view
+        |> element("button[phx-click=\"show_edit_group_modal\"]")
+        |> render()
+        |> Floki.attribute("phx-value-resource-id")
+
+      [option_1, option_2] =
+        Oli.Repo.get_by!(Revision, resource_id: resource_id).content["options"]
+
+      assert view
+             |> has_element?(
+               "button[phx-click=\"show_edit_group_modal\"][phx-value-resource-id=\"#{resource_id}\"] > .fa-pencil"
+             )
+
+      assert view
+             |> has_element?(
+               "button[phx-click=\"show_edit_option_modal\"][phx-value-option-id=\"#{option_1["id"]}\"] > .fa-pencil"
+             )
+
+      assert view
+             |> has_element?(
+               "button[phx-click=\"show_edit_option_modal\"][phx-value-option-id=\"#{option_2["id"]}\"] > .fa-pencil"
+             )
+
+      assert view
+             |> has_element?(
+               "button[phx-click=\"show_delete_option_modal\"][phx-value-option-id=\"#{option_1["id"]}\"] > .fa-trash"
+             )
+
+      assert view
+             |> has_element?(
+               "button[phx-click=\"show_delete_option_modal\"][phx-value-option-id=\"#{option_2["id"]}\"] > .fa-trash"
+             )
+
+      assert view
+             |> element(
+               "button[phx-click=\"show_create_option_modal\"][phx-value-resource_id=\"#{resource_id}\"]"
+             )
+             |> render() =~ "New Option"
+
+      # Unchecking checkbox
+      view |> element("input[phx-click=\"enable_upgrade\"]") |> render_click()
+
+      refute view
+             |> has_element?(
+               "button[phx-click=\"show_edit_group_modal\"][phx-value-resource-id=\"#{resource_id}\"] > .fa-pencil"
+             )
+
+      refute view
+             |> has_element?(
+               "button[phx-click=\"show_edit_option_modal\"][phx-value-option-id=\"#{option_1["id"]}\"] > .fa-pencil"
+             )
+
+      refute view
+             |> has_element?(
+               "button[phx-click=\"show_edit_option_modal\"][phx-value-option-id=\"#{option_2["id"]}\"] > .fa-pencil"
+             )
+
+      refute view
+             |> has_element?(
+               "button[phx-click=\"show_delete_option_modal\"][phx-value-option-id=\"#{option_1["id"]}\"] > .fa-trash"
+             )
+
+      refute view
+             |> has_element?(
+               "button[phx-click=\"show_delete_option_modal\"][phx-value-option-id=\"#{option_2["id"]}\"] > .fa-trash"
+             )
+
+      refute view
+             |> has_element?(
+               "button[phx-click=\"show_create_option_modal\"][phx-value-resource_id=\"#{resource_id}\"]"
+             )
+
+      assert has_element?(view, ".alternatives-group", "Decision Point")
+      assert has_element?(view, ".list-group", "Option 1")
+      assert has_element?(view, ".list-group", "Option 2")
     end
   end
 end

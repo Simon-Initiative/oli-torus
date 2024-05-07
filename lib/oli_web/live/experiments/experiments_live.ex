@@ -48,7 +48,7 @@ defmodule OliWeb.Experiments.ExperimentsView do
         type="checkbox"
         class="form-check-input"
         name="experiments"
-        value={nil}
+        value={@is_upgrade_enabled}
         label="Enable A/B testing with UpGrade"
         phx-click="enable_upgrade"
         checked={@is_upgrade_enabled}
@@ -65,7 +65,7 @@ defmodule OliWeb.Experiments.ExperimentsView do
     """
   end
 
-  def handle_event("enable_upgrade", params, socket) do
+  def handle_event("enable_upgrade", _params, socket) do
     socket =
       case socket.assigns.experiment do
         nil ->
@@ -75,11 +75,7 @@ defmodule OliWeb.Experiments.ExperimentsView do
           assign(socket, experiment: experiment, is_upgrade_enabled: true)
 
         %Revision{} ->
-          if Map.get(params, "value") do
-            assign(socket, :is_upgrade_enabled, true)
-          else
-            assign(socket, :is_upgrade_enabled, false)
-          end
+          assign(socket, :is_upgrade_enabled, !socket.assigns.is_upgrade_enabled)
       end
 
     {:noreply, socket}
