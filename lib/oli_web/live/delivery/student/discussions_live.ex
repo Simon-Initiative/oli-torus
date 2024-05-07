@@ -614,7 +614,7 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
         </h3>
       </div>
 
-      <.actions
+      <.posts_actions
         post_params={@post_params}
         course_collab_space_config={@course_collab_space_config}
         posts_search_term={@posts_search_term}
@@ -654,76 +654,23 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
     """
   end
 
-  attr :notes, :list
-  attr :ctx, :map
-  attr :current_user, :any
-  attr :note_params, :map
-  attr :more_notes_exist?, :boolean
-  attr :notes_search_term, :string
-  attr :notes_search_results, :any
-
-  defp notes_section(assigns) do
-    ~H"""
-    <section id="notes" class="container mx-auto flex flex-col items-start w-full gap-6">
-      <div role="notes header" class="flex justify-between items-center w-full self-stretch">
-        <h3 class="text-2xl tracking-[0.02px] font-semibold dark:text-white">
-          Notes
-        </h3>
-      </div>
-
-      <.notes_actions note_params={@note_params} notes_search_term={@notes_search_term} />
-
-      <%= case @notes_search_results do %>
-        <% nil -> %>
-          <div role="notes list" class="w-full">
-            <%= for post <- @notes do %>
-              <div class="mb-3">
-                <Annotations.post class="bg-white" post={post} current_user={@ctx.user} />
-              </div>
-            <% end %>
-            <div :if={@notes == []} class="flex p-4 text-center w-full">
-              There are no notes to show.
-            </div>
-            <div class="flex w-full justify-end">
-              <button
-                :if={@more_notes_exist?}
-                phx-click="load_more_notes"
-                class="text-primary text-sm px-6 py-2 hover:text-primary/70"
-              >
-                Load more notes
-              </button>
-            </div>
-          </div>
-        <% :loading -> %>
-          <div class="flex p-4 text-center w-full">
-            Searching...
-          </div>
-        <% results -> %>
-          <div role="search-results list" class="w-full">
-            <Annotations.search_results search_results={results} current_user={@current_user} />
-          </div>
-      <% end %>
-    </section>
-    """
-  end
-
   attr :post_params, :map
   attr :course_collab_space_config, Oli.Resources.Collaboration.CollabSpaceConfig
   attr :posts_search_term, :string
 
-  defp actions(assigns) do
+  defp posts_actions(assigns) do
     ~H"""
     <div role="posts actions" class="w-full flex gap-6">
-      <div class="flex flex-1 space-x-3">
+      <div class="flex flex-1 space-x-3 justify-between">
         <Annotations.search_box
-          class="flex-1"
+          class="flex-1 max-w-[600px]"
           search_term={@posts_search_term}
           on_search="search_posts"
           on_clear_search="clear_search_posts"
         />
 
         <.dropdown
-          id="sort-dropdown"
+          id="sort-posts-dropdown"
           role="sort"
           class="inline-flex"
           button_class="rounded-[3px] py-[10px] px-6 flex justify-center items-center whitespace-nowrap text-[14px] leading-[20px] font-normal text-white bg-[#0F6CF5] hover:bg-blue-600"
@@ -789,22 +736,75 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
     """
   end
 
+  attr :notes, :list
+  attr :ctx, :map
+  attr :current_user, :any
+  attr :note_params, :map
+  attr :more_notes_exist?, :boolean
+  attr :notes_search_term, :string
+  attr :notes_search_results, :any
+
+  defp notes_section(assigns) do
+    ~H"""
+    <section id="notes" class="container mx-auto flex flex-col items-start w-full gap-6">
+      <div role="notes header" class="flex justify-between items-center w-full self-stretch">
+        <h3 class="text-2xl tracking-[0.02px] font-semibold dark:text-white">
+          Notes
+        </h3>
+      </div>
+
+      <.notes_actions note_params={@note_params} notes_search_term={@notes_search_term} />
+
+      <%= case @notes_search_results do %>
+        <% nil -> %>
+          <div role="notes list" class="w-full">
+            <%= for post <- @notes do %>
+              <div class="mb-3">
+                <Annotations.post class="bg-white" post={post} current_user={@ctx.user} />
+              </div>
+            <% end %>
+            <div :if={@notes == []} class="flex p-4 text-center w-full">
+              There are no notes to show.
+            </div>
+            <div class="flex w-full justify-end">
+              <button
+                :if={@more_notes_exist?}
+                phx-click="load_more_notes"
+                class="text-primary text-sm px-6 py-2 hover:text-primary/70"
+              >
+                Load more notes
+              </button>
+            </div>
+          </div>
+        <% :loading -> %>
+          <div class="flex p-4 text-center w-full">
+            Searching...
+          </div>
+        <% results -> %>
+          <div role="search-results list" class="w-full">
+            <Annotations.search_results search_results={results} current_user={@current_user} />
+          </div>
+      <% end %>
+    </section>
+    """
+  end
+
   attr :note_params, :map
   attr :notes_search_term, :string
 
   defp notes_actions(assigns) do
     ~H"""
     <div role="notes actions" class="w-full flex gap-6">
-      <div class="flex flex-1 space-x-3">
+      <div class="flex flex-1 space-x-3 justify-between">
         <Annotations.search_box
-          class="flex-1"
+          class="flex-1 max-w-[600px]"
           search_term={@notes_search_term}
           on_search="search_notes"
           on_clear_search="clear_search_notes"
         />
 
         <.dropdown
-          id="sort-dropdown"
+          id="sort-notes-dropdown"
           role="sort"
           class="inline-flex"
           button_class="rounded-[3px] py-[10px] px-6 flex justify-center items-center whitespace-nowrap text-[14px] leading-[20px] font-normal text-white bg-[#0F6CF5] hover:bg-blue-600"
