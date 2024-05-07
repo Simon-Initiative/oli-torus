@@ -4130,10 +4130,6 @@ table.table-striped tbody tr:nth-child(even) {
   right: 50%;
 }
 
-.right-12 {
-  right: 3rem;
-}
-
 .right-2 {
   right: 0.5rem;
 }
@@ -5296,10 +5292,6 @@ table.table-striped tbody tr:nth-child(even) {
 
 .w-\[124px\] {
   width: 124px;
-}
-
-.w-\[132px\] {
-  width: 132px;
 }
 
 .w-\[171px\] {
@@ -7366,6 +7358,11 @@ table.table-striped tbody tr:nth-child(even) {
 .py-2\.5 {
   padding-top: 0.625rem;
   padding-bottom: 0.625rem;
+}
+
+.py-20 {
+  padding-top: 5rem;
+  padding-bottom: 5rem;
 }
 
 .py-24 {
@@ -13774,11 +13771,6 @@ https://tailwindcss.com/docs/utility-first
   .md\:my-10 {
     margin-top: 2.5rem;
     margin-bottom: 2.5rem;
-  }
-
-  .md\:my-5 {
-    margin-top: 1.25rem;
-    margin-bottom: 1.25rem;
   }
 
   .md\:-mr-\[30px\] {
