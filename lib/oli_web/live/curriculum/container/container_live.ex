@@ -827,41 +827,4 @@ defmodule OliWeb.Curriculum.ContainerLive do
     end)
     |> Enum.into(%{})
   end
-
-  defp decode_revision_params(revision_params) do
-    revision_params
-    |> maybe_decode_explanation_strategy
-    |> maybe_decode_intro_content
-  end
-
-  defp maybe_decode_explanation_strategy(revision_params) do
-    case revision_params do
-      %{"explanation_strategy" => %{"type" => "none"}} ->
-        Map.put(revision_params, "explanation_strategy", nil)
-
-      _ ->
-        revision_params
-    end
-  end
-
-  defp maybe_decode_intro_content(revision_params) do
-    case revision_params do
-      %{"intro_content" => intro_content} when intro_content in ["", nil] ->
-        Map.put(
-          revision_params,
-          "intro_content",
-          %{}
-        )
-
-      %{"intro_content" => intro_content} ->
-        Map.put(
-          revision_params,
-          "intro_content",
-          Jason.decode!(intro_content)
-        )
-
-      _ ->
-        revision_params
-    end
-  end
 end
