@@ -481,6 +481,8 @@ defmodule OliWeb.Delivery.Student.DiscussionsLiveTest do
 
       toggle_post_replies(view, course_discussion.id)
 
+      wait_while(fn -> has_element?(view, "svg.loading") end)
+
       assert render(view) =~ "My first discussion"
       assert render(view) =~ "This is a reply to the first discussion"
 
