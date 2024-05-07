@@ -14,6 +14,7 @@ import { AlternativesEditor } from './AlternativesEditor';
 import { ContentBreakEditor } from './ContentBreak';
 import { ContentEditor } from './ContentEditor';
 import { PurposeGroupEditor } from './PurposeGroupEditor';
+import { ReportEditor } from './ReportEditor';
 import { SelectionEditor } from './SelectionEditor';
 import { SurveyEditor } from './SurveyEditor';
 
@@ -58,6 +59,9 @@ export const createEditor = (editorProps: EditorProps): JSX.Element => {
       return <PurposeGroupEditor {...editorProps} contentItem={contentItem} />;
     case 'survey':
       return <SurveyEditor {...editorProps} contentItem={contentItem} />;
+    case 'report':
+      console.log('creating report editor');
+      return <ReportEditor {...editorProps} contentItem={contentItem} />;
     case 'alternatives':
       return <AlternativesEditor {...editorProps} contentItem={contentItem} />;
     case 'break':

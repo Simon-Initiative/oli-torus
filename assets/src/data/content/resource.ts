@@ -28,6 +28,7 @@ export type ResourceContent =
   | ActivityBankSelection
   | PurposeGroupContent
   | SurveyContent
+  | ReportContent
   | AlternativesContent
   | AlternativeContent
   | Break;
@@ -39,6 +40,7 @@ export const isResourceContent = (content: any) =>
     'selection',
     'group',
     'survey',
+    'report',
     'alternatives',
     'alternative',
     'break',
@@ -49,11 +51,12 @@ export const isResourceContent = (content: any) =>
 export type ResourceGroup =
   | PurposeGroupContent
   | SurveyContent
+  | ReportContent
   | AlternativesContent
   | AlternativeContent;
 
 export const isResourceGroup = (content: ResourceContent) =>
-  ['group', 'survey', 'alternatives', 'alternative'].some((t) => t == content.type);
+  ['group', 'survey', 'report', 'alternatives', 'alternative'].some((t) => t == content.type);
 
 export const getResourceContentName = (content: ResourceContent): string => {
   switch (content.type) {
@@ -65,6 +68,8 @@ export const getResourceContentName = (content: ResourceContent): string => {
       return 'Group';
     case 'survey':
       return 'Survey';
+    case 'report':
+      return 'Report';
     case 'alternatives':
       return 'Alternatives';
     case 'alternative':
@@ -81,6 +86,7 @@ export const allElements = [
   'activity-reference',
   'group',
   'survey',
+  'report',
   'alternatives',
   'break',
   'selection',
@@ -92,6 +98,8 @@ export const allowedContentItems = (content: ResourceContent): string[] => {
       return allElements;
     case 'survey':
       return allElements;
+    case 'report':
+      return ['activity-reference'];
     case 'alternatives':
       return ['alternative'];
     case 'alternative':
@@ -120,12 +128,18 @@ export const canInsert = (content: ResourceContent, parents: ResourceContent[]):
         allowedContentItems(parent).some((t) => t === content.type) &&
         parents.every((p) => !isSurvey(p))
       );
+    case 'report':
+      return (
+        allowedContentItems(parent).some((t) => t === content.type) &&
+        parents.every((p) => !isReport(p))
+      );
     default:
       return allowedContentItems(parent).some((t) => t === content.type);
   }
 };
 
 export const isSurvey = (c: ResourceContent) => c.type === 'survey';
+export const isReport = (c: ResourceContent) => c.type === 'report';
 export const isGroupWithPurpose = (c: ResourceContent) =>
   c.type === 'group' && c.purpose !== 'none';
 export const groupOrDescendantHasPurpose = (c: ResourceContent): boolean => {
@@ -236,6 +250,15 @@ export const createSurvey = (
   children,
 });
 
+export const createReport = (
+  children: Immutable.List<ResourceContent> = Immutable.List(),
+): ReportContent => ({
+  type: 'report',
+  id: guid(),
+  title: undefined,
+  children,
+});
+
 export const createBreak = (): Break => ({
   type: 'break',
   id: guid(),
@@ -312,6 +335,13 @@ export interface AlternativeContent {
 
 export interface SurveyContent {
   type: 'survey';
+  id: string;
+  title: string | undefined;
+  children: Immutable.List<ResourceContent>;
+}
+
+export interface ReportContent {
+  type: 'report';
   id: string;
   title: string | undefined;
   children: Immutable.List<ResourceContent>;
