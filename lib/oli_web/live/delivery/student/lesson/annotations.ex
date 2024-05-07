@@ -493,7 +493,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
             phx-value-post-id={assigns.post.id}
             phx-value-parent-post-id={assigns.post.parent_post_id}
           >
-            <%= case Map.get(reaction_summaries, :like) do %>
+            <%= case Map.get(@post.reaction_summaries, :like) do %>
               <% nil -> %>
                 <.like_icon />
               <% %{count: count, reacted: reacted} -> %>

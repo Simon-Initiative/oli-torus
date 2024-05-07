@@ -249,9 +249,11 @@ defmodule OliWeb.Delivery.Student.DiscussionsLiveTest do
 
       {:ok, view, _html} = live(conn, live_view_discussions_live_route(section.slug))
 
-      assert view
+      # page posts are not shown in discussions view
+      refute view
              |> has_element?("div[id=\"post-#{page_post.id}\"]")
 
+      # course discussions are shown
       assert view
              |> element("div[id=\"post-#{course_discussion.id}\"]")
              |> render() =~ "My first discussion"
