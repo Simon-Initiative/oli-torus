@@ -16,6 +16,12 @@ defmodule OliWeb.Delivery.Student.LearnLive do
 
   @default_selected_view :gallery
 
+  @default_module_page_metrics %{
+    total_pages_count: 0,
+    completed_pages_count: 0,
+    total_duration_minutes: 0
+  }
+
   @default_image "/images/course_default.jpg"
   # this is an optimization to reduce the memory footprint of the liveview process
   @required_keys_per_assign %{
@@ -910,8 +916,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
                     module["resource_id"]
                 }
                 page_metrics={
-                  @page_metrics_per_module_id[module["resource_id"]] ||
-                    %{total_pages_count: 0, completed_pages_count: 0, total_duration_minutes: 0}
+                  get_module_page_metrics(@page_metrics_per_module_id, module["resource_id"])
                 }
               />
             </.custom_focus_wrap>
@@ -1048,7 +1053,9 @@ defmodule OliWeb.Delivery.Student.LearnLive do
               Map.get(@selected_module_per_unit_resource_id, @unit["resource_id"]) %>
             <.module_content_header
               module={module}
-              page_metrics={@page_metrics_per_module_id[module["resource_id"]]}
+              page_metrics={
+                get_module_page_metrics(@page_metrics_per_module_id, module["resource_id"])
+              }
               show_completed_pages={
                 get_in(
                   @display_props_per_module_id,
@@ -1250,9 +1257,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
 
   attr :module, :map
   attr :show_completed_pages, :boolean, default: true
-
-  attr :page_metrics, :map,
-    default: %{total_pages_count: 0, completed_pages_count: 0, total_duration_minutes: 0}
+  attr :page_metrics, :map, default: @default_module_page_metrics
 
   def module_content_header(assigns) do
     ~H"""
@@ -1856,9 +1861,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   attr :bg_image_url, :string, doc: "the background image url for the card"
   attr :student_progress_per_resource_id, :map
   attr :default_image, :string, default: @default_image
-
-  attr :page_metrics, :map,
-    default: %{total_pages_count: 0, completed_pages_count: 0, total_duration_minutes: 0}
+  attr :page_metrics, :map, default: @default_module_page_metrics
 
   def card(assigns) do
     assigns = Map.put(assigns, :is_page, is_page(assigns.card))
@@ -2127,7 +2130,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   defp module_page_metrics(container) do
     Enum.reduce(
       container["children"],
-      %{total_pages_count: 0, completed_pages_count: 0, total_duration_minutes: 0},
+      @default_module_page_metrics,
       fn
         %{"resource_type_id" => @page_resource_type_id} = page,
         %{
@@ -2541,5 +2544,25 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       level when level >= 8 -> "ml-[100px]"
       _ -> "ml-0"
     end
+  end
+
+  defp find_module_ancestor(_, nil, _), do: nil
+
+  defp find_module_ancestor(hierarchy, resource_id, container_resource_type_id) do
+    case Oli.Delivery.Hierarchy.find_parent_in_hierarchy(
+           hierarchy,
+           &(&1["resource_id"] == resource_id)
+         ) do
+      %{"resource_type_id" => ^container_resource_type_id, "numbering" => %{"level" => 2}} =
+          module ->
+        module["resource_id"]
+
+      parent ->
+        find_module_ancestor(hierarchy, parent["resource_id"], container_resource_type_id)
+    end
+  end
+
+  defp get_module_page_metrics(page_metrics_per_module_id, module_resource_id) do
+    page_metrics_per_module_id[module_resource_id] || @default_module_page_metrics
   end
 end
