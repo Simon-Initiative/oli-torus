@@ -24,10 +24,14 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
           "collab_space_discussion_#{socket.assigns.section.slug}"
         )
 
+    root_section_resource_resource_id =
+      Sections.get_root_section_resource_resource_id(socket.assigns.section)
+
     {posts, more_posts_exist?} =
       get_posts(
         socket.assigns.current_user.id,
         socket.assigns.section.id,
+        root_section_resource_resource_id,
         @default_params
       )
 
@@ -53,8 +57,11 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
         note_params: @default_params,
         more_posts_exist?: more_posts_exist?,
         more_notes_exist?: more_notes_exist?,
-        root_section_resource_resource_id:
-          Sections.get_root_section_resource_resource_id(socket.assigns.section)
+        root_section_resource_resource_id: root_section_resource_resource_id,
+        posts_search_term: "",
+        posts_search_results: nil,
+        notes_search_term: "",
+        notes_search_results: nil
       )
       |> assign_new_discussion_form()
     }
@@ -76,6 +83,7 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
       get_posts(
         socket.assigns.current_user.id,
         socket.assigns.section.id,
+        socket.assigns.root_section_resource_resource_id,
         updated_post_params
       )
 
@@ -319,6 +327,7 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
       get_posts(
         socket.assigns.current_user.id,
         socket.assigns.section.id,
+        socket.assigns.root_section_resource_resource_id,
         updated_post_params
       )
 
@@ -363,6 +372,58 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
     end
   end
 
+  def handle_event("search_posts", %{"search_term" => ""}, socket) do
+    {:noreply, assign(socket, posts_search_results: nil, posts_search_term: "")}
+  end
+
+  def handle_event("search_posts", %{"search_term" => search_term}, socket) do
+    %{
+      current_user: current_user,
+      root_section_resource_resource_id: root_section_resource_resource_id,
+      section: section
+    } = socket.assigns
+
+    async_search(
+      section.id,
+      current_user.id,
+      root_section_resource_resource_id,
+      :public,
+      search_term
+    )
+
+    {:noreply, assign(socket, posts_search_results: :loading, posts_search_term: search_term)}
+  end
+
+  def handle_event("clear_search_posts", _, socket) do
+    {:noreply, assign(socket, posts_search_results: nil, posts_search_term: "")}
+  end
+
+  def handle_event("search_notes", %{"search_term" => ""}, socket) do
+    {:noreply, assign(socket, notes_search_results: nil, notes_search_term: "")}
+  end
+
+  def handle_event("search_notes", %{"search_term" => search_term}, socket) do
+    %{
+      current_user: current_user,
+      root_section_resource_resource_id: root_section_resource_resource_id,
+      section: section
+    } = socket.assigns
+
+    async_search(
+      section.id,
+      current_user.id,
+      root_section_resource_resource_id,
+      :private,
+      search_term
+    )
+
+    {:noreply, assign(socket, notes_search_results: :loading, notes_search_term: search_term)}
+  end
+
+  def handle_event("clear_search_notes", _, socket) do
+    {:noreply, assign(socket, notes_search_results: nil, notes_search_term: "")}
+  end
+
   def handle_info({:discussion_created, _new_post}, socket)
       when socket.assigns.post_params.filter_by in ["my_activity", "page_discussions"] do
     # new broadcasted post should not be added to the UI if the user is filtering by "my activity"
@@ -404,6 +465,9 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
     Process.demonitor(ref, [:flush])
 
     case result do
+      {:assign, assigns} ->
+        {:noreply, assign(socket, assigns)}
+
       {:assign_post_replies, {parent_post_id, replies}} ->
         {:noreply, update_post_replies(socket, parent_post_id, replies, fn _ -> replies end)}
 
@@ -430,16 +494,21 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
         ctx={@ctx}
         section_slug={@section.slug}
         expanded_posts={@expanded_posts}
-        current_user_id={@current_user.id}
+        current_user={@current_user}
         course_collab_space_config={@course_collab_space_config}
         post_params={@post_params}
         more_posts_exist?={@more_posts_exist?}
+        posts_search_term={@posts_search_term}
+        posts_search_results={@posts_search_results}
       />
       <.notes_section
         ctx={@ctx}
+        current_user={@current_user}
         notes={@notes}
         note_params={@note_params}
         more_notes_exist?={@more_notes_exist?}
+        notes_search_term={@notes_search_term}
+        notes_search_results={@notes_search_results}
       />
     </div>
     """
@@ -529,10 +598,12 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
   attr :ctx, :map
   attr :section_slug, :string
   attr :expanded_posts, :map
-  attr :current_user_id, :integer
+  attr :current_user, :any
   attr :course_collab_space_config, Oli.Resources.Collaboration.CollabSpaceConfig
   attr :post_params, :map
   attr :more_posts_exist?, :boolean
+  attr :posts_search_term, :string
+  attr :posts_search_results, :any
 
   defp posts_section(assigns) do
     ~H"""
@@ -543,35 +614,53 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
         </h3>
       </div>
 
-      <.actions post_params={@post_params} course_collab_space_config={@course_collab_space_config} />
+      <.actions
+        post_params={@post_params}
+        course_collab_space_config={@course_collab_space_config}
+        posts_search_term={@posts_search_term}
+      />
 
-      <div role="posts list" class="w-full">
-        <%= for post <- @posts do %>
-          <div class="mb-3">
-            <Annotations.post class="bg-white" post={post} current_user={@ctx.user} />
+      <%= case @posts_search_results do %>
+        <% nil -> %>
+          <div role="posts list" class="w-full">
+            <%= for post <- @posts do %>
+              <div class="mb-3">
+                <Annotations.post class="bg-white" post={post} current_user={@ctx.user} />
+              </div>
+            <% end %>
+            <div :if={@posts == []} class="flex p-4 text-center w-full">
+              There are no discussions to show.
+            </div>
+            <div class="flex w-full justify-end">
+              <button
+                :if={@more_posts_exist?}
+                phx-click="load_more_posts"
+                class="text-primary text-sm px-6 py-2 hover:text-primary/70"
+              >
+                Load more posts
+              </button>
+            </div>
           </div>
-        <% end %>
-        <div :if={@posts == []} class="flex p-4 text-center w-full">
-          There are no discussions to show.
-        </div>
-        <div class="flex w-full justify-end">
-          <button
-            :if={@more_posts_exist?}
-            phx-click="load_more_posts"
-            class="text-primary text-sm px-6 py-2 hover:text-primary/70"
-          >
-            Load more posts
-          </button>
-        </div>
-      </div>
+        <% :loading -> %>
+          <div class="flex p-4 text-center w-full">
+            Searching...
+          </div>
+        <% results -> %>
+          <div role="search-results list" class="w-full">
+            <Annotations.search_results search_results={results} current_user={@current_user} />
+          </div>
+      <% end %>
     </section>
     """
   end
 
   attr :notes, :list
   attr :ctx, :map
+  attr :current_user, :any
   attr :note_params, :map
   attr :more_notes_exist?, :boolean
+  attr :notes_search_term, :string
+  attr :notes_search_results, :any
 
   defp notes_section(assigns) do
     ~H"""
@@ -582,39 +671,56 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
         </h3>
       </div>
 
-      <.notes_actions note_params={@note_params} />
+      <.notes_actions note_params={@note_params} notes_search_term={@notes_search_term} />
 
-      <div role="notes list" class="w-full">
-        <%= for post <- @notes do %>
-          <div class="mb-3">
-            <Annotations.post class="bg-white" post={post} current_user={@ctx.user} />
+      <%= case @notes_search_results do %>
+        <% nil -> %>
+          <div role="notes list" class="w-full">
+            <%= for post <- @notes do %>
+              <div class="mb-3">
+                <Annotations.post class="bg-white" post={post} current_user={@ctx.user} />
+              </div>
+            <% end %>
+            <div :if={@notes == []} class="flex p-4 text-center w-full">
+              There are no notes to show.
+            </div>
+            <div class="flex w-full justify-end">
+              <button
+                :if={@more_notes_exist?}
+                phx-click="load_more_notes"
+                class="text-primary text-sm px-6 py-2 hover:text-primary/70"
+              >
+                Load more notes
+              </button>
+            </div>
           </div>
-        <% end %>
-        <div :if={@notes == []} class="flex p-4 text-center w-full">
-          There are no notes to show.
-        </div>
-        <div class="flex w-full justify-end">
-          <button
-            :if={@more_notes_exist?}
-            phx-click="load_more_notes"
-            class="text-primary text-sm px-6 py-2 hover:text-primary/70"
-          >
-            Load more notes
-          </button>
-        </div>
-      </div>
+        <% :loading -> %>
+          <div class="flex p-4 text-center w-full">
+            Searching...
+          </div>
+        <% results -> %>
+          <div role="search-results list" class="w-full">
+            <Annotations.search_results search_results={results} current_user={@current_user} />
+          </div>
+      <% end %>
     </section>
     """
   end
 
   attr :post_params, :map
   attr :course_collab_space_config, Oli.Resources.Collaboration.CollabSpaceConfig
+  attr :posts_search_term, :string
 
   defp actions(assigns) do
     ~H"""
     <div role="posts actions" class="w-full flex gap-6">
       <div class="flex flex-1 space-x-3">
-        <Annotations.search_box class="flex-1" />
+        <Annotations.search_box
+          class="flex-1"
+          search_term={@posts_search_term}
+          on_search="search_posts"
+          on_clear_search="clear_search_posts"
+        />
 
         <.dropdown
           id="sort-dropdown"
@@ -684,12 +790,18 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
   end
 
   attr :note_params, :map
+  attr :notes_search_term, :string
 
   defp notes_actions(assigns) do
     ~H"""
     <div role="notes actions" class="w-full flex gap-6">
       <div class="flex flex-1 space-x-3">
-        <Annotations.search_box class="flex-1" />
+        <Annotations.search_box
+          class="flex-1"
+          search_term={@notes_search_term}
+          on_search="search_notes"
+          on_clear_search="clear_search_notes"
+        />
 
         <.dropdown
           id="sort-dropdown"
@@ -731,12 +843,14 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
   defp get_posts(
          current_user_id,
          section_id,
+         root_section_resource_resource_id,
          post_params
        ) do
     {posts, more_posts_exist?} =
       Collaboration.list_root_posts_for_section(
         current_user_id,
         section_id,
+        root_section_resource_resource_id,
         post_params.limit,
         post_params.offset,
         post_params.sort_by,
@@ -820,6 +934,34 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
       post_replies = Collaboration.list_replies_for_post(user_id, post_id)
 
       {:assign_post_replies, {post_id, post_replies}}
+    end)
+  end
+
+  defp async_search(
+         section_id,
+         current_user_id,
+         root_section_resource_resource_id,
+         visibility,
+         search_term
+       ) do
+    Task.async(fn ->
+      search_results =
+        Collaboration.search_posts_for_user_in_point_block(
+          section_id,
+          if(visibility == :public, do: root_section_resource_resource_id, else: nil),
+          current_user_id,
+          visibility,
+          nil,
+          search_term
+        )
+
+      case visibility do
+        :public ->
+          {:assign, %{posts_search_results: search_results}}
+
+        :private ->
+          {:assign, %{notes_search_results: search_results}}
+      end
     end)
   end
 end

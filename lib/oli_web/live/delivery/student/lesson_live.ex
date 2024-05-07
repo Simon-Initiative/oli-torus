@@ -494,11 +494,11 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     end
   end
 
-  def handle_event("search_annotations", %{"search_term" => ""}, socket) do
+  def handle_event("search", %{"search_term" => ""}, socket) do
     {:noreply, assign_annotations(socket, search_results: nil, search_term: "")}
   end
 
-  def handle_event("search_annotations", %{"search_term" => search_term}, socket) do
+  def handle_event("search", %{"search_term" => search_term}, socket) do
     %{
       current_user: current_user,
       section: section,
