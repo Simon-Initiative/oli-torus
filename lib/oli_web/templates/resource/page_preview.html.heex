@@ -1,37 +1,94 @@
-<div class="pt-5 mx-auto max-w-[900px]">
-  <%= if not is_nil(@container) and
+<%= if not is_nil(@container) and
     Oli.Resources.ResourceType.is_container(@container.revision) do %>
-    <%= render(
-      OliWeb.PageDeliveryView,
-      "container.html",
-      Map.merge(assigns, %{
-        children: @container.children,
-        active_page: nil
-      })
-    ) %>
-  <% else %>
-    <%= if not (Map.has_key?(@context.content, "advancedDelivery") and @context.content["advancedDelivery"]) do %>
-      <Components.Delivery.PageDelivery.header
-        title={@context.title}
-        page_number={0}
-        review_mode={false}
-      />
-    <% end %>
+  <div class="h-screen flex flex-col overscroll-none overflow-hidden">
+    <Components.Delivery.Layouts.header
+      ctx={@ctx}
+      is_system_admin={assigns[:is_system_admin] || false}
+      preview_mode={@preview_mode}
+    />
+    <div class="container mx-auto max-w-[880px] py-20">
+      <%= render(
+        OliWeb.PageDeliveryView,
+        "container.html",
+        Map.merge(assigns, %{
+          children: @container.children,
+          active_page: nil
+        })
+      ) %>
 
-    <Components.Delivery.PageDelivery.details ctx={@ctx} />
-
-    <div id="eventIntercept" class="content">
-      <%= raw(@content_html) %>
+      <%= render(OliWeb.ResourceView, "_preview_previous_next_nav.html",
+        conn: @conn,
+        context: @context,
+        action: :preview
+      ) %>
     </div>
+  </div>
+<% else %>
+  <div class="h-screen flex flex-col overscroll-none overflow-hidden">
+    <Components.Delivery.Layouts.header
+      ctx={@ctx}
+      is_system_admin={assigns[:is_system_admin] || false}
+      preview_mode={@preview_mode}
+    />
+
+    <div class="flex-1 flex flex-col overflow-hidden">
+      <div
+        id="page-content"
+        class="flex-1 flex flex-col relative justify-center items-start overflow-hidden"
+      >
+        <div class="flex-1 flex flex-col w-full overflow-auto">
+          <div class="flex-1 px-[80px] relative">
+            <div class="container mx-auto max-w-[880px] py-20">
+              <div class="message flex sticky justify-content-between alert alert-info rounded-none md:rounded-md enter-done">
+                <div>
+                  <strong>Preview Mode</strong>
+                  <br />
+                  <%= if @context.graded do %>
+                    <p>
+                      This is a preview of your graded assessment but it is displayed as an ungraded page to show feedback and hints.
+                    </p>
+                  <% else %>
+                    <p>This is a preview of your ungraded page.</p>
+                  <% end %>
+                </div>
+                <div class="form-inline m-2 my-lg-0">
+                  <button
+                    class="btn btn-action btn-warning"
+                    type="button"
+                    style="white-space: nowrap;"
+                    onclick="window.close()"
+                  >
+                    Exit Preview
+                  </button>
+                </div>
+              </div>
+
+              <div id="eventIntercept" class="content" phx-update="ignore" role="page content">
+                <%= raw(@content_html) %>
+              </div>
+
+              <%= render(OliWeb.BibliographyView, "_references.html",
+                conn: @conn,
+                context: @context,
+                bib_app_params: @bib_app_params,
+                action: :preview
+              ) %>
+
+              <%= render(OliWeb.ResourceView, "_preview_previous_next_nav.html",
+                conn: @conn,
+                context: @context,
+                action: :preview
+              ) %>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <script>
       OLI.initPreviewActivityBridge('eventIntercept');
     </script>
-  <% end %>
-
-  <%= render(OliWeb.BibliographyView, "_references.html",
-    conn: @conn,
-    context: @context,
-    bib_app_params: @bib_app_params,
-    action: :preview
-  ) %>
-</div>
+    <script :for={script <- @scripts} type="text/javascript" src={"/js/#{script}"}>
+    </script>
+  </div>
+<% end %>

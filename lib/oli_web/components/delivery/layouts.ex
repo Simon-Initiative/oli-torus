@@ -13,7 +13,6 @@ defmodule OliWeb.Components.Delivery.Layouts do
   alias Oli.Delivery.Sections.Section
   alias Oli.Accounts.{User, Author}
   alias Oli.Branding
-  alias Oli.Branding.Brand
   alias OliWeb.Components.Delivery.UserAccount
   alias Oli.Resources.Collaboration.CollabSpaceConfig
   alias OliWeb.Delivery.Student.Utils
@@ -22,7 +21,6 @@ defmodule OliWeb.Components.Delivery.Layouts do
   attr(:is_system_admin, :boolean, required: true)
   attr(:section, Section, default: nil)
   attr(:project, Project, default: nil)
-  attr(:brand, Brand)
   attr(:preview_mode, :boolean)
 
   attr(:force_show_user_menu, :boolean,
@@ -35,7 +33,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
     <div class="fixed z-50 w-full h-14 flex flex-row bg-delivery-header dark:bg-delivery-header-dark shadow-sm">
       <div class="w-48 p-2 flex shrink-0" tab-index="0">
         <a href={logo_link_path(@preview_mode, @section, @ctx.user)}>
-          <.logo_img />
+          <.logo_img section={@section} />
         </a>
       </div>
       <div class="flex items-center flex-grow-1 p-2">
@@ -282,7 +280,6 @@ defmodule OliWeb.Components.Delivery.Layouts do
   end
 
   attr(:section, Section)
-  attr(:brand, Brand)
 
   def logo_img(assigns) do
     assigns =
@@ -315,6 +312,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
   attr(:next_page, :map)
   attr(:section_slug, :string)
   attr(:request_path, :string)
+  attr(:selected_view, :string, doc: "The selected view for the Learn page (gallery or outline)")
 
   def previous_next_nav(assigns) do
     # <.links /> were changed from "navigate" to "href" to force a page reload
@@ -348,10 +346,13 @@ defmodule OliWeb.Components.Delivery.Layouts do
         role="prev_page"
       >
         <div class="px-2 lg:px-6 rounded justify-end items-center gap-2 flex">
-          <.link href={resource_navigation_url(@previous_page, @section_slug, @request_path)}>
-            <div class="w-[72px] h-10 opacity-30 hover:opacity-40 bg-blue-600 flex items-center justify-center cursor-pointer">
-              <.left_arrow />
-            </div>
+          <.link
+            href={
+              resource_navigation_url(@previous_page, @section_slug, @request_path, @selected_view)
+            }
+            class="w-[72px] h-10 opacity-90 hover:opacity-100 bg-blue-600 flex items-center justify-center"
+          >
+            <.left_arrow />
           </.link>
         </div>
         <div class="grow shrink basis-0 dark:text-white text-xs font-normal overflow-hidden text-ellipsis">
@@ -368,10 +369,11 @@ defmodule OliWeb.Components.Delivery.Layouts do
           <%= @next_page["title"] %>
         </div>
         <div class="px-2 lg:px-6 py-2 rounded justify-end items-center gap-2 flex">
-          <.link href={resource_navigation_url(@next_page, @section_slug, @request_path)}>
-            <div class="w-[72px] h-10 opacity-90 hover:opacity-100 bg-blue-600 flex items-center justify-center cursor-pointer">
-              <.right_arrow />
-            </div>
+          <.link
+            href={resource_navigation_url(@next_page, @section_slug, @request_path, @selected_view)}
+            class="w-[72px] h-10 opacity-90 hover:opacity-100 bg-blue-600 flex items-center justify-center"
+          >
+            <.right_arrow />
           </.link>
         </div>
       </div>
@@ -397,22 +399,32 @@ defmodule OliWeb.Components.Delivery.Layouts do
   defp resource_navigation_url(
          %{"slug" => slug, "type" => "page", "id" => resource_id},
          section_slug,
-         request_path
+         request_path,
+         selected_view
        ) do
     # If the request_path is the Learn page and we navigate to a different lesson,
     # we need to update the request_path to include the new target resource.
     request_path =
       if request_path && String.contains?(request_path, "/learn") do
-        Utils.learn_live_path(section_slug, target_resource_id: resource_id)
+        Utils.learn_live_path(section_slug,
+          target_resource_id: resource_id,
+          selected_view: selected_view
+        )
       else
         request_path
       end
 
-    Utils.lesson_live_path(section_slug, slug, request_path: request_path)
+    Utils.lesson_live_path(section_slug, slug,
+      request_path: request_path,
+      selected_view: selected_view
+    )
   end
 
-  defp resource_navigation_url(%{"id" => container_id}, section_slug, _) do
-    Utils.learn_live_path(section_slug, target_resource_id: container_id)
+  defp resource_navigation_url(%{"id" => container_id}, section_slug, _, selected_view) do
+    Utils.learn_live_path(section_slug,
+      target_resource_id: container_id,
+      selected_view: selected_view
+    )
   end
 
   attr(:to, :string)
@@ -484,24 +496,6 @@ defmodule OliWeb.Components.Delivery.Layouts do
     >
       <path d="M7.825 13H20V11H7.825L13.425 5.4L12 4L4 12L12 20L13.425 18.6L7.825 13Z" fill="white" />
     </svg>
-    """
-  end
-
-  def annotations_dropdown(assigns) do
-    ~H"""
-    <div class="flex items-center gap-2.5 absolute top-10 right-12 z-50 p-4 hidden">
-      <div class="flex py-1.5 pl-[18px] items-center gap-2.5">
-        <div class="w-6 h-6 relative opacity-50">
-          <i class="fa-solid fa-eye" />
-        </div>
-        <div class="w-[132px] dark:text-white text-xs font-bold uppercase tracking-wide">
-          All annotations
-        </div>
-      </div>
-      <div class="w-6 h-6 justify-center items-center gap-2.5 inline-flex">
-        <i class="fa-solid fa-caret-down" />
-      </div>
-    </div>
     """
   end
 

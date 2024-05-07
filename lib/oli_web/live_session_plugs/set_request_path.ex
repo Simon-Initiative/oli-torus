@@ -11,8 +11,15 @@ defmodule OliWeb.LiveSessionPlugs.SetRequestPath do
 
   def on_mount(:default, params, _session, socket) do
     section_slug = socket.assigns.section.slug
-    request_path = Map.get(params, "request_path", Utils.learn_live_path(section_slug))
+    selected_view = Map.get(params, "selected_view", "gallery")
 
-    {:cont, assign(socket, request_path: request_path)}
+    request_path =
+      Map.get(
+        params,
+        "request_path",
+        Utils.learn_live_path(section_slug, selected_view: selected_view)
+      )
+
+    {:cont, assign(socket, request_path: request_path, selected_view: selected_view)}
   end
 end

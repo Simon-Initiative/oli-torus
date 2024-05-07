@@ -308,16 +308,43 @@ defmodule OliWeb.Delivery.Student.LessonLive do
         _ -> :my_notes
       end
 
-    async_load_annotations(
-      socket.assigns.section,
-      socket.assigns.page_context.page.resource_id,
-      socket.assigns.current_user,
-      socket.assigns.course_collab_space_config,
-      visibility_for_active_tab(tab),
-      socket.assigns.annotations.selected_point
-    )
+    if socket.assigns.annotations.search_term not in [nil, ""] do
+      %{
+        current_user: current_user,
+        section: section,
+        page_context: %{
+          page: %{resource_id: resource_id}
+        },
+        annotations: %{
+          selected_point: selected_point,
+          search_term: search_term
+        }
+      } = socket.assigns
 
-    {:noreply, assign_annotations(socket, active_tab: tab, posts: nil)}
+      async_search_annotations(
+        section,
+        resource_id,
+        current_user,
+        visibility_for_active_tab(tab),
+        selected_point,
+        search_term
+      )
+
+      {:noreply,
+       socket
+       |> assign_annotations(search_results: :loading, active_tab: tab)}
+    else
+      async_load_annotations(
+        socket.assigns.section,
+        socket.assigns.page_context.page.resource_id,
+        socket.assigns.current_user,
+        socket.assigns.course_collab_space_config,
+        visibility_for_active_tab(tab),
+        socket.assigns.annotations.selected_point
+      )
+
+      {:noreply, assign_annotations(socket, active_tab: tab, posts: nil)}
+    end
   end
 
   def handle_event("toggle_post_replies", %{"post-id" => post_id}, socket) do
@@ -467,11 +494,11 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     end
   end
 
-  def handle_event("search_annotations", %{"search_term" => ""}, socket) do
+  def handle_event("search", %{"search_term" => ""}, socket) do
     {:noreply, assign_annotations(socket, search_results: nil, search_term: "")}
   end
 
-  def handle_event("search_annotations", %{"search_term" => search_term}, socket) do
+  def handle_event("search", %{"search_term" => search_term}, socket) do
     %{
       current_user: current_user,
       section: section,
