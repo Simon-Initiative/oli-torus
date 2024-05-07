@@ -31,7 +31,6 @@ defmodule OliWeb.Router do
     plug(OliWeb.SetLiveCSRF)
     plug(Plug.Telemetry, event_prefix: [:oli, :plug])
     plug(OliWeb.Plugs.SessionContext)
-    plug(OliWeb.Plugs.PutSessionExpirationTimeCookie)
   end
 
   # pipline for REST api endpoint routes

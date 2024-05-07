@@ -14,7 +14,7 @@ defmodule OliWeb.Projects.OverviewLive do
   alias Oli.Publishing.AuthoringResolver
   alias Oli.Resources.Collaboration
   alias OliWeb.Components.Overview
-  alias OliWeb.Projects.RequiredSurvey
+  alias OliWeb.Projects.{RequiredSurvey, TransferPaymentCodes}
   alias OliWeb.Common.SessionContext
 
   def mount(_params, session, socket) do
@@ -320,6 +320,17 @@ defmodule OliWeb.Projects.OverviewLive do
           author_id={@current_author.id}
           enabled={@project.required_survey_resource_id}
           required_survey={@project.required_survey}
+        />
+      </Overview.section>
+
+      <Overview.section
+        title="Transfer Payment Codes"
+        description="Allows to transfer payment codes between products of this project."
+      >
+        <.live_component
+          module={TransferPaymentCodes}
+          id="transfer-payment-codes-section"
+          project={@project}
         />
       </Overview.section>
 

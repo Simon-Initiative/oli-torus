@@ -8,6 +8,33 @@ defmodule OliWeb.LiveSessionPlugs.RedirectAdaptiveChromeless do
 
   def on_mount(
         :default,
+        %{
+          "section_slug" => section_slug,
+          "revision_slug" => revision_slug,
+          "attempt_guid" => attempt_guid
+        } = params,
+        _session,
+        socket
+      ) do
+    if is_adaptive_chromeless_view?(revision_slug) do
+      {:halt,
+       redirect(socket,
+         to:
+           adaptive_chromeless_revision_url(
+             section_slug,
+             revision_slug,
+             attempt_guid,
+             request_path: params["request_path"],
+             selected_view: params["selected_view"]
+           )
+       )}
+    else
+      {:cont, socket}
+    end
+  end
+
+  def on_mount(
+        :default,
         %{"section_slug" => section_slug, "revision_slug" => revision_slug} = params,
         _session,
         socket
@@ -15,7 +42,11 @@ defmodule OliWeb.LiveSessionPlugs.RedirectAdaptiveChromeless do
     if is_adaptive_chromeless_view?(revision_slug) do
       {:halt,
        redirect(socket,
-         to: adaptive_chromeless_url(section_slug, revision_slug, params["request_path"])
+         to:
+           adaptive_chromeless_url(section_slug, revision_slug,
+             request_path: params["request_path"],
+             selected_view: params["selected_view"]
+           )
        )}
     else
       {:cont, socket}
@@ -26,12 +57,12 @@ defmodule OliWeb.LiveSessionPlugs.RedirectAdaptiveChromeless do
     {:cont, socket}
   end
 
-  def adaptive_chromeless_url(section_slug, revision_slug, nil),
-    do: ~p"/sections/#{section_slug}/adaptive_lesson/#{revision_slug}"
-
-  def adaptive_chromeless_url(section_slug, revision_slug, request_path),
+  def adaptive_chromeless_revision_url(section_slug, revision_slug, attempt_guid, params),
     do:
-      ~p"/sections/#{section_slug}/adaptive_lesson/#{revision_slug}?#{%{request_path: request_path}}"
+      ~p"/sections/#{section_slug}/page/#{revision_slug}/attempt/#{attempt_guid}/review?#{params}"
+
+  def adaptive_chromeless_url(section_slug, revision_slug, params),
+    do: ~p"/sections/#{section_slug}/adaptive_lesson/#{revision_slug}?#{params}"
 
   defp is_adaptive_chromeless_view?(revision_slug) do
     Repo.exists?(

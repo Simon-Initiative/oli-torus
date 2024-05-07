@@ -12,6 +12,8 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
   alias Oli.Resources.ResourceType
   alias OliWeb.Delivery.Student.Utils
 
+  @default_selected_view :gallery
+
   defp live_view_adaptive_lesson_live_route(section_slug, revision_slug, request_path \\ nil)
 
   defp live_view_adaptive_lesson_live_route(section_slug, revision_slug, nil) do
@@ -357,10 +359,17 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       Sections.mark_section_visited_for_student(section, user)
 
       {:error, {:redirect, %{to: redirect_path}}} =
-        live(conn, Utils.lesson_live_path(section.slug, exploration_1.slug))
+        live(
+          conn,
+          Utils.lesson_live_path(section.slug, exploration_1.slug,
+            request_path: "some_request_path",
+            selected_view: @default_selected_view
+          )
+        )
 
       assert redirect_path ==
-               live_view_adaptive_lesson_live_route(section.slug, exploration_1.slug)
+               live_view_adaptive_lesson_live_route(section.slug, exploration_1.slug) <>
+                 "?request_path=some_request_path&selected_view=gallery"
     end
 
     test "can access when enrolled to course", %{
@@ -597,6 +606,46 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       )
     end
 
+    test "Review link redirects to the lesson review page for adaptive chromeles pages",
+         %{
+           conn: conn,
+           user: user,
+           section: section,
+           graded_adaptive_page_revision: graded_adaptive_page_revision
+         } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+
+      attempt = create_attempt(user, section, graded_adaptive_page_revision)
+
+      request_path =
+        Utils.learn_live_path(section.slug,
+          target_resource_id: graded_adaptive_page_revision.resource_id
+        )
+
+      {:ok, view, _html} =
+        live(
+          conn,
+          live_view_adaptive_lesson_live_route(
+            section.slug,
+            graded_adaptive_page_revision.slug,
+            request_path
+          )
+        )
+
+      view
+      |> element(~s{a[role="review_attempt_link"]})
+      |> render_click
+
+      assert_redirected(
+        view,
+        ~p"/sections/#{section.slug}/lesson/#{graded_adaptive_page_revision.slug}/attempt/#{attempt.attempt_guid}/review?#{%{request_path: request_path}}"
+      )
+
+      # Note that the student will then be redirected to the adaptive chromeless review path in OliWeb.LiveSessionPlugs.RedirectAdaptiveChromeless
+      # (tested in OliWeb.LiveSessionPlugs.RedirectAdaptiveChromelessTest)
+    end
+
     test "does not render 'Review' link on attempt summary if instructor does not allow it", %{
       conn: conn,
       user: user,
@@ -726,11 +775,18 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       |> render_click
 
       # It redirects to the next page, but still referencing the targeted Learn view in the URL with the next page resource
-      request_path = Utils.learn_live_path(section.slug, target_resource_id: page_2.resource_id)
+      request_path =
+        Utils.learn_live_path(section.slug,
+          target_resource_id: page_2.resource_id,
+          selected_view: @default_selected_view
+        )
 
       assert_redirected(
         view,
-        Utils.lesson_live_path(section.slug, page_2.slug, request_path: request_path)
+        Utils.lesson_live_path(section.slug, page_2.slug,
+          request_path: request_path,
+          selected_view: @default_selected_view
+        )
       )
     end
 
@@ -748,7 +804,13 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       request_path = ~p"/sections/#{section.slug}/assignments"
 
       {:ok, view, _html} =
-        live(conn, Utils.lesson_live_path(section.slug, page_1.slug, request_path: request_path))
+        live(
+          conn,
+          Utils.lesson_live_path(section.slug, page_1.slug,
+            request_path: request_path,
+            selected_view: @default_selected_view
+          )
+        )
 
       view
       |> element(~s{div[role="next_page"] a})
@@ -756,7 +818,10 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
 
       assert_redirected(
         view,
-        Utils.lesson_live_path(section.slug, page_2.slug, request_path: request_path)
+        Utils.lesson_live_path(section.slug, page_2.slug,
+          request_path: request_path,
+          selected_view: @default_selected_view
+        )
       )
     end
 
@@ -773,7 +838,11 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       Sections.mark_section_visited_for_student(section, user)
 
       # next page is a container
-      {:ok, view, _html} = live(conn, Utils.lesson_live_path(section.slug, page_2.slug))
+      {:ok, view, _html} =
+        live(
+          conn,
+          Utils.lesson_live_path(section.slug, page_2.slug, selected_view: @default_selected_view)
+        )
 
       view
       |> element(~s{div[role="next_page"] a})
@@ -781,7 +850,10 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
 
       assert_redirected(
         view,
-        Utils.learn_live_path(section.slug, target_resource_id: module_2.resource_id)
+        Utils.learn_live_path(section.slug,
+          target_resource_id: module_2.resource_id,
+          selected_view: @default_selected_view
+        )
       )
 
       # previous page is a container
@@ -793,7 +865,10 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
 
       assert_redirected(
         view,
-        Utils.learn_live_path(section.slug, target_resource_id: module_2.resource_id)
+        Utils.learn_live_path(section.slug,
+          target_resource_id: module_2.resource_id,
+          selected_view: @default_selected_view
+        )
       )
     end
 
@@ -806,7 +881,11 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
       Sections.mark_section_visited_for_student(section, user)
 
-      {:ok, view, _html} = live(conn, Utils.lesson_live_path(section.slug, page_1.slug))
+      {:ok, view, _html} =
+        live(
+          conn,
+          Utils.lesson_live_path(section.slug, page_1.slug, selected_view: @default_selected_view)
+        )
 
       view
       |> element(~s{div[role="back_link"] a})
@@ -814,7 +893,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
 
       assert_redirected(
         view,
-        Utils.learn_live_path(section.slug)
+        Utils.learn_live_path(section.slug, selected_view: @default_selected_view)
       )
     end
 
@@ -898,7 +977,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
 
       assert_redirected(
         view,
-        Utils.learn_live_path(section.slug)
+        Utils.learn_live_path(section.slug, selected_view: @default_selected_view)
       )
     end
   end

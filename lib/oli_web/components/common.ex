@@ -630,11 +630,12 @@ defmodule OliWeb.Components.Common do
   attr(:id, :string)
   attr(:button_class, :string)
   attr(:options, :list)
+  attr(:rest, :global, include: ~w(disabled class))
   slot(:inner_block)
 
   def dropdown(assigns) do
     ~H"""
-    <div class="relative" phx-click-away={JS.hide(to: "##{@id}-options")}>
+    <div class={["relative", @rest[:class]]} phx-click-away={JS.hide(to: "##{@id}-options")}>
       <button
         phx-click={
           JS.toggle(

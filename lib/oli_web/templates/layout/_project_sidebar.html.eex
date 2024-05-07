@@ -13,6 +13,7 @@
       <li><a class="dropdown-item btn btn-lg" href="<%= Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.OverviewLive, @project.slug) %>">Overview</a></li>
       <li><a class="dropdown-item btn btn-lg" href="<%= Routes.live_path(OliWeb.Endpoint, OliWeb.ObjectivesLive.Objectives, @project.slug) %>">Objectives</a></li>
       <li><a class="dropdown-item btn btn-lg" href="<%= Routes.activity_bank_path(@conn, :index, @project.slug) %>">Activity Bank</a></li>
+      <li><a class="dropdown-item btn btn-lg" href="<%= Routes.live_path(OliWeb.Endpoint, OliWeb.Experiments.ExperimentsView, @project.slug) %>">Experiments</a></li>
       <li><a class="dropdown-item btn btn-lg" href="<%= Routes.bibliography_path(@conn, :index, @project.slug) %>">Bibliography</a></li>
       <li><a class="dropdown-item btn btn-lg" href="<%= Routes.container_path(@conn, :index, @project.slug, root_container_slug(@project.slug)) %>">Curriculum</a></li>
 

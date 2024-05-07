@@ -1,16 +1,18 @@
 defmodule OliWeb.Products.DetailsView do
   use OliWeb, :live_view
+  use OliWeb.Common.Modal
 
   alias Oli.{Accounts, Branding, Inventories, Repo}
-  alias OliWeb.Common.Breadcrumb
   alias Oli.Accounts.Author
-  alias Oli.Delivery.Sections
+  alias Oli.Authoring.Course
+  alias Oli.Delivery.{Paywall, Sections}
   alias Oli.Delivery.Sections.{Blueprint, Section}
-  alias OliWeb.Router.Helpers, as: Routes
-  alias OliWeb.Common.Confirm
-  alias OliWeb.Sections.Mount
-  alias OliWeb.Products.Details.{Actions, Edit, Content, ImageUpload}
   alias Oli.Utils.S3Storage
+  alias OliWeb.Common.{Breadcrumb, Confirm}
+  alias OliWeb.Products.Details.{Actions, Edit, Content, ImageUpload}
+  alias OliWeb.Products.ProductsToTransferCodes
+  alias OliWeb.Router.Helpers, as: Routes
+  alias OliWeb.Sections.Mount
 
   require Logger
 
@@ -34,6 +36,8 @@ defmodule OliWeb.Products.DetailsView do
       {_, _, product} ->
         author = Repo.get(Author, author_id)
 
+        base_project = Course.get_project!(product.base_project_id)
+
         available_brands =
           Branding.list_brands()
           |> Enum.map(fn brand -> {brand.name, brand.id} end)
@@ -51,7 +55,8 @@ defmodule OliWeb.Products.DetailsView do
            changeset: Section.changeset(product, %{}),
            title: "Edit Product",
            show_confirm: false,
-           breadcrumbs: [Breadcrumb.new(%{full_title: "Product Overview"})]
+           breadcrumbs: [Breadcrumb.new(%{full_title: "Product Overview"})],
+           base_project: base_project
          )
          |> Phoenix.LiveView.allow_upload(:cover_image,
            accept: ~w(.jpg .jpeg .png),
@@ -64,6 +69,7 @@ defmodule OliWeb.Products.DetailsView do
 
   def render(assigns) do
     ~H"""
+    <%= render_modal(assigns) %>
     <div class="overview container">
       <div class="grid grid-cols-12 py-5 border-b">
         <div class="md:col-span-4">
@@ -125,7 +131,12 @@ defmodule OliWeb.Products.DetailsView do
           <h4>Actions</h4>
         </div>
         <div class="md:col-span-8">
-          <Actions.render product={@product} is_admin={@is_admin} />
+          <Actions.render
+            product={@product}
+            is_admin={@is_admin}
+            base_project={@base_project}
+            has_payment_codes={Paywall.has_payment_codes?(@product.id)}
+          />
         </div>
       </div>
       <%= if @show_confirm do %>
@@ -222,6 +233,53 @@ defmodule OliWeb.Products.DetailsView do
 
   def handle_event("cancel_upload", %{"ref" => ref}, socket) do
     {:noreply, cancel_upload(socket, :cover_image, ref)}
+  end
+
+  def handle_event("show_products_to_transfer", _, socket) do
+    products_to_transfer =
+      Oli.Delivery.Sections.get_sections_by(
+        base_project_id: socket.assigns.base_project.id,
+        type: :blueprint
+      )
+      |> Enum.filter(fn product -> product.id != socket.assigns.product.id end)
+
+    modal_assigns = %{
+      id: "products_to_transfer_modal",
+      products_to_transfer: products_to_transfer,
+      changeset: socket.assigns.changeset
+    }
+
+    modal = fn assigns ->
+      ~H"""
+      <ProductsToTransferCodes.render {@modal_assigns} />
+      """
+    end
+
+    {:noreply,
+     show_modal(
+       socket,
+       modal,
+       modal_assigns: modal_assigns
+     )}
+  end
+
+  def handle_event("submit_transfer_payment_codes", %{"product_id" => product_id}, socket) do
+    socket = clear_flash(socket)
+
+    socket =
+      case Paywall.transfer_payment_codes(socket.assigns.product.id, product_id) do
+        {0, _nil} ->
+          put_flash(socket, :error, "Could not transfer payment codes")
+
+        {_count, _} ->
+          socket = put_flash(socket, :info, "Payment codes transferred successfully")
+
+          redirect(socket,
+            to: ~p"/authoring/products/#{socket.assigns.product.slug}"
+          )
+      end
+
+    {:noreply, hide_modal(socket, modal_assigns: nil)}
   end
 
   defp ext(entry) do

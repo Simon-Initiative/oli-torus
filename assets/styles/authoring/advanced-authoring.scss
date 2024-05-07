@@ -849,38 +849,6 @@ $font-family-sans-serif: var(--font-sans);
   }
 }
 
-.modal-dialog.session-modal {
-  .modal-content {
-    box-shadow: 3px 3px 6px 1px rgba(#000, 0.5);
-  }
-  .modal-header {
-    background: $panel-section-title-bar-color;
-    border-top: 1px solid $ui-border-color;
-    border-bottom: 1px solid $ui-border-color;
-    display: flex;
-    font-family: 'Raleway', $font-family-sans-serif;
-    font-size: 12px;
-    color: $panel-font-color-light;
-    height: $panel-section-title-bar-height;
-    justify-content: space-between;
-    align-items: center;
-    padding: 0 16px 0 4px;
-    i {
-      font-size: 1rem;
-    }
-
-    .title {
-      font-weight: 700;
-      text-transform: uppercase;
-    }
-  }
-  .modal-footer {
-    background-color: $panel-bg-color-light;
-    box-shadow: 0 2px 4px 0 rgba(#000, 0.1);
-    border-bottom: 1px solid $ui-border-color;
-  }
-}
-
 .modal-dialog.diagnostic-modal {
   &.advanced-authoring {
     opacity: 1;
@@ -961,18 +929,5 @@ $font-family-sans-serif: var(--font-sans);
 .toast-body {
   .list-group-item {
     margin: 5px;
-  }
-}
-
-.dark .modal-dialog.session-modal {
-  .modal-header {
-    background-color: $panel-bg-color-dark;
-    color: #f5f6f7;
-  }
-  .modal-footer {
-    background-color: $panel-bg-color-dark;
-  }
-  .modal-body {
-    color: white;
   }
 }

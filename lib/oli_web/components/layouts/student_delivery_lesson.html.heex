@@ -43,7 +43,6 @@
     ctx={@ctx}
     is_system_admin={assigns[:is_system_admin] || false}
     section={@section}
-    brand={@brand}
     preview_mode={@preview_mode}
   />
 
@@ -55,9 +54,6 @@
     >
       <.back_arrow to={@request_path} show_sidebar={assigns[:show_sidebar]} view={@view} />
 
-      <%!-- This feature will not be implemented in the first release. This is just a placeholder--%>
-      <.annotations_dropdown />
-
       <%= @inner_content %>
     </div>
 
@@ -68,6 +64,7 @@
       next_page={@next_page}
       section_slug={@section.slug}
       request_path={@request_path}
+      selected_view={@selected_view}
     />
   </div>
 

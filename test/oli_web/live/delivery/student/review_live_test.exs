@@ -11,6 +11,8 @@ defmodule OliWeb.Delivery.Student.ReviewLiveTest do
   alias Oli.Resources.ResourceType
   alias OliWeb.Delivery.Student.Utils
 
+  @default_selected_view :gallery
+
   defp create_attempt(student, section, revision) do
     resource_access =
       insert(:resource_access, %{
@@ -421,11 +423,18 @@ defmodule OliWeb.Delivery.Student.ReviewLiveTest do
       |> render_click
 
       # It redirects to the next page, but still referencing the targeted Learn view in the URL with the next page resource
-      request_path = Utils.learn_live_path(section.slug, target_resource_id: page_2.resource_id)
+      request_path =
+        Utils.learn_live_path(section.slug,
+          target_resource_id: page_2.resource_id,
+          selected_view: @default_selected_view
+        )
 
       assert_redirected(
         view,
-        Utils.lesson_live_path(section.slug, page_2.slug, request_path: request_path)
+        Utils.lesson_live_path(section.slug, page_2.slug,
+          request_path: request_path,
+          selected_view: @default_selected_view
+        )
       )
     end
 
@@ -447,7 +456,8 @@ defmodule OliWeb.Delivery.Student.ReviewLiveTest do
         live(
           conn,
           Utils.review_live_path(section.slug, page_1.slug, attempt.attempt_guid,
-            request_path: request_path
+            request_path: request_path,
+            selected_view: @default_selected_view
           )
         )
 
@@ -457,7 +467,10 @@ defmodule OliWeb.Delivery.Student.ReviewLiveTest do
 
       assert_redirected(
         view,
-        Utils.lesson_live_path(section.slug, page_2.slug, request_path: request_path)
+        Utils.lesson_live_path(section.slug, page_2.slug,
+          request_path: request_path,
+          selected_view: @default_selected_view
+        )
       )
     end
 
@@ -476,7 +489,12 @@ defmodule OliWeb.Delivery.Student.ReviewLiveTest do
 
       # next page is a container
       {:ok, view, _html} =
-        live(conn, Utils.review_live_path(section.slug, page_2.slug, attempt.attempt_guid))
+        live(
+          conn,
+          Utils.review_live_path(section.slug, page_2.slug, attempt.attempt_guid,
+            selected_view: @default_selected_view
+          )
+        )
 
       view
       |> element(~s{div[role="next_page"] a})
@@ -484,11 +502,18 @@ defmodule OliWeb.Delivery.Student.ReviewLiveTest do
 
       assert_redirected(
         view,
-        Utils.learn_live_path(section.slug, target_resource_id: module_2.resource_id)
+        Utils.learn_live_path(section.slug,
+          target_resource_id: module_2.resource_id,
+          selected_view: @default_selected_view
+        )
       )
 
       # previous page is a container
-      {:ok, view, _html} = live(conn, Utils.lesson_live_path(section.slug, page_3.slug))
+      {:ok, view, _html} =
+        live(
+          conn,
+          Utils.lesson_live_path(section.slug, page_3.slug, selected_view: @default_selected_view)
+        )
 
       view
       |> element(~s{div[role="prev_page"] a})
@@ -496,7 +521,10 @@ defmodule OliWeb.Delivery.Student.ReviewLiveTest do
 
       assert_redirected(
         view,
-        Utils.learn_live_path(section.slug, target_resource_id: module_2.resource_id)
+        Utils.learn_live_path(section.slug,
+          target_resource_id: module_2.resource_id,
+          selected_view: @default_selected_view
+        )
       )
     end
 
