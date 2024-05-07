@@ -7,6 +7,7 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
   alias OliWeb.Components.Modal
   alias OliWeb.Components.Delivery.Buttons
   alias OliWeb.Delivery.Student.Lesson.Annotations
+  alias OliWeb.Icons
 
   @default_params %{
     sort_by: "date",
@@ -754,18 +755,7 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
           ]}
         >
           <span class="text-[14px] leading-[20px] mr-2">Sort</span>
-          <svg
-            width="24"
-            height="24"
-            viewBox="0 0 24 24"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <path
-              d="M6.70711 8.29289C6.31658 7.90237 5.68342 7.90237 5.29289 8.29289C4.90237 8.68342 4.90237 9.31658 5.29289 9.70711L11.2929 15.7071C11.6834 16.0976 12.3166 16.0976 12.7071 15.7071L18.7071 9.70711C19.0976 9.31658 19.0976 8.68342 18.7071 8.29289C18.3166 7.90237 17.6834 7.90237 17.2929 8.29289L12 13.5858L6.70711 8.29289Z"
-              fill="white"
-            />
-          </svg>
+          <Icons.chevron_down />
         </.dropdown>
       </div>
 
@@ -775,18 +765,7 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
         phx-click={Modal.show_modal("new-discussion-modal")}
         class="rounded-[3px] py-[10px] pl-[18px] pr-6 flex justify-center items-center whitespace-nowrap text-[14px] leading-[20px] font-normal text-white bg-[#0F6CF5] hover:bg-blue-600"
       >
-        <svg
-          role="plus icon"
-          xmlns="http://www.w3.org/2000/svg"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke-width="1.5"
-          stroke="currentColor"
-          class="w-6 h-6 mr-[10px]"
-        >
-          <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-        </svg>
-        New Discussion
+        <Icons.plus class="w-6 h-6 mr-[10px]" /> New Discussion
       </button>
     </div>
     """
@@ -807,7 +786,7 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
         />
 
         <.dropdown
-          id="sort-dropdown"
+          id="sort-notes-dropdown"
           role="sort"
           class="inline-flex"
           button_class="rounded-[3px] py-[10px] px-6 flex justify-center items-center whitespace-nowrap text-[14px] leading-[20px] font-normal text-white bg-[#0F6CF5] hover:bg-blue-600"
@@ -825,18 +804,7 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
           ]}
         >
           <span class="text-[14px] leading-[20px] mr-2">Sort</span>
-          <svg
-            width="24"
-            height="24"
-            viewBox="0 0 24 24"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <path
-              d="M6.70711 8.29289C6.31658 7.90237 5.68342 7.90237 5.29289 8.29289C4.90237 8.68342 4.90237 9.31658 5.29289 9.70711L11.2929 15.7071C11.6834 16.0976 12.3166 16.0976 12.7071 15.7071L18.7071 9.70711C19.0976 9.31658 19.0976 8.68342 18.7071 8.29289C18.3166 7.90237 17.6834 7.90237 17.2929 8.29289L12 13.5858L6.70711 8.29289Z"
-              fill="white"
-            />
-          </svg>
+          <Icons.chevron_down />
         </.dropdown>
       </div>
     </div>
