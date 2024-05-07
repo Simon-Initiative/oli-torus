@@ -10,7 +10,6 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   alias OliWeb.Components.Delivery.Student
   alias OliWeb.Delivery.Student.Utils
   alias OliWeb.Icons
-  alias Oli.Publishing.DeliveryResolver
   alias Phoenix.LiveView.JS
 
   import Oli.Utils, only: [get_in: 3]
