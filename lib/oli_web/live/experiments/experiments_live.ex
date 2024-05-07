@@ -23,9 +23,11 @@ defmodule OliWeb.Experiments.ExperimentsView do
   def mount(_params, _session, socket) do
     experiment = ResourceEditor.get_latest_experiment(socket.assigns.project.slug)
 
-    socket = assign(socket, is_upgrade_enabled: false)
-    socket = assign(socket, title: @title)
-    socket = assign(socket, experiment: experiment)
+    socket =
+      socket
+      |> assign(is_upgrade_enabled: false)
+      |> assign(title: @title)
+      |> assign(experiment: experiment)
 
     {:ok, socket}
   end
