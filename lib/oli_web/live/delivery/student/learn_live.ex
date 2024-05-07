@@ -1073,9 +1073,10 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         >
           <div class="w-full">
             <% module =
-              Map.get(assigns.selected_module_per_unit_resource_id, assigns.unit["resource_id"]) %>
+              Map.get(@selected_module_per_unit_resource_id, @unit["resource_id"]) %>
             <.module_content_header
               module={module}
+              page_metrics={@page_metrics_per_module_id[module["resource_id"]]}
               show_completed_pages={
                 get_in(
                   @display_props_per_module_id,
@@ -1287,8 +1288,10 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   attr :module, :map
   attr :show_completed_pages, :boolean, default: true
 
+  attr :page_metrics, :map,
+    default: %{total_pages_count: 0, completed_pages_count: 0, total_duration_minutes: 0}
+
   def module_content_header(assigns) do
-    # TODO, do not recalculate module metrics!
     ~H"""
     <div class="w-full border-b dark:border-white/20 flex items-center justify-between pb-1.5">
       <div role="completed count" class="flex gap-2.5">
@@ -1298,7 +1301,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         <div class="w-34 h-8 pl-1 flex gap-1.5">
           <div class="flex gap-0.5 items-center">
             <span class="opacity-80 dark:text-white text-[13px] font-normal font-['Open Sans'] leading-loose">
-              <%= case module_page_metrics(@module) do
+              <%= case @page_metrics do
                 %{total_pages_count: 1, completed_pages_count: 1} ->
                   "1 of 1 Page"
 
