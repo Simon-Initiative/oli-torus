@@ -42,9 +42,8 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
           <% _ -> %>
             <.search_results
               search_results={@search_results}
-              search_term={@search_term}
               current_user={@current_user}
-              active_tab={@active_tab}
+              on_reveal_post="reveal_post"
             />
         <% end %>
       </div>
@@ -91,11 +90,10 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
   end
 
   attr :current_user, Oli.Accounts.User, required: true
-  attr :active_tab, :atom, default: :my_notes
   attr :search_results, :any, default: nil
-  attr :search_term, :string, default: ""
+  attr :on_reveal_post, :string, default: nil
 
-  defp search_results(assigns) do
+  def search_results(assigns) do
     ~H"""
     <div class="flex-1 flex flex-col gap-3 overflow-y-auto pb-[80px]">
       <%= case @search_results do %>
@@ -106,8 +104,8 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
         <% annotations -> %>
           <%= for annotation <- annotations do %>
             <div
-              class="flex flex-col cursor-pointer"
-              phx-click="reveal_post"
+              class={["flex flex-col", if(@on_reveal_post, do: "cursor-pointer")]}
+              phx-click={@on_reveal_post}
               phx-value-point-marker-id={annotation.annotated_block_id}
               phx-value-post-id={annotation.id}
             >
@@ -126,7 +124,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
   defp search_result(assigns) do
     ~H"""
     <div class={[
-      "search-result flex flex-col border-gray-200 dark:border-gray-800 rounded",
+      "search-result flex flex-col bg-white border-gray-200 dark:border-gray-800 rounded",
       if(@is_reply, do: "my-2 pl-4 border-l-2", else: "p-4 border-2")
     ]}>
       <div class="flex flex-row justify-between mb-1">
@@ -314,11 +312,13 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
   end
 
   attr :search_term, :string, default: ""
+  attr :on_search, :string, default: "search"
+  attr :on_clear_search, :string, default: "clear_search"
   attr :rest, :global, include: ~w(class)
 
   def search_box(assigns) do
     ~H"""
-    <form class={["flex flex-row", @rest[:class]]} phx-submit="search_annotations">
+    <form class={["flex flex-row", @rest[:class]]} phx-submit={@on_search}>
       <div class="flex-1 relative">
         <i class="fa-solid fa-search absolute left-4 top-4 text-gray-400 pointer-events-none text-lg">
         </i>
@@ -327,14 +327,14 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
           name="search_term"
           value={@search_term}
           class="w-full border border-gray-400 dark:border-gray-700 rounded-lg px-12 py-3"
-          phx-change="search_annotations"
+          phx-change={@on_search}
           phx-debounce="500"
         />
         <button
           :if={@search_term != ""}
           type="button"
           class="absolute right-0 top-0 bottom-0 py-3 px-4"
-          phx-click="clear_search"
+          phx-click={@on_clear_search}
         >
           <i class="fa-solid fa-xmark text-lg"></i>
         </button>
@@ -477,7 +477,11 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
         </div>
         """
 
-      %Oli.Resources.Collaboration.Post{visibility: :public} ->
+      %Oli.Resources.Collaboration.Post{
+        visibility: :public,
+        reaction_summaries: reaction_summaries
+      }
+      when not is_nil(reaction_summaries) ->
         ~H"""
         <div class="flex flex-row gap-3 my-2" role="post actions">
           <button
