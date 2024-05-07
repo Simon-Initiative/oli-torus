@@ -3,18 +3,14 @@ defmodule OliWeb.Delivery.Student.LearnLive do
 
   alias Oli.Accounts.User
   alias OliWeb.Common.FormatDateTime
-  alias Oli.Delivery.{Metrics, Sections}
+  alias Oli.Delivery.{Hierarchy, Metrics, Sections}
   alias Phoenix.LiveView.JS
-  alias Oli.Authoring.Course.Project
   alias Oli.Delivery.Sections.SectionCache
   alias OliWeb.Common.Utils, as: WebUtils
   alias OliWeb.Components.Delivery.Student
   alias OliWeb.Delivery.Student.Utils
-  alias Oli.Publishing.DeliveryResolver
-  alias Phoenix.LiveView.JS
 
   import Oli.Utils, only: [get_in: 3]
-  import Ecto.Query, warn: false, only: [from: 2]
 
   @default_selected_view :gallery
 
@@ -191,7 +187,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         module_resource_id = String.to_integer(resource_id)
 
         unit_resource_id =
-          Oli.Delivery.Hierarchy.find_parent_in_hierarchy(
+          Hierarchy.find_parent_in_hierarchy(
             full_hierarchy,
             fn node -> node["resource_id"] == module_resource_id end
           )["resource_id"]
@@ -236,7 +232,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         # and then scroll X in the slider to that page
 
         unit_resource_id =
-          Oli.Delivery.Hierarchy.find_parent_in_hierarchy(
+          Hierarchy.find_parent_in_hierarchy(
             full_hierarchy,
             fn node -> node["resource_id"] == String.to_integer(resource_id) end
           )["resource_id"]
@@ -257,14 +253,14 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         # and then scroll X in the slider to that module and expand it
 
         module_resource_id =
-          find_module_ancestor(
+          Hierarchy.find_module_ancestor(
             full_hierarchy,
             String.to_integer(resource_id),
             @container_resource_type_id
-          )
+          )["resource_id"]
 
         unit_resource_id =
-          Oli.Delivery.Hierarchy.find_parent_in_hierarchy(
+          Hierarchy.find_parent_in_hierarchy(
             full_hierarchy,
             fn node ->
               node["resource_id"] == module_resource_id
@@ -315,7 +311,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       if String.to_existing_atom(is_intro_video) do
         Enum.find(full_hierarchy["children"], fn unit -> unit["resource_id"] == resource_id end)
       else
-        Oli.Delivery.Hierarchy.find_parent_in_hierarchy(
+        Hierarchy.find_parent_in_hierarchy(
           full_hierarchy,
           fn node -> node["resource_id"] == resource_id end
         )
@@ -370,7 +366,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     module_resource_id = String.to_integer(module_resource_id)
 
     selected_unit =
-      Oli.Delivery.Hierarchy.find_parent_in_hierarchy(
+      Hierarchy.find_parent_in_hierarchy(
         full_hierarchy,
         &(&1["resource_id"] == module_resource_id)
       )
@@ -495,7 +491,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     full_hierarchy = get_or_compute_full_hierarchy(socket.assigns.section)
 
     selected_unit =
-      Oli.Delivery.Hierarchy.find_parent_in_hierarchy(
+      Hierarchy.find_parent_in_hierarchy(
         full_hierarchy,
         fn node -> node["resource_id"] == module_resource_id end
       )
@@ -2694,93 +2690,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
 
   def get_or_compute_full_hierarchy(section) do
     SectionCache.get_or_compute(section.slug, :full_hierarchy, fn ->
-      full_hierarchy(section)
-    end)
-  end
-
-  defp full_hierarchy(section) do
-    {hierarchy_nodes, root_hierarchy_node} = hierarchy_nodes_by_sr_id(section)
-
-    hierarchy_node_with_children(root_hierarchy_node, hierarchy_nodes)
-  end
-
-  defp hierarchy_node_with_children(
-         %{"children" => children_ids} = node,
-         nodes_by_sr_id
-       ) do
-    Map.put(
-      node,
-      "children",
-      Enum.map(children_ids, fn sr_id ->
-        Map.get(nodes_by_sr_id, sr_id)
-        |> hierarchy_node_with_children(nodes_by_sr_id)
-      end)
-    )
-  end
-
-  # Returns a map of resource ids to hierarchy nodes and the root hierarchy node
-  defp hierarchy_nodes_by_sr_id(section) do
-    page_id = Oli.Resources.ResourceType.get_id_by_type("page")
-    container_id = Oli.Resources.ResourceType.get_id_by_type("container")
-
-    labels =
-      case section.customizations do
-        nil -> Oli.Branding.CustomLabels.default_map()
-        l -> Map.from_struct(l)
-      end
-
-    from(
-      [s: s, sr: sr, rev: rev, spp: spp] in DeliveryResolver.section_resource_revisions(
-        section.slug
-      ),
-      join: p in Project,
-      on: p.id == spp.project_id,
-      where:
-        rev.resource_type_id == ^page_id or
-          rev.resource_type_id == ^container_id,
-      select: %{
-        "id" => rev.id,
-        "numbering" => %{
-          "index" => sr.numbering_index,
-          "level" => sr.numbering_level
-        },
-        "children" => sr.children,
-        "resource_id" => rev.resource_id,
-        "project_id" => sr.project_id,
-        "project_slug" => p.slug,
-        "title" => rev.title,
-        "slug" => rev.slug,
-        "graded" => rev.graded,
-        "intro_video" => rev.intro_video,
-        "poster_image" => rev.poster_image,
-        "intro_content" => rev.intro_content,
-        "duration_minutes" => rev.duration_minutes,
-        "resource_type_id" => rev.resource_type_id,
-        "section_resource" => sr,
-        "is_root?" =>
-          fragment(
-            "CASE WHEN ? = ? THEN true ELSE false END",
-            sr.id,
-            s.root_section_resource_id
-          )
-      }
-    )
-    |> Oli.Repo.all()
-    |> Enum.map(fn node ->
-      numbering = Map.put(node["numbering"], "labels", labels)
-
-      Map.put(node, "uuid", Oli.Utils.uuid())
-      |> Map.put("numbering", numbering)
-    end)
-    |> Enum.reduce({%{}, nil}, fn item, {nodes, root} ->
-      {
-        Map.put(
-          nodes,
-          item["section_resource"].id,
-          item
-        ),
-        if(item["is_root?"], do: item, else: root)
-      }
+      Hierarchy.full_hierarchy(section)
     end)
   end
 
