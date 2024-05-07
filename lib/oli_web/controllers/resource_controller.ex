@@ -15,7 +15,8 @@ defmodule OliWeb.ResourceController do
 
   plug(:fetch_project)
   plug(:authorize_project)
-  plug(:put_root_layout, {OliWeb.LayoutView, "preview.html"} when action in [:preview])
+
+  plug(:put_root_layout, {OliWeb.LayoutView, :delivery} when action in [:preview])
 
   def edit(conn, %{"project_id" => project_slug, "revision_slug" => revision_slug}) do
     author = conn.assigns[:current_author]
@@ -103,7 +104,7 @@ defmodule OliWeb.ResourceController do
     # renders the equivalent of the full screen content.
     activity_types = Activities.activities_for_project(project)
 
-    put_root_layout(conn, {OliWeb.LayoutView, "chromeless.html"})
+    put_root_layout(conn, {OliWeb.LayoutView, :chromeless})
     |> render("advanced_page_preview.html",
       additional_stylesheets: Map.get(revision.content, "additionalStylesheets", []),
       activity_types: activity_types,
@@ -263,7 +264,7 @@ defmodule OliWeb.ResourceController do
 
   def render_not_found(conn, project_slug) do
     conn
-    |> put_root_layout({OliWeb.LayoutView, "default.html"})
+    |> put_root_layout({OliWeb.LayoutView, :default})
     |> put_view(OliWeb.SharedView)
     |> render("_not_found.html",
       title: "Not Found",
