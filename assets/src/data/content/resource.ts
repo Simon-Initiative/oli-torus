@@ -177,10 +177,10 @@ export const PurposeTypes: Purpose[] = [
   { value: 'learnbydoing', label: 'Learn by doing' },
   { value: 'learnmore', label: 'Learn more' },
   { value: 'manystudentswonder', label: 'Many students wonder' },
+  { value: 'priorknowledgecheck', label: 'Prior Knowledge Check' },
   { value: 'quiz', label: 'Quiz' },
   { value: 'simulation', label: 'Simulation' },
   { value: 'walkthrough', label: 'Walkthrough' },
-  { value: 'priorknowledgecheck', label: 'Prior Knowledge Check' },
 ];
 
 export const createDefaultStructuredContent = (
