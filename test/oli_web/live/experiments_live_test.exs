@@ -10,7 +10,7 @@ defmodule OliWeb.ExperimentsLiveTest do
     ~p"/authoring/project/#{project_slug}/experiments"
   end
 
-  defp put_route(context) do
+  defp put_view(context) do
     {:ok, view, _html} = live(context.conn, live_view_experiments_route(context.project.slug))
     [view: view]
   end
@@ -94,7 +94,7 @@ defmodule OliWeb.ExperimentsLiveTest do
   end
 
   describe "experiments view" do
-    setup [:admin_conn, :create_project, :put_route]
+    setup [:admin_conn, :create_project, :put_view]
 
     test "loads experiments view correctly", %{view: view} do
       {view, %{}}
@@ -106,7 +106,7 @@ defmodule OliWeb.ExperimentsLiveTest do
     test "when clicked on checkbox creates and displays experiment with 2 options", %{view: view} do
       {view, %{}}
       |> step(:test_has_alternatives_group, :refute)
-      |> step(:check_on_checkbox)
+      |> step(:click_on_checkbox)
       |> step(:test_has_alternatives_group)
       |> step(:test_has_options)
       |> step(:put_resource_id)
@@ -121,8 +121,8 @@ defmodule OliWeb.ExperimentsLiveTest do
 
     test "when checkbox is off then disable the ability to modify experiment", %{view: view} do
       {view, %{}}
-      |> step(:check_on_checkbox)
-      |> step(:check_on_checkbox)
+      |> step(:click_on_checkbox)
+      |> step(:click_on_checkbox)
       |> step(:test_has_button_show_edit_group_modal, :refute)
       |> step(:test_has_button_show_edit_option_1_modal, :refute)
       |> step(:test_has_button_show_edit_option_2_modal, :refute)
@@ -137,7 +137,7 @@ defmodule OliWeb.ExperimentsLiveTest do
       project: project
     } do
       {view, %{}}
-      |> step(:check_on_checkbox)
+      |> step(:click_on_checkbox)
 
       # Reloads page
       {:ok, view, _html} = live(conn, live_view_experiments_route(project.slug))
@@ -280,7 +280,7 @@ defmodule OliWeb.ExperimentsLiveTest do
     {view, ctx}
   end
 
-  defp step({view, ctx}, :check_on_checkbox, _assert_or_refute) do
+  defp step({view, ctx}, :click_on_checkbox, _assert_or_refute) do
     view |> element("input[phx-click=\"enable_upgrade\"]") |> render_click()
     {view, ctx}
   end
