@@ -12,6 +12,7 @@ defmodule OliWeb.Pow.UserContext do
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.Section
   alias Oli.Repo
+  alias OliWeb.Router.Helpers, as: Routes
 
   require Logger
 
@@ -60,37 +61,58 @@ defmodule OliWeb.Pow.UserContext do
   """
   @impl true
   def create(params) do
-    params =
-      with %{"section" => section_slug} <- params,
-           %Section{skip_email_verification: true} <- Sections.get_section_by_slug(section_slug) do
-        email_confirmed_at = DateTime.truncate(DateTime.utc_now(), :second)
-        Map.put(params, "email_confirmed_at", email_confirmed_at)
-      else
-        _ -> params
-      end
+    case Accounts.get_user_by(%{email: params["email"]}) do
+      %User{email: email} = user ->
+        if user.email_confirmed_at,
+          do:
+            Oli.Email.create_email(
+              email,
+              "Account already registered",
+              "email_already_registered.html",
+              %{
+                url: Routes.pow_session_path(OliWeb.Endpoint, :new),
+                forgot_password:
+                  Routes.pow_reset_password_reset_password_path(OliWeb.Endpoint, :new)
+              }
+            )
+            |> Oli.Mailer.deliver_now()
 
-    %User{}
-    |> User.verification_changeset(params)
-    |> Repo.insert()
-    |> case do
-      {:ok, user} ->
-        if Application.fetch_env!(:oli, :age_verification)[:is_enabled] == "true" do
-          Logger.info(
-            "User (id: #{user.id}, email: #{user.email}) created successfully with age verification"
-          )
+        {:error, %{email: "has already been taken"}}
+
+      _nil ->
+        params =
+          with %{"section" => section_slug} <- params,
+               %Section{skip_email_verification: true} <-
+                 Sections.get_section_by_slug(section_slug) do
+            email_confirmed_at = DateTime.truncate(DateTime.utc_now(), :second)
+            Map.put(params, "email_confirmed_at", email_confirmed_at)
+          else
+            _ -> params
+          end
+
+        %User{}
+        |> User.verification_changeset(params)
+        |> Repo.insert()
+        |> case do
+          {:ok, user} ->
+            if Application.fetch_env!(:oli, :age_verification)[:is_enabled] == "true" do
+              Logger.info(
+                "User (id: #{user.id}, email: #{user.email}) created successfully with age verification"
+              )
+            end
+
+            case params do
+              %{"section" => section} ->
+                # set the `enroll_after_email_confirmation` virtual field from the given section param
+                {:ok, Map.put(user, :enroll_after_email_confirmation, section)}
+
+              _ ->
+                {:ok, user}
+            end
+
+          {:error, error} ->
+            {:error, error}
         end
-
-        case params do
-          %{"section" => section} ->
-            # set the `enroll_after_email_confirmation` virtual field from the given section param
-            {:ok, Map.put(user, :enroll_after_email_confirmation, section)}
-
-          _ ->
-            {:ok, user}
-        end
-
-      {:error, error} ->
-        {:error, error}
     end
   end
 
