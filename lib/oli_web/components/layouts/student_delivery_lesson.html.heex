@@ -43,8 +43,8 @@
     ctx={@ctx}
     is_system_admin={assigns[:is_system_admin] || false}
     section={@section}
-    brand={@brand}
     preview_mode={@preview_mode}
+    force_show_user_menu={true}
   />
 
   <div class="flex-1 flex flex-col mt-14 overflow-hidden">
@@ -54,9 +54,6 @@
       class="flex-1 flex flex-col relative justify-center items-start overflow-hidden"
     >
       <.back_arrow to={@request_path} show_sidebar={assigns[:show_sidebar]} view={@view} />
-
-      <%!-- This feature will not be implemented in the first release. This is just a placeholder--%>
-      <.annotations_dropdown />
 
       <%= @inner_content %>
     </div>
@@ -68,6 +65,7 @@
       next_page={@next_page}
       section_slug={@section.slug}
       request_path={@request_path}
+      selected_view={@selected_view}
     />
   </div>
 

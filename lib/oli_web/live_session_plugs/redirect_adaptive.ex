@@ -24,7 +24,8 @@ defmodule OliWeb.LiveSessionPlugs.RedirectAdaptiveChromeless do
              section_slug,
              revision_slug,
              attempt_guid,
-             params["request_path"]
+             request_path: params["request_path"],
+             selected_view: params["selected_view"]
            )
        )}
     else
@@ -41,7 +42,11 @@ defmodule OliWeb.LiveSessionPlugs.RedirectAdaptiveChromeless do
     if is_adaptive_chromeless_view?(revision_slug) do
       {:halt,
        redirect(socket,
-         to: adaptive_chromeless_url(section_slug, revision_slug, params["request_path"])
+         to:
+           adaptive_chromeless_url(section_slug, revision_slug,
+             request_path: params["request_path"],
+             selected_view: params["selected_view"]
+           )
        )}
     else
       {:cont, socket}
@@ -52,19 +57,12 @@ defmodule OliWeb.LiveSessionPlugs.RedirectAdaptiveChromeless do
     {:cont, socket}
   end
 
-  def adaptive_chromeless_revision_url(section_slug, revision_slug, attempt_guid, nil),
-    do: ~p"/sections/#{section_slug}/page/#{revision_slug}/attempt/#{attempt_guid}/review"
-
-  def adaptive_chromeless_revision_url(section_slug, revision_slug, attempt_guid, request_path),
+  def adaptive_chromeless_revision_url(section_slug, revision_slug, attempt_guid, params),
     do:
-      ~p"/sections/#{section_slug}/page/#{revision_slug}/attempt/#{attempt_guid}/review?#{%{request_path: request_path}}"
+      ~p"/sections/#{section_slug}/page/#{revision_slug}/attempt/#{attempt_guid}/review?#{params}"
 
-  def adaptive_chromeless_url(section_slug, revision_slug, nil),
-    do: ~p"/sections/#{section_slug}/adaptive_lesson/#{revision_slug}"
-
-  def adaptive_chromeless_url(section_slug, revision_slug, request_path),
-    do:
-      ~p"/sections/#{section_slug}/adaptive_lesson/#{revision_slug}?#{%{request_path: request_path}}"
+  def adaptive_chromeless_url(section_slug, revision_slug, params),
+    do: ~p"/sections/#{section_slug}/adaptive_lesson/#{revision_slug}?#{params}"
 
   defp is_adaptive_chromeless_view?(revision_slug) do
     Repo.exists?(

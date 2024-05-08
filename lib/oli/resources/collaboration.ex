@@ -528,6 +528,7 @@ defmodule Oli.Resources.Collaboration do
   def list_root_posts_for_section(
         user_id,
         section_id,
+        root_section_resource_resource_id,
         limit,
         offset,
         sort_by,
@@ -571,6 +572,7 @@ defmodule Oli.Resources.Collaboration do
           post.section_id == ^section_id and post.visibility == :public and
             (post.status in [:approved, :archived] or
                (post.status == :submitted and post.user_id == ^user_id)) and
+            post.resource_id == ^root_section_resource_resource_id and
             is_nil(post.parent_post_id) and is_nil(post.thread_root_id),
         order_by: ^order_clause,
         limit: ^limit,
@@ -1158,6 +1160,15 @@ defmodule Oli.Resources.Collaboration do
         point_block_id,
         search_term
       ) do
+    filter_by_resource_id =
+      case resource_id do
+        nil ->
+          true
+
+        _ ->
+          dynamic([p], p.resource_id == ^resource_id)
+      end
+
     filter_by_point_block_id =
       case point_block_id do
         nil ->
@@ -1190,9 +1201,10 @@ defmodule Oli.Resources.Collaboration do
         left_join: reactions in assoc(post, :reactions),
         left_join: user in assoc(post, :user),
         where:
-          post.section_id == ^section_id and post.resource_id == ^resource_id and
+          post.section_id == ^section_id and
             (post.status in [:approved, :archived] or
                (post.status == :submitted and post.user_id == ^user_id)),
+        where: ^filter_by_resource_id,
         where: ^filter_by_point_block_id,
         where: ^filter_by_visibility,
         where:
