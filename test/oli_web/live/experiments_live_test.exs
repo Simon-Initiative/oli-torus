@@ -10,6 +10,11 @@ defmodule OliWeb.ExperimentsLiveTest do
     ~p"/authoring/project/#{project_slug}/experiments"
   end
 
+  defp put_route(context) do
+    {:ok, view, _html} = live(context.conn, live_view_experiments_route(context.project.slug))
+    [view: view]
+  end
+
   defp create_project(_conn) do
     project = insert(:project)
     container_resource = insert(:resource)
@@ -53,11 +58,7 @@ defmodule OliWeb.ExperimentsLiveTest do
       redirect_path =
         "/authoring/session/new?request_path=%2Fauthoring%2Fproject%2F#{project.slug}%2Fexperiments"
 
-      {:error,
-       {:redirect,
-        %{
-          to: ^redirect_path
-        }}} =
+      {:error, {:redirect, %{to: ^redirect_path}}} =
         live(conn, live_view_experiments_route(project.slug))
     end
   end
@@ -72,11 +73,7 @@ defmodule OliWeb.ExperimentsLiveTest do
       redirect_path =
         "/authoring/session/new?request_path=%2Fauthoring%2Fproject%2F#{project.slug}%2Fexperiments"
 
-      {:error,
-       {:redirect,
-        %{
-          to: ^redirect_path
-        }}} =
+      {:error, {:redirect, %{to: ^redirect_path}}} =
         live(conn, live_view_experiments_route(project.slug))
     end
   end
@@ -91,133 +88,220 @@ defmodule OliWeb.ExperimentsLiveTest do
       redirect_path =
         "/authoring/session/new?request_path=%2Fauthoring%2Fproject%2F#{project.slug}%2Fexperiments"
 
-      {:error,
-       {:redirect,
-        %{
-          to: ^redirect_path
-        }}} =
+      {:error, {:redirect, %{to: ^redirect_path}}} =
         live(conn, live_view_experiments_route(project.slug))
     end
   end
 
   describe "experiments view" do
-    setup [:admin_conn, :create_project]
+    setup [:admin_conn, :create_project, :put_route]
 
-    test "loads experiments view correctly", %{
+    test "loads experiments view correctly", %{view: view} do
+      {view, %{}}
+      |> step(:test_has_title_AB_testing)
+      |> step(:test_has_message_integrate_with_AB_platform)
+      |> step(:test_has_checkbox)
+    end
+
+    test "when clicked on checkbox creates and displays experiment with 2 options", %{view: view} do
+      {view, %{}}
+      |> step(:test_has_alternatives_group, :refute)
+      |> step(:check_on_checkbox)
+      |> step(:test_has_alternatives_group)
+      |> step(:test_has_options)
+      |> step(:put_resource_id)
+      |> step(:put_options)
+      |> step(:test_has_button_show_edit_group_modal)
+      |> step(:test_has_button_show_edit_option_1_modal)
+      |> step(:test_has_button_show_edit_option_2_modal)
+      |> step(:test_has_button_show_delete_option_1_modal)
+      |> step(:test_has_button_show_delete_option_2_modal)
+      |> step(:test_has_new_option_link)
+    end
+
+    test "when checkbox is off then disable the ability to modify experiment", %{view: view} do
+      {view, %{}}
+      |> step(:check_on_checkbox)
+      |> step(:check_on_checkbox)
+      |> step(:test_has_button_show_edit_group_modal, :refute)
+      |> step(:test_has_button_show_edit_option_1_modal, :refute)
+      |> step(:test_has_button_show_edit_option_2_modal, :refute)
+      |> step(:test_has_button_show_delete_option_1_modal, :refute)
+      |> step(:test_has_button_show_delete_option_2_modal, :refute)
+      |> step(:test_has_new_option_link, :refute)
+    end
+
+    test "no new alternative resource is created if it already exists", %{
+      view: view,
       conn: conn,
       project: project
     } do
+      {view, %{}}
+      |> step(:check_on_checkbox)
+
+      # Reloads page
       {:ok, view, _html} = live(conn, live_view_experiments_route(project.slug))
 
-      assert view
-             |> element("h3")
-             |> render() =~
-               "A/B Testing with UpGrade"
-
-      assert view
-             |> element("p")
-             |> render() =~
-               "To support A/B testing, Torus integrates with the A/B testing platform"
-
-      assert has_element?(
-               view,
-               "label",
-               "Enable A/B testing with UpGrade"
-             )
+      {view, %{}}
+      |> step(:test_has_alternatives_group)
+      |> step(:test_has_options)
+      |> step(:test_has_button_show_edit_group_modal, :refute)
+      |> step(:test_has_button_show_edit_option_1_modal, :refute)
+      |> step(:test_has_button_show_edit_option_2_modal, :refute)
+      |> step(:test_has_button_show_delete_option_1_modal, :refute)
+      |> step(:test_has_button_show_delete_option_2_modal, :refute)
+      |> step(:test_has_new_option_link, :refute)
     end
+  end
 
-    test "check, then uncheck, when no previous experiment exists", %{
-      conn: conn,
-      project: project
-    } do
-      {:ok, view, _html} = live(conn, live_view_experiments_route(project.slug))
-
-      refute has_element?(view, ".alternatives-group")
-
-      # Checking checkbox
-      view |> element("input[phx-click=\"enable_upgrade\"]") |> render_click()
-
-      assert has_element?(view, ".alternatives-group", "Decision Point")
-      assert has_element?(view, ".list-group", "Option 1")
-      assert has_element?(view, ".list-group", "Option 2")
-      refute has_element?(view, ".list-group", "Option 3")
-
-      [resource_id] =
-        view
-        |> element("button[phx-click=\"show_edit_group_modal\"]")
-        |> render()
-        |> Floki.attribute("phx-value-resource-id")
-
-      [option_1, option_2] =
-        Oli.Repo.get_by!(Revision, resource_id: resource_id).content["options"]
-
-      assert view
-             |> has_element?(
-               "button[phx-click=\"show_edit_group_modal\"][phx-value-resource-id=\"#{resource_id}\"] > .fa-pencil"
-             )
-
-      assert view
-             |> has_element?(
-               "button[phx-click=\"show_edit_option_modal\"][phx-value-option-id=\"#{option_1["id"]}\"] > .fa-pencil"
-             )
-
-      assert view
-             |> has_element?(
-               "button[phx-click=\"show_edit_option_modal\"][phx-value-option-id=\"#{option_2["id"]}\"] > .fa-pencil"
-             )
-
-      assert view
-             |> has_element?(
-               "button[phx-click=\"show_delete_option_modal\"][phx-value-option-id=\"#{option_1["id"]}\"] > .fa-trash"
-             )
-
-      assert view
-             |> has_element?(
-               "button[phx-click=\"show_delete_option_modal\"][phx-value-option-id=\"#{option_2["id"]}\"] > .fa-trash"
-             )
-
-      assert view
-             |> element(
-               "button[phx-click=\"show_create_option_modal\"][phx-value-resource_id=\"#{resource_id}\"]"
-             )
-             |> render() =~ "New Option"
-
-      # Unchecking checkbox
-      view |> element("input[phx-click=\"enable_upgrade\"]") |> render_click()
-
-      refute view
-             |> has_element?(
-               "button[phx-click=\"show_edit_group_modal\"][phx-value-resource-id=\"#{resource_id}\"] > .fa-pencil"
-             )
-
-      refute view
-             |> has_element?(
-               "button[phx-click=\"show_edit_option_modal\"][phx-value-option-id=\"#{option_1["id"]}\"] > .fa-pencil"
-             )
-
-      refute view
-             |> has_element?(
-               "button[phx-click=\"show_edit_option_modal\"][phx-value-option-id=\"#{option_2["id"]}\"] > .fa-pencil"
-             )
-
-      refute view
-             |> has_element?(
-               "button[phx-click=\"show_delete_option_modal\"][phx-value-option-id=\"#{option_1["id"]}\"] > .fa-trash"
-             )
-
-      refute view
-             |> has_element?(
-               "button[phx-click=\"show_delete_option_modal\"][phx-value-option-id=\"#{option_2["id"]}\"] > .fa-trash"
-             )
-
-      refute view
-             |> has_element?(
-               "button[phx-click=\"show_create_option_modal\"][phx-value-resource_id=\"#{resource_id}\"]"
-             )
-
-      assert has_element?(view, ".alternatives-group", "Decision Point")
-      assert has_element?(view, ".list-group", "Option 1")
-      assert has_element?(view, ".list-group", "Option 2")
+  defp evaluate_assertion(to_evaluate, assert_or_refute) do
+    case assert_or_refute do
+      :assert -> assert to_evaluate
+      :refute -> refute to_evaluate
     end
+  end
+
+  defp step(_view_and_ctx, _operation, assert_or_refute \\ :assert)
+
+  defp step({view, ctx}, :test_has_alternatives_group, assert_or_refute) do
+    to_evaluate = has_element?(view, ".alternatives-group", "Decision Point")
+    evaluate_assertion(to_evaluate, assert_or_refute)
+    {view, ctx}
+  end
+
+  defp step({view, ctx}, :test_has_button_show_edit_group_modal, assert_or_refute) do
+    resource_id = Map.get(ctx, :resource_id)
+
+    to_evaluate =
+      has_element?(
+        view,
+        "button[phx-click=\"show_edit_group_modal\"][phx-value-resource-id=\"#{resource_id}\"] > .fa-pencil"
+      )
+
+    evaluate_assertion(to_evaluate, assert_or_refute)
+
+    {view, ctx}
+  end
+
+  defp step({view, ctx}, :test_has_checkbox, assert_or_refute) do
+    to_evaluate = has_element?(view, "label", "Enable A/B testing with UpGrade")
+    evaluate_assertion(to_evaluate, assert_or_refute)
+    {view, ctx}
+  end
+
+  defp step({view, ctx}, :test_has_message_integrate_with_AB_platform, assert_or_refute) do
+    target_text = "To support A/B testing, Torus integrates with the A/B testing platform"
+    to_evaluate = element(view, "p") |> render() =~ target_text
+    evaluate_assertion(to_evaluate, assert_or_refute)
+    {view, ctx}
+  end
+
+  defp step({view, ctx}, :test_has_title_AB_testing, assert_or_refute) do
+    to_evaluate = element(view, "h3") |> render() =~ "A/B Testing with UpGrade"
+    evaluate_assertion(to_evaluate, assert_or_refute)
+    {view, ctx}
+  end
+
+  defp step({view, ctx}, :test_has_options, assert_or_refute) do
+    to_evaluate = has_element?(view, ".list-group", "Option 1")
+    evaluate_assertion(to_evaluate, assert_or_refute)
+    to_evaluate = has_element?(view, ".list-group", "Option 2")
+    evaluate_assertion(to_evaluate, assert_or_refute)
+    to_evaluate = has_element?(view, ".list-group", "Option 3")
+    evaluate_assertion(to_evaluate, :refute)
+
+    {view, ctx}
+  end
+
+  defp step({view, ctx}, :test_has_button_show_edit_option_1_modal, assert_or_refute) do
+    option_1 = Map.get(ctx, :option_1)
+
+    to_evaluate =
+      has_element?(
+        view,
+        "button[phx-click=\"show_edit_option_modal\"][phx-value-option-id=\"#{option_1["id"]}\"] > .fa-pencil"
+      )
+
+    evaluate_assertion(to_evaluate, assert_or_refute)
+
+    {view, ctx}
+  end
+
+  defp step({view, ctx}, :test_has_button_show_edit_option_2_modal, assert_or_refute) do
+    option_2 = Map.get(ctx, :option_2)
+
+    to_evaluate =
+      has_element?(
+        view,
+        "button[phx-click=\"show_edit_option_modal\"][phx-value-option-id=\"#{option_2["id"]}\"] > .fa-pencil"
+      )
+
+    evaluate_assertion(to_evaluate, assert_or_refute)
+    {view, ctx}
+  end
+
+  defp step({view, ctx}, :test_has_button_show_delete_option_1_modal, assert_or_refute) do
+    option_1 = Map.get(ctx, :option_1)
+
+    to_evaluate =
+      has_element?(
+        view,
+        "button[phx-click=\"show_delete_option_modal\"][phx-value-option-id=\"#{option_1["id"]}\"] > .fa-trash"
+      )
+
+    evaluate_assertion(to_evaluate, assert_or_refute)
+    {view, ctx}
+  end
+
+  defp step({view, ctx}, :test_has_button_show_delete_option_2_modal, assert_or_refute) do
+    option_2 = Map.get(ctx, :option_2)
+
+    to_evaluate =
+      has_element?(
+        view,
+        "button[phx-click=\"show_delete_option_modal\"][phx-value-option-id=\"#{option_2["id"]}\"] > .fa-trash"
+      )
+
+    evaluate_assertion(to_evaluate, assert_or_refute)
+    {view, ctx}
+  end
+
+  defp step({view, ctx}, :test_has_new_option_link, assert_or_refute) do
+    resource_id = Map.get(ctx, :resource_id)
+
+    to_evaluate =
+      has_element?(
+        view,
+        "button[phx-click=\"show_create_option_modal\"][phx-value-resource_id=\"#{resource_id}\"]"
+      )
+
+    evaluate_assertion(to_evaluate, assert_or_refute)
+
+    {view, ctx}
+  end
+
+  defp step({view, ctx}, :check_on_checkbox, _assert_or_refute) do
+    view |> element("input[phx-click=\"enable_upgrade\"]") |> render_click()
+    {view, ctx}
+  end
+
+  defp step({view, ctx}, :put_options, _assert_or_refute) do
+    resource_id = Map.get(ctx, :resource_id)
+
+    [option_1, option_2] =
+      Oli.Repo.get_by!(Revision, resource_id: resource_id).content["options"]
+
+    ctx = ctx |> Map.put(:option_1, option_1) |> Map.put(:option_2, option_2)
+    {view, ctx}
+  end
+
+  defp step({view, ctx}, :put_resource_id, _assert_or_refute) do
+    [resource_id] =
+      view
+      |> element("button[phx-click=\"show_edit_group_modal\"]")
+      |> render()
+      |> Floki.attribute("phx-value-resource-id")
+
+    {view, Map.put(ctx, :resource_id, resource_id)}
   end
 end
