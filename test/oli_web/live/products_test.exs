@@ -152,6 +152,8 @@ defmodule OliWeb.ProductsLiveTest do
 
       render_hook(view, "text_search_change", %{value: "25"})
 
+      wait_while(fn -> has_element?(view, "a", product.title) end)
+
       refute has_element?(view, "a", product.title)
       assert has_element?(view, "a", product_2.title)
 
