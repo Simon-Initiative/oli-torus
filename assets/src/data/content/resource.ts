@@ -180,6 +180,7 @@ export const PurposeTypes: Purpose[] = [
   { value: 'quiz', label: 'Quiz' },
   { value: 'simulation', label: 'Simulation' },
   { value: 'walkthrough', label: 'Walkthrough' },
+  { value: 'priorknowledgecheck', label: 'Prior Knowledge Check' },
 ];
 
 export const createDefaultStructuredContent = (

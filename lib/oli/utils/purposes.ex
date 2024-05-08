@@ -10,6 +10,7 @@ defmodule Oli.Utils.Purposes do
   def label_for("quiz"), do: "Quiz"
   def label_for("simulation"), do: "Simulation"
   def label_for("walkthrough"), do: "Walkthrough"
+  def label_for("priorknowledgecheck"), do: "Prior Knowledge Check"
   def label_for(nil), do: ""
   def label_for(purpose), do: String.capitalize(purpose)
 end
