@@ -1,0 +1,12 @@
+<div class="flex flex-column gap-y-4">
+  <h3>Are you trying to create a new account?</h3>
+  <p>
+    Someone tried to create an account with this email but an account already exists.
+    If this was you, you can login <%= link "here", to: @url, target: "_blank" %> with your existing email and password.
+    If you forgot your password, you can reset it by clicking <%= link "Forgot Password?", to: @forgot_password, target: "_blank" %>.
+  </p>
+  <p>If this was not you, you can safely disregard this email.</p>
+</div>
+
+
+
