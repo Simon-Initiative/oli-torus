@@ -532,6 +532,84 @@ defmodule OliWeb.Curriculum.ContainerLiveTest do
                  page_2.slug
                )
     end
+
+    test "updates a revision data when a `save-options` event is handled after submitting the options modal with no intro content defined (when submitting a page, for instance)",
+         %{
+           conn: conn,
+           project: project,
+           page_2: page_2
+         } do
+      {:ok, view, _html} =
+        live(conn, ~p"/authoring/project/#{project.slug}/curriculum")
+
+      assert has_element?(view, "span", "Page 2")
+
+      assert %Oli.Resources.Revision{
+               retake_mode: :normal,
+               duration_minutes: nil,
+               graded: false,
+               max_attempts: 0,
+               purpose: :foundation,
+               scoring_strategy_id: 1,
+               explanation_strategy: nil
+             } =
+               _initial_revision =
+               Oli.Publishing.AuthoringResolver.from_revision_slug(
+                 project.slug,
+                 page_2.slug
+               )
+
+      view
+      |> element(
+        ~s{button[role="show_options_modal"][phx-value-slug="#{page_2.slug}"]},
+        "Options"
+      )
+      |> render_click()
+
+      view
+      |> render_hook("save-options", %{
+        "revision" => %{
+          "duration_minutes" => "5",
+          "explanation_strategy" => %{"type" => "after_max_resource_attempts_exhausted"},
+          "graded" => "true",
+          "max_attempts" => "10",
+          "poster_image" => "some_poster_image_url",
+          "purpose" => "application",
+          "retake_mode" => "targeted",
+          "scoring_strategy_id" => "2",
+          "title" => "New Title!!"
+        }
+      })
+
+      {path, flash} = assert_redirect(view)
+
+      assert path =~ "/authoring/project/#{project.slug}/curriculum/root_container"
+      assert flash == %{"info" => "Page options saved"}
+
+      {:ok, view, _html} =
+        live(conn, ~p"/authoring/project/#{project.slug}/curriculum")
+
+      assert has_element?(view, "span", "New Title!!")
+
+      assert %Oli.Resources.Revision{
+               retake_mode: :targeted,
+               duration_minutes: 5,
+               graded: true,
+               max_attempts: 10,
+               purpose: :application,
+               scoring_strategy_id: 2,
+               explanation_strategy: %Oli.Resources.ExplanationStrategy{
+                 type: :after_max_resource_attempts_exhausted,
+                 set_num_attempts: nil
+               },
+               poster_image: "some_poster_image_url"
+             } =
+               _updated_revision =
+               Oli.Publishing.AuthoringResolver.from_revision_slug(
+                 project.slug,
+                 page_2.slug
+               )
+    end
   end
 
   defp setup_session(%{conn: conn}) do

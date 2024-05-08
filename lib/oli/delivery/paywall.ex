@@ -404,6 +404,24 @@ defmodule Oli.Delivery.Paywall do
     end
   end
 
+  @spec has_payment_codes?(integer()) :: boolean()
+  @doc """
+  Return if a product has any payment codes.
+  """
+  def has_payment_codes?(product_id) do
+    count =
+      Repo.one(
+        from(p in Payment,
+          join: s in Section,
+          on: s.id == p.section_id,
+          where: s.id == ^product_id,
+          select: count(p.id)
+        )
+      )
+
+    if count > 0, do: true, else: false
+  end
+
   @doc """
   Get the last X(quantity) payment codes for the given product.
   """
@@ -502,6 +520,17 @@ defmodule Oli.Delivery.Paywall do
       where: p.enrollment_id == ^current_enrollment_id
     )
     |> Repo.update_all(set: [enrollment_id: target_enrollment_id, section_id: target_section_id])
+  end
+
+  @doc """
+  Transfers payment codes from one product to another. This updates all payment codes for the current product.
+  """
+  def transfer_payment_codes(current_section_id, target_section_id) do
+    from(
+      p in Payment,
+      where: p.section_id == ^current_section_id
+    )
+    |> Repo.update_all(set: [section_id: target_section_id])
   end
 
   # ------------------------------------------

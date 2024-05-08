@@ -3962,6 +3962,72 @@ defmodule Oli.Delivery.Sections do
   end
 
   @doc """
+  Retrieves the last accessed but unfinished page for a given user in a specific section.
+
+  ## Parameters:
+  - `section`: The section struct containing details about the course section.
+  - `user_id`: The ID of the user.
+
+  ## Returns:
+  - Returns a map with details of the last unfinished page if found, otherwise `nil`.
+  """
+  @spec get_last_open_and_unfinished_page(Oli.Delivery.Sections.Section.t(), integer()) ::
+          map() | nil
+  def get_last_open_and_unfinished_page(section, user_id) do
+    page_resource_type_id = Oli.Resources.ResourceType.get_id_by_type("page")
+
+    from(
+      [rev: rev, sr: sr] in Oli.Publishing.DeliveryResolver.section_resource_revisions(
+        section.slug
+      ),
+      join: r_att in ResourceAttempt,
+      on: rev.id == r_att.revision_id,
+      join: ra in assoc(r_att, :resource_access),
+      where:
+        ra.section_id == ^section.id and ra.user_id == ^user_id and
+          rev.resource_type_id == ^page_resource_type_id and ra.progress != 1.0,
+      order_by: [desc: ra.updated_at],
+      limit: 1,
+      select: map(rev, [:id, :title, :slug, :duration_minutes, :resource_id, :graded, :purpose]),
+      select_merge: %{
+        numbering_index: sr.numbering_index,
+        end_date: sr.end_date
+      }
+    )
+    |> Repo.one()
+  end
+
+  @doc """
+  Finds the nearest upcoming lesson in a specific section based on the current date.
+
+  ## Parameters:
+  - `section`: The section struct containing details about the course section.
+
+  ## Returns:
+  - Returns a map with details of the upcoming lesson if found, otherwise `nil`.
+  """
+  @spec get_nearest_upcoming_lesson(Oli.Delivery.Sections.Section.t()) :: map() | nil
+  def get_nearest_upcoming_lesson(section) do
+    today = Oli.DateTime.utc_now()
+    page_resource_type_id = Oli.Resources.ResourceType.get_id_by_type("page")
+
+    from([rev: rev, sr: sr] in DeliveryResolver.section_resource_revisions(section.slug),
+      where:
+        rev.resource_type_id == ^page_resource_type_id and
+          coalesce(sr.start_date, sr.end_date) >= ^today,
+      order_by: [asc: coalesce(sr.start_date, sr.end_date), asc: sr.numbering_index],
+      limit: 1,
+      select: map(rev, [:id, :title, :slug, :duration_minutes, :resource_id, :graded, :purpose]),
+      select_merge: %{
+        numbering_index: sr.numbering_index,
+        start_date: sr.start_date,
+        end_date: sr.end_date
+      }
+    )
+    |> Repo.one()
+  end
+
+  @doc """
   Returns all the resource_ids of a section grouped by resource type.
 
   %{
@@ -4459,8 +4525,12 @@ defmodule Oli.Delivery.Sections do
     end
   end
 
+  @type opts :: {:enrollment_state, Boolean.t()}
   @spec has_visited_section(map, map) :: boolean
-  def has_visited_section(section, user) do
+  @spec has_visited_section(map, map, [opts]) :: boolean
+  def has_visited_section(section, user, opts \\ [enrollment_state: true])
+
+  def has_visited_section(section, user, opts) do
     required_survey_filter =
       if section.required_survey_resource_id,
         do: dynamic([ra], ra.resource_id != ^section.required_survey_resource_id),
@@ -4478,22 +4548,21 @@ defmodule Oli.Delivery.Sections do
       |> length()
       |> Kernel.>(0)
 
-    case has_resource_accesses do
+    if has_resource_accesses do
       # If the user already has a resource access, they have already visited the section
-      true ->
-        true
+      true
 
       # If the user doesn't, check if the visited flag in the enrollment state is true
-      false ->
-        visited_section_key = Oli.Delivery.ExtrinsicState.Key.has_visited_once()
+    else
+      visited_section_key = Oli.Delivery.ExtrinsicState.Key.has_visited_once()
 
-        state =
-          case Oli.Delivery.ExtrinsicState.read_section(user.id, section.slug) do
-            {:ok, state} -> state
-            _ -> %{}
-          end
+      state =
+        case Oli.Delivery.ExtrinsicState.read_section(user.id, section.slug) do
+          {:ok, state} -> state
+          _ -> %{}
+        end
 
-        !is_nil(state[visited_section_key])
+      opts[:enrollment_state] and !is_nil(state[visited_section_key])
     end
   end
 

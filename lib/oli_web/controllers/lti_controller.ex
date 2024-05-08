@@ -181,7 +181,7 @@ defmodule OliWeb.LtiController do
                 "default" => get_course_navigation_default(params),
                 "windowTarget" => "_blank"
               }
-              ## TODO: add support for more placement types in the future, possibly configurable by LMS admin
+              ## TODO: add support for more placement types in the future, possibly configurable by LMS admin 
               # assignment_selection when we support deep linking
               # %{
               #   "placement" => "assignment_selection",
@@ -256,7 +256,7 @@ defmodule OliWeb.LtiController do
               "text" => %{
                 "type" => "mrkdwn",
                 "text" =>
-                  "New registration request from *#{pending_registration.name}*. <#{~p"/admin/institutions"}|Click here to view all pending requests>."
+                  "New registration request from *#{pending_registration.name}*. <#{conn.scheme}://#{conn.host}/admin/institutions|Click here to view all pending requests>"
               }
             },
             %{
@@ -294,7 +294,7 @@ defmodule OliWeb.LtiController do
                     "type" => "plain_text",
                     "text" => "Review Request"
                   },
-                  "url" => ~p"/admin/institutions"
+                  "url" => "#{conn.scheme}://#{conn.host}/admin/institutions"
                 }
               ]
             }
