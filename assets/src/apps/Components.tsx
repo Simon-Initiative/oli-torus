@@ -9,6 +9,7 @@ import { AlternativesPreferenceSelector } from 'components/delivery/Alternatives
 import { CourseContentOutline } from 'components/delivery/CourseContentOutline';
 import { SurveyControls } from 'components/delivery/SurveyControls';
 import { AttemptSelector } from 'components/misc/AttemptSelector';
+import { AdvancedAnalytics } from 'components/misc/AdvancedAnalytics';
 import { DarkModeSelector } from 'components/misc/DarkModeSelector';
 import { PaginationControls } from 'components/misc/PaginationControls';
 import { ModalDisplay } from 'components/modal/ModalDisplay';
@@ -37,3 +38,4 @@ registerApplication('YoutubePlayer', YoutubePlayer, globalStore);
 registerApplication('TechSupportButton', TechSupportButton, globalStore);
 registerApplication('OfflineDetector', OfflineDetector, globalStore);
 registerApplication('RichTextEditor', RichTextEditor, globalStore);
+registerApplication('AdvancedAnalytics', AdvancedAnalytics, globalStore);

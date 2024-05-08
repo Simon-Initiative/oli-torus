@@ -309,6 +309,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
       {"reports", "learning_objectives"},
       {"reports", "quiz_scores"},
       {"reports", "course_discussion"},
+      {"reports", "advanced"},
       {"manage", nil},
       {"discussions", nil}
     ]
@@ -443,6 +444,12 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
         path: path_for(:reports, :course_discussion, section_slug, preview_mode),
         badge: nil,
         active: is_active_tab?(:course_discussion, active_tab)
+      },
+      %TabLink{
+        label: "Advanced Analytics",
+        path: path_for(:reports, :advanced, section_slug, preview_mode),
+        badge: nil,
+        active: is_active_tab?(:advanced, active_tab)
       }
     ]
   end
@@ -642,6 +649,19 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
         section={@section}
         view={@view}
         patch_url_type={:quiz_scores_instructor}
+      />
+    </div>
+    """
+  end
+
+  def render(%{view: :reports, active_tab: :advanced} = assigns) do
+    ~H"""
+    <InstructorDashboard.tabs tabs={reports_tabs(@section_slug, @preview_mode, @active_tab)} />
+
+    <div class="container mx-auto">
+      <OliWeb.Components.Delivery.AdvancedAnalytics.render
+        section={@section}
+        ctx={@ctx}
       />
     </div>
     """

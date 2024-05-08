@@ -2991,6 +2991,8 @@ defmodule Oli.Delivery.Sections do
         project_publications = get_pinned_project_publications(section.id)
         rebuild_section_curriculum(section, current_hierarchy, project_publications)
 
+        DeliveryResolver.update_cached_sr_fields(section.slug) |> IO.inspect()
+
         {:ok}
       end)
 
@@ -3213,6 +3215,8 @@ defmodule Oli.Delivery.Sections do
 
         Oli.Delivery.maybe_update_section_contains_explorations(section)
         Oli.Delivery.maybe_update_section_contains_deliberate_practice(section)
+
+        DeliveryResolver.update_cached_sr_fields(section.slug) |> IO.inspect()
 
         {:ok}
       end)

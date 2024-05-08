@@ -16,6 +16,40 @@ defmodule Oli.Publishing.DeliveryResolver do
   alias Oli.Branding.CustomLabels
   alias Oli.Delivery.Attempts.Core.{ResourceAttempt, ResourceAccess}
   alias Oli.Authoring.Course.Project
+  alias Oli.Resources.ResourceType
+
+  def update_cached_sr_fields(section_slug) do
+
+    page_type_id = ResourceType.get_id_by_type("page")
+    container_type_id = ResourceType.get_id_by_type("container")
+    objective_type_id = ResourceType.get_id_by_type("objective")
+
+    now = DateTime.utc_now() |> DateTime.truncate(:second)
+
+    inserts = from([_sr, s, _spp, _pr, rev] in section_resource_revisions(section_slug),
+      where: rev.resource_type_id == ^page_type_id
+        or rev.resource_type_id == ^container_type_id
+        or rev.resource_type_id == ^objective_type_id,
+      select: %{
+        section_id: s.id,
+        resource_id: rev.resource_id,
+        title: rev.title,
+        graded: rev.graded,
+        resource_type_id: rev.resource_type_id,
+        activity_type_id: rev.activity_type_id
+      }
+    )
+    |> Repo.all()
+    |> Enum.map(fn a -> Map.put(a, :inserted_at, now) |> Map.put(:updated_at, now) end)
+
+    Oli.Repo.insert_all(
+      Oli.Delivery.Sections.SectionResourceSummary,
+      inserts,
+      conflict_target: [:section_id, :resource_id],
+      on_conflict: {:replace, [:title, :graded]}
+    )
+
+  end
 
   defp section_resources(section_slug) do
     from(sr in SectionResource,

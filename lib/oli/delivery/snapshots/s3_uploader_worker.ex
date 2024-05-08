@@ -11,6 +11,20 @@ defmodule Oli.Delivery.Snapshots.S3UploaderWorker do
   """
   @impl Oban.Worker
   def perform(%Oban.Job{
+    args: %{"category" => category, "body" => body, "bundle_id" => bundle_id, "partition_id" => partition_id}
+    }) do
+
+    %StatementBundle{
+      partition: :section,
+      partition_id: partition_id,
+      category: category,
+      bundle_id: bundle_id,
+      body: body
+    }
+    |> Uploader.upload()
+  end
+
+  def perform(%Oban.Job{
         args: %{"body" => body, "bundle_id" => bundle_id, "partition_id" => partition_id}
       }) do
     %StatementBundle{

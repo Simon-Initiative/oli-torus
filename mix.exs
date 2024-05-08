@@ -5,7 +5,7 @@ defmodule Oli.MixProject do
     [
       app: :oli,
       version: "0.28.0",
-      elixir: "~> 1.15.5",
+      elixir: "~> 1.16.0",
       elixirc_paths: elixirc_paths(Mix.env()),
       elixirc_options: elixirc_options(Mix.env()),
       compilers: Mix.compilers(),
@@ -138,6 +138,7 @@ defmodule Oli.MixProject do
       {:bcrypt_elixir, "~> 2.2"},
       {:cachex, "~> 3.5"},
       {:credo, "~> 1.6", only: [:dev, :test], runtime: false},
+      {:corsica, "~> 2.0"},
       {:csv, "~> 3.0.5"},
       {:decimal, "~> 2.0"},
       {:dialyxir, "~> 0.5.0", only: [:dev], runtime: true},

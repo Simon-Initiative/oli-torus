@@ -2,7 +2,7 @@ defmodule OliWeb.PageDeliveryController do
   use OliWeb, :controller
 
   import OliWeb.Common.FormatDateTime
-
+  import Ecto.Query
   require Logger
 
   alias Oli.Accounts
@@ -508,11 +508,33 @@ defmodule OliWeb.PageDeliveryController do
          section_slug,
          preview_mode
        ) do
+
+    emit = fn ->
+
+      {project_id, publication_id} = get_project_and_publication_ids(conn.assigns.section.id, context.page.id)
+
+      emit_page_viewed(%Oli.Analytics.Summary.Context{
+        user_id: context.user.id,
+        host_name: host_name(),
+        section_id: conn.assigns.section.id,
+        project_id: project_id,
+        publication_id: publication_id
+      }, %{
+        attempt_guid: hd(context.resource_attempts).attempt_guid,
+        attempt_number: hd(context.resource_attempts).attempt_number,
+        resource_id: context.page.resource_id,
+        timestamp: DateTime.utc_now(),
+        page_sub_type: "adaptive"
+      })
+    end
+
     case Map.get(content, "displayApplicationChrome", false) do
       false ->
+        emit.()
         render_adaptive_chromeless_page(context, conn, section_slug, preview_mode)
 
       _ ->
+        emit.()
         render_page_body(context, conn, section_slug)
     end
   end
@@ -582,6 +604,25 @@ defmodule OliWeb.PageDeliveryController do
         true -> Oli.Delivery.Sections.get_enrollment(section_slug, user.id)
         _ -> nil
       end
+
+    if context.review_mode == :delivery do
+
+      {project_id, publication_id} = get_project_and_publication_ids(section.id, context.page.id)
+
+      emit_page_viewed(%Oli.Analytics.Summary.Context{
+        user_id: user.id,
+        host_name: host_name(),
+        section_id: section.id,
+        project_id: project_id,
+        publication_id: publication_id
+      }, %{
+        attempt_guid: hd(context.resource_attempts).attempt_guid,
+        attempt_number: hd(context.resource_attempts).attempt_number,
+        resource_id: context.page.resource_id,
+        timestamp: DateTime.utc_now(),
+        page_sub_type: "basic"
+      })
+    end
 
     render_context = %Context{
       # Allow admin authors to review student work
@@ -1487,5 +1528,39 @@ defmodule OliWeb.PageDeliveryController do
 
   defp before_start_date_message(conn, effective_settings) do
     "This assessment is not yet available. It will be available on #{date(effective_settings.start_date, conn: conn, precision: :minutes)}."
+  end
+
+  defp emit_page_viewed(%Oli.Analytics.Summary.Context{} = context, %{
+    attempt_guid: _page_attempt_guid,
+    attempt_number: _page_attempt_number,
+    resource_id: _page_id,
+    timestamp: _timestamp,
+    page_sub_type: _page_sub_type
+  } = page_details) do
+    IO.inspect "EMITTED"
+    Oli.Analytics.Summary.XAPI.PageViewed.new(context, page_details)
+    |> Oli.Analytics.EventEmitter.emit()
+
+  end
+
+  defp get_project_and_publication_ids(section_id, revision_id) do
+    # From the SectionProjectPublication table, get the project_id and publication_id
+    # where a published resource exists for revision_id
+    # and the section_id matches the section_id
+
+    query = from sp in Oli.Delivery.Sections.SectionsProjectsPublications,
+      join: pr in Oli.Publishing.PublishedResource, on: pr.publication_id == sp.publication_id,
+      where: sp.section_id == ^section_id and pr.revision_id == ^revision_id,
+      select: {sp.project_id, sp.publication_id}
+
+    Oli.Repo.all(query)
+    |> hd()
+
+  end
+
+  defp host_name() do
+    Application.get_env(:oli, OliWeb.Endpoint)
+    |> Keyword.get(:url)
+    |> Keyword.get(:host)
   end
 end

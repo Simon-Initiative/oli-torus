@@ -1193,6 +1193,16 @@ defmodule OliWeb.Router do
     end
   end
 
+  scope "/api/v1/viz", OliWeb do
+    pipe_through([
+      :api
+    ])
+
+    get("/", Api.VizController, :index)
+    get "/:analytic_id/:section_id", Api.VizController, :show
+
+  end
+
   scope "/api/v1/state/course/:section_slug/activity_attempt", OliWeb do
     pipe_through([
       :browser,

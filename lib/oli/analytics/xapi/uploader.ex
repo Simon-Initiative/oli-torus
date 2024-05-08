@@ -22,5 +22,6 @@ defmodule Oli.Analytics.XAPI.Uploader do
 
     S3.put_object(bucket_name, upload_path, body, [])
     |> HTTP.aws().request()
+
   end
 end

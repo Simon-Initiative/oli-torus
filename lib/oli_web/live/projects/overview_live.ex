@@ -63,6 +63,7 @@ defmodule OliWeb.Projects.OverviewLive do
   def render(assigns) do
     ~H"""
     <div class="overview container mx-auto">
+      <button class="btn" phx-click="test">TEST</button>
       <.form :let={f} for={@changeset} phx-submit="update">
         <Overview.section
           title="Details"
@@ -493,6 +494,13 @@ defmodule OliWeb.Projects.OverviewLive do
           |> assign(:changeset, changeset)
           |> put_flash(:error, "Project could not be updated.")
       end
+
+    {:noreply, socket}
+  end
+
+  def handle_event("test", _, socket) do
+    ExAws.S3.put_object("siegel-xapi-dev", "test/file", "TEST", [])
+    |> Oli.HTTP.aws().request() |> IO.inspect()
 
     {:noreply, socket}
   end

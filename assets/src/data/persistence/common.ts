@@ -14,6 +14,7 @@ export type HttpRequestParams = {
   headers?: Headers;
   query?: QueryParams;
   hasTextResult?: boolean;
+  baseURL?: string;
 };
 
 export type Ok<Result = any> = {
@@ -37,6 +38,7 @@ export function makeRequest<SuccessType>(
   const method = params.method ? params.method : 'GET';
   const headers = params.headers ? params.headers : { 'Content-Type': 'application/json' };
   const hasTextResult = params.hasTextResult ? params.hasTextResult : false;
+  const base = params.baseURL ? params.baseURL : getBaseURL();
 
   const { body, url, query } = params;
 
@@ -51,7 +53,7 @@ export function makeRequest<SuccessType>(
   }
 
   return new Promise((resolve, reject) => {
-    return fetch(getBaseURL() + url + queryString, {
+    return fetch(base + url + queryString, {
       method,
       headers,
       body,

@@ -40,6 +40,14 @@ if ! docker-compose ps | grep -iq "oli_postgres.\+Up"; then
   docker-compose up -d postgres && sleep 5
 fi
 
+# start localstack if it's not running
+if [ -z `docker-compose ps -q localstack` ] || [ -z `docker ps -q --no-trunc | grep $(docker-compose ps -q localstack)` ]; then
+  echo "## Starting localstack..."
+  docker-compose up -d localstack && sleep 5
+else
+  echo "## localstack already running"
+fi
+
 echo "## NOTICE: Running 'reload-env' will apply any configuration set in oli.env"
 echo "## "
 echo "## Use the command 'exit' to leave anytime."

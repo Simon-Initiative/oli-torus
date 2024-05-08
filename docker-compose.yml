@@ -20,19 +20,39 @@ services:
       - 5432:5432
     env_file: ./postgres.env
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - postgres_data1:/var/lib/postgresql/data
+    container_name: torus
+    networks:
+      - net
 
-  minio:
-    image: minio/minio
+  localstack:
+    container_name: aws
+    image: localstack/localstack
     ports:
-      - "9000:9000"
-      - "9001:9001"
+      - "127.0.0.1:4566:4566"            # LocalStack Gateway
+      - "127.0.0.1:4510-4559:4510-4559"  # external services port range
     environment:
-      MINIO_ROOT_USER: your_minio_access_key
-      MINIO_ROOT_PASSWORD: your_minio_secret_key
+      # LocalStack configuration: https://docs.localstack.cloud/references/configuration/
+      - AWS_DEFAULT_REGION=us-east-1
+      - SERVICES=s3,sqs
+      - DEBUG=${DEBUG:-0}
+      - AWS_ACCESS_KEY_ID=test
+      - AWS_SECRET_ACCESS_KEY=test
+      - DISABLE_CORS_CHECKS=1
+      - PROVIDER_OVERRIDE_S3=asf
+      - S3_SKIP_SIGNATURE_VALIDATION=1
+      - PERSISTENCE=1
     volumes:
-      - ./data:/data
-    command: ["server", "--console-address", ":9001", "/data"]
+      - "./localstack.config/init-aws.sh:/etc/localstack/init/ready.d/init-aws.sh"  # ready hook
+      - "./localstack.config/queue-config.json:/etc/localstack/init/ready.d/config/queue-config.json"  # queue config file
+      - "./aws:/var/lib/localstack"
+      - "/var/run/docker.sock:/var/run/docker.sock"
+    networks:
+      - net
 
 volumes:
-  postgres_data:
+  postgres_data1:
+
+networks:
+  net:
+    external: true

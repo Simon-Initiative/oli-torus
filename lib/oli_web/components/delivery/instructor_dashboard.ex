@@ -191,7 +191,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard do
             path={header_link_path(@section, :reports, @preview_mode)}
             active={is_active?(@view, :reports)}
           >
-            Reports
+            Insights
           </.header_link>
           <.header_link
             path={header_link_path(@section, :manage, @preview_mode)}
