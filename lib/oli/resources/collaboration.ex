@@ -633,6 +633,14 @@ defmodule Oli.Resources.Collaboration do
     results =
       from(
         post in Post,
+        join: sr in SectionResource,
+        on: sr.resource_id == post.resource_id and sr.section_id == post.section_id,
+        join: spp in SectionsProjectsPublications,
+        on: spp.section_id == post.section_id and spp.project_id == sr.project_id,
+        join: pr in PublishedResource,
+        on: pr.publication_id == spp.publication_id and pr.resource_id == post.resource_id,
+        join: rev in Revision,
+        on: rev.id == pr.revision_id,
         join: user in User,
         on: post.user_id == user.id,
         left_join: replies in subquery(replies_subquery()),
@@ -652,7 +660,8 @@ defmodule Oli.Resources.Collaboration do
           post: %{
             post
             | replies_count: coalesce(replies.count, 0),
-              read_replies_count: coalesce(read_replies.count, 0)
+              read_replies_count: coalesce(read_replies.count, 0),
+              resource_slug: rev.slug
           },
           total_count: over(count(post.id))
         }
@@ -1193,6 +1202,14 @@ defmodule Oli.Resources.Collaboration do
     Repo.all(
       from(
         post in Post,
+        join: sr in SectionResource,
+        on: sr.resource_id == post.resource_id and sr.section_id == post.section_id,
+        join: spp in SectionsProjectsPublications,
+        on: spp.section_id == post.section_id and spp.project_id == sr.project_id,
+        join: pr in PublishedResource,
+        on: pr.publication_id == spp.publication_id and pr.resource_id == post.resource_id,
+        join: rev in Revision,
+        on: rev.id == pr.revision_id,
         left_join: replies in subquery(replies_subquery()),
         on: replies.thread_root_id == post.id,
         left_join: read_replies in subquery(read_replies_subquery(user_id)),
@@ -1224,6 +1241,7 @@ defmodule Oli.Resources.Collaboration do
           post
           | replies_count: coalesce(replies.count, 0),
             read_replies_count: coalesce(read_replies.count, 0),
+            resource_slug: rev.slug,
             headline:
               fragment(
                 """

@@ -35,6 +35,7 @@ defmodule Oli.Resources.Collaboration.Post do
     has_many :reactions, Oli.Resources.Collaboration.UserReactionPost
 
     field :resource_type_id, :id, virtual: true
+    field :resource_slug, :id, virtual: true
     field :replies_count, :integer, virtual: true
     field :read_replies_count, :integer, virtual: true
     field :is_read, :boolean, virtual: true
