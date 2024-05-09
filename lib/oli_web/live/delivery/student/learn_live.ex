@@ -1904,7 +1904,11 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       data-enter-event={enter_module(@unit_resource_id)}
       data-leave-event={leave_unit(@unit_resource_id)}
     >
-      <div class="rounded-xl absolute h-[170px] w-[294px] overflow-hidden cursor-pointer bg-[linear-gradient(180deg,#223_0%,rgba(34,34,51,0.72)_52.6%,rgba(34,34,51,0.00)_100%)]">
+      <div
+        xphx-mouseover={JS.show(to: "#card_badge_details_#{@card["resource_id"]}")}
+        xphx-mouseout={JS.hide(to: "#card_badge_details_#{@card["resource_id"]}")}
+        class="rounded-xl absolute h-[170px] w-[294px] overflow-hidden cursor-pointer bg-[linear-gradient(180deg,#223_0%,rgba(34,34,51,0.72)_52.6%,rgba(34,34,51,0.00)_100%)]"
+      >
         <div class="mt-[166px]" role={"card #{@module_index} progress"}>
           <.progress_bar
             percent={
@@ -1934,15 +1938,15 @@ defmodule OliWeb.Delivery.Student.LearnLive do
           ]}
           style={"background-image: url('#{if(@bg_image_url in ["", nil], do: @default_image, else: @bg_image_url)}');"}
         >
-          <span class="text-[12px] leading-[16px] font-bold opacity-60 text-white dark:text-opacity-50">
+          <span class="pointer-events-none text-[12px] leading-[16px] font-bold opacity-60 text-white dark:text-opacity-50">
             <%= if @is_page,
               do: Phoenix.HTML.raw("&nbsp;"),
               else: "#{@unit_numbering_index}.#{@module_index}" %>
           </span>
-          <h5 class="text-[18px] leading-[25px] font-bold text-white z-10">
+          <h5 class="pointer-events-none text-[18px] leading-[25px] font-bold text-white z-10">
             <%= @card["title"] %>
           </h5>
-          <div class="absolute bottom-4 right-3 h-[26px]">
+          <div class="absolute bottom-4 right-3 h-[26px] pointer-events-none">
             <.card_badge
               :if={!@is_page}
               page_metrics={@page_metrics}
@@ -2001,19 +2005,12 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       )
       when completed_pages_count == total_pages_count do
     ~H"""
-    <div
-      id={"completed_collapsed_card_badge_#{@resource_id}"}
-      class="w-[38px] h-[26px] px-2 py-1 dark:bg-white/10 rounded-xl shadow justify-end items-center gap-1 inline-flex"
-    >
+    <div class="h-[26px] px-2 py-1 dark:bg-white/10 rounded-xl shadow justify-end items-center gap-1 inline-flex overflow-hidden">
       <Icons.check />
-    </div>
-
-    <div
-      id={"completed_expanded_card_badge_#{@resource_id}"}
-      class="hidden ml-auto h-[26px] px-2 py-1 dark:bg-white/10 rounded-xl shadow justify-end items-center gap-1 inline-flex"
-    >
-      <Icons.check />
-      <div class="dark:text-white text-[13px] font-semibold">
+      <div
+        id={"card_badge_details_#{@resource_id}"}
+        class="hidden dark:text-white text-[13px] font-semibold pointer-events-none"
+      >
         <%= parse_module_total_pages(@page_metrics.total_pages_count) %> · <%= parse_module_total_minutes(
           @page_metrics.total_duration_minutes
         ) %>
