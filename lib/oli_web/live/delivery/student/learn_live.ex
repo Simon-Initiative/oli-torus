@@ -862,20 +862,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
                 role={"unit_#{@unit["numbering"]["index"]}_progress"}
                 show_percent={@progress != 100}
               />
-              <svg
-                :if={@progress == 100}
-                xmlns="http://www.w3.org/2000/svg"
-                width="25"
-                height="24"
-                viewBox="0 0 25 24"
-                fill="none"
-                role="unit completed check icon"
-              >
-                <path
-                  d="M10.0496 17.9996L4.34961 12.2996L5.77461 10.8746L10.0496 15.1496L19.2246 5.97461L20.6496 7.39961L10.0496 17.9996Z"
-                  fill="#0CAF61"
-                />
-              </svg>
+              <Icons.check progress={@progress / 100} role="unit completed check icon" />
               <Student.score_summary :if={@progress == 100} raw_avg_score={@unit_raw_avg_score} />
             </div>
           </div>
