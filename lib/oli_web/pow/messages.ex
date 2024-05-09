@@ -46,26 +46,14 @@ defmodule OliWeb.Pow.Messages do
   def pow_email_confirmation_email_confirmation_required(conn) do
     email = conn.params["user"]["email"]
 
-    user =
-      case conn.assigns.action do
-        "/authoring/registration" -> Accounts.get_author_by_email(email)
-        "/registration" -> Accounts.get_user_by(%{email: email})
-        _ -> nil
-      end
-
-    case {user, email} do
-      {nil, _} ->
-        PowEmailConfirmation.Phoenix.Messages.email_confirmation_required(conn)
-
-      {user, _} when not is_nil(user.email_confirmed_at) ->
-        "An account with this email already exists"
-
-      {_, email} ->
-        """
-        To continue, check #{email} for a confirmation email.\n
-        If you don’t receive this email, check your Spam folder or verify that #{email} is correct.\n
-        You can close this tab if you received the email.
-        """
+    if email do
+      """
+      To continue, check #{email} for a confirmation email.\n
+      If you don’t receive this email, check your Spam folder or verify that #{email} is correct.\n
+      You can close this tab if you received the email.
+      """
+    else
+      PowEmailConfirmation.Phoenix.Messages.email_confirmation_required(conn)
     end
   end
 

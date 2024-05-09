@@ -282,32 +282,7 @@ defmodule OliWeb.Common.PowTest do
                Accounts.get_user_by(%{email: @user_email})
     end
 
-    test "a flash message is shown when the user is already registered and his account has been confirmed",
-         %{conn: conn} do
-      insert(:user, %{email: @user_email, email_confirmed_at: DateTime.utc_now()})
-      expect_recaptcha_http_post()
-
-      conn =
-        post(
-          conn,
-          Routes.pow_registration_path(conn, :create),
-          %{
-            user:
-              Map.merge(@user_form_attrs, %{
-                age_verified: "true"
-              }),
-            "g-recaptcha-response": "any"
-          }
-        )
-
-      assert conn.assigns.flash["info"] ==
-               "An account with this email already exists"
-
-      assert %User{email: @user_email} =
-               Accounts.get_user_by(%{email: @user_email})
-    end
-
-    test "a flash message is shown when the user is already registered but his account has not been confirmed",
+    test "a flash message is shown when the user is already registered",
          %{conn: conn} do
       insert(:user, %{email: @user_email, email_confirmed_at: nil})
       expect_recaptcha_http_post()
@@ -415,32 +390,7 @@ defmodule OliWeb.Common.PowTest do
       assert response =~ "div class=\"github-auth-container\""
     end
 
-    test "a flash message is shown when the author is already registered and his account has been confirmed",
-         %{conn: conn} do
-      insert(:author, %{email: @author_email, email_confirmed_at: DateTime.utc_now()})
-      expect_recaptcha_http_post()
-
-      conn =
-        post(
-          conn,
-          Routes.authoring_pow_registration_path(conn, :create),
-          %{
-            user:
-              Map.merge(@author_form_attrs, %{
-                age_verified: "true"
-              }),
-            "g-recaptcha-response": "any"
-          }
-        )
-
-      assert conn.assigns.flash["info"] ==
-               "An account with this email already exists"
-
-      assert %Author{email: @author_email} =
-               Accounts.get_author_by_email(@author_email)
-    end
-
-    test "a flash message is shown when the author is already registered but his account has not been confirmed",
+    test "a flash message is shown when the author is already registered",
          %{conn: conn} do
       insert(:author, %{email: @author_email, email_confirmed_at: nil})
       expect_recaptcha_http_post()
