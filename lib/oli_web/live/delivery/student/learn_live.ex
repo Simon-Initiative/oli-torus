@@ -1942,7 +1942,13 @@ defmodule OliWeb.Delivery.Student.LearnLive do
           <h5 class="text-[18px] leading-[25px] font-bold text-white z-10">
             <%= @card["title"] %>
           </h5>
-          <.card_badge :if={!@is_page} page_metrics={@page_metrics} />
+          <div class="absolute bottom-4 right-3 h-[26px]">
+            <.card_badge
+              :if={!@is_page}
+              page_metrics={@page_metrics}
+              resource_id={@card["resource_id"]}
+            />
+          </div>
         </div>
         <div
           :if={@selected}
@@ -1958,11 +1964,21 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   end
 
   attr :page_metrics, :map
+  attr :resource_id, :string
 
-  def card_badge(assigns) do
+  def card_badge(
+        %{
+          page_metrics: %{
+            completed_pages_count: completed_pages_count,
+            total_pages_count: total_pages_count
+          }
+        } =
+          assigns
+      )
+      when completed_pages_count < total_pages_count do
     ~H"""
     <div
-      :if={@page_metrics.completed_pages_count < @page_metrics.total_pages_count}
+      id={"in_progress_card_badge_#{@resource_id}"}
       class="ml-auto h-[26px] px-2 py-1 dark:bg-white/10 rounded-xl shadow justify-end items-center gap-1 inline-flex"
     >
       <div class="dark:text-white text-[13px] font-semibold">
@@ -1971,13 +1987,36 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         ) %>
       </div>
     </div>
+    """
+  end
+
+  def card_badge(
+        %{
+          page_metrics: %{
+            completed_pages_count: completed_pages_count,
+            total_pages_count: total_pages_count
+          }
+        } =
+          assigns
+      )
+      when completed_pages_count == total_pages_count do
+    ~H"""
+    <div
+      id={"completed_collapsed_card_badge_#{@resource_id}"}
+      class="w-[38px] h-[26px] px-2 py-1 dark:bg-white/10 rounded-xl shadow justify-end items-center gap-1 inline-flex"
+    >
+      <Icons.check />
+    </div>
 
     <div
-      :if={@page_metrics.completed_pages_count == @page_metrics.total_pages_count}
-      class="w-[38px] h-[30px] px-2 py-1 dark:bg-white/10 rounded-xl shadow justify-end items-center gap-1 inline-flex"
+      id={"completed_expanded_card_badge_#{@resource_id}"}
+      class="hidden ml-auto h-[26px] px-2 py-1 dark:bg-white/10 rounded-xl shadow justify-end items-center gap-1 inline-flex"
     >
-      <div class="w-[22px] h-[22px] flex-col justify-center items-center inline-flex">
-        <div class="justify-center items-center inline-flex"></div>
+      <Icons.check />
+      <div class="dark:text-white text-[13px] font-semibold">
+        <%= parse_module_total_pages(@page_metrics.total_pages_count) %> · <%= parse_module_total_minutes(
+          @page_metrics.total_duration_minutes
+        ) %>
       </div>
     </div>
     """
