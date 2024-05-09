@@ -122,6 +122,8 @@ defmodule OliWeb.ExperimentsLiveTest do
     test "when checkbox is off then disable the ability to modify experiment", %{view: view} do
       {view, %{}}
       |> step(:click_on_checkbox)
+      |> step(:put_resource_id)
+      |> step(:put_options)
       |> step(:click_on_checkbox)
       |> step(:test_has_button_show_edit_group_modal, :refute)
       |> step(:test_has_button_show_edit_option_1_modal, :refute)
@@ -136,13 +138,16 @@ defmodule OliWeb.ExperimentsLiveTest do
       conn: conn,
       project: project
     } do
-      {view, %{}}
-      |> step(:click_on_checkbox)
+      {_old_view, context} =
+        {view, %{}}
+        |> step(:click_on_checkbox)
+        |> step(:put_resource_id)
+        |> step(:put_options)
 
-      # Reloads page
+      # # Reloads page
       {:ok, view, _html} = live(conn, live_view_experiments_route(project.slug))
 
-      {view, %{}}
+      {view, context}
       |> step(:test_has_alternatives_group)
       |> step(:test_has_options)
       |> step(:test_has_button_show_edit_group_modal, :refute)
@@ -171,6 +176,7 @@ defmodule OliWeb.ExperimentsLiveTest do
 
   defp step({view, ctx}, :test_has_button_show_edit_group_modal, assert_or_refute) do
     resource_id = Map.get(ctx, :resource_id)
+    assert resource_id
 
     to_evaluate =
       has_element?(
@@ -215,6 +221,7 @@ defmodule OliWeb.ExperimentsLiveTest do
 
   defp step({view, ctx}, :test_has_button_show_edit_option_1_modal, assert_or_refute) do
     option_1 = Map.get(ctx, :option_1)
+    assert option_1
 
     to_evaluate =
       has_element?(
@@ -229,6 +236,7 @@ defmodule OliWeb.ExperimentsLiveTest do
 
   defp step({view, ctx}, :test_has_button_show_edit_option_2_modal, assert_or_refute) do
     option_2 = Map.get(ctx, :option_2)
+    assert option_2
 
     to_evaluate =
       has_element?(
@@ -242,6 +250,7 @@ defmodule OliWeb.ExperimentsLiveTest do
 
   defp step({view, ctx}, :test_has_button_show_delete_option_1_modal, assert_or_refute) do
     option_1 = Map.get(ctx, :option_1)
+    assert option_1
 
     to_evaluate =
       has_element?(
@@ -255,6 +264,7 @@ defmodule OliWeb.ExperimentsLiveTest do
 
   defp step({view, ctx}, :test_has_button_show_delete_option_2_modal, assert_or_refute) do
     option_2 = Map.get(ctx, :option_2)
+    assert option_2
 
     to_evaluate =
       has_element?(
@@ -268,6 +278,7 @@ defmodule OliWeb.ExperimentsLiveTest do
 
   defp step({view, ctx}, :test_has_new_option_link, assert_or_refute) do
     resource_id = Map.get(ctx, :resource_id)
+    assert resource_id
 
     to_evaluate =
       has_element?(
@@ -287,6 +298,7 @@ defmodule OliWeb.ExperimentsLiveTest do
 
   defp step({view, ctx}, :put_options, _assert_or_refute) do
     resource_id = Map.get(ctx, :resource_id)
+    assert resource_id
 
     [option_1, option_2] =
       Oli.Repo.get_by!(Revision, resource_id: resource_id).content["options"]
