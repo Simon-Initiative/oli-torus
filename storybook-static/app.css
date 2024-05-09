@@ -5468,6 +5468,10 @@ table.table-striped tbody tr:nth-child(even) {
   max-width: 400px;
 }
 
+.max-w-\[600px\] {
+  max-width: 600px;
+}
+
 .max-w-\[720px\] {
   max-width: 720px;
 }
