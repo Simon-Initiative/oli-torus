@@ -619,7 +619,7 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
         </h3>
       </div>
 
-      <.actions
+      <.posts_actions
         post_params={@post_params}
         course_collab_space_config={@course_collab_space_config}
         posts_search_term={@posts_search_term}
@@ -727,19 +727,19 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
   attr :course_collab_space_config, Oli.Resources.Collaboration.CollabSpaceConfig
   attr :posts_search_term, :string
 
-  defp actions(assigns) do
+  defp posts_actions(assigns) do
     ~H"""
     <div role="posts actions" class="w-full flex gap-6">
-      <div class="flex flex-1 space-x-3">
+      <div class="flex flex-1 space-x-3 justify-between">
         <Annotations.search_box
-          class="flex-1"
+          class="flex-1 max-w-[600px]"
           search_term={@posts_search_term}
           on_search="search_posts"
           on_clear_search="clear_search_posts"
         />
 
         <.dropdown
-          id="sort-dropdown"
+          id="sort-posts-dropdown"
           role="sort"
           class="inline-flex"
           button_class="rounded-[3px] py-[10px] px-6 flex justify-center items-center whitespace-nowrap text-[14px] leading-[20px] font-normal text-white bg-[#0F6CF5] hover:bg-blue-600"
@@ -789,9 +789,9 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
   defp notes_actions(assigns) do
     ~H"""
     <div role="notes actions" class="w-full flex gap-6">
-      <div class="flex flex-1 space-x-3">
+      <div class="flex flex-1 space-x-3 justify-between">
         <Annotations.search_box
-          class="flex-1"
+          class="flex-1 max-w-[600px]"
           search_term={@notes_search_term}
           on_search="search_notes"
           on_clear_search="clear_search_notes"

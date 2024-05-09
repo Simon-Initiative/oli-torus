@@ -539,21 +539,21 @@ defmodule Oli.Resources.Collaboration do
         {"popularity", :desc} ->
           {:desc_nulls_last,
            dynamic(
-             [_post, _sr, _spp, _pr, _rev, _user, replies, _read_replies],
+             [_post, _sr, _spp, _pr, _rev, _user, replies, _read_replies, _reactions],
              replies.count
            )}
 
         {"popularity", :asc} ->
           {:asc_nulls_first,
            dynamic(
-             [_post, _sr, _spp, _pr, _rev, _user, replies, _read_replies],
+             [_post, _sr, _spp, _pr, _rev, _user, replies, _read_replies, _reactions],
              replies.count
            )}
 
         {"date", sort_order} ->
           {sort_order,
            dynamic(
-             [post, _sr, _spp, _pr, _rev, _user, _replies, _read_replies],
+             [post, _sr, _spp, _pr, _rev, _user, _replies, _read_replies, _reactions],
              post.updated_at
            )}
       end
@@ -561,6 +561,14 @@ defmodule Oli.Resources.Collaboration do
     results =
       from(
         post in Post,
+        join: sr in SectionResource,
+        on: sr.resource_id == post.resource_id and sr.section_id == post.section_id,
+        join: spp in SectionsProjectsPublications,
+        on: spp.section_id == post.section_id and spp.project_id == sr.project_id,
+        join: pr in PublishedResource,
+        on: pr.publication_id == spp.publication_id and pr.resource_id == post.resource_id,
+        join: rev in Revision,
+        on: rev.id == pr.revision_id,
         join: user in User,
         on: post.user_id == user.id,
         left_join: replies in subquery(replies_subquery()),
