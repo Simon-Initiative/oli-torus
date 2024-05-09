@@ -2,7 +2,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
   use OliWeb, :live_view
 
   import OliWeb.Delivery.Student.Utils,
-    only: [page_header: 1, star_icon: 1, scripts: 1]
+    only: [page_header: 1, scripts: 1]
 
   alias Oli.Delivery.Attempts.Core.ResourceAttempt
   alias Oli.Delivery.Attempts.PageLifecycle
@@ -16,6 +16,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
   alias OliWeb.Components.Modal
   alias OliWeb.Delivery.Student.Utils
   alias OliWeb.Delivery.Student.Lesson.Annotations
+  alias OliWeb.Icons
 
   require Logger
 
@@ -964,7 +965,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
           Attempt <%= @index %>:
         </div>
         <div class="py-1 justify-end items-center gap-1.5 flex">
-          <div class="w-4 h-4 relative"><.star_icon /></div>
+          <div class="w-4 h-4 relative"><Icons.star /></div>
           <div class="justify-end items-center gap-1 flex">
             <div
               role="attempt score"
