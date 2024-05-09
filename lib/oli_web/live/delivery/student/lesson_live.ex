@@ -631,6 +631,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
 
       <:sidebar>
         <Annotations.panel
+          section_slug={@section.slug}
           create_new_annotation={@annotations.create_new_annotation}
           annotations={@annotations.posts}
           current_user={@current_user}

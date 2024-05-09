@@ -384,7 +384,7 @@ defmodule OliWeb.GradesLiveTest do
                """
     end
 
-    test "download gradebook - download file without grades succesfully", %{
+    test "download gradebook - download file without grades successfully", %{
       conn: conn,
       section: section
     } do

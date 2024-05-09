@@ -507,6 +507,7 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
       />
       <.notes_section
         ctx={@ctx}
+        section_slug={@section.slug}
         current_user={@current_user}
         notes={@notes}
         note_params={@note_params}
@@ -660,6 +661,7 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
 
   attr :notes, :list
   attr :ctx, :map
+  attr :section_slug, :string
   attr :current_user, :any
   attr :note_params, :map
   attr :more_notes_exist?, :boolean
@@ -682,7 +684,12 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
           <div role="notes list" class="w-full">
             <%= for post <- @notes do %>
               <div class="mb-3">
-                <Annotations.post class="bg-white" post={post} current_user={@ctx.user} />
+                <Annotations.post
+                  class="bg-white"
+                  post={post}
+                  current_user={@ctx.user}
+                  go_to_post_href={~p"/sections/#{@section_slug}/lesson/#{post.resource_slug}"}
+                />
               </div>
             <% end %>
             <div :if={@notes == []} class="flex p-4 text-center w-full">
@@ -704,7 +711,12 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
           </div>
         <% results -> %>
           <div role="search-results list" class="w-full">
-            <Annotations.search_results search_results={results} current_user={@current_user} />
+            <Annotations.search_results
+              section_slug={@section_slug}
+              search_results={results}
+              current_user={@current_user}
+              show_go_to_post_link={true}
+            />
           </div>
       <% end %>
     </section>
