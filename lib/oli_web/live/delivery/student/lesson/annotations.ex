@@ -8,6 +8,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
   attr :create_new_annotation, :boolean, default: false
   attr :annotations, :any, required: true
   attr :current_user, Oli.Accounts.User, required: true
+  attr :is_instructor, :boolean, default: false
   attr :selected_point, :any, required: true
   attr :active_tab, :atom, default: :my_notes
   attr :search_results, :any, default: nil
@@ -23,10 +24,10 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
       </div>
       <div class="flex-1 flex flex-col bg-white dark:bg-black p-5">
         <.tab_group class="py-3">
-          <.tab name={:my_notes} selected={@active_tab == :my_notes}>
+          <.tab :if={not @is_instructor} name={:my_notes} selected={@active_tab == :my_notes}>
             <.user_icon class="mr-2" /> My Notes
           </.tab>
-          <.tab name={:all_notes} selected={@active_tab == :all_notes}>
+          <.tab name={:class_notes} selected={@active_tab == :class_notes || @is_instructor}>
             <.users_icon class="mr-2" /> Class Notes
           </.tab>
         </.tab_group>

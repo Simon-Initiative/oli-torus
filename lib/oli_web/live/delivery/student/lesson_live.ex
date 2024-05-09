@@ -24,6 +24,10 @@ defmodule OliWeb.Delivery.Student.LessonLive do
   on_mount {OliWeb.LiveSessionPlugs.InitPage, :previous_next_index}
 
   def mount(_params, _session, %{assigns: %{view: :practice_page}} = socket) do
+    %{current_user: current_user, section: section} = socket.assigns
+
+    is_instructor = Sections.has_instructor_role?(current_user, section.slug)
+
     course_collab_space_config =
       Collaboration.get_course_collab_space_config(
         socket.assigns.section.root_section_resource_id
@@ -37,7 +41,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
         socket.assigns.page_context.page.resource_id,
         socket.assigns.current_user,
         course_collab_space_config,
-        :private,
+        if(is_instructor, do: :public, else: :private),
         nil
       )
     end
@@ -45,8 +49,11 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     {:ok,
      socket
      |> assign_html_and_scripts()
-     |> annotations_assigns(course_collab_space_config)
-     |> assign(course_collab_space_config: course_collab_space_config)}
+     |> annotations_assigns(course_collab_space_config, is_instructor)
+     |> assign(
+       is_instructor: is_instructor,
+       course_collab_space_config: course_collab_space_config
+     )}
   end
 
   def mount(
@@ -207,7 +214,8 @@ defmodule OliWeb.Delivery.Student.LessonLive do
   end
 
   def handle_event("toggle_annotation_point", params, socket) do
-    %{annotations: %{selected_point: selected_point}} = socket.assigns
+    %{is_instructor: is_instructor, annotations: %{selected_point: selected_point}} =
+      socket.assigns
 
     point_marker_id =
       case params do
@@ -222,7 +230,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
         socket.assigns.page_context.page.resource_id,
         socket.assigns.current_user,
         socket.assigns.course_collab_space_config,
-        visibility_for_active_tab(socket.assigns.annotations.active_tab),
+        visibility_for_active_tab(socket.assigns.annotations.active_tab, is_instructor),
         nil
       )
 
@@ -237,7 +245,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
         socket.assigns.page_context.page.resource_id,
         socket.assigns.current_user,
         socket.assigns.course_collab_space_config,
-        visibility_for_active_tab(socket.assigns.annotations.active_tab),
+        visibility_for_active_tab(socket.assigns.annotations.active_tab, is_instructor),
         point_marker_id
       )
 
@@ -263,6 +271,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
   def handle_event("create_annotation", %{"content" => value} = params, socket) do
     %{
       current_user: current_user,
+      is_instructor: is_instructor,
       section: section,
       page_context: page_context,
       annotations: %{
@@ -285,7 +294,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
       annotated_block_id: selected_point,
       annotation_type: if(selected_point, do: :point, else: :none),
       anonymous: params["anonymous"] == "true",
-      visibility: visibility_for_active_tab(active_tab),
+      visibility: visibility_for_active_tab(active_tab, is_instructor),
       content: %Collaboration.PostContent{message: value}
     }
 
@@ -302,10 +311,12 @@ defmodule OliWeb.Delivery.Student.LessonLive do
   end
 
   def handle_event("select_tab", %{"tab" => tab}, socket) do
+    %{is_instructor: is_instructor} = socket.assigns
+
     tab =
       case tab do
         "my_notes" -> :my_notes
-        "all_notes" -> :all_notes
+        "class_notes" -> :class_notes
         _ -> :my_notes
       end
 
@@ -326,7 +337,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
         section,
         resource_id,
         current_user,
-        visibility_for_active_tab(tab),
+        visibility_for_active_tab(tab, is_instructor),
         selected_point,
         search_term
       )
@@ -340,7 +351,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
         socket.assigns.page_context.page.resource_id,
         socket.assigns.current_user,
         socket.assigns.course_collab_space_config,
-        visibility_for_active_tab(tab),
+        visibility_for_active_tab(tab, is_instructor),
         socket.assigns.annotations.selected_point
       )
 
@@ -452,6 +463,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
 
     %{
       current_user: current_user,
+      is_instructor: is_instructor,
       section: section,
       page_context: page_context,
       annotations: %{
@@ -474,7 +486,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
       annotated_block_id: selected_point,
       annotation_type: if(selected_point, do: :point, else: :none),
       anonymous: params["anonymous"] == "true",
-      visibility: visibility_for_active_tab(active_tab),
+      visibility: visibility_for_active_tab(active_tab, is_instructor),
       content: %Collaboration.PostContent{message: value},
       parent_post_id: parent_post_id,
       thread_root_id: parent_post_id
@@ -502,6 +514,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
   def handle_event("search", %{"search_term" => search_term}, socket) do
     %{
       current_user: current_user,
+      is_instructor: is_instructor,
       section: section,
       page_context: %{
         page: %{resource_id: resource_id}
@@ -516,7 +529,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
       section,
       resource_id,
       current_user,
-      visibility_for_active_tab(active_tab),
+      visibility_for_active_tab(active_tab, is_instructor),
       selected_point,
       search_term
     )
@@ -537,6 +550,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
       section: section,
       page_context: page_context,
       current_user: current_user,
+      is_instructor: is_instructor,
       course_collab_space_config: course_collab_space_config,
       annotations: %{
         active_tab: active_tab
@@ -554,7 +568,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
       page_context.page.resource_id,
       current_user,
       course_collab_space_config,
-      visibility_for_active_tab(active_tab),
+      visibility_for_active_tab(active_tab, is_instructor),
       point_marker_id,
       String.to_integer(post_id)
     )
@@ -635,6 +649,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
           create_new_annotation={@annotations.create_new_annotation}
           annotations={@annotations.posts}
           current_user={@current_user}
+          is_instructor={@is_instructor}
           active_tab={@annotations.active_tab}
           search_results={@annotations.search_results}
           search_term={@annotations.search_term}
@@ -1166,7 +1181,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     )
   end
 
-  defp annotations_assigns(socket, course_collab_space_config) do
+  defp annotations_assigns(socket, course_collab_space_config, is_instructor) do
     case course_collab_space_config do
       %CollabSpaceConfig{status: :enabled} ->
         assign(socket,
@@ -1176,7 +1191,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
             selected_point: nil,
             post_counts: nil,
             posts: nil,
-            active_tab: :my_notes,
+            active_tab: if(is_instructor, do: :class_notes, else: :my_notes),
             create_new_annotation: false,
             auto_approve_annotations: course_collab_space_config.auto_accept,
             search_results: nil,
@@ -1292,9 +1307,10 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     assign(socket, annotations: Enum.into(annotations, socket.assigns.annotations))
   end
 
-  defp visibility_for_active_tab(:all_notes), do: :public
-  defp visibility_for_active_tab(:my_notes), do: :private
-  defp visibility_for_active_tab(_), do: :private
+  defp visibility_for_active_tab(_, true), do: :public
+  defp visibility_for_active_tab(:class_notes, _is_instructor), do: :public
+  defp visibility_for_active_tab(:my_notes, _is_instructor), do: :private
+  defp visibility_for_active_tab(_, _is_instructor), do: :private
 
   defp optimistically_add_post(socket, selected_point, post) do
     %{posts: posts, post_counts: post_counts} = socket.assigns.annotations

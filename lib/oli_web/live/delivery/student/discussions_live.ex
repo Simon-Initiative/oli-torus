@@ -18,6 +18,10 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
   }
 
   def mount(_params, _session, socket) do
+    %{current_user: current_user, section: section} = socket.assigns
+
+    is_instructor = Sections.has_instructor_role?(current_user, section.slug)
+
     if connected?(socket),
       do:
         Phoenix.PubSub.subscribe(
@@ -46,6 +50,7 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
     {
       :ok,
       assign(socket,
+        is_instructor: is_instructor,
         active_tab: :discussions,
         posts: posts,
         notes: notes,
@@ -506,6 +511,7 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
         posts_search_results={@posts_search_results}
       />
       <.notes_section
+        :if={not @is_instructor}
         ctx={@ctx}
         section_slug={@section.slug}
         current_user={@current_user}
