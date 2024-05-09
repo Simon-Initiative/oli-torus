@@ -152,6 +152,15 @@ defmodule OliWeb.ExperimentsLiveTest do
       |> step(:test_has_button_show_delete_option_2_modal, :refute)
       |> step(:test_has_new_option_link, :refute)
     end
+
+    test "hide/show download buttons when checkbox is checked/unchecked", %{view: view} do
+      {view, %{}}
+      |> step(:test_has_button_download_segment_json, :refute)
+      |> step(:test_has_button_download_experiment_json, :refute)
+      |> step(:click_on_checkbox)
+      |> step(:test_has_button_download_segment_json)
+      |> step(:test_has_button_download_experiment_json)
+    end
   end
 
   defp evaluate_assertion(to_evaluate, assert_or_refute) do
@@ -162,6 +171,30 @@ defmodule OliWeb.ExperimentsLiveTest do
   end
 
   defp step(_view_and_ctx, _operation, assert_or_refute \\ :assert)
+
+  defp step({view, ctx}, :test_has_button_download_experiment_json, assert_or_refute) do
+    to_evaluate =
+      view
+      |> render()
+      |> Floki.find("button:fl-contains('Download Experiment JSON')")
+      |> Floki.text() =~ "Download Experiment JSON"
+
+    evaluate_assertion(to_evaluate, assert_or_refute)
+
+    {view, ctx}
+  end
+
+  defp step({view, ctx}, :test_has_button_download_segment_json, assert_or_refute) do
+    to_evaluate =
+      view
+      |> render()
+      |> Floki.find("button:fl-contains('Download Segment JSON')")
+      |> Floki.text() =~ "Download Segment JSON"
+
+    evaluate_assertion(to_evaluate, assert_or_refute)
+
+    {view, ctx}
+  end
 
   defp step({view, ctx}, :test_has_alternatives_group, assert_or_refute) do
     to_evaluate = has_element?(view, ".alternatives-group", "Decision Point")
