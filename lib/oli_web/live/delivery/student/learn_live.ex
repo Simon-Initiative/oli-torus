@@ -1792,9 +1792,12 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         class="flex flex-col items-center rounded-xl h-[170px] w-[294px] bg-gray-200/50 shrink-0 px-5 pt-[15px] bg-cover bg-center"
         style={"background-image: url('#{WebUtils.convert_to_youtube_image_url(@video_url)}');"}
       >
-        <h5 class="pointer-events-none text-[13px] leading-[18px] font-bold opacity-60 text-gray-500 text-white dark:text-opacity-50 self-start">
+        <span
+          role="card top label"
+          class="pointer-events-none text-[12px] leading-[16px] font-bold opacity-60 text-white dark:text-opacity-50 self-start"
+        >
           <%= @title %>
-        </h5>
+        </span>
         <div class="absolute bottom-4 right-3 h-[26px] pointer-events-none">
           <.card_badge
             resource_id={@card_resource_id}
@@ -1859,9 +1862,12 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         >
           <source src={"#{@video_url}#t=0.5"} /> Your browser does not support the video tag.
         </video>
-        <h5 class="pointer-events-none z-30 text-[13px] leading-[18px] font-bold opacity-60 text-gray-500 text-white dark:text-opacity-50 self-start">
+        <span
+          role="card top label"
+          class="pointer-events-none text-[12px] leading-[16px] font-bold opacity-60 text-white dark:text-opacity-50 self-start"
+        >
           <%= @title %>
-        </h5>
+        </span>
         <div class="absolute bottom-4 right-3 h-[26px] pointer-events-none">
           <.card_badge
             resource_id={@card_resource_id}
@@ -1955,7 +1961,10 @@ defmodule OliWeb.Delivery.Student.LearnLive do
           ]}
           style={"background-image: url('#{if(@bg_image_url in ["", nil], do: @default_image, else: @bg_image_url)}');"}
         >
-          <span class="pointer-events-none text-[12px] leading-[16px] font-bold opacity-60 text-white dark:text-opacity-50">
+          <span
+            role="card top label"
+            class="pointer-events-none text-[12px] leading-[16px] font-bold opacity-60 text-white dark:text-opacity-50"
+          >
             <%= if @is_page,
               do: "PAGE",
               else: "MODULE #{@module_index}" %>
@@ -1996,7 +2005,10 @@ defmodule OliWeb.Delivery.Student.LearnLive do
 
   def card_badge(%{completed: true} = assigns) do
     ~H"""
-    <div class="h-[26px] px-2 py-1 dark:bg-white/10 rounded-xl shadow justify-end items-center gap-1 inline-flex overflow-hidden">
+    <div
+      role="card badge"
+      class="h-[26px] px-2 py-1 dark:bg-white/10 rounded-xl shadow justify-end items-center gap-1 inline-flex overflow-hidden"
+    >
       <Icons.check />
       <div
         id={"card_badge_details_#{@resource_id}"}
@@ -2010,7 +2022,10 @@ defmodule OliWeb.Delivery.Student.LearnLive do
 
   def card_badge(assigns) do
     ~H"""
-    <div class="h-[26px] px-2 py-1 dark:bg-white/10 rounded-xl shadow justify-end items-center gap-1 inline-flex overflow-hidden">
+    <div
+      role="card badge"
+      class="h-[26px] px-2 py-1 dark:bg-white/10 rounded-xl shadow justify-end items-center gap-1 inline-flex overflow-hidden"
+    >
       <div class="dark:text-white text-[13px] font-semibold pointer-events-none">
         <%= parse_card_badge_minutes(@duration_minutes, :page) %>
       </div>
@@ -2033,6 +2048,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       when completed_pages_count < total_pages_count do
     ~H"""
     <div
+      role="card badge"
       id={"in_progress_card_badge_#{@resource_id}"}
       class="ml-auto h-[26px] px-2 py-1 dark:bg-white/10 rounded-xl shadow justify-end items-center gap-1 inline-flex"
     >
@@ -2057,7 +2073,10 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       )
       when completed_pages_count == total_pages_count do
     ~H"""
-    <div class="h-[26px] px-2 py-1 dark:bg-white/10 rounded-xl shadow justify-end items-center gap-1 inline-flex overflow-hidden">
+    <div
+      role="card badge"
+      class="h-[26px] px-2 py-1 dark:bg-white/10 rounded-xl shadow justify-end items-center gap-1 inline-flex overflow-hidden"
+    >
       <Icons.check />
       <div
         id={"card_badge_details_#{@resource_id}"}
