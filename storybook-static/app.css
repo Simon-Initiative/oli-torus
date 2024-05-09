@@ -7034,10 +7034,6 @@ table.table-striped tbody tr:nth-child(even) {
   fill: #0CAF61;
 }
 
-.fill-\[\#0caf61\] {
-  fill: #0caf61;
-}
-
 .fill-\[\#333333\] {
   fill: #333333;
 }
@@ -12680,20 +12676,12 @@ https://tailwindcss.com/docs/utility-first
   display: none;
 }
 
-.group.past-start .group-\[\.past-start\]\:fill-\[\#89c8aa\] {
-  fill: #89c8aa;
-}
-
 .group.past-start .group-\[\.past-start\]\:fill-\[\#e3cdff\] {
   fill: #e3cdff;
 }
 
 .group.past-start .group-\[\.past-start\]\:fill-gray-300 {
   fill: #d4d4d4;
-}
-
-.group.past-start .group-\[\.past-start\]\:fill-gray-400 {
-  fill: #a3a3a3;
 }
 
 .group.past-start .group-\[\.past-start\]\:text-gray-400 {
@@ -13566,10 +13554,6 @@ https://tailwindcss.com/docs/utility-first
 .dark .group:hover .dark\:group-hover\:bg-gray-800 {
   --tw-bg-opacity: 1;
   background-color: rgb(38 38 38 / var(--tw-bg-opacity));
-}
-
-.dark .group.past-start .dark\:group-\[\.past-start\]\:fill-\[\#085c36\] {
-  fill: #085c36;
 }
 
 .dark .group.past-start .dark\:group-\[\.past-start\]\:fill-\[\#66488c\] {
