@@ -39,8 +39,8 @@ defmodule OliWeb.Pow.AuthorContext do
           do:
             Oli.Email.create_email(
               email,
-              "Account already registered",
-              "email_already_registered.html",
+              "Account already exists",
+              "account_already_exists.html",
               %{
                 url: Routes.authoring_pow_session_path(OliWeb.Endpoint, :new),
                 forgot_password:

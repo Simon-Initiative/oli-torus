@@ -5,7 +5,7 @@
     If this was you, you can login <%= link "here", to: @url, target: "_blank" %> with your existing email and password.
     If you forgot your password, you can reset it by clicking <%= link "Forgot Password?", to: @forgot_password, target: "_blank" %>.
   </p>
-  <p>If this was not you, you can safely disregard this email.</p>
+  <p>If this was not you, you can disregard this email.</p>
 </div>
 
 
