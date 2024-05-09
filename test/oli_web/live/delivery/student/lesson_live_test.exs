@@ -1104,7 +1104,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       |> render_click
 
       view
-      |> element(~s{button[phx-click='select_tab'][phx-value-tab='all_notes']})
+      |> element(~s{button[phx-click='select_tab'][phx-value-tab='class_notes']})
       |> render_click
 
       wait_while(fn -> has_element?(view, "svg.loading") end)
@@ -1150,7 +1150,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       |> render_click
 
       view
-      |> element(~s{button[phx-click='select_tab'][phx-value-tab='all_notes']})
+      |> element(~s{button[phx-click='select_tab'][phx-value-tab='class_notes']})
       |> render_click
 
       wait_while(fn -> has_element?(view, "svg.loading") end)
