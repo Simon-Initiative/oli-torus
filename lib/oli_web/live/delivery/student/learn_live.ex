@@ -2047,15 +2047,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
           <h5 class="text-[18px] leading-[25px] font-bold text-white z-10">
             <%= @card["title"] %>
           </h5>
-          <div :if={!@is_page} class="rounded-lg p-2 bg-gray-300 bg-opacity-50">
-            <div :if={@page_metrics.completed_pages_count < @page_metrics.total_pages_count}>
-              <%= @page_metrics.completed_pages_count %> - <%= @page_metrics.total_pages_count %> - <%= @page_metrics.total_duration_minutes %>
-            </div>
-
-            <div :if={@page_metrics.completed_pages_count == @page_metrics.total_pages_count}>
-              Completed!!
-            </div>
-          </div>
+          <.card_badge :if={!@is_page} page_metrics={@page_metrics} />
         </div>
         <div
           :if={@selected}
@@ -2073,6 +2065,32 @@ defmodule OliWeb.Delivery.Student.LearnLive do
             <path d="M0 0L27 0L13.5 12Z" />
           </svg>
         </div>
+      </div>
+    </div>
+    """
+  end
+
+  attr :page_metrics, :map
+
+  def card_badge(assigns) do
+    ~H"""
+    <div
+      :if={@page_metrics.completed_pages_count < @page_metrics.total_pages_count}
+      class="ml-auto h-[26px] px-2 py-1 dark:bg-white/10 rounded-xl shadow justify-end items-center gap-1 inline-flex"
+    >
+      <div class="dark:text-white text-[13px] font-semibold">
+        <%= parse_module_total_pages(@page_metrics.total_pages_count) %> · <%= parse_module_total_minutes(
+          @page_metrics.total_duration_minutes
+        ) %>
+      </div>
+    </div>
+
+    <div
+      :if={@page_metrics.completed_pages_count == @page_metrics.total_pages_count}
+      class="w-[38px] h-[30px] px-2 py-1 dark:bg-white/10 rounded-xl shadow justify-end items-center gap-1 inline-flex"
+    >
+      <div class="w-[22px] h-[22px] flex-col justify-center items-center inline-flex">
+        <div class="justify-center items-center inline-flex"></div>
       </div>
     </div>
     """
@@ -2744,4 +2762,29 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   defp get_module_page_metrics(page_metrics_per_module_id, module_resource_id) do
     page_metrics_per_module_id[module_resource_id] || @default_module_page_metrics
   end
+
+  defp parse_module_total_pages(pages) when is_integer(pages) do
+    pages
+    |> case do
+      1 -> "1 page"
+      _ -> "#{pages} pages"
+    end
+  end
+
+  defp parse_module_total_pages(_), do: "unknown pages"
+
+  defp parse_module_total_minutes(minutes) when is_integer(minutes) do
+    minutes
+    |> Timex.Duration.from_minutes()
+    |> Timex.Duration.to_clock()
+    |> case do
+      {hours, minutes, _seconds, _milliseconds} when hours > 0 ->
+        "#{hours}h #{minutes}m"
+
+      {_, minutes, _seconds, _milliseconds} ->
+        "#{minutes}m"
+    end
+  end
+
+  defp parse_module_total_minutes(_), do: "unknown time"
 end
