@@ -603,7 +603,7 @@ defmodule OliWeb.Components.Common do
     <div class="flex flex-row items-center mx-auto" role={@role}>
       <div class="flex justify-center w-full">
         <div
-          class={"rounded-[60px] bg-gray-200 #{@height} dark:bg-white/opacity-20"}
+          class={"rounded-[60px] bg-gray-600/20 #{@height} dark:bg-white/20"}
           style={"width: #{@width}"}
         >
           <div
