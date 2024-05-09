@@ -2627,22 +2627,6 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     end
   end
 
-  defp find_module_ancestor(_, nil, _), do: nil
-
-  defp find_module_ancestor(hierarchy, resource_id, container_resource_type_id) do
-    case Oli.Delivery.Hierarchy.find_parent_in_hierarchy(
-           hierarchy,
-           &(&1["resource_id"] == resource_id)
-         ) do
-      %{"resource_type_id" => ^container_resource_type_id, "numbering" => %{"level" => 2}} =
-          module ->
-        module["resource_id"]
-
-      parent ->
-        find_module_ancestor(hierarchy, parent["resource_id"], container_resource_type_id)
-    end
-  end
-
   defp get_module_page_metrics(page_metrics_per_module_id, module_resource_id) do
     page_metrics_per_module_id[module_resource_id] || @default_module_page_metrics
   end
