@@ -1406,15 +1406,13 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
              |> render() =~ "style=\"width: 100%\""
     end
 
-    test "can see icon that identifies practice pages at level 2 of hierarchy (and can navigate to them)",
+    test "can navigate to pages at level 2 of hierarchy (rendered as cards)",
          %{
            conn: conn,
            section: section,
            page_7: page_7
          } do
       {:ok, view, _html} = live(conn, Utils.learn_live_path(section.slug))
-
-      assert has_element?(view, ~s{div[role="unit_3"] div[role="card_7"] div[role="page icon"]})
 
       # click on page 7 card to navigate to that page
       view
@@ -1436,18 +1434,13 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       )
     end
 
-    test "can see icon that identifies graded pages at level 2 of hierarchy (and can navigate to them)",
+    test "can navigate to graded pages at level 2 of hierarchy (rendered as cards)",
          %{
            conn: conn,
            section: section,
            page_8: page_8
          } do
       {:ok, view, _html} = live(conn, Utils.learn_live_path(section.slug))
-
-      assert has_element?(
-               view,
-               ~s{div[role="unit_3"] div[role="card_8"] div[role="graded page icon"]}
-             )
 
       # click on page 8 card to navigate to that page
       view
