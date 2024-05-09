@@ -1737,7 +1737,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     end
   end
 
-  attr :title, :string, default: "Intro"
+  attr :title, :string, default: "INTRO"
   attr :video_url, :string
   attr :card_resource_id, :string
   attr :resource_id, :string
@@ -1914,7 +1914,6 @@ defmodule OliWeb.Delivery.Student.LearnLive do
           />
         </div>
       </div>
-      <.page_icon :if={@is_page} graded={@card["graded"]} />
 
       <div class="h-[170px] w-[294px]">
         <div
@@ -1925,8 +1924,8 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         >
           <span class="pointer-events-none text-[12px] leading-[16px] font-bold opacity-60 text-white dark:text-opacity-50">
             <%= if @is_page,
-              do: Phoenix.HTML.raw("&nbsp;"),
-              else: "#{@unit_numbering_index}.#{@module_index}" %>
+              do: "PAGE",
+              else: "MODULE #{@module_index}" %>
           </span>
           <h5 class="pointer-events-none text-[18px] leading-[25px] font-bold text-white z-10">
             <%= @card["title"] %>
