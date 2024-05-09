@@ -5,10 +5,8 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTable do
   import OliWeb.ErrorHelpers
   import Ecto.Query, only: [from: 2]
 
-  alias OliWeb.Common.FormatDateTime
-  alias OliWeb.Common.PagedTable
+  alias OliWeb.Common.{FormatDateTime, PagedTable, Paging, Params}
   alias OliWeb.Sections.AssessmentSettings.StudentExceptionsTableModel
-  alias OliWeb.Common.Params
   alias OliWeb.Common.Utils, as: CommonUtils
   alias Phoenix.LiveView.JS
   alias OliWeb.Router.Helpers, as: Routes
@@ -148,6 +146,13 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTable do
           </button>
         </div>
       </div>
+      <Paging.render
+        id="header_paging"
+        total_count={@total_count}
+        offset={@params.offset}
+        limit={@params.limit}
+        click={JS.push("paged_table_page_change", target: @myself)}
+      />
       <form
         id={"form-#{@form_id}"}
         for="student_exceptions_table"
@@ -159,10 +164,10 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTable do
           total_count={@total_count}
           offset={@params.offset}
           limit={@params.limit}
-          page_change={JS.push("paged_table_page_change", target: @myself)}
           sort={JS.push("paged_table_sort", target: @myself)}
           additional_table_class="instructor_dashboard_table"
           show_bottom_paging={false}
+          show_top_paging={false}
           render_top_info={false}
         />
       </form>
