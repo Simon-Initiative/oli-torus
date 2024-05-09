@@ -7,6 +7,7 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
   alias OliWeb.Components.Modal
   alias OliWeb.Components.Delivery.Buttons
   alias OliWeb.Delivery.Student.Lesson.Annotations
+  alias OliWeb.Icons
 
   @default_params %{
     sort_by: "date",
@@ -486,9 +487,12 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
       new_discussion_form={@new_discussion_form}
     />
     <.hero_banner class="bg-discussions">
-      <h1 class="text-6xl mb-8">Discussions</h1>
+      <h1 class="text-4xl md:text-6xl mb-8">Discussions</h1>
     </.hero_banner>
-    <div id="discussions_content" class="flex flex-col py-6 px-16 mb-10 gap-6 items-start">
+    <div
+      id="discussions_content"
+      class="overflow-x-scroll md:overflow-x-auto flex flex-col py-6 px-16 mb-10 gap-6 items-start"
+    >
       <.posts_section
         posts={@posts}
         ctx={@ctx}
@@ -503,6 +507,7 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
       />
       <.notes_section
         ctx={@ctx}
+        section_slug={@section.slug}
         current_user={@current_user}
         notes={@notes}
         note_params={@note_params}
@@ -654,6 +659,70 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
     """
   end
 
+  attr :notes, :list
+  attr :ctx, :map
+  attr :section_slug, :string
+  attr :current_user, :any
+  attr :note_params, :map
+  attr :more_notes_exist?, :boolean
+  attr :notes_search_term, :string
+  attr :notes_search_results, :any
+
+  defp notes_section(assigns) do
+    ~H"""
+    <section id="notes" class="container mx-auto flex flex-col items-start w-full gap-6">
+      <div role="notes header" class="flex justify-between items-center w-full self-stretch">
+        <h3 class="text-2xl tracking-[0.02px] font-semibold dark:text-white">
+          Notes
+        </h3>
+      </div>
+
+      <.notes_actions note_params={@note_params} notes_search_term={@notes_search_term} />
+
+      <%= case @notes_search_results do %>
+        <% nil -> %>
+          <div role="notes list" class="w-full">
+            <%= for post <- @notes do %>
+              <div class="mb-3">
+                <Annotations.post
+                  class="bg-white"
+                  post={post}
+                  current_user={@ctx.user}
+                  go_to_post_href={~p"/sections/#{@section_slug}/lesson/#{post.resource_slug}"}
+                />
+              </div>
+            <% end %>
+            <div :if={@notes == []} class="flex p-4 text-center w-full">
+              There are no notes to show.
+            </div>
+            <div class="flex w-full justify-end">
+              <button
+                :if={@more_notes_exist?}
+                phx-click="load_more_notes"
+                class="text-primary text-sm px-6 py-2 hover:text-primary/70"
+              >
+                Load more notes
+              </button>
+            </div>
+          </div>
+        <% :loading -> %>
+          <div class="flex p-4 text-center w-full">
+            Searching...
+          </div>
+        <% results -> %>
+          <div role="search-results list" class="w-full">
+            <Annotations.search_results
+              section_slug={@section_slug}
+              search_results={results}
+              current_user={@current_user}
+              show_go_to_post_link={true}
+            />
+          </div>
+      <% end %>
+    </section>
+    """
+  end
+
   attr :post_params, :map
   attr :course_collab_space_config, Oli.Resources.Collaboration.CollabSpaceConfig
   attr :posts_search_term, :string
@@ -698,18 +767,7 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
           ]}
         >
           <span class="text-[14px] leading-[20px] mr-2">Sort</span>
-          <svg
-            width="24"
-            height="24"
-            viewBox="0 0 24 24"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <path
-              d="M6.70711 8.29289C6.31658 7.90237 5.68342 7.90237 5.29289 8.29289C4.90237 8.68342 4.90237 9.31658 5.29289 9.70711L11.2929 15.7071C11.6834 16.0976 12.3166 16.0976 12.7071 15.7071L18.7071 9.70711C19.0976 9.31658 19.0976 8.68342 18.7071 8.29289C18.3166 7.90237 17.6834 7.90237 17.2929 8.29289L12 13.5858L6.70711 8.29289Z"
-              fill="white"
-            />
-          </svg>
+          <Icons.chevron_down />
         </.dropdown>
       </div>
 
@@ -719,73 +777,9 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
         phx-click={Modal.show_modal("new-discussion-modal")}
         class="rounded-[3px] py-[10px] pl-[18px] pr-6 flex justify-center items-center whitespace-nowrap text-[14px] leading-[20px] font-normal text-white bg-[#0F6CF5] hover:bg-blue-600"
       >
-        <svg
-          role="plus icon"
-          xmlns="http://www.w3.org/2000/svg"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke-width="1.5"
-          stroke="currentColor"
-          class="w-6 h-6 mr-[10px]"
-        >
-          <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-        </svg>
-        New Discussion
+        <Icons.plus class="w-6 h-6 mr-[10px]" /> New Discussion
       </button>
     </div>
-    """
-  end
-
-  attr :notes, :list
-  attr :ctx, :map
-  attr :current_user, :any
-  attr :note_params, :map
-  attr :more_notes_exist?, :boolean
-  attr :notes_search_term, :string
-  attr :notes_search_results, :any
-
-  defp notes_section(assigns) do
-    ~H"""
-    <section id="notes" class="container mx-auto flex flex-col items-start w-full gap-6">
-      <div role="notes header" class="flex justify-between items-center w-full self-stretch">
-        <h3 class="text-2xl tracking-[0.02px] font-semibold dark:text-white">
-          Notes
-        </h3>
-      </div>
-
-      <.notes_actions note_params={@note_params} notes_search_term={@notes_search_term} />
-
-      <%= case @notes_search_results do %>
-        <% nil -> %>
-          <div role="notes list" class="w-full">
-            <%= for post <- @notes do %>
-              <div class="mb-3">
-                <Annotations.post class="bg-white" post={post} current_user={@ctx.user} />
-              </div>
-            <% end %>
-            <div :if={@notes == []} class="flex p-4 text-center w-full">
-              There are no notes to show.
-            </div>
-            <div class="flex w-full justify-end">
-              <button
-                :if={@more_notes_exist?}
-                phx-click="load_more_notes"
-                class="text-primary text-sm px-6 py-2 hover:text-primary/70"
-              >
-                Load more notes
-              </button>
-            </div>
-          </div>
-        <% :loading -> %>
-          <div class="flex p-4 text-center w-full">
-            Searching...
-          </div>
-        <% results -> %>
-          <div role="search-results list" class="w-full">
-            <Annotations.search_results search_results={results} current_user={@current_user} />
-          </div>
-      <% end %>
-    </section>
     """
   end
 
@@ -822,18 +816,7 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
           ]}
         >
           <span class="text-[14px] leading-[20px] mr-2">Sort</span>
-          <svg
-            width="24"
-            height="24"
-            viewBox="0 0 24 24"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <path
-              d="M6.70711 8.29289C6.31658 7.90237 5.68342 7.90237 5.29289 8.29289C4.90237 8.68342 4.90237 9.31658 5.29289 9.70711L11.2929 15.7071C11.6834 16.0976 12.3166 16.0976 12.7071 15.7071L18.7071 9.70711C19.0976 9.31658 19.0976 8.68342 18.7071 8.29289C18.3166 7.90237 17.6834 7.90237 17.2929 8.29289L12 13.5858L6.70711 8.29289Z"
-              fill="white"
-            />
-          </svg>
+          <Icons.chevron_down />
         </.dropdown>
       </div>
     </div>

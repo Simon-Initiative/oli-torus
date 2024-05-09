@@ -1,13 +1,11 @@
 defmodule OliWeb.Components.Delivery.Student do
   use OliWeb, :html
 
-  import OliWeb.Delivery.Student.Utils,
-    only: [star_icon: 1]
-
   alias OliWeb.Common.FormatDateTime
   alias Oli.Delivery.Attempts.HistoricalGradedAttemptSummary
   alias Oli.Delivery.Attempts.Core.ResourceAttempt
   alias OliWeb.Components.Common
+  alias OliWeb.Icons
 
   attr(:raw_avg_score, :map)
 
@@ -234,7 +232,7 @@ defmodule OliWeb.Components.Delivery.Student do
       <div class="flex flex-row justify-between gap-10 text-xs">
         <div class="flex flex-row gap-1 text-xs font-semibold">
           <div class="font-semibold uppercase text-gray-500 mr-1">Attempt <%= @index %>:</div>
-          <div class="w-4 h-4 relative"><.star_icon /></div>
+          <div class="w-4 h-4 relative"><Icons.star /></div>
 
           <div role="attempt score" class="text-emerald-600 tracking-tight">
             <%= Float.round(@attempt.score, 2) %>

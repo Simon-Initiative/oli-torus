@@ -154,6 +154,8 @@ defmodule OliWeb.GradesLiveTest do
       |> element("button[phx-click=\"test_connection\"]")
       |> render_click()
 
+      wait_while(fn -> not has_element?(view, "samp", "Requesting line items...") end)
+
       assert has_element?(view, "samp", "Starting test")
       assert has_element?(view, "samp", "Requesting access token...")
       assert has_element?(view, "samp", "Received access token")
@@ -382,7 +384,7 @@ defmodule OliWeb.GradesLiveTest do
                """
     end
 
-    test "download gradebook - download file without grades succesfully", %{
+    test "download gradebook - download file without grades successfully", %{
       conn: conn,
       section: section
     } do

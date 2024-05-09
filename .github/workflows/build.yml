@@ -13,8 +13,6 @@ jobs:
     name: Elixir build and test
     runs-on: ubuntu-latest
 
-    environment: ci-build-test
-
     env:
       MIX_ENV: test
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
