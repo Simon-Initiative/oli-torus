@@ -852,18 +852,18 @@ defmodule OliWeb.Delivery.Student.LearnLive do
                   ) %>
                 </div>
               </div>
-              <div class="ml-auto flex items-center gap-6">
-                <Student.score_summary :if={@progress == 100} raw_avg_score={@unit_raw_avg_score} />
-                <.progress_bar
-                  percent={@progress}
-                  width="100px"
-                  on_going_colour="bg-[#0CAF61]"
-                  completed_colour="bg-[#0CAF61]"
-                  role={"unit_#{@unit["numbering"]["index"]}_progress"}
-                  show_percent={@progress != 100}
-                />
-                <Icons.check progress={@progress / 100} role="unit completed check icon" />
-              </div>
+            </div>
+            <div class="flex items-center gap-6">
+              <.progress_bar
+                percent={@progress}
+                width="194px"
+                on_going_colour="bg-[#0CAF61]"
+                completed_colour="bg-[#0CAF61]"
+                role={"unit_#{@unit["numbering"]["index"]}_progress"}
+                show_percent={@progress != 100}
+              />
+              <Icons.check progress={@progress / 100} role="unit completed check icon" />
+              <Student.score_summary :if={@progress == 100} raw_avg_score={@unit_raw_avg_score} />
             </div>
           </div>
         </div>
