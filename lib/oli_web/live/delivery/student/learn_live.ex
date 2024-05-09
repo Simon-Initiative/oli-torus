@@ -1762,7 +1762,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     ~H"""
     <div
       id={"intro_card_#{@card_resource_id}"}
-      class="relative slider-card hover:scale-[1.01] mr-4"
+      class="relative slider-card mr-4 rounded-xl hover:outline hover:outline-[3px] outline-gray-800 dark:outline-white"
       role="youtube_intro_video_card"
       phx-keydown="intro_card_keydown"
       phx-value-video_url={@video_url}
@@ -1814,7 +1814,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     ~H"""
     <div
       id={"intro_card_#{@card_resource_id}"}
-      class="relative slider-card hover:scale-[1.01] mr-4"
+      class="relative slider-card mr-4 rounded-xl hover:outline hover:outline-[3px] outline-gray-800 dark:outline-white"
       role="intro_video_card"
       phx-keydown="intro_card_keydown"
       phx-value-video_url={@video_url}
@@ -1825,7 +1825,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       phx-value-module_resource_id={@resource_id}
       phx-value-is_intro_video="true"
     >
-      <div class="rounded-xl absolute overflow-hidden -top-[0.7px] -left-[0.7px] h-[170px] w-[294px] cursor-pointer bg-[linear-gradient(180deg,#223_0%,rgba(34,34,51,0.72)_52.6%,rgba(34,34,51,0.00)_100%)]">
+      <div class="rounded-xl absolute overflow-hidden h-[170px] w-[294px] cursor-pointer bg-[linear-gradient(180deg,#223_0%,rgba(34,34,51,0.72)_52.6%,rgba(34,34,51,0.00)_100%)]">
         <div class="mt-[166px]">
           <.progress_bar
             percent={if @intro_video_viewed, do: 100, else: 0}
@@ -1841,7 +1841,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       <div class="relative flex flex-col items-center rounded-xl h-[170px] w-[294px] bg-gray-200/50 shrink-0 px-5 pt-[15px] bg-cover bg-center">
         <video
           id={"video_preview_image_#{@video_url}"}
-          class="rounded-xl object-cover absolute -top-[0.7px] -left-[0.7px] h-[170px] w-[294px]"
+          class="rounded-xl object-cover absolute h-[170px] w-[294px]"
           preload="metadata"
         >
           <source src={"#{@video_url}#t=0.5"} /> Your browser does not support the video tag.
@@ -1897,8 +1897,9 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       phx-value-slug={@card["slug"]}
       phx-value-type={if @is_page, do: "page", else: "module"}
       class={[
-        "relative slider-card hover:scale-[1.01] transition-transform duration-150 mr-4",
-        if(!@is_page, do: "slider-card")
+        "relative slider-card mr-4 rounded-xl hover:outline hover:outline-[3px] outline-gray-800 dark:outline-white",
+        if(!@is_page, do: "slider-card"),
+        if(@selected, do: "outline outline-[3px]")
       ]}
       role={"card_#{@module_index}"}
       data-enter-event={enter_module(@unit_resource_id)}
@@ -1931,10 +1932,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       <div class="h-[170px] w-[294px]">
         <div
           class={[
-            "flex flex-col gap-[5px] cursor-pointer rounded-xl h-[170px] w-[294px] shrink-0 mb-1 px-5 pt-[15px] bg-gray-200 z-10 bg-cover bg-center",
-            if(@selected,
-              do: "bg-gray-400 outline outline-[3px] outline-gray-800 dark:outline-white"
-            )
+            "flex flex-col gap-[5px] cursor-pointer rounded-xl h-[170px] w-[294px] shrink-0 mb-1 px-5 pt-[15px] bg-gray-200 z-10 bg-cover bg-center"
           ]}
           style={"background-image: url('#{if(@bg_image_url in ["", nil], do: @default_image, else: @bg_image_url)}');"}
         >
