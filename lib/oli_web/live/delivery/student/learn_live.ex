@@ -2016,32 +2016,6 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     """
   end
 
-  attr :graded, :boolean
-
-  def page_icon(assigns) do
-    if assigns.graded do
-      ~H"""
-      <div
-        class="h-[36px] w-[36px] absolute top-0 right-0 bg-[#F68E2E] rounded-bl-xl rounded-tr-xl"
-        role="graded page icon"
-      >
-        <div class="absolute top-0 right-0 h-[36px] w-[36px] flex justify-center items-center">
-          <Icons.flag fill_class="fill-[#FFFFFF]" />
-        </div>
-      </div>
-      """
-    else
-      ~H"""
-      <div class="h-[45px] w-[36px] absolute top-0 right-0" role="page icon">
-        <img src={~p"/images/course_content/page_icon.png"} />
-        <div class="absolute top-0 right-0 h-[36px] w-[36px] flex justify-center items-center">
-          <Icons.practice_page />
-        </div>
-      </div>
-      """
-    end
-  end
-
   def video_player(assigns) do
     ~H"""
     <div id="student_video_wrapper" phx-hook="VideoPlayer" class="hidden">
