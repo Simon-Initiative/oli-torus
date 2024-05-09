@@ -144,7 +144,7 @@ defmodule OliWeb.ExperimentsLiveTest do
         |> step(:put_resource_id)
         |> step(:put_options)
 
-      # # Reloads page
+      # Reloads page
       {:ok, view, _html} = live(conn, live_view_experiments_route(project.slug))
 
       {view, context}
