@@ -910,11 +910,10 @@ defmodule OliWeb.Delivery.Student.LearnLive do
               <.intro_video_card
                 :if={@unit["intro_video"]}
                 video_url={@unit["intro_video"]}
+                duration_minutes={@unit["duration_minutes"]}
                 card_resource_id={@unit["resource_id"]}
-                resource_id={@unit["resource_id"]}
                 intro_video_viewed={@unit["resource_id"] in @viewed_intro_video_resource_ids}
                 is_youtube_video={WebUtils.is_youtube_video?(@unit["intro_video"])}
-                unit_resource_id={@unit["resource_id"]}
               />
               <.card
                 :for={module <- @unit["children"]}
@@ -1753,10 +1752,9 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   attr :title, :string, default: "INTRO"
   attr :video_url, :string
   attr :card_resource_id, :string
-  attr :resource_id, :string
   attr :intro_video_viewed, :boolean, default: false
   attr :is_youtube_video, :boolean, default: false
-  attr :unit_resource_id, :string
+  attr :duration_minutes, :integer
 
   def intro_video_card(%{is_youtube_video: true} = assigns) do
     ~H"""
@@ -1767,13 +1765,17 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       phx-keydown="intro_card_keydown"
       phx-value-video_url={@video_url}
       phx-value-card_resource_id={@card_resource_id}
-      data-event={leave_unit(@unit_resource_id)}
+      data-event={leave_unit(@card_resource_id)}
       phx-click="play_video"
       phx-value-video_url={@video_url}
-      phx-value-module_resource_id={@resource_id}
+      phx-value-module_resource_id={@card_resource_id}
       phx-value-is_intro_video="true"
     >
-      <div class="rounded-xl absolute overflow-hidden h-[170px] w-[294px] cursor-pointer bg-[linear-gradient(180deg,#223_0%,rgba(34,34,51,0.72)_52.6%,rgba(34,34,51,0.00)_100%)]">
+      <div
+        xphx-mouseover={JS.show(to: "#card_badge_details_#{@card_resource_id}")}
+        xphx-mouseout={JS.hide(to: "#card_badge_details_#{@card_resource_id}")}
+        class="rounded-xl absolute overflow-hidden h-[170px] w-[294px] cursor-pointer bg-[linear-gradient(180deg,#223_0%,rgba(34,34,51,0.72)_52.6%,rgba(34,34,51,0.00)_100%)]"
+      >
         <div class="mt-[166px]">
           <.progress_bar
             percent={if @intro_video_viewed, do: 100, else: 0}
@@ -1790,12 +1792,19 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         class="flex flex-col items-center rounded-xl h-[170px] w-[294px] bg-gray-200/50 shrink-0 px-5 pt-[15px] bg-cover bg-center"
         style={"background-image: url('#{WebUtils.convert_to_youtube_image_url(@video_url)}');"}
       >
-        <h5 class="text-[13px] leading-[18px] font-bold opacity-60 text-gray-500 text-white dark:text-opacity-50 self-start">
+        <h5 class="pointer-events-none text-[13px] leading-[18px] font-bold opacity-60 text-gray-500 text-white dark:text-opacity-50 self-start">
           <%= @title %>
         </h5>
+        <div class="absolute bottom-4 right-3 h-[26px] pointer-events-none">
+          <.card_badge
+            resource_id={@card_resource_id}
+            duration_minutes={@duration_minutes}
+            completed={@intro_video_viewed}
+          />
+        </div>
         <div
           id={"intro_video_card_#{@card_resource_id}"}
-          class="w-[70px] h-[70px] relative my-auto -top-2 cursor-pointer"
+          class="w-[70px] h-[70px] relative my-auto -top-2 cursor-pointer pointer-events-none"
         >
           <div class="w-full h-full rounded-full backdrop-blur bg-gray/50"></div>
           <div
@@ -1819,13 +1828,17 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       phx-keydown="intro_card_keydown"
       phx-value-video_url={@video_url}
       phx-value-card_resource_id={@card_resource_id}
-      data-event={leave_unit(@unit_resource_id)}
+      data-event={leave_unit(@card_resource_id)}
       phx-click="play_video"
       phx-value-video_url={@video_url}
-      phx-value-module_resource_id={@resource_id}
+      phx-value-module_resource_id={@card_resource_id}
       phx-value-is_intro_video="true"
     >
-      <div class="rounded-xl absolute overflow-hidden h-[170px] w-[294px] cursor-pointer bg-[linear-gradient(180deg,#223_0%,rgba(34,34,51,0.72)_52.6%,rgba(34,34,51,0.00)_100%)]">
+      <div
+        xphx-mouseover={JS.show(to: "#card_badge_details_#{@card_resource_id}")}
+        xphx-mouseout={JS.hide(to: "#card_badge_details_#{@card_resource_id}")}
+        class="rounded-xl absolute overflow-hidden h-[170px] w-[294px] cursor-pointer bg-[linear-gradient(180deg,#223_0%,rgba(34,34,51,0.72)_52.6%,rgba(34,34,51,0.00)_100%)]"
+      >
         <div class="mt-[166px]">
           <.progress_bar
             percent={if @intro_video_viewed, do: 100, else: 0}
@@ -1846,12 +1859,19 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         >
           <source src={"#{@video_url}#t=0.5"} /> Your browser does not support the video tag.
         </video>
-        <h5 class="z-30 text-[13px] leading-[18px] font-bold opacity-60 text-gray-500 text-white dark:text-opacity-50 self-start">
+        <h5 class="pointer-events-none z-30 text-[13px] leading-[18px] font-bold opacity-60 text-gray-500 text-white dark:text-opacity-50 self-start">
           <%= @title %>
         </h5>
+        <div class="absolute bottom-4 right-3 h-[26px] pointer-events-none">
+          <.card_badge
+            resource_id={@card_resource_id}
+            duration_minutes={@duration_minutes}
+            completed={@intro_video_viewed}
+          />
+        </div>
         <div
           id={"intro_video_card_#{@card_resource_id}"}
-          class="w-[70px] h-[70px] relative my-auto -top-2 cursor-pointer"
+          class="w-[70px] h-[70px] relative my-auto -top-2 cursor-pointer pointer-events-none"
         >
           <div class="w-full h-full rounded-full backdrop-blur bg-gray/50"></div>
           <div
@@ -1944,10 +1964,16 @@ defmodule OliWeb.Delivery.Student.LearnLive do
             <%= @card["title"] %>
           </h5>
           <div class="absolute bottom-4 right-3 h-[26px] pointer-events-none">
-            <.card_badge
+            <.module_card_badge
               :if={!@is_page}
               page_metrics={@page_metrics}
               resource_id={@card["resource_id"]}
+            />
+            <.card_badge
+              :if={@is_page}
+              resource_id={@card["resource_id"]}
+              duration_minutes={@card["duration_minutes"]}
+              completed={@card["completed"]}
             />
           </div>
         </div>
@@ -1964,10 +1990,38 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     """
   end
 
+  attr :resource_id, :string
+  attr :duration_minutes, :integer
+  attr :completed, :boolean
+
+  def card_badge(%{completed: true} = assigns) do
+    ~H"""
+    <div class="h-[26px] px-2 py-1 dark:bg-white/10 rounded-xl shadow justify-end items-center gap-1 inline-flex overflow-hidden">
+      <Icons.check />
+      <div
+        id={"card_badge_details_#{@resource_id}"}
+        class="hidden dark:text-white text-[13px] font-semibold pointer-events-none"
+      >
+        <%= parse_card_badge_minutes(@duration_minutes, :page) %>
+      </div>
+    </div>
+    """
+  end
+
+  def card_badge(assigns) do
+    ~H"""
+    <div class="h-[26px] px-2 py-1 dark:bg-white/10 rounded-xl shadow justify-end items-center gap-1 inline-flex overflow-hidden">
+      <div class="dark:text-white text-[13px] font-semibold pointer-events-none">
+        <%= parse_card_badge_minutes(@duration_minutes, :page) %>
+      </div>
+    </div>
+    """
+  end
+
   attr :page_metrics, :map
   attr :resource_id, :string
 
-  def card_badge(
+  def module_card_badge(
         %{
           page_metrics: %{
             completed_pages_count: completed_pages_count,
@@ -1983,15 +2037,16 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       class="ml-auto h-[26px] px-2 py-1 dark:bg-white/10 rounded-xl shadow justify-end items-center gap-1 inline-flex"
     >
       <div class="dark:text-white text-[13px] font-semibold">
-        <%= parse_module_total_pages(@page_metrics.total_pages_count) %> · <%= parse_module_total_minutes(
-          @page_metrics.total_duration_minutes
+        <%= parse_module_total_pages(@page_metrics.total_pages_count) %> · <%= parse_card_badge_minutes(
+          @page_metrics.total_duration_minutes,
+          :module
         ) %>
       </div>
     </div>
     """
   end
 
-  def card_badge(
+  def module_card_badge(
         %{
           page_metrics: %{
             completed_pages_count: completed_pages_count,
@@ -2008,8 +2063,9 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         id={"card_badge_details_#{@resource_id}"}
         class="hidden dark:text-white text-[13px] font-semibold pointer-events-none"
       >
-        <%= parse_module_total_pages(@page_metrics.total_pages_count) %> · <%= parse_module_total_minutes(
-          @page_metrics.total_duration_minutes
+        <%= parse_module_total_pages(@page_metrics.total_pages_count) %> · <%= parse_card_badge_minutes(
+          @page_metrics.total_duration_minutes,
+          :module
         ) %>
       </div>
     </div>
@@ -2614,18 +2670,26 @@ defmodule OliWeb.Delivery.Student.LearnLive do
 
   defp parse_module_total_pages(_), do: "unknown pages"
 
-  defp parse_module_total_minutes(minutes) when is_integer(minutes) do
-    minutes
-    |> Timex.Duration.from_minutes()
-    |> Timex.Duration.to_clock()
-    |> case do
-      {hours, minutes, _seconds, _milliseconds} when hours > 0 ->
+  defp parse_card_badge_minutes(minutes, resource_type) when is_integer(minutes) do
+    clock_duration =
+      minutes
+      |> Timex.Duration.from_minutes()
+      |> Timex.Duration.to_clock()
+
+    case {clock_duration, resource_type} do
+      {{hours, minutes, _seconds, _milliseconds}, :module} when hours > 0 ->
         "#{hours}h #{minutes}m"
 
-      {_, minutes, _seconds, _milliseconds} ->
+      {{_, minutes, _seconds, _milliseconds}, :module} ->
         "#{minutes}m"
+
+      {{hours, minutes, _seconds, _milliseconds}, :page} when hours > 0 ->
+        "#{hours}h #{minutes}m"
+
+      {{_, minutes, _seconds, _milliseconds}, :page} ->
+        "#{minutes} min"
     end
   end
 
-  defp parse_module_total_minutes(_), do: "unknown time"
+  defp parse_card_badge_minutes(_, _), do: "? min"
 end
