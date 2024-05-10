@@ -1,4 +1,4 @@
-import React, { Fragment, useCallback, useState } from 'react';
+import React, { Fragment, useCallback, useEffect, useState } from 'react';
 import { ListGroup, Overlay, OverlayTrigger, Popover, Tooltip } from 'react-bootstrap';
 import { useDispatch, useSelector } from 'react-redux';
 import {
@@ -113,6 +113,22 @@ const AddComponentToolbar: React.FC<{
 
     dispatch(setRightPanelActiveTab({ rightPanelActiveTab: RightPanelTabs.COMPONENT }));
   };
+
+  const handleKeyPress = (event: any) => {
+    // event.metaKey - pressed Command key on Macs
+    // event.ctrlKey - pressed Control key on Linux or Windows
+    if ((event.metaKey || event.ctrlKey) && event.code === 'KeyV') {
+      handlePartPasteClick();
+    }
+  };
+
+  useEffect(() => {
+    window.addEventListener('keydown', handleKeyPress, { passive: true });
+    return () => {
+      window.removeEventListener('keydown', handleKeyPress);
+    };
+  }, [copiedPart]);
+
   return (
     <Fragment>
       <div className="btn-group align-items-center" role="group">
