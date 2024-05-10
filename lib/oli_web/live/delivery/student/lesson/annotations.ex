@@ -681,6 +681,44 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
     """
   end
 
+  def delete_post_modal(assigns) do
+    ~H"""
+    <Modal.modal id="delete_post_modal" class="w-1/2">
+      <:title>Delete Note</:title>
+      <.form
+        phx-submit={JS.push("delete_post") |> Modal.hide_modal("delete_post_modal")}
+        for={%{}}
+        class="flex flex-col gap-6"
+        id="delete_post_form"
+      >
+        <p class="my-2">Are you sure you want to delete this note?</p>
+        <div class="flex flex-row justify-end gap-2">
+          <.button
+            type="button"
+            variant={:secondary}
+            phx-click={Modal.hide_modal("delete_post_modal")}
+          >
+            Cancel
+          </.button>
+          <.button type="submit" variant={:danger}>Delete</.button>
+        </div>
+      </.form>
+    </Modal.modal>
+    """
+  end
+
+  def find_and_update_post(posts, post_id, update_fn) when is_list(posts) do
+    Enum.map(posts, fn post ->
+      if post.id == post_id do
+        update_fn.(post)
+      else
+        %{post | replies: find_and_update_post(post.replies, post_id, update_fn)}
+      end
+    end)
+  end
+
+  def find_and_update_post(posts, _post_id, _update_fn), do: posts
+
   attr :point_marker, :any, required: true
   attr :selected, :boolean, default: false
   attr :count, :integer, default: nil

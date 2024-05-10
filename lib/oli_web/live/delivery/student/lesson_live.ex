@@ -605,7 +605,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
   def render(%{view: :practice_page, annotations: %{}} = assigns) do
     # For practice page the activity scripts and activity_bridge script are needed as soon as the page loads.
     ~H"""
-    <.delete_post_modal />
+    <Annotations.delete_post_modal />
 
     <.page_content_with_sidebar_layout show_sidebar={@annotations.show_sidebar}>
       <:header>
@@ -861,32 +861,6 @@ defmodule OliWeb.Delivery.Student.LessonLive do
       >
         <input id="password_attempt_input" type="password" name="password" field={:password} value="" />
         <.button type="submit" class="mx-auto btn btn-primary">Begin</.button>
-      </.form>
-    </Modal.modal>
-    """
-  end
-
-  defp delete_post_modal(assigns) do
-    ~H"""
-    <Modal.modal id="delete_post_modal" class="w-1/2">
-      <:title>Delete Note</:title>
-      <.form
-        phx-submit={JS.push("delete_post") |> Modal.hide_modal("delete_post_modal")}
-        for={%{}}
-        class="flex flex-col gap-6"
-        id="delete_post_form"
-      >
-        <p class="my-2">Are you sure you want to delete this note?</p>
-        <div class="flex flex-row justify-end gap-2">
-          <.button
-            type="button"
-            variant={:secondary}
-            phx-click={Modal.hide_modal("delete_post_modal")}
-          >
-            Cancel
-          </.button>
-          <.button type="submit" variant={:danger}>Delete</.button>
-        </div>
       </.form>
     </Modal.modal>
     """
@@ -1365,7 +1339,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     socket
     |> assign_annotations(
       posts:
-        find_and_update_post(posts, parent_post_id, fn post ->
+        Annotations.find_and_update_post(posts, parent_post_id, fn post ->
           if post.id == parent_post_id do
             %Collaboration.Post{
               post
@@ -1401,23 +1375,11 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     socket
     |> assign_annotations(
       posts:
-        find_and_update_post(posts, post_id, fn post ->
+        Annotations.find_and_update_post(posts, post_id, fn post ->
           %Collaboration.Post{post | status: :deleted}
         end)
     )
   end
-
-  defp find_and_update_post(posts, post_id, update_fn) when is_list(posts) do
-    Enum.map(posts, fn post ->
-      if post.id == post_id do
-        update_fn.(post)
-      else
-        %{post | replies: find_and_update_post(post.replies, post_id, update_fn)}
-      end
-    end)
-  end
-
-  defp find_and_update_post(posts, _post_id, _update_fn), do: posts
 
   defp check_gating_conditions(section, user, resource_id) do
     case Oli.Delivery.Gating.blocked_by(section, user, resource_id) do
