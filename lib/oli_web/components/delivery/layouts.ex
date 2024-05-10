@@ -8,7 +8,6 @@ defmodule OliWeb.Components.Delivery.Layouts do
 
   alias Phoenix.LiveView.JS
   alias OliWeb.Common.SessionContext
-  alias OliWeb.Common.React
   alias Oli.Authoring.Course.Project
   alias Oli.Delivery.Sections.Section
   alias Oli.Accounts.{User, Author}
@@ -97,25 +96,29 @@ defmodule OliWeb.Components.Delivery.Layouts do
         md:h-[calc(100vh-56px)]
         md:flex
         flex-col
+        justify-between
         md:w-[190px]
         shadow-sm
         bg-delivery-navbar
         dark:bg-delivery-navbar-dark
       ", if(!@sidebar_expanded, do: "md:!w-[60px]")]}>
-        <.sidebar_toggler
-          active_tab={@active_tab}
-          section={@section}
-          preview_mode={@preview_mode}
-          sidebar_expanded={@sidebar_expanded}
-        />
-        <.sidebar_links
-          active_tab={@active_tab}
-          section={@section}
-          preview_mode={@preview_mode}
-          sidebar_expanded={@sidebar_expanded}
-        />
-        <div class="flex w-full px-6 py-4 text-center mt-auto">
-          <.tech_support_button id="tech-support" ctx={@ctx} />
+        <div class="w-full">
+          <.sidebar_toggler
+            active_tab={@active_tab}
+            section={@section}
+            preview_mode={@preview_mode}
+            sidebar_expanded={@sidebar_expanded}
+          />
+          <.sidebar_links
+            active_tab={@active_tab}
+            section={@section}
+            preview_mode={@preview_mode}
+            sidebar_expanded={@sidebar_expanded}
+          />
+        </div>
+        <div class="p-2 flex-col justify-center items-center gap-4 inline-flex">
+          <.tech_support_button id="tech-support" ctx={@ctx} sidebar_expanded={@sidebar_expanded} />
+          <.exit_course_button sidebar_expanded={@sidebar_expanded} />
         </div>
       </nav>
       <nav
@@ -178,7 +181,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
 
   def sidebar_links(assigns) do
     ~H"""
-    <div class="p-2 flex-col justify-center items-center gap-4 inline-flex">
+    <div class="w-full p-2 flex-col justify-center items-center gap-4 inline-flex">
       <.nav_link
         href={path_for(:index, @section, @preview_mode, @sidebar_expanded)}
         is_active={@active_tab == :index}
@@ -358,15 +361,39 @@ defmodule OliWeb.Components.Delivery.Layouts do
 
   attr(:id, :string)
   attr(:ctx, SessionContext)
+  attr(:sidebar_expanded, :boolean, default: true)
 
   def tech_support_button(assigns) do
     ~H"""
-    <%= React.component(
-      @ctx,
-      "Components.TechSupportButton",
-      %{},
-      id: @id
-    ) %>
+    <button
+      onclick="window.showHelpModal();"
+      class="w-full h-11 px-3 py-3 flex-col justify-center items-start inline-flex text-gray-400 hover:text-white stroke-[#B8B4BF] hover:stroke-white"
+    >
+      <div class="justify-start items-end gap-3 inline-flex">
+        <div class="w-5 h-5 flex items-center justify-center">
+          <Icons.support />
+        </div>
+        <div :if={@sidebar_expanded} class="text-sm font-medium tracking-tight">Support</div>
+      </div>
+    </button>
+    """
+  end
+
+  attr :sidebar_expanded, :boolean, default: true
+
+  def exit_course_button(assigns) do
+    ~H"""
+    <.link
+      navigate={~p"/sections"}
+      class="w-full h-11 flex-col justify-center items-center flex hover:no-underline text-gray-400 hover:text-white stroke-[#B8B4BF] hover:stroke-white"
+    >
+      <div class="w-full h-9 px-3 py-3 bg-neutral-800 rounded-lg justify-start items-center gap-3 inline-flex">
+        <div class="w-5 h-5 flex items-center justify-center"><Icons.exit /></div>
+        <div :if={@sidebar_expanded} class="text-sm font-medium tracking-tight">
+          Exit Course
+        </div>
+      </div>
+    </.link>
     """
   end
 
