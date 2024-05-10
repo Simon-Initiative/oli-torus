@@ -24,7 +24,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
       socket
       |> assign(
         params: params,
-        view: :reports,
+        view: :insights,
         active_tab: maybe_get_tab_from_params(active_tab, :content)
       )
       |> assign(users: Helpers.get_students(socket.assigns.section, params))
@@ -50,7 +50,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
 
   @impl Phoenix.LiveView
   def handle_params(
-        %{"view" => "reports", "active_tab" => "content", "container_id" => _container_id} =
+        %{"view" => "insights", "active_tab" => "content", "container_id" => _container_id} =
           params,
         uri,
         socket
@@ -59,7 +59,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
 
   @impl Phoenix.LiveView
   def handle_params(
-        %{"view" => "reports", "active_tab" => "students"} = params,
+        %{"view" => "insights", "active_tab" => "students"} = params,
         uri,
         socket
       ),
@@ -67,7 +67,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
 
   @impl Phoenix.LiveView
   def handle_params(
-        %{"view" => "reports", "active_tab" => "learning_objectives"} = params,
+        %{"view" => "insights", "active_tab" => "learning_objectives"} = params,
         _,
         socket
       ) do
@@ -75,7 +75,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
       socket
       |> assign(
         params: params,
-        view: :reports,
+        view: :insights,
         active_tab: :learning_objectives,
         section: socket.assigns.section
       )
@@ -91,7 +91,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
   end
 
   @impl Phoenix.LiveView
-  def handle_params(%{"view" => "reports"} = params, _, socket) do
+  def handle_params(%{"view" => "insights"} = params, _, socket) do
     active_tab =
       case params["active_tab"] do
         nil -> :content
@@ -100,7 +100,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
 
     socket =
       socket
-      |> assign(params: params, view: :reports, active_tab: active_tab)
+      |> assign(params: params, view: :insights, active_tab: active_tab)
       |> assign_new(:containers, fn ->
         containers = Helpers.get_containers(socket.assigns.section)
         async_calculate_proficiency(socket.assigns.section)
@@ -303,12 +303,12 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
       {"overview", "recommended_actions"},
       {"overview", "practice_activities"},
       {"overview", "surveys"},
-      {"reports", nil},
-      {"reports", "content"},
-      {"reports", "students"},
-      {"reports", "learning_objectives"},
-      {"reports", "quiz_scores"},
-      {"reports", "course_discussion"},
+      {"insights", nil},
+      {"insights", "content"},
+      {"insights", "students"},
+      {"insights", "learning_objectives"},
+      {"insights", "quiz_scores"},
+      {"insights", "course_discussion"},
       {"manage", nil},
       {"discussions", nil}
     ]
@@ -396,7 +396,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
     [
       %TabLink{
         label: fn -> render_container_tab_detail(%{title: selected_container.title}) end,
-        path: path_for(:reports, :content, section_slug, preview_mode),
+        path: path_for(:insights, :content, section_slug, preview_mode),
         badge: nil,
         active: true
       }
@@ -412,35 +412,35 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
     """
   end
 
-  defp reports_tabs(section_slug, preview_mode, active_tab) do
+  defp insights_tabs(section_slug, preview_mode, active_tab) do
     [
       %TabLink{
         label: "Content",
-        path: path_for(:reports, :content, section_slug, preview_mode),
+        path: path_for(:insights, :content, section_slug, preview_mode),
         badge: nil,
         active: is_active_tab?(:content, active_tab)
       },
       %TabLink{
         label: "Students",
-        path: path_for(:reports, :students, section_slug, preview_mode),
+        path: path_for(:insights, :students, section_slug, preview_mode),
         badge: nil,
         active: is_active_tab?(:students, active_tab)
       },
       %TabLink{
         label: "Learning Objectives",
-        path: path_for(:reports, :learning_objectives, section_slug, preview_mode),
+        path: path_for(:insights, :learning_objectives, section_slug, preview_mode),
         badge: nil,
         active: is_active_tab?(:learning_objectives, active_tab)
       },
       %TabLink{
         label: "Quiz Scores",
-        path: path_for(:reports, :quiz_scores, section_slug, preview_mode),
+        path: path_for(:insights, :quiz_scores, section_slug, preview_mode),
         badge: nil,
         active: is_active_tab?(:quiz_scores, active_tab)
       },
       %TabLink{
         label: "Course Discussion",
-        path: path_for(:reports, :course_discussion, section_slug, preview_mode),
+        path: path_for(:insights, :course_discussion, section_slug, preview_mode),
         badge: nil,
         active: is_active_tab?(:course_discussion, active_tab)
       }
@@ -550,7 +550,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
   end
 
   def render(
-        %{view: :reports, active_tab: :content, params: %{container_id: _container_id}} = assigns
+        %{view: :insights, active_tab: :content, params: %{container_id: _container_id}} = assigns
       ) do
     ~H"""
     <InstructorDashboard.tabs tabs={
@@ -575,9 +575,9 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
     """
   end
 
-  def render(%{view: :reports, active_tab: :content} = assigns) do
+  def render(%{view: :insights, active_tab: :content} = assigns) do
     ~H"""
-    <InstructorDashboard.tabs tabs={reports_tabs(@section_slug, @preview_mode, @active_tab)} />
+    <InstructorDashboard.tabs tabs={insights_tabs(@section_slug, @preview_mode, @active_tab)} />
 
     <div class="container mx-auto">
       <.live_component
@@ -593,9 +593,9 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
     """
   end
 
-  def render(%{view: :reports, active_tab: :students} = assigns) do
+  def render(%{view: :insights, active_tab: :students} = assigns) do
     ~H"""
-    <InstructorDashboard.tabs tabs={reports_tabs(@section_slug, @preview_mode, @active_tab)} />
+    <InstructorDashboard.tabs tabs={insights_tabs(@section_slug, @preview_mode, @active_tab)} />
 
     <div class="container mx-auto">
       <.live_component
@@ -612,9 +612,9 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
     """
   end
 
-  def render(%{view: :reports, active_tab: :learning_objectives} = assigns) do
+  def render(%{view: :insights, active_tab: :learning_objectives} = assigns) do
     ~H"""
-    <InstructorDashboard.tabs tabs={reports_tabs(@section_slug, @preview_mode, @active_tab)} />
+    <InstructorDashboard.tabs tabs={insights_tabs(@section_slug, @preview_mode, @active_tab)} />
 
     <div class="container mx-auto">
       <.live_component
@@ -630,9 +630,9 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
     """
   end
 
-  def render(%{view: :reports, active_tab: :quiz_scores} = assigns) do
+  def render(%{view: :insights, active_tab: :quiz_scores} = assigns) do
     ~H"""
-    <InstructorDashboard.tabs tabs={reports_tabs(@section_slug, @preview_mode, @active_tab)} />
+    <InstructorDashboard.tabs tabs={insights_tabs(@section_slug, @preview_mode, @active_tab)} />
 
     <div class="container mx-auto">
       <.live_component
@@ -647,7 +647,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
     """
   end
 
-  def render(%{view: :reports, active_tab: :course_discussion} = assigns) do
+  def render(%{view: :insights, active_tab: :course_discussion} = assigns) do
     %{slug: revision_slug} = DeliveryResolver.root_container(assigns.section_slug)
 
     {:ok, collab_space_config} =
@@ -680,7 +680,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
       )
 
     ~H"""
-    <InstructorDashboard.tabs tabs={reports_tabs(@section_slug, @preview_mode, @active_tab)} />
+    <InstructorDashboard.tabs tabs={insights_tabs(@section_slug, @preview_mode, @active_tab)} />
 
     <div class="container mx-auto">
       <div class="bg-white dark:bg-gray-800 p-8 shadow">
