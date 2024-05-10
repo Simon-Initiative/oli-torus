@@ -27,14 +27,14 @@ defmodule OliWeb.Components.Delivery.Layouts do
     doc: "Forces the user menu to be shown on the header and does not show the mobile menu button"
   )
 
+  attr(:sidebar_expanded, :boolean, default: true)
+
   def header(assigns) do
     ~H"""
-    <div class="fixed z-50 w-full h-14 flex flex-row bg-delivery-header dark:bg-delivery-header-dark shadow-sm">
-      <div class="w-48 p-2 flex shrink-0" tab-index="0">
-        <a href={logo_link_path(@preview_mode, @section, @ctx.user)}>
-          <.logo_img section={@section} />
-        </a>
-      </div>
+    <div class={[
+      "fixed z-50 w-full md:pl-[225px] h-14 border-b border-white/5 flex flex-row bg-delivery-header dark:bg-delivery-header-dark shadow-sm",
+      if(!@sidebar_expanded, do: "md:!pl-[95px]")
+    ]}>
       <div class="flex items-center flex-grow-1 p-2">
         <.title section={@section} project={@project} preview_mode={@preview_mode} />
       </div>
@@ -92,8 +92,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
         z-50
         w-full
         hidden
-        mt-14
-        md:h-[calc(100vh-56px)]
+        h-[100vh]
         md:flex
         flex-col
         justify-between
@@ -101,8 +100,14 @@ defmodule OliWeb.Components.Delivery.Layouts do
         shadow-sm
         bg-delivery-navbar
         dark:bg-delivery-navbar-dark
+        overflow-hidden
       ", if(!@sidebar_expanded, do: "md:!w-[60px]")]}>
         <div class="w-full">
+          <div class="h-14 w-48 py-2 flex shrink-0 border-b border-white/5" tab-index="0">
+            <.link navigate={path_for(:index, @section, @preview_mode, @sidebar_expanded)}>
+              <.logo_img section={@section} />
+            </.link>
+          </div>
           <.sidebar_toggler
             active_tab={@active_tab}
             section={@section}
