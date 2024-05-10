@@ -581,6 +581,22 @@ defmodule OliWeb.Delivery.Student.LessonLive do
      )}
   end
 
+  def handle_event("set_delete_post_id", %{"post-id" => post_id}, socket) do
+    {:noreply, assign_annotations(socket, delete_post_id: String.to_integer(post_id))}
+  end
+
+  def handle_event("delete_post", _params, socket) do
+    %{annotations: %{delete_post_id: post_id}} = socket.assigns
+
+    case Collaboration.soft_delete_post(post_id) do
+      {1, _} ->
+        {:noreply, mark_post_deleted(socket, post_id)}
+
+      {:error, _} ->
+        {:noreply, put_flash(socket, :error, "Failed to delete note")}
+    end
+  end
+
   # handle assigns directly from async tasks
   def handle_info({ref, result}, socket) do
     Process.demonitor(ref, [:flush])
@@ -603,6 +619,8 @@ defmodule OliWeb.Delivery.Student.LessonLive do
   def render(%{view: :practice_page, annotations: %{}} = assigns) do
     # For practice page the activity scripts and activity_bridge script are needed as soon as the page loads.
     ~H"""
+    <.delete_post_modal />
+
     <.page_content_with_sidebar_layout show_sidebar={@annotations.show_sidebar}>
       <:header>
         <.page_header
@@ -820,18 +838,8 @@ defmodule OliWeb.Delivery.Student.LessonLive do
   def render(%{view: view, begin_attempt?: false} = assigns)
       when view in [:graded_page, :adaptive_chromeless] do
     ~H"""
-    <Modal.modal id="password_attempt_modal" class="w-1/2">
-      <:title>Provide Assessment Password</:title>
-      <.form
-        phx-submit={JS.push("begin_attempt") |> Modal.hide_modal("password_attempt_modal")}
-        for={%{}}
-        class="flex flex-col gap-6"
-        id="password_attempt_form"
-      >
-        <input id="password_attempt_input" type="password" name="password" field={:password} value="" />
-        <.button type="submit" class="mx-auto btn btn-primary">Begin</.button>
-      </.form>
-    </Modal.modal>
+    <.password_attempt_modal />
+
     <div class="flex pb-20 flex-col w-full items-center gap-15 flex-1 overflow-auto">
       <div class="flex-1 max-w-[720px] pt-20 pb-10 mx-6 flex-col justify-start items-center gap-10 inline-flex">
         <.page_header
@@ -853,6 +861,49 @@ defmodule OliWeb.Delivery.Student.LessonLive do
         />
       </div>
     </div>
+    """
+  end
+
+  defp password_attempt_modal(assigns) do
+    ~H"""
+    <Modal.modal id="password_attempt_modal" class="w-1/2">
+      <:title>Provide Assessment Password</:title>
+      <.form
+        phx-submit={JS.push("begin_attempt") |> Modal.hide_modal("password_attempt_modal")}
+        for={%{}}
+        class="flex flex-col gap-6"
+        id="password_attempt_form"
+      >
+        <input id="password_attempt_input" type="password" name="password" field={:password} value="" />
+        <.button type="submit" class="mx-auto btn btn-primary">Begin</.button>
+      </.form>
+    </Modal.modal>
+    """
+  end
+
+  defp delete_post_modal(assigns) do
+    ~H"""
+    <Modal.modal id="delete_post_modal" class="w-1/2">
+      <:title>Delete Note</:title>
+      <.form
+        phx-submit={JS.push("delete_post") |> Modal.hide_modal("delete_post_modal")}
+        for={%{}}
+        class="flex flex-col gap-6"
+        id="delete_post_form"
+      >
+        <p class="my-2">Are you sure you want to delete this note?</p>
+        <div class="flex flex-row justify-end gap-2">
+          <.button
+            type="button"
+            variant={:secondary}
+            phx-click={Modal.hide_modal("delete_post_modal")}
+          >
+            Cancel
+          </.button>
+          <.button type="submit" variant={:danger}>Delete</.button>
+        </div>
+      </.form>
+    </Modal.modal>
     """
   end
 
@@ -1195,7 +1246,8 @@ defmodule OliWeb.Delivery.Student.LessonLive do
             create_new_annotation: false,
             auto_approve_annotations: course_collab_space_config.auto_accept,
             search_results: nil,
-            search_term: ""
+            search_term: "",
+            delete_post_id: nil
           }
         )
 
@@ -1329,7 +1381,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     socket
     |> assign_annotations(
       posts:
-        Enum.map(posts, fn post ->
+        find_and_update_post(posts, parent_post_id, fn post ->
           if post.id == parent_post_id do
             %Collaboration.Post{
               post
@@ -1358,6 +1410,30 @@ defmodule OliWeb.Delivery.Student.LessonLive do
       }
     )
   end
+
+  defp mark_post_deleted(socket, post_id) do
+    %{posts: posts} = socket.assigns.annotations
+
+    socket
+    |> assign_annotations(
+      posts:
+        find_and_update_post(posts, post_id, fn post ->
+          %Collaboration.Post{post | status: :deleted}
+        end)
+    )
+  end
+
+  defp find_and_update_post(posts, post_id, update_fn) when is_list(posts) do
+    Enum.map(posts, fn post ->
+      if post.id == post_id do
+        update_fn.(post)
+      else
+        %{post | replies: find_and_update_post(post.replies, post_id, update_fn)}
+      end
+    end)
+  end
+
+  defp find_and_update_post(posts, _post_id, _update_fn), do: posts
 
   defp check_gating_conditions(section, user, resource_id) do
     case Oli.Delivery.Gating.blocked_by(section, user, resource_id) do

@@ -578,7 +578,7 @@ defmodule Oli.Resources.Collaboration do
         left_join: reactions in assoc(post, :reactions),
         where:
           post.section_id == ^section_id and post.visibility == :public and
-            (post.status in [:approved, :archived] or
+            (post.status in [:approved, :archived, :deleted] or
                (post.status == :submitted and post.user_id == ^user_id)) and
             post.resource_id == ^root_section_resource_resource_id and
             is_nil(post.parent_post_id) and is_nil(post.thread_root_id),
@@ -1026,6 +1026,22 @@ defmodule Oli.Resources.Collaboration do
   end
 
   @doc """
+  Soft deletes a single post with the given id.
+
+  ## Examples
+
+      iex> delete_post(post)
+      {number, nil | returned data}` where number is the number of deleted entries
+  """
+  def soft_delete_post(post_id) do
+    from(
+      p in Post,
+      where: p.id == ^post_id
+    )
+    |> Repo.update_all(set: [status: :deleted])
+  end
+
+  @doc """
   Delete a post or a set of posts.
 
   ## Examples
@@ -1142,7 +1158,7 @@ defmodule Oli.Resources.Collaboration do
         where:
           post.section_id == ^section_id and post.resource_id == ^resource_id and
             is_nil(post.parent_post_id) and is_nil(post.thread_root_id) and
-            (post.status in [:approved, :archived] or
+            (post.status in [:approved, :archived, :deleted] or
                (post.status == :submitted and post.user_id == ^user_id)),
         where: ^filter_by_point_block_id,
         where: ^filter_by_visibility,
@@ -1227,7 +1243,7 @@ defmodule Oli.Resources.Collaboration do
         left_join: user in assoc(post, :user),
         where:
           post.section_id == ^section_id and
-            (post.status in [:approved, :archived] or
+            (post.status in [:approved, :archived, :deleted] or
                (post.status == :submitted and post.user_id == ^user_id)),
         where: ^filter_by_resource_id,
         where: ^filter_by_point_block_id,
@@ -1350,7 +1366,7 @@ defmodule Oli.Resources.Collaboration do
       where:
         post.section_id == ^section_id and post.resource_id == ^resource_id and
           is_nil(post.parent_post_id) and is_nil(post.thread_root_id) and
-          (post.status in [:approved, :archived] or
+          (post.status in [:approved, :archived, :deleted] or
              (post.status == :submitted and post.user_id == ^user_id)),
       where: ^filter_by_visibility,
       group_by: post.annotated_block_id,
@@ -1371,7 +1387,7 @@ defmodule Oli.Resources.Collaboration do
         left_join: reactions in assoc(post, :reactions),
         where:
           post.parent_post_id == ^post_id and
-            (post.status in [:approved, :archived] or
+            (post.status in [:approved, :archived, :deleted] or
                (post.status == :submitted and post.user_id == ^user_id)),
         order_by: [asc: :updated_at],
         preload: [user: user, reactions: reactions],

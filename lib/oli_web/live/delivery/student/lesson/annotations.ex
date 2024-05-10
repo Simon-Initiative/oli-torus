@@ -1,8 +1,11 @@
 defmodule OliWeb.Delivery.Student.Lesson.Annotations do
   use OliWeb, :html
 
-  alias OliWeb.Components.Common
+  import OliWeb.Icons, only: [trash: 1]
+
   alias Oli.Accounts.User
+  alias OliWeb.Components.Common
+  alias OliWeb.Components.Modal
 
   attr :section_slug, :string, required: true
   attr :create_new_annotation, :boolean, default: false
@@ -447,10 +450,16 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
         </div>
       </div>
       <p class="my-2" role="post content">
-        <%= @post.content.message %>
+        <%= case @post.status do %>
+          <% :deleted -> %>
+            <span class="italic text-gray-500">(deleted)</span>
+          <% _ -> %>
+            <%= @post.content.message %>
+        <% end %>
       </p>
       <.post_actions
         post={@post}
+        current_user={@current_user}
         on_toggle_reaction="toggle_reaction"
         on_toggle_replies="toggle_post_replies"
         go_to_post_href={@go_to_post_href}
@@ -489,6 +498,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
   end
 
   attr :post, Oli.Resources.Collaboration.Post, required: true
+  attr :current_user, Oli.Accounts.User, required: true
   attr :on_toggle_reaction, :string, default: nil
   attr :on_toggle_replies, :string, default: nil
   attr :go_to_post_href, :string, default: nil
@@ -542,6 +552,19 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
             <% nil -> %>
             <% href -> %>
               <.button variant={:link} href={href}>Go to Page</.button>
+          <% end %>
+          <%= if @current_user.id == @post.user_id do %>
+            <button
+              disabled={@post.status == :deleted}
+              class={[
+                "inline-flex gap-1 text-sm text-gray-500 bold py-1 px-2 rounded-lg",
+                if(@post.status == :deleted, do: "opacity-50", else: "hover:bg-gray-100")
+              ]}
+              phx-click={JS.push("set_delete_post_id") |> Modal.show_modal("delete_post_modal")}
+              phx-value-post-id={@post.id}
+            >
+              <.trash />
+            </button>
           <% end %>
         </div>
         """
@@ -648,9 +671,14 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
         </div>
       </div>
       <p class="my-2">
-        <%= @post.content.message %>
+        <%= case @post.status do %>
+          <% :deleted -> %>
+            <span class="italic text-gray-500">(deleted)</span>
+          <% _ -> %>
+            <%= @post.content.message %>
+        <% end %>
       </p>
-      <.post_actions post={@post} on_toggle_reaction="toggle_reaction" />
+      <.post_actions post={@post} current_user={@current_user} on_toggle_reaction="toggle_reaction" />
     </div>
     """
   end
