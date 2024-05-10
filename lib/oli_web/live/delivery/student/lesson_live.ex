@@ -567,12 +567,19 @@ defmodule OliWeb.Delivery.Student.LessonLive do
      )}
   end
 
-  def handle_event("set_delete_post_id", %{"post-id" => post_id}, socket) do
-    {:noreply, assign_annotations(socket, delete_post_id: String.to_integer(post_id))}
+  def handle_event(
+        "set_delete_post_id",
+        %{"post-id" => post_id, "visibility" => visibility},
+        socket
+      ) do
+    {:noreply,
+     assign_annotations(socket,
+       delete_post_id: {String.to_existing_atom(visibility), String.to_integer(post_id)}
+     )}
   end
 
   def handle_event("delete_post", _params, socket) do
-    %{annotations: %{delete_post_id: post_id}} = socket.assigns
+    %{annotations: %{delete_post_id: {_visibility, post_id}}} = socket.assigns
 
     case Collaboration.soft_delete_post(post_id) do
       {1, _} ->
