@@ -18,6 +18,10 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
   }
 
   def mount(_params, _session, socket) do
+    %{current_user: current_user, section: section} = socket.assigns
+
+    is_instructor = Sections.has_instructor_role?(current_user, section.slug)
+
     if connected?(socket),
       do:
         Phoenix.PubSub.subscribe(
@@ -46,6 +50,7 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
     {
       :ok,
       assign(socket,
+        is_instructor: is_instructor,
         active_tab: :discussions,
         posts: posts,
         notes: notes,
@@ -506,7 +511,9 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
         posts_search_results={@posts_search_results}
       />
       <.notes_section
+        :if={not @is_instructor}
         ctx={@ctx}
+        section_slug={@section.slug}
         current_user={@current_user}
         notes={@notes}
         note_params={@note_params}
@@ -618,7 +625,7 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
         </h3>
       </div>
 
-      <.actions
+      <.posts_actions
         post_params={@post_params}
         course_collab_space_config={@course_collab_space_config}
         posts_search_term={@posts_search_term}
@@ -660,6 +667,7 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
 
   attr :notes, :list
   attr :ctx, :map
+  attr :section_slug, :string
   attr :current_user, :any
   attr :note_params, :map
   attr :more_notes_exist?, :boolean
@@ -682,7 +690,12 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
           <div role="notes list" class="w-full">
             <%= for post <- @notes do %>
               <div class="mb-3">
-                <Annotations.post class="bg-white" post={post} current_user={@ctx.user} />
+                <Annotations.post
+                  class="bg-white"
+                  post={post}
+                  current_user={@ctx.user}
+                  go_to_post_href={~p"/sections/#{@section_slug}/lesson/#{post.resource_slug}"}
+                />
               </div>
             <% end %>
             <div :if={@notes == []} class="flex p-4 text-center w-full">
@@ -704,7 +717,12 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
           </div>
         <% results -> %>
           <div role="search-results list" class="w-full">
-            <Annotations.search_results search_results={results} current_user={@current_user} />
+            <Annotations.search_results
+              section_slug={@section_slug}
+              search_results={results}
+              current_user={@current_user}
+              show_go_to_post_link={true}
+            />
           </div>
       <% end %>
     </section>
@@ -715,19 +733,19 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
   attr :course_collab_space_config, Oli.Resources.Collaboration.CollabSpaceConfig
   attr :posts_search_term, :string
 
-  defp actions(assigns) do
+  defp posts_actions(assigns) do
     ~H"""
     <div role="posts actions" class="w-full flex gap-6">
-      <div class="flex flex-1 space-x-3">
+      <div class="flex flex-1 space-x-3 justify-between">
         <Annotations.search_box
-          class="flex-1"
+          class="flex-1 max-w-[600px]"
           search_term={@posts_search_term}
           on_search="search_posts"
           on_clear_search="clear_search_posts"
         />
 
         <.dropdown
-          id="sort-dropdown"
+          id="sort-posts-dropdown"
           role="sort"
           class="inline-flex"
           button_class="rounded-[3px] py-[10px] px-6 flex justify-center items-center whitespace-nowrap text-[14px] leading-[20px] font-normal text-white bg-[#0F6CF5] hover:bg-blue-600"
@@ -777,9 +795,9 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
   defp notes_actions(assigns) do
     ~H"""
     <div role="notes actions" class="w-full flex gap-6">
-      <div class="flex flex-1 space-x-3">
+      <div class="flex flex-1 space-x-3 justify-between">
         <Annotations.search_box
-          class="flex-1"
+          class="flex-1 max-w-[600px]"
           search_term={@notes_search_term}
           on_search="search_notes"
           on_clear_search="clear_search_notes"
