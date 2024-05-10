@@ -562,6 +562,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
               ]}
               phx-click={JS.push("set_delete_post_id") |> Modal.show_modal("delete_post_modal")}
               phx-value-post-id={@post.id}
+              phx-value-visibility={@post.visibility}
             >
               <.trash />
             </button>
@@ -571,13 +572,29 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
 
       _ ->
         ~H"""
-        <%= case @go_to_post_href do %>
-          <% nil -> %>
-          <% href -> %>
-            <div class="flex flex-row gap-3 my-2 justify-end" role="post actions">
+        <div class="flex flex-row gap-3 my-2 justify-end" role="post actions">
+          <div class="flex-1" />
+
+          <%= case @go_to_post_href do %>
+            <% nil -> %>
+            <% href -> %>
               <.button variant={:link} href={href}>Go to Page</.button>
-            </div>
-        <% end %>
+          <% end %>
+          <%= if @current_user.id == @post.user_id do %>
+            <button
+              disabled={@post.status == :deleted}
+              class={[
+                "inline-flex gap-1 text-sm text-gray-500 bold py-2 px-2 rounded-lg",
+                if(@post.status == :deleted, do: "opacity-50", else: "hover:bg-gray-100")
+              ]}
+              phx-click={JS.push("set_delete_post_id") |> Modal.show_modal("delete_post_modal")}
+              phx-value-post-id={@post.id}
+              phx-value-visibility={@post.visibility}
+            >
+              <.trash />
+            </button>
+          <% end %>
+        </div>
         """
     end
   end

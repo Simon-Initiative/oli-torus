@@ -430,16 +430,23 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
     {:noreply, assign(socket, notes_search_results: nil, notes_search_term: "")}
   end
 
-  def handle_event("set_delete_post_id", %{"post-id" => post_id}, socket) do
-    {:noreply, assign(socket, delete_post_id: String.to_integer(post_id))}
+  def handle_event(
+        "set_delete_post_id",
+        %{"post-id" => post_id, "visibility" => visibility},
+        socket
+      ) do
+    {:noreply,
+     assign(socket,
+       delete_post_id: {String.to_existing_atom(visibility), String.to_integer(post_id)}
+     )}
   end
 
   def handle_event("delete_post", _params, socket) do
-    %{delete_post_id: post_id} = socket.assigns
+    %{delete_post_id: {visibility, post_id}} = socket.assigns
 
     case Collaboration.soft_delete_post(post_id) do
       {1, _} ->
-        {:noreply, mark_post_deleted(socket, post_id)}
+        {:noreply, mark_post_deleted(socket, visibility, post_id)}
 
       {:error, _} ->
         {:noreply, put_flash(socket, :error, "Failed to delete note")}
@@ -972,15 +979,27 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
     end)
   end
 
-  defp mark_post_deleted(socket, post_id) do
-    %{posts: posts} = socket.assigns
+  defp mark_post_deleted(socket, visibility, post_id) do
+    %{posts: posts, notes: notes} = socket.assigns
 
-    socket
-    |> assign(
-      posts:
-        Annotations.find_and_update_post(posts, post_id, fn post ->
-          %Collaboration.Post{post | status: :deleted}
-        end)
-    )
+    case visibility do
+      :public ->
+        socket
+        |> assign(
+          posts:
+            Annotations.find_and_update_post(posts, post_id, fn post ->
+              %Collaboration.Post{post | status: :deleted}
+            end)
+        )
+
+      :private ->
+        socket
+        |> assign(
+          notes:
+            Annotations.find_and_update_post(notes, post_id, fn post ->
+              %Collaboration.Post{post | status: :deleted}
+            end)
+        )
+    end
   end
 end
