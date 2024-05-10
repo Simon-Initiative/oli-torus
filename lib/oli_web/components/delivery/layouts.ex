@@ -14,6 +14,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
   alias Oli.Accounts.{User, Author}
   alias Oli.Branding
   alias OliWeb.Components.Delivery.UserAccount
+  alias OliWeb.Icons
   alias Oli.Resources.Collaboration.CollabSpaceConfig
   alias OliWeb.Delivery.Student.Utils
 
@@ -149,10 +150,20 @@ defmodule OliWeb.Components.Delivery.Layouts do
   def sidebar_links(assigns) do
     ~H"""
     <.nav_link href={path_for(:index, @section, @preview_mode)} is_active={@active_tab == :index}>
-      Home
+      <Icons.home is_active={@active_tab == :index} />
+      <span>Home</span>
     </.nav_link>
     <.nav_link href={path_for(:learn, @section, @preview_mode)} is_active={@active_tab == :learn}>
-      Learn
+      <Icons.learn is_active={@active_tab == :learn} />
+      <span>Learn</span>
+    </.nav_link>
+
+    <.nav_link
+      href={path_for(:schedule, @section, @preview_mode)}
+      is_active={@active_tab == :schedule}
+    >
+      <Icons.schedule is_active={@active_tab == :schedule} />
+      <span>Schedule</span>
     </.nav_link>
 
     <.nav_link
@@ -160,27 +171,24 @@ defmodule OliWeb.Components.Delivery.Layouts do
       href={path_for(:discussions, @section, @preview_mode)}
       is_active={@active_tab == :discussions}
     >
-      Discussions
-    </.nav_link>
-    <.nav_link
-      href={path_for(:schedule, @section, @preview_mode)}
-      is_active={@active_tab == :schedule}
-    >
-      Schedule
+      <Icons.discussions is_active={@active_tab == :discussions} />
+      <span>Discussions</span>
     </.nav_link>
     <.nav_link
       :if={@section.contains_explorations}
       href={path_for(:explorations, @section, @preview_mode)}
       is_active={@active_tab == :explorations}
     >
-      Explorations
+      <Icons.explorations is_active={@active_tab == :explorations} />
+      <span>Explorations</span>
     </.nav_link>
     <.nav_link
       :if={@section.contains_deliberate_practice}
       href={path_for(:practice, @section, @preview_mode)}
       is_active={@active_tab == :practice}
     >
-      Practice
+      <Icons.practice is_active={@active_tab == :practice} />
+      <span>Practice</span>
     </.nav_link>
     """
   end
