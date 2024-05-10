@@ -1,4 +1,4 @@
-defmodule OliWeb.Delivery.Student.ScheduleLiveTest do
+defmodule OliWeb.Delivery.Student.ExplorationsLiveTest do
   use ExUnit.Case, async: true
   use OliWeb.ConnCase
 
