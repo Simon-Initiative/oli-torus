@@ -1,4 +1,5 @@
 defmodule OliWeb.Components.Delivery.InstructorDashboard do
+  alias OliWeb.Insights
   use OliWeb, :html
 
   import OliWeb.ViewHelpers, only: [brand_logo: 1]
@@ -188,10 +189,10 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard do
             Overview
           </.header_link>
           <.header_link
-            path={header_link_path(@section, :reports, @preview_mode)}
-            active={is_active?(@view, :reports)}
+            path={header_link_path(@section, :insights, @preview_mode)}
+            active={is_active?(@view, :insights)}
           >
-            Reports
+            Insights
           </.header_link>
           <.header_link
             path={header_link_path(@section, :manage, @preview_mode)}
