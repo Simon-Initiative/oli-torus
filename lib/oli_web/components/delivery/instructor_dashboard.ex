@@ -1,5 +1,4 @@
 defmodule OliWeb.Components.Delivery.InstructorDashboard do
-  alias OliWeb.Insights
   use OliWeb, :html
 
   import OliWeb.ViewHelpers, only: [brand_logo: 1]
