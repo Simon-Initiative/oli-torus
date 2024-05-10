@@ -344,7 +344,8 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   def handle_event("change_selected_view", %{"selected_view" => selected_view}, socket) do
     {:noreply,
      push_patch(socket,
-       to: ~p"/sections/#{socket.assigns.section.slug}/learn?#{%{selected_view: selected_view}}"
+       to:
+         ~p"/sections/#{socket.assigns.section.slug}/learn?#{%{selected_view: selected_view, sidebar_expanded: socket.assigns.sidebar_expanded}}"
      )}
   end
 
