@@ -8,8 +8,9 @@ defmodule OliWeb.Experiments.ExperimentsView do
   import OliWeb.ErrorHelpers
   import OliWeb.Resources.AlternativesEditor.GroupOption
 
-  alias Oli.Resources.ResourceType
   alias Oli.Authoring.Editing.ResourceEditor
+  alias Oli.Authoring.Experiments
+  alias Oli.Resources.ResourceType
   alias Oli.Resources.Revision
   alias OliWeb.Common.Modal.DeleteModal
   alias OliWeb.Common.Modal.FormModal
@@ -21,7 +22,7 @@ defmodule OliWeb.Experiments.ExperimentsView do
   @alternatives_type_id ResourceType.id_for_alternatives()
 
   def mount(_params, _session, socket) do
-    experiment = ResourceEditor.get_latest_experiment(socket.assigns.project.slug)
+    experiment = Experiments.get_latest_experiment(socket.assigns.project.slug)
 
     socket =
       socket

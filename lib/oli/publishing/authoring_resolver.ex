@@ -170,7 +170,7 @@ defmodule Oli.Publishing.AuthoringResolver do
     |> emit([:oli, :resolvers, :authoring], :duration)
   end
 
-  defp project_working_publication(project_slug) do
+  def project_working_publication(project_slug) do
     from(p in Publication,
       join: c in Project,
       on: p.project_id == c.id,
