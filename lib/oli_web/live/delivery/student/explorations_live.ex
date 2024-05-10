@@ -16,6 +16,10 @@ defmodule OliWeb.Delivery.Student.ExplorationsLive do
      )}
   end
 
+  def handle_params(_params, _uri, socket) do
+    {:noreply, socket}
+  end
+
   def render(assigns) do
     ~H"""
     <.hero_banner class="bg-explorations">

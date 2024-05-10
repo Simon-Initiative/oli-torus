@@ -963,6 +963,7 @@ defmodule OliWeb.Router do
           OliWeb.LiveSessionPlugs.SetSection,
           OliWeb.LiveSessionPlugs.SetBrand,
           OliWeb.LiveSessionPlugs.SetPreviewMode,
+          OliWeb.LiveSessionPlugs.SetSidebar,
           OliWeb.LiveSessionPlugs.RequireEnrollment
         ] do
         live("/", Delivery.Student.IndexLive)

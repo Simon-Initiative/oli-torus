@@ -14,8 +14,12 @@
       section={@section}
       active_tab={assigns[:active_tab]}
       preview_mode={@preview_mode}
+      sidebar_expanded={@sidebar_expanded}
     />
-    <div class="md:w-[calc(100%-190px)] flex-1 flex flex-col md:ml-[190px] mt-14 relative">
+    <div class={[
+      "md:w-[calc(100%-190px)] flex-1 flex flex-col md:ml-[190px] mt-14 relative",
+      if(!@sidebar_expanded, do: "md:w-[calc(100%-60px)] md:ml-[60px]")
+    ]}>
       <div class="container mx-auto sticky top-[60px] z-50">
         <.flash_group flash={@flash} />
       </div>

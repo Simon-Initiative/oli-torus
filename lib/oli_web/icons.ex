@@ -560,5 +560,19 @@ defmodule OliWeb.Icons do
     """
   end
 
+  def left_chevron(assigns) do
+    ~H"""
+    <svg width="6" height="9" viewBox="0 0 6 9" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path
+        d="M4.46798 7.96686L0.968018 4.4669L4.46798 0.966943"
+        stroke="white"
+        stroke-width="1.5"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      />
+    </svg>
+    """
+  end
+
   ########## Studend Delivery Icons (end) ##########
 end

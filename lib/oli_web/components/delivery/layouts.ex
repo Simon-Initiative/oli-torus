@@ -82,14 +82,13 @@ defmodule OliWeb.Components.Delivery.Layouts do
   attr(:is_system_admin, :boolean, required: true)
   attr(:section, Section, default: nil)
   attr(:active_tab, :atom)
+  attr(:sidebar_expanded, :boolean, default: true)
   attr(:preview_mode, :boolean)
 
   def sidebar_nav(assigns) do
     ~H"""
     <div>
-      <nav
-        id="desktop-nav-menu"
-        class="
+      <nav id="desktop-nav-menu" class={["
         fixed
         z-50
         w-full
@@ -102,9 +101,19 @@ defmodule OliWeb.Components.Delivery.Layouts do
         shadow-sm
         bg-delivery-navbar
         dark:bg-delivery-navbar-dark
-      "
-      >
-        <.sidebar_links active_tab={@active_tab} section={@section} preview_mode={@preview_mode} />
+      ", if(!@sidebar_expanded, do: "md:!w-[60px]")]}>
+        <.sidebar_toggler
+          active_tab={@active_tab}
+          section={@section}
+          preview_mode={@preview_mode}
+          sidebar_expanded={@sidebar_expanded}
+        />
+        <.sidebar_links
+          active_tab={@active_tab}
+          section={@section}
+          preview_mode={@preview_mode}
+          sidebar_expanded={@sidebar_expanded}
+        />
         <div class="flex w-full px-6 py-4 text-center mt-auto">
           <.tech_support_button id="tech-support" ctx={@ctx} />
         </div>
@@ -146,23 +155,52 @@ defmodule OliWeb.Components.Delivery.Layouts do
   attr(:section, Section, default: nil)
   attr(:active_tab, :atom)
   attr(:preview_mode, :boolean)
+  attr(:sidebar_expanded, :boolean, default: true)
+
+  def sidebar_toggler(assigns) do
+    ~H"""
+    <button
+      phx-click={JS.patch(path_for(@active_tab, @section, @preview_mode, !@sidebar_expanded))}
+      title={if @sidebar_expanded, do: "Minimize", else: "Expand"}
+      class="flex items-center justify-center ml-auto w-6 h-6 bg-neutral-800 rounded-tl-[52px] rounded-bl-[52px]"
+    >
+      <div class={if !@sidebar_expanded, do: "rotate-180"}>
+        <Icons.left_chevron />
+      </div>
+    </button>
+    """
+  end
+
+  attr(:section, Section, default: nil)
+  attr(:active_tab, :atom)
+  attr(:preview_mode, :boolean)
+  attr(:sidebar_expanded, :boolean, default: true)
 
   def sidebar_links(assigns) do
     ~H"""
     <div class="p-2 flex-col justify-center items-center gap-4 inline-flex">
-      <.nav_link href={path_for(:index, @section, @preview_mode)} is_active={@active_tab == :index}>
+      <.nav_link
+        href={path_for(:index, @section, @preview_mode, @sidebar_expanded)}
+        is_active={@active_tab == :index}
+        sidebar_expanded={@sidebar_expanded}
+      >
         <:icon><Icons.home is_active={@active_tab == :index} /></:icon>
         <:text>Home</:text>
       </.nav_link>
 
-      <.nav_link href={path_for(:learn, @section, @preview_mode)} is_active={@active_tab == :learn}>
+      <.nav_link
+        href={path_for(:learn, @section, @preview_mode, @sidebar_expanded)}
+        is_active={@active_tab == :learn}
+        sidebar_expanded={@sidebar_expanded}
+      >
         <:icon><Icons.learn is_active={@active_tab == :learn} /></:icon>
         <:text>Learn</:text>
       </.nav_link>
 
       <.nav_link
-        href={path_for(:schedule, @section, @preview_mode)}
+        href={path_for(:schedule, @section, @preview_mode, @sidebar_expanded)}
         is_active={@active_tab == :schedule}
+        sidebar_expanded={@sidebar_expanded}
       >
         <:icon><Icons.schedule is_active={@active_tab == :schedule} /></:icon>
         <:text>Schedule</:text>
@@ -170,8 +208,9 @@ defmodule OliWeb.Components.Delivery.Layouts do
 
       <.nav_link
         :if={@section.contains_discussions}
-        href={path_for(:discussions, @section, @preview_mode)}
+        href={path_for(:discussions, @section, @preview_mode, @sidebar_expanded)}
         is_active={@active_tab == :discussions}
+        sidebar_expanded={@sidebar_expanded}
       >
         <:icon><Icons.discussions is_active={@active_tab == :discussions} /></:icon>
         <:text>Discussions</:text>
@@ -179,8 +218,9 @@ defmodule OliWeb.Components.Delivery.Layouts do
 
       <.nav_link
         :if={@section.contains_explorations}
-        href={path_for(:explorations, @section, @preview_mode)}
+        href={path_for(:explorations, @section, @preview_mode, @sidebar_expanded)}
         is_active={@active_tab == :explorations}
+        sidebar_expanded={@sidebar_expanded}
       >
         <:icon><Icons.explorations is_active={@active_tab == :explorations} /></:icon>
         <:text>Explorations</:text>
@@ -188,8 +228,9 @@ defmodule OliWeb.Components.Delivery.Layouts do
 
       <.nav_link
         :if={@section.contains_deliberate_practice}
-        href={path_for(:practice, @section, @preview_mode)}
+        href={path_for(:practice, @section, @preview_mode, @sidebar_expanded)}
         is_active={@active_tab == :practice}
+        sidebar_expanded={@sidebar_expanded}
       >
         <:icon><Icons.practice is_active={@active_tab == :practice} /></:icon>
         <:text>Practice</:text>
@@ -198,75 +239,75 @@ defmodule OliWeb.Components.Delivery.Layouts do
     """
   end
 
-  defp path_for(:index, %Section{slug: section_slug}, preview_mode) do
+  defp path_for(:index, %Section{slug: section_slug}, preview_mode, sidebar_expanded) do
     if preview_mode do
       ~p"/sections/#{section_slug}/preview"
     else
-      ~p"/sections/#{section_slug}"
+      ~p"/sections/#{section_slug}?#{%{sidebar_expanded: sidebar_expanded}}"
     end
   end
 
-  defp path_for(:index, _section, _preview_mode) do
+  defp path_for(:index, _section, _preview_mode, _sidebar_expanded) do
     "#"
   end
 
-  defp path_for(:learn, %Section{slug: section_slug}, preview_mode) do
+  defp path_for(:learn, %Section{slug: section_slug}, preview_mode, sidebar_expanded) do
     if preview_mode do
       ~p"/sections/#{section_slug}/preview/learn"
     else
-      ~p"/sections/#{section_slug}/learn"
+      ~p"/sections/#{section_slug}/learn?#{%{sidebar_expanded: sidebar_expanded}}"
     end
   end
 
-  defp path_for(:learn, _section, _preview_mode) do
+  defp path_for(:learn, _section, _preview_mode, _sidebar_expanded) do
     "#"
   end
 
-  defp path_for(:discussions, %Section{slug: section_slug}, preview_mode) do
+  defp path_for(:discussions, %Section{slug: section_slug}, preview_mode, sidebar_expanded) do
     if preview_mode do
       ~p"/sections/#{section_slug}/preview/discussions"
     else
-      ~p"/sections/#{section_slug}/discussions"
+      ~p"/sections/#{section_slug}/discussions?#{%{sidebar_expanded: sidebar_expanded}}"
     end
   end
 
-  defp path_for(:discussions, _section, _preview_mode) do
+  defp path_for(:discussions, _section, _preview_mode, _sidebar_expanded) do
     "#"
   end
 
-  defp path_for(:schedule, %Section{slug: section_slug}, preview_mode) do
+  defp path_for(:schedule, %Section{slug: section_slug}, preview_mode, sidebar_expanded) do
     if preview_mode do
       ~p"/sections/#{section_slug}/preview/assignments"
     else
-      ~p"/sections/#{section_slug}/assignments"
+      ~p"/sections/#{section_slug}/assignments?#{%{sidebar_expanded: sidebar_expanded}}"
     end
   end
 
-  defp path_for(:schedule, _section, _preview_mode) do
+  defp path_for(:schedule, _section, _preview_mode, _sidebar_expanded) do
     "#"
   end
 
-  defp path_for(:explorations, %Section{slug: section_slug}, preview_mode) do
+  defp path_for(:explorations, %Section{slug: section_slug}, preview_mode, sidebar_expanded) do
     if preview_mode do
       ~p"/sections/#{section_slug}/preview/explorations"
     else
-      ~p"/sections/#{section_slug}/explorations"
+      ~p"/sections/#{section_slug}/explorations?#{%{sidebar_expanded: sidebar_expanded}}"
     end
   end
 
-  defp path_for(:explorations, _section, _preview_mode) do
+  defp path_for(:explorations, _section, _preview_mode, _sidebar_expanded) do
     "#"
   end
 
-  defp path_for(:practice, %Section{slug: section_slug}, preview_mode) do
+  defp path_for(:practice, %Section{slug: section_slug}, preview_mode, sidebar_expanded) do
     if preview_mode do
       ~p"/sections/#{section_slug}/preview/practice"
     else
-      ~p"/sections/#{section_slug}/practice"
+      ~p"/sections/#{section_slug}/practice?#{%{sidebar_expanded: sidebar_expanded}}"
     end
   end
 
-  defp path_for(:practice, _section, _preview_mode) do
+  defp path_for(:practice, _section, _preview_mode, _sidebar_expanded) do
     "#"
   end
 
@@ -274,6 +315,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
   attr :is_active, :boolean, required: true
   slot :text, required: true
   slot :icon, required: true
+  attr :sidebar_expanded, :boolean, default: true
 
   def nav_link(assigns) do
     ~H"""
@@ -286,10 +328,13 @@ defmodule OliWeb.Components.Delivery.Layouts do
         if(@is_active, do: "bg-neutral-800")
       ]}>
         <div class="w-5 h-5 flex items-center justify-center"><%= render_slot(@icon) %></div>
-        <div class={[
-          "text-gray-400 text-sm font-medium tracking-tight",
-          if(@is_active, do: "!font-semibold !text-white")
-        ]}>
+        <div
+          :if={@sidebar_expanded}
+          class={[
+            "text-gray-400 text-sm font-medium tracking-tight",
+            if(@is_active, do: "!font-semibold !text-white")
+          ]}
+        >
           <%= render_slot(@text) %>
         </div>
       </div>
