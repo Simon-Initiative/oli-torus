@@ -98,7 +98,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
         md:h-[calc(100vh-56px)]
         md:flex
         flex-col
-        md:w-48
+        md:w-[190px]
         shadow-sm
         bg-delivery-navbar
         dark:bg-delivery-navbar-dark
@@ -149,47 +149,52 @@ defmodule OliWeb.Components.Delivery.Layouts do
 
   def sidebar_links(assigns) do
     ~H"""
-    <.nav_link href={path_for(:index, @section, @preview_mode)} is_active={@active_tab == :index}>
-      <Icons.home is_active={@active_tab == :index} />
-      <span>Home</span>
-    </.nav_link>
-    <.nav_link href={path_for(:learn, @section, @preview_mode)} is_active={@active_tab == :learn}>
-      <Icons.learn is_active={@active_tab == :learn} />
-      <span>Learn</span>
-    </.nav_link>
+    <div class="p-2 flex-col justify-center items-center gap-4 inline-flex">
+      <.nav_link href={path_for(:index, @section, @preview_mode)} is_active={@active_tab == :index}>
+        <:icon><Icons.home is_active={@active_tab == :index} /></:icon>
+        <:text>Home</:text>
+      </.nav_link>
 
-    <.nav_link
-      href={path_for(:schedule, @section, @preview_mode)}
-      is_active={@active_tab == :schedule}
-    >
-      <Icons.schedule is_active={@active_tab == :schedule} />
-      <span>Schedule</span>
-    </.nav_link>
+      <.nav_link href={path_for(:learn, @section, @preview_mode)} is_active={@active_tab == :learn}>
+        <:icon><Icons.learn is_active={@active_tab == :learn} /></:icon>
+        <:text>Learn</:text>
+      </.nav_link>
 
-    <.nav_link
-      :if={@section.contains_discussions}
-      href={path_for(:discussions, @section, @preview_mode)}
-      is_active={@active_tab == :discussions}
-    >
-      <Icons.discussions is_active={@active_tab == :discussions} />
-      <span>Discussions</span>
-    </.nav_link>
-    <.nav_link
-      :if={@section.contains_explorations}
-      href={path_for(:explorations, @section, @preview_mode)}
-      is_active={@active_tab == :explorations}
-    >
-      <Icons.explorations is_active={@active_tab == :explorations} />
-      <span>Explorations</span>
-    </.nav_link>
-    <.nav_link
-      :if={@section.contains_deliberate_practice}
-      href={path_for(:practice, @section, @preview_mode)}
-      is_active={@active_tab == :practice}
-    >
-      <Icons.practice is_active={@active_tab == :practice} />
-      <span>Practice</span>
-    </.nav_link>
+      <.nav_link
+        href={path_for(:schedule, @section, @preview_mode)}
+        is_active={@active_tab == :schedule}
+      >
+        <:icon><Icons.schedule is_active={@active_tab == :schedule} /></:icon>
+        <:text>Schedule</:text>
+      </.nav_link>
+
+      <.nav_link
+        :if={@section.contains_discussions}
+        href={path_for(:discussions, @section, @preview_mode)}
+        is_active={@active_tab == :discussions}
+      >
+        <:icon><Icons.discussions is_active={@active_tab == :discussions} /></:icon>
+        <:text>Discussions</:text>
+      </.nav_link>
+
+      <.nav_link
+        :if={@section.contains_explorations}
+        href={path_for(:explorations, @section, @preview_mode)}
+        is_active={@active_tab == :explorations}
+      >
+        <:icon><Icons.explorations is_active={@active_tab == :explorations} /></:icon>
+        <:text>Explorations</:text>
+      </.nav_link>
+
+      <.nav_link
+        :if={@section.contains_deliberate_practice}
+        href={path_for(:practice, @section, @preview_mode)}
+        is_active={@active_tab == :practice}
+      >
+        <:icon><Icons.practice is_active={@active_tab == :practice} /></:icon>
+        <:text>Practice</:text>
+      </.nav_link>
+    </div>
     """
   end
 
@@ -267,24 +272,29 @@ defmodule OliWeb.Components.Delivery.Layouts do
 
   attr :href, :string, required: true
   attr :is_active, :boolean, required: true
-  slot :inner_block, required: true
+  slot :text, required: true
+  slot :icon, required: true
 
   def nav_link(assigns) do
     ~H"""
-    <.link navigate={@href} class={nav_link_class(@is_active)}>
-      <%= render_slot(@inner_block) %>
+    <.link
+      navigate={@href}
+      class={["w-full h-11 flex-col justify-center items-center flex hover:no-underline"]}
+    >
+      <div class={[
+        "w-full h-9 px-3 py-3 hover:bg-neutral-800/60 rounded-lg justify-start items-center gap-3 inline-flex",
+        if(@is_active, do: "bg-neutral-800")
+      ]}>
+        <div class="w-5 h-5 flex items-center justify-center"><%= render_slot(@icon) %></div>
+        <div class={[
+          "text-gray-400 text-sm font-medium tracking-tight",
+          if(@is_active, do: "!font-semibold !text-white")
+        ]}>
+          <%= render_slot(@text) %>
+        </div>
+      </div>
     </.link>
     """
-  end
-
-  defp nav_link_class(is_active) do
-    case is_active do
-      true ->
-        "px-6 py-4 text-current hover:no-underline hover:text-delivery-primary font-bold bg-gray-50 dark:bg-gray-800"
-
-      false ->
-        "px-6 py-4 text-current hover:no-underline hover:text-delivery-primary"
-    end
   end
 
   attr(:section, Section)
