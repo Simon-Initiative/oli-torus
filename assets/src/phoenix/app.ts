@@ -169,6 +169,22 @@ window.addEventListener('phx:js-exec', ({ detail }: any) => {
   });
 });
 
+window.addEventListener('mouseover', (e: any) => {
+  // if the event's target has the xphx-mouseover attribute,
+  // execute the commands on that element
+  if (e.target.matches('[xphx-mouseover]')) {
+    liveSocket.execJS(e.target, e.target.getAttribute('xphx-mouseover'));
+  }
+});
+
+window.addEventListener('mouseout', (e: any) => {
+  // if the event's target has the xphx-mouseout attribute,
+  // execute the commands on that element
+  if (e.target.matches('[xphx-mouseout]')) {
+    liveSocket.execJS(e.target, e.target.getAttribute('xphx-mouseout'));
+  }
+});
+
 declare global {
   interface Window {
     liveSocket: typeof liveSocket;
