@@ -103,7 +103,13 @@ defmodule OliWeb.Components.Delivery.Layouts do
         overflow-hidden
       ", if(!@sidebar_expanded, do: "md:!w-[60px]")]}>
         <div class="w-full">
-          <div class="h-14 w-48 py-2 flex shrink-0 border-b border-white/5" tab-index="0">
+          <div
+            class={[
+              "h-14 w-48 py-2 flex shrink-0 border-b border-white/5",
+              if(!@sidebar_expanded, do: "w-14")
+            ]}
+            tab-index="0"
+          >
             <.link navigate={path_for(:index, @section, @preview_mode, @sidebar_expanded)}>
               <.logo_img section={@section} />
             </.link>
@@ -359,8 +365,12 @@ defmodule OliWeb.Components.Delivery.Layouts do
       |> assign(:logo_src_dark, Branding.brand_logo_url_dark(assigns[:section]))
 
     ~H"""
-    <img src={@logo_src} class="inline-block dark:hidden h-9" alt="logo" />
-    <img src={@logo_src_dark} class="hidden dark:inline-block h-9" alt="logo dark" />
+    <img src={@logo_src} class="inline-block dark:hidden h-9 object-cover object-left" alt="logo" />
+    <img
+      src={@logo_src_dark}
+      class="hidden dark:inline-block h-9 object-cover object-left"
+      alt="logo dark"
+    />
     """
   end
 
