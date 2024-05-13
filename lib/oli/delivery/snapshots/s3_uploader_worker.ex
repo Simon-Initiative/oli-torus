@@ -9,9 +9,13 @@ defmodule Oli.Delivery.Snapshots.S3UploaderWorker do
   If the job fails, it will be retried up to a total of the configured maximum attempts.
   """
   def perform(%Oban.Job{
-    args: %{"category" => category, "body" => body, "bundle_id" => bundle_id, "partition_id" => partition_id}
-    }) do
-
+        args: %{
+          "category" => category,
+          "body" => body,
+          "bundle_id" => bundle_id,
+          "partition_id" => partition_id
+        }
+      }) do
     %StatementBundle{
       partition: :section,
       partition_id: partition_id,
@@ -26,7 +30,6 @@ defmodule Oli.Delivery.Snapshots.S3UploaderWorker do
   def perform(%Oban.Job{
         args: %{"body" => body, "bundle_id" => bundle_id, "partition_id" => partition_id}
       }) do
-
     # No category specified, so default to :attempt_evaluated
 
     %StatementBundle{
