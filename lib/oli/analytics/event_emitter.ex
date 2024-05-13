@@ -1,14 +1,13 @@
 defmodule Oli.Analytics.EventEmitter do
-
   @chars "abcdefghijklmnopqrstuvwxyz1234567890" |> String.split("", trim: true)
 
   def emit_page_viewed(event) do
-
     section_id = event["context"]["extensions"]["http://oli.cmu.edu/extensions/section_id"]
     guid = event["context"]["extensions"]["http://oli.cmu.edu/extensions/page_attempt_guid"]
 
-    bundle_id = :crypto.hash(:md5, guid <> "-" <> random_string(10))
-    |> Base.encode16()
+    bundle_id =
+      :crypto.hash(:md5, guid <> "-" <> random_string(10))
+      |> Base.encode16()
 
     Oli.Delivery.Snapshots.S3UploaderWorker.new(%{
       body: [event] |> Oli.Analytics.Common.to_jsonlines(),
@@ -25,5 +24,4 @@ defmodule Oli.Analytics.EventEmitter do
     end)
     |> Enum.join("")
   end
-
 end

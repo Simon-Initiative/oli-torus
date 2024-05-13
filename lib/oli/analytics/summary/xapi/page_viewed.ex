@@ -17,7 +17,6 @@ defmodule Oli.Analytics.Summary.XAPI.PageViewed do
           page_sub_type: page_sub_type
         }
       ) do
-
     %{
       "actor" => %{
         "account" => %{
