@@ -24,7 +24,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
       socket
       |> assign(
         params: params,
-        view: :insights,
+        view: :overview,
         active_tab: maybe_get_tab_from_params(active_tab, :content)
       )
       |> assign(users: Helpers.get_students(socket.assigns.section, params))
@@ -59,7 +59,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
 
   @impl Phoenix.LiveView
   def handle_params(
-        %{"view" => "insights", "active_tab" => "students"} = params,
+        %{"view" => "overview", "active_tab" => "students"} = params,
         uri,
         socket
       ),
@@ -299,7 +299,8 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
     allowed_routes = [
       {nil, nil},
       {"overview", "course_content"},
-      {"overview", "scored_activities"},
+      # {"overview", "scored_activities"},
+      {"overview", "students"},
       {"overview", "recommended_actions"},
       {"overview", "practice_activities"},
       {"overview", "surveys"},
@@ -366,29 +367,41 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
         active: is_active_tab?(:course_content, active_tab)
       },
       %TabLink{
-        label: "Scored Activities",
-        path: path_for(:overview, :scored_activities, section_slug, preview_mode),
+        label: "Students",
+        path: path_for(:overview, :students, section_slug, preview_mode),
         badge: nil,
-        active: is_active_tab?(:scored_activities, active_tab)
-      },
-      %TabLink{
-        label: "Recommended Actions",
-        path: path_for(:overview, :recommended_actions, section_slug, preview_mode),
-        badge: nil,
-        active: is_active_tab?(:recommended_actions, active_tab)
-      },
-      %TabLink{
-        label: "Practice Activities",
-        path: path_for(:overview, :practice_activities, section_slug, preview_mode),
-        badge: nil,
-        active: is_active_tab?(:practice_activities, active_tab)
-      },
-      %TabLink{
-        label: "Surveys",
-        path: path_for(:overview, :surveys, section_slug, preview_mode),
-        badge: nil,
-        active: is_active_tab?(:surveys, active_tab)
+        active: is_active_tab?(:students, active_tab)
       }
+      # %TabLink{
+      #   label: "Quiz Scores",
+      #   path: path_for(:insights, :quiz_scores, section_slug, preview_mode),
+      #   badge: nil,
+      #   active: is_active_tab?(:quiz_scores, active_tab)
+      # },
+      # %TabLink{
+      #   label: "Scored Activities",
+      #   path: path_for(:overview, :scored_activities, section_slug, preview_mode),
+      #   badge: nil,
+      #   active: is_active_tab?(:scored_activities, active_tab)
+      # },
+      # %TabLink{
+      #   label: "Recommended Actions",
+      #   path: path_for(:overview, :recommended_actions, section_slug, preview_mode),
+      #   badge: nil,
+      #   active: is_active_tab?(:recommended_actions, active_tab)
+      # }
+      # %TabLink{
+      #   label: "Practice Activities",
+      #   path: path_for(:overview, :practice_activities, section_slug, preview_mode),
+      #   badge: nil,
+      #   active: is_active_tab?(:practice_activities, active_tab)
+      # },
+      # %TabLink{
+      #   label: "Surveys",
+      #   path: path_for(:overview, :surveys, section_slug, preview_mode),
+      #   badge: nil,
+      #   active: is_active_tab?(:surveys, active_tab)
+      # }
     ]
   end
 
@@ -420,12 +433,12 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
         badge: nil,
         active: is_active_tab?(:content, active_tab)
       },
-      %TabLink{
-        label: "Students",
-        path: path_for(:insights, :students, section_slug, preview_mode),
-        badge: nil,
-        active: is_active_tab?(:students, active_tab)
-      },
+      # %TabLink{
+      #   label: "Students",
+      #   path: path_for(:insights, :students, section_slug, preview_mode),
+      #   badge: nil,
+      #   active: is_active_tab?(:students, active_tab)
+      # },
       %TabLink{
         label: "Learning Objectives",
         path: path_for(:insights, :learning_objectives, section_slug, preview_mode),
@@ -528,6 +541,25 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
     """
   end
 
+  def render(%{view: :overview, active_tab: :students} = assigns) do
+    ~H"""
+    <InstructorDashboard.tabs tabs={overview_tabs(@section_slug, @preview_mode, @active_tab)} />
+
+    <div class="container mx-auto">
+      <.live_component
+        id="students_table"
+        module={OliWeb.Components.Delivery.Students}
+        params={@params}
+        ctx={@ctx}
+        section={@section}
+        view={@view}
+        students={@users}
+        dropdown_options={@dropdown_options}
+      />
+    </div>
+    """
+  end
+
   def render(%{view: :overview} = assigns) do
     ~H"""
     <InstructorDashboard.tabs tabs={overview_tabs(@section_slug, @preview_mode, @active_tab)} />
@@ -588,25 +620,6 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
         view={@view}
         containers={@containers}
         patch_url_type={:instructor_dashboard}
-      />
-    </div>
-    """
-  end
-
-  def render(%{view: :insights, active_tab: :students} = assigns) do
-    ~H"""
-    <InstructorDashboard.tabs tabs={insights_tabs(@section_slug, @preview_mode, @active_tab)} />
-
-    <div class="container mx-auto">
-      <.live_component
-        id="students_table"
-        module={OliWeb.Components.Delivery.Students}
-        params={@params}
-        ctx={@ctx}
-        section={@section}
-        view={@view}
-        students={@users}
-        dropdown_options={@dropdown_options}
       />
     </div>
     """
