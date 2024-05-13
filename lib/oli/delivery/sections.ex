@@ -2574,11 +2574,13 @@ defmodule Oli.Delivery.Sections do
 
       list_children_activity_ids = build_list_children_activity_ids(hierarchy.children)
 
-      create_nonstructural_section_resources(section_id, publication_ids,
-        skip_resource_ids: processed_resource_ids,
-        required_survey_resource_id: survey_id,
-        list_children_activity_ids: list_children_activity_ids
-      )
+      if length(processed_resource_ids) != 1 do
+        create_nonstructural_section_resources(section_id, publication_ids,
+          skip_resource_ids: processed_resource_ids,
+          required_survey_resource_id: survey_id,
+          list_children_activity_ids: list_children_activity_ids
+        )
+      end
 
       # Rebuild section previous next index
       PreviousNextIndex.rebuild(section, hierarchy)
@@ -3054,6 +3056,8 @@ defmodule Oli.Delivery.Sections do
         {:ok}
       end)
 
+    IO.inspect(result, label: "diferencesss")
+
     Logger.info(
       "perform_update.MINOR: section[#{section.slug}] #{Oli.Timing.elapsed(mark) / 1000 / 1000}ms"
     )
@@ -3444,6 +3448,7 @@ defmodule Oli.Delivery.Sections do
     published_resources_by_resource_id =
       build_published_resources_by_resource_id(publication_ids, list_children_activity_ids)
 
+    IO.inspect(published_resources_by_resource_id, label: "wetree")
     now = DateTime.utc_now() |> DateTime.truncate(:second)
 
     # determine which pages are unreachable from the hierarchy, taking into account
