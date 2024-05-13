@@ -100,8 +100,10 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLiveTest do
       {:ok, view, _html} = live(conn, instructor_dashboard_path(section.slug, :overview))
 
       assert has_element?(view, "a.active", "Course Content")
-      assert has_element?(view, "a", "Scored Activities")
-      refute has_element?(view, "a.active", "Scored Activities")
+      assert has_element?(view, "a", "Students")
+      refute has_element?(view, "a.active", "Students")
+      assert has_element?(view, "a", "Quiz Scores")
+      refute has_element?(view, "a.active", "Quiz Scores")
       assert has_element?(view, "a", "Recommended Actions")
       refute has_element?(view, "a.active", "Recommended Actions")
     end
@@ -116,14 +118,14 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLiveTest do
       {:ok, view, _html} = live(conn, instructor_dashboard_path(section.slug, :insights))
 
       assert has_element?(view, "a.active", "Content")
-      assert has_element?(view, "a", "Students")
-      refute has_element?(view, "a.active", "Students")
       assert has_element?(view, "a", "Learning Objectives")
       refute has_element?(view, "a.active", "Learning Objectives")
-      assert has_element?(view, "a", "Quiz Scores")
-      refute has_element?(view, "a.active", "Quiz Scores")
-      assert has_element?(view, "a", "Course Discussion")
-      refute has_element?(view, "a.active", "Course Discussion")
+      assert has_element?(view, "a", "Scored Activities")
+      refute has_element?(view, "a.active", "Scored Activities")
+      assert has_element?(view, "a", "Practice Activities")
+      refute has_element?(view, "a.active", "Practice Activities")
+      assert has_element?(view, "a", "Surveys")
+      refute has_element?(view, "a.active", "Surveys")
     end
 
     test "if enrolled, can access the mange page", %{
