@@ -24,34 +24,9 @@ defmodule OliWeb.Components.Delivery.UserAccount do
     <div class="relative">
       <button
         id={@id}
-        class={"
-          flex
-          flex-row
-          px-3
-          items-center
-          rounded-lg
-          focus:outline-none
-          pointer
-          hover:bg-gray-100
-          dark:hover:bg-gray-700
-          active:bg-gray-200
-          dark:active:bg-gray-600
-          focus:bg-gray-100
-          dark:focus:bg-gray-700
-          #{@class}
-        "}
+        class={"flex flex-row items-center justify-center rounded-full outline outline-2 outline-neutral-700 hover:outline-4 hover:outline-zinc-600#{@class}"}
         phx-click={toggle_menu("##{@id}-dropdown")}
       >
-        <div class="mr-2 block">
-          <div class={
-            if !@is_system_admin, do: "text-xs sm:text-base py-2 whitespace-nowrap", else: ""
-          }>
-            <%= username(@ctx) %>
-          </div>
-          <div :if={@is_system_admin} class="text-xs text-right uppercase font-bold text-yellow">
-            Admin
-          </div>
-        </div>
         <.user_icon ctx={@ctx} />
       </button>
       <.dropdown_menu id={"#{@id}-dropdown"} class={@dropdown_class}>
@@ -324,29 +299,27 @@ defmodule OliWeb.Components.Delivery.UserAccount do
     ~H"""
     <%= case @ctx do %>
       <% %SessionContext{user: user} when user != nil -> %>
-        <.user_picture_icon picture={user.picture} />
+        <.user_picture_icon user={user} />
       <% %SessionContext{author: author} when author != nil -> %>
-        <.user_picture_icon picture={author.picture} />
+        <.user_picture_icon user={author} />
       <% _ -> %>
         <.default_user_icon />
     <% end %>
     """
   end
 
-  attr(:picture, :string, default: nil)
+  attr(:user, :map)
 
   def user_picture_icon(assigns) do
     ~H"""
-    <%= case @picture do %>
+    <%= case @user.picture do %>
       <% nil -> %>
-        <div class="self-center">
-          <div class="max-w-[28px] rounded-full">
-            <i class="fa-solid fa-circle-user fa-2xl mt-[-1px] ml-[-1px] text-gray-600"></i>
-          </div>
+        <div class="w-8 h-8 bg-zinc-800 rounded-full flex justify-center items-center text-white text-sm font-semibold leading-[14px]">
+          <%= to_initials(@user) %>
         </div>
       <% picture -> %>
-        <div class="self-center">
-          <img src={picture} referrerpolicy="no-referrer" class="rounded-full max-w-[28px]" />
+        <div class="flex justify-center items-center">
+          <img src={picture} referrerpolicy="no-referrer" class="rounded-full h-8 w-8" />
         </div>
     <% end %>
     """
@@ -355,8 +328,8 @@ defmodule OliWeb.Components.Delivery.UserAccount do
   def default_user_icon(assigns) do
     ~H"""
     <div class="self-center">
-      <div class="max-w-[28px] rounded-full">
-        <i class="fa-solid fa-circle-user fa-2xl mt-[-1px] ml-[-1px] text-gray-600"></i>
+      <div class="h-8 w-8 rounded-full flex justify-center items-center">
+        <i class="fa-solid fa-circle-user fa-2xl mt-[1px] text-gray-600"></i>
       </div>
     </div>
     """
@@ -421,4 +394,16 @@ defmodule OliWeb.Components.Delivery.UserAccount do
         Routes.session_path(OliWeb.Endpoint, :signout, type: :user)
     end
   end
+
+  defp to_initials(%{name: nil}), do: "G"
+
+  defp to_initials(%{name: name}) do
+    name
+    |> String.split(" ")
+    |> Enum.take(2)
+    |> Enum.map(&String.slice(&1, 0..0))
+    |> Enum.join()
+  end
+
+  defp to_initials(_), do: "?"
 end
