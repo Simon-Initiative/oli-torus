@@ -4006,10 +4006,6 @@ table.table-striped tbody tr:nth-child(even) {
   left: -0.75rem;
 }
 
-.-left-\[0\.7px\] {
-  left: -0.7px;
-}
-
 .-left-\[114px\] {
   left: -114px;
 }
@@ -4036,10 +4032,6 @@ table.table-striped tbody tr:nth-child(even) {
 
 .-top-4 {
   top: -1rem;
-}
-
-.-top-\[0\.7px\] {
-  top: -0.7px;
 }
 
 .-top-\[8px\] {
@@ -4721,6 +4713,10 @@ table.table-striped tbody tr:nth-child(even) {
   margin-top: -1px;
 }
 
+.mt-\[166px\] {
+  margin-top: 166px;
+}
+
 .mt-\[2px\] {
   margin-top: 2px;
 }
@@ -4917,20 +4913,12 @@ table.table-striped tbody tr:nth-child(even) {
   height: 162px;
 }
 
-.h-\[163px\] {
-  height: 163px;
-}
-
 .h-\[170px\] {
   height: 170px;
 }
 
-.h-\[178px\] {
-  height: 178px;
-}
-
-.h-\[180px\] {
-  height: 180px;
+.h-\[187px\] {
+  height: 187px;
 }
 
 .h-\[18px\] {
@@ -4959,6 +4947,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .h-\[25px\] {
   height: 25px;
+}
+
+.h-\[26px\] {
+  height: 26px;
 }
 
 .h-\[2px\] {
@@ -5007,10 +4999,6 @@ table.table-striped tbody tr:nth-child(even) {
 
 .h-\[450px\] {
   height: 450px;
-}
-
-.h-\[45px\] {
-  height: 45px;
 }
 
 .h-\[48px\] {
@@ -5334,12 +5322,12 @@ table.table-striped tbody tr:nth-child(even) {
   width: 288px;
 }
 
-.w-\[289\.5px\] {
-  width: 289.5px;
-}
-
 .w-\[28px\] {
   width: 28px;
+}
+
+.w-\[294px\] {
+  width: 294px;
 }
 
 .w-\[30px\] {
@@ -6590,11 +6578,6 @@ table.table-striped tbody tr:nth-child(even) {
   background-color: rgb(47 49 71 / var(--tw-bg-opacity));
 }
 
-.bg-\[\#F68E2E\] {
-  --tw-bg-opacity: 1;
-  background-color: rgb(246 142 46 / var(--tw-bg-opacity));
-}
-
 .bg-\[\#dcdef6\] {
   --tw-bg-opacity: 1;
   background-color: rgb(220 222 246 / var(--tw-bg-opacity));
@@ -6762,11 +6745,6 @@ table.table-striped tbody tr:nth-child(even) {
   background-color: rgb(212 212 212 / var(--tw-bg-opacity));
 }
 
-.bg-gray-400 {
-  --tw-bg-opacity: 1;
-  background-color: rgb(163 163 163 / var(--tw-bg-opacity));
-}
-
 .bg-gray-50 {
   --tw-bg-opacity: 1;
   background-color: rgb(250 250 250 / var(--tw-bg-opacity));
@@ -6784,6 +6762,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .bg-gray-600\/10 {
   background-color: rgb(82 82 82 / 0.1);
+}
+
+.bg-gray-600\/20 {
+  background-color: rgb(82 82 82 / 0.2);
 }
 
 .bg-gray-700 {
@@ -7046,10 +7028,6 @@ table.table-striped tbody tr:nth-child(even) {
   fill: #FF9040;
 }
 
-.fill-\[\#FFFFFF\] {
-  fill: #FFFFFF;
-}
-
 .fill-\[\#b982ff\] {
   fill: #b982ff;
 }
@@ -7309,11 +7287,6 @@ table.table-striped tbody tr:nth-child(even) {
   padding-right: 20px;
 }
 
-.px-\[3px\] {
-  padding-left: 3px;
-  padding-right: 3px;
-}
-
 .px-\[44px\] {
   padding-left: 44px;
   padding-right: 44px;
@@ -7322,6 +7295,11 @@ table.table-striped tbody tr:nth-child(even) {
 .px-\[50px\] {
   padding-left: 50px;
   padding-right: 50px;
+}
+
+.px-\[5px\] {
+  padding-left: 5px;
+  padding-right: 5px;
 }
 
 .px-\[80px\] {
@@ -7660,8 +7638,8 @@ table.table-striped tbody tr:nth-child(even) {
   padding-top: 25px;
 }
 
-.pt-\[3px\] {
-  padding-top: 3px;
+.pt-\[5px\] {
+  padding-top: 5px;
 }
 
 .text-left {
@@ -7893,10 +7871,6 @@ table.table-striped tbody tr:nth-child(even) {
 
 .leading-\[16px\] {
   line-height: 16px;
-}
-
-.leading-\[18px\] {
-  line-height: 18px;
 }
 
 .leading-\[19px\] {
@@ -8416,8 +8390,8 @@ table.table-striped tbody tr:nth-child(even) {
   outline-width: 1px;
 }
 
-.outline-2 {
-  outline-width: 2px;
+.outline-\[3px\] {
+  outline-width: 3px;
 }
 
 .outline-blue-400 {
@@ -11926,12 +11900,6 @@ https://tailwindcss.com/docs/utility-first
   transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
 }
 
-.hover\:scale-\[1\.01\]:hover {
-  --tw-scale-x: 1.01;
-  --tw-scale-y: 1.01;
-  transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
-}
-
 .hover\:scale-\[1\.02\]:hover {
   --tw-scale-x: 1.02;
   --tw-scale-y: 1.02;
@@ -12255,6 +12223,14 @@ https://tailwindcss.com/docs/utility-first
   --tw-shadow: 0 0 #0000;
   --tw-shadow-colored: 0 0 #0000;
   box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow);
+}
+
+.hover\:outline:hover {
+  outline-style: solid;
+}
+
+.hover\:outline-\[3px\]:hover {
+  outline-width: 3px;
 }
 
 .hover\:checked\:bg-blue-600:checked:hover {
@@ -12885,10 +12861,6 @@ https://tailwindcss.com/docs/utility-first
   background-color: rgb(223 128 40 / var(--tw-bg-opacity));
 }
 
-.dark .dark\:bg-\[rgba\(170\2c 170\2c 170\2c 0\.20\)\] {
-  background-color: rgba(170,170,170,0.20);
-}
-
 .dark .dark\:bg-black {
   --tw-bg-opacity: 1;
   background-color: rgb(0 0 0 / var(--tw-bg-opacity));
@@ -13033,6 +13005,14 @@ https://tailwindcss.com/docs/utility-first
 .dark .dark\:bg-white {
   --tw-bg-opacity: 1;
   background-color: rgb(255 255 255 / var(--tw-bg-opacity));
+}
+
+.dark .dark\:bg-white\/10 {
+  background-color: rgb(255 255 255 / 0.1);
+}
+
+.dark .dark\:bg-white\/20 {
+  background-color: rgb(255 255 255 / 0.2);
 }
 
 .dark .dark\:bg-white\/5 {
