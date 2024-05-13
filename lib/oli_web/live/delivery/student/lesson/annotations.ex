@@ -4,9 +4,11 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
   alias OliWeb.Components.Common
   alias Oli.Accounts.User
 
+  attr :section_slug, :string, required: true
   attr :create_new_annotation, :boolean, default: false
   attr :annotations, :any, required: true
   attr :current_user, Oli.Accounts.User, required: true
+  attr :is_instructor, :boolean, default: false
   attr :selected_point, :any, required: true
   attr :active_tab, :atom, default: :my_notes
   attr :search_results, :any, default: nil
@@ -22,10 +24,10 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
       </div>
       <div class="flex-1 flex flex-col bg-white dark:bg-black p-5">
         <.tab_group class="py-3">
-          <.tab name={:my_notes} selected={@active_tab == :my_notes}>
+          <.tab :if={not @is_instructor} name={:my_notes} selected={@active_tab == :my_notes}>
             <.user_icon class="mr-2" /> My Notes
           </.tab>
-          <.tab name={:all_notes} selected={@active_tab == :all_notes}>
+          <.tab name={:class_notes} selected={@active_tab == :class_notes || @is_instructor}>
             <.users_icon class="mr-2" /> Class Notes
           </.tab>
         </.tab_group>
@@ -34,6 +36,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
         <%= case @search_results do %>
           <% nil -> %>
             <.annotations
+              active_tab={@active_tab}
               annotations={@annotations}
               current_user={@current_user}
               create_new_annotation={@create_new_annotation}
@@ -41,10 +44,10 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
             />
           <% _ -> %>
             <.search_results
+              section_slug={@section_slug}
               search_results={@search_results}
-              search_term={@search_term}
               current_user={@current_user}
-              active_tab={@active_tab}
+              on_reveal_post="reveal_post"
             />
         <% end %>
       </div>
@@ -56,7 +59,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
   attr :annotations, :any, required: true
   attr :current_user, Oli.Accounts.User, required: true
   attr :selected_point, :any, required: true
-  attr :active_tab, :atom, default: :my_notes
+  attr :active_tab, :atom, required: true
 
   defp annotations(assigns) do
     ~H"""
@@ -91,11 +94,12 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
   end
 
   attr :current_user, Oli.Accounts.User, required: true
-  attr :active_tab, :atom, default: :my_notes
   attr :search_results, :any, default: nil
-  attr :search_term, :string, default: ""
+  attr :on_reveal_post, :string, default: nil
+  attr :section_slug, :string, default: nil
+  attr :show_go_to_post_link, :boolean, default: false
 
-  defp search_results(assigns) do
+  def search_results(assigns) do
     ~H"""
     <div class="flex-1 flex flex-col gap-3 overflow-y-auto pb-[80px]">
       <%= case @search_results do %>
@@ -103,15 +107,23 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
           <Common.loading_spinner />
         <% [] -> %>
           <div class="text-center p-4 text-gray-500">No results found</div>
-        <% annotations -> %>
-          <%= for annotation <- annotations do %>
+        <% results -> %>
+          <%= for post <- results do %>
             <div
-              class="flex flex-col cursor-pointer"
-              phx-click="reveal_post"
-              phx-value-point-marker-id={annotation.annotated_block_id}
-              phx-value-post-id={annotation.id}
+              class={["flex flex-col", if(@on_reveal_post, do: "cursor-pointer")]}
+              phx-click={@on_reveal_post}
+              phx-value-point-marker-id={post.annotated_block_id}
+              phx-value-post-id={post.id}
             >
-              <.search_result post={annotation} current_user={@current_user} />
+              <.search_result
+                post={post}
+                current_user={@current_user}
+                go_to_post_href={
+                  if(@show_go_to_post_link,
+                    do: ~p"/sections/#{@section_slug}/lesson/#{post.resource_slug}"
+                  )
+                }
+              />
             </div>
           <% end %>
       <% end %>
@@ -122,11 +134,12 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
   attr :post, Oli.Resources.Collaboration.Post, required: true
   attr :current_user, Oli.Accounts.User, required: true
   attr :is_reply, :boolean, default: false
+  attr :go_to_post_href, :string, default: nil
 
   defp search_result(assigns) do
     ~H"""
     <div class={[
-      "search-result flex flex-col border-gray-200 dark:border-gray-800 rounded",
+      "search-result flex flex-col bg-white border-gray-200 dark:border-gray-800 rounded",
       if(@is_reply, do: "my-2 pl-4 border-l-2", else: "p-4 border-2")
     ]}>
       <div class="flex flex-row justify-between mb-1">
@@ -152,6 +165,13 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
             <%= for reply <- replies do %>
               <.search_result post={reply} current_user={@current_user} is_reply={true} />
             <% end %>
+          </div>
+      <% end %>
+      <%= case @go_to_post_href do %>
+        <% nil -> %>
+        <% href -> %>
+          <div class="flex flex-row justify-end">
+            <.button variant={:link} href={href}>Go to Page</.button>
           </div>
       <% end %>
     </div>
@@ -314,11 +334,13 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
   end
 
   attr :search_term, :string, default: ""
+  attr :on_search, :string, default: "search"
+  attr :on_clear_search, :string, default: "clear_search"
   attr :rest, :global, include: ~w(class)
 
-  defp search_box(assigns) do
+  def search_box(assigns) do
     ~H"""
-    <form class={["flex flex-row", @rest[:class]]} phx-submit="search_annotations">
+    <form class={["flex flex-row", @rest[:class]]} phx-submit={@on_search}>
       <div class="flex-1 relative">
         <i class="fa-solid fa-search absolute left-4 top-4 text-gray-400 pointer-events-none text-lg">
         </i>
@@ -327,14 +349,14 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
           name="search_term"
           value={@search_term}
           class="w-full border border-gray-400 dark:border-gray-700 rounded-lg px-12 py-3"
-          phx-change="search_annotations"
+          phx-change={@on_search}
           phx-debounce="500"
         />
         <button
           :if={@search_term != ""}
           type="button"
           class="absolute right-0 top-0 bottom-0 py-3 px-4"
-          phx-click="clear_search"
+          phx-click={@on_clear_search}
         >
           <i class="fa-solid fa-xmark text-lg"></i>
         </button>
@@ -404,25 +426,34 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
   attr :post, Oli.Resources.Collaboration.Post, required: true
   attr :current_user, Oli.Accounts.User, required: true
   attr :disable_anonymous_option, :boolean, default: false
+  attr :go_to_post_href, :string, default: nil
+  attr :rest, :global, include: ~w(class)
 
-  defp post(assigns) do
+  def post(assigns) do
     ~H"""
-    <div class="post flex flex-col p-4 border-2 border-gray-200 dark:border-gray-800 rounded">
-      <div class="flex flex-row justify-between mb-1">
-        <div class="font-semibold">
+    <div
+      id={"post-#{@post.id}"}
+      class={[
+        "post flex flex-col p-4 border-2 border-gray-200 dark:border-gray-800 rounded",
+        @rest[:class]
+      ]}
+    >
+      <div class="flex flex-row justify-between mb-1" role="post header">
+        <div class="font-semibold" role="user name">
           <%= post_creator(@post, @current_user) %>
         </div>
         <div class="text-sm text-gray-500">
           <%= Timex.from_now(@post.inserted_at) %>
         </div>
       </div>
-      <p class="my-2">
+      <p class="my-2" role="post content">
         <%= @post.content.message %>
       </p>
       <.post_actions
         post={@post}
         on_toggle_reaction="toggle_reaction"
         on_toggle_replies="toggle_post_replies"
+        go_to_post_href={@go_to_post_href}
       />
       <.post_replies
         post={@post}
@@ -448,11 +479,11 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
       "Me"
     else
       case post.user do
-        %User{guest: true} ->
-          "Anonymous " <> Oli.Predefined.map_id_to_anonymous_name(post.user_id)
-
-        %User{name: name} ->
+        %User{guest: false, name: name} ->
           name
+
+        _ ->
+          "Anonymous " <> Oli.Predefined.map_id_to_anonymous_name(post.user_id)
       end
     end
   end
@@ -460,6 +491,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
   attr :post, Oli.Resources.Collaboration.Post, required: true
   attr :on_toggle_reaction, :string, default: nil
   attr :on_toggle_replies, :string, default: nil
+  attr :go_to_post_href, :string, default: nil
 
   defp post_actions(assigns) do
     case assigns.post do
@@ -470,12 +502,17 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
         </div>
         """
 
-      %Oli.Resources.Collaboration.Post{visibility: :public} ->
+      %Oli.Resources.Collaboration.Post{
+        visibility: :public,
+        reaction_summaries: reaction_summaries
+      }
+      when not is_nil(reaction_summaries) ->
         ~H"""
-        <div class="flex flex-row gap-3 my-2">
+        <div class="flex flex-row gap-3 my-2" role="post actions">
           <button
             :if={@on_toggle_reaction}
             class="inline-flex gap-1 text-sm text-gray-500 bold py-1 px-2 rounded-lg hover:bg-gray-100"
+            role="reactions"
             phx-click={@on_toggle_reaction}
             phx-value-reaction={:like}
             phx-value-post-id={assigns.post.id}
@@ -491,6 +528,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
           <button
             :if={@on_toggle_replies}
             class="inline-flex gap-1 text-sm text-gray-500 bold py-1 px-2 rounded-lg hover:bg-gray-100"
+            role="replies"
             phx-click={@on_toggle_replies}
             phx-value-post-id={assigns.post.id}
           >
@@ -499,12 +537,24 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
               do: @post.replies_count
             ) %>
           </button>
+          <div class="flex-1" />
+          <%= case @go_to_post_href do %>
+            <% nil -> %>
+            <% href -> %>
+              <.button variant={:link} href={href}>Go to Page</.button>
+          <% end %>
         </div>
         """
 
       _ ->
         ~H"""
-
+        <%= case @go_to_post_href do %>
+          <% nil -> %>
+          <% href -> %>
+            <div class="flex flex-row gap-3 my-2 justify-end" role="post actions">
+              <.button variant={:link} href={href}>Go to Page</.button>
+            </div>
+        <% end %>
         """
     end
   end

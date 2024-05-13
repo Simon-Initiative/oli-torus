@@ -127,6 +127,39 @@ defmodule OliWeb.Resources.AlternativesEditorTest do
       # verify alternatives group contains new option
       assert has_element?(view, "div", "Excel")
       refute has_element?(view, "em", "There are no options in this group")
+
+      # show edit option modal
+      view
+      |> element(~s|button[phx-click="show_edit_option_modal"]|)
+      |> render_click()
+
+      assert has_element?(view, ~s|div[class="modal-dialog"]|)
+      assert has_element?(view, "h5", "Edit Option")
+
+      # edit option
+      view
+      |> element(~s|form[phx-submit="edit_option"|)
+      |> render_submit(%{"params" => %{"name" => "Shine"}})
+
+      # verify alternatives group contains the edited option
+      assert has_element?(view, "div", "Shine")
+      refute has_element?(view, "div", "Excel")
+
+      # show delete option modal
+      view
+      |> element(~s|button[phx-click="show_delete_option_modal"]|)
+      |> render_click()
+
+      assert has_element?(view, ~s|div[class="modal-dialog"]|)
+      assert has_element?(view, "h5", "Delete Option")
+
+      # delete option
+      view
+      |> element(~s|button[phx-click="delete_option"]|)
+      |> render_click()
+
+      # verify alternatives group doesn't contain the deleted option
+      assert has_element?(view, "em", "There are no options in this group")
     end
   end
 end

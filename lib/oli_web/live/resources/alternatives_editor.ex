@@ -91,6 +91,10 @@ defmodule OliWeb.Resources.AlternativesEditor do
     """
   end
 
+  attr(:editing_enabled, :boolean, default: true)
+  attr(:source, :atom, default: :alternatives)
+  attr(:group, :any)
+
   def group(assigns) do
     ~H"""
     <div class="alternatives-group bg-gray-100 dark:bg-neutral-800 dark:border-gray-700 border p-3 my-2">
@@ -103,12 +107,14 @@ defmodule OliWeb.Resources.AlternativesEditor do
         </div>
         <div class="flex-grow-1"></div>
         <.icon_button
+          :if={@editing_enabled}
           class="mr-1"
           icon="fa-solid fa-pencil"
           on_click="show_edit_group_modal"
           values={["phx-value-resource-id": @group.resource_id]}
         />
         <button
+          :if={@source == :alternatives}
           class="btn btn-danger btn-sm mr-2"
           phx-click="show_delete_group_modal"
           phx-value-resource_id={@group.resource_id}
@@ -120,7 +126,7 @@ defmodule OliWeb.Resources.AlternativesEditor do
         <%= if Enum.count(@group.content["options"]) > 0 do %>
           <ul class="list-group">
             <%= for option <- @group.content["options"] do %>
-              <.group_option group={@group} option={option} show_actions={true} />
+              <.group_option group={@group} option={option} show_actions={@editing_enabled} />
             <% end %>
           </ul>
         <% else %>
@@ -129,6 +135,7 @@ defmodule OliWeb.Resources.AlternativesEditor do
           </div>
         <% end %>
         <button
+          :if={@editing_enabled}
           class="btn btn-link btn-sm my-2"
           phx-click="show_create_option_modal"
           phx-value-resource_id={@group.resource_id}

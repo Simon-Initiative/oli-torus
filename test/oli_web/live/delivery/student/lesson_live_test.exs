@@ -12,6 +12,8 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
   alias Oli.Resources.ResourceType
   alias OliWeb.Delivery.Student.Utils
 
+  @default_selected_view :gallery
+
   defp live_view_adaptive_lesson_live_route(section_slug, revision_slug, request_path \\ nil)
 
   defp live_view_adaptive_lesson_live_route(section_slug, revision_slug, nil) do
@@ -357,10 +359,17 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       Sections.mark_section_visited_for_student(section, user)
 
       {:error, {:redirect, %{to: redirect_path}}} =
-        live(conn, Utils.lesson_live_path(section.slug, exploration_1.slug))
+        live(
+          conn,
+          Utils.lesson_live_path(section.slug, exploration_1.slug,
+            request_path: "some_request_path",
+            selected_view: @default_selected_view
+          )
+        )
 
       assert redirect_path ==
-               live_view_adaptive_lesson_live_route(section.slug, exploration_1.slug)
+               live_view_adaptive_lesson_live_route(section.slug, exploration_1.slug) <>
+                 "?request_path=some_request_path&selected_view=gallery"
     end
 
     test "can access when enrolled to course", %{
@@ -766,11 +775,18 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       |> render_click
 
       # It redirects to the next page, but still referencing the targeted Learn view in the URL with the next page resource
-      request_path = Utils.learn_live_path(section.slug, target_resource_id: page_2.resource_id)
+      request_path =
+        Utils.learn_live_path(section.slug,
+          target_resource_id: page_2.resource_id,
+          selected_view: @default_selected_view
+        )
 
       assert_redirected(
         view,
-        Utils.lesson_live_path(section.slug, page_2.slug, request_path: request_path)
+        Utils.lesson_live_path(section.slug, page_2.slug,
+          request_path: request_path,
+          selected_view: @default_selected_view
+        )
       )
     end
 
@@ -788,7 +804,13 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       request_path = ~p"/sections/#{section.slug}/assignments"
 
       {:ok, view, _html} =
-        live(conn, Utils.lesson_live_path(section.slug, page_1.slug, request_path: request_path))
+        live(
+          conn,
+          Utils.lesson_live_path(section.slug, page_1.slug,
+            request_path: request_path,
+            selected_view: @default_selected_view
+          )
+        )
 
       view
       |> element(~s{div[role="next_page"] a})
@@ -796,7 +818,10 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
 
       assert_redirected(
         view,
-        Utils.lesson_live_path(section.slug, page_2.slug, request_path: request_path)
+        Utils.lesson_live_path(section.slug, page_2.slug,
+          request_path: request_path,
+          selected_view: @default_selected_view
+        )
       )
     end
 
@@ -813,7 +838,11 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       Sections.mark_section_visited_for_student(section, user)
 
       # next page is a container
-      {:ok, view, _html} = live(conn, Utils.lesson_live_path(section.slug, page_2.slug))
+      {:ok, view, _html} =
+        live(
+          conn,
+          Utils.lesson_live_path(section.slug, page_2.slug, selected_view: @default_selected_view)
+        )
 
       view
       |> element(~s{div[role="next_page"] a})
@@ -821,7 +850,10 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
 
       assert_redirected(
         view,
-        Utils.learn_live_path(section.slug, target_resource_id: module_2.resource_id)
+        Utils.learn_live_path(section.slug,
+          target_resource_id: module_2.resource_id,
+          selected_view: @default_selected_view
+        )
       )
 
       # previous page is a container
@@ -833,7 +865,10 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
 
       assert_redirected(
         view,
-        Utils.learn_live_path(section.slug, target_resource_id: module_2.resource_id)
+        Utils.learn_live_path(section.slug,
+          target_resource_id: module_2.resource_id,
+          selected_view: @default_selected_view
+        )
       )
     end
 
@@ -846,7 +881,11 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
       Sections.mark_section_visited_for_student(section, user)
 
-      {:ok, view, _html} = live(conn, Utils.lesson_live_path(section.slug, page_1.slug))
+      {:ok, view, _html} =
+        live(
+          conn,
+          Utils.lesson_live_path(section.slug, page_1.slug, selected_view: @default_selected_view)
+        )
 
       view
       |> element(~s{div[role="back_link"] a})
@@ -854,7 +893,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
 
       assert_redirected(
         view,
-        Utils.learn_live_path(section.slug)
+        Utils.learn_live_path(section.slug, selected_view: @default_selected_view)
       )
     end
 
@@ -938,7 +977,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
 
       assert_redirected(
         view,
-        Utils.learn_live_path(section.slug)
+        Utils.learn_live_path(section.slug, selected_view: @default_selected_view)
       )
     end
   end
@@ -980,6 +1019,20 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
                view,
                "button[phx-click='toggle_sidebar']"
              )
+    end
+
+    test "can access user menu on the header", %{
+      conn: conn,
+      section: section,
+      user: user,
+      page_1: page_1
+    } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+
+      {:ok, view, _html} = live(conn, Utils.lesson_live_path(section.slug, page_1.slug))
+
+      assert has_element?(view, "button[id=user-account-menu]")
     end
   end
 
@@ -1051,7 +1104,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       |> render_click
 
       view
-      |> element(~s{button[phx-click='select_tab'][phx-value-tab='all_notes']})
+      |> element(~s{button[phx-click='select_tab'][phx-value-tab='class_notes']})
       |> render_click
 
       wait_while(fn -> has_element?(view, "svg.loading") end)
@@ -1097,7 +1150,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       |> render_click
 
       view
-      |> element(~s{button[phx-click='select_tab'][phx-value-tab='all_notes']})
+      |> element(~s{button[phx-click='select_tab'][phx-value-tab='class_notes']})
       |> render_click
 
       wait_while(fn -> has_element?(view, "svg.loading") end)

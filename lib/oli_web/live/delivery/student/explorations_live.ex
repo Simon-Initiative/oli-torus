@@ -19,11 +19,11 @@ defmodule OliWeb.Delivery.Student.ExplorationsLive do
   def render(assigns) do
     ~H"""
     <.hero_banner class="bg-explorations">
-      <h1 class="text-6xl mb-8">Your Explorations</h1>
+      <h1 class="text-4xl md:text-6xl mb-8">Your Explorations</h1>
       <p>All your explorations in one place.</p>
       <p>You unlock explorations as you solve problems and gain useful skills.</p>
     </.hero_banner>
-    <div class="container mx-auto flex flex-col mt-6 px-16">
+    <div class="overflow-x-scroll md:overflow-x-auto container mx-auto flex flex-col mt-6 px-16">
       <div :if={Enum.count(@explorations_by_container) == 0} class="text-center" role="alert">
         <h6>There are no explorations available</h6>
       </div>
@@ -54,7 +54,10 @@ defmodule OliWeb.Delivery.Student.ExplorationsLive do
 
   defp exploration_card(assigns) do
     ~H"""
-    <div class="flex flex-col lg:flex-row-reverse items-center rounded-lg bg-black/5 dark:bg-white/5 mb-4">
+    <div
+      id={"exploration_card_#{@exploration.id}"}
+      class="flex flex-col lg:flex-row-reverse items-center rounded-lg bg-black/5 dark:bg-white/5 mb-4"
+    >
       <img
         class="object-cover rounded-t-lg lg:rounded-tl-none w-full lg:w-[300px] lg:rounded-r-lg h-64 lg:h-full shrink-0"
         src={poster_image(@exploration)}
@@ -83,7 +86,7 @@ defmodule OliWeb.Delivery.Student.ExplorationsLive do
     if preview_mode do
       ~p"/sections/#{section_slug}/preview/page/#{exploration.slug}"
     else
-      ~p"/sections/#{section_slug}/page/#{exploration.slug}"
+      ~p"/sections/#{section_slug}/lesson/#{exploration.slug}"
     end
   end
 

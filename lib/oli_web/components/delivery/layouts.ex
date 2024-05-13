@@ -13,7 +13,6 @@ defmodule OliWeb.Components.Delivery.Layouts do
   alias Oli.Delivery.Sections.Section
   alias Oli.Accounts.{User, Author}
   alias Oli.Branding
-  alias Oli.Branding.Brand
   alias OliWeb.Components.Delivery.UserAccount
   alias Oli.Resources.Collaboration.CollabSpaceConfig
   alias OliWeb.Delivery.Student.Utils
@@ -22,22 +21,26 @@ defmodule OliWeb.Components.Delivery.Layouts do
   attr(:is_system_admin, :boolean, required: true)
   attr(:section, Section, default: nil)
   attr(:project, Project, default: nil)
-  attr(:brand, Brand)
   attr(:preview_mode, :boolean)
+
+  attr(:force_show_user_menu, :boolean,
+    default: false,
+    doc: "Forces the user menu to be shown on the header and does not show the mobile menu button"
+  )
 
   def header(assigns) do
     ~H"""
     <div class="fixed z-50 w-full h-14 flex flex-row bg-delivery-header dark:bg-delivery-header-dark shadow-sm">
-      <div class="w-48 p-2" tab-index="0">
+      <div class="w-48 p-2 flex shrink-0" tab-index="0">
         <a href={logo_link_path(@preview_mode, @section, @ctx.user)}>
-          <.logo_img />
+          <.logo_img section={@section} />
         </a>
       </div>
       <div class="flex items-center flex-grow-1 p-2">
         <.title section={@section} project={@project} preview_mode={@preview_mode} />
       </div>
-      <div class="flex items-center p-2">
-        <div class="hidden md:block">
+      <div class="flex items-center p-2 ml-auto">
+        <div class={if @force_show_user_menu, do: "block", else: "hidden md:block"}>
           <UserAccount.menu
             id="user-account-menu"
             ctx={@ctx}
@@ -46,8 +49,11 @@ defmodule OliWeb.Components.Delivery.Layouts do
           />
         </div>
         <button
-          class="block md:hidden py-1.5 px-3 rounded border border-transparent hover:border-gray-300 active:bg-gray-100"
-          phx-click={toggle_class(%JS{}, "hidden", to: "#nav-menu")}
+          class={[
+            "py-1.5 px-3 rounded border border-transparent hover:border-gray-300 active:bg-gray-100",
+            if(@force_show_user_menu, do: "hidden", else: "md:hidden")
+          ]}
+          phx-click={JS.toggle(to: "#mobile-nav-menu", display: "flex")}
         >
           <i class="fa-solid fa-bars"></i>
         </button>
@@ -62,16 +68,12 @@ defmodule OliWeb.Components.Delivery.Layouts do
 
   def title(assigns) do
     ~H"""
-    <div :if={@section} class="hidden md:block">
-      <span class="text-2xl text-bold">
-        <%= @section.title %><%= if @preview_mode, do: " (Preview Mode)" %>
-      </span>
-    </div>
-    <div :if={@project} class="hidden md:block">
-      <span class="text-2xl text-bold">
-        <%= @project.title %>
-      </span>
-    </div>
+    <span :if={@section} class="text-2xl text-bold hidden md:block">
+      <%= @section.title %><%= if @preview_mode, do: " (Preview Mode)" %>
+    </span>
+    <span :if={@project} class="text-2xl text-bold hidden md:block">
+      <%= @project.title %>
+    </span>
     """
   end
 
@@ -83,78 +85,103 @@ defmodule OliWeb.Components.Delivery.Layouts do
 
   def sidebar_nav(assigns) do
     ~H"""
-    <nav
-      id="nav-menu"
-      class="
+    <div>
+      <nav
+        id="desktop-nav-menu"
+        class="
         fixed
         z-50
+        w-full
+        hidden
         mt-14
         md:h-[calc(100vh-56px)]
-        flex
-        hidden
         md:flex
         flex-col
-        w-full
         md:w-48
         shadow-sm
         bg-delivery-navbar
         dark:bg-delivery-navbar-dark
       "
-    >
-      <.nav_link href={path_for(:index, @section, @preview_mode)} is_active={@active_tab == :index}>
-        Home
-      </.nav_link>
-      <.nav_link href={path_for(:learn, @section, @preview_mode)} is_active={@active_tab == :learn}>
-        Learn
-      </.nav_link>
-
-      <.nav_link
-        :if={@section.contains_discussions}
-        href={path_for(:discussions, @section, @preview_mode)}
-        is_active={@active_tab == :discussions}
       >
-        Discussions
-      </.nav_link>
-      <.nav_link
-        href={path_for(:schedule, @section, @preview_mode)}
-        is_active={@active_tab == :schedule}
-      >
-        Schedule
-      </.nav_link>
-      <.nav_link
-        :if={@section.contains_explorations}
-        href={path_for(:explorations, @section, @preview_mode)}
-        is_active={@active_tab == :explorations}
-      >
-        Explorations
-      </.nav_link>
-      <.nav_link
-        :if={@section.contains_deliberate_practice}
-        href={path_for(:practice, @section, @preview_mode)}
-        is_active={@active_tab == :practice}
-      >
-        Practice
-      </.nav_link>
-
-      <div class="hidden md:flex w-full px-6 py-4 text-center mt-auto">
-        <.tech_support_button id="tech-support" ctx={@ctx} />
-      </div>
-
-      <div class="flex flex-row md:hidden align-center justify-between border-t border-gray-300 dark:border-gray-800">
-        <div class="px-6 py-4">
-          <.tech_support_button id="tech-support-collapsed" ctx={@ctx} />
+        <.sidebar_links active_tab={@active_tab} section={@section} preview_mode={@preview_mode} />
+        <div class="flex w-full px-6 py-4 text-center mt-auto">
+          <.tech_support_button id="tech-support" ctx={@ctx} />
         </div>
-
-        <div class="px-6 py-4">
+      </nav>
+      <nav
+        id="mobile-nav-menu"
+        class="
+        fixed
+        z-50
+        w-full
+        mt-14
+        hidden
+        md:hidden
+        flex-col
+        shadow-sm
+        bg-delivery-navbar
+        dark:bg-delivery-navbar-dark
+      "
+        phx-click-away={JS.hide()}
+      >
+        <.sidebar_links active_tab={@active_tab} section={@section} preview_mode={@preview_mode} />
+        <div class="px-4 py-2 flex flex-row align-center justify-between border-t border-gray-300 dark:border-gray-800">
+          <div class="flex items-center">
+            <.tech_support_button id="mobile-tech-support" ctx={@ctx} />
+          </div>
           <UserAccount.menu
-            id="user-account-menu-sidebar"
+            id="mobile-user-account-menu-sidebar"
             ctx={@ctx}
             is_system_admin={@is_system_admin}
             section={@section}
+            dropdown_class="absolute -translate-y-[calc(100%+58px)] right-0 border"
           />
         </div>
-      </div>
-    </nav>
+      </nav>
+    </div>
+    """
+  end
+
+  attr(:section, Section, default: nil)
+  attr(:active_tab, :atom)
+  attr(:preview_mode, :boolean)
+
+  def sidebar_links(assigns) do
+    ~H"""
+    <.nav_link href={path_for(:index, @section, @preview_mode)} is_active={@active_tab == :index}>
+      Home
+    </.nav_link>
+    <.nav_link href={path_for(:learn, @section, @preview_mode)} is_active={@active_tab == :learn}>
+      Learn
+    </.nav_link>
+
+    <.nav_link
+      :if={@section.contains_discussions}
+      href={path_for(:discussions, @section, @preview_mode)}
+      is_active={@active_tab == :discussions}
+    >
+      Discussions
+    </.nav_link>
+    <.nav_link
+      href={path_for(:schedule, @section, @preview_mode)}
+      is_active={@active_tab == :schedule}
+    >
+      Schedule
+    </.nav_link>
+    <.nav_link
+      :if={@section.contains_explorations}
+      href={path_for(:explorations, @section, @preview_mode)}
+      is_active={@active_tab == :explorations}
+    >
+      Explorations
+    </.nav_link>
+    <.nav_link
+      :if={@section.contains_deliberate_practice}
+      href={path_for(:practice, @section, @preview_mode)}
+      is_active={@active_tab == :practice}
+    >
+      Practice
+    </.nav_link>
     """
   end
 
@@ -253,7 +280,6 @@ defmodule OliWeb.Components.Delivery.Layouts do
   end
 
   attr(:section, Section)
-  attr(:brand, Brand)
 
   def logo_img(assigns) do
     assigns =
@@ -286,6 +312,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
   attr(:next_page, :map)
   attr(:section_slug, :string)
   attr(:request_path, :string)
+  attr(:selected_view, :string, doc: "The selected view for the Learn page (gallery or outline)")
 
   def previous_next_nav(assigns) do
     # <.links /> were changed from "navigate" to "href" to force a page reload
@@ -319,10 +346,13 @@ defmodule OliWeb.Components.Delivery.Layouts do
         role="prev_page"
       >
         <div class="px-2 lg:px-6 rounded justify-end items-center gap-2 flex">
-          <.link href={resource_navigation_url(@previous_page, @section_slug, @request_path)}>
-            <div class="w-[72px] h-10 opacity-30 hover:opacity-40 bg-blue-600 flex items-center justify-center cursor-pointer">
-              <.left_arrow />
-            </div>
+          <.link
+            href={
+              resource_navigation_url(@previous_page, @section_slug, @request_path, @selected_view)
+            }
+            class="w-[72px] h-10 opacity-90 hover:opacity-100 bg-blue-600 flex items-center justify-center"
+          >
+            <.left_arrow />
           </.link>
         </div>
         <div class="grow shrink basis-0 dark:text-white text-xs font-normal overflow-hidden text-ellipsis">
@@ -339,10 +369,11 @@ defmodule OliWeb.Components.Delivery.Layouts do
           <%= @next_page["title"] %>
         </div>
         <div class="px-2 lg:px-6 py-2 rounded justify-end items-center gap-2 flex">
-          <.link href={resource_navigation_url(@next_page, @section_slug, @request_path)}>
-            <div class="w-[72px] h-10 opacity-90 hover:opacity-100 bg-blue-600 flex items-center justify-center cursor-pointer">
-              <.right_arrow />
-            </div>
+          <.link
+            href={resource_navigation_url(@next_page, @section_slug, @request_path, @selected_view)}
+            class="w-[72px] h-10 opacity-90 hover:opacity-100 bg-blue-600 flex items-center justify-center"
+          >
+            <.right_arrow />
           </.link>
         </div>
       </div>
@@ -368,22 +399,32 @@ defmodule OliWeb.Components.Delivery.Layouts do
   defp resource_navigation_url(
          %{"slug" => slug, "type" => "page", "id" => resource_id},
          section_slug,
-         request_path
+         request_path,
+         selected_view
        ) do
     # If the request_path is the Learn page and we navigate to a different lesson,
     # we need to update the request_path to include the new target resource.
     request_path =
       if request_path && String.contains?(request_path, "/learn") do
-        Utils.learn_live_path(section_slug, target_resource_id: resource_id)
+        Utils.learn_live_path(section_slug,
+          target_resource_id: resource_id,
+          selected_view: selected_view
+        )
       else
         request_path
       end
 
-    Utils.lesson_live_path(section_slug, slug, request_path: request_path)
+    Utils.lesson_live_path(section_slug, slug,
+      request_path: request_path,
+      selected_view: selected_view
+    )
   end
 
-  defp resource_navigation_url(%{"id" => container_id}, section_slug, _) do
-    Utils.learn_live_path(section_slug, target_resource_id: container_id)
+  defp resource_navigation_url(%{"id" => container_id}, section_slug, _, selected_view) do
+    Utils.learn_live_path(section_slug,
+      target_resource_id: container_id,
+      selected_view: selected_view
+    )
   end
 
   attr(:to, :string)
@@ -455,24 +496,6 @@ defmodule OliWeb.Components.Delivery.Layouts do
     >
       <path d="M7.825 13H20V11H7.825L13.425 5.4L12 4L4 12L12 20L13.425 18.6L7.825 13Z" fill="white" />
     </svg>
-    """
-  end
-
-  def annotations_dropdown(assigns) do
-    ~H"""
-    <div class="flex items-center gap-2.5 absolute top-10 right-12 z-50 p-4 hidden">
-      <div class="flex py-1.5 pl-[18px] items-center gap-2.5">
-        <div class="w-6 h-6 relative opacity-50">
-          <i class="fa-solid fa-eye" />
-        </div>
-        <div class="w-[132px] dark:text-white text-xs font-bold uppercase tracking-wide">
-          All annotations
-        </div>
-      </div>
-      <div class="w-6 h-6 justify-center items-center gap-2.5 inline-flex">
-        <i class="fa-solid fa-caret-down" />
-      </div>
-    </div>
     """
   end
 

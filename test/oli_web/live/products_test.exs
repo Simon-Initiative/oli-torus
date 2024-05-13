@@ -6,9 +6,10 @@ defmodule OliWeb.ProductsLiveTest do
   import Oli.Factory
   import Mox
 
-  alias Oli.Delivery.Sections
+  alias Oli.Delivery.{Paywall, Sections}
   alias OliWeb.Router.Helpers, as: Routes
   alias Oli.Utils.Seeder
+  alias Oli.Authoring.Course
 
   @live_view_all_products Routes.live_path(OliWeb.Endpoint, OliWeb.Products.ProductsView)
 
@@ -23,6 +24,15 @@ defmodule OliWeb.ProductsLiveTest do
   defp create_product(_conn) do
     product =
       insert(:section, type: :blueprint, requires_payment: true, amount: Money.new(:USD, 10))
+
+    [product: product]
+  end
+
+  defp create_product_with_payment_codes(_conn) do
+    product =
+      insert(:section, type: :blueprint, requires_payment: true, amount: Money.new(:USD, 10))
+
+    Paywall.create_payment_codes(product.slug, 20)
 
     [product: product]
   end
@@ -141,6 +151,8 @@ defmodule OliWeb.ProductsLiveTest do
       assert has_element?(view, "a", product_2.title)
 
       render_hook(view, "text_search_change", %{value: "25"})
+
+      wait_while(fn -> has_element?(view, "a", product.title) end)
 
       refute has_element?(view, "a", product.title)
       assert has_element?(view, "a", product_2.title)
@@ -390,5 +402,139 @@ defmodule OliWeb.ProductsLiveTest do
 
       assert render(view) =~ "Create a new product with title"
     end
+  end
+
+  describe "product overview - transfer payment codes" do
+    setup [:admin_conn, :create_product_with_payment_codes]
+
+    test "shows transfer payment codes button if product has payment codes and project has this option enabled",
+         %{conn: conn, product: product} do
+      allow_transfer_payment_codes(product.base_project)
+
+      {:ok, view, _html} = live(conn, ~p"/authoring/products/#{product.slug}")
+
+      assert view
+             |> element("button[phx-click=\"show_products_to_transfer\"]")
+             |> render() =~ "Transfer Payment Codes"
+
+      assert has_element?(view, "div", "Allow transfer of payment codes to another product.")
+    end
+
+    test "does not show transfer payment codes button if project has this option disabled", %{
+      conn: conn,
+      product: product
+    } do
+      {:ok, view, _html} = live(conn, ~p"/authoring/products/#{product.slug}")
+
+      refute has_element?(view, "button", "Transfer Payment Codes")
+
+      refute has_element?(view, "div", "Allow transfer of payment codes to another product.")
+    end
+
+    test "does not show transfer payment codes button if product has no payment codes", %{
+      conn: conn
+    } do
+      product =
+        insert(:section, type: :blueprint, requires_payment: true, amount: Money.new(:USD, 10))
+
+      allow_transfer_payment_codes(product.base_project)
+
+      {:ok, view, _html} = live(conn, ~p"/authoring/products/#{product.slug}")
+
+      refute has_element?(view, "button", "Transfer Payment Codes")
+
+      refute has_element?(view, "div", "Allow transfer of payment codes to another product.")
+    end
+
+    test "shows a modal to select another product to transfer payment codes when clicking on transfer payment codes button",
+         %{conn: conn, product: product} do
+      product_2 =
+        insert(:section,
+          type: :blueprint,
+          requires_payment: true,
+          amount: Money.new(:USD, 10),
+          base_project: product.base_project,
+          base_project_id: product.base_project_id
+        )
+
+      allow_transfer_payment_codes(product.base_project)
+
+      {:ok, view, _html} = live(conn, ~p"/authoring/products/#{product.slug}")
+
+      view
+      |> element("button[phx-click=\"show_products_to_transfer\"]")
+      |> render_click()
+
+      assert has_element?(view, "h5", "Transfer Payment Codes")
+
+      assert has_element?(
+               view,
+               "h6",
+               "Select a product to transfer payment codes from this product."
+             )
+
+      assert has_element?(view, ".torus-select option", product_2.title)
+    end
+
+    test "shows a message when there are no products available to transfer payment codes", %{
+      conn: conn,
+      product: product
+    } do
+      allow_transfer_payment_codes(product.base_project)
+
+      {:ok, view, _html} = live(conn, ~p"/authoring/products/#{product.slug}")
+
+      view
+      |> element("button[phx-click=\"show_products_to_transfer\"]")
+      |> render_click()
+
+      assert has_element?(
+               view,
+               "h6",
+               "There are no products available to transfer payment codes."
+             )
+    end
+
+    test "transfers payment codes to another product", %{conn: conn, product: product} do
+      product_2 =
+        insert(:section,
+          type: :blueprint,
+          requires_payment: true,
+          amount: Money.new(:USD, 10),
+          base_project: product.base_project,
+          base_project_id: product.base_project_id
+        )
+
+      allow_transfer_payment_codes(product.base_project)
+
+      {:ok, view, _html} = live(conn, ~p"/authoring/products/#{product.slug}")
+
+      view
+      |> element("button[phx-click=\"show_products_to_transfer\"]")
+      |> render_click()
+
+      view
+      |> element("form[phx-submit=\"submit_transfer_payment_codes\"]")
+      |> render_submit(%{
+        "product_id" => product_2.id
+      })
+
+      refute Paywall.has_payment_codes?(product.id)
+      assert Paywall.has_payment_codes?(product_2.id)
+
+      flash =
+        assert_redirected(
+          view,
+          ~p"/authoring/products/#{product.slug}"
+        )
+
+      assert flash["info"] == "Payment codes transferred successfully"
+    end
+  end
+
+  defp allow_transfer_payment_codes(project) do
+    Course.update_project(project, %{
+      allow_transfer_payment_codes: true
+    })
   end
 end
