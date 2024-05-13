@@ -1418,7 +1418,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
   } = page_details) do
 
     Oli.Analytics.Summary.XAPI.PageViewed.new(context, page_details)
-    |> Oli.Analytics.EventEmitter.emit()
+    |> Oli.Analytics.EventEmitter.emit_page_viewed()
 
   end
 
