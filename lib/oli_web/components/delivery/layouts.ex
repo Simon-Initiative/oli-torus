@@ -176,7 +176,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
     <button
       phx-click={JS.patch(path_for(@active_tab, @section, @preview_mode, !@sidebar_expanded))}
       title={if @sidebar_expanded, do: "Minimize", else: "Expand"}
-      class="flex items-center justify-center ml-auto w-6 h-6 bg-neutral-800 rounded-tl-[52px] rounded-bl-[52px]"
+      class="flex items-center justify-center ml-auto w-6 h-6 bg-gray-400 dark:bg-neutral-800 rounded-tl-[52px] rounded-bl-[52px] stroke-black/70 hover:stroke-black/90 dark:stroke-[#B8B4BF] hover:dark:stroke-white"
     >
       <div class={if !@sidebar_expanded, do: "rotate-180"}>
         <Icons.left_chevron />
@@ -338,15 +338,17 @@ defmodule OliWeb.Components.Delivery.Layouts do
       class={["w-full h-11 flex-col justify-center items-center flex hover:no-underline"]}
     >
       <div class={[
-        "w-full h-9 px-3 py-3 hover:bg-neutral-800/60 rounded-lg justify-start items-center gap-3 inline-flex",
-        if(@is_active, do: "bg-neutral-800")
+        "w-full h-9 px-3 py-3 hover:bg-gray-300 hover:dark:bg-neutral-800/60 rounded-lg justify-start items-center gap-3 inline-flex",
+        if(@is_active,
+          do: "bg-gray-400 hover:!bg-gray-400 dark:bg-neutral-800 hover:dark:!bg-neutral-800"
+        )
       ]}>
         <div class="w-5 h-5 flex items-center justify-center"><%= render_slot(@icon) %></div>
         <div
           :if={@sidebar_expanded}
           class={[
-            "text-gray-400 text-sm font-medium tracking-tight",
-            if(@is_active, do: "!font-semibold !text-white")
+            "text-black/70 dark:text-gray-400 text-sm font-medium tracking-tight",
+            if(@is_active, do: "!font-semibold dark:!text-white !text-black/90")
           ]}
         >
           <%= render_slot(@text) %>
@@ -382,7 +384,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
     ~H"""
     <button
       onclick="window.showHelpModal();"
-      class="w-full h-11 px-3 py-3 flex-col justify-center items-start inline-flex text-gray-400 hover:text-white stroke-[#B8B4BF] hover:stroke-white"
+      class="w-full h-11 px-3 py-3 flex-col justify-center items-start inline-flex text-black/70 hover:text-black/90 dark:text-gray-400 hover:dark:text-white stroke-black/70 hover:stroke-black/90 dark:stroke-[#B8B4BF] hover:dark:stroke-white"
     >
       <div class="justify-start items-end gap-3 inline-flex">
         <div class="w-5 h-5 flex items-center justify-center">
@@ -400,9 +402,9 @@ defmodule OliWeb.Components.Delivery.Layouts do
     ~H"""
     <.link
       navigate={~p"/sections"}
-      class="w-full h-11 flex-col justify-center items-center flex hover:no-underline text-gray-400 hover:text-white stroke-[#B8B4BF] hover:stroke-white"
+      class="w-full h-11 flex-col justify-center items-center flex hover:no-underline text-black/70 hover:text-black/90 dark:text-gray-400 hover:dark:text-white stroke-black/70 hover:stroke-black/90 dark:stroke-[#B8B4BF] hover:dark:stroke-white"
     >
-      <div class="w-full h-9 px-3 py-3 bg-neutral-800 rounded-lg justify-start items-center gap-3 inline-flex">
+      <div class="w-full h-9 px-3 py-3 bg-gray-400 dark:bg-neutral-800 rounded-lg justify-start items-center gap-3 inline-flex">
         <div class="w-5 h-5 flex items-center justify-center"><Icons.exit /></div>
         <div :if={@sidebar_expanded} class="text-sm font-medium tracking-tight">
           Exit Course
