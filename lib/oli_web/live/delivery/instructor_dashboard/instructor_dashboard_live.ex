@@ -377,6 +377,12 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
         path: path_for(:overview, :quiz_scores, section_slug, preview_mode),
         badge: nil,
         active: is_active_tab?(:quiz_scores, active_tab)
+      },
+      %TabLink{
+        label: "Recommended Actions",
+        path: path_for(:overview, :recommended_actions, section_slug, preview_mode),
+        badge: nil,
+        active: is_active_tab?(:recommended_actions, active_tab)
       }
       # %TabLink{
       #   label: "Scored Activities",
@@ -384,12 +390,6 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
       #   badge: nil,
       #   active: is_active_tab?(:scored_activities, active_tab)
       # },
-      # %TabLink{
-      #   label: "Recommended Actions",
-      #   path: path_for(:overview, :recommended_actions, section_slug, preview_mode),
-      #   badge: nil,
-      #   active: is_active_tab?(:recommended_actions, active_tab)
-      # }
       # %TabLink{
       #   label: "Practice Activities",
       #   path: path_for(:overview, :practice_activities, section_slug, preview_mode),
