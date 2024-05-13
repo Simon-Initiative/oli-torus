@@ -2201,5 +2201,163 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
       |> element("#end_date_input[min]")
       |> render() =~ "min=\"2023-10-12T17:00\""
     end
+
+    test "student exceptions table can be paginated", %{
+      conn: conn,
+      section: section,
+      student_1: student_1,
+      student_2: student_2,
+      student_3: student_3,
+      student_4: student_4,
+      page_1: page_1
+    } do
+      set_student_exception(section, page_1.resource, student_1)
+      set_student_exception(section, page_1.resource, student_2)
+      set_student_exception(section, page_1.resource, student_3)
+      set_student_exception(section, page_1.resource, student_4)
+
+      # set params to limit to 2 student exceptions per page
+      params = %{
+        limit: 2,
+        offset: 0
+      }
+
+      {:ok, view, _html} =
+        live(
+          conn,
+          live_view_overview_route(section.slug, "student_exceptions", page_1.resource.id, params)
+        )
+
+      # assert that the first two assessments are shown
+      assert has_element?(
+               view,
+               "table.instructor_dashboard_table > tbody > tr:nth-child(1) > td > div",
+               "#{student_1.name}"
+             )
+
+      assert has_element?(
+               view,
+               "table.instructor_dashboard_table > tbody > tr:nth-child(2) > td > div",
+               "#{student_2.name}"
+             )
+
+      refute has_element?(
+               view,
+               "table.instructor_dashboard_table > tbody > tr > td > div",
+               "#{student_3.name}"
+             )
+
+      refute has_element?(
+               view,
+               "table.instructor_dashboard_table > tbody > tr > td > div",
+               "#{student_4.name}"
+             )
+
+      # click on the next page button
+      view
+      |> element("button[phx-value-offset=\"2\"][phx-value-limit=\"2\"]", "2")
+      |> render_click()
+
+      # assert that the next two assessments are shown
+      assert has_element?(
+               view,
+               "table.instructor_dashboard_table > tbody > tr:nth-child(1) > td > div",
+               "#{student_3.name}"
+             )
+
+      assert has_element?(
+               view,
+               "table.instructor_dashboard_table > tbody > tr:nth-child(2) > td > div",
+               "#{student_4.name}"
+             )
+
+      refute has_element?(
+               view,
+               "table.instructor_dashboard_table > tbody > tr > td > div",
+               "#{student_1.name}"
+             )
+
+      refute has_element?(
+               view,
+               "table.instructor_dashboard_table > tbody > tr > td > div",
+               "#{student_2.name}"
+             )
+    end
+
+    test "student exceptions table can be sorted", %{
+      conn: conn,
+      section: section,
+      student_1: student_1,
+      student_2: student_2,
+      student_3: student_3,
+      student_4: student_4,
+      page_1: page_1
+    } do
+      set_student_exception(section, page_1.resource, student_1)
+      set_student_exception(section, page_1.resource, student_2)
+      set_student_exception(section, page_1.resource, student_3)
+      set_student_exception(section, page_1.resource, student_4)
+
+      {:ok, view, _html} =
+        live(
+          conn,
+          live_view_overview_route(section.slug, "student_exceptions", page_1.resource.id)
+        )
+
+      # assert that the students are shown in ascending order
+      assert has_element?(
+               view,
+               "table.instructor_dashboard_table > tbody > tr:nth-child(1) > td > div",
+               "#{student_1.name}"
+             )
+
+      assert has_element?(
+               view,
+               "table.instructor_dashboard_table > tbody > tr:nth-child(2) > td > div",
+               "#{student_2.name}"
+             )
+
+      assert has_element?(
+               view,
+               "table.instructor_dashboard_table > tbody > tr:nth-child(3) > td > div",
+               "#{student_3.name}"
+             )
+
+      assert has_element?(
+               view,
+               "table.instructor_dashboard_table > tbody > tr:nth-child(4) > td > div",
+               "#{student_4.name}"
+             )
+
+      # sort by student column in descending order
+      view
+      |> with_target("#student_exceptions_table")
+      |> render_click("paged_table_sort", %{"sort_by" => "student"})
+
+      # assert that the students are shown in descending order
+      assert has_element?(
+               view,
+               "table.instructor_dashboard_table > tbody > tr:nth-child(1) > td > div",
+               "#{student_4.name}"
+             )
+
+      assert has_element?(
+               view,
+               "table.instructor_dashboard_table > tbody > tr:nth-child(2) > td > div",
+               "#{student_3.name}"
+             )
+
+      assert has_element?(
+               view,
+               "table.instructor_dashboard_table > tbody > tr:nth-child(3) > td > div",
+               "#{student_2.name}"
+             )
+
+      assert has_element?(
+               view,
+               "table.instructor_dashboard_table > tbody > tr:nth-child(4) > td > div",
+               "#{student_1.name}"
+             )
+    end
   end
 end

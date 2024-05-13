@@ -36,6 +36,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
         <%= case @search_results do %>
           <% nil -> %>
             <.annotations
+              active_tab={@active_tab}
               annotations={@annotations}
               current_user={@current_user}
               create_new_annotation={@create_new_annotation}
@@ -58,7 +59,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
   attr :annotations, :any, required: true
   attr :current_user, Oli.Accounts.User, required: true
   attr :selected_point, :any, required: true
-  attr :active_tab, :atom, default: :my_notes
+  attr :active_tab, :atom, required: true
 
   defp annotations(assigns) do
     ~H"""
