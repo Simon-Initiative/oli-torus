@@ -101,7 +101,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
         bg-delivery-navbar
         dark:bg-delivery-navbar-dark
         overflow-hidden
-      ", if(!@sidebar_expanded, do: "md:!w-[60px]")]}>
+      ", if(!@sidebar_expanded, do: "md:!w-[60px]")]} aria-expanded={"#{@sidebar_expanded}"}>
         <div class="w-full">
           <div
             class={[
@@ -110,7 +110,10 @@ defmodule OliWeb.Components.Delivery.Layouts do
             ]}
             tab-index="0"
           >
-            <.link navigate={logo_link_path(@preview_mode, @section, @ctx.user, @sidebar_expanded)}>
+            <.link
+              id="logo_button"
+              navigate={logo_link_path(@preview_mode, @section, @ctx.user, @sidebar_expanded)}
+            >
               <.logo_img section={@section} />
             </.link>
           </div>
@@ -174,6 +177,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
   def sidebar_toggler(assigns) do
     ~H"""
     <button
+      role="toggle sidebar"
       phx-click={JS.patch(path_for(@active_tab, @section, @preview_mode, !@sidebar_expanded))}
       title={if @sidebar_expanded, do: "Minimize", else: "Expand"}
       class="flex items-center justify-center ml-auto w-6 h-6 bg-gray-400 dark:bg-neutral-800 rounded-tl-[52px] rounded-bl-[52px] stroke-black/70 hover:stroke-black/90 dark:stroke-[#B8B4BF] hover:dark:stroke-white"
@@ -194,6 +198,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
     ~H"""
     <div class="w-full p-2 flex-col justify-center items-center gap-4 inline-flex">
       <.nav_link
+        id="home_nav_link"
         href={path_for(:index, @section, @preview_mode, @sidebar_expanded)}
         is_active={@active_tab == :index}
         sidebar_expanded={@sidebar_expanded}
@@ -202,32 +207,59 @@ defmodule OliWeb.Components.Delivery.Layouts do
         <:text>Home</:text>
       </.nav_link>
 
-    <.nav_link
-      href={path_for(:discussions, @section, @preview_mode)}
-      is_active={@active_tab == :discussions}
-    >
-      Notes
-    </.nav_link>
-    <.nav_link
-      href={path_for(:schedule, @section, @preview_mode)}
-      is_active={@active_tab == :schedule}
-    >
-      Schedule
-    </.nav_link>
-    <.nav_link
-      :if={@section.contains_explorations}
-      href={path_for(:explorations, @section, @preview_mode)}
-      is_active={@active_tab == :explorations}
-    >
-      Explorations
-    </.nav_link>
-    <.nav_link
-      :if={@section.contains_deliberate_practice}
-      href={path_for(:practice, @section, @preview_mode)}
-      is_active={@active_tab == :practice}
-    >
-      Practice
-    </.nav_link>
+      <.nav_link
+        id="learn_nav_link"
+        href={path_for(:learn, @section, @preview_mode, @sidebar_expanded)}
+        is_active={@active_tab == :learn}
+        sidebar_expanded={@sidebar_expanded}
+      >
+        <:icon><Icons.learn is_active={@active_tab == :learn} /></:icon>
+        <:text>Learn</:text>
+      </.nav_link>
+
+      <.nav_link
+        id="schedule_nav_link"
+        href={path_for(:schedule, @section, @preview_mode, @sidebar_expanded)}
+        is_active={@active_tab == :schedule}
+        sidebar_expanded={@sidebar_expanded}
+      >
+        <:icon><Icons.schedule is_active={@active_tab == :schedule} /></:icon>
+        <:text>Schedule</:text>
+      </.nav_link>
+
+      <.nav_link
+        :if={@section.contains_discussions}
+        id="discussions_nav_link"
+        href={path_for(:discussions, @section, @preview_mode, @sidebar_expanded)}
+        is_active={@active_tab == :discussions}
+        sidebar_expanded={@sidebar_expanded}
+      >
+        <:icon><Icons.discussions is_active={@active_tab == :discussions} /></:icon>
+        <:text>Discussions</:text>
+      </.nav_link>
+
+      <.nav_link
+        :if={@section.contains_explorations}
+        id="explorations_nav_link"
+        href={path_for(:explorations, @section, @preview_mode, @sidebar_expanded)}
+        is_active={@active_tab == :explorations}
+        sidebar_expanded={@sidebar_expanded}
+      >
+        <:icon><Icons.explorations is_active={@active_tab == :explorations} /></:icon>
+        <:text>Explorations</:text>
+      </.nav_link>
+
+      <.nav_link
+        :if={@section.contains_deliberate_practice}
+        id="practice_nav_link"
+        href={path_for(:practice, @section, @preview_mode, @sidebar_expanded)}
+        is_active={@active_tab == :practice}
+        sidebar_expanded={@sidebar_expanded}
+      >
+        <:icon><Icons.practice is_active={@active_tab == :practice} /></:icon>
+        <:text>Practice</:text>
+      </.nav_link>
+    </div>
     """
   end
 
@@ -303,13 +335,19 @@ defmodule OliWeb.Components.Delivery.Layouts do
     "#"
   end
 
+  defp path_for(_, _, _, _), do: "#"
+
   attr :href, :string, required: true
   attr :is_active, :boolean, required: true
-  slot :inner_block, required: true
+  slot :text, required: true
+  slot :icon, required: true
+  attr :sidebar_expanded, :boolean, default: true
+  attr :id, :string
 
   def nav_link(assigns) do
     ~H"""
     <.link
+      id={@id}
       navigate={@href}
       class={["w-full h-11 flex-col justify-center items-center flex hover:no-underline"]}
     >
@@ -387,6 +425,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
   def exit_course_button(assigns) do
     ~H"""
     <.link
+      id="exit_course_button"
       navigate={~p"/sections"}
       class="w-full h-11 flex-col justify-center items-center flex hover:no-underline text-black/70 hover:text-black/90 dark:text-gray-400 hover:dark:text-white stroke-black/70 hover:stroke-black/90 dark:stroke-[#B8B4BF] hover:dark:stroke-white"
     >

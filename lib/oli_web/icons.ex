@@ -334,6 +334,7 @@ defmodule OliWeb.Icons do
   def trash(assigns) do
     ~H"""
     <svg
+      role="active home icon"
       class="dark:fill-white dark:stroke-white fill-black/90 stroke-black/90"
       width="18"
       height="18"
@@ -349,6 +350,7 @@ defmodule OliWeb.Icons do
   def home(%{is_active: false} = assigns) do
     ~H"""
     <svg
+      role="home icon"
       class="dark:stroke-[#B8B4BF] stroke-black/70"
       width="18"
       height="18"
@@ -377,6 +379,7 @@ defmodule OliWeb.Icons do
   def learn(%{is_active: true} = assigns) do
     ~H"""
     <svg
+      role="active learn icon"
       class="dark:fill-white dark:stroke-white fill-black/90 stroke-black/90"
       width="16"
       height="16"
@@ -397,6 +400,7 @@ defmodule OliWeb.Icons do
   def learn(%{is_active: false} = assigns) do
     ~H"""
     <svg
+      role="learn icon"
       class="dark:stroke-[#B8B4BF] stroke-black/70"
       width="16"
       height="16"
@@ -418,7 +422,14 @@ defmodule OliWeb.Icons do
 
   def schedule(%{is_active: true} = assigns) do
     ~H"""
-    <svg width="16" height="18" viewBox="0 0 16 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <svg
+      role="active schedule icon"
+      width="16"
+      height="18"
+      viewBox="0 0 16 18"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+    >
       <path
         class="dark:fill-white fill-black/90"
         fill-rule="evenodd"
@@ -439,6 +450,7 @@ defmodule OliWeb.Icons do
   def schedule(%{is_active: false} = assigns) do
     ~H"""
     <svg
+      role="schedule icon"
       class="dark:stroke-[#B8B4BF] stroke-black/70"
       width="16"
       height="18"
@@ -461,6 +473,7 @@ defmodule OliWeb.Icons do
   def discussions(%{is_active: true} = assigns) do
     ~H"""
     <svg
+      role="active discussions icon"
       class="dark:fill-white fill-black/90"
       width="18"
       height="17"
@@ -480,6 +493,7 @@ defmodule OliWeb.Icons do
   def discussions(%{is_active: false} = assigns) do
     ~H"""
     <svg
+      role="discussions icon"
       class="dark:stroke-[#B8B4BF] stroke-black/70"
       width="18"
       height="17"
@@ -502,6 +516,7 @@ defmodule OliWeb.Icons do
   def explorations(%{is_active: true} = assigns) do
     ~H"""
     <svg
+      role="active explorations icon"
       class="dark:fill-white fill-black/90"
       width="18"
       height="16"
@@ -522,6 +537,7 @@ defmodule OliWeb.Icons do
   def explorations(%{is_active: false} = assigns) do
     ~H"""
     <svg
+      role="explorations icon"
       class="dark:stroke-[#B8B4BF] stroke-black/70"
       width="18"
       height="18"
@@ -558,6 +574,7 @@ defmodule OliWeb.Icons do
   def practice(%{is_active: true} = assigns) do
     ~H"""
     <svg
+      role="active practice icon"
       class="dark:stroke-white stroke-black/70"
       width="14"
       height="18"
@@ -586,7 +603,14 @@ defmodule OliWeb.Icons do
 
   def practice(%{is_active: false} = assigns) do
     ~H"""
-    <svg width="14" height="18" viewBox="0 0 14 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <svg
+      role="practice icon"
+      width="14"
+      height="18"
+      viewBox="0 0 14 18"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+    >
       <path
         class="dark:stroke-[#B8B4BF] stroke-black/70"
         d="M4.50008 3.16667H2.83341C2.39139 3.16667 1.96746 3.34226 1.6549 3.65482C1.34234 3.96738 1.16675 4.39131 1.16675 4.83333V14.8333C1.16675 15.2754 1.34234 15.6993 1.6549 16.0118C1.96746 16.3244 2.39139 16.5 2.83341 16.5H11.1667C11.6088 16.5 12.0327 16.3244 12.3453 16.0118C12.6578 15.6993 12.8334 15.2754 12.8334 14.8333V4.83333C12.8334 4.39131 12.6578 3.96738 12.3453 3.65482C12.0327 3.34226 11.6088 3.16667 11.1667 3.16667H9.50008M4.50008 3.16667C4.50008 2.72464 4.67568 2.30072 4.98824 1.98816C5.3008 1.67559 5.72472 1.5 6.16675 1.5H7.83341C8.27544 1.5 8.69937 1.67559 9.01193 1.98816C9.32449 2.30072 9.50008 2.72464 9.50008 3.16667M4.50008 3.16667C4.50008 3.60869 4.67568 4.03262 4.98824 4.34518C5.3008 4.65774 5.72472 4.83333 6.16675 4.83333H7.83341C8.27544 4.83333 8.69937 4.65774 9.01193 4.34518C9.32449 4.03262 9.50008 3.60869 9.50008 3.16667M4.50008 9H4.50841M7.83341 9H9.50008M4.50008 12.3333H4.50841M7.83341 12.3333H9.50008"

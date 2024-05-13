@@ -2513,7 +2513,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       assert_patch(
         view,
-        Utils.learn_live_path(section.slug, selected_view: :gallery)
+        Utils.learn_live_path(section.slug, selected_view: :gallery, sidebar_expanded: true)
       )
 
       # selector text matches target view
@@ -2540,7 +2540,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       assert_patch(
         view,
-        Utils.learn_live_path(section.slug, selected_view: :outline)
+        Utils.learn_live_path(section.slug, selected_view: :outline, sidebar_expanded: true)
       )
 
       # selector text matches target view
@@ -2557,15 +2557,19 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       refute has_element?(
                view,
-               ~s{a[href="/sections/#{section.slug}/explorations"]},
+               ~s{a[href="/sections/#{section.slug}/explorations?sidebar_expanded=true"]},
                "Explorations"
              )
 
-      refute has_element?(view, ~s{a[href="/sections/#{section.slug}/practice"]}, "Practice")
+      refute has_element?(
+               view,
+               ~s{a[href="/sections/#{section.slug}/practice?sidebar_expanded=true"]},
+               "Practice"
+             )
 
       refute has_element?(
                view,
-               ~s{a[href="/sections/#{section.slug}/discussions"]},
+               ~s{a[href="/sections/#{section.slug}/discussions?sidebar_expanded=true"]},
                "Discussions"
              )
     end
@@ -2579,44 +2583,152 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
            page_3: page_3,
            author: author
          } do
-      # change the purpose of the pages to have an exploration page and a deliberate practice page
-      Oli.Resources.update_revision(page_1, %{purpose: :application, author_id: author.id})
-
-      Oli.Resources.update_revision(page_2, %{purpose: :deliberate_practice, author_id: author.id})
-
-      # enable collab space on page 3
-      page_3_sr =
-        Oli.Delivery.Sections.get_section_resource(section.id, page_3.resource_id)
-
-      {:ok, _} =
-        Oli.Delivery.Sections.update_section_resource(page_3_sr, %{
-          collab_space_config: %Oli.Resources.Collaboration.CollabSpaceConfig{
-            status: :enabled
-          }
-        })
-
-      # process changes in section
-      Oli.Delivery.Sections.PostProcessing.apply(section, [
-        :discussions,
-        :explorations,
-        :deliberate_practice
-      ])
+      enable_all_sidebar_links(section, author, page_1, page_2, page_3)
 
       {:ok, view, _html} = live(conn, Utils.learn_live_path(section.slug))
 
       assert has_element?(
                view,
-               ~s{a[href="/sections/#{section.slug}/explorations"]},
+               ~s{a[href="/sections/#{section.slug}/explorations?sidebar_expanded=true"]},
                "Explorations"
              )
 
-      assert has_element?(view, ~s{a[href="/sections/#{section.slug}/practice"]}, "Practice")
+      assert has_element?(
+               view,
+               ~s{a[href="/sections/#{section.slug}/practice?sidebar_expanded=true"]},
+               "Practice"
+             )
 
       assert has_element?(
                view,
-               ~s{a[href="/sections/#{section.slug}/discussions"]},
-               "Notes"
+               ~s{a[href="/sections/#{section.slug}/discussions?sidebar_expanded=true"]},
+               "Discussions"
              )
     end
+
+    test "can see expanded/collapsed sidebar nav", %{
+      conn: conn,
+      section: section,
+      page_1: page_1,
+      page_2: page_2,
+      page_3: page_3,
+      author: author
+    } do
+      enable_all_sidebar_links(section, author, page_1, page_2, page_3)
+
+      {:ok, view, _html} =
+        live(conn, Utils.learn_live_path(section.slug, sidebar_expanded: true))
+
+      assert has_element?(view, ~s{nav[id=desktop-nav-menu][aria-expanded=true]})
+
+      labels = [
+        "Home",
+        "Learn",
+        "Schedule",
+        "Discussions",
+        "Explorations",
+        "Practice",
+        "Support",
+        "Exit Course"
+      ]
+
+      Enum.each(labels, fn label ->
+        assert view
+               |> element(~s{nav[id=desktop-nav-menu]})
+               |> render() =~ label
+      end)
+
+      {:ok, view, _html} =
+        live(conn, Utils.learn_live_path(section.slug, sidebar_expanded: false))
+
+      assert has_element?(view, ~s{nav[id=desktop-nav-menu][aria-expanded=false]})
+
+      Enum.each(labels, fn label ->
+        refute view
+               |> element(~s{nav[id=desktop-nav-menu]})
+               |> render() =~ label
+      end)
+    end
+
+    test "navbar expanded or collapsed state is kept after navigating to other menu link", %{
+      conn: conn,
+      section: section
+    } do
+      {:ok, view, _html} =
+        live(conn, Utils.learn_live_path(section.slug, sidebar_expanded: true))
+
+      assert has_element?(view, ~s{nav[id=desktop-nav-menu][aria-expanded=true]})
+
+      view
+      |> element(~s{nav[id=desktop-nav-menu] a}, "Schedule")
+      |> render_click()
+
+      assert_redirect(view, "/sections/#{section.slug}/assignments?sidebar_expanded=true")
+
+      {:ok, view, _html} =
+        live(conn, Utils.learn_live_path(section.slug, sidebar_expanded: false))
+
+      open_browser(view)
+      assert has_element?(view, ~s{nav[id=desktop-nav-menu][aria-expanded=false]})
+
+      view
+      |> element(~s{nav[id="desktop-nav-menu"] a[id="schedule_nav_link"])})
+      |> render_click()
+
+      assert_redirect(view, "/sections/#{section.slug}/assignments?sidebar_expanded=false")
+    end
+
+    test "exit course button redirects to sections view", %{
+      conn: conn,
+      section: section
+    } do
+      {:ok, view, _html} =
+        live(conn, Utils.learn_live_path(section.slug))
+
+      view
+      |> element(~s{nav[id=desktop-nav-menu] a[id="exit_course_button"]}, "Exit Course")
+      |> render_click()
+
+      assert_redirect(view, "/sections")
+    end
+
+    test "logo icon redirects to home page", %{
+      conn: conn,
+      section: section
+    } do
+      {:ok, view, _html} =
+        live(conn, Utils.learn_live_path(section.slug))
+
+      view
+      |> element(~s{nav[id=desktop-nav-menu] a[id="logo_button"]})
+      |> render_click()
+
+      assert_redirect(view, "/sections/#{section.slug}?sidebar_expanded=true")
+    end
+  end
+
+  defp enable_all_sidebar_links(section, author, page_1, page_2, page_3) do
+    # change the purpose of the pages to have an exploration page and a deliberate practice page
+    Oli.Resources.update_revision(page_1, %{purpose: :application, author_id: author.id})
+
+    Oli.Resources.update_revision(page_2, %{purpose: :deliberate_practice, author_id: author.id})
+
+    # enable collab space on page 3
+    page_3_sr =
+      Oli.Delivery.Sections.get_section_resource(section.id, page_3.resource_id)
+
+    {:ok, _} =
+      Oli.Delivery.Sections.update_section_resource(page_3_sr, %{
+        collab_space_config: %Oli.Resources.Collaboration.CollabSpaceConfig{
+          status: :enabled
+        }
+      })
+
+    # process changes in section
+    Oli.Delivery.Sections.PostProcessing.apply(section, [
+      :discussions,
+      :explorations,
+      :deliberate_practice
+    ])
   end
 end
