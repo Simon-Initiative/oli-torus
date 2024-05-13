@@ -110,7 +110,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
             ]}
             tab-index="0"
           >
-            <.link navigate={path_for(:index, @section, @preview_mode, @sidebar_expanded)}>
+            <.link navigate={logo_link_path(@preview_mode, @section, @ctx.user, @sidebar_expanded)}>
               <.logo_img section={@section} />
             </.link>
           </div>
@@ -658,13 +658,13 @@ defmodule OliWeb.Components.Delivery.Layouts do
     end
   end
 
-  defp logo_link_path(preview_mode, section, user) do
+  defp logo_link_path(preview_mode, section, user, sidebar_expanded) do
     cond do
       preview_mode ->
         "#"
 
       is_open_and_free_section?(section) or is_independent_learner?(user) ->
-        ~p"/sections"
+        path_for(:index, section, preview_mode, sidebar_expanded)
 
       true ->
         Routes.static_page_path(OliWeb.Endpoint, :index)
