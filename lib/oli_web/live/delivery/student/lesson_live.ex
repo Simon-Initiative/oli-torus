@@ -1424,7 +1424,6 @@ defmodule OliWeb.Delivery.Student.LessonLive do
        ) do
     Oli.Analytics.Summary.XAPI.PageViewed.new(context, page_details)
     |> Oli.Analytics.EventEmitter.emit_page_viewed()
-
   end
 
   defp get_project_and_publication_ids(section_id, revision_id) do
