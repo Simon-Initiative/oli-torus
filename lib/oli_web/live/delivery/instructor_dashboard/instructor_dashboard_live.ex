@@ -371,13 +371,13 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
         path: path_for(:overview, :students, section_slug, preview_mode),
         badge: nil,
         active: is_active_tab?(:students, active_tab)
+      },
+      %TabLink{
+        label: "Quiz Scores",
+        path: path_for(:overview, :quiz_scores, section_slug, preview_mode),
+        badge: nil,
+        active: is_active_tab?(:quiz_scores, active_tab)
       }
-      # %TabLink{
-      #   label: "Quiz Scores",
-      #   path: path_for(:insights, :quiz_scores, section_slug, preview_mode),
-      #   badge: nil,
-      #   active: is_active_tab?(:quiz_scores, active_tab)
-      # },
       # %TabLink{
       #   label: "Scored Activities",
       #   path: path_for(:overview, :scored_activities, section_slug, preview_mode),
@@ -541,6 +541,23 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
     """
   end
 
+  def render(%{view: :overview, active_tab: :quiz_scores} = assigns) do
+    ~H"""
+    <InstructorDashboard.tabs tabs={overview_tabs(@section_slug, @preview_mode, @active_tab)} />
+
+    <div class="container mx-auto">
+      <.live_component
+        id="quiz_scores_table"
+        module={OliWeb.Components.Delivery.QuizScores}
+        params={@params}
+        section={@section}
+        view={@view}
+        patch_url_type={:quiz_scores_instructor}
+      />
+    </div>
+    """
+  end
+
   def render(%{view: :overview, active_tab: :students} = assigns) do
     ~H"""
     <InstructorDashboard.tabs tabs={overview_tabs(@section_slug, @preview_mode, @active_tab)} />
@@ -638,23 +655,6 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
         objectives_tab={@objectives_tab}
         section={@section}
         patch_url_type={:instructor_dashboard}
-      />
-    </div>
-    """
-  end
-
-  def render(%{view: :insights, active_tab: :quiz_scores} = assigns) do
-    ~H"""
-    <InstructorDashboard.tabs tabs={insights_tabs(@section_slug, @preview_mode, @active_tab)} />
-
-    <div class="container mx-auto">
-      <.live_component
-        id="quiz_scores_table"
-        module={OliWeb.Components.Delivery.QuizScores}
-        params={@params}
-        section={@section}
-        view={@view}
-        patch_url_type={:quiz_scores_instructor}
       />
     </div>
     """
