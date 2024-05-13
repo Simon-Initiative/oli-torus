@@ -512,6 +512,8 @@ defmodule OliWeb.Router do
     delete("/:project/lock/:resource", Api.LockController, :release)
 
     get("/:project/alternatives", Api.ResourceController, :alternatives)
+
+    get("/:project/activities/with_report", Api.ResourceController, :with_report)
   end
 
   # Storage Service

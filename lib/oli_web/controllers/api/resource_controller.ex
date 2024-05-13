@@ -79,6 +79,19 @@ defmodule OliWeb.Api.ResourceController do
     end
   end
 
+  def with_report(conn, %{"project" => project_slug}) do
+    case Resources.alternatives_groups(
+           project_slug,
+           Oli.Publishing.AuthoringResolver
+         ) do
+      {:ok, alternatives} ->
+        json(conn, %{"type" => "success", "alternatives" => alternatives})
+
+      _ ->
+        error(conn, 404, "failed to resolve alternatives groups")
+    end
+  end
+
   defp error(conn, code, reason) do
     conn
     |> send_resp(code, reason)
