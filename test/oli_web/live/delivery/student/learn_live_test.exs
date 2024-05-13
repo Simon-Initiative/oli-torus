@@ -2668,7 +2668,6 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       {:ok, view, _html} =
         live(conn, Utils.learn_live_path(section.slug, sidebar_expanded: false))
 
-      open_browser(view)
       assert has_element?(view, ~s{nav[id=desktop-nav-menu][aria-expanded=false]})
 
       view
