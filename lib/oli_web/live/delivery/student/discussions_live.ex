@@ -517,13 +517,14 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
     <Annotations.delete_post_modal />
 
     <.hero_banner class="bg-discussions">
-      <h1 class="text-4xl md:text-6xl mb-8">Discussions</h1>
+      <h1 class="text-4xl md:text-6xl mb-8">Notes</h1>
     </.hero_banner>
     <div
       id="discussions_content"
       class="overflow-x-scroll md:overflow-x-auto flex flex-col py-6 px-16 mb-10 gap-6 items-start"
     >
       <.posts_section
+        :if={@section.contains_discussions}
         posts={@posts}
         ctx={@ctx}
         section_slug={@section.slug}
@@ -661,7 +662,11 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
           <div role="posts list" class="w-full">
             <%= for post <- @posts do %>
               <div class="mb-3">
-                <Annotations.post class="bg-white" post={post} current_user={@ctx.user} />
+                <Annotations.post
+                  class="bg-white dark:bg-gray-900"
+                  post={post}
+                  current_user={@ctx.user}
+                />
               </div>
             <% end %>
             <div :if={@posts == []} class="flex p-4 text-center w-full">
@@ -716,7 +721,7 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
             <%= for post <- @notes do %>
               <div class="mb-3">
                 <Annotations.post
-                  class="bg-white"
+                  class="bg-white dark:bg-gray-900"
                   post={post}
                   current_user={@ctx.user}
                   go_to_post_href={~p"/sections/#{@section_slug}/lesson/#{post.resource_slug}"}
