@@ -704,7 +704,7 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
     <section id="notes" class="container mx-auto flex flex-col items-start w-full gap-6">
       <div role="notes header" class="flex justify-between items-center w-full self-stretch">
         <h3 class="text-2xl tracking-[0.02px] font-semibold dark:text-white">
-          Notes
+          My Notes
         </h3>
       </div>
 

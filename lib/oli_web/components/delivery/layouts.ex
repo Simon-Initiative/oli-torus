@@ -160,7 +160,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
       href={path_for(:discussions, @section, @preview_mode)}
       is_active={@active_tab == :discussions}
     >
-      Discussions
+      Notes
     </.nav_link>
     <.nav_link
       href={path_for(:schedule, @section, @preview_mode)}
