@@ -4,8 +4,6 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
 
   alias OliWeb.Common.SessionContext
   alias Oli.Delivery.{Metrics, Sections}
-  alias Oli.Publishing.DeliveryResolver
-  alias Oli.Resources.Collaboration
   alias OliWeb.Components.Delivery.InstructorDashboard
   alias OliWeb.Components.Delivery.InstructorDashboard.TabLink
   alias Oli.Delivery.RecommendedActions
@@ -402,12 +400,6 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
         badge: nil,
         active: is_active_tab?(:recommended_actions, active_tab)
       }
-      # %TabLink{
-      #   label: "Scored Activities",
-      #   path: path_for(:overview, :scored_activities, section_slug, preview_mode),
-      #   badge: nil,
-      #   active: is_active_tab?(:scored_activities, active_tab)
-      # },
     ]
   end
 
@@ -642,64 +634,6 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
         view={@view}
         ctx={@ctx}
       />
-    </div>
-    """
-  end
-
-  def render(%{view: :insights, active_tab: :course_discussion} = assigns) do
-    %{slug: revision_slug} = DeliveryResolver.root_container(assigns.section_slug)
-
-    {:ok, collab_space_config} =
-      Collaboration.get_collab_space_config_for_page_in_section(
-        revision_slug,
-        assigns.section_slug
-      )
-
-    current_user_id =
-      case assigns.ctx.user do
-        %Oli.Accounts.User{id: id} -> id
-        _ -> nil
-      end
-
-    current_author_id =
-      case assigns.ctx.author do
-        %Oli.Accounts.Author{id: id} -> id
-        _ -> nil
-      end
-
-    assigns =
-      Map.merge(
-        assigns,
-        %{
-          current_user_id: current_user_id,
-          current_author_id: current_author_id,
-          revision_slug: revision_slug,
-          collab_space_config: collab_space_config
-        }
-      )
-
-    ~H"""
-    <InstructorDashboard.tabs tabs={insights_tabs(@section_slug, @preview_mode, @active_tab)} />
-
-    <div class="container mx-auto">
-      <div class="bg-white dark:bg-gray-800 p-8 shadow">
-        <%= if !is_nil(@collab_space_config) do %>
-          <%= live_render(@socket, OliWeb.CollaborationLive.CollabSpaceView,
-            id: "course_discussion",
-            session: %{
-              "collab_space_config" => @collab_space_config,
-              "section_slug" => @section_slug,
-              "resource_slug" => @revision_slug,
-              "is_instructor" => true,
-              "title" => "Course Discussion",
-              "current_user_id" => @current_user_id,
-              "current_author_id" => @current_author_id
-            }
-          ) %>
-        <% else %>
-          <h6>There is no collaboration space configured for this Course</h6>
-        <% end %>
-      </div>
     </div>
     """
   end
