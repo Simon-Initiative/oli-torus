@@ -22,12 +22,14 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
 
     is_instructor = Sections.has_instructor_role?(current_user, section.slug)
 
-    if connected?(socket),
-      do:
-        Phoenix.PubSub.subscribe(
-          Oli.PubSub,
-          "collab_space_discussion_#{socket.assigns.section.slug}"
-        )
+    if connected?(socket) do
+      Phoenix.PubSub.subscribe(
+        Oli.PubSub,
+        "collab_space_discussion_#{socket.assigns.section.slug}"
+      )
+
+      clear_unread_replies(current_user.id, section.id)
+    end
 
     root_section_resource_resource_id =
       Sections.get_root_section_resource_resource_id(socket.assigns.section)
@@ -679,7 +681,7 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
     <section id="notes" class="container mx-auto flex flex-col items-start w-full gap-6">
       <div role="notes header" class="flex justify-between items-center w-full self-stretch">
         <h3 class="text-2xl tracking-[0.02px] font-semibold dark:text-white">
-          Notes
+          My Notes
         </h3>
       </div>
 

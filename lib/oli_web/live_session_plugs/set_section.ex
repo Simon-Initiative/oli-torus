@@ -7,6 +7,18 @@ defmodule OliWeb.LiveSessionPlugs.SetSection do
   alias Oli.Delivery.Sections
 
   def on_mount(:default, %{"section_slug" => section_slug}, _session, socket) do
+    load_section(socket, section_slug)
+  end
+
+  def on_mount(:default, _params, %{"section_slug" => section_slug}, socket) do
+    load_section(socket, section_slug)
+  end
+
+  def on_mount(:default, _params, _session, socket) do
+    {:cont, assign(socket, section: nil)}
+  end
+
+  defp load_section(socket, section_slug) do
     case Sections.get_section_by_slug(section_slug) do
       nil ->
         {:halt,
@@ -23,9 +35,5 @@ defmodule OliWeb.LiveSessionPlugs.SetSection do
 
         {:cont, assign(socket, section: section)}
     end
-  end
-
-  def on_mount(:default, _params, _session, socket) do
-    {:cont, assign(socket, section: nil)}
   end
 end

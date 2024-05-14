@@ -82,6 +82,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
   attr(:section, Section, default: nil)
   attr(:active_tab, :atom)
   attr(:preview_mode, :boolean)
+  attr :notification_badges, :map, default: %{}
 
   def sidebar_nav(assigns) do
     ~H"""
@@ -103,7 +104,12 @@ defmodule OliWeb.Components.Delivery.Layouts do
         dark:bg-delivery-navbar-dark
       "
       >
-        <.sidebar_links active_tab={@active_tab} section={@section} preview_mode={@preview_mode} />
+        <.sidebar_links
+          active_tab={@active_tab}
+          section={@section}
+          preview_mode={@preview_mode}
+          notification_badges={@notification_badges}
+        />
         <div class="flex w-full px-6 py-4 text-center mt-auto">
           <.tech_support_button id="tech-support" ctx={@ctx} />
         </div>
@@ -145,6 +151,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
   attr(:section, Section, default: nil)
   attr(:active_tab, :atom)
   attr(:preview_mode, :boolean)
+  attr(:notification_badges, :map, default: %{})
 
   def sidebar_links(assigns) do
     ~H"""
@@ -159,6 +166,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
       :if={@section.contains_discussions}
       href={path_for(:discussions, @section, @preview_mode)}
       is_active={@active_tab == :discussions}
+      badge={Map.get(@notification_badges, :discussions)}
     >
       Discussions
     </.nav_link>
@@ -259,12 +267,16 @@ defmodule OliWeb.Components.Delivery.Layouts do
 
   attr :href, :string, required: true
   attr :is_active, :boolean, required: true
+  attr :badge, :integer, default: nil
   slot :inner_block, required: true
 
   def nav_link(assigns) do
     ~H"""
     <.link navigate={@href} class={nav_link_class(@is_active)}>
       <%= render_slot(@inner_block) %>
+      <%= if @badge do %>
+        <.badge variant={:primary} class="ml-2"><%= @badge %></.badge>
+      <% end %>
     </.link>
     """
   end

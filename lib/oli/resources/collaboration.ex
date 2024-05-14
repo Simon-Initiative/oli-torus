@@ -523,6 +523,27 @@ defmodule Oli.Resources.Collaboration do
   end
 
   @doc """
+  Returns the list of unread replies for a user.
+  """
+  def get_unread_reply_counts_for_root_discussions(user_id, root_section_resource_resource_id) do
+    from(
+      p in Post,
+      left_join: urp in UserReadPost,
+      on: urp.post_id == p.id,
+      # ignore replies that were created by the user
+      where:
+        not is_nil(p.thread_root_id) and is_nil(urp.post_id) and
+          p.resource_id == ^root_section_resource_resource_id and p.user_id != ^user_id,
+      group_by: p.thread_root_id,
+      select: %{
+        thread_root_id: p.thread_root_id,
+        count: count(p.id)
+      }
+    )
+    |> Repo.all()
+  end
+
+  @doc """
   Returns the list of root posts for a section.
   """
   def list_root_posts_for_section(
