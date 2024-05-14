@@ -3,10 +3,12 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
   use OliWeb.Common.Modal
 
   alias OliWeb.Common.SessionContext
-  alias Oli.Delivery.{Metrics, Sections}
+  alias Oli.Delivery.Metrics
+  alias Oli.Delivery.Sections
+  alias Oli.Delivery.RecommendedActions
   alias OliWeb.Components.Delivery.InstructorDashboard
   alias OliWeb.Components.Delivery.InstructorDashboard.TabLink
-  alias Oli.Delivery.RecommendedActions
+  alias OliWeb.Components.Delivery.Students
   alias OliWeb.Delivery.InstructorDashboard.Helpers
 
   @impl Phoenix.LiveView
@@ -17,7 +19,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
 
   defp do_handle_students_params(%{"active_tab" => active_tab} = params, _, socket) do
     view = String.to_existing_atom(params["view"])
-    params = OliWeb.Components.Delivery.Students.decode_params(params)
+    params = Students.decode_params(params)
 
     socket =
       socket
