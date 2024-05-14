@@ -32,11 +32,14 @@ defmodule OliWeb.Components.Delivery.Layouts do
 
   def header(assigns) do
     ~H"""
-    <div class={[
-      "fixed z-50 w-full md:pl-[226px] py-2.5 h-14 flex flex-row bg-delivery-header dark:bg-black border-b border-[#0F0D0F]/5 dark:border-[#0F0D0F]",
-      if(!@sidebar_expanded, do: "md:!pl-[95px]")
-    ]}>
-      <div class="flex items-center flex-grow-1 text-[#BAB8BF] text-base font-medium font-['Roboto']">
+    <div
+      id="header"
+      class={[
+        "fixed z-50 w-full md:pl-[226px] py-2.5 h-14 flex flex-row bg-delivery-header dark:bg-black border-b border-[#0F0D0F]/5 dark:border-[#0F0D0F]",
+        if(!@sidebar_expanded, do: "md:!pl-[95px]")
+      ]}
+    >
+      <div class="flex items-center flex-grow-1 dark:text-[#BAB8BF] text-base font-medium font-['Roboto']">
         <.title section={@section} project={@project} preview_mode={@preview_mode} />
       </div>
       <div class="justify-end items-center flex">
