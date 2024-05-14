@@ -430,6 +430,29 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
     {:noreply, assign(socket, notes_search_results: nil, notes_search_term: "")}
   end
 
+  def handle_event(
+        "set_delete_post_id",
+        %{"post-id" => post_id, "visibility" => visibility},
+        socket
+      ) do
+    {:noreply,
+     assign(socket,
+       delete_post_id: {String.to_existing_atom(visibility), String.to_integer(post_id)}
+     )}
+  end
+
+  def handle_event("delete_post", _params, socket) do
+    %{delete_post_id: {visibility, post_id}} = socket.assigns
+
+    case Collaboration.soft_delete_post(post_id) do
+      {1, _} ->
+        {:noreply, mark_post_deleted(socket, visibility, post_id)}
+
+      {:error, _} ->
+        {:noreply, put_flash(socket, :error, "Failed to delete note")}
+    end
+  end
+
   def handle_info({:discussion_created, _new_post}, socket)
       when socket.assigns.post_params.filter_by in ["my_activity", "page_discussions"] do
     # new broadcasted post should not be added to the UI if the user is filtering by "my activity"
@@ -491,6 +514,8 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
       course_collab_space_config={@course_collab_space_config}
       new_discussion_form={@new_discussion_form}
     />
+    <Annotations.delete_post_modal />
+
     <.hero_banner class="bg-discussions">
       <h1 class="text-4xl md:text-6xl mb-8">Discussions</h1>
     </.hero_banner>
@@ -952,5 +977,29 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
           {:assign, %{notes_search_results: search_results}}
       end
     end)
+  end
+
+  defp mark_post_deleted(socket, visibility, post_id) do
+    %{posts: posts, notes: notes} = socket.assigns
+
+    case visibility do
+      :public ->
+        socket
+        |> assign(
+          posts:
+            Annotations.find_and_update_post(posts, post_id, fn post ->
+              %Collaboration.Post{post | status: :deleted}
+            end)
+        )
+
+      :private ->
+        socket
+        |> assign(
+          notes:
+            Annotations.find_and_update_post(notes, post_id, fn post ->
+              %Collaboration.Post{post | status: :deleted}
+            end)
+        )
+    end
   end
 end
