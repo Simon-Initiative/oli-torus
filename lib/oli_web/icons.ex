@@ -28,6 +28,27 @@ defmodule OliWeb.Icons do
     """
   end
 
+  def transparent_flag(assigns) do
+    ~H"""
+    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <g clip-path="url(#clip0_1_19943)">
+        <path
+          d="M4.16602 11.666H15.8327L12.0827 7.91602L15.8327 4.16602H4.16602V17.4993"
+          stroke="#FF8F40"
+          stroke-width="1.5"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        />
+      </g>
+      <defs>
+        <clipPath id="clip0_1_19943">
+          <rect width="20" height="20" fill="white" />
+        </clipPath>
+      </defs>
+    </svg>
+    """
+  end
+
   def square_checked(assigns) do
     ~H"""
     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
@@ -252,9 +273,20 @@ defmodule OliWeb.Icons do
     """
   end
 
+  attr :width, :string, default: "24"
+  attr :height, :string, default: "24"
+  attr :class, :string, default: ""
+
   def chevron_down(assigns) do
     ~H"""
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <svg
+      width={@width}
+      height={@height}
+      viewBox="0 0 24 24"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      class={@class}
+    >
       <path
         d="M6.70711 8.29289C6.31658 7.90237 5.68342 7.90237 5.29289 8.29289C4.90237 8.68342 4.90237 9.31658 5.29289 9.70711L11.2929 15.7071C11.6834 16.0976 12.3166 16.0976 12.7071 15.7071L18.7071 9.70711C19.0976 9.31658 19.0976 8.68342 18.7071 8.29289C18.3166 7.90237 17.6834 7.90237 17.2929 8.29289L12 13.5858L6.70711 8.29289Z"
         fill="white"
@@ -325,6 +357,152 @@ defmodule OliWeb.Icons do
       class={@class}
     >
       <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+    </svg>
+    """
+  end
+
+  attr :class, :string, default: ""
+
+  def book(assigns) do
+    ~H"""
+    <svg
+      width="20"
+      height="20"
+      viewBox="0 0 20 20"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      class={@class}
+    >
+      <path
+        d="M15.8327 3.33398V16.6673H5.83268C5.39065 16.6673 4.96673 16.4917 4.65417 16.1792C4.34161 15.8666 4.16602 15.4427 4.16602 15.0007V5.00065C4.16602 4.55862 4.34161 4.1347 4.65417 3.82214C4.96673 3.50958 5.39065 3.33398 5.83268 3.33398H15.8327Z"
+        stroke="#6DD1DF"
+        stroke-width="1.5"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      />
+      <path
+        d="M15.8327 13.334H5.83268C5.39065 13.334 4.96673 13.5096 4.65417 13.8221C4.34161 14.1347 4.16602 14.5586 4.16602 15.0007"
+        stroke="#6DD1DF"
+        stroke-width="1.5"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      />
+      <path
+        d="M7.49935 6.66724H12.4994"
+        stroke="#6DD1DF"
+        stroke-width="1.5"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      />
+    </svg>
+    """
+  end
+
+  attr :class, :string, default: ""
+
+  def world(assigns) do
+    ~H"""
+    <svg
+      width="20"
+      height="20"
+      viewBox="0 0 20 20"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      class={@class}
+    >
+      <path
+        d="M2.5 10C2.5 10.9849 2.69399 11.9602 3.0709 12.8701C3.44781 13.7801 4.00026 14.6069 4.6967 15.3033C5.39314 15.9997 6.21993 16.5522 7.12987 16.9291C8.03982 17.306 9.01509 17.5 10 17.5C10.9849 17.5 11.9602 17.306 12.8701 16.9291C13.7801 16.5522 14.6069 15.9997 15.3033 15.3033C15.9997 14.6069 16.5522 13.7801 16.9291 12.8701C17.306 11.9602 17.5 10.9849 17.5 10C17.5 8.01088 16.7098 6.10322 15.3033 4.6967C13.8968 3.29018 11.9891 2.5 10 2.5C8.01088 2.5 6.10322 3.29018 4.6967 4.6967C3.29018 6.10322 2.5 8.01088 2.5 10Z"
+        stroke="#EC8CFF"
+        stroke-width="1.5"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      />
+      <path
+        d="M3 7.5H17"
+        stroke="#EC8CFF"
+        stroke-width="1.5"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      />
+      <path
+        d="M3 12.5H17"
+        stroke="#EC8CFF"
+        stroke-width="1.5"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      />
+      <path
+        d="M9.58322 2.5C8.17934 4.74968 7.43506 7.34822 7.43506 10C7.43506 12.6518 8.17934 15.2503 9.58322 17.5"
+        stroke="#EC8CFF"
+        stroke-width="1.5"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      />
+      <path
+        d="M10.4167 2.5C11.8206 4.74968 12.5649 7.34822 12.5649 10C12.5649 12.6518 11.8206 15.2503 10.4167 17.5"
+        stroke="#EC8CFF"
+        stroke-width="1.5"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      />
+    </svg>
+    """
+  end
+
+  attr :class, :string, default: ""
+
+  def clipboard(assigns) do
+    ~H"""
+    <svg
+      width="20"
+      height="20"
+      viewBox="0 0 20 20"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      class={@class}
+    >
+      <path
+        d="M7.49935 4.16699H5.83268C5.39065 4.16699 4.96673 4.34259 4.65417 4.65515C4.34161 4.96771 4.16602 5.39163 4.16602 5.83366V15.8337C4.16602 16.2757 4.34161 16.6996 4.65417 17.0122C4.96673 17.3247 5.39065 17.5003 5.83268 17.5003H14.166C14.608 17.5003 15.032 17.3247 15.3445 17.0122C15.6571 16.6996 15.8327 16.2757 15.8327 15.8337V5.83366C15.8327 5.39163 15.6571 4.96771 15.3445 4.65515C15.032 4.34259 14.608 4.16699 14.166 4.16699H12.4993"
+        stroke="#8CBCFF"
+        stroke-width="1.5"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      />
+      <path
+        d="M7.5 4.16667C7.5 3.72464 7.6756 3.30072 7.98816 2.98816C8.30072 2.67559 8.72464 2.5 9.16667 2.5H10.8333C11.2754 2.5 11.6993 2.67559 12.0118 2.98816C12.3244 3.30072 12.5 3.72464 12.5 4.16667C12.5 4.60869 12.3244 5.03262 12.0118 5.34518C11.6993 5.65774 11.2754 5.83333 10.8333 5.83333H9.16667C8.72464 5.83333 8.30072 5.65774 7.98816 5.34518C7.6756 5.03262 7.5 4.60869 7.5 4.16667Z"
+        stroke="#8CBCFF"
+        stroke-width="1.5"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      />
+      <path
+        d="M7.5 10H7.50833"
+        stroke="#8CBCFF"
+        stroke-width="1.5"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      />
+      <path
+        d="M10.834 10H12.5007"
+        stroke="#8CBCFF"
+        stroke-width="1.5"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      />
+      <path
+        d="M7.5 13.333H7.50833"
+        stroke="#8CBCFF"
+        stroke-width="1.5"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      />
+      <path
+        d="M10.834 13.333H12.5007"
+        stroke="#8CBCFF"
+        stroke-width="1.5"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      />
     </svg>
     """
   end

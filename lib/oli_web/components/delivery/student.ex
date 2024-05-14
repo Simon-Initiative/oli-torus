@@ -283,6 +283,8 @@ defmodule OliWeb.Components.Delivery.Student do
     end
   end
 
+  attr :effective_settings, :map, required: true
+
   defp time_remaining(%{effective_settings: %{end_date: nil}} = assigns) do
     ~H"""
 
@@ -300,7 +302,22 @@ defmodule OliWeb.Components.Delivery.Student do
     """
   end
 
-  defp format_time_remaining(effective_settings) do
+  @doc """
+  Calculates the time remaining from the current moment until a specified end date and formats it as "HH:MM:SS".
+
+  ## Parameters
+  - `effective_settings`: A map containing the `end_date` as a `DateTime`.
+
+  ## Returns
+  - A string representing the formatted time remaining as "HH:MM:SS". If the time difference is negative, it returns "00:00:00".
+
+  ## Examples
+      iex> format_time_remaining(%{end_date: Timex.shift(Timex.now(), seconds: 3661)})
+      "01:01:01"
+  """
+
+  @spec format_time_remaining(map()) :: String.t()
+  def format_time_remaining(effective_settings) do
     # Get the current time
     current_time = Timex.now()
 
@@ -327,4 +344,28 @@ defmodule OliWeb.Components.Delivery.Student do
        |> Integer.to_string()
        |> String.pad_leading(2, "0"))
   end
+
+  attr :graded, :boolean, default: false
+  attr :duration_minutes, :integer
+
+  def duration_in_minutes(assigns) do
+    ~H"""
+    <div class="ml-auto items-center gap-1.5 flex">
+      <div :if={@graded} class="w-[22px] h-[22px] opacity-60 flex items-center justify-center">
+        <Icons.clock />
+      </div>
+      <div class="text-right dark:text-white opacity-60 whitespace-nowrap">
+        <span class="text-sm font-semibold font-['Open Sans']" role="duration in minutes">
+          <%= parse_minutes(@duration_minutes) %>
+          <span class="w-[25px] self-stretch text-[13px] font-semibold font-['Open Sans']">
+            min
+          </span>
+        </span>
+      </div>
+    </div>
+    """
+  end
+
+  defp parse_minutes(minutes) when minutes in ["", nil], do: "?"
+  defp parse_minutes(minutes), do: minutes
 end

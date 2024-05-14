@@ -211,6 +211,25 @@ defmodule OliWeb.Delivery.Student.Utils do
     do:
       ~p"/sections/#{section_slug}/lesson/#{revision_slug}/attempt/#{attempt_guid}/review?#{params}"
 
+  @doc """
+  Generates a URL for the course schedule.
+
+  ## Parameters
+    - `section_slug`: The unique identifier for the section.
+    - `params`: (Optional) Additional query parameters in a list or map format. If omitted, a URL is generated without additional parameters.
+
+  ## Examples
+    - `schedule_live_path("math")` returns `"/sections/math/assignments"`.
+    - `schedule_live_path("math", request_path: "some/previous/url")` returns `"/sections/math/assignments?request_path=some/previous/url"`.
+  """
+  def schedule_live_path(section_slug, params \\ [])
+
+  def schedule_live_path(section_slug, []),
+    do: ~p"/sections/#{section_slug}/assignments"
+
+  def schedule_live_path(section_slug, params),
+    do: ~p"/sections/#{section_slug}/assignments?#{params}"
+
   def get_container_label(page_id, section) do
     section_id = section.id
 
@@ -317,5 +336,31 @@ defmodule OliWeb.Delivery.Student.Utils do
     else
       this_attempt.content
     end
+  end
+
+  @doc """
+  Calculates the date range for a specific week number relative to a given section start date.
+
+  ## Parameters
+  - `week_number`: The number of the week for which the range is needed, starting from 1.
+  - `section_start_date`: The start date of the section, given as a `DateTime`.
+
+  ## Returns
+  - A tuple containing the start and end dates (`Date` structs) of the specified week, starting from Sunday.
+
+  ## Examples
+      iex> week_range(5, ~N[2024-01-01T00:00:00])
+      {~D[2024-01-28], ~D[2024-02-03]}
+  """
+
+  @spec week_range(integer(), DateTime.t()) :: {Date.t(), Date.t()}
+  def week_range(week_number, section_start_date) do
+    week_start =
+      section_start_date
+      |> DateTime.to_date()
+      |> Date.beginning_of_week(:sunday)
+      |> Date.add((week_number - 1) * 7)
+
+    {week_start, Date.add(week_start, 6)}
   end
 end
