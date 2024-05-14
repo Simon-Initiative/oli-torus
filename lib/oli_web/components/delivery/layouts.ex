@@ -156,7 +156,6 @@ defmodule OliWeb.Components.Delivery.Layouts do
     </.nav_link>
 
     <.nav_link
-      :if={@section.contains_discussions}
       href={path_for(:discussions, @section, @preview_mode)}
       is_active={@active_tab == :discussions}
     >
