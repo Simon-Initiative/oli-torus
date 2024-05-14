@@ -18,13 +18,14 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
   end
 
   defp do_handle_students_params(%{"active_tab" => active_tab} = params, _, socket) do
+    view = String.to_existing_atom(params["view"])
     params = OliWeb.Components.Delivery.Students.decode_params(params)
 
     socket =
       socket
       |> assign(
         params: params,
-        view: :overview,
+        view: view,
         active_tab: maybe_get_tab_from_params(active_tab, :content)
       )
       |> assign(users: Helpers.get_students(socket.assigns.section, params))
@@ -50,11 +51,13 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
 
   @impl Phoenix.LiveView
   def handle_params(
-        %{"view" => "overview", "active_tab" => "students"} = params,
+        %{"view" => "insights", "active_tab" => "content", "container_id" => _container_id} =
+          params,
         uri,
         socket
-      ),
-      do: do_handle_students_params(params, uri, socket)
+      ) do
+    do_handle_students_params(params, uri, socket)
+  end
 
   @impl Phoenix.LiveView
   def handle_params(
@@ -116,6 +119,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
     {:noreply, socket}
   end
 
+  @impl Phoenix.LiveView
   def handle_params(
         %{"view" => "insights", "active_tab" => "practice_activities"} = params,
         _,
@@ -150,6 +154,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
     {:noreply, socket}
   end
 
+  @impl Phoenix.LiveView
   def handle_params(
         %{"view" => "insights", "active_tab" => "surveys"} = params,
         _,
@@ -184,6 +189,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
     {:noreply, socket}
   end
 
+  @impl Phoenix.LiveView
   def handle_params(%{"view" => "insights"} = params, _, socket) do
     active_tab =
       case params["active_tab"] do
@@ -205,11 +211,17 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
 
   @impl Phoenix.LiveView
   def handle_params(
-        %{
-          "view" => "overview",
-          "section_slug" => _section_slug,
-          "active_tab" => "recommended_actions"
-        } = params,
+        %{"view" => "overview", "active_tab" => "students"} = params,
+        uri,
+        socket
+      ) do
+    do_handle_students_params(params, uri, socket)
+  end
+
+  @impl Phoenix.LiveView
+  def handle_params(
+        %{"view" => "overview", "active_tab" => "recommended_actions", "section_slug" => _ss} =
+          params,
         _,
         socket
       ) do
@@ -275,11 +287,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
 
         tab ->
           socket
-          |> assign(
-            view: :overview,
-            params: params,
-            active_tab: tab
-          )
+          |> assign(view: :overview, params: params, active_tab: tab)
       end
 
     {:noreply, socket}
@@ -492,7 +500,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
     """
   end
 
-  def render(%{view: :overview} = assigns) do
+  def render(%{view: :overview, active_tab: :course_content} = assigns) do
     ~H"""
     <InstructorDashboard.tabs tabs={overview_tabs(@section_slug, @preview_mode, @active_tab)} />
 
