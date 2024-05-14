@@ -139,7 +139,7 @@ defmodule OliWeb.Components.Delivery.UserAccount do
     <div
       id={@id}
       phx-click-away={JS.hide() |> reset_header_color()}
-      class={"hidden absolute top-[50px] -right-[10px] z-50 p-[10px] whitespace-nowrap bg-gray-100 border-gray-300 w-[220px] dark:bg-[#0F0D0F] rounded-xl border dark:border-zinc-800 #{@class}"}
+      class={"hidden absolute top-[51px] -right-[9px] z-50 p-[10px] whitespace-nowrap bg-gray-100 border-gray-300 w-[220px] dark:bg-[#0F0D0F] rounded-xl border dark:border-zinc-800 #{@class}"}
     >
       <ul>
         <%= render_slot(@inner_block) %>
