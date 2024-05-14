@@ -16,6 +16,12 @@ defmodule OliWeb.Delivery.Student.LearnLive do
 
   @default_selected_view :gallery
 
+  @default_module_page_metrics %{
+    total_pages_count: 0,
+    completed_pages_count: 0,
+    total_duration_minutes: 0
+  }
+
   @default_image "/images/course_default.jpg"
   # this is an optimization to reduce the memory footprint of the liveview process
   @required_keys_per_assign %{
@@ -61,6 +67,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         student_progress_per_resource_id: %{},
         student_raw_avg_score_per_page_id: %{},
         student_raw_avg_score_per_container_id: %{},
+        page_metrics_per_module_id: %{},
         viewed_intro_video_resource_ids:
           get_viewed_intro_video_resource_ids(
             section.slug,
@@ -106,7 +113,6 @@ defmodule OliWeb.Delivery.Student.LearnLive do
          socket
          |> assign(selected_view: selected_view)
          |> update(:units, fn _units -> full_hierarchy["children"] end)
-         |> maybe_enable_gallery_slider_buttons(full_hierarchy, selected_view)
          |> scroll_to_target_resource(resource_id, full_hierarchy, selected_view)}
 
       %{"selected_view" => selected_view} ->
@@ -115,13 +121,11 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         {:noreply,
          socket
          |> assign(selected_view: selected_view)
-         |> update(:units, fn _units -> full_hierarchy["children"] end)
-         |> maybe_enable_gallery_slider_buttons(full_hierarchy, selected_view)}
+         |> update(:units, fn _units -> full_hierarchy["children"] end)}
 
       %{"target_resource_id" => resource_id} ->
         {:noreply,
          socket
-         |> maybe_enable_gallery_slider_buttons(full_hierarchy, :gallery)
          |> scroll_to_target_resource(resource_id, full_hierarchy, :gallery)}
 
       _ ->
@@ -440,16 +444,16 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   def handle_event("card_keydown", _, socket), do: {:noreply, socket}
 
   def enter_unit(js \\ %JS{}, unit_id) do
-    unit_cards_selector = "#slider_#{unit_id} > div[role*=\"card\"]"
+    unit_cards_selector = "#slider_focus_wrap_#{unit_id} > div[role*=\"card\"]"
 
     JS.set_attribute(js, {"tabindex", "0"}, to: unit_cards_selector)
-    |> enable_focus_wrap_for("#slider_#{unit_id}")
+    |> enable_focus_wrap_for("#slider_focus_wrap_#{unit_id}")
     |> JS.focus(to: unit_cards_selector <> ":first-of-type")
   end
 
   def leave_unit(js \\ %JS{}, unit_id) do
     JS.remove_attribute(js, "tabindex", to: "#slider_#{unit_id} > div[role*=\"card\"]")
-    |> disable_focus_wrap_for("#slider_#{unit_id}")
+    |> disable_focus_wrap_for("#slider_focus_wrap_#{unit_id}")
     |> JS.focus(to: "#unit_#{unit_id}")
   end
 
@@ -620,8 +624,6 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       selected_view: selected_view
     } = socket.assigns
 
-    full_hierarchy = get_or_compute_full_hierarchy(section)
-
     send(self(), :gc)
 
     {:noreply,
@@ -646,8 +648,8 @@ defmodule OliWeb.Delivery.Student.LearnLive do
            end
          )
      )
-     |> update(:units, fn _units -> full_hierarchy["children"] end)
-     |> maybe_enable_gallery_slider_buttons(full_hierarchy, selected_view)}
+     |> update(:units, fn _units -> get_or_compute_full_hierarchy(section)["children"] end)
+     |> maybe_assign_gallery_data(selected_view)}
   end
 
   # needed to ignore results of Task invocation
@@ -723,6 +725,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
           student_end_date_exceptions_per_resource_id={@student_end_date_exceptions_per_resource_id}
           selected_module_per_unit_resource_id={@selected_module_per_unit_resource_id}
           student_raw_avg_score_per_page_id={@student_raw_avg_score_per_page_id}
+          page_metrics_per_module_id={@page_metrics_per_module_id}
           viewed_intro_video_resource_ids={@viewed_intro_video_resource_ids}
           progress={
             parse_student_progress_for_resource(
@@ -758,6 +761,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   attr :unit_raw_avg_score, :map
   attr :assistant_enabled, :boolean, required: true
   attr :display_props_per_module_id, :map
+  attr :page_metrics_per_module_id, :map
 
   # top level page as a card with title and header
   def gallery_row(%{unit: %{"resource_type_id" => 1}} = assigns) do
@@ -790,7 +794,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
                 <.progress_bar
                   percent={@progress}
                   width="100px"
-                  on_going_colour="bg-[#0F6CF5]"
+                  on_going_colour="bg-[#0CAF61]"
                   completed_colour="bg-[#0CAF61]"
                   role={"unit_#{@unit["numbering"]["index"]}_progress"}
                   show_percent={@progress != 100}
@@ -800,7 +804,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
             </div>
           </div>
         </div>
-        <div class="w-[288px]">
+        <div class="w-[294px]">
           <.card
             card={@unit}
             module_index={1}
@@ -833,11 +837,11 @@ defmodule OliWeb.Delivery.Student.LearnLive do
             <%= "UNIT #{@unit["numbering"]["index"]}" %>
           </div>
           <div class="mb-6 flex flex-col items-start gap-[6px] w-full">
-            <h3 class="text-[26px] leading-[32px] tracking-[0.02px] font-normal dark:text-[#DDD]">
-              <%= @unit["title"] %>
-            </h3>
-            <div class="flex items-center w-full gap-3">
-              <div class="flex items-center gap-3" role="schedule_details">
+            <div class="flex w-full">
+              <h3 class="text-[26px] leading-[32px] tracking-[0.02px] font-normal dark:text-[#DDD]">
+                <%= @unit["title"] %>
+              </h3>
+              <div class="ml-auto flex items-center gap-3" role="schedule_details">
                 <div class="text-[14px] leading-[32px] tracking-[0.02px] font-semibold">
                   <span class="text-gray-400 opacity-80 dark:text-[#696974] dark:opacity-100 mr-1">
                     Due:
@@ -849,67 +853,74 @@ defmodule OliWeb.Delivery.Student.LearnLive do
                   ) %>
                 </div>
               </div>
-              <div class="ml-auto flex items-center gap-6">
-                <Student.score_summary :if={@progress == 100} raw_avg_score={@unit_raw_avg_score} />
-                <.progress_bar
-                  percent={@progress}
-                  width="100px"
-                  on_going_colour="bg-[#0F6CF5]"
-                  completed_colour="bg-[#0CAF61]"
-                  role={"unit_#{@unit["numbering"]["index"]}_progress"}
-                  show_percent={@progress != 100}
-                />
-                <Icons.check progress={@progress / 100} role="unit completed check icon" />
-              </div>
+            </div>
+            <div class="flex items-center gap-6">
+              <.progress_bar
+                percent={@progress}
+                width="194px"
+                on_going_colour="bg-[#0CAF61]"
+                completed_colour="bg-[#0CAF61]"
+                role={"unit_#{@unit["numbering"]["index"]}_progress"}
+                show_percent={@progress != 100}
+              />
+              <Icons.check progress={@progress / 100} role="unit completed check icon" />
+              <Student.score_summary :if={@progress == 100} raw_avg_score={@unit_raw_avg_score} />
             </div>
           </div>
         </div>
         <div class="flex relative">
           <button
             id={"slider_left_button_#{@unit["resource_id"]}"}
-            class="hidden absolute items-center justify-start -top-1 -left-1 w-10 bg-gradient-to-r from-gray-100 dark:from-[#0D0C0F] h-[180px] z-20 text-gray-700 dark:text-gray-600 hover:text-xl hover:dark:text-gray-200 hover:w-16 cursor-pointer"
+            class="hidden absolute items-center justify-start -top-1 -left-1 w-10 bg-gradient-to-r from-gray-100 dark:from-[#0D0C0F] h-[187px] z-20 text-gray-700 dark:text-gray-600 hover:text-xl hover:dark:text-gray-200 hover:w-16 cursor-pointer"
             tabindex="-1"
           >
             <i class="fa-solid fa-chevron-left ml-3"></i>
           </button>
           <button
             id={"slider_right_button_#{@unit["resource_id"]}"}
-            class="hidden absolute items-center justify-end -top-1 -right-1 w-10 bg-gradient-to-l from-gray-100 dark:from-[#0D0C0F] h-[180px] z-20 text-gray-700 dark:text-gray-600 hover:text-xl hover:dark:text-gray-200 hover:w-16 cursor-pointer"
+            class="hidden absolute items-center justify-end -top-1 -right-1 w-10 bg-gradient-to-l from-gray-100 dark:from-[#0D0C0F] h-[187px] z-20 text-gray-700 dark:text-gray-600 hover:text-xl hover:dark:text-gray-200 hover:w-16 cursor-pointer"
             tabindex="-1"
           >
             <i class="fa-solid fa-chevron-right mr-3"></i>
           </button>
-          <.custom_focus_wrap
+          <div
             id={"slider_#{@unit["resource_id"]}"}
             role="slider"
-            initially_enabled={false}
             phx-hook="SliderScroll"
             data-resource_id={@unit["resource_id"]}
-            class="flex gap-4 overflow-x-scroll overflow-y-hidden h-[178px] pt-[3px] px-[3px] scrollbar-hide"
+            class="overflow-x-scroll overflow-y-hidden h-[187px] pt-[5px] px-[5px] scrollbar-hide"
           >
-            <.intro_video_card
-              :if={@unit["intro_video"]}
-              video_url={@unit["intro_video"]}
-              card_resource_id={@unit["resource_id"]}
-              resource_id={@unit["resource_id"]}
-              intro_video_viewed={@unit["resource_id"] in @viewed_intro_video_resource_ids}
-              is_youtube_video={WebUtils.is_youtube_video?(@unit["intro_video"])}
-              unit_resource_id={@unit["resource_id"]}
-            />
-            <.card
-              :for={module <- @unit["children"]}
-              card={module}
-              module_index={module["numbering"]["index"]}
-              unit_resource_id={@unit["resource_id"]}
-              unit_numbering_index={@unit["numbering"]["index"]}
-              bg_image_url={module["poster_image"]}
-              student_progress_per_resource_id={@student_progress_per_resource_id}
-              selected={
-                @selected_module_per_unit_resource_id[@unit["resource_id"]]["resource_id"] ==
-                  module["resource_id"]
-              }
-            />
-          </.custom_focus_wrap>
+            <.custom_focus_wrap
+              id={"slider_focus_wrap_#{@unit["resource_id"]}"}
+              initially_enabled={false}
+              class="flex"
+            >
+              <.intro_video_card
+                :if={@unit["intro_video"]}
+                video_url={@unit["intro_video"]}
+                duration_minutes={@unit["duration_minutes"]}
+                card_resource_id={@unit["resource_id"]}
+                intro_video_viewed={@unit["resource_id"] in @viewed_intro_video_resource_ids}
+                is_youtube_video={WebUtils.is_youtube_video?(@unit["intro_video"])}
+              />
+              <.card
+                :for={module <- @unit["children"]}
+                card={module}
+                module_index={module["numbering"]["index"]}
+                unit_resource_id={@unit["resource_id"]}
+                unit_numbering_index={@unit["numbering"]["index"]}
+                bg_image_url={module["poster_image"]}
+                student_progress_per_resource_id={@student_progress_per_resource_id}
+                selected={
+                  @selected_module_per_unit_resource_id[@unit["resource_id"]]["resource_id"] ==
+                    module["resource_id"]
+                }
+                page_metrics={
+                  get_module_page_metrics(@page_metrics_per_module_id, module["resource_id"])
+                }
+              />
+            </.custom_focus_wrap>
+          </div>
         </div>
       </div>
       <.custom_focus_wrap
@@ -1039,9 +1050,12 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         >
           <div class="w-full">
             <% module =
-              Map.get(assigns.selected_module_per_unit_resource_id, assigns.unit["resource_id"]) %>
+              Map.get(@selected_module_per_unit_resource_id, @unit["resource_id"]) %>
             <.module_content_header
               module={module}
+              page_metrics={
+                get_module_page_metrics(@page_metrics_per_module_id, module["resource_id"])
+              }
               show_completed_pages={
                 get_in(
                   @display_props_per_module_id,
@@ -1243,6 +1257,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
 
   attr :module, :map
   attr :show_completed_pages, :boolean, default: true
+  attr :page_metrics, :map, default: @default_module_page_metrics
 
   def module_content_header(assigns) do
     ~H"""
@@ -1254,9 +1269,12 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         <div class="w-34 h-8 pl-1 flex gap-1.5">
           <div class="flex gap-0.5 items-center">
             <span class="opacity-80 dark:text-white text-[13px] font-normal font-['Open Sans'] leading-loose">
-              <%= case count_completed_and_total_pages(@module) do
-                {1, 1} -> "1 of 1 Page"
-                {completed_count, total_count} -> "#{completed_count} of #{total_count} Pages"
+              <%= case @page_metrics do
+                %{total_pages_count: 1, completed_pages_count: 1} ->
+                  "1 of 1 Page"
+
+                %{total_pages_count: total_count, completed_pages_count: completed_count} ->
+                  "#{completed_count} of #{total_count} Pages"
               end %>
             </span>
           </div>
@@ -1548,7 +1566,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     <button
       role={"#{@type} #{@numbering_index} details"}
       class={[
-        "w-full pl-[5px] pr-[7px] py-2.5 rounded-lg justify-start items-center gap-5 flex rounded-lg focus:bg-[#000000]/5 hover:bg-[#000000]/5 dark:focus:bg-[#FFFFFF]/5 dark:hover:bg-[#FFFFFF]/5",
+        "w-full pl-[5px] pr-[7px] py-2.5 rounded-lg justify-start items-center gap-5 flex focus:bg-[#000000]/5 hover:bg-[#000000]/5 dark:focus:bg-[#FFFFFF]/5 dark:hover:bg-[#FFFFFF]/5",
         if(@graded,
           do: "font-semibold hover:font-bold focus:font-bold",
           else: "font-normal hover:font-medium focus:font-medium"
@@ -1719,56 +1737,70 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     end
   end
 
-  attr :title, :string, default: "Intro"
+  attr :title, :string, default: "INTRO"
   attr :video_url, :string
   attr :card_resource_id, :string
-  attr :resource_id, :string
   attr :intro_video_viewed, :boolean, default: false
   attr :is_youtube_video, :boolean, default: false
-  attr :unit_resource_id, :string
+  attr :duration_minutes, :integer
 
   def intro_video_card(%{is_youtube_video: true} = assigns) do
     ~H"""
     <div
       id={"intro_card_#{@card_resource_id}"}
-      class="relative slider-card hover:scale-[1.01]"
+      class="relative slider-card mr-4 rounded-xl hover:outline hover:outline-[3px] outline-gray-800 dark:outline-white"
       role="youtube_intro_video_card"
       phx-keydown="intro_card_keydown"
       phx-value-video_url={@video_url}
       phx-value-card_resource_id={@card_resource_id}
-      data-event={leave_unit(@unit_resource_id)}
+      data-event={leave_unit(@card_resource_id)}
+      phx-click="play_video"
+      phx-value-video_url={@video_url}
+      phx-value-module_resource_id={@card_resource_id}
+      phx-value-is_intro_video="true"
     >
-      <div class="z-10 rounded-xl overflow-hidden absolute w-[288px] h-10">
-        <.progress_bar
-          percent={if @intro_video_viewed, do: 100, else: 0}
-          width="100%"
-          height="h-[4px]"
-          show_percent={false}
-          on_going_colour="bg-[#0F6CF5]"
-          completed_colour="bg-[#0CAF61]"
-          role="intro video card progress"
-        />
-      </div>
-      <div class="rounded-xl absolute -top-[0.7px] -left-[0.7px] h-[163px] w-[289.5px] cursor-pointer bg-[linear-gradient(180deg,#223_0%,rgba(34,34,51,0.72)_52.6%,rgba(34,34,51,0.00)_100%)]" />
       <div
-        class="flex flex-col items-center rounded-xl h-[162px] w-[288px] bg-gray-200/50 shrink-0 px-5 pt-[15px] bg-cover bg-center"
+        xphx-mouseover={JS.show(to: "#card_badge_details_#{@card_resource_id}")}
+        xphx-mouseout={JS.hide(to: "#card_badge_details_#{@card_resource_id}")}
+        class="rounded-xl absolute overflow-hidden h-[170px] w-[294px] cursor-pointer bg-[linear-gradient(180deg,#223_0%,rgba(34,34,51,0.72)_52.6%,rgba(34,34,51,0.00)_100%)]"
+      >
+        <div class="mt-[166px]">
+          <.progress_bar
+            percent={if @intro_video_viewed, do: 100, else: 0}
+            width="100%"
+            height="h-[4px]"
+            show_percent={false}
+            on_going_colour="bg-[#0CAF61]"
+            completed_colour="bg-[#0CAF61]"
+            role="intro video card progress"
+          />
+        </div>
+      </div>
+      <div
+        class="flex flex-col items-center rounded-xl h-[170px] w-[294px] bg-gray-200/50 shrink-0 px-5 pt-[15px] bg-cover bg-center"
         style={"background-image: url('#{WebUtils.convert_to_youtube_image_url(@video_url)}');"}
       >
-        <h5 class="text-[13px] leading-[18px] font-bold opacity-60 text-gray-500 text-white dark:text-opacity-50 self-start">
+        <span
+          role="card top label"
+          class="pointer-events-none text-[12px] leading-[16px] font-bold opacity-60 text-white dark:text-opacity-50 self-start"
+        >
           <%= @title %>
-        </h5>
+        </span>
+        <div class="absolute bottom-4 right-3 h-[26px] pointer-events-none">
+          <.card_badge
+            resource_id={@card_resource_id}
+            duration_minutes={@duration_minutes}
+            completed={@intro_video_viewed}
+          />
+        </div>
         <div
           id={"intro_video_card_#{@card_resource_id}"}
-          class="w-[70px] h-[70px] relative my-auto -top-2 cursor-pointer"
+          class="w-[70px] h-[70px] relative my-auto -top-2 cursor-pointer pointer-events-none"
         >
           <div class="w-full h-full rounded-full backdrop-blur bg-gray/50"></div>
           <div
             role="play_unit_intro_video"
             class="w-full h-full absolute top-0 left-0 flex items-center justify-center"
-            phx-click="play_video"
-            phx-value-video_url={@video_url}
-            phx-value-module_resource_id={@resource_id}
-            phx-value-is_intro_video="true"
           >
             <Icons.play class="scale-110 ml-[6px] mt-[9px]" />
           </div>
@@ -1782,48 +1814,63 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     ~H"""
     <div
       id={"intro_card_#{@card_resource_id}"}
-      class="relative slider-card hover:scale-[1.01]"
+      class="relative slider-card mr-4 rounded-xl hover:outline hover:outline-[3px] outline-gray-800 dark:outline-white"
       role="intro_video_card"
       phx-keydown="intro_card_keydown"
       phx-value-video_url={@video_url}
       phx-value-card_resource_id={@card_resource_id}
-      data-event={leave_unit(@unit_resource_id)}
+      data-event={leave_unit(@card_resource_id)}
+      phx-click="play_video"
+      phx-value-video_url={@video_url}
+      phx-value-module_resource_id={@card_resource_id}
+      phx-value-is_intro_video="true"
     >
-      <div class="z-20 rounded-xl overflow-hidden absolute w-[288px] h-10">
-        <.progress_bar
-          percent={if @intro_video_viewed, do: 100, else: 0}
-          width="100%"
-          height="h-[4px]"
-          show_percent={false}
-          on_going_colour="bg-[#0F6CF5]"
-          completed_colour="bg-[#0CAF61]"
-          role="intro video card progress"
-        />
+      <div
+        xphx-mouseover={JS.show(to: "#card_badge_details_#{@card_resource_id}")}
+        xphx-mouseout={JS.hide(to: "#card_badge_details_#{@card_resource_id}")}
+        class="rounded-xl absolute overflow-hidden h-[170px] w-[294px] cursor-pointer bg-[linear-gradient(180deg,#223_0%,rgba(34,34,51,0.72)_52.6%,rgba(34,34,51,0.00)_100%)]"
+      >
+        <div class="mt-[166px]">
+          <.progress_bar
+            percent={if @intro_video_viewed, do: 100, else: 0}
+            width="100%"
+            height="h-[4px]"
+            show_percent={false}
+            on_going_colour="bg-[#0CAF61]"
+            completed_colour="bg-[#0CAF61]"
+            role="intro video card progress"
+          />
+        </div>
       </div>
-      <div class="z-10 rounded-xl absolute -top-[0.7px] -left-[0.7px] h-[163px] w-[289.5px] cursor-pointer bg-[linear-gradient(180deg,#223_0%,rgba(34,34,51,0.72)_52.6%,rgba(34,34,51,0.00)_100%)]" />
-      <div class="relative flex flex-col items-center rounded-xl h-[162px] w-[288px] bg-gray-200/50 shrink-0 px-5 pt-[15px] bg-cover bg-center">
+      <div class="relative flex flex-col items-center rounded-xl h-[170px] w-[294px] bg-gray-200/50 shrink-0 px-5 pt-[15px] bg-cover bg-center">
         <video
           id={"video_preview_image_#{@video_url}"}
-          class="rounded-xl object-cover absolute -top-[0.7px] -left-[0.7px] h-[163px] w-[289.5px]"
+          class="rounded-xl object-cover absolute h-[170px] w-[294px]"
           preload="metadata"
         >
           <source src={"#{@video_url}#t=0.5"} /> Your browser does not support the video tag.
         </video>
-        <h5 class="z-30 text-[13px] leading-[18px] font-bold opacity-60 text-gray-500 text-white dark:text-opacity-50 self-start">
+        <span
+          role="card top label"
+          class="pointer-events-none text-[12px] leading-[16px] font-bold opacity-60 text-white dark:text-opacity-50 self-start"
+        >
           <%= @title %>
-        </h5>
+        </span>
+        <div class="absolute bottom-4 right-3 h-[26px] pointer-events-none">
+          <.card_badge
+            resource_id={@card_resource_id}
+            duration_minutes={@duration_minutes}
+            completed={@intro_video_viewed}
+          />
+        </div>
         <div
           id={"intro_video_card_#{@card_resource_id}"}
-          class="w-[70px] h-[70px] relative my-auto -top-2 cursor-pointer"
+          class="w-[70px] h-[70px] relative my-auto -top-2 cursor-pointer pointer-events-none"
         >
           <div class="w-full h-full rounded-full backdrop-blur bg-gray/50"></div>
           <div
             role="play_unit_intro_video"
             class="z-30 w-full h-full absolute top-0 left-0 flex items-center justify-center"
-            phx-click="play_video"
-            phx-value-video_url={@video_url}
-            phx-value-module_resource_id={@resource_id}
-            phx-value-is_intro_video="true"
           >
             <Icons.play class="scale-110 ml-[6px] mt-[9px]" />
           </div>
@@ -1841,6 +1888,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   attr :bg_image_url, :string, doc: "the background image url for the card"
   attr :student_progress_per_resource_id, :map
   attr :default_image, :string, default: @default_image
+  attr :page_metrics, :map, default: @default_module_page_metrics
 
   def card(assigns) do
     assigns = Map.put(assigns, :is_page, is_page(assigns.card))
@@ -1863,54 +1911,69 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       phx-value-slug={@card["slug"]}
       phx-value-type={if @is_page, do: "page", else: "module"}
       class={[
-        "relative hover:scale-[1.01] transition-transform duration-150",
-        if(!@is_page, do: "slider-card")
+        "relative slider-card mr-4 rounded-xl hover:outline hover:outline-[3px] outline-gray-800 dark:outline-white",
+        if(!@is_page, do: "slider-card"),
+        if(@selected, do: "outline outline-[3px]")
       ]}
       role={"card_#{@module_index}"}
       data-enter-event={enter_module(@unit_resource_id)}
       data-leave-event={leave_unit(@unit_resource_id)}
     >
-      <div class="z-10 rounded-xl overflow-hidden absolute h-[163px] w-[288px] cursor-pointer">
-        <.progress_bar
-          :if={progress_started(@student_progress_per_resource_id, @card["resource_id"])}
-          percent={
-            parse_student_progress_for_resource(
-              @student_progress_per_resource_id,
-              @card["resource_id"]
-            )
-          }
-          width="100%"
-          height="h-[4px]"
-          show_percent={false}
-          on_going_colour="bg-[#0F6CF5]"
-          completed_colour="bg-[#0CAF61]"
-          role={"card_#{@module_index}_progress"}
-        />
+      <div
+        xphx-mouseover={JS.show(to: "#card_badge_details_#{@card["resource_id"]}")}
+        xphx-mouseout={JS.hide(to: "#card_badge_details_#{@card["resource_id"]}")}
+        class="rounded-xl absolute h-[170px] w-[294px] overflow-hidden cursor-pointer bg-[linear-gradient(180deg,#223_0%,rgba(34,34,51,0.72)_52.6%,rgba(34,34,51,0.00)_100%)]"
+      >
+        <div class="mt-[166px]" role={"card #{@module_index} progress"}>
+          <.progress_bar
+            percent={
+              parse_student_progress_for_resource(
+                @student_progress_per_resource_id,
+                @card["resource_id"]
+              )
+            }
+            width="100%"
+            height="h-[4px]"
+            show_percent={false}
+            on_going_colour="bg-[#0CAF61]"
+            completed_colour="bg-[#0CAF61]"
+            role={"card_#{@module_index}_progress"}
+          />
+        </div>
       </div>
-      <div class="rounded-xl absolute h-[163px] w-[288px] cursor-pointer bg-[linear-gradient(180deg,#223_0%,rgba(34,34,51,0.72)_52.6%,rgba(34,34,51,0.00)_100%)]">
-      </div>
-      <.page_icon :if={@is_page} graded={@card["graded"]} />
 
-      <div class="h-[170px] w-[288px]">
+      <div class="h-[170px] w-[294px]">
         <div
           class={[
-            "flex flex-col gap-[5px] cursor-pointer rounded-xl h-[162px] w-[288px] shrink-0 mb-1 px-5 pt-[15px] bg-gray-200 z-10 bg-cover bg-center",
-            if(@selected,
-              do: "bg-gray-400 outline outline-2 outline-gray-800 dark:outline-white"
-            )
+            "flex flex-col gap-[5px] cursor-pointer rounded-xl h-[170px] w-[294px] shrink-0 mb-1 px-5 pt-[15px] bg-gray-200 z-10 bg-cover bg-center"
           ]}
           style={"background-image: url('#{if(@bg_image_url in ["", nil], do: @default_image, else: @bg_image_url)}');"}
         >
-          <span class="text-[12px] leading-[16px] font-bold opacity-60 text-white dark:text-opacity-50">
+          <span
+            role="card top label"
+            class="pointer-events-none text-[12px] leading-[16px] font-bold opacity-60 text-white dark:text-opacity-50"
+          >
             <%= if @is_page,
-              do: Phoenix.HTML.raw("&nbsp;"),
-              else: "#{@unit_numbering_index}.#{@module_index}" %>
+              do: "PAGE",
+              else: "MODULE #{@module_index}" %>
           </span>
-          <h5 class="text-[18px] leading-[25px] font-bold text-white z-10">
+          <h5 class="pointer-events-none text-[18px] leading-[25px] font-bold text-white z-10">
             <%= @card["title"] %>
           </h5>
+          <div class="absolute bottom-4 right-3 h-[26px] pointer-events-none">
+            <.module_card_badge
+              :if={!@is_page}
+              page_metrics={@page_metrics}
+              resource_id={@card["resource_id"]}
+            />
+            <.card_badge
+              :if={@is_page}
+              resource_id={@card["resource_id"]}
+              duration_minutes={@card["duration_minutes"]}
+              completed={@card["completed"]}
+            />
+          </div>
         </div>
-
         <div
           :if={@selected}
           class={[
@@ -1924,30 +1987,96 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     """
   end
 
-  attr :graded, :boolean
+  attr :resource_id, :string
+  attr :duration_minutes, :integer
+  attr :completed, :boolean
 
-  def page_icon(assigns) do
-    if assigns.graded do
-      ~H"""
+  def card_badge(%{completed: true} = assigns) do
+    ~H"""
+    <div
+      role="card badge"
+      class="h-[26px] px-2 py-1 dark:bg-white/10 rounded-xl shadow justify-end items-center gap-1 inline-flex overflow-hidden"
+    >
+      <Icons.check />
       <div
-        class="h-[36px] w-[36px] absolute top-0 right-0 bg-[#F68E2E] rounded-bl-xl rounded-tr-xl"
-        role="graded page icon"
+        id={"card_badge_details_#{@resource_id}"}
+        class="hidden dark:text-white text-[13px] font-semibold pointer-events-none"
       >
-        <div class="absolute top-0 right-0 h-[36px] w-[36px] flex justify-center items-center">
-          <Icons.flag fill_class="fill-[#FFFFFF]" />
-        </div>
+        <%= parse_card_badge_minutes(@duration_minutes, :page) %>
       </div>
-      """
-    else
-      ~H"""
-      <div class="h-[45px] w-[36px] absolute top-0 right-0" role="page icon">
-        <img src={~p"/images/course_content/page_icon.png"} />
-        <div class="absolute top-0 right-0 h-[36px] w-[36px] flex justify-center items-center">
-          <Icons.practice_page />
-        </div>
+    </div>
+    """
+  end
+
+  def card_badge(assigns) do
+    ~H"""
+    <div
+      role="card badge"
+      class="h-[26px] px-2 py-1 dark:bg-white/10 rounded-xl shadow justify-end items-center gap-1 inline-flex overflow-hidden"
+    >
+      <div class="dark:text-white text-[13px] font-semibold pointer-events-none">
+        <%= parse_card_badge_minutes(@duration_minutes, :page) %>
       </div>
-      """
-    end
+    </div>
+    """
+  end
+
+  attr :page_metrics, :map
+  attr :resource_id, :string
+
+  def module_card_badge(
+        %{
+          page_metrics: %{
+            completed_pages_count: completed_pages_count,
+            total_pages_count: total_pages_count
+          }
+        } =
+          assigns
+      )
+      when completed_pages_count < total_pages_count do
+    ~H"""
+    <div
+      role="card badge"
+      id={"in_progress_card_badge_#{@resource_id}"}
+      class="ml-auto h-[26px] px-2 py-1 dark:bg-white/10 rounded-xl shadow justify-end items-center gap-1 inline-flex"
+    >
+      <div class="dark:text-white text-[13px] font-semibold">
+        <%= parse_module_total_pages(@page_metrics.total_pages_count) %> · <%= parse_card_badge_minutes(
+          @page_metrics.total_duration_minutes,
+          :module
+        ) %>
+      </div>
+    </div>
+    """
+  end
+
+  def module_card_badge(
+        %{
+          page_metrics: %{
+            completed_pages_count: completed_pages_count,
+            total_pages_count: total_pages_count
+          }
+        } =
+          assigns
+      )
+      when completed_pages_count == total_pages_count do
+    ~H"""
+    <div
+      role="card badge"
+      class="h-[26px] px-2 py-1 dark:bg-white/10 rounded-xl shadow justify-end items-center gap-1 inline-flex overflow-hidden"
+    >
+      <Icons.check />
+      <div
+        id={"card_badge_details_#{@resource_id}"}
+        class="hidden dark:text-white text-[13px] font-semibold pointer-events-none"
+      >
+        <%= parse_module_total_pages(@page_metrics.total_pages_count) %> · <%= parse_card_badge_minutes(
+          @page_metrics.total_duration_minutes,
+          :module
+        ) %>
+      </div>
+    </div>
+    """
   end
 
   def video_player(assigns) do
@@ -2099,20 +2228,80 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   defp completed_page?(false = _graded, visited?, _score, progress),
     do: visited? and progress == 1.0
 
-  defp count_completed_and_total_pages(container) do
-    page_resource_type_id = Oli.Resources.ResourceType.get_id_by_type("page")
-    container_resource_type_id = Oli.Resources.ResourceType.get_id_by_type("container")
+  defp module_page_metrics(container) do
+    Enum.reduce(
+      container["children"],
+      @default_module_page_metrics,
+      fn
+        %{"resource_type_id" => @page_resource_type_id} = page,
+        %{
+          total_pages_count: total_pages_count,
+          completed_pages_count: completed_pages_count,
+          total_duration_minutes: total_duration_minutes
+        } ->
+          %{
+            total_pages_count: total_pages_count + 1,
+            completed_pages_count: completed_pages_count + if(page["completed"], do: 1, else: 0),
+            total_duration_minutes: total_duration_minutes + (page["duration_minutes"] || 0)
+          }
 
-    Enum.reduce(container["children"], {0, 0}, fn
-      %{"resource_type_id" => ^page_resource_type_id} = page, {completed_count, total_count} ->
-        {if(page["completed"], do: 1, else: 0) + completed_count, total_count + 1}
+        %{"resource_type_id" => @container_resource_type_id} = section,
+        %{
+          total_pages_count: total_pages_count,
+          completed_pages_count: completed_pages_count,
+          total_duration_minutes: total_duration_minutes
+        } ->
+          %{
+            total_pages_count: total,
+            completed_pages_count: completed,
+            total_duration_minutes: minutes
+          } =
+            module_page_metrics(section)
 
-      %{"resource_type_id" => ^container_resource_type_id} = section,
-      {completed_count, total_count} ->
-        {completed, total} = count_completed_and_total_pages(section)
+          %{
+            total_pages_count: total_pages_count + total,
+            completed_pages_count: completed_pages_count + completed,
+            total_duration_minutes: total_duration_minutes + minutes
+          }
+      end
+    )
+  end
 
-        {completed + completed_count, total + total_count}
-    end)
+  defp page_metrics_per_module_id(resources, pages_per_module_id \\ %{})
+
+  defp page_metrics_per_module_id([], pages_per_module_id), do: pages_per_module_id
+
+  defp page_metrics_per_module_id(
+         [
+           %{"numbering" => %{"level" => level}, "resource_type_id" => resource_type_id} =
+             resource
+           | rest
+         ],
+         pages_per_module_id
+       ) do
+    resource_completed_and_total_pages =
+      case {level, resource_type_id} do
+        {1, @container_resource_type_id} ->
+          # unit
+          Map.merge(
+            pages_per_module_id,
+            page_metrics_per_module_id(resource["children"], pages_per_module_id)
+          )
+
+        {2, @container_resource_type_id} ->
+          # module
+          page_metrics_per_module_id(
+            rest,
+            Map.merge(pages_per_module_id, %{
+              resource["resource_id"] => module_page_metrics(resource)
+            })
+          )
+
+        _ ->
+          pages_per_module_id
+      end
+
+    page_metrics_per_module_id(rest, resource_completed_and_total_pages)
   end
 
   defp display_module_item?(
@@ -2224,10 +2413,6 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     end)
   end
 
-  defp progress_started(student_progress_per_resource_id, resource_id) do
-    Map.get(student_progress_per_resource_id, resource_id, 0.0) > 0.0
-  end
-
   defp parse_student_progress_for_resource(student_progress_per_resource_id, resource_id) do
     Map.get(student_progress_per_resource_id, resource_id, 0.0)
     |> Kernel.*(100)
@@ -2285,20 +2470,51 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   end
 
   _docp = """
+  When rendering learn page in gallery view, we need to calculate the unit and module metrics
+  """
+
+  defp maybe_assign_gallery_data(socket, :gallery) do
+    %{
+      units: units,
+      student_visited_pages: student_visited_pages,
+      student_raw_avg_score_per_page_id: student_raw_avg_score_per_page_id,
+      student_progress_per_resource_id: student_progress_per_resource_id,
+      section: section
+    } = socket.assigns
+
+    units_with_metrics =
+      units
+      |> Enum.map(fn unit ->
+        unit
+        |> mark_visited_and_completed_pages(
+          student_visited_pages,
+          student_raw_avg_score_per_page_id,
+          student_progress_per_resource_id
+        )
+        |> fetch_learning_objectives(section.id)
+      end)
+
+    socket
+    |> update(:units, fn _units -> units_with_metrics end)
+    |> assign(page_metrics_per_module_id: page_metrics_per_module_id(units_with_metrics))
+    |> enable_gallery_slider_buttons()
+  end
+
+  defp maybe_assign_gallery_data(socket, _another_view), do: socket
+
+  _docp = """
   When rendering learn page in gallery view, we need to execute the Scroller hook to enable the slider buttons
   """
 
-  defp maybe_enable_gallery_slider_buttons(socket, full_hierarchy, :gallery) do
+  defp enable_gallery_slider_buttons(socket) do
     push_event(socket, "enable-slider-buttons", %{
       unit_resource_ids:
         Enum.map(
-          full_hierarchy["children"],
+          socket.assigns.units,
           & &1["resource_id"]
         )
     })
   end
-
-  defp maybe_enable_gallery_slider_buttons(socket, _full_hierarchy, _selected_view), do: socket
 
   defp module_has_intro_video(module), do: module["intro_video"] != nil
 
@@ -2430,4 +2646,41 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       _ -> "ml-0"
     end
   end
+
+  defp get_module_page_metrics(page_metrics_per_module_id, module_resource_id) do
+    page_metrics_per_module_id[module_resource_id] || @default_module_page_metrics
+  end
+
+  defp parse_module_total_pages(pages) when is_integer(pages) do
+    pages
+    |> case do
+      1 -> "1 page"
+      _ -> "#{pages} pages"
+    end
+  end
+
+  defp parse_module_total_pages(_), do: "unknown pages"
+
+  defp parse_card_badge_minutes(minutes, resource_type) when is_integer(minutes) do
+    clock_duration =
+      minutes
+      |> Timex.Duration.from_minutes()
+      |> Timex.Duration.to_clock()
+
+    case {clock_duration, resource_type} do
+      {{hours, minutes, _seconds, _milliseconds}, :module} when hours > 0 ->
+        "#{hours}h #{minutes}m"
+
+      {{_, minutes, _seconds, _milliseconds}, :module} ->
+        "#{minutes}m"
+
+      {{hours, minutes, _seconds, _milliseconds}, :page} when hours > 0 ->
+        "#{hours}h #{minutes}m"
+
+      {{_, minutes, _seconds, _milliseconds}, :page} ->
+        "#{minutes} min"
+    end
+  end
+
+  defp parse_card_badge_minutes(_, _), do: "? min"
 end

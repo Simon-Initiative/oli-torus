@@ -26,7 +26,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.SurveysTabTest do
       OliWeb.Endpoint,
       OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
       section_slug,
-      :overview,
+      :insights,
       :surveys,
       params
     )
@@ -1201,7 +1201,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.SurveysTabTest do
       section = insert(:section)
 
       redirect_path =
-        "/session/new?request_path=%2Fsections%2F#{section.slug}%2Finstructor_dashboard%2Foverview%2Fsurveys"
+        "/session/new?request_path=%2Fsections%2F#{section.slug}%2Finstructor_dashboard%2Finsights%2Fsurveys"
 
       assert {:error, {:redirect, %{to: ^redirect_path}}} =
                live(conn, live_surveys_route(section.slug))

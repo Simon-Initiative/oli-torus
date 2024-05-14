@@ -4,6 +4,8 @@ defmodule OliWeb.Delivery.Student.LessonLive do
   import OliWeb.Delivery.Student.Utils,
     only: [page_header: 1, scripts: 1]
 
+  import Ecto.Query
+
   alias Oli.Delivery.Attempts.Core.ResourceAttempt
   alias Oli.Delivery.Attempts.PageLifecycle
   alias Oli.Delivery.Attempts.PageLifecycle.FinalizationSummary
@@ -46,6 +48,8 @@ defmodule OliWeb.Delivery.Student.LessonLive do
       )
     end
 
+    emit_page_viewed_event(socket)
+
     {:ok,
      socket
      |> assign_html_and_scripts()
@@ -61,6 +65,8 @@ defmodule OliWeb.Delivery.Student.LessonLive do
         _session,
         %{assigns: %{view: :graded_page, page_context: %{progress_state: :in_progress}}} = socket
       ) do
+    emit_page_viewed_event(socket)
+
     {:ok,
      socket
      |> assign_html_and_scripts()
@@ -73,6 +79,8 @@ defmodule OliWeb.Delivery.Student.LessonLive do
         %{assigns: %{view: :adaptive_chromeless, page_context: %{progress_state: :in_progress}}} =
           socket
       ) do
+    emit_page_viewed_event(socket)
+
     {:ok,
      socket
      |> assign_scripts()
@@ -581,6 +589,29 @@ defmodule OliWeb.Delivery.Student.LessonLive do
      )}
   end
 
+  def handle_event(
+        "set_delete_post_id",
+        %{"post-id" => post_id, "visibility" => visibility},
+        socket
+      ) do
+    {:noreply,
+     assign_annotations(socket,
+       delete_post_id: {String.to_existing_atom(visibility), String.to_integer(post_id)}
+     )}
+  end
+
+  def handle_event("delete_post", _params, socket) do
+    %{annotations: %{delete_post_id: {_visibility, post_id}}} = socket.assigns
+
+    case Collaboration.soft_delete_post(post_id) do
+      {1, _} ->
+        {:noreply, mark_post_deleted(socket, post_id)}
+
+      {:error, _} ->
+        {:noreply, put_flash(socket, :error, "Failed to delete note")}
+    end
+  end
+
   # handle assigns directly from async tasks
   def handle_info({ref, result}, socket) do
     Process.demonitor(ref, [:flush])
@@ -603,6 +634,8 @@ defmodule OliWeb.Delivery.Student.LessonLive do
   def render(%{view: :practice_page, annotations: %{}} = assigns) do
     # For practice page the activity scripts and activity_bridge script are needed as soon as the page loads.
     ~H"""
+    <Annotations.delete_post_modal />
+
     <.page_content_with_sidebar_layout show_sidebar={@annotations.show_sidebar}>
       <:header>
         <.page_header
@@ -820,18 +853,8 @@ defmodule OliWeb.Delivery.Student.LessonLive do
   def render(%{view: view, begin_attempt?: false} = assigns)
       when view in [:graded_page, :adaptive_chromeless] do
     ~H"""
-    <Modal.modal id="password_attempt_modal" class="w-1/2">
-      <:title>Provide Assessment Password</:title>
-      <.form
-        phx-submit={JS.push("begin_attempt") |> Modal.hide_modal("password_attempt_modal")}
-        for={%{}}
-        class="flex flex-col gap-6"
-        id="password_attempt_form"
-      >
-        <input id="password_attempt_input" type="password" name="password" field={:password} value="" />
-        <.button type="submit" class="mx-auto btn btn-primary">Begin</.button>
-      </.form>
-    </Modal.modal>
+    <.password_attempt_modal />
+
     <div class="flex pb-20 flex-col w-full items-center gap-15 flex-1 overflow-auto">
       <div class="flex-1 max-w-[720px] pt-20 pb-10 mx-6 flex-col justify-start items-center gap-10 inline-flex">
         <.page_header
@@ -853,6 +876,23 @@ defmodule OliWeb.Delivery.Student.LessonLive do
         />
       </div>
     </div>
+    """
+  end
+
+  defp password_attempt_modal(assigns) do
+    ~H"""
+    <Modal.modal id="password_attempt_modal" class="w-1/2">
+      <:title>Provide Assessment Password</:title>
+      <.form
+        phx-submit={JS.push("begin_attempt") |> Modal.hide_modal("password_attempt_modal")}
+        for={%{}}
+        class="flex flex-col gap-6"
+        id="password_attempt_form"
+      >
+        <input id="password_attempt_input" type="password" name="password" field={:password} value="" />
+        <.button type="submit" class="mx-auto btn btn-primary">Begin</.button>
+      </.form>
+    </Modal.modal>
     """
   end
 
@@ -1080,6 +1120,8 @@ defmodule OliWeb.Delivery.Student.LessonLive do
           socket.assigns.datashop_session_id
         )
 
+      emit_page_viewed_event(socket)
+
       {:noreply,
        socket
        |> assign(page_context: page_context)
@@ -1195,7 +1237,8 @@ defmodule OliWeb.Delivery.Student.LessonLive do
             create_new_annotation: false,
             auto_approve_annotations: course_collab_space_config.auto_accept,
             search_results: nil,
-            search_term: ""
+            search_term: "",
+            delete_post_id: nil
           }
         )
 
@@ -1329,7 +1372,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     socket
     |> assign_annotations(
       posts:
-        Enum.map(posts, fn post ->
+        Annotations.find_and_update_post(posts, parent_post_id, fn post ->
           if post.id == parent_post_id do
             %Collaboration.Post{
               post
@@ -1359,6 +1402,18 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     )
   end
 
+  defp mark_post_deleted(socket, post_id) do
+    %{posts: posts} = socket.assigns.annotations
+
+    socket
+    |> assign_annotations(
+      posts:
+        Annotations.find_and_update_post(posts, post_id, fn post ->
+          %Collaboration.Post{post | status: :deleted}
+        end)
+    )
+  end
+
   defp check_gating_conditions(section, user, resource_id) do
     case Oli.Delivery.Gating.blocked_by(section, user, resource_id) do
       [] -> :ok
@@ -1370,4 +1425,75 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     do: {:redirect, ~p"/sections/#{section_slug}/adaptive_lesson/#{revision_slug}"}
 
   defp maybe_redirect_adaptive(_, _, _), do: :ok
+
+  defp emit_page_viewed_event(socket) do
+    section = socket.assigns.section
+    context = socket.assigns.page_context
+
+    page_sub_type =
+      if Map.get(context.page.content, "advancedDelivery", false) do
+        "advanced"
+      else
+        "basic"
+      end
+
+    {project_id, publication_id} = get_project_and_publication_ids(section.id, context.page.id)
+
+    emit_page_viewed_helper(
+      %Oli.Analytics.Summary.Context{
+        user_id: socket.assigns.current_user.id,
+        host_name: host_name(),
+        section_id: section.id,
+        project_id: project_id,
+        publication_id: publication_id
+      },
+      %{
+        attempt_guid: hd(context.resource_attempts).attempt_guid,
+        attempt_number: hd(context.resource_attempts).attempt_number,
+        resource_id: context.page.resource_id,
+        timestamp: DateTime.utc_now(),
+        page_sub_type: page_sub_type
+      }
+    )
+  end
+
+  defp emit_page_viewed_helper(
+         %Oli.Analytics.Summary.Context{} = context,
+         %{
+           attempt_guid: _page_attempt_guid,
+           attempt_number: _page_attempt_number,
+           resource_id: _page_id,
+           timestamp: _timestamp,
+           page_sub_type: _page_sub_type
+         } = page_details
+       ) do
+    Oli.Analytics.Summary.XAPI.PageViewed.new(context, page_details)
+    |> Oli.Analytics.EventEmitter.emit_page_viewed()
+  end
+
+  defp get_project_and_publication_ids(section_id, revision_id) do
+    # From the SectionProjectPublication table, get the project_id and publication_id
+    # where a published resource exists for revision_id
+    # and the section_id matches the section_id
+
+    query =
+      from sp in Oli.Delivery.Sections.SectionsProjectsPublications,
+        join: pr in Oli.Publishing.PublishedResource,
+        on: pr.publication_id == sp.publication_id,
+        where: sp.section_id == ^section_id and pr.revision_id == ^revision_id,
+        select: {sp.project_id, sp.publication_id}
+
+    # Return nil if somehow we cannot resolve this resource.  This is just a guaranteed that
+    # we can never throw an error here
+    case Oli.Repo.all(query) do
+      [] -> {nil, nil}
+      other -> hd(other)
+    end
+  end
+
+  defp host_name() do
+    Application.get_env(:oli, OliWeb.Endpoint)
+    |> Keyword.get(:url)
+    |> Keyword.get(:host)
+  end
 end
