@@ -1243,7 +1243,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
                 <%= "#{@row["title"]}" %>
               </span>
 
-              <.duration_in_minutes
+              <Student.duration_in_minutes
                 duration_minutes={@row["duration_minutes"]}
                 graded={@row["graded"]}
               />
@@ -1609,7 +1609,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
               <%= "#{@title}" %>
             </span>
 
-            <.duration_in_minutes duration_minutes={@duration_minutes} graded={@graded} />
+            <Student.duration_in_minutes duration_minutes={@duration_minutes} graded={@graded} />
           </div>
           <div :if={@graded} role="due date and score" class="flex">
             <span class="opacity-60 text-[13px] font-normal font-['Open Sans'] !font-normal opacity-60 dark:text-white">
@@ -1620,27 +1620,6 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         </div>
       </div>
     </button>
-    """
-  end
-
-  attr :graded, :boolean, default: false
-  attr :duration_minutes, :integer
-
-  def duration_in_minutes(assigns) do
-    ~H"""
-    <div class="ml-auto items-center gap-1.5 flex">
-      <div :if={@graded} class="w-[22px] h-[22px] opacity-60 flex items-center justify-center">
-        <Icons.clock />
-      </div>
-      <div class="text-right dark:text-white opacity-60 whitespace-nowrap">
-        <span class="text-sm font-semibold font-['Open Sans']" role="duration in minutes">
-          <%= parse_minutes(@duration_minutes) %>
-          <span class="w-[25px] self-stretch text-[13px] font-semibold font-['Open Sans']">
-            min
-          </span>
-        </span>
-      </div>
-    </div>
     """
   end
 
@@ -1691,7 +1670,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
               Introduction
             </span>
 
-            <.duration_in_minutes duration_minutes={@duration_minutes} />
+            <Student.duration_in_minutes duration_minutes={@duration_minutes} />
           </div>
         </div>
       </div>
@@ -2424,9 +2403,6 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     |> round()
     |> trunc()
   end
-
-  defp parse_minutes(minutes) when minutes in ["", nil], do: "?"
-  defp parse_minutes(minutes), do: minutes
 
   defp async_calculate_student_metrics_and_enable_slider_buttons(
          liveview_pid,

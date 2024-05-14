@@ -74,6 +74,7 @@ defmodule Oli.Delivery.Sections.SectionResource do
     field(:resource_type_id, :integer, virtual: true)
     field(:revision_slug, :string, virtual: true)
     field(:purpose, :string, virtual: true)
+    field(:duration_minutes, :integer, virtual: true)
 
     timestamps(type: :utc_datetime)
   end
