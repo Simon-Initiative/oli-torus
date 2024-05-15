@@ -7,12 +7,7 @@ defmodule OliWeb.Telemetry do
   end
 
   def init(_arg) do
-
-    children = [
-      {:telemetry_poller, measurements: periodic_measurements(), period: 10_000}
-    ]
-
-    Supervisor.init(children, strategy: :one_for_one)
+    Supervisor.init([], strategy: :one_for_one)
   end
 
   def metrics do
@@ -80,9 +75,4 @@ defmodule OliWeb.Telemetry do
     ]
   end
 
-  defp periodic_measurements do
-    [
-      {Oli.Analytics.XAPI.QueueProducer, :emit_health_stats, []}
-    ]
-  end
 end
