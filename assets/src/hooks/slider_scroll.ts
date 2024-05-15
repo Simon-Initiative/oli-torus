@@ -52,7 +52,8 @@ export const SliderScroll = {
         sliderLeftButton?.classList.add('flex');
       }
 
-      if (slider.scrollLeft >= slider.scrollWidth - slider.clientWidth) {
+      // we add 5 to the scrollLeft value to avoid the sliderRightButton to get visible even when scrolling is at the end
+      if (slider.scrollLeft + 5 >= slider.scrollWidth - slider.clientWidth) {
         sliderRightButton?.classList.add('hidden');
         sliderRightButton?.classList.remove('flex');
       } else {

@@ -64,6 +64,11 @@ defmodule OliWeb.Experiments.ExperimentsView do
           source={:experiments}
         />
       <% end %>
+
+      <div :if={@is_upgrade_enabled} class="flex gap-4">
+        <.button class="btn btn-md btn-primary mt-2">Download Segment JSON</.button>
+        <.button class="btn btn-md btn-primary mt-2">Download Experiment JSON</.button>
+      </div>
     </div>
     """
   end

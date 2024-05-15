@@ -166,7 +166,8 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
     page_7_revision =
       insert(:revision,
         resource_type_id: ResourceType.get_id_by_type("page"),
-        title: "Page 7"
+        title: "Page 7",
+        duration_minutes: 12
       )
 
     page_8_revision =
@@ -307,7 +308,9 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
         children: [module_1_revision.resource_id, module_2_revision.resource_id],
         title: "Introduction",
         poster_image: "some_image_url",
-        intro_video: "youtube.com/watch?v=123456789ab"
+        intro_video: "youtube.com/watch?v=123456789ab",
+        # this duration corresponds to the intro video
+        duration_minutes: 23
       })
 
     unit_2_revision =
@@ -810,6 +813,140 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       refute has_element?(
                view,
                ~s{div[role="unit_3"] div[role="slider"] div[role="youtube_intro_video_card"]}
+             )
+    end
+
+    test "can see card top label for intro videos, graded pages, practice pages and modules", %{
+      conn: conn,
+      section: section,
+      unit_1: unit_1,
+      page_7: practice_page,
+      page_8: graded_page,
+      module_1: module_1
+    } do
+      {:ok, view, _html} = live(conn, Utils.learn_live_path(section.slug))
+
+      assert has_element?(
+               view,
+               ~s{div[id="intro_card_#{unit_1.resource_id}"] span[role="card top label"]},
+               "INTRO"
+             )
+
+      assert has_element?(
+               view,
+               ~s{div[id="page_#{practice_page.resource_id}"] span[role="card top label"]},
+               "PAGE"
+             )
+
+      assert has_element?(
+               view,
+               ~s{div[id="page_#{graded_page.resource_id}"] span[role="card top label"]},
+               "PAGE"
+             )
+
+      assert has_element?(
+               view,
+               ~s{div[id="module_#{module_1.resource_id}"] span[role="card top label"]},
+               "MODULE 1"
+             )
+    end
+
+    test "can see not completed card badge for intro videos, graded pages, practice pages and modules",
+         %{
+           conn: conn,
+           section: section,
+           unit_1: unit_1,
+           page_7: practice_page,
+           page_8: graded_page,
+           module_1: module_1
+         } do
+      {:ok, view, _html} = live(conn, Utils.learn_live_path(section.slug))
+
+      assert has_element?(
+               view,
+               ~s{div[id="intro_card_#{unit_1.resource_id}"] div[role="card badge"]},
+               "23 min"
+             )
+
+      assert has_element?(
+               view,
+               ~s{div[id="page_#{practice_page.resource_id}"] div[role="card badge"]},
+               "12 min"
+             )
+
+      assert has_element?(
+               view,
+               ~s{div[id="page_#{graded_page.resource_id}"] div[role="card badge"]},
+               "? min"
+             )
+
+      assert has_element?(
+               view,
+               ~s{div[id="module_#{module_1.resource_id}"] div[role="card badge"]},
+               "2 pages · 25m"
+             )
+    end
+
+    test "can see completed card badge for intro videos, graded pages, practice pages and modules",
+         %{
+           conn: conn,
+           section: section,
+           user: user,
+           unit_1: unit_1,
+           page_1: page_1,
+           page_2: page_2,
+           page_7: practice_page,
+           page_8: graded_page,
+           module_1: module_1,
+           mcq_1: mcq_1,
+           project: project,
+           publication: publication
+         } do
+      # complete all pages
+      [page_1, page_2, practice_page, graded_page]
+      |> Enum.each(fn page ->
+        set_progress(section.id, page.resource_id, user.id, 1.0, page)
+
+        set_activity_attempt(
+          page,
+          mcq_1,
+          user,
+          section,
+          project.id,
+          publication.id,
+          "id_for_option_a",
+          true
+        )
+      end)
+
+      {:ok, view, _html} = live(conn, Utils.learn_live_path(section.slug))
+
+      # play unit 1 intro video
+      view
+      |> element(~s{div[id="intro_card_#{unit_1.resource_id}"]})
+      |> render_click()
+
+      # revisit the page since the video is mark as seen in an async way
+      {:ok, view, _html} = live(conn, Utils.learn_live_path(section.slug))
+
+      assert has_element?(
+               view,
+               ~s{div[id="intro_card_#{unit_1.resource_id}"] div[role="card badge"] div[role="check icon"]}
+             )
+
+      assert has_element?(
+               view,
+               ~s{div[id="page_#{practice_page.resource_id}"] div[role="card badge"] div[role="check icon"]}
+             )
+
+      assert has_element?(
+               view,
+               ~s{div[id="page_#{graded_page.resource_id}"] div[role="card badge"] div[role="check icon"]}
+             )
+
+      assert has_element?(
+               view,
+               ~s{div[id="module_#{module_1.resource_id}"] div[role="card badge"] div[role="check icon"]}
              )
     end
 
@@ -1406,15 +1543,13 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
              |> render() =~ "style=\"width: 100%\""
     end
 
-    test "can see icon that identifies practice pages at level 2 of hierarchy (and can navigate to them)",
+    test "can navigate to pages at level 2 of hierarchy (rendered as cards)",
          %{
            conn: conn,
            section: section,
            page_7: page_7
          } do
       {:ok, view, _html} = live(conn, Utils.learn_live_path(section.slug))
-
-      assert has_element?(view, ~s{div[role="unit_3"] div[role="card_7"] div[role="page icon"]})
 
       # click on page 7 card to navigate to that page
       view
@@ -1436,18 +1571,13 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       )
     end
 
-    test "can see icon that identifies graded pages at level 2 of hierarchy (and can navigate to them)",
+    test "can navigate to graded pages at level 2 of hierarchy (rendered as cards)",
          %{
            conn: conn,
            section: section,
            page_8: page_8
          } do
       {:ok, view, _html} = live(conn, Utils.learn_live_path(section.slug))
-
-      assert has_element?(
-               view,
-               ~s{div[role="unit_3"] div[role="card_8"] div[role="graded page icon"]}
-             )
 
       # click on page 8 card to navigate to that page
       view
@@ -1469,13 +1599,12 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       )
     end
 
-    test "progress bar is not rendered when there is no progress",
+    test "progress bar is rendered EVEN when there is no progress",
          %{conn: conn, section: section} do
       {:ok, view, _html} = live(conn, Utils.learn_live_path(section.slug))
 
-      # no progress yet, so progress bar is not rendered
-      refute has_element?(view, ~s{div[role="unit_1"] div[role="card_1_progress"]})
-      refute has_element?(view, ~s{div[role="unit_3"] div[role="card_1_progress"]})
+      assert has_element?(view, ~s{div[role="unit_1"] div[role="card 1 progress"]})
+      assert has_element?(view, ~s{div[role="unit_3"] div[role="card 8 progress"]})
     end
 
     test "can see card progress bar for modules at level 2 of hierarchy, and even for pages at level 2",
@@ -2384,7 +2513,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       assert_patch(
         view,
-        Utils.learn_live_path(section.slug, selected_view: :gallery)
+        Utils.learn_live_path(section.slug, selected_view: :gallery, sidebar_expanded: true)
       )
 
       # selector text matches target view
@@ -2411,7 +2540,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       assert_patch(
         view,
-        Utils.learn_live_path(section.slug, selected_view: :outline)
+        Utils.learn_live_path(section.slug, selected_view: :outline, sidebar_expanded: true)
       )
 
       # selector text matches target view
@@ -2428,15 +2557,19 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       refute has_element?(
                view,
-               ~s{a[href="/sections/#{section.slug}/explorations"]},
+               ~s{a[href="/sections/#{section.slug}/explorations?sidebar_expanded=true"]},
                "Explorations"
              )
 
-      refute has_element?(view, ~s{a[href="/sections/#{section.slug}/practice"]}, "Practice")
+      refute has_element?(
+               view,
+               ~s{a[href="/sections/#{section.slug}/practice?sidebar_expanded=true"]},
+               "Practice"
+             )
 
       refute has_element?(
                view,
-               ~s{a[href="/sections/#{section.slug}/discussions"]},
+               ~s{a[href="/sections/#{section.slug}/discussions?sidebar_expanded=true"]},
                "Discussions"
              )
     end
@@ -2450,44 +2583,151 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
            page_3: page_3,
            author: author
          } do
-      # change the purpose of the pages to have an exploration page and a deliberate practice page
-      Oli.Resources.update_revision(page_1, %{purpose: :application, author_id: author.id})
-
-      Oli.Resources.update_revision(page_2, %{purpose: :deliberate_practice, author_id: author.id})
-
-      # enable collab space on page 3
-      page_3_sr =
-        Oli.Delivery.Sections.get_section_resource(section.id, page_3.resource_id)
-
-      {:ok, _} =
-        Oli.Delivery.Sections.update_section_resource(page_3_sr, %{
-          collab_space_config: %Oli.Resources.Collaboration.CollabSpaceConfig{
-            status: :enabled
-          }
-        })
-
-      # process changes in section
-      Oli.Delivery.Sections.PostProcessing.apply(section, [
-        :discussions,
-        :explorations,
-        :deliberate_practice
-      ])
+      enable_all_sidebar_links(section, author, page_1, page_2, page_3)
 
       {:ok, view, _html} = live(conn, Utils.learn_live_path(section.slug))
 
       assert has_element?(
                view,
-               ~s{a[href="/sections/#{section.slug}/explorations"]},
+               ~s{a[href="/sections/#{section.slug}/explorations?sidebar_expanded=true"]},
                "Explorations"
              )
 
-      assert has_element?(view, ~s{a[href="/sections/#{section.slug}/practice"]}, "Practice")
+      assert has_element?(
+               view,
+               ~s{a[href="/sections/#{section.slug}/practice?sidebar_expanded=true"]},
+               "Practice"
+             )
 
       assert has_element?(
                view,
-               ~s{a[href="/sections/#{section.slug}/discussions"]},
+               ~s{a[href="/sections/#{section.slug}/discussions?sidebar_expanded=true"]},
                "Discussions"
              )
     end
+
+    test "can see expanded/collapsed sidebar nav", %{
+      conn: conn,
+      section: section,
+      page_1: page_1,
+      page_2: page_2,
+      page_3: page_3,
+      author: author
+    } do
+      enable_all_sidebar_links(section, author, page_1, page_2, page_3)
+
+      {:ok, view, _html} =
+        live(conn, Utils.learn_live_path(section.slug, sidebar_expanded: true))
+
+      assert has_element?(view, ~s{nav[id=desktop-nav-menu][aria-expanded=true]})
+
+      labels = [
+        "Home",
+        "Learn",
+        "Schedule",
+        "Discussions",
+        "Explorations",
+        "Practice",
+        "Support",
+        "Exit Course"
+      ]
+
+      Enum.each(labels, fn label ->
+        assert view
+               |> element(~s{nav[id=desktop-nav-menu]})
+               |> render() =~ label
+      end)
+
+      {:ok, view, _html} =
+        live(conn, Utils.learn_live_path(section.slug, sidebar_expanded: false))
+
+      assert has_element?(view, ~s{nav[id=desktop-nav-menu][aria-expanded=false]})
+
+      Enum.each(labels, fn label ->
+        refute view
+               |> element(~s{nav[id=desktop-nav-menu]})
+               |> render() =~ label
+      end)
+    end
+
+    test "navbar expanded or collapsed state is kept after navigating to other menu link", %{
+      conn: conn,
+      section: section
+    } do
+      {:ok, view, _html} =
+        live(conn, Utils.learn_live_path(section.slug, sidebar_expanded: true))
+
+      assert has_element?(view, ~s{nav[id=desktop-nav-menu][aria-expanded=true]})
+
+      view
+      |> element(~s{nav[id=desktop-nav-menu] a}, "Schedule")
+      |> render_click()
+
+      assert_redirect(view, "/sections/#{section.slug}/assignments?sidebar_expanded=true")
+
+      {:ok, view, _html} =
+        live(conn, Utils.learn_live_path(section.slug, sidebar_expanded: false))
+
+      assert has_element?(view, ~s{nav[id=desktop-nav-menu][aria-expanded=false]})
+
+      view
+      |> element(~s{nav[id="desktop-nav-menu"] a[id="schedule_nav_link"])})
+      |> render_click()
+
+      assert_redirect(view, "/sections/#{section.slug}/assignments?sidebar_expanded=false")
+    end
+
+    test "exit course button redirects to sections view", %{
+      conn: conn,
+      section: section
+    } do
+      {:ok, view, _html} =
+        live(conn, Utils.learn_live_path(section.slug))
+
+      view
+      |> element(~s{nav[id=desktop-nav-menu] a[id="exit_course_button"]}, "Exit Course")
+      |> render_click()
+
+      assert_redirect(view, "/sections")
+    end
+
+    test "logo icon redirects to home page", %{
+      conn: conn,
+      section: section
+    } do
+      {:ok, view, _html} =
+        live(conn, Utils.learn_live_path(section.slug))
+
+      view
+      |> element(~s{nav[id=desktop-nav-menu] a[id="logo_button"]})
+      |> render_click()
+
+      assert_redirect(view, "/sections/#{section.slug}?sidebar_expanded=true")
+    end
+  end
+
+  defp enable_all_sidebar_links(section, author, page_1, page_2, page_3) do
+    # change the purpose of the pages to have an exploration page and a deliberate practice page
+    Oli.Resources.update_revision(page_1, %{purpose: :application, author_id: author.id})
+
+    Oli.Resources.update_revision(page_2, %{purpose: :deliberate_practice, author_id: author.id})
+
+    # enable collab space on page 3
+    page_3_sr =
+      Oli.Delivery.Sections.get_section_resource(section.id, page_3.resource_id)
+
+    {:ok, _} =
+      Oli.Delivery.Sections.update_section_resource(page_3_sr, %{
+        collab_space_config: %Oli.Resources.Collaboration.CollabSpaceConfig{
+          status: :enabled
+        }
+      })
+
+    # process changes in section
+    Oli.Delivery.Sections.PostProcessing.apply(section, [
+      :discussions,
+      :explorations,
+      :deliberate_practice
+    ])
   end
 end
