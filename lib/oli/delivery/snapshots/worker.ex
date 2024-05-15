@@ -5,6 +5,7 @@ defmodule Oli.Delivery.Snapshots.Worker do
   alias Oli.Repo
   alias Oli.Delivery.Snapshots.Snapshot
   alias Oli.Publishing.DeliveryResolver
+  alias Oli.Analytics.XAPI.StatementBundle
   alias Oli.Resources.Revision
 
   alias Oli.Delivery.Attempts.Core.{
@@ -16,7 +17,6 @@ defmodule Oli.Delivery.Snapshots.Worker do
 
   alias Oli.Analytics.Common.Pipeline
   alias Oli.Analytics.Summary.XAPI.StatementFactory
-  alias Oli.Delivery.Snapshots.S3UploaderWorker
 
   @moduledoc """
   An Oban worker driven snapshot creator.  Snapshot creation jobs take a section slug and a collection of
@@ -124,27 +124,24 @@ defmodule Oli.Delivery.Snapshots.Worker do
          end) do
       {:ok, attempt_group} ->
         if with_v2_support and attempt_group != nil and Application.get_env(:oli, :env) != :test do
-          # In case the Repo.transaction succeeds, we have to schedule
-          # the job to upload the snapshot details to S3.
-          # But we do not want the unprobable oban job insertion error
-          # to trigger the execution of this whole worker again
-          # (which will involve re running the Repo.transaction)
-          # so we wrap the insertion in an async supervised task.
-          # This task will not be spawned for test environment.
 
-          Task.Supervisor.start_child(Oli.TaskSupervisor, fn ->
-            body =
-              StatementFactory.to_statements(attempt_group)
-              |> Oli.Analytics.Common.to_jsonlines()
+          body =
+            StatementFactory.to_statements(attempt_group)
+            |> Oli.Analytics.Common.to_jsonlines()
 
-            bundle_id = create_bundle_id(attempt_group)
+          bundle_id = create_bundle_id(attempt_group)
 
-            partition_id = attempt_group.context.section_id
+          partition_id = attempt_group.context.section_id
 
-            %{body: body, bundle_id: bundle_id, partition_id: partition_id}
-            |> S3UploaderWorker.new()
-            |> Oban.insert()
-          end)
+          %StatementBundle{
+            body: body,
+            bundle_id: bundle_id,
+            partition_id: partition_id,
+            category: :attempt_evaluated,
+            partition: :section
+          }
+          |> Oli.Analytics.XAPI.emit()
+
         end
 
         {:ok, attempt_group}

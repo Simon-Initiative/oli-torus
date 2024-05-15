@@ -20,7 +20,23 @@ defmodule Oli.Analytics.XAPI.Uploader do
 
     upload_path = "#{partition}/#{partition_id}/#{category}/#{timestamp}_#{bundle_id}.jsonl"
 
-    S3.put_object(bucket_name, upload_path, body, [])
-    |> HTTP.aws().request()
+    # We don't want the default 10 retries, which could lead to problems downstream
+    # by delaying a batcher as we wait for a single upload to succeed
+    retries_config = [
+      max_attempts: 2,
+      base_backoff_in_ms: 10,
+      max_backoff_in_ms: 10_000
+    ]
+
+    :telemetry.span(
+      [:oli, :xapi, :pipeline, :upload],
+      %{category: category, partition: partition, partition_id: partition_id, bundle_id: bundle_id},
+      fn ->
+        result = S3.put_object(bucket_name, upload_path, body, [])
+        |> HTTP.aws().request(retries: retries_config)
+
+        {result, %{}}
+      end
+    )
   end
 end

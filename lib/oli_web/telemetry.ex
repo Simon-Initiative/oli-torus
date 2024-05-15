@@ -7,7 +7,12 @@ defmodule OliWeb.Telemetry do
   end
 
   def init(_arg) do
-    Supervisor.init([], strategy: :one_for_one)
+
+    children = [
+      {:telemetry_poller, measurements: periodic_measurements(), period: 10_000}
+    ]
+
+    Supervisor.init(children, strategy: :one_for_one)
   end
 
   def metrics do
@@ -37,6 +42,9 @@ defmodule OliWeb.Telemetry do
       last_value("vm.total_run_queue_lengths.cpu"),
       last_value("vm.total_run_queue_lengths.io"),
       last_value("vm.system_counts.process_count"),
+
+      last_value("oli.xapi.pipeline.queue_size"),
+      last_value("oli.xapi.pipeline.demand"),
 
       # Phoenix Metrics
       summary("phoenix.endpoint.stop.duration",
@@ -69,6 +77,12 @@ defmodule OliWeb.Telemetry do
       summary("vm.total_run_queue_lengths.total"),
       summary("vm.total_run_queue_lengths.cpu"),
       summary("vm.total_run_queue_lengths.io")
+    ]
+  end
+
+  defp periodic_measurements do
+    [
+      {Oli.Analytics.XAPI.QueueProducer, :emit_health_stats, []}
     ]
   end
 end
