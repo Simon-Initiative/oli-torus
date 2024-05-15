@@ -1,9 +1,10 @@
 defmodule OliWeb.Delivery.Student.ExplorationsLive do
   use OliWeb, :live_view
 
-  alias OliWeb.Common.SessionContext
   alias Oli.Rendering.Content
   alias Oli.Delivery.Sections
+  alias OliWeb.Common.SessionContext
+  alias OliWeb.Delivery.Student.Utils
 
   def mount(_params, _session, socket) do
     explorations_by_container =
@@ -86,7 +87,9 @@ defmodule OliWeb.Delivery.Student.ExplorationsLive do
     if preview_mode do
       ~p"/sections/#{section_slug}/preview/page/#{exploration.slug}"
     else
-      ~p"/sections/#{section_slug}/lesson/#{exploration.slug}"
+      Utils.lesson_live_path(section_slug, exploration.slug,
+        request_path: ~p"/sections/#{section_slug}/explorations"
+      )
     end
   end
 
