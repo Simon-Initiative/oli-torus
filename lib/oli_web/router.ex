@@ -979,9 +979,10 @@ defmodule OliWeb.Router do
           root_layout: {OliWeb.LayoutView, :delivery},
           layout: {OliWeb.Layouts, :student_delivery_lesson},
           on_mount: [
-            OliWeb.LiveSessionPlugs.RedirectAdaptiveChromeless,
             OliWeb.LiveSessionPlugs.SetUser,
             OliWeb.LiveSessionPlugs.SetSection,
+            {OliWeb.LiveSessionPlugs.InitPage, :set_page_context},
+            OliWeb.LiveSessionPlugs.RedirectAdaptiveChromeless,
             OliWeb.LiveSessionPlugs.SetBrand,
             OliWeb.LiveSessionPlugs.SetPreviewMode,
             OliWeb.LiveSessionPlugs.RequireEnrollment,
@@ -999,6 +1000,7 @@ defmodule OliWeb.Router do
           on_mount: [
             OliWeb.LiveSessionPlugs.SetUser,
             OliWeb.LiveSessionPlugs.SetSection,
+            {OliWeb.LiveSessionPlugs.InitPage, :set_page_context},
             OliWeb.LiveSessionPlugs.SetBrand,
             OliWeb.LiveSessionPlugs.SetPreviewMode,
             OliWeb.LiveSessionPlugs.RequireEnrollment,
