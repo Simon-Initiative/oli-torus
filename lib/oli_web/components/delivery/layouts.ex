@@ -8,12 +8,12 @@ defmodule OliWeb.Components.Delivery.Layouts do
 
   alias Phoenix.LiveView.JS
   alias OliWeb.Common.SessionContext
-  alias OliWeb.Common.React
   alias Oli.Authoring.Course.Project
   alias Oli.Delivery.Sections.Section
   alias Oli.Accounts.{User, Author}
   alias Oli.Branding
   alias OliWeb.Components.Delivery.UserAccount
+  alias OliWeb.Icons
   alias Oli.Resources.Collaboration.CollabSpaceConfig
   alias OliWeb.Delivery.Student.Utils
 
@@ -28,14 +28,14 @@ defmodule OliWeb.Components.Delivery.Layouts do
     doc: "Forces the user menu to be shown on the header and does not show the mobile menu button"
   )
 
+  attr(:sidebar_expanded, :boolean, default: true)
+
   def header(assigns) do
     ~H"""
-    <div class="fixed z-50 w-full h-14 flex flex-row bg-delivery-header dark:bg-delivery-header-dark shadow-sm">
-      <div class="w-48 p-2 flex shrink-0" tab-index="0">
-        <a href={logo_link_path(@preview_mode, @section, @ctx.user)}>
-          <.logo_img section={@section} />
-        </a>
-      </div>
+    <div class={[
+      "fixed z-50 w-full md:pl-[225px] h-14 border-b border-white/5 flex flex-row bg-delivery-header dark:bg-delivery-header-dark shadow-sm",
+      if(!@sidebar_expanded, do: "md:!pl-[95px]")
+    ]}>
       <div class="flex items-center flex-grow-1 p-2">
         <.title section={@section} project={@project} preview_mode={@preview_mode} />
       </div>
@@ -81,31 +81,58 @@ defmodule OliWeb.Components.Delivery.Layouts do
   attr(:is_system_admin, :boolean, required: true)
   attr(:section, Section, default: nil)
   attr(:active_tab, :atom)
+  attr(:sidebar_expanded, :boolean, default: true)
   attr(:preview_mode, :boolean)
 
   def sidebar_nav(assigns) do
     ~H"""
     <div>
-      <nav
-        id="desktop-nav-menu"
-        class="
+      <nav id="desktop-nav-menu" class={["
         fixed
         z-50
         w-full
         hidden
-        mt-14
-        md:h-[calc(100vh-56px)]
+        h-[100vh]
         md:flex
         flex-col
-        md:w-48
+        justify-between
+        md:w-[190px]
         shadow-sm
         bg-delivery-navbar
         dark:bg-delivery-navbar-dark
-      "
-      >
-        <.sidebar_links active_tab={@active_tab} section={@section} preview_mode={@preview_mode} />
-        <div class="flex w-full px-6 py-4 text-center mt-auto">
-          <.tech_support_button id="tech-support" ctx={@ctx} />
+        overflow-hidden
+      ", if(!@sidebar_expanded, do: "md:!w-[60px]")]} aria-expanded={"#{@sidebar_expanded}"}>
+        <div class="w-full">
+          <div
+            class={[
+              "h-14 w-48 py-2 flex shrink-0 border-b border-white/5",
+              if(!@sidebar_expanded, do: "w-14")
+            ]}
+            tab-index="0"
+          >
+            <.link
+              id="logo_button"
+              navigate={logo_link_path(@preview_mode, @section, @ctx.user, @sidebar_expanded)}
+            >
+              <.logo_img section={@section} />
+            </.link>
+          </div>
+          <.sidebar_toggler
+            active_tab={@active_tab}
+            section={@section}
+            preview_mode={@preview_mode}
+            sidebar_expanded={@sidebar_expanded}
+          />
+          <.sidebar_links
+            active_tab={@active_tab}
+            section={@section}
+            preview_mode={@preview_mode}
+            sidebar_expanded={@sidebar_expanded}
+          />
+        </div>
+        <div class="p-2 flex-col justify-center items-center gap-4 inline-flex">
+          <.tech_support_button id="tech-support" ctx={@ctx} sidebar_expanded={@sidebar_expanded} />
+          <.exit_course_button sidebar_expanded={@sidebar_expanded} />
         </div>
       </nav>
       <nav
@@ -145,138 +172,204 @@ defmodule OliWeb.Components.Delivery.Layouts do
   attr(:section, Section, default: nil)
   attr(:active_tab, :atom)
   attr(:preview_mode, :boolean)
+  attr(:sidebar_expanded, :boolean, default: true)
+
+  def sidebar_toggler(assigns) do
+    ~H"""
+    <button
+      role="toggle sidebar"
+      phx-click={JS.patch(path_for(@active_tab, @section, @preview_mode, !@sidebar_expanded))}
+      title={if @sidebar_expanded, do: "Minimize", else: "Expand"}
+      class="flex items-center justify-center ml-auto w-6 h-6 bg-gray-400 dark:bg-neutral-800 rounded-tl-[52px] rounded-bl-[52px] stroke-black/70 hover:stroke-black/90 dark:stroke-[#B8B4BF] hover:dark:stroke-white"
+    >
+      <div class={if !@sidebar_expanded, do: "rotate-180"}>
+        <Icons.left_chevron />
+      </div>
+    </button>
+    """
+  end
+
+  attr(:section, Section, default: nil)
+  attr(:active_tab, :atom)
+  attr(:preview_mode, :boolean)
+  attr(:sidebar_expanded, :boolean, default: true)
 
   def sidebar_links(assigns) do
     ~H"""
-    <.nav_link href={path_for(:index, @section, @preview_mode)} is_active={@active_tab == :index}>
-      Home
-    </.nav_link>
-    <.nav_link href={path_for(:learn, @section, @preview_mode)} is_active={@active_tab == :learn}>
-      Learn
-    </.nav_link>
+    <div class="w-full p-2 flex-col justify-center items-center gap-4 inline-flex">
+      <.nav_link
+        id="home_nav_link"
+        href={path_for(:index, @section, @preview_mode, @sidebar_expanded)}
+        is_active={@active_tab == :index}
+        sidebar_expanded={@sidebar_expanded}
+      >
+        <:icon><Icons.home is_active={@active_tab == :index} /></:icon>
+        <:text>Home</:text>
+      </.nav_link>
 
-    <.nav_link
-      :if={@section.contains_discussions}
-      href={path_for(:discussions, @section, @preview_mode)}
-      is_active={@active_tab == :discussions}
-    >
-      Discussions
-    </.nav_link>
-    <.nav_link
-      href={path_for(:schedule, @section, @preview_mode)}
-      is_active={@active_tab == :schedule}
-    >
-      Schedule
-    </.nav_link>
-    <.nav_link
-      :if={@section.contains_explorations}
-      href={path_for(:explorations, @section, @preview_mode)}
-      is_active={@active_tab == :explorations}
-    >
-      Explorations
-    </.nav_link>
-    <.nav_link
-      :if={@section.contains_deliberate_practice}
-      href={path_for(:practice, @section, @preview_mode)}
-      is_active={@active_tab == :practice}
-    >
-      Practice
-    </.nav_link>
+      <.nav_link
+        id="learn_nav_link"
+        href={path_for(:learn, @section, @preview_mode, @sidebar_expanded)}
+        is_active={@active_tab == :learn}
+        sidebar_expanded={@sidebar_expanded}
+      >
+        <:icon><Icons.learn is_active={@active_tab == :learn} /></:icon>
+        <:text>Learn</:text>
+      </.nav_link>
+
+      <.nav_link
+        id="schedule_nav_link"
+        href={path_for(:schedule, @section, @preview_mode, @sidebar_expanded)}
+        is_active={@active_tab == :schedule}
+        sidebar_expanded={@sidebar_expanded}
+      >
+        <:icon><Icons.schedule is_active={@active_tab == :schedule} /></:icon>
+        <:text>Schedule</:text>
+      </.nav_link>
+
+      <.nav_link
+        :if={@section.contains_discussions}
+        id="discussions_nav_link"
+        href={path_for(:discussions, @section, @preview_mode, @sidebar_expanded)}
+        is_active={@active_tab == :discussions}
+        sidebar_expanded={@sidebar_expanded}
+      >
+        <:icon><Icons.discussions is_active={@active_tab == :discussions} /></:icon>
+        <:text>Discussions</:text>
+      </.nav_link>
+
+      <.nav_link
+        :if={@section.contains_explorations}
+        id="explorations_nav_link"
+        href={path_for(:explorations, @section, @preview_mode, @sidebar_expanded)}
+        is_active={@active_tab == :explorations}
+        sidebar_expanded={@sidebar_expanded}
+      >
+        <:icon><Icons.explorations is_active={@active_tab == :explorations} /></:icon>
+        <:text>Explorations</:text>
+      </.nav_link>
+
+      <.nav_link
+        :if={@section.contains_deliberate_practice}
+        id="practice_nav_link"
+        href={path_for(:practice, @section, @preview_mode, @sidebar_expanded)}
+        is_active={@active_tab == :practice}
+        sidebar_expanded={@sidebar_expanded}
+      >
+        <:icon><Icons.practice is_active={@active_tab == :practice} /></:icon>
+        <:text>Practice</:text>
+      </.nav_link>
+    </div>
     """
   end
 
-  defp path_for(:index, %Section{slug: section_slug}, preview_mode) do
+  defp path_for(:index, %Section{slug: section_slug}, preview_mode, sidebar_expanded) do
     if preview_mode do
       ~p"/sections/#{section_slug}/preview"
     else
-      ~p"/sections/#{section_slug}"
+      ~p"/sections/#{section_slug}?#{%{sidebar_expanded: sidebar_expanded}}"
     end
   end
 
-  defp path_for(:index, _section, _preview_mode) do
+  defp path_for(:index, _section, _preview_mode, _sidebar_expanded) do
     "#"
   end
 
-  defp path_for(:learn, %Section{slug: section_slug}, preview_mode) do
+  defp path_for(:learn, %Section{slug: section_slug}, preview_mode, sidebar_expanded) do
     if preview_mode do
       ~p"/sections/#{section_slug}/preview/learn"
     else
-      ~p"/sections/#{section_slug}/learn"
+      ~p"/sections/#{section_slug}/learn?#{%{sidebar_expanded: sidebar_expanded}}"
     end
   end
 
-  defp path_for(:learn, _section, _preview_mode) do
+  defp path_for(:learn, _section, _preview_mode, _sidebar_expanded) do
     "#"
   end
 
-  defp path_for(:discussions, %Section{slug: section_slug}, preview_mode) do
+  defp path_for(:discussions, %Section{slug: section_slug}, preview_mode, sidebar_expanded) do
     if preview_mode do
       ~p"/sections/#{section_slug}/preview/discussions"
     else
-      ~p"/sections/#{section_slug}/discussions"
+      ~p"/sections/#{section_slug}/discussions?#{%{sidebar_expanded: sidebar_expanded}}"
     end
   end
 
-  defp path_for(:discussions, _section, _preview_mode) do
+  defp path_for(:discussions, _section, _preview_mode, _sidebar_expanded) do
     "#"
   end
 
-  defp path_for(:schedule, %Section{slug: section_slug}, preview_mode) do
+  defp path_for(:schedule, %Section{slug: section_slug}, preview_mode, sidebar_expanded) do
     if preview_mode do
       ~p"/sections/#{section_slug}/preview/assignments"
     else
-      ~p"/sections/#{section_slug}/assignments"
+      ~p"/sections/#{section_slug}/assignments?#{%{sidebar_expanded: sidebar_expanded}}"
     end
   end
 
-  defp path_for(:schedule, _section, _preview_mode) do
+  defp path_for(:schedule, _section, _preview_mode, _sidebar_expanded) do
     "#"
   end
 
-  defp path_for(:explorations, %Section{slug: section_slug}, preview_mode) do
+  defp path_for(:explorations, %Section{slug: section_slug}, preview_mode, sidebar_expanded) do
     if preview_mode do
       ~p"/sections/#{section_slug}/preview/explorations"
     else
-      ~p"/sections/#{section_slug}/explorations"
+      ~p"/sections/#{section_slug}/explorations?#{%{sidebar_expanded: sidebar_expanded}}"
     end
   end
 
-  defp path_for(:explorations, _section, _preview_mode) do
+  defp path_for(:explorations, _section, _preview_mode, _sidebar_expanded) do
     "#"
   end
 
-  defp path_for(:practice, %Section{slug: section_slug}, preview_mode) do
+  defp path_for(:practice, %Section{slug: section_slug}, preview_mode, sidebar_expanded) do
     if preview_mode do
       ~p"/sections/#{section_slug}/preview/practice"
     else
-      ~p"/sections/#{section_slug}/practice"
+      ~p"/sections/#{section_slug}/practice?#{%{sidebar_expanded: sidebar_expanded}}"
     end
   end
 
-  defp path_for(:practice, _section, _preview_mode) do
+  defp path_for(:practice, _section, _preview_mode, _sidebar_expanded) do
     "#"
   end
 
+  defp path_for(_, _, _, _), do: "#"
+
   attr :href, :string, required: true
   attr :is_active, :boolean, required: true
-  slot :inner_block, required: true
+  slot :text, required: true
+  slot :icon, required: true
+  attr :sidebar_expanded, :boolean, default: true
+  attr :id, :string
 
   def nav_link(assigns) do
     ~H"""
-    <.link navigate={@href} class={nav_link_class(@is_active)}>
-      <%= render_slot(@inner_block) %>
+    <.link
+      id={@id}
+      navigate={@href}
+      class={["w-full h-11 flex-col justify-center items-center flex hover:no-underline"]}
+    >
+      <div class={[
+        "w-full h-9 px-3 py-3 hover:bg-gray-300 hover:dark:bg-neutral-800/60 rounded-lg justify-start items-center gap-3 inline-flex",
+        if(@is_active,
+          do: "bg-gray-400 hover:!bg-gray-400 dark:bg-neutral-800 hover:dark:!bg-neutral-800"
+        )
+      ]}>
+        <div class="w-5 h-5 flex items-center justify-center"><%= render_slot(@icon) %></div>
+        <div
+          :if={@sidebar_expanded}
+          class={[
+            "text-black/70 dark:text-gray-400 text-sm font-medium tracking-tight",
+            if(@is_active, do: "!font-semibold dark:!text-white !text-black/90")
+          ]}
+        >
+          <%= render_slot(@text) %>
+        </div>
+      </div>
     </.link>
     """
-  end
-
-  defp nav_link_class(is_active) do
-    case is_active do
-      true ->
-        "px-6 py-4 text-current hover:no-underline hover:text-delivery-primary font-bold bg-gray-50 dark:bg-gray-800"
-
-      false ->
-        "px-6 py-4 text-current hover:no-underline hover:text-delivery-primary"
-    end
   end
 
   attr(:section, Section)
@@ -288,22 +381,51 @@ defmodule OliWeb.Components.Delivery.Layouts do
       |> assign(:logo_src_dark, Branding.brand_logo_url_dark(assigns[:section]))
 
     ~H"""
-    <img src={@logo_src} class="inline-block dark:hidden h-9" alt="logo" />
-    <img src={@logo_src_dark} class="hidden dark:inline-block h-9" alt="logo dark" />
+    <img src={@logo_src} class="inline-block dark:hidden h-9 object-cover object-left" alt="logo" />
+    <img
+      src={@logo_src_dark}
+      class="hidden dark:inline-block h-9 object-cover object-left"
+      alt="logo dark"
+    />
     """
   end
 
   attr(:id, :string)
   attr(:ctx, SessionContext)
+  attr(:sidebar_expanded, :boolean, default: true)
 
   def tech_support_button(assigns) do
     ~H"""
-    <%= React.component(
-      @ctx,
-      "Components.TechSupportButton",
-      %{},
-      id: @id
-    ) %>
+    <button
+      onclick="window.showHelpModal();"
+      class="w-full h-11 px-3 py-3 flex-col justify-center items-start inline-flex text-black/70 hover:text-black/90 dark:text-gray-400 hover:dark:text-white stroke-black/70 hover:stroke-black/90 dark:stroke-[#B8B4BF] hover:dark:stroke-white"
+    >
+      <div class="justify-start items-end gap-3 inline-flex">
+        <div class="w-5 h-5 flex items-center justify-center">
+          <Icons.support />
+        </div>
+        <div :if={@sidebar_expanded} class="text-sm font-medium tracking-tight">Support</div>
+      </div>
+    </button>
+    """
+  end
+
+  attr :sidebar_expanded, :boolean, default: true
+
+  def exit_course_button(assigns) do
+    ~H"""
+    <.link
+      id="exit_course_button"
+      navigate={~p"/sections"}
+      class="w-full h-11 flex-col justify-center items-center flex hover:no-underline text-black/70 hover:text-black/90 dark:text-gray-400 hover:dark:text-white stroke-black/70 hover:stroke-black/90 dark:stroke-[#B8B4BF] hover:dark:stroke-white"
+    >
+      <div class="w-full h-9 px-3 py-3 bg-gray-400 dark:bg-neutral-800 rounded-lg justify-start items-center gap-3 inline-flex">
+        <div class="w-5 h-5 flex items-center justify-center"><Icons.exit /></div>
+        <div :if={@sidebar_expanded} class="text-sm font-medium tracking-tight">
+          Exit Course
+        </div>
+      </div>
+    </.link>
     """
   end
 
@@ -565,13 +687,13 @@ defmodule OliWeb.Components.Delivery.Layouts do
     end
   end
 
-  defp logo_link_path(preview_mode, section, user) do
+  defp logo_link_path(preview_mode, section, user, sidebar_expanded) do
     cond do
       preview_mode ->
         "#"
 
       is_open_and_free_section?(section) or is_independent_learner?(user) ->
-        ~p"/sections"
+        path_for(:index, section, preview_mode, sidebar_expanded)
 
       true ->
         Routes.static_page_path(OliWeb.Endpoint, :index)
