@@ -153,10 +153,9 @@ defmodule OliWeb.LiveSessionPlugs.InitPage do
   defp init_context_state(
          %{
            assigns: %{
-             page_context:
-               %PageContext{
-                 page: %{graded: false}
-               } = page_context
+             page_context: %PageContext{
+               page: %{graded: false}
+             }
            }
          } =
            socket
@@ -180,7 +179,7 @@ defmodule OliWeb.LiveSessionPlugs.InitPage do
   defp init_context_state(
          %{
            assigns: %{
-             page_context: %PageContext{progress_state: :error} = page_context
+             page_context: %PageContext{progress_state: :error}
            }
          } =
            socket
