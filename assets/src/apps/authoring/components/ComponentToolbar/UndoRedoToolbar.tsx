@@ -1,9 +1,10 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { OverlayTrigger, Tooltip } from 'react-bootstrap';
 import { useDispatch, useSelector } from 'react-redux';
 import { redo } from 'apps/authoring/store/history/actions/redo';
 import { undo } from 'apps/authoring/store/history/actions/undo';
 import { selectHasRedo, selectHasUndo } from 'apps/authoring/store/history/slice';
+import { useKeyDown } from 'hooks/useKeyDown';
 import { selectPaths } from '../../store/app/slice';
 
 const UndoRedoToolbar: React.FC = () => {
@@ -21,25 +22,8 @@ const UndoRedoToolbar: React.FC = () => {
     dispatch(redo(null));
   };
 
-  const handleKeyPress = (event: any) => {
-    // event.metaKey - pressed Command key on Macs
-    // event.ctrlKey - pressed Control key on Linux or Windows
-    console.log({ event });
-    if (event.metaKey || event.ctrlKey) {
-      if (event.code === 'KeyZ') {
-        handleUndo();
-      } else if (event.code === 'KeyY' || (event.shiftKey && event.code === 'KeyY')) {
-        handleRedo();
-      }
-    }
-  };
-
-  useEffect(() => {
-    window.addEventListener('keydown', handleKeyPress, { passive: true });
-    return () => {
-      window.removeEventListener('keydown', handleKeyPress);
-    };
-  }, []);
+  useKeyDown(() => handleUndo(), ['KeyZ']);
+  useKeyDown(() => handleRedo(), ['KeyY']);
 
   return (
     <>

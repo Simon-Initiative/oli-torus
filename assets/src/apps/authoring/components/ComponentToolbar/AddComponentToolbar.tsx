@@ -1,4 +1,4 @@
-import React, { Fragment, useCallback, useEffect, useState } from 'react';
+import React, { Fragment, useCallback, useState } from 'react';
 import { ListGroup, Overlay, OverlayTrigger, Popover, Tooltip } from 'react-bootstrap';
 import { useDispatch, useSelector } from 'react-redux';
 import {
@@ -13,6 +13,7 @@ import {
   selectCurrentActivityTree,
   selectSequence,
 } from 'apps/delivery/store/features/groups/selectors/deck';
+import { useKeyDown } from 'hooks/useKeyDown';
 import guid from 'utils/guid';
 import { RightPanelTabs } from '../RightMenu/RightMenu';
 
@@ -51,6 +52,8 @@ const AddComponentToolbar: React.FC<{
   const copiedPart = useSelector(selectCopiedPart);
 
   // console.log('AVAILABLE PART COMPONENTS', availablePartComponents);
+
+  useKeyDown(() => handlePartPasteClick(), ['KeyV'], [copiedPart]);
 
   const addPartToCurrentScreen = (newPartData: any) => {
     if (currentActivityTree) {
@@ -113,21 +116,6 @@ const AddComponentToolbar: React.FC<{
 
     dispatch(setRightPanelActiveTab({ rightPanelActiveTab: RightPanelTabs.COMPONENT }));
   };
-
-  const handleKeyPress = (event: any) => {
-    // event.metaKey - pressed Command key on Macs
-    // event.ctrlKey - pressed Control key on Linux or Windows
-    if ((event.metaKey || event.ctrlKey) && event.code === 'KeyV') {
-      handlePartPasteClick();
-    }
-  };
-
-  useEffect(() => {
-    window.addEventListener('keydown', handleKeyPress, { passive: true });
-    return () => {
-      window.removeEventListener('keydown', handleKeyPress);
-    };
-  }, [copiedPart]);
 
   return (
     <Fragment>

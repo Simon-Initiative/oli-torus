@@ -12,6 +12,7 @@ import {
   NotificationType,
   subscribeToNotification,
 } from 'apps/delivery/components/NotificationContext';
+import { useKeyDown } from 'hooks/useKeyDown';
 import { clone } from 'utils/common';
 import { contexts } from '../../../../../types/applicationContext';
 import PartComponent from '../common/PartComponent';
@@ -393,23 +394,12 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
     [dragSize, isDragging, selectedPartId],
   );
 
-  const handleKeyPress = (event: any) => {
-    // event.metaKey - pressed Command key on Macs
-    // event.ctrlKey - pressed Control key on Linux or Windows
-
-    if ((event.metaKey || event.ctrlKey) && event.code === 'KeyC') {
-      handleCopyComponent();
-    } else if (event.code === 'Delete' || event.code === 'Backspace') {
-      setShowConfirmDelete(true);
-    }
-  };
-
-  useEffect(() => {
-    window.addEventListener('keydown', handleKeyPress, { passive: true });
-    return () => {
-      window.removeEventListener('keydown', handleKeyPress);
-    };
-  }, [selectedPartAndCapabilities, parts, handleCopyComponent]);
+  useKeyDown(() => setShowConfirmDelete(true), ['Delete', 'Backspace'], []);
+  useKeyDown(
+    () => handleCopyComponent(),
+    ['KeyC'],
+    [selectedPartAndCapabilities, parts, handleCopyComponent],
+  );
 
   return parts && parts.length ? (
     <NotificationContext.Provider value={pusher}>
