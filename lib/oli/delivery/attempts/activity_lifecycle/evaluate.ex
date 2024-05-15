@@ -28,78 +28,70 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
     activity_model = select_model(activity_attempt)
     part_attempts = get_latest_part_attempts(activity_attempt_guid)
 
-    if activity_attempt.lifecycle_state in [:submitted, :evaluated] do
-      Logger.info(
-        "These changes could not be saved as this attempt may have already been submitted"
-      )
+    case Model.parse(activity_model) do
+      {:ok, %Model{rules: []}} ->
+        evaluate_from_input(
+          section_slug,
+          activity_attempt_guid,
+          part_inputs,
+          datashop_session_id
+        )
 
-      {:error, :already_submitted}
-    else
-      case Model.parse(activity_model) do
-        {:ok, %Model{rules: []}} ->
-          evaluate_from_input(
-            section_slug,
-            activity_attempt_guid,
-            part_inputs,
-            datashop_session_id
-          )
+      {:ok, %Model{rules: rules, delivery: delivery, authoring: authoring}} ->
+        part_attempts_submitted = submit_active_part_attempts(part_attempts)
 
-        {:ok, %Model{rules: rules, delivery: delivery, authoring: authoring}} ->
-          part_attempts_submitted = submit_active_part_attempts(part_attempts)
+        custom = Map.get(delivery, "custom", %{})
 
-          custom = Map.get(delivery, "custom", %{})
+        is_manually_graded =
+          Enum.any?(part_attempts, fn pa -> pa.grading_approach == :manual end)
 
-          is_manually_graded =
-            Enum.any?(part_attempts, fn pa -> pa.grading_approach == :manual end)
+        # count the manual max score, and use that as the default instead of zero if there is no maxScore set by the author
+        max_score =
+          case is_manually_graded do
+            true ->
+              manual_max = Enum.reduce(part_attempts, fn sum, pa -> sum + pa.out_of end)
+              Map.get(custom, "maxScore", manual_max)
 
-          # count the manual max score, and use that as the default instead of zero if there is no maxScore set by the author
-          max_score =
-            case is_manually_graded do
-              true ->
-                manual_max = Enum.reduce(part_attempts, fn sum, pa -> sum + pa.out_of end)
-                Map.get(custom, "maxScore", manual_max)
+            false ->
+              Map.get(custom, "maxScore", 0)
+          end
 
-              false ->
-                Map.get(custom, "maxScore", 0)
-            end
+        scoringContext = %{
+          maxScore: max_score,
+          maxAttempt: Map.get(custom, "maxAttempt", 1),
+          trapStateScoreScheme: Map.get(custom, "trapStateScoreScheme", false),
+          negativeScoreAllowed: Map.get(custom, "negativeScoreAllowed", false),
+          currentAttemptNumber: attempt_number,
+          isManuallyGraded: is_manually_graded
+        }
 
-          scoringContext = %{
-            maxScore: max_score,
-            maxAttempt: Map.get(custom, "maxAttempt", 1),
-            trapStateScoreScheme: Map.get(custom, "trapStateScoreScheme", false),
-            negativeScoreAllowed: Map.get(custom, "negativeScoreAllowed", false),
-            currentAttemptNumber: attempt_number,
-            isManuallyGraded: is_manually_graded
-          }
+        activitiesRequiredForEvaluation =
+          Map.get(authoring, "activitiesRequiredForEvaluation", [])
 
-          activitiesRequiredForEvaluation =
-            Map.get(authoring, "activitiesRequiredForEvaluation", [])
+        # Logger.debug("ACTIVITIES REQUIRED: #{activitiesRequiredForEvaluation}")
 
-          # Logger.debug("ACTIVITIES REQUIRED: #{activitiesRequiredForEvaluation}")
+        variablesRequiredForEvaluation =
+          Map.get(authoring, "variablesRequiredForEvaluation", nil)
 
-          variablesRequiredForEvaluation =
-            Map.get(authoring, "variablesRequiredForEvaluation", nil)
+        # Logger.debug("VARIABLES REQUIRED: #{Jason.encode!(variablesRequiredForEvaluation)}")
 
-          # Logger.debug("VARIABLES REQUIRED: #{Jason.encode!(variablesRequiredForEvaluation)}")
+        Logger.debug("SCORE CONTEXT: #{Jason.encode!(scoringContext)}")
 
-          Logger.debug("SCORE CONTEXT: #{Jason.encode!(scoringContext)}")
+        evaluate_from_rules(
+          section_slug,
+          resource_attempt,
+          activity_attempt_guid,
+          part_inputs,
+          scoringContext,
+          rules,
+          activitiesRequiredForEvaluation,
+          variablesRequiredForEvaluation,
+          datashop_session_id,
+          part_attempts_submitted
+        )
 
-          evaluate_from_rules(
-            section_slug,
-            resource_attempt,
-            activity_attempt_guid,
-            part_inputs,
-            scoringContext,
-            rules,
-            activitiesRequiredForEvaluation,
-            variablesRequiredForEvaluation,
-            datashop_session_id,
-            part_attempts_submitted
-          )
-
-        e ->
-          e
-      end
+      e ->
+        e
     end
   end
 
