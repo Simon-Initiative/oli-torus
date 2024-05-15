@@ -10,10 +10,10 @@ defmodule OliWeb.LiveSessionPlugs.RedirectAdaptiveChromelessTest do
       resource_type_id: ResourceType.get_id_by_type("page"),
       graded: true,
       content: %{
-        model: [],
-        advancedDelivery: true,
-        displayApplicationChrome: false,
-        additionalStylesheets: [
+        "model" => [],
+        "advancedDelivery" => true,
+        "displayApplicationChrome" => false,
+        "additionalStylesheets" => [
           "/css/delivery_adaptive_themes_default_light.css"
         ]
       }
@@ -47,7 +47,15 @@ defmodule OliWeb.LiveSessionPlugs.RedirectAdaptiveChromelessTest do
           "selected_view" => "gallery"
         },
         %{},
-        %Phoenix.LiveView.Socket{}
+        %Phoenix.LiveView.Socket{
+          assigns: %{
+            page_context:
+              build(:page_context,
+                page: adaptive_chromeless_page_revision,
+                progress_state: :in_progress
+              )
+          }
+        }
       )
 
     assert updated_socket.redirected ==
@@ -58,7 +66,7 @@ defmodule OliWeb.LiveSessionPlugs.RedirectAdaptiveChromelessTest do
               }}
   end
 
-  test "redirects an adaptive chromeless page" do
+  test "redirects an adaptive chromeless page with an attempt in progress" do
     adaptive_chromeless_page_revision = adaptive_chromeless_page_revision()
 
     {:halt, updated_socket} =
@@ -71,7 +79,15 @@ defmodule OliWeb.LiveSessionPlugs.RedirectAdaptiveChromelessTest do
           "selected_view" => "gallery"
         },
         %{},
-        %Phoenix.LiveView.Socket{}
+        %Phoenix.LiveView.Socket{
+          assigns: %{
+            page_context:
+              build(:page_context,
+                page: adaptive_chromeless_page_revision,
+                progress_state: :in_progress
+              )
+          }
+        }
       )
 
     assert updated_socket.redirected ==
@@ -94,7 +110,15 @@ defmodule OliWeb.LiveSessionPlugs.RedirectAdaptiveChromelessTest do
           "attempt_guid" => "some-attempt-guid"
         },
         %{},
-        %Phoenix.LiveView.Socket{}
+        %Phoenix.LiveView.Socket{
+          assigns: %{
+            page_context:
+              build(:page_context,
+                page: non_adaptive_chromeless_page_revision,
+                progress_state: :in_progress
+              )
+          }
+        }
       )
 
     refute updated_socket.redirected
@@ -111,7 +135,40 @@ defmodule OliWeb.LiveSessionPlugs.RedirectAdaptiveChromelessTest do
           "revision_slug" => non_adaptive_chromeless_page_revision.slug
         },
         %{},
-        %Phoenix.LiveView.Socket{}
+        %Phoenix.LiveView.Socket{
+          assigns: %{
+            page_context:
+              build(:page_context,
+                page: non_adaptive_chromeless_page_revision,
+                progress_state: :in_progress
+              )
+          }
+        }
+      )
+
+    refute updated_socket.redirected
+  end
+
+  test "does not redirect an adaptive chromeless page with state not in progress" do
+    adaptive_chromeless_page_revision = adaptive_chromeless_page_revision()
+
+    {:cont, updated_socket} =
+      RedirectAdaptiveChromeless.on_mount(
+        :default,
+        %{
+          "section_slug" => "some-section-slug",
+          "revision_slug" => adaptive_chromeless_page_revision.slug
+        },
+        %{},
+        %Phoenix.LiveView.Socket{
+          assigns: %{
+            page_context:
+              build(:page_context,
+                page: adaptive_chromeless_page_revision,
+                progress_state: :not_started
+              )
+          }
+        }
       )
 
     refute updated_socket.redirected
