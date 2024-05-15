@@ -37,7 +37,6 @@ defmodule OliWeb.Telemetry do
       last_value("vm.total_run_queue_lengths.cpu"),
       last_value("vm.total_run_queue_lengths.io"),
       last_value("vm.system_counts.process_count"),
-
       last_value("oli.xapi.pipeline.queue_size"),
       last_value("oli.xapi.pipeline.demand"),
 
@@ -74,5 +73,4 @@ defmodule OliWeb.Telemetry do
       summary("vm.total_run_queue_lengths.io")
     ]
   end
-
 end

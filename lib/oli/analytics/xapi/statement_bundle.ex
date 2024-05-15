@@ -17,5 +17,4 @@ defmodule Oli.Analytics.XAPI.StatementBundle do
     :bundle_id,
     :body
   ]
-
 end

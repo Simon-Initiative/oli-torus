@@ -1,5 +1,4 @@
 defmodule Oli.Analytics.XAPI.PendingUpload do
-
   @moduledoc """
   This schema represents statement bundles that had to be written to the DB
   because either they failed to upload, or they were drained from the queue during
@@ -23,5 +22,4 @@ defmodule Oli.Analytics.XAPI.PendingUpload do
     ])
     |> validate_required([:reason, :bundle])
   end
-
 end

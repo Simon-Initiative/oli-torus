@@ -16,7 +16,6 @@ defmodule Oli.Analytics.XAPI.PipelineTest do
 
   describe "xapi upload pipeline tests" do
     setup do
-
       # Create the directory ./test_bundles
       File.mkdir_p!("./test_bundles")
 
@@ -30,18 +29,15 @@ defmodule Oli.Analytics.XAPI.PipelineTest do
     end
 
     test "test pushing through a single message" do
-
       bundle = make_bundle("1")
       ref = Broadway.test_message(UploadPipeline, bundle)
       assert_receive {:ack, ^ref, [%{data: ^bundle}], []}
 
       assert File.exists?("./test_bundles/1.jsonl")
       assert File.read!("./test_bundles/1.jsonl") == "1"
-
     end
 
     test "test that failed uploads get written to DB" do
-
       bundle = make_bundle("fail")
       ref = Broadway.test_message(UploadPipeline, bundle)
       assert_receive {:ack, ^ref, [%{data: ^bundle}], []}
@@ -56,11 +52,9 @@ defmodule Oli.Analytics.XAPI.PipelineTest do
       # to StatementBundle correctly
       [%StatementBundle{body: body}] = Oli.Analytics.XAPI.QueueProducer.enqueue_from_storage()
       assert body == "fail"
-
     end
 
     test "test that a single batcher honors batch keys" do
-
       bundle1a = make_bundle("1")
       bundle1b = make_bundle("1")
       bundle2a = make_bundle("2")
@@ -81,10 +75,6 @@ defmodule Oli.Analytics.XAPI.PipelineTest do
       # we verify that the two messages were coalesced into one file
       assert File.read!("./test_bundles/1.jsonl") == "1\n1"
       assert File.read!("./test_bundles/2.jsonl") == "2\n2"
-
     end
-
   end
-
-
 end

@@ -1,5 +1,4 @@
 defmodule Oli.Analytics.XAPI do
-
   alias Oli.Analytics.XAPI.StatementBundle
 
   @chars "abcdefghijklmnopqrstuvwxyz1234567890" |> String.split("", trim: true)
@@ -10,7 +9,6 @@ defmodule Oli.Analytics.XAPI do
   end
 
   def emit(category, events) when is_list(events) do
-
     context = hd(events) |> extract_context()
 
     %StatementBundle{
@@ -18,21 +16,24 @@ defmodule Oli.Analytics.XAPI do
       bundle_id: context.bundle_id,
       partition_id: context.section_id,
       category: category,
-      partition: :section # TODO, we will want to detect the partition once we start
-                          # emitting from the authoring side
+      # TODO, we will want to detect the partition once we start
+      partition: :section
+      # emitting from the authoring side
     }
     |> emit()
-
   end
 
   def emit(category, event), do: emit(category, [event])
 
   defp extract_context(event) do
     section_id = event["context"]["extensions"]["http://oli.cmu.edu/extensions/section_id"]
-    guid = Map.get(
-      event["context"]["extensions"],
-      "http://oli.cmu.edu/extensions/page_attempt_guid",
-      UUID.uuid4())
+
+    guid =
+      Map.get(
+        event["context"]["extensions"],
+        "http://oli.cmu.edu/extensions/page_attempt_guid",
+        UUID.uuid4()
+      )
 
     bundle_id =
       :crypto.hash(:md5, guid <> "-" <> random_string(10))

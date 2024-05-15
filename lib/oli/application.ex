@@ -21,7 +21,6 @@ defmodule Oli.Application do
 
         # Starts telemetry
         OliWeb.Telemetry,
-
         Oli.Analytics.XAPI.UploadPipeline,
 
         # Start the endpoint when the application starts

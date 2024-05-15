@@ -5,7 +5,6 @@ defmodule Oli.Analytics.XAPI.UploadPipeline do
   alias Oli.Analytics.XAPI.StatementBundle
 
   def start_link(_opts) do
-
     config = Oli.Analytics.XAPI.PipelineConfig.get()
 
     Broadway.start_link(__MODULE__,
@@ -48,10 +47,7 @@ defmodule Oli.Analytics.XAPI.UploadPipeline do
   # built-in batching capabilities, where we can coalesce messages
   # into one bundle before uploading.
   def handle_batch(:default, messages, _batch_info, _context) do
-
-    Oli.Analytics.XAPI.Utils.record_pipeline_stats(
-      %{batch_size: Enum.count(messages)}
-    )
+    Oli.Analytics.XAPI.Utils.record_pipeline_stats(%{batch_size: Enum.count(messages)})
 
     messages
     |> coalesce()
@@ -62,9 +58,9 @@ defmodule Oli.Analytics.XAPI.UploadPipeline do
 
   # Combine the body content of all of messages into one statement bundle
   defp coalesce(messages) do
-
-    combined_body = Enum.map(messages, fn m -> m.data.body end)
-    |> Enum.join("\n")
+    combined_body =
+      Enum.map(messages, fn m -> m.data.body end)
+      |> Enum.join("\n")
 
     hd(messages).data
     |> Map.put(:body, combined_body)
@@ -72,22 +68,22 @@ defmodule Oli.Analytics.XAPI.UploadPipeline do
 
   # upload the bundle, if it fails we store it so it can be replayed later
   defp upload(bundle) do
-
     %{uploader_module: uploader_module} = Oli.Analytics.XAPI.PipelineConfig.get()
 
     case apply(uploader_module, :upload, [bundle]) do
       {:error, _} ->
         Oli.Analytics.XAPI.QueueProducer.persist([bundle], :failed)
+
       _ ->
         true
     end
   end
 
   defp build_batch_key(%StatementBundle{
-    partition: partition,
-    partition_id: partition_id,
-    category: category
-  }) do
+         partition: partition,
+         partition_id: partition_id,
+         category: category
+       }) do
     "#{partition}/#{partition_id}/#{category}"
   end
 end
