@@ -180,7 +180,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
       role="toggle sidebar"
       phx-click={JS.patch(path_for(@active_tab, @section, @preview_mode, !@sidebar_expanded))}
       title={if @sidebar_expanded, do: "Minimize", else: "Expand"}
-      class="flex items-center justify-center ml-auto w-6 h-6 bg-gray-400 dark:bg-neutral-800 rounded-tl-[52px] rounded-bl-[52px] stroke-black/70 hover:stroke-black/90 dark:stroke-[#B8B4BF] hover:dark:stroke-white"
+      class="flex items-center justify-center ml-auto w-6 h-6 bg-zinc-400 bg-opacity-20 hover:bg-opacity-40 rounded-tl-[52px] rounded-bl-[52px] stroke-black/70 hover:stroke-black/90 dark:stroke-[#B8B4BF] hover:dark:stroke-white"
     >
       <div class={if !@sidebar_expanded, do: "rotate-180"}>
         <Icons.left_chevron />
@@ -352,12 +352,14 @@ defmodule OliWeb.Components.Delivery.Layouts do
       class={["w-full h-11 flex-col justify-center items-center flex hover:no-underline"]}
     >
       <div class={[
-        "w-full h-9 px-3 py-3 hover:bg-gray-300 hover:dark:bg-neutral-800/60 rounded-lg justify-start items-center gap-3 inline-flex",
+        "w-full h-9 px-3 py-3 hover:bg-zinc-400 hover:bg-opacity-40 rounded-lg justify-start items-center gap-3 inline-flex",
         if(@is_active,
-          do: "bg-gray-400 hover:!bg-gray-400 dark:bg-neutral-800 hover:dark:!bg-neutral-800"
+          do: "bg-zinc-400 bg-opacity-20"
         )
       ]}>
-        <div class="w-5 h-5 flex items-center justify-center"><%= render_slot(@icon) %></div>
+        <div class="w-5 h-5 flex items-center justify-center">
+          <%= render_slot(@icon) %>
+        </div>
         <div
           :if={@sidebar_expanded}
           class={[
@@ -419,7 +421,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
       navigate={~p"/sections"}
       class="w-full h-11 flex-col justify-center items-center flex hover:no-underline text-black/70 hover:text-black/90 dark:text-gray-400 hover:dark:text-white stroke-black/70 hover:stroke-black/90 dark:stroke-[#B8B4BF] hover:dark:stroke-white"
     >
-      <div class="w-full h-9 px-3 py-3 bg-gray-400 dark:bg-neutral-800 rounded-lg justify-start items-center gap-3 inline-flex">
+      <div class="w-full h-9 px-3 py-3 bg-zinc-400 bg-opacity-20 hover:bg-opacity-40 rounded-lg justify-start items-center gap-3 inline-flex">
         <div class="w-5 h-5 flex items-center justify-center"><Icons.exit /></div>
         <div :if={@sidebar_expanded} class="text-sm font-medium tracking-tight">
           Exit Course
