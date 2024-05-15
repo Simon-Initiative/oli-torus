@@ -3,12 +3,12 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
   use OliWeb.Common.Modal
 
   alias OliWeb.Common.SessionContext
-  alias Oli.Delivery.{Metrics, Sections}
-  alias Oli.Publishing.DeliveryResolver
-  alias Oli.Resources.Collaboration
+  alias Oli.Delivery.Metrics
+  alias Oli.Delivery.Sections
+  alias Oli.Delivery.RecommendedActions
   alias OliWeb.Components.Delivery.InstructorDashboard
   alias OliWeb.Components.Delivery.InstructorDashboard.TabLink
-  alias Oli.Delivery.RecommendedActions
+  alias OliWeb.Components.Delivery.Students
   alias OliWeb.Delivery.InstructorDashboard.Helpers
 
   @impl Phoenix.LiveView
@@ -18,13 +18,14 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
   end
 
   defp do_handle_students_params(%{"active_tab" => active_tab} = params, _, socket) do
-    params = OliWeb.Components.Delivery.Students.decode_params(params)
+    view = String.to_existing_atom(params["view"])
+    params = Students.decode_params(params)
 
     socket =
       socket
       |> assign(
         params: params,
-        view: :reports,
+        view: view,
         active_tab: maybe_get_tab_from_params(active_tab, :content)
       )
       |> assign(users: Helpers.get_students(socket.assigns.section, params))
@@ -50,24 +51,17 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
 
   @impl Phoenix.LiveView
   def handle_params(
-        %{"view" => "reports", "active_tab" => "content", "container_id" => _container_id} =
+        %{"view" => "insights", "active_tab" => "content", "container_id" => _container_id} =
           params,
         uri,
         socket
-      ),
-      do: do_handle_students_params(params, uri, socket)
+      ) do
+    do_handle_students_params(params, uri, socket)
+  end
 
   @impl Phoenix.LiveView
   def handle_params(
-        %{"view" => "reports", "active_tab" => "students"} = params,
-        uri,
-        socket
-      ),
-      do: do_handle_students_params(params, uri, socket)
-
-  @impl Phoenix.LiveView
-  def handle_params(
-        %{"view" => "reports", "active_tab" => "learning_objectives"} = params,
+        %{"view" => "insights", "active_tab" => "learning_objectives"} = params,
         _,
         socket
       ) do
@@ -75,7 +69,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
       socket
       |> assign(
         params: params,
-        view: :reports,
+        view: :insights,
         active_tab: :learning_objectives,
         section: socket.assigns.section
       )
@@ -91,27 +85,8 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
   end
 
   @impl Phoenix.LiveView
-  def handle_params(%{"view" => "reports"} = params, _, socket) do
-    active_tab =
-      case params["active_tab"] do
-        nil -> :content
-        tab -> maybe_get_tab_from_params(tab, :content)
-      end
-
-    socket =
-      socket
-      |> assign(params: params, view: :reports, active_tab: active_tab)
-      |> assign_new(:containers, fn ->
-        containers = Helpers.get_containers(socket.assigns.section)
-        async_calculate_proficiency(socket.assigns.section)
-        containers
-      end)
-
-    {:noreply, socket}
-  end
-
   def handle_params(
-        %{"view" => "overview", "active_tab" => "scored_activities"} = params,
+        %{"view" => "insights", "active_tab" => "scored_activities"} = params,
         _,
         socket
       ) do
@@ -119,7 +94,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
       socket
       |> assign(
         params: params,
-        view: :overview,
+        view: :insights,
         active_tab: :scored_activities
       )
       |> assign_new(:students, fn ->
@@ -144,8 +119,9 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
     {:noreply, socket}
   end
 
+  @impl Phoenix.LiveView
   def handle_params(
-        %{"view" => "overview", "active_tab" => "surveys"} = params,
+        %{"view" => "insights", "active_tab" => "practice_activities"} = params,
         _,
         socket
       ) do
@@ -153,7 +129,42 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
       socket
       |> assign(
         params: params,
-        view: :overview,
+        view: :insights,
+        active_tab: :practice_activities
+      )
+      |> assign_new(:students, fn ->
+        Sections.enrolled_students(socket.assigns.section.slug)
+        |> Enum.reject(fn s -> s.user_role_id != 4 end)
+      end)
+      |> assign_new(:practice_activities, fn %{students: students} ->
+        Helpers.get_practice_pages(socket.assigns.section, students)
+      end)
+      |> assign_new(:activities, fn -> Oli.Activities.list_activity_registrations() end)
+      |> assign_new(:scripts, fn %{activities: activities} ->
+        part_components = Oli.PartComponents.get_part_component_scripts(:delivery_script)
+
+        Enum.map(activities, fn a -> a.authoring_script end)
+        |> Enum.concat(part_components)
+        |> Enum.map(fn s -> Routes.static_path(OliWeb.Endpoint, "/js/" <> s) end)
+      end)
+      |> assign_new(:activity_types_map, fn %{activities: activities} ->
+        Enum.reduce(activities, %{}, fn e, m -> Map.put(m, e.id, e) end)
+      end)
+
+    {:noreply, socket}
+  end
+
+  @impl Phoenix.LiveView
+  def handle_params(
+        %{"view" => "insights", "active_tab" => "surveys"} = params,
+        _,
+        socket
+      ) do
+    socket =
+      socket
+      |> assign(
+        params: params,
+        view: :insights,
         active_tab: :surveys
       )
       |> assign_new(:students, fn ->
@@ -179,12 +190,38 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
   end
 
   @impl Phoenix.LiveView
+  def handle_params(%{"view" => "insights"} = params, _, socket) do
+    active_tab =
+      case params["active_tab"] do
+        nil -> :content
+        tab -> maybe_get_tab_from_params(tab, :content)
+      end
+
+    socket =
+      socket
+      |> assign(params: params, view: :insights, active_tab: active_tab)
+      |> assign_new(:containers, fn ->
+        containers = Helpers.get_containers(socket.assigns.section)
+        async_calculate_proficiency(socket.assigns.section)
+        containers
+      end)
+
+    {:noreply, socket}
+  end
+
+  @impl Phoenix.LiveView
   def handle_params(
-        %{
-          "view" => "overview",
-          "section_slug" => _section_slug,
-          "active_tab" => "recommended_actions"
-        } = params,
+        %{"view" => "overview", "active_tab" => "students"} = params,
+        uri,
+        socket
+      ) do
+    do_handle_students_params(params, uri, socket)
+  end
+
+  @impl Phoenix.LiveView
+  def handle_params(
+        %{"view" => "overview", "active_tab" => "recommended_actions", "section_slug" => _ss} =
+          params,
         _,
         socket
       ) do
@@ -222,40 +259,6 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
     {:noreply, assign(socket, params: params, view: :overview, active_tab: :recommended_actions)}
   end
 
-  def handle_params(
-        %{"view" => "overview", "active_tab" => "practice_activities"} = params,
-        _,
-        socket
-      ) do
-    socket =
-      socket
-      |> assign(
-        params: params,
-        view: :overview,
-        active_tab: :practice_activities
-      )
-      |> assign_new(:students, fn ->
-        Sections.enrolled_students(socket.assigns.section.slug)
-        |> Enum.reject(fn s -> s.user_role_id != 4 end)
-      end)
-      |> assign_new(:practice_activities, fn %{students: students} ->
-        Helpers.get_practice_pages(socket.assigns.section, students)
-      end)
-      |> assign_new(:activities, fn -> Oli.Activities.list_activity_registrations() end)
-      |> assign_new(:scripts, fn %{activities: activities} ->
-        part_components = Oli.PartComponents.get_part_component_scripts(:delivery_script)
-
-        Enum.map(activities, fn a -> a.authoring_script end)
-        |> Enum.concat(part_components)
-        |> Enum.map(fn s -> Routes.static_path(OliWeb.Endpoint, "/js/" <> s) end)
-      end)
-      |> assign_new(:activity_types_map, fn %{activities: activities} ->
-        Enum.reduce(activities, %{}, fn e, m -> Map.put(m, e.id, e) end)
-      end)
-
-    {:noreply, socket}
-  end
-
   @impl Phoenix.LiveView
   def handle_params(%{"view" => "overview", "section_slug" => _section_slug} = params, _, socket) do
     socket =
@@ -284,11 +287,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
 
         tab ->
           socket
-          |> assign(
-            view: :overview,
-            params: params,
-            active_tab: tab
-          )
+          |> assign(view: :overview, params: params, active_tab: tab)
       end
 
     {:noreply, socket}
@@ -299,16 +298,16 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
     allowed_routes = [
       {nil, nil},
       {"overview", "course_content"},
-      {"overview", "scored_activities"},
+      {"overview", "students"},
+      {"overview", "quiz_scores"},
       {"overview", "recommended_actions"},
-      {"overview", "practice_activities"},
-      {"overview", "surveys"},
-      {"reports", nil},
-      {"reports", "content"},
-      {"reports", "students"},
-      {"reports", "learning_objectives"},
-      {"reports", "quiz_scores"},
-      {"reports", "course_discussion"},
+      {"insights", nil},
+      {"insights", "content"},
+      {"insights", "learning_objectives"},
+      {"insights", "scored_activities"},
+      {"insights", "practice_activities"},
+      {"insights", "surveys"},
+      {"insights", "course_discussion"},
       {"manage", nil},
       {"discussions", nil}
     ]
@@ -357,46 +356,11 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
 
   defp is_active_tab?(tab, active_tab), do: tab == active_tab
 
-  defp overview_tabs(section_slug, preview_mode, active_tab) do
-    [
-      %TabLink{
-        label: "Course Content",
-        path: path_for(:overview, :course_content, section_slug, preview_mode),
-        badge: nil,
-        active: is_active_tab?(:course_content, active_tab)
-      },
-      %TabLink{
-        label: "Scored Activities",
-        path: path_for(:overview, :scored_activities, section_slug, preview_mode),
-        badge: nil,
-        active: is_active_tab?(:scored_activities, active_tab)
-      },
-      %TabLink{
-        label: "Recommended Actions",
-        path: path_for(:overview, :recommended_actions, section_slug, preview_mode),
-        badge: nil,
-        active: is_active_tab?(:recommended_actions, active_tab)
-      },
-      %TabLink{
-        label: "Practice Activities",
-        path: path_for(:overview, :practice_activities, section_slug, preview_mode),
-        badge: nil,
-        active: is_active_tab?(:practice_activities, active_tab)
-      },
-      %TabLink{
-        label: "Surveys",
-        path: path_for(:overview, :surveys, section_slug, preview_mode),
-        badge: nil,
-        active: is_active_tab?(:surveys, active_tab)
-      }
-    ]
-  end
-
   defp container_details_tab(section_slug, preview_mode, selected_container) do
     [
       %TabLink{
         label: fn -> render_container_tab_detail(%{title: selected_container.title}) end,
-        path: path_for(:reports, :content, section_slug, preview_mode),
+        path: path_for(:insights, :content, section_slug, preview_mode),
         badge: nil,
         active: true
       }
@@ -412,58 +376,102 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
     """
   end
 
-  defp reports_tabs(section_slug, preview_mode, active_tab) do
+  defp overview_tabs(section_slug, preview_mode, active_tab) do
     [
       %TabLink{
-        label: "Content",
-        path: path_for(:reports, :content, section_slug, preview_mode),
+        label: "Course Content",
+        path: path_for(:overview, :course_content, section_slug, preview_mode),
         badge: nil,
-        active: is_active_tab?(:content, active_tab)
+        active: is_active_tab?(:course_content, active_tab)
       },
       %TabLink{
         label: "Students",
-        path: path_for(:reports, :students, section_slug, preview_mode),
+        path: path_for(:overview, :students, section_slug, preview_mode),
         badge: nil,
         active: is_active_tab?(:students, active_tab)
       },
       %TabLink{
-        label: "Learning Objectives",
-        path: path_for(:reports, :learning_objectives, section_slug, preview_mode),
-        badge: nil,
-        active: is_active_tab?(:learning_objectives, active_tab)
-      },
-      %TabLink{
         label: "Quiz Scores",
-        path: path_for(:reports, :quiz_scores, section_slug, preview_mode),
+        path: path_for(:overview, :quiz_scores, section_slug, preview_mode),
         badge: nil,
         active: is_active_tab?(:quiz_scores, active_tab)
       },
       %TabLink{
-        label: "Course Discussion",
-        path: path_for(:reports, :course_discussion, section_slug, preview_mode),
+        label: "Recommended Actions",
+        path: path_for(:overview, :recommended_actions, section_slug, preview_mode),
         badge: nil,
-        active: is_active_tab?(:course_discussion, active_tab)
+        active: is_active_tab?(:recommended_actions, active_tab)
+      }
+    ]
+  end
+
+  defp insights_tabs(section_slug, preview_mode, active_tab) do
+    [
+      %TabLink{
+        label: "Content",
+        path: path_for(:insights, :content, section_slug, preview_mode),
+        badge: nil,
+        active: is_active_tab?(:content, active_tab)
+      },
+      %TabLink{
+        label: "Learning Objectives",
+        path: path_for(:insights, :learning_objectives, section_slug, preview_mode),
+        badge: nil,
+        active: is_active_tab?(:learning_objectives, active_tab)
+      },
+      %TabLink{
+        label: "Scored Activities",
+        path: path_for(:insights, :scored_activities, section_slug, preview_mode),
+        badge: nil,
+        active: is_active_tab?(:scored_activities, active_tab)
+      },
+      %TabLink{
+        label: "Practice Activities",
+        path: path_for(:insights, :practice_activities, section_slug, preview_mode),
+        badge: nil,
+        active: is_active_tab?(:practice_activities, active_tab)
+      },
+      %TabLink{
+        label: "Surveys",
+        path: path_for(:insights, :surveys, section_slug, preview_mode),
+        badge: nil,
+        active: is_active_tab?(:surveys, active_tab)
       }
     ]
   end
 
   @impl Phoenix.LiveView
-  def render(%{view: :overview, active_tab: :scored_activities} = assigns) do
+  def render(%{view: :overview, active_tab: :students} = assigns) do
     ~H"""
     <InstructorDashboard.tabs tabs={overview_tabs(@section_slug, @preview_mode, @active_tab)} />
 
-    <div class="container mx-auto mb-10">
+    <div class="container mx-auto">
       <.live_component
-        id="scored_activities_tab"
-        module={OliWeb.Components.Delivery.ScoredActivities}
-        section={@section}
+        id="students_table"
+        module={OliWeb.Components.Delivery.Students}
         params={@params}
-        assessments={@assessments}
-        students={@students}
-        scripts={@scripts}
-        activity_types_map={@activity_types_map}
-        view={@view}
         ctx={@ctx}
+        section={@section}
+        view={@view}
+        students={@users}
+        dropdown_options={@dropdown_options}
+      />
+    </div>
+    """
+  end
+
+  def render(%{view: :overview, active_tab: :quiz_scores} = assigns) do
+    ~H"""
+    <InstructorDashboard.tabs tabs={overview_tabs(@section_slug, @preview_mode, @active_tab)} />
+
+    <div class="container mx-auto">
+      <.live_component
+        id="quiz_scores_table"
+        module={OliWeb.Components.Delivery.QuizScores}
+        params={@params}
+        section={@section}
+        view={@view}
+        patch_url_type={:quiz_scores_instructor}
       />
     </div>
     """
@@ -486,49 +494,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
     """
   end
 
-  def render(%{view: :overview, active_tab: :practice_activities} = assigns) do
-    ~H"""
-    <InstructorDashboard.tabs tabs={overview_tabs(@section_slug, @preview_mode, @active_tab)} />
-
-    <div class="mx-10 mb-10">
-      <.live_component
-        id="practice_activities_tab"
-        module={OliWeb.Components.Delivery.PracticeActivities}
-        section={@section}
-        params={@params}
-        assessments={@practice_activities}
-        students={@students}
-        scripts={@scripts}
-        activity_types_map={@activity_types_map}
-        view={@view}
-        ctx={@ctx}
-      />
-    </div>
-    """
-  end
-
-  def render(%{view: :overview, active_tab: :surveys} = assigns) do
-    ~H"""
-    <InstructorDashboard.tabs tabs={overview_tabs(@section_slug, @preview_mode, @active_tab)} />
-
-    <div class="mx-10 mb-10">
-      <.live_component
-        id="surveys_tab"
-        module={OliWeb.Components.Delivery.Surveys}
-        section={@section}
-        params={@params}
-        assessments={@surveys}
-        students={@students}
-        scripts={@scripts}
-        activity_types_map={@activity_types_map}
-        view={@view}
-        ctx={@ctx}
-      />
-    </div>
-    """
-  end
-
-  def render(%{view: :overview} = assigns) do
+  def render(%{view: :overview, active_tab: :course_content} = assigns) do
     ~H"""
     <InstructorDashboard.tabs tabs={overview_tabs(@section_slug, @preview_mode, @active_tab)} />
 
@@ -550,7 +516,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
   end
 
   def render(
-        %{view: :reports, active_tab: :content, params: %{container_id: _container_id}} = assigns
+        %{view: :insights, active_tab: :content, params: %{container_id: _container_id}} = assigns
       ) do
     ~H"""
     <InstructorDashboard.tabs tabs={
@@ -575,9 +541,9 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
     """
   end
 
-  def render(%{view: :reports, active_tab: :content} = assigns) do
+  def render(%{view: :insights, active_tab: :content} = assigns) do
     ~H"""
-    <InstructorDashboard.tabs tabs={reports_tabs(@section_slug, @preview_mode, @active_tab)} />
+    <InstructorDashboard.tabs tabs={insights_tabs(@section_slug, @preview_mode, @active_tab)} />
 
     <div class="container mx-auto">
       <.live_component
@@ -593,28 +559,9 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
     """
   end
 
-  def render(%{view: :reports, active_tab: :students} = assigns) do
+  def render(%{view: :insights, active_tab: :learning_objectives} = assigns) do
     ~H"""
-    <InstructorDashboard.tabs tabs={reports_tabs(@section_slug, @preview_mode, @active_tab)} />
-
-    <div class="container mx-auto">
-      <.live_component
-        id="students_table"
-        module={OliWeb.Components.Delivery.Students}
-        params={@params}
-        ctx={@ctx}
-        section={@section}
-        view={@view}
-        students={@users}
-        dropdown_options={@dropdown_options}
-      />
-    </div>
-    """
-  end
-
-  def render(%{view: :reports, active_tab: :learning_objectives} = assigns) do
-    ~H"""
-    <InstructorDashboard.tabs tabs={reports_tabs(@section_slug, @preview_mode, @active_tab)} />
+    <InstructorDashboard.tabs tabs={insights_tabs(@section_slug, @preview_mode, @active_tab)} />
 
     <div class="container mx-auto">
       <.live_component
@@ -630,77 +577,65 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
     """
   end
 
-  def render(%{view: :reports, active_tab: :quiz_scores} = assigns) do
+  def render(%{view: :insights, active_tab: :scored_activities} = assigns) do
     ~H"""
-    <InstructorDashboard.tabs tabs={reports_tabs(@section_slug, @preview_mode, @active_tab)} />
+    <InstructorDashboard.tabs tabs={insights_tabs(@section_slug, @preview_mode, @active_tab)} />
 
-    <div class="container mx-auto">
+    <div class="container mx-auto mb-10">
       <.live_component
-        id="quiz_scores_table"
-        module={OliWeb.Components.Delivery.QuizScores}
-        params={@params}
+        id="scored_activities_tab"
+        module={OliWeb.Components.Delivery.ScoredActivities}
         section={@section}
+        params={@params}
+        assessments={@assessments}
+        students={@students}
+        scripts={@scripts}
+        activity_types_map={@activity_types_map}
         view={@view}
-        patch_url_type={:quiz_scores_instructor}
+        ctx={@ctx}
       />
     </div>
     """
   end
 
-  def render(%{view: :reports, active_tab: :course_discussion} = assigns) do
-    %{slug: revision_slug} = DeliveryResolver.root_container(assigns.section_slug)
-
-    {:ok, collab_space_config} =
-      Collaboration.get_collab_space_config_for_page_in_section(
-        revision_slug,
-        assigns.section_slug
-      )
-
-    current_user_id =
-      case assigns.ctx.user do
-        %Oli.Accounts.User{id: id} -> id
-        _ -> nil
-      end
-
-    current_author_id =
-      case assigns.ctx.author do
-        %Oli.Accounts.Author{id: id} -> id
-        _ -> nil
-      end
-
-    assigns =
-      Map.merge(
-        assigns,
-        %{
-          current_user_id: current_user_id,
-          current_author_id: current_author_id,
-          revision_slug: revision_slug,
-          collab_space_config: collab_space_config
-        }
-      )
-
+  def render(%{view: :insights, active_tab: :practice_activities} = assigns) do
     ~H"""
-    <InstructorDashboard.tabs tabs={reports_tabs(@section_slug, @preview_mode, @active_tab)} />
+    <InstructorDashboard.tabs tabs={insights_tabs(@section_slug, @preview_mode, @active_tab)} />
 
-    <div class="container mx-auto">
-      <div class="bg-white dark:bg-gray-800 p-8 shadow">
-        <%= if !is_nil(@collab_space_config) do %>
-          <%= live_render(@socket, OliWeb.CollaborationLive.CollabSpaceView,
-            id: "course_discussion",
-            session: %{
-              "collab_space_config" => @collab_space_config,
-              "section_slug" => @section_slug,
-              "resource_slug" => @revision_slug,
-              "is_instructor" => true,
-              "title" => "Course Discussion",
-              "current_user_id" => @current_user_id,
-              "current_author_id" => @current_author_id
-            }
-          ) %>
-        <% else %>
-          <h6>There is no collaboration space configured for this Course</h6>
-        <% end %>
-      </div>
+    <div class="mx-10 mb-10">
+      <.live_component
+        id="practice_activities_tab"
+        module={OliWeb.Components.Delivery.PracticeActivities}
+        section={@section}
+        params={@params}
+        assessments={@practice_activities}
+        students={@students}
+        scripts={@scripts}
+        activity_types_map={@activity_types_map}
+        view={@view}
+        ctx={@ctx}
+      />
+    </div>
+    """
+  end
+
+  def render(%{view: :insights, active_tab: :surveys} = assigns) do
+    ~H"""
+    <InstructorDashboard.tabs tabs={insights_tabs(@section_slug, @preview_mode, @active_tab)} />
+
+    <div class="mx-10 mb-10">
+      <.live_component
+        id="surveys_tab"
+        module={OliWeb.Components.Delivery.Surveys}
+        section={@section}
+        params={@params}
+        assessments={@surveys}
+        students={@students}
+        scripts={@scripts}
+        activity_types_map={@activity_types_map}
+        view={@view}
+        ctx={@ctx}
+      />
     </div>
     """
   end

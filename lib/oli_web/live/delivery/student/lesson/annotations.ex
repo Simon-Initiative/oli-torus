@@ -1,8 +1,11 @@
 defmodule OliWeb.Delivery.Student.Lesson.Annotations do
   use OliWeb, :html
 
-  alias OliWeb.Components.Common
+  import OliWeb.Icons, only: [trash: 1]
+
   alias Oli.Accounts.User
+  alias OliWeb.Components.Common
+  alias OliWeb.Components.Modal
 
   attr :section_slug, :string, required: true
   attr :create_new_annotation, :boolean, default: false
@@ -447,10 +450,16 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
         </div>
       </div>
       <p class="my-2" role="post content">
-        <%= @post.content.message %>
+        <%= case @post.status do %>
+          <% :deleted -> %>
+            <span class="italic text-gray-500">(deleted)</span>
+          <% _ -> %>
+            <%= @post.content.message %>
+        <% end %>
       </p>
       <.post_actions
         post={@post}
+        current_user={@current_user}
         on_toggle_reaction="toggle_reaction"
         on_toggle_replies="toggle_post_replies"
         go_to_post_href={@go_to_post_href}
@@ -489,6 +498,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
   end
 
   attr :post, Oli.Resources.Collaboration.Post, required: true
+  attr :current_user, Oli.Accounts.User, required: true
   attr :on_toggle_reaction, :string, default: nil
   attr :on_toggle_replies, :string, default: nil
   attr :go_to_post_href, :string, default: nil
@@ -543,18 +553,48 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
             <% href -> %>
               <.button variant={:link} href={href}>Go to Page</.button>
           <% end %>
+          <%= if @current_user.id == @post.user_id do %>
+            <button
+              disabled={@post.status == :deleted}
+              class={[
+                "inline-flex gap-1 text-sm text-gray-500 bold py-1 px-2 rounded-lg",
+                if(@post.status == :deleted, do: "opacity-50", else: "hover:bg-gray-100")
+              ]}
+              phx-click={JS.push("set_delete_post_id") |> Modal.show_modal("delete_post_modal")}
+              phx-value-post-id={@post.id}
+              phx-value-visibility={@post.visibility}
+            >
+              <.trash />
+            </button>
+          <% end %>
         </div>
         """
 
       _ ->
         ~H"""
-        <%= case @go_to_post_href do %>
-          <% nil -> %>
-          <% href -> %>
-            <div class="flex flex-row gap-3 my-2 justify-end" role="post actions">
+        <div class="flex flex-row gap-3 my-2 justify-end" role="post actions">
+          <div class="flex-1" />
+
+          <%= case @go_to_post_href do %>
+            <% nil -> %>
+            <% href -> %>
               <.button variant={:link} href={href}>Go to Page</.button>
-            </div>
-        <% end %>
+          <% end %>
+          <%= if @current_user.id == @post.user_id do %>
+            <button
+              disabled={@post.status == :deleted}
+              class={[
+                "inline-flex gap-1 text-sm text-gray-500 bold py-2 px-2 rounded-lg",
+                if(@post.status == :deleted, do: "opacity-50", else: "hover:bg-gray-100")
+              ]}
+              phx-click={JS.push("set_delete_post_id") |> Modal.show_modal("delete_post_modal")}
+              phx-value-post-id={@post.id}
+              phx-value-visibility={@post.visibility}
+            >
+              <.trash />
+            </button>
+          <% end %>
+        </div>
         """
     end
   end
@@ -648,12 +688,55 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
         </div>
       </div>
       <p class="my-2">
-        <%= @post.content.message %>
+        <%= case @post.status do %>
+          <% :deleted -> %>
+            <span class="italic text-gray-500">(deleted)</span>
+          <% _ -> %>
+            <%= @post.content.message %>
+        <% end %>
       </p>
-      <.post_actions post={@post} on_toggle_reaction="toggle_reaction" />
+      <.post_actions post={@post} current_user={@current_user} on_toggle_reaction="toggle_reaction" />
     </div>
     """
   end
+
+  def delete_post_modal(assigns) do
+    ~H"""
+    <Modal.modal id="delete_post_modal" class="w-1/2">
+      <:title>Delete Note</:title>
+      <.form
+        phx-submit={JS.push("delete_post") |> Modal.hide_modal("delete_post_modal")}
+        for={%{}}
+        class="flex flex-col gap-6"
+        id="delete_post_form"
+      >
+        <p class="my-2">Are you sure you want to delete this note?</p>
+        <div class="flex flex-row justify-end gap-2">
+          <.button
+            type="button"
+            variant={:secondary}
+            phx-click={Modal.hide_modal("delete_post_modal")}
+          >
+            Cancel
+          </.button>
+          <.button type="submit" variant={:danger}>Delete</.button>
+        </div>
+      </.form>
+    </Modal.modal>
+    """
+  end
+
+  def find_and_update_post(posts, post_id, update_fn) when is_list(posts) do
+    Enum.map(posts, fn post ->
+      if post.id == post_id do
+        update_fn.(post)
+      else
+        %{post | replies: find_and_update_post(post.replies, post_id, update_fn)}
+      end
+    end)
+  end
+
+  def find_and_update_post(posts, _post_id, _update_fn), do: posts
 
   attr :point_marker, :any, required: true
   attr :selected, :boolean, default: false

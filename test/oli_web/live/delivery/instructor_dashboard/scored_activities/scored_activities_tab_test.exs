@@ -28,7 +28,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.ScoredActivitiesTabTest do
           OliWeb.Endpoint,
           OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
           section_slug,
-          :overview,
+          :insights,
           :scored_activities,
           params
         )
@@ -38,7 +38,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.ScoredActivitiesTabTest do
           OliWeb.Endpoint,
           OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
           section_slug,
-          :overview,
+          :insights,
           :scored_activities,
           assessment_id,
           params
@@ -1184,7 +1184,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.ScoredActivitiesTabTest do
       section = insert(:section)
 
       redirect_path =
-        "/session/new?request_path=%2Fsections%2F#{section.slug}%2Finstructor_dashboard%2Foverview%2Fscored_activities"
+        "/session/new?request_path=%2Fsections%2F#{section.slug}%2Finstructor_dashboard%2Finsights%2Fscored_activities"
 
       assert {:error, {:redirect, %{to: ^redirect_path}}} =
                live(conn, live_view_scored_activities_route(section.slug))

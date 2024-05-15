@@ -89,7 +89,7 @@ defmodule OliWeb.InviteController do
         OliWeb.Endpoint,
         OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
         section_slug,
-        :reports,
+        :overview,
         :students
       )
 
