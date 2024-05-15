@@ -1,7 +1,8 @@
-import React, { useCallback, useEffect, useRef } from 'react';
+import React, { useCallback, useRef } from 'react';
 import { OverlayTrigger, Tooltip } from 'react-bootstrap';
 import { useDispatch, useSelector } from 'react-redux';
 import { setCurrentSelection } from 'apps/authoring/store/parts/slice';
+import { useKeyDown } from 'hooks/useKeyDown';
 import useHover from '../../../../../components/hooks/useHover';
 import guid from '../../../../../utils/guid';
 import {
@@ -177,26 +178,9 @@ export const FlowchartHeaderNav: React.FC<HeaderNavProps> = () => {
     dispatch(setShowScoringOverview({ show: true }));
   };
 
-  const handleKeyPress = (event: any) => {
-    // event.metaKey - pressed Command key on Macs
-    // event.ctrlKey - pressed Control key on Linux or Windows
-    if (event.metaKey || event.ctrlKey) {
-      if (event.code === 'KeyZ') {
-        handleUndo();
-      } else if (event.code === 'KeyY' || (event.shiftKey && event.code === 'KeyY')) {
-        handleRedo();
-      } else if (event.code === 'KeyV') {
-        handlePartPasteClick();
-      }
-    }
-  };
-
-  useEffect(() => {
-    window.addEventListener('keydown', handleKeyPress, { passive: true });
-    return () => {
-      window.removeEventListener('keydown', handleKeyPress);
-    };
-  }, [copiedPart]);
+  useKeyDown(() => handleUndo(), ['KeyZ']);
+  useKeyDown(() => handleRedo(), ['KeyY']);
+  useKeyDown(() => handlePartPasteClick(), ['KeyV'], [copiedPart]);
 
   const handleAddComponent = useCallback(
     (partComponentType: string) => () => {
