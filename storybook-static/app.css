@@ -4905,6 +4905,10 @@ table.table-striped tbody tr:nth-child(even) {
   height: 0px;
 }
 
+.h-\[100vh\] {
+  height: 100vh;
+}
+
 .h-\[120px\] {
   height: 120px;
 }
@@ -6249,12 +6253,20 @@ table.table-striped tbody tr:nth-child(even) {
   border-top-right-radius: 0.375rem;
 }
 
+.rounded-bl-\[52px\] {
+  border-bottom-left-radius: 52px;
+}
+
 .rounded-bl-xl {
   border-bottom-left-radius: 0.75rem;
 }
 
 .rounded-br-xl {
   border-bottom-right-radius: 0.75rem;
+}
+
+.rounded-tl-\[52px\] {
+  border-top-left-radius: 52px;
 }
 
 .rounded-tl-xl {
@@ -6505,6 +6517,10 @@ table.table-striped tbody tr:nth-child(even) {
   border-color: rgb(255 255 255 / var(--tw-border-opacity));
 }
 
+.border-white\/5 {
+  border-color: rgb(255 255 255 / 0.05);
+}
+
 .border-yellow-500 {
   --tw-border-opacity: 1;
   border-color: rgb(247 174 50 / var(--tw-border-opacity));
@@ -6743,6 +6759,11 @@ table.table-striped tbody tr:nth-child(even) {
 .bg-gray-300 {
   --tw-bg-opacity: 1;
   background-color: rgb(212 212 212 / var(--tw-bg-opacity));
+}
+
+.bg-gray-400 {
+  --tw-bg-opacity: 1;
+  background-color: rgb(163 163 163 / var(--tw-bg-opacity));
 }
 
 .bg-gray-50 {
@@ -7036,6 +7057,14 @@ table.table-striped tbody tr:nth-child(even) {
   fill: #000;
 }
 
+.fill-black\/70 {
+  fill: rgb(0 0 0 / 0.7);
+}
+
+.fill-black\/90 {
+  fill: rgb(0 0 0 / 0.9);
+}
+
 .fill-blue-600 {
   fill: #275CAF;
 }
@@ -7080,6 +7109,14 @@ table.table-striped tbody tr:nth-child(even) {
   stroke: rgb(0 0 0 / 0.6);
 }
 
+.stroke-black\/70 {
+  stroke: rgb(0 0 0 / 0.7);
+}
+
+.stroke-black\/90 {
+  stroke: rgb(0 0 0 / 0.9);
+}
+
 .stroke-gray-300 {
   stroke: #d4d4d4;
 }
@@ -7103,6 +7140,11 @@ table.table-striped tbody tr:nth-child(even) {
 .object-cover {
   -o-object-fit: cover;
      object-fit: cover;
+}
+
+.object-left {
+  -o-object-position: left;
+     object-position: left;
 }
 
 .p-0 {
@@ -7804,6 +7846,10 @@ table.table-striped tbody tr:nth-child(even) {
   font-weight: 400 !important;
 }
 
+.\!font-semibold {
+  font-weight: 600 !important;
+}
+
 .font-bold {
   font-weight: 700;
 }
@@ -7961,6 +8007,10 @@ table.table-striped tbody tr:nth-child(even) {
   letter-spacing: 0.05em;
 }
 
+.\!text-black\/90 {
+  color: rgb(0 0 0 / 0.9) !important;
+}
+
 .\!text-danger {
   --tw-text-opacity: 1 !important;
   color: rgb(231 76 60 / var(--tw-text-opacity)) !important;
@@ -7983,6 +8033,10 @@ table.table-striped tbody tr:nth-child(even) {
 .text-black {
   --tw-text-opacity: 1;
   color: rgb(0 0 0 / var(--tw-text-opacity));
+}
+
+.text-black\/70 {
+  color: rgb(0 0 0 / 0.7);
 }
 
 .text-blue-400 {
@@ -11949,6 +12003,11 @@ https://tailwindcss.com/docs/utility-first
   background-color: rgb(59 59 77 / var(--tw-bg-opacity)) !important;
 }
 
+.hover\:\!bg-gray-400:hover {
+  --tw-bg-opacity: 1 !important;
+  background-color: rgb(163 163 163 / var(--tw-bg-opacity)) !important;
+}
+
 .hover\:bg-\[\#000000\]\/5:hover {
   background-color: rgb(0 0 0 / 0.05);
 }
@@ -12066,6 +12125,10 @@ https://tailwindcss.com/docs/utility-first
   --tw-bg-opacity: 0.4;
 }
 
+.hover\:stroke-black\/90:hover {
+  stroke: rgb(0 0 0 / 0.9);
+}
+
 .hover\:text-xl:hover {
   font-size: 1.25rem;
   line-height: 1.75rem;
@@ -12082,6 +12145,10 @@ https://tailwindcss.com/docs/utility-first
 .hover\:text-black:hover {
   --tw-text-opacity: 1;
   color: rgb(0 0 0 / var(--tw-text-opacity));
+}
+
+.hover\:text-black\/90:hover {
+  color: rgb(0 0 0 / 0.9);
 }
 
 .hover\:text-blue-500:hover {
@@ -13058,6 +13125,10 @@ https://tailwindcss.com/docs/utility-first
   stroke: #12E56A;
 }
 
+.dark .dark\:stroke-\[\#B8B4BF\] {
+  stroke: #B8B4BF;
+}
+
 .dark .dark\:stroke-white {
   stroke: #fff;
 }
@@ -13331,13 +13402,26 @@ https://tailwindcss.com/docs/utility-first
   background-color: rgb(247 174 50 / var(--tw-bg-opacity));
 }
 
+.dark .hover\:dark\:\!bg-neutral-800:hover {
+  --tw-bg-opacity: 1 !important;
+  background-color: rgb(38 38 38 / var(--tw-bg-opacity)) !important;
+}
+
 .dark .hover\:dark\:bg-\[\#262626\]:hover {
   --tw-bg-opacity: 1;
   background-color: rgb(38 38 38 / var(--tw-bg-opacity));
 }
 
+.dark .hover\:dark\:bg-neutral-800\/60:hover {
+  background-color: rgb(38 38 38 / 0.6);
+}
+
 .dark .dark\:hover\:bg-opacity-60:hover {
   --tw-bg-opacity: 0.6;
+}
+
+.dark .hover\:dark\:stroke-white:hover {
+  stroke: #fff;
 }
 
 .dark .dark\:hover\:text-blue-500:hover {
@@ -13387,6 +13471,11 @@ https://tailwindcss.com/docs/utility-first
 .dark .hover\:dark\:text-gray-200:hover {
   --tw-text-opacity: 1;
   color: rgb(229 229 229 / var(--tw-text-opacity));
+}
+
+.dark .hover\:dark\:text-white:hover {
+  --tw-text-opacity: 1;
+  color: rgb(255 255 255 / var(--tw-text-opacity));
 }
 
 .dark .dark\:hover\:opacity-50:hover {
@@ -13768,8 +13857,12 @@ https://tailwindcss.com/docs/utility-first
     margin-left: 1rem;
   }
 
-  .md\:ml-48 {
-    margin-left: 12rem;
+  .md\:ml-\[190px\] {
+    margin-left: 190px;
+  }
+
+  .md\:ml-\[60px\] {
+    margin-left: 60px;
   }
 
   .md\:mr-2 {
@@ -13804,12 +13897,12 @@ https://tailwindcss.com/docs/utility-first
     display: none;
   }
 
-  .md\:h-\[calc\(100vh-56px\)\] {
-    height: calc(100vh - 56px);
-  }
-
   .md\:h-full {
     height: 100%;
+  }
+
+  .md\:\!w-\[60px\] {
+    width: 60px !important;
   }
 
   .md\:w-1\/3 {
@@ -13836,10 +13929,6 @@ https://tailwindcss.com/docs/utility-first
     width: 33.333333%;
   }
 
-  .md\:w-48 {
-    width: 12rem;
-  }
-
   .md\:w-64 {
     width: 16rem;
   }
@@ -13848,8 +13937,16 @@ https://tailwindcss.com/docs/utility-first
     width: 66.666667%;
   }
 
-  .md\:w-\[calc\(100\%-192px\)\] {
-    width: calc(100% - 192px);
+  .md\:w-\[190px\] {
+    width: 190px;
+  }
+
+  .md\:w-\[calc\(100\%-190px\)\] {
+    width: calc(100% - 190px);
+  }
+
+  .md\:w-\[calc\(100\%-60px\)\] {
+    width: calc(100% - 60px);
   }
 
   .md\:w-auto {
@@ -13932,12 +14029,20 @@ https://tailwindcss.com/docs/utility-first
     padding-right: 2rem;
   }
 
+  .md\:\!pl-\[95px\] {
+    padding-left: 95px !important;
+  }
+
   .md\:pb-4 {
     padding-bottom: 1rem;
   }
 
   .md\:pl-\[125px\] {
     padding-left: 125px;
+  }
+
+  .md\:pl-\[225px\] {
+    padding-left: 225px;
   }
 
   .md\:pl-\[50px\] {
