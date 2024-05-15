@@ -137,7 +137,8 @@ defmodule OliWeb.Delivery.Student.DiscussionsLiveTest do
     section =
       insert(:section,
         base_project: project,
-        title: "The best course ever!"
+        title: "The best course ever!",
+        contains_discussions: true
       )
 
     {:ok, section} = Sections.create_section_resources(section, publication)
