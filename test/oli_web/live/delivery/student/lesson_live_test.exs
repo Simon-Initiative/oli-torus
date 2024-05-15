@@ -253,7 +253,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
         container_revision
       ]
 
-    # asociate resources to project
+    # associate resources to project
     Enum.each(all_revisions, fn revision ->
       insert(:project_resource, %{
         project_id: project.id,
@@ -300,6 +300,21 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       start_date: ~U[2023-11-10 20:00:00Z],
       end_date: ~U[2023-11-14 20:00:00Z]
     })
+
+    # enable collaboration spaces for all pages in the section
+    {_total_page_count, _section_resources} =
+      Oli.Resources.Collaboration.enable_all_page_collab_spaces_for_section(
+        section.slug,
+        %Oli.Resources.Collaboration.CollabSpaceConfig{
+          status: :enabled,
+          threaded: true,
+          auto_accept: true,
+          show_full_history: true,
+          anonymous_posting: true,
+          participation_min_replies: 0,
+          participation_min_posts: 0
+        }
+      )
 
     %{
       section: section,
@@ -994,6 +1009,8 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
       Sections.mark_section_visited_for_student(section, user)
 
+      Oli.Resources.Collaboration.disable_all_page_collab_spaces_for_section(section.slug)
+
       {:ok, view, _html} = live(conn, Utils.lesson_live_path(section.slug, page_1.slug))
 
       assert not has_element?(
@@ -1008,8 +1025,6 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       user: user,
       page_1: page_1
     } do
-      enable_collaborative_spaces(%{section: section})
-
       Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
       Sections.mark_section_visited_for_student(section, user)
 
@@ -1037,7 +1052,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
   end
 
   describe "annotations panel" do
-    setup [:user_conn, :create_elixir_project, :enable_collaborative_spaces]
+    setup [:user_conn, :create_elixir_project]
 
     test "is toggled open when toolbar button is clicked", %{
       conn: conn,
@@ -1189,21 +1204,5 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
 
   defp react_to_post(post, user, reaction) do
     Oli.Resources.Collaboration.toggle_reaction(post.id, user.id, reaction)
-  end
-
-  defp enable_collaborative_spaces(%{section: section}) do
-    course_collab_space_config =
-      Oli.Resources.Collaboration.get_course_collab_space_config(section.root_section_resource_id)
-      |> Map.from_struct()
-      |> Map.merge(%{status: :enabled})
-
-    %{resource_id: resource_id} = Oli.Publishing.DeliveryResolver.root_container(section.slug)
-
-    Oli.Delivery.Sections.get_section_resource(section.id, resource_id)
-    |> Oli.Delivery.Sections.update_section_resource(%{
-      collab_space_config: course_collab_space_config
-    })
-
-    %{}
   end
 end
