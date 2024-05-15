@@ -98,7 +98,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLiveTest do
       {:ok, view, _html} = live(conn, instructor_dashboard_path(section.slug, :overview))
 
       assert view
-             |> has_element?(".bg-delivery-instructor-dashboard-header.fixed.top-0.z-50")
+             |> has_element?(".bg-delivery-instructor-dashboard-header.sticky.top-0.z-50")
     end
 
     test "if enrolled, can access the overview page with the course content tab as the default tab",
