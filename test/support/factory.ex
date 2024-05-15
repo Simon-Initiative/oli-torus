@@ -14,6 +14,7 @@ defmodule Oli.Factory do
   }
 
   alias Oli.Branding.Brand
+  alias Oli.Delivery.Page.PageContext
   alias Oli.Delivery.Sections.ContainedObjective
 
   alias Oli.Delivery.Attempts.Core.{
@@ -45,7 +46,7 @@ defmodule Oli.Factory do
   alias Oli.Notifications.SystemMessage
   alias Oli.Publishing.{PublishedResource}
   alias Oli.Publishing.Publications.Publication
-  alias Oli.Resources.{Resource, Revision}
+  alias Oli.Resources.{Resource, ResourceType, Revision}
   alias Oli.Resources.Collaboration.{CollabSpaceConfig, Post, PostContent, UserReactionPost}
   alias Oli.Search.RevisionEmbedding
 
@@ -629,6 +630,25 @@ defmodule Oli.Factory do
     %ProjectAttributes.License{
       license_type: :none,
       custom_license_details: ""
+    }
+  end
+
+  def page_context_factory() do
+    %PageContext{
+      user: build(:user),
+      review_mode: false,
+      page: build(:revision, resource_type_id: ResourceType.get_id_by_type("page")),
+      progress_state: :in_progress,
+      resource_attempts: [build(:resource_attempt)],
+      activities: [],
+      objectives: [],
+      latest_attempts: [],
+      bib_revisions: [],
+      historical_attempts: [],
+      collab_space_config: build(:collab_space_config),
+      is_instructor: false,
+      is_student: true,
+      effective_settings: %Oli.Delivery.Settings.Combined{}
     }
   end
 
