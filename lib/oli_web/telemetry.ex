@@ -40,7 +40,6 @@ defmodule OliWeb.Telemetry do
       last_value("oli.xapi.pipeline.queue_size"),
       last_value("oli.xapi.pipeline.batch_size"),
       summary("oli.xapi.pipeline.upload.duration", unit: {:native, :millisecond}),
-
       summary("phoenix.endpoint.stop.duration",
         unit: {:native, :millisecond}
       ),

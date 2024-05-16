@@ -4,10 +4,10 @@ defmodule Oli.Analytics.XAPI do
   @chars "abcdefghijklmnopqrstuvwxyz1234567890" |> String.split("", trim: true)
 
   def emit(%StatementBundle{} = bundle) do
-
-    producer = Oli.Analytics.XAPI.UploadPipeline
-    |> Broadway.producer_names()
-    |> Enum.random()
+    producer =
+      Oli.Analytics.XAPI.UploadPipeline
+      |> Broadway.producer_names()
+      |> Enum.random()
 
     GenStage.cast(producer, {:insert, bundle})
   end
