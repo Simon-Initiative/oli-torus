@@ -2,6 +2,7 @@ import React, { useCallback, useRef } from 'react';
 import { OverlayTrigger, Tooltip } from 'react-bootstrap';
 import { useDispatch, useSelector } from 'react-redux';
 import { setCurrentSelection } from 'apps/authoring/store/parts/slice';
+import { useKeyDown } from 'hooks/useKeyDown';
 import useHover from '../../../../../components/hooks/useHover';
 import guid from '../../../../../utils/guid';
 import {
@@ -176,6 +177,10 @@ export const FlowchartHeaderNav: React.FC<HeaderNavProps> = () => {
   const handleScoringOverviewClick = () => {
     dispatch(setShowScoringOverview({ show: true }));
   };
+
+  useKeyDown(handleUndo, ['KeyZ'], { ctrlKey: true });
+  useKeyDown(handleRedo, ['KeyY'], { ctrlKey: true });
+  useKeyDown(handlePartPasteClick, ['KeyV'], { ctrlKey: true }, [copiedPart]);
 
   const handleAddComponent = useCallback(
     (partComponentType: string) => () => {
