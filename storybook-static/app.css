@@ -4166,6 +4166,10 @@ table.table-striped tbody tr:nth-child(even) {
   top: 3.5rem;
 }
 
+.top-16 {
+  top: 4rem;
+}
+
 .top-2 {
   top: 0.5rem;
 }
