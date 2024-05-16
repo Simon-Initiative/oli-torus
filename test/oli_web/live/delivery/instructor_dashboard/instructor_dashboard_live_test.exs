@@ -89,6 +89,18 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLiveTest do
                live(conn, instructor_dashboard_path(section.slug, :discussions))
     end
 
+    test "ensures instructors have access to the top navigation menu bar on vertical scroll", %{
+      conn: conn,
+      instructor: instructor,
+      section: section
+    } do
+      Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
+      {:ok, view, _html} = live(conn, instructor_dashboard_path(section.slug, :overview))
+
+      assert view
+             |> has_element?(".bg-delivery-instructor-dashboard-header.sticky.top-0.z-50")
+    end
+
     test "if enrolled, can access the overview page with the course content tab as the default tab",
          %{
            instructor: instructor,

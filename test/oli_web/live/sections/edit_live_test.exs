@@ -6,10 +6,11 @@ defmodule OliWeb.Sections.EditLiveTest do
   import Oli.Factory
 
   alias Oli.Delivery.Sections
+  alias Oli.Delivery.Sections.Section
   alias Lti_1p3.Tool.ContextRoles
 
   defp live_view_edit_route(section_slug) do
-    Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.EditView, section_slug)
+    ~p"/sections/#{section_slug}/edit"
   end
 
   defp live_view_edit_section_route(section_slug) do
@@ -100,6 +101,63 @@ defmodule OliWeb.Sections.EditLiveTest do
       refute html =~ "Admin"
       assert html =~ "Edit Section Details"
       assert html =~ "Settings"
+    end
+  end
+
+  describe "instructor cannot modify payment data" do
+    setup [:instructor_conn]
+
+    test "when working on the edit form", %{conn: conn, instructor: instructor} do
+      section = insert(:section, requires_payment: true, type: :enrollable)
+      Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
+
+      {:ok, view, _html} = live(conn, live_view_edit_route(section.slug))
+
+      assert section.requires_payment == true
+
+      assert has_element?(view, "#section_requires_payment[checked=\"checked\"]")
+
+      view
+      |> element("form[phx-change=\"validate\"")
+      |> render_change(section: %{title: "New title"})
+
+      # Validate event shouldn't change section_requires_payment
+      assert has_element?(view, "#section_requires_payment[checked=\"checked\"]")
+
+      view
+      |> element("form[phx-submit=\"save\"")
+      |> render_submit(section: %{title: "New title"})
+
+      # Save event shouldn't change section_requires_payment
+      assert has_element?(view, "#section_requires_payment[checked=\"checked\"]")
+      assert Oli.Repo.get(Section, section.id).requires_payment == true
+    end
+  end
+
+  describe "admin can modify payment data" do
+    setup [:admin_conn]
+
+    test "when working on the edit form", %{conn: conn} do
+      section = insert(:section, requires_payment: true, type: :enrollable)
+
+      {:ok, view, _html} = live(conn, live_view_edit_route(section.slug))
+
+      assert section.requires_payment == true
+
+      assert has_element?(view, "#section_requires_payment[checked=\"checked\"]")
+
+      view
+      |> element("form[phx-change=\"validate\"")
+      |> render_change(section: %{requires_payment: "false"})
+
+      refute has_element?(view, "#section_requires_payment[checked=\"checked\"]")
+
+      view
+      |> element("form[phx-submit=\"save\"")
+      |> render_submit(section: %{requires_payment: "false"})
+
+      refute has_element?(view, "#section_requires_payment[checked=\"checked\"]")
+      assert Oli.Repo.get(Section, section.id).requires_payment == false
     end
   end
 

@@ -13,6 +13,7 @@ import {
   selectCurrentActivityTree,
   selectSequence,
 } from 'apps/delivery/store/features/groups/selectors/deck';
+import { useKeyDown } from 'hooks/useKeyDown';
 import guid from 'utils/guid';
 import { RightPanelTabs } from '../RightMenu/RightMenu';
 
@@ -49,8 +50,6 @@ const AddComponentToolbar: React.FC<{
   const currentActivityTree = useSelector(selectCurrentActivityTree);
   const currentSequence = useSelector(selectSequence);
   const copiedPart = useSelector(selectCopiedPart);
-
-  // console.log('AVAILABLE PART COMPONENTS', availablePartComponents);
 
   const addPartToCurrentScreen = (newPartData: any) => {
     if (currentActivityTree) {
@@ -113,6 +112,9 @@ const AddComponentToolbar: React.FC<{
 
     dispatch(setRightPanelActiveTab({ rightPanelActiveTab: RightPanelTabs.COMPONENT }));
   };
+
+  useKeyDown(handlePartPasteClick, ['KeyV'], { ctrlKey: true }, [copiedPart]);
+
   return (
     <Fragment>
       <div className="btn-group align-items-center" role="group">

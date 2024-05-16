@@ -109,10 +109,7 @@ defmodule OliWeb.Sections.EditView do
         <% else %>
           <LtiSettings.render section={@section} />
         <% end %>
-        <PaywallSettings.render
-          changeset={@changeset}
-          disabled={!can_change_payment?(@section, @is_admin)}
-        />
+        <PaywallSettings.render changeset={@changeset} disabled={!@is_admin} />
         <ContentSettings.render changeset={@changeset} />
       </Groups.render>
     </.form>
@@ -125,12 +122,19 @@ defmodule OliWeb.Sections.EditView do
   end
 
   def handle_event("validate", %{"section" => params}, socket) do
-    params = convert_dates(params, socket.assigns.ctx)
+    params =
+      params
+      |> can_change_payment?(socket.assigns.is_admin)
+      |> convert_dates(socket.assigns.ctx)
+
     {:noreply, assign(socket, changeset: Sections.change_section(socket.assigns.section, params))}
   end
 
   def handle_event("save", %{"section" => params}, socket) do
-    params = convert_dates(params, socket.assigns.ctx)
+    params =
+      params
+      |> can_change_payment?(socket.assigns.is_admin)
+      |> convert_dates(socket.assigns.ctx)
 
     case Sections.update_section(socket.assigns.section, params) do
       {:ok, section} ->
@@ -182,7 +186,10 @@ defmodule OliWeb.Sections.EditView do
   end
 
   # A user can make paywall edits only if they are logged in as an admin user
-  defp can_change_payment?(_section, is_admin?) do
-    is_admin?
+  defp can_change_payment?(params, is_admin?) do
+    case is_admin? do
+      true -> params
+      false -> Map.delete(params, "requires_payment")
+    end
   end
 end

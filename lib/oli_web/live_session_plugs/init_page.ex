@@ -7,6 +7,26 @@ defmodule OliWeb.LiveSessionPlugs.InitPage do
   alias Oli.Delivery.Page.PageContext
   alias OliWeb.Router.Helpers, as: Routes
 
+  def on_mount(:set_page_context, :not_mounted_at_router, _session, socket) do
+    {:cont, socket}
+  end
+
+  def on_mount(:set_page_context, %{"revision_slug" => revision_slug}, _session, socket) do
+    %{section: section, current_user: current_user, datashop_session_id: datashop_session_id} =
+      socket.assigns
+
+    {:cont,
+     assign(socket,
+       page_context:
+         PageContext.create_for_visit(
+           section,
+           revision_slug,
+           current_user,
+           datashop_session_id
+         )
+     )}
+  end
+
   def on_mount(
         :previous_next_index,
         _params,
@@ -43,36 +63,32 @@ defmodule OliWeb.LiveSessionPlugs.InitPage do
   end
 
   def on_mount(
-        :page_context,
-        %{"revision_slug" => revision_slug},
+        :init_context_state,
+        _params,
         _session,
-        %{assigns: assigns} = socket
+        socket
       ) do
-    socket =
-      PageContext.create_for_visit(
-        assigns.section,
-        revision_slug,
-        assigns.current_user,
-        assigns.datashop_session_id
-      )
-      |> init_context_state(socket)
-
-    {:cont, socket}
+    {:cont, init_context_state(socket)}
   end
 
   # Handles the 2 cases of adaptive delivery
   #  1. A fullscreen chromeless version
   #  2. A version inside the torus navigation with an iframe pointing to #1
   defp init_context_state(
-         %PageContext{
-           page: %{
-             content:
-               %{
-                 "advancedDelivery" => true
-               } = content
+         %{
+           assigns: %{
+             page_context:
+               %PageContext{
+                 page: %{
+                   content:
+                     %{
+                       "advancedDelivery" => true
+                     } = content
+                 }
+               } = page_context
            }
-         } = page_context,
-         socket
+         } =
+           socket
        ) do
     view =
       if Map.get(content, "displayApplicationChrome", false) do
@@ -135,36 +151,40 @@ defmodule OliWeb.LiveSessionPlugs.InitPage do
 
   # Display practice pages
   defp init_context_state(
-         %PageContext{
-           page: %{graded: false}
-         } = page_context,
-         socket
+         %{
+           assigns: %{
+             page_context: %PageContext{
+               page: %{graded: false}
+             }
+           }
+         } =
+           socket
        ) do
-    assign(socket, %{
-      view: :practice_page,
-      page_context: page_context
-    })
+    assign(socket, %{view: :practice_page})
   end
 
   # Display the prologue view for graded pages
   defp init_context_state(
-         %PageContext{page: %{graded: true}} = page_context,
-         socket
+         %{
+           assigns: %{
+             page_context: %PageContext{page: %{graded: true}} = page_context
+           }
+         } =
+           socket
        ) do
-    assign(socket, %{
-      view: :graded_page
-    })
+    assign(socket, %{view: :graded_page})
     |> prologue_assigns(page_context)
   end
 
   defp init_context_state(
-         %PageContext{progress_state: :error} = page_context,
-         socket
+         %{
+           assigns: %{
+             page_context: %PageContext{progress_state: :error}
+           }
+         } =
+           socket
        ) do
-    assign(socket, %{
-      view: :error,
-      page_context: page_context
-    })
+    assign(socket, %{view: :error})
   end
 
   defp plural(1), do: ""

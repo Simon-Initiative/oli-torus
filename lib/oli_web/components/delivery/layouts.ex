@@ -32,15 +32,20 @@ defmodule OliWeb.Components.Delivery.Layouts do
 
   def header(assigns) do
     ~H"""
-    <div class={[
-      "fixed z-50 w-full md:pl-[225px] h-14 border-b border-white/5 flex flex-row bg-delivery-header dark:bg-delivery-header-dark shadow-sm",
-      if(!@sidebar_expanded, do: "md:!pl-[95px]")
-    ]}>
-      <div class="flex items-center flex-grow-1 p-2">
+    <div
+      id="header"
+      class={[
+        "fixed z-50 w-full md:pl-[226px] py-2.5 h-14 flex flex-row bg-delivery-header dark:bg-black border-b border-[#0F0D0F]/5 dark:border-[#0F0D0F]",
+        if(!@sidebar_expanded, do: "md:!pl-[95px]")
+      ]}
+    >
+      <div class="flex items-center flex-grow-1 dark:text-[#BAB8BF] text-base font-medium font-['Roboto']">
         <.title section={@section} project={@project} preview_mode={@preview_mode} />
       </div>
-      <div class="flex items-center p-2 ml-auto">
-        <div class={if @force_show_user_menu, do: "block", else: "hidden md:block"}>
+      <div class="justify-end items-center flex">
+        <div class={
+          if @force_show_user_menu, do: "block", else: "hidden md:flex justify-center items-center"
+        }>
           <UserAccount.menu
             id="user-account-menu"
             ctx={@ctx}
@@ -48,6 +53,8 @@ defmodule OliWeb.Components.Delivery.Layouts do
             is_system_admin={@is_system_admin}
           />
         </div>
+      </div>
+      <div class="flex items-center p-2 ml-auto">
         <button
           class={[
             "py-1.5 px-3 rounded border border-transparent hover:border-gray-300 active:bg-gray-100",
@@ -105,7 +112,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
         <div class="w-full">
           <div
             class={[
-              "h-14 w-48 py-2 flex shrink-0 border-b border-white/5",
+              "h-14 w-48 py-2 flex shrink-0 border-b border-[#0F0D0F]/5 dark:border-[#0F0D0F]",
               if(!@sidebar_expanded, do: "w-14")
             ]}
             tab-index="0"
@@ -180,7 +187,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
       role="toggle sidebar"
       phx-click={JS.patch(path_for(@active_tab, @section, @preview_mode, !@sidebar_expanded))}
       title={if @sidebar_expanded, do: "Minimize", else: "Expand"}
-      class="flex items-center justify-center ml-auto w-6 h-6 bg-gray-400 dark:bg-neutral-800 rounded-tl-[52px] rounded-bl-[52px] stroke-black/70 hover:stroke-black/90 dark:stroke-[#B8B4BF] hover:dark:stroke-white"
+      class="flex items-center justify-center ml-auto w-6 h-6 bg-zinc-400 bg-opacity-20 hover:bg-opacity-40 rounded-tl-[52px] rounded-bl-[52px] stroke-black/70 hover:stroke-black/90 dark:stroke-[#B8B4BF] hover:dark:stroke-white"
     >
       <div class={if !@sidebar_expanded, do: "rotate-180"}>
         <Icons.left_chevron />
@@ -351,12 +358,14 @@ defmodule OliWeb.Components.Delivery.Layouts do
       class={["w-full h-11 flex-col justify-center items-center flex hover:no-underline"]}
     >
       <div class={[
-        "w-full h-9 px-3 py-3 hover:bg-gray-300 hover:dark:bg-neutral-800/60 rounded-lg justify-start items-center gap-3 inline-flex",
+        "w-full h-9 px-3 py-3 hover:bg-zinc-400 hover:bg-opacity-40 rounded-lg justify-start items-center gap-3 inline-flex",
         if(@is_active,
-          do: "bg-gray-400 hover:!bg-gray-400 dark:bg-neutral-800 hover:dark:!bg-neutral-800"
+          do: "bg-zinc-400 bg-opacity-20"
         )
       ]}>
-        <div class="w-5 h-5 flex items-center justify-center"><%= render_slot(@icon) %></div>
+        <div class="w-5 h-5 flex items-center justify-center">
+          <%= render_slot(@icon) %>
+        </div>
         <div
           :if={@sidebar_expanded}
           class={[
@@ -418,7 +427,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
       navigate={~p"/sections"}
       class="w-full h-11 flex-col justify-center items-center flex hover:no-underline text-black/70 hover:text-black/90 dark:text-gray-400 hover:dark:text-white stroke-black/70 hover:stroke-black/90 dark:stroke-[#B8B4BF] hover:dark:stroke-white"
     >
-      <div class="w-full h-9 px-3 py-3 bg-gray-400 dark:bg-neutral-800 rounded-lg justify-start items-center gap-3 inline-flex">
+      <div class="w-full h-9 px-3 py-3 bg-zinc-400 bg-opacity-20 hover:bg-opacity-40 rounded-lg justify-start items-center gap-3 inline-flex">
         <div class="w-5 h-5 flex items-center justify-center"><Icons.exit /></div>
         <div :if={@sidebar_expanded} class="text-sm font-medium tracking-tight">
           Exit Course
@@ -632,6 +641,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
   def spinner(assigns) do
     ~H"""
     <svg
+      role="spinner"
       aria-hidden="true"
       class={[
         "w-8 h-8 text-gray-200 animate-spin dark:text-gray-600 fill-blue-600",
