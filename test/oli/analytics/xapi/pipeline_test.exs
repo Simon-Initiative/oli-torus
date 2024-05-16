@@ -1,5 +1,4 @@
 defmodule Oli.Analytics.XAPI.PipelineTest do
-
   use Oli.DataCase
 
   alias Oli.Analytics.XAPI.UploadPipeline
@@ -80,7 +79,6 @@ defmodule Oli.Analytics.XAPI.PipelineTest do
     end
 
     test "verify that a stopped pipeline drains the QueueProducer" do
-
       Broadway.start_link(__MODULE__,
         name: :dummy_pipeline,
         producer: [
@@ -113,7 +111,6 @@ defmodule Oli.Analytics.XAPI.PipelineTest do
       # verify that the QueueProducer was drained
       items = Oli.Repo.all(Oli.Analytics.XAPI.PendingUpload)
       assert length(items) == 1
-
     end
   end
 
@@ -125,7 +122,6 @@ defmodule Oli.Analytics.XAPI.PipelineTest do
   end
 
   def handle_message(_, %Broadway.Message{} = message, _) do
-
     # Simulate a stalled processer by sleeping for 2 seconds, which
     # will leave 1 item sitting in the producer queue
     Process.sleep(2_000)
