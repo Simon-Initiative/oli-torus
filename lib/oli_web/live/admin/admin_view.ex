@@ -125,14 +125,19 @@ defmodule OliWeb.Admin.AdminView do
               </a>
             </li>
             <li>
-              <a href={Routes.live_dashboard_path(OliWeb.Endpoint, :home)} target="_blank">
-                <span>View System Performance Dashboard</span>
-                <i class="fas fa-external-link-alt self-center ml-1"></i>
+              <a href={~p"/admin/vr_user_agents"}>
+                Manage VR User Agents
               </a>
             </li>
             <li>
-              <a href={~p"/admin/vr_user_agents"}>
-                Manage VR User Agents
+              <a href={~p"/admin/xapi"}>
+                XAPI Upload Pipeline Stats
+              </a>
+            </li>
+            <li>
+              <a href={Routes.live_dashboard_path(OliWeb.Endpoint, :home)} target="_blank">
+                <span>View System Performance Dashboard</span>
+                <i class="fas fa-external-link-alt self-center ml-1"></i>
               </a>
             </li>
           </ul>

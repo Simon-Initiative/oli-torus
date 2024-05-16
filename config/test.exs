@@ -18,6 +18,14 @@ config :oli,
     favicons: "/favicons"
   ]
 
+config :oli, :xapi_upload_pipeline,
+  producer_module: Broadway.DummyProducer,
+  uploader_module: Oli.Analytics.XAPI.FileWriterUploader,
+  batcher_concurrency: 1,
+  batch_size: 10,
+  batch_timeout: 100,
+  processor_concurrency: 1
+
 # Configure your database
 config :oli, Oli.Repo,
   username: System.get_env("DB_USER", "postgres"),

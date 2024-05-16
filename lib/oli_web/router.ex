@@ -1267,7 +1267,10 @@ defmodule OliWeb.Router do
     live_dashboard("/dashboard",
       metrics: {OliWeb.Telemetry, :non_distributed_metrics},
       ecto_repos: [Oli.Repo],
-      session: {__MODULE__, :with_session, []}
+      session: {__MODULE__, :with_session, []},
+      additional_pages: [
+        broadway: {BroadwayDashboard, pipelines: [Oli.Analytics.XAPI.UploadPipeline]}
+      ]
     )
 
     resources("/platform_instances", PlatformInstanceController)
@@ -1405,6 +1408,7 @@ defmodule OliWeb.Router do
       pipe_through([:reject_content_or_account_admin])
       get("/activity_review", ActivityReviewController, :index)
       live("/part_attempts", Admin.PartAttemptsView)
+      live("/xapi", Admin.UploadPipelineView)
       get("/spot_check/:activity_attempt_id", SpotCheckController, :index)
 
       # Authoring Activity Management
