@@ -325,7 +325,7 @@ defmodule OliWeb.Components.Delivery.Utils do
         1
 
       day_diff ->
-        (day_diff / 7)
+        (day_diff / 6)
         |> Float.ceil()
         |> trunc()
     end

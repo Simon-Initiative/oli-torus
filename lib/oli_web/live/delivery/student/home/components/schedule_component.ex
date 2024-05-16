@@ -33,20 +33,24 @@ defmodule OliWeb.Delivery.Student.Home.Components.ScheduleComponent do
     ~H"""
     <div class="justify-start items-center gap-1 inline-flex self-stretch">
       <div class="text-base font-normal tracking-tight grow">
-        <%= for {week, scheduled_groups} <- @schedule_for_current_week_and_next_week do %>
+        <%= for {{week, scheduled_groups}, week_idx} <- Enum.with_index(@schedule_for_current_week_and_next_week, 1) do %>
           <% week_range = Utils.week_range(week, @section_start_date) %>
-          <div class="flex self-stretch h-fit flex flex-col justify-start items-start gap-3.5 pb-7">
+          <div
+            id={"schedule_week_#{week_idx}"}
+            class="flex self-stretch h-fit flex flex-col justify-start items-start gap-3.5 pb-7"
+          >
             <div class="flex self-stretch justify-between items-baseline">
-              <div class="text-white text-lg font-bold tracking-tight">
+              <div role="schedule_title" class="text-white text-lg font-bold tracking-tight">
                 <%= this_or_next_week(week_range) %>
               </div>
-              <div class="text-white text-sm font-bold tracking-tight">
+              <div role="schedule_date_range" class="text-white text-sm font-bold tracking-tight">
                 <%= Phoenix.HTML.raw(week_range(week_range)) %>
               </div>
             </div>
             <div class="flex flex-col w-full h-fit gap-2.5">
               <.schedule_item
-                :for={item <- scheduled_groups}
+                :for={{item, item_idx} <- Enum.with_index(scheduled_groups, 1)}
+                id={"schedule_item_#{week_idx}_#{item_idx}"}
                 item={item}
                 ctx={@ctx}
                 section_slug={@section_slug}
@@ -61,6 +65,7 @@ defmodule OliWeb.Delivery.Student.Home.Components.ScheduleComponent do
     """
   end
 
+  attr :id, :string, required: true
   attr :item, :any, required: true
   attr :ctx, :map, required: true
   attr :section_slug, :string, required: true
@@ -71,13 +76,16 @@ defmodule OliWeb.Delivery.Student.Home.Components.ScheduleComponent do
     ~H"""
     <% completed = Enum.all?(@item.resources, &(&1.progress == 100)) %>
 
-    <div class={[
-      item_bg_color(completed),
-      "flex h-fit px-2.5 py-3.5 rounded-xl border flex-col justify-start items-start"
-    ]}>
+    <div
+      id={@id}
+      class={[
+        item_bg_color(completed),
+        "flex h-fit px-2.5 py-3.5 rounded-xl border flex-col justify-start items-start"
+      ]}
+    >
       <div class="self-stretch justify-between items-start flex pl-2">
         <div class="grow shrink basis-0 self-stretch flex-col justify-start items-start gap-2.5 flex">
-          <div class="justify-start items-start gap-2 flex uppercase">
+          <div role="container_label" class="justify-start items-start gap-2 flex uppercase">
             <div class="text-white text-opacity-60 text-xs font-bold whitespace-nowrap">
               <%= @item.unit_label %>
             </div>
@@ -89,13 +97,13 @@ defmodule OliWeb.Delivery.Student.Home.Components.ScheduleComponent do
               </div>
             </div>
           </div>
-          <div class="self-stretch pb-2.5 justify-start items-start gap-2.5 flex">
+          <div role="title" class="self-stretch pb-2.5 justify-start items-start gap-2.5 flex">
             <div class="grow shrink basis-0 text-white text-opacity-90 text-lg font-semibold">
               <%= @item.container_title %>
             </div>
           </div>
         </div>
-        <div class="justify-start items-start flex">
+        <div role="resource_type" class="justify-start items-start flex">
           <div class="px-3 py-1 bg-slate-500 bg-opacity-20 rounded-3xl justify-center items-center gap-1.5 flex">
             <div class="w-5 h-5 relative opacity-80">
               <div class="w-3 h-3.5 absolute">
@@ -132,6 +140,7 @@ defmodule OliWeb.Delivery.Student.Home.Components.ScheduleComponent do
     <% completed = @resource.progress == 100 %>
 
     <.link
+      id={@id}
       href={
         Utils.lesson_live_path(@section_slug, @resource.resource.revision_slug,
           request_path: ~p"/sections/#{@section_slug}"
@@ -150,7 +159,7 @@ defmodule OliWeb.Delivery.Student.Home.Components.ScheduleComponent do
         </div>
         <div class="self-stretch justify-between items-start flex pl-2">
           <div class="grow shrink basis-0 self-stretch flex-col justify-start items-start gap-2.5 flex">
-            <div class="justify-start items-start gap-2 flex uppercase">
+            <div role="container_label" class="justify-start items-start gap-2 flex uppercase">
               <div class="text-white text-opacity-60 text-xs font-bold whitespace-nowrap">
                 <%= @item.unit_label %>
               </div>
@@ -162,7 +171,7 @@ defmodule OliWeb.Delivery.Student.Home.Components.ScheduleComponent do
                 </div>
               </div>
             </div>
-            <div class="self-stretch pb-2.5 justify-start items-start gap-2.5 flex">
+            <div role="title" class="self-stretch pb-2.5 justify-start items-start gap-2.5 flex">
               <div class="grow shrink basis-0 text-white text-opacity-90 text-lg font-semibold">
                 <%= @resource.resource.title %>
               </div>
@@ -193,7 +202,7 @@ defmodule OliWeb.Delivery.Student.Home.Components.ScheduleComponent do
 
   defp resource_type(%{resource: %{purpose: :application}} = assigns) do
     ~H"""
-    <div class="justify-start items-start flex">
+    <div role="resource_type" class="justify-start items-start flex">
       <div class="px-3 py-1 bg-gray-500 bg-opacity-25 rounded-3xl justify-center items-center gap-1.5 flex">
         <div class="w-5 h-5 relative opacity-80">
           <div class="w-3 h-3.5 absolute">
@@ -212,7 +221,7 @@ defmodule OliWeb.Delivery.Student.Home.Components.ScheduleComponent do
 
   defp resource_type(%{resource: %{graded: true}} = assigns) do
     ~H"""
-    <div class="justify-start items-start flex">
+    <div role="resource_type" class="justify-start items-start flex">
       <div class="px-3 py-1 bg-yellow-700 bg-opacity-25 rounded-3xl justify-center items-center gap-1.5 flex">
         <div class="w-5 h-5 relative opacity-80">
           <div class="w-3 h-3.5 absolute">
@@ -231,7 +240,7 @@ defmodule OliWeb.Delivery.Student.Home.Components.ScheduleComponent do
 
   defp resource_type(%{resource: %{graded: false}} = assigns) do
     ~H"""
-    <div class="justify-start items-start flex">
+    <div role="resource_type" class="justify-start items-start flex">
       <div class="px-3 py-1 bg-blue-800 bg-opacity-25 rounded-3xl justify-center items-center gap-1.5 flex">
         <div class="w-5 h-5 relative opacity-80">
           <div class="w-3 h-3.5 absolute">
@@ -269,7 +278,7 @@ defmodule OliWeb.Delivery.Student.Home.Components.ScheduleComponent do
     assigns = Map.put(assigns, :resource, resource)
 
     ~H"""
-    <div class="pt-2 pb-1 px-1 flex self-stretch justify-between gap-5">
+    <div role="details" class="pt-2 pb-1 px-1 flex self-stretch justify-between gap-5">
       <div class="flex justify-start items-center gap-5">
         <div
           :if={!is_nil(@resource.raw_avg_score) and @resource.last_attempt[:state] != :active}
@@ -331,7 +340,7 @@ defmodule OliWeb.Delivery.Student.Home.Components.ScheduleComponent do
 
   defp schedule_item_details(assigns) do
     ~H"""
-    <div class="w-full h-full px-1 flex flex-col items-stretch gap-5 relative">
+    <div role="details" class="w-full h-full px-1 flex flex-col items-stretch gap-5 relative">
       <.schedule_group_content
         :if={@item_type == :expandable}
         item_id={@item_id}
@@ -367,7 +376,7 @@ defmodule OliWeb.Delivery.Student.Home.Components.ScheduleComponent do
 
   defp schedule_group_content(assigns) do
     ~H"""
-    <div class="w-full self-start">
+    <div role="group" class="w-full self-start">
       <button
         phx-click="expand_item"
         phx-value-item_id={@item_id}
@@ -378,7 +387,7 @@ defmodule OliWeb.Delivery.Student.Home.Components.ScheduleComponent do
           if(@completed, do: "bg-white bg-opacity-10", else: "bg-[#0F6CF5]"),
           "flex px-2 py-0.5 rounded-xl shadow tracking-tight gap-2 items-center align-center"
         ]}>
-          <div class="pl-1 justify-start items-center gap-2.5 flex">
+          <div role="count" class="pl-1 justify-start items-center gap-2.5 flex">
             <div class="text-white text-xs font-semibold">
               <%= length(@resources) %> pages
             </div>
@@ -403,7 +412,10 @@ defmodule OliWeb.Delivery.Student.Home.Components.ScheduleComponent do
             class="w-full hover:no-underline"
           >
             <% resource_completed = resource.progress == 100 %>
-            <div class="w-full self-stretch pl-7 pr-4 py-2.5 rounded-lg justify-start items-start gap-5 inline-flex hover:bg-[#000000]/5 dark:hover:bg-[#FFFFFF]/5 hover:font-medium hover:cursor-pointer">
+            <div
+              role="group_item"
+              class="w-full self-stretch pl-7 pr-4 py-2.5 rounded-lg justify-start items-start gap-5 inline-flex hover:bg-[#000000]/5 dark:hover:bg-[#FFFFFF]/5 hover:font-medium hover:cursor-pointer"
+            >
               <div class="grow shrink basis-0 h-5 justify-start items-start gap-5 flex">
                 <div class="justify-start items-start gap-5 flex">
                   <div class="w-5 h-5 flex-col justify-center items-center inline-flex">
@@ -442,7 +454,7 @@ defmodule OliWeb.Delivery.Student.Home.Components.ScheduleComponent do
   defp max_attempts(%{max_attempts: max_attempts}), do: max_attempts
 
   defp days_difference(resource) do
-    days = resource.end_date |> DateTime.to_date() |> Timex.diff(Date.utc_today(), :days)
+    days = resource.end_date |> DateTime.to_date() |> Timex.diff(Oli.Date.utc_today(), :days)
 
     case days do
       0 ->
@@ -465,7 +477,7 @@ defmodule OliWeb.Delivery.Student.Home.Components.ScheduleComponent do
   defp this_or_next_week(week_range) do
     {week_start, _} = week_range
 
-    case Date.beginning_of_week(DateTime.utc_now(), :sunday) do
+    case Date.beginning_of_week(Oli.DateTime.utc_now(), :sunday) do
       ^week_start ->
         "This Week"
 
