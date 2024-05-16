@@ -1201,6 +1201,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
           Resources.get_revisions_by_resource_id(objective_resource_ids)
           |> Enum.map(fn rev ->
             %{
+              resource_id: rev.resource_id,
               title: rev.title,
               proficiency:
                 Map.get(

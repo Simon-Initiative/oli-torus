@@ -13,6 +13,7 @@ defmodule OliWeb.Delivery.Student.Utils do
   alias OliWeb.Common.FormatDateTime
   alias OliWeb.Icons
   alias Oli.Publishing.DeliveryResolver, as: Resolver
+  alias Phoenix.LiveView.JS
 
   attr :page_context, Oli.Delivery.Page.PageContext
   attr :ctx, OliWeb.Common.SessionContext
@@ -124,10 +125,8 @@ defmodule OliWeb.Delivery.Student.Utils do
           class="self-stretch flex-col justify-start items-start flex ml-6"
           role={"objective #{index}"}
         >
-          <div class="h-[21px] justify-start items-center gap-[19px] inline-flex">
-            <div class="w-6 h-6 flex items-center justify-center">
-              <Icons.proficiency proficiency={objective.proficiency} />
-            </div>
+          <div class="relative h-[21px] justify-start items-center gap-[19px] inline-flex">
+            <.proficiency_icon_with_tooltip objective={objective} />
             <div class="justify-start items-start gap-3.5 flex">
               <div class="justify-start items-start gap-[17px] flex">
                 <div class="w-5 text-neutral-500 text-sm font-bold font-['Inter'] leading-[21px]">
@@ -144,6 +143,34 @@ defmodule OliWeb.Delivery.Student.Utils do
     </div>
     """
   end
+
+  attr :objective, :map
+
+  defp proficiency_icon_with_tooltip(assigns) do
+    ~H"""
+    <div
+      class="absolute top-0 left-0 z-10 w-6 h-6 cursor-pointer"
+      xphx-mouseover={JS.show(to: "#objective_#{@objective.resource_id}_tooltip")}
+      xphx-mouseout={JS.hide(to: "#objective_#{@objective.resource_id}_tooltip")}
+    >
+    </div>
+    <div class="w-6 h-6 flex items-center justify-center">
+      <Icons.proficiency proficiency={@objective.proficiency} />
+    </div>
+    <div
+      id={"objective_#{@objective.resource_id}_tooltip"}
+      class="hidden absolute h-[57px] px-6 pt-[15px] pb-6 -top-[20px] -left-6 text-gray-700 text-base font-normal font-['Inter'] leading-normal bg-white rounded-md border-2 border-gray-700 flex-col justify-start items-start gap-4 -translate-x-full"
+    >
+      <%= proficiency_to_text(@objective.proficiency) %>
+      <Icons.filled_chevron_up class="absolute -right-3 top-[16px] fill-white z-10 rotate-90 scale-125" />
+    </div>
+    """
+  end
+
+  defp proficiency_to_text("Not enough data"), do: "Not enough information"
+  defp proficiency_to_text("Low"), do: "Beginning Proficiency"
+  defp proficiency_to_text("Medium"), do: "Growing Proficiency"
+  defp proficiency_to_text("High"), do: "Establishing Proficiency"
 
   attr :scripts, :list
   attr :user_token, :string
