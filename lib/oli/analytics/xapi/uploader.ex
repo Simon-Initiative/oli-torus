@@ -30,10 +30,16 @@ defmodule Oli.Analytics.XAPI.Uploader do
 
     :telemetry.span(
       [:oli, :xapi, :pipeline, :upload],
-      %{category: category, partition: partition, partition_id: partition_id, bundle_id: bundle_id},
+      %{
+        category: category,
+        partition: partition,
+        partition_id: partition_id,
+        bundle_id: bundle_id
+      },
       fn ->
-        result = S3.put_object(bucket_name, upload_path, body, [])
-        |> HTTP.aws().request(retries: retries_config)
+        result =
+          S3.put_object(bucket_name, upload_path, body, [])
+          |> HTTP.aws().request(retries: retries_config)
 
         {result, %{}}
       end

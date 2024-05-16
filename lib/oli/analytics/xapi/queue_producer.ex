@@ -1,5 +1,4 @@
 defmodule Oli.Analytics.XAPI.QueueProducer do
-
   @moduledoc """
   This module is a Broadway producer that manages a queue of statement
   bundles to be uploaded to S3. Clients of this code enqueue statement
@@ -17,7 +16,6 @@ defmodule Oli.Analytics.XAPI.QueueProducer do
   end
 
   def init(_opts) do
-
     pending_items = enqueue_from_storage()
 
     initial_state = %{
@@ -33,7 +31,6 @@ defmodule Oli.Analytics.XAPI.QueueProducer do
   # to be uploaded to S3.  Everything else in this module faces
   # the Broadway pipeline.
   def enqueue(%StatementBundle{} = bundle) do
-
     # This seems to be the most future proof way, randomly selecting 1 on n producers
     # to send the message to.  This is a good way to ensure that the load is distributed
     # should we ever need to add additional queues.
@@ -53,7 +50,6 @@ defmodule Oli.Analytics.XAPI.QueueProducer do
   end
 
   def prepare_for_draining(%{} = state) do
-
     Logger.info("Draining XAPI queue with #{Enum.count(state.queue)} messages")
     persist(state.queue)
 
@@ -61,7 +57,6 @@ defmodule Oli.Analytics.XAPI.QueueProducer do
   end
 
   defp handle_receive_messages(%{demand: demand, queue: queue} = state) when demand > 0 do
-
     {remaining, to_send} = Enum.split(queue, -demand)
     satisfied_count = Enum.count(to_send)
     demand = demand - satisfied_count
@@ -69,7 +64,8 @@ defmodule Oli.Analytics.XAPI.QueueProducer do
     Utils.record_pipeline_stats(%{queue_size: Enum.count(remaining), demand: demand})
     Logger.debug("Satisfying demand of #{demand} with #{satisfied_count}")
 
-    {:noreply, to_send, %{state | demand: demand, queue: remaining, queue_size: Enum.count(remaining)}}
+    {:noreply, to_send,
+     %{state | demand: demand, queue: remaining, queue_size: Enum.count(remaining)}}
   end
 
   defp handle_receive_messages(state) do
@@ -79,15 +75,17 @@ defmodule Oli.Analytics.XAPI.QueueProducer do
 
   # Persist a list of statement bundles to the database
   def persist(bundles, reason \\ :drained) when is_list(bundles) do
-
     now = DateTime.utc_now() |> DateTime.truncate(:second)
 
-    inserts = Enum.map(bundles, fn b -> %{
-      reason: reason,
-      bundle: b,
-      inserted_at: now,
-      updated_at: now
-    } end)
+    inserts =
+      Enum.map(bundles, fn b ->
+        %{
+          reason: reason,
+          bundle: b,
+          inserted_at: now,
+          updated_at: now
+        }
+      end)
 
     expected_count = Enum.count(bundles)
     {count, _} = Oli.Repo.insert_all(PendingUpload, inserts)
@@ -96,29 +94,28 @@ defmodule Oli.Analytics.XAPI.QueueProducer do
       ^expected_count -> {:ok, count}
       _ -> {:error, count}
     end
-
   end
 
   def enqueue_from_storage() do
-    {:ok, all} = Oli.Repo.transaction(fn ->
+    {:ok, all} =
+      Oli.Repo.transaction(fn ->
+        all =
+          Oli.Repo.all(PendingUpload)
+          |> Enum.map(fn pu ->
+            %StatementBundle{
+              partition: pu.bundle["partition"],
+              partition_id: pu.bundle["partition_id"],
+              category: pu.bundle["category"],
+              bundle_id: pu.bundle["bundle_id"],
+              body: pu.bundle["body"]
+            }
+          end)
 
-      all = Oli.Repo.all(PendingUpload)
-      |> Enum.map(fn pu -> %StatementBundle{
-        partition: pu.bundle["partition"],
-        partition_id: pu.bundle["partition_id"],
-        category: pu.bundle["category"],
-        bundle_id: pu.bundle["bundle_id"],
-        body: pu.bundle["body"]
-      }
+        Oli.Repo.delete_all(PendingUpload)
+
+        all
       end)
-
-      Oli.Repo.delete_all(PendingUpload)
-
-      all
-
-    end)
 
     all
   end
-
 end

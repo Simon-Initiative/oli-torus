@@ -124,7 +124,6 @@ defmodule Oli.Delivery.Snapshots.Worker do
          end) do
       {:ok, attempt_group} ->
         if with_v2_support and attempt_group != nil and Application.get_env(:oli, :env) != :test do
-
           body =
             StatementFactory.to_statements(attempt_group)
             |> Oli.Analytics.Common.to_jsonlines()
@@ -141,7 +140,6 @@ defmodule Oli.Delivery.Snapshots.Worker do
             partition: :section
           }
           |> Oli.Analytics.XAPI.emit()
-
         end
 
         {:ok, attempt_group}
