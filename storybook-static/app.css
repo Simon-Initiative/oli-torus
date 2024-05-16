@@ -13228,6 +13228,14 @@ https://tailwindcss.com/docs/utility-first
   fill: #000;
 }
 
+.dark .dark\:fill-gray-200 {
+  fill: #e5e5e5;
+}
+
+.dark .dark\:fill-gray-800 {
+  fill: #262626;
+}
+
 .dark .dark\:fill-white {
   fill: #fff;
 }
@@ -13242,6 +13250,14 @@ https://tailwindcss.com/docs/utility-first
 
 .dark .dark\:stroke-\[\#B8B4BF\] {
   stroke: #B8B4BF;
+}
+
+.dark .dark\:stroke-gray-200 {
+  stroke: #e5e5e5;
+}
+
+.dark .dark\:stroke-gray-700 {
+  stroke: #404040;
 }
 
 .dark .dark\:stroke-white {
