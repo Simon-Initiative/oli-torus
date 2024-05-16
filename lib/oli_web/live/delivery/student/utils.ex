@@ -16,13 +16,14 @@ defmodule OliWeb.Delivery.Student.Utils do
 
   attr :page_context, Oli.Delivery.Page.PageContext
   attr :ctx, OliWeb.Common.SessionContext
+  attr :objectives, :list
   attr :index, :string
   attr :container_label, :string
   attr :has_assignments?, :boolean
 
   def page_header(assigns) do
     ~H"""
-    <div id="page_header" class="flex-col justify-start items-start gap-9 flex w-full">
+    <div id="page_header" class="flex-col justify-start items-start gap-9 flex w-full mb-16">
       <div class="flex-col justify-start items-start gap-3 flex w-full">
         <div class="self-stretch flex-col justify-start items-start flex">
           <div class="self-stretch justify-between items-center inline-flex">
@@ -104,28 +105,37 @@ defmodule OliWeb.Delivery.Student.Utils do
         </div>
       </div>
       <div
-        :if={@page_context.objectives not in [nil, []]}
-        class="flex-col justify-start items-start gap-3 flex w-full"
+        :if={@objectives != []}
+        class="flex-col justify-start items-start gap-3 flex w-full mt-4"
         role="page objectives"
       >
-        <div class="self-stretch justify-start items-start gap-6 inline-flex">
-          <div class="opacity-80 dark:text-white text-sm font-bold font-['Open Sans'] uppercase tracking-wider">
-            Learning objectives
+        <div class="self-stretch justify-start items-start gap-6 inline-flex mb-6">
+          <div>
+            <span class="text-neutral-300 text-base font-bold font-['Inter'] leading-normal">
+              LEARNING OBJECTIVES &
+            </span>
+            <span class="text-blue-600 text-base font-bold font-['Inter'] leading-normal">
+              PROFICIENCY
+            </span>
           </div>
-          <div class="hidden text-blue-500 text-sm font-semibold font-['Open Sans']">View More</div>
         </div>
         <div
-          :for={{objective, index} <- Enum.with_index(@page_context.objectives, 1)}
-          class="self-stretch flex-col justify-start items-start flex"
+          :for={{objective, index} <- Enum.with_index(@objectives, 1)}
+          class="self-stretch flex-col justify-start items-start flex ml-6"
           role={"objective #{index}"}
         >
-          <div class="self-stretch py-1 justify-start items-start inline-flex">
-            <div class="grow shrink basis-0 h-6 justify-start items-start flex">
-              <div class="w-[30px] opacity-40 dark:text-white text-xs font-bold font-['Open Sans'] leading-normal">
-                L<%= index %>
-              </div>
-              <div class="grow shrink basis-0 opacity-80 dark:text-white text-sm font-normal font-['Open Sans'] leading-normal">
-                <%= objective %>
+          <div class="h-[21px] justify-start items-center gap-[19px] inline-flex">
+            <div class="w-6 h-6 flex items-center justify-center">
+              <Icons.proficiency proficiency={objective.proficiency} />
+            </div>
+            <div class="justify-start items-start gap-3.5 flex">
+              <div class="justify-start items-start gap-[17px] flex">
+                <div class="w-5 text-neutral-500 text-sm font-bold font-['Inter'] leading-[21px]">
+                  L<%= index %>
+                </div>
+                <div class="text-stone-300 text-sm font-normal font-['Open Sans'] leading-[21px]">
+                  <%= objective.title %>
+                </div>
               </div>
             </div>
           </div>
