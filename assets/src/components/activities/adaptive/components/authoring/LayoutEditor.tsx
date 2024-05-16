@@ -394,12 +394,12 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
     [dragSize, isDragging, selectedPartId],
   );
 
-  useKeyDown(() => setShowConfirmDelete(true), ['Delete', 'Backspace'], []);
-  useKeyDown(
-    () => handleCopyComponent(),
-    ['KeyC'],
-    [selectedPartAndCapabilities, parts, handleCopyComponent],
-  );
+  useKeyDown(() => setShowConfirmDelete(true), ['Delete', 'Backspace'], {}, []);
+  useKeyDown(handleCopyComponent, ['KeyC'], { ctrlKey: true }, [
+    selectedPartAndCapabilities,
+    parts,
+    handleCopyComponent,
+  ]);
 
   return parts && parts.length ? (
     <NotificationContext.Provider value={pusher}>
