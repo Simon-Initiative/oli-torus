@@ -33,11 +33,11 @@ defmodule OliWeb.Admin.UploadPipelineView do
     ~H"""
     <div class="w-full bg-stone-950 dark:text-white">
       <div class="w-full p-8 justify-start items-start gap-6 inline-flex">
-        <.stats title={"Batch Size"} stats={@batch_size_stats} suffix="" />
-        <.stats title={"S3 Upload Time"} stats={@upload_time_stats} suffix="ms" />
+        <.stats title="Batch Size" stats={@batch_size_stats} suffix="" />
+        <.stats title="S3 Upload Time" stats={@upload_time_stats} suffix="ms" />
       </div>
       <div class="w-full p-8 justify-start items-start gap-6 inline-flex">
-        <.stats title={"Throughput"} stats={@throughput_per_second} />
+        <.stats title="Throughput" stats={@throughput_per_second} />
         <.pending pending_count={@pending_count} />
       </div>
     </div>
@@ -93,8 +93,6 @@ defmodule OliWeb.Admin.UploadPipelineView do
     """
   end
 
-
-
   defp format(v, s) when is_float(v), do: "#{Float.round(v, 3)}#{s}"
   defp format(v, s), do: "#{v}#{s}"
 
@@ -128,10 +126,10 @@ defmodule OliWeb.Admin.UploadPipelineView do
   end
 
   def handle_event("queue", _params, socket) do
-
-    producer = Oli.Analytics.XAPI.UploadPipeline
-    |> Broadway.producer_names()
-    |> Enum.random()
+    producer =
+      Oli.Analytics.XAPI.UploadPipeline
+      |> Broadway.producer_names()
+      |> Enum.random()
 
     GenStage.cast(producer, {:enqueue_from_storage})
 
