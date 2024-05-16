@@ -1373,9 +1373,10 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       <button
         :if={@module["learning_objectives"] != []}
         role="module learning objectives"
-        class="flex items-center gap-[14px] px-[10px] w-full p-1 cursor-pointer"
+        class="hidden items-center gap-[14px] px-[10px] w-full p-1 cursor-pointer"
         phx-click={JS.toggle(to: "#learning_objectives_#{@module["resource_id"]}", display: "flex")}
       >
+        <%!-- This button was hidden in ticket NG-201 but will be reactivated with NG23-199 --%>
         <Icons.learning_objectives class="fill-black dark:fill-white" />
         <h3 class="text-[16px] leading-[22px] font-semibold dark:text-white">
           Introduction and Learning Objectives

@@ -1167,6 +1167,8 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
              )
     end
 
+    @tag :skip
+    # This feature was disabled in ticket NG-201 but will be reactivated with NG23-199
     test "can see module learning objectives (if any) in the tooltip", %{
       conn: conn,
       section: section
