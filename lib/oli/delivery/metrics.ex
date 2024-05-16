@@ -1158,6 +1158,77 @@ defmodule Oli.Delivery.Metrics do
     end)
   end
 
+  @doc """
+  Calculates the learning proficiency ("High", "Medium", "Low", "Not enough data")
+  for a given student in a given section.
+
+      It returns a map:
+
+      %{objective_id_1 => "High",
+        ...
+        objective_id_n => "Low"
+      }
+  """
+  @spec proficiency_for_student_per_learning_objective(
+          section :: Oli.Delivery.Sections.Section.t(),
+          student_id :: integer
+        ) :: map
+  def proficiency_for_student_per_learning_objective(
+        %Section{slug: section_slug, analytics_version: :v1},
+        student_id
+      ) do
+    query =
+      from(sn in Snapshot,
+        join: s in Section,
+        on: sn.section_id == s.id,
+        where:
+          sn.attempt_number == 1 and sn.part_attempt_number == 1 and s.slug == ^section_slug and
+            sn.user_id == ^student_id,
+        group_by: sn.objective_id,
+        select:
+          {sn.objective_id,
+           fragment(
+             "CAST(COUNT(CASE WHEN ? THEN 1 END) as float) / CAST(COUNT(*) as float)",
+             sn.correct
+           )}
+      )
+
+    Repo.all(query)
+    |> Enum.into(%{}, fn {objective_id, proficiency} ->
+      {objective_id, proficiency_range(proficiency)}
+    end)
+  end
+
+  def proficiency_for_student_per_learning_objective(
+        %Section{id: section_id, analytics_version: :v2},
+        student_id
+      ) do
+    objective_type_id = Oli.Resources.ResourceType.id_for_objective()
+
+    query =
+      from(summary in Oli.Analytics.Summary.ResourceSummary,
+        where:
+          summary.section_id == ^section_id and
+            summary.project_id == -1 and
+            summary.publication_id == -1 and
+            summary.user_id == ^student_id and
+            summary.resource_type_id == ^objective_type_id,
+        group_by: summary.resource_id,
+        select:
+          {summary.resource_id,
+           fragment(
+             "CAST(SUM(?) as float) / CAST(SUM(?) as float)",
+             summary.num_first_attempts_correct,
+             summary.num_first_attempts
+           )}
+      )
+
+    Repo.all(query)
+    |> Enum.into(%{}, fn {objective_id, proficiency} ->
+      {objective_id, proficiency_range(proficiency)}
+    end)
+  end
+
   def proficiency_range(nil), do: "Not enough data"
   def proficiency_range(proficiency) when proficiency <= 0.5, do: "Low"
   def proficiency_range(proficiency) when proficiency <= 0.8, do: "Medium"
