@@ -2625,7 +2625,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
         "Home",
         "Learn",
         "Schedule",
-        "Discussions",
+        "Notes",
         "Explorations",
         "Practice",
         "Support",
