@@ -182,6 +182,7 @@ defmodule OliWeb.Resources.PagesView do
           validate={JS.push("validate-options")}
           submit={JS.push("save-options")}
           cancel={Modal.hide_modal("options_modal") |> JS.push("restart_options_modal")}
+          form={to_form(@options_modal_assigns.changeset)}
         />
       <% end %>
       <div id="options-modal-assigns-trigger" data-show_modal={Modal.show_modal("options_modal")}>
