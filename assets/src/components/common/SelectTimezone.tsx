@@ -47,7 +47,7 @@ export const SelectTimezone: React.FC<SelectTimezoneProps> = ({
       <select
         onChange={onSelect}
         name="timezone[timezone]"
-        className="max-w-[300px] border-gray-300 rounded-md w-full disabled:bg-gray-100 disabled:text-gray-600 dark:bg-delivery-body-dark dark:border-gray-700"
+        className="max-w-[300px] dark:text-white text-sm font-normal font-['Roboto'] rounded-md border-gray-300 w-full disabled:bg-gray-100 disabled:text-gray-600 dark:bg-delivery-body-dark dark:border-gray-700"
         value={selectedTimezone}
       >
         {timezones.map(([label, value]) => (
