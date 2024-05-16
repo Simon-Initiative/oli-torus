@@ -22,7 +22,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
 
   require Logger
 
-  on_mount {OliWeb.LiveSessionPlugs.InitPage, :page_context}
+  on_mount {OliWeb.LiveSessionPlugs.InitPage, :init_context_state}
   on_mount {OliWeb.LiveSessionPlugs.InitPage, :previous_next_index}
 
   def mount(_params, _session, %{assigns: %{view: :practice_page}} = socket) do
@@ -992,7 +992,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
         )
       }
       class={[
-        "cursor-pointer px-5 py-2.5 hover:bg-opacity-40 bg-blue-600 rounded-[3px] shadow justify-center items-center gap-2.5 inline-flex text-white text-sm font-normal font-['Open Sans'] leading-tight",
+        "mb-24 cursor-pointer px-5 py-2.5 hover:bg-opacity-40 bg-blue-600 rounded-[3px] shadow justify-center items-center gap-2.5 inline-flex text-white text-sm font-normal font-['Open Sans'] leading-tight",
         if(!@allow_attempt?, do: "opacity-50 dark:opacity-20 disabled !cursor-not-allowed")
       ]}
     >

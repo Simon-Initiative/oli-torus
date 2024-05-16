@@ -635,6 +635,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
   def spinner(assigns) do
     ~H"""
     <svg
+      role="spinner"
       aria-hidden="true"
       class={[
         "w-8 h-8 text-gray-200 animate-spin dark:text-gray-600 fill-blue-600",
