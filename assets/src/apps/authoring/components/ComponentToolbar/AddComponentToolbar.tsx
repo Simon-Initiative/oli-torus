@@ -51,8 +51,6 @@ const AddComponentToolbar: React.FC<{
   const currentSequence = useSelector(selectSequence);
   const copiedPart = useSelector(selectCopiedPart);
 
-  useKeyDown(() => handlePartPasteClick(), ['KeyV'], [copiedPart]);
-
   const addPartToCurrentScreen = (newPartData: any) => {
     if (currentActivityTree) {
       const [currentActivity] = currentActivityTree.slice(-1);
@@ -114,6 +112,9 @@ const AddComponentToolbar: React.FC<{
 
     dispatch(setRightPanelActiveTab({ rightPanelActiveTab: RightPanelTabs.COMPONENT }));
   };
+
+  useKeyDown(handlePartPasteClick, ['KeyV'], { ctrlKey: true }, [copiedPart]);
+
   return (
     <Fragment>
       <div className="btn-group align-items-center" role="group">

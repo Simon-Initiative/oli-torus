@@ -1,13 +1,19 @@
 import { useEffect } from 'react';
 
-export function useKeyDown(callback: () => void, keyCodes: string[], dependencies: any = []): void {
+export function useKeyDown(
+  callback: () => void,
+  keyCodes: string[],
+  options: { ctrlKey?: boolean; metaKey?: boolean } = {},
+  dependencies: any = [],
+): void {
   const handler = ({ metaKey, ctrlKey, code }: KeyboardEvent) => {
-    // event.metaKey - pressed Command key on  Macs
-    // event.ctrlKey - pressed Control key on Linux or Windows
-    if (metaKey || ctrlKey || code === 'Delete' || code === 'Backspace') {
-      if (keyCodes.includes(code)) {
-        callback();
-      }
+    const { ctrlKey: ctrlRequired, metaKey: metaRequired } = options;
+
+    const ctrlMatch = ctrlRequired === undefined || ctrlKey === ctrlRequired;
+    const metaMatch = metaRequired === undefined || metaKey === metaRequired;
+    console.log({ metaKey, ctrlKey, code, keyCodes });
+    if (ctrlMatch && metaMatch && keyCodes.includes(code)) {
+      callback();
     }
   };
 
