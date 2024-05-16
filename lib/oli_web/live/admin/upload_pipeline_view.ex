@@ -13,6 +13,11 @@ defmodule OliWeb.Admin.UploadPipelineView do
 
     PubSub.subscribe(Oli.PubSub, "xapi_upload_pipeline_stats")
 
+    {:ok, %{rows: [[count]]}} = Oli.Repo.query("SELECT Count(*) FROM pending_uploads")
+
+    # setup a timer to query the pending_uploads every 10 seconds
+    Process.send_after(self(), :query_pending_uploads, 10_000)
+
     {:ok,
      assign(socket,
        title: "XAPI Upload Pipeline",
@@ -21,27 +26,34 @@ defmodule OliWeb.Admin.UploadPipelineView do
        throughput_per_second: nil,
        batch_size_stats: nil,
        upload_time_stats: nil,
-       messages: []
+       messages: [],
+       pending_count: count
      )}
   end
 
   def render(assigns) do
     ~H"""
-    <div>
-      <.stats title={"Batch Size"} stats={@batch_size_stats} suffix="" />
-      <.stats title={"S3 Upload Time"} stats={@upload_time_stats} suffix="ms" />
-      <.stats title={"Throughput"} stats={@throughput_per_second} />
+    <div class="w-full bg-stone-950 dark:text-white">
+      <div class="w-full p-8 justify-start items-start gap-6 inline-flex">
+        <.stats title={"Batch Size"} stats={@batch_size_stats} suffix="" />
+        <.stats title={"S3 Upload Time"} stats={@upload_time_stats} suffix="ms" />
+      </div>
+      <div class="w-full p-8 justify-start items-start gap-6 inline-flex">
+        <.stats title={"Throughput"} stats={@throughput_per_second} />
+        <.pending pending_count={@pending_count} />
+      </div>
     </div>
     """
   end
 
   attr(:stats, :any, required: true)
   attr(:title, :string, required: true)
+  attr(:suffix, :string, default: "")
 
   defp stats(assigns) do
     ~H"""
-    <div class="w-1/4 h-48 flex-col justify-start items-start gap-6 inline-flex">
-      <div class="w-full h-96 p-6 bg-zinc-900 bg-opacity-20 dark:bg-opacity-100 rounded-2xl justify-start items-start gap-32 inline-flex">
+    <div class="w-1/4 flex-col justify-start items-start gap-6 inline-flex">
+      <div class="w-full p-6 bg-zinc-900 bg-opacity-20 dark:bg-opacity-100 rounded-2xl justify-start items-start gap-32 inline-flex">
         <div class="flex-col justify-start items-start gap-5 inline-flex grow">
           <div class="justify-start items-start gap-2.5 inline-flex">
             <div class="text-2xl font-bold leading-loose tracking-tight">
@@ -56,6 +68,34 @@ defmodule OliWeb.Admin.UploadPipelineView do
     </div>
     """
   end
+
+  attr(:pending_count, :any, required: true)
+
+  defp pending(assigns) do
+    ~H"""
+    <div class="w-1/4 h-48 flex-col justify-start items-start gap-6 inline-flex">
+      <div class="w-full h-96 p-6 bg-zinc-900 bg-opacity-20 dark:bg-opacity-100 rounded-2xl justify-start items-start gap-32 inline-flex">
+        <div class="flex-col justify-start items-start gap-5 inline-flex grow">
+          <div class="justify-start items-start gap-2.5 inline-flex">
+            <div class="text-2xl font-bold leading-loose tracking-tight">
+              Pending Uploads
+            </div>
+          </div>
+          <div class="flex-col justify-start items-start flex">
+            <%= @pending_count %> total bundles
+          </div>
+          <%= if @pending_count > 0 do %>
+            <div class="flex-col justify-start items-start flex">
+              <.button class="btn btn-primary" phx-click="queue">Re-enqueue</.button>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    </div>
+    """
+  end
+
+
 
   defp format(v, s) when is_float(v), do: "#{Float.round(v, 3)}#{s}"
   defp format(v, s), do: "#{v}#{s}"
@@ -89,6 +129,23 @@ defmodule OliWeb.Admin.UploadPipelineView do
       <div class="text-2xl font-bold text-gray-100"><%= format(@stats, " statements/s") %></div>
     </div>
     """
+  end
+
+  def handle_event("queue", _params, socket) do
+
+    producer = Oli.Analytics.XAPI.UploadPipeline
+    |> Broadway.producer_names()
+    |> Enum.random()
+
+    GenStage.cast(producer, {:enqueue_from_storage})
+
+    {:noreply, socket}
+  end
+
+  def handle_info(:query_pending_uploads, socket) do
+    {:ok, %{rows: [[count]]}} = Oli.Repo.query("SELECT Count(*) FROM pending_uploads")
+    Process.send_after(self(), :query_pending_uploads, 10_000)
+    {:noreply, assign(socket, pending_count: count)}
   end
 
   def handle_info({:stats, {batch_size, upload_time}}, socket) do

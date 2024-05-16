@@ -41,6 +41,12 @@ defmodule Oli.Analytics.XAPI.QueueProducer do
     handle_receive_messages(state)
   end
 
+  def handle_cast({:enqueue_from_storage}, state) do
+    pending_items = enqueue_from_storage()
+    state = %{state | queue: pending_items ++ state.queue}
+    handle_receive_messages(state)
+  end
+
   def handle_demand(incoming_demand, %{demand: demand} = state) do
     handle_receive_messages(%{state | demand: demand + incoming_demand})
   end
