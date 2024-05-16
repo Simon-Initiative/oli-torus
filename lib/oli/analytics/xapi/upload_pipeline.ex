@@ -3,6 +3,10 @@ defmodule Oli.Analytics.XAPI.UploadPipeline do
 
   alias Broadway.Message
   alias Oli.Analytics.XAPI.StatementBundle
+  alias Oli.Analytics.XAPI.Utils
+  alias Phoenix.PubSub
+
+  import Oli.Timing
 
   def start_link(_opts) do
     config = Oli.Analytics.XAPI.PipelineConfig.get()
@@ -47,11 +51,13 @@ defmodule Oli.Analytics.XAPI.UploadPipeline do
   # built-in batching capabilities, where we can coalesce messages
   # into one bundle before uploading.
   def handle_batch(:default, messages, _batch_info, _context) do
-    Oli.Analytics.XAPI.Utils.record_pipeline_stats(%{batch_size: Enum.count(messages)})
+
+    batch_size = Enum.count(messages)
+    Utils.record_pipeline_stats(%{batch_size: batch_size})
 
     messages
     |> coalesce()
-    |> upload()
+    |> upload(batch_size)
 
     messages
   end
@@ -66,11 +72,24 @@ defmodule Oli.Analytics.XAPI.UploadPipeline do
     |> Map.put(:body, combined_body)
   end
 
-  # upload the bundle, if it fails we store it so it can be replayed later
-  defp upload(bundle) do
+  # upload the bundle, if it fails we store it so it can be replayed later. Internally,
+  # the ExAws library will retry the upload multiple times before giving up. In case of
+  # this hard failure we spool the bundle to the DB so it can be replayed later - or
+  # potentially manually uploaded in a worst case scenario.
+  defp upload(bundle, batch_size) do
     %{uploader_module: uploader_module} = Oli.Analytics.XAPI.PipelineConfig.get()
 
-    case apply(uploader_module, :upload, [bundle]) do
+    mark = mark()
+    retval = fn ->
+      apply(uploader_module, :upload, [bundle])
+    end
+    |> run()
+    |> emit([:oli, :xapi, :pipeline, :upload], :duration)
+
+    elapsed_time = elapsed(mark) / 1000 / 1000
+    PubSub.broadcast(Oli.PubSub, "xapi_upload_pipeline_stats", {:stats, {batch_size, elapsed_time}})
+
+    case retval do
       {:error, _} ->
         Oli.Analytics.XAPI.QueueProducer.persist([bundle], :failed)
 
