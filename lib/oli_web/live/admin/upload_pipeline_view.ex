@@ -1,5 +1,4 @@
 defmodule OliWeb.Admin.UploadPipelineView do
-
   use OliWeb, :live_view
 
   alias Phoenix.PubSub
@@ -10,7 +9,6 @@ defmodule OliWeb.Admin.UploadPipelineView do
   @window_size 500
 
   def mount(_, _, socket) do
-
     PubSub.subscribe(Oli.PubSub, "xapi_upload_pipeline_stats")
 
     {:ok, %{rows: [[count]]}} = Oli.Repo.query("SELECT Count(*) FROM pending_uploads")
@@ -117,9 +115,7 @@ defmodule OliWeb.Admin.UploadPipelineView do
 
   defp render_stats(%{stats: nil} = assigns) do
     ~H"""
-    <div>
-
-    </div>
+    <div></div>
     """
   end
 
@@ -149,17 +145,18 @@ defmodule OliWeb.Admin.UploadPipelineView do
   end
 
   def handle_info({:stats, {batch_size, upload_time}}, socket) do
-
-    raw_stats = [{batch_size, upload_time, System.monotonic_time()} | socket.assigns.raw_stats]
-    |> Enum.take(@window_size)
+    raw_stats =
+      [{batch_size, upload_time, System.monotonic_time()} | socket.assigns.raw_stats]
+      |> Enum.take(@window_size)
 
     throughput_per_second = throughput_per_second(raw_stats)
 
     count = Enum.count(raw_stats)
 
-    {batch_sizes, uploads, _} = Enum.reduce(raw_stats, {[], [], nil}, fn {size, upload, _}, {batch_sizes, uploads, _} ->
-      {[size | batch_sizes], [upload | uploads], []}
-    end)
+    {batch_sizes, uploads, _} =
+      Enum.reduce(raw_stats, {[], [], nil}, fn {size, upload, _}, {batch_sizes, uploads, _} ->
+        {[size | batch_sizes], [upload | uploads], []}
+      end)
 
     batch_sizes = Enum.reverse(batch_sizes)
     uploads = Enum.reverse(uploads)
@@ -167,18 +164,24 @@ defmodule OliWeb.Admin.UploadPipelineView do
     batch_size_stats = calculate_distribution_stats(batch_sizes, count)
     upload_time_stats = calculate_distribution_stats(uploads, count)
 
-    {:noreply, assign(socket,
-      raw_stats: raw_stats,
-      batch_size_stats: batch_size_stats,
-      upload_time_stats: upload_time_stats,
-      throughput_per_second: throughput_per_second
-    )}
+    {:noreply,
+     assign(socket,
+       raw_stats: raw_stats,
+       batch_size_stats: batch_size_stats,
+       upload_time_stats: upload_time_stats,
+       throughput_per_second: throughput_per_second
+     )}
   end
 
   defp throughput_per_second(raw_stats) do
-    stats = Enum.reduce(raw_stats, %{count: 0, last_time: nil}, fn {size, _, time}, %{count: count, last_time: _last_time} ->
-      %{count: count + size, last_time: time}
-    end)
+    stats =
+      Enum.reduce(raw_stats, %{count: 0, last_time: nil}, fn {size, _, time},
+                                                             %{
+                                                               count: count,
+                                                               last_time: _last_time
+                                                             } ->
+        %{count: count + size, last_time: time}
+      end)
 
     diff = ((raw_stats |> hd() |> elem(2)) - stats.last_time) / 1000 / 1000 / 1000
 
@@ -187,11 +190,9 @@ defmodule OliWeb.Admin.UploadPipelineView do
     else
       0.0
     end
-
   end
 
   defp calculate_distribution_stats(raw_stats, count) do
-
     # Calculate the mean
     mean = Enum.reduce(raw_stats, 0, fn v, acc -> acc + v end) / count
 

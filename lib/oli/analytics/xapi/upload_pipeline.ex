@@ -51,7 +51,6 @@ defmodule Oli.Analytics.XAPI.UploadPipeline do
   # built-in batching capabilities, where we can coalesce messages
   # into one bundle before uploading.
   def handle_batch(:default, messages, _batch_info, _context) do
-
     batch_size = Enum.count(messages)
     Utils.record_pipeline_stats(%{batch_size: batch_size})
 
@@ -80,14 +79,21 @@ defmodule Oli.Analytics.XAPI.UploadPipeline do
     %{uploader_module: uploader_module} = Oli.Analytics.XAPI.PipelineConfig.get()
 
     mark = mark()
-    retval = fn ->
-      apply(uploader_module, :upload, [bundle])
-    end
-    |> run()
-    |> emit([:oli, :xapi, :pipeline, :upload], :duration)
+
+    retval =
+      fn ->
+        apply(uploader_module, :upload, [bundle])
+      end
+      |> run()
+      |> emit([:oli, :xapi, :pipeline, :upload], :duration)
 
     elapsed_time = elapsed(mark) / 1000 / 1000
-    PubSub.broadcast(Oli.PubSub, "xapi_upload_pipeline_stats", {:stats, {batch_size, elapsed_time}})
+
+    PubSub.broadcast(
+      Oli.PubSub,
+      "xapi_upload_pipeline_stats",
+      {:stats, {batch_size, elapsed_time}}
+    )
 
     case retval do
       {:error, _} ->
