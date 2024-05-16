@@ -112,7 +112,7 @@ defmodule OliWeb.Delivery.Student.Utils do
       >
         <div class="self-stretch justify-start items-start gap-6 inline-flex mb-6">
           <div>
-            <span class="text-neutral-300 text-base font-bold font-['Inter'] leading-normal">
+            <span class="text-neutral-700 dark:text-neutral-300 text-base font-bold font-['Inter'] leading-normal">
               LEARNING OBJECTIVES &
             </span>
             <span class="text-blue-600 text-base font-bold font-['Inter'] leading-normal">
@@ -129,10 +129,10 @@ defmodule OliWeb.Delivery.Student.Utils do
             <.proficiency_icon_with_tooltip objective={objective} />
             <div class="justify-start items-start gap-3.5 flex">
               <div class="justify-start items-start gap-[17px] flex">
-                <div class="w-5 text-neutral-500 text-sm font-bold font-['Inter'] leading-[21px]">
+                <div class="w-5 text-neutral-800 dark:text-neutral-500 text-sm font-bold font-['Inter'] leading-[21px]">
                   L<%= index %>
                 </div>
-                <div class="text-stone-300 text-sm font-normal font-['Open Sans'] leading-[21px]">
+                <div class="text-stone-700 dark:text-stone-300 text-sm font-normal font-['Open Sans'] leading-[21px]">
                   <%= objective.title %>
                 </div>
               </div>
@@ -159,10 +159,11 @@ defmodule OliWeb.Delivery.Student.Utils do
     </div>
     <div
       id={"objective_#{@objective.resource_id}_tooltip"}
-      class="hidden absolute h-[57px] px-6 pt-[15px] pb-6 -top-[20px] -left-6 text-gray-700 text-base font-normal font-['Inter'] leading-normal bg-white rounded-md border-2 border-gray-700 flex-col justify-start items-start gap-4 -translate-x-full"
+      class="hidden absolute h-[57px] px-6 pt-[15px] pb-6 -top-[20px] -left-6 text-gray-800 dark:text-gray-700 text-base font-normal font-['Inter'] leading-normal bg-gray-300 dark:bg-white rounded-md border-2 border-gray-700 flex-col justify-start items-start gap-4 -translate-x-full"
     >
       <%= proficiency_to_text(@objective.proficiency) %>
-      <Icons.filled_chevron_up class="absolute -right-3 top-[16px] fill-white z-10 rotate-90 scale-125" />
+      <div class="absolute h-[40px] w-2 bg-gray-300 dark:bg-white top-2 right-0 z-20"></div>
+      <Icons.filled_chevron_up class="absolute -right-[13px] top-[16px] fill-gray-300 dark:fill-white z-10 rotate-90 scale-150 stroke-1.5 stroke-gray-700" />
     </div>
     """
   end

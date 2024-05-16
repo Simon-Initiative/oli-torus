@@ -252,12 +252,15 @@ defmodule OliWeb.Icons do
     """
   end
 
+  attr :class, :string, default: ""
+
   def chevron_down(assigns) do
     ~H"""
     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
       <path
         d="M6.70711 8.29289C6.31658 7.90237 5.68342 7.90237 5.29289 8.29289C4.90237 8.68342 4.90237 9.31658 5.29289 9.70711L11.2929 15.7071C11.6834 16.0976 12.3166 16.0976 12.7071 15.7071L18.7071 9.70711C19.0976 9.31658 19.0976 8.68342 18.7071 8.29289C18.3166 7.90237 17.6834 7.90237 17.2929 8.29289L12 13.5858L6.70711 8.29289Z"
         fill="white"
+        class={@class}
       />
     </svg>
     """
@@ -735,6 +738,7 @@ defmodule OliWeb.Icons do
     ~H"""
     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
       <path
+        class="dark:stroke-[#747474] stroke-gray-700"
         d="M8 8C8 7.20435 8.36875 6.44129 9.02513 5.87868C9.6815 5.31607 10.5717 5 11.5 5H12.5C13.4283 5 14.3185 5.31607 14.9749 5.87868C15.6313 6.44129 16 7.20435 16 8C16.0368 8.64925 15.8617 9.2929 15.501 9.83398C15.1402 10.3751 14.6135 10.7843 14 11C13.3865 11.2876 12.8598 11.8333 12.499 12.5547C12.1383 13.2761 11.9632 14.1343 12 15M12 19V19.01"
         stroke="#747474"
         stroke-width="2"
@@ -748,10 +752,18 @@ defmodule OliWeb.Icons do
   def proficiency(%{proficiency: "Low"} = assigns) do
     ~H"""
     <svg width="19" height="20" viewBox="0 0 19 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <rect x="1" y="1" width="16.9474" height="18" rx="2" stroke="#9B6DFF" stroke-width="2" />
+      <rect
+        class="dark:stroke-[#9B6DFF] stroke-[#7C40FF]"
+        x="1"
+        y="1"
+        width="16.9474"
+        height="18"
+        rx="2"
+        stroke-width="2"
+      />
       <path
+        class="dark:fill-[#9B6DFF] fill-[#7C40FF]"
         d="M0 13.334H18.3333V17.0007C18.3333 18.6575 16.9902 20.0007 15.3333 20.0007H3C1.34315 20.0007 0 18.6575 0 17.0007V13.334Z"
-        fill="#9B6DFF"
       />
     </svg>
     """
@@ -760,10 +772,18 @@ defmodule OliWeb.Icons do
   def proficiency(%{proficiency: "Medium"} = assigns) do
     ~H"""
     <svg width="19" height="20" viewBox="0 0 19 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <rect x="1" y="1" width="16.9474" height="18" rx="2" stroke="#7C40FF" stroke-width="2" />
+      <rect
+        class="dark:stroke-[#7C40FF] stroke-[#651FFF]"
+        x="1"
+        y="1"
+        width="16.9474"
+        height="18"
+        rx="2"
+        stroke-width="2"
+      />
       <path
         d="M0 7.5H18.3333V17C18.3333 18.6569 16.9902 20 15.3333 20H3C1.34315 20 0 18.6569 0 17V7.5Z"
-        fill="#7C40FF"
+        class="dark:fill-[#7C40FF] fill-[#651FFF]"
       />
     </svg>
     """
@@ -773,13 +793,12 @@ defmodule OliWeb.Icons do
     ~H"""
     <svg width="19" height="21" viewBox="0 0 19 21" fill="none" xmlns="http://www.w3.org/2000/svg">
       <rect
+        class="dark:stroke-[#651FFF] dark:fill-[#651FFF] stroke-[#5104f7] fill-[#5104f7]"
         x="1"
         y="1.5"
         width="16.9474"
         height="18"
         rx="2"
-        fill="#651FFF"
-        stroke="#651FFF"
         stroke-width="2"
       />
     </svg>
