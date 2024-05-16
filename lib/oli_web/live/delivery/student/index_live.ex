@@ -79,7 +79,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
       <div class="w-full absolute p-8 justify-start items-start gap-6 inline-flex">
         <.course_progress has_visited_section={@has_visited_section} progress={@section_progress} />
         <div class="w-3/4 h-full flex-col justify-start items-start gap-6 inline-flex">
-          <div class="w-full h-fit overflow-y-auto p-6 bg-zinc-400 bg-opacity-20 rounded-2xl justify-start items-start gap-32 inline-flex">
+          <div class="w-full h-fit overflow-y-auto p-6 bg-[#1C1A20] bg-opacity-20 dark:bg-opacity-100 rounded-2xl justify-start items-start gap-32 inline-flex">
             <div class="flex-col justify-start items-start gap-7 inline-flex grow">
               <div class="self-stretch justify-between items-baseline inline-flex gap-2.5">
                 <div class="text-2xl font-bold leading-loose tracking-tight">
@@ -94,7 +94,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
                   }
                   class="hover:no-underline"
                 >
-                  <div class="text-blue-500 hover:text-blue-400 text-base font-bold tracking-tight">
+                  <div class="text-[#3399FF] hover:text-opacity-80 text-base font-bold tracking-tight">
                     View full schedule
                   </div>
                 </.link>
@@ -296,7 +296,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
   defp course_progress(assigns) do
     ~H"""
     <div class="w-1/4 h-48 flex-col justify-start items-start gap-6 inline-flex">
-      <div class="w-full h-96 p-6 bg-zinc-400 bg-opacity-20 rounded-2xl justify-start items-start gap-32 inline-flex">
+      <div class="w-full h-96 p-6 bg-[#1C1A20] bg-opacity-20 dark:bg-opacity-100 rounded-2xl justify-start items-start gap-32 inline-flex">
         <div class="flex-col justify-start items-start gap-5 inline-flex grow">
           <div class="justify-start items-start gap-2.5 inline-flex">
             <div class="text-2xl font-bold leading-loose tracking-tight">

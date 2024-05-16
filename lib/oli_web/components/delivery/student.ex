@@ -230,17 +230,17 @@ defmodule OliWeb.Components.Delivery.Student do
     ~H"""
     <div class="flex flex-col">
       <div class="flex flex-row justify-between gap-10 text-xs">
-        <div class="flex flex-row gap-1 text-xs font-semibold">
+        <div class="flex flex-row gap-1 text-xs font-semibold text-green-700 dark:text-green-500">
           <div class="font-semibold uppercase text-gray-500 mr-1">Attempt <%= @index %>:</div>
           <div class="w-4 h-4 relative"><Icons.star /></div>
 
-          <div role="attempt score" class="text-emerald-600 tracking-tight">
+          <div role="attempt score" class="tracking-tight">
             <%= Float.round(@attempt.score, 2) %>
           </div>
           <div class="text-emerald-600">
             /
           </div>
-          <div role="attempt out of" class="text-emerald-600 tracking-tight">
+          <div role="attempt out of" class="tracking-tight">
             <%= Float.round(@attempt.out_of, 2) %>
           </div>
         </div>
