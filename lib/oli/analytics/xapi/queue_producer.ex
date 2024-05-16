@@ -10,6 +10,7 @@ defmodule Oli.Analytics.XAPI.QueueProducer do
   require Logger
   alias Oli.Analytics.XAPI.StatementBundle
   alias Oli.Analytics.XAPI.PendingUpload
+  alias Oli.Analytics.XAPI.Utils
 
   def start_link(opts) do
     GenStage.start_link(__MODULE__, opts)
