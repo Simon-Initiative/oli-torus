@@ -31,13 +31,7 @@ defmodule Oli.Analytics.XAPI.QueueProducer do
   # to be uploaded to S3.  Everything else in this module faces
   # the Broadway pipeline.
   def enqueue(%StatementBundle{} = bundle) do
-    # This seems to be the most future proof way, randomly selecting 1 on n producers
-    # to send the message to.  This is a good way to ensure that the load is distributed
-    # should we ever need to add additional queues.
-    producer_name = Broadway.producer_names(Oli.Analytics.XAPI.UploadPipeline) |> Enum.random()
-
-    # Async call to the producer
-    GenStage.cast(producer_name, {:insert, bundle})
+    GenStage.cast(Oli.Analytics.XAPI.QueueProducer, {:insert, bundle})
   end
 
   def handle_cast({:insert, bundle}, state) do
