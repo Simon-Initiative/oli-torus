@@ -120,8 +120,9 @@ defmodule OliWeb.Components.Delivery.Content do
           offset={@params.offset}
           limit={@params.limit}
           sort={JS.push("paged_table_sort", target: @myself)}
-          click={JS.push("paged_table_page_change", target: @myself)}
           limit_change={JS.push("paged_table_limit_change", target: @myself)}
+          selection_change={JS.push("paged_table_selection_change", target: @myself)}
+          page_change={JS.push("paged_table_page_change", target: @myself)}
         />
       </div>
     </div>

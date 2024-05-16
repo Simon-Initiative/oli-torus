@@ -12,6 +12,7 @@ defmodule OliWeb.Components.Delivery.PracticeActivities do
     StudentResponse
   }
 
+  alias OliWeb.Common.InstructorDashboardPagedTable
   alias Oli.Delivery.Attempts.Core
 
   alias Oli.Delivery.Attempts.Core.{
@@ -26,7 +27,7 @@ defmodule OliWeb.Components.Delivery.PracticeActivities do
   alias Oli.Repo
   alias Oli.Resources.Revision
   alias Oli.Resources.ResourceType
-  alias OliWeb.Common.{Params, PagedTable, SearchInput}
+  alias OliWeb.Common.{Params, SearchInput}
   alias OliWeb.Common.Table.SortableTableModel
   alias OliWeb.Delivery.PracticeActivities.PracticeAssessmentsTableModel
   alias OliWeb.ManualGrading.RenderedActivity
@@ -135,19 +136,15 @@ defmodule OliWeb.Components.Delivery.PracticeActivities do
           </div>
         </div>
 
-        <PagedTable.render
+        <InstructorDashboardPagedTable.render
           table_model={@table_model}
           total_count={@total_count}
           offset={@params.offset}
           limit={@params.limit}
-          page_change={JS.push("paged_table_page_change", target: @myself)}
-          selection_change={JS.push("paged_table_selection_change", target: @myself)}
           sort={JS.push("paged_table_sort", target: @myself)}
-          additional_table_class="instructor_dashboard_table"
-          allow_selection={true}
-          show_bottom_paging={false}
           limit_change={JS.push("paged_table_limit_change", target: @myself)}
-          show_limit_change={true}
+          selection_change={JS.push("paged_table_selection_change", target: @myself)}
+          page_change={JS.push("paged_table_page_change", target: @myself)}
         />
       </div>
 
