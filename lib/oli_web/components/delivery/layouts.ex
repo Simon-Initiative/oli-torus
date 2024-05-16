@@ -235,14 +235,13 @@ defmodule OliWeb.Components.Delivery.Layouts do
       </.nav_link>
 
       <.nav_link
-        :if={@section.contains_discussions}
         id="discussions_nav_link"
         href={path_for(:discussions, @section, @preview_mode, @sidebar_expanded)}
         is_active={@active_tab == :discussions}
         sidebar_expanded={@sidebar_expanded}
       >
         <:icon><Icons.discussions is_active={@active_tab == :discussions} /></:icon>
-        <:text>Discussions</:text>
+        <:text>Notes</:text>
       </.nav_link>
 
       <.nav_link
