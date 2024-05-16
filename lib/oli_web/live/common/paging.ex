@@ -12,9 +12,19 @@ defmodule OliWeb.Common.Paging do
   attr :id, :string, required: true
   attr :page_sizes, :list, default: @page_sizes
   attr :show_limit_change, :boolean, default: false
+  attr :has_shorter_label, :boolean, default: false
+  attr :should_add_empty_flex, :boolean, default: true
+  attr :is_page_size_right, :boolean, default: false
 
   def render(assigns) do
-    params = PagingParams.calculate(assigns.total_count, assigns.offset, assigns.limit, 5)
+    params =
+      PagingParams.calculate(
+        assigns.total_count,
+        assigns.offset,
+        assigns.limit,
+        5,
+        assigns.has_shorter_label
+      )
 
     assigns =
       assigns
@@ -24,8 +34,13 @@ defmodule OliWeb.Common.Paging do
     ~H"""
     <div id={@id} class="d-flex justify-content-between items-center px-5 py-2">
       <div :if={@show_pagination}><%= @params.label %></div>
-      <div class="flex-1"></div>
-      <.form id={"#{@id}_page_size_form"} for={%{}} phx-change={@limit_change}>
+      <div :if={@should_add_empty_flex} class="flex-1"></div>
+      <.form
+        :if={!@is_page_size_right}
+        id={"#{@id}_page_size_form"}
+        for={%{}}
+        phx-change={@limit_change}
+      >
         <div :if={@show_limit_change} class="inline-flex flex-col gap-1 mr-2">
           <small class="torus-small uppercase">
             Page size
@@ -98,6 +113,23 @@ defmodule OliWeb.Common.Paging do
           </li>
         </ul>
       </nav>
+      <.form
+        :if={@is_page_size_right}
+        id={"#{@id}_page_size_form"}
+        for={%{}}
+        phx-change={@limit_change}
+      >
+        <div :if={@show_limit_change} class="inline-flex flex-col gap-1 mr-2">
+          <small class="torus-small uppercase">
+            Page size
+          </small>
+          <select class="torus-select" name="limit">
+            <option :for={page_size <- @page_sizes} selected={@limit == page_size} value={page_size}>
+              <%= page_size %>
+            </option>
+          </select>
+        </div>
+      </.form>
     </div>
     """
   end
