@@ -1011,22 +1011,16 @@ defmodule OliWeb.Delivery.Student.LessonLive do
         <div class="w-[92px] opacity-40 dark:text-white text-xs font-bold font-['Open Sans'] uppercase leading-normal tracking-wide">
           Attempt <%= @index %>:
         </div>
-        <div class="py-1 justify-end items-center gap-1.5 flex">
+        <div class="py-1 justify-end items-center gap-1.5 flex text-green-700 dark:text-green-500">
           <div class="w-4 h-4 relative"><Icons.star /></div>
           <div class="justify-end items-center gap-1 flex">
-            <div
-              role="attempt score"
-              class="text-emerald-600 text-xs font-semibold font-['Open Sans'] tracking-tight"
-            >
+            <div role="attempt score" class="text-xs font-semibold tracking-tight">
               <%= Float.round(@attempt.score, 2) %>
             </div>
-            <div class="text-emerald-600 text-xs font-semibold font-['Open Sans'] tracking-[4px]">
+            <div class="text-xs font-semibold tracking-[4px]">
               /
             </div>
-            <div
-              role="attempt out of"
-              lass="text-emerald-600 text-xs font-semibold font-['Open Sans'] tracking-tight"
-            >
+            <div role="attempt out of" lass="text-xs font-semibold tracking-tight">
               <%= Float.round(@attempt.out_of, 2) %>
             </div>
           </div>

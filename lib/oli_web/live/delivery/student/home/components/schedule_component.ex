@@ -40,10 +40,10 @@ defmodule OliWeb.Delivery.Student.Home.Components.ScheduleComponent do
             class="flex self-stretch h-fit flex flex-col justify-start items-start gap-3.5 pb-7"
           >
             <div class="flex self-stretch justify-between items-baseline">
-              <div role="schedule_title" class="text-white text-lg font-bold tracking-tight">
+              <div role="schedule_title" class="dark:text-white text-lg font-bold tracking-tight">
                 <%= this_or_next_week(week_range) %>
               </div>
-              <div role="schedule_date_range" class="text-white text-sm font-bold tracking-tight">
+              <div role="schedule_date_range" class="dark:text-white text-sm font-bold tracking-tight">
                 <%= Phoenix.HTML.raw(week_range(week_range)) %>
               </div>
             </div>
@@ -86,32 +86,32 @@ defmodule OliWeb.Delivery.Student.Home.Components.ScheduleComponent do
       <div class="self-stretch justify-between items-start flex pl-2">
         <div class="grow shrink basis-0 self-stretch flex-col justify-start items-start gap-2.5 flex">
           <div role="container_label" class="justify-start items-start gap-2 flex uppercase">
-            <div class="text-white text-opacity-60 text-xs font-bold whitespace-nowrap">
+            <div class="dark:text-white text-opacity-60 text-xs font-bold whitespace-nowrap">
               <%= @item.unit_label %>
             </div>
 
             <div :if={@item.module_id} class="flex items-center gap-2">
-              <div class="text-white text-opacity-60 text-xs font-bold">•</div>
-              <div class="text-white text-opacity-60 text-xs font-bold whitespace-nowrap">
+              <div class="dark:text-white text-opacity-60 text-xs font-bold">•</div>
+              <div class="dark:text-white text-opacity-60 text-xs font-bold whitespace-nowrap">
                 <%= @item.module_label %>
               </div>
             </div>
           </div>
           <div role="title" class="self-stretch pb-2.5 justify-start items-start gap-2.5 flex">
-            <div class="grow shrink basis-0 text-white text-opacity-90 text-lg font-semibold">
+            <div class="grow shrink basis-0 dark:text-white text-opacity-90 text-lg font-semibold">
               <%= @item.container_title %>
             </div>
           </div>
         </div>
         <div role="resource_type" class="justify-start items-start flex">
-          <div class="px-3 py-1 bg-slate-500 bg-opacity-20 rounded-3xl justify-center items-center gap-1.5 flex">
+          <div class="px-3 py-1 text-teal-700 dark:text-[#6DD1DF] bg-[#3E7981]/[.25] rounded-3xl justify-center items-center gap-1.5 flex">
             <div class="w-5 h-5 relative opacity-80">
               <div class="w-3 h-3.5 absolute">
                 <Icons.book />
               </div>
             </div>
             <div class="pr-1 opacity-80 justify-center items-center gap-2.5 flex">
-              <div class="text-teal-300 text-sm font-semibold tracking-tight">
+              <div class="text-sm font-semibold tracking-tight">
                 Reading
               </div>
             </div>
@@ -138,6 +138,7 @@ defmodule OliWeb.Delivery.Student.Home.Components.ScheduleComponent do
 
     ~H"""
     <% completed = @resource.progress == 100 %>
+    <% assignment = @resource.graded and @resource.purpose != :application %>
 
     <.link
       id={@id}
@@ -146,33 +147,29 @@ defmodule OliWeb.Delivery.Student.Home.Components.ScheduleComponent do
           request_path: ~p"/sections/#{@section_slug}"
         )
       }
-      class="hover:no-underline"
+      class="text-black hover:text-black hover:no-underline"
     >
       <div class={[
         item_bg_color(completed),
-        "flex h-32 px-2.5 py-3.5 rounded-xl border flex-col justify-start items-start hover:cursor-pointer"
+        maybe_assignment_left_bar(assignment),
+        "flex h-fit px-2.5 py-3.5 rounded-xl border flex-col justify-start items-start hover:cursor-pointer"
       ]}>
-        <div
-          :if={false and @resource.graded and @resource.purpose != :application}
-          class="w-0.5 h-24 bg-orange-400"
-        >
-        </div>
         <div class="self-stretch justify-between items-start flex pl-2">
           <div class="grow shrink basis-0 self-stretch flex-col justify-start items-start gap-2.5 flex">
             <div role="container_label" class="justify-start items-start gap-2 flex uppercase">
-              <div class="text-white text-opacity-60 text-xs font-bold whitespace-nowrap">
+              <div class="dark:text-white text-opacity-60 text-xs font-bold whitespace-nowrap">
                 <%= @item.unit_label %>
               </div>
 
               <div :if={@item.module_id} class="flex items-center gap-2">
-                <div class="text-white text-opacity-60 text-xs font-bold">•</div>
-                <div class="text-white text-opacity-60 text-xs font-bold whitespace-nowrap">
+                <div class="dark:text-white text-opacity-60 text-xs font-bold">•</div>
+                <div class="dark:text-white text-opacity-60 text-xs font-bold whitespace-nowrap">
                   <%= @item.module_label %>
                 </div>
               </div>
             </div>
             <div role="title" class="self-stretch pb-2.5 justify-start items-start gap-2.5 flex">
-              <div class="grow shrink basis-0 text-white text-opacity-90 text-lg font-semibold">
+              <div class="grow shrink basis-0 dark:text-white text-opacity-90 text-lg font-semibold">
                 <%= @resource.resource.title %>
               </div>
             </div>
@@ -195,22 +192,30 @@ defmodule OliWeb.Delivery.Student.Home.Components.ScheduleComponent do
   end
 
   defp item_bg_color(true = _completed),
-    do: "bg-white/[.02] hover:bg-white/[.06] border-white/[0.06] hover:border-white/[0.02]"
+    do:
+      "bg-black/[.07] hover:bg-black/[.1] border border-white/[.1] dark:bg-white/[.02] dark:hover:bg-white/[.06] dark:border-white/[0.06] dark:hover:border-white/[0.02]"
 
   defp item_bg_color(false = _completed),
-    do: "bg-white/[.08] hover:bg-white/[.12] border-black hover:border-none"
+    do:
+      "bg-black/[.1] hover:bg-black/[.2] border border-white/[.6] hover:border-transparent dark:bg-white/[.08] dark:hover:bg-white/[.12] dark:border-black hover:border-none"
+
+  defp maybe_assignment_left_bar(true),
+    do:
+      "relative overflow-hidden z-0 before:content-[''] before:absolute before:left-0 before:top-0 before:w-0.5 before:h-full before:bg-[#FF8F40] before:z-10"
+
+  defp maybe_assignment_left_bar(_), do: ""
 
   defp resource_type(%{resource: %{purpose: :application}} = assigns) do
     ~H"""
     <div role="resource_type" class="justify-start items-start flex">
-      <div class="px-3 py-1 bg-gray-500 bg-opacity-25 rounded-3xl justify-center items-center gap-1.5 flex">
+      <div class="px-3 py-1 text-fuchsia-700 dark:text-[#EC8CFF] bg-[#815499]/[.25] rounded-3xl justify-center items-center gap-1.5 flex">
         <div class="w-5 h-5 relative opacity-80">
           <div class="w-3 h-3.5 absolute">
             <Icons.world />
           </div>
         </div>
         <div class="pr-1 justify-center items-center gap-2.5 flex">
-          <div class="text-fuchsia-400 text-sm font-semibold tracking-tight">
+          <div class="text-sm font-semibold tracking-tight">
             Exploration
           </div>
         </div>
@@ -222,14 +227,14 @@ defmodule OliWeb.Delivery.Student.Home.Components.ScheduleComponent do
   defp resource_type(%{resource: %{graded: true}} = assigns) do
     ~H"""
     <div role="resource_type" class="justify-start items-start flex">
-      <div class="px-3 py-1 bg-yellow-700 bg-opacity-25 rounded-3xl justify-center items-center gap-1.5 flex">
+      <div class="px-3 py-1 text-yellow-700 dark:text-[#FF8F40] bg-[#B87439]/[.25] rounded-3xl justify-center items-center gap-1.5 flex">
         <div class="w-5 h-5 relative opacity-80">
           <div class="w-3 h-3.5 absolute">
             <Icons.transparent_flag />
           </div>
         </div>
         <div class="pr-1 justify-center items-center gap-2.5 flex">
-          <div class="text-orange-400 text-sm font-semibold tracking-tight">
+          <div class="text-sm font-semibold tracking-tight">
             Assignment
           </div>
         </div>
@@ -241,14 +246,14 @@ defmodule OliWeb.Delivery.Student.Home.Components.ScheduleComponent do
   defp resource_type(%{resource: %{graded: false}} = assigns) do
     ~H"""
     <div role="resource_type" class="justify-start items-start flex">
-      <div class="px-3 py-1 bg-blue-800 bg-opacity-25 rounded-3xl justify-center items-center gap-1.5 flex">
+      <div class="px-3 py-1 text-blue-700 dark:text-[#8CBCFF] bg-[#3959B8]/[.25] rounded-3xl justify-center items-center gap-1.5 flex">
         <div class="w-5 h-5 relative opacity-80">
           <div class="w-3 h-3.5 absolute">
             <Icons.clipboard />
           </div>
         </div>
         <div class="pr-1 justify-center items-center gap-2.5 flex">
-          <div class="text-blue-300 text-sm font-semibold tracking-tight">
+          <div class="text-sm font-semibold tracking-tight">
             Practice
           </div>
         </div>
@@ -284,22 +289,22 @@ defmodule OliWeb.Delivery.Student.Home.Components.ScheduleComponent do
           :if={!is_nil(@resource.raw_avg_score) and @resource.last_attempt[:state] != :active}
           class="py-px justify-end items-start gap-2.5 flex"
         >
-          <div class="flex justify-end items-center gap-1">
+          <div class="text-green-700 dark:text-green-500 flex justify-end items-center gap-1">
             <div class="w-4 h-4 relative"><Icons.star /></div>
-            <div class="text-green-500 text-sm font-semibold tracking-tight">
+            <div class="text-sm font-semibold tracking-tight">
               <%= parse_score(@resource.raw_avg_score[:score]) %>
             </div>
-            <div class="text-green-500 text-sm font-semibold tracking-widest">
+            <div class="text-sm font-semibold tracking-widest">
               /
             </div>
-            <div class="text-green-500 text-sm font-semibold tracking-tight">
+            <div class="text-sm font-semibold tracking-tight">
               <%= parse_score(@resource.raw_avg_score[:out_of]) %>
             </div>
           </div>
         </div>
 
         <div class="py-px justify-end items-start gap-2.5 flex">
-          <div class="text-right text-white text-opacity-60 text-sm font-semibold">
+          <div class="text-right dark:text-white text-opacity-60 text-sm font-semibold">
             Attempt <%= @resource.resource_attempt_count %> of <%= max_attempts(
               @resource.effective_settings
             ) %>
@@ -312,20 +317,20 @@ defmodule OliWeb.Delivery.Student.Home.Components.ScheduleComponent do
             :if={has_end_date?(@resource.effective_settings)}
             class="justify-end items-end gap-1 flex ml-auto"
           >
-            <div class="text-white text-opacity-60 text-xs font-semibold ">
+            <div class="dark:text-white text-opacity-60 text-xs font-semibold ">
               Time Remaining:
             </div>
-            <div class="text-white text-xs font-semibold">
+            <div class="dark:text-white text-xs font-semibold">
               <%= Student.format_time_remaining(@resource.effective_settings) %>
             </div>
           </div>
         </div>
       <% else %>
         <div :if={@resource.last_attempt} class="justify-end items-end gap-1 flex ml-auto">
-          <div class="text-white text-opacity-60 text-xs font-semibold ">
+          <div class="dark:text-white text-opacity-60 text-xs font-semibold ">
             Last Submitted:
           </div>
-          <div class="text-white text-xs font-semibold">
+          <div class="dark:text-white text-xs font-semibold">
             <%= FormatDateTime.to_formatted_datetime(
               @resource.last_attempt[:date_submitted],
               @ctx,
@@ -340,7 +345,7 @@ defmodule OliWeb.Delivery.Student.Home.Components.ScheduleComponent do
 
   defp schedule_item_details(assigns) do
     ~H"""
-    <div role="details" class="w-full h-full px-1 flex flex-col items-stretch gap-5 relative">
+    <div role="details" class="w-full h-full flex flex-col items-stretch gap-5 relative">
       <.schedule_group_content
         :if={@item_type == :expandable}
         item_id={@item_id}
@@ -351,9 +356,9 @@ defmodule OliWeb.Delivery.Student.Home.Components.ScheduleComponent do
         section_slug={@section_slug}
       />
 
-      <div class="pr-1 self-end">
+      <div class="pr-2 pl-1 self-end">
         <div class="flex items-end gap-1">
-          <div class="text-right text-white text-opacity-90 text-xs font-semibold">
+          <div class="text-right dark:text-white text-opacity-90 text-xs font-semibold">
             <%= if @completed do %>
               Completed
             <% else %>
@@ -381,14 +386,17 @@ defmodule OliWeb.Delivery.Student.Home.Components.ScheduleComponent do
         phx-click="expand_item"
         phx-value-item_id={@item_id}
         phx-target={@target}
-        class="hover:cursor-pointer absolute top-2 left-2 z-10"
+        class="hover:cursor-pointer absolute top-3.5 left-3 z-10"
       >
         <div class={[
-          if(@completed, do: "bg-white bg-opacity-10", else: "bg-[#0F6CF5]"),
+          if(@completed,
+            do: "bg-black/[0.1] dark:bg-white/[0.1]",
+            else: "bg-[#5798f8] dark:bg-[#0F6CF5]"
+          ),
           "flex px-2 py-0.5 rounded-xl shadow tracking-tight gap-2 items-center align-center"
         ]}>
           <div role="count" class="pl-1 justify-start items-center gap-2.5 flex">
-            <div class="text-white text-xs font-semibold">
+            <div class="dark:text-white text-xs font-semibold">
               <%= length(@resources) %> pages
             </div>
           </div>
@@ -399,7 +407,7 @@ defmodule OliWeb.Delivery.Student.Home.Components.ScheduleComponent do
       </button>
       <div
         :if={@expanded}
-        class="w-full h-full bg-[#030105]/[.15] rounded-md flex-col justify-start items-start gap-2.5 inline-flex"
+        class="w-full h-full bg-white/[.15] dark:bg-[#030105]/[.15] rounded-md flex-col justify-start items-start gap-2.5 inline-flex"
       >
         <div class="self-stretch pt-12 flex-col justify-start items-start gap-0.5 flex">
           <.link
@@ -409,14 +417,14 @@ defmodule OliWeb.Delivery.Student.Home.Components.ScheduleComponent do
                 request_path: ~p"/sections/#{@section_slug}"
               )
             }
-            class="w-full hover:no-underline"
+            class="w-full text-black hover:text-black dark:text-white dark:hover:text-white hover:no-underline"
           >
             <% resource_completed = resource.progress == 100 %>
             <div
               role="group_item"
-              class="w-full self-stretch pl-7 pr-4 py-2.5 rounded-lg justify-start items-start gap-5 inline-flex hover:bg-[#000000]/5 dark:hover:bg-[#FFFFFF]/5 hover:font-medium hover:cursor-pointer"
+              class="w-full flex self-stretch pl-7 pr-4 py-2.5 rounded-lg justify-start items-start gap-5 hover:bg-[#000000]/5 dark:hover:bg-[#FFFFFF]/5 hover:font-medium hover:cursor-pointer"
             >
-              <div class="grow shrink basis-0 h-5 justify-start items-start gap-5 flex">
+              <div class="grow shrink h-auto justify-start items-start gap-5 flex">
                 <div class="justify-start items-start gap-5 flex">
                   <div class="w-5 h-5 flex-col justify-center items-center inline-flex">
                     <div class="justify-center items-center inline-flex">
@@ -424,15 +432,15 @@ defmodule OliWeb.Delivery.Student.Home.Components.ScheduleComponent do
                     </div>
                   </div>
                   <div class="w-6 justify-start items-center gap-2.5 flex">
-                    <div class="grow shrink basis-0 opacity-60 text-white text-xs font-semibold capitalize">
+                    <div class="grow shrink basis-0 opacity-60 text-xs font-semibold capitalize">
                       <%= resource.resource.numbering_index %>
                     </div>
                   </div>
                 </div>
-                <div class="grow shrink basis-0 h-5 justify-start items-start gap-2.5 flex">
+                <div class="grow shrink h-auto justify-start items-start gap-2.5 flex">
                   <div class={[
                     if(resource_completed, do: "opacity-60", else: "opacity-90"),
-                    "grow shrink basis-0 text-white text-base font-normal"
+                    "text-base font-normal whitespace-normal"
                   ]}>
                     <%= resource.resource.title %>
                   </div>
