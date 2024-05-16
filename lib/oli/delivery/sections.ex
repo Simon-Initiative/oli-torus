@@ -2031,13 +2031,12 @@ defmodule Oli.Delivery.Sections do
        ) do
     section_resources
     |> Enum.map(fn sr ->
-      unit =
-        page_to_containers_map[sr.resource_id]
-        |> Enum.find(fn container -> container["numbering_level"] == 1 end)
+      resource_containers = Map.get(page_to_containers_map, sr.resource_id, [])
+
+      unit = Enum.find(resource_containers, fn container -> container["numbering_level"] == 1 end)
 
       module =
-        page_to_containers_map[sr.resource_id]
-        |> Enum.find(fn container -> container["numbering_level"] == 2 end)
+        Enum.find(resource_containers, fn container -> container["numbering_level"] == 2 end)
 
       %ScheduledSectionResource{
         resource: sr,
@@ -4893,7 +4892,7 @@ defmodule Oli.Delivery.Sections do
     container_type_id = Oli.Resources.ResourceType.get_id_by_type("container")
 
     from([s: s, sr: sr, rev: rev] in DeliveryResolver.section_resource_revisions(section_slug),
-      where: rev.resource_type_id == ^container_type_id,
+      where: rev.resource_type_id == ^container_type_id and rev.deleted == false,
       select: {rev.resource_id, rev.title}
     )
     |> Repo.all()

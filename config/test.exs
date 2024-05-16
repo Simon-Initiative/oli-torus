@@ -10,6 +10,7 @@ config :oli,
   aws_client: Oli.Test.MockAws,
   openai_client: Oli.Test.MockOpenAIClient,
   date_time_module: Oli.Test.DateTimeMock,
+  date_module: Oli.Test.DateMock,
   slack_webhook_url: nil,
   branding: [
     name: "OLI Torus Test",

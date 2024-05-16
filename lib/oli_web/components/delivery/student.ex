@@ -319,7 +319,7 @@ defmodule OliWeb.Components.Delivery.Student do
   @spec format_time_remaining(map()) :: String.t()
   def format_time_remaining(effective_settings) do
     # Get the current time
-    current_time = Timex.now()
+    current_time = Oli.DateTime.utc_now()
 
     # Calculate the difference in seconds, clamp negative values to 0
     diff_seconds =
