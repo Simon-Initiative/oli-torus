@@ -37,6 +37,12 @@ defmodule OliWeb.Telemetry do
       last_value("vm.total_run_queue_lengths.cpu"),
       last_value("vm.total_run_queue_lengths.io"),
       last_value("vm.system_counts.process_count"),
+      last_value("oli.xapi.pipeline.queue_size"),
+      last_value("oli.xapi.pipeline.batch_size"),
+      summary("oli.xapi.pipeline.upload.duration", unit: {:native, :millisecond}),
+      summary("phoenix.endpoint.stop.duration",
+        unit: {:native, :millisecond}
+      ),
 
       # Phoenix Metrics
       summary("phoenix.endpoint.stop.duration",
